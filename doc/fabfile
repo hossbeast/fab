@@ -1,0 +1,17 @@
+build : main.o
+
+main.o : main.c
+main.o : args.o
+main.o : common/xmem.o
+
+args.o : args.c args.h
+
+common/xmem.o : common/xmem.c common/xmem.h
+
+build {
+	gcc -m64 -O3 -Werror -D_GNU_SOURCE -o $@.path $@.edepso
+}
+
+main.o args.o common/xmem.o {
+	gcc -m64 -O3 -Werror -D_GNU_SOURCE -c $@.idepsc -o $@.path
+}

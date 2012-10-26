@@ -1,0 +1,106 @@
+# include the following directories
+>> lib
+>> util
+
+# lazy variable definitions
+CFX = $COPTS $CFLAGS
+LFX = $LOPTS $LFLAGS
+
+# variables available for interpolation in recipes
+$@ - path to target
+$^ - list of immediate dependencies
+
+# make "build" from .o files corresponding to the .c files in this directory
+build : s/^(.*)\.c$/$1.o/ {
+	gcc $CFX $@ $LFX -o $^
+}
+
+# make a .o in this directory from a .c in this directory
+/\.o$/ : $_0.c {
+	gcc ${CFLAGS} $@ 
+}
+
+# make deps files for each .c in this directory
+/\.d$/ : $_0.c {
+	gcc -MP -ME $@
+	sed -e 's/a/b' > $@
+}
+
+q/date.h/
+
+b/.h/s/(^.)/$1/
+
+principles
+	- rules to use a file are in the buildfile in its same directory
+	- two-stage process : dependency discoverbuildinoy, target building
+	- 
+
+generic listbuilding syntax
+	- op/args/args/op/args/op/args
+	- 
+	- default list : files in the same directory as the buildfile being executed
+	- list => transformation => transformation => transformation ...
+	
+	- different kinds of list transformations
+		- selection
+			- m// - grep 
+			- q// - exact name match
+			- a// - starts with string
+			- b// - ends with string
+			- c// - contains string
+			- first, last ?
+		- translation
+			- s/// - substitution on all list elements
+			- t// - replace current list with single element list whose element is the given argument
+			- d// - replace current list with list of files in directory named by first element in current list
+
+
+
+ ( )
+
+variables
+	- syntax
+		- $ varname
+		- ${varname}
+		- ${varname}<modifiers>
+			- + : filename-part
+			- - : dirname-part
+
+	- $@ : target of the rule
+	- $^ : all prerequisites
+	- ${_0} - filename-part before regex match
+	- ${_1} - filename-part of regex match
+	- ${_1} - filename-part after regex match
+
+	- ALL variables are lists
+	- when using a variable, the default is to use its first element
+	- otherwise, use a list transform
+	- variable has a value
+		- variable is then bound at usage time
+			- variable-bind is an event which can be used
+
+$COPTS = -m32
+
+
+filenames
+	- default is to exclude the directory-part
+	- include the directory-part with ${variable}+
+	- all filepaths are canonicalized
+
+directories
+	- including a directory
+		- reads a buildfile in that directory, if any
+		- makes files in that directory available for pattern matching
+
+switches
+	- just build dependencies
+	- up-to-date method
+		- last-modified timestamp
+		- file size
+		- md5
+
+immediate and eventual dependency context
+	- this file immediately depends on date.h, therefore COPTS for this file +=-fms-extensions
+
+dependencies
+	- a canonical filepath depends on another canonical filepath + exact cmd used to construct that file
