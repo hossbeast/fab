@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 #include "args.h"
-#include "bf.h"
+#include "ff.h"
 #include "gn.h"
 #include "fml.h"
 #include "bp.h"
@@ -29,8 +29,8 @@ int main(int argc, char** argv)
 {
 	int domain()
 	{
-		bf_parser *		bfp = 0;
-		bf_node *			bfn = 0;
+		ff_parser *		ffp = 0;
+		ff_node *			ffn = 0;
 		bp *					bp = 0;
 
 		// unblock all signals
@@ -57,18 +57,18 @@ int main(int argc, char** argv)
 		// create/cleanup tmp 
 		fatal(tmp_setup);
 
-		// parse the fabfile
-		fatal(bf_mkparser, &bfp);
-		fatal(bf_parse, bfp, g_args.fabfile, &bfn);
+		// parse the faffile
+		fatal(ff_mkparser, &ffp);
+		fatal(ff_parse, ffp, g_args.fabfile, &ffn);
 
 		// the first target is the default
 		gn * def = 0;
 
 		// add each dependency to the graph
-		bf_node* t = bfn;
+		ff_node* t = ffn;
 		while(t)
 		{
-			if(t->type == BFN_DEPENDENCY)
+			if(t->type == FFN_DEPENDENCY)
 			{
 				for(x = 0; x < t->targets_l; x++)
 				{
@@ -76,9 +76,9 @@ int main(int argc, char** argv)
 					for(y = 0; y < t->prereqs_l; y++)
 					{
 						if(!def)
-							fatal(gn_add, t->bf_dir, t->targets[x]->name, t->prereqs[y]->name, &def);
+							fatal(gn_add, t->ff_dir, t->targets[x]->name, t->prereqs[y]->name, &def);
 						else
-							fatal(gn_add, t->bf_dir, t->targets[x]->name, t->prereqs[y]->name, 0);
+							fatal(gn_add, t->ff_dir, t->targets[x]->name, t->prereqs[y]->name, 0);
 					}
 				}
 			}
@@ -87,10 +87,10 @@ int main(int argc, char** argv)
 		}
 
 		// create formulas
-		t = bfn;
+		t = ffn;
 		while(t)
 		{
-			if(t->type == BFN_FORMULA)
+			if(t->type == FFN_FORMULA)
 			{
 				fml * fml = 0;
 				fatal(fml_add, t, &fml);
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 					int y;
 					for(y = 0; y < t->targets_l; y++)
 					{
-						if(strcmp(gn_nodes.e[x]->dir, t->targets[y]->bf_dir) == 0)
+						if(strcmp(gn_nodes.e[x]->dir, t->targets[y]->ff_dir) == 0)
 						{
 							if(strcmp(gn_nodes.e[x]->name, t->targets[y]->name) == 0)
 							{

@@ -21,6 +21,8 @@ INSTALL         :=install
 COPTS						+=-m64 -g -O0 -Werror -fms-extensions -fno-builtin-log -D_GNU_SOURCE $(foreach x,${VPATH},-I${SRCDIR}/$(x))
 %.o : COPTS     +=-c
 
+LOPTS						+=-llistwise
+
 #
 # default goal
 #
@@ -67,10 +69,10 @@ ${NAME}: main.o
 	@echo '}'																													>>$(*D)/$(*F).tok.c
 
 
-bf/bf.tokens.c : bf/bf.tok.c
+ff/ff.tokens.c : ff/ff.tok.c
 	cp $< $@
 
-bf/bf.tokens.h : bf/bf.tok.h
+ff/ff.tokens.h : ff/ff.tok.h
 	cp $< $@
 
 %.c : %.y
@@ -81,7 +83,7 @@ bf/bf.tokens.h : bf/bf.tok.h
 
 # dependencies
 main.o  : args/args.o						\
-				  bf/bf.o								\
+				  ff/ff.o								\
 				  bp/bp.o								\
 				  common/coll.o					\
 				  common/idx.o					\
@@ -98,7 +100,7 @@ main.o  : args/args.o						\
 
 common/idx.o : common/xstring.o
 
-bf/bf.o : bf/bf.tokens.h bf/bf.tab.o bf/bf.lex.o bf/bf.tokens.o
+ff/ff.o : ff/ff.tokens.h ff/ff.tab.o ff/ff.lex.o ff/ff.tokens.o
 
 gn/gn.o	: common/coll.o common/idx.o common/unitstring.o
 

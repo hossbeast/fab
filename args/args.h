@@ -4,8 +4,8 @@
 #include <sys/types.h>
 
 #define DEFAULT_FABFILE "fabfile"
-#define DEFAULT_EXECDIR		"/tmp/build/exec"
-#define DEFAULT_HASHDIR		"/tmp/build/hash"
+#define DEFAULT_EXECDIR		"/tmp/fab/exec"
+#define DEFAULT_HASHDIR		"/tmp/fab/hash"
 
 /* modes */
 
@@ -32,7 +32,7 @@ extern struct g_args_t
 
 	char				mode;									// one of MODE_*
 
-	char *			fabfile;						// path to fabfile
+	char *			fabfile;							// path to fabfile
 
 	char *			execdir_base;
 	char *			execdir;

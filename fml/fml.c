@@ -7,7 +7,7 @@
 #include "args.h"
 #include "gn.h"
 #include "ts.h"
-#include "bf.tokens.h"
+#include "ff.tokens.h"
 
 #include "control.h"
 #include "xmem.h"
@@ -75,12 +75,12 @@ static int resolve_idepsc(pstring ** p, gn * gn)
 //
 // public
 //
-int fml_add(bf_node * bfn, fml ** fml)
+int fml_add(ff_node * ffn, fml ** fml)
 {
-	// bfn is an BFN_FORMULA
+	// ffn is an FFN_FORMULA
 	fatal(coll_doubly_add, &g_fmls.c, 0, fml);
 
-	(*fml)->bfn = bfn;
+	(*fml)->ffn = ffn;
 }
 
 int fml_render(ts * ts)
@@ -88,26 +88,26 @@ int fml_render(ts * ts)
 	// start with shebang
 	fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
 
-	bf_node * bfn = ts->gn->fml->bfn;
+	ff_node * ffn = ts->gn->fml->ffn;
 
 	int x;
-	for(x = 0; x < bfn->commands_l; x++)
+	for(x = 0; x < ffn->commands_l; x++)
 	{
-		if(bfn->commands[x]->type == BFN_COMMAND_TEXT)
+		if(ffn->commands[x]->type == FFN_COMMAND_TEXT)
 		{
-			fatal(pscatf, &ts->cmd_txt, bfn->commands[x]->text);
+			fatal(pscatf, &ts->cmd_txt, ffn->commands[x]->text);
 		}
-		if(bfn->commands[x]->type == BFN_COMMAND_REF)
+		if(ffn->commands[x]->type == FFN_COMMAND_REF)
 		{
-			if(bfn->commands[x]->ref == bf_BF_REF_EDEPSO)
+			if(ffn->commands[x]->ref == ff_FF_REF_EDEPSO)
 			{
 				fatal(resolve_edepso, &ts->cmd_txt, ts->gn);
 			}
-			if(bfn->commands[x]->ref == bf_BF_REF_IDEPSC)
+			if(ffn->commands[x]->ref == ff_FF_REF_IDEPSC)
 			{
 				fatal(resolve_idepsc, &ts->cmd_txt, ts->gn);
 			}
-			if(bfn->commands[x]->ref == bf_BF_REF_PATH)
+			if(ffn->commands[x]->ref == ff_FF_REF_PATH)
 			{
 				fatal(resolve_path, &ts->cmd_txt, ts->gn);
 			}

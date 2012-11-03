@@ -16,8 +16,8 @@ struct g_args_t g_args;
 static void usage()
 {
 	printf(
-		"build\n"
-		"Usage: build [options] target .. target\n"
+		"fab\n"
+		"Usage: fab [options] target .. target\n"
 		"   --help|-h for this message\n"
 		"\n"
 	);

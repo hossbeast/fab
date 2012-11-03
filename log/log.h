@@ -22,8 +22,8 @@
 #define L_BPEXEC				0x00000008ULL							/* buildplan execution */
 #define L_BPEVAL				0x00000010ULL							/* buildplan evaluation results */
 #define L_BPDUMP				0x00000020ULL							/* dump the final buildplan */
-#define L_BFTOK 				0x00000040ULL							/* buildfile parsing, token stream */
-#define L_BF						0x00000080ULL							/* buildfile parsing */
+#define L_FFTOK 				0x00000040ULL							/* fabfile parsing, token stream */
+#define L_FF						0x00000080ULL							/* fabfile parsing */
 #define L_ARGS 					0x00000100ULL							/* program arguments */
 #define L_GN 						0x00000200ULL							/* graph node details */
 #define L_FMEXEC				0x00000400ULL							/* formula execution results/details */

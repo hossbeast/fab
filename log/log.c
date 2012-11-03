@@ -39,19 +39,19 @@ static struct {
 	char *			s;
 	int					l;
 } o_logs[] = { 
-	  { .v = L_ERROR	, .s = "L_ERROR" 	}
-	, { .v = L_WARN		, .s = "L_WARN" 	}
-	, { .v = L_INFO		, .s = "L_INFO" 	}
-	, { .v = L_BPEXEC	, .s = "L_BPEXEC"	}
-	, { .v = L_BPEVAL	, .s = "L_BPEVAL"	}
-	, { .v = L_BPDUMP	, .s = "L_BPDUMP"	}
-	, { .v = L_BFTOK	, .s = "L_BFTOK"	}
-	, { .v = L_BF			, .s = "L_BF"			}
-	, { .v = L_ARGS		, .s = "L_ARGS"		}
-	, { .v = L_GN			, .s = "L_GN"			}
-	, { .v = L_FMEXEC	, .s = "L_FMEXEC"	}
-	, { .v = L_HASH		, .s = "L_HASH"		}
-	, { .v = L_TAG		, .s = "L_TAG"		}
+	  { .v = L_ERROR	, .s = "ERROR" 	}
+	, { .v = L_WARN		, .s = "WARN" 	}
+	, { .v = L_INFO		, .s = "INFO" 	}
+	, { .v = L_BPEXEC	, .s = "BPEXEC"	}
+	, { .v = L_BPEVAL	, .s = "BPEVAL"	}
+	, { .v = L_BPDUMP	, .s = "BPDUMP"	}
+	, { .v = L_FFTOK	, .s = "FFTOK"	}
+	, { .v = L_FF			, .s = "FF"			}
+	, { .v = L_ARGS		, .s = "ARGS"		}
+	, { .v = L_GN			, .s = "GN"			}
+	, { .v = L_FMEXEC	, .s = "FMEXEC"	}
+	, { .v = L_HASH		, .s = "HASH"		}
+	, { .v = L_TAG		, .s = "TAG"		}
 };
 
 static int o_name_len;

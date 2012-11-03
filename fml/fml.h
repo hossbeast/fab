@@ -3,7 +3,7 @@
 
 /* fml - formula for fabricating target files */
 
-#include "bf.h"
+#include "ff.h"
 #include "gn.h"
 #include "ts.h"
 
@@ -11,7 +11,7 @@
 
 typedef struct fml
 {
-	bf_node *		bfn;		// bf_node for this formula
+	ff_node *		ffn;		// ff_node for this formula
 } fml;
 
 extern union g_fmls_t
@@ -30,9 +30,9 @@ extern union g_fmls_t
 
 /// fml_add
 //
-// add a formula to the global list from the buildfile node
+// add a formula to the global list from the fabfile node
 //
-int fml_add(bf_node *, fml **);
+int fml_add(ff_node *, fml **);
 
 /// fml_render
 //
