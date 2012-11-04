@@ -9,10 +9,13 @@
 
 #define FFN_TABLE(x)										\
 	_FFN(FFN_DEPENDENCY			, 0x01	, x)	\
-	_FFN(FFN_FNAME					, 0x02	, x)	\
-	_FFN(FFN_FORMULA				, 0x03	, x)	\
-	_FFN(FFN_COMMAND_TEXT		, 0x04	, x)	\
-	_FFN(FFN_COMMAND_REF		, 0x05	, x)	\
+	_FFN(FFN_FORMULA				, 0x02	, x)	\
+	_FFN(FFN_INCLUDE				, 0x03	, x)	\
+	_FFN(FFN_VARDECL				, 0x04	, x)	\
+	_FFN(FFN_LISTGEN				, 0x05	, x)	\
+	_FFN(FFN_VARNAME				, 0x06	, x)	\
+	_FFN(FFN_WS							, 0x07	, x)	\
+	_FFN(FFN_WORD						, 0x09	, x)	\
 
 enum {
 #define _FFN(a, b, c) a = b,
@@ -47,20 +50,16 @@ typedef struct ff_node
 	union {
 		char*	strings[1];
 
-		struct {											// FFN_FNAME
+		struct {											// FFN_WORD, FFN_WS
+			char*			text;
+		};
+
+		struct {											// FFN_VARNAME, FFN_VARDECL
 			char*			name;
 		};
 
-		struct {											// FFN_COMMAND_TEXT
-			char*			text;
-		};
-	};
-
-	union {
-		int numbers[1];
-
-		struct {											// FFN_COMMAND_REF
-			int				ref;
+		struct {											// FFN_LISTGEN
+			char*			gen;
 		};
 	};
 
@@ -74,6 +73,11 @@ typedef struct ff_node
 		struct {											// FFN_FORMULA, FFN_DEPENDENCY
 			struct ff_node**	targets;
 			int								targets_l;
+		};
+
+		struct {											// FFN_VARDECL
+			struct ff_node**	deflist;
+			int								deflist_l;
 		};
 	};
 

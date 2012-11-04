@@ -125,7 +125,13 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 		n->chain[0]				= va_arg(va, ff_node*);
 		n->chain[1]				= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_FNAME)
+	else if(type == FFN_WORD || type == FFN_WS)
+	{
+		a = va_arg(va, char*);
+
+		n->text 					= a;
+	}
+	else if(type == FFN_VARNAME)
 	{
 		a = va_arg(va, char*);
 		b = va_arg(va, char*);
@@ -137,16 +143,22 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 		n->chain[0]				= va_arg(va, ff_node*);
 		n->chain[1]				= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_COMMAND_TEXT)
+	else if(type == FFN_INCLUDE)
+	{
+
+	}
+	else if(type == FFN_VARDECL)
 	{
 		a = va_arg(va, char*);
 		b = va_arg(va, char*);
 
-		n->text						= struse(a, b);
+		n->name						= struse(a, b);
+		n->chain[0]				= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_COMMAND_REF)
+	else if(type == FFN_LISTGEN)
 	{
-		n->ref						= va_arg(va, int);
+		n->chain[0]				= va_arg(va, ff_node*);
+		n->gen						= va_arg(va, char*);
 	}
 
 	va_end(va);
@@ -285,4 +297,65 @@ void ff_xfreenode(ff_node ** const restrict ffn)
 {
 	ff_freenode(*ffn);
 	*ffn = 0;
+}
+
+void ff_dump(ff_node * const restrict root)
+{
+	void dump(ff_node * const restrict ffn, int lvl)
+	{
+		int x;
+
+		if(ffn)
+		{
+			printf("%*s%20s @ [%3d,%3d - %3d,%3d]\n"
+				, lvl * 2, ""
+				, FFN_STRING(ffn->type), ffn->loc.f_lin, ffn->loc.f_col, ffn->loc.l_lin, ffn->loc.l_col
+			);
+
+			if(ffn->type == FFN_DEPENDENCY)
+			{
+
+			}
+			else if(ffn->type == FFN_FORMULA)
+			{
+
+			}
+			else if(ffn->type == FFN_INCLUDE)
+			{
+
+			}
+			else if(ffn->type == FFN_VARDECL)
+			{
+				printf("%*s  %10s : '%s'\n"
+					, lvl * 2, ""
+					, "name", ffn->name
+				);
+
+				for(x = 0; x < ffn->deflist_l; x++)
+					dump(ffn->deflist[x], lvl + 1);
+			}
+			else if(ffn->type == FFN_VARNAME)
+			{
+				printf("%*s  %10s : '%s'\n"
+					, lvl * 2, ""
+					, "name", ffn->name
+				);
+			}
+			else if(ffn->type == FFN_LISTGEN)
+			{
+				
+			}
+			else if(ffn->type == FFN_WORD || ffn->type == FFN_WS)
+			{
+				printf("%*s  %10s : '%s'\n"
+					, lvl * 2, ""
+					, "text", ffn->text
+				);
+			}
+
+			dump(ffn->next, lvl);
+		}
+	};
+
+	dump(root, 0);
 }

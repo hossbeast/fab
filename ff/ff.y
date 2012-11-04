@@ -2,6 +2,7 @@
 	#include <stdio.h>
 	#include <stdint.h>
 	#include <string.h>
+	#include <stdlib.h>
 }
 
 %code top {
@@ -42,33 +43,57 @@
 	{
 		const char*			s;
 		const char*			e;
+
+		char*						v;
+	}							wordparts;
+
+	struct
+	{
+		const char*			s;
+		const char*			e;
 		uint32_t				v;
 	}							num;
+
+	struct
+	{
+		const char*			s;
+		const char*			e;
+
+		const char*			vs;
+		const char*			ve;
+	}							var;
 
 	ff_node*			node;
 }
 
 /* terminals with a semantic value */
-%token <str> FNAME
-%token <str> TEXT
-%token <num> FF_REF_PATH
-%token <num> FF_REF_EDEPSO
-%token <num> FF_REF_IDEPSC
-%token <num> LF								"LF"
+%token <str> WORD							"WORD"
+%token <str> WS								"WS"
+%token <var> VARNAME					"VARNAME"
+%token <num> INC							">>"
+%token <num> LW								"=>>"
 %token <num> ':'
+%token <num> '['
+%token <num> ']'
 %token <num> '{'
 %token <num> '}'
+%token <num> '='
+%token <num> '"'
 
 /* nonterminals */
+%type  <wordparts> wordparts
+%type  <wordparts> lw_word
+
 %type  <node> statement
 %type  <node> statement_list
-%type  <node> file_list
-%type  <node> file
-%type  <node> recipe
-%type  <node> command
-%type  <node> command_seg
+%type  <node> include
+%type  <node> vardecl
+%type  <node> formula
 %type  <node> dependency
-%type  <num>  reference
+%type  <node> list
+%type  <node> listpiece
+%type  <node> formula_list
+%type  <node> word
 
 /* sugar */
 %token END 0 "end of file"
@@ -78,89 +103,163 @@
 %%
 
 ff
-	: statement_list tail
+	: statement_list
 	{
 		*parm->ffn = $1;
 	}
 	;
 
-tail
-	: LF_list
-	|
-	;
-
 statement_list
-	: statement_list LF_list statement
+	: statement_list statement
 	{
-		$$ = addchain($1, $3);
+		$$ = addchain($1, $2);
 	}
 	| statement
 	;
 
 statement
 	: dependency
-	| recipe
+	| formula
+	| include
+	| vardecl
 	;
 
 dependency
-	: file_list ':' file_list
+	: list ':' list
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $3->e, $1, $3);
 	}
-	;
-
-file_list
-	: file_list file
+	| list ':' ':' list
 	{
-		$$ = addchain($1, $2);
+		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $4->e, $1, $4);
 	}
-	| file
-	;
-
-file
-	: FNAME
+	| list ':' ':' ':' list
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_FNAME, $1.s, $1.e, $1.s, $1.e);
+		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $5->e, $1, $5);
 	}
 	;
 
-recipe
-	: file_list '{' command '}'
+formula
+	: list '{' formula_list '}'
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_FORMULA, $1->s, $4.e, $1, $3);
 	}
 	;
 
-command
-	: command command_seg
+include
+	: INC list
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_INCLUDE, $1.s, $2->e, $1, $2);
+	}
+	;
+
+vardecl
+	: WORD '=' list
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_VARDECL, $1.s, $3->e, $1.s, $1.e, $3);
+	}
+	;
+
+formula_list
+	: formula_list formula_list
 	{
 		$$ = addchain($1, $2);
 	}
-	| command_seg
+	| VARNAME
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
+	}
+	| WS
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_WS, $1.s, $1.e, $1.s, $1.e);
+	}
+	| list
+	| word
 	;
 
-command_seg
-	: TEXT
+list
+	: '[' listpiece ']'
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_COMMAND_TEXT, $1.s, $1.e, $1.s, $1.e);
+		$$ = $2;
+		$$->s = (char*)$1.s;
+		$$->e = (char*)$3.e;
 	}
-	| LF
+	| '[' listpiece ']' LW lw_word
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_COMMAND_TEXT, $1.s, $1.e, $1.s, $1.e);
+		$$ = mknode(&@$, parm->ff_dir, FFN_LISTGEN, $1.s, $5.e, $2, $5.v);
 	}
-	| reference
+	| '[' listpiece ']' WS LW lw_word
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_COMMAND_REF, $1.s, $1.e, $1.v);
+		$$ = mknode(&@$, parm->ff_dir, FFN_LISTGEN, $1.s, $6.e, $2, $6.v);
 	}
 	;
 
-reference
-	: FF_REF_PATH
-	| FF_REF_EDEPSO
-	| FF_REF_IDEPSC
+listpiece
+	: listpiece listpiece
+	{
+		$$ = addchain($1, $2);
+	}
+	| VARNAME
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
+	}
+	| WS
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_WS, $1.s, $1.e, $1.s, $1.e);
+	}
+	| word
 	;
 
-LF_list
-	: LF_list LF
-	| LF
+lw_word
+	: '"' wordparts '"'
+	{
+		$$ = $2;
+	}
+	| WS wordparts WS
+	{
+		$$ = $2;
+	}
+	| wordparts
+	;
+
+word
+	: '"' wordparts '"'
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
+	}
+	| WS wordparts WS
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
+	}
+	| WORD
+	{
+		char* v = calloc(1, ($1.e - $1.s) + 1);
+		memcpy(v, $1.s, $1.e - $1.s);
+
+		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $1.e, v);
+	}
+	;
+
+wordparts
+	: wordparts WORD
+	{
+		$$ = $1;
+
+		int l = strlen($$.v);
+		int nl = $2.e - $2.s;
+
+		$$.v = realloc($$.v, l + nl + 1);
+		memcpy($$.v + l, $2.s, nl);
+		$$.v[l + nl] = 0;
+
+		$$.e = (char*)$2.e;
+	}
+	| WORD
+	{
+		$$.s = $1.s;
+		$$.e = $1.e;
+
+		$$.v = calloc(1, ($$.e - $$.s) + 1);
+		memcpy($$.v, $$.s, $$.e - $$.s);
+	}
 	;

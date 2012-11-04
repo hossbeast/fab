@@ -175,9 +175,9 @@ int bp_prune(bp * bp)
 					if(gn->prop_hash[1] == 0)		// file does not exist
 					{
 						// SOURCE file - not found
-						log(L_ERROR, "SOURCE file %s not found - required by %d", gn->path, gn->provides.l);
-						for(i = 0; i < gn->provides.l; i++)
-							log(L_BPEVAL, "  ---> %s", gn->provides.e[i]->path);
+						log(L_ERROR, "SOURCE file %s not found - required by %d", gn->path, gn->feeds.l);
+						for(i = 0; i < gn->feeds.l; i++)
+							log(L_BPEVAL, "  ---> %s", gn->feeds.e[i]->path);
 
 						gn->poison = 1;
 					}
@@ -194,9 +194,9 @@ int bp_prune(bp * bp)
 				{
 					// file doesn't exist or has changed, is not a SOURCE file, and cannot be fabricated
 
-					log(L_ERROR, "file %s has no formula - required by %d", gn->path, gn->provides.l);
-					for(i = 0; i < gn->provides.l; i++)
-						log(L_BPEVAL, "  ---> %s", gn->provides.e[i]->path);
+					log(L_ERROR, "file %s has no formula - required by %d", gn->path, gn->feeds.l);
+					for(i = 0; i < gn->feeds.l; i++)
+						log(L_BPEVAL, "  ---> %s", gn->feeds.e[i]->path);
 
 					gn->poison = 1;
 				}
@@ -205,8 +205,8 @@ int bp_prune(bp * bp)
 				if(gn->changed)
 				{
 					// : mark all nodes that depend on me as needing rebuilt, too
-					for(i = 0; i < gn->provides.l; i++)
-						gn->provides.e[i]->changed = 1;
+					for(i = 0; i < gn->feeds.l; i++)
+						gn->feeds.e[i]->changed = 1;
 				}
 
 				// does not need rebuilt : remove it from the buildplan
@@ -233,8 +233,8 @@ int bp_prune(bp * bp)
 			// propagate the poison
 			if(gn->poison)
 			{
-				for(i = 0; i < gn->provides.l; i++)
-					gn->provides.e[i]->poison = 1;
+				for(i = 0; i < gn->feeds.l; i++)
+					gn->feeds.e[i]->poison = 1;
 
 				bp_bad = 1;
 			}
@@ -393,7 +393,7 @@ int bp_exec(bp * bp)
 			{
 				ts[y]->gn->fab_success = 1;
 
-				// check each of my SOURCE dependencies - if all nodes which it provides
+				// check each of my SOURCE dependencies - if all nodes which it feeds
 				// to have been fabricated, we are done with it - update its hashfile
 
 				int k;
@@ -402,13 +402,13 @@ int bp_exec(bp * bp)
 					if(ts[y]->gn->needs.e[k]->needs.l == 0)
 					{
 						int j;
-						for(j = 0; j < ts[y]->gn->needs.e[k]->provides.l; j++)
+						for(j = 0; j < ts[y]->gn->needs.e[k]->feeds.l; j++)
 						{
-							if(!ts[y]->gn->needs.e[k]->provides.e[j]->fab_success)
+							if(!ts[y]->gn->needs.e[k]->feeds.e[j]->fab_success)
 								break;
 						}
 
-						if(j == ts[y]->gn->needs.e[k]->provides.l)
+						if(j == ts[y]->gn->needs.e[k]->feeds.l)
 							fatal(gn_hashes_write, ts[y]->gn->needs.e[k]);
 					}
 				}

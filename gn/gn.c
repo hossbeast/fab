@@ -111,7 +111,7 @@ int gn_add(char* cwd, char* A, char* B, gn ** r)
 		gna->dir				= strdup(space);
 		gna->dir[cwdl]  = 0;
 		gna->needs.z		= sizeof(struct gn **);
-		gna->provides.z	= sizeof(struct gn **);
+		gna->feeds.z	= sizeof(struct gn **);
 		char * xt = A + strlen(A);
 		while(*xt != '.' && xt != A)
 			xt--;
@@ -141,7 +141,7 @@ int gn_add(char* cwd, char* A, char* B, gn ** r)
 		gnb->dir				= strdup(space);
 		gnb->dir[cwdl]	= 0;
 		gnb->needs.z		= sizeof(struct gn **);
-		gnb->provides.z	= sizeof(struct gn **);
+		gnb->feeds.z	= sizeof(struct gn **);
 		char * xt = B + strlen(B);
 		while(*xt != '.' && xt != B)
 			xt--;
@@ -182,7 +182,7 @@ int gn_add(char* cwd, char* A, char* B, gn ** r)
 
 	// add dependency
 	coll_singly_add(&gna->needs.c, &gnb, 0);
-	coll_singly_add(&gnb->provides.c, &gna, 0);
+	coll_singly_add(&gnb->feeds.c, &gna, 0);
 
 	if(r)
 		*r = gna;
@@ -216,9 +216,9 @@ void gn_dump(gn * n)
 		for(x = 0; x < n->needs.l; x++)
 			log(L_GN, "%10s --> %s", "", n->needs.e[x]->path);
 
-		log(L_GN, "%10s : %d", "provides", n->provides.l);
-		for(x = 0; x < n->provides.l; x++)
-			log(L_GN, "%10s --> %s", "", n->provides.e[x]->path);
+		log(L_GN, "%10s : %d", "feeds", n->feeds.l);
+		for(x = 0; x < n->feeds.l; x++)
+			log(L_GN, "%10s --> %s", "", n->feeds.e[x]->path);
 
 		log(L_GN, "");
 	}

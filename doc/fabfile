@@ -1,3 +1,15 @@
+places possibly for variables / listwise / shell 
+ - include body
+ - variable body
+ - dependency lhs/rhs
+ - formula text
+
+>> common
+>> args
+
+CC     =gcc
+CFLAGS =-m64 -O3 -Werror -D_GNU_SOURCE
+
 build : main.o
 
 main.o : main.c
@@ -8,10 +20,134 @@ args.o : args.c args.h
 
 common/xmem.o : common/xmem.c common/xmem.h
 
+FOO = a b c ->> ss
+FOO = a [ b c ] ->> ss
+FOO = [ a b c ] ->> ss
+FOO = a b c [ [] =>> date ] ->> ss
+FOO = a b c =>> date ->> ss
+FOO = a b c ->> ss =>> head
+
+bar { $FOO => q/()/, }
+
 build {
 	gcc -m64 -O3 -Werror -D_GNU_SOURCE -o $@.path $@.edepso
+	$CC $CFLAGS -o [ $@ ] ->> a/path [ ${@[0]} ] ->> a/aneed/a/path/m/[.]o$
+}
+
+[ ${DIRS} ] ->> ls/s/[.]o$/.c/y
+{
+	gcc -m64 -O3 -Werror -D_GNU_SOURCE -c $@.idepsc -o $@.path
+}
+
+ff/ff.tab.c ff/ff.tab.h : ff/ff.tab.y
+
+ff/ff.tab.c ff/ff.tab.h =>> ss
+{
+
 }
 
 main.o args.o common/xmem.o {
 	gcc -m64 -O3 -Werror -D_GNU_SOURCE -c $@.idepsc -o $@.path
 }
+
+# list/variables
+
+all variables are a single list, they can be simply defined
+
+VARNAME = <space delimited list entries> ( =>> generator) ?
+	- assignment by whitespace delimited
+	- assignment by nullbyte-sequence delimited
+	- assignment by newline-sequence delimited
+
+predefined :
+
+DIRS  - list of canonical paths to included directories
+       - DIRS[0] is the canonical path to directory initial fabfile is located in
+% - target(s) of current execution
+
+predefined in formula text :
+
+@ - target(s) of current formula
+
+predefined on RHS of dependency :
+
+LHS - list of targets
+
+variables can be used in:
+	- definitions of variables
+  - shelltext
+  - formula text
+
+when a variable is simply referenced, it is replaced by a string of text
+the default delimiter is a space, can be changed like this
+
+${VARNAME} - replace, entries separated by spaces
+$VARNAME   - the same
+${VARNAME:C} - replace, entries separated by C
+ ex - ${VARNAME:,}
+${VARNAME:A:B} - replace, entries enclosed in A,B
+ ex - ${VARNAME:<:>}
+${VARNAME:A:B:C} - replace, entries enclosed in by A,B, separated by C
+ ex - ${VARNAME:<:>:,}
+
+when a variable is referenced by a list-generator, its entries are passed
+directly to liblistwise
+
+${VARNAME} =>> list-generator
+$VARNAME =>> list-generator
+
+# fabfile includes
+
+>> path-relative-to-root - add to DIRS, parse fabfile in that directory, if present
+
+# list-generator
+
+<initial list> =>> list-generator
+
+list elements may be graph-node objects which may be manipulated by listwise, the following
+properties are supported by fab graph nodes
+
+strings
+	dir   - canonical path to the directory the file is in
+	name  - file name
+	path  - canonical path to file
+	ext   - filename extension, or null
+
+graph-node lists
+	ineed - immediate dependencies
+  aneed - all dependencies
+	ifeed - nodes whose ineed includes this node
+  afeed - nodes whose aneed includes this node
+
+$@ ->> a/path
+${@} ->> a/ineed
+
+$@ ->> f/ineed/a/f/path/m/[.]c$/path
+$@ ->> a/ineed/path/m/[.]c$
+$@ ->> a/path/m/[.]o$/
+
+# multi-target formulas
+
+if the left-hand-side results in a single list, then each entry is a possible target
+of the formula, such as
+
+foo.o bar.o baz.o =>> sp     { /* formula text */ }
+foo bar baz =>> ap/.o { /* formula text */ }
+
+however if the left-hand-side results in a stack of lists, then each list on the stack
+declares a set of possible targets
+
+foo.tab.c foo.tab.h { /* formula text */ }
+
+however if the formula declaration contains a list-generator, then each list on the resulting
+stack declares a set of possible targets 
+
+foo.tab.c foo.tab.h ->> ss { /* formula text */ }
+
+# shell invocation ??
+
+->> { lw ./ls/foo }
+=>> { ./ls/foo/bar foo }
+=>> { find . -type f }
+
+# dependency generation

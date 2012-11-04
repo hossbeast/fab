@@ -64,7 +64,7 @@ typedef struct gn
 			int						z;
 			struct gn **	e;
 		};
-	} provides;
+	} feeds;
 
 	// formula for fabricating this node
 	struct fml *			fml;
