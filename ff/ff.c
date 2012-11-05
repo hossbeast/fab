@@ -14,6 +14,11 @@
 
 #include "xmem.h"
 
+#define MIN(a,b)            \
+ ({ typeof (a) _a = (a);    \
+		 typeof (b) _b = (b);   \
+	 _a > _b ? _b : _a; })
+
 struct ff_parser_t
 {
 	void*			p;
@@ -22,7 +27,7 @@ struct ff_parser_t
 // defined in the bison parser
 int ff_yyparse(yyscan_t, parse_param*);
 
-/// [[ public ]]
+/// [[ static ]]
 
 static char* struse(char* s, char* e)
 {
@@ -103,6 +108,8 @@ static void flatten(ff_node* n)
 	}
 }
 
+/// [[ public ]]
+
 ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 {
 	char* a;
@@ -120,12 +127,16 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 	n->s = va_arg(va, char*);
 	n->e = va_arg(va, char*);
 
+	if(type == FFN_STMTLIST)
+	{
+		n->chain[0]				= va_arg(va, ff_node*);
+	}
 	if(type == FFN_DEPENDENCY)
 	{
 		n->chain[0]				= va_arg(va, ff_node*);
 		n->chain[1]				= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_WORD || type == FFN_WS)
+	else if(type == FFN_WORD || type == FFN_LF)
 	{
 		a = va_arg(va, char*);
 
@@ -163,12 +174,6 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 
 	va_end(va);
 	return n;
-}
-
-void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
-{
-	pp->r = 0;
-	log(L_ERROR | L_FF, "%s", err);
 }
 
 /// [[ api/public ]]
@@ -304,21 +309,56 @@ void ff_dump(ff_node * const restrict root)
 	void dump(ff_node * const restrict ffn, int lvl)
 	{
 		int x;
-
 		if(ffn)
 		{
-			printf("%*s%20s @ [%3d,%3d - %3d,%3d]\n"
+			log(L_FF | L_FFTREE, "%*s%-20s%*s @ [%3d,%3d - %3d,%3d]"
 				, lvl * 2, ""
-				, FFN_STRING(ffn->type), ffn->loc.f_lin, ffn->loc.f_col, ffn->loc.l_lin, ffn->loc.l_col
+				, FFN_STRING(ffn->type)
+				, 70 - MIN(((lvl * 2) + 20), 70)
+				, ""
+				, ffn->loc.f_lin, ffn->loc.f_col, ffn->loc.l_lin, ffn->loc.l_col
 			);
 
+			if(ffn->type == FFN_STMTLIST)
+			{
+				for(x = 0; x < ffn->statements_l; x++)
+					dump(ffn->statements[x], lvl + 1);
+			}
 			if(ffn->type == FFN_DEPENDENCY)
 			{
+				log(L_FF | L_FFTREE, "%*s  %10s :"
+					, lvl * 2, ""
+					, "needs"
+				);
 
+				for(x = 0; x < ffn->targets_l; x++)
+					dump(ffn->targets[x], lvl + 1);
+
+				log(L_FF | L_FFTREE, "%*s  %10s :"
+					, lvl * 2, ""
+					, "feeds"
+				);
+
+				for(x = 0; x < ffn->prereqs_l; x++)
+					dump(ffn->prereqs[x], lvl + 1);
 			}
 			else if(ffn->type == FFN_FORMULA)
 			{
+				log(L_FF | L_FFTREE, "%*s  %10s :"
+					, lvl * 2, ""
+					, "targets"
+				);
+				
+				for(x = 0; x < ffn->targets_l; x++)
+					dump(ffn->targets[x], lvl + 1);
 
+				log(L_FF | L_FFTREE, "%*s  %10s :"
+					, lvl * 2, ""
+					, "command"
+				);
+
+				for(x = 0; x < ffn->commands_l; x++)
+					dump(ffn->commands[x], lvl + 1);
 			}
 			else if(ffn->type == FFN_INCLUDE)
 			{
@@ -326,7 +366,7 @@ void ff_dump(ff_node * const restrict root)
 			}
 			else if(ffn->type == FFN_VARDECL)
 			{
-				printf("%*s  %10s : '%s'\n"
+				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
 					, lvl * 2, ""
 					, "name", ffn->name
 				);
@@ -336,26 +376,58 @@ void ff_dump(ff_node * const restrict root)
 			}
 			else if(ffn->type == FFN_VARNAME)
 			{
-				printf("%*s  %10s : '%s'\n"
+				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
 					, lvl * 2, ""
 					, "name", ffn->name
 				);
 			}
 			else if(ffn->type == FFN_LISTGEN)
 			{
-				
+				log(L_FF | L_FFTREE, "%*s  %10s :"
+					, lvl * 2, ""
+					, "initlist"
+				);
+
+				for(x = 0; x < ffn->initlist_l; x++)
+					dump(ffn->initlist[x], lvl + 1);
+
+				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
+					, lvl * 2, ""
+					, "generator", ffn->gen
+				);
 			}
-			else if(ffn->type == FFN_WORD || ffn->type == FFN_WS)
+			else if(ffn->type == FFN_WORD)
 			{
-				printf("%*s  %10s : '%s'\n"
+				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
 					, lvl * 2, ""
 					, "text", ffn->text
 				);
 			}
-
-			dump(ffn->next, lvl);
 		}
 	};
 
 	dump(root, 0);
+}
+
+void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
+{
+	pp->r = 0;
+	log(L_ERROR | L_FF, "%s", err);		// bison error
+
+	int t						= pp->last_tok;
+	const char * s	= pp->last_s;
+	const char * e	= pp->last_e;
+	int l						= e - s;
+	ff_loc * lc			= &pp->last_loc;
+
+	// log last good token
+	log(L_ERROR | L_FF, "last token - %s ) '%.*s' @ [%3d,%3d - %3d,%3d]"
+		, ff_tokname(pp->last_tok)
+		, MIN(t == LF ? 0 : t == WS ? 0 : l, 50)
+		, t == LF ? "" : t == WS ? "" : s
+		, lc->f_lin
+		, lc->f_col
+		, lc->l_lin
+		, lc->l_col
+	);
 }

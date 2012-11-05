@@ -12,44 +12,83 @@
 			 typeof (b) _b = (b);   \
 		 _a > _b ? _b : _a; })
 
+	#define TOPSTATE(x) (x->states_n ? x->states[x->states_n-1] : 0)
+	#define STATENAME(x)	\
+		  x == INITIAL			? "INITIAL"					\
+		: x == quoteword		? "quoteword"				\
+		: x == generatorws	? "generatorws"			\
+		: x == generator		? "generator"				\
+		: x == command			? "command"					\
+		: x == checklw			? "checklw"					\
+		: x == list					? "list" : "UNKNWN"	\
 
-	#define PTOKEN(s, l, t, lc, ln)																				\
-			log(L_FF | L_FFTOK, "%15s ) %.*s%*s @ [%3d,%3d - %3d,%3d] - %d"		\
-				, ff_tokname(t)																									\
-				, MIN(t == WS ? 0 : l, 50)																			\
-				, t == WS ? "" : s																							\
-				, 50 - MIN(t == WS ? 0 : l, 50)																	\
-				, ""																														\
-				, lc->first_line																								\
-				, lc->first_column																							\
-				, lc->last_line																									\
-				, lc->last_column																								\
+	#define PUSHSTATE(a, b)																				\
+		do {																												\
+			log(L_FF | L_FFSTAT, "%s:%d -> %s:%d"											\
+				, STATENAME(TOPSTATE(b)), TOPSTATE(b), STATENAME(a), a	\
+			);																												\
+			b->states[b->states_n++] = a;															\
+			yy_push_state(a, b->scanner);															\
+		} while(0)
+
+	#define POPSTATE(b)																							\
+		do {																													\
+			int x = TOPSTATE(b);																				\
+			yy_pop_state(b->scanner);																		\
+			b->states_n--;																							\
+			log(L_FF | L_FFSTAT, "%s:%d <- %s:%d"												\
+				, STATENAME(TOPSTATE(b)), TOPSTATE(b), STATENAME(x), x);	\
+		} while(0)
+
+	#define PTOKEN(s, l, t, lc, ln)																					\
+			log(L_FF | L_FFTOKN, "%15s ) '%.*s'%*s @ [%3d,%3d - %3d,%3d] - %d"	\
+				, ff_tokname(t)																										\
+				, MIN(t == LF ? 0 : t == WS ? 0 : l, 50)													\
+				, t == LF ? "" : t == WS ? "" : s																	\
+				, 50 - MIN(t == LF ? 0 : t == WS ? 0 : l, 50)											\
+				, ""																															\
+				, lc->first_line																									\
+				, lc->first_column																								\
+				, lc->last_line																										\
+				, lc->last_column																									\
 				, ln)
 
 	#define LEX(token)					\
-		lexify(yytext, yyleng, yylval, yylloc, token, 0, 0, yyextra, __LINE__)
+		lexify(yytext, yyleng, 0, 1, yylval, yylloc, token, 0, 0, yyextra, __LINE__)
+
+	#define LEXX(token, del)		\
+		lexify(yytext, yyleng, del, 1, yylval, yylloc, token, 0, 0, yyextra, __LINE__)
 
 	#define LEXV(token, vs, vl)	\
-		lexify(yytext, yyleng, yylval, yylloc, token, vs, vs + vl, yyextra, __LINE__)
+		lexify(yytext, yyleng, 0, 1, yylval, yylloc, token, vs, vs + vl, yyextra, __LINE__)
 
-	void loc_reset(YYLTYPE* lloc)
+	void loc_reset(parse_param * xtra, YYLTYPE* lloc)
 	{
-		lloc->first_line++;
-		lloc->last_line = lloc->first_line;
+		xtra->loc.f_lin++;
+		xtra->loc.l_lin = xtra->loc.f_lin;
 
-		lloc->first_column = 0;
-		lloc->last_column = 0;
+		xtra->loc.f_col = 0;
+		xtra->loc.l_col = 0;
 	}
 
-	void locify(YYLTYPE* lloc, int leng)
+	void locify(parse_param* xtra, YYLTYPE* lloc, int leng, int del)
 	{
-		lloc->first_column = lloc->last_column;
-		lloc->last_column  = lloc->first_column + leng;
+		xtra->loc.f_col = xtra->loc.l_col;
+		xtra->loc.l_col = xtra->loc.f_col + leng;
+
+		lloc->first_column = xtra->loc.f_col + del;
+		lloc->last_column  = xtra->loc.l_col + del - 1;
+		lloc->first_line	 = xtra->loc.f_lin;
+		lloc->last_line		 = xtra->loc.l_lin;
+
+		xtra->loc.f_col += del;
+		xtra->loc.l_col += del;
 	}
 
-	int lexify(const char* text, int leng, YYSTYPE* lval, YYLTYPE* lloc, int token, char* vs, char* ve, parse_param* xtra, int ln)
+	int lexify(const char* text, int leng, int del, int doloc, YYSTYPE* lval, YYLTYPE* lloc, int token, char* vs, char* ve, parse_param* xtra, int ln)
 	{
-		locify(lloc, leng);
+		if(doloc)
+			locify(xtra, lloc, leng, del);
 		PTOKEN(text, leng, token, lloc, ln);
 
 		lval->str.s = text;
@@ -57,6 +96,12 @@
 		lval->num.v = token;
 		lval->var.vs = vs;
 		lval->var.ve = ve;
+
+		/* store for error reporting */
+		memcpy(&xtra->last_loc, lloc, sizeof(xtra->last_loc));
+		xtra->last_tok = token;
+		xtra->last_s = lval->str.s;
+		xtra->last_e = lval->str.e;
 
 		return token;
 	}
@@ -69,108 +114,132 @@
 %option extra-type="parse_param*"
 %option stack
 
-%x command
 %x quoteword
 %x generatorws
 %x generator
 
+%s command
+%x checklw
+%s list
+
 %%
 
-[#].*												{ locify(yylloc, yyleng); }
+[#].*																				{ locify(yyextra, yylloc, yyleng, 0); }
 
->>													{ return LEX(INC); }
-=>>													{
-															yy_push_state(generatorws, yyextra->scanner);
-															return LEX(LW);
-														}
+<INITIAL>>>																	{ return LEX(INC); }
+<INITIAL>=>>																{
+																							PUSHSTATE(generatorws, yyextra);
+																							return LEX(LW);
+																						}
+<checklw>=>>																{
+																							POPSTATE(yyextra);
+																							PUSHSTATE(generatorws, yyextra);
+																							return LEX(LW);
+																						}
+<checklw>[^ \t=]														{ POPSTATE(yyextra); yyless(0); }
+<checklw>[ \t]+															{ locify(yyextra, yylloc, yyleng, 0); }
 
-[^\n\t\\ :"$[\]{=\x00]+			{ return LEX(WORD); }
-\\\\												{ yytext++; yyleng--; return LEX(WORD); }
-\\[ ]												{ yytext++; yyleng--; return LEX(WORD); }
-\\[$]												{ yytext++; yyleng--; return LEX(WORD); }
-\\[:]												{ yytext++; yyleng--; return LEX(WORD); }
-\\[[]												{ yytext++; yyleng--; return LEX(WORD); }
-\\[]]												{ yytext++; yyleng--; return LEX(WORD); }
-\\["]												{ yytext++; yyleng--; return LEX(WORD); }
-\\[{]												{ yytext++; yyleng--; return LEX(WORD); }
-\\[=]												{ yytext++; yyleng--; return LEX(WORD); }
+<INITIAL>[^\n\t\\ :"$[{=\x00]+							{ return LEX(WORD); }
+<list>[^\n\t\\ "$[\]\x00]+									{ return LEX(WORD); }
+<command>[^\n\\}[\x00]+											{ return LEX(WORD); }
+\\\\																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<INITIAL,list>\\[ ]													{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<list>\\[$]																	{ yytext++; yyleng--; return LEXX(WORD, 1); }
+\\[[]																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<list>\\["]																	{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<list>\\[]]																	{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<INITIAL>\\[:]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<INITIAL>\\[{]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<INITIAL>\\[=]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
 
-\n													{ loc_reset(yylloc); }
-[\t ]+											{ locify(yylloc, yyleng); }
-\$[a-zA-Z_@*][a-zA-Z0-9_]*		{ return LEXV(VARNAME, yytext + 1, yyleng - 1); }
-\$\{[a-zA-Z_@*][a-zA-Z0-9_]*\}	{ return LEXV(VARNAME, yytext + 2, yyleng - 3); }
-[:]													{ return LEX(yytext[0]); }
-[[]													{ return LEX(yytext[0]); }
-[]]													{ return LEX(yytext[0]); }
-[=]													{ return LEX(yytext[0]); }
-["]													{
-															yy_push_state(quoteword, yyextra->scanner);
-															return LEX(yytext[0]);
-														}
-[{]													{
-															yy_push_state(command, yyextra->scanner);
-															return LEX(yytext[0]);
-														}
+<INITIAL,list>\n														{ loc_reset(yyextra, yylloc); }
+<command>\n																	{
+																							int x = LEX(LF);
+																							loc_reset(yyextra, yylloc);
+																							return x;
+																						}
+<INITIAL,list>[\t ]+												{ locify(yyextra, yylloc, yyleng, 0); }
+<list>\$[a-zA-Z_@*][a-zA-Z0-9_]*						{ return LEXV(VARNAME, yytext + 1, yyleng - 1); }
+<list>\$\{[a-zA-Z_@*][a-zA-Z0-9_]*\}				{ return LEXV(VARNAME, yytext + 2, yyleng - 3); }
+<INITIAL>[:]																{ return LEX(yytext[0]); }
+<INITIAL>[=]																{ return LEX(yytext[0]); }
+<command>[}]																{
+																							POPSTATE(yyextra);
+																							return LEX(yytext[0]);
+																						}
+<list>[]]																		{
+																							POPSTATE(yyextra);
+																							PUSHSTATE(checklw, yyextra);
+																							return LEX(yytext[0]);
+																						}
+[[]																					{
+																							PUSHSTATE(list, yyextra);
+																							return LEX(yytext[0]);
+																						}
+<INITIAL,list>["]														{
+																							PUSHSTATE(quoteword, yyextra);
+																							return LEX(yytext[0]);
+																						}
+<INITIAL>[{]																{
+																							PUSHSTATE(command, yyextra);
+																							return LEX(yytext[0]);
+																						}
+
 <generatorws>{
-[\t ]+["]										{
-															yy_push_state(quoteword, yyextra->scanner);
-															return LEX('"');
-														}
-[\t ]+											{
-															yy_push_state(generator, yyextra->scanner);
-															return LEX(WS);
-														}
-
-.														{ locify(yylloc, yyleng); ff_yyerror(0, yyextra->scanner, yyextra, "unknown character"); return 0; }
+[\t ]+["]																		{
+																							POPSTATE(yyextra);
+																							PUSHSTATE(quoteword, yyextra);
+																							int del = yyleng - 1;
+																							yytext += del;
+																							yyleng -= del;
+																							return LEXX('"', del);
+																						}
+[\t ]+																			{
+																							POPSTATE(yyextra);
+																							PUSHSTATE(generator, yyextra);
+																							return LEX(WS);
+																						}
 }
 <generator>{
-[\n\t ]											{
-															yy_pop_state(yyextra->scanner);
-															yy_pop_state(yyextra->scanner);
-															return LEX(WS);
-														}
-\\\\												{ yytext++; yyleng--; return LEX(WORD); }
-\\[ ]+											{ yytext++; yyleng--; return LEX(WORD); }
-[^\\\n\t ]+									{ return LEX(WORD); }
-
-.														{ locify(yylloc, yyleng); ff_yyerror(0, yyextra->scanner, yyextra, "unknown character"); return 0; }
+\n																					{
+																							POPSTATE(yyextra);
+																							int x = LEX(WS);
+																							loc_reset(yyextra, yylloc);
+																							return x;
+																						}
+[\t ]																				{
+																							POPSTATE(yyextra);
+																							return LEX(WS);
+																						}
+\\\\																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
+\\[ ]+																			{ yytext++; yyleng--; return LEXX(WORD, 1); }
+[^\\ \n\t]+																	{ return LEX(WORD); }
 }
 <quoteword>{
-["]													{
-															yy_pop_state(yyextra->scanner);
-															return LEX(yytext[0]);
-														}
-\\\\												{ yytext++; yyleng--; return LEX(WORD); }
-\\["]												{ yytext++; yyleng--; return LEX(WORD); }
-[^\\"]+											{ return LEX(WORD); }
-
-.														{ locify(yylloc, yyleng); ff_yyerror(0, yyextra->scanner, yyextra, "unknown character"); return 0; }
-}
-<command>{
-[}]													{
-															yy_pop_state(yyextra->scanner);
-															return LEX(yytext[0]);
-														}
-=>>													{
-															yy_push_state(generatorws, yyextra->scanner);
-															return LEX(LW);
-														}
-[\t ]+											{ return LEX(WS); }
-\n													{ loc_reset(yylloc); return LEX(WS); }
-
-[^\n\t\\ \$[\]\x00]+				{ return LEX(WORD); }
-\\\\												{ yytext++; yyleng--; return LEX(WORD); }
-\\[$]												{ yytext++; yyleng--; return LEX(WORD); }
-\\[[]												{ yytext++; yyleng--; return LEX(WORD); }
-\\[]]												{ yytext++; yyleng--; return LEX(WORD); }
-
-\$[a-zA-Z_@*][a-zA-Z0-9_]*		{ return LEX(VARNAME); }
-\$\{[a-zA-Z_@*][a-zA-Z0-9_]*\}	{ return LEX(VARNAME); }
-[[]													{ return LEX(yytext[0]); }
-[]]													{ return LEX(yytext[0]); }
-
-.														{ locify(yylloc, yyleng); ff_yyerror(0, yyextra->scanner, yyextra, "unknown character"); return 0; }
+["]																					{
+																							POPSTATE(yyextra);
+																							return LEX(yytext[0]);
+																						}
+\\\\																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
+\\["]																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
+[^\\"]+																			{ return LEX(WORD); }
 }
 
-\x00												{ return END; }
-.														{ locify(yylloc, yyleng); ff_yyerror(0, yyextra->scanner, yyextra, "unknown character"); return 0; }
+\x00																				{ return END; }
+<*>[\x00-\xff]															{
+																							locify(yyextra, yylloc, yyleng, 0);
+																							if(yytext[0] >= 0x20 && yytext[0] <= 0x7E)
+																							{
+																								log(L_ERROR | L_FF, "unknown character : '%c'(0x%02hhx)"
+																									, yytext[0]
+																									, yytext[0]
+																								);
+																							}
+																							else
+																							{
+																								log(L_ERROR | L_FF, "unknown character : (0x%02hhx)"
+																									, yytext[0]
+																								);
+																							}
+																							return 0;
+																						}

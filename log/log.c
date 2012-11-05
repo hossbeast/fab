@@ -45,7 +45,9 @@ static struct {
 	, { .v = L_BPEXEC	, .s = "BPEXEC"	}
 	, { .v = L_BPEVAL	, .s = "BPEVAL"	}
 	, { .v = L_BPDUMP	, .s = "BPDUMP"	}
-	, { .v = L_FFTOK	, .s = "FFTOK"	}
+	, { .v = L_FFTOKN	, .s = "FFTOKN"	}
+	, { .v = L_FFSTAT	, .s = "FFSTAT"	}
+	, { .v = L_FFTREE	, .s = "FFTREE"	}
 	, { .v = L_FF			, .s = "FF"			}
 	, { .v = L_ARGS		, .s = "ARGS"		}
 	, { .v = L_GN			, .s = "GN"			}

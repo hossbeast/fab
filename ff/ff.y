@@ -68,7 +68,8 @@
 
 /* terminals with a semantic value */
 %token <str> WORD							"WORD"
-%token <str> WS								"WS"
+%token <str> WS								"WS"				/* a single tab/space */
+%token <str> LF								"LF"				/* a single newline */
 %token <var> VARNAME					"VARNAME"
 %token <num> INC							">>"
 %token <num> LW								"=>>"
@@ -82,7 +83,7 @@
 
 /* nonterminals */
 %type  <wordparts> wordparts
-%type  <wordparts> lw_word
+%type  <wordparts> litword
 
 %type  <node> statement
 %type  <node> statement_list
@@ -105,7 +106,7 @@
 ff
 	: statement_list
 	{
-		*parm->ffn = $1;
+		*parm->ffn = mknode(&@$, parm->ff_dir, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 
@@ -169,9 +170,9 @@ formula_list
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
 	}
-	| WS
+	| LF
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_WS, $1.s, $1.e, $1.s, $1.e);
+		$$ = mknode(&@$, parm->ff_dir, FFN_LF, $1.s, $1.e, $1.s, $1.e);
 	}
 	| list
 	| word
@@ -184,13 +185,9 @@ list
 		$$->s = (char*)$1.s;
 		$$->e = (char*)$3.e;
 	}
-	| '[' listpiece ']' LW lw_word
+	| '[' listpiece ']' LW litword
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_LISTGEN, $1.s, $5.e, $2, $5.v);
-	}
-	| '[' listpiece ']' WS LW lw_word
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_LISTGEN, $1.s, $6.e, $2, $6.v);
 	}
 	;
 
@@ -203,14 +200,11 @@ listpiece
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
 	}
-	| WS
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_WS, $1.s, $1.e, $1.s, $1.e);
-	}
 	| word
+	| list
 	;
 
-lw_word
+litword
 	: '"' wordparts '"'
 	{
 		$$ = $2;
@@ -218,16 +212,20 @@ lw_word
 	| WS wordparts WS
 	{
 		$$ = $2;
+		@$ = @2;	/* exclude the surround WS for litword location */
 	}
-	| wordparts
+	| WORD
+	{
+		$$.s = $1.s;
+		$$.e = $1.e;
+
+		$$.v = calloc(1, ($$.e - $$.e) + 1);
+		memcpy($$.v, $$.s, $$.e - $$.s);
+	}
 	;
 
 word
 	: '"' wordparts '"'
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
-	}
-	| WS wordparts WS
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
 	}

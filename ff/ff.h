@@ -8,13 +8,14 @@
 #define restrict __restrict
 
 #define FFN_TABLE(x)										\
-	_FFN(FFN_DEPENDENCY			, 0x01	, x)	\
-	_FFN(FFN_FORMULA				, 0x02	, x)	\
-	_FFN(FFN_INCLUDE				, 0x03	, x)	\
-	_FFN(FFN_VARDECL				, 0x04	, x)	\
-	_FFN(FFN_LISTGEN				, 0x05	, x)	\
-	_FFN(FFN_VARNAME				, 0x06	, x)	\
-	_FFN(FFN_WS							, 0x07	, x)	\
+	_FFN(FFN_STMTLIST				, 0x01	, x)	\
+	_FFN(FFN_DEPENDENCY			, 0x02	, x)	\
+	_FFN(FFN_FORMULA				, 0x03	, x)	\
+	_FFN(FFN_INCLUDE				, 0x04	, x)	\
+	_FFN(FFN_VARDECL				, 0x05	, x)	\
+	_FFN(FFN_LISTGEN				, 0x06	, x)	\
+	_FFN(FFN_VARNAME				, 0x07	, x)	\
+	_FFN(FFN_LF							, 0x08	, x)	\
 	_FFN(FFN_WORD						, 0x09	, x)	\
 
 enum {
@@ -50,7 +51,7 @@ typedef struct ff_node
 	union {
 		char*	strings[1];
 
-		struct {											// FFN_WORD, FFN_WS
+		struct {											// FFN_WORD, FFN_LF
 			char*			text;
 		};
 
@@ -70,6 +71,11 @@ typedef struct ff_node
 			int								list_one_a;
 		};
 
+		struct {											// FFN_STMTLIST
+			struct ff_node**	statements;
+			int								statements_l;
+		};
+
 		struct {											// FFN_FORMULA, FFN_DEPENDENCY
 			struct ff_node**	targets;
 			int								targets_l;
@@ -78,6 +84,11 @@ typedef struct ff_node
 		struct {											// FFN_VARDECL
 			struct ff_node**	deflist;
 			int								deflist_l;
+		};
+
+		struct {											// FFN_LISTGEN
+			struct ff_node**	initlist;
+			int								initlist_l;
 		};
 	};
 
@@ -109,6 +120,16 @@ typedef struct
 {
 	ff_node ** const		ffn;				// results go here
 	void*								scanner;		// scanner
+
+	int									states[64];	// start states stack
+	int									states_n;
+
+	ff_loc							loc;				// running location track for this parse
+
+	ff_loc							last_loc;
+	int									last_tok;
+	const char*					last_s;
+	const char*					last_e;
 
 	const char*					orig_base;	// ptr to original input string
 	int									orig_len;		// length of original input string

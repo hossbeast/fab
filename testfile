@@ -1,25 +1,25 @@
 # variables
-CC			= [ gcc ]
-CFLAGS	= [ -m64 -O3 -Werror -D_GNU_SOURCE -fPIC ]
-LFLAGS	= [ -llistwise ]
+CC      = [ "gcc\"gcc" ] =>> s/\ /X
+#CFLAGS  = [ -m64 -O3 -Werror -D_GNU_SOURCE -fPIC ]
+#LFLAGS  = [ -llistwise ]
 
 # executable depends on .o for each .c
-[ listwise ] : [ $DIRS ] =>> ls/s/[.]c$/.o/y
+#[ listwise ] : [ $DIRS ] =>> ls/s/[.]c$/.o/y
 
 # any .o depends on its own .c and .h
-[ $DIRS ] =>> ls/s/[.]c$/.o/y :: [ $LHS ] =>> s/[.]o$/.c/y
-[ $DIRS ] =>> ls/s/[.]c$/.o/y :: [ $LHS ] =>> s/[.]o$/.h/y
+[ item [ $DIRS ] =>> ls/s/[.]c$/.o/y ] =>> ss :: [ $LHS ] =>> s/[.]o$/.c/y
+#[ $DIRS ] =>> ls/s/[.]c$/.o/y :: [ $LHS ] =>> s/[.]o$/.h/y
 
 # main uses args
-[ main.o ] : [ args.o ]
+#[ main.o "foo.foo" ] : [ args.o ]
 
 # recipes
-[ listwise ]
-{
-	$CC $CFLAGS -o [ $@ ] =>> a/path [ $@ ] =>> a/aneed/a/path/m/[.]o$ -llistwise
-}
+#[ listwise ]
+#{
+#  [ $CC $CFLAGS ] -o [ $@ ] =>> a/path [ $@ ] =>> a/aneed/a/path/m/[.]o$ -llistwise
+#}
 
-[ $DIRS ] =>> ls/s/[.]c$/.o/y
-{
-	$CC $CFLAGS -c [ $@ ] =>> a/ineed/a/path/m/[.]c$ -o [ $@ ] =>> a/path
-}
+#[ $DIRS ] =>> ls/s/[.]c$/.o/y
+#{
+#  [ $CC $CFLAGS ] -c [ $@ ] =>> a/ineed/a/path/m/[.]c$ -o [ $@ ] =>> a/path
+#}

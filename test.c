@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 	signal(SIGTERM	, signal_handler);
 
 	// initialize logger
-	fatal(log_init, "+ERROR +WARN +INFO +FF");
+	fatal(log_init, "+ERROR +WARN +INFO +FFTOKN +FFTREE +FFSTAT");
 
 	// parse the faffile
 	fatal(ff_mkparser, &ffp);

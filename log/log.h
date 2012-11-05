@@ -22,12 +22,14 @@
 #define L_BPEXEC				0x00000008ULL							/* buildplan execution */
 #define L_BPEVAL				0x00000010ULL							/* buildplan evaluation results */
 #define L_BPDUMP				0x00000020ULL							/* dump the final buildplan */
-#define L_FFTOK 				0x00000040ULL							/* fabfile parsing, token stream */
-#define L_FF						0x00000080ULL							/* fabfile parsing */
-#define L_ARGS 					0x00000100ULL							/* program arguments */
-#define L_GN 						0x00000200ULL							/* graph node details */
-#define L_FMEXEC				0x00000400ULL							/* formula execution results/details */
-#define L_HASH					0x00000800ULL							/* hash loading/saving on per-file basis */
+#define L_FFTOKN 				0x00000040ULL							/* fabfile parsing, token stream */
+#define L_FFSTAT 				0x00000080ULL							/* fabfile parsing, lexer start condition changes*/
+#define L_FFTREE				0x00000100ULL							/* fabfile parsing, parsed tree */
+#define L_FF						0x00000200ULL							/* fabfile parsing */
+#define L_ARGS 					0x00000400ULL							/* program arguments */
+#define L_GN 						0x00000800ULL							/* graph node details */
+#define L_FMEXEC				0x00001000ULL							/* formula execution results/details */
+#define L_HASH					0x00002000ULL							/* hash loading/saving on per-file basis */
 
 /// log_init
 //
