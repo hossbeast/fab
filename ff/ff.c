@@ -50,11 +50,11 @@ static void strmeasure(ff_node* n)
 		n->l = n->e - n->s;
 
 		int x;
-		for(x = 0; x < n->list_one_l; x++)
-			strmeasure(n->list_one[x]);
+		for(x = 0; x < n->list_l; x++)
+			strmeasure(n->list[x]);
 
-		for(x = 0; x < n->list_two_l; x++)
-			strmeasure(n->list_two[x]);
+		for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
+			strmeasure(n->nodes[x]);
 	}
 }
 
@@ -62,49 +62,32 @@ static void flatten(ff_node* n)
 {
 	if(n)
 	{
-		n->list_one_l = 0;
+		n->list_l = 0;
 		ff_node* t = n->chain[0];
 		while(t)
 		{
 			flatten(t);
 
 			t = t->next;
-			n->list_one_l++;
+			n->list_l++;
 		}
 
-		if(n->list_one_l)
-			n->list_one = calloc(n->list_one_l, sizeof(n->list_one[0]));
+		if(n->list_l)
+			n->list = calloc(n->list_l, sizeof(n->list[0]));
 
-		n->list_one_l = 0;
+		n->list_l = 0;
 		t = n->chain[0];
 		while(t)
 		{
-			n->list_one[n->list_one_l++] = t;
-			t = t->next;
-		}
-
-		n->list_two_l = 0;
-		t = n->chain[1];
-		while(t)
-		{
-			flatten(t);
-
-			t = t->next;
-			n->list_two_l++;
-		}
-
-		if(n->list_two_l)
-			n->list_two = calloc(n->list_two_l, sizeof(n->list_two[0]));
-
-		n->list_two_l = 0;
-		t = n->chain[1];
-		while(t)
-		{
-			n->list_two[n->list_two_l++] = t;
+			n->list[n->list_l++] = t;
 			t = t->next;
 		}
 
 		flatten(n->next);
+
+		int x;
+		for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
+			flatten(n->nodes[x]);
 	}
 }
 
@@ -131,12 +114,12 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 	{
 		n->chain[0]				= va_arg(va, ff_node*);
 	}
-	if(type == FFN_DEPENDENCY)
+	else if(type == FFN_DEPENDENCY)
 	{
-		n->chain[0]				= va_arg(va, ff_node*);
-		n->chain[1]				= va_arg(va, ff_node*);
+		n->needs					= va_arg(va, ff_node*);
+		n->feeds					= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_WORD || type == FFN_LF)
+	else if(type == FFN_WORD)
 	{
 		a = va_arg(va, char*);
 
@@ -151,8 +134,8 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 	}
 	else if(type == FFN_FORMULA)
 	{
+		n->targets				= va_arg(va, ff_node*);
 		n->chain[0]				= va_arg(va, ff_node*);
-		n->chain[1]				= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_INCLUDE)
 	{
@@ -164,12 +147,12 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 		b = va_arg(va, char*);
 
 		n->name						= struse(a, b);
-		n->chain[0]				= va_arg(va, ff_node*);
+		n->definition			= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_LISTGEN)
+	else if(type == FFN_LIST)
 	{
 		n->chain[0]				= va_arg(va, ff_node*);
-		n->gen						= va_arg(va, char*);
+		n->generator			= va_arg(va, ff_node*);
 	}
 
 	va_end(va);
@@ -284,15 +267,13 @@ void ff_freenode(ff_node * const restrict ffn)
 		for(x = 0; x < sizeof(ffn->strings) / sizeof(ffn->strings[0]); x++)
 			free(ffn->strings[x]);
 
-		for(x = 0; x < ffn->list_one_l; x++)
-			ff_freenode(ffn->list_one[x]);
+		for(x = 0; x < sizeof(ffn->nodes) / sizeof(ffn->nodes[0]); x++)
+			ff_freenode(ffn->nodes[x]);
 
-		free(ffn->list_one);
+		for(x = 0; x < ffn->list_l; x++)
+			ff_freenode(ffn->list[x]);
 
-		for(x = 0; x < ffn->list_two_l; x++)
-			ff_freenode(ffn->list_two[x]);
-
-		free(ffn->list_two);
+		free(ffn->list);
 	}
 
 	free(ffn);
@@ -321,6 +302,10 @@ void ff_dump(ff_node * const restrict root)
 
 			if(ffn->type == FFN_STMTLIST)
 			{
+				log(L_FF | L_FFTREE, "%*s  %10s : %d"
+					, lvl * 2, ""
+					, "statements", ffn->statements_l
+				);
 				for(x = 0; x < ffn->statements_l; x++)
 					dump(ffn->statements[x], lvl + 1);
 			}
@@ -330,17 +315,13 @@ void ff_dump(ff_node * const restrict root)
 					, lvl * 2, ""
 					, "needs"
 				);
-
-				for(x = 0; x < ffn->targets_l; x++)
-					dump(ffn->targets[x], lvl + 1);
+				dump(ffn->needs, lvl + 1);
 
 				log(L_FF | L_FFTREE, "%*s  %10s :"
 					, lvl * 2, ""
 					, "feeds"
 				);
-
-				for(x = 0; x < ffn->prereqs_l; x++)
-					dump(ffn->prereqs[x], lvl + 1);
+				dump(ffn->feeds, lvl + 1);
 			}
 			else if(ffn->type == FFN_FORMULA)
 			{
@@ -348,15 +329,12 @@ void ff_dump(ff_node * const restrict root)
 					, lvl * 2, ""
 					, "targets"
 				);
-				
-				for(x = 0; x < ffn->targets_l; x++)
-					dump(ffn->targets[x], lvl + 1);
+				dump(ffn->targets, lvl + 1);
 
-				log(L_FF | L_FFTREE, "%*s  %10s :"
+				log(L_FF | L_FFTREE, "%*s  %10s : %d"
 					, lvl * 2, ""
-					, "command"
+					, "command", ffn->commands_l
 				);
-
 				for(x = 0; x < ffn->commands_l; x++)
 					dump(ffn->commands[x], lvl + 1);
 			}
@@ -371,8 +349,11 @@ void ff_dump(ff_node * const restrict root)
 					, "name", ffn->name
 				);
 
-				for(x = 0; x < ffn->deflist_l; x++)
-					dump(ffn->deflist[x], lvl + 1);
+				log(L_FF | L_FFTREE, "%*s  %10s :"
+					, lvl * 2, ""
+					, "definition"
+				);
+				dump(ffn->definition, lvl + 1);
 			}
 			else if(ffn->type == FFN_VARNAME)
 			{
@@ -381,20 +362,20 @@ void ff_dump(ff_node * const restrict root)
 					, "name", ffn->name
 				);
 			}
-			else if(ffn->type == FFN_LISTGEN)
+			else if(ffn->type == FFN_LIST)
 			{
+				log(L_FF | L_FFTREE, "%*s  %10s : %d"
+					, lvl * 2, ""
+					, "elements", ffn->elements_l
+				);
+				for(x = 0; x < ffn->elements_l; x++)
+					dump(ffn->elements[x], lvl + 1);
+
 				log(L_FF | L_FFTREE, "%*s  %10s :"
 					, lvl * 2, ""
-					, "initlist"
+					, "generator"
 				);
-
-				for(x = 0; x < ffn->initlist_l; x++)
-					dump(ffn->initlist[x], lvl + 1);
-
-				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
-					, lvl * 2, ""
-					, "generator", ffn->gen
-				);
+				dump(ffn->generator, lvl + 1);
 			}
 			else if(ffn->type == FFN_WORD)
 			{

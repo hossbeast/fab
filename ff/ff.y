@@ -83,7 +83,6 @@
 
 /* nonterminals */
 %type  <wordparts> wordparts
-%type  <wordparts> litword
 
 %type  <node> statement
 %type  <node> statement_list
@@ -134,10 +133,6 @@ dependency
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $4->e, $1, $4);
 	}
-	| list ':' ':' ':' list
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $5->e, $1, $5);
-	}
 	;
 
 formula
@@ -181,13 +176,11 @@ formula_list
 list
 	: '[' listpiece ']'
 	{
-		$$ = $2;
-		$$->s = (char*)$1.s;
-		$$->e = (char*)$3.e;
+		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1.s, $3.e, $2, 0);
 	}
-	| '[' listpiece ']' LW litword
+	| '[' listpiece ']' LW word
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_LISTGEN, $1.s, $5.e, $2, $5.v);
+		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1.s, $5->e, $2, $5);
 	}
 	;
 
@@ -204,34 +197,19 @@ listpiece
 	| list
 	;
 
-litword
-	: '"' wordparts '"'
-	{
-		$$ = $2;
-	}
-	| WS wordparts WS
-	{
-		$$ = $2;
-		@$ = @2;	/* exclude the surround WS for litword location */
-	}
-	| WORD
-	{
-		$$.s = $1.s;
-		$$.e = $1.e;
-
-		$$.v = calloc(1, ($$.e - $$.e) + 1);
-		memcpy($$.v, $$.s, $$.e - $$.s);
-	}
-	;
-
 word
 	: '"' wordparts '"'
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
 	}
+	| WS wordparts WS
+	{
+		@$ = @2;	/* exclude the enclosing WS for word location */
+		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
+	}
 	| WORD
 	{
-		char* v = calloc(1, ($1.e - $1.s) + 1);
+		char* v = calloc(1, ($1.e - $1.e) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
 		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $1.e, v);

@@ -13,7 +13,7 @@
 	_FFN(FFN_FORMULA				, 0x03	, x)	\
 	_FFN(FFN_INCLUDE				, 0x04	, x)	\
 	_FFN(FFN_VARDECL				, 0x05	, x)	\
-	_FFN(FFN_LISTGEN				, 0x06	, x)	\
+	_FFN(FFN_LIST						, 0x06	, x)	\
 	_FFN(FFN_VARNAME				, 0x07	, x)	\
 	_FFN(FFN_LF							, 0x08	, x)	\
 	_FFN(FFN_WORD						, 0x09	, x)	\
@@ -51,24 +51,41 @@ typedef struct ff_node
 	union {
 		char*	strings[1];
 
-		struct {											// FFN_WORD, FFN_LF
+		struct {													// FFN_WORD
 			char*			text;
 		};
 
-		struct {											// FFN_VARNAME, FFN_VARDECL
+		struct {													// FFN_VARNAME, FFN_VARDECL
 			char*			name;
 		};
+	};
 
-		struct {											// FFN_LISTGEN
-			char*			gen;
+	union {
+		struct ff_node*			nodes[2];
+
+		struct {													// FFN_LIST
+			struct ff_node*			generator;
+		};
+
+		struct {													// FFN_VARDECL
+			struct ff_node*			definition;
+		};
+
+		struct {													// FFN_FORMULA
+			struct ff_node*			targets;
+		};
+
+		struct {													// FFN_DEPENDENCY
+			struct ff_node*			needs;
+			struct ff_node*			feeds;
 		};
 	};
 
 	union {
 		struct {
-			struct ff_node**	list_one;
-			int								list_one_l;
-			int								list_one_a;
+			struct ff_node**	list;
+			int								list_l;
+			int								list_a;
 		};
 
 		struct {											// FFN_STMTLIST
@@ -76,43 +93,20 @@ typedef struct ff_node
 			int								statements_l;
 		};
 
-		struct {											// FFN_FORMULA, FFN_DEPENDENCY
-			struct ff_node**	targets;
-			int								targets_l;
-		};
-
-		struct {											// FFN_VARDECL
-			struct ff_node**	deflist;
-			int								deflist_l;
-		};
-
-		struct {											// FFN_LISTGEN
-			struct ff_node**	initlist;
-			int								initlist_l;
-		};
-	};
-
-	union {
-		struct {
-			struct ff_node**	list_two;
-			int								list_two_l;
-			int								list_two_a;
+		struct {											// FFN_LIST
+			struct ff_node**	elements;
+			int								elements_l;
 		};
 
 		struct {											// FFN_FORMULA
 			struct ff_node**	commands;
 			int								commands_l;
 		};
-
-		struct {											// FFN_DEPENDENCY
-			struct ff_node**	prereqs;
-			int								prereqs_l;
-		};
 	};
 
 	// implementation
 	char*							e;
-	struct ff_node*		chain[2];		// chains for this node
+	struct ff_node*		chain[1];		// chains for this node
 	struct ff_node*		next;				// next sibling in parent chain
 } ff_node;
 
