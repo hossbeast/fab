@@ -94,6 +94,7 @@
 %type  <node> listpiece
 %type  <node> formula_list
 %type  <node> word
+%type  <node> generator
 
 /* sugar */
 %token END 0 "end of file"
@@ -196,6 +197,13 @@ listpiece
 	| word
 	| list
 	;
+
+generator
+	: word
+	{
+		$$ = $1;
+		$$.type = FFN_GENERATOR;
+	}
 
 word
 	: '"' wordparts '"'

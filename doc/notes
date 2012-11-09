@@ -112,3 +112,6 @@ TODO
  : need PHONY targets - 
  : incorporate list-generator into bf syntax
  : rename ff - fabfile
+
+- stack based dependencies, and formulas
+- right-to-left dependency evaluation

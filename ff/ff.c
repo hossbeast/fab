@@ -125,6 +125,12 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 
 		n->text 					= a;
 	}
+	else if(type == FFN_GENERATOR)
+	{
+		a = va_arg(va, char*);
+
+		n->text 					= a;
+	}
 	else if(type == FFN_VARNAME)
 	{
 		a = va_arg(va, char*);
@@ -382,6 +388,13 @@ void ff_dump(ff_node * const restrict root)
 				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
 					, lvl * 2, ""
 					, "text", ffn->text
+				);
+			}
+			else if(ffn->type == FFN_GENERATOR)
+			{
+				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
+					, lvl * 2, ""
+					, "generator-string", ffn->text
 				);
 			}
 		}

@@ -1,32 +1,49 @@
 # variables
-CC      = [ "gcc\"gcc" ]
-CFLAGS  = [ -m64 -O3 -Werror -D_GNU_SOURCE -fPIC ]
-LFLAGS  = [ -llistwise ]
+CC    		= [ gcc ]
+CFLAGS		= [ -m64 -O3 -Werror -D_GNU_SOURCE ]
+LFLAGS		= [ -llistwise ]
+FLEX			= [ flex ]
 
 # executable depends on .o for each .c
 [ listwise ] : [ $DIRS ] =>> ls/s/[.]c$/.o/y
 
-# any .o depends on its own .c and .h
-[ item [ $DIRS ] =>> ls/s/[.]c$/.o/y ] =>> ss :: [ $LHS ] =>> s/[.]o$/.c/y
+# .o depends on corresponding .c and .h
+[ $DIRS ] =>> ls/s/[.]c$/.o/y :: [ $LHS ] =>> s/[.]o$/.c/y
 [ $DIRS ] =>> ls/s/[.]c$/.o/y :: [ $LHS ] =>> s/[.]o$/.h/y
 
-# main uses args
-[ main.o "foo.foo" ] : [ args.o ]
+# .lex.c and .lex.h depend on corresponding .l
+# .lex.c and .lex.h depend on corresponding .tab.h
+[ $DIRS ] =>> ls/m/[.]l$/ :>>: [ $LHS ] =>> s/[.]l$/.lex.h/y
 
-# recipes
+
+# .tab.c and .tab.h depend on corresponding .y
+
+
+# main uses args
+[ main.o ] : [ args.o ]
+
+# formula - executable
 [ listwise ]
 {
-  [ $CC $CFLAGS ] -o [ $@ ] =>> a/path [ $@ ] =>> a/aneed/a/path/m/[.]o$ -llistwise
+  [ $CC ] -o [ $@ ] =>> a/path [ $@ ] =>> a/aneed/a/path/m/[.]o$ [ $CFLAGS $LFLAGS ]
 }
 
-[ $DIRS ] =>> ls/s/[.]c$/.o/y
-{
-  [ $CC $CFLAGS ] -c [ $@ ] =>> a/ineed/a/path/m/[.]c$ -o [ $@ ] =>> a/path
-}
-
+# formula - lex.c and lex.h from .l's
 [ $DIRS ] =>> ls/s/[.]l$/.lex.c/y 
 {
+	[ $FLEX ] $FLEXFLAGS
+}
 
+# formula - tab.c and tab.h from .y's
+[ $DIRS ]
+{
+
+}
+
+# formula - .o's
+[ $DIRS ] =>> ls/s/[.]c$/.o/y
+{
+  [ $CC ] -c [ $@ ] =>> a/ineed/a/path/m/[.]c$ -o [ $@ ] =>> a/path [ $CFLAGS ]
 }
 
 #A=[[[A][B]]]

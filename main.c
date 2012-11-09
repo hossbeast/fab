@@ -57,14 +57,43 @@ int main(int argc, char** argv)
 		// create/cleanup tmp 
 		fatal(tmp_setup);
 
-		// parse the faffile
+		// parse the fabfile
 		fatal(ff_mkparser, &ffp);
 		fatal(ff_parse, ffp, g_args.fabfile, &ffn);
 
 		// the first target is the default
 		gn * def = 0;
 
-		// add each dependency to the graph
+		// process the graph
+		for(x = 0; x < ffn->statements_l; x++)
+		{
+			if(ffn->statements[x]->type == FFN_DEPENDENCY)
+			{
+				// the number of edges is the cartesian product needs x feeds
+				ff_node * n = ffn->statements[x]->needs;
+				ff_node * f = ffn->statements[x]->feeds;
+
+				for()	
+				{
+					for()
+					{
+						if(!def)
+							fatal(gn_add, t->ff_dir, t->targets[x]->name, t->prereqs[y]->name, &def);
+						else
+							fatal(gn_add, t->ff_dir, t->targets[x]->name, t->prereqs[y]->name, 0);
+					}
+				}
+			}
+			else if(ffn->statements[x]->type == FFN_VARDECL)
+			{
+				
+			}
+			else if(ffn->statements[x]->type == FFN_FORMULA)
+			{
+				
+			}
+		}
+
 		ff_node* t = ffn;
 		while(t)
 		{

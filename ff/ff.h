@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include <listwise.h>
+
 #define restrict __restrict
 
 #define FFN_TABLE(x)										\
@@ -14,9 +16,10 @@
 	_FFN(FFN_INCLUDE				, 0x04	, x)	\
 	_FFN(FFN_VARDECL				, 0x05	, x)	\
 	_FFN(FFN_LIST						, 0x06	, x)	\
-	_FFN(FFN_VARNAME				, 0x07	, x)	\
-	_FFN(FFN_LF							, 0x08	, x)	\
-	_FFN(FFN_WORD						, 0x09	, x)	\
+	_FFN(FFN_GENERATOR			, 0x07	, x)	\
+	_FFN(FFN_VARNAME				, 0x08	, x)	\
+	_FFN(FFN_LF							, 0x09	, x)	\
+	_FFN(FFN_WORD						, 0x0a	, x)	\
 
 enum {
 #define _FFN(a, b, c) a = b,
@@ -48,10 +51,12 @@ typedef struct ff_node
 	char*				s;
 	int					l;
 
+	generator * 					generator;		// FFN_GENERATOR
+
 	union {
 		char*	strings[1];
 
-		struct {													// FFN_WORD
+		struct {													// FFN_WORD, FFN_GENERATOR
 			char*			text;
 		};
 
@@ -64,7 +69,7 @@ typedef struct ff_node
 		struct ff_node*			nodes[2];
 
 		struct {													// FFN_LIST
-			struct ff_node*			generator;
+			struct ff_node*			generator_node;
 		};
 
 		struct {													// FFN_VARDECL
