@@ -29,9 +29,21 @@ int main(int argc, char** argv)
 {
 	int domain()
 	{
-		ff_parser *		ffp = 0;
-		ff_node *			ffn = 0;
-		bp *					bp = 0;
+		ff_parser *					ffp = 0;
+		ff_node *						ffn = 0;
+		bp *								bp = 0;
+		generator_parser * 	gp = 0;
+		lstack **						astax = 0;
+		int									astax_l = 0;
+		int									astax_a = 0;
+		lstack **						bstax = 0;
+		int									bstax_l = 0;
+		int									bstax_a = 0;
+
+		int x;
+		int i;
+		int j;
+		int k;
 
 		// unblock all signals
 		sigset_t all;
@@ -39,7 +51,6 @@ int main(int argc, char** argv)
 		sigprocmask(SIG_UNBLOCK, &all, 0);
 
 		// ignore most signals
-		int x;
 		for(x = 0; x < NSIG; x++)
 			signal(x, SIG_DFL);
 
@@ -70,10 +81,10 @@ int main(int argc, char** argv)
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
 				// the number of edges is the cartesian product needs x feeds
-				ff_node * n = ffn->statements[x]->needs;
-				ff_node * f = ffn->statements[x]->feeds;
+				fatal(list_render, ffn->statements[x]->needs, &gp, &astax, &astax_l, &astax_a);
+				fatal(list_render, ffn->statements[x]->feeds, &gp, &bstax, &bstax_l, &bstax_a);
 
-				for()	
+				for(i = 0; i < astax[0]->s[0].l; i++)
 				{
 					for()
 					{

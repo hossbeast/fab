@@ -21,7 +21,8 @@
 
 struct ff_parser_t
 {
-	void*			p;
+	void *							p;
+	generator_parser *	gp;
 };
 
 // defined in the bison parser
@@ -89,6 +90,30 @@ static void flatten(ff_node* n)
 		for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
 			flatten(n->nodes[x]);
 	}
+}
+
+static int parse_generators(ff_node* n, generator_parser * gp)
+{
+	int x;
+
+	if(n->type == FFN_STMTLIST)
+	{
+		for(x = 0; x < n->statements_l; x++)
+			fatal(parse_generators, n->statements[x]);
+	}
+	else if(n->type == FFN_LIST)
+	{
+		for(x = 0; x < n->elements_l; x++)
+			fatal(parse_generators, n->elements[x]);
+
+		fatal(parse_generators, n->generator_node);
+	}
+	else if(n->type == FFN_GENERATOR)
+	{
+		fatal(generator_parse, gp, n->text, 0, &n->generator);
+	}
+
+	return 1;
 }
 
 /// [[ public ]]
@@ -175,6 +200,9 @@ int ff_mkparser(ff_parser ** const restrict p)
 	if(ff_yylex_init(&(*p)->p) != 0)
 		return 0;
 
+	if(generator_mkparser(&(*p)->gp) == 0)
+		return 0;
+
 	return 1;
 }
 
@@ -234,8 +262,15 @@ int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const re
 
 	if(pp.r)
 	{
+		// convert chains to lists
 		flatten(*ffn);
+
+		// calculate string lengths
 		strmeasure(*ffn);
+
+		// parse generator strings
+		if(!parse_generators(*ffn, p->gp))
+			fail("parse_generators failed");
 	}
 	else
 	{
@@ -252,6 +287,7 @@ void ff_freeparser(ff_parser* const restrict p)
 	if(p)
 	{
 		ff_yylex_destroy(p->p);
+		generator_freeparser(p->gp);
 	}
 
 	free(p);

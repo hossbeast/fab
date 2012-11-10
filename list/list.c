@@ -9,47 +9,57 @@ static int listwise_execute()
 
 }
 
-static int listwise_render(ff_node * list, generator_parser ** p, lstack ** ls)
+int list_resolve(ff_node * list, lstack *** ls, int * stax_l, int * stax_a, int p)
 {
-	if(!*ls)
-		fatal(xmalloc, ls, sizeof(**ls));
+	// ensure enough lstacks are allocated
+	if((*stax_a) <= p)
+	{
+		fatal(xrealloc, ls, sizeof(**ls), p + 1, (*stax_a));
+		(*stax_a) = p + 1;
+	}
 
-	fatal(lstack_reset, *ls);
+	// ensure lstack at this spot is allocated
+	if(!(*ls)[p])
+		fatal(xmalloc, &(*ls)[p], sizeof(*(*ls)[p]));
+
+	// reset the lstack we are using
+	fatal(lstack_reset, (*ls)[p]);
+
+	// additional lstacks go here
+	int pn = p;
 
 	int x;
 	for(x = 0; x < list->items_l; x++)
 	{
-		if(ls->items[x]->type == FFN_WORD)
+		if(list->items[x]->type == FFN_WORD)
 		{
-			fatal(lstack_add, ls, ls->items[x]->text, 0);
+			fatal(lstack_add, ls, list->items[x]->text, 0);
 		}
-		else if(ls->items[x]->type == FFN_VARNAME)
+		else if(list->items[x]->type == FFN_VARNAME)
 		{
 			
 		}
-		else if(ls->items[x]->type == FFN_LIST)
+		else if(list->items[x]->type == FFN_LIST)
 		{
-			
+			fatal(list_resolver, list->items[x], ls, stax_l, stax_a, ++pn);
+
+			LSTACK_LOOP_ITER((*ls)[pn], i, go);
+			if(go)
+			{
+				fatal(lstack_add, (*ls)[p], (*ls)[pn]->s[0].s[i].s, (*ls)[pn]->s[0].s[i].l);
+			}
+			LSTACK_LOOP_DONE;
 		}
 	}
 
-	if(!*p)
-		fatal(generator_mkparser, p);
-
-	if(!list->generator_node->generator)
-		fatal(generator_parse, *p, list->generator_node->text, 0, &list->generator_node->generator);
-}
-
-int list_render(ff_node * list, generator_parser ** p, lstack *** ls, int * ls_l, int * ls_a)
-{
+	// run the list through listwise
 	if(list->generator_node)
 	{
-		fatal(execute_listwise, list, p, ls);
+		fatal(listwise_exec, 
 	}
-	else
-	{
+}
 
-	}
-
-	return 1;
+int list_resolve(ff_node * list, lstack *** stax, int * stax_l, int * stax_a)
+{
+	fatal(list_resolver, list, stax, stax_l, stax_a, 0);
 }
