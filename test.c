@@ -21,6 +21,10 @@ int main(int argc, char** argv)
 	ff_parser *		ffp = 0;
 	ff_node *			ffn = 0;
 
+	lstack ** stax = 0;
+	int stax_a = 0;
+	int stax_l = 0;
+
 	// unblock all signals
 	sigset_t all;
 	sigfillset(&all);
@@ -41,10 +45,22 @@ int main(int argc, char** argv)
 
 	// parse the faffile
 	fatal(ff_mkparser, &ffp);
-	fatal(ff_parse, ffp, "testfile", &ffn);
+	fatal(ff_parse, ffp, "lists", &ffn);
 
 extern void ff_dump(ff_node * const __restrict);
 	ff_dump(ffn);
+
+	fatal(list_resolve, ffn->statements[0]->definition, &stax, &stax_l, &stax_a);
+
+	lstack_dump(stax[0]);
+
+	ff_freeparser(ffp);
+	ff_freenode(ffn);
+	for(x = 0; x < stax_a; x++)
+		lstack_free(stax[x]);
+	free(stax);
+
+	log_teardown();
 
 	return 0;
 }

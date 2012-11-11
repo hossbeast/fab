@@ -82,16 +82,9 @@ static void gn_stat(gn * n)
 	);
 }
 
-//
-// public
-//
-
-int gn_add(char* cwd, char* A, char* B, gn ** r)
+static void gn_create(char * cwd, char * A, gn ** gna, int * new)
 {
 	char space[512];
-	gn * gna = 0;
-	gn * gnb = 0;
-	char new = 0;
 
 	fatal(realpath, cwd, space);
 	int cwdl = strlen(space);
@@ -99,62 +92,79 @@ int gn_add(char* cwd, char* A, char* B, gn ** r)
 	// canonical path for A
 	snprintf(space + cwdl, sizeof(space) - cwdl, "/%s", A);
 
-	if(!gn_nodes.by_path || (gna = idx_lookup_val(gn_nodes.by_path, (char*[]) { space }, 0)) == 0)
+	if(!gn_nodes.by_path || (*gna = idx_lookup_val(gn_nodes.by_path, (char*[]) { space }, 0)) == 0)
 	{
 		// allocate new gnode in collection for A
-		fatal(coll_doubly_add, &gn_nodes.c, 0, &gna);
+		fatal(coll_doubly_add, &gn_nodes.c, 0, gna);
 
 		// populate gna
-		gna->vrs[1]			= GN_VERSION;
-		gna->path				= strdup(space);
-		gna->name				= strdup(A);
-		gna->dir				= strdup(space);
-		gna->dir[cwdl]  = 0;
-		gna->needs.z		= sizeof(struct gn **);
-		gna->feeds.z	= sizeof(struct gn **);
+		(*gna)->vrs[1]		= GN_VERSION;
+		(*gna)->path			= strdup(space);
+		(*gna)->name			= strdup(A);
+		(*gna)->dir				= strdup(space);
+		(*gna)->dir[cwdl]	= 0;
+		(*gna)->needs.z		= sizeof(struct gn **);
+		(*gna)->feeds.z		= sizeof(struct gn **);
 		char * xt = A + strlen(A);
 		while(*xt != '.' && xt != A)
 			xt--;
 		if(*xt == '.')
 		{
 			xt++;
-			gna->ext = strdup(xt);
+			(*gna)->ext = strdup(xt);
 		}
 
-		gn_stat(gna);
-
-		new++;
+		gn_stat(*gna);
+		(*new)++;
 	}
+}
 
-	// canonical path for B
-	snprintf(space + cwdl, sizeof(space) - cwdl, "/%s", B);
+//
+// public
+//
 
-	if(!gn_nodes.by_path || (gnb = idx_lookup_val(gn_nodes.by_path, (char*[]) { space }, 0)) == 0)
+int gn_add(char * cwd, char * A, gn ** r)
+{
+	gn *	gna = 0;
+	int		new = 0;
+
+	fatal(gn_create, cwd, A, &gna, &new);
+
+	if(new)
 	{
-		// allocate new gnode in collection for A
-		fatal(coll_doubly_add, &gn_nodes.c, 0, &gnb);
+		fatal(idx_mkindex
+			, gn_nodes.e
+			, gn_nodes.l
+			, gn_nodes.z
+			, offsetof(typeof(gn_nodes.e[0][0]), path)
+			, 0
+			, INDEX_UNIQUE | INDEX_STRING | INDEX_DEREF
+			, &gn_nodes.by_path
+		);
 
-		// populate gnb
-		gnb->vrs[1]			= GN_VERSION;
-		gnb->path				= strdup(space);
-		gnb->name				= strdup(B);
-		gnb->dir				= strdup(space);
-		gnb->dir[cwdl]	= 0;
-		gnb->needs.z		= sizeof(struct gn **);
-		gnb->feeds.z	= sizeof(struct gn **);
-		char * xt = B + strlen(B);
-		while(*xt != '.' && xt != B)
-			xt--;
-		if(*xt == '.')
-		{
-			xt++;
-			gnb->ext = strdup(xt);
-		}
-
-		gn_stat(gnb);
-
-		new++;
+		fatal(idx_mkindex
+			, gn_nodes.e
+			, gn_nodes.l
+			, gn_nodes.z
+			, offsetof(typeof(gn_nodes.e[0][0]), dir)
+			, 0
+			, INDEX_MULTI | INDEX_STRING | INDEX_DEREF
+			, &gn_nodes.by_dir
+		);
 	}
+
+	if(r)
+		*r = gna;
+}
+
+int gn_edge_add(char* cwd, char* A, char* B, gn ** r)
+{
+	gn *	gna = 0;
+	gn *	gnb = 0;
+	int		new = 0;
+
+	fatal(gn_create, cwd, A, &gna, &new);
+	fatal(gn_create, cwd, B, &gnb, &new);
 
 	// reindex the collections
 	if(new)

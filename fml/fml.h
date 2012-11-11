@@ -3,11 +3,14 @@
 
 /* fml - formula for fabricating target files */
 
+#include <listwise.h>
+
 #include "ff.h"
 #include "gn.h"
 #include "ts.h"
 
 #include "coll.h"
+#include "map.h"
 
 typedef struct fml
 {
@@ -38,7 +41,8 @@ int fml_add(ff_node *, fml **);
 //
 // render cmd to ts->cmd_txt
 //
-int fml_render(ts * ts);
+int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a)
+	__attribute__((nonnull));
 
 /// fml_exec
 //

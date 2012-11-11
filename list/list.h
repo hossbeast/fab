@@ -2,7 +2,6 @@
 #define _LIST_H
 
 #include <listwise.h>
-#include <listwise/generator.h>
 
 #include "ff.h"
 
@@ -10,6 +9,6 @@
 //
 // render the list node to the lstack
 //
-list_render(ff_node * list, generator_parser ** p, lstack ** ls);
+int list_render(ff_node * list, lstack *** stax, int * lstax_l, int * stax_a);
 
 #endif

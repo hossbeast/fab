@@ -162,10 +162,6 @@ formula_list
 	{
 		$$ = addchain($1, $2);
 	}
-	| VARNAME
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
-	}
 	| LF
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_LF, $1.s, $1.e, $1.s, $1.e);
@@ -177,9 +173,9 @@ formula_list
 list
 	: '[' listpiece ']'
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1.s, $3.e, $2, 0);
+		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1.s, $3.e, $2, (void*)0);
 	}
-	| '[' listpiece ']' LW word
+	| '[' listpiece ']' LW generator
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1.s, $5->e, $2, $5);
 	}
@@ -202,8 +198,9 @@ generator
 	: word
 	{
 		$$ = $1;
-		$$.type = FFN_GENERATOR;
+		$$->type = FFN_GENERATOR;
 	}
+	;
 
 word
 	: '"' wordparts '"'
@@ -217,7 +214,7 @@ word
 	}
 	| WORD
 	{
-		char* v = calloc(1, ($1.e - $1.e) + 1);
+		char* v = calloc(1, ($1.e - $1.s) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
 		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $1.e, v);

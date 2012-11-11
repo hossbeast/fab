@@ -30,6 +30,7 @@
 #define L_GN 						0x00000800ULL							/* graph node details */
 #define L_FMEXEC				0x00001000ULL							/* formula execution results/details */
 #define L_HASH					0x00002000ULL							/* hash loading/saving on per-file basis */
+#define L_VAR						0x00004000ULL							/* variable defintions */
 
 /// log_init
 //
@@ -49,5 +50,24 @@ int log_would(const uint64_t bits);
 //
 void log(const uint64_t bits, const char* fmt, ...)
 	__attribute__((nonnull));
+
+/// log_start
+//
+// begin writing a single log
+//
+void log_start(const uint64_t bits, const char* fmt, ...)
+	__attribute__((nonnull));
+
+/// log_finish
+//
+// complete the log begun with log_start
+//
+void log_finish(const char* fmt, ...);
+
+/// log_teardown
+//
+// cleanup
+//
+void log_teardown();
 
 #endif

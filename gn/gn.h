@@ -100,23 +100,46 @@ extern gn * gn_root;
 
 /// gn_add
 //
-// add the directed edge : A -> B (A depends on B)
+// SUMMARY
+//  adds a graph node
 //
-int gn_add(char* cwd, char* A, char* B, gn ** r);
+// PARAMETERS
+//  dir  - path to directory
+//  A    - name of file residing in {dir}
+//  [r]  - gn for A returned here
+// 
+// returns 0 on failure (memory, io) and 1 otherwise
+//
+int gn_add(char* cwd, char* A, gn ** r);
 
-/// gn_lookup
+/// gn_edge_add
 //
+// SUMMARY
+//  add the directed edge : A -> B (A depends on B)
 //
+// PARAMETERS
+//  dir  - path to directory
+//  A    - name of file residing in {dir}
+//  B    - name of file residing in {dir}
+//  [r]  - gn for A returned here
+// 
+// returns 0 on failure (memory, io) and 1 otherwise
 //
-gn* gn_lookup(char* path);
+int gn_edge_add(char* cwd, char* A, char* B, gn ** r);
 
 /// gn_dump
 //
-//
+// log under L_GN properties of the gn
 //
 void gn_dump(gn *);
 
-void gn_cmdhash(gn * gn, char *, int);
+/// gn_dumpall
+//
+// call gn_dump for all known gn's
+//
+void gn_dumpall();
+
+void gn_hashcmd(gn * gn, char * s, int l);
 
 int gn_hashes_read(gn * gn);
 

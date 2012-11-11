@@ -25,6 +25,7 @@
 #define NOCOLOR			(unsigned char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
 
 static uint64_t o_lgctx;
+static uint64_t o_e;
 
 //
 // [[ static ]]
@@ -53,6 +54,7 @@ static struct {
 	, { .v = L_GN			, .s = "GN"			}
 	, { .v = L_FMEXEC	, .s = "FMEXEC"	}
 	, { .v = L_HASH		, .s = "HASH"		}
+	, { .v = L_VAR		, .s = "VAR"		}
 	, { .v = L_TAG		, .s = "TAG"		}
 };
 
@@ -132,6 +134,60 @@ static void args_parse(char * args, int args_len)
 	}
 }
 
+static int log_vstart(const uint64_t e)
+{
+	if(log_would(e))
+	{
+		o_space_l = 0;
+
+		// colorization
+		if((e & L_COLOR_VALUE) && COLORHEX(e))
+		{
+			logwrite(COLOR(e));
+		}
+
+		// prefix
+		int x;
+		for(x = 0; x < sizeof(o_logs) / sizeof(o_logs[0]); x++)
+		{
+			if(e & o_logs[x].v)
+			{
+				logprintf("%*s : ", o_name_len, o_logs[x].s);
+				break;
+			}
+		}
+
+		o_e = e;
+
+		return 1;
+	}
+
+	return 0;
+}
+
+static void log_vadd(const char* fmt, va_list va)
+{
+	logvprintf(fmt, va);
+}
+
+static void log_vfinish(const char* fmt, va_list* va)
+{
+	if(fmt)
+		log_vadd(fmt, *va);
+
+	if((o_e & L_COLOR_VALUE) && COLORHEX(o_e))
+	{
+		logwrite(NOCOLOR);
+	}
+
+	logwrite("\n", 1);
+
+	// flush to stderr
+	write(2, o_space, o_space_l);
+
+	o_e = 0;
+}
+
 //
 // [[ public ]]
 //
@@ -177,6 +233,8 @@ int log_init(char * str)
 	// parse cmdline args
 	args_parse(args, args_len);
 
+	free(args);
+
 	return 1;
 }
 
@@ -185,42 +243,51 @@ int log_would(const uint64_t bits)
 	return !!(o_lgctx & bits);
 }
 
-void log(const uint64_t e, const char* fmt, ...)
+void log_start(const uint64_t e, const char* fmt, ...)
 {
-	if(log_would(e))
+	if(log_vstart(e))
 	{
-		o_space_l = 0;
-
-		// colorization
-		if((e & L_COLOR_VALUE) && COLORHEX(e))
-		{
-			logwrite(COLOR(e));
-		}
-
-		// prefix
-		int x;
-		for(x = 0; x < sizeof(o_logs) / sizeof(o_logs[0]); x++)
-		{
-			if(e & o_logs[x].v)
-			{
-				logprintf("%*s : ", o_name_len, o_logs[x].s);
-				break;
-			}
-		}
-
-		// content
 		va_list va;
 		va_start(va, fmt);
-		logvprintf(fmt, va);
-		
-		if((e & L_COLOR_VALUE) && COLORHEX(e))
-		{
-			logwrite(NOCOLOR);
-		}
-
-		logwrite("\n", 1);
-
-		// flush to stderr
-		write(2, o_space, o_space_l);
+		log_vadd(fmt, va);
 	}
+}
+
+void log_add(const char* fmt, ...)
+{
+	if(log_would(o_e))
+	{
+		va_list va;
+		va_start(va, fmt);
+		log_vadd(fmt, va);
+	}
+}
+
+void log_finish(const char* fmt, ...)
+{
+	if(log_would(o_e))
+	{
+		va_list va;
+		if(fmt)
+			va_start(va, fmt);
+
+		log_vfinish(fmt, &va);
+	}
+}
+
+void log(const uint64_t e, const char* fmt, ...)
+{
+	if(log_vstart(e))
+	{
+		va_list va;
+		va_start(va, fmt);
+		log_vadd(fmt, va);
+
+		log_vfinish(0, 0);
+	}
+}
+
+void log_teardown()
+{
+	free(o_space);
 }

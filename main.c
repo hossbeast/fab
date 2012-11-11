@@ -4,12 +4,16 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <listwise/lstack.h>
+
 #include "args.h"
 #include "ff.h"
 #include "gn.h"
 #include "fml.h"
 #include "bp.h"
 #include "log.h"
+#include "map.h"
+#include "var.h"
 
 #include "control.h"
 
@@ -32,7 +36,7 @@ int main(int argc, char** argv)
 		ff_parser *					ffp = 0;
 		ff_node *						ffn = 0;
 		bp *								bp = 0;
-		generator_parser * 	gp = 0;
+		map *								vmap = 0;				// variable lookup map
 		lstack **						astax = 0;
 		int									astax_l = 0;
 		int									astax_a = 0;
@@ -60,7 +64,7 @@ int main(int argc, char** argv)
 		signal(SIGTERM	, signal_handler);
 
 		// initialize logger
-		fatal(log_init, "+L_ERROR +L_WARN +L_INFO +L_BPEXEC");
+		fatal(log_init, "+ERROR +WARN +INFO +BPEXEC");
 
 		// parse cmdline arguments
 		fatal(parse_args, argc, argv);
@@ -72,87 +76,107 @@ int main(int argc, char** argv)
 		fatal(ff_mkparser, &ffp);
 		fatal(ff_parse, ffp, g_args.fabfile, &ffn);
 
+		if(!ffn)
+			return 0;
+
+		// create map for variable definitions
+		fatal(map_create, &vmap, 0);
+
+		// default variables
+		lstack* ls = 0;
+		fatal(xmalloc, &ls, sizeof(*ls));
+		
+		fatal(lstack_add, ls, ffn->ff_dir, strlen(ffn->ff_dir));
+
+		// included directories
+		fatal(var_set, vmap, "#", ls);
+
+		if(g_args.targets_l)
+		{
+			// add gn's for each target, and add those to the vmap
+
+			fatal(xmalloc, &ls, sizeof(*ls));
+
+			for(x = 0; x < g_args.targets_l; x++)
+			{
+				gn * gn = 0;
+				fatal(gn_add, ffn->ff_dir, g_args.targets[x], &gn);
+				fatal(lstack_add, ls, &gn, sizeof(gn));
+			}
+
+			fatal(var_set, vmap, "*", ls);
+		}
+
 		// the first target is the default
 		gn * def = 0;
 
-		// process the graph
+		// process the fabfile tree, constructing the graph
 		for(x = 0; x < ffn->statements_l; x++)
 		{
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
-				// the number of edges is the cartesian product needs x feeds
-				fatal(list_render, ffn->statements[x]->needs, &gp, &astax, &astax_l, &astax_a);
-				fatal(list_render, ffn->statements[x]->feeds, &gp, &bstax, &bstax_l, &bstax_a);
+				// resolve both lists
+				fatal(list_resolve, ffn->statements[x]->needs, vmap, &astax, &astax_l, &astax_a);
+				fatal(list_resolve, ffn->statements[x]->feeds, vmap, &bstax, &bstax_l, &bstax_a);
 
-				for(i = 0; i < astax[0]->s[0].l; i++)
+				// add edges, which are the cartesian product needs x feeds
+				LSTACK_LOOP_ITER(astax[0], i, goa);
+				if(goa)
 				{
-					for()
+					LSTACK_LOOP_ITER(bstax[0], j, gob);
+					if(gob)
 					{
 						if(!def)
-							fatal(gn_add, t->ff_dir, t->targets[x]->name, t->prereqs[y]->name, &def);
+						{
+							fatal(gn_add, ffn->statements[x]->ff_dir, astax[0]->s[0].s[i].s, bstax[0]->s[0].s[j].s, &def);
+
+							// add the gn for the default target to the vmap
+							fatal(xmalloc, &ls, sizeof(*ls));
+							fatal(lstack_add, ls, &def, sizeof(def));
+							fatal(var_set, vmap, "*", ls);
+						}
 						else
-							fatal(gn_add, t->ff_dir, t->targets[x]->name, t->prereqs[y]->name, 0);
+							fatal(gn_add, ffn->statements[x]->ff_dir, astax[0]->s[0].s[i].s, bstax[0]->s[0].s[j].s, 0);
 					}
+					LSTACK_LOOP_DONE;
 				}
+				LSTACK_LOOP_DONE;
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)
 			{
-				
+				// resolve the list associated to the variable name
+				fatal(list_resolve, ffn->statements[x]->definition, vmap, &astax, &astax_l, &astax_a);
+
+				// save the resultant list
+				fatal(var_set, vmap, ffn->statements[x]->name, astax[0]);
+
+				astax_l--;
+				astax_a--;
 			}
 			else if(ffn->statements[x]->type == FFN_FORMULA)
 			{
-				
-			}
-		}
-
-		ff_node* t = ffn;
-		while(t)
-		{
-			if(t->type == FFN_DEPENDENCY)
-			{
-				for(x = 0; x < t->targets_l; x++)
-				{
-					int y;
-					for(y = 0; y < t->prereqs_l; y++)
-					{
-						if(!def)
-							fatal(gn_add, t->ff_dir, t->targets[x]->name, t->prereqs[y]->name, &def);
-						else
-							fatal(gn_add, t->ff_dir, t->targets[x]->name, t->prereqs[y]->name, 0);
-					}
-				}
-			}
-
-			t = t->next;
-		}
-
-		// create formulas
-		t = ffn;
-		while(t)
-		{
-			if(t->type == FFN_FORMULA)
-			{
+				// create the formula
 				fml * fml = 0;
-				fatal(fml_add, t, &fml);
+				fatal(fml_add, ffn->statements[x], &fml);
 
-				// attach to appropriate graph nodes
-				for(x = 0; x < gn_nodes.l; x++)
+				// resolve the list of targets
+				fatal(list_resolve, ffn->statements[x]->targets, vmap, &astax, &astax_l, &astax_a);
+
+				// attach formula to graph nodes
+				for(j = 0; j < gn_nodes.l; j++)
 				{
-					int y;
-					for(y = 0; y < t->targets_l; y++)
+					LSTACK_LOOP_ITER(astax[0], i, go);
+					if(go)
 					{
-						if(strcmp(gn_nodes.e[x]->dir, t->targets[y]->ff_dir) == 0)
+						if(strcmp(gn_nodes.e[j]->path, astax[0]->s[0].s[i].s) == 0)
 						{
-							if(strcmp(gn_nodes.e[x]->name, t->targets[y]->name) == 0)
-							{
-								gn_nodes.e[x]->fml = fml;
-							}
+							gn_nodes.e[j]->fml = fml;
+							break;
 						}
 					}
+					LSTACK_LOOP_DONE;
 				}
 			}
-
-			t = t->next;
 		}
 
 		// dump graph nodes, pending logging

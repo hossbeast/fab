@@ -44,6 +44,36 @@ static char* struse(char* s, char* e)
 	return v;
 }
 
+static void flatten(ff_node* n)
+{
+	if(n)
+	{
+		n->list_l = 0;
+		ff_node* t = n->chain[0];
+		while(t)
+		{
+			flatten(t);
+
+			t = t->next;
+			n->list_l++;
+		}
+
+		n->list = calloc(n->list_l, sizeof(n->list[0]));
+
+		n->list_l = 0;
+		t = n->chain[0];
+		while(t)
+		{
+			n->list[n->list_l++] = t;
+			t = t->next;
+		}
+
+		int x;
+		for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
+			flatten(n->nodes[x]);
+	}
+}
+
 static void strmeasure(ff_node* n)
 {
 	if(n)
@@ -59,58 +89,19 @@ static void strmeasure(ff_node* n)
 	}
 }
 
-static void flatten(ff_node* n)
+static int parse_generators(ff_node* n, generator_parser * gp)
 {
 	if(n)
 	{
-		n->list_l = 0;
-		ff_node* t = n->chain[0];
-		while(t)
-		{
-			flatten(t);
-
-			t = t->next;
-			n->list_l++;
-		}
-
-		if(n->list_l)
-			n->list = calloc(n->list_l, sizeof(n->list[0]));
-
-		n->list_l = 0;
-		t = n->chain[0];
-		while(t)
-		{
-			n->list[n->list_l++] = t;
-			t = t->next;
-		}
-
-		flatten(n->next);
+		if(n->type == FFN_GENERATOR)
+			fatal(generator_parse, gp, n->text, 0, &n->generator);
 
 		int x;
+		for(x = 0; x < n->list_l; x++)
+			fatal(parse_generators, n->list[x], gp);
+
 		for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
-			flatten(n->nodes[x]);
-	}
-}
-
-static int parse_generators(ff_node* n, generator_parser * gp)
-{
-	int x;
-
-	if(n->type == FFN_STMTLIST)
-	{
-		for(x = 0; x < n->statements_l; x++)
-			fatal(parse_generators, n->statements[x]);
-	}
-	else if(n->type == FFN_LIST)
-	{
-		for(x = 0; x < n->elements_l; x++)
-			fatal(parse_generators, n->elements[x]);
-
-		fatal(parse_generators, n->generator_node);
-	}
-	else if(n->type == FFN_GENERATOR)
-	{
-		fatal(generator_parse, gp, n->text, 0, &n->generator);
+			fatal(parse_generators, n->nodes[x], gp);
 	}
 
 	return 1;
@@ -183,7 +174,7 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 	else if(type == FFN_LIST)
 	{
 		n->chain[0]				= va_arg(va, ff_node*);
-		n->generator			= va_arg(va, ff_node*);
+		n->generator_node	= va_arg(va, ff_node*);
 	}
 
 	va_end(va);
@@ -269,8 +260,7 @@ int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const re
 		strmeasure(*ffn);
 
 		// parse generator strings
-		if(!parse_generators(*ffn, p->gp))
-			fail("parse_generators failed");
+		fatal(parse_generators, *ffn, p->gp);
 	}
 	else
 	{
@@ -278,6 +268,7 @@ int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const re
 	}
 
 	free(pp.ff_dir);
+	free(b);
 
 	return 1;
 }
@@ -287,7 +278,7 @@ void ff_freeparser(ff_parser* const restrict p)
 	if(p)
 	{
 		ff_yylex_destroy(p->p);
-		generator_freeparser(p->gp);
+		generator_parser_free(p->gp);
 	}
 
 	free(p);
@@ -316,6 +307,9 @@ void ff_freenode(ff_node * const restrict ffn)
 			ff_freenode(ffn->list[x]);
 
 		free(ffn->list);
+
+		if(ffn->type == FFN_GENERATOR)
+			generator_free(ffn->generator);
 	}
 
 	free(ffn);
@@ -417,7 +411,7 @@ void ff_dump(ff_node * const restrict root)
 					, lvl * 2, ""
 					, "generator"
 				);
-				dump(ffn->generator, lvl + 1);
+				dump(ffn->generator_node, lvl + 1);
 			}
 			else if(ffn->type == FFN_WORD)
 			{
@@ -451,13 +445,13 @@ void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 	ff_loc * lc			= &pp->last_loc;
 
 	// log last good token
-	log(L_ERROR | L_FF, "last token - %s ) '%.*s' @ [%3d,%3d - %3d,%3d]"
+	log(L_ERROR | L_FF, "last token - %s '%.*s' @ [%3d,%3d - %3d,%3d]"
 		, ff_tokname(pp->last_tok)
 		, MIN(t == LF ? 0 : t == WS ? 0 : l, 50)
 		, t == LF ? "" : t == WS ? "" : s
-		, lc->f_lin
-		, lc->f_col
-		, lc->l_lin
-		, lc->l_col
+		, lc->f_lin + 1
+		, lc->f_col + 1
+		, lc->l_lin + 1
+		, lc->l_col + 1
 	);
 }

@@ -3,11 +3,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <listwise/lstack.h>
+
 #include "fml.h"
 #include "args.h"
 #include "gn.h"
 #include "ts.h"
 #include "ff.tokens.h"
+#include "list.h"
+#include "map.h"
 
 #include "control.h"
 #include "xmem.h"
@@ -83,7 +87,7 @@ int fml_add(ff_node * ffn, fml ** fml)
 	(*fml)->ffn = ffn;
 }
 
-int fml_render(ts * ts)
+int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a)
 {
 	// start with shebang
 	fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
@@ -93,24 +97,25 @@ int fml_render(ts * ts)
 	int x;
 	for(x = 0; x < ffn->commands_l; x++)
 	{
-		if(ffn->commands[x]->type == FFN_COMMAND_TEXT)
+		if(ffn->commands[x]->type == FFN_WORD)
 		{
 			fatal(pscatf, &ts->cmd_txt, ffn->commands[x]->text);
 		}
-		if(ffn->commands[x]->type == FFN_COMMAND_REF)
+		else if(ffn->commands[x]->type == FFN_LF)
 		{
-			if(ffn->commands[x]->ref == ff_FF_REF_EDEPSO)
+			fatal(pscatf, &ts->cmd_txt, "\n");
+		}
+		else if(ffn->commands[x]->type == FFN_LIST)
+		{
+			fatal(list_resolve, ffn->commands[x], vmap, stax, stax_l, stax_a);
+
+			int i;
+			LSTACK_LOOP_ITER((*stax)[0], i, go);
+			if(go)
 			{
-				fatal(resolve_edepso, &ts->cmd_txt, ts->gn);
+				fatal(pscat, &ts->cmd_txt, (*stax)[0]->s[0].s[i].s, (*stax)[0]->s[0].s[i].l);
 			}
-			if(ffn->commands[x]->ref == ff_FF_REF_IDEPSC)
-			{
-				fatal(resolve_idepsc, &ts->cmd_txt, ts->gn);
-			}
-			if(ffn->commands[x]->ref == ff_FF_REF_PATH)
-			{
-				fatal(resolve_path, &ts->cmd_txt, ts->gn);
-			}
+			LSTACK_LOOP_DONE;
 		}
 	}
 

@@ -27,7 +27,7 @@ LOPTS						+=-llistwise
 # default goal
 #
 ${NAME}: main.o
-	${CC} ${COPTS} ${CFLAGS} ${LOPTS} ${LFLAGS} -o $@ $(foreach x,$(VPATH),$(x)/*.o)
+	${CC} ${COPTS} ${CFLAGS} ${LFLAGS} -o $@ $(foreach x,$(VPATH),$(x)/*.o) ${LOPTS}
 
 #
 # recipes
@@ -92,10 +92,13 @@ main.o  : args/args.o						\
 				  common/unitstring.o		\
 				  common/xmem.o					\
 				  common/xstring.o			\
+					common/map.o					\
 				  fml/fml.o							\
 				  gn/gn.o								\
 				  log/log.o							\
 				  tmp/tmp.o							\
+					list/list.o						\
+					var/var.o							\
 				  ts/ts.o
 
 common/idx.o : common/xstring.o

@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include <listwise.h>
+#include <listwise/generator.h>
 
 #define restrict __restrict
 
