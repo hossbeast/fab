@@ -14,11 +14,17 @@
 
 typedef struct gn
 {
+	/* exported to listwise - maintain corresponding length */
 	char*							dir;						// canonical path to directory file is in
+	int								dirl;
 	char*							name;						// file name
+	int								namel;
 	char*							path;						// canonical path to file
+	int								pathl;
 	char*							ext;						// portion of file name following the last '.', or null
-	char *						hashfile_path;	// canonical path to hashfile
+	int								extl;
+
+	char*							hashfile_path;	// canonical path to hashfile
 
 	// fields for computing prophash
 	struct __attribute__((packed))

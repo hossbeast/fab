@@ -82,7 +82,7 @@ static void gn_stat(gn * n)
 	);
 }
 
-static void gn_create(char * cwd, char * A, gn ** gna, int * new)
+static int gn_create(char * cwd, char * A, gn ** gna, int * new)
 {
 	char space[512];
 
@@ -117,6 +117,8 @@ static void gn_create(char * cwd, char * A, gn ** gna, int * new)
 		gn_stat(*gna);
 		(*new)++;
 	}
+
+	return 1;
 }
 
 //

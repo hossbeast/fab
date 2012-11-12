@@ -95,6 +95,7 @@ main.o  : args/args.o						\
 					common/map.o					\
 				  fml/fml.o							\
 				  gn/gn.o								\
+					gn/gnlw.o							\
 				  log/log.o							\
 				  tmp/tmp.o							\
 					list/list.o						\

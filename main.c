@@ -5,10 +5,12 @@
 #include <unistd.h>
 
 #include <listwise/lstack.h>
+#include <listwise/object.h>
 
 #include "args.h"
 #include "ff.h"
 #include "gn.h"
+#include "gnlw.h"
 #include "fml.h"
 #include "bp.h"
 #include "log.h"
@@ -79,6 +81,9 @@ int main(int argc, char** argv)
 		if(!ffn)
 			return 0;
 
+		// register object types with liblistwise
+		fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
+
 		// create map for variable definitions
 		fatal(map_create, &vmap, 0);
 
@@ -91,19 +96,17 @@ int main(int argc, char** argv)
 		// included directories
 		fatal(var_set, vmap, "#", ls);
 
-		if(g_args.targets_l)
+		if(g_args.targets_len)
 		{
 			// add gn's for each target, and add those to the vmap
 
 			fatal(xmalloc, &ls, sizeof(*ls));
-
-			for(x = 0; x < g_args.targets_l; x++)
+			for(x = 0; x < g_args.targets_len; x++)
 			{
 				gn * gn = 0;
 				fatal(gn_add, ffn->ff_dir, g_args.targets[x], &gn);
-				fatal(lstack_add, ls, &gn, sizeof(gn));
+				fatal(lstack_obj_add, ls, &gn, LISTWISE_TYPE_GNLW);
 			}
-
 			fatal(var_set, vmap, "*", ls);
 		}
 
@@ -128,15 +131,15 @@ int main(int argc, char** argv)
 					{
 						if(!def)
 						{
-							fatal(gn_add, ffn->statements[x]->ff_dir, astax[0]->s[0].s[i].s, bstax[0]->s[0].s[j].s, &def);
+							fatal(gn_edge_add, ffn->statements[x]->ff_dir, astax[0]->s[0].s[i].s, bstax[0]->s[0].s[j].s, &def);
 
 							// add the gn for the default target to the vmap
 							fatal(xmalloc, &ls, sizeof(*ls));
-							fatal(lstack_add, ls, &def, sizeof(def));
+							fatal(lstack_obj_add, ls, &def, LISTWISE_TYPE_GNLW);
 							fatal(var_set, vmap, "*", ls);
 						}
 						else
-							fatal(gn_add, ffn->statements[x]->ff_dir, astax[0]->s[0].s[i].s, bstax[0]->s[0].s[j].s, 0);
+							fatal(gn_edge_add, ffn->statements[x]->ff_dir, astax[0]->s[0].s[i].s, bstax[0]->s[0].s[j].s, 0);
 					}
 					LSTACK_LOOP_DONE;
 				}
