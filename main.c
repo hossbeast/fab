@@ -90,6 +90,7 @@ int main(int argc, char** argv)
 		// default variables
 		lstack* ls = 0;
 		fatal(xmalloc, &ls, sizeof(*ls));
+		ls->sel.all = 1;
 		
 		fatal(lstack_add, ls, ffn->ff_dir, strlen(ffn->ff_dir));
 
@@ -98,9 +99,9 @@ int main(int argc, char** argv)
 
 		if(g_args.targets_len)
 		{
-			// add gn's for each target, and add those to the vmap
-
 			fatal(xmalloc, &ls, sizeof(*ls));
+
+			// add gn's for each target, and add those to the vmap
 			for(x = 0; x < g_args.targets_len; x++)
 			{
 				gn * gn = 0;
@@ -135,7 +136,8 @@ int main(int argc, char** argv)
 
 							// add the gn for the default target to the vmap
 							fatal(xmalloc, &ls, sizeof(*ls));
-							fatal(lstack_obj_add, ls, &def, LISTWISE_TYPE_GNLW);
+							fatal(lstack_obj_add, ls, def, LISTWISE_TYPE_GNLW);
+							ls->sel.all = 1;
 							fatal(var_set, vmap, "*", ls);
 						}
 						else

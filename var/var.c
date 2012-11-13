@@ -13,12 +13,28 @@ int var_set(map * vmap, char * s, lstack * ls)
 
 	int i = 0;
 	int j = 0;
+
 	LSTACK_LOOP_ITER(ls, i, go);
 	if(go)
 	{
 		if(j++)
 			log_add(" ");
-		log_add("%.*s", ls->s[0].s[i].l, ls->s[0].s[i].s);
+
+		if(ls->s[0].s[i].type)
+		{
+			char * vs = 0;
+			int    vl = 0;
+			lstack_getstring(ls, 0, i, &vs, &vl);
+
+			log_add("[%hhu]%p (%.*s)"
+				, ls->s[0].s[i].type
+				, *(void**)ls->s[0].s[i].s
+				, vl
+				, vs
+			);
+		}
+		else
+			log_add("%.*s", ls->s[0].s[i].l, ls->s[0].s[i].s);
 	}
 	LSTACK_LOOP_DONE;
 	log_finish(" ]");

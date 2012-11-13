@@ -1,8 +1,10 @@
 #include "list.h"
 
 #include <listwise/lstack.h>
+#include <listwise/object.h>
 
 #include "list.h"
+#include "gnlw.h"
 
 #include "control.h"
 #include "map.h"
@@ -45,7 +47,10 @@ int list_resolver(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * 
 			LSTACK_LOOP_ITER((*vls), i, go);
 			if(go)
 			{
-				fatal(lstack_add, (*ls)[p], (*vls)->s[0].s[i].s, (*vls)->s[0].s[i].l);
+				if((*vls)->s[0].s[i].type)
+					fatal(lstack_obj_add, (*ls)[p], *(void**)(*vls)->s[0].s[i].s, LISTWISE_TYPE_GNLW);
+				else
+					fatal(lstack_add, (*ls)[p], (*vls)->s[0].s[i].s, (*vls)->s[0].s[i].l);
 			}
 			LSTACK_LOOP_DONE;
 		}
@@ -66,6 +71,10 @@ int list_resolver(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * 
 	if(list->generator_node)
 	{
 		fatal(lstack_exec, list->generator_node->generator, 0, 0, 0, &(*ls)[p]);
+	}
+	else
+	{
+		(*ls)[p]->sel.all = 1;
 	}
 
 	return 1;

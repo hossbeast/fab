@@ -84,25 +84,42 @@ static void gn_stat(gn * n)
 
 static int gn_create(char * cwd, char * A, gn ** gna, int * new)
 {
-	char space[512];
+	char * p = 0;
 
-	fatal(realpath, cwd, space);
-	int cwdl = strlen(space);
+	if(A[0] == '/')
+	{
+		p = A;
+		A = p + strlen(p);
+		while(A != p && A[0] != '/')
+			A--;
 
-	// canonical path for A
-	snprintf(space + cwdl, sizeof(space) - cwdl, "/%s", A);
+		if(A != p)
+			A++;
+	}
+	else
+	{
+		char space[512];
+		fatal(realpath, cwd, space);
+		int cwdl = strlen(space);
 
-	if(!gn_nodes.by_path || (*gna = idx_lookup_val(gn_nodes.by_path, (char*[]) { space }, 0)) == 0)
+		// canonical path for A
+		snprintf(space + cwdl, sizeof(space) - cwdl, "/%s", A);
+		p = space;
+	}
+
+	if(!gn_nodes.by_path || (*gna = idx_lookup_val(gn_nodes.by_path, (char*[]) { p }, 0)) == 0)
 	{
 		// allocate new gnode in collection for A
 		fatal(coll_doubly_add, &gn_nodes.c, 0, gna);
 
 		// populate gna
 		(*gna)->vrs[1]		= GN_VERSION;
-		(*gna)->path			= strdup(space);
+		(*gna)->path			= strdup(p);
+		(*gna)->pathl			= strlen(p);
 		(*gna)->name			= strdup(A);
-		(*gna)->dir				= strdup(space);
-		(*gna)->dir[cwdl]	= 0;
+		(*gna)->namel			= strlen(A);
+		(*gna)->dir				= strdup(cwd);
+		(*gna)->dirl			= strlen(cwd);
 		(*gna)->needs.z		= sizeof(struct gn **);
 		(*gna)->feeds.z		= sizeof(struct gn **);
 		char * xt = A + strlen(A);
@@ -112,6 +129,7 @@ static int gn_create(char * cwd, char * A, gn ** gna, int * new)
 		{
 			xt++;
 			(*gna)->ext = strdup(xt);
+			(*gna)->extl = strlen(xt);
 		}
 
 		gn_stat(*gna);

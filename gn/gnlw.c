@@ -1,3 +1,4 @@
+#include <stdlib.h>
 
 #include "control.h"
 
@@ -93,6 +94,8 @@ int lw_string(void * o, char* prop, char ** s, int * l)
 int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, int * rl)
 {
 	int x;
+
+printf("REFLECT : %s @ %p\n", prop, o);
 
 /* string-based property reflection */
 	if(strcmp(prop, "name") == 0)

@@ -122,5 +122,5 @@ uninstall:
 	rm -f												${DESTDIR}/${NAME}
 
 clean ::
-	rm ${NAME} 1>/dev/null 2>&1 ; true
+	rm -f ${NAME} 1>/dev/null 2>&1 ; true
 	find . \( -false $(foreach txt,*.o *.i *.s *.so *.lex.* *.tab.* *.tok.* *.tokens.* exports,-o -name '$(txt)') \) -delete
