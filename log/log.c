@@ -55,6 +55,7 @@ static struct {
 	, { .v = L_FMEXEC	, .s = "FMEXEC"	}
 	, { .v = L_HASH		, .s = "HASH"		}
 	, { .v = L_VAR		, .s = "VAR"		}
+	, { .v = L_FMLTAR	, .s = "FMLTAR"	}
 	, { .v = L_TAG		, .s = "TAG"		}
 };
 

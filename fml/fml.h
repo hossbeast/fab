@@ -35,13 +35,14 @@ extern union g_fmls_t
 //
 // add a formula to the global list from the fabfile node
 //
-int fml_add(ff_node *, fml **);
+int fml_add(ff_node * ffn, lstack * ls)
+	__attribute__((nonnull));
 
 /// fml_render
 //
 // render cmd to ts->cmd_txt
 //
-int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a)
+int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
 	__attribute__((nonnull));
 
 /// fml_exec

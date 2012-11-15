@@ -31,6 +31,7 @@
 #define L_FMEXEC				0x00001000ULL							/* formula execution results/details */
 #define L_HASH					0x00002000ULL							/* hash loading/saving on per-file basis */
 #define L_VAR						0x00004000ULL							/* variable defintions */
+#define L_FMLTAR				0x00008000ULL							/* formula target resolution */
 
 /// log_init
 //

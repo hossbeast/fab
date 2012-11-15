@@ -39,17 +39,16 @@ int main(int argc, char** argv)
 		ff_node *						ffn = 0;
 		bp *								bp = 0;
 		map *								vmap = 0;				// variable lookup map
-		lstack **						astax = 0;
-		int									astax_l = 0;
-		int									astax_a = 0;
-		lstack **						bstax = 0;
-		int									bstax_l = 0;
-		int									bstax_a = 0;
+		lstack **						stax = 0;
+		int									stax_l = 0;
+		int									stax_a = 0;
+		int 								p = 0;
 
 		int x;
 		int i;
 		int j;
 		int k;
+
 
 		// unblock all signals
 		sigset_t all;
@@ -87,28 +86,39 @@ int main(int argc, char** argv)
 		// create map for variable definitions
 		fatal(map_create, &vmap, 0);
 
-		// default variables
-		lstack* ls = 0;
-		fatal(xmalloc, &ls, sizeof(*ls));
-		ls->sel.all = 1;
-		
-		fatal(lstack_add, ls, ffn->ff_dir, strlen(ffn->ff_dir));
+		// use up one list and populate the # variable (all directories)
+		if(stax_a <= p)
+		{
+			fatal(xrealloc, &stax, sizeof(*stax), p + 1, stax_a);
+			stax_a = p + 1;
+		}
+		if(!stax[p])
+			fatal(xmalloc, &stax[p], sizeof(*stax[p]));
+		lstack_reset(stax[p]);
 
-		// included directories
-		fatal(var_set, vmap, "#", ls);
+		fatal(lstack_add, stax[p], ffn->ff_dir, strlen(ffn->ff_dir));
+		fatal(var_set, vmap, "#", stax[p++]);
 
 		if(g_args.targets_len)
 		{
-			fatal(xmalloc, &ls, sizeof(*ls));
+			// use up one list and populate the * variable (root-level targets)
+			if(stax_a <= p)
+			{
+				fatal(xrealloc, &stax, sizeof(*stax), p + 1, stax_a);
+				stax_a = p + 1;
+			}
+			if(!stax[p])
+				fatal(xmalloc, &stax[p], sizeof(*stax[p]));
+			lstack_reset(stax[p]);
 
 			// add gn's for each target, and add those to the vmap
 			for(x = 0; x < g_args.targets_len; x++)
 			{
 				gn * gn = 0;
 				fatal(gn_add, ffn->ff_dir, g_args.targets[x], &gn);
-				fatal(lstack_obj_add, ls, &gn, LISTWISE_TYPE_GNLW);
+				fatal(lstack_obj_add, stax[p], &gn, LISTWISE_TYPE_GNLW);
 			}
-			fatal(var_set, vmap, "*", ls);
+			fatal(var_set, vmap, "*", stax[p++]);
 		}
 
 		// the first target is the default
@@ -120,67 +130,59 @@ int main(int argc, char** argv)
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
 				// resolve both lists
-				fatal(list_resolve, ffn->statements[x]->needs, vmap, &astax, &astax_l, &astax_a);
-				fatal(list_resolve, ffn->statements[x]->feeds, vmap, &bstax, &bstax_l, &bstax_a);
+				fatal(list_resolve, ffn->statements[x]->needs, vmap, &stax, &stax_l, &stax_a, p);
+				fatal(list_resolve, ffn->statements[x]->feeds, vmap, &stax, &stax_l, &stax_a, p + 1);
 
 				// add edges, which are the cartesian product needs x feeds
-				LSTACK_LOOP_ITER(astax[0], i, goa);
+				gn * first = 0;
+				LSTACK_LOOP_ITER(stax[p], i, goa);
 				if(goa)
 				{
-					LSTACK_LOOP_ITER(bstax[0], j, gob);
+					LSTACK_LOOP_ITER(stax[p + 1], j, gob);
 					if(gob)
 					{
-						if(!def)
-						{
-							fatal(gn_edge_add, ffn->statements[x]->ff_dir, astax[0]->s[0].s[i].s, bstax[0]->s[0].s[j].s, &def);
-
-							// add the gn for the default target to the vmap
-							fatal(xmalloc, &ls, sizeof(*ls));
-							fatal(lstack_obj_add, ls, def, LISTWISE_TYPE_GNLW);
-							ls->sel.all = 1;
-							fatal(var_set, vmap, "*", ls);
-						}
+						if(!first)
+							fatal(gn_edge_add, ffn->statements[x]->ff_dir, stax[p]->s[0].s[i].s, stax[p + 1]->s[0].s[j].s, &first);
 						else
-							fatal(gn_edge_add, ffn->statements[x]->ff_dir, astax[0]->s[0].s[i].s, bstax[0]->s[0].s[j].s, 0);
+							fatal(gn_edge_add, ffn->statements[x]->ff_dir, stax[p]->s[0].s[i].s, stax[p + 1]->s[0].s[j].s, 0);
 					}
 					LSTACK_LOOP_DONE;
 				}
 				LSTACK_LOOP_DONE;
+
+				if(!def)
+				{
+					def = first;
+
+					// use up one list and populate the * variable (root-level targets)
+					if(stax_a <= p)
+					{
+						fatal(xrealloc, &stax, sizeof(*stax), p + 1, stax_a);
+						stax_a = p + 1;
+					}
+					if(!stax[p])
+						fatal(xmalloc, &stax[p], sizeof(*stax[p]));
+					lstack_reset(stax[p]);
+
+					fatal(lstack_obj_add, stax[p], def, LISTWISE_TYPE_GNLW);
+					fatal(var_set, vmap, "*", stax[p++]);
+				}
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)
 			{
 				// resolve the list associated to the variable name
-				fatal(list_resolve, ffn->statements[x]->definition, vmap, &astax, &astax_l, &astax_a);
+				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &stax_l, &stax_a, p);
 
 				// save the resultant list
-				fatal(var_set, vmap, ffn->statements[x]->name, astax[0]);
-
-				astax_l--;
-				astax_a--;
+				fatal(var_set, vmap, ffn->statements[x]->name, stax[p++]);
 			}
 			else if(ffn->statements[x]->type == FFN_FORMULA)
 			{
-				// create the formula
-				fml * fml = 0;
-				fatal(fml_add, ffn->statements[x], &fml);
-
 				// resolve the list of targets
-				fatal(list_resolve, ffn->statements[x]->targets, vmap, &astax, &astax_l, &astax_a);
+				fatal(list_resolve, ffn->statements[x]->targets, vmap, &stax, &stax_l, &stax_a, p);
 
-				// attach formula to graph nodes
-				for(j = 0; j < gn_nodes.l; j++)
-				{
-					LSTACK_LOOP_ITER(astax[0], i, go);
-					if(go)
-					{
-						if(strcmp(gn_nodes.e[j]->path, astax[0]->s[0].s[i].s) == 0)
-						{
-							gn_nodes.e[j]->fml = fml;
-							break;
-						}
-					}
-					LSTACK_LOOP_DONE;
-				}
+				// create the formula
+				fatal(fml_add, ffn->statements[x], stax[p]);
 			}
 		}
 
@@ -230,7 +232,7 @@ int main(int argc, char** argv)
 		if(g_args.mode == MODE_FABRICATE)
 		{
 			// execute the build plan, one stage at a time
-			fatal(bp_exec, bp);
+			fatal(bp_exec, bp, vmap, &stax, &stax_l, &stax_a, p);
 		}
 
 		return 1;

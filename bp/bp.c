@@ -2,6 +2,8 @@
 
 #include "bp.h"
 #include "ts.h"
+#include "fml.h"
+#include "gnlw.h"
 
 #include "log.h"
 #include "control.h"
@@ -276,7 +278,7 @@ int bp_prune(bp * bp)
 	return !bp_bad;
 }
 
-int bp_exec(bp * bp)
+int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
 {
 	ts ** ts			= 0;
 	int tsl				= 0;		// thread count
@@ -301,7 +303,23 @@ int bp_exec(bp * bp)
 		for(y = 0; y < bp->stages[x].targets_l; y++)
 		{
 			ts[i]->gn = bp->stages[x].targets[y];
-			fatal(fml_render, ts[i]);
+
+			// populate variables resident in this context @ is the target to fabricate
+			int pn = p;
+			if((*stax_a) <= pn)
+			{
+				fatal(xrealloc, stax, sizeof(**stax), pn + 1, (*stax_a));
+				(*stax_a) = pn + 1;
+			}
+			if(!(*stax)[p])
+				fatal(xmalloc, &(*stax)[p], sizeof(*(*stax)[p]));
+			lstack_reset((*stax)[pn]);
+
+			fatal(lstack_obj_add, (*stax)[pn], ts[i]->gn, LISTWISE_TYPE_GNLW);
+			fatal(var_set, vmap, "@", (*stax)[pn++]);
+
+			// render the formula
+			fatal(fml_render, ts[i], vmap, stax, stax_l, stax_a, pn);
 			
 			// save hash of the cmd used to render the gn
 			gn_hashcmd(ts[i]->gn, ts[i]->cmd_txt->s, ts[i]->cmd_txt->l);

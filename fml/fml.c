@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <listwise.h>
 #include <listwise/lstack.h>
 
 #include "fml.h"
@@ -79,15 +80,47 @@ static int resolve_idepsc(pstring ** p, gn * gn)
 //
 // public
 //
-int fml_add(ff_node * ffn, fml ** fml)
+int fml_add(ff_node * ffn, lstack * ls)
 {
 	// ffn is an FFN_FORMULA
-	fatal(coll_doubly_add, &g_fmls.c, 0, fml);
+	fml * fml = 0;
+	fatal(coll_doubly_add, &g_fmls.c, 0, &fml);
+	fml->ffn = ffn;
 
-	(*fml)->ffn = ffn;
+	int i;
+	LSTACK_LOOP_ITER(ls, i, go);
+	if(go)
+	{
+		gn* t = 0;
+		if(ls->s[0].s[i].l && ls->s[0].s[i].s[0] == '/')
+			t = idx_lookup_val(gn_nodes.by_path, &ls->s[0].s[i].s, 0);
+		else
+		{
+			int x;
+			for(x = 0; x < gn_nodes.l; x++)
+			{
+				if(strcmp(gn_nodes.e[x]->dir, ffn->ff_dir) == 0 && strcmp(ls->s[0].s[i].s, gn_nodes.e[x]->name) == 0)
+				{
+					t = gn_nodes.e[x];
+					break;
+				}
+			}
+		}
+
+		if(t)
+		{
+			log(L_FMLTAR, "formula %p matches %s", fml, t->path);
+			t->fml = fml;
+		}
+		else
+		{
+			log(L_ERROR, "formula %p references unresolved target %s", fml, ls->s[0].s[i].s);
+		}	
+	}
+	LSTACK_LOOP_DONE;
 }
 
-int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a)
+int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
 {
 	// start with shebang
 	fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
@@ -107,13 +140,17 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a)
 		}
 		else if(ffn->commands[x]->type == FFN_LIST)
 		{
-			fatal(list_resolve, ffn->commands[x], vmap, stax, stax_l, stax_a);
+			fatal(list_resolve, ffn->commands[x], vmap, stax, stax_l, stax_a, p);
 
 			int i;
 			LSTACK_LOOP_ITER((*stax)[0], i, go);
 			if(go)
 			{
-				fatal(pscat, &ts->cmd_txt, (*stax)[0]->s[0].s[i].s, (*stax)[0]->s[0].s[i].l);
+				char * s = 0;
+				int l = 0;
+				lstack_string((*stax)[0], 0, i, &s, &l);
+
+				fatal(pscat, &ts->cmd_txt, s, l);
 			}
 			LSTACK_LOOP_DONE;
 		}

@@ -24,7 +24,7 @@ int var_set(map * vmap, char * s, lstack * ls)
 		{
 			char * vs = 0;
 			int    vl = 0;
-			lstack_getstring(ls, 0, i, &vs, &vl);
+			lstack_string(ls, 0, i, &vs, &vl);
 
 			log_add("[%hhu]%p (%.*s)"
 				, ls->s[0].s[i].type

@@ -9,7 +9,7 @@
 #include "control.h"
 #include "map.h"
 
-int list_resolver(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * stax_a, int p)
+int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * stax_a, int p)
 {
 	// ensure enough lstacks are allocated
 	if((*stax_a) <= p)
@@ -56,7 +56,7 @@ int list_resolver(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * 
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
-			fatal(list_resolver, list->elements[x], vmap, ls, stax_l, stax_a, ++pn);
+			fatal(list_resolve, list->elements[x], vmap, ls, stax_l, stax_a, ++pn);
 
 			LSTACK_LOOP_ITER((*ls)[pn], i, go);
 			if(go)
@@ -78,9 +78,4 @@ int list_resolver(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * 
 	}
 
 	return 1;
-}
-
-int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * stax_l, int * stax_a)
-{
-	return list_resolver(list, vmap, stax, stax_l, stax_a, 0);
 }

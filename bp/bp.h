@@ -1,9 +1,12 @@
 #ifndef _BP_H
 #define _BP_H
 
-/* bp - build plan */
+#include <listwise.h>
 
+/* bp - build plan */
 #include "gn.h"
+
+#include "map.h"
 
 // actions to be performed in a single build stage
 typedef struct 
@@ -41,6 +44,7 @@ void bp_dump(bp *);
 //
 // execute the build plan one stage at a time
 //
-int bp_exec(bp * bp);
+int bp_exec(bp * bp, map * vmap, lstack *** stax, int * lstax_l, int * stax_a, int p)
+	__attribute__((nonnull));
 
 #endif
