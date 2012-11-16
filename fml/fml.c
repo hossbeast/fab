@@ -109,7 +109,7 @@ int fml_add(ff_node * ffn, lstack * ls)
 
 		if(t)
 		{
-			log(L_FMLTAR, "formula %p matches %s", fml, t->path);
+			log(L_FML | L_FMLTARG, "formula %p matches %s", fml, t->path);
 			t->fml = fml;
 		}
 		else
@@ -127,30 +127,40 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 
 	ff_node * ffn = ts->gn->fml->ffn;
 
+	int k = 0;
 	int x;
 	for(x = 0; x < ffn->commands_l; x++)
 	{
+		if(k)
+			fatal(pscat, &ts->cmd_txt, " ", 1);
+
 		if(ffn->commands[x]->type == FFN_WORD)
 		{
 			fatal(pscatf, &ts->cmd_txt, ffn->commands[x]->text);
+			k++;
 		}
 		else if(ffn->commands[x]->type == FFN_LF)
 		{
 			fatal(pscatf, &ts->cmd_txt, "\n");
+			k = 0;
 		}
 		else if(ffn->commands[x]->type == FFN_LIST)
 		{
 			fatal(list_resolve, ffn->commands[x], vmap, stax, stax_l, stax_a, p);
 
 			int i;
-			LSTACK_LOOP_ITER((*stax)[0], i, go);
+			LSTACK_LOOP_ITER((*stax)[p], i, go);
 			if(go)
 			{
+				if(k)
+					fatal(pscat, &ts->cmd_txt, " ", 1);
+
 				char * s = 0;
 				int l = 0;
-				lstack_string((*stax)[0], 0, i, &s, &l);
+				lstack_string((*stax)[p], 0, i, &s, &l);
 
 				fatal(pscat, &ts->cmd_txt, s, l);
+				k++;
 			}
 			LSTACK_LOOP_DONE;
 		}

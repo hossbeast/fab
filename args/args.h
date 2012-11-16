@@ -3,7 +3,7 @@
 
 #include <sys/types.h>
 
-#define DEFAULT_FABFILE "fabfile"
+#define DEFAULT_FABFILE 	"fabfile"
 #define DEFAULT_EXECDIR		"/tmp/fab/exec"
 #define DEFAULT_HASHDIR		"/tmp/fab/hash"
 
@@ -27,16 +27,19 @@ extern struct g_args_t
 {
 	pid_t				pid;									// pid of this process
 
+	char				mode;									// one of MODE_*
+
 	char **			targets;							// targets
 	int					targets_len;
-
-	char				mode;									// one of MODE_*
 
 	char *			fabfile;							// path to fabfile
 
 	char *			execdir_base;
 	char *			execdir;
 	char *			hashdir;
+
+	char **			invalid;							// graph nodes to invalidate
+	int					invalid_len;
 } g_args;
 
 //// parse_args

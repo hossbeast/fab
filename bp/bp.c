@@ -166,7 +166,7 @@ int bp_prune(bp * bp)
 				if(gn->needs.l)
 				{
 					if(gn->prop_hash[1] == 0)
-						gn->changed= 1;	// file doesn't exist
+						gn->changed = 1;	// file doesn't exist
 
 					if(gn->changed)
 						gn->rebuild = 1;
@@ -179,7 +179,7 @@ int bp_prune(bp * bp)
 						// SOURCE file - not found
 						log(L_ERROR, "SOURCE file %s not found - required by %d", gn->path, gn->feeds.l);
 						for(i = 0; i < gn->feeds.l; i++)
-							log(L_BPEVAL, "  ---> %s", gn->feeds.e[i]->path);
+							log(L_BP | L_BPEVAL, "  ---> %s", gn->feeds.e[i]->path);
 
 						gn->poison = 1;
 					}
@@ -198,7 +198,7 @@ int bp_prune(bp * bp)
 
 					log(L_ERROR, "file %s has no formula - required by %d", gn->path, gn->feeds.l);
 					for(i = 0; i < gn->feeds.l; i++)
-						log(L_BPEVAL, "  ---> %s", gn->feeds.e[i]->path);
+						log(L_BP | L_BPEVAL, "  ---> %s", gn->feeds.e[i]->path);
 
 					gn->poison = 1;
 				}
@@ -219,15 +219,15 @@ int bp_prune(bp * bp)
 			if(gn->needs.l)
 			{
 				if(gn->rebuild)
-					log(L_BPEVAL, "%9s %-50s | %7s (%s)", "SECONDARY", gn->path, "REBUILD"
+					log(L_BP | L_BPEVAL, "%9s %-50s | %7s (%s)", "SECONDARY", gn->path, "REBUILD"
 						, gn->prop_hash[1] == 0 ? "does not exist" : "sources changed"
 					);
 				else
-					log(L_BPEVAL, "%9s %-50s | %7s", "SECONDARY", gn->path, "SKIP");
+					log(L_BP | L_BPEVAL, "%9s %-50s | %7s", "SECONDARY", gn->path, "SKIP");
 			}
 			else
 			{
-				log(L_BPEVAL, "%9s %-50s | %7s (%s)", "SOURCE", gn->path, ""
+				log(L_BP | L_BPEVAL, "%9s %-50s | %7s (%s)", "SOURCE", gn->path, ""
 					, gn->changed ? "  changed" : "unchanged"
 				);
 			}
@@ -297,7 +297,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		i = 0;
-		log(L_BPEXEC, "STAGE %d/%d : %d/%d", x, bp->stages_l - 1, bp->stages[x].targets_l - 1, 0);
+		log(L_BP | L_BPEXEC, "STAGE %d/%d : %d/%d", x, bp->stages_l - 1, bp->stages[x].targets_l - 1, 0);
 
 		// determine which nodes to fabricate on this stage
 		for(y = 0; y < bp->stages[x].targets_l; y++)
@@ -324,7 +324,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			// save hash of the cmd used to render the gn
 			gn_hashcmd(ts[i]->gn, ts[i]->cmd_txt->s, ts[i]->cmd_txt->l);
 
-			log(L_BPEXEC, " -- %s", ts[i++]->gn->path);
+			log(L_BP | L_BPEXEC, " -- %s", ts[i++]->gn->path);
 		}
 
 		// execute all formulas in parallel processes
@@ -357,7 +357,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			}
 
 			// snarf stdout
-			if(log_would(L_FMEXEC))
+			if(log_would(L_FML | L_FMLEXEC))
 			{
 				off_t sz = lseek(ts[y]->stdo_fd, 0, SEEK_END);
 				lseek(ts[y]->stdo_fd, 0, SEEK_SET);
@@ -369,41 +369,41 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			close(ts[y]->stde_fd);
 			close(ts[y]->stdo_fd);
 
-			uint64_t tag = L_FMEXEC;
+			uint64_t tag = L_FML | L_FMLEXEC;
 			if(ts[y]->r_status || ts[y]->stde_txt->l)
 				tag |= L_ERROR;
 
 			log(tag			, "%15s : %s"			, "target"				, ts[y]->gn->path);
-			if(log_would(L_FMEXEC))
+			if(log_would(L_FML | L_FMLEXEC))
 			{
-				log(L_FMEXEC, "%15s : (%d)"	, "cmd text"			, ts[y]->cmd_txt->l);
+				log(L_FML | L_FMLEXEC, "%15s : (%d)"	, "cmd text"			, ts[y]->cmd_txt->l);
 				write(2, ts[y]->cmd_txt->s, ts[y]->cmd_txt->l);
 			}
 			else
 			{
-				log(L_FMEXEC, "%15s"				, "cmd text");
+				log(L_FML | L_FMLEXEC, "%15s"				, "cmd text");
 			}
 			log(tag			, "%15s : %d"			, "exit status"		, ts[y]->r_status);
 			log(tag			, "%15s : %d"			, "exit signal"		, ts[y]->r_signal);
-			log(L_FMEXEC, "%15s : %s"			, "stdout path"		, ts[y]->stdo_path->s);
-			if(log_would(L_FMEXEC))
+			log(L_FML | L_FMLEXEC, "%15s : %s"			, "stdout path"		, ts[y]->stdo_path->s);
+			if(log_would(L_FML | L_FMLEXEC))
 			{
-				log(L_FMEXEC, "%15s : (%d)"	, "stdout text"		, ts[y]->stdo_txt->l);
+				log(L_FML | L_FMLEXEC, "%15s : (%d)"	, "stdout text"		, ts[y]->stdo_txt->l);
 				write(2, ts[y]->stdo_txt->s, ts[y]->stdo_txt->l);
 			}
 			else
 			{
-				log(L_FMEXEC, "%15s"				, "stdout text");
+				log(L_FML | L_FMLEXEC, "%15s"				, "stdout text");
 			}
-			log(L_FMEXEC, "%15s : %s"			, "stderr path"		, ts[y]->stde_path->s);
-			if(log_would(L_FMEXEC))
+			log(L_FML | L_FMLEXEC, "%15s : %s"			, "stderr path"		, ts[y]->stde_path->s);
+			if(log_would(L_FML | L_FMLEXEC))
 			{
-				log(L_FMEXEC, "%15s : (%d)"	, "stderr text"		, ts[y]->stde_txt->l);
+				log(L_FML | L_FMLEXEC, "%15s : (%d)"	, "stderr text"		, ts[y]->stde_txt->l);
 				write(2, ts[y]->stde_txt->s, ts[y]->stde_txt->l);
 			}
 			else
 			{
-				log(L_FMEXEC, "%15s"				, "stderr text");
+				log(L_FML | L_FMLEXEC, "%15s"				, "stderr text");
 			}
 
 			// SUCCESS if - exit status 0 and wrote nothing to stderr
@@ -452,12 +452,12 @@ void bp_dump(bp * bp)
 	int x;
 	for(x = 0; x < bp->stages_l; x++)
 	{
-		log(L_BPDUMP, "STAGE %d", x);
+		log(L_BP | L_BPDUMP, "STAGE %d", x);
 
 		int y;
 		for(y = 0; y < bp->stages[x].targets_l; y++)
 		{
-			log(L_BPDUMP, " -- %s %s", bp->stages[x].targets[y]->path, bp->stages[x].targets[y]->mark ? "*" : "");
+			log(L_BP | L_BPDUMP, " -- %s %s", bp->stages[x].targets[y]->path, bp->stages[x].targets[y]->mark ? "*" : "");
 		}
 	}
 }

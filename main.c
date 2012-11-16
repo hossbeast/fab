@@ -49,7 +49,6 @@ int main(int argc, char** argv)
 		int j;
 		int k;
 
-
 		// unblock all signals
 		sigset_t all;
 		sigfillset(&all);

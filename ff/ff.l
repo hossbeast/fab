@@ -18,6 +18,7 @@
 		: x == quoteword		? "quoteword"				\
 		: x == generatorws	? "generatorws"			\
 		: x == generator		? "generator"				\
+		: x == generatorlf	? "generatorlf"			\
 		: x == command			? "command"					\
 		: x == checklw			? "checklw"					\
 		: x == list					? "list" : "UNKNWN"	\
@@ -117,6 +118,7 @@
 %x quoteword
 %x generatorws
 %x generator
+%x generatorlf
 
 %s command
 %x checklw
@@ -203,6 +205,7 @@
 <generator>{
 \n																					{
 																							POPSTATE(yyextra);
+																							PUSHSTATE(generatorlf, yyextra);
 																							int x = LEX(WS);
 																							loc_reset(yyextra, yylloc);
 																							return x;
@@ -215,6 +218,29 @@
 \\[ ]+																			{ yytext++; yyleng--; return LEXX(WORD, 1); }
 [^\\ \n\t]+																	{ return LEX(WORD); }
 }
+<generatorlf>[\00-\xff]											{
+																							POPSTATE(yyextra);
+
+																							// re-scan this byte
+																							yyless(0);
+
+																							if(yyextra->states_n && yyextra->states[yyextra->states_n - 1] == command)
+																							{
+																								// fabricate an LF token
+																								yylval->str.s = yyextra->last_s;
+																								yylval->str.e = yyextra->last_e;
+																								yylval->num.v = LF;
+																								yylloc->first_column = yyextra->loc.f_col;
+																								yylloc->last_column = yyextra->loc.l_col;
+																								yylloc->first_line = yyextra->loc.f_lin;
+																								yylloc->last_line = yyextra->loc.l_lin;
+
+																								// print it
+																								PTOKEN(yylval->str.s, yylval->str.e - yylval->str.s, LF, yylloc, __LINE__);
+
+																								return LF;
+																							}
+																						}
 <quoteword>{
 ["]																					{
 																							POPSTATE(yyextra);

@@ -135,7 +135,7 @@ int gn_edge_add(char* cwd, char* A, char* B, gn ** r);
 
 /// gn_dump
 //
-// log under L_GN properties of the gn
+// log under L_DGRAPH properties of the gn
 //
 void gn_dump(gn *);
 

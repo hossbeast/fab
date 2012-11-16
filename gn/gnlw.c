@@ -67,10 +67,10 @@ int lw_string(void * o, char* prop, char ** s, int * l)
 	*s = 0;
 	*l = 0;
 
-	if(!prop || strcmp(prop, "name") == 0)
+	if(!prop || strcmp(prop, "path") == 0)
 	{
-		*s = ((gn*)o)->name;
-		*l = ((gn*)o)->namel;
+		*s = ((gn*)o)->path;
+		*l = ((gn*)o)->pathl;
 	}
 	else if(strcmp(prop, "name") == 0)
 	{
@@ -95,20 +95,18 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 {
 	int x;
 
-printf("REFLECT : %s @ %p\n", prop, o);
-
 /* string-based property reflection */
-	if(strcmp(prop, "name") == 0)
+	if(strcmp(prop, "path") == 0)
 	{
 		*rl = 1;
 		fatal(xmalloc, r, sizeof(char*) * (*rl));
 		fatal(xmalloc, rls, sizeof(*rls[0]) * (*rl));
 
-		fatal(xmalloc, &(((char**)(*r))[0]), ((gn*)o)->namel + 1);
-		memcpy((((char**)(*r))[0]), ((gn*)o)->name, ((gn*)o)->namel);
-		(*rls)[0] = ((gn*)o)->namel;
+		fatal(xmalloc, &(((char**)(*r))[0]), ((gn*)o)->pathl + 1);
+		memcpy((((char**)(*r))[0]), ((gn*)o)->path, ((gn*)o)->pathl);
+		(*rls)[0] = ((gn*)o)->pathl;
 	}
-	else if(strcmp(prop, "name") == 0)
+	else if(strcmp(prop, "path") == 0)
 	{
 		*rl = 1;
 		fatal(xmalloc, r, sizeof(char*) * 1);

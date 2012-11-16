@@ -108,10 +108,11 @@ dependencies
 TODO
  : mode to build all targets
  : mode to just display buildplan - implies BPDUMP
- : remove "L_"
  : need PHONY targets - 
- : incorporate list-generator into bf syntax
  : rename ff - fabfile
+ : fablw - inspect dependency graph
+ : fab -h help
+ : hash invalidation - force rebuild
 
-- stack based dependencies, and formulas
+- stack based dependencies, and formulas, i.e. formula fabs 2 targets
 - right-to-left dependency evaluation

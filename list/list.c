@@ -3,8 +3,12 @@
 #include <listwise/lstack.h>
 #include <listwise/object.h>
 
+// in liblistwise.so
+extern int lstack_exec_internal(generator* g, char** init, int* initls, int initl, lstack** ls, int dump);
+
 #include "list.h"
 #include "gnlw.h"
+#include "args.h"
 
 #include "control.h"
 #include "map.h"
@@ -70,7 +74,8 @@ int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * s
 	// run the list through listwise
 	if(list->generator_node)
 	{
-		fatal(lstack_exec, list->generator_node->generator, 0, 0, 0, &(*ls)[p]);
+		log(L_LWDEBUG, "%s", list->generator_node->text);
+		fatal(lstack_exec_internal, list->generator_node->generator, 0, 0, 0, &(*ls)[p], log_would(L_LWDEBUG));
 	}
 	else
 	{

@@ -222,41 +222,41 @@ void gn_dump(gn * n)
 {
 	char space[128];
 
-	if(log_would(L_GN))
+	if(log_would(L_DG | L_DGRAPH))
 	{
-		log(L_GN, "%8s : %s", "path", n->path);
-		log(L_GN, "%10s : %p", "fml", n->fml);
-		log(L_GN, "%10s : %d", "size", (int)n->size);
+		log(L_DG | L_DGRAPH, "%8s : %s", "path", n->path);
+		log(L_DG | L_DGRAPH, "%10s : %p", "fml", n->fml);
+		log(L_DG | L_DGRAPH, "%10s : %d", "size", (int)n->size);
 		if(n->mtime)
 		{
 			struct tm ltm;
 			localtime_r(&n->mtime, &ltm);
 			strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
 
-			log(L_GN, "%10s : %s", "mtime-abs", space);
-			log(L_GN, "%10s : %s", "mtime-del", durationstring(time(0) - n->mtime));
+			log(L_DG | L_DGRAPH, "%10s : %s", "mtime-abs", space);
+			log(L_DG | L_DGRAPH, "%10s : %s", "mtime-del", durationstring(time(0) - n->mtime));
 		}
 		else
 		{
-			log(L_GN, "%10s : %s", "mtime", "");
+			log(L_DG | L_DGRAPH, "%10s : %s", "mtime", "");
 		}
 
-		log(L_GN, "%10s : %d", "needs", n->needs.l);
+		log(L_DG | L_DGRAPH, "%10s : %d", "needs", n->needs.l);
 		int x;
 		for(x = 0; x < n->needs.l; x++)
-			log(L_GN, "%10s --> %s", "", n->needs.e[x]->path);
+			log(L_DG | L_DGRAPH, "%10s --> %s", "", n->needs.e[x]->path);
 
-		log(L_GN, "%10s : %d", "feeds", n->feeds.l);
+		log(L_DG | L_DGRAPH, "%10s : %d", "feeds", n->feeds.l);
 		for(x = 0; x < n->feeds.l; x++)
-			log(L_GN, "%10s --> %s", "", n->feeds.e[x]->path);
+			log(L_DG | L_DGRAPH, "%10s --> %s", "", n->feeds.e[x]->path);
 
-		log(L_GN, "");
+		log(L_DG | L_DGRAPH, "");
 	}
 }
 
 void gn_dumpall()
 {
-	if(log_would(L_GN))
+	if(log_would(L_DG | L_DGRAPH))
 	{
 		int x;
 		for(x = 0; x < gn_nodes.l; x++)
@@ -280,13 +280,13 @@ int gn_hashes_read(gn * gn)
 		read(fd, &gn->prop_hash[0]	, sizeof(gn->prop_hash[0]));
 		read(fd, &gn->cmd_hash[0]		, sizeof(gn->cmd_hash[0]));
 
-		log(L_HASH, "%s <- %s = 0x%08x%08x%08x", gn->path, gn->hashfile_path, gn->vrs[0], gn->prop_hash[0], gn->cmd_hash[0]);
+		log(L_DGHASH, "%s <- %s = 0x%08x%08x%08x", gn->path, gn->hashfile_path, gn->vrs[0], gn->prop_hash[0], gn->cmd_hash[0]);
 
 		close(fd);
 	}
 	else
 	{
-		log(L_HASH, "%s <- %s = 0x%08x%08x%08x", gn->path, "(ENOENT)", gn->vrs[0], gn->prop_hash[0], gn->cmd_hash[0]);
+		log(L_DGHASH, "%s <- %s = 0x%08x%08x%08x", gn->path, "(ENOENT)", gn->vrs[0], gn->prop_hash[0], gn->cmd_hash[0]);
 	}
 
 	return 1;
@@ -302,7 +302,7 @@ int gn_hashes_write(gn * gn)
 	if((fd = open(gn->hashfile_path, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
 		fail("open(%s) failed [%d][%s", gn->hashfile_path, errno, strerror(errno));
 
-	log(L_HASH, "%s -> %s = 0x%08x%08x%08x", gn->path, gn->hashfile_path, gn->vrs[1], gn->prop_hash[1], gn->cmd_hash[1]);
+	log(L_DGHASH, "%s -> %s = 0x%08x%08x%08x", gn->path, gn->hashfile_path, gn->vrs[1], gn->prop_hash[1], gn->cmd_hash[1]);
 
 	write(fd, &gn->vrs[1]					, sizeof(gn->vrs[0]));
 	write(fd, &gn->prop_hash[1]		, sizeof(gn->prop_hash[0]));

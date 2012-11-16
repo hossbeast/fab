@@ -40,23 +40,26 @@ static struct {
 	char *			s;
 	int					l;
 } o_logs[] = { 
-	  { .v = L_ERROR	, .s = "ERROR" 	}
-	, { .v = L_WARN		, .s = "WARN" 	}
-	, { .v = L_INFO		, .s = "INFO" 	}
-	, { .v = L_BPEXEC	, .s = "BPEXEC"	}
-	, { .v = L_BPEVAL	, .s = "BPEVAL"	}
-	, { .v = L_BPDUMP	, .s = "BPDUMP"	}
-	, { .v = L_FFTOKN	, .s = "FFTOKN"	}
-	, { .v = L_FFSTAT	, .s = "FFSTAT"	}
-	, { .v = L_FFTREE	, .s = "FFTREE"	}
-	, { .v = L_FF			, .s = "FF"			}
-	, { .v = L_ARGS		, .s = "ARGS"		}
-	, { .v = L_GN			, .s = "GN"			}
-	, { .v = L_FMEXEC	, .s = "FMEXEC"	}
-	, { .v = L_HASH		, .s = "HASH"		}
-	, { .v = L_VAR		, .s = "VAR"		}
-	, { .v = L_FMLTAR	, .s = "FMLTAR"	}
-	, { .v = L_TAG		, .s = "TAG"		}
+	  { .v = L_ERROR		, .s = "ERROR"		}
+	, { .v = L_WARN			, .s = "WARN"			}
+	, { .v = L_INFO			, .s = "INFO"			}
+	, { .v = L_ARGS			, .s = "ARGS"			}
+	, { .v = L_FFTOKN		, .s = "FFTOKN"		}
+	, { .v = L_FFSTAT		, .s = "FFSTAT"		}
+	, { .v = L_FFTREE		, .s = "FFTREE"		}
+	, { .v = L_FF				, .s = "FF"				}
+	, { .v = L_BPEXEC		, .s = "BPEXEC"		}
+	, { .v = L_BPEVAL		, .s = "BPEVAL"		}
+	, { .v = L_BPDUMP		, .s = "BPDUMP"		}
+	, { .v = L_BP				, .s = "BP"				}
+	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	}
+	, { .v = L_FMLTARG	, .s = "FMLTARG"	}
+	, { .v = L_FML			, .s = "FML"			}
+	, { .v = L_DGRAPH		, .s = "DGRAPH"		}
+	, { .v = L_DGHASH		, .s = "DGHASH"		}
+	, { .v = L_DG				, .s = "DG"				}
+	, { .v = L_VAR			, .s = "VAR"			}
+	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	}
 };
 
 static int o_name_len;
@@ -108,31 +111,6 @@ static int logprintf(const char * fmt, ...)
 
 	logvprintf(fmt, va);
 	va_end(va);
-}
-
-static void args_parse(char * args, int args_len)
-{
-	int x;
-	for(x = 0; x < (args_len - 1); x++)
-	{
-		if(args[x] == '+' || args[x] == '-')
-		{
-			int y;
-			for(y = 0; y < sizeof(o_logs) / sizeof(o_logs[0]); y++)
-			{
-				if(xstrcmp(&args[x+1], MIN(args_len - (x + 1), o_logs[y].l), o_logs[y].s, o_logs[y].l, 0) == 0)
-				{
-					if(args[x] == '+')
-						o_lgctx |= o_logs[y].v;
-
-					if(args[x] == '-')
-						o_lgctx &= ~o_logs[y].v;
-
-					x += o_logs[y].l + 1;
-				}
-			}
-		}
-	}
 }
 
 static int log_vstart(const uint64_t e)
@@ -193,6 +171,48 @@ static void log_vfinish(const char* fmt, va_list* va)
 // [[ public ]]
 //
 
+void log_active(char * s, size_t z)
+{
+	int l = 0;
+	int x;
+	for(x = 0; x < sizeof(o_logs) / sizeof(o_logs[0]); x++)
+	{
+		if((o_lgctx & o_logs[x].v) == o_logs[x].v)
+		{
+			if(l)
+				l += snprintf(s + l, z - l, " ");
+			l += snprintf(s + l, z - l, "+%s", o_logs[x].s);
+		}
+	}
+}
+
+void log_parse(char * args, int args_len)
+{
+	args_len = args_len ?: strlen(args);
+
+	int x;
+	for(x = 0; x < (args_len - 1); x++)
+	{
+		if(args[x] == '+' || args[x] == '-')
+		{
+			int y;
+			for(y = 0; y < sizeof(o_logs) / sizeof(o_logs[0]); y++)
+			{
+				if(xstrcmp(&args[x+1], MIN(args_len - (x + 1), o_logs[y].l), o_logs[y].s, o_logs[y].l, 0) == 0)
+				{
+					if(args[x] == '+')
+						o_lgctx |= o_logs[y].v;
+
+					if(args[x] == '-')
+						o_lgctx &= ~o_logs[y].v;
+
+					x += o_logs[y].l + 1;
+				}
+			}
+		}
+	}
+}
+
 int log_init(char * str)
 {
 	// determine logtag len
@@ -204,7 +224,7 @@ int log_init(char * str)
 	}
 
 	// apply initial args string
-	args_parse(str, strlen(str));
+	log_parse(str, 0);
 
 	// parse cmdline
 	int fd = open("/proc/self/cmdline", O_RDONLY);
@@ -232,7 +252,7 @@ int log_init(char * str)
 	}
 
 	// parse cmdline args
-	args_parse(args, args_len);
+	log_parse(args, args_len);
 
 	free(args);
 

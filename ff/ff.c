@@ -94,7 +94,18 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 	if(n)
 	{
 		if(n->type == FFN_GENERATOR)
-			fatal(generator_parse, gp, n->text, 0, &n->generator);
+		{
+			if(generator_parse(gp, n->text, 0, &n->generator) == 0)
+			{
+				fail("failed to parse '%s' @ [%3d,%3d - %3d,%3d]"
+					, n->text
+					, n->loc.f_lin + 1
+					, n->loc.f_col + 1
+					, n->loc.l_lin + 1
+					, n->loc.l_col + 1
+				);
+			}
+		}
 
 		int x;
 		for(x = 0; x < n->list_l; x++)
