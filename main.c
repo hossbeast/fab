@@ -115,7 +115,7 @@ int main(int argc, char** argv)
 			{
 				gn * gn = 0;
 				fatal(gn_add, ffn->ff_dir, g_args.targets[x], &gn);
-				fatal(lstack_obj_add, stax[p], &gn, LISTWISE_TYPE_GNLW);
+				fatal(lstack_obj_add, stax[p], gn, LISTWISE_TYPE_GNLW);
 			}
 			fatal(var_set, vmap, "*", stax[p++]);
 		}

@@ -4,6 +4,7 @@
 #include "ts.h"
 #include "fml.h"
 #include "gnlw.h"
+#include "args.h"
 
 #include "log.h"
 #include "control.h"
@@ -155,6 +156,24 @@ int bp_prune(bp * bp)
 		}
 	}
 
+	// process invalidations
+	if(g_args.invalidate_all)
+	{
+		for(x = 0; x < gn_nodes.l; x++)
+			gn_nodes.e[x]->changed = 1;
+	}
+	else
+	{
+		for(x = 0; x < g_args.invalidate_len; x++)
+		{
+			gn * gn = 0;
+			if((gn = idx_lookup_val(gn_nodes.by_path, (char*[]) { g_args.invalidate[x] }, 0)))
+			{
+				gn->changed = 1;
+			}
+		}
+	}
+
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		for(y = 0; y < bp->stages[x].targets_l; y++)
@@ -195,7 +214,6 @@ int bp_prune(bp * bp)
 				if(gn->rebuild && !gn->fml)
 				{
 					// file doesn't exist or has changed, is not a SOURCE file, and cannot be fabricated
-
 					log(L_ERROR, "file %s has no formula - required by %d", gn->path, gn->feeds.l);
 					for(i = 0; i < gn->feeds.l; i++)
 						log(L_BP | L_BPEVAL, "  ---> %s", gn->feeds.e[i]->path);
@@ -282,13 +300,17 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 {
 	ts ** ts			= 0;
 	int tsl				= 0;		// thread count
+	int tot				= 0;		// total targets
 	int y;
 	int x;
 	int i;
 
 	// determine how many threads are needed
 	for(x = 0; x < bp->stages_l; x++)
+	{
 		tsl = MAX(tsl, bp->stages[x].targets_l);
+		tot += bp->stages[x].targets_l;
+	}
 
 	fatal(xmalloc, &ts, sizeof(*ts) * tsl);
 	for(x = 0; x < tsl; x++)
@@ -297,7 +319,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		i = 0;
-		log(L_BP | L_BPEXEC, "STAGE %d/%d : %d/%d", x, bp->stages_l - 1, bp->stages[x].targets_l - 1, 0);
+		log(L_BP | L_BPEXEC, "STAGE %d/%d : %d/%d", x, bp->stages_l - 1, bp->stages[x].targets_l, tot);
 
 		// determine which nodes to fabricate on this stage
 		for(y = 0; y < bp->stages[x].targets_l; y++)
@@ -370,40 +392,30 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			close(ts[y]->stdo_fd);
 
 			uint64_t tag = L_FML | L_FMLEXEC;
-			if(ts[y]->r_status || ts[y]->stde_txt->l)
+			if(ts[y]->r_status || ts[y]->r_signal || ts[y]->stde_txt->l)
 				tag |= L_ERROR;
 
-			log(tag			, "%15s : %s"			, "target"				, ts[y]->gn->path);
-			if(log_would(L_FML | L_FMLEXEC))
+			log(tag											, "%15s : %s"			, "target"				, ts[y]->gn->path);
+			if(log_would(tag))
 			{
-				log(L_FML | L_FMLEXEC, "%15s : (%d)"	, "cmd text"			, ts[y]->cmd_txt->l);
+				log(tag										, "%15s : (%d)"		, "cmd text"			, ts[y]->cmd_txt->l);
 				write(2, ts[y]->cmd_txt->s, ts[y]->cmd_txt->l);
 			}
-			else
-			{
-				log(L_FML | L_FMLEXEC, "%15s"				, "cmd text");
-			}
-			log(tag			, "%15s : %d"			, "exit status"		, ts[y]->r_status);
-			log(tag			, "%15s : %d"			, "exit signal"		, ts[y]->r_signal);
-			log(L_FML | L_FMLEXEC, "%15s : %s"			, "stdout path"		, ts[y]->stdo_path->s);
+			if(log_would(L_FML | L_FMLEXEC) || ts[y]->r_status)
+				log(tag										, "%15s : %d"			, "exit status"		, ts[y]->r_status);
+			if(log_would(L_FML | L_FMLEXEC) || ts[y]->r_signal)
+				log(tag										, "%15s : %d"			, "exit signal"		, ts[y]->r_signal);
 			if(log_would(L_FML | L_FMLEXEC))
 			{
-				log(L_FML | L_FMLEXEC, "%15s : (%d)"	, "stdout text"		, ts[y]->stdo_txt->l);
+				log(tag										, "%15s : %s"			, "stdout path"		, ts[y]->stdo_path->s);
+				log(tag										, "%15s : (%d)"		, "stdout text"		, ts[y]->stdo_txt->l);
 				write(2, ts[y]->stdo_txt->s, ts[y]->stdo_txt->l);
 			}
-			else
+			if(log_would(L_FML | L_FMLEXEC) || ts[y]->stde_txt->l)
 			{
-				log(L_FML | L_FMLEXEC, "%15s"				, "stdout text");
-			}
-			log(L_FML | L_FMLEXEC, "%15s : %s"			, "stderr path"		, ts[y]->stde_path->s);
-			if(log_would(L_FML | L_FMLEXEC))
-			{
-				log(L_FML | L_FMLEXEC, "%15s : (%d)"	, "stderr text"		, ts[y]->stde_txt->l);
+				log(tag										,  "%15s : %s"		, "stderr path"		, ts[y]->stde_path->s);
+				log(tag										, "%15s : (%d)"		, "stderr text"		, ts[y]->stde_txt->l);
 				write(2, ts[y]->stde_txt->s, ts[y]->stde_txt->l);
-			}
-			else
-			{
-				log(L_FML | L_FMLEXEC, "%15s"				, "stderr text");
 			}
 
 			// SUCCESS if - exit status 0 and wrote nothing to stderr

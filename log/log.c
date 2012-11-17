@@ -60,6 +60,7 @@ static struct {
 	, { .v = L_DG				, .s = "DG"				}
 	, { .v = L_VAR			, .s = "VAR"			}
 	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	}
+	, { .v = L_TAG			, .s = "TAG"			}
 };
 
 static int o_name_len;

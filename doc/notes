@@ -116,3 +116,6 @@ TODO
 
 - stack based dependencies, and formulas, i.e. formula fabs 2 targets
 - right-to-left dependency evaluation
+
+- fablw - examine the dependency graph
+- list-in-command interpolation modes : no whitespace, commas, etc

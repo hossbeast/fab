@@ -3,9 +3,10 @@
 
 #include <sys/types.h>
 
-#define DEFAULT_FABFILE 	"fabfile"
-#define DEFAULT_EXECDIR		"/tmp/fab/exec"
-#define DEFAULT_HASHDIR		"/tmp/fab/hash"
+#define DEFAULT_FABFILE 				"fabfile"
+#define DEFAULT_EXECDIR_BASE		"/tmp/fab/exec"
+#define DEFAULT_HASHDIR					"/tmp/fab/hash"
+#define DEFAULT_INVALIDATE_ALL	0
 
 /* modes */
 
@@ -26,6 +27,8 @@ MODE_TABLE(0)
 extern struct g_args_t
 {
 	pid_t				pid;									// pid of this process
+	char				cwd[512];							// current working directory
+	int					cwdl;									// length
 
 	char				mode;									// one of MODE_*
 
@@ -38,8 +41,9 @@ extern struct g_args_t
 	char *			execdir;
 	char *			hashdir;
 
-	char **			invalid;							// graph nodes to invalidate
-	int					invalid_len;
+	char **			invalidate;							// graph nodes to invalidate
+	int					invalidate_len;
+	int					invalidate_all;
 } g_args;
 
 //// parse_args
