@@ -6,22 +6,20 @@
 	#include "ff.tokens.h"
 
 	#include "log.h"
-
-	#define MIN(a,b)            \
-	 ({ typeof (a) _a = (a);    \
-			 typeof (b) _b = (b);   \
-		 _a > _b ? _b : _a; })
+	#include "macros.h"
 
 	#define TOPSTATE(x) (x->states_n ? x->states[x->states_n-1] : 0)
 	#define STATENAME(x)	\
-		  x == INITIAL			? "INITIAL"					\
-		: x == quoteword		? "quoteword"				\
-		: x == generatorws	? "generatorws"			\
-		: x == generator		? "generator"				\
-		: x == generatorlf	? "generatorlf"			\
-		: x == command			? "command"					\
-		: x == checklw			? "checklw"					\
-		: x == list					? "list" : "UNKNWN"	\
+		  x == INITIAL					? "INITIAL"					\
+		: x == quoteword				? "quoteword"				\
+		: x == generatorws			? "generatorws"			\
+		: x == generator				? "generator"				\
+		: x == generatorlf			? "generatorlf"			\
+		: x == command					? "command"					\
+		: x == commandchecklit	? "commandchecklit"	\
+		: x == commandlit				? "commandlit"			\
+		: x == checklw					? "checklw"					\
+		: x == list							? "list" : "UNKNWN"	\
 
 	#define PUSHSTATE(a, b)																				\
 		do {																												\
@@ -42,11 +40,11 @@
 		} while(0)
 
 	#define PTOKEN(s, l, t, lc, ln)																					\
-			log(L_FF | L_FFTOKN, "%15s ) '%.*s'%*s @ [%3d,%3d - %3d,%3d] - %d"	\
+			log(L_FF | L_FFTOKN, "%8s ) '%.*s'%*s @ [%3d,%3d - %3d,%3d] - %d"		\
 				, ff_tokname(t)																										\
-				, MIN(t == LF ? 0 : t == WS ? 0 : l, 50)													\
+				, t == LF ? 0 : t == WS ? 0 : l																		\
 				, t == LF ? "" : t == WS ? "" : s																	\
-				, 50 - MIN(t == LF ? 0 : t == WS ? 0 : l, 50)											\
+				, MAX(50 - (t == LF ? 0 : t == WS ? 0 : l), 0)										\
 				, ""																															\
 				, lc->first_line																									\
 				, lc->first_column																								\
@@ -121,6 +119,8 @@
 %x generatorlf
 
 %s command
+%x commandchecklit
+%x commandlit
 %x checklw
 %s list
 
@@ -143,7 +143,16 @@
 
 <INITIAL>[^\n\t\\ :"$[{=\x00]+							{ return LEX(WORD); }
 <list>[^\n\t\\ "$[\]\x00]+									{ return LEX(WORD); }
-<command>[^\n\\}[\x00]+											{ return LEX(WORD); }
+<command>[^\n}[\x00]+												{ return LEX(WORD); }
+<commandchecklit>[\t ]+>										{
+																							POPSTATE(yyextra);
+																							PUSHSTATE(commandlit, yyextra);
+																						}
+<commandchecklit>.													{ POPSTATE(yyextra); yyless(0); }
+<commandlit>.*															{
+																							POPSTATE(yyextra);
+																							return LEX(WORD);
+																						}
 \\\\																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
 <INITIAL,list>\\[ ]													{ yytext++; yyleng--; return LEXX(WORD, 1); }
 <list>\\[$]																	{ yytext++; yyleng--; return LEXX(WORD, 1); }
@@ -156,6 +165,7 @@
 
 <INITIAL,list>\n														{ loc_reset(yyextra, yylloc); }
 <command>\n																	{
+																							PUSHSTATE(commandchecklit, yyextra);
 																							int x = LEX(LF);
 																							loc_reset(yyextra, yylloc);
 																							return x;
@@ -214,9 +224,7 @@
 																							POPSTATE(yyextra);
 																							return LEX(WS);
 																						}
-\\\\																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
-\\[ ]+																			{ yytext++; yyleng--; return LEXX(WORD, 1); }
-[^\\ \n\t]+																	{ return LEX(WORD); }
+[^\n\t ]+																		{ return LEX(WORD); }
 }
 <generatorlf>[\00-\xff]											{
 																							POPSTATE(yyextra);
@@ -253,7 +261,6 @@
 
 \x00																				{ return END; }
 <*>[\x00-\xff]															{
-																							locify(yyextra, yylloc, yyleng, 0);
 																							if(yytext[0] >= 0x20 && yytext[0] <= 0x7E)
 																							{
 																								log(L_ERROR | L_FF, "unknown character : '%c'(0x%02hhx)"
@@ -267,5 +274,6 @@
 																									, yytext[0]
 																								);
 																							}
-																							REJECT;
+																							yyextra->badchar = 1;
+																							return 0;
 																						}

@@ -48,7 +48,7 @@ int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * s
 				fail("reference to undefined variable : '%s'", list->elements[x]->name);
 			}
 
-			LSTACK_LOOP_ITER((*vls), i, go);
+			LSTACK_ITERATE((*vls), i, go);
 			if(go)
 			{
 				if((*vls)->s[0].s[i].type)
@@ -56,18 +56,18 @@ int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * s
 				else
 					fatal(lstack_add, (*ls)[p], (*vls)->s[0].s[i].s, (*vls)->s[0].s[i].l);
 			}
-			LSTACK_LOOP_DONE;
+			LSTACK_ITEREND;
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
 			fatal(list_resolve, list->elements[x], vmap, ls, stax_l, stax_a, ++pn);
 
-			LSTACK_LOOP_ITER((*ls)[pn], i, go);
+			LSTACK_ITERATE((*ls)[pn], i, go);
 			if(go)
 			{
 				fatal(lstack_add, (*ls)[p], (*ls)[pn]->s[0].s[i].s, (*ls)[pn]->s[0].s[i].l);
 			}
-			LSTACK_LOOP_DONE;
+			LSTACK_ITEREND;
 		}
 	}
 

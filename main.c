@@ -134,10 +134,10 @@ int main(int argc, char** argv)
 
 				// add edges, which are the cartesian product needs x feeds
 				gn * first = 0;
-				LSTACK_LOOP_ITER(stax[p], i, goa);
+				LSTACK_ITERATE(stax[p], i, goa);
 				if(goa)
 				{
-					LSTACK_LOOP_ITER(stax[p + 1], j, gob);
+					LSTACK_ITERATE(stax[p + 1], j, gob);
 					if(gob)
 					{
 						if(!first)
@@ -145,9 +145,9 @@ int main(int argc, char** argv)
 						else
 							fatal(gn_edge_add, ffn->statements[x]->ff_dir, stax[p]->s[0].s[i].s, stax[p + 1]->s[0].s[j].s, 0);
 					}
-					LSTACK_LOOP_DONE;
+					LSTACK_ITEREND;
 				}
-				LSTACK_LOOP_DONE;
+				LSTACK_ITEREND;
 
 				if(!def)
 				{

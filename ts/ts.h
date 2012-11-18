@@ -4,12 +4,18 @@
 #include <sys/types.h>
 
 #include "gn.h"
+#include "fml/fml.h"
+
 #include "pstring.h"
 
 // thread workspace
 typedef struct 
 {
+/*
 	gn *			gn;					// graph node being fabricated
+*/
+
+	fmleval * fmlv;				// fml evaluation context
 
 	pid_t			pid;				// child pid
 

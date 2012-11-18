@@ -109,10 +109,16 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 
 		int x;
 		for(x = 0; x < n->list_l; x++)
-			fatal(parse_generators, n->list[x], gp);
+		{
+			if(parse_generators(n->list[x], gp) == 0)
+				return 0;
+		}
 
 		for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
-			fatal(parse_generators, n->nodes[x], gp);
+		{
+			if(parse_generators(n->nodes[x], gp) == 0)
+				return 0;
+		}
 	}
 
 	return 1;
@@ -271,7 +277,8 @@ int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const re
 		strmeasure(*ffn);
 
 		// parse generator strings
-		fatal(parse_generators, *ffn, p->gp);
+		if(parse_generators(*ffn, p->gp) == 0)
+			return 0;
 	}
 	else
 	{
@@ -447,7 +454,8 @@ void ff_dump(ff_node * const restrict root)
 void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 {
 	pp->r = 0;
-	log(L_ERROR | L_FF, "%s", err);		// bison error
+	if(!pp->badchar)
+		log(L_ERROR | L_FF, "%s", err);		// bison error
 
 	int t						= pp->last_tok;
 	const char * s	= pp->last_s;

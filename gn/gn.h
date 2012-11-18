@@ -12,6 +12,7 @@
 
 #define GN_VERSION				0x01
 
+struct fmleval;
 typedef struct gn
 {
 	/* exported to listwise - maintain corresponding length */
@@ -72,8 +73,8 @@ typedef struct gn
 		};
 	} feeds;
 
-	// formula for fabricating this node
-	struct fml *			fml;
+	// formula evaluation context which fabricates this node
+	struct fmleval *	fmlv;
 
 	// tracking fields
 	char							mark;

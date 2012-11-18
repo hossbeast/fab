@@ -326,17 +326,19 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 		{
 			ts[i]->gn = bp->stages[x].targets[y];
 
-			// populate variables resident in this context @ is the target to fabricate
+
+			// populate variables resident in this context : @ is the products of this formula evaluation
 			int pn = p;
 			if((*stax_a) <= pn)
 			{
 				fatal(xrealloc, stax, sizeof(**stax), pn + 1, (*stax_a));
 				(*stax_a) = pn + 1;
 			}
-			if(!(*stax)[p])
-				fatal(xmalloc, &(*stax)[p], sizeof(*(*stax)[p]));
+			if(!(*stax)[pn])
+				fatal(xmalloc, &(*stax)[pn], sizeof(*(*stax)[0]));
 			lstack_reset((*stax)[pn]);
 
+			
 			fatal(lstack_obj_add, (*stax)[pn], ts[i]->gn, LISTWISE_TYPE_GNLW);
 			fatal(var_set, vmap, "@", (*stax)[pn++]);
 

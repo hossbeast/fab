@@ -12,9 +12,34 @@
 #include "coll.h"
 #include "map.h"
 
+#define FMLEVAL_SINGLE		0x00
+#define FMLEVAL_MULTI			0x01
+
+struct fml;
+
+/// fmleval
+//
+// an instance of a formula evaluation with a list of products
+//
+typedef struct fmleval
+{
+	struct fml *	fml;				// the formula
+
+	uint8_t				type;				// one of FMLEVAL_*
+
+	struct										// FMLEVAL_MULTI
+	{
+		gn **				products;
+		int					products_l;
+	};
+} fmleval;
+
 typedef struct fml
 {
-	ff_node *		ffn;		// ff_node for this formula
+	ff_node *		ffn;					// ff_node for this formula
+
+	fmleval *		evals;				// evaluation instances
+	int					evals_l;
 } fml;
 
 extern union g_fmls_t

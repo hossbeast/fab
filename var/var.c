@@ -14,7 +14,7 @@ int var_set(map * vmap, char * s, lstack * ls)
 	int i = 0;
 	int j = 0;
 
-	LSTACK_LOOP_ITER(ls, i, go);
+	LSTACK_ITERATE(ls, i, go);
 	if(go)
 	{
 		if(j++)
@@ -36,7 +36,7 @@ int var_set(map * vmap, char * s, lstack * ls)
 		else
 			log_add("%.*s", ls->s[0].s[i].l, ls->s[0].s[i].s);
 	}
-	LSTACK_LOOP_DONE;
+	LSTACK_ITEREND;
 	log_finish(" ]");
 
 	// save the resultant list

@@ -115,7 +115,9 @@ TODO
  : hash invalidation - force rebuild
 
 - stack based dependencies, and formulas, i.e. formula fabs 2 targets
+- multi-target formulas
 - right-to-left dependency evaluation
+- generator-string variables, and composition from variables
 
 - fablw - examine the dependency graph
 - list-in-command interpolation modes : no whitespace, commas, etc

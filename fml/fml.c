@@ -82,42 +82,118 @@ static int resolve_idepsc(pstring ** p, gn * gn)
 //
 int fml_add(ff_node * ffn, lstack * ls)
 {
+	int x;
+	int y;
+	int i;
+
 	// ffn is an FFN_FORMULA
 	fml * fml = 0;
 	fatal(coll_doubly_add, &g_fmls.c, 0, &fml);
 	fml->ffn = ffn;
 
-	int i;
-	LSTACK_LOOP_ITER(ls, i, go);
-	if(go)
+	// attach graph nodes
+	if(ls->l == 1)
 	{
-		gn* t = 0;
-		if(ls->s[0].s[i].l && ls->s[0].s[i].s[0] == '/')
-			t = idx_lookup_val(gn_nodes.by_path, &ls->s[0].s[i].s, 0);
-		else
+		// single-target formula
+		fml->evals_l = 1;
+		fatal(xmalloc, &fml->evals, sizeof(fml->evals[0]) * fml->evals_l);
+		fmleval * fmlv = &fml->evals[0];
+		fmlv->fml = fml;
+		fmlv->type = FMLEVAL_SINGLE;
+
+		LSTACK_ITERATE(ls, y, go);
+		if(go)
 		{
-			int x;
-			for(x = 0; x < gn_nodes.l; x++)
+			gn* t = 0;
+			if(ls->s[0].s[y].l && ls->s[0].s[y].s[0] == '/')
+				t = idx_lookup_val(gn_nodes.by_path, &ls->s[0].s[y].s, 0);
+			else
 			{
-				if(strcmp(gn_nodes.e[x]->dir, ffn->ff_dir) == 0 && strcmp(ls->s[0].s[i].s, gn_nodes.e[x]->name) == 0)
+				int i;
+				for(i = 0; i < gn_nodes.l; i++)
 				{
-					t = gn_nodes.e[x];
-					break;
+					if(strcmp(gn_nodes.e[i]->dir, ffn->ff_dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[0].s[y].s) == 0)
+					{
+						t = gn_nodes.e[i];
+						break;
+					}
+				}
+			}
+
+			if(t)
+			{
+				log(L_FML | L_FMLTARG, "formula -> %s @ [%3d,%3d - %3d,%3d]"
+					, t->path
+					, fml->ffn->loc.f_lin + 1
+					, fml->ffn->loc.f_col + 1
+					, fml->ffn->loc.l_lin + 1
+					, fml->ffn->loc.l_col + 1
+				);
+				t->fmlv = fmlv;
+			}
+			else
+			{
+				log(L_ERROR, "formula target unresolved %s @ [%3d,%3d - %3d,%3d]"
+					, ls->s[0].s[y].s
+					, fml->ffn->loc.f_lin + 1
+					, fml->ffn->loc.f_col + 1
+					, fml->ffn->loc.l_lin + 1
+					, fml->ffn->loc.l_col + 1
+				);
+			}	
+		}
+		LSTACK_ITEREND;
+	}
+	else
+	{
+		// multi-target formula
+		fml->evals_l = ls->l;
+		fatal(xmalloc, &fml->evals, sizeof(fml->evals[0]) * fml->evals_l);
+
+		for(x = 0; x < ls->l; x++)
+		{
+			fmleval * fmlv = &fml->evals[x];
+			fmlv->fml = fml;
+			fmlv->type = FMLEVAL_MULTI;
+			fmlv->products_l = ls->s[x].l;
+			fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
+
+			for(y = 0; y < ls->s[x].l; y++)
+			{
+				gn * t = 0;
+				if(ls->s[x].s[y].l && ls->s[x].s[y].s[0] == '/')
+					t = idx_lookup_val(gn_nodes.by_path, &ls->s[x].s[y].s, 0);
+				else
+				{
+					int i;
+					for(i = 0; i < gn_nodes.l; i++)
+					{
+						if(strcmp(gn_nodes.e[i]->dir, ffn->ff_dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[x].s[y].s) == 0)
+						{
+							t = gn_nodes.e[i];
+							break;
+						}
+					}
+				}
+
+				if(t)
+				{
+					fmlv->products[y] = t;
+					t->fmlv = fmlv;
+				}
+				else
+				{
+					log(L_ERROR, "formula target unresolved %s @ [%3d,%3d - %3d,%3d]"
+						, ls->s[x].s[y].s
+						, fml->ffn->loc.f_lin + 1
+						, fml->ffn->loc.f_col + 1
+						, fml->ffn->loc.l_lin + 1
+						, fml->ffn->loc.l_col + 1
+					);
 				}
 			}
 		}
-
-		if(t)
-		{
-			log(L_FML | L_FMLTARG, "formula %p matches %s", fml, t->path);
-			t->fml = fml;
-		}
-		else
-		{
-			log(L_ERROR, "formula %p references unresolved target %s", fml, ls->s[0].s[i].s);
-		}	
 	}
-	LSTACK_LOOP_DONE;
 }
 
 int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
@@ -149,7 +225,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 			fatal(list_resolve, ffn->commands[x], vmap, stax, stax_l, stax_a, p);
 
 			int i;
-			LSTACK_LOOP_ITER((*stax)[p], i, go);
+			LSTACK_ITERATE((*stax)[p], i, go);
 			if(go)
 			{
 				if(k)
@@ -162,7 +238,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 				fatal(pscat, &ts->cmd_txt, s, l);
 				k++;
 			}
-			LSTACK_LOOP_DONE;
+			LSTACK_ITEREND;
 		}
 	}
 
