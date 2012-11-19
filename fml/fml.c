@@ -85,6 +85,7 @@ int fml_add(ff_node * ffn, lstack * ls)
 	int x;
 	int y;
 	int i;
+	int R = 1;
 
 	// ffn is an FFN_FORMULA
 	fml * fml = 0;
@@ -95,15 +96,17 @@ int fml_add(ff_node * ffn, lstack * ls)
 	if(ls->l == 1)
 	{
 		// single-target formula
-		fml->evals_l = 1;
+		fml->evals_l = ls->s[0].l;
 		fatal(xmalloc, &fml->evals, sizeof(fml->evals[0]) * fml->evals_l);
-		fmleval * fmlv = &fml->evals[0];
-		fmlv->fml = fml;
-		fmlv->type = FMLEVAL_SINGLE;
 
 		LSTACK_ITERATE(ls, y, go);
 		if(go)
 		{
+			fmleval * fmlv = &fml->evals[y];
+			fmlv->fml = fml;
+			fmlv->products_l = 1;
+			fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
+
 			gn* t = 0;
 			if(ls->s[0].s[y].l && ls->s[0].s[y].s[0] == '/')
 				t = idx_lookup_val(gn_nodes.by_path, &ls->s[0].s[y].s, 0);
@@ -122,13 +125,14 @@ int fml_add(ff_node * ffn, lstack * ls)
 
 			if(t)
 			{
-				log(L_FML | L_FMLTARG, "formula -> %s @ [%3d,%3d - %3d,%3d]"
+				log(L_FML | L_FMLTARG, "formula -> %s @ [%3d,%3d - %3d,%3d] single"
 					, t->path
 					, fml->ffn->loc.f_lin + 1
 					, fml->ffn->loc.f_col + 1
 					, fml->ffn->loc.l_lin + 1
 					, fml->ffn->loc.l_col + 1
 				);
+				fmlv->products[0] = t;
 				t->fmlv = fmlv;
 			}
 			else
@@ -140,6 +144,7 @@ int fml_add(ff_node * ffn, lstack * ls)
 					, fml->ffn->loc.l_lin + 1
 					, fml->ffn->loc.l_col + 1
 				);
+				R = 0;
 			}	
 		}
 		LSTACK_ITEREND;
@@ -154,7 +159,6 @@ int fml_add(ff_node * ffn, lstack * ls)
 		{
 			fmleval * fmlv = &fml->evals[x];
 			fmlv->fml = fml;
-			fmlv->type = FMLEVAL_MULTI;
 			fmlv->products_l = ls->s[x].l;
 			fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
 
@@ -178,6 +182,14 @@ int fml_add(ff_node * ffn, lstack * ls)
 
 				if(t)
 				{
+					log(L_FML | L_FMLTARG, "formula -> %s @ [%3d,%3d - %3d,%3d] multi"
+						, t->path
+						, fml->ffn->loc.f_lin + 1
+						, fml->ffn->loc.f_col + 1
+						, fml->ffn->loc.l_lin + 1
+						, fml->ffn->loc.l_col + 1
+					);
+
 					fmlv->products[y] = t;
 					t->fmlv = fmlv;
 				}
@@ -190,10 +202,13 @@ int fml_add(ff_node * ffn, lstack * ls)
 						, fml->ffn->loc.l_lin + 1
 						, fml->ffn->loc.l_col + 1
 					);
+					R = 0;
 				}
 			}
 		}
 	}
+
+	return R;
 }
 
 int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
@@ -201,7 +216,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 	// start with shebang
 	fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
 
-	ff_node * ffn = ts->gn->fml->ffn;
+	ff_node * ffn = ts->fmlv->fml->ffn;
 
 	int k = 0;
 	int x;

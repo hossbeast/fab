@@ -237,7 +237,6 @@ int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const re
 
 	// create state specific to this parse
 	void* state = 0;
-
 	if((state = ff_yy_scan_bytes(b, statbuf.st_size + 2, p->p)) == 0)
 		fail("scan_bytes failed");
 

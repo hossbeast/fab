@@ -82,7 +82,7 @@ static void gn_stat(gn * n)
 	);
 }
 
-static int gn_create(char * cwd, char * A, gn ** gna, int * new)
+static int gn_create(char * cwd, char * A, int Al, gn ** gna, int * new)
 {
 	char * p = 0;
 
@@ -143,12 +143,12 @@ static int gn_create(char * cwd, char * A, gn ** gna, int * new)
 // public
 //
 
-int gn_add(char * cwd, char * A, gn ** r)
+int gn_add(char * cwd, char * A, int Al, gn ** r)
 {
 	gn *	gna = 0;
 	int		new = 0;
 
-	fatal(gn_create, cwd, A, &gna, &new);
+	fatal(gn_create, cwd, A, Al, &gna, &new);
 
 	if(new)
 	{
@@ -175,9 +175,11 @@ int gn_add(char * cwd, char * A, gn ** r)
 
 	if(r)
 		*r = gna;
+
+	return 1;
 }
 
-int gn_edge_add(char* cwd, char* A, char* B, gn ** r)
+int gn_edge_add(char* cwd, char* A, int Al, char* B, int Bl, gn ** r)
 {
 	gn *	gna = 0;
 	gn *	gnb = 0;
@@ -225,7 +227,6 @@ void gn_dump(gn * n)
 	if(log_would(L_DG | L_DGRAPH))
 	{
 		log(L_DG | L_DGRAPH, "%8s : %s", "path", n->path);
-		log(L_DG | L_DGRAPH, "%10s : %p", "fml", n->fml);
 		log(L_DG | L_DGRAPH, "%10s : %d", "size", (int)n->size);
 		if(n->mtime)
 		{

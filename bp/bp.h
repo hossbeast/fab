@@ -5,14 +5,15 @@
 
 /* bp - build plan */
 #include "gn.h"
+#include "fml.h"
 
 #include "map.h"
 
 // actions to be performed in a single build stage
 typedef struct 
 {
-	gn ** targets;
-	int		targets_l;
+	fmleval **	evals;
+	int					evals_l;
 } bp_stage;
 
 // build plan

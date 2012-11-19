@@ -16,6 +16,7 @@
 #include "log.h"
 #include "map.h"
 #include "var.h"
+#include "dep.h"
 
 #include "control.h"
 
@@ -98,6 +99,9 @@ int main(int argc, char** argv)
 		fatal(lstack_add, stax[p], ffn->ff_dir, strlen(ffn->ff_dir));
 		fatal(var_set, vmap, "#", stax[p++]);
 
+		// first dependency found is the default for "*"
+		int star = 0;
+
 		if(g_args.targets_len)
 		{
 			// use up one list and populate the * variable (root-level targets)
@@ -114,57 +118,36 @@ int main(int argc, char** argv)
 			for(x = 0; x < g_args.targets_len; x++)
 			{
 				gn * gn = 0;
-				fatal(gn_add, ffn->ff_dir, g_args.targets[x], &gn);
+				fatal(gn_add, ffn->ff_dir, g_args.targets[x], 0, &gn);
 				fatal(lstack_obj_add, stax[p], gn, LISTWISE_TYPE_GNLW);
 			}
 			fatal(var_set, vmap, "*", stax[p++]);
+			star = 1;
 		}
-
-		// the first target is the default
-		gn * def = 0;
 
 		// process the fabfile tree, constructing the graph
 		for(x = 0; x < ffn->statements_l; x++)
 		{
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
-				// resolve both lists
-				fatal(list_resolve, ffn->statements[x]->needs, vmap, &stax, &stax_l, &stax_a, p);
-				fatal(list_resolve, ffn->statements[x]->feeds, vmap, &stax, &stax_l, &stax_a, p + 1);
-
-				// add edges, which are the cartesian product needs x feeds
 				gn * first = 0;
-				LSTACK_ITERATE(stax[p], i, goa);
-				if(goa)
-				{
-					LSTACK_ITERATE(stax[p + 1], j, gob);
-					if(gob)
-					{
-						if(!first)
-							fatal(gn_edge_add, ffn->statements[x]->ff_dir, stax[p]->s[0].s[i].s, stax[p + 1]->s[0].s[j].s, &first);
-						else
-							fatal(gn_edge_add, ffn->statements[x]->ff_dir, stax[p]->s[0].s[i].s, stax[p + 1]->s[0].s[j].s, 0);
-					}
-					LSTACK_ITEREND;
-				}
-				LSTACK_ITEREND;
+				fatal(dep_add, ffn->statements[x], vmap, &stax, &stax_l, &stax_a, p, &first);
 
-				if(!def)
+				if(!star)
 				{
-					def = first;
-
 					// use up one list and populate the * variable (root-level targets)
 					if(stax_a <= p)
 					{
-						fatal(xrealloc, &stax, sizeof(*stax), p + 1, stax_a);
+						fatal(xrealloc, &(*stax), sizeof(*(*stax)), p + 1, stax_a);
 						stax_a = p + 1;
 					}
-					if(!stax[p])
-						fatal(xmalloc, &stax[p], sizeof(*stax[p]));
-					lstack_reset(stax[p]);
+					if(!(*stax)[p])
+						fatal(xmalloc, &(*stax)[p], sizeof(*(*stax)[p]));
+					lstack_reset((*stax)[p]);
 
-					fatal(lstack_obj_add, stax[p], def, LISTWISE_TYPE_GNLW);
-					fatal(var_set, vmap, "*", stax[p++]);
+					fatal(lstack_obj_add, (*stax)[p], def, LISTWISE_TYPE_GNLW);
+					fatal(var_set, vmap, "*", (*stax)[p++]);
+					star = 1;
 				}
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)

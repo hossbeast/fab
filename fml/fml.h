@@ -12,8 +12,6 @@
 #include "coll.h"
 #include "map.h"
 
-#define FMLEVAL_SINGLE		0x00
-#define FMLEVAL_MULTI			0x01
 
 struct fml;
 
@@ -25,12 +23,10 @@ typedef struct fmleval
 {
 	struct fml *	fml;				// the formula
 
-	uint8_t				type;				// one of FMLEVAL_*
-
-	struct										// FMLEVAL_MULTI
+	struct
 	{
-		gn **				products;
-		int					products_l;
+		gn **					products;
+		int						products_l;
 	};
 } fmleval;
 

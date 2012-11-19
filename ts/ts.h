@@ -4,9 +4,10 @@
 #include <sys/types.h>
 
 #include "gn.h"
-#include "fml/fml.h"
 
 #include "pstring.h"
+
+struct fmleval;
 
 // thread workspace
 typedef struct 
@@ -15,7 +16,7 @@ typedef struct
 	gn *			gn;					// graph node being fabricated
 */
 
-	fmleval * fmlv;				// fml evaluation context
+	struct fmleval * fmlv;				// fml evaluation context
 
 	pid_t			pid;				// child pid
 

@@ -75,6 +75,12 @@ void log(const uint64_t bits, const char* fmt, ...)
 void log_start(const uint64_t bits, const char* fmt, ...)
 	__attribute__((nonnull));
 
+/// log_add
+//
+//
+//
+void log_add(const char* fmt, ...);
+
 /// log_finish
 //
 // complete the log begun with log_start
