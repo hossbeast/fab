@@ -269,11 +269,11 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 	int x;
 	for(x = 0; x < ffn->commands_l; x++)
 	{
-		if(k)
-			fatal(pscat, &ts->cmd_txt, " ", 1);
-
 		if(ffn->commands[x]->type == FFN_WORD)
 		{
+			if(k)
+				fatal(pscat, &ts->cmd_txt, " ", 1);
+
 			fatal(pscatf, &ts->cmd_txt, ffn->commands[x]->text);
 			k++;
 		}

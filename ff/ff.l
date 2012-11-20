@@ -144,7 +144,7 @@
 <INITIAL>[^\n\t\\ :"$[{=\x00]+							{ return LEX(WORD); }
 <list>[^\n\t\\ "$[\]\x00]+									{ return LEX(WORD); }
 <command>[^\n}[\x00]+												{ return LEX(WORD); }
-<commandchecklit>[\t ]+>										{
+<commandchecklit>\t+>[\t ]+									{
 																							POPSTATE(yyextra);
 																							PUSHSTATE(commandlit, yyextra);
 																						}

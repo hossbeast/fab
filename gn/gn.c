@@ -8,6 +8,7 @@
 
 #include "log.h"
 #include "control.h"
+#include "fml.h"
 
 #include "args.h"
 #include "xmem.h"
@@ -262,29 +263,61 @@ void gn_dump(gn * n)
 	if(log_would(L_DG | L_DGRAPH))
 	{
 		log(L_DG | L_DGRAPH, "%8s : %s", "path", n->path);
-		log(L_DG | L_DGRAPH, "%10s : %d", "size", (int)n->size);
+		if(n->fmlv)
+		{
+			if(n->needs.l)
+				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "SECONDARY");
+			else
+				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "GENERATED");
+		}
+		else if(n->needs.l)
+		{
+			log(L_WARN | L_DG | L_DGRAPH, "%12s : %s", "designation", "SECONDARY (no formula)");
+		}
+		else
+		{
+			log(L_DG | L_DGRAPH, "%12s : %s", "designation", "PRIMARY");
+		}
+		log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)n->size);
 		if(n->mtime)
 		{
 			struct tm ltm;
 			localtime_r(&n->mtime, &ltm);
 			strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
 
-			log(L_DG | L_DGRAPH, "%10s : %s", "mtime-abs", space);
-			log(L_DG | L_DGRAPH, "%10s : %s", "mtime-del", durationstring(time(0) - n->mtime));
+			log(L_DG | L_DGRAPH, "%12s : %s", "mtime-abs", space);
+			log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - n->mtime));
 		}
 		else
 		{
-			log(L_DG | L_DGRAPH, "%10s : %s", "mtime", "");
+			log(L_DG | L_DGRAPH, "%12s : %s", "mtime", "");
 		}
 
-		log(L_DG | L_DGRAPH, "%10s : %d", "needs", n->needs.l);
+		if(n->fmlv)
+		{
+			log(L_DG | L_DGRAPH, "%12s : [%3d,%3d - %3d,%3d]", "formula"
+				, n->fmlv->fml->ffn->loc.f_lin + 1
+				, n->fmlv->fml->ffn->loc.f_col + 1
+				, n->fmlv->fml->ffn->loc.l_lin + 1
+				, n->fmlv->fml->ffn->loc.l_col + 1
+			);
+
+			if(n->fmlv->products_l > 1)
+			{
+				int x;
+				for(x = 0; x < n->fmlv->products_l; x++)
+					log(L_DG | L_DGRAPH, "%12s --> %s", "", n->fmlv->products[x]->path);
+			}
+		}
+
+		log(L_DG | L_DGRAPH, "%12s : %d", "needs", n->needs.l);
 		int x;
 		for(x = 0; x < n->needs.l; x++)
-			log(L_DG | L_DGRAPH, "%10s --> %s", "", n->needs.e[x]->path);
+			log(L_DG | L_DGRAPH, "%12s --> %s", "", n->needs.e[x]->path);
 
-		log(L_DG | L_DGRAPH, "%10s : %d", "feeds", n->feeds.l);
+		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", n->feeds.l);
 		for(x = 0; x < n->feeds.l; x++)
-			log(L_DG | L_DGRAPH, "%10s --> %s", "", n->feeds.e[x]->path);
+			log(L_DG | L_DGRAPH, "%12s --> %s", "", n->feeds.e[x]->path);
 
 		log(L_DG | L_DGRAPH, "");
 	}

@@ -12,8 +12,14 @@
 // actions to be performed in a single build stage
 typedef struct 
 {
-	fmleval **	evals;
-	int					evals_l;
+	fmleval **	evals;				// evaluations to be carried out which result in 1 or more
+	int					evals_l;			//  SECONDARY/GENERATED files
+
+	gn **				nofmls;				// placeholders for SECONDARY nodes which are needed but which have no fml
+	int					nofmls_l;			//  i.e. these are errors being aggregated
+
+	gn **				primary;			// source files
+	int					primary_l;
 } bp_stage;
 
 // build plan

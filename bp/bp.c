@@ -9,30 +9,34 @@
 #include "log.h"
 #include "control.h"
 #include "xmem.h"
+#include "macros.h"
 
-#define MAX(a,b)            \
- ({ typeof (a) _a = (a);    \
-     typeof (b) _b = (b);   \
-   _a > _b ? _a : _b; })
+/*
+** BPEVAL graph node designations
+**
+** GENERATED - has no dependencies, can be fabricated by some formula
+** PRIMARY   - has no dependencies, has no formula
+** SECONDARY - has dependencies, and can be fabricated by some formula
+*/
 
 //
 // static
 //
+
+static int gn_cmp(const void * _A, const void * _B)
+{
+	gn * A = *((gn **)_A);
+	gn * B = *((gn **)_B);
+
+	return strcmp(A->path, B->path);
+}
 
 static int fmleval_cmp(const void * _A, const void * _B)
 {
 	fmleval * A = *((fmleval **)_A);
 	fmleval * B = *((fmleval **)_B);
 
-	gn * gna = A->product;
-	if(A->fml)
-		gna = A->products[0];
-
-	gn * gnb = B->product;
-	if(B->fml)
-		gnb = B->products[0];
-
-	return strcmp(gna->path, gnb->path);
+	return gn_cmp(&A->products[0], &B->products[0]);
 }
 
 static void reset(gn * n)
@@ -119,16 +123,30 @@ int bp_create(gn ** n, int l, bp ** bp)
 				// ptr to the stage we will add to
 				bp_stage * bps = &(*bp)->stages[k];
 
-				// reallocate the stage - the ceiling of new evaluation contexts is the number of nodes found
+				// reallocate the stage - the ceiling for these allocations is the number of nodes found
 				fatal(xrealloc
 					, &bps->evals
 					, sizeof(bps->evals[0])
 					, bps->evals_l + lvsl
 					, bps->evals_l
 				);
+				fatal(xrealloc
+					, &bps->nofmls
+					, sizeof(bps->nofmls[0])
+					, bps->nofmls_l + lvsl
+					, bps->nofmls_l
+				);
+				fatal(xrealloc
+					, &bps->primary
+					, sizeof(bps->primary[0])
+					, bps->primary_l + lvsl
+					, bps->primary_l
+				);
 
-				// add eval contexts one-at-a-time
-				int cnt = 0;
+				// process nodes found on the last visit
+				int evals_cnt = 0;
+				int nofmls_cnt = 0;
+				int primary_cnt = 0;
 				int y;
 				for(y = 0; y < lvsl; y++)
 				{
@@ -144,7 +162,7 @@ int bp_create(gn ** n, int l, bp ** bp)
 								lvs[y]->fmlv->products[i]->mark++;
 
 							// add this eval context to the stage
-							bps->evals[bps->evals_l + (cnt++)] = lvs[y]->fmlv;
+							bps->evals[bps->evals_l + (evals_cnt++)] = lvs[y]->fmlv;
 						}
 						else if(lvs[y]->needs.l)
 						{
@@ -156,19 +174,24 @@ int bp_create(gn ** n, int l, bp ** bp)
 							//
 							log(L_WARN, "no formula - %s", lvs[y]->path);
 
-							bps->evals[bps->evals_l + cnt] = calloc(1, sizeof(*bps->evals[0]));
-							bps->evals[bps->evals_l + cnt]->product = lvs[y];
-							cnt++;
+							bps->nofmls[bps->nofmls_l + (nofmls_cnt++)] = lvs[y];
+						}
+						else
+						{
+							// this is a source file
+							bps->primary[bps->primary_l + (primary_cnt++)] = lvs[y];
 						}
 					}
 				}
 
-				bps->evals_l += cnt;
+				bps->evals_l += evals_cnt;
+				bps->nofmls_l += nofmls_cnt;
+				bps->primary_l += primary_cnt;
 			}
 		}
 	}
 
-	// internally sort evals of each stage by name of their first product
+	// internally sort lists in each stage by name of their first product
 	for(x = 0; x < (*bp)->stages_l; x++)
 	{
 		qsort(
@@ -176,6 +199,18 @@ int bp_create(gn ** n, int l, bp ** bp)
 			, (*bp)->stages[x].evals_l
 			, sizeof((*bp)->stages[0].evals[0])
 			, fmleval_cmp
+		);
+		qsort(
+			  (*bp)->stages[x].nofmls
+			, (*bp)->stages[x].nofmls_l
+			, sizeof((*bp)->stages[0].nofmls[0])
+			, gn_cmp
+		);
+		qsort(
+			  (*bp)->stages[x].primary
+			, (*bp)->stages[x].primary_l
+			, sizeof((*bp)->stages[0].primary[0])
+			, gn_cmp
 		);
 	}
 
@@ -188,29 +223,6 @@ int bp_prune(bp * bp)
 	int y;
 	int i;
 	int k;
-
-	// mark all nodes as not needing to be rebuilt
-	for(x = 0; x < bp->stages_l; x++)
-	{
-		for(y = 0; y < bp->stages[x].evals_l; y++)
-		{
-			if(bp->stages[x].evals[y]->fml)
-			{
-				for(i = 0; i < bp->stages[x].evals[y]->products_l; i++)
-				{
-					bp->stages[x].evals[y]->products[i]->changed = 0;
-					bp->stages[x].evals[y]->products[i]->rebuild = 0;
-					bp->stages[x].evals[y]->products[i]->poison = 0;
-				}
-			}
-			else
-			{
-				bp->stages[x].evals[y]->product->changed = 0;
-				bp->stages[x].evals[y]->product->rebuild = 0;
-				bp->stages[x].evals[y]->product->poison = 0;
-			}
-		}
-	}
 
 	// process invalidations
 	if(g_args.invalidate_all)
@@ -230,71 +242,87 @@ int bp_prune(bp * bp)
 		}
 	}
 
-	int bp_bad = 0;
+	int poisoned = 0;
 	for(x = 0; x < bp->stages_l; x++)
 	{
+		int c = 0;
+		for(y = 0; y < bp->stages[x].primary_l; y++)
+		{
+			// source files
+			gn * gn = bp->stages[x].primary[y];
+
+			if(gn->prop_hash[1] == 0)		// file does not exist
+			{
+				// SOURCE file - not found
+				log(L_ERROR, "[%2d,%2d] %-9s file %s not found - feeds %d", x, y, "PRIMARY", gn->path, gn->feeds.l);
+				gn->poison = 1;
+			}
+			else
+			{
+				gn_hashes_read(gn);
+
+				if(gn_hashes_cmp(gn))		// hashes do not agree; file has changed
+					gn->changed = 1;
+			}
+
+			// needs rebuilt
+			if(gn->changed)
+			{
+				// : mark all nodes that depend on me as needing rebuilt, too
+				for(i = 0; i < gn->feeds.l; i++)
+					gn->feeds.e[i]->rebuild = 1;
+			}
+
+			// propagate the poison
+			if(gn->poison)
+			{
+				for(i = 0; i < gn->feeds.l; i++)
+					gn->feeds.e[i]->poison = 1;
+
+				poisoned = 1;
+			}
+
+			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+				, x, c++
+				, "PRIMARY"
+				, gn->path
+				, ""
+				, gn->changed ? "  changed" : "unchanged"
+			);
+		}
+
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
-			k = 0;
-			while(k == 0 || bp->stages[x].evals[y]->fml)
-			{
-				gn * gn = bp->stages[x].evals[y]->product;
-				if(bp->stages[x].evals[y]->fml)
-				{
-					if(k == bp->stages[x].evals[y]->products_l)
-						break;
+			// whether NONE of the products of this eval context require rebuilding
+			int keep = 0;
 
-					gn = bp->stages[x].evals[y]->products[k];
-				}
-				k++;
+			for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
+			{
+				// GENERATED and SECONDARY files
+				gn * gn = bp->stages[x].evals[y]->products[k];
 
 				if(!gn->poison)
 				{
 					if(gn->needs.l)
 					{
+						// SECONDARY file
 						if(gn->prop_hash[1] == 0)
-							gn->changed = 1;	// file doesn't exist
-
-						if(gn->changed)
-							gn->rebuild = 1;
+							gn->rebuild = 1;	// file doesn't exist
 					}
-					else
+					else if(gn->fmlv)
 					{
-						// SOURCE file
-						if(gn->prop_hash[1] == 0)		// file does not exist
-						{
-							// SOURCE file - not found
-							log(L_ERROR, "SOURCE file %s not found - required by %d", gn->path, gn->feeds.l);
-							for(i = 0; i < gn->feeds.l; i++)
-								log(L_BP | L_BPEVAL, "  ---> %s", gn->feeds.e[i]->path);
-
-							gn->poison = 1;
-						}
-						else
-						{
-							gn_hashes_read(gn);
-
-							if(gn_hashes_cmp(gn))		// hashes do not agree; file has changed
-								gn->changed = 1;
-						}
-					}
-
-					if(gn->rebuild && !gn->fmlv)
-					{
-						// file doesn't exist or has changed, is not a SOURCE file, and cannot be fabricated
-						log(L_ERROR, "cannot fabricate %s - required by %d", gn->path, gn->feeds.l);
-						for(i = 0; i < gn->feeds.l; i++)
-							log(L_BP | L_BPEVAL, "  ---> %s", gn->feeds.e[i]->path);
-
-						gn->poison = 1;
+						// GENERATED file - must be fabricated every time
+						gn->rebuild = 1;
 					}
 
 					// needs rebuilt
-					if(gn->changed)
+					if(gn->rebuild)
 					{
 						// : mark all nodes that depend on me as needing rebuilt, too
 						for(i = 0; i < gn->feeds.l; i++)
-							gn->feeds.e[i]->changed = 1;
+							gn->feeds.e[i]->rebuild = 1;
+
+						keep++;
 					}
 				}
 
@@ -303,53 +331,25 @@ int bp_prune(bp * bp)
 				{
 					for(i = 0; i < gn->feeds.l; i++)
 						gn->feeds.e[i]->poison = 1;
-
-					bp_bad = 1;
 				}
 			}
 
-			// whether NONE of the products of this eval context require rebuilding
-			int rem = 1;
-
-			if(bp->stages[x].evals[y]->fml)
+			if(!keep)
 			{
 				for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
 				{
-					if(bp->stages[x].evals[y]->products[k]->rebuild)
-						break;
-				}
+					gn * gn = bp->stages[x].evals[y]->products[k];
 
-				if(k != bp->stages[x].evals[y]->products_l)
-					rem = 0;
-			}
-
-			if(rem)
-			{
-				if(bp->stages[x].evals[y]->fml)
-				{
-					for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
+					if(!gn->poison)
 					{
-						gn * gn = bp->stages[x].evals[y]->products[k];
-
-						if(!gn->poison)
+						if(gn->needs.l)
 						{
-							if(gn->needs.l)
-							{
-								log(L_BP | L_BPEVAL, "%9s %-65s | %7s"
-									, "SECONDARY"
-									, gn->path
-									, "SKIP"
-								);
-							}
-							else
-							{
-								log(L_BP | L_BPEVAL, "%9s %-65s | %7s (%s)"
-									, "SOURCE"
-									, gn->path
-									, ""
-									, gn->changed ? "  changed" : "unchanged"
-								);
-							}
+							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
+								, x, c++
+								, "SECONDARY"
+								, gn->path
+								, "SKIP"
+							);
 						}
 					}
 				}
@@ -365,29 +365,97 @@ int bp_prune(bp * bp)
 
 					if(gn->rebuild)
 					{
-						log(L_BP | L_BPEVAL, "%9s %-65s | %7s (%s)"
+						if(gn->needs.l)
+						{
+							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+								, x, c++
+								, "SECONDARY"
+								, gn->path
+								, "REBUILD"
+								, gn->prop_hash[1] == 0 ? "does not exist" : "sources changed"
+							);
+						}
+						else
+						{
+							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
+								, x, c++
+								, "GENERATED"
+								, gn->path
+								, "REBUILD"
+							);
+						}
+					}
+					else if(gn->needs.l)
+					{
+						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+							, x, c++
 							, "SECONDARY"
 							, gn->path
 							, "REBUILD"
-							, gn->prop_hash[1] == 0 ? "does not exist" : "sources changed"
+							, "eval context product"
 						);
 					}
 					else
 					{
-						log(L_BP | L_BPEVAL, "%9s %-65s | %7s (%s)"
-							, "SECONDARY"
+						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+							, x, c++
+							, "GENERATED"
 							, gn->path
 							, "REBUILD"
-							, "eval context requires"
+							, "eval context product"
 						);
-					}
+					}	
 				}
+			}
+		}
+
+		for(y = 0; y < bp->stages[x].nofmls_l; y++)
+		{
+			// SECONDARY files which have no formula
+			gn * gn = bp->stages[x].evals[y]->products[k];
+
+			if(!gn->poison)
+			{
+				if(gn->rebuild)
+				{
+					// file doesn't exist or has changed, is not a SOURCE file, and cannot be fabricated
+					gn->poison = 1;
+					poisoned = 1;
+				}
+			}
+
+			// propagate the poison
+			if(gn->poison)
+			{
+				for(i = 0; i < gn->feeds.l; i++)
+					gn->feeds.e[i]->poison = 1;
+			}
+
+			if(gn->rebuild)
+			{
+				log(L_ERROR | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+					, x, c++
+					, "SECONDARY"
+					, gn->path
+					, ""
+					, "no formula"
+				);
+			}
+			else
+			{
+				log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+					, x, c++
+					, "SECONDARY"
+					, gn->path
+					, ""
+					, "no formula"
+				);
 			}
 		}
 	}
 
 	// consolidate stages
-	if(!bp_bad)
+	if(!poisoned)
 	{
 		for(x = bp->stages_l - 1; x >= 0; x--)
 		{
@@ -418,7 +486,7 @@ int bp_prune(bp * bp)
 		}
 	}
 
-	return !bp_bad;
+	return !poisoned;
 }
 
 int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
@@ -426,7 +494,6 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 	ts ** ts			= 0;
 	int tsl				= 0;		// thread count
 	int tot				= 0;		// total targets
-	int bad				= 0;
 	int y;
 	int x;
 	int i;
@@ -493,7 +560,6 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			fatal(fml_exec, ts[y], (x * 1000) + y);
 
 		// wait for formulas to complete
-		int bad = 0;
 		for(y = 0; y < i; y++)
 		{
 			ts[y]->r_status = -1;
@@ -597,7 +663,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			}
 			else
 			{
-				bad = 1;
+				return 0;
 			}
 		}
 	}
@@ -606,30 +672,50 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 		ts_free(ts[x]);
 	free(ts);
 
-	return !bad;
+	return 1;
 }
 
 void bp_dump(bp * bp)
 {
 	int x;
+	int y;
+	int c;
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		log(L_BP | L_BPDUMP, "STAGE %d", x);
 
-		int y;
+/*
+		c = 0;
+		for(y = 0; y < bp->stages[x].primary_l; y++)
+		{
+			log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s", x, c++, "PRIMARY", bp->stages[x].primary[y]->path);
+		}
+*/
+
+		// so numbering lines up with BPEVAL
+		c = bp->stages[x].primary_l;
+
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
-			log_start(L_BP | L_BPDUMP, " -- ");
-
 			int i;
 			for(i = 0; i < bp->stages[x].evals[y]->products_l; i++)
 			{
-				if(i)
-					log_add(", ");
+				char * des = "SECONDARY";
+				if(bp->stages[x].evals[y]->products[i]->needs.l == 0)
+					des = "GENERATED";
 
-				log_add("%s", bp->stages[x].evals[y]->products[i]->path);
+				if(i)
+					log(L_BP | L_BPDUMP, "        %-9s %s", des, bp->stages[x].evals[y]->products[i]->path);
+				else
+					log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s", x, c++, des, bp->stages[x].evals[y]->products[i]->path);
 			}
-			log_finish(0);
 		}
+
+/*
+		for(y = 0; y < bp->stages[x].nofmls_l; y++)
+		{
+			log(L_WARN | L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s (no formula)", x, c++, "SECONDARY", bp->stages[x].nofmls[y]->path);
+		}
+*/
 	}
 }
