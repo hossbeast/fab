@@ -29,7 +29,7 @@ int parse_args(int argc, char** argv)
 // a
 /* b */   { "invalidate"				, required_argument	, 0			, 'v' }		// graph node invalidation
 // c
-// d
+/* d */	,	{ "dump"							, required_argument	, 0			, 'd' }		// graph node dump
 // e
 /* f */ , { "fabfile"						, required_argument	, 0			, 'f' }
 // g
@@ -55,15 +55,16 @@ int parse_args(int argc, char** argv)
 // A
 /* B */ , { "invalidate-all"		, no_argument				, 0			, 'B' }		// graph node invalidation
 // C
+/* D */	, { "dump-all"					, no_argument				, 0			, 'D' }		// graph node dump
 		, { }
 	};
 
 	char* switches =
 		// no-argument switches
-		"pB"
+		"pBD"
 
 		// with-argument switches
-		"f:b:"
+		"f:b:d:"
 	;
 
 	// defaults
@@ -111,6 +112,23 @@ int parse_args(int argc, char** argv)
 				}
 				g_args.invalidate_len++;
 				break;
+			case 'D':
+				g_args.dumpnode_all = 1;
+				break;
+			case 'd':
+				fatal(xrealloc, &g_args.dumpnode, sizeof(g_args.dumpnode[0]), g_args.dumpnode_len + 1, g_args.dumpnode_len);
+				if(optarg[0] == '/')
+				{
+					g_args.dumpnode[g_args.dumpnode_len] = strdup(optarg);
+				}
+				else
+				{
+					// path is relative to current working directory
+					fatal(xmalloc, &g_args.dumpnode[g_args.dumpnode_len], g_args.cwdl + 1 + strlen(optarg) + 1);
+					sprintf(g_args.dumpnode[g_args.dumpnode_len], "%s/%s", g_args.cwd, optarg);
+				}
+				g_args.dumpnode_len++;
+				break;
 		}
 	}
 
@@ -134,6 +152,10 @@ int parse_args(int argc, char** argv)
 			g_args.targets_len++;
 		}
 	}
+
+	// dumpnode implies +DGRAPH
+	if(g_args.dumpnode)
+		log_parse("+DGRAPH", 0);
 
 	// MODE_BUILDPLAN implies +BPDUMP
 	if(g_args.mode == MODE_BUILDPLAN)
@@ -168,6 +190,16 @@ int parse_args(int argc, char** argv)
 			log(L_ARGS	, " %s (%c) invalidate(s)      =%s", "*", 'b', g_args.invalidate[x]);
 	}
 
+	log(L_ARGS		, " %s (%c) dumpnode-all       =%s", g_args.dumpnode_all == DEFAULT_DUMPNODE_ALL ? " " : "*", 'B', g_args.dumpnode_all ? "yes" : "no");
+
+	if(!g_args.dumpnode_all)
+	{
+		if(!g_args.dumpnode)
+			log(L_ARGS	, " %s (%c) dumpnode(s)        =", " ", 'd');
+		for(x = 0; x < g_args.dumpnode_len; x++)         
+			log(L_ARGS	, " %s (%c) dumpnode(s)        =%s", "*", 'd', g_args.dumpnode[x]);
+	}
+
 	if(!g_args.targets)
 		log(L_ARGS	, " %s (%c) target(s)          =", " ", ' ');
 	for(x = 0; x < g_args.targets_len; x++)
@@ -186,8 +218,12 @@ void args_teardown()
 	for(x = 0; x < g_args.invalidate_len; x++)
 		free(g_args.invalidate[x]);
 
+	for(x = 0; x < g_args.dumpnode_len; x++)
+		free(g_args.dumpnode[x]);
+
 	free(g_args.targets);
 	free(g_args.invalidate);
+	free(g_args.dumpnode);
 	free(g_args.fabfile);
 	free(g_args.execdir_base);
 	free(g_args.hashdir);

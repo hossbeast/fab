@@ -77,45 +77,107 @@ static int resolve_idepsc(pstring ** p, gn * gn)
 	return 1;
 }
 
-//
-// public
-//
-int fml_add(ff_node * ffn, lstack * ls)
+static int fml_add_single(fml * fml, lstack * ls)
 {
+	int R = 1;
+	int y;
+	int go;
+
+	fml->evals_l = ls->s[0].l;
+	fatal(xmalloc, &fml->evals, sizeof(fml->evals[0]) * fml->evals_l);
+
+	LSTACK_ITERATE(ls, y, go);
+	if(go)
+	{
+		fmleval * fmlv = &fml->evals[y];
+		fmlv->fml = fml;
+		fmlv->products_l = 1;
+		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
+
+		gn* t = 0;
+		if(ls->s[0].s[y].l && ls->s[0].s[y].s[0] == '/')
+		{
+			t = idx_lookup_val(gn_nodes.by_path, &ls->s[0].s[y].s, 0);
+		}
+		else
+		{
+			int i;
+			for(i = 0; i < gn_nodes.l; i++)
+			{
+				if(strcmp(gn_nodes.e[i]->dir, fml->ffn->ff_dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[0].s[y].s) == 0)
+				{
+					t = gn_nodes.e[i];
+					break;
+				}
+			}
+		}
+
+		if(t)
+		{
+			log(L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
+				, fml->ffn->loc.f_lin + 1
+				, fml->ffn->loc.f_col + 1
+				, fml->ffn->loc.l_lin + 1
+				, fml->ffn->loc.l_col + 1
+				, t->path
+			);
+			fmlv->products[0] = t;
+			t->fmlv = fmlv;
+		}
+		else
+		{
+			log(L_ERROR, "[%3d,%3d - %3d,%3d] unresolved -> %s"
+				, fml->ffn->loc.f_lin + 1
+				, fml->ffn->loc.f_col + 1
+				, fml->ffn->loc.l_lin + 1
+				, fml->ffn->loc.l_col + 1
+				, ls->s[0].s[y].s
+			);
+			R = 0;
+		}	
+	}
+	LSTACK_ITEREND;
+
+	return R;
+}
+
+static int fml_add_multi(fml * fml, lstack * ls)
+{
+	int R = 1;
+
 	int x;
 	int y;
 	int i;
-	int R = 1;
 
-	// ffn is an FFN_FORMULA
-	fml * fml = 0;
-	fatal(coll_doubly_add, &g_fmls.c, 0, &fml);
-	fml->ffn = ffn;
+	// multi-target formula
+	fml->evals_l = ls->l;
+	fatal(xmalloc, &fml->evals, sizeof(fml->evals[0]) * fml->evals_l);
 
-	// attach graph nodes
-	if(ls->l == 1)
+	for(x = 0; x < ls->l; x++)
 	{
-		// single-target formula
-		fml->evals_l = ls->s[0].l;
-		fatal(xmalloc, &fml->evals, sizeof(fml->evals[0]) * fml->evals_l);
+		fmleval * fmlv = &fml->evals[x];
+		fmlv->fml = fml;
+		fmlv->products_l = ls->s[x].l;
+		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
 
-		LSTACK_ITERATE(ls, y, go);
-		if(go)
+		log_start(L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> {\n"
+			, fml->ffn->loc.f_lin + 1
+			, fml->ffn->loc.f_col + 1
+			, fml->ffn->loc.l_lin + 1
+			, fml->ffn->loc.l_col + 1
+		);
+		for(y = 0; y < ls->s[x].l; y++)
 		{
-			fmleval * fmlv = &fml->evals[y];
-			fmlv->fml = fml;
-			fmlv->products_l = 1;
-			fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
-
-			gn* t = 0;
-			if(ls->s[0].s[y].l && ls->s[0].s[y].s[0] == '/')
-				t = idx_lookup_val(gn_nodes.by_path, &ls->s[0].s[y].s, 0);
+			gn * t = 0;
+			if(ls->s[x].s[y].l && ls->s[x].s[y].s[0] == '/')
+			{
+				t = idx_lookup_val(gn_nodes.by_path, &ls->s[x].s[y].s, 0);
+			}
 			else
 			{
-				int i;
 				for(i = 0; i < gn_nodes.l; i++)
 				{
-					if(strcmp(gn_nodes.e[i]->dir, ffn->ff_dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[0].s[y].s) == 0)
+					if(strcmp(gn_nodes.e[i]->dir, fml->ffn->ff_dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[x].s[y].s) == 0)
 					{
 						t = gn_nodes.e[i];
 						break;
@@ -125,90 +187,75 @@ int fml_add(ff_node * ffn, lstack * ls)
 
 			if(t)
 			{
-				log(L_FML | L_FMLTARG, "formula -> %s @ [%3d,%3d - %3d,%3d] single"
-					, t->path
-					, fml->ffn->loc.f_lin + 1
-					, fml->ffn->loc.f_col + 1
-					, fml->ffn->loc.l_lin + 1
-					, fml->ffn->loc.l_col + 1
-				);
-				fmlv->products[0] = t;
+				if(y)
+					log_add("  , %s\n", t->path);
+				else
+					log_add("    %s\n", t->path);
+
+				fmlv->products[y] = t;
 				t->fmlv = fmlv;
 			}
-			else
-			{
-				log(L_ERROR, "formula target unresolved %s @ [%3d,%3d - %3d,%3d]"
-					, ls->s[0].s[y].s
-					, fml->ffn->loc.f_lin + 1
-					, fml->ffn->loc.f_col + 1
-					, fml->ffn->loc.l_lin + 1
-					, fml->ffn->loc.l_col + 1
-				);
-				R = 0;
-			}	
 		}
-		LSTACK_ITEREND;
-	}
-	else
-	{
-		// multi-target formula
-		fml->evals_l = ls->l;
-		fatal(xmalloc, &fml->evals, sizeof(fml->evals[0]) * fml->evals_l);
+		log_finish("}");
 
-		for(x = 0; x < ls->l; x++)
+		int k = 0;
+		for(y = 0; y < ls->s[x].l; y++)
 		{
-			fmleval * fmlv = &fml->evals[x];
-			fmlv->fml = fml;
-			fmlv->products_l = ls->s[x].l;
-			fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
-
-			for(y = 0; y < ls->s[x].l; y++)
+			if(fmlv->products[y] == 0)
 			{
-				gn * t = 0;
-				if(ls->s[x].s[y].l && ls->s[x].s[y].s[0] == '/')
-					t = idx_lookup_val(gn_nodes.by_path, &ls->s[x].s[y].s, 0);
-				else
+				if(k++ == 0)
 				{
-					int i;
-					for(i = 0; i < gn_nodes.l; i++)
-					{
-						if(strcmp(gn_nodes.e[i]->dir, ffn->ff_dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[x].s[y].s) == 0)
-						{
-							t = gn_nodes.e[i];
-							break;
-						}
-					}
-				}
-
-				if(t)
-				{
-					log(L_FML | L_FMLTARG, "formula -> %s @ [%3d,%3d - %3d,%3d] multi"
-						, t->path
+					log_start(L_ERROR, "[%3d,%3d - %3d,%3d] unresolved -> {\n"
 						, fml->ffn->loc.f_lin + 1
 						, fml->ffn->loc.f_col + 1
 						, fml->ffn->loc.l_lin + 1
 						, fml->ffn->loc.l_col + 1
 					);
-
-					fmlv->products[y] = t;
-					t->fmlv = fmlv;
+					log_add("    %s\n", ls->s[x].s[y].s);
 				}
 				else
 				{
-					log(L_ERROR, "formula target unresolved %s @ [%3d,%3d - %3d,%3d]"
-						, ls->s[x].s[y].s
-						, fml->ffn->loc.f_lin + 1
-						, fml->ffn->loc.f_col + 1
-						, fml->ffn->loc.l_lin + 1
-						, fml->ffn->loc.l_col + 1
-					);
-					R = 0;
+					log_add("  , %s\n", ls->s[x].s[y].s);
 				}
+
+				R = 0;
 			}
 		}
+		if(k)
+			log_finish("}");
 	}
 
 	return R;
+}
+
+//
+// public
+//
+int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
+{
+	// create fml with ffn - which is an FFN_FORMULA
+	fml * fml = 0;
+	fatal(coll_doubly_add, &g_fmls.c, 0, &fml);
+	fml->ffn = ffn;
+
+	// resolve targets list
+	fatal(list_resolve, ffn->targets, vmap, stax, stax_l, stax_a, p);
+
+	// attach graph nodes
+	if(fml->ffn->flags == FFN_SINGLE)
+	{
+		fatal(fml_add_single, fml, (*stax)[p]);
+	}
+	else if(fml->ffn->flags == FFN_MULTI)
+	{
+		fatal(fml_add_multi, fml, (*stax)[p]);
+	}
+	else
+	{
+		fail("bad flags %hhu", fml->ffn->flags);
+	}
+
+	return 1;
 }
 
 int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)

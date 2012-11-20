@@ -10,6 +10,9 @@
 
 #define restrict __restrict
 
+#define FFN_SINGLE		0x00
+#define FFN_MULTI			0x01
+
 #define FFN_TABLE(x)										\
 	_FFN(FFN_STMTLIST				, 0x01	, x)	\
 	_FFN(FFN_DEPENDENCY			, 0x02	, x)	\
@@ -46,13 +49,14 @@ typedef struct ff_node
 	uint32_t		type;
 	ff_loc			loc;
 
-	// normalized directory that the fabfile is in
+	// canonical path for the directory the fabfile this node came from is in
 	char*				ff_dir;	
 
 	char*				s;
 	int					l;
 
-	generator * 					generator;		// FFN_GENERATOR
+	generator * 		generator;		// FFN_GENERATOR
+	uint8_t					flags;				// FFN_DEPENDENCY, FFN_FORMULA
 
 	union {
 		char*	strings[1];

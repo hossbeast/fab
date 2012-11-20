@@ -100,7 +100,8 @@ main.o  : args/args.o						\
 				  tmp/tmp.o							\
 					list/list.o						\
 					var/var.o							\
-				  ts/ts.o
+				  ts/ts.o								\
+					dep/dep.o
 
 common/idx.o : common/xstring.o
 

@@ -171,8 +171,8 @@
 																							return x;
 																						}
 <INITIAL,list>[\t ]+												{ locify(yyextra, yylloc, yyleng, 0); }
-<list>\$[a-zA-Z_@*#][a-zA-Z0-9_]*						{ return LEXV(VARNAME, yytext + 1, yyleng - 1); }
-<list>\$\{[a-zA-Z_@*#][a-zA-Z0-9_]*\}				{ return LEXV(VARNAME, yytext + 2, yyleng - 3); }
+<list>\$[a-zA-Z_@*#<^][a-zA-Z0-9_]*					{ return LEXV(VARNAME, yytext + 1, yyleng - 1); }
+<list>\$\{[a-zA-Z_@*#<^][a-zA-Z0-9_]*\}			{ return LEXV(VARNAME, yytext + 2, yyleng - 3); }
 <INITIAL>[:]																{ return LEX(yytext[0]); }
 <INITIAL>[=]																{ return LEX(yytext[0]); }
 <command>[}]																{

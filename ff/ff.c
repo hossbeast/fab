@@ -149,6 +149,7 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 	}
 	else if(type == FFN_DEPENDENCY)
 	{
+		n->flags					= (uint8_t)va_arg(va, int);
 		n->needs					= va_arg(va, ff_node*);
 		n->feeds					= va_arg(va, ff_node*);
 	}
@@ -173,6 +174,7 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 	}
 	else if(type == FFN_FORMULA)
 	{
+		n->flags					= (uint8_t)va_arg(va, int);
 		n->targets				= va_arg(va, ff_node*);
 		n->chain[0]				= va_arg(va, ff_node*);
 	}

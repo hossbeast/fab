@@ -55,6 +55,7 @@ static struct {
 	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	}
 	, { .v = L_FMLTARG	, .s = "FMLTARG"	}
 	, { .v = L_FML			, .s = "FML"			}
+	, { .v = L_DGDEPS		, .s = "DGDEPS"		}
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		}
 	, { .v = L_DGHASH		, .s = "DGHASH"		}
 	, { .v = L_DG				, .s = "DG"				}
@@ -130,7 +131,7 @@ static int log_vstart(const uint64_t e)
 		int x;
 		for(x = 0; x < sizeof(o_logs) / sizeof(o_logs[0]); x++)
 		{
-			if(e & o_logs[x].v)
+			if((e & o_logs[x].v) == o_logs[x].v)
 			{
 				logprintf("%*s : ", o_name_len, o_logs[x].s);
 				break;

@@ -82,30 +82,56 @@ static void gn_stat(gn * n)
 	);
 }
 
-static int gn_create(char * cwd, char * A, int Al, gn ** gna, int * new)
+static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 {
+	char* space = 0;
+
+	// p will point to a null-terminated string of the full canonical path to the file
+	// A will point to a null-terminated string of the name of the file
 	char * p = 0;
+	int pl = 0;
+	int realwdl = strlen(realwd);
 
-	if(A[0] == '/')
+	if(Al)
 	{
-		p = A;
-		A = p + strlen(p);
-		while(A != p && A[0] != '/')
-			A--;
+		if(A[0] == '/')
+		{
+			space = alloca(Al + 1);
+			sprintf(space, "%.*s", Al, A);
+		}
+		else
+		{
+			space = alloca(realwdl + 1 + Al + 1);
+			sprintf(space, "%s/%.*s", realwd, Al, A);
+		}
 
-		if(A != p)
-			A++;
+		p = space;
 	}
 	else
 	{
-		char space[512];
-		fatal(realpath, cwd, space);
-		int cwdl = strlen(space);
+		if((Al = strlen(A)) == 0)
+			fail("zero-length name");
+		
+		if(A[0] == '/')
+		{
+			p = A;
+		}
+		else
+		{
+			space = alloca(realwdl + 1 + Al + 1);
+			sprintf(space, "%s/%.*s", realwd, Al, A);
 
-		// canonical path for A
-		snprintf(space + cwdl, sizeof(space) - cwdl, "/%s", A);
-		p = space;
+			p = space;
+		}
 	}
+
+	pl = strlen(p);
+	A = p + pl - 1;
+	while(A != p && A[0] != '/')
+		A--;
+
+	A++;
+	Al = strlen(A);
 
 	if(!gn_nodes.by_path || (*gna = idx_lookup_val(gn_nodes.by_path, (char*[]) { p }, 0)) == 0)
 	{
@@ -115,14 +141,14 @@ static int gn_create(char * cwd, char * A, int Al, gn ** gna, int * new)
 		// populate gna
 		(*gna)->vrs[1]		= GN_VERSION;
 		(*gna)->path			= strdup(p);
-		(*gna)->pathl			= strlen(p);
+		(*gna)->pathl			= pl;
 		(*gna)->name			= strdup(A);
-		(*gna)->namel			= strlen(A);
-		(*gna)->dir				= strdup(cwd);
-		(*gna)->dirl			= strlen(cwd);
+		(*gna)->namel			= Al;
+		(*gna)->dir				= strdup(realwd);
+		(*gna)->dirl			= realwdl;
 		(*gna)->needs.z		= sizeof(struct gn **);
 		(*gna)->feeds.z		= sizeof(struct gn **);
-		char * xt = A + strlen(A);
+		char * xt = A + Al;
 		while(*xt != '.' && xt != A)
 			xt--;
 		if(*xt == '.')
@@ -143,12 +169,12 @@ static int gn_create(char * cwd, char * A, int Al, gn ** gna, int * new)
 // public
 //
 
-int gn_add(char * cwd, char * A, int Al, gn ** r)
+int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** r)
 {
 	gn *	gna = 0;
 	int		new = 0;
 
-	fatal(gn_create, cwd, A, Al, &gna, &new);
+	fatal(gn_create, realwd, A, Al, &gna, &new);
 
 	if(new)
 	{
@@ -179,14 +205,21 @@ int gn_add(char * cwd, char * A, int Al, gn ** r)
 	return 1;
 }
 
-int gn_edge_add(char* cwd, char* A, int Al, char* B, int Bl, gn ** r)
+int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, int At, void ** const restrict B, int Bl, int Bt)
 {
 	gn *	gna = 0;
 	gn *	gnb = 0;
 	int		new = 0;
 
-	fatal(gn_create, cwd, A, &gna, &new);
-	fatal(gn_create, cwd, B, &gnb, &new);
+	if(At)
+		gna = *(gn**)A;
+	else
+		fatal(gn_create, realwd, *(char**)A, Al, &gna, &new);
+
+	if(Bt)
+		gnb = *(gn**)B;
+	else
+		fatal(gn_create, realwd, *(char**)B, Bl, &gnb, &new);
 
 	// reindex the collections
 	if(new)
@@ -216,8 +249,10 @@ int gn_edge_add(char* cwd, char* A, int Al, char* B, int Bl, gn ** r)
 	coll_singly_add(&gna->needs.c, &gnb, 0);
 	coll_singly_add(&gnb->feeds.c, &gna, 0);
 
-	if(r)
-		*r = gna;
+	*A = gna;
+	*B = gnb;
+
+	return 1;
 }
 
 void gn_dump(gn * n)
@@ -252,16 +287,6 @@ void gn_dump(gn * n)
 			log(L_DG | L_DGRAPH, "%10s --> %s", "", n->feeds.e[x]->path);
 
 		log(L_DG | L_DGRAPH, "");
-	}
-}
-
-void gn_dumpall()
-{
-	if(log_would(L_DG | L_DGRAPH))
-	{
-		int x;
-		for(x = 0; x < gn_nodes.l; x++)
-			gn_dump(gn_nodes.e[x]);
 	}
 }
 

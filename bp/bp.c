@@ -24,8 +24,13 @@ static int fmleval_cmp(const void * _A, const void * _B)
 	fmleval * A = *((fmleval **)_A);
 	fmleval * B = *((fmleval **)_B);
 
-	gn * gna = A->products[0];
-	gn * gnb = B->products[0];
+	gn * gna = A->product;
+	if(A->fml)
+		gna = A->products[0];
+
+	gn * gnb = B->product;
+	if(B->fml)
+		gnb = B->products[0];
 
 	return strcmp(gna->path, gnb->path);
 }
@@ -127,17 +132,34 @@ int bp_create(gn ** n, int l, bp ** bp)
 				int y;
 				for(y = 0; y < lvsl; y++)
 				{
-					if(lvs[y]->mark == 1 && lvs[y]->fmlv)
+					if(lvs[y]->mark == 1)
 					{
-						// explicitly mark each target of this eval context : it is possible that a single
-						// eval context produces more than one of the leaf nodes found, and we want to avoid
-						// adding it to this stage twice. marking also excludes it from future stages
-						int i;
-						for(i = 0; i < lvs[y]->fmlv->products_l; i++)
-							lvs[y]->fmlv->products[i]->mark++;
+						if(lvs[y]->fmlv)
+						{
+							// explicitly mark each target of this eval context : it is possible that a single
+							// eval context produces more than one of the leaf nodes found, and we want to avoid
+							// adding it to this stage twice. marking also excludes it from future stages
+							int i;
+							for(i = 0; i < lvs[y]->fmlv->products_l; i++)
+								lvs[y]->fmlv->products[i]->mark++;
 
-						// add this eval context to the stage
-						bps->evals[bps->evals_l + (cnt++)] = lvs[y]->fmlv;
+							// add this eval context to the stage
+							bps->evals[bps->evals_l + (cnt++)] = lvs[y]->fmlv;
+						}
+						else if(lvs[y]->needs.l)
+						{
+							// this node is part of the buildplan but is not part of any fml eval context - it cannot
+							// be fabricated. we add a dummy node to the plan so that we can defer reporting this error
+							// until pruning the buildplan. there are two reasons to do this:
+							//  1 - this node may be pruned away and not actually needed after all.
+							//  2 - in order to report additional errors before failing out
+							//
+							log(L_WARN, "no formula - %s", lvs[y]->path);
+
+							bps->evals[bps->evals_l + cnt] = calloc(1, sizeof(*bps->evals[0]));
+							bps->evals[bps->evals_l + cnt]->product = lvs[y];
+							cnt++;
+						}
 					}
 				}
 
@@ -167,18 +189,25 @@ int bp_prune(bp * bp)
 	int i;
 	int k;
 
-	char bp_bad = 0;
-
 	// mark all nodes as not needing to be rebuilt
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
-			for(i = 0; i < bp->stages[x].evals[y]->products_l; i++)
+			if(bp->stages[x].evals[y]->fml)
 			{
-				bp->stages[x].evals[y]->products[i]->changed = 0;
-				bp->stages[x].evals[y]->products[i]->rebuild = 0;
-				bp->stages[x].evals[y]->products[i]->poison = 0;
+				for(i = 0; i < bp->stages[x].evals[y]->products_l; i++)
+				{
+					bp->stages[x].evals[y]->products[i]->changed = 0;
+					bp->stages[x].evals[y]->products[i]->rebuild = 0;
+					bp->stages[x].evals[y]->products[i]->poison = 0;
+				}
+			}
+			else
+			{
+				bp->stages[x].evals[y]->product->changed = 0;
+				bp->stages[x].evals[y]->product->rebuild = 0;
+				bp->stages[x].evals[y]->product->poison = 0;
 			}
 		}
 	}
@@ -201,13 +230,23 @@ int bp_prune(bp * bp)
 		}
 	}
 
+	int bp_bad = 0;
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
-			for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
+			k = 0;
+			while(k == 0 || bp->stages[x].evals[y]->fml)
 			{
-				gn * gn = bp->stages[x].evals[y]->products[k];
+				gn * gn = bp->stages[x].evals[y]->product;
+				if(bp->stages[x].evals[y]->fml)
+				{
+					if(k == bp->stages[x].evals[y]->products_l)
+						break;
+
+					gn = bp->stages[x].evals[y]->products[k];
+				}
+				k++;
 
 				if(!gn->poison)
 				{
@@ -269,37 +308,48 @@ int bp_prune(bp * bp)
 				}
 			}
 
-			// rem is true if NONE of the products of this eval context require rebuilding
-			for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
-			{
-				if(bp->stages[x].evals[y]->products[k]->rebuild)
-					break;
-			}
+			// whether NONE of the products of this eval context require rebuilding
+			int rem = 1;
 
-			if(k == bp->stages[x].evals[y]->products_l)
+			if(bp->stages[x].evals[y]->fml)
 			{
 				for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
 				{
-					gn * gn = bp->stages[x].evals[y]->products[k];
+					if(bp->stages[x].evals[y]->products[k]->rebuild)
+						break;
+				}
 
-					if(!gn->poison)
+				if(k != bp->stages[x].evals[y]->products_l)
+					rem = 0;
+			}
+
+			if(rem)
+			{
+				if(bp->stages[x].evals[y]->fml)
+				{
+					for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
 					{
-						if(gn->needs.l)
+						gn * gn = bp->stages[x].evals[y]->products[k];
+
+						if(!gn->poison)
 						{
-							log(L_BP | L_BPEVAL, "%9s %-50s | %7s"
-								, "SECONDARY"
-								, gn->path
-								, "SKIP"
-							);
-						}
-						else
-						{
-							log(L_BP | L_BPEVAL, "%9s %-50s | %7s (%s)"
-								, "SOURCE"
-								, gn->path
-								, ""
-								, gn->changed ? "  changed" : "unchanged"
-							);
+							if(gn->needs.l)
+							{
+								log(L_BP | L_BPEVAL, "%9s %-65s | %7s"
+									, "SECONDARY"
+									, gn->path
+									, "SKIP"
+								);
+							}
+							else
+							{
+								log(L_BP | L_BPEVAL, "%9s %-65s | %7s (%s)"
+									, "SOURCE"
+									, gn->path
+									, ""
+									, gn->changed ? "  changed" : "unchanged"
+								);
+							}
 						}
 					}
 				}
@@ -315,7 +365,7 @@ int bp_prune(bp * bp)
 
 					if(gn->rebuild)
 					{
-						log(L_BP | L_BPEVAL, "%9s %-50s | %7s (%s)"
+						log(L_BP | L_BPEVAL, "%9s %-65s | %7s (%s)"
 							, "SECONDARY"
 							, gn->path
 							, "REBUILD"
@@ -324,7 +374,7 @@ int bp_prune(bp * bp)
 					}
 					else
 					{
-						log(L_BP | L_BPEVAL, "%9s %-50s | %7s (%s)"
+						log(L_BP | L_BPEVAL, "%9s %-65s | %7s (%s)"
 							, "SECONDARY"
 							, gn->path
 							, "REBUILD"
@@ -376,6 +426,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 	ts ** ts			= 0;
 	int tsl				= 0;		// thread count
 	int tot				= 0;		// total targets
+	int bad				= 0;
 	int y;
 	int x;
 	int i;
@@ -549,16 +600,13 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 				bad = 1;
 			}
 		}
-
-		if(bad)
-			break;
 	}
 
 	for(x = 0; x < tsl; x++)
 		ts_free(ts[x]);
 	free(ts);
 
-	return x == bp->stages_l;
+	return !bad;
 }
 
 void bp_dump(bp * bp)

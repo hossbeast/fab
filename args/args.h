@@ -7,6 +7,7 @@
 #define DEFAULT_EXECDIR_BASE		"/tmp/fab/exec"
 #define DEFAULT_HASHDIR					"/tmp/fab/hash"
 #define DEFAULT_INVALIDATE_ALL	0
+#define DEFAULT_DUMPNODE_ALL		0
 
 /* modes */
 
@@ -41,9 +42,13 @@ extern struct g_args_t
 	char *			execdir;
 	char *			hashdir;
 
-	char **			invalidate;							// graph nodes to invalidate
+	char **			invalidate;						// graph nodes to invalidate
 	int					invalidate_len;
 	int					invalidate_all;
+
+	char **			dumpnode;							// graph nodes to dump
+	int					dumpnode_len;
+	int					dumpnode_all;
 } g_args;
 
 //// parse_args

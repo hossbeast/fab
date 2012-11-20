@@ -128,18 +128,22 @@ statement
 dependency
 	: list ':' list
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $3->e, $1, $3);
+		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
 	}
 	| list ':' ':' list
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $4->e, $1, $4);
+		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $4->e, FFN_MULTI, $1, $4);
 	}
 	;
 
 formula
-	: list '{' formula_list '}'
+	: list ':' '{' formula_list '}'
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_FORMULA, $1->s, $4.e, $1, $3);
+		$$ = mknode(&@$, parm->ff_dir, FFN_FORMULA, $1->s, $5.e, FFN_SINGLE, $1, $4);
+	}
+	| list ':' ':' '{' formula_list '}'
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_FORMULA, $1->s, $6.e, FFN_MULTI, $1, $5);
 	}
 	;
 

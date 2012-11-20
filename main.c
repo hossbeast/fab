@@ -100,6 +100,7 @@ int main(int argc, char** argv)
 		fatal(var_set, vmap, "#", stax[p++]);
 
 		// first dependency found is the default for "*"
+		// star is the index into stax where "*" was set
 		int star = 0;
 
 		if(g_args.targets_len)
@@ -121,8 +122,7 @@ int main(int argc, char** argv)
 				fatal(gn_add, ffn->ff_dir, g_args.targets[x], 0, &gn);
 				fatal(lstack_obj_add, stax[p], gn, LISTWISE_TYPE_GNLW);
 			}
-			fatal(var_set, vmap, "*", stax[p++]);
-			star = 1;
+			fatal(var_set, vmap, "*", stax[star = p++]);
 		}
 
 		// process the fabfile tree, constructing the graph
@@ -138,16 +138,15 @@ int main(int argc, char** argv)
 					// use up one list and populate the * variable (root-level targets)
 					if(stax_a <= p)
 					{
-						fatal(xrealloc, &(*stax), sizeof(*(*stax)), p + 1, stax_a);
+						fatal(xrealloc, &stax, sizeof(*stax), p + 1, stax_a);
 						stax_a = p + 1;
 					}
-					if(!(*stax)[p])
-						fatal(xmalloc, &(*stax)[p], sizeof(*(*stax)[p]));
-					lstack_reset((*stax)[p]);
+					if(!stax[p])
+						fatal(xmalloc, &stax[p], sizeof(*stax[p]));
+					lstack_reset(stax[p]);
 
-					fatal(lstack_obj_add, (*stax)[p], def, LISTWISE_TYPE_GNLW);
-					fatal(var_set, vmap, "*", (*stax)[p++]);
-					star = 1;
+					fatal(lstack_obj_add, stax[p], first, LISTWISE_TYPE_GNLW);
+					fatal(var_set, vmap, "*", stax[star = p++]);
 				}
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)
@@ -160,61 +159,65 @@ int main(int argc, char** argv)
 			}
 			else if(ffn->statements[x]->type == FFN_FORMULA)
 			{
-				// resolve the list of targets
-				fatal(list_resolve, ffn->statements[x]->targets, vmap, &stax, &stax_l, &stax_a, p);
-
-				// create the formula
-				fatal(fml_add, ffn->statements[x], stax[p]);
+				// add the formula
+				fatal(fml_add, ffn->statements[x], vmap, &stax, &stax_l, &stax_a, p);
 			}
 		}
 
 		// dump graph nodes, pending logging
-		gn_dumpall();
-
-		// lookup gn for each target
-		gn ** list = 0;
-		int list_len = 0;
-
-		if(g_args.targets_len)
+		if(g_args.dumpnode_all)
 		{
-			list_len = g_args.targets_len;
-			list = calloc(sizeof(*list), list_len);
-
-			for(x = 0; x < list_len; x++)
+			for(x = 0; x < gn_nodes.l; x++)
+				gn_dump(gn_nodes.e[x]);
+		}
+		else if(g_args.dumpnode)
+		{
+			for(x = 0; x < g_args.dumpnode_len; x++)
 			{
-				if((list[x] = idx_lookup_val(gn_nodes.by_path, &g_args.targets[x], 0)) == 0)
+				gn * gn = 0;
+				if(gn_nodes.by_path && (gn = idx_lookup_val(gn_nodes.by_path, &g_args.dumpnode[x], 0)))
 				{
-					fail("unknown target : %s", g_args.targets[x]);
+					gn_dump(gn);
+				}
+				else
+				{
+					fail("not found : %s", g_args.dumpnode[x]);
 				}
 			}
 		}
-		else if(def)
+		else if(star)
 		{
-			list_len = 1;
+			// lookup gn for each target
+			gn ** list = 0;
+			int list_len = 0;
+
+			list_len = stax[star]->s[0].l;
 			list = calloc(sizeof(*list), list_len);
 
-			if((list[0] = idx_lookup_val(gn_nodes.by_path, &def->path, 0)) == 0)
+			for(x = 0; x < list_len; x++)
+				list[x] = *(void**)stax[star]->s[0].s[x].s;
+
+			// traverse the graph, construct the build plan that culminates in the given targets
+			fatal(bp_create, list, list_len, &bp);
+
+			free(list);
+
+			// prune the buildplan of nodes which do not require updating
+			if(bp_prune(bp))
 			{
-				fail("unknown target : %s", g_args.targets[x]);
+				// dump buildplan, pending logging
+				bp_dump(bp);
+
+				if(bp->stages_l == 0)
+				{
+					log(L_INFO, "nothing to fabricate");
+				}
+				else if(g_args.mode == MODE_FABRICATE)
+				{
+					// execute the build plan, one stage at a time
+					fatal(bp_exec, bp, vmap, &stax, &stax_l, &stax_a, p);
+				}
 			}
-		}
-
-		// traverse the graph, construct the build plan that culminates in the given targets
-		fatal(bp_create, list, list_len, &bp);
-
-		// prune the buildplan of nodes which do not require updating
-		fatal(bp_prune, bp);
-
-		if(bp->stages_l == 0)
-			log(L_INFO, "No targets require fabrication");
-
-		// dump buildplan, pending logging
-		bp_dump(bp);
-
-		if(g_args.mode == MODE_FABRICATE)
-		{
-			// execute the build plan, one stage at a time
-			fatal(bp_exec, bp, vmap, &stax, &stax_l, &stax_a, p);
 		}
 
 		return 1;

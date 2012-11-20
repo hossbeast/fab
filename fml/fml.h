@@ -23,6 +23,11 @@ typedef struct fmleval
 {
 	struct fml *	fml;				// the formula
 
+	/*
+  ** only used for dummy nodes, and only nonnull if fml is null
+  */
+	gn * 						product;
+
 	struct
 	{
 		gn **					products;
@@ -56,7 +61,7 @@ extern union g_fmls_t
 //
 // add a formula to the global list from the fabfile node
 //
-int fml_add(ff_node * ffn, lstack * ls)
+int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
 	__attribute__((nonnull));
 
 /// fml_render
