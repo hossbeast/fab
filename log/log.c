@@ -61,7 +61,7 @@ static struct {
 	, { .v = L_DG				, .s = "DG"				}
 	, { .v = L_VAR			, .s = "VAR"			}
 	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	}
-	, { .v = L_TAG			, .s = "TAG"			}
+	, { .v = L_TAG & ~L_LWDEBUG			, .s = "TAG"			}
 };
 
 static int o_name_len;
@@ -85,6 +85,8 @@ static int logwrite(const char * s, size_t l)
 
 	memcpy(o_space + o_space_l, s, l);
 	o_space_l += l;
+
+	return l;
 }
 
 static int logvprintf(const char * fmt, va_list va)
@@ -104,6 +106,8 @@ static int logvprintf(const char * fmt, va_list va)
 	vsprintf(o_space + o_space_l, fmt, va);
 
 	o_space_l += size;
+
+	return size;
 }
 
 static int logprintf(const char * fmt, ...)
@@ -111,12 +115,15 @@ static int logprintf(const char * fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 
-	logvprintf(fmt, va);
+	int R = logvprintf(fmt, va);
 	va_end(va);
+
+	return R;
 }
 
 static int log_vstart(const uint64_t e)
 {
+	int R = 0;
 	if(log_would(e))
 	{
 		o_space_l = 0;
@@ -133,28 +140,27 @@ static int log_vstart(const uint64_t e)
 		{
 			if((e & o_logs[x].v) == o_logs[x].v)
 			{
-				logprintf("%*s : ", o_name_len, o_logs[x].s);
+				R = logprintf("%*s : ", o_name_len, o_logs[x].s);
 				break;
 			}
 		}
 
 		o_e = e;
-
-		return 1;
 	}
 
-	return 0;
+	return R;
 }
 
-static void log_vadd(const char* fmt, va_list va)
+static int log_vadd(const char* fmt, va_list va)
 {
-	logvprintf(fmt, va);
+	return logvprintf(fmt, va);
 }
 
-static void log_vfinish(const char* fmt, va_list* va)
+static int log_vfinish(const char* fmt, va_list* va)
 {
+	int R = 0;
 	if(fmt)
-		log_vadd(fmt, *va);
+		R = log_vadd(fmt, *va);
 
 	if((o_e & L_COLOR_VALUE) && COLORHEX(o_e))
 	{
@@ -167,6 +173,8 @@ static void log_vfinish(const char* fmt, va_list* va)
 	write(2, o_space, o_space_l);
 
 	o_e = 0;
+
+	return R;
 }
 
 //
@@ -266,27 +274,32 @@ int log_would(const uint64_t bits)
 	return !!(o_lgctx & bits);
 }
 
-void log_start(const uint64_t e, const char* fmt, ...)
+int log_start(const uint64_t e, const char* fmt, ...)
 {
-	if(log_vstart(e))
+	int R = 0;
+	if((R = log_vstart(e)))
 	{
 		va_list va;
 		va_start(va, fmt);
-		log_vadd(fmt, va);
+		return R + log_vadd(fmt, va);
 	}
+
+	return 0;
 }
 
-void log_add(const char* fmt, ...)
+int log_add(const char* fmt, ...)
 {
 	if(log_would(o_e))
 	{
 		va_list va;
 		va_start(va, fmt);
-		log_vadd(fmt, va);
+		return log_vadd(fmt, va);
 	}
+
+	return 0;
 }
 
-void log_finish(const char* fmt, ...)
+int log_finish(const char* fmt, ...)
 {
 	if(log_would(o_e))
 	{
@@ -294,11 +307,13 @@ void log_finish(const char* fmt, ...)
 		if(fmt)
 			va_start(va, fmt);
 
-		log_vfinish(fmt, &va);
+		return log_vfinish(fmt, &va);
 	}
+
+	return 0;
 }
 
-void log(const uint64_t e, const char* fmt, ...)
+int log(const uint64_t e, const char* fmt, ...)
 {
 	if(log_vstart(e))
 	{
@@ -306,8 +321,10 @@ void log(const uint64_t e, const char* fmt, ...)
 		va_start(va, fmt);
 		log_vadd(fmt, va);
 
-		log_vfinish(0, 0);
+		return log_vfinish(0, 0);
 	}
+
+	return 0;
 }
 
 void log_teardown()

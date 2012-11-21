@@ -64,7 +64,7 @@ int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int
 				Bl = (*stax)[pr]->s[0].s[j].l;
 			}
 
-			fatal(gn_edge_add, ffn->ff_dir, &A, Al, At, &B, Bl, Bt);
+			fatal(gn_edge_add, ffn->ff_dir, &A, Al, At, &B, Bl, Bt, ffn);
 			if(first)
 			{
 				*first = A;
@@ -159,7 +159,7 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 					Bl = (*stax)[pr]->s[0].s[j].l;
 				}
 
-				fatal(gn_edge_add, ffn->ff_dir, &A, Al, At, &B, Bl, Bt);
+				fatal(gn_edge_add, ffn->ff_dir, &A, Al, At, &B, Bl, Bt, ffn);
 				if(first)
 				{
 					*first = A;

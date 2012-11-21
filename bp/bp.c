@@ -41,48 +41,52 @@ static int fmleval_cmp(const void * _A, const void * _B)
 
 static void reset(gn * n)
 {
-	n->mark = 0;
+	n->stage = INT32_MAX;
 
 	int x;
 	for(x = 0; x < n->needs.l; x++)
-		reset(n->needs.e[x]);
+		reset(n->needs.e[x].gn);
 }
 
-static int visit(gn * n, gn *** lvs, int * l, int * a)
+static int visit(gn * n, int k, gn *** lvs, int * l, int * a)
 {
-	if(!n->mark)
+	if(n->stage == INT32_MAX)
 	{
-		// I am a leaf if I have no dependencies which were visited
+		// I am a leaf if I have no dependencies which were added on this iteration
 		int leaf = 1;
 
 		int x;
 		for(x = 0; x < n->needs.l; x++)
 		{
-			if(n->needs.e[x]->mark == 0)
-			{
-				if(visit(n->needs.e[x], lvs, l, a) == 0)
-					return 0;
-
+			if(visit(n->needs.e[x].gn, k, lvs, l, a) >= k)
 				leaf = 0;
-			}
 		}
 
 		if(leaf)
 		{
-			n->mark = 1;
+			n->stage = k;
 
 			if(*l == *a)
 			{
-				fatal(xrealloc, lvs, sizeof(**lvs), (*a) + 1, *a);
-				(*a)++;
+				int ns = (*a) ? (*a) * 2 + (*a) / 2 : 10;
+				(*lvs) = realloc((*lvs), sizeof(**lvs) * ns);
+				(*a) = ns;
 			}
 
 			(*lvs)[(*l)++] = n;
 		}
 	}
 
-	return 1;
+	return n->stage;
 }
+
+/*
+printf("leaf -- [%d][%d] %s\n"
+	, n->needs.l
+	, n->needs.l ? n->needs.e[0].gn->mark : -1
+	, n->path
+);
+*/
 
 //
 // public
@@ -96,7 +100,6 @@ int bp_create(gn ** n, int l, bp ** bp)
 
 	fatal(xmalloc, bp, sizeof(**bp));
 
-	// reset tracking
 	int x;
 	for(x = 0; x < l; x++)
 		reset(n[x]);
@@ -104,12 +107,13 @@ int bp_create(gn ** n, int l, bp ** bp)
 	// traverse graph from each target node
 	for(x = 0; x < l; x++)
 	{
-		int k;
-		for(k = 0; k == 0 || lvsl; k++)
+		int tstage = INT32_MAX;
+		int k = -1;
+		while(k++, tstage == INT32_MAX)
 		{
-			// visit - get all leaves from this node
+			// visit - get leaves starting from this node
 			lvsl = 0;
-			fatal(visit, n[x], &lvs, &lvsl, &lvsa);
+			tstage = visit(n[x], k, &lvs, &lvsl, &lvsa);
 
 			if(lvsl)
 			{
@@ -150,37 +154,42 @@ int bp_create(gn ** n, int l, bp ** bp)
 				int y;
 				for(y = 0; y < lvsl; y++)
 				{
-					if(lvs[y]->mark == 1)
+//printf("x=%d k=%d y=%d m=%d n[x]=%s -- %s\n", x, k, y, lvs[y]->mark, n[x]->path, lvs[y]->path);
+					if(lvs[y]->fmlv)
 					{
-						if(lvs[y]->fmlv)
-						{
-							// explicitly mark each target of this eval context : it is possible that a single
-							// eval context produces more than one of the leaf nodes found, and we want to avoid
-							// adding it to this stage twice. marking also excludes it from future stages
-							int i;
-							for(i = 0; i < lvs[y]->fmlv->products_l; i++)
-								lvs[y]->fmlv->products[i]->mark++;
+						// explicitly mark each target of this eval context : it is possible that a single
+						// eval context produces more than one of the leaf nodes found, and we want to avoid
+						// adding it to this stage twice. marking also excludes it from future stages
+						int i;
+						for(i = 0; i < lvs[y]->fmlv->products_l; i++)
+							lvs[y]->fmlv->products[i]->stage = lvs[y]->stage;
 
-							// add this eval context to the stage
+						for(i = 0; i < (bps->evals_l + evals_cnt); i++)
+						{
+							if(bps->evals[i] == lvs[y]->fmlv)
+								break;
+						}
+
+						// add this eval context to the stage
+						if(i == (bps->evals_l + evals_cnt))
 							bps->evals[bps->evals_l + (evals_cnt++)] = lvs[y]->fmlv;
-						}
-						else if(lvs[y]->needs.l)
-						{
-							// this node is part of the buildplan but is not part of any fml eval context - it cannot
-							// be fabricated. we add a dummy node to the plan so that we can defer reporting this error
-							// until pruning the buildplan. there are two reasons to do this:
-							//  1 - this node may be pruned away and not actually needed after all.
-							//  2 - in order to report additional errors before failing out
-							//
-							log(L_WARN, "no formula - %s", lvs[y]->path);
+					}
+					else if(lvs[y]->needs.l)
+					{
+						// this node is part of the buildplan but is not part of any fml eval context - it cannot
+						// be fabricated. we add a dummy node to the plan so that we can defer reporting this error
+						// until pruning the buildplan. there are two reasons to do this:
+						//  1 - this node may be pruned away and not actually needed after all.
+						//  2 - in order to report additional errors before failing out
+						//
+						log(L_WARN, "no formula - %s", lvs[y]->path);
 
-							bps->nofmls[bps->nofmls_l + (nofmls_cnt++)] = lvs[y];
-						}
-						else
-						{
-							// this is a source file
-							bps->primary[bps->primary_l + (primary_cnt++)] = lvs[y];
-						}
+						bps->nofmls[bps->nofmls_l + (nofmls_cnt++)] = lvs[y];
+					}
+					else
+					{
+						// this is a source file
+						bps->primary[bps->primary_l + (primary_cnt++)] = lvs[y];
 					}
 				}
 
@@ -238,6 +247,7 @@ int bp_prune(bp * bp)
 			if((gn = idx_lookup_val(gn_nodes.by_path, (char*[]) { g_args.invalidate[x] }, 0)))
 			{
 				gn->changed = 1;
+				gn->rebuild = 1;
 			}
 		}
 	}
@@ -270,14 +280,14 @@ int bp_prune(bp * bp)
 			{
 				// : mark all nodes that depend on me as needing rebuilt, too
 				for(i = 0; i < gn->feeds.l; i++)
-					gn->feeds.e[i]->rebuild = 1;
+					gn->feeds.e[i].gn->rebuild = 1;
 			}
 
 			// propagate the poison
 			if(gn->poison)
 			{
 				for(i = 0; i < gn->feeds.l; i++)
-					gn->feeds.e[i]->poison = 1;
+					gn->feeds.e[i].gn->poison = 1;
 
 				poisoned = 1;
 			}
@@ -320,7 +330,7 @@ int bp_prune(bp * bp)
 					{
 						// : mark all nodes that depend on me as needing rebuilt, too
 						for(i = 0; i < gn->feeds.l; i++)
-							gn->feeds.e[i]->rebuild = 1;
+							gn->feeds.e[i].gn->rebuild = 1;
 
 						keep++;
 					}
@@ -330,7 +340,7 @@ int bp_prune(bp * bp)
 				if(gn->poison)
 				{
 					for(i = 0; i < gn->feeds.l; i++)
-						gn->feeds.e[i]->poison = 1;
+						gn->feeds.e[i].gn->poison = 1;
 				}
 			}
 
@@ -412,7 +422,7 @@ int bp_prune(bp * bp)
 		for(y = 0; y < bp->stages[x].nofmls_l; y++)
 		{
 			// SECONDARY files which have no formula
-			gn * gn = bp->stages[x].evals[y]->products[k];
+			gn * gn = bp->stages[x].nofmls[y];
 
 			if(!gn->poison)
 			{
@@ -428,7 +438,7 @@ int bp_prune(bp * bp)
 			if(gn->poison)
 			{
 				for(i = 0; i < gn->feeds.l; i++)
-					gn->feeds.e[i]->poison = 1;
+					gn->feeds.e[i].gn->poison = 1;
 			}
 
 			if(gn->rebuild)
@@ -512,13 +522,18 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 
 	for(x = 0; x < bp->stages_l; x++)
 	{
+		int bad = 0;
 		i = 0;
-		log(L_BP | L_BPEXEC, "STAGE %d/%d : %d/%d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
+		log(L_BP | L_BPEXEC, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
+
+		// so numbering lines up with BPEVAL
+		int c = bp->stages[x].primary_l;
 
 		// render formulas for each eval context on this stage
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
 			ts[i]->fmlv = bp->stages[x].evals[y];
+			ts[i]->y = y;
 
 			// prepare lstack(s) for variables resident in this context
 			int pn = p;
@@ -531,7 +546,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 				fatal(xmalloc, &(*stax)[pn], sizeof(*(*stax)[0]));
 			lstack_reset((*stax)[pn]);
 
-			// @ is a list of the products of this eval context
+			// @ is a list of expected products of this eval context
 			for(k = 0; k < ts[i]->fmlv->products_l; k++)
 				fatal(lstack_obj_add, (*stax)[pn], ts[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
@@ -544,14 +559,6 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			for(k = 0; k < ts[i]->fmlv->products_l; k++)
 				gn_hashcmd(ts[i]->fmlv->products[k], ts[i]->cmd_txt->s, ts[i]->cmd_txt->l);
 
-			log_start(L_BP | L_BPEXEC, " -- ");
-			for(k = 0; k < ts[i]->fmlv->products_l; k++)
-			{
-				if(k)
-					log_add(", ");
-				log_add("%s", ts[i]->fmlv->products[k]->path);
-			}
-			log_finish(0);
 			i++;
 		}
 
@@ -559,20 +566,21 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 		for(y = 0; y < i; y++)
 			fatal(fml_exec, ts[y], (x * 1000) + y);
 
-		// wait for formulas to complete
-		for(y = 0; y < i; y++)
+		// wait for each of them to complete
+		pid_t pid = 0;
+		int r = 0;
+		while((pid = wait(&r)) != -1)
 		{
-			ts[y]->r_status = -1;
-			ts[y]->r_signal = 0;
-
-			int r = 0;
-			if(waitpid(ts[y]->pid, &r, 0) == ts[y]->pid)
+			for(y = 0; y < i; y++)
 			{
-				if(WIFEXITED(r))
-					ts[y]->r_status = WEXITSTATUS(r);
-				else if(WIFSIGNALED(r))
-					ts[y]->r_signal = WTERMSIG(r);
+				if(ts[y]->pid == pid)
+					break;
 			}
+
+			if(WIFEXITED(r))
+				ts[y]->r_status = WEXITSTATUS(r);
+			else if(WIFSIGNALED(r))
+				ts[y]->r_signal = WTERMSIG(r);
 
 			// snarf stderr
 			if(1)
@@ -585,7 +593,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			}
 
 			// snarf stdout
-			if(log_would(L_FML | L_FMLEXEC))
+			if(1)
 			{
 				off_t sz = lseek(ts[y]->stdo_fd, 0, SEEK_END);
 				lseek(ts[y]->stdo_fd, 0, SEEK_SET);
@@ -597,38 +605,74 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			close(ts[y]->stde_fd);
 			close(ts[y]->stdo_fd);
 
-			uint64_t tag = L_FML | L_FMLEXEC;
+			int e = 0;
 			if(ts[y]->r_status || ts[y]->r_signal || ts[y]->stde_txt->l)
-				tag |= L_ERROR;
+				e = 1;
 
-			log_start(tag								, "%15s : "			, "product(s)");
 			for(k = 0; k < ts[y]->fmlv->products_l; k++)
 			{
+				char * des = "SECONDARY";
+				if(ts[y]->fmlv->products[k]->needs.l == 0)
+					des = "GENERATED";
+
+				int R = 0;
 				if(k)
-					log_add(", ");
-				log_add("%s", ts[y]->fmlv->products[k]->path);
-			}
-			log_finish(0);
-			if(log_would(tag))
-			{
-				log(tag										, "%15s : (%d)"		, "cmd text"			, ts[y]->cmd_txt->l);
-				write(2, ts[y]->cmd_txt->s, ts[y]->cmd_txt->l);
-			}
-			if(log_would(L_FML | L_FMLEXEC) || ts[y]->r_status)
-				log(tag										, "%15s : %d"			, "exit status"		, ts[y]->r_status);
-			if(log_would(L_FML | L_FMLEXEC) || ts[y]->r_signal)
-				log(tag										, "%15s : %d"			, "exit signal"		, ts[y]->r_signal);
-			if(log_would(L_FML | L_FMLEXEC))
-			{
-				log(tag										, "%15s : %s"			, "stdout path"		, ts[y]->stdo_path->s);
-				log(tag										, "%15s : (%d)"		, "stdout text"		, ts[y]->stdo_txt->l);
-				write(2, ts[y]->stdo_txt->s, ts[y]->stdo_txt->l);
-			}
-			if(log_would(L_FML | L_FMLEXEC) || ts[y]->stde_txt->l)
-			{
-				log(tag										,  "%15s : %s"		, "stderr path"		, ts[y]->stde_path->s);
-				log(tag										, "%15s : (%d)"		, "stderr text"		, ts[y]->stde_txt->l);
-				write(2, ts[y]->stde_txt->s, ts[y]->stde_txt->l);
+					R = log_start(L_BP | L_BPEXEC | (e ? L_ERROR : 0), "        %-9s %s", des, ts[y]->fmlv->products[k]->path);
+				else
+					R = log_start(L_BP | L_BPEXEC | (e ? L_ERROR : 0), "[%2d,%2d] %-9s %s", x, ts[y]->y, des, ts[y]->fmlv->products[k]->path);
+
+				if(ts[y]->r_status)
+				{
+					log_add("%*sx=%d", 100 - R, "", ts[y]->r_status);
+				}
+				else if(ts[y]->r_signal)
+				{
+					log_add("%*ss=%d", 100 - R, "", ts[y]->r_signal);
+				}
+				else if(ts[y]->stde_txt->l)
+				{
+					log_add("%*se=%d", 100 - R, "", ts[y]->stde_txt->l);
+				}
+				else
+				{
+					log_add("%*sx=0", 100 - R, "");
+				}
+				log_finish(0);
+
+				if(log_would(L_FML | L_FMLEXEC))
+				{
+					log_start(L_FML | L_FMLEXEC | (e ? L_ERROR : 0)								, "%15s : "			, "product(s)");
+					for(k = 0; k < ts[y]->fmlv->products_l; k++)
+					{
+						if(k)
+							log_add(", ");
+						log_add("%s", ts[y]->fmlv->products[k]->path);
+					}
+					log_finish(0);
+				}
+				if(log_would(L_FML | L_FMLEXEC) || e)
+				{
+						log(L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : (%d) @ %s"	, "cmd"				, ts[y]->cmd_txt->l, ts[y]->cmd_path->s);
+						write(2, ts[y]->cmd_txt->s, ts[y]->cmd_txt->l);
+						if(ts[y]->cmd_txt->l)
+							write(2, "\n", 1);
+						log(L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : %d"			, "exit status"		, ts[y]->r_status);
+						log(L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : %d"			, "exit signal"		, ts[y]->r_signal);
+				}
+				if(log_would(L_FML | L_FMLEXEC))
+				{
+						log(L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : (%d) @ %s"	, "stdout"		, ts[y]->stdo_txt->l, ts[y]->stdo_path->s);
+						write(2, ts[y]->stdo_txt->s, ts[y]->stdo_txt->l);
+						if(ts[y]->stdo_txt->l)
+							write(2, "\n", 1);
+				}
+				if(log_would(L_FML | L_FMLEXEC) || e)
+				{
+						log(L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : (%d) @ %s"	, "stderr"		, ts[y]->stde_txt->l, ts[y]->stde_path->s);
+						write(2, ts[y]->stde_txt->s, ts[y]->stde_txt->l);
+						if(ts[y]->stde_txt->l)
+							write(2, "\n", 1);
+				}
 			}
 
 			// SUCCESS if - exit status 0, not killed by signal, and wrote nothing to stderr
@@ -646,26 +690,29 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 
 					for(k = 0; k < gn->needs.l; k++)
 					{
-						if(gn->needs.e[k]->needs.l == 0)
+						if(gn->needs.e[k].gn->needs.l == 0)
 						{
 							int j;
-							for(j = 0; j < gn->needs.e[k]->feeds.l; j++)
+							for(j = 0; j < gn->needs.e[k].gn->feeds.l; j++)
 							{
-								if(!gn->needs.e[k]->feeds.e[j]->fab_success)
+								if(!gn->needs.e[k].gn->feeds.e[j].gn->fab_success)
 									break;
 							}
 
-							if(j == gn->needs.e[k]->feeds.l)
-								fatal(gn_hashes_write, gn->needs.e[k]);
+							if(j == gn->needs.e[k].gn->feeds.l)
+								fatal(gn_hashes_write, gn->needs.e[k].gn);
 						}
 					}
 				}
 			}
 			else
 			{
-				return 0;
+				bad = 1;
 			}
 		}
+
+		if(bad)
+			return 0;
 	}
 
 	for(x = 0; x < tsl; x++)
@@ -679,21 +726,16 @@ void bp_dump(bp * bp)
 {
 	int x;
 	int y;
-	int c;
+	
+	int tot = 0;
 	for(x = 0; x < bp->stages_l; x++)
 	{
-		log(L_BP | L_BPDUMP, "STAGE %d", x);
+		tot += bp->stages[x].evals_l;
+	}
 
-/*
-		c = 0;
-		for(y = 0; y < bp->stages[x].primary_l; y++)
-		{
-			log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s", x, c++, "PRIMARY", bp->stages[x].primary[y]->path);
-		}
-*/
-
-		// so numbering lines up with BPEVAL
-		c = bp->stages[x].primary_l;
+	for(x = 0; x < bp->stages_l; x++)
+	{
+		log(L_BP | L_BPDUMP, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
 
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
@@ -707,15 +749,8 @@ void bp_dump(bp * bp)
 				if(i)
 					log(L_BP | L_BPDUMP, "        %-9s %s", des, bp->stages[x].evals[y]->products[i]->path);
 				else
-					log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s", x, c++, des, bp->stages[x].evals[y]->products[i]->path);
+					log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s", x, y, des, bp->stages[x].evals[y]->products[i]->path);
 			}
 		}
-
-/*
-		for(y = 0; y < bp->stages[x].nofmls_l; y++)
-		{
-			log(L_WARN | L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s (no formula)", x, c++, "SECONDARY", bp->stages[x].nofmls[y]->path);
-		}
-*/
 	}
 }

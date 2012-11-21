@@ -65,7 +65,10 @@ int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * s
 			LSTACK_ITERATE((*ls)[pn], i, go);
 			if(go)
 			{
-				fatal(lstack_add, (*ls)[p], (*ls)[pn]->s[0].s[i].s, (*ls)[pn]->s[0].s[i].l);
+				if((*ls)[pn]->s[0].s[i].type)
+					fatal(lstack_obj_add, (*ls)[p], *(void**)(*ls)[pn]->s[0].s[i].s, LISTWISE_TYPE_GNLW);
+				else
+					fatal(lstack_add, (*ls)[p], (*ls)[pn]->s[0].s[i].s, (*ls)[pn]->s[0].s[i].l);
 			}
 			LSTACK_ITEREND;
 		}

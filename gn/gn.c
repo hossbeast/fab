@@ -147,8 +147,8 @@ static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 		(*gna)->namel			= Al;
 		(*gna)->dir				= strdup(realwd);
 		(*gna)->dirl			= realwdl;
-		(*gna)->needs.z		= sizeof(struct gn **);
-		(*gna)->feeds.z		= sizeof(struct gn **);
+		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
+		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
 		char * xt = A + Al;
 		while(*xt != '.' && xt != A)
 			xt--;
@@ -206,7 +206,7 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 	return 1;
 }
 
-int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, int At, void ** const restrict B, int Bl, int Bt)
+int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, int At, void ** const restrict B, int Bl, int Bt, struct ff_node * ffn)
 {
 	gn *	gna = 0;
 	gn *	gnb = 0;
@@ -247,8 +247,20 @@ int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, 
 	}
 
 	// add dependency
+	relation * ra = 0;
+	relation * rb = 0;
+	fatal(coll_singly_add, &gna->needs.c, 0, &ra);
+	fatal(coll_singly_add, &gnb->feeds.c, 0, &rb);
+
+	ra->gn = gnb;
+	ra->ffn = ffn;
+	rb->gn = gna;
+	rb->ffn = ffn;
+
+/*
 	coll_singly_add(&gna->needs.c, &gnb, 0);
 	coll_singly_add(&gnb->feeds.c, &gna, 0);
+*/
 
 	*A = gna;
 	*B = gnb;
@@ -313,11 +325,27 @@ void gn_dump(gn * n)
 		log(L_DG | L_DGRAPH, "%12s : %d", "needs", n->needs.l);
 		int x;
 		for(x = 0; x < n->needs.l; x++)
-			log(L_DG | L_DGRAPH, "%12s --> %s", "", n->needs.e[x]->path);
+		{
+			log(L_DG | L_DGRAPH, "%12s --> %s @ [%3d,%3d - %3d,%3d]", ""
+				, n->needs.e[x].gn->path
+				, n->needs.e[x].ffn->loc.f_lin + 1
+				, n->needs.e[x].ffn->loc.f_col + 1
+				, n->needs.e[x].ffn->loc.l_lin + 1
+				, n->needs.e[x].ffn->loc.l_col + 1
+			);
+		}
 
 		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", n->feeds.l);
 		for(x = 0; x < n->feeds.l; x++)
-			log(L_DG | L_DGRAPH, "%12s --> %s", "", n->feeds.e[x]->path);
+		{
+			log(L_DG | L_DGRAPH, "%12s --> %s @ [%3d,%3d - %3d,%3d]", ""
+				, n->feeds.e[x].gn->path
+				, n->feeds.e[x].ffn->loc.f_lin + 1
+				, n->feeds.e[x].ffn->loc.f_col + 1
+				, n->feeds.e[x].ffn->loc.l_lin + 1
+				, n->feeds.e[x].ffn->loc.l_col + 1
+			);
+		}
 
 		log(L_DG | L_DGRAPH, "");
 	}

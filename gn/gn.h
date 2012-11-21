@@ -14,7 +14,16 @@
 
 #define GN_VERSION				0x01
 
+struct ff_node;
 struct fmleval;
+struct gn;
+
+typedef struct
+{
+	struct ff_node *	ffn;
+	struct gn *				gn;
+} relation;
+
 typedef struct gn
 {
 	/* exported to listwise - maintain corresponding length */
@@ -58,7 +67,8 @@ typedef struct gn
 			int						l;
 			int						a;
 			int						z;
-			struct gn **	e;
+/*		struct gn **	e; */
+			relation *		e;
 		};
 	} needs;
 
@@ -71,7 +81,8 @@ typedef struct gn
 			int						l;
 			int						a;
 			int						z;
-			struct gn **	e;
+/*		struct gn **	e; */
+			relation * 		e;
 		};
 	} feeds;
 
@@ -79,7 +90,9 @@ typedef struct gn
 	struct fmleval *	fmlv;
 
 	// tracking fields
-	char							mark;
+//	char							mark;
+//	char							visit;
+	int 							stage;
 
 	char							changed;
 	char							rebuild;
@@ -141,11 +154,12 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 //  At     - LISTWISE_TYPE_GNLW if A is a gn *, and 0 otherwise
 //  B      - same possibilities as A
 //  Bl     - length of B, 0 for strlen
+//  ffn    - originating dependency node
 //
 // RETURNS
 //  returns 0 on failure (memory, io) otherwise returns 1 and sets *A to gn for a, and *B to gn for b
 //
-int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, int At, void ** const restrict B, int Bl, int Bt)
+int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, int At, void ** const restrict B, int Bl, int Bt, struct ff_node * ffn)
 	__attribute__((nonnull));
 
 /// gn_dump

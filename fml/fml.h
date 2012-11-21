@@ -21,14 +21,9 @@ struct fml;
 //
 typedef struct fmleval
 {
-	struct fml *	fml;				// the formula
+	struct fml *	fml;					// the formula
 
-	/*
-  ** only used for dummy nodes, and only nonnull if fml is null
-  */
-	gn * 						product;
-
-	struct
+	struct											// products expected when executing the formula
 	{
 		gn **					products;
 		int						products_l;

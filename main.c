@@ -80,6 +80,9 @@ int main(int argc, char** argv)
 		if(!ffn)
 			return 0;
 
+		if(log_would(L_FF | L_FFTREE))
+			ff_dump(ffn);
+
 		// register object types with liblistwise
 		fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
 
@@ -199,7 +202,6 @@ int main(int argc, char** argv)
 
 			// traverse the graph, construct the build plan that culminates in the given targets
 			fatal(bp_create, list, list_len, &bp);
-
 			free(list);
 
 			// prune the buildplan of nodes which do not require updating
@@ -215,7 +217,8 @@ int main(int argc, char** argv)
 				else if(g_args.mode == MODE_FABRICATE)
 				{
 					// execute the build plan, one stage at a time
-					fatal(bp_exec, bp, vmap, &stax, &stax_l, &stax_a, p);
+					if(bp_exec(bp, vmap, &stax, &stax_l, &stax_a, p) == 0)
+						return 0;
 				}
 			}
 		}

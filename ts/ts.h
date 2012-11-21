@@ -12,28 +12,26 @@ struct fmleval;
 // thread workspace
 typedef struct 
 {
-/*
-	gn *			gn;					// graph node being fabricated
-*/
+	struct fmleval * fmlv;			// fml evaluation context
 
-	struct fmleval * fmlv;				// fml evaluation context
+	pid_t			pid;							// child pid
 
-	pid_t			pid;				// child pid
+	int				cmd_fd;						// fd for cmd file
+	pstring *	cmd_path;					// full path to cmd file
+	pstring *	cmd_txt;					// txt in cmd file
 
-	int				cmd_fd;			// fd for cmd file
-	pstring *	cmd_path;		// full path to cmd file
-	pstring *	cmd_txt;		// txt in cmd file
+	int				stdo_fd;					// fd for stdout file
+	pstring *	stdo_path;				// full path to stdout file
+	pstring *	stdo_txt;					// txt in stdout file
 
-	int				stdo_fd;		// fd for stdout file
-	pstring *	stdo_path;	// full path to stdout file
-	pstring *	stdo_txt;		// txt in stdout file
+	int				stde_fd;					// fd for stderr file
+	pstring *	stde_path;				// full path to stderr file
+	pstring *	stde_txt;					// txt in stderr file
 
-	int				stde_fd;		// fd for stderr file
-	pstring *	stde_path;	// full path to stderr file
-	pstring *	stde_txt;		// txt in stderr file
+	int				r_status;					// exit status
+	int				r_signal;					// exit signal
 
-	int				r_status;		// exit status
-	int				r_signal;		// exit signal
+	int y;
 } ts;
 
 int ts_mk(ts ** ts)

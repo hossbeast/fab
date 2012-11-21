@@ -148,7 +148,7 @@
 																							POPSTATE(yyextra);
 																							PUSHSTATE(commandlit, yyextra);
 																						}
-<commandchecklit>.													{ POPSTATE(yyextra); yyless(0); }
+<commandchecklit>.|\n												{ POPSTATE(yyextra); yyless(0); }
 <commandlit>.*															{
 																							POPSTATE(yyextra);
 																							return LEX(WORD);

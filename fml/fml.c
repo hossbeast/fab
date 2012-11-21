@@ -27,56 +27,6 @@ union g_fmls_t		g_fmls = { { .size = sizeof(fml) } };
 // static
 //
 
-static int resolve_path(pstring ** p, gn * gn)
-{
-	return pscatf(p, gn->path);
-}
-
-static int do_resolve_edepso(pstring ** p, gn * gn, int k)
-{
-	if(strcmp(gn->ext, "o") == 0)
-	{
-		if(k)
-			fatal(pscatf, p, " ");
-
-		fatal(pscatf, p, gn->path);
-		k++;
-	}
-
-	int x;
-	for(x = 0; x < gn->needs.l; x++)
-		fatal(do_resolve_edepso, p, gn->needs.e[x], k);
-
-	return 1;
-}
-
-static int resolve_edepso(pstring ** p, gn * gn)
-{
-	int x;
-	for(x = 0; x < gn->needs.l; x++)
-		fatal(do_resolve_edepso, p, gn->needs.e[x], 0);
-
-	return 1;
-}
-
-static int resolve_idepsc(pstring ** p, gn * gn)
-{
-	int k = 0;
-	int x;
-	for(x = 0; x < gn->needs.l; x++)
-	{
-		if(strcmp(gn->needs.e[x]->ext, "c") == 0)
-		{
-			if(k++)
-				fatal(pscatf, p, " ");
-
-			fatal(pscatf, p, gn->needs.e[x]->path);
-		}
-	}
-
-	return 1;
-}
-
 static int fml_add_single(fml * fml, lstack * ls)
 {
 	int R = 1;
@@ -298,6 +248,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 				lstack_string((*stax)[p], 0, i, &s, &l);
 
 				fatal(pscat, &ts->cmd_txt, s, l);
+//				fatal(pscatf, &ts->cmd_txt, "[%d]%.*s(%d)(%p)", i, l, s, (*stax)[p]->s[0].s[i].type, s);
 				k++;
 			}
 			LSTACK_ITEREND;

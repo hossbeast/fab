@@ -13,7 +13,7 @@
 #define L_CYAN          0x0000000400000000ULL // this message cyan in the terminal
 #define L_BLUE          0x0000000500000000ULL // this message blue in the terminal
 
-#define L_TAG           0x000000003FFFFFFFULL  // D range
+#define L_TAG           0x000000003FFFFFFFULL // D range
 
 // E
 #define L_ERROR         0x0000000000000001ULL | L_RED			/* errors leading to shutdown */
@@ -66,27 +66,27 @@ int log_would(const uint64_t bits);
 //
 // writes messages to stderr if log_would([bits])
 //
-void log(const uint64_t bits, const char* fmt, ...)
+int log(const uint64_t bits, const char* fmt, ...)
 	__attribute__((nonnull));
 
 /// log_start
 //
 // begin writing a single log
 //
-void log_start(const uint64_t bits, const char* fmt, ...)
+int log_start(const uint64_t bits, const char* fmt, ...)
 	__attribute__((nonnull));
 
 /// log_add
 //
 //
 //
-void log_add(const char* fmt, ...);
+int log_add(const char* fmt, ...);
 
 /// log_finish
 //
 // complete the log begun with log_start
 //
-void log_finish(const char* fmt, ...);
+int log_finish(const char* fmt, ...);
 
 /// log_teardown
 //
