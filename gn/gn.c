@@ -60,38 +60,48 @@ static int hashfile_mkpath(gn * gn)
 
 static void gn_stat(gn * n)
 {
-	struct stat stb;
-
-	// STAT for A
-	if(stat(n->path, &stb) == 0)
+	// skip for non-file-backed nodes
+	if(strcmp(n->dir, "/.."))
 	{
-		n->dev			= stb.st_dev;
-		n->ino			= stb.st_ino;
-		n->mode			= stb.st_mode;
-		n->nlink		= stb.st_nlink;
-		n->uid			= stb.st_uid;
-		n->gid			= stb.st_gid;
-		n->size			= stb.st_size;
-		n->mtime		= stb.st_mtime;
-		n->ctime		= stb.st_ctime;
-	}
+		struct stat stb;
 
-	// compute hashes
-	n->prop_hash[1] = hash(
-			(char*)&n->dev
-		, (char*)&n->ctime - (char*)&n->dev
-	);
+		// STAT for A
+		if(stat(n->path, &stb) == 0)
+		{
+			n->dev			= stb.st_dev;
+			n->ino			= stb.st_ino;
+			n->mode			= stb.st_mode;
+			n->nlink		= stb.st_nlink;
+			n->uid			= stb.st_uid;
+			n->gid			= stb.st_gid;
+			n->size			= stb.st_size;
+			n->mtime		= stb.st_mtime;
+			n->ctime		= stb.st_ctime;
+		}
+
+		// compute hashes
+		n->prop_hash[1] = hash(
+				(char*)&n->dev
+			, (char*)&n->ctime - (char*)&n->dev
+		);
+	}
 }
 
 static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 {
-	char* space = 0;
-
 	// p will point to a null-terminated string of the full canonical path to the file
-	// A will point to a null-terminated string of the name of the file
 	char * p = 0;
 	int pl = 0;
-	int realwdl = strlen(realwd);
+
+	// n will point to a length-limited string of the name of the file
+	char* n = 0;
+	int nl = 0;
+
+	// d will point to a length-limited string of the name of the file
+	char * d = 0;
+	int dl = 0;
+
+	char* space = 0;
 
 	if(Al)
 	{
@@ -102,6 +112,7 @@ static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 		}
 		else
 		{
+			int realwdl = strlen(realwd);
 			space = alloca(realwdl + 1 + Al + 1);
 			sprintf(space, "%s/%.*s", realwd, Al, A);
 		}
@@ -119,6 +130,7 @@ static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 		}
 		else
 		{
+			int realwdl = strlen(realwd);
 			space = alloca(realwdl + 1 + Al + 1);
 			sprintf(space, "%s/%.*s", realwd, Al, A);
 
@@ -127,12 +139,19 @@ static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 	}
 
 	pl = strlen(p);
-	A = p + pl - 1;
-	while(A != p && A[0] != '/')
-		A--;
+	n = p + pl - 1;
+	while(n[0] != '/')
+		n--;
 
-	A++;
-	Al = strlen(A);
+	n++;
+	nl = strlen(n);
+
+	d = p;
+	dl = pl - nl - 1;
+	while(dl && d[dl] == '/')
+		dl--;
+
+	dl++;
 
 	if(!gn_nodes.by_path || (*gna = idx_lookup_val(gn_nodes.by_path, (char*[]) { p }, 0)) == 0)
 	{
@@ -143,14 +162,14 @@ static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 		(*gna)->vrs[1]		= GN_VERSION;
 		(*gna)->path			= strdup(p);
 		(*gna)->pathl			= pl;
-		(*gna)->name			= strdup(A);
-		(*gna)->namel			= Al;
-		(*gna)->dir				= strdup(realwd);
-		(*gna)->dirl			= realwdl;
+		(*gna)->name			= strdup(n);
+		(*gna)->namel			= nl;
+		(*gna)->dir				= strndup(d, dl);
+		(*gna)->dirl			= dl;
 		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
-		char * xt = A + Al;
-		while(*xt != '.' && xt != A)
+		char * xt = n + nl;
+		while(*xt != '.' && xt != n)
 			xt--;
 		if(*xt == '.')
 		{
@@ -188,16 +207,6 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 			, INDEX_UNIQUE | INDEX_STRING | INDEX_DEREF
 			, &gn_nodes.by_path
 		);
-
-		fatal(idx_mkindex
-			, gn_nodes.e
-			, gn_nodes.l
-			, gn_nodes.z
-			, offsetof(typeof(gn_nodes.e[0][0]), dir)
-			, 0
-			, INDEX_MULTI | INDEX_STRING | INDEX_DEREF
-			, &gn_nodes.by_dir
-		);
 	}
 
 	if(r)
@@ -222,6 +231,15 @@ int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, 
 	else
 		fatal(gn_create, realwd, *(char**)B, Bl, &gnb, &new);
 
+	// error check
+	if(strcmp(gnb->dir, "/..") == 0)
+	{
+		if(strcmp(gna->dir, "/.."))
+		{
+			fail("file-backed node may not depend on non-file-backed node");
+		}
+	}
+
 	// reindex the collections
 	if(new)
 	{
@@ -234,19 +252,8 @@ int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, 
 			, INDEX_UNIQUE | INDEX_STRING | INDEX_DEREF
 			, &gn_nodes.by_path
 		);
-
-		fatal(idx_mkindex
-			, gn_nodes.e
-			, gn_nodes.l
-			, gn_nodes.z
-			, offsetof(typeof(gn_nodes.e[0][0]), dir)
-			, 0
-			, INDEX_MULTI | INDEX_STRING | INDEX_DEREF
-			, &gn_nodes.by_dir
-		);
 	}
 
-	// add dependency
 	relation * ra = 0;
 	relation * rb = 0;
 	fatal(coll_singly_add, &gna->needs.c, 0, &ra);
@@ -256,11 +263,6 @@ int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, 
 	ra->ffn = ffn;
 	rb->gn = gna;
 	rb->ffn = ffn;
-
-/*
-	coll_singly_add(&gna->needs.c, &gnb, 0);
-	coll_singly_add(&gnb->feeds.c, &gna, 0);
-*/
 
 	*A = gna;
 	*B = gnb;
@@ -277,10 +279,16 @@ void gn_dump(gn * n)
 		log(L_DG | L_DGRAPH, "%8s : %s", "path", n->path);
 		if(n->fmlv)
 		{
-			if(n->needs.l)
+			if(strcmp(n->dir, "/..") == 0)
+				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "TASK");
+			else if(n->needs.l)
 				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "SECONDARY");
 			else
 				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "GENERATED");
+		}
+		else if(strcmp(n->dir, "/..") == 0)
+		{
+			log(L_DG | L_DGRAPH, "%12s : %s", "designation", "NONFILE");
 		}
 		else if(n->needs.l)
 		{

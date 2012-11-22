@@ -44,17 +44,34 @@ static int fml_add_single(fml * fml, lstack * ls)
 		fmlv->products_l = 1;
 		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
 
+		char * s = 0;
+		int l = 0;
+
+		fatal(lstack_string, ls, 0, y, &s, &l);
+
 		gn* t = 0;
-		if(ls->s[0].s[y].l && ls->s[0].s[y].s[0] == '/')
+		if(l && s[0] == '/')
 		{
-			t = idx_lookup_val(gn_nodes.by_path, &ls->s[0].s[y].s, 0);
+			if((t = idx_lookup_val(gn_nodes.by_path, &s, l)) == 0)
+			{
+				// task nodes do not necessarily require a relation to the rest of the graph - create here in this case
+				if(l > 4 && memcmp("/../", s, 4) == 0)
+				{
+					fatal(gn_add, 0, s, l, &t);
+				}
+			}
 		}
 		else
 		{
+			/*
+			** this loop should be replaced by an idx lookup on names within the directory
+			*/
+
 			int i;
 			for(i = 0; i < gn_nodes.l; i++)
 			{
-				if(strcmp(gn_nodes.e[i]->dir, fml->ffn->ff_dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[0].s[y].s) == 0)
+				if(  strcmp(gn_nodes.e[i]->dir, fml->ffn->ff_dir) == 0
+					&& xstrcmp(gn_nodes.e[i]->name, gn_nodes.e[i]->namel, s, l) == 0)
 				{
 					t = gn_nodes.e[i];
 					break;

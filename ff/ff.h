@@ -10,6 +10,7 @@
 
 #define restrict __restrict
 
+// flags
 #define FFN_SINGLE		0x00
 #define FFN_MULTI			0x01
 
@@ -23,7 +24,7 @@
 	_FFN(FFN_GENERATOR			, 0x07	, x)	\
 	_FFN(FFN_VARNAME				, 0x08	, x)	\
 	_FFN(FFN_LF							, 0x09	, x)	\
-	_FFN(FFN_WORD						, 0x0a	, x)	\
+	_FFN(FFN_WORD						, 0x0a	, x)
 
 enum {
 #define _FFN(a, b, c) a = b,

@@ -174,8 +174,6 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 	}
 	else if(type == FFN_FORMULA)
 	{
-		n->flags					= (uint8_t)va_arg(va, int);
-		n->targets				= va_arg(va, ff_node*);
 		n->chain[0]				= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_INCLUDE)
@@ -366,6 +364,11 @@ void ff_dump(ff_node * const restrict root)
 			}
 			if(ffn->type == FFN_DEPENDENCY)
 			{
+				log(L_FF | L_FFTREE, "%*s  %10s"
+					, lvl * 2, ""
+					, "type"
+					, ffn->flags & FFN_MULTI ? "multi" : "single"
+				);
 				log(L_FF | L_FFTREE, "%*s  %10s :"
 					, lvl * 2, ""
 					, "needs"
@@ -380,6 +383,11 @@ void ff_dump(ff_node * const restrict root)
 			}
 			else if(ffn->type == FFN_FORMULA)
 			{
+				log(L_FF | L_FFTREE, "%*s  %10s"
+					, lvl * 2, ""
+					, "type"
+					, ffn->flags & FFN_MULTI ? "multi" : "single"
+				);
 				log(L_FF | L_FFTREE, "%*s  %10s :"
 					, lvl * 2, ""
 					, "targets"

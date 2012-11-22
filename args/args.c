@@ -137,19 +137,8 @@ int parse_args(int argc, char** argv)
 	{
 		if(argv[x][0] != '+' && argv[x][0] != '-')
 		{
-			g_args.targets = realloc(g_args.targets, sizeof(*g_args.targets) * (g_args.targets_len + 1));
 			fatal(xrealloc, &g_args.targets, sizeof(g_args.targets[0]), g_args.targets_len + 1, g_args.targets_len);
-			if(argv[x][0] == '/')
-			{
-				g_args.targets[g_args.targets_len] = strdup(argv[x]);
-			}
-			else
-			{
-				// path is relative to current working directory
-				fatal(xmalloc, &g_args.targets[g_args.targets_len], g_args.cwdl + 1 + strlen(argv[x]) + 1);
-				sprintf(g_args.targets[g_args.targets_len], "%s/%s", g_args.cwd, argv[x]);
-			}
-			g_args.targets_len++;
+			g_args.targets[g_args.targets_len++] = strdup(argv[x]);
 		}
 	}
 

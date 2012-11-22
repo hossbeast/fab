@@ -45,7 +45,13 @@ int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * s
 			lstack ** vls = 0;
 			if((vls = map_get(vmap, list->elements[x]->name, strlen(list->elements[x]->name))) == 0)
 			{
-				fail("reference to undefined variable : '%s'", list->elements[x]->name);
+				fail("reference to undefined variable : '%s' @ [%3d,%3d - %3d,%3d]"
+					, list->elements[x]->name
+					, list->loc.f_lin + 1
+					, list->loc.f_col + 1
+					, list->loc.l_lin + 1
+					, list->loc.l_col + 1
+				);
 			}
 
 			LSTACK_ITERATE((*vls), i, go);

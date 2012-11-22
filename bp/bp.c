@@ -12,11 +12,19 @@
 #include "macros.h"
 
 /*
-** BPEVAL graph node designations
+** graph node designations
 **
-** GENERATED - has no dependencies, can be fabricated by some formula
-** PRIMARY   - has no dependencies, has no formula
-** SECONDARY - has dependencies, and can be fabricated by some formula
+** 1. has any dependencies
+** 2. can be fabricated by some formula
+** 3. has a backing file
+**
+**              1  2  3
+** PRIMARY   - [ ][ ][x]
+** SECONDARY - [x][x][x]
+** GENERATED - [ ][x][x]
+** TASK      - [ ][x][ ]
+** NOFILE    - [ ][ ][ ]
+**
 */
 
 //
@@ -79,14 +87,6 @@ static int visit(gn * n, int k, gn *** lvs, int * l, int * a)
 
 	return n->stage;
 }
-
-/*
-printf("leaf -- [%d][%d] %s\n"
-	, n->needs.l
-	, n->needs.l ? n->needs.e[0].gn->mark : -1
-	, n->path
-);
-*/
 
 //
 // public
@@ -154,7 +154,7 @@ int bp_create(gn ** n, int l, bp ** bp)
 				int y;
 				for(y = 0; y < lvsl; y++)
 				{
-//printf("x=%d k=%d y=%d m=%d n[x]=%s -- %s\n", x, k, y, lvs[y]->mark, n[x]->path, lvs[y]->path);
+//printf("x=%d k=%d y=%d s=%d n[x]=%s -- %s\n", x, k, y, lvs[y]->stage, n[x]->path, lvs[y]->path);
 					if(lvs[y]->fmlv)
 					{
 						// explicitly mark each target of this eval context : it is possible that a single
@@ -308,12 +308,17 @@ int bp_prune(bp * bp)
 
 			for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
 			{
-				// GENERATED and SECONDARY files
+				// TASK, GENERATED, and SECONDARY nodes
 				gn * gn = bp->stages[x].evals[y]->products[k];
 
 				if(!gn->poison)
 				{
-					if(gn->needs.l)
+					if(strcmp("/..", gn->dir) == 0)
+					{
+						// TASK node - must be fabricated every time
+						gn->rebuild = 1;
+					}
+					else if(gn->needs.l)
 					{
 						// SECONDARY file
 						if(gn->prop_hash[1] == 0)
@@ -375,7 +380,16 @@ int bp_prune(bp * bp)
 
 					if(gn->rebuild)
 					{
-						if(gn->needs.l)
+						if(strcmp("/..", gn->dir) == 0)
+						{
+							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
+								, x, c++
+								, "TASK"
+								, gn->path
+								, "EXECUTE"
+							);
+						}
+						else if(gn->needs.l)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
@@ -612,6 +626,8 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			for(k = 0; k < ts[y]->fmlv->products_l; k++)
 			{
 				char * des = "SECONDARY";
+				if(strcmp("/..", ts[y]->fmlv->products[k]->dir) == 0)
+					des = "TASK";
 				if(ts[y]->fmlv->products[k]->needs.l == 0)
 					des = "GENERATED";
 
@@ -743,7 +759,9 @@ void bp_dump(bp * bp)
 			for(i = 0; i < bp->stages[x].evals[y]->products_l; i++)
 			{
 				char * des = "SECONDARY";
-				if(bp->stages[x].evals[y]->products[i]->needs.l == 0)
+				if(strcmp("/..", bp->stages[x].evals[y]->products[i]->dir) == 0)
+					des = "TASK";
+				else if(bp->stages[x].evals[y]->products[i]->needs.l == 0)
 					des = "GENERATED";
 
 				if(i)

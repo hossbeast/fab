@@ -106,18 +106,18 @@ dependencies
 	- a canonical filepath depends on another canonical filepath + exact cmd used to construct that file
 
 TODO
- : mode to build all targets
- : mode to just display buildplan - implies BPDUMP
- : need PHONY targets - 
- : rename ff - fabfile
  : fablw - inspect dependency graph
  : fab -h help
- : hash invalidation - force rebuild
 
-- stack based dependencies, and formulas, i.e. formula fabs 2 targets
-- multi-target formulas
 - right-to-left dependency evaluation
 - generator-string variables, and composition from variables
 
 - fablw - examine the dependency graph
-- list-in-command interpolation modes : no whitespace, commas, etc
+
+
+TASKS
+ - a task is a name given to a formula to be executed on demand
+	- relations : non-task nodes may NOT depend on task nodes
+							: task nodes MAY depend on any other node
+	- formula : a task MUST have a formula
+	- exec : a task is ALWAYS executed and is NOT related to presence/contents of any file

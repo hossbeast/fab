@@ -26,7 +26,9 @@ typedef struct
 
 typedef struct gn
 {
-	/* exported to listwise - maintain corresponding length */
+	/* exported to listwise - maintain corresponding length
+	** these strings ARE null-terminated, though
+	*/
 	char*							dir;						// canonical path to directory file is in
 	int								dirl;
 	char*							name;						// file name
@@ -36,7 +38,9 @@ typedef struct gn
 	char*							ext;						// portion of file name following the last '.', or null
 	int								extl;
 
-	char*							hashfile_path;	// canonical path to hashfile
+  char*							hashfile_path;  // canonical path to hashfile
+
+
 
 	// fields for computing prophash
 	struct __attribute__((packed))
@@ -67,7 +71,6 @@ typedef struct gn
 			int						l;
 			int						a;
 			int						z;
-/*		struct gn **	e; */
 			relation *		e;
 		};
 	} needs;
@@ -81,7 +84,6 @@ typedef struct gn
 			int						l;
 			int						a;
 			int						z;
-/*		struct gn **	e; */
 			relation * 		e;
 		};
 	} feeds;
@@ -90,8 +92,6 @@ typedef struct gn
 	struct fmleval *	fmlv;
 
 	// tracking fields
-//	char							mark;
-//	char							visit;
 	int 							stage;
 
 	char							changed;
@@ -107,14 +107,13 @@ extern union gn_nodes_t
 
 	struct
 	{
-		int		l;				// length
-		int		a;				// allocated
-		int		z;				// element size
+		int		l;						// length
+		int		a;						// allocated
+		int		z;						// element size
 
-		gn ** e;				// elements
+		gn ** e;						// elements
 
-		idx*	by_path;	// indexed by canonical path
-		idx*	by_dir;		// indexed by canonical dir
+		idx*	by_path;			// indexed by canonical path
 	};
 } gn_nodes;
 
@@ -142,7 +141,7 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 // SUMMARY
 //  1) possibly create graph nodes for A, and B
 //  2) add the directed edge : A -> B (A depends on B)
-//  3) return gn for A
+//  3) return gn for A, and B
 //
 // PARAMETERS
 //  realwd - canonical path to directory for resolving relative paths
@@ -151,9 +150,10 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 //                      3) canonical filepath, or
 //                      4) gn *
 //  Al     - length of A, or 0 for strlen
-//  At     - LISTWISE_TYPE_GNLW if A is a gn *, and 0 otherwise
+//  At     - LISTWISE_TYPE_GNLW if A is a gn * and 0 otherwise
 //  B      - same possibilities as A
 //  Bl     - length of B, 0 for strlen
+//	Bt		 - LISTWISE_TYPE_GNLW if B is a gn * and 0 otherwise
 //  ffn    - originating dependency node
 //
 // RETURNS

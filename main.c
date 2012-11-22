@@ -18,6 +18,7 @@
 #include "var.h"
 #include "dep.h"
 
+#include "macros.h"
 #include "control.h"
 
 // signal handling
@@ -40,6 +41,7 @@ int main(int argc, char** argv)
 		ff_node *						ffn = 0;
 		bp *								bp = 0;
 		map *								vmap = 0;				// variable lookup map
+		gn *								first = 0;			// first dependency mentioned
 		lstack **						stax = 0;
 		int									stax_l = 0;
 		int									stax_a = 0;
@@ -102,55 +104,12 @@ int main(int argc, char** argv)
 		fatal(lstack_add, stax[p], ffn->ff_dir, strlen(ffn->ff_dir));
 		fatal(var_set, vmap, "#", stax[p++]);
 
-		// first dependency found is the default for "*"
-		// star is the index into stax where "*" was set
-		int star = 0;
-
-		if(g_args.targets_len)
-		{
-			// use up one list and populate the * variable (root-level targets)
-			if(stax_a <= p)
-			{
-				fatal(xrealloc, &stax, sizeof(*stax), p + 1, stax_a);
-				stax_a = p + 1;
-			}
-			if(!stax[p])
-				fatal(xmalloc, &stax[p], sizeof(*stax[p]));
-			lstack_reset(stax[p]);
-
-			// add gn's for each target, and add those to the vmap
-			for(x = 0; x < g_args.targets_len; x++)
-			{
-				gn * gn = 0;
-				fatal(gn_add, ffn->ff_dir, g_args.targets[x], 0, &gn);
-				fatal(lstack_obj_add, stax[p], gn, LISTWISE_TYPE_GNLW);
-			}
-			fatal(var_set, vmap, "*", stax[star = p++]);
-		}
-
-		// process the fabfile tree, constructing the graph
+		// process the fabfile tree, construct the graph
 		for(x = 0; x < ffn->statements_l; x++)
 		{
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
-				gn * first = 0;
-				fatal(dep_add, ffn->statements[x], vmap, &stax, &stax_l, &stax_a, p, &first);
-
-				if(!star)
-				{
-					// use up one list and populate the * variable (root-level targets)
-					if(stax_a <= p)
-					{
-						fatal(xrealloc, &stax, sizeof(*stax), p + 1, stax_a);
-						stax_a = p + 1;
-					}
-					if(!stax[p])
-						fatal(xmalloc, &stax[p], sizeof(*stax[p]));
-					lstack_reset(stax[p]);
-
-					fatal(lstack_obj_add, stax[p], first, LISTWISE_TYPE_GNLW);
-					fatal(var_set, vmap, "*", stax[star = p++]);
-				}
+				fatal(dep_add, ffn->statements[x], vmap, &stax, &stax_l, &stax_a, p, first ? 0 : &first);
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)
 			{
@@ -188,38 +147,83 @@ int main(int argc, char** argv)
 				}
 			}
 		}
-		else if(star)
+		else
 		{
 			// lookup gn for each target
-			gn ** list = 0;
-			int list_len = 0;
+			gn **		node_list = 0;
+			int			node_list_len = 0;
 
-			list_len = stax[star]->s[0].l;
-			list = calloc(sizeof(*list), list_len);
+			char *	space = 0;
+			int			aretasks = 0;
+			int			istask = 0;
 
-			for(x = 0; x < list_len; x++)
-				list[x] = *(void**)stax[star]->s[0].s[x].s;
+			fatal(xmalloc, &node_list, sizeof(node_list[0]) * MAX(g_args.targets_len, 1));
 
-			// traverse the graph, construct the build plan that culminates in the given targets
-			fatal(bp_create, list, list_len, &bp);
-			free(list);
-
-			// prune the buildplan of nodes which do not require updating
-			if(bp_prune(bp))
+			// add gn's for each target
+			for(x = 0; x < g_args.targets_len; x++)
 			{
-				// dump buildplan, pending logging
+				gn * gn = 0;
+				if(gn_nodes.by_path)
+				{
+					char * sp = g_args.targets[x];
+					while(gn == 0)
+					{
+						if(gn = idx_lookup_val(gn_nodes.by_path, &sp, 0))
+						{
+							istask = strcmp(gn->dir, "/..") == 0;
+							if(aretasks && !istask)
+								fail("cannot mix tasks and file-backed-nodes");
+							aretasks |= istask;
+
+							node_list[node_list_len++] = gn;
+						}
+						else if(sp != space)
+						{
+							fatal(xrealloc, &space, 1, strlen(g_args.targets[x]) + 5, 0);
+							sprintf(space, "/../%s", g_args.targets[x]);
+							sp = space;
+						}
+						else
+						{
+							break;
+						}
+					}
+				}
+
+				if(gn == 0)
+				{
+					fail("unknown : %s", g_args.targets[x]);
+				}
+			}
+
+			// default target is the first dependency processed
+			if(node_list_len == 0 && first)
+			{
+				node_list[node_list_len++] = first;
+			}
+
+			if(node_list_len)
+			{
+				// traverse the graph, construct the build plan that culminates in the given targets
+				fatal(bp_create, node_list, node_list_len, &bp);
+
+				// prune the buildplan of nodes which do not require updating
+				if(bp_prune(bp) == 0)
+					return 0;
+			}
+
+			// dump buildplan, pending logging
+			if(bp)
 				bp_dump(bp);
 
-				if(bp->stages_l == 0)
-				{
-					log(L_INFO, "nothing to fabricate");
-				}
-				else if(g_args.mode == MODE_FABRICATE)
-				{
-					// execute the build plan, one stage at a time
-					if(bp_exec(bp, vmap, &stax, &stax_l, &stax_a, p) == 0)
-						return 0;
-				}
+			if(!bp || bp->stages_l == 0)
+				log(L_INFO, "nothing to fabricate");
+
+			if(bp && g_args.mode == MODE_FABRICATE)
+			{
+				// execute the build plan, one stage at a time
+				if(bp_exec(bp, vmap, &stax, &stax_l, &stax_a, p) == 0)
+					return 0;
 			}
 		}
 
