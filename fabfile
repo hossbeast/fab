@@ -1,0 +1,155 @@
+##
+## programs
+##
+NAME						= [ fab ]
+CC							= [ gcc ]
+FLEX						= [ flex ]
+BISON						= [ bison ]
+CFLAGS					= [ -m64 -O3 -Werror -fms-extensions -fno-builtin-log -D_GNU_SOURCE [ $# ] =>> lsr/xm/<h>/rp/dn/ss/u/s/^/-I ]
+LFLAGS					= [ -llistwise ]
+
+##
+## directories
+##
+SRCDIR					= [ $# ]
+DESTDIR					= [ / ]
+BINDIR					= [ usr/local/bin ]
+
+# executable depends on .o for each c, l, and y
+[ $NAME ] : [ $SRCDIR ] =>> lsr/xs/<c>/<o>/y
+[ $NAME ] : [ $SRCDIR ] =>> lrs/xs/<l>/<lex.o>/y
+[ $NAME ] : [ $SRCDIR ] =>> lrs/xs/<y>/<tab.o>/y
+
+# each .o depends on its .c
+[ $SRCDIR ] =>> lsr/xs/<c>/<o>/y/dj/shift/pop :: [ $< ] =>> rx/xs/<c>
+
+##
+## formulas
+##
+
+# compile the executable
+[ $NAME ] :
+{
+	[ $CC $CFLAGS $LFLAGS -o $@ [ $@ ] =>> rx/aneed/xm/<o>/ss/u ]
+}
+
+# compile o from c
+[
+	[ $SRCDIR ] =>> lsr/xs/<c>/<o>/y
+	[ $SRCDIR ] =>> lsr/xs/<l>/<lex.o>/y
+	[ $SRCDIR ] =>> lsr/xs/<y>/<tab.o>/y
+] :
+{
+	[ $CC $CFLAGS ] -c [ $@ ] =>> rx/ineed/xm/<c>/ss/u -o [ $@ ]
+}
+
+# flex - create .lex.c and .lex.h from a .l
+[ $SRCDIR ] =>> lsr/xs/<l>/lex.c/y/v/d/cp/u/xs/lex.c/lex.h/z/v/dj/2/shift/pop/2 ::
+{
+	[ $FLEX -o [ $@ ] =>> h/1/1/rx ]									\
+	[ --header-file= [ $@ ] =>> h/0/1/rx ] =>> j			\
+	[ $@ ] =>> rx/ineed/xm/<l>/ss/u
+}
+
+# bison - create .tab.c and .tab.h from a .y
+[ $SRCDIR ] =>> lsr/xs/<y>/tab.c/y/v/d/cp/u/xs/tab.c/tab.h/z/v/dj/2/shift/pop/2 ::
+{
+	[ $BISON --warnings=error -o ]		\
+	[ $@ ] =>> h/1/1									\
+	[ -d ]														\
+	[ $@ ] =>> rx/ineed/xm/<y>/ss/u
+}
+
+# tok.c and tok.h are extracted from tab.c
+[ $SRCDIR ] =>> lsr/xs/<y>/tab.c/y/v/d/cp/u/xs/tok.c/tok.h/z/v/dj/2/shift/pop/2 :: [ $< ] =>> xs/<tab.c>
+{
+	exec 1> [ $@ ] =>> h/0/1/xs/<tok.h>
+	echo "#ifndef [ [ $@ ] =>> h/0/1/bn/xs/<tok.h>/s/\./_/g _TOK_H ] =>> j "
+	echo "#define [ [ $@ ] =>> h/0/1/bn/xs/<tok.h>/s/\./_/g _TOK_H ] =>> j "
+	echo "const char* [ $@ ] =>> h/0/1/bn/xs/<tok
+
+	exec 1> [ $@ ] =>> h/0/1/xs/<tok.c>
+
+	@echo "#ifndef _$(subst .,_,$(*F))_TOK_H"         							 	 >$(*D)/$(*F).tok.h
+	@echo "#define _$(subst .,_,$(*F))_TOK_H"         								>>$(*D)/$(*F).tok.h
+	@echo "const char* $(subst .,_,$(*F))_tokname(int);"							>>$(*D)/$(*F).tok.h
+	@sed   -ne '/yytokentype/,/;/ p' < $<													\
+		| sed -e 's/\(yytokentype\)/$(subst .,_,$(*F))_\1/'         \
+		| sed -e '/ *[A-Z]/s/\([A-Z]\)/$(subst .,_,$(*F))_\1/'			    >>$(*D)/$(*F).tok.h
+	@echo "#endif"                                  									>>$(*D)/$(*F).tok.h
+	@echo "typedef unsigned short yytype_uint16;"   									 >$(*D)/$(*F).tok.c
+	@sed -ne '/yytname\[\]/,/;/ p'  < $< | sed -e 's/\\"\|'"'"'//g'   >>$(*D)/$(*F).tok.c
+	@sed -ne '/yytoknum\[\]/,/;/ p' < $<            									>>$(*D)/$(*F).tok.c
+	@grep 'define YYNTOKENS'        < $<            									>>$(*D)/$(*F).tok.c
+	@echo '#define API __attribute__((visibility("protected")))'			>>$(*D)/$(*F).tok.c
+	@echo '#include <stdio.h>'																				>>$(*D)/$(*F).tok.c
+	@echo "const char API * $(subst .,_,$(*F))_tokname(int tok)"			>>$(*D)/$(*F).tok.c
+	@echo "{"																													>>$(*D)/$(*F).tok.c
+	@echo '  int x;'																									>>$(*D)/$(*F).tok.c
+	@echo '  for(x = 0; x < YYNTOKENS; x++)'													>>$(*D)/$(*F).tok.c
+	@echo '  {'																												>>$(*D)/$(*F).tok.c
+	@echo '  	 if(yytoknum[x] == tok)'																>>$(*D)/$(*F).tok.c
+	@echo '		 {'																											>>$(*D)/$(*F).tok.c
+	@echo '      return yytname[x];'																	>>$(*D)/$(*F).tok.c
+	@echo '    }'																											>>$(*D)/$(*F).tok.c
+	@echo '  }'																												>>$(*D)/$(*F).tok.c
+	@echo '  return 0;'																								>>$(*D)/$(*F).tok.c
+	@echo '}'																													>>$(*D)/$(*F).tok.c
+}
+
+ff/ff.tokens.c : ff/ff.tok.c
+	cp $< $@
+
+ff/ff.tokens.h : ff/ff.tok.h
+	cp $< $@
+
+%.c : %.y
+%.c : %.l
+
+%.o : %.c
+	$(CC) $(COPTS) $(CFLAGS) $< -o $@
+
+# dependencies
+main.o  : args/args.o						\
+				  ff/ff.o								\
+				  bp/bp.o								\
+				  common/coll.o					\
+				  common/idx.o					\
+				  common/pstring.o			\
+					common/rpath.o				\
+				  common/unitstring.o		\
+				  common/xmem.o					\
+				  common/xstring.o			\
+					common/map.o					\
+				  fml/fml.o							\
+				  gn/gn.o								\
+					gn/gnlw.o							\
+				  log/log.o							\
+				  tmp/tmp.o							\
+					list/list.o						\
+					var/var.o							\
+				  ts/ts.o								\
+					dep/dep.o
+
+common/idx.o : common/xstring.o
+
+ff/ff.o : ff/ff.tokens.h ff/ff.tab.o ff/ff.lex.o ff/ff.tokens.o
+
+gn/gn.o	: common/coll.o common/idx.o common/unitstring.o
+
+#
+# phony targets
+#
+
+.PHONY: install uninstall clean
+
+install: ${NAME}
+	${INSTALL} -d               ${DESTDIR}
+	${INSTALL} ${NAME}  ${DESTDIR}/${NAME}
+
+uninstall:
+	rm -f												${DESTDIR}/${NAME}
+
+clean ::
+	rm -f ${NAME} 1>/dev/null 2>&1 ; true
+	find . \( -false $(foreach txt,*.o *.i *.s *.so *.lex.* *.tab.* *.tok.* *.tokens.* exports,-o -name '$(txt)') \) -delete

@@ -23,7 +23,7 @@
 
 // signal handling
 static int o_signum;
-void signal_handler(int signum)
+static void signal_handler(int signum)
 {
 	log(L_INFO, "shutdown signal: %d", signum);
 exit(0);
@@ -37,6 +37,7 @@ int main(int argc, char** argv)
 {
 	int domain()
 	{
+		char *							space = 0;
 		ff_parser *					ffp = 0;
 		ff_node *						ffn = 0;
 		bp *								bp = 0;
@@ -137,14 +138,9 @@ int main(int argc, char** argv)
 			for(x = 0; x < g_args.dumpnode_len; x++)
 			{
 				gn * gn = 0;
-				if(gn_nodes.by_path && (gn = idx_lookup_val(gn_nodes.by_path, &g_args.dumpnode[x], 0)))
-				{
-					gn_dump(gn);
-				}
-				else
-				{
-					fail("not found : %s", g_args.dumpnode[x]);
-				}
+				if(gn_lookup(g_args.dumpnode[x], g_args.cwd, &gn) == 0)
+					return 0;
+				gn_dump(gn);
 			}
 		}
 		else
@@ -153,46 +149,31 @@ int main(int argc, char** argv)
 			gn **		node_list = 0;
 			int			node_list_len = 0;
 
-			char *	space = 0;
 			int			aretasks = 0;
 			int			istask = 0;
 
 			fatal(xmalloc, &node_list, sizeof(node_list[0]) * MAX(g_args.targets_len, 1));
 
 			// add gn's for each target
-			for(x = 0; x < g_args.targets_len; x++)
+			if(g_args.targets_len)
 			{
 				gn * gn = 0;
-				if(gn_nodes.by_path)
-				{
-					char * sp = g_args.targets[x];
-					while(gn == 0)
-					{
-						if(gn = idx_lookup_val(gn_nodes.by_path, &sp, 0))
-						{
-							istask = strcmp(gn->dir, "/..") == 0;
-							if(aretasks && !istask)
-								fail("cannot mix tasks and file-backed-nodes");
-							aretasks |= istask;
+				if(gn_lookup(g_args.targets[0], g_args.cwd, &gn) == 0)
+					return 0;
 
-							node_list[node_list_len++] = gn;
-						}
-						else if(sp != space)
-						{
-							fatal(xrealloc, &space, 1, strlen(g_args.targets[x]) + 5, 0);
-							sprintf(space, "/../%s", g_args.targets[x]);
-							sp = space;
-						}
-						else
-						{
-							break;
-						}
-					}
-				}
+				aretasks = strcmp(gn->dir, "/..") == 0 && gn->fmlv;
+				node_list[node_list_len++] = gn;
 
-				if(gn == 0)
+				for(x = 1; x < g_args.targets_len; x++)
 				{
-					fail("unknown : %s", g_args.targets[x]);
+					if(gn_lookup(g_args.targets[x], g_args.cwd, &gn) == 0)
+						return 0;
+
+					istask = strcmp(gn->dir, "/..") == 0 && gn->fmlv;
+					if(aretasks ^ istask)
+						fail("cannot mix task and non-task fabrication targets");
+
+					node_list[node_list_len++] = gn;
 				}
 			}
 

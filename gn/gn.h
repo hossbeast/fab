@@ -14,6 +14,26 @@
 
 #define GN_VERSION				0x01
 
+/*
+** graph node designations
+**
+** 1. has any dependencies
+** 2. can be fabricated by some formula
+** 3. has a backing file
+**
+**              1  2  3
+** PRIMARY   - [ ][ ][x]
+** SECONDARY - [x][x][x]
+** GENERATED - [ ][x][x]
+** TASK      - [x][x][ ]
+** NOFILE    - [x][ ][ ]
+**
+*/
+
+#define GN_FLAGS_HASNEED			0x01
+#define GN_FLAGS_CANFAB				0x02
+#define GN_FLAGS_NOFILE				0x04
+
 struct ff_node;
 struct fmleval;
 struct gn;
@@ -26,6 +46,8 @@ typedef struct
 
 typedef struct gn
 {
+	uint8_t						flags;
+
 	/* exported to listwise - maintain corresponding length
 	** these strings ARE null-terminated, though
 	*/
@@ -39,8 +61,6 @@ typedef struct gn
 	int								extl;
 
   char*							hashfile_path;  // canonical path to hashfile
-
-
 
 	// fields for computing prophash
 	struct __attribute__((packed))
@@ -92,7 +112,10 @@ typedef struct gn
 	struct fmleval *	fmlv;
 
 	// tracking fields
-	int 							stage;
+	int 							depth;		// distance of longest route to a root node
+	int								height;		// distance of longest route to a leaf node
+	int								stage;		// assigned stage = maxheight - depth
+	int								mark;
 
 	char							changed;
 	char							rebuild;
@@ -118,6 +141,15 @@ extern union gn_nodes_t
 } gn_nodes;
 
 extern gn * gn_root;
+
+/// gn_lookup
+//
+// lookup a gn by absolute path, relative path, or NOFILE-name
+//
+// returns 0 on failure (memory, io) or if the specified node was not found
+//
+int gn_lookup(char * const restrict s, char * const restrict cwd, gn ** restrict r)
+	__attribute__((nonnull));
 
 /// gn_add
 //

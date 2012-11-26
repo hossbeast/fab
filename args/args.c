@@ -100,34 +100,14 @@ int parse_args(int argc, char** argv)
 				break;
 			case 'b':
 				fatal(xrealloc, &g_args.invalidate, sizeof(g_args.invalidate[0]), g_args.invalidate_len + 1, g_args.invalidate_len);
-				if(optarg[0] == '/')
-				{
-					g_args.invalidate[g_args.invalidate_len] = strdup(optarg);
-				}
-				else
-				{
-					// path is relative to current working directory
-					fatal(xmalloc, &g_args.invalidate[g_args.invalidate_len], g_args.cwdl + 1 + strlen(optarg) + 1);
-					sprintf(g_args.invalidate[g_args.invalidate_len], "%s/%s", g_args.cwd, optarg);
-				}
-				g_args.invalidate_len++;
+				g_args.invalidate[g_args.invalidate_len++] = strdup(optarg);
 				break;
 			case 'D':
 				g_args.dumpnode_all = 1;
 				break;
 			case 'd':
 				fatal(xrealloc, &g_args.dumpnode, sizeof(g_args.dumpnode[0]), g_args.dumpnode_len + 1, g_args.dumpnode_len);
-				if(optarg[0] == '/')
-				{
-					g_args.dumpnode[g_args.dumpnode_len] = strdup(optarg);
-				}
-				else
-				{
-					// path is relative to current working directory
-					fatal(xmalloc, &g_args.dumpnode[g_args.dumpnode_len], g_args.cwdl + 1 + strlen(optarg) + 1);
-					sprintf(g_args.dumpnode[g_args.dumpnode_len], "%s/%s", g_args.cwd, optarg);
-				}
-				g_args.dumpnode_len++;
+				g_args.dumpnode[g_args.dumpnode_len++] = strdup(optarg);
 				break;
 		}
 	}

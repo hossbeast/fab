@@ -189,6 +189,41 @@ static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 // public
 //
 
+int gn_lookup(char * s, char * cwd, gn ** r)
+{
+	char * sp = 0;
+
+	*r = 0;
+	if(gn_nodes.by_path)
+	{
+		// absolute path
+		if(s[0] == '/')
+			(*r) = idx_lookup_val(gn_nodes.by_path, &s, 0);
+
+		// relative to cwd
+		if(!(*r))
+		{
+			fatal(xrealloc, &sp, 1, strlen(cwd) + strlen(s) + 2, 0);
+			sprintf(sp, "%s/%s", cwd, s);
+			(*r) = idx_lookup_val(gn_nodes.by_path, &sp, 0);
+		}
+
+		// NOFILE nodes
+		if(!(*r))
+		{
+			fatal(xrealloc, &sp, 1, strlen(s) + 5, 0);
+			sprintf(sp, "/../%s", s);
+			(*r) = idx_lookup_val(gn_nodes.by_path, &sp, 0);
+		}
+	}
+
+	if((*r) == 0)
+		fail("not found : %s", s);
+
+	free(sp);
+	return 1;
+}
+
 int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** r)
 {
 	gn *	gna = 0;
@@ -270,27 +305,40 @@ int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, 
 	return 1;
 }
 
-void gn_dump(gn * n)
+void gn_dump(gn * gn)
 {
+	int x;
 	char space[128];
+
+	gn->flags = 0;
+	if(strcmp(gn->dir, "/..") == 0)
+		gn->flags |= GN_FLAGS_NOFILE;
+	if(gn->needs.l)
+		gn->flags |= GN_FLAGS_HASNEED;
+	if(gn->fmlv)
+		gn->flags |= GN_FLAGS_CANFAB;
 
 	if(log_would(L_DG | L_DGRAPH))
 	{
-		log(L_DG | L_DGRAPH, "%8s : %s", "path", n->path);
-		if(n->fmlv)
+		log(L_DG | L_DGRAPH, "%8s : %s", "path", gn->path);
+		log(L_DG | L_DGRAPH, "%8s : %s", "name", gn->name);
+		log(L_DG | L_DGRAPH, "%8s : %s", "dir", gn->dir);
+		log(L_DG | L_DGRAPH, "%8s : %s", "ext", gn->ext);
+
+		if(gn->fmlv)
 		{
-			if(strcmp(n->dir, "/..") == 0)
+			if(strcmp(gn->dir, "/..") == 0)
 				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "TASK");
-			else if(n->needs.l)
+			else if(gn->needs.l)
 				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "SECONDARY");
 			else
 				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "GENERATED");
 		}
-		else if(strcmp(n->dir, "/..") == 0)
+		else if(strcmp(gn->dir, "/..") == 0)
 		{
-			log(L_DG | L_DGRAPH, "%12s : %s", "designation", "NONFILE");
+			log(L_DG | L_DGRAPH, "%12s : %s", "designation", "NOFILE");
 		}
-		else if(n->needs.l)
+		else if(gn->needs.l)
 		{
 			log(L_WARN | L_DG | L_DGRAPH, "%12s : %s", "designation", "SECONDARY (no formula)");
 		}
@@ -298,60 +346,77 @@ void gn_dump(gn * n)
 		{
 			log(L_DG | L_DGRAPH, "%12s : %s", "designation", "PRIMARY");
 		}
-		log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)n->size);
-		if(n->mtime)
-		{
-			struct tm ltm;
-			localtime_r(&n->mtime, &ltm);
-			strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
 
-			log(L_DG | L_DGRAPH, "%12s : %s", "mtime-abs", space);
-			log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - n->mtime));
-		}
-		else
+		if(!(gn->flags & GN_FLAGS_NOFILE))
 		{
-			log(L_DG | L_DGRAPH, "%12s : %s", "mtime", "");
-		}
-
-		if(n->fmlv)
-		{
-			log(L_DG | L_DGRAPH, "%12s : [%3d,%3d - %3d,%3d]", "formula"
-				, n->fmlv->fml->ffn->loc.f_lin + 1
-				, n->fmlv->fml->ffn->loc.f_col + 1
-				, n->fmlv->fml->ffn->loc.l_lin + 1
-				, n->fmlv->fml->ffn->loc.l_col + 1
-			);
-
-			if(n->fmlv->products_l > 1)
+			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->size);
+			if(gn->mtime)
 			{
-				int x;
-				for(x = 0; x < n->fmlv->products_l; x++)
-					log(L_DG | L_DGRAPH, "%12s --> %s", "", n->fmlv->products[x]->path);
+				struct tm ltm;
+				localtime_r(&gn->mtime, &ltm);
+				strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
+
+				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-abs", space);
+				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - gn->mtime));
+			}
+			else
+			{
+				log(L_DG | L_DGRAPH, "%12s : %s", "mtime", "");
 			}
 		}
 
-		log(L_DG | L_DGRAPH, "%12s : %d", "needs", n->needs.l);
-		int x;
-		for(x = 0; x < n->needs.l; x++)
+		if(gn->flags & GN_FLAGS_CANFAB)
 		{
-			log(L_DG | L_DGRAPH, "%12s --> %s @ [%3d,%3d - %3d,%3d]", ""
-				, n->needs.e[x].gn->path
-				, n->needs.e[x].ffn->loc.f_lin + 1
-				, n->needs.e[x].ffn->loc.f_col + 1
-				, n->needs.e[x].ffn->loc.l_lin + 1
-				, n->needs.e[x].ffn->loc.l_col + 1
-			);
+			if(gn->fmlv)
+			{
+				log(L_DG | L_DGRAPH, "%12s : [%3d,%3d - %3d,%3d]", "formula"
+					, gn->fmlv->fml->ffn->loc.f_lin + 1
+					, gn->fmlv->fml->ffn->loc.f_col + 1
+					, gn->fmlv->fml->ffn->loc.l_lin + 1
+					, gn->fmlv->fml->ffn->loc.l_col + 1
+				);
+
+				if(gn->fmlv->products_l > 1)
+				{
+					int x;
+					for(x = 0; x < gn->fmlv->products_l; x++)
+						log(L_DG | L_DGRAPH, "%12s --> %s", "", gn->fmlv->products[x]->path);
+				}
+			}
+			else
+			{
+				log(L_WARN | L_DG | L_DGRAPH, "%12s : %s", "formula", "(no formula)");
+			}
 		}
 
-		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", n->feeds.l);
-		for(x = 0; x < n->feeds.l; x++)
+		log(L_DG | L_DGRAPH, "%12s : %d", "depth", gn->depth);
+		log(L_DG | L_DGRAPH, "%12s : %d", "height", gn->height);
+		log(L_DG | L_DGRAPH, "%12s : %d", "stage", gn->stage);
+
+		if(gn->flags & GN_FLAGS_HASNEED)
+		{
+			log(L_DG | L_DGRAPH, "%12s : %d", "needs", gn->needs.l);
+			for(x = 0; x < gn->needs.l; x++)
+			{
+				log(L_DG | L_DGRAPH, "%12s --> %s @ [%3d,%3d - %3d,%3d]", ""
+					, gn->needs.e[x].gn->path
+					, gn->needs.e[x].ffn->loc.f_lin + 1
+					, gn->needs.e[x].ffn->loc.f_col + 1
+					, gn->needs.e[x].ffn->loc.l_lin + 1
+					, gn->needs.e[x].ffn->loc.l_col + 1
+				);
+			}
+		}
+
+		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", gn->feeds.l);
+		for(x = 0; x < gn->feeds.l; x++)
 		{
 			log(L_DG | L_DGRAPH, "%12s --> %s @ [%3d,%3d - %3d,%3d]", ""
-				, n->feeds.e[x].gn->path
-				, n->feeds.e[x].ffn->loc.f_lin + 1
-				, n->feeds.e[x].ffn->loc.f_col + 1
-				, n->feeds.e[x].ffn->loc.l_lin + 1
-				, n->feeds.e[x].ffn->loc.l_col + 1
+				, gn->feeds.e[x].gn->path
+				, gn->feeds.e[x].ffn->loc.f_lin + 1
+				, gn->feeds.e[x].ffn->loc.f_col + 1
+				, gn->feeds.e[x].ffn->loc.l_lin + 1
+				, gn->feeds.e[x].ffn->loc.l_col + 1
 			);
 		}
 
