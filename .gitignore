@@ -1,5 +1,9 @@
 *.so
 *.o
 *.tab.*
+*.tok.*
+*.tokens.*
 *.lex.*
 exports
+fab
+a.out
