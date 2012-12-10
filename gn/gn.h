@@ -109,7 +109,10 @@ typedef struct gn
 	} feeds;
 
 	// formula evaluation context which fabricates this node
-	struct fmleval *	fmlv;
+	struct fmleval *	fabv;
+
+	// formula evaluation context which gives dependencies for this node
+	struct fmleval *	dscv;
 
 	// tracking fields
 	int 							depth;		// distance of longest route to a root node

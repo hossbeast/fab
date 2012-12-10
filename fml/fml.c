@@ -52,6 +52,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 		gn* t = 0;
 		if(l && s[0] == '/')
 		{
+			// lookup for absolute paths
 			if((t = idx_lookup_val(gn_nodes.by_path, &s, l)) == 0)
 			{
 				// task nodes do not necessarily require a relation to the rest of the graph - create here in this case
@@ -67,11 +68,13 @@ static int fml_add_single(fml * fml, lstack * ls)
 			** this loop should be replaced by an idx lookup on names within the directory
 			*/
 
+			char space[256];
+			snprintf(space, sizeof(space), "%s/%.*s", fml->ffn->ff_dir, l, s);
+
 			int i;
 			for(i = 0; i < gn_nodes.l; i++)
 			{
-				if(  strcmp(gn_nodes.e[i]->dir, fml->ffn->ff_dir) == 0
-					&& xstrcmp(gn_nodes.e[i]->name, gn_nodes.e[i]->namel, s, l) == 0)
+				if(strcmp(gn_nodes.e[i]->path, space) == 0)
 				{
 					t = gn_nodes.e[i];
 					break;
@@ -81,15 +84,30 @@ static int fml_add_single(fml * fml, lstack * ls)
 
 		if(t)
 		{
-			log(L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
-				, fml->ffn->loc.f_lin + 1
-				, fml->ffn->loc.f_col + 1
-				, fml->ffn->loc.l_lin + 1
-				, fml->ffn->loc.l_col + 1
-				, t->path
-			);
 			fmlv->products[0] = t;
-			t->fmlv = fmlv;
+
+			if(fml->ffn->flags & FFN_DISCOVERY)
+			{
+				log(L_DSC | L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
+					, fml->ffn->loc.f_lin + 1
+					, fml->ffn->loc.f_col + 1
+					, fml->ffn->loc.l_lin + 1
+					, fml->ffn->loc.l_col + 1
+					, t->path
+				);
+				t->dscv = fmlv;
+			}
+			else
+			{
+				log(L_FAB | L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
+					, fml->ffn->loc.f_lin + 1
+					, fml->ffn->loc.f_col + 1
+					, fml->ffn->loc.l_lin + 1
+					, fml->ffn->loc.l_col + 1
+					, t->path
+				);
+				t->fabv = fmlv;
+			}
 		}
 		else
 		{
@@ -127,12 +145,24 @@ static int fml_add_multi(fml * fml, lstack * ls)
 		fmlv->products_l = ls->s[x].l;
 		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
 
-		log_start(L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> {\n"
-			, fml->ffn->loc.f_lin + 1
-			, fml->ffn->loc.f_col + 1
-			, fml->ffn->loc.l_lin + 1
-			, fml->ffn->loc.l_col + 1
-		);
+		if(fml->ffn->flags & FFN_DISCOVERY)
+		{
+			log_start(L_DSC | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> {\n"
+				, fml->ffn->loc.f_lin + 1
+				, fml->ffn->loc.f_col + 1
+				, fml->ffn->loc.l_lin + 1
+				, fml->ffn->loc.l_col + 1
+			);
+		}
+		else
+		{
+			log_start(L_FAB | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> {\n"
+				, fml->ffn->loc.f_lin + 1
+				, fml->ffn->loc.f_col + 1
+				, fml->ffn->loc.l_lin + 1
+				, fml->ffn->loc.l_col + 1
+			);
+		}
 		for(y = 0; y < ls->s[x].l; y++)
 		{
 			gn * t = 0;
@@ -160,7 +190,10 @@ static int fml_add_multi(fml * fml, lstack * ls)
 					log_add("    %s\n", t->path);
 
 				fmlv->products[y] = t;
-				t->fmlv = fmlv;
+				if(fml->ffn->flags & FFN_DISCOVERY)
+					t->dscv = fmlv;
+				else
+					t->fabv = fmlv;
 			}
 		}
 		log_finish("}");
@@ -209,17 +242,17 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax
 	fatal(list_resolve, ffn->targets, vmap, stax, stax_l, stax_a, p);
 
 	// attach graph nodes
-	if(fml->ffn->flags == FFN_SINGLE)
+	if(fml->ffn->flags & FFN_SINGLE)
 	{
 		fatal(fml_add_single, fml, (*stax)[p]);
 	}
-	else if(fml->ffn->flags == FFN_MULTI)
+	else if(fml->ffn->flags & FFN_MULTI)
 	{
 		fatal(fml_add_multi, fml, (*stax)[p]);
 	}
 	else
 	{
-		fail("bad flags %hhu", fml->ffn->flags);
+		fail("bad flags %hhu (no cardinality)", fml->ffn->flags);
 	}
 
 	return 1;
@@ -265,7 +298,6 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 				lstack_string((*stax)[p], 0, i, &s, &l);
 
 				fatal(pscat, &ts->cmd_txt, s, l);
-//				fatal(pscatf, &ts->cmd_txt, "[%d]%.*s(%d)(%p)", i, l, s, (*stax)[p]->s[0].s[i].type, s);
 				k++;
 			}
 			LSTACK_ITEREND;
@@ -312,7 +344,7 @@ int fml_exec(ts * ts,  int num)
 	if(ts->pid == 0)
 	{
 		int x;
-		for(x = 3; x < 6; x++)//4192; x++)
+		for(x = 3; x < 6; x++)
 		{
 			if(x != ts->stdo_fd && x != ts->stde_fd)
 				close(x);

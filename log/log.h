@@ -5,15 +5,15 @@
 #include <stdint.h>
 
 // C
-#define L_COLOR_VALUE   0x0000000F00000000ULL // C range
+#define L_COLOR_VALUE   0xF000000000000000ULL // C range
 
-#define L_RED           0x0000000100000000ULL // this message red in the terminal
-#define L_GREEN         0x0000000200000000ULL // this message green in the terminal
-#define L_YELLOW        0x0000000300000000ULL // this message yellow in the terminal
-#define L_CYAN          0x0000000400000000ULL // this message cyan in the terminal
-#define L_BLUE          0x0000000500000000ULL // this message blue in the terminal
+#define L_RED           0x1000000000000000ULL // this message red in the terminal
+#define L_GREEN         0x2000000000000000ULL // this message green in the terminal
+#define L_YELLOW        0x3000000000000000ULL // this message yellow in the terminal
+#define L_CYAN          0x4000000000000000ULL // this message cyan in the terminal
+#define L_BLUE          0x5000000000000000ULL // this message blue in the terminal
 
-#define L_TAG           0x000000003FFFFFFFULL // D range
+#define L_TAG           0x0000FFFFFFFFFFFFULL // D range
 
 // E
 #define L_ERROR         0x0000000000000001ULL | L_RED			/* errors leading to shutdown */
@@ -31,12 +31,15 @@
 #define L_FMLEXEC				0x0000000000001000ULL							/* formulas - execution results/details */
 #define L_FMLTARG				0x0000000000002000ULL							/* formulas - target resolution/assignment */
 #define L_FML						0x0000000000004000ULL							/* formulas */
-#define L_DGDEPS				0x0000000000008000ULL							/* dependency graph - dependencies */
-#define L_DGRAPH 				0x0000000000010000ULL							/* dependency graph - dump/details */
-#define L_DGHASH				0x0000000000020000ULL							/* dependency graph - hash loading/saving */
-#define L_DG 						0x0000000000040000ULL							/* dependency graph */
-#define L_VAR						0x0000000000080000ULL							/* variable defintions */
-#define L_LWDEBUG				0x0000000000100000ULL							/* debug liblistwise invocations */
+#define L_FAB						0x0000000000008000ULL							/* fabrication formulas */
+#define L_DSCEXEC				0x0000000000010000ULL							/* dependendcy discovery - execution */
+#define L_DSC						0x0000000000020000ULL							/* discovery formulas */
+#define L_DGDEPS				0x000000000004000ULL							/* dependency graph - dependencies */
+#define L_DGRAPH 				0x0000000000080000ULL							/* dependency graph - dump/details */
+#define L_DGHASH				0x0000000000100000ULL							/* dependency graph - hash loading/saving */
+#define L_DG 						0x0000000000200000ULL							/* dependency graph */
+#define L_VAR						0x0000000000400000ULL							/* variable defintions */
+#define L_LWDEBUG				0x0000000000800000ULL							/* debug liblistwise invocations */
 
 /// log_init
 //

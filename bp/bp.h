@@ -6,6 +6,7 @@
 /* bp - build plan */
 #include "gn.h"
 #include "fml.h"
+#include "ts.h"
 
 #include "map.h"
 
@@ -51,7 +52,7 @@ void bp_dump(bp *);
 //
 // execute the build plan one stage at a time
 //
-int bp_exec(bp * bp, map * vmap, lstack *** stax, int * lstax_l, int * stax_a, int p)
+int bp_exec(bp * bp, map * vmap, lstack *** stax, int * lstax_l, int * stax_a, int p, ts *** ts, int * tsa, int * tsw)
 	__attribute__((nonnull));
 
 #endif

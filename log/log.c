@@ -20,7 +20,7 @@
      typeof (b) _b = (b);   \
    _a > _b ? _b : _a; })
 
-#define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 32])
+#define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 60])
 #define COLOR(x)		(unsigned char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
 #define NOCOLOR			(unsigned char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
 
@@ -55,6 +55,9 @@ static struct {
 	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	}
 	, { .v = L_FMLTARG	, .s = "FMLTARG"	}
 	, { .v = L_FML			, .s = "FML"			}
+	, { .v = L_FAB			, .s = "FAB"			}
+	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	}
+	, { .v = L_DSC			, .s = "DSC"			}
 	, { .v = L_DGDEPS		, .s = "DGDEPS"		}
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		}
 	, { .v = L_DGHASH		, .s = "DGHASH"		}

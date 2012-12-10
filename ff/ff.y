@@ -74,6 +74,7 @@
 %token <num> INC							">>"
 %token <num> LW								"=>>"
 %token <num> ':'
+%token <num> '~'
 %token <num> '['
 %token <num> ']'
 %token <num> '{'
@@ -90,6 +91,8 @@
 %type  <node> vardecl
 %type  <node> formula
 %type  <node> dependency
+%type  <node> discovery
+%type  <node> fabrication
 %type  <node> task
 %type  <node> taskdep
 %type  <node> taskname
@@ -122,11 +125,57 @@ statement_list
 	;
 
 statement
-	: dependency
-	| include
+	: include
 	| vardecl
+	| dependency
 	| task
-	| dependency formula
+	| fabrication
+	| discovery
+	;
+
+include
+	: INC list
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_INCLUDE, $1.s, $2->e, $1, $2);
+	}
+	;
+
+vardecl
+	: WORD '=' list
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_VARDECL, $1.s, $3->e, $1.s, $1.e, $3);
+	}
+	;
+
+dependency
+	: list ':' list
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+	}
+	| list ':' ':' list
+	{
+		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $4->e, FFN_MULTI, $1, $4);
+	}
+	;
+
+task
+	: taskdep
+	| taskdep formula
+	{
+		$2->flags = FFN_SINGLE;
+		$2->targets = $1->needs;
+		$$ = addchain($1, $2);
+	}
+	| taskname formula
+	{
+		$2->flags = FFN_SINGLE;
+		$2->targets = $1;
+		$$ = $2;
+	}
+	;
+
+fabrication
+	: dependency formula
 	{
 		$2->flags = $1->flags;
 		$2->targets = $1->needs;
@@ -147,19 +196,18 @@ statement
 	}
 	;
 
-task
-	: taskdep
-	| taskdep formula
+discovery
+	: list '~' formula
 	{
-		$2->flags = FFN_SINGLE;
-		$2->targets = $1->needs;
-		$$ = addchain($1, $2);
+		$3->flags = FFN_SINGLE | FFN_DISCOVERY;
+		$3->targets = $1;
+		$$ = $3;
 	}
-	| taskname formula
+	| list '~' '~' formula
 	{
-		$2->flags = FFN_SINGLE;
-		$2->targets = $1;
-		$$ = $2;
+		$4->flags = FFN_MULTI | FFN_DISCOVERY;
+		$4->targets = $1;
+		$$ = $4;
 	}
 	;
 
@@ -182,35 +230,10 @@ taskname
 	}
 	;
 
-dependency
-	: list ':' list
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
-	}
-	| list ':' ':' list
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $4->e, FFN_MULTI, $1, $4);
-	}
-	;
-
 formula
 	: '{' formula_list '}'
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_FORMULA, $1.s, $3.e, $2);
-	}
-	;
-
-include
-	: INC list
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_INCLUDE, $1.s, $2->e, $1, $2);
-	}
-	;
-
-vardecl
-	: WORD '=' list
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_VARDECL, $1.s, $3->e, $1.s, $1.e, $3);
 	}
 	;
 

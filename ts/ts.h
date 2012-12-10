@@ -1,13 +1,29 @@
 #ifndef _TS_H
 #define _TS_H
 
+#include <stdint.h>
 #include <sys/types.h>
 
 #include "gn.h"
 
 #include "pstring.h"
 
-struct fmleval;
+struct fml;
+
+/// fmleval
+//
+// an instance of a formula evaluation with a list of products
+//
+typedef struct fmleval
+{
+	struct fml *	fml;					// the formula
+
+	struct											// products expected when executing the formula
+	{
+		gn **					products;
+		int						products_l;
+	};
+} fmleval;
 
 // thread workspace
 typedef struct 
@@ -34,7 +50,25 @@ typedef struct
 	int y;
 } ts;
 
-int ts_mk(ts ** ts)
+int ts_ensure(ts *** ts, int * tsa, int n)
+	__attribute__((nonnull));
+
+void ts_reset(ts * ts)
+	__attribute__((nonnull));
+
+/// ts_execwave
+//
+// SUMMARY
+//  execute a set of formulas each associated with a threadspace
+//
+// PARAMETERS
+//  ts - ptr to threadspaces
+//  n  - number of threadspaces
+//  id - unique identifier for this wave of threadspace executions
+//  hi - log tags to associate with high-level logging of this execution wave
+//  lo - log tags to associate with low-level logging of this execution wave
+//
+int ts_exewave(ts ** ts, int * waveid, int n, uint64_t hi, uint64_t lo)
 	__attribute__((nonnull));
 
 void ts_free(ts * ts);

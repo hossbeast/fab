@@ -11,20 +11,21 @@
 #define restrict __restrict
 
 // flags
-#define FFN_SINGLE		0x00
-#define FFN_MULTI			0x01
+#define FFN_SINGLE		0x01
+#define FFN_MULTI			0x02
+#define FFN_DISCOVERY	0x04
 
 #define FFN_TABLE(x)										\
 	_FFN(FFN_STMTLIST				, 0x01	, x)	\
 	_FFN(FFN_DEPENDENCY			, 0x02	, x)	\
-	_FFN(FFN_FORMULA				, 0x03	, x)	\
-	_FFN(FFN_INCLUDE				, 0x04	, x)	\
-	_FFN(FFN_VARDECL				, 0x05	, x)	\
-	_FFN(FFN_LIST						, 0x06	, x)	\
-	_FFN(FFN_GENERATOR			, 0x07	, x)	\
-	_FFN(FFN_VARNAME				, 0x08	, x)	\
-	_FFN(FFN_LF							, 0x09	, x)	\
-	_FFN(FFN_WORD						, 0x0a	, x)
+	_FFN(FFN_FORMULA				, 0x04	, x)	\
+	_FFN(FFN_INCLUDE				, 0x05	, x)	\
+	_FFN(FFN_VARDECL				, 0x06	, x)	\
+	_FFN(FFN_LIST						, 0x07	, x)	\
+	_FFN(FFN_GENERATOR			, 0x08	, x)	\
+	_FFN(FFN_VARNAME				, 0x09	, x)	\
+	_FFN(FFN_LF							, 0x0a	, x)	\
+	_FFN(FFN_WORD						, 0x0b	, x)
 
 enum {
 #define _FFN(a, b, c) a = b,

@@ -47,6 +47,9 @@ int main(int argc, char** argv)
 		int									stax_l = 0;
 		int									stax_a = 0;
 		int 								p = 0;
+		ts **								ts = 0;
+		int									tsa = 0;
+		int									tsw = 0;
 
 		int x;
 		int i;
@@ -122,10 +125,15 @@ int main(int argc, char** argv)
 			}
 			else if(ffn->statements[x]->type == FFN_FORMULA)
 			{
-				// add the formula
+				// add the formula, attach to graph nodes
 				fatal(fml_add, ffn->statements[x], vmap, &stax, &stax_l, &stax_a, p);
 			}
 		}
+
+		// dependency discovery phase
+		fatal(dsc_exec, gn_nodes.e, gn_nodes.l, vmap, &stax, &stax_l, &stax_a, p, &ts, &tsa, &tsw);
+
+		exit(0);
 
 		// dump graph nodes, pending logging
 		if(g_args.dumpnode_all)
@@ -161,7 +169,7 @@ int main(int argc, char** argv)
 				if(gn_lookup(g_args.targets[0], g_args.cwd, &gn) == 0)
 					return 0;
 
-				aretasks = strcmp(gn->dir, "/..") == 0 && gn->fmlv;
+				aretasks = strcmp(gn->dir, "/..") == 0 && gn->fabv;
 				node_list[node_list_len++] = gn;
 
 				for(x = 1; x < g_args.targets_len; x++)
@@ -169,7 +177,7 @@ int main(int argc, char** argv)
 					if(gn_lookup(g_args.targets[x], g_args.cwd, &gn) == 0)
 						return 0;
 
-					istask = strcmp(gn->dir, "/..") == 0 && gn->fmlv;
+					istask = strcmp(gn->dir, "/..") == 0 && gn->fabv;
 					if(aretasks ^ istask)
 						fail("cannot mix task and non-task fabrication targets");
 
@@ -203,10 +211,14 @@ int main(int argc, char** argv)
 			if(bp && g_args.mode == MODE_FABRICATE)
 			{
 				// execute the build plan, one stage at a time
-				if(bp_exec(bp, vmap, &stax, &stax_l, &stax_a, p) == 0)
+				if(bp_exec(bp, vmap, &stax, &stax_l, &stax_a, p, &ts, &tsa, &tsw) == 0)
 					return 0;
 			}
 		}
+
+		for(x = 0; x < tsa; x++)
+			ts_free(ts[x]);
+		free(ts);
 
 		return 1;
 	};

@@ -176,10 +176,6 @@ ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
 	{
 		n->chain[0]				= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_INCLUDE)
-	{
-
-	}
 	else if(type == FFN_VARDECL)
 	{
 		a = va_arg(va, char*);
@@ -383,10 +379,10 @@ void ff_dump(ff_node * const restrict root)
 			}
 			else if(ffn->type == FFN_FORMULA)
 			{
-				log(L_FF | L_FFTREE, "%*s  %10s"
+				log(L_FF | L_FFTREE, "%*s  %10s : %10s, %10s : %10s"
 					, lvl * 2, ""
-					, "type"
-					, ffn->flags & FFN_MULTI ? "multi" : "single"
+					, "type"				, ffn->flags & FFN_DISCOVERY ? "discovery" : "fabrication"
+					, "cardinality"	, ffn->flags & FFN_SINGLE ? "single " : ffn->flags & FFN_MULTI ? "multi" : "UNKNOWN"
 				);
 				log(L_FF | L_FFTREE, "%*s  %10s :"
 					, lvl * 2, ""

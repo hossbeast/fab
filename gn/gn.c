@@ -315,7 +315,7 @@ void gn_dump(gn * gn)
 		gn->flags |= GN_FLAGS_NOFILE;
 	if(gn->needs.l)
 		gn->flags |= GN_FLAGS_HASNEED;
-	if(gn->fmlv)
+	if(gn->fabv)
 		gn->flags |= GN_FLAGS_CANFAB;
 
 	if(log_would(L_DG | L_DGRAPH))
@@ -325,7 +325,7 @@ void gn_dump(gn * gn)
 		log(L_DG | L_DGRAPH, "%8s : %s", "dir", gn->dir);
 		log(L_DG | L_DGRAPH, "%8s : %s", "ext", gn->ext);
 
-		if(gn->fmlv)
+		if(gn->fabv)
 		{
 			if(strcmp(gn->dir, "/..") == 0)
 				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "TASK");
@@ -367,20 +367,20 @@ void gn_dump(gn * gn)
 
 		if(gn->flags & GN_FLAGS_CANFAB)
 		{
-			if(gn->fmlv)
+			if(gn->fabv)
 			{
 				log(L_DG | L_DGRAPH, "%12s : [%3d,%3d - %3d,%3d]", "formula"
-					, gn->fmlv->fml->ffn->loc.f_lin + 1
-					, gn->fmlv->fml->ffn->loc.f_col + 1
-					, gn->fmlv->fml->ffn->loc.l_lin + 1
-					, gn->fmlv->fml->ffn->loc.l_col + 1
+					, gn->fabv->fml->ffn->loc.f_lin + 1
+					, gn->fabv->fml->ffn->loc.f_col + 1
+					, gn->fabv->fml->ffn->loc.l_lin + 1
+					, gn->fabv->fml->ffn->loc.l_col + 1
 				);
 
-				if(gn->fmlv->products_l > 1)
+				if(gn->fabv->products_l > 1)
 				{
 					int x;
-					for(x = 0; x < gn->fmlv->products_l; x++)
-						log(L_DG | L_DGRAPH, "%12s --> %s", "", gn->fmlv->products[x]->path);
+					for(x = 0; x < gn->fabv->products_l; x++)
+						log(L_DG | L_DGRAPH, "%12s --> %s", "", gn->fabv->products[x]->path);
 				}
 			}
 			else

@@ -1,7 +1,7 @@
 #ifndef _FML_H
 #define _FML_H
 
-/* fml - formula for fabricating target files */
+/* fml - formula for executing an external process */
 
 #include <listwise.h>
 
@@ -12,29 +12,13 @@
 #include "coll.h"
 #include "map.h"
 
-
-struct fml;
-
-/// fmleval
-//
-// an instance of a formula evaluation with a list of products
-//
-typedef struct fmleval
-{
-	struct fml *	fml;					// the formula
-
-	struct											// products expected when executing the formula
-	{
-		gn **					products;
-		int						products_l;
-	};
-} fmleval;
+struct fmleval;
 
 typedef struct fml
 {
 	ff_node *		ffn;					// ff_node for this formula
 
-	fmleval *		evals;				// evaluation instances
+	struct fmleval *		evals;				// evaluation instances
 	int					evals_l;
 } fml;
 

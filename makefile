@@ -101,6 +101,7 @@ main.o  : args/args.o						\
 					list/list.o						\
 					var/var.o							\
 				  ts/ts.o								\
+					dsc/dsc.o							\
 					dep/dep.o
 
 common/idx.o : common/xstring.o
