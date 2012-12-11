@@ -106,7 +106,7 @@ main.o  : args/args.o						\
 
 common/idx.o : common/xstring.o
 
-ff/ff.o : ff/ff.tokens.h ff/ff.tab.o ff/ff.lex.o ff/ff.tokens.o
+ff/ff.o : ff/ff.tokens.h ff/ff.tab.o ff/ff.lex.o ff/ff.tokens.o ff/ff.dsc.tab.o
 
 gn/gn.o	: common/coll.o common/idx.o common/unitstring.o
 

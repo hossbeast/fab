@@ -16,6 +16,8 @@ void ts_reset(ts * ts)
 	ts->r_signal	= 0;
 	ts->y					= 0;
 
+	ff_xfreenode(&ts->ffn);
+
 	if(ts->cmd_path)
 		ts->cmd_path->l		= 0;
 	if(ts->cmd_txt)
@@ -36,10 +38,15 @@ int ts_ensure(ts *** ts, int * tsa, int n)
 
 	if(n > (*tsa))
 	{
+		// reallocate to appropriate size
 		fatal(xrealloc, ts, sizeof(**ts), n, *tsa);
 
+		// deep allocate
 		for(x = (*tsa); x < n; x++)
+		{
 			fatal(xmalloc, &(*ts)[x], sizeof(*(*ts)[0]));
+			fatal(ff_mkparser, &(*ts)[x]->ffp);
+		}
 
 		(*tsa) = n;
 	}
@@ -81,8 +88,10 @@ int ts_execwave(ts ** ts, int n, int * waveid, uint64_t hi, uint64_t lo)
 		{
 			off_t sz = lseek(ts[x]->stde_fd, 0, SEEK_END);
 			lseek(ts[x]->stde_fd, 0, SEEK_SET);
-			psgrow(&ts[x]->stde_txt, sz);
+			psgrow(&ts[x]->stde_txt, sz + 2);
 			read(ts[x]->stde_fd, ts[x]->stde_txt->s, sz);
+			ts[x]->stde_txt->s[sz+0] = 0;
+			ts[x]->stde_txt->s[sz+1] = 0;
 			ts[x]->stde_txt->l = sz;
 		}
 
@@ -91,8 +100,10 @@ int ts_execwave(ts ** ts, int n, int * waveid, uint64_t hi, uint64_t lo)
 		{
 			off_t sz = lseek(ts[x]->stdo_fd, 0, SEEK_END);
 			lseek(ts[x]->stdo_fd, 0, SEEK_SET);
-			psgrow(&ts[x]->stdo_txt, sz);
+			psgrow(&ts[x]->stdo_txt, sz + 2);
 			read(ts[x]->stdo_fd, ts[x]->stdo_txt->s, sz);
+			ts[x]->stdo_txt->s[sz+0] = 0;
+			ts[x]->stdo_txt->s[sz+1] = 0;
 			ts[x]->stdo_txt->l = sz;
 		}
 
@@ -178,13 +189,22 @@ void ts_free(ts * ts)
 {
 	if(ts)
 	{
-		pstring_free(ts->cmd_path);
-		pstring_free(ts->cmd_txt);
-		pstring_free(ts->stdo_path);
-		pstring_free(ts->stdo_txt);
-		pstring_free(ts->stde_path);
-		pstring_free(ts->stde_txt);
+		ff_xfreeparser(&ts->ffp);
+		ff_xfreenode(&ts->ffn);
+
+		pstring_xfree(&ts->cmd_path);
+		pstring_xfree(&ts->cmd_txt);
+		pstring_xfree(&ts->stdo_path);
+		pstring_xfree(&ts->stdo_txt);
+		pstring_xfree(&ts->stde_path);
+		pstring_xfree(&ts->stde_txt);
 	}
 
 	free(ts);
+}
+
+void ts_xfree(ts ** ts)
+{
+	ts_free(*ts);
+	*ts = 0;
 }

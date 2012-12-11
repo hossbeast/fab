@@ -5,19 +5,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "log.h"
-#include "control.h"
-
 #include "ff.h"
 #include "ff.tab.h"
 #include "ff.lex.h"
 
+#include "log.h"
+#include "control.h"
 #include "xmem.h"
-
-#define MIN(a,b)            \
- ({ typeof (a) _a = (a);    \
-		 typeof (b) _b = (b);   \
-	 _a > _b ? _b : _a; })
+#include "macros.h"
 
 struct ff_parser_t
 {
@@ -25,8 +20,11 @@ struct ff_parser_t
 	generator_parser *	gp;
 };
 
-// defined in the bison parser
+// defined in ff.tab.o
 int ff_yyparse(yyscan_t, parse_param*);
+
+// defined in ff.dsc.tab.o
+int ff_dsc_yyparse(yyscan_t, parse_param*);
 
 /// [[ static ]]
 
@@ -43,6 +41,16 @@ static char* struse(char* s, char* e)
 
 	return v;
 }
+
+ff_node* addchain(ff_node* a, ff_node* b)
+	{
+		ff_node* i = a;
+		while(a->next)
+			a = a->next;
+
+		a->next = b;
+		return i;
+	}
 
 static void flatten(ff_node* n)
 {
@@ -120,6 +128,73 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 				return 0;
 		}
 	}
+
+	return 1;
+}
+
+static int parse(const ff_parser * const restrict p, char* b, int sz, char* path, ff_node ** const restrict ffn, int dsc)
+{
+	// results struct for this parse
+	ff_xfreenode(ffn);
+
+	// create state specific to this parse
+	void* state = 0;
+	if((state = ff_yy_scan_bytes(b, sz + 2, p->p)) == 0)
+		fail("scan_bytes failed");
+
+	parse_param pp = {
+		  .scanner = p->p
+		, .ffn = ffn
+		, .orig_base = b
+		, .orig_len = sz
+		, .r = 1
+	};
+
+	// canonical path to the fabfile
+	pp.ff_dir = realpath(path, 0);
+
+	// terminate at the last directory specification
+	char* tm = pp.ff_dir + strlen(pp.ff_dir);
+	while(*tm != '/')
+		tm--;
+
+	*tm = 0;
+
+	// make available to the lexer
+	ff_yyset_extra(&pp, p->p);
+
+	if(dsc)
+	{
+		// parse
+		ff_dsc_yyparse(p->p, &pp);
+	}
+	else
+	{
+		// parse
+		ff_yyparse(p->p, &pp);
+	}
+
+	// cleanup state for this parse
+	ff_yy_delete_buffer(state, p->p);
+
+	if(pp.r)
+	{
+		// convert chains to lists
+		flatten(*ffn);
+
+		// calculate string lengths
+		strmeasure(*ffn);
+
+		// parse generator strings
+		if(parse_generators(*ffn, p->gp) == 0)
+			return 0;
+	}
+	else
+	{
+		ff_xfreenode(ffn);
+	}
+
+	free(pp.ff_dir);
 
 	return 1;
 }
@@ -212,11 +287,10 @@ int ff_mkparser(ff_parser ** const restrict p)
 
 int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const restrict ffn)
 {
-	// results struct for this parse
-	ff_xfreenode(ffn);
+	int fd = 0;
+	char * b = 0;
 
 	// open the file
-	int fd;
 	if((fd = open(path, O_RDONLY)) == -1)
 		fail("open(%s) failed : [%d][%s]", path, errno, strerror(errno));
 
@@ -224,66 +298,21 @@ int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const re
 	struct stat statbuf;
 	fatal_os(fstat, fd, &statbuf);
 
-	char* b = calloc(statbuf.st_size + 2, 1);
+	fatal(xmalloc, &b, statbuf.st_size + 2);
 	ssize_t r = 0;
 	if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
 		fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
 
 	close(fd);
 
-	// create state specific to this parse
-	void* state = 0;
-	if((state = ff_yy_scan_bytes(b, statbuf.st_size + 2, p->p)) == 0)
-		fail("scan_bytes failed");
-
-	parse_param pp = {
-		  .scanner = p->p
-		, .ffn = ffn
-		, .orig_base = b
-		, .orig_len = statbuf.st_size
-		, .r = 1
-	};
-
-	// canonical path to the fabfile
-	pp.ff_dir = realpath(path, 0);
-
-	// terminate at the last directory specification
-	char* tm = pp.ff_dir + strlen(pp.ff_dir);
-	while(*tm != '/')
-		tm--;
-
-	*tm = 0;
-
-	// make it available to the lexer
-	ff_yyset_extra(&pp, p->p);
-
-	// parse
-	ff_yyparse(p->p, &pp);
-
-	// cleanup state for this parse
-	ff_yy_delete_buffer(state, p->p);
-
-	if(pp.r)
-	{
-		// convert chains to lists
-		flatten(*ffn);
-
-		// calculate string lengths
-		strmeasure(*ffn);
-
-		// parse generator strings
-		if(parse_generators(*ffn, p->gp) == 0)
-			return 0;
-	}
-	else
-	{
-		ff_xfreenode(ffn);
-	}
-
-	free(pp.ff_dir);
+	int R = parse(p, b, statbuf.st_size, path, ffn, 0);
 	free(b);
+	return R;
+}
 
-	return 1;
+int ff_dsc_parse(const ff_parser * const restrict p, char* b, int sz, char* path, ff_node ** const restrict ffn)
+{
+	return parse(p, b, sz, path, ffn, 1);
 }
 
 void ff_freeparser(ff_parser* const restrict p)

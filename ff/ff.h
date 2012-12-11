@@ -177,10 +177,23 @@ int ff_mkparser(ff_parser ** const restrict p)
 #define ff_parse_onfail "p: %p, path: '%s', ff: %p"
 int ff_parse(
 	  const ff_parser * const restrict p
-	, char* path
+	, char * path
 	, ff_node ** const restrict ff
 )
 	__attribute__((nonnull));
+
+/// ff_dsc_parse
+//
+// see ff_parse, but for discovery files, which support only a limited syntax
+//
+#define ff_dsc_parse_onfail "p: %p, path: '%s', ff: %p"
+int ff_dsc_parse(
+	  const ff_parser * const restrict p
+	, char * text
+	, int l
+	, char * path
+	, ff_node ** const restrict ff
+);
 
 /// ff_freeparser
 //

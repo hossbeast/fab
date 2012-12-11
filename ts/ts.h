@@ -5,6 +5,7 @@
 #include <sys/types.h>
 
 #include "gn.h"
+#include "ff.h"
 
 #include "pstring.h"
 
@@ -28,31 +29,45 @@ typedef struct fmleval
 // thread workspace
 typedef struct 
 {
-	struct fmleval * fmlv;			// fml evaluation context
+	ff_parser *				ffp;					// ff parser
+	ff_node *					ffn;					// ff node
 
-	pid_t			pid;							// child pid
+	struct fmleval *	fmlv;					// fml evaluation context
 
-	int				cmd_fd;						// fd for cmd file
-	pstring *	cmd_path;					// full path to cmd file
-	pstring *	cmd_txt;					// txt in cmd file
+	pid_t							pid;					// child pid
 
-	int				stdo_fd;					// fd for stdout file
-	pstring *	stdo_path;				// full path to stdout file
-	pstring *	stdo_txt;					// txt in stdout file
+	int								cmd_fd;				// fd for cmd file
+	pstring *					cmd_path;			// full path to cmd file
+	pstring *					cmd_txt;			// txt in cmd file
 
-	int				stde_fd;					// fd for stderr file
-	pstring *	stde_path;				// full path to stderr file
-	pstring *	stde_txt;					// txt in stderr file
+	int								stdo_fd;			// fd for stdout file
+	pstring *					stdo_path;		// full path to stdout file
+	pstring *					stdo_txt;			// txt in stdout file
 
-	int				r_status;					// exit status
-	int				r_signal;					// exit signal
+	int								stde_fd;			// fd for stderr file
+	pstring *					stde_path;		// full path to stderr file
+	pstring *					stde_txt;			// txt in stderr file
+
+	int								r_status;			// exit status
+	int								r_signal;			// exit signal
 
 	int y;
 } ts;
 
+/// ts_ensure
+//
+// SUMMARY
+//  ensure that at least n threadspaces are allocated
+//  then call ts_reset on the first n threadspaces
+//
 int ts_ensure(ts *** ts, int * tsa, int n)
 	__attribute__((nonnull));
 
+/// ts_reset
+//
+// reset all threadspace properties without freeing underlying resources
+// so that it can be used again
+//
 void ts_reset(ts * ts)
 	__attribute__((nonnull));
 

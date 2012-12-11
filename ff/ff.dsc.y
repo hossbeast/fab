@@ -8,15 +8,16 @@
 %code top {
 	#include "ff.h"
 
-	int  ff_yylex(void* yylvalp, void* yylloc, void* scanner);
-	ff_node* mknode(void* loc, char* ffdir, uint32_t type, ...);
+	static int __attribute__((weakref, alias("ff_yylex"))) ff_dsc_yylex(); 
+	static int __attribute__((weakref, alias("ff_yyerror"))) ff_dsc_yyerror(); 
 
+	ff_node* mknode(void* loc, char* ffdir, uint32_t type, ...);
 	ff_node* addchain(ff_node* a, ff_node* b);
 }
 
 %define api.pure
 %error-verbose
-%name-prefix="ff_yy"
+%name-prefix="ff_dsc_yy"
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
@@ -61,17 +62,10 @@
 /* terminals with a semantic value */
 %token <str> WORD							"WORD"
 %token <str> WS								"WS"				/* a single tab/space */
-%token <str> LF								"LF"				/* a single newline */
-%token <var> VARNAME					"VARNAME"
-%token <num> INC							">>"
 %token <num> LW								"=>>"
 %token <num> ':'
-%token <num> '~'
 %token <num> '['
 %token <num> ']'
-%token <num> '{'
-%token <num> '}'
-%token <num> '='
 %token <num> '"'
 
 /* nonterminals */
@@ -79,18 +73,9 @@
 
 %type  <node> statement
 %type  <node> statement_list
-%type  <node> include
-%type  <node> vardecl
-%type  <node> formula
 %type  <node> dependency
-%type  <node> discovery
-%type  <node> fabrication
-%type  <node> task
-%type  <node> taskdep
-%type  <node> taskname
 %type  <node> list
 %type  <node> listpiece
-%type  <node> formula_list
 %type  <node> word
 %type  <node> generator
 
@@ -101,7 +86,7 @@
 
 %%
 
-ff
+ff_dsc
 	: statement_list
 	{
 		*parm->ffn = mknode(&@$, parm->ff_dir, FFN_STMTLIST, $1->s, $1->e, $1);
@@ -117,26 +102,8 @@ statement_list
 	;
 
 statement
-	: include
-	| vardecl
-	| dependency
-	| task
-	| fabrication
-	| discovery
-	;
-
-include
-	: INC list
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_INCLUDE, $1.s, $2->e, $1, $2);
-	}
-	;
-
-vardecl
-	: WORD '=' list
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_VARDECL, $1.s, $3->e, $1.s, $1.e, $3);
-	}
+	: dependency
+	| word
 	;
 
 dependency
@@ -148,98 +115,6 @@ dependency
 	{
 		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $4->e, FFN_MULTI, $1, $4);
 	}
-	;
-
-task
-	: taskdep
-	| taskdep formula
-	{
-		$2->flags = FFN_SINGLE;
-		$2->targets = $1->needs;
-		$$ = addchain($1, $2);
-	}
-	| taskname formula
-	{
-		$2->flags = FFN_SINGLE;
-		$2->targets = $1;
-		$$ = $2;
-	}
-	;
-
-fabrication
-	: dependency formula
-	{
-		$2->flags = $1->flags;
-		$2->targets = $1->needs;
-
-		$$ = addchain($1, $2);
-	}
-	| list ':' formula
-	{
-		$3->flags = FFN_SINGLE;
-		$3->targets = $1;
-		$$ = $3;
-	}
-	| list ':' ':' formula
-	{
-		$4->flags = FFN_MULTI;
-		$4->targets = $1;
-		$$ = $4;
-	}
-	;
-
-discovery
-	: list '~' formula
-	{
-		$3->flags = FFN_SINGLE | FFN_DISCOVERY;
-		$3->targets = $1;
-		$$ = $3;
-	}
-	| list '~' '~' formula
-	{
-		$4->flags = FFN_MULTI | FFN_DISCOVERY;
-		$4->targets = $1;
-		$$ = $4;
-	}
-	;
-
-taskdep
-	: taskname ':' list
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
-	}
-	;
-
-taskname
-	: word
-	{
-		// shorthand for non-reachable filepath
-		char * t = $1->text;
-		$1->text = calloc(1, strlen($1->text) + 5);
-		sprintf($1->text, "/../%s", t);
-
-		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1->s, $1->e, $1, (void*)0);
-	}
-	;
-
-formula
-	: '{' formula_list '}'
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_FORMULA, $1.s, $3.e, $2);
-	}
-	;
-
-formula_list
-	: formula_list formula_list
-	{
-		$$ = addchain($1, $2);
-	}
-	| LF
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_LF, $1.s, $1.e, $1.s, $1.e);
-	}
-	| list
-	| word
 	;
 
 list
@@ -257,10 +132,6 @@ listpiece
 	: listpiece listpiece
 	{
 		$$ = addchain($1, $2);
-	}
-	| VARNAME
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
 	}
 	| word
 	| list

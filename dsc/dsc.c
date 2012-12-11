@@ -3,6 +3,7 @@
 #include "bp.h"
 #include "ts.h"
 #include "fml.h"
+#include "ff.h"
 #include "gnlw.h"
 #include "args.h"
 
@@ -78,6 +79,7 @@ static void assign(gn * gn, ts ** ts, int * c)
 int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p, ts *** ts, int * tsa, int * tsw)
 {
 	int	tsl = 0;
+	ff_node * ffn = 0;
 
 	int x;
 	int i;
@@ -138,7 +140,15 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 		// harvest the results
 		for(x = 0; x < tsl; x++)
 		{
-//			printf("%.*s\n", (int)(*ts)[x]->stdo_txt->l, (*ts)[x]->stdo_txt->s);
+			fatal(ff_dsc_parse
+				, (*ts)[x]->ffp
+				, (*ts)[x]->stdo_txt->s
+				, (*ts)[x]->stdo_txt->l
+				, (*ts)[x]->stdo_path->s
+				, &ffn
+			);
+
+			ff_dump(ffn);
 		}
 
 		break;
