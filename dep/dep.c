@@ -64,14 +64,15 @@ int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int
 				Bl = (*stax)[pr]->s[0].s[j].l;
 			}
 
-			fatal(gn_edge_add, ffn->ff_dir, &A, Al, At, &B, Bl, Bt, ffn);
+			fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn);
 			if(first)
 			{
 				*first = A;
 				first = 0;
 			}
 
-			log(L_DG | L_DGDEPS, "S[%3d,%3d - %3d,%3d] %s -> %s"
+			log(L_DG | L_DGDEPS, "S(%s)[%3d,%3d - %3d,%3d] %s -> %s"
+				, ffn->loc.ff->name
 				, ffn->loc.f_lin + 1
 				, ffn->loc.f_col + 1
 				, ffn->loc.l_lin + 1
@@ -116,7 +117,7 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 			}
 			else
 			{
-				fatal(gn_add, ffn->ff_dir, (*stax)[pl]->s[x].s[i].s, (*stax)[pl]->s[x].s[i].l, &r);
+				fatal(gn_add, ffn->loc.ff->dir, (*stax)[pl]->s[x].s[i].s, (*stax)[pl]->s[x].s[i].l, &r);
 			}
 
 			fatal(lstack_obj_add, (*stax)[pr], r, LISTWISE_TYPE_GNLW);
@@ -159,14 +160,15 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 					Bl = (*stax)[pr]->s[0].s[j].l;
 				}
 
-				fatal(gn_edge_add, ffn->ff_dir, &A, Al, At, &B, Bl, Bt, ffn);
+				fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn);
 				if(first)
 				{
 					*first = A;
 					first = 0;
 				}
 
-				log(L_DG | L_DGDEPS, "M[%3d,%3d - %3d,%3d] %s -> %s"
+				log(L_DG | L_DGDEPS, "M(%s)[%3d,%3d - %3d,%3d] %s -> %s"
+					, ffn->loc.ff->name
 					, ffn->loc.f_lin + 1
 					, ffn->loc.f_col + 1
 					, ffn->loc.l_lin + 1
@@ -202,3 +204,35 @@ int dep_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax
 
 	return 1;
 }
+
+int dep_add_bare(gn * target, ff_node * ffn)
+{
+	int x;
+printf("%p\n", ffn->feeds);
+	for(x = 0; x < ffn->feeds->elements_l; x++)
+	{
+		if(ffn->feeds->elements[x]->type == FFN_WORD)
+		{
+			void * A = target;
+			int Al = 0;
+			int At = LISTWISE_TYPE_GNLW;
+
+			void * B = ffn->feeds->elements[x]->text;
+			int Bl = strlen(B);
+			int Bt = 0;
+
+			fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn);
+
+			log(L_DG | L_DGDEPS, "D(%s)[%3d,%3d - %3d,%3d] %s -> %s"
+				, ffn->loc.ff->name
+				, ffn->loc.f_lin + 1
+				, ffn->loc.f_col + 1
+				, ffn->loc.l_lin + 1
+				, ffn->loc.l_col + 1
+				, ((gn*)A)->path
+				, ((gn*)B)->path
+			);
+		}
+	}
+}
+

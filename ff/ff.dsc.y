@@ -11,7 +11,7 @@
 	static int __attribute__((weakref, alias("ff_yylex"))) ff_dsc_yylex(); 
 	static int __attribute__((weakref, alias("ff_yyerror"))) ff_dsc_yyerror(); 
 
-	ff_node* mknode(void* loc, char* ffdir, uint32_t type, ...);
+	ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...);
 	ff_node* addchain(ff_node* a, ff_node* b);
 }
 
@@ -64,8 +64,7 @@
 %token <str> WS								"WS"				/* a single tab/space */
 %token <num> LW								"=>>"
 %token <num> ':'
-%token <num> '['
-%token <num> ']'
+%token <num> '*'
 %token <num> '"'
 
 /* nonterminals */
@@ -73,11 +72,10 @@
 
 %type  <node> statement
 %type  <node> statement_list
-%type  <node> dependency
-%type  <node> list
-%type  <node> listpiece
+%type  <node> dependency_bare
 %type  <node> word
-%type  <node> generator
+%type  <node> wordlist
+%type  <node> barelist
 
 /* sugar */
 %token END 0 "end of file"
@@ -89,7 +87,7 @@
 ff_dsc
 	: statement_list
 	{
-		*parm->ffn = mknode(&@$, parm->ff_dir, FFN_STMTLIST, $1->s, $1->e, $1);
+		*parm->ffn = mknode(&@$, sizeof(&@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 
@@ -102,65 +100,51 @@ statement_list
 	;
 
 statement
-	: dependency
-	| word
+	: dependency_bare
 	;
 
-dependency
-	: list ':' list
+dependency_bare
+	: ':' barelist
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1.s, $2->e, FFN_SINGLE, (void*)0, $2);
 	}
-	| list ':' ':' list
+	| ':' '*' barelist
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $4->e, FFN_MULTI, $1, $4);
-	}
-	;
-
-list
-	: '[' listpiece ']'
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1.s, $3.e, $2, (void*)0);
-	}
-	| '[' listpiece ']' LW generator
-	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1.s, $5->e, $2, $5);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1.s, $3->e, FFN_SINGLE | FFN_WEAK, (void*)0, $3);
 	}
 	;
 
-listpiece
-	: listpiece listpiece
+barelist
+	: wordlist
+	{
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
+	}
+	;
+
+wordlist
+	: wordlist word
 	{
 		$$ = addchain($1, $2);
 	}
 	| word
-	| list
-	;
-
-generator
-	: word
-	{
-		$$ = $1;
-		$$->type = FFN_GENERATOR;
-	}
 	;
 
 word
 	: '"' wordparts '"'
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WS wordparts WS
 	{
 		@$ = @2;	/* exclude the enclosing WS for word location */
-		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WORD
 	{
 		char* v = calloc(1, ($1.e - $1.s) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
-		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $1.e, v);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
 	}
 	;
 

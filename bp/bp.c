@@ -40,7 +40,7 @@ static void reset(gn * gn)
 
 	int x;
 	for(x = 0; x < gn->needs.l; x++)
-		reset(gn->needs.e[x].gn);
+		reset(gn->needs.e[x]->B);
 }
 
 static int heights(gn * gn)
@@ -49,7 +49,7 @@ static int heights(gn * gn)
 	{
 		int x;
 		for(x = 0; x < gn->needs.l; x++)
-			gn->height = MAX(gn->height, heights(gn->needs.e[x].gn));
+			gn->height = MAX(gn->height, heights(gn->needs.e[x]->B));
 
 		gn->height++;
 	}
@@ -63,7 +63,7 @@ static int depths(gn * gn, int k)
 
 	int x;
 	for(x = 0; x < gn->needs.l; x++)
-		depths(gn->needs.e[x].gn, k + 1);
+		depths(gn->needs.e[x]->B, k + 1);
 }
 
 static void assign(gn * gn, int maxheight)
@@ -76,7 +76,7 @@ static void assign(gn * gn, int maxheight)
 
 		int x;
 		for(x = 0; x < gn->needs.l; x++)
-			assign(gn->needs.e[x].gn, maxheight);
+			assign(gn->needs.e[x]->B, maxheight);
 	}
 }
 
@@ -98,7 +98,7 @@ static int visit(gn * n, int k, gn *** lvs, int * l, int * a)
 
 		int x;
 		for(x = 0; x < n->needs.l; x++)
-			visit(n->needs.e[x].gn, k, lvs, l, a);
+			visit(n->needs.e[x]->B, k, lvs, l, a);
 
 		n->mark = k;
 	}
@@ -287,7 +287,7 @@ int bp_prune(bp * bp)
 			if(gn->prop_hash[1] == 0)		// file does not exist
 			{
 				// SOURCE file - not found
-				log(L_ERROR, "[%2d,%2d] %-9s file %s not found - feeds %d", x, y, "PRIMARY", gn->path, gn->feeds.l);
+				log(L_ERROR, "[%2d,%2d] %-9s file %s not found -->Beds %d", x, y, "PRIMARY", gn->path, gn->feeds.l);
 				gn->poison = 1;
 			}
 			else
@@ -303,14 +303,14 @@ int bp_prune(bp * bp)
 			{
 				// : mark all nodes that depend on me as needing rebuilt, too
 				for(i = 0; i < gn->feeds.l; i++)
-					gn->feeds.e[i].gn->rebuild = 1;
+					gn->feeds.e[i]->A->rebuild = 1;
 			}
 
 			// propagate the poison
 			if(gn->poison)
 			{
 				for(i = 0; i < gn->feeds.l; i++)
-					gn->feeds.e[i].gn->poison = 1;
+					gn->feeds.e[i]->A->poison = 1;
 
 				poisoned = 1;
 			}
@@ -358,7 +358,7 @@ int bp_prune(bp * bp)
 					{
 						// : mark all nodes that depend on me as needing rebuilt, too
 						for(i = 0; i < gn->feeds.l; i++)
-							gn->feeds.e[i].gn->rebuild = 1;
+							gn->feeds.e[i]->A->rebuild = 1;
 
 						keep++;
 					}
@@ -368,7 +368,7 @@ int bp_prune(bp * bp)
 				if(gn->poison)
 				{
 					for(i = 0; i < gn->feeds.l; i++)
-						gn->feeds.e[i].gn->poison = 1;
+						gn->feeds.e[i]->A->poison = 1;
 				}
 			}
 
@@ -476,7 +476,7 @@ int bp_prune(bp * bp)
 			if(gn->poison)
 			{
 				for(i = 0; i < gn->feeds.l; i++)
-					gn->feeds.e[i].gn->poison = 1;
+					gn->feeds.e[i]->A->poison = 1;
 			}
 
 			if(gn->rebuild)
@@ -620,17 +620,17 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 
 					for(k = 0; k < gn->needs.l; k++)
 					{
-						if(gn->needs.e[k].gn->needs.l == 0)
+						if(gn->needs.e[k]->B->needs.l == 0)
 						{
 							int j;
-							for(j = 0; j < gn->needs.e[k].gn->feeds.l; j++)
+							for(j = 0; j < gn->needs.e[k]->B->feeds.l; j++)
 							{
-								if(!gn->needs.e[k].gn->feeds.e[j].gn->fab_success)
+								if(!gn->needs.e[k]->B->feeds.e[j]->A->fab_success)
 									break;
 							}
 
-							if(j == gn->needs.e[k].gn->feeds.l)
-								fatal(gn_hashes_write, gn->needs.e[k].gn);
+							if(j == gn->needs.e[k]->B->feeds.l)
+								fatal(gn_hashes_write, gn->needs.e[k]->B);
 						}
 					}
 				}

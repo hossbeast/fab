@@ -289,15 +289,39 @@ int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, 
 		);
 	}
 
-	relation * ra = 0;
-	relation * rb = 0;
-	fatal(coll_singly_add, &gna->needs.c, 0, &ra);
-	fatal(coll_singly_add, &gnb->feeds.c, 0, &rb);
+	relation * rel = 0;
+	if(gna->needs.by_B == 0 || (rel = idx_lookup_val(gna->needs.by_B, &gnb, 0)) == 0)
+	{
+		fatal(xmalloc, &rel, sizeof(*rel));
 
-	ra->gn = gnb;
-	ra->ffn = ffn;
-	rb->gn = gna;
-	rb->ffn = ffn;
+		fatal(coll_doubly_add, &gna->needs.c, &rel, 0);
+		fatal(coll_doubly_add, &gnb->feeds.c, &rel, 0);
+		
+		fatal(idx_mkindex
+			, gna->needs.e
+			, gna->needs.l
+			, gna->needs.z
+			, offsetof(typeof(gna->needs.e[0][0]), B)
+			, sizeof(((typeof(gna->needs.e[0][0])*)0)->B)
+			, INDEX_UNIQUE | INDEX_NUMERIC | INDEX_DEREF
+			, &gna->needs.by_B
+		);
+
+		fatal(idx_mkindex
+			, gnb->feeds.e
+			, gnb->feeds.l
+			, gnb->feeds.z
+			, offsetof(typeof(gnb->needs.e[0][0]), A)
+			, sizeof(((typeof(gnb->needs.e[0][0])*)0)->A)
+			, INDEX_UNIQUE | INDEX_NUMERIC | INDEX_DEREF
+			, &gnb->feeds.by_A
+		);
+	}
+
+	rel->A = gna;
+	rel->B = gnb;
+	rel->ffn = ffn;
+	rel->weak = ffn->flags & FFN_WEAK;
 
 	*A = gna;
 	*B = gnb;
@@ -398,12 +422,12 @@ void gn_dump(gn * gn)
 			log(L_DG | L_DGRAPH, "%12s : %d", "needs", gn->needs.l);
 			for(x = 0; x < gn->needs.l; x++)
 			{
-				log(L_DG | L_DGRAPH, "%12s --> %s @ [%3d,%3d - %3d,%3d]", ""
-					, gn->needs.e[x].gn->path
-					, gn->needs.e[x].ffn->loc.f_lin + 1
-					, gn->needs.e[x].ffn->loc.f_col + 1
-					, gn->needs.e[x].ffn->loc.l_lin + 1
-					, gn->needs.e[x].ffn->loc.l_col + 1
+				log(L_DG | L_DGRAPH, "%12s --> %s @ (%s)[%3d,%3d - %3d,%3d]", ""
+					, gn->needs.e[x]->B->path
+					, gn->needs.e[x]->ffn->loc.f_lin + 1
+					, gn->needs.e[x]->ffn->loc.f_col + 1
+					, gn->needs.e[x]->ffn->loc.l_lin + 1
+					, gn->needs.e[x]->ffn->loc.l_col + 1
 				);
 			}
 		}
@@ -412,11 +436,11 @@ void gn_dump(gn * gn)
 		for(x = 0; x < gn->feeds.l; x++)
 		{
 			log(L_DG | L_DGRAPH, "%12s --> %s @ [%3d,%3d - %3d,%3d]", ""
-				, gn->feeds.e[x].gn->path
-				, gn->feeds.e[x].ffn->loc.f_lin + 1
-				, gn->feeds.e[x].ffn->loc.f_col + 1
-				, gn->feeds.e[x].ffn->loc.l_lin + 1
-				, gn->feeds.e[x].ffn->loc.l_col + 1
+				, gn->feeds.e[x]->A->path
+				, gn->feeds.e[x]->ffn->loc.f_lin + 1
+				, gn->feeds.e[x]->ffn->loc.f_col + 1
+				, gn->feeds.e[x]->ffn->loc.l_lin + 1
+				, gn->feeds.e[x]->ffn->loc.l_col + 1
 			);
 		}
 

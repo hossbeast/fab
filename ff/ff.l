@@ -141,7 +141,7 @@
 <checklw>[^ \t=]														{ POPSTATE(yyextra); yyless(0); }
 <checklw>[ \t]+															{ locify(yyextra, yylloc, yyleng, 0); }
 
-<INITIAL>[^\n\t\\ :~"$[{=\x00]+							{ return LEX(WORD); }
+<INITIAL>[^\n\t\\ :*~"$[{=\x00]+						{ return LEX(WORD); }
 <list>[^\n\t\\ "$[\]\x00]+									{ return LEX(WORD); }
 <command>[^\n}[\x00]+												{ return LEX(WORD); }
 <commandchecklit>\t+>[\t ]+									{
@@ -160,6 +160,7 @@
 <list>\\["]																	{ yytext++; yyleng--; return LEXX(WORD, 1); }
 <list>\\[]]																	{ yytext++; yyleng--; return LEXX(WORD, 1); }
 <INITIAL>\\[:]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<INITIAL>\\[*]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
 <INITIAL>\\[~]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
 <INITIAL>\\[{]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
 <INITIAL>\\[=]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
@@ -175,6 +176,7 @@
 <list>\$[a-zA-Z_@*#<^][a-zA-Z0-9_]*					{ return LEXV(VARNAME, yytext + 1, yyleng - 1); }
 <list>\$\{[a-zA-Z_@*#<^][a-zA-Z0-9_]*\}			{ return LEXV(VARNAME, yytext + 2, yyleng - 3); }
 <INITIAL>[:]																{ return LEX(yytext[0]); }
+<INITIAL>[*]																{ return LEX(yytext[0]); }
 <INITIAL>[~]																{ return LEX(yytext[0]); }
 <INITIAL>[=]																{ return LEX(yytext[0]); }
 <command>[}]																{

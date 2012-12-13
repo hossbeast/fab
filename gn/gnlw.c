@@ -24,17 +24,17 @@ static void recurse_needs(gn * n, gn ** r, int * x)
 	if(r)
 	{
 		for(i = 0; i < n->needs.l; i++)
-			r[(*x)++] = n->needs.e[i].gn;
+			r[(*x)++] = n->needs.e[i]->B;
 
 		for(i = 0; i < n->needs.l; i++)
-			recurse_needs(n->needs.e[i].gn, r, x);
+			recurse_needs(n->needs.e[i]->B, r, x);
 	}
 	else
 	{
 		(*x) += n->needs.l;
 
 		for(i = 0; i < n->needs.l; i++)
-			recurse_needs(n->needs.e[i].gn, 0, x);
+			recurse_needs(n->needs.e[i]->B, 0, x);
 	}
 }
 
@@ -44,17 +44,17 @@ static void recurse_feeds(gn * n, gn ** r, int * x)
 	if(r)
 	{
 		for(i = 0; i < n->feeds.l; i++)
-			r[(*x)++] = n->feeds.e[i].gn;
+			r[(*x)++] = n->feeds.e[i]->A;
 
 		for(i = 0; i < n->feeds.l; i++)
-			recurse_feeds(n->feeds.e[i].gn, r, x);
+			recurse_feeds(n->feeds.e[i]->A, r, x);
 	}
 	else
 	{
 		(*x) += n->feeds.l;
 
 		for(i = 0; i < n->feeds.l; i++)
-			recurse_feeds(n->feeds.e[i].gn, 0, x);
+			recurse_feeds(n->feeds.e[i]->A, 0, x);
 	}
 }
 
@@ -149,7 +149,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		{
 			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
 			fatal(xmalloc, &(((gn**)(*r))[x]), sizeof(gn*));
-			((gn**)(*r))[x] = ((gn*)o)->needs.e[x].gn;
+			((gn**)(*r))[x] = ((gn*)o)->needs.e[x]->B;
 		}
 	}
 	else if(strcmp(prop, "ifeed") == 0)
@@ -162,7 +162,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		{
 			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
 			fatal(xmalloc, &(((gn**)(*r))[x]), sizeof(gn*));
-			((gn**)(*r))[x] = ((gn*)o)->feeds.e[x].gn;
+			((gn**)(*r))[x] = ((gn*)o)->feeds.e[x]->A;
 		}
 	}
 	else if(strcmp(prop, "aneed") == 0)

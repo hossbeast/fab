@@ -9,7 +9,7 @@
 	#include "ff.h"
 
 	int  ff_yylex(void* yylvalp, void* yylloc, void* scanner);
-	ff_node* mknode(void* loc, char* ffdir, uint32_t type, ...);
+	ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...);
 
 	ff_node* addchain(ff_node* a, ff_node* b);
 }
@@ -66,6 +66,7 @@
 %token <num> INC							">>"
 %token <num> LW								"=>>"
 %token <num> ':'
+%token <num> '*'
 %token <num> '~'
 %token <num> '['
 %token <num> ']'
@@ -104,7 +105,7 @@
 ff
 	: statement_list
 	{
-		*parm->ffn = mknode(&@$, parm->ff_dir, FFN_STMTLIST, $1->s, $1->e, $1);
+		*parm->ffn = mknode(&@$, sizeof(&@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 
@@ -128,25 +129,33 @@ statement
 include
 	: INC list
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_INCLUDE, $1.s, $2->e, $1, $2);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_INCLUDE, $1.s, $2->e, $1, $2);
 	}
 	;
 
 vardecl
 	: WORD '=' list
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_VARDECL, $1.s, $3->e, $1.s, $1.e, $3);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_VARDECL, $1.s, $3->e, $1.s, $1.e, $3);
 	}
 	;
 
 dependency
 	: list ':' list
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+	}
+	| list ':' '*' list
+	{
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_SINGLE | FFN_WEAK, $1, $4);
 	}
 	| list ':' ':' list
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $4->e, FFN_MULTI, $1, $4);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_MULTI, $1, $4);
+	}
+	| list ':' ':' '*' list
+	{
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1->s, $5->e, FFN_MULTI | FFN_WEAK, $1, $5);
 	}
 	;
 
@@ -195,18 +204,12 @@ discovery
 		$3->targets = $1;
 		$$ = $3;
 	}
-	| list '~' '~' formula
-	{
-		$4->flags = FFN_MULTI | FFN_DISCOVERY;
-		$4->targets = $1;
-		$$ = $4;
-	}
 	;
 
 taskdep
 	: taskname ':' list
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
 	}
 	;
 
@@ -218,14 +221,14 @@ taskname
 		$1->text = calloc(1, strlen($1->text) + 5);
 		sprintf($1->text, "/../%s", t);
 
-		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1->s, $1->e, $1, (void*)0);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
 	}
 	;
 
 formula
 	: '{' formula_list '}'
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_FORMULA, $1.s, $3.e, $2);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_FORMULA, $1.s, $3.e, $2);
 	}
 	;
 
@@ -236,7 +239,7 @@ formula_list
 	}
 	| LF
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_LF, $1.s, $1.e, $1.s, $1.e);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LF, $1.s, $1.e, $1.s, $1.e);
 	}
 	| list
 	| word
@@ -245,11 +248,11 @@ formula_list
 list
 	: '[' listpiece ']'
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1.s, $3.e, $2, (void*)0);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
 	}
 	| '[' listpiece ']' LW generator
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_LIST, $1.s, $5->e, $2, $5);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
 	}
 	;
 
@@ -260,7 +263,7 @@ listpiece
 	}
 	| VARNAME
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
 	}
 	| word
 	| list
@@ -277,19 +280,19 @@ generator
 word
 	: '"' wordparts '"'
 	{
-		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WS wordparts WS
 	{
 		@$ = @2;	/* exclude the enclosing WS for word location */
-		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WORD
 	{
 		char* v = calloc(1, ($1.e - $1.s) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
-		$$ = mknode(&@$, parm->ff_dir, FFN_WORD, $1.s, $1.e, v);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
 	}
 	;
 

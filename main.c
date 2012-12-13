@@ -105,7 +105,7 @@ int main(int argc, char** argv)
 			fatal(xmalloc, &stax[p], sizeof(*stax[p]));
 		lstack_reset(stax[p]);
 
-		fatal(lstack_add, stax[p], ffn->ff_dir, strlen(ffn->ff_dir));
+		fatal(lstack_add, stax[p], ffn->loc.ff->dir, strlen(ffn->loc.ff->dir));
 		fatal(var_set, vmap, "#", stax[p++]);
 
 		// process the fabfile tree, construct the graph

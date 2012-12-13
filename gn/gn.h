@@ -40,8 +40,15 @@ struct gn;
 
 typedef struct
 {
-	struct ff_node *	ffn;
-	struct gn *				gn;
+	struct ff_node *	ffn;		// FFN_DEPENDENCY node which gave rise to this relation
+
+	struct gn *				A;			// A needs B
+	struct gn *				B;			// B feeds A
+
+	int								weak;		// whether this is a weak relation
+
+	// tracking
+	int								mark;
 } relation;
 
 typedef struct gn
@@ -82,29 +89,33 @@ typedef struct gn
 	uint32_t					prop_hash[2];	// hash of fs properties
 	uint32_t					cmd_hash[2];	// hash of cmd which last fabricated this node
 
-	// dependencies
+	// this node depends on the nodes in this list
 	union {
-		coll_singly c;
+		coll_doubly c;
 
 		struct
 		{
 			int						l;
 			int						a;
 			int						z;
-			relation *		e;
+			relation **		e;
+
+			idx*					by_B;	// indexed by canonical path of the node at the other end of the relation
 		};
 	} needs;
 
-	// prerequisites
+	// the nodes in this list depend on this node
 	union {
-		coll_singly c;
+		coll_doubly c;
 
 		struct
 		{
 			int						l;
 			int						a;
 			int						z;
-			relation * 		e;
+			relation **		e;
+
+			idx*					by_A;	// indexed by canonical path of the node at the other end of the relation
 		};
 	} feeds;
 

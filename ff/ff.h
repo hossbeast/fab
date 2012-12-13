@@ -14,6 +14,7 @@
 #define FFN_SINGLE		0x01
 #define FFN_MULTI			0x02
 #define FFN_DISCOVERY	0x04
+#define FFN_WEAK			0x08
 
 #define FFN_TABLE(x)										\
 	_FFN(FFN_STMTLIST				, 0x01	, x)	\
@@ -36,26 +37,34 @@ enum {
 #define _FFN(a, b, c) (c) == b ? #a "[" #b "]" :
 #define FFN_STRING(x) FFN_TABLE(x) "unknown"
 
+struct ff_file;
+typedef struct ff_file
+{
+	char *		name;		// name of fabfile
+
+	char *		path;		// canonical path to fabfile 
+	char *		dir;		// canonical path to dir fabfile is in
+} ff_file;
+
 struct ff_loc;
 typedef struct ff_loc
 {
-	int f_lin;
-	int f_col;
-	int l_lin;
-	int l_col;
+	int				f_lin;
+	int				f_col;
+	int				l_lin;
+	int				l_col;
+
+	ff_file *	ff;
 } ff_loc;
 
 struct ff_node;
 typedef struct ff_node
 {
-	uint32_t		type;
-	ff_loc			loc;
+	uint32_t		type;		// node type
+	ff_loc			loc;		// location of the node
 
-	// canonical path for the directory the fabfile this node came from is in
-	char*				ff_dir;	
-
-	char*				s;
-	int					l;
+	char*				s;			// string value of the entire node
+	int					l;			// string length
 
 	generator * 		generator;		// FFN_GENERATOR
 	uint8_t					flags;				// FFN_DEPENDENCY, FFN_FORMULA
@@ -142,7 +151,7 @@ typedef struct
 	int									orig_len;		// length of original input string
 	char*								act_base;		// ptr to lexer copy
 
-	char*								ff_dir;			// relative path to the directory the fabfile is in
+	ff_file *						ff;					// info about the fabfile
 
 	int									r;					// zeroed in yyerror
 } parse_param;
@@ -178,7 +187,7 @@ int ff_mkparser(ff_parser ** const restrict p)
 int ff_parse(
 	  const ff_parser * const restrict p
 	, char * path
-	, ff_node ** const restrict ff
+	, ff_node ** const restrict ffn
 )
 	__attribute__((nonnull));
 
@@ -192,7 +201,7 @@ int ff_dsc_parse(
 	, char * text
 	, int l
 	, char * path
-	, ff_node ** const restrict ff
+	, ff_node ** const restrict ffn
 );
 
 /// ff_freeparser

@@ -69,7 +69,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 			*/
 
 			char space[256];
-			snprintf(space, sizeof(space), "%s/%.*s", fml->ffn->ff_dir, l, s);
+			snprintf(space, sizeof(space), "%s/%.*s", fml->ffn->loc.ff->dir, l, s);
 
 			int i;
 			for(i = 0; i < gn_nodes.l; i++)
@@ -174,7 +174,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 			{
 				for(i = 0; i < gn_nodes.l; i++)
 				{
-					if(strcmp(gn_nodes.e[i]->dir, fml->ffn->ff_dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[x].s[y].s) == 0)
+					if(strcmp(gn_nodes.e[i]->dir, fml->ffn->loc.ff->dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[x].s[y].s) == 0)
 					{
 						t = gn_nodes.e[i];
 						break;

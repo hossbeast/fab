@@ -142,23 +142,30 @@ static int parse(const ff_parser * const restrict p, char* b, int sz, char* path
 	if((state = ff_yy_scan_bytes(b, sz + 2, p->p)) == 0)
 		fail("scan_bytes failed");
 
+	ff_file * ff = 0;
+	fatal(xmalloc, &ff, sizeof(*ff));
+
+	// canonical path to the fabfile and its directory
+	ff->path = realpath(path, 0);
+	ff->dir = realpath(path, 0);
+
+	// terminate at the last directory specification
+	char * tm = ff->dir + strlen(ff->dir);
+	while(*tm != '/')
+		tm--;
+	*tm = 0;
+
+	// name of fabfile
+	ff->name = strdup(++tm);
+
 	parse_param pp = {
 		  .scanner = p->p
 		, .ffn = ffn
+		, .ff = ff
 		, .orig_base = b
 		, .orig_len = sz
 		, .r = 1
 	};
-
-	// canonical path to the fabfile
-	pp.ff_dir = realpath(path, 0);
-
-	// terminate at the last directory specification
-	char* tm = pp.ff_dir + strlen(pp.ff_dir);
-	while(*tm != '/')
-		tm--;
-
-	*tm = 0;
 
 	// make available to the lexer
 	ff_yyset_extra(&pp, p->p);
@@ -194,23 +201,20 @@ static int parse(const ff_parser * const restrict p, char* b, int sz, char* path
 		ff_xfreenode(ffn);
 	}
 
-	free(pp.ff_dir);
-
 	return 1;
 }
 
 /// [[ public ]]
 
-ff_node* mknode(void* loc, char* ff_dir, uint32_t type, ...)
+ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 {
 	char* a;
 	char* b;
 
 	ff_node* n = calloc(1, sizeof(*n));
 	n->type = type;
-	memcpy(&n->loc, loc, sizeof(n->loc));
-
-	n->ff_dir = strdup(ff_dir);
+	memcpy(&n->loc, loc, locz);
+	n->loc.ff = ff;
 
 	va_list va;
 	va_start(va, type);
@@ -336,8 +340,6 @@ void ff_freenode(ff_node * const restrict ffn)
 {
 	if(ffn)
 	{
-		free(ffn->ff_dir);
-
 		int x;
 		for(x = 0; x < sizeof(ffn->strings) / sizeof(ffn->strings[0]); x++)
 			free(ffn->strings[x]);
@@ -389,10 +391,15 @@ void ff_dump(ff_node * const restrict root)
 			}
 			if(ffn->type == FFN_DEPENDENCY)
 			{
-				log(L_FF | L_FFTREE, "%*s  %10s"
+				log(L_FF | L_FFTREE, "%*s  %10s : %s"
 					, lvl * 2, ""
 					, "type"
 					, ffn->flags & FFN_MULTI ? "multi" : "single"
+				);
+				log(L_FF | L_FFTREE, "%*s  %10s : %s"
+					, lvl * 2, ""
+					, "type"
+					, ffn->flags & FFN_WEAK ? "weak" : "strong"
 				);
 				log(L_FF | L_FFTREE, "%*s  %10s :"
 					, lvl * 2, ""
