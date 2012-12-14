@@ -16,38 +16,27 @@
 // static
 //
 
-static int newedges(gn * gn)
+static int newedges(gn * r, int * c)
 {
-	int c = 0;
-
-	int x;
-	for(x = 0; x < gn->needs.l; x++)
+	void logic(gn * gn)
 	{
-		if(gn->needs.e[x]->mark == 0)
-		{
-			gn->needs.e[x]->mark = 1;
-printf("%s %p->needs[%d]=%p : %s(%p) -> %s(%p)\n", gn->needs.e[x]->ffn->loc.ff->path, gn, x, gn->needs.e[x], gn->needs.e[x]->A->path, gn->needs.e[x]->A, gn->needs.e[x]->B->path, gn->needs.e[x]->B);
-			c++;
-		}
+		if(gn->mark == 0)
+			(*c)++;
 
-		c += newedges(gn->needs.e[x]->B);
-	}
+		gn->mark = 1;
+	};
 
-	return c;
+	return gn_traverse_needs(r, logic);
 }
 
-static void reset(gn * gn)
+static int reset(gn * r)
 {
-	gn->mark = 0;
-
-	int x;
-	for(x = 0; x < gn->needs.l; x++)
+	void logic(gn * gn)
 	{
-		// mark all existing relations
-		gn->needs.e[x]->mark = 1;
+		gn->mark = 0;
+	};
 
-		reset(gn->needs.e[x]->B);
-	}
+	return gn_traverse_needs(r, logic);
 }
 
 static int count(gn * gn)
@@ -110,7 +99,7 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 
 	// graph reset
 	for(x = 0; x < gnl; x++)
-		reset(gn[x]);
+		fatal(reset, gn[x]);
 
 	// count nodes having not yet participated in discovery
 	//  (actually this counts discovery fml contexts)
@@ -161,8 +150,10 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 			fatal(ts_execwave, *ts, x, tsw, L_DSC | L_DSCEXEC, L_DSC);
 
 			// harvest the results
+printf("harvesting %d threads\n", tsl);
 			for(x = 0; x < tsl; x++)
 			{
+printf("parsing thread %d\n", x);
 				fatal(ff_dsc_parse
 					, (*ts)[x]->ffp
 					, (*ts)[x]->stdo_txt->s
@@ -175,9 +166,9 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 
 				for(k = 0; k < ffn->statements_l; k++)
 				{
-					if(ffn->statements[x]->type == FFN_DEPENDENCY)
+					if(ffn->statements[k]->type == FFN_DEPENDENCY)
 					{
-						fatal(dep_add_bare, (*ts)[x]->fmlv->products[0], ffn->statements[x]);
+						fatal(dep_add_bare, (*ts)[x]->fmlv->products[0], ffn->statements[k]);
 					}
 				}
 			}
@@ -185,9 +176,10 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 			// edges newly added
 			k = 0;
 			for(x = 0; x < gnl; x++)
-				k += newedges(gn[x]);
+				fatal(newedges, gn[x], &k);
 
 			printf("%d new edges\n", k);
+exit(0);
 
 			// nodes newly discovered
 			tsl = 0;

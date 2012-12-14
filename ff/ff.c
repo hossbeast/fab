@@ -354,6 +354,8 @@ void ff_freenode(ff_node * const restrict ffn)
 
 		if(ffn->type == FFN_GENERATOR)
 			generator_free(ffn->generator);
+
+		memset(ffn, 0, sizeof(*ffn));
 	}
 
 	free(ffn);

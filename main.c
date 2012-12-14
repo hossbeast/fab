@@ -130,6 +130,17 @@ int main(int argc, char** argv)
 			}
 		}
 
+		if(g_args.dumpnode)
+		{
+			for(x = 0; x < g_args.dumpnode_len; x++)
+			{
+				gn * gn = 0;
+				if(gn_lookup(g_args.dumpnode[x], g_args.cwd, &gn) == 0)
+					return 0;
+				gn_dump(gn);
+			}
+		}
+		
 		// dependency discovery phase
 		fatal(dsc_exec, gn_nodes.e, gn_nodes.l, vmap, &stax, &stax_l, &stax_a, p, &ts, &tsa, &tsw);
 

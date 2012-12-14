@@ -424,6 +424,7 @@ void gn_dump(gn * gn)
 			{
 				log(L_DG | L_DGRAPH, "%12s --> %s @ (%s)[%3d,%3d - %3d,%3d]", ""
 					, gn->needs.e[x]->B->path
+					, gn->needs.e[x]->ffn->loc.ff->name
 					, gn->needs.e[x]->ffn->loc.f_lin + 1
 					, gn->needs.e[x]->ffn->loc.f_col + 1
 					, gn->needs.e[x]->ffn->loc.l_lin + 1
@@ -435,8 +436,9 @@ void gn_dump(gn * gn)
 		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", gn->feeds.l);
 		for(x = 0; x < gn->feeds.l; x++)
 		{
-			log(L_DG | L_DGRAPH, "%12s --> %s @ [%3d,%3d - %3d,%3d]", ""
+			log(L_DG | L_DGRAPH, "%12s --> %s @ (%s)[%3d,%3d - %3d,%3d]", ""
 				, gn->feeds.e[x]->A->path
+				, gn->feeds.e[x]->ffn->loc.ff->name
 				, gn->feeds.e[x]->ffn->loc.f_lin + 1
 				, gn->feeds.e[x]->ffn->loc.f_col + 1
 				, gn->feeds.e[x]->ffn->loc.l_lin + 1
@@ -502,4 +504,112 @@ int gn_hashes_cmp(gn * gn)
 					?: gn->prop_hash[1] - gn->prop_hash[0]
 					?: gn->cmd_hash[1] - gn->cmd_hash[0]
 					?: 0;
+}
+
+int gn_traverse_needs(gn * r, void (*logic)(gn *))
+{
+	gn * stack[64] = {};
+	int ptr = 0;
+
+	int leave(gn * n)
+	{
+		n->guard = 0;
+
+		int x;
+		for(x = 0; x < n->needs.l; x++)
+			leave(n->needs.e[x]->B);
+	};
+
+	int enter(gn * n, int l)
+	{
+		if(n->guard)
+		{
+			if(ptr < sizeof(stack) / sizeof(stack[0]))
+				stack[ptr++] = n;
+
+			return 1;
+		}
+		n->guard = 1;
+
+		// descend
+		int x;
+		for(x = 0; x < n->needs.l; x++)
+		{
+			if(enter(n->needs.e[x]->B, l + 1))
+			{
+				if(ptr < sizeof(stack) / sizeof(stack[0]))
+					stack[ptr++] = n;
+
+				return 1;
+			}
+		}
+
+		// logic on this node
+		logic(n);
+
+		leave(n);
+
+		return 0;
+	};
+
+	if(enter(r, 0))
+	{
+		log_start(L_ERROR, "detected cycle : ");
+
+		int x;
+
+		int top;
+		for(top = 1; top < ptr; top++)
+		{
+			if(stack[top] == stack[0])
+				break;
+		}
+
+		if(top != ptr)
+			top++;
+
+		for(x = 0; x < top; x++)
+		{
+			if(x)
+				log_add(" -> ");
+
+			log_add("%s", gn_idstring(stack[x]));
+		}
+
+		if(ptr == sizeof(stack) / sizeof(stack[0]))
+			log_finish(" -> ...");
+		else
+			log_finish("");
+
+		return 0;
+	}
+
+	return 1;
+}
+
+char * gn_idstring(gn * gn)
+{
+	if(g_args.mode_gnid == MODE_GNID_CANON)
+	{
+		return gn->path;
+	}
+	if(g_args.mode_gnid == MODE_GNID_RELATIVE)
+	{
+		if(gn->idstring == 0)
+		{
+
+			int x;
+			for(x = 0; x < strlen(g_args.fabfile_canon) && x < gn->pathl; x++)
+			{
+				if(g_args.fabfile_canon[x] != gn->path[x])
+					break;
+			}
+
+			gn->idstring = strdup(&gn->path[x]);
+		}
+
+		return gn->idstring;
+	}
+
+	return 0;
 }

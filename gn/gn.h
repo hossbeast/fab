@@ -49,6 +49,7 @@ typedef struct
 
 	// tracking
 	int								mark;
+	int								guard;
 } relation;
 
 typedef struct gn
@@ -66,6 +67,8 @@ typedef struct gn
 	int								pathl;
 	char*							ext;						// portion of file name following the last '.', or null
 	int								extl;
+	char*							idstring;				// identifier string, subject to execution parameters
+	int								idstringl;
 
   char*							hashfile_path;  // canonical path to hashfile
 
@@ -130,6 +133,7 @@ typedef struct gn
 	int								height;		// distance of longest route to a leaf node
 	int								stage;		// assigned stage = maxheight - depth
 	int								mark;
+	int								guard;
 
 	char							changed;
 	char							rebuild;
@@ -153,8 +157,6 @@ extern union gn_nodes_t
 		idx*	by_path;			// indexed by canonical path
 	};
 } gn_nodes;
-
-extern gn * gn_root;
 
 /// gn_lookup
 //
@@ -221,5 +223,21 @@ int gn_hashes_read(gn * gn);
 int gn_hashes_write(gn * gn);
 
 int gn_hashes_cmp(gn *);
+
+/// gn_traverse_needs
+//
+// SUMMARY
+//  traverse the graph needs-wise, depth first, starting at gn.
+//  apply logic at each node along the way
+//  detect cycles, and fail if one is found
+//
+int gn_traverse_needs(gn * gn, void (*logic)(struct gn *));
+
+/// gn_idstring
+//
+// get a string identifying a node, subject to execution arguments
+//
+char * gn_idstring(gn * gn)
+	__attribute__((nonnull));
 
 #endif

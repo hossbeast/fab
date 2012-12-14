@@ -8,13 +8,18 @@
 #define DEFAULT_HASHDIR					"/tmp/fab/hash"
 #define DEFAULT_INVALIDATE_ALL	0
 #define DEFAULT_DUMPNODE_ALL		0
+#define DEFAULT_MODE						MODE_FABRICATE
+#define DEFAULT_MODE_GNID				MODE_GNID_RELATIVE
 
 /* modes */
 
-#define MODE_DEFAULT			MODE_FABRICATE
-#define MODE_TABLE(x)																													\
-	_MODE(MODE_FABRICATE			, 0x00	, x)		/* fabricate targets - default */	\
-	_MODE(MODE_BUILDPLAN			, 0x01	, x)		/* generate buildplan only */			\
+#define MODE_TABLE(x)																																					\
+/* execution modes */																																					\
+	_MODE(MODE_FABRICATE			, 0x00	, x)		/* fabricate targets - default */									\
+	_MODE(MODE_BUILDPLAN			, 0x01	, x)		/* generate buildplan only */											\
+/* path display modes */																																			\
+	_MODE(MODE_GNID_CANON			, 0x02	, x)		/* canonical path */															\
+	_MODE(MODE_GNID_RELATIVE	, 0x03	, x)		/* path relative to the initial fabfile */				\
 
 enum {
 #define _MODE(a, b, c) a = b,
@@ -36,7 +41,8 @@ extern struct g_args_t
 	char **			targets;							// targets
 	int					targets_len;
 
-	char *			fabfile;							// path to fabfile
+	char *			fabfile;							// user-supplied path to initial fabfile
+	char *			fabfile_canon;				// canonical path to initial fabfile
 
 	char *			execdir_base;
 	char *			execdir;
@@ -49,6 +55,8 @@ extern struct g_args_t
 	char **			dumpnode;							// graph nodes to dump
 	int					dumpnode_len;
 	int					dumpnode_all;
+
+	int					mode_gnid;						// mode for gn identification string
 } g_args;
 
 //// parse_args

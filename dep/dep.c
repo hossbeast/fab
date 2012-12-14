@@ -77,8 +77,8 @@ int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int
 				, ffn->loc.f_col + 1
 				, ffn->loc.l_lin + 1
 				, ffn->loc.l_col + 1
-				, ((gn*)A)->path
-				, ((gn*)B)->path
+				, gn_idstring((gn*)A)
+				, gn_idstring((gn*)B)
 			);
 		}
 		LSTACK_ITEREND;
@@ -173,8 +173,8 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 					, ffn->loc.f_col + 1
 					, ffn->loc.l_lin + 1
 					, ffn->loc.l_col + 1
-					, ((gn*)A)->path
-					, ((gn*)B)->path
+					, gn_idstring((gn*)A)
+					, gn_idstring((gn*)B)
 				);
 			}
 			LSTACK_ITEREND;
@@ -208,7 +208,6 @@ int dep_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax
 int dep_add_bare(gn * target, ff_node * ffn)
 {
 	int x;
-printf("%p\n", ffn->feeds);
 	for(x = 0; x < ffn->feeds->elements_l; x++)
 	{
 		if(ffn->feeds->elements[x]->type == FFN_WORD)
@@ -229,10 +228,9 @@ printf("%p\n", ffn->feeds);
 				, ffn->loc.f_col + 1
 				, ffn->loc.l_lin + 1
 				, ffn->loc.l_col + 1
-				, ((gn*)A)->path
-				, ((gn*)B)->path
+				, gn_idstring((gn*)A)
+				, gn_idstring((gn*)B)
 			);
 		}
 	}
 }
-
