@@ -87,7 +87,7 @@ static void gn_stat(gn * n)
 	}
 }
 
-static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
+static int gn_create(char * realwd, char * A, int Al, gn ** gna)
 {
 	// p will point to a null-terminated string of the full canonical path to the file
 	char * p = 0;
@@ -153,10 +153,14 @@ static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 
 	dl++;
 
-	if(!gn_nodes.by_path || (*gna = idx_lookup_val(gn_nodes.by_path, (char*[]) { p }, 0)) == 0)
+	if(!gn_nodes.by_path)
+		fatal(map_create, &gn_nodes.by_path, 0);
+
+	if((*gna = gn_lookup_canon(p, pl)) == 0)
 	{
-		// allocate new gnode in collection for A
 		fatal(coll_doubly_add, &gn_nodes.c, 0, gna);
+
+		map_set(gn_nodes.by_path, p, pl, gna, sizeof(*gna));
 
 		// populate gna
 		(*gna)->vrs[1]		= GN_VERSION;
@@ -179,7 +183,6 @@ static int gn_create(char * realwd, char * A, int Al, gn ** gna, int * new)
 		}
 
 		gn_stat(*gna);
-		(*new)++;
 	}
 
 	return 1;
@@ -198,14 +201,14 @@ int gn_lookup(char * s, char * cwd, gn ** r)
 	{
 		// absolute path
 		if(s[0] == '/')
-			(*r) = idx_lookup_val(gn_nodes.by_path, &s, 0);
+			(*r) = gn_lookup_canon(s, 0);
 
 		// relative to cwd
 		if(!(*r))
 		{
 			fatal(xrealloc, &sp, 1, strlen(cwd) + strlen(s) + 2, 0);
 			sprintf(sp, "%s/%s", cwd, s);
-			(*r) = idx_lookup_val(gn_nodes.by_path, &sp, 0);
+			(*r) = gn_lookup_canon(sp, 0);
 		}
 
 		// NOFILE nodes
@@ -213,7 +216,7 @@ int gn_lookup(char * s, char * cwd, gn ** r)
 		{
 			fatal(xrealloc, &sp, 1, strlen(s) + 5, 0);
 			sprintf(sp, "/../%s", s);
-			(*r) = idx_lookup_val(gn_nodes.by_path, &sp, 0);
+			(*r) = gn_lookup_canon(sp, 0);
 		}
 	}
 
@@ -224,25 +227,22 @@ int gn_lookup(char * s, char * cwd, gn ** r)
 	return 1;
 }
 
+gn * gn_lookup_canon(char* s, int l)
+{
+	gn ** r = map_get(gn_nodes.by_path, s, l ?: strlen(s));
+
+	if(r)
+		return *r;
+
+	return 0;
+}
+
 int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** r)
 {
 	gn *	gna = 0;
 	int		new = 0;
 
-	fatal(gn_create, realwd, A, Al, &gna, &new);
-
-	if(new)
-	{
-		fatal(idx_mkindex
-			, gn_nodes.e
-			, gn_nodes.l
-			, gn_nodes.z
-			, offsetof(typeof(gn_nodes.e[0][0]), path)
-			, 0
-			, INDEX_UNIQUE | INDEX_STRING | INDEX_DEREF
-			, &gn_nodes.by_path
-		);
-	}
+	fatal(gn_create, realwd, A, Al, &gna);
 
 	if(r)
 		*r = gna;
@@ -254,74 +254,52 @@ int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, 
 {
 	gn *	gna = 0;
 	gn *	gnb = 0;
-	int		new = 0;
 
 	if(At)
 		gna = *(gn**)A;
 	else
-		fatal(gn_create, realwd, *(char**)A, Al, &gna, &new);
+		fatal(gn_create, realwd, *(char**)A, Al, &gna);
 
 	if(Bt)
 		gnb = *(gn**)B;
 	else
-		fatal(gn_create, realwd, *(char**)B, Bl, &gnb, &new);
+		fatal(gn_create, realwd, *(char**)B, Bl, &gnb);
 
-	// error check
-	if(strcmp(gnb->dir, "/..") == 0)
+	// as syntactic sugar, silently ignore dependencies of a node on itself
+	if(gna != gnb)
 	{
-		if(strcmp(gna->dir, "/.."))
+		// error check
+		if(strcmp(gnb->dir, "/..") == 0)
 		{
-			fail("file-backed node may not depend on non-file-backed node");
+			if(strcmp(gna->dir, "/.."))
+			{
+				fail("file-backed node may not depend on non-file-backed node");
+			}
+		}
+
+		relation * rel = 0;
+		if(!gna->needs.by_B)
+			fatal(map_create, &gna->needs.by_B, 0);
+		
+		if(!gnb->feeds.by_A)
+			fatal(map_create, &gnb->feeds.by_A, 0);
+
+		if((rel = map_get(gna->needs.by_B, &gnb, sizeof(gnb))) == 0)
+		{
+			fatal(xmalloc, &rel, sizeof(*rel));
+
+			fatal(coll_doubly_add, &gna->needs.c, &rel, 0);
+			fatal(coll_doubly_add, &gnb->feeds.c, &rel, 0);
+
+			fatal(map_set, gna->needs.by_B, &gnb, sizeof(gnb), &rel, sizeof(rel));
+			fatal(map_set, gnb->feeds.by_A, &gna, sizeof(gna), &rel, sizeof(rel));
+
+			rel->A = gna;
+			rel->B = gnb;
+			rel->ffn = ffn;
+			rel->weak = ffn->flags & FFN_WEAK;
 		}
 	}
-
-	// reindex the collections
-	if(new)
-	{
-		fatal(idx_mkindex
-			, gn_nodes.e
-			, gn_nodes.l
-			, gn_nodes.z
-			, offsetof(typeof(gn_nodes.e[0][0]), path)
-			, 0
-			, INDEX_UNIQUE | INDEX_STRING | INDEX_DEREF
-			, &gn_nodes.by_path
-		);
-	}
-
-	relation * rel = 0;
-	if(gna->needs.by_B == 0 || (rel = idx_lookup_val(gna->needs.by_B, &gnb, 0)) == 0)
-	{
-		fatal(xmalloc, &rel, sizeof(*rel));
-
-		fatal(coll_doubly_add, &gna->needs.c, &rel, 0);
-		fatal(coll_doubly_add, &gnb->feeds.c, &rel, 0);
-		
-		fatal(idx_mkindex
-			, gna->needs.e
-			, gna->needs.l
-			, gna->needs.z
-			, offsetof(typeof(gna->needs.e[0][0]), B)
-			, sizeof(((typeof(gna->needs.e[0][0])*)0)->B)
-			, INDEX_UNIQUE | INDEX_NUMERIC | INDEX_DEREF
-			, &gna->needs.by_B
-		);
-
-		fatal(idx_mkindex
-			, gnb->feeds.e
-			, gnb->feeds.l
-			, gnb->feeds.z
-			, offsetof(typeof(gnb->needs.e[0][0]), A)
-			, sizeof(((typeof(gnb->needs.e[0][0])*)0)->A)
-			, INDEX_UNIQUE | INDEX_NUMERIC | INDEX_DEREF
-			, &gnb->feeds.by_A
-		);
-	}
-
-	rel->A = gna;
-	rel->B = gnb;
-	rel->ffn = ffn;
-	rel->weak = ffn->flags & FFN_WEAK;
 
 	*A = gna;
 	*B = gnb;
@@ -506,21 +484,43 @@ int gn_hashes_cmp(gn * gn)
 					?: 0;
 }
 
-int gn_traverse_needs(gn * r, void (*logic)(gn *))
+static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
+{
+	log_start(L_ERROR, "detected cycle : ");
+
+	int top;
+	for(top = 1; top < ptr; top++)
+	{
+		if(stack[top] == stack[0])
+			break;
+	}
+
+	if(top != ptr)
+		top++;
+
+	int x;
+	for(x = 0; x < top; x++)
+	{
+		if(x)
+			log_add(" -> ");
+
+		log_add("%s", gn_idstring(stack[x]));
+	}
+
+	if(ptr == stack_elsize)
+		log_finish(" -> ...");
+	else
+		log_finish("");
+
+	return 0;
+}
+
+int gn_traverse_needsward(gn * r, void (*logic)(gn*))
 {
 	gn * stack[64] = {};
 	int ptr = 0;
 
-	int leave(gn * n)
-	{
-		n->guard = 0;
-
-		int x;
-		for(x = 0; x < n->needs.l; x++)
-			leave(n->needs.e[x]->B);
-	};
-
-	int enter(gn * n, int l)
+	int enter(gn * n)
 	{
 		if(n->guard)
 		{
@@ -535,7 +535,7 @@ int gn_traverse_needs(gn * r, void (*logic)(gn *))
 		int x;
 		for(x = 0; x < n->needs.l; x++)
 		{
-			if(enter(n->needs.e[x]->B, l + 1))
+			if(enter(n->needs.e[x]->B))
 			{
 				if(ptr < sizeof(stack) / sizeof(stack[0]))
 					stack[ptr++] = n;
@@ -547,42 +547,62 @@ int gn_traverse_needs(gn * r, void (*logic)(gn *))
 		// logic on this node
 		logic(n);
 
-		leave(n);
+		n->guard = 0;
 
 		return 0;
 	};
 
-	if(enter(r, 0))
+	if(enter(r))
+		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr);
+
+	return 1;
+}
+
+int gn_traverse_relations_needsward(gn * r, void (*logic)(relation*))
+{
+	gn * stack[64] = {};
+	int ptr = 0;
+
+	int enter(void * N, int root)
 	{
-		log_start(L_ERROR, "detected cycle : ");
-
-		int x;
-
-		int top;
-		for(top = 1; top < ptr; top++)
-		{
-			if(stack[top] == stack[0])
-				break;
-		}
-
-		if(top != ptr)
-			top++;
-
-		for(x = 0; x < top; x++)
-		{
-			if(x)
-				log_add(" -> ");
-
-			log_add("%s", gn_idstring(stack[x]));
-		}
-
-		if(ptr == sizeof(stack) / sizeof(stack[0]))
-			log_finish(" -> ...");
+		gn * n = 0;
+		if(root)
+			n = (gn*)N;
 		else
-			log_finish("");
+			n = ((relation*)N)->B;
+
+		if(n->guard)
+		{
+			if(ptr < sizeof(stack) / sizeof(stack[0]))
+				stack[ptr++] = n;
+
+			return 1;
+		}
+		n->guard = 1;
+
+		// descend
+		int x;
+		for(x = 0; x < n->needs.l; x++)
+		{
+			if(enter(n->needs.e[x], 0))
+			{
+				if(ptr < sizeof(stack) / sizeof(stack[0]))
+					stack[ptr++] = n;
+
+				return 1;
+			}
+		}
+
+		// logic on this node
+		logic(N);
+
+		n->guard = 0;
 
 		return 0;
-	}
+	};
+
+	if(enter(r, 1))
+		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr);
 
 	return 1;
 }

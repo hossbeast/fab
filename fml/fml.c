@@ -53,7 +53,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 		if(l && s[0] == '/')
 		{
 			// lookup for absolute paths
-			if((t = idx_lookup_val(gn_nodes.by_path, &s, l)) == 0)
+			if((t = gn_lookup_canon(s, l)) == 0)
 			{
 				// task nodes do not necessarily require a relation to the rest of the graph - create here in this case
 				if(l > 4 && memcmp("/../", s, 4) == 0)
@@ -168,7 +168,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 			gn * t = 0;
 			if(ls->s[x].s[y].l && ls->s[x].s[y].s[0] == '/')
 			{
-				t = idx_lookup_val(gn_nodes.by_path, &ls->s[x].s[y].s, 0);
+				t = gn_lookup_canon(ls->s[x].s[y].s, ls->s[x].s[y].l);
 			}
 			else
 			{

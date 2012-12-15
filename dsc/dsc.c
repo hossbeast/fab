@@ -16,7 +16,7 @@
 // static
 //
 
-static int newedges(gn * r, int * c)
+static int newnodes(gn * r, int * c)
 {
 	void logic(gn * gn)
 	{
@@ -26,64 +26,74 @@ static int newedges(gn * r, int * c)
 		gn->mark = 1;
 	};
 
-	return gn_traverse_needs(r, logic);
+	return gn_traverse_needsward(r, logic);
 }
 
-static int reset(gn * r)
+static int newedges(gn * r, int * c)
+{
+	void logic(relation * rel)
+	{
+		if(rel->mark == 0)
+			(*c)++;
+
+		rel->mark = 1;
+	};
+
+	return gn_traverse_relations_needsward(r, logic);
+}
+
+static int reset_edges(gn * r)
+{
+	void logic(relation * rel)
+	{
+		rel->mark = 0;
+	};
+
+	return gn_traverse_relations_needsward(r, logic);
+}
+
+static int reset_nodes(gn * r)
 {
 	void logic(gn * gn)
 	{
 		gn->mark = 0;
 	};
 
-	return gn_traverse_needs(r, logic);
+	return gn_traverse_needsward(r, logic);
 }
 
-static int count(gn * gn)
+static int count(gn * r, int * c)
 {
-	int c = 0;
-
-	if(gn->mark == 0)
+	void logic(gn * gn)
 	{
-		int x;
-		for(x = 0; x < gn->needs.l; x++)
-			c += count(gn->needs.e[x]->B);
-
-		if(gn->dscv)
+		if(gn->mark == 0 && gn->dscv)
 		{
-			c++;
+			(*c)++;
+
+			int x;
 			for(x = 0; x < gn->dscv->products_l; x++)
-			{
 				gn->dscv->products[x]->mark = 1;
-			}
 		}
+	};
 
-		gn->mark = 1;
-	}
-
-	return c;
+	return gn_traverse_needsward(r, logic);
 }
 
-static void assign(gn * gn, ts ** ts, int * c)
+static int assign(gn * r, ts ** ts, int * c)
 {
-	if(gn->mark == 1)
+	void logic(gn * gn)
 	{
-		int x;
-		for(x = 0; x < gn->needs.l; x++)
-			assign(gn->needs.e[x]->B, ts, c);
-
-		if(gn->dscv)
+		if(gn->mark == 1)
 		{
 			ts[(*c)++]->fmlv = gn->dscv;
 
+			int x;
 			for(x = 0; x < gn->dscv->products_l; x++)
-			{
 				gn->dscv->products[x]->mark = 2;
-			}
 		}
-
-		gn->mark = 2;
 	}
+
+	return gn_traverse_needsward(r, logic);
 }
 
 //
@@ -97,15 +107,19 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 	int i;
 	int k;
 
-	// graph reset
+	// graph nodes reset
 	for(x = 0; x < gnl; x++)
-		fatal(reset, gn[x]);
+		fatal(reset_nodes, gn[x]);
+
+	// graph edges reset
+	for(x = 0; x < gnl; x++)
+		fatal(reset_edges, gn[x]);
 
 	// count nodes having not yet participated in discovery
 	//  (actually this counts discovery fml contexts)
 	int tsl = 0;
 	for(x = 0; x < gnl; x++)
-		tsl += count(gn[x]);
+		fatal(count, gn[x], &tsl);
 
 	if(tsl)
 	{
@@ -115,7 +129,7 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 		// assign each threadspace a discovery formula evaluation context
 		k = 0;
 		for(x = 0; x < gnl; x++)
-			assign(gn[x], *ts, &k);
+			fatal(assign, gn[x], *ts, &k);
 
 		for(i = 0; 1; i++)
 		{
@@ -150,10 +164,8 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 			fatal(ts_execwave, *ts, x, tsw, L_DSC | L_DSCEXEC, L_DSC);
 
 			// harvest the results
-printf("harvesting %d threads\n", tsl);
 			for(x = 0; x < tsl; x++)
 			{
-printf("parsing thread %d\n", x);
 				fatal(ff_dsc_parse
 					, (*ts)[x]->ffp
 					, (*ts)[x]->stdo_txt->s
@@ -179,12 +191,18 @@ printf("parsing thread %d\n", x);
 				fatal(newedges, gn[x], &k);
 
 			printf("%d new edges\n", k);
+
+			for(x = 0; x < gnl; x++)
+				fatal(newnodes, gn[x], &k);
+
+			printf("%d new nodes\n", k);
+
 exit(0);
 
 			// nodes newly discovered
 			tsl = 0;
 			for(x = 0; x < gnl; x++)
-				tsl += count(gn[x]);
+				fatal(count, gn[x], &tsl);
 
 			// terminate when there are no nodes having not yet participated in discovery
 			if(tsl == 0)
@@ -193,7 +211,7 @@ exit(0);
 			// assign each threadspace a discovery formula evaluation context
 			k = 0;
 			for(x = 0; x < gnl; x++)
-				assign(gn[x], *ts, &k);
+				fatal(assign, gn[x], *ts, &k);
 		}
 	}
 

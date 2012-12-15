@@ -8,7 +8,7 @@
 #include <time.h>
 
 #include "coll.h"
-#include "idx.h"
+#include "map.h"
 
 #define restrict __restrict
 
@@ -103,7 +103,7 @@ typedef struct gn
 			int						z;
 			relation **		e;
 
-			idx*					by_B;	// indexed by canonical path of the node at the other end of the relation
+			map *					by_B;	// lookup by canonical path of the node at the other end of the relation
 		};
 	} needs;
 
@@ -118,7 +118,7 @@ typedef struct gn
 			int						z;
 			relation **		e;
 
-			idx*					by_A;	// indexed by canonical path of the node at the other end of the relation
+			map *					by_A;	// indexed by canonical path of the node at the other end of the relation
 		};
 	} feeds;
 
@@ -154,9 +154,15 @@ extern union gn_nodes_t
 
 		gn ** e;						// elements
 
-		idx*	by_path;			// indexed by canonical path
+		map *	by_path;			// indexed by canonical path
 	};
 } gn_nodes;
+
+/// gn_lookup_canon
+//
+//
+//
+gn * gn_lookup_canon(char* s, int l);
 
 /// gn_lookup
 //
@@ -232,6 +238,14 @@ int gn_hashes_cmp(gn *);
 //  detect cycles, and fail if one is found
 //
 int gn_traverse_needs(gn * gn, void (*logic)(struct gn *));
+
+/// gn_traverse_relations_needsward
+//
+// SUMMARY
+//  same as gn_traverse_needs, except execute logic on relations
+//  note, this excludes the starting node
+//
+int gn_traverse_relations_needsward(gn * r, void (*logic)(relation*));
 
 /// gn_idstring
 //

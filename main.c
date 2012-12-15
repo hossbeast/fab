@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 		signal(SIGTERM	, signal_handler);
 
 		// initialize logger
-		fatal(log_init, "+ERROR +WARN +INFO +BPEXEC");
+		fatal(log_init, "+ERROR +WARN +INFO +BPEXEC +DSCEXEC");
 
 		// parse cmdline arguments
 		fatal(parse_args, argc, argv);
