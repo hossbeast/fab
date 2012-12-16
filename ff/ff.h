@@ -230,4 +230,10 @@ void ff_freenode(ff_node * const restrict);
 void ff_xfreenode(ff_node ** const restrict)
 	__attribute__((nonnull));
 
+/// ff_dump
+//
+//
+//
+void ff_dump(ff_node * const restrict root);
+
 #endif

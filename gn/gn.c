@@ -87,21 +87,21 @@ static void gn_stat(gn * n)
 	}
 }
 
-static int gn_create(char * realwd, char * A, int Al, gn ** gna)
+static int gn_create(const char * const restrict realwd, char * const restrict A, int Al, gn ** gna, int * const restrict new)
 {
 	// p will point to a null-terminated string of the full canonical path to the file
 	char * p = 0;
 	int pl = 0;
 
 	// n will point to a length-limited string of the name of the file
-	char* n = 0;
+	char * n = 0;
 	int nl = 0;
 
 	// d will point to a length-limited string of the name of the file
 	char * d = 0;
 	int dl = 0;
 
-	char* space = 0;
+	char * space = 0;
 
 	if(Al)
 	{
@@ -183,9 +183,42 @@ static int gn_create(char * realwd, char * A, int Al, gn ** gna)
 		}
 
 		gn_stat(*gna);
+		if(new)
+			(*new)++;
 	}
 
 	return 1;
+}
+
+static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
+{
+	log_start(L_ERROR, "detected cycle : ");
+
+	int top;
+	for(top = 1; top < ptr; top++)
+	{
+		if(stack[top] == stack[0])
+			break;
+	}
+
+	if(top != ptr)
+		top++;
+
+	int x;
+	for(x = 0; x < top; x++)
+	{
+		if(x)
+			log_add(" -> ");
+
+		log_add("%s", gn_idstring(stack[x]));
+	}
+
+	if(ptr == stack_elsize)
+		log_finish(" -> ...");
+	else
+		log_finish("");
+
+	return 0;
 }
 
 //
@@ -237,12 +270,11 @@ gn * gn_lookup_canon(char* s, int l)
 	return 0;
 }
 
-int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** r)
+int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** r, int * const restrict newa)
 {
 	gn *	gna = 0;
-	int		new = 0;
 
-	fatal(gn_create, realwd, A, Al, &gna);
+	fatal(gn_create, realwd, A, Al, &gna, newa);
 
 	if(r)
 		*r = gna;
@@ -250,7 +282,15 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 	return 1;
 }
 
-int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, int At, void ** const restrict B, int Bl, int Bt, struct ff_node * ffn)
+int gn_edge_add(
+	  char * const restrict realwd
+	, void ** const restrict A, int Al, int At
+	, void ** const restrict B, int Bl, int Bt
+	, struct ff_node * const restrict ffn
+	, int * const restrict newa
+	, int * const restrict newb
+	, int * const restrict newr
+)
 {
 	gn *	gna = 0;
 	gn *	gnb = 0;
@@ -258,12 +298,12 @@ int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, 
 	if(At)
 		gna = *(gn**)A;
 	else
-		fatal(gn_create, realwd, *(char**)A, Al, &gna);
+		fatal(gn_create, realwd, *(char**)A, Al, &gna, newa);
 
 	if(Bt)
 		gnb = *(gn**)B;
 	else
-		fatal(gn_create, realwd, *(char**)B, Bl, &gnb);
+		fatal(gn_create, realwd, *(char**)B, Bl, &gnb, newb);
 
 	// as syntactic sugar, silently ignore dependencies of a node on itself
 	if(gna != gnb)
@@ -298,6 +338,9 @@ int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, 
 			rel->B = gnb;
 			rel->ffn = ffn;
 			rel->weak = ffn->flags & FFN_WEAK;
+
+			if(newr)
+				(*newr)++;
 		}
 	}
 
@@ -482,37 +525,6 @@ int gn_hashes_cmp(gn * gn)
 					?: gn->prop_hash[1] - gn->prop_hash[0]
 					?: gn->cmd_hash[1] - gn->cmd_hash[0]
 					?: 0;
-}
-
-static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
-{
-	log_start(L_ERROR, "detected cycle : ");
-
-	int top;
-	for(top = 1; top < ptr; top++)
-	{
-		if(stack[top] == stack[0])
-			break;
-	}
-
-	if(top != ptr)
-		top++;
-
-	int x;
-	for(x = 0; x < top; x++)
-	{
-		if(x)
-			log_add(" -> ");
-
-		log_add("%s", gn_idstring(stack[x]));
-	}
-
-	if(ptr == stack_elsize)
-		log_finish(" -> ...");
-	else
-		log_finish("");
-
-	return 0;
 }
 
 int gn_traverse_needsward(gn * r, void (*logic)(gn*))

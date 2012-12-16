@@ -58,7 +58,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 				// task nodes do not necessarily require a relation to the rest of the graph - create here in this case
 				if(l > 4 && memcmp("/../", s, 4) == 0)
 				{
-					fatal(gn_add, 0, s, l, &t);
+					fatal(gn_add, 0, s, l, &t, 0);
 				}
 			}
 		}

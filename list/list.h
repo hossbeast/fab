@@ -5,10 +5,36 @@
 
 #include "ff.h"
 
-/// list_render
+#include "map.h"
+
+/// list_ensure
 //
-// render the list node to the lstack
+// SUMMARY
+//  ensure allocation of listwise stax, reset entry @ stax[p]
 //
-int list_render(ff_node * list, lstack *** stax, int * lstax_l, int * stax_a, int p);
+// PARAMETERS
+//  stax  - listwise stax
+//  staxl - listwise stax
+//  staxa - listwise stax
+//  p     - offset to next free stax
+//
+int list_ensure(lstack *** stax, int * staxl, int * staxa, int p)
+	__attribute__((nonnull));
+
+/// list_resolve
+//
+// SUMMARY
+//  render an FFN_LIST node to an lstack
+//
+// PARAMETERS
+//  list  - FFN_LIST node
+//  vmap  - map used to resolve variable references
+//  stax  - listwise stax
+//  staxl - listwise stax
+//  staxa - listwise stax
+//  p     - offset to next free stax
+//
+int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxl, int * staxa, int p)
+	__attribute__((nonnull));
 
 #endif

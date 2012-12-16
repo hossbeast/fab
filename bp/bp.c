@@ -72,8 +72,6 @@ static void assign(gn * gn, int maxheight)
 	{
 		gn->stage = maxheight - gn->depth;
 
-//printf("h=[%2d]d=[%2d]s=[%2d] %s\n", gn->height, gn->depth, gn->stage, gn->path);
-
 		int x;
 		for(x = 0; x < gn->needs.l; x++)
 			assign(gn->needs.e[x]->B, maxheight);

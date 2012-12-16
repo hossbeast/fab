@@ -185,10 +185,11 @@ int gn_lookup(char * const restrict s, char * const restrict cwd, gn ** restrict
 //           3) canonical filepath
 //  Al     - length of A, 0 for strlen
 //  [r]    - gn for A returned here
+//  [newa] - incremented by 1 if a new node was created
 // 
 // returns 0 on failure (memory, io) and 1 otherwise
 //
-int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** r);
+int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** r, int * const restrict newa);
 
 /// gn_edge_add
 //
@@ -209,11 +210,22 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 //  Bl     - length of B, 0 for strlen
 //	Bt		 - LISTWISE_TYPE_GNLW if B is a gn * and 0 otherwise
 //  ffn    - originating dependency node
+//  newa   - incremented if A was created
+//  newb   - incremented if B was created
+//  newr   - incremented if a new edge was created
 //
 // RETURNS
 //  returns 0 on failure (memory, io) otherwise returns 1 and sets *A to gn for a, and *B to gn for b
 //
-int gn_edge_add(char * const restrict realwd, void ** const restrict A, int Al, int At, void ** const restrict B, int Bl, int Bt, struct ff_node * ffn)
+int gn_edge_add(
+	  char * const restrict realwd
+	, void ** const restrict A, int Al, int At
+	, void ** const restrict B, int Bl, int Bt
+	, struct ff_node * const restrict ffn
+	, int * const restrict newa
+	, int * const restrict newb
+	, int * const restrict newr
+)
 	__attribute__((nonnull));
 
 /// gn_dump

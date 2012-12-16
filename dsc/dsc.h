@@ -14,14 +14,16 @@
 // execute dependency discovery
 //
 int dsc_exec(
-	  gn * restrict n
+	  gn ** restrict n
+	, int gnl
 	, map * restrict vmap
 	, lstack *** restrict stax
-	, int * restrict stax_l
-	, int * restrict stax_a
+	, int * restrict staxl
+	, int * restrict staxa
 	, int p
 	, ts *** restrict ts
 	, int * restrict tsa
+	, int * restrict tsw
 )
 	__attribute__((nonnull));
 

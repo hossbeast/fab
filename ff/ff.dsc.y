@@ -72,7 +72,7 @@
 
 %type  <node> statement
 %type  <node> statement_list
-%type  <node> dependency_bare
+%type  <node> dependency
 %type  <node> word
 %type  <node> wordlist
 %type  <node> barelist
@@ -100,10 +100,10 @@ statement_list
 	;
 
 statement
-	: dependency_bare
+	: dependency
 	;
 
-dependency_bare
+dependency
 	: ':' barelist
 	{
 		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1.s, $2->e, FFN_SINGLE, (void*)0, $2);

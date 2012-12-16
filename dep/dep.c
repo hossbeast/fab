@@ -16,10 +16,16 @@
 #include "log.h"
 #include "map.h"
 #include "var.h"
+#include "list.h"
 
 #include "control.h"
+#include "xmem.h"
 
-int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first)
+///
+/// static
+///
+
+static int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first, int * newn, int * newr)
 {
 	int i;
 	int j;
@@ -64,7 +70,17 @@ int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int
 				Bl = (*stax)[pr]->s[0].s[j].l;
 			}
 
-			fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn);
+			int newa = 0;
+			int newb = 0;
+
+			fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn, &newa, &newb, newr);
+
+			if(newn)
+			{
+				(*newn) += newa;
+				(*newn) += newb;
+			}
+
 			if(first)
 			{
 				*first = A;
@@ -88,7 +104,7 @@ int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int
 	return 1;
 }
 
-static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first)
+static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first, int * newn, int * newr)
 {
 	int x;
 	for(x = 0; x < (*stax)[pl]->l; x++)
@@ -117,7 +133,7 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 			}
 			else
 			{
-				fatal(gn_add, ffn->loc.ff->dir, (*stax)[pl]->s[x].s[i].s, (*stax)[pl]->s[x].s[i].l, &r);
+				fatal(gn_add, ffn->loc.ff->dir, (*stax)[pl]->s[x].s[i].s, (*stax)[pl]->s[x].s[i].l, &r, newn);
 			}
 
 			fatal(lstack_obj_add, (*stax)[pr], r, LISTWISE_TYPE_GNLW);
@@ -160,7 +176,17 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 					Bl = (*stax)[pr]->s[0].s[j].l;
 				}
 
-				fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn);
+				int newa = 0;
+				int newb = 0;
+
+				fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn, &newa, &newb, newr);
+
+				if(newn)
+				{
+					(*newn) += newa;
+					(*newn) += newb;
+				}
+
 				if(first)
 				{
 					*first = A;
@@ -183,6 +209,52 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 
 	return 1;
 }
+
+///
+/// public
+///
+
+int dep_process(
+	  ff_node * const restrict ffn
+	, const gn * const restrict defgn
+	, map * const restrict vmap
+	, lstack *** const restrict stax
+	, int * const restrict staxl
+	, int * const restrict staxa
+	, int p
+	, gn ** const restrict first
+	, int * const restrict newn
+	, int * const restrict newr
+)
+{
+	// resolve the left-hand side
+	if(ffn->needs)
+	{
+		fatal(list_resolve, ffn->needs, vmap, stax, staxl, staxa, p);
+	}
+	else
+	{
+		fatal(list_ensure, stax, staxl, staxa, p);
+		fatal(lstack_obj_add, (*stax)[p], defgn, LISTWISE_TYPE_GNLW);
+	}
+
+	if(ffn->flags & FFN_SINGLE)
+	{
+		fatal(dep_add_single, ffn, vmap, stax, staxl, staxa, p, p + 1, first, newn, newr);
+	}
+	else if(ffn->flags & FFN_MULTI)
+	{
+		fatal(dep_add_multi, ffn, vmap, stax, staxl, staxa, p, p + 1, first, newn, newr);
+	}
+	else
+	{
+		fail("bad flags : %hhu", ffn->flags);
+	}
+
+	return 1;
+}
+
+/*
 
 int dep_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p, gn ** first)
 {
@@ -234,3 +306,4 @@ int dep_add_bare(gn * target, ff_node * ffn)
 		}
 	}
 }
+*/

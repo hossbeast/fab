@@ -1,5 +1,3 @@
-#include "list.h"
-
 #include <listwise/lstack.h>
 #include <listwise/object.h>
 
@@ -13,21 +11,29 @@ extern int lstack_exec_internal(generator* g, char** init, int* initls, int init
 #include "control.h"
 #include "map.h"
 
-int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * stax_a, int p)
+int list_ensure(lstack *** stax, int * staxl, int * staxa, int p)
 {
 	// ensure enough lstacks are allocated
-	if((*stax_a) <= p)
+	if((*staxa) <= p)
 	{
-		fatal(xrealloc, ls, sizeof(**ls), p + 1, (*stax_a));
-		(*stax_a) = p + 1;
+		fatal(xrealloc, stax, sizeof(**stax), p + 1, (*staxa));
+		(*staxa) = p + 1;
 	}
 
 	// ensure lstack at this spot is allocated
-	if(!(*ls)[p])
-		fatal(xmalloc, &(*ls)[p], sizeof(*(*ls)[p]));
+	if(!(*stax)[p])
+		fatal(xmalloc, &(*stax)[p], sizeof(*(*stax)[p]));
 
 	// reset the lstack we are using
-	lstack_reset((*ls)[p]);
+	lstack_reset((*stax)[p]);
+
+	return 1;
+}
+
+int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxl, int * staxa, int p)
+{
+	// ensure stax allocation, reset p'th stack
+	fatal(list_ensure, stax, staxl, staxa, p);
 
 	// additional lstacks go here
 	int pn = p;
@@ -38,7 +44,7 @@ int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * s
 	{
 		if(list->elements[x]->type == FFN_WORD)
 		{
-			fatal(lstack_add, (*ls)[p], list->elements[x]->text, strlen(list->elements[x]->text));
+			fatal(lstack_add, (*stax)[p], list->elements[x]->text, strlen(list->elements[x]->text));
 		}
 		else if(list->elements[x]->type == FFN_VARNAME)
 		{
@@ -58,23 +64,23 @@ int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * s
 			if(go)
 			{
 				if((*vls)->s[0].s[i].type)
-					fatal(lstack_obj_add, (*ls)[p], *(void**)(*vls)->s[0].s[i].s, LISTWISE_TYPE_GNLW);
+					fatal(lstack_obj_add, (*stax)[p], *(void**)(*vls)->s[0].s[i].s, LISTWISE_TYPE_GNLW);
 				else
-					fatal(lstack_add, (*ls)[p], (*vls)->s[0].s[i].s, (*vls)->s[0].s[i].l);
+					fatal(lstack_add, (*stax)[p], (*vls)->s[0].s[i].s, (*vls)->s[0].s[i].l);
 			}
 			LSTACK_ITEREND;
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
-			fatal(list_resolve, list->elements[x], vmap, ls, stax_l, stax_a, ++pn);
+			fatal(list_resolve, list->elements[x], vmap, stax, staxl, staxa, ++pn);
 
-			LSTACK_ITERATE((*ls)[pn], i, go);
+			LSTACK_ITERATE((*stax)[pn], i, go);
 			if(go)
 			{
-				if((*ls)[pn]->s[0].s[i].type)
-					fatal(lstack_obj_add, (*ls)[p], *(void**)(*ls)[pn]->s[0].s[i].s, LISTWISE_TYPE_GNLW);
+				if((*stax)[pn]->s[0].s[i].type)
+					fatal(lstack_obj_add, (*stax)[p], *(void**)(*stax)[pn]->s[0].s[i].s, LISTWISE_TYPE_GNLW);
 				else
-					fatal(lstack_add, (*ls)[p], (*ls)[pn]->s[0].s[i].s, (*ls)[pn]->s[0].s[i].l);
+					fatal(lstack_add, (*stax)[p], (*stax)[pn]->s[0].s[i].s, (*stax)[pn]->s[0].s[i].l);
 			}
 			LSTACK_ITEREND;
 		}
@@ -84,11 +90,11 @@ int list_resolve(ff_node * list, map* vmap, lstack *** ls, int * stax_l, int * s
 	if(list->generator_node)
 	{
 		log(L_LWDEBUG, "%s", list->generator_node->text);
-		fatal(lstack_exec_internal, list->generator_node->generator, 0, 0, 0, &(*ls)[p], log_would(L_LWDEBUG));
+		fatal(lstack_exec_internal, list->generator_node->generator, 0, 0, 0, &(*stax)[p], log_would(L_LWDEBUG));
 	}
 	else
 	{
-		(*ls)[p]->sel.all = 1;
+		(*stax)[p]->sel.all = 1;
 	}
 
 	return 1;

@@ -16,6 +16,26 @@
 // static
 //
 
+static int reset_edges(gn * r)
+{
+	void logic(relation * rel)
+	{
+		rel->mark = 0;
+	};
+
+	return gn_traverse_relations_needsward(r, logic);
+}
+
+static int reset_nodes(gn * r)
+{
+	void logic(gn * gn)
+	{
+		gn->mark = 0;
+	};
+
+	return gn_traverse_needsward(r, logic);
+}
+
 static int newnodes(gn * r, int * c)
 {
 	void logic(gn * gn)
@@ -42,27 +62,7 @@ static int newedges(gn * r, int * c)
 	return gn_traverse_relations_needsward(r, logic);
 }
 
-static int reset_edges(gn * r)
-{
-	void logic(relation * rel)
-	{
-		rel->mark = 0;
-	};
-
-	return gn_traverse_relations_needsward(r, logic);
-}
-
-static int reset_nodes(gn * r)
-{
-	void logic(gn * gn)
-	{
-		gn->mark = 0;
-	};
-
-	return gn_traverse_needsward(r, logic);
-}
-
-static int count(gn * r, int * c)
+static int count_dscv(gn * r, int * c)
 {
 	void logic(gn * gn)
 	{
@@ -79,7 +79,7 @@ static int count(gn * r, int * c)
 	return gn_traverse_needsward(r, logic);
 }
 
-static int assign(gn * r, ts ** ts, int * c)
+static int assign_dscv(gn * r, ts ** ts, int * c)
 {
 	void logic(gn * gn)
 	{
@@ -100,7 +100,7 @@ static int assign(gn * r, ts ** ts, int * c)
 // public
 //
 
-int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p, ts *** ts, int * tsa, int * tsw)
+int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * staxl, int * staxa, int p, ts *** ts, int * tsa, int * tsw)
 {
 	ff_node * ffn = 0;
 	int x;
@@ -119,7 +119,7 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 	//  (actually this counts discovery fml contexts)
 	int tsl = 0;
 	for(x = 0; x < gnl; x++)
-		fatal(count, gn[x], &tsl);
+		fatal(count_dscv, gn[x], &tsl);
 
 	if(tsl)
 	{
@@ -129,7 +129,7 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 		// assign each threadspace a discovery formula evaluation context
 		k = 0;
 		for(x = 0; x < gnl; x++)
-			fatal(assign, gn[x], *ts, &k);
+			fatal(assign_dscv, gn[x], *ts, &k);
 
 		for(i = 0; 1; i++)
 		{
@@ -142,10 +142,10 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 
 				// prepare lstack(s) for variables resident in this context
 				int pn = p;
-				if((*stax_a) <= pn)
+				if((*staxa) <= pn)
 				{
-					fatal(xrealloc, stax, sizeof(**stax), pn + 1, (*stax_a));
-					(*stax_a) = pn + 1;
+					fatal(xrealloc, stax, sizeof(**stax), pn + 1, (*staxa));
+					(*staxa) = pn + 1;
 				}
 				if(!(*stax)[pn])
 					fatal(xmalloc, &(*stax)[pn], sizeof(*(*stax)[0]));
@@ -157,13 +157,17 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 				fatal(var_set, vmap, "@", (*stax)[pn++]);
 
 				// render the formula
-				fatal(fml_render, (*ts)[x], vmap, stax, stax_l, stax_a, pn);
+				fatal(fml_render, (*ts)[x], vmap, stax, staxl, staxa, pn);
 			}
 
 			// execute all formulas in parallel
 			fatal(ts_execwave, *ts, x, tsw, L_DSC | L_DSCEXEC, L_DSC);
 
 			// harvest the results
+
+			int newn = 0;
+			int newr = 0;
+
 			for(x = 0; x < tsl; x++)
 			{
 				fatal(ff_dsc_parse
@@ -180,29 +184,18 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * stax_l, int *
 				{
 					if(ffn->statements[k]->type == FFN_DEPENDENCY)
 					{
-						fatal(dep_add_bare, (*ts)[x]->fmlv->products[0], ffn->statements[k]);
+						fatal(dep_process, ffn->statements[k], (*ts)[x]->fmlv->products[0], vmap, stax, staxl, staxa, p, (void*)0, &newn, &newr);
 					}
 				}
 			}
 
-			// edges newly added
-			k = 0;
-			for(x = 0; x < gnl; x++)
-				fatal(newedges, gn[x], &k);
-
-			printf("%d new edges\n", k);
-
-			for(x = 0; x < gnl; x++)
-				fatal(newnodes, gn[x], &k);
-
-			printf("%d new nodes\n", k);
-
-exit(0);
+			log(L_DSC | L_DSCEXEC, "%d new nodes", newn);
+			log(L_DSC | L_DSCEXEC, "%d new edges", newr);
 
 			// nodes newly discovered
 			tsl = 0;
 			for(x = 0; x < gnl; x++)
-				fatal(count, gn[x], &tsl);
+				fatal(count_dscv, gn[x], &tsl);
 
 			// terminate when there are no nodes having not yet participated in discovery
 			if(tsl == 0)
@@ -211,7 +204,7 @@ exit(0);
 			// assign each threadspace a discovery formula evaluation context
 			k = 0;
 			for(x = 0; x < gnl; x++)
-				fatal(assign, gn[x], *ts, &k);
+				fatal(assign_dscv, gn[x], *ts, &k);
 		}
 	}
 

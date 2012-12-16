@@ -1,6 +1,6 @@
 #ifndef _TMP_H
 #define _TMP_H
 
-int tmp_cleanup();
+int tmp_setup();
 
 #endif

@@ -16,10 +16,14 @@
 #include "log.h"
 #include "map.h"
 #include "var.h"
+#include "list.h"
+#include "dsc.h"
 #include "dep.h"
+#include "tmp.h"
 
 #include "macros.h"
 #include "control.h"
+#include "xmem.h"
 
 // signal handling
 static int o_signum;
@@ -37,7 +41,6 @@ int main(int argc, char** argv)
 {
 	int domain()
 	{
-		char *							space = 0;
 		ff_parser *					ffp = 0;
 		ff_node *						ffn = 0;
 		bp *								bp = 0;
@@ -52,9 +55,6 @@ int main(int argc, char** argv)
 		int									tsw = 0;
 
 		int x;
-		int i;
-		int j;
-		int k;
 
 		// unblock all signals
 		sigset_t all;
@@ -113,7 +113,7 @@ int main(int argc, char** argv)
 		{
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
-				fatal(dep_add, ffn->statements[x], vmap, &stax, &stax_l, &stax_a, p, first ? 0 : &first);
+				fatal(dep_process, ffn->statements[x], 0, vmap, &stax, &stax_l, &stax_a, p, first ? (void*)0 : &first, (void*)0, (void*)0);
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)
 			{
@@ -143,8 +143,6 @@ int main(int argc, char** argv)
 		
 		// dependency discovery phase
 		fatal(dsc_exec, gn_nodes.e, gn_nodes.l, vmap, &stax, &stax_l, &stax_a, p, &ts, &tsa, &tsw);
-
-		exit(0);
 
 		// dump graph nodes, pending logging
 		if(g_args.dumpnode_all)
