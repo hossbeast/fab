@@ -93,7 +93,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 					, fml->ffn->loc.f_col + 1
 					, fml->ffn->loc.l_lin + 1
 					, fml->ffn->loc.l_col + 1
-					, t->path
+					, gn_idstring(t)
 				);
 				t->dscv = fmlv;
 			}
@@ -104,7 +104,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 					, fml->ffn->loc.f_col + 1
 					, fml->ffn->loc.l_lin + 1
 					, fml->ffn->loc.l_col + 1
-					, t->path
+					, gn_idstring(t)
 				);
 				t->fabv = fmlv;
 			}
@@ -185,9 +185,9 @@ static int fml_add_multi(fml * fml, lstack * ls)
 			if(t)
 			{
 				if(y)
-					log_add("  , %s\n", t->path);
+					log_add("  , %s\n", gn_idstring(t));
 				else
-					log_add("    %s\n", t->path);
+					log_add("    %s\n", gn_idstring(t));
 
 				fmlv->products[y] = t;
 				if(fml->ffn->flags & FFN_DISCOVERY)

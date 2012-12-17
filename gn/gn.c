@@ -443,9 +443,11 @@ void gn_dump(gn * gn)
 			log(L_DG | L_DGRAPH, "%12s : %d", "needs", gn->needs.l);
 			for(x = 0; x < gn->needs.l; x++)
 			{
-				log(L_DG | L_DGRAPH, "%12s --> %s @ (%s)[%3d,%3d - %3d,%3d]", ""
-					, gn->needs.e[x]->B->path
-					, gn->needs.e[x]->ffn->loc.ff->name
+				log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
+					, ""
+					, gn->needs.e[x]->weak ? "*" : " "
+					, gn_idstring(gn->needs.e[x]->B)
+					, ff_idstring(gn->needs.e[x]->ffn->loc.ff)
 					, gn->needs.e[x]->ffn->loc.f_lin + 1
 					, gn->needs.e[x]->ffn->loc.f_col + 1
 					, gn->needs.e[x]->ffn->loc.l_lin + 1
@@ -457,9 +459,11 @@ void gn_dump(gn * gn)
 		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", gn->feeds.l);
 		for(x = 0; x < gn->feeds.l; x++)
 		{
-			log(L_DG | L_DGRAPH, "%12s --> %s @ (%s)[%3d,%3d - %3d,%3d]", ""
-				, gn->feeds.e[x]->A->path
-				, gn->feeds.e[x]->ffn->loc.ff->name
+			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
+				, ""
+				, gn->feeds.e[x]->weak ? "*" : " "
+				, gn_idstring(gn->feeds.e[x]->A)
+				, ff_idstring(gn->feeds.e[x]->ffn->loc.ff)
 				, gn->feeds.e[x]->ffn->loc.f_lin + 1
 				, gn->feeds.e[x]->ffn->loc.f_col + 1
 				, gn->feeds.e[x]->ffn->loc.l_lin + 1
@@ -629,7 +633,6 @@ char * gn_idstring(gn * gn)
 	{
 		if(gn->idstring == 0)
 		{
-
 			int x;
 			for(x = 0; x < strlen(g_args.fabfile_canon) && x < gn->pathl; x++)
 			{

@@ -26,8 +26,7 @@ static void usage()
 		"----------- [ options ] --------------------------\n"
 		" -f fabfile\n"
 		" -p buildplan only\n"
-		" -c node identifier is canonical path (default)\n"
-		" -r node identifier is relative paths\n"
+		" -c node identifier is canonical path\n"
 		" -B invalidate-all\n"
 		" -b invalidate node\n"
 		" -D dumpnode-all\n"
@@ -107,10 +106,10 @@ int parse_args(int argc, char** argv)
 // o
 /* p */	, { "buildplan"					, no_argument				, 0			, 'p' } 	// implies BPDUMP
 // q
-/* r */	, { "relative"					, no_argument				, 0			, 'r' }
+// r
 // s
 // t
-// u
+/* u */	, { "upfront"						, no_argument				, 0			, 'u' }		// dependency discovery upfront
 // v
 // w
 // x
@@ -125,20 +124,21 @@ int parse_args(int argc, char** argv)
 
 	char* switches =
 		// no-argument switches
-		"chprBD"
+		"chpuBD"
 
 		// with-argument switches
-		"f:b:d:"
+		"b:d:f:"
 	;
 
 	// defaults
 	g_args.pid						= getpid();
-	g_args.mode						= DEFAULT_MODE;
+	g_args.mode_exec			= DEFAULT_MODE_EXEC;
+	g_args.mode_gnid			= DEFAULT_MODE_GNID;
+	g_args.mode_ddsc			= DEFAULT_MODE_DDSC;
 	g_args.invalidate_all	= DEFAULT_INVALIDATE_ALL;
 	g_args.fabfile				= strdup(DEFAULT_FABFILE);
 	g_args.execdir_base		= strdup(DEFAULT_EXECDIR_BASE);
 	g_args.hashdir				= strdup(DEFAULT_HASHDIR);
-	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 
 	// working directory
 	getcwd(g_args.cwd, sizeof(g_args.cwd));
@@ -153,33 +153,32 @@ int parse_args(int argc, char** argv)
 			case 'h':
 				usage(1);
 				break;
-
+			case 'b':
+				fatal(xrealloc, &g_args.invalidate, sizeof(g_args.invalidate[0]), g_args.invalidate_len + 1, g_args.invalidate_len);
+				g_args.invalidate[g_args.invalidate_len++] = strdup(optarg);
+				break;
 			case 'c':
 				g_args.mode_gnid = MODE_GNID_CANON;
 				break;
-			case 'r':
-				g_args.mode_gnid = MODE_GNID_RELATIVE;
+			case 'd':
+				fatal(xrealloc, &g_args.dumpnode, sizeof(g_args.dumpnode[0]), g_args.dumpnode_len + 1, g_args.dumpnode_len);
+				g_args.dumpnode[g_args.dumpnode_len++] = strdup(optarg);
 				break;
 			case 'f':
 				xfree(&g_args.fabfile);
 				g_args.fabfile = strdup(optarg);
 				break;
 			case 'p':
-				g_args.mode = MODE_BUILDPLAN;
+				g_args.mode_exec = MODE_EXEC_BUILDPLAN;
+				break;
+			case 'u':
+				g_args.mode_ddsc = MODE_DDSC_UPFRONT;
 				break;
 			case 'B':
 				g_args.invalidate_all = 1;
 				break;
-			case 'b':
-				fatal(xrealloc, &g_args.invalidate, sizeof(g_args.invalidate[0]), g_args.invalidate_len + 1, g_args.invalidate_len);
-				g_args.invalidate[g_args.invalidate_len++] = strdup(optarg);
-				break;
 			case 'D':
 				g_args.dumpnode_all = 1;
-				break;
-			case 'd':
-				fatal(xrealloc, &g_args.dumpnode, sizeof(g_args.dumpnode[0]), g_args.dumpnode_len + 1, g_args.dumpnode_len);
-				g_args.dumpnode[g_args.dumpnode_len++] = strdup(optarg);
 				break;
 		}
 	}
@@ -187,7 +186,7 @@ int parse_args(int argc, char** argv)
 	// canonicalize
 	g_args.fabfile_canon = realpath(g_args.fabfile, 0);
 
-	// unprocessed options - targets for fabrication
+	// unprocessed options - fabrication targets
 	for(x = optind; x < argc; x++)
 	{
 		if(argv[x][0] != '+' && argv[x][0] != '-')
@@ -202,7 +201,7 @@ int parse_args(int argc, char** argv)
 		log_parse("+DGRAPH", 0);
 
 	// MODE_BUILDPLAN implies +BPDUMP
-	if(g_args.mode == MODE_BUILDPLAN)
+	if(g_args.mode_exec == MODE_EXEC_BUILDPLAN)
 		log_parse("+BPDUMP", 0);
 
 	// create execdir
@@ -218,13 +217,14 @@ int parse_args(int argc, char** argv)
 	// log cmdline args under args
 	log(L_ARGS		, "---------------------------------------------------");
 	log(L_ARGS		, " %s (%c) fabfile            =%s", strcmp(g_args.fabfile, DEFAULT_FABFILE) == 0 ? " " : "*", 'f', g_args.fabfile);
-	log(L_ARGS		, " %s (%c) mode               =%s", g_args.mode == DEFAULT_MODE ? " " : "*", 'p', MODE_STR(g_args.mode));
+	log(L_ARGS		, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
+	log(L_ARGS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
+	log(L_ARGS		, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
 	log(L_ARGS		, " %s (%c) pid                =%u", " ", ' ', g_args.pid);
 	log(L_ARGS		, " %s (%c) cwd                =%s", " ", ' ', g_args.cwd);
 	log(L_ARGS		, " %s (%c) execdir-base       =%s", strcmp(g_args.execdir_base, DEFAULT_EXECDIR_BASE) == 0 ? " " : "*", ' ', g_args.execdir_base);
 	log(L_ARGS		, " %s (%c) execdir            =%s", " ", ' ', g_args.execdir);
 	log(L_ARGS		, " %s (%c) hashdir            =%s", strcmp(g_args.hashdir, DEFAULT_HASHDIR) == 0 ? " " : "*", ' ', g_args.hashdir);
-	log(L_ARGS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS		, " %s (%c) invalidate-all     =%s", g_args.invalidate_all == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidate_all ? "yes" : "no");
 
 	if(!g_args.invalidate_all)
@@ -267,10 +267,11 @@ void args_teardown()
 		free(g_args.dumpnode[x]);
 
 	free(g_args.targets);
-	free(g_args.invalidate);
-	free(g_args.dumpnode);
 	free(g_args.fabfile);
 	free(g_args.fabfile_canon);
+	free(g_args.execdir);
 	free(g_args.execdir_base);
 	free(g_args.hashdir);
+	free(g_args.invalidate);
+	free(g_args.dumpnode);
 }

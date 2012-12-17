@@ -132,11 +132,8 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 	return 1;
 }
 
-static int parse(const ff_parser * const restrict p, char* b, int sz, char* path, ff_node ** const restrict ffn, int dsc)
+static int parse(const ff_parser * const restrict p, char* b, int sz, char* path, ff_node ** const restrict ffn, struct gn * dscv_gn)
 {
-	// results struct for this parse
-	ff_xfreenode(ffn);
-
 	// create state specific to this parse
 	void* state = 0;
 	if((state = ff_yy_scan_bytes(b, sz + 2, p->p)) == 0)
@@ -158,6 +155,9 @@ static int parse(const ff_parser * const restrict p, char* b, int sz, char* path
 	// name of fabfile
 	ff->name = strdup(++tm);
 
+	if(dscv_gn)
+		ff->dscv_gn = dscv_gn;
+
 	parse_param pp = {
 		  .scanner = p->p
 		, .ffn = ffn
@@ -170,7 +170,7 @@ static int parse(const ff_parser * const restrict p, char* b, int sz, char* path
 	// make available to the lexer
 	ff_yyset_extra(&pp, p->p);
 
-	if(dsc)
+	if(dsc_gn)
 	{
 		// parse
 		ff_dsc_yyparse(p->p, &pp);
@@ -309,14 +309,14 @@ int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const re
 
 	close(fd);
 
-	int R = parse(p, b, statbuf.st_size, path, ffn, 0);
+	int R = parse(p, b, statbuf.st_size, path, ffn, (void*)0);
 	free(b);
 	return R;
 }
 
-int ff_dsc_parse(const ff_parser * const restrict p, char* b, int sz, char* path, ff_node ** const restrict ffn)
+int ff_dsc_parse(const ff_parser * const restrict p, char* b, int sz, char* path, struct gn * dscv_gn, ff_node ** const restrict ffn)
 {
-	return parse(p, b, sz, path, ffn, 1);
+	return parse(p, b, sz, path, ffn, dscv_gn);
 }
 
 void ff_freeparser(ff_parser* const restrict p)
@@ -516,4 +516,39 @@ void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 		, lc->l_lin + 1
 		, lc->l_col + 1
 	);
+}
+
+char * ff_idstring(ff_node * const restrict ffn)
+{
+	if(ffn->dscv_gn)
+	{
+		if(ffn->idstring == 0)
+		{
+			size_t sz = snprintf(0, 0, "DSC:%s", gn_idstring(ffn->dscv_gn));
+			ffn->idstring = calloc(sz + 1, 1);
+			sprintf(ffn->idstring, "DSC:%s", gn_idstring(ffn->dscv_gn));
+		}
+
+		return ffn->idstring;
+	}
+	else if(g_args.mode_gnid == MODE_GNID_CANON)
+	{
+		return ffn->path;
+	}
+	else if(g_args.mode_gnid == MODE_GNID_RELATIVE)
+	{
+		if(ffn->idstring == 0)
+		{
+			int x;
+			for(x = 0; x < strlen(g_args.fabfile_canon) && x < strlen(ffn->path); x++)
+			{
+				if(g_args.fabfile_canon[x] != ffn->path[x])
+					break;
+			}
+
+			ffn->idstring = strdup(&ffn->path[x]);
+		}
+	}
+
+	return 0;
 }

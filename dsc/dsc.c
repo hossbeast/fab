@@ -175,6 +175,7 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * staxl, int * 
 					, (*ts)[x]->stdo_txt->s
 					, (*ts)[x]->stdo_txt->l
 					, (*ts)[x]->stdo_path->s
+					, (*ts)[x]->fmlv->products[0]
 					, &ffn
 				);
 
@@ -208,5 +209,5 @@ int dsc_exec(gn ** gn, int gnl, map * vmap, lstack *** stax, int * staxl, int * 
 		}
 	}
 
-	ff_xfreenode(&ffn);
+	return 1;
 }

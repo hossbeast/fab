@@ -38,15 +38,22 @@ enum {
 #define FFN_STRING(x) FFN_TABLE(x) "unknown"
 
 struct ff_file;
+struct ff_loc;
+struct ff_node;
+struct gn;
+
 typedef struct ff_file
 {
-	char *		name;		// name of fabfile
+	char *						name;			// name of fabfile
 
-	char *		path;		// canonical path to fabfile 
-	char *		dir;		// canonical path to dir fabfile is in
+	char *						path;			// canonical path to fabfile 
+	char *						dir;			// canonical path to dir fabfile is in
+
+	struct gn *				dscv_gn;	// for a dependency discovery fabfile, associated graph node
+
+	char*							idstring;	// identifier string, subject to execution parameters
 } ff_file;
 
-struct ff_loc;
 typedef struct ff_loc
 {
 	int				f_lin;
@@ -57,7 +64,6 @@ typedef struct ff_loc
 	ff_file *	ff;
 } ff_loc;
 
-struct ff_node;
 typedef struct ff_node
 {
 	uint32_t		type;		// node type
@@ -235,5 +241,12 @@ void ff_xfreenode(ff_node ** const restrict)
 //
 //
 void ff_dump(ff_node * const restrict root);
+
+/// ff_idstring
+//
+// get a string identifying a ff, subject to execution arguments
+//
+char * ff_idstring(ff_node * const restrict ff)
+	__attribute__((nonnull));
 
 #endif

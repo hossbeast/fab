@@ -47,9 +47,9 @@ int main(int argc, char** argv)
 		map *								vmap = 0;				// variable lookup map
 		gn *								first = 0;			// first dependency mentioned
 		lstack **						stax = 0;
-		int									stax_l = 0;
-		int									stax_a = 0;
-		int 								p = 0;
+		int									staxl = 0;
+		int									staxa = 0;
+		int 								staxp = 0;
 		ts **								ts = 0;
 		int									tsa = 0;
 		int									tsw = 0;
@@ -96,38 +96,44 @@ int main(int argc, char** argv)
 		fatal(map_create, &vmap, 0);
 
 		// use up one list and populate the # variable (all directories)
-		if(stax_a <= p)
+		if(staxa <= staxp)
 		{
-			fatal(xrealloc, &stax, sizeof(*stax), p + 1, stax_a);
-			stax_a = p + 1;
+			fatal(xrealloc, &stax, sizeof(*stax), staxp + 1, staxa);
+			staxa = staxp + 1;
 		}
-		if(!stax[p])
-			fatal(xmalloc, &stax[p], sizeof(*stax[p]));
-		lstack_reset(stax[p]);
+		if(!stax[staxp])
+			fatal(xmalloc, &stax[staxp], sizeof(*stax[staxp]));
+		lstack_reset(stax[staxp]);
 
-		fatal(lstack_add, stax[p], ffn->loc.ff->dir, strlen(ffn->loc.ff->dir));
-		fatal(var_set, vmap, "#", stax[p++]);
+		fatal(lstack_add, stax[staxp], ffn->loc.ff->dir, strlen(ffn->loc.ff->dir));
+		fatal(var_set, vmap, "#", stax[staxp++]);
 
 		// process the fabfile tree, construct the graph
 		for(x = 0; x < ffn->statements_l; x++)
 		{
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
-				fatal(dep_process, ffn->statements[x], 0, vmap, &stax, &stax_l, &stax_a, p, first ? (void*)0 : &first, (void*)0, (void*)0);
+				fatal(dep_process, ffn->statements[x], 0, vmap, &stax, &staxl, &staxa, staxp, first ? (void*)0 : &first, (void*)0, (void*)0);
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)
 			{
 				// resolve the list associated to the variable name
-				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &stax_l, &stax_a, p);
+				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxl, &staxa, staxp);
 
 				// save the resultant list
-				fatal(var_set, vmap, ffn->statements[x]->name, stax[p++]);
+				fatal(var_set, vmap, ffn->statements[x]->name, stax[staxp++]);
 			}
 			else if(ffn->statements[x]->type == FFN_FORMULA)
 			{
 				// add the formula, attach to graph nodes
-				fatal(fml_add, ffn->statements[x], vmap, &stax, &stax_l, &stax_a, p);
+				fatal(fml_add, ffn->statements[x], vmap, &stax, &staxl, &staxa, staxp);
 			}
+		}
+		
+		// comprehensive upfront dependency discovery
+		if(g_args.mode_ddsc == MODE_DDSC_UPFRONT)
+		{
+			fatal(dsc_exec, gn_nodes.e, gn_nodes.l, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw);
 		}
 
 		if(g_args.dumpnode)
@@ -140,9 +146,8 @@ int main(int argc, char** argv)
 				gn_dump(gn);
 			}
 		}
-		
-		// dependency discovery phase
-		fatal(dsc_exec, gn_nodes.e, gn_nodes.l, vmap, &stax, &stax_l, &stax_a, p, &ts, &tsa, &tsw);
+
+exit(0);
 
 		// dump graph nodes, pending logging
 		if(g_args.dumpnode_all)
@@ -217,10 +222,10 @@ int main(int argc, char** argv)
 			if(!bp || bp->stages_l == 0)
 				log(L_INFO, "nothing to fabricate");
 
-			if(bp && g_args.mode == MODE_FABRICATE)
+			if(bp && g_args.mode_exec == MODE_EXEC_FABRICATE)
 			{
 				// execute the build plan, one stage at a time
-				if(bp_exec(bp, vmap, &stax, &stax_l, &stax_a, p, &ts, &tsa, &tsw) == 0)
+				if(bp_exec(bp, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw) == 0)
 					return 0;
 			}
 		}

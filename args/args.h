@@ -8,18 +8,22 @@
 #define DEFAULT_HASHDIR					"/tmp/fab/hash"
 #define DEFAULT_INVALIDATE_ALL	0
 #define DEFAULT_DUMPNODE_ALL		0
-#define DEFAULT_MODE						MODE_FABRICATE
+#define DEFAULT_MODE_EXEC				MODE_EXEC_FABRICATE
 #define DEFAULT_MODE_GNID				MODE_GNID_RELATIVE
+#define DEFAULT_MODE_DDSC				MODE_DDSC_DEFERRED
 
 /* modes */
 
 #define MODE_TABLE(x)																																					\
 /* execution modes */																																					\
-	_MODE(MODE_FABRICATE			, 0x00	, x)		/* fabricate targets - default */									\
-	_MODE(MODE_BUILDPLAN			, 0x01	, x)		/* generate buildplan only */											\
+	_MODE(MODE_EXEC_FABRICATE	, 0x00	, x)		/* fabricate targets*/														\
+	_MODE(MODE_EXEC_BUILDPLAN	, 0x01	, x)		/* generate buildplan only */											\
 /* path display modes */																																			\
-	_MODE(MODE_GNID_CANON			, 0x02	, x)		/* canonical path */															\
-	_MODE(MODE_GNID_RELATIVE	, 0x03	, x)		/* path relative to the initial fabfile */				\
+	_MODE(MODE_GNID_RELATIVE	, 0x02	, x)		/* path relative to the initial fabfile */				\
+	_MODE(MODE_GNID_CANON			, 0x03	, x)		/* canonical path */															\
+/* dependency discovery modes */																															\
+	_MODE(MODE_DDSC_DEFERRED	, 0x04	, x)		/* defer dependency discovery until bp prune */		\
+	_MODE(MODE_DDSC_UPFRONT		, 0x05	, x)		/* complete dependency discovery upfront */				\
 
 enum {
 #define _MODE(a, b, c) a = b,
@@ -36,7 +40,9 @@ extern struct g_args_t
 	char				cwd[512];							// current working directory
 	int					cwdl;									// length
 
-	char				mode;									// one of MODE_*
+	int					mode_exec;						// execution mode
+	int					mode_gnid;						// mode for gn identification string
+	int					mode_ddsc;						// dependency discovery mode
 
 	char **			targets;							// targets
 	int					targets_len;
@@ -55,8 +61,6 @@ extern struct g_args_t
 	char **			dumpnode;							// graph nodes to dump
 	int					dumpnode_len;
 	int					dumpnode_all;
-
-	int					mode_gnid;						// mode for gn identification string
 } g_args;
 
 //// parse_args
