@@ -53,6 +53,9 @@ int main(int argc, char** argv)
 		ts **								ts = 0;
 		int									tsa = 0;
 		int									tsw = 0;
+		gn **								list = 0;
+		int									listl = 0;
+		int									lista = 0;
 
 		int x;
 
@@ -130,24 +133,11 @@ int main(int argc, char** argv)
 			}
 		}
 		
-		// comprehensive upfront dependency discovery
+		// comprehensive upfront dependency discovery on the entire graph
 		if(g_args.mode_ddsc == MODE_DDSC_UPFRONT)
 		{
-			fatal(dsc_exec, gn_nodes.e, gn_nodes.l, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw);
+			fatal(dsc_exec, gn_nodes.e, gn_nodes.l, 0, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, 0);
 		}
-
-		if(g_args.dumpnode)
-		{
-			for(x = 0; x < g_args.dumpnode_len; x++)
-			{
-				gn * gn = 0;
-				if(gn_lookup(g_args.dumpnode[x], g_args.cwd, &gn) == 0)
-					return 0;
-				gn_dump(gn);
-			}
-		}
-
-exit(0);
 
 		// dump graph nodes, pending logging
 		if(g_args.dumpnode_all)
@@ -207,12 +197,26 @@ exit(0);
 
 			if(node_list_len)
 			{
-				// traverse the graph, construct the build plan that culminates in the given targets
-				fatal(bp_create, node_list, node_list_len, &bp);
+				int new = 1;
 
-				// prune the buildplan of nodes which do not require updating
-				if(bp_prune(bp) == 0)
-					return 0;
+				while(new)
+				{
+					// traverse the graph, construct the build plan that culminates in the given targets
+					fatal(bp_create, node_list, node_list_len, &bp);
+
+					// prune the buildplan of nodes which do not require updating
+					if(bp_prune(bp) == 0)
+						return 0;
+
+					if(g_args.mode_ddsc == MODE_DDSC_DEFERRED)
+					{
+						// flat list of nodes in the buildplan
+						fatal(bp_flatten, bp, &list, &listl, &lista);
+
+						// execute discovery
+						fatal(dsc_exec, list, listl, 1, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, &new);
+					}
+				}
 			}
 
 			// dump buildplan, pending logging
@@ -233,6 +237,8 @@ exit(0);
 		for(x = 0; x < tsa; x++)
 			ts_free(ts[x]);
 		free(ts);
+
+		free(list);
 
 		return 1;
 	};

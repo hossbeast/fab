@@ -34,6 +34,7 @@
 #define GN_FLAGS_CANFAB				0x02
 #define GN_FLAGS_NOFILE				0x04
 
+struct ff_file;
 struct ff_node;
 struct fmleval;
 struct gn;
@@ -128,13 +129,19 @@ typedef struct gn
 	// formula evaluation context which gives dependencies for this node
 	struct fmleval *	dscv;
 
-	// tracking fields
+	// buildplan create tracking
 	int 							depth;		// distance of longest route to a root node
 	int								height;		// distance of longest route to a leaf node
 	int								stage;		// assigned stage = maxheight - depth
-	int								mark;
+	int								create_mark;
+
+	// traversal tracking
 	int								guard;
 
+	// discovery tracking
+	int								dscv_mark;
+
+	// buildplan prune tracking
 	char							changed;
 	char							rebuild;
 	char							poison;
@@ -249,7 +256,7 @@ int gn_hashes_cmp(gn *);
 //  apply logic at each node along the way
 //  detect cycles, and fail if one is found
 //
-int gn_traverse_needs(gn * gn, void (*logic)(struct gn *));
+int gn_traverse_needsward(gn * gn, void (*logic)(struct gn *));
 
 /// gn_traverse_relations_needsward
 //

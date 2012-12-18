@@ -106,7 +106,7 @@
 	}
 %}
 
-%option nounput noyywrap
+%option noinput nounput noyywrap
 %option reentrant
 %option bison-bridge bison-locations
 %option prefix="ff_yy"

@@ -14,6 +14,8 @@
 #include "xmem.h"
 #include "unitstring.h"
 
+char * ff_idstring(struct ff_file * const);
+
 //
 // data
 //

@@ -1,4 +1,9 @@
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include "ts.h"
+#include "fml.h"
 
 #include "xmem.h"
 #include "pstring.h"
@@ -183,6 +188,8 @@ int ts_execwave(ts ** ts, int n, int * waveid, uint64_t hi, uint64_t lo)
 			}
 		}
 	}
+
+	return 1;
 }
 
 void ts_free(ts * ts)

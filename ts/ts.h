@@ -83,7 +83,7 @@ void ts_reset(ts * ts)
 //  hi - log tags to associate with high-level logging of this execution wave
 //  lo - log tags to associate with low-level logging of this execution wave
 //
-int ts_exewave(ts ** ts, int * waveid, int n, uint64_t hi, uint64_t lo)
+int ts_execwave(ts ** ts, int n, int * waveid, uint64_t hi, uint64_t lo)
 	__attribute__((nonnull));
 
 void ts_free(ts * ts);

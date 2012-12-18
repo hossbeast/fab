@@ -1,10 +1,14 @@
 #include <stdio.h>
 
+#include <listwise.h>
+#include <listwise/lstack.h>
+
 #include "bp.h"
 #include "ts.h"
 #include "fml.h"
 #include "gnlw.h"
 #include "args.h"
+#include "var.h"
 
 #include "log.h"
 #include "control.h"
@@ -36,7 +40,7 @@ static void reset(gn * gn)
 	gn->depth = -1;
 	gn->height = -1;
 	gn->stage = -1;
-	gn->mark = -1;
+	gn->create_mark = -1;
 
 	int x;
 	for(x = 0; x < gn->needs.l; x++)
@@ -57,7 +61,7 @@ static int heights(gn * gn)
 	return gn->height;
 }
 
-static int depths(gn * gn, int k)
+static void depths(gn * gn, int k)
 {
 	gn->depth = MAX(gn->depth, k);
 
@@ -78,9 +82,9 @@ static void assign(gn * gn, int maxheight)
 	}
 }
 
-static int visit(gn * n, int k, gn *** lvs, int * l, int * a)
+static void visit(gn * n, int k, gn *** lvs, int * l, int * a)
 {
-	if(n->mark < k)
+	if(n->create_mark < k)
 	{
 		if(n->stage == k)
 		{
@@ -98,7 +102,7 @@ static int visit(gn * n, int k, gn *** lvs, int * l, int * a)
 		for(x = 0; x < n->needs.l; x++)
 			visit(n->needs.e[x]->B, k, lvs, l, a);
 
-		n->mark = k;
+		n->create_mark = k;
 	}
 }
 
@@ -561,9 +565,6 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 		i = 0;
 		log(L_BP | L_BPEXEC, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
 
-		// so numbering lines up with BPEVAL
-		int c = bp->stages[x].primary_l;
-
 		// render formulas for each eval context on this stage
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
@@ -679,4 +680,46 @@ void bp_dump(bp * bp)
 			}
 		}
 	}
+}
+
+int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
+{
+	int add(gn * gn)
+	{
+		if(*gnl == *gna)
+		{
+			int ns = 10;
+			if(*gna)
+				ns = (*gna) * 2 + (*gna) / 2;
+
+			fatal(xrealloc, gns, sizeof(**gns), ns, *gna);
+			*gna = ns;
+		}
+	
+		(*gns)[(*gnl)++] = gn;
+
+		return 1;
+	};
+
+	*gnl = 0;
+
+	int x;
+	for(x = 0; x < bp->stages_l; x++)
+	{
+		int y;
+		for(y = 0; y < bp->stages[x].primary_l; y++)
+			fatal(add, bp->stages[x].primary[y]);
+
+		for(y = 0; y < bp->stages[x].nofmls_l; y++)
+			fatal(add, bp->stages[x].nofmls[y]);
+
+		for(y = 0; y < bp->stages[x].evals_l; y++)
+		{
+			int q;
+			for(q = 0; q < bp->stages[x].evals[y]->products_l; q++)
+				fatal(add, bp->stages[x].evals[y]->products[q]);
+		}
+	}
+
+	return 1;
 }

@@ -48,6 +48,13 @@ int bp_prune(bp * bp);
 //
 void bp_dump(bp *);
 
+/// bp_flatten
+//
+//
+//
+int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
+	__attribute__((nonnull));
+
 /// bp_exec
 //
 // execute the build plan one stage at a time

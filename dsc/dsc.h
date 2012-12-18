@@ -11,20 +11,38 @@
 
 /// dsc_exec
 //
-// execute dependency discovery
+// SUMMARY
+//  execute dependency discovery on a set of nodes, consisting of an initial set, plus
+//  all dependencies needsward, minus any node having already participated in discovery
+//
+// PARAMETERS
+//  roots   - graph nodes
+//  rootsl  - len of gn
+//  prune   - if true, skip nodes which have not been marked as changed (which occurs in bp_prune)
+//  vmap    - map for resolving var references
+//  stax    - listwise stax
+//  staxl   - listwise stax
+//  staxa   - listwise stax
+//  staxp   - listwise stax
+//  ts      - ts  (see ts_execwave)
+//  tsa     - ts   |
+//  tsw     - tsw  v
+//  [new]   - if not null, incremented by the number of edges and nodes discovered
 //
 int dsc_exec(
-	  gn ** restrict n
-	, int gnl
+	  gn ** restrict roots
+	, int rootsl
+	, int prune
 	, map * restrict vmap
 	, lstack *** restrict stax
 	, int * restrict staxl
 	, int * restrict staxa
-	, int p
+	, int staxp
 	, ts *** restrict ts
 	, int * restrict tsa
 	, int * restrict tsw
+	, int * restrict new
 )
-	__attribute__((nonnull));
+	__attribute__((nonnull(1, 4, 5, 6, 7, 9, 10, 11)));
 
 #endif

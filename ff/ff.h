@@ -207,6 +207,7 @@ int ff_dsc_parse(
 	, char * text
 	, int l
 	, char * path
+	, struct gn * dscv_gn
 	, ff_node ** const restrict ffn
 );
 
@@ -246,7 +247,7 @@ void ff_dump(ff_node * const restrict root);
 //
 // get a string identifying a ff, subject to execution arguments
 //
-char * ff_idstring(ff_node * const restrict ff)
+char * ff_idstring(ff_file * const restrict ff)
 	__attribute__((nonnull));
 
 #endif

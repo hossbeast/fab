@@ -21,11 +21,45 @@
    _a > _b ? _b : _a; })
 
 #define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 60])
-#define COLOR(x)		(unsigned char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
-#define NOCOLOR			(unsigned char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
+#define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
+#define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
 
 static uint64_t o_lgctx;
 static uint64_t o_e;
+
+//struct g_logs_t * g_logs = (struct g_logs_t[]) {
+struct g_logs_t o_logs[] = { 
+	  { .v = L_ERROR		, .s = "ERROR"		, .d = "errors leading to shutdown" }
+	, { .v = L_WARN			, .s = "WARN"			, .d = "nonfatal warnings" }
+	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
+	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
+	, { .v = L_FFTOKN		, .s = "FFTOKN"		, .d = "fabfile parsing - token stream" }
+	, { .v = L_FFSTAT		, .s = "FFSTAT"		, .d = "fabfile parsing - lexer start condition change" }
+	, { .v = L_FFTREE		, .s = "FFTREE"		, .d = "fabfile parsing - parsed tree" }
+	, { .v = L_FF				, .s = "FF"				, .d = "fabfile" }
+	, { .v = L_BPEXEC		, .s = "BPEXEC"		, .d = "buildplan - execution" }
+	, { .v = L_BPEVAL		, .s = "BPEVAL"		, .d = "buildplan - pruning/evaluating" }
+	, { .v = L_BPDUMP		, .s = "BPDUMP"		, .d = "buildplan - dump the final buildplan" }
+	, { .v = L_BP				, .s = "BP"				, .d = "buildplan" }
+	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	, .d = "formulas - execution results/details" }
+	, { .v = L_FMLTARG	, .s = "FMLTARG"	, .d = "formulas - target resolution/assignment" }
+	, { .v = L_FML			, .s = "FML"			, .d = "formulas" }
+	, { .v = L_FAB			, .s = "FAB"			, .d = "fabrication formulas" }
+	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - highlevel execution details" }
+	, { .v = L_DSCNEW		, .s = "DSCNEW"		, .d = "dependency discovery - new nodes/edges" }
+	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery formulas" }
+	, { .v = L_DGDEPS		, .s = "DGDEPS"		, .d = "dependency graph - dependencies" }
+	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
+	, { .v = L_DGHASH		, .s = "DGHASH"		, .d = "dependency graph - hash loading/saving" }
+	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
+	, { .v = L_VAR			, .s = "VAR"			, .d = "variable defintions" }
+	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	, .d = "debug liblistwise invocations ** VERBOSE" }
+//	, { .v = L_TAG & ~L_LWDEBUG		, .s = "TAG" }
+};
+
+struct g_logs_t * g_logs = o_logs;
+
+int g_logs_l = sizeof(o_logs) / sizeof(o_logs[0]);
 
 //
 // [[ static ]]
@@ -34,38 +68,6 @@ static uint64_t o_e;
 static char * o_space;
 static int		o_space_l;
 static int		o_space_a;
-
-static struct {
-	uint64_t		v;
-	char *			s;
-	int					l;
-} o_logs[] = { 
-	  { .v = L_ERROR		, .s = "ERROR"		}
-	, { .v = L_WARN			, .s = "WARN"			}
-	, { .v = L_INFO			, .s = "INFO"			}
-	, { .v = L_ARGS			, .s = "ARGS"			}
-	, { .v = L_FFTOKN		, .s = "FFTOKN"		}
-	, { .v = L_FFSTAT		, .s = "FFSTAT"		}
-	, { .v = L_FFTREE		, .s = "FFTREE"		}
-	, { .v = L_FF				, .s = "FF"				}
-	, { .v = L_BPEXEC		, .s = "BPEXEC"		}
-	, { .v = L_BPEVAL		, .s = "BPEVAL"		}
-	, { .v = L_BPDUMP		, .s = "BPDUMP"		}
-	, { .v = L_BP				, .s = "BP"				}
-	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	}
-	, { .v = L_FMLTARG	, .s = "FMLTARG"	}
-	, { .v = L_FML			, .s = "FML"			}
-	, { .v = L_FAB			, .s = "FAB"			}
-	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	}
-	, { .v = L_DSC			, .s = "DSC"			}
-	, { .v = L_DGDEPS		, .s = "DGDEPS"		}
-	, { .v = L_DGRAPH		, .s = "DGRAPH"		}
-	, { .v = L_DGHASH		, .s = "DGHASH"		}
-	, { .v = L_DG				, .s = "DG"				}
-	, { .v = L_VAR			, .s = "VAR"			}
-	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	}
-	, { .v = L_TAG & ~L_LWDEBUG			, .s = "TAG"			}
-};
 
 static int o_name_len;
 
@@ -139,11 +141,11 @@ static int log_vstart(const uint64_t e)
 
 		// prefix
 		int x;
-		for(x = 0; x < sizeof(o_logs) / sizeof(o_logs[0]); x++)
+		for(x = 0; x < sizeof(g_logs) / sizeof(g_logs[0]); x++)
 		{
-			if((e & o_logs[x].v) == o_logs[x].v)
+			if((e & g_logs[x].v) == g_logs[x].v)
 			{
-				R = logprintf("%*s : ", o_name_len, o_logs[x].s);
+				R = logprintf("%*s : ", o_name_len, g_logs[x].s);
 				break;
 			}
 		}
@@ -188,13 +190,13 @@ void log_active(char * s, size_t z)
 {
 	int l = 0;
 	int x;
-	for(x = 0; x < sizeof(o_logs) / sizeof(o_logs[0]); x++)
+	for(x = 0; x < sizeof(g_logs) / sizeof(g_logs[0]); x++)
 	{
-		if((o_lgctx & o_logs[x].v) == o_logs[x].v)
+		if((o_lgctx & g_logs[x].v) == g_logs[x].v)
 		{
 			if(l)
 				l += snprintf(s + l, z - l, " ");
-			l += snprintf(s + l, z - l, "+%s", o_logs[x].s);
+			l += snprintf(s + l, z - l, "+%s", g_logs[x].s);
 		}
 	}
 }
@@ -209,17 +211,17 @@ void log_parse(char * args, int args_len)
 		if(args[x] == '+' || args[x] == '-')
 		{
 			int y;
-			for(y = 0; y < sizeof(o_logs) / sizeof(o_logs[0]); y++)
+			for(y = 0; y < sizeof(g_logs) / sizeof(g_logs[0]); y++)
 			{
-				if(xstrcmp(&args[x+1], MIN(args_len - (x + 1), o_logs[y].l), o_logs[y].s, o_logs[y].l, 0) == 0)
+				if(xstrcmp(&args[x+1], MIN(args_len - (x + 1), g_logs[y].l), g_logs[y].s, g_logs[y].l, 0) == 0)
 				{
 					if(args[x] == '+')
-						o_lgctx |= o_logs[y].v;
+						o_lgctx |= g_logs[y].v;
 
 					if(args[x] == '-')
-						o_lgctx &= ~o_logs[y].v;
+						o_lgctx &= ~g_logs[y].v;
 
-					x += o_logs[y].l + 1;
+					x += g_logs[y].l + 1;
 				}
 			}
 		}
@@ -230,10 +232,10 @@ int log_init(char * str)
 {
 	// determine logtag len
 	int x;
-	for(x = 0; x < sizeof(o_logs) / sizeof(o_logs[0]); x++)
+	for(x = 0; x < sizeof(g_logs) / sizeof(g_logs[0]); x++)
 	{
-		o_logs[x].l = strlen(o_logs[x].s);
-		o_name_len = MAX(o_name_len, o_logs[x].l);
+		g_logs[x].l = strlen(g_logs[x].s);
+		o_name_len = MAX(o_name_len, g_logs[x].l);
 	}
 
 	// apply initial args string

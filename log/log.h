@@ -16,30 +16,40 @@
 #define L_TAG           0x0000FFFFFFFFFFFFULL // D range
 
 // E
-#define L_ERROR         0x0000000000000001ULL | L_RED			/* errors leading to shutdown */
-#define L_WARN          0x0000000000000002ULL | L_YELLOW	/* nonfatal warnings */
-#define L_INFO          0x0000000000000004ULL							/* program flow */
-#define L_ARGS 					0x0000000000000008ULL							/* program arguments */
-#define L_FFTOKN 				0x0000000000000010ULL							/* fabfile parsing - token stream */
-#define L_FFSTAT 				0x0000000000000020ULL							/* fabfile parsing - lexer start condition changes*/
-#define L_FFTREE				0x0000000000000040ULL							/* fabfile parsing - parsed tree */
-#define L_FF						0x0000000000000080ULL							/* fabfile */
-#define L_BPEXEC				0x0000000000000100ULL							/* buildplan - execution */
-#define L_BPEVAL				0x0000000000000200ULL							/* buildplan - pruning/evaluating */
-#define L_BPDUMP				0x0000000000000400ULL							/* buildplan - dump the final buildplan */
-#define L_BP						0x0000000000000800ULL							/* buildplan */
-#define L_FMLEXEC				0x0000000000001000ULL							/* formulas - execution results/details */
-#define L_FMLTARG				0x0000000000002000ULL							/* formulas - target resolution/assignment */
-#define L_FML						0x0000000000004000ULL							/* formulas */
-#define L_FAB						0x0000000000008000ULL							/* fabrication formulas */
-#define L_DSCEXEC				0x0000000000010000ULL							/* dependendcy discovery - execution */
-#define L_DSC						0x0000000000020000ULL							/* discovery formulas */
-#define L_DGDEPS				0x000000000004000ULL							/* dependency graph - dependencies */
-#define L_DGRAPH 				0x0000000000080000ULL							/* dependency graph - dump/details */
-#define L_DGHASH				0x0000000000100000ULL							/* dependency graph - hash loading/saving */
-#define L_DG 						0x0000000000200000ULL							/* dependency graph */
-#define L_VAR						0x0000000000400000ULL							/* variable defintions */
-#define L_LWDEBUG				0x0000000000800000ULL							/* debug liblistwise invocations */
+#define L_ERROR         0x0000000000000001ULL | L_RED		
+#define L_WARN          0x0000000000000002ULL | L_YELLOW
+#define L_INFO          0x0000000000000004ULL
+#define L_ARGS 					0x0000000000000008ULL
+#define L_FFTOKN 				0x0000000000000010ULL
+#define L_FFSTAT 				0x0000000000000020ULL
+#define L_FFTREE				0x0000000000000040ULL
+#define L_FF						0x0000000000000080ULL
+#define L_BPEXEC				0x0000000000000100ULL
+#define L_BPEVAL				0x0000000000000200ULL
+#define L_BPDUMP				0x0000000000000400ULL
+#define L_BP						0x0000000000000800ULL
+#define L_FMLEXEC				0x0000000000001000ULL
+#define L_FMLTARG				0x0000000000002000ULL
+#define L_FML						0x0000000000004000ULL
+#define L_FAB						0x0000000000008000ULL
+#define L_DSCEXEC				0x0000000000010000ULL
+#define L_DSCNEW				0x0000000000020000ULL
+#define L_DSC						0x0000000000040000ULL
+#define L_DGDEPS				0x0000000000080000ULL
+#define L_DGRAPH 				0x0000000000100000ULL
+#define L_DGHASH				0x0000000000200000ULL
+#define L_DG 						0x0000000000400000ULL
+#define L_VAR						0x0000000000800000ULL
+#define L_LWDEBUG				0x0000000001000000ULL
+
+struct g_logs_t {
+	uint64_t		v;	// tag definition
+	char *			s;	// name
+	int					l;	// length of name
+	char *			d;	// description
+} * g_logs;
+
+int g_logs_l;
 
 /// log_init
 //
