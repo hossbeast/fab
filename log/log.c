@@ -27,7 +27,6 @@
 static uint64_t o_lgctx;
 static uint64_t o_e;
 
-//struct g_logs_t * g_logs = (struct g_logs_t[]) {
 struct g_logs_t o_logs[] = { 
 	  { .v = L_ERROR		, .s = "ERROR"		, .d = "errors leading to shutdown" }
 	, { .v = L_WARN			, .s = "WARN"			, .d = "nonfatal warnings" }
@@ -54,7 +53,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
 	, { .v = L_VAR			, .s = "VAR"			, .d = "variable defintions" }
 	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	, .d = "debug liblistwise invocations ** VERBOSE" }
-//	, { .v = L_TAG & ~L_LWDEBUG		, .s = "TAG" }
+	, { .v = L_TAG & ~L_LWDEBUG		, .s = "TAG" }
 };
 
 struct g_logs_t * g_logs = o_logs;
@@ -141,7 +140,7 @@ static int log_vstart(const uint64_t e)
 
 		// prefix
 		int x;
-		for(x = 0; x < sizeof(g_logs) / sizeof(g_logs[0]); x++)
+		for(x = 0; x < g_logs_l; x++)
 		{
 			if((e & g_logs[x].v) == g_logs[x].v)
 			{
@@ -190,7 +189,7 @@ void log_active(char * s, size_t z)
 {
 	int l = 0;
 	int x;
-	for(x = 0; x < sizeof(g_logs) / sizeof(g_logs[0]); x++)
+	for(x = 0; x < g_logs_l; x++)
 	{
 		if((o_lgctx & g_logs[x].v) == g_logs[x].v)
 		{
@@ -211,7 +210,7 @@ void log_parse(char * args, int args_len)
 		if(args[x] == '+' || args[x] == '-')
 		{
 			int y;
-			for(y = 0; y < sizeof(g_logs) / sizeof(g_logs[0]); y++)
+			for(y = 0; y < g_logs_l; y++)
 			{
 				if(xstrcmp(&args[x+1], MIN(args_len - (x + 1), g_logs[y].l), g_logs[y].s, g_logs[y].l, 0) == 0)
 				{
@@ -232,7 +231,7 @@ int log_init(char * str)
 {
 	// determine logtag len
 	int x;
-	for(x = 0; x < sizeof(g_logs) / sizeof(g_logs[0]); x++)
+	for(x = 0; x < g_logs_l; x++)
 	{
 		g_logs[x].l = strlen(g_logs[x].s);
 		o_name_len = MAX(o_name_len, g_logs[x].l);

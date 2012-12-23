@@ -130,10 +130,8 @@ typedef struct gn
 	struct fmleval *	dscv;
 
 	// buildplan create tracking
-	int 							depth;		// distance of longest route to a root node
 	int								height;		// distance of longest route to a leaf node
-	int								stage;		// assigned stage = maxheight - depth
-	int								create_mark;
+	int								stage;		// assigned stage - NEARLY always equal to height
 
 	// traversal tracking
 	int								guard;
@@ -167,17 +165,27 @@ extern union gn_nodes_t
 
 /// gn_lookup_canon
 //
+// lookup a gn by absolute path
 //
+// returns the node, or 0 if it was not found
 //
 gn * gn_lookup_canon(char* s, int l);
 
 /// gn_lookup
 //
-// lookup a gn by absolute path, relative path, or NOFILE-name
+// SUMMARY
+//  lookup a gn by absolute path, relative path, or NOFILE-name
 //
-// returns 0 on failure (memory, io) or if the specified node was not found
+// PARAMETERS
+//  s   - string
+//  l   - string length, or 0 for strlen
+//  cwd - directory path for resolving relative paths
+//  r   - node returned here
 //
-int gn_lookup(char * const restrict s, char * const restrict cwd, gn ** restrict r)
+// RETURNS
+//  pointer to the node, or 0 if not found
+//
+gn * gn_lookup(char * const restrict s, int l, char * const restrict cwd)
 	__attribute__((nonnull));
 
 /// gn_add
@@ -217,9 +225,9 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 //  Bl     - length of B, 0 for strlen
 //	Bt		 - LISTWISE_TYPE_GNLW if B is a gn * and 0 otherwise
 //  ffn    - originating dependency node
-//  newa   - incremented if A was created
-//  newb   - incremented if B was created
-//  newr   - incremented if a new edge was created
+//  [newa] - incremented if A was created
+//  [newb] - incremented if B was created
+//  [newr] - incremented if a new edge was created
 //
 // RETURNS
 //  returns 0 on failure (memory, io) otherwise returns 1 and sets *A to gn for a, and *B to gn for b
@@ -233,7 +241,7 @@ int gn_edge_add(
 	, int * const restrict newb
 	, int * const restrict newr
 )
-	__attribute__((nonnull));
+	__attribute__((nonnull(1,2,5,8)));
 
 /// gn_dump
 //
@@ -256,7 +264,7 @@ int gn_hashes_cmp(gn *);
 //  apply logic at each node along the way
 //  detect cycles, and fail if one is found
 //
-int gn_traverse_needsward(gn * gn, void (*logic)(struct gn *));
+int gn_depth_traversal_nodes_needsward(gn * gn, void (*logic)(struct gn *, int d));
 
 /// gn_traverse_relations_needsward
 //
@@ -264,7 +272,7 @@ int gn_traverse_needsward(gn * gn, void (*logic)(struct gn *));
 //  same as gn_traverse_needs, except execute logic on relations
 //  note, this excludes the starting node
 //
-int gn_traverse_relations_needsward(gn * r, void (*logic)(relation*));
+int gn_depth_traversal_relations_needsward(gn * r, void (*logic)(relation*));
 
 /// gn_idstring
 //

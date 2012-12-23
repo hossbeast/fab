@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <alloca.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -227,39 +228,37 @@ static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
 // public
 //
 
-int gn_lookup(char * s, char * cwd, gn ** r)
+gn * gn_lookup(char * s, int l, char * cwd)
 {
 	char * sp = 0;
+	l = l ?: strlen(s);
 
-	*r = 0;
+	gn * r = 0;
+
 	if(gn_nodes.by_path)
 	{
 		// absolute path
 		if(s[0] == '/')
-			(*r) = gn_lookup_canon(s, 0);
+			r = gn_lookup_canon(s, l);
 
 		// relative to cwd
-		if(!(*r))
+		if(!r)
 		{
-			fatal(xrealloc, &sp, 1, strlen(cwd) + strlen(s) + 2, 0);
-			sprintf(sp, "%s/%s", cwd, s);
-			(*r) = gn_lookup_canon(sp, 0);
+			sp = alloca(strlen(cwd) + l + 2);
+			sprintf(sp, "%s/%.*s", cwd, l, s);
+			r = gn_lookup_canon(sp, 0);
 		}
 
 		// NOFILE nodes
-		if(!(*r))
+		if(!r)
 		{
-			fatal(xrealloc, &sp, 1, strlen(s) + 5, 0);
-			sprintf(sp, "/../%s", s);
-			(*r) = gn_lookup_canon(sp, 0);
+			sp = alloca(l + 5);
+			sprintf(sp, "/../%.*s", l, s);
+			r = gn_lookup_canon(sp, 0);
 		}
 	}
 
-	if((*r) == 0)
-		fail("not found : %s", s);
-
-	free(sp);
-	return 1;
+	return r;
 }
 
 gn * gn_lookup_canon(char* s, int l)
@@ -297,19 +296,27 @@ int gn_edge_add(
 	gn *	gna = 0;
 	gn *	gnb = 0;
 
+	int _newa = 0;
+	int _newb = 0;
+
 	if(At)
 		gna = *(gn**)A;
 	else
-		fatal(gn_create, realwd, *(char**)A, Al, &gna, newa);
+		fatal(gn_create, realwd, *(char**)A, Al, &gna, &_newa);
 
 	if(Bt)
 		gnb = *(gn**)B;
 	else
-		fatal(gn_create, realwd, *(char**)B, Bl, &gnb, newb);
+		fatal(gn_create, realwd, *(char**)B, Bl, &gnb, &_newb);
 
 	// as syntactic sugar, silently ignore dependencies of a node on itself
 	if(gna != gnb)
 	{
+		if(newa)
+			(*newa) += _newa;
+		if(newb)
+			(*newb) += _newb;
+
 		// error check
 		if(strcmp(gnb->dir, "/..") == 0)
 		{
@@ -436,7 +443,6 @@ void gn_dump(gn * gn)
 			}
 		}
 
-		log(L_DG | L_DGRAPH, "%12s : %d", "depth", gn->depth);
 		log(L_DG | L_DGRAPH, "%12s : %d", "height", gn->height);
 		log(L_DG | L_DGRAPH, "%12s : %d", "stage", gn->stage);
 
@@ -533,12 +539,12 @@ int gn_hashes_cmp(gn * gn)
 					?: 0;
 }
 
-int gn_traverse_needsward(gn * r, void (*logic)(gn*))
+int gn_depth_traversal_nodes_needsward(gn * r, void (*logic)(gn*, int))
 {
 	gn * stack[64] = {};
 	int ptr = 0;
 
-	int enter(gn * n)
+	int enter(gn * n, int d)
 	{
 		if(n->guard)
 		{
@@ -553,7 +559,7 @@ int gn_traverse_needsward(gn * r, void (*logic)(gn*))
 		int x;
 		for(x = 0; x < n->needs.l; x++)
 		{
-			if(enter(n->needs.e[x]->B))
+			if(enter(n->needs.e[x]->B, d + 1))
 			{
 				if(ptr < sizeof(stack) / sizeof(stack[0]))
 					stack[ptr++] = n;
@@ -563,20 +569,20 @@ int gn_traverse_needsward(gn * r, void (*logic)(gn*))
 		}
 
 		// logic on this node
-		logic(n);
+		logic(n, d);
 
 		n->guard = 0;
 
 		return 0;
 	};
 
-	if(enter(r))
+	if(enter(r, 0))
 		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr);
 
 	return 1;
 }
 
-int gn_traverse_relations_needsward(gn * r, void (*logic)(relation*))
+int gn_depth_traversal_relations_needsward(gn * r, void (*logic)(relation*))
 {
 	gn * stack[64] = {};
 	int ptr = 0;
@@ -627,25 +633,32 @@ int gn_traverse_relations_needsward(gn * r, void (*logic)(relation*))
 
 char * gn_idstring(gn * gn)
 {
-	if(g_args.mode_gnid == MODE_GNID_CANON)
-	{
-		return gn->path;
-	}
 	if(g_args.mode_gnid == MODE_GNID_RELATIVE)
 	{
 		if(gn->idstring == 0)
 		{
-			int x;
-			for(x = 0; x < strlen(g_args.fabfile_canon) && x < gn->pathl; x++)
+			if(strcmp(gn->dir, "/..") == 0)
 			{
-				if(g_args.fabfile_canon[x] != gn->path[x])
-					break;
+				gn->idstring = strdup(gn->path);
 			}
+			else
+			{
+				int x;
+				for(x = 0; x < strlen(g_args.fabfile_canon) && x < gn->pathl; x++)
+				{
+					if(g_args.fabfile_canon[x] != gn->path[x])
+						break;
+				}
 
-			gn->idstring = strdup(&gn->path[x]);
+				gn->idstring = strdup(&gn->path[x]);
+			}
 		}
 
 		return gn->idstring;
+	}
+	if(g_args.mode_gnid == MODE_GNID_CANON)
+	{
+		return gn->path;
 	}
 
 	return 0;

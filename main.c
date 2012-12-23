@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 		{
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
-				fatal(dep_process, ffn->statements[x], 0, vmap, &stax, &staxl, &staxa, staxp, first ? (void*)0 : &first, (void*)0, (void*)0);
+				fatal(dep_process, ffn->statements[x], 0, vmap, &stax, &staxl, &staxa, staxp, first ? 0 : &first, 0, 0);
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)
 			{
@@ -150,7 +150,7 @@ int main(int argc, char** argv)
 			for(x = 0; x < g_args.dumpnode_len; x++)
 			{
 				gn * gn = 0;
-				if(gn_lookup(g_args.dumpnode[x], g_args.cwd, &gn) == 0)
+				if((gn = gn_lookup(g_args.dumpnode[x], 0, g_args.cwd)) == 0)
 					return 0;
 				gn_dump(gn);
 			}
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
 			if(g_args.targets_len)
 			{
 				gn * gn = 0;
-				if(gn_lookup(g_args.targets[0], g_args.cwd, &gn) == 0)
+				if((gn = gn_lookup(g_args.targets[0], 0, g_args.cwd)) == 0)
 					return 0;
 
 				aretasks = strcmp(gn->dir, "/..") == 0 && gn->fabv;
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
 
 				for(x = 1; x < g_args.targets_len; x++)
 				{
-					if(gn_lookup(g_args.targets[x], g_args.cwd, &gn) == 0)
+					if((gn = gn_lookup(g_args.targets[x], 0, g_args.cwd)) == 0)
 						return 0;
 
 					istask = strcmp(gn->dir, "/..") == 0 && gn->fabv;
@@ -198,7 +198,6 @@ int main(int argc, char** argv)
 			if(node_list_len)
 			{
 				int new = 1;
-
 				while(new)
 				{
 					// traverse the graph, construct the build plan that culminates in the given targets
@@ -214,7 +213,12 @@ int main(int argc, char** argv)
 						fatal(bp_flatten, bp, &list, &listl, &lista);
 
 						// execute discovery
+						new = 0;
 						fatal(dsc_exec, list, listl, 1, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, &new);
+					}
+					else
+					{
+						new = 0;
 					}
 				}
 			}

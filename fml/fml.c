@@ -50,76 +50,33 @@ static int fml_add_single(fml * fml, lstack * ls)
 		fatal(lstack_string, ls, 0, y, &s, &l);
 
 		gn* t = 0;
-		if(l && s[0] == '/')
-		{
-			// lookup for absolute paths
-			if((t = gn_lookup_canon(s, l)) == 0)
-			{
-				// task nodes do not necessarily require a relation to the rest of the graph - create here in this case
-				if(l > 4 && memcmp("/../", s, 4) == 0)
-				{
-					fatal(gn_add, 0, s, l, &t, 0);
-				}
-			}
-		}
-		else
-		{
-			/*
-			** this loop should be replaced by an idx lookup on names within the directory
-			*/
+		if((t = gn_lookup(s, l, fml->ffn->loc.ff->dir)) == 0)
+			fatal(gn_add, fml->ffn->loc.ff->dir, s, l, &t, 0);
 
-			char space[256];
-			snprintf(space, sizeof(space), "%s/%.*s", fml->ffn->loc.ff->dir, l, s);
+		fmlv->products[0] = t;
 
-			int i;
-			for(i = 0; i < gn_nodes.l; i++)
-			{
-				if(strcmp(gn_nodes.e[i]->path, space) == 0)
-				{
-					t = gn_nodes.e[i];
-					break;
-				}
-			}
-		}
-
-		if(t)
+		if(fml->ffn->flags & FFN_DISCOVERY)
 		{
-			fmlv->products[0] = t;
-
-			if(fml->ffn->flags & FFN_DISCOVERY)
-			{
-				log(L_DSC | L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
-					, fml->ffn->loc.f_lin + 1
-					, fml->ffn->loc.f_col + 1
-					, fml->ffn->loc.l_lin + 1
-					, fml->ffn->loc.l_col + 1
-					, gn_idstring(t)
-				);
-				t->dscv = fmlv;
-			}
-			else
-			{
-				log(L_FAB | L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
-					, fml->ffn->loc.f_lin + 1
-					, fml->ffn->loc.f_col + 1
-					, fml->ffn->loc.l_lin + 1
-					, fml->ffn->loc.l_col + 1
-					, gn_idstring(t)
-				);
-				t->fabv = fmlv;
-			}
-		}
-		else
-		{
-			log(L_ERROR, "[%3d,%3d - %3d,%3d] unresolved -> %s"
+			log(L_DSC | L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
 				, fml->ffn->loc.f_lin + 1
 				, fml->ffn->loc.f_col + 1
 				, fml->ffn->loc.l_lin + 1
 				, fml->ffn->loc.l_col + 1
-				, ls->s[0].s[y].s
+				, gn_idstring(t)
 			);
-			R = 0;
-		}	
+			t->dscv = fmlv;
+		}
+		else
+		{
+			log(L_FAB | L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
+				, fml->ffn->loc.f_lin + 1
+				, fml->ffn->loc.f_col + 1
+				, fml->ffn->loc.l_lin + 1
+				, fml->ffn->loc.l_col + 1
+				, gn_idstring(t)
+			);
+			t->fabv = fmlv;
+		}
 	}
 	LSTACK_ITEREND;
 
@@ -166,63 +123,21 @@ static int fml_add_multi(fml * fml, lstack * ls)
 		for(y = 0; y < ls->s[x].l; y++)
 		{
 			gn * t = 0;
-			if(ls->s[x].s[y].l && ls->s[x].s[y].s[0] == '/')
-			{
-				t = gn_lookup_canon(ls->s[x].s[y].s, ls->s[x].s[y].l);
-			}
+			if((t = gn_lookup(ls->s[x].s[y].s, ls->s[x].s[y].l, fml->ffn->loc.ff->dir)) == 0)
+				fatal(gn_add, fml->ffn->loc.ff->dir, ls->s[x].s[y].s, ls->s[x].s[y].l, &t, 0);
+
+			if(y)
+				log_add("  , %s\n", gn_idstring(t));
 			else
-			{
-				for(i = 0; i < gn_nodes.l; i++)
-				{
-					if(strcmp(gn_nodes.e[i]->dir, fml->ffn->loc.ff->dir) == 0 && strcmp(gn_nodes.e[i]->name, ls->s[x].s[y].s) == 0)
-					{
-						t = gn_nodes.e[i];
-						break;
-					}
-				}
-			}
+				log_add("    %s\n", gn_idstring(t));
 
-			if(t)
-			{
-				if(y)
-					log_add("  , %s\n", gn_idstring(t));
-				else
-					log_add("    %s\n", gn_idstring(t));
-
-				fmlv->products[y] = t;
-				if(fml->ffn->flags & FFN_DISCOVERY)
-					t->dscv = fmlv;
-				else
-					t->fabv = fmlv;
-			}
+			fmlv->products[y] = t;
+			if(fml->ffn->flags & FFN_DISCOVERY)
+				t->dscv = fmlv;
+			else
+				t->fabv = fmlv;
 		}
 		log_finish("}");
-
-		int k = 0;
-		for(y = 0; y < ls->s[x].l; y++)
-		{
-			if(fmlv->products[y] == 0)
-			{
-				if(k++ == 0)
-				{
-					log_start(L_ERROR, "[%3d,%3d - %3d,%3d] unresolved -> {\n"
-						, fml->ffn->loc.f_lin + 1
-						, fml->ffn->loc.f_col + 1
-						, fml->ffn->loc.l_lin + 1
-						, fml->ffn->loc.l_col + 1
-					);
-					log_add("    %s\n", ls->s[x].s[y].s);
-				}
-				else
-				{
-					log_add("  , %s\n", ls->s[x].s[y].s);
-				}
-
-				R = 0;
-			}
-		}
-		if(k)
-			log_finish("}");
 	}
 
 	return R;

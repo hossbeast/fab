@@ -25,8 +25,9 @@
 
 static int count_dscv(gn * r, int prune, int * c)
 {
-	void logic(gn * gn)
+	void logic(gn * gn, int d)
 	{
+//printf("%s mark=%d dscv=%p prune=%d changed=%d rebuild=%d\n", gn_idstring(gn), gn->dscv_mark, gn->dscv, prune, gn->changed, gn->rebuild);
 		if(gn->dscv_mark == 0 && gn->dscv)
 		{
 			if(!prune || gn->changed || gn->rebuild)
@@ -40,12 +41,12 @@ static int count_dscv(gn * r, int prune, int * c)
 		}
 	};
 
-	return gn_traverse_needsward(r, logic);
+	return gn_depth_traversal_nodes_needsward(r, logic);
 }
 
 static int assign_dscv(gn * r, ts ** ts, int prune, int * c)
 {
-	void logic(gn * gn)
+	void logic(gn * gn, int d)
 	{
 		if(gn->dscv_mark == 1)
 		{
@@ -57,7 +58,7 @@ static int assign_dscv(gn * r, ts ** ts, int prune, int * c)
 		}
 	}
 
-	return gn_traverse_needsward(r, logic);
+	return gn_depth_traversal_nodes_needsward(r, logic);
 }
 
 //
@@ -79,7 +80,6 @@ int dsc_exec(gn ** roots, int rootsl, int prune, map * vmap, lstack *** stax, in
 
 	for(i = 0; tsl; i++)
 	{
-		// create new threadspaces as needed
 		fatal(ts_ensure, ts, tsa, tsl);
 
 		// assign each threadspace a discovery formula evaluation context
@@ -140,7 +140,7 @@ int dsc_exec(gn ** roots, int rootsl, int prune, map * vmap, lstack *** stax, in
 			{
 				if(ffn->statements[k]->type == FFN_DEPENDENCY)
 				{
-					fatal(dep_process, ffn->statements[k], (*ts)[x]->fmlv->products[0], vmap, stax, staxl, staxa, staxp, (void*)0, &newn, &newr);
+					fatal(dep_process, ffn->statements[k], (*ts)[x]->fmlv->products[0], vmap, stax, staxl, staxa, staxp, 0, &newn, &newr);
 				}
 			}
 		}
@@ -149,8 +149,7 @@ int dsc_exec(gn ** roots, int rootsl, int prune, map * vmap, lstack *** stax, in
 		if(new)
 			(*new) += newn + newr;
 
-		log(L_DSC | L_DSCEXEC, "%d new nodes", newn);
-		log(L_DSC | L_DSCEXEC, "%d new edges", newr);
+		log(L_DSC | L_DSCEXEC, "discovered %d nodes and %d edges", newn, newr);
 
 		// recount - new nodes may need discovered
 		tsl = 0;

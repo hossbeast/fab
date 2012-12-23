@@ -49,6 +49,7 @@ extern struct g_args_t
 
 	char *			fabfile;							// user-supplied path to initial fabfile
 	char *			fabfile_canon;				// canonical path to initial fabfile
+	char *			fabfile_canon_dir;		// canonical path to directory of initial fabfile
 
 	char *			execdir_base;
 	char *			execdir;

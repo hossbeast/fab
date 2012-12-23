@@ -117,8 +117,9 @@ gn/gn.o	: common/coll.o common/idx.o common/unitstring.o
 .PHONY: install uninstall clean
 
 install: ${NAME}
-	${INSTALL} -d               ${DESTDIR}
-	${INSTALL} ${NAME}  ${DESTDIR}/${NAME}
+	${INSTALL} -d            ${DESTDIR}
+	${INSTALL} ${NAME}       ${DESTDIR}/${NAME}
+	${INSTALL} gcc-dep       ${DESTDIR}/gcc-dep
 
 uninstall:
 	rm -f												${DESTDIR}/${NAME}

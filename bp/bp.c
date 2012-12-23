@@ -6,6 +6,7 @@
 #include "bp.h"
 #include "ts.h"
 #include "fml.h"
+#include "gn.h"
 #include "gnlw.h"
 #include "args.h"
 #include "var.h"
@@ -35,75 +36,59 @@ static int fmleval_cmp(const void * _A, const void * _B)
 	return gn_cmp(&A->products[0], &B->products[0]);
 }
 
-static void reset(gn * gn)
+static int reset(gn * r)
 {
-	gn->depth = -1;
-	gn->height = -1;
-	gn->stage = -1;
-	gn->create_mark = -1;
-
-	int x;
-	for(x = 0; x < gn->needs.l; x++)
-		reset(gn->needs.e[x]->B);
-}
-
-static int heights(gn * gn)
-{
-	if(gn->height == -1)
+	void logic(gn * gn, int d)
 	{
-		int x;
-		for(x = 0; x < gn->needs.l; x++)
-			gn->height = MAX(gn->height, heights(gn->needs.e[x]->B));
+		gn->height = -1;
+		gn->stage = -1;
+	};
 
-		gn->height++;
-	}
-
-	return gn->height;
+	return gn_depth_traversal_nodes_needsward(r, logic);
 }
 
-static void depths(gn * gn, int k)
+static int heights(gn * r)
 {
-	gn->depth = MAX(gn->depth, k);
-
-	int x;
-	for(x = 0; x < gn->needs.l; x++)
-		depths(gn->needs.e[x]->B, k + 1);
-}
-
-static void assign(gn * gn, int maxheight)
-{
-	if(gn->stage == -1)
+	void logic(gn * gn, int d)
 	{
-		gn->stage = maxheight - gn->depth;
-
-		int x;
-		for(x = 0; x < gn->needs.l; x++)
-			assign(gn->needs.e[x]->B, maxheight);
-	}
-}
-
-static void visit(gn * n, int k, gn *** lvs, int * l, int * a)
-{
-	if(n->create_mark < k)
-	{
-		if(n->stage == k)
+		if(gn->height == -1)
 		{
-			if((*l) == (*a))
+			int x;
+			for(x = 0; x < gn->needs.l; x++)
 			{
-				int ns = (*a) ? (*a) * 2 + (*a) / 2 : 10;
-				(*lvs) = realloc((*lvs), sizeof(**lvs) * ns);
-				(*a) = ns;
+				if(!gn->needs.e[x]->weak)
+					gn->height = MAX(gn->height, gn->needs.e[x]->B->height);
 			}
 
-			(*lvs)[(*l)++] = n;
+			gn->height++;
+//	printf("%s -> %d\n", gn_idstring(gn), gn->height);
 		}
+	};
 
-		int x;
-		for(x = 0; x < n->needs.l; x++)
-			visit(n->needs.e[x]->B, k, lvs, l, a);
+	return gn_depth_traversal_nodes_needsward(r, logic);
+}
 
-		n->create_mark = k;
-	}
+static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
+{
+	void logic(gn * gn, int d)
+	{
+		if(gn->stage == -1)
+		{
+			if(gn->height == k)
+			{
+				if((*l) == (*a))
+				{
+					int ns = (*a) ? (*a) * 2 + (*a) / 2 : 10;
+					(*lvs) = realloc((*lvs), sizeof(**lvs) * ns);
+					(*a) = ns;
+				}
+
+				(*lvs)[(*l)++] = gn;
+			}
+		}
+	};
+
+	return gn_depth_traversal_nodes_needsward(r, logic);
 }
 
 //
@@ -121,26 +106,24 @@ int bp_create(gn ** n, int l, bp ** bp)
 	// reset all depths/heights to -1
 	int x;
 	for(x = 0; x < l; x++)
-		reset(n[x]);
+		fatal(reset, n[x]);
 
+	// calculate node heights and max height
 	int maxheight = -1;
 	for(x = 0; x < l; x++)
-		maxheight = MAX(maxheight, heights(n[x]));
-
-	for(x = 0; x < l; x++)
-		depths(n[x], 0);
-
-	for(x = 0; x < l; x++)
-		assign(n[x], maxheight);
+	{
+		fatal(heights, n[x]);
+		maxheight = MAX(maxheight, n[x]->height);
+	}
 
 	// allocate stages in the buildplan and assign nodes
 	int k;
 	for(k = 0; k <= maxheight; k++)
 	{
-		// get list of nodes for this stage - k is stage index
+		// get list of nodes for this stage - k is stage number
 		lvsl = 0;
 		for(x = 0; x < l; x++)
-			visit(n[x], k, &lvs, &lvsl, &lvsa);
+			fatal(visit, n[x], k, &lvs, &lvsl, &lvsa);
 
 		if((*bp)->stages_l <= k)
 		{
@@ -179,44 +162,54 @@ int bp_create(gn ** n, int l, bp ** bp)
 		int y;
 		for(y = 0; y < lvsl; y++)
 		{
-			if(lvs[y]->fabv)
+			if(lvs[y]->stage == -1)
 			{
-				// explicitly mark each target of this eval context : it is possible that a single
-				// eval context produces more than one of the leaf nodes found, and we want to avoid
-				// adding it to this stage twice. marking also excludes it from future stages
-				int i;
-				for(i = 0; i < lvs[y]->fabv->products_l; i++)
-					lvs[y]->fabv->products[i]->stage = lvs[y]->stage;
-
-				for(i = 0; i < (bps->evals_l + evals_cnt); i++)
+				if(lvs[y]->fabv)
 				{
-					if(bps->evals[i] == lvs[y]->fabv)
-						break;
-				}
+					// all nodes in an fmlv go into the same stage, the last stage any of them is required to be in
+					int mheight = lvs[y]->height;
+					int i;
+					for(i = 0; i < lvs[y]->fabv->products_l; i++)
+						mheight = MAX(mheight, lvs[y]->fabv->products[i]->height);
 
-				// add this eval context to the stage
-				if(i == (bps->evals_l + evals_cnt))
-					bps->evals[bps->evals_l + (evals_cnt++)] = lvs[y]->fabv;
-			}
-			else if(strcmp("/..", lvs[y]->dir) == 0)
-			{
-				// this is a NOFILE node - no error, do not add to the stage
-			}
-			else if(lvs[y]->needs.l)
-			{
-				// this SECONDARY node is part of the buildplan but is not part of any fml eval context - it cannot
-				// be fabricated. we add a dummy node to the plan so that we can defer reporting this error
-				// until pruning the buildplan. there are two reasons to do this:
-				//  1 - this node may be pruned away and not actually needed after all.
-				//  2 - in order to report additional errors before failing out
-				//
-				log(L_WARN, "SECONDARY has no formula - %s", lvs[y]->path);
-				bps->nofmls[bps->nofmls_l + (nofmls_cnt++)] = lvs[y];
-			}
-			else
-			{
-				// this is a source file
-				bps->primary[bps->primary_l + (primary_cnt++)] = lvs[y];
+					if(mheight == k)
+					{
+						for(i = 0; i < lvs[y]->fabv->products_l; i++)
+							lvs[y]->fabv->products[i]->stage = k;
+
+						for(i = 0; i < (bps->evals_l + evals_cnt); i++)
+						{
+							if(bps->evals[i] == lvs[y]->fabv)
+								break;
+						}
+
+						// add this eval context to the stage
+						if(i == (bps->evals_l + evals_cnt))
+							bps->evals[bps->evals_l + (evals_cnt++)] = lvs[y]->fabv;
+					}
+				}
+				else if(strcmp("/..", lvs[y]->dir) == 0)
+				{
+					// this is a NOFILE node - no error, do not add to the stage
+				}
+				else if(lvs[y]->needs.l)
+				{
+					// this SECONDARY node is part of the buildplan but is not part of any fml eval context - it cannot
+					// be fabricated. we add a dummy node to the plan so that we can defer reporting this error
+					// until pruning the buildplan. there are two reasons to do this:
+					//  1 - this node may be pruned away and not actually needed after all.
+					//  2 - in order to report additional errors before failing out
+					//
+					log(L_WARN, "SECONDARY has no formula - %s", gn_idstring(lvs[y]));
+					bps->nofmls[bps->nofmls_l + (nofmls_cnt++)] = lvs[y];
+					lvs[y]->stage = k;
+				}
+				else
+				{
+					// this is a source file
+					bps->primary[bps->primary_l + (primary_cnt++)] = lvs[y];
+					lvs[y]->stage = k;
+				}
 			}
 		}
 
@@ -269,11 +262,11 @@ int bp_prune(bp * bp)
 		for(x = 0; x < g_args.invalidate_len; x++)
 		{
 			gn * gn = 0;
-			if(gn_lookup(g_args.invalidate[x], g_args.cwd, &gn) == 0)
-				return 0;
-
-			gn->changed = 1;
-			gn->rebuild = 1;
+			if((gn = gn_lookup(g_args.invalidate[x], 0, g_args.cwd)))
+			{
+				gn->changed = 1;
+				gn->rebuild = 1;
+			}
 		}
 	}
 
@@ -289,7 +282,7 @@ int bp_prune(bp * bp)
 			if(gn->prop_hash[1] == 0)		// file does not exist
 			{
 				// SOURCE file - not found
-				log(L_ERROR, "[%2d,%2d] %-9s file %s not found -->Beds %d", x, y, "PRIMARY", gn->path, gn->feeds.l);
+				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn_idstring(gn));
 				gn->poison = 1;
 			}
 			else
@@ -320,7 +313,7 @@ int bp_prune(bp * bp)
 			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 				, x, c++
 				, "PRIMARY"
-				, gn->path
+				, gn_idstring(gn)
 				, ""
 				, gn->changed ? "  changed" : "unchanged"
 			);
@@ -387,7 +380,7 @@ int bp_prune(bp * bp)
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
 								, "SECONDARY"
-								, gn->path
+								, gn_idstring(gn)
 								, "SKIP"
 							);
 						}
@@ -410,7 +403,7 @@ int bp_prune(bp * bp)
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
 								, "TASK"
-								, gn->path
+								, gn_idstring(gn)
 								, "EXECUTE"
 							);
 						}
@@ -419,7 +412,7 @@ int bp_prune(bp * bp)
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
 								, "SECONDARY"
-								, gn->path
+								, gn_idstring(gn)
 								, "REBUILD"
 								, gn->prop_hash[1] == 0 ? "does not exist" : "sources changed"
 							);
@@ -429,7 +422,7 @@ int bp_prune(bp * bp)
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
 								, "GENERATED"
-								, gn->path
+								, gn_idstring(gn)
 								, "REBUILD"
 								, "always fab"
 							);
@@ -440,7 +433,7 @@ int bp_prune(bp * bp)
 						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 							, x, c++
 							, "SECONDARY"
-							, gn->path
+							, gn_idstring(gn)
 							, "REBUILD"
 							, "eval context product"
 						);
@@ -450,7 +443,7 @@ int bp_prune(bp * bp)
 						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 							, x, c++
 							, "GENERATED"
-							, gn->path
+							, gn_idstring(gn)
 							, "REBUILD"
 							, "eval context product"
 						);
@@ -486,7 +479,7 @@ int bp_prune(bp * bp)
 				log(L_ERROR | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
 					, "SECONDARY"
-					, gn->path
+					, gn_idstring(gn)
 					, ""
 					, "no formula"
 				);
@@ -496,7 +489,7 @@ int bp_prune(bp * bp)
 				log(L_WARN | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
 					, "SECONDARY"
-					, gn->path
+					, gn_idstring(gn)
 					, ""
 					, "no formula"
 				);
@@ -674,9 +667,9 @@ void bp_dump(bp * bp)
 					des = "GENERATED";
 
 				if(i)
-					log(L_BP | L_BPDUMP, "        %-9s %s", des, bp->stages[x].evals[y]->products[i]->path);
+					log(L_BP | L_BPDUMP, "        %-9s %s", des, gn_idstring(bp->stages[x].evals[y]->products[i]));
 				else
-					log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s", x, y, des, bp->stages[x].evals[y]->products[i]->path);
+					log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s", x, y, des, gn_idstring(bp->stages[x].evals[y]->products[i]));
 			}
 		}
 	}

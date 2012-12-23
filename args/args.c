@@ -53,7 +53,7 @@ int parse_args(int argc, char** argv)
 // e
 /* f */ , { "fabfile"						, required_argument	, 0			, 'f' }
 // g
-/* h */
+/* h */ , { "help"							, no_argument				, 0			, 'h' }
 // i
 // j
 // k
@@ -143,6 +143,14 @@ int parse_args(int argc, char** argv)
 	// canonicalize
 	g_args.fabfile_canon = realpath(g_args.fabfile, 0);
 
+	// terminate at the final slash
+	g_args.fabfile_canon_dir = strdup(g_args.fabfile_canon);
+	
+	char* s = g_args.fabfile_canon_dir + strlen(g_args.fabfile_canon_dir);
+	while(s[0] != '/')
+		s--;
+	s[0] = 0;
+
 	// unprocessed options - fabrication targets
 	for(x = optind; x < argc; x++)
 	{
@@ -226,6 +234,7 @@ void args_teardown()
 	free(g_args.targets);
 	free(g_args.fabfile);
 	free(g_args.fabfile_canon);
+	free(g_args.fabfile_canon_dir);
 	free(g_args.execdir);
 	free(g_args.execdir_base);
 	free(g_args.hashdir);

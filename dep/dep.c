@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <alloca.h>
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
@@ -25,7 +26,7 @@
 /// static
 ///
 
-static int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first, int * newn, int * newr)
+static int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first, int * newnp, int * newrp)
 {
 	int i;
 	int j;
@@ -72,23 +73,45 @@ static int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax
 
 			int newa = 0;
 			int newb = 0;
+			int newr = 0;
 
-			fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn, &newa, &newb, newr);
-
-			if(newn)
+			if(ffn->loc.ff->dscv_gn)
 			{
-				(*newn) += newa;
-				(*newn) += newb;
+				fatal(gn_edge_add, g_args.fabfile_canon_dir, &A, Al, At, &B, Bl, Bt, ffn, &newa, &newb, &newr);
+			}
+			else
+			{
+				fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn, &newa, &newb, &newr);
 			}
 
+			if(newnp)
+			{
+				(*newnp) += newa;
+				(*newnp) += newb;
+			}
+			if(newrp)
+			{
+				(*newrp) += newr;
+			}
 			if(first)
 			{
 				*first = A;
 				first = 0;
 			}
 
-			log(L_DG | L_DGDEPS, "S(%s)[%3d,%3d - %3d,%3d] %s -> %s"
-				, ffn->loc.ff->name
+			uint64_t tag = L_DG | L_DGDEPS;
+			if(ffn->loc.ff->dscv_gn)
+			{
+				if((newnp && (newa || newb)) || (newrp && newr))
+					tag |= L_DSCNEW;
+			}
+
+			log(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
+				, "S"
+				, newa ? "x" : ""
+				, newb ? "x" : ""
+				, newr ? "x" : ""
+				, ff_idstring(ffn->loc.ff)
 				, ffn->loc.f_lin + 1
 				, ffn->loc.f_col + 1
 				, ffn->loc.l_lin + 1
@@ -104,8 +127,13 @@ static int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax
 	return 1;
 }
 
-static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first, int * newn, int * newr)
+static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first, int * newnp, int * newrp)
 {
+	// newa tracks whether the left-hand-side of a dependency references a newly-created node
+	int * newa = 0;
+	size_t newaa = 0;
+	size_t newal = 0;
+
 	int x;
 	for(x = 0; x < (*stax)[pl]->l; x++)
 	{
@@ -122,6 +150,14 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 		lstack_reset((*stax)[pr]);
 
 		// populate the "<" variable (left-hand side)
+		newal = (*stax)[pl]->s[x].l;
+		if(newaa < newal)
+		{
+			newaa = newal;
+			newa = alloca(sizeof(*newa) * newaa);
+		}
+		memset(newa, 0, sizeof(*newa) * newal);
+		
 		int i;
 		int j;
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
@@ -133,7 +169,7 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 			}
 			else
 			{
-				fatal(gn_add, ffn->loc.ff->dir, (*stax)[pl]->s[x].s[i].s, (*stax)[pl]->s[x].s[i].l, &r, newn);
+				fatal(gn_add, ffn->loc.ff->dir, (*stax)[pl]->s[x].s[i].s, (*stax)[pl]->s[x].s[i].l, &r, &newa[i]);
 			}
 
 			fatal(lstack_obj_add, (*stax)[pr], r, LISTWISE_TYPE_GNLW);
@@ -176,25 +212,42 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 					Bl = (*stax)[pr]->s[0].s[j].l;
 				}
 
-				int newa = 0;
 				int newb = 0;
+				int newr = 0;
 
-				fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn, &newa, &newb, newr);
+				if(ffn->loc.ff->dscv_gn)
+					fatal(gn_edge_add, g_args.fabfile_canon_dir, &A, Al, At, &B, Bl, Bt, ffn, 0, &newb, &newr);
+				else
+					fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn, 0, &newb, &newr);
 
-				if(newn)
+				if(newnp)
 				{
-					(*newn) += newa;
-					(*newn) += newb;
+					(*newnp) += newa[i];
+					(*newnp) += newb;
 				}
-
+				if(newrp)
+				{
+					(*newrp) += newr;
+				}
 				if(first)
 				{
 					*first = A;
 					first = 0;
 				}
 
-				log(L_DG | L_DGDEPS, "M(%s)[%3d,%3d - %3d,%3d] %s -> %s"
-					, ffn->loc.ff->name
+				uint64_t tag = L_DG | L_DGDEPS;
+				if(ffn->loc.ff->dscv_gn)
+				{
+					if((newnp && (newa[i] || newb)) || (newrp && newr))
+						tag |= L_DSCNEW;
+				}
+
+				log(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
+					, "M"
+					, newa[i] ? "x" : ""
+					, newb ? "x" : ""
+					, newr ? "x" : ""
+					, ff_idstring(ffn->loc.ff)
 					, ffn->loc.f_lin + 1
 					, ffn->loc.f_col + 1
 					, ffn->loc.l_lin + 1
