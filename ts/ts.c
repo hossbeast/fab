@@ -132,7 +132,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, uint64_t hi, uint64_t lo)
 			if(k)
 				R = log_start(hi | (e ? L_ERROR : 0), "        %-9s %s", des, ts[x]->fmlv->products[k]->path);
 			else
-				R = log_start(hi | (e ? L_ERROR : 0), "[%2d,%2d] %-9s %s", x, ts[x]->y, des, ts[x]->fmlv->products[k]->path);
+				R = log_start(hi | (e ? L_ERROR : 0), "[%2d,%2d] %-9s %s", *waveid, ts[x]->y, des, ts[x]->fmlv->products[k]->path);
 
 			if(ts[x]->r_status)
 			{

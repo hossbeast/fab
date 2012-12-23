@@ -18,7 +18,6 @@
 // PARAMETERS
 //  roots   - graph nodes
 //  rootsl  - len of gn
-//  prune   - if true, skip nodes which have not been marked as changed (which occurs in bp_prune)
 //  vmap    - map for resolving var references
 //  stax    - listwise stax
 //  staxl   - listwise stax
@@ -32,7 +31,6 @@
 int dsc_exec(
 	  gn ** restrict roots
 	, int rootsl
-	, int prune
 	, map * restrict vmap
 	, lstack *** restrict stax
 	, int * restrict staxl
@@ -43,6 +41,6 @@ int dsc_exec(
 	, int * restrict tsw
 	, int * restrict new
 )
-	__attribute__((nonnull(1, 4, 5, 6, 7, 9, 10, 11)));
+	__attribute__((nonnull(1, 3, 4, 5, 6, 8, 9, 10)));
 
 #endif

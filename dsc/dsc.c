@@ -23,28 +23,39 @@
 // static
 //
 
-static int count_dscv(gn * r, int prune, int * c)
+static int count_dscv(gn * r, int * c)
 {
 	void logic(gn * gn, int d)
 	{
-//printf("%s mark=%d dscv=%p prune=%d changed=%d rebuild=%d\n", gn_idstring(gn), gn->dscv_mark, gn->dscv, prune, gn->changed, gn->rebuild);
+#if 0
+printf("%-30s %10s=%d %10s=%p %10s=%d %10s=%d %10s=%d\n"
+	, gn_idstring(gn)
+, "mark"
+	, gn->dscv_mark
+, "dscv"
+	, gn->dscv
+, "prune"
+	, prune
+, "changed"
+	, gn->changed
+, "rebuild"
+	, gn->rebuild
+);
+#endif
 		if(gn->dscv_mark == 0 && gn->dscv)
 		{
-			if(!prune || gn->changed || gn->rebuild)
-			{
-				(*c)++;
+			(*c)++;
 
-				int x;
-				for(x = 0; x < gn->dscv->products_l; x++)
-					gn->dscv->products[x]->dscv_mark = 1;
-			}
+			int x;
+			for(x = 0; x < gn->dscv->products_l; x++)
+				gn->dscv->products[x]->dscv_mark = 1;
 		}
 	};
 
 	return gn_depth_traversal_nodes_needsward(r, logic);
 }
 
-static int assign_dscv(gn * r, ts ** ts, int prune, int * c)
+static int assign_dscv(gn * r, ts ** ts, int * c)
 {
 	void logic(gn * gn, int d)
 	{
@@ -65,7 +76,7 @@ static int assign_dscv(gn * r, ts ** ts, int prune, int * c)
 // public
 //
 
-int dsc_exec(gn ** roots, int rootsl, int prune, map * vmap, lstack *** stax, int * staxl, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
+int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
 {
 	ff_node * ffn = 0;
 	int x;
@@ -76,7 +87,7 @@ int dsc_exec(gn ** roots, int rootsl, int prune, map * vmap, lstack *** stax, in
 	//  (actually this counts discovery fml contexts)
 	int tsl = 0;
 	for(x = 0; x < rootsl; x++)
-		fatal(count_dscv, roots[x], prune, &tsl);
+		fatal(count_dscv, roots[x], &tsl);
 
 	for(i = 0; tsl; i++)
 	{
@@ -85,7 +96,7 @@ int dsc_exec(gn ** roots, int rootsl, int prune, map * vmap, lstack *** stax, in
 		// assign each threadspace a discovery formula evaluation context
 		k = 0;
 		for(x = 0; x < rootsl; x++)
-			fatal(assign_dscv, roots[x], *ts, prune, &k);
+			fatal(assign_dscv, roots[x], *ts, &k);
 
 		log(L_DSC | L_DSCEXEC, "DISCOVERY %d executes %d", i, tsl);
 
@@ -154,7 +165,7 @@ int dsc_exec(gn ** roots, int rootsl, int prune, map * vmap, lstack *** stax, in
 		// recount - new nodes may need discovered
 		tsl = 0;
 		for(x = 0; x < rootsl; x++)
-			fatal(count_dscv, roots[x], prune, &tsl);
+			fatal(count_dscv, roots[x], &tsl);
 	}
 
 	return 1;

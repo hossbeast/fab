@@ -75,6 +75,7 @@ int main(int argc, char** argv)
 
 		// initialize logger
 		fatal(log_init, "+ERROR +WARN +INFO +BPEXEC +DSCEXEC");
+		listwise_err_fd = 1;
 
 		// parse cmdline arguments
 		fatal(parse_args, argc, argv);
@@ -136,7 +137,7 @@ int main(int argc, char** argv)
 		// comprehensive upfront dependency discovery on the entire graph
 		if(g_args.mode_ddsc == MODE_DDSC_UPFRONT)
 		{
-			fatal(dsc_exec, gn_nodes.e, gn_nodes.l, 0, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, 0);
+			fatal(dsc_exec, gn_nodes.e, gn_nodes.l, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, 0);
 		}
 
 		// dump graph nodes, pending logging
@@ -203,10 +204,6 @@ int main(int argc, char** argv)
 					// traverse the graph, construct the build plan that culminates in the given targets
 					fatal(bp_create, node_list, node_list_len, &bp);
 
-					// prune the buildplan of nodes which do not require updating
-					if(bp_prune(bp) == 0)
-						return 0;
-
 					if(g_args.mode_ddsc == MODE_DDSC_DEFERRED)
 					{
 						// flat list of nodes in the buildplan
@@ -214,13 +211,17 @@ int main(int argc, char** argv)
 
 						// execute discovery
 						new = 0;
-						fatal(dsc_exec, list, listl, 1, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, &new);
+						fatal(dsc_exec, list, listl, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, &new);
 					}
 					else
 					{
 						new = 0;
 					}
 				}
+
+				// prune the buildplan of nodes which do not require updating
+				if(bp_prune(bp) == 0)
+					return 0;
 			}
 
 			// dump buildplan, pending logging

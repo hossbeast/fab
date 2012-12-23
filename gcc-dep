@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+while(<STDIN>)
+{
+	if(/^[^:]+:$/)	# -MP lines, only
+	{
+		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
+
+		if($line =~ /\.lex\.h$/)
+		{
+			print ":$line\n";							# strong dependency on the header
+			$line =~ s/\.lex\.h/.lex.o/;
+			print ":*$line\n";						# weak dependency on the object
+		}
+		elsif($line =~ /\.tab\.h$/)
+		{
+			print ":$line\n";							# strong dependency on the header
+			$line =~ s/\.tab\.h/.tab.o/;
+			print ":*$line\n";						# weak dependency on the object
+		}
+		else
+		{
+			print ":$line\n";							# strong dependency on the header
+
+			# corresponding .c file
+			$line =~ s/\.h$/.c/;
+
+			if(-f $line)
+			{
+				$line =~ s/\.c$/.o/;
+				print ":*$line\n";					# weak dependency on the object, if the c file exists
+			}
+		}
+	}
+}
