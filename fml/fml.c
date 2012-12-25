@@ -57,7 +57,8 @@ static int fml_add_single(fml * fml, lstack * ls)
 
 		if(fml->ffn->flags & FFN_DISCOVERY)
 		{
-			log(L_DSC | L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
+			log(L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s"
+				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
 				, fml->ffn->loc.f_col + 1
 				, fml->ffn->loc.l_lin + 1
@@ -68,7 +69,8 @@ static int fml_add_single(fml * fml, lstack * ls)
 		}
 		else
 		{
-			log(L_FAB | L_FML | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> %s"
+			log(L_FAB | L_FML | L_FMLTARG, "reg(%s)[%3d,%3d - %3d,%3d] -> %s"
+				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
 				, fml->ffn->loc.f_col + 1
 				, fml->ffn->loc.l_lin + 1
@@ -104,7 +106,8 @@ static int fml_add_multi(fml * fml, lstack * ls)
 
 		if(fml->ffn->flags & FFN_DISCOVERY)
 		{
-			log_start(L_DSC | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> {\n"
+			log_start(L_DSC | L_FML | L_FMLTARG, "(%s)[%3d,%3d - %3d,%3d] -> {\n"
+				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
 				, fml->ffn->loc.f_col + 1
 				, fml->ffn->loc.l_lin + 1
@@ -113,7 +116,8 @@ static int fml_add_multi(fml * fml, lstack * ls)
 		}
 		else
 		{
-			log_start(L_FAB | L_FMLTARG, "[%3d,%3d - %3d,%3d] -> {\n"
+			log_start(L_FAB | L_FML | L_FMLTARG, "(%s)[%3d,%3d - %3d,%3d] -> {\n"
+				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
 				, fml->ffn->loc.f_col + 1
 				, fml->ffn->loc.l_lin + 1

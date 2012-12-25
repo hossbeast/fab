@@ -64,6 +64,9 @@ static int mkdirp(char * path, mode_t mode)
 
 int tmp_setup()
 {
+	// temporarily assume fabsys identity
+	fatal(identity_assume_fabsys);
+
 	// ensure execdir exists
 	fatal(mkdirp, g_args.execdir_base, S_IRWXU | S_IRWXG | S_IRWXO);
 
@@ -75,6 +78,9 @@ int tmp_setup()
 
 	// ensure hashdir exists
 	fatal(mkdirp, g_args.hashdir, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	// resume user identity
+	fatal(identity_assume_user);
 
 	return 1;
 }

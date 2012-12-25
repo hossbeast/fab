@@ -30,7 +30,7 @@ static int o_signum;
 static void signal_handler(int signum)
 {
 	log(L_INFO, "shutdown signal: %d", signum);
-exit(0);
+	exit(0);
 	if(!o_signum)
 	{
 		o_signum = signum;
@@ -59,6 +59,12 @@ int main(int argc, char** argv)
 
 		int x;
 
+		// get user identity of this process, assert user:group and permissions are set appropriately
+		fatal(identity_init);
+
+		// assume identity of the executing user
+		fatal(identity_assume_user);
+
 		// unblock all signals
 		sigset_t all;
 		sigfillset(&all);
@@ -74,14 +80,15 @@ int main(int argc, char** argv)
 		signal(SIGTERM	, signal_handler);
 
 		// initialize logger
-		fatal(log_init, "+ERROR +WARN +INFO +BPEXEC +DSCEXEC");
-		listwise_err_fd = 1;
+		fatal(log_init, "+ERROR|WARN|INFO|BPINFO|BPEXEC|DSCINFO");
 
 		// parse cmdline arguments
 		fatal(parse_args, argc, argv);
 
 		// create/cleanup tmp 
 		fatal(tmp_setup);
+
+exit(0);
 
 		// parse the fabfile
 		fatal(ff_mkparser, &ffp);

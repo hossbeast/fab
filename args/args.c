@@ -87,19 +87,23 @@ int parse_args(int argc, char** argv)
 		"b:d:f:"
 	;
 
-	// defaults
+	// parameters
 	g_args.pid						= getpid();
+	g_args.sid						= getsid(0);
+	fatal(xsprintf, &g_args.sid_gn_dir, "%s/%d", SID_GN_DIR_BASE, g_args.sid);
+	fatal(xsprintf, &g_args.pid_fml_dir, "%s/%d", PID_FML_DIR_BASE, g_args.pid);
+	fatal(xsprintf, &g_args.gn_dir, "%s", GN_DIR_BASE);
+
+	// working directory
+	getcwd(g_args.cwd, sizeof(g_args.cwd));
+	g_args.cwdl = strlen(g_args.cwd);
+
+	// args:defaults
 	g_args.mode_exec			= DEFAULT_MODE_EXEC;
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_ddsc			= DEFAULT_MODE_DDSC;
 	g_args.invalidate_all	= DEFAULT_INVALIDATE_ALL;
 	g_args.fabfile				= strdup(DEFAULT_FABFILE);
-	g_args.execdir_base		= strdup(DEFAULT_EXECDIR_BASE);
-	g_args.hashdir				= strdup(DEFAULT_HASHDIR);
-
-	// working directory
-	getcwd(g_args.cwd, sizeof(g_args.cwd));
-	g_args.cwdl = strlen(g_args.cwd);
 
 	int x, indexptr;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
@@ -179,17 +183,23 @@ int parse_args(int argc, char** argv)
 	log_active(buf, sizeof(buf));
 	log(L_INFO, "%s", buf);
 
-	// log cmdline args under args
-	log(L_ARGS		, "---------------------------------------------------");
-	log(L_ARGS		, " %s (%c) fabfile            =%s", strcmp(g_args.fabfile, DEFAULT_FABFILE) == 0 ? " " : "*", 'f', g_args.fabfile);
+	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
+
+	// log execution parameters under PARAMS
+	log(L_PARAMS	, "%7spid                =%u"						, ""	, g_args.pid);
+	log(L_PARAMS	, "%7ssid                =%u"						, ""	, g_args.sid);
+	log(L_PARAMS	, "%7seid                =%s/%d:%s/%d"	, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
+	log(L_PARAMS	, "%7srid                =%s/%d:%s/%d"	, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
+	log(L_PARAMS	, "%7scwd                =%s"						, ""	, g_args.cwd);
+	log(L_PARAMS	, "%7ssid-gn-dir         =%s"						, ""	, g_args.sid_gn_dir);
+	log(L_PARAMS	, "%7spid-fml-dir        =%s"						, ""	, g_args.pid_fml_dir);
+	log(L_PARAMS	, "%7sgn-dir             =%s"						, ""	, g_args.gn_dir);
+
+	// log cmdline args under ARGS
+	log(L_ARGS		, " %s (%c) fabfile-canon      =%s", strcmp(g_args.fabfile, DEFAULT_FABFILE) == 0 ? " " : "*", 'f', g_args.fabfile_canon);
 	log(L_ARGS		, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
 	log(L_ARGS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS		, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
-	log(L_ARGS		, " %s (%c) pid                =%u", " ", ' ', g_args.pid);
-	log(L_ARGS		, " %s (%c) cwd                =%s", " ", ' ', g_args.cwd);
-	log(L_ARGS		, " %s (%c) execdir-base       =%s", strcmp(g_args.execdir_base, DEFAULT_EXECDIR_BASE) == 0 ? " " : "*", ' ', g_args.execdir_base);
-	log(L_ARGS		, " %s (%c) execdir            =%s", " ", ' ', g_args.execdir);
-	log(L_ARGS		, " %s (%c) hashdir            =%s", strcmp(g_args.hashdir, DEFAULT_HASHDIR) == 0 ? " " : "*", ' ', g_args.hashdir);
 	log(L_ARGS		, " %s (%c) invalidate-all     =%s", g_args.invalidate_all == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidate_all ? "yes" : "no");
 
 	if(!g_args.invalidate_all)
@@ -214,7 +224,7 @@ int parse_args(int argc, char** argv)
 		log(L_ARGS	, " %s (%c) target(s)          =", " ", ' ');
 	for(x = 0; x < g_args.targets_len; x++)
 		log(L_ARGS	, " %s (%c) target(s)          =%s", "*", ' ', g_args.targets[x]);
-	log(L_ARGS		, "---------------------------------------------------");
+	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 
 	return 1;
 }
@@ -232,7 +242,6 @@ void args_teardown()
 		free(g_args.dumpnode[x]);
 
 	free(g_args.targets);
-	free(g_args.fabfile);
 	free(g_args.fabfile_canon);
 	free(g_args.fabfile_canon_dir);
 	free(g_args.execdir);

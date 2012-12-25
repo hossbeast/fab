@@ -9,33 +9,36 @@
 #include "log.h"
 
 #include "xstring.h"
-
-#define MAX(a,b)            \
- ({ typeof (a) _a = (a);    \
-     typeof (b) _b = (b);   \
-   _a > _b ? _a : _b; })
-
-#define MIN(a,b)            \
- ({ typeof (a) _a = (a);    \
-     typeof (b) _b = (b);   \
-   _a > _b ? _b : _a; })
+#include "macros.h"
 
 #define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 60])
 #define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
 #define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
 
-static uint64_t o_lgctx;
-static uint64_t o_e;
+static struct filter
+{
+	uint64_t	v;		// tag
+	char			m;		// mode, (, [, {, or <
+	char			o;		// operation, + or -
+} * 							o_filter;
+static int				o_filter_a;
+static int				o_filter_l;
 
+static uint64_t o_e;						// when a log is being constructed, effective bits
+
+// logtag definitions
 struct g_logs_t o_logs[] = { 
 	  { .v = L_ERROR		, .s = "ERROR"		, .d = "errors leading to shutdown" }
 	, { .v = L_WARN			, .s = "WARN"			, .d = "nonfatal warnings" }
 	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
+	, { .v = L_IDEN			, .s = "IDEN"			, .d = "process identity switches" }
 	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
+	, { .v = L_PARAMS		, .s = "PARAMS"		, .d = "program execution parameters" }
 	, { .v = L_FFTOKN		, .s = "FFTOKN"		, .d = "fabfile parsing - token stream" }
 	, { .v = L_FFSTAT		, .s = "FFSTAT"		, .d = "fabfile parsing - lexer start condition change" }
 	, { .v = L_FFTREE		, .s = "FFTREE"		, .d = "fabfile parsing - parsed tree" }
-	, { .v = L_FF				, .s = "FF"				, .d = "fabfile" }
+	, { .v = L_FF				, .s = "FF"				, .d = "fabfile parsing" }
+	, { .v = L_BPINFO		, .s = "BPINFO"		, .d = "buildplan - flow" }
 	, { .v = L_BPEXEC		, .s = "BPEXEC"		, .d = "buildplan - execution" }
 	, { .v = L_BPEVAL		, .s = "BPEVAL"		, .d = "buildplan - pruning/evaluating" }
 	, { .v = L_BPDUMP		, .s = "BPDUMP"		, .d = "buildplan - dump the final buildplan" }
@@ -44,16 +47,16 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_FMLTARG	, .s = "FMLTARG"	, .d = "formulas - target resolution/assignment" }
 	, { .v = L_FML			, .s = "FML"			, .d = "formulas" }
 	, { .v = L_FAB			, .s = "FAB"			, .d = "fabrication formulas" }
-	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - highlevel execution details" }
+	, { .v = L_DSCINFO	, .s = "DSCINFO"	, .d = "dependency discovery - flow" }
+	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - execution details" }
 	, { .v = L_DSCNEW		, .s = "DSCNEW"		, .d = "dependency discovery - new nodes/edges" }
-	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery formulas" }
+	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery" }
 	, { .v = L_DGDEPS		, .s = "DGDEPS"		, .d = "dependency graph - dependencies" }
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
 	, { .v = L_DGHASH		, .s = "DGHASH"		, .d = "dependency graph - hash loading/saving" }
 	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
 	, { .v = L_VAR			, .s = "VAR"			, .d = "variable defintions" }
 	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	, .d = "debug liblistwise invocations ** VERBOSE" }
-	, { .v = L_TAG & ~L_LWDEBUG		, .s = "TAG" }
 };
 
 struct g_logs_t * g_logs = o_logs;
@@ -189,14 +192,31 @@ void log_active(char * s, size_t z)
 {
 	int l = 0;
 	int x;
-	for(x = 0; x < g_logs_l; x++)
+	for(x = 0; x < o_filter_l; x++)
 	{
-		if((o_lgctx & g_logs[x].v) == g_logs[x].v)
+		if(x)
+			l += snprintf(s + l, z - l, " ");
+
+		l += snprintf(s + l, z - l, "%c%c", o_filter[x].o, o_filter[x].m);
+
+		int y;
+		int i = 0;
+		for(y = 0; y < g_logs_l; y++)
 		{
-			if(l)
-				l += snprintf(s + l, z - l, " ");
-			l += snprintf(s + l, z - l, "+%s", g_logs[x].s);
+			if(g_logs[y].v & o_filter[x].v)
+			{
+				if(i++)
+					l += snprintf(s + l, z - l, "|");
+				l += snprintf(s + l, z - l, "%s", g_logs[y].s);
+			}
 		}
+
+		l += snprintf(s + l, z - l, "%c"
+			, o_filter[x].m == '(' ? ')'
+			: o_filter[x].m == '[' ? ']'
+			: o_filter[x].m == '{' ? '}'
+			: o_filter[x].m == '<' ? '>' : ' '
+		);
 	}
 }
 
@@ -205,22 +225,103 @@ void log_parse(char * args, int args_len)
 	args_len = args_len ?: strlen(args);
 
 	int x;
-	for(x = 0; x < (args_len - 1); x++)
+	for(x = 0; x < args_len; x++)
 	{
 		if(args[x] == '+' || args[x] == '-')
 		{
-			int y;
-			for(y = 0; y < g_logs_l; y++)
+			char lhs = ' ';
+			int off = 1;
+
+			if((x + off) < args_len)
 			{
-				if(xstrcmp(&args[x+1], MIN(args_len - (x + 1), g_logs[y].l), g_logs[y].s, g_logs[y].l, 0) == 0)
+				if(args[x+off] == '(')
+					lhs = '(';
+				else if(args[x+off] == '{')
+					lhs = '{';
+				else if(args[x+off] == '[')
+					lhs = '[';
+				else if(args[x+off] == '<')
+					lhs = '<';
+
+				if(lhs != ' ')
+					off++;
+
+				if((x + off) < args_len)
 				{
-					if(args[x] == '+')
-						o_lgctx |= g_logs[y].v;
+					int y;
+					for(y = off; (x+y) < args_len; y++)
+					{
+						if(lhs == ' ' && args[x+y] == ' ')
+							break;
+						else if(lhs == '(' && args[x+y] == ')')
+							break;
+						else if(lhs == '{' && args[x+y] == '}')
+							break;
+						else if(lhs == '[' && args[x+y] == ']')
+							break;
+						else if(lhs == '<' && args[x+y] == '>')
+							break;
+					}
 
-					if(args[x] == '-')
-						o_lgctx &= ~g_logs[y].v;
+					uint64_t tag = 0;
 
-					x += g_logs[y].l + 1;
+					int k = 0;
+					while(k != y)
+					{
+						if(args[x+off] == ',' || args[x+off] == '|')
+							off++;
+
+						for(k = off; k < y; k++)
+						{
+							if(args[x+k] == ',' || args[x+k] == '|')
+								break;
+						}
+
+						if(xstrcmp(&args[x+off], k-off, "TAG", 3, 0) == 0)
+						{
+							// special case for TAG to exclude LWDEBUG
+							tag |= L_TAG & ~L_LWDEBUG;
+							off += 3;
+						}
+						else
+						{
+							int i;
+							for(i = 0; i < g_logs_l; i++)
+							{
+								if(xstrcmp(&args[x+off], k-off, g_logs[i].s, g_logs[i].l, 0) == 0)
+									break;
+							}
+
+							if(i == g_logs_l)
+							{
+								break; // nothing
+							}
+							else
+							{
+								tag |= g_logs[i].v;
+								off += g_logs[i].l;
+							}
+						}
+					}
+
+					if(tag && (off == y))
+					{
+						if(o_filter_a == o_filter_l)
+						{
+							int ns = 3;
+							if(o_filter_a)
+								ns = o_filter_a * 2 + o_filter_a / 2;
+
+							o_filter = realloc(o_filter, sizeof(*o_filter) * ns);
+							o_filter_a = ns;
+						}
+
+						struct filter * f = &o_filter[o_filter_l++];
+
+						f->v = tag & L_TAG;
+						f->o = args[x];
+						f->m = lhs == ' ' ? '(' : lhs;
+					}
 				}
 			}
 		}
@@ -275,7 +376,30 @@ int log_init(char * str)
 
 int log_would(const uint64_t bits)
 {
-	return !!(o_lgctx & bits);
+	int r = 0;
+	int x;
+	for(x = 0; x < o_filter_l; x++)
+	{
+		int rr = 0;
+		if(o_filter[x].m == '(')
+			rr = (bits & o_filter[x].v);
+		if(o_filter[x].m == '{')
+			rr = ((bits & o_filter[x].v) == bits);
+		if(o_filter[x].m == '[')
+			rr = ((bits & o_filter[x].v) == o_filter[x].v);
+		if(o_filter[x].m == '<')
+			rr = (bits == o_filter[x].v);
+
+		if(rr)
+		{
+			if(o_filter[x].o == '+')
+				r = 1;
+			if(o_filter[x].o == '-')
+				r = 0;
+		}
+	}
+
+	return r;
 }
 
 int log_start(const uint64_t e, const char* fmt, ...)

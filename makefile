@@ -102,7 +102,8 @@ main.o  : args/args.o						\
 					var/var.o							\
 				  ts/ts.o								\
 					dsc/dsc.o							\
-					dep/dep.o
+					dep/dep.o							\
+					identity/identity.o
 
 common/idx.o : common/xstring.o
 
@@ -119,6 +120,9 @@ gn/gn.o	: common/coll.o common/idx.o common/unitstring.o
 install: ${NAME}
 	${INSTALL} -d            ${DESTDIR}
 	${INSTALL} ${NAME}       ${DESTDIR}/${NAME}
+	chown fabsys:fabsys      ${DESTDIR}/${NAME}
+	chmod u+s                ${DESTDIR}/${NAME}
+	chmod g+s                ${DESTDIR}/${NAME}
 	${INSTALL} gcc-dep       ${DESTDIR}/gcc-dep
 
 uninstall:

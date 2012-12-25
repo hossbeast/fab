@@ -98,7 +98,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 		for(x = 0; x < rootsl; x++)
 			fatal(assign_dscv, roots[x], *ts, &k);
 
-		log(L_DSC | L_DSCEXEC, "DISCOVERY %d executes %d", i, tsl);
+		log(L_DSC | L_DSCINFO, "DISCOVERY %d executes %d", i, tsl);
 
 		// render formulas
 		for(x = 0; x < tsl; x++)
@@ -160,7 +160,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 		if(new)
 			(*new) += newn + newr;
 
-		log(L_DSC | L_DSCEXEC, "discovered %d nodes and %d edges", newn, newr);
+		log(L_DSC | L_DSCINFO, "discovered %d nodes and %d edges", newn, newr);
 
 		// recount - new nodes may need discovered
 		tsl = 0;
