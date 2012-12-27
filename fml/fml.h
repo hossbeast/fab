@@ -56,7 +56,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 //
 // parameters
 //     ts - threadspace
-//    num - unique number for this execution
+//    num - unique-per-pid number for this execution
 //
 int fml_exec(ts *, int num)
 	__attribute__((nonnull));

@@ -6,7 +6,6 @@ SHELL           :=/bin/bash
 
 # paths
 SRCDIR           =.
-DESTDIR					 =/usr/local/bin
 VPATH           +=${SRCDIR}
 VPATH						+=$(shell find ${SRCDIR} -mindepth 1 -maxdepth 1 -type d -name '[a-z]*' -printf "%f\n" | grep -v doc)
 NAME             =fab
@@ -92,6 +91,7 @@ main.o  : args/args.o						\
 				  common/unitstring.o		\
 				  common/xmem.o					\
 				  common/xstring.o			\
+					common/dirutil.o			\
 					common/map.o					\
 				  fml/fml.o							\
 				  gn/gn.o								\
@@ -118,12 +118,16 @@ gn/gn.o	: common/coll.o common/idx.o common/unitstring.o
 .PHONY: install uninstall clean
 
 install: ${NAME}
-	${INSTALL} -d            ${DESTDIR}
-	${INSTALL} ${NAME}       ${DESTDIR}/${NAME}
-	chown fabsys:fabsys      ${DESTDIR}/${NAME}
-	chmod u+s                ${DESTDIR}/${NAME}
-	chmod g+s                ${DESTDIR}/${NAME}
-	${INSTALL} gcc-dep       ${DESTDIR}/gcc-dep
+	${INSTALL} -d            ${DESTDIR}/usr/local/bin
+	${INSTALL} ${NAME}       ${DESTDIR}/usr/local/bin/${NAME}
+	chown fabsys:fabsys      ${DESTDIR}/usr/local/bin/${NAME}
+	chmod u+s                ${DESTDIR}/usr/local/bin/${NAME}
+	chmod g+s                ${DESTDIR}/usr/local/bin/${NAME}
+	${INSTALL} gcc-dep       ${DESTDIR}/usr/local/bin/gcc-dep
+	${INSTALL} -d            ${DESTDIR}/var/cache/fab
+	chown fabsys:fabsys      ${DESTDIR}/var/cache/fab
+	${INSTALL} -d            ${DESTDIR}/var/tmp/fab
+	chown fabsys:fabsys      ${DESTDIR}/var/tmp/fab
 
 uninstall:
 	rm -f												${DESTDIR}/${NAME}

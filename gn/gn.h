@@ -66,14 +66,13 @@ typedef struct gn
 	int								namel;
 	char*							path;						// canonical path to file
 	int								pathl;
+	uint32_t					pathhash;				// hash of path
 	char*							ext;						// portion of file name following the last '.', or null
 	int								extl;
 	char*							idstring;				// identifier string, subject to execution parameters
 	int								idstringl;
 
-  char*							hashfile_path;  // canonical path to hashfile
-
-	// fields for computing prophash
+	// fields for computing stathash
 	struct __attribute__((packed))
 	{
 		// stat fields
@@ -88,10 +87,15 @@ typedef struct gn
 		time_t						ctime;   /* time of last status change */
 	};
 
-	// fields for the hashfile
-	uint32_t					vrs[2];
-	uint32_t					prop_hash[2];	// hash of fs properties
-	uint32_t					cmd_hash[2];	// hash of cmd which last fabricated this node
+	// hashing fields
+	uint32_t					stathash[2];	// hash of fs properties (PRIMARY nodes)
+	char *						stathash_path;
+
+	uint32_t					fmlhash[2];		// hash of command used to fabricate the node (SECONDARY nodes)
+	char *						fmlhash_path;
+
+	uint32_t					vrshash[2];		// version identifier
+	char *						vrshash_path;
 
 	// this node depends on the nodes in this list
 	union {

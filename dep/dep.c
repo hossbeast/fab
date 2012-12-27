@@ -268,16 +268,16 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 ///
 
 int dep_process(
-	  ff_node * const restrict ffn
-	, const gn * const restrict defgn
-	, map * const restrict vmap
-	, lstack *** const restrict stax
-	, int * const restrict staxl
-	, int * const restrict staxa
+	  ff_node * const ffn
+	, const gn * const defgn
+	, map * const vmap
+	, lstack *** const stax
+	, int * const staxl
+	, int * const staxa
 	, int p
-	, gn ** const restrict first
-	, int * const restrict newn
-	, int * const restrict newr
+	, gn ** const first
+	, int * const newn
+	, int * const newr
 )
 {
 	// resolve the left-hand side

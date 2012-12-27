@@ -17,6 +17,16 @@
 		);																	\
 		return 0;														\
 	} while(0)
+
+#define fail_log(fmt, ...)							\
+	do {																	\
+		log(L_ERROR, fmt " at [%s:%d (%s)]"	\
+			, ##__VA_ARGS__										\
+			, __FILE__												\
+			, __LINE__												\
+			, __FUNCTION__										\
+		);																	\
+	} while(0)
  
 #define fatal(x, ...)														\
 	do {																					\

@@ -12,10 +12,12 @@
 #include "ts.h"
 #include "ff.tokens.h"
 #include "list.h"
-#include "map.h"
+#include "identity.h"
 
 #include "control.h"
 #include "xmem.h"
+#include "map.h"
+#include "dirutil.h"
 
 //
 // data
@@ -228,26 +230,32 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 
 int fml_exec(ts * ts,  int num)
 {
-	// create tmp file to capture stdout
-	psprintf(&ts->stdo_path, "%s/%u.out", g_args.execdir, num);
+	// assume fabsys identity
+	fatal(identity_assume_fabsys);
 
-	unlink(ts->stdo_path->s);
+	//
+	// create pid-fml-dir
+	//
+	//  note : all but the last component of this dir were created in tmp_setup
+	//  note : the directory itself cannot already exist, because num is process-unique
+	//
+	psprintf(&ts->stdo_path, PID_DIR_BASE "/%d/fml/%d", g_args.pid, num);
+	fatal(mkdirp, ts->stdo_path->s, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	// create tmp file for the cmd
+	psprintf(&ts->cmd_path, PID_DIR_BASE "/%d/fml/%d/cmd", g_args.pid, num);
+	if((ts->cmd_fd = open(ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG)) == -1)
+		fail("open(%s)=[%d][%s]", ts->cmd_path->s, errno, strerror(errno));
+
+	// create tmp file to capture stdout
+	psprintf(&ts->stdo_path, PID_DIR_BASE "/%d/fml/%d/out", g_args.pid, num);
 	if((ts->stdo_fd = open(ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
 		fail("open(%s)=[%d][%s]", ts->stdo_path->s, errno, strerror(errno));
 
 	// create tmp file to capture stderr
-	psprintf(&ts->stde_path, "%s/%u.err", g_args.execdir, num);
-
-	unlink(ts->stde_path->s);
+	psprintf(&ts->stde_path, PID_DIR_BASE "/%d/fml/%d/err", g_args.pid, num);
 	if((ts->stde_fd = open(ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
 		fail("open(%s)=[%d][%s]", ts->stde_path->s, errno, strerror(errno));
-
-	// create tmp file to capture the cmd
-	psprintf(&ts->cmd_path, "%s/%u.cmd", g_args.execdir, num);
-
-	unlink(ts->cmd_path->s);
-	if((ts->cmd_fd = open(ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
-		fail("open(%s)=[%d][%s]", ts->cmd_path->s, errno, strerror(errno));
 
 	// write the cmd to the tmp file
 	if(write(ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l) == -1)
@@ -263,14 +271,15 @@ int fml_exec(ts * ts,  int num)
 	if(ts->pid == 0)
 	{
 		int x;
-		for(x = 3; x < 6; x++)
+		for(x = 0; x < 4196; x++)
 		{
-			if(x != ts->stdo_fd && x != ts->stde_fd)
+			if(x != 1 && x != 2 && x != ts->stdo_fd && x != ts->stde_fd)
 				close(x);
 		}
 
-		// redirect stdin
-		
+		// reopen stdin
+		if(open("/dev/null", O_RDONLY) != 0)
+			fail("open(/dev/stderr)=[%d][%s]", errno, strerror(errno));
 
 		// redirect stdout
 		if(dup2(ts->stdo_fd, 1) == -1)
@@ -280,10 +289,16 @@ int fml_exec(ts * ts,  int num)
 		if(dup2(ts->stde_fd, 2) == -1)
 			fail("dup2 failed : [%d][%s]", errno, strerror(errno));
 
+		// irretrievably drop fabsys:fabsys identity
+		fatal_os(setresuid, g_args.ruid, g_args.ruid, g_args.ruid);
+		fatal_os(setresgid, g_args.rgid, g_args.rgid, g_args.rgid);
+
 		// exec doesnt return
-		execv(ts->cmd_path->s, 0);
-		fail("exec(%s) failed [%d][%s]", ts->cmd_path->s, errno, strerror(errno));
+		fatal_os(execv, ts->cmd_path->s, 0);
 	}
+
+	// reassume user identity
+	fatal(identity_assume_user);
 
 	return 1;
 }

@@ -15,6 +15,8 @@
 #include "xmem.h"
 #include "unitstring.h"
 
+#define restrict __restrict
+
 char * ff_idstring(struct ff_file * const);
 
 //
@@ -46,21 +48,6 @@ static uint32_t hash(const char* s, size_t l)
 	return h;
 }
 
-static int hashfile_mkpath(gn * gn)
-{
-	if(!gn->hashfile_path)
-	{
-		uint32_t pathhash = hash(gn->path, strlen(gn->path));
-
-		int l = snprintf(0, 0, "%s/%u", g_args.hashdir, pathhash);
-		gn->hashfile_path = malloc(l + 1);
-		snprintf(gn->hashfile_path, l + 1, "%s/%u", g_args.hashdir, pathhash);
-		snprintf(gn->hashfile_path, l + 1, "%s/%u", g_args.hashdir, pathhash);
-	}
-
-	return 1;
-}
-
 static void gn_stat(gn * n)
 {
 	// skip for non-file-backed nodes
@@ -83,7 +70,7 @@ static void gn_stat(gn * n)
 		}
 
 		// compute hashes
-		n->prop_hash[1] = hash(
+		n->stathash[1] = hash(
 				(char*)&n->dev
 			, (char*)&n->ctime - (char*)&n->dev
 		);
@@ -166,15 +153,27 @@ static int gn_create(const char * const restrict realwd, char * const restrict A
 		map_set(gn_nodes.by_path, p, pl, gna, sizeof(*gna));
 
 		// populate gna
-		(*gna)->vrs[1]		= GN_VERSION;
-		(*gna)->path			= strdup(p);
-		(*gna)->pathl			= pl;
-		(*gna)->name			= strdup(n);
-		(*gna)->namel			= nl;
-		(*gna)->dir				= strndup(d, dl);
-		(*gna)->dirl			= dl;
-		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
-		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
+		(*gna)->vrshash[1]		= GN_VERSION;
+		(*gna)->path					= strdup(p);
+		(*gna)->pathl					= pl;
+		(*gna)->pathhash			= hash((*gna)->path, strlen((*gna)->path));
+		(*gna)->name					= strdup(n);
+		(*gna)->namel					= nl;
+		(*gna)->dir						= strndup(d, dl);
+		(*gna)->dirl					= dl;
+		(*gna)->needs.z				= sizeof((*gna)->needs.e[0]);
+		(*gna)->feeds.z				= sizeof((*gna)->feeds.e[0]);
+
+		// ensure GN_DIR_BASE exists for this gn
+		fatal(xsprintf, &(*gna)->stathash_path, GN_DIR_BASE "/%u", (*gna)->pathhash);
+		fatal(identity_assume_fabsys);
+		fatal(mkdirp, (*gna)->stathash_path, S_IRWXU | S_IRWXG | S_IRWXO);
+		fatal(identity_assume_user);
+
+		fatal(xsprintf, &(*gna)->stathash_path, GN_DIR_BASE "/%u/stat", (*gna)->pathhash);
+		fatal(xsprintf, &(*gna)->fmlhash_path, GN_DIR_BASE  "/%u/fml", (*gna)->pathhash);
+		fatal(xsprintf, &(*gna)->vrshash_path, GN_DIR_BASE  "/%u/vrs", (*gna)->pathhash);
+
 		char * xt = n + nl;
 		while(*xt != '.' && xt != n)
 			xt--;
@@ -485,57 +484,65 @@ void gn_dump(gn * gn)
 
 void gn_hashcmd(gn * gn, char * s, int l)
 {
-	gn->cmd_hash[1] = hash(s, l);
+	gn->fmlhash[1] = hash(s, l);
 }
 
 int gn_hashes_read(gn * gn)
 {
-	fatal(hashfile_mkpath, gn);
-
 	int fd;
-	if((fd = open(gn->hashfile_path, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO)) != -1)
+	if((fd = open(gn->stathash_path, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO)) != -1)
 	{
-		read(fd, &gn->vrs[0]				, sizeof(gn->vrs[0]));
-		read(fd, &gn->prop_hash[0]	, sizeof(gn->prop_hash[0]));
-		read(fd, &gn->cmd_hash[0]		, sizeof(gn->cmd_hash[0]));
-
-		log(L_DGHASH, "%s <- %s = 0x%08x%08x%08x", gn->path, gn->hashfile_path, gn->vrs[0], gn->prop_hash[0], gn->cmd_hash[0]);
-
+		read(fd, &gn->stathash[0], sizeof(gn->stathash[0]));
 		close(fd);
 	}
-	else
+	if((fd = open(gn->fmlhash_path, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO)) != -1)
 	{
-		log(L_DGHASH, "%s <- %s = 0x%08x%08x%08x", gn->path, "(ENOENT)", gn->vrs[0], gn->prop_hash[0], gn->cmd_hash[0]);
+		read(fd, &gn->fmlhash[0], sizeof(gn->fmlhash[0]));
+		close(fd);
 	}
+	if((fd = open(gn->vrshash_path, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO)) != -1)
+	{
+		read(fd, &gn->vrshash[0], sizeof(gn->vrshash[0]));
+		close(fd);
+	}
+
+	log(L_DGHASH, "<== 0x%08x%08x%08x", gn_idstring(gn), gn->stathash[0], gn->fmlhash[0], gn->vrshash[0]);
 
 	return 1;
 }
 
 int gn_hashes_write(gn * gn)
 {
-	fatal(hashfile_mkpath, gn);
+	int fd = 0;
 
-	unlink(gn->hashfile_path);
+	fatal(identity_assume_fabsys);
 
-	int fd;
-	if((fd = open(gn->hashfile_path, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
-		fail("open(%s) failed [%d][%s", gn->hashfile_path, errno, strerror(errno));
-
-	log(L_DGHASH, "%s -> %s = 0x%08x%08x%08x", gn->path, gn->hashfile_path, gn->vrs[1], gn->prop_hash[1], gn->cmd_hash[1]);
-
-	write(fd, &gn->vrs[1]					, sizeof(gn->vrs[0]));
-	write(fd, &gn->prop_hash[1]		, sizeof(gn->prop_hash[0]));
-	write(fd, &gn->cmd_hash[1]		, sizeof(gn->cmd_hash[0]));
-
+	if((fd = open(gn->stathash_path, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
+		fail("open(%s) failed [%d][%s", gn->stathash_path, errno, strerror(errno));
+	write(fd, &gn->stathash[1], sizeof(gn->stathash[0]));
 	close(fd);
+
+	if((fd = open(gn->fmlhash_path, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
+		fail("open(%s) failed [%d][%s", gn->fmlhash_path, errno, strerror(errno));
+	write(fd, &gn->fmlhash[1], sizeof(gn->fmlhash[0]));
+	close(fd);
+
+	if((fd = open(gn->vrshash_path, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
+		fail("open(%s) failed [%d][%s", gn->vrshash_path, errno, strerror(errno));
+	write(fd, &gn->vrshash[1], sizeof(gn->vrshash[0]));
+	close(fd);
+
+	log(L_DGHASH, "==> 0x%08x%08x%08x", gn_idstring(gn), gn->stathash[1], gn->fmlhash[1], gn->vrshash[1]);
+
+	fatal(identity_assume_user);
 	return 1;
 }
 
 int gn_hashes_cmp(gn * gn)
 {
-	return     gn->vrs[1] - gn->vrs[0]
-					?: gn->prop_hash[1] - gn->prop_hash[0]
-					?: gn->cmd_hash[1] - gn->cmd_hash[0]
+	return     gn->vrshash[1] - gn->vrshash[0]
+					?: gn->stathash[1] - gn->stathash[0]
+					?: gn->fmlhash[1] - gn->fmlhash[0]
 					?: 0;
 }
 

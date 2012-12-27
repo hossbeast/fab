@@ -34,4 +34,5 @@ int dep_process(
 )
 	__attribute__((nonnull(1,3,4,5,6)));
 
+#undef restrict
 #endif

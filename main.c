@@ -88,11 +88,9 @@ int main(int argc, char** argv)
 		// create/cleanup tmp 
 		fatal(tmp_setup);
 
-exit(0);
-
 		// parse the fabfile
 		fatal(ff_mkparser, &ffp);
-		fatal(ff_parse, ffp, g_args.fabfile, &ffn);
+		fatal(ff_parse, ffp, g_args.fabfile_canon, &ffn);
 
 		if(!ffn)
 			return 0;

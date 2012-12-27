@@ -36,4 +36,5 @@ int pstring_free(pstring *);
 int pstring_xfree(pstring **)
 	__attribute__((nonnull));
 
+#undef restrict
 #endif

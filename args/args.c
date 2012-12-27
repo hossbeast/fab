@@ -11,6 +11,7 @@
 #include "control.h"
 #include "xmem.h"
 #include "xstring.h"
+#include "unitstring.h"
 
 struct g_args_t g_args;
 
@@ -45,6 +46,8 @@ static void usage()
 
 int parse_args(int argc, char** argv)
 {
+	char * fabfile = 0;
+
 	struct option longopts[] = {
 // a
 /* b */   { "invalidate"				, required_argument	, 0			, 'v' }		// graph node invalidation
@@ -87,23 +90,25 @@ int parse_args(int argc, char** argv)
 		"b:d:f:"
 	;
 
+	//
 	// parameters
+	//
 	g_args.pid						= getpid();
 	g_args.sid						= getsid(0);
-	fatal(xsprintf, &g_args.sid_gn_dir, "%s/%d", SID_GN_DIR_BASE, g_args.sid);
-	fatal(xsprintf, &g_args.pid_fml_dir, "%s/%d", PID_FML_DIR_BASE, g_args.pid);
-	fatal(xsprintf, &g_args.gn_dir, "%s", GN_DIR_BASE);
 
-	// working directory
-	getcwd(g_args.cwd, sizeof(g_args.cwd));
-	g_args.cwdl = strlen(g_args.cwd);
+	// current working directory, canonicalized
+	char space[512];
+	getcwd(space, sizeof(space));
+	g_args.cwd = realpath(space, 0);
 
+	//
 	// args:defaults
+	//
 	g_args.mode_exec			= DEFAULT_MODE_EXEC;
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_ddsc			= DEFAULT_MODE_DDSC;
 	g_args.invalidate_all	= DEFAULT_INVALIDATE_ALL;
-	g_args.fabfile				= strdup(DEFAULT_FABFILE);
+	fabfile								= strdup(DEFAULT_FABFILE);
 
 	int x, indexptr;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
@@ -126,8 +131,8 @@ int parse_args(int argc, char** argv)
 				g_args.dumpnode[g_args.dumpnode_len++] = strdup(optarg);
 				break;
 			case 'f':
-				xfree(&g_args.fabfile);
-				g_args.fabfile = strdup(optarg);
+				xfree(&fabfile);
+				fabfile = strdup(optarg);
 				break;
 			case 'p':
 				g_args.mode_exec = MODE_EXEC_BUILDPLAN;
@@ -145,7 +150,7 @@ int parse_args(int argc, char** argv)
 	}
 
 	// canonicalize
-	g_args.fabfile_canon = realpath(g_args.fabfile, 0);
+	g_args.fabfile_canon = realpath(fabfile, 0);
 
 	// terminate at the final slash
 	g_args.fabfile_canon_dir = strdup(g_args.fabfile_canon);
@@ -173,11 +178,6 @@ int parse_args(int argc, char** argv)
 	if(g_args.mode_exec == MODE_EXEC_BUILDPLAN)
 		log_parse("+BPDUMP", 0);
 
-	// create execdir
-	int l = snprintf(0, 0, "%s/%u", g_args.execdir_base, g_args.pid);
-	fatal(xmalloc, &g_args.execdir, l + 1);
-	sprintf(g_args.execdir, "%s/%u", g_args.execdir_base, g_args.pid);
-
 	// active logs
 	char buf[256];
 	log_active(buf, sizeof(buf));
@@ -191,12 +191,15 @@ int parse_args(int argc, char** argv)
 	log(L_PARAMS	, "%7seid                =%s/%d:%s/%d"	, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
 	log(L_PARAMS	, "%7srid                =%s/%d:%s/%d"	, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
 	log(L_PARAMS	, "%7scwd                =%s"						, ""	, g_args.cwd);
-	log(L_PARAMS	, "%7ssid-gn-dir         =%s"						, ""	, g_args.sid_gn_dir);
-	log(L_PARAMS	, "%7spid-fml-dir        =%s"						, ""	, g_args.pid_fml_dir);
-	log(L_PARAMS	, "%7sgn-dir             =%s"						, ""	, g_args.gn_dir);
+	log(L_PARAMS	, "%7ssid-dir-pat        =%s"						, ""	, SID_DIR_BASE);
+	log(L_PARAMS	, "%7sgn-dir-pat         =%s"						, ""	, GN_DIR_BASE);
+	log(L_PARAMS	, "%7spid-dir-pat        =%s"						, ""	, PID_DIR_BASE);
+	log(L_PARAMS	, "%7sexpiration-policy  =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
-	log(L_ARGS		, " %s (%c) fabfile-canon      =%s", strcmp(g_args.fabfile, DEFAULT_FABFILE) == 0 ? " " : "*", 'f', g_args.fabfile_canon);
+	snprintf(space, sizeof(space), "%s/%s", g_args.cwd, DEFAULT_FABFILE);
+
+	log(L_ARGS		, " %s (%c) fabfile-canon      =%s", strcmp(g_args.fabfile_canon, space) == 0 ? " " : "*", 'f', g_args.fabfile_canon);
 	log(L_ARGS		, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
 	log(L_ARGS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS		, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
@@ -226,6 +229,8 @@ int parse_args(int argc, char** argv)
 		log(L_ARGS	, " %s (%c) target(s)          =%s", "*", ' ', g_args.targets[x]);
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 
+	free(fabfile);
+
 	return 1;
 }
 
@@ -244,9 +249,6 @@ void args_teardown()
 	free(g_args.targets);
 	free(g_args.fabfile_canon);
 	free(g_args.fabfile_canon_dir);
-	free(g_args.execdir);
-	free(g_args.execdir_base);
-	free(g_args.hashdir);
 	free(g_args.invalidate);
 	free(g_args.dumpnode);
 }

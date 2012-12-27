@@ -279,7 +279,7 @@ int bp_prune(bp * bp)
 			// source files
 			gn * gn = bp->stages[x].primary[y];
 
-			if(gn->prop_hash[1] == 0)		// file does not exist
+			if(gn->stathash[1] == 0)		// file does not exist
 			{
 				// SOURCE file - not found
 				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn_idstring(gn));
@@ -339,7 +339,7 @@ int bp_prune(bp * bp)
 					else if(gn->needs.l)
 					{
 						// SECONDARY file
-						if(gn->prop_hash[1] == 0)
+						if(gn->stathash[1] == 0)
 							gn->rebuild = 1;	// file doesn't exist
 					}
 					else if(gn->fabv)
@@ -414,7 +414,7 @@ int bp_prune(bp * bp)
 								, "SECONDARY"
 								, gn_idstring(gn)
 								, "REBUILD"
-								, gn->prop_hash[1] == 0 ? "does not exist" : "sources changed"
+								, gn->stathash[1] == 0 ? "does not exist" : "sources changed"
 							);
 						}
 						else

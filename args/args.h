@@ -3,9 +3,30 @@
 
 #include <sys/types.h>
 
-#define SID_GN_DIR_BASE					"/var/cache/fab/sid/gn"
+/*
+** PER-SID : delete if no extant process in this session  (pertains to the last build in this session)
+** ------------
+** /var/cache/fab/sid/<sid>/gn/<gn-id-hash>/needs/strong/<link>
+** /var/cache/fab/sid/<sid>/gn/<gn-id-hash>/needs/weak/<link>
+**
+** PER-GN : delete if newest file is older than <policy>  (pertains to a given PRIMARY file)
+** ------------
+** /var/cache/fab/gn/<gn-id-hash>/stat										stat hash
+** /var/cache/fab/gn/<gi-id-hash>/content									content hash
+** /var/cache/fab/gn/<gn-id-hash>/fml											formula hash
+** /var/cache/fab/gn/<gn-id-hash>/vrs											version hash
+** /var/cache/fab/gn/<gn-id-hash>/dscv										cached results of dependency discovery
+**
+** PER-PID : delete if pid is not presently executing     (pertains to a given fab process)
+** ------------
+** /var/tmp/fab/pid/<pid>/fml/<fml-id-hash>/cmd
+** /var/tmp/fab/pid/<pid>/fml/<fml-id-hash>/stdo
+** /var/tmp/fab/pid/<pid>/fml/<fml-id-hash>/stde
+*/
+
+#define SID_DIR_BASE						"/var/cache/fab/sid"
 #define GN_DIR_BASE							"/var/cache/fab/gn"
-#define PID_FML_DIR_BASE				"/var/tmp/fab/pid/fml"
+#define PID_DIR_BASE						"/var/tmp/fab/pid"
 
 #define DEFAULT_FABFILE 				"fabfile"
 #define DEFAULT_INVALIDATE_ALL	0
@@ -13,6 +34,8 @@
 #define DEFAULT_MODE_EXEC				MODE_EXEC_FABRICATE
 #define DEFAULT_MODE_GNID				MODE_GNID_RELATIVE
 #define DEFAULT_MODE_DDSC				MODE_DDSC_DEFERRED
+
+#define EXPIRATION_POLICY				(60 * 60 * 24 * 7)
 
 /* modes */
 
@@ -25,7 +48,7 @@
 	_MODE(MODE_GNID_CANON			, 0x03	, x)		/* canonical path */															\
 /* dependency discovery modes */																															\
 	_MODE(MODE_DDSC_DEFERRED	, 0x04	, x)		/* defer dependency discovery until bp prune */		\
-	_MODE(MODE_DDSC_UPFRONT		, 0x05	, x)		/* complete dependency discovery upfront */				\
+	_MODE(MODE_DDSC_UPFRONT		, 0x05	, x)		/* comprehensive dependency discovery upfront */	\
 
 enum {
 #define _MODE(a, b, c) a = b,
@@ -43,8 +66,7 @@ extern struct g_args_t
 //
 
 	pid_t				pid;									// pid of this process
-	char				cwd[512];							// current working directory
-	int					cwdl;									// length
+	char *			cwd;									// current working directory (canonicalized)
 
 	pid_t				sid;									// session-id
 
@@ -56,34 +78,6 @@ extern struct g_args_t
 	char *			rgid_name;
 	gid_t				egid;									// effective-group-id  (must be fabsys)
 	char *			egid_name;
-
-/*
-** PER-SID : delete if no extant process in this session  (pertains to the last build in this session)
-** ------------
-** /var/cache/fab/sid/gn/<sid>/<gn-id-hash>/needs/strong/<link>
-** /var/cache/fab/sid/gn/<sid>/<gn-id-hash>/needs/weak/<link>
-**
-** PER-GN : delete if ts file is older than <policy>      (pertains to a given backing file)
-** ------------
-** /var/cache/fab/gn/<gn-id-hash>/ts
-** /var/cache/fab/gn/<gn-id-hash>/<stat-hash>/ts
-** /var/cache/fab/gn/<gn-id-hash>/<stat-hash>/<fmlv-hash>   		hashvalues of backing files
-** /var/cache/fab/gn/<gn-id-hash>/<stat-hash>/<dscv-hash>				cached results of dependency discovery
-**
-** PER-PID : delete if pid is not presently executing     (pertains to a given fab process)
-** ------------
-** /var/tmp/fab/pid/fml/<pid>/<fml-id-hash>/cmd
-** /var/tmp/fab/pid/fml/<pid>/<fml-id-hash>/stdo
-** /var/tmp/fab/pid/fml/<pid>/<fml-id-hash>/stde
-*/
-
-	char *			sid_gn_dir;			// /var/cache/fab/<sid>/gn
-	char *			gn_dir;					// /var/cache/fab/gn
-	char *			pid_fml_dir;		// /var/tmp/fab/<pid>
-
-	char *			execdir_base;
-	char *			execdir;
-	char *			hashdir;
 
 //
 // arguments
