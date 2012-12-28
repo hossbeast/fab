@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 		signal(SIGTERM	, signal_handler);
 
 		// initialize logger
-		fatal(log_init, "+ERROR|WARN|INFO|BPINFO|BPEXEC|DSCINFO");
+		fatal(log_init, "+ERROR|WARN|INFO|BPEXEC|DSCINFO");
 
 		// parse cmdline arguments
 		fatal(parse_args, argc, argv);
@@ -142,7 +142,9 @@ int main(int argc, char** argv)
 		// comprehensive upfront dependency discovery on the entire graph
 		if(g_args.mode_ddsc == MODE_DDSC_UPFRONT)
 		{
-			fatal(dsc_exec, gn_nodes.e, gn_nodes.l, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, 0);
+			gn ** gnl = alloca(sizeof(*gnl) * gn_nodes.l);
+			memcpy(gnl, gn_nodes.e, sizeof(*gnl) * gn_nodes.l);
+			fatal(dsc_exec, gnl, gn_nodes.l, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, 0);
 		}
 
 		// dump graph nodes, pending logging
@@ -209,18 +211,14 @@ int main(int argc, char** argv)
 					// traverse the graph, construct the build plan that culminates in the given targets
 					fatal(bp_create, node_list, node_list_len, &bp);
 
+					new = 0;
 					if(g_args.mode_ddsc == MODE_DDSC_DEFERRED)
 					{
 						// flat list of nodes in the buildplan
 						fatal(bp_flatten, bp, &list, &listl, &lista);
 
 						// execute discovery
-						new = 0;
 						fatal(dsc_exec, list, listl, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, &new);
-					}
-					else
-					{
-						new = 0;
 					}
 				}
 

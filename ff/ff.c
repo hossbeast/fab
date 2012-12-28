@@ -16,13 +16,8 @@
 #include "macros.h"
 #include "args.h"
 
+// defined in gn.c
 char * gn_idstring(struct gn * const);
-
-struct ff_parser_t
-{
-	void *							p;
-	generator_parser *	gp;
-};
 
 // defined in ff.tab.o
 int ff_yyparse(yyscan_t, parse_param*);
@@ -30,7 +25,21 @@ int ff_yyparse(yyscan_t, parse_param*);
 // defined in ff.dsc.tab.o
 int ff_dsc_yyparse(yyscan_t, parse_param*);
 
-/// [[ static ]]
+struct ff_parser_t
+{
+	void *							p;
+	generator_parser *	gp;
+};
+
+//
+// data
+//
+
+union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
+
+//
+// [[ static ]]
+//
 
 static char* struse(char* s, char* e)
 {
@@ -47,14 +56,14 @@ static char* struse(char* s, char* e)
 }
 
 ff_node* addchain(ff_node* a, ff_node* b)
-	{
-		ff_node* i = a;
-		while(a->next)
-			a = a->next;
+{
+	ff_node* i = a;
+	while(a->next)
+		a = a->next;
 
-		a->next = b;
-		return i;
-	}
+	a->next = b;
+	return i;
+}
 
 static void flatten(ff_node* n)
 {
@@ -136,7 +145,7 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 	return 1;
 }
 
-static int parse(const ff_parser * const restrict p, char* b, int sz, char* path, ff_node ** const restrict ffn, struct gn * dscv_gn)
+static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node ** const ffn, struct gn * dscv_gn)
 {
 	// create state specific to this parse
 	void* state = 0;
@@ -144,7 +153,16 @@ static int parse(const ff_parser * const restrict p, char* b, int sz, char* path
 		fail("scan_bytes failed");
 
 	ff_file * ff = 0;
-	fatal(xmalloc, &ff, sizeof(*ff));
+
+	// regular ff_file's are tracked in ff_files
+	if(dscv_gn)
+	{
+		fatal(xmalloc, &ff, sizeof(*ff));
+	}
+	else
+	{
+		fatal(coll_doubly_add, &ff_files.c, 0, &ff);
+	}
 
 	// canonical path to the fabfile and its directory
 	ff->path = realpath(path, 0);
@@ -279,7 +297,7 @@ ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 
 /// [[ api/public ]]
 
-int ff_mkparser(ff_parser ** const restrict p)
+int ff_mkparser(ff_parser ** const p)
 {
 	if((*p = calloc(1, sizeof(*p[0]))) == 0)
 		return 0;
@@ -293,7 +311,7 @@ int ff_mkparser(ff_parser ** const restrict p)
 	return 1;
 }
 
-int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const restrict ffn)
+int ff_parse(const ff_parser * const p, char* path, ff_node ** const ffn)
 {
 	int fd = 0;
 	char * b = 0;
@@ -313,17 +331,17 @@ int ff_parse(const ff_parser * const restrict p, char* path, ff_node ** const re
 
 	close(fd);
 
-	int R = parse(p, b, statbuf.st_size, path, ffn, (void*)0);
+	int R = parse(p, b, statbuf.st_size, path, ffn, 0);
 	free(b);
 	return R;
 }
 
-int ff_dsc_parse(const ff_parser * const restrict p, char* b, int sz, char* path, struct gn * dscv_gn, ff_node ** const restrict ffn)
+int ff_dsc_parse(const ff_parser * const p, char* b, int sz, char* path, struct gn * dscv_gn, ff_node ** const ffn)
 {
 	return parse(p, b, sz, path, ffn, dscv_gn);
 }
 
-void ff_freeparser(ff_parser* const restrict p)
+void ff_freeparser(ff_parser* const p)
 {
 	if(p)
 	{
@@ -334,13 +352,13 @@ void ff_freeparser(ff_parser* const restrict p)
 	free(p);
 }
 
-void ff_xfreeparser(ff_parser ** const restrict p)
+void ff_xfreeparser(ff_parser ** const p)
 {
 	ff_freeparser(*p);
 	*p = 0;
 }
 
-void ff_freenode(ff_node * const restrict ffn)
+void ff_freenode(ff_node * const ffn)
 {
 	if(ffn)
 	{
@@ -365,15 +383,15 @@ void ff_freenode(ff_node * const restrict ffn)
 	free(ffn);
 }
 
-void ff_xfreenode(ff_node ** const restrict ffn)
+void ff_xfreenode(ff_node ** const ffn)
 {
 	ff_freenode(*ffn);
 	*ffn = 0;
 }
 
-void ff_dump(ff_node * const restrict root)
+void ff_dump(ff_node * const root)
 {
-	void dump(ff_node * const restrict ffn, int lvl)
+	void dump(ff_node * const ffn, int lvl)
 	{
 		int x;
 		if(ffn)
@@ -511,10 +529,11 @@ void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 	ff_loc * lc			= &pp->last_loc;
 
 	// log last good token
-	log(L_ERROR | L_FF, "last token - %s '%.*s' @ [%3d,%3d - %3d,%3d]"
+	log(L_ERROR | L_FF, "last token - %s '%.*s' @ (%s)[%3d,%3d - %3d,%3d]"
 		, ff_tokname(pp->last_tok)
 		, MIN(t == LF ? 0 : t == WS ? 0 : l, 50)
 		, t == LF ? "" : t == WS ? "" : s
+		, ff_idstring(pp->ff)
 		, lc->f_lin + 1
 		, lc->f_col + 1
 		, lc->l_lin + 1
@@ -522,7 +541,7 @@ void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 	);
 }
 
-char * ff_idstring(ff_file * const restrict ff)
+char * ff_idstring(ff_file * const ff)
 {
 	if(ff->dscv_gn)
 	{
@@ -564,4 +583,34 @@ char * ff_idstring(ff_file * const restrict ff)
 	}
 
 	return 0;
+}
+
+int ff_hb_read(ff_file * const ff)
+{
+	fatal(hashblock_read, ff->hb);
+
+	log(L_HASHBLK
+		, "%s <== 0x%08x%08x%08x"
+		, ff_idstring(ff)
+		, ff->hb->stathash[0]
+		, ff->hb->contenthash[0]
+		, ff->hb->vrshash[0]
+	);
+
+	return 1;
+}
+
+int ff_hb_write(ff_file * const ff)
+{
+	fatal(hashblock_write, ff->hb);
+
+	log(L_HASHBLK
+		, "%s ==> 0x%08x%08x%08x"
+		, ff_idstring(ff)
+		, ff->hb->stathash[1]
+		, ff->hb->contenthash[1]
+		, ff->hb->vrshash[1]
+	);
+
+	return 1;
 }

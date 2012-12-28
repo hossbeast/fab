@@ -62,7 +62,7 @@ int ts_ensure(ts *** ts, int * tsa, int n)
 	return 1;
 }
 
-int ts_execwave(ts ** ts, int n, int * waveid, uint64_t hi, uint64_t lo)
+int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo)
 {
 	int x;
 
@@ -122,17 +122,11 @@ int ts_execwave(ts ** ts, int n, int * waveid, uint64_t hi, uint64_t lo)
 		int k;
 		for(k = 0; k < ts[x]->fmlv->products_l; k++)
 		{
-			char * des = "SECONDARY";
-			if(strcmp("/..", ts[x]->fmlv->products[k]->dir) == 0)
-				des = "TASK";
-			else if(ts[x]->fmlv->products[k]->needs.l == 0)
-				des = "GENERATED";
-
 			int R = 0;
 			if(k)
-				R = log_start(hi | (e ? L_ERROR : 0), "        %-9s %s", des, gn_idstring(ts[x]->fmlv->products[k]));
+				R = log_start(hi | (e ? L_ERROR : 0), "        %-9s %s", gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
 			else
-				R = log_start(hi | (e ? L_ERROR : 0), "[%2d,%2d] %-9s %s", *waveid, ts[x]->y, des, gn_idstring(ts[x]->fmlv->products[k]));
+				R = log_start(hi | (e ? L_ERROR : 0), "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
 
 			if(ts[x]->r_status)
 			{

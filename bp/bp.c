@@ -270,6 +270,61 @@ int bp_prune(bp * bp)
 		}
 	}
 
+	// update all node designations
+	for(x = 0; x < bp->stages_l; x++)
+	{
+		for(y = 0; y < bp->stages[x].primary_l; y++)
+		{
+			gn_designate(bp->stages[x].primary[y]);
+		}
+
+		for(y = 0; y < bp->stages[x].evals_l; y++)
+		{
+			for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
+			{
+				gn_designate(bp->stages[x].evals[y]->products[k]);
+			}
+		}
+
+		for(y = 0; y < bp->stages[x].nofmls_l; y++)
+		{
+			gn_designate(bp->stages[x].nofmls[y]);
+		}
+	}
+
+	// nodes in the buildplan
+	//  PRIMARY   : read hashes
+	//  SECONDARY : existence check
+	fatal(identity_assume_fabsys);
+
+	for(x = 0; x < bp->stages_l; x++)
+	{
+		for(y = 0; y < bp->stages[x].primary_l; y++)
+		{
+			fatal(gn_hb_read, bp->stages[x].primary[y]);
+		}
+
+		for(y = 0; y < bp->stages[x].evals_l; y++)
+		{
+			for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
+			{
+				if(bp->stages[x].evals[y]->products[k]->designation == GN_DESIGNATION_SECONDARY)
+				{
+					fatal(gn_exists, bp->stages[x].evals[y]->products[k]);
+				}
+			}
+		}
+	}
+
+	// ff_files
+	//  REGULAR : read hashes
+	for(x = 0; x < ff_files.l; x++)
+	{
+		fatal(ff_hb_read, ff_files.e[x]);
+	}
+
+	fatal(identity_assume_user);
+
 	int poisoned = 0;
 	for(x = 0; x < bp->stages_l; x++)
 	{
@@ -279,18 +334,16 @@ int bp_prune(bp * bp)
 			// source files
 			gn * gn = bp->stages[x].primary[y];
 
-			if(gn->stathash[1] == 0)		// file does not exist
+			if(gn->hb->stathash[1] == 0)		// file does not exist
 			{
-				// SOURCE file - not found
+				// PRIMARY file - not found
 				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn_idstring(gn));
 				gn->poison = 1;
 			}
 			else
 			{
-				gn_hashes_read(gn);
-
-				if(gn_hashes_cmp(gn))		// hashes do not agree; file has changed
-					gn->changed = 1;
+				// check if file has changed
+				gn->changed = hashblock_cmp(gn->hb);
 			}
 
 			// needs rebuilt
@@ -331,21 +384,26 @@ int bp_prune(bp * bp)
 
 				if(!gn->poison)
 				{
-					if(strcmp("/..", gn->dir) == 0)
+					if(gn->designation == GN_DESIGNATION_TASK)
 					{
 						// TASK node - must be fabricated every time
 						gn->rebuild = 1;
 					}
-					else if(gn->needs.l)
-					{
-						// SECONDARY file
-						if(gn->stathash[1] == 0)
-							gn->rebuild = 1;	// file doesn't exist
-					}
-					else if(gn->fabv)
+					else if(gn->designation == GN_DESIGNATION_GENERATED)
 					{
 						// GENERATED file - must be fabricated every time
 						gn->rebuild = 1;
+					}
+					else if(gn->designation == GN_DESIGNATION_SECONDARY)
+					{
+						// SECONDARY file
+						if(gn->exists == 0)
+							gn->rebuild = 1;	// file doesn't exist
+						else
+						{
+							if(hashblock_cmp(gn->fabv->fml->ffn->loc.ff->hb))
+								gn->rebuild = 1;	// ff containing the formula has changed
+						}
 					}
 
 					// needs rebuilt
@@ -379,7 +437,7 @@ int bp_prune(bp * bp)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
-								, "SECONDARY"
+								, gn->designation
 								, gn_idstring(gn)
 								, "SKIP"
 							);
@@ -398,56 +456,46 @@ int bp_prune(bp * bp)
 
 					if(gn->rebuild)
 					{
-						if(strcmp("/..", gn->dir) == 0)
+						if(gn->flags & GN_FLAGS_NOFILE)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
-								, "TASK"
+								, gn->designation
 								, gn_idstring(gn)
 								, "EXECUTE"
 							);
 						}
-						else if(gn->needs.l)
+						else if(gn->flags & GN_FLAGS_HASNEED)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
-								, "SECONDARY"
+								, gn->designation
 								, gn_idstring(gn)
 								, "REBUILD"
-								, gn->stathash[1] == 0 ? "does not exist" : "sources changed"
+								, gn->exists  == 0 ? "does not exist" : "sources changed"
 							);
 						}
 						else
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
-								, "GENERATED"
+								, gn->designation
 								, gn_idstring(gn)
 								, "REBUILD"
 								, "always fab"
 							);
 						}
 					}
-					else if(gn->needs.l)
+					else
 					{
 						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 							, x, c++
-							, "SECONDARY"
+							, gn->designation
 							, gn_idstring(gn)
 							, "REBUILD"
 							, "eval context product"
 						);
 					}
-					else
-					{
-						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
-							, x, c++
-							, "GENERATED"
-							, gn_idstring(gn)
-							, "REBUILD"
-							, "eval context product"
-						);
-					}	
 				}
 			}
 		}
@@ -461,7 +509,7 @@ int bp_prune(bp * bp)
 			{
 				if(gn->rebuild)
 				{
-					// file doesn't exist or has changed, is not a SOURCE file, and cannot be fabricated
+					// file doesn't exist or has changed, is not a PRIMARY file, and cannot be fabricated
 					gn->poison = 1;
 					poisoned = 1;
 				}
@@ -478,7 +526,7 @@ int bp_prune(bp * bp)
 			{
 				log(L_ERROR | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
-					, "SECONDARY"
+					, gn->designation
 					, gn_idstring(gn)
 					, ""
 					, "no formula"
@@ -488,7 +536,7 @@ int bp_prune(bp * bp)
 			{
 				log(L_WARN | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
-					, "SECONDARY"
+					, gn->designation
 					, gn_idstring(gn)
 					, ""
 					, "no formula"
@@ -583,16 +631,12 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 
 			// render the formula
 			fatal(fml_render, (*ts)[i], vmap, stax, stax_l, stax_a, pn);
-			
-			// save hash of the cmd used to render the gn
-			for(k = 0; k < (*ts)[i]->fmlv->products_l; k++)
-				gn_hashcmd((*ts)[i]->fmlv->products[k], (*ts)[i]->cmd_txt->s, (*ts)[i]->cmd_txt->l);
 
 			i++;
 		}
 
 		// execute all formulas in parallel processes
-		fatal(ts_execwave, *ts, i, tsw, L_BP | L_BPEXEC, L_FAB);
+		fatal(ts_execwave, *ts, i, tsw, x, L_BP | L_BPEXEC, L_FAB);
 
 		// harvest the results
 		for(y = 0; y < i; y++)
@@ -603,26 +647,28 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 				int q;
 				for(q = 0; q < (*ts)[y]->fmlv->products_l; q++)
 				{
-					gn * gn = (*ts)[y]->fmlv->products[q];
+					gn * prod = (*ts)[y]->fmlv->products[q];
 
-					gn->fab_success = 1;
+					prod->fab_success = 1;
 
-					// check each of my SOURCE dependencies - if all nodes which it feeds
-					// have been fabricated, we are done with it - update its hashfile
+					// check each of my PRIMARY dependencies - if all nodes which it feeds
+					// have now been fabricated, we are done with it - update its hashfile
 
-					for(k = 0; k < gn->needs.l; k++)
+					for(k = 0; k < prod->needs.l; k++)
 					{
-						if(gn->needs.e[k]->B->needs.l == 0)
+						gn * pri = prod->needs.e[k]->B;
+
+						if(pri->designation == GN_DESIGNATION_PRIMARY)
 						{
 							int j;
-							for(j = 0; j < gn->needs.e[k]->B->feeds.l; j++)
+							for(j = 0; j < pri->feeds.l; j++)
 							{
-								if(!gn->needs.e[k]->B->feeds.e[j]->A->fab_success)
+								if(!pri->feeds.e[j]->A->fab_success)
 									break;
 							}
 
-							if(j == gn->needs.e[k]->B->feeds.l)
-								fatal(gn_hashes_write, gn->needs.e[k]->B);
+							if(j == pri->feeds.l)
+								fatal(gn_hb_write, pri);
 						}
 					}
 				}
@@ -660,16 +706,22 @@ void bp_dump(bp * bp)
 			int i;
 			for(i = 0; i < bp->stages[x].evals[y]->products_l; i++)
 			{
-				char * des = "SECONDARY";
-				if(strcmp("/..", bp->stages[x].evals[y]->products[i]->dir) == 0)
-					des = "TASK";
-				else if(bp->stages[x].evals[y]->products[i]->needs.l == 0)
-					des = "GENERATED";
-
 				if(i)
-					log(L_BP | L_BPDUMP, "        %-9s %s", des, gn_idstring(bp->stages[x].evals[y]->products[i]));
+				{
+					log(L_BP | L_BPDUMP, "        %-9s %s"
+						, gn_designate(bp->stages[x].evals[y]->products[i])
+						, gn_idstring (bp->stages[x].evals[y]->products[i])
+					);
+				}
 				else
-					log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s", x, y, des, gn_idstring(bp->stages[x].evals[y]->products[i]));
+				{
+					log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s"
+						, x
+						, y
+						, gn_designate(bp->stages[x].evals[y]->products[i])
+						, gn_idstring (bp->stages[x].evals[y]->products[i])
+					);
+				}
 			}
 		}
 	}

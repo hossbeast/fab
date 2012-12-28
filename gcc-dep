@@ -3,6 +3,12 @@
 use strict;
 use warnings;
 
+# dependency target
+my $target = $ARGV[0];
+
+my @S;	# strong
+my @W;	# weak
+
 while(<STDIN>)
 {
 	if(/^[^:]+:$/)	# -MP lines, only
@@ -11,19 +17,19 @@ while(<STDIN>)
 
 		if($line =~ /\.lex\.h$/)
 		{
-			print ":$line\n";							# strong dependency on the header
+			push @S, $line;				# strong dependency on the header
 			$line =~ s/\.lex\.h/.lex.o/;
-			print ":*$line\n";						# weak dependency on the object
+			push @W, $line;				# weak dependency on the object
 		}
 		elsif($line =~ /\.tab\.h$/)
 		{
-			print ":$line\n";							# strong dependency on the header
+			push @S, $line;				# strong dependency on the header
 			$line =~ s/\.tab\.h/.tab.o/;
-			print ":*$line\n";						# weak dependency on the object
+			push @W, $line;				# weak dependency on the object
 		}
 		else
 		{
-			print ":$line\n";							# strong dependency on the header
+			push @S, $line;				# strong dependency on the header
 
 			# corresponding .c file
 			$line =~ s/\.h$/.c/;
@@ -31,8 +37,22 @@ while(<STDIN>)
 			if(-f $line)
 			{
 				$line =~ s/\.c$/.o/;
-				print ":*$line\n";					# weak dependency on the object, if the c file exists
+				push @W, $line;			# weak dependency on the object, if the c file exists
 			}
 		}
 	}
+}
+
+if(@S)
+{
+	print "[ $target ] : [\n";
+	print "$_\n" for @S;
+	print "]\n";
+}
+
+if(@W)
+{
+	print "[ $target ] :* [\n";
+	print "$_\n" for @W;
+	print "]\n";
 }

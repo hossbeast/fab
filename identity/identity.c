@@ -62,11 +62,13 @@ int identity_init()
 	}
 	g_args.egid_name = strdup(grp->gr_name);
 
+/*
 	// this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions !!
 	if(strcmp(g_args.euid_name, "fabsys") || strcmp(g_args.egid_name, "fabsys"))
 	{
 		fail("fab executable must be owned by fabsys:fabsys and have u+s and g+s permissions\n");
 	}
+*/
 
 	// assume identity of the user - default identity
 	if(seteuid(g_args.ruid) == -1)
@@ -83,8 +85,6 @@ int identity_init()
 
 int identity_assume_user()
 {
-	log(L_IDEN, "assuming identity %s:%s", g_args.ruid_name, g_args.rgid_name);
-
 	fatal_os(seteuid, g_args.ruid);
 	fatal_os(setegid, g_args.rgid);
 
@@ -93,8 +93,6 @@ int identity_assume_user()
 
 int identity_assume_fabsys()
 {
-	log(L_IDEN, "assuming identity %s:%s", g_args.euid_name, g_args.egid_name);
-
 	fatal_os(seteuid, g_args.euid);
 	fatal_os(setegid, g_args.egid);
 

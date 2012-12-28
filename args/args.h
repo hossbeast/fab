@@ -3,6 +3,8 @@
 
 #include <sys/types.h>
 
+#define FAB_VERSION		0x01
+
 /*
 ** PER-SID : delete if no extant process in this session  (pertains to the last build in this session)
 ** ------------
@@ -11,11 +13,16 @@
 **
 ** PER-GN : delete if newest file is older than <policy>  (pertains to a given PRIMARY file)
 ** ------------
-** /var/cache/fab/gn/<gn-id-hash>/stat										stat hash
-** /var/cache/fab/gn/<gi-id-hash>/content									content hash
-** /var/cache/fab/gn/<gn-id-hash>/fml											formula hash
-** /var/cache/fab/gn/<gn-id-hash>/vrs											version hash
-** /var/cache/fab/gn/<gn-id-hash>/dscv										cached results of dependency discovery
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/stat						stat hash
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/content					content hash
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/vrs							version hash
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv						cached ddisc results
+**
+** PER-FF : delete if newest file is older than <policy>  (pertains to a given fabfile)
+** ------------
+** /var/cache/fab/ff/REGULAR/<ff-id-hash>/stat						stat hash
+** /var/cache/fab/ff/REGULAR/<ff-id-hash>/content					content hash
+** /var/cache/fab/ff/REGULAR/<ff-id-hash>/vrs							version hash
 **
 ** PER-PID : delete if pid is not presently executing     (pertains to a given fab process)
 ** ------------
@@ -26,6 +33,7 @@
 
 #define SID_DIR_BASE						"/var/cache/fab/sid"
 #define GN_DIR_BASE							"/var/cache/fab/gn"
+#define FF_DIR_BASE							"/var/cache/fab/ff"
 #define PID_DIR_BASE						"/var/tmp/fab/pid"
 
 #define DEFAULT_FABFILE 				"fabfile"

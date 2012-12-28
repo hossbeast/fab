@@ -114,10 +114,23 @@ TODO
 
 - fablw - examine the dependency graph
 
-
-TASKS
- - a task is a name given to a formula to be executed on demand
-	- relations : non-task nodes may NOT depend on task nodes
-							: task nodes MAY depend on any other node
-	- formula : a task MUST have a formula
-	- exec : a task is ALWAYS executed and is NOT related to presence/contents of any file
+- dependency discovery from .l and .y
+- dependency discovery - PRIMARY files only!
+- dependency discovery - caching
+- save relations in /var/cache/fab/gn
+- 2 dump modes - saved relations, parsed node
+- log tag audit
+- GENERATED always in its own stage?
+- generator.tab.o - wrong extension (in dump)
+- define variables from commandline
+- includes ?? 
+- terminating comments /* */
+- memory audit
+- dump individual VAR-sets by name
+- dump individual formulas by node-name
+- better help output, logging category explanations
+- flag 
+- node settings ( x:y, x:y )
+	- always fabricate/invalidate
+	- use/or not cached discovery
+	- use hash of formula as part of filename?

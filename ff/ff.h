@@ -8,6 +8,9 @@
 #include <listwise.h>
 #include <listwise/generator.h>
 
+#include "coll.h"
+#include "hashblock.h"
+
 #define restrict __restrict
 
 // flags
@@ -16,6 +19,7 @@
 #define FFN_DISCOVERY	0x04
 #define FFN_WEAK			0x08
 
+// FF node type table
 #define FFN_TABLE(x)										\
 	_FFN(FFN_STMTLIST				, 0x01	, x)	\
 	_FFN(FFN_DEPENDENCY			, 0x02	, x)	\
@@ -37,6 +41,20 @@ enum {
 #define _FFN(a, b, c) (c) == b ? #a "[" #b "]" :
 #define FFN_STRING(x) FFN_TABLE(x) "unknown"
 
+// FF type table
+#define FFT_TABLE(x)																												\
+	_FFT(FFT_REGULAR				, 0x01	, x)	/* regular fabfile */								\
+	_FFT(FFT_DDISC					, 0x02	, x)	/* dependency discovery fabfile */	\
+
+enum {
+#define _FFT(a, b, c) a = b,
+	FFT_TABLE
+#undef _FFT
+};
+
+#define _FFT(a, b, c) (c) == b ? #a "[" #b "]" :
+#define FFT_STRING(x) FFT_TABLE(x) "unknown"
+
 struct ff_file;
 struct ff_loc;
 struct ff_node;
@@ -44,15 +62,41 @@ struct gn;
 
 typedef struct ff_file
 {
-	char *						name;			// name of fabfile
+	uint32_t					type;			// fabfile type
 
+	char *						name;			// name of fabfile
 	char *						path;			// canonical path to fabfile 
 	char *						dir;			// canonical path to dir fabfile is in
+	char *						idstring;	// identifier string, subject to execution parameters
 
-	struct gn *				dscv_gn;	// for a dependency discovery fabfile, associated graph node
-
-	char*							idstring;	// identifier string, subject to execution parameters
+	union
+	{
+		// dependency discovery fabfile
+		struct {
+			struct gn *				dscv_gn;	// associated graph node
+		};
+		
+		// regular fabfile
+		struct {
+			hashblock *				hb;
+		};
+	};
 } ff_file;
+
+// collection of ff_files (REGULAR only, not discovery)
+extern union ff_files_t
+{
+	coll_doubly c;
+
+	struct
+	{
+		int		l;						// length
+		int		a;						// allocated
+		int		z;						// element size
+
+		ff_file ** e;				// elements
+	};
+} ff_files;
 
 typedef struct ff_loc
 {
@@ -250,4 +294,13 @@ void ff_dump(ff_node * const restrict root);
 char * ff_idstring(ff_file * const restrict ff)
 	__attribute__((nonnull));
 
+
+int ff_hb_read(ff_file * const restrict ff)
+	__attribute__((nonnull));
+	
+
+int ff_hb_write(ff_file * const restrict ff)
+	__attribute__((nonnull));
+
+#undef restrict
 #endif

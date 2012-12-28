@@ -7,12 +7,12 @@
 #include <unistd.h>
 #include <time.h>
 
+#include "hashblock.h"
+
 #include "coll.h"
 #include "map.h"
 
 #define restrict __restrict
-
-#define GN_VERSION				0x01
 
 /*
 ** graph node designations
@@ -33,6 +33,23 @@
 #define GN_FLAGS_HASNEED			0x01
 #define GN_FLAGS_CANFAB				0x02
 #define GN_FLAGS_NOFILE				0x04
+
+#define GN_DESIGNATION_TABLE(x)																											\
+	_GN_DESIGNATION(GN_DESIGNATION_TASK								, 0x01	, "TASK"				, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_SECONDARY					, 0x02	, "SECONDARY"		, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_SECONDARY_NOFORM		, 0x03	, "SECONDARY"		, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_GENERATED					, 0x04	, "GENERATED"		, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_NOFILE							, 0x05	, "NOFILE"			, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_PRIMARY						, 0x06	, "PRIMARY"			, x)		\
+
+enum {
+#define _GN_DESIGNATION(a, b, c, d) a = b,
+GN_DESIGNATION_TABLE(0)
+#undef _GN_DESIGNATION
+};
+
+#define _GN_DESIGNATION(a, b, c, d) (d) == b ? c :
+#define GN_DESIGNATION_STR(x) GN_DESIGNATION_TABLE(x) "unknown"
 
 struct ff_file;
 struct ff_node;
@@ -56,6 +73,7 @@ typedef struct
 typedef struct gn
 {
 	uint8_t						flags;
+	uint8_t						designation;
 
 	/* exported to listwise - maintain corresponding length
 	** these strings ARE null-terminated, though
@@ -72,30 +90,15 @@ typedef struct gn
 	char*							idstring;				// identifier string, subject to execution parameters
 	int								idstringl;
 
-	// fields for computing stathash
-	struct __attribute__((packed))
-	{
-		// stat fields
-		dev_t							dev;     /* ID of device containing file */
-		ino_t							ino;     /* inode number */
-		mode_t						mode;    /* protection */
-		nlink_t						nlink;   /* number of hard links */
-		uid_t							uid;     /* user ID of owner */
-		gid_t							gid;     /* group ID of owner */
-		off_t							size;    /* total size, in bytes */
-		time_t						mtime;   /* time of last modification */
-		time_t						ctime;   /* time of last status change */
-	};
+	//
+	// PRIMARY
+	//
+	hashblock *				hb;
 
-	// hashing fields
-	uint32_t					stathash[2];	// hash of fs properties (PRIMARY nodes)
-	char *						stathash_path;
-
-	uint32_t					fmlhash[2];		// hash of command used to fabricate the node (SECONDARY nodes)
-	char *						fmlhash_path;
-
-	uint32_t					vrshash[2];		// version identifier
-	char *						vrshash_path;
+	//
+	// SECONDARY
+	//
+	int								exists;
 
 	// this node depends on the nodes in this list
 	union {
@@ -253,13 +256,17 @@ int gn_edge_add(
 //
 void gn_dump(gn *);
 
-void gn_hashcmd(gn * gn, char * s, int l);
+/// gn_exists
+//
+// for a SECONDARY file - check whether the file exists, populate {exists}
+//
+int gn_exists(gn *);
 
-int gn_hashes_read(gn * gn);
+int gn_hb_write(gn * const restrict gn)
+	__attribute__((nonnull));
 
-int gn_hashes_write(gn * gn);
-
-int gn_hashes_cmp(gn *);
+int gn_hb_read(gn * const restrict gn)
+	__attribute__((nonnull));
 
 /// gn_traverse_needs
 //
@@ -282,7 +289,17 @@ int gn_depth_traversal_relations_needsward(gn * r, void (*logic)(relation*));
 //
 // get a string identifying a node, subject to execution arguments
 //
-char * gn_idstring(gn * gn)
+char * gn_idstring(gn * const restrict gn)
 	__attribute__((nonnull));
 
+/// gn_designate
+//
+// populate gn->flags and gn->designation
+//
+// return GN_DESIGNATION_STR(gn->designation)
+//
+char * gn_designate(gn * gn)
+	__attribute__((nonnull));
+
+#undef restrict
 #endif

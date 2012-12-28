@@ -27,21 +27,6 @@ static int count_dscv(gn * r, int * c)
 {
 	void logic(gn * gn, int d)
 	{
-#if 0
-printf("%-30s %10s=%d %10s=%p %10s=%d %10s=%d %10s=%d\n"
-	, gn_idstring(gn)
-, "mark"
-	, gn->dscv_mark
-, "dscv"
-	, gn->dscv
-, "prune"
-	, prune
-, "changed"
-	, gn->changed
-, "rebuild"
-	, gn->rebuild
-);
-#endif
 		if(gn->dscv_mark == 0 && gn->dscv)
 		{
 			(*c)++;
@@ -98,7 +83,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 		for(x = 0; x < rootsl; x++)
 			fatal(assign_dscv, roots[x], *ts, &k);
 
-		log(L_DSC | L_DSCINFO, "DISCOVERY %d executes %d", i, tsl);
+		log(L_DSC | L_DSCEXEC, "DISCOVERY %d executes %d", i, tsl);
 
 		// render formulas
 		for(x = 0; x < tsl; x++)
@@ -126,7 +111,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 		}
 
 		// execute all formulas in parallel
-		fatal(ts_execwave, *ts, x, tsw, L_DSC | L_DSCEXEC, L_DSC);
+		fatal(ts_execwave, *ts, x, tsw, i, L_DSC | L_DSCEXEC, L_DSC);
 
 		// harvest the results
 		int newn = 0;
@@ -142,6 +127,9 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 				, (*ts)[x]->fmlv->products[0]
 				, &ffn
 			);
+
+			if(!ffn)
+				return 0;
 
 			// dump, pending logging
 			ff_dump(ffn);

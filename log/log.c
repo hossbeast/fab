@@ -31,7 +31,6 @@ struct g_logs_t o_logs[] = {
 	  { .v = L_ERROR		, .s = "ERROR"		, .d = "errors leading to shutdown" }
 	, { .v = L_WARN			, .s = "WARN"			, .d = "nonfatal warnings" }
 	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
-	, { .v = L_IDEN			, .s = "IDEN"			, .d = "process identity switches" }
 	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
 	, { .v = L_PARAMS		, .s = "PARAMS"		, .d = "program execution parameters" }
 	, { .v = L_FFTOKN		, .s = "FFTOKN"		, .d = "fabfile parsing - token stream" }
@@ -53,8 +52,8 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery" }
 	, { .v = L_DGDEPS		, .s = "DGDEPS"		, .d = "dependency graph - dependencies" }
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
-	, { .v = L_DGHASH		, .s = "DGHASH"		, .d = "dependency graph - hash loading/saving" }
 	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
+	, { .v = L_HASHBLK	, .s = "HASHBLK"	, .d = "hashblock - read/write" }
 	, { .v = L_VAR			, .s = "VAR"			, .d = "variable defintions" }
 	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	, .d = "debug liblistwise invocations ** VERBOSE" }
 };

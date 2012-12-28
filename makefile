@@ -87,7 +87,6 @@ main.o  : args/args.o						\
 				  common/coll.o					\
 				  common/idx.o					\
 				  common/pstring.o			\
-					common/rpath.o				\
 				  common/unitstring.o		\
 				  common/xmem.o					\
 				  common/xstring.o			\
@@ -103,7 +102,8 @@ main.o  : args/args.o						\
 				  ts/ts.o								\
 					dsc/dsc.o							\
 					dep/dep.o							\
-					identity/identity.o
+					identity/identity.o		\
+					hashblock/hashblock.o
 
 common/idx.o : common/xstring.o
 

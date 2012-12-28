@@ -7,13 +7,14 @@
 
 #include "gn.h"
 
+#include "fml.h"
+#include "args.h"
+
 #include "log.h"
 #include "control.h"
-#include "fml.h"
-
-#include "args.h"
 #include "xmem.h"
 #include "unitstring.h"
+#include "cksum.h"
 
 #define restrict __restrict
 
@@ -28,54 +29,6 @@ union gn_nodes_t		gn_nodes = { { .size = sizeof(gn) } };
 //
 // static
 //
-
-static uint32_t hash(const char* s, size_t l)
-{
-	uint32_t h = 0;
-
-	int x;
-	for(x = 0; x < l; x++)
-	{
-		h += s[x];
-		h += (h << 10);
-		h ^= (h >> 6);
-	}
-
-	h += (h << 3);
-	h ^= (h >> 11);
-	h += (h << 15);
-
-	return h;
-}
-
-static void gn_stat(gn * n)
-{
-	// skip for non-file-backed nodes
-	if(strcmp(n->dir, "/.."))
-	{
-		struct stat stb;
-
-		// STAT for A
-		if(stat(n->path, &stb) == 0)
-		{
-			n->dev			= stb.st_dev;
-			n->ino			= stb.st_ino;
-			n->mode			= stb.st_mode;
-			n->nlink		= stb.st_nlink;
-			n->uid			= stb.st_uid;
-			n->gid			= stb.st_gid;
-			n->size			= stb.st_size;
-			n->mtime		= stb.st_mtime;
-			n->ctime		= stb.st_ctime;
-		}
-
-		// compute hashes
-		n->stathash[1] = hash(
-				(char*)&n->dev
-			, (char*)&n->ctime - (char*)&n->dev
-		);
-	}
-}
 
 static int gn_create(const char * const restrict realwd, char * const restrict A, int Al, gn ** gna, int * const restrict new)
 {
@@ -153,26 +106,15 @@ static int gn_create(const char * const restrict realwd, char * const restrict A
 		map_set(gn_nodes.by_path, p, pl, gna, sizeof(*gna));
 
 		// populate gna
-		(*gna)->vrshash[1]		= GN_VERSION;
 		(*gna)->path					= strdup(p);
 		(*gna)->pathl					= pl;
-		(*gna)->pathhash			= hash((*gna)->path, strlen((*gna)->path));
+		(*gna)->pathhash			= cksum((*gna)->path, strlen((*gna)->path));
 		(*gna)->name					= strdup(n);
 		(*gna)->namel					= nl;
 		(*gna)->dir						= strndup(d, dl);
 		(*gna)->dirl					= dl;
 		(*gna)->needs.z				= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z				= sizeof((*gna)->feeds.e[0]);
-
-		// ensure GN_DIR_BASE exists for this gn
-		fatal(xsprintf, &(*gna)->stathash_path, GN_DIR_BASE "/%u", (*gna)->pathhash);
-		fatal(identity_assume_fabsys);
-		fatal(mkdirp, (*gna)->stathash_path, S_IRWXU | S_IRWXG | S_IRWXO);
-		fatal(identity_assume_user);
-
-		fatal(xsprintf, &(*gna)->stathash_path, GN_DIR_BASE "/%u/stat", (*gna)->pathhash);
-		fatal(xsprintf, &(*gna)->fmlhash_path, GN_DIR_BASE  "/%u/fml", (*gna)->pathhash);
-		fatal(xsprintf, &(*gna)->vrshash_path, GN_DIR_BASE  "/%u/vrs", (*gna)->pathhash);
 
 		char * xt = n + nl;
 		while(*xt != '.' && xt != n)
@@ -184,7 +126,6 @@ static int gn_create(const char * const restrict realwd, char * const restrict A
 			(*gna)->extl = strlen(xt);
 		}
 
-		gn_stat(*gna);
 		if(new)
 			(*new)++;
 	}
@@ -270,7 +211,7 @@ gn * gn_lookup_canon(char* s, int l)
 	return 0;
 }
 
-int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** r, int * const restrict newa)
+int gn_add(char * const realwd, void * const A, int Al, gn ** r, int * const newa)
 {
 	gn *	gna = 0;
 
@@ -283,13 +224,13 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 }
 
 int gn_edge_add(
-	  char * const restrict realwd
-	, void ** const restrict A, int Al, int At
-	, void ** const restrict B, int Bl, int Bt
-	, struct ff_node * const restrict ffn
-	, int * const restrict newa
-	, int * const restrict newb
-	, int * const restrict newr
+	  char * const realwd
+	, void ** const A, int Al, int At
+	, void ** const B, int Bl, int Bt
+	, struct ff_node * const ffn
+	, int * const newa
+	, int * const newb
+	, int * const newr
 )
 {
 	gn *	gna = 0;
@@ -363,54 +304,25 @@ void gn_dump(gn * gn)
 	int x;
 	char space[128];
 
-	gn->flags = 0;
-	if(strcmp(gn->dir, "/..") == 0)
-		gn->flags |= GN_FLAGS_NOFILE;
-	if(gn->needs.l)
-		gn->flags |= GN_FLAGS_HASNEED;
-	if(gn->fabv)
-		gn->flags |= GN_FLAGS_CANFAB;
-
 	if(log_would(L_DG | L_DGRAPH))
 	{
 		log(L_DG | L_DGRAPH, "%8s : %s", "path", gn->path);
 		log(L_DG | L_DGRAPH, "%8s : %s", "name", gn->name);
 		log(L_DG | L_DGRAPH, "%8s : %s", "dir", gn->dir);
 		log(L_DG | L_DGRAPH, "%8s : %s", "ext", gn->ext);
+		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn_designate(gn));
 
-		if(gn->fabv)
+		if(gn->designation == GN_DESIGNATION_PRIMARY)
 		{
-			if(strcmp(gn->dir, "/..") == 0)
-				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "TASK");
-			else if(gn->needs.l)
-				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "SECONDARY");
-			else
-				log(L_DG | L_DGRAPH, "%12s : %s", "designation", "GENERATED");
-		}
-		else if(strcmp(gn->dir, "/..") == 0)
-		{
-			log(L_DG | L_DGRAPH, "%12s : %s", "designation", "NOFILE");
-		}
-		else if(gn->needs.l)
-		{
-			log(L_WARN | L_DG | L_DGRAPH, "%12s : %s", "designation", "SECONDARY (no formula)");
-		}
-		else
-		{
-			log(L_DG | L_DGRAPH, "%12s : %s", "designation", "PRIMARY");
-		}
-
-		if(!(gn->flags & GN_FLAGS_NOFILE))
-		{
-			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->size);
-			if(gn->mtime)
+			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->hb->size);
+			if(gn->hb->mtime)
 			{
 				struct tm ltm;
-				localtime_r(&gn->mtime, &ltm);
+				localtime_r(&gn->hb->mtime, &ltm);
 				strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
 
 				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-abs", space);
-				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - gn->mtime));
+				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - gn->hb->mtime));
 			}
 			else
 			{
@@ -422,7 +334,8 @@ void gn_dump(gn * gn)
 		{
 			if(gn->fabv)
 			{
-				log(L_DG | L_DGRAPH, "%12s : [%3d,%3d - %3d,%3d]", "formula"
+				log(L_DG | L_DGRAPH, "%12s : (%s)[%3d,%3d - %3d,%3d]", "formula"
+					, ff_idstring(gn->fabv->fml->ffn->loc.ff)
 					, gn->fabv->fml->ffn->loc.f_lin + 1
 					, gn->fabv->fml->ffn->loc.f_col + 1
 					, gn->fabv->fml->ffn->loc.l_lin + 1
@@ -480,70 +393,6 @@ void gn_dump(gn * gn)
 
 		log(L_DG | L_DGRAPH, "");
 	}
-}
-
-void gn_hashcmd(gn * gn, char * s, int l)
-{
-	gn->fmlhash[1] = hash(s, l);
-}
-
-int gn_hashes_read(gn * gn)
-{
-	int fd;
-	if((fd = open(gn->stathash_path, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO)) != -1)
-	{
-		read(fd, &gn->stathash[0], sizeof(gn->stathash[0]));
-		close(fd);
-	}
-	if((fd = open(gn->fmlhash_path, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO)) != -1)
-	{
-		read(fd, &gn->fmlhash[0], sizeof(gn->fmlhash[0]));
-		close(fd);
-	}
-	if((fd = open(gn->vrshash_path, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO)) != -1)
-	{
-		read(fd, &gn->vrshash[0], sizeof(gn->vrshash[0]));
-		close(fd);
-	}
-
-	log(L_DGHASH, "<== 0x%08x%08x%08x", gn_idstring(gn), gn->stathash[0], gn->fmlhash[0], gn->vrshash[0]);
-
-	return 1;
-}
-
-int gn_hashes_write(gn * gn)
-{
-	int fd = 0;
-
-	fatal(identity_assume_fabsys);
-
-	if((fd = open(gn->stathash_path, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
-		fail("open(%s) failed [%d][%s", gn->stathash_path, errno, strerror(errno));
-	write(fd, &gn->stathash[1], sizeof(gn->stathash[0]));
-	close(fd);
-
-	if((fd = open(gn->fmlhash_path, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
-		fail("open(%s) failed [%d][%s", gn->fmlhash_path, errno, strerror(errno));
-	write(fd, &gn->fmlhash[1], sizeof(gn->fmlhash[0]));
-	close(fd);
-
-	if((fd = open(gn->vrshash_path, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
-		fail("open(%s) failed [%d][%s", gn->vrshash_path, errno, strerror(errno));
-	write(fd, &gn->vrshash[1], sizeof(gn->vrshash[0]));
-	close(fd);
-
-	log(L_DGHASH, "==> 0x%08x%08x%08x", gn_idstring(gn), gn->stathash[1], gn->fmlhash[1], gn->vrshash[1]);
-
-	fatal(identity_assume_user);
-	return 1;
-}
-
-int gn_hashes_cmp(gn * gn)
-{
-	return     gn->vrshash[1] - gn->vrshash[0]
-					?: gn->stathash[1] - gn->stathash[0]
-					?: gn->fmlhash[1] - gn->fmlhash[0]
-					?: 0;
 }
 
 int gn_depth_traversal_nodes_needsward(gn * r, void (*logic)(gn*, int))
@@ -638,7 +487,7 @@ int gn_depth_traversal_relations_needsward(gn * r, void (*logic)(relation*))
 	return 1;
 }
 
-char * gn_idstring(gn * gn)
+char * gn_idstring(gn * const gn)
 {
 	if(g_args.mode_gnid == MODE_GNID_RELATIVE)
 	{
@@ -669,4 +518,80 @@ char * gn_idstring(gn * gn)
 	}
 
 	return 0;
+}
+
+char* gn_designate(gn * gn)
+{
+	gn->flags = 0;
+	if(strcmp(gn->dir, "/..") == 0)
+		gn->flags |= GN_FLAGS_NOFILE;
+	if(gn->needs.l)
+		gn->flags |= GN_FLAGS_HASNEED;
+	if(gn->fabv)
+		gn->flags |= GN_FLAGS_CANFAB;
+	
+	if(gn->flags & GN_FLAGS_CANFAB)
+	{
+		if(gn->flags & GN_FLAGS_NOFILE)
+			gn->designation = GN_DESIGNATION_TASK;
+		else if(gn->flags & GN_FLAGS_HASNEED)
+			gn->designation = GN_DESIGNATION_SECONDARY;
+		else
+			gn->designation = GN_DESIGNATION_GENERATED;
+	}
+	else if(gn->flags & GN_FLAGS_NOFILE)
+		gn->designation = GN_DESIGNATION_NOFILE;
+	else if(gn->flags & GN_FLAGS_HASNEED)
+	{
+		// but there's no fmlv, which is a warning
+		gn->designation = GN_DESIGNATION_SECONDARY;
+	}
+	else
+		gn->designation = GN_DESIGNATION_PRIMARY;
+
+	return GN_DESIGNATION_STR(gn->designation);
+}
+
+int gn_exists(gn * gn)
+{
+	if(euidaccess(gn->path, F_OK) == 0)
+	{
+		gn->exists = 1;
+	}
+	else if(errno != ENOENT)
+	{
+		fail("access(%s)=[%d][%s]", gn->path, errno, strerror(errno));
+	}
+
+	return 1;
+}
+
+int gn_hb_read(gn * const gn)
+{
+	fatal(hashblock_read, gn->hb);
+
+	log(L_HASHBLK
+		, "%s <== 0x%08x%08x%08x"
+		, gn_idstring(gn)
+		, gn->hb->stathash[0]
+		, gn->hb->contenthash[0]
+		, gn->hb->vrshash[0]
+	);
+
+	return 1;
+}
+
+int gn_hb_write(gn * const gn)
+{
+	fatal(hashblock_write, gn->hb);
+
+	log(L_HASHBLK
+		, "%s ==> 0x%08x%08x%08x"
+		, gn_idstring(gn)
+		, gn->hb->stathash[1]
+		, gn->hb->contenthash[1]
+		, gn->hb->vrshash[1]
+	);
+
+	return 1;
 }

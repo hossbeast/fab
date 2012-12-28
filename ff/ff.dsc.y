@@ -62,9 +62,12 @@
 /* terminals with a semantic value */
 %token <str> WORD							"WORD"
 %token <str> WS								"WS"				/* a single tab/space */
+%token <var> VARNAME					"VARNAME"
 %token <num> LW								"=>>"
 %token <num> ':'
 %token <num> '*'
+%token <num> '['
+%token <num> ']'
 %token <num> '"'
 
 /* nonterminals */
@@ -73,9 +76,11 @@
 %type  <node> statement
 %type  <node> statement_list
 %type  <node> dependency
+%type  <node> list
+%type  <node> listpiece
 %type  <node> word
-%type  <node> wordlist
-%type  <node> barelist
+%type  <node> generator
+
 
 /* sugar */
 %token END 0 "end of file"
@@ -84,7 +89,7 @@
 
 %%
 
-ff_dsc
+ff
 	: statement_list
 	{
 		*parm->ffn = mknode(&@$, sizeof(&@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
@@ -104,29 +109,46 @@ statement
 	;
 
 dependency
-	: ':' barelist
+	: list ':' list
 	{
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1.s, $2->e, FFN_SINGLE, (void*)0, $2);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
 	}
-	| ':' '*' barelist
+	| list ':' '*' list
 	{
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1.s, $3->e, FFN_SINGLE | FFN_WEAK, (void*)0, $3);
-	}
-	;
-
-barelist
-	: wordlist
-	{
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_SINGLE | FFN_WEAK, $1, $4);
 	}
 	;
 
-wordlist
-	: wordlist word
+list
+	: '[' listpiece ']'
+	{
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
+	}
+	| '[' listpiece ']' LW generator
+	{
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
+	}
+	;
+
+listpiece
+	: listpiece listpiece
 	{
 		$$ = addchain($1, $2);
 	}
+	| VARNAME
+	{
+		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
+	}
 	| word
+	| list
+	;
+
+generator
+	: word
+	{
+		$$ = $1;
+		$$->type = FFN_GENERATOR;
+	}
 	;
 
 word
