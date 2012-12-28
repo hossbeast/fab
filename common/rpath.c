@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "rpath.h"
+
 int rpath(const char * s, char ** d)
 {
 	char src[256];
