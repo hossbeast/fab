@@ -41,4 +41,6 @@ int var_set(map * vmap, char * s, lstack * ls)
 
 	// save the resultant list
 	fatal(map_set, vmap, s, strlen(s), &ls, sizeof(ls));
+
+	return 1;
 }

@@ -48,7 +48,7 @@ enum {
 
 enum {
 #define _FFT(a, b, c) a = b,
-	FFT_TABLE
+	FFT_TABLE(0)
 #undef _FFT
 };
 
@@ -66,6 +66,7 @@ typedef struct ff_file
 
 	char *						name;			// name of fabfile
 	char *						path;			// canonical path to fabfile 
+	uint32_t					pathhash;	// hash of path
 	char *						dir;			// canonical path to dir fabfile is in
 	char *						idstring;	// identifier string, subject to execution parameters
 
@@ -79,6 +80,7 @@ typedef struct ff_file
 		// regular fabfile
 		struct {
 			hashblock *				hb;
+			int								hb_reload;
 		};
 	};
 } ff_file;
@@ -106,7 +108,7 @@ typedef struct ff_loc
 	int				l_col;
 
 	ff_file *	ff;
-} ff_loc;
+} __attribute__((packed)) ff_loc;
 
 typedef struct ff_node
 {
@@ -295,11 +297,19 @@ char * ff_idstring(ff_file * const restrict ff)
 	__attribute__((nonnull));
 
 
-int ff_hb_read(ff_file * const restrict ff)
+/// ff_regular_reload
+//
+// for a REGULAR ff_file - load the previous hashblock, stat the file
+//
+int ff_regular_reload(ff_file * const restrict ff)
 	__attribute__((nonnull));
 	
 
-int ff_hb_write(ff_file * const restrict ff)
+/// ff_regular_rewrite
+//
+// for a REGULAR ff_file - write the current hashblock
+//
+int ff_regular_rewrite(ff_file * const restrict ff)
 	__attribute__((nonnull));
 
 #undef restrict

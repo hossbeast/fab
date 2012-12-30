@@ -3,6 +3,7 @@
 #include "control.h"
 
 #include "gnlw.h"
+#include "xmem.h"
 
 static int lw_string(void * o, char* prop, char ** s, int * l);
 static int lw_reflect(void * o, char* property, void *** r, uint8_t ** rtypes, int ** rls, int * rl);

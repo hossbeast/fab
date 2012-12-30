@@ -20,6 +20,7 @@
 #include "dsc.h"
 #include "dep.h"
 #include "tmp.h"
+#include "identity.h"
 
 #include "macros.h"
 #include "control.h"
@@ -122,7 +123,7 @@ int main(int argc, char** argv)
 		{
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
-				fatal(dep_process, ffn->statements[x], 0, vmap, &stax, &staxl, &staxa, staxp, first ? 0 : &first, 0, 0);
+				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxl, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)
 			{
@@ -209,6 +210,7 @@ int main(int argc, char** argv)
 				while(new)
 				{
 					// traverse the graph, construct the build plan that culminates in the given targets
+					// bp_create also updates all node designations
 					fatal(bp_create, node_list, node_list_len, &bp);
 
 					new = 0;
@@ -239,6 +241,10 @@ int main(int argc, char** argv)
 				// execute the build plan, one stage at a time
 				if(bp_exec(bp, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw) == 0)
 					return 0;
+
+				// commit regular fabfile hashblocks
+				for(x = 0; x < ff_files.l; x++)
+					fatal(hashblock_write, ff_files.e[x]->hb);
 			}
 		}
 

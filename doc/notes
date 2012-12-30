@@ -121,7 +121,6 @@ TODO
 - 2 dump modes - saved relations, parsed node
 - log tag audit
 - GENERATED always in its own stage?
-- generator.tab.o - wrong extension (in dump)
 - define variables from commandline
 - includes ?? 
 - terminating comments /* */
@@ -132,5 +131,5 @@ TODO
 - flag 
 - node settings ( x:y, x:y )
 	- always fabricate/invalidate
-	- use/or not cached discovery
+	- disable cached discovery
 	- use hash of formula as part of filename?

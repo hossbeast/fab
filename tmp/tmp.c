@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <signal.h>
 #include <time.h>
 #include <unistd.h>
 #include <ftw.h>
@@ -7,6 +8,7 @@
 
 #include "tmp.h"
 #include "args.h"
+#include "identity.h"
 
 #include "log.h"
 #include "control.h"

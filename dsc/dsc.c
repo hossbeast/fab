@@ -25,7 +25,7 @@
 
 static int count_dscv(gn * r, int * c)
 {
-	void logic(gn * gn, int d)
+	int logic(gn * gn, int d)
 	{
 		if(gn->dscv_mark == 0 && gn->dscv)
 		{
@@ -35,24 +35,38 @@ static int count_dscv(gn * r, int * c)
 			for(x = 0; x < gn->dscv->products_l; x++)
 				gn->dscv->products[x]->dscv_mark = 1;
 		}
+
+		return 1;
 	};
 
 	return gn_depth_traversal_nodes_needsward(r, logic);
 }
 
-static int assign_dscv(gn * r, ts ** ts, int * c)
+static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
 {
-	void logic(gn * gn, int d)
+	int logic(gn * gn, int d)
 	{
 		if(gn->dscv_mark == 1)
 		{
-			ts[(*c)++]->fmlv = gn->dscv;
+			// determine if the node has suitable cached discovery results
+			fatal(gn_primary_reload_dscv, gn);
+
+			if(gn->dscv_block->block)
+			{
+				cache[(*cachel)++] = gn;
+			}
+			else
+			{
+				ts[(*tsl)++]->fmlv = gn->dscv;
+			}
 
 			int x;
 			for(x = 0; x < gn->dscv->products_l; x++)
 				gn->dscv->products[x]->dscv_mark = 2;
 		}
-	}
+
+		return 1;
+	};
 
 	return gn_depth_traversal_nodes_needsward(r, logic);
 }
@@ -68,22 +82,38 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 	int i;
 	int k;
 
+	gn ** cache = 0;
+	int		cachel = 0;
+	int		cachea = 0;
+
+	int		dscvl = 0;
+
+	int		tsl = 0;
+
 	// count nodes having not yet participated in discovery
 	//  (actually this counts discovery fml contexts)
-	int tsl = 0;
 	for(x = 0; x < rootsl; x++)
-		fatal(count_dscv, roots[x], &tsl);
+		fatal(count_dscv, roots[x], &dscvl);
 
-	for(i = 0; tsl; i++)
+	for(i = 0; dscvl; i++)
 	{
-		fatal(ts_ensure, ts, tsa, tsl);
+		// ensure enough threadspace if all nodes require re-execution of discovery
+		fatal(ts_ensure, ts, tsa, dscvl);
+
+		// ensure enough cache space if all nodes have cached discovery
+		if(dscvl > cachea)
+		{
+			fatal(xrealloc, &cache, sizeof(*cache), dscvl, 0);
+			cachea = dscvl;
+		}
 
 		// assign each threadspace a discovery formula evaluation context
-		k = 0;
+		tsl = 0;
+		cachel = 0;
 		for(x = 0; x < rootsl; x++)
-			fatal(assign_dscv, roots[x], *ts, &k);
+			fatal(assign_dscv, roots[x], *ts, &tsl, cache, &cachel);
 
-		log(L_DSC | L_DSCEXEC, "DISCOVERY %d executes %d", i, tsl);
+		log(L_DSC | L_DSCEXEC, "DISCOVERY %d executes %d cached %d", i, tsl, cachel);
 
 		// render formulas
 		for(x = 0; x < tsl; x++)
@@ -119,12 +149,15 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 
 		for(x = 0; x < tsl; x++)
 		{
+			// PRIMARY node for this discovery
+			gn * dscvgn = (*ts)[x]->fmlv->products[0];
+
 			fatal(ff_dsc_parse
 				, (*ts)[x]->ffp
 				, (*ts)[x]->stdo_txt->s
 				, (*ts)[x]->stdo_txt->l
 				, (*ts)[x]->stdo_path->s
-				, (*ts)[x]->fmlv->products[0]
+				, dscvgn
 				, &ffn
 			);
 
@@ -134,26 +167,36 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 			// dump, pending logging
 			ff_dump(ffn);
 
-			// process dependencies
+			// allocate the dependency block
+			fatal(depblock_allocate, dscvgn->dscv_block);
+
+			// process dependencies, attempt to populate the dependency block
 			for(k = 0; k < ffn->statements_l; k++)
 			{
 				if(ffn->statements[k]->type == FFN_DEPENDENCY)
 				{
-					fatal(dep_process, ffn->statements[k], (*ts)[x]->fmlv->products[0], vmap, stax, staxl, staxa, staxp, 0, &newn, &newr);
+					fatal(dep_process, ffn->statements[k], vmap, stax, staxl, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
 				}
 			}
+		}
+
+		// process cached results
+		for(x = 0; x < cachel; x++)
+		{
+			fatal(depblock_process, cache[x], cache[x]->dscv_block, &newn, &newr);
+			fatal(depblock_close, cache[x]->dscv_block);
 		}
 
 		// sum of discovered objects
 		if(new)
 			(*new) += newn + newr;
 
-		log(L_DSC | L_DSCINFO, "discovered %d nodes and %d edges", newn, newr);
+		log(L_DSC | L_DSCINFO, "DISCOVERY %d : %d nodes and %d edges", i, newn, newr);
 
 		// recount - new nodes may need discovered
-		tsl = 0;
+		dscvl = 0;
 		for(x = 0; x < rootsl; x++)
-			fatal(count_dscv, roots[x], &tsl);
+			fatal(count_dscv, roots[x], &dscvl);
 	}
 
 	return 1;

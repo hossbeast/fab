@@ -38,10 +38,12 @@ static int fmleval_cmp(const void * _A, const void * _B)
 
 static int reset(gn * r)
 {
-	void logic(gn * gn, int d)
+	int logic(gn * gn, int d)
 	{
 		gn->height = -1;
 		gn->stage = -1;
+
+		return 1;
 	};
 
 	return gn_depth_traversal_nodes_needsward(r, logic);
@@ -49,7 +51,7 @@ static int reset(gn * r)
 
 static int heights(gn * r)
 {
-	void logic(gn * gn, int d)
+	int logic(gn * gn, int d)
 	{
 		if(gn->height == -1)
 		{
@@ -61,8 +63,9 @@ static int heights(gn * r)
 			}
 
 			gn->height++;
-//	printf("%s -> %d\n", gn_idstring(gn), gn->height);
 		}
+
+		return 1;
 	};
 
 	return gn_depth_traversal_nodes_needsward(r, logic);
@@ -70,7 +73,7 @@ static int heights(gn * r)
 
 static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
 {
-	void logic(gn * gn, int d)
+	int logic(gn * gn, int d)
 	{
 		if(gn->stage == -1)
 		{
@@ -79,13 +82,15 @@ static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
 				if((*l) == (*a))
 				{
 					int ns = (*a) ? (*a) * 2 + (*a) / 2 : 10;
-					(*lvs) = realloc((*lvs), sizeof(**lvs) * ns);
+					fatal(xrealloc, lvs, sizeof(**lvs), ns, *a);
 					(*a) = ns;
 				}
 
 				(*lvs)[(*l)++] = gn;
 			}
 		}
+
+		return 1;
 	};
 
 	return gn_depth_traversal_nodes_needsward(r, logic);
@@ -239,6 +244,30 @@ int bp_create(gn ** n, int l, bp ** bp)
 			, sizeof((*bp)->stages[0].primary[0])
 			, gn_cmp
 		);
+
+
+		// update all node designations
+		for(x = 0; x < (*bp)->stages_l; x++)
+		{
+			int y;
+			for(y = 0; y < (*bp)->stages[x].primary_l; y++)
+			{
+				gn_designate((*bp)->stages[x].primary[y]);
+			}
+
+			for(y = 0; y < (*bp)->stages[x].evals_l; y++)
+			{
+				for(k = 0; k < (*bp)->stages[x].evals[y]->products_l; k++)
+				{
+					gn_designate((*bp)->stages[x].evals[y]->products[k]);
+				}
+			}
+
+			for(y = 0; y < (*bp)->stages[x].nofmls_l; y++)
+			{
+				gn_designate((*bp)->stages[x].nofmls[y]);
+			}
+		}
 	}
 
 	return 1;
@@ -255,7 +284,13 @@ int bp_prune(bp * bp)
 	if(g_args.invalidate_all)
 	{
 		for(x = 0; x < gn_nodes.l; x++)
-			gn_nodes.e[x]->changed = 1;
+		{
+			if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
+				gn_nodes.e[x]->changed = 1;
+
+			if(gn_nodes.e[x]->designation == GN_DESIGNATION_SECONDARY)
+				gn_nodes.e[x]->rebuild = 1;
+		}
 	}
 	else
 	{
@@ -264,66 +299,14 @@ int bp_prune(bp * bp)
 			gn * gn = 0;
 			if((gn = gn_lookup(g_args.invalidate[x], 0, g_args.cwd)))
 			{
-				gn->changed = 1;
-				gn->rebuild = 1;
+				if(gn->designation == GN_DESIGNATION_PRIMARY)
+					gn->changed = 1;
+
+				if(gn->designation == GN_DESIGNATION_SECONDARY)
+					gn->rebuild = 1;
 			}
 		}
 	}
-
-	// update all node designations
-	for(x = 0; x < bp->stages_l; x++)
-	{
-		for(y = 0; y < bp->stages[x].primary_l; y++)
-		{
-			gn_designate(bp->stages[x].primary[y]);
-		}
-
-		for(y = 0; y < bp->stages[x].evals_l; y++)
-		{
-			for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
-			{
-				gn_designate(bp->stages[x].evals[y]->products[k]);
-			}
-		}
-
-		for(y = 0; y < bp->stages[x].nofmls_l; y++)
-		{
-			gn_designate(bp->stages[x].nofmls[y]);
-		}
-	}
-
-	// nodes in the buildplan
-	//  PRIMARY   : read hashes
-	//  SECONDARY : existence check
-	fatal(identity_assume_fabsys);
-
-	for(x = 0; x < bp->stages_l; x++)
-	{
-		for(y = 0; y < bp->stages[x].primary_l; y++)
-		{
-			fatal(gn_hb_read, bp->stages[x].primary[y]);
-		}
-
-		for(y = 0; y < bp->stages[x].evals_l; y++)
-		{
-			for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
-			{
-				if(bp->stages[x].evals[y]->products[k]->designation == GN_DESIGNATION_SECONDARY)
-				{
-					fatal(gn_exists, bp->stages[x].evals[y]->products[k]);
-				}
-			}
-		}
-	}
-
-	// ff_files
-	//  REGULAR : read hashes
-	for(x = 0; x < ff_files.l; x++)
-	{
-		fatal(ff_hb_read, ff_files.e[x]);
-	}
-
-	fatal(identity_assume_user);
 
 	int poisoned = 0;
 	for(x = 0; x < bp->stages_l; x++)
@@ -334,33 +317,32 @@ int bp_prune(bp * bp)
 			// source files
 			gn * gn = bp->stages[x].primary[y];
 
+			// check if file has changed
+			fatal(gn_primary_reload, gn);
+
 			if(gn->hb->stathash[1] == 0)		// file does not exist
 			{
 				// PRIMARY file - not found
 				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn_idstring(gn));
-				gn->poison = 1;
-			}
-			else
-			{
-				// check if file has changed
-				gn->changed = hashblock_cmp(gn->hb);
-			}
 
-			// needs rebuilt
-			if(gn->changed)
-			{
-				// : mark all nodes that depend on me as needing rebuilt, too
-				for(i = 0; i < gn->feeds.l; i++)
-					gn->feeds.e[i]->A->rebuild = 1;
-			}
-
-			// propagate the poison
-			if(gn->poison)
-			{
+				// poison and propagate
+				poisoned = 1;
 				for(i = 0; i < gn->feeds.l; i++)
 					gn->feeds.e[i]->A->poison = 1;
+			}
+			else if(hashblock_cmp(gn->hb))
+			{
+				gn->changed = 1;
+			}
 
-				poisoned = 1;
+			if(gn->changed)
+			{
+				// propagate through strong dependencies
+				for(i = 0; i < gn->feeds.l; i++)
+				{
+					if(!gn->feeds.e[i]->weak)
+						gn->feeds.e[i]->A->rebuild = 1;
+				}
 			}
 
 			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
@@ -397,21 +379,29 @@ int bp_prune(bp * bp)
 					else if(gn->designation == GN_DESIGNATION_SECONDARY)
 					{
 						// SECONDARY file
+						fatal(gn_secondary_exists, gn);
+
 						if(gn->exists == 0)
+						{
 							gn->rebuild = 1;	// file doesn't exist
+						}
 						else
 						{
-							if(hashblock_cmp(gn->fabv->fml->ffn->loc.ff->hb))
-								gn->rebuild = 1;	// ff containing the formula has changed
+							// rebuild if the ff containing the formula has changed
+							if((gn->changed = hashblock_cmp(gn->fabv->fml->ffn->loc.ff->hb)))
+								gn->rebuild = 1;
 						}
 					}
 
 					// needs rebuilt
 					if(gn->rebuild)
 					{
-						// : mark all nodes that depend on me as needing rebuilt, too
+						// propagate to strong dependencies
 						for(i = 0; i < gn->feeds.l; i++)
-							gn->feeds.e[i]->A->rebuild = 1;
+						{
+							if(!gn->feeds.e[i]->weak)
+								gn->feeds.e[i]->A->rebuild = 1;
+						}
 
 						keep++;
 					}
@@ -437,7 +427,7 @@ int bp_prune(bp * bp)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
-								, gn->designation
+								, gn_designate(gn)
 								, gn_idstring(gn)
 								, "SKIP"
 							);
@@ -460,7 +450,7 @@ int bp_prune(bp * bp)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
-								, gn->designation
+								, gn_designate(gn)
 								, gn_idstring(gn)
 								, "EXECUTE"
 							);
@@ -469,17 +459,17 @@ int bp_prune(bp * bp)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
-								, gn->designation
+								, gn_designate(gn)
 								, gn_idstring(gn)
 								, "REBUILD"
-								, gn->exists  == 0 ? "does not exist" : "sources changed"
+								, !gn->exists ? "does not exist" : gn->changed ? "fabfile changed" : "sources changed"
 							);
 						}
 						else
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
-								, gn->designation
+								, gn_designate(gn)
 								, gn_idstring(gn)
 								, "REBUILD"
 								, "always fab"
@@ -490,7 +480,7 @@ int bp_prune(bp * bp)
 					{
 						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 							, x, c++
-							, gn->designation
+							, gn_designate(gn)
 							, gn_idstring(gn)
 							, "REBUILD"
 							, "eval context product"
@@ -526,7 +516,7 @@ int bp_prune(bp * bp)
 			{
 				log(L_ERROR | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
-					, gn->designation
+					, gn_designate(gn)
 					, gn_idstring(gn)
 					, ""
 					, "no formula"
@@ -536,7 +526,7 @@ int bp_prune(bp * bp)
 			{
 				log(L_WARN | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
-					, gn->designation
+					, gn_designate(gn)
 					, gn_idstring(gn)
 					, ""
 					, "no formula"
@@ -668,7 +658,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 							}
 
 							if(j == pri->feeds.l)
-								fatal(gn_hb_write, pri);
+								fatal(gn_primary_rewrite, pri);
 						}
 					}
 				}

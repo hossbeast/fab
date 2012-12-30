@@ -31,9 +31,9 @@ int pscat(pstring ** restrict p, void * restrict s, size_t l)
 int psgrow(pstring ** restrict p, size_t l)
 	__attribute__((nonnull));
 
-int pstring_free(pstring *);
+void pstring_free(pstring *);
 
-int pstring_xfree(pstring **)
+void pstring_xfree(pstring **)
 	__attribute__((nonnull));
 
 #undef restrict

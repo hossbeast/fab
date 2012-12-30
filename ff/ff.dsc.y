@@ -92,7 +92,7 @@
 ff
 	: statement_list
 	{
-		*parm->ffn = mknode(&@$, sizeof(&@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
+		*parm->ffn = mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 
@@ -111,22 +111,22 @@ statement
 dependency
 	: list ':' list
 	{
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
 	}
 	| list ':' '*' list
 	{
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_SINGLE | FFN_WEAK, $1, $4);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_SINGLE | FFN_WEAK, $1, $4);
 	}
 	;
 
 list
 	: '[' listpiece ']'
 	{
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
 	}
 	| '[' listpiece ']' LW generator
 	{
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
 	}
 	;
 
@@ -137,7 +137,7 @@ listpiece
 	}
 	| VARNAME
 	{
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
 	}
 	| word
 	| list
@@ -154,19 +154,19 @@ generator
 word
 	: '"' wordparts '"'
 	{
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WS wordparts WS
 	{
 		@$ = @2;	/* exclude the enclosing WS for word location */
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WORD
 	{
 		char* v = calloc(1, ($1.e - $1.s) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
-		$$ = mknode(&@$, sizeof(&@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
 	}
 	;
 

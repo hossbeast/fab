@@ -43,4 +43,5 @@ int dsc_exec(
 )
 	__attribute__((nonnull(1, 3, 4, 5, 6, 8, 9, 10)));
 
+#undef restrict
 #endif

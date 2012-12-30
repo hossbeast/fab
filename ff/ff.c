@@ -15,6 +15,8 @@
 #include "xmem.h"
 #include "macros.h"
 #include "args.h"
+#include "cksum.h"
+#include "xstring.h"
 
 // defined in gn.c
 char * gn_idstring(struct gn * const);
@@ -158,15 +160,20 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 	if(dscv_gn)
 	{
 		fatal(xmalloc, &ff, sizeof(*ff));
+
+		ff->type = FFT_DDISC;
+		ff->dscv_gn = dscv_gn;
 	}
 	else
 	{
 		fatal(coll_doubly_add, &ff_files.c, 0, &ff);
+		ff->type = FFT_REGULAR;
 	}
 
 	// canonical path to the fabfile and its directory
 	ff->path = realpath(path, 0);
-	ff->dir = realpath(path, 0);
+	ff->pathhash = cksum(path, strlen(path));
+	ff->dir = strdup(ff->path);
 
 	// terminate at the last directory specification
 	char * tm = ff->dir + strlen(ff->dir);
@@ -176,9 +183,6 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 
 	// name of fabfile
 	ff->name = strdup(++tm);
-
-	if(dscv_gn)
-		ff->dscv_gn = dscv_gn;
 
 	parse_param pp = {
 		  .scanner = p->p
@@ -192,7 +196,7 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 	// make available to the lexer
 	ff_yyset_extra(&pp, p->p);
 
-	if(dscv_gn)
+	if(ff->type == FFT_DDISC)
 	{
 		// parse
 		ff_dsc_yyparse(p->p, &pp);
@@ -201,6 +205,16 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 	{
 		// parse
 		ff_yyparse(p->p, &pp);
+
+		// create hashblock
+		fatal(hashblock_create, &ff->hb, "%s/REGULAR/%u", FF_DIR_BASE, ff->pathhash);
+
+		// load previous hashblock into [0]
+		fatal(hashblock_read, ff->hb);
+
+		// stat the file, populate [1] - now ready for hashblock_cmp
+		fatal(hashblock_stat, ff->hb, ff->path);
+		ff->hb->vrshash[1] = FAB_VERSION;
 	}
 
 	// cleanup state for this parse
@@ -331,7 +345,7 @@ int ff_parse(const ff_parser * const p, char* path, ff_node ** const ffn)
 
 	close(fd);
 
-	int R = parse(p, b, statbuf.st_size, path, ffn, 0);
+	int R = parse(p, b, statbuf.st_size, path, ffn, (void*)0);
 	free(b);
 	return R;
 }
@@ -376,8 +390,6 @@ void ff_freenode(ff_node * const ffn)
 
 		if(ffn->type == FFN_GENERATOR)
 			generator_free(ffn->generator);
-
-		memset(ffn, 0, sizeof(*ffn));
 	}
 
 	free(ffn);
@@ -543,14 +555,10 @@ void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 
 char * ff_idstring(ff_file * const ff)
 {
-	if(ff->dscv_gn)
+	if(ff->type == FFT_DDISC)
 	{
 		if(ff->idstring == 0)
-		{
-			size_t sz = snprintf(0, 0, "DSC:%s", gn_idstring(ff->dscv_gn));
-			ff->idstring = calloc(sz + 1, 1);
-			sprintf(ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
-		}
+			xsprintf(&ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
 
 		return ff->idstring;
 	}
@@ -583,34 +591,4 @@ char * ff_idstring(ff_file * const ff)
 	}
 
 	return 0;
-}
-
-int ff_hb_read(ff_file * const ff)
-{
-	fatal(hashblock_read, ff->hb);
-
-	log(L_HASHBLK
-		, "%s <== 0x%08x%08x%08x"
-		, ff_idstring(ff)
-		, ff->hb->stathash[0]
-		, ff->hb->contenthash[0]
-		, ff->hb->vrshash[0]
-	);
-
-	return 1;
-}
-
-int ff_hb_write(ff_file * const ff)
-{
-	fatal(hashblock_write, ff->hb);
-
-	log(L_HASHBLK
-		, "%s ==> 0x%08x%08x%08x"
-		, ff_idstring(ff)
-		, ff->hb->stathash[1]
-		, ff->hb->contenthash[1]
-		, ff->hb->vrshash[1]
-	);
-
-	return 1;
 }

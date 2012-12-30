@@ -118,7 +118,6 @@ int map_create(map** const restrict m, void (*destructor)(void*, void*))
 
 void* map_set(map* const restrict m, const void* const restrict k, int kl, const void* const restrict v, int vl)
 {
-	void* R = 0;
 	slot** ks = 0;
 	slot** vs = 0;
 	slot** uk = 0;
@@ -268,7 +267,7 @@ void* map_set(map* const restrict m, const void* const restrict k, int kl, const
 	free(uv);
 
 	// return a pointer to the value
-	R = m->tv[i]->p;
+	return m->tv[i]->p;
 }
 
 void* map_get(const map* const restrict m, const void* const restrict k, int kl)
@@ -289,7 +288,7 @@ int map_count(const map* const restrict m)
 void map_clear(map* const restrict m)
 {
 	// reset all lengths; all allocations remain intact
-	int x, y;
+	int x;
 	for(x = 0; x < m->l; x++)
 	{
 		if(m->tk[x] && m->tk[x]->l)
@@ -338,7 +337,7 @@ int map_keysx(const map* const restrict m, void* const restrict t, int* const re
 	fatal(xmalloc, t, m->kc * sizeof(void*));
 	*c = 0;
 
-	int x, y;
+	int x;
 	for(x = 0; x < m->l; x++)
 	{
 		if(m->tk[x] && m->tk[x]->l)
@@ -355,7 +354,7 @@ int map_values(const map* const restrict m, void* const restrict t, int* const r
 	fatal(xmalloc, t, m->kc * sizeof(void*));
 	*c = 0;
 
-	int x, y;
+	int x;
 	for(x = 0; x < m->l; x++)
 	{
 		if(m->tv[x] && m->tv[x]->l)
@@ -371,7 +370,7 @@ void map_free(map* const restrict m)
 {
 	if(m)		// free-like semantics
 	{
-		int x, y;
+		int x;
 		for(x = 0; x < m->l; x++)
 		{
 			if(m->tk[x] && m->tk[x]->l)

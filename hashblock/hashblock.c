@@ -16,6 +16,8 @@
 #include "xmem.h"
 #include "unitstring.h"
 #include "cksum.h"
+#include "xstring.h"
+#include "dirutil.h"
 
 #define restrict __restrict
 
@@ -23,19 +25,28 @@
 // public
 //
 
-int hashblock_create(hashblock ** const hb, const char * const basepath, const uint32_t pathhash)
+int hashblock_create(hashblock ** const hb, const char * const dirfmt, ...)
 {
 	fatal(xmalloc, hb, sizeof(**hb));
 
-	fatal(xsprintf, &(*hb)->hashdir, "%s", basepath);
-	fatal(xsprintf, &(*hb)->stathash_path, "%s/%u/stat", basepath, pathhash);
-	fatal(xsprintf, &(*hb)->contenthash_path, "%s/%u/content", basepath, pathhash);
-	fatal(xsprintf, &(*hb)->vrshash_path, "%s/%u/vrs", basepath, pathhash);
+	va_list va;
+	va_start(va, dirfmt);
+	int req = vsnprintf(0, 0, dirfmt, va);
+	va_end(va);
+
+	fatal(xmalloc, &(*hb)->hashdir, req + 1);
+	va_start(va, dirfmt);
+	vsprintf((*hb)->hashdir, dirfmt, va);
+	va_end(va);
+
+	fatal(xsprintf, &(*hb)->stathash_path, "%s/stat", (*hb)->hashdir);
+	fatal(xsprintf, &(*hb)->contenthash_path, "%s/content", (*hb)->hashdir);
+	fatal(xsprintf, &(*hb)->vrshash_path, "%s/vrs", (*hb)->hashdir);
 
 	return 1;
 }
 
-void hashblock_stat(hashblock * const hb, const char * const path)
+int hashblock_stat(hashblock * const hb, const char * const path)
 {
 	struct stat stb;
 
@@ -51,12 +62,22 @@ void hashblock_stat(hashblock * const hb, const char * const path)
 		hb->size		= stb.st_size;
 		hb->mtime		= stb.st_mtime;
 		hb->ctime		= stb.st_ctime;
+
+		hb->stathash[1] = cksum(
+				(char*)&hb->dev
+			, (char*)&hb->ctime - (char*)&hb->dev
+		);
+	}
+	else if(errno != ENOENT)
+	{
+		fail("stat(%s)=[%d][%s]", path, errno, strerror(errno));
+	}
+	else
+	{
+		hb->stathash[1] = 0;
 	}
 
-	hb->stathash[1] = cksum(
-			(char*)&hb->dev
-		, (char*)&hb->ctime - (char*)&hb->dev
-	);
+	return 1;
 }
 
 int hashblock_read(hashblock * const hb)
@@ -106,7 +127,7 @@ int hashblock_write(const hashblock * const hb)
 
 	if(hb->stathash[1])
 	{
-		if((fd = open(hb->stathash_path, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
+		if((fd = open(hb->stathash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
 			fail("open(%s) failed [%d][%s", hb->stathash_path, errno, strerror(errno));
 		write(fd, &hb->stathash[1], sizeof(hb->stathash[0]));
 		close(fd);
@@ -114,13 +135,13 @@ int hashblock_write(const hashblock * const hb)
 
 	if(hb->contenthash[1])
 	{
-		if((fd = open(hb->contenthash_path, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
+		if((fd = open(hb->contenthash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
 			fail("open(%s) failed [%d][%s", hb->contenthash_path, errno, strerror(errno));
 		write(fd, &hb->contenthash[1], sizeof(hb->contenthash[0]));
 		close(fd);
 	}
 
-	if((fd = open(hb->vrshash_path, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
+	if((fd = open(hb->vrshash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
 		fail("open(%s) failed [%d][%s", hb->vrshash_path, errno, strerror(errno));
 	write(fd, &hb->vrshash[1], sizeof(hb->vrshash[0]));
 	close(fd);

@@ -116,15 +116,20 @@ static int gn_create(const char * const restrict realwd, char * const restrict A
 		(*gna)->needs.z				= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z				= sizeof((*gna)->feeds.e[0]);
 
-		char * xt = n + nl;
-		while(*xt != '.' && xt != n)
-			xt--;
+		char * xt = n;
+		while(xt != n + nl && xt[0] != '.')
+			xt++;
+
 		if(*xt == '.')
 		{
 			xt++;
 			(*gna)->ext = strdup(xt);
-			(*gna)->extl = strlen(xt);
 		}
+		else
+		{
+			(*gna)->ext = strdup("(none)");
+		}
+		(*gna)->extl = strlen(xt);
 
 		if(new)
 			(*new)++;
@@ -227,7 +232,9 @@ int gn_edge_add(
 	  char * const realwd
 	, void ** const A, int Al, int At
 	, void ** const B, int Bl, int Bt
-	, struct ff_node * const ffn
+	, struct ff_node * const reg_ffn
+	, gn * const dscv_gn
+	, int isweak
 	, int * const newa
 	, int * const newb
 	, int * const newr
@@ -267,6 +274,7 @@ int gn_edge_add(
 		}
 
 		relation * rel = 0;
+
 		if(!gna->needs.by_B)
 			fatal(map_create, &gna->needs.by_B, 0);
 		
@@ -285,8 +293,18 @@ int gn_edge_add(
 
 			rel->A = gna;
 			rel->B = gnb;
-			rel->ffn = ffn;
-			rel->weak = ffn->flags & FFN_WEAK;
+			rel->weak = isweak;
+
+			if(reg_ffn)
+			{
+				rel->type = GN_RELATION_REGULAR;
+				rel->ffn = reg_ffn;
+			}
+			if(dscv_gn)
+			{
+				rel->type = GN_RELATION_CACHED;
+				rel->dscv_gn = dscv_gn;
+			}
 
 			if(newr)
 				(*newr)++;
@@ -307,8 +325,9 @@ void gn_dump(gn * gn)
 	if(log_would(L_DG | L_DGRAPH))
 	{
 		log(L_DG | L_DGRAPH, "%8s : %s", "path", gn->path);
-		log(L_DG | L_DGRAPH, "%8s : %s", "name", gn->name);
+		log(L_DG | L_DGRAPH, "%8s : %u", "pathhash", gn->pathhash);
 		log(L_DG | L_DGRAPH, "%8s : %s", "dir", gn->dir);
+		log(L_DG | L_DGRAPH, "%8s : %s", "name", gn->name);
 		log(L_DG | L_DGRAPH, "%8s : %s", "ext", gn->ext);
 		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn_designate(gn));
 
@@ -358,22 +377,19 @@ void gn_dump(gn * gn)
 		log(L_DG | L_DGRAPH, "%12s : %d", "height", gn->height);
 		log(L_DG | L_DGRAPH, "%12s : %d", "stage", gn->stage);
 
-		if(gn->flags & GN_FLAGS_HASNEED)
+		log(L_DG | L_DGRAPH, "%12s : %d", "needs", gn->needs.l);
+		for(x = 0; x < gn->needs.l; x++)
 		{
-			log(L_DG | L_DGRAPH, "%12s : %d", "needs", gn->needs.l);
-			for(x = 0; x < gn->needs.l; x++)
-			{
-				log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
-					, ""
-					, gn->needs.e[x]->weak ? "*" : " "
-					, gn_idstring(gn->needs.e[x]->B)
-					, ff_idstring(gn->needs.e[x]->ffn->loc.ff)
-					, gn->needs.e[x]->ffn->loc.f_lin + 1
-					, gn->needs.e[x]->ffn->loc.f_col + 1
-					, gn->needs.e[x]->ffn->loc.l_lin + 1
-					, gn->needs.e[x]->ffn->loc.l_col + 1
-				);
-			}
+			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
+				, ""
+				, gn->needs.e[x]->weak ? "*" : " "
+				, gn_idstring(gn->needs.e[x]->B)
+				, ff_idstring(gn->needs.e[x]->ffn->loc.ff)
+				, gn->needs.e[x]->ffn->loc.f_lin + 1
+				, gn->needs.e[x]->ffn->loc.f_col + 1
+				, gn->needs.e[x]->ffn->loc.l_lin + 1
+				, gn->needs.e[x]->ffn->loc.l_col + 1
+			);
 		}
 
 		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", gn->feeds.l);
@@ -395,11 +411,16 @@ void gn_dump(gn * gn)
 	}
 }
 
-int gn_depth_traversal_nodes_needsward(gn * r, void (*logic)(gn*, int))
+int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 {
 	gn * stack[64] = {};
 	int ptr = 0;
 
+	// RETURNS
+	//  0 - success
+	//  1 - cycle detected
+	// -1 - callback failure
+	//
 	int enter(gn * n, int d)
 	{
 		if(n->guard)
@@ -415,74 +436,32 @@ int gn_depth_traversal_nodes_needsward(gn * r, void (*logic)(gn*, int))
 		int x;
 		for(x = 0; x < n->needs.l; x++)
 		{
-			if(enter(n->needs.e[x]->B, d + 1))
+			int e = enter(n->needs.e[x]->B, d + 1);
+			if(e == 1)
 			{
 				if(ptr < sizeof(stack) / sizeof(stack[0]))
 					stack[ptr++] = n;
 
 				return 1;
 			}
+			if(e == -1)
+				return -1;
 		}
 
 		// logic on this node
-		logic(n, d);
+		if(logic(n, d) == 0)
+			return -1;
 
 		n->guard = 0;
 
 		return 0;
 	};
 
-	if(enter(r, 0))
+	int e = enter(r, 0);
+	if(e == 1)
 		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr);
-
-	return 1;
-}
-
-int gn_depth_traversal_relations_needsward(gn * r, void (*logic)(relation*))
-{
-	gn * stack[64] = {};
-	int ptr = 0;
-
-	int enter(void * N, int root)
-	{
-		gn * n = 0;
-		if(root)
-			n = (gn*)N;
-		else
-			n = ((relation*)N)->B;
-
-		if(n->guard)
-		{
-			if(ptr < sizeof(stack) / sizeof(stack[0]))
-				stack[ptr++] = n;
-
-			return 1;
-		}
-		n->guard = 1;
-
-		// descend
-		int x;
-		for(x = 0; x < n->needs.l; x++)
-		{
-			if(enter(n->needs.e[x], 0))
-			{
-				if(ptr < sizeof(stack) / sizeof(stack[0]))
-					stack[ptr++] = n;
-
-				return 1;
-			}
-		}
-
-		// logic on this node
-		logic(N);
-
-		n->guard = 0;
-
+	if(e == -1)
 		return 0;
-	};
-
-	if(enter(r, 1))
-		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr);
 
 	return 1;
 }
@@ -552,7 +531,7 @@ char* gn_designate(gn * gn)
 	return GN_DESIGNATION_STR(gn->designation);
 }
 
-int gn_exists(gn * gn)
+int gn_secondary_exists(gn * const gn)
 {
 	if(euidaccess(gn->path, F_OK) == 0)
 	{
@@ -566,23 +545,58 @@ int gn_exists(gn * gn)
 	return 1;
 }
 
-int gn_hb_read(gn * const gn)
+int gn_primary_reload_dscv(gn * const gn)
 {
-	fatal(hashblock_read, gn->hb);
+	// ensure we've reloaded hashes for the backing file
+	fatal(gn_primary_reload, gn);
 
-	log(L_HASHBLK
-		, "%s <== 0x%08x%08x%08x"
-		, gn_idstring(gn)
-		, gn->hb->stathash[0]
-		, gn->hb->contenthash[0]
-		, gn->hb->vrshash[0]
-	);
+	// create ddisc block
+	fatal(depblock_create, &gn->dscv_block, "%s/PRIMARY/%u", GN_DIR_BASE, gn->pathhash);
+
+	// only actually load the dscv cache if the backing file has not changed
+	if(hashblock_cmp(gn->hb) == 0)
+	{
+		fatal(depblock_read, gn->dscv_block);
+	}
 
 	return 1;
 }
 
-int gn_hb_write(gn * const gn)
+int gn_primary_reload(gn * const gn)
 {
+	if(gn->hb_loaded == 0)
+	{
+		// create hashblock
+		fatal(hashblock_create, &gn->hb, "%s/PRIMARY/%u", GN_DIR_BASE, gn->pathhash);
+
+		// load the previous hashblock
+		fatal(hashblock_read, gn->hb);
+
+		log(L_HASHBLK
+			, "%s <== 0x%08x%08x%08x"
+			, gn_idstring(gn)
+			, gn->hb->stathash[0]
+			, gn->hb->contenthash[0]
+			, gn->hb->vrshash[0]
+		);
+
+		// stat the file, compute new stathash
+		fatal(hashblock_stat, gn->hb, gn->path);
+
+		gn->hb->vrshash[1] = FAB_VERSION;
+		gn->hb_loaded = 1;
+	}
+
+	return 1;
+}
+
+int gn_primary_rewrite(gn * const gn)
+{
+	// rewrite dependency discovery block
+	if(gn->dscv_block)
+		fatal(depblock_write, gn->dscv_block);
+
+	// rewrite the hashblock
 	fatal(hashblock_write, gn->hb);
 
 	log(L_HASHBLK

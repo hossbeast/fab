@@ -5,10 +5,12 @@
 
 #include "pstring.h"
 
+#include "xmem.h"
+
 int pvprintf(pstring ** p, char * fmt, va_list va)
 {
-	if(!*p)
-		(*p) = calloc(sizeof(**p), 1);
+	if(!*p && xmalloc(p, sizeof(**p)) == 0)
+		return 0;
 
 	va_list va2;
 	va_copy(va2, va);
@@ -16,14 +18,13 @@ int pvprintf(pstring ** p, char * fmt, va_list va)
 	int size = vsnprintf(0, 0, fmt, va2);
 	va_end(va2);
 
-	if(size >= (*p)->a)
-	{
-		(*p)->a = size + 1;
-		(*p)->s = realloc((*p)->s, (*p)->a);
-	}
+	if(psgrow(p, size) == 0)
+		return 0;
 
 	vsprintf((*p)->s, fmt, va);
 	(*p)->l = size;
+
+	return 1;
 }
 
 int psprintf(pstring ** p, char * fmt, ...)
@@ -31,14 +32,17 @@ int psprintf(pstring ** p, char * fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 
-	pvprintf(p, fmt, va);
+	if(pvprintf(p, fmt, va) == 0)
+		return 0;
 	va_end(va);
+
+	return 1;
 }
 
 int pscatvf(pstring ** p, char * fmt, va_list va)
 {
-	if(!*p)
-		*p = calloc(sizeof(**p), 1);
+	if(!*p && xmalloc(p, sizeof(**p)) == 0)
+		return 0;
 
 	va_list va2;
 	va_copy(va2, va);
@@ -46,14 +50,13 @@ int pscatvf(pstring ** p, char * fmt, va_list va)
 	int size = vsnprintf(0, 0, fmt, va2);
 	va_end(va2);
 
-	if(((*p)->l + size) >= (*p)->a)
-	{
-		(*p)->a = (*p)->l + size + 1;
-		(*p)->s = realloc((*p)->s, (*p)->a);
-	}
+	if(psgrow(p, (*p)->l + size) == 0)
+		return 0;
 
 	vsprintf((*p)->s + (*p)->l, fmt, va);
 	(*p)->l += size;
+
+	return 1;
 }
 
 int pscatf(pstring ** p, char * fmt, ...)
@@ -61,46 +64,53 @@ int pscatf(pstring ** p, char * fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 
-	pscatvf(p, fmt, va);
+	if(pscatvf(p, fmt, va) == 0)
+		return 0;
+
 	va_end(va);
+
+	return 1;
 }
 
 int pscat(pstring ** p, void * s, size_t l)
 {
-	if(!*p)
-		*p = calloc(sizeof(**p), 1);
+	if(!*p && xmalloc(p, sizeof(**p)) == 0)
+		return 0;
 
-	if(((*p)->l + l) >= (*p)->a)
-	{
-		(*p)->a = (*p)->l + l + 1;
-		(*p)->s = realloc((*p)->s, (*p)->a);
-	}
+	if(psgrow(p, (*p)->l + l) == 0)
+		return 0;
 
 	memcpy((*p)->s + (*p)->l, s, l);
 	(*p)->l += l;
+
+	return 1;
 }
 
 int psgrow(pstring ** p, size_t l)
 {
-	if(!*p)
-		*p = calloc(sizeof(**p), 1);
+	if(!*p && xmalloc(p, sizeof(**p)) == 0)
+		return 0;
 
-	if(l > (*p)->a)
+	if(l >= (*p)->a)
 	{
-		(*p)->a = l;
-		(*p)->s = realloc((*p)->s, (*p)->a);
+		if(xrealloc(&(*p)->s, 1, l+1, (*p)->a) == 0)
+			return 0;
+
+		(*p)->a = l+1;
 	}
+
+	return 1;
 }
 
-int pstring_free(pstring * p)
+void pstring_free(pstring * p)
 {
 	if(p)
-	{
 		free(p->s);
-	}
+
+	free(p);
 }
 
-int pstring_xfree(pstring ** p)
+void pstring_xfree(pstring ** p)
 {
 	pstring_free(*p);
 	*p = 0;

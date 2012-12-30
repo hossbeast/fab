@@ -7,7 +7,10 @@
 #include <unistd.h>
 #include <time.h>
 
+#include "gn.h"
+
 #include "hashblock.h"
+#include "depblock.h"
 
 #include "coll.h"
 #include "map.h"
@@ -17,9 +20,9 @@
 /*
 ** graph node designations
 **
-** 1. has any dependencies
-** 2. can be fabricated by some formula
-** 3. has a backing file
+** 1. HASNEED - has any dependencies
+** 2. CANFAB  - can be fabricated by some formula
+** 3. !NOFILE - has a backing file
 **
 **              1  2  3
 ** PRIMARY   - [ ][ ][x]
@@ -34,6 +37,9 @@
 #define GN_FLAGS_CANFAB				0x02
 #define GN_FLAGS_NOFILE				0x04
 
+//
+// gn designation table
+//
 #define GN_DESIGNATION_TABLE(x)																											\
 	_GN_DESIGNATION(GN_DESIGNATION_TASK								, 0x01	, "TASK"				, x)		\
 	_GN_DESIGNATION(GN_DESIGNATION_SECONDARY					, 0x02	, "SECONDARY"		, x)		\
@@ -51,6 +57,22 @@ GN_DESIGNATION_TABLE(0)
 #define _GN_DESIGNATION(a, b, c, d) (d) == b ? c :
 #define GN_DESIGNATION_STR(x) GN_DESIGNATION_TABLE(x) "unknown"
 
+//
+// gn relation type table
+//
+#define GNR_TYPE_TABLE(x)																																						\
+	_GNRT(GN_RELATION_REGULAR			, 0x01	, x)		/* relation having arisen from parsing a fabfile */	\
+	_GNRT(GN_RELATION_CACHED			, 0x02	, x)		/* relation recovered from cached ddisc results  */	\
+
+enum {
+#define _GNRT(a, b, c) a = c,
+GNR_TYPE_TABLE(0)
+#undef _GNRT
+};
+
+#define _GNRT(a, b, c) (c) == b ? #a : 
+#define GNRT_STR(x) GNR_TYPE_TABLE(x) "unknown"
+
 struct ff_file;
 struct ff_node;
 struct fmleval;
@@ -58,16 +80,25 @@ struct gn;
 
 typedef struct
 {
-	struct ff_node *	ffn;		// FFN_DEPENDENCY node which gave rise to this relation
+	uint32_t					type;		// one of GN_RELATION_*
+
+	union
+	{
+		//
+		// GN_RELATION_REGULAR
+		//
+		struct ff_node *	ffn;			// FFN_DEPENDENCY node which gave rise to this relation
+
+		//
+		// GN_RELATION_CACHED
+		//
+		struct gn *				dscv_gn;	// node whose discovery contained this relation
+	};
 
 	struct gn *				A;			// A needs B
 	struct gn *				B;			// B feeds A
 
 	int								weak;		// whether this is a weak relation
-
-	// tracking
-	int								mark;
-	int								guard;
 } relation;
 
 typedef struct gn
@@ -93,12 +124,28 @@ typedef struct gn
 	//
 	// PRIMARY
 	//
+
+	// change-tracking for the backing file
 	hashblock *				hb;
+	int								hb_loaded;
+
+	// formula eval context for dependency discovery
+	struct fmleval *		dscv;
+
+	// depblock for dependency discovery
+	struct depblock *		dscv_block;
 
 	//
 	// SECONDARY
 	//
 	int								exists;
+
+	//
+	// SECONDARY, GENERATED, TASK
+	//
+
+	// formula evaluation context which fabricates this node
+	struct fmleval *		fabv;
 
 	// this node depends on the nodes in this list
 	union {
@@ -130,28 +177,22 @@ typedef struct gn
 		};
 	} feeds;
 
-	// formula evaluation context which fabricates this node
-	struct fmleval *	fabv;
-
-	// formula evaluation context which gives dependencies for this node
-	struct fmleval *	dscv;
-
 	// buildplan create tracking
-	int								height;		// distance of longest route to a leaf node
-	int								stage;		// assigned stage - NEARLY always equal to height
+	int									height;		// distance of longest route to a leaf node
+	int									stage;		// assigned stage - NEARLY always equal to height
 
 	// traversal tracking
-	int								guard;
+	int									guard;
 
 	// discovery tracking
-	int								dscv_mark;
+	int									dscv_mark;
 
 	// buildplan prune tracking
-	char							changed;
-	char							rebuild;
-	char							poison;
+	char								changed;
+	char								rebuild;
+	char								poison;
 
-	char							fab_success;
+	char								fab_success;
 } gn;
 
 extern union gn_nodes_t
@@ -221,20 +262,22 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 //  3) return gn for A, and B
 //
 // PARAMETERS
-//  realwd - canonical path to directory for resolving relative paths
-//  A      - pointer to 1) filename (relative to realwd), or
-//                      2) relative filepath (relative to realwd), or
-//                      3) canonical filepath, or
-//                      4) gn *
-//  Al     - length of A, or 0 for strlen
-//  At     - LISTWISE_TYPE_GNLW if A is a gn * and 0 otherwise
-//  B      - same possibilities as A
-//  Bl     - length of B, 0 for strlen
-//	Bt		 - LISTWISE_TYPE_GNLW if B is a gn * and 0 otherwise
-//  ffn    - originating dependency node
-//  [newa] - incremented if A was created
-//  [newb] - incremented if B was created
-//  [newr] - incremented if a new edge was created
+//  [realwd]   - canonical path to directory for resolving relative paths
+//  A          - pointer to 1) filename (relative to realwd), or
+//                        2) relative filepath (relative to realwd), or
+//                        3) canonical filepath, or
+//                        4) gn *
+//  Al         - length of A, or 0 for strlen
+//  At         - LISTWISE_TYPE_GNLW if A is a gn * and 0 otherwise
+//  B          - same possibilities as A
+//  Bl         - length of B, 0 for strlen
+//	Bt		     - LISTWISE_TYPE_GNLW if B is a gn * and 0 otherwise
+//  [ffn]      - for a regular relation, originating dependency node
+//  [dscv_gn]  - for a cached relation, node whose discovery cache contained this relation
+//  isweak     - whether to create a weak relation
+//  [newa]     - incremented if A was created
+//  [newb]     - incremented if B was created
+//  [newr]     - incremented if a new edge was created
 //
 // RETURNS
 //  returns 0 on failure (memory, io) otherwise returns 1 and sets *A to gn for a, and *B to gn for b
@@ -244,11 +287,13 @@ int gn_edge_add(
 	, void ** const restrict A, int Al, int At
 	, void ** const restrict B, int Bl, int Bt
 	, struct ff_node * const restrict ffn
+	, gn * const restrict dscv_gn
+	, int isweak
 	, int * const restrict newa
 	, int * const restrict newb
 	, int * const restrict newr
 )
-	__attribute__((nonnull(1,2,5,8)));
+	__attribute__((nonnull(2,5)));
 
 /// gn_dump
 //
@@ -256,34 +301,44 @@ int gn_edge_add(
 //
 void gn_dump(gn *);
 
-/// gn_exists
+/// gn_secondary_exists
 //
 // for a SECONDARY file - check whether the file exists, populate {exists}
 //
-int gn_exists(gn *);
-
-int gn_hb_write(gn * const restrict gn)
+int gn_secondary_exists(gn * const restrict)
 	__attribute__((nonnull));
 
-int gn_hb_read(gn * const restrict gn)
+/// gn_primary_reload_dscv
+//
+// for a PRIMARY file - call gn_primary_reload, load dscv block
+//
+int gn_primary_reload_dscv(gn * const restrict)
+	__attribute__((nonnull));
+
+/// gn_primary_reload
+//
+// for a PRIMARY file - load the previous hashblock, stat the file
+//
+int gn_primary_reload(gn * const restrict)
+	__attribute__((nonnull));
+
+/// gn_primary_rewrite
+//
+// for a PRIMARY file - write the current hashblock
+//
+int gn_primary_rewrite(gn * const restrict)
 	__attribute__((nonnull));
 
 /// gn_traverse_needs
 //
 // SUMMARY
-//  traverse the graph needs-wise, depth first, starting at gn.
-//  apply logic at each node along the way
-//  detect cycles, and fail if one is found
+//  traverse the graph needs-wise, depth first, starting at gn, with guards to detect a cycle
+//  apply logic at each node along the way, which returns 0 to stop the traversal with failure
 //
-int gn_depth_traversal_nodes_needsward(gn * gn, void (*logic)(struct gn *, int d));
-
-/// gn_traverse_relations_needsward
+// RETURNS
+//  0 if a cycle was detected, or if logic ever returned 0, and 1 otherwise
 //
-// SUMMARY
-//  same as gn_traverse_needs, except execute logic on relations
-//  note, this excludes the starting node
-//
-int gn_depth_traversal_relations_needsward(gn * r, void (*logic)(relation*));
+int gn_depth_traversal_nodes_needsward(gn * gn, int (*logic)(struct gn *, int d));
 
 /// gn_idstring
 //

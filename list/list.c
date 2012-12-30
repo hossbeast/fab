@@ -10,6 +10,7 @@ extern int lstack_exec_internal(generator* g, char** init, int* initls, int init
 
 #include "control.h"
 #include "map.h"
+#include "xmem.h"
 
 int list_ensure(lstack *** stax, int * staxl, int * staxa, int p)
 {

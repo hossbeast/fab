@@ -1,6 +1,12 @@
 #ifndef _DEP_H
 #define _DEP_H
 
+#include <listwise.h>
+
+#include "ff.h"
+#include "gn.h"
+#include "depblock.h"
+
 #define restrict __restrict
 
 /// dep_process
@@ -9,21 +15,20 @@
 //  process FFN_DEPENDENCY nodes to create directed edges in the dependency graph
 //
 // PARAMETERS
-//  ffn     - FFN_DEPENDENCY node
-//  gn      - default needs-end node for dependencies lacking a lefthand side (discovery)
-//  vmap    - vmap used to resolve variable references in the dependency lists
-//  stax    - listwise stax
-//  stax_l  - listwise stax
-//  stax_a  - listwise stax
-//  p       - offset to next available lstack
-//  [first] - if not null, set to the needs-end of the first dependency processed
-//  [newn]  - if not null, incremented by the number of new nodes created
-//  [newr]  - if not null, incremented by the number of new edges created
+//  ffn        - FFN_DEPENDENCY node
+//  vmap       - vmap used to resolve variable references in the dependency lists
+//  stax       - listwise stax
+//  stax_l     - listwise stax
+//  stax_a     - listwise stax
+//  p          - offset to next available lstack
+//  [first]    - if not null, set to the needs-end of the first dependency processed
+//  [newn]     - if not null, incremented by the number of new nodes created
+//  [newr]     - if not null, incremented by the number of new edges created
+//  [block]    - if not null, attempt to copy all the dependencies into this dependency block
 //
 int dep_process(
-	  const ff_node * const restrict ffn
-	, const gn * const restrict defgn
-	, const map * const restrict vmap
+	  ff_node * const restrict ffn
+	, map * const restrict vmap
 	, lstack *** const restrict stax
 	, int * const restrict staxl
 	, int * const restrict staxa
@@ -31,8 +36,23 @@ int dep_process(
 	, gn ** const restrict first
 	, int * const restrict newn
 	, int * const restrict newr
+	, depblock * const restrict block
 )
-	__attribute__((nonnull(1,3,4,5,6)));
+	__attribute__((nonnull(1,2,3,4,5)));
+
+
+/// depblock_process
+//
+// SUMMARY
+//  process a depblock to create directed edges in the dependency graph
+//
+int depblock_process(
+	  gn * const restrict dscvgn
+	, const depblock * const restrict block
+	, int * const restrict newnp
+	, int * const restrict newrp
+)
+	__attribute__((nonnull(1,2)));
 
 #undef restrict
 #endif

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <sys/mman.h>
 #include <alloca.h>
 #include <stdio.h>
 #include <signal.h>
@@ -8,9 +9,9 @@
 #include <listwise/lstack.h>
 #include <listwise/object.h>
 
+#include "dep.h"
+
 #include "args.h"
-#include "ff.h"
-#include "gn.h"
 #include "gnlw.h"
 #include "fml.h"
 #include "bp.h"
@@ -26,7 +27,56 @@
 /// static
 ///
 
-static int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first, int * newnp, int * newrp)
+static int addrelation(dep_relations_set * set, gn * A, gn * B)
+{
+	if(set->needsl == 0)
+	{
+		if(snprintf(set->needs[0], sizeof(set->needs[0]), "%s", A->path) >= sizeof(set->needs[0]))
+		{
+			return 0; // path too long
+		}
+		else
+		{
+			set->needsl++;
+		}
+	}
+	else if(strcmp(set->needs[0], A->path))
+	{
+		return 0; // needs[0] is some other file
+	}
+
+	if(set->feedsl < sizeof(set->feeds) / sizeof(set->feeds[0]))
+	{
+		if(snprintf(set->feeds[set->feedsl], sizeof(set->feeds[0]), "%s", B->path) >= sizeof(set->feeds[0]))
+		{
+			return 0;	// path too long
+		}
+		else
+		{
+			set->feedsl++;
+		}
+	}
+	else
+	{
+		return 0;	// too many feeds
+	}
+
+	return 1;
+}
+
+static int dep_add_single(
+	  ff_node * ffn
+	, map * vmap
+	, lstack *** stax
+	, int * stax_l
+	, int * stax_a
+	, int pl
+	, int p
+	, gn ** first
+	, int * newnp
+	, int * newrp
+	, depblock * const block
+)
 {
 	int i;
 	int j;
@@ -75,13 +125,18 @@ static int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax
 			int newb = 0;
 			int newr = 0;
 
-			if(ffn->loc.ff->dscv_gn)
-			{
-				fatal(gn_edge_add, g_args.fabfile_canon_dir, &A, Al, At, &B, Bl, Bt, ffn, &newa, &newb, &newr);
-			}
+			if(ffn->loc.ff->type == FFT_DDISC)
+				fatal(gn_edge_add, g_args.fabfile_canon_dir, &A, Al, At, &B, Bl, Bt, ffn, 0, ffn->flags & FFN_WEAK, &newa, &newb, &newr);
 			else
+				fatal(gn_edge_add, ffn->loc.ff->dir        , &A, Al, At, &B, Bl, Bt, ffn, 0, ffn->flags & FFN_WEAK, &newa, &newb, &newr);
+
+			if(block && block->block)
 			{
-				fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn, &newa, &newb, &newr);
+				// attempt to add the relation to the block
+				if(addrelation(ffn->flags & FFN_WEAK ? &block->block->weak : &block->block->strong, ((gn*)A), ((gn*)B)) == 0)
+				{
+					xfree(&block->block);
+				}
 			}
 
 			if(newnp)
@@ -100,7 +155,7 @@ static int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax
 			}
 
 			uint64_t tag = L_DG | L_DGDEPS;
-			if(ffn->loc.ff->dscv_gn)
+			if(ffn->loc.ff->type == FFT_DDISC)
 			{
 				if((newnp && (newa || newb)) || (newrp && newr))
 					tag |= L_DSCNEW;
@@ -127,7 +182,19 @@ static int dep_add_single(ff_node * ffn, map * vmap, lstack *** stax, int * stax
 	return 1;
 }
 
-static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int pl, int p, gn ** first, int * newnp, int * newrp)
+static int dep_add_multi(
+	  ff_node * ffn
+	, map * vmap
+	, lstack *** stax
+	, int * stax_l
+	, int * stax_a
+	, int pl
+	, int p
+	, gn ** first
+	, int * newnp
+	, int * newrp
+	, depblock * const block
+)
 {
 	// newa tracks whether the left-hand-side of a dependency references a newly-created node
 	int * newa = 0;
@@ -215,10 +282,19 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 				int newb = 0;
 				int newr = 0;
 
-				if(ffn->loc.ff->dscv_gn)
-					fatal(gn_edge_add, g_args.fabfile_canon_dir, &A, Al, At, &B, Bl, Bt, ffn, 0, &newb, &newr);
+				if(ffn->loc.ff->type == FFT_DDISC)
+					fatal(gn_edge_add, g_args.fabfile_canon_dir, &A, Al, At, &B, Bl, Bt, ffn, 0, ffn->flags & FFN_WEAK, 0, &newb, &newr);
 				else
-					fatal(gn_edge_add, ffn->loc.ff->dir, &A, Al, At, &B, Bl, Bt, ffn, 0, &newb, &newr);
+					fatal(gn_edge_add, ffn->loc.ff->dir        , &A, Al, At, &B, Bl, Bt, ffn, 0, ffn->flags & FFN_WEAK, 0, &newb, &newr);
+
+				if(block && block->block)
+				{
+					// attempt to add the relation to the block
+					if(addrelation(ffn->flags & FFN_WEAK ? &block->block->weak : &block->block->strong, ((gn*)A), ((gn*)B)) == 0)
+					{
+						xfree(&block->block);
+					}
+				}
 
 				if(newnp)
 				{
@@ -236,7 +312,7 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 				}
 
 				uint64_t tag = L_DG | L_DGDEPS;
-				if(ffn->loc.ff->dscv_gn)
+				if(ffn->loc.ff->type == FFT_DDISC)
 				{
 					if((newnp && (newa[i] || newb)) || (newrp && newr))
 						tag |= L_DSCNEW;
@@ -269,7 +345,6 @@ static int dep_add_multi(ff_node * ffn, map * vmap, lstack *** stax, int * stax_
 
 int dep_process(
 	  ff_node * const ffn
-	, const gn * const defgn
 	, map * const vmap
 	, lstack *** const stax
 	, int * const staxl
@@ -278,30 +353,86 @@ int dep_process(
 	, gn ** const first
 	, int * const newn
 	, int * const newr
+	, depblock * const block
 )
 {
 	// resolve the left-hand side
-	if(ffn->needs)
-	{
-		fatal(list_resolve, ffn->needs, vmap, stax, staxl, staxa, p);
-	}
-	else
-	{
-		fatal(list_ensure, stax, staxl, staxa, p);
-		fatal(lstack_obj_add, (*stax)[p], defgn, LISTWISE_TYPE_GNLW);
-	}
+	fatal(list_resolve, ffn->needs, vmap, stax, staxl, staxa, p);
 
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(dep_add_single, ffn, vmap, stax, staxl, staxa, p, p + 1, first, newn, newr);
+		fatal(dep_add_single, ffn, vmap, stax, staxl, staxa, p, p + 1, first, newn, newr, block);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(dep_add_multi, ffn, vmap, stax, staxl, staxa, p, p + 1, first, newn, newr);
+		fatal(dep_add_multi, ffn, vmap, stax, staxl, staxa, p, p + 1, first, newn, newr, block);
 	}
 	else
 	{
 		fail("bad flags : %hhu", ffn->flags);
+	}
+
+	return 1;
+}
+
+int depblock_process(gn * const dscvgn, const depblock * const block, int * const newnp, int * const newrp)
+{
+	int process(char * _A, char * _B, int isweak)
+	{
+		void * A = _A;
+		int Al = strlen(A);
+		int At = 0;
+
+		void * B = _B;
+		int Bl = strlen(B);
+		int Bt = 0;
+
+		int newa = 0;
+		int newb = 0;
+		int newr = 0;
+
+		fatal(gn_edge_add, 0, &A, Al, At, &B, Bl, Bt, 0, dscvgn, isweak, &newa, &newb, &newr);
+
+		if(newnp)
+		{
+			(*newnp) += newa;
+			(*newnp) += newb;
+		}
+		if(newrp)
+		{
+			(*newrp) += newr;
+		}
+
+		log(L_DG | L_DGDEPS | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%3s,%3s - %3s,%3s] %s -> %s"
+			, "S"
+			, newa ? "x" : ""
+			, newb ? "x" : ""
+			, newr ? "x" : ""
+			, gn_idstring(dscvgn)
+			, "-", "-", "-", "-"
+			, gn_idstring((gn*)A)
+			, gn_idstring((gn*)B)
+		);
+
+		return 1;
+	};
+
+	int x;
+	int y;
+	for(x = 0; x < block->block->weak.needsl; x++)
+	{
+		for(y = 0; y < block->block->weak.feedsl; y++)
+		{
+			fatal(process, block->block->weak.needs[x], block->block->weak.feeds[y], 1);
+		}
+	}
+
+	for(x = 0; x < block->block->strong.needsl; x++)
+	{
+		for(y = 0; y < block->block->strong.feedsl; y++)
+		{
+			fatal(process, block->block->strong.needs[x], block->block->strong.feeds[y], 0);
+		}
 	}
 
 	return 1;

@@ -39,18 +39,26 @@
 				, STATENAME(TOPSTATE(b)), TOPSTATE(b), STATENAME(x), x);	\
 		} while(0)
 
-	#define PTOKEN(s, l, t, lc, ln)																					\
-			log(L_FF | L_FFTOKN, "%8s ) '%.*s'%*s @ [%3d,%3d - %3d,%3d] - %d"		\
-				, ff_tokname(t)																										\
-				, t == LF ? 0 : t == WS ? 0 : l																		\
-				, t == LF ? "" : t == WS ? "" : s																	\
-				, MAX(50 - (t == LF ? 0 : t == WS ? 0 : l), 0)										\
-				, ""																															\
-				, lc->first_line																									\
-				, lc->first_column																								\
-				, lc->last_line																										\
-				, lc->last_column																									\
-				, ln)
+	#define PTOKEN(s, l, t, lc, ln)																						\
+		do {																																		\
+			if(log_would(L_FF | L_FFTOKN))																				\
+			{																																			\
+				char buf[256];																											\
+				int bufl = stresc(buf, sizeof(buf), s, l);													\
+				log(L_FF | L_FFTOKN, "%8s ) '%.*s'%*s @ [%3d,%3d - %3d,%3d] - %d"		\
+					, ff_tokname(t)																										\
+					, bufl																														\
+					, buf																															\
+					, MAX(50 - bufl, 0)																								\
+					, ""																															\
+					, lc->first_line																									\
+					, lc->first_column																								\
+					, lc->last_line																										\
+					, lc->last_column																									\
+					, ln																															\
+				);																																	\
+			}																																			\
+		}	while(0)																															\
 
 	#define LEX(token)					\
 		lexify(yytext, yyleng, 0, 1, yylval, yylloc, token, 0, 0, yyextra, __LINE__)
@@ -60,6 +68,33 @@
 
 	#define LEXV(token, vs, vl)	\
 		lexify(yytext, yyleng, 0, 1, yylval, yylloc, token, vs, vs + vl, yyextra, __LINE__)
+
+	int stresc(char * const buf, size_t sz, const char * const s, int l)
+	{
+		int o = 0;
+		int x;
+		for(x = 0; x < l; x++)
+		{
+			int r = 0;
+			if(s[x] == 0x09)
+				r = snprintf(buf + o, sz - o, "\\t");
+			else if(s[x] == 0x0a)
+				r = snprintf(buf + o, sz - o, "\\n");
+			else if(s[x] == 0x0d)
+				r = snprintf(buf + o, sz - o, "\\r");
+			else if(s[x] >= 0x20 && s[x] <= 0x7e)
+				r = snprintf(buf + o, sz - o, "%c", s[x]);
+			else
+				r = snprintf(buf + o, sz - o, "\\x%02hhx", s[x]);
+
+			if(r >= (sz - o))
+				break;
+			else
+				o += r;
+		}
+
+		return o;
+	}
 
 	void loc_reset(parse_param * xtra, YYLTYPE* lloc)
 	{
@@ -106,7 +141,7 @@
 	}
 %}
 
-%option noinput nounput noyywrap
+%option noinput nounput noyywrap noyy_top_state
 %option reentrant
 %option bison-bridge bison-locations
 %option prefix="ff_yy"

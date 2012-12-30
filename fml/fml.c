@@ -33,7 +33,6 @@ static int fml_add_single(fml * fml, lstack * ls)
 {
 	int R = 1;
 	int y;
-	int go;
 
 	fml->evals_l = ls->s[0].l;
 	fatal(xmalloc, &fml->evals, sizeof(fml->evals[0]) * fml->evals_l);
@@ -93,7 +92,6 @@ static int fml_add_multi(fml * fml, lstack * ls)
 
 	int x;
 	int y;
-	int i;
 
 	// multi-target formula
 	fml->evals_l = ls->l;
@@ -239,29 +237,29 @@ int fml_exec(ts * ts,  int num)
 	//  note : all but the last component of this dir were created in tmp_setup
 	//  note : the directory itself cannot already exist, because num is process-unique
 	//
-	psprintf(&ts->stdo_path, PID_DIR_BASE "/%d/fml/%d", g_args.pid, num);
+	fatal(psprintf, &ts->stdo_path, PID_DIR_BASE "/%d/fml/%d", g_args.pid, num);
 	fatal(mkdirp, ts->stdo_path->s, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	// create tmp file for the cmd
-	psprintf(&ts->cmd_path, PID_DIR_BASE "/%d/fml/%d/cmd", g_args.pid, num);
+	fatal(psprintf, &ts->cmd_path, PID_DIR_BASE "/%d/fml/%d/cmd", g_args.pid, num);
 	if((ts->cmd_fd = open(ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG)) == -1)
 		fail("open(%s)=[%d][%s]", ts->cmd_path->s, errno, strerror(errno));
-
-	// create tmp file to capture stdout
-	psprintf(&ts->stdo_path, PID_DIR_BASE "/%d/fml/%d/out", g_args.pid, num);
-	if((ts->stdo_fd = open(ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
-		fail("open(%s)=[%d][%s]", ts->stdo_path->s, errno, strerror(errno));
-
-	// create tmp file to capture stderr
-	psprintf(&ts->stde_path, PID_DIR_BASE "/%d/fml/%d/err", g_args.pid, num);
-	if((ts->stde_fd = open(ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
-		fail("open(%s)=[%d][%s]", ts->stde_path->s, errno, strerror(errno));
 
 	// write the cmd to the tmp file
 	if(write(ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l) == -1)
 		fail("write failed : [%d][%s]", errno, strerror(errno));
 
 	close(ts->cmd_fd);
+
+	// create tmp file to capture stdout, remain-through-exec
+	fatal(psprintf, &ts->stdo_path, PID_DIR_BASE "/%d/fml/%d/out", g_args.pid, num);
+	if((ts->stdo_fd = open(ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
+		fail("open(%s)=[%d][%s]", ts->stdo_path->s, errno, strerror(errno));
+
+	// create tmp file to capture stderr, remain-through-exec
+	fatal(psprintf, &ts->stde_path, PID_DIR_BASE "/%d/fml/%d/err", g_args.pid, num);
+	if((ts->stde_fd = open(ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
+		fail("open(%s)=[%d][%s]", ts->stde_path->s, errno, strerror(errno));
 
 	// fork off the child
 	ts->pid = 0;
@@ -270,14 +268,8 @@ int fml_exec(ts * ts,  int num)
 
 	if(ts->pid == 0)
 	{
-		int x;
-		for(x = 0; x < 4196; x++)
-		{
-			if(x != 1 && x != 2 && x != ts->stdo_fd && x != ts->stde_fd)
-				close(x);
-		}
-
 		// reopen stdin
+		close(0);
 		if(open("/dev/null", O_RDONLY) != 0)
 			fail("open(/dev/stderr)=[%d][%s]", errno, strerror(errno));
 
@@ -294,7 +286,7 @@ int fml_exec(ts * ts,  int num)
 		fatal_os(setresgid, g_args.rgid, g_args.rgid, g_args.rgid);
 
 		// exec doesnt return
-		fatal_os(execv, ts->cmd_path->s, 0);
+		fatal_os(execl, ts->cmd_path->s, ts->cmd_path->s, (void*)0);
 	}
 
 	// reassume user identity

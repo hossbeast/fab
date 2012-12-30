@@ -42,7 +42,7 @@ typedef struct
 // SUMMARY
 //  create a hashblock 
 //
-int hashblock_create(hashblock ** const restrict hb, const char * const restrict basepath, const uint32_t pathhash)
+int hashblock_create(hashblock ** const restrict hb, const char * const restrict dirfmt, ...)
 	__attribute__((nonnull));
 
 /// hashblock_free
@@ -66,7 +66,7 @@ void hashblock_xfree(hashblock ** const restrict hb)
 // SUMMARY
 //  stat the specified file and populate hb->stathash[1]
 //
-void hashblock_stat(hashblock * const restrict hb, const char * const restrict path)
+int hashblock_stat(hashblock * const restrict hb, const char * const restrict path)
 	__attribute__((nonnull));
 
 /// hashblock_read
