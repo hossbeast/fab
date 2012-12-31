@@ -11,12 +11,12 @@
 
 #include "log.h"
 
-#define fail(fmt, ...)		\
-	do {										\
-		fprintf(stderr, fmt 	\
-			, ##__VA_ARGS__			\
-		);										\
-		return 0;							\
+#define fail(fmt, ...)				\
+	do {												\
+		fprintf(stderr, fmt "\n" 	\
+			, ##__VA_ARGS__					\
+		);												\
+		return 0;									\
 	} while(0)
 
 int identity_init()
@@ -47,7 +47,7 @@ int identity_init()
 
 	// get group identity of this process
 	gid_t sgid;
-	getresuid(&g_args.rgid, &g_args.egid, &sgid);
+	getresgid(&g_args.rgid, &g_args.egid, &sgid);
 
 	struct group * grp = 0;
 	if((e = getgrgid_r(g_args.rgid, &_grp, gbuf, sizeof(gbuf), &grp)))
@@ -62,13 +62,17 @@ int identity_init()
 	}
 	g_args.egid_name = strdup(grp->gr_name);
 
-/*
 	// this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions !!
 	if(strcmp(g_args.euid_name, "fabsys") || strcmp(g_args.egid_name, "fabsys"))
 	{
-		fail("fab executable must be owned by fabsys:fabsys and have u+s and g+s permissions\n");
+		fail(
+			"fab executable must be owned by fabsys:fabsys and have u+s and g+s permissions\n"
+			" -> r:%s/%d:%s/%d\n"
+			" -> e:%s/%d:%s/%d"
+			, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid
+			, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid
+		);
 	}
-*/
 
 	// assume identity of the user - default identity
 	if(seteuid(g_args.ruid) == -1)
