@@ -88,7 +88,7 @@ int identity_assume_user()
 	fatal_os(seteuid, g_args.ruid);
 	fatal_os(setegid, g_args.rgid);
 
-	return 1;
+	finally : coda;
 }
 
 int identity_assume_fabsys()
@@ -96,5 +96,5 @@ int identity_assume_fabsys()
 	fatal_os(seteuid, g_args.euid);
 	fatal_os(setegid, g_args.egid);
 
-	return 1;
+	finally : coda;
 }

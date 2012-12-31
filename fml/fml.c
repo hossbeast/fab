@@ -31,7 +31,6 @@ union g_fmls_t		g_fmls = { { .size = sizeof(fml) } };
 
 static int fml_add_single(fml * fml, lstack * ls)
 {
-	int R = 1;
 	int y;
 
 	fml->evals_l = ls->s[0].l;
@@ -83,13 +82,11 @@ static int fml_add_single(fml * fml, lstack * ls)
 	}
 	LSTACK_ITEREND;
 
-	return R;
+	finally : coda;
 }
 
 static int fml_add_multi(fml * fml, lstack * ls)
 {
-	int R = 1;
-
 	int x;
 	int y;
 
@@ -144,7 +141,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 		log_finish("}");
 	}
 
-	return R;
+	finally : coda;
 }
 
 //
@@ -174,7 +171,7 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax
 		fail("bad flags %hhu (no cardinality)", fml->ffn->flags);
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
@@ -223,10 +220,10 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 		}
 	}
 
-	return 1;
+	finally : coda;
 }
 
-int fml_exec(ts * ts,  int num)
+int fml_exec(ts * ts, int num)
 {
 	// assume fabsys identity
 	fatal(identity_assume_fabsys);
@@ -253,12 +250,12 @@ int fml_exec(ts * ts,  int num)
 
 	// create tmp file to capture stdout, remain-through-exec
 	fatal(psprintf, &ts->stdo_path, PID_DIR_BASE "/%d/fml/%d/out", g_args.pid, num);
-	if((ts->stdo_fd = open(ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
+	if((ts->stdo_fd = open(ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
 		fail("open(%s)=[%d][%s]", ts->stdo_path->s, errno, strerror(errno));
 
 	// create tmp file to capture stderr, remain-through-exec
 	fatal(psprintf, &ts->stde_path, PID_DIR_BASE "/%d/fml/%d/err", g_args.pid, num);
-	if((ts->stde_fd = open(ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
+	if((ts->stde_fd = open(ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
 		fail("open(%s)=[%d][%s]", ts->stde_path->s, errno, strerror(errno));
 
 	// fork off the child
@@ -292,5 +289,5 @@ int fml_exec(ts * ts,  int num)
 	// reassume user identity
 	fatal(identity_assume_user);
 
-	return 1;
+	finally : coda;
 }

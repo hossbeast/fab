@@ -30,7 +30,6 @@ static void usage()
 		" -c node identifier is canonical path\n"
 		" -B invalidate-all\n"
 		" -b invalidate node\n"
-		" -D dumpnode-all\n"
 		" -d dump node\n"
 		"----------- [ logopts ] --------------------------\n"
 		" +<log name> to enable logging\n"  
@@ -78,13 +77,13 @@ int parse_args(int argc, char** argv)
 // A
 /* B */ , { "invalidate-all"		, no_argument				, 0			, 'B' }		// graph node invalidation
 // C
-/* D */	, { "dump-all"					, no_argument				, 0			, 'D' }		// graph node dump
+/* U */	, { "discovery"					, no_argument				, 0			, 'U' }		// dependency discovery mode
 		, { }
 	};
 
 	char* switches =
 		// no-argument switches
-		"chpuBD"
+		"chpuBU"
 
 		// with-argument switches
 		"b:d:f:"
@@ -143,8 +142,8 @@ int parse_args(int argc, char** argv)
 			case 'B':
 				g_args.invalidate_all = 1;
 				break;
-			case 'D':
-				g_args.dumpnode_all = 1;
+			case 'U':
+				g_args.mode_exec = MODE_EXEC_DDSC;
 				break;
 		}
 	}
@@ -170,13 +169,19 @@ int parse_args(int argc, char** argv)
 		}
 	}
 
-	// dumpnode implies +DGRAPH
+	// dumpnode implies +DGRAPH and MODE_EXEC_DUMP
 	if(g_args.dumpnode)
+	{
+		g_args.mode_exec = MODE_EXEC_DUMP;
 		log_parse("+DGRAPH", 0);
+	}
 
 	// MODE_BUILDPLAN implies +BPDUMP
 	if(g_args.mode_exec == MODE_EXEC_BUILDPLAN)
 		log_parse("+BPDUMP", 0);
+
+	// initialize logger
+	fatal(log_init, "+ERROR|WARN|INFO|BPEXEC|DSCINFO");
 
 	// active logs
 	char buf[256];
@@ -199,39 +204,37 @@ int parse_args(int argc, char** argv)
 	// log cmdline args under ARGS
 	snprintf(space, sizeof(space), "%s/%s", g_args.cwd, DEFAULT_FABFILE);
 
-	log(L_ARGS		, " %s (%c) fabfile-canon      =%s", strcmp(g_args.fabfile_canon, space) == 0 ? " " : "*", 'f', g_args.fabfile_canon);
-	log(L_ARGS		, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
-	log(L_ARGS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
-	log(L_ARGS		, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
-	log(L_ARGS		, " %s (%c) invalidate-all     =%s", g_args.invalidate_all == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidate_all ? "yes" : "no");
+	log(L_ARGS | L_PARAMS		, " %s (%c) fabfile-canon      =%s", strcmp(g_args.fabfile_canon, space) == 0 ? " " : "*", 'f', g_args.fabfile_canon);
+	log(L_ARGS | L_PARAMS		, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
+	log(L_ARGS | L_PARAMS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
+	log(L_ARGS | L_PARAMS		, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
+	log(L_ARGS | L_PARAMS		, " %s (%c) invalidate-all     =%s", g_args.invalidate_all == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidate_all ? "yes" : "no");
 
 	if(!g_args.invalidate_all)
 	{
 		if(!g_args.invalidate)
-			log(L_ARGS	, " %s (%c) invalidate(s)      =", " ", 'b');
+			log(L_ARGS | L_PARAMS	, " %s (%c) invalidate(s)      =", " ", 'b');
 		for(x = 0; x < g_args.invalidate_len; x++)
-			log(L_ARGS	, " %s (%c) invalidate(s)      =%s", "*", 'b', g_args.invalidate[x]);
+			log(L_ARGS | L_PARAMS	, " %s (%c) invalidate(s)      =%s", "*", 'b', g_args.invalidate[x]);
 	}
-
-	log(L_ARGS		, " %s (%c) dumpnode-all       =%s", g_args.dumpnode_all == DEFAULT_DUMPNODE_ALL ? " " : "*", 'B', g_args.dumpnode_all ? "yes" : "no");
 
 	if(!g_args.dumpnode_all)
 	{
 		if(!g_args.dumpnode)
-			log(L_ARGS	, " %s (%c) dumpnode(s)        =", " ", 'd');
+			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnode(s)        =", " ", 'd');
 		for(x = 0; x < g_args.dumpnode_len; x++)         
-			log(L_ARGS	, " %s (%c) dumpnode(s)        =%s", "*", 'd', g_args.dumpnode[x]);
+			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnode(s)        =%s", "*", 'd', g_args.dumpnode[x]);
 	}
 
 	if(!g_args.targets)
-		log(L_ARGS	, " %s (%c) target(s)          =", " ", ' ');
+		log(L_ARGS | L_PARAMS	, " %s (%c) target(s)          =", " ", ' ');
 	for(x = 0; x < g_args.targets_len; x++)
-		log(L_ARGS	, " %s (%c) target(s)          =%s", "*", ' ', g_args.targets[x]);
+		log(L_ARGS | L_PARAMS	, " %s (%c) target(s)          =%s", "*", ' ', g_args.targets[x]);
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 
+finally:
 	free(fabfile);
-
-	return 1;
+coda;
 }
 
 void args_teardown()

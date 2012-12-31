@@ -4,10 +4,36 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "log.h"
 
-#define fail(fmt, ...)									\
+/// finally
+//
+//
+//
+#define finally				\
+	int _coda_r;				\
+	goto CODA_GOOD;			\
+CODA:									\
+	_coda_r = 0;				\
+	goto CODA_FINALLY;	\
+CODA_GOOD:						\
+	_coda_r = 1;				\
+CODA_FINALLY
+
+/// coda
+//
+//
+//
+#define coda return _coda_r
+
+/// error
+//
+// SUMMARY
+//  log an L_ERROR message
+//
+#define error(fmt, ...)									\
 	do {																	\
 		log(L_ERROR, fmt " at [%s:%d (%s)]"	\
 			, ##__VA_ARGS__										\
@@ -15,19 +41,39 @@
 			, __LINE__												\
 			, __FUNCTION__										\
 		);																	\
-		return 0;														\
 	} while(0)
 
-#define fail_log(fmt, ...)							\
-	do {																	\
-		log(L_ERROR, fmt " at [%s:%d (%s)]"	\
-			, ##__VA_ARGS__										\
-			, __FILE__												\
-			, __LINE__												\
-			, __FUNCTION__										\
-		);																	\
+/// fail
+//
+// SUMMARY
+//  log an L_ERROR message, terminate the current scope with failure
+//
+#define fail(fmt, ...)					\
+	do {													\
+		error(fmt, ##__VA_ARGS__);	\
+		goto CODA;									\
 	} while(0)
- 
+
+/// qfail
+//
+// SUMMARY
+//  silently terminate the current scope with failure
+//
+#define qfail()	goto CODA
+
+/// qterm
+//
+// SUMMARY
+//  silently terminate the current scope with success
+//
+#define qterm() goto CODA_GOOD
+
+/// fatal
+//
+// SUMMARY
+//  execute the specified function with zero-return-failure semantics and if it fails
+//  log an L_ERROR message and terminate the current scope with failure
+//
 #define fatal(x, ...)														\
 	do {																					\
 		if((x(__VA_ARGS__)) == 0)										\
@@ -37,10 +83,30 @@
 				, __LINE__															\
 				, __FUNCTION__													\
 			);																				\
-			return 0;																	\
+			goto CODA;																\
+		}																						\
+	} while(0)
+ 
+/// qfatal
+//
+// SUMMARY
+//  execute the specified function with zero-return-failure semantics and if it fails
+//  silently terminate the current scope with failure
+//
+#define qfatal(x, ...)													\
+	do {																					\
+		if((x(__VA_ARGS__)) == 0)										\
+		{																						\
+			goto CODA;																\
 		}																						\
 	} while(0)
 
+/// fatal_os
+//
+// SUMMARY
+//  execute the specified function with nonzero-return-failure semantics and if it fails
+//  log an L_ERROR message and terminate the current scope with failure
+//
 #define fatal_os(x, ...)																				\
 	do {																													\
 		if((x(__VA_ARGS__)) != 0)																		\
@@ -52,7 +118,21 @@
 				, __LINE__																							\
 				, __FUNCTION__																					\
 			);																												\
-			return 0;																									\
+			goto CODA;																								\
+		}																														\
+	} while(0)
+
+/// fatal_os
+//
+// SUMMARY
+//  execute the specified function with nonzero-return-failure semantics and if it fails
+//  silently terminate the current scope with failure
+//
+#define qfatal_os(x, ...)																				\
+	do {																													\
+		if((x(__VA_ARGS__)) != 0)																		\
+		{																														\
+			goto CODA;																								\
 		}																														\
 	} while(0)
 

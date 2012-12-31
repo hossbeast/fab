@@ -195,12 +195,13 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		recurse_feeds(o, (gn**)(*r), &x);
 	}
 
-	return 1;
+	finally : coda;
 }
 
 void lw_destroy(void * o)
 {
-	/* do nothing ; listwise gets copies of pointers to gn objects
+	/*
+	** do nothing ; listwise gets copies of pointers to gn objects
   ** and I free them all at the end
-  */
+	*/
 }

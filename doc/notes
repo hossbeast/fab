@@ -114,22 +114,20 @@ TODO
 
 - fablw - examine the dependency graph
 
-- dependency discovery from .l and .y
-- dependency discovery - PRIMARY files only!
-- dependency discovery - caching
+- memory audit
 - save relations in /var/cache/fab/gn
 - 2 dump modes - saved relations, parsed node
+ - saved : include formula
+ - saved : include ddisc formula, resulting text
+- dump individual VAR-sets by name
+- dump individual formulas by node-name
 - log tag audit
+- better help output, logging category explanations
+
 - GENERATED always in its own stage?
 - define variables from commandline
 - includes ?? 
 - terminating comments /* */
-- memory audit
-- dump individual VAR-sets by name
-- dump individual formulas by node-name
-- better help output, logging category explanations
 - flag 
-- node settings ( x:y, x:y )
-	- always fabricate/invalidate
-	- disable cached discovery
-	- use hash of formula as part of filename?
+- per-node settings ( x:y, x:y )
+	- invalidate this node

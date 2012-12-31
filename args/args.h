@@ -49,14 +49,16 @@
 
 #define MODE_TABLE(x)																																					\
 /* execution modes */																																					\
-	_MODE(MODE_EXEC_FABRICATE	, 0x00	, x)		/* fabricate targets*/														\
+	_MODE(MODE_EXEC_FABRICATE	, 0x00	, x)		/* fabricate targets */														\
 	_MODE(MODE_EXEC_BUILDPLAN	, 0x01	, x)		/* generate buildplan only */											\
+	_MODE(MODE_EXEC_DDSC			, 0x02	, x)		/* perform dependency discovery */								\
+	_MODE(MODE_EXEC_DUMP			, 0x03	, x)		/* dump graph nodes */														\
 /* path display modes */																																			\
-	_MODE(MODE_GNID_RELATIVE	, 0x02	, x)		/* path relative to the initial fabfile */				\
-	_MODE(MODE_GNID_CANON			, 0x03	, x)		/* canonical path */															\
+	_MODE(MODE_GNID_RELATIVE	, 0x04	, x)		/* path relative to the initial fabfile */				\
+	_MODE(MODE_GNID_CANON			, 0x05	, x)		/* canonical path */															\
 /* dependency discovery modes */																															\
-	_MODE(MODE_DDSC_DEFERRED	, 0x04	, x)		/* defer dependency discovery until bp prune */		\
-	_MODE(MODE_DDSC_UPFRONT		, 0x05	, x)		/* comprehensive dependency discovery upfront */	\
+	_MODE(MODE_DDSC_DEFERRED	, 0x06	, x)		/* defer dependency discovery until bp prune */		\
+	_MODE(MODE_DDSC_UPFRONT		, 0x07	, x)		/* comprehensive dependency discovery upfront */	\
 
 enum {
 #define _MODE(a, b, c) a = b,

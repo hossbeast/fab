@@ -59,7 +59,7 @@ int ts_ensure(ts *** ts, int * tsa, int n)
 	for(x = 0; x < n; x++)
 		ts_reset((*ts)[x]);
 
-	return 1;
+	finally : coda;
 }
 
 int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo)
@@ -183,7 +183,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 		}
 	}
 
-	return 1;
+	finally : coda;
 }
 
 void ts_free(ts * ts)

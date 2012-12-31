@@ -81,6 +81,17 @@ static unsigned char o_colors[] = {
 	/* L_BLUE 	*/ , 0x34
 };
 
+static void __attribute__((constructor)) init()
+{
+	// determine logtag len
+	int x;
+	for(x = 0; x < g_logs_l; x++)
+	{
+		g_logs[x].l = strlen(g_logs[x].s);
+		o_name_len = MAX(o_name_len, g_logs[x].l);
+	}
+}
+
 static int logwrite(const char * s, size_t l)
 {
 	if((o_space_l + l) >= o_space_a)
@@ -329,13 +340,6 @@ void log_parse(char * args, int args_len)
 
 int log_init(char * str)
 {
-	// determine logtag len
-	int x;
-	for(x = 0; x < g_logs_l; x++)
-	{
-		g_logs[x].l = strlen(g_logs[x].s);
-		o_name_len = MAX(o_name_len, g_logs[x].l);
-	}
 
 	// apply initial args string
 	log_parse(str, 0);
@@ -359,6 +363,7 @@ int log_init(char * str)
 	close(fd);
 
 	args_len--;
+	int x;
 	for(x = 0; x < args_len; x++)
 	{
 		if(args[x] == 0)

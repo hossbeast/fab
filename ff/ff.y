@@ -165,6 +165,7 @@ task
 	{
 		$2->flags = FFN_SINGLE;
 		$2->targets = $1->needs;
+		$2->nodes_freeguard = 1;
 		$$ = addchain($1, $2);
 	}
 	| taskname formula
@@ -180,7 +181,7 @@ fabrication
 	{
 		$2->flags = $1->flags;
 		$2->targets = $1->needs;
-
+		$2->nodes_freeguard = 1;
 		$$ = addchain($1, $2);
 	}
 	| list ':' formula

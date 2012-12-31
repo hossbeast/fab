@@ -223,5 +223,5 @@ int tmp_setup()
 	// resume user identity
 	fatal(identity_assume_user);
 
-	return 1;
+	finally : coda;
 }

@@ -181,6 +181,13 @@ typedef struct ff_node
 	char*							e;
 	struct ff_node*		chain[1];		// chains for this node
 	struct ff_node*		next;				// next sibling in parent chain
+
+	/* this freeguard is necessary when a dependency and a formula are combined in
+	** a production rule ... the dependency and the formula itself are both returned
+	** as part of the containing STMTLIST, but the formula has a reference to the
+	** dependency as well, as the targets of the formula
+	*/
+	int								nodes_freeguard;
 } ff_node;
 
 typedef struct

@@ -135,7 +135,7 @@ static int gn_create(const char * const restrict realwd, char * const restrict A
 			(*new)++;
 	}
 
-	return 1;
+	finally : coda;
 }
 
 static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
@@ -225,7 +225,7 @@ int gn_add(char * const realwd, void * const A, int Al, gn ** r, int * const new
 	if(r)
 		*r = gna;
 
-	return 1;
+	finally : coda;
 }
 
 int gn_edge_add(
@@ -314,7 +314,7 @@ int gn_edge_add(
 	*A = gna;
 	*B = gnb;
 
-	return 1;
+	finally : coda;
 }
 
 void gn_dump(gn * gn)
@@ -542,7 +542,7 @@ int gn_secondary_exists(gn * const gn)
 		fail("access(%s)=[%d][%s]", gn->path, errno, strerror(errno));
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int gn_primary_reload_dscv(gn * const gn)
@@ -553,13 +553,26 @@ int gn_primary_reload_dscv(gn * const gn)
 	// create ddisc block
 	fatal(depblock_create, &gn->dscv_block, "%s/PRIMARY/%u", GN_DIR_BASE, gn->pathhash);
 
-	// only actually load the dscv cache if the backing file has not changed
+	// backing file has not changed
 	if(hashblock_cmp(gn->hb) == 0)
 	{
-		fatal(depblock_read, gn->dscv_block);
+		// node has not been invalidated
+		if(gn->changed == 0)
+		{
+			// primary node with associated discovery fml eval
+			if(gn->dscv)
+			{
+				// fabfile containing the fml eval has not changed
+				if(hashblock_cmp(gn->dscv->fml->ffn->loc.ff->hb) == 0)
+				{
+					// actually load the depblock from cache
+					fatal(depblock_read, gn->dscv_block);
+				}
+			}
+		}
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int gn_primary_reload(gn * const gn)
@@ -587,7 +600,7 @@ int gn_primary_reload(gn * const gn)
 		gn->hb_loaded = 1;
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int gn_primary_rewrite(gn * const gn)
@@ -607,5 +620,78 @@ int gn_primary_rewrite(gn * const gn)
 		, gn->hb->vrshash[1]
 	);
 
-	return 1;
+	finally : coda;
+}
+
+void gn_invalidations()
+{
+	int x;
+
+	// update all node designations
+	for(x = 0; x < gn_nodes.l; x++)
+		gn_designate(gn_nodes.e[x]);
+
+	if(g_args.invalidate_all)
+	{
+		for(x = 0; x < gn_nodes.l; x++)
+		{
+			if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
+				gn_nodes.e[x]->changed = 1;
+
+			if(gn_nodes.e[x]->designation == GN_DESIGNATION_SECONDARY)
+				gn_nodes.e[x]->rebuild = 1;
+		}
+	}
+	else
+	{
+		for(x = 0; x < g_args.invalidate_len; x++)
+		{
+			gn * gn = 0;
+			if((gn = gn_lookup(g_args.invalidate[x], 0, g_args.cwd)))
+			{
+				if(gn->designation == GN_DESIGNATION_PRIMARY)
+					gn->changed = 1;
+
+				if(gn->designation == GN_DESIGNATION_SECONDARY)
+					gn->rebuild = 1;
+			}
+		}
+	}
+}
+
+static void gn_freenode(gn * const gn)
+{
+	int x;
+
+	if(gn)
+	{
+		free(gn->dir);
+		free(gn->name);
+		free(gn->path);
+		free(gn->ext);
+		free(gn->idstring);
+
+		hashblock_free(gn->hb);
+		depblock_free(gn->dscv_block);
+
+		for(x = 0; x < gn->needs.l; x++)
+			free(gn->needs.e[x]);
+		free(gn->needs.e);
+		map_free(gn->needs.by_B);
+
+		free(gn->feeds.e);
+		map_free(gn->feeds.by_A);
+	}
+
+	free(gn);
+}
+
+void gn_teardown()
+{
+	int x;
+	for(x = 0; x < gn_nodes.l; x++)
+		gn_freenode(gn_nodes.e[x]);
+
+	free(gn_nodes.e);
+	map_free(gn_nodes.by_path);
 }

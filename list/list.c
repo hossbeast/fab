@@ -28,7 +28,7 @@ int list_ensure(lstack *** stax, int * staxl, int * staxa, int p)
 	// reset the lstack we are using
 	lstack_reset((*stax)[p]);
 
-	return 1;
+	finally : coda;
 }
 
 int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxl, int * staxa, int p)
@@ -98,5 +98,5 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxl, int * 
 		(*stax)[p]->sel.all = 1;
 	}
 
-	return 1;
+	finally : coda;
 }

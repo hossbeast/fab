@@ -17,7 +17,7 @@ int rmdir_recursive(const char * const dirpath, int rmself)
 		{
 			if(unlink(fpath) != 0)
 			{
-				fail_log("unlink(%s)=[%d][%s]", fpath, errno, strerror(errno));
+				error("unlink(%s)=[%d][%s]", fpath, errno, strerror(errno));
 				return FTW_STOP;
 			}
 			return FTW_CONTINUE;
@@ -28,14 +28,13 @@ int rmdir_recursive(const char * const dirpath, int rmself)
 			{
 				if(rmdir(fpath) != 0)
 				{
-					fail_log("rmdir(%s)=[%d][%s]", fpath, errno, strerror(errno));
+					error("rmdir(%s)=[%d][%s]", fpath, errno, strerror(errno));
 					return FTW_STOP;
 				}
 			}
 			return FTW_CONTINUE;
 		}
 
-printf("unknown %s\n", fpath);
 		return FTW_STOP;
 	};
 	
@@ -63,5 +62,5 @@ int mkdirp(const char * const path, mode_t mode)
 			fail("mkdir(%s)=%s", space, strerror(errno));
 	}
 
-	return 1;
+	finally : coda;
 }

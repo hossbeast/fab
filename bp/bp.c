@@ -90,7 +90,7 @@ static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
 			}
 		}
 
-		return 1;
+		finally : coda;
 	};
 
 	return gn_depth_traversal_nodes_needsward(r, logic);
@@ -244,71 +244,24 @@ int bp_create(gn ** n, int l, bp ** bp)
 			, sizeof((*bp)->stages[0].primary[0])
 			, gn_cmp
 		);
-
-
-		// update all node designations
-		for(x = 0; x < (*bp)->stages_l; x++)
-		{
-			int y;
-			for(y = 0; y < (*bp)->stages[x].primary_l; y++)
-			{
-				gn_designate((*bp)->stages[x].primary[y]);
-			}
-
-			for(y = 0; y < (*bp)->stages[x].evals_l; y++)
-			{
-				for(k = 0; k < (*bp)->stages[x].evals[y]->products_l; k++)
-				{
-					gn_designate((*bp)->stages[x].evals[y]->products[k]);
-				}
-			}
-
-			for(y = 0; y < (*bp)->stages[x].nofmls_l; y++)
-			{
-				gn_designate((*bp)->stages[x].nofmls[y]);
-			}
-		}
 	}
 
-	return 1;
+	finally : coda;
 }
 
-int bp_prune(bp * bp)
+int bp_eval(bp * const bp, int * const poison)
 {
 	int x;
 	int y;
 	int i;
 	int k;
 
-	// process invalidations
-	if(g_args.invalidate_all)
-	{
-		for(x = 0; x < gn_nodes.l; x++)
-		{
-			if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
-				gn_nodes.e[x]->changed = 1;
+	// begin with an assumption of a good build
+	(*poison) = 0;
 
-			if(gn_nodes.e[x]->designation == GN_DESIGNATION_SECONDARY)
-				gn_nodes.e[x]->rebuild = 1;
-		}
-	}
-	else
-	{
-		for(x = 0; x < g_args.invalidate_len; x++)
-		{
-			gn * gn = 0;
-			if((gn = gn_lookup(g_args.invalidate[x], 0, g_args.cwd)))
-			{
-				if(gn->designation == GN_DESIGNATION_PRIMARY)
-					gn->changed = 1;
+	// process invalidations, also update node designations
+	gn_invalidations();
 
-				if(gn->designation == GN_DESIGNATION_SECONDARY)
-					gn->rebuild = 1;
-			}
-		}
-	}
-
-	int poisoned = 0;
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		int c = 0;
@@ -326,7 +279,7 @@ int bp_prune(bp * bp)
 				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn_idstring(gn));
 
 				// poison and propagate
-				poisoned = 1;
+				(*poison) = 1;
 				for(i = 0; i < gn->feeds.l; i++)
 					gn->feeds.e[i]->A->poison = 1;
 			}
@@ -495,14 +448,11 @@ int bp_prune(bp * bp)
 			// SECONDARY files which have no formula
 			gn * gn = bp->stages[x].nofmls[y];
 
-			if(!gn->poison)
+			if(gn->rebuild)
 			{
-				if(gn->rebuild)
-				{
-					// file doesn't exist or has changed, is not a PRIMARY file, and cannot be fabricated
-					gn->poison = 1;
-					poisoned = 1;
-				}
+				// file doesn't exist or has changed, is not a PRIMARY file, and cannot be fabricated
+				gn->poison = 1;
+				(*poison) = 1;
 			}
 
 			// propagate the poison
@@ -536,7 +486,7 @@ int bp_prune(bp * bp)
 	}
 
 	// consolidate stages
-	if(!poisoned)
+	if(!(*poison))
 	{
 		for(x = bp->stages_l - 1; x >= 0; x--)
 		{
@@ -567,7 +517,7 @@ int bp_prune(bp * bp)
 		}
 	}
 
-	return !poisoned;
+	finally : coda;
 }
 
 int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p, ts *** ts, int * tsa, int * tsw)
@@ -673,7 +623,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			return 0;
 	}
 
-	return 1;
+	finally : coda;
 }
 
 void bp_dump(bp * bp)
@@ -733,7 +683,7 @@ int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
 	
 		(*gns)[(*gnl)++] = gn;
 
-		return 1;
+		finally : coda;
 	};
 
 	*gnl = 0;
@@ -756,5 +706,27 @@ int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
 		}
 	}
 
-	return 1;
+	finally : coda;
+}
+
+void bp_free(bp * const restrict bp)
+{
+	if(bp)
+	{
+		int x;
+		for(x = 0; x < bp->stages_l; x++)
+		{
+			free(bp->stages[x].primary);
+			free(bp->stages[x].evals);
+			free(bp->stages[x].nofmls);
+		}
+	}
+
+	free(bp);
+}
+
+void bp_xfree(bp ** const restrict bp)
+{
+	bp_free(*bp);
+	*bp = 0;
 }

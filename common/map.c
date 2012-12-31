@@ -113,7 +113,7 @@ int map_create(map** const restrict m, void (*destructor)(void*, void*))
 
 	(*m)->destructor = destructor;
 
-	return 1;
+	finally : coda;
 }
 
 void* map_set(map* const restrict m, const void* const restrict k, int kl, const void* const restrict v, int vl)
@@ -261,13 +261,16 @@ void* map_set(map* const restrict m, const void* const restrict k, int kl, const
 		m->kc++;
 	}
 
+finally:
 	free(ks);
 	free(vs);
 	free(uk);
 	free(uv);
 
-	// return a pointer to the value
-	return m->tv[i]->p;
+	if(_coda_r)
+		return m->tv[i]->p;
+
+	return 0;
 }
 
 void* map_get(const map* const restrict m, const void* const restrict k, int kl)
@@ -346,7 +349,7 @@ int map_keysx(const map* const restrict m, void* const restrict t, int* const re
 		}
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int map_values(const map* const restrict m, void* const restrict t, int* const restrict c)
@@ -363,7 +366,7 @@ int map_values(const map* const restrict m, void* const restrict t, int* const r
 		}
 	}
 
-	return 1;
+	finally : coda;
 }
 
 void map_free(map* const restrict m)

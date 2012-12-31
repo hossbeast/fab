@@ -81,7 +81,8 @@ static void flatten(ff_node* n)
 			n->list_l++;
 		}
 
-		n->list = calloc(n->list_l, sizeof(n->list[0]));
+		if(n->list_l)
+			n->list = calloc(n->list_l, sizeof(n->list[0]));
 
 		n->list_l = 0;
 		t = n->chain[0];
@@ -91,9 +92,12 @@ static void flatten(ff_node* n)
 			t = t->next;
 		}
 
-		int x;
-		for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
-			flatten(n->nodes[x]);
+		if(n->nodes_freeguard == 0)
+		{
+			int x;
+			for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
+				flatten(n->nodes[x]);
+		}
 	}
 }
 
@@ -144,7 +148,7 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 		}
 	}
 
-	return 1;
+	finally : coda;
 }
 
 static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node ** const ffn, struct gn * dscv_gn)
@@ -237,7 +241,7 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 		ff_xfreenode(ffn);
 	}
 
-	return 1;
+	finally : coda;
 }
 
 /// [[ public ]]
@@ -274,12 +278,6 @@ ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 
 		n->text 					= a;
 	}
-	else if(type == FFN_GENERATOR)
-	{
-		a = va_arg(va, char*);
-
-		n->text 					= a;
-	}
 	else if(type == FFN_VARNAME)
 	{
 		a = va_arg(va, char*);
@@ -303,6 +301,15 @@ ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 	{
 		n->chain[0]				= va_arg(va, ff_node*);
 		n->generator_node	= va_arg(va, ff_node*);
+	}
+	else if(type == FFN_LF)
+	{
+		// no extra params
+	}
+	else
+	{
+		fprintf(stderr, "unknown type : %s\n", FFN_STRING(type));
+		exit(0);
 	}
 
 	va_end(va);
@@ -343,11 +350,13 @@ int ff_parse(const ff_parser * const p, char* path, ff_node ** const ffn)
 	if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
 		fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
 
-	close(fd);
+	qfatal(parse, p, b, statbuf.st_size, path, ffn, 0);
 
-	int R = parse(p, b, statbuf.st_size, path, ffn, (void*)0);
+finally:
 	free(b);
-	return R;
+	if(fd)
+		close(fd);
+coda;
 }
 
 int ff_dsc_parse(const ff_parser * const p, char* b, int sz, char* path, struct gn * dscv_gn, ff_node ** const ffn)
@@ -380,8 +389,11 @@ void ff_freenode(ff_node * const ffn)
 		for(x = 0; x < sizeof(ffn->strings) / sizeof(ffn->strings[0]); x++)
 			free(ffn->strings[x]);
 
-		for(x = 0; x < sizeof(ffn->nodes) / sizeof(ffn->nodes[0]); x++)
-			ff_freenode(ffn->nodes[x]);
+		if(ffn->nodes_freeguard == 0)
+		{
+			for(x = 0; x < sizeof(ffn->nodes) / sizeof(ffn->nodes[0]); x++)
+				ff_freenode(ffn->nodes[x]);
+		}
 
 		for(x = 0; x < ffn->list_l; x++)
 			ff_freenode(ffn->list[x]);

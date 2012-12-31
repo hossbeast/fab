@@ -34,7 +34,7 @@ int depblock_create(depblock ** const block, const char * const dirfmt, ...)
 
 	fatal(xsprintf, &(*block)->block_path, "%s/dscv", (*block)->blockdir);
 
-	return 1;
+	finally : coda;
 }
 
 void depblock_free(depblock * const block)
@@ -78,14 +78,14 @@ int depblock_read(depblock * const block)
 		fail("open(%s)=[%d][%s]", block->block_path, errno, strerror(errno));
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int depblock_allocate(depblock * const block)
 {
 	fatal(xmalloc, &block->block, sizeof(*block->block));
 
-	return 1;
+	finally : coda;
 }
 
 int depblock_close(depblock * const block)
@@ -104,7 +104,7 @@ int depblock_close(depblock * const block)
 		block->block = 0;
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int depblock_write(const depblock * const block)
@@ -145,5 +145,5 @@ int depblock_write(const depblock * const block)
 		fatal(identity_assume_user);
 	}
 
-	return 1;
+	finally : coda;
 }

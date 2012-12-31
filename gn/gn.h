@@ -97,7 +97,6 @@ typedef struct
 
 	struct gn *				A;			// A needs B
 	struct gn *				B;			// B feeds A
-
 	int								weak;		// whether this is a weak relation
 } relation;
 
@@ -355,6 +354,22 @@ char * gn_idstring(gn * const restrict gn)
 //
 char * gn_designate(gn * gn)
 	__attribute__((nonnull));
+
+/// gn_invalidations
+//
+// SUMMARY
+//  process user-specified invalidations - also calls gn_designate on all nodes
+//
+//  for PRIMARY   - may set gn->changed
+//  for SECONDARY - may set gn->rebuild
+//
+void gn_invalidations();
+
+/// gn_teardown
+//
+// free the dependency graph
+//
+void gn_teardown();
 
 #undef restrict
 #endif

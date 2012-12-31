@@ -179,7 +179,7 @@ static int dep_add_single(
 	}
 	LSTACK_ITEREND;
 
-	return 1;
+	finally : coda;
 }
 
 static int dep_add_multi(
@@ -336,7 +336,7 @@ static int dep_add_multi(
 		}
 	}
 
-	return 1;
+	finally : coda;
 }
 
 ///
@@ -372,7 +372,7 @@ int dep_process(
 		fail("bad flags : %hhu", ffn->flags);
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int depblock_process(gn * const dscvgn, const depblock * const block, int * const newnp, int * const newrp)
@@ -414,7 +414,7 @@ int depblock_process(gn * const dscvgn, const depblock * const block, int * cons
 			, gn_idstring((gn*)B)
 		);
 
-		return 1;
+		finally : coda;
 	};
 
 	int x;
@@ -435,5 +435,5 @@ int depblock_process(gn * const dscvgn, const depblock * const block, int * cons
 		}
 	}
 
-	return 1;
+	finally : coda;
 }

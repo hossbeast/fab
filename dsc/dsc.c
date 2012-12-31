@@ -65,7 +65,7 @@ static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
 				gn->dscv->products[x]->dscv_mark = 2;
 		}
 
-		return 1;
+		finally : coda;
 	};
 
 	return gn_depth_traversal_nodes_needsward(r, logic);
@@ -106,6 +106,8 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 			fatal(xrealloc, &cache, sizeof(*cache), dscvl, 0);
 			cachea = dscvl;
 		}
+
+		gn_invalidations();
 
 		// assign each threadspace a discovery formula evaluation context
 		tsl = 0;
@@ -183,6 +185,8 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 		// process cached results
 		for(x = 0; x < cachel; x++)
 		{
+			log(L_DSC | L_DSCEXEC, "(cache) %-9s %s", gn_designate(cache[x]), gn_idstring(cache[x]));
+
 			fatal(depblock_process, cache[x], cache[x]->dscv_block, &newn, &newr);
 			fatal(depblock_close, cache[x]->dscv_block);
 		}
@@ -199,5 +203,5 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 			fatal(count_dscv, roots[x], &dscvl);
 	}
 
-	return 1;
+	finally : coda;
 }

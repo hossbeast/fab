@@ -57,6 +57,8 @@ int main(int argc, char** argv)
 		gn **								list = 0;
 		int									listl = 0;
 		int									lista = 0;
+		gn **								node_list = 0;
+		int									node_list_len = 0;
 
 		int x;
 
@@ -80,10 +82,8 @@ int main(int argc, char** argv)
 		signal(SIGQUIT	, signal_handler);
 		signal(SIGTERM	, signal_handler);
 
-		// initialize logger
-		fatal(log_init, "+ERROR|WARN|INFO|BPEXEC|DSCINFO");
-
 		// parse cmdline arguments
+		//  (parse_args also calls log_init with a default string)
 		fatal(parse_args, argc, argv);
 
 		// create/cleanup tmp 
@@ -149,27 +149,20 @@ int main(int argc, char** argv)
 		}
 
 		// dump graph nodes, pending logging
-		if(g_args.dumpnode_all)
-		{
-			for(x = 0; x < gn_nodes.l; x++)
-				gn_dump(gn_nodes.e[x]);
-		}
-		else if(g_args.dumpnode)
+		if(g_args.mode_exec == MODE_EXEC_DUMP)
 		{
 			for(x = 0; x < g_args.dumpnode_len; x++)
 			{
 				gn * gn = 0;
 				if((gn = gn_lookup(g_args.dumpnode[x], 0, g_args.cwd)) == 0)
 					return 0;
+
 				gn_dump(gn);
 			}
 		}
 		else
 		{
 			// lookup gn for each target
-			gn **		node_list = 0;
-			int			node_list_len = 0;
-
 			int			aretasks = 0;
 			int			istask = 0;
 
@@ -206,55 +199,82 @@ int main(int argc, char** argv)
 
 			if(node_list_len)
 			{
-				int new = 1;
-				while(new)
+				if(g_args.mode_exec == MODE_EXEC_DDSC)
 				{
-					// traverse the graph, construct the build plan that culminates in the given targets
-					// bp_create also updates all node designations
-					fatal(bp_create, node_list, node_list_len, &bp);
-
-					new = 0;
-					if(g_args.mode_ddsc == MODE_DDSC_DEFERRED)
+					// execute discovery
+					fatal(dsc_exec, node_list, node_list_len, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, 0);
+				}
+				else if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN)
+				{
+					int new = 1;
+					while(new)
 					{
-						// flat list of nodes in the buildplan
-						fatal(bp_flatten, bp, &list, &listl, &lista);
+						// traverse the graph, construct the build plan that culminates in the given target(s)
+						// bp_create also updates all node designations
+						fatal(bp_create, node_list, node_list_len, &bp);
 
-						// execute discovery
-						fatal(dsc_exec, list, listl, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, &new);
+						new = 0;
+						if(g_args.mode_ddsc == MODE_DDSC_DEFERRED)
+						{
+							// flat list of nodes in the buildplan
+							fatal(bp_flatten, bp, &list, &listl, &lista);
+
+							// execute discovery
+							fatal(dsc_exec, list, listl, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, &new);
+						}
+					}
+
+					// prune the buildplan of nodes which do not require updating
+					int poison = 0;
+					qfatal(bp_eval, bp, &poison);
+
+					if(poison)
+						qfail();
+
+					// dump buildplan, pending logging
+					if(bp)
+						bp_dump(bp);
+					
+					if(g_args.mode_exec == MODE_EXEC_FABRICATE)
+					{
+						if(!bp || bp->stages_l == 0)
+						{
+							log(L_INFO, "nothing to fabricate");
+						}
+						else
+						{
+							// execute the build plan, one stage at a time
+							qfatal(bp_exec, bp, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw);
+
+							// commit regular fabfile hashblocks
+							for(x = 0; x < ff_files.l; x++)
+								fatal(hashblock_write, ff_files.e[x]->hb);
+						}
 					}
 				}
-
-				// prune the buildplan of nodes which do not require updating
-				if(bp_prune(bp) == 0)
-					return 0;
-			}
-
-			// dump buildplan, pending logging
-			if(bp)
-				bp_dump(bp);
-
-			if(!bp || bp->stages_l == 0)
-				log(L_INFO, "nothing to fabricate");
-
-			if(bp && g_args.mode_exec == MODE_EXEC_FABRICATE)
-			{
-				// execute the build plan, one stage at a time
-				if(bp_exec(bp, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw) == 0)
-					return 0;
-
-				// commit regular fabfile hashblocks
-				for(x = 0; x < ff_files.l; x++)
-					fatal(hashblock_write, ff_files.e[x]->hb);
 			}
 		}
+
+	finally:
+		ff_freeparser(ffp);
+		ff_freenode(ffn);
+		bp_free(bp);
+		map_free(vmap);
+
+		for(x = 0; x < staxa; x++)
+			lstack_free(stax[x]);
+		free(stax);
 
 		for(x = 0; x < tsa; x++)
 			ts_free(ts[x]);
 		free(ts);
 
 		free(list);
+		free(node_list);
 
-		return 1;
+		gn_teardown();
+
+		coda;
 	};
 
 	int R = !domain() || o_signum;

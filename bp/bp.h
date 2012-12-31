@@ -3,12 +3,13 @@
 
 #include <listwise.h>
 
-/* bp - build plan */
 #include "gn.h"
 #include "fml.h"
 #include "ts.h"
 
 #include "map.h"
+
+#define restrict __restrict
 
 // actions to be performed in a single build stage
 typedef struct 
@@ -36,11 +37,22 @@ typedef struct
 //
 int bp_create(gn ** goals, int goals_len, bp ** bp);
 
-/// bp_prune
+/// bp_eval
 //
-// remove nodes that do not require updating
+// SUMMARY
+//  evaluate the buildplan, removing nodes that can be determined to not require fabrication
+//  then consolidate stages in the buildplan
 //
-int bp_prune(bp * bp);
+// PARAMETERS
+//  bp     - buildplan
+//  poison - set to 1 if the bp cannot be executed (ex: missing source files)
+//
+// RETURNS
+//  0 in the case of failure (memory, io), and 1 otherwise
+//  check poison to determine whether the buildplan can be executed
+//
+int bp_eval(bp * const restrict, int * const restrict)
+	__attribute__((nonnull));
 
 /// bp_dump
 //
@@ -62,4 +74,20 @@ int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
 int bp_exec(bp * bp, map * vmap, lstack *** stax, int * lstax_l, int * stax_a, int p, ts *** ts, int * tsa, int * tsw)
 	__attribute__((nonnull));
 
+/// bp_free
+//
+// SUMMARY
+//  free a bp with free semantics
+//
+void bp_free(bp * const restrict bp);
+
+/// bp_xfree
+//
+// SUMMARY
+//  free a bp with xfree semantics
+//
+void bp_xfree(bp ** const restrict bp)
+	__attribute__((nonnull));
+
+#undef restrict
 #endif

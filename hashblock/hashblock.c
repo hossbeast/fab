@@ -43,7 +43,7 @@ int hashblock_create(hashblock ** const hb, const char * const dirfmt, ...)
 	fatal(xsprintf, &(*hb)->contenthash_path, "%s/content", (*hb)->hashdir);
 	fatal(xsprintf, &(*hb)->vrshash_path, "%s/vrs", (*hb)->hashdir);
 
-	return 1;
+	finally : coda;
 }
 
 int hashblock_stat(hashblock * const hb, const char * const path)
@@ -77,7 +77,7 @@ int hashblock_stat(hashblock * const hb, const char * const path)
 		hb->stathash[1] = 0;
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int hashblock_read(hashblock * const hb)
@@ -113,7 +113,7 @@ int hashblock_read(hashblock * const hb)
 		close(fd);
 	}
 
-	return 1;
+	finally : coda;
 }
 
 int hashblock_write(const hashblock * const hb)
@@ -147,7 +147,8 @@ int hashblock_write(const hashblock * const hb)
 	close(fd);
 
 	fatal(identity_assume_user);
-	return 1;
+
+	finally : coda;
 }
 
 int hashblock_cmp(const hashblock * const hb)
