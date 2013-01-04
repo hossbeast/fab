@@ -130,7 +130,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 				(*staxa) = pn + 1;
 			}
 			if(!(*stax)[pn])
-				fatal(xmalloc, &(*stax)[pn], sizeof(*(*stax)[0]));
+				fatal(lstack_create, &(*stax)[pn]);
 			lstack_reset((*stax)[pn]);
 
 			// @ is a list of expected products of this eval context
@@ -164,7 +164,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 			);
 
 			if(!ffn)
-				return 0;
+				qfail();
 
 			// dump, pending logging
 			ff_dump(ffn);
@@ -203,5 +203,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 			fatal(count_dscv, roots[x], &dscvl);
 	}
 
-	finally : coda;
+finally:
+	free(cache);
+coda;
 }

@@ -97,45 +97,17 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 	int x;
 
 /* string-based property reflection */
-	if(!prop || strcmp(prop, "path") == 0)
+
+	if(!prop || strcmp(prop, "path") == 0
+					 || strcmp(prop, "name") == 0
+					 || strcmp(prop, "dir") == 0
+					 || strcmp(prop, "ext") == 0)
 	{
 		*rl = 1;
 		fatal(xmalloc, r, sizeof(char*) * (*rl));
-		fatal(xmalloc, rls, sizeof(*rls[0]) * (*rl));
+		fatal(xmalloc, rls, sizeof(**rls) * (*rl));
 
-		fatal(xmalloc, &(((char**)(*r))[0]), ((gn*)o)->pathl + 1);
-		memcpy((((char**)(*r))[0]), ((gn*)o)->path, ((gn*)o)->pathl);
-		(*rls)[0] = ((gn*)o)->pathl;
-	}
-	else if(strcmp(prop, "name") == 0)
-	{
-		*rl = 1;
-		fatal(xmalloc, r, sizeof(char*) * 1);
-		fatal(xmalloc, rls, sizeof(*rls[0]) * 1);
-
-		fatal(xmalloc, &(((char**)(*r))[0]), ((gn*)o)->namel + 1);
-		memcpy((((char**)(*r))[0]), ((gn*)o)->name, ((gn*)o)->namel);
-		(*rls)[0] = ((gn*)o)->namel;
-	}
-	else if(strcmp(prop, "dir") == 0)
-	{
-		*rl = 1;
-		fatal(xmalloc, r, sizeof(char*) * 1);
-		fatal(xmalloc, rls, sizeof(*rls) * 1);
-
-		fatal(xmalloc, &(((char**)(*r))[0]), ((gn*)o)->dirl + 1);
-		memcpy((((char**)(*r))[0]), ((gn*)o)->dir, ((gn*)o)->dirl);
-		(*rls)[0] = ((gn*)o)->dirl;
-	}
-	else if(strcmp(prop, "ext") == 0)
-	{
-		*rl = 1;
-		fatal(xmalloc, r, sizeof(char*) * 1);
-		fatal(xmalloc, rls, sizeof(*rls) * 1);
-
-		fatal(xmalloc, &(((char**)(*r))[0]), ((gn*)o)->extl + 1);
-		memcpy((((char**)(*r))[0]), ((gn*)o)->ext, ((gn*)o)->extl);
-		(*rls)[0] = ((gn*)o)->extl;
+		lw_string(o, prop, (char**)&(*r)[0], &(*rls)[0]);
 	}
 
 /* collection-based property reflection */
@@ -149,8 +121,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		for(x = 0; x < (*rl); x++)
 		{
 			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
-			fatal(xmalloc, &(((gn**)(*r))[x]), sizeof(gn*));
-			((gn**)(*r))[x] = ((gn*)o)->needs.e[x]->B;
+			(*r)[x] = ((gn*)o)->needs.e[x]->B;
 		}
 	}
 	else if(strcmp(prop, "ifeed") == 0)
@@ -162,8 +133,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		for(x = 0; x < (*rl); x++)
 		{
 			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
-			fatal(xmalloc, &(((gn**)(*r))[x]), sizeof(gn*));
-			((gn**)(*r))[x] = ((gn*)o)->feeds.e[x]->A;
+			(*r)[x] = ((gn*)o)->feeds.e[x]->A;
 		}
 	}
 	else if(strcmp(prop, "aneed") == 0)

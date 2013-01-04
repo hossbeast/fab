@@ -94,7 +94,7 @@ int main(int argc, char** argv)
 		fatal(ff_parse, ffp, g_args.fabfile_canon, &ffn);
 
 		if(!ffn)
-			return 0;
+			qfail();
 
 		if(log_would(L_FF | L_FFTREE))
 			ff_dump(ffn);
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
 			staxa = staxp + 1;
 		}
 		if(!stax[staxp])
-			fatal(xmalloc, &stax[staxp], sizeof(*stax[staxp]));
+			fatal(lstack_create, &stax[staxp]);
 		lstack_reset(stax[staxp]);
 
 		fatal(lstack_add, stax[staxp], ffn->loc.ff->dir, strlen(ffn->loc.ff->dir));
@@ -155,7 +155,7 @@ int main(int argc, char** argv)
 			{
 				gn * gn = 0;
 				if((gn = gn_lookup(g_args.dumpnode[x], 0, g_args.cwd)) == 0)
-					return 0;
+					qfail();
 
 				gn_dump(gn);
 			}
@@ -173,7 +173,7 @@ int main(int argc, char** argv)
 			{
 				gn * gn = 0;
 				if((gn = gn_lookup(g_args.targets[0], 0, g_args.cwd)) == 0)
-					return 0;
+					qfail();
 
 				aretasks = strcmp(gn->dir, "/..") == 0 && gn->fabv;
 				node_list[node_list_len++] = gn;
@@ -181,7 +181,7 @@ int main(int argc, char** argv)
 				for(x = 1; x < g_args.targets_len; x++)
 				{
 					if((gn = gn_lookup(g_args.targets[x], 0, g_args.cwd)) == 0)
-						return 0;
+						qfail();
 
 					istask = strcmp(gn->dir, "/..") == 0 && gn->fabv;
 					if(aretasks ^ istask)
@@ -211,6 +211,7 @@ int main(int argc, char** argv)
 					{
 						// traverse the graph, construct the build plan that culminates in the given target(s)
 						// bp_create also updates all node designations
+						bp_xfree(&bp);
 						fatal(bp_create, node_list, node_list_len, &bp);
 
 						new = 0;
@@ -248,7 +249,12 @@ int main(int argc, char** argv)
 
 							// commit regular fabfile hashblocks
 							for(x = 0; x < ff_files.l; x++)
-								fatal(hashblock_write, ff_files.e[x]->hb);
+							{
+								if(ff_files.e[x]->type == FFT_REGULAR)
+								{
+									fatal(hashblock_write, ff_files.e[x]->hb);
+								}
+							}
 						}
 					}
 				}
@@ -273,12 +279,16 @@ int main(int argc, char** argv)
 		free(node_list);
 
 		gn_teardown();
-
-		coda;
+		fml_teardown();
+		ff_teardown();
+		args_teardown();
+	coda;
 	};
 
 	int R = !domain() || o_signum;
 	log(L_INFO, "exiting with status: %d", R);
+
+	log_teardown();
 	
 	return R;
 }

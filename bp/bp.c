@@ -20,6 +20,8 @@
 // static
 //
 
+static void bp_freestage(bp_stage * const restrict bps);
+
 static int gn_cmp(const void * _A, const void * _B)
 {
 	gn * A = *((gn **)_A);
@@ -145,19 +147,19 @@ int bp_create(gn ** n, int l, bp ** bp)
 			, &bps->evals
 			, sizeof(bps->evals[0])
 			, bps->evals_l + lvsl
-			, bps->evals_l
+			, 0
 		);
 		fatal(xrealloc
 			, &bps->nofmls
 			, sizeof(bps->nofmls[0])
 			, bps->nofmls_l + lvsl
-			, bps->nofmls_l
+			, 0
 		);
 		fatal(xrealloc
 			, &bps->primary
 			, sizeof(bps->primary[0])
 			, bps->primary_l + lvsl
-			, bps->primary_l
+			, 0
 		);
 
 		// process nodes found on the last visit
@@ -246,7 +248,9 @@ int bp_create(gn ** n, int l, bp ** bp)
 		);
 	}
 
-	finally : coda;
+finally:
+	free(lvs);
+coda;
 }
 
 int bp_eval(bp * const bp, int * const poison)
@@ -506,6 +510,8 @@ int bp_eval(bp * const bp, int * const poison)
 
 			if(bp->stages[x].evals_l == 0)
 			{
+				bp_freestage(&bp->stages[x]);
+
 				memmove(
 					  &bp->stages[x]
 					, &bp->stages[x + 1]
@@ -560,7 +566,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 				(*stax_a) = pn + 1;
 			}
 			if(!(*stax)[pn])
-				fatal(xmalloc, &(*stax)[pn], sizeof(*(*stax)[0]));
+				fatal(lstack_create, &(*stax)[pn]);
 			lstack_reset((*stax)[pn]);
 
 			// @ is a list of expected products of this eval context
@@ -709,17 +715,25 @@ int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
 	finally : coda;
 }
 
+void bp_freestage(bp_stage * const restrict bps)
+{
+	if(bps)
+	{
+		free(bps->primary);
+		free(bps->evals);
+		free(bps->nofmls);
+	}
+}
+
 void bp_free(bp * const restrict bp)
 {
 	if(bp)
 	{
 		int x;
 		for(x = 0; x < bp->stages_l; x++)
-		{
-			free(bp->stages[x].primary);
-			free(bp->stages[x].evals);
-			free(bp->stages[x].nofmls);
-		}
+			bp_freestage(&bp->stages[x]);
+
+		free(bp->stages);
 	}
 
 	free(bp);

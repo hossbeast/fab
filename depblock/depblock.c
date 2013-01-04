@@ -41,6 +41,16 @@ void depblock_free(depblock * const block)
 {
 	if(block)
 	{
+		if(block->addr)
+		{
+			// in this case, block->block points to mmap'ed memory that is
+			// dealt with in depblock_close
+		}
+		else
+		{
+			free(block->block);
+		}
+
 		free(block->blockdir);
 		free(block->block_path);
 	}

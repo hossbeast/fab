@@ -340,7 +340,6 @@ void log_parse(char * args, int args_len)
 
 int log_init(char * str)
 {
-
 	// apply initial args string
 	log_parse(str, 0);
 
@@ -462,4 +461,5 @@ int log(const uint64_t e, const char* fmt, ...)
 void log_teardown()
 {
 	free(o_space);
+	free(o_filter);
 }

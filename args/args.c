@@ -239,6 +239,12 @@ coda;
 
 void args_teardown()
 {
+	free(g_args.cwd);
+	free(g_args.ruid_name);
+	free(g_args.euid_name);
+	free(g_args.rgid_name);
+	free(g_args.egid_name);
+
 	int x;
 	for(x = 0; x < g_args.targets_len; x++)
 		free(g_args.targets[x]);

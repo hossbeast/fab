@@ -99,6 +99,7 @@
 %token END 0 "end of file"
 
 %destructor { ff_freenode($$); } <node>
+%destructor { free($$.v); } <wordparts>
 
 %%
 
@@ -221,6 +222,7 @@ taskname
 		char * t = $1->text;
 		$1->text = calloc(1, strlen($1->text) + 5);
 		sprintf($1->text, "/../%s", t);
+		free(t);
 
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
 	}
@@ -281,6 +283,7 @@ generator
 word
 	: '"' wordparts '"'
 	{
+		/* only concatenate consecutive WORD's when enclosed in quotes or WS */
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WS wordparts WS

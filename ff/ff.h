@@ -85,7 +85,7 @@ typedef struct ff_file
 	};
 } ff_file;
 
-// collection of ff_files (REGULAR only, not discovery)
+// collection of ff_files (REGULAR as well as DDISC)
 extern union ff_files_t
 {
 	coll_doubly c;
@@ -318,6 +318,12 @@ int ff_regular_reload(ff_file * const restrict ff)
 //
 int ff_regular_rewrite(ff_file * const restrict ff)
 	__attribute__((nonnull));
+
+/// ff_teardown
+//
+// free ff_files
+//
+void ff_teardown();
 
 #undef restrict
 #endif

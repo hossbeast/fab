@@ -16,10 +16,10 @@ struct fmleval;
 
 typedef struct fml
 {
-	ff_node *		ffn;					// ff_node for this formula
+	ff_node *					ffn;					// ff_node for this formula
 
-	struct fmleval *		evals;				// evaluation instances
-	int					evals_l;
+	struct fmleval *	evals;				// evaluation instances
+	int								evals_l;
 } fml;
 
 extern union g_fmls_t
@@ -60,5 +60,11 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 //
 int fml_exec(ts *, int num)
 	__attribute__((nonnull));
+
+/// fml_teardown
+//
+// free g_fmls
+//
+void fml_teardown();
 
 #endif

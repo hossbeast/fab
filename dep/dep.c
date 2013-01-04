@@ -68,8 +68,8 @@ static int dep_add_single(
 	  ff_node * ffn
 	, map * vmap
 	, lstack *** stax
-	, int * stax_l
-	, int * stax_a
+	, int * staxl
+	, int * staxa
 	, int pl
 	, int p
 	, gn ** first
@@ -84,7 +84,7 @@ static int dep_add_single(
 	int pr = p;
 
 	// resolve the right-hand side
-	fatal(list_resolve, ffn->feeds, vmap, stax, stax_l, stax_a, pr);
+	fatal(list_resolve, ffn->feeds, vmap, stax, staxl, staxa, pr);
 
 	// add edges, which are the cartesian product needs x feeds
 	LSTACK_ITERATE((*stax)[pl], i, goa);
@@ -186,8 +186,8 @@ static int dep_add_multi(
 	  ff_node * ffn
 	, map * vmap
 	, lstack *** stax
-	, int * stax_l
-	, int * stax_a
+	, int * staxl
+	, int * staxa
 	, int pl
 	, int p
 	, gn ** first
@@ -207,13 +207,13 @@ static int dep_add_multi(
 		int pr = p;
 
 		// prepare space for new variable definition list
-		if((*stax_a) <= pr)
+		if((*staxa) <= pr)
 		{
-			fatal(xrealloc, &(*stax), sizeof(*(*stax)), pr + 1, (*stax_a));
-			(*stax_a) = pr + 1;
+			fatal(xrealloc, &(*stax), sizeof(*(*stax)), pr + 1, (*staxa));
+			(*staxa) = pr + 1;
 		}
 		if(!(*stax)[pr])
-			fatal(xmalloc, &(*stax)[pr], sizeof(*(*stax)[pr]));
+			fatal(lstack_create, &(*stax)[pr]);
 		lstack_reset((*stax)[pr]);
 
 		// populate the "<" variable (left-hand side)
@@ -244,7 +244,7 @@ static int dep_add_multi(
 		fatal(var_set, vmap, "<", (*stax)[pr++]);
 
 		// resolve the right-hand side
-		fatal(list_resolve, ffn->feeds, vmap, &(*stax), stax_l, stax_a, pr);
+		fatal(list_resolve, ffn->feeds, vmap, &(*stax), staxl, staxa, pr);
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
 		{
@@ -349,7 +349,7 @@ int dep_process(
 	, lstack *** const stax
 	, int * const staxl
 	, int * const staxa
-	, int p
+	, int staxp
 	, gn ** const first
 	, int * const newn
 	, int * const newr
@@ -357,15 +357,15 @@ int dep_process(
 )
 {
 	// resolve the left-hand side
-	fatal(list_resolve, ffn->needs, vmap, stax, staxl, staxa, p);
+	fatal(list_resolve, ffn->needs, vmap, stax, staxl, staxa, staxp);
 
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(dep_add_single, ffn, vmap, stax, staxl, staxa, p, p + 1, first, newn, newr, block);
+		fatal(dep_add_single, ffn, vmap, stax, staxl, staxa, staxp, staxp + 1, first, newn, newr, block);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(dep_add_multi, ffn, vmap, stax, staxl, staxa, p, p + 1, first, newn, newr, block);
+		fatal(dep_add_multi, ffn, vmap, stax, staxl, staxa, staxp, staxp + 1, first, newn, newr, block);
 	}
 	else
 	{

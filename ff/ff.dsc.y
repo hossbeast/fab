@@ -86,6 +86,7 @@
 %token END 0 "end of file"
 
 %destructor { ff_freenode($$); } <node>
+%destructor { free($$.v); } <wordparts>
 
 %%
 

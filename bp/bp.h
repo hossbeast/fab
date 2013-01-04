@@ -12,7 +12,7 @@
 #define restrict __restrict
 
 // actions to be performed in a single build stage
-typedef struct 
+typedef struct bp_stage
 {
 	fmleval **	evals;				// evaluations to be carried out which result in 1 or more
 	int					evals_l;			//  SECONDARY/GENERATED files

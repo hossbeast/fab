@@ -23,7 +23,7 @@ int list_ensure(lstack *** stax, int * staxl, int * staxa, int p)
 
 	// ensure lstack at this spot is allocated
 	if(!(*stax)[p])
-		fatal(xmalloc, &(*stax)[p], sizeof(*(*stax)[p]));
+		fatal(lstack_create, &(*stax)[p]);
 
 	// reset the lstack we are using
 	lstack_reset((*stax)[p]);
@@ -50,7 +50,19 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxl, int * 
 		else if(list->elements[x]->type == FFN_VARNAME)
 		{
 			lstack ** vls = 0;
-			if((vls = map_get(vmap, list->elements[x]->name, strlen(list->elements[x]->name))) == 0)
+			if((vls = map_get(vmap, list->elements[x]->name, strlen(list->elements[x]->name))))
+			{
+				LSTACK_ITERATE((*vls), i, go);
+				if(go)
+				{
+					if((*vls)->s[0].s[i].type)
+						fatal(lstack_obj_add, (*stax)[p], *(void**)(*vls)->s[0].s[i].s, LISTWISE_TYPE_GNLW);
+					else
+						fatal(lstack_add, (*stax)[p], (*vls)->s[0].s[i].s, (*vls)->s[0].s[i].l);
+				}
+				LSTACK_ITEREND;
+			}
+			else
 			{
 				fail("reference to undefined variable : '%s' @ [%3d,%3d - %3d,%3d]"
 					, list->elements[x]->name
@@ -60,16 +72,6 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxl, int * 
 					, list->loc.l_col + 1
 				);
 			}
-
-			LSTACK_ITERATE((*vls), i, go);
-			if(go)
-			{
-				if((*vls)->s[0].s[i].type)
-					fatal(lstack_obj_add, (*stax)[p], *(void**)(*vls)->s[0].s[i].s, LISTWISE_TYPE_GNLW);
-				else
-					fatal(lstack_add, (*stax)[p], (*vls)->s[0].s[i].s, (*vls)->s[0].s[i].l);
-			}
-			LSTACK_ITEREND;
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{

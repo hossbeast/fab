@@ -132,3 +132,9 @@ TODO
 - flag 
 - per-node settings ( x:y, x:y )
 	- invalidate this node
+- -j switch - max concurrent executions
+
+- tagging of items in fabfile for logging - the tagging is done with per-node ( x:y ) settings
+
+- write a bash script which will perform the build - this is equivalent to invalidating all nodes
+  and then concatenating the formula scripts in stage order

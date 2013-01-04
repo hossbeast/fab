@@ -21,7 +21,7 @@ int xrealloc(void* target, size_t es, size_t ec, size_t oec)
 		*t = a;
 
 		if(ec - oec)
-			memset(((char*)*t) + (oec * es), 0, (ec- oec) * es);
+			memset(((char*)*t) + (oec * es), 0, (ec - oec) * es);
 
 		return 1;
 	}

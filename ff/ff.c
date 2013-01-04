@@ -138,13 +138,16 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 		for(x = 0; x < n->list_l; x++)
 		{
 			if(parse_generators(n->list[x], gp) == 0)
-				return 0;
+				qfail();
 		}
 
-		for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
+		if(n->nodes_freeguard == 0)
 		{
-			if(parse_generators(n->nodes[x], gp) == 0)
-				return 0;
+			for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
+			{
+				if(parse_generators(n->nodes[x], gp) == 0)
+					qfail();
+			}
 		}
 	}
 
@@ -160,17 +163,16 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 
 	ff_file * ff = 0;
 
-	// regular ff_file's are tracked in ff_files
+	// all ff_files are tracked in ff_files
+	fatal(coll_doubly_add, &ff_files.c, 0, &ff);
+
 	if(dscv_gn)
 	{
-		fatal(xmalloc, &ff, sizeof(*ff));
-
 		ff->type = FFT_DDISC;
 		ff->dscv_gn = dscv_gn;
 	}
 	else
 	{
-		fatal(coll_doubly_add, &ff_files.c, 0, &ff);
 		ff->type = FFT_REGULAR;
 	}
 
@@ -234,7 +236,7 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 
 		// parse generator strings
 		if(parse_generators(*ffn, p->gp) == 0)
-			return 0;
+			qfail();
 	}
 	else
 	{
@@ -603,4 +605,35 @@ char * ff_idstring(ff_file * const ff)
 	}
 
 	return 0;
+}
+
+static void ff_freefile(ff_file * ff)
+{
+	if(ff)
+	{
+		if(ff->type == FFT_DDISC)
+		{
+			// no-op
+		}
+		if(ff->type == FFT_REGULAR)
+		{
+			hashblock_free(ff->hb);
+		}
+
+		free(ff->name);
+		free(ff->path);
+		free(ff->dir);
+		free(ff->idstring);
+	}
+
+	free(ff);
+}
+
+void ff_teardown()
+{
+	int x;
+	for(x = 0; x < ff_files.l; x++)
+		ff_freefile(ff_files.e[x]);
+
+	free(ff_files.e);
 }

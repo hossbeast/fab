@@ -147,7 +147,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 //
 // public
 //
-int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
+int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * staxl, int * staxa, int p)
 {
 	// create fml with ffn - which is an FFN_FORMULA
 	fml * fml = 0;
@@ -155,7 +155,7 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax
 	fml->ffn = ffn;
 
 	// resolve targets list
-	fatal(list_resolve, ffn->targets, vmap, stax, stax_l, stax_a, p);
+	fatal(list_resolve, ffn->targets, vmap, stax, staxl, staxa, p);
 
 	// attach graph nodes
 	if(fml->ffn->flags & FFN_SINGLE)
@@ -174,7 +174,7 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_l, int * stax
 	finally : coda;
 }
 
-int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p)
+int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxl, int * staxa, int p)
 {
 	// start with shebang
 	fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
@@ -200,7 +200,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_l, int * stax_a,
 		}
 		else if(ffn->commands[x]->type == FFN_LIST)
 		{
-			fatal(list_resolve, ffn->commands[x], vmap, stax, stax_l, stax_a, p);
+			fatal(list_resolve, ffn->commands[x], vmap, stax, staxl, staxa, p);
 
 			int i;
 			LSTACK_ITERATE((*stax)[p], i, go);
@@ -290,4 +290,27 @@ int fml_exec(ts * ts, int num)
 	fatal(identity_assume_user);
 
 	finally : coda;
+}
+
+static void fml_free(fml * fml)
+{
+	if(fml)
+	{
+		int x;
+		for(x = 0; x < fml->evals_l; x++)
+		{
+			free(fml->evals[x].products);
+		}
+		free(fml->evals);
+	}
+	free(fml);
+}
+
+void fml_teardown()
+{
+	int x;
+	for(x = 0; x < g_fmls.l; x++)
+		fml_free(g_fmls.e[x]);
+
+	free(g_fmls.e);
 }

@@ -115,40 +115,53 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 		close(ts[x]->stde_fd);
 		close(ts[x]->stdo_fd);
 
-		int e = 0;
-		if(ts[x]->r_status || ts[x]->r_signal || ts[x]->stde_txt->l)
-			e = 1;
+		uint64_t e_stat = 0;	// whether there has been an error as a result of a nonzero exit status
+		uint64_t e_sign = 0;	// whether there has been an error as a result of a nonzero exit signal
+		uint64_t e_stde = 0;	// whether there has been an error as a result of a nonzero-length std error output
+
+		if(ts[x]->r_status)
+			e_stat = L_ERROR;
+		if(ts[x]->r_signal)
+			e_sign = L_ERROR;
+		if(ts[x]->stde_txt->l)
+			e_stde = L_ERROR;
+
+		uint64_t e = e_stat | e_sign | e_stde; // whether there has been an error
 
 		int k;
 		for(k = 0; k < ts[x]->fmlv->products_l; k++)
 		{
 			int R = 0;
 			if(k)
-				R = log_start(hi | (e ? L_ERROR : 0), "        %-9s %s", gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
+				R = log_start(hi | e, "        %-9s %s", gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
 			else
-				R = log_start(hi | (e ? L_ERROR : 0), "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
+				R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
 
-			if(ts[x]->r_status)
+			if(k == 0)
 			{
-				log_add("%*sx=%d", 100 - R, "", ts[x]->r_status);
-			}
-			else if(ts[x]->r_signal)
-			{
-				log_add("%*ss=%d", 100 - R, "", ts[x]->r_signal);
-			}
-			else if(ts[x]->stde_txt->l)
-			{
-				log_add("%*se=%d", 100 - R, "", ts[x]->stde_txt->l);
-			}
-			else
-			{
-				log_add("%*sx=0", 100 - R, "");
+				if(e_stat)
+				{
+					log_add("%*sx=%d", 100 - R, "", ts[x]->r_status);
+				}
+				else if(e_sign)
+				{
+					log_add("%*ss=%d", 100 - R, "", ts[x]->r_signal);
+				}
+				else if(e_stde)
+				{
+					log_add("%*se=%d", 100 - R, "", ts[x]->stde_txt->l);
+				}
+				else
+				{
+					log_add("%*sx=0", 100 - R, "");
+				}
 			}
 			log_finish(0);
 
 			if(log_would(lo | L_FML | L_FMLEXEC))
 			{
-				log_start(lo | L_FML | L_FMLEXEC | (e ? L_ERROR : 0)								, "%15s : "			, "product(s)");
+				// this section must actually be enabled
+				log_start(lo | L_FML | L_FMLEXEC 										, "%15s : "			, "product(s)");
 				for(k = 0; k < ts[x]->fmlv->products_l; k++)
 				{
 					if(k)
@@ -157,28 +170,31 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				}
 				log_finish(0);
 			}
-			if(log_would(lo | L_FML | L_FMLEXEC) || e)
-			{
-					log(lo | L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
-					write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
-					if(ts[x]->cmd_txt->l)
-						write(2, "\n", 1);
-					log(lo | L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
-					log(lo | L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
-			}
 			if(log_would(lo | L_FML | L_FMLEXEC))
 			{
-					log(lo | L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
-					write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
-					if(ts[x]->stdo_txt->l)
-						write(2, "\n", 1);
+				log(lo | L_FML | L_FMLEXEC 													, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
+				write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
+
+				if(ts[x]->cmd_txt->l && ts[x]->cmd_txt->s[ts[x]->cmd_txt->l - 1] != '\n')
+					write(2, "\n", 1);
 			}
-			if(log_would(lo | L_FML | L_FMLEXEC) || e)
+			log(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
+			log(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
+			if(log_would(lo | L_FML | L_FMLEXEC))
 			{
-					log(lo | L_FML | L_FMLEXEC | (e ? L_ERROR : 0)										, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
-					write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
-					if(ts[x]->stde_txt->l)
-						write(2, "\n", 1);
+				log(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
+				write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
+
+				if(ts[x]->stdo_txt->l && ts[x]->stdo_txt->s[ts[x]->stdo_txt->l - 1] != '\n')
+					write(2, "\n", 1);
+			}
+			if(log_would(lo | L_FML | L_FMLEXEC | e_stde))
+			{
+				log(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
+				write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
+
+				if(ts[x]->stde_txt->l && ts[x]->stde_txt->s[ts[x]->stde_txt->l - 1] != '\n')
+					write(2, "\n", 1);
 			}
 		}
 	}
