@@ -70,6 +70,8 @@ typedef struct ff_file
 	char *						dir;			// canonical path to dir fabfile is in
 	char *						idstring;	// identifier string, subject to execution parameters
 
+	struct ff_node *	ffn;			// root ff_node parsed from this ff_file
+
 	union
 	{
 		// dependency discovery fabfile
@@ -192,7 +194,7 @@ typedef struct ff_node
 
 typedef struct
 {
-	ff_node ** const		ffn;				// results go here
+	ff_file *						ff;					// fabfile being parsed; ffn is at ff->ffn
 	void*								scanner;		// scanner
 
 	int									states[64];	// start states stack
@@ -209,8 +211,6 @@ typedef struct
 	const char*					orig_base;	// ptr to original input string
 	int									orig_len;		// length of original input string
 	char*								act_base;		// ptr to lexer copy
-
-	ff_file *						ff;					// info about the fabfile
 
 	int									r;					// zeroed in yyerror
 } parse_param;

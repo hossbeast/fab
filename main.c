@@ -151,11 +151,19 @@ int main(int argc, char** argv)
 		// dump graph nodes, pending logging
 		if(g_args.mode_exec == MODE_EXEC_DUMP)
 		{
+			// process invalidations, update 
+			gn_invalidations();
+
 			for(x = 0; x < g_args.dumpnode_len; x++)
 			{
 				gn * gn = 0;
 				if((gn = gn_lookup(g_args.dumpnode[x], 0, g_args.cwd)) == 0)
 					qfail();
+
+				if(gn->designation == GN_DESIGNATION_PRIMARY)
+					gn_primary_reload(gn);
+				if(gn->designation == GN_DESIGNATION_SECONDARY)
+					gn_secondary_exists(gn);
 
 				gn_dump(gn);
 			}
@@ -263,7 +271,6 @@ int main(int argc, char** argv)
 
 	finally:
 		ff_freeparser(ffp);
-		ff_freenode(ffn);
 		bp_free(bp);
 		map_free(vmap);
 

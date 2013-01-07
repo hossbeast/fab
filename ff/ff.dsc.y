@@ -93,7 +93,7 @@
 ff
 	: statement_list
 	{
-		*parm->ffn = mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
+		parm->ff->ffn = mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 

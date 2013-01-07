@@ -161,9 +161,8 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 	if((state = ff_yy_scan_bytes(b, sz + 2, p->p)) == 0)
 		fail("scan_bytes failed");
 
-	ff_file * ff = 0;
-
 	// all ff_files are tracked in ff_files
+	ff_file * ff = 0;
 	fatal(coll_doubly_add, &ff_files.c, 0, &ff);
 
 	if(dscv_gn)
@@ -192,7 +191,6 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 
 	parse_param pp = {
 		  .scanner = p->p
-		, .ffn = ffn
 		, .ff = ff
 		, .orig_base = b
 		, .orig_len = sz
@@ -229,14 +227,16 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 	if(pp.r)
 	{
 		// convert chains to lists
-		flatten(*ffn);
+		flatten(ff->ffn);
 
 		// calculate string lengths
-		strmeasure(*ffn);
+		strmeasure(ff->ffn);
 
 		// parse generator strings
-		if(parse_generators(*ffn, p->gp) == 0)
+		if(parse_generators(ff->ffn, p->gp) == 0)
 			qfail();
+
+		*ffn = ff->ffn;
 	}
 	else
 	{
@@ -624,6 +624,7 @@ static void ff_freefile(ff_file * ff)
 		free(ff->path);
 		free(ff->dir);
 		free(ff->idstring);
+		ff_freenode(ff->ffn);
 	}
 
 	free(ff);
