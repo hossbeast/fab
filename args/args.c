@@ -31,6 +31,7 @@ static void usage()
 		" -B invalidate-all\n"
 		" -b invalidate node\n"
 		" -d dump node\n"
+		" -v key=value\n"
 		"----------- [ logopts ] --------------------------\n"
 		" +<log name> to enable logging\n"  
 		" -<log name> to disable logging\n"  
@@ -69,7 +70,7 @@ int parse_args(int argc, char** argv)
 // s
 // t
 /* u */	, { "upfront"						, no_argument				, 0			, 'u' }		// dependency discovery upfront
-// v
+/* v */
 // w
 // x
 // y
@@ -86,7 +87,7 @@ int parse_args(int argc, char** argv)
 		"chpuBU"
 
 		// with-argument switches
-		"b:d:f:"
+		"b:d:f:v:"
 	;
 
 	//
@@ -139,6 +140,25 @@ int parse_args(int argc, char** argv)
 			case 'u':
 				g_args.mode_ddsc = MODE_DDSC_UPFRONT;
 				break;
+			case 'v':
+				{
+					char * eq;
+					if((eq = strstr(optarg, "=")))
+					{
+						fatal(xrealloc, &g_args.varkeys, sizeof(g_args.varkeys[0]), g_args.varkeys_len + 1, g_args.varkeys_len);
+						fatal(xrealloc, &g_args.varvals, sizeof(g_args.varvals[0]), g_args.varvals_len + 1, g_args.varvals_len);
+
+						*eq = 0;
+						g_args.varkeys[g_args.varkeys_len++] = strdup(optarg);
+						*eq = '=';
+						g_args.varvals[g_args.varvals_len++] = strdup(eq+1);
+					}
+					else
+					{
+						fail("badly formed option for -v : '%s'", optarg);
+					}
+				}
+				break;
 			case 'B':
 				g_args.invalidate_all = 1;
 				break;
@@ -149,7 +169,8 @@ int parse_args(int argc, char** argv)
 	}
 
 	// canonicalize
-	g_args.fabfile_canon = realpath(fabfile, 0);
+	if((g_args.fabfile_canon = realpath(fabfile, 0)) == 0)
+		fail("realpath(%s)=[%d][%s]", fabfile, errno, strerror(errno));
 
 	// terminate at the final slash
 	g_args.fabfile_canon_dir = strdup(g_args.fabfile_canon);
@@ -230,6 +251,12 @@ int parse_args(int argc, char** argv)
 		log(L_ARGS | L_PARAMS	, " %s (%c) target(s)          =", " ", ' ');
 	for(x = 0; x < g_args.targets_len; x++)
 		log(L_ARGS | L_PARAMS	, " %s (%c) target(s)          =%s", "*", ' ', g_args.targets[x]);
+
+	if(!g_args.varkeys)
+		log(L_ARGS | L_PARAMS , " %s (%c) var(s)             =", " ", ' ');
+	for(x = 0; x < g_args.varkeys_len; x++)
+		log(L_ARGS | L_PARAMS , " %s (%c) var(s)             =%s=%s", "*", 'v', g_args.varkeys[x], g_args.varvals[x]);
+
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 
 finally:
@@ -255,9 +282,17 @@ void args_teardown()
 	for(x = 0; x < g_args.dumpnode_len; x++)
 		free(g_args.dumpnode[x]);
 
+	for(x = 0; x < g_args.varkeys_len; x++)
+		free(g_args.varkeys[x]);
+
+	for(x = 0; x < g_args.varvals_len; x++)
+		free(g_args.varvals[x]);
+
 	free(g_args.targets);
 	free(g_args.fabfile_canon);
 	free(g_args.fabfile_canon_dir);
 	free(g_args.invalidate);
 	free(g_args.dumpnode);
+	free(g_args.varkeys);
+	free(g_args.varvals);
 }

@@ -7,9 +7,13 @@
 #include "control.h"
 #include "log.h"
 
-int var_set(map * vmap, char * s, lstack * ls)
+//
+// static
+//
+
+static int var_set(map * vmap, char * s, lstack * ls, uint64_t lo)
 {
-	log_start(L_VAR, "%10s = [ ", s);
+	log_start(lo, "%10s = [ ", s);
 
 	int i = 0;
 	int j = 0;
@@ -43,4 +47,18 @@ int var_set(map * vmap, char * s, lstack * ls)
 	fatal(map_set, vmap, s, strlen(s), &ls, sizeof(ls));
 
 	finally : coda;
+}
+
+//
+// public
+//
+
+int var_set_auto(map * vmap, char * s, lstack * ls)
+{
+	return var_set(vmap, s, ls, L_VARAUTO);
+}
+
+int var_set_user(map * vmap, char * s, lstack * ls)
+{
+	return var_set(vmap, s, ls, L_VARUSER);
 }

@@ -77,14 +77,15 @@ void ts_reset(ts * ts)
 //  execute a set of formulas each associated with a threadspace
 //
 // PARAMETERS
-//  ts - ptr to threadspaces
-//  n  - number of threadspaces
-//  id - process-unique identifier for this wave of threadspace executions
-//  no - wave number for logging (buildplan stage, etc)
-//  hi - log tags to associate with high-level logging of this execution wave
-//  lo - log tags to associate with low-level logging of this execution wave
+//  ts  - ptr to threadspaces
+//  n   - number of threadspaces
+//  id  - process-unique identifier for this wave of threadspace executions
+//  no  - wave number for logging (buildplan stage, etc)
+//  hi  - log tags to associate with high-level logging of this execution wave
+//  lo  - log tags to associate with low-level logging of this execution wave
+//  res - set to 1 if all formulas executed successfully
 //
-int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo)
+int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo, int * res)
 	__attribute__((nonnull));
 
 void ts_free(ts * ts);

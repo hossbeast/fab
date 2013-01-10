@@ -5,7 +5,10 @@
 
 #include "map.h"
 
-int var_set(map * vmap, char * s, lstack * ls)
+int var_set_user(map * vmap, char * s, lstack * ls)
+	__attribute__((nonnull));
+
+int var_set_auto(map * vmap, char * s, lstack * ls)
 	__attribute__((nonnull));
 
 #endif

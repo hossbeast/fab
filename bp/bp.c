@@ -573,7 +573,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			for(k = 0; k < (*ts)[i]->fmlv->products_l; k++)
 				fatal(lstack_obj_add, (*stax)[pn], (*ts)[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
-			fatal(var_set, vmap, "@", (*stax)[pn++]);
+			fatal(var_set_auto, vmap, "@", (*stax)[pn++]);
 
 			// render the formula
 			fatal(fml_render, (*ts)[i], vmap, stax, stax_l, stax_a, pn);
@@ -582,7 +582,11 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 		}
 
 		// execute all formulas in parallel processes
-		fatal(ts_execwave, *ts, i, tsw, x, L_BP | L_BPEXEC, L_FAB);
+		int res = 0;
+		fatal(ts_execwave, *ts, i, tsw, x, L_BP | L_BPEXEC, L_FAB, &res);
+
+		if(!res)
+			qfail();
 
 		// harvest the results
 		for(y = 0; y < i; y++)

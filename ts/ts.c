@@ -62,7 +62,7 @@ int ts_ensure(ts *** ts, int * tsa, int n)
 	finally : coda;
 }
 
-int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo)
+int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo, int * res)
 {
 	int x;
 
@@ -71,6 +71,8 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 	// execute all formulas in parallel processes
 	for(x = 0; x < n; x++)
 		fatal(fml_exec, ts[x], ((*waveid) * 1000) + x);
+
+	(*res) = 1;
 
 	// wait for each of them to complete
 	pid_t pid = 0;
@@ -127,6 +129,9 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			e_stde = L_ERROR;
 
 		uint64_t e = e_stat | e_sign | e_stde; // whether there has been an error
+
+		if(e)
+			(*res) = 0;
 
 		int k;
 		for(k = 0; k < ts[x]->fmlv->products_l; k++)

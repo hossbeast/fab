@@ -238,10 +238,6 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 
 		*ffn = ff->ffn;
 	}
-	else
-	{
-		ff_xfreenode(ffn);
-	}
 
 	finally : coda;
 }

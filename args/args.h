@@ -110,6 +110,12 @@ extern struct g_args_t
 	char **			dumpnode;							// graph nodes to dump
 	int					dumpnode_len;
 	int					dumpnode_all;
+
+	char **			varkeys;							// var keys
+	int					varkeys_len;
+
+	char **			varvals;							// var values
+	int					varvals_len;
 } g_args;
 
 //// parse_args

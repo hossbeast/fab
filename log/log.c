@@ -54,7 +54,8 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
 	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
 	, { .v = L_HASHBLK	, .s = "HASHBLK"	, .d = "hashblock - read/write" }
-	, { .v = L_VAR			, .s = "VAR"			, .d = "variable defintions" }
+	, { .v = L_VARAUTO	, .s = "VARAUTO"	, .d = "automatic variable defintions" }
+	, { .v = L_VARUSER	, .s = "VARUSER"	, .d = "user-defined variable defintions" }
 	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	, .d = "debug liblistwise invocations ** VERBOSE" }
 };
 
@@ -379,6 +380,9 @@ int log_init(char * str)
 
 int log_would(const uint64_t bits)
 {
+	if(o_filter_l == 0)
+		return 1;
+
 	int r = 0;
 	int x;
 	for(x = 0; x < o_filter_l; x++)

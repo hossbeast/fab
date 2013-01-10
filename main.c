@@ -30,7 +30,6 @@
 static int o_signum;
 static void signal_handler(int signum)
 {
-	log(L_INFO, "shutdown signal: %d", signum);
 	exit(0);
 	if(!o_signum)
 	{
@@ -116,7 +115,7 @@ int main(int argc, char** argv)
 		lstack_reset(stax[staxp]);
 
 		fatal(lstack_add, stax[staxp], ffn->loc.ff->dir, strlen(ffn->loc.ff->dir));
-		fatal(var_set, vmap, "#", stax[staxp++]);
+		fatal(var_set_auto, vmap, "#", stax[staxp++]);
 
 		// process the fabfile tree, construct the graph
 		for(x = 0; x < ffn->statements_l; x++)
@@ -131,7 +130,7 @@ int main(int argc, char** argv)
 				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxl, &staxa, staxp);
 
 				// save the resultant list
-				fatal(var_set, vmap, ffn->statements[x]->name, stax[staxp++]);
+				fatal(var_set_user, vmap, ffn->statements[x]->name, stax[staxp++]);
 			}
 			else if(ffn->statements[x]->type == FFN_FORMULA)
 			{

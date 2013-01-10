@@ -241,7 +241,7 @@ static int dep_add_multi(
 
 			fatal(lstack_obj_add, (*stax)[pr], r, LISTWISE_TYPE_GNLW);
 		}
-		fatal(var_set, vmap, "<", (*stax)[pr++]);
+		fatal(var_set_auto, vmap, "<", (*stax)[pr++]);
 
 		// resolve the right-hand side
 		fatal(list_resolve, ffn->feeds, vmap, &(*stax), staxl, staxa, pr);
