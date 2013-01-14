@@ -14,7 +14,7 @@
 #include "control.h"
 #include "xmem.h"
 #include "unitstring.h"
-#include "cksum.h"
+#include "canon.h"
 
 #define restrict __restrict
 
@@ -29,114 +29,6 @@ union gn_nodes_t		gn_nodes = { { .size = sizeof(gn) } };
 //
 // static
 //
-
-static int gn_create(const char * const restrict realwd, char * const restrict A, int Al, gn ** gna, int * const restrict new)
-{
-	// p will point to a null-terminated string of the full canonical path to the file
-	char * p = 0;
-	int pl = 0;
-
-	// n will point to a length-limited string of the name of the file
-	char * n = 0;
-	int nl = 0;
-
-	// d will point to a length-limited string of the name of the file
-	char * d = 0;
-	int dl = 0;
-
-	char * space = 0;
-
-	if(Al)
-	{
-		if(A[0] == '/')
-		{
-			space = alloca(Al + 1);
-			sprintf(space, "%.*s", Al, A);
-		}
-		else
-		{
-			int realwdl = strlen(realwd);
-			space = alloca(realwdl + 1 + Al + 1);
-			sprintf(space, "%s/%.*s", realwd, Al, A);
-		}
-
-		p = space;
-	}
-	else
-	{
-		if((Al = strlen(A)) == 0)
-			fail("zero-length name");
-		
-		if(A[0] == '/')
-		{
-			p = A;
-		}
-		else
-		{
-			int realwdl = strlen(realwd);
-			space = alloca(realwdl + 1 + Al + 1);
-			sprintf(space, "%s/%.*s", realwd, Al, A);
-
-			p = space;
-		}
-	}
-
-	pl = strlen(p);
-	n = p + pl - 1;
-	while(n[0] != '/')
-		n--;
-
-	n++;
-	nl = strlen(n);
-
-	d = p;
-	dl = pl - nl - 1;
-	while(dl && d[dl] == '/')
-		dl--;
-
-	dl++;
-
-	if(!gn_nodes.by_path)
-		fatal(map_create, &gn_nodes.by_path, 0);
-
-	if((*gna = gn_lookup_canon(p, pl)) == 0)
-	{
-		fatal(coll_doubly_add, &gn_nodes.c, 0, gna);
-
-		map_set(gn_nodes.by_path, p, pl, gna, sizeof(*gna));
-
-		// populate gna
-		(*gna)->path					= strdup(p);
-		(*gna)->pathl					= pl;
-		(*gna)->pathhash			= cksum((*gna)->path, strlen((*gna)->path));
-		(*gna)->name					= strdup(n);
-		(*gna)->namel					= nl;
-		(*gna)->dir						= strndup(d, dl);
-		(*gna)->dirl					= dl;
-		(*gna)->needs.z				= sizeof((*gna)->needs.e[0]);
-		(*gna)->feeds.z				= sizeof((*gna)->feeds.e[0]);
-
-		char * xt = n;
-		while(xt != n + nl && xt[0] != '.')
-			xt++;
-
-		if(*xt == '.')
-		{
-			xt++;
-			(*gna)->ext = strdup(xt);
-		}
-		else
-		{
-			(*gna)->ext = strdup("(none)");
-		}
-		(*gna)->extl = strlen(xt);
-
-		if(new)
-			(*new)++;
-	}
-
-	finally : coda;
-}
 
 static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
 {
@@ -158,7 +50,7 @@ static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
 		if(x)
 			log_add(" -> ");
 
-		log_add("%s", gn_idstring(stack[x]));
+		log_add("%s", stack[x]->idstring);
 	}
 
 	if(ptr == stack_elsize)
@@ -173,63 +65,83 @@ static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
 // public
 //
 
-gn * gn_lookup(char * s, int l, char * cwd)
+int gn_lookup(const char * const s, int l, const char * const base, gn ** r)
 {
-	char * sp = 0;
-	l = l ?: strlen(s);
+	if(!gn_nodes.by_path)
+		fatal(map_create, &gn_nodes.by_path, 0);
 
-	gn * r = 0;
+	// canonicalize for lookup
+	char can[512];
+	if(canon(s, l, can, sizeof(can), base, CAN_REALPATH) == 0)
+		return 0;
 
-	if(gn_nodes.by_path)
+//printf("lookup : in=%.*s, base=%s, can=%s\n", l ?: (int)strlen(s), s, base, can);
+
+	gn ** R = 0;
+	if((R = map_get(gn_nodes.by_path, can, strlen(can))))
+		*r = *R;
+
+	finally : coda;
+}
+
+int gn_lookup_canon(const char * const s, int l, gn ** r)
+{
+	if(!gn_nodes.by_path)
+		fatal(map_create, &gn_nodes.by_path, 0);
+
+	gn ** R = 0;
+	if((R = map_get(gn_nodes.by_path, s, l)))
+		*r = *R;
+
+	finally : coda;
+}
+
+int gn_add(const char * const restrict base, char * const restrict A, int Al, gn ** gna, int * const restrict new)
+{
+	if(!gn_nodes.by_path)
+		fatal(map_create, &gn_nodes.by_path, 0);
+
+	if(base)
+		fatal(gn_lookup, A, Al, base, gna);
+	else
+		fatal(gn_lookup_canon, A, Al, gna);
+
+	if((*gna) == 0)
 	{
-		// absolute path
-		if(s[0] == '/')
-			r = gn_lookup_canon(s, l);
+		fatal(coll_doubly_add, &gn_nodes.c, 0, gna);
 
-		// relative to cwd
-		if(!r)
-		{
-			sp = alloca(strlen(cwd) + l + 2);
-			sprintf(sp, "%s/%.*s", cwd, l, s);
-			r = gn_lookup_canon(sp, 0);
-		}
+		// populate gna
+		if(base)
+			fatal(path_create, &(*gna)->path, base, "%.*s", Al ?: strlen(A), A);
+		else
+			fatal(path_create_canon, &(*gna)->path, "%.*s", Al ?: strlen(A), A);
 
-		// NOFILE nodes
-		if(!r)
+		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
+		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
+
+		// idstring
+		if(g_args.mode_gnid == MODE_GNID_RELATIVE)
 		{
-			sp = alloca(l + 5);
-			sprintf(sp, "/../%.*s", l, s);
-			r = gn_lookup_canon(sp, 0);
+			(*gna)->idstring = strdup((*gna)->path->rel);
 		}
+		else if(g_args.mode_gnid == MODE_GNID_CANON)
+		{
+			(*gna)->idstring = strdup((*gna)->path->can);
+		}
+		(*gna)->idstringl = strlen((*gna)->idstring);
+
+printf("added %.*s, base=%s\n", (*gna)->path->canl, (*gna)->path->can, base);
+		map_set(gn_nodes.by_path, (*gna)->path->can, (*gna)->path->canl, gna, sizeof(*gna));
+
+		if(new)
+			(*new)++;
 	}
-
-	return r;
-}
-
-gn * gn_lookup_canon(char* s, int l)
-{
-	gn ** r = map_get(gn_nodes.by_path, s, l ?: strlen(s));
-
-	if(r)
-		return *r;
-
-	return 0;
-}
-
-int gn_add(char * const realwd, void * const A, int Al, gn ** r, int * const newa)
-{
-	gn *	gna = 0;
-
-	fatal(gn_create, realwd, A, Al, &gna, newa);
-
-	if(r)
-		*r = gna;
 
 	finally : coda;
 }
 
 int gn_edge_add(
-	  char * const realwd
+	  char * const base
 	, void ** const A, int Al, int At
 	, void ** const B, int Bl, int Bt
 	, struct ff_node * const reg_ffn
@@ -249,15 +161,18 @@ int gn_edge_add(
 	if(At)
 		gna = *(gn**)A;
 	else
-		fatal(gn_create, realwd, *(char**)A, Al, &gna, &_newa);
+		fatal(gn_add, base, *(char**)A, Al, &gna, &_newa);
 
 	if(Bt)
 		gnb = *(gn**)B;
 	else
-		fatal(gn_create, realwd, *(char**)B, Bl, &gnb, &_newb);
+		fatal(gn_add, base, *(char**)B, Bl, &gnb, &_newb);
 
-	// as syntactic sugar, silently ignore dependencies of a node on itself
-	if(gna != gnb)
+	if(gna == gnb)
+	{
+		// as syntactic sugar, silently ignore dependencies of a node on itself
+	}
+	else
 	{
 		if(newa)
 			(*newa) += _newa;
@@ -265,13 +180,8 @@ int gn_edge_add(
 			(*newb) += _newb;
 
 		// error check
-		if(strcmp(gnb->dir, "/..") == 0)
-		{
-			if(strcmp(gna->dir, "/.."))
-			{
-				fail("file-backed node may not depend on non-file-backed node");
-			}
-		}
+		if(gnb->path->is_nofile && !gna->path->is_nofile)
+			fail("file-backed node may not depend on non-file-backed node");
 
 		relation * rel = 0;
 
@@ -324,11 +234,15 @@ void gn_dump(gn * gn)
 
 	if(log_would(L_DG | L_DGRAPH))
 	{
-		log(L_DG | L_DGRAPH, "%8s : %s", "path", gn->path);
-		log(L_DG | L_DGRAPH, "%8s : %u", "pathhash", gn->pathhash);
-		log(L_DG | L_DGRAPH, "%8s : %s", "dir", gn->dir);
-		log(L_DG | L_DGRAPH, "%8s : %s", "name", gn->name);
-		log(L_DG | L_DGRAPH, "%8s : %s", "ext", gn->ext);
+		// path properties
+		log(L_DG | L_DGRAPH, "%8s : %s", "canpath"	, gn->path->can);
+		log(L_DG | L_DGRAPH, "%8s : %s", "abspath"	, gn->path->abs);
+		log(L_DG | L_DGRAPH, "%8s : %s", "relpath"	, gn->path->rel);
+		log(L_DG | L_DGRAPH, "%8s : %u", "abshash"	, gn->path->can_hash);
+		log(L_DG | L_DGRAPH, "%8s : %s", "name"			, gn->path->name);
+		log(L_DG | L_DGRAPH, "%8s : %s", "ext"			, gn->path->ext);
+		log(L_DG | L_DGRAPH, "%8s : %s", "ext_last"	, gn->path->ext_last);
+
 		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn_designate(gn));
 
 		if(gn->designation == GN_DESIGNATION_PRIMARY)
@@ -383,7 +297,7 @@ void gn_dump(gn * gn)
 			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
 				, ""
 				, gn->needs.e[x]->weak ? "*" : " "
-				, gn_idstring(gn->needs.e[x]->B)
+				, gn->needs.e[x]->B->idstring
 				, ff_idstring(gn->needs.e[x]->ffn->loc.ff)
 				, gn->needs.e[x]->ffn->loc.f_lin + 1
 				, gn->needs.e[x]->ffn->loc.f_col + 1
@@ -398,7 +312,7 @@ void gn_dump(gn * gn)
 			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
 				, ""
 				, gn->feeds.e[x]->weak ? "*" : " "
-				, gn_idstring(gn->feeds.e[x]->A)
+				, gn->feeds.e[x]->A->idstring
 				, ff_idstring(gn->feeds.e[x]->ffn->loc.ff)
 				, gn->feeds.e[x]->ffn->loc.f_lin + 1
 				, gn->feeds.e[x]->ffn->loc.f_col + 1
@@ -466,46 +380,16 @@ int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 	return 1;
 }
 
-char * gn_idstring(gn * const gn)
-{
-	if(g_args.mode_gnid == MODE_GNID_RELATIVE)
-	{
-		if(gn->idstring == 0)
-		{
-			if(strcmp(gn->dir, "/..") == 0)
-			{
-				gn->idstring = strdup(gn->path);
-			}
-			else
-			{
-				int x;
-				for(x = 0; x < strlen(g_args.fabfile_canon) && x < gn->pathl; x++)
-				{
-					if(g_args.fabfile_canon[x] != gn->path[x])
-						break;
-				}
-
-				gn->idstring = strdup(&gn->path[x]);
-			}
-		}
-
-		return gn->idstring;
-	}
-	if(g_args.mode_gnid == MODE_GNID_CANON)
-	{
-		return gn->path;
-	}
-
-	return 0;
-}
-
 char* gn_designate(gn * gn)
 {
 	gn->flags = 0;
-	if(strcmp(gn->dir, "/..") == 0)
+
+	if(gn->path->is_nofile)
 		gn->flags |= GN_FLAGS_NOFILE;
+
 	if(gn->needs.l)
 		gn->flags |= GN_FLAGS_HASNEED;
+
 	if(gn->fabv)
 		gn->flags |= GN_FLAGS_CANFAB;
 	
@@ -533,7 +417,7 @@ char* gn_designate(gn * gn)
 
 int gn_secondary_exists(gn * const gn)
 {
-	if(euidaccess(gn->path, F_OK) == 0)
+	if(euidaccess(gn->path->can, F_OK) == 0)
 	{
 		gn->exists = 1;
 	}
@@ -551,7 +435,7 @@ int gn_primary_reload_dscv(gn * const gn)
 	fatal(gn_primary_reload, gn);
 
 	// create ddisc block
-	fatal(depblock_create, &gn->dscv_block, "%s/PRIMARY/%u", GN_DIR_BASE, gn->pathhash);
+	fatal(depblock_create, &gn->dscv_block, "%s/PRIMARY/%u", GN_DIR_BASE, gn->path->can_hash);
 
 	// backing file has not changed
 	if(hashblock_cmp(gn->hb) == 0)
@@ -580,21 +464,21 @@ int gn_primary_reload(gn * const gn)
 	if(gn->hb_loaded == 0)
 	{
 		// create hashblock
-		fatal(hashblock_create, &gn->hb, "%s/PRIMARY/%u", GN_DIR_BASE, gn->pathhash);
+		fatal(hashblock_create, &gn->hb, "%s/PRIMARY/%u", GN_DIR_BASE, gn->path->can_hash);
 
 		// load the previous hashblock
 		fatal(hashblock_read, gn->hb);
 
 		log(L_HASHBLK
 			, "%s <== 0x%08x%08x%08x"
-			, gn_idstring(gn)
+			, gn->idstring
 			, gn->hb->stathash[0]
 			, gn->hb->contenthash[0]
 			, gn->hb->vrshash[0]
 		);
 
 		// stat the file, compute new stathash
-		fatal(hashblock_stat, gn->hb, gn->path);
+		fatal(hashblock_stat, gn->hb, gn->path->can);
 
 		gn->hb->vrshash[1] = FAB_VERSION;
 		gn->hb_loaded = 1;
@@ -614,7 +498,7 @@ int gn_primary_rewrite(gn * const gn)
 
 	log(L_HASHBLK
 		, "%s ==> 0x%08x%08x%08x"
-		, gn_idstring(gn)
+		, gn->idstring
 		, gn->hb->stathash[1]
 		, gn->hb->contenthash[1]
 		, gn->hb->vrshash[1]
@@ -623,7 +507,7 @@ int gn_primary_rewrite(gn * const gn)
 	finally : coda;
 }
 
-void gn_invalidations()
+int gn_invalidations()
 {
 	int x;
 
@@ -647,7 +531,9 @@ void gn_invalidations()
 		for(x = 0; x < g_args.invalidate_len; x++)
 		{
 			gn * gn = 0;
-			if((gn = gn_lookup(g_args.invalidate[x], 0, g_args.cwd)))
+			fatal(gn_lookup_canon, g_args.invalidate[x], 0, &gn);
+
+			if(gn)
 			{
 				if(gn->designation == GN_DESIGNATION_PRIMARY)
 					gn->changed = 1;
@@ -655,8 +541,14 @@ void gn_invalidations()
 				if(gn->designation == GN_DESIGNATION_SECONDARY)
 					gn->rebuild = 1;
 			}
+			else
+			{
+				log(L_WARN, "invalidation : %s not found", g_args.invalidate[x]);
+			}
 		}
 	}
+
+	finally : coda;
 }
 
 static void gn_freenode(gn * const gn)
@@ -665,10 +557,7 @@ static void gn_freenode(gn * const gn)
 
 	if(gn)
 	{
-		free(gn->dir);
-		free(gn->name);
-		free(gn->path);
-		free(gn->ext);
+		path_free(gn->path);
 		free(gn->idstring);
 
 		hashblock_free(gn->hb);
@@ -694,4 +583,9 @@ void gn_teardown()
 
 	free(gn_nodes.e);
 	map_free(gn_nodes.by_path);
+}
+
+char* gn_idstring(gn * const gn)
+{
+	return gn->idstring;
 }

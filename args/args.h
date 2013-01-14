@@ -3,6 +3,8 @@
 
 #include <sys/types.h>
 
+#include "path.h"
+
 #define FAB_VERSION		0x01
 
 /*
@@ -36,7 +38,7 @@
 #define FF_DIR_BASE							"/var/cache/fab/ff"
 #define PID_DIR_BASE						"/var/tmp/fab/pid"
 
-#define DEFAULT_FABFILE 				"fabfile"
+#define DEFAULT_INIT_FABFILE 		"./fabfile"
 #define DEFAULT_INVALIDATE_ALL	0
 #define DEFAULT_DUMPNODE_ALL		0
 #define DEFAULT_MODE_EXEC				MODE_EXEC_FABRICATE
@@ -76,9 +78,8 @@ extern struct g_args_t
 //
 
 	pid_t				pid;									// pid of this process
-	char *			cwd;									// current working directory (canonicalized)
-
 	pid_t				sid;									// session-id
+	char *			cwd;									// cwd
 
 	uid_t				ruid;									// real-user-id
 	char *			ruid_name;
@@ -100,8 +101,7 @@ extern struct g_args_t
 	char **			targets;							// targets
 	int					targets_len;
 
-	char *			fabfile_canon;				// canonical path to initial fabfile
-	char *			fabfile_canon_dir;		// canonical path to directory of initial fabfile
+	path *			init_fabfile_path;		// path to initial fabfile
 
 	char **			invalidate;						// graph nodes to invalidate
 	int					invalidate_len;
@@ -128,7 +128,6 @@ extern struct g_args_t
 //
 // returns zero on failure (malloc failure, for example)
 //
-#define parse_args_onfail "argc: '%d', argv: '0x%08x'"
 int parse_args(int argc, char** argv);
 
 /// args_teardown

@@ -154,7 +154,7 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 	finally : coda;
 }
 
-static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node ** const ffn, struct gn * dscv_gn)
+static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, ff_node ** const ffn, struct gn * dscv_gn)
 {
 	// create state specific to this parse
 	void* state = 0;
@@ -165,29 +165,31 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 	ff_file * ff = 0;
 	fatal(coll_doubly_add, &ff_files.c, 0, &ff);
 
+	// create copy of the path
+	fatal(path_copy, in_path, &ff->path);
+
 	if(dscv_gn)
 	{
 		ff->type = FFT_DDISC;
 		ff->dscv_gn = dscv_gn;
+
+		// idstring
+		xsprintf(&ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
 	}
 	else
 	{
 		ff->type = FFT_REGULAR;
+
+		// idstring
+		if(g_args.mode_gnid == MODE_GNID_CANON)
+		{
+			ff->idstring = strdup(ff->path->can);
+		}
+		else if(g_args.mode_gnid == MODE_GNID_RELATIVE)
+		{
+			ff->idstring = strdup(ff->path->rel);
+		}
 	}
-
-	// canonical path to the fabfile and its directory
-	ff->path = realpath(path, 0);
-	ff->pathhash = cksum(path, strlen(path));
-	ff->dir = strdup(ff->path);
-
-	// terminate at the last directory specification
-	char * tm = ff->dir + strlen(ff->dir);
-	while(*tm != '/')
-		tm--;
-	*tm = 0;
-
-	// name of fabfile
-	ff->name = strdup(++tm);
 
 	parse_param pp = {
 		  .scanner = p->p
@@ -211,13 +213,13 @@ static int parse(const ff_parser * const p, char* b, int sz, char* path, ff_node
 		ff_yyparse(p->p, &pp);
 
 		// create hashblock
-		fatal(hashblock_create, &ff->hb, "%s/REGULAR/%u", FF_DIR_BASE, ff->pathhash);
+		fatal(hashblock_create, &ff->hb, "%s/REGULAR/%u", FF_DIR_BASE, ff->path->can_hash);
 
 		// load previous hashblock into [0]
 		fatal(hashblock_read, ff->hb);
 
 		// stat the file, populate [1] - now ready for hashblock_cmp
-		fatal(hashblock_stat, ff->hb, ff->path);
+		fatal(hashblock_stat, ff->hb, ff->path->abs);
 		ff->hb->vrshash[1] = FAB_VERSION;
 	}
 
@@ -330,14 +332,14 @@ int ff_mkparser(ff_parser ** const p)
 	return 1;
 }
 
-int ff_parse(const ff_parser * const p, char* path, ff_node ** const ffn)
+int ff_parse_path(const ff_parser * const p, const path * const in_path, ff_node ** const ffn)
 {
-	int fd = 0;
-	char * b = 0;
+	int			fd = 0;
+	char *	b = 0;
 
 	// open the file
-	if((fd = open(path, O_RDONLY)) == -1)
-		fail("open(%s) failed : [%d][%s]", path, errno, strerror(errno));
+	if((fd = open(in_path->abs, O_RDONLY)) == -1)
+		fail("open(%s) failed : [%d][%s]", in_path->abs, errno, strerror(errno));
 
 	// snarf the file
 	struct stat statbuf;
@@ -348,7 +350,7 @@ int ff_parse(const ff_parser * const p, char* path, ff_node ** const ffn)
 	if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
 		fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
 
-	qfatal(parse, p, b, statbuf.st_size, path, ffn, 0);
+	qfatal(parse, p, b, statbuf.st_size, in_path, ffn, 0);
 
 finally:
 	free(b);
@@ -357,9 +359,49 @@ finally:
 coda;
 }
 
-int ff_dsc_parse(const ff_parser * const p, char* b, int sz, char* path, struct gn * dscv_gn, ff_node ** const ffn)
+int ff_parse(const ff_parser * const p, const char * const fp, const char * const base, ff_node ** const ffn)
 {
-	return parse(p, b, sz, path, ffn, dscv_gn);
+	int			fd = 0;
+	char *	b = 0;
+	path *	pth = 0;
+
+	fatal(path_create, &pth, base, "%s", fp);
+
+	// open the file
+	if((fd = open(pth->abs, O_RDONLY)) == -1)
+		fail("open(%s) failed : [%d][%s]", pth->abs, errno, strerror(errno));
+
+	// snarf the file
+	struct stat statbuf;
+	fatal_os(fstat, fd, &statbuf);
+
+	fatal(xmalloc, &b, statbuf.st_size + 2);
+	ssize_t r = 0;
+	if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
+		fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
+
+	qfatal(parse, p, b, statbuf.st_size, pth, ffn, 0);
+
+finally:
+	free(b);
+	if(fd)
+		close(fd);
+	path_free(pth);
+coda;
+}
+
+int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const fp, struct gn * dscv_gn, ff_node ** const ffn)
+{
+	path * pth = 0;
+	fatal(path_create_canon, &pth, fp, 0);
+
+	path * pp = pth;
+	pth = 0;
+	fatal(parse, p, b, sz, pp, ffn, dscv_gn);
+
+finally:
+	path_free(pth);
+coda;
 }
 
 void ff_freeparser(ff_parser* const p)
@@ -565,42 +607,7 @@ void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 
 char * ff_idstring(ff_file * const ff)
 {
-	if(ff->type == FFT_DDISC)
-	{
-		if(ff->idstring == 0)
-			xsprintf(&ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
-
-		return ff->idstring;
-	}
-	else if(g_args.mode_gnid == MODE_GNID_CANON)
-	{
-		return ff->path;
-	}
-	else if(g_args.mode_gnid == MODE_GNID_RELATIVE)
-	{
-		if(ff->idstring == 0)
-		{
-			if(strcmp(g_args.fabfile_canon, ff->path) == 0)
-			{
-				ff->idstring = strdup(ff->name);
-			}
-			else
-			{
-				int x;
-				for(x = 0; x < strlen(g_args.fabfile_canon) && x < strlen(ff->path); x++)
-				{
-					if(g_args.fabfile_canon[x] != ff->path[x])
-						break;
-				}
-
-				ff->idstring = strdup(&ff->path[x]);
-			}
-		}
-
-		return ff->idstring;
-	}
-
-	return 0;
+	return ff->idstring;
 }
 
 static void ff_freefile(ff_file * ff)
@@ -616,9 +623,7 @@ static void ff_freefile(ff_file * ff)
 			hashblock_free(ff->hb);
 		}
 
-		free(ff->name);
-		free(ff->path);
-		free(ff->dir);
+		path_free(ff->path);
 		free(ff->idstring);
 		ff_freenode(ff->ffn);
 	}

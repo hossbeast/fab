@@ -12,29 +12,34 @@ extern int lstack_exec_internal(generator* g, char** init, int* initls, int init
 #include "map.h"
 #include "xmem.h"
 
-int list_ensure(lstack *** stax, int * staxl, int * staxa, int p)
+int list_ensure(lstack *** stax, int * staxa, int staxp)
 {
 	// ensure enough lstacks are allocated
-	if((*staxa) <= p)
+	if((*staxa) <= staxp)
 	{
-		fatal(xrealloc, stax, sizeof(**stax), p + 1, (*staxa));
-		(*staxa) = p + 1;
+		int ns = (*staxa) ?: 10;
+		ns = ns * 2 + ns / 2;
+
+		fatal(xrealloc, stax, sizeof(**stax), ns, (*staxa));
+		(*staxa) = ns;
 	}
 
 	// ensure lstack at this spot is allocated
-	if(!(*stax)[p])
-		fatal(lstack_create, &(*stax)[p]);
+	if(!(*stax)[staxp])
+		fatal(lstack_create, &(*stax)[staxp]);
 
-	// reset the lstack we are using
-	lstack_reset((*stax)[p]);
+	// reset the lstack we are using, advance staxp
+	lstack_reset((*stax)[staxp]);
 
 	finally : coda;
 }
 
-int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxl, int * staxa, int p)
+int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
 {
+	int p = staxp;
+
 	// ensure stax allocation, reset p'th stack
-	fatal(list_ensure, stax, staxl, staxa, p);
+	fatal(list_ensure, stax, staxa, staxp);
 
 	// additional lstacks go here
 	int pn = p;
@@ -75,7 +80,7 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxl, int * 
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
-			fatal(list_resolve, list->elements[x], vmap, stax, staxl, staxa, ++pn);
+			fatal(list_resolve, list->elements[x], vmap, stax, staxa, ++pn);
 
 			LSTACK_ITERATE((*stax)[pn], i, go);
 			if(go)

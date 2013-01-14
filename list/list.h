@@ -10,15 +10,14 @@
 /// list_ensure
 //
 // SUMMARY
-//  ensure allocation of listwise stax, reset entry @ stax[p]
+//  ensure allocation of listwise stax up to staxp, reset entry @ stax[staxp]
 //
 // PARAMETERS
 //  stax  - listwise stax
-//  staxl - listwise stax
 //  staxa - listwise stax
-//  p     - offset to next free stax
+//  staxp - offset to next free stax
 //
-int list_ensure(lstack *** stax, int * staxl, int * staxa, int p)
+int list_ensure(lstack *** stax, int * staxa, int staxp)
 	__attribute__((nonnull));
 
 /// list_resolve
@@ -30,11 +29,10 @@ int list_ensure(lstack *** stax, int * staxl, int * staxa, int p)
 //  list  - FFN_LIST node
 //  vmap  - map used to resolve variable references
 //  stax  - listwise stax
-//  staxl - listwise stax
 //  staxa - listwise stax
-//  p     - offset to next free stax
+//  staxp - offset to next free stax
 //
-int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxl, int * staxa, int p)
+int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
 	__attribute__((nonnull));
 
 #endif

@@ -20,7 +20,6 @@
 //  rootsl  - len of gn
 //  vmap    - map for resolving var references
 //  stax    - listwise stax
-//  staxl   - listwise stax
 //  staxa   - listwise stax
 //  staxp   - listwise stax
 //  ts      - ts  (see ts_execwave)
@@ -33,7 +32,6 @@ int dsc_exec(
 	, int rootsl
 	, map * restrict vmap
 	, lstack *** restrict stax
-	, int * restrict staxl
 	, int * restrict staxa
 	, int staxp
 	, ts *** restrict ts
@@ -41,7 +39,7 @@ int dsc_exec(
 	, int * restrict tsw
 	, int * restrict new
 )
-	__attribute__((nonnull(1, 3, 4, 5, 6, 8, 9, 10)));
+	__attribute__((nonnull(1, 3, 4, 5, 7, 8, 9)));
 
 #undef restrict
 #endif

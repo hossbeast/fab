@@ -70,23 +70,23 @@ int lw_string(void * o, char* prop, char ** s, int * l)
 
 	if(!prop || strcmp(prop, "path") == 0)
 	{
-		*s = ((gn*)o)->path;
-		*l = ((gn*)o)->pathl;
+		*s = ((gn*)o)->path->abs;
+		*l = ((gn*)o)->path->absl;
 	}
 	else if(strcmp(prop, "name") == 0)
 	{
-		*s = ((gn*)o)->name;
-		*l = ((gn*)o)->namel;
+		*s = ((gn*)o)->path->name;
+		*l = ((gn*)o)->path->namel;
 	}
 	else if(strcmp(prop, "dir") == 0)
 	{
-		*s = ((gn*)o)->dir;
-		*l = ((gn*)o)->dirl;
+		*s = ((gn*)o)->path->abs_dir;
+		*l = ((gn*)o)->path->abs_dirl;
 	}
 	else if(strcmp(prop, "ext") == 0)
 	{
-		*s = ((gn*)o)->ext;
-		*l = ((gn*)o)->extl;
+		*s = ((gn*)o)->path->ext;
+		*l = ((gn*)o)->path->extl;
 	}
 
 	return 1;

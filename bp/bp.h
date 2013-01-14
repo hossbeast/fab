@@ -71,7 +71,7 @@ int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
 //
 // execute the build plan one stage at a time
 //
-int bp_exec(bp * bp, map * vmap, lstack *** stax, int * lstax_l, int * stax_a, int p, ts *** ts, int * tsa, int * tsw)
+int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 	__attribute__((nonnull));
 
 /// bp_free

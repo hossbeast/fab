@@ -75,7 +75,7 @@ static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
 // public
 //
 
-int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
+int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
 {
 	ff_node * ffn = 0;
 	int x;
@@ -136,10 +136,10 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 			// @ is a list of expected products of this eval context
 			// for a discovery formula, @ always contains exactly 1 element
 			fatal(lstack_obj_add, (*stax)[pn], (*ts)[x]->fmlv->products[0], LISTWISE_TYPE_GNLW);
-			fatal(var_set_auto, vmap, "@", (*stax)[pn++]);
+			fatal(var_set, vmap, "@", (*stax)[pn++], 0);
 
 			// render the formula
-			fatal(fml_render, (*ts)[x], vmap, stax, staxl, staxa, pn);
+			fatal(fml_render, (*ts)[x], vmap, stax, staxa, pn);
 		}
 
 		// execute all formulas in parallel
@@ -181,7 +181,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 			{
 				if(ffn->statements[k]->type == FFN_DEPENDENCY)
 				{
-					fatal(dep_process, ffn->statements[k], vmap, stax, staxl, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
+					fatal(dep_process, ffn->statements[k], vmap, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
 				}
 			}
 		}
@@ -189,7 +189,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxl, 
 		// process cached results
 		for(x = 0; x < cachel; x++)
 		{
-			log(L_DSC | L_DSCEXEC, "(cache) %-9s %s", gn_designate(cache[x]), gn_idstring(cache[x]));
+			log(L_DSC | L_DSCEXEC, "(cache) %-9s %s", gn_designate(cache[x]), cache[x]->idstring);
 
 			fatal(depblock_process, cache[x], cache[x]->dscv_block, &newn, &newr);
 			fatal(depblock_close, cache[x]->dscv_block);

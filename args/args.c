@@ -12,6 +12,7 @@
 #include "xmem.h"
 #include "xstring.h"
 #include "unitstring.h"
+#include "canon.h"
 
 struct g_args_t g_args;
 
@@ -46,7 +47,7 @@ static void usage()
 
 int parse_args(int argc, char** argv)
 {
-	char * fabfile = 0;
+	char * fabpath = 0;
 
 	struct option longopts[] = {
 // a
@@ -95,11 +96,7 @@ int parse_args(int argc, char** argv)
 	//
 	g_args.pid						= getpid();
 	g_args.sid						= getsid(0);
-
-	// current working directory, canonicalized
-	char space[512];
-	getcwd(space, sizeof(space));
-	g_args.cwd = realpath(space, 0);
+	g_args.cwd						= getcwd(0, 0);
 
 	//
 	// args:defaults
@@ -108,7 +105,7 @@ int parse_args(int argc, char** argv)
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_ddsc			= DEFAULT_MODE_DDSC;
 	g_args.invalidate_all	= DEFAULT_INVALIDATE_ALL;
-	fabfile								= strdup(DEFAULT_FABFILE);
+	fabpath								= strdup(DEFAULT_INIT_FABFILE);
 
 	int x, indexptr;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
@@ -131,8 +128,8 @@ int parse_args(int argc, char** argv)
 				g_args.dumpnode[g_args.dumpnode_len++] = strdup(optarg);
 				break;
 			case 'f':
-				xfree(&fabfile);
-				fabfile = strdup(optarg);
+				xfree(&fabpath);
+				fabpath = strdup(optarg);
 				break;
 			case 'p':
 				g_args.mode_exec = MODE_EXEC_BUILDPLAN;
@@ -168,18 +165,6 @@ int parse_args(int argc, char** argv)
 		}
 	}
 
-	// canonicalize
-	if((g_args.fabfile_canon = realpath(fabfile, 0)) == 0)
-		fail("realpath(%s)=[%d][%s]", fabfile, errno, strerror(errno));
-
-	// terminate at the final slash
-	g_args.fabfile_canon_dir = strdup(g_args.fabfile_canon);
-	
-	char* s = g_args.fabfile_canon_dir + strlen(g_args.fabfile_canon_dir);
-	while(s[0] != '/')
-		s--;
-	s[0] = 0;
-
 	// unprocessed options - fabrication targets
 	for(x = optind; x < argc; x++)
 	{
@@ -188,6 +173,18 @@ int parse_args(int argc, char** argv)
 			fatal(xrealloc, &g_args.targets, sizeof(g_args.targets[0]), g_args.targets_len + 1, g_args.targets_len);
 			g_args.targets[g_args.targets_len++] = strdup(argv[x]);
 		}
+	}
+
+	// init fabfile path
+	fatal(path_create, &g_args.init_fabfile_path, g_args.cwd, "%s", fabpath);
+
+	// lookup invalidations
+	for(x = 0; x < g_args.invalidate_len; x++)
+	{
+		char * N = malloc(512);
+		fatal(canon, g_args.invalidate[x], 0, N, 512, g_args.cwd, CAN_REALPATH);
+		free(g_args.invalidate[x]);
+		g_args.invalidate[x] = N;
 	}
 
 	// dumpnode implies +DGRAPH and MODE_EXEC_DUMP
@@ -217,15 +214,15 @@ int parse_args(int argc, char** argv)
 	log(L_PARAMS	, "%7seid                =%s/%d:%s/%d"	, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
 	log(L_PARAMS	, "%7srid                =%s/%d:%s/%d"	, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
 	log(L_PARAMS	, "%7scwd                =%s"						, ""	, g_args.cwd);
-	log(L_PARAMS	, "%7ssid-dir-pat        =%s"						, ""	, SID_DIR_BASE);
-	log(L_PARAMS	, "%7sgn-dir-pat         =%s"						, ""	, GN_DIR_BASE);
-	log(L_PARAMS	, "%7spid-dir-pat        =%s"						, ""	, PID_DIR_BASE);
+	log(L_PARAMS	, "%7ssid-dir-base       =%s"						, ""	, SID_DIR_BASE);
+	log(L_PARAMS	, "%7sgn-dir-base        =%s"						, ""	, GN_DIR_BASE);
+	log(L_PARAMS	, "%7spid-dir-base       =%s"						, ""	, PID_DIR_BASE);
 	log(L_PARAMS	, "%7sexpiration-policy  =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
-	snprintf(space, sizeof(space), "%s/%s", g_args.cwd, DEFAULT_FABFILE);
-
-	log(L_ARGS | L_PARAMS		, " %s (%c) fabfile-canon      =%s", strcmp(g_args.fabfile_canon, space) == 0 ? " " : "*", 'f', g_args.fabfile_canon);
+	log(L_ARGS | L_PARAMS		, " %s (%c) init-fabfile-can   =%s", "*", 'f', g_args.init_fabfile_path->can);
+	log(L_ARGS | L_PARAMS		, " %s (%c) init-fabfile-abs   =%s", "*", 'f', g_args.init_fabfile_path->abs);
+	log(L_ARGS | L_PARAMS		, " %s (%c) init-fabfile-rel   =%s", "*", 'f', g_args.init_fabfile_path->rel);
 	log(L_ARGS | L_PARAMS		, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
 	log(L_ARGS | L_PARAMS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS | L_PARAMS		, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
@@ -260,17 +257,17 @@ int parse_args(int argc, char** argv)
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 
 finally:
-	free(fabfile);
+	free(fabpath);
 coda;
 }
 
 void args_teardown()
 {
-	free(g_args.cwd);
 	free(g_args.ruid_name);
 	free(g_args.euid_name);
 	free(g_args.rgid_name);
 	free(g_args.egid_name);
+	free(g_args.cwd);
 
 	int x;
 	for(x = 0; x < g_args.targets_len; x++)
@@ -289,10 +286,10 @@ void args_teardown()
 		free(g_args.varvals[x]);
 
 	free(g_args.targets);
-	free(g_args.fabfile_canon);
-	free(g_args.fabfile_canon_dir);
 	free(g_args.invalidate);
 	free(g_args.dumpnode);
 	free(g_args.varkeys);
 	free(g_args.varvals);
+
+	path_free(g_args.init_fabfile_path);
 }

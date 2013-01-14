@@ -31,7 +31,7 @@ static int addrelation(dep_relations_set * set, gn * A, gn * B)
 {
 	if(set->needsl == 0)
 	{
-		if(snprintf(set->needs[0], sizeof(set->needs[0]), "%s", A->path) >= sizeof(set->needs[0]))
+		if(snprintf(set->needs[0], sizeof(set->needs[0]), "%s", A->path->abs) >= sizeof(set->needs[0]))
 		{
 			return 0; // path too long
 		}
@@ -40,14 +40,14 @@ static int addrelation(dep_relations_set * set, gn * A, gn * B)
 			set->needsl++;
 		}
 	}
-	else if(strcmp(set->needs[0], A->path))
+	else if(strcmp(set->needs[0], A->path->abs))
 	{
 		return 0; // needs[0] is some other file
 	}
 
 	if(set->feedsl < sizeof(set->feeds) / sizeof(set->feeds[0]))
 	{
-		if(snprintf(set->feeds[set->feedsl], sizeof(set->feeds[0]), "%s", B->path) >= sizeof(set->feeds[0]))
+		if(snprintf(set->feeds[set->feedsl], sizeof(set->feeds[0]), "%s", B->path->abs) >= sizeof(set->feeds[0]))
 		{
 			return 0;	// path too long
 		}
@@ -68,7 +68,6 @@ static int dep_add_single(
 	  ff_node * ffn
 	, map * vmap
 	, lstack *** stax
-	, int * staxl
 	, int * staxa
 	, int pl
 	, int p
@@ -84,7 +83,7 @@ static int dep_add_single(
 	int pr = p;
 
 	// resolve the right-hand side
-	fatal(list_resolve, ffn->feeds, vmap, stax, staxl, staxa, pr);
+	fatal(list_resolve, ffn->feeds, vmap, stax, staxa, pr);
 
 	// add edges, which are the cartesian product needs x feeds
 	LSTACK_ITERATE((*stax)[pl], i, goa);
@@ -126,9 +125,45 @@ static int dep_add_single(
 			int newr = 0;
 
 			if(ffn->loc.ff->type == FFT_DDISC)
-				fatal(gn_edge_add, g_args.fabfile_canon_dir, &A, Al, At, &B, Bl, Bt, ffn, 0, ffn->flags & FFN_WEAK, &newa, &newb, &newr);
+			{
+				// dependencies 
+gn_dump(ffn->loc.ff->dscv_gn);
+				fatal(gn_edge_add
+					, ffn->loc.ff->dscv_gn->path->abs_dir		// <-- THIS IS WRONG
+					, &A
+					, Al
+					, At
+					, &B
+					, Bl
+					, Bt
+					, ffn
+					, 0
+					, ffn->flags & FFN_WEAK
+					, &newa
+					, &newb
+					, &newr
+				);
+			}
 			else
-				fatal(gn_edge_add, ffn->loc.ff->dir        , &A, Al, At, &B, Bl, Bt, ffn, 0, ffn->flags & FFN_WEAK, &newa, &newb, &newr);
+			{
+				// dependencies arising from an FFN_DEPENDENCY node in a regular fabfile yield nodes whose
+				// paths are canonicalized relative to the relative path of the fabfile
+				fatal(gn_edge_add
+					, ffn->loc.ff->path->abs_dir
+					, &A
+					, Al
+					, At
+					, &B
+					, Bl
+					, Bt
+					, ffn
+					, 0
+					, ffn->flags & FFN_WEAK
+					, &newa
+					, &newb
+					, &newr
+				);
+			}
 
 			if(block && block->block)
 			{
@@ -171,8 +206,8 @@ static int dep_add_single(
 				, ffn->loc.f_col + 1
 				, ffn->loc.l_lin + 1
 				, ffn->loc.l_col + 1
-				, gn_idstring((gn*)A)
-				, gn_idstring((gn*)B)
+				, ((gn*)A)->idstring
+				, ((gn*)B)->idstring
 			);
 		}
 		LSTACK_ITEREND;
@@ -186,7 +221,6 @@ static int dep_add_multi(
 	  ff_node * ffn
 	, map * vmap
 	, lstack *** stax
-	, int * staxl
 	, int * staxa
 	, int pl
 	, int p
@@ -236,15 +270,15 @@ static int dep_add_multi(
 			}
 			else
 			{
-				fatal(gn_add, ffn->loc.ff->dir, (*stax)[pl]->s[x].s[i].s, (*stax)[pl]->s[x].s[i].l, &r, &newa[i]);
+				fatal(gn_add, ffn->loc.ff->path->abs_dir, (*stax)[pl]->s[x].s[i].s, (*stax)[pl]->s[x].s[i].l, &r, &newa[i]);
 			}
 
 			fatal(lstack_obj_add, (*stax)[pr], r, LISTWISE_TYPE_GNLW);
 		}
-		fatal(var_set_auto, vmap, "<", (*stax)[pr++]);
+		fatal(var_set, vmap, "<", (*stax)[pr++], 0);
 
 		// resolve the right-hand side
-		fatal(list_resolve, ffn->feeds, vmap, &(*stax), staxl, staxa, pr);
+		fatal(list_resolve, ffn->feeds, vmap, &(*stax), staxa, pr);
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
 		{
@@ -283,9 +317,41 @@ static int dep_add_multi(
 				int newr = 0;
 
 				if(ffn->loc.ff->type == FFT_DDISC)
-					fatal(gn_edge_add, g_args.fabfile_canon_dir, &A, Al, At, &B, Bl, Bt, ffn, 0, ffn->flags & FFN_WEAK, 0, &newb, &newr);
+				{
+					fatal(gn_edge_add
+						, ffn->loc.ff->dscv_gn->path->abs_dir
+						, &A
+						, Al
+						, At
+						, &B
+						, Bl
+						, Bt
+						, ffn
+						, 0
+						, ffn->flags & FFN_WEAK
+						, 0
+						, &newb
+						, &newr
+					);
+				}
 				else
-					fatal(gn_edge_add, ffn->loc.ff->dir        , &A, Al, At, &B, Bl, Bt, ffn, 0, ffn->flags & FFN_WEAK, 0, &newb, &newr);
+				{
+					fatal(gn_edge_add
+						, ffn->loc.ff->path->abs_dir
+						, &A
+						, Al
+						, At
+						, &B
+						, Bl
+						, Bt
+						, ffn
+						, 0
+						, ffn->flags & FFN_WEAK
+						, 0
+						, &newb
+						, &newr
+					);
+				}
 
 				if(block && block->block)
 				{
@@ -328,8 +394,8 @@ static int dep_add_multi(
 					, ffn->loc.f_col + 1
 					, ffn->loc.l_lin + 1
 					, ffn->loc.l_col + 1
-					, gn_idstring((gn*)A)
-					, gn_idstring((gn*)B)
+					, ((gn*)A)->idstring
+					, ((gn*)B)->idstring
 				);
 			}
 			LSTACK_ITEREND;
@@ -347,7 +413,6 @@ int dep_process(
 	  ff_node * const ffn
 	, map * const vmap
 	, lstack *** const stax
-	, int * const staxl
 	, int * const staxa
 	, int staxp
 	, gn ** const first
@@ -357,15 +422,15 @@ int dep_process(
 )
 {
 	// resolve the left-hand side
-	fatal(list_resolve, ffn->needs, vmap, stax, staxl, staxa, staxp);
+	fatal(list_resolve, ffn->needs, vmap, stax, staxa, staxp);
 
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(dep_add_single, ffn, vmap, stax, staxl, staxa, staxp, staxp + 1, first, newn, newr, block);
+		fatal(dep_add_single, ffn, vmap, stax, staxa, staxp, staxp + 1, first, newn, newr, block);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(dep_add_multi, ffn, vmap, stax, staxl, staxa, staxp, staxp + 1, first, newn, newr, block);
+		fatal(dep_add_multi, ffn, vmap, stax, staxa, staxp, staxp + 1, first, newn, newr, block);
 	}
 	else
 	{
@@ -408,10 +473,10 @@ int depblock_process(gn * const dscvgn, const depblock * const block, int * cons
 			, newa ? "x" : ""
 			, newb ? "x" : ""
 			, newr ? "x" : ""
-			, gn_idstring(dscvgn)
+			, dscvgn->idstring
 			, "-", "-", "-", "-"
-			, gn_idstring((gn*)A)
-			, gn_idstring((gn*)B)
+			, ((gn*)A)->idstring
+			, ((gn*)B)->idstring
 		);
 
 		finally : coda;

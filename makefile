@@ -17,7 +17,7 @@ INSTALL         :=install
 #  C/L OPTS  - internal to makefile flags
 #  C/L FLAGS - user specified compiler flags
 # 
-COPTS						+=-m64 -g -O0 -Wall -Werror -fms-extensions -fno-builtin-log -D_GNU_SOURCE $(foreach x,${VPATH},-I${SRCDIR}/$(x))
+COPTS						+=-m64 -rdynamic -O0 -Wall -Werror -fms-extensions -fno-builtin-log -D_GNU_SOURCE $(foreach x,${VPATH},-I${SRCDIR}/$(x))
 %.o : COPTS     +=-c
 
 LOPTS						+=-llistwise
@@ -105,7 +105,9 @@ main.o  : args/args.o						\
 					dep/dep.o							\
 					identity/identity.o		\
 					hashblock/hashblock.o	\
-					depblock/depblock.o
+					depblock/depblock.o		\
+					canon/canon.o					\
+					path/path.o
 
 common/idx.o : common/xstring.o
 

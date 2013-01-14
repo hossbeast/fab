@@ -59,12 +59,10 @@ typedef struct
 	char*	e;				// doubly-allocated list of collection elements
 } coll_doubly;
 
-#define coll_singly_add_onfail "c: 0x%08x, el: 0x%08x, ret: 0x%08x"
 int coll_singly_add(coll_singly* c, void* el, void* ret);
 
 void coll_singly_free(coll_singly* c);
 
-#define coll_doubly_add_onfail "c: 0x%08x, el: 0x%08x, ret: 0x%08x"
 int coll_doubly_add(coll_doubly* c, void* el, void* ret);
 
 void coll_doubly_free(coll_doubly* c);

@@ -49,9 +49,8 @@ static int fml_add_single(fml * fml, lstack * ls)
 
 		fatal(lstack_string, ls, 0, y, &s, &l);
 
-		gn* t = 0;
-		if((t = gn_lookup(s, l, fml->ffn->loc.ff->dir)) == 0)
-			fatal(gn_add, fml->ffn->loc.ff->dir, s, l, &t, 0);
+		gn * t = 0;
+		fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, s, l, &t, 0);
 
 		fmlv->products[0] = t;
 
@@ -63,7 +62,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 				, fml->ffn->loc.f_col + 1
 				, fml->ffn->loc.l_lin + 1
 				, fml->ffn->loc.l_col + 1
-				, gn_idstring(t)
+				, t->idstring
 			);
 			t->dscv = fmlv;
 		}
@@ -75,7 +74,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 				, fml->ffn->loc.f_col + 1
 				, fml->ffn->loc.l_lin + 1
 				, fml->ffn->loc.l_col + 1
-				, gn_idstring(t)
+				, t->idstring
 			);
 			t->fabv = fmlv;
 		}
@@ -124,13 +123,12 @@ static int fml_add_multi(fml * fml, lstack * ls)
 		for(y = 0; y < ls->s[x].l; y++)
 		{
 			gn * t = 0;
-			if((t = gn_lookup(ls->s[x].s[y].s, ls->s[x].s[y].l, fml->ffn->loc.ff->dir)) == 0)
-				fatal(gn_add, fml->ffn->loc.ff->dir, ls->s[x].s[y].s, ls->s[x].s[y].l, &t, 0);
+			fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, ls->s[x].s[y].s, ls->s[x].s[y].l, &t, 0);
 
 			if(y)
-				log_add("  , %s\n", gn_idstring(t));
+				log_add("  , %s\n", t->idstring);
 			else
-				log_add("    %s\n", gn_idstring(t));
+				log_add("    %s\n", t->idstring);
 
 			fmlv->products[y] = t;
 			if(fml->ffn->flags & FFN_DISCOVERY)
@@ -147,7 +145,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 //
 // public
 //
-int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * staxl, int * staxa, int p)
+int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * staxa, int p)
 {
 	// create fml with ffn - which is an FFN_FORMULA
 	fml * fml = 0;
@@ -155,7 +153,7 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * staxl, int * staxa
 	fml->ffn = ffn;
 
 	// resolve targets list
-	fatal(list_resolve, ffn->targets, vmap, stax, staxl, staxa, p);
+	fatal(list_resolve, ffn->targets, vmap, stax, staxa, p);
 
 	// attach graph nodes
 	if(fml->ffn->flags & FFN_SINGLE)
@@ -174,7 +172,7 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * staxl, int * staxa
 	finally : coda;
 }
 
-int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxl, int * staxa, int p)
+int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxa, int p)
 {
 	// start with shebang
 	fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
@@ -200,7 +198,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxl, int * staxa, i
 		}
 		else if(ffn->commands[x]->type == FFN_LIST)
 		{
-			fatal(list_resolve, ffn->commands[x], vmap, stax, staxl, staxa, p);
+			fatal(list_resolve, ffn->commands[x], vmap, stax, staxa, p);
 
 			int i;
 			LSTACK_ITERATE((*stax)[p], i, go);

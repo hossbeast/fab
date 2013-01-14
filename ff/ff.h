@@ -10,6 +10,7 @@
 
 #include "coll.h"
 #include "hashblock.h"
+#include "path.h"
 
 #define restrict __restrict
 
@@ -63,11 +64,7 @@ struct gn;
 typedef struct ff_file
 {
 	uint32_t					type;			// fabfile type
-
-	char *						name;			// name of fabfile
-	char *						path;			// canonical path to fabfile 
-	uint32_t					pathhash;	// hash of path
-	char *						dir;			// canonical path to dir fabfile is in
+	path *						path;			// fabfile path
 	char *						idstring;	// identifier string, subject to execution parameters
 
 	struct ff_node *	ffn;			// root ff_node parsed from this ff_file
@@ -225,8 +222,27 @@ typedef struct ff_parser_t ff_parser;
 //
 // creates an instance of a ff parser which may be passed repeatedly to parse
 //
-#define ff_mkparser_onfail "p: %p"
 int ff_mkparser(ff_parser ** const restrict p)
+	__attribute__((nonnull));
+
+/// ff_parse_path
+//
+// parse a fabfile using a preconstructed path
+//
+// parameters
+//
+//   p    - parser returned from mkparser
+//   path - path to fabfile
+//   ff   - results go here
+//
+// returns
+//  0 on error - check *ff to see if the parse was successful
+//
+int ff_parse_path(
+	  const ff_parser * const restrict p
+	, const path * const restrict path
+	, ff_node ** const restrict ffn
+)
 	__attribute__((nonnull));
 
 /// ff_parse
@@ -242,10 +258,10 @@ int ff_mkparser(ff_parser ** const restrict p)
 // returns
 //  0 on error - check *ff to see if the parse was successful
 //
-#define ff_parse_onfail "p: %p, path: '%s', ff: %p"
 int ff_parse(
 	  const ff_parser * const restrict p
-	, char * path
+	, const char * const restrict fp
+	, const char * const restrict base 
 	, ff_node ** const restrict ffn
 )
 	__attribute__((nonnull));
@@ -254,15 +270,15 @@ int ff_parse(
 //
 // see ff_parse, but for discovery files, which support only a limited syntax
 //
-#define ff_dsc_parse_onfail "p: %p, path: '%s', ff: %p"
 int ff_dsc_parse(
 	  const ff_parser * const restrict p
-	, char * text
-	, int l
-	, char * path
+	, char * b
+	, int sz
+	, const char * const restrict fp 
 	, struct gn * dscv_gn
 	, ff_node ** const restrict ffn
-);
+)
+	__attribute__((nonnull));
 
 /// ff_freeparser
 //

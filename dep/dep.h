@@ -18,9 +18,8 @@
 //  ffn        - FFN_DEPENDENCY node
 //  vmap       - vmap used to resolve variable references in the dependency lists
 //  stax       - listwise stax
-//  stax_l     - listwise stax
-//  stax_a     - listwise stax
-//  p          - offset to next available lstack
+//  staxa      - listwise stax
+//  staxp      - offset to next available lstack
 //  [first]    - if not null, set to the needs-end of the first dependency processed
 //  [newn]     - if not null, incremented by the number of new nodes created
 //  [newr]     - if not null, incremented by the number of new edges created
@@ -30,15 +29,14 @@ int dep_process(
 	  ff_node * const restrict ffn
 	, map * const restrict vmap
 	, lstack *** const restrict stax
-	, int * const restrict staxl
 	, int * const restrict staxa
-	, int p
+	, int staxp
 	, gn ** const restrict first
 	, int * const restrict newn
 	, int * const restrict newr
 	, depblock * const restrict block
 )
-	__attribute__((nonnull(1,2,3,4,5)));
+	__attribute__((nonnull(1,2,3,4)));
 
 
 /// depblock_process

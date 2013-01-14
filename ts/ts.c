@@ -138,9 +138,9 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 		{
 			int R = 0;
 			if(k)
-				R = log_start(hi | e, "        %-9s %s", gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
+				R = log_start(hi | e, "        %-9s %s", gn_designate(ts[x]->fmlv->products[k]), ts[x]->fmlv->products[k]->idstring);
 			else
-				R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
+				R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(ts[x]->fmlv->products[k]), ts[x]->fmlv->products[k]->idstring);
 
 			if(k == 0)
 			{
@@ -171,7 +171,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				{
 					if(k)
 						log_add(", ");
-					log_add("%s", gn_idstring(ts[x]->fmlv->products[k]));
+					log_add("%s", ts[x]->fmlv->products[k]->idstring);
 				}
 				log_finish(0);
 			}

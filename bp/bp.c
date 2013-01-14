@@ -27,7 +27,7 @@ static int gn_cmp(const void * _A, const void * _B)
 	gn * A = *((gn **)_A);
 	gn * B = *((gn **)_B);
 
-	return strcmp(A->path, B->path);
+	return path_cmp(A->path, B->path);
 }
 
 static int fmleval_cmp(const void * _A, const void * _B)
@@ -195,9 +195,9 @@ int bp_create(gn ** n, int l, bp ** bp)
 							bps->evals[bps->evals_l + (evals_cnt++)] = lvs[y]->fabv;
 					}
 				}
-				else if(strcmp("/..", lvs[y]->dir) == 0)
+				else if(strcmp("/..", lvs[y]->path->abs_dir) == 0)
 				{
-					// this is a NOFILE node - no error, do not add to the stage
+					// this is a NOFILE node - no error, but do not add to the stage
 				}
 				else if(lvs[y]->needs.l)
 				{
@@ -207,7 +207,7 @@ int bp_create(gn ** n, int l, bp ** bp)
 					//  1 - this node may be pruned away and not actually needed after all.
 					//  2 - in order to report additional errors before failing out
 					//
-					log(L_WARN, "SECONDARY has no formula - %s", gn_idstring(lvs[y]));
+					log(L_WARN, "SECONDARY has no formula - %s", lvs[y]->idstring);
 					bps->nofmls[bps->nofmls_l + (nofmls_cnt++)] = lvs[y];
 					lvs[y]->stage = k;
 				}
@@ -280,7 +280,7 @@ int bp_eval(bp * const bp, int * const poison)
 			if(gn->hb->stathash[1] == 0)		// file does not exist
 			{
 				// PRIMARY file - not found
-				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn_idstring(gn));
+				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
 
 				// poison and propagate
 				(*poison) = 1;
@@ -305,7 +305,7 @@ int bp_eval(bp * const bp, int * const poison)
 			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 				, x, c++
 				, "PRIMARY"
-				, gn_idstring(gn)
+				, gn->idstring
 				, ""
 				, gn->changed ? "  changed" : "unchanged"
 			);
@@ -385,7 +385,7 @@ int bp_eval(bp * const bp, int * const poison)
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
 								, gn_designate(gn)
-								, gn_idstring(gn)
+								, gn->idstring
 								, "SKIP"
 							);
 						}
@@ -408,7 +408,7 @@ int bp_eval(bp * const bp, int * const poison)
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
 								, gn_designate(gn)
-								, gn_idstring(gn)
+								, gn->idstring
 								, "EXECUTE"
 							);
 						}
@@ -417,7 +417,7 @@ int bp_eval(bp * const bp, int * const poison)
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
 								, gn_designate(gn)
-								, gn_idstring(gn)
+								, gn->idstring
 								, "REBUILD"
 								, !gn->exists ? "does not exist" : gn->changed ? "fabfile changed" : "sources changed"
 							);
@@ -427,7 +427,7 @@ int bp_eval(bp * const bp, int * const poison)
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
 								, gn_designate(gn)
-								, gn_idstring(gn)
+								, gn->idstring
 								, "REBUILD"
 								, "always fab"
 							);
@@ -438,7 +438,7 @@ int bp_eval(bp * const bp, int * const poison)
 						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 							, x, c++
 							, gn_designate(gn)
-							, gn_idstring(gn)
+							, gn->idstring
 							, "REBUILD"
 							, "eval context product"
 						);
@@ -471,7 +471,7 @@ int bp_eval(bp * const bp, int * const poison)
 				log(L_ERROR | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
 					, gn_designate(gn)
-					, gn_idstring(gn)
+					, gn->idstring
 					, ""
 					, "no formula"
 				);
@@ -481,7 +481,7 @@ int bp_eval(bp * const bp, int * const poison)
 				log(L_WARN | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
 					, gn_designate(gn)
-					, gn_idstring(gn)
+					, gn->idstring
 					, ""
 					, "no formula"
 				);
@@ -526,7 +526,7 @@ int bp_eval(bp * const bp, int * const poison)
 	finally : coda;
 }
 
-int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, int p, ts *** ts, int * tsa, int * tsw)
+int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int p, ts *** ts, int * tsa, int * tsw)
 {
 	int tsl				= 0;		// thread count
 	int tot				= 0;		// total targets
@@ -560,10 +560,10 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 
 			// prepare lstack(s) for variables resident in this context
 			int pn = p;
-			if((*stax_a) <= pn)
+			if((*staxa) <= pn)
 			{
-				fatal(xrealloc, stax, sizeof(**stax), pn + 1, (*stax_a));
-				(*stax_a) = pn + 1;
+				fatal(xrealloc, stax, sizeof(**stax), pn + 1, (*staxa));
+				(*staxa) = pn + 1;
 			}
 			if(!(*stax)[pn])
 				fatal(lstack_create, &(*stax)[pn]);
@@ -573,10 +573,10 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * stax_l, int * stax_a, in
 			for(k = 0; k < (*ts)[i]->fmlv->products_l; k++)
 				fatal(lstack_obj_add, (*stax)[pn], (*ts)[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
-			fatal(var_set_auto, vmap, "@", (*stax)[pn++]);
+			fatal(var_set, vmap, "@", (*stax)[pn++], 0);
 
 			// render the formula
-			fatal(fml_render, (*ts)[i], vmap, stax, stax_l, stax_a, pn);
+			fatal(fml_render, (*ts)[i], vmap, stax, staxa, pn);
 
 			i++;
 		}
@@ -660,7 +660,7 @@ void bp_dump(bp * bp)
 				{
 					log(L_BP | L_BPDUMP, "        %-9s %s"
 						, gn_designate(bp->stages[x].evals[y]->products[i])
-						, gn_idstring (bp->stages[x].evals[y]->products[i])
+						, bp->stages[x].evals[y]->products[i]->idstring
 					);
 				}
 				else
@@ -669,7 +669,7 @@ void bp_dump(bp * bp)
 						, x
 						, y
 						, gn_designate(bp->stages[x].evals[y]->products[i])
-						, gn_idstring (bp->stages[x].evals[y]->products[i])
+						, bp->stages[x].evals[y]->products[i]->idstring
 					);
 				}
 			}

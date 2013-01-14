@@ -47,7 +47,6 @@ int main(int argc, char** argv)
 		map *								vmap = 0;				// variable lookup map
 		gn *								first = 0;			// first dependency mentioned
 		lstack **						stax = 0;
-		int									staxl = 0;
 		int									staxa = 0;
 		int 								staxp = 0;
 		ts **								ts = 0;
@@ -90,7 +89,7 @@ int main(int argc, char** argv)
 
 		// parse the fabfile
 		fatal(ff_mkparser, &ffp);
-		fatal(ff_parse, ffp, g_args.fabfile_canon, &ffn);
+		fatal(ff_parse_path, ffp, g_args.init_fabfile_path, &ffn);
 
 		if(!ffn)
 			qfail();
@@ -104,38 +103,38 @@ int main(int argc, char** argv)
 		// create map for variable definitions
 		fatal(map_create, &vmap, 0);
 
-		// use up one list and populate the # variable (all directories)
-		if(staxa <= staxp)
+		// populate with cmdline-specified variables
+		for(x = 0; x < g_args.varkeys_len; x++)
 		{
-			fatal(xrealloc, &stax, sizeof(*stax), staxp + 1, staxa);
-			staxa = staxp + 1;
+			fatal(list_ensure, &stax, &staxa, staxp);
+			fatal(lstack_add, stax[staxp], g_args.varvals[x], strlen(g_args.varvals[x]));
+			fatal(var_set, vmap, g_args.varkeys[x], stax[staxp++], 1);
 		}
-		if(!stax[staxp])
-			fatal(lstack_create, &stax[staxp]);
-		lstack_reset(stax[staxp]);
 
-		fatal(lstack_add, stax[staxp], ffn->loc.ff->dir, strlen(ffn->loc.ff->dir));
-		fatal(var_set_auto, vmap, "#", stax[staxp++]);
+		// use up one list and populate the # variable (directory path to initial fabfile, in user-supplied form)
+		fatal(list_ensure, &stax, &staxa, staxp);
+		fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
+		fatal(var_set, vmap, "#", stax[staxp++], 0);
 
 		// process the fabfile tree, construct the graph
 		for(x = 0; x < ffn->statements_l; x++)
 		{
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
-				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxl, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
+				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
 			}
 			else if(ffn->statements[x]->type == FFN_VARDECL)
 			{
 				// resolve the list associated to the variable name
-				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxl, &staxa, staxp);
+				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
 
 				// save the resultant list
-				fatal(var_set_user, vmap, ffn->statements[x]->name, stax[staxp++]);
+				fatal(var_set, vmap, ffn->statements[x]->name, stax[staxp++], 0);
 			}
 			else if(ffn->statements[x]->type == FFN_FORMULA)
 			{
 				// add the formula, attach to graph nodes
-				fatal(fml_add, ffn->statements[x], vmap, &stax, &staxl, &staxa, staxp);
+				fatal(fml_add, ffn->statements[x], vmap, &stax, &staxa, staxp);
 			}
 		}
 		
@@ -144,20 +143,22 @@ int main(int argc, char** argv)
 		{
 			gn ** gnl = alloca(sizeof(*gnl) * gn_nodes.l);
 			memcpy(gnl, gn_nodes.e, sizeof(*gnl) * gn_nodes.l);
-			fatal(dsc_exec, gnl, gn_nodes.l, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, 0);
+			fatal(dsc_exec, gnl, gn_nodes.l, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
 		}
 
 		// dump graph nodes, pending logging
 		if(g_args.mode_exec == MODE_EXEC_DUMP)
 		{
-			// process invalidations, update 
-			gn_invalidations();
+			// process invalidations, update designations
+			fatal(gn_invalidations);
 
 			for(x = 0; x < g_args.dumpnode_len; x++)
 			{
 				gn * gn = 0;
-				if((gn = gn_lookup(g_args.dumpnode[x], 0, g_args.cwd)) == 0)
-					qfail();
+				fatal(gn_lookup, g_args.dumpnode[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
+
+				if(gn == 0)
+					fail("dumpnode : %s not found", g_args.dumpnode[x]);
 
 				if(gn->designation == GN_DESIGNATION_PRIMARY)
 					gn_primary_reload(gn);
@@ -179,18 +180,24 @@ int main(int argc, char** argv)
 			if(g_args.targets_len)
 			{
 				gn * gn = 0;
-				if((gn = gn_lookup(g_args.targets[0], 0, g_args.cwd)) == 0)
-					qfail();
+				fatal(gn_lookup, g_args.targets[0], 0, g_args.init_fabfile_path->abs_dir, &gn);
 
-				aretasks = strcmp(gn->dir, "/..") == 0 && gn->fabv;
+				if(gn == 0)
+					fail("target : %s not found", g_args.targets[0]);
+
+				gn_designate(gn);
+				aretasks = gn->designation == GN_DESIGNATION_TASK;
 				node_list[node_list_len++] = gn;
 
 				for(x = 1; x < g_args.targets_len; x++)
 				{
-					if((gn = gn_lookup(g_args.targets[x], 0, g_args.cwd)) == 0)
-						qfail();
+					fatal(gn_lookup, g_args.targets[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
 
-					istask = strcmp(gn->dir, "/..") == 0 && gn->fabv;
+					if(gn == 0)
+						fail("target : %s not found", g_args.targets[x]);
+
+					gn_designate(gn);
+					istask = gn->designation == GN_DESIGNATION_TASK;
 					if(aretasks ^ istask)
 						fail("cannot mix task and non-task fabrication targets");
 
@@ -209,7 +216,7 @@ int main(int argc, char** argv)
 				if(g_args.mode_exec == MODE_EXEC_DDSC)
 				{
 					// execute discovery
-					fatal(dsc_exec, node_list, node_list_len, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, 0);
+					fatal(dsc_exec, node_list, node_list_len, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
 				}
 				else if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN)
 				{
@@ -228,7 +235,7 @@ int main(int argc, char** argv)
 							fatal(bp_flatten, bp, &list, &listl, &lista);
 
 							// execute discovery
-							fatal(dsc_exec, list, listl, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw, &new);
+							fatal(dsc_exec, list, listl, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, &new);
 						}
 					}
 
@@ -252,7 +259,7 @@ int main(int argc, char** argv)
 						else
 						{
 							// execute the build plan, one stage at a time
-							qfatal(bp_exec, bp, vmap, &stax, &staxl, &staxa, staxp, &ts, &tsa, &tsw);
+							qfatal(bp_exec, bp, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw);
 
 							// commit regular fabfile hashblocks
 							for(x = 0; x < ff_files.l; x++)

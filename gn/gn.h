@@ -14,6 +14,7 @@
 
 #include "coll.h"
 #include "map.h"
+#include "path.h"
 
 #define restrict __restrict
 
@@ -105,18 +106,7 @@ typedef struct gn
 	uint8_t						flags;
 	uint8_t						designation;
 
-	/* exported to listwise - maintain corresponding length
-	** these strings ARE null-terminated, though
-	*/
-	char*							dir;						// canonical path to directory file is in
-	int								dirl;
-	char*							name;						// file name
-	int								namel;
-	char*							path;						// canonical path to file
-	int								pathl;
-	uint32_t					pathhash;				// hash of path
-	char*							ext;						// portion of file name following the last '.', or null
-	int								extl;
+	path *						path;
 	char*							idstring;				// identifier string, subject to execution parameters
 	int								idstringl;
 
@@ -210,29 +200,37 @@ extern union gn_nodes_t
 	};
 } gn_nodes;
 
-/// gn_lookup_canon
-//
-// lookup a gn by absolute path
-//
-// returns the node, or 0 if it was not found
-//
-gn * gn_lookup_canon(char* s, int l);
-
 /// gn_lookup
 //
 // SUMMARY
 //  lookup a gn by absolute path, relative path, or NOFILE-name
 //
 // PARAMETERS
-//  s   - string
-//  l   - string length, or 0 for strlen
-//  cwd - directory path for resolving relative paths
-//  r   - node returned here
+//  s    - string
+//  l    - string length, or 0 for strlen
+//  base - directory path for resolving relative paths
+//  r    - node returned here, if found
 //
 // RETURNS
-//  pointer to the node, or 0 if not found
+//  0 on failure (ENOMEN) and 1 otherwise
 //
-gn * gn_lookup(char * const restrict s, int l, char * const restrict cwd)
+int gn_lookup(const char * const restrict s, int l, const char * const restrict base, gn ** r)
+	__attribute__((nonnull));
+
+/// gn_lookup_canon
+//
+// SUMMARY
+//  lookup a gn by canonicalized absolute path
+//
+// PARAMETERS
+//  s    - string
+//  l    - string length, or 0 for strlen
+//  r    - node returned here, if found
+//
+// RETURNS
+//  0 on failure (ENOMEN) and 1 otherwise
+//
+int gn_lookup_canon(const char * const restrict s, int l, gn ** r)
 	__attribute__((nonnull));
 
 /// gn_add
@@ -241,7 +239,7 @@ gn * gn_lookup(char * const restrict s, int l, char * const restrict cwd)
 //  adds a graph node
 //
 // PARAMETERS
-//  realwd - canonical path to directory for resolving relative paths
+//  base   - directory path for resolving relative paths
 //  A      - 1) filename (relative to realwd), or
 //           2) relative filepath (relative to realwd), or
 //           3) canonical filepath
@@ -251,7 +249,7 @@ gn * gn_lookup(char * const restrict s, int l, char * const restrict cwd)
 // 
 // returns 0 on failure (memory, io) and 1 otherwise
 //
-int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** r, int * const restrict newa);
+int gn_add(const char * const restrict base, char * const restrict A, int Al, gn ** r, int * const restrict newa);
 
 /// gn_edge_add
 //
@@ -261,11 +259,11 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 //  3) return gn for A, and B
 //
 // PARAMETERS
-//  [realwd]   - canonical path to directory for resolving relative paths
-//  A          - pointer to 1) filename (relative to realwd), or
-//                        2) relative filepath (relative to realwd), or
-//                        3) canonical filepath, or
-//                        4) gn *
+//  [base]     - directory path for resolving relative paths
+//  A          - pointer to 1) filename (relative to base), or
+//                          2) relative filepath (relative to base), or
+//                          3) canonical filepath, or
+//                          4) gn *
 //  Al         - length of A, or 0 for strlen
 //  At         - LISTWISE_TYPE_GNLW if A is a gn * and 0 otherwise
 //  B          - same possibilities as A
@@ -282,7 +280,7 @@ int gn_add(char * const restrict realwd, void * const restrict A, int Al, gn ** 
 //  returns 0 on failure (memory, io) otherwise returns 1 and sets *A to gn for a, and *B to gn for b
 //
 int gn_edge_add(
-	  char * const restrict realwd
+	  char * const restrict base
 	, void ** const restrict A, int Al, int At
 	, void ** const restrict B, int Bl, int Bt
 	, struct ff_node * const restrict ffn
@@ -339,13 +337,6 @@ int gn_primary_rewrite(gn * const restrict)
 //
 int gn_depth_traversal_nodes_needsward(gn * gn, int (*logic)(struct gn *, int d));
 
-/// gn_idstring
-//
-// get a string identifying a node, subject to execution arguments
-//
-char * gn_idstring(gn * const restrict gn)
-	__attribute__((nonnull));
-
 /// gn_designate
 //
 // populate gn->flags and gn->designation
@@ -363,7 +354,10 @@ char * gn_designate(gn * gn)
 //  for PRIMARY   - may set gn->changed
 //  for SECONDARY - may set gn->rebuild
 //
-void gn_invalidations();
+// RETURNS
+//  0 on ENOMEM, 1 otherwise
+//
+int gn_invalidations();
 
 /// gn_teardown
 //
