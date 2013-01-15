@@ -70,8 +70,8 @@ int lw_string(void * o, char* prop, char ** s, int * l)
 
 	if(!prop || strcmp(prop, "path") == 0)
 	{
-		*s = ((gn*)o)->path->abs;
-		*l = ((gn*)o)->path->absl;
+		*s = ((gn*)o)->path->rel;
+		*l = ((gn*)o)->path->rell;
 	}
 	else if(strcmp(prop, "name") == 0)
 	{
@@ -80,8 +80,8 @@ int lw_string(void * o, char* prop, char ** s, int * l)
 	}
 	else if(strcmp(prop, "dir") == 0)
 	{
-		*s = ((gn*)o)->path->abs_dir;
-		*l = ((gn*)o)->path->abs_dirl;
+		*s = ((gn*)o)->path->rel_dir;
+		*l = ((gn*)o)->path->rel_dirl;
 	}
 	else if(strcmp(prop, "ext") == 0)
 	{

@@ -84,39 +84,82 @@ int getextlast(const char * const p, char ** const r)
 	return 1;
 }
 
+int getstem(const char * const abs, const char * const rel, char ** const r)
+{
+	int dotdots = 0;
+	const char * s = rel;
+	while(1)
+	{
+		const char * ps = s;
+		const char * pe = s;
+		while(pe[0] != 0 && pe[0] != '/')
+			pe++;
+
+		if(pe - ps == 1 && ps[0] == '.')
+		{
+			s = pe + 1;
+		}
+		else if(pe - ps == 2 && ps[0] == '.' && ps[1] == '.')
+		{
+			s = pe + 1;
+			dotdots++;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	// s now points to the portion of rel following any leading dots and dotdots
+	int e = strlen(abs);
+	while(e && strcmp(abs + e, s))
+		e--;
+
+	while(e && abs[e-1] == '/')
+		e--;
+
+	if(((*r) = calloc(1, e + 1)) == 0)
+		return 0;
+
+	memcpy((*r), abs, e);
+
+	return 1;
+}
+
 static int path_init(path * const p)
 {
-	// other stuff
+	// directories
 	fatal(getdir, p->can, &p->can_dir);
 	fatal(getdir, p->abs, &p->abs_dir);
 	fatal(getdir, p->rel, &p->rel_dir);
+
+	// other properties
 	fatal(getname, p->can, &p->name);
 	fatal(getext, p->can, &p->ext);
 	fatal(getextlast, p->can, &p->ext_last);
 
-	p->peer_dir = strdup(p->abs_dir);
-	char * s = p->peer_dir + p->abs_dirl;
-	while
-	p->peer_dirl = strlen(p->peer_dir);
+	// the stem : absolute - relative
+	fatal(getstem, p->abs, p->rel, &p->stem);
 
-	// compute lengths
-	p->canl				= strlen(p->can);
-	p->absl				= strlen(p->abs);
-	p->rell				= strlen(p->rel);
-	p->can_dirl		= strlen(p->can_dir);
-	p->abs_dirl		= strlen(p->abs_dir);
-	p->rel_dirl		= strlen(p->rel_dir);
-	p->namel			= strlen(p->name);
+	// lengths
+	p->canl					= strlen(p->can);
+	p->absl					= strlen(p->abs);
+	p->rell					= strlen(p->rel);
+	p->can_dirl			= strlen(p->can_dir);
+	p->abs_dirl			= strlen(p->abs_dir);
+	p->rel_dirl			= strlen(p->rel_dir);
+	p->namel				= strlen(p->name);
 	if(p->ext)
 		p->extl				= strlen(p->ext);
 	if(p->ext_last)
 		p->ext_lastl	= strlen(p->ext_last);
+	p->steml				= strlen(p->stem);
 
 	// hash of the canonical path
-	p->can_hash		= cksum(p->can, p->canl);
+	p->can_hash			= cksum(p->can, p->canl);
 
 	// nofile determination
-	p->is_nofile	= p->can_dirl >= 4 && memcmp(p->can_dir, "/../", 4) == 0;
+	p->is_nofile		= p->canl >= 4 && memcmp(p->can, "/../", 4) == 0;
 
 	finally : coda;
 }
@@ -167,32 +210,6 @@ int path_create(path ** const p, const char * const base, const char * const fmt
 
 	path_init(*p);
 
-/*
-if(strcmp((*p)->name, "re.o") == 0 || strcmp((*p)->name, "fabfile") == 0)
-{
-	dprintf(2, "path_create : s=%s, base=%s\n", buf, base);
-
-#include <execinfo.h>
-
-	void * foo[16] = {};
-	int nptrs = backtrace(foo, sizeof(foo) / sizeof(foo[0]));
-	char ** strings = backtrace_symbols(foo, nptrs);
-	int x;
-	for(x = 0; x < nptrs; x++)
-		dprintf(2, "%s\n", strings[x]);
-
-	dprintf(2, " >can      =%s\n", (*p)->can);
-	dprintf(2, " >candir   =%s\n", (*p)->can_dir);
-	dprintf(2, " >abs      =%s\n", (*p)->abs);
-	dprintf(2, " >absdir   =%s\n", (*p)->abs_dir);
-	dprintf(2, " >rel      =%s\n", (*p)->rel);
-	dprintf(2, " >reldir   =%s\n", (*p)->rel_dir);
-	dprintf(2, " >name     =%s\n", (*p)->name);
-	dprintf(2, " >ext      =%s\n", (*p)->ext);
-	dprintf(2, " >ext_last =%s\n", (*p)->ext_last);
-}
-*/
-
 	return 1;
 }
 
@@ -202,12 +219,6 @@ int path_create_canon(path ** const p, const char * fmt, ...)
 		return 0;
 
 	if(xmalloc(&(*p)->can, 512) == 0)
-		return 0;
-
-	if(xmalloc(&(*p)->abs, 512) == 0)
-		return 0;
-
-	if(xmalloc(&(*p)->rel, 512) == 0)
 		return 0;
 
 	va_list va;
@@ -232,15 +243,10 @@ void path_free(path * const p)
 {
 	if(p)
 	{
-		free(p->can);
-		free(p->abs);
-		free(p->rel);
-		free(p->can_dir);
-		free(p->abs_dir);
-		free(p->rel_dir);
-		free(p->name);
-		free(p->ext);
-		free(p->ext_last);
+		// free all the strings
+		int x;
+		for(x = 0; x < sizeof(p->strings) / sizeof(p->strings[0]); x++)
+			free(p->strings[x]);
 	}
 
 	free(p);
@@ -257,24 +263,19 @@ int path_copy(const path * const A, path ** const B)
 	if(xmalloc(B, sizeof(**B)) == 0)
 		return 0;
 
-	if(((*B)->can = strdup(A->can)) == 0)
-		return 0;
-	if(((*B)->abs = strdup(A->abs)) == 0)
-		return 0;
-	if(((*B)->rel = strdup(A->rel)) == 0)
-		return 0;
-	if(((*B)->can_dir = strdup(A->can_dir)) == 0)
-		return 0;
-	if(((*B)->abs_dir = strdup(A->abs_dir)) == 0)
-		return 0;
-	if(((*B)->rel_dir = strdup(A->rel_dir)) == 0)
-		return 0;
-	if(((*B)->name = strdup(A->name)) == 0)
-		return 0;
-	if(A->ext && ((*B)->ext = strdup(A->ext)) == 0)
-		return 0;
-	if(A->ext_last && ((*B)->ext_last = strdup(A->ext_last)) == 0)
-		return 0;
+	// copy
+	(**B) = *A;
+
+	// duplicate all the strings
+	int x;
+	for(x = 0; x < sizeof((*B)->strings) / sizeof((*B)->strings[0]); x++)
+	{
+		if((*B)->strings[x])
+		{
+			if(((*B)->strings[x] = strdup((*B)->strings[x])) == 0)
+				return 0;
+		}
+	}
 	
 	return 1;
 }

@@ -12,9 +12,9 @@
 #define CAN_SYMABSMNT			0x08			// resolve absolute symlinks which cross mount points
 #define CAN_SYMREL				0x10			// resolve relative symlinks which do not cross mount points
 #define CAN_SYMRELMNT			0x20			// resolve relative symlinks which cross mount points
-#define CAN_FORCE_DOT			0x40
+#define CAN_FORCE_DOT			0x40			// ensure that path begins with '.' - force base to be prepended
 
-#define CAN_REALPATH			0xFF			// canon = realpath
+#define CAN_REALPATH			0xFF			// canon = realpath (except ENOENT is not an error)
 
 /// canon - man 3 realpath
 //
@@ -42,7 +42,7 @@ int canon(
 	, const char * const restrict base
 	, const uint32_t opts
 )
-	__attribute((nonnull(1)));
+	__attribute((nonnull));
 
 #undef restrict
 #endif

@@ -75,8 +75,6 @@ int gn_lookup(const char * const s, int l, const char * const base, gn ** r)
 	if(canon(s, l, can, sizeof(can), base, CAN_REALPATH) == 0)
 		return 0;
 
-//printf("lookup : in=%.*s, base=%s, can=%s\n", l ?: (int)strlen(s), s, base, can);
-
 	gn ** R = 0;
 	if((R = map_get(gn_nodes.by_path, can, strlen(can))))
 		*r = *R;
@@ -130,7 +128,6 @@ int gn_add(const char * const restrict base, char * const restrict A, int Al, gn
 		}
 		(*gna)->idstringl = strlen((*gna)->idstring);
 
-printf("added %.*s, base=%s\n", (*gna)->path->canl, (*gna)->path->can, base);
 		map_set(gn_nodes.by_path, (*gna)->path->can, (*gna)->path->canl, gna, sizeof(*gna));
 
 		if(new)
@@ -235,10 +232,11 @@ void gn_dump(gn * gn)
 	if(log_would(L_DG | L_DGRAPH))
 	{
 		// path properties
-		log(L_DG | L_DGRAPH, "%8s : %s", "canpath"	, gn->path->can);
-		log(L_DG | L_DGRAPH, "%8s : %s", "abspath"	, gn->path->abs);
-		log(L_DG | L_DGRAPH, "%8s : %s", "relpath"	, gn->path->rel);
-		log(L_DG | L_DGRAPH, "%8s : %u", "abshash"	, gn->path->can_hash);
+		log(L_DG | L_DGRAPH, "%8s : %s", "can-path"	, gn->path->can);
+		log(L_DG | L_DGRAPH, "%8s : %s", "abs-path"	, gn->path->abs);
+		log(L_DG | L_DGRAPH, "%8s : %s", "rel-path"	, gn->path->rel);
+		log(L_DG | L_DGRAPH, "%8s : %s", "stem"			, gn->path->stem);
+		log(L_DG | L_DGRAPH, "%8s : %u", "canhash"	, gn->path->can_hash);
 		log(L_DG | L_DGRAPH, "%8s : %s", "name"			, gn->path->name);
 		log(L_DG | L_DGRAPH, "%8s : %s", "ext"			, gn->path->ext);
 		log(L_DG | L_DGRAPH, "%8s : %s", "ext_last"	, gn->path->ext_last);

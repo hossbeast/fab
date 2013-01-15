@@ -394,10 +394,7 @@ int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const 
 {
 	path * pth = 0;
 	fatal(path_create_canon, &pth, fp, 0);
-
-	path * pp = pth;
-	pth = 0;
-	fatal(parse, p, b, sz, pp, ffn, dscv_gn);
+	fatal(parse, p, b, sz, pth, ffn, dscv_gn);
 
 finally:
 	path_free(pth);

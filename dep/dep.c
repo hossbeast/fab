@@ -126,10 +126,10 @@ static int dep_add_single(
 
 			if(ffn->loc.ff->type == FFT_DDISC)
 			{
-				// dependencies 
-gn_dump(ffn->loc.ff->dscv_gn);
+				// dependencies arising from an FFN_DEPENDENCY node in a DDISC fabfile yield paths which
+				// are specified relative to the stem of the DDISC node
 				fatal(gn_edge_add
-					, ffn->loc.ff->dscv_gn->path->abs_dir		// <-- THIS IS WRONG
+					, ffn->loc.ff->dscv_gn->path->stem
 					, &A
 					, Al
 					, At
@@ -146,8 +146,8 @@ gn_dump(ffn->loc.ff->dscv_gn);
 			}
 			else
 			{
-				// dependencies arising from an FFN_DEPENDENCY node in a regular fabfile yield nodes whose
-				// paths are canonicalized relative to the relative path of the fabfile
+				// dependencies arising from an FFN_DEPENDENCY node in a regular fabfile yield paths which
+				// are specified relative to the absolute directory of the fabfile
 				fatal(gn_edge_add
 					, ffn->loc.ff->path->abs_dir
 					, &A

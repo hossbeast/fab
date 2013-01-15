@@ -7,27 +7,40 @@
 
 typedef struct
 {
-	char *			can;				// fully canonicalized representation
+	union
+	{
+		struct
+		{
+			char * strings[10];
+		};
+
+		struct
+		{
+			char *			can;				// fully canonicalized representation
+			char *			abs;				// non-normalized, but in absolute form
+			char *			rel;				// relative form
+			char *			can_dir;
+			char *			abs_dir;
+			char *			rel_dir;
+			char *			stem;				// stem
+			char *			name;
+			char *			ext;
+			char * 			ext_last;
+		};
+	};
+
 	int					canl;
-	char *			abs;				// non-normalized, but in absolute form
 	int					absl;
-	char *			rel;				// relative form
 	int					rell;
 
-	char *			can_dir;
 	int					can_dirl;
-	char *			abs_dir;
 	int					abs_dirl;
-	char *			rel_dir;
 	int					rel_dirl;
-	char *			peer_dir;
-	int					peer_dirl;
 
-	char *			name;
+	int					steml;
+
 	int					namel;
-	char *			ext;
 	int					extl;
-	char * 			ext_last;
 	int					ext_lastl;
 
 	uint32_t		can_hash;

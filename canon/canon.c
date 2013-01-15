@@ -312,17 +312,3 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 	resolved[z] = 0;
 	return 1;
 }
-
-/*
-for(ix = 0; ix < il; ix++)
-{
-	if(i[ix].t == SLASH)
-		printf("[%2d] SLASH\n", ix);
-	else if(i[ix].t == DOT)
-		printf("[%2d] DOT\n", ix);
-	else if(i[ix].t == DOTDOT)
-		printf("[%2d] DOTDOT\n", ix);
-	else
-		printf("[%2d] %.*s\n", ix, i[ix].l, i[ix].s);
-}
-*/
