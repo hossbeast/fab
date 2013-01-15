@@ -46,27 +46,49 @@ int hashblock_create(hashblock ** const hb, const char * const dirfmt, ...)
 	finally : coda;
 }
 
-int hashblock_stat(hashblock * const hb, const char * const path)
+int hashblock_stat(const char * const path, hashblock * const hb0, hashblock * const hb1, hashblock * const hb2)
 {
 	struct stat stb;
+
+	hashblock * hbs[3];
+	int					hbsl = 0;
+
+	if(hb0)
+		hbs[hbsl++] = hb0;
+	if(hb1)
+		hbs[hbsl++] = hb1;
+	if(hb2)
+		hbs[hbsl++] = hb2;
+
+	int x;
 
 	// STAT for A
 	if(stat(path, &stb) == 0)
 	{
-		hb->dev			= stb.st_dev;
-		hb->ino			= stb.st_ino;
-		hb->mode		= stb.st_mode;
-		hb->nlink		= stb.st_nlink;
-		hb->uid			= stb.st_uid;
-		hb->gid			= stb.st_gid;
-		hb->size		= stb.st_size;
-		hb->mtime		= stb.st_mtime;
-		hb->ctime		= stb.st_ctime;
+		uint32_t cks = 0;
 
-		hb->stathash[1] = cksum(
-				(char*)&hb->dev
-			, (char*)&hb->ctime - (char*)&hb->dev
-		);
+		for(x = 0; x < hbsl; x++)
+		{
+			hbs[x]->dev			= stb.st_dev;
+			hbs[x]->ino			= stb.st_ino;
+			hbs[x]->mode		= stb.st_mode;
+			hbs[x]->nlink		= stb.st_nlink;
+			hbs[x]->uid			= stb.st_uid;
+			hbs[x]->gid			= stb.st_gid;
+			hbs[x]->size		= stb.st_size;
+			hbs[x]->mtime		= stb.st_mtime;
+			hbs[x]->ctime		= stb.st_ctime;
+
+			if(x == 0)
+			{
+				cks = cksum(
+						(char*)&hbs[0]->dev
+					, (char*)&hbs[0]->ctime - (char*)&hbs[0]->dev
+				);
+			}
+
+			hbs[x]->stathash[1] = cks;
+		}
 	}
 	else if(errno != ENOENT)
 	{
@@ -74,7 +96,8 @@ int hashblock_stat(hashblock * const hb, const char * const path)
 	}
 	else
 	{
-		hb->stathash[1] = 0;
+		for(x = 0; x < hbsl; x++)
+			hbs[x]->stathash[1] = 0;
 	}
 
 	finally : coda;

@@ -158,6 +158,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 			// PRIMARY node for this discovery
 			gn * dscvgn = (*ts)[x]->fmlv->products[0];
 
+			// parse the generated DDISC fabfile
 			fatal(ff_dsc_parse
 				, (*ts)[x]->ffp
 				, (*ts)[x]->stdo_txt->s
@@ -184,6 +185,9 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 					fatal(dep_process, ffn->statements[k], vmap, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
 				}
 			}
+
+			// rewrite the dependency block to disk, commit the dscv hashblock
+			fatal(gn_primary_rewrite_dscv, dscvgn);
 		}
 
 		// process cached results

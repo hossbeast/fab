@@ -219,7 +219,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		fatal(hashblock_read, ff->hb);
 
 		// stat the file, populate [1] - now ready for hashblock_cmp
-		fatal(hashblock_stat, ff->hb, ff->path->abs);
+		fatal(hashblock_stat, ff->path->abs, ff->hb, 0, 0);
 		ff->hb->vrshash[1] = FAB_VERSION;
 	}
 

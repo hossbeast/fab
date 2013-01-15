@@ -245,15 +245,15 @@ void gn_dump(gn * gn)
 
 		if(gn->designation == GN_DESIGNATION_PRIMARY)
 		{
-			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->hb->size);
-			if(gn->hb->mtime)
+			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->hb_fab->size);
+			if(gn->hb_fab->mtime)
 			{
 				struct tm ltm;
-				localtime_r(&gn->hb->mtime, &ltm);
+				localtime_r(&gn->hb_fab->mtime, &ltm);
 				strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
 
 				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-abs", space);
-				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - gn->hb->mtime));
+				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - gn->hb_fab->mtime));
 			}
 			else
 			{
@@ -433,12 +433,12 @@ int gn_primary_reload_dscv(gn * const gn)
 	fatal(gn_primary_reload, gn);
 
 	// create ddisc block
-	fatal(depblock_create, &gn->dscv_block, "%s/PRIMARY/%u", GN_DIR_BASE, gn->path->can_hash);
+	fatal(depblock_create, &gn->dscv_block, "%s/PRIMARY/%u/dscv", GN_DIR_BASE, gn->path->can_hash);
 
 	// backing file has not changed
-	if(hashblock_cmp(gn->hb) == 0)
+	if(hashblock_cmp(gn->hb_dscv) == 0)
 	{
-		// node has not been invalidated
+		// node has not been invalidated (see gn_invalidations)
 		if(gn->changed == 0)
 		{
 			// primary node with associated discovery fml eval
@@ -461,24 +461,35 @@ int gn_primary_reload(gn * const gn)
 {
 	if(gn->hb_loaded == 0)
 	{
-		// create hashblock
-		fatal(hashblock_create, &gn->hb, "%s/PRIMARY/%u", GN_DIR_BASE, gn->path->can_hash);
+		// create hashblocks
+		fatal(hashblock_create, &gn->hb_fab, "%s/PRIMARY/%u/fab", GN_DIR_BASE, gn->path->can_hash);
+		fatal(hashblock_create, &gn->hb_dscv, "%s/PRIMARY/%u/dscv", GN_DIR_BASE, gn->path->can_hash);
 
-		// load the previous hashblock
-		fatal(hashblock_read, gn->hb);
+		// load the previous hashblocks
+		fatal(hashblock_read, gn->hb_fab);
+		fatal(hashblock_read, gn->hb_dscv);
 
 		log(L_HASHBLK
-			, "%s <== 0x%08x%08x%08x"
+			, "%s (fab) <== 0x%08x%08x%08x"
 			, gn->idstring
-			, gn->hb->stathash[0]
-			, gn->hb->contenthash[0]
-			, gn->hb->vrshash[0]
+			, gn->hb_fab->stathash[0]
+			, gn->hb_fab->contenthash[0]
+			, gn->hb_fab->vrshash[0]
+		);
+
+		log(L_HASHBLK
+			, "%s (dscv) <== 0x%08x%08x%08x"
+			, gn->idstring
+			, gn->hb_dscv->stathash[0]
+			, gn->hb_dscv->contenthash[0]
+			, gn->hb_dscv->vrshash[0]
 		);
 
 		// stat the file, compute new stathash
-		fatal(hashblock_stat, gn->hb, gn->path->can);
+		fatal(hashblock_stat, gn->path->can, gn->hb_fab, gn->hb_dscv, 0);
 
-		gn->hb->vrshash[1] = FAB_VERSION;
+		gn->hb_fab->vrshash[1] = FAB_VERSION;
+		gn->hb_dscv->vrshash[1] = FAB_VERSION;
 		gn->hb_loaded = 1;
 	}
 
@@ -487,19 +498,35 @@ int gn_primary_reload(gn * const gn)
 
 int gn_primary_rewrite(gn * const gn)
 {
+	// rewrite the fab hashblock
+	fatal(hashblock_write, gn->hb_fab);
+
+	log(L_HASHBLK
+		, "%s (fab) ==> 0x%08x%08x%08x"
+		, gn->idstring
+		, gn->hb_fab->stathash[1]
+		, gn->hb_fab->contenthash[1]
+		, gn->hb_fab->vrshash[1]
+	);
+
+	finally : coda;
+}
+
+int gn_primary_rewrite_dscv(gn * const gn)
+{
 	// rewrite dependency discovery block
 	if(gn->dscv_block)
 		fatal(depblock_write, gn->dscv_block);
 
-	// rewrite the hashblock
-	fatal(hashblock_write, gn->hb);
+	// rewrite the discovery hashblock
+	fatal(hashblock_write, gn->hb_dscv);
 
 	log(L_HASHBLK
-		, "%s ==> 0x%08x%08x%08x"
+		, "%s (dscv) ==> 0x%08x%08x%08x"
 		, gn->idstring
-		, gn->hb->stathash[1]
-		, gn->hb->contenthash[1]
-		, gn->hb->vrshash[1]
+		, gn->hb_dscv->stathash[1]
+		, gn->hb_dscv->contenthash[1]
+		, gn->hb_dscv->vrshash[1]
 	);
 
 	finally : coda;
@@ -529,7 +556,7 @@ int gn_invalidations()
 		for(x = 0; x < g_args.invalidate_len; x++)
 		{
 			gn * gn = 0;
-			fatal(gn_lookup_canon, g_args.invalidate[x], 0, &gn);
+			fatal(gn_lookup, g_args.invalidate[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
 
 			if(gn)
 			{
@@ -558,7 +585,8 @@ static void gn_freenode(gn * const gn)
 		path_free(gn->path);
 		free(gn->idstring);
 
-		hashblock_free(gn->hb);
+		hashblock_free(gn->hb_fab);
+		hashblock_free(gn->hb_dscv);
 		depblock_free(gn->dscv_block);
 
 		for(x = 0; x < gn->needs.l; x++)

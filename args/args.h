@@ -15,10 +15,13 @@
 **
 ** PER-GN : delete if newest file is older than <policy>  (pertains to a given PRIMARY file)
 ** ------------
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/stat						stat hash
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/content					content hash
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/vrs							version hash
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv						cached ddisc results
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/fab/stat						stat hash			// -- updated after successful fabrication
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/fab/content					content hash
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/fab/vrs							version hash
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv/stat						stat hash			// -- updated after successful ddisc
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv/content				content hash
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv/vrs						version hash
+** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv/block					cached ddisc results
 **
 ** PER-FF : delete if newest file is older than <policy>  (pertains to a given fabfile)
 ** ------------

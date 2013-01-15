@@ -53,7 +53,7 @@ int hashblock_create(hashblock ** const restrict hb, const char * const restrict
 void hashblock_free(hashblock * const restrict hb);
 
 
-/// hashblock_read
+/// hashblock_xfree
 //
 // SUMMARY
 //  free a hashblock with xfree semantics
@@ -64,10 +64,9 @@ void hashblock_xfree(hashblock ** const restrict hb)
 /// hashblock_stat
 //
 // SUMMARY
-//  stat the specified file and populate hb->stathash[1]
+//  stat the specified file and populate stathash[1] on all specified hashblocks
 //
-int hashblock_stat(hashblock * const restrict hb, const char * const restrict path)
-	__attribute__((nonnull));
+int hashblock_stat(const char * const restrict path, hashblock * const restrict hb0, hashblock * const restrict hb1, hashblock * const restrict hb2);
 
 /// hashblock_read
 //

@@ -32,7 +32,7 @@ int depblock_create(depblock ** const block, const char * const dirfmt, ...)
 	vsprintf((*block)->blockdir, dirfmt, va);
 	va_end(va);
 
-	fatal(xsprintf, &(*block)->block_path, "%s/dscv", (*block)->blockdir);
+	fatal(xsprintf, &(*block)->block_path, "%s/block", (*block)->blockdir);
 
 	finally : coda;
 }

@@ -114,7 +114,6 @@ TODO
 
 - fablw - examine the dependency graph
 
-- memory audit
 - save relations in /var/cache/fab/gn
 - 2 dump modes - saved relations, parsed node
  - saved : include formula
@@ -125,7 +124,6 @@ TODO
 - better help output, logging category explanations
 
 - GENERATED always in its own stage?
-- define variables from commandline
 - undefined variables resolve to empty list
 - includes ?? 
 - terminating comments /* */

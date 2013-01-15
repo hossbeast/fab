@@ -115,7 +115,8 @@ typedef struct gn
 	//
 
 	// change-tracking for the backing file
-	hashblock *				hb;
+	hashblock *				hb_fab;
+	hashblock *				hb_dscv;
 	int								hb_loaded;
 
 	// formula eval context for dependency discovery
@@ -305,6 +306,20 @@ void gn_dump(gn *);
 int gn_secondary_exists(gn * const restrict)
 	__attribute__((nonnull));
 
+/// gn_primary_reload
+//
+// for a PRIMARY file - load the previous hashblocks, stat the file
+//
+int gn_primary_reload(gn * const restrict)
+	__attribute__((nonnull));
+
+/// gn_primary_rewrite
+//
+// for a PRIMARY file - write the current fab hashblock
+//
+int gn_primary_rewrite(gn * const restrict)
+	__attribute__((nonnull));
+
 /// gn_primary_reload_dscv
 //
 // for a PRIMARY file - call gn_primary_reload, load dscv block
@@ -312,18 +327,11 @@ int gn_secondary_exists(gn * const restrict)
 int gn_primary_reload_dscv(gn * const restrict)
 	__attribute__((nonnull));
 
-/// gn_primary_reload
+/// gn_primary_rewrite_dscv
 //
-// for a PRIMARY file - load the previous hashblock, stat the file
+// for a PRIMARY file - write the current dscv hashblock, write the dscv block, if any
 //
-int gn_primary_reload(gn * const restrict)
-	__attribute__((nonnull));
-
-/// gn_primary_rewrite
-//
-// for a PRIMARY file - write the current hashblock
-//
-int gn_primary_rewrite(gn * const restrict)
+int gn_primary_rewrite_dscv(gn * const restrict)
 	__attribute__((nonnull));
 
 /// gn_traverse_needs

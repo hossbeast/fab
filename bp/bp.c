@@ -277,7 +277,7 @@ int bp_eval(bp * const bp, int * const poison)
 			// check if file has changed
 			fatal(gn_primary_reload, gn);
 
-			if(gn->hb->stathash[1] == 0)		// file does not exist
+			if(gn->hb_fab->stathash[1] == 0)		// file does not exist
 			{
 				// PRIMARY file - not found
 				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
@@ -287,7 +287,7 @@ int bp_eval(bp * const bp, int * const poison)
 				for(i = 0; i < gn->feeds.l; i++)
 					gn->feeds.e[i]->A->poison = 1;
 			}
-			else if(hashblock_cmp(gn->hb))
+			else if(hashblock_cmp(gn->hb_fab))
 			{
 				gn->changed = 1;
 			}
