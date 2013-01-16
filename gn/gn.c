@@ -65,6 +65,27 @@ static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
 // public
 //
 
+int gn_lookup_match(const char * const s, gn *** const r, int * const rl, int * const ra)
+{
+	int x;
+	for(x = 0; x < gn_nodes.l; x++)
+	{
+		if(strstr(gn_nodes.e[x]->path->name, s))
+		{
+			if((*rl) == (*ra))
+			{
+				int ns = (*ra) ?: 10;
+				ns = ns * 2 + ns / 2;
+				fatal(xrealloc, r, sizeof(**r), ns, *ra);
+				*ra = ns;
+			}
+			(*r)[(*rl)++] = gn_nodes.e[x];
+		}
+	}
+
+	finally : coda;
+}
+
 int gn_lookup(const char * const s, int l, const char * const base, gn ** r)
 {
 	if(!gn_nodes.by_path)
@@ -99,6 +120,8 @@ int gn_add(const char * const restrict base, char * const restrict A, int Al, gn
 	if(!gn_nodes.by_path)
 		fatal(map_create, &gn_nodes.by_path, 0);
 
+//printf("gn_add(%.*s, %s)\n", Al, A, base);
+
 	if(base)
 		fatal(gn_lookup, A, Al, base, gna);
 	else
@@ -113,6 +136,10 @@ int gn_add(const char * const restrict base, char * const restrict A, int Al, gn
 			fatal(path_create, &(*gna)->path, base, "%.*s", Al ?: strlen(A), A);
 		else
 			fatal(path_create_canon, &(*gna)->path, "%.*s", Al ?: strlen(A), A);
+
+(*gna)->path_in = calloc(1, Al ?: strlen(A) + 1);
+memcpy((*gna)->path_in, A, Al ?: strlen(A));
+(*gna)->path_base = strdup(base);
 
 		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
@@ -178,7 +205,7 @@ int gn_edge_add(
 
 		// error check
 		if(gnb->path->is_nofile && !gna->path->is_nofile)
-			fail("file-backed node may not depend on non-file-backed node");
+			fail("file-backed node %s may not depend on non-file-backed node %s", gna->path->can, gnb->path->can);
 
 		relation * rel = 0;
 
@@ -231,6 +258,9 @@ void gn_dump(gn * gn)
 
 	if(log_would(L_DG | L_DGRAPH))
 	{
+log(L_DG | L_DGRAPH, "%8s : %s", "path-in", gn->path_in);
+log(L_DG | L_DGRAPH, "%8s : %s", "path-base", gn->path_base);
+
 		// path properties
 		log(L_DG | L_DGRAPH, "%8s : %s", "can-path"	, gn->path->can);
 		log(L_DG | L_DGRAPH, "%8s : %s", "abs-path"	, gn->path->abs);

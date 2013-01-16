@@ -29,6 +29,7 @@ typedef struct
 
 int breakup(const char * in, int inl, item ** i, int * ia, int * il, int at)
 {
+//printf("breakup(%.*s)\n", inl, in);
 	int x = 0;
 	while(x < inl)
 	{
@@ -185,17 +186,32 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 
 	resolved[0] = 0;
 
+/*
+for(ix = 0; ix < il; ix++)
+{
+	if(i[ix].t == SLASH)
+		printf("[%d] SLASH\n", ix);
+	else if(i[ix].t == DOT)
+		printf("[%d] DOT\n", ix);
+	else if(i[ix].t == DOTDOT)
+		printf("[%d] DOTDOT\n", ix);
+	else
+		printf("[%d] %.*s\n", ix, i[ix].l, i[ix].s);
+}
+*/
+
 	int flag = 0;
 	for(ix = 0; ix < il; ix++)
 	{
 		if(i[ix].t == SLASH)
 		{
-			if(ix == 0)
+//			if(ix == 0)
+			if(z == 0)
 				z += snprintf(resolved + z, sz - z, "/");
 		}
 		else if(i[ix].t == DOT)
 		{
-			if((opts & CAN_NEXT_DOT) == 0 && i[ix].f == 0)
+			if((opts & CAN_NEXT_DOT) != 0 && i[ix].f == 0)
 			{
 				add(&z, &flag, resolved, sz, ".");
 			}
@@ -209,8 +225,9 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 			}
 			else
 			{
-				z--;
-				while(resolved[z] != '/')
+				if(z)
+					z--;
+				while(z && resolved[z] != '/')
 					z--;
 
 				// backed up all the way, reset slash flag

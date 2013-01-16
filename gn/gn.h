@@ -106,6 +106,9 @@ typedef struct gn
 	uint8_t						flags;
 	uint8_t						designation;
 
+	char * path_in;
+	char * path_base;
+
 	path *						path;
 	char*							idstring;				// identifier string, subject to execution parameters
 	int								idstringl;
@@ -200,6 +203,9 @@ extern union gn_nodes_t
 		map *	by_path;			// indexed by canonical path
 	};
 } gn_nodes;
+
+int gn_lookup_match(const char * const restrict s, gn *** const restrict r, int * const restrict rl, int * const ra)
+	__attribute__((nonnull));
 
 /// gn_lookup
 //

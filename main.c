@@ -154,18 +154,26 @@ int main(int argc, char** argv)
 
 			for(x = 0; x < g_args.dumpnode_len; x++)
 			{
-				gn * gn = 0;
-				fatal(gn_lookup, g_args.dumpnode[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
+				listl = 0;
+				fatal(gn_lookup_match, g_args.dumpnode[x], &list, &listl, &lista);
 
-				if(gn == 0)
-					fail("dumpnode : %s not found", g_args.dumpnode[x]);
+				if(listl == 0)
+				{
+					log(L_WARN, "dumpnode : %s not found", g_args.dumpnode[x]);
+				}
+				else
+				{
+					int i;
+					for(i = 0; i < listl; i++)
+					{
+						if(list[i]->designation == GN_DESIGNATION_PRIMARY)
+							gn_primary_reload(list[i]);
+						if(list[i]->designation == GN_DESIGNATION_SECONDARY)
+							gn_secondary_exists(list[i]);
 
-				if(gn->designation == GN_DESIGNATION_PRIMARY)
-					gn_primary_reload(gn);
-				if(gn->designation == GN_DESIGNATION_SECONDARY)
-					gn_secondary_exists(gn);
-
-				gn_dump(gn);
+						gn_dump(list[i]);
+					}
+				}
 			}
 		}
 		else

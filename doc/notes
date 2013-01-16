@@ -136,3 +136,68 @@ TODO
 
 - write a bash script which will perform the build - this is equivalent to invalidating all nodes
   and then concatenating the formula scripts in stage order
+
+
+461 erc:autodisc ~/syslogcollector $ 
+461 erc:autodisc ~/syslogcollector $ 
+461 erc:autodisc ~/syslogcollector $ fab -d date.o -d date.c +[DSC,FMLEXEC]
+   INFO : +(DGRAPH) +(ERROR|WARN|INFO|BPEXEC|DSCINFO) +[FMLEXEC|DSC]
+ DGRAPH :  path-in : ./../common_c/date/date.o
+ DGRAPH : path-base : /root/syslogcollector
+ DGRAPH : can-path : /root/common_c/date/date.o
+ DGRAPH : abs-path : /root/common_c/date/date.o
+ DGRAPH : rel-path : /common_c/date/date.o
+ DGRAPH :     stem : /root
+ DGRAPH :  canhash : 2846756161
+ DGRAPH :     name : date.o
+ DGRAPH :      ext : o
+ DGRAPH : ext_last : o
+ DGRAPH :  designation : SECONDARY
+ DGRAPH :      formula : (./fabfile)[ 36,  1 -  42,  1]
+ DGRAPH :       height : 0
+ DGRAPH :        stage : 0
+ DGRAPH :        needs : 1
+ DGRAPH :              --> /common_c/date/date.c     @ (./fabfile)[ 35,  1 -  35, 80]
+ DGRAPH :        feeds : 0
+ DGRAPH : 
+ DGRAPH :  path-in : /common_c/date/date.c
+ DGRAPH : path-base : /root/syslogcollector
+ DGRAPH : can-path : /common_c/date/date.c
+ DGRAPH : abs-path : /common_c/date/date.c
+ DGRAPH : rel-path : /common_c/date/date.c
+ DGRAPH :     stem : 
+ DGRAPH :  canhash : 2259649466
+ DGRAPH :     name : date.c
+ DGRAPH :      ext : c
+ DGRAPH : ext_last : c
+ DGRAPH :  designation : PRIMARY
+ DGRAPH :         size : 0
+ DGRAPH :        mtime : 
+ DGRAPH :       height : 0
+ DGRAPH :        stage : 0
+ DGRAPH :        needs : 0
+ DGRAPH :        feeds : 1
+ DGRAPH :              --> /common_c/date/date.o     @ (./fabfile)[ 35,  1 -  35, 80]
+ DGRAPH : 
+ DGRAPH :  path-in : ./../common_c/date/date.c
+ DGRAPH : path-base : /root/syslogcollector
+ DGRAPH : can-path : //mnt/remote/NitroVision/branches/9.2.0_24201/NVDevices/Receiver/common_c/date/date.c
+ DGRAPH : abs-path : /root/common_c/date/date.c
+ DGRAPH : rel-path : /common_c/date/date.c
+ DGRAPH :     stem : /root
+ DGRAPH :  canhash : 37189747
+ DGRAPH :     name : date.c
+ DGRAPH :      ext : c
+ DGRAPH : ext_last : c
+ DGRAPH :  designation : PRIMARY
+ DGRAPH :         size : 33701
+ DGRAPH :    mtime-abs : Tue Dec 04 2012 21:46:47
+ DGRAPH :    mtime-del : 42 day(s), 19 hr(s), 48 min(s), 49 sec(s) or 3700129s
+ DGRAPH :       height : 0
+ DGRAPH :        stage : 0
+ DGRAPH :        needs : 0
+ DGRAPH :        feeds : 0
+ DGRAPH : 
+   INFO : exiting with status: 0
+462 erc:autodisc ~/syslogcollector $ 
+
