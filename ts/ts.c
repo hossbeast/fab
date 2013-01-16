@@ -66,6 +66,8 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 {
 	int x;
 
+	int __attribute__((unused)) __r;
+
 	(*waveid)++;
 
 	// execute all formulas in parallel processes
@@ -96,7 +98,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			off_t sz = lseek(ts[x]->stde_fd, 0, SEEK_END);
 			lseek(ts[x]->stde_fd, 0, SEEK_SET);
 			psgrow(&ts[x]->stde_txt, sz + 2);
-			read(ts[x]->stde_fd, ts[x]->stde_txt->s, sz);
+			__r = read(ts[x]->stde_fd, ts[x]->stde_txt->s, sz);
 			ts[x]->stde_txt->s[sz+0] = 0;
 			ts[x]->stde_txt->s[sz+1] = 0;
 			ts[x]->stde_txt->l = sz;
@@ -108,7 +110,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			off_t sz = lseek(ts[x]->stdo_fd, 0, SEEK_END);
 			lseek(ts[x]->stdo_fd, 0, SEEK_SET);
 			psgrow(&ts[x]->stdo_txt, sz + 2);
-			read(ts[x]->stdo_fd, ts[x]->stdo_txt->s, sz);
+			__r = read(ts[x]->stdo_fd, ts[x]->stdo_txt->s, sz);
 			ts[x]->stdo_txt->s[sz+0] = 0;
 			ts[x]->stdo_txt->s[sz+1] = 0;
 			ts[x]->stdo_txt->l = sz;
@@ -178,28 +180,28 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			if(log_would(lo | L_FML | L_FMLEXEC))
 			{
 				log(lo | L_FML | L_FMLEXEC 													, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
-				write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
+				__r = write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
 
 				if(ts[x]->cmd_txt->l && ts[x]->cmd_txt->s[ts[x]->cmd_txt->l - 1] != '\n')
-					write(2, "\n", 1);
+					__r = write(2, "\n", 1);
 			}
 			log(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
 			log(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
 			if(log_would(lo | L_FML | L_FMLEXEC))
 			{
 				log(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
-				write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
+				__r = write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
 
 				if(ts[x]->stdo_txt->l && ts[x]->stdo_txt->s[ts[x]->stdo_txt->l - 1] != '\n')
-					write(2, "\n", 1);
+					__r = write(2, "\n", 1);
 			}
 			if(log_would(lo | L_FML | L_FMLEXEC | e_stde))
 			{
 				log(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
-				write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
+				__r = write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
 
 				if(ts[x]->stde_txt->l && ts[x]->stde_txt->s[ts[x]->stde_txt->l - 1] != '\n')
-					write(2, "\n", 1);
+					__r = write(2, "\n", 1);
 			}
 		}
 	}

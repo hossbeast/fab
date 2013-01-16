@@ -188,7 +188,7 @@ static int log_vfinish(const char* fmt, va_list* va)
 	logwrite("\n", 1);
 
 	// flush to stderr
-	write(2, o_space, o_space_l);
+	int __attribute__((unused)) r = write(2, o_space, o_space_l);
 
 	o_e = 0;
 

@@ -8,11 +8,11 @@
 #define CAN_SLASH					0x00			// resolve extra "/" characters
 #define CAN_INIT_DOT			0x01			// resolve references to the "." and ".." directories at the initial component 
 #define CAN_NEXT_DOT			0x02			// resolve references to the "." and ".." directories at positions other than the initial component 
-#define CAN_SYMABS				0x04			// resolve absolute symlinks which do not cross mount points
-#define CAN_SYMABSMNT			0x08			// resolve absolute symlinks which cross mount points
-#define CAN_SYMREL				0x10			// resolve relative symlinks which do not cross mount points
-#define CAN_SYMRELMNT			0x20			// resolve relative symlinks which cross mount points
-#define CAN_FORCE_DOT			0x40			// ensure that path begins with '.' - force base to be prepended
+#define CAN_FORCE_DOT			0x04			// force the path to begin with "."
+#define CAN_NEXT_SYM			0x08			// resolve symlinks at positions other than the final component which do not cross mount points
+#define CAN_NEXT_SYMMNT		0x10			// resolve symlinks at positions other than the final component which cross mount points
+#define CAN_FINL_SYM			0x20			// resolve symlinks at the final component which do not cross mount points
+#define CAN_FINL_SYMMNT		0x40			// resolve relative at the final component which cross mount points
 
 #define CAN_REALPATH			0xFF			// canon = realpath (except ENOENT is not an error)
 

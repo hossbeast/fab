@@ -112,7 +112,8 @@ int hashblock_read(hashblock * const hb)
 	}
 	else if(fd > 0)
 	{
-		read(fd, &hb->stathash[0], sizeof(hb->stathash[0]));
+		if(read(fd, &hb->stathash[0], sizeof(hb->stathash[0])) == -1)
+			fail("read failed [%d][%s]", errno, strerror(errno));
 		close(fd);
 	}
 
@@ -122,7 +123,8 @@ int hashblock_read(hashblock * const hb)
 	}
 	else if(fd > 0)
 	{
-		read(fd, &hb->contenthash[0], sizeof(hb->contenthash[0]));
+		if(read(fd, &hb->contenthash[0], sizeof(hb->contenthash[0])) == -1)
+			fail("read failed [%d][%s]", errno, strerror(errno));
 		close(fd);
 	}
 
@@ -132,7 +134,8 @@ int hashblock_read(hashblock * const hb)
 	}
 	else if(fd > 0)
 	{
-		read(fd, &hb->vrshash[0], sizeof(hb->vrshash[0]));
+		if(read(fd, &hb->vrshash[0], sizeof(hb->vrshash[0])) == -1)
+			fail("read failed [%d][%s]", errno, strerror(errno));
 		close(fd);
 	}
 
@@ -152,7 +155,8 @@ int hashblock_write(const hashblock * const hb)
 	{
 		if((fd = open(hb->stathash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
 			fail("open(%s) failed [%d][%s", hb->stathash_path, errno, strerror(errno));
-		write(fd, &hb->stathash[1], sizeof(hb->stathash[0]));
+		if(write(fd, &hb->stathash[1], sizeof(hb->stathash[0])) == -1)
+			fail("write failed [%d][%s]", errno, strerror(errno));
 		close(fd);
 	}
 
@@ -160,13 +164,15 @@ int hashblock_write(const hashblock * const hb)
 	{
 		if((fd = open(hb->contenthash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
 			fail("open(%s) failed [%d][%s", hb->contenthash_path, errno, strerror(errno));
-		write(fd, &hb->contenthash[1], sizeof(hb->contenthash[0]));
+		if(write(fd, &hb->contenthash[1], sizeof(hb->contenthash[0])) == -1)
+			fail("write failed [%d][%s]", errno, strerror(errno));
 		close(fd);
 	}
 
 	if((fd = open(hb->vrshash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
 		fail("open(%s) failed [%d][%s", hb->vrshash_path, errno, strerror(errno));
-	write(fd, &hb->vrshash[1], sizeof(hb->vrshash[0]));
+	if(write(fd, &hb->vrshash[1], sizeof(hb->vrshash[0])) == -1)
+		fail("write failed [%d][%s]", errno, strerror(errno));
 	close(fd);
 
 	fatal(identity_assume_user);

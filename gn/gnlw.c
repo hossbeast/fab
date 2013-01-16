@@ -114,6 +114,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 
 	else if(strcmp(prop, "ineed") == 0)
 	{
+//gn_dump((gn*)o);
 		*rl = ((gn*)o)->needs.l;
 		fatal(xmalloc, r, sizeof(gn*) * (*rl));
 		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));

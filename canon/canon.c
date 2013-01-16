@@ -220,7 +220,18 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 		}
 		else
 		{
+			int isfinal = 1;
+			int fix;
+			for(fix = ix + 1; fix < il; fix++)
+			{
+				if(i[fix].t != SLASH)
+				{
+					isfinal = 0;
+				}
+			}
+
 			// append the link name to pass to stat
+			size_t oldz = z;
 			add(&z, &flag, resolved, sz, "%.*s", i[ix].l, i[ix].s);
 
 			struct stat stb[2] = {};
@@ -233,70 +244,36 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 					int j = readlink(resolved, space, sizeof(space));
 					space[j] = 0;
 
-					if(stat(space, &stb[1]) == 0)
+					char space2[512];
+					snprintf(space2, sizeof(space2), "%.*s/%s", (int)oldz, resolved, space);
+
+					int r = lstat(space2, &stb[1]);
+
+					if(r || stb[0].st_dev == stb[1].st_dev)
 					{
-						if(space[0] == '/')
+						// dangling links, and fulfilled links which do not cross mount points
+						if((isfinal && (opts & CAN_FINL_SYM)) || (!isfinal && (opts & CAN_NEXT_SYM)))
 						{
-							if(stb[0].st_dev == stb[1].st_dev)
-							{
-								if(opts & CAN_SYMABS)
-								{
-									if(breakup(space, j, &i, &ia, &il, ix + 1) == 0)
-										return 0;
+							if(breakup(space, j, &i, &ia, &il, ix + 1) == 0)
+								return 0;
 
-									z = 0;
-								}
-							}
+							if(space[0] == '/')
+								z = 0;
 							else
-							{
-								if(opts & CAN_SYMABSMNT)
-								{
-									if(breakup(space, j, &i, &ia, &il, ix + 1) == 0)
-										return 0;
-
-									z = 0;
-								}
-							}
-						}
-						else
-						{
-							if(stb[0].st_dev == stb[1].st_dev)
-							{
-								if(opts & CAN_SYMREL)
-								{
-									if(breakup(space, j, &i, &ia, &il, ix + 1) == 0)
-										return 0;
-								}
-							}
-							else
-							{
-								if(opts & CAN_SYMRELMNT)
-								{
-									if(breakup(space, j, &i, &ia, &il, ix + 1) == 0)
-										return 0;
-								}
-							}
+								z = oldz;
 						}
 					}
 					else
 					{
-						if(space[0] == '/')
+						if((isfinal && (opts & CAN_FINL_SYMMNT)) || (!isfinal && (opts & CAN_NEXT_SYMMNT)))
 						{
-							if(opts & CAN_SYMABS)
-							{
-								if(breakup(space, j, &i, &ia, &il, ix + 1) == 0)
-									return 0;
+							if(breakup(space, j, &i, &ia, &il, ix + 1) == 0)
+								return 0;
 
+							if(space[0] == '/')
 								z = 0;
-							}
-						}
-						else
-						{
-							if(opts & CAN_SYMREL)
-							{
-								if(breakup(space, j, &i, &ia, &il, ix + 1) == 0)
-									return 0;
-							}
+							else
+								z = oldz;
 						}
 					}
 				}

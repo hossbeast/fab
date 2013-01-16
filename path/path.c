@@ -196,19 +196,28 @@ int path_create(path ** const p, const char * const base, const char * const fmt
 	// absolute path - close to the users representation - but forced to absolute notation
 	//  - will always begin with a slash (FORCE_DOT)
 	//	- all dots and dotdots resolved
-	//  - resolve all symbolic links which do not cross mount points
+	//  - resolve internal symbolic links which do not cross mount points
 	//
-	if(canon(buf, 0, (*p)->abs, 512, base, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_SYMREL | CAN_SYMABS) == 0)
+	if(canon(buf, 0, (*p)->abs, 512, base, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM) == 0)
 		return 0;
 
 	// relative path - very close to the users representation
 	//  - internal dots and dotdots are resolved
-	//	- symbolic links which do not cross mountpoints are resolved
+	//  - resolve internal symbolic links which do not cross mount points
 	// 
-	if(canon(buf, 0, (*p)->rel, 512, base, CAN_NEXT_DOT | CAN_SYMREL | CAN_SYMABS) == 0)
+	if(canon(buf, 0, (*p)->rel, 512, base, CAN_NEXT_DOT | CAN_NEXT_SYM) == 0)
 		return 0;
 
 	path_init(*p);
+
+#ifdef PATHDEBUG
+dprintf(2, ">>%5s: %s\n", "in", buf);
+dprintf(2, "> %5s: %s\n", "base", base);
+dprintf(2, "> %5s: %s\n", "can", (*p)->can);
+dprintf(2, "> %5s: %s\n", "abs", (*p)->abs);
+dprintf(2, "> %5s: %s\n", "rel", (*p)->rel);
+dprintf(2, "> %5s: %s\n", "stem", (*p)->stem);
+#endif
 
 	return 1;
 }

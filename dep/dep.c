@@ -206,8 +206,12 @@ static int dep_add_single(
 				, ffn->loc.f_col + 1
 				, ffn->loc.l_lin + 1
 				, ffn->loc.l_col + 1
+/*
 				, ((gn*)A)->idstring
 				, ((gn*)B)->idstring
+*/
+				, ((gn*)A)->path->abs
+				, ((gn*)B)->path->abs
 			);
 		}
 		LSTACK_ITEREND;

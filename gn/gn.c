@@ -435,6 +435,16 @@ int gn_primary_reload_dscv(gn * const gn)
 	// create ddisc block
 	fatal(depblock_create, &gn->dscv_block, "%s/PRIMARY/%u/dscv", GN_DIR_BASE, gn->path->can_hash);
 
+/*
+printf("considering %25s : %d %d %p %d\n"
+	, gn->idstring
+	, hashblock_cmp(gn->hb_dscv)
+	, gn->changed
+	, gn->dscv
+	, hashblock_cmp(gn->dscv->fml->ffn->loc.ff->hb)
+);
+*/
+
 	// backing file has not changed
 	if(hashblock_cmp(gn->hb_dscv) == 0)
 	{
