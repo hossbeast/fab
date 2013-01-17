@@ -137,10 +137,6 @@ int gn_add(const char * const restrict base, char * const restrict A, int Al, gn
 		else
 			fatal(path_create_canon, &(*gna)->path, "%.*s", Al ?: strlen(A), A);
 
-(*gna)->path_in = calloc(1, Al ?: strlen(A) + 1);
-memcpy((*gna)->path_in, A, Al ?: strlen(A));
-(*gna)->path_base = strdup(base);
-
 		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
 
@@ -258,8 +254,8 @@ void gn_dump(gn * gn)
 
 	if(log_would(L_DG | L_DGRAPH))
 	{
-log(L_DG | L_DGRAPH, "%8s : %s", "path-in", gn->path_in);
-log(L_DG | L_DGRAPH, "%8s : %s", "path-base", gn->path_base);
+log(L_DG | L_DGRAPH, "%8s : %s", "path-in", gn->path->in);
+log(L_DG | L_DGRAPH, "%8s : %s", "path-base", gn->path->base);
 
 		// path properties
 		log(L_DG | L_DGRAPH, "%8s : %s", "can-path"	, gn->path->can);

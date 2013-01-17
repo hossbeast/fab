@@ -106,9 +106,6 @@ typedef struct gn
 	uint8_t						flags;
 	uint8_t						designation;
 
-	char * path_in;
-	char * path_base;
-
 	path *						path;
 	char*							idstring;				// identifier string, subject to execution parameters
 	int								idstringl;

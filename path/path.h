@@ -11,7 +11,7 @@ typedef struct
 	{
 		struct
 		{
-			char * strings[10];
+			char * strings[16];
 		};
 
 		struct
@@ -26,6 +26,9 @@ typedef struct
 			char *			name;
 			char *			ext;
 			char * 			ext_last;
+
+			char *	in;
+			char *	base;
 		};
 	};
 

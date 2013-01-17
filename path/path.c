@@ -210,14 +210,17 @@ int path_create(path ** const p, const char * const base, const char * const fmt
 
 	path_init(*p);
 
-#ifdef PATHDEBUG
-dprintf(2, ">>%5s: %s\n", "in", buf);
-dprintf(2, "> %5s: %s\n", "base", base);
+(*p)->in = strdup(buf);
+(*p)->base = strdup(base);
+
+/*
+dprintf(2, ">>%5s: %s\n", "in", (*p)->in);
+dprintf(2, "> %5s: %s\n", "base", (*p)->base);
 dprintf(2, "> %5s: %s\n", "can", (*p)->can);
 dprintf(2, "> %5s: %s\n", "abs", (*p)->abs);
 dprintf(2, "> %5s: %s\n", "rel", (*p)->rel);
 dprintf(2, "> %5s: %s\n", "stem", (*p)->stem);
-#endif
+*/
 
 	return 1;
 }
