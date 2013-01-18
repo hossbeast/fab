@@ -127,9 +127,11 @@ static int dep_add_single(
 			if(ffn->loc.ff->type == FFT_DDISC)
 			{
 				// dependencies arising from an FFN_DEPENDENCY node in a DDISC fabfile yield paths which
-				// are specified relative to the stem of the DDISC node
+				// are specified relative to base path of the DDISC node itself
+gn_dump(ffn->loc.ff->dscv_gn);
 				fatal(gn_edge_add
-					, ffn->loc.ff->dscv_gn->path->stem
+//					, ffn->loc.ff->dscv_gn->path->stem
+					, ffn->loc.ff->dscv_gn->path->base
 					, &A
 					, Al
 					, At
@@ -206,12 +208,8 @@ static int dep_add_single(
 				, ffn->loc.f_col + 1
 				, ffn->loc.l_lin + 1
 				, ffn->loc.l_col + 1
-/*
-				, ((gn*)A)->idstring
-				, ((gn*)B)->idstring
-*/
-				, ((gn*)A)->path->abs
-				, ((gn*)B)->path->abs
+				, ((gn*)A)->path->can
+				, ((gn*)B)->path->can
 			);
 		}
 		LSTACK_ITEREND;

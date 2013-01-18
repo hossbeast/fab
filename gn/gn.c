@@ -254,14 +254,15 @@ void gn_dump(gn * gn)
 
 	if(log_would(L_DG | L_DGRAPH))
 	{
-log(L_DG | L_DGRAPH, "%8s : %s", "path-in", gn->path->in);
-log(L_DG | L_DGRAPH, "%8s : %s", "path-base", gn->path->base);
-
 		// path properties
 		log(L_DG | L_DGRAPH, "%8s : %s", "can-path"	, gn->path->can);
 		log(L_DG | L_DGRAPH, "%8s : %s", "abs-path"	, gn->path->abs);
 		log(L_DG | L_DGRAPH, "%8s : %s", "rel-path"	, gn->path->rel);
 		log(L_DG | L_DGRAPH, "%8s : %s", "stem"			, gn->path->stem);
+
+log(L_DG | L_DGRAPH, "%8s : %s", "path-in", gn->path->in);
+log(L_DG | L_DGRAPH, "%8s : %s", "path-base", gn->path->base);
+
 		log(L_DG | L_DGRAPH, "%8s : %u", "canhash"	, gn->path->can_hash);
 		log(L_DG | L_DGRAPH, "%8s : %s", "name"			, gn->path->name);
 		log(L_DG | L_DGRAPH, "%8s : %s", "ext"			, gn->path->ext);

@@ -102,7 +102,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 
 		if(fml->ffn->flags & FFN_DISCOVERY)
 		{
-			log_start(L_DSC | L_FML | L_FMLTARG, "(%s)[%3d,%3d - %3d,%3d] -> {\n"
+			log_start(L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> { "
 				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
 				, fml->ffn->loc.f_col + 1
@@ -112,7 +112,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 		}
 		else
 		{
-			log_start(L_FAB | L_FML | L_FMLTARG, "(%s)[%3d,%3d - %3d,%3d] -> {\n"
+			log_start(L_FAB | L_FML | L_FMLTARG, "reg(%s)[%3d,%3d - %3d,%3d] -> { "
 				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
 				, fml->ffn->loc.f_col + 1
@@ -126,9 +126,9 @@ static int fml_add_multi(fml * fml, lstack * ls)
 			fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, ls->s[x].s[y].s, ls->s[x].s[y].l, &t, 0);
 
 			if(y)
-				log_add("  , %s\n", t->idstring);
+				log_add(", %s", t->idstring);
 			else
-				log_add("    %s\n", t->idstring);
+				log_add("%s", t->idstring);
 
 			fmlv->products[y] = t;
 			if(fml->ffn->flags & FFN_DISCOVERY)
@@ -136,7 +136,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 			else
 				t->fabv = fmlv;
 		}
-		log_finish("}");
+		log_finish(" }");
 	}
 
 	finally : coda;
