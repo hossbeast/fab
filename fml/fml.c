@@ -54,6 +54,9 @@ static int fml_add_single(fml * fml, lstack * ls)
 
 		fmlv->products[0] = t;
 
+		// update affected lists
+		fatal(ff_regular_affecting_gn, fml->ffn->loc.ff, t);
+
 		if(fml->ffn->flags & FFN_DISCOVERY)
 		{
 			log(L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s"
@@ -124,6 +127,9 @@ static int fml_add_multi(fml * fml, lstack * ls)
 		{
 			gn * t = 0;
 			fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, ls->s[x].s[y].s, ls->s[x].s[y].l, &t, 0);
+
+			// update affected lists
+			fatal(ff_regular_affecting_gn, fml->ffn->loc.ff, t);
 
 			if(y)
 				log_add(", %s", t->idstring);

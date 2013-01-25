@@ -86,6 +86,31 @@ int gn_lookup_match(const char * const s, gn *** const r, int * const rl, int * 
 	finally : coda;
 }
 
+int gn_lookup_nofile(const char * const s, int l, const char * const base, gn ** r)
+{
+	if(!gn_nodes.by_path)
+		fatal(map_create, &gn_nodes.by_path, 0);
+
+	// canonicalize for lookup
+	char can[512];
+	if(canon(s, l, can, sizeof(can), base, CAN_REALPATH) == 0)
+		return 0;
+
+	gn ** R = 0;
+	if((R = map_get(gn_nodes.by_path, can, strlen(can))))
+		*r = *R;
+	else
+	{
+		if(canon(s, l, can, sizeof(can), "/..", CAN_REALPATH) == 0)
+			return 0;
+
+		if((R = map_get(gn_nodes.by_path, can, strlen(can))))
+			*r = *R;
+	}
+
+	finally : coda;
+}
+
 int gn_lookup(const char * const s, int l, const char * const base, gn ** r)
 {
 	if(!gn_nodes.by_path)
@@ -651,4 +676,30 @@ void gn_teardown()
 char* gn_idstring(gn * const gn)
 {
 	return gn->idstring;
+}
+
+int gn_affected_ff_reg(gn * const gn, struct ff_file * const ff, int * const newa)
+{
+	int x;
+	for(x = 0; x < gn->affecting_ff_filel; x++)
+	{
+		if(gn->affecting_ff_file[x] == ff)
+			break;
+	}
+
+	if(x >= gn->affecting_ff_filel)
+	{
+		if(gn->affecting_ff_filel == gn->affecting_ff_filea)
+		{
+			int ns = gn->affecting_ff_filea ?: 10;
+			ns = ns * 2 + ns / 2;
+			fatal(xrealloc, &gn->affecting_ff_file, sizeof(*gn->affecting_ff_file), ns, gn->affecting_ff_filea);
+			gn->affecting_ff_filea = ns;
+		}
+
+		gn->affecting_ff_file[gn->affecting_ff_filel++] = ff;
+		(*newa)++;
+	}
+
+	finally : coda;
 }

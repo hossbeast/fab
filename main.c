@@ -188,7 +188,7 @@ int main(int argc, char** argv)
 			if(g_args.targets_len)
 			{
 				gn * gn = 0;
-				fatal(gn_lookup, g_args.targets[0], 0, g_args.init_fabfile_path->abs_dir, &gn);
+				fatal(gn_lookup_nofile, g_args.targets[0], 0, g_args.init_fabfile_path->abs_dir, &gn);
 
 				if(gn == 0)
 					fail("target : %s not found", g_args.targets[0]);
@@ -199,7 +199,7 @@ int main(int argc, char** argv)
 
 				for(x = 1; x < g_args.targets_len; x++)
 				{
-					fatal(gn_lookup, g_args.targets[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
+					fatal(gn_lookup_nofile, g_args.targets[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
 
 					if(gn == 0)
 						fail("target : %s not found", g_args.targets[x]);

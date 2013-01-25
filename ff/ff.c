@@ -10,6 +10,8 @@
 #include "ff.tab.h"
 #include "ff.lex.h"
 
+#include "gn.h"
+
 #include "log.h"
 #include "control.h"
 #include "xmem.h"
@@ -17,6 +19,8 @@
 #include "args.h"
 #include "cksum.h"
 #include "xstring.h"
+#include "identity.h"
+#include "dirutil.h"
 
 // defined in gn.c
 char * gn_idstring(struct gn * const);
@@ -189,6 +193,9 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		{
 			ff->idstring = strdup(ff->path->rel);
 		}
+
+		// affected dir
+		fatal(xsprintf, &ff->affected_dir, "%s/REGULAR/%u/affected", FF_DIR_BASE, ff->path->can_hash);
 	}
 
 	parse_param pp = {
@@ -635,4 +642,60 @@ void ff_teardown()
 		ff_freefile(ff_files.e[x]);
 
 	free(ff_files.e);
+}
+
+int ff_regular_rewrite(ff_file * ff)
+{
+	fatal(identity_assume_fabsys);
+
+	// ensure affected directory exists
+	fatal(mkdirp, ff->affected_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	// save links to all nodes that are connected to this regular fabfile
+	int x;
+	for(x = 0; x < ff->affected_gnl; x++)
+	{
+		char to[512];
+		char from[512];
+
+		snprintf(to, sizeof(to), "%s/PRIMARY/%u", GN_DIR_BASE, ff->affected_gn[x]->path->can_hash);
+		snprintf(from, sizeof(from), "%s/%u", ff->affected_dir, ff->path->can_hash);
+
+		fatal_os(symlink, to, from);
+	}
+
+	// rewrite the hashblock (reverts to user identity)
+	fatal(hashblock_write, ff->hb);
+
+	log(L_HASHBLK
+		, "%s (fab) ==> 0x%08x%08x%08x"
+		, ff->idstring
+		, ff->hb->stathash[1]
+		, ff->hb->contenthash[1]
+		, ff->hb->vrshash[1]
+	);
+
+	finally : coda;
+}
+
+int ff_regular_affecting_gn(struct ff_file * const ff, gn * const gn)
+{
+	int newa = 0;
+	fatal(gn_affected_ff_reg, gn, ff, &newa);
+
+	if(newa)
+	{
+		if(ff->affected_gnl >= ff->affected_gna)
+		{
+			int ns = ff->affected_gna ?: 10;
+			ns = ns * 2 + ns / 2;
+			fatal(xrealloc, &ff->affected_gn, sizeof(*ff->affected_gn), ns, ff->affected_gna);
+			ff->affected_gna = ns;
+		}
+
+printf("%s affects %s @ %d\n", ff_idstring(ff), gn_idstring(gn), ff->affected_gnl);
+		ff->affected_gn[ff->affected_gnl++] = gn;
+	}
+
+	finally : coda;	
 }

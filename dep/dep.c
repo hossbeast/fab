@@ -128,7 +128,6 @@ static int dep_add_single(
 			{
 				// dependencies arising from an FFN_DEPENDENCY node in a DDISC fabfile yield paths which
 				// are specified relative to base path of the DDISC node itself
-gn_dump(ffn->loc.ff->dscv_gn);
 				fatal(gn_edge_add
 //					, ffn->loc.ff->dscv_gn->path->stem
 					, ffn->loc.ff->dscv_gn->path->base
@@ -165,6 +164,10 @@ gn_dump(ffn->loc.ff->dscv_gn);
 					, &newb
 					, &newr
 				);
+
+				// update affected lists
+				fatal(ff_regular_affecting_gn, ffn->loc.ff, A);
+				fatal(ff_regular_affecting_gn, ffn->loc.ff, B);
 			}
 
 			if(block && block->block)
@@ -353,6 +356,10 @@ static int dep_add_multi(
 						, &newb
 						, &newr
 					);
+
+					// update affected lists
+					fatal(ff_regular_affecting_gn, ffn->loc.ff, A);
+					fatal(ff_regular_affecting_gn, ffn->loc.ff, B);
 				}
 
 				if(block && block->block)

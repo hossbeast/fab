@@ -78,6 +78,12 @@ typedef struct ff_file
 		
 		// regular fabfile
 		struct {
+			struct gn ** 			affected_gn;	// all gn's related to this ff_file (dependencies, formulas, dscv formulas, etc)
+			int								affected_gnl;
+			int								affected_gna;
+
+			char *						affected_dir;
+
 			hashblock *				hb;
 			int								hb_reload;
 		};
@@ -319,7 +325,6 @@ void ff_dump(ff_node * const restrict root);
 char * ff_idstring(ff_file * const restrict ff)
 	__attribute__((nonnull));
 
-
 /// ff_regular_reload
 //
 // for a REGULAR ff_file - load the previous hashblock, stat the file
@@ -340,6 +345,16 @@ int ff_regular_rewrite(ff_file * const restrict ff)
 // free ff_files
 //
 void ff_teardown();
+
+/// ff_regular_affecting_gn
+//
+// SUMMARY
+//  mark a regular ff_file as affecting a gn by appending gn to its affecting_gn list
+//
+// PARAMETERS
+//
+int ff_regular_affecting_gn(struct ff_file * const restrict ff, struct gn * const restrict gn)
+	__attribute__((nonnull));
 
 #undef restrict
 #endif

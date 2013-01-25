@@ -110,13 +110,18 @@ typedef struct gn
 	char*							idstring;				// identifier string, subject to execution parameters
 	int								idstringl;
 
+	// regular fabfiles which may affect this node (dependencies, formulas, dscv formulas, etc)
+	struct ff_file **	affecting_ff_file;
+	int								affecting_ff_filel;
+	int								affecting_ff_filea;
+
 	//
 	// PRIMARY
 	//
 
 	// change-tracking for the backing file
-	hashblock *				hb_fab;
-	hashblock *				hb_dscv;
+	hashblock *				hb_fab;				// rewritten following successful fabrication
+	hashblock *				hb_dscv;			// rewritten following successful dependency discovery
 	int								hb_loaded;
 
 	// formula eval context for dependency discovery
@@ -219,6 +224,9 @@ int gn_lookup_match(const char * const restrict s, gn *** const restrict r, int 
 //  0 on failure (ENOMEN) and 1 otherwise
 //
 int gn_lookup(const char * const restrict s, int l, const char * const restrict base, gn ** r)
+	__attribute__((nonnull));
+
+int gn_lookup_nofile(const char * const restrict s, int l, const char * const restrict base, gn ** r)
 	__attribute__((nonnull));
 
 /// gn_lookup_canon
@@ -375,6 +383,17 @@ int gn_invalidations();
 // free the dependency graph
 //
 void gn_teardown();
+
+/// gn_affected_ff_reg
+//
+// SUMMARY
+//  mark an gn as being affected by an ff_file by appending ff to its affected_ff_file list
+//
+// PARAMETERS
+//  newa - *newa incremented by 1 if ff_file was added to gn->affected_ff_file
+//
+int gn_affected_ff_reg(gn * const restrict gn, struct ff_file * const restrict ff, int * const restrict newa)
+	__attribute__((nonnull));
 
 #undef restrict
 #endif
