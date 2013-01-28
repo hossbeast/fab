@@ -13,7 +13,7 @@ int rmdir_recursive(const char * const dirpath, int rmself)
 {
 	int fn(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
 	{
-		if(typeflag == FTW_F)
+		if(typeflag == FTW_F || typeflag == FTW_SL || typeflag == FTW_SLN)
 		{
 			if(unlink(fpath) != 0)
 			{
@@ -39,7 +39,7 @@ int rmdir_recursive(const char * const dirpath, int rmself)
 	};
 	
 	// depth-first
-	return nftw(dirpath, fn, 32, FTW_DEPTH) == 0;
+	return nftw(dirpath, fn, 32, FTW_ACTIONRETVAL | FTW_DEPTH | FTW_PHYS) == 0;
 }
 
 int mkdirp(const char * const path, mode_t mode)

@@ -292,7 +292,7 @@ int bp_eval(bp * const bp, int * const poison)
 				gn->changed = 1;
 			}
 
-			if(gn->changed)
+			if(gn->changed || gn->invalid)
 			{
 				// propagate through strong dependencies
 				for(i = 0; i < gn->feeds.l; i++)
@@ -302,12 +302,17 @@ int bp_eval(bp * const bp, int * const poison)
 				}
 			}
 
-			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s) %d %d %u"
 				, x, c++
 				, "PRIMARY"
 				, gn->idstring
 				, ""
-				, gn->changed ? "  changed" : "unchanged"
+				,   gn->invalid ?               "  invalid"
+					: gn->changed ?               "  changed"
+					:                             "unchanged"
+				, gn->invalid
+				, gn->changed
+				, gn->path->can_hash
 			);
 		}
 
@@ -336,17 +341,19 @@ int bp_eval(bp * const bp, int * const poison)
 					else if(gn->designation == GN_DESIGNATION_SECONDARY)
 					{
 						// SECONDARY file
-						fatal(gn_secondary_exists, gn);
+						fatal(gn_secondary_reload, gn);
 
 						if(gn->exists == 0)
 						{
 							gn->rebuild = 1;	// file doesn't exist
 						}
-						else
+						else if(gn->fab_noforce == 0)
 						{
-							// rebuild if the ff containing the formula has changed
-							if((gn->changed = hashblock_cmp(gn->fabv->fml->ffn->loc.ff->hb)))
-								gn->rebuild = 1;
+							gn->rebuild = 1;	// rebuild is forced
+						}
+						else if(gn->invalid)
+						{
+							gn->rebuild = 1;	// node invalidated
 						}
 					}
 
@@ -419,7 +426,10 @@ int bp_eval(bp * const bp, int * const poison)
 								, gn_designate(gn)
 								, gn->idstring
 								, "REBUILD"
-								, !gn->exists ? "does not exist" : gn->changed ? "fabfile changed" : "sources changed"
+								,   gn->invalid      ? "invalidated"
+								  : !gn->exists      ? "does not exist"
+									: gn->fab_noforce  ? "sources changed"
+									:                    "fabfile changed"
 							);
 						}
 						else
@@ -618,9 +628,13 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int p, ts *** ts,
 							}
 
 							if(j == pri->feeds.l)
-								fatal(gn_primary_rewrite, pri);
+								fatal(gn_primary_rewrite_fab, pri);
 						}
 					}
+
+					// secondary rewrite
+					if(prod->designation == GN_DESIGNATION_SECONDARY)
+						fatal(gn_secondary_rewrite_fab, prod);
 				}
 			}
 			else

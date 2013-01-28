@@ -137,7 +137,13 @@ int main(int argc, char** argv)
 				fatal(fml_add, ffn->statements[x], vmap, &stax, &staxa, staxp);
 			}
 		}
-		
+
+		// process hashblocks for fabfiles which have changed
+		if(hashblock_cmp(ffn->loc.ff->hb))
+		{
+			fatal(ff_regular_rewrite, ffn->loc.ff);
+		}
+
 		// comprehensive upfront dependency discovery on the entire graph
 		if(g_args.mode_ddsc == MODE_DDSC_UPFRONT)
 		{
@@ -169,7 +175,7 @@ int main(int argc, char** argv)
 						if(list[i]->designation == GN_DESIGNATION_PRIMARY)
 							gn_primary_reload(list[i]);
 						if(list[i]->designation == GN_DESIGNATION_SECONDARY)
-							gn_secondary_exists(list[i]);
+							gn_secondary_reload(list[i]);
 
 						gn_dump(list[i]);
 					}

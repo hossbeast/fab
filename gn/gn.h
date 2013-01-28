@@ -110,7 +110,7 @@ typedef struct gn
 	char*							idstring;				// identifier string, subject to execution parameters
 	int								idstringl;
 
-	// regular fabfiles which may affect this node (dependencies, formulas, dscv formulas, etc)
+	// regular fabfiles which may affect this node (dependencies, formulas, dscv formulas)
 	struct ff_file **	affecting_ff_file;
 	int								affecting_ff_filel;
 	int								affecting_ff_filea;
@@ -118,22 +118,31 @@ typedef struct gn
 	//
 	// PRIMARY
 	//
+	struct
+	{
+		// change-tracking for the backing file
+		hashblock *				hb_fab;				// rewritten following successful fabrication of all feeds
+		hashblock *				hb_dscv;			// rewritten following successful dependency discovery involving this node
+		int								hb_loaded;
 
-	// change-tracking for the backing file
-	hashblock *				hb_fab;				// rewritten following successful fabrication
-	hashblock *				hb_dscv;			// rewritten following successful dependency discovery
-	int								hb_loaded;
+		// formula eval context for dependency discovery
+		struct fmleval *		dscv;
 
-	// formula eval context for dependency discovery
-	struct fmleval *		dscv;
-
-	// depblock for dependency discovery
-	struct depblock *		dscv_block;
+		// depblock for dependency discovery
+		struct depblock *		dscv_block;
+	};
 
 	//
 	// SECONDARY
 	//
-	int								exists;
+	struct
+	{
+		char *						noforce_dir;
+		char *						noforce_path;	// canonical path to the noforce file
+
+		int								exists;				// whether the file exists
+		int								fab_noforce;	// whether fabrication of the file is not forced
+	};
 
 	//
 	// SECONDARY, GENERATED, TASK
@@ -186,6 +195,7 @@ typedef struct gn
 	char								changed;
 	char								rebuild;
 	char								poison;
+	char								invalid;
 
 	char								fab_success;
 } gn;
@@ -310,11 +320,18 @@ int gn_edge_add(
 //
 void gn_dump(gn *);
 
-/// gn_secondary_exists
+/// gn_secondary_reload
 //
-// for a SECONDARY file - check whether the file exists, populate {exists}
+// for a SECONDARY file - check whether the file exists, reload 
 //
-int gn_secondary_exists(gn * const restrict)
+int gn_secondary_reload(gn * const restrict)
+	__attribute__((nonnull));
+
+/// gn_secondary_rewrite_fab
+//
+// for a SECONDARY file - rewrite the fab/noforce file
+//
+int gn_secondary_rewrite_fab(gn * const restrict)
 	__attribute__((nonnull));
 
 /// gn_primary_reload
@@ -324,11 +341,11 @@ int gn_secondary_exists(gn * const restrict)
 int gn_primary_reload(gn * const restrict)
 	__attribute__((nonnull));
 
-/// gn_primary_rewrite
+/// gn_primary_rewrite_fab
 //
 // for a PRIMARY file - write the current fab hashblock
 //
-int gn_primary_rewrite(gn * const restrict)
+int gn_primary_rewrite_fab(gn * const restrict)
 	__attribute__((nonnull));
 
 /// gn_primary_reload_dscv

@@ -15,6 +15,14 @@
 #include "dirutil.h"
 #include "macros.h"
 
+/// minmodify
+//
+// get the minimum modify time of all files and directories in the specified directory
+//
+// *minmod should have been initialized to the modify time of the directory itself
+//
+// symbolic links are not followed
+//
 static int minmodify(const char* dirpath, time_t * minmod)
 {
 	int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
@@ -23,7 +31,7 @@ static int minmodify(const char* dirpath, time_t * minmod)
 		return FTW_CONTINUE;
 	};
 
-	return nftw(dirpath, fn, 32, 0) == 0;
+	return nftw(dirpath, fn, 32, FTW_PHYS) == 0;
 }
 
 //
@@ -128,7 +136,7 @@ int tmp_setup()
 	fatal(mkdirp, space, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	//
-	// FF_DIR
+	// FF_DIR/REGULAR
 	//
 	snprintf(space, sizeof(space), "%s/REGULAR", FF_DIR_BASE);
 	fatal(mkdirp, space, S_IRWXU | S_IRWXG | S_IRWXO); 

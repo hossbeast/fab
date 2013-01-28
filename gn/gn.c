@@ -15,6 +15,8 @@
 #include "xmem.h"
 #include "unitstring.h"
 #include "canon.h"
+#include "xstring.h"
+#include "dirutil.h"
 
 #define restrict __restrict
 
@@ -70,7 +72,7 @@ int gn_lookup_match(const char * const s, gn *** const r, int * const rl, int * 
 	int x;
 	for(x = 0; x < gn_nodes.l; x++)
 	{
-		if(strstr(gn_nodes.e[x]->path->name, s))
+		if(strstr(gn_nodes.e[x]->path->can, s) || strstr(gn_nodes.e[x]->path->abs, s) || strstr(gn_nodes.e[x]->path->rel, s))
 		{
 			if((*rl) == (*ra))
 			{
@@ -465,7 +467,7 @@ char* gn_designate(gn * gn)
 	return GN_DESIGNATION_STR(gn->designation);
 }
 
-int gn_secondary_exists(gn * const gn)
+int gn_secondary_reload(gn * const gn)
 {
 	if(euidaccess(gn->path->can, F_OK) == 0)
 	{
@@ -475,6 +477,33 @@ int gn_secondary_exists(gn * const gn)
 	{
 		fail("access(%s)=[%d][%s]", gn->path, errno, strerror(errno));
 	}
+
+	fatal(xsprintf, &gn->noforce_dir, "%s/SECONDARY/%u/fab", GN_DIR_BASE, gn->path->can_hash);
+	fatal(xsprintf, &gn->noforce_path, "%s/SECONDARY/%u/fab/noforce", GN_DIR_BASE, gn->path->can_hash);
+
+	if(euidaccess(gn->noforce_path, F_OK) == 0)
+	{
+		gn->fab_noforce = 1;
+	}
+	else if(errno != ENOENT)
+	{
+		fail("access(%s)=[%d][%s]", gn->noforce_path, errno, strerror(errno));
+	}
+
+	finally : coda;
+}
+
+int gn_secondary_rewrite_fab(gn * const gn)
+{
+	fatal(mkdirp, gn->noforce_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	int fd;
+	if((fd = open(gn->noforce_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
+		fail("open failed : [%d][%s]", errno, strerror(errno));
+
+	struct timespec times[2] = { { .tv_nsec = UTIME_NOW } , { .tv_nsec = UTIME_NOW } };
+
+	fatal_os(futimens, fd, times);
 
 	finally : coda;
 }
@@ -487,31 +516,17 @@ int gn_primary_reload_dscv(gn * const gn)
 	// create ddisc block
 	fatal(depblock_create, &gn->dscv_block, "%s/PRIMARY/%u/dscv", GN_DIR_BASE, gn->path->can_hash);
 
-/*
-printf("considering %25s : %d %d %p %d\n"
-	, gn->idstring
-	, hashblock_cmp(gn->hb_dscv)
-	, gn->changed
-	, gn->dscv
-	, hashblock_cmp(gn->dscv->fml->ffn->loc.ff->hb)
-);
-*/
-
 	// backing file has not changed
 	if(hashblock_cmp(gn->hb_dscv) == 0)
 	{
 		// node has not been invalidated (see gn_invalidations)
-		if(gn->changed == 0)
+		if(gn->invalid == 0)
 		{
 			// primary node with associated discovery fml eval
 			if(gn->dscv)
 			{
-				// fabfile containing the fml eval has not changed
-				if(hashblock_cmp(gn->dscv->fml->ffn->loc.ff->hb) == 0)
-				{
-					// actually load the depblock from cache
-					fatal(depblock_read, gn->dscv_block);
-				}
+				// actually load the depblock from cache
+				fatal(depblock_read, gn->dscv_block);
 			}
 		}
 	}
@@ -532,11 +547,12 @@ int gn_primary_reload(gn * const gn)
 		fatal(hashblock_read, gn->hb_dscv);
 
 		log(L_HASHBLK
-			, "%s (fab) <== 0x%08x%08x%08x"
+			, "%s (fab) <== 0x%08x%08x%08x %s"
 			, gn->idstring
 			, gn->hb_fab->stathash[0]
 			, gn->hb_fab->contenthash[0]
 			, gn->hb_fab->vrshash[0]
+			, gn->hb_fab->hashdir
 		);
 
 		log(L_HASHBLK
@@ -558,17 +574,18 @@ int gn_primary_reload(gn * const gn)
 	finally : coda;
 }
 
-int gn_primary_rewrite(gn * const gn)
+int gn_primary_rewrite_fab(gn * const gn)
 {
 	// rewrite the fab hashblock
 	fatal(hashblock_write, gn->hb_fab);
 
 	log(L_HASHBLK
-		, "%s (fab) ==> 0x%08x%08x%08x"
+		, "%s (fab) ==> 0x%08x%08x%08x %s"
 		, gn->idstring
 		, gn->hb_fab->stathash[1]
 		, gn->hb_fab->contenthash[1]
 		, gn->hb_fab->vrshash[1]
+		, gn->hb_fab->hashdir
 	);
 
 	finally : coda;
@@ -607,10 +624,12 @@ int gn_invalidations()
 		for(x = 0; x < gn_nodes.l; x++)
 		{
 			if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
-				gn_nodes.e[x]->changed = 1;
+				gn_nodes.e[x]->invalid = 1;
+//				gn_nodes.e[x]->changed = 1;
 
 			if(gn_nodes.e[x]->designation == GN_DESIGNATION_SECONDARY)
-				gn_nodes.e[x]->rebuild = 1;
+				gn_nodes.e[x]->invalid = 1;
+//				gn_nodes.e[x]->rebuild = 1;
 		}
 	}
 	else
@@ -623,10 +642,10 @@ int gn_invalidations()
 			if(gn)
 			{
 				if(gn->designation == GN_DESIGNATION_PRIMARY)
-					gn->changed = 1;
+					gn->invalid = 1;
 
 				if(gn->designation == GN_DESIGNATION_SECONDARY)
-					gn->rebuild = 1;
+					gn->invalid = 1;
 			}
 			else
 			{
@@ -658,6 +677,11 @@ static void gn_freenode(gn * const gn)
 
 		free(gn->feeds.e);
 		map_free(gn->feeds.by_A);
+
+		free(gn->affecting_ff_file);
+
+		free(gn->noforce_dir);
+		free(gn->noforce_path);
 	}
 
 	free(gn);

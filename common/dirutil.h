@@ -9,7 +9,8 @@
 //
 // SUMMARY
 //  recursively delete a directory and all of its contents, which consists only
-//  of files and directories
+//  of files, directories, symlinks, and dangling symlinks. symlinks are deleted
+//  not followed
 //
 // PARAMETERS
 //  dirpath - 

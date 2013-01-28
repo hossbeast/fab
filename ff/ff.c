@@ -4,6 +4,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <ftw.h>
+#include <inttypes.h>
 
 #include "ff.h"
 #include "ff.tokens.h"
@@ -218,16 +220,6 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	{
 		// parse
 		ff_yyparse(p->p, &pp);
-
-		// create hashblock
-		fatal(hashblock_create, &ff->hb, "%s/REGULAR/%u", FF_DIR_BASE, ff->path->can_hash);
-
-		// load previous hashblock into [0]
-		fatal(hashblock_read, ff->hb);
-
-		// stat the file, populate [1] - now ready for hashblock_cmp
-		fatal(hashblock_stat, ff->path->abs, ff->hb, 0, 0);
-		ff->hb->vrshash[1] = FAB_VERSION;
 	}
 
 	// cleanup state for this parse
@@ -246,6 +238,16 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 			qfail();
 
 		*ffn = ff->ffn;
+
+		// create hashblock
+		fatal(hashblock_create, &ff->hb, "%s/REGULAR/%u", FF_DIR_BASE, ff->path->can_hash);
+
+		// load previous hashblock into [0]
+		fatal(hashblock_read, ff->hb);
+
+		// stat the file, populate [1] - now ready for hashblock_cmp
+		fatal(hashblock_stat, ff->path->abs, ff->hb, 0, 0);
+		ff->hb->vrshash[1] = FAB_VERSION;
 	}
 
 	finally : coda;
@@ -625,6 +627,9 @@ static void ff_freefile(ff_file * ff)
 		if(ff->type == FFT_REGULAR)
 		{
 			hashblock_free(ff->hb);
+
+			free(ff->affected_dir);
+			free(ff->affected_gn);
 		}
 
 		path_free(ff->path);
@@ -646,23 +651,104 @@ void ff_teardown()
 
 int ff_regular_rewrite(ff_file * ff)
 {
+	char to[512];
+	char from[512];
+
 	fatal(identity_assume_fabsys);
+
+	// sort the affected gn list by canonical path hash
+	int cmp(const void * _A, const void * _B)
+	{
+		uint32_t A = (*(struct gn **)_A)->path->can_hash;
+		uint32_t B = (*(struct gn **)_B)->path->can_hash;
+
+		if(A > B) return 1;
+		else if(B > A) return -1;
+
+		return 0;
+	};
+	qsort(ff->affected_gn, ff->affected_gnl, sizeof(*ff->affected_gn), cmp);
 
 	// ensure affected directory exists
 	fatal(mkdirp, ff->affected_dir, S_IRWXU | S_IRWXG | S_IRWXO);
 
-	// save links to all nodes that are connected to this regular fabfile
+	// write links to all nodes that are connected to this regular fabfile
 	int x;
 	for(x = 0; x < ff->affected_gnl; x++)
 	{
-		char to[512];
-		char from[512];
-
+		// directory for the affected node
+		snprintf(to, sizeof(to), "%s/%u", ff->affected_dir, ff->affected_gn[x]->path->can_hash);
+		fatal(mkdirp, to, S_IRWXU | S_IRWXG | S_IRWXO);
+		
+		// with a link to its PRIMARY and SECONDARY directories
 		snprintf(to, sizeof(to), "%s/PRIMARY/%u", GN_DIR_BASE, ff->affected_gn[x]->path->can_hash);
-		snprintf(from, sizeof(from), "%s/%u", ff->affected_dir, ff->path->can_hash);
+		snprintf(from, sizeof(from), "%s/%u/PRIMARY", ff->affected_dir, ff->affected_gn[x]->path->can_hash);
+		if(symlink(to, from) != 0 && errno != EEXIST)
+			fail("symlink failed : [%d][%s]", errno, strerror(errno));
 
-		fatal_os(symlink, to, from);
+		snprintf(to, sizeof(to), "%s/SECONDARY/%u", GN_DIR_BASE, ff->affected_gn[x]->path->can_hash);
+		snprintf(from, sizeof(from), "%s/%u/SECONDARY", ff->affected_dir, ff->affected_gn[x]->path->can_hash);
+		if(symlink(to, from) != 0 && errno != EEXIST)
+			fail("symlink failed : [%d][%s]", errno, strerror(errno));
 	}
+
+	// follow ALL links (pre-existing and newly-created)
+	int fn(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
+	{
+		if(ftwbuf->level == 3)
+		{
+			// force fab and dscv
+			int fpl = strlen(fpath);
+
+			if(fpl >= 3 && strcmp(fpath + fpl - 3, "fab") == 0)
+			{
+				if(rmdir_recursive(fpath, 0) == 0)
+					return FTW_STOP;
+
+				return FTW_SKIP_SUBTREE;
+			}
+			else if(fpl > 4 && strcmp(fpath + fpl - 4, "dscv") == 0)
+			{
+				if(rmdir_recursive(fpath, 0) == 0)
+					return FTW_STOP;
+
+				return FTW_SKIP_SUBTREE;
+			}
+		}
+		else if(ftwbuf->level == 1)
+		{
+			// This is the directory for a gn. If it is no longer in the affected
+			// list, delete the directory as well
+
+			uint32_t canhash = 0;
+			int n = 0;
+
+			if(sscanf(fpath + ftwbuf->base, "%u%n", &canhash, &n) == 1 && canhash && n > 0)
+			{
+				int kcmp(const void * K, const void * A)
+				{
+					return *(uint32_t*)K - (*(struct gn **)A)->path->can_hash;
+				};
+
+				if(bsearch(&canhash, ff->affected_gn, ff->affected_gnl, sizeof(*ff->affected_gn), kcmp) == 0)
+				{
+					if(rmdir_recursive(fpath, 1) == 0)
+					{
+						return FTW_STOP;
+					}
+				}
+			}
+			else
+			{
+				// unexpected file
+				log(L_WARN, "unexpected file %s - %u, %d", fpath, canhash, n);
+			}
+		}
+		
+		return FTW_CONTINUE;
+	};
+
+	fatal_os(nftw, ff->affected_dir, fn, 32, FTW_ACTIONRETVAL | FTW_DEPTH);
 
 	// rewrite the hashblock (reverts to user identity)
 	fatal(hashblock_write, ff->hb);
@@ -693,7 +779,6 @@ int ff_regular_affecting_gn(struct ff_file * const ff, gn * const gn)
 			ff->affected_gna = ns;
 		}
 
-printf("%s affects %s @ %d\n", ff_idstring(ff), gn_idstring(gn), ff->affected_gnl);
 		ff->affected_gn[ff->affected_gnl++] = gn;
 	}
 
