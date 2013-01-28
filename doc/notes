@@ -54,8 +54,6 @@ generic listbuilding syntax
 			- t// - replace current list with single element list whose element is the given argument
 			- d// - replace current list with list of files in directory named by first element in current list
 
-
-
  ( )
 
 variables
@@ -130,9 +128,13 @@ TODO
 - flag 
 - per-node settings ( x:y, x:y )
 	- invalidate this node
-- -j switch - max concurrent executions
 
 - tagging of items in fabfile for logging - the tagging is done with per-node ( x:y ) settings
 
 - write a bash script which will perform the build - this is equivalent to invalidating all nodes
   and then concatenating the formula scripts in stage order
+
+- dump/invalidate/target node identification standardization
+ - /regex/ match on abs/can/rel paths : returns list
+ - end-of-string substring match : returns list
+ - canonical path match : returns single item

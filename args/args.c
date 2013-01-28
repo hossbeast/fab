@@ -33,6 +33,7 @@ static void usage()
 		" -b invalidate node\n"
 		" -d dump node\n"
 		" -v key=value\n"
+		" -j concurrency limit\n"
 		"----------- [ logopts ] --------------------------\n"
 		" +<log name> to enable logging\n"  
 		" -<log name> to disable logging\n"  
@@ -59,7 +60,7 @@ int parse_args(int argc, char** argv)
 // g
 /* h */ , { "help"							, no_argument				, 0			, 'h' }
 // i
-// j
+/* j */ , { "concurrency"				, required_argument	, 0			, 'j' }
 // k
 // l 
 // m
@@ -88,7 +89,7 @@ int parse_args(int argc, char** argv)
 		"chpuBU"
 
 		// with-argument switches
-		"b:d:f:v:"
+		"b:d:f:v:j:"
 	;
 
 	//
@@ -101,6 +102,7 @@ int parse_args(int argc, char** argv)
 	//
 	// args:defaults
 	//
+	g_args.concurrency		= DEFAULT_CONCURRENCY_LIMIT;
 	g_args.mode_exec			= DEFAULT_MODE_EXEC;
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_ddsc			= DEFAULT_MODE_DDSC;
@@ -153,6 +155,15 @@ int parse_args(int argc, char** argv)
 					else
 					{
 						fail("badly formed option for -v : '%s'", optarg);
+					}
+				}
+				break;
+			case 'j':
+				{
+					int n = 0;
+					if(sscanf(optarg, "%d%n", &g_args.concurrency, &n) != 1 || n <= 0)
+					{
+						fail("badly formed option for -j : '%s'", optarg);
 					}
 				}
 				break;
@@ -226,6 +237,11 @@ int parse_args(int argc, char** argv)
 	log(L_ARGS | L_PARAMS		, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
 	log(L_ARGS | L_PARAMS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS | L_PARAMS		, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
+	if(g_args.concurrency > 0)
+		snprintf(buf, sizeof(buf), "%d", g_args.concurrency);
+	else
+		snprintf(buf, sizeof(buf), "%s", "unbounded");
+	log(L_ARGS | L_PARAMS		, " %s (%c) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', buf);
 	log(L_ARGS | L_PARAMS		, " %s (%c) invalidate-all     =%s", g_args.invalidate_all == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidate_all ? "yes" : "no");
 
 	if(!g_args.invalidate_all)

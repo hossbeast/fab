@@ -239,15 +239,18 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 		*ffn = ff->ffn;
 
-		// create hashblock
-		fatal(hashblock_create, &ff->hb, "%s/REGULAR/%u", FF_DIR_BASE, ff->path->can_hash);
+		if(ff->type == FFT_REGULAR)
+		{
+			// create hashblock
+			fatal(hashblock_create, &ff->hb, "%s/REGULAR/%u", FF_DIR_BASE, ff->path->can_hash);
 
-		// load previous hashblock into [0]
-		fatal(hashblock_read, ff->hb);
+			// load previous hashblock into [0]
+			fatal(hashblock_read, ff->hb);
 
-		// stat the file, populate [1] - now ready for hashblock_cmp
-		fatal(hashblock_stat, ff->path->abs, ff->hb, 0, 0);
-		ff->hb->vrshash[1] = FAB_VERSION;
+			// stat the file, populate [1] - now ready for hashblock_cmp
+			fatal(hashblock_stat, ff->path->abs, ff->hb, 0, 0);
+			ff->hb->vrshash[1] = FAB_VERSION;
+		}
 	}
 
 	finally : coda;

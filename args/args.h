@@ -36,17 +36,18 @@
 ** /var/tmp/fab/pid/<pid>/fml/<fml-id-hash>/stde
 */
 
-#define SID_DIR_BASE						"/var/cache/fab/sid"
-#define GN_DIR_BASE							"/var/cache/fab/gn"
-#define FF_DIR_BASE							"/var/cache/fab/ff"
-#define PID_DIR_BASE						"/var/tmp/fab/pid"
+#define SID_DIR_BASE							"/var/cache/fab/sid"
+#define GN_DIR_BASE								"/var/cache/fab/gn"
+#define FF_DIR_BASE								"/var/cache/fab/ff"
+#define PID_DIR_BASE							"/var/tmp/fab/pid"
 
-#define DEFAULT_INIT_FABFILE 		"./fabfile"
-#define DEFAULT_INVALIDATE_ALL	0
-#define DEFAULT_DUMPNODE_ALL		0
-#define DEFAULT_MODE_EXEC				MODE_EXEC_FABRICATE
-#define DEFAULT_MODE_GNID				MODE_GNID_RELATIVE
-#define DEFAULT_MODE_DDSC				MODE_DDSC_DEFERRED
+#define DEFAULT_INIT_FABFILE 			"./fabfile"
+#define DEFAULT_INVALIDATE_ALL		0
+#define DEFAULT_DUMPNODE_ALL			0
+#define DEFAULT_MODE_EXEC					MODE_EXEC_FABRICATE
+#define DEFAULT_MODE_GNID					MODE_GNID_RELATIVE
+#define DEFAULT_MODE_DDSC					MODE_DDSC_DEFERRED
+#define DEFAULT_CONCURRENCY_LIMIT	0
 
 #define EXPIRATION_POLICY				(60 * 60 * 24 * 7)
 
@@ -100,6 +101,8 @@ extern struct g_args_t
 	int					mode_exec;						// execution mode
 	int					mode_gnid;						// mode for gn identification string
 	int					mode_ddsc;						// dependency discovery mode
+
+	int					concurrency;					// concurrently limiting factor
 
 	char **			targets;							// targets
 	int					targets_len;

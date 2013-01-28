@@ -4,6 +4,7 @@
 
 #include "ts.h"
 #include "fml.h"
+#include "args.h"
 
 #include "xmem.h"
 #include "pstring.h"
@@ -65,143 +66,151 @@ int ts_ensure(ts *** ts, int * tsa, int n)
 int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo, int * res)
 {
 	int x;
+	int j;
 
 	int __attribute__((unused)) __r;
 
 	(*waveid)++;
 
-	// execute all formulas in parallel processes
-	for(x = 0; x < n; x++)
-		fatal(fml_exec, ts[x], ((*waveid) * 1000) + x);
+	int step = n;
+	if(g_args.concurrency > 0)
+		step = g_args.concurrency;
 
 	(*res) = 1;
 
-	// wait for each of them to complete
-	pid_t pid = 0;
-	int r = 0;
-	while((pid = wait(&r)) != -1)
+	// execute all formulas in parallel processes
+	for(j = 0; j < n; j += step)
 	{
-		for(x = 0; x < n; x++)
+		for(x = j; x < (j + step) && x < n; x++)
+			fatal(fml_exec, ts[x], ((*waveid) * 1000) + x);
+
+		// wait for each of them to complete
+		pid_t pid = 0;
+		int r = 0;
+		while((pid = wait(&r)) != -1)
 		{
-			if(ts[x]->pid == pid)
-				break;
-		}
-
-		if(WIFEXITED(r))
-			ts[x]->r_status = WEXITSTATUS(r);
-		else if(WIFSIGNALED(r))
-			ts[x]->r_signal = WTERMSIG(r);
-
-		// snarf stderr
-		if(1)
-		{
-			off_t sz = lseek(ts[x]->stde_fd, 0, SEEK_END);
-			lseek(ts[x]->stde_fd, 0, SEEK_SET);
-			psgrow(&ts[x]->stde_txt, sz + 2);
-			__r = read(ts[x]->stde_fd, ts[x]->stde_txt->s, sz);
-			ts[x]->stde_txt->s[sz+0] = 0;
-			ts[x]->stde_txt->s[sz+1] = 0;
-			ts[x]->stde_txt->l = sz;
-		}
-
-		// snarf stdout
-		if(1)
-		{
-			off_t sz = lseek(ts[x]->stdo_fd, 0, SEEK_END);
-			lseek(ts[x]->stdo_fd, 0, SEEK_SET);
-			psgrow(&ts[x]->stdo_txt, sz + 2);
-			__r = read(ts[x]->stdo_fd, ts[x]->stdo_txt->s, sz);
-			ts[x]->stdo_txt->s[sz+0] = 0;
-			ts[x]->stdo_txt->s[sz+1] = 0;
-			ts[x]->stdo_txt->l = sz;
-		}
-
-		close(ts[x]->stde_fd);
-		close(ts[x]->stdo_fd);
-
-		uint64_t e_stat = 0;	// whether there has been an error as a result of a nonzero exit status
-		uint64_t e_sign = 0;	// whether there has been an error as a result of a nonzero exit signal
-		uint64_t e_stde = 0;	// whether there has been an error as a result of a nonzero-length std error output
-
-		if(ts[x]->r_status)
-			e_stat = L_ERROR;
-		if(ts[x]->r_signal)
-			e_sign = L_ERROR;
-		if(ts[x]->stde_txt->l)
-			e_stde = L_ERROR;
-
-		uint64_t e = e_stat | e_sign | e_stde; // whether there has been an error
-
-		if(e)
-			(*res) = 0;
-
-		int k;
-		for(k = 0; k < ts[x]->fmlv->products_l; k++)
-		{
-			int R = 0;
-			if(k)
-				R = log_start(hi | e, "        %-9s %s", gn_designate(ts[x]->fmlv->products[k]), ts[x]->fmlv->products[k]->idstring);
-			else
-				R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(ts[x]->fmlv->products[k]), ts[x]->fmlv->products[k]->idstring);
-
-			if(k == 0)
+			for(x = j; x < (j + step) && x < n; x++)
 			{
-				if(e_stat)
-				{
-					log_add("%*sx=%d", 100 - R, "", ts[x]->r_status);
-				}
-				else if(e_sign)
-				{
-					log_add("%*ss=%d", 100 - R, "", ts[x]->r_signal);
-				}
-				else if(e_stde)
-				{
-					log_add("%*se=%d", 100 - R, "", ts[x]->stde_txt->l);
-				}
-				else
-				{
-					log_add("%*sx=0", 100 - R, "");
-				}
+				if(ts[x]->pid == pid)
+					break;
 			}
-			log_finish(0);
 
-			if(log_would(lo | L_FML | L_FMLEXEC))
+			if(WIFEXITED(r))
+				ts[x]->r_status = WEXITSTATUS(r);
+			else if(WIFSIGNALED(r))
+				ts[x]->r_signal = WTERMSIG(r);
+
+			// snarf stderr
+			if(1)
 			{
-				// this section must actually be enabled
-				log_start(lo | L_FML | L_FMLEXEC 										, "%15s : "			, "product(s)");
-				for(k = 0; k < ts[x]->fmlv->products_l; k++)
+				off_t sz = lseek(ts[x]->stde_fd, 0, SEEK_END);
+				lseek(ts[x]->stde_fd, 0, SEEK_SET);
+				psgrow(&ts[x]->stde_txt, sz + 2);
+				__r = read(ts[x]->stde_fd, ts[x]->stde_txt->s, sz);
+				ts[x]->stde_txt->s[sz+0] = 0;
+				ts[x]->stde_txt->s[sz+1] = 0;
+				ts[x]->stde_txt->l = sz;
+			}
+
+			// snarf stdout
+			if(1)
+			{
+				off_t sz = lseek(ts[x]->stdo_fd, 0, SEEK_END);
+				lseek(ts[x]->stdo_fd, 0, SEEK_SET);
+				psgrow(&ts[x]->stdo_txt, sz + 2);
+				__r = read(ts[x]->stdo_fd, ts[x]->stdo_txt->s, sz);
+				ts[x]->stdo_txt->s[sz+0] = 0;
+				ts[x]->stdo_txt->s[sz+1] = 0;
+				ts[x]->stdo_txt->l = sz;
+			}
+
+			close(ts[x]->stde_fd);
+			close(ts[x]->stdo_fd);
+
+			uint64_t e_stat = 0;	// whether there has been an error as a result of a nonzero exit status
+			uint64_t e_sign = 0;	// whether there has been an error as a result of a nonzero exit signal
+			uint64_t e_stde = 0;	// whether there has been an error as a result of a nonzero-length std error output
+
+			if(ts[x]->r_status)
+				e_stat = L_ERROR;
+			if(ts[x]->r_signal)
+				e_sign = L_ERROR;
+			if(ts[x]->stde_txt->l)
+				e_stde = L_ERROR;
+
+			uint64_t e = e_stat | e_sign | e_stde; // whether there has been an error
+
+			if(e)
+				(*res) = 0;
+
+			int k;
+			for(k = 0; k < ts[x]->fmlv->products_l; k++)
+			{
+				int R = 0;
+				if(k)
+					R = log_start(hi | e, "        %-9s %s", gn_designate(ts[x]->fmlv->products[k]), ts[x]->fmlv->products[k]->idstring);
+				else
+					R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(ts[x]->fmlv->products[k]), ts[x]->fmlv->products[k]->idstring);
+
+				if(k == 0)
 				{
-					if(k)
-						log_add(", ");
-					log_add("%s", ts[x]->fmlv->products[k]->idstring);
+					if(e_stat)
+					{
+						log_add("%*sx=%d", 100 - R, "", ts[x]->r_status);
+					}
+					else if(e_sign)
+					{
+						log_add("%*ss=%d", 100 - R, "", ts[x]->r_signal);
+					}
+					else if(e_stde)
+					{
+						log_add("%*se=%d", 100 - R, "", ts[x]->stde_txt->l);
+					}
+					else
+					{
+						log_add("%*sx=0", 100 - R, "");
+					}
 				}
 				log_finish(0);
-			}
-			if(log_would(lo | L_FML | L_FMLEXEC))
-			{
-				log(lo | L_FML | L_FMLEXEC 													, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
-				__r = write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
 
-				if(ts[x]->cmd_txt->l && ts[x]->cmd_txt->s[ts[x]->cmd_txt->l - 1] != '\n')
-					__r = write(2, "\n", 1);
-			}
-			log(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
-			log(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
-			if(log_would(lo | L_FML | L_FMLEXEC))
-			{
-				log(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
-				__r = write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
+				if(log_would(lo | L_FML | L_FMLEXEC))
+				{
+					// this section must actually be enabled
+					log_start(lo | L_FML | L_FMLEXEC 										, "%15s : "			, "product(s)");
+					for(k = 0; k < ts[x]->fmlv->products_l; k++)
+					{
+						if(k)
+							log_add(", ");
+						log_add("%s", ts[x]->fmlv->products[k]->idstring);
+					}
+					log_finish(0);
+				}
+				if(log_would(lo | L_FML | L_FMLEXEC))
+				{
+					log(lo | L_FML | L_FMLEXEC 													, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
+					__r = write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
 
-				if(ts[x]->stdo_txt->l && ts[x]->stdo_txt->s[ts[x]->stdo_txt->l - 1] != '\n')
-					__r = write(2, "\n", 1);
-			}
-			if(log_would(lo | L_FML | L_FMLEXEC | e_stde))
-			{
-				log(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
-				__r = write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
+					if(ts[x]->cmd_txt->l && ts[x]->cmd_txt->s[ts[x]->cmd_txt->l - 1] != '\n')
+						__r = write(2, "\n", 1);
+				}
+				log(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
+				log(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
+				if(log_would(lo | L_FML | L_FMLEXEC))
+				{
+					log(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
+					__r = write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
 
-				if(ts[x]->stde_txt->l && ts[x]->stde_txt->s[ts[x]->stde_txt->l - 1] != '\n')
-					__r = write(2, "\n", 1);
+					if(ts[x]->stdo_txt->l && ts[x]->stdo_txt->s[ts[x]->stdo_txt->l - 1] != '\n')
+						__r = write(2, "\n", 1);
+				}
+				if(log_would(lo | L_FML | L_FMLEXEC | e_stde))
+				{
+					log(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
+					__r = write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
+
+					if(ts[x]->stde_txt->l && ts[x]->stde_txt->s[ts[x]->stde_txt->l - 1] != '\n')
+						__r = write(2, "\n", 1);
+				}
 			}
 		}
 	}
