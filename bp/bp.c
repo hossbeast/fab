@@ -146,26 +146,23 @@ int bp_create(gn ** n, int l, bp ** bp)
 		fatal(xrealloc
 			, &bps->evals
 			, sizeof(bps->evals[0])
-			, bps->evals_l + lvsl
+			, lvsl
 			, 0
 		);
 		fatal(xrealloc
 			, &bps->nofmls
 			, sizeof(bps->nofmls[0])
-			, bps->nofmls_l + lvsl
+			, lvsl
 			, 0
 		);
 		fatal(xrealloc
 			, &bps->primary
 			, sizeof(bps->primary[0])
-			, bps->primary_l + lvsl
+			, lvsl
 			, 0
 		);
 
 		// process nodes found on the last visit
-		int evals_cnt = 0;
-		int nofmls_cnt = 0;
-		int primary_cnt = 0;
 		int y;
 		for(y = 0; y < lvsl; y++)
 		{
@@ -184,15 +181,15 @@ int bp_create(gn ** n, int l, bp ** bp)
 						for(i = 0; i < lvs[y]->fabv->products_l; i++)
 							lvs[y]->fabv->products[i]->stage = k;
 
-						for(i = 0; i < (bps->evals_l + evals_cnt); i++)
+						for(i = 0; i < bps->evals_l; i++)
 						{
 							if(bps->evals[i] == lvs[y]->fabv)
 								break;
 						}
 
 						// add this eval context to the stage
-						if(i == (bps->evals_l + evals_cnt))
-							bps->evals[bps->evals_l + (evals_cnt++)] = lvs[y]->fabv;
+						if(i == bps->evals_l)
+							bps->evals[bps->evals_l++] = lvs[y]->fabv;
 					}
 				}
 				else if(strcmp("/..", lvs[y]->path->abs_dir) == 0)
@@ -208,21 +205,34 @@ int bp_create(gn ** n, int l, bp ** bp)
 					//  2 - in order to report additional errors before failing out
 					//
 					log(L_WARN, "SECONDARY has no formula - %s", lvs[y]->idstring);
-					bps->nofmls[bps->nofmls_l + (nofmls_cnt++)] = lvs[y];
+					bps->nofmls[bps->nofmls_l++] = lvs[y];
 					lvs[y]->stage = k;
 				}
 				else
 				{
 					// this is a source file
-					bps->primary[bps->primary_l + (primary_cnt++)] = lvs[y];
+					bps->primary[bps->primary_l++] = lvs[y];
 					lvs[y]->stage = k;
 				}
 			}
 		}
+	}
 
-		bps->evals_l += evals_cnt;
-		bps->nofmls_l += nofmls_cnt;
-		bps->primary_l += primary_cnt;
+	// splice out empty stages
+	for(x = (*bp)->stages_l - 1; x >= 0; x--)
+	{
+		if(((*bp)->stages[x].primary_l + (*bp)->stages[x].evals_l + (*bp)->stages[x].nofmls_l) == 0)
+		{
+			bp_freestage(&(*bp)->stages[x]);
+
+			memmove(
+					(*bp)->stages[x]
+				, &(*bp)->stages[x + 1]
+				, ((*bp)->stages_l - x - 1) * sizeof((*bp)->stages[0])
+			);
+
+			(*bp)->stages_l--;
+		}
 	}
 
 	// internally sort lists in each stage by name of their first product
@@ -294,7 +304,7 @@ int bp_eval(bp * const bp, int * const poison)
 
 			if(gn->changed || gn->invalid)
 			{
-				// propagate through strong dependencies
+				// changes propagate through strong dependencies
 				for(i = 0; i < gn->feeds.l; i++)
 				{
 					if(!gn->feeds.e[i]->weak)
@@ -302,7 +312,7 @@ int bp_eval(bp * const bp, int * const poison)
 				}
 			}
 
-			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s) %d %d %u"
+			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 				, x, c++
 				, "PRIMARY"
 				, gn->idstring
@@ -310,9 +320,6 @@ int bp_eval(bp * const bp, int * const poison)
 				,   gn->invalid ?               "  invalid"
 					: gn->changed ?               "  changed"
 					:                             "unchanged"
-				, gn->invalid
-				, gn->changed
-				, gn->path->can_hash
 			);
 		}
 
@@ -360,7 +367,7 @@ int bp_eval(bp * const bp, int * const poison)
 					// needs rebuilt
 					if(gn->rebuild)
 					{
-						// propagate to strong dependencies
+						// changes propagate to strong dependencies
 						for(i = 0; i < gn->feeds.l; i++)
 						{
 							if(!gn->feeds.e[i]->weak)
@@ -586,7 +593,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int p, ts *** ts,
 			fatal(var_set, vmap, "@", (*stax)[pn++], 0);
 
 			// render the formula
-			fatal(fml_render, (*ts)[i], vmap, stax, staxa, pn);
+			fatal(fml_render, (*ts)[i], vmap, stax, staxa, pn, 1);
 
 			i++;
 		}

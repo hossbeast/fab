@@ -61,7 +61,7 @@ int parse_args(int argc, char** argv)
 /* h */ , { "help"							, no_argument				, 0			, 'h' }
 // i
 /* j */ , { "concurrency"				, required_argument	, 0			, 'j' }
-// k
+/* k */	, { "bakescript"				, required_argument	, 0			, 'k'	}		// bakescript output path
 // l 
 // m
 // n
@@ -89,7 +89,7 @@ int parse_args(int argc, char** argv)
 		"chpuBU"
 
 		// with-argument switches
-		"b:d:f:v:j:"
+		"b:d:f:j:k:v:"
 	;
 
 	//
@@ -138,6 +138,11 @@ int parse_args(int argc, char** argv)
 				break;
 			case 'u':
 				g_args.mode_ddsc = MODE_DDSC_UPFRONT;
+				break;
+			case 'k':
+				g_args.mode_exec = MODE_EXEC_BAKE;
+				xfree(&g_args.bakescript_path);
+				g_args.bakescript_path = strdup(optarg);
 				break;
 			case 'v':
 				{
@@ -235,6 +240,10 @@ int parse_args(int argc, char** argv)
 	log(L_ARGS | L_PARAMS		, " %s (%c) init-fabfile-abs   =%s", "*", 'f', g_args.init_fabfile_path->abs);
 	log(L_ARGS | L_PARAMS		, " %s (%c) init-fabfile-rel   =%s", "*", 'f', g_args.init_fabfile_path->rel);
 	log(L_ARGS | L_PARAMS		, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
+	if(g_args.mode_exec == MODE_EXEC_BAKE)
+	{
+		log(L_ARGS | L_PARAMS		, " %s (%c) bakescript-path    =%s", strcmp(g_args.bakescript_path, DEFAULT_BAKE_PATH) == 0 ? " " : "*", 'k', g_args.bakescript_path);
+	}
 	log(L_ARGS | L_PARAMS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS | L_PARAMS		, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
 	if(g_args.concurrency > 0)
@@ -308,4 +317,5 @@ void args_teardown()
 	free(g_args.varvals);
 
 	path_free(g_args.init_fabfile_path);
+	free(g_args.bakescript_path);
 }

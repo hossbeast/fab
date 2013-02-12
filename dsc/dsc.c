@@ -139,7 +139,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 			fatal(var_set, vmap, "@", (*stax)[pn++], 0);
 
 			// render the formula
-			fatal(fml_render, (*ts)[x], vmap, stax, staxa, pn);
+			fatal(fml_render, (*ts)[x], vmap, stax, staxa, pn, 1);
 		}
 
 		// execute all formulas in parallel

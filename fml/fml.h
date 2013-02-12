@@ -47,7 +47,7 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_a, int p)
 //
 // render cmd to ts->cmd_txt
 //
-int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_a, int p)
+int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_a, int p, int standalone)
 	__attribute__((nonnull));
 
 /// fml_exec

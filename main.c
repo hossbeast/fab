@@ -21,6 +21,7 @@
 #include "dep.h"
 #include "tmp.h"
 #include "identity.h"
+#include "bake.h"
 
 #include "macros.h"
 #include "control.h"
@@ -232,7 +233,7 @@ int main(int argc, char** argv)
 					// execute discovery
 					fatal(dsc_exec, node_list, node_list_len, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
 				}
-				else if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN)
+				else if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN || g_args.mode_exec == MODE_EXEC_BAKE)
 				{
 					int new = 1;
 					while(new)
@@ -253,34 +254,46 @@ int main(int argc, char** argv)
 						}
 					}
 
-					// prune the buildplan of nodes which do not require updating
-					int poison = 0;
-					qfatal(bp_eval, bp, &poison);
-
-					if(poison)
-						qfail();
-
-					// dump buildplan, pending logging
-					if(bp)
-						bp_dump(bp);
-					
-					if(g_args.mode_exec == MODE_EXEC_FABRICATE)
+					if(g_args.mode_exec == MODE_EXEC_BAKE)
 					{
-						if(!bp || bp->stages_l == 0)
-						{
-							log(L_INFO, "nothing to fabricate");
-						}
-						else
-						{
-							// execute the build plan, one stage at a time
-							qfatal(bp_exec, bp, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+						// dump buildplan, pending logging
+						if(bp)
+							bp_dump(bp);
+						
+						// create bakescript
+						fatal(bake_bp, bp, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, g_args.bakescript_path);
+					}
+					if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN)
+					{
+						// prune the buildplan of nodes which do not require updating - incremental build
+						int poison = 0;
+						qfatal(bp_eval, bp, &poison);
 
-							// commit regular fabfile hashblocks
-							for(x = 0; x < ff_files.l; x++)
+						if(poison)
+							qfail();
+
+						// dump buildplan, pending logging
+						if(bp)
+							bp_dump(bp);
+						
+						if(g_args.mode_exec == MODE_EXEC_FABRICATE)
+						{
+							if(!bp || bp->stages_l == 0)
 							{
-								if(ff_files.e[x]->type == FFT_REGULAR)
+								log(L_INFO, "nothing to fabricate");
+							}
+							else
+							{
+								// execute the build plan, one stage at a time
+								qfatal(bp_exec, bp, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+
+								// commit regular fabfile hashblocks
+								for(x = 0; x < ff_files.l; x++)
 								{
-									fatal(hashblock_write, ff_files.e[x]->hb);
+									if(ff_files.e[x]->type == FFT_REGULAR)
+									{
+										fatal(hashblock_write, ff_files.e[x]->hb);
+									}
 								}
 							}
 						}

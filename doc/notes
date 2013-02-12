@@ -138,3 +138,13 @@ TODO
  - /regex/ match on abs/can/rel paths : returns list
  - end-of-string substring match : returns list
  - canonical path match : returns single item
+
+- PERSISTENT FAB DAEMON FOR A GIVEN TARGET
+ - given a target, establishes inotify watches on all relevant nodes
+ - given any changes, performs builds necessary to reconstruct the target
+ - outputs say a 10-line HUD view of current activity
+  - suitable for tailing - it emits say 10 newlines between views
+ - you can query the FABD for dumping node information it knows about
+ - affecting fabfile changes - equivalent to restarting the daemon
+
+ - WHY DIDNT I THINK OF THIS 6 MONTHS AGO

@@ -81,10 +81,8 @@ ff/ff.tokens.h : ff/ff.tok.h
 	$(CC) $(COPTS) $(CFLAGS) $< -o $@
 
 # dependencies
-main.o  : args/args.o						\
-				  ff/ff.o								\
-				  bp/bp.o								\
-				  common/coll.o					\
+main.o  :	common/coll.o					\
+					args/args.o						\
 				  common/idx.o					\
 				  common/pstring.o			\
 				  common/unitstring.o		\
@@ -93,6 +91,8 @@ main.o  : args/args.o						\
 					common/dirutil.o			\
 					common/cksum.o				\
 					common/map.o					\
+				  ff/ff.o								\
+				  bp/bp.o								\
 				  fml/fml.o							\
 				  gn/gn.o								\
 					gn/gnlw.o							\
@@ -107,7 +107,8 @@ main.o  : args/args.o						\
 					hashblock/hashblock.o	\
 					depblock/depblock.o		\
 					canon/canon.o					\
-					path/path.o
+					path/path.o						\
+					bake/bake.o
 
 common/idx.o : common/xstring.o
 

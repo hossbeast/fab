@@ -178,10 +178,17 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * staxa, int p)
 	finally : coda;
 }
 
-int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxa, int p)
+int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxa, int p, int standalone)
 {
-	// start with shebang
-	fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
+	if(standalone)
+	{
+		// start with shebang
+		fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
+	}
+	else if(ts->cmd_txt)
+	{
+		ts->cmd_txt->l = 0;
+	}
 
 	ff_node * ffn = ts->fmlv->fml->ffn;
 

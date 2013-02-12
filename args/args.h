@@ -48,8 +48,9 @@
 #define DEFAULT_MODE_GNID					MODE_GNID_RELATIVE
 #define DEFAULT_MODE_DDSC					MODE_DDSC_DEFERRED
 #define DEFAULT_CONCURRENCY_LIMIT	0
+#define DEFAULT_BAKE_PATH					"./bakescript"
 
-#define EXPIRATION_POLICY				(60 * 60 * 24 * 7)
+#define EXPIRATION_POLICY					(60 * 60 * 24 * 7)
 
 /* modes */
 
@@ -59,12 +60,13 @@
 	_MODE(MODE_EXEC_BUILDPLAN	, 0x01	, x)		/* generate buildplan only */											\
 	_MODE(MODE_EXEC_DDSC			, 0x02	, x)		/* perform dependency discovery */								\
 	_MODE(MODE_EXEC_DUMP			, 0x03	, x)		/* dump graph nodes */														\
+	_MODE(MODE_EXEC_BAKE			, 0x04	, x)		/* bake the buildplan */													\
 /* path display modes */																																			\
-	_MODE(MODE_GNID_RELATIVE	, 0x04	, x)		/* path relative to the initial fabfile */				\
-	_MODE(MODE_GNID_CANON			, 0x05	, x)		/* canonical path */															\
+	_MODE(MODE_GNID_RELATIVE	, 0x05	, x)		/* path relative to the initial fabfile */				\
+	_MODE(MODE_GNID_CANON			, 0x06	, x)		/* canonical path */															\
 /* dependency discovery modes */																															\
-	_MODE(MODE_DDSC_DEFERRED	, 0x06	, x)		/* defer dependency discovery until bp prune */		\
-	_MODE(MODE_DDSC_UPFRONT		, 0x07	, x)		/* comprehensive dependency discovery upfront */	\
+	_MODE(MODE_DDSC_DEFERRED	, 0x07	, x)		/* defer dependency discovery until bp prune */		\
+	_MODE(MODE_DDSC_UPFRONT		, 0x08	, x)		/* comprehensive dependency discovery upfront */	\
 
 enum {
 #define _MODE(a, b, c) a = b,
@@ -108,6 +110,7 @@ extern struct g_args_t
 	int					targets_len;
 
 	path *			init_fabfile_path;		// path to initial fabfile
+	char *			bakescript_path;			// path to bakescript
 
 	char **			invalidate;						// graph nodes to invalidate
 	int					invalidate_len;
