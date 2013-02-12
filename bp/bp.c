@@ -565,7 +565,6 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int p, ts *** ts,
 	// execute stages
 	for(x = 0; x < bp->stages_l; x++)
 	{
-		int bad = 0;
 		i = 0;
 		log(L_BP | L_BPINFO, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
 
@@ -598,12 +597,10 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int p, ts *** ts,
 			i++;
 		}
 
-		// execute all formulas in parallel processes
+		// execute all formulas in parallel processes - res is true if all formulas
+		// executed successfully
 		int res = 0;
 		fatal(ts_execwave, *ts, i, tsw, x, L_BP | L_BPEXEC, L_FAB, &res);
-
-		if(!res)
-			qfail();
 
 		// harvest the results
 		for(y = 0; y < i; y++)
@@ -644,14 +641,10 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int p, ts *** ts,
 						fatal(gn_secondary_rewrite_fab, prod);
 				}
 			}
-			else
-			{
-				bad = 1;
-			}
 		}
 
-		if(bad)
-			return 0;
+		if(!res)
+			qfail();
 	}
 
 	finally : coda;

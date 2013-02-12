@@ -144,10 +144,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 
 		// execute all formulas in parallel
 		int res = 0;
-		fatal(ts_execwave, *ts, x, tsw, i, L_DSC | L_DSCEXEC, L_DSC, &res);
-
-		if(!res)
-			qfail();
+		fatal(ts_execwave, *ts, tsl, tsw, i, L_DSC | L_DSCEXEC, L_DSC, &res);
 
 		// harvest the results
 		int newn = 0;
@@ -155,40 +152,50 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 
 		for(x = 0; x < tsl; x++)
 		{
-			// PRIMARY node for this discovery
-			gn * dscvgn = (*ts)[x]->fmlv->products[0];
-
-			// parse the generated DDISC fabfile
-			fatal(ff_dsc_parse
-				, (*ts)[x]->ffp
-				, (*ts)[x]->stdo_txt->s
-				, (*ts)[x]->stdo_txt->l
-				, (*ts)[x]->stdo_path->s
-				, dscvgn
-				, &ffn
-			);
-
-			if(!ffn)
-				qfail();
-
-			// dump, pending logging
-			ff_dump(ffn);
-
-			// allocate the dependency block
-			fatal(depblock_allocate, dscvgn->dscv_block);
-
-			// process dependencies, attempt to populate the dependency block
-			for(k = 0; k < ffn->statements_l; k++)
+			if((*ts)[x]->r_status == 0 && (*ts)[x]->r_signal == 0 && (*ts)[x]->stde_txt->l == 0)
 			{
-				if(ffn->statements[k]->type == FFN_DEPENDENCY)
+				// PRIMARY node for this discovery
+				gn * dscvgn = (*ts)[x]->fmlv->products[0];
+
+				// parse the generated DDISC fabfile
+				fatal(ff_dsc_parse
+					, (*ts)[x]->ffp
+					, (*ts)[x]->stdo_txt->s
+					, (*ts)[x]->stdo_txt->l
+					, (*ts)[x]->stdo_path->s
+					, dscvgn
+					, &ffn
+				);
+
+				if(ffn)
 				{
-					fatal(dep_process, ffn->statements[k], vmap, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
+					// dump, pending logging
+					ff_dump(ffn);
+
+					// allocate the dependency block
+					fatal(depblock_allocate, dscvgn->dscv_block);
+
+					// process dependencies, attempt to populate the dependency block
+					for(k = 0; k < ffn->statements_l; k++)
+					{
+						if(ffn->statements[k]->type == FFN_DEPENDENCY)
+						{
+							fatal(dep_process, ffn->statements[k], vmap, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
+						}
+					}
+
+					// rewrite the dependency block to disk, commit the dscv hashblock
+					fatal(gn_primary_rewrite_dscv, dscvgn);
+				}
+				else
+				{
+					res = 0;
 				}
 			}
-
-			// rewrite the dependency block to disk, commit the dscv hashblock
-			fatal(gn_primary_rewrite_dscv, dscvgn);
 		}
+
+		if(!res)
+			qfail();
 
 		// process cached results
 		for(x = 0; x < cachel; x++)
