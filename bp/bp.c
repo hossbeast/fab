@@ -226,7 +226,7 @@ int bp_create(gn ** n, int l, bp ** bp)
 			bp_freestage(&(*bp)->stages[x]);
 
 			memmove(
-					(*bp)->stages[x]
+					&(*bp)->stages[x]
 				, &(*bp)->stages[x + 1]
 				, ((*bp)->stages_l - x - 1) * sizeof((*bp)->stages[0])
 			);

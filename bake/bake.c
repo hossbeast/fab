@@ -54,7 +54,12 @@ int bake_bp(
 		fail("open(%s)=[%d][%s]", dst, errno, strerror(errno));
 
 	dprintf(fd, "#!/bin/bash\n\n");
-	dprintf(fd, "START=$(date +%%s)\n");
+	dprintf(fd, "# re-exec under time\n");
+	dprintf(fd, "if [[ $1 != \"timed\" ]]; then\n");
+	dprintf(fd, "  time $0 timed\n");
+	dprintf(fd, "  exit $?\n");
+	dprintf(fd, "fi\n");
+	dprintf(fd, "\n");
 
 	// render all formulas
 	i = 0;
@@ -62,8 +67,9 @@ int bake_bp(
 	{
 		log(L_BP | L_BPINFO, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
 
-		if(bp->stages[x].evals_l)
-			dprintf(fd, "## stage %d\n", x);
+		if(x)
+			dprintf(fd, "\n");
+		dprintf(fd, "# formulas and names for stage %d\n", x);
 
 		// render formulas for each eval context on this stage
 		for(y = 0; y < bp->stages[x].evals_l; y++)
@@ -91,31 +97,10 @@ int bake_bp(
 			// render the formula
 			fatal(fml_render, (*ts)[y], vmap, stax, staxa, pn, 0);
 
-			// index in the stage in which this formula is executed
+			// index occupied by this formula in the stage.stage in which this formula is executed
 			int index = y;
 			if(g_args.concurrency > 0)
 				index %= g_args.concurrency;
-
-			// append this formula to the bakescript
-			dprintf(fd
-				, "fml_%d_%d()\n"						// x, y
-				  "{\n"
-				  "  exec 1>/dev/null\n"		// discard stdout
-				  "  exec 2>&%d\n"					// save stderr to specific fd
-					"\n"
-					"  # command"
-					"  %.*s\n"								// the command
-					"\n"
-					"  X=$?\n"								// save exit status
-					"  echo %d 1>&100\n"			// echo our index
-					"  exit $X\n"							// return exit status
-				  "}\n"
-					"\n"
-				, x, y
-				, 100+index+1
-				, (int)(*ts)[y]->cmd_txt->l, (*ts)[y]->cmd_txt->s
-				, index
-			);
 
 			// save the name(s) of target(s) produced by this formula
 			dprintf(fd, "NAMES[%d]='", i++);
@@ -133,26 +118,44 @@ int bake_bp(
 				dprintf(fd, "}");
 
 			dprintf(fd, "'\n");
+
+			// append this formula to the bakescript
+			dprintf(fd
+				, "fml_%d_%d()\n"						// x, y
+				  "{\n"
+				  "  exec 1>/dev/null\n"		// discard stdout
+				  "  exec 2>&%d\n"					// save stderr to specific fd
+					"\n"
+					"  # command"
+					"  %.*s\n"								// the command
+					"\n"
+					"  X=$?\n"								// save exit status
+					"  echo %d 1>&99\n"				// echo our index
+					"  exit $X\n"							// return exit status
+				  "}\n"
+					"\n"
+				, x, y
+				, 100+index
+				, (int)(*ts)[y]->cmd_txt->l, (*ts)[y]->cmd_txt->s
+				, index
+			);
 		}
 	}
 
-	// create enough temp files for the whole build
-	int needtemp = MIN(g_args.concurrency > 0 ? g_args.concurrency : 0xFFFFFFFF, tsl);
+	dprintf(fd, "# temp filename - only need the 1\n");
+	dprintf(fd, "tmp=`mktemp --dry-run`\n");
 
-	dprintf(fd, "# setup temp files\n");
-	dprintf(fd, "tmp[0]=`mktemp --dry-run`\n");
-	for(x = 0; x < needtemp; x++)
-		dprintf(fd, "tmp[%d]=`mktemp --dry-run`\n", x+1);
-
-	// setup named pipe to manage process multiplexing
-	dprintf(fd, "mkfifo --mode=0700 $tmp[0]\n");
-	dprintf(fd, "exec 100<>$tmp[0]\n");
-	dprintf(fd, "rm -f $tmp[0]\n");
+	dprintf(fd, "# setup named pipe to manage process multiplexing\n");
+	dprintf(fd, "\n");
+	dprintf(fd, "mkfifo --mode=0700 $tmp\n");
+	dprintf(fd, "exec 99<>$tmp\n");
+	dprintf(fd, "rm -f $tmp\n");
 	dprintf(fd, "\n");
 
-	// results aggregation
+	dprintf(fd, "# results aggregation\n");
 	dprintf(fd, "WIN=0\n");
 	dprintf(fd, "DIE=0\n");
+	dprintf(fd, "\n");
 
 	// emit code to execute all the stages
 	i = 0;
@@ -171,26 +174,29 @@ int bake_bp(
 				dprintf(fd, "# launch stage %d.%d\n", x, j/step);
 
 				for(y = j; y < (j + step) && y < bp->stages[x].evals_l; y++)
-					dprintf(fd, "exec %d>$tmp[%d] ; rm -f $tmp[%d]\n", 100+y-j+1, y-j+1, y-j+1);
+					dprintf(fd
+						, "exec %d>$tmp ; rm -f $tmp ; fml_%d_%d & PIDS[%d]=$!\n"
+						, 100+y-j
+						, x
+						, y
+						, y-j
+					);
 
-				for(y = j; y < (j + step) && y < bp->stages[x].evals_l; y++)
-					dprintf(fd, "fml_%d_%d & PIDS[%d]=$!\n", x, y, y-j);
-				
 				dprintf(fd, "\n");
-				dprintf(fd, "# harvest stage %d.%d\n", x, j);
+				dprintf(fd, "# harvest stage %d.%d\n", x, j/step);
 				dprintf(fd, "C=0\n");
 				dprintf(fd, "while [[ $C != %d ]]; do\n", MIN(j + step, bp->stages[x].evals_l) - j);
-				dprintf(fd, "  read -u 100 idx\n");
+				dprintf(fd, "  read -u 99 idx\n");
 				dprintf(fd, "  wait ${PIDS[$idx]}\n");
-				dprintf(fd, "  EXTS[$idx]=$?\n");
+				dprintf(fd, "  EXITS[$idx]=$?\n");
 				dprintf(fd, "  P=${PIDS[$idx]}\n");
-				dprintf(fd, "  X=${EXTS[$idx]}\n");
+				dprintf(fd, "  X=${EXITS[$idx]}\n");
 				dprintf(fd, "  I=$((%d+$idx))\n", i+j);
 				dprintf(fd, "  N=${NAMES[$I]}\n");
 				dprintf(fd, "  [[ $X -eq 0 ]] && ((WIN++))\n");
 				dprintf(fd, "  [[ $X -ne 0 ]] && ((DIE++))\n");
-				dprintf(fd, "  printf '[%%3d,%%3d] P=%%d X=%%d %%s\\n' %d $(($idx+%d)) $P $X \"$N\"\n", x, j);
-				dprintf(fd, "  cat /proc/$$/fd/$((100+$idx+1))\n");
+				dprintf(fd, "  printf '[%%3d,%%3d] X=%%d %%s\\n' %d $((idx+%d)) $X \"$N\"\n", x, j);
+				dprintf(fd, "  cat /proc/$$/fd/$((100+idx))\n");
 				dprintf(fd, "  ((C++))\n");
 				dprintf(fd, "done\n");
 				dprintf(fd, "\n");
@@ -199,10 +205,10 @@ int bake_bp(
 		i += bp->stages[x].evals_l;
 	}
 	
-	dprintf(fd, "STOP=$(date +%%s)\n");
-	dprintf(fd, "printf '%%15s %%ds\\n' elapsed $(($STOP-$START))\n");
 	dprintf(fd, "printf '%%15s %%d\\n' succeeded $WIN\n");
 	dprintf(fd, "printf '%%15s %%d\\n' failed $DIE\n");
+	dprintf(fd, "# no failures=0, and 1 otherwise\n");
+	dprintf(fd, "exit $((!(DIE==0)))\n");
 
 finally:
 	close(fd);
