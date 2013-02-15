@@ -1,0 +1,29 @@
+# c.fab
+# provides discovery formula for .c files
+# provides fabrication formula for .c -> .o
+#
+# bindings
+#  cc
+#  cflags
+#  dirs
+#  paths
+#  discdirs
+#  discpaths
+#  fabdirs
+#  fabpaths
+#
+# usage
+#  >> std::c srcdir @ dirs
+
+
+# c files
+[ [ $dirs $discdirs ] =>> lsr/xmf/<c> $discpaths $paths ] ~
+{
+	[ $cc $cflags ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ] =>> rx/xs/<o>
+}
+
+# compile .o from .c, also provides the dependency
+[ [ $dirs $fabdirs ] =>> lsr/xs/<c>/<o>/y/dj/shift/pop $fabpaths $paths ] :: [ $< ] =>> rx/xs/<c>
+{
+	[ $cc $cflags ] -c [ $@ ] =>> rx/ineed/xm/<c>/ss/u -o [ $@ ]
+}

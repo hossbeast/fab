@@ -1,0 +1,58 @@
+- set of fab snippets installs with fab into /usr/lib/fab/std
+- you can specify additional directories with a cmdline switch
+   fab -I /path/to/.fabs
+  or with some directive in the file
+   >>>I [ /code/root/common/fab ]
+
+- include syntax, infix double colon notation for installed modules by name
+ >> lang::c
+ >> std::dsc::c
+ >> std::fab::c
+ >> std::task::clean
+ >> nitro::task::clean
+
+- include syntax, list-based path-to-file notation
+ >> [ /home/code/common/fab/std/c.fab ] 
+
+- a variables definition is the value at the top of its stack
+- each stack entry is either : 1) an lstack instance, or 2) an alias to another variable
+
+var =							# undef var
+var = [ list ]		# undef var ; push(var,[list])
+var = alias				# undef var ; push(var,list)
+var <- [ list ]		# push(var,[list])
+var <- alias			# push(var,list)
+var ->						# pop(var)
+var -> [ list ]	 	# pop(var) ; push(var,[list])
+var -> alias			# pop(var) ; push(var,list)
+
+- then, the syntax for "including" a .fab includes shorthand notation for pushing values
+	onto the variables' stacks before including, and popping thereafter
+
+# 0. do nothing
+# 1. push an empty value onto all variables referenced in the fab
+# 2. specify a value to push/pop for a variable
+# 3. specify an alias to push/pop for a variable
+
+>> std::c														# just include
+>> std::c [ list ] @ var 						# push(var,[list]) ; include ; pop(var)
+>> std::c [ list ] @ var var2				# push(var,[list]) ; push(var2,[list]) ; include ; pop(var) ; pop(var2)
+>> std::c alias @ var var2 					# push(var,list) ; push(var2,list) ; include ; pop(var)
+>> std::c < >												# for all { push($_, []) } ; include ; for all { pop }
+>> std::c < alias @ var var2 >			# for all except var, var2 { push($_, []) } ; push(var,list) ; push(var2,list) ; include ; for all { pop }
+>> std::c < [ list ] @ var var2 >		# for all except var, var2 { push($_, []) } ; push(var,list) ; push(var2,list) ; include ; for all { pop }
+
+- non-file-backed scoping
+
+non-file-backed's by default live at /../name
+
+when you declare a non-file-backed by absolute path, that's where it goes
+otherwise, it goes to /../<scope>/name
+then, those non-file-backed's declared in the initial fabfile are "symlinked" back to /..
+references to @non-file-backed in some file resolve to /../<scope>/name for the scope of that file
+shorthand : 
+
+clean : @syslog/clean => clean : /../syslog/clean
+install : @all => install : /../<myscope>/all
+
+

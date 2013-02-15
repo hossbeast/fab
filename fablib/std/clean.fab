@@ -1,0 +1,13 @@
+# clean.fab
+# provides a formula for clean
+
+clean
+{
+	find [ $DIRS ] =>> rx/DIRS -name '*.o' -delete
+	find [ $DIRS ] =>> rx/DIRS -name '*.so' -delete
+	find [ $DIRS ] =>> rx/DIRS -name '*.lex.*' -delete
+	find [ $DIRS ] =>> rx/DIRS -name '*.tab.*' -delete
+	find [ $DIRS ] =>> rx/DIRS -name exports -delete
+}
+
+------------------------------------------------------------

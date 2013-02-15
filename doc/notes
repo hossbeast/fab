@@ -1,150 +1,46 @@
-# include the following directories
->> lib
->> util
+# includes
+	two kinds
+	reusable
+		bindings
+	include guards
 
-# lazy variable definitions
-CFX = $COPTS $CFLAGS
-LFX = $LOPTS $LFLAGS
-
-# variables available for interpolation in recipes
-$@ - path to target
-$^ - list of immediate dependencies
-
-# make "build" from .o files corresponding to the .c files in this directory
-build : s/^(.*)\.c$/$1.o/ {
-	gcc $CFX $@ $LFX -o $^
-}
-
-# make a .o in this directory from a .c in this directory
-/\.o$/ : $_0.c {
-	gcc ${CFLAGS} $@ 
-}
-
-# make deps files for each .c in this directory
-/\.d$/ : $_0.c {
-	gcc -MP -ME $@
-	sed -e 's/a/b' > $@
-}
-
-q/date.h/
-
-b/.h/s/(^.)/$1/
-
-principles
-	- rules to use a file are in the buildfile in its same directory
-	- two-stage process : dependency discoverbuildinoy, target building
-	- 
-
-generic listbuilding syntax
-	- op/args/args/op/args/op/args
-	- 
-	- default list : files in the same directory as the buildfile being executed
-	- list => transformation => transformation => transformation ...
+# pre-installed reusable >> includes
+	generator-variables : reusable list transformation components
 	
-	- different kinds of list transformations
-		- selection
-			- m// - grep 
-			- q// - exact name match
-			- a// - starts with string
-			- b// - ends with string
-			- c// - contains string
-			- first, last ?
-		- translation
-			- s/// - substitution on all list elements
-			- t// - replace current list with single element list whose element is the given argument
-			- d// - replace current list with list of files in directory named by first element in current list
 
- ( )
-
-variables
-	- syntax
-		- $ varname
-		- ${varname}
-		- ${varname}<modifiers>
-			- + : filename-part
-			- - : dirname-part
-
-	- $@ : target of the rule
-	- $^ : all prerequisites
-	- ${_0} - filename-part before regex match
-	- ${_1} - filename-part of regex match
-	- ${_1} - filename-part after regex match
-
-	- ALL variables are lists
-	- when using a variable, the default is to use its first element
-	- otherwise, use a list transform
-	- variable has a value
-		- variable is then bound at usage time
-			- variable-bind is an event which can be used
-
-$COPTS = -m32
+when you include a .fab, you supply 0+ variable bindings. this creates a binding context object
+which is available inside the .fab and can be read from
 
 
-filenames
-	- default is to exclude the directory-part
-	- include the directory-part with ${variable}+
-	- all filepaths are canonicalized
+# generator-string variables, and composition from variables
+# content signatures
+# better help output, logging category explanations
+# fabfile syntax : terminating comments /* */
 
-directories
-	- including a directory
-		- reads a buildfile in that directory, if any
-		- makes files in that directory available for pattern matching
+# tagging of items in fabfile for logging - the tagging is done with per-node ( x:y ) settings
+  per-node settings ( x:y, x:y )
+		invalidate this node
+		dump individual VAR-sets by name
+		dump individual formulas by node-name
 
-switches
-	- just build dependencies
-	- up-to-date method
-		- last-modified timestamp
-		- file size
-		- md5
 
-immediate and eventual dependency context
-	- this file immediately depends on date.h, therefore COPTS for this file +=-fms-extensions
 
-dependencies
-	- a canonical filepath depends on another canonical filepath + exact cmd used to construct that file
+# dump/invalidate/target node identification standardization
+	/text/ : match on abs/can/rel paths, returns list
+	text   : substring match, returns list
+	<text> : canonical path match, returns single item
+	@text  : shorthand for non-file-backed, equivalent to canonical path match
+   text  : shorthand for append to init-fabfile-rel-dir, then bsearch on relative path
 
-TODO
- : fablw - inspect dependency graph
- : fab -h help
+# PERSISTENT FAB DAEMON FOR A GIVEN TARGET
+	given a target, establishes inotify watches on all relevant nodes
+	given any changes, performs builds necessary to reconstruct the target
+	outputs say a 10-line HUD view of current activity
+		suitable for tailing - it emits say 10 newlines between views
+	you can query the FABD for dumping node information it knows about
+	affecting fabfile changes - equivalent to restarting the daemon
 
-- right-to-left dependency evaluation
-- generator-string variables, and composition from variables
-
-- fablw - examine the dependency graph
-
-- save relations in /var/cache/fab/gn
-- 2 dump modes - saved relations, parsed node
- - saved : include formula
- - saved : include ddisc formula, resulting text
-- dump individual VAR-sets by name
-- dump individual formulas by node-name
-- log tag audit
-- better help output, logging category explanations
-
-- GENERATED always in its own stage?
-- undefined variables resolve to empty list
-- includes ?? 
-- terminating comments /* */
-- flag 
-- per-node settings ( x:y, x:y )
-	- invalidate this node
-
-- tagging of items in fabfile for logging - the tagging is done with per-node ( x:y ) settings
-
-- write a bash script which will perform the build - this is equivalent to invalidating all nodes
-  and then concatenating the formula scripts in stage order
-
-- dump/invalidate/target node identification standardization
- - /regex/ match on abs/can/rel paths : returns list
- - end-of-string substring match : returns list
- - canonical path match : returns single item
-
-- PERSISTENT FAB DAEMON FOR A GIVEN TARGET
- - given a target, establishes inotify watches on all relevant nodes
- - given any changes, performs builds necessary to reconstruct the target
- - outputs say a 10-line HUD view of current activity
-  - suitable for tailing - it emits say 10 newlines between views
- - you can query the FABD for dumping node information it knows about
- - affecting fabfile changes - equivalent to restarting the daemon
-
- - WHY DIDNT I THINK OF THIS 6 MONTHS AGO
+# autovar documentation
+$@, ${products} - products of the current formula
+$<, ${lhs}      - lefthand side of a multi-product formula
+$#, ${base}     - relative path to the directory containing the master fabfile
