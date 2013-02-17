@@ -2,7 +2,7 @@
 - you can specify additional directories with a cmdline switch
    fab -I /path/to/.fabs
   or with some directive in the file
-   >>>I [ /code/root/common/fab ]
+   >>> [ /code/root/common/fab ]
 
 - include syntax, infix double colon notation for installed modules by name
  >> lang::c
@@ -18,13 +18,14 @@
 - each stack entry is either : 1) an lstack instance, or 2) an alias to another variable
 
 var =							# undef var
-var = [ list ]		# undef var ; push(var,[list])
-var = alias				# undef var ; push(var,list)
-var <- [ list ]		# push(var,[list])
-var <- alias			# push(var,list)
+var = [ list ]		# undef var ; push(var, [list])
+var = alias				# undef var ; push(var, alias)
+var <-            # push(var, undef)
+var <- [ list ]		# push(var, [list])
+var <- alias			# push(var, alias)
 var ->						# pop(var)
-var -> [ list ]	 	# pop(var) ; push(var,[list])
-var -> alias			# pop(var) ; push(var,list)
+var -> [ list ]	 	# pop(var) ; push(var, [list])
+var -> alias			# pop(var) ; push(var, alias)
 
 - then, the syntax for "including" a .fab includes shorthand notation for pushing values
 	onto the variables' stacks before including, and popping thereafter
@@ -50,9 +51,10 @@ when you declare a non-file-backed by absolute path, that's where it goes
 otherwise, it goes to /../<scope>/name
 then, those non-file-backed's declared in the initial fabfile are "symlinked" back to /..
 references to @non-file-backed in some file resolve to /../<scope>/name for the scope of that file
-shorthand : 
+
+scoping : 
 
 clean : @syslog/clean => clean : /../syslog/clean
 install : @all => install : /../<myscope>/all
 
-
+clean : /../syslog/clean @libasp::clean

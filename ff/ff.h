@@ -24,14 +24,16 @@
 #define FFN_TABLE(x)										\
 	_FFN(FFN_STMTLIST				, 0x01	, x)	\
 	_FFN(FFN_DEPENDENCY			, 0x02	, x)	\
-	_FFN(FFN_FORMULA				, 0x04	, x)	\
-	_FFN(FFN_INCLUDE				, 0x05	, x)	\
-	_FFN(FFN_VARDECL				, 0x06	, x)	\
-	_FFN(FFN_LIST						, 0x07	, x)	\
-	_FFN(FFN_GENERATOR			, 0x08	, x)	\
-	_FFN(FFN_VARNAME				, 0x09	, x)	\
-	_FFN(FFN_LF							, 0x0a	, x)	\
-	_FFN(FFN_WORD						, 0x0b	, x)
+	_FFN(FFN_FORMULA				, 0x03	, x)	\
+	_FFN(FFN_INCLUDE				, 0x04	, x)	\
+	_FFN(FFN_VARASSIGN			, 0x05	, x)	\
+	_FFN(FFN_VARPUSH				, 0x06	, x)	\
+	_FFN(FFN_VARPOP					, 0x07	, x)	\
+	_FFN(FFN_LIST						, 0x08	, x)	\
+	_FFN(FFN_GENERATOR			, 0x09	, x)	\
+	_FFN(FFN_VARNAME				, 0x0a	, x)	\
+	_FFN(FFN_LF							, 0x0b	, x)	\
+	_FFN(FFN_WORD						, 0x0c	, x)
 
 enum {
 #define _FFN(a, b, c) a = b,
@@ -133,7 +135,7 @@ typedef struct ff_node
 			char*			text;
 		};
 
-		struct {													// FFN_VARNAME, FFN_VARDECL
+		struct {													// FFN_VARNAME, FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP
 			char*			name;
 		};
 	};
@@ -145,7 +147,7 @@ typedef struct ff_node
 			struct ff_node*			generator_node;
 		};
 
-		struct {													// FFN_VARDECL
+		struct {													// FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP
 			struct ff_node*			definition;
 		};
 

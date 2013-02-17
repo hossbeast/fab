@@ -124,7 +124,23 @@ int main(int argc, char** argv)
 			{
 				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
 			}
-			else if(ffn->statements[x]->type == FFN_VARDECL)
+			else if(ffn->statements[x]->type == FFN_VARASSIGN)
+			{
+				// resolve the list associated to the variable name
+				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
+
+				// save the resultant list
+				fatal(var_set, vmap, ffn->statements[x]->name, stax[staxp++], 0);
+			}
+			else if(ffn->statements[x]->type == FFN_VARPUSH)
+			{
+				// resolve the list associated to the variable name
+				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
+
+				// save the resultant list
+				fatal(var_set, vmap, ffn->statements[x]->name, stax[staxp++], 0);
+			}
+			else if(ffn->statements[x]->type == FFN_VARPOP)
 			{
 				// resolve the list associated to the variable name
 				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);

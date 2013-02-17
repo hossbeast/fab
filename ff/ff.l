@@ -163,6 +163,7 @@
 
 [#].*																				{ locify(yyextra, yylloc, yyleng, 0); }
 
+
 <INITIAL>>>																	{ return LEX(INC); }
 <INITIAL>=>>																{
 																							PUSHSTATE(generatorws, yyextra);
@@ -176,7 +177,7 @@
 <checklw>[^ \t=]														{ POPSTATE(yyextra); yyless(0); }
 <checklw>[ \t]+															{ locify(yyextra, yylloc, yyleng, 0); }
 
-<INITIAL>[^\n\t\\ :*~"$[{=\x00]+						{ return LEX(WORD); }
+<INITIAL>[^\n\t\\ :*~"$[{=<>-\x00]+					{ return LEX(WORD); }
 <list>[^\n\t\\ "$[\]\x00]+									{ return LEX(WORD); }
 <command>[^\n}[\x00]+												{ return LEX(WORD); }
 <commandchecklit>\t+>[\t ]+									{
@@ -199,6 +200,9 @@
 <INITIAL>\\[~]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
 <INITIAL>\\[{]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
 <INITIAL>\\[=]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<INITIAL>\\[-]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<INITIAL>\\[<]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<INITIAL>\\[>]															{ yytext++; yyleng--; return LEXX(WORD, 1); }
 
 <INITIAL,list>\n														{ loc_reset(yyextra, yylloc); }
 <command>\n																	{
@@ -214,6 +218,9 @@
 <INITIAL>[*]																{ return LEX(yytext[0]); }
 <INITIAL>[~]																{ return LEX(yytext[0]); }
 <INITIAL>[=]																{ return LEX(yytext[0]); }
+<INITIAL>[-]																{ return LEX(yytext[0]); }
+<INITIAL>[<]																{ return LEX(yytext[0]); }
+<INITIAL>[>]																{ return LEX(yytext[0]); }
 <command>[}]																{
 																							POPSTATE(yyextra);
 																							return LEX(yytext[0]);

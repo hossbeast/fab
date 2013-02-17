@@ -73,6 +73,9 @@
 %token <num> '{'
 %token <num> '}'
 %token <num> '='
+%token <num> '-'
+%token <num> '<'
+%token <num> '>'
 %token <num> '"'
 
 /* nonterminals */
@@ -81,7 +84,9 @@
 %type  <node> statement
 %type  <node> statement_list
 %type  <node> include
-%type  <node> vardecl
+%type  <node> varassign
+%type  <node> varpush
+%type  <node> varpop
 %type  <node> formula
 %type  <node> dependency
 %type  <node> discovery
@@ -94,6 +99,7 @@
 %type  <node> formula_list
 %type  <node> word
 %type  <node> generator
+%type  <node> varvalue
 
 /* sugar */
 %token END 0 "end of file"
@@ -120,7 +126,9 @@ statement_list
 
 statement
 	: include
-	| vardecl
+	| varassign
+	| varpush
+	| varpop
 	| dependency
 	| task
 	| fabrication
@@ -134,11 +142,42 @@ include
 	}
 	;
 
-vardecl
-	: WORD '=' list
+varassign
+	: WORD '='
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARDECL, $1.s, $3->e, $1.s, $1.e, $3);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1.s, $2.e, $1.s, $1.e, (void*)0);
 	}
+	| WORD '=' varvalue
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1.s, $3->e, $1.s, $1.e, $3);
+	}
+	;
+
+varpush
+	: WORD '<' '-'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1.s, $3.e, $1.s, $1.e, (void*)0);
+	}
+	| WORD '<' '-' varvalue
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1.s, $4->e, $1.s, $1.e, $4);
+	}
+	;
+
+varpop
+	: WORD '-' '>'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1.s, $3.e, $1.s, $1.e, (void*)0);
+	}
+	| WORD '-' '>' varvalue
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1.s, $4->e, $1.s, $1.e, $4);
+	}
+	;
+
+varvalue
+	: list
+	| word
 	;
 
 dependency

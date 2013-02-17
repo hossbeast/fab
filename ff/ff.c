@@ -301,7 +301,23 @@ ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 	{
 		n->chain[0]				= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_VARDECL)
+	else if(type == FFN_VARASSIGN)
+	{
+		a = va_arg(va, char*);
+		b = va_arg(va, char*);
+
+		n->name						= struse(a, b);
+		n->definition			= va_arg(va, ff_node*);
+	}
+	else if(type == FFN_VARPUSH)
+	{
+		a = va_arg(va, char*);
+		b = va_arg(va, char*);
+
+		n->name						= struse(a, b);
+		n->definition			= va_arg(va, ff_node*);
+	}
+	else if(type == FFN_VARPOP)
 	{
 		a = va_arg(va, char*);
 		b = va_arg(va, char*);
@@ -534,7 +550,33 @@ void ff_dump(ff_node * const root)
 			{
 
 			}
-			else if(ffn->type == FFN_VARDECL)
+			else if(ffn->type == FFN_VARASSIGN)
+			{
+				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
+					, lvl * 2, ""
+					, "name", ffn->name
+				);
+
+				log(L_FF | L_FFTREE, "%*s  %10s :"
+					, lvl * 2, ""
+					, "definition"
+				);
+				dump(ffn->definition, lvl + 1);
+			}
+			else if(ffn->type == FFN_VARPUSH)
+			{
+				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
+					, lvl * 2, ""
+					, "name", ffn->name
+				);
+
+				log(L_FF | L_FFTREE, "%*s  %10s :"
+					, lvl * 2, ""
+					, "definition"
+				);
+				dump(ffn->definition, lvl + 1);
+			}
+			else if(ffn->type == FFN_VARPOP)
 			{
 				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
 					, lvl * 2, ""
