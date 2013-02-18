@@ -35,4 +35,17 @@ int list_ensure(lstack *** stax, int * staxa, int staxp)
 int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
 	__attribute__((nonnull));
 
+/// list_empty
+//
+// SUMMARY
+//  create an empty list
+//
+// PARAMETERS
+//  stax  - listwise stax
+//  staxa - listwise stax
+//  staxp - offset to next free stax
+//
+int list_empty(lstack *** stax, int * staxa, int staxp)
+	__attribute__((nonnull));
+
 #endif

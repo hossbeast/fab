@@ -38,6 +38,9 @@ static void signal_handler(int signum)
 	}
 }
 
+// vmap destructor
+static void vmap_destructor(void*, void*);
+
 int main(int argc, char** argv)
 {
 	int domain()
@@ -102,20 +105,20 @@ int main(int argc, char** argv)
 		fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
 
 		// create map for variable definitions
-		fatal(map_create, &vmap, 0);
+		fatal(map_create, &vmap, vmap_destructor);
 
 		// populate with cmdline-specified variables
 		for(x = 0; x < g_args.varkeys_len; x++)
 		{
 			fatal(list_ensure, &stax, &staxa, staxp);
 			fatal(lstack_add, stax[staxp], g_args.varvals[x], strlen(g_args.varvals[x]));
-			fatal(var_set, vmap, g_args.varkeys[x], stax[staxp++], 1);
+			fatal(var_push, vmap, g_args.varkeys[x], stax[staxp++], VV_LS, 1);
 		}
 
-		// use up one list and populate the # variable (directory path to initial fabfile, in user-supplied form)
+		// use up one list and populate the # variable (relative directory path to the initial fabfile)
 		fatal(list_ensure, &stax, &staxa, staxp);
 		fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
-		fatal(var_set, vmap, "#", stax[staxp++], 0);
+		fatal(var_push, vmap, "#", stax[staxp++], VV_LS, 0);
 
 		// process the fabfile tree, construct the graph
 		for(x = 0; x < ffn->statements_l; x++)
@@ -124,34 +127,79 @@ int main(int argc, char** argv)
 			{
 				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
 			}
-			else if(ffn->statements[x]->type == FFN_VARASSIGN)
-			{
-				// resolve the list associated to the variable name
-				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
-
-				// save the resultant list
-				fatal(var_set, vmap, ffn->statements[x]->name, stax[staxp++], 0);
-			}
-			else if(ffn->statements[x]->type == FFN_VARPUSH)
-			{
-				// resolve the list associated to the variable name
-				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
-
-				// save the resultant list
-				fatal(var_set, vmap, ffn->statements[x]->name, stax[staxp++], 0);
-			}
-			else if(ffn->statements[x]->type == FFN_VARPOP)
-			{
-				// resolve the list associated to the variable name
-				fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
-
-				// save the resultant list
-				fatal(var_set, vmap, ffn->statements[x]->name, stax[staxp++], 0);
-			}
 			else if(ffn->statements[x]->type == FFN_FORMULA)
 			{
 				// add the formula, attach to graph nodes
 				fatal(fml_add, ffn->statements[x], vmap, &stax, &staxa, staxp);
+			}
+			else if(ffn->statements[x]->type == FFN_VARASSIGN)
+			{
+				// clear the stack for this variable
+				int r;
+				fatal(var_undef, vmap, ffn->statements[x]->name, &r);
+
+				// if it was actually cleared, which will be prevented by a sticky value
+				if(r)
+				{
+					if(ffn->statements[x]->definition)
+					{
+						if(ffn->statements[x]->definition->type == FFN_LIST)
+						{
+							// resolve and push the associated list
+							fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
+							fatal(var_push, vmap, ffn->statements[x]->name, stax[staxp++], VV_LS, 0);
+						}
+						if(ffn->statements[x]->definition->type == FFN_WORD)
+						{
+							// push an alias value
+							fatal(var_push, vmap, ffn->statements[x]->name, ffn->statements[x]->definition->text, VV_AL, 0);
+						}
+					}
+				}
+			}
+			else if(ffn->statements[x]->type == FFN_VARPUSH)
+			{
+				if(ffn->statements[x]->definition)
+				{
+					if(ffn->statements[x]->definition->type == FFN_LIST)
+					{
+						// resolve and push the associated list
+						fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
+						fatal(var_push, vmap, ffn->statements[x]->name, stax[staxp++], VV_LS, 0);
+					}
+					if(ffn->statements[x]->definition->type == FFN_WORD)
+					{
+						// push an alias value
+						fatal(var_push, vmap, ffn->statements[x]->name, ffn->statements[x]->definition->text, VV_AL, 0);
+					}
+				}
+				else
+				{
+					// create and push an empty list
+					fatal(list_empty, &stax, &staxa, staxp);
+					fatal(var_push, vmap, ffn->statements[x]->name, stax[staxp++], VV_LS, 0);
+				}
+			}
+			else if(ffn->statements[x]->type == FFN_VARPOP)
+			{
+				// pop
+				fatal(var_pop, vmap, ffn->statements[x]->name);
+
+				// push an associated value, if any
+				if(ffn->statements[x]->definition)
+				{
+					if(ffn->statements[x]->definition->type == FFN_LIST)
+					{
+						// resolve and push the associated list
+						fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
+						fatal(var_push, vmap, ffn->statements[x]->name, stax[staxp++], VV_LS, 0);
+					}
+					if(ffn->statements[x]->definition->type == FFN_WORD)
+					{
+						// push an alias value
+						fatal(var_push, vmap, ffn->statements[x]->name, ffn->statements[x]->definition->text, VV_AL, 0);
+					}
+				}
 			}
 		}
 
@@ -347,4 +395,9 @@ int main(int argc, char** argv)
 	log_teardown();
 	
 	return R;
+}
+
+void vmap_destructor(void* tk, void* tv)
+{
+	var_container_free(*(var_container**)tv);
 }

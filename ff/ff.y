@@ -73,7 +73,6 @@
 %token <num> '{'
 %token <num> '}'
 %token <num> '='
-%token <num> '-'
 %token <num> '<'
 %token <num> '>'
 %token <num> '"'
@@ -154,22 +153,22 @@ varassign
 	;
 
 varpush
-	: WORD '<' '-'
+	: WORD '<' '='
 	{
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1.s, $3.e, $1.s, $1.e, (void*)0);
 	}
-	| WORD '<' '-' varvalue
+	| WORD '<' '=' varvalue
 	{
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1.s, $4->e, $1.s, $1.e, $4);
 	}
 	;
 
 varpop
-	: WORD '-' '>'
+	: WORD '=' '>'
 	{
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1.s, $3.e, $1.s, $1.e, (void*)0);
 	}
-	| WORD '-' '>' varvalue
+	| WORD '=' '>' varvalue
 	{
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1.s, $4->e, $1.s, $1.e, $4);
 	}

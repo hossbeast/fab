@@ -7,7 +7,7 @@ SHELL           :=/bin/bash
 # paths
 SRCDIR           =.
 VPATH           +=${SRCDIR}
-VPATH						+=$(shell find ${SRCDIR} -mindepth 1 -maxdepth 1 -type d -name '[a-z]*' -printf "%f\n" | grep -v doc)
+VPATH						+=$(shell find ${SRCDIR} -mindepth 1 -maxdepth 1 -type d -name '[a-z]*' -printf "%f\n" | grep -v doc | grep -v fablib)
 NAME             =fab
 
 INSTALL         :=install

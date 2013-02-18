@@ -20,12 +20,12 @@
 var =							# undef var
 var = [ list ]		# undef var ; push(var, [list])
 var = alias				# undef var ; push(var, alias)
-var <-            # push(var, undef)
-var <- [ list ]		# push(var, [list])
-var <- alias			# push(var, alias)
-var ->						# pop(var)
-var -> [ list ]	 	# pop(var) ; push(var, [list])
-var -> alias			# pop(var) ; push(var, alias)
+var <=            # push(var, undef)
+var <= [ list ]		# push(var, [list])
+var <= alias			# push(var, alias)
+var =>						# pop(var)
+var => [ list ]	 	# pop(var) ; push(var, [list])
+var => alias			# pop(var) ; push(var, alias)
 
 - then, the syntax for "including" a .fab includes shorthand notation for pushing values
 	onto the variables' stacks before including, and popping thereafter

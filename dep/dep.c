@@ -279,10 +279,11 @@ static int dep_add_multi(
 
 			fatal(lstack_obj_add, (*stax)[pr], r, LISTWISE_TYPE_GNLW);
 		}
-		fatal(var_set, vmap, "<", (*stax)[pr++], 0);
 
 		// resolve the right-hand side
+		fatal(var_push, vmap, "<", (*stax)[pr++], VV_LS, 0);
 		fatal(list_resolve, ffn->feeds, vmap, &(*stax), staxa, pr);
+		fatal(var_pop, vmap, "<");
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
 		{
@@ -408,6 +409,8 @@ static int dep_add_multi(
 			}
 			LSTACK_ITEREND;
 		}
+
+
 	}
 
 	finally : coda;

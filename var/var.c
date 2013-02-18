@@ -4,34 +4,101 @@
 
 #include "var.h"
 
+#include "xmem.h"
 #include "control.h"
 #include "log.h"
 
-///
-/// private
-///
+#define restrict __restrict
 
-static int var_set(map * vmap, char * s, lstack * ls, int stickys)
+static int ensure_exists(map * const restrict vmap, const char * const restrict s, var_container ** const restrict con)
 {
-	if(sticky || map_get(vmap, s, strlen(s)) == 0)
+	var_container * c = 0;
+	var_container ** cc = 0;
+
+	if((cc = map_get(vmap, s, strlen(s))))
 	{
-		uint64_t lo = 0;
+		c = (*cc);
+	}
+	else
+	{
+		fatal(xmalloc, &c, sizeof(*c));
+		fatal(map_set, vmap, s, strlen(s), MM(c));
+	}
 
-		if(strcmp(s, "@") == 0)
-			lo = L_VARAUTO;
-		else if(strcmp(s, "#") == 0)
-			lo = L_VARAUTO;
-		else if(strcmp(s, "<") == 0)
-			lo = L_VARAUTO;
-		else
-			lo = L_VARUSER;
+	(*con) = c;
 
-		if(log_would(lo))
+	finally : coda;
+}
+
+#undef restrict
+
+///
+/// public
+///
+
+// select logtag based on variable name
+#define TAG strcmp(s, "@") && strcmp(s, "#") && strcmp(s, "<") ? L_VARUSER : L_VARAUTO
+
+int var_undef(map * const vmap, const char * const s, int * r)
+{
+	var_container * cc = 0;
+	fatal(ensure_exists, vmap, s, &cc);
+
+	if(cc->l && cc->v[cc->l - 1].sticky)
+	{
+		*r = 0;	// denied
+	}
+	else
+	{
+		log(TAG, "%10s(%s)", "undef", s);
+
+		*r = 1;
+		cc->l = 0;
+	}
+
+	finally : coda;
+}
+
+int var_pop(map * const vmap, const char * const s)
+{
+	var_container * cc = 0;
+	fatal(ensure_exists, vmap, s, &cc);
+	
+	log(TAG, "%10s(%s)", "pop", s);
+
+	if(cc->l)
+		cc->l--;
+
+	finally : coda;
+}
+
+int var_push(map * const vmap, const char * const s, void * const v, const uint8_t t, int sticky)
+{
+	var_container * cc = 0;
+	fatal(ensure_exists, vmap, s, &cc);
+	
+	if(cc->l == cc->a)
+	{
+		int ns = cc->a ?: 10;
+		ns = ns * 2 + ns / 2;
+		fatal(xrealloc, &cc->v, sizeof(*cc->v), ns, cc->a);
+		cc->a = ns;
+	}
+
+	cc->v[cc->l].ls = v;
+	cc->v[cc->l].type = t;
+	cc->v[cc->l].sticky = sticky;
+
+	if(t == VV_LS)
+	{
+		if(log_would(TAG))
 		{
-			log_start(lo, "%10s = [ ", s);
+			log_start(TAG, "%10s(%s, [ ", "push", s);
 
 			int i = 0;
 			int j = 0;
+
+			lstack * ls = v;
 
 			LSTACK_ITERATE(ls, i, go);
 			if(go)
@@ -53,86 +120,28 @@ static int var_set(map * vmap, char * s, lstack * ls, int stickys)
 					);
 				}
 				else
+				{
 					log_add("%.*s", ls->s[0].s[i].l, ls->s[0].s[i].s);
+				}
 			}
 			LSTACK_ITEREND;
-			log_finish(" ]");
+			log_finish(" ] )");
 		}
-
-		fatal(map_set, vmap, s, strlen(s), &ls, sizeof(ls));
 	}
-
-	finally : coda;
-}
-
-int var_undef(const map * const vmap, const char * const s, int * r)
-{
-	var_container * cc = 0;
-	if((cc = map_get(vmap, s, strlen(s))) == 0)
+	if(t == VV_AL)
 	{
-		fatal(xmalloc, &cc, sizeof(*cc));
-		fatal(map_set, vmap, s, strlen(s), MM(cc));
+		log(TAG, "%10s(%s, alias(%s))", "push", s, v); 
 	}
-
-	if(cc->l && cc->v[cc->l - 1].sticky)
-	{
-		*r = 0;	// denied
-	}
-	else
-	{
-		*r = 1;
-		cc->l = 0;
-	}
-
-	finally : coda;
-}
-
-int var_pop(const map * const vmap, const char * const s)
-{
-	var_container * cc = 0;
-	if((cc = map_get(vmap, s, strlen(s))) == 0)
-	{
-		fatal(xmalloc, &cc, sizeof(*cc));
-		fatal(map_set, vmap, s, strlen(s), MM(cc));
-	}
-	
-	if(cc->l)
-		cc->l--;
-
-	finally : coda;
-}
-
-int var_push(const map * const vmap, const char * const s, const void * const v, const uint8_t t, int sticky)
-{
-	var_container * cc = 0;
-	if((cc = map_get(vmap, s, strlen(s))) == 0)
-	{
-		fatal(xmalloc, &cc, sizeof(*cc));
-		fatal(map_set, vmap, s, strlen(s), MM(cc));
-	}
-	
-	if(cc->l == cc->a)
-	{
-		int ns = cc->a ?: 10;
-		ns = ns * 2 + ns / 2;
-		fatal(xrealloc, &cc->v, sizeof(*cc->v), ns, cc->a);
-		cc->a = ns;
-	}
-
-	cc->v[cc->l].ls = v;
-	cc->v[cc->l].t = t;
-	cc->v[cc->l].sticky = sticky;
 
 	cc->l++;
 
 	finally : coda;
 }
 
-int var_container_free(var_container * const restrict cc)
+void var_container_free(var_container * const cc)
 {
 	if(cc)
-	{
 		free(cc->v);
-	}
+
 	free(cc);
 }

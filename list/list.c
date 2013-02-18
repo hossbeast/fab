@@ -7,6 +7,7 @@ extern int lstack_exec_internal(generator* g, char** init, int* initls, int init
 #include "list.h"
 #include "gnlw.h"
 #include "args.h"
+#include "var.h"
 
 #include "control.h"
 #include "map.h"
@@ -54,28 +55,44 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int st
 		}
 		else if(list->elements[x]->type == FFN_VARNAME)
 		{
-			lstack ** vls = 0;
-			if((vls = map_get(vmap, list->elements[x]->name, strlen(list->elements[x]->name))))
+			var_container * c = 0;
+			var_container ** cc = 0;
+
+			char * name = list->elements[x]->name;
+
+			while((cc = map_get(vmap, name, strlen(name))))
 			{
-				LSTACK_ITERATE((*vls), i, go);
+				c = (*cc);
+
+				if(c->l == 0)
+					break;
+				
+				if(c->v[c->l - 1].type == VV_LS)
+					break;
+
+				name = c->v[c->l - 1].alias;
+			}
+
+			lstack * vls = 0;
+
+			if(c && c->l)
+				vls = c->v[c->l - 1].ls;
+			
+			if(vls)
+			{
+				LSTACK_ITERATE(vls, i, go);
 				if(go)
 				{
-					if((*vls)->s[0].s[i].type)
-						fatal(lstack_obj_add, (*stax)[p], *(void**)(*vls)->s[0].s[i].s, LISTWISE_TYPE_GNLW);
+					if(vls->s[0].s[i].type)
+						fatal(lstack_obj_add, (*stax)[p], *(void**)vls->s[0].s[i].s, LISTWISE_TYPE_GNLW);
 					else
-						fatal(lstack_add, (*stax)[p], (*vls)->s[0].s[i].s, (*vls)->s[0].s[i].l);
+						fatal(lstack_add, (*stax)[p], vls->s[0].s[i].s, vls->s[0].s[i].l);
 				}
 				LSTACK_ITEREND;
 			}
 			else
 			{
-				fail("reference to undefined variable : '%s' @ [%3d,%3d - %3d,%3d]"
-					, list->elements[x]->name
-					, list->loc.f_lin + 1
-					, list->loc.f_col + 1
-					, list->loc.l_lin + 1
-					, list->loc.l_col + 1
-				);
+				// an undefined variable, or a variable with no definition - equivalent to the empty list
 			}
 		}
 		else if(list->elements[x]->type == FFN_LIST)
@@ -104,6 +121,16 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int st
 	{
 		(*stax)[p]->sel.all = 1;
 	}
+
+	finally : coda;
+}
+
+int list_empty(lstack *** stax, int * staxa, int staxp)
+{
+	// ensure stax allocation, reset p'th stack
+	fatal(list_ensure, stax, staxa, staxp);
+
+	(*stax)[staxp]->sel.all = 1;
 
 	finally : coda;
 }

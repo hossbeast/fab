@@ -20,6 +20,8 @@
 // static
 //
 
+#define restrict __restrict
+
 static void bp_freestage(bp_stage * const restrict bps);
 
 static int gn_cmp(const void * _A, const void * _B)
@@ -589,10 +591,10 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int p, ts *** ts,
 			for(k = 0; k < (*ts)[i]->fmlv->products_l; k++)
 				fatal(lstack_obj_add, (*stax)[pn], (*ts)[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
-			fatal(var_set, vmap, "@", (*stax)[pn++], 0);
-
 			// render the formula
+			fatal(var_push, vmap, "@", (*stax)[pn++], VV_LS, 0);
 			fatal(fml_render, (*ts)[i], vmap, stax, staxa, pn, 1);
+			fatal(var_pop, vmap, "@");
 
 			i++;
 		}

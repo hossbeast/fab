@@ -136,10 +136,11 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 			// @ is a list of expected products of this eval context
 			// for a discovery formula, @ always contains exactly 1 element
 			fatal(lstack_obj_add, (*stax)[pn], (*ts)[x]->fmlv->products[0], LISTWISE_TYPE_GNLW);
-			fatal(var_set, vmap, "@", (*stax)[pn++], 0);
 
 			// render the formula
+			fatal(var_push, vmap, "@", (*stax)[pn++], VV_LS, 0);
 			fatal(fml_render, (*ts)[x], vmap, stax, staxa, pn, 1);
+			fatal(var_pop, vmap, "@");
 		}
 
 		// execute all formulas in parallel

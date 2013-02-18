@@ -44,30 +44,28 @@ typedef struct
 //
 // pop all values off of a variables stack
 //
-// 
-//
-int var_undef(const map * const restrict vmap, const char * const restrict s, int * r)
+int var_undef(map * const restrict vmap, const char * const restrict s, int * r)
 	__attribute__((nonnull));
 
 /// var_pop
 //
 // pop the top value off a variables stack, if any
 //
-int var_pop(const map * const restrict vmap, const char * const restrict s)
+int var_pop(map * const restrict vmap, const char * const restrict s)
 	__attribute__((nonnull));
 
 /// var_push
 //
 // push an lstack or alias onto a variables stack
 //
-int var_push(const map * const restrict vmap, const char * const restrict s, const void * const restrict v, const uint8_t t, int sticky)
+int var_push(map * const restrict vmap, const char * const restrict s, void * const restrict v, const uint8_t t, int sticky)
 	__attribute__((nonnull(1, 2)));
 
 /// var_container_free
 //
 // free a var_container with free semantics
 //
-int var_container_free(var_container * const restrict);
+void var_container_free(var_container * const restrict);
 
 #undef restrict
 #endif

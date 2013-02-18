@@ -92,10 +92,10 @@ int bake_bp(
 			for(k = 0; k < (*ts)[y]->fmlv->products_l; k++)
 				fatal(lstack_obj_add, (*stax)[pn], (*ts)[y]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
-			fatal(var_set, vmap, "@", (*stax)[pn++], 0);
-
 			// render the formula
+			fatal(var_push, vmap, "@", (*stax)[pn++], VV_LS, 0);
 			fatal(fml_render, (*ts)[y], vmap, stax, staxa, pn, 0);
+			fatal(var_pop, vmap, "@");
 
 			// index occupied by this formula in the stage.stage in which this formula is executed
 			int index = y;
@@ -155,6 +155,7 @@ int bake_bp(
 	dprintf(fd, "# results aggregation\n");
 	dprintf(fd, "WIN=0\n");
 	dprintf(fd, "DIE=0\n");
+	dprintf(fd, "SKP=0\n");
 	dprintf(fd, "\n");
 
 	// emit code to execute all the stages
@@ -170,12 +171,17 @@ int bake_bp(
 			int j;
 			for(j = 0; j < bp->stages[x].evals_l; j += step)
 			{
+				dprintf(fd, "# early termination \n");
+				dprintf(fd, "if [[ $DIE -ne 0 ]]; then\n");
+				dprintf(fd, "  ((SKP+=%d))\n", MIN(j + step, bp->stages[x].evals_l) - j);
+				dprintf(fd, "else\n");
+
 				// execute fmls in this stage concurrently
-				dprintf(fd, "# launch stage %d.%d\n", x, j/step);
+				dprintf(fd, "  # launch stage %d.%d\n", x, j/step);
 
 				for(y = j; y < (j + step) && y < bp->stages[x].evals_l; y++)
 					dprintf(fd
-						, "exec %d>$tmp ; rm -f $tmp ; fml_%d_%d & PIDS[%d]=$!\n"
+						, "  exec %d>$tmp ; rm -f $tmp ; fml_%d_%d & PIDS[%d]=$!\n"
 						, 100+y-j
 						, x
 						, y
@@ -183,30 +189,33 @@ int bake_bp(
 					);
 
 				dprintf(fd, "\n");
-				dprintf(fd, "# harvest stage %d.%d\n", x, j/step);
-				dprintf(fd, "C=0\n");
-				dprintf(fd, "while [[ $C != %d ]]; do\n", MIN(j + step, bp->stages[x].evals_l) - j);
-				dprintf(fd, "  read -u 99 idx\n");
-				dprintf(fd, "  wait ${PIDS[$idx]}\n");
-				dprintf(fd, "  EXITS[$idx]=$?\n");
-				dprintf(fd, "  P=${PIDS[$idx]}\n");
-				dprintf(fd, "  X=${EXITS[$idx]}\n");
-				dprintf(fd, "  I=$((%d+$idx))\n", i+j);
-				dprintf(fd, "  N=${NAMES[$I]}\n");
-				dprintf(fd, "  [[ $X -eq 0 ]] && ((WIN++))\n");
-				dprintf(fd, "  [[ $X -ne 0 ]] && ((DIE++))\n");
-				dprintf(fd, "  printf '[%%3d,%%3d] X=%%d %%s\\n' %d $((idx+%d)) $X \"$N\"\n", x, j);
-				dprintf(fd, "  cat /proc/$$/fd/$((100+idx))\n");
-				dprintf(fd, "  ((C++))\n");
-				dprintf(fd, "done\n");
+				dprintf(fd, "  # harvest stage %d.%d\n", x, j/step);
+				dprintf(fd, "  C=0\n");
+				dprintf(fd, "  while [[ $C != %d ]]; do\n", MIN(j + step, bp->stages[x].evals_l) - j);
+				dprintf(fd, "    read -u 99 idx\n");
+				dprintf(fd, "    wait ${PIDS[$idx]}\n");
+				dprintf(fd, "    EXITS[$idx]=$?\n");
+				dprintf(fd, "    P=${PIDS[$idx]}\n");
+				dprintf(fd, "    X=${EXITS[$idx]}\n");
+				dprintf(fd, "    I=$((%d+$idx))\n", i+j);
+				dprintf(fd, "    N=${NAMES[$I]}\n");
+				dprintf(fd, "    [[ $X -eq 0 ]] && ((WIN++))\n");
+				dprintf(fd, "    [[ $X -ne 0 ]] && ((DIE++))\n");
+				dprintf(fd, "    printf '[%%3d,%%3d] X=%%d %%s\\n' %d $((idx+%d)) $X \"$N\"\n", x, j);
+				dprintf(fd, "    cat /proc/$$/fd/$((100+idx))\n");
+				dprintf(fd, "    ((C++))\n");
+				dprintf(fd, "  done\n");
+				dprintf(fd, "fi\n");
 				dprintf(fd, "\n");
 			}
 		}
+
 		i += bp->stages[x].evals_l;
 	}
 	
 	dprintf(fd, "printf '%%15s %%d\\n' succeeded $WIN\n");
 	dprintf(fd, "printf '%%15s %%d\\n' failed $DIE\n");
+	dprintf(fd, "printf '%%15s %%d\\n' skipped $SKP\n");
 	dprintf(fd, "# no failures=0, and 1 otherwise\n");
 	dprintf(fd, "exit $((!(DIE==0)))\n");
 
