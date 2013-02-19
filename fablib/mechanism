@@ -5,11 +5,17 @@
    >>> [ /code/root/common/fab ]
 
 - include syntax, infix double colon notation for installed modules by name
- >> lang::c
- >> std::dsc::c
- >> std::fab::c
- >> std::task::clean
- >> nitro::task::clean
+ + lang/c
+ + std/dsc/c
+ + std/fab/c
+ + std/task/clean
+ + nitro/task/clean
+
+ + [ *lang/c *lang/l *lang/y ] <srcdir@dirs>
+
+ + [ c l y ] =>> pp/<*lang/> <srcdir@dirs>
+
+ + lang::c <srcdir@dirs>
 
 - include syntax, list-based path-to-file notation
  >> [ /home/code/common/fab/std/c.fab ] 
@@ -17,15 +23,15 @@
 - a variables definition is the value at the top of its stack
 - each stack entry is either : 1) an lstack instance, or 2) an alias to another variable
 
-var =							# undef var
-var = [ list ]		# undef var ; push(var, [list])
-var = alias				# undef var ; push(var, alias)
-var <=            # push(var, undef)
-var <= [ list ]		# push(var, [list])
-var <= alias			# push(var, alias)
-var =>						# pop(var)
-var => [ list ]	 	# pop(var) ; push(var, [list])
-var => alias			# pop(var) ; push(var, alias)
+$var =						# undef var
+$var = [ list ]		# undef var ; push(var, [list])
+$var = $alias			# undef var ; push(var, alias)
+$var <           	# push(var, undef)
+$var < [ list ]		# push(var, [list])
+$var < $alias			# push(var, alias)
+$var >						# pop(var)
+$var > [ $alias ]	# pop(var) ; push(var, [list])
+$var > $alias			# pop(var) ; push(var, alias)
 
 - then, the syntax for "including" a .fab includes shorthand notation for pushing values
 	onto the variables' stacks before including, and popping thereafter
@@ -35,13 +41,13 @@ var => alias			# pop(var) ; push(var, alias)
 # 2. specify a value to push/pop for a variable
 # 3. specify an alias to push/pop for a variable
 
->> std::c														# just include
->> std::c [ list ] @ var 						# push(var,[list]) ; include ; pop(var)
->> std::c [ list ] @ var var2				# push(var,[list]) ; push(var2,[list]) ; include ; pop(var) ; pop(var2)
->> std::c alias @ var var2 					# push(var,list) ; push(var2,list) ; include ; pop(var)
->> std::c < >												# for all { push($_, []) } ; include ; for all { pop }
->> std::c < alias @ var var2 >			# for all except var, var2 { push($_, []) } ; push(var,list) ; push(var2,list) ; include ; for all { pop }
->> std::c < [ list ] @ var var2 >		# for all except var, var2 { push($_, []) } ; push(var,list) ; push(var2,list) ; include ; for all { pop }
+>> std/c														# just include
+>> std/c [ list ] @ $var 						# push(var,[list]) ; include ; pop(var)
+>> std/c [ list ] @ $var $var2			# push(var,[list]) ; push(var2,[list]) ; include ; pop(var) ; pop(var2)
+>> std/c $alias @ $var $var2 				# push(var,list) ; push(var2,list) ; include ; pop(var)
+>> std/c < >												# for all { push($_, []) } ; include ; for all { pop }
+>> std/c <$alias @ $var $var2>		# for all except var, var2 { push($_, []) } ; push(var,list) ; push(var2,list) ; include ; for all { pop }
+>> std/c <[ list ] @ $var $var2>	# for all except var, var2 { push($_, []) } ; push(var,list) ; push(var2,list) ; include ; for all { pop }
 
 - non-file-backed scoping
 
@@ -54,7 +60,8 @@ references to @non-file-backed in some file resolve to /../<scope>/name for the 
 
 scoping : 
 
-clean : @syslog/clean => clean : /../syslog/clean
+clean : @syslog/clean
+clean : /../GN/syslog/clean
 install : @all => install : /../<myscope>/all
 
-clean : /../syslog/clean @libasp::clean
+clean : /../syslog/clean @libasp/clean

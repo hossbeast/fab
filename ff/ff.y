@@ -20,6 +20,7 @@
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
+%expect 22
 
 /* zero based lines and columns */
 %initial-action { memset(&@$, 0, sizeof(@$)); }
@@ -46,15 +47,6 @@
 		uint32_t				v;
 	}							num;
 
-	struct
-	{
-		const char*			s;
-		const char*			e;
-
-		const char*			vs;
-		const char*			ve;
-	}							var;
-
 	ff_node*			node;
 }
 
@@ -62,31 +54,34 @@
 %token <str> WORD							"WORD"
 %token <str> WS								"WS"				/* a single tab/space */
 %token <str> LF								"LF"				/* a single newline */
-%token <var> VARNAME					"VARNAME"
-%token <num> INC							">>"
-%token <num> LW								"=>>"
-%token <num> ':'
-%token <num> '*'
-%token <num> '~'
-%token <num> '['
-%token <num> ']'
-%token <num> '{'
-%token <num> '}'
-%token <num> '='
-%token <num> '<'
-%token <num> '>'
-%token <num> '"'
+%token <num> LW								"=>>"				/* listwise transformation */
+%token <num> '$'	/* variable reference */
+%token <num> ':'	/* cartesian-product dependency */
+%token <num> '*'	/* weak reference */
+%token <num> '~'	/* dependency discovery formula */
+%token <num> '['	/* list start */
+%token <num> ']'	/* list end */
+%token <num> '{'	/* formula start */
+%token <num> '}'	/* formula end */
+%token <num> '='	/* variable assignment */
+%token <num> '<'	/* variable push */
+%token <num> '>'	/* variable pop */
+%token <num> '+'  /* invocation */
+%token <num> '"'	/* generator-string literal */
 
 /* nonterminals */
 %type  <wordparts> wordparts
 
 %type  <node> statement
 %type  <node> statement_list
-%type  <node> include
+%type  <node> invocation
+%type  <node> context
+%type  <node> context_block
 %type  <node> varassign
 %type  <node> varpush
 %type  <node> varpop
 %type  <node> formula
+%type  <node> formula_list
 %type  <node> dependency
 %type  <node> discovery
 %type  <node> fabrication
@@ -95,9 +90,10 @@
 %type  <node> taskname
 %type  <node> list
 %type  <node> listpiece
-%type  <node> formula_list
 %type  <node> word
 %type  <node> generator
+%type  <node> varref
+%type  <node> varreflist
 %type  <node> varvalue
 
 /* sugar */
@@ -124,7 +120,7 @@ statement_list
 	;
 
 statement
-	: include
+	: invocation
 	| varassign
 	| varpush
 	| varpop
@@ -134,49 +130,84 @@ statement
 	| discovery
 	;
 
-include
-	: INC list
+invocation
+	: '+' list
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INCLUDE, $1.s, $2->e, $1, $2);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $2->e, $2, (void*)0, 0);
+	}
+	| '+' list context
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, 0);
+	}
+	| '+' list '<' '>'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $2, (void*)0, 1);
+	}
+	| '+' list '<' context '>'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, $4, 1);
 	}
 	;
 
-varassign
-	: WORD '='
+context
+	: context ',' context
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1.s, $2.e, $1.s, $1.e, (void*)0);
+		$$ = addchain($1, $3);
 	}
-	| WORD '=' varvalue
+	| context_block
+	;
+
+context_block
+	: varvalue '@' varreflist
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1.s, $3->e, $1.s, $1.e, $3);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION_CONTEXT, $1->s, $3->e, $1, $3);
+	}
+	;
+
+varreflist
+	: varreflist varreflist
+	{
+		$$ = addchain($1, $2);
+	}
+	| varref
+	;
+
+varassign
+	: varref '='
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $2.e, $1, (void*)0);
+	}
+	| varref '=' varvalue
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $3->e, $1, $3);
 	}
 	;
 
 varpush
-	: WORD '<' '='
+	: varref '<'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1.s, $3.e, $1.s, $1.e, (void*)0);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $2.e, $1, (void*)0);
 	}
-	| WORD '<' '=' varvalue
+	| varref '<' varvalue
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1.s, $4->e, $1.s, $1.e, $4);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $3->e, $1, $3);
 	}
 	;
 
 varpop
-	: WORD '=' '>'
+	: varref '>'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1.s, $3.e, $1.s, $1.e, (void*)0);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $2.e, $1, (void*)0);
 	}
-	| WORD '=' '>' varvalue
+	| varref '>' varvalue
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1.s, $4->e, $1.s, $1.e, $4);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $3->e, $1, $3);
 	}
 	;
 
 varvalue
 	: list
-	| word
+	| varref
 	;
 
 dependency
@@ -302,12 +333,16 @@ listpiece
 	{
 		$$ = addchain($1, $2);
 	}
-	| VARNAME
-	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
-	}
+	| varref
 	| word
 	| list
+	;
+
+varref
+	: '$' WORD
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARREF, $1.s, $2.e, $2.s, $2.e);
+	}
 	;
 
 generator
