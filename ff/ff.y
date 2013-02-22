@@ -56,27 +56,31 @@
 %token <str> LF								"LF"				/* a single newline */
 %token <num> LW								"=>>"				/* listwise transformation */
 %token <num> '$'	/* variable reference */
-%token <num> ':'	/* cartesian-product dependency */
+%token <num> ':'	/* dependency */
 %token <num> '*'	/* weak reference */
-%token <num> '~'	/* dependency discovery formula */
+%token <num> '~'	/* dependency discovery */
 %token <num> '['	/* list start */
 %token <num> ']'	/* list end */
 %token <num> '{'	/* formula start */
 %token <num> '}'	/* formula end */
 %token <num> '='	/* variable assignment */
-%token <num> '<'	/* variable push */
-%token <num> '>'	/* variable pop */
 %token <num> '+'  /* invocation */
+%token <num> '<'	/* variable push, invocation context start */
+%token <num> '>'	/* variable pop,  invocation context end */
+%token <num> '@'  /* variable contextual push */
 %token <num> '"'	/* generator-string literal */
 
 /* nonterminals */
 %type  <wordparts> wordparts
+%type  <wordparts> nofileparts
 
 %type  <node> statement
 %type  <node> statement_list
 %type  <node> invocation
+%type  <node> specifier
 %type  <node> context
-%type  <node> context_block
+%type  <node> designation
+%type  <node> designation_list
 %type  <node> varassign
 %type  <node> varpush
 %type  <node> varpop
@@ -91,6 +95,7 @@
 %type  <node> list
 %type  <node> listpiece
 %type  <node> word
+%type  <node> nofile
 %type  <node> generator
 %type  <node> varref
 %type  <node> varreflist
@@ -131,36 +136,81 @@ statement
 	;
 
 invocation
-	: '+' list
+	: '+' specifier
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $2->e, $2, (void*)0, 0);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $2->e, $2, (void*)0);
 	}
-	| '+' list context
+	| '+' specifier context
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, 0);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3);
 	}
-	| '+' list '<' '>'
+	;
+
+specifier
+	: list
+	| nofile
+	;
+
+nofile
+	: nofileparts
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $2, (void*)0, 1);
+		/* nofile is a shorthand for non-file-backed notation */
+
+		char * v = realloc($1.v, strlen($1.v) + 5);
+		memcpy(v, "/../", 4);
+		memcpy(v + 4, $1.v, strlen($1.v));
+		v[4 + strlen($1.v)] = 0;
+
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
 	}
-	| '+' list '<' context '>'
+	;
+
+nofileparts
+	: nofileparts ':' ':' WORD
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, $4, 1);
+		$$ = $1;
+
+		int l = strlen($$.v);
+		int nl = $4.e - $4.s;
+
+		$$.v = realloc($$.v, l + nl + 1 + 1);
+		memcpy($$.v + l, "/", 1);
+		memcpy($$.v + l + 1, $4.s, nl);
+		$$.v[l + nl + 1] = 0;
+
+		$$.e = (char*)$4.e;
+	}
+	| WORD
+	{
+		$$.s = $1.s;
+		$$.e = $1.e;
+
+		$$.v = calloc(1, ($$.e - $$.s) + 1);
+		memcpy($$.v, $$.s, $$.e - $$.s);
 	}
 	;
 
 context
-	: context ',' context
+	: '<' designation_list '>'
+	{
+		$$ = $2;
+		$$->flags = FFN_GATED;
+	}
+	| designation_list
+	;
+
+designation_list
+	: designation_list ',' designation_list
 	{
 		$$ = addchain($1, $3);
 	}
-	| context_block
+	| designation
 	;
 
-context_block
+designation
 	: varvalue '@' varreflist
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION_CONTEXT, $1->s, $3->e, $1, $3);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION_CTX, $1->s, $3->e, $1, $3);
 	}
 	;
 
@@ -285,14 +335,8 @@ taskdep
 	;
 
 taskname
-	: word
+	: nofile
 	{
-		// shorthand for non-reachable filepath
-		char * t = $1->text;
-		$1->text = calloc(1, strlen($1->text) + 5);
-		sprintf($1->text, "/../%s", t);
-		free(t);
-
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
 	}
 	;
@@ -339,9 +383,10 @@ listpiece
 	;
 
 varref
-	: '$' WORD
+	: '$' word
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARREF, $1.s, $2.e, $2.s, $2.e);
+		$$ = $2;
+		$$->type = FFN_VARREF;
 	}
 	;
 

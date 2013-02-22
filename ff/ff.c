@@ -276,7 +276,7 @@ ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 
 	if(type == FFN_STMTLIST)
 	{
-		n->chain[0]				= va_arg(va, ff_node*);
+		n->chain[0]				= va_arg(va, ff_node*);	// statements
 	}
 	else if(type == FFN_DEPENDENCY)
 	{
@@ -284,22 +284,25 @@ ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 		n->needs					= va_arg(va, ff_node*);
 		n->feeds					= va_arg(va, ff_node*);
 	}
+	else if(type == FFN_INVOCATION)
+	{
+		n->modules				= va_arg(va, ff_node*);
+		n->chain[0]				= va_arg(va, ff_node*);	// designations
+	}
+	else if(type == FFN_INVOCATION_CTX)
+	{
+		n->definition			= va_arg(va, ff_node*);
+		n->chain[0]				= va_arg(va, ff_node*);	// vars
+	}
 	else if(type == FFN_WORD)
 	{
 		a = va_arg(va, char*);
 
 		n->text 					= a;
 	}
-	else if(type == FFN_VARNAME)
-	{
-		a = va_arg(va, char*);
-		b = va_arg(va, char*);
-
-		n->name						= struse(a, b);
-	}
 	else if(type == FFN_FORMULA)
 	{
-		n->chain[0]				= va_arg(va, ff_node*);
+		n->chain[0]				= va_arg(va, ff_node*);	// commands
 	}
 	else if(type == FFN_VARASSIGN)
 	{
@@ -327,7 +330,7 @@ ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 	}
 	else if(type == FFN_LIST)
 	{
-		n->chain[0]				= va_arg(va, ff_node*);
+		n->chain[0]				= va_arg(va, ff_node*);	// elements
 		n->generator_node	= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_LF)
@@ -546,7 +549,11 @@ void ff_dump(ff_node * const root)
 				for(x = 0; x < ffn->commands_l; x++)
 					dump(ffn->commands[x], lvl + 1);
 			}
-			else if(ffn->type == FFN_INCLUDE)
+			else if(ffn->type == FFN_INVOCATION)
+			{
+
+			}
+			else if(ffn->type == FFN_INVOCATION_CTX)
 			{
 
 			}
@@ -589,13 +596,6 @@ void ff_dump(ff_node * const root)
 				);
 				dump(ffn->definition, lvl + 1);
 			}
-			else if(ffn->type == FFN_VARNAME)
-			{
-				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
-					, lvl * 2, ""
-					, "name", ffn->name
-				);
-			}
 			else if(ffn->type == FFN_LIST)
 			{
 				log(L_FF | L_FFTREE, "%*s  %10s : %d"
@@ -623,6 +623,13 @@ void ff_dump(ff_node * const root)
 				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
 					, lvl * 2, ""
 					, "generator-string", ffn->text
+				);
+			}
+			else if(ffn->type == FFN_VARREF)
+			{
+				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
+					, lvl * 2, ""
+					, "name", ffn->text
 				);
 			}
 		}

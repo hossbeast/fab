@@ -19,19 +19,21 @@
 #define FFN_MULTI			0x02
 #define FFN_DISCOVERY	0x04
 #define FFN_WEAK			0x08
+#define FFN_GATED			0x10
 
 // FF node type table
 #define FFN_TABLE(x)										\
 	_FFN(FFN_STMTLIST				, 0x01	, x)	\
 	_FFN(FFN_DEPENDENCY			, 0x02	, x)	\
 	_FFN(FFN_FORMULA				, 0x03	, x)	\
-	_FFN(FFN_INCLUDE				, 0x04	, x)	\
+	_FFN(FFN_INVOCATION			, 0x04	, x)	\
+	_FFN(FFN_INVOCATION_CTX	, 0x04	, x)	\
 	_FFN(FFN_VARASSIGN			, 0x05	, x)	\
 	_FFN(FFN_VARPUSH				, 0x06	, x)	\
 	_FFN(FFN_VARPOP					, 0x07	, x)	\
 	_FFN(FFN_LIST						, 0x08	, x)	\
 	_FFN(FFN_GENERATOR			, 0x09	, x)	\
-	_FFN(FFN_VARNAME				, 0x0a	, x)	\
+	_FFN(FFN_VARREF					, 0x0a	, x)	\
 	_FFN(FFN_LF							, 0x0b	, x)	\
 	_FFN(FFN_WORD						, 0x0c	, x)
 
@@ -126,7 +128,7 @@ typedef struct ff_node
 	int					l;			// string length
 
 	generator * 		generator;		// FFN_GENERATOR
-	uint8_t					flags;				// FFN_DEPENDENCY, FFN_FORMULA
+	uint8_t					flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION_CTX
 
 	union {
 		char*	strings[1];
@@ -147,7 +149,7 @@ typedef struct ff_node
 			struct ff_node*			generator_node;
 		};
 
-		struct {													// FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP
+		struct {													// FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP, FFN_INVOCATION_CTX
 			struct ff_node*			definition;
 		};
 
@@ -158,6 +160,10 @@ typedef struct ff_node
 		struct {													// FFN_DEPENDENCY
 			struct ff_node*			needs;
 			struct ff_node*			feeds;
+		};
+
+		struct {													// FFN_INVOCATION
+			struct ff_node*			modules;
 		};
 	};
 
@@ -181,6 +187,16 @@ typedef struct ff_node
 		struct {											// FFN_FORMULA
 			struct ff_node**	commands;
 			int								commands_l;
+		};
+
+		struct {											// FFN_INVOCATION
+			struct ff_node**	designations;
+			int								designations_l;
+		};
+
+		struct {											// FFN_INVOCATION_CTX
+			struct ff_node**	vars;
+			int								vars_l;
 		};
 	};
 
