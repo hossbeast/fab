@@ -9,18 +9,19 @@
 	#include "macros.h"
 
 	#define TOPSTATE(x) (x->states_n ? x->states[x->states_n-1] : 0)
-	#define STATENAME(x)	\
-		  x == INITIAL					? "INITIAL"					\
-		: x == quoteword				? "quoteword"				\
-		: x == generatorws			? "generatorws"			\
-		: x == generator				? "generator"				\
-		: x == generatorlf			? "generatorlf"			\
-		: x == command					? "command"					\
-		: x == commandchecklit	? "commandchecklit"	\
-		: x == commandlit				? "commandlit"			\
-		: x == checklw					? "checklw"					\
-		: x == varref						? "varref"					\
-		: x == list							? "list" : "UNKNWN"	\
+	#define STATENAME(x)														\
+		  x == INITIAL					? "INITIAL"						\
+		: x == quoteword				? "quoteword"					\
+		: x == generatorws			? "generatorws"				\
+		: x == generator				? "generator"					\
+		: x == generatorlf			? "generatorlf"				\
+		: x == command					? "command"						\
+		: x == commandchecklit	? "commandchecklit"		\
+		: x == commandlit				? "commandlit"				\
+		: x == checklw					? "checklw"						\
+		: x == varref						? "varref"						\
+		: x == multilinecomment	? "multilinecomment"	\
+		: x == list							? "list" : "UNKNWN"
 
 	#define PUSHSTATE(a, b)																				\
 		do {																												\
@@ -157,169 +158,184 @@
 %x checklw
 
 %x varref
+%x multilinecomment
 
 %%
 
-[#].*																				{
-																							// single-line comments
-																							locify(yyextra, yylloc, yyleng, 0);
-																						}
+<INITIAL,list,checklw>[#][^\x00-\x1F\x7F-\xFF]*		{
+																										// single-line comments
+																										locify(yyextra, yylloc, yyleng, 0);
+																									}
+<INITIAL,list,checklw,multilinecomment>[/][*]			{
+																										// multi-line comments
+																										PUSHSTATE(multilinecomment, yyextra);
+																										locify(yyextra, yylloc, yyleng, 0);
+																									}
+<multilinecomment>[^*\x00-\x1F\x7F-\xFF]*					{ locify(yyextra, yylloc, yyleng, 0); }
+<multilinecomment>[*][^/\x00-\x1F\x7F-\xFF]				{ locify(yyextra, yylloc, yyleng, 0); }
+<multilinecomment>[*][/]													{
+																										POPSTATE(yyextra);
+																										locify(yyextra, yylloc, yyleng, 0);
+																									}
 
-<INITIAL,list,checklw>[\n]									{
-																							// characters with special meaning in both INITIAL and list
-																							loc_reset(yyextra, yylloc);
-																						}
-<INITIAL,list,checklw>[\t ]+								{ locify(yyextra, yylloc, yyleng, 0); }
-<INITIAL,list,command>[[]										{
-																							PUSHSTATE(list, yyextra);
-																							return LEX(yytext[0]);
-																						}
-<INITIAL,list>["]														{
-																							PUSHSTATE(quoteword, yyextra);
-																							return LEX(yytext[0]);
-																						}
-<INITIAL,list>[$]														{
-																							PUSHSTATE(varref, yyextra);
-																							return LEX(yytext[0]);
-																						}
+<INITIAL,list,checklw,multilinecomment>[\n]				{
+																										// characters with special meaning in both INITIAL and list
+																										loc_reset(yyextra, yylloc);
+																									}
+<INITIAL,list,checklw>[\t ]+											{ locify(yyextra, yylloc, yyleng, 0); }
+<INITIAL,list,command>[[]													{
+																										PUSHSTATE(list, yyextra);
+																										return LEX(yytext[0]);
+																									}
+<INITIAL,list>["]																	{
+																										PUSHSTATE(quoteword, yyextra);
+																										return LEX(yytext[0]);
+																									}
+<INITIAL,list>[$]																	{
+																										PUSHSTATE(varref, yyextra);
+																										return LEX(yytext[0]);
+																									}
 
-<INITIAL>[+]																{
-																							// characters with special meaning in INITIAL
-																							return LEX(yytext[0]);
-																						}
-<INITIAL>[:]																{ return LEX(yytext[0]); }
-<INITIAL>[*]																{ return LEX(yytext[0]); }
-<INITIAL>[~]																{ return LEX(yytext[0]); }
-<INITIAL>[=]																{ return LEX(yytext[0]); }
-<INITIAL>[<]																{ return LEX(yytext[0]); }
-<INITIAL>[>]																{ return LEX(yytext[0]); }
-<INITIAL>[@]																{ return LEX(yytext[0]); }
-<INITIAL>[{]																{
-																							PUSHSTATE(command, yyextra);
-																							return LEX(yytext[0]);
-																						}
-<list>[]]																		{
-																							// list-specific
-																							POPSTATE(yyextra);
-																							PUSHSTATE(checklw, yyextra);
-																							return LEX(yytext[0]);
-																						}
-<checklw>=>>																{
-																							POPSTATE(yyextra);
-																							PUSHSTATE(generatorws, yyextra);
-																							return LEX(LW);
-																						}
-<checklw>.																	{ POPSTATE(yyextra); yyless(0); }
+<INITIAL>[+]																			{
+																										// characters with special meaning in INITIAL
+																										return LEX(yytext[0]);
+																									}
+<INITIAL>[:]																			{ return LEX(yytext[0]); }
+<INITIAL>[.]																			{ return LEX(yytext[0]); }
+<INITIAL>[*]																			{ return LEX(yytext[0]); }
+<INITIAL>[~]																			{ return LEX(yytext[0]); }
+<INITIAL>[=]																			{ return LEX(yytext[0]); }
+<INITIAL>[<]																			{ return LEX(yytext[0]); }
+<INITIAL>[>]																			{ return LEX(yytext[0]); }
+<INITIAL>[@]																			{ return LEX(yytext[0]); }
+<INITIAL>[{]																			{
+																										PUSHSTATE(command, yyextra);
+																										return LEX(yytext[0]);
+																									}
+<list>[]]																					{
+																										// list-specific
+																										POPSTATE(yyextra);
+																										PUSHSTATE(checklw, yyextra);
+																										return LEX(yytext[0]);
+																									}
+<checklw>=>>																			{
+																										POPSTATE(yyextra);
+																										PUSHSTATE(generatorws, yyextra);
+																										return LEX(LW);
+																									}
+<checklw>[^\x00-\x1F\x7F-\xFF]										{ POPSTATE(yyextra); yyless(0); }
 
-<INITIAL>[^ \\"$\x00-\x1F\x7F-\xFF/[+:*~=<>@{]+ {
-																							// string of anything else 
-																							return LEX(WORD);
-																						}
-<list>[^ \\"$\x00-\x1F\x7F-\xFF\]]+ 				{
-																							// string of anything else 
-																							return LEX(WORD);
-																						}
+<INITIAL>[^ \\#"$\x00-\x1F\x7F-\xFF/[+:.*~=<>@{]+	{
+																										// string of anything else 
+																										return LEX(WORD);
+																									}
+<list>[^ \\#"$\x00-\x1F\x7F-\xFF\]]+ 							{
+																										// string of anything else 
+																										return LEX(WORD);
+																									}
 
-<command>\n																	{
-																							// command
-																							PUSHSTATE(commandchecklit, yyextra);
-																							int x = LEX(LF);
-																							loc_reset(yyextra, yylloc);
-																							return x;
-																						}
-<command>[}]																{
-																							POPSTATE(yyextra);
-																							return LEX(yytext[0]);
-																						}
-<command>[^\\[}]+														{ return LEX(WORD); }
-<commandchecklit>\t+>[\t ]+									{
-																							POPSTATE(yyextra);
-																							PUSHSTATE(commandlit, yyextra);
-																						}
-<commandchecklit>[\x00-\xff]								{ POPSTATE(yyextra); yyless(0); }
-<commandlit>.+															{
-																							POPSTATE(yyextra);
-																							return LEX(WORD);
-																						}
-<varref>[-@*#<^>]														{
-																							POPSTATE(yyextra);
-																							return LEX(WORD);
-																						}
-<varref>[a-zA-Z_][a-zA-Z0-9_]*							{
-																							POPSTATE(yyextra);
-																							return LEX(WORD);
-																						}
-<generatorws>[\t ]+["]											{
-																							POPSTATE(yyextra);
-																							PUSHSTATE(quoteword, yyextra);
-																							int del = yyleng - 1;
-																							yytext += del;
-																							yyleng -= del;
-																							return LEXX('"', del);
-																						}
-<generatorws>[\t ]+													{
-																							POPSTATE(yyextra);
-																							PUSHSTATE(generator, yyextra);
-																							return LEX(WS);
-																						}
-<generator>\n																{
-																							POPSTATE(yyextra);
-																							PUSHSTATE(generatorlf, yyextra);
-																							int x = LEX(WS);
-																							loc_reset(yyextra, yylloc);
-																							return x;
-																						}
-<generator>[\t ]														{
-																							POPSTATE(yyextra);
-																							return LEX(WS);
-																						}
-<generator>[^\n\t ]+												{ return LEX(WORD); }
-<generatorlf>[\x00-\xff]										{
-																							POPSTATE(yyextra);
+<command>\n																				{
+																										// command
+																										PUSHSTATE(commandchecklit, yyextra);
+																										int x = LEX(LF);
+																										loc_reset(yyextra, yylloc);
+																										return x;
+																									}
+<command>[}]																			{
+																										POPSTATE(yyextra);
+																										return LEX(yytext[0]);
+																									}
+<command>\\\\																			{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<command>\\[}]																		{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<command>\\[[]																		{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<command>[^\\[}\x00-\x08\x0a-\x1F\x7F-\xFF]+			{ return LEX(WORD); }
+<commandchecklit>\t+>[\t ]+												{
+																										POPSTATE(yyextra);
+																										PUSHSTATE(commandlit, yyextra);
+																									}
+<commandchecklit>[^\x00-\x08\x0a-\x1F\x7F-\xFF]		{ POPSTATE(yyextra); yyless(0); }
+<commandlit>[^\x00-\x1F\x7F-\xFF]+								{
+																										POPSTATE(yyextra);
+																										return LEX(WORD);
+																									}
+<varref>[-@*#<^>]																	{
+																										POPSTATE(yyextra);
+																										return LEX(WORD);
+																									}
+<varref>[a-zA-Z_][a-zA-Z0-9_]*										{
+																										POPSTATE(yyextra);
+																										return LEX(WORD);
+																									}
+<generatorws>[\t ]+["]														{
+																										POPSTATE(yyextra);
+																										PUSHSTATE(quoteword, yyextra);
+																										int del = yyleng - 1;
+																										yytext += del;
+																										yyleng -= del;
+																										return LEXX('"', del);
+																									}
+<generatorws>[\t ]+																{
+																										POPSTATE(yyextra);
+																										PUSHSTATE(generator, yyextra);
+																										return LEX(WS);
+																									}
+<generator>\n																			{
+																										POPSTATE(yyextra);
+																										PUSHSTATE(generatorlf, yyextra);
+																										int x = LEX(WS);
+																										loc_reset(yyextra, yylloc);
+																										return x;
+																									}
+<generator>[\t ]																	{
+																										POPSTATE(yyextra);
+																										return LEX(WS);
+																									}
+<generator>[^\n\t ]+															{ return LEX(WORD); }
+<generatorlf>[\x00-\xff]													{
+																										POPSTATE(yyextra);
 
-																							// re-scan this byte
-																							yyless(0);
+																										// re-scan this byte
+																										yyless(0);
 
-																							if(yyextra->states_n && yyextra->states[yyextra->states_n - 1] == command)
-																							{
-																								// fabricate an LF token
-																								yylval->str.s = yyextra->last_s;
-																								yylval->str.e = yyextra->last_e;
-																								yylval->num.v = LF;
-																								yylloc->first_column = yyextra->loc.f_col;
-																								yylloc->last_column = yyextra->loc.l_col;
-																								yylloc->first_line = yyextra->loc.f_lin;
-																								yylloc->last_line = yyextra->loc.l_lin;
+																										if(yyextra->states_n && yyextra->states[yyextra->states_n - 1] == command)
+																										{
+																											// fabricate an LF token
+																											yylval->str.s = yyextra->last_s;
+																											yylval->str.e = yyextra->last_e;
+																											yylval->num.v = LF;
+																											yylloc->first_column = yyextra->loc.f_col;
+																											yylloc->last_column = yyextra->loc.l_col;
+																											yylloc->first_line = yyextra->loc.f_lin;
+																											yylloc->last_line = yyextra->loc.l_lin;
 
-																								// print it
-																								PTOKEN(yylval->str.s, yylval->str.e - yylval->str.s, LF, yylloc, __LINE__);
+																											// print it
+																											PTOKEN(yylval->str.s, yylval->str.e - yylval->str.s, LF, yylloc, __LINE__);
 
-																								return LF;
-																							}
-																						}
-<quoteword>["]															{
-																							POPSTATE(yyextra);
-																							return LEX(yytext[0]);
-																						}
-<quoteword>\\\\															{ yytext++; yyleng--; return LEXX(WORD, 1); }
-<quoteword>\\["]														{ yytext++; yyleng--; return LEXX(WORD, 1); }
-<quoteword>[^\\"\x00-\x1F\x7F-\xFF]+				{ return LEX(WORD); }
+																											return LF;
+																										}
+																									}
+<quoteword>["]																		{
+																										POPSTATE(yyextra);
+																										return LEX(yytext[0]);
+																									}
+<quoteword>\\\\																		{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<quoteword>\\["]																	{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<quoteword>[^\\"\x00-\x1F\x7F-\xFF]+							{ return LEX(WORD); }
 
-
-<*>[\x00]																		{ return END; }
-<*>[\x00-\x1F\x7F-\xFF]											{
-																							// non-printable characters - not allowed
-																							log(L_ERROR | L_FF, "unknown character : (0x%02hhx)"
-																								, yytext[0]
-																							);
-																							yyextra->badchar = 1;
-																							return 0;
-																						}
-<*>[\x00-\xff]															{
-																							log(L_ERROR | L_FF, "unknown character : '%c'(0x%02hhx)"
-																								, yytext[0]
-																								, yytext[0]
-																							);
-																							yyextra->badchar = 1;
-																							return 0;
-																						}
+<*>[\x00]																					{ return END; }
+<*>[\x01-\x1F\x7F-\xFF]														{
+																										// non-printable characters - not allowed
+																										log(L_ERROR | L_FF, "unknown character : (0x%02hhx)"
+																											, yytext[0]
+																										);
+																										yyextra->badchar = 1;
+																										return 0;
+																									}
+<*>[\x20-\x7E]																		{
+																										log(L_ERROR | L_FF, "unknown character : '%c'(0x%02hhx)"
+																											, yytext[0]
+																											, yytext[0]
+																										);
+																										yyextra->badchar = 1;
+																										return 0;
+																									}

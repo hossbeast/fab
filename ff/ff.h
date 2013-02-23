@@ -15,11 +15,12 @@
 #define restrict __restrict
 
 // flags
-#define FFN_SINGLE		0x01
-#define FFN_MULTI			0x02
-#define FFN_DISCOVERY	0x04
-#define FFN_WEAK			0x08
-#define FFN_GATED			0x10
+#define FFN_SINGLE			0x01
+#define FFN_MULTI				0x02
+#define FFN_DISCOVERY		0x04
+#define FFN_FABRICATION	0x08
+#define FFN_WEAK				0x10
+#define FFN_GATED				0x20
 
 // FF node type table
 #define FFN_TABLE(x)										\
@@ -27,10 +28,10 @@
 	_FFN(FFN_DEPENDENCY			, 0x02	, x)	\
 	_FFN(FFN_FORMULA				, 0x03	, x)	\
 	_FFN(FFN_INVOCATION			, 0x04	, x)	\
-	_FFN(FFN_INVOCATION_CTX	, 0x04	, x)	\
 	_FFN(FFN_VARASSIGN			, 0x05	, x)	\
 	_FFN(FFN_VARPUSH				, 0x06	, x)	\
 	_FFN(FFN_VARPOP					, 0x07	, x)	\
+	_FFN(FFN_VARDESIGNATE		, 0x04	, x)	\
 	_FFN(FFN_LIST						, 0x08	, x)	\
 	_FFN(FFN_GENERATOR			, 0x09	, x)	\
 	_FFN(FFN_VARREF					, 0x0a	, x)	\
@@ -128,8 +129,11 @@ typedef struct ff_node
 	int					l;			// string length
 
 	generator * 		generator;		// FFN_GENERATOR
-	uint8_t					flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION_CTX
+	uint8_t					flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_DESIGNATE
 
+	/*
+	** strings are freed in freenode
+	*/
 	union {
 		char*	strings[1];
 
@@ -137,24 +141,27 @@ typedef struct ff_node
 			char*			text;
 		};
 
-		struct {													// FFN_VARNAME, FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP
+		struct {													// FFN_VARREF, FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP
 			char*			name;
 		};
 	};
 
+	/*
+	** nodes_owned are freed in freenode
+	*/
 	union {
-		struct ff_node*			nodes[2];
+		struct ff_node*			nodes_owned[2];
 
 		struct {													// FFN_LIST
 			struct ff_node*			generator_node;
 		};
 
-		struct {													// FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP, FFN_INVOCATION_CTX
+		struct {													// FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP, FFN_DESIGNATE
 			struct ff_node*			definition;
 		};
 
 		struct {													// FFN_FORMULA
-			struct ff_node*			targets;
+			struct ff_node*			targets_0;
 		};
 
 		struct {													// FFN_DEPENDENCY
@@ -167,6 +174,21 @@ typedef struct ff_node
 		};
 	};
 
+	/*
+	** nodes_notowned are not freed
+	*/
+	union {
+		struct ff_node*			nodes_notowned[2];
+
+		struct {													// FFN_FORMULA
+			struct ff_node*			targets_1;
+		};
+	};
+
+	/*
+	** chain[0] is accumulated and converted to list in flatten
+	** list is freed in freenode
+	*/
 	union {
 		struct {
 			struct ff_node**	list;
@@ -194,7 +216,7 @@ typedef struct ff_node
 			int								designations_l;
 		};
 
-		struct {											// FFN_INVOCATION_CTX
+		struct {											// FFN_DESIGNATE
 			struct ff_node**	vars;
 			int								vars_l;
 		};
@@ -203,14 +225,7 @@ typedef struct ff_node
 	// implementation
 	char*							e;
 	struct ff_node*		chain[1];		// chains for this node
-	struct ff_node*		next;				// next sibling in parent chain
-
-	/* this freeguard is necessary when a dependency and a formula are combined in
-	** a production rule ... the dependency and the formula itself are both returned
-	** as part of the containing STMTLIST, but the formula has a reference to the
-	** dependency as well, as the targets of the formula
-	*/
-	int								nodes_freeguard;
+	struct ff_node*		next;				// next sibling in parents chain
 } ff_node;
 
 typedef struct

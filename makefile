@@ -8,7 +8,6 @@ SHELL           :=/bin/bash
 SRCDIR           =.
 VPATH           +=${SRCDIR}
 VPATH						+=$(shell find ${SRCDIR} -mindepth 1 -maxdepth 1 -type d -name '[a-z]*' -printf "%f\n" | grep -v doc | grep -v fablib)
-NAME             =fab
 
 INSTALL         :=install
 
@@ -25,7 +24,7 @@ LOPTS						+=-llistwise
 #
 # default goal
 #
-${NAME}: main.o
+fab : main.o
 	${CC} ${COPTS} ${CFLAGS} ${LFLAGS} -o $@ $(foreach x,$(VPATH),$(x)/*.o) ${LOPTS}
 
 #
@@ -122,21 +121,29 @@ gn/gn.o	: common/coll.o common/idx.o common/unitstring.o
 
 .PHONY: install uninstall clean
 
-install: ${NAME}
-	${INSTALL} -d            ${DESTDIR}/usr/local/bin
-	${INSTALL} ${NAME}       ${DESTDIR}/usr/local/bin/${NAME}
-	chown fabsys:fabsys      ${DESTDIR}/usr/local/bin/${NAME}
-	chmod u+s                ${DESTDIR}/usr/local/bin/${NAME}
-	chmod g+s                ${DESTDIR}/usr/local/bin/${NAME}
-	${INSTALL} gcc-dep       ${DESTDIR}/usr/local/bin/gcc-dep
-	${INSTALL} -d            ${DESTDIR}/var/cache/fab
-	chown fabsys:fabsys      ${DESTDIR}/var/cache/fab
-	${INSTALL} -d            ${DESTDIR}/var/tmp/fab
-	chown fabsys:fabsys      ${DESTDIR}/var/tmp/fab
+install: fab
+	${INSTALL} -d                ${DESTDIR}/usr/local/bin
+	${INSTALL} fab               ${DESTDIR}/usr/local/bin/fab
+	chown fabsys:fabsys          ${DESTDIR}/usr/local/bin/fab
+	chmod u+s                    ${DESTDIR}/usr/local/bin/fab
+	chmod g+s                    ${DESTDIR}/usr/local/bin/fab
+	${INSTALL} gcc-dep           ${DESTDIR}/usr/local/bin/gcc-dep
+	${INSTALL} -d                ${DESTDIR}/var/cache/fab
+	chown fabsys:fabsys          ${DESTDIR}/var/cache/fab
+	${INSTALL} -d                ${DESTDIR}/var/tmp/fab
+	chown fabsys:fabsys          ${DESTDIR}/var/tmp/fab
+	${INSTALL} -d                ${DESTDIR}/usr/lib/fab/std
+	${INSTALL} fablib/std/c.fab  ${DESTDIR}/usr/lib/fab/std/c.fab
+	${INSTALL} fablib/std/l.fab  ${DESTDIR}/usr/lib/fab/std/l.fab
+	${INSTALL} fablib/std/y.fab  ${DESTDIR}/usr/lib/fab/std/y.fab
 
 uninstall:
-	rm -f												${DESTDIR}/${NAME}
+	rm -f                        ${DESTDIR}/fab
+	rm -f                        ${DESTDIR}/gcc-dep
+	rm -rf                       ${DESTDIR}/var/cache/fab
+	rm -rf                       ${DESTDIR}/var/tmp/fab
+	rm -rf                       ${DESTDIR}/usr/lib/fab
 
 clean ::
-	rm -f ${NAME} 1>/dev/null 2>&1 ; true
+	rm -f fab 1>/dev/null 2>&1 ; true
 	find . \( -false $(foreach txt,*.o *.i *.s *.so *.lex.* *.tab.* *.tok.* *.tokens.* exports,-o -name '$(txt)') \) -delete

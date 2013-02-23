@@ -49,20 +49,6 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 // [[ static ]]
 //
 
-static char* struse(char* s, char* e)
-{
-	char* v = 0;
-
-	if(s)
-	{
-		v = malloc((e - s) + 1);
-		memcpy(v, s, e - s);
-		v[e - s] = 0;
-	}
-
-	return v;
-}
-
 ff_node* addchain(ff_node* a, ff_node* b)
 {
 	ff_node* i = a;
@@ -98,12 +84,9 @@ static void flatten(ff_node* n)
 			t = t->next;
 		}
 
-		if(n->nodes_freeguard == 0)
-		{
-			int x;
-			for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
-				flatten(n->nodes[x]);
-		}
+		int x;
+		for(x = 0; x < sizeof(n->nodes_owned) / sizeof(n->nodes_owned[0]); x++)
+			flatten(n->nodes_owned[x]);
 	}
 }
 
@@ -117,8 +100,8 @@ static void strmeasure(ff_node* n)
 		for(x = 0; x < n->list_l; x++)
 			strmeasure(n->list[x]);
 
-		for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
-			strmeasure(n->nodes[x]);
+		for(x = 0; x < sizeof(n->nodes_owned) / sizeof(n->nodes_owned[0]); x++)
+			strmeasure(n->nodes_owned[x]);
 	}
 }
 
@@ -147,13 +130,10 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 				qfail();
 		}
 
-		if(n->nodes_freeguard == 0)
+		for(x = 0; x < sizeof(n->nodes_owned) / sizeof(n->nodes_owned[0]); x++)
 		{
-			for(x = 0; x < sizeof(n->nodes) / sizeof(n->nodes[0]); x++)
-			{
-				if(parse_generators(n->nodes[x], gp) == 0)
-					qfail();
-			}
+			if(parse_generators(n->nodes_owned[x], gp) == 0)
+				qfail();
 		}
 	}
 
@@ -260,9 +240,6 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 {
-	char* a;
-	char* b;
-
 	ff_node* n = calloc(1, sizeof(*n));
 	n->type = type;
 	memcpy(&n->loc, loc, locz);
@@ -280,52 +257,44 @@ ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 	}
 	else if(type == FFN_DEPENDENCY)
 	{
-		n->flags					= (uint8_t)va_arg(va, int);
 		n->needs					= va_arg(va, ff_node*);
 		n->feeds					= va_arg(va, ff_node*);
+		n->flags					= (uint8_t)va_arg(va, int);
 	}
 	else if(type == FFN_INVOCATION)
 	{
 		n->modules				= va_arg(va, ff_node*);
 		n->chain[0]				= va_arg(va, ff_node*);	// designations
 	}
-	else if(type == FFN_INVOCATION_CTX)
-	{
-		n->definition			= va_arg(va, ff_node*);
-		n->chain[0]				= va_arg(va, ff_node*);	// vars
-	}
 	else if(type == FFN_WORD)
 	{
-		a = va_arg(va, char*);
-
-		n->text 					= a;
+		n->text 					= va_arg(va, char*);
 	}
 	else if(type == FFN_FORMULA)
 	{
+		n->targets_0			= va_arg(va, ff_node*);
+		n->targets_1			= va_arg(va, ff_node*);
 		n->chain[0]				= va_arg(va, ff_node*);	// commands
+		n->flags					= (uint8_t)va_arg(va, int);
 	}
 	else if(type == FFN_VARASSIGN)
 	{
-		a = va_arg(va, char*);
-		b = va_arg(va, char*);
-
-		n->name						= struse(a, b);
+		n->chain[0]				= va_arg(va, ff_node*);	// vars
 		n->definition			= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_VARPUSH)
 	{
-		a = va_arg(va, char*);
-		b = va_arg(va, char*);
-
-		n->name						= struse(a, b);
+		n->chain[0]				= va_arg(va, ff_node*);	// vars
 		n->definition			= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_VARPOP)
 	{
-		a = va_arg(va, char*);
-		b = va_arg(va, char*);
-
-		n->name						= struse(a, b);
+		n->chain[0]				= va_arg(va, ff_node*);	// vars
+		n->definition			= va_arg(va, ff_node*);
+	}
+	else if(type == FFN_VARDESIGNATE)
+	{
+		n->chain[0]				= va_arg(va, ff_node*);	// vars
 		n->definition			= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_LIST)
@@ -457,11 +426,8 @@ void ff_freenode(ff_node * const ffn)
 		for(x = 0; x < sizeof(ffn->strings) / sizeof(ffn->strings[0]); x++)
 			free(ffn->strings[x]);
 
-		if(ffn->nodes_freeguard == 0)
-		{
-			for(x = 0; x < sizeof(ffn->nodes) / sizeof(ffn->nodes[0]); x++)
-				ff_freenode(ffn->nodes[x]);
-		}
+		for(x = 0; x < sizeof(ffn->nodes_owned) / sizeof(ffn->nodes_owned[0]); x++)
+			ff_freenode(ffn->nodes_owned[x]);
 
 		for(x = 0; x < ffn->list_l; x++)
 			ff_freenode(ffn->list[x]);
@@ -498,7 +464,7 @@ void ff_dump(ff_node * const root)
 
 			if(ffn->type == FFN_STMTLIST)
 			{
-				log(L_FF | L_FFTREE, "%*s  %10s : %d"
+				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "statements", ffn->statements_l
 				);
@@ -507,23 +473,23 @@ void ff_dump(ff_node * const root)
 			}
 			if(ffn->type == FFN_DEPENDENCY)
 			{
-				log(L_FF | L_FFTREE, "%*s  %10s : %s"
-					, lvl * 2, ""
-					, "type"
-					, ffn->flags & FFN_MULTI ? "multi" : "single"
-				);
-				log(L_FF | L_FFTREE, "%*s  %10s : %s"
+				log(L_FF | L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
 					, "type"
 					, ffn->flags & FFN_WEAK ? "weak" : "strong"
 				);
-				log(L_FF | L_FFTREE, "%*s  %10s :"
+				log(L_FF | L_FFTREE, "%*s  %12s : %s"
+					, lvl * 2, ""
+					, "cardinality"
+					, ffn->flags & FFN_MULTI ? "multi" : "single"
+				);
+				log(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "needs"
 				);
 				dump(ffn->needs, lvl + 1);
 
-				log(L_FF | L_FFTREE, "%*s  %10s :"
+				log(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "feeds"
 				);
@@ -531,18 +497,23 @@ void ff_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_FORMULA)
 			{
-				log(L_FF | L_FFTREE, "%*s  %10s : %10s, %10s : %10s"
+				log(L_FF | L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
-					, "type"				, ffn->flags & FFN_DISCOVERY ? "discovery" : "fabrication"
+					, "type"
+					, ffn->flags & FFN_DISCOVERY ? "discovery" : "fabrication"
+				);
+				log(L_FF | L_FFTREE, "%*s  %12s : %s"
+					, lvl * 2, ""
 					, "cardinality"	, ffn->flags & FFN_SINGLE ? "single " : ffn->flags & FFN_MULTI ? "multi" : "UNKNOWN"
 				);
-				log(L_FF | L_FFTREE, "%*s  %10s :"
+				log(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "targets"
 				);
-				dump(ffn->targets, lvl + 1);
+				dump(ffn->targets_0, lvl + 1);
+				dump(ffn->targets_1, lvl + 1);
 
-				log(L_FF | L_FFTREE, "%*s  %10s : %d"
+				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "command", ffn->commands_l
 				);
@@ -553,44 +524,19 @@ void ff_dump(ff_node * const root)
 			{
 
 			}
-			else if(ffn->type == FFN_INVOCATION_CTX)
+			else if(    ffn->type == FFN_VARASSIGN
+			         || ffn->type == FFN_VARPUSH
+			         || ffn->type == FFN_VARPOP
+			         || ffn->type == FFN_VARDESIGNATE)
 			{
+				log(L_FF | L_FFTREE, "%*s  %12s : %d"
+					, lvl * 2, ""
+					, "vars", ffn->vars_l
+				);
+				for(x = 0; x < ffn->vars_l; x++)
+					dump(ffn->vars[x], lvl + 1);
 
-			}
-			else if(ffn->type == FFN_VARASSIGN)
-			{
-				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
-					, lvl * 2, ""
-					, "name", ffn->name
-				);
-
-				log(L_FF | L_FFTREE, "%*s  %10s :"
-					, lvl * 2, ""
-					, "definition"
-				);
-				dump(ffn->definition, lvl + 1);
-			}
-			else if(ffn->type == FFN_VARPUSH)
-			{
-				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
-					, lvl * 2, ""
-					, "name", ffn->name
-				);
-
-				log(L_FF | L_FFTREE, "%*s  %10s :"
-					, lvl * 2, ""
-					, "definition"
-				);
-				dump(ffn->definition, lvl + 1);
-			}
-			else if(ffn->type == FFN_VARPOP)
-			{
-				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
-					, lvl * 2, ""
-					, "name", ffn->name
-				);
-
-				log(L_FF | L_FFTREE, "%*s  %10s :"
+				log(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "definition"
 				);
@@ -598,14 +544,14 @@ void ff_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_LIST)
 			{
-				log(L_FF | L_FFTREE, "%*s  %10s : %d"
+				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "elements", ffn->elements_l
 				);
 				for(x = 0; x < ffn->elements_l; x++)
 					dump(ffn->elements[x], lvl + 1);
 
-				log(L_FF | L_FFTREE, "%*s  %10s :"
+				log(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "generator"
 				);
@@ -613,21 +559,21 @@ void ff_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_WORD)
 			{
-				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
+				log(L_FF | L_FFTREE, "%*s  %12s : '%s'"
 					, lvl * 2, ""
 					, "text", ffn->text
 				);
 			}
 			else if(ffn->type == FFN_GENERATOR)
 			{
-				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
+				log(L_FF | L_FFTREE, "%*s  %12s : '%s'"
 					, lvl * 2, ""
 					, "generator-string", ffn->text
 				);
 			}
 			else if(ffn->type == FFN_VARREF)
 			{
-				log(L_FF | L_FFTREE, "%*s  %10s : '%s'"
+				log(L_FF | L_FFTREE, "%*s  %12s : '%s'"
 					, lvl * 2, ""
 					, "name", ffn->text
 				);

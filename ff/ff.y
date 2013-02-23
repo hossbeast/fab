@@ -7,6 +7,7 @@
 
 %code top {
 	#include "ff.h"
+	#include "xstring.h"
 
 	int  ff_yylex(void* yylvalp, void* yylloc, void* scanner);
 	ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...);
@@ -20,7 +21,7 @@
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
-%expect 22
+%expect 29
 
 /* zero based lines and columns */
 %initial-action { memset(&@$, 0, sizeof(@$)); }
@@ -57,6 +58,7 @@
 %token <num> LW								"=>>"				/* listwise transformation */
 %token <num> '$'	/* variable reference */
 %token <num> ':'	/* dependency */
+%token <num> '.'	/* scope resolution */
 %token <num> '*'	/* weak reference */
 %token <num> '~'	/* dependency discovery */
 %token <num> '['	/* list start */
@@ -65,40 +67,38 @@
 %token <num> '}'	/* formula end */
 %token <num> '='	/* variable assignment */
 %token <num> '+'  /* invocation */
-%token <num> '<'	/* variable push, invocation context start */
-%token <num> '>'	/* variable pop,  invocation context end */
+%token <num> '<'	/* variable push, gated invocation context start */
+%token <num> '>'	/* variable pop,  gated invocation context end */
 %token <num> '@'  /* variable contextual push */
 %token <num> '"'	/* generator-string literal */
 
 /* nonterminals */
 %type  <wordparts> wordparts
-%type  <wordparts> nofileparts
-
-%type  <node> statement
-%type  <node> statement_list
+ 
+%type  <node> statements
 %type  <node> invocation
-%type  <node> specifier
-%type  <node> context
-%type  <node> designation
-%type  <node> designation_list
 %type  <node> varassign
 %type  <node> varpush
 %type  <node> varpop
-%type  <node> formula
-%type  <node> formula_list
+%type  <node> vardesignate
+%type  <node> vardesignates
+%type  <node> command
+%type  <node> commands
 %type  <node> dependency
 %type  <node> discovery
 %type  <node> fabrication
-%type  <node> task
-%type  <node> taskdep
-%type  <node> taskname
 %type  <node> list
-%type  <node> listpiece
+%type  <node> listparts
+%type  <node> listornofile
 %type  <node> word
+%type  <node> scope
 %type  <node> nofile
+%type  <node> nofiles
+%type  <node> nofilelist
+%type  <node> nofileparts
 %type  <node> generator
 %type  <node> varref
-%type  <node> varreflist
+%type  <node> varrefs
 %type  <node> varvalue
 
 /* sugar */
@@ -110,281 +110,291 @@
 %%
 
 ff
-	: statement_list
+	: statements
 	{
 		parm->ff->ffn = mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 
-statement_list
-	: statement_list statement
+statements
+	: statements statements
 	{
 		$$ = addchain($1, $2);
 	}
-	| statement
-	;
-
-statement
-	: invocation
 	| varassign
 	| varpush
 	| varpop
+	| invocation
 	| dependency
-	| task
 	| fabrication
 	| discovery
 	;
 
-invocation
-	: '+' specifier
-	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $2->e, $2, (void*)0);
-	}
-	| '+' specifier context
-	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3);
-	}
-	;
-
-specifier
-	: list
-	| nofile
-	;
-
-nofile
-	: nofileparts
-	{
-		/* nofile is a shorthand for non-file-backed notation */
-
-		char * v = realloc($1.v, strlen($1.v) + 5);
-		memcpy(v, "/../", 4);
-		memcpy(v + 4, $1.v, strlen($1.v));
-		v[4 + strlen($1.v)] = 0;
-
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
-	}
-	;
-
-nofileparts
-	: nofileparts ':' ':' WORD
-	{
-		$$ = $1;
-
-		int l = strlen($$.v);
-		int nl = $4.e - $4.s;
-
-		$$.v = realloc($$.v, l + nl + 1 + 1);
-		memcpy($$.v + l, "/", 1);
-		memcpy($$.v + l + 1, $4.s, nl);
-		$$.v[l + nl + 1] = 0;
-
-		$$.e = (char*)$4.e;
-	}
-	| WORD
-	{
-		$$.s = $1.s;
-		$$.e = $1.e;
-
-		$$.v = calloc(1, ($$.e - $$.s) + 1);
-		memcpy($$.v, $$.s, $$.e - $$.s);
-	}
-	;
-
-context
-	: '<' designation_list '>'
-	{
-		$$ = $2;
-		$$->flags = FFN_GATED;
-	}
-	| designation_list
-	;
-
-designation_list
-	: designation_list ',' designation_list
-	{
-		$$ = addchain($1, $3);
-	}
-	| designation
-	;
-
-designation
-	: varvalue '@' varreflist
-	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION_CTX, $1->s, $3->e, $1, $3);
-	}
-	;
-
-varreflist
-	: varreflist varreflist
-	{
-		$$ = addchain($1, $2);
-	}
-	| varref
-	;
-
 varassign
-	: varref '='
+	: varrefs '='
 	{
+printf("varassign 1\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $2.e, $1, (void*)0);
 	}
-	| varref '=' varvalue
+	| varrefs '=' varvalue
 	{
+printf("varassign 2\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $3->e, $1, $3);
 	}
 	;
 
 varpush
-	: varref '<'
+	: varrefs '<'
 	{
+printf("varpush 1\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $2.e, $1, (void*)0);
 	}
-	| varref '<' varvalue
+	| varrefs '<' varvalue
 	{
+printf("varpush 2\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $3->e, $1, $3);
 	}
 	;
 
 varpop
-	: varref '>'
+	: varrefs '>'
 	{
+printf("varpop 1\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $2.e, $1, (void*)0);
 	}
-	| varref '>' varvalue
+	| varrefs '>' varvalue
 	{
+printf("varpop 2\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $3->e, $1, $3);
+	}
+	;
+
+vardesignate
+	: '@' varrefs
+	{
+printf("vardesignate 1\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1.s, $2->e, (void*)0, $2);
+	}
+	| varvalue '@' varrefs
+	{
+printf("vardesignate 2\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1->s, $3->e, $3, $1);
 	}
 	;
 
 varvalue
 	: list
+	{
+$$ = $1;
+printf("varvalue 1\n");
+	}
 	| varref
+	{
+$$ = $1;
+printf("varvalue 2\n");
+	}
+	;
+
+invocation
+	: '+' listornofile
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $2->e, $2, (void*)0);
+	}
+	| '+' listornofile '<' '>'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+	}
+	| '+' listornofile '<' scope '>'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+	}
+	| '+' listornofile '<' vardesignates '>'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+	}
+	| '+' listornofile '<' scope '|' vardesignates '>'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+	}
+	| '+' listornofile scope
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+	}
+	| '+' listornofile vardesignates
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+	}
+	| '+' listornofile scope '|' vardesignates
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+	}
+	;
+
+scope
+	: nofile
+	;
+
+vardesignates
+	: vardesignates ',' vardesignates
+	{
+		$$ = addchain($1, $3);
+	}
+	| vardesignate
 	;
 
 dependency
-	: list ':' list
+	: listornofile ':' listornofile
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+printf("dependency 1\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
 	}
-	| list ':' '*' list
+	| list ':' '*' listornofile
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_SINGLE | FFN_WEAK, $1, $4);
+printf("dependency 2\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE);
 	}
-	| list ':' ':' list
+	| listornofile ':' ':' listornofile
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_MULTI, $1, $4);
+printf("dependency 3\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_MULTI);
 	}
-	| list ':' ':' '*' list
+	| list ':' ':' '*' listornofile
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $5->e, FFN_MULTI | FFN_WEAK, $1, $5);
-	}
-	;
-
-task
-	: taskdep
-	| taskdep formula
-	{
-		$2->flags = FFN_SINGLE;
-		$2->targets = $1->needs;
-		$2->nodes_freeguard = 1;
-		$$ = addchain($1, $2);
-	}
-	| taskname formula
-	{
-		$2->flags = FFN_SINGLE;
-		$2->targets = $1;
-		$$ = $2;
+printf("dependency 4\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $5->e, $1, $5, FFN_MULTI | FFN_WEAK);
 	}
 	;
 
 fabrication
-	: dependency formula
+	: dependency '{' commands '}'
 	{
-		$2->flags = $1->flags;
-		$2->targets = $1->needs;
-		$2->nodes_freeguard = 1;
-		$$ = addchain($1, $2);
+printf("fabrication 1\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, (void*)0, $1->needs, $3, $1->flags | FFN_FABRICATION);
+		$$ = addchain($1, $$);
 	}
-	| list ':' formula
+	| listornofile '{' commands '}'
 	{
-		$3->flags = FFN_SINGLE;
-		$3->targets = $1;
-		$$ = $3;
+printf("fabrication 2\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, $1, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
 	}
-	| list ':' ':' formula
+	| listornofile ':' '{' commands '}'
 	{
-		$4->flags = FFN_MULTI;
-		$4->targets = $1;
-		$$ = $4;
+		/* this form is redundant but is included for completeness */
+printf("fabrication 3\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_FABRICATION);
+	}
+	| list ':' ':' '{' commands '}'
+	{
+printf("fabrication 4\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $6.e, $1, (void*)0, $5, FFN_MULTI | FFN_FABRICATION);
 	}
 	;
 
 discovery
-	: list '~' formula
+	: list '~' '{' commands '}'
 	{
-		$3->flags = FFN_SINGLE | FFN_DISCOVERY;
-		$3->targets = $1;
-		$$ = $3;
+printf("discovery 1\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, $4, FFN_SINGLE | FFN_DISCOVERY);
 	}
 	;
 
-taskdep
-	: taskname ':' list
+commands
+	: commands commands
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+printf("commands 1\n");
+		$$ = addchain($1, $2);
+	}
+	| command
+	{
+printf("commands 2\n");
+$$ = $1;
 	}
 	;
 
-taskname
-	: nofile
+command
+	: LF
 	{
+printf("command 1\n");
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LF, $1.s, $1.e, $1.s, $1.e);
+	}
+	| list
+	{
+printf("command 2\n");
+$$ = $1;
+	}
+	| word
+	{
+printf("command 3\n");
+$$ = $1;
+	}
+	;
+
+listornofile
+	: list
+	{
+$$ = $1;
+printf("listornofile 1\n");
+	}
+	| nofile
+	{
+printf("listornofile 2\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
 	}
 	;
 
-formula
-	: '{' formula_list '}'
-	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1.s, $3.e, $2);
-	}
-	;
-
-formula_list
-	: formula_list formula_list
-	{
-		$$ = addchain($1, $2);
-	}
-	| LF
-	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LF, $1.s, $1.e, $1.s, $1.e);
-	}
-	| list
-	| word
-	;
-
 list
-	: '[' listpiece ']'
+	: '[' listparts ']'
 	{
+printf("list 1\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
 	}
-	| '[' listpiece ']' LW generator
+	| '[' listparts ']' LW generator
 	{
+printf("list 2\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
 	}
 	;
 
-listpiece
-	: listpiece listpiece
+listparts
+	: listparts listparts
 	{
+printf("listparts 1\n");
 		$$ = addchain($1, $2);
 	}
 	| varref
+	{
+$$ = $1;
+printf("listparts 2\n");
+	}
 	| word
+	{
+$$ = $1;
+printf("listparts 3\n");
+	}
 	| list
+	{
+$$ = $1;
+printf("listparts 4\n");
+	}
+	;
+
+varrefs
+	: varrefs varrefs
+	{
+printf("varrefs 1\n");
+		$$ = addchain($1, $2);
+	}
+	| varref
+	{
+$$ = $1;
+printf("varrefs 2\n");
+	}
 	;
 
 varref
 	: '$' word
 	{
+printf("varref 1\n");
 		$$ = $2;
 		$$->type = FFN_VARREF;
 	}
@@ -393,24 +403,81 @@ varref
 generator
 	: word
 	{
+printf("generator 1\n");
 		$$ = $1;
 		$$->type = FFN_GENERATOR;
+	}
+	;
+
+nofilelist
+	: '(' nofiles ')'
+	{
+		$$ = $2;
+	}
+	| nofile
+	;
+
+nofiles
+	: nofiles nofiles
+	{
+		$$ = addchain($1, $2);
+	}
+	| nofile
+	;
+
+nofile
+	: nofileparts
+	{
+printf("nofile 1\n");
+		/* nofile is a shorthand for non-file-backed notation */
+
+		char * v = 0;
+		xstrcatf(&v, "/..");
+
+		ff_node * n = $$;
+		while(n)
+		{
+			xstrcatf(&v, "/%s", n->text);
+
+			ff_node * nn = n->next;
+			n->next = 0;
+			ff_freenode(n);
+			n = nn;
+		}
+
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1->s, $1->e, v);
+	}
+	;
+
+nofileparts
+	: nofileparts '.' nofileparts
+	{
+printf("nofileparts 1\n");
+		$$ = addchain($1, $3);
+	}
+	| word
+	{
+$$ = $1;
+printf("nofileparts 2\n");
 	}
 	;
 
 word
 	: '"' wordparts '"'
 	{
+printf("word 1\n");
 		/* only concatenate consecutive WORD's when enclosed in quotes or WS */
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WS wordparts WS
 	{
+printf("word 2\n");
 		@$ = @2;	/* exclude the enclosing WS for word location */
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WORD
 	{
+printf("word 3\n");
 		char* v = calloc(1, ($1.e - $1.s) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
@@ -421,6 +488,7 @@ word
 wordparts
 	: wordparts WORD
 	{
+printf("wordparts 1\n");
 		$$ = $1;
 
 		int l = strlen($$.v);
@@ -434,6 +502,7 @@ wordparts
 	}
 	| WORD
 	{
+printf("wordparts 2\n");
 		$$.s = $1.s;
 		$$.e = $1.e;
 

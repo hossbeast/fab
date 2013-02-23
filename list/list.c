@@ -53,7 +53,7 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int st
 		{
 			fatal(lstack_add, (*stax)[p], list->elements[x]->text, strlen(list->elements[x]->text));
 		}
-		else if(list->elements[x]->type == FFN_VARNAME)
+		else if(list->elements[x]->type == FFN_VARREF)
 		{
 			var_container * c = 0;
 			var_container ** cc = 0;
