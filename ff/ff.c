@@ -264,7 +264,9 @@ ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...)
 	else if(type == FFN_INVOCATION)
 	{
 		n->modules				= va_arg(va, ff_node*);
+		n->scope					= va_arg(va, ff_node*);
 		n->chain[0]				= va_arg(va, ff_node*);	// designations
+		n->flags					= (uint8_t)va_arg(va, int);
 	}
 	else if(type == FFN_WORD)
 	{
@@ -522,7 +524,34 @@ void ff_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_INVOCATION)
 			{
+				log(L_FF | L_FFTREE, "%*s  %12s : %s"
+					, lvl * 2, ""
+					, "gated"	, ffn->flags & FFN_GATED ? "yes" : "no"
+				);
+				log(L_FF | L_FFTREE, "%*s  %12s :"
+					, lvl * 2, ""
+					, "modules"
+				);
+				dump(ffn->modules, lvl + 1);
 
+				log(L_FF | L_FFTREE, "%*s  %12s :"
+					, lvl * 2, ""
+					, "scope"	
+				);
+				dump(ffn->scope, lvl + 1);
+
+				log(L_FF | L_FFTREE, "%*s  %12s : %d"
+					, lvl * 2, ""
+					, "designations"
+					, ffn->designations_l
+				);
+				for(x = 0; x < ffn->designations_l; x++)
+					dump(ffn->designations[x], lvl + 1);
+
+				log(L_FF | L_FFTREE, "%*s  %12s : %d"
+					, lvl * 2, ""
+					, "command", ffn->commands_l
+				);
 			}
 			else if(    ffn->type == FFN_VARASSIGN
 			         || ffn->type == FFN_VARPUSH

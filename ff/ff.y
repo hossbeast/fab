@@ -21,7 +21,7 @@
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
-%expect 29
+%expect 26
 
 /* zero based lines and columns */
 %initial-action { memset(&@$, 0, sizeof(@$)); }
@@ -66,16 +66,22 @@
 %token <num> '{'	/* formula start */
 %token <num> '}'	/* formula end */
 %token <num> '='	/* variable assignment */
-%token <num> '+'  /* invocation */
-%token <num> '<'	/* variable push, gated invocation context start */
-%token <num> '>'	/* variable pop,  gated invocation context end */
-%token <num> '@'  /* variable contextual push */
+%token <num> '<'	/* variable push */
+%token <num> '>'	/* variable pop, invocation*/
+%token <num> '@'	/* variable contextual push */
 %token <num> '"'	/* generator-string literal */
+%token <num> '-'	/* invocation gate */
+%token <num> '('	/* invocation context */
+%token <num> ')'	/* invocation context */
+%token <num> ','	/* invocation designation separation */
+
+%token <num> '+'	/* reserved */
 
 /* nonterminals */
 %type  <wordparts> wordparts
  
 %type  <node> statements
+%type  <node> statement
 %type  <node> invocation
 %type  <node> varassign
 %type  <node> varpush
@@ -91,10 +97,7 @@
 %type  <node> listparts
 %type  <node> listornofile
 %type  <node> word
-%type  <node> scope
 %type  <node> nofile
-%type  <node> nofiles
-%type  <node> nofilelist
 %type  <node> nofileparts
 %type  <node> generator
 %type  <node> varref
@@ -121,7 +124,11 @@ statements
 	{
 		$$ = addchain($1, $2);
 	}
-	| varassign
+	| statement
+	;
+
+statement
+	: varassign
 	| varpush
 	| varpop
 	| invocation
@@ -173,7 +180,7 @@ vardesignate
 	: '@' varrefs
 	{
 printf("vardesignate 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1.s, $2->e, (void*)0, $2);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1.s, $2->e, $2, (void*)0);
 	}
 	| varvalue '@' varrefs
 	{
@@ -196,50 +203,59 @@ printf("varvalue 2\n");
 	;
 
 invocation
-	: '+' listornofile
+	: '>' '>' listornofile
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $2->e, $2, (void*)0);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $3, (void*)0, (void*)0, 0);
 	}
-	| '+' listornofile '<' '>'
+	| '>' '>' listornofile '-'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $3, (void*)0, (void*)0, FFN_GATED);
 	}
-	| '+' listornofile '<' scope '>'
+	| '>' '>' listornofile '(' ')'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $3, (void*)0, (void*)0, 0);
 	}
-	| '+' listornofile '<' vardesignates '>'
+	| '>' '>' listornofile '(' ')' '-'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, (void*)0, FFN_GATED);
 	}
-	| '+' listornofile '<' scope '|' vardesignates '>'
+	| '>' '>' listornofile '(' nofile ')'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, $5, (void*)0, 0);
 	}
-	| '+' listornofile scope
+	| '>' '>' listornofile '(' nofile ')' '-'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, $5, (void*)0, FFN_GATED);
 	}
-	| '+' listornofile vardesignates
+	| '>' '>' listornofile '(' vardesignates ')'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, $5, 0);
 	}
-	| '+' listornofile scope '|' vardesignates
+	| '>' '>' listornofile '(' vardesignates ')' '-'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, FFN_GATED);
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, (void*)0, $5, FFN_GATED);
 	}
-	;
-
-scope
-	: nofile
+	| '>' '>' listornofile '(' nofile '|' vardesignates ')'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $8.e, $3, $5, $7, 0);
+	}
+	| '>' '>' listornofile '(' nofile '|' vardesignates ')' '-'
+	{
+		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $9.e, $3, $5, $7, FFN_GATED);
+	}
 	;
 
 vardesignates
 	: vardesignates ',' vardesignates
 	{
+printf("vardesignates 1\n");
 		$$ = addchain($1, $3);
 	}
 	| vardesignate
+	{
+printf("vardesignates 2\n");
+$$ = $1;
+	}
 	;
 
 dependency
@@ -248,7 +264,7 @@ dependency
 printf("dependency 1\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
 	}
-	| list ':' '*' listornofile
+	| list ':' '*' list
 	{
 printf("dependency 2\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE);
@@ -258,7 +274,7 @@ printf("dependency 2\n");
 printf("dependency 3\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_MULTI);
 	}
-	| list ':' ':' '*' listornofile
+	| list ':' ':' '*' list
 	{
 printf("dependency 4\n");
 		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $5->e, $1, $5, FFN_MULTI | FFN_WEAK);
@@ -407,22 +423,6 @@ printf("generator 1\n");
 		$$ = $1;
 		$$->type = FFN_GENERATOR;
 	}
-	;
-
-nofilelist
-	: '(' nofiles ')'
-	{
-		$$ = $2;
-	}
-	| nofile
-	;
-
-nofiles
-	: nofiles nofiles
-	{
-		$$ = addchain($1, $2);
-	}
-	| nofile
 	;
 
 nofile

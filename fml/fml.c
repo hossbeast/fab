@@ -159,7 +159,8 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * staxa, int p)
 	fml->ffn = ffn;
 
 	// resolve targets list
-	fatal(list_resolve, ffn->targets, vmap, stax, staxa, p);
+	fatal(list_resolveto, ffn->targets_0, vmap, stax, staxa, p);
+	fatal(list_resolveto, ffn->targets_1, vmap, stax, staxa, p);
 
 	// attach graph nodes
 	if(fml->ffn->flags & FFN_SINGLE)

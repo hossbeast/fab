@@ -63,6 +63,7 @@ int main(int argc, char** argv)
 		int									node_list_len = 0;
 
 		int x;
+		int y;
 
 		// get user identity of this process, assert user:group and permissions are set appropriately
 		fatal(identity_init);
@@ -123,6 +124,10 @@ int main(int argc, char** argv)
 		// process the fabfile tree, construct the graph
 		for(x = 0; x < ffn->statements_l; x++)
 		{
+			if(ffn->statements[x]->type == FFN_INVOCATION)
+			{
+
+			}
 			if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
 				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
@@ -134,26 +139,40 @@ int main(int argc, char** argv)
 			}
 			else if(ffn->statements[x]->type == FFN_VARASSIGN)
 			{
-				// clear the stack for this variable
-				int r;
-				fatal(var_undef, vmap, ffn->statements[x]->name, &r);
+				// get the value, if any
+				void * v = 0;
+				uint8_t t = 0;
 
-				// if it was actually cleared, which will be prevented by a sticky value
-				if(r)
+				if(ffn->statements[x]->definition)
 				{
-					if(ffn->statements[x]->definition)
+					if(ffn->statements[x]->definition->type == FFN_LIST)
 					{
-						if(ffn->statements[x]->definition->type == FFN_LIST)
-						{
-							// resolve and push the associated list
-							fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
-							fatal(var_push, vmap, ffn->statements[x]->name, stax[staxp++], VV_LS, 0);
-						}
-						if(ffn->statements[x]->definition->type == FFN_WORD)
-						{
-							// push an alias value
-							fatal(var_push, vmap, ffn->statements[x]->name, ffn->statements[x]->definition->text, VV_AL, 0);
-						}
+						// resolve and push the associated list
+						fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
+						v = stax[staxp++];
+						t = VV_LS;
+					}
+					if(ffn->statements[x]->definition->type == FFN_WORD)
+					{
+						// push an alias value
+						v = ffn->statements[x]->definition->text;
+						t = VV_AL;
+					}
+				}
+
+				// apply to all referenced vars
+				for(y = 0; y < ffn->statements[x]->vars_l; y++)
+				{
+					char * var = ffn->statements[x]->vars[y]->text;
+
+					// clear the stack for this variable
+					int r;
+					fatal(var_undef, vmap, var, &r);
+
+					// if it was actually cleared, which will be prevented by a sticky value
+					if(r)
+					{
+						fatal(var_push, vmap, var, v, t, 0);
 					}
 				}
 			}

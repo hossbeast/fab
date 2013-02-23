@@ -13,7 +13,11 @@ extern int lstack_exec_internal(generator* g, char** init, int* initls, int init
 #include "map.h"
 #include "xmem.h"
 
-int list_ensure(lstack *** stax, int * staxa, int staxp)
+///
+/// static
+///
+
+int ensure(lstack *** stax, int * staxa, int staxp)
 {
 	// ensure enough lstacks are allocated
 	if((*staxa) <= staxp)
@@ -35,13 +39,8 @@ int list_ensure(lstack *** stax, int * staxa, int staxp)
 	finally : coda;
 }
 
-int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
+static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p)
 {
-	int p = staxp;
-
-	// ensure stax allocation, reset p'th stack
-	fatal(list_ensure, stax, staxa, staxp);
-
 	// additional lstacks go here
 	int pn = p;
 
@@ -125,10 +124,39 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int st
 	finally : coda;
 }
 
+///
+/// public
+///
+
+int list_ensure(lstack *** stax, int * staxa, int staxp)
+{
+	lstack_reset((*stax)[staxp]);
+	fatal(ensure, stax, staxa, staxp);
+
+	finally : coda;
+}
+
+int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
+{
+	fatal(ensure, stax, staxa, staxp);
+	fatal(render, list, vmap, stax, staxa, staxp);
+
+	finally : coda;
+}
+
+int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
+{
+	fatal(ensure, stax, staxa, staxp);
+	lstack_reset((*stax)[staxp]);
+	fatal(render, list, vmap, stax, staxa, staxp);
+
+	finally : coda;
+}
+
 int list_empty(lstack *** stax, int * staxa, int staxp)
 {
-	// ensure stax allocation, reset p'th stack
-	fatal(list_ensure, stax, staxa, staxp);
+	fatal(ensure, stax, staxa, staxp);
+	lstack_reset((*stax)[staxp]);
 
 	(*stax)[staxp]->sel.all = 1;
 

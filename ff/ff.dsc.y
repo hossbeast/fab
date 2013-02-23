@@ -47,22 +47,12 @@
 		uint32_t				v;
 	}							num;
 
-	struct
-	{
-		const char*			s;
-		const char*			e;
-
-		const char*			vs;
-		const char*			ve;
-	}							var;
-
 	ff_node*			node;
 }
 
 /* terminals with a semantic value */
 %token <str> WORD							"WORD"
 %token <str> WS								"WS"				/* a single tab/space */
-%token <var> VARNAME					"VARNAME"
 %token <num> LW								"=>>"
 %token <num> ':'
 %token <num> '*'
@@ -79,6 +69,7 @@
 %type  <node> list
 %type  <node> listpiece
 %type  <node> word
+%type  <node> varref
 %type  <node> generator
 
 
@@ -136,12 +127,17 @@ listpiece
 	{
 		$$ = addchain($1, $2);
 	}
-	| VARNAME
-	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARNAME, $1.s, $1.e, $1.vs, $1.ve);
-	}
+	| varref
 	| word
 	| list
+	;
+
+varref
+	: '$' word
+	{
+		$$ = $2;
+		$$->type = FFN_VARREF;
+	}
 	;
 
 generator
