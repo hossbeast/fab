@@ -92,15 +92,27 @@ int main(int argc, char** argv)
 		// create/cleanup tmp 
 		fatal(tmp_setup);
 
-		// parse the fabfile
 		fatal(ff_mkparser, &ffp);
-		fatal(ff_parse_path, ffp, g_args.init_fabfile_path, &ffn);
 
-		if(!ffn)
-			qfail();
+		// parse fabfiles, starting with the initial
+		while(1)
+		{
+			fatal(ff_parse_path, ffp, g_args.init_fabfile_path, &ffn);
 
-		if(log_would(L_FF | L_FFTREE))
-			ff_dump(ffn);
+			if(!ffn)
+				qfail();
+
+			if(log_would(L_FF | L_FFTREE))
+				ff_dump(ffn);
+
+			// process the fabfile tree, construct the graph
+			for(x = 0; x < ffn->statements_l; x++)
+			{
+				if(ffn->statements[x]->type == FFN_INVOCATION)
+				{
+				}
+			}					
+		}
 
 		// register object types with liblistwise
 		fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
@@ -124,11 +136,13 @@ int main(int argc, char** argv)
 		// process the fabfile tree, construct the graph
 		for(x = 0; x < ffn->statements_l; x++)
 		{
+			ff_node* stmt = ffn->statements[x];
+
 			if(ffn->statements[x]->type == FFN_INVOCATION)
 			{
-
+				
 			}
-			if(ffn->statements[x]->type == FFN_DEPENDENCY)
+			else if(ffn->statements[x]->type == FFN_DEPENDENCY)
 			{
 				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
 			}
@@ -137,86 +151,63 @@ int main(int argc, char** argv)
 				// add the formula, attach to graph nodes
 				fatal(fml_add, ffn->statements[x], vmap, &stax, &staxa, staxp);
 			}
-			else if(ffn->statements[x]->type == FFN_VARASSIGN)
+			else if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARPUSH || stmt->type == FFN_VARPOP)
 			{
 				// get the value, if any
 				void * v = 0;
 				uint8_t t = 0;
 
-				if(ffn->statements[x]->definition)
+				if(stmt->definition)
 				{
-					if(ffn->statements[x]->definition->type == FFN_LIST)
+					if(stmt->definition->type == FFN_LIST)
 					{
-						// resolve and push the associated list
-						fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
+						fatal(list_resolve, stmt->definition, vmap, &stax, &staxa, staxp);
 						v = stax[staxp++];
 						t = VV_LS;
 					}
-					if(ffn->statements[x]->definition->type == FFN_WORD)
+					if(stmt->definition->type == FFN_WORD)
 					{
-						// push an alias value
-						v = ffn->statements[x]->definition->text;
+						v = stmt->definition->text;
 						t = VV_AL;
-					}
-				}
-
-				// apply to all referenced vars
-				for(y = 0; y < ffn->statements[x]->vars_l; y++)
-				{
-					char * var = ffn->statements[x]->vars[y]->text;
-
-					// clear the stack for this variable
-					int r;
-					fatal(var_undef, vmap, var, &r);
-
-					// if it was actually cleared, which will be prevented by a sticky value
-					if(r)
-					{
-						fatal(var_push, vmap, var, v, t, 0);
-					}
-				}
-			}
-			else if(ffn->statements[x]->type == FFN_VARPUSH)
-			{
-				if(ffn->statements[x]->definition)
-				{
-					if(ffn->statements[x]->definition->type == FFN_LIST)
-					{
-						// resolve and push the associated list
-						fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
-						fatal(var_push, vmap, ffn->statements[x]->name, stax[staxp++], VV_LS, 0);
-					}
-					if(ffn->statements[x]->definition->type == FFN_WORD)
-					{
-						// push an alias value
-						fatal(var_push, vmap, ffn->statements[x]->name, ffn->statements[x]->definition->text, VV_AL, 0);
 					}
 				}
 				else
 				{
-					// create and push an empty list
-					fatal(list_empty, &stax, &staxa, staxp);
-					fatal(var_push, vmap, ffn->statements[x]->name, stax[staxp++], VV_LS, 0);
-				}
-			}
-			else if(ffn->statements[x]->type == FFN_VARPOP)
-			{
-				// pop
-				fatal(var_pop, vmap, ffn->statements[x]->name);
-
-				// push an associated value, if any
-				if(ffn->statements[x]->definition)
-				{
-					if(ffn->statements[x]->definition->type == FFN_LIST)
+					if(stmt->type == FFN_VARPUSH)
 					{
-						// resolve and push the associated list
-						fatal(list_resolve, ffn->statements[x]->definition, vmap, &stax, &staxa, staxp);
-						fatal(var_push, vmap, ffn->statements[x]->name, stax[staxp++], VV_LS, 0);
+						fatal(list_empty, &stax, &staxa, staxp);
+						v = stax[staxp++];
+						t = VV_LS;
 					}
-					if(ffn->statements[x]->definition->type == FFN_WORD)
+				}
+
+				// apply to all referenced vars
+				for(y = 0; y < stmt->vars_l; y++)
+				{
+					char * var = stmt->vars[y]->text;
+
+					if(stmt->type == FFN_VARASSIGN)
 					{
-						// push an alias value
-						fatal(var_push, vmap, ffn->statements[x]->name, ffn->statements[x]->definition->text, VV_AL, 0);
+						// clear the stack for this variable
+						int r;
+						fatal(var_undef, vmap, var, &r);
+
+						// r is whether it was actually cleared, which is prevented by a sticky value on top
+						if(r && v)
+						{
+							fatal(var_push, vmap, var, v, t, 0);
+						}
+					}
+					if(stmt->type == FFN_VARPUSH)
+					{
+						fatal(var_push, vmap, var, v, t, 0);
+					}
+					if(stmt->type == FFN_VARPOP)
+					{
+						if(v)
+						{
+							fatal(var_push, vmap, var, v, t, 0);
+						}
 					}
 				}
 			}

@@ -26,11 +26,10 @@ which is available inside the .fab and can be read from
 
 
 # dump/invalidate/target node identification standardization
-	/text/ : match on abs/can/rel paths, returns list
-	text   : substring match, returns list
-	<text> : canonical path match, returns single item
-	@text  : shorthand for non-file-backed, equivalent to canonical path match
-   text  : shorthand for append to init-fabfile-rel-dir, then bsearch on relative path
+   text   : shorthand for append to init-fabfile-rel-dir, relative path exact match
+	/text/  : regex match on abs/can/rel paths, returns list
+	<text>  : canonical path match, returns single item
+	.text   : shorthand for nofile, equivalent to canonical path match
 
 # PERSISTENT FAB DAEMON FOR A GIVEN TARGET
 	given a target, establishes inotify watches on all relevant nodes
@@ -44,3 +43,9 @@ which is available inside the .fab and can be read from
 $@, ${products} - products of the current formula
 $<, ${lhs}      - lefthand side of a multi-product formula
 $#, ${base}     - relative path to the directory containing the master fabfile
+
+
+should've held my ground
+
+
+				I could've been redeemed

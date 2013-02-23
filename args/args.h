@@ -106,25 +106,28 @@ extern struct g_args_t
 
 	int					concurrency;					// concurrently limiting factor
 
-	char **			targets;							// targets
-	int					targets_len;
-
 	path *			init_fabfile_path;		// path to initial fabfile
 	char *			bakescript_path;			// path to bakescript
 
-	char **			invalidate;						// graph nodes to invalidate
-	int					invalidate_len;
-	int					invalidate_all;
-
-	char **			dumpnode;							// graph nodes to dump
-	int					dumpnode_len;
-	int					dumpnode_all;
-
 	char **			varkeys;							// var keys
-	int					varkeys_len;
+	int					varkeysl;
 
 	char **			varvals;							// var values
-	int					varvals_len;
+	int					varvalsl;
+
+	char **			invokedirs;						// root directories for locating invocations
+	int					invokedirsl;
+
+	char **			targets;							// targets
+	int					targetsl;
+
+	char **			invalidations;				// graph nodes to invalidate
+	int					invalidationsl;
+	int					invalidationsa;
+
+	char **			dumpnodes;						// graph nodes to dump
+	int					dumpnodesl;
+	int					dumpnodesa;
 } g_args;
 
 //// parse_args
