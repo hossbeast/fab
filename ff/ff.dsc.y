@@ -10,9 +10,6 @@
 
 	static int __attribute__((weakref, alias("ff_yylex"))) ff_dsc_yylex(); 
 	static int __attribute__((weakref, alias("ff_yyerror"))) ff_dsc_yyerror(); 
-
-	ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...);
-	ff_node* addchain(ff_node* a, ff_node* b);
 }
 
 %define api.pure
@@ -76,7 +73,7 @@
 /* sugar */
 %token END 0 "end of file"
 
-%destructor { ff_freenode($$); } <node>
+%destructor { ffn_free($$); } <node>
 %destructor { free($$.v); } <wordparts>
 
 %%
@@ -84,14 +81,14 @@
 ff
 	: statement_list
 	{
-		parm->ff->ffn = mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
+		parm->ff->ffn = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 
 statement_list
 	: statement_list statement
 	{
-		$$ = addchain($1, $2);
+		$$ = ffn_addchain($1, $2);
 	}
 	| statement
 	;
@@ -103,29 +100,29 @@ statement
 dependency
 	: list ':' list
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
 	}
 	| list ':' '*' list
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_SINGLE | FFN_WEAK, $1, $4);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_SINGLE | FFN_WEAK, $1, $4);
 	}
 	;
 
 list
 	: '[' listpiece ']'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
 	}
 	| '[' listpiece ']' LW generator
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
 	}
 	;
 
 listpiece
 	: listpiece listpiece
 	{
-		$$ = addchain($1, $2);
+		$$ = ffn_addchain($1, $2);
 	}
 	| varref
 	| word
@@ -151,19 +148,19 @@ generator
 word
 	: '"' wordparts '"'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WS wordparts WS
 	{
 		@$ = @2;	/* exclude the enclosing WS for word location */
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WORD
 	{
 		char* v = calloc(1, ($1.e - $1.s) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
 	}
 	;
 

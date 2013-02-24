@@ -90,6 +90,7 @@ main.o  :	common/coll.o					\
 					common/dirutil.o			\
 					common/cksum.o				\
 					common/map.o					\
+					common/strstack.o			\
 				  ff/ff.o								\
 				  ffn/ffn.o							\
 				  bp/bp.o								\

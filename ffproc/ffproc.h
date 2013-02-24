@@ -27,15 +27,14 @@
 //  [first] - set to first dependency processed
 //
 int ffproc(
-    const ff_node * const restrict ffn
+    const ff_file * const restrict ff
   , const ff_parser * const restrict ffp
-  , const char * const restrict dir
   , strstack * const restrict sstk
   , map * const restrict vmap
   , lstack *** const restrict stax
   , int * const restrict staxa
   , int staxp
   , gn ** const restrict first
-) __attribute__((nonnull(1,2,3,4,5,6,7)));
+) __attribute__((nonnull(1,2,3,4,5,6)));
 
 #endif

@@ -32,24 +32,24 @@ static void flatten(ff_node* n)
 {
 	if(n)
 	{
-		n->list_l = 0;
+		n->listl = 0;
 		ff_node* t = n->chain[0];
 		while(t)
 		{
 			flatten(t);
 
 			t = t->next;
-			n->list_l++;
+			n->listl++;
 		}
 
-		if(n->list_l)
-			n->list = calloc(n->list_l, sizeof(n->list[0]));
+		if(n->listl)
+			n->list = calloc(n->listl, sizeof(n->list[0]));
 
-		n->list_l = 0;
+		n->listl = 0;
 		t = n->chain[0];
 		while(t)
 		{
-			n->list[n->list_l++] = t;
+			n->list[n->listl++] = t;
 			t = t->next;
 		}
 
@@ -66,7 +66,7 @@ static void strmeasure(ff_node* n)
 		n->l = n->e - n->s;
 
 		int x;
-		for(x = 0; x < n->list_l; x++)
+		for(x = 0; x < n->listl; x++)
 			strmeasure(n->list[x]);
 
 		for(x = 0; x < sizeof(n->nodes_owned) / sizeof(n->nodes_owned[0]); x++)
@@ -93,7 +93,7 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 		}
 
 		int x;
-		for(x = 0; x < n->list_l; x++)
+		for(x = 0; x < n->listl; x++)
 		{
 			if(parse_generators(n->list[x], gp) == 0)
 				qfail();
@@ -113,7 +113,7 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 
 /// [[ api/public ]]
 
-ff_node* ffn_mknode(const ff_loc * const loc, size_t locz, struct ff_file * const ff, uint32_t type, ...)
+ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const ff, uint32_t type, ...)
 {
 	ff_node* n = calloc(1, sizeof(*n));
 	n->type = type;
@@ -218,7 +218,7 @@ int ffn_postprocess(ff_node * const ffn, generator_parser * const gp)
 	finally : coda;
 }
 
-void ffn_freenode(ff_node * const ffn)
+void ffn_free(ff_node * const ffn)
 {
 	if(ffn)
 	{
@@ -227,10 +227,10 @@ void ffn_freenode(ff_node * const ffn)
 			free(ffn->strings[x]);
 
 		for(x = 0; x < sizeof(ffn->nodes_owned) / sizeof(ffn->nodes_owned[0]); x++)
-			ffn_freenode(ffn->nodes_owned[x]);
+			ffn_free(ffn->nodes_owned[x]);
 
-		for(x = 0; x < ffn->list_l; x++)
-			ffn_freenode(ffn->list[x]);
+		for(x = 0; x < ffn->listl; x++)
+			ffn_free(ffn->list[x]);
 
 		free(ffn->list);
 
@@ -241,9 +241,9 @@ void ffn_freenode(ff_node * const ffn)
 	free(ffn);
 }
 
-void ffn_xfreenode(ff_node ** const ffn)
+void ffn_xfree(ff_node ** const ffn)
 {
-	ffn_freenode(*ffn);
+	ffn_free(*ffn);
 	*ffn = 0;
 }
 
@@ -266,9 +266,9 @@ void ffn_dump(ff_node * const root)
 			{
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
-					, "statements", ffn->statements_l
+					, "statements", ffn->statementsl
 				);
-				for(x = 0; x < ffn->statements_l; x++)
+				for(x = 0; x < ffn->statementsl; x++)
 					dump(ffn->statements[x], lvl + 1);
 			}
 			if(ffn->type == FFN_DEPENDENCY)
@@ -315,9 +315,9 @@ void ffn_dump(ff_node * const root)
 
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
-					, "command", ffn->commands_l
+					, "command", ffn->commandsl
 				);
-				for(x = 0; x < ffn->commands_l; x++)
+				for(x = 0; x < ffn->commandsl; x++)
 					dump(ffn->commands[x], lvl + 1);
 			}
 			else if(ffn->type == FFN_INVOCATION)
@@ -341,14 +341,14 @@ void ffn_dump(ff_node * const root)
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "designations"
-					, ffn->designations_l
+					, ffn->designationsl
 				);
-				for(x = 0; x < ffn->designations_l; x++)
+				for(x = 0; x < ffn->designationsl; x++)
 					dump(ffn->designations[x], lvl + 1);
 
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
-					, "command", ffn->commands_l
+					, "command", ffn->commandsl
 				);
 			}
 			else if(    ffn->type == FFN_VARASSIGN
@@ -358,9 +358,9 @@ void ffn_dump(ff_node * const root)
 			{
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
-					, "vars", ffn->vars_l
+					, "vars", ffn->varsl
 				);
-				for(x = 0; x < ffn->vars_l; x++)
+				for(x = 0; x < ffn->varsl; x++)
 					dump(ffn->vars[x], lvl + 1);
 
 				log(L_FF | L_FFTREE, "%*s  %12s :"
@@ -373,9 +373,9 @@ void ffn_dump(ff_node * const root)
 			{
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
-					, "elements", ffn->elements_l
+					, "elements", ffn->elementsl
 				);
-				for(x = 0; x < ffn->elements_l; x++)
+				for(x = 0; x < ffn->elementsl; x++)
 					dump(ffn->elements[x], lvl + 1);
 
 				log(L_FF | L_FFTREE, "%*s  %12s :"

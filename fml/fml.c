@@ -195,7 +195,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxa, int p, int sta
 
 	int k = 0;
 	int x;
-	for(x = 0; x < ffn->commands_l; x++)
+	for(x = 0; x < ffn->commandsl; x++)
 	{
 		if(ffn->commands[x]->type == FFN_WORD)
 		{

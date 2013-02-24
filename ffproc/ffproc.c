@@ -1,3 +1,5 @@
+#include <listwise/lstack.h>
+
 #include "ffproc.h"
 
 #include "fml.h"
@@ -7,6 +9,7 @@
 #include "args.h"
 
 #include "control.h"
+#include "path.h"
 
 ///
 /// static
@@ -44,7 +47,7 @@ int proc_varnode(ff_node * stmt, map * const vmap, lstack *** const stax, int * 
 
 	// apply to all referenced vars
 	int y;
-	for(y = 0; y < stmt->vars_l; y++)
+	for(y = 0; y < stmt->varsl; y++)
 	{
 		char * var = stmt->vars[y]->text;
 
@@ -80,69 +83,82 @@ int proc_varnode(ff_node * stmt, map * const vmap, lstack *** const stax, int * 
 /// public
 ///
 
-int ffproc(const ff_node * const ffn, const ff_parser * const ffp, const char * const dir, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int staxp, gn ** const first)
+int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int staxp, gn ** const first)
 {
+	path * pth = 0;
 	int x;
 	int y;
 	int i;
 
-	// containing fabfile
-	ff_file * ff = ffn->loc.ff;
-
 	// use up one list and populate the ^ variable (relative directory path to this fabfile)
 	fatal(list_ensure, stax, staxa, staxp);
-	fatal(lstack_add, (*stax)[staxp], dir, strlen(dir));
+	fatal(lstack_add, (*stax)[staxp], ff->path->rel_dir, ff->path->rel_dirl);
 	fatal(var_push, vmap, "^", (*stax)[staxp++], VV_LS, 0);
 
 	// process the fabfile tree, construct the graph
-	for(x = 0; x < ffn->statements_l; x++)
+	for(x = 0; x < ff->ffn->statementsl; x++)
 	{
-		ff_node* stmt = ffn->statements[x];
+		ff_node* stmt = ff->ffn->statements[x];
 
 		if(stmt->type == FFN_INVOCATION)
 		{
-			int pn = staxp;
-			fatal(list_resolve, stmt->modules, vmap, stax, staxa, pn++);
+			fatal(list_resolve, stmt->modules, vmap, stax, staxa, staxp);
 
 			// iterate all referenced modules
-			LSTACK_ITERATE(ls, y, go);
+			LSTACK_ITERATE((*stax)[staxp], y, go);
 			if(go)
 			{
-				char * s = 0;
-				int l = 0;
+				// module reference
+				char * s;
+				int l;
+				fatal(lstack_string, (*stax)[staxp], 0, y, &s, &l);
 
-				fatal(lstack_string, ls, 0, y, &s, &l);
-
-				// locate the actual file
-				if(l >= 4 && memcmp(s, "/../") == 0)
+				// handle module notation
+				if(l >= 4 && memcmp(s, "/../", 4) == 0)
 				{
 					for(i = 0; i < g_args.invokedirsl; i++)
 					{
-						
+						fatal(path_create, &pth, g_args.invokedirs[i], "./%s", s + 4);
+
+						if(euidaccess(pth->can, F_OK) == 0)
+							break;
+					}
+
+					if(i == g_args.invokedirsl)
+					{
+						fail("not found %.*s", l, s);
 					}
 				}
+				else
+				{
+					fatal(path_create, &pth, ff->path->rel_dir, "%.*s", l, s);
+				}
+
+				// parse the referenced fabfile
+				ff_file * iff = 0;
+				fatal(ff_parse_path, ffp, pth, &iff);
 
 				// for a gated invocation, push an empty value into all affecting variables
 				if(stmt->flags & FFN_GATED)
 				{
 					for(i = 0; i < ff->affecting_varsl; i++)
-						fatal(var_push, vmap, ff->affecting_vars[i], 0, 0, 0);
+						fatal(var_push, vmap, ff->affecting_vars[i]->text, 0, 0, 0);
 				}
 
 				// push values for all designations
 				for(i = 0; i < stmt->designationsl; i++)
-					fatal(proc_varnode, stmt->designations[i], stax, staxa, staxp);
+					fatal(proc_varnode, stmt->designations[i], vmap, stax, staxa, staxp + 1);
 
 				// apply scope for this invocation
 				if(stmt->scope)
 					fatal(strstack_push, sstk, stmt->scope->text);
 
 				// process the referenced fabfile
-				fatal(ffproc);
+				fatal(ffproc, iff, ffp, sstk, vmap, stax, staxa, staxp, 0);
 
 				// scope pop
 				if(stmt->scope)
-					fatal(strstack_pop, sstk);
+					strstack_pop(sstk);
 
 				// pop designations
 				for(i = 0; i < stmt->designationsl; i++)
@@ -156,7 +172,7 @@ int ffproc(const ff_node * const ffn, const ff_parser * const ffp, const char * 
 				if(stmt->flags & FFN_GATED)
 				{
 					for(i = 0; i < ff->affecting_varsl; i++)
-						fatal(var_pop, vmap, ff->affecting_vars[i]);
+						fatal(var_pop, vmap, ff->affecting_vars[i]->text);
 				}
 			}
 			LSTACK_ITEREND;
@@ -175,5 +191,7 @@ int ffproc(const ff_node * const ffn, const ff_parser * const ffp, const char * 
 		}
 	}
 
-	finally : coda;
+finally:
+	path_free(pth);
+coda;
 }

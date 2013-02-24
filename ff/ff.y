@@ -10,9 +10,6 @@
 	#include "xstring.h"
 
 	int  ff_yylex(void* yylvalp, void* yylloc, void* scanner);
-	ff_node* mknode(void* loc, size_t locz, ff_file * ff, uint32_t type, ...);
-
-	ff_node* addchain(ff_node* a, ff_node* b);
 }
 
 %define api.pure
@@ -107,7 +104,7 @@
 /* sugar */
 %token END 0 "end of file"
 
-%destructor { ff_freenode($$); } <node>
+%destructor { ffn_free($$); } <node>
 %destructor { free($$.v); } <wordparts>
 
 %%
@@ -115,14 +112,14 @@
 ff
 	: statements
 	{
-		parm->ff->ffn = mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
+		parm->ff->ffn = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 
 statements
 	: statements statements
 	{
-		$$ = addchain($1, $2);
+		$$ = ffn_addchain($1, $2);
 	}
 	| statement
 	;
@@ -141,12 +138,12 @@ varassign
 	: varrefs '='
 	{
 printf("varassign 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $2.e, $1, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $2.e, $1, (void*)0);
 	}
 	| varrefs '=' varvalue
 	{
 printf("varassign 2\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $3->e, $1, $3);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $3->e, $1, $3);
 	}
 	;
 
@@ -154,12 +151,12 @@ varpush
 	: varrefs '<'
 	{
 printf("varpush 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $2.e, $1, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $2.e, $1, (void*)0);
 	}
 	| varrefs '<' varvalue
 	{
 printf("varpush 2\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $3->e, $1, $3);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $3->e, $1, $3);
 	}
 	;
 
@@ -167,12 +164,12 @@ varpop
 	: varrefs '>'
 	{
 printf("varpop 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $2.e, $1, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $2.e, $1, (void*)0);
 	}
 	| varrefs '>' varvalue
 	{
 printf("varpop 2\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $3->e, $1, $3);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $3->e, $1, $3);
 	}
 	;
 
@@ -180,12 +177,12 @@ vardesignate
 	: '@' varrefs
 	{
 printf("vardesignate 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1.s, $2->e, $2, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1.s, $2->e, $2, (void*)0);
 	}
 	| varvalue '@' varrefs
 	{
 printf("vardesignate 2\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1->s, $3->e, $3, $1);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1->s, $3->e, $3, $1);
 	}
 	;
 
@@ -205,43 +202,43 @@ printf("varvalue 2\n");
 invocation
 	: '>' '>' listornofile
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $3, (void*)0, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $3, (void*)0, (void*)0, 0);
 	}
 	| '>' '>' listornofile '-'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $3, (void*)0, (void*)0, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $3, (void*)0, (void*)0, FFN_GATED);
 	}
 	| '>' '>' listornofile '(' ')'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $3, (void*)0, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $3, (void*)0, (void*)0, 0);
 	}
 	| '>' '>' listornofile '(' ')' '-'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, (void*)0, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, (void*)0, FFN_GATED);
 	}
 	| '>' '>' listornofile '(' nofile ')'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, $5, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, $5, (void*)0, 0);
 	}
 	| '>' '>' listornofile '(' nofile ')' '-'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, $5, (void*)0, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, $5, (void*)0, FFN_GATED);
 	}
 	| '>' '>' listornofile '(' vardesignates ')'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, $5, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, $5, 0);
 	}
 	| '>' '>' listornofile '(' vardesignates ')' '-'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, (void*)0, $5, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, (void*)0, $5, FFN_GATED);
 	}
 	| '>' '>' listornofile '(' nofile '|' vardesignates ')'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $8.e, $3, $5, $7, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $8.e, $3, $5, $7, 0);
 	}
 	| '>' '>' listornofile '(' nofile '|' vardesignates ')' '-'
 	{
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $9.e, $3, $5, $7, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $9.e, $3, $5, $7, FFN_GATED);
 	}
 	;
 
@@ -249,7 +246,7 @@ vardesignates
 	: vardesignates ',' vardesignates
 	{
 printf("vardesignates 1\n");
-		$$ = addchain($1, $3);
+		$$ = ffn_addchain($1, $3);
 	}
 	| vardesignate
 	{
@@ -262,22 +259,22 @@ dependency
 	: listornofile ':' listornofile
 	{
 printf("dependency 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
 	}
 	| list ':' '*' list
 	{
 printf("dependency 2\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE);
 	}
 	| listornofile ':' ':' listornofile
 	{
 printf("dependency 3\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_MULTI);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_MULTI);
 	}
 	| list ':' ':' '*' list
 	{
 printf("dependency 4\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $5->e, $1, $5, FFN_MULTI | FFN_WEAK);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $5->e, $1, $5, FFN_MULTI | FFN_WEAK);
 	}
 	;
 
@@ -285,24 +282,24 @@ fabrication
 	: dependency '{' commands '}'
 	{
 printf("fabrication 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, (void*)0, $1->needs, $3, $1->flags | FFN_FABRICATION);
-		$$ = addchain($1, $$);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, (void*)0, $1->needs, $3, $1->flags | FFN_FABRICATION);
+		$$ = ffn_addchain($1, $$);
 	}
 	| listornofile '{' commands '}'
 	{
 printf("fabrication 2\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, $1, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, $1, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
 	}
 	| listornofile ':' '{' commands '}'
 	{
 		/* this form is redundant but is included for completeness */
 printf("fabrication 3\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_FABRICATION);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_FABRICATION);
 	}
 	| list ':' ':' '{' commands '}'
 	{
 printf("fabrication 4\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $6.e, $1, (void*)0, $5, FFN_MULTI | FFN_FABRICATION);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $6.e, $1, (void*)0, $5, FFN_MULTI | FFN_FABRICATION);
 	}
 	;
 
@@ -310,7 +307,7 @@ discovery
 	: list '~' '{' commands '}'
 	{
 printf("discovery 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, $4, FFN_SINGLE | FFN_DISCOVERY);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, $4, FFN_SINGLE | FFN_DISCOVERY);
 	}
 	;
 
@@ -318,7 +315,7 @@ commands
 	: commands commands
 	{
 printf("commands 1\n");
-		$$ = addchain($1, $2);
+		$$ = ffn_addchain($1, $2);
 	}
 	| command
 	{
@@ -331,7 +328,7 @@ command
 	: LF
 	{
 printf("command 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LF, $1.s, $1.e, $1.s, $1.e);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LF, $1.s, $1.e, $1.s, $1.e);
 	}
 	| list
 	{
@@ -354,7 +351,7 @@ printf("listornofile 1\n");
 	| nofile
 	{
 printf("listornofile 2\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
 	}
 	;
 
@@ -362,12 +359,12 @@ list
 	: '[' listparts ']'
 	{
 printf("list 1\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
 	}
 	| '[' listparts ']' LW generator
 	{
 printf("list 2\n");
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
 	}
 	;
 
@@ -375,7 +372,7 @@ listparts
 	: listparts listparts
 	{
 printf("listparts 1\n");
-		$$ = addchain($1, $2);
+		$$ = ffn_addchain($1, $2);
 	}
 	| varref
 	{
@@ -398,7 +395,7 @@ varrefs
 	: varrefs varrefs
 	{
 printf("varrefs 1\n");
-		$$ = addchain($1, $2);
+		$$ = ffn_addchain($1, $2);
 	}
 	| varref
 	{
@@ -441,11 +438,11 @@ printf("nofile 1\n");
 
 			ff_node * nn = n->next;
 			n->next = 0;
-			ff_freenode(n);
+			ffn_free(n);
 			n = nn;
 		}
 
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1->s, $1->e, v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1->s, $1->e, v);
 	}
 	;
 
@@ -453,7 +450,7 @@ nofileparts
 	: nofileparts '.' nofileparts
 	{
 printf("nofileparts 1\n");
-		$$ = addchain($1, $3);
+		$$ = ffn_addchain($1, $3);
 	}
 	| word
 	{
@@ -467,13 +464,13 @@ word
 	{
 printf("word 1\n");
 		/* only concatenate consecutive WORD's when enclosed in quotes or WS */
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WS wordparts WS
 	{
 printf("word 2\n");
 		@$ = @2;	/* exclude the enclosing WS for word location */
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WORD
 	{
@@ -481,7 +478,7 @@ printf("word 3\n");
 		char* v = calloc(1, ($1.e - $1.s) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
-		$$ = mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
 	}
 	;
 

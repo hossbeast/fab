@@ -119,42 +119,42 @@ int ff_mkparser(ff_parser ** const restrict p)
 
 /// ff_parse_path
 //
-// parse a fabfile using a preconstructed path
+// SUMMARY
+//  parse a fabfile using a preconstructed path
 //
-// parameters
+// PARAMETERS
+//  p    - parser returned from mkparser
+//  path - path to fabfile
+//  ff   - results go here
 //
-//   p    - parser returned from mkparser
-//   path - path to fabfile
-//   ff   - results go here
-//
-// returns
+// RETURNS
 //  0 on error - check *ff to see if the parse was successful
 //
 int ff_parse_path(
 	  const ff_parser * const restrict p
 	, const path * const restrict path
-	, ff_node ** const restrict ffn
+	, ff_file ** const restrict ff
 )
 	__attribute__((nonnull));
 
 /// ff_parse
 //
-// parse a fabfile
+// SUMMARY
+//  parse a fabfile
 //
-// parameters
+// PARAMETERS
+//  p    - parser returned from mkparser
+//  path - path to fabfile
+//  ff   - results go here
 //
-//   p    - parser returned from mkparser
-//   path - path to fabfile
-//   ff   - results go here
-//
-// returns
+// RETURNS
 //  0 on error - check *ff to see if the parse was successful
 //
 int ff_parse(
 	  const ff_parser * const restrict p
 	, const char * const restrict fp
 	, const char * const restrict base 
-	, ff_node ** const restrict ffn
+	, ff_file ** const restrict ff
 )
 	__attribute__((nonnull));
 
@@ -168,7 +168,7 @@ int ff_dsc_parse(
 	, int sz
 	, const char * const restrict fp 
 	, struct gn * dscv_gn
-	, ff_node ** const restrict ffn
+	, ff_file ** const restrict ff
 )
 	__attribute__((nonnull));
 

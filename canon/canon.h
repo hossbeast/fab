@@ -21,7 +21,8 @@
 // SUMMARY
 //  convert a path into a more canonical representation by performing a subset
 //  of path translation operations. when all operations are specified, the result
-//  is a canonicalized absolute pathname, as returned by the realpath function
+//  is a canonicalized absolute pathname, as returned by the realpath function (except
+//  that ENOENT is not an error)
 //
 // PARAMETERS
 //  path				- path to convert

@@ -22,7 +22,7 @@ void ts_reset(ts * ts)
 	ts->r_signal	= 0;
 	ts->y					= 0;
 
-	ff_xfreenode(&ts->ffn);
+	ffn_xfree(&ts->ffn);
 
 	if(ts->cmd_path)
 		ts->cmd_path->l		= 0;
@@ -226,7 +226,7 @@ void ts_free(ts * ts)
 	if(ts)
 	{
 		ff_xfreeparser(&ts->ffp);
-		ff_xfreenode(&ts->ffn);
+		ffn_xfree(&ts->ffn);
 
 		pstring_xfree(&ts->cmd_path);
 		pstring_xfree(&ts->cmd_txt);

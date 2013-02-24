@@ -172,8 +172,8 @@ typedef struct ff_node
 //
 // free a ff_node with free semantics
 //
-ff_node* ffn_mknode(const ff_loc * const restrict loc, size_t locz, struct ff_file * const restrict ff, uint32_t type, ...)
-	__attribute__((nonnull));
+ff_node* ffn_mknode(const void * const restrict loc, size_t locz, struct ff_file * const restrict ff, uint32_t type, ...)
+	__attribute__((nonnull(1, 3)));
 
 /// ffn_addchain
 //

@@ -46,12 +46,13 @@ int main(int argc, char** argv)
 {
 	int domain()
 	{
-		ff_parser *					ffp = 0;
-		ff_node *						ffn = 0;
-		bp *								bp = 0;
+		ff_parser *					ffp = 0;				// fabfile parser
+		ff_file *						iff = 0;				// initial fabfile
+		bp *								bp = 0;					// buildplan 
 		map *								vmap = 0;				// variable lookup map
+		strstack *					sstk = 0;				// scope stack
 		gn *								first = 0;			// first dependency mentioned
-		lstack **						stax = 0;
+		lstack **						stax = 0;				// listwise stacks
 		int									staxa = 0;
 		int 								staxp = 0;
 		ts **								ts = 0;
@@ -62,7 +63,6 @@ int main(int argc, char** argv)
 		int									lista = 0;
 		gn **								node_list = 0;
 		int									node_list_len = 0;
-		strstack *					scope = 0;
 
 		// get user identity of this process, assert user:group and permissions are set appropriately
 		fatal(identity_init);
@@ -95,9 +95,9 @@ int main(int argc, char** argv)
 		fatal(ff_mkparser, &ffp);
 
 		// parse the initial fabfile
-		fatal(ff_parse_path, ffp, g_args.init_fabfile_path, &ffn);
+		fatal(ff_parse_path, ffp, g_args.init_fabfile_path, &iff);
 
-		if(!ffn)
+		if(!iff)
 			qfail();
 
 		// register object types with liblistwise
@@ -105,7 +105,7 @@ int main(int argc, char** argv)
 
 		// create map for variable definitions
 		fatal(map_create, &vmap, vmap_destructor);
-		fatal(strstack_create, &scope);
+		fatal(strstack_create, &sstk);
 
 		// populate cmdline-specified variables with sticky definitions
 		for(x = 0; x < g_args.varkeysl; x++)
@@ -121,12 +121,12 @@ int main(int argc, char** argv)
 		fatal(var_push, vmap, "#", stax[staxp++], VV_LS, 0);
 
 		// process the fabfile tree, construct the graph
-		fatal(ffproc, ffn, ffp, g_args.init_fabfile_path->rel_dir, scope, vmap, &stax, &staxa, staxp, &first);
+		fatal(ffproc, iff, ffp, sstk, vmap, &stax, &staxa, staxp, &first);
 
 		// process hashblocks for fabfiles which have changed
-		if(hashblock_cmp(ffn->loc.ff->hb))
+		if(hashblock_cmp(iff->hb))
 		{
-			fatal(ff_regular_rewrite, ffn->loc.ff);
+			fatal(ff_regular_rewrite, iff);
 		}
 
 		// comprehensive upfront dependency discovery on the entire graph

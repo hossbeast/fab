@@ -77,7 +77,6 @@ static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
 
 int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
 {
-	ff_node * ffn = 0;
 	int x;
 	int i;
 	int k;
@@ -159,26 +158,27 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 				gn * dscvgn = (*ts)[x]->fmlv->products[0];
 
 				// parse the generated DDISC fabfile
+				ff_file * dff = 0;
 				fatal(ff_dsc_parse
 					, (*ts)[x]->ffp
 					, (*ts)[x]->stdo_txt->s
 					, (*ts)[x]->stdo_txt->l
 					, (*ts)[x]->stdo_path->s
 					, dscvgn
-					, &ffn
+					, &dff
 				);
 
-				if(ffn)
+				if(dff)
 				{
 					// allocate the dependency block
 					fatal(depblock_allocate, dscvgn->dscv_block);
 
 					// process dependencies, attempt to populate the dependency block
-					for(k = 0; k < ffn->statements_l; k++)
+					for(k = 0; k < dff->ffn->statementsl; k++)
 					{
-						if(ffn->statements[k]->type == FFN_DEPENDENCY)
+						if(dff->ffn->statements[k]->type == FFN_DEPENDENCY)
 						{
-							fatal(dep_process, ffn->statements[k], vmap, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
+							fatal(dep_process, dff->ffn->statements[k], vmap, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
 						}
 					}
 

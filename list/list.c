@@ -46,7 +46,7 @@ static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p
 
 	int i;
 	int x;
-	for(x = 0; x < list->elements_l; x++)
+	for(x = 0; x < list->elementsl; x++)
 	{
 		if(list->elements[x]->type == FFN_WORD)
 		{

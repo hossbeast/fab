@@ -58,20 +58,20 @@ static int findvars(ff_file * const restrict ff, ff_node * const restrict ffn)
 	{
 		if(ffn->type == FFN_VARREF)
 		{
-			if(ff->affecting_varl == ff->affecting_vara)
+			if(ff->affecting_varsl == ff->affecting_varsa)
 			{
-				int ns = ff->affecting_vara ?: 10;
+				int ns = ff->affecting_varsa ?: 10;
 				ns = ns + 2 * ns / 2;
 
-				fatal(xrealloc, &ff->affecting_var, sizeof(*ff->affecting_var), ns, ff->affecting_vara);
-				ff->affecting_vara = ns;
+				fatal(xrealloc, &ff->affecting_vars, sizeof(*ff->affecting_vars), ns, ff->affecting_varsa);
+				ff->affecting_varsa = ns;
 			}
 
-			ff->affecting_var[ff->affecting_varl++] = ffn;
+			ff->affecting_vars[ff->affecting_varsl++] = ffn;
 		}
 
 		int x;
-		for(x = 0; x < ffn->list_l; x++)
+		for(x = 0; x < ffn->listl; x++)
 			findvars(ff, ffn->list[x]);
 
 		for(x = 0; x < sizeof(ffn->nodes_owned) / sizeof(ffn->nodes_owned[0]); x++)
@@ -81,7 +81,7 @@ static int findvars(ff_file * const restrict ff, ff_node * const restrict ffn)
 	finally : coda;
 }
 
-static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, ff_node ** const ffn, struct gn * dscv_gn)
+static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, ff_file ** const rff)
 {
 	// create state specific to this parse
 	void* state = 0;
@@ -169,7 +169,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 			ff->hb->vrshash[1] = FAB_VERSION;
 		}
 
-		*ffn = ff->ffn;
+		(*rff) = ff;
 	}
 
 	finally : coda;
@@ -191,7 +191,7 @@ int ff_mkparser(ff_parser ** const p)
 	return 1;
 }
 
-int ff_parse_path(const ff_parser * const p, const path * const in_path, ff_node ** const ffn)
+int ff_parse_path(const ff_parser * const p, const path * const in_path, ff_file ** const ff)
 {
 	int			fd = 0;
 	char *	b = 0;
@@ -209,7 +209,7 @@ int ff_parse_path(const ff_parser * const p, const path * const in_path, ff_node
 	if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
 		fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
 
-	qfatal(parse, p, b, statbuf.st_size, in_path, ffn, 0);
+	qfatal(parse, p, b, statbuf.st_size, in_path, 0, ff);
 
 finally:
 	free(b);
@@ -218,7 +218,7 @@ finally:
 coda;
 }
 
-int ff_parse(const ff_parser * const p, const char * const fp, const char * const base, ff_node ** const ffn)
+int ff_parse(const ff_parser * const p, const char * const fp, const char * const base, ff_file ** const ff)
 {
 	int			fd = 0;
 	char *	b = 0;
@@ -239,7 +239,7 @@ int ff_parse(const ff_parser * const p, const char * const fp, const char * cons
 	if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
 		fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
 
-	qfatal(parse, p, b, statbuf.st_size, pth, ffn, 0);
+	qfatal(parse, p, b, statbuf.st_size, pth, 0, ff);
 
 finally:
 	free(b);
@@ -249,11 +249,11 @@ finally:
 coda;
 }
 
-int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const fp, struct gn * dscv_gn, ff_node ** const ffn)
+int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const fp, struct gn * dscv_gn, ff_file** const ff)
 {
 	path * pth = 0;
 	fatal(path_create_canon, &pth, fp, 0);
-	fatal(parse, p, b, sz, pth, ffn, dscv_gn);
+	fatal(parse, p, b, sz, pth, dscv_gn, ff);
 
 finally:
 	path_free(pth);
