@@ -147,8 +147,6 @@ int gn_add(const char * const restrict base, char * const restrict A, int Al, gn
 	if(!gn_nodes.by_path)
 		fatal(map_create, &gn_nodes.by_path, 0);
 
-//printf("gn_add(%.*s, %s)\n", Al, A, base);
-
 	if(base)
 		fatal(gn_lookup, A, Al, base, gna);
 	else
@@ -616,7 +614,7 @@ int gn_invalidations()
 	for(x = 0; x < gn_nodes.l; x++)
 		gn_designate(gn_nodes.e[x]);
 
-	if(g_args.invalidate_all)
+	if(g_args.invalidationsz)
 	{
 		for(x = 0; x < gn_nodes.l; x++)
 		{
@@ -631,10 +629,10 @@ int gn_invalidations()
 	}
 	else
 	{
-		for(x = 0; x < g_args.invalidate_len; x++)
+		for(x = 0; x < g_args.invalidationsl; x++)
 		{
 			gn * gn = 0;
-			fatal(gn_lookup, g_args.invalidate[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
+			fatal(gn_lookup, g_args.invalidations[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
 
 			if(gn)
 			{
@@ -646,7 +644,7 @@ int gn_invalidations()
 			}
 			else
 			{
-				log(L_WARN, "invalidation : %s not found", g_args.invalidate[x]);
+				log(L_WARN, "invalidation : %s not found", g_args.invalidations[x]);
 			}
 		}
 	}

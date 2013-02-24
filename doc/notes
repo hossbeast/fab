@@ -24,7 +24,6 @@ which is available inside the .fab and can be read from
 		dump individual formulas by node-name
 
 
-
 # dump/invalidate/target node identification standardization
    text   : shorthand for append to init-fabfile-rel-dir, relative path exact match
 	/text/  : regex match on abs/can/rel paths, returns list
@@ -42,10 +41,5 @@ which is available inside the .fab and can be read from
 # autovar documentation
 $@, ${products} - products of the current formula
 $<, ${lhs}      - lefthand side of a multi-product formula
-$#, ${base}     - relative path to the directory containing the master fabfile
-
-
-should've held my ground
-
-
-				I could've been redeemed
+$#, ${initdir}  - relative path to the directory containing the master fabfile
+$^, ${thisdir}	- relative path to the directory containing the current fabfile

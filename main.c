@@ -22,6 +22,7 @@
 #include "tmp.h"
 #include "identity.h"
 #include "bake.h"
+#include "ffproc.h"
 
 #include "macros.h"
 #include "control.h"
@@ -61,9 +62,7 @@ int main(int argc, char** argv)
 		int									lista = 0;
 		gn **								node_list = 0;
 		int									node_list_len = 0;
-
-		int x;
-		int y;
+		strstack *					scope = 0;
 
 		// get user identity of this process, assert user:group and permissions are set appropriately
 		fatal(identity_init);
@@ -77,6 +76,7 @@ int main(int argc, char** argv)
 		sigprocmask(SIG_UNBLOCK, &all, 0);
 
 		// ignore most signals
+		int x;
 		for(x = 0; x < NSIG; x++)
 			signal(x, SIG_DFL);
 
@@ -94,34 +94,21 @@ int main(int argc, char** argv)
 
 		fatal(ff_mkparser, &ffp);
 
-		// parse fabfiles, starting with the initial
-		while(1)
-		{
-			fatal(ff_parse_path, ffp, g_args.init_fabfile_path, &ffn);
+		// parse the initial fabfile
+		fatal(ff_parse_path, ffp, g_args.init_fabfile_path, &ffn);
 
-			if(!ffn)
-				qfail();
-
-			if(log_would(L_FF | L_FFTREE))
-				ff_dump(ffn);
-
-			// process the fabfile tree, construct the graph
-			for(x = 0; x < ffn->statements_l; x++)
-			{
-				if(ffn->statements[x]->type == FFN_INVOCATION)
-				{
-				}
-			}					
-		}
+		if(!ffn)
+			qfail();
 
 		// register object types with liblistwise
 		fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
 
 		// create map for variable definitions
 		fatal(map_create, &vmap, vmap_destructor);
+		fatal(strstack_create, &scope);
 
-		// populate with cmdline-specified variables
-		for(x = 0; x < g_args.varkeys_len; x++)
+		// populate cmdline-specified variables with sticky definitions
+		for(x = 0; x < g_args.varkeysl; x++)
 		{
 			fatal(list_ensure, &stax, &staxa, staxp);
 			fatal(lstack_add, stax[staxp], g_args.varvals[x], strlen(g_args.varvals[x]));
@@ -134,84 +121,7 @@ int main(int argc, char** argv)
 		fatal(var_push, vmap, "#", stax[staxp++], VV_LS, 0);
 
 		// process the fabfile tree, construct the graph
-		for(x = 0; x < ffn->statements_l; x++)
-		{
-			ff_node* stmt = ffn->statements[x];
-
-			if(ffn->statements[x]->type == FFN_INVOCATION)
-			{
-				
-			}
-			else if(ffn->statements[x]->type == FFN_DEPENDENCY)
-			{
-				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
-			}
-			else if(ffn->statements[x]->type == FFN_FORMULA)
-			{
-				// add the formula, attach to graph nodes
-				fatal(fml_add, ffn->statements[x], vmap, &stax, &staxa, staxp);
-			}
-			else if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARPUSH || stmt->type == FFN_VARPOP)
-			{
-				// get the value, if any
-				void * v = 0;
-				uint8_t t = 0;
-
-				if(stmt->definition)
-				{
-					if(stmt->definition->type == FFN_LIST)
-					{
-						fatal(list_resolve, stmt->definition, vmap, &stax, &staxa, staxp);
-						v = stax[staxp++];
-						t = VV_LS;
-					}
-					if(stmt->definition->type == FFN_WORD)
-					{
-						v = stmt->definition->text;
-						t = VV_AL;
-					}
-				}
-				else
-				{
-					if(stmt->type == FFN_VARPUSH)
-					{
-						fatal(list_empty, &stax, &staxa, staxp);
-						v = stax[staxp++];
-						t = VV_LS;
-					}
-				}
-
-				// apply to all referenced vars
-				for(y = 0; y < stmt->vars_l; y++)
-				{
-					char * var = stmt->vars[y]->text;
-
-					if(stmt->type == FFN_VARASSIGN)
-					{
-						// clear the stack for this variable
-						int r;
-						fatal(var_undef, vmap, var, &r);
-
-						// r is whether it was actually cleared, which is prevented by a sticky value on top
-						if(r && v)
-						{
-							fatal(var_push, vmap, var, v, t, 0);
-						}
-					}
-					if(stmt->type == FFN_VARPUSH)
-					{
-						fatal(var_push, vmap, var, v, t, 0);
-					}
-					if(stmt->type == FFN_VARPOP)
-					{
-						if(v)
-						{
-							fatal(var_push, vmap, var, v, t, 0);
-						}
-					}
-				}
-			}
-		}
+		fatal(ffproc, ffn, ffp, g_args.init_fabfile_path->rel_dir, scope, vmap, &stax, &staxa, staxp, &first);
 
 		// process hashblocks for fabfiles which have changed
 		if(hashblock_cmp(ffn->loc.ff->hb))
@@ -233,14 +143,14 @@ int main(int argc, char** argv)
 			// process invalidations, update designations
 			fatal(gn_invalidations);
 
-			for(x = 0; x < g_args.dumpnode_len; x++)
+			for(x = 0; x < g_args.dumpnodesl; x++)
 			{
 				listl = 0;
-				fatal(gn_lookup_match, g_args.dumpnode[x], &list, &listl, &lista);
+				fatal(gn_lookup_match, g_args.dumpnodes[x], &list, &listl, &lista);
 
 				if(listl == 0)
 				{
-					log(L_WARN, "dumpnode : %s not found", g_args.dumpnode[x]);
+					log(L_WARN, "dumpnodes : %s not found", g_args.dumpnodes[x]);
 				}
 				else
 				{
@@ -263,10 +173,10 @@ int main(int argc, char** argv)
 			int			aretasks = 0;
 			int			istask = 0;
 
-			fatal(xmalloc, &node_list, sizeof(node_list[0]) * MAX(g_args.targets_len, 1));
+			fatal(xmalloc, &node_list, sizeof(node_list[0]) * MAX(g_args.targetsl, 1));
 
 			// add gn's for each target
-			if(g_args.targets_len)
+			if(g_args.targetsl)
 			{
 				gn * gn = 0;
 				fatal(gn_lookup_nofile, g_args.targets[0], 0, g_args.init_fabfile_path->abs_dir, &gn);
@@ -278,7 +188,7 @@ int main(int argc, char** argv)
 				aretasks = gn->designation == GN_DESIGNATION_TASK;
 				node_list[node_list_len++] = gn;
 
-				for(x = 1; x < g_args.targets_len; x++)
+				for(x = 1; x < g_args.targetsl; x++)
 				{
 					fatal(gn_lookup_nofile, g_args.targets[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
 
@@ -411,3 +321,85 @@ void vmap_destructor(void* tk, void* tv)
 {
 	var_container_free(*(var_container**)tv);
 }
+
+/*
+
+		for(x = 0; x < ffn->statements_l; x++)
+		{
+			ff_node* stmt = ffn->statements[x];
+
+			if(ffn->statements[x]->type == FFN_INVOCATION)
+			{
+				
+			}
+			else if(ffn->statements[x]->type == FFN_DEPENDENCY)
+			{
+				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
+			}
+			else if(ffn->statements[x]->type == FFN_FORMULA)
+			{
+				// add the formula, attach to graph nodes
+				fatal(fml_add, ffn->statements[x], vmap, &stax, &staxa, staxp);
+			}
+			else if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARPUSH || stmt->type == FFN_VARPOP)
+			{
+				// get the value, if any
+				void * v = 0;
+				uint8_t t = 0;
+
+				if(stmt->definition)
+				{
+					if(stmt->definition->type == FFN_LIST)
+					{
+						fatal(list_resolve, stmt->definition, vmap, &stax, &staxa, staxp);
+						v = stax[staxp++];
+						t = VV_LS;
+					}
+					if(stmt->definition->type == FFN_WORD)
+					{
+						v = stmt->definition->text;
+						t = VV_AL;
+					}
+				}
+				else
+				{
+					if(stmt->type == FFN_VARPUSH)
+					{
+						fatal(list_empty, &stax, &staxa, staxp);
+						v = stax[staxp++];
+						t = VV_LS;
+					}
+				}
+
+				// apply to all referenced vars
+				for(y = 0; y < stmt->vars_l; y++)
+				{
+					char * var = stmt->vars[y]->text;
+
+					if(stmt->type == FFN_VARASSIGN)
+					{
+						// clear the stack for this variable
+						int r;
+						fatal(var_undef, vmap, var, &r);
+
+						// r is whether it was actually cleared, which is prevented by a sticky value on top
+						if(r && v)
+						{
+							fatal(var_push, vmap, var, v, t, 0);
+						}
+					}
+					if(stmt->type == FFN_VARPUSH)
+					{
+						fatal(var_push, vmap, var, v, t, 0);
+					}
+					if(stmt->type == FFN_VARPOP)
+					{
+						if(v)
+						{
+							fatal(var_push, vmap, var, v, t, 0);
+						}
+					}
+				}
+			}
+		}
+*/

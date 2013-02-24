@@ -49,6 +49,7 @@
 #define DEFAULT_MODE_DDSC					MODE_DDSC_DEFERRED
 #define DEFAULT_CONCURRENCY_LIMIT	0
 #define DEFAULT_BAKE_PATH					"./bakescript"
+#define DEFAULT_INVOKEDIR					"/usr/lib/fablib"
 
 #define EXPIRATION_POLICY					(60 * 60 * 24 * 7)
 
@@ -121,13 +122,13 @@ extern struct g_args_t
 	char **			targets;							// targets
 	int					targetsl;
 
+	int					invalidationsz;				// invalidate all graph nodes
 	char **			invalidations;				// graph nodes to invalidate
 	int					invalidationsl;
-	int					invalidationsa;
 
+	int					dumpnodesz;						// invalidate all graph nodes
 	char **			dumpnodes;						// graph nodes to dump
 	int					dumpnodesl;
-	int					dumpnodesa;
 } g_args;
 
 //// parse_args

@@ -92,6 +92,7 @@ int parse_args(int argc, char** argv)
 /* B */ , { "invalidate-all"		, no_argument				, 0			, 'B' }		// graph node invalidation
 // C
 /* U */	, { "discovery"					, no_argument				, 0			, 'U' }		// dependency discovery mode
+/* I */	, { "invokedir"					, no_argument				, 0			, 'I' }		// directory to search for invocations
 		, { }
 	};
 
@@ -100,7 +101,7 @@ int parse_args(int argc, char** argv)
 		"chpuBU"
 
 		// with-argument switches
-		"b:d:f:j:k:v:"
+		"b:d:f:j:k:v:I:"
 	;
 
 	//
@@ -117,8 +118,10 @@ int parse_args(int argc, char** argv)
 	g_args.mode_exec			= DEFAULT_MODE_EXEC;
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_ddsc			= DEFAULT_MODE_DDSC;
-	g_args.invalidate_all	= DEFAULT_INVALIDATE_ALL;
-	fabpath								= strdup(DEFAULT_INIT_FABFILE);
+	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
+	fatal(xstrdup, &fabpath, DEFAULT_INIT_FABFILE);
+	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
+	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl], DEFAULT_INVOKEDIR);
 
 	int x, indexptr;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
@@ -130,15 +133,15 @@ int parse_args(int argc, char** argv)
 				usage(1);
 				break;
 			case 'b':
-				fatal(xrealloc, &g_args.invalidate, sizeof(g_args.invalidate[0]), g_args.invalidate_len + 1, g_args.invalidate_len);
-				g_args.invalidate[g_args.invalidate_len++] = strdup(optarg);
+				fatal(xrealloc, &g_args.invalidations, sizeof(g_args.invalidations[0]), g_args.invalidationsl + 1, g_args.invalidationsl);
+				g_args.invalidations[g_args.invalidationsl++] = strdup(optarg);
 				break;
 			case 'c':
 				g_args.mode_gnid = MODE_GNID_CANON;
 				break;
 			case 'd':
-				fatal(xrealloc, &g_args.dumpnode, sizeof(g_args.dumpnode[0]), g_args.dumpnode_len + 1, g_args.dumpnode_len);
-				g_args.dumpnode[g_args.dumpnode_len++] = strdup(optarg);
+				fatal(xrealloc, &g_args.dumpnodes, sizeof(g_args.dumpnodes[0]), g_args.dumpnodesl + 1, g_args.dumpnodesl);
+				g_args.dumpnodes[g_args.dumpnodesl++] = strdup(optarg);
 				break;
 			case 'f':
 				xfree(&fabpath);
@@ -160,13 +163,13 @@ int parse_args(int argc, char** argv)
 					char * eq;
 					if((eq = strstr(optarg, "=")))
 					{
-						fatal(xrealloc, &g_args.varkeys, sizeof(g_args.varkeys[0]), g_args.varkeys_len + 1, g_args.varkeys_len);
-						fatal(xrealloc, &g_args.varvals, sizeof(g_args.varvals[0]), g_args.varvals_len + 1, g_args.varvals_len);
+						fatal(xrealloc, &g_args.varkeys, sizeof(g_args.varkeys[0]), g_args.varkeysl + 1, g_args.varkeysl);
+						fatal(xrealloc, &g_args.varvals, sizeof(g_args.varvals[0]), g_args.varvalsl + 1, g_args.varvalsl);
 
 						*eq = 0;
-						g_args.varkeys[g_args.varkeys_len++] = strdup(optarg);
+						g_args.varkeys[g_args.varkeysl++] = strdup(optarg);
 						*eq = '=';
-						g_args.varvals[g_args.varvals_len++] = strdup(eq+1);
+						g_args.varvals[g_args.varvalsl++] = strdup(eq+1);
 					}
 					else
 					{
@@ -184,10 +187,14 @@ int parse_args(int argc, char** argv)
 				}
 				break;
 			case 'B':
-				g_args.invalidate_all = 1;
+				g_args.invalidationsz = 1;
 				break;
 			case 'U':
 				g_args.mode_exec = MODE_EXEC_DDSC;
+				break;
+			case 'I':
+				fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
+				g_args.invokedirs[g_args.invokedirsl++] = strdup(optarg);
 				break;
 		}
 	}
@@ -197,8 +204,8 @@ int parse_args(int argc, char** argv)
 	{
 		if(argv[x][0] != '+' && argv[x][0] != '-')
 		{
-			fatal(xrealloc, &g_args.targets, sizeof(g_args.targets[0]), g_args.targets_len + 1, g_args.targets_len);
-			g_args.targets[g_args.targets_len++] = strdup(argv[x]);
+			fatal(xrealloc, &g_args.targets, sizeof(g_args.targets[0]), g_args.targetsl + 1, g_args.targetsl);
+			g_args.targets[g_args.targetsl++] = strdup(argv[x]);
 		}
 	}
 
@@ -206,16 +213,16 @@ int parse_args(int argc, char** argv)
 	fatal(path_create, &g_args.init_fabfile_path, g_args.cwd, "%s", fabpath);
 
 	// lookup invalidations
-	for(x = 0; x < g_args.invalidate_len; x++)
+	for(x = 0; x < g_args.invalidationsl; x++)
 	{
 		char * N = malloc(512);
-		fatal(canon, g_args.invalidate[x], 0, N, 512, g_args.cwd, CAN_REALPATH);
-		free(g_args.invalidate[x]);
-		g_args.invalidate[x] = N;
+		fatal(canon, g_args.invalidations[x], 0, N, 512, g_args.cwd, CAN_REALPATH);
+		free(g_args.invalidations[x]);
+		g_args.invalidations[x] = N;
 	}
 
-	// dumpnode implies +DGRAPH and MODE_EXEC_DUMP
-	if(g_args.dumpnode)
+	// dumpnodes implies +DGRAPH and MODE_EXEC_DUMP
+	if(g_args.dumpnodes)
 	{
 		g_args.mode_exec = MODE_EXEC_DUMP;
 		log_parse("+DGRAPH", 0);
@@ -262,32 +269,35 @@ int parse_args(int argc, char** argv)
 	else
 		snprintf(buf, sizeof(buf), "%s", "unbounded");
 	log(L_ARGS | L_PARAMS		, " %s (%c) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', buf);
-	log(L_ARGS | L_PARAMS		, " %s (%c) invalidate-all     =%s", g_args.invalidate_all == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidate_all ? "yes" : "no");
+	log(L_ARGS | L_PARAMS		, " %s (%c) invalidations-all     =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
 
-	if(!g_args.invalidate_all)
+	for(x = 0; x < g_args.invokedirsl; x++)
+		log(L_ARGS | L_PARAMS	, " %s (%c) invokedirs(s)         =%s", "*", 'I', g_args.invokedirs[x]);
+
+	if(!g_args.invalidationsz)
 	{
-		if(!g_args.invalidate)
-			log(L_ARGS | L_PARAMS	, " %s (%c) invalidate(s)      =", " ", 'b');
-		for(x = 0; x < g_args.invalidate_len; x++)
-			log(L_ARGS | L_PARAMS	, " %s (%c) invalidate(s)      =%s", "*", 'b', g_args.invalidate[x]);
+		if(!g_args.invalidations)
+			log(L_ARGS | L_PARAMS	, " %s (%c) invalidations(s)      =", " ", 'b');
+		for(x = 0; x < g_args.invalidationsl; x++)
+			log(L_ARGS | L_PARAMS	, " %s (%c) invalidations(s)      =%s", "*", 'b', g_args.invalidations[x]);
 	}
 
-	if(!g_args.dumpnode_all)
+	if(!g_args.dumpnodesz)
 	{
-		if(!g_args.dumpnode)
-			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnode(s)        =", " ", 'd');
-		for(x = 0; x < g_args.dumpnode_len; x++)         
-			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnode(s)        =%s", "*", 'd', g_args.dumpnode[x]);
+		if(!g_args.dumpnodes)
+			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnodes(s)        =", " ", 'd');
+		for(x = 0; x < g_args.dumpnodesl; x++)         
+			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnodes(s)        =%s", "*", 'd', g_args.dumpnodes[x]);
 	}
 
 	if(!g_args.targets)
 		log(L_ARGS | L_PARAMS	, " %s (%c) target(s)          =", " ", ' ');
-	for(x = 0; x < g_args.targets_len; x++)
+	for(x = 0; x < g_args.targetsl; x++)
 		log(L_ARGS | L_PARAMS	, " %s (%c) target(s)          =%s", "*", ' ', g_args.targets[x]);
 
 	if(!g_args.varkeys)
 		log(L_ARGS | L_PARAMS , " %s (%c) var(s)             =", " ", ' ');
-	for(x = 0; x < g_args.varkeys_len; x++)
+	for(x = 0; x < g_args.varkeysl; x++)
 		log(L_ARGS | L_PARAMS , " %s (%c) var(s)             =%s=%s", "*", 'v', g_args.varkeys[x], g_args.varvals[x]);
 
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
@@ -306,26 +316,30 @@ void args_teardown()
 	free(g_args.cwd);
 
 	int x;
-	for(x = 0; x < g_args.targets_len; x++)
+	for(x = 0; x < g_args.targetsl; x++)
 		free(g_args.targets[x]);
 
-	for(x = 0; x < g_args.invalidate_len; x++)
-		free(g_args.invalidate[x]);
+	for(x = 0; x < g_args.invalidationsl; x++)
+		free(g_args.invalidations[x]);
 
-	for(x = 0; x < g_args.dumpnode_len; x++)
-		free(g_args.dumpnode[x]);
+	for(x = 0; x < g_args.dumpnodesl; x++)
+		free(g_args.dumpnodes[x]);
 
-	for(x = 0; x < g_args.varkeys_len; x++)
+	for(x = 0; x < g_args.varkeysl; x++)
 		free(g_args.varkeys[x]);
 
-	for(x = 0; x < g_args.varvals_len; x++)
+	for(x = 0; x < g_args.varvalsl; x++)
 		free(g_args.varvals[x]);
 
+	for(x = 0; x < g_args.invokedirsl; x++)
+		free(g_args.invokedirs[x]);
+
 	free(g_args.targets);
-	free(g_args.invalidate);
-	free(g_args.dumpnode);
+	free(g_args.invalidations);
+	free(g_args.dumpnodes);
 	free(g_args.varkeys);
 	free(g_args.varvals);
+	free(g_args.invokedirs);
 
 	path_free(g_args.init_fabfile_path);
 	free(g_args.bakescript_path);

@@ -91,6 +91,7 @@ main.o  :	common/coll.o					\
 					common/cksum.o				\
 					common/map.o					\
 				  ff/ff.o								\
+				  ffn/ffn.o							\
 				  bp/bp.o								\
 				  fml/fml.o							\
 				  gn/gn.o								\
@@ -107,7 +108,8 @@ main.o  :	common/coll.o					\
 					depblock/depblock.o		\
 					canon/canon.o					\
 					path/path.o						\
-					bake/bake.o
+					bake/bake.o						\
+					ffproc/ffproc.o
 
 common/idx.o : common/xstring.o
 

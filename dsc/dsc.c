@@ -170,9 +170,6 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 
 				if(ffn)
 				{
-					// dump, pending logging
-					ff_dump(ffn);
-
 					// allocate the dependency block
 					fatal(depblock_allocate, dscvgn->dscv_block);
 
