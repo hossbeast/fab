@@ -20,6 +20,7 @@
 		: x == commandlit				? "commandlit"				\
 		: x == checklw					? "checklw"						\
 		: x == varref						? "varref"						\
+		: x == nofile						? "nofile"						\
 		: x == multilinecomment	? "multilinecomment"	\
 		: x == list							? "list" : "UNKNWN"
 
@@ -158,6 +159,7 @@
 %x checklw
 
 %x varref
+%x nofile
 %x multilinecomment
 
 %%
@@ -195,13 +197,16 @@
 																												PUSHSTATE(varref, yyextra);
 																												return LEX(yytext[0]);
 																											}
+<INITIAL,list>[@]																			{
+																												PUSHSTATE(nofile, yyextra);
+																												return LEX(yytext[0]);
+																											}
 
 <INITIAL>[+]																					{
 																												// characters with special meaning in INITIAL
 																												return LEX(yytext[0]);
 																											}
 <INITIAL>[:]																					{ return LEX(yytext[0]); }
-<INITIAL>[.]																					{ return LEX(yytext[0]); }
 <INITIAL>[,]																					{ return LEX(yytext[0]); }
 <INITIAL>[(]																					{ return LEX(yytext[0]); }
 <INITIAL>[)]																					{ return LEX(yytext[0]); }
@@ -212,7 +217,7 @@
 <INITIAL>[=]																					{ return LEX(yytext[0]); }
 <INITIAL>[<]																					{ return LEX(yytext[0]); }
 <INITIAL>[>]																					{ return LEX(yytext[0]); }
-<INITIAL>[@]																					{ return LEX(yytext[0]); }
+<INITIAL>[\^]																					{ return LEX(yytext[0]); }
 <INITIAL>[{]																					{
 																												PUSHSTATE(command, yyextra);
 																												return LEX(yytext[0]);
@@ -230,11 +235,11 @@
 																											}
 <checklw>[^\x00-\x1F\x7F-\xFF]												{ POPSTATE(yyextra); yyless(0); }
 
-<INITIAL>[^ \\#"$\x00-\x1F\x7F-\xFF/[+:.,()\-|*~=<>@{]+	{
+<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:,()\-|*~=<>^{]+	{
 																												// string of anything else 
 																												return LEX(WORD);
 																											}
-<list>[^ \\#"$\x00-\x1F\x7F-\xFF\]]+ 									{
+<list>[^ \\#"$@\x00-\x1F\x7F-\xFF\]]+ 								{
 																												// string of anything else 
 																												return LEX(WORD);
 																											}
@@ -267,10 +272,14 @@
 																												POPSTATE(yyextra);
 																												return LEX(WORD);
 																											}
-<varref>[a-zA-Z_][a-zA-Z0-9_]*												{
+<varref>[a-zA-Z_][a-zA-Z0-9_]*									{
 																												POPSTATE(yyextra);
 																												return LEX(WORD);
 																											}
+<nofile>[a-zA-Z_][a-zA-Z0-9_]*												{ return LEX(WORD); }
+<nofile>[.]																						{ return LEX(yytext[0]); }
+<nofile>[^\x00-\x1F\x7F-\xFF]													{ POPSTATE(yyextra); yyless(0); }
+
 <generatorws>[\t ]+["]																{
 																												POPSTATE(yyextra);
 																												PUSHSTATE(quoteword, yyextra);

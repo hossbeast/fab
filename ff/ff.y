@@ -53,8 +53,9 @@
 %token <str> LF								"LF"				/* a single newline */
 %token <num> LW								"=>>"				/* listwise transformation */
 %token <num> '$'	/* variable reference */
+%token <num> '@'	/* nofile reference */
+%token <num> '.'	/* nofile/scope resolution */
 %token <num> ':'	/* dependency */
-%token <num> '.'	/* scope resolution */
 %token <num> '*'	/* weak reference */
 %token <num> '~'	/* dependency discovery */
 %token <num> '['	/* list start */
@@ -63,15 +64,14 @@
 %token <num> '}'	/* formula end */
 %token <num> '='	/* variable assignment */
 %token <num> '<'	/* variable push */
-%token <num> '>'	/* variable pop, invocation*/
-%token <num> '@'	/* variable contextual push */
+%token <num> '>'	/* variable pop */
+%token <num> '^'	/* variable designation */
 %token <num> '"'	/* generator-string literal */
+%token <num> '+'	/* invocation */
 %token <num> '-'	/* invocation gate */
 %token <num> '('	/* invocation context */
 %token <num> ')'	/* invocation context */
 %token <num> ','	/* invocation designation separation */
-
-%token <num> '+'	/* reserved */
 
 /* nonterminals */
 %type  <wordparts> wordparts
@@ -135,12 +135,10 @@ statement
 varassign
 	: varrefs '='
 	{
-printf("varassign 1\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $2.e, $1, (void*)0);
 	}
 	| varrefs '=' varvalue
 	{
-printf("varassign 2\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $3->e, $1, $3);
 	}
 	;
@@ -148,12 +146,10 @@ printf("varassign 2\n");
 varpush
 	: varrefs '<'
 	{
-printf("varpush 1\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $2.e, $1, (void*)0);
 	}
 	| varrefs '<' varvalue
 	{
-printf("varpush 2\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $3->e, $1, $3);
 	}
 	;
@@ -161,131 +157,96 @@ printf("varpush 2\n");
 varpop
 	: varrefs '>'
 	{
-printf("varpop 1\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $2.e, $1, (void*)0);
 	}
 	| varrefs '>' varvalue
 	{
-printf("varpop 2\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $3->e, $1, $3);
 	}
 	;
 
 vardesignate
-	: '@' varrefs
+	: '^' varrefs
 	{
-printf("vardesignate 1\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1.s, $2->e, $2, (void*)0);
 	}
-	| varvalue '@' varrefs
+	| varvalue '^' varrefs
 	{
-printf("vardesignate 2\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1->s, $3->e, $3, $1);
 	}
 	;
 
 varvalue
 	: list
-	{
-$$ = $1;
-printf("varvalue 1\n");
-	}
 	| varref
-	{
-$$ = $1;
-printf("varvalue 2\n");
-	}
 	;
 
 invocation
-	: '>' '>' list
+	: '+' list
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $3, (void*)0, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $2->e, $2, (void*)0, (void*)0, 0);
 	}
-	| '>' '>' list '-'
+	| '+' list '-'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $3, (void*)0, (void*)0, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3.e, $2, (void*)0, (void*)0, FFN_GATED);
 	}
-	| '>' '>' list '(' ')'
+	| '+' list '(' ')'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $3, (void*)0, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $2, (void*)0, (void*)0, 0);
 	}
-	| '>' '>' list '(' ')' '-'
+	| '+' list '(' ')' '-'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, (void*)0, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, (void*)0, (void*)0, FFN_GATED);
 	}
-	| '>' '>' list '(' nofile ')'
+	| '+' list '(' nofile ')'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, $5, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, $4, (void*)0, 0);
 	}
-	| '>' '>' list '(' nofile ')' '-'
+	| '+' list '(' nofile ')' '-'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, $5, (void*)0, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $2, $4, (void*)0, FFN_GATED);
 	}
-	| '>' '>' list '(' vardesignates ')'
+	| '+' list '(' vardesignates ')'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, $5, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, (void*)0, $4, 0);
 	}
-	| '>' '>' list '(' vardesignates ')' '-'
+	| '+' list '(' vardesignates ')' '-'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, (void*)0, $5, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $2, (void*)0, $4, FFN_GATED);
 	}
-	| '>' '>' list '(' nofile '|' vardesignates ')'
+	| '+' list '(' nofile '|' vardesignates ')'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $8.e, $3, $5, $7, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $2, $4, $6, 0);
 	}
-	| '>' '>' list '(' nofile '|' vardesignates ')' '-'
+	| '+' list '(' nofile '|' vardesignates ')' '-'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $9.e, $3, $5, $7, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $8.e, $2, $4, $6, FFN_GATED);
 	}
 	;
 
 vardesignates
 	: vardesignates ',' vardesignates
 	{
-printf("vardesignates 1\n");
 		$$ = ffn_addchain($1, $3);
 	}
 	| vardesignate
-	{
-printf("vardesignates 2\n");
-$$ = $1;
-	}
 	;
 
 dependency
-	: nofile ':' nofile
+	: list ':' list
 	{
-printf("dependency 1\n");
-		$1 = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
-		$3 = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $3->s, $3->e, $3, (void*)0);
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
-	}
-	| list ':' nofile
-	{
-printf("dependency 1\n");
-		$3 = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $3->s, $3->e, $3, (void*)0);
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
-	}
-	| nofile ':' list
-	{
-printf("dependency 1\n");
-		$1 = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
 	}
 	| list ':' '*' list
 	{
-printf("dependency 2\n");
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE | FFN_WEAK);
 	}
 	| list ':' ':' list
 	{
-printf("dependency 3\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_MULTI);
 	}
 	| list ':' ':' '*' list
 	{
-printf("dependency 4\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $5->e, $1, $5, FFN_MULTI | FFN_WEAK);
 	}
 	;
@@ -293,38 +254,20 @@ printf("dependency 4\n");
 fabrication
 	: dependency '{' commands '}'
 	{
-printf("fabrication 1\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, (void*)0, $1->needs, $3, $1->flags | FFN_FABRICATION);
 		$$ = ffn_addchain($1, $$);
 	}
-	| nofile '{' commands '}'
-	{
-printf("fabrication 2\n");
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, $$, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
-	}
-	| nofile ':' '{' commands '}'
-	{
-		/* this form is redundant but is included for completeness */
-printf("fabrication 3\n");
-
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $$, (void*)0, $4, FFN_SINGLE | FFN_FABRICATION);
-	}
 	| list '{' commands '}'
 	{
-printf("fabrication 2\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, $1, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
 	}
 	| list ':' '{' commands '}'
 	{
 		/* this form is redundant but is included for completeness */
-printf("fabrication 3\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_FABRICATION);
 	}
 	| list ':' ':' '{' commands '}'
 	{
-printf("fabrication 4\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $6.e, $1, (void*)0, $5, FFN_MULTI | FFN_FABRICATION);
 	}
 	;
@@ -332,7 +275,6 @@ printf("fabrication 4\n");
 discovery
 	: list '~' '{' commands '}'
 	{
-printf("discovery 1\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, $4, FFN_SINGLE | FFN_DISCOVERY);
 	}
 	;
@@ -340,12 +282,10 @@ printf("discovery 1\n");
 commands
 	: commands commands
 	{
-printf("commands 1\n");
 		$$ = ffn_addchain($1, $2);
 	}
 	| command
 	{
-printf("commands 2\n");
 $$ = $1;
 	}
 	;
@@ -353,17 +293,14 @@ $$ = $1;
 command
 	: LF
 	{
-printf("command 1\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LF, $1.s, $1.e, $1.s, $1.e);
 	}
 	| list
 	{
-printf("command 2\n");
 $$ = $1;
 	}
 	| word
 	{
-printf("command 3\n");
 $$ = $1;
 	}
 	;
@@ -371,56 +308,44 @@ $$ = $1;
 list
 	: '[' listparts ']'
 	{
-printf("list 1\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
+	}
+	| '[' ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0);
 	}
 	| '[' listparts ']' LW generator
 	{
-printf("list 2\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
+	}
+	| '[' ']' LW generator
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4->e, (void*)0, $4);
 	}
 	;
 
 listparts
 	: listparts listparts
 	{
-printf("listparts 1\n");
 		$$ = ffn_addchain($1, $2);
 	}
 	| varref
-	{
-$$ = $1;
-printf("listparts 2\n");
-	}
 	| word
-	{
-$$ = $1;
-printf("listparts 3\n");
-	}
+	| nofile
 	| list
-	{
-$$ = $1;
-printf("listparts 4\n");
-	}
 	;
 
 varrefs
 	: varrefs varrefs
 	{
-printf("varrefs 1\n");
 		$$ = ffn_addchain($1, $2);
 	}
 	| varref
-	{
-$$ = $1;
-printf("varrefs 2\n");
-	}
 	;
 
 varref
 	: '$' word
 	{
-printf("varref 1\n");
 		$$ = $2;
 		$$->type = FFN_VARREF;
 	}
@@ -429,22 +354,20 @@ printf("varref 1\n");
 generator
 	: word
 	{
-printf("generator 1\n");
 		$$ = $1;
 		$$->type = FFN_GENERATOR;
 	}
 	;
 
 nofile
-	: nofileparts
+	: '@' nofileparts
 	{
-printf("nofile 1\n");
 		/* nofile is a shorthand for non-file-backed notation */
 
 		char * v = 0;
 		xstrcatf(&v, "/..");
 
-		ff_node * n = $$;
+		ff_node * n = $2;
 		while(n)
 		{
 			xstrcatf(&v, "/%s", n->text);
@@ -455,39 +378,31 @@ printf("nofile 1\n");
 			n = nn;
 		}
 
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1->s, $1->e, v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $2->e, v);
 	}
 	;
 
 nofileparts
-	: '.' nofileparts
+	: nofileparts '.' word
 	{
-printf("nofileparts 1\n");
-		$$ = ffn_addchain($$, $2);
+		$$ = ffn_addchain($1, $3);
 	}
 	| word
-	{
-$$ = $1;
-printf("nofileparts 2\n");
-	}
 	;
 
 word
 	: '"' wordparts '"'
 	{
-printf("word 1\n");
 		/* only concatenate consecutive WORD's when enclosed in quotes or WS */
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WS wordparts WS
 	{
-printf("word 2\n");
 		@$ = @2;	/* exclude the enclosing WS for word location */
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
 	}
 	| WORD
 	{
-printf("word 3\n");
 		char* v = calloc(1, ($1.e - $1.s) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
@@ -498,7 +413,6 @@ printf("word 3\n");
 wordparts
 	: wordparts WORD
 	{
-printf("wordparts 1\n");
 		$$ = $1;
 
 		int l = strlen($$.v);
@@ -512,7 +426,6 @@ printf("wordparts 1\n");
 	}
 	| WORD
 	{
-printf("wordparts 2\n");
 		$$.s = $1.s;
 		$$.e = $1.e;
 
