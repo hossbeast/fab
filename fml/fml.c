@@ -29,7 +29,7 @@ union g_fmls_t		g_fmls = { { .size = sizeof(fml) } };
 // static
 //
 
-static int fml_add_single(fml * fml, lstack * ls)
+static int fml_add_single(fml * fml, strstack * sstk, lstack * ls)
 {
 	int y;
 
@@ -50,7 +50,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 		fatal(lstack_string, ls, 0, y, &s, &l);
 
 		gn * t = 0;
-		fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, s, l, &t, 0);
+		fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, sstk, s, l, &t, 0);
 
 		fmlv->products[0] = t;
 
@@ -87,7 +87,7 @@ static int fml_add_single(fml * fml, lstack * ls)
 	finally : coda;
 }
 
-static int fml_add_multi(fml * fml, lstack * ls)
+static int fml_add_multi(fml * fml, strstack * sstk, lstack * ls)
 {
 	int x;
 	int y;
@@ -126,7 +126,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 		for(y = 0; y < ls->s[x].l; y++)
 		{
 			gn * t = 0;
-			fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, ls->s[x].s[y].s, ls->s[x].s[y].l, &t, 0);
+			fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, sstk, ls->s[x].s[y].s, ls->s[x].s[y].l, &t, 0);
 
 			// update affected lists
 			fatal(ff_regular_affecting_gn, fml->ffn->loc.ff, t);
@@ -151,7 +151,7 @@ static int fml_add_multi(fml * fml, lstack * ls)
 //
 // public
 //
-int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * staxa, int p)
+int fml_add(ff_node * ffn, strstack * sstk, map * vmap, lstack *** stax, int * staxa, int p)
 {
 	// create fml with ffn - which is an FFN_FORMULA
 	fml * fml = 0;
@@ -165,11 +165,11 @@ int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * staxa, int p)
 	// attach graph nodes
 	if(fml->ffn->flags & FFN_SINGLE)
 	{
-		fatal(fml_add_single, fml, (*stax)[p]);
+		fatal(fml_add_single, fml, sstk, (*stax)[p]);
 	}
 	else if(fml->ffn->flags & FFN_MULTI)
 	{
-		fatal(fml_add_multi, fml, (*stax)[p]);
+		fatal(fml_add_multi, fml, sstk, (*stax)[p]);
 	}
 	else
 	{

@@ -27,7 +27,7 @@ which is available inside the .fab and can be read from
 # dump/invalidate/target node identification standardization
    text   : shorthand for append to init-fabfile-rel-dir, relative path exact match
 	/text/  : regex match on abs/can/rel paths, returns list
-	<text>  : canonical path match, returns single item
+	/text   : canonical path match, returns single item
 	.text   : shorthand for nofile, equivalent to canonical path match
 
 # PERSISTENT FAB DAEMON FOR A GIVEN TARGET

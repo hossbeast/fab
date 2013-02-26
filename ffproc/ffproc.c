@@ -15,7 +15,7 @@
 /// static
 ///
 
-int proc_varnode(ff_node * stmt, map * const vmap, lstack *** const stax, int * const staxa, int staxp)
+int proc_varnode(ff_node * stmt, map * const vmap, lstack *** const stax, int * const staxa, int * staxp)
 {
 	// get the value, if any
 	void * v = 0;
@@ -25,8 +25,8 @@ int proc_varnode(ff_node * stmt, map * const vmap, lstack *** const stax, int * 
 	{
 		if(stmt->definition->type == FFN_LIST)
 		{
-			fatal(list_resolve, stmt->definition, vmap, stax, staxa, staxp);
-			v = (*stax)[staxp++];
+			fatal(list_resolve, stmt->definition, vmap, stax, staxa, (*staxp));
+			v = (*stax)[(*staxp)++];
 			t = VV_LS;
 		}
 		else if(stmt->definition->type == FFN_WORD)
@@ -39,8 +39,8 @@ int proc_varnode(ff_node * stmt, map * const vmap, lstack *** const stax, int * 
 	{
 		if(stmt->type == FFN_VARPUSH || stmt->type == FFN_VARDESIGNATE)
 		{
-			fatal(list_empty, stax, staxa, staxp);
-			v = (*stax)[staxp++];
+			fatal(list_empty, stax, staxa, (*staxp));
+			v = (*stax)[(*staxp)++];
 			t = VV_LS;
 		}
 	}
@@ -102,16 +102,18 @@ int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * con
 
 		if(stmt->type == FFN_INVOCATION)
 		{
-			fatal(list_resolve, stmt->modules, vmap, stax, staxa, staxp);
+			int p = staxp;
+			int pn = p + 1;
+			fatal(list_resolve, stmt->modules, vmap, stax, staxa, p);
 
 			// iterate all referenced modules
-			LSTACK_ITERATE((*stax)[staxp], y, go);
+			LSTACK_ITERATE((*stax)[p], y, go);
 			if(go)
 			{
-				// module reference
+				// module reference string
 				char * s;
 				int l;
-				fatal(lstack_string, (*stax)[staxp], 0, y, &s, &l);
+				fatal(lstack_string, (*stax)[p], 0, y, &s, &l);
 
 				// handle module notation
 				if(l >= 4 && memcmp(s, "/../", 4) == 0)
@@ -147,14 +149,14 @@ int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * con
 
 				// push values for all designations
 				for(i = 0; i < stmt->designationsl; i++)
-					fatal(proc_varnode, stmt->designations[i], vmap, stax, staxa, staxp + 1);
+					fatal(proc_varnode, stmt->designations[i], vmap, stax, staxa, &pn);
 
 				// apply scope for this invocation
 				if(stmt->scope)
 					fatal(strstack_push, sstk, stmt->scope->text);
 
 				// process the referenced fabfile
-				fatal(ffproc, iff, ffp, sstk, vmap, stax, staxa, staxp, 0);
+				fatal(ffproc, iff, ffp, sstk, vmap, stax, staxa, pn, 0);
 
 				// scope pop
 				if(stmt->scope)
@@ -179,15 +181,16 @@ int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * con
 		}
 		else if(stmt->type == FFN_DEPENDENCY)
 		{
-			fatal(dep_process, stmt, vmap, stax, staxa, staxp, first, 0, 0, 0);
+			fatal(dep_process, stmt, sstk, vmap, stax, staxa, staxp, first, 0, 0, 0);
 		}
 		else if(stmt->type == FFN_FORMULA)
 		{
-			fatal(fml_add, stmt, vmap, stax, staxa, staxp);
+			fatal(fml_add, stmt, sstk, vmap, stax, staxa, staxp);
 		}
 		else if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARPUSH || stmt->type == FFN_VARPOP)
 		{
-			fatal(proc_varnode, stmt, vmap, stax, staxa, staxp);
+			int pn = staxp;
+			fatal(proc_varnode, stmt, vmap, stax, staxa, &pn);
 		}
 	}
 

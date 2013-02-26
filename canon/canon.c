@@ -294,7 +294,6 @@ printf("init=%d\n", init);
 			}
 			else if(errno != ENOENT && errno != EACCES)
 			{
-printf("[%d][%s]\n", errno, strerror(errno));
 				return 0;
 			}
 		}

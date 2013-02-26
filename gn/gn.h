@@ -14,6 +14,7 @@
 
 #include "coll.h"
 #include "map.h"
+#include "strstack.h"
 #include "path.h"
 
 #define restrict __restrict
@@ -216,72 +217,59 @@ extern union gn_nodes_t
 	};
 } gn_nodes;
 
-int gn_lookup_match(const char * const restrict s, gn *** const restrict r, int * const restrict rl, int * const ra)
-	__attribute__((nonnull));
-
-/// gn_lookup
+/// gn_match
 //
 // SUMMARY
-//  lookup a gn by absolute path, relative path, or NOFILE-name
+//  get graph nodes whose path(s) match certain criteria
 //
 // PARAMETERS
-//  s    - string
-//  l    - string length, or 0 for strlen
 //  base - directory path for resolving relative paths
-//  r    - node returned here, if found
+//  s    - one of
+//          1) /s/ - regex to match on can/abs/rel paths
+//          2) .s  - nofile specifier
+//          3) /s  - canonical path
+//          4)  s  - path relative to base
+//  r    - results appended to this list
+//  rl   - length of r
+//  ra   - allocated size of r
 //
 // RETURNS
-//  0 on failure (ENOMEN) and 1 otherwise
+//  returns 0 on failure (memory, io) and 1 otherwise
 //
-int gn_lookup(const char * const restrict s, int l, const char * const restrict base, gn ** r)
-	__attribute__((nonnull));
-
-int gn_lookup_nofile(const char * const restrict s, int l, const char * const restrict base, gn ** r)
-	__attribute__((nonnull));
-
-/// gn_lookup_canon
-//
-// SUMMARY
-//  lookup a gn by canonicalized absolute path
-//
-// PARAMETERS
-//  s    - string
-//  l    - string length, or 0 for strlen
-//  r    - node returned here, if found
-//
-// RETURNS
-//  0 on failure (ENOMEN) and 1 otherwise
-//
-int gn_lookup_canon(const char * const restrict s, int l, gn ** r)
+int gn_match(const char * const base, const char * const restrict s, gn *** const restrict r, int * const restrict rl, int * const ra)
 	__attribute__((nonnull));
 
 /// gn_add
 //
 // SUMMARY
-//  adds a graph node
+//  lookup or create a graph node
 //
 // PARAMETERS
-//  base   - directory path for resolving relative paths
-//  A      - 1) filename (relative to realwd), or
-//           2) relative filepath (relative to realwd), or
-//           3) canonical filepath
+//  [base] - directory path for resolving relative paths
+//  sstk   - stringstack for resolving nofile paths
+//  A        1) filepath (relative to base), or
+//           2) nofile path (interpreted via sstk), or
+//           2) canonical filepath
 //  Al     - length of A, 0 for strlen
 //  [r]    - gn for A returned here
 //  [newa] - incremented by 1 if a new node was created
 // 
-// returns 0 on failure (memory, io) and 1 otherwise
+// RETURNS
+//  returns 0 on failure (memory, io) and 1 otherwise
 //
-int gn_add(const char * const restrict base, char * const restrict A, int Al, gn ** r, int * const restrict newa);
+int gn_add(const char * const restrict base, strstack * const restrict sstk, char * const restrict A, int Al, gn ** r, int * const restrict newa)
+	__attribute__((nonnull(2, 3)));
 
 /// gn_edge_add
 //
 // SUMMARY
-//  1) possibly create graph nodes for A, and B
+//  1) lookup or create graph nodes for A, and B
 //  2) add the directed edge : A -> B (A depends on B)
 //  3) return gn for A, and B
 //
 // PARAMETERS
 //  [base]     - directory path for resolving relative paths
+//  sstk       - stringstack for resolving nofile paths
 //  A          - pointer to 1) filename (relative to base), or
 //                          2) relative filepath (relative to base), or
 //                          3) canonical filepath, or
@@ -303,6 +291,7 @@ int gn_add(const char * const restrict base, char * const restrict A, int Al, gn
 //
 int gn_edge_add(
 	  char * const restrict base
+	, strstack * const restrict sstk
 	, void ** const restrict A, int Al, int At
 	, void ** const restrict B, int Bl, int Bt
 	, struct ff_node * const restrict ffn
@@ -312,7 +301,7 @@ int gn_edge_add(
 	, int * const restrict newb
 	, int * const restrict newr
 )
-	__attribute__((nonnull(2,5)));
+	__attribute__((nonnull(2,3,6)));
 
 /// gn_dump
 //

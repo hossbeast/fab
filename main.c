@@ -58,11 +58,9 @@ int main(int argc, char** argv)
 		ts **								ts = 0;
 		int									tsa = 0;
 		int									tsw = 0;
-		gn **								list = 0;
-		int									listl = 0;
-		int									lista = 0;
-		gn **								node_list = 0;
-		int									node_list_len = 0;
+		gn **								list[2] = { };
+		int									listl[2] = { };
+		int									lista[2] = { };
 
 		// get user identity of this process, assert user:group and permissions are set appropriately
 		fatal(identity_init);
@@ -145,77 +143,63 @@ int main(int argc, char** argv)
 
 			for(x = 0; x < g_args.dumpnodesl; x++)
 			{
-				listl = 0;
-				fatal(gn_lookup_match, g_args.dumpnodes[x], &list, &listl, &lista);
+				int ll = listl[0];
+				fatal(gn_match, g_args.init_fabfile_path->abs_dir, g_args.dumpnodes[x], &list[0], &listl[0], &lista[0]);
 
-				if(listl == 0)
+				if(ll == listl[0])
 				{
-					log(L_WARN, "dumpnodes : %s not found", g_args.dumpnodes[x]);
+					log(L_WARN, "dumpnode : %s not found", g_args.dumpnodes[x]);
 				}
-				else
-				{
-					int i;
-					for(i = 0; i < listl; i++)
-					{
-						if(list[i]->designation == GN_DESIGNATION_PRIMARY)
-							gn_primary_reload(list[i]);
-						if(list[i]->designation == GN_DESIGNATION_SECONDARY)
-							gn_secondary_reload(list[i]);
+			}
 
-						gn_dump(list[i]);
-					}
-				}
+			int i;
+			for(i = 0; i < listl[0]; i++)
+			{
+				if(list[0][i]->designation == GN_DESIGNATION_PRIMARY)
+					gn_primary_reload(list[0][i]);
+				if(list[0][i]->designation == GN_DESIGNATION_SECONDARY)
+					gn_secondary_reload(list[0][i]);
+
+				gn_dump(list[0][i]);
 			}
 		}
 		else
 		{
-			// lookup gn for each target
-			int			aretasks = 0;
-			int			istask = 0;
-
-			fatal(xmalloc, &node_list, sizeof(node_list[0]) * MAX(g_args.targetsl, 1));
-
-			// add gn's for each target
-			if(g_args.targetsl)
+			// target list
+			for(x = 0; x < g_args.targetsl; x++)
 			{
-				gn * gn = 0;
-				fatal(gn_lookup_nofile, g_args.targets[0], 0, g_args.init_fabfile_path->abs_dir, &gn);
+				int ll = listl[0];
+				fatal(gn_match, g_args.init_fabfile_path->abs_dir, g_args.targets[x], &list[0], &listl[0], &lista[0]);
 
-				if(gn == 0)
-					fail("target : %s not found", g_args.targets[0]);
-
-				gn_designate(gn);
-				aretasks = gn->designation == GN_DESIGNATION_TASK;
-				node_list[node_list_len++] = gn;
-
-				for(x = 1; x < g_args.targetsl; x++)
+				if(ll == listl[0])
 				{
-					fatal(gn_lookup_nofile, g_args.targets[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
-
-					if(gn == 0)
-						fail("target : %s not found", g_args.targets[x]);
-
-					gn_designate(gn);
-					istask = gn->designation == GN_DESIGNATION_TASK;
-					if(aretasks ^ istask)
-						fail("cannot mix task and non-task fabrication targets");
-
-					node_list[node_list_len++] = gn;
+					log(L_WARN, "target : %s not found", g_args.targets[x]);
 				}
 			}
 
-			// default target is the first dependency processed
-			if(node_list_len == 0 && first)
+			// check for mixing task and non-task
+			if(listl[0])
 			{
-				node_list[node_list_len++] = first;
+				gn_designate(list[0][0]);
+				for(x = 1; x < listl[0]; x++)
+				{
+					gn_designate(list[0][x]);
+
+					if((list[0][x-1]->designation == GN_DESIGNATION_TASK) ^ (list[0][x]->designation == GN_DESIGNATION_TASK))
+						fail("cannot mix task and non-task targets");
+				}
+			}
+			else if(first)
+			{
+				list[0][listl[0]++] = first;	// default target
 			}
 
-			if(node_list_len)
+			if(listl[0])
 			{
 				if(g_args.mode_exec == MODE_EXEC_DDSC)
 				{
 					// execute discovery
-					fatal(dsc_exec, node_list, node_list_len, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+					fatal(dsc_exec, list[0], listl[0], vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
 				}
 				else if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN || g_args.mode_exec == MODE_EXEC_BAKE)
 				{
@@ -225,16 +209,16 @@ int main(int argc, char** argv)
 						// traverse the graph, construct the build plan that culminates in the given target(s)
 						// bp_create also updates all node designations
 						bp_xfree(&bp);
-						fatal(bp_create, node_list, node_list_len, &bp);
+						fatal(bp_create, list[0], listl[0], &bp);
 
 						new = 0;
 						if(g_args.mode_ddsc == MODE_DDSC_DEFERRED)
 						{
 							// flat list of nodes in the buildplan
-							fatal(bp_flatten, bp, &list, &listl, &lista);
+							fatal(bp_flatten, bp, &list[1], &listl[1], &lista[1]);
 
 							// execute discovery
-							fatal(dsc_exec, list, listl, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, &new);
+							fatal(dsc_exec, list[1], listl[1], vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, &new);
 						}
 					}
 
@@ -299,8 +283,8 @@ int main(int argc, char** argv)
 			ts_free(ts[x]);
 		free(ts);
 
-		free(list);
-		free(node_list);
+		for(x = 0; x < sizeof(list) / sizeof(list[0]); x++)
+			free(list[x]);
 
 		gn_teardown();
 		fml_teardown();
@@ -321,85 +305,3 @@ void vmap_destructor(void* tk, void* tv)
 {
 	var_container_free(*(var_container**)tv);
 }
-
-/*
-
-		for(x = 0; x < ffn->statements_l; x++)
-		{
-			ff_node* stmt = ffn->statements[x];
-
-			if(ffn->statements[x]->type == FFN_INVOCATION)
-			{
-				
-			}
-			else if(ffn->statements[x]->type == FFN_DEPENDENCY)
-			{
-				fatal(dep_process, ffn->statements[x], vmap, &stax, &staxa, staxp, first ? 0 : &first, 0, 0, 0);
-			}
-			else if(ffn->statements[x]->type == FFN_FORMULA)
-			{
-				// add the formula, attach to graph nodes
-				fatal(fml_add, ffn->statements[x], vmap, &stax, &staxa, staxp);
-			}
-			else if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARPUSH || stmt->type == FFN_VARPOP)
-			{
-				// get the value, if any
-				void * v = 0;
-				uint8_t t = 0;
-
-				if(stmt->definition)
-				{
-					if(stmt->definition->type == FFN_LIST)
-					{
-						fatal(list_resolve, stmt->definition, vmap, &stax, &staxa, staxp);
-						v = stax[staxp++];
-						t = VV_LS;
-					}
-					if(stmt->definition->type == FFN_WORD)
-					{
-						v = stmt->definition->text;
-						t = VV_AL;
-					}
-				}
-				else
-				{
-					if(stmt->type == FFN_VARPUSH)
-					{
-						fatal(list_empty, &stax, &staxa, staxp);
-						v = stax[staxp++];
-						t = VV_LS;
-					}
-				}
-
-				// apply to all referenced vars
-				for(y = 0; y < stmt->vars_l; y++)
-				{
-					char * var = stmt->vars[y]->text;
-
-					if(stmt->type == FFN_VARASSIGN)
-					{
-						// clear the stack for this variable
-						int r;
-						fatal(var_undef, vmap, var, &r);
-
-						// r is whether it was actually cleared, which is prevented by a sticky value on top
-						if(r && v)
-						{
-							fatal(var_push, vmap, var, v, t, 0);
-						}
-					}
-					if(stmt->type == FFN_VARPUSH)
-					{
-						fatal(var_push, vmap, var, v, t, 0);
-					}
-					if(stmt->type == FFN_VARPOP)
-					{
-						if(v)
-						{
-							fatal(var_push, vmap, var, v, t, 0);
-						}
-					}
-				}
-			}
-		}
-*/

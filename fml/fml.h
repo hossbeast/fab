@@ -10,6 +10,7 @@
 #include "ts.h"
 
 #include "coll.h"
+#include "strstack.h"
 #include "map.h"
 
 struct fmleval;
@@ -40,7 +41,7 @@ extern union g_fmls_t
 //
 // add a formula to the global list from the fabfile node
 //
-int fml_add(ff_node * ffn, map * vmap, lstack *** stax, int * stax_a, int p)
+int fml_add(ff_node * ffn, strstack * sstk, map * vmap, lstack *** stax, int * stax_a, int p)
 	__attribute__((nonnull));
 
 /// fml_render

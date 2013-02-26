@@ -7,6 +7,9 @@
 #include "gn.h"
 #include "depblock.h"
 
+#include "map.h"
+#include "strstack.h"
+
 #define restrict __restrict
 
 /// dep_process
@@ -16,6 +19,7 @@
 //
 // PARAMETERS
 //  ffn        - FFN_DEPENDENCY node
+//  sstk       - sstk used to resolve nofile paths
 //  vmap       - vmap used to resolve variable references in the dependency lists
 //  stax       - listwise stax
 //  staxa      - listwise stax
@@ -27,6 +31,7 @@
 //
 int dep_process(
 	  ff_node * const restrict ffn
+	, strstack * const restrict sstk
 	, map * const restrict vmap
 	, lstack *** const restrict stax
 	, int * const restrict staxa
@@ -36,7 +41,7 @@ int dep_process(
 	, int * const restrict newr
 	, depblock * const restrict block
 )
-	__attribute__((nonnull(1,2,3,4)));
+	__attribute__((nonnull(1,2,3,4,5)));
 
 
 /// depblock_process

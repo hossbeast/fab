@@ -188,6 +188,10 @@ int path_create(path ** const p, const char * const base, const char * const fmt
 	vsnprintf(buf, sizeof(buf), fmt, va);
 	va_end(va);
 
+	// save pameters of creation
+	(*p)->in = strdup(buf);
+	(*p)->base = strdup(base);
+
 	// canonical path - fully canonicalized
 	//
 	if(canon(buf, 0, (*p)->can, 512, base, CAN_REALPATH) == 0)
@@ -210,18 +214,6 @@ int path_create(path ** const p, const char * const base, const char * const fmt
 
 	path_init(*p);
 
-(*p)->in = strdup(buf);
-(*p)->base = strdup(base);
-
-/*
-dprintf(2, ">>%5s: %s\n", "in", (*p)->in);
-dprintf(2, "> %5s: %s\n", "base", (*p)->base);
-dprintf(2, "> %5s: %s\n", "can", (*p)->can);
-dprintf(2, "> %5s: %s\n", "abs", (*p)->abs);
-dprintf(2, "> %5s: %s\n", "rel", (*p)->rel);
-dprintf(2, "> %5s: %s\n", "stem", (*p)->stem);
-*/
-
 	return 1;
 }
 
@@ -240,6 +232,8 @@ int path_create_canon(path ** const p, const char * fmt, ...)
 
 	(*p)->abs = strdup((*p)->can);
 	(*p)->rel = strdup((*p)->can);
+
+	(*p)->in  = strdup((*p)->can);
 
 	path_init(*p);
 

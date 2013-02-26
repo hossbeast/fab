@@ -18,7 +18,6 @@
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
-%expect 26
 
 /* zero based lines and columns */
 %initial-action { memset(&@$, 0, sizeof(@$)); }
@@ -92,7 +91,6 @@
 %type  <node> fabrication
 %type  <node> list
 %type  <node> listparts
-%type  <node> listornofile
 %type  <node> word
 %type  <node> nofile
 %type  <node> nofileparts
@@ -200,43 +198,43 @@ printf("varvalue 2\n");
 	;
 
 invocation
-	: '>' '>' listornofile
+	: '>' '>' list
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $3, (void*)0, (void*)0, 0);
 	}
-	| '>' '>' listornofile '-'
+	| '>' '>' list '-'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $3, (void*)0, (void*)0, FFN_GATED);
 	}
-	| '>' '>' listornofile '(' ')'
+	| '>' '>' list '(' ')'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $3, (void*)0, (void*)0, 0);
 	}
-	| '>' '>' listornofile '(' ')' '-'
+	| '>' '>' list '(' ')' '-'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, (void*)0, FFN_GATED);
 	}
-	| '>' '>' listornofile '(' nofile ')'
+	| '>' '>' list '(' nofile ')'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, $5, (void*)0, 0);
 	}
-	| '>' '>' listornofile '(' nofile ')' '-'
+	| '>' '>' list '(' nofile ')' '-'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, $5, (void*)0, FFN_GATED);
 	}
-	| '>' '>' listornofile '(' vardesignates ')'
+	| '>' '>' list '(' vardesignates ')'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $3, (void*)0, $5, 0);
 	}
-	| '>' '>' listornofile '(' vardesignates ')' '-'
+	| '>' '>' list '(' vardesignates ')' '-'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $3, (void*)0, $5, FFN_GATED);
 	}
-	| '>' '>' listornofile '(' nofile '|' vardesignates ')'
+	| '>' '>' list '(' nofile '|' vardesignates ')'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $8.e, $3, $5, $7, 0);
 	}
-	| '>' '>' listornofile '(' nofile '|' vardesignates ')' '-'
+	| '>' '>' list '(' nofile '|' vardesignates ')' '-'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $9.e, $3, $5, $7, FFN_GATED);
 	}
@@ -256,9 +254,23 @@ $$ = $1;
 	;
 
 dependency
-	: listornofile ':' listornofile
+	: nofile ':' nofile
 	{
 printf("dependency 1\n");
+		$1 = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
+		$3 = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $3->s, $3->e, $3, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
+	}
+	| list ':' nofile
+	{
+printf("dependency 1\n");
+		$3 = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $3->s, $3->e, $3, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
+	}
+	| nofile ':' list
+	{
+printf("dependency 1\n");
+		$1 = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
 	}
 	| list ':' '*' list
@@ -266,7 +278,7 @@ printf("dependency 1\n");
 printf("dependency 2\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE);
 	}
-	| listornofile ':' ':' listornofile
+	| list ':' ':' list
 	{
 printf("dependency 3\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_MULTI);
@@ -285,12 +297,26 @@ printf("fabrication 1\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, (void*)0, $1->needs, $3, $1->flags | FFN_FABRICATION);
 		$$ = ffn_addchain($1, $$);
 	}
-	| listornofile '{' commands '}'
+	| nofile '{' commands '}'
+	{
+printf("fabrication 2\n");
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, $$, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
+	}
+	| nofile ':' '{' commands '}'
+	{
+		/* this form is redundant but is included for completeness */
+printf("fabrication 3\n");
+
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $$, (void*)0, $4, FFN_SINGLE | FFN_FABRICATION);
+	}
+	| list '{' commands '}'
 	{
 printf("fabrication 2\n");
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, $1, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
 	}
-	| listornofile ':' '{' commands '}'
+	| list ':' '{' commands '}'
 	{
 		/* this form is redundant but is included for completeness */
 printf("fabrication 3\n");
@@ -339,19 +365,6 @@ $$ = $1;
 	{
 printf("command 3\n");
 $$ = $1;
-	}
-	;
-
-listornofile
-	: list
-	{
-$$ = $1;
-printf("listornofile 1\n");
-	}
-	| nofile
-	{
-printf("listornofile 2\n");
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0);
 	}
 	;
 
@@ -447,10 +460,10 @@ printf("nofile 1\n");
 	;
 
 nofileparts
-	: nofileparts '.' nofileparts
+	: '.' nofileparts
 	{
 printf("nofileparts 1\n");
-		$$ = ffn_addchain($1, $3);
+		$$ = ffn_addchain($$, $2);
 	}
 	| word
 	{

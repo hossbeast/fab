@@ -32,6 +32,11 @@ union gn_nodes_t		gn_nodes = { { .size = sizeof(gn) } };
 // static
 //
 
+/// raise_cycle
+//
+// SUMMARY
+//  log a cycle error from the specified gn stack
+//
 static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
 {
 	log_start(L_ERROR, "detected cycle : ");
@@ -63,101 +68,173 @@ static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
 	return 0;
 }
 
-//
-// public
-//
-
-int gn_lookup_match(const char * const s, gn *** const r, int * const rl, int * const ra)
+static void freenode(gn * const gn)
 {
 	int x;
-	for(x = 0; x < gn_nodes.l; x++)
+
+	if(gn)
 	{
-		if(strstr(gn_nodes.e[x]->path->can, s) || strstr(gn_nodes.e[x]->path->abs, s) || strstr(gn_nodes.e[x]->path->rel, s))
+		path_free(gn->path);
+		free(gn->idstring);
+
+		hashblock_free(gn->hb_fab);
+		hashblock_free(gn->hb_dscv);
+		depblock_free(gn->dscv_block);
+
+		for(x = 0; x < gn->needs.l; x++)
+			free(gn->needs.e[x]);
+		free(gn->needs.e);
+		map_free(gn->needs.by_B);
+
+		free(gn->feeds.e);
+		map_free(gn->feeds.by_A);
+
+		free(gn->affecting_ff_file);
+
+		free(gn->noforce_dir);
+		free(gn->noforce_path);
+	}
+
+	free(gn);
+}
+
+/// lookup
+//
+// SUMMARY
+//  lookup a gn by absolute path, relative path, or NOFILE-name
+//
+// PARAMETERS
+//  [base] - directory path for resolving relative paths
+//  [sstk] - stringstack for resolving nofile paths
+//  iscan  - skip canonicalization (path is already known to be canonicalized)
+//  s      - string
+//  l      - string length, or 0 for strlen
+//  r      - node returned here, if found
+//
+// RETURNS
+//  0 on failure (ENOMEN) and 1 otherwise
+//
+static int lookup(const char * const restrict base, strstack * const restrict sstk, const char * const restrict s, int l, gn ** r)
+	__attribute__((nonnull(3)));
+
+static int lookup(const char * const base, strstack * const sstk, const char * const s, int l, gn ** r)
+{
+	char space[512];									// space for canonicalization
+	const char * canp	= s;						// canonical path for lookup
+	int canpl		= l ?: strlen(s);			// canp length
+
+	if(canpl > 4 && memcmp(canp, "/../", 4) == 0)
+	{
+		char * sstr;
+		strstack_string(sstk, "/", &sstr);
+
+		fatal(canon, canp + 2, canpl - 2, space, sizeof(space), sstr, CAN_REALPATH);
+
+		canp = space;
+		canpl = strlen(canp);
+	}
+	else if(base)
+	{
+		fatal(canon, canp, canpl, space, sizeof(space), base, CAN_REALPATH);
+
+		canp = space;
+		canpl = strlen(canp);
+	}
+
+	gn ** R = 0;
+	if((R = map_get(gn_nodes.by_path, canp, canpl)))
+		(*r) = *R;
+
+	finally : coda;
+}
+
+///
+/// public
+///
+
+int gn_match(const char * const base, const char * const s, gn *** const r, int * const rl, int * const ra)
+{
+	int add(gn * e)
+	{
+		if((*rl) == (*ra))
 		{
-			if((*rl) == (*ra))
-			{
-				int ns = (*ra) ?: 10;
-				ns = ns * 2 + ns / 2;
-				fatal(xrealloc, r, sizeof(**r), ns, *ra);
-				*ra = ns;
-			}
-			(*r)[(*rl)++] = gn_nodes.e[x];
+			int ns = (*ra) ?: 10;
+			ns = ns * 2 + ns / 2;
+			fatal(xrealloc, r, sizeof(**r), ns, *ra);
+			*ra = ns;
+		}
+		(*r)[(*rl)++] = e;
+
+		finally : coda;
+	};
+
+	if(!gn_nodes.by_path)
+		fatal(map_create, &gn_nodes.by_path, 0);
+
+	char can[512];
+
+	if(s[0] == '/' && s[strlen(s) - 1] == '/')
+	{
+		// regex match (substring for now)
+		int x;
+		for(x = 0; x < gn_nodes.l; x++)
+		{
+			if(strstr(gn_nodes.e[x]->path->can, s) || strstr(gn_nodes.e[x]->path->abs, s) || strstr(gn_nodes.e[x]->path->rel, s))
+				fatal(add, gn_nodes.e[x]);
 		}
 	}
+	else if(strlen(s) > 2 && s[0] == '.' && s[1] != '/')
+	{
+		// nofile
+		int d = 0;
+		d += snprintf(can + d, sizeof(can) - d, "/..");
 
-	finally : coda;
-}
+		const char * p[2] = { [0] = s };
+		while((p[1] = strstr(p[0], ".")))
+		{
+			d += snprintf(can + d, sizeof(can) - d, "%.*s", (int)(p[1] - p[0]), p[0]);
+			p[0] = p[1];
+		}
 
-int gn_lookup_nofile(const char * const s, int l, const char * const base, gn ** r)
-{
-	if(!gn_nodes.by_path)
-		fatal(map_create, &gn_nodes.by_path, 0);
-
-	// canonicalize for lookup
-	char can[512];
-	if(canon(s, l, can, sizeof(can), base, CAN_REALPATH) == 0)
-		return 0;
-
-	gn ** R = 0;
-	if((R = map_get(gn_nodes.by_path, can, strlen(can))))
-		*r = *R;
+		gn ** R = 0;
+		if((R = map_get(gn_nodes.by_path, can, strlen(can))))
+			fatal(add, *R);
+	}
 	else
 	{
-		if(canon(s, l, can, sizeof(can), "/..", CAN_REALPATH) == 0)
+		// relative to base, or canonical path
+		if(canon(s, 0, can, sizeof(can), base, CAN_REALPATH) == 0)
 			return 0;
 
+		gn ** R = 0;
 		if((R = map_get(gn_nodes.by_path, can, strlen(can))))
-			*r = *R;
+			fatal(add, *R);
 	}
 
 	finally : coda;
 }
 
-int gn_lookup(const char * const s, int l, const char * const base, gn ** r)
+int gn_add(const char * const restrict base, strstack * const restrict sstk, char * const restrict A, int Al, gn ** gna, int * const restrict new)
 {
-	if(!gn_nodes.by_path)
-		fatal(map_create, &gn_nodes.by_path, 0);
-
-	// canonicalize for lookup
-	char can[512];
-	if(canon(s, l, can, sizeof(can), base, CAN_REALPATH) == 0)
-		return 0;
-
-	gn ** R = 0;
-	if((R = map_get(gn_nodes.by_path, can, strlen(can))))
-		*r = *R;
-
-	finally : coda;
-}
-
-int gn_lookup_canon(const char * const s, int l, gn ** r)
-{
-	if(!gn_nodes.by_path)
-		fatal(map_create, &gn_nodes.by_path, 0);
-
-	gn ** R = 0;
-	if((R = map_get(gn_nodes.by_path, s, l)))
-		*r = *R;
-
-	finally : coda;
-}
-
-int gn_add(const char * const restrict base, char * const restrict A, int Al, gn ** gna, int * const restrict new)
-{
-	if(!gn_nodes.by_path)
-		fatal(map_create, &gn_nodes.by_path, 0);
-
-	if(base)
-		fatal(gn_lookup, A, Al, base, gna);
+	if(gn_nodes.by_path)
+		fatal(lookup, base, sstk, A, Al, gna);
 	else
-		fatal(gn_lookup_canon, A, Al, gna);
+		fatal(map_create, &gn_nodes.by_path, 0);
 
 	if((*gna) == 0)
 	{
 		fatal(coll_doubly_add, &gn_nodes.c, 0, gna);
 
+		Al = Al ?: strlen(A);
+
 		// populate gna
-		if(base)
+		if(Al > 4 && memcmp(A, "/../", 4) == 0)
+		{
+			char * sstr;
+			fatal(strstack_string, sstk, "/", &sstr);
+			fatal(path_create_canon, &(*gna)->path, "%s/%.*s", sstr, Al, A);
+		}
+		else if(base)
 			fatal(path_create, &(*gna)->path, base, "%.*s", Al ?: strlen(A), A);
 		else
 			fatal(path_create_canon, &(*gna)->path, "%.*s", Al ?: strlen(A), A);
@@ -187,6 +264,7 @@ int gn_add(const char * const restrict base, char * const restrict A, int Al, gn
 
 int gn_edge_add(
 	  char * const base
+	, strstack * const sstk
 	, void ** const A, int Al, int At
 	, void ** const B, int Bl, int Bt
 	, struct ff_node * const reg_ffn
@@ -206,12 +284,12 @@ int gn_edge_add(
 	if(At)
 		gna = *(gn**)A;
 	else
-		fatal(gn_add, base, *(char**)A, Al, &gna, &_newa);
+		fatal(gn_add, base, sstk, *(char**)A, Al, &gna, &_newa);
 
 	if(Bt)
 		gnb = *(gn**)B;
 	else
-		fatal(gn_add, base, *(char**)B, Bl, &gnb, &_newb);
+		fatal(gn_add, base, sstk, *(char**)B, Bl, &gnb, &_newb);
 
 	if(gna == gnb)
 	{
@@ -632,7 +710,7 @@ int gn_invalidations()
 		for(x = 0; x < g_args.invalidationsl; x++)
 		{
 			gn * gn = 0;
-			fatal(gn_lookup, g_args.invalidations[x], 0, g_args.init_fabfile_path->abs_dir, &gn);
+			fatal(lookup, g_args.init_fabfile_path->abs_dir, 0, g_args.invalidations[x], 0, &gn);
 
 			if(gn)
 			{
@@ -652,41 +730,11 @@ int gn_invalidations()
 	finally : coda;
 }
 
-static void gn_freenode(gn * const gn)
-{
-	int x;
-
-	if(gn)
-	{
-		path_free(gn->path);
-		free(gn->idstring);
-
-		hashblock_free(gn->hb_fab);
-		hashblock_free(gn->hb_dscv);
-		depblock_free(gn->dscv_block);
-
-		for(x = 0; x < gn->needs.l; x++)
-			free(gn->needs.e[x]);
-		free(gn->needs.e);
-		map_free(gn->needs.by_B);
-
-		free(gn->feeds.e);
-		map_free(gn->feeds.by_A);
-
-		free(gn->affecting_ff_file);
-
-		free(gn->noforce_dir);
-		free(gn->noforce_path);
-	}
-
-	free(gn);
-}
-
 void gn_teardown()
 {
 	int x;
 	for(x = 0; x < gn_nodes.l; x++)
-		gn_freenode(gn_nodes.e[x]);
+		freenode(gn_nodes.e[x]);
 
 	free(gn_nodes.e);
 	map_free(gn_nodes.by_path);
