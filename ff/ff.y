@@ -9,7 +9,7 @@
 	#include "ff.h"
 	#include "xstring.h"
 
-	int  ff_yylex(void* yylvalp, void* yylloc, void* scanner);
+	int ff_yylex(void* yylvalp, void* yylloc, void* scanner);
 }
 
 %define api.pure
@@ -275,7 +275,7 @@ fabrication
 discovery
 	: list '~' '{' commands '}'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, $4, FFN_SINGLE | FFN_DISCOVERY);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_DISCOVERY);
 	}
 	;
 
@@ -285,9 +285,6 @@ commands
 		$$ = ffn_addchain($1, $2);
 	}
 	| command
-	{
-$$ = $1;
-	}
 	;
 
 command
@@ -296,13 +293,7 @@ command
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LF, $1.s, $1.e, $1.s, $1.e);
 	}
 	| list
-	{
-$$ = $1;
-	}
 	| word
-	{
-$$ = $1;
-	}
 	;
 
 list
@@ -367,6 +358,8 @@ nofile
 		char * v = 0;
 		xstrcatf(&v, "/..");
 
+		char * e = $2->e;
+
 		ff_node * n = $2;
 		while(n)
 		{
@@ -378,7 +371,7 @@ nofile
 			n = nn;
 		}
 
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $2->e, v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, e, v);
 	}
 	;
 

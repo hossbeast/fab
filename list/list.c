@@ -1,5 +1,6 @@
-#include <listwise/lstack.h>
+#include <listwise.h>
 #include <listwise/object.h>
+#include <listwise/lstack.h>
 
 // in liblistwise.so
 extern int lstack_exec_internal(generator* g, char** init, int* initls, int initl, lstack** ls, int dump);
@@ -12,6 +13,7 @@ extern int lstack_exec_internal(generator* g, char** init, int* initls, int init
 #include "control.h"
 #include "map.h"
 #include "xmem.h"
+#include "macros.h"
 
 ///
 /// static
@@ -77,28 +79,22 @@ static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p
 			if(c && c->l)
 				vls = c->v[c->l - 1].ls;
 			
-			if(vls)
+			// an undefined variable, or a variable with no definition is equivalent to the empty list
+			ITERATE(vls, i, go);
+			if(go)
 			{
-				LSTACK_ITERATE(vls, i, go);
-				if(go)
-				{
-					if(vls->s[0].s[i].type)
-						fatal(lstack_obj_add, (*stax)[p], *(void**)vls->s[0].s[i].s, LISTWISE_TYPE_GNLW);
-					else
-						fatal(lstack_add, (*stax)[p], vls->s[0].s[i].s, vls->s[0].s[i].l);
-				}
-				LSTACK_ITEREND;
+				if(vls->s[0].s[i].type)
+					fatal(lstack_obj_add, (*stax)[p], *(void**)vls->s[0].s[i].s, LISTWISE_TYPE_GNLW);
+				else
+					fatal(lstack_add, (*stax)[p], vls->s[0].s[i].s, vls->s[0].s[i].l);
 			}
-			else
-			{
-				// an undefined variable, or a variable with no definition - equivalent to the empty list
-			}
+			ITEREND;
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
 			fatal(list_resolve, list->elements[x], vmap, stax, staxa, ++pn);
 
-			LSTACK_ITERATE((*stax)[pn], i, go);
+			ITERATE((*stax)[pn], i, go);
 			if(go)
 			{
 				if((*stax)[pn]->s[0].s[i].type)
@@ -106,7 +102,7 @@ static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p
 				else
 					fatal(lstack_add, (*stax)[p], (*stax)[pn]->s[0].s[i].s, (*stax)[pn]->s[0].s[i].l);
 			}
-			LSTACK_ITEREND;
+			ITEREND;
 		}
 	}
 
@@ -130,8 +126,8 @@ static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p
 
 int list_ensure(lstack *** stax, int * staxa, int staxp)
 {
-	lstack_reset((*stax)[staxp]);
 	fatal(ensure, stax, staxa, staxp);
+	lstack_reset((*stax)[staxp]);
 
 	finally : coda;
 }

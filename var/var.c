@@ -37,7 +37,7 @@ static int ensure_exists(map * const restrict vmap, const char * const restrict 
 ///
 
 // select logtag based on variable name
-#define TAG strcmp(s, "@") && strcmp(s, "#") && strcmp(s, "<") ? L_VARUSER : L_VARAUTO
+#define TAG ((s[0] >= 'a' && s[0] <= 'z') || (s[0] >= 'A' && s[0] <= 'Z') || s[0] == '_') ? L_VARUSER : L_VARAUTO
 
 int var_undef(map * const vmap, const char * const s, int * r)
 {
@@ -130,7 +130,7 @@ int var_push(map * const vmap, const char * const s, void * const v, const uint8
 	}
 	if(t == VV_AL)
 	{
-		log(TAG, "%10s(%s, alias(%s))", "push", s, v); 
+		log(TAG, "%10s(%s, alias($%s))", "push", s, v); 
 	}
 
 	cc->l++;

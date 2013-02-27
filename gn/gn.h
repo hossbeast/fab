@@ -246,7 +246,7 @@ int gn_match(const char * const base, const char * const restrict s, gn *** cons
 //
 // PARAMETERS
 //  [base] - directory path for resolving relative paths
-//  sstk   - stringstack for resolving nofile paths
+//  [sstk] - stringstack for resolving nofile paths
 //  A        1) filepath (relative to base), or
 //           2) nofile path (interpreted via sstk), or
 //           2) canonical filepath
@@ -258,7 +258,7 @@ int gn_match(const char * const base, const char * const restrict s, gn *** cons
 //  returns 0 on failure (memory, io) and 1 otherwise
 //
 int gn_add(const char * const restrict base, strstack * const restrict sstk, char * const restrict A, int Al, gn ** r, int * const restrict newa)
-	__attribute__((nonnull(2, 3)));
+	__attribute__((nonnull(3)));
 
 /// gn_edge_add
 //
@@ -269,7 +269,7 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 //
 // PARAMETERS
 //  [base]     - directory path for resolving relative paths
-//  sstk       - stringstack for resolving nofile paths
+//  [sstk]     - stringstack for resolving nofile paths
 //  A          - pointer to 1) filename (relative to base), or
 //                          2) relative filepath (relative to base), or
 //                          3) canonical filepath, or
@@ -301,7 +301,7 @@ int gn_edge_add(
 	, int * const restrict newb
 	, int * const restrict newr
 )
-	__attribute__((nonnull(2,3,6)));
+	__attribute__((nonnull(3,6)));
 
 /// gn_dump
 //

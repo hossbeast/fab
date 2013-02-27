@@ -206,7 +206,8 @@ void ffn_xfree(ff_node ** const restrict)
 //
 // log an ff_node under FFTREE
 //
-void ffn_dump(ff_node * const restrict root);
+void ffn_dump(ff_node * const restrict root)
+	__attribute__((nonnull));
 
 #undef restrict
 #endif

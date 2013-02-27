@@ -10,6 +10,8 @@
 
 #define restrict __restrict
 
+#define FFP_MODULE	0x01
+
 /// ffproc
 //
 // SUMMARY
@@ -25,6 +27,7 @@
 //  staxa   - listwise stax
 //  staxp   - offset to next free stax
 //  [first] - set to first dependency processed
+//  flags   - FFP_MODULE : this ff was referenced with module notation - affects the value of $^
 //
 int ffproc(
     const ff_file * const restrict ff
@@ -35,6 +38,7 @@ int ffproc(
   , int * const restrict staxa
   , int staxp
   , gn ** const restrict first
+	, const uint32_t flags
 ) __attribute__((nonnull(1,2,3,4,5,6)));
 
 #endif

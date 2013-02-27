@@ -84,48 +84,6 @@ int getextlast(const char * const p, char ** const r)
 	return 1;
 }
 
-int getstem(const char * const abs, const char * const rel, char ** const r)
-{
-	int dotdots = 0;
-	const char * s = rel;
-	while(1)
-	{
-		const char * ps = s;
-		const char * pe = s;
-		while(pe[0] != 0 && pe[0] != '/')
-			pe++;
-
-		if(pe - ps == 1 && ps[0] == '.')
-		{
-			s = pe + 1;
-		}
-		else if(pe - ps == 2 && ps[0] == '.' && ps[1] == '.')
-		{
-			s = pe + 1;
-			dotdots++;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	// s now points to the portion of rel following any leading dots and dotdots
-	int e = strlen(abs);
-	while(e && strcmp(abs + e, s))
-		e--;
-
-	while(e && abs[e-1] == '/')
-		e--;
-
-	if(((*r) = calloc(1, e + 1)) == 0)
-		return 0;
-
-	memcpy((*r), abs, e);
-
-	return 1;
-}
-
 static int path_init(path * const p)
 {
 	// directories
@@ -137,9 +95,6 @@ static int path_init(path * const p)
 	fatal(getname, p->can, &p->name);
 	fatal(getext, p->can, &p->ext);
 	fatal(getextlast, p->can, &p->ext_last);
-
-	// the stem : absolute - relative
-	fatal(getstem, p->abs, p->rel, &p->stem);
 
 	// lengths
 	p->canl					= strlen(p->can);
@@ -153,7 +108,6 @@ static int path_init(path * const p)
 		p->extl				= strlen(p->ext);
 	if(p->ext_last)
 		p->ext_lastl	= strlen(p->ext_last);
-	p->steml				= strlen(p->stem);
 
 	// hash of the canonical path
 	p->can_hash			= cksum(p->can, p->canl);

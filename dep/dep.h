@@ -19,7 +19,7 @@
 //
 // PARAMETERS
 //  ffn        - FFN_DEPENDENCY node
-//  sstk       - sstk used to resolve nofile paths
+//  [sstk]     - sstk used to resolve nofile paths (not required for dependencies in an autodisc fabfile)
 //  vmap       - vmap used to resolve variable references in the dependency lists
 //  stax       - listwise stax
 //  staxa      - listwise stax
@@ -41,7 +41,7 @@ int dep_process(
 	, int * const restrict newr
 	, depblock * const restrict block
 )
-	__attribute__((nonnull(1,2,3,4,5)));
+	__attribute__((nonnull(1,3,4,5)));
 
 
 /// depblock_process

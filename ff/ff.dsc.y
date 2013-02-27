@@ -61,14 +61,13 @@
 %type  <wordparts> wordparts
 
 %type  <node> statement
-%type  <node> statement_list
+%type  <node> statements
 %type  <node> dependency
 %type  <node> list
-%type  <node> listpiece
+%type  <node> listparts
 %type  <node> word
 %type  <node> varref
 %type  <node> generator
-
 
 /* sugar */
 %token END 0 "end of file"
@@ -79,14 +78,14 @@
 %%
 
 ff
-	: statement_list
+	: statements
 	{
 		parm->ff->ffn = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 
-statement_list
-	: statement_list statement
+statements
+	: statements statements
 	{
 		$$ = ffn_addchain($1, $2);
 	}
@@ -100,27 +99,35 @@ statement
 dependency
 	: list ':' list
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, FFN_SINGLE, $1, $3);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $3->e, $1, $3, FFN_SINGLE);
 	}
 	| list ':' '*' list
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, FFN_SINGLE | FFN_WEAK, $1, $4);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE | FFN_WEAK);
 	}
 	;
 
 list
-	: '[' listpiece ']'
+	: '[' listparts ']'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
 	}
-	| '[' listpiece ']' LW generator
+	| '[' ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0);
+	}
+	| '[' listparts ']' LW generator
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
 	}
+	| '[' ']' LW generator
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4->e, (void*)0, $4);
+	}
 	;
 
-listpiece
-	: listpiece listpiece
+listparts
+	: listparts listparts
 	{
 		$$ = ffn_addchain($1, $2);
 	}

@@ -34,8 +34,9 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
 	, { .v = L_PARAMS		, .s = "PARAMS"		, .d = "program execution parameters" }
 	, { .v = L_FFTOKN		, .s = "FFTOKN"		, .d = "fabfile parsing - token stream" }
-	, { .v = L_FFSTAT		, .s = "FFSTAT"		, .d = "fabfile parsing - lexer start condition change" }
+	, { .v = L_FFSTAT		, .s = "FFSTAT"		, .d = "fabfile parsing - lexer start conditions" }
 	, { .v = L_FFTREE		, .s = "FFTREE"		, .d = "fabfile parsing - parsed tree" }
+	, { .v = L_FFFILE		, .s = "FFFILE"		, .d = "fabfile parsing - parsed file" }
 	, { .v = L_FF				, .s = "FF"				, .d = "fabfile parsing" }
 	, { .v = L_BPINFO		, .s = "BPINFO"		, .d = "buildplan - flow" }
 	, { .v = L_BPEXEC		, .s = "BPEXEC"		, .d = "buildplan - execution" }

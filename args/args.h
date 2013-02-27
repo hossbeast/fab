@@ -49,7 +49,7 @@
 #define DEFAULT_MODE_DDSC					MODE_DDSC_DEFERRED
 #define DEFAULT_CONCURRENCY_LIMIT	0
 #define DEFAULT_BAKE_PATH					"./bakescript"
-#define DEFAULT_INVOKEDIR					"/usr/lib/fablib"
+#define DEFAULT_INVOKEDIR					"/usr/lib/fab"
 
 #define EXPIRATION_POLICY					(60 * 60 * 24 * 7)
 

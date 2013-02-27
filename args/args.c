@@ -121,7 +121,7 @@ int parse_args(int argc, char** argv)
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(xstrdup, &fabpath, DEFAULT_INIT_FABFILE);
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl], DEFAULT_INVOKEDIR);
+	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], DEFAULT_INVOKEDIR);
 
 	int x, indexptr;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
@@ -269,25 +269,25 @@ int parse_args(int argc, char** argv)
 	else
 		snprintf(buf, sizeof(buf), "%s", "unbounded");
 	log(L_ARGS | L_PARAMS		, " %s (%c) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', buf);
-	log(L_ARGS | L_PARAMS		, " %s (%c) invalidations-all     =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
+	log(L_ARGS | L_PARAMS		, " %s (%c) invalidations-all  =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
 
 	for(x = 0; x < g_args.invokedirsl; x++)
-		log(L_ARGS | L_PARAMS	, " %s (%c) invokedirs(s)         =%s", "*", 'I', g_args.invokedirs[x]);
+		log(L_ARGS | L_PARAMS	, " %s (%c) invokedirs(s)      =%s", "*", 'I', g_args.invokedirs[x]);
 
 	if(!g_args.invalidationsz)
 	{
 		if(!g_args.invalidations)
-			log(L_ARGS | L_PARAMS	, " %s (%c) invalidations(s)      =", " ", 'b');
+			log(L_ARGS | L_PARAMS	, " %s (%c) invalidations(s) =", " ", 'b');
 		for(x = 0; x < g_args.invalidationsl; x++)
-			log(L_ARGS | L_PARAMS	, " %s (%c) invalidations(s)      =%s", "*", 'b', g_args.invalidations[x]);
+			log(L_ARGS | L_PARAMS	, " %s (%c) invalidations(s) =%s", "*", 'b', g_args.invalidations[x]);
 	}
 
 	if(!g_args.dumpnodesz)
 	{
 		if(!g_args.dumpnodes)
-			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnodes(s)        =", " ", 'd');
+			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnodes(s)     =", " ", 'd');
 		for(x = 0; x < g_args.dumpnodesl; x++)         
-			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnodes(s)        =%s", "*", 'd', g_args.dumpnodes[x]);
+			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnodes(s)     =%s", "*", 'd', g_args.dumpnodes[x]);
 	}
 
 	if(!g_args.targets)

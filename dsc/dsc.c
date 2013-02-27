@@ -178,7 +178,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 					{
 						if(dff->ffn->statements[k]->type == FFN_DEPENDENCY)
 						{
-							fatal(dep_process, dff->ffn->statements[k], vmap, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
+							fatal(dep_process, dff->ffn->statements[k], 0, vmap, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
 						}
 					}
 

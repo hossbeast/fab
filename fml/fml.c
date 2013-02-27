@@ -50,7 +50,15 @@ static int fml_add_single(fml * fml, strstack * sstk, lstack * ls)
 		fatal(lstack_string, ls, 0, y, &s, &l);
 
 		gn * t = 0;
-		fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, sstk, s, l, &t, 0);
+		fatal(gn_add
+//			, fml->ffn->loc.ff->path->abs_dir
+			, g_args.init_fabfile_path->abs_dir
+			, sstk
+			, s
+			, l
+			, &t
+			, 0
+		);
 
 		fmlv->products[0] = t;
 
@@ -126,7 +134,15 @@ static int fml_add_multi(fml * fml, strstack * sstk, lstack * ls)
 		for(y = 0; y < ls->s[x].l; y++)
 		{
 			gn * t = 0;
-			fatal(gn_add, fml->ffn->loc.ff->path->abs_dir, sstk, ls->s[x].s[y].s, ls->s[x].s[y].l, &t, 0);
+			fatal(gn_add
+//				, fml->ffn->loc.ff->path->abs_dir
+				, g_args.init_fabfile_path->abs_dir
+				, sstk
+				, ls->s[x].s[y].s
+				, ls->s[x].s[y].l
+				, &t
+				, 0
+			);
 
 			// update affected lists
 			fatal(ff_regular_affecting_gn, fml->ffn->loc.ff, t);
@@ -158,9 +174,12 @@ int fml_add(ff_node * ffn, strstack * sstk, map * vmap, lstack *** stax, int * s
 	fatal(coll_doubly_add, &g_fmls.c, 0, &fml);
 	fml->ffn = ffn;
 
-	// resolve targets list
-	fatal(list_resolveto, ffn->targets_0, vmap, stax, staxa, p);
-	fatal(list_resolveto, ffn->targets_1, vmap, stax, staxa, p);
+	// resolve targets lists
+	if(ffn->targets_0)
+		fatal(list_resolveto, ffn->targets_0, vmap, stax, staxa, p);
+
+	if(ffn->targets_1)
+		fatal(list_resolveto, ffn->targets_1, vmap, stax, staxa, p);
 
 	// attach graph nodes
 	if(fml->ffn->flags & FFN_SINGLE)

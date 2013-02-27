@@ -219,7 +219,15 @@ void ff_teardown();
 //
 // PARAMETERS
 //
-int ff_regular_affecting_gn(struct ff_file * const restrict ff, struct gn * const restrict gn)
+int ff_regular_affecting_gn(ff_file * const restrict ff, struct gn * const restrict gn)
+	__attribute__((nonnull));
+
+/// ff_dump
+//
+// SUMMARY
+//  log an ff_file under FFFILE
+//
+void ff_dump(ff_file * const restrict ff)
 	__attribute__((nonnull));
 
 #undef restrict

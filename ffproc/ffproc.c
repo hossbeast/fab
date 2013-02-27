@@ -11,11 +11,13 @@
 #include "control.h"
 #include "path.h"
 
+#define restrict __restrict
+
 ///
 /// static
 ///
 
-int proc_varnode(ff_node * stmt, map * const vmap, lstack *** const stax, int * const staxa, int * staxp)
+static int proc_varnode(ff_node * restrict stmt, map * const restrict  vmap, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 {
 	// get the value, if any
 	void * v = 0;
@@ -29,7 +31,7 @@ int proc_varnode(ff_node * stmt, map * const vmap, lstack *** const stax, int * 
 			v = (*stax)[(*staxp)++];
 			t = VV_LS;
 		}
-		else if(stmt->definition->type == FFN_WORD)
+		else if(stmt->definition->type == FFN_VARREF)
 		{
 			v = stmt->definition->text;
 			t = VV_AL;
@@ -83,7 +85,7 @@ int proc_varnode(ff_node * stmt, map * const vmap, lstack *** const stax, int * 
 /// public
 ///
 
-int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int staxp, gn ** const first)
+int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int staxp, gn ** const first, const uint32_t flags)
 {
 	path * pth = 0;
 	int x;
@@ -92,7 +94,16 @@ int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * con
 
 	// use up one list and populate the ^ variable (relative directory path to this fabfile)
 	fatal(list_ensure, stax, staxa, staxp);
-	fatal(lstack_add, (*stax)[staxp], ff->path->rel_dir, ff->path->rel_dirl);
+
+	if(flags & FFP_MODULE)
+	{
+		fatal(lstack_add, (*stax)[staxp], ff->path->abs_dir, ff->path->abs_dirl);
+	}
+	else
+	{
+		fatal(lstack_add, (*stax)[staxp], ff->path->rel_dir, ff->path->rel_dirl);
+	}
+
 	fatal(var_push, vmap, "^", (*stax)[staxp++], VV_LS, 0);
 
 	// process the fabfile tree, construct the graph
@@ -115,12 +126,41 @@ int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * con
 				int l;
 				fatal(lstack_string, (*stax)[p], 0, y, &s, &l);
 
-				// handle module notation
+				// handle module notation 
+				int ismod = 0;
 				if(l >= 4 && memcmp(s, "/../", 4) == 0)
 				{
+					ismod = 1;
 					for(i = 0; i < g_args.invokedirsl; i++)
 					{
-						fatal(path_create, &pth, g_args.invokedirs[i], "./%s", s + 4);
+						// last component is understood as a filename
+						char * f = s + l - 1;
+						int fl = 1;
+
+						// previous components understood as a path
+						char * p = s + 4;
+						int pl = l - 4;
+
+						while(f != s && f[0] != '/')
+						{
+							f--;
+							fl++;
+						}
+
+						if(f == s)
+							fail("invalid invocation %.*s", l, s);
+						else
+						{
+							pl -= fl;
+							f++;
+							fl--;
+						}
+
+						fatal(path_create, &pth, g_args.invokedirs[i]
+							, "%.*s/%.*s.fab"
+							, pl, p
+							, fl, f
+						);
 
 						if(euidaccess(pth->can, F_OK) == 0)
 							break;
@@ -128,7 +168,7 @@ int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * con
 
 					if(i == g_args.invokedirsl)
 					{
-						fail("not found %.*s", l, s);
+						fail("invocation not found %.*s", l, s);
 					}
 				}
 				else
@@ -156,7 +196,7 @@ int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * con
 					fatal(strstack_push, sstk, stmt->scope->text);
 
 				// process the referenced fabfile
-				fatal(ffproc, iff, ffp, sstk, vmap, stax, staxa, pn, 0);
+				fatal(ffproc, iff, ffp, sstk, vmap, stax, staxa, pn, 0, ismod);
 
 				// scope pop
 				if(stmt->scope)
@@ -193,6 +233,8 @@ int ffproc(const ff_file * const ff, const ff_parser * const ffp, strstack * con
 			fatal(proc_varnode, stmt, vmap, stax, staxa, &pn);
 		}
 	}
+
+	fatal(var_pop, vmap, "^");
 
 finally:
 	path_free(pth);

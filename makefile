@@ -37,7 +37,7 @@ fab : main.o
 
 # .lex.c's from local or common_c .l's
 %.lex.c %.lex.h: %.l %.tab.h
-	${FLEX} -o $*.lex.c --header-file=$*.lex.h ${FLEXFLAGS} $<
+	${FLEX} -d -o $*.lex.c --header-file=$*.lex.h ${FLEXFLAGS} $<
 
 %.tok.c %.tok.h : %.tab.c
 	@echo "#ifndef _$(subst .,_,$(*F))_TOK_H"         							 	 >$(*D)/$(*F).tok.h

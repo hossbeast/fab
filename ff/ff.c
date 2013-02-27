@@ -52,30 +52,73 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 // [[ static ]]
 //
 
-static int findvars(ff_file * const restrict ff, ff_node * const restrict ffn)
+static int findvars(ff_file * const restrict ff, ff_node * const restrict root)
 {
-	if(ffn)
+	int find(ff_node * const restrict ffn)
 	{
-		if(ffn->type == FFN_VARREF)
+		if(ffn)
 		{
-			if(ff->affecting_varsl == ff->affecting_varsa)
+			if(ffn->type == FFN_VARREF)
 			{
-				int ns = ff->affecting_varsa ?: 10;
-				ns = ns + 2 * ns / 2;
+				// skip autovars
+				if((ffn->text[0] >= 'a' && ffn->text[0] <= 'z') || (ffn->text[0] >= 'A' && ffn->text[0] <= 'Z') || ffn->text[0] == '_')
+				{
+					if(ff->affecting_varsl == ff->affecting_varsa)
+					{
+						int ns = ff->affecting_varsa ?: 10;
+						ns = ns + 2 * ns / 2;
 
-				fatal(xrealloc, &ff->affecting_vars, sizeof(*ff->affecting_vars), ns, ff->affecting_varsa);
-				ff->affecting_varsa = ns;
+						fatal(xrealloc, &ff->affecting_vars, sizeof(*ff->affecting_vars), ns, ff->affecting_varsa);
+						ff->affecting_varsa = ns;
+					}
+
+					ff->affecting_vars[ff->affecting_varsl++] = ffn;
+				}
 			}
 
-			ff->affecting_vars[ff->affecting_varsl++] = ffn;
+			int x;
+			for(x = 0; x < ffn->listl; x++)
+				find(ffn->list[x]);
+
+			for(x = 0; x < sizeof(ffn->nodes_owned) / sizeof(ffn->nodes_owned[0]); x++)
+				find(ffn->nodes_owned[x]);
 		}
 
-		int x;
-		for(x = 0; x < ffn->listl; x++)
-			findvars(ff, ffn->list[x]);
+		finally : coda;
+	};
 
-		for(x = 0; x < sizeof(ffn->nodes_owned) / sizeof(ffn->nodes_owned[0]); x++)
-			findvars(ff, ffn->nodes_owned[x]);
+	// find all varrefs
+	fatal(find, root);
+
+	// sort
+	int cmp(const void * A, const void * B)
+	{
+		return strcmp((*(ff_node**)A)->text, (*(ff_node**)B)->text);
+	};
+	qsort(ff->affecting_vars, ff->affecting_varsl, sizeof(*ff->affecting_vars), cmp);
+
+	// uniq
+	int j;
+	for(j = ff->affecting_varsl - 1; j > 0; j--)
+	{
+		int i;
+		for(i = j - 1; i >= 0; i--)
+		{
+			if(strcmp(ff->affecting_vars[i]->text, ff->affecting_vars[j]->text))
+				break;
+		}
+
+		if((++i) < j)
+		{
+			memmove(
+				  &ff->affecting_vars[i]
+				, &ff->affecting_vars[j]
+				, (ff->affecting_varsl - j) * sizeof(ff->affecting_vars[0])
+			);
+
+			ff->affecting_varsl -= (j - i);
+			j = i;
+		}
 	}
 
 	finally : coda;
@@ -134,13 +177,11 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 	if(ff->type == FFT_DDISC)
 	{
-		// parse
-		ff_dsc_yyparse(p->p, &pp);
+		ff_dsc_yyparse(p->p, &pp);	// parse with ff/ff.dsc.y
 	}
 	else
 	{
-		// parse
-		ff_yyparse(p->p, &pp);
+		ff_yyparse(p->p, &pp);			// parse with ff/ff.y
 	}
 
 	// cleanup state for this parse
@@ -150,8 +191,6 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	{
 		if(ffn_postprocess(ff->ffn, p->gp) == 0)
 			qfail();
-
-		ffn_dump(ff->ffn);
 
 		if(ff->type == FFT_REGULAR)
 		{
@@ -170,6 +209,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		}
 
 		(*rff) = ff;
+		ff_dump(ff);
 	}
 
 	finally : coda;
@@ -321,6 +361,7 @@ static void ff_freefile(ff_file * ff)
 
 			free(ff->affected_dir);
 			free(ff->affected_gn);
+			free(ff->affecting_vars);
 		}
 
 		path_free(ff->path);
@@ -474,4 +515,34 @@ int ff_regular_affecting_gn(struct ff_file * const ff, gn * const gn)
 	}
 
 	finally : coda;	
+}
+
+void ff_dump(ff_file * const ff)
+{
+	if(log_would(L_FF | L_FFFILE))
+	{
+		log(L_FF | L_FFFILE			, "%20s : %s", "idstring", ff->idstring);
+		log(L_FF | L_FFFILE			, "%20s : %s", "type", FFT_STRING(ff->type));
+		log(L_FF | L_FFFILE			, "%20s : %s", "can-path", ff->path->can);
+		log(L_FF | L_FFFILE			, "%20s : %s", "abs-path", ff->path->abs);
+		log(L_FF | L_FFFILE			, "%20s : %s", "rel-path", ff->path->rel);
+		log(L_FF | L_FFFILE			, "%20s : %s", "path-in", ff->path->in);
+		log(L_FF | L_FFFILE			, "%20s : %s", "path-base", ff->path->base);
+		if(ff->type == FFT_REGULAR)
+		{
+			log(L_FF | L_FFFILE		, "%20s : %d", "var-closure", ff->affecting_varsl);
+			int x;
+			for(x = 0; x < ff->affecting_varsl; x++)
+			{
+				log(L_FF | L_FFFILE	, "  %20s : %s", "", ff->affecting_vars[x]->text);
+			}
+		}
+		else if(ff->type == FFT_DDISC)
+		{
+			log(L_FF | L_FFFILE		, "%20s : %s", "dscv-gn", ff->dscv_gn);
+		}
+	}
+
+	log(L_FF | L_FFFILE			, "%20s :", "tree");
+	ffn_dump(ff->ffn);
 }

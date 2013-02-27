@@ -26,9 +26,6 @@ int strstack_create(strstack ** const stk)
 	// initial allocation
 	fatal(xmalloc, stk, sizeof(**stk));
 	
-	(*stk)->a = 10;
-	fatal(xmalloc, (*stk)->v, sizeof((*stk)->v[0]) * (*stk)->a);
-
 	finally : coda;
 }
 

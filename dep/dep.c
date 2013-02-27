@@ -23,6 +23,8 @@
 #include "control.h"
 #include "xmem.h"
 
+#define restrict __restrict
+
 ///
 /// static
 ///
@@ -66,6 +68,7 @@ static int addrelation(dep_relations_set * set, gn * A, gn * B)
 
 static int dep_add_single(
 	  ff_node * ffn
+	, strstack * const restrict sstk
 	, map * vmap
 	, lstack *** stax
 	, int * staxa
@@ -130,6 +133,7 @@ static int dep_add_single(
 				// are specified relative to base path of the DDISC node itself
 				fatal(gn_edge_add
 					, ffn->loc.ff->dscv_gn->path->base
+					, sstk
 					, &A
 					, Al
 					, At
@@ -149,7 +153,9 @@ static int dep_add_single(
 				// dependencies arising from an FFN_DEPENDENCY node in a regular fabfile yield paths which
 				// are specified relative to the absolute directory of the fabfile
 				fatal(gn_edge_add
-					, ffn->loc.ff->path->abs_dir
+//					, ffn->loc.ff->path->abs_dir
+					, g_args.init_fabfile_path->abs_dir
+					, sstk
 					, &A
 					, Al
 					, At
@@ -210,8 +216,8 @@ static int dep_add_single(
 				, ffn->loc.f_col + 1
 				, ffn->loc.l_lin + 1
 				, ffn->loc.l_col + 1
-				, ((gn*)A)->path->can
-				, ((gn*)B)->path->can
+				, ((gn*)A)->idstring
+				, ((gn*)B)->idstring
 			);
 		}
 		LSTACK_ITEREND;
@@ -223,6 +229,7 @@ static int dep_add_single(
 
 static int dep_add_multi(
 	  ff_node * ffn
+	, strstack * const restrict sstk
 	, map * vmap
 	, lstack *** stax
 	, int * staxa
@@ -274,7 +281,15 @@ static int dep_add_multi(
 			}
 			else
 			{
-				fatal(gn_add, ffn->loc.ff->path->abs_dir, (*stax)[pl]->s[x].s[i].s, (*stax)[pl]->s[x].s[i].l, &r, &newa[i]);
+				fatal(gn_add
+//					, ffn->loc.ff->path->abs_dir
+					, g_args.init_fabfile_path->abs_dir
+					, sstk
+					, (*stax)[pl]->s[x].s[i].s
+					, (*stax)[pl]->s[x].s[i].l
+					, &r
+					, &newa[i]
+				);
 			}
 
 			fatal(lstack_obj_add, (*stax)[pr], r, LISTWISE_TYPE_GNLW);
@@ -325,6 +340,7 @@ static int dep_add_multi(
 				{
 					fatal(gn_edge_add
 						, ffn->loc.ff->dscv_gn->path->abs_dir
+						, sstk
 						, &A
 						, Al
 						, At
@@ -342,7 +358,9 @@ static int dep_add_multi(
 				else
 				{
 					fatal(gn_edge_add
-						, ffn->loc.ff->path->abs_dir
+//						, ffn->loc.ff->path->abs_dir
+						, g_args.init_fabfile_path->abs_dir
+						, sstk
 						, &A
 						, Al
 						, At
@@ -409,8 +427,6 @@ static int dep_add_multi(
 			}
 			LSTACK_ITEREND;
 		}
-
-
 	}
 
 	finally : coda;
@@ -422,6 +438,7 @@ static int dep_add_multi(
 
 int dep_process(
 	  ff_node * const ffn
+	, strstack * const sstk
 	, map * const vmap
 	, lstack *** const stax
 	, int * const staxa
@@ -437,11 +454,11 @@ int dep_process(
 
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(dep_add_single, ffn, vmap, stax, staxa, staxp, staxp + 1, first, newn, newr, block);
+		fatal(dep_add_single, ffn, sstk, vmap, stax, staxa, staxp, staxp + 1, first, newn, newr, block);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(dep_add_multi, ffn, vmap, stax, staxa, staxp, staxp + 1, first, newn, newr, block);
+		fatal(dep_add_multi, ffn, sstk, vmap, stax, staxa, staxp, staxp + 1, first, newn, newr, block);
 	}
 	else
 	{
@@ -467,7 +484,7 @@ int depblock_process(gn * const dscvgn, const depblock * const block, int * cons
 		int newb = 0;
 		int newr = 0;
 
-		fatal(gn_edge_add, 0, &A, Al, At, &B, Bl, Bt, 0, dscvgn, isweak, &newa, &newb, &newr);
+		fatal(gn_edge_add, 0, 0, &A, Al, At, &B, Bl, Bt, 0, dscvgn, isweak, &newa, &newb, &newr);
 
 		if(newnp)
 		{

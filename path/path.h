@@ -22,13 +22,12 @@ typedef struct
 			char *			can_dir;
 			char *			abs_dir;
 			char *			rel_dir;
-			char *			stem;				// stem
 			char *			name;
 			char *			ext;
 			char * 			ext_last;
 
-			char *	in;
-			char *	base;
+			char *			in;
+			char *			base;
 		};
 	};
 
@@ -39,8 +38,6 @@ typedef struct
 	int					can_dirl;
 	int					abs_dirl;
 	int					rel_dirl;
-
-	int					steml;
 
 	int					namel;
 	int					extl;

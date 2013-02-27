@@ -103,6 +103,8 @@ int main(int argc, char** argv)
 
 		// create map for variable definitions
 		fatal(map_create, &vmap, vmap_destructor);
+
+		// create stack for scope resolution
 		fatal(strstack_create, &sstk);
 
 		// populate cmdline-specified variables with sticky definitions
@@ -119,7 +121,7 @@ int main(int argc, char** argv)
 		fatal(var_push, vmap, "#", stax[staxp++], VV_LS, 0);
 
 		// process the fabfile tree, construct the graph
-		fatal(ffproc, iff, ffp, sstk, vmap, &stax, &staxa, staxp, &first);
+		fatal(ffproc, iff, ffp, sstk, vmap, &stax, &staxa, staxp, &first, 0);
 
 		// process hashblocks for fabfiles which have changed
 		if(hashblock_cmp(iff->hb))
@@ -191,6 +193,8 @@ int main(int argc, char** argv)
 			}
 			else if(first)
 			{
+				lista[0] = 1;
+				fatal(xmalloc, &list[0], sizeof(*list[0]) * lista[0]);
 				list[0][listl[0]++] = first;	// default target
 			}
 
@@ -274,6 +278,7 @@ int main(int argc, char** argv)
 		ff_freeparser(ffp);
 		bp_free(bp);
 		map_free(vmap);
+		strstack_free(sstk);
 
 		for(x = 0; x < staxa; x++)
 			lstack_free(stax[x]);

@@ -1,29 +1,59 @@
 # c.fab
-# provides discovery formula for .c files
-# provides fabrication formula for .c -> .o
+#  provides discovery formula for .c files
+#  provides fabrication formula for .c -> .o
+#  provides dependencies for .c -> .o
 #
-# bindings
+# var-closure
 #  cc
 #  cflags
-#  dirs
-#  paths
-#  discdirs
-#  discpaths
-#  fabdirs
-#  fabpaths
+#  dirs				- directories containing .c files
+#  rdirs      - directories containing .c files, recursive search
+#  paths      - paths to .c files
 #
-# usage
-#  >> std::c srcdir @ dirs
+#  discdirs   - (as above, but for discover only)
+#  discrdirs  - 
+#  discpaths  - 
+#
+#  fabdirs    - (as above, but for fabrication/dependency only)
+#  fabrdirs   - 
+#  fabpaths   - 
+#
 
+# fabrication, and dependency
+[
+	$paths				# paths
+	$fabpaths			# paths, fabrication only
 
-# c files
-[ [ $dirs $discdirs ] =>> lsr/xmf/<c> $discpaths $paths ] ~
-{
-	[ $cc $cflags ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ] =>> rx/xs/<o>
-}
+	[
+		$dirs				# directories
+		$fabdirs		# directories, fabrication only
+	] =>> ls
 
-# compile .o from .c, also provides the dependency
-[ [ $dirs $fabdirs ] =>> lsr/xs/<c>/<o>/y/dj/shift/pop $fabpaths $paths ] :: [ $< ] =>> rx/xs/<c>
+	[
+		$rdirs				# recursive directories
+		$rfabdirs		# recursive directories, fabrication only
+	] =>> lsr
+]	=>> xs/<c>/<o>/y/dj/shift :: [ $< ] =>> rx/xs/<c>
 {
 	[ $cc $cflags ] -c [ $@ ] =>> rx/ineed/xm/<c>/ss/u -o [ $@ ]
+}
+
+# discovery
+[
+	$paths				# paths
+	$dscpaths			# paths, discovery only
+
+	[
+		$dirs				# directories
+		$dscdirs		# directories, discovery only
+	] =>> ls
+
+	[
+		$rdirs			# recursive directories
+		$rdscdirs		# recursive directories, discovery only
+	] =>> lsr
+] =>> xm/<c>
+~
+{
+	[ $cc $cflags ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ] =>> rx/xs/<o>
 }

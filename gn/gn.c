@@ -123,11 +123,10 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 	const char * canp	= s;						// canonical path for lookup
 	int canpl		= l ?: strlen(s);			// canp length
 
-	if(canpl > 4 && memcmp(canp, "/../", 4) == 0)
+	if(canpl > 4 && memcmp(canp, "/../", 4) == 0 && sstk)
 	{
-		char * sstr;
-		strstack_string(sstk, "/", &sstr);
-
+		char * sstr = 0;
+		fatal(strstack_string, sstk, "/", &sstr);
 		fatal(canon, canp + 2, canpl - 2, space, sizeof(space), sstr, CAN_REALPATH);
 
 		canp = space;
@@ -230,14 +229,25 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		// populate gna
 		if(Al > 4 && memcmp(A, "/../", 4) == 0)
 		{
-			char * sstr;
-			fatal(strstack_string, sstk, "/", &sstr);
-			fatal(path_create_canon, &(*gna)->path, "%s/%.*s", sstr, Al, A);
+			if(sstk)
+			{
+				char * sstr;
+				fatal(strstack_string, sstk, "/", &sstr);
+				fatal(path_create_canon, &(*gna)->path, "%s/%.*s", sstr, Al, A);
+			}
+			else
+			{
+				fatal(path_create_canon, &(*gna)->path, "%.*s", Al, A);
+			}
 		}
 		else if(base)
-			fatal(path_create, &(*gna)->path, base, "%.*s", Al ?: strlen(A), A);
+		{
+			fatal(path_create, &(*gna)->path, base, "%.*s", Al, A);
+		}
 		else
-			fatal(path_create_canon, &(*gna)->path, "%.*s", Al ?: strlen(A), A);
+		{
+			fatal(path_create_canon, &(*gna)->path, "%.*s", Al, A);
+		}
 
 		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
@@ -348,106 +358,6 @@ int gn_edge_add(
 	*B = gnb;
 
 	finally : coda;
-}
-
-void gn_dump(gn * gn)
-{
-	int x;
-	char space[128];
-
-	if(log_would(L_DG | L_DGRAPH))
-	{
-		// path properties
-		log(L_DG | L_DGRAPH, "%8s : %s", "can-path"	, gn->path->can);
-		log(L_DG | L_DGRAPH, "%8s : %s", "abs-path"	, gn->path->abs);
-		log(L_DG | L_DGRAPH, "%8s : %s", "rel-path"	, gn->path->rel);
-		log(L_DG | L_DGRAPH, "%8s : %s", "path-in"	, gn->path->in);
-		log(L_DG | L_DGRAPH, "%8s : %s", "path-base", gn->path->base);
-		log(L_DG | L_DGRAPH, "%8s : %u", "canhash"	, gn->path->can_hash);
-		log(L_DG | L_DGRAPH, "%8s : %s", "name"			, gn->path->name);
-		log(L_DG | L_DGRAPH, "%8s : %s", "ext"			, gn->path->ext);
-		log(L_DG | L_DGRAPH, "%8s : %s", "ext_last"	, gn->path->ext_last);
-
-		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn_designate(gn));
-
-		if(gn->designation == GN_DESIGNATION_PRIMARY)
-		{
-			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->hb_fab->size);
-			if(gn->hb_fab->mtime)
-			{
-				struct tm ltm;
-				localtime_r(&gn->hb_fab->mtime, &ltm);
-				strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
-
-				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-abs", space);
-				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - gn->hb_fab->mtime));
-			}
-			else
-			{
-				log(L_DG | L_DGRAPH, "%12s : %s", "mtime", "");
-			}
-		}
-
-		if(gn->flags & GN_FLAGS_CANFAB)
-		{
-			if(gn->fabv)
-			{
-				log(L_DG | L_DGRAPH, "%12s : (%s)[%3d,%3d - %3d,%3d]", "formula"
-					, ff_idstring(gn->fabv->fml->ffn->loc.ff)
-					, gn->fabv->fml->ffn->loc.f_lin + 1
-					, gn->fabv->fml->ffn->loc.f_col + 1
-					, gn->fabv->fml->ffn->loc.l_lin + 1
-					, gn->fabv->fml->ffn->loc.l_col + 1
-				);
-
-				if(gn->fabv->products_l > 1)
-				{
-					int x;
-					for(x = 0; x < gn->fabv->products_l; x++)
-						log(L_DG | L_DGRAPH, "%12s --> %s", "", gn->fabv->products[x]->path);
-				}
-			}
-			else
-			{
-				log(L_WARN | L_DG | L_DGRAPH, "%12s : %s", "formula", "(no formula)");
-			}
-		}
-
-		log(L_DG | L_DGRAPH, "%12s : %d", "height", gn->height);
-		log(L_DG | L_DGRAPH, "%12s : %d", "stage", gn->stage);
-
-		log(L_DG | L_DGRAPH, "%12s : %d", "needs", gn->needs.l);
-		for(x = 0; x < gn->needs.l; x++)
-		{
-			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
-				, ""
-				, gn->needs.e[x]->weak ? "*" : " "
-				, gn->needs.e[x]->B->idstring
-				, ff_idstring(gn->needs.e[x]->ffn->loc.ff)
-				, gn->needs.e[x]->ffn->loc.f_lin + 1
-				, gn->needs.e[x]->ffn->loc.f_col + 1
-				, gn->needs.e[x]->ffn->loc.l_lin + 1
-				, gn->needs.e[x]->ffn->loc.l_col + 1
-			);
-		}
-
-		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", gn->feeds.l);
-		for(x = 0; x < gn->feeds.l; x++)
-		{
-			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
-				, ""
-				, gn->feeds.e[x]->weak ? "*" : " "
-				, gn->feeds.e[x]->A->idstring
-				, ff_idstring(gn->feeds.e[x]->ffn->loc.ff)
-				, gn->feeds.e[x]->ffn->loc.f_lin + 1
-				, gn->feeds.e[x]->ffn->loc.f_col + 1
-				, gn->feeds.e[x]->ffn->loc.l_lin + 1
-				, gn->feeds.e[x]->ffn->loc.l_col + 1
-			);
-		}
-
-		log(L_DG | L_DGRAPH, "");
-	}
 }
 
 int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
@@ -740,6 +650,7 @@ void gn_teardown()
 	map_free(gn_nodes.by_path);
 }
 
+// necessary for a module to call which cannot include the struct gn definition
 char* gn_idstring(gn * const gn)
 {
 	return gn->idstring;
@@ -769,4 +680,119 @@ int gn_affected_ff_reg(gn * const gn, struct ff_file * const ff, int * const new
 	}
 
 	finally : coda;
+}
+
+void gn_dump(gn * gn)
+{
+	int x;
+	char space[128];
+
+	if(log_would(L_DG | L_DGRAPH))
+	{
+		// path properties
+		log(L_DG | L_DGRAPH, "%8s : %s", "can-path"	, gn->path->can);
+		log(L_DG | L_DGRAPH, "%8s : %s", "abs-path"	, gn->path->abs);
+		log(L_DG | L_DGRAPH, "%8s : %s", "rel-path"	, gn->path->rel);
+		log(L_DG | L_DGRAPH, "%8s : %s", "path-in"	, gn->path->in);
+		log(L_DG | L_DGRAPH, "%8s : %s", "path-base", gn->path->base);
+		log(L_DG | L_DGRAPH, "%8s : %u", "canhash"	, gn->path->can_hash);
+		log(L_DG | L_DGRAPH, "%8s : %s", "name"			, gn->path->name);
+		log(L_DG | L_DGRAPH, "%8s : %s", "ext"			, gn->path->ext);
+		log(L_DG | L_DGRAPH, "%8s : %s", "ext_last"	, gn->path->ext_last);
+
+		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn_designate(gn));
+
+		if(gn->designation == GN_DESIGNATION_PRIMARY)
+		{
+			if(gn->dscv)
+			{
+				log(L_DG | L_DGRAPH, "%12s : (%s)[%3d,%3d - %3d,%3d]", "dsc formula"
+					, ff_idstring(gn->dscv->fml->ffn->loc.ff)
+					, gn->dscv->fml->ffn->loc.f_lin + 1
+					, gn->dscv->fml->ffn->loc.f_col + 1
+					, gn->dscv->fml->ffn->loc.l_lin + 1
+					, gn->dscv->fml->ffn->loc.l_col + 1
+				);
+			}
+			else
+			{
+				log(L_WARN | L_DG | L_DGRAPH, "%12s : %s", "dsc formula", "(no formula)");
+			}
+
+			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->hb_fab->size);
+			if(gn->hb_fab->mtime)
+			{
+				struct tm ltm;
+				localtime_r(&gn->hb_fab->mtime, &ltm);
+				strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
+
+				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-abs", space);
+				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - gn->hb_fab->mtime));
+			}
+			else
+			{
+				log(L_DG | L_DGRAPH, "%12s : %s", "mtime", "");
+			}
+		}
+
+		if(gn->flags & GN_FLAGS_CANFAB)
+		{
+			if(gn->fabv)
+			{
+				log(L_DG | L_DGRAPH, "%12s : (%s)[%3d,%3d - %3d,%3d]", "fab formula"
+					, ff_idstring(gn->fabv->fml->ffn->loc.ff)
+					, gn->fabv->fml->ffn->loc.f_lin + 1
+					, gn->fabv->fml->ffn->loc.f_col + 1
+					, gn->fabv->fml->ffn->loc.l_lin + 1
+					, gn->fabv->fml->ffn->loc.l_col + 1
+				);
+
+				if(gn->fabv->products_l > 1)
+				{
+					int x;
+					for(x = 0; x < gn->fabv->products_l; x++)
+						log(L_DG | L_DGRAPH, "%12s --> %s", "", gn->fabv->products[x]->path);
+				}
+			}
+			else
+			{
+				log(L_WARN | L_DG | L_DGRAPH, "%12s : %s", "fab formula", "(no formula)");
+			}
+		}
+
+		log(L_DG | L_DGRAPH, "%12s : %d", "height", gn->height);
+		log(L_DG | L_DGRAPH, "%12s : %d", "stage", gn->stage);
+
+		log(L_DG | L_DGRAPH, "%12s : %d", "needs", gn->needs.l);
+		for(x = 0; x < gn->needs.l; x++)
+		{
+			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
+				, ""
+				, gn->needs.e[x]->weak ? "*" : " "
+				, gn->needs.e[x]->B->idstring
+				, ff_idstring(gn->needs.e[x]->ffn->loc.ff)
+				, gn->needs.e[x]->ffn->loc.f_lin + 1
+				, gn->needs.e[x]->ffn->loc.f_col + 1
+				, gn->needs.e[x]->ffn->loc.l_lin + 1
+				, gn->needs.e[x]->ffn->loc.l_col + 1
+			);
+		}
+
+		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", gn->feeds.l);
+		for(x = 0; x < gn->feeds.l; x++)
+		{
+			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
+				, ""
+				, gn->feeds.e[x]->weak ? "*" : " "
+				, gn->feeds.e[x]->A->idstring
+				, ff_idstring(gn->feeds.e[x]->ffn->loc.ff)
+				, gn->feeds.e[x]->ffn->loc.f_lin + 1
+				, gn->feeds.e[x]->ffn->loc.f_col + 1
+				, gn->feeds.e[x]->ffn->loc.l_lin + 1
+				, gn->feeds.e[x]->ffn->loc.l_col + 1
+			);
+		}
+
+		log(L_DG | L_DGRAPH, "");
+	}
 }

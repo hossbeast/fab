@@ -254,7 +254,7 @@ void ffn_dump(ff_node * const root)
 		int x;
 		if(ffn)
 		{
-			log(L_FF | L_FFTREE, "%*s%-20s%*s @ [%3d,%3d - %3d,%3d]"
+			log(L_FF | L_FFTREE, "%*s%-25s%*s @ [%3d,%3d - %3d,%3d]"
 				, lvl * 2, ""
 				, FFN_STRING(ffn->type)
 				, 70 - MIN(((lvl * 2) + 20), 70)
@@ -271,7 +271,7 @@ void ffn_dump(ff_node * const root)
 				for(x = 0; x < ffn->statementsl; x++)
 					dump(ffn->statements[x], lvl + 1);
 			}
-			if(ffn->type == FFN_DEPENDENCY)
+			else if(ffn->type == FFN_DEPENDENCY)
 			{
 				log(L_FF | L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
@@ -345,11 +345,6 @@ void ffn_dump(ff_node * const root)
 				);
 				for(x = 0; x < ffn->designationsl; x++)
 					dump(ffn->designations[x], lvl + 1);
-
-				log(L_FF | L_FFTREE, "%*s  %12s : %d"
-					, lvl * 2, ""
-					, "command", ffn->commandsl
-				);
 			}
 			else if(    ffn->type == FFN_VARASSIGN
 			         || ffn->type == FFN_VARPUSH

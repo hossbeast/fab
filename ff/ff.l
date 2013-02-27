@@ -164,7 +164,7 @@
 
 %%
 
-<INITIAL,list,checklw>[#][^\x00-\x1F\x7F-\xFF]*				{
+<INITIAL,list,checklw>[#][^\x00-\x08\x0a-\x1F\x7F-\xFF]*	{
 																												// single-line comments
 																												locify(yyextra, yylloc, yyleng, 0);
 																											}
