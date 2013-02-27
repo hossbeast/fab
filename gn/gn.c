@@ -126,8 +126,8 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 	if(canpl > 4 && memcmp(canp, "/../", 4) == 0 && sstk)
 	{
 		char * sstr = 0;
-		fatal(strstack_string, sstk, "/", &sstr);
-		fatal(canon, canp + 2, canpl - 2, space, sizeof(space), sstr, CAN_REALPATH);
+		fatal(strstack_string, sstk, "/..", "/", &sstr);
+		fatal(canon, canp + 4, canpl - 4, space, sizeof(space), sstr, CAN_REALPATH);
 
 		canp = space;
 		canpl = strlen(canp);
@@ -182,18 +182,20 @@ int gn_match(const char * const base, const char * const s, gn *** const r, int 
 				fatal(add, gn_nodes.e[x]);
 		}
 	}
-	else if(strlen(s) > 2 && s[0] == '.' && s[1] != '/')
+	else if(s[0] == '@')
 	{
 		// nofile
 		int d = 0;
 		d += snprintf(can + d, sizeof(can) - d, "/..");
 
-		const char * p[2] = { [0] = s };
+		const char * p[2] = { [0] = s + 1 };
 		while((p[1] = strstr(p[0], ".")))
 		{
-			d += snprintf(can + d, sizeof(can) - d, "%.*s", (int)(p[1] - p[0]), p[0]);
-			p[0] = p[1];
+			d += snprintf(can + d, sizeof(can) - d, "/%.*s", (int)(p[1] - p[0]), p[0]);
+			p[0] = p[1] + 1;
 		}
+
+		d += snprintf(can + d, sizeof(can) - d, "/%s", p[0]);
 
 		gn ** R = 0;
 		if((R = map_get(gn_nodes.by_path, can, strlen(can))))
@@ -227,18 +229,11 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		Al = Al ?: strlen(A);
 
 		// populate gna
-		if(Al > 4 && memcmp(A, "/../", 4) == 0)
+		if(Al > 4 && memcmp(A, "/../", 4) == 0 && sstk)
 		{
-			if(sstk)
-			{
-				char * sstr;
-				fatal(strstack_string, sstk, "/", &sstr);
-				fatal(path_create_canon, &(*gna)->path, "%s/%.*s", sstr, Al, A);
-			}
-			else
-			{
-				fatal(path_create_canon, &(*gna)->path, "%.*s", Al, A);
-			}
+			char * sstr;
+			fatal(strstack_string, sstk, "/..", "/", &sstr);
+			fatal(path_create_canon, &(*gna)->path, "%s/%.*s", sstr, Al - 4, A + 4);
 		}
 		else if(base)
 		{
@@ -690,15 +685,15 @@ void gn_dump(gn * gn)
 	if(log_would(L_DG | L_DGRAPH))
 	{
 		// path properties
-		log(L_DG | L_DGRAPH, "%8s : %s", "can-path"	, gn->path->can);
-		log(L_DG | L_DGRAPH, "%8s : %s", "abs-path"	, gn->path->abs);
-		log(L_DG | L_DGRAPH, "%8s : %s", "rel-path"	, gn->path->rel);
-		log(L_DG | L_DGRAPH, "%8s : %s", "path-in"	, gn->path->in);
-		log(L_DG | L_DGRAPH, "%8s : %s", "path-base", gn->path->base);
-		log(L_DG | L_DGRAPH, "%8s : %u", "canhash"	, gn->path->can_hash);
-		log(L_DG | L_DGRAPH, "%8s : %s", "name"			, gn->path->name);
-		log(L_DG | L_DGRAPH, "%8s : %s", "ext"			, gn->path->ext);
-		log(L_DG | L_DGRAPH, "%8s : %s", "ext_last"	, gn->path->ext_last);
+		log(L_DG | L_DGRAPH, "%10s : %s", "can-path"	, gn->path->can);
+		log(L_DG | L_DGRAPH, "%10s : %s", "abs-path"	, gn->path->abs);
+		log(L_DG | L_DGRAPH, "%10s : %s", "rel-path"	, gn->path->rel);
+		log(L_DG | L_DGRAPH, "%10s : %s", "path-in"	, gn->path->in);
+		log(L_DG | L_DGRAPH, "%10s : %s", "path-base", gn->path->base);
+		log(L_DG | L_DGRAPH, "%10s : %u", "canhash"	, gn->path->can_hash);
+		log(L_DG | L_DGRAPH, "%10s : %s", "name"			, gn->path->name);
+		log(L_DG | L_DGRAPH, "%10s : %s", "ext"			, gn->path->ext);
+		log(L_DG | L_DGRAPH, "%10s : %s", "ext_last"	, gn->path->ext_last);
 
 		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn_designate(gn));
 

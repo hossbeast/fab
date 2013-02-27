@@ -91,18 +91,39 @@ void strstack_pop(strstack * const stk)
 		stk->l--;
 }
 
-int strstack_string(strstack * const stk, const char * const d, char ** const r)
+int strstack_string(strstack * const stk, const char * const ldr, const char * const d, char ** const r)
 {
-	int dl = strlen(d);
+	int dl = 0;
+	int ldrl = 0;
+
+	if(d)
+		dl = strlen(d);
+
+	if(ldr)
+		ldrl = strlen(ldr);
+
+	stk->sl = 0;
+	while(stk->sa <= (stk->sl + ldrl))
+	{
+		int ns = stk->sa ?: 10;
+		ns = ns * 2 + ns / 2;
+
+		fatal(xrealloc, &stk->s, sizeof(*stk->s), ns, stk->sa);
+		stk->sa = ns;
+	}
+
+	memcpy(stk->s + stk->sl, ldr, ldrl);
+	stk->s[stk->sl + ldrl] = 0;
+	stk->sl += ldrl;
 
 	int x;
 	for(x = 0; x < stk->l; x++)
 	{
-		int r = stk->v[x].l;
-		if(x)
-			r += dl;
+		int t = stk->v[x].l;
+		if(stk->sl)
+			t += dl;
 
-		while(stk->sa <= (stk->sl + r))
+		while(stk->sa <= (stk->sl + t))
 		{
 			int ns = stk->sa ?: 10;
 			ns = ns * 2 + ns / 2;
@@ -111,7 +132,7 @@ int strstack_string(strstack * const stk, const char * const d, char ** const r)
 			stk->sa = ns;
 		}
 
-		if(x)
+		if(stk->sl)
 		{
 			memcpy(stk->s + stk->sl, d, dl);
 			stk->sl += dl;

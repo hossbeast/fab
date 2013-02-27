@@ -42,24 +42,75 @@ typedef struct
 
 /// var_undef
 //
-// pop all values off of a variables stack
+// SUMMARY
+//  pop all values off of a variables stack
 //
-int var_undef(map * const restrict vmap, const char * const restrict s, int * r)
+// PARAMETERS
+//  vmap  - variable map
+//  s     - target variable
+//  r     - set to 1 if the variable was successfully cleared
+//  stax  - stax
+//  staxa - stax alloc
+//  staxp - offset to next available stax
+//
+// RETURNS
+//  nonzero on success
+//
+int var_undef(map * const restrict vmap, const char * const restrict s, int * r, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 	__attribute__((nonnull));
 
 /// var_pop
 //
 // pop the top value off a variables stack, if any
 //
-int var_pop(map * const restrict vmap, const char * const restrict s)
+int var_pop(map * const restrict vmap, const char * const restrict s, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 	__attribute__((nonnull));
 
-/// var_push
+/// var_push_list
 //
-// push an lstack or alias onto a variables stack
+// SUMMARY
+//  take ownership of an lstack and push it onto a variables stack
 //
-int var_push(map * const restrict vmap, const char * const restrict s, void * const restrict v, const uint8_t t, int sticky)
+// PARAMETERS
+//  vmap   - variable map
+//  s      - target variable
+//  sticky - whether to create a sticky definition
+//  stax   - stax
+//  staxa  - stax alloc
+//  staxp  - offset to stax containing the definition
+//
+// RETURNS
+//  nonzero on success
+//
+int var_push_list(map * const restrict vmap, const char * const restrict s, int sticky, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 	__attribute__((nonnull(1, 2)));
+
+/// var_push_alias
+//
+// SUMMARY
+//  push an alias to another variable onto a variables stack
+//
+// PARAMETERS
+//  vmap   - variable map
+//  s      - target variable
+//  sticky - whether to create a sticky definition
+//  v      - name of aliased variable
+//
+// RETURNS
+//  nonzero on success
+//
+int var_push_alias(map * const restrict vmap, const char * const restrict s, int sticky, char * const restrict v)
+	__attribute__((nonnull));
+
+/// var_access
+//
+// access the value for a given variable
+//
+// RETURNS
+//  the definition, or listwise_identity if the variable is not defined, or has an empty definition stack
+//
+lstack * var_access(const map * const restrict vmap, const char * restrict s)
+	__attribute__((nonnull));
 
 /// var_container_free
 //

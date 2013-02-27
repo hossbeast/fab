@@ -47,7 +47,6 @@ int main(int argc, char** argv)
 	int domain()
 	{
 		ff_parser *					ffp = 0;				// fabfile parser
-		ff_file *						iff = 0;				// initial fabfile
 		bp *								bp = 0;					// buildplan 
 		map *								vmap = 0;				// variable lookup map
 		strstack *					sstk = 0;				// scope stack
@@ -90,14 +89,6 @@ int main(int argc, char** argv)
 		// create/cleanup tmp 
 		fatal(tmp_setup);
 
-		fatal(ff_mkparser, &ffp);
-
-		// parse the initial fabfile
-		fatal(ff_parse_path, ffp, g_args.init_fabfile_path, &iff);
-
-		if(!iff)
-			qfail();
-
 		// register object types with liblistwise
 		fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
 
@@ -106,6 +97,9 @@ int main(int argc, char** argv)
 
 		// create stack for scope resolution
 		fatal(strstack_create, &sstk);
+
+		// parse the initial fabfile
+		fatal(ff_mkparser, &ffp);
 
 		// populate cmdline-specified variables with sticky definitions
 		for(x = 0; x < g_args.varkeysl; x++)
@@ -120,14 +114,16 @@ int main(int argc, char** argv)
 		fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
 		fatal(var_push, vmap, "#", stax[staxp++], VV_LS, 0);
 
-		// process the fabfile tree, construct the graph
-		fatal(ffproc, iff, ffp, sstk, vmap, &stax, &staxa, staxp, &first, 0);
+		// parse, starting with the initial fabfile, construct the graph
+		fatal(ffproc, ffp, g_args.init_fabfile_path, sstk, vmap, &stax, &staxa, &staxp, &first, 0);
 
 		// process hashblocks for fabfiles which have changed
+		/* 
 		if(hashblock_cmp(iff->hb))
 		{
 			fatal(ff_regular_rewrite, iff);
 		}
+		*/
 
 		// comprehensive upfront dependency discovery on the entire graph
 		if(g_args.mode_ddsc == MODE_DDSC_UPFRONT)

@@ -65,9 +65,15 @@ void strstack_pop(strstack * const restrict stk)
 //
 // get a string representing stack contents
 //
+// PARAMETERS
+//  stk   - strstack instance
+//  [ldr] - prepended to the result string
+//  [d]   - delimiter stk members in the result string
+//  r     - results returned here - points to memory in the strstack instance
+//
 // returns nonzero on success
 //
-int strstack_string(strstack * const restrict stk, const char * const restrict d, char ** const restrict r)
-  __attribute__((nonnull));
+int strstack_string(strstack * const restrict stk, const char * const restrict ldr, const char * const restrict d, char ** const restrict r)
+  __attribute__((nonnull(1, 4)));
 
 #endif

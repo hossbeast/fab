@@ -73,7 +73,7 @@ static int dep_add_single(
 	, lstack *** stax
 	, int * staxa
 	, int pl
-	, int p
+	, int pr
 	, gn ** first
 	, int * newnp
 	, int * newrp
@@ -83,8 +83,7 @@ static int dep_add_single(
 	int i;
 	int j;
 
-	int pr = p;
-
+printf("dep_add_single\n");
 	// resolve the right-hand side
 	fatal(list_resolve, ffn->feeds, vmap, stax, staxa, pr);
 
@@ -92,23 +91,25 @@ static int dep_add_single(
 	LSTACK_ITERATE((*stax)[pl], i, goa);
 	if(goa)
 	{
+		void * A = 0;
+		int Al = 0;
+		int At = 0;
+		if((*stax)[pl]->s[0].s[i].type)
+		{
+			A = *(void**)(*stax)[pl]->s[0].s[i].s;
+			At = LISTWISE_TYPE_GNLW;
+printf("LHS=%s\n", ((gn*)A)->idstring);
+		}
+		else
+		{
+			A = (*stax)[pl]->s[0].s[i].s;
+			Al = (*stax)[pl]->s[0].s[i].l;
+printf("LHS=%.*s\n", Al, (char*)A);
+		}
+
 		LSTACK_ITERATE((*stax)[pr], j, gob);
 		if(gob)
 		{
-			void * A = 0;
-			int Al = 0;
-			int At = 0;
-			if((*stax)[pl]->s[0].s[i].type)
-			{
-				A = *(void**)(*stax)[pl]->s[0].s[i].s;
-				At = LISTWISE_TYPE_GNLW;
-			}
-			else
-			{
-				A = (*stax)[pl]->s[0].s[i].s;
-				Al = (*stax)[pl]->s[0].s[i].l;
-			}
-
 			void * B = 0;
 			int Bl = 0;
 			int Bt = 0;
@@ -116,11 +117,13 @@ static int dep_add_single(
 			{
 				B = *(void**)(*stax)[pr]->s[0].s[j].s;
 				Bt = LISTWISE_TYPE_GNLW;
+printf("RHS=%s\n", ((gn*)B)->idstring);
 			}
 			else
 			{
 				B = (*stax)[pr]->s[0].s[j].s;
 				Bl = (*stax)[pr]->s[0].s[j].l;
+printf("RHS=%.*s\n", Bl, (char*)B);
 			}
 
 			int newa = 0;

@@ -19,35 +19,37 @@ struct g_args_t g_args;
 static void usage()
 {
 	printf(
-"usage: fab [[options] [logopts] [product]]*\n"
+"usage: fab [[options] [logopts] [targets]]*\n"
 "   --help|-h for this message\n"
 "\n"
 " <node specifier> may be: \n"
-"  1.  text   : append to init-fabfile-rel-dir, relative path match\n"
+"  1.  text   : rel path match relative to init-fabfile-rel-dir\n"
 "  2. /text/  : regex match on abs/can/rel paths\n"
-"  3. <text>  : canonical path match\n"
-"  4. .text   : canonical path match with nofile notation\n"
+"  3. /text   : canonical path match\n"
+"  4. @text   : nofile match\n"
 "\n"
-"----------- [ product] ---------------------------------------------------------\n"
+"----------- [ targets ] --------------------------------------------------------\n"
 "\n"
 " <node specifier>        fabrication target\n"
 "\n"
 "----------- [ options ] --------------------------------------------------------\n"
 "\n"
+" execution modes\n"
+" -p                      create buildplan only\n"
+" -d <node specifier>     dump node(s)\n"
+"\n"
 " -b <node specifier>     invalidate node(s)\n"
 " -B                      invalidate-all\n"
 " -c                      set node identifier mode to GNID_CANON for logging\n"
-" -d <node specifier>     dump node(s)\n"
+" -j <number>             concurrency limit\n"
 " -f <path/to/fabfile>    path to initial fabfile\n"
 " -I <path/to/directory>  root directory for locating invocations\n"
-" -j <number>             concurrency limit\n"
-" -p                      create buildplan only\n"
-" -v <key=value>          provide sticky variable definition as key=value\n"
+" -v <key=value>          sticky variable definition\n"
 "\n"
 "----------- [ logopts ] --------------------------------------------------------\n"
 "\n"
-" +<log name> to enable logging\n"  
-" -<log name> to disable logging\n"  
+" +<log name> to enable logging category\n"  
+" -<log name> to disable logging category\n"  
 	);
 
 	int x;
@@ -254,51 +256,51 @@ int parse_args(int argc, char** argv)
 	log(L_PARAMS	, "%7sexpiration-policy  =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
-	log(L_ARGS | L_PARAMS		, " %s (%c) init-fabfile-can   =%s", "*", 'f', g_args.init_fabfile_path->can);
-	log(L_ARGS | L_PARAMS		, " %s (%c) init-fabfile-abs   =%s", "*", 'f', g_args.init_fabfile_path->abs);
-	log(L_ARGS | L_PARAMS		, " %s (%c) init-fabfile-rel   =%s", "*", 'f', g_args.init_fabfile_path->rel);
-	log(L_ARGS | L_PARAMS		, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
+	log(L_ARGS | L_PARAMS				, " %s (%c) init-fabfile-can   =%s", "*", 'f', g_args.init_fabfile_path->can);
+	log(L_ARGS | L_PARAMS				, " %s (%c) init-fabfile-abs   =%s", "*", 'f', g_args.init_fabfile_path->abs);
+	log(L_ARGS | L_PARAMS				, " %s (%c) init-fabfile-rel   =%s", "*", 'f', g_args.init_fabfile_path->rel);
+	log(L_ARGS | L_PARAMS				, " %s (%c) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", 'p', MODE_STR(g_args.mode_exec));
 	if(g_args.mode_exec == MODE_EXEC_BAKE)
 	{
-		log(L_ARGS | L_PARAMS		, " %s (%c) bakescript-path    =%s", strcmp(g_args.bakescript_path, DEFAULT_BAKE_PATH) == 0 ? " " : "*", 'k', g_args.bakescript_path);
+		log(L_ARGS | L_PARAMS			, " %s (%c) bakescript-path    =%s", strcmp(g_args.bakescript_path, DEFAULT_BAKE_PATH) == 0 ? " " : "*", 'k', g_args.bakescript_path);
 	}
-	log(L_ARGS | L_PARAMS		, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
-	log(L_ARGS | L_PARAMS		, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
+	log(L_ARGS | L_PARAMS				, " %s (%c) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'r', MODE_STR(g_args.mode_gnid));
+	log(L_ARGS | L_PARAMS				, " %s (%c) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'u', MODE_STR(g_args.mode_ddsc));
 	if(g_args.concurrency > 0)
-		snprintf(buf, sizeof(buf), "%d", g_args.concurrency);
+		snprintf(buf, sizeof(buf)	, "%d", g_args.concurrency);
 	else
-		snprintf(buf, sizeof(buf), "%s", "unbounded");
-	log(L_ARGS | L_PARAMS		, " %s (%c) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', buf);
-	log(L_ARGS | L_PARAMS		, " %s (%c) invalidations-all  =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
+		snprintf(buf, sizeof(buf)	, "%s", "unbounded");
+	log(L_ARGS | L_PARAMS				, " %s (%c) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', buf);
+	log(L_ARGS | L_PARAMS				, " %s (%c) invalidations-all  =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
 
 	for(x = 0; x < g_args.invokedirsl; x++)
-		log(L_ARGS | L_PARAMS	, " %s (%c) invokedirs(s)      =%s", "*", 'I', g_args.invokedirs[x]);
+		log(L_ARGS | L_PARAMS			, " %s (%c) invokedirs(s)      =%s", "*", 'I', g_args.invokedirs[x]);
 
 	if(!g_args.invalidationsz)
 	{
 		if(!g_args.invalidations)
-			log(L_ARGS | L_PARAMS	, " %s (%c) invalidations(s) =", " ", 'b');
+			log(L_ARGS | L_PARAMS		, " %s (%c) invalidations(s)   =", " ", 'b');
 		for(x = 0; x < g_args.invalidationsl; x++)
-			log(L_ARGS | L_PARAMS	, " %s (%c) invalidations(s) =%s", "*", 'b', g_args.invalidations[x]);
+			log(L_ARGS | L_PARAMS		, " %s (%c) invalidations(s)   =%s", "*", 'b', g_args.invalidations[x]);
 	}
 
 	if(!g_args.dumpnodesz)
 	{
 		if(!g_args.dumpnodes)
-			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnodes(s)     =", " ", 'd');
+			log(L_ARGS | L_PARAMS		, " %s (%c) dumpnodes(s)       =", " ", 'd');
 		for(x = 0; x < g_args.dumpnodesl; x++)         
-			log(L_ARGS | L_PARAMS	, " %s (%c) dumpnodes(s)     =%s", "*", 'd', g_args.dumpnodes[x]);
+			log(L_ARGS | L_PARAMS		, " %s (%c) dumpnodes(s)       =%s", "*", 'd', g_args.dumpnodes[x]);
 	}
 
 	if(!g_args.targets)
-		log(L_ARGS | L_PARAMS	, " %s (%c) target(s)          =", " ", ' ');
+		log(L_ARGS | L_PARAMS			, " %s (%c) target(s)          =", " ", ' ');
 	for(x = 0; x < g_args.targetsl; x++)
-		log(L_ARGS | L_PARAMS	, " %s (%c) target(s)          =%s", "*", ' ', g_args.targets[x]);
+		log(L_ARGS | L_PARAMS			, " %s (%c) target(s)          =%s", "*", ' ', g_args.targets[x]);
 
 	if(!g_args.varkeys)
-		log(L_ARGS | L_PARAMS , " %s (%c) var(s)             =", " ", ' ');
+		log(L_ARGS | L_PARAMS 		, " %s (%c) var(s)             =", " ", ' ');
 	for(x = 0; x < g_args.varkeysl; x++)
-		log(L_ARGS | L_PARAMS , " %s (%c) var(s)             =%s=%s", "*", 'v', g_args.varkeys[x], g_args.varvals[x]);
+		log(L_ARGS | L_PARAMS 		, " %s (%c) var(s)             =%s=%s", "*", 'v', g_args.varkeys[x], g_args.varvals[x]);
 
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 

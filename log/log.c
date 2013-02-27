@@ -55,8 +55,9 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
 	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
 	, { .v = L_HASHBLK	, .s = "HASHBLK"	, .d = "hashblock - read/write" }
-	, { .v = L_VARAUTO	, .s = "VARAUTO"	, .d = "automatic variable defintions" }
-	, { .v = L_VARUSER	, .s = "VARUSER"	, .d = "user-defined variable defintions" }
+	, { .v = L_VARAUTO	, .s = "VARAUTO"	, .d = "variable definitions - automatic" }
+	, { .v = L_VARUSER	, .s = "VARUSER"	, .d = "variable definitions - user-defined" }
+	, { .v = L_VAR			, .s = "VAR"			, .d = "variable definitions" }
 	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	, .d = "debug liblistwise invocations ** VERBOSE" }
 };
 
