@@ -13,6 +13,7 @@
 #include "var.h"
 #include "ts.h"
 #include "dep.h"
+#include "list.h"
 
 #include "log.h"
 #include "control.h"
@@ -121,25 +122,15 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 		{
 			(*ts)[x]->y = x;
 
-			// prepare lstack(s) for variables resident in this context
-			int pn = staxp;
-			if((*staxa) <= pn)
-			{
-				fatal(xrealloc, stax, sizeof(**stax), pn + 1, (*staxa));
-				(*staxa) = pn + 1;
-			}
-			if(!(*stax)[pn])
-				fatal(lstack_create, &(*stax)[pn]);
-			lstack_reset((*stax)[pn]);
-
 			// @ is a list of expected products of this eval context
 			// for a discovery formula, @ always contains exactly 1 element
-			fatal(lstack_obj_add, (*stax)[pn], (*ts)[x]->fmlv->products[0], LISTWISE_TYPE_GNLW);
+			fatal(list_ensure, stax, staxa, staxp);
+			fatal(lstack_obj_add, (*stax)[staxp], (*ts)[x]->fmlv->products[0], LISTWISE_TYPE_GNLW);
 
 			// render the formula
-			fatal(var_push, vmap, "@", (*stax)[pn++], VV_LS, 0);
-			fatal(fml_render, (*ts)[x], vmap, stax, staxa, pn, 1);
-			fatal(var_pop, vmap, "@");
+			fatal(var_push_list, vmap, "@", 0, stax, staxa, staxp);
+			fatal(fml_render, (*ts)[x], vmap, stax, staxa, staxp + 1, 1);
+			fatal(var_pop, vmap, "@", stax, staxa, staxp);
 		}
 
 		// execute all formulas in parallel

@@ -72,8 +72,8 @@ static int dep_add_single(
 	, map * vmap
 	, lstack *** stax
 	, int * staxa
+	, int staxp
 	, int pl
-	, int pr
 	, gn ** first
 	, int * newnp
 	, int * newrp
@@ -82,6 +82,8 @@ static int dep_add_single(
 {
 	int i;
 	int j;
+
+	int pr = staxp;
 
 printf("dep_add_single\n");
 	// resolve the right-hand side
@@ -236,8 +238,8 @@ static int dep_add_multi(
 	, map * vmap
 	, lstack *** stax
 	, int * staxa
+	, int staxp
 	, int pl
-	, int p
 	, gn ** first
 	, int * newnp
 	, int * newrp
@@ -252,17 +254,8 @@ static int dep_add_multi(
 	int x;
 	for(x = 0; x < (*stax)[pl]->l; x++)
 	{
-		int pr = p;
-
 		// prepare space for new variable definition list
-		if((*staxa) <= pr)
-		{
-			fatal(xrealloc, &(*stax), sizeof(*(*stax)), pr + 1, (*staxa));
-			(*staxa) = pr + 1;
-		}
-		if(!(*stax)[pr])
-			fatal(lstack_create, &(*stax)[pr]);
-		lstack_reset((*stax)[pr]);
+		fatal(list_ensure, stax, staxa, staxp);
 
 		// populate the "<" variable (left-hand side)
 		newal = (*stax)[pl]->s[x].l;
@@ -295,17 +288,17 @@ static int dep_add_multi(
 				);
 			}
 
-			fatal(lstack_obj_add, (*stax)[pr], r, LISTWISE_TYPE_GNLW);
+			fatal(lstack_obj_add, (*stax)[staxp], r, LISTWISE_TYPE_GNLW);
 		}
 
 		// resolve the right-hand side
-		fatal(var_push, vmap, "<", (*stax)[pr++], VV_LS, 0);
-		fatal(list_resolve, ffn->feeds, vmap, &(*stax), staxa, pr);
-		fatal(var_pop, vmap, "<");
+		fatal(var_push_list, vmap, "<", 0, stax, staxa, staxp);
+		fatal(list_resolve, ffn->feeds, vmap, stax, staxa, staxp);
+		fatal(var_pop, vmap, "<", stax, staxa, staxp);
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
 		{
-			LSTACK_ITERATE((*stax)[pr], j, gob);
+			LSTACK_ITERATE((*stax)[staxp], j, gob);
 			if(gob)
 			{
 				void * A = 0;
@@ -325,15 +318,15 @@ static int dep_add_multi(
 				void * B = 0;
 				int Bl = 0;
 				int Bt = 0;
-				if((*stax)[pr]->s[0].s[j].type)
+				if((*stax)[staxp]->s[0].s[j].type)
 				{
-					B = *(void**)(*stax)[pr]->s[0].s[j].s;
+					B = *(void**)(*stax)[staxp]->s[0].s[j].s;
 					Bt = LISTWISE_TYPE_GNLW;
 				}
 				else
 				{
-					B = (*stax)[pr]->s[0].s[j].s;
-					Bl = (*stax)[pr]->s[0].s[j].l;
+					B = (*stax)[staxp]->s[0].s[j].s;
+					Bl = (*stax)[staxp]->s[0].s[j].l;
 				}
 
 				int newb = 0;
@@ -457,11 +450,11 @@ int dep_process(
 
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(dep_add_single, ffn, sstk, vmap, stax, staxa, staxp, staxp + 1, first, newn, newr, block);
+		fatal(dep_add_single, ffn, sstk, vmap, stax, staxa, staxp + 1, staxp, first, newn, newr, block);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(dep_add_multi, ffn, sstk, vmap, stax, staxa, staxp, staxp + 1, first, newn, newr, block);
+		fatal(dep_add_multi, ffn, sstk, vmap, stax, staxa, staxp + 1, staxp, first, newn, newr, block);
 	}
 	else
 	{

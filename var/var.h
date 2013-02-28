@@ -56,14 +56,14 @@ typedef struct
 // RETURNS
 //  nonzero on success
 //
-int var_undef(map * const restrict vmap, const char * const restrict s, int * r, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int var_undef(map * const restrict vmap, const char * const restrict s, int * r, lstack *** const restrict stax, int * const restrict staxa, int staxp)
 	__attribute__((nonnull));
 
 /// var_pop
 //
 // pop the top value off a variables stack, if any
 //
-int var_pop(map * const restrict vmap, const char * const restrict s, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int var_pop(map * const restrict vmap, const char * const restrict s, lstack *** const restrict stax, int * const restrict staxa, int staxp)
 	__attribute__((nonnull));
 
 /// var_push_list
@@ -82,7 +82,7 @@ int var_pop(map * const restrict vmap, const char * const restrict s, lstack ***
 // RETURNS
 //  nonzero on success
 //
-int var_push_list(map * const restrict vmap, const char * const restrict s, int sticky, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int var_push_list(map * const restrict vmap, const char * const restrict s, int sticky, lstack *** const restrict stax, int * const restrict staxa, int staxp)
 	__attribute__((nonnull(1, 2)));
 
 /// var_push_alias

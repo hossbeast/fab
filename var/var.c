@@ -39,7 +39,7 @@ static int ensure_exists(map * const restrict vmap, const char * const restrict 
 // select logtag based on variable name
 #define TAG(x) (((x[0] >= 'a' && x[0] <= 'z') || (x[0] >= 'A' && x[0] <= 'Z') || x[0] == '_') ? L_VARUSER : L_VARAUTO)
 
-int var_undef(map * const vmap, const char * const s, int * r, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int var_undef(map * const vmap, const char * const s, int * r, lstack *** const stax, int * const staxa, int staxp)
 {
 	var_container * cc = 0;
 	fatal(ensure_exists, vmap, s, &cc);
@@ -50,41 +50,56 @@ int var_undef(map * const vmap, const char * const s, int * r, lstack *** const 
 	}
 	else
 	{
+		*r = 1;
 		log(L_VAR | TAG(s), "%10s(%s)", "undef", s);
 
-		*r = 1;
-		cc->l = 0;
+		while(cc->l)
+		{
+			// disclaim ownership of this stack instance
+			// ensure enough lstacks are allocated
+			if((*staxa) <= staxp)
+			{
+				int ns = (*staxa) ?: 10;
+				ns = ns * 2 + ns / 2;
+
+				fatal(xrealloc, stax, sizeof(**stax), ns, (*staxa));
+				(*staxa) = ns;
+			}
+
+			(*stax)[staxp++] = cc->v[--cc->l].ls;
+		}
 	}
 
 	finally : coda;
 }
 
-int var_pop(map * const vmap, const char * const s, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int var_pop(map * const vmap, const char * const s, lstack *** const stax, int * const staxa, int staxp)
 {
 	var_container * cc = 0;
 	fatal(ensure_exists, vmap, s, &cc);
 	
 	log(L_VAR | TAG(s), "%10s(%s)", "pop", s);
 
-	// disclaim ownership of this stack instance
-	// ensure enough lstacks are allocated
-	if((*staxa) <= staxp)
-	{
-		int ns = (*staxa) ?: 10;
-		ns = ns * 2 + ns / 2;
-
-		fatal(xrealloc, stax, sizeof(**stax), ns, (*staxa));
-		(*staxa) = ns;
-	}
-	
-
 	if(cc->l)
-		cc->l--;
+	{
+		// disclaim ownership of this stack instance
+		// ensure enough lstacks are allocated
+		if((*staxa) <= staxp)
+		{
+			int ns = (*staxa) ?: 10;
+			ns = ns * 2 + ns / 2;
+
+			fatal(xrealloc, stax, sizeof(**stax), ns, (*staxa));
+			(*staxa) = ns;
+		}
+
+		(*stax)[staxp] = cc->v[--cc->l].ls;
+	}
 
 	finally : coda;
 }
 
-int var_push_alias(map * const restrict vmap, const char * const restrict s, int sticky, char * const restrict v)
+int var_push_alias(map * const vmap, const char * const s, int sticky, char * const v)
 {
 	var_container * cc = 0;
 	fatal(ensure_exists, vmap, s, &cc);
@@ -97,7 +112,7 @@ int var_push_alias(map * const restrict vmap, const char * const restrict s, int
 		cc->a = ns;
 	}
 
-	cc->v[cc->l].ls = v;
+	cc->v[cc->l].alias = v;
 	cc->v[cc->l].type = VV_AL;
 	cc->v[cc->l].sticky = sticky;
 	cc->l++;
@@ -107,7 +122,7 @@ int var_push_alias(map * const restrict vmap, const char * const restrict s, int
 	finally : coda;
 }
 
-int var_push_list(map * const restrict vmap, const char * const restrict s, int sticky, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int var_push_list(map * const vmap, const char * const s, int sticky, lstack *** const stax, int * const staxa, int staxp)
 {
 	var_container * cc = 0;
 	fatal(ensure_exists, vmap, s, &cc);
@@ -124,17 +139,8 @@ int var_push_list(map * const restrict vmap, const char * const restrict s, int 
 	cc->v[cc->l].sticky = sticky;
 
 	// claim this lstack instance
-	cc->v[cc->l].ls = (*stax)[(*staxp)];
-	(*stax)[(*staxp)] = 0;
-/*
-	memcpy(
-		  &(*stax)[(*staxp)]
-		, &(*stax)[(*staxp)+1]
-		, ((*staxa) - (*staxp) - 1) * sizeof((*stax)[0])
-	);
-	(*staxa)--;
-*/
-
+	cc->v[cc->l].ls = (*stax)[staxp];
+	(*stax)[staxp] = 0;
 	cc->l++;
 
 	if(log_would(L_VAR | TAG(s)))
@@ -144,7 +150,7 @@ int var_push_list(map * const restrict vmap, const char * const restrict s, int 
 		int i = 0;
 		int j = 0;
 
-		lstack * ls = v;
+		lstack * ls = cc->v[cc->l - 1].ls;
 
 		LSTACK_ITERATE(ls, i, go);
 		if(go)

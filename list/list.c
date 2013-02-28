@@ -35,9 +35,6 @@ int ensure(lstack *** stax, int * staxa, int staxp)
 	if(!(*stax)[staxp])
 		fatal(lstack_create, &(*stax)[staxp]);
 
-	// reset the lstack we are using, advance staxp
-	lstack_reset((*stax)[staxp]);
-
 	finally : coda;
 }
 
