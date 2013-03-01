@@ -253,7 +253,7 @@ int ff_parse_path(const ff_parser * const p, const path * const in_path, ff_file
 
 finally:
 	free(b);
-	if(fd)
+	if(fd > 0)
 		close(fd);
 coda;
 }
@@ -283,7 +283,7 @@ int ff_parse(const ff_parser * const p, const char * const fp, const char * cons
 
 finally:
 	free(b);
-	if(fd)
+	if(fd > 0)
 		close(fd);
 	path_free(pth);
 coda;

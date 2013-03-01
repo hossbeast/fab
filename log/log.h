@@ -107,6 +107,12 @@ int log_add(const char* fmt, ...);
 //
 int log_finish(const char* fmt, ...);
 
+/// log_written
+//
+// returns the number of bytes written thus far for a log_start/log_add* sequence
+//
+int log_written();
+
 /// log_teardown
 //
 // cleanup

@@ -85,7 +85,7 @@ static int dep_add_single(
 
 	int pr = staxp;
 
-printf("dep_add_single\n");
+//printf("dep_add_single\n");
 	// resolve the right-hand side
 	fatal(list_resolve, ffn->feeds, vmap, stax, staxa, pr);
 
@@ -100,13 +100,13 @@ printf("dep_add_single\n");
 		{
 			A = *(void**)(*stax)[pl]->s[0].s[i].s;
 			At = LISTWISE_TYPE_GNLW;
-printf("LHS=%s\n", ((gn*)A)->idstring);
+//printf("LHS=%s\n", ((gn*)A)->idstring);
 		}
 		else
 		{
 			A = (*stax)[pl]->s[0].s[i].s;
 			Al = (*stax)[pl]->s[0].s[i].l;
-printf("LHS=%.*s\n", Al, (char*)A);
+//printf("LHS=%.*s\n", Al, (char*)A);
 		}
 
 		LSTACK_ITERATE((*stax)[pr], j, gob);
@@ -119,13 +119,13 @@ printf("LHS=%.*s\n", Al, (char*)A);
 			{
 				B = *(void**)(*stax)[pr]->s[0].s[j].s;
 				Bt = LISTWISE_TYPE_GNLW;
-printf("RHS=%s\n", ((gn*)B)->idstring);
+//printf("RHS=%s\n", ((gn*)B)->idstring);
 			}
 			else
 			{
 				B = (*stax)[pr]->s[0].s[j].s;
 				Bl = (*stax)[pr]->s[0].s[j].l;
-printf("RHS=%.*s\n", Bl, (char*)B);
+//printf("RHS=%.*s\n", Bl, (char*)B);
 			}
 
 			int newa = 0;
@@ -137,7 +137,8 @@ printf("RHS=%.*s\n", Bl, (char*)B);
 				// dependencies arising from an FFN_DEPENDENCY node in a DDISC fabfile yield paths which
 				// are specified relative to base path of the DDISC node itself
 				fatal(gn_edge_add
-					, ffn->loc.ff->dscv_gn->path->base
+//					, ffn->loc.ff->dscv_gn->path->base
+					, g_args.init_fabfile_path->abs_dir
 					, sstk
 					, &A
 					, Al
@@ -179,6 +180,9 @@ printf("RHS=%.*s\n", Bl, (char*)B);
 				fatal(ff_regular_affecting_gn, ffn->loc.ff, A);
 				fatal(ff_regular_affecting_gn, ffn->loc.ff, B);
 			}
+
+			// if A was a string, gn_edge_add has just made it a gn*
+			At = 1;
 
 			if(block && block->block)
 			{
@@ -291,42 +295,42 @@ static int dep_add_multi(
 			fatal(lstack_obj_add, (*stax)[staxp], r, LISTWISE_TYPE_GNLW);
 		}
 
-		// resolve the right-hand side
-		fatal(var_push_list, vmap, "<", 0, stax, staxa, staxp);
-		fatal(list_resolve, ffn->feeds, vmap, stax, staxa, staxp);
-		fatal(var_pop, vmap, "<", stax, staxa, staxp);
+		// resolve the right-hand side in the context of $<
+		fatal(var_push_list, vmap, "<", 0, (*stax)[staxp], 0);
+		fatal(list_resolve, ffn->feeds, vmap, stax, staxa, staxp + 1);
+		fatal(var_pop, vmap, "<", 0);
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
 		{
-			LSTACK_ITERATE((*stax)[staxp], j, gob);
+			void * A = 0;
+			int Al = 0;
+			int At = 0;
+			if((*stax)[pl]->s[x].s[i].type)
+			{
+				A = *(void**)(*stax)[pl]->s[x].s[i].s;
+				At = LISTWISE_TYPE_GNLW;
+			}
+			else
+			{
+				A = (*stax)[pl]->s[x].s[i].s;
+				Al = (*stax)[pl]->s[x].s[i].l;
+			}
+
+			LSTACK_ITERATE((*stax)[staxp + 1], j, gob);
 			if(gob)
 			{
-				void * A = 0;
-				int Al = 0;
-				int At = 0;
-				if((*stax)[pl]->s[x].s[i].type)
-				{
-					A = *(void**)(*stax)[pl]->s[x].s[i].s;
-					At = LISTWISE_TYPE_GNLW;
-				}
-				else
-				{
-					A = (*stax)[pl]->s[x].s[i].s;
-					Al = (*stax)[pl]->s[x].s[i].l;
-				}
-
 				void * B = 0;
 				int Bl = 0;
 				int Bt = 0;
-				if((*stax)[staxp]->s[0].s[j].type)
+				if((*stax)[staxp + 1]->s[0].s[j].type)
 				{
-					B = *(void**)(*stax)[staxp]->s[0].s[j].s;
+					B = *(void**)(*stax)[staxp + 1]->s[0].s[j].s;
 					Bt = LISTWISE_TYPE_GNLW;
 				}
 				else
 				{
-					B = (*stax)[staxp]->s[0].s[j].s;
-					Bl = (*stax)[staxp]->s[0].s[j].l;
+					B = (*stax)[staxp + 1]->s[0].s[j].s;
+					Bl = (*stax)[staxp + 1]->s[0].s[j].l;
 				}
 
 				int newb = 0;
@@ -375,6 +379,9 @@ static int dep_add_multi(
 					fatal(ff_regular_affecting_gn, ffn->loc.ff, A);
 					fatal(ff_regular_affecting_gn, ffn->loc.ff, B);
 				}
+
+				// if A was a string, gn_edge_add has just made it a gn*
+				At = 1;
 
 				if(block && block->block)
 				{

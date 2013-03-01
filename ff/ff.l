@@ -9,24 +9,25 @@
 	#include "macros.h"
 
 	#define TOPSTATE(x) (x->states_n ? x->states[x->states_n-1] : 0)
-	#define STATENAME(x)														\
-		  x == INITIAL					? "INITIAL"						\
-		: x == quoteword				? "quoteword"					\
-		: x == generatorws			? "generatorws"				\
-		: x == generator				? "generator"					\
-		: x == generatorlf			? "generatorlf"				\
-		: x == command					? "command"						\
-		: x == commandchecklit	? "commandchecklit"		\
-		: x == commandlit				? "commandlit"				\
-		: x == checklw					? "checklw"						\
-		: x == varref						? "varref"						\
-		: x == nofile						? "nofile"						\
-		: x == multilinecomment	? "multilinecomment"	\
-		: x == list							? "list" : "UNKNWN"
+	#define STATENAME(x)																			\
+		  x == INITIAL					? "INITIAL"											\
+		: x == quoteword				? "quoteword"										\
+		: x == generatorws			? "generatorws"									\
+		: x == generator				? "generator"										\
+		: x == generatorlf			? "generatorlf"									\
+		: x == command					? "command"											\
+		: x == commandchecklit	? "commandchecklit"							\
+		: x == commandlit				? "commandlit"									\
+		: x == list							? "list"												\
+		: x == checklw					? "checklw"											\
+		: x == varref						? "varref"											\
+		: x == nofile						? "nofile"											\
+		: x == multilinecomment	? "multilinecomment" : "UNKNWN"
 
 	#define PUSHSTATE(a, b)																				\
 		do {																												\
-			log(L_FF | L_FFSTAT, "%s:%d -> %s:%d"											\
+			log(L_FF | L_FFSTAT, "(%2d) %s:%d -> %s:%d"								\
+				, b->states_n																						\
 				, STATENAME(TOPSTATE(b)), TOPSTATE(b), STATENAME(a), a	\
 			);																												\
 			b->states[b->states_n++] = a;															\
@@ -38,8 +39,10 @@
 			int x = TOPSTATE(b);																				\
 			yy_pop_state(b->scanner);																		\
 			b->states_n--;																							\
-			log(L_FF | L_FFSTAT, "%s:%d <- %s:%d"												\
-				, STATENAME(TOPSTATE(b)), TOPSTATE(b), STATENAME(x), x);	\
+			log(L_FF | L_FFSTAT, "(%2d) %s:%d <- %s:%d @ %d"									\
+				, b->states_n																							\
+				, STATENAME(TOPSTATE(b)), TOPSTATE(b), STATENAME(x), x	\
+				, __LINE__	);\
 		} while(0)
 
 	#define PTOKEN(s, l, t, lc, ln)																						\
@@ -233,7 +236,7 @@
 																												PUSHSTATE(generatorws, yyextra);
 																												return LEX(LW);
 																											}
-<checklw>[^\x00-\x1F\x7F-\xFF]												{ POPSTATE(yyextra); yyless(0); }
+<checklw>[^\x01-\x1F\x7F-\xFF]												{ POPSTATE(yyextra); yyless(0); }
 
 <INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:,()\-|*~=<>^{]+	{
 																												// string of anything else 
@@ -272,7 +275,7 @@
 																												POPSTATE(yyextra);
 																												return LEX(WORD);
 																											}
-<varref>[a-zA-Z_][a-zA-Z0-9_]*									{
+<varref>[a-zA-Z_][a-zA-Z0-9_]*												{
 																												POPSTATE(yyextra);
 																												return LEX(WORD);
 																											}

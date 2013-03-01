@@ -14,6 +14,7 @@
 #include "var.h"
 #include "args.h"
 
+#include "list.h"
 #include "log.h"
 #include "control.h"
 #include "macros.h"
@@ -24,7 +25,7 @@ int bake_bp(
 	, map * const vmap
 	, lstack *** const stax
 	, int * const staxa
-	, int p
+	, int staxp
 	, ts *** const ts
 	, int * const tsa
 	, const int * const tsw
@@ -78,24 +79,16 @@ int bake_bp(
 			(*ts)[y]->y = y;
 
 			// prepare lstack(s) for variables resident in this context
-			int pn = p;
-			if((*staxa) <= pn)
-			{
-				fatal(xrealloc, stax, sizeof(**stax), pn + 1, (*staxa));
-				(*staxa) = pn + 1;
-			}
-			if(!(*stax)[pn])
-				fatal(lstack_create, &(*stax)[pn]);
-			lstack_reset((*stax)[pn]);
+			fatal(list_ensure, stax, staxa, staxp);
 
 			// @ is a list of expected products of this eval context
 			for(k = 0; k < (*ts)[y]->fmlv->products_l; k++)
-				fatal(lstack_obj_add, (*stax)[pn], (*ts)[y]->fmlv->products[k], LISTWISE_TYPE_GNLW);
+				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[y]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
 			// render the formula
-			fatal(var_push, vmap, "@", (*stax)[pn++], VV_LS, 0);
-			fatal(fml_render, (*ts)[y], vmap, stax, staxa, pn, 0);
-			fatal(var_pop, vmap, "@");
+			fatal(var_push_list, vmap, "@", 0, (*stax)[staxp], 0);
+			fatal(fml_render, (*ts)[y], vmap, stax, staxa, staxp + 1, 0);
+			fatal(var_pop, vmap, "@", 0);
 
 			// index occupied by this formula in the stage.stage in which this formula is executed
 			int index = y;

@@ -4,9 +4,10 @@
 #include <listwise.h>
 
 #include "map.h"
+#include "ff/ff.h"
 
-#define VV_LS		1			// lstack
-#define VV_AL		2			// alias
+#define VV_LS		2			// lstack
+#define VV_AL		3			// alias
 
 #define restrict __restrict
 
@@ -49,22 +50,19 @@ typedef struct
 //  vmap  - variable map
 //  s     - target variable
 //  r     - set to 1 if the variable was successfully cleared
-//  stax  - stax
-//  staxa - stax alloc
-//  staxp - offset to next available stax
 //
 // RETURNS
 //  nonzero on success
 //
-int var_undef(map * const restrict vmap, const char * const restrict s, int * r, lstack *** const restrict stax, int * const restrict staxa, int staxp)
-	__attribute__((nonnull));
+int var_undef(map * const restrict vmap, const char * const restrict s, int * r, const ff_node * const restrict o)
+	__attribute__((nonnull(1,2,3)));
 
 /// var_pop
 //
 // pop the top value off a variables stack, if any
 //
-int var_pop(map * const restrict vmap, const char * const restrict s, lstack *** const restrict stax, int * const restrict staxa, int staxp)
-	__attribute__((nonnull));
+int var_pop(map * const restrict vmap, const char * const restrict s, const ff_node * const restrict o)
+	__attribute__((nonnull(1,2)));
 
 /// var_push_list
 //
@@ -75,15 +73,13 @@ int var_pop(map * const restrict vmap, const char * const restrict s, lstack ***
 //  vmap   - variable map
 //  s      - target variable
 //  sticky - whether to create a sticky definition
-//  stax   - stax
-//  staxa  - stax alloc
-//  staxp  - offset to stax containing the definition
+//  ls     - lstack instance
 //
 // RETURNS
 //  nonzero on success
 //
-int var_push_list(map * const restrict vmap, const char * const restrict s, int sticky, lstack *** const restrict stax, int * const restrict staxa, int staxp)
-	__attribute__((nonnull(1, 2)));
+int var_push_list(map * const restrict vmap, const char * const restrict s, int sticky, lstack * const restrict ls, const ff_node * const restrict o)
+	__attribute__((nonnull(1,2,4)));
 
 /// var_push_alias
 //
@@ -99,8 +95,8 @@ int var_push_list(map * const restrict vmap, const char * const restrict s, int 
 // RETURNS
 //  nonzero on success
 //
-int var_push_alias(map * const restrict vmap, const char * const restrict s, int sticky, char * const restrict v)
-	__attribute__((nonnull));
+int var_push_alias(map * const restrict vmap, const char * const restrict s, int sticky, char * const restrict v, const ff_node * const restrict o)
+	__attribute__((nonnull(1,2,4)));
 
 /// var_access
 //

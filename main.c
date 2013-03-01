@@ -106,13 +106,13 @@ int main(int argc, char** argv)
 		{
 			fatal(list_ensure, &stax, &staxa, staxp);
 			fatal(lstack_add, stax[staxp], g_args.varvals[x], strlen(g_args.varvals[x]));
-			fatal(var_push, vmap, g_args.varkeys[x], stax[staxp++], VV_LS, 1);
+			fatal(var_push_list, vmap, g_args.varkeys[x], 0, stax[staxp++], 0);
 		}
 
 		// use up one list and populate the # variable (relative directory path to the initial fabfile)
 		fatal(list_ensure, &stax, &staxa, staxp);
 		fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
-		fatal(var_push, vmap, "#", stax[staxp++], VV_LS, 0);
+		fatal(var_push_list, vmap, "#", 0, stax[staxp++], 0);
 
 		// parse, starting with the initial fabfile, construct the graph
 		fatal(ffproc, ffp, g_args.init_fabfile_path, sstk, vmap, &stax, &staxa, &staxp, &first, 0);

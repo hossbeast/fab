@@ -53,7 +53,7 @@ static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p
 		}
 		else if(list->elements[x]->type == FFN_VARREF)
 		{
-dprintf(2, "varref %s = {", list->elements[x]->name);
+//dprintf(2, "varref %s = {", list->elements[x]->name);
 
 			lstack * vls = 0;
 			if((vls = var_access(vmap, list->elements[x]->name)))
@@ -64,19 +64,19 @@ dprintf(2, "varref %s = {", list->elements[x]->name);
 				{
 					if(vls->s[0].s[i].type)
 					{
-	dprintf(2, " [%d]=%s", i, ((gn*)*(void**)vls->s[0].s[i].s)->idstring);
+//	dprintf(2, " [%d]=%s", i, ((gn*)*(void**)vls->s[0].s[i].s)->idstring);
 						fatal(lstack_obj_add, (*stax)[p], *(void**)vls->s[0].s[i].s, LISTWISE_TYPE_GNLW);
 					}
 					else
 					{
-	dprintf(2, " [%d]=%.*s", i, vls->s[0].s[i].l, vls->s[0].s[i].s);
+//	dprintf(2, " [%d]=%.*s", i, vls->s[0].s[i].l, vls->s[0].s[i].s);
 						fatal(lstack_add, (*stax)[p], vls->s[0].s[i].s, vls->s[0].s[i].l);
 					}
 				}
 				ITEREND;
 			}
 
-dprintf(2, " } \n");
+//dprintf(2, " } \n");
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
@@ -123,7 +123,7 @@ int list_ensure(lstack *** stax, int * staxa, int staxp)
 int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
 {
 	fatal(ensure, stax, staxa, staxp);
-dprintf(2, "resolveto -> %d\n", staxp);
+//dprintf(2, "resolveto -> %d\n", staxp);
 	fatal(render, list, vmap, stax, staxa, staxp);
 
 	finally : coda;
@@ -133,18 +133,8 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int st
 {
 	fatal(ensure, stax, staxa, staxp);
 	lstack_reset((*stax)[staxp]);
-dprintf(2, "resolve   -> %d\n", staxp);
+//dprintf(2, "resolve   -> %d\n", staxp);
 	fatal(render, list, vmap, stax, staxa, staxp);
-
-	finally : coda;
-}
-
-int list_empty(lstack *** stax, int * staxa, int staxp)
-{
-	fatal(ensure, stax, staxa, staxp);
-	lstack_reset((*stax)[staxp]);
-
-	(*stax)[staxp]->sel.all = 1;
 
 	finally : coda;
 }

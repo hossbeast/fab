@@ -29,21 +29,20 @@ static int proc_varnode(ff_node * restrict stmt, map * const restrict  vmap, lst
 		{
 			fatal(list_resolve, stmt->definition, vmap, stax, staxa, (*staxp));
 			v = (*stax)[(*staxp)++];
-			t = VV_LS;
+			t = 1;
 		}
 		else if(stmt->definition->type == FFN_VARREF)
 		{
 			v = stmt->definition->text;
-			t = VV_AL;
+			t = 0;
 		}
 	}
 	else
 	{
 		if(stmt->type == FFN_VARPUSH || stmt->type == FFN_VARDESIGNATE)
 		{
-			fatal(list_empty, stax, staxa, (*staxp));
-			v = (*stax)[(*staxp)++];
-			t = VV_LS;
+			v = listwise_identity;
+			t = 1;
 		}
 	}
 
@@ -57,23 +56,32 @@ static int proc_varnode(ff_node * restrict stmt, map * const restrict  vmap, lst
 		{
 			// clear the stack for this variable
 			int r;
-			fatal(var_undef, vmap, var, &r);
+			fatal(var_undef, vmap, var, &r, stmt);
 
 			// r is whether it was actually cleared, which is prevented by a sticky value on top
 			if(r && v)
 			{
-				fatal(var_push, vmap, var, v, t, 0);
+				if(t)
+					fatal(var_push_list, vmap, var, 0, v, stmt);
+				else
+					fatal(var_push_alias, vmap, var, 0, v, stmt);
 			}
 		}
 		else if(stmt->type == FFN_VARPUSH || stmt->type == FFN_VARDESIGNATE)
 		{
-			fatal(var_push, vmap, var, v, t, 0);
+			if(t)
+				fatal(var_push_list, vmap, var, 0, v, stmt);
+			else
+				fatal(var_push_alias, vmap, var, 0, v, stmt);
 		}
 		else if(stmt->type == FFN_VARPOP)
 		{
 			if(v)
 			{
-				fatal(var_push, vmap, var, v, t, 0);
+				if(t)
+					fatal(var_push_list, vmap, var, 0, v, stmt);
+				else
+					fatal(var_push_alias, vmap, var, 0, v, stmt);
 			}
 		}
 	}
@@ -109,7 +117,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 	}
 
 	// $^ is the path to THIS fabfile
-	fatal(var_push, vmap, "^", (*stax)[(*staxp)++], VV_LS, 0);
+	fatal(var_push_list, vmap, "^", 0, (*stax)[(*staxp)++], 0);
 
 	// process the fabfile tree, construct the graph
 	for(x = 0; x < ff->ffn->statementsl; x++)
@@ -118,16 +126,21 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 
 		if(stmt->type == FFN_INVOCATION)
 		{
-			fatal(list_resolve, stmt->modules, vmap, stax, staxa, (*staxp));
+			int pn = *staxp;
+			fatal(list_resolve, stmt->modules, vmap, stax, staxa, pn);
+
+//printf("INVOCATIONS : %d @ %d\n", (*stax)[(*staxp)]->s[0].l, (*staxp));
 
 			// iterate all referenced modules
-			LSTACK_ITERATE((*stax)[(*staxp)], y, go);
+			LSTACK_ITERATE((*stax)[pn], y, go);
 			if(go)
 			{
 				// module reference string
 				char * s;
 				int l;
-				fatal(lstack_string, (*stax)[p], 0, y, &s, &l);
+				fatal(lstack_string, (*stax)[pn], 0, y, &s, &l);
+
+//printf("INVOKE %.*s @ %d\n", l, s, y);
 
 				// handle module notation 
 				int ismod = 0;
@@ -184,7 +197,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 				if(stmt->flags & FFN_GATED)
 				{
 					for(i = 0; i < ff->affecting_varsl; i++)
-						fatal(var_push, vmap, ff->affecting_vars[i]->text, 0, 0, 0);
+						fatal(var_push_list, vmap, ff->affecting_vars[i]->text, 0, listwise_identity, stmt);
 				}
 
 				// push values for all designations
@@ -207,14 +220,14 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 				{
 					int k;
 					for(k = 0; k < stmt->designations[i]->varsl; k++)
-						fatal(var_pop, vmap, stmt->designations[i]->vars[k]->text);
+						fatal(var_pop, vmap, stmt->designations[i]->vars[k]->text, stmt->designations[i]);
 				}
 
 				// gate pop
 				if(stmt->flags & FFN_GATED)
 				{
 					for(i = 0; i < ff->affecting_varsl; i++)
-						fatal(var_pop, vmap, ff->affecting_vars[i]->text);
+						fatal(var_pop, vmap, ff->affecting_vars[i]->text, stmt);
 				}
 			}
 			LSTACK_ITEREND;
@@ -233,7 +246,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		}
 	}
 
-	fatal(var_pop, vmap, "^");
+	fatal(var_pop, vmap, "^", 0);
 
 finally:
 	path_free(pth);

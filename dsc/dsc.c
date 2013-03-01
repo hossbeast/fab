@@ -128,9 +128,9 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 			fatal(lstack_obj_add, (*stax)[staxp], (*ts)[x]->fmlv->products[0], LISTWISE_TYPE_GNLW);
 
 			// render the formula
-			fatal(var_push_list, vmap, "@", 0, stax, staxa, staxp);
+			fatal(var_push_list, vmap, "@", 0, (*stax)[staxp], 0);
 			fatal(fml_render, (*ts)[x], vmap, stax, staxa, staxp + 1, 1);
-			fatal(var_pop, vmap, "@", stax, staxa, staxp);
+			fatal(var_pop, vmap, "@", 0);
 		}
 
 		// execute all formulas in parallel

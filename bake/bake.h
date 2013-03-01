@@ -14,7 +14,7 @@ int bake_bp(
 	, map * const restrict vmap
 	, lstack *** const restrict stax
 	, int * const restrict staxa
-	, int p
+	, int staxp
 	, ts *** const restrict ts
 	, int * const restrict tsa
 	, const int * const restrict tsw

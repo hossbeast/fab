@@ -450,6 +450,11 @@ int log_finish(const char* fmt, ...)
 	return 0;
 }
 
+int log_written()
+{
+	return o_space_l;
+}
+
 int log(const uint64_t e, const char* fmt, ...)
 {
 	if(log_vstart(e))

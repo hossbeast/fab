@@ -50,17 +50,4 @@ int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int 
 int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
 	__attribute__((nonnull));
 
-/// list_empty
-//
-// SUMMARY
-//  create an empty list
-//
-// PARAMETERS
-//  stax  - listwise stax
-//  staxa - listwise stax
-//  staxp - offset to next free stax
-//
-int list_empty(lstack *** stax, int * staxa, int staxp)
-	__attribute__((nonnull));
-
 #endif

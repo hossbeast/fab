@@ -15,6 +15,7 @@
 #include "control.h"
 #include "xmem.h"
 #include "macros.h"
+#include "list.h"
 
 //
 // static
@@ -545,7 +546,7 @@ int bp_eval(bp * const bp, int * const poison)
 	finally : coda;
 }
 
-int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int p, ts *** ts, int * tsa, int * tsw)
+int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
 	int tsl				= 0;		// thread count
 	int tot				= 0;		// total targets
@@ -577,24 +578,16 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int p, ts *** ts,
 			(*ts)[i]->y = y;
 
 			// prepare lstack(s) for variables resident in this context
-			int pn = p;
-			if((*staxa) <= pn)
-			{
-				fatal(xrealloc, stax, sizeof(**stax), pn + 1, (*staxa));
-				(*staxa) = pn + 1;
-			}
-			if(!(*stax)[pn])
-				fatal(lstack_create, &(*stax)[pn]);
-			lstack_reset((*stax)[pn]);
+			fatal(list_ensure, stax, staxa, staxp);
 
 			// @ is a list of expected products of this eval context
 			for(k = 0; k < (*ts)[i]->fmlv->products_l; k++)
-				fatal(lstack_obj_add, (*stax)[pn], (*ts)[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
+				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
 			// render the formula
-			fatal(var_push, vmap, "@", (*stax)[pn++], VV_LS, 0);
-			fatal(fml_render, (*ts)[i], vmap, stax, staxa, pn, 1);
-			fatal(var_pop, vmap, "@");
+			fatal(var_push_list, vmap, "@", 0, (*stax)[staxp], 0);
+			fatal(fml_render, (*ts)[i], vmap, stax, staxa, staxp + 1, 1);
+			fatal(var_pop, vmap, "@", 0);
 
 			i++;
 		}
