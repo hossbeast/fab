@@ -72,6 +72,69 @@ static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
 	return gn_depth_traversal_nodes_needsward(r, logic);
 }
 
+static int depblock_process(const depblock * const db, gn * const dscvgn, int * const newnp, int * const newrp)
+{
+	int i;
+	int k;
+	for(i = 0; i < db->block->setsl; i++)
+	{
+		gn * A = 0;
+
+		int newa = 0;
+		fatal(gn_add
+			, db->block->sets[i].nbase
+			, 0
+			, db->block->sets[i].needs
+			, 0
+			, &A
+			, &newa
+		);
+
+		if(newnp)
+			(*newnp) += newa;
+
+		for(k = 0; k < db->block->sets[i].feedsl; k++)
+		{
+			void * B = db->block->sets[i].feeds[k];
+
+			int newa = 0;
+			int newb = 0;
+			int newr = 0;
+
+			fatal(gn_edge_add
+				, db->block->sets[i].fbase
+				, 0
+				, (void*)&A, 0, 1
+				, &B, 0, 0
+				, 0
+				, dscvgn
+				, db->block->sets[i].weak
+				, 0
+				, &newb
+				, &newr
+			);
+
+			if(newnp)
+				(*newnp) += newb;
+			if(newrp)
+				(*newrp) += newr;
+
+			log(L_DG | L_DGDEPS | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
+				, "S"
+				, newa ? "x" : ""
+				, newb ? "x" : ""
+				, newr ? "x" : ""
+				, dscvgn->idstring
+				, "", "cache", ""
+				, ((gn*)A)->idstring
+				, ((gn*)B)->idstring
+			);
+		}
+	}
+
+	finally : coda;
+}
+
 //
 // public
 //
@@ -191,7 +254,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 		{
 			log(L_DSC | L_DSCEXEC, "(cache) %-9s %s", gn_designate(cache[x]), cache[x]->idstring);
 
-			fatal(depblock_process, cache[x], cache[x]->dscv_block, &newn, &newr);
+			fatal(depblock_process, cache[x]->dscv_block, cache[x], &newn, &newr);
 			fatal(depblock_close, cache[x]->dscv_block);
 		}
 

@@ -29,43 +29,6 @@
 /// static
 ///
 
-static int addrelation(dep_relations_set * set, gn * A, gn * B)
-{
-	if(set->needsl == 0)
-	{
-		if(snprintf(set->needs[0], sizeof(set->needs[0]), "%s", A->path->abs) >= sizeof(set->needs[0]))
-		{
-			return 0; // path too long
-		}
-		else
-		{
-			set->needsl++;
-		}
-	}
-	else if(strcmp(set->needs[0], A->path->abs))
-	{
-		return 0; // needs[0] is some other file
-	}
-
-	if(set->feedsl < sizeof(set->feeds) / sizeof(set->feeds[0]))
-	{
-		if(snprintf(set->feeds[set->feedsl], sizeof(set->feeds[0]), "%s", B->path->abs) >= sizeof(set->feeds[0]))
-		{
-			return 0;	// path too long
-		}
-		else
-		{
-			set->feedsl++;
-		}
-	}
-	else
-	{
-		return 0;	// too many feeds
-	}
-
-	return 1;
-}
-
 static int dep_add_single(
 	  ff_node * ffn
 	, strstack * const restrict sstk
@@ -187,7 +150,7 @@ static int dep_add_single(
 			if(block && block->block)
 			{
 				// attempt to add the relation to the block
-				if(addrelation(ffn->flags & FFN_WEAK ? &block->block->weak : &block->block->strong, ((gn*)A), ((gn*)B)) == 0)
+				if(depblock_addrelation(block, ((gn*)A)->path, ((gn*)B)->path, ffn->flags & FFN_WEAK) == 0)
 				{
 					xfree(&block->block);
 				}
@@ -386,7 +349,7 @@ static int dep_add_multi(
 				if(block && block->block)
 				{
 					// attempt to add the relation to the block
-					if(addrelation(ffn->flags & FFN_WEAK ? &block->block->weak : &block->block->strong, ((gn*)A), ((gn*)B)) == 0)
+					if(depblock_addrelation(block, ((gn*)A)->path, ((gn*)B)->path, ffn->flags & FFN_WEAK) == 0)
 					{
 						xfree(&block->block);
 					}
@@ -466,69 +429,6 @@ int dep_process(
 	else
 	{
 		fail("bad flags : %hhu", ffn->flags);
-	}
-
-	finally : coda;
-}
-
-int depblock_process(gn * const dscvgn, const depblock * const block, int * const newnp, int * const newrp)
-{
-	int process(char * _A, char * _B, int isweak)
-	{
-		void * A = _A;
-		int Al = strlen(A);
-		int At = 0;
-
-		void * B = _B;
-		int Bl = strlen(B);
-		int Bt = 0;
-
-		int newa = 0;
-		int newb = 0;
-		int newr = 0;
-
-		fatal(gn_edge_add, 0, 0, &A, Al, At, &B, Bl, Bt, 0, dscvgn, isweak, &newa, &newb, &newr);
-
-		if(newnp)
-		{
-			(*newnp) += newa;
-			(*newnp) += newb;
-		}
-		if(newrp)
-		{
-			(*newrp) += newr;
-		}
-
-		log(L_DG | L_DGDEPS | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%3s,%3s - %3s,%3s] %s -> %s"
-			, "S"
-			, newa ? "x" : ""
-			, newb ? "x" : ""
-			, newr ? "x" : ""
-			, dscvgn->idstring
-			, "-", "-", "-", "-"
-			, ((gn*)A)->idstring
-			, ((gn*)B)->idstring
-		);
-
-		finally : coda;
-	};
-
-	int x;
-	int y;
-	for(x = 0; x < block->block->weak.needsl; x++)
-	{
-		for(y = 0; y < block->block->weak.feedsl; y++)
-		{
-			fatal(process, block->block->weak.needs[x], block->block->weak.feeds[y], 1);
-		}
-	}
-
-	for(x = 0; x < block->block->strong.needsl; x++)
-	{
-		for(y = 0; y < block->block->strong.feedsl; y++)
-		{
-			fatal(process, block->block->strong.needs[x], block->block->strong.feeds[y], 0);
-		}
 	}
 
 	finally : coda;

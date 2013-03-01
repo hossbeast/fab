@@ -30,7 +30,7 @@
 	] =>> ls
 
 	[
-		$rdirs				# recursive directories
+		$rdirs			# recursive directories
 		$rfabdirs		# recursive directories, fabrication only
 	] =>> lsr
 ]	=>> xs/<c>/<o>/y/dj/shift :: [ $< ] =>> rx/xs/<c>

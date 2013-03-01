@@ -43,19 +43,5 @@ int dep_process(
 )
 	__attribute__((nonnull(1,3,4,5)));
 
-
-/// depblock_process
-//
-// SUMMARY
-//  process a depblock to create directed edges in the dependency graph
-//
-int depblock_process(
-	  gn * const restrict dscvgn
-	, const depblock * const restrict block
-	, int * const restrict newnp
-	, int * const restrict newrp
-)
-	__attribute__((nonnull(1,2)));
-
 #undef restrict
 #endif

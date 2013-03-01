@@ -93,7 +93,7 @@ static int proc_varnode(ff_node * restrict stmt, map * const restrict  vmap, lst
 /// public
 ///
 
-int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** const first, const uint32_t flags)
+int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, const uint32_t flags)
 {
 	int x;
 	int y;
@@ -235,6 +235,8 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		else if(stmt->type == FFN_DEPENDENCY)
 		{
 			fatal(dep_process, stmt, sstk, vmap, stax, staxa, (*staxp), first, 0, 0, 0);
+			if(first && *first)
+				first = 0;
 		}
 		else if(stmt->type == FFN_FORMULA)
 		{

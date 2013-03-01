@@ -1,18 +1,37 @@
 #ifndef _DEPBLOCK_H
 #define _DEPBLOCK_H
 
+#include <stdint.h>
 #include <sys/types.h>
+
+#include "path.h"
 
 #define restrict __restrict
 
+/*
+** for now a single depblock corresponds to a single PRIMARY file, and may only contain
+** relations A -> B from a single node A
+**
+**
+**
+*/
+
 typedef struct
 {
-	int		needsl;
-	char	needs[1][256];
+	uint8_t setsl;
 
-	int		feedsl;
-	char	feeds[128][256];
-} dep_relations_set;
+	struct
+	{
+		uint8_t	weak;
+
+		char		needs[256];
+		char		nbase[256];
+
+		uint8_t	feedsl;
+		char		feeds[128][256];
+		char		fbase[256];
+	} sets[1];
+} dep_relations;
 
 typedef struct depblock
 {
@@ -25,11 +44,7 @@ typedef struct depblock
 	int								fd;
 
 	// dependency block
-	struct
-	{
-		dep_relations_set weak;
-		dep_relations_set strong;
-	}								* block;
+	dep_relations *		block;
 } depblock;
 
 int depblock_create(depblock ** const restrict block, const char * const restrict dirfmt, ...)
@@ -51,6 +66,9 @@ int depblock_close(depblock * const restrict block)
 	__attribute__((nonnull));
 
 int depblock_write(const depblock * const restrict block)
+	__attribute__((nonnull));
+
+int depblock_addrelation(depblock * const restrict block, const path * const restrict A, const path * const restrict B, int isweak)
 	__attribute__((nonnull));
 
 #undef restrict

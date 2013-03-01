@@ -120,6 +120,8 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 	memcpy(&n->loc, loc, locz);
 	n->loc.ff = ff;
 
+//if(n->loc.ff = 
+
 	va_list va;
 	va_start(va, type);
 
@@ -259,7 +261,10 @@ void ffn_dump(ff_node * const root)
 				, FFN_STRING(ffn->type)
 				, 70 - MIN(((lvl * 2) + 20), 70)
 				, ""
-				, ffn->loc.f_lin, ffn->loc.f_col, ffn->loc.l_lin, ffn->loc.l_col
+				, ffn->loc.f_lin + 1
+				, ffn->loc.f_col + 1
+				, ffn->loc.l_lin + 1
+				, ffn->loc.l_col + 1
 			);
 
 			if(ffn->type == FFN_STMTLIST)

@@ -10,6 +10,7 @@
 
 #define SATURATION 0.45f			/* for 1000-sized table, reallocate at 450 keys */
 
+#define restrict __restrict
 typedef struct
 {
 	size_t	a;			// allocated, in elements

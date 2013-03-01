@@ -172,13 +172,14 @@ int gn_match(const char * const base, const char * const s, gn *** const r, int 
 
 	char can[512];
 
-	if(s[0] == '/' && s[strlen(s) - 1] == '/')
+	int sl = strlen(s);
+	if(s[0] == '/' && s[sl - 1] == '/')
 	{
 		// regex match (substring for now)
 		int x;
 		for(x = 0; x < gn_nodes.l; x++)
 		{
-			if(strstr(gn_nodes.e[x]->path->can, s) || strstr(gn_nodes.e[x]->path->abs, s) || strstr(gn_nodes.e[x]->path->rel, s))
+			if(xstrstr(gn_nodes.e[x]->path->can, 0, s + 1, sl - 2, 0) || xstrstr(gn_nodes.e[x]->path->abs, 0, s + 1, sl - 2, 0) || xstrstr(gn_nodes.e[x]->path->rel, 0, s + 1, sl - 2, 0))
 				fatal(add, gn_nodes.e[x]);
 		}
 	}
@@ -338,7 +339,7 @@ int gn_edge_add(
 				rel->type = GN_RELATION_REGULAR;
 				rel->ffn = reg_ffn;
 			}
-			if(dscv_gn)
+			else if(dscv_gn)
 			{
 				rel->type = GN_RELATION_CACHED;
 				rel->dscv_gn = dscv_gn;
@@ -685,15 +686,15 @@ void gn_dump(gn * gn)
 	if(log_would(L_DG | L_DGRAPH))
 	{
 		// path properties
-		log(L_DG | L_DGRAPH, "%10s : %s", "can-path"	, gn->path->can);
-		log(L_DG | L_DGRAPH, "%10s : %s", "abs-path"	, gn->path->abs);
-		log(L_DG | L_DGRAPH, "%10s : %s", "rel-path"	, gn->path->rel);
-		log(L_DG | L_DGRAPH, "%10s : %s", "path-in"	, gn->path->in);
-		log(L_DG | L_DGRAPH, "%10s : %s", "path-base", gn->path->base);
-		log(L_DG | L_DGRAPH, "%10s : %u", "canhash"	, gn->path->can_hash);
-		log(L_DG | L_DGRAPH, "%10s : %s", "name"			, gn->path->name);
-		log(L_DG | L_DGRAPH, "%10s : %s", "ext"			, gn->path->ext);
-		log(L_DG | L_DGRAPH, "%10s : %s", "ext_last"	, gn->path->ext_last);
+		log(L_DG | L_DGRAPH, "%12s : %s", "can-path"	, gn->path->can);
+		log(L_DG | L_DGRAPH, "%12s : %s", "abs-path"	, gn->path->abs);
+		log(L_DG | L_DGRAPH, "%12s : %s", "rel-path"	, gn->path->rel);
+		log(L_DG | L_DGRAPH, "%12s : %s", "path-in"	, gn->path->in);
+		log(L_DG | L_DGRAPH, "%12s : %s", "path-base", gn->path->base);
+		log(L_DG | L_DGRAPH, "%12s : %u", "canhash"	, gn->path->can_hash);
+		log(L_DG | L_DGRAPH, "%12s : %s", "name"			, gn->path->name);
+		log(L_DG | L_DGRAPH, "%12s : %s", "ext"			, gn->path->ext);
+		log(L_DG | L_DGRAPH, "%12s : %s", "ext_last"	, gn->path->ext_last);
 
 		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn_designate(gn));
 
@@ -708,10 +709,6 @@ void gn_dump(gn * gn)
 					, gn->dscv->fml->ffn->loc.l_lin + 1
 					, gn->dscv->fml->ffn->loc.l_col + 1
 				);
-			}
-			else
-			{
-				log(L_WARN | L_DG | L_DGRAPH, "%12s : %s", "dsc formula", "(no formula)");
 			}
 
 			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->hb_fab->size);
@@ -761,31 +758,57 @@ void gn_dump(gn * gn)
 		log(L_DG | L_DGRAPH, "%12s : %d", "needs", gn->needs.l);
 		for(x = 0; x < gn->needs.l; x++)
 		{
-			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
-				, ""
-				, gn->needs.e[x]->weak ? "*" : " "
-				, gn->needs.e[x]->B->idstring
-				, ff_idstring(gn->needs.e[x]->ffn->loc.ff)
-				, gn->needs.e[x]->ffn->loc.f_lin + 1
-				, gn->needs.e[x]->ffn->loc.f_col + 1
-				, gn->needs.e[x]->ffn->loc.l_lin + 1
-				, gn->needs.e[x]->ffn->loc.l_col + 1
-			);
+			if(gn->needs.e[x]->type == GN_RELATION_REGULAR)
+			{
+				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
+					, ""
+					, gn->needs.e[x]->weak ? "*" : " "
+					, gn->needs.e[x]->B->idstring
+					, ff_idstring(gn->needs.e[x]->ffn->loc.ff)
+					, gn->needs.e[x]->ffn->loc.f_lin + 1
+					, gn->needs.e[x]->ffn->loc.f_col + 1
+					, gn->needs.e[x]->ffn->loc.l_lin + 1
+					, gn->needs.e[x]->ffn->loc.l_col + 1
+				);
+			}
+			else if(gn->needs.e[x]->type == GN_RELATION_CACHED)
+			{
+				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (DSC:%s)[%6s%s%6s]"
+					, ""
+					, gn->needs.e[x]->weak ? "*" : " "
+					, gn->needs.e[x]->B->idstring
+					, gn->needs.e[x]->dscv_gn->idstring
+					, "", "cache", ""
+				);
+			}
 		}
 
 		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", gn->feeds.l);
 		for(x = 0; x < gn->feeds.l; x++)
 		{
-			log(L_DG | L_DGRAPH, "%10s %s --> %-25s @ (%s)[%3d,%3d - %3d,%3d]"
-				, ""
-				, gn->feeds.e[x]->weak ? "*" : " "
-				, gn->feeds.e[x]->A->idstring
-				, ff_idstring(gn->feeds.e[x]->ffn->loc.ff)
-				, gn->feeds.e[x]->ffn->loc.f_lin + 1
-				, gn->feeds.e[x]->ffn->loc.f_col + 1
-				, gn->feeds.e[x]->ffn->loc.l_lin + 1
-				, gn->feeds.e[x]->ffn->loc.l_col + 1
-			);
+			if(gn->feeds.e[x]->type == GN_RELATION_REGULAR)
+			{
+				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
+					, ""
+					, gn->feeds.e[x]->weak ? "*" : " "
+					, gn->feeds.e[x]->A->idstring
+					, ff_idstring(gn->feeds.e[x]->ffn->loc.ff)
+					, gn->feeds.e[x]->ffn->loc.f_lin + 1
+					, gn->feeds.e[x]->ffn->loc.f_col + 1
+					, gn->feeds.e[x]->ffn->loc.l_lin + 1
+					, gn->feeds.e[x]->ffn->loc.l_col + 1
+				);
+			}
+			else if(gn->feeds.e[x]->type == GN_RELATION_CACHED)
+			{
+				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (DSC:%s)[%6s%s%6s]"
+					, ""
+					, gn->feeds.e[x]->weak ? "*" : " "
+					, gn->feeds.e[x]->A->idstring
+					, gn->feeds.e[x]->dscv_gn->idstring
+					, "", "cache", ""
+				);
+			}
 		}
 
 		log(L_DG | L_DGRAPH, "");

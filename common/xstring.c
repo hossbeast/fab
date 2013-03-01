@@ -39,10 +39,16 @@ int xstrcmp(char* A, int alen, char* B, int blen, int case_insensitive)
 	return result;
 }
 
-char* xstrstr(char* A, int alen, char* B, int blen, int case_insensitive)
+char* xstrstr(char * A, int alen, const char * const B, int blen, const int case_insensitive)
 {
+	alen = alen ?: strlen(A);
+	blen = blen ?: strlen(B);
+
+	if(blen == 0)
+		return 0;
+
 	int x, y;
-	for(x = 0; x < (alen - blen); x++)
+	for(x = 0; x <= (alen - blen); x++)
 	{
 		for(y = 0; y < blen; y++)
 		{

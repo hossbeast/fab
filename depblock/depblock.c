@@ -7,9 +7,10 @@
 #include <unistd.h>
 
 #include "depblock.h"
-#include "identity.h"
-#include "dirutil.h"
 
+#include "identity.h"
+
+#include "dirutil.h"
 #include "control.h"
 #include "xmem.h"
 #include "xstring.h"
@@ -80,7 +81,7 @@ int depblock_read(depblock * const block)
 		if((block->addr = mmap(0, block->size, PROT_READ, MAP_PRIVATE, block->fd, 0)) == MAP_FAILED)
 			fail("mmap(%s)=[%d][%s]", block->block_path, errno, strerror(errno));
 
-		// block ready to process
+		// block is ready to process
 		block->block = block->addr;
 	}
 	else if(errno != ENOENT)
@@ -156,4 +157,59 @@ int depblock_write(const depblock * const block)
 	}
 
 	finally : coda;
+}
+
+int depblock_addrelation(depblock * const db, const path * const A, const path * const B, int isweak)
+{
+	if(A->basel >= (sizeof(db->block->sets[0].nbase) / sizeof(db->block->sets[0].nbase[0])))
+		return 0; // nbase too long
+
+	if(A->inl >= (sizeof(db->block->sets[0].needs) / sizeof(db->block->sets[0].needs[0])))
+		return 0;	// in too long
+
+	if(B->basel >- (sizeof(db->block->sets[0].fbase) / sizeof(db->block->sets[0].fbase[0])))
+		return 0; // fbase too long
+
+	if(B->inl >= (sizeof(db->block->sets[0].feeds) / sizeof((db->block->sets[0].feeds[0]))))
+		return 0;	// in too long
+
+	// locate a suitable set, which has matching bases, needs, and weak
+	int x;
+	for(x = 0; x < db->block->setsl; x++)
+	{
+		if(db->block->sets[x].weak == isweak)
+		{
+			if(strcmp(db->block->sets[x].nbase, A->base ?: "") == 0 && strcmp(db->block->sets[x].needs, A->in) == 0)
+			{
+				if(strcmp(db->block->sets[x].fbase, B->base ?: "") == 0)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	if(x == db->block->setsl)
+	{
+		// no suitable set was found
+		if(x == sizeof(db->block->sets) / sizeof(db->block->sets[0]))
+			return 0;	// nospace
+
+		if(A->base)
+			memcpy(db->block->sets[x].nbase, A->base, A->basel);
+
+		if(B->base)
+			memcpy(db->block->sets[x].fbase, B->base, B->basel);
+
+		memcpy(db->block->sets[x].needs, A->in, A->inl);
+
+		db->block->sets[x].weak = isweak;
+		db->block->setsl++;
+	}
+
+	if(db->block->sets[x].feedsl == (sizeof(db->block->sets[0].feeds) / sizeof(db->block->sets[0].feeds[0])))
+		return 0;	// too many feeds
+
+	memcpy(db->block->sets[x].feeds[db->block->sets[x].feedsl++], B->in, B->inl);
+	return 1;
 }

@@ -131,6 +131,7 @@ static int fml_add_multi(fml * fml, strstack * sstk, lstack * ls)
 				, fml->ffn->loc.l_col + 1
 			);
 		}
+
 		for(y = 0; y < ls->s[x].l; y++)
 		{
 			gn * t = 0;
@@ -173,6 +174,8 @@ int fml_add(ff_node * ffn, strstack * sstk, map * vmap, lstack *** stax, int * s
 	fml * fml = 0;
 	fatal(coll_doubly_add, &g_fmls.c, 0, &fml);
 	fml->ffn = ffn;
+
+	fatal(list_ensure, stax, staxa, p);
 
 	// resolve targets lists
 	if(ffn->targets_0)

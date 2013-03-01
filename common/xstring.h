@@ -1,6 +1,8 @@
 #ifndef _XSTRING_H
 #define _XSTRING_H
 
+#define restrict __restrict
+
 /* wrappers around certain functions from string.h */
 
 /// xstrcmp
@@ -29,7 +31,8 @@ int xstrcmp(char* A, int alen, char* B, int blen, int case_insensitive);
 //
 // returns a pointer offset from A where B was found, or 0
 //
-char* xstrstr(char* A, int alen, char* B, int blen, int case_insensitive);
+char* xstrstr(char * restrict A, int alen, const char * const restrict B, int blen, const int case_insensitive)
+	__attribute__((nonnull));
 
 /// xstrcatf
 //
@@ -63,4 +66,5 @@ int xstrdup(char** s1, const char* s2);
 //
 int xsprintf(char** s, char* fmt, ...);
 
+#undef restrict
 #endif

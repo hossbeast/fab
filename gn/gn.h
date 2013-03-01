@@ -67,7 +67,7 @@ GN_DESIGNATION_TABLE(0)
 	_GNRT(GN_RELATION_CACHED			, 0x02	, x)		/* relation recovered from cached ddisc results  */	\
 
 enum {
-#define _GNRT(a, b, c) a = c,
+#define _GNRT(a, b, c) a = b,
 GNR_TYPE_TABLE(0)
 #undef _GNRT
 };
@@ -86,15 +86,13 @@ typedef struct
 
 	union
 	{
-		//
-		// GN_RELATION_REGULAR
-		//
-		struct ff_node *	ffn;			// FFN_DEPENDENCY node which gave rise to this relation
+		struct {									// GN_RELATION_REGULAR
+			struct ff_node *	ffn;			// FFN_DEPENDENCY node which gave rise to this relation
+		};
 
-		//
-		// GN_RELATION_CACHED
-		//
-		struct gn *				dscv_gn;	// node whose discovery contained this relation
+		struct {									// GN_RELATION_CACHED
+			struct gn *				dscv_gn;	// node whose discovery contained this relation
+		};
 	};
 
 	struct gn *				A;			// A needs B

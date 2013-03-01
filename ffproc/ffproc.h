@@ -38,7 +38,7 @@ int ffproc(
   , lstack *** const restrict stax
   , int * const restrict staxa
   , int * const restrict staxp
-  , gn ** const restrict first
+  , gn ** restrict first
 	, const uint32_t flags
 ) __attribute__((nonnull(1,2,3,4,5,6)));
 

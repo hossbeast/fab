@@ -124,4 +124,5 @@ int map_keysx(const map* const restrict map, void* const restrict target, int* c
 int map_values(const map* const restrict map, void* const restrict target, int* const restrict count)
 	__attribute__((nonnull));
 
+#undef restrict
 #endif

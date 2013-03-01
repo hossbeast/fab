@@ -34,14 +34,15 @@ typedef struct
 	int					canl;
 	int					absl;
 	int					rell;
-
 	int					can_dirl;
 	int					abs_dirl;
 	int					rel_dirl;
-
 	int					namel;
 	int					extl;
 	int					ext_lastl;
+
+	int					inl;
+	int					basel;
 
 	uint32_t		can_hash;
 	int					is_nofile;
@@ -101,7 +102,7 @@ void path_xfree(path ** const restrict)
 // SUMMARY
 //  create a deep copy of a path object
 //
-int path_copy(const path * const restrict A, path ** const restrict B)
+int path_copy(path ** const restrict B, const path * const restrict A)
 	__attribute__((nonnull));
 
 #undef restrict

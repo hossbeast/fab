@@ -109,6 +109,10 @@ static int path_init(path * const p)
 	if(p->ext_last)
 		p->ext_lastl	= strlen(p->ext_last);
 
+	if(p->base)
+		p->basel			= strlen(p->base);
+	p->inl					= strlen(p->in);
+
 	// hash of the canonical path
 	p->can_hash			= cksum(p->can, p->canl);
 
@@ -186,7 +190,6 @@ int path_create_canon(path ** const p, const char * fmt, ...)
 
 	(*p)->abs = strdup((*p)->can);
 	(*p)->rel = strdup((*p)->can);
-
 	(*p)->in  = strdup((*p)->can);
 
 	path_init(*p);
@@ -218,7 +221,7 @@ void path_xfree(path ** const p)
 	*p = 0;
 }
 
-int path_copy(const path * const A, path ** const B)
+int path_copy(path ** const B, const path * const A)
 {
 	if(xmalloc(B, sizeof(**B)) == 0)
 		return 0;

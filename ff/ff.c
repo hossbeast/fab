@@ -52,7 +52,7 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 // [[ static ]]
 //
 
-static int findvars(ff_file * const restrict ff, ff_node * const restrict root)
+static int closevars(ff_file * const restrict ff, ff_node * const restrict root)
 {
 	int find(ff_node * const restrict ffn)
 	{
@@ -136,7 +136,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	fatal(coll_doubly_add, &ff_files.c, 0, &ff);
 
 	// create copy of the path
-	fatal(path_copy, in_path, &ff->path);
+	fatal(path_copy, &ff->path, in_path);
 
 	if(dscv_gn)
 	{
@@ -195,7 +195,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		if(ff->type == FFT_REGULAR)
 		{
 			// create flat list of VARREF's in this fabfile
-			fatal(findvars, ff, ff->ffn);
+			fatal(closevars, ff, ff->ffn);
 
 			// create hashblock
 			fatal(hashblock_create, &ff->hb, "%s/REGULAR/%u", FF_DIR_BASE, ff->path->can_hash);
