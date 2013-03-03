@@ -21,8 +21,9 @@ typedef struct fml
 {
 	ff_node *					ffn;					// ff_node for this formula
 
-	struct fmleval *	evals;				// evaluation instances
-	int								evals_l;
+	struct fmleval **	evals;				// evaluation instances
+	int								evalsa;
+	int								evalsl;
 
 	// the number of bags associated with an fml is the number of different times that
 	// the ff_file it is in is invoked

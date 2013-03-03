@@ -160,69 +160,55 @@ int ff_mkparser(ff_parser ** const p)
 	return 1;
 }
 
-int ff_parse_path(const ff_parser * const p, const path * const in_path, ff_file ** const ff)
+int ff_reg_load(const ff_parser * const p, const path * const in_path, ff_file ** const ff)
 {
 	int			fd = 0;
 	char *	b = 0;
 
-	// open the file
-	if((fd = open(in_path->abs, O_RDONLY)) == -1)
-		fail("open(%s) failed : [%d][%s]", in_path->abs, errno, strerror(errno));
+	if(!ff_files.by_canpath)
+		fatal(map_create, &ff_files.by_canpath, 0);
 
-	// snarf the file
-	struct stat statbuf;
-	fatal_os(fstat, fd, &statbuf);
+	ff_file ** c = 0;
+	c = map_get(ff_files.by_canpath, in_path->can, in_path->canl);
+	if(c)
+	{
+		*ff = *c;
+	}
+	else
+	{
+		// open the file
+		if((fd = open(in_path->abs, O_RDONLY)) == -1)
+			fail("open(%s) failed : [%d][%s]", in_path->abs, errno, strerror(errno));
 
-	fatal(xmalloc, &b, statbuf.st_size + 2);
-	ssize_t r = 0;
-	if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
-		fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
+		// snarf the file
+		struct stat statbuf;
+		fatal_os(fstat, fd, &statbuf);
 
-	qfatal(parse, p, b, statbuf.st_size, in_path, 0, ff);
+		fatal(xmalloc, &b, statbuf.st_size + 2);
+		ssize_t r = 0;
+		if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
+			fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
+
+		qfatal(parse, p, b, statbuf.st_size, in_path, 0, ff);
+
+		if(*ff)
+		{
+			fatal(map_set, ff_files.by_canpath, in_path->can, in_path->canl, ff, sizeof(*ff));
+		}
+	}
 
 finally:
 	free(b);
 	if(fd > 0)
 		close(fd);
-coda;
-}
-
-int ff_parse(const ff_parser * const p, const char * const fp, const char * const base, ff_file ** const ff)
-{
-	int			fd = 0;
-	char *	b = 0;
-	path *	pth = 0;
-
-	fatal(path_create, &pth, base, "%s", fp);
-
-	// open the file
-	if((fd = open(pth->abs, O_RDONLY)) == -1)
-		fail("open(%s) failed : [%d][%s]", pth->abs, errno, strerror(errno));
-
-	// snarf the file
-	struct stat statbuf;
-	fatal_os(fstat, fd, &statbuf);
-
-	fatal(xmalloc, &b, statbuf.st_size + 2);
-	ssize_t r = 0;
-	if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
-		fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
-
-	qfatal(parse, p, b, statbuf.st_size, pth, 0, ff);
-
-finally:
-	free(b);
-	if(fd > 0)
-		close(fd);
-	path_free(pth);
 coda;
 }
 
 int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const fp, struct gn * dscv_gn, ff_file** const ff)
 {
 	path * pth = 0;
-	fatal(path_create_canon, &pth, fp, 0);
-	fatal(parse, p, b, sz, pth, dscv_gn, ff);
+	fatal(path_create_canon, &pth, "%s", fp);
+	qfatal(parse, p, b, sz, pth, dscv_gn, ff);
 
 finally:
 	path_free(pth);
@@ -305,9 +291,12 @@ void ff_teardown()
 {
 	int x;
 	for(x = 0; x < ff_files.l; x++)
+	{
 		ff_freefile(ff_files.e[x]);
+	}
 
 	free(ff_files.e);
+	map_free(ff_files.by_canpath);
 }
 
 int ff_regular_rewrite(ff_file * ff)
@@ -481,77 +470,3 @@ void ff_dump(ff_file * const ff)
 	log(L_FF | L_FFFILE			, "%20s :", "tree");
 	ffn_dump(ff->ffn);
 }
-
-/*
-static int closevars(ff_file * const restrict ff, ff_node * const restrict root)
-{
-	int find(ff_node * const restrict ffn)
-	{
-		if(ffn)
-		{
-			if(ffn->type == FFN_VARREF)
-			{
-				// skip autovars
-				if((ffn->text[0] >= 'a' && ffn->text[0] <= 'z') || (ffn->text[0] >= 'A' && ffn->text[0] <= 'Z') || ffn->text[0] == '_')
-				{
-					if(ff->closure_varsl == ff->closure_varsa)
-					{
-						int ns = ff->closure_varsa ?: 10;
-						ns = ns + 2 * ns / 2;
-
-						fatal(xrealloc, &ff->closure_vars, sizeof(*ff->closure_vars), ns, ff->closure_varsa);
-						ff->closure_varsa = ns;
-					}
-
-					ff->closure_vars[ff->closure_varsl++] = ffn;
-				}
-			}
-
-			int x;
-			for(x = 0; x < ffn->listl; x++)
-				find(ffn->list[x]);
-
-			for(x = 0; x < sizeof(ffn->nodes_owned) / sizeof(ffn->nodes_owned[0]); x++)
-				find(ffn->nodes_owned[x]);
-		}
-
-		finally : coda;
-	};
-
-	// find all varrefs
-	fatal(find, root);
-
-	// sort
-	int cmp(const void * A, const void * B)
-	{
-		return strcmp((*(ff_node**)A)->text, (*(ff_node**)B)->text);
-	};
-	qsort(ff->closure_vars, ff->closure_varsl, sizeof(*ff->closure_vars), cmp);
-
-	// uniq
-	int j;
-	for(j = ff->closure_varsl - 1; j > 0; j--)
-	{
-		int i;
-		for(i = j - 1; i >= 0; i--)
-		{
-			if(strcmp(ff->closure_vars[i]->text, ff->closure_vars[j]->text))
-				break;
-		}
-
-		if((++i) < j)
-		{
-			memmove(
-				  &ff->closure_vars[i]
-				, &ff->closure_vars[j]
-				, (ff->closure_varsl - j) * sizeof(ff->closure_vars[0])
-			);
-
-			ff->closure_varsl -= (j - i);
-			j = i;
-		}
-	}
-
-	finally : coda;
-}
-*/

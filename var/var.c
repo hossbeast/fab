@@ -217,8 +217,11 @@ lstack * var_access(const map * const vmap, const char * s)
 {
 	var_container ** c = 0;
 
-	while((c = map_get(vmap, s, strlen(s))))
+	while((c = map_get(vmap, MMS(s))))
 	{
+		if((*c)->l == 0)
+			break;
+
 		if((*c)->v[(*c)->l - 1].type == VV_LS)
 			return (*c)->v[(*c)->l - 1].ls;
 

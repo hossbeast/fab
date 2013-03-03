@@ -38,14 +38,6 @@ $ydscpaths = [
 	] =>> lsr
 ] =>> xm/<y>
 
-# discovery
-[ $ydscpaths ] ~
-{
-		[ $bison $bisonflags --warnings=error -o /dev/stdout $@ ]		\
-	| [ $cc $cflags ] -MM -MP -MG -xc -														\
-	| gcc-dep [ $@ ] =>> rx/xs/<y>/tab.o
-}
-
 # paths to y files for fabrication
 $yfabpaths = [
 	$paths				# paths
@@ -62,6 +54,14 @@ $yfabpaths = [
 	] =>> lsr
 ] =>> xm/<y>
 
+# discovery
+[ $ydscpaths ] ~
+{
+		[ $bison $bisonflags --warnings=error -o /dev/stdout $@ ]		\
+	| [ $cc $cflags ] -MM -MP -MG -xc -														\
+	| gcc-dep [ $@ ] =>> rx/xs/<y>/tab.o
+}
+
 # $bison : y -> { tab.c, tab.h }
 [ $yfabpaths ] =>> xs/<y>/tab.c/y/v/d/cp/u/xs/tab.c/tab.h/z/v/dj/2/shift/pop :: [ $< ] =>> rx/xsf/<y>/ss/u
 {
@@ -71,5 +71,5 @@ $yfabpaths = [
 	[ $@ ] =>> rx/ineed/xm/<y>/ss/u
 }
 
-# $cc : fab.c -> fab.o via std.c
-+[@std.c]([ $yfabpaths ] =>> xs/<y>/<tab.o> ^ $fabpaths)-
+# $cc : tab.c -> tab.o via std.c
++[@std.c]([ $yfabpaths ] =>> xs/<y>/<tab.c> ^ $fabpaths)-

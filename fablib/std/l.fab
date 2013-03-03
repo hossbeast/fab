@@ -22,7 +22,7 @@
 #  fabpaths   - 
 #
 
-# paths to c files for discovery
+# paths to l files for discovery
 $ldscpaths = [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
@@ -36,13 +36,7 @@ $ldscpaths = [
 		$rdirs			# recursive directories
 		$rdscdirs		# recursive directories, discovery only
 	] =>> lsr
-] =>> xmf/<l>
-
-# discovery
-[ $ldscpaths ] ~
-{
-	[ $flex $flexflags -t $@ ] | [ $cc $cflags ] -MM -MP -MG -xc - | gcc-dep [ $@ ] =>> rx/xs/<l>/lex.o
-}
+] =>> xm/<l>
 
 # paths to l files for fabrication
 $lfabpaths = [
@@ -60,6 +54,12 @@ $lfabpaths = [
 	] =>> lsr
 ] =>> xm/<l>
 
+# discovery
+[ $ldscpaths ] ~
+{
+	[ $flex $flexflags -t $@ ] | [ $cc $cflags ] -MM -MP -MG -xc - | gcc-dep [ $@ ] =>> rx/xs/<l>/lex.o
+}
+
 # $flex : l -> { lex.c, lex.h }
 [ $lfabpaths ] =>> xs/<l>/lex.c/y/v/d/cp/u/xs/lex.c/lex.h/z/v/dj/2/shift/pop :: [ $< ] =>> rx/xsf/<l>/ss/u
 {
@@ -69,4 +69,4 @@ $lfabpaths = [
 }
 
 # $cc : lex.c -> lex.o via std.c
-+[@std.c]([ $lfabpaths ] =>> xs/<l>/<lex.o> ^ $fabpaths)-
++[@std.c]([ $lfabpaths ] =>> xs/<l>/<lex.c> ^ $fabpaths)-

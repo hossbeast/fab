@@ -13,6 +13,7 @@
 #include "coll.h"
 #include "hashblock.h"
 #include "path.h"
+#include "map.h"
 
 #define restrict __restrict
 
@@ -86,6 +87,8 @@ extern union ff_files_t
 		int		z;						// element size
 
 		ff_file ** e;				// elements
+
+		map *	by_canpath;
 	};
 } ff_files;
 
@@ -128,7 +131,8 @@ int ff_mkparser(ff_parser ** const restrict p)
 /// ff_parse_path
 //
 // SUMMARY
-//  parse a fabfile using a preconstructed path
+//  load (parsing if necessary) the fabfile at the specified preconstructed path
+//  path is copied from ; it should be freed by the caller
 //
 // PARAMETERS
 //  p    - parser returned from mkparser
@@ -138,37 +142,28 @@ int ff_mkparser(ff_parser ** const restrict p)
 // RETURNS
 //  0 on error - check *ff to see if the parse was successful
 //
-int ff_parse_path(
+int ff_reg_load(
 	  const ff_parser * const restrict p
 	, const path * const restrict path
 	, ff_file ** const restrict ff
 )
 	__attribute__((nonnull));
 
-/// ff_parse
+/// ff_dsc_parse
 //
 // SUMMARY
-//  parse a fabfile
+//  parse text from a dependency discovery fabfile
 //
 // PARAMETERS
-//  p    - parser returned from mkparser
-//  path - path to fabfile
-//  ff   - results go here
+//  p      - parser returned from mkparser
+//  fp     - canonical path to the fabfile
+//  b      - buffer to parse from
+//  sz     - number of bytes to parse
+//  dscvgn - gn for discovery 
+//  ff     - results go here
 //
 // RETURNS
 //  0 on error - check *ff to see if the parse was successful
-//
-int ff_parse(
-	  const ff_parser * const restrict p
-	, const char * const restrict fp
-	, const char * const restrict base 
-	, ff_file ** const restrict ff
-)
-	__attribute__((nonnull));
-
-/// ff_dsc_parse
-//
-// see ff_parse, but for discovery files, which support only a limited syntax
 //
 int ff_dsc_parse(
 	  const ff_parser * const restrict p
