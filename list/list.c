@@ -38,7 +38,7 @@ int ensure(lstack *** stax, int * staxa, int staxp)
 	finally : coda;
 }
 
-static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p)
+static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p, int raw)
 {
 	// additional lstacks go here
 	int pn = p;
@@ -54,11 +54,21 @@ static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p
 		else if(list->elements[x]->type == FFN_VARREF)
 		{
 //dprintf(2, "varref %s = {", list->elements[x]->name);
-
 			lstack * vls = 0;
-			if((vls = var_access(vmap, list->elements[x]->name)))
+			if(raw)
 			{
-				// an undefined variable, or a variable with no definition is equivalent to the empty list
+				lstack ** cc = 0;
+				if((cc = map_get(vmap, MMS(list->elements[x]->name))))
+					vls = *cc;
+			}
+			else
+			{
+				vls = var_access(vmap, list->elements[x]->name);
+			}
+
+			if(vls)
+			{
+			// an undefined variable, or a variable with no definition is equivalent to the empty list
 				ITERATE(vls, i, go);
 				if(go)
 				{
@@ -75,12 +85,11 @@ static int render(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p
 				}
 				ITEREND;
 			}
-
-//dprintf(2, " } \n");
+	//dprintf(2, " } \n");
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
-			fatal(list_resolve, list->elements[x], vmap, stax, staxa, ++pn);
+			fatal(list_resolve, list->elements[x], vmap, stax, staxa, ++pn, raw);
 
 			ITERATE((*stax)[pn], i, go);
 			if(go)
@@ -120,21 +129,21 @@ int list_ensure(lstack *** stax, int * staxa, int staxp)
 	finally : coda;
 }
 
-int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
+int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
 {
 	fatal(ensure, stax, staxa, staxp);
 //dprintf(2, "resolveto -> %d\n", staxp);
-	fatal(render, list, vmap, stax, staxa, staxp);
+	fatal(render, list, vmap, stax, staxa, staxp, raw);
 
 	finally : coda;
 }
 
-int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
+int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
 {
 	fatal(ensure, stax, staxa, staxp);
 	lstack_reset((*stax)[staxp]);
 //dprintf(2, "resolve   -> %d\n", staxp);
-	fatal(render, list, vmap, stax, staxa, staxp);
+	fatal(render, list, vmap, stax, staxa, staxp, raw);
 
 	finally : coda;
 }

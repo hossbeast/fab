@@ -8,6 +8,7 @@
 #include "ff.h"
 
 #include "pstring.h"
+#include "map.h"
 
 struct fml;
 
@@ -18,6 +19,8 @@ struct fml;
 typedef struct fmleval
 {
 	struct fml *	fml;					// the formula
+
+	map * 				bag;					// bag of values 
 
 	struct											// products expected when executing the formula
 	{

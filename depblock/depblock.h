@@ -30,7 +30,7 @@ typedef struct
 		uint8_t	feedsl;
 		char		feeds[128][256];
 		char		fbase[256];
-	} sets[1];
+	} sets[4];
 } dep_relations;
 
 typedef struct depblock

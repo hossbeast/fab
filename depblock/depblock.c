@@ -192,7 +192,7 @@ int depblock_addrelation(depblock * const db, const path * const A, const path *
 	if(x == db->block->setsl)
 	{
 		// no suitable set was found
-		if(x == sizeof(db->block->sets) / sizeof(db->block->sets[0]))
+		if(x == (sizeof(db->block->sets) / sizeof(db->block->sets[0])))
 			return 0;	// nospace
 
 		if(A->base)

@@ -19,6 +19,7 @@
 #include "control.h"
 #include "macros.h"
 #include "xmem.h"
+#include "map.h"
 
 int bake_bp(
 	  const bp * const bp
@@ -86,9 +87,9 @@ int bake_bp(
 				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[y]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
 			// render the formula
-			fatal(var_push_list, vmap, "@", 0, (*stax)[staxp], 0);
-			fatal(fml_render, (*ts)[y], vmap, stax, staxa, staxp + 1, 0);
-			fatal(var_pop, vmap, "@", 0);
+			fatal(map_set, (*ts)[y]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
+			fatal(fml_render, (*ts)[y], stax, staxa, staxp + 1, 0);
+			fatal(map_delete, (*ts)[y]->fmlv->bag, MMS("@"));
 
 			// index occupied by this formula in the stage.stage in which this formula is executed
 			int index = y;

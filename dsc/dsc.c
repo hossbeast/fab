@@ -19,6 +19,7 @@
 #include "control.h"
 #include "xmem.h"
 #include "macros.h"
+#include "map.h"
 
 //
 // static
@@ -119,16 +120,19 @@ static int depblock_process(const depblock * const db, gn * const dscvgn, int * 
 			if(newrp)
 				(*newrp) += newr;
 
-			log(L_DG | L_DGDEPS | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
-				, "S"
-				, newa ? "x" : ""
-				, newb ? "x" : ""
-				, newr ? "x" : ""
-				, dscvgn->idstring
-				, "", "cache", ""
-				, ((gn*)A)->idstring
-				, ((gn*)B)->idstring
-			);
+			if(newr)
+			{
+				log(L_DG | L_DGDEPS | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
+					, "S"
+					, newa ? "x" : ""
+					, newb ? "x" : ""
+					, newr ? "x" : ""
+					, dscvgn->idstring
+					, "", "cache", ""
+					, ((gn*)A)->idstring
+					, ((gn*)B)->idstring
+				);
+			}
 		}
 	}
 
@@ -191,9 +195,9 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 			fatal(lstack_obj_add, (*stax)[staxp], (*ts)[x]->fmlv->products[0], LISTWISE_TYPE_GNLW);
 
 			// render the formula
-			fatal(var_push_list, vmap, "@", 0, (*stax)[staxp], 0);
-			fatal(fml_render, (*ts)[x], vmap, stax, staxa, staxp + 1, 1);
-			fatal(var_pop, vmap, "@", 0);
+			fatal(map_set, (*ts)[x]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
+			fatal(fml_render, (*ts)[x], stax, staxa, staxp + 1, 1);
+			fatal(map_delete, (*ts)[x]->fmlv->bag, MMS("@"));
 		}
 
 		// execute all formulas in parallel

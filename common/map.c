@@ -312,7 +312,7 @@ void map_clear(map* const restrict m)
 	m->kc = 0;
 }
 
-int map_deletex(map* const restrict m, const void* const restrict k, int kl)
+int map_delete(map* const restrict m, const void* const restrict k, int kl)
 {
 	uint32_t i = 0;
 	if(lookup(m, k, kl, &i))
@@ -336,7 +336,7 @@ int map_deletex(map* const restrict m, const void* const restrict k, int kl)
 	return 0;
 }
 
-int map_keysx(const map* const restrict m, void* const restrict t, int* const restrict c)
+int map_keys(const map* const restrict m, void* const restrict t, int* const restrict c)
 {
 	fatal(xmalloc, t, m->kc * sizeof(void*));
 	*c = 0;

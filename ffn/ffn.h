@@ -158,6 +158,15 @@ typedef struct ff_node
 		};
 	};
 
+	/*
+	** xten is not freed
+	*/
+	union {
+		void *			xten;
+
+		void *			fml;						// FFN_FORMULA
+	};
+
 	// implementation
 	char*							e;
 	struct ff_node*		chain[1];		// chains for this node

@@ -16,6 +16,7 @@
 #include "xmem.h"
 #include "macros.h"
 #include "list.h"
+#include "map.h"
 
 //
 // static
@@ -585,9 +586,10 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int staxp, ts ***
 				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
 			// render the formula
-			fatal(var_push_list, vmap, "@", 0, (*stax)[staxp], 0);
-			fatal(fml_render, (*ts)[i], vmap, stax, staxa, staxp + 1, 1);
-			fatal(var_pop, vmap, "@", 0);
+			//  note that serialization in this loop is important, because fmlv's may share the same bag
+			fatal(map_set, (*ts)[i]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
+			fatal(fml_render, (*ts)[i], stax, staxa, staxp + 1, 1);
+			fatal(map_delete, (*ts)[i]->fmlv->bag, MMS("@"));
 
 			i++;
 		}

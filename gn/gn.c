@@ -89,7 +89,7 @@ static void freenode(gn * const gn)
 		free(gn->feeds.e);
 		map_free(gn->feeds.by_A);
 
-		free(gn->affecting_ff_file);
+		free(gn->closure_ffs);
 
 		free(gn->noforce_dir);
 		free(gn->noforce_path);
@@ -652,26 +652,26 @@ char* gn_idstring(gn * const gn)
 	return gn->idstring;
 }
 
-int gn_affected_ff_reg(gn * const gn, struct ff_file * const ff, int * const newa)
+int gn_enclose_ff(gn * const gn, struct ff_file * const ff, int * const newa)
 {
 	int x;
-	for(x = 0; x < gn->affecting_ff_filel; x++)
+	for(x = 0; x < gn->closure_ffsl; x++)
 	{
-		if(gn->affecting_ff_file[x] == ff)
+		if(gn->closure_ffs[x] == ff)
 			break;
 	}
 
-	if(x >= gn->affecting_ff_filel)
+	if(x >= gn->closure_ffsl)
 	{
-		if(gn->affecting_ff_filel == gn->affecting_ff_filea)
+		if(gn->closure_ffsl == gn->closure_ffsa)
 		{
-			int ns = gn->affecting_ff_filea ?: 10;
+			int ns = gn->closure_ffsa ?: 10;
 			ns = ns * 2 + ns / 2;
-			fatal(xrealloc, &gn->affecting_ff_file, sizeof(*gn->affecting_ff_file), ns, gn->affecting_ff_filea);
-			gn->affecting_ff_filea = ns;
+			fatal(xrealloc, &gn->closure_ffs, sizeof(*gn->closure_ffs), ns, gn->closure_ffsa);
+			gn->closure_ffsa = ns;
 		}
 
-		gn->affecting_ff_file[gn->affecting_ff_filel++] = ff;
+		gn->closure_ffs[gn->closure_ffsl++] = ff;
 		(*newa)++;
 	}
 

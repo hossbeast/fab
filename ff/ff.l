@@ -8,6 +8,12 @@
 	#include "log.h"
 	#include "macros.h"
 
+/*
+<command>\\\\																					{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<command>\\[}]																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
+<command>\\[[]																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
+*/
+
 	#define TOPSTATE(x) (x->states_n ? x->states[x->states_n-1] : 0)
 	#define STATENAME(x)																			\
 		  x == INITIAL					? "INITIAL"											\
@@ -258,10 +264,7 @@
 																												POPSTATE(yyextra);
 																												return LEX(yytext[0]);
 																											}
-<command>\\\\																					{ yytext++; yyleng--; return LEXX(WORD, 1); }
-<command>\\[}]																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
-<command>\\[[]																				{ yytext++; yyleng--; return LEXX(WORD, 1); }
-<command>[^\\[}\x00-\x08\x0a-\x1F\x7F-\xFF]+					{ return LEX(WORD); }
+<command>[^[}\x00-\x08\x0a-\x1F\x7F-\xFF]+						{ return LEX(WORD); }
 <commandchecklit>\t+>[\t ]+														{
 																												POPSTATE(yyextra);
 																												PUSHSTATE(commandlit, yyextra);

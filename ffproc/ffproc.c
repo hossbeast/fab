@@ -27,7 +27,7 @@ static int proc_varnode(ff_node * restrict stmt, map * const restrict  vmap, lst
 	{
 		if(stmt->definition->type == FFN_LIST)
 		{
-			fatal(list_resolve, stmt->definition, vmap, stax, staxa, (*staxp));
+			fatal(list_resolve, stmt->definition, vmap, stax, staxa, (*staxp), 0);
 			v = (*stax)[(*staxp)++];
 			t = 1;
 		}
@@ -104,6 +104,9 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 	ff_file * ff = 0;
 	fatal(ff_parse_path, ffp, inpath, &ff);
 
+	if(!ff)
+		qfail();
+
 	// use up one list and populate the ^ variable (relative directory path to this fabfile)
 	fatal(list_ensure, stax, staxa, (*staxp));
 
@@ -127,7 +130,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		if(stmt->type == FFN_INVOCATION)
 		{
 			int pn = *staxp;
-			fatal(list_resolve, stmt->modules, vmap, stax, staxa, pn);
+			fatal(list_resolve, stmt->modules, vmap, stax, staxa, pn, 0);
 
 //printf("INVOCATIONS : %d @ %d\n", (*stax)[(*staxp)]->s[0].l, (*staxp));
 
@@ -144,7 +147,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 
 				// handle module notation 
 				int ismod = 0;
-				if(l >= 4 && memcmp(s, "/../", 4) == 0)
+				if(l >= 5 && memcmp(s, "/../", 4) == 0)
 				{
 					ismod = 1;
 					for(i = 0; i < g_args.invokedirsl; i++)
@@ -196,8 +199,8 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 				// for a gated invocation, push an empty value into all affecting variables
 				if(stmt->flags & FFN_GATED)
 				{
-					for(i = 0; i < ff->affecting_varsl; i++)
-						fatal(var_push_list, vmap, ff->affecting_vars[i]->text, 0, listwise_identity, stmt);
+					for(i = 0; i < ff->closure_varsl; i++)
+						fatal(var_push_list, vmap, ff->closure_vars[i]->text, 0, listwise_identity, stmt);
 				}
 
 				// push values for all designations
@@ -226,8 +229,8 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 				// gate pop
 				if(stmt->flags & FFN_GATED)
 				{
-					for(i = 0; i < ff->affecting_varsl; i++)
-						fatal(var_pop, vmap, ff->affecting_vars[i]->text, stmt);
+					for(i = 0; i < ff->closure_varsl; i++)
+						fatal(var_pop, vmap, ff->closure_vars[i]->text, stmt);
 				}
 			}
 			LSTACK_ITEREND;
@@ -240,7 +243,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		}
 		else if(stmt->type == FFN_FORMULA)
 		{
-			fatal(fml_add, stmt, sstk, vmap, stax, staxa, (*staxp));
+			fatal(fml_attach, stmt, sstk, vmap, stax, staxa, (*staxp));
 		}
 		else if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARPUSH || stmt->type == FFN_VARPOP)
 		{

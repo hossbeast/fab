@@ -1,33 +1,72 @@
-# c.fab
-# provides discovery formula for .c files
-# provides fabrication formula for .c -> .o
-# bindings
-FLEX
-FLEXFLAGS
-LDISCDIR
-CDISCPATHS
-CFABDIR
-CFABPATHS
+# l.fab
+#  provides discovery formula for .l files
+#  provides fabrication formula for .lex.c -> .lex.o
+#  provides dependencies for lex.o -> .l
 
-# autodiscovery of .l files
-[ *LDISCDIR ] =>> lsr/xmf/<l> ~
+# var/closure
+#  cc
+#  cflags 
+#  flex
+#  flexflags
+#
+#  dirs       - directories containing .l files
+#  rdirs      - directories containing .l files, recursive search
+#  paths      - paths to .l files
+#
+#  discdirs   - (as above, but for discovery only)
+#  discrdirs  - 
+#  discpaths  - 
+#
+#  fabdirs    - (as above, but for fabrication/dependency only)
+#  fabrdirs   - 
+#  fabpaths   - 
+#
+
+# paths to c files for discovery
+$ldscpaths = [
+	$paths				# paths
+	$dscpaths			# paths, discovery only
+
+	[
+		$dirs				# directories
+		$dscdirs		# directories, discovery only
+	] =>> ls
+
+	[
+		$rdirs			# recursive directories
+		$rdscdirs		# recursive directories, discovery only
+	] =>> lsr
+] =>> xmf/<l>
+
+# discovery
+[ $ldscpaths ] ~
 {
-	[ *FLEX *FLEXFLAGS -t $@ ] | [ $CC $CFLAGS ] -MM -MP -MG -xc - | gcc-dep [ $@ ] =>> rx/xs/<l>/lex.o
+	[ $flex $flexflags -t $@ ] | [ $cc $cflags ] -MM -MP -MG -xc - | gcc-dep [ $@ ] =>> rx/xs/<l>/lex.o
 }
 
-# flex - create .lex.c and .lex.h from a .l
-[ $SRCDIR ] =>> lsr/xs/<l>/lex.c/y/v/d/cp/u/xs/lex.c/lex.h/z/v/dj/2/shift/pop/2 :: [ $< ] =>> rx/xsf/<l>/ss/u
+# paths to l files for fabrication
+$lfabpaths = [
+	$paths				# paths
+	$dscpaths			# paths, discovery only
+
+	[
+		$dirs				# directories
+		$dscdirs		# directories, discovery only
+	] =>> ls
+
+	[
+		$rdirs			# recursive directories
+		$rdscdirs		# recursive directories, discovery only
+	] =>> lsr
+] =>> xm/<l>
+
+# $flex : l -> { lex.c, lex.h }
+[ $lfabpaths ] =>> xs/<l>/lex.c/y/v/d/cp/u/xs/lex.c/lex.h/z/v/dj/2/shift/pop :: [ $< ] =>> rx/xsf/<l>/ss/u
 {
-	[ *FLEX *FLEXFLAGS -o [ $@ ] =>> h/1/1/rx ]				\
+	[ $flex $flexflags -o [ $@ ] =>> h/1/1/rx ]				\
 	[ --header-file= [ $@ ] =>> h/0/1/rx ] =>> j			\
 	[ $@ ] =>> rx/ineed/xm/<l>/ss/u
 }
 
-# compile .o from .lex.c
-
-### this should use std::c
-
-[ $SRCDIR ] =>> lsr/xs/<l>/<lex.o>/y/dj/shift/pop :: [ $< ] =>> rx/xsf/<lex.c>
-{
-	[ $CC $CFLAGS ] -c [ $@ ] =>> rx/ineed/xm/<c>/ss/u -o [ $@ ]
-}
+# $cc : lex.c -> lex.o via std.c
++[@std.c]([ $lfabpaths ] =>> xs/<l>/<lex.o> ^ $fabpaths)-

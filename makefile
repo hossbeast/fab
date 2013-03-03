@@ -110,7 +110,8 @@ main.o  :	common/coll.o					\
 					canon/canon.o					\
 					path/path.o						\
 					bake/bake.o						\
-					ffproc/ffproc.o
+					ffproc/ffproc.o				\
+					enclose/enclose.o
 
 common/idx.o : common/xstring.o
 

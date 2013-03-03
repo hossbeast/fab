@@ -1,5 +1,4 @@
 #ifndef _MAP_H
-#define _MAP_H
 
 #include <stdint.h>
 
@@ -44,6 +43,7 @@ void map_xfree(map** const restrict map)
 //
 #ifndef MAP_NO_HELPERS
 #define MM(x) (void*)&(x), sizeof(x)
+#define MMS(x) (x), strlen(x)
 #endif
 
 /// map_set
@@ -109,7 +109,7 @@ int map_delete(map* const restrict map, const void* const restrict key, int key_
 //
 // returns nonzero on success
 //
-int map_keysx(const map* const restrict map, void* const restrict target, int* const restrict count)
+int map_keys(const map* const restrict map, void* const restrict target, int* const restrict count)
 	__attribute__((nonnull));
 
 /// map_values

@@ -1,45 +1,27 @@
 # c.fab
 #  provides discovery formula for .c files
 #  provides fabrication formula for .c -> .o
-#  provides dependencies for .c -> .o
+#  provides dependencies for .o -> .c
 #
-# var-closure
+# var/closure
 #  cc
 #  cflags
-#  dirs				- directories containing .c files
+#
+#  dirs       - directories containing .c files
 #  rdirs      - directories containing .c files, recursive search
 #  paths      - paths to .c files
 #
-#  discdirs   - (as above, but for discover only)
-#  discrdirs  - 
-#  discpaths  - 
+#  dscdirs   - (as above, but for discovery only)
+#  dscrdirs  - 
+#  dscpaths  - 
 #
 #  fabdirs    - (as above, but for fabrication/dependency only)
 #  fabrdirs   - 
 #  fabpaths   - 
 #
 
-# fabrication, and dependency
-[
-	$paths				# paths
-	$fabpaths			# paths, fabrication only
-
-	[
-		$dirs				# directories
-		$fabdirs		# directories, fabrication only
-	] =>> ls
-
-	[
-		$rdirs			# recursive directories
-		$rfabdirs		# recursive directories, fabrication only
-	] =>> lsr
-]	=>> xs/<c>/<o>/y/dj/shift :: [ $< ] =>> rx/xs/<c>
-{
-	[ $cc $cflags ] -c [ $@ ] =>> rx/ineed/xm/<c>/ss/u -o [ $@ ]
-}
-
-# discovery
-[
+# paths to c files for discovery
+$cdscpaths = [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
 
@@ -53,7 +35,31 @@
 		$rdscdirs		# recursive directories, discovery only
 	] =>> lsr
 ] =>> xm/<c>
-~
+
+# discovery
+[ $cdscpaths ] ~
 {
 	[ $cc $cflags ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ] =>> rx/xs/<o>
+}
+
+# paths to c files for fabrication
+$cfabpaths = [
+	$paths				# paths
+	$fabpaths			# paths, fabrication only
+
+	[
+		$dirs				# directories
+		$fabdirs		# directories, fabrication only
+	] =>> ls
+
+	[
+		$rdirs			# recursive directories
+		$rfabdirs		# recursive directories, fabrication only
+	] =>> lsr
+] =>> xm/<c>
+
+# fabrication and dependency
+[ $cfabpaths ] =>> xs/<o>/y/dj/shift :: [ $< ] =>> rx/xs/<c>
+{
+	[ $cc $cflags ] -c [ $@ ] =>> rx/ineed/xm/<c>/ss/u -o [ $@ ]
 }

@@ -31,8 +31,9 @@ int list_ensure(lstack *** stax, int * staxa, int staxp)
 //  stax  - listwise stax
 //  staxa - listwise stax
 //  staxp - offset to next free stax
+//  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
+int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
 	__attribute__((nonnull));
 
 /// list_resolve
@@ -46,8 +47,9 @@ int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int 
 //  stax  - listwise stax
 //  staxa - listwise stax
 //  staxp - offset to next free stax
+//  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
+int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
 	__attribute__((nonnull));
 
 #endif

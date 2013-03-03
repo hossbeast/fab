@@ -1,29 +1,75 @@
-# c.fab
-# provides discovery formula for .c files
-# provides fabrication formula for .c -> .o
-#
-# bindings
+# y.fab
+#  provides discovery formula for .y files
+#  provides fabrication formula for .tab.c -> .tab.o
+#  provides dependencies for tab.o -> .y
+
+# var/closure
 #  cc
-#  cflags
-#  dirs
-#  paths
-#  discdirs
-#  discpaths
-#  fabdirs
-#  fabpaths
+#  cflags 
+#  bison
+#  bisonflags
 #
-# usage
-#  >> std::c srcdir @ dirs
+#  dirs       - directories containing .y files
+#  rdirs      - directories containing .y files, recursive search
+#  paths      - paths to .y files
+#
+#  discdirs   - (as above, but for discovery only)
+#  discrdirs  - 
+#  discpaths  - 
+#
+#  fabdirs    - (as above, but for fabrication/dependency only)
+#  fabrdirs   - 
+#  fabpaths   - 
+#
 
+# paths to y files for discovery
+$ydscpaths = [
+	$paths				# paths
+	$dscpaths			# paths, discovery only
 
-# c files
-[ [ $dirs $discdirs ] =>> lsr/xmf/<c> $discpaths $paths ] ~
+	[
+		$dirs				# directories
+		$dscdirs		# directories, discovery only
+	] =>> ls
+
+	[
+		$rdirs			# recursive directories
+		$rdscdirs		# recursive directories, discovery only
+	] =>> lsr
+] =>> xm/<y>
+
+# discovery
+[ $ydscpaths ] ~
 {
-	[ $cc $cflags ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ] =>> rx/xs/<o>
+		[ $bison $bisonflags --warnings=error -o /dev/stdout $@ ]		\
+	| [ $cc $cflags ] -MM -MP -MG -xc -														\
+	| gcc-dep [ $@ ] =>> rx/xs/<y>/tab.o
 }
 
-# compile .o from .c, also provides the dependency
-[ [ $dirs $fabdirs ] =>> lsr/xs/<c>/<o>/y/dj/shift/pop $fabpaths $paths ] :: [ $< ] =>> rx/xs/<c>
+# paths to y files for fabrication
+$yfabpaths = [
+	$paths				# paths
+	$dscpaths			# paths, discovery only
+
+	[
+		$dirs				# directories
+		$dscdirs		# directories, discovery only
+	] =>> ls
+
+	[
+		$rdirs			# recursive directories
+		$rdscdirs		# recursive directories, discovery only
+	] =>> lsr
+] =>> xm/<y>
+
+# $bison : y -> { tab.c, tab.h }
+[ $yfabpaths ] =>> xs/<y>/tab.c/y/v/d/cp/u/xs/tab.c/tab.h/z/v/dj/2/shift/pop :: [ $< ] =>> rx/xsf/<y>/ss/u
 {
-	[ $cc $cflags ] -c [ $@ ] =>> rx/ineed/xm/<c>/ss/u -o [ $@ ]
+	[ $bison --warnings=error -o ]				\
+	[ $@ ] =>> h/1/1											\
+	[ -d ]																\
+	[ $@ ] =>> rx/ineed/xm/<y>/ss/u
 }
+
+# $cc : fab.c -> fab.o via std.c
++[@std.c]([ $yfabpaths ] =>> xs/<y>/<tab.o> ^ $fabpaths)-

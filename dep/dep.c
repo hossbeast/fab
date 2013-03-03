@@ -50,7 +50,7 @@ static int dep_add_single(
 
 //printf("dep_add_single\n");
 	// resolve the right-hand side
-	fatal(list_resolve, ffn->feeds, vmap, stax, staxa, pr);
+	fatal(list_resolve, ffn->feeds, vmap, stax, staxa, pr, 0);
 
 	// add edges, which are the cartesian product needs x feeds
 	LSTACK_ITERATE((*stax)[pl], i, goa);
@@ -140,8 +140,8 @@ static int dep_add_single(
 				);
 
 				// update affected lists
-				fatal(ff_regular_affecting_gn, ffn->loc.ff, A);
-				fatal(ff_regular_affecting_gn, ffn->loc.ff, B);
+				fatal(ff_regular_enclose_gn, ffn->loc.ff, A);
+				fatal(ff_regular_enclose_gn, ffn->loc.ff, B);
 			}
 
 			// if A was a string, gn_edge_add has just made it a gn*
@@ -178,19 +178,22 @@ static int dep_add_single(
 					tag |= L_DSCNEW;
 			}
 
-			log(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
-				, "S"
-				, newa ? "x" : ""
-				, newb ? "x" : ""
-				, newr ? "x" : ""
-				, ff_idstring(ffn->loc.ff)
-				, ffn->loc.f_lin + 1
-				, ffn->loc.f_col + 1
-				, ffn->loc.l_lin + 1
-				, ffn->loc.l_col + 1
-				, ((gn*)A)->idstring
-				, ((gn*)B)->idstring
-			);
+			if(newr)
+			{
+				log(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
+					, "S"
+					, newa ? "x" : ""
+					, newb ? "x" : ""
+					, newr ? "x" : ""
+					, ff_idstring(ffn->loc.ff)
+					, ffn->loc.f_lin + 1
+					, ffn->loc.f_col + 1
+					, ffn->loc.l_lin + 1
+					, ffn->loc.l_col + 1
+					, ((gn*)A)->idstring
+					, ((gn*)B)->idstring
+				);
+			}
 		}
 		LSTACK_ITEREND;
 	}
@@ -260,7 +263,7 @@ static int dep_add_multi(
 
 		// resolve the right-hand side in the context of $<
 		fatal(var_push_list, vmap, "<", 0, (*stax)[staxp], 0);
-		fatal(list_resolve, ffn->feeds, vmap, stax, staxa, staxp + 1);
+		fatal(list_resolve, ffn->feeds, vmap, stax, staxa, staxp + 1, 0);
 		fatal(var_pop, vmap, "<", 0);
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
@@ -339,8 +342,8 @@ static int dep_add_multi(
 					);
 
 					// update affected lists
-					fatal(ff_regular_affecting_gn, ffn->loc.ff, A);
-					fatal(ff_regular_affecting_gn, ffn->loc.ff, B);
+					fatal(ff_regular_enclose_gn, ffn->loc.ff, A);
+					fatal(ff_regular_enclose_gn, ffn->loc.ff, B);
 				}
 
 				// if A was a string, gn_edge_add has just made it a gn*
@@ -377,19 +380,22 @@ static int dep_add_multi(
 						tag |= L_DSCNEW;
 				}
 
-				log(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
-					, "M"
-					, newa[i] ? "x" : ""
-					, newb ? "x" : ""
-					, newr ? "x" : ""
-					, ff_idstring(ffn->loc.ff)
-					, ffn->loc.f_lin + 1
-					, ffn->loc.f_col + 1
-					, ffn->loc.l_lin + 1
-					, ffn->loc.l_col + 1
-					, ((gn*)A)->idstring
-					, ((gn*)B)->idstring
-				);
+				if(newr)
+				{
+					log(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
+						, "M"
+						, newa[i] ? "x" : ""
+						, newb ? "x" : ""
+						, newr ? "x" : ""
+						, ff_idstring(ffn->loc.ff)
+						, ffn->loc.f_lin + 1
+						, ffn->loc.f_col + 1
+						, ffn->loc.l_lin + 1
+						, ffn->loc.l_col + 1
+						, ((gn*)A)->idstring
+						, ((gn*)B)->idstring
+					);
+				}
 			}
 			LSTACK_ITEREND;
 		}
@@ -416,7 +422,7 @@ int dep_process(
 )
 {
 	// resolve the left-hand side
-	fatal(list_resolve, ffn->needs, vmap, stax, staxa, staxp);
+	fatal(list_resolve, ffn->needs, vmap, stax, staxa, staxp, 0);
 
 	if(ffn->flags & FFN_SINGLE)
 	{

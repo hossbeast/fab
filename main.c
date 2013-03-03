@@ -117,13 +117,17 @@ int main(int argc, char** argv)
 		// parse, starting with the initial fabfile, construct the graph
 		fatal(ffproc, ffp, g_args.init_fabfile_path, sstk, vmap, &stax, &staxa, &staxp, &first, 0);
 
-		// process hashblocks for fabfiles which have changed
-		/* 
-		if(hashblock_cmp(iff->hb))
+		// process hashblocks for regular fabfiles which have changed
+		for(x = 0; x < ff_files.l; x++)
 		{
-			fatal(ff_regular_rewrite, iff);
+			if(ff_files.e[x]->type == FFT_REGULAR)
+			{
+				if(hashblock_cmp(ff_files.e[x]->hb))
+				{
+					fatal(ff_regular_rewrite, ff_files.e[x]);
+				}
+			}
 		}
-		*/
 
 		// comprehensive upfront dependency discovery on the entire graph
 		if(g_args.mode_ddsc == MODE_DDSC_UPFRONT)

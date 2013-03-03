@@ -16,6 +16,7 @@
 #include "args.h"
 #include "identity.h"
 #include "gn.h"
+#include "enclose.h"
 
 #include "log.h"
 #include "control.h"
@@ -51,78 +52,6 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 //
 // [[ static ]]
 //
-
-static int closevars(ff_file * const restrict ff, ff_node * const restrict root)
-{
-	int find(ff_node * const restrict ffn)
-	{
-		if(ffn)
-		{
-			if(ffn->type == FFN_VARREF)
-			{
-				// skip autovars
-				if((ffn->text[0] >= 'a' && ffn->text[0] <= 'z') || (ffn->text[0] >= 'A' && ffn->text[0] <= 'Z') || ffn->text[0] == '_')
-				{
-					if(ff->affecting_varsl == ff->affecting_varsa)
-					{
-						int ns = ff->affecting_varsa ?: 10;
-						ns = ns + 2 * ns / 2;
-
-						fatal(xrealloc, &ff->affecting_vars, sizeof(*ff->affecting_vars), ns, ff->affecting_varsa);
-						ff->affecting_varsa = ns;
-					}
-
-					ff->affecting_vars[ff->affecting_varsl++] = ffn;
-				}
-			}
-
-			int x;
-			for(x = 0; x < ffn->listl; x++)
-				find(ffn->list[x]);
-
-			for(x = 0; x < sizeof(ffn->nodes_owned) / sizeof(ffn->nodes_owned[0]); x++)
-				find(ffn->nodes_owned[x]);
-		}
-
-		finally : coda;
-	};
-
-	// find all varrefs
-	fatal(find, root);
-
-	// sort
-	int cmp(const void * A, const void * B)
-	{
-		return strcmp((*(ff_node**)A)->text, (*(ff_node**)B)->text);
-	};
-	qsort(ff->affecting_vars, ff->affecting_varsl, sizeof(*ff->affecting_vars), cmp);
-
-	// uniq
-	int j;
-	for(j = ff->affecting_varsl - 1; j > 0; j--)
-	{
-		int i;
-		for(i = j - 1; i >= 0; i--)
-		{
-			if(strcmp(ff->affecting_vars[i]->text, ff->affecting_vars[j]->text))
-				break;
-		}
-
-		if((++i) < j)
-		{
-			memmove(
-				  &ff->affecting_vars[i]
-				, &ff->affecting_vars[j]
-				, (ff->affecting_varsl - j) * sizeof(ff->affecting_vars[0])
-			);
-
-			ff->affecting_varsl -= (j - i);
-			j = i;
-		}
-	}
-
-	finally : coda;
-}
 
 static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, ff_file ** const rff)
 {
@@ -160,8 +89,8 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 			ff->idstring = strdup(ff->path->rel);
 		}
 
-		// affected dir
-		fatal(xsprintf, &ff->affected_dir, "%s/REGULAR/%u/affected", FF_DIR_BASE, ff->path->can_hash);
+		// closure dir
+		fatal(xsprintf, &ff->closure_gns_dir, "%s/REGULAR/%u/closure_gns", FF_DIR_BASE, ff->path->can_hash);
 	}
 
 	parse_param pp = {
@@ -194,8 +123,8 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 		if(ff->type == FFT_REGULAR)
 		{
-			// create flat list of VARREF's in this fabfile
-			fatal(closevars, ff, ff->ffn);
+			// create VARREF closure
+			fatal(enclose_vars, ff->ffn, &ff->closure_vars, &ff->closure_varsa, &ff->closure_varsl);
 
 			// create hashblock
 			fatal(hashblock_create, &ff->hb, "%s/REGULAR/%u", FF_DIR_BASE, ff->path->can_hash);
@@ -206,10 +135,10 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 			// stat the file, populate [1] - now ready for hashblock_cmp
 			fatal(hashblock_stat, ff->path->abs, ff->hb, 0, 0);
 			ff->hb->vrshash[1] = FAB_VERSION;
+			ff_dump(ff);
 		}
 
 		(*rff) = ff;
-		ff_dump(ff);
 	}
 
 	finally : coda;
@@ -359,9 +288,9 @@ static void ff_freefile(ff_file * ff)
 		{
 			hashblock_free(ff->hb);
 
-			free(ff->affected_dir);
-			free(ff->affected_gn);
-			free(ff->affecting_vars);
+			free(ff->closure_gns_dir);
+			free(ff->closure_gns);
+			free(ff->closure_vars);
 		}
 
 		path_free(ff->path);
@@ -399,27 +328,27 @@ int ff_regular_rewrite(ff_file * ff)
 
 		return 0;
 	};
-	qsort(ff->affected_gn, ff->affected_gnl, sizeof(*ff->affected_gn), cmp);
+	qsort(ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), cmp);
 
 	// ensure affected directory exists
-	fatal(mkdirp, ff->affected_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+	fatal(mkdirp, ff->closure_gns_dir, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	// write links to all nodes that are connected to this regular fabfile
 	int x;
-	for(x = 0; x < ff->affected_gnl; x++)
+	for(x = 0; x < ff->closure_gnsl; x++)
 	{
 		// directory for the affected node
-		snprintf(to, sizeof(to), "%s/%u", ff->affected_dir, ff->affected_gn[x]->path->can_hash);
+		snprintf(to, sizeof(to), "%s/%u", ff->closure_gns_dir, ff->closure_gns[x]->path->can_hash);
 		fatal(mkdirp, to, S_IRWXU | S_IRWXG | S_IRWXO);
 		
 		// with a link to its PRIMARY and SECONDARY directories
-		snprintf(to, sizeof(to), "%s/PRIMARY/%u", GN_DIR_BASE, ff->affected_gn[x]->path->can_hash);
-		snprintf(from, sizeof(from), "%s/%u/PRIMARY", ff->affected_dir, ff->affected_gn[x]->path->can_hash);
+		snprintf(to, sizeof(to), "%s/PRIMARY/%u", GN_DIR_BASE, ff->closure_gns[x]->path->can_hash);
+		snprintf(from, sizeof(from), "%s/%u/PRIMARY", ff->closure_gns_dir, ff->closure_gns[x]->path->can_hash);
 		if(symlink(to, from) != 0 && errno != EEXIST)
 			fail("symlink failed : [%d][%s]", errno, strerror(errno));
 
-		snprintf(to, sizeof(to), "%s/SECONDARY/%u", GN_DIR_BASE, ff->affected_gn[x]->path->can_hash);
-		snprintf(from, sizeof(from), "%s/%u/SECONDARY", ff->affected_dir, ff->affected_gn[x]->path->can_hash);
+		snprintf(to, sizeof(to), "%s/SECONDARY/%u", GN_DIR_BASE, ff->closure_gns[x]->path->can_hash);
+		snprintf(from, sizeof(from), "%s/%u/SECONDARY", ff->closure_gns_dir, ff->closure_gns[x]->path->can_hash);
 		if(symlink(to, from) != 0 && errno != EEXIST)
 			fail("symlink failed : [%d][%s]", errno, strerror(errno));
 	}
@@ -462,7 +391,7 @@ int ff_regular_rewrite(ff_file * ff)
 					return *(uint32_t*)K - (*(struct gn **)A)->path->can_hash;
 				};
 
-				if(bsearch(&canhash, ff->affected_gn, ff->affected_gnl, sizeof(*ff->affected_gn), kcmp) == 0)
+				if(bsearch(&canhash, ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), kcmp) == 0)
 				{
 					if(rmdir_recursive(fpath, 1) == 0)
 					{
@@ -480,7 +409,7 @@ int ff_regular_rewrite(ff_file * ff)
 		return FTW_CONTINUE;
 	};
 
-	fatal_os(nftw, ff->affected_dir, fn, 32, FTW_ACTIONRETVAL | FTW_DEPTH);
+	fatal_os(nftw, ff->closure_gns_dir, fn, 32, FTW_ACTIONRETVAL | FTW_DEPTH);
 
 	// rewrite the hashblock (reverts to user identity)
 	fatal(hashblock_write, ff->hb);
@@ -496,22 +425,22 @@ int ff_regular_rewrite(ff_file * ff)
 	finally : coda;
 }
 
-int ff_regular_affecting_gn(struct ff_file * const ff, gn * const gn)
+int ff_regular_enclose_gn(struct ff_file * const ff, gn * const gn)
 {
 	int newa = 0;
-	fatal(gn_affected_ff_reg, gn, ff, &newa);
+	fatal(gn_enclose_ff, gn, ff, &newa);
 
 	if(newa)
 	{
-		if(ff->affected_gnl >= ff->affected_gna)
+		if(ff->closure_gnsl >= ff->closure_gnsa)
 		{
-			int ns = ff->affected_gna ?: 10;
+			int ns = ff->closure_gnsa ?: 10;
 			ns = ns * 2 + ns / 2;
-			fatal(xrealloc, &ff->affected_gn, sizeof(*ff->affected_gn), ns, ff->affected_gna);
-			ff->affected_gna = ns;
+			fatal(xrealloc, &ff->closure_gns, sizeof(*ff->closure_gns), ns, ff->closure_gnsa);
+			ff->closure_gnsa = ns;
 		}
 
-		ff->affected_gn[ff->affected_gnl++] = gn;
+		ff->closure_gns[ff->closure_gnsl++] = gn;
 	}
 
 	finally : coda;	
@@ -519,6 +448,7 @@ int ff_regular_affecting_gn(struct ff_file * const ff, gn * const gn)
 
 void ff_dump(ff_file * const ff)
 {
+	int x;
 	if(log_would(L_FF | L_FFFILE))
 	{
 		log(L_FF | L_FFFILE			, "%20s : %s", "idstring", ff->idstring);
@@ -530,11 +460,16 @@ void ff_dump(ff_file * const ff)
 		log(L_FF | L_FFFILE			, "%20s : %s", "path-base", ff->path->base);
 		if(ff->type == FFT_REGULAR)
 		{
-			log(L_FF | L_FFFILE		, "%20s : %d", "var-closure", ff->affecting_varsl);
-			int x;
-			for(x = 0; x < ff->affecting_varsl; x++)
+			log(L_FF | L_FFFILE		, "%20s : %d", "closure-gns", ff->closure_gnsl);
+			for(x = 0; x < ff->closure_gnsl; x++)
 			{
-				log(L_FF | L_FFFILE	, "  %20s : %s", "", ff->affecting_vars[x]->text);
+				log(L_FF | L_FFFILE , "  %20s : %s", "", ff->closure_gns[x]->idstring);
+			}
+
+			log(L_FF | L_FFFILE		, "%20s : %d", "closure-vars", ff->closure_varsl);
+			for(x = 0; x < ff->closure_varsl; x++)
+			{
+				log(L_FF | L_FFFILE	, "  %20s : %s", "", ff->closure_vars[x]->text);
 			}
 		}
 		else if(ff->type == FFT_DDISC)
@@ -546,3 +481,77 @@ void ff_dump(ff_file * const ff)
 	log(L_FF | L_FFFILE			, "%20s :", "tree");
 	ffn_dump(ff->ffn);
 }
+
+/*
+static int closevars(ff_file * const restrict ff, ff_node * const restrict root)
+{
+	int find(ff_node * const restrict ffn)
+	{
+		if(ffn)
+		{
+			if(ffn->type == FFN_VARREF)
+			{
+				// skip autovars
+				if((ffn->text[0] >= 'a' && ffn->text[0] <= 'z') || (ffn->text[0] >= 'A' && ffn->text[0] <= 'Z') || ffn->text[0] == '_')
+				{
+					if(ff->closure_varsl == ff->closure_varsa)
+					{
+						int ns = ff->closure_varsa ?: 10;
+						ns = ns + 2 * ns / 2;
+
+						fatal(xrealloc, &ff->closure_vars, sizeof(*ff->closure_vars), ns, ff->closure_varsa);
+						ff->closure_varsa = ns;
+					}
+
+					ff->closure_vars[ff->closure_varsl++] = ffn;
+				}
+			}
+
+			int x;
+			for(x = 0; x < ffn->listl; x++)
+				find(ffn->list[x]);
+
+			for(x = 0; x < sizeof(ffn->nodes_owned) / sizeof(ffn->nodes_owned[0]); x++)
+				find(ffn->nodes_owned[x]);
+		}
+
+		finally : coda;
+	};
+
+	// find all varrefs
+	fatal(find, root);
+
+	// sort
+	int cmp(const void * A, const void * B)
+	{
+		return strcmp((*(ff_node**)A)->text, (*(ff_node**)B)->text);
+	};
+	qsort(ff->closure_vars, ff->closure_varsl, sizeof(*ff->closure_vars), cmp);
+
+	// uniq
+	int j;
+	for(j = ff->closure_varsl - 1; j > 0; j--)
+	{
+		int i;
+		for(i = j - 1; i >= 0; i--)
+		{
+			if(strcmp(ff->closure_vars[i]->text, ff->closure_vars[j]->text))
+				break;
+		}
+
+		if((++i) < j)
+		{
+			memmove(
+				  &ff->closure_vars[i]
+				, &ff->closure_vars[j]
+				, (ff->closure_varsl - j) * sizeof(ff->closure_vars[0])
+			);
+
+			ff->closure_varsl -= (j - i);
+			j = i;
+		}
+	}
+
+	finally : coda;
+}
+*/

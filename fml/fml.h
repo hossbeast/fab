@@ -13,7 +13,9 @@
 #include "strstack.h"
 #include "map.h"
 
-struct fmleval;
+#define restrict __restrict
+
+struct fmleval;	// in ts.h
 
 typedef struct fml
 {
@@ -21,6 +23,20 @@ typedef struct fml
 
 	struct fmleval *	evals;				// evaluation instances
 	int								evals_l;
+
+	// the number of bags associated with an fml is the number of different times that
+	// the ff_file it is in is invoked
+	map ** 						bags;
+	int								bagsa;
+	int								bagsl;
+
+	/*
+	** the var closure of an fml is a flat distinct list of all of the variables
+	** whose values could affect the rendered text of the fml (FFN_VARREF nodes)
+	*/
+	struct ff_node **	closure_vars;
+	int								closure_varsa;
+	int								closure_varsl;
 } fml;
 
 extern union g_fmls_t
@@ -37,18 +53,20 @@ extern union g_fmls_t
 	};
 } g_fmls;
 
-/// fml_add
+/// fml_attach
 //
-// add a formula to the global list from the fabfile node
+// SUMMARY
+//  attach a formula to graph nodes
 //
-int fml_add(ff_node * ffn, strstack * sstk, map * vmap, lstack *** stax, int * stax_a, int p)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, lstack *** const restrict stax, int * const restrict staxa, int staxp)
 	__attribute__((nonnull));
 
 /// fml_render
 //
-// render cmd to ts->cmd_txt
+// SUMMARY
+//  ts->fmlv has been set; render the cmd for that evaluation to ts->cmd_txt
 //
-int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_a, int p, int standalone)
+int fml_render(ts * const restrict ts, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
 	__attribute__((nonnull));
 
 /// fml_exec
@@ -59,7 +77,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * stax_a, int p, int st
 //     ts - threadspace
 //    num - unique-per-pid number for this execution
 //
-int fml_exec(ts *, int num)
+int fml_exec(ts * const restrict, int num)
 	__attribute__((nonnull));
 
 /// fml_teardown
@@ -68,4 +86,5 @@ int fml_exec(ts *, int num)
 //
 void fml_teardown();
 
+#undef restrict
 #endif

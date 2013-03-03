@@ -13,11 +13,15 @@
 #include "ff.tokens.h"
 #include "list.h"
 #include "identity.h"
+#include "enclose.h"
+#include "var.h"
 
 #include "control.h"
 #include "xmem.h"
 #include "map.h"
 #include "dirutil.h"
+
+#define restrict __restrict
 
 //
 // data
@@ -29,7 +33,7 @@ union g_fmls_t		g_fmls = { { .size = sizeof(fml) } };
 // static
 //
 
-static int fml_add_single(fml * fml, strstack * sstk, lstack * ls)
+static int fml_attach_singly(fml * const restrict fml, strstack * const restrict sstk, map * const restrict bag, lstack * const restrict ls)
 {
 	int y;
 
@@ -41,6 +45,7 @@ static int fml_add_single(fml * fml, strstack * sstk, lstack * ls)
 	{
 		fmleval * fmlv = &fml->evals[y];
 		fmlv->fml = fml;
+		fmlv->bag = bag;
 		fmlv->products_l = 1;
 		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
 
@@ -63,7 +68,7 @@ static int fml_add_single(fml * fml, strstack * sstk, lstack * ls)
 		fmlv->products[0] = t;
 
 		// update affected lists
-		fatal(ff_regular_affecting_gn, fml->ffn->loc.ff, t);
+		fatal(ff_regular_enclose_gn, fml->ffn->loc.ff, t);
 
 		if(fml->ffn->flags & FFN_DISCOVERY)
 		{
@@ -77,7 +82,8 @@ static int fml_add_single(fml * fml, strstack * sstk, lstack * ls)
 			);
 			t->dscv = fmlv;
 		}
-		else
+
+		if(fml->ffn->flags & FFN_FABRICATION)
 		{
 			log(L_FAB | L_FML | L_FMLTARG, "reg(%s)[%3d,%3d - %3d,%3d] -> %s"
 				, ff_idstring(fml->ffn->loc.ff)
@@ -95,7 +101,7 @@ static int fml_add_single(fml * fml, strstack * sstk, lstack * ls)
 	finally : coda;
 }
 
-static int fml_add_multi(fml * fml, strstack * sstk, lstack * ls)
+static int fml_attach_multi(fml * const restrict fml, strstack * const restrict sstk, map * const restrict bag, lstack * const restrict ls)
 {
 	int x;
 	int y;
@@ -108,6 +114,7 @@ static int fml_add_multi(fml * fml, strstack * sstk, lstack * ls)
 	{
 		fmleval * fmlv = &fml->evals[x];
 		fmlv->fml = fml;
+		fmlv->bag = bag;
 		fmlv->products_l = ls->s[x].l;
 		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
 
@@ -146,7 +153,7 @@ static int fml_add_multi(fml * fml, strstack * sstk, lstack * ls)
 			);
 
 			// update affected lists
-			fatal(ff_regular_affecting_gn, fml->ffn->loc.ff, t);
+			fatal(ff_regular_enclose_gn, fml->ffn->loc.ff, t);
 
 			if(y)
 				log_add(", %s", t->idstring);
@@ -168,40 +175,65 @@ static int fml_add_multi(fml * fml, strstack * sstk, lstack * ls)
 //
 // public
 //
-int fml_add(ff_node * ffn, strstack * sstk, map * vmap, lstack *** stax, int * staxa, int p)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, lstack *** const restrict stax, int * const restrict staxa, int staxp)
 {
-	// create fml with ffn - which is an FFN_FORMULA
+	// create fml if necessary
 	fml * fml = 0;
-	fatal(coll_doubly_add, &g_fmls.c, 0, &fml);
-	fml->ffn = ffn;
+	if(ffn->fml == 0)
+	{
+		fatal(coll_doubly_add, &g_fmls.c, 0, &ffn->fml);
+		fml = ffn->fml;
+		fml->ffn = ffn;
 
-	fatal(list_ensure, stax, staxa, p);
+		// compute VARREF closure
+		fatal(enclose_vars, ffn, &fml->closure_vars, &fml->closure_varsa, &fml->closure_varsl);
+	}
+
+	// create the bag
+	if(fml->bagsl == fml->bagsa)
+	{
+		int ns = fml->bagsa ?: 10;
+		ns = ns * 2 + ns / 2;
+		fatal(xrealloc, &fml->bags, sizeof(*fml->bags), ns, fml->bagsa);
+		fml->bagsa = ns;
+	}
+
+	fatal(map_create, &fml->bags[fml->bagsl++], 0);
+
+	int x;
+	for(x = 0; x < fml->closure_varsl; x++)
+	{
+		lstack * ls = var_access(vmap, fml->closure_vars[x]->text);
+		fatal(map_set, fml->bags[fml->bagsl - 1], MMS(fml->closure_vars[x]->text), MM(ls));
+	}
 
 	// resolve targets lists
+	fatal(list_ensure, stax, staxa, staxp);
+
 	if(ffn->targets_0)
-		fatal(list_resolveto, ffn->targets_0, vmap, stax, staxa, p);
+		fatal(list_resolveto, ffn->targets_0, vmap, stax, staxa, staxp, 0);
 
 	if(ffn->targets_1)
-		fatal(list_resolveto, ffn->targets_1, vmap, stax, staxa, p);
+		fatal(list_resolveto, ffn->targets_1, vmap, stax, staxa, staxp, 0);
 
-	// attach graph nodes
-	if(fml->ffn->flags & FFN_SINGLE)
+	// create fmlv(s) and attach        graph nodes
+	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(fml_add_single, fml, sstk, (*stax)[p]);
+		fatal(fml_attach_singly, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[staxp]);
 	}
-	else if(fml->ffn->flags & FFN_MULTI)
+	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(fml_add_multi, fml, sstk, (*stax)[p]);
+		fatal(fml_attach_multi, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[staxp]);
 	}
 	else
 	{
-		fail("bad flags %hhu (no cardinality)", fml->ffn->flags);
+		fail("bad flags %hhu (no cardinality)", ffn->flags);
 	}
 
 	finally : coda;
 }
 
-int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxa, int p, int standalone)
+int fml_render(ts * const restrict ts, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
 {
 	if(standalone)
 	{
@@ -234,10 +266,10 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxa, int p, int sta
 		}
 		else if(ffn->commands[x]->type == FFN_LIST)
 		{
-			fatal(list_resolve, ffn->commands[x], vmap, stax, staxa, p);
+			fatal(list_resolve, ffn->commands[x], ts->fmlv->bag, stax, staxa, staxp, 1);
 
 			int i;
-			LSTACK_ITERATE((*stax)[p], i, go);
+			LSTACK_ITERATE((*stax)[staxp], i, go);
 			if(go)
 			{
 				if(k)
@@ -245,7 +277,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxa, int p, int sta
 
 				char * s = 0;
 				int l = 0;
-				lstack_string((*stax)[p], 0, i, &s, &l);
+				lstack_string((*stax)[staxp], 0, i, &s, &l);
 
 				fatal(pscat, &ts->cmd_txt, s, l);
 				k++;
@@ -257,7 +289,7 @@ int fml_render(ts * ts, map * vmap, lstack *** stax, int * staxa, int p, int sta
 	finally : coda;
 }
 
-int fml_exec(ts * ts, int num)
+int fml_exec(ts * const restrict ts, int num)
 {
 	// assume fabsys identity
 	fatal(identity_assume_fabsys);
@@ -336,6 +368,14 @@ static void fml_free(fml * fml)
 			free(fml->evals[x].products);
 		}
 		free(fml->evals);
+
+		for(x = 0; x < fml->bagsl; x++)
+		{
+			map_free(fml->bags[x]);
+		}
+		free(fml->bags);
+
+		free(fml->closure_vars);
 	}
 	free(fml);
 }

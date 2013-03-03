@@ -109,10 +109,13 @@ typedef struct gn
 	char*							idstring;				// identifier string, subject to execution parameters
 	int								idstringl;
 
-	// regular fabfiles which may affect this node (dependencies, formulas, dscv formulas)
-	struct ff_file **	affecting_ff_file;
-	int								affecting_ff_filel;
-	int								affecting_ff_filea;
+	/*
+	** the ff closure of an gn is all of the ff_files which might affect this node if they change
+	** (FFT_REGULAR only)
+	*/
+	struct ff_file **	closure_ffs;
+	int								closure_ffsl;
+	int								closure_ffsa;
 
 	//
 	// PRIMARY
@@ -388,15 +391,15 @@ int gn_invalidations();
 //
 void gn_teardown();
 
-/// gn_affected_ff_reg
+/// gn_enclose_ff
 //
 // SUMMARY
-//  mark an gn as being affected by an ff_file by appending ff to its affected_ff_file list
+//  mark an gn as being affected by an ff_file by appending ff to its closure_ffs list
 //
 // PARAMETERS
 //  newa - *newa incremented by 1 if ff_file was added to gn->affected_ff_file
 //
-int gn_affected_ff_reg(gn * const restrict gn, struct ff_file * const restrict ff, int * const restrict newa)
+int gn_enclose_ff(gn * const restrict gn, struct ff_file * const restrict ff, int * const restrict newa)
 	__attribute__((nonnull));
 
 #undef restrict

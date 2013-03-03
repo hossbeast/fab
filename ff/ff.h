@@ -49,19 +49,27 @@ typedef struct ff_file
 		};
 		
 		// regular fabfile
-		struct {
-			struct gn ** 			affected_gn;	// all gn's related to this ff_file (dependencies, formulas, dscv formulas, etc)
-			int								affected_gnl;
-			int								affected_gna;
-
-			char *						affected_dir;
-
+		struct
+		{
 			hashblock *				hb;
 			int								hb_reload;
 
-			struct ff_node **	affecting_vars;	// flat list of VARREF's in this fabfile
-			int								affecting_varsl;
-			int								affecting_varsa;
+			/*
+			** the gn closure of an ff_file is all the gns possibly affected if this file changes
+			** (dependencies, formulas, dscv formulas, etc)
+			*/
+			char *						closure_gns_dir;
+			struct gn ** 			closure_gns;
+			int								closure_gnsl;
+			int								closure_gnsa;
+
+			/*
+			** the var closure of an ff_file is all of the variables whose values affect the meaning
+			** of the ff_file (FFN_VARREF nodes)
+			*/
+			struct ff_node **	closure_vars;
+			int								closure_varsl;
+			int								closure_varsa;
 		};
 	};
 } ff_file;
@@ -212,14 +220,14 @@ int ff_regular_rewrite(ff_file * const restrict ff)
 //
 void ff_teardown();
 
-/// ff_regular_affecting_gn
+/// ff_regular_enclose_gn
 //
 // SUMMARY
-//  mark a regular ff_file as affecting a gn by appending gn to its affecting_gn list
+//  mark a regular ff_file as affecting a gn by appending gn to its closure_gns list
 //
 // PARAMETERS
 //
-int ff_regular_affecting_gn(ff_file * const restrict ff, struct gn * const restrict gn)
+int ff_regular_enclose_gn(ff_file * const restrict ff, struct gn * const restrict gn)
 	__attribute__((nonnull));
 
 /// ff_dump
