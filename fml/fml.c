@@ -187,6 +187,29 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 	finally : coda;
 }
 
+static void fml_free(fml * fml)
+{
+	if(fml)
+	{
+		int x;
+		for(x = 0; x < fml->evalsl; x++)
+		{
+			free(fml->evals[x]->products);
+			free(fml->evals[x]);
+		}
+		free(fml->evals);
+
+		for(x = 0; x < fml->bagsl; x++)
+		{
+			map_free(fml->bags[x]);
+		}
+		free(fml->bags);
+
+		free(fml->closure_vars);
+	}
+	free(fml);
+}
+
 //
 // public
 //
@@ -215,12 +238,16 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 
 	fatal(map_create, &fml->bags[fml->bagsl++], 0);
 
-	int x;
+	lstack * ls = 0;
+	int x = 0;
 	for(x = 0; x < fml->closure_varsl; x++)
 	{
-		lstack * ls = var_access(vmap, fml->closure_vars[x]->text);
+		ls = var_access(vmap, fml->closure_vars[x]->text);
 		fatal(map_set, fml->bags[fml->bagsl - 1], MMS(fml->closure_vars[x]->text), MM(ls));
 	}
+
+	ls = var_access(vmap, "#");
+	fatal(map_set, fml->bags[fml->bagsl - 1], MMS("#"), MM(ls));
 
 	// resolve targets lists
 	fatal(list_ensure, stax, staxa, staxp);
@@ -371,29 +398,6 @@ int fml_exec(ts * const restrict ts, int num)
 	fatal(identity_assume_user);
 
 	finally : coda;
-}
-
-static void fml_free(fml * fml)
-{
-	if(fml)
-	{
-		int x;
-		for(x = 0; x < fml->evalsl; x++)
-		{
-			free(fml->evals[x]->products);
-			free(fml->evals[x]);
-		}
-		free(fml->evals);
-
-		for(x = 0; x < fml->bagsl; x++)
-		{
-			map_free(fml->bags[x]);
-		}
-		free(fml->bags);
-
-		free(fml->closure_vars);
-	}
-	free(fml);
 }
 
 void fml_teardown()

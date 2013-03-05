@@ -47,13 +47,10 @@ static int proc_varnode(
 			t = 0;
 		}
 	}
-	else
+	else if(stmt->type == FFN_VARPUSH)
 	{
-		if(stmt->type == FFN_VARPUSH || stmt->type == FFN_VARDESIGNATE)
-		{
-			v = listwise_identity;
-			t = 1;
-		}
+		v = listwise_identity;
+		t = 1;
 	}
 
 	// apply to all referenced vars
@@ -77,14 +74,14 @@ static int proc_varnode(
 					fatal(var_push_alias, vmap, var, 0, v, stmt);
 			}
 		}
-		else if(stmt->type == FFN_VARPUSH || stmt->type == FFN_VARDESIGNATE)
+		else if(stmt->type == FFN_VARPUSH)
 		{
 			if(t)
 				fatal(var_push_list, vmap, var, 0, v, stmt);
 			else
 				fatal(var_push_alias, vmap, var, 0, v, stmt);
 		}
-		else if(stmt->type == FFN_VARPOP)
+		else if(stmt->type == FFN_VARPOP || stmt->type == FFN_VARDESIGNATE)
 		{
 			if(v)
 			{
@@ -98,7 +95,8 @@ static int proc_varnode(
 		if(vrefs)
 		{
 			if(    (stmt->type == FFN_VARASSIGN && r && v)
-					|| (stmt->type == FFN_VARPUSH || stmt->type == FFN_VARDESIGNATE)
+					|| (stmt->type == FFN_VARPUSH)
+					|| (stmt->type == FFN_VARDESIGNATE)
 					|| (stmt->type == FFN_VARPOP && v)
 			)
 			{
@@ -163,8 +161,6 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		{
 			int pn = *staxp;
 			fatal(list_resolve, stmt->modules, vmap, stax, staxa, pn, 0);
-
-//printf("INVOCATIONS : %d @ %d\n", (*stax)[(*staxp)]->s[0].l, (*staxp));
 
 			// iterate all referenced modules
 			LSTACK_ITERATE((*stax)[pn], y, go);
@@ -274,7 +270,20 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 				if(stmt->flags & FFN_GATED)
 				{
 					for(i = 0; i < ff->closure_varsl; i++)
-						fatal(var_pop, vmap, ff->closure_vars[i]->text, stmt);
+					{
+						int j;
+						for(j = 0; j < vrefsl; j++)
+						{
+							if(strcmp(vrefs[j], ff->closure_vars[i]->text) == 0)
+								break;
+						}
+
+						if(j == vrefsl)
+						{
+							if(ff->closure_vars[i]->type != FFN_VARDESIGNATE)
+								fatal(var_pop, vmap, ff->closure_vars[i]->text, stmt);
+						}
+					}
 				}
 				else
 				{

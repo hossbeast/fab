@@ -23,7 +23,7 @@
 #
 
 # paths to l files for discovery
-$ldscpaths = [
+$ldscpaths < [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
 
@@ -39,7 +39,7 @@ $ldscpaths = [
 ] =>> xm/<l>
 
 # paths to l files for fabrication
-$lfabpaths = [
+$lfabpaths < [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
 
@@ -69,4 +69,4 @@ $lfabpaths = [
 }
 
 # $cc : lex.c -> lex.o via std.c
-+[@std.c]([ $lfabpaths ] =>> xs/<l>/<lex.c> ^ $fabpaths)-
++[@std.c]([ $lfabpaths ] =>> xs/<l>/<lex.c> ^ $fabpaths, ^ $cc $cflags)-

@@ -191,6 +191,7 @@
 
 <INITIAL,list,checklw,multilinecomment>[\n]						{
 																												// characters with special meaning in both INITIAL and list
+																												PUSHSTATE(generatorlf, yyextra);
 																												loc_reset(yyextra, yylloc);
 																											}
 <INITIAL,list,checklw>[\t ]+													{ locify(yyextra, yylloc, yyleng, 0); }
@@ -317,7 +318,13 @@
 																												// re-scan this byte
 																												yyless(0);
 
+																												int fab = 0;
 																												if(yyextra->states_n && yyextra->states[yyextra->states_n - 1] == command)
+																													fab++;
+																												else if(yyextra->states_n > 1 && yyextra->states[yyextra->states_n - 2] == command && yyextra->states[yyextra->states_n - 1] == checklw)
+																													fab++;
+
+																												if(fab)
 																												{
 																													// fabricate an LF token
 																													yylval->str.s = yyextra->last_s;
@@ -329,7 +336,7 @@
 																													yylloc->last_line = yyextra->loc.l_lin;
 
 																													// print it
-																													PTOKEN(yylval->str.s, yylval->str.e - yylval->str.s, LF, yylloc, __LINE__);
+																													PTOKEN("\\n", 2, LF, yylloc, __LINE__);
 
 																													return LF;
 																												}

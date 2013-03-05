@@ -23,7 +23,7 @@
 #
 
 # paths to y files for discovery
-$ydscpaths = [
+$ydscpaths < [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
 
@@ -39,7 +39,7 @@ $ydscpaths = [
 ] =>> xm/<y>
 
 # paths to y files for fabrication
-$yfabpaths = [
+$yfabpaths < [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
 
@@ -72,4 +72,4 @@ $yfabpaths = [
 }
 
 # $cc : tab.c -> tab.o via std.c
-+[@std.c]([ $yfabpaths ] =>> xs/<y>/<tab.c> ^ $fabpaths)-
++[@std.c]([ $yfabpaths ] =>> xs/<y>/<tab.c> ^ $fabpaths, ^ $cc $cflags)-

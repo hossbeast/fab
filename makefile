@@ -7,7 +7,7 @@ SHELL           :=/bin/bash
 # paths
 SRCDIR           =.
 VPATH           +=${SRCDIR}
-VPATH						+=$(shell find ${SRCDIR} -mindepth 1 -maxdepth 1 -type d -name '[a-z]*' -printf "%f\n" | grep -v doc | grep -v fablib)
+VPATH						+=$(shell find ${SRCDIR} -mindepth 1 -maxdepth 1 -type d -name '[a-z]*' -printf "%f\n" | grep -v doc | grep -v fablib | grep -v liblistwise)
 
 INSTALL         :=install
 
@@ -87,10 +87,10 @@ main.o  :	common/coll.o					\
 				  common/unitstring.o		\
 				  common/xmem.o					\
 				  common/xstring.o			\
-					common/dirutil.o			\
+					dirutil/dirutil.o			\
 					common/cksum.o				\
-					common/map.o					\
-					common/strstack.o			\
+					map/map.o					\
+					strstack/strstack.o			\
 				  ff/ff.o								\
 				  ffn/ffn.o							\
 				  bp/bp.o								\
