@@ -1,0 +1,23 @@
+#
+# variables
+#
+$cc				= [ gcc ]
+$cflags		= [ -m64 -O3 -Werror -D_GNU_SOURCE -fPIC ]
+
+# c files
++[@std.c]($# ^ $dirs)
+
+#
+# build everything
+#
+
+[ @all ] : [ $# ] =>> ls/xs/<c>/<o>/y
+
+#
+# tasks
+#
+
+[ @clean ]
+{
+	rm -f [ $# / *.o ] =>> j			2>/dev/null
+}
