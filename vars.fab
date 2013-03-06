@@ -1,0 +1,14 @@
+# compilers and their flags
+$cc					= [ gcc ]
+$cflags			= [ -m64 -O3 -Werror -D_GNU_SOURCE -fPIC ]
+$solflags		= [ -shared -Wl,--version-script=exports [ -Wl,-soname, $lib ] =>> j ]
+$flex				= [ flex ]
+$flexflags	= [ ]
+$bison			= [ bison ]
+$bisonflags	= [ --warnings=error ]
+
+# directories
+$destdir		= [ / ]									# directory to install to
+$incdir			= [ usr/include ]				# directory for .h's
+$libdir			= [ usr/lib ]						# directory for .so's
+$bindir			= [ usr/local/bin ]			# directory for executables
