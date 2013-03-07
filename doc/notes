@@ -7,28 +7,27 @@
 # pre-installed reusable >> includes
 	generator-variables : reusable list transformation components
 	
+# list syntax for interpolation with spaces [ a, b ], and with no spaces [ a b ]
+# command line variable defs : "append this" anytime the variable is rendered/resolved
+# command line variable defs : immutably set the value of the variable, which cannot be
+#                              modified in a lower scope - cmdline is scope 0
 
-when you include a .fab, you supply 0+ variable bindings. this creates a binding context object
-which is available inside the .fab and can be read from
+
+set operations ?? 
+
+[ a b ] U [ b c ] = [ a b c ]
+[ a b ] I [ b c ] = [ b ]
 
 
 # generator-string variables, and composition from variables
 # content signatures
 # better help output, logging category explanations
-# fabfile syntax : terminating comments /* */
 
 # tagging of items in fabfile for logging - the tagging is done with per-node ( x:y ) settings
   per-node settings ( x:y, x:y )
 		invalidate this node
 		dump individual VAR-sets by name
 		dump individual formulas by node-name
-
-
-# dump/invalidate/target node identification standardization
-   text   : shorthand for append to init-fabfile-rel-dir, relative path exact match
-	/text/  : regex match on abs/can/rel paths, returns list
-	/text   : canonical path match, returns single item
-	.text   : shorthand for nofile, equivalent to canonical path match
 
 # PERSISTENT FAB DAEMON FOR A GIVEN TARGET
 	given a target, establishes inotify watches on all relevant nodes
@@ -42,4 +41,4 @@ which is available inside the .fab and can be read from
 $@, ${products} - products of the current formula
 $<, ${lhs}      - lefthand side of a multi-product formula
 $#, ${initdir}  - relative path to the directory containing the master fabfile
-$^, ${thisdir}	- relative path to the directory containing the current fabfile
+$*, ${thisdir}	- relative path to the directory containing the current fabfile

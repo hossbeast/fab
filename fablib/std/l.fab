@@ -30,13 +30,13 @@ $ldscpaths < [
 	[
 		$dirs				# directories
 		$dscdirs		# directories, discovery only
-	] =>> ls
+	] ~ ls
 
 	[
 		$rdirs			# recursive directories
 		$rdscdirs		# recursive directories, discovery only
-	] =>> lsr
-] =>> xm/<l>
+	] ~ lsr
+] ~ xm/<l>
 
 # paths to l files for fabrication
 $lfabpaths < [
@@ -46,27 +46,27 @@ $lfabpaths < [
 	[
 		$dirs				# directories
 		$dscdirs		# directories, discovery only
-	] =>> ls
+	] ~ ls
 
 	[
 		$rdirs			# recursive directories
 		$rdscdirs		# recursive directories, discovery only
-	] =>> lsr
-] =>> xm/<l>
+	] ~ lsr
+] ~ xm/<l>
 
 # discovery
 [ $ldscpaths ] ~
 {
-	[ $flex $flexflags -t $@ ] | [ $cc $cflags ] -MM -MP -MG -xc - | gcc-dep [ $@ ] =>> rx/xs/<l>/lex.o
+	[ $flex $flexflags -t $@ ] | [ $cc $cflags ] -MM -MP -MG -xc - | gcc-dep [ $@ ] ~ rx/xs/<l>/lex.o
 }
 
 # $flex : l -> { lex.c, lex.h }
-[ $lfabpaths ] =>> xs/<l>/lex.c/y/v/d/cp/u/xs/lex.c/lex.h/z/v/dj/2/shift/pop :: [ $< ] =>> rx/xsf/<l>/ss/u
+[ $lfabpaths ] ~ xs/<l>/lex.c/y/v/d/cp/u/xs/lex.c/lex.h/z/v/dj/2/shift/pop :: [ $< ] ~ rx/xsf/<l>/ss/u
 {
-	[ $flex $flexflags -o [ $@ ] =>> h/1/1/rx ]				\
-	[ --header-file= [ $@ ] =>> h/0/1/rx ] =>> j			\
-	[ $@ ] =>> rx/ineed/xm/<l>/ss/u
+	[ $flex $flexflags -o [ $@ ] ~ h/1/1/rx ]				\
+	[ --header-file= [ $@ ] ~ h/0/1/rx ] ~ j			\
+	[ $@ ] ~ rx/ineed/xm/<l>/ss/u
 }
 
 # $cc : lex.c -> lex.o via std.c
-+[@std.c]([ $lfabpaths ] =>> xs/<l>/<lex.c> ^ $fabpaths, ^ $cc $cflags)-
++[@std.c]([ $lfabpaths ] ~ xs/<l>/<lex.c> ^ $fabpaths, ^ $cc $cflags)-

@@ -82,15 +82,14 @@ ff/ff.tokens.h : ff/ff.tok.h
 # dependencies
 main.o  :	common/coll.o					\
 					args/args.o						\
-				  common/idx.o					\
 				  common/pstring.o			\
 				  common/unitstring.o		\
 				  common/xmem.o					\
 				  common/xstring.o			\
 					dirutil/dirutil.o			\
 					common/cksum.o				\
-					map/map.o					\
-					strstack/strstack.o			\
+					map/map.o							\
+					strstack/strstack.o		\
 				  ff/ff.o								\
 				  ffn/ffn.o							\
 				  bp/bp.o								\
@@ -113,11 +112,9 @@ main.o  :	common/coll.o					\
 					ffproc/ffproc.o				\
 					enclose/enclose.o
 
-common/idx.o : common/xstring.o
-
 ff/ff.o : ff/ff.tokens.h ff/ff.tab.o ff/ff.lex.o ff/ff.tokens.o ff/ff.dsc.tab.o
 
-gn/gn.o	: common/coll.o common/idx.o common/unitstring.o
+gn/gn.o	: common/coll.o common/unitstring.o
 
 #
 # phony targets

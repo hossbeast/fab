@@ -138,7 +138,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 	if(!ff)
 		qfail();
 
-	// use up one list and populate the ^ variable (relative directory path to THIS fabfile)
+	// use up one list and populate the * variable (relative directory path to THIS fabfile)
 	fatal(list_ensure, stax, staxa, (*staxp));
 
 	if(flags & FFP_MODULE)
@@ -150,7 +150,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		fatal(lstack_add, (*stax)[(*staxp)], ff->path->rel_dir, ff->path->rel_dirl);
 	}
 
-	fatal(var_push_list, vmap, "^", 0, (*stax)[(*staxp)++], 0);
+	fatal(var_push_list, vmap, "*", 0, (*stax)[(*staxp)++], 0);
 
 	// process the fabfile tree, construct the graph
 	for(x = 0; x < ff->ffn->statementsl; x++)
@@ -166,43 +166,45 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 			LSTACK_ITERATE((*stax)[pn], y, go);
 			if(go)
 			{
-				// module reference string
+				// invocation string
 				char * s;
 				int l;
 				fatal(lstack_string, (*stax)[pn], 0, y, &s, &l);
 
-//printf("INVOKE %.*s @ %d\n", l, s, y);
-
-				// handle module notation 
+				// handle module reference
 				int ismod = 0;
 				if(l >= 5 && memcmp(s, "/../", 4) == 0)
 				{
 					ismod = 1;
+
+					// last component
+					char * f = s + l - 1;
+					int fl = 1;
+
+					// previous components
+					char * p = s + 4;
+					int pl = l - 4;
+
+					while(f != s && f[0] != '/')
+					{
+						f--;
+						fl++;
+					}
+
+					if(f == s)
+					{
+						fail("invalid invocation string : '%.*s'", l, s);
+					}
+					else
+					{
+						pl -= fl;
+						f++;
+						fl--;
+					}
+
 					for(i = 0; i < g_args.invokedirsl; i++)
 					{
-						// last component is understood as a filename
-						char * f = s + l - 1;
-						int fl = 1;
-
-						// previous components understood as a path
-						char * p = s + 4;
-						int pl = l - 4;
-
-						while(f != s && f[0] != '/')
-						{
-							f--;
-							fl++;
-						}
-
-						if(f == s)
-							fail("invalid invocation %.*s", l, s);
-						else
-						{
-							pl -= fl;
-							f++;
-							fl--;
-						}
-
+						// look for a module
 						path_xfree(&pth);
 						fatal(path_create, &pth, g_args.invokedirs[i]
 							, "%.*s/%.*s.fab"
@@ -212,6 +214,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 
 						if(euidaccess(pth->can, F_OK) == 0)
 							break;
+
 					}
 
 					if(i == g_args.invokedirsl)
@@ -221,7 +224,20 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 				}
 				else
 				{
-					fatal(path_create, &pth, ff->path->rel_dir, "%.*s", l, s);
+					// look for a directory
+					path_xfree(&pth);
+					fatal(path_create, &pth, g_args.invokedirs[i]
+						, "%.*s/%.*s/fabfile"
+//						, pl, p
+//						, fl, f
+					);
+
+					if(euidaccess(pth->can, F_OK) != 0)
+					{
+						// otherwise, the invocation string is an exact path to the fabfile
+						path_xfree(&pth);
+						fatal(path_create, &pth, ff->path->rel_dir, "%.*s", l, s);
+					}
 				}
 
 				// for a gated invocation, push an empty value onto all enclosed variables

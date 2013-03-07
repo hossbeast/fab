@@ -48,33 +48,36 @@
 }
 
 /* terminals with a semantic value */
-%token <str> WORD							"WORD"
-%token <str> WS								"WS"				/* a single tab/space */
-%token <str> LF								"LF"				/* a single newline */
-%token <num> LW								"=>>"				/* listwise transformation */
-%token <num> '$'	/* variable reference */
-%token <num> '@'	/* nofile reference */
-%token <num> '.'	/* nofile/scope resolution */
-%token <num> ':'	/* dependency */
-%token <num> '*'	/* weak reference */
-%token <num> '~'	/* dependency discovery */
-%token <num> '['	/* list start */
-%token <num> ']'	/* list end */
-%token <num> '{'	/* formula start */
-%token <num> '}'	/* formula end */
-%token <num> '='	/* variable assignment */
-%token <num> '<'	/* variable push */
-%token <num> '>'	/* variable pop */
-%token <num> '^'	/* variable designation */
-%token <num> '"'	/* generator-string literal */
-%token <num> '+'	/* invocation */
-%token <num> '-'	/* invocation gate */
-%token <num> '('	/* invocation context */
-%token <num> ')'	/* invocation context */
-%token <num> ','	/* invocation designation separation */
+%token <str> WORD		"WORD"			/* string token */
+%token <str> GWORD	"GWORD"			/* whitespace-delimited generator-string token */
+%token <str> QWORD	"QWORD"			/* double-quote delimited string token */
+%token <str> WS			"WS"				/* single tab/space */
+%token <str> LF			"LF"				/* single newline */
+%token <num> '$'								/* variable reference */
+%token <num> '@'								/* nofile reference */
+%token <num> '.'								/* nofile scoping */
+%token <num> ':'								/* dependency */
+%token <num> '*'								/* weak reference */
+%token <num> '%'								/* dependency discovery */
+%token <num> '['								/* list start */
+%token <num> ']'								/* list end */
+%token <num> ','								/* list element separator */
+%token <num> '~'  							/* listwise transformation */
+%token <num> '{'								/* formula start */
+%token <num> '}'								/* formula end */
+%token <num> '='								/* variable assignment */
+%token <num> '<'								/* variable push */
+%token <num> '>'								/* variable pop */
+%token <num> '^'								/* variable designation */
+%token <num> '"'								/* generator-string literal */
+%token <num> '+'								/* invocation */
+%token <num> '-'								/* invocation gate */
+%token <num> '('								/* invocation context */
+%token <num> ')'								/* invocation context */
 
 /* nonterminals */
-%type  <wordparts> wordparts
+%type  <wordparts> gwordparts
+%type  <wordparts> qwordparts
  
 %type  <node> statements
 %type  <node> statement
@@ -90,7 +93,9 @@
 %type  <node> discovery
 %type  <node> fabrication
 %type  <node> list
-%type  <node> listparts
+%type  <node> listpartsnone
+%type  <node> listpartscomma
+%type  <node> listpart
 %type  <node> word
 %type  <node> nofile
 %type  <node> nofileparts
@@ -273,7 +278,7 @@ fabrication
 	;
 
 discovery
-	: list '~' '{' commands '}'
+	: list '%' '{' commands '}'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_DISCOVERY);
 	}
@@ -297,30 +302,64 @@ command
 	;
 
 list
-	: '[' listparts ']'
+	: '[' listpartsnone ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, FFN_WSSEP);
+	}
+	| '[' listpartscomma ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, FFN_COMMASEP);
+	}
+	| '[' listpart ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, FFN_WSSEP);
 	}
 	| '[' ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0, FFN_WSSEP);
 	}
-	| '[' listparts ']' LW generator
+	| '[' listpartsnone '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5->e, $2, $5);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, FFN_WSSEP);
 	}
-	| '[' ']' LW generator
+	| '[' listpartscomma '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4->e, (void*)0, $4);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, FFN_COMMASEP);
+	}
+	| '[' listpart '~' generator ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, FFN_WSSEP);
+	}
+	| '[' '~' generator ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, $3, FFN_WSSEP);
 	}
 	;
 
-listparts
-	: listparts listparts
+listpartsnone
+	: listpartsnone listpart
 	{
 		$$ = ffn_addchain($1, $2);
 	}
-	| varref
+	| listpart listpart
+	{
+		$$ = ffn_addchain($1, $2);
+	}
+	;
+
+listpartscomma
+	: listpartscomma ',' listpart
+	{
+		$$ = ffn_addchain($1, $3);
+	}
+	| listpart ',' listpart
+	{
+		$$ = ffn_addchain($1, $3);
+	}
+	;
+
+listpart
+	: varref
 	| word
 	| nofile
 	| list
@@ -384,15 +423,13 @@ nofileparts
 	;
 
 word
-	: '"' wordparts '"'
+	: qwordparts
 	{
-		/* only concatenate consecutive WORD's when enclosed in quotes or WS */
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, $1.v);
 	}
-	| WS wordparts WS
+	| gwordparts
 	{
-		@$ = @2;	/* exclude the enclosing WS for word location */
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $3.e, $2.v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, $1.v);
 	}
 	| WORD
 	{
@@ -403,8 +440,8 @@ word
 	}
 	;
 
-wordparts
-	: wordparts WORD
+gwordparts
+	: gwordparts GWORD
 	{
 		$$ = $1;
 
@@ -417,7 +454,31 @@ wordparts
 
 		$$.e = (char*)$2.e;
 	}
-	| WORD
+	| GWORD
+	{
+		$$.s = $1.s;
+		$$.e = $1.e;
+
+		$$.v = calloc(1, ($$.e - $$.s) + 1);
+		memcpy($$.v, $$.s, $$.e - $$.s);
+	}
+	;
+
+qwordparts
+	: qwordparts QWORD
+	{
+		$$ = $1;
+
+		int l = strlen($$.v);
+		int nl = $2.e - $2.s;
+
+		$$.v = realloc($$.v, l + nl + 1);
+		memcpy($$.v + l, $2.s, nl);
+		$$.v[l + nl] = 0;
+
+		$$.e = (char*)$2.e;
+	}
+	| QWORD
 	{
 		$$.s = $1.s;
 		$$.e = $1.e;

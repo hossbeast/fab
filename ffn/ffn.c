@@ -120,8 +120,6 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 	memcpy(&n->loc, loc, locz);
 	n->loc.ff = ff;
 
-//if(n->loc.ff = 
-
 	va_list va;
 	va_start(va, type);
 
@@ -180,6 +178,7 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 	{
 		n->chain[0]				= va_arg(va, ff_node*);	// elements
 		n->generator_node	= va_arg(va, ff_node*);
+		n->flags 					= (uint8_t)va_arg(va, int); 
 	}
 	else if(type == FFN_LF)
 	{
@@ -371,6 +370,10 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_LIST)
 			{
+				log(L_FF | L_FFTREE, "%*s  %12s : '%s'"
+					, lvl * 2, ""
+					, "interpolation", ffn->flags & FFN_WSSEP ? "ws" : ffn->flags & FFN_COMMASEP ? "comma" : "UNKNWN"
+				);
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "elements", ffn->elementsl

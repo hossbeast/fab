@@ -17,6 +17,8 @@
 #define FFN_FABRICATION	0x08
 #define FFN_WEAK				0x10
 #define FFN_GATED				0x20
+#define FFN_WSSEP				0x40
+#define FFN_COMMASEP		0x80
 
 // FFN type table
 #define FFN_TABLE(x)										\
@@ -64,7 +66,7 @@ typedef struct ff_node
 	int					l;			// string length
 
 	generator * 		generator;		// FFN_GENERATOR
-	uint8_t					flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION
+	uint8_t					flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION, FFN_LIST
 
 	/*
 	** strings are freed in freenode
