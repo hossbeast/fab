@@ -62,16 +62,14 @@
 %token <num> '['								/* list start */
 %token <num> ']'								/* list end */
 %token <num> ','								/* list element separator */
-%token <num> '~'  							/* listwise transformation */
+%token <num> '~'  							/* list transformation via listwise */
 %token <num> '{'								/* formula start */
 %token <num> '}'								/* formula end */
 %token <num> '='								/* variable assignment */
-%token <num> '<'								/* variable push */
-%token <num> '>'								/* variable pop */
-%token <num> '^'								/* variable designation */
-%token <num> '"'								/* generator-string literal */
+%token <num> '-'								/* variable link */
+%token <num> ';'								/* varref separator */
+%token <num> '"'								/* literal word */
 %token <num> '+'								/* invocation */
-%token <num> '-'								/* invocation gate */
 %token <num> '('								/* invocation context */
 %token <num> ')'								/* invocation context */
 
@@ -79,16 +77,16 @@
 %type  <wordparts> gwordparts
 %type  <wordparts> qwordparts
  
-%type  <node> statements
 %type  <node> statement
+%type  <node> statements
 %type  <node> invocation
 %type  <node> varassign
-%type  <node> varpush
-%type  <node> varpop
-%type  <node> vardesignate
-%type  <node> vardesignates
+%type  <node> varlock
+%type  <node> varlink
+%type  <node> varsettings
+%type  <node> commandpart
+%type  <node> commandparts
 %type  <node> command
-%type  <node> commands
 %type  <node> dependency
 %type  <node> discovery
 %type  <node> fabrication
@@ -97,12 +95,12 @@
 %type  <node> listpartscomma
 %type  <node> listpart
 %type  <node> word
+%type  <node> lf
 %type  <node> nofile
 %type  <node> nofileparts
 %type  <node> generator
 %type  <node> varref
 %type  <node> varrefs
-%type  <node> varvalue
 
 /* sugar */
 %token END 0 "end of file"
@@ -129,8 +127,6 @@ statements
 
 statement
 	: varassign
-	| varpush
-	| varpop
 	| invocation
 	| dependency
 	| fabrication
@@ -138,52 +134,10 @@ statement
 	;
 
 varassign
-	: varrefs '='
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $2.e, $1, (void*)0);
-	}
-	| varrefs '=' varvalue
+	: varrefs '=' list
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARASSIGN, $1->s, $3->e, $1, $3);
 	}
-	;
-
-varpush
-	: varrefs '<'
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $2.e, $1, (void*)0);
-	}
-	| varrefs '<' varvalue
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPUSH, $1->s, $3->e, $1, $3);
-	}
-	;
-
-varpop
-	: varrefs '>'
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $2.e, $1, (void*)0);
-	}
-	| varrefs '>' varvalue
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARPOP, $1->s, $3->e, $1, $3);
-	}
-	;
-
-vardesignate
-	: '^' varrefs
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1.s, $2->e, $2, (void*)0);
-	}
-	| varvalue '^' varrefs
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARDESIGNATE, $1->s, $3->e, $3, $1);
-	}
-	;
-
-varvalue
-	: list
-	| varref
 	;
 
 invocation
@@ -191,50 +145,66 @@ invocation
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $2->e, $2, (void*)0, (void*)0, 0);
 	}
-	| '+' list '-'
+	| '+' list nofile
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3.e, $2, (void*)0, (void*)0, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, (void*)0, 0);
 	}
 	| '+' list '(' ')'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $2, (void*)0, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $2, (void*)0, (void*)0, FFN_SUBCONTEXT);
 	}
-	| '+' list '(' ')' '-'
+	| '+' list '(' ')' nofile
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, (void*)0, (void*)0, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5->e, $2, $5, (void*)0, FFN_SUBCONTEXT);
 	}
-	| '+' list '(' nofile ')'
+	| '+' list '(' varsettings ')'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, $4, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, (void*)0, $4, FFN_SUBCONTEXT);
 	}
-	| '+' list '(' nofile ')' '-'
+	| '+' list '(' varsettings ')' nofile
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $2, $4, (void*)0, FFN_GATED);
-	}
-	| '+' list '(' vardesignates ')'
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, (void*)0, $4, 0);
-	}
-	| '+' list '(' vardesignates ')' '-'
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6.e, $2, (void*)0, $4, FFN_GATED);
-	}
-	| '+' list '(' nofile '|' vardesignates ')'
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $7.e, $2, $4, $6, 0);
-	}
-	| '+' list '(' nofile '|' vardesignates ')' '-'
-	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $8.e, $2, $4, $6, FFN_GATED);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6->e, $2, $4, $6, FFN_SUBCONTEXT);
 	}
 	;
 
-vardesignates
-	: vardesignates ',' vardesignates
+varsettings
+	: varsettings ';' varsettings
 	{
 		$$ = ffn_addchain($1, $3);
 	}
-	| vardesignate
+	| varlock
+	| varlink
+	;
+
+varlock
+	: varref '=' list
+	{
+		/* ls assignment */
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARLOCK, $1->s, $3->e, $1, $3);
+	}
+	| varref '=' varref
+	{
+		/* cross-name alias */
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARLOCK, $1->s, $3->e, $1, $3);
+	}
+	| varrefs
+	{
+		/* same-name alias */
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARLOCK, $1->s, $1->e, $1, (void*)0);
+	}
+	;
+
+varlink
+	: varref '-' varref
+	{
+		/* cross-name link */
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARLINK, $1->s, $3->e, $1, $3);
+	}
+	| '-' varrefs
+	{
+		/* same-name link */
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARLINK, $1.s, $2->e, $2, (void*)0);
+	}
 	;
 
 dependency
@@ -257,48 +227,59 @@ dependency
 	;
 
 fabrication
-	: dependency '{' commands '}'
+	: dependency '{' command '}'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, (void*)0, $1->needs, $3, $1->flags | FFN_FABRICATION);
 		$$ = ffn_addchain($1, $$);
 	}
-	| list '{' commands '}'
+	| list '{' command '}'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, $1, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
 	}
-	| list ':' '{' commands '}'
+	| list ':' '{' command '}'
 	{
 		/* this form is redundant but is included for completeness */
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_FABRICATION);
 	}
-	| list ':' ':' '{' commands '}'
+	| list ':' ':' '{' command '}'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $6.e, $1, (void*)0, $5, FFN_MULTI | FFN_FABRICATION);
 	}
 	;
 
 discovery
-	: list '%' '{' commands '}'
+	: list '%' '{' command '}'
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_DISCOVERY);
 	}
 	;
 
-commands
-	: commands commands
+command
+	: commandparts
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0, FFN_NOSEP);
+	}
+	;
+
+commandparts
+	: commandparts commandparts
 	{
 		$$ = ffn_addchain($1, $2);
 	}
-	| command
+	| commandpart
 	;
 
-command
+commandpart
+	: lf
+	| list
+	| word
+	;
+
+lf
 	: LF
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LF, $1.s, $1.e, $1.s, $1.e);
 	}
-	| list
-	| word
 	;
 
 list
@@ -312,11 +293,11 @@ list
 	}
 	| '[' listpart ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, FFN_WSSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, FFN_NOSEP);
 	}
 	| '[' ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0, FFN_WSSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0, FFN_NOSEP);
 	}
 	| '[' listpartsnone '~' generator ']'
 	{
@@ -328,11 +309,11 @@ list
 	}
 	| '[' listpart '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, FFN_WSSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, FFN_NOSEP);
 	}
 	| '[' '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, $3, FFN_WSSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, $3, FFN_NOSEP);
 	}
 	;
 

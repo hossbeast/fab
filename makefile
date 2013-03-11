@@ -44,12 +44,12 @@ fab : main.o
 	@echo "#define _$(subst .,_,$(*F))_TOK_H"         								>>$(*D)/$(*F).tok.h
 	@echo "const char* $(subst .,_,$(*F))_tokname(int);"							>>$(*D)/$(*F).tok.h
 	@sed   -ne '/yytokentype/,/;/ p' < $<													\
-		| sed -e 's/\(yytokentype\)/$(subst .,_,$(*F))_\1/'         \
-		| sed -e '/ *[A-Z]/s/\([A-Z]\)/$(subst .,_,$(*F))_\1/'			    >>$(*D)/$(*F).tok.h
+	  | sed -e 's/\(yytokentype\)/$(subst .,_,$(*F))_\1/'         \
+	  | sed -e '/ *[A-Z]/s/\([A-Z]\)/$(subst .,_,$(*F))_\1/'			    >>$(*D)/$(*F).tok.h
 	@echo "#endif"                                  									>>$(*D)/$(*F).tok.h
-	@echo "typedef unsigned short yytype_uint16;"   									 >$(*D)/$(*F).tok.c
-	@sed -ne '/yytname\[\]/,/;/ p'  < $< | sed -e 's/\\"\|'"'"'//g'   >>$(*D)/$(*F).tok.c
-	@sed -ne '/yytoknum\[\]/,/;/ p' < $<            									>>$(*D)/$(*F).tok.c
+	@echo "typedef unsigned short yytype_uint16;"   									>$(*D)/$(*F).tok.c
+	@sed -ne '/yytname\[\]/,/};/ p'  < $< | sed -e 's/\\"\|'"'"'//g'  >>$(*D)/$(*F).tok.c
+	@sed -ne '/yytoknum\[\]/,/};/ p' < $<            									>>$(*D)/$(*F).tok.c
 	@grep 'define YYNTOKENS'        < $<            									>>$(*D)/$(*F).tok.c
 	@echo '#define API __attribute__((visibility("protected")))'			>>$(*D)/$(*F).tok.c
 	@echo '#include <stdio.h>'																				>>$(*D)/$(*F).tok.c

@@ -4,99 +4,73 @@
 #include <listwise.h>
 
 #include "map.h"
-#include "ff/ff.h"
-
-#define VV_LS		2			// lstack
-#define VV_AL		3			// alias
+#include "ff.h"
 
 #define restrict __restrict
 
-/// varval
-//
-// value assumed by a variable - either an lstack object, or an alias to another variable
-//
-// if a sticky value is at the top of the stack, then an undef/push is ignored
-//
-typedef struct
-{
-	int					sticky;
-	uint8_t			type;		// one of { VV_LS, VV_AL }
-
-	union
-	{
-		lstack *	ls;
-		char *		alias;
-	};
-} varval;
-
-/// var_container
-//
-// the values in vmap are of type var_container, which is a stack of varval
-// when a variable is referenced, its value is whatever is at the top of its stack
-//
-typedef struct
-{
-	varval *	v;
-	int 			l;
-	int 			a;
-} var_container;
-
-/// var_undef
+/// var_set
 //
 // SUMMARY
-//  pop all values off of a variables stack
+//  set an lstack as the definition for a variable
 //
 // PARAMETERS
-//  vmap  - variable map
-//  s     - target variable
-//  r     - set to 1 if the variable was successfully cleared
+//  vmap    - variable map
+//  s       - target variable
+//  ffn     - FFN_LIST
+//  inherit - whether to create a locked definition
+//  [src]   - FFN_VAR* node (for logging)
 //
 // RETURNS
 //  nonzero on success
 //
-int var_undef(map * const restrict vmap, const char * const restrict s, int * r, const ff_node * const restrict o)
+int var_set(map * const restrict vmap, const char * const restrict s, lstack * const restrict ls, const ff_node * const restrict src)
 	__attribute__((nonnull(1,2,3)));
 
-/// var_pop
-//
-// pop the top value off a variables stack, if any
-//
-int var_pop(map * const restrict vmap, const char * const restrict s, const ff_node * const restrict o)
-	__attribute__((nonnull(1,2)));
-
-/// var_push_list
+/// var_alias
 //
 // SUMMARY
-//  take ownership of an lstack and push it onto a variables stack
+//  create a one-way link between two variables in separate maps
+//  aliases are always inherited
 //
 // PARAMETERS
-//  vmap   - variable map
-//  s      - target variable
-//  sticky - whether to create a sticky definition
-//  ls     - lstack instance
+//  amap    - source map
+//  as      - source variable
+//  bmap    - target map
+//  bs      - target variable
+//  src     - FFN_VAR* node (for logging)
 //
 // RETURNS
 //  nonzero on success
 //
-int var_push_list(map * const restrict vmap, const char * const restrict s, int sticky, lstack * const restrict ls, const ff_node * const restrict o)
-	__attribute__((nonnull(1,2,4)));
+int var_alias(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const ff_node * const restrict src)
+	__attribute__((nonnull));
 
-/// var_push_alias
+/// var_link
 //
 // SUMMARY
-//  push an alias to another variable onto a variables stack
+//  create a two-way link between two variables in separate maps
+//  links are always inherited
 //
 // PARAMETERS
-//  vmap   - variable map
-//  s      - target variable
-//  sticky - whether to create a sticky definition
-//  v      - name of aliased variable
+//  amap    - source map
+//  as      - source variable
+//  bmap    - target map
+//  bs      - target variable
+//  src     - FFN_VAR* node (for logging)
 //
 // RETURNS
 //  nonzero on success
 //
-int var_push_alias(map * const restrict vmap, const char * const restrict s, int sticky, char * const restrict v, const ff_node * const restrict o)
-	__attribute__((nonnull(1,2,4)));
+int var_link(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const ff_node * const restrict src)
+	__attribute__((nonnull));
+
+/// var_clone
+//
+// SUMMARY
+//  copy inherited entries from amap into bmap
+//
+int var_clone(map * const restrict amap, map ** const restrict bmap)
+	__attribute__((nonnull(2)));
 
 /// var_access
 //
@@ -107,12 +81,6 @@ int var_push_alias(map * const restrict vmap, const char * const restrict s, int
 //
 lstack * var_access(const map * const restrict vmap, const char * restrict s)
 	__attribute__((nonnull));
-
-/// var_container_free
-//
-// free a var_container with free semantics
-//
-void var_container_free(var_container * const restrict);
 
 #undef restrict
 #endif

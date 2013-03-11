@@ -51,7 +51,7 @@ void map_xfree(map** const restrict map)
 // set key/value pair on the map
 //
 // parameters
-//  map				- 
+//  map				- map instance
 //  key				- pointer to key
 //  key_len		- key length
 //  [value]		- pointer to value, or 0
@@ -59,7 +59,7 @@ void map_xfree(map** const restrict map)
 //
 // returns pointer to the stored value, or 0 on error
 //
-void* map_set (map* const restrict map, const void* const restrict key, int key_len, const void* const restrict value, int value_len)
+void* map_set(map* const restrict map, const void* const restrict key, int key_len, const void* const restrict value, int value_len)
 	__attribute__((nonnull(1, 2)));
 
 /// map_get

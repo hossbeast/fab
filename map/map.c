@@ -16,6 +16,8 @@ typedef struct
 	size_t	a;			// allocated, in elements
 	size_t	l;			// length
 
+	map * 	owner;	// owner of this map slot
+
 	char		p[];		// payload
 } __attribute__((packed)) slot;
 

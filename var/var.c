@@ -11,27 +11,54 @@
 
 #define restrict __restrict
 
-static int getcontainer(map * const restrict vmap, const char * const restrict s, var_container ** const restrict con)
-{
-	var_container * c = 0;
-	var_container ** cc = 0;
+#define IMMUTABLE				1
+#define WRITETHROUGH		2
+#define WRITABLE				3
 
-	if((cc = map_get(vmap, s, strlen(s))))
+#define VAL_LS					1
+#define VAL_AL					2
+
+typedef struct
+{
+	int					inherit;			// whether child scopes will inherit this
+	int					writes;				// one of { WRITABLE, IMMUTABLE, WRITETHROUGH }
+	int					val;					// one of { VAL_LS, VAL_AL }
+
+	union
 	{
-		c = (*cc);
+		lstack *	ls;
+
+		struct
+		{
+			char *	al_key;
+			map *		al_map;
+		};
+	};
+} varval;
+
+//
+// static
+//
+
+static int getval(map * const restrict vmap, const char * const restrict s, varval ** restrict c)
+{
+	varval ** cc = 0;
+	if((c = map_get(vmap, s, strlen(s))))
+	{
+		(*c) = (*cc);
 	}
 	else
 	{
-		fatal(xmalloc, &c, sizeof(*c));
-		fatal(map_set, vmap, s, strlen(s), MM(c));
+		fatal(xmalloc, c, sizeof(**c));
+		fatal(map_set, vmap, s, strlen(s), MM(*c));
 	}
-
-	(*con) = c;
 
 	finally : coda;
 }
 
-#undef restrict
+void map_destructor(void* tk, void* tv)
+{
+}
 
 ///
 /// public
@@ -40,201 +67,216 @@ static int getcontainer(map * const restrict vmap, const char * const restrict s
 // select logtag based on variable name
 #define TAG(x) (((x[0] >= 'a' && x[0] <= 'z') || (x[0] >= 'A' && x[0] <= 'Z') || x[0] == '_') ? L_VARUSER : L_VARAUTO)
 
-int var_undef(map * const vmap, const char * const s, int * r, const ff_node * const o)
+int var_set(map * const vmap, const char * const s, lstack * const ls, const ff_node * const src)
 {
-	var_container * cc = 0;
-	fatal(getcontainer, vmap, s, &cc);
+	varval * c = 0;
+	fatal(getval, vmap, s, &c);
 
-	if(cc->l && cc->v[cc->l - 1].sticky)
+	if(c->writes == WRITABLE)
 	{
-		*r = 0;	// denied
-		log_start(L_VAR | TAG(s), "%10s(%s) prevented", "undef", s);
-	}
-	else
-	{
-		*r = 1;
-		cc->l = 0;
-		log_start(L_VAR | TAG(s), "%10s(%s)", "undef", s);
-	}
-
-	if(o)
-	{
-		log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-			, 70 - MIN(log_written(), 70)
-			, ""
-			, o->loc.ff->idstring
-			, o->loc.f_lin + 1
-			, o->loc.f_col + 1
-			, o->loc.l_lin + 1
-			, o->loc.l_col + 1
-		);
-	}
-	log_finish("");
-
-	finally : coda;
-}
-
-int var_pop(map * const vmap, const char * const s, const ff_node * const o)
-{
-	var_container * cc = 0;
-	fatal(getcontainer, vmap, s, &cc);
-	
-	log_start(L_VAR | TAG(s), "%10s(%s)", "pop", s);
-	if(o)
-	{
-		log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-			, 70 - MIN(log_written(), 70)
-			, ""
-			, o->loc.ff->idstring
-			, o->loc.f_lin + 1
-			, o->loc.f_col + 1
-			, o->loc.l_lin + 1
-			, o->loc.l_col + 1
-		);
-	}
-	log_finish("");
-
-	if(cc->l)
-		cc->l--;
-
-	finally : coda;
-}
-
-int var_push_alias(map * const vmap, const char * const s, int sticky, char * const v, const ff_node * const o)
-{
-	var_container * cc = 0;
-	fatal(getcontainer, vmap, s, &cc);
-	
-	if(cc->l == cc->a)
-	{
-		int ns = cc->a ?: 10;
-		ns = ns * 2 + ns / 2;
-		fatal(xrealloc, &cc->v, sizeof(*cc->v), ns, cc->a);
-		cc->a = ns;
-	}
-
-	cc->v[cc->l].alias = v;
-	cc->v[cc->l].type = VV_AL;
-	cc->v[cc->l].sticky = sticky;
-	cc->l++;
-
-	log_start(L_VAR | TAG(s), "%10s(%s, alias($%s))", "push", s, v);
-	if(o)
-	{
-		log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-			, 70 - MIN(log_written(), 70)
-			, ""
-			, o->loc.ff->idstring
-			, o->loc.f_lin + 1
-			, o->loc.f_col + 1
-			, o->loc.l_lin + 1
-			, o->loc.l_col + 1
-		);
-	}
-	log_finish("");
-
-	finally : coda;
-}
-
-int var_push_list(map * const vmap, const char * const s, int sticky, lstack * const ls, const ff_node * const o)
-{
-	var_container * cc = 0;
-	fatal(getcontainer, vmap, s, &cc);
-	
-	if(cc->l == cc->a)
-	{
-		int ns = cc->a ?: 10;
-		ns = ns * 2 + ns / 2;
-		fatal(xrealloc, &cc->v, sizeof(*cc->v), ns, cc->a);
-		cc->a = ns;
-	}
-
-	cc->v[cc->l].type = VV_LS;
-	cc->v[cc->l].sticky = sticky;
-
-	if(ls->l && ls->s[0].l)
-		cc->v[cc->l++].ls = ls;
-	else
-		cc->v[cc->l++].ls = listwise_identity;
-
-	if(log_would(L_VAR | TAG(s)))
-	{
-		log_start(L_VAR | TAG(s), "%10s(%s, [ ", "push", s);
-
-		int i = 0;
-		int j = 0;
-
-		lstack * ls = cc->v[cc->l - 1].ls;
-
-		LSTACK_ITERATE(ls, i, go);
-		if(go)
+		c->inherit = 0;
+		c->writes = WRITABLE;
+		c->val = VAL_LS;
+		c->ls = ls;
+			
+		if(log_would(L_VAR | TAG(s)))
 		{
-			if(j++)
-				log_add(" ");
+			log_start(L_VAR | TAG(s), "%10s(%s) = [ ", "set", s);
 
-			if(ls->s[0].s[i].type)
+			int i = 0;
+			int j = 0;
+
+			lstack * ls = c->ls;
+
+			LSTACK_ITERATE(ls, i, go);
+			if(go)
 			{
-				char * vs = 0;
-				int    vl = 0;
-				lstack_string(ls, 0, i, &vs, &vl);
+				if(j++)
+					log_add(" ");
 
-				log_add("[%hhu]%p (%.*s)"
-					, ls->s[0].s[i].type
-					, *(void**)ls->s[0].s[i].s
-					, vl
-					, vs
+				if(ls->s[0].s[i].type)
+				{
+					char * vs = 0;
+					int    vl = 0;
+					lstack_string(ls, 0, i, &vs, &vl);
+
+					log_add("[%hhu]%p (%.*s)"
+						, ls->s[0].s[i].type
+						, *(void**)ls->s[0].s[i].s
+						, vl
+						, vs
+					);
+				}
+				else
+				{
+					log_add("%.*s", ls->s[0].s[i].l, ls->s[0].s[i].s);
+				}
+			}
+			LSTACK_ITEREND;
+
+			log_add(" ] )");
+
+			if(src)
+			{
+				log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
+					, 70 - MIN(log_written(), 70)
+					, ""
+					, src->loc.ff->idstring
+					, src->loc.f_lin + 1
+					, src->loc.f_col + 1
+					, src->loc.l_lin + 1
+					, src->loc.l_col + 1
 				);
 			}
-			else
-			{
-				log_add("%.*s", ls->s[0].s[i].l, ls->s[0].s[i].s);
-			}
+
+			log_finish("");
 		}
-		LSTACK_ITEREND;
-
-		log_add(" ] )");
-
-		if(o)
+	}
+	else if(c->writes == WRITETHROUGH)
+	{
+		log_start(L_VAR | TAG(s), "%10s(%s) -> %s", "set", s, c->al_key);
+		if(src)
 		{
 			log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
 				, 70 - MIN(log_written(), 70)
 				, ""
-				, o->loc.ff->idstring
-				, o->loc.f_lin + 1
-				, o->loc.f_col + 1
-				, o->loc.l_lin + 1
-				, o->loc.l_col + 1
+				, src->loc.ff->idstring
+				, src->loc.f_lin + 1
+				, src->loc.f_col + 1
+				, src->loc.l_lin + 1
+				, src->loc.l_col + 1
 			);
 		}
+		log_finish("");
 
+		fatal(var_set, c->al_map, c->al_key, ls, src);
+	}
+	else
+	{
+		log_start(L_VAR | TAG(s), "%10s(%s) blocked", "set", s);
+		if(src)
+		{
+			log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
+				, 70 - MIN(log_written(), 70)
+				, ""
+				, src->loc.ff->idstring
+				, src->loc.f_lin + 1
+				, src->loc.f_col + 1
+				, src->loc.l_lin + 1
+				, src->loc.l_col + 1
+			);
+		}
 		log_finish("");
 	}
 
 	finally : coda;
 }
 
-lstack * var_access(const map * const vmap, const char * s)
+int var_alias(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const ff_node * const restrict src)
 {
-	var_container ** c = 0;
+	varval * ac = 0;
+	varval * bc = 0;
+	fatal(getval, amap, as, &ac);
+	fatal(getval, bmap, bs, &bc);
 
-	while((c = map_get(vmap, MMS(s))))
+	bc->inherit = 1;
+	bc->writes = IMMUTABLE;
+	bc->val = VAL_AL;
+	bc->al_key = strdup(as);
+	bc->al_map = amap;
+
+	log_start(L_VAR | TAG(as), "%10s(%s -> %s)", "link", as, bs);
+	if(src)
 	{
-		if((*c)->l == 0)
-			break;
+		log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
+			, 70 - MIN(log_written(), 70)
+			, ""
+			, src->loc.ff->idstring
+			, src->loc.f_lin + 1
+			, src->loc.f_col + 1
+			, src->loc.l_lin + 1
+			, src->loc.l_col + 1
+		);
+	}
+	log_finish("");
 
-		if((*c)->v[(*c)->l - 1].type == VV_LS)
-			return (*c)->v[(*c)->l - 1].ls;
+	finally : coda;
+}
 
-		s = (*c)->v[(*c)->l - 1].alias;
+int var_link(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const ff_node * const restrict src)
+{
+	varval * ac = 0;
+	varval * bc = 0;
+	fatal(getval, amap, as, &ac);
+	fatal(getval, bmap, bs, &bc);
+
+	bc->inherit = 1;
+	bc->writes = WRITETHROUGH;
+	bc->val = VAL_AL;
+	bc->al_key = strdup(as);
+	bc->al_map = amap;
+
+	log_start(L_VAR | TAG(as), "%10s(%s <-> %s)", "link", as, bs);
+	if(src)
+	{
+		log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
+			, 70 - MIN(log_written(), 70)
+			, ""
+			, src->loc.ff->idstring
+			, src->loc.f_lin + 1
+			, src->loc.f_col + 1
+			, src->loc.l_lin + 1
+			, src->loc.l_col + 1
+		);
+	}
+	log_finish("");
+
+	finally : coda;
+}
+
+int var_clone(map * const amap, map ** const bmap)
+{
+	char **		keys = 0;
+	varval **	vals = 0;
+	int				keysl = 0;
+
+	fatal(map_create, bmap, map_destructor);
+	if(amap)
+	{
+		fatal(map_keys, amap, &keys, &keysl);
+		fatal(map_values, amap, &vals, &keysl);
+
+		int x;
+		for(x = 0; x < keysl; x++)
+		{
+			if(vals[x]->inherit)
+			{
+				varval * c = 0;
+				fatal(getval, (*bmap), keys[x], &c);
+
+				c->inherit	= vals[x]->inherit;
+				c->ls				= vals[x]->ls;
+			}
+		}
+	}
+
+finally:
+	free(keys);
+	free(vals);
+coda;
+}
+
+lstack * var_access(const map * vmap, const char * s)
+{
+	varval ** cc = 0;
+	while((cc = map_get(vmap, MMS(s))))
+	{
+		if((*cc)->val == VAL_LS)
+			return (*cc)->ls;
+
+		vmap = (*cc)->al_map;
+		s = (*cc)->al_key;
 	}
 
 	return listwise_identity;
-}
-
-void var_container_free(var_container * const cc)
-{
-	if(cc)
-		free(cc->v);
-
-	free(cc);
 }

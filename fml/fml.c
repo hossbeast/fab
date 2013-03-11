@@ -277,55 +277,17 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 
 int fml_render(ts * const restrict ts, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
 {
+	// resolve the list of command
+	fatal(list_resolve, ts->fmlv->fml->ffn->command, ts->fmlv->bag, stax, staxa, staxp, 1);
+
 	if(standalone)
 	{
-		// start with shebang
 		fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
+		fatal(list_renderto, (*stax)[staxp], &ts->cmd_txt);
 	}
 	else if(ts->cmd_txt)
 	{
-		ts->cmd_txt->l = 0;
-	}
-
-	ff_node * ffn = ts->fmlv->fml->ffn;
-
-	int k = 0;
-	int x;
-	for(x = 0; x < ffn->commandsl; x++)
-	{
-		if(ffn->commands[x]->type == FFN_WORD)
-		{
-			if(k)
-				fatal(pscat, &ts->cmd_txt, " ", 1);
-
-			fatal(pscatf, &ts->cmd_txt, ffn->commands[x]->text);
-			k++;
-		}
-		else if(ffn->commands[x]->type == FFN_LF)
-		{
-			fatal(pscatf, &ts->cmd_txt, "\n");
-			k = 0;
-		}
-		else if(ffn->commands[x]->type == FFN_LIST)
-		{
-			fatal(list_resolve, ffn->commands[x], ts->fmlv->bag, stax, staxa, staxp, 1);
-
-			int i;
-			LSTACK_ITERATE((*stax)[staxp], i, go);
-			if(go)
-			{
-				if(k)
-					fatal(pscat, &ts->cmd_txt, " ", 1);
-
-				char * s = 0;
-				int l = 0;
-				lstack_string((*stax)[staxp], 0, i, &s, &l);
-
-				fatal(pscat, &ts->cmd_txt, s, l);
-				k++;
-			}
-			LSTACK_ITEREND;
-		}
+		fatal(list_render, (*stax)[staxp], &ts->cmd_txt);
 	}
 
 	finally : coda;

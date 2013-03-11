@@ -19,7 +19,7 @@ extern int lstack_exec_internal(generator* g, char** init, int* initls, int init
 /// static
 ///
 
-int ensure(lstack *** stax, int * staxa, int staxp)
+static int ensure(lstack *** stax, int * staxa, int staxp)
 {
 	// ensure enough lstacks are allocated
 	if((*staxa) <= staxp)
@@ -38,18 +38,68 @@ int ensure(lstack *** stax, int * staxa, int staxp)
 	finally : coda;
 }
 
-static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int p, int raw)
+static int flatten(lstack * lso)
+{
+	int x;
+
+	// iterate the outer list
+	LSTACK_ITERREV(lso, x, goo);
+	if(goo)
+	{
+		if(lso->s[0].s[x].type == LISTWISE_TYPE_LIST)
+		{
+			// get reference to the inner list
+			lstack * lsi = *(void**)lso->s[0].s[x].s;
+
+			// flatten the inner list
+			fatal(flatten, lsi);
+
+			// delete the inner list from the outer list
+			fatal(lstack_delete, lso, 0, x);
+
+			int rl = LSTACK_COUNT(lsi);
+
+			// displace enough entries to insert the inner list
+			fatal(lstack_displace, lso, 0, x, rl);
+
+			int i = 0;
+			int y;
+			LSTACK_ITERATE(lsi, y, goi)
+			if(goi)
+			{
+				if(lsi->s[0].s[y].type)
+				{
+					fatal(lstack_obj_write_alt, lso, 0, x + i, *(void**)lsi->s[0].s[y].s, lsi->s[0].s[y].type);
+				}
+				else
+				{
+					fatal(lstack_write_alt, lso, 0, x + i, lsi->s[0].s[y].s, lsi->s[0].s[y].l);
+				}
+				i++;
+			}
+			LSTACK_ITEREND;
+		}
+	}
+	LSTACK_ITEREND;
+
+	finally : coda;
+}
+
+static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
 {
 	// additional lstacks go here
-	int pn = p;
+	int pn = staxp + 1;
 
-	int i;
 	int x;
 	for(x = 0; x < list->elementsl; x++)
 	{
 		if(list->elements[x]->type == FFN_WORD)
 		{
-			fatal(lstack_add, (*stax)[p], list->elements[x]->text, strlen(list->elements[x]->text));
+			fatal(lstack_add, (*stax)[staxp], list->elements[x]->text, strlen(list->elements[x]->text));
+		}
+		else if(list->elements[x]->type == FFN_LF)
+		{
+			fatal(lstack_add, (*stax)[staxp], "\n", 1);
 		}
 		else if(list->elements[x]->type == FFN_VARREF)
 		{
@@ -67,48 +117,64 @@ static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int 
 
 			if(vls)
 			{
-			// an undefined variable, or a variable with no definition is equivalent to the empty list
-				ITERATE(vls, i, go);
-				if(go)
-				{
-					if(vls->s[0].s[i].type)
-					{
-						fatal(lstack_obj_add, (*stax)[p], *(void**)vls->s[0].s[i].s, LISTWISE_TYPE_GNLW);
-					}
-					else
-					{
-						fatal(lstack_add, (*stax)[p], vls->s[0].s[i].s, vls->s[0].s[i].l);
-					}
-				}
-				ITEREND;
+				fatal(lstack_obj_add, (*stax)[staxp], &vls, LISTWISE_TYPE_LIST);
 			}
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
-			fatal(list_resolve, list->elements[x], vmap, stax, staxa, ++pn, raw);
-
-			ITERATE((*stax)[pn], i, go);
-			if(go)
-			{
-				if((*stax)[pn]->s[0].s[i].type)
-					fatal(lstack_obj_add, (*stax)[p], *(void**)(*stax)[pn]->s[0].s[i].s, LISTWISE_TYPE_GNLW);
-				else
-					fatal(lstack_add, (*stax)[p], (*stax)[pn]->s[0].s[i].s, (*stax)[pn]->s[0].s[i].l);
-			}
-			ITEREND;
+			fatal(resolve, list->elements[x], vmap, stax, staxa, pn, raw);
+			fatal(lstack_obj_add, (*stax)[staxp], &(*stax)[pn++], LISTWISE_TYPE_LIST);
 		}
 	}
 
-	// run the list through listwise
 	if(list->generator_node)
 	{
+		// latten first
+		fatal(flatten, (*stax)[staxp]);
+
+		// pass through listwise
 		log(L_LWDEBUG, "%s", list->generator_node->text);
-		fatal(lstack_exec_internal, list->generator_node->generator, 0, 0, 0, &(*stax)[p], log_would(L_LWDEBUG));
+		fatal(lstack_exec_internal, list->generator_node->generator, 0, 0, 0, &(*stax)[staxp], log_would(L_LWDEBUG));
 	}
 	else
 	{
-		(*stax)[p]->sel.all = 1;
+		(*stax)[staxp]->sel.all = 1;
 	}
+
+	(*stax)[staxp]->flags = list->flags;
+
+	finally : coda;
+}
+
+static int render(lstack * const ls, pstring ** const ps)
+{
+	char * dm = "";
+	if(ls->flags & FFN_COMMASEP)
+		dm = " ";
+
+	int k = 0;
+	int x;
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		if(k++)
+		{
+			fatal(pscatf, ps, "%s", dm);
+		}
+
+		if(ls->s[0].s[x].type)
+		{
+			fatal(list_render, *(void**)ls->s[0].s[x].s, ps);
+		}
+		else
+		{
+			char * s;
+			int l;
+			fatal(lstack_string, ls, 0, x, &s, &l);
+			fatal(pscat, ps, s, l);
+		}
+	}
+	LSTACK_ITEREND;
 
 	finally : coda;
 }
@@ -116,6 +182,26 @@ static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int 
 ///
 /// public
 ///
+
+int list_render(lstack * const ls, pstring ** const ps)
+{
+	if(ps)
+		(*ps)->l = 0;
+
+	return render(ls, ps);
+}
+
+int list_renderto(lstack * const ls, pstring ** const ps)
+{
+	return render(ls, ps);
+}
+
+int list_flatten(lstack * ls)
+{
+	fatal(flatten, ls);
+
+	finally : coda;
+}
 
 int list_ensure(lstack *** stax, int * staxa, int staxp)
 {

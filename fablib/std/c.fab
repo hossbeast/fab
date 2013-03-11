@@ -21,7 +21,7 @@
 #
 
 # paths to c files for discovery
-$cdscpaths < [
+$cdscpaths = [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
 
@@ -37,7 +37,7 @@ $cdscpaths < [
 ] ~ xm/<c>
 
 # paths to c files for fabrication
-$cfabpaths < [
+$cfabpaths = [
 	$paths				# paths
 	$fabpaths			# paths, fabrication only
 
@@ -55,11 +55,11 @@ $cfabpaths < [
 # discovery
 [ $cdscpaths ] %
 {
-	[ $cc $cflags ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ] ~ rx/xs/<o>
+	[ $cc ] [ $cflags ~ ss/u ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ] ~ rx/xs/<o>
 }
 
 # fabrication and dependency
 [ $cfabpaths ] ~ xs/<o>/y/dj/shift :: [ $< ] ~ rx/xs/<c>
 {
-	[ $cc $cflags ] -c [ $@ ] ~ rx/ineed/xm/<c>/ss/u -o [ $@ ]
+	[ $cc ] [ $cflags ~ ss/u ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u ] -o [ $@ ]
 }

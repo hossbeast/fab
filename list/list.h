@@ -2,27 +2,37 @@
 #define _LIST_H
 
 #include <listwise.h>
+#include <listwise/object.h>
 
 #include "ff.h"
 
 #include "map.h"
+#include "pstring.h"
+
+#define restrict __restrict
+
+// listwise interface to list objects
+//  (this type is a placeholder - instances of this object are NOT ever passed into liblistwise)
+listwise_object listlw;
+
+#define LISTWISE_TYPE_LIST	0x02		/* listwise type id */
 
 /*
-** "resolving" is done to an FFN_LIST node to produce an lstack*
+** you "resolve" an FFN_LIST node to an lstack*
+**  - resolve variable references
+**  - resolve a generator, if any
+**  - if there is a generator, flatten first
+**  ex: 
+**   - dependency targets
+**   - formula targets
 **
-** "rendering" is done to an lstack* to produce a string for, ex:
+** you "render" an lstack* to a string for
+**  - rendering has a delimiter
+**  - embedded lists have their own delimiter
+**  ex:
 **   - interpolation into formula text
 **   - interpretaion as a filepath for an invocation
 */
-
-typedef struct
-{
-	lstack * 	ls;
-	char			delimiter;
-} list;
-
-int list_render(const list * const restrict lst, char ** const restrict s, int * const restrict l)
-	__attribute__((nonnull));
 
 /// list_ensure
 //
@@ -35,6 +45,37 @@ int list_render(const list * const restrict lst, char ** const restrict s, int *
 //  staxp - offset to next free stax
 //
 int list_ensure(lstack *** stax, int * staxa, int staxp)
+	__attribute__((nonnull));
+
+/// list_flatten
+//
+// replace LISTWISE_TYPE_LIST objects with their contents
+//
+int list_flatten(lstack * restrict ls)
+	__attribute__((nonnull));
+
+/// list_render
+//
+// SUMMARY
+//  render an lstack object to an empty pstring
+//
+// PARAMETERS
+//  ls  - lstack object
+//  ps  - pstring
+//
+int list_render(lstack * const restrict ls, pstring ** const restrict ps)
+	__attribute__((nonnull));
+
+/// list_renderto
+//
+// SUMMARY
+//  render an lstack object, appending to a pstring
+//
+// PARAMETERS
+//  ls  - lstack object
+//  ps  - pstring
+//
+int list_renderto(lstack * const restrict ls, pstring ** const restrict ps)
 	__attribute__((nonnull));
 
 /// list_resolve
@@ -69,4 +110,5 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int st
 int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
 	__attribute__((nonnull));
 
+#undef restrict
 #endif

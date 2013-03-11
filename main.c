@@ -39,9 +39,6 @@ static void signal_handler(int signum)
 	}
 }
 
-// vmap destructor
-static void vmap_destructor(void*, void*);
-
 int main(int argc, char** argv)
 {
 	int domain()
@@ -91,9 +88,7 @@ int main(int argc, char** argv)
 
 		// register object types with liblistwise
 		fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
-
-		// create map for variable definitions
-		fatal(map_create, &vmap, vmap_destructor);
+		fatal(listwise_register_object, LISTWISE_TYPE_LIST, &listlw);
 
 		// create stack for scope resolution
 		fatal(strstack_create, &sstk);
@@ -101,18 +96,21 @@ int main(int argc, char** argv)
 		// parse the initial fabfile
 		fatal(ff_mkparser, &ffp);
 
+		// create context-0 varmap
+		fatal(var_clone, 0, &vmap);
+
 		// populate cmdline-specified variables with sticky definitions
 		for(x = 0; x < g_args.varkeysl; x++)
 		{
 			fatal(list_ensure, &stax, &staxa, staxp);
 			fatal(lstack_add, stax[staxp], g_args.varvals[x], strlen(g_args.varvals[x]));
-			fatal(var_push_list, vmap, g_args.varkeys[x], 0, stax[staxp++], 0);
+			fatal(var_set, vmap, g_args.varkeys[x], stax[staxp++], 0);
 		}
 
 		// use up one list and populate the # variable (relative directory path to the initial fabfile)
 		fatal(list_ensure, &stax, &staxa, staxp);
 		fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
-		fatal(var_push_list, vmap, "#", 0, stax[staxp++], 0);
+		fatal(var_set, vmap, "#", stax[staxp++], 0);
 
 		// parse, starting with the initial fabfile, construct the graph
 		fatal(ffproc, ffp, g_args.init_fabfile_path, sstk, vmap, &stax, &staxa, &staxp, &first, 0);
@@ -304,9 +302,4 @@ int main(int argc, char** argv)
 	log_teardown();
 	
 	return R;
-}
-
-void vmap_destructor(void* tk, void* tv)
-{
-	var_container_free(*(var_container**)tv);
 }

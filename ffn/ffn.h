@@ -11,14 +11,15 @@
 #define restrict __restrict
 
 // FFN flags
-#define FFN_SINGLE			0x01
-#define FFN_MULTI				0x02
-#define FFN_DISCOVERY		0x04
-#define FFN_FABRICATION	0x08
-#define FFN_WEAK				0x10
-#define FFN_GATED				0x20
-#define FFN_WSSEP				0x40
-#define FFN_COMMASEP		0x80
+#define FFN_SINGLE			0x0001
+#define FFN_MULTI				0x0002
+#define FFN_DISCOVERY		0x0004
+#define FFN_FABRICATION	0x0008
+#define FFN_WEAK				0x0010
+#define FFN_SUBCONTEXT	0x0020
+#define FFN_NOSEP				0x0040
+#define FFN_WSSEP				0x0080
+#define FFN_COMMASEP		0x0100
 
 // FFN type table
 #define FFN_TABLE(x)										\
@@ -27,14 +28,13 @@
 	_FFN(FFN_FORMULA				, 0x03	, x)	\
 	_FFN(FFN_INVOCATION			, 0x04	, x)	\
 	_FFN(FFN_VARASSIGN			, 0x05	, x)	\
-	_FFN(FFN_VARPUSH				, 0x06	, x)	\
-	_FFN(FFN_VARPOP					, 0x07	, x)	\
-	_FFN(FFN_VARDESIGNATE		, 0x08	, x)	\
-	_FFN(FFN_LIST						, 0x09	, x)	\
-	_FFN(FFN_GENERATOR			, 0x0a	, x)	\
-	_FFN(FFN_VARREF					, 0x0b	, x)	\
-	_FFN(FFN_LF							, 0x0c	, x)	\
-	_FFN(FFN_WORD						, 0x0d	, x)
+	_FFN(FFN_VARLOCK				, 0x06	, x)	\
+	_FFN(FFN_VARLINK				, 0x07	, x)	\
+	_FFN(FFN_LIST						, 0x08	, x)	\
+	_FFN(FFN_GENERATOR			, 0x09	, x)	\
+	_FFN(FFN_VARREF					, 0x0a	, x)	\
+	_FFN(FFN_LF							, 0x0b	, x)	\
+	_FFN(FFN_WORD						, 0x0c	, x)
 
 enum {
 #define _FFN(a, b, c) a = b,
@@ -99,6 +99,7 @@ typedef struct ff_node
 
 		struct {													// FFN_FORMULA
 			struct ff_node*			targets_0;
+			struct ff_node*			command;
 		};
 
 		struct {													// FFN_DEPENDENCY
@@ -107,7 +108,7 @@ typedef struct ff_node
 		};
 
 		struct {													// FFN_INVOCATION
-			struct ff_node*			modules;
+			struct ff_node*			module;
 			struct ff_node*			scope;
 		};
 	};
@@ -144,17 +145,12 @@ typedef struct ff_node
 			int								elementsl;
 		};
 
-		struct {											// FFN_FORMULA
-			struct ff_node**	commands;
-			int								commandsl;
-		};
-
 		struct {											// FFN_INVOCATION
-			struct ff_node**	designations;
-			int								designationsl;
+			struct ff_node**	varsettings;
+			int								varsettingsl;
 		};
 
-		struct {											// FFN_DESIGNATE
+		struct {											// FFN_VARLOCK, FFN_VARLINK
 			struct ff_node**	vars;
 			int								varsl;
 		};

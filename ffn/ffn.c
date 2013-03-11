@@ -138,7 +138,7 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 	}
 	else if(type == FFN_INVOCATION)
 	{
-		n->modules				= va_arg(va, ff_node*);
+		n->module					= va_arg(va, ff_node*);
 		n->scope					= va_arg(va, ff_node*);
 		n->chain[0]				= va_arg(va, ff_node*);	// designations
 		n->flags					= (uint8_t)va_arg(va, int);
@@ -151,7 +151,7 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 	{
 		n->targets_0			= va_arg(va, ff_node*);
 		n->targets_1			= va_arg(va, ff_node*);
-		n->chain[0]				= va_arg(va, ff_node*);	// commands
+		n->command				= va_arg(va, ff_node*);
 		n->flags					= (uint8_t)va_arg(va, int);
 	}
 	else if(type == FFN_VARASSIGN)
@@ -159,17 +159,12 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 		n->chain[0]				= va_arg(va, ff_node*);	// vars
 		n->definition			= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_VARPUSH)
+	else if(type == FFN_VARLOCK)
 	{
 		n->chain[0]				= va_arg(va, ff_node*);	// vars
 		n->definition			= va_arg(va, ff_node*);
 	}
-	else if(type == FFN_VARPOP)
-	{
-		n->chain[0]				= va_arg(va, ff_node*);	// vars
-		n->definition			= va_arg(va, ff_node*);
-	}
-	else if(type == FFN_VARDESIGNATE)
+	else if(type == FFN_VARLINK)
 	{
 		n->chain[0]				= va_arg(va, ff_node*);	// vars
 		n->definition			= va_arg(va, ff_node*);
@@ -317,24 +312,23 @@ void ffn_dump(ff_node * const root)
 				dump(ffn->targets_0, lvl + 1);
 				dump(ffn->targets_1, lvl + 1);
 
-				log(L_FF | L_FFTREE, "%*s  %12s : %d"
+				log(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
-					, "command", ffn->commandsl
+					, "command"
 				);
-				for(x = 0; x < ffn->commandsl; x++)
-					dump(ffn->commands[x], lvl + 1);
+				dump(ffn->command, lvl + 1);
 			}
 			else if(ffn->type == FFN_INVOCATION)
 			{
 				log(L_FF | L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
-					, "gated"	, ffn->flags & FFN_GATED ? "yes" : "no"
+					, "subcontext", ffn->flags & FFN_SUBCONTEXT ? "yes" : "no"
 				);
 				log(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
-					, "modules"
+					, "module"
 				);
-				dump(ffn->modules, lvl + 1);
+				dump(ffn->module, lvl + 1);
 
 				log(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
@@ -344,16 +338,15 @@ void ffn_dump(ff_node * const root)
 
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
-					, "designations"
-					, ffn->designationsl
+					, "varsettings"
+					, ffn->varsettingsl
 				);
-				for(x = 0; x < ffn->designationsl; x++)
-					dump(ffn->designations[x], lvl + 1);
+				for(x = 0; x < ffn->varsettingsl; x++)
+					dump(ffn->varsettings[x], lvl + 1);
 			}
 			else if(    ffn->type == FFN_VARASSIGN
-			         || ffn->type == FFN_VARPUSH
-			         || ffn->type == FFN_VARPOP
-			         || ffn->type == FFN_VARDESIGNATE)
+			         || ffn->type == FFN_VARLOCK
+			         || ffn->type == FFN_VARLINK)
 			{
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
