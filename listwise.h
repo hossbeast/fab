@@ -59,6 +59,8 @@ typedef struct lstack
 		char			all;	// if true, all items are selected - otherwise, exactly those items
 										// as specified in s comprise the current selection
 	} sel;
+
+	uint32_t flags;		// implementation
 } lstack;
 
 /// listwise_exec

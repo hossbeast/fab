@@ -14,9 +14,9 @@ $libdir		= [ usr/lib ]						# directory for .so's
 $dlibdir	= [ usr/lib ]						# directory for dloaded .so's (the operators)
 
 # std handling for source files
-+[@std.c]($# ^ $rdirs)
-+[@std.l]($# ^ $rdirs)
-+[@std.y]($# ^ $rdirs)
++[@std.c]($* ^ $rdirs)
++[@std.l]($* ^ $rdirs)
++[@std.y]($* ^ $rdirs)
 
 # path to each operator so
 $oplist	= [ $# ] =>> s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y

@@ -12,6 +12,8 @@
 #include "macros.h"
 #include "control.h"
 
+#define restrict __restrict
+
 //
 // static
 //

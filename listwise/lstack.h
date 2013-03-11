@@ -48,6 +48,18 @@
 // close an iterate block
 #define LSTACK_ITEREND }
 
+#define LSTACK_COUNT(ls) ({		\
+	int c = 0;									\
+	int x;											\
+	LSTACK_ITERATE(ls, x, go)		\
+	if(go)											\
+	{														\
+		c++;											\
+	}														\
+	LSTACK_ITEREND;							\
+	c;													\
+})
+
 /// lstack_exec
 //
 // if *r == 0, create it as the empty list stack
