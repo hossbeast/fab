@@ -1,17 +1,19 @@
-#
-# variables
-#
-$cc				= [ gcc ]
-$cflags		= [ -m64 -O3 -Werror -D_GNU_SOURCE -fPIC ]
+# directories
+$dcommon				= [ $*/common ]
+
+# variable defs, $cc, $cflags, etc
++[ $dcommon/vars.fab ]
+
+$cflags = [ $cflags [ -I $dcommon ] ]
 
 # c files
-+[@std.c]($# ^ $dirs)
++[@std.c]($dcommon ^ $dirs, -$cfabpaths)
 
 #
-# build everything
+# compile all c files
 #
 
-[ @all ] : [ $# ] =>> ls/xs/<c>/<o>/y
+[ @all ] : [ $cfabpaths ]
 
 #
 # tasks
@@ -19,5 +21,5 @@ $cflags		= [ -m64 -O3 -Werror -D_GNU_SOURCE -fPIC ]
 
 [ @clean ]
 {
-	rm -f [ $# / *.o ] =>> j			2>/dev/null
+	rm -f [ $dcommon/*.o ] 2>/dev/null
 }
