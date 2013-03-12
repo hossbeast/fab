@@ -253,10 +253,10 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	fatal(list_ensure, stax, staxa, staxp);
 
 	if(ffn->targets_0)
-		fatal(list_resolveto, ffn->targets_0, vmap, stax, staxa, staxp, 0);
+		fatal(list_resolvetoflat, ffn->targets_0, vmap, stax, staxa, staxp);
 
 	if(ffn->targets_1)
-		fatal(list_resolveto, ffn->targets_1, vmap, stax, staxa, staxp, 0);
+		fatal(list_resolvetoflat, ffn->targets_1, vmap, stax, staxa, staxp);
 
 	// create fmlv(s) and attach        graph nodes
 	if(ffn->flags & FFN_SINGLE)
@@ -278,7 +278,8 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 int fml_render(ts * const restrict ts, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
 {
 	// resolve the list of command
-	fatal(list_resolve, ts->fmlv->fml->ffn->command, ts->fmlv->bag, stax, staxa, staxp, 1);
+	int pn = staxp;
+	fatal(list_resolve, ts->fmlv->fml->ffn->command, ts->fmlv->bag, stax, staxa, &pn, 1);
 
 	if(standalone)
 	{

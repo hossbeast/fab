@@ -49,7 +49,7 @@ static int dep_add_single(
 	int pr = staxp;
 
 	// resolve the right-hand side
-	fatal(list_resolve, ffn->feeds, vmap, stax, staxa, pr, 0);
+	fatal(list_resolveflat, ffn->feeds, vmap, stax, staxa, pr);
 
 	// add edges, which are the cartesian product needs x feeds
 	LSTACK_ITERATE((*stax)[pl], i, goa);
@@ -257,8 +257,8 @@ static int dep_add_multi(
 		}
 
 		// resolve the right-hand side in the context of $<
-		fatal(var_set, vmap, "<", (*stax)[staxp], 0);
-		fatal(list_resolve, ffn->feeds, vmap, stax, staxa, staxp + 1, 0);
+		fatal(var_set, vmap, "<", (*stax)[staxp], 0, 0, 0);
+		fatal(list_resolveflat, ffn->feeds, vmap, stax, staxa, staxp + 1);
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
 		{
@@ -416,7 +416,7 @@ int dep_process(
 )
 {
 	// resolve the left-hand side
-	fatal(list_resolve, ffn->needs, vmap, stax, staxa, staxp, 0);
+	fatal(list_resolveflat, ffn->needs, vmap, stax, staxa, staxp);
 
 	if(ffn->flags & FFN_SINGLE)
 	{

@@ -33,7 +33,10 @@ static int ensure(lstack *** stax, int * staxa, int staxp)
 
 	// ensure lstack at this spot is allocated
 	if(!(*stax)[staxp])
+	{
+printf("lstack_create @ %d\n", staxp);
 		fatal(lstack_create, &(*stax)[staxp]);
+	}
 
 	finally : coda;
 }
@@ -85,21 +88,21 @@ static int flatten(lstack * lso)
 	finally : coda;
 }
 
-static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
+static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int * staxp, int raw)
 {
-	// additional lstacks go here
-	int pn = staxp + 1;
+	// resolved lstack goes here
+	int pn = (*staxp)++;
 
 	int x;
 	for(x = 0; x < list->elementsl; x++)
 	{
 		if(list->elements[x]->type == FFN_WORD)
 		{
-			fatal(lstack_add, (*stax)[staxp], list->elements[x]->text, strlen(list->elements[x]->text));
+			fatal(lstack_add, (*stax)[pn], list->elements[x]->text, strlen(list->elements[x]->text));
 		}
 		else if(list->elements[x]->type == FFN_LF)
 		{
-			fatal(lstack_add, (*stax)[staxp], "\n", 1);
+			fatal(lstack_add, (*stax)[pn], "\n", 1);
 		}
 		else if(list->elements[x]->type == FFN_VARREF)
 		{
@@ -117,31 +120,32 @@ static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int 
 
 			if(vls)
 			{
-				fatal(lstack_obj_add, (*stax)[staxp], &vls, LISTWISE_TYPE_LIST);
+				fatal(lstack_obj_add, (*stax)[pn], &vls, LISTWISE_TYPE_LIST);
 			}
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
-			fatal(resolve, list->elements[x], vmap, stax, staxa, pn, raw);
-			fatal(lstack_obj_add, (*stax)[staxp], &(*stax)[pn++], LISTWISE_TYPE_LIST);
+			int pr = (*staxp);
+			fatal(resolve, list->elements[x], vmap, stax, staxa, staxp, raw);
+			fatal(lstack_obj_add, (*stax)[pn], (*stax)[pr], LISTWISE_TYPE_LIST);
 		}
 	}
 
 	if(list->generator_node)
 	{
 		// latten first
-		fatal(flatten, (*stax)[staxp]);
+		fatal(flatten, (*stax)[pn]);
 
 		// pass through listwise
 		log(L_LWDEBUG, "%s", list->generator_node->text);
-		fatal(lstack_exec_internal, list->generator_node->generator, 0, 0, 0, &(*stax)[staxp], log_would(L_LWDEBUG));
+		fatal(lstack_exec_internal, list->generator_node->generator, 0, 0, 0, &(*stax)[pn], log_would(L_LWDEBUG));
 	}
 	else
 	{
-		(*stax)[staxp]->sel.all = 1;
+		(*stax)[pn]->sel.all = 1;
 	}
 
-	(*stax)[staxp]->flags = list->flags;
+	(*stax)[pn]->flags = list->flags;
 
 	finally : coda;
 }
@@ -164,7 +168,8 @@ static int render(lstack * const ls, pstring ** const ps)
 
 		if(ls->s[0].s[x].type)
 		{
-			fatal(list_render, *(void**)ls->s[0].s[x].s, ps);
+			printf("type=%d\n", ls->s[0].s[x].type);
+			fatal(render, *(void**)ls->s[0].s[x].s, ps);
 		}
 		else
 		{
@@ -211,19 +216,42 @@ int list_ensure(lstack *** stax, int * staxa, int staxp)
 	finally : coda;
 }
 
-int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
+int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int * staxp, int raw)
 {
-	fatal(ensure, stax, staxa, staxp);
+	fatal(ensure, stax, staxa, (*staxp));
 	fatal(resolve, list, vmap, stax, staxa, staxp, raw);
 
 	finally : coda;
 }
 
-int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
+int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int * staxp, int raw)
+{
+	fatal(ensure, stax, staxa, (*staxp));
+	lstack_reset((*stax)[(*staxp)]);
+	fatal(resolve, list, vmap, stax, staxa, staxp, raw);
+
+	finally : coda;
+}
+
+int list_resolveflat(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
 {
 	fatal(ensure, stax, staxa, staxp);
 	lstack_reset((*stax)[staxp]);
-	fatal(resolve, list, vmap, stax, staxa, staxp, raw);
+
+	int pn = staxp;
+	fatal(resolve, list, vmap, stax, staxa, &pn, 0);
+	fatal(flatten, (*stax)[staxp]);
+
+	finally : coda;
+}
+
+int list_resolvetoflat(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp)
+{
+	fatal(ensure, stax, staxa, staxp);
+
+	int pn = staxp;
+	fatal(resolve, list, vmap, stax, staxa, &pn, 0);
+	fatal(flatten, (*stax)[staxp]);
 
 	finally : coda;
 }

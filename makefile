@@ -3,6 +3,7 @@ CC              :=gcc
 FLEX						:=flex
 BISON						:=bison
 SHELL           :=/bin/bash
+COMMON					:=../common
 
 # paths
 SRCDIR           =.
@@ -16,7 +17,7 @@ INSTALL         :=install
 #  C/L OPTS  - internal to makefile flags
 #  C/L FLAGS - user specified compiler flags
 # 
-COPTS						+=-m64 -g -O0 -Wall -Werror -fms-extensions -fno-builtin-log -D_GNU_SOURCE $(foreach x,${VPATH},-I${SRCDIR}/$(x))
+COPTS						+=-m64 -g -O0 -Wall -Werror -fms-extensions -fno-builtin-log -D_GNU_SOURCE -I${COMMON} $(foreach x,${VPATH},-I${SRCDIR}/$(x))
 %.o : COPTS     +=-c
 
 LOPTS						+=-llistwise
@@ -25,7 +26,7 @@ LOPTS						+=-llistwise
 # default goal
 #
 fab : main.o
-	${CC} ${COPTS} ${CFLAGS} ${LFLAGS} -o $@ $(foreach x,$(VPATH),$(x)/*.o) ${LOPTS}
+	${CC} ${COPTS} ${CFLAGS} ${LFLAGS} -o $@ ${COMMON}/*.o $(foreach x,$(VPATH),$(x)/*.o) ${LOPTS}
 
 #
 # recipes
@@ -80,14 +81,14 @@ ff/ff.tokens.h : ff/ff.tok.h
 	$(CC) $(COPTS) $(CFLAGS) $< -o $@
 
 # dependencies
-main.o  :	common/coll.o					\
+main.o  :	${COMMON}/coll.o					\
 					args/args.o						\
-				  common/pstring.o			\
-				  common/unitstring.o		\
-				  common/xmem.o					\
-				  common/xstring.o			\
+				  ${COMMON}/pstring.o			\
+				  ${COMMON}/unitstring.o		\
+				  ${COMMON}/xmem.o					\
+				  ${COMMON}/xstring.o			\
 					dirutil/dirutil.o			\
-					common/cksum.o				\
+					${COMMON}/cksum.o				\
 					map/map.o							\
 					strstack/strstack.o		\
 				  ff/ff.o								\
@@ -114,7 +115,7 @@ main.o  :	common/coll.o					\
 
 ff/ff.o : ff/ff.tokens.h ff/ff.tab.o ff/ff.lex.o ff/ff.tokens.o ff/ff.dsc.tab.o
 
-gn/gn.o	: common/coll.o common/unitstring.o
+gn/gn.o	: ${COMMON}/coll.o ${COMMON}/unitstring.o
 
 #
 # phony targets

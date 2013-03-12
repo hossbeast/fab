@@ -18,6 +18,7 @@
 //  s       - target variable
 //  ffn     - FFN_LIST
 //  inherit - whether to create an inherited definition
+//  mutable - whether to create a mutable definition
 //  [src]   - FFN_VAR* node (for logging)
 //
 // RETURNS

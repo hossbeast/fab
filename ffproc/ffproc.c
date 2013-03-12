@@ -66,10 +66,11 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		}
 		else if(stmt->type == FFN_VARASSIGN)
 		{
-			fatal(list_resolve, stmt->definition, vmap, stax, staxa, (*staxp), 0);
+			int pn = (*staxp);
+			fatal(list_resolve, stmt->definition, vmap, stax, staxa, staxp, 0);
 
 			for(y = 0; y < stmt->varsl; y++)
-				fatal(var_set, vmap, stmt->vars[y]->name, (*stax)[(*staxp)], 0, 1, stmt);
+				fatal(var_set, vmap, stmt->vars[y]->name, (*stax)[pn], 0, 1, stmt);
 		}
 		else if(stmt->type == FFN_INVOCATION)
 		{

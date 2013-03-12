@@ -26,7 +26,7 @@ listwise_object listlw;
 **   - dependency targets
 **   - formula targets
 **
-** you "render" an lstack* to a string for
+** you "render" an lstack* to a string
 **  - rendering has a delimiter
 **  - embedded lists have their own delimiter
 **  ex:
@@ -81,7 +81,7 @@ int list_renderto(lstack * const restrict ls, pstring ** const restrict ps)
 /// list_resolve
 //
 // SUMMARY
-//  resolve an FFN_LIST node to an empty lstack
+//  reset an lstack, then resolve an FFN_LIST into that lstack
 //
 // PARAMETERS
 //  list  - FFN_LIST node
@@ -91,13 +91,13 @@ int list_renderto(lstack * const restrict ls, pstring ** const restrict ps)
 //  staxp - offset to next free stax
 //  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
+int list_resolve(ff_node * restrict list, map * restrict vmap, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int raw)
 	__attribute__((nonnull));
 
 /// list_resolveto
 //
 // SUMMARY
-//  resolve an FFN_LIST node, appending to an lstack
+//  resolve an FFN_LIST into an lstack
 //
 // PARAMETERS
 //  list  - FFN_LIST node
@@ -107,7 +107,23 @@ int list_resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int st
 //  staxp - offset to next free stax
 //  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolveto(ff_node * list, map* vmap, lstack *** stax, int * staxa, int staxp, int raw)
+int list_resolveto(ff_node * restrict list, map * restrict vmap, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int raw)
+	__attribute__((nonnull));
+
+/// list_resolveflat
+//
+// list_resolve
+// list_flatten
+//
+int list_resolveflat(ff_node * restrict list, map * restrict vmap, lstack *** restrict stax, int * restrict staxa, int staxp)
+	__attribute__((nonnull));
+
+/// list_resolvetoflat
+//
+// list_resolveto
+// list_flatten
+//
+int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, lstack *** restrict stax, int * restrict staxa, int staxp)
 	__attribute__((nonnull));
 
 #undef restrict
