@@ -45,7 +45,8 @@ int main(int argc, char** argv)
 	{
 		ff_parser *					ffp = 0;				// fabfile parser
 		bp *								bp = 0;					// buildplan 
-		map *								vmap = 0;				// variable lookup map
+		map * 							rmap = 0;				// root-level map
+		map *								vmap = 0;				// init-level map
 		strstack *					sstk = 0;				// scope stack
 		gn *								first = 0;			// first dependency mentioned
 		lstack **						stax = 0;				// listwise stacks
@@ -97,20 +98,22 @@ int main(int argc, char** argv)
 		fatal(ff_mkparser, &ffp);
 
 		// create context-0 varmap
-		fatal(var_clone, 0, &vmap);
+		fatal(var_root, &rmap);
 
 		// populate cmdline-specified variables with sticky definitions
 		for(x = 0; x < g_args.varkeysl; x++)
 		{
 			fatal(list_ensure, &stax, &staxa, staxp);
 			fatal(lstack_add, stax[staxp], g_args.varvals[x], strlen(g_args.varvals[x]));
-			fatal(var_set, vmap, g_args.varkeys[x], stax[staxp++], 0);
+			fatal(var_set, rmap, g_args.varkeys[x], stax[staxp++], 1, 0, 0);
 		}
 
 		// use up one list and populate the # variable (relative directory path to the initial fabfile)
 		fatal(list_ensure, &stax, &staxa, staxp);
 		fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
-		fatal(var_set, vmap, "#", stax[staxp++], 0);
+		fatal(var_set, rmap, "#", stax[staxp++], 1, 0, 0);
+
+		fatal(var_clone, rmap, &vmap);
 
 		// parse, starting with the initial fabfile, construct the graph
 		fatal(ffproc, ffp, g_args.init_fabfile_path, sstk, vmap, &stax, &staxa, &staxp, &first, 0);

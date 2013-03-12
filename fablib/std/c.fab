@@ -28,13 +28,13 @@ $cdscpaths = [
 	[
 		$dirs				# directories
 		$dscdirs		# directories, discovery only
-	] ~ ls
+	~ ls ]
 
 	[
 		$rdirs			# recursive directories
 		$rdscdirs		# recursive directories, discovery only
-	] ~ lsr
-] ~ xm/<c>
+	~ lsr ]
+~ xm/<c> ]
 
 # paths to c files for fabrication
 $cfabpaths = [
@@ -44,22 +44,22 @@ $cfabpaths = [
 	[
 		$dirs				# directories
 		$fabdirs		# directories, fabrication only
-	] ~ ls
+	~ ls ]
 
 	[
 		$rdirs			# recursive directories
 		$rfabdirs		# recursive directories, fabrication only
-	] ~ lsr
-] ~ xm/<c>
+	~ lsr ]
+~ xm/<c> ]
 
 # discovery
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ ss/u ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ] ~ rx/xs/<o>
+	[ $cc ] [ $cflags ~ ss/u ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ~ rx/xs/<o> ]
 }
 
 # fabrication and dependency
-[ $cfabpaths ] ~ xs/<o>/y/dj/shift :: [ $< ] ~ rx/xs/<c>
+[ $cfabpaths ~ xs/<o>/y/dj/shift ] :: [ $< ~ rx/xs/<c> ]
 {
 	[ $cc ] [ $cflags ~ ss/u ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u ] -o [ $@ ]
 }

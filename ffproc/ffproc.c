@@ -46,7 +46,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		fatal(lstack_add, (*stax)[(*staxp)], ff->path->rel_dir, ff->path->rel_dirl);
 	}
 
-	fatal(var_set, vmap, "*", (*stax)[(*staxp)++], 0);
+	fatal(var_set, vmap, "*", (*stax)[(*staxp)++], 0, 1, 0);
 
 	// process the fabfile tree, construct the graph
 	for(x = 0; x < ff->ffn->statementsl; x++)
@@ -68,8 +68,8 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		{
 			fatal(list_resolve, stmt->definition, vmap, stax, staxa, (*staxp), 0);
 
-			for(y = 0; y < stmt->varsl++; y++)
-				fatal(var_set, vmap, stmt->vars[y]->name, (*stax)[(*staxp)], stmt);
+			for(y = 0; y < stmt->varsl; y++)
+				fatal(var_set, vmap, stmt->vars[y]->name, (*stax)[(*staxp)], 0, 1, stmt);
 		}
 		else if(stmt->type == FFN_INVOCATION)
 		{
@@ -171,7 +171,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 								fatal(list_resolve, set->definition, vmap, stax, staxa, (*staxp), 0);
 
 								for(i = 0; i < set->varsl; i++)
-									fatal(var_set, cmap, set->vars[i]->name, (*stax)[(*staxp)], set);
+									fatal(var_set, cmap, set->vars[i]->name, (*stax)[(*staxp)], 1, 0, set);
 
 								(*staxp)++;
 							}

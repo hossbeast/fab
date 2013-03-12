@@ -206,17 +206,13 @@
 																												return LEX(yytext[0]);
 																											}
 <INITIAL>[:]																					{ return LEX(yytext[0]); }
-<INITIAL>[,]																					{ return LEX(yytext[0]); }
 <INITIAL>[(]																					{ return LEX(yytext[0]); }
 <INITIAL>[)]																					{ return LEX(yytext[0]); }
 <INITIAL>[-]																					{ return LEX(yytext[0]); }
-<INITIAL>[|]																					{ return LEX(yytext[0]); }
 <INITIAL>[*]																					{ return LEX(yytext[0]); }
-<INITIAL>[~]																					{ return LEX(yytext[0]); }
 <INITIAL>[=]																					{ return LEX(yytext[0]); }
-<INITIAL>[<]																					{ return LEX(yytext[0]); }
-<INITIAL>[>]																					{ return LEX(yytext[0]); }
-<INITIAL>[\^]																					{ return LEX(yytext[0]); }
+<INITIAL>[;]																					{ return LEX(yytext[0]); }
+<INITIAL>[%]																					{ return LEX(yytext[0]); }
 <INITIAL>[{]																					{
 																												PUSHSTATE(command, yyextra);
 																												return LEX(yytext[0]);
@@ -232,11 +228,11 @@
 																											}
 <list>[,]																							{ return LEX(yytext[0]); }
 
-<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:()\-|*~=<>^{;]+	{
+<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:()\-*=;{]+	{
 																												// string of anything else 
 																												return LEX(WORD);
 																											}
-<list>[^ \\#"$@\x00-\x1F\x7F-\xFF\],~]+ 							{
+<list>[^ \\#"$@\x00-\x1F\x7F-\xFF~\],]+ 							{
 																												// string of anything else 
 																												return LEX(WORD);
 																											}

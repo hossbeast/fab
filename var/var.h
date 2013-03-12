@@ -17,13 +17,13 @@
 //  vmap    - variable map
 //  s       - target variable
 //  ffn     - FFN_LIST
-//  inherit - whether to create a locked definition
+//  inherit - whether to create an inherited definition
 //  [src]   - FFN_VAR* node (for logging)
 //
 // RETURNS
 //  nonzero on success
 //
-int var_set(map * const restrict vmap, const char * const restrict s, lstack * const restrict ls, const ff_node * const restrict src)
+int var_set(map * const restrict vmap, const char * const restrict s, lstack * const restrict ls, int inherit, int mutable, const ff_node * const restrict src)
 	__attribute__((nonnull(1,2,3)));
 
 /// var_alias
@@ -64,13 +64,20 @@ int var_alias(map * const restrict amap, const char * const restrict as, map * c
 int var_link(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const ff_node * const restrict src)
 	__attribute__((nonnull));
 
+/// var_root
+//
+// create a root-level map
+//
+int var_root(map ** const restrict bmap)
+	__attribute__((nonnull));
+
 /// var_clone
 //
 // SUMMARY
-//  copy inherited entries from amap into bmap
+//  create bmap with inherited entries from amap
 //
 int var_clone(map * const restrict amap, map ** const restrict bmap)
-	__attribute__((nonnull(2)));
+	__attribute__((nonnull));
 
 /// var_access
 //

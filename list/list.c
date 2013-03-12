@@ -185,7 +185,7 @@ static int render(lstack * const ls, pstring ** const ps)
 
 int list_render(lstack * const ls, pstring ** const ps)
 {
-	if(ps)
+	if(*ps)
 		(*ps)->l = 0;
 
 	return render(ls, ps);
