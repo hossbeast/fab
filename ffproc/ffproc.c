@@ -74,8 +74,11 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		}
 		else if(stmt->type == FFN_INVOCATION)
 		{
-			fatal(list_resolve, stmt->module, vmap, stax, staxa, (*staxp), 0);
+			int pn = (*staxp);
+			fatal(list_resolve, stmt->module, vmap, stax, staxa, &pn, 0);
 			fatal(list_render, (*stax)[(*staxp)], &inv);
+
+printf("module -> %s\n", inv->s);
 
 			// handle module reference
 			int ismod = 0;
@@ -120,7 +123,6 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 
 					if(euidaccess(pth->can, F_OK) == 0)
 						break;
-
 				}
 
 				if(i == g_args.invokedirsl)
@@ -131,13 +133,22 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 			else
 			{
 				// look for a directory
-				path_xfree(&pth);
-				fatal(path_create, &pth, g_args.invokedirs[i]
-					, "%.*s/fabfile"
-					, inv->l, inv->a
-				);
+				for(i = 0; i < g_args.invokedirsl; i++)
+				{
+					path_xfree(&pth);
+					fatal(path_create, &pth, g_args.invokedirs[i]
+						, "%.*s/fabfile"
+						, inv->l, inv->s
+					);
 
-				if(euidaccess(pth->can, F_OK) != 0)
+printf("check: %s\n", pth->can);
+					if(euidaccess(pth->can, F_OK) == 0)
+					{
+						break;
+					}
+				}
+
+				if(i == g_args.invokedirsl)
 				{
 					// otherwise, the invocation string is an exact path to the fabfile
 					path_xfree(&pth);
@@ -169,12 +180,11 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 						{
 							if(set->definition->type == FFN_LIST)
 							{
-								fatal(list_resolve, set->definition, vmap, stax, staxa, (*staxp), 0);
+								int pn = (*staxp);
+								fatal(list_resolve, set->definition, vmap, stax, staxa, staxp, 0);
 
 								for(i = 0; i < set->varsl; i++)
-									fatal(var_set, cmap, set->vars[i]->name, (*stax)[(*staxp)], 1, 0, set);
-
-								(*staxp)++;
+									fatal(var_set, cmap, set->vars[i]->name, (*stax)[pn], 1, 0, set);
 							}
 							else if(set->definition->type == FFN_VARREF)
 							{

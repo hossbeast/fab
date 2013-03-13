@@ -33,10 +33,7 @@ static int ensure(lstack *** stax, int * staxa, int staxp)
 
 	// ensure lstack at this spot is allocated
 	if(!(*stax)[staxp])
-	{
-printf("lstack_create @ %d\n", staxp);
 		fatal(lstack_create, &(*stax)[staxp]);
-	}
 
 	finally : coda;
 }
@@ -120,12 +117,14 @@ static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int 
 
 			if(vls)
 			{
-				fatal(lstack_obj_add, (*stax)[pn], &vls, LISTWISE_TYPE_LIST);
+				fatal(lstack_obj_add, (*stax)[pn], vls, LISTWISE_TYPE_LIST);
 			}
 		}
 		else if(list->elements[x]->type == FFN_LIST)
 		{
 			int pr = (*staxp);
+			fatal(ensure, stax, staxa, pr);
+			lstack_reset((*stax)[pr]);
 			fatal(resolve, list->elements[x], vmap, stax, staxa, staxp, raw);
 			fatal(lstack_obj_add, (*stax)[pn], (*stax)[pr], LISTWISE_TYPE_LIST);
 		}
@@ -168,7 +167,6 @@ static int render(lstack * const ls, pstring ** const ps)
 
 		if(ls->s[0].s[x].type)
 		{
-			printf("type=%d\n", ls->s[0].s[x].type);
 			fatal(render, *(void**)ls->s[0].s[x].s, ps);
 		}
 		else
