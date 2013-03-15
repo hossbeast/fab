@@ -101,7 +101,6 @@ typedef struct
 	int									states_n;
 
 	ff_loc							loc;				// running location track for this parse
-	int									badchar;		// encountered unknown character
 
 	ff_loc							last_loc;
 	int									last_tok;

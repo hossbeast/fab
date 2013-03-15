@@ -292,7 +292,7 @@ printf("init=%d\n", init);
 					}
 				}
 			}
-			else if(errno != ENOENT && errno != EACCES)
+			else if(errno != ENOENT && errno != EACCES && errno != ENOTDIR)
 			{
 				return 0;
 			}

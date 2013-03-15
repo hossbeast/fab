@@ -148,6 +148,9 @@ int parse_args(int argc, char** argv)
 	fatal(path_create, &fabpath, g_args.cwd, "%s", DEFAULT_INIT_FABFILE);
 	fatal(path_copy, &g_args.init_fabfile_path, fabpath);
 
+	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
+	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], DEFAULT_INVOKEDIR);
+
 	int x, indexptr;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
 	{
@@ -219,10 +222,13 @@ int parse_args(int argc, char** argv)
 				break;
 			case 'I':
 				fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-				g_args.invokedirs[g_args.invokedirsl++] = strdup(optarg);
+				fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
 				break;
 		}
 	}
+
+	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
+	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_args.init_fabfile_path->abs_dir);
 
 	// unprocessed options - fabrication targets
 	for(x = optind; x < argc; x++)
@@ -242,10 +248,6 @@ int parse_args(int argc, char** argv)
 		free(g_args.invalidations[x]);
 		g_args.invalidations[x] = N;
 	}
-
-	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], DEFAULT_INVOKEDIR);
-
 
 	// dumpnodes implies +DGRAPH and MODE_EXEC_DUMP
 	if(g_args.dumpnodes)

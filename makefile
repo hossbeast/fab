@@ -34,7 +34,7 @@ fab : main.o
 
 # .y.c's from local or common_c .y's
 %.tab.c %.tab.h: %.y
-	${BISON} --warnings=error -o $*.tab.c -d ${BISONFLAGS} $^
+	${BISON} -t --warnings=error -o $*.tab.c -d ${BISONFLAGS} $^
 
 # .lex.c's from local or common_c .l's
 %.lex.c %.lex.h: %.l %.tab.h

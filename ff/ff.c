@@ -235,8 +235,7 @@ void ff_xfreeparser(ff_parser ** const p)
 void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 {
 	pp->r = 0;
-	if(!pp->badchar)
-		log(L_ERROR | L_FF, "%s", err);		// bison error
+	log(L_ERROR | L_FF, "%s", err);
 
 	int t						= pp->last_tok;
 	const char * s	= pp->last_s;

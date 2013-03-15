@@ -11,12 +11,6 @@
 
 #define restrict __restrict
 
-// listwise interface to list objects
-//  (this type is a placeholder - instances of this object are NOT ever passed into liblistwise)
-listwise_object listlw;
-
-#define LISTWISE_TYPE_LIST	0x02		/* listwise type id */
-
 /*
 ** you "resolve" an FFN_LIST node to an lstack*
 **  - resolve variable references

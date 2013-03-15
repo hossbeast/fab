@@ -78,8 +78,6 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 			fatal(list_resolve, stmt->module, vmap, stax, staxa, &pn, 0);
 			fatal(list_render, (*stax)[(*staxp)], &inv);
 
-printf("module -> %s\n", inv->s);
-
 			// handle module reference
 			int ismod = 0;
 			if(inv->l >= 5 && memcmp(inv->s, "/../", 4) == 0)
@@ -141,7 +139,6 @@ printf("module -> %s\n", inv->s);
 						, inv->l, inv->s
 					);
 
-printf("check: %s\n", pth->can);
 					if(euidaccess(pth->can, F_OK) == 0)
 					{
 						break;
@@ -154,14 +151,14 @@ printf("check: %s\n", pth->can);
 					path_xfree(&pth);
 					fatal(path_create
 						, &pth
-						, ff->path->rel_dir
+						, g_args.init_fabfile_path->abs_dir
 						, "%.*s"
 						, inv->l, inv->s
 					);
 				}
 			}
 
-			map * nmap = 0;
+			map * nmap = vmap;
 
 			if(stmt->flags & FFN_SUBCONTEXT)
 			{
@@ -214,10 +211,6 @@ printf("check: %s\n", pth->can);
 				}
 
 				nmap = cmap;
-			}
-			else
-			{
-				nmap = vmap;
 			}
 
 			// apply scope for this invocation

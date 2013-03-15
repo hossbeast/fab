@@ -161,14 +161,14 @@ int path_create(path ** const p, const char * const base, const char * const fmt
 	//  - resolve internal symbolic links which do not cross mount points
 	//
 	if(canon(buf, 0, (*p)->abs, 512, base, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM) == 0)
-		return 0;
+		return printf("2\n"), 0;
 
 	// relative path - very close to the users representation
 	//  - internal dots and dotdots are resolved
 	//  - resolve internal symbolic links which do not cross mount points
 	// 
 	if(canon(buf, 0, (*p)->rel, 512, base, CAN_NEXT_DOT | CAN_NEXT_SYM) == 0)
-		return 0;
+		return printf("3\n"), 0;
 
 	path_init(*p);
 

@@ -97,10 +97,15 @@ int main(int argc, char** argv)
 		// parse the initial fabfile
 		fatal(ff_mkparser, &ffp);
 
-		// create context-0 varmap
+		// create the rootmap
 		fatal(var_root, &rmap);
 
-		// populate cmdline-specified variables with sticky definitions
+		// seed the map identifier mechanism
+		fatal(map_set, rmap, MMS("?LVL"), MM((int[1]){ 0 }));
+		fatal(map_set, rmap, MMS("?NUM"), MM((int[1]){ 0 }));
+		fatal(map_set, rmap, MMS("?CLD"), MM((int[1]){ 0 }));
+
+		// cmdline-specified variables populate the rootmap
 		for(x = 0; x < g_args.varkeysl; x++)
 		{
 			fatal(list_ensure, &stax, &staxa, staxp);
@@ -113,6 +118,7 @@ int main(int argc, char** argv)
 		fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
 		fatal(var_set, rmap, "#", stax[staxp++], 1, 0, 0);
 
+		// vmap for the initial fabfile is the first (and only) direct descendant of rootmap
 		fatal(var_clone, rmap, &vmap);
 
 		// parse, starting with the initial fabfile, construct the graph

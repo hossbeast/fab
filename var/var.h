@@ -2,11 +2,18 @@
 #define _VAR_H
 
 #include <listwise.h>
+#include <listwise/object.h>
 
 #include "map.h"
 #include "ff.h"
 
 #define restrict __restrict
+
+// listwise interface to list objects
+//  (this type is a placeholder - instances of this object are NOT ever passed into liblistwise)
+listwise_object listlw;
+
+#define LISTWISE_TYPE_LIST	0x02		/* listwise type id */
 
 /// var_set
 //
@@ -16,7 +23,7 @@
 // PARAMETERS
 //  vmap    - variable map
 //  s       - target variable
-//  ffn     - FFN_LIST
+//  ls      - lstack instance
 //  inherit - whether to create an inherited definition
 //  mutable - whether to create a mutable definition
 //  [src]   - FFN_VAR* node (for logging)

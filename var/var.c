@@ -4,6 +4,7 @@
 
 #include "var.h"
 #include "log.h"
+#include "gnlw.h"
 
 #include "xmem.h"
 #include "control.h"
@@ -62,8 +63,46 @@ static int getval(map * const restrict vmap, const char * const restrict s, varv
 	finally : coda;
 }
 
-void map_destructor(void* tk, void* tv)
+static void map_destructor(void* tk, void* tv)
 {
+}
+
+static void dumplist(lstack * const ls)
+{
+	int i = 0;
+	int j = 0;
+
+	LSTACK_ITERATE(ls, i, go);
+	if(go)
+	{
+		if(j++)
+			log_add(" ");
+
+		if(ls->s[0].s[i].type == LISTWISE_TYPE_GNLW)
+		{
+			char * vs = 0;
+			int    vl = 0;
+			lstack_string(ls, 0, i, &vs, &vl);
+
+			log_add("[%hhu]%p (%.*s)"
+				, ls->s[0].s[i].type
+				, *(void**)ls->s[0].s[i].s
+				, vl
+				, vs
+			);
+		}
+		else if(ls->s[0].s[i].type == LISTWISE_TYPE_LIST)
+		{
+			log_add("[ ");
+			dumplist(*(void**)ls->s[0].s[i].s);
+			log_add(" ]");
+		}
+		else
+		{
+			log_add("%.*s", ls->s[0].s[i].l, ls->s[0].s[i].s);
+		}
+	}
+	LSTACK_ITEREND;
 }
 
 ///
@@ -72,6 +111,25 @@ void map_destructor(void* tk, void* tv)
 
 // select logtag based on variable name
 #define TAG(x) (((x[0] >= 'a' && x[0] <= 'z') || (x[0] >= 'A' && x[0] <= 'Z') || x[0] == '_') ? L_VARUSER : L_VARAUTO)
+
+#define KEYID(m, s) *(int*)map_get(m, MMS("?LVL")), *(int*)map_get(m, MMS("?NUM")), s
+
+#define LOG_SRC(s) 														\
+do {																					\
+	if(s)																				\
+	{																						\
+		log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"		\
+			, 70 - MIN(log_written(), 70)						\
+			, ""																		\
+			, s->loc.ff->idstring										\
+			, s->loc.f_lin + 1											\
+			, s->loc.f_col + 1											\
+			, s->loc.l_lin + 1											\
+			, s->loc.l_col + 1											\
+		);																				\
+	}																						\
+} while(0)
+	
 
 int var_set(map * vmap, const char * s, lstack * const ls, int inherit, int mutable, const ff_node * const src)
 {
@@ -86,19 +144,8 @@ int var_set(map * vmap, const char * s, lstack * const ls, int inherit, int muta
 		inh = 0;
 		wrt = 0;
 
-		log_start(L_VAR | TAG(s), "%10s(%s -> %s)", "redir", s, c->skey);
-		if(src)
-		{
-			log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-				, 70 - MIN(log_written(), 70)
-				, ""
-				, src->loc.ff->idstring
-				, src->loc.f_lin + 1
-				, src->loc.f_col + 1
-				, src->loc.l_lin + 1
-				, src->loc.l_col + 1
-			);
-		}
+		log_start(L_VAR | TAG(s), "%10s(%d:%d:%s -> %d:%d:%s)", "redir", KEYID(vmap, s), KEYID(c->smap, c->skey));
+		LOG_SRC(src);
 		log_finish("");
 
 		vmap = c->smap;
@@ -114,76 +161,25 @@ int var_set(map * vmap, const char * s, lstack * const ls, int inherit, int muta
 			c->write		= *wrt; 
 
 		c->val			= VAL_LS;
-		c->ls				= ls;
+
+		if(ls->l && ls->s[0].l)
+			c->ls				= ls;
+		else
+			c->ls				= listwise_identity;
 			
 		if(log_would(L_VAR | TAG(s)))
 		{
-			log_start(L_VAR | TAG(s), "%10s(%s) = [ ", "set", s);
-
-			int i = 0;
-			int j = 0;
-
-			lstack * ls = c->ls;
-
-			LSTACK_ITERATE(ls, i, go);
-			if(go)
-			{
-				if(j++)
-					log_add(" ");
-
-				if(ls->s[0].s[i].type)
-				{
-					char * vs = 0;
-					int    vl = 0;
-					lstack_string(ls, 0, i, &vs, &vl);
-
-					log_add("[%hhu]%p (%.*s)"
-						, ls->s[0].s[i].type
-						, *(void**)ls->s[0].s[i].s
-						, vl
-						, vs
-					);
-				}
-				else
-				{
-					log_add("%.*s", ls->s[0].s[i].l, ls->s[0].s[i].s);
-				}
-			}
-			LSTACK_ITEREND;
-
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "set", KEYID(vmap, s));
+			dumplist(c->ls);
 			log_add(" ] )");
-
-			if(src)
-			{
-				log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-					, 70 - MIN(log_written(), 70)
-					, ""
-					, src->loc.ff->idstring
-					, src->loc.f_lin + 1
-					, src->loc.f_col + 1
-					, src->loc.l_lin + 1
-					, src->loc.l_col + 1
-				);
-			}
-
+			LOG_SRC(src);
 			log_finish("");
 		}
 	}
 	else
 	{
-		log_start(L_VAR | TAG(s), "%10s(%s) blocked", "set", s);
-		if(src)
-		{
-			log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-				, 70 - MIN(log_written(), 70)
-				, ""
-				, src->loc.ff->idstring
-				, src->loc.f_lin + 1
-				, src->loc.f_col + 1
-				, src->loc.l_lin + 1
-				, src->loc.l_col + 1
-			);
-		}
+		log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) blocked", "set", KEYID(vmap, s));
+		LOG_SRC(src);
 		log_finish("");
 	}
 
@@ -205,36 +201,14 @@ int var_alias(map * const restrict smap, const char * const restrict ss, map * c
 		tc->skey		= strdup(ss);
 		tc->smap		= smap;
 
-		log_start(L_VAR | TAG(ss), "%10s(%s -> %s)", "alias", ss, ts);
-		if(src)
-		{
-			log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-				, 70 - MIN(log_written(), 70)
-				, ""
-				, src->loc.ff->idstring
-				, src->loc.f_lin + 1
-				, src->loc.f_col + 1
-				, src->loc.l_lin + 1
-				, src->loc.l_col + 1
-			);
-		}
+		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s)", "alias", KEYID(smap, ss), KEYID(tmap, ts));
+		LOG_SRC(src);
 		log_finish("");
 	}
 	else
 	{
-		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%s -> %s) blocked", "alias", ss, ts);
-		if(src)
-		{
-			log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-				, 70 - MIN(log_written(), 70)
-				, ""
-				, src->loc.ff->idstring
-				, src->loc.f_lin + 1
-				, src->loc.f_col + 1
-				, src->loc.l_lin + 1
-				, src->loc.l_col + 1
-			);
-		}
+		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s) blocked", "alias", KEYID(smap, ss), KEYID(tmap, ts));
+		LOG_SRC(src);
 		log_finish("");
 	}
 
@@ -256,36 +230,14 @@ int var_link(map * const restrict smap, const char * const restrict ss, map * co
 		tc->skey		= strdup(ss);
 		tc->smap		= smap;
 
-		log_start(L_VAR | TAG(ss), "%10s(%s <-> %s)", "link", ss, ts);
-		if(src)
-		{
-			log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-				, 70 - MIN(log_written(), 70)
-				, ""
-				, src->loc.ff->idstring
-				, src->loc.f_lin + 1
-				, src->loc.f_col + 1
-				, src->loc.l_lin + 1
-				, src->loc.l_col + 1
-			);
-		}
+		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s)", "link", KEYID(smap, ss), KEYID(tmap, ts));
+		LOG_SRC(src);
 		log_finish("");
 	}
 	else
 	{
-		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%s <-> %s) blocked", "link", ss, ts);
-		if(src)
-		{
-			log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"
-				, 70 - MIN(log_written(), 70)
-				, ""
-				, src->loc.ff->idstring
-				, src->loc.f_lin + 1
-				, src->loc.f_col + 1
-				, src->loc.l_lin + 1
-				, src->loc.l_col + 1
-			);
-		}
+		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s) blocked", "link", KEYID(smap, ss), KEYID(tmap, ts));
+		LOG_SRC(src);
 		log_finish("");
 	}
 
@@ -312,14 +264,28 @@ int var_clone(map * const amap, map ** const bmap)
 	int x;
 	for(x = 0; x < keysl; x++)
 	{
-		if((*vals[x])->inherit)
+		if(keys[x][0] != '?')
 		{
-			varval * c = 0;
-			fatal(getval, (*bmap), keys[x], &c);
+			if((*vals[x])->inherit)
+			{
+				varval * c = 0;
+				fatal(getval, (*bmap), keys[x], &c);
 
-			memcpy(c, *vals[x], sizeof(*c));
+				memcpy(c, *vals[x], sizeof(*c));
+			}
 		}
 	}
+
+	int * ALVL = map_get(amap, MMS("?LVL"));
+	int * ACLD = map_get(amap, MMS("?CLD"));
+
+	int BLVL = (*ALVL) + 1;
+	int BNUM = (*ACLD)++;
+	int BCLD = 0;
+
+	fatal(map_set, (*bmap), MMS("?LVL"), MM(BLVL));
+	fatal(map_set, (*bmap), MMS("?NUM"), MM(BNUM));
+	fatal(map_set, (*bmap), MMS("?CLD"), MM(BCLD));
 
 finally:
 	free(keys);
@@ -327,17 +293,29 @@ finally:
 coda;
 }
 
-lstack * var_access(const map * vmap, const char * s)
+lstack * var_access(const map * vmap, const char * vs)
 {
+	const map * m = vmap;
+	const char * s = vs;
+	lstack * ls = listwise_identity;
+
 	varval ** cc = 0;
-	while((cc = map_get(vmap, MMS(s))))
+	while((cc = map_get(m, MMS(s))))
 	{
 		if((*cc)->val == VAL_LS)
-			return (*cc)->ls;
+		{
+			ls = (*cc)->ls;
+			break;
+		}
 
-		vmap = (*cc)->smap;
+		m = (*cc)->smap;
 		s = (*cc)->skey;
 	}
 
-	return listwise_identity;
+	log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "access", KEYID(vmap, vs));
+	dumplist(ls);
+	log_add(" ] ");
+	log_finish("");
+
+	return ls;
 }

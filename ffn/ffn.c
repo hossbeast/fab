@@ -139,8 +139,8 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 	else if(type == FFN_INVOCATION)
 	{
 		n->module					= va_arg(va, ff_node*);
-		n->scope					= va_arg(va, ff_node*);
 		n->chain[0]				= va_arg(va, ff_node*);	// designations
+		n->scope					= va_arg(va, ff_node*);
 		n->flags					= (uint8_t)va_arg(va, int);
 	}
 	else if(type == FFN_WORD)

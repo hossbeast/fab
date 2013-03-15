@@ -147,7 +147,7 @@ invocation
 	}
 	| '+' list nofile
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, $3, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, (void*)0, $3, 0);
 	}
 	| '+' list '(' ')'
 	{
@@ -155,11 +155,11 @@ invocation
 	}
 	| '+' list '(' ')' nofile
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5->e, $2, $5, (void*)0, FFN_SUBCONTEXT);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5->e, $2, (void*)0, $5, FFN_SUBCONTEXT);
 	}
 	| '+' list '(' varsettings ')'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, (void*)0, $4, FFN_SUBCONTEXT);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, $4, (void*)0, FFN_SUBCONTEXT);
 	}
 	| '+' list '(' varsettings ')' nofile
 	{
