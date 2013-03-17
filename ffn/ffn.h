@@ -17,9 +17,8 @@
 #define FFN_FABRICATION	0x0008
 #define FFN_WEAK				0x0010
 #define FFN_SUBCONTEXT	0x0020
-#define FFN_NOSEP				0x0040
-#define FFN_WSSEP				0x0080
-#define FFN_COMMASEP		0x0100
+#define FFN_WSSEP				0x0040
+#define FFN_COMMASEP		0x0080
 
 // FFN type table
 #define FFN_TABLE(x)										\
@@ -34,7 +33,8 @@
 	_FFN(FFN_GENERATOR			, 0x09	, x)	\
 	_FFN(FFN_VARREF					, 0x0a	, x)	\
 	_FFN(FFN_LF							, 0x0b	, x)	\
-	_FFN(FFN_WORD						, 0x0c	, x)
+	_FFN(FFN_WORD						, 0x0c	, x)	\
+	_FFN(FFN_NOFILE					, 0x0d	, x)
 
 enum {
 #define _FFN(a, b, c) a = b,
@@ -59,14 +59,29 @@ typedef struct ff_loc
 
 typedef struct ff_node
 {
-	uint32_t		type;		// node type
-	ff_loc			loc;		// location of the node
+	uint32_t		type;					// node type
+	ff_loc			loc;					// node location (cumulative)
+	char*				s;						// string value (cumulative)
+	int					l;						// length
 
-	char*				s;			// string value of the entire node
-	int					l;			// string length
+	generator * generator;		// FFN_GENERATOR
+	uint32_t		flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION, FFN_LIST
 
-	generator * 		generator;		// FFN_GENERATOR
-	uint8_t					flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION, FFN_LIST
+	/*
+	** stringlists are freed in freenode
+	*/
+	union {
+		struct
+		{
+			char **		stringlists[1];
+			int				stringlistsl[1];
+		};
+
+		struct {													// FFN_NOFILE
+			char ** parts;
+			int			partsl;
+		};
+	};
 
 	/*
 	** strings are freed in freenode
@@ -74,11 +89,11 @@ typedef struct ff_node
 	union {
 		char*	strings[1];
 
-		struct {													// FFN_WORD, FFN_GENERATOR
+		struct {													// FFN_WORD, FFN_NOFILE, FFN_GENERATOR
 			char*			text;
 		};
 
-		struct {													// FFN_VARREF, FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP
+		struct {													// FFN_VARREF, FFN_VARASSIGN, FFN_VARLOCK, FFN_VARLINK
 			char*			name;
 		};
 	};
@@ -93,7 +108,7 @@ typedef struct ff_node
 			struct ff_node*			generator_node;
 		};
 
-		struct {													// FFN_VARASSIGN, FFN_VARPUSH, FFN_VARPOP, FFN_DESIGNATE
+		struct {													// FFN_VARASSIGN, FFN_VARLOCK, FFN_VARLINK, FFN_DESIGNATE
 			struct ff_node*			definition;
 		};
 
@@ -157,12 +172,10 @@ typedef struct ff_node
 	};
 
 	/*
-	** xten is not freed
+	** not freed
 	*/
 	union {
-		void *			xten;
-
-		void *			fml;						// FFN_FORMULA
+		void *			fml;						// FFN_FORMULA (a struct fml*)
 	};
 
 	// implementation

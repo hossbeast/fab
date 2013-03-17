@@ -8,6 +8,7 @@
 %code top {
 	#include "ff.h"
 	#include "xstring.h"
+	#include "xmem.h"
 
 	int ff_yylex(void* yylvalp, void* yylloc, void* scanner);
 }
@@ -257,7 +258,7 @@ discovery
 command
 	: commandparts
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0, FFN_NOSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1->s, $1->e, $1, (void*)0, 0);
 	}
 	;
 
@@ -293,11 +294,11 @@ list
 	}
 	| '[' listpart ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, FFN_NOSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, 0);
 	}
 	| '[' ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0, FFN_NOSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0, 0);
 	}
 	| '[' listpartsnone '~' generator ']'
 	{
@@ -309,11 +310,11 @@ list
 	}
 	| '[' listpart '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, FFN_NOSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, 0);
 	}
 	| '[' '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, $3, FFN_NOSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, $3, 0);
 	}
 	;
 
@@ -375,15 +376,45 @@ nofile
 	{
 		/* nofile is a shorthand for non-file-backed notation */
 
+		// parts
+		char ** l = 0;
+		int ll = 0;
+		int la = 0;
+
+		// text
 		char * v = 0;
+
+		// e
+		char * e = $2->e;
+
+		// add to text
 		xstrcatf(&v, "/..");
 
-		char * e = $2->e;
+		// add to parts
+		if(ll == la)
+		{
+			int ns = la ?: 3;
+			ns = ns * 2 + ns / 2;
+			xrealloc(&l, sizeof(*l), ns, la);
+			la = ns;
+		}
+		xstrdup(&l[ll++], "..");
 
 		ff_node * n = $2;
 		while(n)
 		{
+			// add to text
 			xstrcatf(&v, "/%s", n->text);
+
+			// add to parts
+			if(ll == la)
+			{
+				int ns = la ?: 3;
+				ns = ns * 2 + ns / 2;
+				l = realloc(l, sizeof(*l) * ns);
+				la = ns;
+			}
+			xstrdup(&l[ll++], n->text);
 
 			ff_node * nn = n->next;
 			n->next = 0;
@@ -391,7 +422,7 @@ nofile
 			n = nn;
 		}
 
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, e, v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_NOFILE, $1.s, e, v, l, ll);
 	}
 	;
 

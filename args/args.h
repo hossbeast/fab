@@ -40,6 +40,7 @@
 #define GN_DIR_BASE								"/var/cache/fab/gn"
 #define FF_DIR_BASE								"/var/cache/fab/ff"
 #define PID_DIR_BASE							"/var/tmp/fab/pid"
+#define FABLW_DIRS								(char*[]){ "/usr/lib/fab/listwise" }
 
 #define DEFAULT_INIT_FABFILE 			"./fabfile"
 #define DEFAULT_INVALIDATE_ALL		0
@@ -49,7 +50,7 @@
 #define DEFAULT_MODE_DDSC					MODE_DDSC_DEFERRED
 #define DEFAULT_CONCURRENCY_LIMIT	0
 #define DEFAULT_BAKE_PATH					"./bakescript"
-#define DEFAULT_INVOKEDIR					"/usr/lib/fab"
+#define DEFAULT_INVOKEDIR					"/usr/lib/fab/lib"
 
 #define EXPIRATION_POLICY					(60 * 60 * 24 * 7)
 

@@ -126,7 +126,7 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 	if(canpl > 4 && memcmp(canp, "/../", 4) == 0 && sstk)
 	{
 		char * sstr = 0;
-		fatal(strstack_string, sstk, "/..", "/", &sstr);
+		fatal(strstack_string, sstk, "/", "/", &sstr);
 		fatal(canon, canp + 4, canpl - 4, space, sizeof(space), sstr, CAN_REALPATH);
 
 		canp = space;
@@ -233,7 +233,7 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		if(Al > 4 && memcmp(A, "/../", 4) == 0 && sstk)
 		{
 			char * sstr;
-			fatal(strstack_string, sstk, "/..", "/", &sstr);
+			fatal(strstack_string, sstk, "/", "/", &sstr);
 			fatal(path_create_canon, &(*gna)->path, "%s/%.*s", sstr, Al - 4, A + 4);
 		}
 		else if(base)

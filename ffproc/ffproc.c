@@ -46,7 +46,8 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		fatal(lstack_add, (*stax)[(*staxp)], ff->path->rel_dir, ff->path->rel_dirl);
 	}
 
-	fatal(var_set, vmap, "*", (*stax)[(*staxp)++], 0, 1, 0);
+	int star = (*staxp)++;
+	fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
 
 	// process the fabfile tree, construct the graph
 	for(x = 0; x < ff->ffn->statementsl; x++)
@@ -185,7 +186,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 							}
 							else if(set->definition->type == FFN_VARREF)
 							{
-								fatal(var_alias, vmap, set->vars[0]->name, cmap, set->definition->name, set);
+								fatal(var_alias, vmap, set->definition->name, cmap, set->vars[0]->name, set);
 							}
 						}
 						else
@@ -215,14 +216,23 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 
 			// apply scope for this invocation
 			if(stmt->scope)
-				fatal(strstack_push, sstk, stmt->scope->text);
+			{
+				for(i = 1; i < stmt->scope->partsl; i++)
+					fatal(strstack_push, sstk, stmt->scope->parts[i]);
+			}
 
 			// process the referenced fabfile
 			fatal(ffproc, ffp, pth, sstk, nmap, stax, staxa, staxp, 0, ismod);
 
 			// scope pop
 			if(stmt->scope)
-				strstack_pop(sstk);
+			{
+				for(i = 1; i < stmt->scope->partsl; i++)
+					strstack_pop(sstk);
+			}
+
+			// possibly overridden
+			fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
 		}
 	}
 

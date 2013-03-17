@@ -41,6 +41,9 @@ static int ensure(lstack *** stax, int * staxa, int staxp)
 static int flatten(lstack * lso)
 {
 	int x;
+	int c = 0;
+
+	lstack * lsi = 0;
 
 	// iterate the outer list
 	LSTACK_ITERREV(lso, x, goo);
@@ -49,7 +52,7 @@ static int flatten(lstack * lso)
 		if(lso->s[0].s[x].type == LISTWISE_TYPE_LIST)
 		{
 			// get reference to the inner list
-			lstack * lsi = *(void**)lso->s[0].s[x].s;
+			lsi = *(void**)lso->s[0].s[x].s;
 
 			// flatten the inner list
 			fatal(flatten, lsi);
@@ -79,8 +82,15 @@ static int flatten(lstack * lso)
 			}
 			LSTACK_ITEREND;
 		}
+
+		c++;
 	}
 	LSTACK_ITEREND;
+
+	// as a special case, a list with a single entry which is itself a list inherits
+	// the interpolation context of the inner list
+	if(c == 1 && lsi)
+		lso->flags = lsi->flags;
 
 	finally : coda;
 }
@@ -94,6 +104,10 @@ static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int 
 	for(x = 0; x < list->elementsl; x++)
 	{
 		if(list->elements[x]->type == FFN_WORD)
+		{
+			fatal(lstack_add, (*stax)[pn], list->elements[x]->text, strlen(list->elements[x]->text));
+		}
+		else if(list->elements[x]->type == FFN_NOFILE)
 		{
 			fatal(lstack_add, (*stax)[pn], list->elements[x]->text, strlen(list->elements[x]->text));
 		}
@@ -130,9 +144,14 @@ static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int 
 		}
 	}
 
+	if(list->flags & FFN_WSSEP)
+		(*stax)[pn]->flags = INTERPOLATE_ADJOIN;
+	else if(list->flags & FFN_COMMASEP)
+		(*stax)[pn]->flags = INTERPOLATE_DELIM_WS;
+
 	if(list->generator_node)
 	{
-		// latten first
+		// flatten first
 		fatal(flatten, (*stax)[pn]);
 
 		// pass through listwise
@@ -144,16 +163,16 @@ static int resolve(ff_node * list, map* vmap, lstack *** stax, int * staxa, int 
 		(*stax)[pn]->sel.all = 1;
 	}
 
-	(*stax)[pn]->flags = list->flags;
-
 	finally : coda;
 }
 
 static int render(lstack * const ls, pstring ** const ps)
 {
-	char * dm = "";
-	if(ls->flags & FFN_COMMASEP)
-		dm = " ";
+	char * dm = " ";
+	if(ls->flags == INTERPOLATE_ADJOIN)
+		dm = "";
+	else if(ls->flags == INTERPOLATE_DELIM_CUST)
+		dm = ls->ptr;
 
 	int k = 0;
 	int x;
@@ -165,9 +184,14 @@ static int render(lstack * const ls, pstring ** const ps)
 			fatal(pscatf, ps, "%s", dm);
 		}
 
-		if(ls->s[0].s[x].type)
+		if(ls->s[0].s[x].type == LISTWISE_TYPE_LIST)
 		{
 			fatal(render, *(void**)ls->s[0].s[x].s, ps);
+		}
+		else if(ls->s[0].s[x].type == LISTWISE_TYPE_GNLW)
+		{
+			gn * A = *(void**)ls->s[0].s[x].s;
+			fatal(pscatf, ps, "%.*s", A->path->rell, A->path->rel);
 		}
 		else
 		{

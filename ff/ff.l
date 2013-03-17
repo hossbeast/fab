@@ -227,7 +227,7 @@
 																											}
 <list>[,]																							{ return LEX(yytext[0]); }
 
-<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:()\-*=;{]+	{
+<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:()\-*=;{]+		{
 																												// string of anything else 
 																												return LEX(WORD);
 																											}

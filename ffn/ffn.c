@@ -109,8 +109,6 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 	finally : coda;
 }
 
-/// [[ public ]]
-
 /// [[ api/public ]]
 
 ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const ff, uint32_t type, ...)
@@ -134,25 +132,31 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 	{
 		n->needs					= va_arg(va, ff_node*);
 		n->feeds					= va_arg(va, ff_node*);
-		n->flags					= (uint8_t)va_arg(va, int);
+		n->flags					= (uint32_t)va_arg(va, int);
 	}
 	else if(type == FFN_INVOCATION)
 	{
 		n->module					= va_arg(va, ff_node*);
 		n->chain[0]				= va_arg(va, ff_node*);	// designations
 		n->scope					= va_arg(va, ff_node*);
-		n->flags					= (uint8_t)va_arg(va, int);
+		n->flags					= (uint32_t)va_arg(va, int);
 	}
 	else if(type == FFN_WORD)
 	{
 		n->text 					= va_arg(va, char*);
+	}
+	else if(type == FFN_NOFILE)
+	{
+		n->text						= va_arg(va, char*);
+		n->parts					= va_arg(va, char**);
+		n->partsl					= va_arg(va, int);
 	}
 	else if(type == FFN_FORMULA)
 	{
 		n->targets_0			= va_arg(va, ff_node*);
 		n->targets_1			= va_arg(va, ff_node*);
 		n->command				= va_arg(va, ff_node*);
-		n->flags					= (uint8_t)va_arg(va, int);
+		n->flags					= (uint32_t)va_arg(va, int);
 	}
 	else if(type == FFN_VARASSIGN)
 	{
@@ -173,7 +177,7 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 	{
 		n->chain[0]				= va_arg(va, ff_node*);	// elements
 		n->generator_node	= va_arg(va, ff_node*);
-		n->flags 					= (uint8_t)va_arg(va, int); 
+		n->flags 					= (uint32_t)va_arg(va, int); 
 	}
 	else if(type == FFN_LF)
 	{
@@ -219,6 +223,15 @@ void ffn_free(ff_node * const ffn)
 	if(ffn)
 	{
 		int x;
+		for(x = 0; x < sizeof(ffn->stringlists) / sizeof(ffn->stringlists[0]); x++)
+		{
+			int i;
+			for(i = 0; i < ffn->stringlistsl[x]; i++)
+				free(ffn->stringlists[x][i]);
+
+			free(ffn->stringlists[x]);
+		}
+
 		for(x = 0; x < sizeof(ffn->strings) / sizeof(ffn->strings[0]); x++)
 			free(ffn->strings[x]);
 
@@ -363,9 +376,13 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_LIST)
 			{
-				log(L_FF | L_FFTREE, "%*s  %12s : '%s'"
+				log(L_FF | L_FFTREE, "%*s  %12s : '%s' (%u)"
 					, lvl * 2, ""
-					, "interpolation", ffn->flags & FFN_WSSEP ? "ws" : ffn->flags & FFN_COMMASEP ? "comma" : "UNKNWN"
+					, "interpolation"
+					, ffn->flags & FFN_WSSEP ? "ws"
+					: ffn->flags & FFN_COMMASEP ? "comma"
+					: "UNKNWN"
+					, ffn->flags
 				);
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
@@ -386,6 +403,24 @@ void ffn_dump(ff_node * const root)
 					, lvl * 2, ""
 					, "text", ffn->text
 				);
+			}
+			else if(ffn->type == FFN_NOFILE)
+			{
+				log(L_FF | L_FFTREE, "%*s  %12s : '%s'"
+					, lvl * 2, ""
+					, "text", ffn->text
+				);
+				log(L_FF | L_FFTREE, "%*s  %12s : %d"
+					, lvl * 2, ""
+					, "parts", ffn->partsl
+				);
+				for(x = 0; x < ffn->partsl; x++)
+				{
+					log(L_FF | L_FFTREE, "%*s  %12s : %s"
+						, lvl * 2, ""
+						, "part", ffn->parts[x]
+					);
+				}
 			}
 			else if(ffn->type == FFN_GENERATOR)
 			{

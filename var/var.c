@@ -65,6 +65,13 @@ static int getval(map * const restrict vmap, const char * const restrict s, varv
 
 static void map_destructor(void* tk, void* tv)
 {
+	if(((char*)tk)[0] != '?')
+	{
+		varval ** cc = tv;
+		if((*cc)->val == VAL_AL)
+			free((*cc)->skey);
+		free((*cc));
+	}
 }
 
 static void dumplist(lstack * const ls)
@@ -138,7 +145,7 @@ int var_set(map * vmap, const char * s, lstack * const ls, int inherit, int muta
 
 	varval * c = 0;
 	fatal(getval, vmap, s, &c);
-	while(c && c->write == WRITETHROUGH)
+	while(c->write == WRITETHROUGH)
 	{
 		// writethrough does not modify properties
 		inh = 0;
@@ -201,13 +208,13 @@ int var_alias(map * const restrict smap, const char * const restrict ss, map * c
 		tc->skey		= strdup(ss);
 		tc->smap		= smap;
 
-		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s)", "alias", KEYID(smap, ss), KEYID(tmap, ts));
+		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s)", "alias", KEYID(tmap, ts), KEYID(smap, ss));
 		LOG_SRC(src);
 		log_finish("");
 	}
 	else
 	{
-		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s) blocked", "alias", KEYID(smap, ss), KEYID(tmap, ts));
+		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s) blocked", "alias", KEYID(tmap, ts), KEYID(smap, ss));
 		LOG_SRC(src);
 		log_finish("");
 	}
@@ -230,13 +237,13 @@ int var_link(map * const restrict smap, const char * const restrict ss, map * co
 		tc->skey		= strdup(ss);
 		tc->smap		= smap;
 
-		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s)", "link", KEYID(smap, ss), KEYID(tmap, ts));
+		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s)", "link", KEYID(tmap, ts), KEYID(smap, ss));
 		LOG_SRC(src);
 		log_finish("");
 	}
 	else
 	{
-		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s) blocked", "link", KEYID(smap, ss), KEYID(tmap, ts));
+		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s) blocked", "link", KEYID(tmap, ts), KEYID(smap, ss));
 		LOG_SRC(src);
 		log_finish("");
 	}
@@ -272,6 +279,8 @@ int var_clone(map * const amap, map ** const bmap)
 				fatal(getval, (*bmap), keys[x], &c);
 
 				memcpy(c, *vals[x], sizeof(*c));
+				if(c->val == VAL_AL)
+					c->skey = strdup(c->skey);
 			}
 		}
 	}
@@ -312,10 +321,12 @@ lstack * var_access(const map * vmap, const char * vs)
 		s = (*cc)->skey;
 	}
 
+/*
 	log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "access", KEYID(vmap, vs));
 	dumplist(ls);
 	log_add(" ] ");
 	log_finish("");
+*/
 
 	return ls;
 }

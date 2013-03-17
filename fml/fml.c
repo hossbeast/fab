@@ -37,73 +37,70 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 {
 	int y;
 
-	if(ls->l)
+	LSTACK_ITERATE(ls, y, go);
+	if(go)
 	{
-		LSTACK_ITERATE(ls, y, go);
-		if(go)
+		// create a new fmleval
+		if(fml->evalsl == fml->evalsa)
 		{
-			// create a new fmleval
-			if(fml->evalsl == fml->evalsa)
-			{
-				int ns = fml->evalsa ?: 10;
-				ns = ns * 2 + ns / 2;
-				fatal(xrealloc, &fml->evals, sizeof(*fml->evals), ns, fml->evalsa);
-				fml->evalsa = ns;
-			}
-			
-			fatal(xmalloc, &fml->evals[fml->evalsl++], sizeof(*fml->evals[0]));
-			fmleval * fmlv = fml->evals[fml->evalsl - 1];
-			fmlv->fml = fml;
-			fmlv->bag = bag;
-
-			// get the target graph node
-			char * s = 0;
-			int l = 0;
-			fatal(lstack_string, ls, 0, y, &s, &l);
-
-			gn * t = 0;
-			fatal(gn_add
-				, g_args.init_fabfile_path->abs_dir
-				, sstk
-				, s
-				, l
-				, &t
-				, 0
-			);
-
-			// update affected lists
-			fmlv->products_l = 1;
-			fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
-			fmlv->products[0] = t;
-			fatal(ff_regular_enclose_gn, fml->ffn->loc.ff, t);
-
-			if(fml->ffn->flags & FFN_DISCOVERY)
-			{
-				log(L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s"
-					, ff_idstring(fml->ffn->loc.ff)
-					, fml->ffn->loc.f_lin + 1
-					, fml->ffn->loc.f_col + 1
-					, fml->ffn->loc.l_lin + 1
-					, fml->ffn->loc.l_col + 1
-					, t->idstring
-				);
-				t->dscv = fmlv;
-			}
-			else if(fml->ffn->flags & FFN_FABRICATION)
-			{
-				log(L_FAB | L_FML | L_FMLTARG, "reg(%s)[%3d,%3d - %3d,%3d] -> %s"
-					, ff_idstring(fml->ffn->loc.ff)
-					, fml->ffn->loc.f_lin + 1
-					, fml->ffn->loc.f_col + 1
-					, fml->ffn->loc.l_lin + 1
-					, fml->ffn->loc.l_col + 1
-					, t->idstring
-				);
-				t->fabv = fmlv;
-			}
+			int ns = fml->evalsa ?: 10;
+			ns = ns * 2 + ns / 2;
+			fatal(xrealloc, &fml->evals, sizeof(*fml->evals), ns, fml->evalsa);
+			fml->evalsa = ns;
 		}
-		LSTACK_ITEREND;
+		
+		fatal(xmalloc, &fml->evals[fml->evalsl++], sizeof(*fml->evals[0]));
+		fmleval * fmlv = fml->evals[fml->evalsl - 1];
+		fmlv->fml = fml;
+		fmlv->bag = bag;
+
+		// get the target graph node
+		char * s = 0;
+		int l = 0;
+		fatal(lstack_string, ls, 0, y, &s, &l);
+
+		gn * t = 0;
+		fatal(gn_add
+			, g_args.init_fabfile_path->abs_dir
+			, sstk
+			, s
+			, l
+			, &t
+			, 0
+		);
+
+		// update affected lists
+		fmlv->products_l = 1;
+		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
+		fmlv->products[0] = t;
+		fatal(ff_regular_enclose_gn, fml->ffn->loc.ff, t);
+
+		if(fml->ffn->flags & FFN_DISCOVERY)
+		{
+			log(L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s"
+				, ff_idstring(fml->ffn->loc.ff)
+				, fml->ffn->loc.f_lin + 1
+				, fml->ffn->loc.f_col + 1
+				, fml->ffn->loc.l_lin + 1
+				, fml->ffn->loc.l_col + 1
+				, t->idstring
+			);
+			t->dscv = fmlv;
+		}
+		else if(fml->ffn->flags & FFN_FABRICATION)
+		{
+			log(L_FAB | L_FML | L_FMLTARG, "reg(%s)[%3d,%3d - %3d,%3d] -> %s"
+				, ff_idstring(fml->ffn->loc.ff)
+				, fml->ffn->loc.f_lin + 1
+				, fml->ffn->loc.f_col + 1
+				, fml->ffn->loc.l_lin + 1
+				, fml->ffn->loc.l_col + 1
+				, t->idstring
+			);
+			t->fabv = fmlv;
+		}
 	}
+	LSTACK_ITEREND;
 
 	finally : coda;
 }

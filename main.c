@@ -91,8 +91,13 @@ int main(int argc, char** argv)
 		fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
 		fatal(listwise_register_object, LISTWISE_TYPE_LIST, &listlw);
 
+		// load additional fab-specific listwise operators
+		for(x = 0; x < sizeof(FABLW_DIRS) / sizeof(FABLW_DIRS[0]); x++)
+			fatal(listwise_register_opdir, FABLW_DIRS[x]);
+
 		// create stack for scope resolution
 		fatal(strstack_create, &sstk);
+		fatal(strstack_push, sstk, "..");
 
 		// parse the initial fabfile
 		fatal(ff_mkparser, &ffp);
@@ -284,11 +289,15 @@ int main(int argc, char** argv)
 	finally:
 		ff_freeparser(ffp);
 		bp_free(bp);
+		map_free(rmap);
 		map_free(vmap);
 		strstack_free(sstk);
 
 		for(x = 0; x < staxa; x++)
+		{
+			free(stax[x]->ptr);
 			lstack_free(stax[x]);
+		}
 		free(stax);
 
 		for(x = 0; x < tsa; x++)

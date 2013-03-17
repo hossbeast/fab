@@ -8,7 +8,7 @@ COMMON					:=../common
 # paths
 SRCDIR           =.
 VPATH           +=${SRCDIR}
-VPATH						+=$(shell find ${SRCDIR} -mindepth 1 -maxdepth 1 -type d -name '[a-z]*' -printf "%f\n" | grep -v doc | grep -v fablib | grep -v liblistwise)
+VPATH						+=$(shell find ${SRCDIR} -mindepth 1 -maxdepth 1 -type d -name '[a-z]*' -printf "%f\n" | grep -v doc | grep -v fablib | grep -v fablw | grep -v liblistwise)
 
 INSTALL         :=install
 
@@ -25,8 +25,26 @@ LOPTS						+=-llistwise
 #
 # default goal
 #
+all : fab fablw/op/fx/fx.so fablw/op/fxc/fxc.so fablw/op/fxw/fxw.so
+
 fab : main.o
 	${CC} ${COPTS} ${CFLAGS} ${LFLAGS} -o $@ ${COMMON}/*.o $(foreach x,$(VPATH),$(x)/*.o) ${LOPTS}
+
+fablw/op/fx/fx.so   : fablw/op/fx/fx.o   list/list.h
+fablw/op/fxc/fxc.so : fablw/op/fxc/fxc.o list/list.h
+fablw/op/fxw/fxw.so : fablw/op/fxw/fxw.o list/list.h
+
+fablw/op/fx/fx.o : fablw/op/fx/fx.c
+	$(CC) $(COPTS) -fPIC $(CFLAGS) $< -o $@
+
+fablw/op/fxc/fxc.o : fablw/op/fxc/fxc.c
+	$(CC) $(COPTS) -fPIC $(CFLAGS) $< -o $@
+
+fablw/op/fxw/fxw.o : fablw/op/fxw/fxw.c
+	$(CC) $(COPTS) -fPIC $(CFLAGS) $< -o $@
+
+%.so : %.o
+	${CC} ${COPTS} ${CFLAGS} -o $@ $^ -llistwise -shared -Wl,-soname,$(shell basename $*).so
 
 #
 # recipes
@@ -121,30 +139,34 @@ gn/gn.o	: ${COMMON}/coll.o ${COMMON}/unitstring.o
 # phony targets
 #
 
-.PHONY: install uninstall clean
+.PHONY: install uninstall clean all
 
-install: fab
-	${INSTALL} -d                ${DESTDIR}/usr/local/bin
-	${INSTALL} fab               ${DESTDIR}/usr/local/bin/fab
-	chown fabsys:fabsys          ${DESTDIR}/usr/local/bin/fab
-	chmod u+s                    ${DESTDIR}/usr/local/bin/fab
-	chmod g+s                    ${DESTDIR}/usr/local/bin/fab
-	${INSTALL} gcc-dep           ${DESTDIR}/usr/local/bin/gcc-dep
-	${INSTALL} -d                ${DESTDIR}/var/cache/fab
-	chown fabsys:fabsys          ${DESTDIR}/var/cache/fab
-	${INSTALL} -d                ${DESTDIR}/var/tmp/fab
-	chown fabsys:fabsys          ${DESTDIR}/var/tmp/fab
-	${INSTALL} -d                ${DESTDIR}/usr/lib/fab/std
-	${INSTALL} fablib/std/c.fab  ${DESTDIR}/usr/lib/fab/std/c.fab
-	${INSTALL} fablib/std/l.fab  ${DESTDIR}/usr/lib/fab/std/l.fab
-	${INSTALL} fablib/std/y.fab  ${DESTDIR}/usr/lib/fab/std/y.fab
+install : all
+	${INSTALL} -d                   ${DESTDIR}/usr/local/bin
+	${INSTALL} fab                  ${DESTDIR}/usr/local/bin/fab
+	chown fabsys:fabsys             ${DESTDIR}/usr/local/bin/fab
+	chmod u+s                       ${DESTDIR}/usr/local/bin/fab
+	chmod g+s                       ${DESTDIR}/usr/local/bin/fab
+	${INSTALL} gcc-dep              ${DESTDIR}/usr/local/bin/gcc-dep
+	${INSTALL} -d                   ${DESTDIR}/var/cache/fab
+	chown fabsys:fabsys             ${DESTDIR}/var/cache/fab
+	${INSTALL} -d                   ${DESTDIR}/var/tmp/fab
+	chown fabsys:fabsys             ${DESTDIR}/var/tmp/fab
+	${INSTALL} -d                   ${DESTDIR}/usr/lib/fab/lib/std
+	${INSTALL} fablib/std/c.fab     ${DESTDIR}/usr/lib/fab/lib/std/c.fab
+	${INSTALL} fablib/std/l.fab     ${DESTDIR}/usr/lib/fab/lib/std/l.fab
+	${INSTALL} fablib/std/y.fab     ${DESTDIR}/usr/lib/fab/lib/std/y.fab
+	${INSTALL} -d                   ${DESTDIR}/usr/lib/fab/listwise
+	${INSTALL} fablw/op/fx/fx.so    ${DESTDIR}/usr/lib/fab/listwise/fx.so
+	${INSTALL} fablw/op/fxc/fxc.so  ${DESTDIR}/usr/lib/fab/listwise/fxc.so
+	${INSTALL} fablw/op/fxw/fxw.so  ${DESTDIR}/usr/lib/fab/listwise/fxw.so
 
 uninstall:
-	rm -f                        ${DESTDIR}/fab
-	rm -f                        ${DESTDIR}/gcc-dep
-	rm -rf                       ${DESTDIR}/var/cache/fab
-	rm -rf                       ${DESTDIR}/var/tmp/fab
-	rm -rf                       ${DESTDIR}/usr/lib/fab
+	rm -f                           ${DESTDIR}/fab
+	rm -f                           ${DESTDIR}/gcc-dep
+	rm -rf                          ${DESTDIR}/var/cache/fab
+	rm -rf                          ${DESTDIR}/var/tmp/fab
+	rm -rf                          ${DESTDIR}/usr/lib/fab
 
 clean ::
 	rm -f fab 1>/dev/null 2>&1 ; true

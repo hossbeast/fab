@@ -113,7 +113,6 @@ int strstack_string(strstack * const stk, const char * const ldr, const char * c
 	}
 
 	memcpy(stk->s + stk->sl, ldr, ldrl);
-	stk->s[stk->sl + ldrl] = 0;
 	stk->sl += ldrl;
 
 	int x;
@@ -132,16 +131,17 @@ int strstack_string(strstack * const stk, const char * const ldr, const char * c
 			stk->sa = ns;
 		}
 
-		if(stk->sl)
+		if(x)
 		{
 			memcpy(stk->s + stk->sl, d, dl);
 			stk->sl += dl;
 		}
 
 		memcpy(stk->s + stk->sl, stk->v[x].v, stk->v[x].l);
-		stk->s[stk->sl + stk->v[x].l] = 0;
 		stk->sl += stk->v[x].l;
 	}
+
+	stk->s[stk->sl] = 0;
 
 	(*r) = stk->s;
 

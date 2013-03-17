@@ -68,7 +68,7 @@ void strstack_pop(strstack * const restrict stk)
 // PARAMETERS
 //  stk   - strstack instance
 //  [ldr] - prepended to the result string
-//  [d]   - delimiter stk members in the result string
+//  [d]   - delimite stk members in the result string
 //  r     - results returned here - points to memory in the strstack instance
 //
 // returns nonzero on success
