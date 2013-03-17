@@ -2,7 +2,7 @@
 $dcommon = [ $* ]
 +[ $dcommon/vars.fab ]
 
-$cflags = [ $cflags [ -I $dcommon ] ]
+$cflags = [ $cflags [ -I $dcommon ~ j ] ]
 
 # c files
 +[@std.c]($dirs = $dcommon; -$cfabpaths)
