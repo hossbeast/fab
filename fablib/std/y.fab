@@ -13,9 +13,9 @@
 #  rdirs      - directories containing .y files, recursive search
 #  paths      - paths to .y files
 #
-#  discdirs   - (as above, but for discovery only)
-#  discrdirs  - 
-#  discpaths  - 
+#  dscdirs    - (as above, but for discovery only)
+#  dscrdirs   - 
+#  dscpaths   - 
 #
 #  fabdirs    - (as above, but for fabrication/dependency only)
 #  fabrdirs   - 
@@ -23,53 +23,51 @@
 #
 
 # paths to y files for discovery
-$ydscpaths < [
+$ydscpaths = [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
 
 	[
 		$dirs				# directories
 		$dscdirs		# directories, discovery only
-	] =>> ls
+	~ ls ]
 
 	[
 		$rdirs			# recursive directories
 		$rdscdirs		# recursive directories, discovery only
-	] =>> lsr
-] =>> xm/<y>
+	~ lsr ]
+~ xm/<y> ]
 
 # paths to y files for fabrication
-$yfabpaths < [
+$yfabpaths = [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
 
 	[
 		$dirs				# directories
 		$dscdirs		# directories, discovery only
-	] =>> ls
+	~ ls ]
 
 	[
 		$rdirs			# recursive directories
 		$rdscdirs		# recursive directories, discovery only
-	] =>> lsr
-] =>> xm/<y>
+	~ lsr ]
+~ xm/<y> ]
 
 # discovery
-[ $ydscpaths ] ~
+[ $ydscpaths ] %
 {
-		[ $bison $bisonflags --warnings=error -o /dev/stdout $@ ]		\
-	| [ $cc $cflags ] -MM -MP -MG -xc -														\
-	| gcc-dep [ $@ ] =>> rx/xs/<y>/tab.o
+	[ $bison ] [ $bisonflags ~ ss/u/fx ] -o /dev/stdout [ $@ ] [
+	] | [ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG -xc - [
+	] | gcc-dep [ $@ ~ rx/xs/<y>/tab.o/fx ]
 }
 
 # $bison : y -> { tab.c, tab.h }
-[ $yfabpaths ] =>> xs/<y>/tab.c/y/v/d/cp/u/xs/tab.c/tab.h/z/v/dj/2/shift/pop :: [ $< ] =>> rx/xsf/<y>/ss/u
+[ $yfabpaths ~ xs/<y>/tab.c/y/v/d/cp/u/xs/tab.c/tab.h/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xsf/<y>/ss/u ]
 {
-	[ $bison --warnings=error -o ]				\
-	[ $@ ] =>> h/1/1											\
-	[ -d ]																\
-	[ $@ ] =>> rx/ineed/xm/<y>/ss/u
+	[ $bison ] [ $bisonflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ] -d				\
+	[ $@ ~ rx/ineed/xm/<y>/ss/u ]
 }
 
 # $cc : tab.c -> tab.o via std.c
-+[@std.c]([ $yfabpaths ] =>> xs/<y>/<tab.c> ^ $fabpaths, ^ $cc $cflags)-
++[@std.c]($cfabpaths = [ $yfabpaths ~ xs/<y>/<tab.c> ]; $cc $cflags)

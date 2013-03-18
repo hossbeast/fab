@@ -196,7 +196,7 @@ int bp_create(gn ** n, int l, bp ** bp)
 							bps->evals[bps->evals_l++] = lvs[y]->fabv;
 					}
 				}
-				else if(strcmp("/..", lvs[y]->path->abs_dir) == 0)
+				else if(lvs[y]->path->canl >= 4 && memcmp(lvs[y]->path->can, "/../", 4) == 0)
 				{
 					// this is a NOFILE node - no error, but do not add to the stage
 				}
@@ -602,8 +602,12 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int staxp, ts ***
 		// harvest the results
 		for(y = 0; y < i; y++)
 		{
-			// SUCCESS if - exit status 0, not killed by signal, and wrote nothing to stderr
-			if((*ts)[y]->r_status == 0 && (*ts)[y]->r_signal == 0 && (*ts)[y]->stde_txt->l == 0)
+			// SUCCESS if
+			//  pid      - it was executed
+			//  r_status - exit status of 0
+			//  r_signal - not killed by a signal
+			//  std_txt  - wrote nothing to stderr
+			if((*ts)[y]->pid && (*ts)[y]->r_status == 0 && (*ts)[y]->r_signal == 0 && (*ts)[y]->stde_txt->l == 0)
 			{
 				int q;
 				for(q = 0; q < (*ts)[y]->fmlv->products_l; q++)

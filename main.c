@@ -187,7 +187,7 @@ int main(int argc, char** argv)
 
 				if(ll == listl[0])
 				{
-					log(L_WARN, "target : %s not found", g_args.targets[x]);
+					fail("target : %s not found", g_args.targets[x]);
 				}
 			}
 
@@ -295,7 +295,8 @@ int main(int argc, char** argv)
 
 		for(x = 0; x < staxa; x++)
 		{
-			free(stax[x]->ptr);
+			if(stax[x])
+				free(stax[x]->ptr);
 			lstack_free(stax[x]);
 		}
 		free(stax);

@@ -59,31 +59,31 @@ fablw/op/fxw/fxw.o : fablw/op/fxw/fxw.c
 	${FLEX} -d -o $*.lex.c --header-file=$*.lex.h ${FLEXFLAGS} $<
 
 %.tok.c %.tok.h : %.tab.c
-	@echo "#ifndef _$(subst .,_,$(*F))_TOK_H"         							 	 >$(*D)/$(*F).tok.h
-	@echo "#define _$(subst .,_,$(*F))_TOK_H"         								>>$(*D)/$(*F).tok.h
-	@echo "const char* $(subst .,_,$(*F))_tokname(int);"							>>$(*D)/$(*F).tok.h
-	@sed   -ne '/yytokentype/,/;/ p' < $<													\
-	  | sed -e 's/\(yytokentype\)/$(subst .,_,$(*F))_\1/'         \
-	  | sed -e '/ *[A-Z]/s/\([A-Z]\)/$(subst .,_,$(*F))_\1/'			    >>$(*D)/$(*F).tok.h
-	@echo "#endif"                                  									>>$(*D)/$(*F).tok.h
-	@echo "typedef unsigned short yytype_uint16;"   									>$(*D)/$(*F).tok.c
-	@sed -ne '/yytname\[\]/,/};/ p'  < $< | sed -e 's/\\"\|'"'"'//g'  >>$(*D)/$(*F).tok.c
-	@sed -ne '/yytoknum\[\]/,/};/ p' < $<            									>>$(*D)/$(*F).tok.c
-	@grep 'define YYNTOKENS'        < $<            									>>$(*D)/$(*F).tok.c
-	@echo '#define API __attribute__((visibility("protected")))'			>>$(*D)/$(*F).tok.c
-	@echo '#include <stdio.h>'																				>>$(*D)/$(*F).tok.c
-	@echo "const char API * $(subst .,_,$(*F))_tokname(int tok)"			>>$(*D)/$(*F).tok.c
-	@echo "{"																													>>$(*D)/$(*F).tok.c
-	@echo '  int x;'																									>>$(*D)/$(*F).tok.c
-	@echo '  for(x = 0; x < YYNTOKENS; x++)'													>>$(*D)/$(*F).tok.c
-	@echo '  {'																												>>$(*D)/$(*F).tok.c
-	@echo '  	 if(yytoknum[x] == tok)'																>>$(*D)/$(*F).tok.c
-	@echo '		 {'																											>>$(*D)/$(*F).tok.c
-	@echo '      return yytname[x];'																	>>$(*D)/$(*F).tok.c
-	@echo '    }'																											>>$(*D)/$(*F).tok.c
-	@echo '  }'																												>>$(*D)/$(*F).tok.c
-	@echo '  return 0;'																								>>$(*D)/$(*F).tok.c
-	@echo '}'																													>>$(*D)/$(*F).tok.c
+	echo "#ifndef _$(subst .,_,$(*F))_TOK_H"         							 	 >$(*D)/$(*F).tok.h
+	echo "#define _$(subst .,_,$(*F))_TOK_H"         								>>$(*D)/$(*F).tok.h
+	echo "const char* $(subst .,_,$(*F))_tokname(int);"							>>$(*D)/$(*F).tok.h
+	sed   -ne '/yytokentype/,/;/ p' < $<													\
+	 | sed -e 's/\(yytokentype\)/$(subst .,_,$(*F))_\1/'         \
+	 | sed -e '/ *[A-Z]/s/\([A-Z]\)/$(subst .,_,$(*F))_\1/'			    >>$(*D)/$(*F).tok.h
+	echo "#endif"                                  									>>$(*D)/$(*F).tok.h
+	echo "typedef unsigned short yytype_uint16;"   									>$(*D)/$(*F).tok.c
+	sed -ne '/yytname\[\]/,/};/ p'  < $< | sed -e 's/\\"\|'"'"'//g'  >>$(*D)/$(*F).tok.c
+	sed -ne '/yytoknum\[\]/,/};/ p' < $<            									>>$(*D)/$(*F).tok.c
+	grep 'define YYNTOKENS'        < $<            									>>$(*D)/$(*F).tok.c
+	echo '#define API __attribute__((visibility("protected")))'			>>$(*D)/$(*F).tok.c
+	echo '#include <stdio.h>'																				>>$(*D)/$(*F).tok.c
+	echo "const char API * $(subst .,_,$(*F))_tokname(int tok)"			>>$(*D)/$(*F).tok.c
+	echo "{"																													>>$(*D)/$(*F).tok.c
+	echo '  int x;'																									>>$(*D)/$(*F).tok.c
+	echo '  for(x = 0; x < YYNTOKENS; x++)'													>>$(*D)/$(*F).tok.c
+	echo '  {'																												>>$(*D)/$(*F).tok.c
+	echo '  	 if(yytoknum[x] == tok)'																>>$(*D)/$(*F).tok.c
+	echo '		 {'																											>>$(*D)/$(*F).tok.c
+	echo '      return yytname[x];'																	>>$(*D)/$(*F).tok.c
+	echo '    }'																											>>$(*D)/$(*F).tok.c
+	echo '  }'																												>>$(*D)/$(*F).tok.c
+	echo '  return 0;'																								>>$(*D)/$(*F).tok.c
+	echo '}'																													>>$(*D)/$(*F).tok.c
 
 
 ff/ff.tokens.c : ff/ff.tok.c
@@ -99,36 +99,36 @@ ff/ff.tokens.h : ff/ff.tok.h
 	$(CC) $(COPTS) $(CFLAGS) $< -o $@
 
 # dependencies
-main.o  :	${COMMON}/coll.o					\
-					args/args.o						\
+main.o  :	${COMMON}/coll.o				\
+					args/args.o							\
 				  ${COMMON}/pstring.o			\
-				  ${COMMON}/unitstring.o		\
-				  ${COMMON}/xmem.o					\
+				  ${COMMON}/unitstring.o	\
+				  ${COMMON}/xmem.o				\
 				  ${COMMON}/xstring.o			\
-					dirutil/dirutil.o			\
+					dirutil/dirutil.o				\
 					${COMMON}/cksum.o				\
-					map/map.o							\
-					strstack/strstack.o		\
-				  ff/ff.o								\
-				  ffn/ffn.o							\
-				  bp/bp.o								\
-				  fml/fml.o							\
-				  gn/gn.o								\
-					gn/gnlw.o							\
-				  log/log.o							\
-				  tmp/tmp.o							\
-					list/list.o						\
-					var/var.o							\
-				  ts/ts.o								\
-					dsc/dsc.o							\
-					dep/dep.o							\
-					identity/identity.o		\
-					hashblock/hashblock.o	\
-					depblock/depblock.o		\
-					canon/canon.o					\
-					path/path.o						\
-					bake/bake.o						\
-					ffproc/ffproc.o				\
+					map/map.o								\
+					strstack/strstack.o			\
+				  ff/ff.o									\
+				  ffn/ffn.o								\
+				  bp/bp.o									\
+				  fml/fml.o								\
+				  gn/gn.o									\
+					gn/gnlw.o								\
+				  log/log.o								\
+				  tmp/tmp.o								\
+					list/list.o							\
+					var/var.o								\
+				  ts/ts.o									\
+					dsc/dsc.o								\
+					dep/dep.o								\
+					identity/identity.o			\
+					hashblock/hashblock.o		\
+					depblock/depblock.o			\
+					canon/canon.o						\
+					path/path.o							\
+					bake/bake.o							\
+					ffproc/ffproc.o					\
 					enclose/enclose.o
 
 ff/ff.o : ff/ff.tokens.h ff/ff.tab.o ff/ff.lex.o ff/ff.tokens.o ff/ff.dsc.tab.o

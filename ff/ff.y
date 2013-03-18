@@ -19,6 +19,7 @@
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
+%expect 12
 
 /* zero based lines and columns */
 %initial-action { memset(&@$, 0, sizeof(@$)); }
@@ -69,7 +70,6 @@
 %token <num> '='								/* variable assignment */
 %token <num> '-'								/* variable link */
 %token <num> ';'								/* varref separator */
-%token <num> '"'								/* literal word */
 %token <num> '+'								/* invocation */
 %token <num> '('								/* invocation context */
 %token <num> ')'								/* invocation context */

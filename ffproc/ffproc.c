@@ -27,6 +27,14 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 	pstring * inv = 0;
 	map * cmap = 0;
 
+	if(log_would(L_INVOKE))
+	{
+		char * sstr = 0;
+		fatal(strstack_string, sstk, "/", "/", &sstr);
+		
+		log(L_INVOKE, "%s @ %s", inpath->can, sstr);
+	}
+
 	// parse
 	ff_file * ff = 0;
 	fatal(ff_reg_load, ffp, inpath, &ff);

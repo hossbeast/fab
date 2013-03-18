@@ -214,7 +214,8 @@ int var_alias(map * const restrict smap, const char * const restrict ss, map * c
 	}
 	else
 	{
-		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s) blocked", "alias", KEYID(tmap, ts), KEYID(smap, ss));
+		/* this could potentially merit a warning */
+		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s) blocked", "alias", KEYID(tmap, ts), KEYID(smap, ss));
 		LOG_SRC(src);
 		log_finish("");
 	}
@@ -243,7 +244,8 @@ int var_link(map * const restrict smap, const char * const restrict ss, map * co
 	}
 	else
 	{
-		log_start(L_WARN | L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s) blocked", "link", KEYID(tmap, ts), KEYID(smap, ss));
+		/* this could potentially merit a warning */
+		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s) blocked", "link", KEYID(tmap, ts), KEYID(smap, ss));
 		LOG_SRC(src);
 		log_finish("");
 	}
@@ -316,16 +318,26 @@ lstack * var_access(const map * vmap, const char * vs)
 			ls = (*cc)->ls;
 			break;
 		}
-
-		m = (*cc)->smap;
-		s = (*cc)->skey;
+		else if((*cc)->val == VAL_AL)
+		{
+			m = (*cc)->smap;
+			s = (*cc)->skey;
+		}
+		else
+		{
+			// aliased to a var which was never subsequently defined
+			break;
+		}
 	}
 
 /*
-	log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "access", KEYID(vmap, vs));
-	dumplist(ls);
-	log_add(" ] ");
-	log_finish("");
+	if(log_would(L_VAR | TAG(vs)))
+	{
+		log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "access", KEYID(vmap, vs));
+		dumplist(ls);
+		log_add(" ] ");
+		log_finish("");
+	}
 */
 
 	return ls;

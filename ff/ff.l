@@ -282,9 +282,7 @@
 																												PUSHSTATE(generatorws, yyextra);
 																												yyless(0);
 																											}
-<generatorws>[^\\ \t\n]+															{ return LEX(GWORD); }
-<generatorws>\\\\																			{ yytext++; yyleng--; return LEXX(GWORD, 1); }
-<generatorws>\\[ \t]																	{ yytext++; yyleng--; return LEXX(GWORD, 1); }
+<generatorws>[^ \t\n]+																{ return LEX(GWORD); }
 <generatorws>[ \t\n]																	{ POPSTATE(yyextra); yyless(0); }
 <quoteword>\\\\																				{ yytext++; yyleng--; return LEXX(QWORD, 1); }
 <quoteword>\\["]																			{ yytext++; yyleng--; return LEXX(QWORD, 1); }

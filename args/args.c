@@ -88,7 +88,7 @@ int parse_args(int argc, char** argv)
 // s
 // t
 /* u */	, { 0	, no_argument				, 0			, 'u' }		// dependency discovery upfront
-/* v */
+/* v */ , { 0	, required_argument	, 0			, 'v' }		// root-level variable definition
 // w
 // x
 // y
@@ -127,7 +127,7 @@ int parse_args(int argc, char** argv)
 		"chpuBIU"
 
 		// with-argument switches
-		"b:d:f:j:k:I:"
+		"b:d:f:j:k:v:I:"
 	;
 
 	//
@@ -152,6 +152,7 @@ int parse_args(int argc, char** argv)
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], DEFAULT_INVOKEDIR);
 
 	int x, indexptr;
+	opterr = 0;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
 	{
 		switch(x)
@@ -300,7 +301,10 @@ int parse_args(int argc, char** argv)
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidations-all  =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
 
 	for(x = 0; x < g_args.invokedirsl; x++)
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) invokedirs(s)      =%s", "*", 'I', g_args.invokedirs[x]);
+	{
+		int star = x && x != (g_args.invokedirsl - 1);
+		log(L_ARGS | L_PARAMS			, " %s (  %c  ) invokedirs(s)      =%s", star ? "*" : " ", 'I', g_args.invokedirs[x]);
+	}
 
 	if(!g_args.invalidationsz)
 	{

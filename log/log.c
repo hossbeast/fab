@@ -27,7 +27,7 @@ static int				o_filter_l;
 static uint64_t o_e;						// when a log is being constructed, effective bits
 
 // logtag definitions
-struct g_logs_t o_logs[] = { 
+struct g_logs_t o_logs[] = {
 	  { .v = L_ERROR		, .s = "ERROR"		, .d = "errors leading to shutdown" }
 	, { .v = L_WARN			, .s = "WARN"			, .d = "nonfatal warnings" }
 	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
@@ -58,6 +58,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_VARAUTO	, .s = "VARAUTO"	, .d = "variable definitions - automatic" }
 	, { .v = L_VARUSER	, .s = "VARUSER"	, .d = "variable definitions - user-defined" }
 	, { .v = L_VAR			, .s = "VAR"			, .d = "variable definitions" }
+	, { .v = L_INVOKE		, .s = "INVOKE"		, .d = "fabfile invocations" }
 	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	, .d = "debug liblistwise invocations ** VERBOSE" }
 };
 
