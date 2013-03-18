@@ -5,13 +5,13 @@ $dcommon = [ $* ]
 $cflags = [ $cflags [ -I $dcommon ~ j ] ]
 
 # c files
-+[@std.c]($dirs = $dcommon; -$cfabpaths)
++[@std.c]($dirs = $dcommon; -$cfabpaths; $cc $cflags)
 
 #
-# compile all c files
+# compile all o files
 #
 
-[ @all ] : [ $cfabpaths ]
+[ @all ] : [ $cfabpaths ~ xs/<o> ]
 
 #
 # tasks
