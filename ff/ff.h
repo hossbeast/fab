@@ -8,8 +8,6 @@
 #include <listwise.h>
 #include <listwise/generator.h>
 
-#include "ffn.h"
-
 #include "coll.h"
 #include "hashblock.h"
 #include "path.h"

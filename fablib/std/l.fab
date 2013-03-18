@@ -57,9 +57,9 @@ $lfabpaths = [
 # discovery
 [ $ldscpaths ] %
 {
-		[ $flex ] [ $flexflags ~ ss/u/fx ] -t [ $@ ]					\
-	| [ $cc ]   [ $cflags ~ ss/u/fx ] -MM -MP -MG -xc -			\
-	| gcc-dep [ $@ ~ rx/xs/<l>/lex.o/fx ]
+		  [ $flex ] [ $flexflags ~ ss/u/fx ] -t [ $@ ] [
+	] | [ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG -xc - [
+	] | gcc-dep [ $@ ~ rx/xs/<l>/lex.o/fx ]
 }
 
 # $flex : l -> { lex.c, lex.h }

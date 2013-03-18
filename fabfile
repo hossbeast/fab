@@ -8,7 +8,8 @@ $dfab						= [ $* ]
 +[ $dcommon ]($cc; -$cflags) @common
 
 # variables
-$cflags					= [ $cflags, [ -I $dfab ~ j ] ]
+$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
+$cflags					= [ $cflags -fms-extensions -fno-builtin-log ]
 $lflags					= [ -llistwise ]
 $name						= [ fab ]
 $fab						= [ $dfab/$name ~ j ]
@@ -21,7 +22,7 @@ $fab						= [ $dfab/$name ~ j ]
 #
 # catchall node
 #
-[ @all ] : [ $fab [ $fab/fablw/op/fx/fx.o ~ j/lsr/xs/<c>/<so> ] ]
+[ @all ] : [ $fab [ $dfab/fablw/op/fx/fx.o ~ j/lsr/xs/<c>/<so> ] ]
 
 #
 # the executable

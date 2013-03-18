@@ -6,7 +6,6 @@
 }
 
 %code top {
-	#include "ff.h"
 	#include "xstring.h"
 	#include "xmem.h"
 
