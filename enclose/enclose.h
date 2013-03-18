@@ -1,9 +1,9 @@
 #ifndef _ENCLOSE_H
 #define _ENCLOSE_H
 
-#define restrict __restrict
-
 #include "ffn.h"
+
+#define restrict __restrict
 
 /// enclose_vars
 //

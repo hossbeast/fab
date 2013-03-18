@@ -5,8 +5,7 @@
 
 #include <listwise.h>
 
-#include "ff.h"
-#include "gn.h"
+#include "ffn.h"
 #include "ts.h"
 
 #include "coll.h"

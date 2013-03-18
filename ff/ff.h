@@ -90,30 +90,6 @@ extern union ff_files_t
 	};
 } ff_files;
 
-typedef struct
-{
-	ff_file *						ff;					// fabfile being parsed; ffn is at ff->ffn
-	void*								scanner;		// scanner
-
-	int									states[64];	// start states stack
-	int									states_n;
-
-	ff_loc							loc;				// running location track for this parse
-
-	ff_loc							last_loc;
-	int									last_tok;
-	const char*					last_s;
-	const char*					last_e;
-
-	const char*					orig_base;	// ptr to original input string
-	int									orig_len;		// length of original input string
-	char*								act_base;		// ptr to lexer copy
-
-	int									r;					// zeroed in yyerror
-} parse_param;
-
-void ff_yyerror(void* loc, void* scanner, parse_param* pp, char const* err);
-
 // ff parser; opaque type
 struct ff_parser_t;
 typedef struct ff_parser_t ff_parser;

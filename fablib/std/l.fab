@@ -65,9 +65,9 @@ $lfabpaths = [
 # $flex : l -> { lex.c, lex.h }
 [ $lfabpaths ~ xs/<l>/lex.c/y/v/d/cp/u/xs/lex.c/lex.h/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xsf/<l>/ss/u ]
 {
-	[ $flex ] [ $flexflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ]		\
-	[ --header-file= [ $@ ~ h/0/1 ] ]												\
-	[ $@ ~ rx/ineed/xm/<l>/ss/u ]
+	  [ $flex ] [ $flexflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ] [
+	] [ --header-file= [ $@ ~ h/0/1 ] ] [
+	] [ $@ ~ rx/ineed/xm/<l>/ss/u ]
 }
 
 # $cc : lex.c -> lex.o via std.c

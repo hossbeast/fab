@@ -8,10 +8,10 @@
 #include <inttypes.h>
 
 #include "ff.h"
-
-#include "ff.tokens.h"
-#include "ff.tab.h"
-#include "ff.lex.h"
+#include "ff.parse.h"
+#include "ff/ff.tab.h"
+#include "ff/ff.lex.h"
+#include "ff/ff.tokens.h"
 
 #include "args.h"
 #include "identity.h"
@@ -31,12 +31,6 @@
 // defined in gn.c
 char * gn_idstring(struct gn * const);
 
-// defined in ff.tab.o
-int ff_yyparse(yyscan_t, parse_param*);
-
-// defined in ff.dsc.tab.o
-int ff_dsc_yyparse(yyscan_t, parse_param*);
-
 struct ff_parser_t
 {
 	void *							p;
@@ -55,6 +49,8 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 
 static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, ff_file ** const rff)
 {
+	parse_param pp = {};
+
 	// create state specific to this parse
 	void* state = 0;
 	if((state = ff_yy_scan_bytes(b, sz + 2, p->p)) == 0)
@@ -93,13 +89,14 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		fatal(xsprintf, &ff->closure_gns_dir, "%s/REGULAR/%u/closure_gns", FF_DIR_BASE, ff->path->can_hash);
 	}
 
-	parse_param pp = {
-		  .scanner = p->p
-		, .ff = ff
-		, .orig_base = b
-		, .orig_len = sz
-		, .r = 1
-	};
+	pp.scanner = p->p;
+	pp.ff = ff;
+	pp.orig_base = b;
+	pp.orig_len = sz;
+	pp.r = 1;
+
+	fatal(xmalloc, &pp.loc, sizeof(*pp.loc));
+	fatal(xmalloc, &pp.last_loc, sizeof(*pp.last_loc));
 
 	// make available to the lexer
 	ff_yyset_extra(&pp, p->p);
@@ -118,6 +115,8 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 	if(pp.r)
 	{
+		ff->ffn = pp.ffn;
+
 		if(ffn_postprocess(ff->ffn, p->gp) == 0)
 			qfail();
 
@@ -141,7 +140,10 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		(*rff) = ff;
 	}
 
-	finally : coda;
+finally:
+	free(pp.loc);
+	free(pp.last_loc);
+coda;
 }
 
 /// [[ api/public ]]
@@ -232,7 +234,7 @@ void ff_xfreeparser(ff_parser ** const p)
 	*p = 0;
 }
 
-void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
+void ff_yyerror(void* loc, void * scanner, parse_param* pp, char const *err)
 {
 	pp->r = 0;
 	log(L_ERROR | L_FF, "%s", err);
@@ -241,13 +243,13 @@ void ff_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 	const char * s	= pp->last_s;
 	const char * e	= pp->last_e;
 	int l						= e - s;
-	ff_loc * lc			= &pp->last_loc;
+	ff_loc * lc			= pp->last_loc;
 
 	// log last good token
 	log(L_ERROR | L_FF, "last token - %s '%.*s' @ (%s)[%3d,%3d - %3d,%3d]"
 		, ff_tokname(pp->last_tok)
-		, MIN(t == LF ? 0 : t == WS ? 0 : l, 50)
-		, t == LF ? "" : t == WS ? "" : s
+		, MIN(t == ff_LF ? 0 : t == ff_WS ? 0 : l, 50)
+		, t == ff_LF ? "" : t == ff_WS ? "" : s
 		, ff_idstring(pp->ff)
 		, lc->f_lin + 1
 		, lc->f_col + 1

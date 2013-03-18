@@ -5,9 +5,10 @@
 #include <listwise/object.h>
 
 #include "map.h"
-#include "ff.h"
 
 #define restrict __restrict
+
+struct ff_node;
 
 // listwise interface to list objects
 //  (this type is a placeholder - instances of this object are NOT ever passed into liblistwise)
@@ -31,7 +32,7 @@ listwise_object listlw;
 // RETURNS
 //  nonzero on success
 //
-int var_set(map * const restrict vmap, const char * const restrict s, lstack * const restrict ls, int inherit, int mutable, const ff_node * const restrict src)
+int var_set(map * const restrict vmap, const char * const restrict s, lstack * const restrict ls, int inherit, int mutable, const struct ff_node * const restrict src)
 	__attribute__((nonnull(1,2,3)));
 
 /// var_alias
@@ -50,7 +51,7 @@ int var_set(map * const restrict vmap, const char * const restrict s, lstack * c
 // RETURNS
 //  nonzero on success
 //
-int var_alias(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const ff_node * const restrict src)
+int var_alias(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const struct ff_node * const restrict src)
 	__attribute__((nonnull));
 
 /// var_link
@@ -69,7 +70,7 @@ int var_alias(map * const restrict amap, const char * const restrict as, map * c
 // RETURNS
 //  nonzero on success
 //
-int var_link(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const ff_node * const restrict src)
+int var_link(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const struct ff_node * const restrict src)
 	__attribute__((nonnull));
 
 /// var_root

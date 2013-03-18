@@ -3,8 +3,11 @@
 #include <listwise/lstack.h>
 
 #include "var.h"
+
 #include "log.h"
 #include "gnlw.h"
+#include "ff.h"
+#include "ffn.h"
 
 #include "xmem.h"
 #include "control.h"

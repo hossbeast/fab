@@ -15,14 +15,17 @@ $name						= [ fab ]
 $fab						= [ $dfab/$name ~ j ]
 
 # c files
-+[@std.c]($rdirs = $dfab; -$cfabpaths; $cc $cflags)
-+[@std.l]($rdirs = $dfab; -$cfabpaths; $cc $cflags $flex $flexflags)
-+[@std.y]($rdirs = $dfab; -$cfabpaths; $cc $cflags $bison $bisonflags)
++[@std.c]($rdirs = [ $dfab ~ ls/m/fablw/v ]; -$cfabpaths; $cc $cflags)
++[@std.l]($rdirs = $dfab; -$lfabpaths; $cc $cflags $flex $flexflags)
++[@std.y]($rdirs = $dfab; -$yfabpaths; $cc $cflags $bison $bisonflags)
+
+# operator so's
+$oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 
 #
 # catchall node
 #
-[ @all ] : [ $fab [ $dfab/fablw/op/fx/fx.o ~ j/lsr/xs/<c>/<so> ] ]
+[ @all ] : [ $fab $oplist ]
 
 #
 # the executable
@@ -35,14 +38,21 @@ $fab						= [ $dfab/$name ~ j ]
 #
 # fab-specific operator so's
 #
-[ $dfab/fablw/op ~ j/lsr/xs/<c>/<so> ]
+[ $oplist ~ xs/<o>/y/dj/shift ] :: [ $< ~ rx/xs/<c> ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -fPIC -o [ $@ ]
+	[ $cc ] [ $cflags ~ ss/u/fx ] -fPIC -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
 }
 
-[ [ $dfab/ff/ff.tok.c ~ j ] [ $dfab/ff/ff.tok.h ~ j ] ] :: [ $dfab/ff/ff.tab.c ~ j ]
+[ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<o> ]
 {
-	exec 1>[ $dfab/ff/ff.tok.h ]
+	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneed/xm/<o>/ss/u/fx ] [
+	] -llistwise -shared [ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
+}
+
+# generated
+[ [ $dfab/ff/ff.tokens.c ~ j ] [ $dfab/ff/ff.tokens.h ~ j ] ] :: [ $dfab/ff/ff.tab.c ~ j ]
+{
+	exec 1>[ $dfab/ff/ff.tokens.h ]
 
 	> echo "#ifndef ff_TOK_H"
 	> echo "#define ff_TOK_H"
@@ -53,7 +63,7 @@ $fab						= [ $dfab/$name ~ j ]
 	>  | sed -e '/ *[A-Z]/s/\([A-Z]\)/ff_\1/'
 	> echo "#endif"
 
-	exec 1>[ $dfab/ff/ff.tok.c ]
+	exec 1>[ $dfab/ff/ff.tokens.c ]
 
 	> echo "typedef unsigned short yytype_uint16;"
 	> sed -ne '/yytname\[\]/,/};/ p'						\

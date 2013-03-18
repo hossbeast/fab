@@ -363,6 +363,17 @@ int gn_primary_rewrite_dscv(gn * const restrict)
 //
 int gn_depth_traversal_nodes_needsward(gn * gn, int (*logic)(struct gn *, int d));
 
+/// gn_traverse_needs
+//
+// SUMMARY
+//  traverse the graph feeds-wise, depth first, starting at gn, with guards to detect a cycle
+//  apply logic at each node along the way, which returns 0 to stop the traversal with failure
+//
+// RETURNS
+//  0 if a cycle was detected, or if logic ever returned 0, and 1 otherwise
+//
+int gn_depth_traversal_nodes_feedsward(gn * gn, int (*logic)(struct gn *, int d));
+
 /// gn_designate
 //
 // populate gn->flags and gn->designation

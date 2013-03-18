@@ -7,12 +7,10 @@
 #include <ftw.h>
 #include <inttypes.h>
 
-#include "ff.h"
-#include "ff.tokens.h"
-#include "ff.tab.h"
-#include "ff.lex.h"
+#include "ffn.h"
 
-#include "gn.h"
+#include "ff.parse.h"
+#include "ff/ff.tokens.h"
 
 #include "log.h"
 #include "control.h"

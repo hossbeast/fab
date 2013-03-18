@@ -65,8 +65,7 @@ $yfabpaths = [
 # $bison : y -> { tab.c, tab.h }
 [ $yfabpaths ~ xs/<y>/tab.c/y/v/d/cp/u/xs/tab.c/tab.h/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xsf/<y>/ss/u ]
 {
-	[ $bison ] [ $bisonflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ] -d				\
-	[ $@ ~ rx/ineed/xm/<y>/ss/u ]
+	[ $bison ] [ $bisonflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ] -d	[ $@ ~ rx/ineed/xm/<y>/ss/u ]
 }
 
 # $cc : tab.c -> tab.o via std.c

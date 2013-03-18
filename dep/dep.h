@@ -3,7 +3,7 @@
 
 #include <listwise.h>
 
-#include "ff.h"
+#include "ffn.h"
 #include "gn.h"
 #include "depblock.h"
 

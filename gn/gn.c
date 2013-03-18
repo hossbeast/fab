@@ -370,6 +370,7 @@ int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 	{
 		if(n->guard)
 		{
+			return 0;
 			if(ptr < sizeof(stack) / sizeof(stack[0]))
 				stack[ptr++] = n;
 
@@ -382,6 +383,62 @@ int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 		for(x = 0; x < n->needs.l; x++)
 		{
 			int e = enter(n->needs.e[x]->B, d + 1);
+			if(e == 1)
+			{
+				if(ptr < sizeof(stack) / sizeof(stack[0]))
+					stack[ptr++] = n;
+
+				return 1;
+			}
+			if(e == -1)
+				return -1;
+		}
+
+		// logic on this node
+		if(logic(n, d) == 0)
+			return -1;
+
+		n->guard = 0;
+
+		return 0;
+	};
+
+	int e = enter(r, 0);
+	if(e == 1)
+		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr);
+	if(e == -1)
+		return 0;
+
+	return 1;
+}
+
+int gn_depth_traversal_nodes_feedsward(gn * r, int (*logic)(gn*, int))
+{
+	gn * stack[64] = {};
+	int ptr = 0;
+
+	// RETURNS
+	//  0 - success
+	//  1 - cycle detected
+	// -1 - callback failure
+	//
+	int enter(gn * n, int d)
+	{
+		if(n->guard)
+		{
+			return 0;
+			if(ptr < sizeof(stack) / sizeof(stack[0]))
+				stack[ptr++] = n;
+
+			return 1;
+		}
+		n->guard = 1;
+
+		// descend
+		int x;
+		for(x = 0; x < n->feeds.l; x++)
+		{
+			int e = enter(n->feeds.e[x]->B, d + 1);
 			if(e == 1)
 			{
 				if(ptr < sizeof(stack) / sizeof(stack[0]))

@@ -1,9 +1,10 @@
 %{
 	#include <stdio.h>
 
-	#include "ff.h"
-	#include "ff.tab.h"
-	#include "ff.tokens.h"
+	#include "ff.parse.h"
+	#include "ffn.h"
+	#include "ff/ff.tab.h"
+	#include "ff/ff.tokens.h"
 
 	#include "log.h"
 	#include "macros.h"
@@ -101,25 +102,25 @@
 
 	void loc_reset(parse_param * xtra, YYLTYPE* lloc)
 	{
-		xtra->loc.f_lin++;
-		xtra->loc.l_lin = xtra->loc.f_lin;
+		xtra->loc->f_lin++;
+		xtra->loc->l_lin = xtra->loc->f_lin;
 
-		xtra->loc.f_col = 0;
-		xtra->loc.l_col = 0;
+		xtra->loc->f_col = 0;
+		xtra->loc->l_col = 0;
 	}
 
 	void locify(parse_param* xtra, YYLTYPE* lloc, int leng, int del)
 	{
-		xtra->loc.f_col = xtra->loc.l_col;
-		xtra->loc.l_col = xtra->loc.f_col + leng;
+		xtra->loc->f_col = xtra->loc->l_col;
+		xtra->loc->l_col = xtra->loc->f_col + leng;
 
-		lloc->first_column = xtra->loc.f_col + del;
-		lloc->last_column  = xtra->loc.l_col + del - 1;
-		lloc->first_line	 = xtra->loc.f_lin;
-		lloc->last_line		 = xtra->loc.l_lin;
+		lloc->first_column = xtra->loc->f_col + del;
+		lloc->last_column  = xtra->loc->l_col + del - 1;
+		lloc->first_line	 = xtra->loc->f_lin;
+		lloc->last_line		 = xtra->loc->l_lin;
 
-		xtra->loc.f_col += del;
-		xtra->loc.l_col += del;
+		xtra->loc->f_col += del;
+		xtra->loc->l_col += del;
 	}
 
 	int lexify(const char* text, int leng, int del, int doloc, YYSTYPE* lval, YYLTYPE* lloc, int token, parse_param* xtra, int ln)
@@ -133,7 +134,7 @@
 		lval->num.v = token;
 
 		/* store for error reporting */
-		memcpy(&xtra->last_loc, lloc, sizeof(xtra->last_loc));
+		memcpy(xtra->last_loc, lloc, sizeof(*xtra->last_loc));
 		xtra->last_tok = token;
 		xtra->last_s = lval->str.s;
 		xtra->last_e = lval->str.e;

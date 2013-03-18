@@ -10,7 +10,7 @@
 #include "args.h"
 #include "gn.h"
 #include "ts.h"
-#include "ff.tokens.h"
+#include "ff/ff.tokens.h"
 #include "list.h"
 #include "identity.h"
 #include "enclose.h"

@@ -19,44 +19,50 @@ listwise_object gnlw = {
 /// static
 ///
 
-static void recurse_needs(gn * n, gn ** r, int * x)
+static void recurse_needs(gn * root, gn ** r, int * x)
 {
-	int i;
-	if(r)
+	int logic(gn * gn, int d)
 	{
-		for(i = 0; i < n->needs.l; i++)
-			r[(*x)++] = n->needs.e[i]->B;
+		if(r)
+		{
+			// capture mode
+			int i;
+			for(i = 0; i < gn->needs.l; i++)
+				r[(*x)++] = gn->needs.e[i]->B;
+		}
+		else
+		{
+			// count mode
+			(*x) += gn->needs.l;
+		}
 
-		for(i = 0; i < n->needs.l; i++)
-			recurse_needs(n->needs.e[i]->B, r, x);
-	}
-	else
-	{
-		(*x) += n->needs.l;
+		return 1;
+	};
 
-		for(i = 0; i < n->needs.l; i++)
-			recurse_needs(n->needs.e[i]->B, 0, x);
-	}
+	gn_depth_traversal_nodes_needsward(root, logic);
 }
 
-static void recurse_feeds(gn * n, gn ** r, int * x)
+static void recurse_feeds(gn * root, gn ** r, int * x)
 {
-	int i;
-	if(r)
+	int logic(gn * gn, int d)
 	{
-		for(i = 0; i < n->feeds.l; i++)
-			r[(*x)++] = n->feeds.e[i]->A;
+		if(r)
+		{
+			// capture mode
+			int i;
+			for(i = 0; i < gn->feeds.l; i++)
+				r[(*x)++] = gn->feeds.e[i]->B;
+		}
+		else
+		{
+			// count mode
+			(*x) += gn->feeds.l;
+		}
 
-		for(i = 0; i < n->feeds.l; i++)
-			recurse_feeds(n->feeds.e[i]->A, r, x);
-	}
-	else
-	{
-		(*x) += n->feeds.l;
+		return 1;
+	};
 
-		for(i = 0; i < n->feeds.l; i++)
-			recurse_feeds(n->feeds.e[i]->A, 0, x);
-	}
+	gn_depth_traversal_nodes_feedsward(root, logic);
 }
 
 ///

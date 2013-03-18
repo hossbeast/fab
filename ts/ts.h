@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include "gn.h"
 #include "ff.h"
+#include "ffn.h"
 
 #include "pstring.h"
 #include "map.h"
@@ -24,7 +24,7 @@ typedef struct fmleval
 
 	struct											// products expected when executing the formula
 	{
-		gn **					products;
+		struct gn **	products;
 		int						products_l;
 	};
 } fmleval;

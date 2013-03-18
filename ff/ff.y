@@ -6,9 +6,13 @@
 }
 
 %code top {
+	#include "ff.parse.h"
+	#include "ffn.h"
+
 	#include "xstring.h"
 	#include "xmem.h"
 
+	// defined in ff.lex.o
 	int ff_yylex(void* yylvalp, void* yylloc, void* scanner);
 }
 
@@ -45,7 +49,7 @@
 		uint32_t				v;
 	}							num;
 
-	ff_node*			node;
+	struct ff_node*			node;
 }
 
 /* terminals with a semantic value */
@@ -113,7 +117,7 @@
 ff
 	: statements
 	{
-		parm->ff->ffn = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
+		parm->ffn = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	;
 

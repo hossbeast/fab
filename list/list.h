@@ -5,6 +5,7 @@
 #include <listwise/object.h>
 
 #include "ff.h"
+#include "ffn.h"
 
 #include "map.h"
 #include "pstring.h"

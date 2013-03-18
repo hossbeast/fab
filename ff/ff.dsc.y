@@ -6,7 +6,8 @@
 }
 
 %code top {
-	#include "ff.h"
+	#include "ff.parse.h"
+	#include "ffn.h"
 
 	static int __attribute__((weakref, alias("ff_yylex"))) ff_dsc_yylex(); 
 	static int __attribute__((weakref, alias("ff_yyerror"))) ff_dsc_yyerror(); 
@@ -18,6 +19,7 @@
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
+%expect 3
 
 /* zero based lines and columns */
 %initial-action { memset(&@$, 0, sizeof(@$)); }
@@ -86,11 +88,11 @@
 ff
 	: statements
 	{
-		parm->ff->ffn = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
+		parm->ffn = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, $1->s, $1->e, $1);
 	}
 	|
 	{
-		parm->ff->ffn = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, (void*)0, (void*)0, (void*)0);
+		parm->ffn = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_STMTLIST, (void*)0, (void*)0, (void*)0);
 	}
 	;
 
