@@ -6,6 +6,7 @@ SHELL           :=/bin/bash
 
 # paths
 SRCDIR           =.
+COMMONDIR				 =${SRCDIR}/../common
 VPATH           +=${SRCDIR}
 VPATH						+=$(foreach d,${SRCDIR}/${d},$(shell find -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | grep -v '\.'))
 
@@ -17,8 +18,8 @@ LIBDIR          ?=/usr/lib64
 DLIBDIR         ?=/usr/lib
 VER              =0.1
 
-OPLIST					:=$(shell ls -1 op | grep -v 'op\.'| sed -e 's/.*/op\/&\/&.so/')
-VPATH           +=$(shell ls -1 op | sed -e 's/.*/op\/&/')
+OPLIST					:=$(shell ls -1 ${SRCDIR}/op | grep -v 'op\.'| sed -e 's/.*/op\/&\/&.so/')
+VPATH           +=$(shell ls -1 ${SRCDIR} | sed -e 's/.*/op\/&/')
 
 INSTALL         :=install
 INSTALL_PROGRAM :=${INSTALL}
@@ -32,7 +33,7 @@ all: ${LIB} ${OPLIST}
 #
 # required objects
 #
-SOURCES          =$(shell ls -1 *.c */*.c)
+SOURCES          =$(shell ls -1 ${SRCDIR}/*.c ${SRCDIR}/*/*.c 2>/dev/null)
 SOURCES					+=generator/generator.lex.c
 SOURCES					+=generator/generator.tab.c
 
@@ -41,7 +42,7 @@ SOURCES					+=generator/generator.tab.c
 #  C/L OPTS  - internal to makefile flags
 #  C/L FLAGS - user specified compiler flags
 # 
-COPTS						+=-m64 -g -O3 -Werror -D_GNU_SOURCE -fPIC -I${SRCDIR} -I${SRCDIR}/common -I${SRCDIR}/re -I${SRCDIR}/generator -I${SRCDIR}/idx
+COPTS						+=-m64 -g -O3 -Werror -D_GNU_SOURCE -fPIC -I${SRCDIR} -I${COMMONDIR} -I${SRCDIR}/re -I${SRCDIR}/generator -I${SRCDIR}/idx
 LOPTS            =-lpcre -ldl -shared -Wl,--version-script=exports -Wl,-soname,${LIB}
 
 %.o : COPTS     +=-c
@@ -52,7 +53,7 @@ LOPTS            =-lpcre -ldl -shared -Wl,--version-script=exports -Wl,-soname,$
 
 # link the library
 ${LIB}: ${SOURCES:.c=.o} exports
-	${CC} ${COPTS} ${CFLAGS} -o $@ *.o */*.o ${LOPTS} ${LFLAGS}
+	${CC} ${COPTS} ${CFLAGS} -o $@ ${SRCDIR}/*/*.o ${COMMONDIR}/*.o ${LOPTS} ${LFLAGS}
 
 # link an operator so
 %.so : %.o
@@ -86,27 +87,29 @@ exports : ${SOURCES}
 generator/generator.o : generator/generator.tab.h
 generator/generator.o : generator/generator.lex.h
 
-lstack.o : common/xmem.o
+lstack/lstack.o : ${COMMONDIR}/xmem.o
 
-re.o : common/xmem.o
+re/re.o : ${COMMONDIR}/xmem.o
 
-op.o : common/xmem.o
+idx/idx.o : ${COMMONDIR}/xstring.o
 
-object.o : common/idx.o
+op/op.o : ${COMMONDIR}/xmem.o
 
-op/cp/cp.so : common/xmem.o
+object/object.o : idx/idx.o ${COMMONDIR}/coll.o
 
-op/s/s.so : common/parseint.o
-op/s/s.so : common/xmem.o
+op/cp/cp.so : ${COMMONDIR}/xmem.o
 
-op/u/u.so : common/xstring.o
-op/u/u.so : common/xmem.o
+op/s/s.so : ${COMMONDIR}/parseint.o
+op/s/s.so : ${COMMONDIR}/xmem.o
 
-op/ss/ss.so : common/xstring.o
-op/ss/ss.so : common/xmem.o
+op/u/u.so : ${COMMONDIR}/xstring.o
+op/u/u.so : ${COMMONDIR}/xmem.o
 
-op/sn/sn.so : common/parseint.o
-op/sn/sn.so : common/xmem.o
+op/ss/ss.so : ${COMMONDIR}/xstring.o
+op/ss/ss.so : ${COMMONDIR}/xmem.o
+
+op/sn/sn.so : ${COMMONDIR}/parseint.o
+op/sn/sn.so : ${COMMONDIR}/xmem.o
 
 #
 # phony targets
