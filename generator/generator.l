@@ -29,7 +29,7 @@
 #endif
 %}
 
-%option nounput noyywrap
+%option noinput nounput noyywrap noyy_top_state
 %option reentrant
 %option bison-bridge 
 %option prefix="generator_yy"

@@ -283,8 +283,10 @@ static int exec_internal(generator* g, char** init, int* initls, int initl, lsta
 
 	int curl = 0;
 
+/*
 	if((*ls)->l)
 		(*ls)->s[0].l;
+*/
 
 	// write init elements to top of list stack
 	int x;
@@ -683,6 +685,8 @@ int API lstack_shift(lstack* const restrict ls)
 
 		ls->s[--ls->l] = T;
 	}
+
+	return 1;
 }
 
 // pop removes the last list from the stack
@@ -690,6 +694,8 @@ int API lstack_pop(lstack* const restrict ls)
 {
 	if(ls->l)
 		ls->l--;
+
+	return 1;
 }
 
 // unshift allocates a new list at index 0

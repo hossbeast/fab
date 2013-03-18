@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
 #include "xstring.h"
 
@@ -39,35 +40,35 @@ int op_validate(operation* o)
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	int * mema = alloca((ls->sel.l ?: ls->s[0].l) * sizeof(mema[0]));
-	int * memb = 0;
+	size_t num = ls->sel.all ? ls->s[0].l : ls->sel.l;
 
-	int x;
+	// indexes to be sorted
+	int * mema = calloc(num, sizeof(*mema));
+
+	// copy of indexes
+	int * memb = calloc(num, sizeof(*memb));
+
+	// copies of entries to be swapped
+	typeof(ls->s[0].s[0]) * T = calloc(ls->s[0].l, sizeof(*T));
+	memcpy(T, ls->s[0].s, ls->s[0].l * sizeof(*T));
+
 	int i = 0;
-	for(x = 0; x < ls->s[0].l; x++)
+	int x;
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
 	{
-		int go = 1;
-		if(!ls->sel.all)
-		{
-			if(ls->sel.sl <= (x/8))
-				break;
-
-			go = (ls->sel.s[x/8] & (0x01 << (x%8)));
-		}
-
-		if(go)
-			mema[i++] = x;
-	}	
-
-	memb = alloca(i * sizeof(memb[0]));
-	memcpy(memb, mema, i * sizeof(memb[0]));
+		mema[i] = x;
+		memb[i] = x;
+		i++;
+	}
+	LSTACK_ITEREND;
 
 	int compar(const void * A, const void * B)
 	{
-		char * As;
-		int Asl;
-		char * Bs;
-		int Bsl;
+		char *	As = 0;
+		int			Asl = 0;
+		char *	Bs = 0;
+		int			Bsl = 0;
 
 		lstack_string(ls, 0, *(int*)A, &As, &Asl);
 		lstack_string(ls, 0, *(int*)B, &Bs, &Bsl);
@@ -75,13 +76,16 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		return xstrcmp(As, Asl, Bs, Bsl, 0);
 	}
 
-	qsort(mema, i, sizeof(mema[0]), compar);
-
-	typeof(ls->s[0].s[0]) * T = alloca(ls->s[0].l * sizeof(T[0]));
-	memcpy(T, ls->s[0].s, ls->s[0].l * sizeof(T[0]));
+	qsort(mema, i, sizeof(*mema), compar);
 
 	for(x = 0; x < i; x++)
+	{
 		ls->s[0].s[memb[x]] = T[mema[x]];
+	}
+
+	free(mema);
+	free(memb);
+	free(T);
 
 	return 1;
 }

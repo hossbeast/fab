@@ -3,6 +3,7 @@
 
 #include <listwise/operator.h>
 #include <listwise/lstack.h>
+#include <listwise/object.h>
 
 #include "control.h"
 #include "xmem.h"
@@ -49,7 +50,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	if(o->argsl)
 		N = o->args[0]->i64;
 
-	int go = 0;
 	int c = 0;
 	int k = ls->s[0].l;
 

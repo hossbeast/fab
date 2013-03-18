@@ -7,9 +7,22 @@
 
 #include "control.h"
 
-typedef char* charstar;
-
 union object_registry_t object_registry = { { .size = sizeof(listwise_object*) } };
+
+static void __attribute__((destructor)) teardown()
+{
+	int x;
+	for(x = 0; x < object_registry.l; x++)
+		free(object_registry.e[x]->string_property);
+
+	free(object_registry.e);
+
+	idx_free(object_registry.by_type);
+}
+
+///
+/// [[ LSTACK API (for objects) ]]
+///
 
 int API listwise_register_object(uint8_t type, listwise_object * def)
 {
@@ -40,19 +53,4 @@ int API listwise_enumerate_objects(listwise_object *** list, int * list_len)
 int API listwise_lookup_object(uint8_t type, listwise_object ** obj)
 {
 	return (int)(intptr_t)((*obj) = idx_lookup_val(object_registry.by_type, &type, 0));
-}
-
-///
-/// [[ LSTACK API (for objects) ]]
-
-
-void object_teardown()
-{
-	int x;
-	for(x = 0; x < object_registry.l; x++)
-		free(object_registry.e[x]->string_property);
-
-	free(object_registry.e);
-
-	idx_free(object_registry.by_type);
 }

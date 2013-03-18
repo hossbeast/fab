@@ -14,11 +14,6 @@
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
-int op_load(char* path);
-void op_sort();
-void op_teardown();
-
-
 // collection of registered object types
 // with lookup index by type id
 extern union object_registry_t

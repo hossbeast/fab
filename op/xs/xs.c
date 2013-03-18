@@ -166,7 +166,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			if(at)
 			{
 				int o = at - s;
-				int xl = l - o - 1;
 				int newl = o + rxl;
 
 				fatal(lstack_ensure, ls, 0, x, newl);

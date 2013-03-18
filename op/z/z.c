@@ -39,4 +39,5 @@ int op_validate(operation* o)
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	lstack_sel_none(ls);
+	return 1;
 }

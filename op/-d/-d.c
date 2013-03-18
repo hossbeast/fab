@@ -11,8 +11,6 @@
 
 #include "control.h"
 
-#include "parseint.h"
-
 /*
 
 -d operator - select entries whose stringvalue is a path referencing a directory

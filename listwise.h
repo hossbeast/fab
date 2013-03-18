@@ -60,7 +60,8 @@ typedef struct lstack
 										// as specified in s comprise the current selection
 	} sel;
 
-	uint32_t flags;		// implementation
+	uint64_t	flags;	// application-use
+	void *		ptr;		// application-use
 } lstack;
 
 /// listwise_exec
@@ -83,20 +84,23 @@ int listwise_exec(char* s, int l, char** init, int* initls, int initl, lstack** 
 
 /// lstack_create
 //
-// allocate an lstack
+// SUMMARY
+//  allocate an lstack
 //
 int lstack_create(lstack ** const restrict)
 	__attribute__((nonnull));
 
 /// lstack_free
 //
-// free lstack with free-like semantics
+// SUMMARY
+//  free lstack with free-like semantics
 //
 void lstack_free(lstack * const restrict);
 
 /// lstack_xfree
 //
-// free an lstack with xfree-like semantics
+// SUMMARY
+//  free an lstack with xfree-like semantics
 //
 void lstack_xfree(lstack ** const restrict)
 	__attribute__((nonnull));
@@ -115,7 +119,8 @@ int lstack_deepcopy(lstack * const restrict, lstack ** const restrict)
 
 /// listwise_err_fd
 //
-// listwise operators write errors to this fd (ls a nonexistent path, for example)
+// SUMMARY
+//  listwise operators write errors to this fd (ls a nonexistent path, for example)
 //
 // DEFAULT
 //  2 - stderr
@@ -124,7 +129,8 @@ extern int listwise_err_fd;
 
 /// listwise_identity 
 //
-// pointer to a statically allocated lstack object with a single 0-element list
+// SUMMARY
+//  pointer to singleton liblistwise-managed lstack object with a single 0-element list
 //
 extern lstack * listwise_identity;
 

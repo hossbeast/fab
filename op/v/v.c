@@ -42,7 +42,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	if(ls->l)
 	{
 		int x;
-		int go;
 		LSTACK_ITERATE(ls, x, go);
 		if(!go)
 		{

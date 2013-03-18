@@ -6,6 +6,7 @@
 #include <listwise/object.h>
 
 #include "control.h"
+#include "xmem.h"
 
 /*
 

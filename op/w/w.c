@@ -83,7 +83,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				ss[ssl] = 0;
 
 				// clear this string on the stack
-				fatal(lstack_clear, ls, 0, x);
+				lstack_clear(ls, 0, x);
 
 				// write new string using the window
 				fatal(lstack_write, ls, 0, x, ss + off, len);

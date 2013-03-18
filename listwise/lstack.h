@@ -3,27 +3,32 @@
 
 #include <listwise/generator.h>
 
+#define LSTACK_ITERATE_LOOP(ls, y, go)						\
+	int go = 1;																			\
+	if(!(ls)->sel.all)															\
+	{																								\
+		go = 0;																				\
+		if((ls)->sel.sl > (y/8))											\
+		{																							\
+			go = ((ls)->sel.s[y/8] & (0x01 << (y%8)));	\
+		}																							\
+	}
+
+#define LSTACK_ITERATE_HEADER(ls, x, y, go)	\
+	if((ls)->l > x)														\
+	{																					\
+		for(y = 0; y < (ls)->s[x].l; y++)				\
+		{
+
+#define LSTACK_ITERREV_HEADER(ls, x, y, go)	\
+	if((ls)->l > x)														\
+	{																					\
+		for(y = (ls)->s[x].l - 1; y >= 0; y--)	\
+		{
+
 ///
 /// [[ LSTACK API ]]
 ///
-
-#define LSTACK_ITERATE_LOOP(ls, y, go)							\
-	{																									\
-		int go = 1;																			\
-		if(!(ls)->sel.all)															\
-		{																								\
-			go = 0;																				\
-			if((ls)->sel.sl > (y/8))											\
-			{																							\
-				go = ((ls)->sel.s[y/8] & (0x01 << (y%8)));	\
-			}																							\
-		}
-
-#define LSTACK_ITERATE_HEADER(ls, x, y, go)	\
-	for(y = 0; y < (ls)->s[x].l; y++)
-
-#define LSTACK_ITERREV_HEADER(ls, x, y, go)	\
-	for(y = (ls)->s[x].l - 1; y >= 0; y--)
 
 // iterate the selected elements of the 0th list of the lstack
 #define LSTACK_ITERATE(ls, y, go)				\
@@ -46,7 +51,7 @@
 	LSTACK_ITERATE_LOOP(ls, y, go)
 
 // close an iterate block
-#define LSTACK_ITEREND }
+#define LSTACK_ITEREND }}
 
 #define LSTACK_COUNT(ls) ({		\
 	int c = 0;									\

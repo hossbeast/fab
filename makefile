@@ -41,7 +41,7 @@ SOURCES					+=generator/generator.tab.c
 #  C/L OPTS  - internal to makefile flags
 #  C/L FLAGS - user specified compiler flags
 # 
-COPTS						+=-m64 -O3 -Werror -D_GNU_SOURCE -fPIC -I${SRCDIR} -I${SRCDIR}/common -I${SRCDIR}/re -I${SRCDIR}/generator -I${SRCDIR}/idx
+COPTS						+=-m64 -g -O3 -Werror -D_GNU_SOURCE -fPIC -I${SRCDIR} -I${SRCDIR}/common -I${SRCDIR}/re -I${SRCDIR}/generator -I${SRCDIR}/idx
 LOPTS            =-lpcre -ldl -shared -Wl,--version-script=exports -Wl,-soname,${LIB}
 
 %.o : COPTS     +=-c
@@ -55,7 +55,7 @@ ${LIB}: ${SOURCES:.c=.o} exports
 	${CC} ${COPTS} ${CFLAGS} -o $@ *.o */*.o ${LOPTS} ${LFLAGS}
 
 # link an operator so
-%.so: %.o
+%.so : %.o
 	${CC} ${COPTS} ${CFLAGS} -o $@ $^ -L${SRCDIR} -llistwise -shared -Wl,-soname,$(shell basename $*).so
 
 #

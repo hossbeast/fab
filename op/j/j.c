@@ -56,7 +56,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	// count entries that will be deleted
 	int cnt = 0;
 	int x;
-	int go;
 	LSTACK_ITERREV(ls, x, go);
 	if(go && ls->s[0].s[x].type == 0)
 	{

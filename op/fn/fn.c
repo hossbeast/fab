@@ -19,7 +19,6 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc = {

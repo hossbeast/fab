@@ -2,6 +2,7 @@
 #include <string.h>
 #include <alloca.h>
 
+#include <listwise.h>
 #include <listwise/operator.h>
 
 #include "control.h"

@@ -239,6 +239,13 @@ char* lstack_getstring(lstack* const restrict ls, int x, int y);
 //
 int lstack_allocate(lstack* const restrict ls, int x, int y, int z);
 
+/// lstack_clear
+//
+// SUMMARY
+//  reset the entry x:y
+//
+void lstack_clear(const lstack * const restrict ls, int x, int y);
+
 /// ensure
 //
 // ensure stack/list allocation up to the specified dimensions
@@ -336,6 +343,34 @@ int lstack_sel_set(lstack* const restrict ls, int y)
 int lstack_sel_write(lstack* const restrict ls, uint8_t * news, int newsl)
 	__attribute__((nonnull));
 
+/// lstack_sel_all
+//
+// SUMMARY
+//  select all entries
+//
+int lstack_sel_all(lstack* const restrict ls);
+
+/// lstack_sel_none
+//
+// SUMMARY
+//  select none
+//
+int lstack_sel_none(lstack* const restrict ls);
+
+/// lstack_last_clear
+//
+// SUMMARY
+//  reset the last-list
+//
+int lstack_last_clear(lstack* const restrict ls);
+
+/// lstack_last_set
+//
+// SUMMARY
+//  add 0:y to the last-list
+//
+int lstack_last_set(lstack* const restrict ls, int y);
+
 /// re_compile
 //
 // compile the re for an op arg representing a regex
@@ -415,5 +450,13 @@ extern int listwise_sanity;
 //  10
 //
 extern int listwise_allocation_seed;
+
+/// listwise_register_opdir
+//
+// SUMMARY
+//  register an application-specific directory as containing compiled operator .so's
+//  in addition to the default locations liblistwise loads these from
+//
+int listwise_register_opdir(char* dir);
 
 #endif
