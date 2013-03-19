@@ -22,6 +22,9 @@ typedef struct fmleval
 
 	map * 				bag;					// bag of values 
 
+	// discovery tracking
+	int						dscv_mark;
+
 	struct											// products expected when executing the formula
 	{
 		struct gn **	products;

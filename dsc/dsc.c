@@ -29,13 +29,17 @@ static int count_dscv(gn * r, int * c)
 {
 	int logic(gn * gn, int d)
 	{
-		if(gn->dscv_mark == 0 && gn->dscv)
+		if(gn->dscv_mark == 0 && gn->dscvsl)
 		{
-			(*c)++;
+			(*c) += gn->dscvsl;
 
 			int x;
-			for(x = 0; x < gn->dscv->products_l; x++)
-				gn->dscv->products[x]->dscv_mark = 1;
+			int y;
+			for(x = 0; x < gn->dscvsl; x++)
+			{
+				for(y = 0; y < gn->dscvs[x]->products_l; y++)
+					gn->dscvs[x]->products[y]->dscv_mark = 1;
+			}
 		}
 
 		return 1;
@@ -63,8 +67,12 @@ static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
 			}
 
 			int x;
-			for(x = 0; x < gn->dscv->products_l; x++)
-				gn->dscv->products[x]->dscv_mark = 2;
+			int y;
+			for(x = 0; x < gn->dscvsl; x++)
+			{
+				for(y = 0; y < gn->dscvs[x]->products_l; y++)
+					gn->dscvs[x]->products[y]->dscv_mark = 2;
+			}
 		}
 
 		finally : coda;

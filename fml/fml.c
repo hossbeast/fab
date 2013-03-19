@@ -33,6 +33,20 @@ union g_fmls_t		g_fmls = { { .size = sizeof(fml) } };
 // static
 //
 
+static int dscv_attach(gn * t, fmleval * fmlv)
+{
+	if(t->dscvsl == t->dscvsa)
+	{
+		int ns = t->dscvsa ?: 2;
+		ns = ns * 2 + ns / 2;
+		fatal(xrealloc, &t->dscvs, sizeof(*t->dscvs), ns, t->dscvsa);
+		t->dscvsa = ns;
+	}
+	t->dscvs[t->dscvsl++] = fmlv;
+
+	finally : coda;
+}
+
 static int fml_attach_singly(fml * const restrict fml, strstack * const restrict sstk, map * const restrict bag, lstack * const restrict ls)
 {
 	int y;
@@ -85,7 +99,8 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 				, fml->ffn->loc.l_col + 1
 				, t->idstring
 			);
-			t->dscv = fmlv;
+
+			fatal(dscv_attach, t, fmlv);
 		}
 		else if(fml->ffn->flags & FFN_FABRICATION)
 		{
@@ -174,9 +189,13 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 				log_add("%s", t->idstring);
 
 			if(fml->ffn->flags & FFN_DISCOVERY)
-				t->dscv = fmlv;
+			{
+				fatal(dscv_attach, t, fmlv);
+			}
 			else if(fml->ffn->flags & FFN_FABRICATION)
+			{
 				t->fabv = fmlv;
+			}
 		}
 		log_finish(" }");
 	}
@@ -235,6 +254,7 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 
 	fatal(map_create, &fml->bags[fml->bagsl++], 0);
 
+	// populate the bag
 	lstack * ls = 0;
 	int x = 0;
 	for(x = 0; x < fml->closure_varsl; x++)

@@ -257,7 +257,7 @@ static int dep_add_multi(
 		}
 
 		// resolve the right-hand side in the context of $<
-		fatal(var_set, vmap, "<", (*stax)[staxp], 0, 0, 0);
+		fatal(var_set, vmap, "<", (*stax)[staxp], 0, 1, 0);
 		fatal(list_resolveflat, ffn->feeds, vmap, stax, staxa, staxp + 1);
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)

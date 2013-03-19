@@ -14,10 +14,10 @@ $lflags					= [ -llistwise ]
 $name						= [ fab ]
 $fab						= [ $dfab/$name ~ j ]
 
-# c files
-+[@std.c]($rdirs = [ $dfab ~ ls/m/fablw/v ]; -$cfabpaths; $cc $cflags)
-+[@std.l]($rdirs = $dfab; -$lfabpaths; $cc $cflags $flex $flexflags)
-+[@std.y]($rdirs = $dfab; -$yfabpaths; $cc $cflags $bison $bisonflags)
+# c files - standard compilation
++[@std.c]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; -$cfabpaths; $cc $cflags)
++[@std.l]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; -$lfabpaths; $cc $cflags $flex $flexflags)
++[@std.y]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
 
 # operator so's
 $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
@@ -38,15 +38,15 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 # fab-specific operator so's
 #
-[ $oplist ~ xs/<o>/y/dj/shift ] :: [ $< ~ rx/xs/<c> ]
-{
-	[ $cc ] [ $cflags ~ ss/u/fx ] -fPIC -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
-}
-
-[ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<o> ]
+[ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
 	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneed/xm/<o>/ss/u/fx ] [
 	] -llistwise -shared [ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
+}
+
+[ $oplist ~ xs/<pic.o>/y/dj/shift ] :: [ $< ~ rx/xsf/<c> ]
+{
+	[ $cc ] [ $cflags -fPIC ~ ss/u/fx ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
 }
 
 # generated
@@ -93,7 +93,7 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 # tasks
 #
 
-[ @install ] : [ $listwise ]
+[ @install ] : [ @all ]
 {
 	install -d															[ $destdir/$bindir ]
 	install [ $fab ]												[ $destdir/$bindir/$name ]

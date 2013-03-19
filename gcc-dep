@@ -3,9 +3,6 @@
 use strict;
 use warnings;
 
-# dependency target
-my $target = $ARGV[0];
-
 my @S;	# strong
 my @W;	# weak
 
@@ -18,13 +15,13 @@ while(<STDIN>)
 		if($line =~ /\.lex\.h$/)
 		{
 			push @S, $line;				# strong dependency on the header
-			$line =~ s/\.lex\.h/.lex.o/;
+			$line =~ s/\.lex\.h/.lex/;
 			push @W, $line;				# weak dependency on the object
 		}
 		elsif($line =~ /\.tab\.h$/)
 		{
 			push @S, $line;				# strong dependency on the header
-			$line =~ s/\.tab\.h/.tab.o/;
+			$line =~ s/\.tab\.h/.tab/;
 			push @W, $line;				# weak dependency on the object
 		}
 		else
@@ -36,23 +33,30 @@ while(<STDIN>)
 
 			if(-f $line)
 			{
-				$line =~ s/\.c$/.o/;
+				$line =~ s/\.c$//;
 				push @W, $line;			# weak dependency on the object, if the c file exists
 			}
 		}
 	}
 }
 
-if(@S)
-{
-	print "[ $target ] : [\n";
-	print "$_\n" for @S;
-	print "]\n";
-}
+#
+# args come in pairs ; target, and extension to use for its object-file dependencies
+#
 
-if(@W)
+for(my $x = 0; $x <= $#ARGV; $x += 2)
 {
-	print "[ $target ] :* [\n";
-	print "$_\n" for @W;
-	print "]\n";
+	if(@S)
+	{
+		print "[ $ARGV[$x] ] : [\n";
+		print "$_\n" for @S;
+		print "]\n";
+	}
+
+	if(@W)
+	{
+		print "[ $ARGV[$x] ] :* [\n";
+		print "$_.$ARGV[$x+1]\n" for @W;
+		print "]\n";
+	}
 }

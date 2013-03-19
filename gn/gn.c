@@ -558,8 +558,8 @@ int gn_primary_reload_dscv(gn * const gn)
 		// node has not been invalidated (see gn_invalidations)
 		if(gn->invalid == 0)
 		{
-			// primary node with associated discovery fml eval
-			if(gn->dscv)
+			// primary node with associated discovery fml eval(s)
+			if(gn->dscvsl)
 			{
 				// actually load the depblock from cache
 				fatal(depblock_read, gn->dscv_block);
@@ -757,15 +757,22 @@ void gn_dump(gn * gn)
 
 		if(gn->designation == GN_DESIGNATION_PRIMARY)
 		{
-			if(gn->dscv)
+			if(gn->dscvsl)
 			{
-				log(L_DG | L_DGRAPH, "%12s : (%s)[%3d,%3d - %3d,%3d]", "dsc formula"
-					, ff_idstring(gn->dscv->fml->ffn->loc.ff)
-					, gn->dscv->fml->ffn->loc.f_lin + 1
-					, gn->dscv->fml->ffn->loc.f_col + 1
-					, gn->dscv->fml->ffn->loc.l_lin + 1
-					, gn->dscv->fml->ffn->loc.l_col + 1
-				);
+				for(x = 0; x < gn->dscvsl; x++)
+				{
+					log(L_DG | L_DGRAPH, "%12s : (%s)[%3d,%3d - %3d,%3d]", "dsc formula"
+						, ff_idstring(gn->dscvs[x]->fml->ffn->loc.ff)
+						, gn->dscvs[x]->fml->ffn->loc.f_lin + 1
+						, gn->dscvs[x]->fml->ffn->loc.f_col + 1
+						, gn->dscvs[x]->fml->ffn->loc.l_lin + 1
+						, gn->dscvs[x]->fml->ffn->loc.l_col + 1
+					);
+				}
+			}
+			else
+			{
+				log(L_DG | L_DGRAPH, "%12s : none", "dsc formula");
 			}
 
 			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->hb_fab->size);

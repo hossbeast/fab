@@ -124,14 +124,17 @@ typedef struct gn
 	{
 		// change-tracking for the backing file
 		hashblock *				hb_fab;				// rewritten following successful fabrication of all feeds
-		hashblock *				hb_dscv;			// rewritten following successful dependency discovery involving this node
+		hashblock *				hb_dscv;			// rewritten following successful dependency discovery of this node
 		int								hb_loaded;
 
-		// formula eval context for dependency discovery
-		struct fmleval *		dscv;
+		// formula eval contexts for dependency discovery
+		//  ** a PRIMARY node has 0-n fmleval's for discovery
+		struct fmleval **	dscvs;
+		int								dscvsl;
+		int								dscvsa;
 
 		// depblock for dependency discovery
-		struct depblock *		dscv_block;
+		struct depblock *	dscv_block;
 	};
 
 	//
@@ -151,6 +154,7 @@ typedef struct gn
 	//
 
 	// formula evaluation context which fabricates this node
+	//  ** a node has 0 or 1 fmleval's for fabrication
 	struct fmleval *		fabv;
 
 	// this node depends on the nodes in this list
@@ -189,9 +193,6 @@ typedef struct gn
 
 	// traversal tracking
 	int									guard;
-
-	// discovery tracking
-	int									dscv_mark;
 
 	// buildplan prune tracking
 	char								changed;
