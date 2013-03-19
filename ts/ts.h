@@ -19,16 +19,24 @@ struct fml;
 typedef struct fmleval
 {
 	struct fml *	fml;					// the formula
+	map * 				bag;					// bag of values, evaluated at parse-time
+	uint32_t			flags;
 
-	map * 				bag;					// bag of values 
-
-	// discovery tracking
-	int						dscv_mark;
-
-	struct											// products expected when executing the formula
+	union
 	{
-		struct gn **	products;
-		int						products_l;
+		struct 										// FFN_FABRICATION
+		{
+			struct gn **	products;	// nodes updated by executing the fmlv
+			int						productsl;
+		};
+
+		struct										// FFN_DISCOVERY
+		{
+			struct gn *		target;		// primary node whose source file provides discovery info
+
+			// tracking
+			int						dscv_mark;
+		};
 	};
 } fmleval;
 
@@ -94,6 +102,10 @@ void ts_reset(ts * ts)
 int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo, int * res)
 	__attribute__((nonnull));
 
+/// ts_free
+//
+// free a threadspace with free semantics
+//
 void ts_free(ts * ts);
 
 #endif

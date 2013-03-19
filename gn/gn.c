@@ -37,9 +37,12 @@ union gn_nodes_t		gn_nodes = { { .size = sizeof(gn) } };
 // SUMMARY
 //  log a cycle error from the specified gn stack
 //
-static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
+static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr, int err)
 {
-	log_start(L_ERROR, "detected cycle : ");
+	if(err)
+		log_start(L_ERROR, "detected cycle : ");
+	else
+		log_start(L_WARN, "detected cycle : ");
 
 	int top;
 	for(top = 1; top < ptr; top++)
@@ -65,7 +68,10 @@ static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr)
 	else
 		log_finish("");
 
-	return 0;
+	if(err)
+		return 0;
+	else
+		return 1;
 }
 
 static void freenode(gn * const gn)
@@ -370,7 +376,6 @@ int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 	{
 		if(n->guard)
 		{
-			return 0;
 			if(ptr < sizeof(stack) / sizeof(stack[0]))
 				stack[ptr++] = n;
 
@@ -405,7 +410,7 @@ int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 
 	int e = enter(r, 0);
 	if(e == 1)
-		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr);
+		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr, 0);
 	if(e == -1)
 		return 0;
 
@@ -426,7 +431,6 @@ int gn_depth_traversal_nodes_feedsward(gn * r, int (*logic)(gn*, int))
 	{
 		if(n->guard)
 		{
-			return 0;
 			if(ptr < sizeof(stack) / sizeof(stack[0]))
 				stack[ptr++] = n;
 
@@ -461,7 +465,7 @@ int gn_depth_traversal_nodes_feedsward(gn * r, int (*logic)(gn*, int))
 
 	int e = enter(r, 0);
 	if(e == 1)
-		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr);
+		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr, 0);
 	if(e == -1)
 		return 0;
 
@@ -661,11 +665,9 @@ int gn_invalidations()
 		{
 			if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
 				gn_nodes.e[x]->invalid = 1;
-//				gn_nodes.e[x]->changed = 1;
 
 			if(gn_nodes.e[x]->designation == GN_DESIGNATION_SECONDARY)
 				gn_nodes.e[x]->invalid = 1;
-//				gn_nodes.e[x]->rebuild = 1;
 		}
 	}
 	else
@@ -803,10 +805,10 @@ void gn_dump(gn * gn)
 					, gn->fabv->fml->ffn->loc.l_col + 1
 				);
 
-				if(gn->fabv->products_l > 1)
+				if(gn->fabv->productsl > 1)
 				{
 					int x;
-					for(x = 0; x < gn->fabv->products_l; x++)
+					for(x = 0; x < gn->fabv->productsl; x++)
 						log(L_DG | L_DGRAPH, "%12s --> %s", "", gn->fabv->products[x]->path);
 				}
 			}

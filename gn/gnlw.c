@@ -76,6 +76,7 @@ int lw_string(void * o, char* prop, char ** s, int * l)
 
 	if(!prop || strcmp(prop, "path") == 0)
 	{
+printf("\no=%p\n", o);
 		*s = ((gn*)o)->path->rel;
 		*l = ((gn*)o)->path->rell;
 	}

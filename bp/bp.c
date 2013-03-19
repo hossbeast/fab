@@ -177,12 +177,12 @@ int bp_create(gn ** n, int l, bp ** bp)
 					// all nodes in an fmlv go into the same stage, the last stage any of them is required to be in
 					int mheight = lvs[y]->height;
 					int i;
-					for(i = 0; i < lvs[y]->fabv->products_l; i++)
+					for(i = 0; i < lvs[y]->fabv->productsl; i++)
 						mheight = MAX(mheight, lvs[y]->fabv->products[i]->height);
 
 					if(mheight == k)
 					{
-						for(i = 0; i < lvs[y]->fabv->products_l; i++)
+						for(i = 0; i < lvs[y]->fabv->productsl; i++)
 							lvs[y]->fabv->products[i]->stage = k;
 
 						for(i = 0; i < bps->evals_l; i++)
@@ -332,7 +332,7 @@ int bp_eval(bp * const bp, int * const poison)
 			// whether NONE of the products of this eval context require rebuilding
 			int keep = 0;
 
-			for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
+			for(k = 0; k < bp->stages[x].evals[y]->productsl; k++)
 			{
 				// TASK, GENERATED, and SECONDARY nodes
 				gn * gn = bp->stages[x].evals[y]->products[k];
@@ -392,7 +392,7 @@ int bp_eval(bp * const bp, int * const poison)
 
 			if(!keep)
 			{
-				for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
+				for(k = 0; k < bp->stages[x].evals[y]->productsl; k++)
 				{
 					gn * gn = bp->stages[x].evals[y]->products[k];
 
@@ -415,7 +415,7 @@ int bp_eval(bp * const bp, int * const poison)
 			}
 			else
 			{
-				for(k = 0; k < bp->stages[x].evals[y]->products_l; k++)
+				for(k = 0; k < bp->stages[x].evals[y]->productsl; k++)
 				{
 					gn * gn = bp->stages[x].evals[y]->products[k];
 
@@ -582,7 +582,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int staxp, ts ***
 			fatal(list_ensure, stax, staxa, staxp);
 
 			// @ is a list of expected products of this eval context
-			for(k = 0; k < (*ts)[i]->fmlv->products_l; k++)
+			for(k = 0; k < (*ts)[i]->fmlv->productsl; k++)
 				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
 			// render the formula
@@ -610,7 +610,7 @@ int bp_exec(bp * bp, map * vmap, lstack *** stax, int * staxa, int staxp, ts ***
 			if((*ts)[y]->pid && (*ts)[y]->r_status == 0 && (*ts)[y]->r_signal == 0 && (*ts)[y]->stde_txt->l == 0)
 			{
 				int q;
-				for(q = 0; q < (*ts)[y]->fmlv->products_l; q++)
+				for(q = 0; q < (*ts)[y]->fmlv->productsl; q++)
 				{
 					gn * prod = (*ts)[y]->fmlv->products[q];
 
@@ -669,7 +669,7 @@ void bp_dump(bp * bp)
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
 			int i;
-			for(i = 0; i < bp->stages[x].evals[y]->products_l; i++)
+			for(i = 0; i < bp->stages[x].evals[y]->productsl; i++)
 			{
 				if(i)
 				{
@@ -726,7 +726,7 @@ int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
 			int q;
-			for(q = 0; q < bp->stages[x].evals[y]->products_l; q++)
+			for(q = 0; q < bp->stages[x].evals[y]->productsl; q++)
 				fatal(add, bp->stages[x].evals[y]->products[q]);
 		}
 	}

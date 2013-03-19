@@ -426,10 +426,6 @@ int dep_process(
 	{
 		fatal(dep_add_multi, ffn, sstk, vmap, stax, staxa, staxp + 1, staxp, first, newn, newr, block);
 	}
-	else
-	{
-		fail("bad flags : %hhu", ffn->flags);
-	}
 
 	finally : coda;
 }

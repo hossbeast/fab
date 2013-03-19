@@ -67,6 +67,7 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 		fmleval * fmlv = fml->evals[fml->evalsl - 1];
 		fmlv->fml = fml;
 		fmlv->bag = bag;
+		fmlv->flags = fml->ffn->flags;
 
 		// get the target graph node
 		char * s = 0;
@@ -84,13 +85,12 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 		);
 
 		// update affected lists
-		fmlv->products_l = 1;
-		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
-		fmlv->products[0] = t;
 		fatal(ff_regular_enclose_gn, fml->ffn->loc.ff, t);
 
-		if(fml->ffn->flags & FFN_DISCOVERY)
+		if(fmlv->flags & FFN_DISCOVERY)
 		{
+			fmlv->target = t;
+
 			log(L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s"
 				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
@@ -102,8 +102,12 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 
 			fatal(dscv_attach, t, fmlv);
 		}
-		else if(fml->ffn->flags & FFN_FABRICATION)
+		else if(fmlv->flags & FFN_FABRICATION)
 		{
+			fmlv->productsl = 1;
+			fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->productsl);
+			fmlv->products[0] = t;
+
 			log(L_FAB | L_FML | L_FMLTARG, "reg(%s)[%3d,%3d - %3d,%3d] -> %s"
 				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
@@ -141,18 +145,9 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 		fmleval * fmlv = fml->evals[fml->evalsl - 1];
 		fmlv->fml = fml;
 		fmlv->bag = bag;
+		fmlv->flags = fml->ffn->flags;
 
-		if(fml->ffn->flags & FFN_DISCOVERY)
-		{
-			log_start(L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> { "
-				, ff_idstring(fml->ffn->loc.ff)
-				, fml->ffn->loc.f_lin + 1
-				, fml->ffn->loc.f_col + 1
-				, fml->ffn->loc.l_lin + 1
-				, fml->ffn->loc.l_col + 1
-			);
-		}
-		else if(fml->ffn->flags & FFN_FABRICATION)
+		if(fmlv->flags & FFN_FABRICATION)
 		{
 			log_start(L_FAB | L_FML | L_FMLTARG, "reg(%s)[%3d,%3d - %3d,%3d] -> { "
 				, ff_idstring(fml->ffn->loc.ff)
@@ -164,8 +159,8 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 		}
 
 		// get the target graph nodes
-		fmlv->products_l = ls->s[x].l;
-		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->products_l);
+		fmlv->productsl = ls->s[x].l;
+		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->productsl);
 
 		for(y = 0; y < ls->s[x].l; y++)
 		{
@@ -188,11 +183,7 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 			else
 				log_add("%s", t->idstring);
 
-			if(fml->ffn->flags & FFN_DISCOVERY)
-			{
-				fatal(dscv_attach, t, fmlv);
-			}
-			else if(fml->ffn->flags & FFN_FABRICATION)
+			if(fmlv->flags & FFN_FABRICATION)
 			{
 				t->fabv = fmlv;
 			}
@@ -210,7 +201,9 @@ static void fml_free(fml * fml)
 		int x;
 		for(x = 0; x < fml->evalsl; x++)
 		{
-			free(fml->evals[x]->products);
+			if(fml->evals[x]->flags & FFN_FABRICATION)
+				free(fml->evals[x]->products);
+
 			free(fml->evals[x]);
 		}
 		free(fml->evals);
@@ -275,7 +268,7 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	if(ffn->targets_1)
 		fatal(list_resolvetoflat, ffn->targets_1, vmap, stax, staxa, staxp);
 
-	// create fmlv(s) and attach        graph nodes
+	// create fmlv(s) and attach graph nodes
 	if(ffn->flags & FFN_SINGLE)
 	{
 		fatal(fml_attach_singly, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[staxp]);
@@ -283,10 +276,6 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	else if(ffn->flags & FFN_MULTI)
 	{
 		fatal(fml_attach_multi, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[staxp]);
-	}
-	else
-	{
-		fail("bad flags %hhu (no cardinality)", ffn->flags);
 	}
 
 	finally : coda;

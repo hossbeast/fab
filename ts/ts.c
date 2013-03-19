@@ -149,17 +149,19 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			if(e)
 				(*res) = 0;
 
-			int k;
-			for(k = 0; k < ts[x]->fmlv->products_l; k++)
+			int k = 0;
+			while(1)
 			{
-				int R = 0;
-				if(k)
-					R = log_start(hi | e, "        %-9s %s", gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
-				else
-					R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(ts[x]->fmlv->products[k]), gn_idstring(ts[x]->fmlv->products[k]));
+				struct gn * t = 0;
+				if(ts[x]->fmlv->flags & FFN_FABRICATION)
+					t = ts[x]->fmlv->target;
+				else if(ts[x]->fmlv->flags & FFN_DISCOVERY)
+					t = ts[x]->fmlv->products[k];
 
 				if(k == 0)
 				{
+					int R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(t), gn_idstring(t));
+
 					if(e_stat)
 					{
 						log_add("%*sx=%d", 100 - R, "", ts[x]->r_status);
@@ -176,47 +178,49 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 					{
 						log_add("%*sx=0", 100 - R, "");
 					}
-				}
-				log_finish(0);
-
-				if(log_would(lo | L_FML | L_FMLEXEC))
-				{
-					// this section must actually be enabled
-					log_start(lo | L_FML | L_FMLEXEC 										, "%15s : "			, "product(s)");
-					for(k = 0; k < ts[x]->fmlv->products_l; k++)
-					{
-						if(k)
-							log_add(", ");
-						log_add("%s", gn_idstring(ts[x]->fmlv->products[k]));
-					}
 					log_finish(0);
 				}
-				if(log_would(lo | L_FML | L_FMLEXEC))
+				else
 				{
-					log(lo | L_FML | L_FMLEXEC 													, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
-					__r = write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
-
-					if(ts[x]->cmd_txt->l && ts[x]->cmd_txt->s[ts[x]->cmd_txt->l - 1] != '\n')
-						__r = write(2, "\n", 1);
+					log(hi | e, "        %-9s %s", gn_designate(t), gn_idstring(t));
 				}
-				log(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
-				log(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
-				if(log_would(lo | L_FML | L_FMLEXEC))
+
+				if(ts[x]->fmlv->flags & FFN_FABRICATION)
 				{
-					log(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
-					__r = write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
-
-					if(ts[x]->stdo_txt->l && ts[x]->stdo_txt->s[ts[x]->stdo_txt->l - 1] != '\n')
-						__r = write(2, "\n", 1);
+					break;
 				}
-				if(log_would(lo | L_FML | L_FMLEXEC | e_stde))
+				else if(ts[x]->fmlv->flags & FFN_DISCOVERY)
 				{
-					log(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
-					__r = write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
-
-					if(ts[x]->stde_txt->l && ts[x]->stde_txt->s[ts[x]->stde_txt->l - 1] != '\n')
-						__r = write(2, "\n", 1);
+					if(++k == ts[x]->fmlv->productsl)
+						break;
 				}
+			}
+
+			if(log_would(lo | L_FML | L_FMLEXEC))
+			{
+				log(lo | L_FML | L_FMLEXEC 													, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
+				__r = write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
+
+				if(ts[x]->cmd_txt->l && ts[x]->cmd_txt->s[ts[x]->cmd_txt->l - 1] != '\n')
+					__r = write(2, "\n", 1);
+			}
+			log(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
+			log(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
+			if(log_would(lo | L_FML | L_FMLEXEC))
+			{
+				log(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
+				__r = write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
+
+				if(ts[x]->stdo_txt->l && ts[x]->stdo_txt->s[ts[x]->stdo_txt->l - 1] != '\n')
+					__r = write(2, "\n", 1);
+			}
+			if(log_would(lo | L_FML | L_FMLEXEC | e_stde))
+			{
+				log(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
+				__r = write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
+
+				if(ts[x]->stde_txt->l && ts[x]->stde_txt->s[ts[x]->stde_txt->l - 1] != '\n')
+					__r = write(2, "\n", 1);
 			}
 		}
 	}

@@ -83,7 +83,7 @@ int bake_bp(
 			fatal(list_ensure, stax, staxa, staxp);
 
 			// @ is a list of expected products of this eval context
-			for(k = 0; k < (*ts)[y]->fmlv->products_l; k++)
+			for(k = 0; k < (*ts)[y]->fmlv->productsl; k++)
 				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[y]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
 			// render the formula
@@ -98,17 +98,17 @@ int bake_bp(
 
 			// save the name(s) of target(s) produced by this formula
 			dprintf(fd, "NAMES[%d]='", i++);
-			if((*ts)[y]->fmlv->products_l > 1)
+			if((*ts)[y]->fmlv->productsl > 1)
 				dprintf(fd, "{");
 
-			for(k = 0; k < (*ts)[y]->fmlv->products_l; k++)
+			for(k = 0; k < (*ts)[y]->fmlv->productsl; k++)
 			{
 				if(k)
 					dprintf(fd, ", ");
 				dprintf(fd, "%.*s", (*ts)[y]->fmlv->products[k]->idstringl, (*ts)[y]->fmlv->products[k]->idstring);
 			}
 
-			if((*ts)[y]->fmlv->products_l > 1)
+			if((*ts)[y]->fmlv->productsl > 1)
 				dprintf(fd, "}");
 
 			dprintf(fd, "'\n");
