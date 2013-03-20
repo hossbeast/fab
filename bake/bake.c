@@ -33,13 +33,13 @@ int bake_bp(
 	, const char * const dst
 )
 {
+	int fd				= 0;
 	int tsl				= 0;		// thread count
 	int tot				= 0;		// total targets
 	int y;
 	int x;
 	int i;
 	int k;
-	int fd;
 
 	// determine how many threads are needed
 	for(x = 0; x < bp->stages_l; x++)

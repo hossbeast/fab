@@ -14,10 +14,13 @@ $lflags					= [ -llistwise ]
 $name						= [ fab ]
 $fab						= [ $dfab/$name ~ j ]
 
-# c files - standard compilation
+# standard files - standard compilation
 +[@std.c]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; -$cfabpaths; $cc $cflags)
 +[@std.l]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; -$lfabpaths; $cc $cflags $flex $flexflags)
 +[@std.y]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
+
+# standard files - fPIC compilation
++[@std.c.ext]($rdirs = [ $dfab/fablw ~ j ]; $ext = [ fPIC.o ]; -$cfabpaths; $cc $cflags)
 
 # operator so's
 $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]

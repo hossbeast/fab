@@ -278,7 +278,12 @@
 																												PUSHSTATE(quoteword, yyextra);
 																												locify(yyextra, yylloc, yyleng, 0);
 																											}
-<generator>[^ \t\n"]																	{
+<generator>[[]																				{
+																												POPSTATE(yyextra);
+																												PUSHSTATE(list, yyextra);
+																												return LEX(yytext[0]);
+																											}
+<generator>[^ \t\n"[]																	{
 																												POPSTATE(yyextra);
 																												PUSHSTATE(generatorws, yyextra);
 																												yyless(0);

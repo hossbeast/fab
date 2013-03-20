@@ -40,7 +40,7 @@ static void usage()
 " -f <path/to/fabfile>    path to initial fabfile\n"
 " -I <path/to/directory>  directory for locating invocations\n"
 " -v <key=value>          sticky variable definition\n"
-" -U                      dependency discovery upfront\n"
+" -U                      perform dependency discovery upfront\n"
 "\n"
 " <node specifier> is one of: \n"
 "  1.  text   : path match relative to init-fabfile-rel-dir\n"
@@ -67,8 +67,11 @@ int parse_args(int argc, char** argv)
 	path * fabpath = 0;
 
 	struct option longopts[] = {
+				  { "cycle-warn"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_WARN	}
+				, { "cycle-fail"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_FAIL }
+				, { "cycle-deal"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_DEAL }
 // a
-/* b */   { 0	, required_argument	, 0			, 'b' }		// graph node invalidation
+/* b */ , { 0	, required_argument	, 0			, 'b' }		// graph node invalidation
 /* c */	, { 0	, no_argument				, 0			, 'c' }		// MODE_GNID_RELATIVE	
 /* d */	,	{ 0	, required_argument	, 0			, 'd' }		// graph node dump
 // e
@@ -87,7 +90,7 @@ int parse_args(int argc, char** argv)
 // r
 // s
 // t
-/* u */	, { 0	, no_argument				, 0			, 'u' }		// dependency discovery upfront
+/* u */	, { 0	, no_argument				, 0			, 'u' }		// dependency discovery mode
 /* v */ , { 0	, required_argument	, 0			, 'v' }		// root-level variable definition
 // w
 // x
@@ -113,13 +116,13 @@ int parse_args(int argc, char** argv)
 // R
 // S
 // T
-/* U */	, { 0	, no_argument				, 0			, 'U' }		// dependency discovery mode
+/* U */	, { 0	, no_argument				, 0			, 'U' }		// dependency discovery upfront
 // V
 // W
 // X
 // Y
 // Z
-		, { }
+				, { }
 	};
 
 	char* switches =
@@ -144,6 +147,7 @@ int parse_args(int argc, char** argv)
 	g_args.mode_exec			= DEFAULT_MODE_EXEC;
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_ddsc			= DEFAULT_MODE_DDSC;
+	g_args.mode_cycl			= DEFAULT_MODE_CYCL;
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create, &fabpath, g_args.cwd, "%s", DEFAULT_INIT_FABFILE);
 	fatal(path_copy, &g_args.init_fabfile_path, fabpath);
@@ -151,13 +155,13 @@ int parse_args(int argc, char** argv)
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], DEFAULT_INVOKEDIR);
 
-	int x, indexptr;
+	int x;
+	int indexptr;
 	opterr = 0;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
 	{
 		switch(x)
 		{
-			// directories which are normalized to terminate with a slash
 			case 'h':
 				usage(1);
 				break;
@@ -293,6 +297,7 @@ int parse_args(int argc, char** argv)
 	}
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'c', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'U', MODE_STR(g_args.mode_ddsc));
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycl          =%s", g_args.mode_cycl == DEFAULT_MODE_CYCL ? " " : "*", ' ', MODE_STR(g_args.mode_cycl));
 	if(g_args.concurrency > 0)
 		snprintf(buf, sizeof(buf)	, "%d", g_args.concurrency);
 	else

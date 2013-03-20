@@ -3,6 +3,7 @@
 
 #include <listwise.h>
 #include <listwise/object.h>
+#include <listwise/generator.h>
 
 #include "ff.h"
 #include "ffn.h"
@@ -85,12 +86,13 @@ int list_renderto(lstack * const restrict ls, pstring ** const restrict ps)
 // PARAMETERS
 //  list  - FFN_LIST node
 //  vmap  - map used to resolve variable references
+//  gp    - generator_parser for generators which are lists
 //  stax  - listwise stax
 //  staxa - listwise stax
 //  staxp - offset to next free stax
 //  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolve(ff_node * restrict list, map * restrict vmap, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int raw)
+int list_resolve(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int raw)
 	__attribute__((nonnull));
 
 /// list_resolveto
@@ -101,12 +103,13 @@ int list_resolve(ff_node * restrict list, map * restrict vmap, lstack *** restri
 // PARAMETERS
 //  list  - FFN_LIST node
 //  vmap  - map used to resolve variable references
+//  gp    - generator_parser for generators which are lists
 //  stax  - listwise stax
 //  staxa - listwise stax
 //  staxp - offset to next free stax
 //  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolveto(ff_node * restrict list, map * restrict vmap, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int raw)
+int list_resolveto(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int raw)
 	__attribute__((nonnull));
 
 /// list_resolveflat
@@ -114,7 +117,7 @@ int list_resolveto(ff_node * restrict list, map * restrict vmap, lstack *** rest
 // list_resolve
 // list_flatten
 //
-int list_resolveflat(ff_node * restrict list, map * restrict vmap, lstack *** restrict stax, int * restrict staxa, int staxp)
+int list_resolveflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int staxp)
 	__attribute__((nonnull));
 
 /// list_resolvetoflat
@@ -122,7 +125,7 @@ int list_resolveflat(ff_node * restrict list, map * restrict vmap, lstack *** re
 // list_resolveto
 // list_flatten
 //
-int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, lstack *** restrict stax, int * restrict staxa, int staxp)
+int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int staxp)
 	__attribute__((nonnull));
 
 #undef restrict

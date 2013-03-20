@@ -124,58 +124,59 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 
 	if(type == FFN_STMTLIST)
 	{
-		n->chain[0]				= va_arg(va, ff_node*);	// statements
+		n->chain[0]							= va_arg(va, ff_node*);	// statements
 	}
 	else if(type == FFN_DEPENDENCY)
 	{
-		n->needs					= va_arg(va, ff_node*);
-		n->feeds					= va_arg(va, ff_node*);
-		n->flags					= (uint32_t)va_arg(va, int);
+		n->needs								= va_arg(va, ff_node*);
+		n->feeds								= va_arg(va, ff_node*);
+		n->flags								= (uint32_t)va_arg(va, int);
 	}
 	else if(type == FFN_INVOCATION)
 	{
-		n->module					= va_arg(va, ff_node*);
-		n->chain[0]				= va_arg(va, ff_node*);	// designations
-		n->scope					= va_arg(va, ff_node*);
-		n->flags					= (uint32_t)va_arg(va, int);
+		n->module								= va_arg(va, ff_node*);
+		n->chain[0]							= va_arg(va, ff_node*);	// designations
+		n->scope								= va_arg(va, ff_node*);
+		n->flags								= (uint32_t)va_arg(va, int);
 	}
 	else if(type == FFN_WORD)
 	{
-		n->text 					= va_arg(va, char*);
+		n->text 								= va_arg(va, char*);
 	}
 	else if(type == FFN_NOFILE)
 	{
-		n->text						= va_arg(va, char*);
-		n->parts					= va_arg(va, char**);
-		n->partsl					= va_arg(va, int);
+		n->text									= va_arg(va, char*);
+		n->parts								= va_arg(va, char**);
+		n->partsl								= va_arg(va, int);
 	}
 	else if(type == FFN_FORMULA)
 	{
-		n->targets_0			= va_arg(va, ff_node*);
-		n->targets_1			= va_arg(va, ff_node*);
-		n->command				= va_arg(va, ff_node*);
-		n->flags					= (uint32_t)va_arg(va, int);
+		n->targets_0						= va_arg(va, ff_node*);
+		n->targets_1						= va_arg(va, ff_node*);
+		n->command							= va_arg(va, ff_node*);
+		n->flags								= (uint32_t)va_arg(va, int);
 	}
 	else if(type == FFN_VARASSIGN)
 	{
-		n->chain[0]				= va_arg(va, ff_node*);	// vars
-		n->definition			= va_arg(va, ff_node*);
+		n->chain[0]							= va_arg(va, ff_node*);	// vars
+		n->definition						= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_VARLOCK)
 	{
-		n->chain[0]				= va_arg(va, ff_node*);	// vars
-		n->definition			= va_arg(va, ff_node*);
+		n->chain[0]							= va_arg(va, ff_node*);	// vars
+		n->definition						= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_VARLINK)
 	{
-		n->chain[0]				= va_arg(va, ff_node*);	// vars
-		n->definition			= va_arg(va, ff_node*);
+		n->chain[0]							= va_arg(va, ff_node*);	// vars
+		n->definition						= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_LIST)
 	{
-		n->chain[0]				= va_arg(va, ff_node*);	// elements
-		n->generator_node	= va_arg(va, ff_node*);
-		n->flags 					= (uint32_t)va_arg(va, int); 
+		n->chain[0]							= va_arg(va, ff_node*);	// elements
+		n->generator_node				= va_arg(va, ff_node*);
+		n->generator_list_node	= va_arg(va, ff_node*);
+		n->flags 								= (uint32_t)va_arg(va, int); 
 	}
 	else if(type == FFN_LF)
 	{
@@ -394,6 +395,12 @@ void ffn_dump(ff_node * const root)
 					, "generator"
 				);
 				dump(ffn->generator_node, lvl + 1);
+
+				log(L_FF | L_FFTREE, "%*s  %12s :"
+					, lvl * 2, ""
+					, "generator-list"
+				);
+				dump(ffn->generator_list_node, lvl + 1);
 			}
 			else if(ffn->type == FFN_WORD)
 			{

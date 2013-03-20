@@ -33,6 +33,7 @@ static int dep_add_single(
 	  ff_node * ffn
 	, strstack * const restrict sstk
 	, map * vmap
+	, generator_parser * const gp
 	, lstack *** stax
 	, int * staxa
 	, int staxp
@@ -49,7 +50,7 @@ static int dep_add_single(
 	int pr = staxp;
 
 	// resolve the right-hand side
-	fatal(list_resolveflat, ffn->feeds, vmap, stax, staxa, pr);
+	fatal(list_resolveflat, ffn->feeds, vmap, gp, stax, staxa, pr);
 
 	// add edges, which are the cartesian product needs x feeds
 	LSTACK_ITERATE((*stax)[pl], i, goa);
@@ -201,6 +202,7 @@ static int dep_add_multi(
 	  ff_node * ffn
 	, strstack * const restrict sstk
 	, map * vmap
+	, generator_parser * const gp
 	, lstack *** stax
 	, int * staxa
 	, int staxp
@@ -258,7 +260,7 @@ static int dep_add_multi(
 
 		// resolve the right-hand side in the context of $<
 		fatal(var_set, vmap, "<", (*stax)[staxp], 0, 1, 0);
-		fatal(list_resolveflat, ffn->feeds, vmap, stax, staxa, staxp + 1);
+		fatal(list_resolveflat, ffn->feeds, vmap, gp, stax, staxa, staxp + 1);
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
 		{
@@ -406,6 +408,7 @@ int dep_process(
 	  ff_node * const ffn
 	, strstack * const sstk
 	, map * const vmap
+	, generator_parser * const gp
 	, lstack *** const stax
 	, int * const staxa
 	, int staxp
@@ -416,15 +419,15 @@ int dep_process(
 )
 {
 	// resolve the left-hand side
-	fatal(list_resolveflat, ffn->needs, vmap, stax, staxa, staxp);
+	fatal(list_resolveflat, ffn->needs, vmap, gp, stax, staxa, staxp);
 
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(dep_add_single, ffn, sstk, vmap, stax, staxa, staxp + 1, staxp, first, newn, newr, block);
+		fatal(dep_add_single, ffn, sstk, vmap, gp, stax, staxa, staxp + 1, staxp, first, newn, newr, block);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(dep_add_multi, ffn, sstk, vmap, stax, staxa, staxp + 1, staxp, first, newn, newr, block);
+		fatal(dep_add_multi, ffn, sstk, vmap, gp, stax, staxa, staxp + 1, staxp, first, newn, newr, block);
 	}
 
 	finally : coda;

@@ -35,6 +35,22 @@ union g_fmls_t		g_fmls = { { .size = sizeof(fml) } };
 
 static int dscv_attach(gn * t, fmleval * fmlv)
 {
+	int x;
+	for(x = 0; x < t->dscvsl; x++)
+	{
+		if(t->dscvs[x]->fml == fmlv->fml)
+		{
+			log(L_WARN | L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s already associated"
+				, ff_idstring(fmlv->fml->ffn->loc.ff)
+				, fmlv->fml->ffn->loc.f_lin + 1
+				, fmlv->fml->ffn->loc.f_col + 1
+				, fmlv->fml->ffn->loc.l_lin + 1
+				, fmlv->fml->ffn->loc.l_col + 1
+				, t->idstring
+			);
+		}
+	}
+
 	if(t->dscvsl == t->dscvsa)
 	{
 		int ns = t->dscvsa ?: 2;
@@ -283,6 +299,16 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 
 int fml_render(ts * const restrict ts, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
 {
+/*
+	printf("resolving (%s)[%3d,%3d - %3d,%3d]\n"
+		, ff_idstring(ts->fmlv->fml->ffn->loc.ff)
+		, ts->fmlv->fml->ffn->loc.f_lin + 1
+		, ts->fmlv->fml->ffn->loc.f_col + 1
+		, ts->fmlv->fml->ffn->loc.l_lin + 1
+		, ts->fmlv->fml->ffn->loc.l_col + 1
+	);
+*/
+
 	// resolve the list of command
 	int pn = staxp;
 	fatal(list_resolve, ts->fmlv->fml->ffn->command, ts->fmlv->bag, stax, staxa, &pn, 1);

@@ -154,9 +154,9 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			{
 				struct gn * t = 0;
 				if(ts[x]->fmlv->flags & FFN_FABRICATION)
-					t = ts[x]->fmlv->target;
-				else if(ts[x]->fmlv->flags & FFN_DISCOVERY)
 					t = ts[x]->fmlv->products[k];
+				else if(ts[x]->fmlv->flags & FFN_DISCOVERY)
+					t = ts[x]->fmlv->target;
 
 				if(k == 0)
 				{
@@ -187,12 +187,12 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 
 				if(ts[x]->fmlv->flags & FFN_FABRICATION)
 				{
-					break;
+					if(++k == ts[x]->fmlv->productsl)
+						break;
 				}
 				else if(ts[x]->fmlv->flags & FFN_DISCOVERY)
 				{
-					if(++k == ts[x]->fmlv->productsl)
-						break;
+					break;
 				}
 			}
 

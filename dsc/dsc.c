@@ -29,13 +29,16 @@ static int count_dscv(gn * r, int * c)
 {
 	int logic(gn * gn, int d)
 	{
-		int x;
-		for(x = 0; x < gn->dscvsl; x++)
+		if(gn->designation == GN_DESIGNATION_PRIMARY)
 		{
-			if(gn->dscvs[x]->dscv_mark == 0)
+			int x;
+			for(x = 0; x < gn->dscvsl; x++)
 			{
-				(*c)++;
-				gn->dscvs[x]->dscv_mark = 1;
+				if(gn->dscvs[x]->dscv_mark == 0)
+				{
+					(*c)++;
+					gn->dscvs[x]->dscv_mark = 1;
+				}
 			}
 		}
 
@@ -49,38 +52,38 @@ static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
 {
 	int logic(gn * gn, int d)
 	{
-		int x;
-		for(x = 0; x < gn->dscvsl; x++)
+		if(gn->designation == GN_DESIGNATION_PRIMARY)
 		{
-			if(gn->dscvs[x]->dscv_mark == 1)
+			int x;
+			for(x = 0; x < gn->dscvsl; x++)
 			{
-				// determine if the node has suitable cached discovery results
-				fatal(gn_primary_reload_dscv, gn);
-
-				if(gn->dscv_block->block)
+				if(gn->dscvs[x]->dscv_mark == 1)
 				{
-					cache[(*cachel)++] = gn;
+					// determine if the node has suitable cached discovery results
+					fatal(gn_primary_reload_dscv, gn);
 
-					// dscv results were loaded from cache so all of the dscvs for this node are skipped
-					int y;
-					for(y = 0; y < gn->dscvsl; y++)
+					if(gn->dscv_block->block)
 					{
-						gn->dscvs[y]->dscv_mark = 2;
+						cache[(*cachel)++] = gn;
+
+						// dscv results were loaded from cache so all of the dscvs for this node are skipped
+						int y;
+						for(y = 0; y < gn->dscvsl; y++)
+						{
+							gn->dscvs[y]->dscv_mark = 2;
+						}
 					}
-				}
-				else
-				{
-					ts[(*tsl)++]->fmlv = gn->dscvs[x];
-					gn->dscvs[x]->dscv_mark = 2;
+					else
+					{
+						ts[(*tsl)++]->fmlv = gn->dscvs[x];
+						gn->dscvs[x]->dscv_mark = 2;
+					}
 				}
 			}
 		}
 
 		finally : coda;
 	};
-
-	// apply user-specified invalidations
-	gn_invalidations();
 
 	return gn_depth_traversal_nodes_needsward(r, logic);
 }
@@ -164,6 +167,9 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 	int		dscvl = 0;
 	int		tsl = 0;
 
+	// apply user-specified invalidations, apply gn designations
+	gn_invalidations();
+
 	// count not-yet-executed discovery fmleval contexts
 	int x;
 	for(x = 0; x < rootsl; x++)
@@ -195,10 +201,9 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 		{
 			(*ts)[x]->y = x;
 
-			// @ is a list of expected products of this eval context
-			// for a discovery formula, @ always contains exactly 1 element
+			// @ is a single element list containing the target of this dscv
 			fatal(list_ensure, stax, staxa, staxp);
-			fatal(lstack_obj_add, (*stax)[staxp], (*ts)[x]->fmlv->products[0], LISTWISE_TYPE_GNLW);
+			fatal(lstack_obj_add, (*stax)[staxp], (*ts)[x]->fmlv->target, LISTWISE_TYPE_GNLW);
 
 			// render the formula
 			fatal(map_set, (*ts)[x]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
@@ -290,6 +295,9 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 			(*new) += newn + newr;
 
 		log(L_DSC | L_DSCINFO, "DISCOVERY %d : %d nodes and %d edges", i, newn, newr);
+
+		// apply user-specified invalidations, apply gn designations
+		gn_invalidations();
 
 		// recount - new nodes may need discovered
 		dscvl = 0;

@@ -31,12 +31,6 @@
 // defined in gn.c
 char * gn_idstring(struct gn * const);
 
-struct ff_parser_t
-{
-	void *							p;
-	generator_parser *	gp;
-};
-
 //
 // data
 //

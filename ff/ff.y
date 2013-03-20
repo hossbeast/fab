@@ -289,35 +289,51 @@ lf
 list
 	: '[' listpartsnone ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, FFN_WSSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2      , (void*)0, (void*)0, FFN_WSSEP);
 	}
 	| '[' listpartscomma ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, FFN_COMMASEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2      , (void*)0, (void*)0, FFN_COMMASEP);
 	}
 	| '[' listpart ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2      , (void*)0, (void*)0, 0);
 	}
 	| '[' ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0, (void*)0, 0);
 	}
 	| '[' listpartsnone '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, FFN_WSSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , $4      , (void*)0, FFN_WSSEP);
 	}
 	| '[' listpartscomma '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, FFN_COMMASEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , $4      , (void*)0, FFN_COMMASEP);
 	}
 	| '[' listpart '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2, $4, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , $4      , (void*)0, 0);
 	}
 	| '[' '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, $3, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, (void*)0, $3      , 0);
+	}
+	| '[' listpartsnone '~' list ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , (void*)0, $4      , FFN_WSSEP);
+	}
+	| '[' listpartscomma '~' list ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , (void*)0, $4      , FFN_COMMASEP);
+	}
+	| '[' listpart '~' list ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , (void*)0, $4      , 0);
+	}
+	| '[' '~' list ']'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, (void*)0, $3      , 0);
 	}
 	;
 

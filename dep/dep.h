@@ -33,6 +33,7 @@ int dep_process(
 	  ff_node * const restrict ffn
 	, strstack * const restrict sstk
 	, map * const restrict vmap
+	, generator_parser * const gp
 	, lstack *** const restrict stax
 	, int * const restrict staxa
 	, int staxp
@@ -41,7 +42,7 @@ int dep_process(
 	, int * const restrict newr
 	, depblock * const restrict block
 )
-	__attribute__((nonnull(1,3,4,5)));
+	__attribute__((nonnull(1,3,4,5,6)));
 
 #undef restrict
 #endif

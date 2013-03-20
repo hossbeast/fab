@@ -53,8 +53,7 @@ int depblock_create(depblock ** const restrict block, const char * const restric
 int depblock_allocate(depblock * const restrict block)
 	__attribute__((nonnull));
 
-void depblock_free(depblock * const restrict block)
-	__attribute__((nonnull));
+void depblock_free(depblock * const restrict block);
 
 void depblock_xfree(depblock ** const restrict block)
 	__attribute__((nonnull));

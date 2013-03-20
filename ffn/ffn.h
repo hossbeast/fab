@@ -106,6 +106,7 @@ typedef struct ff_node
 
 		struct {													// FFN_LIST
 			struct ff_node*			generator_node;
+			struct ff_node*			generator_list_node;
 		};
 
 		struct {													// FFN_VARASSIGN, FFN_VARLOCK, FFN_VARLINK, FFN_DESIGNATE

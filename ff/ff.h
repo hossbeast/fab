@@ -94,6 +94,12 @@ extern union ff_files_t
 struct ff_parser_t;
 typedef struct ff_parser_t ff_parser;
 
+struct ff_parser_t
+{
+	void *							p;
+	generator_parser *	gp;
+};
+
 /// ff_mkparser
 //
 // creates an instance of a ff parser which may be passed repeatedly to parse

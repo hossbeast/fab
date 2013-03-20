@@ -17,6 +17,8 @@
 #include "canon.h"
 #include "xstring.h"
 #include "dirutil.h"
+#include "map.h"
+#include "cksum.h"
 
 #define restrict __restrict
 
@@ -26,58 +28,91 @@ char * ff_idstring(struct ff_file * const);
 // data
 //
 
-union gn_nodes_t		gn_nodes = { { .size = sizeof(gn) } };
+union gn_nodes_t gn_nodes = { { .size = sizeof(gn) } };
 
 //
 // static
 //
 
+// map from (uint32) hash of detected cycle -> (int) number of times that particular cycle was encountered
+static map * o_cycles;
+
 /// raise_cycle
 //
 // SUMMARY
-//  log a cycle error from the specified gn stack
+//  handle the fact that a cycle was detected in the dependency graph
 //
-static int raise_cycle(gn ** stack, size_t stack_elsize, int ptr, int err)
+// PARAMETERS
+//  stack   - stack of nodes representing the cycle
+//  stacksz - number of elements the stack can hold
+//  num     - number of elements set in stack
+//
+static int raise_cycle(gn ** stack, size_t stacksz, int num)
 {
-	if(err)
-		log_start(L_ERROR, "detected cycle : ");
-	else
-		log_start(L_WARN, "detected cycle : ");
+	void logcycle(int top)
+	{
+		int x;
+		for(x = top; x >= 0; x--)
+		{
+			if(x != top)
+				log_add(" -> ");
 
+			log_add("%s", stack[x]->idstring);
+		}
+
+		if(num == stacksz)
+			log_finish(" -> ...");
+		else
+			log_finish("");
+	};
+
+	if(g_args.mode_cycl == MODE_CYCL_DEAL)
+		return 1;
+
+	// skip the beginning of the traversal, to the start of the cycle
 	int top;
-	for(top = 1; top < ptr; top++)
+	for(top = num - 1; top >= 0; top--)
 	{
 		if(stack[top] == stack[0])
 			break;
 	}
 
-	if(top != ptr)
-		top++;
-
-	int x;
-	for(x = 0; x < top; x++)
+	if(g_args.mode_cycl == MODE_CYCL_FAIL)
 	{
-		if(x)
-			log_add(" -> ");
+		log_start(L_ERROR, "detected cycle : ");
+		logcycle(top);
+		return 0;
+	}
+	else if(g_args.mode_cycl == MODE_CYCL_WARN)
+	{
+		if(!o_cycles)
+			fatal(map_create, &o_cycles, 0);
 
-		log_add("%s", stack[x]->idstring);
+		// hash this cycle
+		uint32_t cyc = cksum(stack, top * sizeof(*stack));
+
+		// get or set the hash into the map
+		int * c = 0;
+		if((c = map_get(o_cycles, MM(cyc))) == 0)
+		{
+			int cc = 0;
+			c = map_set(o_cycles, MM(cyc), MM(cc));
+		}
+
+		if((*c)++ == 0)
+		{
+			log_start(L_WARN, "detected cycle : ");
+			logcycle(top);
+		}
+
+		return 1;
 	}
 
-	if(ptr == stack_elsize)
-		log_finish(" -> ...");
-	else
-		log_finish("");
-
-	if(err)
-		return 0;
-	else
-		return 1;
+	finally : coda;
 }
 
 static void freenode(gn * const gn)
 {
-	int x;
-
 	if(gn)
 	{
 		path_free(gn->path);
@@ -87,8 +122,12 @@ static void freenode(gn * const gn)
 		hashblock_free(gn->hb_dscv);
 		depblock_free(gn->dscv_block);
 
+		free(gn->dscvs);
+
+		int x;
 		for(x = 0; x < gn->needs.l; x++)
 			free(gn->needs.e[x]);
+
 		free(gn->needs.e);
 		map_free(gn->needs.by_B);
 
@@ -365,7 +404,7 @@ int gn_edge_add(
 int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 {
 	gn * stack[64] = {};
-	int ptr = 0;
+	int num = 0;
 
 	// RETURNS
 	//  0 - success
@@ -376,42 +415,50 @@ int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 	{
 		if(n->guard)
 		{
-			if(ptr < sizeof(stack) / sizeof(stack[0]))
-				stack[ptr++] = n;
+			if(num < sizeof(stack) / sizeof(stack[0]))
+				stack[num++] = n;
 
+			n->guard = 0;
 			return 1;
 		}
-		n->guard = 1;
 
 		// descend
+		n->guard = 1;
+
 		int x;
 		for(x = 0; x < n->needs.l; x++)
 		{
 			int e = enter(n->needs.e[x]->B, d + 1);
 			if(e == 1)
 			{
-				if(ptr < sizeof(stack) / sizeof(stack[0]))
-					stack[ptr++] = n;
+				if(num < sizeof(stack) / sizeof(stack[0]))
+					stack[num++] = n;
 
+				n->guard = 0;
 				return 1;
 			}
 			if(e == -1)
+			{
+				n->guard = 0;
 				return -1;
+			}
 		}
 
 		// logic on this node
 		if(logic(n, d) == 0)
+		{
+			n->guard = 0;
 			return -1;
+		}
 
 		n->guard = 0;
-
 		return 0;
 	};
 
 	int e = enter(r, 0);
 	if(e == 1)
-		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr, 0);
-	if(e == -1)
+		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), num);
+	else if(e == -1)
 		return 0;
 
 	return 1;
@@ -420,7 +467,7 @@ int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 int gn_depth_traversal_nodes_feedsward(gn * r, int (*logic)(gn*, int))
 {
 	gn * stack[64] = {};
-	int ptr = 0;
+	int num = 0;
 
 	// RETURNS
 	//  0 - success
@@ -431,41 +478,49 @@ int gn_depth_traversal_nodes_feedsward(gn * r, int (*logic)(gn*, int))
 	{
 		if(n->guard)
 		{
-			if(ptr < sizeof(stack) / sizeof(stack[0]))
-				stack[ptr++] = n;
+			if(num < sizeof(stack) / sizeof(stack[0]))
+				stack[num++] = n;
 
+			n->guard = 0;
 			return 1;
 		}
-		n->guard = 1;
 
 		// descend
+		n->guard = 1;
+
 		int x;
 		for(x = 0; x < n->feeds.l; x++)
 		{
 			int e = enter(n->feeds.e[x]->B, d + 1);
 			if(e == 1)
 			{
-				if(ptr < sizeof(stack) / sizeof(stack[0]))
-					stack[ptr++] = n;
+				if(num < sizeof(stack) / sizeof(stack[0]))
+					stack[num++] = n;
 
+				n->guard = 0;
 				return 1;
 			}
-			if(e == -1)
+			else if(e == -1)
+			{
+				n->guard = 0;
 				return -1;
+			}
 		}
 
 		// logic on this node
 		if(logic(n, d) == 0)
+		{
+			n->guard = 0;
 			return -1;
+		}
 
 		n->guard = 0;
-
 		return 0;
 	};
 
 	int e = enter(r, 0);
 	if(e == 1)
-		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), ptr, 0);
+		return raise_cycle(stack, sizeof(stack) / sizeof(stack[0]), num);
 	if(e == -1)
 		return 0;
 
@@ -703,6 +758,8 @@ void gn_teardown()
 
 	free(gn_nodes.e);
 	map_free(gn_nodes.by_path);
+
+	map_free(o_cycles);
 }
 
 // necessary for a module to call which cannot include the struct gn definition

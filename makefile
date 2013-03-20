@@ -17,7 +17,7 @@ INSTALL         :=install
 #  C/L OPTS  - internal to makefile flags
 #  C/L FLAGS - user specified compiler flags
 # 
-COPTS						+=-m64 -g -O0 -Wall -Werror -fms-extensions -fno-builtin-log -D_GNU_SOURCE -I${COMMON} $(foreach x,${VPATH},-I${SRCDIR}/$(x))
+COPTS						+=-m64 -g -O3 -Wall -Werror -fms-extensions -fno-builtin-log -D_GNU_SOURCE -I${COMMON} $(foreach x,${VPATH},-I${SRCDIR}/$(x))
 %.o : COPTS     +=-c
 
 LOPTS						+=-llistwise
@@ -153,9 +153,15 @@ install : all
 	${INSTALL} -d                   ${DESTDIR}/var/tmp/fab
 	chown fabsys:fabsys             ${DESTDIR}/var/tmp/fab
 	${INSTALL} -d                   ${DESTDIR}/usr/lib/fab/lib/std
+	${INSTALL} -d                   ${DESTDIR}/usr/lib/fab/lib/std/c
+	${INSTALL} -d                   ${DESTDIR}/usr/lib/fab/lib/std/l
+	${INSTALL} -d                   ${DESTDIR}/usr/lib/fab/lib/std/y
 	${INSTALL} fablib/std/c.fab     ${DESTDIR}/usr/lib/fab/lib/std/c.fab
 	${INSTALL} fablib/std/l.fab     ${DESTDIR}/usr/lib/fab/lib/std/l.fab
 	${INSTALL} fablib/std/y.fab     ${DESTDIR}/usr/lib/fab/lib/std/y.fab
+	${INSTALL} fablib/std/c/ext.fab ${DESTDIR}/usr/lib/fab/lib/std/c/ext.fab
+	${INSTALL} fablib/std/l/ext.fab ${DESTDIR}/usr/lib/fab/lib/std/l/ext.fab
+	${INSTALL} fablib/std/y/ext.fab ${DESTDIR}/usr/lib/fab/lib/std/y/ext.fab
 	${INSTALL} -d                   ${DESTDIR}/usr/lib/fab/listwise
 	${INSTALL} fablw/op/fx/fx.so    ${DESTDIR}/usr/lib/fab/listwise/fx.so
 	${INSTALL} fablw/op/fxc/fxc.so  ${DESTDIR}/usr/lib/fab/listwise/fxc.so
