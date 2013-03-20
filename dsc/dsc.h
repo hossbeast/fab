@@ -19,6 +19,7 @@
 //  roots   - graph nodes
 //  rootsl  - len of gn
 //  vmap    - map for resolving var references
+//  gp      - generator parser
 //  stax    - listwise stax
 //  staxa   - listwise stax
 //  staxp   - listwise stax
@@ -31,6 +32,7 @@ int dsc_exec(
 	  gn ** restrict roots
 	, int rootsl
 	, map * restrict vmap
+	, generator_parser * const restrict
 	, lstack *** restrict stax
 	, int * restrict staxa
 	, int staxp
@@ -39,7 +41,7 @@ int dsc_exec(
 	, int * restrict tsw
 	, int * restrict new
 )
-	__attribute__((nonnull(1, 3, 4, 5, 7, 8, 9)));
+	__attribute__((nonnull(1, 3, 4, 5, 6, 8, 9, 10)));
 
 #undef restrict
 #endif

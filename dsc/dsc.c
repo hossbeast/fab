@@ -158,7 +158,7 @@ static int depblock_process(const depblock * const db, gn * const dscvgn, int * 
 // public
 //
 
-int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
+int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
 {
 	gn ** cache = 0;
 	int		cachel = 0;
@@ -207,7 +207,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 
 			// render the formula
 			fatal(map_set, (*ts)[x]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
-			fatal(fml_render, (*ts)[x], stax, staxa, staxp + 1, 1);
+			fatal(fml_render, (*ts)[x], gp, stax, staxa, staxp + 1, 1);
 			fatal(map_delete, (*ts)[x]->fmlv->bag, MMS("@"));
 		}
 
@@ -252,7 +252,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, lstack *** stax, int * staxa, 
 						{
 							if(dff->ffn->statements[k]->type == FFN_DEPENDENCY)
 							{
-								fatal(dep_process, dff->ffn->statements[k], 0, vmap, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
+								fatal(dep_process, dff->ffn->statements[k], 0, vmap, gp, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
 							}
 						}
 					}

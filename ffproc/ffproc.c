@@ -64,14 +64,14 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 
 		if(stmt->type == FFN_DEPENDENCY)
 		{
-			fatal(dep_process, stmt, sstk, vmap, stax, staxa, (*staxp), first, 0, 0, 0);
+			fatal(dep_process, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp), first, 0, 0, 0);
 
 			if(first && *first)
 				first = 0;
 		}
 		else if(stmt->type == FFN_FORMULA)
 		{
-			fatal(fml_attach, stmt, sstk, vmap, stax, staxa, (*staxp));
+			fatal(fml_attach, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp));
 		}
 		else if(stmt->type == FFN_VARASSIGN)
 		{

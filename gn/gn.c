@@ -401,7 +401,7 @@ int gn_edge_add(
 	finally : coda;
 }
 
-int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
+int gn_depth_traversal_nodes_needsward_useweak(gn * gn, int (*logic)(struct gn *, int d));
 {
 	gn * stack[64] = {};
 	int num = 0;
@@ -464,7 +464,7 @@ int gn_depth_traversal_nodes_needsward(gn * r, int (*logic)(gn*, int))
 	return 1;
 }
 
-int gn_depth_traversal_nodes_feedsward(gn * r, int (*logic)(gn*, int))
+int gn_depth_traversal_nodes_feedsward_useweak(gn * r, int (*logic)(gn*, int))
 {
 	gn * stack[64] = {};
 	int num = 0;

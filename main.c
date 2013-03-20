@@ -146,7 +146,7 @@ int main(int argc, char** argv)
 		{
 			gn ** gnl = alloca(sizeof(*gnl) * gn_nodes.l);
 			memcpy(gnl, gn_nodes.e, sizeof(*gnl) * gn_nodes.l);
-			fatal(dsc_exec, gnl, gn_nodes.l, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+			fatal(dsc_exec, gnl, gn_nodes.l, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
 		}
 
 		// dump graph nodes, pending logging
@@ -215,7 +215,7 @@ int main(int argc, char** argv)
 				if(g_args.mode_exec == MODE_EXEC_DDSC)
 				{
 					// execute discovery
-					fatal(dsc_exec, list[0], listl[0], vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+					fatal(dsc_exec, list[0], listl[0], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
 				}
 				else if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN || g_args.mode_exec == MODE_EXEC_BAKE)
 				{
@@ -234,7 +234,7 @@ int main(int argc, char** argv)
 							fatal(bp_flatten, bp, &list[1], &listl[1], &lista[1]);
 
 							// execute discovery
-							fatal(dsc_exec, list[1], listl[1], vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, &new);
+							fatal(dsc_exec, list[1], listl[1], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, &new);
 						}
 					}
 
@@ -245,7 +245,7 @@ int main(int argc, char** argv)
 							bp_dump(bp);
 						
 						// create bakescript
-						fatal(bake_bp, bp, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw, g_args.bakescript_path);
+						fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, g_args.bakescript_path);
 					}
 					if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN)
 					{
@@ -269,7 +269,7 @@ int main(int argc, char** argv)
 							else
 							{
 								// execute the build plan, one stage at a time
-								qfatal(bp_exec, bp, vmap, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+								qfatal(bp_exec, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
 
 								// commit regular fabfile hashblocks
 								for(x = 0; x < ff_files.l; x++)

@@ -7,15 +7,12 @@
 
 #include "ff.h"
 #include "ffn.h"
+#include "interpolate.h"
 
 #include "map.h"
 #include "pstring.h"
 
 #define restrict __restrict
-
-#define INTERPOLATE_ADJOIN			0x01	/* consecutive items are not separated */
-#define INTERPOLATE_DELIM_WS		0x02	/* consecutive items are separated by a single space */
-#define INTERPOLATE_DELIM_CUST	0x03	/* consecutive items are separated by a delimiting string */
 
 /*
 ** you "resolve" an FFN_LIST node to an lstack*

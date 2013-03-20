@@ -1,6 +1,7 @@
 #include <listwise.h>
 #include <listwise/object.h>
 #include <listwise/lstack.h>
+#include <listwise/generator.h>
 
 // in liblistwise.so
 extern int lstack_exec_internal(generator* g, char** init, int* initls, int initl, lstack** ls, int dump);
@@ -95,8 +96,51 @@ static int flatten(lstack * lso)
 	finally : coda;
 }
 
+static int render(lstack * const ls, pstring ** const ps)
+{
+	char * dm = " ";
+	if(ls->flags == INTERPOLATE_ADJOIN)
+		dm = "";
+	else if(ls->flags == INTERPOLATE_DELIM_CUST)
+		dm = ls->ptr;
+
+	int k = 0;
+	int x;
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		if(k++)
+		{
+			fatal(pscatf, ps, "%s", dm);
+		}
+
+		if(ls->s[0].s[x].type == LISTWISE_TYPE_LIST)
+		{
+			fatal(render, *(void**)ls->s[0].s[x].s, ps);
+		}
+		else if(ls->s[0].s[x].type == LISTWISE_TYPE_GNLW)
+		{
+			gn * A = *(void**)ls->s[0].s[x].s;
+			fatal(pscatf, ps, "%.*s", A->path->rell, A->path->rel);
+		}
+		else
+		{
+			char * s;
+			int l;
+			fatal(lstack_string, ls, 0, x, &s, &l);
+			fatal(pscat, ps, s, l);
+		}
+	}
+	LSTACK_ITEREND;
+
+	finally : coda;
+}
+
 static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstack *** stax, int * staxa, int * staxp, int raw)
 {
+	generator * g = 0;
+	pstring * gps = 0;
+
 	// resolved lstack goes here
 	int pn = (*staxp)++;
 
@@ -150,68 +194,51 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstac
 	else if(list->flags & FFN_COMMASEP)
 		(*stax)[pn]->flags = INTERPOLATE_DELIM_WS;
 
-	if(list->generator_node)
+	if(list->generator_node || list->generator_list_node)
 	{
 		// flatten first
 		fatal(flatten, (*stax)[pn]);
 
+		generator * gen = 0;
+		char * tex = 0;
+
 		if(list->generator_node)
 		{
-			// pass through listwise
-			log(L_LWDEBUG, "%s", list->generator_node->text);
-			fatal(lstack_exec_internal, list->generator_node->generator, 0, 0, 0, &(*stax)[pn], log_would(L_LWDEBUG));
+			gen = list->generator_node->generator;
+			tex = list->generator_node->text;
 		}
 		else if(list->generator_list_node)
 		{
-			
+			int pr = (*staxp);
+			fatal(ensure, stax, staxa, pr);
+			lstack_reset((*stax)[pr]);
+			fatal(list_resolve, list->generator_list_node, vmap, gp, stax, staxa, staxp, raw);
+
+			pstring_xfree(&gps);
+			fatal(render, (*stax)[pr], &gps);
+			tex = gps->s;
+
+			generator_xfree(&g);
+			if(generator_parse(gp, gps->s, gps->l, &g) == 0)
+			{
+				fail("failed to parse '%.*s'", gps->l, gps->s);
+			}
+			gen = g;
 		}
+
+		// pass through listwise
+		log(L_LWDEBUG, "%s", tex);
+		fatal(lstack_exec_internal, gen, 0, 0, 0, &(*stax)[pn], log_would(L_LWDEBUG));
 	}
 	else
 	{
 		(*stax)[pn]->sel.all = 1;
 	}
 
-	finally : coda;
-}
-
-static int render(lstack * const ls, pstring ** const ps)
-{
-	char * dm = " ";
-	if(ls->flags == INTERPOLATE_ADJOIN)
-		dm = "";
-	else if(ls->flags == INTERPOLATE_DELIM_CUST)
-		dm = ls->ptr;
-
-	int k = 0;
-	int x;
-	LSTACK_ITERATE(ls, x, go)
-	if(go)
-	{
-		if(k++)
-		{
-			fatal(pscatf, ps, "%s", dm);
-		}
-
-		if(ls->s[0].s[x].type == LISTWISE_TYPE_LIST)
-		{
-			fatal(render, *(void**)ls->s[0].s[x].s, ps);
-		}
-		else if(ls->s[0].s[x].type == LISTWISE_TYPE_GNLW)
-		{
-			gn * A = *(void**)ls->s[0].s[x].s;
-			fatal(pscatf, ps, "%.*s", A->path->rell, A->path->rel);
-		}
-		else
-		{
-			char * s;
-			int l;
-			fatal(lstack_string, ls, 0, x, &s, &l);
-			fatal(pscat, ps, s, l);
-		}
-	}
-	LSTACK_ITEREND;
-
-	finally : coda;
+finally:
+	generator_free(g);
+	pstring_free(gps);
+coda;
 }
 
 ///

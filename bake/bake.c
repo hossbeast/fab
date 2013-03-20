@@ -24,6 +24,7 @@
 int bake_bp(
 	  const bp * const bp
 	, map * const vmap
+	, generator_parser * const gp
 	, lstack *** const stax
 	, int * const staxa
 	, int staxp
@@ -88,7 +89,7 @@ int bake_bp(
 
 			// render the formula
 			fatal(map_set, (*ts)[y]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
-			fatal(fml_render, (*ts)[y], stax, staxa, staxp + 1, 0);
+			fatal(fml_render, (*ts)[y], gp, stax, staxa, staxp + 1, 0);
 			fatal(map_delete, (*ts)[y]->fmlv->bag, MMS("@"));
 
 			// index occupied by this formula in the stage.stage in which this formula is executed

@@ -4,6 +4,7 @@
 /* fml - formula for executing an external process */
 
 #include <listwise.h>
+#include <listwise/generator.h>
 
 #include "ffn.h"
 #include "ts.h"
@@ -58,7 +59,7 @@ extern union g_fmls_t
 // SUMMARY
 //  attach a formula to graph nodes
 //
-int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, lstack *** const restrict stax, int * const restrict staxa, int staxp)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp)
 	__attribute__((nonnull));
 
 /// fml_render
@@ -66,7 +67,7 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 // SUMMARY
 //  ts->fmlv has been set; render the cmd for that evaluation to ts->cmd_txt
 //
-int fml_render(ts * const restrict ts, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
+int fml_render(ts * const restrict ts, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
 	__attribute__((nonnull));
 
 /// fml_exec

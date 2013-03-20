@@ -55,11 +55,11 @@ $cfabpaths = [
 # discovery
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG [ $@ ] | gcc-dep [ [ $@ ~ rx/fn ] . $ext ~ j ] [ $ext ]
+	[ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG [ $@ ] | gcc-dep [ $@ ~ [ rx/xs/< $ext >/fx ~ j ] ] [ $ext ]
 }
 
 # fabrication and dependency
-[ $cfabpaths ~ xs/<o>/y/dj/shift ] :: [ $< ~ rx/xs/<c> ]
+[ $cfabpaths ~ [ xs/< $ext >/y/dj/shift ~ j ] ] :: [ $< ~ rx/xsf/<c> ]
 {
 	[ $cc ] [ $cflags ~ ss/u/fx ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
 }
