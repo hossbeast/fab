@@ -4,8 +4,9 @@
 // public
 //
 
-uint32_t cksum(const char* s, size_t l)
+uint32_t cksum(const void * v, size_t l)
 {
+	const char * s = v;
 	uint32_t h = 0;
 
 	int x;
