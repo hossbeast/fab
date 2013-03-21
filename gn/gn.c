@@ -661,7 +661,7 @@ void gn_dump(gn * gn)
 				{
 					int x;
 					for(x = 0; x < gn->fabv->productsl; x++)
-						log(L_DG | L_DGRAPH, "%12s --> %s", "", gn->fabv->products[x]->path);
+						log(L_DG | L_DGRAPH, "%12s --> %s", "", gn->fabv->products[x]->idstring);
 				}
 			}
 			else

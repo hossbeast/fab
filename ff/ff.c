@@ -10,6 +10,7 @@
 #include "ff.h"
 #include "ff.parse.h"
 #include "ff/ff.tab.h"
+#include "ff/ff.dsc.tab.h"
 #include "ff/ff.lex.h"
 #include "ff/ff.tokens.h"
 

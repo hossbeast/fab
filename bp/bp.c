@@ -62,6 +62,7 @@ static int heights(gn * r)
 	{
 		if(gn->height == -1)
 		{
+/*
 			int x;
 			for(x = 0; x < gn->needs.l; x++)
 			{
@@ -70,6 +71,8 @@ static int heights(gn * r)
 			}
 
 			gn->height++;
+*/
+			gn->height = d;
 		}
 
 		return 1;

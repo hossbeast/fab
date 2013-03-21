@@ -15,9 +15,9 @@ $name						= [ fab ]
 $fab						= [ $dfab/$name ~ j ]
 
 # standard files - standard compilation
-+[@std.c]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; -$cfabpaths; $cc $cflags)
-+[@std.l]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; -$lfabpaths; $cc $cflags $flex $flexflags)
-+[@std.y]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
++[@std.c]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $paths = [ $dfab/main.c ~ j ]; $cc $cflags)
++[@std.l]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $flex $flexflags)
++[@std.y]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 
 # standard files - fPIC compilation
 +[@std.c.ext]($rdirs = $dfab; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
@@ -36,9 +36,9 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 # the executable
 #
-[ $fab ] : [ $cfabpaths ~ xs/<o> ]
+[ $fab ] : [ $dfab/main.o ~ j ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneed/xm/<o>/ss/u/fx ] [ $lflags ]
+	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [ $lflags ]
 }
 
 #
@@ -46,12 +46,14 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 [ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
-	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneed/xm/<o>/ss/u/fx ] [
+	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [
 	] -llistwise -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
 }
 # ~ rx/bn/fn ] .so ]
 
-# generated
+# generated files
++[@std.c]($fabpaths = [ $dfab/ff/ff.tokens.c ~ j ]; $cc $cflags)
+
 [ [ $dfab/ff/ff.tokens.c ~ j ] [ $dfab/ff/ff.tokens.h ~ j ] ] :: [ $dfab/ff/ff.tab.c ~ j ]
 {
 	exec 1>[ $dfab/ff/ff.tokens.h ]
@@ -134,6 +136,9 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 
 [ @clean ] : [ @common.clean ]
 {
-	rm -f [ $dfab/*.o ]		2>/dev/null
+	find [ $dfab ] -name *.o -delete 2>/dev/null
+	find [ $dfab ] -name *.lex.* -delete 2>/dev/null
+	find [ $dfab ] -name *.tab.* -delete 2>/dev/null
+	find [ $dfab ] -name *.tokens.* -delete 2>/dev/null
 	rm -f [ $fab ]				2>/dev/null
 }

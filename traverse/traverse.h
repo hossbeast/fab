@@ -3,6 +3,9 @@
 
 #define restrict __restrict
 
+int traverse_init();
+void traverse_teardown();
+
 struct gn;
 
 /// traverse_depth_bynodes_needsward_useweak

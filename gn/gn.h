@@ -193,6 +193,7 @@ typedef struct gn
 
 	// traversal tracking
 	int									guard;
+	int									travel;
 
 	// buildplan prune tracking
 	char								changed;

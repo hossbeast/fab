@@ -27,15 +27,11 @@ static int recurse_needs(gn * root, gn ** r, int * x, int useweak)
 	{
 		if(r)
 		{
-			// capture mode
-			int i;
-			for(i = 0; i < gn->needs.l; i++)
-				r[(*x)++] = gn->needs.e[i]->B;
+			r[(*x)++] = gn; // capture mode
 		}
 		else
 		{
-			// count mode
-			(*x) += gn->needs.l;
+			(*x)++;  // count mode
 		}
 
 		return 1;
@@ -53,15 +49,11 @@ static int recurse_feeds(gn * root, gn ** r, int * x, int useweak)
 	{
 		if(r)
 		{
-			// capture mode
-			int i;
-			for(i = 0; i < gn->feeds.l; i++)
-				r[(*x)++] = gn->feeds.e[i]->B;
+			r[(*x)++] = gn; // capture mode
 		}
 		else
 		{
-			// count mode
-			(*x) += gn->feeds.l;
+			(*x)++;  // count mode
 		}
 
 		return 1;
