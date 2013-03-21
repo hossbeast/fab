@@ -129,7 +129,8 @@ main.o  :	${COMMON}/coll.o				\
 					path/path.o							\
 					bake/bake.o							\
 					ffproc/ffproc.o					\
-					enclose/enclose.o
+					enclose/enclose.o				\
+					traverse/traverse.o
 
 ff/ff.o : ff/ff.tokens.h ff/ff.tab.o ff/ff.lex.o ff/ff.tokens.o ff/ff.dsc.tab.o
 

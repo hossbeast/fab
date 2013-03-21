@@ -1,8 +1,10 @@
 #include <stdlib.h>
 
+#include "gnlw.h"
+#include "traverse.h"
+
 #include "control.h"
 
-#include "gnlw.h"
 #include "xmem.h"
 
 static int lw_string(void * o, char* prop, char ** s, int * l);
@@ -19,7 +21,7 @@ listwise_object gnlw = {
 /// static
 ///
 
-static void recurse_needs(gn * root, gn ** r, int * x)
+static int recurse_needs(gn * root, gn ** r, int * x, int useweak)
 {
 	int logic(gn * gn, int d)
 	{
@@ -39,10 +41,13 @@ static void recurse_needs(gn * root, gn ** r, int * x)
 		return 1;
 	};
 
-	gn_depth_traversal_nodes_needsward(root, logic);
+	if(useweak)
+		return traverse_depth_bynodes_needsward_useweak(root, logic);
+	else
+		return traverse_depth_bynodes_needsward_noweak(root, logic);
 }
 
-static void recurse_feeds(gn * root, gn ** r, int * x)
+static int recurse_feeds(gn * root, gn ** r, int * x, int useweak)
 {
 	int logic(gn * gn, int d)
 	{
@@ -62,7 +67,10 @@ static void recurse_feeds(gn * root, gn ** r, int * x)
 		return 1;
 	};
 
-	gn_depth_traversal_nodes_feedsward(root, logic);
+	if(useweak)
+		return traverse_depth_bynodes_feedsward_useweak(root, logic);
+	else
+		return traverse_depth_bynodes_feedsward_noweak(root, logic);
 }
 
 ///
@@ -118,9 +126,8 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 
 /* collection-based property reflection */
 
-	else if(strcmp(prop, "ineed") == 0)
+	else if(strcmp(prop, "ineedw") == 0)
 	{
-//gn_dump((gn*)o);
 		*rl = ((gn*)o)->needs.l;
 		fatal(xmalloc, r, sizeof(gn*) * (*rl));
 		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
@@ -131,7 +138,32 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 			(*r)[x] = ((gn*)o)->needs.e[x]->B;
 		}
 	}
-	else if(strcmp(prop, "ifeed") == 0)
+	else if(strcmp(prop, "ineed") == 0)
+	{
+		(*rl) = 0;
+		for(x = 0; x < ((gn*)o)->needs.l; x++)
+		{
+			if(((gn*)o)->needs.e[x]->weak == 0)
+			{
+				(*rl)++;
+			}
+		}
+
+		fatal(xmalloc, r, sizeof(gn*) * (*rl));
+		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
+
+		int i = 0;
+		for(x = 0; x < ((gn*)o)->needs.l; x++)
+		{
+			if(((gn*)o)->needs.e[x]->weak == 0)
+			{
+				(*rtypes)[i] = LISTWISE_TYPE_GNLW;
+				(*r)[i] = ((gn*)o)->needs.e[x]->B;
+				i++;
+			}
+		}
+	}
+	else if(strcmp(prop, "ifeedw") == 0)
 	{
 		*rl = ((gn*)o)->feeds.l;
 		fatal(xmalloc, r, sizeof(gn*) * (*rl));
@@ -140,13 +172,52 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		for(x = 0; x < (*rl); x++)
 		{
 			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
-			(*r)[x] = ((gn*)o)->feeds.e[x]->A;
+			(*r)[x] = ((gn*)o)->feeds.e[x]->B;
 		}
+	}
+	else if(strcmp(prop, "ifeed") == 0)
+	{
+		(*rl) = 0;
+		for(x = 0; x < ((gn*)o)->feeds.l; x++)
+		{
+			if(((gn*)o)->feeds.e[x]->weak == 0)
+			{
+				(*rl)++;
+			}
+		}
+
+		fatal(xmalloc, r, sizeof(gn*) * (*rl));
+		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
+
+		int i = 0;
+		for(x = 0; x < ((gn*)o)->feeds.l; x++)
+		{
+			if(((gn*)o)->feeds.e[x]->weak == 0)
+			{
+				(*rtypes)[i] = LISTWISE_TYPE_GNLW;
+				(*r)[i] = ((gn*)o)->feeds.e[x]->B;
+				i++;
+			}
+		}
+	}
+	else if(strcmp(prop, "aneedw") == 0)
+	{
+		*rl = 0;
+		fatal(recurse_needs, o, 0, rl, 1);
+
+		fatal(xmalloc, r, sizeof(gn*) * (*rl));
+		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
+
+		for(x = 0; x < (*rl); x++)
+			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
+
+		x = 0;
+		fatal(recurse_needs, o, (gn**)(*r), &x, 1);
 	}
 	else if(strcmp(prop, "aneed") == 0)
 	{
 		*rl = 0;
-		recurse_needs(o, 0, rl);
+		fatal(recurse_needs, o, 0, rl, 0);
 
 		fatal(xmalloc, r, sizeof(gn*) * (*rl));
 		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
@@ -155,12 +226,26 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
 
 		x = 0;
-		recurse_needs(o, (gn**)(*r), &x);
+		fatal(recurse_needs, o, (gn**)(*r), &x, 0);
+	}
+	else if(strcmp(prop, "afeedw") == 0)
+	{
+		*rl = 0;
+		fatal(recurse_feeds, o, 0, rl, 1);
+
+		fatal(xmalloc, r, sizeof(gn*) * (*rl));
+		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
+
+		for(x = 0; x < (*rl); x++)
+			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
+
+		x = 0;
+		fatal(recurse_feeds, o, (gn**)(*r), &x, 1);
 	}
 	else if(strcmp(prop, "afeed") == 0)
 	{
 		*rl = 0;
-		recurse_feeds(o, 0, rl);
+		fatal(recurse_feeds, o, 0, rl, 0);
 
 		fatal(xmalloc, r, sizeof(gn*) * (*rl));
 		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
@@ -169,7 +254,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
 
 		x = 0;
-		recurse_feeds(o, (gn**)(*r), &x);
+		fatal(recurse_feeds, o, (gn**)(*r), &x, 0);
 	}
 
 	finally : coda;
@@ -179,6 +264,6 @@ void lw_destroy(void * o)
 {
 	/*
 	** do nothing ; listwise gets copies of pointers to gn objects
-  ** and I free them all at the end
+  ** and I free them all at shutdown
 	*/
 }

@@ -10,6 +10,7 @@
 #include "gnlw.h"
 #include "args.h"
 #include "var.h"
+#include "traverse.h"
 
 #include "log.h"
 #include "control.h"
@@ -52,7 +53,7 @@ static int reset(gn * r)
 		return 1;
 	};
 
-	return gn_depth_traversal_nodes_needsward(r, logic);
+	return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
 static int heights(gn * r)
@@ -74,7 +75,7 @@ static int heights(gn * r)
 		return 1;
 	};
 
-	return gn_depth_traversal_nodes_needsward(r, logic);
+	return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
 static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
@@ -87,7 +88,8 @@ static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
 			{
 				if((*l) == (*a))
 				{
-					int ns = (*a) ? (*a) * 2 + (*a) / 2 : 10;
+					int ns = (*a) ?: 10;
+					ns = ns * 2 + ns / 2;
 					fatal(xrealloc, lvs, sizeof(**lvs), ns, *a);
 					(*a) = ns;
 				}
@@ -99,7 +101,7 @@ static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
 		finally : coda;
 	};
 
-	return gn_depth_traversal_nodes_needsward(r, logic);
+	return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
 //

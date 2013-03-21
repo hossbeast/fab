@@ -47,15 +47,9 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 [ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
 	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneed/xm/<o>/ss/u/fx ] [
-	] -llistwise -shared [ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
+	] -llistwise -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
 }
-
-/*
-[ $oplist ~ xs/<pic.o>/y/dj/shift ] :: [ $< ~ rx/xsf/<c> ]
-{
-	[ $cc ] [ $cflags -fPIC ~ ss/u/fx ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
-}
-*/
+# ~ rx/bn/fn ] .so ]
 
 # generated
 [ [ $dfab/ff/ff.tokens.c ~ j ] [ $dfab/ff/ff.tokens.h ~ j ] ] :: [ $dfab/ff/ff.tab.c ~ j ]

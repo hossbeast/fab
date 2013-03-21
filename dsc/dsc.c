@@ -14,6 +14,7 @@
 #include "ts.h"
 #include "dep.h"
 #include "list.h"
+#include "traverse.h"
 
 #include "log.h"
 #include "control.h"
@@ -45,7 +46,7 @@ static int count_dscv(gn * r, int * c)
 		return 1;
 	};
 
-	return gn_depth_traversal_nodes_needsward(r, logic);
+	return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
 static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
@@ -85,7 +86,7 @@ static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
 		finally : coda;
 	};
 
-	return gn_depth_traversal_nodes_needsward(r, logic);
+	return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
 static int depblock_process(const depblock * const db, gn * const dscvgn, int * const newnp, int * const newrp)

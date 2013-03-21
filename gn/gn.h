@@ -158,7 +158,7 @@ typedef struct gn
 	struct fmleval *		fabv;
 
 	// this node depends on the nodes in this list
-	union {
+	union relations {
 		coll_doubly c;
 
 		struct
@@ -352,78 +352,6 @@ int gn_primary_reload_dscv(gn * const restrict)
 //
 int gn_primary_rewrite_dscv(gn * const restrict)
 	__attribute__((nonnull));
-
-/// gn_depth_traversal_bynodes_needsward_useweak
-//
-// SUMMARY
-//  traverse the graph starting at gn, detecting cycles
-//   - depth first
-//   - needs-wise
-//   - include weak dependencies
-//  apply logic at each node along the way
-//
-// LOGIC
-//  returns 0 to stop the traversal with failure
-//
-// RETURNS
-//  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
-//  returns 1 on success
-//
-int gn_depth_traversal_nodes_needsward_useweak(gn * gn, int (*logic)(struct gn *, int d));
-
-/// gn_depth_traversal_bynodes_needsward_noweak
-//
-// SUMMARY
-//  traverse the graph starting at gn, detecting cycles
-//   - depth first
-//   - needs-wise
-//   - ignore weak dependencies
-//  apply logic at each node along the way
-//
-// LOGIC
-//  returns 0 to stop the traversal with failure
-//
-// RETURNS
-//  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
-//  returns 1 on success
-//
-int gn_depth_traversal_nodes_needsward_noweak(gn * gn, int (*logic)(struct gn *, int d));
-
-/// gn_depth_traversal_bynodes_feedsward_useweak
-//
-// SUMMARY
-//  traverse the graph starting at gn, detecting cycles
-//   - depth first
-//   - feeds-wise
-//   - include weak dependencies
-//  apply logic at each node along the way
-//
-// LOGIC
-//  returns 0 to stop the traversal with failure
-//
-// RETURNS
-//  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
-//  returns 1 on success
-//
-int gn_depth_traversal_nodes_feedsward_useweak(gn * gn, int (*logic)(struct gn *, int d));
-
-/// gn_depth_traversal_bynodes_feedsward_noweak
-//
-// SUMMARY
-//  traverse the graph starting at gn, detecting cycles
-//   - depth first
-//   - feeds-wise
-//   - ignore weak dependencies
-//  apply logic at each node along the way
-//
-// LOGIC
-//  returns 0 to stop the traversal with failure
-//
-// RETURNS
-//  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
-//  returns 1 on success
-//
-int gn_depth_traversal_nodes_feedsward_noweak(gn * gn, int (*logic)(struct gn *, int d));
 
 /// gn_designate
 //
