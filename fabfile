@@ -4,7 +4,8 @@ $dliblistwise	= [ $* ]
 
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
-$lib		= [ liblistwise.so ]		# name of the library
+$libname = [ liblistwise.so ]
+$lib     = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
 
 +[ $dcommon/vars.fab ]
 +[ $dcommon ]($cc; -$cflags) @common
@@ -12,7 +13,6 @@ $lib		= [ liblistwise.so ]		# name of the library
 ##
 ## variables
 ##
-#$lib		= [ liblistwise.so ]		# name of the library
 $cflags	= [ $cflags, [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
 $lflags	= [ -lpcre, -ldl, $solflags ]
 
@@ -32,7 +32,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 [ @all ] : [ $lib $oplist ]
 
 # library depends on .o for each c, l, and y
-[ $lib ] : [ $cfabpaths ~ xs/<c>/<o>/y/m/</op/>/v ]
+[ $lib ] : [ [ $cfabpaths ~ xs/<c>/<o>/y/m/</op/>/v ] [ $dliblistwise/op/op.o ~ j ] ]
 [ $lib ] : [ $lfabpaths ~ xs/<l>/<lex.o>/y ]
 [ $lib ] : [ $yfabpaths ~ xs/<y>/<tab.o>/y ]
 
@@ -43,7 +43,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 # link the library
 [ $lib ] : [ exports ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneed/xm/<o>/ss/u/fx ] [ $lflags ]
+	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneedw/xm/<o>/ss/u/fx ] [ $lflags ]
 }
 
 # library exports
@@ -60,7 +60,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 [ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<o> ]
 {
 	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]			\
-	[ $@ ~ rx/aneed/xm/<o>/ss/u/fx ]						\
+	[ $@ ~ rx/aneedw/xm/<o>/ss/u/fx ]						\
 	[ -L$dliblistwise ] -llistwise -shared			\
 	[ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
 }
@@ -72,8 +72,8 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 [ @install ] : [ @all ]
 {
 	install -d																				[ $destdir/$libdir ]
-	install	[ $dliblistwise/$lib ]										[ $destdir/$libdir/$lib.0.1 ]
-	ln -vfs [ $lib.0.1 ] 															[ $destdir/$libdir/$lib ]
+	install	[ $lib ]																	[ $destdir/$libdir/$libname.0.1 ]
+	ln -vfs [ $libname.0.1 ]													[ $destdir/$libdir/$libname ]
 	install -d																				[ $destdir/$incdir ]
 	install -d																				[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise.h	]							[ $destdir/$incdir/listwise.h ]
@@ -91,8 +91,8 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 
 [ @uninstall ]
 {
-	rm -f																							[ $destdir/$libdir/$lib.0.1 ]
-	rm -f																							[ $destdir/$libdir/$lib ]
+	rm -f																							[ $destdir/$libdir/$libname.0.1 ]
+	rm -f																							[ $destdir/$libdir/$libname ]
 	rm -rf																						[ $destdir/$dlibdir/listwise ]
 	rm -f																							[ $destdir/$incdir/listwise.h ]
 }
