@@ -9,6 +9,7 @@
 
 #include "fml.h"
 #include "args.h"
+#include "identity.h"
 
 #include "log.h"
 #include "control.h"
@@ -387,6 +388,8 @@ int gn_secondary_reload(gn * const gn)
 
 int gn_secondary_rewrite_fab(gn * const gn)
 {
+	fatal(identity_assume_fabsys);
+
 	fatal(mkdirp, gn->noforce_dir, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	int fd;
@@ -396,6 +399,8 @@ int gn_secondary_rewrite_fab(gn * const gn)
 	struct timespec times[2] = { { .tv_nsec = UTIME_NOW } , { .tv_nsec = UTIME_NOW } };
 
 	fatal_os(futimens, fd, times);
+
+	fatal(identity_assume_user);
 
 	finally : coda;
 }

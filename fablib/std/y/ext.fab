@@ -1,7 +1,7 @@
-# y.fab
+# @std.y.ext
 #  provides discovery formula for .y files
-#  provides fabrication formula for .tab.c -> .tab.o
-#  provides dependencies for tab.o -> .y
+#  provides fabrication formula for .tab.c -> .tab.<ext>
+#  provides dependencies for tab.<ext> -> .y
 
 # var/closure
 #  cc
@@ -59,14 +59,14 @@ $yfabpaths = [
 {
 	    [ $bison ] [ $bisonflags ~ ss/u/fx ] -o /dev/stdout [ $@ ] [
 	] | [ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG -xc - [
-	] | gcc-dep [ $@ ~ rx/xs/<y>/tab.o/fx ]
+	] | gcc-dep [ $@ ~ [ rx/xs/<tab. $ext >/fx ~j ] ] [ $ext ]
 }
 
 # $bison : y -> { tab.c, tab.h }
-[ $yfabpaths ~ xs/<y>/tab.c/y/v/d/cp/u/xs/tab.c/tab.h/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xsf/<y>/ss/u ]
+[ $yfabpaths ~ xs/<y>/<tab.c>/y/v/d/cp/u/xs/<tab.c>/<tab.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<tab.c>/<y>/xs/<tab.h>/<y>/ss/u ]
 {
 	[ $bison ] [ $bisonflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ] -d	[ $@ ~ rx/ineed/xm/<y>/ss/u ]
 }
 
 # $cc : tab.c -> tab.o via std.c
-+[@std.c]($cfabpaths = [ $yfabpaths ~ xs/<y>/<tab.c> ]; $cc $cflags; $cdscpaths)
++[@std.c.ext]($cfabpaths = [ $yfabpaths ~ xs/<y>/<tab.c> ]; $cc $cflags; $cdscpaths)

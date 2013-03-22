@@ -1,7 +1,7 @@
-# l.fab
+# @std.l.ext
 #  provides discovery formula for .l files
-#  provides fabrication formula for .lex.c -> .lex.o
-#  provides dependencies for lex.o -> .l
+#  provides fabrication formula for .lex.c -> .lex.<ext>
+#  provides dependencies for lex.<ext> -> .l
 
 # var/closure
 #  cc
@@ -59,11 +59,11 @@ $lfabpaths = [
 {
 		  [ $flex ] [ $flexflags ~ ss/u/fx ] -t [ $@ ] [
 	] | [ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG -xc - [
-	] | gcc-dep [ $@ ~ rx/xs/<l>/lex.o/fx ]
+	] | gcc-dep [ $@ ~ [ rx/xs/<lex. $ext >/fx ~ j ] ] [ $ext ]
 }
 
 # $flex : l -> { lex.c, lex.h }
-[ $lfabpaths ~ xs/<l>/lex.c/y/v/d/cp/u/xs/lex.c/lex.h/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xsf/<l>/ss/u ]
+[ $lfabpaths ~ xs/<l>/<lex.c>/y/v/d/cp/u/xs/<lex.c>/<lex.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<lex.c>/<l>/xs/<lex.h>/<l>/ss/u ]
 {
 	  [ $flex ] [ $flexflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ] [
 	] [ --header-file= [ $@ ~ h/0/1 ] ] [
@@ -71,4 +71,4 @@ $lfabpaths = [
 }
 
 # $cc : lex.c -> lex.o via std.c
-+[@std.c]($cfabpaths = [ $lfabpaths ~ xs/<l>/<lex.c> ]; $cc $cflags; $cdscpaths)
++[@std.c.ext]($cfabpaths = [ $lfabpaths ~ xs/<l>/<lex.c> ]; $cc $cflags; $cdscpaths)

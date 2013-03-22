@@ -36,7 +36,7 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 # the executable
 #
-[ $fab ] : [ $dfab/main.o ~ j ]
+[ $fab ] : [ [ $dfab/main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
 {
 	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [ $lflags ]
 }
@@ -134,11 +134,25 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	rm -rf																	[ $destdir/usr/lib/fab ]
 }
 
-[ @clean ] : [ @common.clean ]
+[ @clean ] :* [ @common.clean ]
 {
 	find [ $dfab ] -name *.o -delete 2>/dev/null
 	find [ $dfab ] -name *.lex.* -delete 2>/dev/null
 	find [ $dfab ] -name *.tab.* -delete 2>/dev/null
 	find [ $dfab ] -name *.tokens.* -delete 2>/dev/null
 	rm -f [ $fab ]				2>/dev/null
+}
+
+[ $dfab/fab.tgz ~ j ] : [ $fab $oplist ]
+{
+	tar -C / -czvf [ $@ ] [
+		usr/lib/fab
+		usr/lib/listwise
+		usr/lib64/liblistwise.so
+		usr/lib64/liblistwise.so.0.1
+		usr/local/bin/lw
+		usr/local/bin/listwise
+		usr/local/bin/fab
+		usr/local/bin/gcc-dep ~ fx
+	]
 }

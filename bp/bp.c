@@ -60,20 +60,16 @@ static int heights(gn * r)
 {
 	int logic(gn * gn, int d)
 	{
-		if(gn->height == -1)
+		int x;
+		for(x = 0; x < gn->needs.l; x++)
 		{
-/*
-			int x;
-			for(x = 0; x < gn->needs.l; x++)
-			{
-				if(!gn->needs.e[x]->weak)
-					gn->height = MAX(gn->height, gn->needs.e[x]->B->height);
-			}
-
-			gn->height++;
-*/
-			gn->height = d;
+			if(gn->needs.e[x]->weak)
+				gn->height = MAX(gn->height, gn->needs.e[x]->B->height - 1);
+			else
+				gn->height = MAX(gn->height, gn->needs.e[x]->B->height);
 		}
+
+		gn->height++;
 
 		return 1;
 	};
