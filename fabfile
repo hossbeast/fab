@@ -6,6 +6,7 @@ $cflags = [ $cflags [ -I $dcommon ~ j ] ]
 
 # c files
 +[@std.c]($dirs = $dcommon; -$cfabpaths; $cc $cflags)
++[@std.c.ext]($dirs = $dcommon; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 #
 # compile all o files
