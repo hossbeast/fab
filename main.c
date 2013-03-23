@@ -131,6 +131,9 @@ int main(int argc, char** argv)
 	// parse, starting with the initial fabfile, construct the graph
 	fatal(ffproc, ffp, g_args.init_fabfile_path, sstk, vmap, &stax, &staxa, &staxp, &first, 0);
 
+	// apply invalidations, update designations
+	fatal(gn_invalidations);
+
 	// process hashblocks for regular fabfiles which have changed
 	for(x = 0; x < ff_files.l; x++)
 	{
@@ -149,14 +152,18 @@ int main(int argc, char** argv)
 		gn ** gnl = alloca(sizeof(*gnl) * gn_nodes.l);
 		memcpy(gnl, gn_nodes.e, sizeof(*gnl) * gn_nodes.l);
 		fatal(dsc_exec, gnl, gn_nodes.l, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+
+		// process source file changes
+		for(x = 0; x < gn_nodes.l; x++)
+		{
+			if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
+				fatal(gn_primary_rewrite, gn_nodes.e[x]);
+		}
 	}
 
 	// dump graph nodes, pending logging
 	if(g_args.mode_exec == MODE_EXEC_DUMP)
 	{
-		// process invalidations, update designations
-		fatal(gn_invalidations);
-
 		for(x = 0; x < g_args.dumpnodesl; x++)
 		{
 			int ll = listl[0];
@@ -171,11 +178,6 @@ int main(int argc, char** argv)
 		int i;
 		for(i = 0; i < listl[0]; i++)
 		{
-			if(list[0][i]->designation == GN_DESIGNATION_PRIMARY)
-				gn_primary_reload(list[0][i]);
-			if(list[0][i]->designation == GN_DESIGNATION_SECONDARY)
-				gn_secondary_reload(list[0][i]);
-
 			gn_dump(list[0][i]);
 		}
 	}
@@ -216,8 +218,18 @@ int main(int argc, char** argv)
 		{
 			if(g_args.mode_exec == MODE_EXEC_DDSC)
 			{
-				// execute discovery
-				fatal(dsc_exec, list[0], listl[0], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+				if(g_args.mode_ddsc == MODE_DDSC_DEFERRED)
+				{
+					// execute discovery
+					fatal(dsc_exec, list[0], listl[0], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+
+					// process source file changes
+					for(x = 0; x < gn_nodes.l; x++)
+					{
+						if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
+							fatal(gn_primary_rewrite, gn_nodes.e[x]);
+					}
+				}
 			}
 			else if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN || g_args.mode_exec == MODE_EXEC_BAKE)
 			{
@@ -238,6 +250,13 @@ int main(int argc, char** argv)
 						// execute discovery
 						fatal(dsc_exec, list[1], listl[1], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, &new);
 					}
+				}
+
+				// process source file changes
+				for(x = 0; x < gn_nodes.l; x++)
+				{
+					if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
+						fatal(gn_primary_rewrite, gn_nodes.e[x]);
 				}
 
 				if(g_args.mode_exec == MODE_EXEC_BAKE)

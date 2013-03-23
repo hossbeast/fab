@@ -8,38 +8,33 @@
 #define FAB_VERSION		0x01
 
 /*
-** PER-SID : delete if no extant process in this session  (pertains to the last build in this session)
-** ------------
-** /var/cache/fab/sid/<sid>/gn/<gn-id-hash>/needs/strong/<link>
-** /var/cache/fab/sid/<sid>/gn/<gn-id-hash>/needs/weak/<link>
+** PER-GN : delete if newest file is older than <policy>  (pertains to a given gn)
+** -------------------------------------------------------------------------------------------------------------------------------
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/stat						stat hash			// rewritten after successfully
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/content					content hash	// processing a detected change to
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/vrs							version hash	// the underlying source file
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/dscv/block			cached ddisc
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/feeds/<gn-id>		link to 'gn/<gn-id>' for a SECONDARY gn
 **
-** PER-GN : delete if newest file is older than <policy>  (pertains to a given PRIMARY file)
-** ------------
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/fab/stat						stat hash			// -- updated after successful fabrication
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/fab/content					content hash
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/fab/vrs							version hash
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv/stat						stat hash			// -- updated after successful ddisc
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv/content				content hash
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv/vrs						version hash
-** /var/cache/fab/gn/PRIMARY/<gn-id-hash>/dscv/block					cached ddisc results
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/SECONDARY/fab/noforce_ff							// require fabrication of this secondary node due to ff change
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/SECONDARY/fab/noforce_gn							// require fabrication of this secondary node due to primary file change
 **
 ** PER-FF : delete if newest file is older than <policy>  (pertains to a given fabfile)
-** ------------
-** /var/cache/fab/ff/REGULAR/<ff-id-hash>/stat						stat hash
-** /var/cache/fab/ff/REGULAR/<ff-id-hash>/content					content hash
-** /var/cache/fab/ff/REGULAR/<ff-id-hash>/vrs							version hash
+** -------------------------------------------------------------------------------------------------------------------------------
+** /var/cache/fab/INIT/<ff-id>/ff/<ff-id>/REGULAR/stat						     	stat hash			// rewritten after successfully
+** /var/cache/fab/INIT/<ff-id>/ff/<ff-id>/REGULAR/content					    	content hash	// processing a detected change to
+** /var/cache/fab/INIT/<ff-id>/ff/<ff-id>/REGULAR/vrs							    	version hash	// the regular fabfile
+** /var/cache/fab/INIT/<ff-id>/ff/<ff-id>/REGULAR/closure_gns/<gn-id>		link to 'gn/<gn-id>' for an enclosed gn
 **
 ** PER-PID : delete if pid is not presently executing     (pertains to a given fab process)
-** ------------
-** /var/tmp/fab/pid/<pid>/fml/<fml-id-hash>/cmd
-** /var/tmp/fab/pid/<pid>/fml/<fml-id-hash>/stdo
-** /var/tmp/fab/pid/<pid>/fml/<fml-id-hash>/stde
+** -------------------------------------------------------------------------------------------------------------------------------
+** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/cmd					cmd text
+** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stdo				stdout from cmd
+** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stde				stderr from cmd
 */
 
-#define SID_DIR_BASE							"/var/cache/fab/sid"
-#define GN_DIR_BASE								"/var/cache/fab/gn"
-#define FF_DIR_BASE								"/var/cache/fab/ff"
-#define PID_DIR_BASE							"/var/tmp/fab/pid"
+#define CACHEDIR_BASE							"/var/cache/fab"
+#define TMPDIR_BASE								"/var/tmp/fab"
 #define FABLW_DIRS								(char*[]){ "/usr/lib/fab/listwise" }
 
 #define DEFAULT_INIT_FABFILE 			"./fabfile"
@@ -53,9 +48,7 @@
 #define DEFAULT_BAKE_PATH					"./bakescript"
 #define DEFAULT_INVOKEDIR					"/usr/lib/fab/lib"
 
-#define EXPIRATION_POLICY					(60 * 60 * 24 * 7)
-
-/* modes */
+#define EXPIRATION_POLICY					(60 * 60 * 24 * 7)		/* 7 days */
 
 #define MODE_TABLE(x)																																							\
 /* execution modes */																																							\

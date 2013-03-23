@@ -337,11 +337,11 @@ int fml_exec(ts * const restrict ts, int num)
 	//  note : all but the last component of this dir were created in tmp_setup
 	//  note : the directory itself cannot already exist, because num is process-unique
 	//
-	fatal(psprintf, &ts->stdo_path, PID_DIR_BASE "/%d/fml/%d", g_args.pid, num);
+	fatal(psprintf, &ts->stdo_path, TMPDIR_BASE "/pid/%d/fml/%d", g_args.pid, num);
 	fatal(mkdirp, ts->stdo_path->s, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	// create tmp file for the cmd
-	fatal(psprintf, &ts->cmd_path, PID_DIR_BASE "/%d/fml/%d/cmd", g_args.pid, num);
+	fatal(psprintf, &ts->cmd_path, TMPDIR_BASE "/pid/%d/fml/%d/cmd", g_args.pid, num);
 	if((ts->cmd_fd = open(ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG)) == -1)
 		fail("open(%s)=[%d][%s]", ts->cmd_path->s, errno, strerror(errno));
 
@@ -352,12 +352,12 @@ int fml_exec(ts * const restrict ts, int num)
 	close(ts->cmd_fd);
 
 	// create tmp file to capture stdout, remain-through-exec
-	fatal(psprintf, &ts->stdo_path, PID_DIR_BASE "/%d/fml/%d/out", g_args.pid, num);
+	fatal(psprintf, &ts->stdo_path, TMPDIR_BASE "/pid/%d/fml/%d/out", g_args.pid, num);
 	if((ts->stdo_fd = open(ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
 		fail("open(%s)=[%d][%s]", ts->stdo_path->s, errno, strerror(errno));
 
 	// create tmp file to capture stderr, remain-through-exec
-	fatal(psprintf, &ts->stde_path, PID_DIR_BASE "/%d/fml/%d/err", g_args.pid, num);
+	fatal(psprintf, &ts->stde_path, TMPDIR_BASE "/pid/%d/fml/%d/err", g_args.pid, num);
 	if((ts->stde_fd = open(ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
 		fail("open(%s)=[%d][%s]", ts->stde_path->s, errno, strerror(errno));
 

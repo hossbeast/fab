@@ -107,6 +107,7 @@ main.o  :	${COMMON}/coll.o				\
 				  ${COMMON}/xstring.o			\
 					dirutil/dirutil.o				\
 					${COMMON}/cksum.o				\
+					${COMMON}/parseint.o		\
 					map/map.o								\
 					strstack/strstack.o			\
 				  ff/ff.o									\

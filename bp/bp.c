@@ -289,10 +289,7 @@ int bp_eval(bp * const bp, int * const poison)
 			// source files
 			gn * gn = bp->stages[x].primary[y];
 
-			// check if file has changed
-			fatal(gn_primary_reload, gn);
-
-			if(gn->hb_fab->stathash[1] == 0)		// file does not exist
+			if(gn->primary_hb->stathash[1] == 0)		// file does not exist
 			{
 				// PRIMARY file - not found
 				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
@@ -301,10 +298,6 @@ int bp_eval(bp * const bp, int * const poison)
 				(*poison) = 1;
 				for(i = 0; i < gn->feeds.l; i++)
 					gn->feeds.e[i]->A->poison = 1;
-			}
-			else if(hashblock_cmp(gn->hb_fab))
-			{
-				gn->changed = 1;
 			}
 
 			if(gn->changed || gn->invalid)
@@ -338,7 +331,13 @@ int bp_eval(bp * const bp, int * const poison)
 				// TASK, GENERATED, and SECONDARY nodes
 				gn * gn = bp->stages[x].evals[y]->products[k];
 
-				if(!gn->poison)
+				// propagate poison
+				if(gn->poison)
+				{
+					for(i = 0; i < gn->feeds.l; i++)
+						gn->feeds.e[i]->A->poison = 1;
+				}
+				else
 				{
 					if(gn->designation == GN_DESIGNATION_TASK)
 					{
@@ -355,17 +354,21 @@ int bp_eval(bp * const bp, int * const poison)
 						// SECONDARY file
 						fatal(gn_secondary_reload, gn);
 
-						if(gn->exists == 0)
+						if(gn->fab_exists == 0)
 						{
-							gn->rebuild = 1;	// file doesn't exist
+							gn->rebuild = 1;	// file doesnt exist
 						}
-						else if(gn->fab_noforce == 0)
+						else if(gn->fab_noforce_ff == 0)
 						{
-							gn->rebuild = 1;	// rebuild is forced
+							gn->rebuild = 1;	// rebuild is forced (ff change)
+						}
+						else if(gn->fab_noforce_gn == 0)
+						{
+							gn->rebuild = 1;	// rebuild is forced (source file change)
 						}
 						else if(gn->invalid)
 						{
-							gn->rebuild = 1;	// node invalidated
+							gn->rebuild = 1;	// node has been invalidated
 						}
 					}
 
@@ -381,13 +384,6 @@ int bp_eval(bp * const bp, int * const poison)
 
 						keep++;
 					}
-				}
-
-				// propagate the poison
-				if(gn->poison)
-				{
-					for(i = 0; i < gn->feeds.l; i++)
-						gn->feeds.e[i]->A->poison = 1;
 				}
 			}
 
@@ -438,10 +434,11 @@ int bp_eval(bp * const bp, int * const poison)
 								, gn_designate(gn)
 								, gn->idstring
 								, "REBUILD"
-								,   gn->invalid      ? "invalidated"
-								  : !gn->exists      ? "does not exist"
-									: gn->fab_noforce  ? "sources changed"
-									:                    "fabfile changed"
+								,   gn->invalid      		? "invalidated"
+								  : !gn->fab_exists  		? "does not exist"
+									: gn->fab_noforce_ff  ? "fabfile changed"
+									: gn->fab_noforce_gn	? "sources changed"	// not useful to distinguish between these two cases
+									:                    		"sources changed"
 							);
 						}
 						else
@@ -613,34 +610,9 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, i
 				int q;
 				for(q = 0; q < (*ts)[y]->fmlv->productsl; q++)
 				{
-					gn * prod = (*ts)[y]->fmlv->products[q];
-
-					prod->fab_success = 1;
-
-					// check each of my PRIMARY dependencies - if all nodes which it feeds
-					// have now been fabricated, we are done with it - update its hashfile
-
-					for(k = 0; k < prod->needs.l; k++)
-					{
-						gn * pri = prod->needs.e[k]->B;
-
-						if(pri->designation == GN_DESIGNATION_PRIMARY)
-						{
-							int j;
-							for(j = 0; j < pri->feeds.l; j++)
-							{
-								if(!pri->feeds.e[j]->A->fab_success)
-									break;
-							}
-
-							if(j == pri->feeds.l)
-								fatal(gn_primary_rewrite_fab, pri);
-						}
-					}
-
 					// secondary rewrite
-					if(prod->designation == GN_DESIGNATION_SECONDARY)
-						fatal(gn_secondary_rewrite_fab, prod);
+					if((*ts)[y]->fmlv->products[q]->designation == GN_DESIGNATION_SECONDARY)
+						fatal(gn_secondary_rewrite_fab, (*ts)[y]->fmlv->products[q]);
 				}
 			}
 		}

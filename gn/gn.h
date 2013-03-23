@@ -123,9 +123,7 @@ typedef struct gn
 	struct
 	{
 		// change-tracking for the backing file
-		hashblock *				hb_fab;				// rewritten following successful fabrication of all feeds
-		hashblock *				hb_dscv;			// rewritten following successful dependency discovery of this node
-		int								hb_loaded;
+		hashblock *				primary_hb;
 
 		// formula eval contexts for dependency discovery
 		//  ** a PRIMARY node has 0-n fmleval's for discovery
@@ -143,10 +141,12 @@ typedef struct gn
 	struct
 	{
 		char *						noforce_dir;
-		char *						noforce_path;	// canonical path to the noforce file
+		char *						noforce_ff_path;	// canonical path to the noforce file
+		char *						noforce_gn_path;	// canonical path to the noforce file
 
-		int								exists;				// whether the file exists
-		int								fab_noforce;	// whether fabrication of the file is not forced
+		int								fab_exists;				// whether the file exists
+		int								fab_noforce_ff;		// whether fabrication of the file is not forced
+		int								fab_noforce_gn;		// whether fabrication of the file is not forced
 	};
 
 	//
@@ -195,13 +195,11 @@ typedef struct gn
 	int									guard;
 	int									travel;
 
-	// buildplan prune tracking
+	// buildplan eval tracking
 	char								changed;
 	char								rebuild;
 	char								poison;
 	char								invalid;
-
-	char								fab_success;
 } gn;
 
 extern union gn_nodes_t
@@ -333,25 +331,11 @@ int gn_secondary_rewrite_fab(gn * const restrict)
 int gn_primary_reload(gn * const restrict)
 	__attribute__((nonnull));
 
-/// gn_primary_rewrite_fab
-//
-// for a PRIMARY file - write the current fab hashblock
-//
-int gn_primary_rewrite_fab(gn * const restrict)
-	__attribute__((nonnull));
-
 /// gn_primary_reload_dscv
 //
 // for a PRIMARY file - call gn_primary_reload, load dscv block
 //
 int gn_primary_reload_dscv(gn * const restrict)
-	__attribute__((nonnull));
-
-/// gn_primary_rewrite_dscv
-//
-// for a PRIMARY file - write the current dscv hashblock, write the dscv block, if any
-//
-int gn_primary_rewrite_dscv(gn * const restrict)
 	__attribute__((nonnull));
 
 /// gn_designate

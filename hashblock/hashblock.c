@@ -43,6 +43,9 @@ int hashblock_create(hashblock ** const hb, const char * const dirfmt, ...)
 	fatal(xsprintf, &(*hb)->contenthash_path, "%s/content", (*hb)->hashdir);
 	fatal(xsprintf, &(*hb)->vrshash_path, "%s/vrs", (*hb)->hashdir);
 
+	// attach version id
+	(*hb)->vrshash[1] = FAB_VERSION;
+
 	finally : coda;
 }
 

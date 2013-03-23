@@ -277,13 +277,12 @@ int parse_args(int argc, char** argv)
 
 	// log execution parameters under PARAMS
 	log(L_PARAMS	, "%11spid                =%u"						, ""	, g_args.pid);
-	log(L_PARAMS	, "%11ssid                =%u"						, ""	, g_args.sid);
+	log(L_PARAMS	, "%11sTid                =%u"						, ""	, g_args.sid);
 	log(L_PARAMS	, "%11seid                =%s/%d:%s/%d"	, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
 	log(L_PARAMS	, "%11srid                =%s/%d:%s/%d"	, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
 	log(L_PARAMS	, "%11scwd                =%s"						, ""	, g_args.cwd);
-	log(L_PARAMS	, "%11ssid-dir-base       =%s"						, ""	, SID_DIR_BASE);
-	log(L_PARAMS	, "%11sgn-dir-base        =%s"						, ""	, GN_DIR_BASE);
-	log(L_PARAMS	, "%11spid-dir-base       =%s"						, ""	, PID_DIR_BASE);
+	log(L_PARAMS	, "%11scache-dir-base     =%s"						, ""	, CACHEDIR_BASE);
+	log(L_PARAMS	, "%11stmp-dir-base       =%s"						, ""	,	TMPDIR_BASE);
 	log(L_PARAMS	, "%11sexpiration-policy  =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS

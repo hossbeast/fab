@@ -61,9 +61,10 @@ static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
 				if(gn->dscvs[x]->dscv_mark == 1)
 				{
 					// determine if the node has suitable cached discovery results
-					fatal(gn_primary_reload_dscv, gn);
+					if(gn->invalid == 0)
+						fatal(gn_primary_reload_dscv, gn);
 
-					if(gn->dscv_block->block)
+					if(gn->invalid == 0 && gn->dscv_block->block)
 					{
 						cache[(*cachel)++] = gn;
 
@@ -168,9 +169,6 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, l
 	int		dscvl = 0;
 	int		tsl = 0;
 
-	// apply user-specified invalidations, apply gn designations
-	gn_invalidations();
-
 	// count not-yet-executed discovery fmleval contexts
 	int x;
 	for(x = 0; x < rootsl; x++)
@@ -271,8 +269,8 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, l
 			}
 			else
 			{
-				// all were parsed; rewrite the dependency block to disk, commit the dscv hashblock
-				fatal(gn_primary_rewrite_dscv, dscvgn);
+				// all were parsed; rewrite the dependency block to disk
+				fatal(depblock_write, dscvgn->dscv_block);
 			}
 
 			// advance to the next group
