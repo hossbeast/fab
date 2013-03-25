@@ -54,11 +54,12 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_DGDEPS		, .s = "DGDEPS"		, .d = "dependency graph - dependencies" }
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
 	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
-	, { .v = L_HASHBLK	, .s = "HASHBLK"	, .d = "hashblock - read/write" }
 	, { .v = L_VARAUTO	, .s = "VARAUTO"	, .d = "variable definitions - automatic" }
 	, { .v = L_VARUSER	, .s = "VARUSER"	, .d = "variable definitions - user-defined" }
 	, { .v = L_VAR			, .s = "VAR"			, .d = "variable definitions" }
 	, { .v = L_INVOKE		, .s = "INVOKE"		, .d = "fabfile invocations" }
+	, { .v = L_CHANGEL	, .s = "CHANGEL"	, .d = "source file changes - SECONDARY lists" }
+	, { .v = L_CHANGE		, .s = "CHANGE"		, .d = "source file changes" }
 	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	, .d = "debug liblistwise invocations ** VERBOSE" }
 };
 

@@ -55,8 +55,8 @@ int tmp_setup()
 			if(typeflag != FTW_D)
 			{
 				// something other than a directory
-				log(L_WARN, "unexepected file %s", fpath);
-				return FTW_CONTINUE;
+				log(L_ERROR, "unexpected file %s", fpath);
+				return FTW_STOP;
 			}
 			else if(ftwbuf->level == 0)
 			{
@@ -68,8 +68,8 @@ int tmp_setup()
 			if(sscanf(fpath + ftwbuf->base, "%d%n", &pid, &n) != 1 || (ftwbuf->base + n) != strlen(fpath))
 			{
 				// dirname consists of something other than <pid>
-				log(L_WARN, "unexepected file %s", fpath);
-				return FTW_CONTINUE;
+				log(L_ERROR, "unexpected file %s", fpath);
+				return FTW_STOP;
 			}
 
 			// pid is myself, or it is unkillable
@@ -87,7 +87,7 @@ int tmp_setup()
 	}
 
 	// ensure directories for my own pid exist
-	snprintf(space, sizeof(space), "%s/%d/fml", TMPDIR_BASE "/pid/%u", g_args.pid);
+	snprintf(space, sizeof(space), TMPDIR_BASE "/pid/%d/fml", g_args.pid);
 	fatal(mkdirp, space, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	//
@@ -103,7 +103,7 @@ int tmp_setup()
 				if(typeflag != FTW_D)
 				{
 					// something other than a directory
-					log(L_ERROR, "unexepected file %s", fpath);
+					log(L_ERROR, "unexpected file %s", fpath);
 					return FTW_STOP;
 				}
 

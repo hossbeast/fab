@@ -13,11 +13,12 @@
 ** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/stat						stat hash			// rewritten after successfully
 ** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/content					content hash	// processing a detected change to
 ** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/vrs							version hash	// the underlying source file
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/dscv/block			cached ddisc
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/feeds/<gn-id>		link to 'gn/<gn-id>' for a SECONDARY gn
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/dscv						cached ddisc
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/afeed_secondary_skipweak/<gn-id>	link to 'gn/<gn-id>' for a SECONDARY gn
 **
 ** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/SECONDARY/fab/noforce_ff							// require fabrication of this secondary node due to ff change
 ** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/SECONDARY/fab/noforce_gn							// require fabrication of this secondary node due to primary file change
+** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/SECONDARY/aneed_primary_skipweak/<gn-id>		link to 'gn/<gn-id>' for a PRIMARY gn
 **
 ** PER-FF : delete if newest file is older than <policy>  (pertains to a given fabfile)
 ** -------------------------------------------------------------------------------------------------------------------------------
@@ -28,9 +29,9 @@
 **
 ** PER-PID : delete if pid is not presently executing     (pertains to a given fab process)
 ** -------------------------------------------------------------------------------------------------------------------------------
-** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/cmd					cmd text
-** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stdo				stdout from cmd
-** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stde				stderr from cmd
+** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/cmd							cmd text
+** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stdo						stdout from cmd
+** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stde						stderr from cmd
 */
 
 #define CACHEDIR_BASE							"/var/cache/fab"

@@ -63,6 +63,8 @@ int hashblock_stat(const char * const path, hashblock * const hb0, hashblock * c
 	if(hb2)
 		hbs[hbsl++] = hb2;
 
+	fatal(identity_assume_fabsys);
+
 	int x;
 
 	// STAT for A
@@ -103,12 +105,17 @@ int hashblock_stat(const char * const path, hashblock * const hb0, hashblock * c
 			hbs[x]->stathash[1] = 0;
 	}
 
+	fatal(identity_assume_user);
+
 	finally : coda;
 }
 
 int hashblock_read(hashblock * const hb)
 {
-	int fd;
+	int fd = 0;
+
+	fatal(identity_assume_fabsys);
+
 	if((fd = open(hb->stathash_path, O_RDONLY)) == -1 && errno != ENOENT)
 	{
 		fail("open(%s)=[%d][%s]", hb->stathash_path, errno, strerror(errno));
@@ -118,6 +125,7 @@ int hashblock_read(hashblock * const hb)
 		if(read(fd, &hb->stathash[0], sizeof(hb->stathash[0])) == -1)
 			fail("read failed [%d][%s]", errno, strerror(errno));
 		close(fd);
+		fd = 0;
 	}
 
 	if((fd = open(hb->contenthash_path, O_RDONLY)) == -1 && errno != ENOENT)
@@ -129,6 +137,7 @@ int hashblock_read(hashblock * const hb)
 		if(read(fd, &hb->contenthash[0], sizeof(hb->contenthash[0])) == -1)
 			fail("read failed [%d][%s]", errno, strerror(errno));
 		close(fd);
+		fd = 0;
 	}
 
 	if((fd = open(hb->vrshash_path, O_RDONLY)) == -1 && errno != ENOENT)
@@ -140,9 +149,15 @@ int hashblock_read(hashblock * const hb)
 		if(read(fd, &hb->vrshash[0], sizeof(hb->vrshash[0])) == -1)
 			fail("read failed [%d][%s]", errno, strerror(errno));
 		close(fd);
+		fd = 0;
 	}
 
-	finally : coda;
+	fatal(identity_assume_user);
+
+finally:
+	if(fd)
+		close(fd);
+coda;
 }
 
 int hashblock_write(const hashblock * const hb)
@@ -185,10 +200,10 @@ int hashblock_write(const hashblock * const hb)
 
 int hashblock_cmp(const hashblock * const hb)
 {
-	return     hb->vrshash[1] - hb->vrshash[0]
-					?: hb->stathash[1] - hb->stathash[0]
-					?: hb->contenthash[1] - hb->contenthash[0]
-					?: 0;
+	return	   hb->vrshash[1] - hb->vrshash[0]					? HB_VERSION
+					 : hb->stathash[1] - hb->stathash[0]				? HB_STAT
+					 : hb->contenthash[1] - hb->contenthash[0]	? HB_CONTENT
+																											: HB_SAME;
 }
 
 void hashblock_free(hashblock * const hb)

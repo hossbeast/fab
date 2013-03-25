@@ -12,7 +12,8 @@
 
 #define restrict __restrict
 
-#define FFP_MODULE	0x01
+#define FFP_NOFILE			0x01	// $^ is an absolute path (relative is default)
+#define FFP_EXACTPATH		0x04	// can be invoked multiple times (single invocation is default)
 
 /// ffproc
 //
@@ -28,7 +29,8 @@
 //  staxa   - listwise stax
 //  staxp   - offset to next free stax
 //  [first] - set to the target of the first dependency found
-//  flags   - FFP_MODULE : this ff was referenced with module notation - affects the value of $^
+//  flags   - FFP_NOFILE     : referenced with a nofile path - affects the value of $^
+//            FFP_EXACTPATH  : referenced with an exact path - can be invoked multiple times
 //
 int ffproc(
     const ff_parser * const restrict ffp

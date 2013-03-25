@@ -27,14 +27,6 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 	pstring * inv = 0;
 	map * cmap = 0;
 
-	if(log_would(L_INVOKE))
-	{
-		char * sstr = 0;
-		fatal(strstack_string, sstk, "/", "/", &sstr);
-		
-		log(L_INVOKE, "%s @ %s", inpath->can, sstr);
-	}
-
 	// parse
 	ff_file * ff = 0;
 	fatal(ff_reg_load, ffp, inpath, &ff);
@@ -42,205 +34,230 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 	if(!ff)
 		qfail();
 
-	// use up one list and populate the * variable (relative directory path to THIS fabfile)
-	fatal(list_ensure, stax, staxa, (*staxp));
-
-	if(flags & FFP_MODULE)
+	if((flags & FFP_EXACTPATH) == 0 && ff->count != 0)
 	{
-		fatal(lstack_add, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
+		if(log_would(L_INVOKE))
+		{
+			char * sstr = 0;
+			fatal(strstack_string, sstk, "/", "/", &sstr);
+			
+			log(L_INVOKE, "%s @ %s - blocked", inpath->can, sstr);
+		}
 	}
 	else
 	{
-		fatal(lstack_add, (*stax)[(*staxp)], ff->path->rel_dir, ff->path->rel_dirl);
-	}
+		ff->count++;
 
-	int star = (*staxp)++;
-	fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
-
-	// process the fabfile tree, construct the graph
-	for(x = 0; x < ff->ffn->statementsl; x++)
-	{
-		ff_node* stmt = ff->ffn->statements[x];
-
-		if(stmt->type == FFN_DEPENDENCY)
+		if(log_would(L_INVOKE))
 		{
-			fatal(dep_process, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp), first, 0, 0, 0);
-
-			if(first && *first)
-				first = 0;
+			char * sstr = 0;
+			fatal(strstack_string, sstk, "/", "/", &sstr);
+			
+			log(L_INVOKE, "%s @ %s", inpath->can, sstr);
 		}
-		else if(stmt->type == FFN_FORMULA)
-		{
-			fatal(fml_attach, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp));
-		}
-		else if(stmt->type == FFN_VARASSIGN)
-		{
-			int pn = (*staxp);
-			fatal(list_resolve, stmt->definition, vmap, ffp->gp, stax, staxa, staxp, 0);
 
-			for(y = 0; y < stmt->varsl; y++)
-				fatal(var_set, vmap, stmt->vars[y]->name, (*stax)[pn], 0, 1, stmt);
-		}
-		else if(stmt->type == FFN_INVOCATION)
-		{
-			int pn = (*staxp);
-			fatal(list_resolve, stmt->module, vmap, ffp->gp, stax, staxa, &pn, 0);
-			fatal(list_render, (*stax)[(*staxp)], &inv);
+		// use up one list and populate the * variable (relative directory path to THIS fabfile)
+		fatal(list_ensure, stax, staxa, (*staxp));
 
-			// handle module reference
-			int ismod = 0;
-			if(inv->l >= 5 && memcmp(inv->s, "/../", 4) == 0)
+		if(flags & FFP_NOFILE)
+		{
+			fatal(lstack_add, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
+		}
+		else
+		{
+			fatal(lstack_add, (*stax)[(*staxp)], ff->path->rel_dir, ff->path->rel_dirl);
+		}
+
+		int star = (*staxp)++;
+		fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
+
+		// process the fabfile tree, construct the graph
+		for(x = 0; x < ff->ffn->statementsl; x++)
+		{
+			ff_node* stmt = ff->ffn->statements[x];
+
+			if(stmt->type == FFN_DEPENDENCY)
 			{
-				ismod = 1;
+				fatal(dep_process, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp), first, 0, 0, 0);
 
-				// last component
-				char * f = inv->s + inv->l - 1;
-				int fl = 1;
+				if(first && *first)
+					first = 0;
+			}
+			else if(stmt->type == FFN_FORMULA)
+			{
+				fatal(fml_attach, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp));
+			}
+			else if(stmt->type == FFN_VARASSIGN)
+			{
+				int pn = (*staxp);
+				fatal(list_resolve, stmt->definition, vmap, ffp->gp, stax, staxa, staxp, 0);
 
-				// previous components
-				char * p = inv->s + 4;
-				int pl = inv->l - 4;
+				for(y = 0; y < stmt->varsl; y++)
+					fatal(var_set, vmap, stmt->vars[y]->name, (*stax)[pn], 0, 1, stmt);
+			}
+			else if(stmt->type == FFN_INVOCATION)
+			{
+				int pn = (*staxp);
+				fatal(list_resolve, stmt->module, vmap, ffp->gp, stax, staxa, &pn, 0);
+				fatal(list_render, (*stax)[(*staxp)], &inv);
 
-				while(f != inv->s && f[0] != '/')
+				// handle module reference
+				uint32_t nflags = 0;
+				if(inv->l >= 5 && memcmp(inv->s, "/../", 4) == 0)
 				{
-					f--;
-					fl++;
-				}
+					nflags |= FFP_NOFILE | FFP_EXACTPATH;
 
-				if(f == inv->s)
-				{
-					fail("invalid invocation string : '%.*s'", inv->l, inv->s);
+					// last component
+					char * f = inv->s + inv->l - 1;
+					int fl = 1;
+
+					// previous components
+					char * p = inv->s + 4;
+					int pl = inv->l - 4;
+
+					while(f != inv->s && f[0] != '/')
+					{
+						f--;
+						fl++;
+					}
+
+					if(f == inv->s)
+					{
+						fail("invalid invocation string : '%.*s'", inv->l, inv->s);
+					}
+					else
+					{
+						pl -= fl;
+						f++;
+						fl--;
+					}
+
+					for(i = 0; i < g_args.invokedirsl; i++)
+					{
+						// look for a module
+						path_xfree(&pth);
+						fatal(path_create, &pth, g_args.invokedirs[i]
+							, "%.*s/%.*s.fab"
+							, pl, p
+							, fl, f
+						);
+
+						if(euidaccess(pth->can, F_OK) == 0)
+							break;
+					}
+
+					if(i == g_args.invokedirsl)
+					{
+						fail("invocation not found %.*s", inv->l, inv->s);
+					}
 				}
 				else
 				{
-					pl -= fl;
-					f++;
-					fl--;
-				}
-
-				for(i = 0; i < g_args.invokedirsl; i++)
-				{
-					// look for a module
-					path_xfree(&pth);
-					fatal(path_create, &pth, g_args.invokedirs[i]
-						, "%.*s/%.*s.fab"
-						, pl, p
-						, fl, f
-					);
-
-					if(euidaccess(pth->can, F_OK) == 0)
-						break;
-				}
-
-				if(i == g_args.invokedirsl)
-				{
-					fail("invocation not found %.*s", inv->l, inv->s);
-				}
-			}
-			else
-			{
-				// look for a directory
-				for(i = 0; i < g_args.invokedirsl; i++)
-				{
-					path_xfree(&pth);
-					fatal(path_create, &pth, g_args.invokedirs[i]
-						, "%.*s/fabfile"
-						, inv->l, inv->s
-					);
-
-					if(euidaccess(pth->can, F_OK) == 0)
+					// look for a directory
+					for(i = 0; i < g_args.invokedirsl; i++)
 					{
-						break;
+						path_xfree(&pth);
+						fatal(path_create, &pth, g_args.invokedirs[i]
+							, "%.*s/fabfile"
+							, inv->l, inv->s
+						);
+
+						if(euidaccess(pth->can, F_OK) == 0)
+						{
+							break;
+						}
+					}
+
+					if(i == g_args.invokedirsl)
+					{
+						nflags |= FFP_EXACTPATH;
+
+						// otherwise, the invocation string is an exact path to the fabfile
+						path_xfree(&pth);
+						fatal(path_create
+							, &pth
+							, g_args.init_fabfile_path->abs_dir
+							, "%.*s"
+							, inv->l, inv->s
+						);
 					}
 				}
 
-				if(i == g_args.invokedirsl)
+				map * nmap = vmap;
+
+				if(stmt->flags & FFN_SUBCONTEXT)
 				{
-					// otherwise, the invocation string is an exact path to the fabfile
-					path_xfree(&pth);
-					fatal(path_create
-						, &pth
-						, g_args.init_fabfile_path->abs_dir
-						, "%.*s"
-						, inv->l, inv->s
-					);
-				}
-			}
+					// clone inherited context into a new map
+					map_xfree(&cmap);
+					fatal(var_clone, vmap, &cmap);
 
-			map * nmap = vmap;
-
-			if(stmt->flags & FFN_SUBCONTEXT)
-			{
-				// clone inherited context into a new map
-				map_xfree(&cmap);
-				fatal(var_clone, vmap, &cmap);
-
-				// apply additional var settings to context
-				for(y = 0; y < stmt->varsettingsl; y++)
-				{
-					ff_node * set = stmt->varsettings[y];		// VARLOCK or VARLINK
-
-					if(set->type == FFN_VARLOCK)
+					// apply additional var settings to context
+					for(y = 0; y < stmt->varsettingsl; y++)
 					{
-						if(set->definition)
-						{
-							if(set->definition->type == FFN_LIST)
-							{
-								int pn = (*staxp);
-								fatal(list_resolve, set->definition, vmap, ffp->gp, stax, staxa, staxp, 0);
+						ff_node * set = stmt->varsettings[y];		// VARLOCK or VARLINK
 
+						if(set->type == FFN_VARLOCK)
+						{
+							if(set->definition)
+							{
+								if(set->definition->type == FFN_LIST)
+								{
+									int pn = (*staxp);
+									fatal(list_resolve, set->definition, vmap, ffp->gp, stax, staxa, staxp, 0);
+
+									for(i = 0; i < set->varsl; i++)
+										fatal(var_set, cmap, set->vars[i]->name, (*stax)[pn], 1, 0, set);
+								}
+								else if(set->definition->type == FFN_VARREF)
+								{
+									fatal(var_alias, vmap, set->definition->name, cmap, set->vars[0]->name, set);
+								}
+							}
+							else
+							{
 								for(i = 0; i < set->varsl; i++)
-									fatal(var_set, cmap, set->vars[i]->name, (*stax)[pn], 1, 0, set);
-							}
-							else if(set->definition->type == FFN_VARREF)
-							{
-								fatal(var_alias, vmap, set->definition->name, cmap, set->vars[0]->name, set);
+									fatal(var_alias, vmap, set->vars[i]->name, cmap, set->vars[i]->name, set);
 							}
 						}
-						else
+						else if(set->type == FFN_VARLINK)
 						{
-							for(i = 0; i < set->varsl; i++)
-								fatal(var_alias, vmap, set->vars[i]->name, cmap, set->vars[i]->name, set);
-						}
-					}
-					else if(set->type == FFN_VARLINK)
-					{
-						if(set->definition)
-						{
-							fatal(var_link, vmap, set->vars[0]->name, cmap, set->definition->name, set);
-						}
-						else
-						{
-							for(i = 0; i < set->varsl; i++)
+							if(set->definition)
 							{
-								fatal(var_link, vmap, set->vars[i]->name, cmap, set->vars[i]->name, set);
+								fatal(var_link, vmap, set->vars[0]->name, cmap, set->definition->name, set);
+							}
+							else
+							{
+								for(i = 0; i < set->varsl; i++)
+								{
+									fatal(var_link, vmap, set->vars[i]->name, cmap, set->vars[i]->name, set);
+								}
 							}
 						}
 					}
+
+					nmap = cmap;
 				}
 
-				nmap = cmap;
+				// apply scope for this invocation
+				if(stmt->scope)
+				{
+					for(i = 1; i < stmt->scope->partsl; i++)
+						fatal(strstack_push, sstk, stmt->scope->parts[i]);
+				}
+
+				// process the referenced fabfile
+				fatal(ffproc, ffp, pth, sstk, nmap, stax, staxa, staxp, 0, nflags);
+
+				// scope pop
+				if(stmt->scope)
+				{
+					for(i = 1; i < stmt->scope->partsl; i++)
+						strstack_pop(sstk);
+				}
+
+				// possibly overridden
+				fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
 			}
-
-			// apply scope for this invocation
-			if(stmt->scope)
-			{
-				for(i = 1; i < stmt->scope->partsl; i++)
-					fatal(strstack_push, sstk, stmt->scope->parts[i]);
-			}
-
-			// process the referenced fabfile
-			fatal(ffproc, ffp, pth, sstk, nmap, stax, staxa, staxp, 0, ismod);
-
-			// scope pop
-			if(stmt->scope)
-			{
-				for(i = 1; i < stmt->scope->partsl; i++)
-					strstack_pop(sstk);
-			}
-
-			// possibly overridden
-			fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
 		}
 	}
 

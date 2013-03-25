@@ -53,6 +53,8 @@ typedef struct ff_file
 			hashblock *				hb;
 			int								hb_reload;
 
+			int								count;		// number of times processed
+
 			/*
 			** the gn closure of an ff_file is all the gns possibly affected if this file changes
 			** (dependencies, formulas, dscv formulas, etc)

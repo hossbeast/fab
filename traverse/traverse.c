@@ -94,7 +94,7 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 //  0 - callback failure, or fatal cycle
 // -1 - cycle detection (internal)
 //
-static int enter(gn * const n, size_t rel_off, int d, int weak, gn * (* const stack)[64], int * num, int (*const logic)(struct gn *, int), int t)
+static int enter(gn * const n, size_t rel_off, int d, int weak, int nextweak, gn * (* const stack)[64], int * num, int (*const logic)(struct gn *, int), int t)
 {
 	if(n->guard)	// cycle
 	{
@@ -117,7 +117,7 @@ static int enter(gn * const n, size_t rel_off, int d, int weak, gn * (* const st
 		{
 			if(rels->e[x]->B->travel != t)
 			{
-				int e = enter(rels->e[x]->B, rel_off, d + 1, weak, stack, num, logic, t);
+				int e = enter(rels->e[x]->B, rel_off, d + 1, nextweak, nextweak, stack, num, logic, t);
 				if(e == -1)
 				{
 					if((*num) < sizeof((*stack)) / sizeof((*stack)[0]))
@@ -166,7 +166,7 @@ int traverse_depth_bynodes_needsward_useweak(struct gn * const restrict r, int (
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), 0, 1, 1, &stack, &num, logic, ++o_t);
 }
 
 int traverse_depth_bynodes_needsward_noweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
@@ -174,7 +174,15 @@ int traverse_depth_bynodes_needsward_noweak(struct gn * const restrict r, int (*
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), 0, 0, 0, &stack, &num, logic, ++o_t);
+}
+
+int traverse_depth_bynodes_needsward_skipweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), 0, 0, 1, &stack, &num, logic, ++o_t);
 }
 
 int traverse_depth_bynodes_feedsward_useweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
@@ -182,7 +190,7 @@ int traverse_depth_bynodes_feedsward_useweak(struct gn * const restrict r, int (
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), 0, 1, 1, &stack, &num, logic, ++o_t);
 }
 
 int traverse_depth_bynodes_feedsward_noweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
@@ -190,7 +198,15 @@ int traverse_depth_bynodes_feedsward_noweak(struct gn * const restrict r, int (*
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), 0, 0, 0, &stack, &num, logic, ++o_t);
+}
+
+int traverse_depth_bynodes_feedsward_skipweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), 0, 0, 1, &stack, &num, logic, ++o_t);
 }
 
 int traverse_init()

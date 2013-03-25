@@ -345,11 +345,9 @@ int ff_regular_rewrite(ff_file * ff)
 
 	struct dirent ent;
 	struct dirent * entp = 0;
-	int r = 0;
 	while(1)
 	{
-		if((r = readdir_r(dh, &ent, &entp)) == 0)
-			fail("readdir=[%d][%s]", r, strerror(r));
+		fatal_os(readdir_r, dh, &ent, &entp);
 
 		if(!entp)
 			break;
@@ -362,7 +360,7 @@ int ff_regular_rewrite(ff_file * ff)
 				fail("unexpected file %s/%s", ff->closure_gns_dir, entp->d_name);
 
 			// delete
-			snprintf(tmpa, sizeof(tmpa), "%s/%u/PRIMARY/dscv/block", ff->closure_gns_dir, canhash);
+			snprintf(tmpa, sizeof(tmpa), "%s/%u/PRIMARY/dscv", ff->closure_gns_dir, canhash);
 			if(unlink(tmpa) != 0 && errno != ENOENT)
 				fail("unlink(%s)=[%d][%s]", tmpa, errno, strerror(errno));
 

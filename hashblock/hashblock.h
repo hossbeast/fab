@@ -9,6 +9,11 @@
 
 #define restrict __restrict
 
+#define HB_SAME			0		/* unchanged */
+#define HB_VERSION	1		/* differ in version number */
+#define HB_STAT			2		/* differ in stat properties */
+#define HB_CONTENT	3		/* differ in file contents */
+
 typedef struct
 {
 	struct __attribute__((packed))
@@ -85,7 +90,11 @@ int hashblock_write(const hashblock * const restrict)
 
 /// hashblock_cmp
 //
+// SUMMARY
+//  compare the two states contained in the hashblock
 //
+// RETURNS
+//  one of HBLOCK_*
 //
 int hashblock_cmp(const hashblock * const restrict)
 	__attribute__((nonnull));

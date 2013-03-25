@@ -48,6 +48,8 @@ static int dscv_attach(gn * t, fmleval * fmlv)
 				, fmlv->fml->ffn->loc.l_col + 1
 				, t->idstring
 			);
+
+			return 1;
 		}
 	}
 

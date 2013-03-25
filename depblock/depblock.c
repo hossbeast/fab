@@ -28,12 +28,10 @@ int depblock_create(depblock ** const block, const char * const dirfmt, ...)
 	int req = vsnprintf(0, 0, dirfmt, va);
 	va_end(va);
 
-	fatal(xmalloc, &(*block)->blockdir, req + 1);
+	fatal(xmalloc, &(*block)->blockpath, req + 1);
 	va_start(va, dirfmt);
-	vsprintf((*block)->blockdir, dirfmt, va);
+	vsprintf((*block)->blockpath, dirfmt, va);
 	va_end(va);
-
-	fatal(xsprintf, &(*block)->block_path, "%s/block", (*block)->blockdir);
 
 	finally : coda;
 }
@@ -52,8 +50,7 @@ void depblock_free(depblock * const block)
 			free(block->block);
 		}
 
-		free(block->blockdir);
-		free(block->block_path);
+		free(block->blockpath);
 	}
 
 	free(block);
@@ -67,27 +64,31 @@ void depblock_xfree(depblock ** const block)
 
 int depblock_read(depblock * const block)
 {
+	fatal(identity_assume_fabsys);
+
 	// open the file readonly
-	if((block->fd = open(block->block_path, O_RDONLY)) > 0)
+	if((block->fd = open(block->blockpath, O_RDONLY)) > 0)
 	{
 		// get the size of the file
 		if((block->size = lseek(block->fd, 0, SEEK_END)) == (off_t)-1)
-			fail("lseek(%s)=[%d][%s]", block->block_path, errno, strerror(errno));
+			fail("lseek(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
 
 		// seek back to the start
 		if(lseek(block->fd, 0, SEEK_SET) == (off_t)-1)
-			fail("lseek(%s)=[%d][%s]", block->block_path, errno, strerror(errno));
+			fail("lseek(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
 
 		if((block->addr = mmap(0, block->size, PROT_READ, MAP_PRIVATE, block->fd, 0)) == MAP_FAILED)
-			fail("mmap(%s)=[%d][%s]", block->block_path, errno, strerror(errno));
+			fail("mmap(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
 
 		// block is ready to process
 		block->block = block->addr;
 	}
 	else if(errno != ENOENT)
 	{
-		fail("open(%s)=[%d][%s]", block->block_path, errno, strerror(errno));
+		fail("open(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
 	}
+
+	fatal(identity_assume_user);
 
 	finally : coda;
 }
@@ -128,20 +129,17 @@ int depblock_write(const depblock * const block)
 
 		fatal(identity_assume_fabsys);
 
-		// ensure directory exists
-		fatal(mkdirp, block->blockdir, S_IRWXU | S_IRWXG | S_IRWXO);
-
 		// open the file for writing
-		if((fd = open(block->block_path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-			fail("open(%s)=[%d][%s]", block->block_path, errno, strerror(errno));
+		if((fd = open(block->blockpath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
+			fail("open(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
 
 		// set the filesize
 		if(ftruncate(fd, size) == -1)
-			fail("ftruncate(%s)=[%d][%s]", block->block_path, errno, strerror(errno));
+			fail("ftruncate(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
 
 		// map the entire file writable
 		if((addr = mmap(0, size, PROT_WRITE, MAP_SHARED, fd, 0)) == MAP_FAILED)
-			fail("mmap(%s)=[%d][%s]", block->block_path, errno, strerror(errno));
+			fail("mmap(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
 
 		// copy the data in
 		memcpy(addr, block->block, size);

@@ -358,11 +358,11 @@ int bp_eval(bp * const bp, int * const poison)
 						{
 							gn->rebuild = 1;	// file doesnt exist
 						}
-						else if(gn->fab_noforce_ff == 0)
+						else if(gn->fab_force_ff)
 						{
 							gn->rebuild = 1;	// rebuild is forced (ff change)
 						}
-						else if(gn->fab_noforce_gn == 0)
+						else if(gn->fab_force_gn)
 						{
 							gn->rebuild = 1;	// rebuild is forced (source file change)
 						}
@@ -436,8 +436,8 @@ int bp_eval(bp * const bp, int * const poison)
 								, "REBUILD"
 								,   gn->invalid      		? "invalidated"
 								  : !gn->fab_exists  		? "does not exist"
-									: gn->fab_noforce_ff  ? "fabfile changed"
-									: gn->fab_noforce_gn	? "sources changed"	// not useful to distinguish between these two cases
+									: gn->fab_force_ff	  ? "fabfile changed"
+									: gn->fab_force_gn		? "sources changed"	// not useful to distinguish between these two cases
 									:                    		"sources changed"
 							);
 						}
@@ -554,6 +554,10 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, i
 	int i;
 	int k;
 
+	map * ws = 0;
+
+	fatal(map_create, &ws, 0);
+
 	// determine how many threads are needed
 	for(x = 0; x < bp->stages_l; x++)
 	{
@@ -612,16 +616,22 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, i
 				{
 					// secondary rewrite
 					if((*ts)[y]->fmlv->products[q]->designation == GN_DESIGNATION_SECONDARY)
-						fatal(gn_secondary_rewrite_fab, (*ts)[y]->fmlv->products[q]);
+					{
+						fatal(gn_secondary_rewrite_fab, (*ts)[y]->fmlv->products[q], ws);
+					}
 				}
 			}
 		}
 
 		if(!res)
+		{
 			qfail();
+		}
 	}
 
-	finally : coda;
+finally:
+	map_free(ws);
+coda;
 }
 
 void bp_dump(bp * bp)

@@ -42,12 +42,13 @@
 #define L_DGDEPS				0x0000000000800000ULL
 #define L_DGRAPH 				0x0000000001000000ULL
 #define L_DG 						0x0000000002000000ULL
-#define L_HASHBLK				0x0000000004000000ULL
-#define L_VARAUTO				0x0000000008000000ULL
-#define L_VARUSER				0x0000000010000000ULL
-#define L_VAR						0x0000000020000000ULL
-#define L_INVOKE				0x0000000040000000ULL
-#define L_LWDEBUG				0x0000000080000000ULL
+#define L_VARAUTO				0x0000000004000000ULL
+#define L_VARUSER				0x0000000008000000ULL
+#define L_VAR						0x0000000010000000ULL
+#define L_INVOKE				0x0000000020000000ULL
+#define L_CHANGE				0x0000000040000000ULL
+#define L_CHANGEL				0x0000000080000000ULL
+#define L_LWDEBUG				0x0000000100000000ULL
 
 struct g_logs_t {
 	uint64_t		v;	// tag definition
@@ -87,20 +88,21 @@ int log_would(const uint64_t bits);
 // writes messages to stderr if log_would([bits])
 //
 int log(const uint64_t bits, const char* fmt, ...)
-	__attribute__((nonnull));
+	__attribute__((nonnull(2)));
 
 /// log_start
 //
 // begin writing a single log
 //
 int log_start(const uint64_t bits, const char* fmt, ...)
-	__attribute__((nonnull));
+	__attribute__((nonnull(2)));
 
 /// log_add
 //
 // append to the log under construction
 //
-int log_add(const char* fmt, ...);
+int log_add(const char* fmt, ...)
+	__attribute__((nonnull(1)));
 
 /// log_finish
 //

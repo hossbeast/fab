@@ -26,70 +26,6 @@
 // static
 //
 
-static int count_dscv(gn * r, int * c)
-{
-	int logic(gn * gn, int d)
-	{
-		if(gn->designation == GN_DESIGNATION_PRIMARY)
-		{
-			int x;
-			for(x = 0; x < gn->dscvsl; x++)
-			{
-				if(gn->dscvs[x]->dscv_mark == 0)
-				{
-					(*c)++;
-					gn->dscvs[x]->dscv_mark = 1;
-				}
-			}
-		}
-
-		return 1;
-	};
-
-	return traverse_depth_bynodes_needsward_useweak(r, logic);
-}
-
-static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
-{
-	int logic(gn * gn, int d)
-	{
-		if(gn->designation == GN_DESIGNATION_PRIMARY)
-		{
-			int x;
-			for(x = 0; x < gn->dscvsl; x++)
-			{
-				if(gn->dscvs[x]->dscv_mark == 1)
-				{
-					// determine if the node has suitable cached discovery results
-					if(gn->invalid == 0)
-						fatal(gn_primary_reload_dscv, gn);
-
-					if(gn->invalid == 0 && gn->dscv_block->block)
-					{
-						cache[(*cachel)++] = gn;
-
-						// dscv results were loaded from cache so all of the dscvs for this node are skipped
-						int y;
-						for(y = 0; y < gn->dscvsl; y++)
-						{
-							gn->dscvs[y]->dscv_mark = 2;
-						}
-					}
-					else
-					{
-						ts[(*tsl)++]->fmlv = gn->dscvs[x];
-						gn->dscvs[x]->dscv_mark = 2;
-					}
-				}
-			}
-		}
-
-		finally : coda;
-	};
-
-	return traverse_depth_bynodes_needsward_useweak(r, logic);
-}
-
 static int depblock_process(const depblock * const db, gn * const dscvgn, int * const newnp, int * const newrp)
 {
 	int i;
@@ -139,7 +75,7 @@ static int depblock_process(const depblock * const db, gn * const dscvgn, int * 
 
 			if(newr)
 			{
-				log(L_DG | L_DGDEPS | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
+				log(L_DG | L_DGDEPS | L_DSC | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
 					, "S"
 					, newa ? "x" : ""
 					, newb ? "x" : ""
@@ -154,6 +90,69 @@ static int depblock_process(const depblock * const db, gn * const dscvgn, int * 
 	}
 
 	finally : coda;
+}
+
+static int count_dscv(gn * r, int * c)
+{
+	int logic(gn * gn, int d)
+	{
+		if(gn->designation == GN_DESIGNATION_PRIMARY)
+		{
+			int x;
+			for(x = 0; x < gn->dscvsl; x++)
+			{
+				if(gn->dscvs[x]->dscv_mark == 0)
+				{
+					(*c)++;
+					gn->dscvs[x]->dscv_mark = 1;
+				}
+			}
+		}
+
+		return 1;
+	};
+
+	return traverse_depth_bynodes_needsward_useweak(r, logic);
+}
+
+static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
+{
+	int logic(gn * gn, int d)
+	{
+		if(gn->designation == GN_DESIGNATION_PRIMARY)
+		{
+			int x;
+			for(x = 0; x < gn->dscvsl; x++)
+			{
+				if(gn->dscvs[x]->dscv_mark == 1)
+				{
+					// determine if the node has suitable cached discovery results
+					fatal(gn_primary_reload_dscv, gn);
+
+					if(gn->dscv_block->block)
+					{
+						cache[(*cachel)++] = gn;
+
+						// dscv results were loaded from cache so all of the dscvs for this node are skipped
+						int y;
+						for(y = 0; y < gn->dscvsl; y++)
+						{
+							gn->dscvs[y]->dscv_mark = 2;
+						}
+					}
+					else
+					{
+						ts[(*tsl)++]->fmlv = gn->dscvs[x];
+						gn->dscvs[x]->dscv_mark = 2;
+					}
+				}
+			}
+		}
+
+		finally : coda;
+	};
+
+	return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
 //
@@ -278,7 +277,9 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, l
 		}
 
 		if(!res)
+		{
 			qfail();
+		}
 
 		// process cached results
 		for(x = 0; x < cachel; x++)

@@ -59,7 +59,7 @@ $cfabpaths = [
 }
 
 # fabrication and dependency
-[ $cfabpaths ~ [ xs/< $ext >/y/dj/shift ~ j ] ] :: [ $< ~ rx/xsf/<c> ]
+[ $cfabpaths ~ [ xs/< $ext >/y/dj/shift ~ j ] ] :: [ $< ~ [ rx/xs/< $ext >/<c> ~ j ] ]
 {
 	[ $cc ] [ $cflags ~ ss/u/fx ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
 }

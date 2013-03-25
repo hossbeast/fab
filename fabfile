@@ -5,7 +5,7 @@ $dfab						= [ $* ]
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
 +[ $dcommon/vars.fab ]
-+[ $dcommon ]($cc; -$cflags) @common
++[ $dcommon/fabfile ]($cc; -$cflags) @common
 
 # variables
 $cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
@@ -20,7 +20,7 @@ $fab						= [ $dfab/$name ~ j ]
 +[@std.y]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 
 # standard files - fPIC compilation
-+[@std.c.ext]($rdirs = $dfab; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
++[@std.c.ext]($rdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # operator so's
 $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
@@ -136,10 +136,11 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 
 [ @clean ] :* [ @common.clean ]
 {
-	find [ $dfab ] -name *.o -delete 2>/dev/null
-	find [ $dfab ] -name *.lex.* -delete 2>/dev/null
-	find [ $dfab ] -name *.tab.* -delete 2>/dev/null
-	find [ $dfab ] -name *.tokens.* -delete 2>/dev/null
+	find [ $dfab ] -name '*.o' -delete 2>/dev/null
+	find [ $dfab ] -name '*.so' -delete 2>/dev/null
+	find [ $dfab ] -name '*.lex.*' -delete 2>/dev/null
+	find [ $dfab ] -name '*.tab.*' -delete 2>/dev/null
+	find [ $dfab ] -name '*.tokens.*' -delete 2>/dev/null
 	rm -f [ $fab ]				2>/dev/null
 }
 

@@ -40,6 +40,19 @@ static void signal_handler(int signum)
 	}
 }
 
+// process source file changes
+static int primary_reload()
+{
+	int x;
+	for(x = 0; x < gn_nodes.l; x++)
+	{
+		if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
+			fatal(gn_primary_reload, gn_nodes.e[x]);
+	}
+
+	finally : coda;
+}
+
 int main(int argc, char** argv)
 {
 	ff_parser *					ffp = 0;				// fabfile parser
@@ -146,6 +159,9 @@ int main(int argc, char** argv)
 		}
 	}
 
+	// process changes to source files
+	fatal(primary_reload);
+
 	// comprehensive upfront dependency discovery on the entire graph
 	if(g_args.mode_ddsc == MODE_DDSC_UPFRONT)
 	{
@@ -153,12 +169,8 @@ int main(int argc, char** argv)
 		memcpy(gnl, gn_nodes.e, sizeof(*gnl) * gn_nodes.l);
 		fatal(dsc_exec, gnl, gn_nodes.l, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
 
-		// process source file changes
-		for(x = 0; x < gn_nodes.l; x++)
-		{
-			if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
-				fatal(gn_primary_rewrite, gn_nodes.e[x]);
-		}
+		// process changes to source files
+		fatal(primary_reload);
 	}
 
 	// dump graph nodes, pending logging
@@ -223,12 +235,8 @@ int main(int argc, char** argv)
 					// execute discovery
 					fatal(dsc_exec, list[0], listl[0], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
 
-					// process source file changes
-					for(x = 0; x < gn_nodes.l; x++)
-					{
-						if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
-							fatal(gn_primary_rewrite, gn_nodes.e[x]);
-					}
+					// process changes to source files
+					fatal(primary_reload);
 				}
 			}
 			else if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN || g_args.mode_exec == MODE_EXEC_BAKE)
@@ -249,24 +257,22 @@ int main(int argc, char** argv)
 
 						// execute discovery
 						fatal(dsc_exec, list[1], listl[1], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, &new);
-					}
-				}
 
-				// process source file changes
-				for(x = 0; x < gn_nodes.l; x++)
-				{
-					if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
-						fatal(gn_primary_rewrite, gn_nodes.e[x]);
+						// process changes to source files
+						fatal(primary_reload);
+					}
 				}
 
 				if(g_args.mode_exec == MODE_EXEC_BAKE)
 				{
 					// dump buildplan, pending logging
 					if(bp)
+					{
 						bp_dump(bp);
 					
-					// create bakescript
-					fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, g_args.bakescript_path);
+						// create bakescript
+						fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, g_args.bakescript_path);
+					}
 				}
 				if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN)
 				{

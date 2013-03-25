@@ -35,8 +35,7 @@ typedef struct
 
 typedef struct depblock
 {
-	char *						blockdir;			// directory containing the block
-	char *						block_path;		// path to the block file
+	char *						blockpath;		// path to the block file
 
 	// mmap fields
 	void *						addr;

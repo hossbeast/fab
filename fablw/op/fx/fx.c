@@ -6,8 +6,6 @@
 
 #include "interpolate.h"
 
-#include "xmem.h"
-
 /*
 
 (fab specific) fx operator - set list interpolation mode

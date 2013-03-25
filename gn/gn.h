@@ -145,8 +145,8 @@ typedef struct gn
 		char *						noforce_gn_path;	// canonical path to the noforce file
 
 		int								fab_exists;				// whether the file exists
-		int								fab_noforce_ff;		// whether fabrication of the file is not forced
-		int								fab_noforce_gn;		// whether fabrication of the file is not forced
+		int								fab_force_ff;			// whether fabrication of the file is forced
+		int								fab_force_gn;			// whether fabrication of the file is forced
 	};
 
 	//
@@ -215,6 +215,7 @@ extern union gn_nodes_t
 		gn ** e;						// elements
 
 		map *	by_path;			// indexed by canonical path
+		map *	by_pathhash;	// indexed by canonical path hash
 	};
 } gn_nodes;
 
@@ -319,14 +320,23 @@ int gn_secondary_reload(gn * const restrict)
 
 /// gn_secondary_rewrite_fab
 //
-// for a SECONDARY file - rewrite the fab/noforce file
+// SUMMARY
+//  for a SECONDARY file - rewrite the fab/noforce file
 //
-int gn_secondary_rewrite_fab(gn * const restrict)
+// PARAMETERS
+//  gn - a secondary node which was just successfully fabricated
+//  ws - workspace (required)
+//
+int gn_secondary_rewrite_fab(gn * const restrict, map * const ws)
 	__attribute__((nonnull));
 
 /// gn_primary_reload
 //
-// for a PRIMARY file - load the previous hashblocks, stat the file
+// SUMMARY
+//  for a PRIMARY file - load the previous hashblocks, stat the file
+//  if the underlying source file has changed:
+//   - delete cached discovery results for this node
+//   - delete noforce_gn for all cached feed_secondary_skipweak
 //
 int gn_primary_reload(gn * const restrict)
 	__attribute__((nonnull));
