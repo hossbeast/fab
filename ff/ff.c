@@ -193,7 +193,7 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, ff_file *
 		fatal(xmalloc, &b, statbuf.st_size + 2);
 		ssize_t r = 0;
 		if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
-			fail("read, expected: %d, actual: %d", (int)statbuf.st_size, (int)r);
+			fail("read(%d)=%d [%d][%s]", (int)statbuf.st_size, (int)r, errno, strerror(errno));
 
 		qfatal(parse, p, b, statbuf.st_size, in_path, 0, ff);
 

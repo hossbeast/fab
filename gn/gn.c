@@ -623,7 +623,18 @@ int gn_primary_reload(gn * const gn)
 						// force fabrication of secondary node
 						snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/SECONDARY/fab/noforce_gn", tmp[2], entp->d_name);
 						if(unlink(tmp[0]) != 0 && errno != ENOENT)
-							fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+						{
+							if(errno == ENOENT)
+							{
+								// delete dangling links
+								snprintf(tmp[0], sizeof(tmp[0]), "%s/%s", tmp[2], entp->d_name);
+								unlink(tmp[0]);
+							}
+							else
+							{
+								fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+							}
+						}
 
 						if(log_would(L_CHANGEL))
 						{

@@ -144,7 +144,7 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	rm -f [ $fab ]				2>/dev/null
 }
 
-[ $dfab/fab.tgz ~ j ] : [ $fab $oplist ]
+[ $dfab/fab.tgz ~ j ]
 {
 	tar -C / -czvf [ $@ ] [
 		usr/lib/fab
