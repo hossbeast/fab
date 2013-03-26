@@ -1,6 +1,6 @@
 # compilers and their flags
 $cc					= [ gcc ]
-$cflags			= [ -m64, -O3, -Wall, -Werror, -D_GNU_SOURCE, -g ]
+$cflags			= [ -m64, -O3, -Wall, -Werror, -D_GNU_SOURCE, -g, [ -I $dcommon ~ j ] ]
 $solflags		= [ -shared, "-Wl,--version-script=exports", [ "-Wl,-soname," $libname ] ]
 $flex				= [ flex ]
 $flexflags	= [ ]
