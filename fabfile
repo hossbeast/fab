@@ -5,7 +5,7 @@ $dfab						= [ $* ]
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
 +[ $dcommon/vars.fab ]
-+[ $dcommon/fabfile ]($cc; -$cflags) @common
++[ $dcommon ]() @common
 
 # variables
 $cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
@@ -15,12 +15,12 @@ $name						= [ fab ]
 $fab						= [ $dfab/$name ~ j ]
 
 # standard files - standard compilation
-+[@std.c]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $paths = [ $dfab/main.c ~ j ]; $cc $cflags)
-+[@std.l]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $flex $flexflags)
-+[@std.y]($rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
++[@std.c]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $paths = [ $dfab/main.c ~ j ]; $cc $cflags)
++[@std.l]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $flex $flexflags)
++[@std.y]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 
 # standard files - fPIC compilation
-+[@std.c.ext]($rdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
++[@std.c.ext]($gendir = $dfab; $rdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # operator so's
 $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
@@ -52,7 +52,7 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 # ~ rx/bn/fn ] .so ]
 
 # generated files
-+[@std.c]($fabpaths = [ $dfab/ff/ff.tokens.c ~ j ]; $cc $cflags)
++[@std.c]($gendir = $dfab; $fabpaths = [ $dfab/ff/ff.tokens.c ~ j ]; $cc $cflags)
 
 [ [ $dfab/ff/ff.tokens.c ~ j ] [ $dfab/ff/ff.tokens.h ~ j ] ] :: [ $dfab/ff/ff.tab.c ~ j ]
 {

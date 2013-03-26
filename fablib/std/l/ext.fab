@@ -59,7 +59,7 @@ $lfabpaths = [
 {
 		  [ $flex ] [ $flexflags ~ ss/u/fx ] -t [ $@ ] [
 	] | [ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG -xc - [
-	] | gcc-dep [ $@ ~ [ rx/xs/<lex. $ext >/fx ~ j ] ] [ $ext ]
+	] | gcc-dep [ $gendir ] [ $@ ~ [ rx/xs/<lex. $ext >/fx ~ j ] ] [ $ext ]
 }
 
 # $flex : l -> { lex.c, lex.h }

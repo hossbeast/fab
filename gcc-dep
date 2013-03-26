@@ -12,6 +12,12 @@ while(<STDIN>)
 	{
 		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
 
+		# for a generated file, the target does not exist ; prepend to the path
+		if(! -r $line)
+		{
+			$line = $ARGV[0] . "/" . $line;
+		}
+
 		if($line =~ /\.lex\.h$/)
 		{
 			push @S, $line;				# strong dependency on the header
@@ -34,7 +40,7 @@ while(<STDIN>)
 			if(-f $line)
 			{
 				$line =~ s/\.c$//;
-				push @W, $line;			# weak dependency on the object, if the c file exists
+				push @W, $line;			# weak dependency on the object, if a corresponding c file exists
 			}
 		}
 	}
@@ -44,7 +50,7 @@ while(<STDIN>)
 # args come in pairs ; target, and extension to use for its object-file dependencies
 #
 
-for(my $x = 0; $x <= $#ARGV; $x += 2)
+for(my $x = 1; $x <= $#ARGV; $x += 2)
 {
 	if(@S)
 	{
