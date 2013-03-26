@@ -8,18 +8,18 @@ $libname = [ liblistwise.so ]
 $lib     = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
 
 +[ $dcommon/vars.fab ]
-+[ $dcommon ]($cc; -$cflags) @common
++[ $dcommon ]() @common
 
 ##
 ## variables
 ##
-$cflags	= [ $cflags, [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
+$cflags	= [ $cflags, -fPIC, [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
 $lflags	= [ -lpcre, -ldl, $solflags ]
 
 # source files
-+[@std.c.ext]($rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
-+[@std.l.ext]($rdirs = $dliblistwise; $ext = [ pic.o ]; -$lfabpaths; $cc $cflags $flex $flexflags)
-+[@std.y.ext]($rdirs = $dliblistwise; $ext = [ pic.o ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
++[@std.c.ext]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
++[@std.l.ext]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$lfabpaths; $cc $cflags $flex $flexflags)
++[@std.y.ext]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
 
 # path to each operator so
 $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
