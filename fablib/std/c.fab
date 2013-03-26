@@ -55,7 +55,7 @@ $cfabpaths = [
 # discovery
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG [ $@ ] | gcc-dep [ $gendir ] [ $@ ~ rx/xs/<o>/fx ] o
+	[ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ rx/xs/<o>/fx ] o
 }
 
 # fabrication and dependency
