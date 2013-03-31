@@ -1,0 +1,15 @@
+[submodule "fabdev"]
+	path = fabdev
+	url = git@github.com:hossbeast/fabdev.git
+[submodule "common"]
+	path = common
+	url = git@github.com:hossbeast/common.git
+[submodule "listwisedev"]
+	path = listwisedev
+	url = git@github.com:hossbeast/listwisedev.git
+[submodule "listwise"]
+	path = listwise
+	url = git@github.com:hossbeast/listwise.git
+[submodule "liblistwise"]
+	path = liblistwise
+	url = git@github.com:hossbeast/liblistwise.git
