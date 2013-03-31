@@ -1,0 +1,177 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# directories
+$dcommon				= [ $*/../common ]
+$dfab						= [ $* ]
+
+# variable defs, $cc, $cflags, etc
+# common targets xmem, map, etc
++[ $dcommon/vars.fab ]
++[ $dcommon ]() @common
+
+# variables
+$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
+$cflags					= [ $cflags -fms-extensions -fno-builtin-log ]
+$lflags					= [ -llistwise ]
+$name						= [ fab ]
+$fab						= [ $dfab/$name ~ j ]
+
+# standard files - standard compilation
++[@std.c]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $paths = [ $dfab/main.c ~ j ]; $cc $cflags)
++[@std.l]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $flex $flexflags)
++[@std.y]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
+
+# standard files - fPIC compilation
++[@std.c.ext]($gendir = $dfab; $rdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
+
+# operator so's
+$oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
+
+#
+# catchall node
+#
+[ @all ] : [ $fab @oplist ]
+
+# target for building all operators
+[ @oplist ] : [ $oplist ]
+
+#
+# the executable
+#
+[ $fab ] : [ [ $dfab/main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
+{
+	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [ $lflags ]
+}
+
+#
+# fab-specific operator so's
+#
+[ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
+{
+	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [
+	] -llistwise -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
+}
+# ~ rx/bn/fn ] .so ]
+
+# generated files
++[@std.c]($gendir = $dfab; $fabpaths = [ $dfab/ff/ff.tokens.c ~ j ]; $cc $cflags)
+
+[ [ $dfab/ff/ff.tokens.c ~ j ] [ $dfab/ff/ff.tokens.h ~ j ] ] :: [ $dfab/ff/ff.tab.c ~ j ]
+{
+	exec 1>[ $dfab/ff/ff.tokens.h ]
+
+	> echo "#ifndef ff_TOK_H"
+	> echo "#define ff_TOK_H"
+	> echo "const char* ff_tokname(int);"
+	> sed   -ne '/yytokentype/,/;/ p' 					\
+	  <[ $dfab/ff/ff.tab.c ]										\
+	>  | sed -e 's/\(yytokentype\)/ff_\1/'			\
+	>  | sed -e '/ *[A-Z]/s/\([A-Z]\)/ff_\1/'
+	> echo "#endif"
+
+	exec 1>[ $dfab/ff/ff.tokens.c ]
+
+	> echo "typedef unsigned short yytype_uint16;"
+	> sed -ne '/yytname\[\]/,/};/ p'						\
+	  <[ $dfab/ff/ff.tab.c ]										\
+	>  | sed -e 's/\\"\|'"'"'//g'
+	> sed -ne '/yytoknum\[\]/,/};/ p'						\
+	  <[ $dfab/ff/ff.tab.c ]
+	> grep 'define YYNTOKENS'										\
+	  <[ $dfab/ff/ff.tab.c ]
+	> echo '#define API __attribute__((visibility("protected")))'
+	> echo '#include <stdio.h>'
+	> echo "const char API * ff_tokname(int tok)"
+	> echo "{"
+	> echo '  int x;'
+	> echo '  for(x = 0; x < YYNTOKENS; x++)'
+	> echo '  {'
+	> echo '  	 if(yytoknum[x] == tok)'
+	> echo '		 {'
+	> echo '      return yytname[x];'
+	> echo '    }'
+	> echo '  }'
+	> echo '  return 0;'
+	> echo '}'
+}
+
+#
+# tasks
+#
+
+[ @install ] : [ @all ]
+{
+	install -d															[ $destdir/$bindir ]
+	install [ $fab ]												[ $destdir/$bindir/$name ]
+	chown fabsys:fabsys											[ $destdir/$bindir/$name ]
+	chmod u+s 															[ $destdir/$bindir/$name ]
+	chmod g+s 															[ $destdir/$bindir/$name ]
+	install [ $dfab/gcc-dep]								[ $destdir/$bindir/gcc-dep ]
+	install -d 															[ $destdir/var/cache/fab ]
+	chown fabsys:fabsys											[ $destdir/var/cache/fab ]
+	install -d 															[ $destdir/var/tmp/fab ]
+	chown fabsys:fabsys											[ $destdir/var/tmp/fab ]
+	install -d															[ $destdir/usr/lib/fab/lib/std ]
+	install -d															[ $destdir/usr/lib/fab/lib/std/c ]
+	install -d															[ $destdir/usr/lib/fab/lib/std/l ]
+	install -d															[ $destdir/usr/lib/fab/lib/std/y ]
+	install [ $dfab/fablib/std/c.fab ]			[ $destdir/usr/lib/fab/lib/std/c.fab ]
+	install [ $dfab/fablib/std/l.fab ]			[ $destdir/usr/lib/fab/lib/std/l.fab ]
+	install [ $dfab/fablib/std/y.fab ]			[ $destdir/usr/lib/fab/lib/std/y.fab ]
+	install [ $dfab/fablib/std/c/ext.fab ]	[ $destdir/usr/lib/fab/lib/std/c/ext.fab ]
+	install [ $dfab/fablib/std/l/ext.fab ]	[ $destdir/usr/lib/fab/lib/std/l/ext.fab ]
+	install [ $dfab/fablib/std/y/ext.fab ]	[ $destdir/usr/lib/fab/lib/std/y/ext.fab ]
+	install -d															[ $destdir/usr/lib/fab/listwise ]
+	install [ $dfab/fablw/op/fx/fx.so ]			[ $destdir/usr/lib/fab/listwise/fx.so ]
+	install [ $dfab/fablw/op/fxc/fxc.so ]		[ $destdir/usr/lib/fab/listwise/fxc.so ]
+	install [ $dfab/fablw/op/fxw/fxw.so ]		[ $destdir/usr/lib/fab/listwise/fxw.so ]
+}
+
+[ @uninstall ]
+{
+	rm -f																		[ $destdir/fab ]
+	rm -f																		[ $destdir/gcc-dep ]
+	rm -rf																	[ $destdir/var/cache/fab ]
+	rm -rf																	[ $destdir/var/tmp/fab ]
+	rm -rf																	[ $destdir/usr/lib/fab ]
+}
+
+[ @clean ] :* [ @common.clean ]
+{
+	find [ $dfab ] -name '*.o' -delete 2>/dev/null
+	find [ $dfab ] -name '*.so' -delete 2>/dev/null
+	find [ $dfab ] -name '*.lex.*' -delete 2>/dev/null
+	find [ $dfab ] -name '*.tab.*' -delete 2>/dev/null
+	find [ $dfab ] -name '*.tokens.*' -delete 2>/dev/null
+	rm -f [ $fab ]				2>/dev/null
+}
+
+[ $dfab/fab.tgz ~ j ]
+{
+	tar -C / -czvf [ $@ ] [
+		usr/lib/fab
+		usr/lib/listwise
+		usr/lib64/liblistwise.so
+		usr/lib64/liblistwise.so.0.1
+		usr/local/bin/lw
+		usr/local/bin/listwise
+		usr/local/bin/fab
+		usr/local/bin/gcc-dep ~ fx
+	]
+}
+

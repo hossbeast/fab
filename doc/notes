@@ -1,0 +1,48 @@
+# includes
+	two kinds
+	reusable
+		bindings
+	include guards
+
+# pre-installed reusable >> includes
+	generator-variables : reusable list transformation components
+	
+# list syntax for interpolation with spaces [ a, b ], and with no spaces [ a b ]
+# command line variable defs : "append this" anytime the variable is rendered/resolved
+# command line variable defs : immutably set the value of the variable, which cannot be
+#                              modified in a lower scope - cmdline is scope 0
+
+
+set operations ?? 
+
+[ a b ] U [ b c ] = [ a b c ]
+[ a b ] I [ b c ] = [ b ]
+
+file-node change should be propagated by creation of FORCE files in directories
+of nodes that are affected, and then their hashes committed
+
+# generator-string variables, and composition from variables
+# content signatures
+# better help output, logging category explanations
+
+# tagging of items in fabfile for logging - the tagging is done with per-node ( x:y ) settings
+  per-node settings ( x:y, x:y )
+		invalidate this node
+
+dump individual VAR-sets by name
+dump individual formulas by node-name
+dump discovery results by node-name
+
+# PERSISTENT FAB DAEMON FOR A GIVEN TARGET
+	given a target, establishes inotify watches on all relevant nodes
+	given any changes, performs builds necessary to reconstruct the target
+	outputs say a 10-line HUD view of current activity
+		suitable for tailing - it emits say 10 newlines between views
+	you can query the FABD for dumping node information it knows about
+	affecting fabfile changes - equivalent to restarting the daemon
+
+# autovar documentation
+$@, ${products} - products of the current formula
+$<, ${lhs}      - lefthand side of a multi-product formula
+$#, ${initdir}  - relative path to the directory containing the master fabfile
+$*, ${thisdir}	- relative path to the directory containing the current fabfile

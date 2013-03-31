@@ -1,0 +1,90 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# y.fab
+#  provides discovery formula for .y files
+#  provides fabrication formula for .tab.c -> .tab.o
+#  provides dependencies for tab.o -> .y
+
+# var/closure
+#  cc
+#  cflags 
+#  bison
+#  bisonflags
+#
+#  dirs       - directories containing .y files
+#  rdirs      - directories containing .y files, recursive search
+#  paths      - paths to .y files
+#
+#  dscdirs    - (as above, but for discovery only)
+#  dscrdirs   - 
+#  dscpaths   - 
+#
+#  fabdirs    - (as above, but for fabrication/dependency only)
+#  fabrdirs   - 
+#  fabpaths   - 
+#
+
+# paths to y files for discovery
+$ydscpaths = [
+	$paths				# paths
+	$dscpaths			# paths, discovery only
+
+	[
+		$dirs				# directories
+		$dscdirs		# directories, discovery only
+	~ ls ]
+
+	[
+		$rdirs			# recursive directories
+		$rdscdirs		# recursive directories, discovery only
+	~ lsr ]
+~ xm/<y> ]
+
+# paths to y files for fabrication
+$yfabpaths = [
+	$paths				# paths
+	$dscpaths			# paths, discovery only
+
+	[
+		$dirs				# directories
+		$dscdirs		# directories, discovery only
+	~ ls ]
+
+	[
+		$rdirs			# recursive directories
+		$rdscdirs		# recursive directories, discovery only
+	~ lsr ]
+~ xm/<y> ]
+
+# discovery
+[ $ydscpaths ] %
+{
+	    [ $bison ] [ $bisonflags ~ ss/u/fx ] -o /dev/stdout [ $@ ] [
+	] | [ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG -xc - [
+	] | gcc-dep '[ $gendir ]' [ $@ ~ rx/xs/<y>/tab.o/fx ] o
+}
+
+# $bison : y -> { tab.c, tab.h }
+[ $yfabpaths ~ xs/<y>/tab.c/y/v/d/cp/u/xs/<tab.c>/<tab.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<tab.c>/<y>/xs/<tab.h>/<y>/ss/u ]
+{
+	[ $bison ] [ $bisonflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ] -d	[ $@ ~ rx/ineed/xm/<y>/ss/u ]
+}
+
+# $cc : tab.c -> tab.o via std.c
++[@std.c]($cfabpaths = [ $yfabpaths ~ xs/<y>/<tab.c> ]; $cc $cflags; $cdscpaths)
+

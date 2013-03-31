@@ -1,0 +1,85 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+# 
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use strict;
+use warnings;
+
+my @S;	# strong
+my @W;	# weak
+
+while(<STDIN>)
+{
+	if(/^[^:]+:$/)	# -MP lines, only
+	{
+		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
+
+		# for a generated file, the target does not exist ; prepend to the path
+		if(! -r $line)
+		{
+			$line = $ARGV[0] . "/" . $line;
+		}
+
+		if($line =~ /\.lex\.h$/)
+		{
+			push @S, $line;				# strong dependency on the header
+			$line =~ s/\.lex\.h/.lex/;
+			push @W, $line;				# weak dependency on the object
+		}
+		elsif($line =~ /\.tab\.h$/)
+		{
+			push @S, $line;				# strong dependency on the header
+			$line =~ s/\.tab\.h/.tab/;
+			push @W, $line;				# weak dependency on the object
+		}
+		else
+		{
+			push @S, $line;				# strong dependency on the header
+
+			# corresponding .c file
+			$line =~ s/\.h$/.c/;
+
+			if(-f $line)
+			{
+				$line =~ s/\.c$//;
+				push @W, $line;			# weak dependency on the object, if a corresponding c file exists
+			}
+		}
+	}
+}
+
+#
+# args come in pairs ; target, and extension to use for its object-file dependencies
+#
+
+for(my $x = 1; $x <= $#ARGV; $x += 2)
+{
+	if(@S)
+	{
+		print "[ $ARGV[$x] ] : [\n";
+		print "$_\n" for @S;
+		print "]\n";
+	}
+
+	if(@W)
+	{
+		print "[ $ARGV[$x] ] :* [\n";
+		print "$_.$ARGV[$x+1]\n" for @W;
+		print "]\n";
+	}
+}
