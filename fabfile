@@ -18,20 +18,23 @@
 # directories
 $dcommon      = [ $*/common ]
 $dliblistwise = [ $*/liblistwise ]
+$dlistwise    = [ $*/listwisedev ]
 $dfab         = [ $*/fabdev ]
 
 # invocations
 +[ $dcommon ]()      @common
 +[ $dliblistwise ]() @liblistwise
++[ $dlistwise ]()    @listwise
 +[ $dfab ]()         @fab
 
 # default target - make everything
-[ @all ] 				: [ @liblistwise.all       @fab.all ]
+[ @all ] 				: [ @liblistwise.all       $listwise      @fab.all ]
 
 # inter-module dependencies
+[ $listwise ]		: [ $liblistwise ]
 [ $fab ]				: [ $liblistwise ]
 
 # supertasks
-[ @install ]		: [               @liblistwise.install   @fab.install  ]
-[ @uninstall ]	: [               @liblistwise.uninstall @fab.uninstall  ]
-[ @clean ]			: [ @common.clean @liblistwise.clean     @fab.clean  ]
+[ @install ]		: [               @liblistwise.install   @listwise.install   @fab.install  ]
+[ @uninstall ]	: [               @liblistwise.uninstall @listwise.uninstall @fab.uninstall  ]
+[ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @fab.clean  ]
