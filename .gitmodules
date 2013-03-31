@@ -1,6 +1,0 @@
-[submodule "common"]
-	path = common
-	url = https://github.com/hossbeast/common.git
-[submodule "liblistwise"]
-	path = liblistwise
-	url = https://github.com/hossbeast/liblistwise.git
