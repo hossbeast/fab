@@ -32,7 +32,7 @@ $link						= [ lw ]
 $listwise				= [ $dlistwise/$name ~ j ]
 
 # c files
-+[@std.c]($dirs = $dlistwise; -$cfabpaths; $cc $cflags)
++[@std.c]($gendir = $dlistwise; $dirs = $dlistwise; -$cfabpaths; $cc $cflags)
 
 #
 # formulas
@@ -46,7 +46,7 @@ $listwise				= [ $dlistwise/$name ~ j ]
 # tasks
 #
 
-[ @install ] : [ $listwise ]
+[ @install ]
 {
 	install -d										[ $destdir/$bindir ]
 	install [ $listwise ]					[ $destdir/$bindir/$name ]
