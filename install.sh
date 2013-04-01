@@ -1,21 +1,21 @@
 #!/bin/bash
 
-# Copyright (c) 2012-2013 Todd Freed <todd.freed\@gmail.com>
-# 
-# This file is part of listwise.
-# 
-# listwise is free software: you can redistribute it and/or modify
+# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
-# listwise is distributed in the hope that it will be useful,
+#
+# fab is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
-# along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -24,72 +24,13 @@ if [[ $1 != "timed" ]]; then
 fi
 
 # formulas and names for stage 0
-
-# formulas and names for stage 1
-NAMES[0]='./args.o'
-fml_1_0()
+NAMES[0]='/../install'
+fml_0_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
-	gcc -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -g -m64 -c ./args.c -o ./args.o
-
-
-  X=$?
-  echo 0 1>&99
-  exit $X
-}
-
-NAMES[1]='./main.o'
-fml_1_1()
-{
-  exec 1>/dev/null
-  exec 2>&101
-
-  # command  #!/bin/bash
-
-
-	gcc -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -g -m64 -c ./main.c -o ./main.o
-
-
-  X=$?
-  echo 1 1>&99
-  exit $X
-}
-
-
-# formulas and names for stage 2
-NAMES[2]='./listwise'
-fml_2_0()
-{
-  exec 1>/dev/null
-  exec 2>&100
-
-  # command  #!/bin/bash
-
-
-	gcc -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -g -m64 -o ./listwise ./args.o ./main.o -llistwise
-
-
-  X=$?
-  echo 0 1>&99
-  exit $X
-}
-
-
-# formulas and names for stage 3
-NAMES[3]='/../install'
-fml_3_0()
-{
-  exec 1>/dev/null
-  exec 2>&100
-
-  # command  #!/bin/bash
-
-
+  
 	install -d										//usr/local/bin
 	install ./listwise					//usr/local/bin/listwise
 	ln -vfs listwise							//usr/local/bin/lw
@@ -115,15 +56,14 @@ SKP=0
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=2))
+  ((SKP+=1))
 else
-  # launch stage 1.0
-  exec 100>$tmp ; rm -f $tmp ; fml_1_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_1 & PIDS[1]=$!
+  # launch stage 0.0
+  exec 100>$tmp ; rm -f $tmp ; fml_0_0 & PIDS[0]=$!
 
-  # harvest stage 1.0
+  # harvest stage 0.0
   C=0
-  while [[ $C != 2 ]]; do
+  while [[ $C != 1 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -133,57 +73,7 @@ else
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+0)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
-else
-  # launch stage 2.0
-  exec 100>$tmp ; rm -f $tmp ; fml_2_0 & PIDS[0]=$!
-
-  # harvest stage 2.0
-  C=0
-  while [[ $C != 1 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((2+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 2 $((idx+0)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
-else
-  # launch stage 3.0
-  exec 100>$tmp ; rm -f $tmp ; fml_3_0 & PIDS[0]=$!
-
-  # harvest stage 3.0
-  C=0
-  while [[ $C != 1 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((3+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 3 $((idx+0)) $X "$N"
+    printf '[%3d,%3d] X=%d %s\n' 0 $((idx+0)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done

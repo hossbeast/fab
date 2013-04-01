@@ -1,21 +1,21 @@
 #!/bin/bash
 
-# Copyright (c) 2012-2013 Todd Freed <todd.freed\@gmail.com>
-# 
-# This file is part of listwise.
-# 
-# listwise is free software: you can redistribute it and/or modify
+# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
-# listwise is distributed in the hope that it will be useful,
+#
+# fab is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
-# along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -32,9 +32,7 @@ fml_1_0()
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -g -m64 -c ./args.c -o ./args.o
 
 
@@ -49,9 +47,7 @@ fml_1_1()
   exec 1>/dev/null
   exec 2>&101
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -g -m64 -c ./main.c -o ./main.o
 
 
@@ -68,9 +64,7 @@ fml_2_0()
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -g -m64 -o ./listwise ./args.o ./main.o -llistwise
 
 
