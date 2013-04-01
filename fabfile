@@ -18,6 +18,8 @@
 # directories
 $dcommon			= [ $*/../common ]
 $dliblistwise	= [ $* ]
+$libdir				= [ usr/lib64 ]
+$dlibdir			= [ usr/lib ]
 
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
@@ -31,12 +33,12 @@ $lib     = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
 ## variables
 ##
 $cflags	= [ $cflags, -fPIC, [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
-$lflags	= [ -lpcre, -ldl, $solflags ]
+$lflags	= [ -shared, [ "-Wl,--version-script=" $dliblistwise/exports ], [ "-Wl,-soname," $libname ] ]
 
 # source files
-+[@std.c.ext]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
-+[@std.l.ext]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$lfabpaths; $cc $cflags $flex $flexflags)
-+[@std.y.ext]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
++[@std.c]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
++[@std.l]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$lfabpaths; $cc $cflags $flex $flexflags)
++[@std.y]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
 
 # path to each operator so
 $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
@@ -82,7 +84,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 ## tasks
 ##
 
-[ @install ] : [ @all ]
+[ @install ]
 {
 	install -d																				[ $destdir/$libdir ]
 	install	[ $lib ]																	[ $destdir/$libdir/$libname.0.1 ]
@@ -97,7 +99,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 	install [ $dliblistwise/listwise/object.h ] 			[ $destdir/$incdir/listwise/object.h ]
 
 	install -d																				[ $destdir/$dlibdir/listwise ]
-	for x in [ $oplist ]; do \
+	for x in [ $oplist ~ fx ]; do \
 		install $x																			[ $destdir/$dlibdir/listwise ]
 	done
 }
@@ -118,8 +120,3 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 	find [ $dliblistwise ] -name '*.tab.*' -delete
 	find [ $dliblistwise ] -name exports -delete
 }
-
-
-
-
-
