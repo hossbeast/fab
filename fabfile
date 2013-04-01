@@ -18,7 +18,7 @@
 # directories
 $dcommon			= [ $*/../common ]
 $dliblistwise	= [ $* ]
-$libdir				= [ usr/lib64 ]
+$libdir				= [ usr/lib/x86_64-linux-gnu ]
 $dlibdir			= [ usr/lib ]
 
 # variable defs, $cc, $cflags, etc
@@ -33,7 +33,7 @@ $lib     = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
 ## variables
 ##
 $cflags	= [ $cflags, -fPIC, [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
-$lflags	= [ -shared, [ "-Wl,--version-script=" $dliblistwise/exports ], [ "-Wl,-soname," $libname ] ]
+$lflags	= [ -lpcre, -ldl, -shared, [ "-Wl,--version-script=" $dliblistwise/exports ], [ "-Wl,-soname," $libname ] ]
 
 # source files
 +[@std.c]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)

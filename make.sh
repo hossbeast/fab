@@ -1435,7 +1435,7 @@ sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
 	  cat -- ./../common/coll.c ./../common/xmem.c ./../common/xstring.c ./apidata/apidata.c ./exec/exec.c ./generator/generator.c ./generator/generator.lex.c ./generator/generator.tab.c ./idx/idx.c ./last/last.c ./lstack/lstack.c ./object/object.c ./op/op.c ./re/re.c ./sel/sel.c )
 echo "local: *; };"
 
-	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise.so ./../common/coll.pic.o ./../common/xmem.pic.o ./../common/xstring.pic.o ./apidata/apidata.pic.o ./exec/exec.pic.o ./generator/generator.lex.pic.o ./generator/generator.pic.o ./generator/generator.tab.pic.o ./idx/idx.pic.o ./last/last.pic.o ./lstack/lstack.pic.o ./object/object.pic.o ./op/op.pic.o ./re/re.pic.o ./sel/sel.pic.o -shared -Wl,--version-script=./exports -Wl,-soname,liblistwise.so
+	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise.so ./../common/coll.pic.o ./../common/xmem.pic.o ./../common/xstring.pic.o ./apidata/apidata.pic.o ./exec/exec.pic.o ./generator/generator.lex.pic.o ./generator/generator.pic.o ./generator/generator.tab.pic.o ./idx/idx.pic.o ./last/last.pic.o ./lstack/lstack.pic.o ./object/object.pic.o ./op/op.pic.o ./re/re.pic.o ./sel/sel.pic.o -lpcre -ldl -shared -Wl,--version-script=./exports -Wl,-soname,liblistwise.so
 
 
   X=$?
