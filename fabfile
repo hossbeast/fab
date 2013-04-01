@@ -112,7 +112,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 	rm -f																							[ $destdir/$incdir/listwise.h ]
 }
 
-[ @clean ] : [ @common.clean ]
+[ @clean ] :* [ @common.clean ]
 {
 	find [ $dliblistwise ] -name '*.o' -delete
 	find [ $dliblistwise ] -name '*.so' -delete
