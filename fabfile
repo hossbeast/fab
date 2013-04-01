@@ -38,3 +38,51 @@ $dfab         = [ $*/fabdev ]
 [ @install ]		: [               @liblistwise.install   @listwise.install   @fab.install  ]
 [ @uninstall ]	: [               @liblistwise.uninstall @listwise.uninstall @fab.uninstall  ]
 [ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @fab.clean  ]
+
+[ $*/fab.tgz ~ j ]
+{
+	rm -rf [ $*/ar ]
+
+	mkdir -p																[ $*/ar/var/cache/fab ]
+	chown fabsys:fabsys											[ $*/ar/var/cache/fab ]
+	mkdir -p																[ $*/ar/var/tmp/fab ]
+	chown fabsys:fabsys											[ $*/ar/var/tmp/fab ]
+
+	mkdir -p [ $*/ar/usr/local/bin ]
+
+	cp [ $dfab/fab ]												[ $*/ar/usr/local/bin/fab ]
+	chown fabsys:fabsys											[ $*/ar/usr/local/bin/fab ]
+	chmod u+s																[ $*/ar/usr/local/bin/fab ]
+	chmod g+s																[ $*/ar/usr/local/bin/fab ]
+	cp [ $dfab/gcc-dep ]										[ $*/ar/usr/local/bin/gcc-dep ]
+	cp [ $dlistwise/listwise ]							[ $*/ar/usr/local/bin/listwise ]
+	ln -fs listwise													[ $*/ar/usr/local/bin/lw ]
+
+	mkdir -p [ $*/ar/usr/lib/fab/lib/std ]
+
+	cp [ $dfab/fablib/std/c.fab ]						[ $*/ar/usr/lib/fab/lib/std ]
+	cp [ $dfab/fablib/std/l.fab ]						[ $*/ar/usr/lib/fab/lib/std ]
+	cp [ $dfab/fablib/std/y.fab ]						[ $*/ar/usr/lib/fab/lib/std ]
+
+	mkdir -p [ $*/ar/usr/lib/fab/listwise ]
+
+	cp [ $dfab/fablw/op/fx/fx.so ]					[ $*/ar/usr/lib/fab/listwise ]
+	cp [ $dfab/fablw/op/fxc/fxc.so ]				[ $*/ar/usr/lib/fab/listwise ]
+	cp [ $dfab/fablw/op/fxw/fxw.so ]				[ $*/ar/usr/lib/fab/listwise ]
+
+	mkdir -p [ $*/ar/usr/lib64 ]
+
+	cp [ $dliblistwise/liblistwise.so ]			[ $*/ar/usr/lib64/liblistwise.so.0.1 ]
+	ln -fs liblistwise.so.0.1								[ $*/ar/usr/lib64/liblistwise.so ]
+
+	mkdir -p [ $*/ar/usr/include/listwise ]
+
+	cp [ $dliblistwise/listwise.h]					[ $*/ar/usr/include/listwise.h ]
+	cp [ $dliblistwise/listwise/*.h ]				[ $*/ar/usr/include/listwise ]
+
+	mkdir -p [ $*/ar/usr/lib/listwise ]
+
+	cp [ $dliblistwise/op/*/*.so ]					[ $*/ar/usr/lib/listwise ]
+
+	tar -C [ $*/ar ] -czvf [ $@ ~ rx/rp ] .
+}
