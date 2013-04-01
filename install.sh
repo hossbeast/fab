@@ -66,9 +66,9 @@ fml_0_1()
   exec 2>&101
 
   
-	install -d																				//usr/lib64
-	install	./liblistwise/liblistwise.so																	//usr/lib64/liblistwise.so.0.1
-	ln -vfs liblistwise.so.0.1													//usr/lib64/liblistwise.so
+	install -d																				//usr/lib/x86_64-linux-gnu
+	install	./liblistwise/liblistwise.so																	//usr/lib/x86_64-linux-gnu/liblistwise.so.0.1
+	ln -vfs liblistwise.so.0.1													//usr/lib/x86_64-linux-gnu/liblistwise.so
 	install -d																				//usr/include
 	install -d																				//usr/include/listwise
 	install ./liblistwise/listwise.h							//usr/include/listwise.h

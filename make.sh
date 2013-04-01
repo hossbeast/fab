@@ -1136,9 +1136,39 @@ fml_1_73()
   exit $X
 }
 
+NAMES[74]='./listwisedev/args.o'
+fml_1_74()
+{
+  exec 1>/dev/null
+  exec 2>&174
+
+  
+	gcc -D_GNU_SOURCE -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -c ./listwisedev/args.c -o ./listwisedev/args.o
+
+
+  X=$?
+  echo 74 1>&99
+  exit $X
+}
+
+NAMES[75]='./listwisedev/main.o'
+fml_1_75()
+{
+  exec 1>/dev/null
+  exec 2>&175
+
+  
+	gcc -D_GNU_SOURCE -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -c ./listwisedev/main.c -o ./listwisedev/main.o
+
+
+  X=$?
+  echo 75 1>&99
+  exit $X
+}
+
 
 # formulas and names for stage 2
-NAMES[74]='./fabdev/fablw/op/fx/fx.so'
+NAMES[76]='./fabdev/fablw/op/fx/fx.so'
 fml_2_0()
 {
   exec 1>/dev/null
@@ -1153,7 +1183,7 @@ fml_2_0()
   exit $X
 }
 
-NAMES[75]='./fabdev/fablw/op/fxc/fxc.so'
+NAMES[77]='./fabdev/fablw/op/fxc/fxc.so'
 fml_2_1()
 {
   exec 1>/dev/null
@@ -1168,7 +1198,7 @@ fml_2_1()
   exit $X
 }
 
-NAMES[76]='./fabdev/fablw/op/fxw/fxw.so'
+NAMES[78]='./fabdev/fablw/op/fxw/fxw.so'
 fml_2_2()
 {
   exec 1>/dev/null
@@ -1183,7 +1213,7 @@ fml_2_2()
   exit $X
 }
 
-NAMES[77]='{./fabdev/ff/ff.tokens.c, ./fabdev/ff/ff.tokens.h}'
+NAMES[79]='{./fabdev/ff/ff.tokens.c, ./fabdev/ff/ff.tokens.h}'
 fml_2_3()
 {
   exec 1>/dev/null
@@ -1232,7 +1262,7 @@ echo '}'
   exit $X
 }
 
-NAMES[78]='./liblistwise/generator/generator.lex.pic.o'
+NAMES[80]='./liblistwise/generator/generator.lex.pic.o'
 fml_2_4()
 {
   exec 1>/dev/null
@@ -1247,7 +1277,7 @@ fml_2_4()
   exit $X
 }
 
-NAMES[79]='./liblistwise/generator/generator.pic.o'
+NAMES[81]='./liblistwise/generator/generator.pic.o'
 fml_2_5()
 {
   exec 1>/dev/null
@@ -1262,7 +1292,7 @@ fml_2_5()
   exit $X
 }
 
-NAMES[80]='./liblistwise/generator/generator.tab.pic.o'
+NAMES[82]='./liblistwise/generator/generator.tab.pic.o'
 fml_2_6()
 {
   exec 1>/dev/null
@@ -1277,7 +1307,7 @@ fml_2_6()
   exit $X
 }
 
-NAMES[81]='./liblistwise/lstack/lstack.pic.o'
+NAMES[83]='./liblistwise/lstack/lstack.pic.o'
 fml_2_7()
 {
   exec 1>/dev/null
@@ -1292,7 +1322,7 @@ fml_2_7()
   exit $X
 }
 
-NAMES[82]='./liblistwise/op/-d/-d.so'
+NAMES[84]='./liblistwise/op/-d/-d.so'
 fml_2_8()
 {
   exec 1>/dev/null
@@ -1310,7 +1340,7 @@ fml_2_8()
   exit $X
 }
 
-NAMES[83]='./liblistwise/op/-f/-f.so'
+NAMES[85]='./liblistwise/op/-f/-f.so'
 fml_2_9()
 {
   exec 1>/dev/null
@@ -1328,7 +1358,7 @@ fml_2_9()
   exit $X
 }
 
-NAMES[84]='./liblistwise/op/-l/-l.so'
+NAMES[86]='./liblistwise/op/-l/-l.so'
 fml_2_10()
 {
   exec 1>/dev/null
@@ -1346,7 +1376,7 @@ fml_2_10()
   exit $X
 }
 
-NAMES[85]='./liblistwise/op/bn/bn.so'
+NAMES[87]='./liblistwise/op/bn/bn.so'
 fml_2_11()
 {
   exec 1>/dev/null
@@ -1364,7 +1394,7 @@ fml_2_11()
   exit $X
 }
 
-NAMES[86]='./liblistwise/op/c/c.so'
+NAMES[88]='./liblistwise/op/c/c.so'
 fml_2_12()
 {
   exec 1>/dev/null
@@ -1382,7 +1412,7 @@ fml_2_12()
   exit $X
 }
 
-NAMES[87]='./liblistwise/op/cp/cp.so'
+NAMES[89]='./liblistwise/op/cp/cp.so'
 fml_2_13()
 {
   exec 1>/dev/null
@@ -1400,7 +1430,7 @@ fml_2_13()
   exit $X
 }
 
-NAMES[88]='./liblistwise/op/d/d.so'
+NAMES[90]='./liblistwise/op/d/d.so'
 fml_2_14()
 {
   exec 1>/dev/null
@@ -1418,7 +1448,7 @@ fml_2_14()
   exit $X
 }
 
-NAMES[89]='./liblistwise/op/dj/dj.so'
+NAMES[91]='./liblistwise/op/dj/dj.so'
 fml_2_15()
 {
   exec 1>/dev/null
@@ -1436,7 +1466,7 @@ fml_2_15()
   exit $X
 }
 
-NAMES[90]='./liblistwise/op/dn/dn.so'
+NAMES[92]='./liblistwise/op/dn/dn.so'
 fml_2_16()
 {
   exec 1>/dev/null
@@ -1454,7 +1484,7 @@ fml_2_16()
   exit $X
 }
 
-NAMES[91]='./liblistwise/op/fn/fn.so'
+NAMES[93]='./liblistwise/op/fn/fn.so'
 fml_2_17()
 {
   exec 1>/dev/null
@@ -1472,7 +1502,7 @@ fml_2_17()
   exit $X
 }
 
-NAMES[92]='./liblistwise/op/h/h.so'
+NAMES[94]='./liblistwise/op/h/h.so'
 fml_2_18()
 {
   exec 1>/dev/null
@@ -1490,7 +1520,7 @@ fml_2_18()
   exit $X
 }
 
-NAMES[93]='./liblistwise/op/j/j.so'
+NAMES[95]='./liblistwise/op/j/j.so'
 fml_2_19()
 {
   exec 1>/dev/null
@@ -1508,7 +1538,7 @@ fml_2_19()
   exit $X
 }
 
-NAMES[94]='./liblistwise/op/ls/ls.so'
+NAMES[96]='./liblistwise/op/ls/ls.so'
 fml_2_20()
 {
   exec 1>/dev/null
@@ -1526,7 +1556,7 @@ fml_2_20()
   exit $X
 }
 
-NAMES[95]='./liblistwise/op/lsr/lsr.so'
+NAMES[97]='./liblistwise/op/lsr/lsr.so'
 fml_2_21()
 {
   exec 1>/dev/null
@@ -1544,7 +1574,7 @@ fml_2_21()
   exit $X
 }
 
-NAMES[96]='./liblistwise/op/m/m.so'
+NAMES[98]='./liblistwise/op/m/m.so'
 fml_2_22()
 {
   exec 1>/dev/null
@@ -1562,7 +1592,7 @@ fml_2_22()
   exit $X
 }
 
-NAMES[97]='./liblistwise/op/o/o.so'
+NAMES[99]='./liblistwise/op/o/o.so'
 fml_2_23()
 {
   exec 1>/dev/null
@@ -1580,7 +1610,7 @@ fml_2_23()
   exit $X
 }
 
-NAMES[98]='./liblistwise/op/pop/pop.so'
+NAMES[100]='./liblistwise/op/pop/pop.so'
 fml_2_24()
 {
   exec 1>/dev/null
@@ -1598,7 +1628,7 @@ fml_2_24()
   exit $X
 }
 
-NAMES[99]='./liblistwise/op/r/r.so'
+NAMES[101]='./liblistwise/op/r/r.so'
 fml_2_25()
 {
   exec 1>/dev/null
@@ -1616,7 +1646,7 @@ fml_2_25()
   exit $X
 }
 
-NAMES[100]='./liblistwise/op/rp/rp.so'
+NAMES[102]='./liblistwise/op/rp/rp.so'
 fml_2_26()
 {
   exec 1>/dev/null
@@ -1634,7 +1664,7 @@ fml_2_26()
   exit $X
 }
 
-NAMES[101]='./liblistwise/op/rx/rx.so'
+NAMES[103]='./liblistwise/op/rx/rx.so'
 fml_2_27()
 {
   exec 1>/dev/null
@@ -1652,7 +1682,7 @@ fml_2_27()
   exit $X
 }
 
-NAMES[102]='./liblistwise/op/s/s.so'
+NAMES[104]='./liblistwise/op/s/s.so'
 fml_2_28()
 {
   exec 1>/dev/null
@@ -1670,7 +1700,7 @@ fml_2_28()
   exit $X
 }
 
-NAMES[103]='./liblistwise/op/shift/shift.so'
+NAMES[105]='./liblistwise/op/shift/shift.so'
 fml_2_29()
 {
   exec 1>/dev/null
@@ -1688,7 +1718,7 @@ fml_2_29()
   exit $X
 }
 
-NAMES[104]='./liblistwise/op/sn/sn.so'
+NAMES[106]='./liblistwise/op/sn/sn.so'
 fml_2_30()
 {
   exec 1>/dev/null
@@ -1706,7 +1736,7 @@ fml_2_30()
   exit $X
 }
 
-NAMES[105]='./liblistwise/op/ss/ss.so'
+NAMES[107]='./liblistwise/op/ss/ss.so'
 fml_2_31()
 {
   exec 1>/dev/null
@@ -1724,7 +1754,7 @@ fml_2_31()
   exit $X
 }
 
-NAMES[106]='./liblistwise/op/u/u.so'
+NAMES[108]='./liblistwise/op/u/u.so'
 fml_2_32()
 {
   exec 1>/dev/null
@@ -1742,7 +1772,7 @@ fml_2_32()
   exit $X
 }
 
-NAMES[107]='./liblistwise/op/v/v.so'
+NAMES[109]='./liblistwise/op/v/v.so'
 fml_2_33()
 {
   exec 1>/dev/null
@@ -1760,7 +1790,7 @@ fml_2_33()
   exit $X
 }
 
-NAMES[108]='./liblistwise/op/w/w.so'
+NAMES[110]='./liblistwise/op/w/w.so'
 fml_2_34()
 {
   exec 1>/dev/null
@@ -1778,7 +1808,7 @@ fml_2_34()
   exit $X
 }
 
-NAMES[109]='./liblistwise/op/xch/xch.so'
+NAMES[111]='./liblistwise/op/xch/xch.so'
 fml_2_35()
 {
   exec 1>/dev/null
@@ -1796,7 +1826,7 @@ fml_2_35()
   exit $X
 }
 
-NAMES[110]='./liblistwise/op/xm/xm.so'
+NAMES[112]='./liblistwise/op/xm/xm.so'
 fml_2_36()
 {
   exec 1>/dev/null
@@ -1814,7 +1844,7 @@ fml_2_36()
   exit $X
 }
 
-NAMES[111]='./liblistwise/op/xmf/xmf.so'
+NAMES[113]='./liblistwise/op/xmf/xmf.so'
 fml_2_37()
 {
   exec 1>/dev/null
@@ -1832,7 +1862,7 @@ fml_2_37()
   exit $X
 }
 
-NAMES[112]='./liblistwise/op/xs/xs.so'
+NAMES[114]='./liblistwise/op/xs/xs.so'
 fml_2_38()
 {
   exec 1>/dev/null
@@ -1850,7 +1880,7 @@ fml_2_38()
   exit $X
 }
 
-NAMES[113]='./liblistwise/op/xsf/xsf.so'
+NAMES[115]='./liblistwise/op/xsf/xsf.so'
 fml_2_39()
 {
   exec 1>/dev/null
@@ -1868,7 +1898,7 @@ fml_2_39()
   exit $X
 }
 
-NAMES[114]='./liblistwise/op/y/y.so'
+NAMES[116]='./liblistwise/op/y/y.so'
 fml_2_40()
 {
   exec 1>/dev/null
@@ -1886,7 +1916,7 @@ fml_2_40()
   exit $X
 }
 
-NAMES[115]='./liblistwise/op/z/z.so'
+NAMES[117]='./liblistwise/op/z/z.so'
 fml_2_41()
 {
   exec 1>/dev/null
@@ -1904,9 +1934,24 @@ fml_2_41()
   exit $X
 }
 
+NAMES[118]='./listwisedev/listwise'
+fml_2_42()
+{
+  exec 1>/dev/null
+  exec 2>&142
+
+  
+	gcc -D_GNU_SOURCE -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -o ./listwisedev/listwise ./listwisedev/args.o ./listwisedev/main.o -llistwise
+
+
+  X=$?
+  echo 42 1>&99
+  exit $X
+}
+
 
 # formulas and names for stage 3
-NAMES[116]='./fabdev/bake/bake.o'
+NAMES[119]='./fabdev/bake/bake.o'
 fml_3_0()
 {
   exec 1>/dev/null
@@ -1921,7 +1966,7 @@ fml_3_0()
   exit $X
 }
 
-NAMES[117]='./fabdev/bp/bp.o'
+NAMES[120]='./fabdev/bp/bp.o'
 fml_3_1()
 {
   exec 1>/dev/null
@@ -1936,7 +1981,7 @@ fml_3_1()
   exit $X
 }
 
-NAMES[118]='./fabdev/dep/dep.o'
+NAMES[121]='./fabdev/dep/dep.o'
 fml_3_2()
 {
   exec 1>/dev/null
@@ -1951,7 +1996,7 @@ fml_3_2()
   exit $X
 }
 
-NAMES[119]='./fabdev/dsc/dsc.o'
+NAMES[122]='./fabdev/dsc/dsc.o'
 fml_3_3()
 {
   exec 1>/dev/null
@@ -1966,7 +2011,7 @@ fml_3_3()
   exit $X
 }
 
-NAMES[120]='./fabdev/enclose/enclose.o'
+NAMES[123]='./fabdev/enclose/enclose.o'
 fml_3_4()
 {
   exec 1>/dev/null
@@ -1981,7 +2026,7 @@ fml_3_4()
   exit $X
 }
 
-NAMES[121]='./fabdev/ff/ff.dsc.tab.o'
+NAMES[124]='./fabdev/ff/ff.dsc.tab.o'
 fml_3_5()
 {
   exec 1>/dev/null
@@ -1996,7 +2041,7 @@ fml_3_5()
   exit $X
 }
 
-NAMES[122]='./fabdev/ff/ff.lex.o'
+NAMES[125]='./fabdev/ff/ff.lex.o'
 fml_3_6()
 {
   exec 1>/dev/null
@@ -2011,7 +2056,7 @@ fml_3_6()
   exit $X
 }
 
-NAMES[123]='./fabdev/ff/ff.o'
+NAMES[126]='./fabdev/ff/ff.o'
 fml_3_7()
 {
   exec 1>/dev/null
@@ -2026,7 +2071,7 @@ fml_3_7()
   exit $X
 }
 
-NAMES[124]='./fabdev/ff/ff.tab.o'
+NAMES[127]='./fabdev/ff/ff.tab.o'
 fml_3_8()
 {
   exec 1>/dev/null
@@ -2041,7 +2086,7 @@ fml_3_8()
   exit $X
 }
 
-NAMES[125]='./fabdev/ff/ff.tokens.o'
+NAMES[128]='./fabdev/ff/ff.tokens.o'
 fml_3_9()
 {
   exec 1>/dev/null
@@ -2056,7 +2101,7 @@ fml_3_9()
   exit $X
 }
 
-NAMES[126]='./fabdev/ffn/ffn.o'
+NAMES[129]='./fabdev/ffn/ffn.o'
 fml_3_10()
 {
   exec 1>/dev/null
@@ -2071,7 +2116,7 @@ fml_3_10()
   exit $X
 }
 
-NAMES[127]='./fabdev/ffproc/ffproc.o'
+NAMES[130]='./fabdev/ffproc/ffproc.o'
 fml_3_11()
 {
   exec 1>/dev/null
@@ -2086,7 +2131,7 @@ fml_3_11()
   exit $X
 }
 
-NAMES[128]='./fabdev/fml/fml.o'
+NAMES[131]='./fabdev/fml/fml.o'
 fml_3_12()
 {
   exec 1>/dev/null
@@ -2101,7 +2146,7 @@ fml_3_12()
   exit $X
 }
 
-NAMES[129]='./fabdev/gn/gn.o'
+NAMES[132]='./fabdev/gn/gn.o'
 fml_3_13()
 {
   exec 1>/dev/null
@@ -2116,7 +2161,7 @@ fml_3_13()
   exit $X
 }
 
-NAMES[130]='./fabdev/list/list.o'
+NAMES[133]='./fabdev/list/list.o'
 fml_3_14()
 {
   exec 1>/dev/null
@@ -2131,7 +2176,7 @@ fml_3_14()
   exit $X
 }
 
-NAMES[131]='./fabdev/main.o'
+NAMES[134]='./fabdev/main.o'
 fml_3_15()
 {
   exec 1>/dev/null
@@ -2146,7 +2191,7 @@ fml_3_15()
   exit $X
 }
 
-NAMES[132]='./fabdev/ts/ts.o'
+NAMES[135]='./fabdev/ts/ts.o'
 fml_3_16()
 {
   exec 1>/dev/null
@@ -2161,7 +2206,7 @@ fml_3_16()
   exit $X
 }
 
-NAMES[133]='./fabdev/var/var.o'
+NAMES[136]='./fabdev/var/var.o'
 fml_3_17()
 {
   exec 1>/dev/null
@@ -2176,7 +2221,7 @@ fml_3_17()
   exit $X
 }
 
-NAMES[134]='./liblistwise/liblistwise.so'
+NAMES[137]='./liblistwise/liblistwise.so'
 fml_3_18()
 {
   exec 1>/dev/null
@@ -2189,7 +2234,7 @@ sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
 	  cat -- ./common/coll.c ./common/xmem.c ./common/xstring.c ./liblistwise/apidata/apidata.c ./liblistwise/exec/exec.c ./liblistwise/generator/generator.c ./liblistwise/generator/generator.lex.c ./liblistwise/generator/generator.tab.c ./liblistwise/idx/idx.c ./liblistwise/last/last.c ./liblistwise/lstack/lstack.c ./liblistwise/object/object.c ./liblistwise/op/op.c ./liblistwise/re/re.c ./liblistwise/sel/sel.c )
 echo "local: *; };"
 
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/liblistwise.so ./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o -shared -Wl,--version-script=./liblistwise/exports -Wl,-soname,liblistwise.so
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/liblistwise.so ./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o -lpcre -ldl -shared -Wl,--version-script=./liblistwise/exports -Wl,-soname,liblistwise.so
 
 
   X=$?
@@ -2199,7 +2244,7 @@ echo "local: *; };"
 
 
 # formulas and names for stage 4
-NAMES[135]='./fabdev/fab'
+NAMES[138]='./fabdev/fab'
 fml_4_0()
 {
   exec 1>/dev/null
@@ -2229,7 +2274,7 @@ SKP=0
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=74))
+  ((SKP+=76))
 else
   # launch stage 1.0
   exec 100>$tmp ; rm -f $tmp ; fml_1_0 & PIDS[0]=$!
@@ -2306,10 +2351,12 @@ else
   exec 171>$tmp ; rm -f $tmp ; fml_1_71 & PIDS[71]=$!
   exec 172>$tmp ; rm -f $tmp ; fml_1_72 & PIDS[72]=$!
   exec 173>$tmp ; rm -f $tmp ; fml_1_73 & PIDS[73]=$!
+  exec 174>$tmp ; rm -f $tmp ; fml_1_74 & PIDS[74]=$!
+  exec 175>$tmp ; rm -f $tmp ; fml_1_75 & PIDS[75]=$!
 
   # harvest stage 1.0
   C=0
-  while [[ $C != 74 ]]; do
+  while [[ $C != 76 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -2327,7 +2374,7 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=42))
+  ((SKP+=43))
 else
   # launch stage 2.0
   exec 100>$tmp ; rm -f $tmp ; fml_2_0 & PIDS[0]=$!
@@ -2372,16 +2419,17 @@ else
   exec 139>$tmp ; rm -f $tmp ; fml_2_39 & PIDS[39]=$!
   exec 140>$tmp ; rm -f $tmp ; fml_2_40 & PIDS[40]=$!
   exec 141>$tmp ; rm -f $tmp ; fml_2_41 & PIDS[41]=$!
+  exec 142>$tmp ; rm -f $tmp ; fml_2_42 & PIDS[42]=$!
 
   # harvest stage 2.0
   C=0
-  while [[ $C != 42 ]]; do
+  while [[ $C != 43 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((74+$idx))
+    I=$((76+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -2424,7 +2472,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((116+$idx))
+    I=$((119+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -2449,7 +2497,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((135+$idx))
+    I=$((138+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
