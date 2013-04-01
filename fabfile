@@ -157,18 +157,3 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	find [ $dfab ] -name '*.tokens.*' -delete 2>/dev/null
 	rm -f [ $fab ]				2>/dev/null
 }
-
-[ $dfab/fab.tgz ~ j ]
-{
-	tar -C / -czvf [ $@ ] [
-		usr/lib/fab
-		usr/lib/listwise
-		usr/lib64/liblistwise.so
-		usr/lib64/liblistwise.so.0.1
-		usr/local/bin/lw
-		usr/local/bin/listwise
-		usr/local/bin/fab
-		usr/local/bin/gcc-dep ~ fx
-	]
-}
-

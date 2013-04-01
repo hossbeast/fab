@@ -296,6 +296,9 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	ls = var_access(vmap, "#");
 	fatal(map_set, fml->bags[fml->bagsl - 1], MMS("#"), MM(ls));
 
+	ls = var_access(vmap, "*");
+	fatal(map_set, fml->bags[fml->bagsl - 1], MMS("*"), MM(ls));
+
 	// resolve targets lists
 	fatal(list_ensure, stax, staxa, staxp);
 

@@ -1,6 +1,5 @@
-include guards
-
 generator-variables : reusable list transformation components
+	you get this with evalled generator strings - possibly more elegant way?
 
 set operations ?? 
 
@@ -33,6 +32,18 @@ $<, ${lhs}      - lefthand side of a multi-product formula
 $#, ${initdir}  - relative path to the directory containing the master fabfile
 $*, ${thisdir}	- relative path to the directory containing the current fabfile
 
+$# - master fabfile
+$* - current fabfile
+
+fabfile properties
+	path [default] (relative)
+	name
+	dir (relative)
+	ext
+	cnt - number of times invoked
+
+expose canons other modes as listwise operators
+
 # done
 - command line variable defs : immutably set the value of the variable, which cannot be
                                modified in a lower scope - cmdline is scope 0
@@ -46,6 +57,7 @@ $*, ${thisdir}	- relative path to the directory containing the current fabfile
 option for nofile nodes in invocations to be just ignored
 command line variable defs : "append this" anytime the variable is rendered/resolved
 sadly - if blocks and looping constructs are needed
+  do-not-invoke depending on how invocation string is referenced - reworked
+	include guards
 default target - invoke in same NOFILE-context can become default target
-do-not-invoke depending on how invocation string is referenced - reworked
 VARLINK between different names
