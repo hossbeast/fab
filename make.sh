@@ -2,20 +2,20 @@
 
 # Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
 #
-# This file is part of listwise.
-# 
-# listwise is free software: you can redistribute it and/or modify
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
-# listwise is distributed in the hope that it will be useful,
+#
+# fab is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
-# along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -32,9 +32,7 @@ fml_1_0()
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -fPIC -g -m64 -c ./../common/coll.c -o ./../common/coll.pic.o
 
 
@@ -49,9 +47,7 @@ fml_1_1()
   exec 1>/dev/null
   exec 2>&101
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -fPIC -g -m64 -c ./../common/parseint.c -o ./../common/parseint.pic.o
 
 
@@ -66,9 +62,7 @@ fml_1_2()
   exec 1>/dev/null
   exec 2>&102
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -fPIC -g -m64 -c ./../common/xmem.c -o ./../common/xmem.pic.o
 
 
@@ -83,9 +77,7 @@ fml_1_3()
   exec 1>/dev/null
   exec 2>&103
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -fPIC -g -m64 -c ./../common/xstring.c -o ./../common/xstring.pic.o
 
 
@@ -100,9 +92,7 @@ fml_1_4()
   exec 1>/dev/null
   exec 2>&104
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./apidata/apidata.c -o ./apidata/apidata.pic.o
 
 
@@ -117,9 +107,7 @@ fml_1_5()
   exec 1>/dev/null
   exec 2>&105
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./exec/exec.c -o ./exec/exec.pic.o
 
 
@@ -134,9 +122,7 @@ fml_1_6()
   exec 1>/dev/null
   exec 2>&106
 
-  # command  #!/bin/bash
-
-
+  
 	  flex  -o ./generator/generator.lex.c  --header-file=./generator/generator.lex.h  ./generator/generator.l
 
 
@@ -151,9 +137,7 @@ fml_1_7()
   exec 1>/dev/null
   exec 2>&107
 
-  # command  #!/bin/bash
-
-
+  
 	bison --warnings=error -o ./generator/generator.tab.c -d	./generator/generator.y
 
 
@@ -168,9 +152,7 @@ fml_1_8()
   exec 1>/dev/null
   exec 2>&108
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./idx/idx.c -o ./idx/idx.pic.o
 
 
@@ -185,9 +167,7 @@ fml_1_9()
   exec 1>/dev/null
   exec 2>&109
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./last/last.c -o ./last/last.pic.o
 
 
@@ -202,9 +182,7 @@ fml_1_10()
   exec 1>/dev/null
   exec 2>&110
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./object/object.c -o ./object/object.pic.o
 
 
@@ -219,9 +197,7 @@ fml_1_11()
   exec 1>/dev/null
   exec 2>&111
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/-d/-d.c -o ./op/-d/-d.pic.o
 
 
@@ -236,9 +212,7 @@ fml_1_12()
   exec 1>/dev/null
   exec 2>&112
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/-f/-f.c -o ./op/-f/-f.pic.o
 
 
@@ -253,9 +227,7 @@ fml_1_13()
   exec 1>/dev/null
   exec 2>&113
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/-l/-l.c -o ./op/-l/-l.pic.o
 
 
@@ -270,9 +242,7 @@ fml_1_14()
   exec 1>/dev/null
   exec 2>&114
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/bn/bn.c -o ./op/bn/bn.pic.o
 
 
@@ -287,9 +257,7 @@ fml_1_15()
   exec 1>/dev/null
   exec 2>&115
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/c/c.c -o ./op/c/c.pic.o
 
 
@@ -304,9 +272,7 @@ fml_1_16()
   exec 1>/dev/null
   exec 2>&116
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/cp/cp.c -o ./op/cp/cp.pic.o
 
 
@@ -321,9 +287,7 @@ fml_1_17()
   exec 1>/dev/null
   exec 2>&117
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/d/d.c -o ./op/d/d.pic.o
 
 
@@ -338,9 +302,7 @@ fml_1_18()
   exec 1>/dev/null
   exec 2>&118
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/dj/dj.c -o ./op/dj/dj.pic.o
 
 
@@ -355,9 +317,7 @@ fml_1_19()
   exec 1>/dev/null
   exec 2>&119
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/dn/dn.c -o ./op/dn/dn.pic.o
 
 
@@ -372,9 +332,7 @@ fml_1_20()
   exec 1>/dev/null
   exec 2>&120
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/fn/fn.c -o ./op/fn/fn.pic.o
 
 
@@ -389,9 +347,7 @@ fml_1_21()
   exec 1>/dev/null
   exec 2>&121
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/h/h.c -o ./op/h/h.pic.o
 
 
@@ -406,9 +362,7 @@ fml_1_22()
   exec 1>/dev/null
   exec 2>&122
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/j/j.c -o ./op/j/j.pic.o
 
 
@@ -423,9 +377,7 @@ fml_1_23()
   exec 1>/dev/null
   exec 2>&123
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/ls/ls.c -o ./op/ls/ls.pic.o
 
 
@@ -440,9 +392,7 @@ fml_1_24()
   exec 1>/dev/null
   exec 2>&124
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/lsr/lsr.c -o ./op/lsr/lsr.pic.o
 
 
@@ -457,9 +407,7 @@ fml_1_25()
   exec 1>/dev/null
   exec 2>&125
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/m/m.c -o ./op/m/m.pic.o
 
 
@@ -474,9 +422,7 @@ fml_1_26()
   exec 1>/dev/null
   exec 2>&126
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/o/o.c -o ./op/o/o.pic.o
 
 
@@ -491,9 +437,7 @@ fml_1_27()
   exec 1>/dev/null
   exec 2>&127
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/op.c -o ./op/op.pic.o
 
 
@@ -508,9 +452,7 @@ fml_1_28()
   exec 1>/dev/null
   exec 2>&128
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/pop/pop.c -o ./op/pop/pop.pic.o
 
 
@@ -525,9 +467,7 @@ fml_1_29()
   exec 1>/dev/null
   exec 2>&129
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/r/r.c -o ./op/r/r.pic.o
 
 
@@ -542,9 +482,7 @@ fml_1_30()
   exec 1>/dev/null
   exec 2>&130
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/rp/rp.c -o ./op/rp/rp.pic.o
 
 
@@ -559,9 +497,7 @@ fml_1_31()
   exec 1>/dev/null
   exec 2>&131
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/rx/rx.c -o ./op/rx/rx.pic.o
 
 
@@ -576,9 +512,7 @@ fml_1_32()
   exec 1>/dev/null
   exec 2>&132
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/s/s.c -o ./op/s/s.pic.o
 
 
@@ -593,9 +527,7 @@ fml_1_33()
   exec 1>/dev/null
   exec 2>&133
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/shift/shift.c -o ./op/shift/shift.pic.o
 
 
@@ -610,9 +542,7 @@ fml_1_34()
   exec 1>/dev/null
   exec 2>&134
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/sn/sn.c -o ./op/sn/sn.pic.o
 
 
@@ -627,9 +557,7 @@ fml_1_35()
   exec 1>/dev/null
   exec 2>&135
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/ss/ss.c -o ./op/ss/ss.pic.o
 
 
@@ -644,9 +572,7 @@ fml_1_36()
   exec 1>/dev/null
   exec 2>&136
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/u/u.c -o ./op/u/u.pic.o
 
 
@@ -661,9 +587,7 @@ fml_1_37()
   exec 1>/dev/null
   exec 2>&137
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/v/v.c -o ./op/v/v.pic.o
 
 
@@ -678,9 +602,7 @@ fml_1_38()
   exec 1>/dev/null
   exec 2>&138
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/w/w.c -o ./op/w/w.pic.o
 
 
@@ -695,9 +617,7 @@ fml_1_39()
   exec 1>/dev/null
   exec 2>&139
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/xch/xch.c -o ./op/xch/xch.pic.o
 
 
@@ -712,9 +632,7 @@ fml_1_40()
   exec 1>/dev/null
   exec 2>&140
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/xm/xm.c -o ./op/xm/xm.pic.o
 
 
@@ -729,9 +647,7 @@ fml_1_41()
   exec 1>/dev/null
   exec 2>&141
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/xmf/xmf.c -o ./op/xmf/xmf.pic.o
 
 
@@ -746,9 +662,7 @@ fml_1_42()
   exec 1>/dev/null
   exec 2>&142
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/xs/xs.c -o ./op/xs/xs.pic.o
 
 
@@ -763,9 +677,7 @@ fml_1_43()
   exec 1>/dev/null
   exec 2>&143
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/xsf/xsf.c -o ./op/xsf/xsf.pic.o
 
 
@@ -780,9 +692,7 @@ fml_1_44()
   exec 1>/dev/null
   exec 2>&144
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/y/y.c -o ./op/y/y.pic.o
 
 
@@ -797,9 +707,7 @@ fml_1_45()
   exec 1>/dev/null
   exec 2>&145
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./op/z/z.c -o ./op/z/z.pic.o
 
 
@@ -814,9 +722,7 @@ fml_1_46()
   exec 1>/dev/null
   exec 2>&146
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./re/re.c -o ./re/re.pic.o
 
 
@@ -831,9 +737,7 @@ fml_1_47()
   exec 1>/dev/null
   exec 2>&147
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./sel/sel.c -o ./sel/sel.pic.o
 
 
@@ -850,9 +754,7 @@ fml_2_0()
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./generator/generator.lex.c -o ./generator/generator.lex.pic.o
 
 
@@ -867,9 +769,7 @@ fml_2_1()
   exec 1>/dev/null
   exec 2>&101
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./generator/generator.c -o ./generator/generator.pic.o
 
 
@@ -884,9 +784,7 @@ fml_2_2()
   exec 1>/dev/null
   exec 2>&102
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./generator/generator.tab.c -o ./generator/generator.tab.pic.o
 
 
@@ -901,9 +799,7 @@ fml_2_3()
   exec 1>/dev/null
   exec 2>&103
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -c ./lstack/lstack.c -o ./lstack/lstack.pic.o
 
 
@@ -918,9 +814,7 @@ fml_2_4()
   exec 1>/dev/null
   exec 2>&104
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/-d/-d.so			\
 	./op/-d/-d.pic.o						\
 	-L. -llistwise -shared			\
@@ -938,9 +832,7 @@ fml_2_5()
   exec 1>/dev/null
   exec 2>&105
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/-f/-f.so			\
 	./../common/parseint.pic.o ./op/-f/-f.pic.o						\
 	-L. -llistwise -shared			\
@@ -958,9 +850,7 @@ fml_2_6()
   exec 1>/dev/null
   exec 2>&106
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/-l/-l.so			\
 	./../common/parseint.pic.o ./op/-l/-l.pic.o						\
 	-L. -llistwise -shared			\
@@ -978,9 +868,7 @@ fml_2_7()
   exec 1>/dev/null
   exec 2>&107
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/bn/bn.so			\
 	./op/bn/bn.pic.o						\
 	-L. -llistwise -shared			\
@@ -998,9 +886,7 @@ fml_2_8()
   exec 1>/dev/null
   exec 2>&108
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/c/c.so			\
 	./op/c/c.pic.o						\
 	-L. -llistwise -shared			\
@@ -1018,9 +904,7 @@ fml_2_9()
   exec 1>/dev/null
   exec 2>&109
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/cp/cp.so			\
 	./../common/xmem.pic.o ./op/cp/cp.pic.o						\
 	-L. -llistwise -shared			\
@@ -1038,9 +922,7 @@ fml_2_10()
   exec 1>/dev/null
   exec 2>&110
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/d/d.so			\
 	./op/d/d.pic.o						\
 	-L. -llistwise -shared			\
@@ -1058,9 +940,7 @@ fml_2_11()
   exec 1>/dev/null
   exec 2>&111
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/dj/dj.so			\
 	./op/dj/dj.pic.o						\
 	-L. -llistwise -shared			\
@@ -1078,9 +958,7 @@ fml_2_12()
   exec 1>/dev/null
   exec 2>&112
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/dn/dn.so			\
 	./op/dn/dn.pic.o						\
 	-L. -llistwise -shared			\
@@ -1098,9 +976,7 @@ fml_2_13()
   exec 1>/dev/null
   exec 2>&113
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/fn/fn.so			\
 	./op/fn/fn.pic.o						\
 	-L. -llistwise -shared			\
@@ -1118,9 +994,7 @@ fml_2_14()
   exec 1>/dev/null
   exec 2>&114
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/h/h.so			\
 	./op/h/h.pic.o						\
 	-L. -llistwise -shared			\
@@ -1138,9 +1012,7 @@ fml_2_15()
   exec 1>/dev/null
   exec 2>&115
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/j/j.so			\
 	./op/j/j.pic.o						\
 	-L. -llistwise -shared			\
@@ -1158,9 +1030,7 @@ fml_2_16()
   exec 1>/dev/null
   exec 2>&116
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/ls/ls.so			\
 	./../common/parseint.pic.o ./op/ls/ls.pic.o						\
 	-L. -llistwise -shared			\
@@ -1178,9 +1048,7 @@ fml_2_17()
   exec 1>/dev/null
   exec 2>&117
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/lsr/lsr.so			\
 	./../common/parseint.pic.o ./op/lsr/lsr.pic.o						\
 	-L. -llistwise -shared			\
@@ -1198,9 +1066,7 @@ fml_2_18()
   exec 1>/dev/null
   exec 2>&118
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/m/m.so			\
 	./op/m/m.pic.o						\
 	-L. -llistwise -shared			\
@@ -1218,9 +1084,7 @@ fml_2_19()
   exec 1>/dev/null
   exec 2>&119
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/o/o.so			\
 	./op/o/o.pic.o						\
 	-L. -llistwise -shared			\
@@ -1238,9 +1102,7 @@ fml_2_20()
   exec 1>/dev/null
   exec 2>&120
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/pop/pop.so			\
 	./op/pop/pop.pic.o						\
 	-L. -llistwise -shared			\
@@ -1258,9 +1120,7 @@ fml_2_21()
   exec 1>/dev/null
   exec 2>&121
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/r/r.so			\
 	./op/r/r.pic.o						\
 	-L. -llistwise -shared			\
@@ -1278,9 +1138,7 @@ fml_2_22()
   exec 1>/dev/null
   exec 2>&122
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/rp/rp.so			\
 	./../common/xmem.pic.o ./op/rp/rp.pic.o						\
 	-L. -llistwise -shared			\
@@ -1298,9 +1156,7 @@ fml_2_23()
   exec 1>/dev/null
   exec 2>&123
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/rx/rx.so			\
 	./../common/xmem.pic.o ./op/rx/rx.pic.o						\
 	-L. -llistwise -shared			\
@@ -1318,9 +1174,7 @@ fml_2_24()
   exec 1>/dev/null
   exec 2>&124
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/s/s.so			\
 	./op/s/s.pic.o						\
 	-L. -llistwise -shared			\
@@ -1338,9 +1192,7 @@ fml_2_25()
   exec 1>/dev/null
   exec 2>&125
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/shift/shift.so			\
 	./op/shift/shift.pic.o						\
 	-L. -llistwise -shared			\
@@ -1358,9 +1210,7 @@ fml_2_26()
   exec 1>/dev/null
   exec 2>&126
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/sn/sn.so			\
 	./../common/parseint.pic.o ./op/sn/sn.pic.o						\
 	-L. -llistwise -shared			\
@@ -1378,9 +1228,7 @@ fml_2_27()
   exec 1>/dev/null
   exec 2>&127
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/ss/ss.so			\
 	./../common/xmem.pic.o ./../common/xstring.pic.o ./op/ss/ss.pic.o						\
 	-L. -llistwise -shared			\
@@ -1398,9 +1246,7 @@ fml_2_28()
   exec 1>/dev/null
   exec 2>&128
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/u/u.so			\
 	./../common/parseint.pic.o ./../common/xmem.pic.o ./../common/xstring.pic.o ./op/u/u.pic.o						\
 	-L. -llistwise -shared			\
@@ -1418,9 +1264,7 @@ fml_2_29()
   exec 1>/dev/null
   exec 2>&129
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/v/v.so			\
 	./op/v/v.pic.o						\
 	-L. -llistwise -shared			\
@@ -1438,9 +1282,7 @@ fml_2_30()
   exec 1>/dev/null
   exec 2>&130
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/w/w.so			\
 	./op/w/w.pic.o						\
 	-L. -llistwise -shared			\
@@ -1458,9 +1300,7 @@ fml_2_31()
   exec 1>/dev/null
   exec 2>&131
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xch/xch.so			\
 	./op/xch/xch.pic.o						\
 	-L. -llistwise -shared			\
@@ -1478,9 +1318,7 @@ fml_2_32()
   exec 1>/dev/null
   exec 2>&132
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xm/xm.so			\
 	./op/xm/xm.pic.o						\
 	-L. -llistwise -shared			\
@@ -1498,9 +1336,7 @@ fml_2_33()
   exec 1>/dev/null
   exec 2>&133
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xmf/xmf.so			\
 	./op/xmf/xmf.pic.o						\
 	-L. -llistwise -shared			\
@@ -1518,9 +1354,7 @@ fml_2_34()
   exec 1>/dev/null
   exec 2>&134
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xs/xs.so			\
 	./op/xs/xs.pic.o						\
 	-L. -llistwise -shared			\
@@ -1538,9 +1372,7 @@ fml_2_35()
   exec 1>/dev/null
   exec 2>&135
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xsf/xsf.so			\
 	./op/xsf/xsf.pic.o						\
 	-L. -llistwise -shared			\
@@ -1558,9 +1390,7 @@ fml_2_36()
   exec 1>/dev/null
   exec 2>&136
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/y/y.so			\
 	./../common/xmem.pic.o ./op/y/y.pic.o						\
 	-L. -llistwise -shared			\
@@ -1578,9 +1408,7 @@ fml_2_37()
   exec 1>/dev/null
   exec 2>&137
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/z/z.so			\
 	./op/z/z.pic.o						\
 	-L. -llistwise -shared			\
@@ -1600,16 +1428,14 @@ fml_3_0()
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
+  
 	  exec 1>./exports
 	  echo "{ global: "
 sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
 	  cat -- ./../common/coll.c ./../common/xmem.c ./../common/xstring.c ./apidata/apidata.c ./exec/exec.c ./generator/generator.c ./generator/generator.lex.c ./generator/generator.tab.c ./idx/idx.c ./last/last.c ./lstack/lstack.c ./object/object.c ./op/op.c ./re/re.c ./sel/sel.c )
 echo "local: *; };"
 
-	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise.so ./../common/coll.pic.o ./../common/xmem.pic.o ./../common/xstring.pic.o ./apidata/apidata.pic.o ./exec/exec.pic.o ./generator/generator.lex.pic.o ./generator/generator.pic.o ./generator/generator.tab.pic.o ./idx/idx.pic.o ./last/last.pic.o ./lstack/lstack.pic.o ./object/object.pic.o ./op/op.pic.o ./re/re.pic.o ./sel/sel.pic.o -lpcre -ldl -shared -Wl,--version-script=exports -Wl,-soname,liblistwise.so
+	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise.so ./../common/coll.pic.o ./../common/xmem.pic.o ./../common/xstring.pic.o ./apidata/apidata.pic.o ./exec/exec.pic.o ./generator/generator.lex.pic.o ./generator/generator.pic.o ./generator/generator.tab.pic.o ./idx/idx.pic.o ./last/last.pic.o ./lstack/lstack.pic.o ./object/object.pic.o ./op/op.pic.o ./re/re.pic.o ./sel/sel.pic.o -shared -Wl,--version-script=./exports -Wl,-soname,liblistwise.so
 
 
   X=$?
