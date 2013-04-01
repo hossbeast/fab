@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
-# 
+#
 # This file is part of fab.
-# 
+#
 # fab is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # fab is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -32,9 +32,7 @@ fml_1_0()
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -g -m64 -c ./../common/cksum.c -o ./../common/cksum.o
 
 
@@ -49,9 +47,7 @@ fml_1_1()
   exec 1>/dev/null
   exec 2>&101
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -g -m64 -c ./../common/coll.c -o ./../common/coll.o
 
 
@@ -66,9 +62,7 @@ fml_1_2()
   exec 1>/dev/null
   exec 2>&102
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -g -m64 -c ./../common/parseint.c -o ./../common/parseint.o
 
 
@@ -83,9 +77,7 @@ fml_1_3()
   exec 1>/dev/null
   exec 2>&103
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -g -m64 -c ./../common/pstring.c -o ./../common/pstring.o
 
 
@@ -100,9 +92,7 @@ fml_1_4()
   exec 1>/dev/null
   exec 2>&104
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -g -m64 -c ./../common/unitstring.c -o ./../common/unitstring.o
 
 
@@ -117,9 +107,7 @@ fml_1_5()
   exec 1>/dev/null
   exec 2>&105
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -g -m64 -c ./../common/xmem.c -o ./../common/xmem.o
 
 
@@ -134,9 +122,7 @@ fml_1_6()
   exec 1>/dev/null
   exec 2>&106
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I./../common -O3 -Wall -Werror -g -m64 -c ./../common/xstring.c -o ./../common/xstring.o
 
 
@@ -151,9 +137,7 @@ fml_1_7()
   exec 1>/dev/null
   exec 2>&107
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./args/args.c -o ./args/args.o
 
 
@@ -168,9 +152,7 @@ fml_1_8()
   exec 1>/dev/null
   exec 2>&108
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./canon/canon.c -o ./canon/canon.o
 
 
@@ -185,9 +167,7 @@ fml_1_9()
   exec 1>/dev/null
   exec 2>&109
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./depblock/depblock.c -o ./depblock/depblock.o
 
 
@@ -202,9 +182,7 @@ fml_1_10()
   exec 1>/dev/null
   exec 2>&110
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./dirutil/dirutil.c -o ./dirutil/dirutil.o
 
 
@@ -219,9 +197,7 @@ fml_1_11()
   exec 1>/dev/null
   exec 2>&111
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -g -m64 -c ./fablw/op/fx/fx.c -o ./fablw/op/fx/fx.pic.o
 
 
@@ -236,9 +212,7 @@ fml_1_12()
   exec 1>/dev/null
   exec 2>&112
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -g -m64 -c ./fablw/op/fxc/fxc.c -o ./fablw/op/fxc/fxc.pic.o
 
 
@@ -253,9 +227,7 @@ fml_1_13()
   exec 1>/dev/null
   exec 2>&113
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -g -m64 -c ./fablw/op/fxw/fxw.c -o ./fablw/op/fxw/fxw.pic.o
 
 
@@ -270,9 +242,7 @@ fml_1_14()
   exec 1>/dev/null
   exec 2>&114
 
-  # command  #!/bin/bash
-
-
+  
 	bison --warnings=error -o ./ff/ff.dsc.tab.c -d	./ff/ff.dsc.y
 
 
@@ -287,9 +257,7 @@ fml_1_15()
   exec 1>/dev/null
   exec 2>&115
 
-  # command  #!/bin/bash
-
-
+  
 	  flex  -o ./ff/ff.lex.c  --header-file=./ff/ff.lex.h  ./ff/ff.l
 
 
@@ -304,9 +272,7 @@ fml_1_16()
   exec 1>/dev/null
   exec 2>&116
 
-  # command  #!/bin/bash
-
-
+  
 	bison --warnings=error -o ./ff/ff.tab.c -d	./ff/ff.y
 
 
@@ -321,9 +287,7 @@ fml_1_17()
   exec 1>/dev/null
   exec 2>&117
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./gn/gnlw.c -o ./gn/gnlw.o
 
 
@@ -338,9 +302,7 @@ fml_1_18()
   exec 1>/dev/null
   exec 2>&118
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./hashblock/hashblock.c -o ./hashblock/hashblock.o
 
 
@@ -355,9 +317,7 @@ fml_1_19()
   exec 1>/dev/null
   exec 2>&119
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./identity/identity.c -o ./identity/identity.o
 
 
@@ -372,9 +332,7 @@ fml_1_20()
   exec 1>/dev/null
   exec 2>&120
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./log/log.c -o ./log/log.o
 
 
@@ -389,9 +347,7 @@ fml_1_21()
   exec 1>/dev/null
   exec 2>&121
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./map/map.c -o ./map/map.o
 
 
@@ -406,9 +362,7 @@ fml_1_22()
   exec 1>/dev/null
   exec 2>&122
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./path/path.c -o ./path/path.o
 
 
@@ -423,9 +377,7 @@ fml_1_23()
   exec 1>/dev/null
   exec 2>&123
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./strstack/strstack.c -o ./strstack/strstack.o
 
 
@@ -440,9 +392,7 @@ fml_1_24()
   exec 1>/dev/null
   exec 2>&124
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./tmp/tmp.c -o ./tmp/tmp.o
 
 
@@ -457,9 +407,7 @@ fml_1_25()
   exec 1>/dev/null
   exec 2>&125
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./traverse/traverse.c -o ./traverse/traverse.o
 
 
@@ -476,9 +424,7 @@ fml_2_0()
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
+  
 	  gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fablw/op/fx/fx.so	./fablw/op/fx/fx.pic.o  -llistwise -shared -Wl,-soname,fx.so
 
 
@@ -493,9 +439,7 @@ fml_2_1()
   exec 1>/dev/null
   exec 2>&101
 
-  # command  #!/bin/bash
-
-
+  
 	  gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fablw/op/fxc/fxc.so	./fablw/op/fxc/fxc.pic.o  -llistwise -shared -Wl,-soname,fxc.so
 
 
@@ -510,9 +454,7 @@ fml_2_2()
   exec 1>/dev/null
   exec 2>&102
 
-  # command  #!/bin/bash
-
-
+  
 	  gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fablw/op/fxw/fxw.so	./fablw/op/fxw/fxw.pic.o  -llistwise -shared -Wl,-soname,fxw.so
 
 
@@ -527,9 +469,7 @@ fml_2_3()
   exec 1>/dev/null
   exec 2>&103
 
-  # command  #!/bin/bash
-
-
+  
 	exec 1>./ff/ff.tokens.h
 
 echo "#ifndef ff_TOK_H"
@@ -580,9 +520,7 @@ fml_3_0()
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./bake/bake.c -o ./bake/bake.o
 
 
@@ -597,9 +535,7 @@ fml_3_1()
   exec 1>/dev/null
   exec 2>&101
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./bp/bp.c -o ./bp/bp.o
 
 
@@ -614,9 +550,7 @@ fml_3_2()
   exec 1>/dev/null
   exec 2>&102
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./dep/dep.c -o ./dep/dep.o
 
 
@@ -631,9 +565,7 @@ fml_3_3()
   exec 1>/dev/null
   exec 2>&103
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./dsc/dsc.c -o ./dsc/dsc.o
 
 
@@ -648,9 +580,7 @@ fml_3_4()
   exec 1>/dev/null
   exec 2>&104
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./enclose/enclose.c -o ./enclose/enclose.o
 
 
@@ -665,9 +595,7 @@ fml_3_5()
   exec 1>/dev/null
   exec 2>&105
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./ff/ff.dsc.tab.c -o ./ff/ff.dsc.tab.o
 
 
@@ -682,9 +610,7 @@ fml_3_6()
   exec 1>/dev/null
   exec 2>&106
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./ff/ff.lex.c -o ./ff/ff.lex.o
 
 
@@ -699,9 +625,7 @@ fml_3_7()
   exec 1>/dev/null
   exec 2>&107
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./ff/ff.c -o ./ff/ff.o
 
 
@@ -716,9 +640,7 @@ fml_3_8()
   exec 1>/dev/null
   exec 2>&108
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./ff/ff.tab.c -o ./ff/ff.tab.o
 
 
@@ -733,9 +655,7 @@ fml_3_9()
   exec 1>/dev/null
   exec 2>&109
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./ff/ff.tokens.c -o ./ff/ff.tokens.o
 
 
@@ -750,9 +670,7 @@ fml_3_10()
   exec 1>/dev/null
   exec 2>&110
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./ffn/ffn.c -o ./ffn/ffn.o
 
 
@@ -767,9 +685,7 @@ fml_3_11()
   exec 1>/dev/null
   exec 2>&111
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./ffproc/ffproc.c -o ./ffproc/ffproc.o
 
 
@@ -784,9 +700,7 @@ fml_3_12()
   exec 1>/dev/null
   exec 2>&112
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fml/fml.c -o ./fml/fml.o
 
 
@@ -801,9 +715,7 @@ fml_3_13()
   exec 1>/dev/null
   exec 2>&113
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./gn/gn.c -o ./gn/gn.o
 
 
@@ -818,9 +730,7 @@ fml_3_14()
   exec 1>/dev/null
   exec 2>&114
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./list/list.c -o ./list/list.o
 
 
@@ -835,9 +745,7 @@ fml_3_15()
   exec 1>/dev/null
   exec 2>&115
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./main.c -o ./main.o
 
 
@@ -852,9 +760,7 @@ fml_3_16()
   exec 1>/dev/null
   exec 2>&116
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./ts/ts.c -o ./ts/ts.o
 
 
@@ -869,9 +775,7 @@ fml_3_17()
   exec 1>/dev/null
   exec 2>&117
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./var/var.c -o ./var/var.o
 
 
@@ -888,9 +792,7 @@ fml_4_0()
   exec 1>/dev/null
   exec 2>&100
 
-  # command  #!/bin/bash
-
-
+  
 	gcc -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fab ./../common/cksum.o ./../common/coll.o ./../common/parseint.o ./../common/pstring.o ./../common/unitstring.o ./../common/xmem.o ./../common/xstring.o ./args/args.o ./bake/bake.o ./bp/bp.o ./canon/canon.o ./dep/dep.o ./depblock/depblock.o ./dirutil/dirutil.o ./dsc/dsc.o ./enclose/enclose.o ./ff/ff.dsc.tab.o ./ff/ff.lex.o ./ff/ff.o ./ff/ff.tab.o ./ff/ff.tokens.o ./ffn/ffn.o ./ffproc/ffproc.o ./fml/fml.o ./gn/gn.o ./gn/gnlw.o ./hashblock/hashblock.o ./identity/identity.o ./list/list.o ./log/log.o ./main.o ./map/map.o ./path/path.o ./strstack/strstack.o ./tmp/tmp.o ./traverse/traverse.o ./ts/ts.o ./var/var.o -llistwise
 
 
