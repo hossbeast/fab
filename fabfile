@@ -37,7 +37,7 @@ $fab						= [ $dfab/$name ~ j ]
 +[@std.y]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 
 # standard files - fPIC compilation
-+[@std.c.ext]($gendir = $dfab; $rdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
++[@std.c]($gendir = $dfab; $rdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # operator so's
 $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
@@ -114,7 +114,7 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 # tasks
 #
 
-[ @install ] : [ @all ]
+[ @install ]
 {
 	install -d															[ $destdir/$bindir ]
 	install [ $fab ]												[ $destdir/$bindir/$name ]
@@ -133,9 +133,6 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	install [ $dfab/fablib/std/c.fab ]			[ $destdir/usr/lib/fab/lib/std/c.fab ]
 	install [ $dfab/fablib/std/l.fab ]			[ $destdir/usr/lib/fab/lib/std/l.fab ]
 	install [ $dfab/fablib/std/y.fab ]			[ $destdir/usr/lib/fab/lib/std/y.fab ]
-	install [ $dfab/fablib/std/c/ext.fab ]	[ $destdir/usr/lib/fab/lib/std/c/ext.fab ]
-	install [ $dfab/fablib/std/l/ext.fab ]	[ $destdir/usr/lib/fab/lib/std/l/ext.fab ]
-	install [ $dfab/fablib/std/y/ext.fab ]	[ $destdir/usr/lib/fab/lib/std/y/ext.fab ]
 	install -d															[ $destdir/usr/lib/fab/listwise ]
 	install [ $dfab/fablw/op/fx/fx.so ]			[ $destdir/usr/lib/fab/listwise/fx.so ]
 	install [ $dfab/fablw/op/fxc/fxc.so ]		[ $destdir/usr/lib/fab/listwise/fxc.so ]

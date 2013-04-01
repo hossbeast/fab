@@ -1,24 +1,24 @@
 /* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# y.fab
+# @std.y
 #  provides discovery formula for .y files
-#  provides fabrication formula for .tab.c -> .tab.o
-#  provides dependencies for tab.o -> .y
+#  provides fabrication formula for .tab.c -> .tab.<ext>
+#  provides dependencies for tab.<ext> -> .y
 
 # var/closure
 #  cc
@@ -38,6 +38,9 @@
 #  fabrdirs   - 
 #  fabpaths   - 
 #
+
+# default object file extension
+$ext = [ o ]
 
 # paths to y files for discovery
 $ydscpaths = [
@@ -76,15 +79,15 @@ $yfabpaths = [
 {
 	    [ $bison ] [ $bisonflags ~ ss/u/fx ] -o /dev/stdout [ $@ ] [
 	] | [ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG -xc - [
-	] | gcc-dep '[ $gendir ]' [ $@ ~ rx/xs/<y>/tab.o/fx ] o
+	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<y>/<tab. $ext >/y/fx ~ j ] ] [ $ext ]
 }
 
 # $bison : y -> { tab.c, tab.h }
-[ $yfabpaths ~ xs/<y>/tab.c/y/v/d/cp/u/xs/<tab.c>/<tab.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<tab.c>/<y>/xs/<tab.h>/<y>/ss/u ]
+[ $yfabpaths ~ xs/<y>/<tab.c>/y/v/d/cp/u/xs/<tab.c>/<tab.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<tab.c>/<y>/xs/<tab.h>/<y>/ss/u ]
 {
 	[ $bison ] [ $bisonflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ] -d	[ $@ ~ rx/ineed/xm/<y>/ss/u ]
 }
 
 # $cc : tab.c -> tab.o via std.c
-+[@std.c]($cfabpaths = [ $yfabpaths ~ xs/<y>/<tab.c> ]; $cc $cflags; $cdscpaths)
-
++[@std.c](-$cobjpaths; $cfabpaths = [ $yfabpaths ~ xs/<y>/<tab.c> ]; $cc $cflags; $cdscpaths)
+$yobjpaths = [ $cobjpaths ]

@@ -1,25 +1,11 @@
-# includes
-	two kinds
-	reusable
-		bindings
-	include guards
+include guards
 
-# pre-installed reusable >> includes
-	generator-variables : reusable list transformation components
-	
-# list syntax for interpolation with spaces [ a, b ], and with no spaces [ a b ]
-# command line variable defs : "append this" anytime the variable is rendered/resolved
-# command line variable defs : immutably set the value of the variable, which cannot be
-#                              modified in a lower scope - cmdline is scope 0
-
+generator-variables : reusable list transformation components
 
 set operations ?? 
 
 [ a b ] U [ b c ] = [ a b c ]
 [ a b ] I [ b c ] = [ b ]
-
-file-node change should be propagated by creation of FORCE files in directories
-of nodes that are affected, and then their hashes committed
 
 # generator-string variables, and composition from variables
 # content signatures
@@ -46,3 +32,20 @@ $@, ${products} - products of the current formula
 $<, ${lhs}      - lefthand side of a multi-product formula
 $#, ${initdir}  - relative path to the directory containing the master fabfile
 $*, ${thisdir}	- relative path to the directory containing the current fabfile
+
+# done
+- command line variable defs : immutably set the value of the variable, which cannot be
+                               modified in a lower scope - cmdline is scope 0
+
+- file-node change should be propagated by creation of FORCE files in directories
+  of nodes that are affected, and then their hashes committed
+- list syntax for interpolation with spaces [ a, b ], and with no spaces [ a b ]
+- evalled generator-strings
+
+# NEED
+option for nofile nodes in invocations to be just ignored
+command line variable defs : "append this" anytime the variable is rendered/resolved
+sadly - if blocks and looping constructs are needed
+default target - invoke in same NOFILE-context can become default target
+do-not-invoke depending on how invocation string is referenced - reworked
+VARLINK between different names

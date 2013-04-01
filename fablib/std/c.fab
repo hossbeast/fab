@@ -37,6 +37,9 @@
 #  fabpaths   - 
 #
 
+# default object file extension
+$ext = [ o ]
+
 # paths to c files for discovery
 $cdscpaths = [
 	$paths				# paths
@@ -69,14 +72,17 @@ $cfabpaths = [
 	~ lsr ]
 ~ xm/<c> ]
 
+# paths to object files
+$cobjpaths = [ $cfabpaths ~ [ xs/<c>/< $ext >/y ~ j ] ]
+
 # discovery
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ rx/xs/<o>/fx ] o
+	[ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<c>/< $ext >/fx ~ j ] ] [ $ext ]
 }
 
 # fabrication and dependency
-[ $cfabpaths ~ xs/<o>/y/dj/shift ] :: [ $< ~ rx/xs/<c> ]
+[ $cobjpaths ~ dj/shift ] :: [ $< ~ [ rx/xs/< $ext >/<c> ~ j ] ]
 {
 	[ $cc ] [ $cflags ~ ss/u/fx ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
 }

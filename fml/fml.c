@@ -52,6 +52,7 @@ union g_fmls_t		g_fmls = { { .size = sizeof(fml) } };
 
 static int dscv_attach(gn * t, fmleval * fmlv)
 {
+/*
 	int x;
 	for(x = 0; x < t->dscvsl; x++)
 	{
@@ -69,6 +70,7 @@ static int dscv_attach(gn * t, fmleval * fmlv)
 			return 1;
 		}
 	}
+*/
 
 	if(t->dscvsl == t->dscvsa)
 	{
@@ -318,16 +320,6 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 
 int fml_render(ts * const restrict ts, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
 {
-/*
-	printf("resolving (%s)[%3d,%3d - %3d,%3d]\n"
-		, ff_idstring(ts->fmlv->fml->ffn->loc.ff)
-		, ts->fmlv->fml->ffn->loc.f_lin + 1
-		, ts->fmlv->fml->ffn->loc.f_col + 1
-		, ts->fmlv->fml->ffn->loc.l_lin + 1
-		, ts->fmlv->fml->ffn->loc.l_col + 1
-	);
-*/
-
 	// resolve the list of command
 	int pn = staxp;
 	fatal(list_resolve, ts->fmlv->fml->ffn->command, ts->fmlv->bag, gp, stax, staxa, &pn, 1);
@@ -337,7 +329,7 @@ int fml_render(ts * const restrict ts, generator_parser * const gp, lstack *** c
 		fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
 		fatal(list_renderto, (*stax)[staxp], &ts->cmd_txt);
 	}
-	else if(ts->cmd_txt)
+	else
 	{
 		fatal(list_render, (*stax)[staxp], &ts->cmd_txt);
 	}
