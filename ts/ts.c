@@ -181,19 +181,19 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 
 					if(e_stat)
 					{
-						log_add("%*sx=%d", 100 - R, "", ts[x]->r_status);
+						log_add("%*s%d", 100 - R, "", ts[x]->r_status);
 					}
 					else if(e_sign)
 					{
-						log_add("%*ss=%d", 100 - R, "", ts[x]->r_signal);
+						log_add("%*ss=%d", 98 - R, "", ts[x]->r_signal);
 					}
 					else if(e_stde)
 					{
-						log_add("%*se=%d", 100 - R, "", ts[x]->stde_txt->l);
+						log_add("%*se=%d", 98 - R, "", ts[x]->stde_txt->l);
 					}
 					else
 					{
-						log_add("%*sx=0", 100 - R, "");
+						log_add("%*s0", 100 - R, "");
 					}
 					log_finish(0);
 				}

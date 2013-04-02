@@ -76,6 +76,11 @@ $cfabpaths = [
 $cobjpaths = [ $cfabpaths ~ [ xs/<c>/< $ext >/y ~ j ] ]
 
 # discovery
+#
+# -MM : ignore system headers
+# -MG : include generated files
+# -MP : produce phony list - which is what gcc-dep actually parses
+#
 [ $cdscpaths ] %
 {
 	[ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<c>/< $ext >/fx ~ j ] ] [ $ext ]
