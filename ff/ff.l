@@ -175,6 +175,8 @@
 %x commandchecklit
 %x commandlit
 
+%x blockcheck
+
 %x list
 
 %x varref
@@ -230,6 +232,7 @@
 <INITIAL>[=]																					{ return LEX(yytext[0]); }
 <INITIAL>[;]																					{ return LEX(yytext[0]); }
 <INITIAL>[%]																					{ return LEX(yytext[0]); }
+<INITIAL>[}]																					{ return LEX(yytext[0]); }
 <INITIAL>[{]																					{
 																												PUSHSTATE(command, yyextra);
 																												return LEX(yytext[0]);
@@ -245,7 +248,11 @@
 																											}
 <list>[,]																							{ return LEX(yytext[0]); }
 
-<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:()\-*=;{]+		{
+<INITIAL>"once"																				{
+																												PUSHSTATE(blockcheck, yyextra);
+																												return LEX(ONCE);
+																											}
+<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:()\-*=;}{]+		{
 																												// string of anything else 
 																												return LEX(WORD);
 																											}
@@ -253,6 +260,13 @@
 																												// string of anything else 
 																												return LEX(WORD);
 																											}
+<blockcheck>[\n]																			{ loc_reset(yyextra, yylloc); }
+<blockcheck>[\t ]+																		{ locify(yyextra, yylloc, yyleng, 0); }
+<blockcheck>[{]																				{
+																												POPSTATE(yyextra);
+																												return LEX(yytext[0]);
+																											}
+<blockcheck>[\x00-\xFF]																{ POPSTATE(yyextra); yyless(0); }
 
 <command>\n																						{
 																												// command
@@ -325,4 +339,3 @@
 																												ff_yyerror(0, 0, yyextra, space);
 																												return 0;
 																											}
-

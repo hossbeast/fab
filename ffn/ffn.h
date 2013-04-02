@@ -51,7 +51,8 @@
 	_FFN(FFN_VARREF					, 0x0a	, x)	\
 	_FFN(FFN_LF							, 0x0b	, x)	\
 	_FFN(FFN_WORD						, 0x0c	, x)	\
-	_FFN(FFN_NOFILE					, 0x0d	, x)
+	_FFN(FFN_NOFILE					, 0x0d	, x)	\
+	_FFN(FFN_ONCEBLOCK			, 0x0e	, x)
 
 enum {
 #define _FFN(a, b, c) a = b,
@@ -168,7 +169,7 @@ typedef struct ff_node
 			int								lista;
 		};
 
-		struct {											// FFN_STMTLIST
+		struct {											// FFN_STMTLIST, FFN_ONCEBLOCK
 			struct ff_node**	statements;
 			int								statementsl;
 		};

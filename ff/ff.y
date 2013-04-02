@@ -39,7 +39,7 @@
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
-%expect 12
+%expect 13
 
 /* zero based lines and columns */
 %initial-action { memset(&@$, 0, sizeof(@$)); }
@@ -94,6 +94,8 @@
 %token <num> '('								/* invocation context */
 %token <num> ')'								/* invocation context */
 
+%token <num> ONCE		"ONCE"			/* once */
+
 /* nonterminals */
 %type  <wordparts> gwordparts
 %type  <wordparts> qwordparts
@@ -122,6 +124,7 @@
 %type  <node> generator
 %type  <node> varref
 %type  <node> varrefs
+%type  <node> onceblock
 
 /* sugar */
 %token END 0 "end of file"
@@ -152,6 +155,14 @@ statement
 	| dependency
 	| fabrication
 	| discovery
+	| onceblock
+	;
+
+onceblock
+	: ONCE '{' statements '}'
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_ONCEBLOCK, $1.s, $4.e, $3);
+	}
 	;
 
 varassign

@@ -143,6 +143,10 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 	{
 		n->chain[0]							= va_arg(va, ff_node*);	// statements
 	}
+	else if(type == FFN_ONCEBLOCK	)
+	{
+		n->chain[0]							= va_arg(va, ff_node*);
+	}
 	else if(type == FFN_DEPENDENCY)
 	{
 		n->needs								= va_arg(va, ff_node*);
@@ -291,6 +295,15 @@ void ffn_dump(ff_node * const root)
 			);
 
 			if(ffn->type == FFN_STMTLIST)
+			{
+				log(L_FF | L_FFTREE, "%*s  %12s : %d"
+					, lvl * 2, ""
+					, "statements", ffn->statementsl
+				);
+				for(x = 0; x < ffn->statementsl; x++)
+					dump(ffn->statements[x], lvl + 1);
+			}
+			else if(ffn->type == FFN_ONCEBLOCK)
 			{
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""

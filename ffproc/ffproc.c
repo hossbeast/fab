@@ -93,7 +93,11 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		{
 			ff_node* stmt = ff->ffn->statements[x];
 
-			if(stmt->type == FFN_DEPENDENCY)
+			if(stmt->type == FFN_ONCEBLOCK)
+			{
+
+			}
+			else if(stmt->type == FFN_DEPENDENCY)
 			{
 				fatal(dep_process, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp), first, 0, 0, 0);
 
