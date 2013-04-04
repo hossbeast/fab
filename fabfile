@@ -66,7 +66,6 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [
 	] -llistwise -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
 }
-# ~ rx/bn/fn ] .so ]
 
 # generated files
 +[@std.c]($gendir = $dfab; $fabpaths = [ $dfab/ff/ff.tokens.c ~ j ]; $cc $cflags)

@@ -42,7 +42,9 @@ fabfile properties
 	ext
 	cnt - number of times invoked
 
-expose canons other modes as listwise operators
+- expose canons other modes as listwise operators
+- C-code compiled bakescrips
+- blocking node - dependency unreachable by traversal
 
 # done
 - command line variable defs : immutably set the value of the variable, which cannot be
