@@ -272,6 +272,7 @@ int gn_edge_add(
 	, struct ff_node * const reg_ffn
 	, gn * const dscv_gn
 	, int isweak
+	, int isbridge
 	, int * const newa
 	, int * const newb
 	, int * const newr
@@ -329,6 +330,7 @@ int gn_edge_add(
 			rel->A = gna;
 			rel->B = gnb;
 			rel->weak = isweak;
+			rel->bridge = isbridge;
 
 			if(reg_ffn)
 			{
@@ -860,7 +862,7 @@ void gn_dump(gn * gn)
 			{
 				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
 					, ""
-					, gn->needs.e[x]->weak ? "*" : " "
+					, gn->needs.e[x]->weak ? "*" : gn->needs.e[x]->bridge ? "^" : " "
 					, gn->needs.e[x]->B->idstring
 					, ff_idstring(gn->needs.e[x]->ffn->loc.ff)
 					, gn->needs.e[x]->ffn->loc.f_lin + 1
@@ -873,7 +875,7 @@ void gn_dump(gn * gn)
 			{
 				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (DSC:%s)[%6s%s%6s]"
 					, ""
-					, gn->needs.e[x]->weak ? "*" : " "
+					, gn->needs.e[x]->weak ? "*" : gn->needs.e[x]->bridge ? "^" : " "
 					, gn->needs.e[x]->B->idstring
 					, gn->needs.e[x]->dscv_gn->idstring
 					, "", "cache", ""
@@ -888,7 +890,7 @@ void gn_dump(gn * gn)
 			{
 				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
 					, ""
-					, gn->feeds.e[x]->weak ? "*" : " "
+					, gn->feeds.e[x]->weak ? "*" : gn->feeds.e[x]->bridge ? "^" : " "
 					, gn->feeds.e[x]->A->idstring
 					, ff_idstring(gn->feeds.e[x]->ffn->loc.ff)
 					, gn->feeds.e[x]->ffn->loc.f_lin + 1
@@ -901,7 +903,7 @@ void gn_dump(gn * gn)
 			{
 				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (DSC:%s)[%6s%s%6s]"
 					, ""
-					, gn->feeds.e[x]->weak ? "*" : " "
+					, gn->feeds.e[x]->weak ? "*" : gn->feeds.e[x]->bridge ? "^" : " "
 					, gn->feeds.e[x]->A->idstring
 					, gn->feeds.e[x]->dscv_gn->idstring
 					, "", "cache", ""
@@ -912,4 +914,3 @@ void gn_dump(gn * gn)
 		log(L_DG | L_DGRAPH, "");
 	}
 }
-

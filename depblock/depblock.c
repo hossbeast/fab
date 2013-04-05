@@ -174,7 +174,7 @@ int depblock_write(const depblock * const block)
 	finally : coda;
 }
 
-int depblock_addrelation(depblock * const db, const path * const A, const path * const B, int isweak)
+int depblock_addrelation(depblock * const db, const path * const A, const path * const B, int isweak, int isbridge)
 {
 	if(A->basel >= (sizeof(db->block->sets[0].nbase) / sizeof(db->block->sets[0].nbase[0])))
 		return 0; // nbase too long
@@ -194,11 +194,14 @@ int depblock_addrelation(depblock * const db, const path * const A, const path *
 	{
 		if(db->block->sets[x].weak == isweak)
 		{
-			if(strcmp(db->block->sets[x].nbase, A->base ?: "") == 0 && strcmp(db->block->sets[x].needs, A->in) == 0)
+			if(db->block->sets[x].bridge == isbridge)
 			{
-				if(strcmp(db->block->sets[x].fbase, B->base ?: "") == 0)
+				if(strcmp(db->block->sets[x].nbase, A->base ?: "") == 0 && strcmp(db->block->sets[x].needs, A->in) == 0)
 				{
-					break;
+					if(strcmp(db->block->sets[x].fbase, B->base ?: "") == 0)
+					{
+						break;
+					}
 				}
 			}
 		}
@@ -219,6 +222,7 @@ int depblock_addrelation(depblock * const db, const path * const A, const path *
 		memcpy(db->block->sets[x].needs, A->in, A->inl);
 
 		db->block->sets[x].weak = isweak;
+		db->block->sets[x].bridge = isbridge;
 		db->block->setsl++;
 	}
 
@@ -228,4 +232,3 @@ int depblock_addrelation(depblock * const db, const path * const A, const path *
 	memcpy(db->block->sets[x].feeds[db->block->sets[x].feedsl++], B->in, B->inl);
 	return 1;
 }
-

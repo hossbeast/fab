@@ -106,12 +106,24 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 // SUMMARY
 //  traversal
 //
+// PARAMETERS
+//  n        -
+//  rel_off  -
+//  d        -
+//  weak     -
+//  nextweak -
+//  bridge   -
+//  stack    -
+//  num      -
+//  logic    -
+//  t        -
+//
 // RETURNS
 //  1 - success
 //  0 - callback failure, or fatal cycle
 // -1 - cycle detection (internal)
 //
-static int enter(gn * const n, size_t rel_off, int d, int weak, int nextweak, gn * (* const stack)[64], int * num, int (*const logic)(struct gn *, int), int t)
+static int enter(gn * const n, size_t rel_off, int d, int weak, int nextweak, int bridge, gn * (* const stack)[64], int * num, int (*const logic)(struct gn *, int), int t)
 {
 	if(n->guard)	// cycle
 	{
@@ -132,33 +144,36 @@ static int enter(gn * const n, size_t rel_off, int d, int weak, int nextweak, gn
 	{
 		if(!rels->e[x]->weak || weak)
 		{
-			if(rels->e[x]->B->travel != t)
+			if(!rels->e[x]->bridge || bridge)
 			{
-				int e = enter(rels->e[x]->B, rel_off, d + 1, nextweak, nextweak, stack, num, logic, t);
-				if(e == -1)
+				if(rels->e[x]->B->travel != t)
 				{
-					if((*num) < sizeof((*stack)) / sizeof((*stack)[0]))
-						(*stack)[(*num)++] = n;
-
-					if((*stack)[0] == n)
+					int e = enter(rels->e[x]->B, rel_off, d + 1, nextweak, nextweak, bridge, stack, num, logic, t);
+					if(e == -1)
 					{
-						if(raise_cycle(stack, (*num)) == 0)
+						if((*num) < sizeof((*stack)) / sizeof((*stack)[0]))
+							(*stack)[(*num)++] = n;
+
+						if((*stack)[0] == n)
 						{
+							if(raise_cycle(stack, (*num)) == 0)
+							{
+								n->guard = 0;
+								return 0;
+							}
+						}
+						else
+						{
+							// continue unwinding
 							n->guard = 0;
-							return 0;
+							return -1;
 						}
 					}
-					else
+					else if(e == 0)
 					{
-						// continue unwinding
 						n->guard = 0;
-						return -1;
+						return 0;
 					}
-				}
-				else if(e == 0)
-				{
-					n->guard = 0;
-					return 0;
 				}
 			}
 		}
@@ -178,12 +193,12 @@ static int enter(gn * const n, size_t rel_off, int d, int weak, int nextweak, gn
 
 static int o_t;
 
-int traverse_depth_bynodes_needsward_useweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+int traverse_depth_bynodes_needsward_noweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), 0, 1, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), 0, 0, 0, 0, &stack, &num, logic, ++o_t);
 }
 
 int traverse_depth_bynodes_needsward_noweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
@@ -191,7 +206,7 @@ int traverse_depth_bynodes_needsward_noweak(struct gn * const restrict r, int (*
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), 0, 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), 0, 0, 0, 1, &stack, &num, logic, ++o_t);
 }
 
 int traverse_depth_bynodes_needsward_skipweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
@@ -199,15 +214,31 @@ int traverse_depth_bynodes_needsward_skipweak(struct gn * const restrict r, int 
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), 0, 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), 0, 0, 1, 1, &stack, &num, logic, ++o_t);
 }
 
-int traverse_depth_bynodes_feedsward_useweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+int traverse_depth_bynodes_needsward_useweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), 0, 1, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), 0, 1, 1, 0, &stack, &num, logic, ++o_t);
+}
+
+int traverse_depth_bynodes_needsward_useweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), 0, 1, 1, 1, &stack, &num, logic, ++o_t);
+}
+
+int traverse_depth_bynodes_feedsward_noweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), 0, 0, 0, 0, &stack, &num, logic, ++o_t);
 }
 
 int traverse_depth_bynodes_feedsward_noweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
@@ -215,7 +246,7 @@ int traverse_depth_bynodes_feedsward_noweak(struct gn * const restrict r, int (*
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), 0, 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), 0, 0, 0, 1, &stack, &num, logic, ++o_t);
 }
 
 int traverse_depth_bynodes_feedsward_skipweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
@@ -223,7 +254,23 @@ int traverse_depth_bynodes_feedsward_skipweak(struct gn * const restrict r, int 
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), 0, 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), 0, 0, 1, 1, &stack, &num, logic, ++o_t);
+}
+
+int traverse_depth_bynodes_feedsward_useweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), 0, 1, 1, 0, &stack, &num, logic, ++o_t);
+}
+
+int traverse_depth_bynodes_feedsward_useweak(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), 0, 1, 1, 1, &stack, &num, logic, ++o_t);
 }
 
 int traverse_init()
@@ -237,4 +284,3 @@ void traverse_teardown()
 {
 	map_free(o_cycles);
 }
-

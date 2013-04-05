@@ -246,15 +246,7 @@ coda;
 
 int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, const uint32_t flags)
 {
-
-	// parse
 	ff_file * ff = 0;
-	fatal(ff_reg_load, ffp, inpath, &ff);
-
-	if(!ff)
-		qfail();
-
-	ff->count++;
 
 	if(log_would(L_INVOKE))
 	{
@@ -263,6 +255,14 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		
 		log(L_INVOKE, "%s @ %s", inpath->can, sstr);
 	}
+
+	// parse
+	fatal(ff_reg_load, ffp, inpath, &ff);
+
+	if(!ff)
+		qfail();
+
+	ff->count++;
 
 	// use up one list and populate the * variable (path to the directory of the fabfile)
 	fatal(list_ensure, stax, staxa, (*staxp));

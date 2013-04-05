@@ -79,7 +79,8 @@
 %token <num> '@'								/* nofile reference */
 %token <num> '.'								/* nofile scoping */
 %token <num> ':'								/* dependency */
-%token <num> '*'								/* weak reference */
+%token <num> '*'								/* weak dependency */
+%token <num> '^'								/* bridge dependency */
 %token <num> '%'								/* dependency discovery */
 %token <num> '['								/* list start */
 %token <num> ']'								/* list end */
@@ -248,6 +249,10 @@ dependency
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE | FFN_WEAK);
 	}
+	| list ':' '^' list
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_SINGLE | FFN_BRIDGE);
+	}
 	| list ':' ':' list
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $4->e, $1, $4, FFN_MULTI);
@@ -255,6 +260,10 @@ dependency
 	| list ':' ':' '*' list
 	{
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $5->e, $1, $5, FFN_MULTI | FFN_WEAK);
+	}
+	| list ':' ':' '^' list
+	{
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_DEPENDENCY, $1->s, $5->e, $1, $5, FFN_MULTI | FFN_BRIDGE);
 	}
 	;
 

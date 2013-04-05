@@ -115,6 +115,7 @@ typedef struct
 	struct gn *				A;			// A needs B
 	struct gn *				B;			// B feeds A
 	int								weak;		// whether this is a weak relation
+	int								bridge;	// whether this is a bridge relation (unreachable via fabfile traversals)
 } relation;
 
 typedef struct gn
@@ -301,6 +302,7 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 //  [ffn]      - for a regular relation, originating dependency node
 //  [dscv_gn]  - for a cached relation, node whose discovery cache contained this relation
 //  isweak     - whether to create a weak relation
+//  isweak     - whether to create a bridge relation
 //  [newa]     - incremented if A was created
 //  [newb]     - incremented if B was created
 //  [newr]     - incremented if a new edge was created
@@ -316,6 +318,7 @@ int gn_edge_add(
 	, struct ff_node * const restrict ffn
 	, gn * const restrict dscv_gn
 	, int isweak
+	, int isbridge
 	, int * const restrict newa
 	, int * const restrict newb
 	, int * const restrict newr

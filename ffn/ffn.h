@@ -33,9 +33,10 @@
 #define FFN_DISCOVERY		0x0004
 #define FFN_FABRICATION	0x0008
 #define FFN_WEAK				0x0010
-#define FFN_SUBCONTEXT	0x0020
-#define FFN_WSSEP				0x0040
-#define FFN_COMMASEP		0x0080
+#define FFN_BRIDGE			0x0020
+#define FFN_SUBCONTEXT	0x0040
+#define FFN_WSSEP				0x0080
+#define FFN_COMMASEP		0x0100
 
 // FFN type table
 #define FFN_TABLE(x)										\

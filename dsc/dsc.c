@@ -80,6 +80,7 @@ static int depblock_process(const depblock * const db, gn * const dscvgn, int * 
 				, 0
 				, dscvgn
 				, db->block->sets[i].weak
+				, db->block->sets[i].bridge
 				, 0
 				, &newb
 				, &newr

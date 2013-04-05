@@ -26,10 +26,17 @@
 #define restrict __restrict
 
 /*
-** for now a single depblock corresponds to a single PRIMARY file, and may only contain
-** relations A -> B from a single node A
+** for now a single depblock corresponds to a single PRIMARY file, and may contain relations
+** A -> B from up to 8 nodes A
 **
-**
+**  foo.m32.pic.o/weak
+**  foo.m32.pic.o/weak
+**  foo.m64.nopic.o/weak
+**  foo.m64.nopic.o/weak
+**  foo.m32.pic.o/noweak
+**  foo.m32.pic.o/noweak
+**  foo.m64.nopic.o/noweak
+**  foo.m64.nopic.o/noweak
 **
 */
 
@@ -40,14 +47,15 @@ typedef struct
 	struct
 	{
 		uint8_t	weak;
+		uint8_t bridge;
 
 		char		needs[256];
 		char		nbase[256];
 
 		uint8_t	feedsl;
-		char		feeds[128][256];
 		char		fbase[256];
-	} sets[4];
+		char		feeds[128][256];
+	} sets[8];
 } dep_relations;
 
 typedef struct depblock
@@ -83,9 +91,8 @@ int depblock_close(depblock * const restrict block)
 int depblock_write(const depblock * const restrict block)
 	__attribute__((nonnull));
 
-int depblock_addrelation(depblock * const restrict block, const path * const restrict A, const path * const restrict B, int isweak)
+int depblock_addrelation(depblock * const restrict block, const path * const restrict A, const path * const restrict B, int isweak, int isbridge)
 	__attribute__((nonnull));
 
 #undef restrict
 #endif
-

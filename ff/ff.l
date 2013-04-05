@@ -229,6 +229,7 @@
 <INITIAL>[)]																					{ return LEX(yytext[0]); }
 <INITIAL>[-]																					{ return LEX(yytext[0]); }
 <INITIAL>[*]																					{ return LEX(yytext[0]); }
+<INITIAL>[\^]																					{ return LEX(yytext[0]); }
 <INITIAL>[=]																					{ return LEX(yytext[0]); }
 <INITIAL>[;]																					{ return LEX(yytext[0]); }
 <INITIAL>[%]																					{ return LEX(yytext[0]); }
@@ -252,7 +253,7 @@
 																												PUSHSTATE(blockcheck, yyextra);
 																												return LEX(ONCE);
 																											}
-<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:()\-*=;}{]+		{
+<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:()\-*^=;}{]+	{
 																												// string of anything else 
 																												return LEX(WORD);
 																											}

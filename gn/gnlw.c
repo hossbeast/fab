@@ -55,9 +55,9 @@ static int recurse_needs(gn * root, gn ** r, int * x, int useweak)
 	};
 
 	if(useweak)
-		return traverse_depth_bynodes_needsward_useweak(root, logic);
+		return traverse_depth_bynodes_needsward_useweak_nobridge(root, logic);
 	else
-		return traverse_depth_bynodes_needsward_noweak(root, logic);
+		return traverse_depth_bynodes_needsward_noweak_nobridge(root, logic);
 }
 
 static int recurse_feeds(gn * root, gn ** r, int * x, int useweak)
@@ -77,9 +77,9 @@ static int recurse_feeds(gn * root, gn ** r, int * x, int useweak)
 	};
 
 	if(useweak)
-		return traverse_depth_bynodes_feedsward_useweak(root, logic);
+		return traverse_depth_bynodes_feedsward_useweak_nobridge(root, logic);
 	else
-		return traverse_depth_bynodes_feedsward_noweak(root, logic);
+		return traverse_depth_bynodes_feedsward_noweak_nobridge(root, logic);
 }
 
 ///

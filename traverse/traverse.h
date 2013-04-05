@@ -43,6 +43,8 @@ struct gn;
 //
 int traverse_depth_bynodes_needsward_useweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
 
+int traverse_depth_bynodes_needsward_useweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int));
+
 /// traverse_depth_bynodes_needsward_noweak
 //
 // SUMMARY
@@ -60,6 +62,8 @@ int traverse_depth_bynodes_needsward_useweak(struct gn * const restrict r, int (
 //  returns 1 on success
 //
 int traverse_depth_bynodes_needsward_noweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
+
+int traverse_depth_bynodes_needsward_noweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int));
 
 /// traverse_depth_bynodes_needsward_skipweak
 //
@@ -98,6 +102,8 @@ int traverse_depth_bynodes_needsward_skipweak(struct gn * const restrict r, int 
 //
 int traverse_depth_bynodes_feedsward_useweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
 
+int traverse_depth_bynodes_feedsward_useweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int));
+
 /// traverse_depth_bynodes_feedsward_noweak
 //
 // SUMMARY
@@ -115,6 +121,8 @@ int traverse_depth_bynodes_feedsward_useweak(struct gn * const restrict r, int (
 //  returns 1 on success
 //
 int traverse_depth_bynodes_feedsward_noweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
+
+int traverse_depth_bynodes_feedsward_noweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int));
 
 /// traverse_depth_bynodes_feedsward_skipweak
 //

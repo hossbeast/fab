@@ -44,7 +44,8 @@ fabfile properties
 
 - expose canons other modes as listwise operators
 - C-code compiled bakescrips
-- blocking node - dependency unreachable by traversal
+- build dependency - unreachable by traversal
+- FS invalidation formulas ? (filesystem)
 
 # done
 - command line variable defs : immutably set the value of the variable, which cannot be

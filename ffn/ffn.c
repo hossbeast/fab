@@ -317,7 +317,7 @@ void ffn_dump(ff_node * const root)
 				log(L_FF | L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
 					, "type"
-					, ffn->flags & FFN_WEAK ? "weak" : "strong"
+					, ffn->flags & FFN_WEAK ? "weak" : ffn->flags & FFN_BRIDGE ? "bridge" : "strong"
 				);
 				log(L_FF | L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""

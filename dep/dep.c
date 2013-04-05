@@ -125,6 +125,7 @@ static int dep_add_single(
 					, ffn
 					, 0
 					, ffn->flags & FFN_WEAK
+					, ffn->flags & FFN_BRIDGE
 					, &newa
 					, &newb
 					, &newr
@@ -147,6 +148,7 @@ static int dep_add_single(
 					, ffn
 					, 0
 					, ffn->flags & FFN_WEAK
+					, ffn->flags & FFN_BRIDGE
 					, &newa
 					, &newb
 					, &newr
@@ -163,8 +165,9 @@ static int dep_add_single(
 			if(block && block->block)
 			{
 				// attempt to add the relation to the block
-				if(depblock_addrelation(block, ((gn*)A)->path, ((gn*)B)->path, ffn->flags & FFN_WEAK) == 0)
+				if(depblock_addrelation(block, ((gn*)A)->path, ((gn*)B)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) == 0)
 				{
+					log(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
 					xfree(&block->block);
 				}
 			}
@@ -329,6 +332,7 @@ static int dep_add_multi(
 						, ffn
 						, 0
 						, ffn->flags & FFN_WEAK
+						, ffn->flags & FFN_BRIDGE
 						, 0
 						, &newb
 						, &newr
@@ -349,6 +353,7 @@ static int dep_add_multi(
 						, ffn
 						, 0
 						, ffn->flags & FFN_WEAK
+						, ffn->flags & FFN_BRIDGE
 						, 0
 						, &newb
 						, &newr
@@ -365,8 +370,9 @@ static int dep_add_multi(
 				if(block && block->block)
 				{
 					// attempt to add the relation to the block
-					if(depblock_addrelation(block, ((gn*)A)->path, ((gn*)B)->path, ffn->flags & FFN_WEAK) == 0)
+					if(depblock_addrelation(block, ((gn*)A)->path, ((gn*)B)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) == 0)
 					{
+						log(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
 						xfree(&block->block);
 					}
 				}
