@@ -43,7 +43,7 @@ $fab						= [ $dfab/$name ~ j ]
 +[@std.c]($gendir = $dfab; $rdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # operator so's
-$oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
+$faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 
 #
 # catchall node
@@ -51,7 +51,7 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 [ @all ] : [ $fab @oplist ]
 
 # target for building all operators
-[ @oplist ] : [ $oplist ]
+[ @oplist ] : [ $faboplist ]
 
 #
 # the executable
@@ -64,7 +64,7 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 # fab-specific operator so's
 #
-[ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
+[ $faboplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
 	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [
 	] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
