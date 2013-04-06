@@ -23,8 +23,8 @@ $dlibdir			= [ usr/lib ]
 
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
-$libname = [ liblistwise.so ]
-$liblistwise     = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
+$libname 			= [ liblistwise.so ]
+$liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
 
 +[ $dcommon/vars.fab ]
 +[ $dcommon ]() @common
@@ -76,7 +76,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 {
 	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]			\
 	[ $@ ~ rx/aneedw/xm/<o>/ss/u/fx ]						\
-	[ -L$dliblistwise ] -llistwise -shared			\
+	[ $liblistwise ] -shared										\
 	[ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
 }
 

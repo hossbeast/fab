@@ -817,7 +817,7 @@ fml_2_4()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/-d/-d.so			\
 	./op/-d/-d.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,-d.so
 
 
@@ -835,7 +835,7 @@ fml_2_5()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/-f/-f.so			\
 	./../common/parseint.pic.o ./op/-f/-f.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,-f.so
 
 
@@ -853,7 +853,7 @@ fml_2_6()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/-l/-l.so			\
 	./../common/parseint.pic.o ./op/-l/-l.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,-l.so
 
 
@@ -871,7 +871,7 @@ fml_2_7()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/bn/bn.so			\
 	./op/bn/bn.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,bn.so
 
 
@@ -889,7 +889,7 @@ fml_2_8()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/c/c.so			\
 	./op/c/c.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,c.so
 
 
@@ -907,7 +907,7 @@ fml_2_9()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/cp/cp.so			\
 	./../common/xmem.pic.o ./op/cp/cp.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,cp.so
 
 
@@ -925,7 +925,7 @@ fml_2_10()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/d/d.so			\
 	./op/d/d.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,d.so
 
 
@@ -943,7 +943,7 @@ fml_2_11()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/dj/dj.so			\
 	./op/dj/dj.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,dj.so
 
 
@@ -961,7 +961,7 @@ fml_2_12()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/dn/dn.so			\
 	./op/dn/dn.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,dn.so
 
 
@@ -979,7 +979,7 @@ fml_2_13()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/fn/fn.so			\
 	./op/fn/fn.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,fn.so
 
 
@@ -997,7 +997,7 @@ fml_2_14()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/h/h.so			\
 	./op/h/h.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,h.so
 
 
@@ -1015,7 +1015,7 @@ fml_2_15()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/j/j.so			\
 	./op/j/j.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,j.so
 
 
@@ -1033,7 +1033,7 @@ fml_2_16()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/ls/ls.so			\
 	./../common/parseint.pic.o ./op/ls/ls.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,ls.so
 
 
@@ -1051,7 +1051,7 @@ fml_2_17()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/lsr/lsr.so			\
 	./../common/parseint.pic.o ./op/lsr/lsr.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,lsr.so
 
 
@@ -1069,7 +1069,7 @@ fml_2_18()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/m/m.so			\
 	./op/m/m.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,m.so
 
 
@@ -1087,7 +1087,7 @@ fml_2_19()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/o/o.so			\
 	./op/o/o.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,o.so
 
 
@@ -1105,7 +1105,7 @@ fml_2_20()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/pop/pop.so			\
 	./op/pop/pop.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,pop.so
 
 
@@ -1123,7 +1123,7 @@ fml_2_21()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/r/r.so			\
 	./op/r/r.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,r.so
 
 
@@ -1141,7 +1141,7 @@ fml_2_22()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/rp/rp.so			\
 	./../common/xmem.pic.o ./op/rp/rp.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,rp.so
 
 
@@ -1159,7 +1159,7 @@ fml_2_23()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/rx/rx.so			\
 	./../common/xmem.pic.o ./op/rx/rx.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,rx.so
 
 
@@ -1177,7 +1177,7 @@ fml_2_24()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/s/s.so			\
 	./op/s/s.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,s.so
 
 
@@ -1195,7 +1195,7 @@ fml_2_25()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/shift/shift.so			\
 	./op/shift/shift.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,shift.so
 
 
@@ -1213,7 +1213,7 @@ fml_2_26()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/sn/sn.so			\
 	./../common/parseint.pic.o ./op/sn/sn.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,sn.so
 
 
@@ -1231,7 +1231,7 @@ fml_2_27()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/ss/ss.so			\
 	./../common/xmem.pic.o ./../common/xstring.pic.o ./op/ss/ss.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,ss.so
 
 
@@ -1249,7 +1249,7 @@ fml_2_28()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/u/u.so			\
 	./../common/parseint.pic.o ./../common/xmem.pic.o ./../common/xstring.pic.o ./op/u/u.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,u.so
 
 
@@ -1267,7 +1267,7 @@ fml_2_29()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/v/v.so			\
 	./op/v/v.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,v.so
 
 
@@ -1285,7 +1285,7 @@ fml_2_30()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/w/w.so			\
 	./op/w/w.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,w.so
 
 
@@ -1303,7 +1303,7 @@ fml_2_31()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xch/xch.so			\
 	./op/xch/xch.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,xch.so
 
 
@@ -1321,7 +1321,7 @@ fml_2_32()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xm/xm.so			\
 	./op/xm/xm.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,xm.so
 
 
@@ -1339,7 +1339,7 @@ fml_2_33()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xmf/xmf.so			\
 	./op/xmf/xmf.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,xmf.so
 
 
@@ -1357,7 +1357,7 @@ fml_2_34()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xs/xs.so			\
 	./op/xs/xs.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,xs.so
 
 
@@ -1375,7 +1375,7 @@ fml_2_35()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/xsf/xsf.so			\
 	./op/xsf/xsf.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,xsf.so
 
 
@@ -1393,7 +1393,7 @@ fml_2_36()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/y/y.so			\
 	./../common/xmem.pic.o ./op/y/y.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,y.so
 
 
@@ -1411,7 +1411,7 @@ fml_2_37()
   
 	gcc -D_GNU_SOURCE -I. -I./../common -I./generator -I./idx -I./listwise -I./re -O3 -Wall -Werror -fPIC -g -m64 -o ./op/z/z.so			\
 	./op/z/z.pic.o						\
-	-L. -llistwise -shared			\
+	./liblistwise.so -shared										\
 	-Wl,-soname,z.so
 
 
