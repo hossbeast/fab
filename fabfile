@@ -28,7 +28,7 @@ $dlistwise    	= [ $* ]
 $liblistwise		= [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags, [ -I $dlistwise ~ j ] ]
+$cflags					= [ $cflags, [ -I $dlistwise ~ j ], $incdirs ]
 $lflags					= [ $liblistwise ]
 $name						= [ listwise ]
 $link						= [ lw ]
