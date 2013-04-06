@@ -24,10 +24,13 @@ $dfab						= [ $* ]
 +[ $dcommon/vars.fab ]
 +[ $dcommon ]() @common
 
+# libraries to link
+$liblistwise = [ -llistwise ]
+
 # variables
 $cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
 $cflags					= [ $cflags -fms-extensions -fno-builtin-log ]
-$lflags					= [ -llistwise ]
+$lflags					= [ $liblistwise ]
 $name						= [ fab ]
 $fab						= [ $dfab/$name ~ j ]
 
@@ -55,7 +58,7 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 [ $fab ] : [ [ $dfab/main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [ $lflags ]
+	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [ $lflags ~ fx ]
 }
 
 #
