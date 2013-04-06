@@ -1559,7 +1559,7 @@ fml_3_18()
 	  exec 1>./liblistwise/exports
 	  echo "{ global: "
 sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- ./common/coll.c ./common/xmem.c ./common/xstring.c ./liblistwise/apidata/apidata.c ./liblistwise/exec/exec.c ./liblistwise/generator/generator.c ./liblistwise/generator/generator.lex.c ./liblistwise/generator/generator.tab.c ./liblistwise/idx/idx.c ./liblistwise/last/last.c ./liblistwise/lstack/lstack.c ./liblistwise/object/object.c ./liblistwise/op/op.c ./liblistwise/re/re.c ./liblistwise/sel/sel.c )
+	  cat -- ./liblistwise/re/re.c ./liblistwise/object/object.c ./liblistwise/apidata/apidata.c ./liblistwise/idx/idx.c ./liblistwise/last/last.c ./liblistwise/op/bn/bn.c ./liblistwise/op/v/v.c ./liblistwise/op/xm/xm.c ./liblistwise/op/rp/rp.c ./liblistwise/op/rx/rx.c ./liblistwise/op/m/m.c ./liblistwise/op/-d/-d.c ./liblistwise/op/c/c.c ./liblistwise/op/xch/xch.c ./liblistwise/op/xsf/xsf.c ./liblistwise/op/-l/-l.c ./liblistwise/op/s/s.c ./liblistwise/op/xs/xs.c ./liblistwise/op/h/h.c ./liblistwise/op/pop/pop.c ./liblistwise/op/w/w.c ./liblistwise/op/o/o.c ./liblistwise/op/dj/dj.c ./liblistwise/op/dn/dn.c ./liblistwise/op/-f/-f.c ./liblistwise/op/cp/cp.c ./liblistwise/op/xmf/xmf.c ./liblistwise/op/u/u.c ./liblistwise/op/y/y.c ./liblistwise/op/op.c ./liblistwise/op/ss/ss.c ./liblistwise/op/j/j.c ./liblistwise/op/ls/ls.c ./liblistwise/op/shift/shift.c ./liblistwise/op/lsr/lsr.c ./liblistwise/op/r/r.c ./liblistwise/op/sn/sn.c ./liblistwise/op/d/d.c ./liblistwise/op/z/z.c ./liblistwise/op/fn/fn.c ./liblistwise/exec/exec.c ./liblistwise/sel/sel.c ./liblistwise/generator/generator.c ./liblistwise/generator/generator.lex.c ./liblistwise/generator/generator.tab.c ./liblistwise/lstack/lstack.c )
 echo "local: *; };"
 
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/liblistwise.so ./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o -lpcre -ldl -shared -Wl,--version-script=./liblistwise/exports -Wl,-soname,liblistwise.so
@@ -1640,7 +1640,7 @@ fml_4_4()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-d/-d.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/-d/-d.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/-d/-d.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,-d.so
 
@@ -1658,7 +1658,7 @@ fml_4_5()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-f/-f.so			\
-	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/-f/-f.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/parseint.pic.o ./liblistwise/op/-f/-f.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,-f.so
 
@@ -1676,7 +1676,7 @@ fml_4_6()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-l/-l.so			\
-	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/-l/-l.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/parseint.pic.o ./liblistwise/op/-l/-l.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,-l.so
 
@@ -1694,7 +1694,7 @@ fml_4_7()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/bn/bn.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/bn/bn.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/bn/bn.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,bn.so
 
@@ -1712,7 +1712,7 @@ fml_4_8()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/c/c.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/c/c.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/c/c.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,c.so
 
@@ -1730,7 +1730,7 @@ fml_4_9()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/cp/cp.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/cp/cp.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/xmem.pic.o ./liblistwise/op/cp/cp.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,cp.so
 
@@ -1748,7 +1748,7 @@ fml_4_10()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/d/d.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/d/d.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/d/d.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,d.so
 
@@ -1766,7 +1766,7 @@ fml_4_11()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/dj/dj.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/dj/dj.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/dj/dj.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,dj.so
 
@@ -1784,7 +1784,7 @@ fml_4_12()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/dn/dn.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/dn/dn.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/dn/dn.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,dn.so
 
@@ -1802,7 +1802,7 @@ fml_4_13()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/fn/fn.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/fn/fn.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/fn/fn.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,fn.so
 
@@ -1820,7 +1820,7 @@ fml_4_14()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/h/h.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/h/h.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/h/h.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,h.so
 
@@ -1838,7 +1838,7 @@ fml_4_15()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/j/j.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/j/j.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/j/j.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,j.so
 
@@ -1856,7 +1856,7 @@ fml_4_16()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/ls/ls.so			\
-	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/ls/ls.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/parseint.pic.o ./liblistwise/op/ls/ls.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,ls.so
 
@@ -1874,7 +1874,7 @@ fml_4_17()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/lsr/lsr.so			\
-	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/lsr/lsr.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/parseint.pic.o ./liblistwise/op/lsr/lsr.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,lsr.so
 
@@ -1892,7 +1892,7 @@ fml_4_18()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/m/m.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/m/m.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/m/m.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,m.so
 
@@ -1910,7 +1910,7 @@ fml_4_19()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/o/o.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/o/o.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/o/o.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,o.so
 
@@ -1928,7 +1928,7 @@ fml_4_20()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/pop/pop.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/pop/pop.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/pop/pop.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,pop.so
 
@@ -1946,7 +1946,7 @@ fml_4_21()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/r/r.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/r/r.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/r/r.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,r.so
 
@@ -1964,7 +1964,7 @@ fml_4_22()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/rp/rp.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/rp/rp.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/xmem.pic.o ./liblistwise/op/rp/rp.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,rp.so
 
@@ -1982,7 +1982,7 @@ fml_4_23()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/rx/rx.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/rx/rx.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/xmem.pic.o ./liblistwise/op/rx/rx.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,rx.so
 
@@ -2000,7 +2000,7 @@ fml_4_24()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/s/s.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/s/s.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/s/s.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,s.so
 
@@ -2018,7 +2018,7 @@ fml_4_25()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/shift/shift.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/shift/shift.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/shift/shift.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,shift.so
 
@@ -2036,7 +2036,7 @@ fml_4_26()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/sn/sn.so			\
-	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/sn/sn.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/parseint.pic.o ./liblistwise/op/sn/sn.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,sn.so
 
@@ -2054,7 +2054,7 @@ fml_4_27()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/ss/ss.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/ss/ss.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/op/ss/ss.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,ss.so
 
@@ -2072,7 +2072,7 @@ fml_4_28()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/u/u.so			\
-	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/u/u.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/op/u/u.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,u.so
 
@@ -2090,7 +2090,7 @@ fml_4_29()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/v/v.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/v/v.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/v/v.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,v.so
 
@@ -2108,7 +2108,7 @@ fml_4_30()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/w/w.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/w/w.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/w/w.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,w.so
 
@@ -2126,7 +2126,7 @@ fml_4_31()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xch/xch.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xch/xch.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/xch/xch.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xch.so
 
@@ -2144,7 +2144,7 @@ fml_4_32()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xm/xm.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xm/xm.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/xm/xm.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xm.so
 
@@ -2162,7 +2162,7 @@ fml_4_33()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xmf/xmf.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xmf/xmf.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/xmf/xmf.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xmf.so
 
@@ -2180,7 +2180,7 @@ fml_4_34()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xs/xs.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xs/xs.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/xs/xs.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xs.so
 
@@ -2198,7 +2198,7 @@ fml_4_35()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xsf/xsf.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xsf/xsf.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/xsf/xsf.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xsf.so
 
@@ -2216,7 +2216,7 @@ fml_4_36()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/y/y.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/y/y.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./common/xmem.pic.o ./liblistwise/op/y/y.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,y.so
 
@@ -2234,7 +2234,7 @@ fml_4_37()
 
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/z/z.so			\
-	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/z/z.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/op/z/z.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,z.so
 
