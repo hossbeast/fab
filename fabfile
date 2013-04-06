@@ -24,9 +24,12 @@ $dlistwise    	= [ $* ]
 # common targets xmem, map, etc
 +[ $dcommon/vars.fab ]
 
+# libraries to link
+$liblistwise		= [ -llistwise ]
+
 # variables
 $cflags					= [ $cflags, [ -I $dlistwise ~ j ] ]
-$lflags					= [ -llistwise ]
+$lflags					= [ $liblistwise ]
 $name						= [ listwise ]
 $link						= [ lw ]
 $listwise				= [ $dlistwise/$name ~ j ]
@@ -39,7 +42,7 @@ $listwise				= [ $dlistwise/$name ~ j ]
 #
 [ $listwise ] : [ $cfabpaths ~ xs/<o> ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneed/xm/<o>/ss/u/fx ] [ $lflags ]
+	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneed/xm/<o>/ss/u/fx ] [ $lflags ~ fx ]
 }
 
 #
