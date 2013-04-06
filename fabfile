@@ -24,7 +24,7 @@ $dlibdir			= [ usr/lib ]
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
 $libname = [ liblistwise.so ]
-$lib     = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
+$liblistwise     = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
 
 +[ $dcommon/vars.fab ]
 +[ $dcommon ]() @common
@@ -48,19 +48,19 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 ##
 
 # default NOFILE target - build library and all operators
-[ @all ] : [ $lib $oplist ]
+[ @all ] : [ $liblistwise $oplist ]
 
 # library depends on .o for each c, l, and y
-[ $lib ] : [ [ $cfabpaths ~ xs/<c>/<pic.o>/y/m/</op/>/v ] [ $dliblistwise/op/op.pic.o ~ j ] ]
-[ $lib ] : [ $lfabpaths ~ xs/<l>/<lex.pic.o>/y ]
-[ $lib ] : [ $yfabpaths ~ xs/<y>/<tab.pic.o>/y ]
+[ $liblistwise ] : [ [ $cfabpaths ~ xs/<c>/<pic.o>/y/m/</op/>/v ] [ $dliblistwise/op/op.pic.o ~ j ] ]
+[ $liblistwise ] : [ $lfabpaths ~ xs/<l>/<lex.pic.o>/y ]
+[ $liblistwise ] : [ $yfabpaths ~ xs/<y>/<tab.pic.o>/y ]
 
 ##
 ## formulas
 ##
 
 # link the library
-[ $lib ]
+[ $liblistwise ]
 {
 	  exec 1>[ $dliblistwise/exports ]
 	  echo "{ global: "
@@ -87,7 +87,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 [ @install ]
 {
 	install -d																				[ $destdir/$libdir ]
-	install	[ $lib ]																	[ $destdir/$libdir/$libname.0.1 ]
+	install	[ $liblistwise ]													[ $destdir/$libdir/$libname.0.1 ]
 	ln -vfs [ $libname.0.1 ]													[ $destdir/$libdir/$libname ]
 	install -d																				[ $destdir/$incdir ]
 	install -d																				[ $destdir/$incdir/listwise ]
