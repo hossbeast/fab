@@ -28,7 +28,7 @@ $dfab						= [ $* ]
 $liblistwise = [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
+$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs ]
 $cflags					= [ $cflags -fms-extensions -fno-builtin-log ]
 $lflags					= [ $liblistwise ]
 $name						= [ fab ]
@@ -67,7 +67,7 @@ $oplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 [ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
 	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [
-	] -llistwise -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
+	] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
 }
 
 # generated files
