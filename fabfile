@@ -80,6 +80,9 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 	[ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
 }
 
+# operators also depend on the library for linking
+[ $oplist ] : [ $liblistwise ]
+
 ##
 ## tasks
 ##
