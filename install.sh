@@ -67,7 +67,7 @@ fml_0_1()
 
   
 	install -d																				//usr/lib/x86_64-linux-gnu
-	install	./liblistwise/liblistwise.so																	//usr/lib/x86_64-linux-gnu/liblistwise.so.0.1
+	install	./liblistwise/liblistwise.so													//usr/lib/x86_64-linux-gnu/liblistwise.so.0.1
 	ln -vfs liblistwise.so.0.1													//usr/lib/x86_64-linux-gnu/liblistwise.so
 	install -d																				//usr/include
 	install -d																				//usr/include/listwise
@@ -79,7 +79,7 @@ fml_0_1()
 	install ./liblistwise/listwise/object.h 			//usr/include/listwise/object.h
 
 	install -d																				//usr/lib/listwise
-	for x in ./liblistwise/op/xsf/xsf.so ./liblistwise/op/ls/ls.so ./liblistwise/op/xch/xch.so ./liblistwise/op/y/y.so ./liblistwise/op/o/o.so ./liblistwise/op/dj/dj.so ./liblistwise/op/h/h.so ./liblistwise/op/c/c.so ./liblistwise/op/rx/rx.so ./liblistwise/op/xm/xm.so ./liblistwise/op/m/m.so ./liblistwise/op/r/r.so ./liblistwise/op/rp/rp.so ./liblistwise/op/lsr/lsr.so ./liblistwise/op/w/w.so ./liblistwise/op/j/j.so ./liblistwise/op/dn/dn.so ./liblistwise/op/ss/ss.so ./liblistwise/op/sn/sn.so ./liblistwise/op/v/v.so ./liblistwise/op/s/s.so ./liblistwise/op/shift/shift.so ./liblistwise/op/-l/-l.so ./liblistwise/op/d/d.so ./liblistwise/op/bn/bn.so ./liblistwise/op/-d/-d.so ./liblistwise/op/z/z.so ./liblistwise/op/u/u.so ./liblistwise/op/fn/fn.so ./liblistwise/op/pop/pop.so ./liblistwise/op/cp/cp.so ./liblistwise/op/-f/-f.so ./liblistwise/op/xmf/xmf.so ./liblistwise/op/xs/xs.so; do \
+	for x in ./liblistwise/op/bn/bn.so ./liblistwise/op/v/v.so ./liblistwise/op/xm/xm.so ./liblistwise/op/rp/rp.so ./liblistwise/op/rx/rx.so ./liblistwise/op/m/m.so ./liblistwise/op/-d/-d.so ./liblistwise/op/c/c.so ./liblistwise/op/xch/xch.so ./liblistwise/op/xsf/xsf.so ./liblistwise/op/-l/-l.so ./liblistwise/op/s/s.so ./liblistwise/op/xs/xs.so ./liblistwise/op/h/h.so ./liblistwise/op/pop/pop.so ./liblistwise/op/w/w.so ./liblistwise/op/o/o.so ./liblistwise/op/dj/dj.so ./liblistwise/op/dn/dn.so ./liblistwise/op/-f/-f.so ./liblistwise/op/cp/cp.so ./liblistwise/op/xmf/xmf.so ./liblistwise/op/u/u.so ./liblistwise/op/y/y.so ./liblistwise/op/ss/ss.so ./liblistwise/op/j/j.so ./liblistwise/op/ls/ls.so ./liblistwise/op/shift/shift.so ./liblistwise/op/lsr/lsr.so ./liblistwise/op/r/r.so ./liblistwise/op/sn/sn.so ./liblistwise/op/d/d.so ./liblistwise/op/z/z.so ./liblistwise/op/fn/fn.so; do \
 		install $x																			//usr/lib/listwise
 	done
 

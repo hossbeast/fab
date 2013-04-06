@@ -198,7 +198,7 @@ fml_1_11()
   exec 2>&111
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/args/args.c -o ./fabdev/args/args.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/args/args.c -o ./fabdev/args/args.o
 
 
   X=$?
@@ -213,7 +213,7 @@ fml_1_12()
   exec 2>&112
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/canon/canon.c -o ./fabdev/canon/canon.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/canon/canon.c -o ./fabdev/canon/canon.o
 
 
   X=$?
@@ -228,7 +228,7 @@ fml_1_13()
   exec 2>&113
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/depblock/depblock.c -o ./fabdev/depblock/depblock.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/depblock/depblock.c -o ./fabdev/depblock/depblock.o
 
 
   X=$?
@@ -243,7 +243,7 @@ fml_1_14()
   exec 2>&114
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/dirutil/dirutil.c -o ./fabdev/dirutil/dirutil.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/dirutil/dirutil.c -o ./fabdev/dirutil/dirutil.o
 
 
   X=$?
@@ -258,7 +258,7 @@ fml_1_15()
   exec 2>&115
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/fablw/op/fx/fx.c -o ./fabdev/fablw/op/fx/fx.pic.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/fablw/op/fx/fx.c -o ./fabdev/fablw/op/fx/fx.pic.o
 
 
   X=$?
@@ -273,7 +273,7 @@ fml_1_16()
   exec 2>&116
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/fablw/op/fxc/fxc.c -o ./fabdev/fablw/op/fxc/fxc.pic.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/fablw/op/fxc/fxc.c -o ./fabdev/fablw/op/fxc/fxc.pic.o
 
 
   X=$?
@@ -288,7 +288,7 @@ fml_1_17()
   exec 2>&117
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/fablw/op/fxw/fxw.c -o ./fabdev/fablw/op/fxw/fxw.pic.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/fablw/op/fxw/fxw.c -o ./fabdev/fablw/op/fxw/fxw.pic.o
 
 
   X=$?
@@ -348,7 +348,7 @@ fml_1_21()
   exec 2>&121
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/gn/gnlw.c -o ./fabdev/gn/gnlw.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/gn/gnlw.c -o ./fabdev/gn/gnlw.o
 
 
   X=$?
@@ -363,7 +363,7 @@ fml_1_22()
   exec 2>&122
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/hashblock/hashblock.c -o ./fabdev/hashblock/hashblock.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/hashblock/hashblock.c -o ./fabdev/hashblock/hashblock.o
 
 
   X=$?
@@ -378,7 +378,7 @@ fml_1_23()
   exec 2>&123
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/identity/identity.c -o ./fabdev/identity/identity.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/identity/identity.c -o ./fabdev/identity/identity.o
 
 
   X=$?
@@ -393,7 +393,7 @@ fml_1_24()
   exec 2>&124
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/log/log.c -o ./fabdev/log/log.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/log/log.c -o ./fabdev/log/log.o
 
 
   X=$?
@@ -408,7 +408,7 @@ fml_1_25()
   exec 2>&125
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/map/map.c -o ./fabdev/map/map.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/map/map.c -o ./fabdev/map/map.o
 
 
   X=$?
@@ -423,7 +423,7 @@ fml_1_26()
   exec 2>&126
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/path/path.c -o ./fabdev/path/path.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/path/path.c -o ./fabdev/path/path.o
 
 
   X=$?
@@ -438,7 +438,7 @@ fml_1_27()
   exec 2>&127
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/strstack/strstack.c -o ./fabdev/strstack/strstack.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/strstack/strstack.c -o ./fabdev/strstack/strstack.o
 
 
   X=$?
@@ -453,7 +453,7 @@ fml_1_28()
   exec 2>&128
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/tmp/tmp.c -o ./fabdev/tmp/tmp.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/tmp/tmp.c -o ./fabdev/tmp/tmp.o
 
 
   X=$?
@@ -468,7 +468,7 @@ fml_1_29()
   exec 2>&129
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/traverse/traverse.c -o ./fabdev/traverse/traverse.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/traverse/traverse.c -o ./fabdev/traverse/traverse.o
 
 
   X=$?
@@ -1143,7 +1143,7 @@ fml_1_74()
   exec 2>&174
 
   
-	gcc -D_GNU_SOURCE -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -c ./listwisedev/args.c -o ./listwisedev/args.o
+	gcc -D_GNU_SOURCE -I./liblistwise -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -c ./listwisedev/args.c -o ./listwisedev/args.o
 
 
   X=$?
@@ -1158,7 +1158,7 @@ fml_1_75()
   exec 2>&175
 
   
-	gcc -D_GNU_SOURCE -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -c ./listwisedev/main.c -o ./listwisedev/main.o
+	gcc -D_GNU_SOURCE -I./liblistwise -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -c ./listwisedev/main.c -o ./listwisedev/main.o
 
 
   X=$?
@@ -1175,7 +1175,7 @@ fml_2_0()
   exec 2>&100
 
   
-	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fx/fx.so	./fabdev/fablw/op/fx/fx.pic.o  -llistwise -shared -Wl,-soname,fx.so
+	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fx/fx.so	./fabdev/fablw/op/fx/fx.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fx.so
 
 
   X=$?
@@ -1190,7 +1190,7 @@ fml_2_1()
   exec 2>&101
 
   
-	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fxc/fxc.so	./fabdev/fablw/op/fxc/fxc.pic.o  -llistwise -shared -Wl,-soname,fxc.so
+	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fxc/fxc.so	./fabdev/fablw/op/fxc/fxc.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fxc.so
 
 
   X=$?
@@ -1205,7 +1205,7 @@ fml_2_2()
   exec 2>&102
 
   
-	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fxw/fxw.so	./fabdev/fablw/op/fxw/fxw.pic.o  -llistwise -shared -Wl,-soname,fxw.so
+	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fxw/fxw.so	./fabdev/fablw/op/fxw/fxw.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fxw.so
 
 
   X=$?
@@ -1331,7 +1331,7 @@ fml_2_8()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-d/-d.so			\
 	./liblistwise/op/-d/-d.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,-d.so
 
 
@@ -1349,7 +1349,7 @@ fml_2_9()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-f/-f.so			\
 	./common/parseint.pic.o ./liblistwise/op/-f/-f.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,-f.so
 
 
@@ -1367,7 +1367,7 @@ fml_2_10()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-l/-l.so			\
 	./common/parseint.pic.o ./liblistwise/op/-l/-l.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,-l.so
 
 
@@ -1385,7 +1385,7 @@ fml_2_11()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/bn/bn.so			\
 	./liblistwise/op/bn/bn.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,bn.so
 
 
@@ -1403,7 +1403,7 @@ fml_2_12()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/c/c.so			\
 	./liblistwise/op/c/c.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,c.so
 
 
@@ -1421,7 +1421,7 @@ fml_2_13()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/cp/cp.so			\
 	./common/xmem.pic.o ./liblistwise/op/cp/cp.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,cp.so
 
 
@@ -1439,7 +1439,7 @@ fml_2_14()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/d/d.so			\
 	./liblistwise/op/d/d.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,d.so
 
 
@@ -1457,7 +1457,7 @@ fml_2_15()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/dj/dj.so			\
 	./liblistwise/op/dj/dj.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,dj.so
 
 
@@ -1475,7 +1475,7 @@ fml_2_16()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/dn/dn.so			\
 	./liblistwise/op/dn/dn.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,dn.so
 
 
@@ -1493,7 +1493,7 @@ fml_2_17()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/fn/fn.so			\
 	./liblistwise/op/fn/fn.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,fn.so
 
 
@@ -1511,7 +1511,7 @@ fml_2_18()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/h/h.so			\
 	./liblistwise/op/h/h.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,h.so
 
 
@@ -1529,7 +1529,7 @@ fml_2_19()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/j/j.so			\
 	./liblistwise/op/j/j.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,j.so
 
 
@@ -1547,7 +1547,7 @@ fml_2_20()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/ls/ls.so			\
 	./common/parseint.pic.o ./liblistwise/op/ls/ls.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,ls.so
 
 
@@ -1565,7 +1565,7 @@ fml_2_21()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/lsr/lsr.so			\
 	./common/parseint.pic.o ./liblistwise/op/lsr/lsr.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,lsr.so
 
 
@@ -1583,7 +1583,7 @@ fml_2_22()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/m/m.so			\
 	./liblistwise/op/m/m.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,m.so
 
 
@@ -1601,7 +1601,7 @@ fml_2_23()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/o/o.so			\
 	./liblistwise/op/o/o.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,o.so
 
 
@@ -1619,7 +1619,7 @@ fml_2_24()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/pop/pop.so			\
 	./liblistwise/op/pop/pop.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,pop.so
 
 
@@ -1637,7 +1637,7 @@ fml_2_25()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/r/r.so			\
 	./liblistwise/op/r/r.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,r.so
 
 
@@ -1655,7 +1655,7 @@ fml_2_26()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/rp/rp.so			\
 	./common/xmem.pic.o ./liblistwise/op/rp/rp.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,rp.so
 
 
@@ -1673,7 +1673,7 @@ fml_2_27()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/rx/rx.so			\
 	./common/xmem.pic.o ./liblistwise/op/rx/rx.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,rx.so
 
 
@@ -1691,7 +1691,7 @@ fml_2_28()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/s/s.so			\
 	./liblistwise/op/s/s.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,s.so
 
 
@@ -1709,7 +1709,7 @@ fml_2_29()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/shift/shift.so			\
 	./liblistwise/op/shift/shift.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,shift.so
 
 
@@ -1727,7 +1727,7 @@ fml_2_30()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/sn/sn.so			\
 	./common/parseint.pic.o ./liblistwise/op/sn/sn.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,sn.so
 
 
@@ -1745,7 +1745,7 @@ fml_2_31()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/ss/ss.so			\
 	./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/op/ss/ss.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,ss.so
 
 
@@ -1763,7 +1763,7 @@ fml_2_32()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/u/u.so			\
 	./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/op/u/u.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,u.so
 
 
@@ -1781,7 +1781,7 @@ fml_2_33()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/v/v.so			\
 	./liblistwise/op/v/v.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,v.so
 
 
@@ -1799,7 +1799,7 @@ fml_2_34()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/w/w.so			\
 	./liblistwise/op/w/w.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,w.so
 
 
@@ -1817,7 +1817,7 @@ fml_2_35()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xch/xch.so			\
 	./liblistwise/op/xch/xch.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xch.so
 
 
@@ -1835,7 +1835,7 @@ fml_2_36()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xm/xm.so			\
 	./liblistwise/op/xm/xm.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xm.so
 
 
@@ -1853,7 +1853,7 @@ fml_2_37()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xmf/xmf.so			\
 	./liblistwise/op/xmf/xmf.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xmf.so
 
 
@@ -1871,7 +1871,7 @@ fml_2_38()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xs/xs.so			\
 	./liblistwise/op/xs/xs.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xs.so
 
 
@@ -1889,7 +1889,7 @@ fml_2_39()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xsf/xsf.so			\
 	./liblistwise/op/xsf/xsf.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xsf.so
 
 
@@ -1907,7 +1907,7 @@ fml_2_40()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/y/y.so			\
 	./common/xmem.pic.o ./liblistwise/op/y/y.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,y.so
 
 
@@ -1925,7 +1925,7 @@ fml_2_41()
   
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/z/z.so			\
 	./liblistwise/op/z/z.pic.o						\
-	-L./liblistwise -llistwise -shared			\
+	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,z.so
 
 
@@ -1934,31 +1934,16 @@ fml_2_41()
   exit $X
 }
 
-NAMES[118]='./listwisedev/listwise'
-fml_2_42()
-{
-  exec 1>/dev/null
-  exec 2>&142
-
-  
-	gcc -D_GNU_SOURCE -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -o ./listwisedev/listwise ./listwisedev/args.o ./listwisedev/main.o -llistwise
-
-
-  X=$?
-  echo 42 1>&99
-  exit $X
-}
-
 
 # formulas and names for stage 3
-NAMES[119]='./fabdev/bake/bake.o'
+NAMES[118]='./fabdev/bake/bake.o'
 fml_3_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/bake/bake.c -o ./fabdev/bake/bake.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/bake/bake.c -o ./fabdev/bake/bake.o
 
 
   X=$?
@@ -1966,14 +1951,14 @@ fml_3_0()
   exit $X
 }
 
-NAMES[120]='./fabdev/bp/bp.o'
+NAMES[119]='./fabdev/bp/bp.o'
 fml_3_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/bp/bp.c -o ./fabdev/bp/bp.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/bp/bp.c -o ./fabdev/bp/bp.o
 
 
   X=$?
@@ -1981,14 +1966,14 @@ fml_3_1()
   exit $X
 }
 
-NAMES[121]='./fabdev/dep/dep.o'
+NAMES[120]='./fabdev/dep/dep.o'
 fml_3_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/dep/dep.c -o ./fabdev/dep/dep.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/dep/dep.c -o ./fabdev/dep/dep.o
 
 
   X=$?
@@ -1996,14 +1981,14 @@ fml_3_2()
   exit $X
 }
 
-NAMES[122]='./fabdev/dsc/dsc.o'
+NAMES[121]='./fabdev/dsc/dsc.o'
 fml_3_3()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/dsc/dsc.c -o ./fabdev/dsc/dsc.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/dsc/dsc.c -o ./fabdev/dsc/dsc.o
 
 
   X=$?
@@ -2011,14 +1996,14 @@ fml_3_3()
   exit $X
 }
 
-NAMES[123]='./fabdev/enclose/enclose.o'
+NAMES[122]='./fabdev/enclose/enclose.o'
 fml_3_4()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/enclose/enclose.c -o ./fabdev/enclose/enclose.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/enclose/enclose.c -o ./fabdev/enclose/enclose.o
 
 
   X=$?
@@ -2026,14 +2011,14 @@ fml_3_4()
   exit $X
 }
 
-NAMES[124]='./fabdev/ff/ff.dsc.tab.o'
+NAMES[123]='./fabdev/ff/ff.dsc.tab.o'
 fml_3_5()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.dsc.tab.c -o ./fabdev/ff/ff.dsc.tab.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.dsc.tab.c -o ./fabdev/ff/ff.dsc.tab.o
 
 
   X=$?
@@ -2041,14 +2026,14 @@ fml_3_5()
   exit $X
 }
 
-NAMES[125]='./fabdev/ff/ff.lex.o'
+NAMES[124]='./fabdev/ff/ff.lex.o'
 fml_3_6()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.lex.c -o ./fabdev/ff/ff.lex.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.lex.c -o ./fabdev/ff/ff.lex.o
 
 
   X=$?
@@ -2056,14 +2041,14 @@ fml_3_6()
   exit $X
 }
 
-NAMES[126]='./fabdev/ff/ff.o'
+NAMES[125]='./fabdev/ff/ff.o'
 fml_3_7()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.c -o ./fabdev/ff/ff.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.c -o ./fabdev/ff/ff.o
 
 
   X=$?
@@ -2071,14 +2056,14 @@ fml_3_7()
   exit $X
 }
 
-NAMES[127]='./fabdev/ff/ff.tab.o'
+NAMES[126]='./fabdev/ff/ff.tab.o'
 fml_3_8()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.tab.c -o ./fabdev/ff/ff.tab.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.tab.c -o ./fabdev/ff/ff.tab.o
 
 
   X=$?
@@ -2086,14 +2071,14 @@ fml_3_8()
   exit $X
 }
 
-NAMES[128]='./fabdev/ff/ff.tokens.o'
+NAMES[127]='./fabdev/ff/ff.tokens.o'
 fml_3_9()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.tokens.c -o ./fabdev/ff/ff.tokens.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ff/ff.tokens.c -o ./fabdev/ff/ff.tokens.o
 
 
   X=$?
@@ -2101,14 +2086,14 @@ fml_3_9()
   exit $X
 }
 
-NAMES[129]='./fabdev/ffn/ffn.o'
+NAMES[128]='./fabdev/ffn/ffn.o'
 fml_3_10()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ffn/ffn.c -o ./fabdev/ffn/ffn.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ffn/ffn.c -o ./fabdev/ffn/ffn.o
 
 
   X=$?
@@ -2116,14 +2101,14 @@ fml_3_10()
   exit $X
 }
 
-NAMES[130]='./fabdev/ffproc/ffproc.o'
+NAMES[129]='./fabdev/ffproc/ffproc.o'
 fml_3_11()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ffproc/ffproc.c -o ./fabdev/ffproc/ffproc.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ffproc/ffproc.c -o ./fabdev/ffproc/ffproc.o
 
 
   X=$?
@@ -2131,14 +2116,14 @@ fml_3_11()
   exit $X
 }
 
-NAMES[131]='./fabdev/fml/fml.o'
+NAMES[130]='./fabdev/fml/fml.o'
 fml_3_12()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/fml/fml.c -o ./fabdev/fml/fml.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/fml/fml.c -o ./fabdev/fml/fml.o
 
 
   X=$?
@@ -2146,14 +2131,14 @@ fml_3_12()
   exit $X
 }
 
-NAMES[132]='./fabdev/gn/gn.o'
+NAMES[131]='./fabdev/gn/gn.o'
 fml_3_13()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/gn/gn.c -o ./fabdev/gn/gn.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/gn/gn.c -o ./fabdev/gn/gn.o
 
 
   X=$?
@@ -2161,14 +2146,14 @@ fml_3_13()
   exit $X
 }
 
-NAMES[133]='./fabdev/list/list.o'
+NAMES[132]='./fabdev/list/list.o'
 fml_3_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/list/list.c -o ./fabdev/list/list.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/list/list.c -o ./fabdev/list/list.o
 
 
   X=$?
@@ -2176,14 +2161,14 @@ fml_3_14()
   exit $X
 }
 
-NAMES[134]='./fabdev/main.o'
+NAMES[133]='./fabdev/main.o'
 fml_3_15()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/main.c -o ./fabdev/main.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/main.c -o ./fabdev/main.o
 
 
   X=$?
@@ -2191,14 +2176,14 @@ fml_3_15()
   exit $X
 }
 
-NAMES[135]='./fabdev/ts/ts.o'
+NAMES[134]='./fabdev/ts/ts.o'
 fml_3_16()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ts/ts.c -o ./fabdev/ts/ts.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/ts/ts.c -o ./fabdev/ts/ts.o
 
 
   X=$?
@@ -2206,14 +2191,14 @@ fml_3_16()
   exit $X
 }
 
-NAMES[136]='./fabdev/var/var.o'
+NAMES[135]='./fabdev/var/var.o'
 fml_3_17()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/var/var.c -o ./fabdev/var/var.o
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -c ./fabdev/var/var.c -o ./fabdev/var/var.o
 
 
   X=$?
@@ -2221,7 +2206,7 @@ fml_3_17()
   exit $X
 }
 
-NAMES[137]='./liblistwise/liblistwise.so'
+NAMES[136]='./liblistwise/liblistwise.so'
 fml_3_18()
 {
   exec 1>/dev/null
@@ -2244,18 +2229,33 @@ echo "local: *; };"
 
 
 # formulas and names for stage 4
-NAMES[138]='./fabdev/fab'
+NAMES[137]='./fabdev/fab'
 fml_4_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fab ./common/cksum.o ./common/coll.o ./common/parseint.o ./common/pstring.o ./common/unitstring.o ./common/xmem.o ./common/xstring.o ./fabdev/args/args.o ./fabdev/bake/bake.o ./fabdev/bp/bp.o ./fabdev/canon/canon.o ./fabdev/dep/dep.o ./fabdev/depblock/depblock.o ./fabdev/dirutil/dirutil.o ./fabdev/dsc/dsc.o ./fabdev/enclose/enclose.o ./fabdev/ff/ff.dsc.tab.o ./fabdev/ff/ff.lex.o ./fabdev/ff/ff.o ./fabdev/ff/ff.tab.o ./fabdev/ff/ff.tokens.o ./fabdev/ffn/ffn.o ./fabdev/ffproc/ffproc.o ./fabdev/fml/fml.o ./fabdev/gn/gn.o ./fabdev/gn/gnlw.o ./fabdev/hashblock/hashblock.o ./fabdev/identity/identity.o ./fabdev/list/list.o ./fabdev/log/log.o ./fabdev/main.o ./fabdev/map/map.o ./fabdev/path/path.o ./fabdev/strstack/strstack.o ./fabdev/tmp/tmp.o ./fabdev/traverse/traverse.o ./fabdev/ts/ts.o ./fabdev/var/var.o -llistwise
+	gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fab ./common/cksum.o ./common/coll.o ./common/parseint.o ./common/pstring.o ./common/unitstring.o ./common/xmem.o ./common/xstring.o ./fabdev/args/args.o ./fabdev/bake/bake.o ./fabdev/bp/bp.o ./fabdev/canon/canon.o ./fabdev/dep/dep.o ./fabdev/depblock/depblock.o ./fabdev/dirutil/dirutil.o ./fabdev/dsc/dsc.o ./fabdev/enclose/enclose.o ./fabdev/ff/ff.dsc.tab.o ./fabdev/ff/ff.lex.o ./fabdev/ff/ff.o ./fabdev/ff/ff.tab.o ./fabdev/ff/ff.tokens.o ./fabdev/ffn/ffn.o ./fabdev/ffproc/ffproc.o ./fabdev/fml/fml.o ./fabdev/gn/gn.o ./fabdev/gn/gnlw.o ./fabdev/hashblock/hashblock.o ./fabdev/identity/identity.o ./fabdev/list/list.o ./fabdev/log/log.o ./fabdev/main.o ./fabdev/map/map.o ./fabdev/path/path.o ./fabdev/strstack/strstack.o ./fabdev/tmp/tmp.o ./fabdev/traverse/traverse.o ./fabdev/ts/ts.o ./fabdev/var/var.o ./liblistwise/liblistwise.so
 
 
   X=$?
   echo 0 1>&99
+  exit $X
+}
+
+NAMES[138]='./listwisedev/listwise'
+fml_4_1()
+{
+  exec 1>/dev/null
+  exec 2>&101
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -o ./listwisedev/listwise ./listwisedev/args.o ./listwisedev/main.o ./liblistwise/liblistwise.so
+
+
+  X=$?
+  echo 1 1>&99
   exit $X
 }
 
@@ -2374,7 +2374,7 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=43))
+  ((SKP+=42))
 else
   # launch stage 2.0
   exec 100>$tmp ; rm -f $tmp ; fml_2_0 & PIDS[0]=$!
@@ -2419,11 +2419,10 @@ else
   exec 139>$tmp ; rm -f $tmp ; fml_2_39 & PIDS[39]=$!
   exec 140>$tmp ; rm -f $tmp ; fml_2_40 & PIDS[40]=$!
   exec 141>$tmp ; rm -f $tmp ; fml_2_41 & PIDS[41]=$!
-  exec 142>$tmp ; rm -f $tmp ; fml_2_42 & PIDS[42]=$!
 
   # harvest stage 2.0
   C=0
-  while [[ $C != 43 ]]; do
+  while [[ $C != 42 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -2472,7 +2471,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((119+$idx))
+    I=$((118+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -2484,20 +2483,21 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
+  ((SKP+=2))
 else
   # launch stage 4.0
   exec 100>$tmp ; rm -f $tmp ; fml_4_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_4_1 & PIDS[1]=$!
 
   # harvest stage 4.0
   C=0
-  while [[ $C != 1 ]]; do
+  while [[ $C != 2 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((138+$idx))
+    I=$((137+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
