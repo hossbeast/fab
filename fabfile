@@ -22,17 +22,17 @@ $dlistwise    = [ $*/listwisedev ]
 $dfab         = [ $*/fabdev ]
 
 # invocations
-+[ $dcommon ]()   							  	@common
-+[ $dliblistwise ](-$liblistwise)		@liblistwise
-+[ $dlistwise ](-$listwise)					@listwise
-+[ $dfab ](-$fab)										@fab
++[ $dcommon ]()   							  				@common
++[ $dliblistwise ](-$liblistwise)					@liblistwise
++[ $dlistwise ](-$listwise; $liblistwise)	@listwise
++[ $dfab ](-$fab; $liblistwise)						@fab
 
 # default target - make everything
 [ @all ] 				: [ @liblistwise.all       $listwise      @fab.all ]
 
 # inter-module dependencies
-[ $listwise ]		: [ $liblistwise ]
-[ $fab ]				: [ $liblistwise ]
+[ $listwise ]		:^ [ $liblistwise ]
+[ $fab ]				:^ [ $liblistwise ]
 
 # supertasks
 [ @install ]		: [               @liblistwise.install   @listwise.install   @fab.install  ]
