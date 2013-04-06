@@ -1168,56 +1168,11 @@ fml_1_75()
 
 
 # formulas and names for stage 2
-NAMES[76]='./fabdev/fablw/op/fx/fx.so'
+NAMES[76]='{./fabdev/ff/ff.tokens.c, ./fabdev/ff/ff.tokens.h}'
 fml_2_0()
 {
   exec 1>/dev/null
   exec 2>&100
-
-  
-	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fx/fx.so	./fabdev/fablw/op/fx/fx.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fx.so
-
-
-  X=$?
-  echo 0 1>&99
-  exit $X
-}
-
-NAMES[77]='./fabdev/fablw/op/fxc/fxc.so'
-fml_2_1()
-{
-  exec 1>/dev/null
-  exec 2>&101
-
-  
-	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fxc/fxc.so	./fabdev/fablw/op/fxc/fxc.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fxc.so
-
-
-  X=$?
-  echo 1 1>&99
-  exit $X
-}
-
-NAMES[78]='./fabdev/fablw/op/fxw/fxw.so'
-fml_2_2()
-{
-  exec 1>/dev/null
-  exec 2>&102
-
-  
-	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fxw/fxw.so	./fabdev/fablw/op/fxw/fxw.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fxw.so
-
-
-  X=$?
-  echo 2 1>&99
-  exit $X
-}
-
-NAMES[79]='{./fabdev/ff/ff.tokens.c, ./fabdev/ff/ff.tokens.h}'
-fml_2_3()
-{
-  exec 1>/dev/null
-  exec 2>&103
 
   
 	exec 1>./fabdev/ff/ff.tokens.h
@@ -1258,18 +1213,63 @@ echo '}'
 
 
   X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+NAMES[77]='./liblistwise/generator/generator.lex.pic.o'
+fml_2_1()
+{
+  exec 1>/dev/null
+  exec 2>&101
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -c ./liblistwise/generator/generator.lex.c -o ./liblistwise/generator/generator.lex.pic.o
+
+
+  X=$?
+  echo 1 1>&99
+  exit $X
+}
+
+NAMES[78]='./liblistwise/generator/generator.pic.o'
+fml_2_2()
+{
+  exec 1>/dev/null
+  exec 2>&102
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -c ./liblistwise/generator/generator.c -o ./liblistwise/generator/generator.pic.o
+
+
+  X=$?
+  echo 2 1>&99
+  exit $X
+}
+
+NAMES[79]='./liblistwise/generator/generator.tab.pic.o'
+fml_2_3()
+{
+  exec 1>/dev/null
+  exec 2>&103
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -c ./liblistwise/generator/generator.tab.c -o ./liblistwise/generator/generator.tab.pic.o
+
+
+  X=$?
   echo 3 1>&99
   exit $X
 }
 
-NAMES[80]='./liblistwise/generator/generator.lex.pic.o'
+NAMES[80]='./liblistwise/lstack/lstack.pic.o'
 fml_2_4()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -c ./liblistwise/generator/generator.lex.c -o ./liblistwise/generator/generator.lex.pic.o
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -c ./liblistwise/lstack/lstack.c -o ./liblistwise/lstack/lstack.pic.o
 
 
   X=$?
@@ -1277,666 +1277,9 @@ fml_2_4()
   exit $X
 }
 
-NAMES[81]='./liblistwise/generator/generator.pic.o'
-fml_2_5()
-{
-  exec 1>/dev/null
-  exec 2>&105
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -c ./liblistwise/generator/generator.c -o ./liblistwise/generator/generator.pic.o
-
-
-  X=$?
-  echo 5 1>&99
-  exit $X
-}
-
-NAMES[82]='./liblistwise/generator/generator.tab.pic.o'
-fml_2_6()
-{
-  exec 1>/dev/null
-  exec 2>&106
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -c ./liblistwise/generator/generator.tab.c -o ./liblistwise/generator/generator.tab.pic.o
-
-
-  X=$?
-  echo 6 1>&99
-  exit $X
-}
-
-NAMES[83]='./liblistwise/lstack/lstack.pic.o'
-fml_2_7()
-{
-  exec 1>/dev/null
-  exec 2>&107
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -c ./liblistwise/lstack/lstack.c -o ./liblistwise/lstack/lstack.pic.o
-
-
-  X=$?
-  echo 7 1>&99
-  exit $X
-}
-
-NAMES[84]='./liblistwise/op/-d/-d.so'
-fml_2_8()
-{
-  exec 1>/dev/null
-  exec 2>&108
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-d/-d.so			\
-	./liblistwise/op/-d/-d.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,-d.so
-
-
-  X=$?
-  echo 8 1>&99
-  exit $X
-}
-
-NAMES[85]='./liblistwise/op/-f/-f.so'
-fml_2_9()
-{
-  exec 1>/dev/null
-  exec 2>&109
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-f/-f.so			\
-	./common/parseint.pic.o ./liblistwise/op/-f/-f.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,-f.so
-
-
-  X=$?
-  echo 9 1>&99
-  exit $X
-}
-
-NAMES[86]='./liblistwise/op/-l/-l.so'
-fml_2_10()
-{
-  exec 1>/dev/null
-  exec 2>&110
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-l/-l.so			\
-	./common/parseint.pic.o ./liblistwise/op/-l/-l.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,-l.so
-
-
-  X=$?
-  echo 10 1>&99
-  exit $X
-}
-
-NAMES[87]='./liblistwise/op/bn/bn.so'
-fml_2_11()
-{
-  exec 1>/dev/null
-  exec 2>&111
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/bn/bn.so			\
-	./liblistwise/op/bn/bn.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,bn.so
-
-
-  X=$?
-  echo 11 1>&99
-  exit $X
-}
-
-NAMES[88]='./liblistwise/op/c/c.so'
-fml_2_12()
-{
-  exec 1>/dev/null
-  exec 2>&112
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/c/c.so			\
-	./liblistwise/op/c/c.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,c.so
-
-
-  X=$?
-  echo 12 1>&99
-  exit $X
-}
-
-NAMES[89]='./liblistwise/op/cp/cp.so'
-fml_2_13()
-{
-  exec 1>/dev/null
-  exec 2>&113
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/cp/cp.so			\
-	./common/xmem.pic.o ./liblistwise/op/cp/cp.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,cp.so
-
-
-  X=$?
-  echo 13 1>&99
-  exit $X
-}
-
-NAMES[90]='./liblistwise/op/d/d.so'
-fml_2_14()
-{
-  exec 1>/dev/null
-  exec 2>&114
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/d/d.so			\
-	./liblistwise/op/d/d.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,d.so
-
-
-  X=$?
-  echo 14 1>&99
-  exit $X
-}
-
-NAMES[91]='./liblistwise/op/dj/dj.so'
-fml_2_15()
-{
-  exec 1>/dev/null
-  exec 2>&115
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/dj/dj.so			\
-	./liblistwise/op/dj/dj.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,dj.so
-
-
-  X=$?
-  echo 15 1>&99
-  exit $X
-}
-
-NAMES[92]='./liblistwise/op/dn/dn.so'
-fml_2_16()
-{
-  exec 1>/dev/null
-  exec 2>&116
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/dn/dn.so			\
-	./liblistwise/op/dn/dn.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,dn.so
-
-
-  X=$?
-  echo 16 1>&99
-  exit $X
-}
-
-NAMES[93]='./liblistwise/op/fn/fn.so'
-fml_2_17()
-{
-  exec 1>/dev/null
-  exec 2>&117
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/fn/fn.so			\
-	./liblistwise/op/fn/fn.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,fn.so
-
-
-  X=$?
-  echo 17 1>&99
-  exit $X
-}
-
-NAMES[94]='./liblistwise/op/h/h.so'
-fml_2_18()
-{
-  exec 1>/dev/null
-  exec 2>&118
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/h/h.so			\
-	./liblistwise/op/h/h.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,h.so
-
-
-  X=$?
-  echo 18 1>&99
-  exit $X
-}
-
-NAMES[95]='./liblistwise/op/j/j.so'
-fml_2_19()
-{
-  exec 1>/dev/null
-  exec 2>&119
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/j/j.so			\
-	./liblistwise/op/j/j.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,j.so
-
-
-  X=$?
-  echo 19 1>&99
-  exit $X
-}
-
-NAMES[96]='./liblistwise/op/ls/ls.so'
-fml_2_20()
-{
-  exec 1>/dev/null
-  exec 2>&120
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/ls/ls.so			\
-	./common/parseint.pic.o ./liblistwise/op/ls/ls.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,ls.so
-
-
-  X=$?
-  echo 20 1>&99
-  exit $X
-}
-
-NAMES[97]='./liblistwise/op/lsr/lsr.so'
-fml_2_21()
-{
-  exec 1>/dev/null
-  exec 2>&121
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/lsr/lsr.so			\
-	./common/parseint.pic.o ./liblistwise/op/lsr/lsr.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,lsr.so
-
-
-  X=$?
-  echo 21 1>&99
-  exit $X
-}
-
-NAMES[98]='./liblistwise/op/m/m.so'
-fml_2_22()
-{
-  exec 1>/dev/null
-  exec 2>&122
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/m/m.so			\
-	./liblistwise/op/m/m.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,m.so
-
-
-  X=$?
-  echo 22 1>&99
-  exit $X
-}
-
-NAMES[99]='./liblistwise/op/o/o.so'
-fml_2_23()
-{
-  exec 1>/dev/null
-  exec 2>&123
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/o/o.so			\
-	./liblistwise/op/o/o.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,o.so
-
-
-  X=$?
-  echo 23 1>&99
-  exit $X
-}
-
-NAMES[100]='./liblistwise/op/pop/pop.so'
-fml_2_24()
-{
-  exec 1>/dev/null
-  exec 2>&124
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/pop/pop.so			\
-	./liblistwise/op/pop/pop.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,pop.so
-
-
-  X=$?
-  echo 24 1>&99
-  exit $X
-}
-
-NAMES[101]='./liblistwise/op/r/r.so'
-fml_2_25()
-{
-  exec 1>/dev/null
-  exec 2>&125
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/r/r.so			\
-	./liblistwise/op/r/r.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,r.so
-
-
-  X=$?
-  echo 25 1>&99
-  exit $X
-}
-
-NAMES[102]='./liblistwise/op/rp/rp.so'
-fml_2_26()
-{
-  exec 1>/dev/null
-  exec 2>&126
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/rp/rp.so			\
-	./common/xmem.pic.o ./liblistwise/op/rp/rp.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,rp.so
-
-
-  X=$?
-  echo 26 1>&99
-  exit $X
-}
-
-NAMES[103]='./liblistwise/op/rx/rx.so'
-fml_2_27()
-{
-  exec 1>/dev/null
-  exec 2>&127
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/rx/rx.so			\
-	./common/xmem.pic.o ./liblistwise/op/rx/rx.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,rx.so
-
-
-  X=$?
-  echo 27 1>&99
-  exit $X
-}
-
-NAMES[104]='./liblistwise/op/s/s.so'
-fml_2_28()
-{
-  exec 1>/dev/null
-  exec 2>&128
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/s/s.so			\
-	./liblistwise/op/s/s.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,s.so
-
-
-  X=$?
-  echo 28 1>&99
-  exit $X
-}
-
-NAMES[105]='./liblistwise/op/shift/shift.so'
-fml_2_29()
-{
-  exec 1>/dev/null
-  exec 2>&129
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/shift/shift.so			\
-	./liblistwise/op/shift/shift.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,shift.so
-
-
-  X=$?
-  echo 29 1>&99
-  exit $X
-}
-
-NAMES[106]='./liblistwise/op/sn/sn.so'
-fml_2_30()
-{
-  exec 1>/dev/null
-  exec 2>&130
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/sn/sn.so			\
-	./common/parseint.pic.o ./liblistwise/op/sn/sn.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,sn.so
-
-
-  X=$?
-  echo 30 1>&99
-  exit $X
-}
-
-NAMES[107]='./liblistwise/op/ss/ss.so'
-fml_2_31()
-{
-  exec 1>/dev/null
-  exec 2>&131
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/ss/ss.so			\
-	./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/op/ss/ss.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,ss.so
-
-
-  X=$?
-  echo 31 1>&99
-  exit $X
-}
-
-NAMES[108]='./liblistwise/op/u/u.so'
-fml_2_32()
-{
-  exec 1>/dev/null
-  exec 2>&132
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/u/u.so			\
-	./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/op/u/u.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,u.so
-
-
-  X=$?
-  echo 32 1>&99
-  exit $X
-}
-
-NAMES[109]='./liblistwise/op/v/v.so'
-fml_2_33()
-{
-  exec 1>/dev/null
-  exec 2>&133
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/v/v.so			\
-	./liblistwise/op/v/v.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,v.so
-
-
-  X=$?
-  echo 33 1>&99
-  exit $X
-}
-
-NAMES[110]='./liblistwise/op/w/w.so'
-fml_2_34()
-{
-  exec 1>/dev/null
-  exec 2>&134
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/w/w.so			\
-	./liblistwise/op/w/w.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,w.so
-
-
-  X=$?
-  echo 34 1>&99
-  exit $X
-}
-
-NAMES[111]='./liblistwise/op/xch/xch.so'
-fml_2_35()
-{
-  exec 1>/dev/null
-  exec 2>&135
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xch/xch.so			\
-	./liblistwise/op/xch/xch.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,xch.so
-
-
-  X=$?
-  echo 35 1>&99
-  exit $X
-}
-
-NAMES[112]='./liblistwise/op/xm/xm.so'
-fml_2_36()
-{
-  exec 1>/dev/null
-  exec 2>&136
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xm/xm.so			\
-	./liblistwise/op/xm/xm.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,xm.so
-
-
-  X=$?
-  echo 36 1>&99
-  exit $X
-}
-
-NAMES[113]='./liblistwise/op/xmf/xmf.so'
-fml_2_37()
-{
-  exec 1>/dev/null
-  exec 2>&137
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xmf/xmf.so			\
-	./liblistwise/op/xmf/xmf.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,xmf.so
-
-
-  X=$?
-  echo 37 1>&99
-  exit $X
-}
-
-NAMES[114]='./liblistwise/op/xs/xs.so'
-fml_2_38()
-{
-  exec 1>/dev/null
-  exec 2>&138
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xs/xs.so			\
-	./liblistwise/op/xs/xs.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,xs.so
-
-
-  X=$?
-  echo 38 1>&99
-  exit $X
-}
-
-NAMES[115]='./liblistwise/op/xsf/xsf.so'
-fml_2_39()
-{
-  exec 1>/dev/null
-  exec 2>&139
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xsf/xsf.so			\
-	./liblistwise/op/xsf/xsf.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,xsf.so
-
-
-  X=$?
-  echo 39 1>&99
-  exit $X
-}
-
-NAMES[116]='./liblistwise/op/y/y.so'
-fml_2_40()
-{
-  exec 1>/dev/null
-  exec 2>&140
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/y/y.so			\
-	./common/xmem.pic.o ./liblistwise/op/y/y.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,y.so
-
-
-  X=$?
-  echo 40 1>&99
-  exit $X
-}
-
-NAMES[117]='./liblistwise/op/z/z.so'
-fml_2_41()
-{
-  exec 1>/dev/null
-  exec 2>&141
-
-  
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/z/z.so			\
-	./liblistwise/op/z/z.pic.o						\
-	./liblistwise/liblistwise.so -shared										\
-	-Wl,-soname,z.so
-
-
-  X=$?
-  echo 41 1>&99
-  exit $X
-}
-
 
 # formulas and names for stage 3
-NAMES[118]='./fabdev/bake/bake.o'
+NAMES[81]='./fabdev/bake/bake.o'
 fml_3_0()
 {
   exec 1>/dev/null
@@ -1951,7 +1294,7 @@ fml_3_0()
   exit $X
 }
 
-NAMES[119]='./fabdev/bp/bp.o'
+NAMES[82]='./fabdev/bp/bp.o'
 fml_3_1()
 {
   exec 1>/dev/null
@@ -1966,7 +1309,7 @@ fml_3_1()
   exit $X
 }
 
-NAMES[120]='./fabdev/dep/dep.o'
+NAMES[83]='./fabdev/dep/dep.o'
 fml_3_2()
 {
   exec 1>/dev/null
@@ -1981,7 +1324,7 @@ fml_3_2()
   exit $X
 }
 
-NAMES[121]='./fabdev/dsc/dsc.o'
+NAMES[84]='./fabdev/dsc/dsc.o'
 fml_3_3()
 {
   exec 1>/dev/null
@@ -1996,7 +1339,7 @@ fml_3_3()
   exit $X
 }
 
-NAMES[122]='./fabdev/enclose/enclose.o'
+NAMES[85]='./fabdev/enclose/enclose.o'
 fml_3_4()
 {
   exec 1>/dev/null
@@ -2011,7 +1354,7 @@ fml_3_4()
   exit $X
 }
 
-NAMES[123]='./fabdev/ff/ff.dsc.tab.o'
+NAMES[86]='./fabdev/ff/ff.dsc.tab.o'
 fml_3_5()
 {
   exec 1>/dev/null
@@ -2026,7 +1369,7 @@ fml_3_5()
   exit $X
 }
 
-NAMES[124]='./fabdev/ff/ff.lex.o'
+NAMES[87]='./fabdev/ff/ff.lex.o'
 fml_3_6()
 {
   exec 1>/dev/null
@@ -2041,7 +1384,7 @@ fml_3_6()
   exit $X
 }
 
-NAMES[125]='./fabdev/ff/ff.o'
+NAMES[88]='./fabdev/ff/ff.o'
 fml_3_7()
 {
   exec 1>/dev/null
@@ -2056,7 +1399,7 @@ fml_3_7()
   exit $X
 }
 
-NAMES[126]='./fabdev/ff/ff.tab.o'
+NAMES[89]='./fabdev/ff/ff.tab.o'
 fml_3_8()
 {
   exec 1>/dev/null
@@ -2071,7 +1414,7 @@ fml_3_8()
   exit $X
 }
 
-NAMES[127]='./fabdev/ff/ff.tokens.o'
+NAMES[90]='./fabdev/ff/ff.tokens.o'
 fml_3_9()
 {
   exec 1>/dev/null
@@ -2086,7 +1429,7 @@ fml_3_9()
   exit $X
 }
 
-NAMES[128]='./fabdev/ffn/ffn.o'
+NAMES[91]='./fabdev/ffn/ffn.o'
 fml_3_10()
 {
   exec 1>/dev/null
@@ -2101,7 +1444,7 @@ fml_3_10()
   exit $X
 }
 
-NAMES[129]='./fabdev/ffproc/ffproc.o'
+NAMES[92]='./fabdev/ffproc/ffproc.o'
 fml_3_11()
 {
   exec 1>/dev/null
@@ -2116,7 +1459,7 @@ fml_3_11()
   exit $X
 }
 
-NAMES[130]='./fabdev/fml/fml.o'
+NAMES[93]='./fabdev/fml/fml.o'
 fml_3_12()
 {
   exec 1>/dev/null
@@ -2131,7 +1474,7 @@ fml_3_12()
   exit $X
 }
 
-NAMES[131]='./fabdev/gn/gn.o'
+NAMES[94]='./fabdev/gn/gn.o'
 fml_3_13()
 {
   exec 1>/dev/null
@@ -2146,7 +1489,7 @@ fml_3_13()
   exit $X
 }
 
-NAMES[132]='./fabdev/list/list.o'
+NAMES[95]='./fabdev/list/list.o'
 fml_3_14()
 {
   exec 1>/dev/null
@@ -2161,7 +1504,7 @@ fml_3_14()
   exit $X
 }
 
-NAMES[133]='./fabdev/main.o'
+NAMES[96]='./fabdev/main.o'
 fml_3_15()
 {
   exec 1>/dev/null
@@ -2176,7 +1519,7 @@ fml_3_15()
   exit $X
 }
 
-NAMES[134]='./fabdev/ts/ts.o'
+NAMES[97]='./fabdev/ts/ts.o'
 fml_3_16()
 {
   exec 1>/dev/null
@@ -2191,7 +1534,7 @@ fml_3_16()
   exit $X
 }
 
-NAMES[135]='./fabdev/var/var.o'
+NAMES[98]='./fabdev/var/var.o'
 fml_3_17()
 {
   exec 1>/dev/null
@@ -2206,7 +1549,7 @@ fml_3_17()
   exit $X
 }
 
-NAMES[136]='./liblistwise/liblistwise.so'
+NAMES[99]='./liblistwise/liblistwise.so'
 fml_3_18()
 {
   exec 1>/dev/null
@@ -2229,7 +1572,7 @@ echo "local: *; };"
 
 
 # formulas and names for stage 4
-NAMES[137]='./fabdev/fab'
+NAMES[100]='./fabdev/fab'
 fml_4_0()
 {
   exec 1>/dev/null
@@ -2244,18 +1587,675 @@ fml_4_0()
   exit $X
 }
 
-NAMES[138]='./listwisedev/listwise'
+NAMES[101]='./fabdev/fablw/op/fx/fx.so'
 fml_4_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -o ./listwisedev/listwise ./listwisedev/args.o ./listwisedev/main.o ./liblistwise/liblistwise.so
+	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fx/fx.so	./fabdev/fablw/op/fx/fx.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fx.so
 
 
   X=$?
   echo 1 1>&99
+  exit $X
+}
+
+NAMES[102]='./fabdev/fablw/op/fxc/fxc.so'
+fml_4_2()
+{
+  exec 1>/dev/null
+  exec 2>&102
+
+  
+	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fxc/fxc.so	./fabdev/fablw/op/fxc/fxc.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fxc.so
+
+
+  X=$?
+  echo 2 1>&99
+  exit $X
+}
+
+NAMES[103]='./fabdev/fablw/op/fxw/fxw.so'
+fml_4_3()
+{
+  exec 1>/dev/null
+  exec 2>&103
+
+  
+	  gcc -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -g -m64 -o ./fabdev/fablw/op/fxw/fxw.so	./fabdev/fablw/op/fxw/fxw.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fxw.so
+
+
+  X=$?
+  echo 3 1>&99
+  exit $X
+}
+
+NAMES[104]='./liblistwise/op/-d/-d.so'
+fml_4_4()
+{
+  exec 1>/dev/null
+  exec 2>&104
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-d/-d.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/-d/-d.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,-d.so
+
+
+  X=$?
+  echo 4 1>&99
+  exit $X
+}
+
+NAMES[105]='./liblistwise/op/-f/-f.so'
+fml_4_5()
+{
+  exec 1>/dev/null
+  exec 2>&105
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-f/-f.so			\
+	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/-f/-f.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,-f.so
+
+
+  X=$?
+  echo 5 1>&99
+  exit $X
+}
+
+NAMES[106]='./liblistwise/op/-l/-l.so'
+fml_4_6()
+{
+  exec 1>/dev/null
+  exec 2>&106
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/-l/-l.so			\
+	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/-l/-l.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,-l.so
+
+
+  X=$?
+  echo 6 1>&99
+  exit $X
+}
+
+NAMES[107]='./liblistwise/op/bn/bn.so'
+fml_4_7()
+{
+  exec 1>/dev/null
+  exec 2>&107
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/bn/bn.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/bn/bn.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,bn.so
+
+
+  X=$?
+  echo 7 1>&99
+  exit $X
+}
+
+NAMES[108]='./liblistwise/op/c/c.so'
+fml_4_8()
+{
+  exec 1>/dev/null
+  exec 2>&108
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/c/c.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/c/c.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,c.so
+
+
+  X=$?
+  echo 8 1>&99
+  exit $X
+}
+
+NAMES[109]='./liblistwise/op/cp/cp.so'
+fml_4_9()
+{
+  exec 1>/dev/null
+  exec 2>&109
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/cp/cp.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/cp/cp.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,cp.so
+
+
+  X=$?
+  echo 9 1>&99
+  exit $X
+}
+
+NAMES[110]='./liblistwise/op/d/d.so'
+fml_4_10()
+{
+  exec 1>/dev/null
+  exec 2>&110
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/d/d.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/d/d.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,d.so
+
+
+  X=$?
+  echo 10 1>&99
+  exit $X
+}
+
+NAMES[111]='./liblistwise/op/dj/dj.so'
+fml_4_11()
+{
+  exec 1>/dev/null
+  exec 2>&111
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/dj/dj.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/dj/dj.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,dj.so
+
+
+  X=$?
+  echo 11 1>&99
+  exit $X
+}
+
+NAMES[112]='./liblistwise/op/dn/dn.so'
+fml_4_12()
+{
+  exec 1>/dev/null
+  exec 2>&112
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/dn/dn.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/dn/dn.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,dn.so
+
+
+  X=$?
+  echo 12 1>&99
+  exit $X
+}
+
+NAMES[113]='./liblistwise/op/fn/fn.so'
+fml_4_13()
+{
+  exec 1>/dev/null
+  exec 2>&113
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/fn/fn.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/fn/fn.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,fn.so
+
+
+  X=$?
+  echo 13 1>&99
+  exit $X
+}
+
+NAMES[114]='./liblistwise/op/h/h.so'
+fml_4_14()
+{
+  exec 1>/dev/null
+  exec 2>&114
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/h/h.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/h/h.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,h.so
+
+
+  X=$?
+  echo 14 1>&99
+  exit $X
+}
+
+NAMES[115]='./liblistwise/op/j/j.so'
+fml_4_15()
+{
+  exec 1>/dev/null
+  exec 2>&115
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/j/j.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/j/j.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,j.so
+
+
+  X=$?
+  echo 15 1>&99
+  exit $X
+}
+
+NAMES[116]='./liblistwise/op/ls/ls.so'
+fml_4_16()
+{
+  exec 1>/dev/null
+  exec 2>&116
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/ls/ls.so			\
+	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/ls/ls.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,ls.so
+
+
+  X=$?
+  echo 16 1>&99
+  exit $X
+}
+
+NAMES[117]='./liblistwise/op/lsr/lsr.so'
+fml_4_17()
+{
+  exec 1>/dev/null
+  exec 2>&117
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/lsr/lsr.so			\
+	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/lsr/lsr.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,lsr.so
+
+
+  X=$?
+  echo 17 1>&99
+  exit $X
+}
+
+NAMES[118]='./liblistwise/op/m/m.so'
+fml_4_18()
+{
+  exec 1>/dev/null
+  exec 2>&118
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/m/m.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/m/m.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,m.so
+
+
+  X=$?
+  echo 18 1>&99
+  exit $X
+}
+
+NAMES[119]='./liblistwise/op/o/o.so'
+fml_4_19()
+{
+  exec 1>/dev/null
+  exec 2>&119
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/o/o.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/o/o.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,o.so
+
+
+  X=$?
+  echo 19 1>&99
+  exit $X
+}
+
+NAMES[120]='./liblistwise/op/pop/pop.so'
+fml_4_20()
+{
+  exec 1>/dev/null
+  exec 2>&120
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/pop/pop.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/pop/pop.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,pop.so
+
+
+  X=$?
+  echo 20 1>&99
+  exit $X
+}
+
+NAMES[121]='./liblistwise/op/r/r.so'
+fml_4_21()
+{
+  exec 1>/dev/null
+  exec 2>&121
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/r/r.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/r/r.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,r.so
+
+
+  X=$?
+  echo 21 1>&99
+  exit $X
+}
+
+NAMES[122]='./liblistwise/op/rp/rp.so'
+fml_4_22()
+{
+  exec 1>/dev/null
+  exec 2>&122
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/rp/rp.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/rp/rp.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,rp.so
+
+
+  X=$?
+  echo 22 1>&99
+  exit $X
+}
+
+NAMES[123]='./liblistwise/op/rx/rx.so'
+fml_4_23()
+{
+  exec 1>/dev/null
+  exec 2>&123
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/rx/rx.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/rx/rx.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,rx.so
+
+
+  X=$?
+  echo 23 1>&99
+  exit $X
+}
+
+NAMES[124]='./liblistwise/op/s/s.so'
+fml_4_24()
+{
+  exec 1>/dev/null
+  exec 2>&124
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/s/s.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/s/s.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,s.so
+
+
+  X=$?
+  echo 24 1>&99
+  exit $X
+}
+
+NAMES[125]='./liblistwise/op/shift/shift.so'
+fml_4_25()
+{
+  exec 1>/dev/null
+  exec 2>&125
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/shift/shift.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/shift/shift.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,shift.so
+
+
+  X=$?
+  echo 25 1>&99
+  exit $X
+}
+
+NAMES[126]='./liblistwise/op/sn/sn.so'
+fml_4_26()
+{
+  exec 1>/dev/null
+  exec 2>&126
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/sn/sn.so			\
+	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/sn/sn.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,sn.so
+
+
+  X=$?
+  echo 26 1>&99
+  exit $X
+}
+
+NAMES[127]='./liblistwise/op/ss/ss.so'
+fml_4_27()
+{
+  exec 1>/dev/null
+  exec 2>&127
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/ss/ss.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/ss/ss.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,ss.so
+
+
+  X=$?
+  echo 27 1>&99
+  exit $X
+}
+
+NAMES[128]='./liblistwise/op/u/u.so'
+fml_4_28()
+{
+  exec 1>/dev/null
+  exec 2>&128
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/u/u.so			\
+	./common/coll.pic.o ./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/u/u.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,u.so
+
+
+  X=$?
+  echo 28 1>&99
+  exit $X
+}
+
+NAMES[129]='./liblistwise/op/v/v.so'
+fml_4_29()
+{
+  exec 1>/dev/null
+  exec 2>&129
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/v/v.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/v/v.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,v.so
+
+
+  X=$?
+  echo 29 1>&99
+  exit $X
+}
+
+NAMES[130]='./liblistwise/op/w/w.so'
+fml_4_30()
+{
+  exec 1>/dev/null
+  exec 2>&130
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/w/w.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/w/w.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,w.so
+
+
+  X=$?
+  echo 30 1>&99
+  exit $X
+}
+
+NAMES[131]='./liblistwise/op/xch/xch.so'
+fml_4_31()
+{
+  exec 1>/dev/null
+  exec 2>&131
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xch/xch.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xch/xch.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,xch.so
+
+
+  X=$?
+  echo 31 1>&99
+  exit $X
+}
+
+NAMES[132]='./liblistwise/op/xm/xm.so'
+fml_4_32()
+{
+  exec 1>/dev/null
+  exec 2>&132
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xm/xm.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xm/xm.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,xm.so
+
+
+  X=$?
+  echo 32 1>&99
+  exit $X
+}
+
+NAMES[133]='./liblistwise/op/xmf/xmf.so'
+fml_4_33()
+{
+  exec 1>/dev/null
+  exec 2>&133
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xmf/xmf.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xmf/xmf.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,xmf.so
+
+
+  X=$?
+  echo 33 1>&99
+  exit $X
+}
+
+NAMES[134]='./liblistwise/op/xs/xs.so'
+fml_4_34()
+{
+  exec 1>/dev/null
+  exec 2>&134
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xs/xs.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xs/xs.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,xs.so
+
+
+  X=$?
+  echo 34 1>&99
+  exit $X
+}
+
+NAMES[135]='./liblistwise/op/xsf/xsf.so'
+fml_4_35()
+{
+  exec 1>/dev/null
+  exec 2>&135
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/xsf/xsf.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/xsf/xsf.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,xsf.so
+
+
+  X=$?
+  echo 35 1>&99
+  exit $X
+}
+
+NAMES[136]='./liblistwise/op/y/y.so'
+fml_4_36()
+{
+  exec 1>/dev/null
+  exec 2>&136
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/y/y.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/y/y.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,y.so
+
+
+  X=$?
+  echo 36 1>&99
+  exit $X
+}
+
+NAMES[137]='./liblistwise/op/z/z.so'
+fml_4_37()
+{
+  exec 1>/dev/null
+  exec 2>&137
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -g -m64 -o ./liblistwise/op/z/z.so			\
+	./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/op/z/z.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o						\
+	./liblistwise/liblistwise.so -shared										\
+	-Wl,-soname,z.so
+
+
+  X=$?
+  echo 37 1>&99
+  exit $X
+}
+
+NAMES[138]='./listwisedev/listwise'
+fml_4_38()
+{
+  exec 1>/dev/null
+  exec 2>&138
+
+  
+	gcc -D_GNU_SOURCE -I./liblistwise -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -g -m64 -o ./listwisedev/listwise ./listwisedev/args.o ./listwisedev/main.o ./liblistwise/liblistwise.so
+
+
+  X=$?
+  echo 38 1>&99
   exit $X
 }
 
@@ -2374,7 +2374,7 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=42))
+  ((SKP+=5))
 else
   # launch stage 2.0
   exec 100>$tmp ; rm -f $tmp ; fml_2_0 & PIDS[0]=$!
@@ -2382,47 +2382,10 @@ else
   exec 102>$tmp ; rm -f $tmp ; fml_2_2 & PIDS[2]=$!
   exec 103>$tmp ; rm -f $tmp ; fml_2_3 & PIDS[3]=$!
   exec 104>$tmp ; rm -f $tmp ; fml_2_4 & PIDS[4]=$!
-  exec 105>$tmp ; rm -f $tmp ; fml_2_5 & PIDS[5]=$!
-  exec 106>$tmp ; rm -f $tmp ; fml_2_6 & PIDS[6]=$!
-  exec 107>$tmp ; rm -f $tmp ; fml_2_7 & PIDS[7]=$!
-  exec 108>$tmp ; rm -f $tmp ; fml_2_8 & PIDS[8]=$!
-  exec 109>$tmp ; rm -f $tmp ; fml_2_9 & PIDS[9]=$!
-  exec 110>$tmp ; rm -f $tmp ; fml_2_10 & PIDS[10]=$!
-  exec 111>$tmp ; rm -f $tmp ; fml_2_11 & PIDS[11]=$!
-  exec 112>$tmp ; rm -f $tmp ; fml_2_12 & PIDS[12]=$!
-  exec 113>$tmp ; rm -f $tmp ; fml_2_13 & PIDS[13]=$!
-  exec 114>$tmp ; rm -f $tmp ; fml_2_14 & PIDS[14]=$!
-  exec 115>$tmp ; rm -f $tmp ; fml_2_15 & PIDS[15]=$!
-  exec 116>$tmp ; rm -f $tmp ; fml_2_16 & PIDS[16]=$!
-  exec 117>$tmp ; rm -f $tmp ; fml_2_17 & PIDS[17]=$!
-  exec 118>$tmp ; rm -f $tmp ; fml_2_18 & PIDS[18]=$!
-  exec 119>$tmp ; rm -f $tmp ; fml_2_19 & PIDS[19]=$!
-  exec 120>$tmp ; rm -f $tmp ; fml_2_20 & PIDS[20]=$!
-  exec 121>$tmp ; rm -f $tmp ; fml_2_21 & PIDS[21]=$!
-  exec 122>$tmp ; rm -f $tmp ; fml_2_22 & PIDS[22]=$!
-  exec 123>$tmp ; rm -f $tmp ; fml_2_23 & PIDS[23]=$!
-  exec 124>$tmp ; rm -f $tmp ; fml_2_24 & PIDS[24]=$!
-  exec 125>$tmp ; rm -f $tmp ; fml_2_25 & PIDS[25]=$!
-  exec 126>$tmp ; rm -f $tmp ; fml_2_26 & PIDS[26]=$!
-  exec 127>$tmp ; rm -f $tmp ; fml_2_27 & PIDS[27]=$!
-  exec 128>$tmp ; rm -f $tmp ; fml_2_28 & PIDS[28]=$!
-  exec 129>$tmp ; rm -f $tmp ; fml_2_29 & PIDS[29]=$!
-  exec 130>$tmp ; rm -f $tmp ; fml_2_30 & PIDS[30]=$!
-  exec 131>$tmp ; rm -f $tmp ; fml_2_31 & PIDS[31]=$!
-  exec 132>$tmp ; rm -f $tmp ; fml_2_32 & PIDS[32]=$!
-  exec 133>$tmp ; rm -f $tmp ; fml_2_33 & PIDS[33]=$!
-  exec 134>$tmp ; rm -f $tmp ; fml_2_34 & PIDS[34]=$!
-  exec 135>$tmp ; rm -f $tmp ; fml_2_35 & PIDS[35]=$!
-  exec 136>$tmp ; rm -f $tmp ; fml_2_36 & PIDS[36]=$!
-  exec 137>$tmp ; rm -f $tmp ; fml_2_37 & PIDS[37]=$!
-  exec 138>$tmp ; rm -f $tmp ; fml_2_38 & PIDS[38]=$!
-  exec 139>$tmp ; rm -f $tmp ; fml_2_39 & PIDS[39]=$!
-  exec 140>$tmp ; rm -f $tmp ; fml_2_40 & PIDS[40]=$!
-  exec 141>$tmp ; rm -f $tmp ; fml_2_41 & PIDS[41]=$!
 
   # harvest stage 2.0
   C=0
-  while [[ $C != 42 ]]; do
+  while [[ $C != 5 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -2471,7 +2434,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((118+$idx))
+    I=$((81+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -2483,21 +2446,58 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=2))
+  ((SKP+=39))
 else
   # launch stage 4.0
   exec 100>$tmp ; rm -f $tmp ; fml_4_0 & PIDS[0]=$!
   exec 101>$tmp ; rm -f $tmp ; fml_4_1 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_4_2 & PIDS[2]=$!
+  exec 103>$tmp ; rm -f $tmp ; fml_4_3 & PIDS[3]=$!
+  exec 104>$tmp ; rm -f $tmp ; fml_4_4 & PIDS[4]=$!
+  exec 105>$tmp ; rm -f $tmp ; fml_4_5 & PIDS[5]=$!
+  exec 106>$tmp ; rm -f $tmp ; fml_4_6 & PIDS[6]=$!
+  exec 107>$tmp ; rm -f $tmp ; fml_4_7 & PIDS[7]=$!
+  exec 108>$tmp ; rm -f $tmp ; fml_4_8 & PIDS[8]=$!
+  exec 109>$tmp ; rm -f $tmp ; fml_4_9 & PIDS[9]=$!
+  exec 110>$tmp ; rm -f $tmp ; fml_4_10 & PIDS[10]=$!
+  exec 111>$tmp ; rm -f $tmp ; fml_4_11 & PIDS[11]=$!
+  exec 112>$tmp ; rm -f $tmp ; fml_4_12 & PIDS[12]=$!
+  exec 113>$tmp ; rm -f $tmp ; fml_4_13 & PIDS[13]=$!
+  exec 114>$tmp ; rm -f $tmp ; fml_4_14 & PIDS[14]=$!
+  exec 115>$tmp ; rm -f $tmp ; fml_4_15 & PIDS[15]=$!
+  exec 116>$tmp ; rm -f $tmp ; fml_4_16 & PIDS[16]=$!
+  exec 117>$tmp ; rm -f $tmp ; fml_4_17 & PIDS[17]=$!
+  exec 118>$tmp ; rm -f $tmp ; fml_4_18 & PIDS[18]=$!
+  exec 119>$tmp ; rm -f $tmp ; fml_4_19 & PIDS[19]=$!
+  exec 120>$tmp ; rm -f $tmp ; fml_4_20 & PIDS[20]=$!
+  exec 121>$tmp ; rm -f $tmp ; fml_4_21 & PIDS[21]=$!
+  exec 122>$tmp ; rm -f $tmp ; fml_4_22 & PIDS[22]=$!
+  exec 123>$tmp ; rm -f $tmp ; fml_4_23 & PIDS[23]=$!
+  exec 124>$tmp ; rm -f $tmp ; fml_4_24 & PIDS[24]=$!
+  exec 125>$tmp ; rm -f $tmp ; fml_4_25 & PIDS[25]=$!
+  exec 126>$tmp ; rm -f $tmp ; fml_4_26 & PIDS[26]=$!
+  exec 127>$tmp ; rm -f $tmp ; fml_4_27 & PIDS[27]=$!
+  exec 128>$tmp ; rm -f $tmp ; fml_4_28 & PIDS[28]=$!
+  exec 129>$tmp ; rm -f $tmp ; fml_4_29 & PIDS[29]=$!
+  exec 130>$tmp ; rm -f $tmp ; fml_4_30 & PIDS[30]=$!
+  exec 131>$tmp ; rm -f $tmp ; fml_4_31 & PIDS[31]=$!
+  exec 132>$tmp ; rm -f $tmp ; fml_4_32 & PIDS[32]=$!
+  exec 133>$tmp ; rm -f $tmp ; fml_4_33 & PIDS[33]=$!
+  exec 134>$tmp ; rm -f $tmp ; fml_4_34 & PIDS[34]=$!
+  exec 135>$tmp ; rm -f $tmp ; fml_4_35 & PIDS[35]=$!
+  exec 136>$tmp ; rm -f $tmp ; fml_4_36 & PIDS[36]=$!
+  exec 137>$tmp ; rm -f $tmp ; fml_4_37 & PIDS[37]=$!
+  exec 138>$tmp ; rm -f $tmp ; fml_4_38 & PIDS[38]=$!
 
   # harvest stage 4.0
   C=0
-  while [[ $C != 2 ]]; do
+  while [[ $C != 39 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((137+$idx))
+    I=$((100+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))

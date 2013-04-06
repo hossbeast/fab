@@ -25,7 +25,7 @@ $dfab         = [ $*/fabdev ]
 +[ $dcommon ]()   							  				@common
 +[ $dliblistwise ](-$liblistwise)					@liblistwise
 +[ $dlistwise ](-$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ])	@listwise
-+[ $dfab ](-$fab; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ])							@fab
++[ $dfab ](-$fab; -$faboplist; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ])							@fab
 
 # default target - make everything
 [ @all ] 				: [ @liblistwise.all       $listwise      @fab.all ]
@@ -33,6 +33,7 @@ $dfab         = [ $*/fabdev ]
 # inter-module dependencies
 [ $listwise ]		:^ [ $liblistwise ]
 [ $fab ]				:^ [ $liblistwise ]
+[ $faboplist ]	:^ [ $liblistwise ]
 
 # supertasks
 [ @install ]		: [               @liblistwise.install   @listwise.install   @fab.install  ]
