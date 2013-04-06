@@ -65,7 +65,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 	  exec 1>[ $dliblistwise/exports ]
 	  echo "{ global: "
 	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- [ $@ ~ rx/aneedw/xm/<c>/ss/u/fx ] )
+	  cat -- [ $cfabpaths ~ fx ] )
 	> echo "local: *; };"
 
 	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneedw/xm/<o>/ss/u/fx ] [ $lflags ]
@@ -81,7 +81,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 }
 
 # operators also depend on the library for linking
-[ $oplist ] : [ $liblistwise ]
+[ $oplist ] :^ [ $liblistwise ]
 
 ##
 ## tasks

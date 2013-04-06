@@ -40,10 +40,3 @@ int listwise_exec(char* s, int l, char** init, int* initls, int initl, lstack** 
 
 	finally : coda;
 }
-
-
-
-
-
-
-
