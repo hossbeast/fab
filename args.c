@@ -34,11 +34,11 @@ struct g_args_t g_args;
 static void usage(int help)
 {
 	printf(
+"listwise : list-based computation utility and library\n"
+" v0.4.0\n"
 "\n"
-"listwise : list-centric computation utility\n"
-"\n"
-"Usage : lw [options] generator-string\n"
-"Usage : lw --help|-h for this message\n"
+"usage : lw [options] generator-string\n"
+"usage : lw --help|-h for this message\n"
 "\n"
 "------------------[options]-----------------------------------------------------\n"
 "\n"
