@@ -36,8 +36,11 @@ struct g_args_t g_args;
 static void usage()
 {
 	printf(
-"usage: fab [[options] [logopts] [targets]]*\n"
-"   --help|-h for this message\n"
+"fab : parallel and incremental builds, integrated dependency discovery\n"
+" v0.4.0\n"
+"\n"
+"usage : fab [[options] [logopts] [targets]]*\n"
+"usage : fab --help|-h for this message\n"
 "\n"
 "----------- [ targets ] --------------------------------------------------------\n"
 "\n"

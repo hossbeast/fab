@@ -477,4 +477,3 @@ void ffn_dump(ff_node * const root)
 	if(log_would(L_FF | L_FFTREE))
 		dump(root, 0);
 }
-
