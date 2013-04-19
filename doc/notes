@@ -45,7 +45,9 @@ fabfile properties
 - expose canons other modes as listwise operators
 - C-code compiled bakescrips
 - build dependency - unreachable by traversal
-- FS invalidation formulas ? (filesystem)
+- FS invalidation formulas ? (filesystem) for invalidating a fabfile
+- listwise operators to treat NOFILE @ space as filesystem, i.e. [ /../ ~ lsr ] - all nofile nodes
+- listwise operator to create unique list without sorting
 
 # done
 - command line variable defs : immutably set the value of the variable, which cannot be
