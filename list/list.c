@@ -329,4 +329,3 @@ int list_resolvetoflat(ff_node * list, map* vmap, generator_parser* const gp, ls
 
 	finally : coda;
 }
-

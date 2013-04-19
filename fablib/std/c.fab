@@ -91,4 +91,3 @@ $cobjpaths = [ $cfabpaths ~ [ xs/<c>/< $ext >/y ~ j ] ]
 {
 	[ $cc ] [ $cflags ~ ss/u/fx ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
 }
-
