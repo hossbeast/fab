@@ -73,7 +73,22 @@ int bake_bp(
 	if((fd = open(dst, O_CREAT | O_TRUNC | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
 		fail("open(%s)=[%d][%s]", dst, errno, strerror(errno));
 
-	dprintf(fd, "#!/bin/bash\n\n");
+	dprintf(fd, "#!/bin/bash\n");
+
+/* include licensing exception in bakescript output */
+	dprintf(fd,
+"\n"
+"# A build script made by fab v0.4.0\n"
+"#  fab is free software released under the GNU General Public License.\n"
+"#\n"
+"#  As a special exception, build scripts made by fab v0.4.0 (including this\n"
+"#  build script) are excluded from the license covering fab itself, even\n"
+"#  if substantial portions of the fab source code are copied verbatim into\n"
+"#  the build script. You may create a larger work that contains part or all\n"
+"#  of the build script and distribute that work under terms of your choice\n"
+"\n"
+	);
+
 	dprintf(fd, "# re-exec under time\n");
 	dprintf(fd, "if [[ $1 != \"timed\" ]]; then\n");
 	dprintf(fd, "  time $0 timed\n");
