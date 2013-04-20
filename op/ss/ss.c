@@ -106,8 +106,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	return 1;
 }
-
-
-
-
-

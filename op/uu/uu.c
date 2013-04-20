@@ -22,6 +22,7 @@
 #include <dirent.h>
 
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
 #include "control.h"
 #include "xstring.h"
@@ -30,7 +31,7 @@
 
 /*
 
-u operator - select stringwise-unique entries (expects an already-sorted list)
+uu operator - select stringwise-unique entries which need not be contiguous
 
 NO ARGUMENTS
 
@@ -50,7 +51,7 @@ operator op_desc = {
 	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
 	, .op_validate	= op_validate
 	, .op_exec			= op_exec
-	, .desc					= "select unique (already sorted)"
+	, .desc					= "select unique (sort not required)"
 };
 
 int op_validate(operation* o)
@@ -60,40 +61,62 @@ int op_validate(operation* o)
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	int p = -1;
+	size_t num = ls->sel.all ? ls->s[0].l : ls->sel.l;
+
+	// indexes to be sorted
+	int * mema = calloc(num, sizeof(*mema));
+
+	char * As = 0;
+	int    Asl = 0;
+	char * Bs = 0;
+	int    Bsl = 0;
+	int    r = 0;
+
+	int i = 0;
 	int x;
-	for(x = 0; x < ls->s[0].l; x++)
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
 	{
-		int go = 1;
-		if(!ls->sel.all)
+		mema[i++] = x;
+	}
+	LSTACK_ITEREND;
+
+	int compar(const void * A, const void * B)
+	{
+		lstack_string(ls, 0, *(int*)A, &As, &Asl);
+		lstack_string(ls, 0, *(int*)B, &Bs, &Bsl);
+
+		return xstrcmp(As, Asl, Bs, Bsl, 0);
+	}
+
+	qsort(mema, i, sizeof(*mema), compar);
+
+	if(i)
+	{
+		fatal(lstack_last_set, ls, mema[0]);
+		lstack_string(ls, 0, mema[0], &As, &Asl);
+
+		for(x = 1; x < i; x++)
 		{
-			if(ls->sel.sl <= (x/8))	// could not be selected
-				break;
-
-			go = (ls->sel.s[x/8] & (0x01 << (x%8)));	// whether it is selected
-		}
-
-		if(go)
-		{
-			char * As = 0;
-			int    Asl = 0;
-			char * Bs = 0;
-			int    Bsl = 0;
-
-			if(p != -1)
+			if(x % 2)
 			{
-				lstack_string(ls, 0, p, &As, &Asl);
-				lstack_string(ls, 0, x, &Bs, &Bsl);
+				lstack_string(ls, 0, mema[x], &Bs, &Bsl);
+				r = xstrcmp(As, Asl, Bs, Bsl, 0);
+			}
+			else
+			{
+				lstack_string(ls, 0, mema[x], &As, &Asl);
+				r = xstrcmp(Bs, Bsl, As, Asl, 0);
 			}
 
-			if(p == -1 || xstrcmp(As, Asl, Bs, Bsl, 0))
+			if(r)
 			{
-				fatal(lstack_last_set, ls, x);
+				fatal(lstack_last_set, ls, mema[x]);
 			}
-
-			p = x;
 		}
 	}
 
-	finally : coda;
+finally :
+	free(mema);
+coda;
 }

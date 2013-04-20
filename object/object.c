@@ -71,8 +71,3 @@ int API listwise_lookup_object(uint8_t type, listwise_object ** obj)
 {
 	return (int)(intptr_t)((*obj) = idx_lookup_val(object_registry.by_type, &type, 0));
 }
-
-
-
-
-
