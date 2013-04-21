@@ -218,8 +218,3 @@ void API generator_xfree(generator** g)
 	generator_free(*g);
 	*g = 0;
 }
-
-
-
-
-
