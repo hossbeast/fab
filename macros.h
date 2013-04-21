@@ -31,5 +31,7 @@
      typeof (b) _b = (b);   \
    _a > _b ? _a : _b; })
 
-#endif
+#define QUOTE(x) #x
+#define XQUOTE(x) QUOTE(x)
 
+#endif

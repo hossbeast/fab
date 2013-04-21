@@ -15,9 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
 
+$dbug				= [ 0 ]
+
 # compilers and their flags
 $cc					= [ gcc ]
-$cflags     = [ -m64, -O3, -Wall, -Werror, -D_GNU_SOURCE, -g, [ -I $dcommon ~ j ] ]
+$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE [ -I $dcommon ~ j ]
+
+	[ $dbug ~ s/1/-O0/y ]
+	[ $dbug ~ s/1/-g/y ]
+	[ $dbug ~ s/1/-DDBUG/y ]
+	[ $dbug ~ s/0/-O3/y ]
+]
 $flex				= [ flex ]
 $flexflags	= [ ]
 $bison			= [ bison ]
