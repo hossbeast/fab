@@ -41,8 +41,13 @@ static void usage(int valid, int version, int help, int logopts)
 );
 if(version)
 {
-	printf(
-" " XQUOTE(FABVERSION) "\n"
+	printf(" "
+#if DBUG
+	XQUOTE(FABVERSION) "+DBUG"
+#else
+	XQUOTE(FABVERSION)
+#endif
+	  "\n"
 	);
 }
 if(help)
@@ -69,13 +74,14 @@ if(help)
 "\n"
 " incremental builds\n"
 " -b <node specifier>     invalidate node(s)\n"
+" -e <node specifier>     invalidate node(s) and add as fabrication target(s)\n"
 " -B                      invalidate-all\n"
 "\n"
 " parallel builds\n"
 " -j <number>             concurrency limit\n"
 "\n"
 " bakescript generation\n"
-" -k </path/to/output>    create this file and output bakescript\n"
+" -k </path/to/output>    create bakescript\n"
 "\n"
 " logging\n"
 " -c                      set node identifier mode to GNID_CANON for logging\n"
@@ -83,10 +89,10 @@ if(help)
 " fabfile processing\n"
 " -f <path/to/fabfile>    path to initial fabfile\n"
 " -I <path/to/directory>  directory for locating invocations\n"
-" -v <key=value>          scope-zero variable definition\n"
-" -v <key+=value>         scope-zero variable addition\n"
-" -v <key-=value>         scope-zero variable subtraction\n"
-" -v <key~=value>					scope-zero variable transformation\n"
+" -v $var=[list]          scope-zero variable definition\n"
+" -v $var+=[list]         scope-zero variable transform-addition\n"
+" -v $var-=[list]         scope-zero variable transform-subtraction\n"
+" -v $var=~generator      scope-zero variable transform-listwise\n"
 "\n"
 " handling cycles\n"
 " --cycle-warn            warn when a cycle is detected (once per unique cycle)\n"
@@ -114,6 +120,7 @@ if(logopts)
 	int x;
 	for(x = 0; x < g_logs_l; x++)
 		printf("  %-10s %s\n", g_logs[x].s, g_logs[x].d);
+	printf("\n");
 }
 
 if(help || logopts)
@@ -148,7 +155,7 @@ int parse_args(int argc, char** argv)
 /* b */ , { 0	, required_argument	, 0			, 'b' }		// graph node invalidation
 /* c */	, { 0	, no_argument				, 0			, 'c' }		// MODE_GNID_RELATIVE	
 /* d */	,	{ 0	, required_argument	, 0			, 'd' }		// graph node dump
-// e
+/* e */	,	{ 0 , required_argument	, 0			, 'e' }		// graph node invalidation
 /* f */ , { 0	, required_argument	, 0			, 'f' }		// init-fabfile-path
 // g
 /* h */ , { 0	, no_argument				, 0			, 'h' }		// help
@@ -204,7 +211,7 @@ int parse_args(int argc, char** argv)
 		"chpuBIU"
 
 		// with-argument switches
-		"b:d:f:j:k:v:I:"
+		"b:d:e:f:j:k:v:I:"
 	;
 
 	//
@@ -249,6 +256,13 @@ int parse_args(int argc, char** argv)
 			case 'd':
 				fatal(xrealloc, &g_args.dumpnodes, sizeof(g_args.dumpnodes[0]), g_args.dumpnodesl + 1, g_args.dumpnodesl);
 				g_args.dumpnodes[g_args.dumpnodesl++] = strdup(optarg);
+				break;
+			case 'e':
+				fatal(xrealloc, &g_args.invalidations, sizeof(g_args.invalidations[0]), g_args.invalidationsl + 1, g_args.invalidationsl);
+				g_args.invalidations[g_args.invalidationsl++] = strdup(optarg);
+
+				fatal(xrealloc, &g_args.targets, sizeof(g_args.targets[0]), g_args.targetsl + 1, g_args.targetsl);
+				g_args.targets[g_args.targetsl++] = strdup(optarg);
 				break;
 			case 'f':
 				path_xfree(&g_args.init_fabfile_path);
@@ -390,9 +404,9 @@ int parse_args(int argc, char** argv)
 	if(!g_args.invalidationsz)
 	{
 		if(!g_args.invalidations)
-			log(L_ARGS | L_PARAMS		, " %s (  %c  ) invalidations(s)   =", " ", 'b');
+			log(L_ARGS | L_PARAMS		, " %s ( %s ) invalidations(s)   =", " ", "b/e");
 		for(x = 0; x < g_args.invalidationsl; x++)
-			log(L_ARGS | L_PARAMS		, " %s (  %c  ) invalidations(s)   =%s", "*", 'b', g_args.invalidations[x]);
+			log(L_ARGS | L_PARAMS		, " %s ( %s ) invalidations(s)   =%s", "*", "b/e", g_args.invalidations[x]);
 	}
 
 	if(!g_args.dumpnodesz)
@@ -404,9 +418,9 @@ int parse_args(int argc, char** argv)
 	}
 
 	if(!g_args.rootvarsl)
-		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) root-var(s)        =", " ", ' ');
+		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)     =", " ", ' ');
 	for(x = 0; x < g_args.rootvarsl; x++)
-		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) root-var(s)        =%s", "*", 'v', g_args.rootvars[x]);
+		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)     =%s", "*", 'v', g_args.rootvars[x]);
 
 	if(!g_args.targets)
 		log(L_ARGS | L_PARAMS			, " %s (  %c  ) target(s)          =", " ", ' ');

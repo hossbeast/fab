@@ -145,25 +145,25 @@ varassign
 varadd
 	: varrefs '+' '=' list
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARADD, $1->s, $4->e, $1, $4);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARXFM_ADD, $1->s, $4->e, $1, $4);
 	}
 	;
 
 varsub
 	: varrefs '-' '=' list
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARSUB, $1->s, $4->e, $1, $4);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARXFM_SUB, $1->s, $4->e, $1, $4);
 	}
 	;
 
 varxfm
 	: varrefs '=' '~' generator
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARXFM, $1->s, $4->e, $1, $4, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARXFM_LW, $1->s, $4->e, $1, $4, (void*)0);
 	}
 	| varrefs '=' '~' list
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARXFM, $1->s, $4->e, $1, (void*)0, $4);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARXFM_LW, $1->s, $4->e, $1, (void*)0, $4);
 	}
 	;
 

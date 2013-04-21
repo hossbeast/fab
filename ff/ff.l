@@ -219,6 +219,10 @@
 																												PUSHSTATE(nofile, yyextra);
 																												return LEX(yytext[0]);
 																											}
+<INITIAL,list>[~]																			{
+																												PUSHSTATE(generator, yyextra);
+																												return LEX(yytext[0]);
+																											}
 
 <INITIAL>[+]																					{
 																												// characters with special meaning in INITIAL
@@ -238,10 +242,6 @@
 																												PUSHSTATE(command, yyextra);
 																												return LEX(yytext[0]);
 																											}
-<list>[~]																							{
-																												PUSHSTATE(generator, yyextra);
-																												return LEX(yytext[0]);
-																											}
 <list>[]]																							{
 																												// list-specific
 																												POPSTATE(yyextra);
@@ -253,11 +253,11 @@
 																												PUSHSTATE(blockcheck, yyextra);
 																												return LEX(ONCE);
 																											}
-<INITIAL>[^ \\#"$@\x00-\x1F\x7F-\xFF/[+:()\-*^=;}{]+	{
+<INITIAL>[^ \\#"$@~\x00-\x1F\x7F-\xFF/[+:()\-*^=;}{]+	{
 																												// string of anything else 
 																												return LEX(WORD);
 																											}
-<list>[^ \\#"$@\x00-\x1F\x7F-\xFF~\],]+ 							{
+<list>[^ \\#"$@~\x00-\x1F\x7F-\xFF\],]+ 							{
 																												// string of anything else 
 																												return LEX(WORD);
 																											}
@@ -320,14 +320,18 @@
 																												PUSHSTATE(generatorws, yyextra);
 																												yyless(0);
 																											}
-<generatorws>[^ \t\n]+																{ return LEX(GWORD); }
+<generatorws>[^\x00-\x1F\x20]+												{ return LEX(GWORD); }
 <generatorws>[ \t\n]																	{ POPSTATE(yyextra); yyless(0); }
 <quoteword>\\\\																				{ yytext++; yyleng--; return LEXX(QWORD, 1); }
 <quoteword>\\["]																			{ yytext++; yyleng--; return LEXX(QWORD, 1); }
 <quoteword>[^\\"\x00-\x1F\x7F-\xFF]+									{ return LEX(QWORD); }
 <quoteword>["]																				{ POPSTATE(yyextra); locify(yyextra, yylloc, yyleng, 0); }
 
-<*>[\x00]																							{ return 0; }
+<*>[\x00]																							{
+																												while(yyextra->states_n)
+																													POPSTATE(yyextra);
+																												return 0;
+																											}
 <*>[\x01-\x1F\x7F-\xFF]																{
 																												char space[64];
 																												snprintf(space, sizeof(space), "unknown character : (0x%02hhx)", yytext[0]);

@@ -318,13 +318,24 @@ int bp_eval(bp * const bp, int * const poison)
 					gn->feeds.e[i]->A->poison = 1;
 			}
 
-			if(gn->changed || gn->invalid)
+			if(gn->changed || gn->invalid || gn->weak_invalid)
 			{
-				// changes propagate through strong dependencies
+				// change propagation
 				for(i = 0; i < gn->feeds.l; i++)
 				{
-					if(!gn->feeds.e[i]->weak)
-						gn->feeds.e[i]->A->rebuild = 1;
+					if(gn->feeds.e[i]->weak)
+					{
+						gn->feeds.e[i]->A->weak_invalid = 1;
+					}
+					else if(gn->feeds.e[i]->bridge)
+					{
+						// no-op
+					}
+					else
+					{
+//					gn->feeds.e[i]->A->rebuild = 1;
+						gn->feeds.e[i]->A->invalid = 1;
+					}
 				}
 			}
 
@@ -390,16 +401,30 @@ int bp_eval(bp * const bp, int * const poison)
 						}
 					}
 
+					if(gn->rebuild || gn->invalid || gn->weak_invalid)
+					{
+						// change propagation
+						for(i = 0; i < gn->feeds.l; i++)
+						{
+							if(gn->feeds.e[i]->weak)
+							{
+								gn->feeds.e[i]->A->weak_invalid = 1;
+							}
+							else if(gn->feeds.e[i]->bridge)
+							{
+								// no-op
+							}
+							else
+							{
+		//					gn->feeds.e[i]->A->rebuild = 1;
+								gn->feeds.e[i]->A->invalid = 1;
+							}
+						}
+					}
+
 					// needs rebuilt
 					if(gn->rebuild)
 					{
-						// changes propagate to strong dependencies
-						for(i = 0; i < gn->feeds.l; i++)
-						{
-							if(!gn->feeds.e[i]->weak)
-								gn->feeds.e[i]->A->rebuild = 1;
-						}
-
 						keep++;
 					}
 				}

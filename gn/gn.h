@@ -218,6 +218,7 @@ typedef struct gn
 	char								rebuild;
 	char								poison;
 	char								invalid;
+	char								weak_invalid;
 } gn;
 
 extern union gn_nodes_t

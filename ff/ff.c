@@ -83,12 +83,14 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		ff->dscv_gn = dscv_gn;
 
 		// idstring
-		xsprintf(&ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
+		fatal(xsprintf, &ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
 	}
 	else if(id)
 	{
 		ff->type = FFT_VAREXPR;
 		ff->id = *id;
+
+		fatal(xsprintf, &ff->idstring, "VAR:%s", ff->path->can);
 	}
 	else
 	{

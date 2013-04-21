@@ -20,6 +20,9 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <listwise/lstack.h>
 #include <listwise/object.h>
@@ -129,6 +132,13 @@ int main(int argc, char** argv)
 	for(x = 0; x < sizeof(FABLW_DIRS) / sizeof(FABLW_DIRS[0]); x++)
 		fatal(listwise_register_opdir, FABLW_DIRS[x]);
 
+	// unless LWDEBUG, arrange for liblistwise to write to /dev/null
+	if(!log_would(L_LWDEBUG))
+	{
+		if((listwise_err_fd = open("/dev/null", O_WRONLY)) == -1)
+			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
+	}
+	
 	// create the rootmap
 	fatal(var_root, &rmap);
 
@@ -151,7 +161,7 @@ int main(int argc, char** argv)
 			{
 				ff_node * stmt = vff->ffn->statements[k];
 
-				if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARADD || stmt->type == FFN_VARSUB)
+				if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARXFM_ADD || stmt->type == FFN_VARXFM_SUB)
 				{
 					int pn = staxp;
 					fatal(list_resolve, stmt->definition, rmap, ffp->gp, &stax, &staxa, &staxp, 0);
@@ -162,24 +172,31 @@ int main(int argc, char** argv)
 					{
 						if(stmt->type == FFN_VARASSIGN)
 						{
-							fatal(var_set, rmap, stmt->vars[y]->name, stax[pn], 1, 1, stmt);
+							fatal(var_set, rmap, stmt->vars[y]->name, stax[pn], 1, 0, stmt);
 						}
-						else if(stmt->type == FFN_VARADD)
+						else if(stmt->type == FFN_VARXFM_ADD)
 						{
 							fatal(var_xfm_add, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
 						}
-						else if(stmt->type == FFN_VARSUB)
+						else if(stmt->type == FFN_VARXFM_SUB)
 						{
 							fatal(var_xfm_sub, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
 						}
 					}
 				}
-				else if(vff->ffn->statements[k]->type == FFN_VARXFM)
+				else if(stmt->type == FFN_VARXFM_LW)
 				{
 					int y;
 					for(y = 0; y < stmt->varsl; y++)
 					{
-						fatal(var_xfm_lw, rmap, stmt->vars[y]->name, stmt->generator, 1, stmt);
+						if(stmt->generator_node)
+						{
+							fatal(var_xfm_lw, rmap, stmt->vars[y]->name, stmt->generator_node->generator, stmt->generator_node->text, 1, stmt);
+						}
+						else if(stmt->generator_list_node)
+						{
+
+						}
 					}
 				}
 			}

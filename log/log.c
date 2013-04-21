@@ -50,25 +50,31 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
 	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
 	, { .v = L_PARAMS		, .s = "PARAMS"		, .d = "program execution parameters" }
+#if DBUG
 	, { .v = L_FFTOKN		, .s = "FFTOKN"		, .d = "fabfile parsing - token stream" }
 	, { .v = L_FFSTAT		, .s = "FFSTAT"		, .d = "fabfile parsing - lexer start conditions" }
 	, { .v = L_FFTREE		, .s = "FFTREE"		, .d = "fabfile parsing - parsed tree" }
 	, { .v = L_FFFILE		, .s = "FFFILE"		, .d = "fabfile parsing - parsed file" }
 	, { .v = L_FF				, .s = "FF"				, .d = "fabfile parsing" }
+#endif
 	, { .v = L_BPINFO		, .s = "BPINFO"		, .d = "buildplan - flow" }
 	, { .v = L_BPEXEC		, .s = "BPEXEC"		, .d = "buildplan - execution" }
 	, { .v = L_BPEVAL		, .s = "BPEVAL"		, .d = "buildplan - pruning/evaluating" }
 	, { .v = L_BPDUMP		, .s = "BPDUMP"		, .d = "buildplan - dump the final buildplan" }
 	, { .v = L_BP				, .s = "BP"				, .d = "buildplan" }
 	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	, .d = "formulas - execution results/details" }
+#if DBUG
 	, { .v = L_FMLTARG	, .s = "FMLTARG"	, .d = "formulas - target resolution/assignment" }
+#endif
 	, { .v = L_FML			, .s = "FML"			, .d = "formulas" }
 	, { .v = L_FAB			, .s = "FAB"			, .d = "fabrication formulas" }
 	, { .v = L_DSCINFO	, .s = "DSCINFO"	, .d = "dependency discovery - flow" }
 	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - execution details" }
 	, { .v = L_DSCNEW		, .s = "DSCNEW"		, .d = "dependency discovery - new nodes/edges" }
 	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery" }
+#if DBUG
 	, { .v = L_DGDEPS		, .s = "DGDEPS"		, .d = "dependency graph - dependencies" }
+#endif
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
 	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
 	, { .v = L_VARAUTO	, .s = "VARAUTO"	, .d = "variable definitions - automatic" }
@@ -410,7 +416,7 @@ int log_would(const uint64_t bits)
 	{
 		int rr = 0;
 		if(o_filter[x].m == '(')
-			rr = (bits & o_filter[x].v);
+			rr = bits & o_filter[x].v;
 		if(o_filter[x].m == '{')
 			rr = ((bits & o_filter[x].v) == bits);
 		if(o_filter[x].m == '[')

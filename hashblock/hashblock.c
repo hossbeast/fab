@@ -172,7 +172,7 @@ int hashblock_read(hashblock * const hb)
 	fatal(identity_assume_user);
 
 finally:
-	if(fd)
+	if(fd > 0)
 		close(fd);
 coda;
 }

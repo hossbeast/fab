@@ -189,7 +189,7 @@ static void dumplist(lstack * const ls)
 	LSTACK_ITEREND;
 }
 
-static int xfm_add(map * restrict vmap, const char * restrict s, int type, void * const restrict xfm, int inherit, const struct ff_node * const restrict src, vardef ** c)
+static int xfm_add(map * restrict vmap, const char * restrict s, int type, void * const restrict xfm, char * const restrict tex, int inherit, const struct ff_node * const restrict src, vardef ** c)
 {
 	fatal(getdef, vmap, s, c);
 	while((*c)->val.write == WRITETHROUGH)
@@ -221,28 +221,10 @@ static int xfm_add(map * restrict vmap, const char * restrict s, int type, void 
 		vx->inherit = inherit;
 		vx->type = type;
 		vx->xfm = xfm;
+		vx->tex = tex;
 	}
 
 	finally : coda;
-}
-
-static int ensure(lstack *** stax, int * staxa, int staxp)
-{
-  // ensure enough lstacks are allocated
-  if((*staxa) <= staxp)
-  {
-    int ns = (*staxa) ?: 10;
-    ns = ns * 2 + ns / 2;
-
-    fatal(xrealloc, stax, sizeof(**stax), ns, (*staxa));
-    (*staxa) = ns;
-  }
-
-  // ensure lstack at this spot is allocated
-  if(!(*stax)[staxp])
-    fatal(lstack_create, &(*stax)[staxp]);
-
-  finally : coda;
 }
 
 ///
@@ -289,7 +271,7 @@ int var_set(map * restrict vmap, const char * restrict s, lstack * const restric
 			c->val.ls				= listwise_identity;
 
 		// assigning to a variable wipes out any associated xfms
-		c->xfmsl = 0;
+//		c->xfmsl = 0;
 
 		if(log_would(L_VAR | TAG(s)))
 		{
@@ -316,7 +298,7 @@ int var_set(map * restrict vmap, const char * restrict s, lstack * const restric
 int var_xfm_add(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
 {
 	vardef * c = 0;
-	fatal(xfm_add, vmap, s, XFM_ADD, ls, inherit, src, &c);
+	fatal(xfm_add, vmap, s, XFM_ADD, ls, 0, inherit, src, &c);
 
 	if(c->val.write == ASSIGNABLE)
 	{
@@ -345,7 +327,7 @@ int var_xfm_add(map * restrict vmap, const char * restrict s, lstack * const res
 int var_xfm_sub(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
 {
 	vardef * c = 0;
-	fatal(xfm_add, vmap, s, XFM_SUB, ls, inherit, src, &c);
+	fatal(xfm_add, vmap, s, XFM_SUB, ls, 0, inherit, src, &c);
 
 	if(c->val.write == ASSIGNABLE)
 	{
@@ -371,16 +353,16 @@ int var_xfm_sub(map * restrict vmap, const char * restrict s, lstack * const res
 	finally : coda;
 }
 
-int var_xfm_lw(map * restrict vmap, const char * restrict s, generator * const restrict gen, int inherit, const struct ff_node * const restrict src)
+int var_xfm_lw(map * restrict vmap, const char * restrict s, generator * const restrict gen, char * const restrict tex, int inherit, const struct ff_node * const restrict src)
 {
 	vardef * c = 0;
-	fatal(xfm_add, vmap, s, XFM_LW, gen, inherit, src, &c);
+	fatal(xfm_add, vmap, s, XFM_LW, gen, tex, inherit, src, &c);
 
 	if(c->val.write == ASSIGNABLE)
 	{
 		if(log_would(L_VAR | TAG(s)))
 		{
-			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ %p ] ", "xfm-lw", KEYID(vmap, s), gen);
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) =~ %s ", "xfm-lw", KEYID(vmap, s), tex);
 			LOG_SRC(src);
 			log_finish("");
 		}
@@ -577,8 +559,7 @@ int var_access(const map * const restrict vmap, const char * restrict vs, lstack
 			if((*cc)->xfms[x].type == XFM_ADD || (*cc)->xfms[x].type == XFM_LW)
 			{
 				int pn = (*staxp)++;
-				fatal(ensure, stax, staxa, pn);
-				lstack_reset((*stax)[pn]);
+				fatal(lw_reset, stax, staxa, pn);
 
 				if((*cc)->xfms[x].type == XFM_ADD)
 				{

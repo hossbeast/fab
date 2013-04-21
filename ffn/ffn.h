@@ -45,9 +45,9 @@
 	_FFN(FFN_FORMULA				, 0x03	, x)	\
 	_FFN(FFN_INVOCATION			, 0x04	, x)	\
 	_FFN(FFN_VARASSIGN			, 0x05	, x)	\
-	_FFN(FFN_VARADD					, 0x06	, x)	\
-	_FFN(FFN_VARSUB					, 0x07	, x)	\
-	_FFN(FFN_VARXFM					, 0x08	, x)	\
+	_FFN(FFN_VARXFM_ADD			, 0x06	, x)	\
+	_FFN(FFN_VARXFM_SUB			, 0x07	, x)	\
+	_FFN(FFN_VARXFM_LW			, 0x08	, x)	\
 	_FFN(FFN_VARLOCK				, 0x09	, x)	\
 	_FFN(FFN_VARLINK				, 0x0a	, x)	\
 	_FFN(FFN_LIST						, 0x0b	, x)	\
