@@ -21,26 +21,44 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "args.h"
-
 #include <listwise.h>
 #include <listwise/operator.h>
 #include <listwise/ops.h>
 #include <listwise/generator.h>
 #include <listwise/lstack.h>
 
+#include "args.h"
+
+#include "macros.h"
+
 struct g_args_t g_args;
 
-static void usage(int help)
+static void usage(int valid, int version, int help, int operators)
 {
 	printf(
-"listwise : list-based computation utility and library\n"
-" v0.4.0\n"
+"listwise : list transformation utility\n"
+);
+if(version)
+{
+	printf(" "
+#if DBUG
+	XQUOTE(FABVERSION) "+DBUG"
+#else
+	XQUOTE(FABVERSION)
+#endif
+		"\n"
+	);
+}
+if(help)
+{
+	printf(
 "\n"
 "usage : lw [options] generator-string\n"
-"usage : lw --help|-h for this message\n"
+"  --help|-h   : this message\n"
+"  --version   : version information\n"
+"  --operators : operator listing\n"
 "\n"
-"------------------[options]-----------------------------------------------------\n"
+"----------------- [ options ] --------------------------------------------------\n"
 "\n"
 " -a         output entire list, not just selected entries\n"
 " -k         output entire stack, not just top list\n"
@@ -54,7 +72,12 @@ static void usage(int help)
 "            <path> of - indicates read from stdin\n"
 " -          equal to -f -\n"
 "\n"
-"------------------[options]-----------------------------------------------------\n"
+	);
+}
+if(operators)
+{
+	printf(
+"----------------- [ operators ] ------------------------------------------------\n"
 "\n"
 " 1  2  3  4  5  6  7  8  9    name  description\n"
 	);
@@ -88,6 +111,8 @@ static void usage(int help)
 		" 8. OPERATION_FILESYSTEM\n"
 		" 9. OBJECT_NO\n"
 	);
+	printf("\n");
+}
 
 	exit(!help);
 }
@@ -96,8 +121,29 @@ int parse_args(int argc, char** argv)
 {
 	int init_lista = 0;
 
+	int help = 0;
+	int version = 0;
+	int operators = 0;
+
+	struct option longopts[] = {
+		  { "help"				, no_argument	, &help, 1 } 
+		, { "version"			, no_argument	, &version, 1 } 
+		, { "operators"		, no_argument	, &operators, 1 } 
+		, { }
+	};
+
+	char * switches =
+		// no-argument switches
+		"adhknz0"
+
+		// with-argument switches
+		"f:i:"
+	;
+
 	int c;
-	while((c = getopt(argc, argv, "adhknz0f:i:")) != -1)
+	int indexptr;
+	opterr = 1;
+	while((c = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
 	{
 		switch(c)
 		{
@@ -137,9 +183,18 @@ int parse_args(int argc, char** argv)
 					g_args.init_list[g_args.init_listl++] = strdup(optarg);
 				}
 				break;
-			default:
-				usage(c == 'h');
+			case 'h':
+				usage(1, 1, 1, 0);
+				break;
+			case '?':
+				usage(0, 1, 1, 0);
+				break;
 		}
+	}
+
+	if(help || version || operators)
+	{
+		usage(1, 1, help, operators);
 	}
 
 	if(optind < argc && strcmp(argv[optind], "-") == 0)
