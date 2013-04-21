@@ -31,6 +31,7 @@
 #include "ts.h"
 #include "dep.h"
 #include "list.h"
+#include "lwutil.h"
 #include "traverse.h"
 
 #include "log.h"
@@ -218,7 +219,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, l
 			(*ts)[x]->y = x;
 
 			// @ is a single element list containing the target of this dscv
-			fatal(list_ensure, stax, staxa, staxp);
+			fatal(lw_reset, stax, staxa, staxp);
 			fatal(lstack_obj_add, (*stax)[staxp], (*ts)[x]->fmlv->target, LISTWISE_TYPE_GNLW);
 
 			// render the formula

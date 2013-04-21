@@ -32,6 +32,7 @@
 #include "args.h"
 
 #include "list.h"
+#include "lwutil.h"
 #include "log.h"
 #include "control.h"
 #include "macros.h"
@@ -78,10 +79,10 @@ int bake_bp(
 /* include licensing exception in bakescript output */
 	dprintf(fd,
 "\n"
-"# A build script made by fab v0.4.0\n"
+"# A build script made by fab " XQUOTE(FABVERSION) "\n"
 "#  fab is free software released under the GNU General Public License.\n"
 "#\n"
-"#  As a special exception, build scripts made by fab v0.4.0 (including this\n"
+"#  As a special exception, build scripts made by fab " XQUOTE(FABVERSION) " (including this\n"
 "#  build script) are excluded from the license covering fab itself, even\n"
 "#  if substantial portions of the fab source code are copied verbatim into\n"
 "#  the build script. You may create a larger work that contains part or all\n"
@@ -113,7 +114,7 @@ int bake_bp(
 			(*ts)[y]->y = y;
 
 			// prepare lstack(s) for variables resident in this context
-			fatal(list_ensure, stax, staxa, staxp);
+			fatal(lw_reset, stax, staxa, staxp);
 
 			// @ is a list of expected products of this eval context
 			for(k = 0; k < (*ts)[y]->fmlv->productsl; k++)

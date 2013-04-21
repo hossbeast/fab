@@ -48,26 +48,6 @@
 **   - interpretaion as a filepath for an invocation
 */
 
-/// list_ensure
-//
-// SUMMARY
-//  ensure allocation of listwise stax up to staxp, reset entry @ stax[staxp]
-//
-// PARAMETERS
-//  stax  - listwise stax
-//  staxa - listwise stax
-//  staxp - offset to next free stax
-//
-int list_ensure(lstack *** stax, int * staxa, int staxp)
-	__attribute__((nonnull));
-
-/// list_flatten
-//
-// replace LISTWISE_TYPE_LIST objects with their contents
-//
-int list_flatten(lstack * restrict ls)
-	__attribute__((nonnull));
-
 /// list_render
 //
 // SUMMARY
@@ -144,4 +124,3 @@ int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, generator_p
 
 #undef restrict
 #endif
-

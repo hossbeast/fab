@@ -28,6 +28,7 @@
 #include "ff.parse.h"
 #include "ff/ff.tab.h"
 #include "ff/ff.dsc.tab.h"
+#include "ff/ff.var.tab.h"
 #include "ff/ff.lex.h"
 #include "ff/ff.tokens.h"
 
@@ -60,7 +61,7 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 // [[ static ]]
 //
 
-static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, ff_file ** const rff)
+static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const id, ff_file ** const rff)
 {
 	parse_param pp = {};
 
@@ -83,6 +84,11 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 		// idstring
 		xsprintf(&ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
+	}
+	else if(id)
+	{
+		ff->type = FFT_VAREXPR;
+		ff->id = *id;
 	}
 	else
 	{
@@ -121,6 +127,10 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	if(ff->type == FFT_DDISC)
 	{
 		ff_dsc_yyparse(p->p, &pp);	// parse with ff/ff.dsc.y
+	}
+	else if(ff->type == FFT_VAREXPR)
+	{
+		ff_var_yyparse(p->p, &pp);	// parse with ff/ff.var.y
 	}
 	else
 	{
@@ -212,7 +222,7 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, ff_file *
 		if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
 			fail("read(%d)=%d [%d][%s]", (int)statbuf.st_size, (int)r, errno, strerror(errno));
 
-		qfatal(parse, p, b, statbuf.st_size, in_path, 0, ff);
+		qfatal(parse, p, b, statbuf.st_size, in_path, 0, 0, ff);
 
 		if(*ff)
 		{
@@ -231,7 +241,18 @@ int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const 
 {
 	path * pth = 0;
 	fatal(path_create_canon, &pth, "%s", fp);
-	qfatal(parse, p, b, sz, pth, dscv_gn, ff);
+	qfatal(parse, p, b, sz, pth, dscv_gn, 0, ff);
+
+finally:
+	path_free(pth);
+coda;
+}
+
+int ff_var_parse(const ff_parser * const p, char* b, int sz, int id, ff_file** const ff)
+{
+	path * pth = 0;
+	fatal(path_create_canon, &pth, "/../cmdline/v/%d", id);
+	qfatal(parse, p, b, sz, pth, 0, &id, ff);
 
 finally:
 	path_free(pth);
@@ -464,4 +485,3 @@ void ff_dump(ff_file * const ff)
 	log(L_FF | L_FFFILE			, "%20s :", "tree");
 	ffn_dump(ff->ffn);
 }
-

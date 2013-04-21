@@ -36,6 +36,7 @@
 #include "map.h"
 #include "var.h"
 #include "list.h"
+#include "lwutil.h"
 
 #include "control.h"
 #include "xmem.h"
@@ -242,7 +243,7 @@ static int dep_add_multi(
 	for(x = 0; x < (*stax)[pl]->l; x++)
 	{
 		// prepare space for new variable definition list
-		fatal(list_ensure, stax, staxa, staxp);
+		fatal(lw_reset, stax, staxa, staxp);
 
 		// populate the "<" variable (left-hand side)
 		newal = (*stax)[pl]->s[x].l;

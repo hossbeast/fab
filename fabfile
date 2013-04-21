@@ -15,6 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+# version
+$VERSION				= [ "v0.4.1" ]
+
 # directories
 $dcommon				= [ $*/../common ]
 $dfab						= [ $* ]
@@ -28,7 +31,7 @@ $dfab						= [ $* ]
 $liblistwise = [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs ]
+$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs [ -DFABVERSION=$VERSION ~ j ] ]
 $cflags					= [ $cflags -fms-extensions -fno-builtin-log ]
 $lflags					= [ $liblistwise ]
 $name						= [ fab ]

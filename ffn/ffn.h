@@ -45,15 +45,18 @@
 	_FFN(FFN_FORMULA				, 0x03	, x)	\
 	_FFN(FFN_INVOCATION			, 0x04	, x)	\
 	_FFN(FFN_VARASSIGN			, 0x05	, x)	\
-	_FFN(FFN_VARLOCK				, 0x06	, x)	\
-	_FFN(FFN_VARLINK				, 0x07	, x)	\
-	_FFN(FFN_LIST						, 0x08	, x)	\
-	_FFN(FFN_GENERATOR			, 0x09	, x)	\
-	_FFN(FFN_VARREF					, 0x0a	, x)	\
-	_FFN(FFN_LF							, 0x0b	, x)	\
-	_FFN(FFN_WORD						, 0x0c	, x)	\
-	_FFN(FFN_NOFILE					, 0x0d	, x)	\
-	_FFN(FFN_ONCEBLOCK			, 0x0e	, x)
+	_FFN(FFN_VARADD					, 0x06	, x)	\
+	_FFN(FFN_VARSUB					, 0x07	, x)	\
+	_FFN(FFN_VARXFM					, 0x08	, x)	\
+	_FFN(FFN_VARLOCK				, 0x09	, x)	\
+	_FFN(FFN_VARLINK				, 0x0a	, x)	\
+	_FFN(FFN_LIST						, 0x0b	, x)	\
+	_FFN(FFN_GENERATOR			, 0x0c	, x)	\
+	_FFN(FFN_VARREF					, 0x0d	, x)	\
+	_FFN(FFN_LF							, 0x0e	, x)	\
+	_FFN(FFN_WORD						, 0x0f	, x)	\
+	_FFN(FFN_NOFILE					, 0x10	, x)	\
+	_FFN(FFN_ONCEBLOCK			, 0x11	, x)
 
 enum {
 #define _FFN(a, b, c) a = b,
@@ -112,7 +115,7 @@ typedef struct ff_node
 			char*			text;
 		};
 
-		struct {													// FFN_VARREF, FFN_VARASSIGN, FFN_VARLOCK, FFN_VARLINK
+		struct {													// FFN_VARREF
 			char*			name;
 		};
 	};
@@ -123,7 +126,7 @@ typedef struct ff_node
 	union {
 		struct ff_node*			nodes_owned[2];
 
-		struct {													// FFN_LIST
+		struct {													// FFN_LIST, FFN_VARXFM
 			struct ff_node*			generator_node;
 			struct ff_node*			generator_list_node;
 		};
@@ -195,7 +198,7 @@ typedef struct ff_node
 	** not freed
 	*/
 	union {
-		void *			fml;						// FFN_FORMULA (a struct fml*)
+		void *			fml;						// FFN_FORMULA (struct fml*)
 	};
 
 	// implementation

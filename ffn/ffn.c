@@ -182,6 +182,22 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 		n->chain[0]							= va_arg(va, ff_node*);	// vars
 		n->definition						= va_arg(va, ff_node*);
 	}
+	else if(type == FFN_VARADD)
+	{
+		n->chain[0]							= va_arg(va, ff_node*);	// vars
+		n->definition						= va_arg(va, ff_node*);
+	}
+	else if(type == FFN_VARSUB)
+	{
+		n->chain[0]							= va_arg(va, ff_node*);	// vars
+		n->definition						= va_arg(va, ff_node*);
+	}
+	else if(type == FFN_VARXFM)
+	{
+		n->chain[0]							= va_arg(va, ff_node*);	// vars
+		n->generator_node				= va_arg(va, ff_node*);
+		n->generator_list_node	= va_arg(va, ff_node*);
+	}
 	else if(type == FFN_VARLOCK)
 	{
 		n->chain[0]							= va_arg(va, ff_node*);	// vars
@@ -388,7 +404,9 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(    ffn->type == FFN_VARASSIGN
 			         || ffn->type == FFN_VARLOCK
-			         || ffn->type == FFN_VARLINK)
+			         || ffn->type == FFN_VARLINK
+			         || ffn->type == FFN_VARADD
+			         || ffn->type == FFN_VARSUB)
 			{
 				log(L_FF | L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
@@ -402,6 +420,26 @@ void ffn_dump(ff_node * const root)
 					, "definition"
 				);
 				dump(ffn->definition, lvl + 1);
+			}
+			else if(ffn->type == FFN_VARXFM)
+			{
+				log(L_FF | L_FFTREE, "%*s  %12s : %d"
+					, lvl * 2, ""
+					, "vars", ffn->varsl
+				);
+				for(x = 0; x < ffn->varsl; x++)
+					dump(ffn->vars[x], lvl + 1);
+
+				log(L_FF | L_FFTREE, "%*s  %12s :"
+					, lvl * 2, ""
+					, "generator"
+				);
+				dump(ffn->generator_node, lvl + 1);
+
+				log(L_FF | L_FFTREE, "%*s  %12s :"
+					, lvl * 2, ""
+					, "generator-list"
+				);
 			}
 			else if(ffn->type == FFN_LIST)
 			{

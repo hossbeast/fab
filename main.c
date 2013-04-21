@@ -41,6 +41,7 @@
 #include "bake.h"
 #include "ffproc.h"
 #include "traverse.h"
+#include "lwutil.h"
 
 #include "macros.h"
 #include "control.h"
@@ -118,6 +119,7 @@ int main(int argc, char** argv)
 
 	// other initializations
 	fatal(traverse_init);
+	fatal(ff_mkparser, &ffp);
 
 	// register object types with liblistwise
 	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
@@ -127,13 +129,6 @@ int main(int argc, char** argv)
 	for(x = 0; x < sizeof(FABLW_DIRS) / sizeof(FABLW_DIRS[0]); x++)
 		fatal(listwise_register_opdir, FABLW_DIRS[x]);
 
-	// create stack for scope resolution
-	fatal(strstack_create, &sstk);
-	fatal(strstack_push, sstk, "..");
-
-	// parse the initial fabfile
-	fatal(ff_mkparser, &ffp);
-
 	// create the rootmap
 	fatal(var_root, &rmap);
 
@@ -142,16 +137,65 @@ int main(int argc, char** argv)
 	fatal(map_set, rmap, MMS("?NUM"), MM((int[1]){ 0 }));
 	fatal(map_set, rmap, MMS("?CLD"), MM((int[1]){ 0 }));
 
-	// cmdline-specified variables populate the rootmap
-	for(x = 0; x < g_args.varkeysl; x++)
+	// parse variable expression text from cmdline (the -v option)
+	for(x = 0; x < g_args.rootvarsl; x++)
 	{
-		fatal(list_ensure, &stax, &staxa, staxp);
-		fatal(lstack_add, stax[staxp], g_args.varvals[x], strlen(g_args.varvals[x]));
-		fatal(var_set, rmap, g_args.varkeys[x], stax[staxp++], 1, 0, 0);
+		ff_file * vff = 0;
+		fatal(ff_var_parse, ffp, g_args.rootvars[x], strlen(g_args.rootvars[x]), x, &vff);
+
+		if(vff)
+		{
+			// process variable expressions
+			int k;
+			for(k = 0; k < vff->ffn->statementsl; k++)
+			{
+				ff_node * stmt = vff->ffn->statements[k];
+
+				if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARADD || stmt->type == FFN_VARSUB)
+				{
+					int pn = staxp;
+					fatal(list_resolve, stmt->definition, rmap, ffp->gp, &stax, &staxa, &staxp, 0);
+					staxp++;
+
+					int y;
+					for(y = 0; y < stmt->varsl; y++)
+					{
+						if(stmt->type == FFN_VARASSIGN)
+						{
+							fatal(var_set, rmap, stmt->vars[y]->name, stax[pn], 1, 1, stmt);
+						}
+						else if(stmt->type == FFN_VARADD)
+						{
+							fatal(var_xfm_add, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
+						}
+						else if(stmt->type == FFN_VARSUB)
+						{
+							fatal(var_xfm_sub, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
+						}
+					}
+				}
+				else if(vff->ffn->statements[k]->type == FFN_VARXFM)
+				{
+					int y;
+					for(y = 0; y < stmt->varsl; y++)
+					{
+						fatal(var_xfm_lw, rmap, stmt->vars[y]->name, stmt->generator, 1, stmt);
+					}
+				}
+			}
+		}
+		else
+		{
+			qfail();
+		}
 	}
 
+	// create stack for scope resolution
+	fatal(strstack_create, &sstk);
+	fatal(strstack_push, sstk, "..");
+
 	// use up one list and populate the # variable (relative directory path to the initial fabfile)
-	fatal(list_ensure, &stax, &staxa, staxp);
+	fatal(lw_reset, &stax, &staxa, staxp);
 	fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
 	fatal(var_set, rmap, "#", stax[staxp++], 1, 0, 0);
 
@@ -362,4 +406,3 @@ finally:
 	log_teardown();
 	return !_coda_r;
 }
-

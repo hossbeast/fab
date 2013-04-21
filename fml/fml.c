@@ -29,6 +29,7 @@
 #include "ts.h"
 #include "ff/ff.tokens.h"
 #include "list.h"
+#include "lwutil.h"
 #include "identity.h"
 #include "enclose.h"
 #include "var.h"
@@ -259,7 +260,7 @@ static void fml_free(fml * fml)
 //
 // public
 //
-int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 {
 	// create fml if necessary
 	fml * fml = ffn->fml;
@@ -289,33 +290,37 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	int x = 0;
 	for(x = 0; x < fml->closure_varsl; x++)
 	{
-		ls = var_access(vmap, fml->closure_vars[x]->text);
+//	ls = var_access(vmap, fml->closure_vars[x]->text, gp, stax, staxa, staxp);
+
+		fatal(var_access, vmap, fml->closure_vars[x]->text, stax, staxa, staxp, &ls);
 		fatal(map_set, fml->bags[fml->bagsl - 1], MMS(fml->closure_vars[x]->text), MM(ls));
 	}
 
-	ls = var_access(vmap, "#");
+//ls = var_access(vmap, "#");
+	fatal(var_access, vmap, "#", stax, staxa, staxp, &ls);
 	fatal(map_set, fml->bags[fml->bagsl - 1], MMS("#"), MM(ls));
 
-	ls = var_access(vmap, "*");
+//ls = var_access(vmap, "*");
+	fatal(var_access, vmap, "*", stax, staxa, staxp, &ls);
 	fatal(map_set, fml->bags[fml->bagsl - 1], MMS("*"), MM(ls));
 
 	// resolve targets lists
-	fatal(list_ensure, stax, staxa, staxp);
+	fatal(lw_reset, stax, staxa, *staxp);
 
 	if(ffn->targets_0)
-		fatal(list_resolvetoflat, ffn->targets_0, vmap, gp, stax, staxa, staxp);
+		fatal(list_resolvetoflat, ffn->targets_0, vmap, gp, stax, staxa, *staxp);
 
 	if(ffn->targets_1)
-		fatal(list_resolvetoflat, ffn->targets_1, vmap, gp, stax, staxa, staxp);
+		fatal(list_resolvetoflat, ffn->targets_1, vmap, gp, stax, staxa, *staxp);
 
 	// create fmlv(s) and attach graph nodes
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(fml_attach_singly, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[staxp]);
+		fatal(fml_attach_singly, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[*staxp]);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(fml_attach_multi, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[staxp]);
+		fatal(fml_attach_multi, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[*staxp]);
 	}
 
 	finally : coda;
@@ -417,4 +422,3 @@ void fml_teardown()
 
 	free(g_fmls.e);
 }
-

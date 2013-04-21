@@ -151,4 +151,3 @@ int tmp_setup()
 
 	finally : coda;
 }
-

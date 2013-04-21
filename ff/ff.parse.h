@@ -42,11 +42,14 @@ typedef struct
 } parse_param;
 
 
-// defined in ff.tab.o (this declaration should be in ff.tab.h but isn't)
+// defined in ff.tab.o (this declaration should be in ff.tab.h but isnt)
 int ff_yyparse(void *, parse_param*);
 
-// defined in ff.dsc.tab.o (this declaration should be in ff.dsc.tab.h but isn't)
+// defined in ff.dsc.tab.o (this declaration should be in ff.dsc.tab.h but isnt)
 int ff_dsc_yyparse(void *, parse_param*);
+
+// defined in ff.var.tab.o (this declaration should be in ff.var.tab.h but isnt)
+int ff_var_yyparse(void *, parse_param*);
 
 /// ff_yyerror
 //
@@ -61,4 +64,3 @@ int ff_dsc_yyparse(void *, parse_param*);
 void ff_yyerror(void * loc, void* scanner, parse_param* pp, char const* err);
 
 #endif
-

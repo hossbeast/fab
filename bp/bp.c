@@ -34,6 +34,7 @@
 #include "xmem.h"
 #include "macros.h"
 #include "list.h"
+#include "lwutil.h"
 #include "map.h"
 
 //
@@ -598,7 +599,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, i
 			(*ts)[i]->y = y;
 
 			// prepare lstack(s) for variables resident in this context
-			fatal(list_ensure, stax, staxa, staxp);
+			fatal(lw_reset, stax, staxa, staxp);
 
 			// @ is a list of expected products of this eval context
 			for(k = 0; k < (*ts)[i]->fmlv->productsl; k++)

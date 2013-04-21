@@ -30,17 +30,29 @@
 #include "xstring.h"
 #include "unitstring.h"
 #include "canon.h"
+#include "macros.h"
 
 struct g_args_t g_args;
 
-static void usage()
+static void usage(int valid, int version, int help, int logopts)
 {
 	printf(
 "fab : parallel and incremental builds, integrated dependency discovery\n"
-" v0.4.0\n"
+);
+if(version)
+{
+	printf(
+" " XQUOTE(FABVERSION) "\n"
+	);
+}
+if(help)
+{
+	printf(
 "\n"
 "usage : fab [[options] [logopts] [targets]]*\n"
-"usage : fab --help|-h for this message\n"
+"            --help|-h : this message\n"
+"            --version : version information\n"
+"            --logopts : logging category listing\n"
 "\n"
 "----------- [ targets ] --------------------------------------------------------\n"
 "\n"
@@ -53,14 +65,33 @@ static void usage()
 " -u                      dependency discovery only\n"
 " -d <node specifier>     dump only\n"
 "\n"
+" -U                      perform dependency discovery upfront\n"
+"\n"
+" incremental builds\n"
 " -b <node specifier>     invalidate node(s)\n"
 " -B                      invalidate-all\n"
-" -c                      set node identifier mode to GNID_CANON for logging\n"
+"\n"
+" parallel builds\n"
 " -j <number>             concurrency limit\n"
+"\n"
+" bakescript generation\n"
+" -k </path/to/output>    create this file and output bakescript\n"
+"\n"
+" logging\n"
+" -c                      set node identifier mode to GNID_CANON for logging\n"
+"\n"
+" fabfile processing\n"
 " -f <path/to/fabfile>    path to initial fabfile\n"
 " -I <path/to/directory>  directory for locating invocations\n"
-" -v <key=value>          sticky variable definition\n"
-" -U                      perform dependency discovery upfront\n"
+" -v <key=value>          scope-zero variable definition\n"
+" -v <key+=value>         scope-zero variable addition\n"
+" -v <key-=value>         scope-zero variable subtraction\n"
+" -v <key~=value>					scope-zero variable transformation\n"
+"\n"
+" handling cycles\n"
+" --cycle-warn            warn when a cycle is detected (once per unique cycle)\n"
+" --cycle-fail            fail when a cycle is detected\n"
+" --cycle-deal            deal with cycles (halt traversal)\n"
 "\n"
 " <node specifier> is one of: \n"
 "  1.  text   : path match relative to init-fabfile-rel-dir\n"
@@ -68,26 +99,49 @@ static void usage()
 "  3. /text   : canonical path match\n"
 "  4. @text   : nofile match\n"
 "\n"
+	);
+}
+if(logopts)
+{
+	printf(
 "----------- [ logopts ] --------------------------------------------------------\n"
 "\n"
 " +<log name> to enable logging category\n"  
 " -<log name> to disable logging category\n"  
 "\n"
-	);
+);
 
 	int x;
 	for(x = 0; x < g_logs_l; x++)
 		printf("  %-10s %s\n", g_logs[x].s, g_logs[x].d);
+}
 
-	exit(0);
+if(help || logopts)
+{
+	printf(
+"For more information visit http://fabutil.org\n"
+	);
+}
+	printf("\n");
+	exit(!valid);
 }
 
 int parse_args(int argc, char** argv)
 {
 	path * fabpath = 0;
 
+	int help = 0;
+	int logopts = 0;
+	int version = 0;
+
 	struct option longopts[] = {
-				  { "cycle-warn"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_WARN	}
+/* informational */
+				  { "help"				, no_argument	, &help, 1 }
+				, { "logopts"			, no_argument	, &logopts, 1 }
+				, { "version"			, no_argument	, &version, 1 }
+
+/* program longopts */
+				, { "cycle-warn"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_WARN	}
 				, { "cycle-fail"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_FAIL }
 				, { "cycle-deal"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_DEAL }
 // a
@@ -177,13 +231,13 @@ int parse_args(int argc, char** argv)
 
 	int x;
 	int indexptr;
-	opterr = 0;
+	opterr = 1;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
 	{
 		switch(x)
 		{
 			case 'h':
-				usage(1);
+				usage(1, 1, 1, 0);
 				break;
 			case 'b':
 				fatal(xrealloc, &g_args.invalidations, sizeof(g_args.invalidations[0]), g_args.invalidationsl + 1, g_args.invalidationsl);
@@ -213,21 +267,16 @@ int parse_args(int argc, char** argv)
 				break;
 			case 'v':
 				{
-					char * eq;
-					if((eq = strstr(optarg, "=")))
+					if(g_args.rootvarsl == g_args.rootvarsa)
 					{
-						fatal(xrealloc, &g_args.varkeys, sizeof(g_args.varkeys[0]), g_args.varkeysl + 1, g_args.varkeysl);
-						fatal(xrealloc, &g_args.varvals, sizeof(g_args.varvals[0]), g_args.varvalsl + 1, g_args.varvalsl);
+						int newa = g_args.rootvarsa ?: 3;
+						newa = newa * 2 + newa / 2;
+						fatal(xrealloc, &g_args.rootvars, sizeof(g_args.rootvars[0]), newa, g_args.rootvarsa);
+						g_args.rootvarsa = newa;
+					}
 
-						*eq = 0;
-						g_args.varkeys[g_args.varkeysl++] = strdup(optarg);
-						*eq = '=';
-						g_args.varvals[g_args.varvalsl++] = strdup(eq+1);
-					}
-					else
-					{
-						fail("badly formed option for -v : '%s'", optarg);
-					}
+					fatal(xsprintf, &g_args.rootvars[g_args.rootvarsl], "%s%c", optarg, 0);
+					g_args.rootvarsl++;
 				}
 				break;
 			case 'j':
@@ -249,7 +298,15 @@ int parse_args(int argc, char** argv)
 				fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 				fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
 				break;
+			case '?':
+				usage(0, 1, 1, 0);
+				break;
 		}
+	}
+
+	if(help || logopts || version)
+	{
+		usage(1, 1, help, logopts);
 	}
 
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
@@ -346,10 +403,10 @@ int parse_args(int argc, char** argv)
 			log(L_ARGS | L_PARAMS		, " %s (  %c  ) dumpnodes(s)       =%s", "*", 'd', g_args.dumpnodes[x]);
 	}
 
-	if(!g_args.varkeys)
-		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) var(s)             =", " ", ' ');
-	for(x = 0; x < g_args.varkeysl; x++)
-		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) var(s)             =%s=%s", "*", 'v', g_args.varkeys[x], g_args.varvals[x]);
+	if(!g_args.rootvarsl)
+		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) root-var(s)        =", " ", ' ');
+	for(x = 0; x < g_args.rootvarsl; x++)
+		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) root-var(s)        =%s", "*", 'v', g_args.rootvars[x]);
 
 	if(!g_args.targets)
 		log(L_ARGS | L_PARAMS			, " %s (  %c  ) target(s)          =", " ", ' ');
@@ -381,11 +438,11 @@ void args_teardown()
 	for(x = 0; x < g_args.dumpnodesl; x++)
 		free(g_args.dumpnodes[x]);
 
-	for(x = 0; x < g_args.varkeysl; x++)
-		free(g_args.varkeys[x]);
-
-	for(x = 0; x < g_args.varvalsl; x++)
-		free(g_args.varvals[x]);
+	for(x = 0; x < g_args.rootvarsl; x++)
+	{
+		free(g_args.rootvars[x]);
+	}
+	free(g_args.rootvars);
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 		free(g_args.invokedirs[x]);
@@ -393,8 +450,6 @@ void args_teardown()
 	free(g_args.targets);
 	free(g_args.invalidations);
 	free(g_args.dumpnodes);
-	free(g_args.varkeys);
-	free(g_args.varvals);
 	free(g_args.invokedirs);
 
 	path_free(g_args.init_fabfile_path);
