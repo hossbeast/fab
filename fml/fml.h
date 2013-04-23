@@ -76,7 +76,7 @@ extern union g_fmls_t
 // SUMMARY
 //  attach a formula to graph nodes
 //
-int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 	__attribute__((nonnull));
 
 /// fml_render

@@ -23,4 +23,3 @@
 #define INTERPOLATE_DELIM_CUST	0x03	/* consecutive items are separated by a delimiting string */
 
 #endif
-

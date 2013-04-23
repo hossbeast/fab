@@ -127,11 +127,9 @@ extern struct g_args_t
 	path *			init_fabfile_path;		// path to initial fabfile
 	char *			bakescript_path;			// path to bakescript
 
-	char **			varkeys;							// var keys
-	int					varkeysl;
-
-	char **			varvals;							// var values
-	int					varvalsl;
+	char **			rootvars;							// root scope variable expressions
+	int					rootvarsl;
+	int					rootvarsa;
 
 	char **			invokedirs;						// root directories for locating invocations
 	int					invokedirsl;
@@ -148,7 +146,7 @@ extern struct g_args_t
 	int					dumpnodesl;
 } g_args;
 
-//// parse_args
+/// parse_args
 //
 // parses command-line options, populating g_args.
 //

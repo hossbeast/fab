@@ -21,6 +21,7 @@
 
 #include "fml.h"
 #include "list.h"
+#include "lwutil.h"
 #include "var.h"
 #include "dep.h"
 #include "args.h"
@@ -60,7 +61,7 @@ static int proc(ff_file * ff, ff_node* root, const ff_parser * const ffp, strsta
 		}
 		else if(stmt->type == FFN_FORMULA)
 		{
-			fatal(fml_attach, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp));
+			fatal(fml_attach, stmt, sstk, vmap, ffp->gp, stax, staxa, staxp);
 		}
 		else if(stmt->type == FFN_VARASSIGN)
 		{
@@ -267,7 +268,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 	ff->count++;
 
 	// use up one list and populate the * variable (path to the directory of the fabfile)
-	fatal(list_ensure, stax, staxa, (*staxp));
+	fatal(lw_reset, stax, staxa, (*staxp));
 
 	if(flags & FFP_NOFILE)
 	{

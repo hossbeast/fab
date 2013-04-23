@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <listwise/lstack.h>
+#include <listwise/generator.h>
 
 #include "var.h"
 
@@ -25,6 +26,7 @@
 #include "gnlw.h"
 #include "ff.h"
 #include "ffn.h"
+#include "lwutil.h"
 
 #include "xmem.h"
 #include "control.h"
@@ -35,18 +37,22 @@
 #define NOTINHERITED		0
 #define INHERITED				1
 
-#define ASSIGNABLE			0		// write reassign the key
-#define IMMUTABLE				1		// write are ignored
-#define WRITETHROUGH		2		// write backpropagate
+#define ASSIGNABLE			0		// write : reassign the key
+#define IMMUTABLE				1		// write : ignore
+#define WRITETHROUGH		2		// write : backpropagate
 
 #define VAL_LS					1
 #define VAL_AL					2
 
+#define XFM_ADD					1
+#define XFM_SUB					2
+#define XFM_LW					3
+
 typedef struct
 {
-	int					inherit;			// whether child scopes will inherit this
+	int					inherit;			// whether child scopes inherit this value
 	int					write;				// one of { ASSIGNABLE, IMMUTABLE, WRITETHROUGH }
-	int					val;					// one of { VAL_LS, VAL_AL }
+	int					type;					// one of { VAL_LS, VAL_AL }
 
 	union
 	{
@@ -63,14 +69,63 @@ typedef struct
 	};
 } varval;
 
+typedef struct
+{
+	int inherit;			// whether child scopes inherit this xfm
+	int type;					// one of XFM_*
+
+	union
+	{
+		void *			xfm;
+		lstack *		add;	// XFM_ADD			( not owned here - all lstacks owned by main )
+		lstack *		sub;	// XFM_SUB			( not owned here - all lstacks owned by main )
+
+		struct {					// XFM_LW				( not owned here - all generators owned by FFN_NODEs )
+			generator * gen;
+			char *			tex;
+		};
+	};
+} varxfm;
+
+typedef struct
+{
+	varval			val;
+
+	varxfm *		xfms;
+	int					xfmsl;
+	int					xfmsa;
+	int					xfmsi;		// number of inherited xfms
+} vardef;
+
 //
 // static
 //
 
-static int getval(map * const restrict vmap, const char * const restrict s, varval ** restrict c)
+// select logtag based on variable name
+#define TAG(x) (((x[0] >= 'a' && x[0] <= 'z') || (x[0] >= 'A' && x[0] <= 'Z') || x[0] == '_') ? L_VARUSER : L_VARAUTO)
+
+#define KEYID(m, s) *(int*)map_get(m, MMS("?LVL")), *(int*)map_get(m, MMS("?NUM")), s
+
+#define LOG_SRC(s) 														\
+do {																					\
+	if(s)																				\
+	{																						\
+		log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"		\
+			, 70 - MIN(log_written(), 70)						\
+			, ""																		\
+			, s->loc.ff->idstring										\
+			, s->loc.f_lin + 1											\
+			, s->loc.f_col + 1											\
+			, s->loc.l_lin + 1											\
+			, s->loc.l_col + 1											\
+		);																				\
+	}																						\
+} while(0)
+
+static int getdef(map * const restrict vmap, const char * const restrict s, vardef ** restrict c)
 {
-	varval ** cc = 0;
-	if((cc = map_get(vmap, s, strlen(s))))
+	vardef ** cc = 0;
+	if((cc = map_get(vmap, MMS(s))))
 	{
 		(*c) = (*cc);
 	}
@@ -87,9 +142,11 @@ static void map_destructor(void* tk, void* tv)
 {
 	if(((char*)tk)[0] != '?')
 	{
-		varval ** cc = tv;
-		if((*cc)->val == VAL_AL)
-			free((*cc)->skey);
+		vardef ** cc = tv;
+		if((*cc)->val.type == VAL_AL)
+			free((*cc)->val.skey);
+
+		free((*cc)->xfms);
 		free((*cc));
 	}
 }
@@ -132,72 +189,94 @@ static void dumplist(lstack * const ls)
 	LSTACK_ITEREND;
 }
 
+static int xfm_add(map * restrict vmap, const char * restrict s, int type, void * const restrict xfm, char * const restrict tex, int inherit, const struct ff_node * const restrict src, vardef ** c)
+{
+	fatal(getdef, vmap, s, c);
+	while((*c)->val.write == WRITETHROUGH)
+	{
+		if(log_would(L_VAR | TAG(s)))
+		{
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s -> %d:%d:%s)", "redir", KEYID(vmap, s), KEYID((*c)->val.smap, (*c)->val.skey));
+			LOG_SRC(src);
+			log_finish("");
+		}
+
+		vmap = (*c)->val.smap;
+		s = (*c)->val.skey;
+		fatal(getdef, vmap, s, &(*c));
+	}
+
+	if((*c)->val.write == ASSIGNABLE)
+	{
+		if((*c)->xfmsl == (*c)->xfmsa)
+		{
+			int newa = (*c)->xfmsa ?: 3;
+			newa = newa * 2 + newa / 2;
+			fatal(xrealloc, &(*c)->xfms, sizeof(*(*c)->xfms), newa, (*c)->xfmsa);
+			(*c)->xfmsa = newa;
+		}
+
+		varxfm * vx = &(*c)->xfms[(*c)->xfmsl++];
+
+		vx->inherit = inherit;
+		vx->type = type;
+		vx->xfm = xfm;
+		vx->tex = tex;
+	}
+
+	finally : coda;
+}
+
 ///
 /// public
 ///
 
-// select logtag based on variable name
-#define TAG(x) (((x[0] >= 'a' && x[0] <= 'z') || (x[0] >= 'A' && x[0] <= 'Z') || x[0] == '_') ? L_VARUSER : L_VARAUTO)
-
-#define KEYID(m, s) *(int*)map_get(m, MMS("?LVL")), *(int*)map_get(m, MMS("?NUM")), s
-
-#define LOG_SRC(s) 														\
-do {																					\
-	if(s)																				\
-	{																						\
-		log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"		\
-			, 70 - MIN(log_written(), 70)						\
-			, ""																		\
-			, s->loc.ff->idstring										\
-			, s->loc.f_lin + 1											\
-			, s->loc.f_col + 1											\
-			, s->loc.l_lin + 1											\
-			, s->loc.l_col + 1											\
-		);																				\
-	}																						\
-} while(0)
-	
-
-int var_set(map * vmap, const char * s, lstack * const ls, int inherit, int mutable, const ff_node * const src)
+int var_set(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, int mutable, const struct ff_node * const restrict src)
 {
 	int * inh = (int[1]) { inherit };
 	int * wrt = (int[1]) { mutable ? ASSIGNABLE : IMMUTABLE };
 
-	varval * c = 0;
-	fatal(getval, vmap, s, &c);
-	while(c->write == WRITETHROUGH)
+	vardef * c = 0;
+	fatal(getdef, vmap, s, &c);
+	while(c->val.write == WRITETHROUGH)
 	{
 		// writethrough does not modify properties
 		inh = 0;
 		wrt = 0;
 
-		log_start(L_VAR | TAG(s), "%10s(%d:%d:%s -> %d:%d:%s)", "redir", KEYID(vmap, s), KEYID(c->smap, c->skey));
-		LOG_SRC(src);
-		log_finish("");
+		if(log_would(L_VAR | TAG(s)))
+		{
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s -> %d:%d:%s)", "redir", KEYID(vmap, s), KEYID(c->val.smap, c->val.skey));
+			LOG_SRC(src);
+			log_finish("");
+		}
 
-		vmap = c->smap;
-		s = c->skey;
-		fatal(getval, vmap, s, &c);
+		vmap = c->val.smap;
+		s = c->val.skey;
+		fatal(getdef, vmap, s, &c);
 	}
 
-	if(c->write == ASSIGNABLE)
+	if(c->val.write == ASSIGNABLE)
 	{
 		if(inh)
-			c->inherit	= *inh;
+			c->val.inherit	= *inh;
 		if(wrt)
-			c->write		= *wrt; 
+			c->val.write		= *wrt; 
 
-		c->val			= VAL_LS;
+		c->val.type				= VAL_LS;
 
 		if(ls->l && ls->s[0].l)
-			c->ls				= ls;
+			c->val.ls				= ls;
 		else
-			c->ls				= listwise_identity;
-			
+			c->val.ls				= listwise_identity;
+
+		// assigning to a variable wipes out any associated xfms
+//		c->xfmsl = 0;
+
 		if(log_would(L_VAR | TAG(s)))
 		{
 			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "set", KEYID(vmap, s));
-			dumplist(c->ls);
+			dumplist(c->val.ls);
 			log_add(" ] )");
 			LOG_SRC(src);
 			log_finish("");
@@ -205,9 +284,97 @@ int var_set(map * vmap, const char * s, lstack * const ls, int inherit, int muta
 	}
 	else
 	{
-		log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) blocked", "set", KEYID(vmap, s));
-		LOG_SRC(src);
-		log_finish("");
+		if(log_would(L_VAR | TAG(s)))
+		{
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) blocked", "set", KEYID(vmap, s));
+			LOG_SRC(src);
+			log_finish("");
+		}
+	}
+
+	finally : coda;
+}
+
+int var_xfm_add(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
+{
+	vardef * c = 0;
+	fatal(xfm_add, vmap, s, XFM_ADD, ls, 0, inherit, src, &c);
+
+	if(c->val.write == ASSIGNABLE)
+	{
+		if(log_would(L_VAR | TAG(s)))
+		{
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "xfm-add", KEYID(vmap, s));
+			dumplist(ls);
+			log_add(" ] )");
+			LOG_SRC(src);
+			log_finish("");
+		}
+	}
+	else
+	{
+		if(log_would(L_VAR | TAG(s)))
+		{
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) blocked", "xfm-add", KEYID(vmap, s));
+			LOG_SRC(src);
+			log_finish("");
+		}
+	}
+
+	finally : coda;
+}
+
+int var_xfm_sub(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
+{
+	vardef * c = 0;
+	fatal(xfm_add, vmap, s, XFM_SUB, ls, 0, inherit, src, &c);
+
+	if(c->val.write == ASSIGNABLE)
+	{
+		if(log_would(L_VAR | TAG(s)))
+		{
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "xfm-sub", KEYID(vmap, s));
+			dumplist(ls);
+			log_add(" ] )");
+			LOG_SRC(src);
+			log_finish("");
+		}
+	}
+	else
+	{
+		if(log_would(L_VAR | TAG(s)))
+		{
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) blocked", "xfm-sub", KEYID(vmap, s));
+			LOG_SRC(src);
+			log_finish("");
+		}
+	}
+
+	finally : coda;
+}
+
+int var_xfm_lw(map * restrict vmap, const char * restrict s, generator * const restrict gen, char * const restrict tex, int inherit, const struct ff_node * const restrict src)
+{
+	vardef * c = 0;
+	fatal(xfm_add, vmap, s, XFM_LW, gen, tex, inherit, src, &c);
+
+	if(c->val.write == ASSIGNABLE)
+	{
+		if(log_would(L_VAR | TAG(s)))
+		{
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) =~ %s ", "xfm-lw", KEYID(vmap, s), tex);
+			LOG_SRC(src);
+			log_finish("");
+		}
+	}
+	else
+	{
+		if(log_would(L_VAR | TAG(s)))
+		{
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) blocked", "xfm-lw", KEYID(vmap, s));
+			LOG_SRC(src);
+			log_finish("");
+		}
 	}
 
 	finally : coda;
@@ -215,29 +382,33 @@ int var_set(map * vmap, const char * s, lstack * const ls, int inherit, int muta
 
 int var_alias(map * const restrict smap, const char * const restrict ss, map * const restrict tmap, const char * const restrict ts, const ff_node * const restrict src)
 {
-	varval * sc = 0;
-	varval * tc = 0;
-	fatal(getval, smap, ss, &sc);
-	fatal(getval, tmap, ts, &tc);
+	vardef * tc = 0;
+	fatal(getdef, tmap, ts, &tc);
 
-	if(tc->write == ASSIGNABLE)
+	if(tc->val.write == ASSIGNABLE)
 	{
-		tc->inherit	= 1;
-		tc->write		= IMMUTABLE;
-		tc->val			= VAL_AL;
-		tc->skey		= strdup(ss);
-		tc->smap		= smap;
+		tc->val.inherit	= 1;
+		tc->val.write		= IMMUTABLE;
+		tc->val.type		= VAL_AL;
+		tc->val.skey		= strdup(ss);
+		tc->val.smap		= smap;
 
-		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s)", "alias", KEYID(tmap, ts), KEYID(smap, ss));
-		LOG_SRC(src);
-		log_finish("");
+		if(log_would(L_VAR | TAG(ss)))
+		{
+			log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s)", "alias", KEYID(tmap, ts), KEYID(smap, ss));
+			LOG_SRC(src);
+			log_finish("");
+		}
 	}
 	else
 	{
-		/* this could potentially merit a warning */
-		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s) blocked", "alias", KEYID(tmap, ts), KEYID(smap, ss));
-		LOG_SRC(src);
-		log_finish("");
+		if(log_would(L_VAR | TAG(ss)))
+		{
+			/* this could potentially merit a warning */
+			log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s -> %d:%d:%s) blocked", "alias", KEYID(tmap, ts), KEYID(smap, ss));
+			LOG_SRC(src);
+			log_finish("");
+		}
 	}
 
 	finally : coda;
@@ -245,29 +416,33 @@ int var_alias(map * const restrict smap, const char * const restrict ss, map * c
 
 int var_link(map * const restrict smap, const char * const restrict ss, map * const restrict tmap, const char * const restrict ts, const ff_node * const restrict src)
 {
-	varval * sc = 0;
-	varval * tc = 0;
-	fatal(getval, smap, ss, &sc);
-	fatal(getval, tmap, ts, &tc);
+	vardef * tc = 0;
+	fatal(getdef, tmap, ts, &tc);
 
-	if(tc->write == ASSIGNABLE)
+	if(tc->val.write == ASSIGNABLE)
 	{
-		tc->inherit	= 1;
-		tc->write		= WRITETHROUGH;
-		tc->val			= VAL_AL;
-		tc->skey		= strdup(ss);
-		tc->smap		= smap;
+		tc->val.inherit	= 1;
+		tc->val.write		= WRITETHROUGH;
+		tc->val.type		= VAL_AL;
+		tc->val.skey		= strdup(ss);
+		tc->val.smap		= smap;
 
-		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s)", "link", KEYID(tmap, ts), KEYID(smap, ss));
-		LOG_SRC(src);
-		log_finish("");
+		if(log_would(L_VAR | TAG(ss)))
+		{
+			log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s)", "link", KEYID(tmap, ts), KEYID(smap, ss));
+			LOG_SRC(src);
+			log_finish("");
+		}
 	}
 	else
 	{
-		/* this could potentially merit a warning */
-		log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s) blocked", "link", KEYID(tmap, ts), KEYID(smap, ss));
-		LOG_SRC(src);
-		log_finish("");
+		if(log_would(L_VAR | TAG(ss)))
+		{
+			/* this could potentially merit a warning */
+			log_start(L_VAR | TAG(ss), "%10s(%d:%d:%s <-> %d:%d:%s) blocked", "link", KEYID(tmap, ts), KEYID(smap, ss));
+			LOG_SRC(src);
+			log_finish("");
+		}
 	}
 
 	finally : coda;
@@ -283,26 +458,52 @@ int var_root(map ** const map)
 int var_clone(map * const amap, map ** const bmap)
 {
 	char **			keys = 0;
-	varval ***	vals = 0;
+	vardef ***	defs = 0;
 	int					keysl = 0;
 
 	fatal(map_create, bmap, map_destructor);
 	fatal(map_keys, amap, &keys, &keysl);
-	fatal(map_values, amap, &vals, &keysl);
+	fatal(map_values, amap, &defs, &keysl);
 
 	int x;
 	for(x = 0; x < keysl; x++)
 	{
 		if(keys[x][0] != '?')
 		{
-			if((*vals[x])->inherit)
-			{
-				varval * c = 0;
-				fatal(getval, (*bmap), keys[x], &c);
+			vardef * c = 0;
 
-				memcpy(c, *vals[x], sizeof(*c));
-				if(c->val == VAL_AL)
-					c->skey = strdup(c->skey);
+			// inherit the value
+			if((*defs[x])->val.inherit)
+			{
+				fatal(getdef, (*bmap), keys[x], &c);
+
+				memcpy(&c->val, &(*defs[x])->val, sizeof(c->val));
+				if(c->val.type == VAL_AL)
+					c->val.skey = strdup(c->val.skey);
+			}
+
+			// inherit the xfms
+			int y;
+			for(y = 0; y < (*defs[x])->xfmsl; y++)
+			{
+				if((*defs[x])->xfms[y].inherit)
+				{
+					fatal(getdef, (*bmap), keys[x], &c);
+
+					if(c->xfmsl == c->xfmsa)
+					{
+						int newa = c->xfmsa ?: 3;
+						newa = newa * 2 + newa / 2;
+						fatal(xrealloc, &c->xfms, sizeof(*c->xfms), newa, c->xfmsa);
+						c->xfmsa = newa;
+					}
+
+					varxfm * xfm = &c->xfms[c->xfmsl++];
+					memcpy(xfm, &(*defs[x])->xfms[y], sizeof(*xfm));
+
+					// track inherited
+					c->xfmsi++;
+				}
 			}
 		}
 	}
@@ -320,33 +521,63 @@ int var_clone(map * const amap, map ** const bmap)
 
 finally:
 	free(keys);
-	free(vals);
+	free(defs);
 coda;
 }
 
-lstack * var_access(const map * vmap, const char * vs)
+int var_access(const map * const restrict vmap, const char * restrict vs, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp, lstack ** const restrict ls)
 {
 	const map * m = vmap;
 	const char * s = vs;
-	lstack * ls = listwise_identity;
+	(*ls) = listwise_identity;
 
-	varval ** cc = 0;
+	vardef ** cc = 0;
 	while((cc = map_get(m, MMS(s))))
 	{
-		if((*cc)->val == VAL_LS)
+		if((*cc)->val.type == VAL_LS)
 		{
-			ls = (*cc)->ls;
+			(*ls) = (*cc)->val.ls;
 			break;
 		}
-		else if((*cc)->val == VAL_AL)
+		else if((*cc)->val.type == VAL_AL)
 		{
-			m = (*cc)->smap;
-			s = (*cc)->skey;
+			m = (*cc)->val.smap;
+			s = (*cc)->val.skey;
 		}
 		else
 		{
 			// aliased to a var which was never subsequently defined
 			break;
+		}
+	}
+
+	if(cc)		// apply xfms
+	{
+		int x;
+		for(x = 0; x < (*cc)->xfmsl; x++)
+		{
+			if((*cc)->xfms[x].type == XFM_ADD || (*cc)->xfms[x].type == XFM_LW)
+			{
+				int pn = (*staxp)++;
+				fatal(lw_reset, stax, staxa, pn);
+
+				if((*cc)->xfms[x].type == XFM_ADD)
+				{
+					fatal(lstack_obj_add, (*stax)[pn], (*ls), LISTWISE_TYPE_LIST);
+					fatal(lstack_obj_add, (*stax)[pn], (*cc)->xfms[x].add, LISTWISE_TYPE_LIST);
+				}
+				else if((*cc)->xfms[x].type == XFM_LW)
+				{
+					fatal(lstack_obj_add, (*stax)[pn], (*ls), LISTWISE_TYPE_LIST);
+					fatal(lw_exec, (*cc)->xfms[x].gen, (*cc)->xfms[x].tex, &(*stax)[pn]);
+				}
+
+				(*ls) = (*stax)[pn];
+			}
+			else if((*cc)->xfms[x].type == XFM_SUB)
+			{
+
+			}
 		}
 	}
 
@@ -360,6 +591,5 @@ lstack * var_access(const map * vmap, const char * vs)
 	}
 */
 
-	return ls;
+	finally : coda;
 }
-

@@ -27,12 +27,6 @@
 
 struct ff_node;
 
-// listwise interface to list objects
-//  (this type is a placeholder - instances of this object are NOT ever passed into liblistwise)
-listwise_object listlw;
-
-#define LISTWISE_TYPE_LIST	0x02		/* listwise type id */
-
 /// var_set
 //
 // SUMMARY
@@ -49,8 +43,63 @@ listwise_object listlw;
 // RETURNS
 //  nonzero on success
 //
-int var_set(map * const restrict vmap, const char * const restrict s, lstack * const restrict ls, int inherit, int mutable, const struct ff_node * const restrict src)
+int var_set(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, int mutable, const struct ff_node * const restrict src)
 	__attribute__((nonnull(1,2,3)));
+
+/// var_xfm_add
+//
+// SUMMARY
+//  add an lstack-addition-xfm to the definition for a variable
+//
+// PARAMETERS
+//  vmap    - variable map
+//  s       - target variable
+//  ls      - addition
+//  inherit - whether to create an inherited xfm
+//  [src]   - FFN_VAR* node (for logging)
+//
+// RETURNS
+//  nonzero on success
+//
+int var_xfm_add(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
+	__attribute__((nonnull(1,2,3)));
+
+/// var_sub
+//
+// SUMMARY
+//  add an lstack-subtraction-xfm to the definition for a variable
+//
+// PARAMETERS
+//  vmap    - variable map
+//  s       - target variable
+//  ls      - subtraction
+//  inherit - whether to create an inherited xfm
+//  [src]   - FFN_VAR* node (for logging)
+//
+// RETURNS
+//  nonzero on success
+//
+int var_xfm_sub(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
+	__attribute__((nonnull(1,2,3)));
+
+/// var_xfm_lw
+//
+// SUMMARY
+//  add an lw-xfm to the definition for a variable
+//
+// PARAMETERS
+//  vmap    - variable map
+//  s       - target variable
+//  gen     - generator
+//  tex     - generator string
+//  inherit - whether to create an inherited xfm
+//  [src]   - FFN_VAR* node (for logging)
+//
+// RETURNS
+//  nonzero on success
+//
+int var_xfm_lw(map * restrict vmap, const char * restrict s, generator * const restrict xfm, char * const restrict tex, int inherit, const struct ff_node * const restrict src)
+	__attribute__((nonnull(1,2,3,4)));
 
 /// var_alias
 //
@@ -112,9 +161,8 @@ int var_clone(map * const restrict amap, map ** const restrict bmap)
 // RETURNS
 //  the definition, or listwise_identity if the variable is not defined, or has an empty definition stack
 //
-lstack * var_access(const map * const restrict vmap, const char * restrict s)
+int var_access(const map * const restrict vmap, const char * restrict s, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp, lstack ** const restrict ls)
 	__attribute__((nonnull));
 
 #undef restrict
 #endif
-

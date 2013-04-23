@@ -36,6 +36,7 @@
 #define FFT_TABLE(x)																												\
 	_FFT(FFT_REGULAR				, 0x01	, x)	/* regular fabfile */								\
 	_FFT(FFT_DDISC					, 0x02	, x)	/* dependency discovery fabfile */	\
+	_FFT(FFT_VAREXPR				, 0x03	, x)	/* variable expression text */			\
 
 enum {
 #define _FFT(a, b, c) a = b,
@@ -59,6 +60,11 @@ typedef struct ff_file
 
 	union
 	{
+		// variable expression text
+		struct {
+			int								id;				// unique id
+		};
+
 		// dependency discovery fabfile
 		struct {
 			struct gn *				dscv_gn;	// associated graph node
@@ -169,6 +175,27 @@ int ff_dsc_parse(
 	, int sz
 	, const char * const restrict fp 
 	, struct gn * dscv_gn
+	, ff_file ** const restrict ff
+)
+	__attribute__((nonnull));
+
+/// ff_var_parse
+//
+// SUMMARY
+//  parse variable expressions
+//
+// PARAMETERS
+//  p      - parser returned from mkparser
+//  b      - buffer to parse from
+//  sz     - number of bytes to parse
+//  id     - unique id for this variable expression text
+//  ff     - results go here
+//
+int ff_var_parse(
+	  const ff_parser * const restrict p
+	, char * b
+	, int sz
+	, int id
 	, ff_file ** const restrict ff
 )
 	__attribute__((nonnull));
