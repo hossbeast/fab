@@ -26,11 +26,15 @@
 #include "log.h"
 
 #include "xstring.h"
+#include "cksum.h"
 #include "macros.h"
 
 #define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 60])
 #define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
 #define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
+
+#define CSAVE				(char[3]){ 0x1b, 0x5b, 0x73 }, 3
+#define CRESTORE		(char[3]){ 0x1b, 0x5b, 0x75 }, 3
 
 static struct filter
 {
@@ -88,9 +92,11 @@ int g_logs_l = sizeof(o_logs) / sizeof(o_logs[0]);
 // [[ static ]]
 //
 
-static char * o_space;
-static int		o_space_l;
-static int		o_space_a;
+static char * 	o_space;			// storage between vadd/flush calls
+static int			o_space_l;
+static int			o_space_a;
+
+static uint32_t	o_ticker_hash;
 
 static int o_name_len;
 
@@ -160,34 +166,41 @@ static int logprintf(const char * fmt, ...)
 	return R;
 }
 
-static int log_vstart(const uint64_t e)
+static int start(const uint64_t e, int nl)
 {
 	int R = 0;
-	if(log_would(e))
+	o_space_l = 0;
+
+	if(nl)
+		logwrite("\n", 1);
+
+	// colorization
+	if((e & L_COLOR_VALUE) && COLORHEX(e))
 	{
-		o_space_l = 0;
-
-		// colorization
-		if((e & L_COLOR_VALUE) && COLORHEX(e))
-		{
-			logwrite(COLOR(e));
-		}
-
-		// prefix
-		int x;
-		for(x = 0; x < g_logs_l; x++)
-		{
-			if((e & g_logs[x].v) == g_logs[x].v)
-			{
-				R = logprintf("%*s : ", o_name_len, g_logs[x].s);
-				break;
-			}
-		}
-
-		o_e = e;
+		logwrite(COLOR(e));
 	}
 
+	// prefix
+	int x;
+	for(x = 0; x < g_logs_l; x++)
+	{
+		if((e & g_logs[x].v) == g_logs[x].v)
+		{
+			R = logprintf("%*s : ", o_name_len, g_logs[x].s);
+			break;
+		}
+	}
+
+	o_e = e;
 	return R;
+}
+
+static int log_vstart(const uint64_t e)
+{
+	if(log_would(e))
+		return start(e, 1);
+
+	return 0;
 }
 
 static int log_vadd(const char* fmt, va_list va)
@@ -212,6 +225,7 @@ static int log_vfinish(const char* fmt, va_list* va)
 	int __attribute__((unused)) r = write(2, o_space, o_space_l);
 
 	o_e = 0;
+	o_ticker_hash = 0;
 
 	return R;
 }
@@ -488,9 +502,58 @@ int log(const uint64_t e, const char* fmt, ...)
 	return 0;
 }
 
+int log_ticker(const uint64_t e, const char * fmt0, const char * fmt, ...)
+{
+	if(log_would(e))
+	{
+		va_list va;
+		va_list va2;
+		va_start(va, fmt);
+		va_copy(va2, va);
+
+		o_space_l = 0;
+		logvprintf(fmt0, va);
+
+		uint32_t hash = 0;
+		if((hash = cksum(o_space, o_space_l)) != o_ticker_hash)
+		{
+			start(e, 0);
+			logvprintf(fmt0, va2);
+			va_end(va2);
+
+			logwrite(CSAVE);
+			int __attribute__((unused)) r = write(2, o_space, o_space_l);
+
+			o_ticker_hash = hash;
+		}
+		else
+		{
+			va_end(va2);
+		}
+
+		o_space_l = 0;
+
+		logwrite(CRESTORE);
+		logvprintf(fmt, va);
+
+		if((e & L_COLOR_VALUE) && COLORHEX(e))
+		{
+			logwrite(NOCOLOR);
+		}
+
+		// flush to stderr
+		int r = write(2, o_space, o_space_l);
+		return r;
+	}
+
+	return 0;
+}
+
 void log_teardown()
 {
 	free(o_space);
 	free(o_filter);
-}
 
+	if(o_ticker_hash)
+		write(2, "\n", 1);
+}

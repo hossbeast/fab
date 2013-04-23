@@ -20,6 +20,7 @@
 
 #include <stdarg.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 // C
 #define L_COLOR_VALUE   0xF000000000000000ULL // C range
@@ -133,6 +134,13 @@ int log_finish(const char* fmt, ...);
 //
 int log_written();
 
+/// log_ticker
+//
+// log a ticker message
+//
+int log_ticker(const uint64_t bits, const char * fmt0, const char * fmt, ...)
+	__attribute__((nonnull(2, 3)));
+
 /// log_teardown
 //
 // cleanup
@@ -140,4 +148,3 @@ int log_written();
 void log_teardown();
 
 #endif
-
