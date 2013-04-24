@@ -25,10 +25,10 @@ $dlistwise    = [ $*/listwisedev ]
 $dfab         = [ $*/fabdev ]
 
 # invocations
-+[ $dcommon ]()   							  				@common
-+[ $dliblistwise ](-$liblistwise)					@liblistwise
-+[ $dlistwise ](-$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ])	@listwise
-+[ $dfab ](-$fab; -$faboplist; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ])							@fab
++[ $dcommon ]()   							  																														@common
++[ $dliblistwise ]($VERSION; -$liblistwise)																										@liblistwise
++[ $dlistwise ]($VERSION; -$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ])				@listwise
++[ $dfab ]($VERSION; -$fab; -$faboplist; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ])		@fab
 
 # default target - make everything
 [ @all ] 				: [ @liblistwise.all       $listwise      @fab.all ]
