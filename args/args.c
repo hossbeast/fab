@@ -42,8 +42,8 @@ static void usage(int valid, int version, int help, int logopts)
 if(version)
 {
 	printf(" "
-#if DBUG
-	XQUOTE(FABVERSION) "+DBUG"
+#if DEVEL
+	XQUOTE(FABVERSION) "+DEVEL"
 #else
 	XQUOTE(FABVERSION)
 #endif

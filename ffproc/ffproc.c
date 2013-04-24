@@ -257,7 +257,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 		log(L_INVOKE, "%s @ %s", inpath->can, sstr);
 	}
 
-	log_ticker(L_INFO, "processing fabfile ", "%s", inpath->can);
+	log_ticker(L_INFO, "processing fabfile", "%s", inpath->can);
 
 	// parse
 	fatal(ff_reg_load, ffp, inpath, &ff);

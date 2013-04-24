@@ -140,8 +140,8 @@ int lw_exec(generator * gen, char * tex, lstack ** ls)
 	fatal(flatten, (*ls));
 
 	// pass through listwise
-	log(L_LWDEBUG, "%s", tex);
-	fatal(lstack_exec_internal, gen, 0, 0, 0, ls, log_would(L_LWDEBUG));
+	log(L_LWVOCAL, "%s", tex);
+	fatal(lstack_exec_internal, gen, 0, 0, 0, ls, log_would(L_LWVOCAL));
 
 	finally : coda;
 }

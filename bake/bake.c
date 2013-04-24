@@ -76,6 +76,29 @@ int bake_bp(
 
 	dprintf(fd, "#!/bin/bash\n");
 
+#ifdef DEVEL
+	dprintf(fd,
+/* this is for producing the bakescripts distributed with the fab source code itself */
+"\n"
+"# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>\n"
+"#\n"
+"# This file is part of fab.\n"
+"#\n"
+"# fab is free software: you can redistribute it and/or modify\n"
+"# it under the terms of the GNU General Public License as published by\n"
+"# the Free Software Foundation, either version 3 of the License, or\n"
+"# (at your option) any later version.\n"
+"#\n"
+"# fab is distributed in the hope that it will be useful,\n"
+"# but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+"# GNU General Public License for more details.\n"
+"#\n"
+"# You should have received a copy of the GNU General Public License\n"
+"# along with fab.  If not, see <http://www.gnu.org/licenses/>.\n"
+"\n"
+	);
+#else
 /* include licensing exception in bakescript output */
 	dprintf(fd,
 "\n"
@@ -89,6 +112,7 @@ int bake_bp(
 "#  of the build script and distribute that work under terms of your choice\n"
 "\n"
 	);
+#endif
 
 	dprintf(fd, "# re-exec under time\n");
 	dprintf(fd, "if [[ $1 != \"timed\" ]]; then\n");

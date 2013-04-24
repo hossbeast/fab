@@ -59,9 +59,7 @@ fabfile properties
 
 # NEED
 option for nofile nodes in invocations to be just ignored
-command line variable defs : "append this" anytime the variable is rendered/resolved
 sadly - if blocks and looping constructs are needed
   do-not-invoke depending on how invocation string is referenced - reworked
 	include guards
 default target - invoke in same NOFILE-context can become default target
-VARLINK between different names

@@ -132,8 +132,8 @@ int main(int argc, char** argv)
 	for(x = 0; x < sizeof(FABLW_DIRS) / sizeof(FABLW_DIRS[0]); x++)
 		fatal(listwise_register_opdir, FABLW_DIRS[x]);
 
-	// unless LWDEBUG, arrange for liblistwise to write to /dev/null
-	if(!log_would(L_LWDEBUG))
+	// unless LWVOCAL, arrange for liblistwise to write to /dev/null
+	if(!log_would(L_LWVOCAL))
 	{
 		if((listwise_err_fd = open("/dev/null", O_WRONLY)) == -1)
 			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));

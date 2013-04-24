@@ -54,7 +54,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
 	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
 	, { .v = L_PARAMS		, .s = "PARAMS"		, .d = "program execution parameters" }
-#if DBUG
+#if DEVEL
 	, { .v = L_FFTOKN		, .s = "FFTOKN"		, .d = "fabfile parsing - token stream" }
 	, { .v = L_FFSTAT		, .s = "FFSTAT"		, .d = "fabfile parsing - lexer start conditions" }
 	, { .v = L_FFTREE		, .s = "FFTREE"		, .d = "fabfile parsing - parsed tree" }
@@ -67,7 +67,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_BPDUMP		, .s = "BPDUMP"		, .d = "buildplan - dump the final buildplan" }
 	, { .v = L_BP				, .s = "BP"				, .d = "buildplan" }
 	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	, .d = "formulas - execution results/details" }
-#if DBUG
+#if DEVEL
 	, { .v = L_FMLTARG	, .s = "FMLTARG"	, .d = "formulas - target resolution/assignment" }
 #endif
 	, { .v = L_FML			, .s = "FML"			, .d = "formulas" }
@@ -76,7 +76,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - execution details" }
 	, { .v = L_DSCNEW		, .s = "DSCNEW"		, .d = "dependency discovery - new nodes/edges" }
 	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery" }
-#if DBUG
+#if DEVEL
 	, { .v = L_DGDEPS		, .s = "DGDEPS"		, .d = "dependency graph - dependencies" }
 #endif
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
@@ -87,7 +87,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_INVOKE		, .s = "INVOKE"		, .d = "fabfile invocations" }
 	, { .v = L_CHANGEL	, .s = "CHANGEL"	, .d = "source file changes - SECONDARY lists" }
 	, { .v = L_CHANGE		, .s = "CHANGE"		, .d = "source file changes" }
-	, { .v = L_LWDEBUG	, .s = "LWDEBUG"	, .d = "debug liblistwise invocations ** VERBOSE" }
+	, { .v = L_LWVOCAL	, .s = "LWVOCAL"	, .d = " ** VERBOSE ** liblistwise invocations" }
 };
 
 struct g_logs_t * g_logs = o_logs;
@@ -102,7 +102,11 @@ static char * 	o_space;			// storage between vadd/flush calls
 static int			o_space_l;
 static int			o_space_a;
 
+static int			o_ticker;
+static uint64_t	o_ticker_e;
+static uint32_t	o_ticker_c;
 static uint32_t	o_ticker_hash;
+static int			o_ticker_max;
 
 static int o_name_len;
 
@@ -172,13 +176,9 @@ static int logprintf(const char * fmt, ...)
 	return R;
 }
 
-static int start(const uint64_t e, int nl)
+static int start(const uint64_t e)
 {
 	int R = 0;
-	o_space_l = 0;
-
-	if(nl)
-		logwrite("\n", 1);
 
 	// colorization
 	if((e & L_COLOR_VALUE) && COLORHEX(e))
@@ -197,14 +197,23 @@ static int start(const uint64_t e, int nl)
 		}
 	}
 
-	o_e = e;
 	return R;
 }
 
 static int log_vstart(const uint64_t e)
 {
 	if(log_would(e))
-		return start(e, 1);
+	{
+		o_space_l = 0;
+
+		if(o_ticker)
+			logwrite("\n", 1);
+
+		o_ticker = 0;
+		o_e = e;
+
+		return start(e);
+	}
 
 	return 0;
 }
@@ -231,7 +240,6 @@ static int log_vfinish(const char* fmt, va_list* va)
 	int __attribute__((unused)) r = write(2, o_space, o_space_l);
 
 	o_e = 0;
-	o_ticker_hash = 0;
 
 	return R;
 }
@@ -331,8 +339,8 @@ void log_parse(char * args, int args_len)
 
 						if(xstrcmp(&args[x+off], k-off, "TAG", 3, 0) == 0)
 						{
-							// special case for TAG to exclude LWDEBUG
-							tag |= L_TAG & ~L_LWDEBUG;
+							// special case for TAG to exclude LWVOCAL
+							tag |= L_TAG & ~L_LWVOCAL;
 							off += 3;
 						}
 						else
@@ -510,39 +518,116 @@ int log(const uint64_t e, const char* fmt, ...)
 
 int log_ticker(const uint64_t e, const char * fmt0, const char * fmt, ...)
 {
-	if(log_would(e))
+	va_list va;
+	va_list va2;
+	va_start(va, fmt);
+	va_copy(va2, va);
+
+	o_space_l = 0;
+	logvprintf(fmt0, va);
+
+	uint32_t hash = cksum(o_space, o_space_l);
+
+	if(!o_ticker || hash != o_ticker_hash)
 	{
-		va_list va;
-		va_list va2;
-		va_start(va, fmt);
-		va_copy(va2, va);
+		if(hash != o_ticker_hash && !log_would(e))
+			return 0;
 
 		o_space_l = 0;
-		logvprintf(fmt0, va);
+		start(e);
+		logvprintf(fmt0, va2);
+		va_end(va2);
 
-		uint32_t hash = 0;
-		if((hash = cksum(o_space, o_space_l)) != o_ticker_hash)
-		{
-			start(e, 0);
-			logvprintf(fmt0, va2);
-			va_end(va2);
+		logwrite(CSAVE);
+		int __attribute__((unused)) r = write(2, o_space, o_space_l);
 
-			logwrite(CSAVE);
-			int __attribute__((unused)) r = write(2, o_space, o_space_l);
+		if(hash != o_ticker_hash)	// new ticker sequence
+			o_ticker_c = 0;
 
-			o_ticker_hash = hash;
-		}
-		else
-		{
-			va_end(va2);
-		}
+		o_ticker = 1;
+		o_ticker_e = e;
+		o_ticker_hash = hash;
+		o_ticker_max = 0;
+	}
+	else
+	{
+		va_end(va2);
+	}
 
+	if(log_would(o_ticker_e))
+	{
 		o_space_l = 0;
-
 		logwrite(CRESTORE);
+		logwrite(" ", 1);
+
+#define TICKER(...)															\
+char * o_states[] = { __VA_ARGS__ };						\
+do {																						\
+	logprintf("%3d ", o_ticker_c);								\
+	logwrite(o_states[o_ticker_c % (sizeof(o_states) / sizeof(o_states[0]))], strlen(o_states[0]));	\
+	o_ticker_c++;																	\
+} while(0)
+
+#define TICKER_BASIC
+#ifdef TICKER_BOBBLE
+		TICKER(
+			  "\xe2\x96\x89"		/* REQUIRES UNICODE !!! */
+			, "\xe2\x96\x8a"
+			, "\xe2\x96\x8b"
+			, "\xe2\x96\x8c"
+			, "\xe2\x96\x8d"
+			, "\xe2\x96\x8e"
+			, "\xe2\x96\x8f"
+			, "\xe2\x96\x8e"
+			, "\xe2\x96\x8d"
+			, "\xe2\x96\x8c"
+			, "\xe2\x96\x8b"
+			, "\xe2\x96\x8a"
+		);
+#endif
+#ifdef TICKER_FISH
+		TICKER(
+			  ">))'>        "
+			, "    >))'>    "
+			, "        >))'>"
+			, "        <(('<"
+			, "    <(('<    "
+			, "<(('<        "
+		);
+#endif
+#ifdef TICKER_BASIC
+		TICKER(
+			  ".  "
+			, ".. "
+			, "..."
+			, " .."
+			, "  ."
+		);
+#endif
+#ifdef TICKER_SIMPLE
+		TICKER(
+			  "---"
+			, "\\--"
+			, "\\\\-"
+			, "\\\\\\"
+			, "-\\\\"
+			, "--\\"
+			, "---"
+			, "--/"
+			, "-//"
+			, "///"
+			, "//-"
+			, "/--"
+		);
+#endif
+
+		logwrite(" ", 1);
 		logvprintf(fmt, va);
 
-		if((e & L_COLOR_VALUE) && COLORHEX(e))
+		o_ticker_max = MAX(o_ticker_max, o_space_l);
+		logprintf("%*s", o_ticker_max - o_space_l, "");
+
+		if((o_ticker_e & L_COLOR_VALUE) && COLORHEX(o_ticker_e))
 		{
 			logwrite(NOCOLOR);
 		}
@@ -560,6 +645,8 @@ void log_teardown()
 	free(o_space);
 	free(o_filter);
 
-	if(o_ticker_hash)
-		write(2, "\n", 1);
+	if(o_ticker)
+	{
+		int __attribute__((unused)) r = write(2, "\n", 1);
+	}
 }

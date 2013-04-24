@@ -76,8 +76,7 @@ int identity_init()
 	// this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions !!
 	if(strcmp(g_args.euid_name, "fabsys") || strcmp(g_args.egid_name, "fabsys"))
 	{
-#define DBUG 1
-#ifndef DBUG
+#ifndef DEVEL
 		fail(
 			"fab executable must be owned by fabsys:fabsys and have u+s and g+s permissions\n"
 			" -> r:%s/%d:%s/%d\n"
