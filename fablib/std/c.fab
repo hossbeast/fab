@@ -83,11 +83,11 @@ $cobjpaths = [ $cfabpaths ~ [ xs/<c>/< $ext >/y ~ j ] ]
 #
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<c>/< $ext >/fx ~ j ] ] [ $ext ]
+	[ $cc ] [ $cflags ~ uu/fx ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<c>/< $ext >/fx ~ j ] ] [ $ext ]
 }
 
 # fabrication and dependency
 [ $cobjpaths ~ dj/shift ] :: [ $< ~ [ rx/xs/< $ext >/<c> ~ j ] ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
+	[ $cc ] [ $cflags ~ uu/fx ] -c [ $@ ~ rx/ineed/xm/<c>/uu/fx ] -o [ $@ ]
 }

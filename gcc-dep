@@ -23,6 +23,14 @@ use warnings;
 my @S;	# strong
 my @W;	# weak
 
+my $gen = '';
+if($ARGV[0])
+{
+	$gen = $ARGV[0];
+	$gen =~ s/^\s+//;
+	$gen =~ s/\s+//;
+}
+
 while(<STDIN>)
 {
 	if(/^[^:]+:$/)	# -MP lines, only
@@ -52,12 +60,13 @@ while(<STDIN>)
 			push @S, $line;				# strong dependency on the header
 
 			# corresponding .c file
-			$line =~ s/\.h$/.c/;
-
-			if(-f $line)
+			if($line =~ s/\.h$/.c/)
 			{
-				$line =~ s/\.c$//;
-				push @W, $line;			# weak dependency on the object, if a corresponding c file exists
+				if(-r $line)
+				{
+					$line =~ s/\.c$//;
+					push @W, $line;			# weak dependency on the object, if a corresponding c file exists
+				}
 			}
 		}
 	}
