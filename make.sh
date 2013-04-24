@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+# along with fab.  If not, see <http://www.gnu.org/licenses/>.
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -33,7 +33,7 @@ fml_1_0()
   exec 2>&100
 
   
-	gcc -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -g -m64 -c ./args.c -o ./args.o
+	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -m64 -c ./args.c -o ./args.o
 
 
   X=$?
@@ -48,7 +48,7 @@ fml_1_1()
   exec 2>&101
 
   
-	gcc -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -g -m64 -c ./main.c -o ./main.o
+	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -m64 -c ./main.c -o ./main.o
 
 
   X=$?
@@ -65,7 +65,7 @@ fml_2_0()
   exec 2>&100
 
   
-	gcc -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -g -m64 -o ./listwise ./args.o ./main.o -llistwise
+	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I. -I./../common -O3 -Wall -Werror -m64 -o ./listwise ./args.o ./main.o -llistwise
 
 
   X=$?

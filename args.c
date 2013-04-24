@@ -114,7 +114,15 @@ if(operators)
 	printf("\n");
 }
 
-	exit(!help);
+	if(help || operators)
+	{
+		printf(
+"For more information visit http://fabutil.org\n"
+		);
+	}
+
+	printf("\n");
+	exit(!valid);
 }
 
 int parse_args(int argc, char** argv)
