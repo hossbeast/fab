@@ -38,9 +38,9 @@ while(<STDIN>)
 		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
 
 		# for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
-		if(! -r $line && $ARGV[0])
+		if(! -r $line && $gen)
 		{
-			$line = $ARGV[0] . "/" . $line;
+			$line = $gen . "/" . $line;
 		}
 
 		if($line =~ /\.lex\.h$/)

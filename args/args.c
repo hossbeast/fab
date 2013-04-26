@@ -357,7 +357,7 @@ int parse_args(int argc, char** argv)
 		log_parse("+BPDUMP", 0);
 
 	// initialize logger
-	fatal(log_init, "+ERROR|WARN|INFO|BPEXEC|DSCINFO");
+	fatal(log_init, "+ERROR|WARN|INFO|INVOKE|BPEXEC|DSCINFO");
 
 	// active logs
 	char buf[256];
@@ -469,4 +469,3 @@ void args_teardown()
 	path_free(g_args.init_fabfile_path);
 	free(g_args.bakescript_path);
 }
-

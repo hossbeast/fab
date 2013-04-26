@@ -74,20 +74,28 @@ static int reset(gn * r)
 	return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
-static int heights(gn * r)
+static int heights(gn * r, int * change)
 {
 	int logic(gn * gn, int d)
 	{
+		int height = 0;
+
 		int x;
 		for(x = 0; x < gn->needs.l; x++)
 		{
 			if(gn->needs.e[x]->weak)
-				gn->height = MAX(gn->height, gn->needs.e[x]->B->height - 1);
+				height = MAX(height, gn->needs.e[x]->B->height - 1);
 			else
-				gn->height = MAX(gn->height, gn->needs.e[x]->B->height);
+				height = MAX(height, gn->needs.e[x]->B->height);
 		}
 
-		gn->height++;
+		height++;
+
+		if(height > gn->height)
+		{
+			gn->height = height;
+			(*change)++;
+		}
 
 		return 1;
 	};
@@ -140,10 +148,22 @@ int bp_create(gn ** n, int l, bp ** bp)
 
 	// calculate node heights and max height
 	int maxheight = -1;
+	int change = 0;
 	for(x = 0; x < l; x++)
 	{
-		fatal(heights, n[x]);
+		int nowchange = 0;
+		fatal(heights, n[x], &nowchange);
 		maxheight = MAX(maxheight, n[x]->height);
+
+		if(change && nowchange)
+		{
+			x = -1;
+			change = 0;
+		}		
+		else
+		{
+			change |= nowchange;
+		}
 	}
 
 	// allocate stages in the buildplan and assign nodes

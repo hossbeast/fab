@@ -1,6 +1,4 @@
-generator-variables : reusable list transformation components
-	you get this with evalled generator strings - possibly more elegant way?
-
+# RAMBLINGS
 set operations ?? 
 
 [ a b ] U [ b c ] = [ a b c ]
@@ -8,7 +6,6 @@ set operations ??
 
 # generator-string variables, and composition from variables
 # content signatures
-# better help output, logging category explanations
 
 # tagging of items in fabfile for logging - the tagging is done with per-node ( x:y ) settings
   per-node settings ( x:y, x:y )
@@ -27,11 +24,8 @@ dump discovery results by node-name
 	affecting fabfile changes - equivalent to restarting the daemon
 
 # autovar documentation
-$@, ${products} - products of the current formula
-$<, ${lhs}      - lefthand side of a multi-product formula
-$#, ${initdir}  - relative path to the directory containing the master fabfile
-$*, ${thisdir}	- relative path to the directory containing the current fabfile
-
+$@ - products of the current formula
+$< - lefthand side of a multi-product formula
 $# - master fabfile
 $* - current fabfile
 
@@ -42,13 +36,19 @@ fabfile properties
 	ext
 	cnt - number of times invoked
 
+# IDEAS
 - expose canons other modes as listwise operators
-- C-code compiled bakescrips
-- build dependency - unreachable by traversal
+- C-code compiled bakescripts
 - FS invalidation formulas ? (filesystem) for invalidating a fabfile
 - listwise operators to treat NOFILE @ space as filesystem, i.e. [ /../ ~ lsr ] - all nofile nodes
+- bakescript option, JUST this node (@install)
+- operator for readable (-r)
+- an lsr which includes "."
+- FFINFO - log ticker for invocations
+- DSCINFO - log ticker for discovery
+- FABINFO - log ticker for fabrications?
 
-# done
+# DONE
 - command line variable defs : immutably set the value of the variable, which cannot be
                                modified in a lower scope - cmdline is scope 0
 
@@ -56,10 +56,15 @@ fabfile properties
   of nodes that are affected, and then their hashes committed
 - list syntax for interpolation with spaces [ a, b ], and with no spaces [ a b ]
 - evalled generator-strings
+- build dependency - unreachable by traversal (bridge dep)
+- operator for unique without sort (uu)
+- better help output, logging category explanations
+- logging option which takes 2 nodes, displays the shortest walk(s)? connecting them
 
 # NEED
-option for nofile nodes in invocations to be just ignored
+option for nofile nodes in invocations to be just ignored (@IGNORE)
 sadly - if blocks and looping constructs are needed
   do-not-invoke depending on how invocation string is referenced - reworked
 	include guards
 default target - invoke in same NOFILE-context can become default target
+system-wide lock on initial-fabfile

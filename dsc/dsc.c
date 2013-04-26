@@ -237,10 +237,12 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, l
 		int newn = 0;
 		int newr = 0;
 
-		for(x = 0; x < tsl; )
+		for(x = 0; x < tsl;)
 		{
 			// PRIMARY node for this discovery group
 			gn * dscvgn = (*ts)[x]->fmlv->target;
+
+			log_ticker(L_DSC | L_DSCINFO, "discovery", "%s", dscvgn->idstring);
 
 			// allocate dependency block for this node
 			fatal(depblock_allocate, dscvgn->dscv_block);
@@ -313,7 +315,7 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, l
 		if(new)
 			(*new) += newn + newr;
 
-		log(L_DSC | L_DSCINFO, "DISCOVERY %d : %d nodes and %d edges", i, newn, newr);
+		log(L_DSC | L_DSCEXEC, "DISCOVERY %d : %d nodes and %d edges", i, newn, newr);
 
 		// apply user-specified invalidations, apply gn designations
 		gn_invalidations();
@@ -328,4 +330,3 @@ finally:
 	free(cache);
 coda;
 }
-
