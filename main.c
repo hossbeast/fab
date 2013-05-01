@@ -69,7 +69,8 @@ static int snarf(char * path, int * fd, void ** mem, size_t * sz, void ** mmem)
 			memcpy(((char*)(*mem)) + (*sz), blk, r);
 			(*sz) += r;
 		}
-		((char*)(*mem))[(*sz)] = 0;
+		if(*mem)
+			((char*)(*mem))[(*sz)] = 0;
 	}
  
 	return 1;
@@ -122,11 +123,12 @@ int main(int argc, char** argv)
 	{
 		if(genx < argc)
 		{
+			// read generator-string from argv
 			if(generator_parse(p, argv[genx], 0, &g) == 0)
 				FAIL("parse failed");
 		}
 
-		// read generator-string from argv, read list items from stdin
+		// read list items from stdin
 		if(snarf("/dev/fd/0", &fd, &mem, &sz, &mmem) == 0)
 			return 1;
 
