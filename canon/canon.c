@@ -323,4 +323,3 @@ printf("init=%d\n", init);
 	resolved[z] = 0;
 	return 1;
 }
-

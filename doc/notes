@@ -47,6 +47,7 @@ fabfile properties
 - FFINFO - log ticker for invocations
 - DSCINFO - log ticker for discovery
 - FABINFO - log ticker for fabrications?
+- baked build - include cmdline in text
 
 # DONE
 - command line variable defs : immutably set the value of the variable, which cannot be

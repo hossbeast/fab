@@ -116,7 +116,7 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 	{
 		char * sstr = 0;
 		fatal(strstack_string, sstk, "/", "/", &sstr);
-		fatal(canon, canp + 4, canpl - 4, space, sizeof(space), sstr, CAN_REALPATH);
+		fatal(canon, canp + 4, canpl - 4, space, sizeof(space), sstr, CAN_SLASH | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_FORCE_DOT);
 
 		canp = space;
 		canpl = strlen(canp);
@@ -211,7 +211,9 @@ int gn_match(const char * const base, const char * const s, gn *** const r, int 
 int gn_add(const char * const restrict base, strstack * const restrict sstk, char * const restrict A, int Al, gn ** gna, int * const restrict new)
 {
 	if(gn_nodes.by_path)
+	{
 		fatal(lookup, base, sstk, A, Al, gna);
+	}
 	else
 	{
 		fatal(map_create, &gn_nodes.by_path, 0);
