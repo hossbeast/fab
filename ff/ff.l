@@ -281,7 +281,7 @@
 																												return LEX(yytext[0]);
 																											}
 <command>[^[}\x00-\x08\x0a-\x1F\x7F-\xFF]+						{ return LEX(WORD); }
-<commandchecklit>\t+>[\t ]+														{
+<commandchecklit>[\t ]+>[\t ]+												{
 																												POPSTATE(yyextra);
 																												PUSHSTATE(commandlit, yyextra);
 																												locify(yyextra, yylloc, yyleng, 0);

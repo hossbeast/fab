@@ -47,6 +47,7 @@ fabfile properties
 - FFINFO - log ticker for invocations
 - DSCINFO - log ticker for discovery
 - FABINFO - log ticker for fabrications?
+- logging option which takes 2 nodes, displays the shortest walk(s)? connecting them
 
 # DONE
 - command line variable defs : immutably set the value of the variable, which cannot be
@@ -59,7 +60,6 @@ fabfile properties
 - build dependency - unreachable by traversal (bridge dep)
 - operator for unique without sort (uu)
 - better help output, logging category explanations
-- logging option which takes 2 nodes, displays the shortest walk(s)? connecting them
 
 # NEED
 option for nofile nodes in invocations to be just ignored (@IGNORE)

@@ -61,16 +61,16 @@ $ldscpaths = [
 # paths to l files for fabrication
 $lfabpaths = [
 	$paths				# paths
-	$dscpaths			# paths, discovery only
+	$fabpaths			# paths, discovery only
 
 	[
 		$dirs				# directories
-		$dscdirs		# directories, discovery only
+		$fabdirs		# directories, discovery only
 	~ ls ]
 
 	[
 		$rdirs			# recursive directories
-		$rdscdirs		# recursive directories, discovery only
+		$rfabdirs		# recursive directories, discovery only
   ~ lsr ]
 ~ xm/<l> ]
 

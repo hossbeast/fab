@@ -32,10 +32,12 @@
 #  dscrdirs  - 
 #  dscpaths  - 
 #
-#  fabdirs    - (as above, but for fabrication/dependency only)
-#  fabrdirs   - 
-#  fabpaths   - 
+#  fabdirs   - (as above, but for fabrication/dependency only)
+#  fabrdirs  - 
+#  fabpaths  - 
 #
+#  ext       - file extension for object files resulting from fabrication
+#  gendir    - parameter to gcc-dep, directory path for the location of generated files
 
 # default object file extension
 $ext = [ o ]
