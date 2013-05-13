@@ -29,7 +29,7 @@
 #define CAN_NEXT_SYM			0x08			// resolve symlinks at positions other than the final component which do not cross mount points
 #define CAN_NEXT_SYMMNT		0x10			// resolve symlinks at positions other than the final component which cross mount points
 #define CAN_FINL_SYM			0x20			// resolve symlinks at the final component which do not cross mount points
-#define CAN_FINL_SYMMNT		0x40			// resolve relative at the final component which cross mount points
+#define CAN_FINL_SYMMNT		0x40			// resolve symlinks at the final component which cross mount points
 
 #define CAN_REALPATH			0xFF			// canon = realpath (except ENOENT is not an error)
 

@@ -45,38 +45,38 @@ int identity_init()
 	uid_t suid;
 	getresuid(&g_args.ruid, &g_args.euid, &suid);
 
-	errno = 0;
-	if((pwd = getpwuid(g_args.ruid)) == 0)
-		fail("cannot get ruid : [%d][%s]", errno, strerror(errno));
-
-	g_args.ruid_name = strdup(pwd->pw_name);
-
-	errno = 0;
-	if((pwd = getpwuid(g_args.euid)) == 0)
-		fail("cannot get euid : [%d][%s]", errno, strerror(errno));
-
-	g_args.euid_name = strdup(pwd->pw_name);
-
 	// get group identity of this process
 	gid_t sgid;
 	getresgid(&g_args.rgid, &g_args.egid, &sgid);
 
 	errno = 0;
+	if((pwd = getpwuid(g_args.ruid)) == 0)
+		fail("cannot get ruid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_args.ruid, g_args.rgid, g_args.euid, g_args.egid);
+
+	g_args.ruid_name = strdup(pwd->pw_name);
+
+	errno = 0;
+	if((pwd = getpwuid(g_args.euid)) == 0)
+		fail("cannot get euid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_args.ruid, g_args.rgid, g_args.euid, g_args.egid);
+
+	g_args.euid_name = strdup(pwd->pw_name);
+
+	errno = 0;
 	if((grp = getgrgid(g_args.rgid)) == 0)
-		fail("cannot get rgid : [%d][%s]", errno, strerror(errno));
+		fail("cannot get rgid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_args.ruid, g_args.rgid, g_args.euid, g_args.egid);
 
 	g_args.rgid_name = strdup(grp->gr_name);
 
 	errno = 0;
 	if((grp = getgrgid(g_args.egid)) == 0)
-		fail("cannot get egid : [%d][%s]", errno, strerror(errno));
+		fail("cannot get egid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_args.ruid, g_args.rgid, g_args.euid, g_args.egid);
 
 	g_args.egid_name = strdup(grp->gr_name);
 
-	// this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions !!
+#ifndef DEVEL
+	// this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions
 	if(strcmp(g_args.euid_name, "fabsys") || strcmp(g_args.egid_name, "fabsys"))
 	{
-#ifndef DEVEL
 		fail(
 			"fab executable must be owned by fabsys:fabsys and have u+s and g+s permissions\n"
 			" -> r:%s/%d:%s/%d\n"
@@ -84,15 +84,8 @@ int identity_init()
 			, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid
 			, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid
 		);
-#endif
 	}
-
-	// assume identity of the user - default identity
-	if(seteuid(g_args.ruid) == -1)
-		fail("cannot seteuid(ruid) : [%d][%s]", errno, strerror(errno));
-
-	if(setegid(g_args.rgid) == -1)
-		fail("cannot setegid(rgid) : [%d][%s]", errno, strerror(errno));
+#endif
 
 	return 1;
 }

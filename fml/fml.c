@@ -290,17 +290,13 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	int x = 0;
 	for(x = 0; x < fml->closure_varsl; x++)
 	{
-//	ls = var_access(vmap, fml->closure_vars[x]->text, gp, stax, staxa, staxp);
-
 		fatal(var_access, vmap, fml->closure_vars[x]->text, stax, staxa, staxp, &ls);
 		fatal(map_set, fml->bags[fml->bagsl - 1], MMS(fml->closure_vars[x]->text), MM(ls));
 	}
 
-//ls = var_access(vmap, "#");
 	fatal(var_access, vmap, "#", stax, staxa, staxp, &ls);
 	fatal(map_set, fml->bags[fml->bagsl - 1], MMS("#"), MM(ls));
 
-//ls = var_access(vmap, "*");
 	fatal(var_access, vmap, "*", stax, staxa, staxp, &ls);
 	fatal(map_set, fml->bags[fml->bagsl - 1], MMS("*"), MM(ls));
 
