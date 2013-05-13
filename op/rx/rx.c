@@ -140,8 +140,3 @@ finally:
 	free(last);
 coda;
 }
-
-
-
-
-
