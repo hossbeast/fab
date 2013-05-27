@@ -270,9 +270,6 @@ int var_set(map * restrict vmap, const char * restrict s, lstack * const restric
 		else
 			c->val.ls				= listwise_identity;
 
-		// assigning to a variable wipes out any associated xfms
-//		c->xfmsl = 0;
-
 		if(log_would(L_VAR | TAG(s)))
 		{
 			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "set", KEYID(vmap, s));
