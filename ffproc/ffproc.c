@@ -253,8 +253,6 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 	{
 		char * sstr = 0;
 		fatal(strstack_string, sstk, "/", "/", &sstr);
-		
-		log_ticker(L_INVOKE, "invoke   ", "%s @ %s", inpath->can, sstr);
 	}
 
 	// parse

@@ -242,8 +242,6 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, l
 			// PRIMARY node for this discovery group
 			gn * dscvgn = (*ts)[x]->fmlv->target;
 
-			log_ticker(L_DSC | L_DSCINFO, "discovery", "%s", dscvgn->idstring);
-
 			// allocate dependency block for this node
 			fatal(depblock_allocate, dscvgn->dscv_block);
 

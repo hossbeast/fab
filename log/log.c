@@ -102,12 +102,6 @@ static char * 	o_space;			// storage between vadd/flush calls
 static int			o_space_l;
 static int			o_space_a;
 
-static int			o_ticker;
-static uint64_t	o_ticker_e;
-static uint32_t	o_ticker_c;
-static uint32_t	o_ticker_hash;
-static int			o_ticker_max;
-
 static int o_name_len;
 
 static unsigned char o_colors[] = {
@@ -205,11 +199,6 @@ static int log_vstart(const uint64_t e)
 	if(log_would(e))
 	{
 		o_space_l = 0;
-
-		if(o_ticker)
-			logwrite("\n", 1);
-
-		o_ticker = 0;
 		o_e = e;
 
 		return start(e);
@@ -516,141 +505,8 @@ int log(const uint64_t e, const char* fmt, ...)
 	return 0;
 }
 
-int log_ticker(const uint64_t e, const char * fmt0, const char * fmt, ...)
-{
-	va_list va;
-	va_list va2;
-	va_start(va, fmt);
-	va_copy(va2, va);
-
-	o_space_l = 0;
-	logvprintf(fmt0, va);
-
-	uint32_t hash = cksum(o_space, o_space_l);
-
-	if(!o_ticker || hash != o_ticker_hash)
-	{
-		if(hash != o_ticker_hash && !log_would(e))
-			return 0;
-
-		o_space_l = 0;
-
-		if(hash != o_ticker_hash && o_ticker)
-			logwrite("\n", 1);
-
-		start(e);
-		logvprintf(fmt0, va2);
-		va_end(va2);
-
-		logwrite(CSAVE);
-		int __attribute__((unused)) r = write(2, o_space, o_space_l);
-
-		if(hash != o_ticker_hash)	// new ticker sequence
-			o_ticker_c = 0;
-
-		o_ticker = 1;
-		o_ticker_e = e;
-		o_ticker_hash = hash;
-		o_ticker_max = 0;
-	}
-	else
-	{
-		va_end(va2);
-	}
-
-	if(log_would(o_ticker_e))
-	{
-		o_space_l = 0;
-		logwrite(CRESTORE);
-		logwrite(" ", 1);
-
-#define TICKER(...)															\
-char * o_states[] = { __VA_ARGS__ };						\
-do {																						\
-	logprintf("%3d ", o_ticker_c);								\
-	logwrite(o_states[o_ticker_c % (sizeof(o_states) / sizeof(o_states[0]))], strlen(o_states[0]));	\
-	o_ticker_c++;																	\
-} while(0)
-
-#define TICKER_BOBBLE
-#ifdef TICKER_BOBBLE
-		TICKER(
-			  "\xe2\x96\x89"		/* REQUIRES UNICODE !!! */
-			, "\xe2\x96\x8a"
-			, "\xe2\x96\x8b"
-			, "\xe2\x96\x8c"
-			, "\xe2\x96\x8d"
-			, "\xe2\x96\x8e"
-			, "\xe2\x96\x8f"
-			, "\xe2\x96\x8e"
-			, "\xe2\x96\x8d"
-			, "\xe2\x96\x8c"
-			, "\xe2\x96\x8b"
-			, "\xe2\x96\x8a"
-		);
-#endif
-#ifdef TICKER_FISH
-		TICKER(
-			  ">))'>        "
-			, "    >))'>    "
-			, "        >))'>"
-			, "        <(('<"
-			, "    <(('<    "
-			, "<(('<        "
-		);
-#endif
-#ifdef TICKER_BASIC
-		TICKER(
-			  ".  "
-			, ".. "
-			, "..."
-			, " .."
-			, "  ."
-		);
-#endif
-#ifdef TICKER_SIMPLE
-		TICKER(
-			  "---"
-			, "\\--"
-			, "\\\\-"
-			, "\\\\\\"
-			, "-\\\\"
-			, "--\\"
-			, "---"
-			, "--/"
-			, "-//"
-			, "///"
-			, "//-"
-			, "/--"
-		);
-#endif
-
-		logwrite(" ", 1);
-		logvprintf(fmt, va);
-
-		o_ticker_max = MAX(o_ticker_max, o_space_l);
-		logprintf("%*s", o_ticker_max - o_space_l, "");
-
-		if((o_ticker_e & L_COLOR_VALUE) && COLORHEX(o_ticker_e))
-		{
-			logwrite(NOCOLOR);
-		}
-
-		// flush to stderr
-		int r = write(2, o_space, o_space_l);
-		return r;
-	}
-
-	return 0;
-}
-
 void log_teardown()
 {
 	free(o_space);
 	free(o_filter);
-
-	if(o_ticker)
-	{
-		int __attribute__((unused)) r = write(2, "\n", 1);
-	}
 }
