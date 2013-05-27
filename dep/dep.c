@@ -114,7 +114,6 @@ static int dep_add_single(
 				// dependencies arising from an FFN_DEPENDENCY node in a DDISC fabfile yield paths which
 				// are specified relative to base path of the DDISC node itself
 				fatal(gn_edge_add
-//					, ffn->loc.ff->dscv_gn->path->base
 					, g_args.init_fabfile_path->abs_dir
 					, sstk
 					, &A
@@ -137,7 +136,6 @@ static int dep_add_single(
 				// dependencies arising from an FFN_DEPENDENCY node in a regular fabfile yield paths which
 				// are specified relative to the absolute directory of the fabfile
 				fatal(gn_edge_add
-//					, ffn->loc.ff->path->abs_dir
 					, g_args.init_fabfile_path->abs_dir
 					, sstk
 					, &A
@@ -322,7 +320,7 @@ static int dep_add_multi(
 				if(ffn->loc.ff->type == FFT_DDISC)
 				{
 					fatal(gn_edge_add
-						, ffn->loc.ff->dscv_gn->path->abs_dir
+						, g_args.init_fabfile_path->abs_dir
 						, sstk
 						, &A
 						, Al
@@ -342,7 +340,6 @@ static int dep_add_multi(
 				else
 				{
 					fatal(gn_edge_add
-//						, ffn->loc.ff->path->abs_dir
 						, g_args.init_fabfile_path->abs_dir
 						, sstk
 						, &A
