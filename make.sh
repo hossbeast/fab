@@ -33,7 +33,7 @@ fml_1_0()
   exec 2>&100
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -m64 -c ./common/cksum.c -o ./common/cksum.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -c ./common/cksum.c -o ./common/cksum.o
 
 
   X=$?
@@ -48,7 +48,7 @@ fml_1_1()
   exec 2>&101
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -m64 -c ./common/coll.c -o ./common/coll.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -c ./common/coll.c -o ./common/coll.o
 
 
   X=$?
@@ -63,7 +63,7 @@ fml_1_2()
   exec 2>&102
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -fPIC -m64 -c ./common/coll.c -o ./common/coll.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -fPIC -c ./common/coll.c -o ./common/coll.pic.o
 
 
   X=$?
@@ -78,7 +78,7 @@ fml_1_3()
   exec 2>&103
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -m64 -c ./common/parseint.c -o ./common/parseint.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -c ./common/parseint.c -o ./common/parseint.o
 
 
   X=$?
@@ -93,7 +93,7 @@ fml_1_4()
   exec 2>&104
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -fPIC -m64 -c ./common/parseint.c -o ./common/parseint.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -fPIC -c ./common/parseint.c -o ./common/parseint.pic.o
 
 
   X=$?
@@ -108,7 +108,7 @@ fml_1_5()
   exec 2>&105
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -m64 -c ./common/pstring.c -o ./common/pstring.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -c ./common/pstring.c -o ./common/pstring.o
 
 
   X=$?
@@ -123,7 +123,7 @@ fml_1_6()
   exec 2>&106
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -m64 -c ./common/unitstring.c -o ./common/unitstring.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -c ./common/unitstring.c -o ./common/unitstring.o
 
 
   X=$?
@@ -138,7 +138,7 @@ fml_1_7()
   exec 2>&107
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -m64 -c ./common/xmem.c -o ./common/xmem.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -c ./common/xmem.c -o ./common/xmem.o
 
 
   X=$?
@@ -153,7 +153,7 @@ fml_1_8()
   exec 2>&108
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -fPIC -m64 -c ./common/xmem.c -o ./common/xmem.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -fPIC -c ./common/xmem.c -o ./common/xmem.pic.o
 
 
   X=$?
@@ -168,7 +168,7 @@ fml_1_9()
   exec 2>&109
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -m64 -c ./common/xstring.c -o ./common/xstring.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -c ./common/xstring.c -o ./common/xstring.o
 
 
   X=$?
@@ -183,7 +183,7 @@ fml_1_10()
   exec 2>&110
 
   
-	gcc -D_GNU_SOURCE -I./common -O3 -Wall -Werror -fPIC -m64 -c ./common/xstring.c -o ./common/xstring.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./common -O3 -fPIC -c ./common/xstring.c -o ./common/xstring.pic.o
 
 
   X=$?
@@ -198,7 +198,7 @@ fml_1_11()
   exec 2>&111
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/args/args.c -o ./fabdev/args/args.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/args/args.c -o ./fabdev/args/args.o
 
 
   X=$?
@@ -213,7 +213,7 @@ fml_1_12()
   exec 2>&112
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/canon/canon.c -o ./fabdev/canon/canon.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/canon/canon.c -o ./fabdev/canon/canon.o
 
 
   X=$?
@@ -228,7 +228,7 @@ fml_1_13()
   exec 2>&113
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/depblock/depblock.c -o ./fabdev/depblock/depblock.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/depblock/depblock.c -o ./fabdev/depblock/depblock.o
 
 
   X=$?
@@ -243,7 +243,7 @@ fml_1_14()
   exec 2>&114
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/dirutil/dirutil.c -o ./fabdev/dirutil/dirutil.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/dirutil/dirutil.c -o ./fabdev/dirutil/dirutil.o
 
 
   X=$?
@@ -258,7 +258,7 @@ fml_1_15()
   exec 2>&115
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -m64 -c ./fabdev/fablw/op/fx/fx.c -o ./fabdev/fablw/op/fx/fx.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -fPIC -c ./fabdev/fablw/op/fx/fx.c -o ./fabdev/fablw/op/fx/fx.pic.o
 
 
   X=$?
@@ -273,7 +273,7 @@ fml_1_16()
   exec 2>&116
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -m64 -c ./fabdev/fablw/op/fxc/fxc.c -o ./fabdev/fablw/op/fxc/fxc.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -fPIC -c ./fabdev/fablw/op/fxc/fxc.c -o ./fabdev/fablw/op/fxc/fxc.pic.o
 
 
   X=$?
@@ -288,7 +288,7 @@ fml_1_17()
   exec 2>&117
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fPIC -fms-extensions -fno-builtin-log -m64 -c ./fabdev/fablw/op/fxw/fxw.c -o ./fabdev/fablw/op/fxw/fxw.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -fPIC -c ./fabdev/fablw/op/fxw/fxw.c -o ./fabdev/fablw/op/fxw/fxw.pic.o
 
 
   X=$?
@@ -363,7 +363,7 @@ fml_1_22()
   exec 2>&122
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/gn/gnlw.c -o ./fabdev/gn/gnlw.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/gn/gnlw.c -o ./fabdev/gn/gnlw.o
 
 
   X=$?
@@ -378,7 +378,7 @@ fml_1_23()
   exec 2>&123
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/hashblock/hashblock.c -o ./fabdev/hashblock/hashblock.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/hashblock/hashblock.c -o ./fabdev/hashblock/hashblock.o
 
 
   X=$?
@@ -393,7 +393,7 @@ fml_1_24()
   exec 2>&124
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/identity/identity.c -o ./fabdev/identity/identity.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/identity/identity.c -o ./fabdev/identity/identity.o
 
 
   X=$?
@@ -408,7 +408,7 @@ fml_1_25()
   exec 2>&125
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/log/log.c -o ./fabdev/log/log.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/log/log.c -o ./fabdev/log/log.o
 
 
   X=$?
@@ -423,7 +423,7 @@ fml_1_26()
   exec 2>&126
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/lwutil/lwutil.c -o ./fabdev/lwutil/lwutil.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/lwutil/lwutil.c -o ./fabdev/lwutil/lwutil.o
 
 
   X=$?
@@ -438,7 +438,7 @@ fml_1_27()
   exec 2>&127
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/map/map.c -o ./fabdev/map/map.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/map/map.c -o ./fabdev/map/map.o
 
 
   X=$?
@@ -453,7 +453,7 @@ fml_1_28()
   exec 2>&128
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/path/path.c -o ./fabdev/path/path.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/path/path.c -o ./fabdev/path/path.o
 
 
   X=$?
@@ -468,7 +468,7 @@ fml_1_29()
   exec 2>&129
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/strstack/strstack.c -o ./fabdev/strstack/strstack.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/strstack/strstack.c -o ./fabdev/strstack/strstack.o
 
 
   X=$?
@@ -483,7 +483,7 @@ fml_1_30()
   exec 2>&130
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/tmp/tmp.c -o ./fabdev/tmp/tmp.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/tmp/tmp.c -o ./fabdev/tmp/tmp.o
 
 
   X=$?
@@ -498,7 +498,7 @@ fml_1_31()
   exec 2>&131
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/traverse/traverse.c -o ./fabdev/traverse/traverse.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/traverse/traverse.c -o ./fabdev/traverse/traverse.o
 
 
   X=$?
@@ -513,7 +513,7 @@ fml_1_32()
   exec 2>&132
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/apidata/apidata.c -o ./liblistwise/apidata/apidata.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/apidata/apidata.c -o ./liblistwise/apidata/apidata.pic.o
 
 
   X=$?
@@ -528,7 +528,7 @@ fml_1_33()
   exec 2>&133
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/exec/exec.c -o ./liblistwise/exec/exec.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/exec/exec.c -o ./liblistwise/exec/exec.pic.o
 
 
   X=$?
@@ -573,7 +573,7 @@ fml_1_36()
   exec 2>&136
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/idx/idx.c -o ./liblistwise/idx/idx.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/idx/idx.c -o ./liblistwise/idx/idx.pic.o
 
 
   X=$?
@@ -588,7 +588,7 @@ fml_1_37()
   exec 2>&137
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/last/last.c -o ./liblistwise/last/last.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/last/last.c -o ./liblistwise/last/last.pic.o
 
 
   X=$?
@@ -603,7 +603,7 @@ fml_1_38()
   exec 2>&138
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/object/object.c -o ./liblistwise/object/object.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/object/object.c -o ./liblistwise/object/object.pic.o
 
 
   X=$?
@@ -618,7 +618,7 @@ fml_1_39()
   exec 2>&139
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/-d/-d.c -o ./liblistwise/op/-d/-d.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/-d/-d.c -o ./liblistwise/op/-d/-d.pic.o
 
 
   X=$?
@@ -633,7 +633,7 @@ fml_1_40()
   exec 2>&140
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/-f/-f.c -o ./liblistwise/op/-f/-f.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/-f/-f.c -o ./liblistwise/op/-f/-f.pic.o
 
 
   X=$?
@@ -648,7 +648,7 @@ fml_1_41()
   exec 2>&141
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/-l/-l.c -o ./liblistwise/op/-l/-l.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/-l/-l.c -o ./liblistwise/op/-l/-l.pic.o
 
 
   X=$?
@@ -663,7 +663,7 @@ fml_1_42()
   exec 2>&142
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/bn/bn.c -o ./liblistwise/op/bn/bn.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/bn/bn.c -o ./liblistwise/op/bn/bn.pic.o
 
 
   X=$?
@@ -678,7 +678,7 @@ fml_1_43()
   exec 2>&143
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/c/c.c -o ./liblistwise/op/c/c.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/c/c.c -o ./liblistwise/op/c/c.pic.o
 
 
   X=$?
@@ -693,7 +693,7 @@ fml_1_44()
   exec 2>&144
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/cp/cp.c -o ./liblistwise/op/cp/cp.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/cp/cp.c -o ./liblistwise/op/cp/cp.pic.o
 
 
   X=$?
@@ -708,7 +708,7 @@ fml_1_45()
   exec 2>&145
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/d/d.c -o ./liblistwise/op/d/d.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/d/d.c -o ./liblistwise/op/d/d.pic.o
 
 
   X=$?
@@ -723,7 +723,7 @@ fml_1_46()
   exec 2>&146
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/dj/dj.c -o ./liblistwise/op/dj/dj.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/dj/dj.c -o ./liblistwise/op/dj/dj.pic.o
 
 
   X=$?
@@ -738,7 +738,7 @@ fml_1_47()
   exec 2>&147
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/dn/dn.c -o ./liblistwise/op/dn/dn.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/dn/dn.c -o ./liblistwise/op/dn/dn.pic.o
 
 
   X=$?
@@ -753,7 +753,7 @@ fml_1_48()
   exec 2>&148
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/fn/fn.c -o ./liblistwise/op/fn/fn.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/fn/fn.c -o ./liblistwise/op/fn/fn.pic.o
 
 
   X=$?
@@ -768,7 +768,7 @@ fml_1_49()
   exec 2>&149
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/h/h.c -o ./liblistwise/op/h/h.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/h/h.c -o ./liblistwise/op/h/h.pic.o
 
 
   X=$?
@@ -783,7 +783,7 @@ fml_1_50()
   exec 2>&150
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/j/j.c -o ./liblistwise/op/j/j.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/j/j.c -o ./liblistwise/op/j/j.pic.o
 
 
   X=$?
@@ -798,7 +798,7 @@ fml_1_51()
   exec 2>&151
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/ls/ls.c -o ./liblistwise/op/ls/ls.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/ls/ls.c -o ./liblistwise/op/ls/ls.pic.o
 
 
   X=$?
@@ -813,7 +813,7 @@ fml_1_52()
   exec 2>&152
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/lsr/lsr.c -o ./liblistwise/op/lsr/lsr.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/lsr/lsr.c -o ./liblistwise/op/lsr/lsr.pic.o
 
 
   X=$?
@@ -828,7 +828,7 @@ fml_1_53()
   exec 2>&153
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/m/m.c -o ./liblistwise/op/m/m.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/m/m.c -o ./liblistwise/op/m/m.pic.o
 
 
   X=$?
@@ -843,7 +843,7 @@ fml_1_54()
   exec 2>&154
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/o/o.c -o ./liblistwise/op/o/o.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/o/o.c -o ./liblistwise/op/o/o.pic.o
 
 
   X=$?
@@ -858,7 +858,7 @@ fml_1_55()
   exec 2>&155
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/op.c -o ./liblistwise/op/op.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/op.c -o ./liblistwise/op/op.pic.o
 
 
   X=$?
@@ -873,7 +873,7 @@ fml_1_56()
   exec 2>&156
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/pop/pop.c -o ./liblistwise/op/pop/pop.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/pop/pop.c -o ./liblistwise/op/pop/pop.pic.o
 
 
   X=$?
@@ -888,7 +888,7 @@ fml_1_57()
   exec 2>&157
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/r/r.c -o ./liblistwise/op/r/r.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/r/r.c -o ./liblistwise/op/r/r.pic.o
 
 
   X=$?
@@ -903,7 +903,7 @@ fml_1_58()
   exec 2>&158
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/rp/rp.c -o ./liblistwise/op/rp/rp.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/rp/rp.c -o ./liblistwise/op/rp/rp.pic.o
 
 
   X=$?
@@ -918,7 +918,7 @@ fml_1_59()
   exec 2>&159
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/rx/rx.c -o ./liblistwise/op/rx/rx.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/rx/rx.c -o ./liblistwise/op/rx/rx.pic.o
 
 
   X=$?
@@ -933,7 +933,7 @@ fml_1_60()
   exec 2>&160
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/s/s.c -o ./liblistwise/op/s/s.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/s/s.c -o ./liblistwise/op/s/s.pic.o
 
 
   X=$?
@@ -948,7 +948,7 @@ fml_1_61()
   exec 2>&161
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/shift/shift.c -o ./liblistwise/op/shift/shift.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/shift/shift.c -o ./liblistwise/op/shift/shift.pic.o
 
 
   X=$?
@@ -963,7 +963,7 @@ fml_1_62()
   exec 2>&162
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/sn/sn.c -o ./liblistwise/op/sn/sn.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/sn/sn.c -o ./liblistwise/op/sn/sn.pic.o
 
 
   X=$?
@@ -978,7 +978,7 @@ fml_1_63()
   exec 2>&163
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/ss/ss.c -o ./liblistwise/op/ss/ss.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/ss/ss.c -o ./liblistwise/op/ss/ss.pic.o
 
 
   X=$?
@@ -993,7 +993,7 @@ fml_1_64()
   exec 2>&164
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/u/u.c -o ./liblistwise/op/u/u.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/u/u.c -o ./liblistwise/op/u/u.pic.o
 
 
   X=$?
@@ -1008,7 +1008,7 @@ fml_1_65()
   exec 2>&165
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/uu/uu.c -o ./liblistwise/op/uu/uu.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/uu/uu.c -o ./liblistwise/op/uu/uu.pic.o
 
 
   X=$?
@@ -1023,7 +1023,7 @@ fml_1_66()
   exec 2>&166
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/v/v.c -o ./liblistwise/op/v/v.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/v/v.c -o ./liblistwise/op/v/v.pic.o
 
 
   X=$?
@@ -1038,7 +1038,7 @@ fml_1_67()
   exec 2>&167
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/w/w.c -o ./liblistwise/op/w/w.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/w/w.c -o ./liblistwise/op/w/w.pic.o
 
 
   X=$?
@@ -1053,7 +1053,7 @@ fml_1_68()
   exec 2>&168
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/xch/xch.c -o ./liblistwise/op/xch/xch.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xch/xch.c -o ./liblistwise/op/xch/xch.pic.o
 
 
   X=$?
@@ -1068,7 +1068,7 @@ fml_1_69()
   exec 2>&169
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/xm/xm.c -o ./liblistwise/op/xm/xm.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xm/xm.c -o ./liblistwise/op/xm/xm.pic.o
 
 
   X=$?
@@ -1083,7 +1083,7 @@ fml_1_70()
   exec 2>&170
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/xmf/xmf.c -o ./liblistwise/op/xmf/xmf.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xmf/xmf.c -o ./liblistwise/op/xmf/xmf.pic.o
 
 
   X=$?
@@ -1098,7 +1098,7 @@ fml_1_71()
   exec 2>&171
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/xs/xs.c -o ./liblistwise/op/xs/xs.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xs/xs.c -o ./liblistwise/op/xs/xs.pic.o
 
 
   X=$?
@@ -1113,7 +1113,7 @@ fml_1_72()
   exec 2>&172
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/xsf/xsf.c -o ./liblistwise/op/xsf/xsf.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xsf/xsf.c -o ./liblistwise/op/xsf/xsf.pic.o
 
 
   X=$?
@@ -1128,7 +1128,7 @@ fml_1_73()
   exec 2>&173
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/y/y.c -o ./liblistwise/op/y/y.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/y/y.c -o ./liblistwise/op/y/y.pic.o
 
 
   X=$?
@@ -1143,7 +1143,7 @@ fml_1_74()
   exec 2>&174
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/op/z/z.c -o ./liblistwise/op/z/z.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/z/z.c -o ./liblistwise/op/z/z.pic.o
 
 
   X=$?
@@ -1158,7 +1158,7 @@ fml_1_75()
   exec 2>&175
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/re/re.c -o ./liblistwise/re/re.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/re/re.c -o ./liblistwise/re/re.pic.o
 
 
   X=$?
@@ -1173,7 +1173,7 @@ fml_1_76()
   exec 2>&176
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/sel/sel.c -o ./liblistwise/sel/sel.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/sel/sel.c -o ./liblistwise/sel/sel.pic.o
 
 
   X=$?
@@ -1188,7 +1188,7 @@ fml_1_77()
   exec 2>&177
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./liblistwise -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -m64 -c ./listwisedev/args.c -o ./listwisedev/args.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./listwisedev/../common -O3 -I./listwisedev -I./liblistwise -DFABVERSION=v0.4.1 -c ./listwisedev/args.c -o ./listwisedev/args.o
 
 
   X=$?
@@ -1203,7 +1203,7 @@ fml_1_78()
   exec 2>&178
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./liblistwise -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -m64 -c ./listwisedev/main.c -o ./listwisedev/main.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./listwisedev/../common -O3 -I./listwisedev -I./liblistwise -DFABVERSION=v0.4.1 -c ./listwisedev/main.c -o ./listwisedev/main.o
 
 
   X=$?
@@ -1269,7 +1269,7 @@ fml_2_1()
   exec 2>&101
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/generator/generator.lex.c -o ./liblistwise/generator/generator.lex.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/generator/generator.lex.c -o ./liblistwise/generator/generator.lex.pic.o
 
 
   X=$?
@@ -1284,7 +1284,7 @@ fml_2_2()
   exec 2>&102
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/generator/generator.c -o ./liblistwise/generator/generator.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/generator/generator.c -o ./liblistwise/generator/generator.pic.o
 
 
   X=$?
@@ -1299,7 +1299,7 @@ fml_2_3()
   exec 2>&103
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/generator/generator.tab.c -o ./liblistwise/generator/generator.tab.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/generator/generator.tab.c -o ./liblistwise/generator/generator.tab.pic.o
 
 
   X=$?
@@ -1314,7 +1314,7 @@ fml_2_4()
   exec 2>&104
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -c ./liblistwise/lstack/lstack.c -o ./liblistwise/lstack/lstack.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/lstack/lstack.c -o ./liblistwise/lstack/lstack.pic.o
 
 
   X=$?
@@ -1331,7 +1331,7 @@ fml_3_0()
   exec 2>&100
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/bake/bake.c -o ./fabdev/bake/bake.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/bake/bake.c -o ./fabdev/bake/bake.o
 
 
   X=$?
@@ -1346,7 +1346,7 @@ fml_3_1()
   exec 2>&101
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/bp/bp.c -o ./fabdev/bp/bp.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/bp/bp.c -o ./fabdev/bp/bp.o
 
 
   X=$?
@@ -1361,7 +1361,7 @@ fml_3_2()
   exec 2>&102
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/dep/dep.c -o ./fabdev/dep/dep.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/dep/dep.c -o ./fabdev/dep/dep.o
 
 
   X=$?
@@ -1376,7 +1376,7 @@ fml_3_3()
   exec 2>&103
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/dsc/dsc.c -o ./fabdev/dsc/dsc.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/dsc/dsc.c -o ./fabdev/dsc/dsc.o
 
 
   X=$?
@@ -1391,7 +1391,7 @@ fml_3_4()
   exec 2>&104
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/enclose/enclose.c -o ./fabdev/enclose/enclose.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/enclose/enclose.c -o ./fabdev/enclose/enclose.o
 
 
   X=$?
@@ -1406,7 +1406,7 @@ fml_3_5()
   exec 2>&105
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/ff/ff.dsc.tab.c -o ./fabdev/ff/ff.dsc.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.dsc.tab.c -o ./fabdev/ff/ff.dsc.tab.o
 
 
   X=$?
@@ -1421,7 +1421,7 @@ fml_3_6()
   exec 2>&106
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/ff/ff.lex.c -o ./fabdev/ff/ff.lex.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.lex.c -o ./fabdev/ff/ff.lex.o
 
 
   X=$?
@@ -1436,7 +1436,7 @@ fml_3_7()
   exec 2>&107
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/ff/ff.c -o ./fabdev/ff/ff.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.c -o ./fabdev/ff/ff.o
 
 
   X=$?
@@ -1451,7 +1451,7 @@ fml_3_8()
   exec 2>&108
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/ff/ff.tab.c -o ./fabdev/ff/ff.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.tab.c -o ./fabdev/ff/ff.tab.o
 
 
   X=$?
@@ -1466,7 +1466,7 @@ fml_3_9()
   exec 2>&109
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/ff/ff.tokens.c -o ./fabdev/ff/ff.tokens.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.tokens.c -o ./fabdev/ff/ff.tokens.o
 
 
   X=$?
@@ -1481,7 +1481,7 @@ fml_3_10()
   exec 2>&110
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/ff/ff.var.tab.c -o ./fabdev/ff/ff.var.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.var.tab.c -o ./fabdev/ff/ff.var.tab.o
 
 
   X=$?
@@ -1496,7 +1496,7 @@ fml_3_11()
   exec 2>&111
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/ffn/ffn.c -o ./fabdev/ffn/ffn.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/ffn/ffn.c -o ./fabdev/ffn/ffn.o
 
 
   X=$?
@@ -1511,7 +1511,7 @@ fml_3_12()
   exec 2>&112
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/ffproc/ffproc.c -o ./fabdev/ffproc/ffproc.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/ffproc/ffproc.c -o ./fabdev/ffproc/ffproc.o
 
 
   X=$?
@@ -1526,7 +1526,7 @@ fml_3_13()
   exec 2>&113
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/fml/fml.c -o ./fabdev/fml/fml.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/fml/fml.c -o ./fabdev/fml/fml.o
 
 
   X=$?
@@ -1541,7 +1541,7 @@ fml_3_14()
   exec 2>&114
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/gn/gn.c -o ./fabdev/gn/gn.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/gn/gn.c -o ./fabdev/gn/gn.o
 
 
   X=$?
@@ -1556,7 +1556,7 @@ fml_3_15()
   exec 2>&115
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/list/list.c -o ./fabdev/list/list.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/list/list.c -o ./fabdev/list/list.o
 
 
   X=$?
@@ -1571,7 +1571,7 @@ fml_3_16()
   exec 2>&116
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/main.c -o ./fabdev/main.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/main.c -o ./fabdev/main.o
 
 
   X=$?
@@ -1586,7 +1586,7 @@ fml_3_17()
   exec 2>&117
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/ts/ts.c -o ./fabdev/ts/ts.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/ts/ts.c -o ./fabdev/ts/ts.o
 
 
   X=$?
@@ -1601,7 +1601,7 @@ fml_3_18()
   exec 2>&118
 
   
-	gcc -DFABVERSION=v0.4.1 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -c ./fabdev/var/var.c -o ./fabdev/var/var.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.1 -fms-extensions -fno-builtin-log -c ./fabdev/var/var.c -o ./fabdev/var/var.o
 
 
   X=$?
@@ -1619,7 +1619,7 @@ fml_3_19()
 	  exec 1>./liblistwise/exports
 	  echo "{ global: "
 sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- ./liblistwise/re/re.c ./liblistwise/object/object.c ./liblistwise/apidata/apidata.c ./liblistwise/idx/idx.c ./liblistwise/last/last.c ./liblistwise/op/bn/bn.c ./liblistwise/op/v/v.c ./liblistwise/op/xm/xm.c ./liblistwise/op/rp/rp.c ./liblistwise/op/rx/rx.c ./liblistwise/op/m/m.c ./liblistwise/op/-d/-d.c ./liblistwise/op/c/c.c ./liblistwise/op/xch/xch.c ./liblistwise/op/xsf/xsf.c ./liblistwise/op/-l/-l.c ./liblistwise/op/s/s.c ./liblistwise/op/xs/xs.c ./liblistwise/op/h/h.c ./liblistwise/op/pop/pop.c ./liblistwise/op/w/w.c ./liblistwise/op/o/o.c ./liblistwise/op/dj/dj.c ./liblistwise/op/dn/dn.c ./liblistwise/op/-f/-f.c ./liblistwise/op/cp/cp.c ./liblistwise/op/xmf/xmf.c ./liblistwise/op/u/u.c ./liblistwise/op/y/y.c ./liblistwise/op/op.c ./liblistwise/op/ss/ss.c ./liblistwise/op/j/j.c ./liblistwise/op/ls/ls.c ./liblistwise/op/shift/shift.c ./liblistwise/op/lsr/lsr.c ./liblistwise/op/uu/uu.c ./liblistwise/op/r/r.c ./liblistwise/op/sn/sn.c ./liblistwise/op/d/d.c ./liblistwise/op/z/z.c ./liblistwise/op/fn/fn.c ./liblistwise/exec/exec.c ./liblistwise/sel/sel.c ./liblistwise/generator/generator.c ./liblistwise/generator/generator.lex.c ./liblistwise/generator/generator.tab.c ./liblistwise/lstack/lstack.c )
+	  cat -- ./liblistwise/re/re.c ./liblistwise/object/object.c ./liblistwise/apidata/apidata.c ./liblistwise/idx/idx.c ./liblistwise/last/last.c ./liblistwise/op/bn/bn.c ./liblistwise/op/v/v.c ./liblistwise/op/xm/xm.c ./liblistwise/op/rp/rp.c ./liblistwise/op/rx/rx.c ./liblistwise/op/m/m.c ./liblistwise/op/-d/-d.c ./liblistwise/op/c/c.c ./liblistwise/op/xch/xch.c ./liblistwise/op/xsf/xsf.c ./liblistwise/op/-l/-l.c ./liblistwise/op/s/s.c ./liblistwise/op/xs/xs.c ./liblistwise/op/h/h.c ./liblistwise/op/pop/pop.c ./liblistwise/op/w/w.c ./liblistwise/op/o/o.c ./liblistwise/op/dj/dj.c ./liblistwise/op/dn/dn.c ./liblistwise/op/-f/-f.c ./liblistwise/op/cp/cp.c ./liblistwise/op/xmf/xmf.c ./liblistwise/op/u/u.c ./liblistwise/op/y/y.c ./liblistwise/op/op.c ./liblistwise/op/ss/ss.c ./liblistwise/op/j/j.c ./liblistwise/op/ls/ls.c ./liblistwise/op/shift/shift.c ./liblistwise/op/lsr/lsr.c ./liblistwise/op/uu/uu.c ./liblistwise/op/r/r.c ./liblistwise/op/sn/sn.c ./liblistwise/op/d/d.c ./liblistwise/op/z/z.c ./liblistwise/op/fn/fn.c ./liblistwise/exec/exec.c ./liblistwise/sel/sel.c ./liblistwise/generator/generator.c ./liblistwise/lstack/lstack.c )
 echo "local: *; };"
 
 	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/liblistwise.so ./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o -lpcre -ldl -shared -Wl,--version-script=./liblistwise/exports -Wl,-soname,liblistwise.so
