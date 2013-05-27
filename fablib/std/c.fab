@@ -32,10 +32,12 @@
 #  dscrdirs  - 
 #  dscpaths  - 
 #
-#  fabdirs    - (as above, but for fabrication/dependency only)
-#  fabrdirs   - 
-#  fabpaths   - 
+#  fabdirs   - (as above, but for fabrication/dependency only)
+#  fabrdirs  - 
+#  fabpaths  - 
 #
+#  ext       - file extension for object files resulting from fabrication
+#  gendir    - parameter to gcc-dep, directory path for the location of generated files
 
 # default object file extension
 $ext = [ o ]
@@ -83,11 +85,11 @@ $cobjpaths = [ $cfabpaths ~ [ xs/<c>/< $ext >/y ~ j ] ]
 #
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<c>/< $ext >/fx ~ j ] ] [ $ext ]
+	[ $cc ] [ $cflags ~ uu/fx ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<c>/< $ext >/fx ~ j ] ] [ $ext ]
 }
 
 # fabrication and dependency
 [ $cobjpaths ~ dj/shift ] :: [ $< ~ [ rx/xs/< $ext >/<c> ~ j ] ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -c [ $@ ~ rx/ineed/xm/<c>/ss/u/fx ] -o [ $@ ]
+	[ $cc ] [ $cflags ~ uu/fx ] -c [ $@ ~ rx/ineed/xm/<c>/uu/fx ] -o [ $@ ]
 }

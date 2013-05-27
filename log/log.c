@@ -534,6 +534,10 @@ int log_ticker(const uint64_t e, const char * fmt0, const char * fmt, ...)
 			return 0;
 
 		o_space_l = 0;
+
+		if(hash != o_ticker_hash && o_ticker)
+			logwrite("\n", 1);
+
 		start(e);
 		logvprintf(fmt0, va2);
 		va_end(va2);
@@ -568,7 +572,7 @@ do {																						\
 	o_ticker_c++;																	\
 } while(0)
 
-#define TICKER_BASIC
+#define TICKER_BOBBLE
 #ifdef TICKER_BOBBLE
 		TICKER(
 			  "\xe2\x96\x89"		/* REQUIRES UNICODE !!! */

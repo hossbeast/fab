@@ -23,6 +23,14 @@ use warnings;
 my @S;	# strong
 my @W;	# weak
 
+my $gen = '';
+if($ARGV[0])
+{
+	$gen = $ARGV[0];
+	$gen =~ s/^\s+//;
+	$gen =~ s/\s+//;
+}
+
 while(<STDIN>)
 {
 	if(/^[^:]+:$/)	# -MP lines, only
@@ -30,9 +38,9 @@ while(<STDIN>)
 		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
 
 		# for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
-		if(! -r $line && $ARGV[0])
+		if(! -r $line && $gen)
 		{
-			$line = $ARGV[0] . "/" . $line;
+			$line = $gen . "/" . $line;
 		}
 
 		if($line =~ /\.lex\.h$/)
@@ -52,12 +60,13 @@ while(<STDIN>)
 			push @S, $line;				# strong dependency on the header
 
 			# corresponding .c file
-			$line =~ s/\.h$/.c/;
-
-			if(-f $line)
+			if($line =~ s/\.h$/.c/)
 			{
-				$line =~ s/\.c$//;
-				push @W, $line;			# weak dependency on the object, if a corresponding c file exists
+				if(-r $line)
+				{
+					$line =~ s/\.c$//;
+					push @W, $line;			# weak dependency on the object, if a corresponding c file exists
+				}
 			}
 		}
 	}

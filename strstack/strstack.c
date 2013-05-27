@@ -164,4 +164,3 @@ int strstack_string(strstack * const stk, const char * const ldr, const char * c
 
 	finally : coda;
 }
-

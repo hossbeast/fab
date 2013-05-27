@@ -61,31 +61,31 @@ $ldscpaths = [
 # paths to l files for fabrication
 $lfabpaths = [
 	$paths				# paths
-	$dscpaths			# paths, discovery only
+	$fabpaths			# paths, discovery only
 
 	[
 		$dirs				# directories
-		$dscdirs		# directories, discovery only
+		$fabdirs		# directories, discovery only
 	~ ls ]
 
 	[
 		$rdirs			# recursive directories
-		$rdscdirs		# recursive directories, discovery only
+		$rfabdirs		# recursive directories, discovery only
   ~ lsr ]
 ~ xm/<l> ]
 
 # discovery
 [ $ldscpaths ] %
 {
-		  [ $flex ] [ $flexflags ~ ss/u/fx ] -t [ $@ ] [
-	] | [ $cc ] [ $cflags ~ ss/u/fx ] -MM -MP -MG -xc - [
+		  [ $flex ] [ $flexflags ~ uu/fx ] -t [ $@ ] [
+	] | [ $cc ] [ $cflags ~ uu/fx ] -MM -MP -MG -xc - [
 	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<l>/<lex. $ext >/y/fx ~ j ] ] [ $ext ]
 }
 
 # $flex : l -> { lex.c, lex.h }
 [ $lfabpaths ~ xs/<l>/<lex.c>/y/v/d/cp/u/xs/<lex.c>/<lex.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<lex.c>/<l>/xs/<lex.h>/<l>/ss/u ]
 {
-	  [ $flex ] [ $flexflags ~ ss/u/fx ] -o [ $@ ~ h/1/1 ] [
+	  [ $flex ] [ $flexflags ~ uu/fx ] -o [ $@ ~ h/1/1 ] [
 	] [ --header-file= [ $@ ~ h/0/1 ] ] [
 	] [ $@ ~ rx/ineed/xm/<l>/ss/u ]
 }

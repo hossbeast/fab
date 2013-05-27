@@ -55,9 +55,9 @@ if(help)
 	printf(
 "\n"
 "usage : fab [[options] [logopts] [targets]]*\n"
-"            --help|-h : this message\n"
-"            --version : version information\n"
-"            --logopts : logging category listing\n"
+"  --help|-h : this message\n"
+"  --version : version information\n"
+"  --logopts : logging category listing\n"
 "\n"
 "----------- [ targets ] --------------------------------------------------------\n"
 "\n"
@@ -74,7 +74,7 @@ if(help)
 "\n"
 " incremental builds\n"
 " -b <node specifier>     invalidate node(s)\n"
-" -e <node specifier>     invalidate node(s) and add as fabrication target(s)\n"
+" -e <node specifier>     invalidate node(s) and add as target(s)\n"
 " -B                      invalidate-all\n"
 "\n"
 " parallel builds\n"
@@ -357,7 +357,7 @@ int parse_args(int argc, char** argv)
 		log_parse("+BPDUMP", 0);
 
 	// initialize logger
-	fatal(log_init, "+ERROR|WARN|INFO|BPEXEC|DSCINFO");
+	fatal(log_init, "+ERROR|WARN|INFO|INVOKE|BPEXEC|DSCINFO");
 
 	// active logs
 	char buf[256];
@@ -469,4 +469,3 @@ void args_teardown()
 	path_free(g_args.init_fabfile_path);
 	free(g_args.bakescript_path);
 }
-
