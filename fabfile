@@ -61,7 +61,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 [ $fab ] : [ [ $dfab/main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [ $lflags ~ fx ]
+	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [ $lflags ~ fi ]
 }
 
 #
@@ -69,7 +69,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 [ $faboplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
-	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [
+	  [ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [
 	] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
 }
 
@@ -138,10 +138,10 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	install [ $dfab/fablib/std/c.fab ]			[ $destdir/usr/lib/fab/lib/std/c.fab ]
 	install [ $dfab/fablib/std/l.fab ]			[ $destdir/usr/lib/fab/lib/std/l.fab ]
 	install [ $dfab/fablib/std/y.fab ]			[ $destdir/usr/lib/fab/lib/std/y.fab ]
+
+	rm -rf 																	[ $destdir/usr/lib/fab/listwise ] 2>/dev/null
 	install -d															[ $destdir/usr/lib/fab/listwise ]
-	install [ $dfab/fablw/op/fx/fx.so ]			[ $destdir/usr/lib/fab/listwise/fx.so ]
-	install [ $dfab/fablw/op/fxc/fxc.so ]		[ $destdir/usr/lib/fab/listwise/fxc.so ]
-	install [ $dfab/fablw/op/fxw/fxw.so ]		[ $destdir/usr/lib/fab/listwise/fxw.so ]
+	install [ $dfab/fablw/op/fi/fi.so ]			[ $destdir/usr/lib/fab/listwise/fi.so ]
 }
 
 [ @uninstall ]

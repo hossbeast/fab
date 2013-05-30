@@ -50,6 +50,37 @@ if(version)
 	  "\n"
 	);
 }
+
+/*
+# add targets to these lists
+d - dump
+b - invalidate
+e - build
+
+# target modifiers
+v - sever
+
+# node selectors
+  -   text   : path match relative to init-fabfile-rel-dir
+  -  /text   : canonical path match
+  -  @text   : nofile reference
+  -  %B      : matches all nodes
+  -  %BP     : matches all primary nodes
+  -  %BS     : matches all secondary nodes
+  - [ text ] : matches nodes in the list
+
+# general-access variables
+$! - all nodes
+
+# listwise operators
+  - select primary
+  - select secondary
+  - select generated
+  - select task
+  - select nofile
+*/
+
+
 if(help)
 {
 	printf(
