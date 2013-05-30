@@ -41,11 +41,15 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype					= LWOP_SELECTION_READ
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "sort numeric"
+operator op_desc[] = {
+	{
+		  .s						= "sn"
+		, .optype				= LWOP_SELECTION_READ
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "sort numeric"
+	}
+	, {}
 };
 
 int op_validate(operation* o)
@@ -104,8 +108,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	return 1;
 }
-
-
-
-
-

@@ -42,11 +42,14 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "join strings possibly with a delimiter"
+operator op_desc[] = {
+	{
+		  .s						= "j"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "join strings possibly with a delimiter"
+	}, {}
 };
 
 int op_validate(operation* o)
@@ -149,8 +152,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	finally : coda;
 }
-
-
-
-
-

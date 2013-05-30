@@ -46,11 +46,14 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "duplicate list entries"
+operator op_desc[] = {
+	{
+		  .s						= "cp"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "duplicate list entries"
+	}, {}
 };
 
 int op_validate(operation* o)

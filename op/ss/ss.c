@@ -43,11 +43,14 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype					= LWOP_SELECTION_READ
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "sort stringwise"
+operator op_desc[] = {
+	{
+		  .s						= "ss"
+		, .optype				= LWOP_SELECTION_READ
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "sort stringwise"
+	}, {}
 };
 
 int op_validate(operation* o)

@@ -41,11 +41,15 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_RESET
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "select none"
+operator op_desc[] = {
+	{
+		  .s						= "z"
+		, .optype				= LWOP_SELECTION_RESET
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "select none"
+	}
+	, {}
 };
 
 int op_validate(operation* o)
@@ -58,8 +62,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	lstack_sel_none(ls);
 	return 1;
 }
-
-
-
-
-

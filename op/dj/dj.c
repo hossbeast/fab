@@ -54,11 +54,14 @@ n+1 ..) contents of the stack beyond list 0 when we started
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_OPERATION_PUSHBEFORE
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "split list into a stack of lists"
+operator op_desc[] = {
+	{
+		  .s						= "dj"
+		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_OPERATION_PUSHBEFORE
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "split list into a stack of lists"
+	}, {}
 };
 
 int op_validate(operation* o)

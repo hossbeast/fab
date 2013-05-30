@@ -45,11 +45,15 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype					= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM | LWOP_OBJECT_NO
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "path canonicalization with realpath"
+operator op_desc[] = {
+	{
+		  .s						= "rp"
+		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM | LWOP_OBJECT_NO
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "path canonicalization with realpath"
+	}
+	, {}
 };
 
 int op_validate(operation* o)
@@ -97,8 +101,3 @@ finally:
 	free(ss);
 coda;
 }
-
-
-
-
-

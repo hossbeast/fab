@@ -42,11 +42,15 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "invert selection"
+operator op_desc[] = {
+	{
+		  .s						= "v"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "invert selection"
+	}
+	, {}
 };
 
 int op_validate(operation* o)
@@ -69,8 +73,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	finally : coda;
 }
-
-
-
-
-

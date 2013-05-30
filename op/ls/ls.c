@@ -48,14 +48,48 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+/*
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "create new list from directory listing(s)"
+lsr operator - recursive directory listing
+
+ARGUMENTS
+
+ has arguments - use each
+ no arguments  - use current selection
+ no selection  - use entire top list
+
+OPERATION
+
+ 1. push an empty list onto the stack
+
+ 2. for each argument
+      2.1 if argument is the path to a directory
+          2.2 for each item in the the directory listing
+              2.3 append path to the item (relative to the argument given)
+							2.4 repeat 2.2 for this item
+
+*/
+
+static int op_validate(operation* o);
+static int op_exec_ls(operation*, lstack*, int**, int*);
+static int op_exec_lsr(operation*, lstack*, int**, int*);
+
+operator op_desc[] = {
+	{
+		  .s						= "ls"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec_ls
+		, .desc					= "create new list from directory listing(s)"
+	}
+	, {
+		  .s						= "lsr"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec_lsr
+		, .desc					= "create new list from recursive directory listing(s)"
+	}
+	, {}
 };
 
 int op_validate(operation* o)
@@ -63,10 +97,9 @@ int op_validate(operation* o)
 	return 1;
 }
 
-static int listing(lstack* ls, char * s)
+static int listing(lstack* ls, char * s, int recurse)
 {
 	DIR * dd = 0;
-
 	if((dd = opendir(s)))
 	{
 		struct dirent ent;
@@ -81,6 +114,7 @@ static int listing(lstack* ls, char * s)
 					if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
 					{
 						fatal(lstack_addf, ls, "%s/%s", s, entp->d_name);
+						fatal(listing, ls, lstack_getstring(ls, 0, ls->s[0].l - 1), recurse);
 					}
 				}
 				else
@@ -104,7 +138,7 @@ finally:
 coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int recurse)
 {
 	if(o->argsl || ls->l)
 	{
@@ -114,7 +148,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		if(o->argsl)
 		{
 			for(x = 0; x < o->argsl; x++)
-				fatal(listing, ls, o->args[x]->s);
+				fatal(listing, ls, o->args[x]->s, recurse);
 		}
 		else
 		{
@@ -130,7 +164,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				}
 
 				if(go)
-					fatal(listing, ls, lstack_getstring(ls, 1, x));
+					fatal(listing, ls, lstack_getstring(ls, 1, x), recurse);
 			}
 		}
 
@@ -139,4 +173,14 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	}
 
 	finally : coda;
+}
+
+int op_exec_ls(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	return op_exec(o, ls, ovec, ovec_len, 0);
+}
+
+int op_exec_lsr(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	return op_exec(o, ls, ovec, ovec_len, 1);
 }

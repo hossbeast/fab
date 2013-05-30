@@ -38,10 +38,14 @@ OPERATION
 
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
-	, .op_exec			= op_exec
-	, .desc					= "get filename component"
+operator op_desc[] = {
+	{
+		  .s						= "fn"
+		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		, .op_exec			= op_exec
+		, .desc					= "get filename component"
+	}
+	, {}
 };
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
@@ -89,8 +93,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	finally : coda;
 }
-
-
-
-
-

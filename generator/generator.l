@@ -113,8 +113,3 @@
 																		return LEX(STR);
 																	}
 <lit>[>]													{ yy_pop_state(yyextra->scanner); }
-
-
-
-
-

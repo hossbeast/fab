@@ -42,11 +42,15 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "select entries by regex"
+operator op_desc[] = {
+	{
+		  .s						= "m"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "select entries by regex"
+	}
+	, {}
 };
 
 int op_validate(operation* o)
@@ -98,8 +102,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	finally : coda;
 }
-
-
-
-
-

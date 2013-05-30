@@ -58,7 +58,6 @@ enum
 //
 typedef struct operator
 {
-	void *		handle;		// dlopen handle
 	uint64_t	optype;		// OPTYPE_*
 	char*			desc;			// operator description
 

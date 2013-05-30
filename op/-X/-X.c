@@ -32,6 +32,8 @@
 /*
 
 -f operator - select entries whose stringvalue is a path referencing a regular file
+-d operator - select entries whose stringvalue is a path referencing a directory
+-l operator - select entries whose stringvalue is a path referencing a symbolic link
 
 NO ARGUMENTS
 
@@ -44,22 +46,33 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec_f(operation*, lstack*, int**, int*);
+static int op_exec_d(operation*, lstack*, int**, int*);
+static int op_exec_l(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "select regular files"
+operator op_desc[] = {
+	{
+		  .s						= "-f"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .op_exec			= op_exec_f
+		, .desc					= "select regular files"
+	}
+	, {
+		  .s						= "-d"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .op_exec			= op_exec_d
+		, .desc					= "select directories"
+	}
+	, {
+		  .s						= "-l"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .op_exec			= op_exec_l
+		, .desc					= "select symbolic links"
+	}
+	, {}
 };
 
-int op_validate(operation* o)
-{
-	return 1;
-}
-
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int (*selector)(struct stat *))
 {
 	int x;
 	for(x = 0; x < ls->s[0].l; x++)
@@ -78,7 +91,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			struct stat st;
 			if(stat(lstack_getstring(ls, 0, x), &st) == 0)
 			{
-				if(S_ISREG(st.st_mode))
+				if(selector(&st))
 					fatal(lstack_last_set, ls, x);
 			}
 			else
@@ -91,7 +104,32 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	finally : coda;
 }
 
+int op_exec_f(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	int selector(struct stat * st)
+	{
+		return S_ISREG(st->st_mode);
+	};
 
+	return op_exec(o, ls, ovec, ovec_len, selector);
+}
 
+int op_exec_d(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	int selector(struct stat * st)
+	{
+		return S_ISDIR(st->st_mode);
+	};
 
+	return op_exec(o, ls, ovec, ovec_len, selector);
+}
 
+int op_exec_l(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	int selector(struct stat * st)
+	{
+		return S_ISLNK(st->st_mode);
+	};
+
+	return op_exec(o, ls, ovec, ovec_len, selector);
+}

@@ -42,11 +42,14 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= 0
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "OR : aggregate selections across operators"
+operator op_desc[] = {
+	{
+		  .s						= "o"
+		, .optype				= 0
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "OR : aggregate selections across operators"
+	}, {}
 };
 
 int op_validate(operation* o)
@@ -58,8 +61,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	return 1;
 }
-
-
-
-
-

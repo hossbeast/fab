@@ -42,10 +42,14 @@ OPERATION
 
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
-	, .op_exec			= op_exec
-	, .desc					= "replace object entries with their reflected properties"
+operator op_desc[] = {
+	{
+		  .s						= "rx"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
+		, .op_exec			= op_exec
+		, .desc					= "replace object entries with their reflected properties"
+	}
+	, {}
 };
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)

@@ -46,11 +46,14 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "select unique (already sorted)"
+operator op_desc[] = {
+	{
+		  .s						= "u"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "select unique (already sorted)"
+	}, {}
 };
 
 int op_validate(operation* o)

@@ -34,11 +34,14 @@ exactly as the xm operator, except fullmatch mode is the default operation
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "select by full filename extension"
+operator op_desc[] = {
+	{
+		  .s						= "xmf"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "select by full filename extension"
+	}, {}
 };
 
 int op_validate(operation* o)

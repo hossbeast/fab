@@ -39,10 +39,14 @@ OPERATION
 
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
-	, .op_exec			= op_exec
-	, .desc					= "get component of filepath preceeding the filename"
+operator op_desc[] = {
+	{
+		  .s						= "dn"
+		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		, .op_exec			= op_exec
+		, .desc					= "get component of filepath preceeding the filename"
+	}
+	, {}
 };
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)

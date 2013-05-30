@@ -37,6 +37,10 @@ operator **	APIDATA g_ops;
 int									g_ops_a;
 int					APIDATA g_ops_l;
 
+void **	g_dls;
+int			g_dls_a;
+int			g_dls_l;
+
 //
 // static
 //
@@ -49,15 +53,17 @@ static void __attribute__((constructor)) init()
 static void __attribute__((destructor)) teardown()
 {
 	int x;
-	for(x = 0; x < g_ops_l; x++)
-		dlclose(g_ops[x]->handle);
+	for(x = 0; x < g_dls_l; x++)
+	{
+		dlclose(g_dls[x]);
+	}
 
+	free(g_dls);
 	free(g_ops);
 }
 
 static int op_load(char* path)
 {
-	void* sym = 0;
 	operator* op = 0;
 
 	char* name = path + strlen(path) - 1;
@@ -69,33 +75,39 @@ static int op_load(char* path)
 	while(name[namel] != '.')
 		namel++;
 
-	if((sym = dlopen(path, RTLD_NOW | RTLD_GLOBAL)) == 0)
+	if(g_dls_a == g_dls_l)
+	{
+		int n = g_dls_a ? g_dls_a * 2 + g_dls_a / 2 : 10;
+		fatal(xrealloc, &g_dls, sizeof(g_dls[0]), n, g_dls_a);
+		g_dls_a = n;
+	}
+
+	if((g_dls[g_dls_l++] = dlopen(path, RTLD_NOW | RTLD_GLOBAL)) == 0)
 	{
 		dprintf(listwise_err_fd, "FAILED TO LOAD: %s [%s]\n", path, dlerror());
 /* I guess this segfaults ...
-		dlclose(sym);
+		dlclose(g_dls[g_dls_l - 1]);
 */
 	}
-	else if((op = dlsym(sym, "op_desc")) == 0)
+	else if((op = dlsym(g_dls[g_dls_l - 1], "op_desc")) == 0)
 	{
 		dprintf(listwise_err_fd, "FAILED TO LOAD: %s\n", path);
-		dlclose(sym);
+		dlclose(g_dls[g_dls_l - 1]);
 	}
 	else
 	{
-		if(g_ops_a == g_ops_l)
+		while(op->desc)
 		{
-			int n = g_ops_a ? g_ops_a * 2 + g_ops_a / 2 : 10;
-			fatal(xrealloc, &g_ops, sizeof(g_ops[0]), n, g_ops_a);
-			g_ops_a = n;
+			if(g_ops_a == g_ops_l)
+			{
+				int n = g_ops_a ? g_ops_a * 2 + g_ops_a / 2 : 10;
+				fatal(xrealloc, &g_ops, sizeof(g_ops[0]), n, g_ops_a);
+				g_ops_a = n;
+			}
+
+			op->sl = strlen(op->s);
+			g_ops[g_ops_l++] = op++;
 		}
-
-		op->sl = namel;
-		memcpy(op->s, name, op->sl);
-
-		op->handle = sym;
-
-		g_ops[g_ops_l++] = op;
 	}
 
 	finally : coda;
@@ -184,8 +196,3 @@ operator* op_lookup(char* s, int l)
 
 	return 0;
 }
-
-
-
-
-

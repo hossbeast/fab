@@ -39,11 +39,14 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_RESET
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "select entries affected by preceeding operator"
+operator op_desc[] = {
+	{
+		  .s						= "y"
+		, .optype				= LWOP_SELECTION_RESET
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "select entries affected by preceeding operator"
+	}, {}
 };
 
 int op_validate(operation* o)

@@ -38,10 +38,14 @@ OPERATION
 
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
-	, .op_exec			= op_exec
-	, .desc					= "get component of filepath following the last slash"
+operator op_desc[] = {
+	{
+		  .s						= "bn"
+		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		, .op_exec			= op_exec
+		, .desc					= "get component of filepath following the last slash"
+	}
+	, {}
 };
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
@@ -105,8 +109,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	finally : coda;
 }
-
-
-
-
-
