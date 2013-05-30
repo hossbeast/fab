@@ -44,7 +44,7 @@ $listwise				= [ $dlistwise/$name ~ j ]
 #
 [ $listwise ] : [ $cfabpaths ~ xs/<o> ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneed/xm/<o>/ss/u/fx ] [ $lflags ~ fx ]
+	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneed/xm/<o>/ss/u/fi ] [ $lflags ~ fi ]
 }
 
 #
