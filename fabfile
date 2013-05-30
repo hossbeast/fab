@@ -25,10 +25,10 @@ $dlistwise    = [ $*/listwisedev ]
 $dfab         = [ $*/fabdev ]
 
 # invocations
-+[ $dcommon ]()   							  																														@common
-+[ $dliblistwise ]($VERSION; -$liblistwise)																										@liblistwise
-+[ $dlistwise ]($VERSION; -$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ])				@listwise
-+[ $dfab ]($VERSION; -$fab; -$faboplist; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ])		@fab
++[ $dcommon ]()   							  																													@common
++[ $dliblistwise ]($VERSION; -$liblistwise)																									@liblistwise
++[ $dlistwise ]($VERSION; -$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )		@listwise
++[ $dfab ]($VERSION; -$fab; -$faboplist; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )	@fab
 
 # default target - make everything
 [ @all ] 				: [ @liblistwise.all       $listwise      @fab.all ]
@@ -70,9 +70,7 @@ $dfab         = [ $*/fabdev ]
 
 	mkdir -p																[ $*/ar/usr/lib/fab/listwise ]
 
-	cp [ $dfab/fablw/op/fx/fx.so ]					[ $*/ar/usr/lib/fab/listwise ]
-	cp [ $dfab/fablw/op/fxc/fxc.so ]				[ $*/ar/usr/lib/fab/listwise ]
-	cp [ $dfab/fablw/op/fxw/fxw.so ]				[ $*/ar/usr/lib/fab/listwise ]
+	cp [ $dfab/fablw/op/fi/fi.so ]					[ $*/ar/usr/lib/fab/listwise ]
 
 	mkdir -p																[ $*/ar/usr/lib64 ]
 
