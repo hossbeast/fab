@@ -16,7 +16,7 @@
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # version
-$VERSION			= [ "v0.4.1" ]
+$VERSION			= [ "v0.4.2" ]
 
 # directories
 $dcommon      = [ $*/common ]
@@ -71,6 +71,7 @@ $dfab         = [ $*/fabdev ]
 	mkdir -p																[ $*/ar/usr/lib/fab/listwise ]
 
 	cp [ $dfab/fablw/op/fi/fi.so ]					[ $*/ar/usr/lib/fab/listwise ]
+	cp [ $dfab/fablw/op/fg/fg.so ]					[ $*/ar/usr/lib/fab/listwise ]
 
 	mkdir -p																[ $*/ar/usr/lib64 ]
 
