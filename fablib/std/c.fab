@@ -29,11 +29,11 @@
 #  paths      - paths to .c files
 #
 #  dscdirs   - (as above, but for discovery only)
-#  dscrdirs  - 
+#  rdscdirs  - 
 #  dscpaths  - 
 #
 #  fabdirs   - (as above, but for fabrication/dependency only)
-#  fabrdirs  - 
+#  rfabdirs  - 
 #  fabpaths  - 
 #
 #  ext       - file extension for object files resulting from fabrication

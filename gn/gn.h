@@ -24,8 +24,6 @@
 #include <unistd.h>
 #include <time.h>
 
-#include "gn.h"
-
 #include "hashblock.h"
 #include "depblock.h"
 
@@ -52,20 +50,15 @@
 **
 */
 
-#define GN_FLAGS_HASNEED			0x01
-#define GN_FLAGS_CANFAB				0x02
-#define GN_FLAGS_NOFILE				0x04
-
 //
 // gn designation table
 //
 #define GN_DESIGNATION_TABLE(x)																											\
 	_GN_DESIGNATION(GN_DESIGNATION_TASK								, 0x01	, "TASK"				, x)		\
 	_GN_DESIGNATION(GN_DESIGNATION_SECONDARY					, 0x02	, "SECONDARY"		, x)		\
-	_GN_DESIGNATION(GN_DESIGNATION_SECONDARY_NOFORM		, 0x03	, "SECONDARY"		, x)		\
-	_GN_DESIGNATION(GN_DESIGNATION_GENERATED					, 0x04	, "GENERATED"		, x)		\
-	_GN_DESIGNATION(GN_DESIGNATION_NOFILE							, 0x05	, "NOFILE"			, x)		\
-	_GN_DESIGNATION(GN_DESIGNATION_PRIMARY						, 0x06	, "PRIMARY"			, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_GENERATED					, 0x03	, "GENERATED"		, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_NOFILE							, 0x04	, "NOFILE"			, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_PRIMARY						, 0x05	, "PRIMARY"			, x)		\
 
 enum {
 #define _GN_DESIGNATION(a, b, c, d) a = b,
@@ -75,6 +68,10 @@ GN_DESIGNATION_TABLE(0)
 
 #define _GN_DESIGNATION(a, b, c, d) (d) == b ? c :
 #define GN_DESIGNATION_STR(x) GN_DESIGNATION_TABLE(x) "unknown"
+
+#define GN_FLAGS_HASNEED			0x01
+#define GN_FLAGS_CANFAB				0x02
+#define GN_FLAGS_NOFILE				0x04
 
 //
 // gn relation type table
@@ -410,4 +407,3 @@ int gn_enclose_ff(gn * const restrict gn, struct ff_file * const restrict ff, in
 
 #undef restrict
 #endif
-

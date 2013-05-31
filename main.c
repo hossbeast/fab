@@ -113,6 +113,14 @@ int main(int argc, char** argv)
 	signal(SIGQUIT	, signal_handler);
 	signal(SIGTERM	, signal_handler);
 
+	// register object types with liblistwise
+	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
+	fatal(listwise_register_object, LISTWISE_TYPE_LIST, &listlw);
+
+	// load additional fab-specific listwise operators
+	for(x = 0; x < sizeof(FABLW_DIRS) / sizeof(FABLW_DIRS[0]); x++)
+		fatal(listwise_register_opdir, FABLW_DIRS[x]);
+
 	// parse cmdline arguments
 	//  (parse_args also calls log_init with a default string)
 	fatal(parse_args, argc, argv);
@@ -123,14 +131,6 @@ int main(int argc, char** argv)
 	// other initializations
 	fatal(traverse_init);
 	fatal(ff_mkparser, &ffp);
-
-	// register object types with liblistwise
-	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
-	fatal(listwise_register_object, LISTWISE_TYPE_LIST, &listlw);
-
-	// load additional fab-specific listwise operators
-	for(x = 0; x < sizeof(FABLW_DIRS) / sizeof(FABLW_DIRS[0]); x++)
-		fatal(listwise_register_opdir, FABLW_DIRS[x]);
 
 	// unless LWVOCAL, arrange for liblistwise to write to /dev/null
 	if(!log_would(L_LWVOCAL))

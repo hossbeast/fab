@@ -25,13 +25,13 @@
 
 /*
 
-(fab specific) fx operator - set list interpolation mode
+(fab specific) fi operator - set list interpolation mode
 
 ARGUMENTS
 	[0] - delimiter string
 
 OPERATION
-  with no arguments, fx is equivalent to fxc - set interpolation mode to INTERPOLATION_DELIM_WS
+  with no arguments, fi is equivalent to fic - set interpolation mode to INTERPOLATION_DELIM_WS
   with an argument, set interpolation mode to INTERPOLATION_DELIM_CUST
 
 */

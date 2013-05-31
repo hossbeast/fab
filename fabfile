@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # version
-$VERSION				= [ "v0.4.1" ]
+$VERSION				= [ "v0.4.2" ]
 
 # directories
 $dcommon				= [ $*/../common ]
@@ -43,7 +43,7 @@ $fab						= [ $dfab/$name ~ j ]
 +[@std.y]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 
 # standard files - fPIC compilation
-+[@std.c]($gendir = $dfab; $rdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
++[@std.c]($gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # operator so's
 $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
@@ -58,10 +58,11 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 
 #
 # the executable
+#  -export-dynamic enables dloaded code (in particular, the fab-specific operator so's) to bind to symbols in the executable.
 #
 [ $fab ] : [ [ $dfab/main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [ $lflags ~ fi ]
+	[ $cc ] [ $cflags -export-dynamic ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [ $lflags ~ fi ]
 }
 
 #
@@ -142,6 +143,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	rm -rf 																	[ $destdir/usr/lib/fab/listwise ] 2>/dev/null
 	install -d															[ $destdir/usr/lib/fab/listwise ]
 	install [ $dfab/fablw/op/fi/fi.so ]			[ $destdir/usr/lib/fab/listwise/fi.so ]
+	install [ $dfab/fablw/op/fg/fg.so ]			[ $destdir/usr/lib/fab/listwise/fg.so ]
 }
 
 [ @uninstall ]

@@ -22,6 +22,12 @@
 #include <string.h>
 #include <getopt.h>
 
+#include <listwise.h>
+#include <listwise/operator.h>
+#include <listwise/ops.h>
+#include <listwise/generator.h>
+#include <listwise/lstack.h>
+
 #include "args.h"
 
 #include "log.h"
@@ -34,7 +40,7 @@
 
 struct g_args_t g_args;
 
-static void usage(int valid, int version, int help, int logopts)
+static void usage(int valid, int version, int help, int logopts, int operators)
 {
 	printf(
 "fab : parallel and incremental builds, integrated dependency discovery\n"
@@ -86,9 +92,10 @@ if(help)
 	printf(
 "\n"
 "usage : fab [[options] [logopts] [targets]]*\n"
-"  --help|-h : this message\n"
-"  --version : version information\n"
-"  --logopts : logging category listing\n"
+"  --help|-h   : this message\n"
+"  --version   : version information\n"
+"  --logopts   : logging category listing\n"
+"  --operators : operator listing\n"
 "\n"
 "----------- [ targets ] --------------------------------------------------------\n"
 "\n"
@@ -154,12 +161,53 @@ if(logopts)
 	printf("\n");
 }
 
-if(help || logopts)
+if(operators)
+{
+	printf(
+"----------------- [ operators ] ------------------------------------------------\n"
+"\n"
+" 1  2  3  4  5  6  7  8  9    name  description\n"
+	);
+
+	int x;
+	for(x = 0; x < g_ops_l; x++)
+	{
+		printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s\n"
+			, g_ops[x]->optype & LWOP_SELECTION_READ				? 'x' : ' '
+			, g_ops[x]->optype & LWOP_SELECTION_WRITE				? 'x' : ' '
+			, g_ops[x]->optype & LWOP_SELECTION_RESET				? 'x' : ' '
+			, g_ops[x]->optype & LWOP_MODIFIERS_CANHAVE			? 'x' : ' '
+			, g_ops[x]->optype & LWOP_ARGS_CANHAVE					? 'x' : ' '
+			, g_ops[x]->optype & LWOP_OPERATION_PUSHBEFORE	? 'x' : ' '
+			, g_ops[x]->optype & LWOP_OPERATION_INPLACE			? 'x' : ' '
+			, g_ops[x]->optype & LWOP_OPERATION_FILESYSTEM	? 'x' : ' '
+			, g_ops[x]->optype & LWOP_OBJECT_NO							? 'x' : ' '
+			, g_ops[x]->s
+			, g_ops[x]->desc
+		);
+	}
+
+	printf(
+		" 1. SELECTION_READ\n"
+		" 2. SELECTION_WRITE\n"
+		" 3. SELECTION_RESET\n"
+		" 4. MODIFIERS_CANHAVE\n"
+		" 5. ARGS_CANHAVE\n"
+		" 6. OPERATION_PUSHBEFORE\n"
+		" 7. OPERATION_INPLACE\n"
+		" 8. OPERATION_FILESYSTEM\n"
+		" 9. OBJECT_NO\n"
+	);
+	printf("\n");
+}
+
+if(help || logopts || operators)
 {
 	printf(
 "For more information visit http://fabutil.org\n"
 	);
 }
+
 	printf("\n");
 	exit(!valid);
 }
@@ -169,14 +217,16 @@ int parse_args(int argc, char** argv)
 	path * fabpath = 0;
 
 	int help = 0;
-	int logopts = 0;
 	int version = 0;
+	int logopts = 0;
+	int operators = 0;
 
 	struct option longopts[] = {
 /* informational */
 				  { "help"				, no_argument	, &help, 1 }
-				, { "logopts"			, no_argument	, &logopts, 1 }
 				, { "version"			, no_argument	, &version, 1 }
+				, { "logopts"			, no_argument	, &logopts, 1 }
+				, { "operators"		, no_argument	, &operators, 1 }
 
 /* program longopts */
 				, { "cycle-warn"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_WARN	}
@@ -275,7 +325,7 @@ int parse_args(int argc, char** argv)
 		switch(x)
 		{
 			case 'h':
-				usage(1, 1, 1, 0);
+				usage(1, 1, 1, 0, 0);
 				break;
 			case 'b':
 				fatal(xrealloc, &g_args.invalidations, sizeof(g_args.invalidations[0]), g_args.invalidationsl + 1, g_args.invalidationsl);
@@ -344,14 +394,14 @@ int parse_args(int argc, char** argv)
 				fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
 				break;
 			case '?':
-				usage(0, 1, 1, 0);
+				usage(0, 1, 1, 0, 0);
 				break;
 		}
 	}
 
-	if(help || logopts || version)
+	if(help || version || logopts || operators)
 	{
-		usage(1, 1, help, logopts);
+		usage(1, 1, help, logopts, operators);
 	}
 
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
