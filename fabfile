@@ -16,7 +16,7 @@
    along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
 
 # version
-$VERSION				= [ "v0.4.1" ]
+$VERSION				= [ "v0.4.2" ]
 
 # directories
 $dcommon				= [ $*/../common ]

@@ -76,6 +76,9 @@ if(help)
 }
 if(operators)
 {
+	if(!help)
+		printf("\n");
+
 	printf(
 "----------------- [ operators ] ------------------------------------------------\n"
 "\n"
@@ -114,12 +117,12 @@ if(operators)
 	printf("\n");
 }
 
-	if(help || operators)
-	{
-		printf(
+if(help || operators)
+{
+	printf(
 "For more information visit http://fabutil.org\n"
-		);
-	}
+	);
+}
 
 	printf("\n");
 	exit(!valid);
