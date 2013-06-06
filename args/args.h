@@ -21,8 +21,7 @@
 #include <sys/types.h>
 
 #include "path.h"
-
-#define FAB_VERSION		0x01
+struct selector;
 
 /*
 ** PER-GN : delete if newest file is older than <policy>  (pertains to a given gn)
@@ -57,10 +56,9 @@
 
 #define DEFAULT_INIT_FABFILE 			"./fabfile"
 #define DEFAULT_INVALIDATE_ALL		0
-#define DEFAULT_DUMPNODE_ALL			0
 #define DEFAULT_MODE_EXEC					MODE_EXEC_FABRICATE
 #define DEFAULT_MODE_GNID					MODE_GNID_RELATIVE
-#define DEFAULT_MODE_DDSC					MODE_DDSC_DEFERRED
+#define DEFAULT_MODE_DDSC					MODE_DDSC_UPFRONT
 #define DEFAULT_MODE_CYCL					MODE_CYCL_WARN
 #define DEFAULT_CONCURRENCY_LIMIT	0
 #define DEFAULT_BAKE_PATH					"./bakescript"
@@ -72,8 +70,8 @@
 /* execution modes */																																							\
 	_MODE(MODE_EXEC_FABRICATE	, 0x00	, x)		/* fabricate targets */																\
 	_MODE(MODE_EXEC_BUILDPLAN	, 0x01	, x)		/* generate buildplan only */													\
-	_MODE(MODE_EXEC_DDSC			, 0x02	, x)		/* perform dependency discovery */										\
-	_MODE(MODE_EXEC_DUMP			, 0x03	, x)		/* dump graph nodes */																\
+	_MODE(MODE_EXEC_DDSC			, 0x02	, x)		/* perform dependency discovery only */								\
+	_MODE(MODE_EXEC_INSPECT		, 0x03	, x)		/* inspect graph nodes */															\
 	_MODE(MODE_EXEC_BAKE			, 0x04	, x)		/* bake the buildplan */															\
 /* path display modes */																																					\
 	_MODE(MODE_GNID_RELATIVE	, 0x05	, x)		/* path relative to the initial fabfile */						\
@@ -92,7 +90,7 @@ MODE_TABLE(0)
 #undef _MODE
 };
 
-#define _MODE(a, b, c) (c) == b ? #a "[" #b "]" :
+#define _MODE(a, b, c) (c) == b ? #a :
 #define MODE_STR(x) MODE_TABLE(x) "unknown"
 
 extern struct g_args_t
@@ -134,19 +132,14 @@ extern struct g_args_t
 	char **			invokedirs;						// root directories for locating invocations
 	int					invokedirsl;
 
-	char **			targets;							// targets
-	int					targetsl;
+	struct selector * 	selectors;
+	int					selectorsa;
+	int					selectorsl;
 
-	int					invalidationsz;				// invalidate all graph nodes
-	char **			invalidations;				// graph nodes to invalidate
-	int					invalidationsl;
-
-	int					dumpnodesz;						// invalidate all graph nodes
-	char **			dumpnodes;						// graph nodes to dump
-	int					dumpnodesl;
+	int					invalidationsz;				// invalidate all nodes (-B)
 } g_args;
 
-/// parse_args
+/// args_parse
 //
 // parses command-line options, populating g_args.
 //
@@ -156,7 +149,7 @@ extern struct g_args_t
 //
 // returns zero on failure (malloc failure, for example)
 //
-int parse_args(int argc, char** argv);
+int args_parse(int argc, char** argv);
 
 /// args_teardown
 //

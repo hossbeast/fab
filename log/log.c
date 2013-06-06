@@ -87,6 +87,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_INVOKE		, .s = "INVOKE"		, .d = "fabfile invocations" }
 	, { .v = L_CHANGEL	, .s = "CHANGEL"	, .d = "source file changes - SECONDARY lists" }
 	, { .v = L_CHANGE		, .s = "CHANGE"		, .d = "source file changes" }
+	, { .v = L_SELECT		, .s = "SELECT"		, .d = "node selectors" }
 	, { .v = L_LWVOCAL	, .s = "LWVOCAL"	, .d = " ** VERBOSE ** liblistwise invocations" }
 };
 
@@ -425,7 +426,7 @@ int log_would(const uint64_t bits)
 	int x;
 	for(x = 0; x < o_filter_l; x++)
 	{
-		int rr = 0;
+		uint64_t rr = 0;
 		if(o_filter[x].m == '(')
 			rr = bits & o_filter[x].v;
 		if(o_filter[x].m == '{')

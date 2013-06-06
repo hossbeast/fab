@@ -37,6 +37,7 @@
 	_FFT(FFT_REGULAR				, 0x01	, x)	/* regular fabfile */								\
 	_FFT(FFT_DDISC					, 0x02	, x)	/* dependency discovery fabfile */	\
 	_FFT(FFT_VAREXPR				, 0x03	, x)	/* variable expression text */			\
+	_FFT(FFT_LISTEXPR				, 0x04	, x)	/* list expression text */					\
 
 enum {
 #define _FFT(a, b, c) a = b,
@@ -192,6 +193,27 @@ int ff_dsc_parse(
 //  ff     - results go here
 //
 int ff_var_parse(
+	  const ff_parser * const restrict p
+	, char * b
+	, int sz
+	, int id
+	, ff_file ** const restrict ff
+)
+	__attribute__((nonnull));
+
+/// ff_list_parse
+//
+// SUMMARY
+//  parse list expressions
+//
+// PARAMETERS
+//  p      - parser returned from mkparser
+//  b      - buffer to parse from
+//  sz     - number of bytes to parse
+//  id     - unique id for this list expression text
+//  ff     - results go here
+//
+int ff_list_parse(
 	  const ff_parser * const restrict p
 	, char * b
 	, int sz

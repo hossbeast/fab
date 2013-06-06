@@ -140,42 +140,11 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 /// public
 ///
 
-int gn_match(const char * const base, const char * const s, gn *** const r, int * const rl, int * const ra)
+int gn_match(const char * const s, gn ** const r)
 {
-	int add(gn * e)
-	{
-		if((*rl) == (*ra))
-		{
-			int ns = (*ra) ?: 10;
-			ns = ns * 2 + ns / 2;
-			fatal(xrealloc, r, sizeof(**r), ns, *ra);
-			*ra = ns;
-		}
-		(*r)[(*rl)++] = e;
-
-		finally : coda;
-	};
-
-	if(!gn_nodes.by_path)
-	{
-		fatal(map_create, &gn_nodes.by_path, 0);
-		fatal(map_create, &gn_nodes.by_pathhash, 0);
-	}
-
 	char can[512];
 
-	int sl = strlen(s);
-	if(s[0] == '/' && s[sl - 1] == '/')
-	{
-		// regex match (substring for now)
-		int x;
-		for(x = 0; x < gn_nodes.l; x++)
-		{
-			if(xstrstr(gn_nodes.e[x]->path->can, 0, s + 1, sl - 2, 0) || xstrstr(gn_nodes.e[x]->path->abs, 0, s + 1, sl - 2, 0) || xstrstr(gn_nodes.e[x]->path->rel, 0, s + 1, sl - 2, 0))
-				fatal(add, gn_nodes.e[x]);
-		}
-	}
-	else if(s[0] == '@')
+	if(s[0] == '@')
 	{
 		// nofile
 		int d = 0;
@@ -189,36 +158,23 @@ int gn_match(const char * const base, const char * const s, gn *** const r, int 
 		}
 
 		d += snprintf(can + d, sizeof(can) - d, "/%s", p[0]);
-
-		gn ** R = 0;
-		if((R = map_get(gn_nodes.by_path, can, strlen(can))))
-			fatal(add, *R);
 	}
 	else
 	{
-		// relative to base, or canonical path
-		if(canon(s, 0, can, sizeof(can), base, CAN_REALPATH) == 0)
-			return 0;
-
-		gn ** R = 0;
-		if((R = map_get(gn_nodes.by_path, can, strlen(can))))
-			fatal(add, *R);
+		// relative to init-fabfile-path, or an absolute path
+		fatal(canon, s, 0, can, sizeof(can), g_args.init_fabfile_path->abs_dir, CAN_REALPATH);
 	}
+
+	gn ** R = 0;
+	if((R = map_get(gn_nodes.by_path, can, strlen(can))))
+		*r = *R;
 
 	finally : coda;
 }
 
 int gn_add(const char * const restrict base, strstack * const restrict sstk, char * const restrict A, int Al, gn ** gna, int * const restrict new)
 {
-	if(gn_nodes.by_path)
-	{
-		fatal(lookup, base, sstk, A, Al, gna);
-	}
-	else
-	{
-		fatal(map_create, &gn_nodes.by_path, 0);
-		fatal(map_create, &gn_nodes.by_pathhash, 0);
-	}
+	fatal(lookup, base, sstk, A, Al, gna);
 
 	if((*gna) == 0)
 	{
@@ -690,10 +646,6 @@ int gn_invalidations()
 {
 	int x;
 
-	// update all node designations
-	for(x = 0; x < gn_nodes.l; x++)
-		gn_designate(gn_nodes.e[x]);
-
 	if(g_args.invalidationsz)
 	{
 		for(x = 0; x < gn_nodes.l; x++)
@@ -707,6 +659,7 @@ int gn_invalidations()
 	}
 	else
 	{
+/*
 		for(x = 0; x < g_args.invalidationsl; x++)
 		{
 			gn * gn = 0;
@@ -725,20 +678,11 @@ int gn_invalidations()
 				log(L_WARN, "invalidation : %s not found", g_args.invalidations[x]);
 			}
 		}
+*/
 	}
 
-	finally : coda;
-}
-
-void gn_teardown()
-{
-	int x;
-	for(x = 0; x < gn_nodes.l; x++)
-		freenode(gn_nodes.e[x]);
-
-	free(gn_nodes.e);
-	map_free(gn_nodes.by_path);
-	map_free(gn_nodes.by_pathhash);
+return 1;
+//	finally : coda;
 }
 
 // necessary for a module to call which cannot include the struct gn definition
@@ -915,4 +859,23 @@ void gn_dump(gn * gn)
 
 		log(L_DG | L_DGRAPH, "");
 	}
+}
+
+int gn_init()
+{
+	fatal(map_create, &gn_nodes.by_path, 0);
+	fatal(map_create, &gn_nodes.by_pathhash, 0);
+
+	finally : coda;
+}
+
+void gn_teardown()
+{
+	int x;
+	for(x = 0; x < gn_nodes.l; x++)
+		freenode(gn_nodes.e[x]);
+
+	free(gn_nodes.e);
+	map_free(gn_nodes.by_path);
+	map_free(gn_nodes.by_pathhash);
 }

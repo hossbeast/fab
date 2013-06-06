@@ -48,10 +48,11 @@ fml_0_0()
 	install ./fablib/std/c.fab			//usr/lib/fab/lib/std/c.fab
 	install ./fablib/std/l.fab			//usr/lib/fab/lib/std/l.fab
 	install ./fablib/std/y.fab			//usr/lib/fab/lib/std/y.fab
+
+	rm -rf 																	//usr/lib/fab/listwise 2>/dev/null
 	install -d															//usr/lib/fab/listwise
-	install ./fablw/op/fx/fx.so			//usr/lib/fab/listwise/fx.so
-	install ./fablw/op/fxc/fxc.so		//usr/lib/fab/listwise/fxc.so
-	install ./fablw/op/fxw/fxw.so		//usr/lib/fab/listwise/fxw.so
+	install ./fablw/op/fi/fi.so			//usr/lib/fab/listwise/fi.so
+	install ./fablw/op/fg/fg.so			//usr/lib/fab/listwise/fg.so
 
 
   X=$?

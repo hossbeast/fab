@@ -254,7 +254,7 @@ extern union gn_nodes_t
 // RETURNS
 //  returns 0 on failure (memory, io) and 1 otherwise
 //
-int gn_match(const char * const base, const char * const restrict s, gn *** const restrict r, int * const restrict rl, int * const ra)
+int gn_match(const char * const restrict s, gn ** const restrict r)
 	__attribute__((nonnull));
 
 /// gn_add
@@ -387,6 +387,13 @@ char * gn_designate(gn * gn)
 //  0 on ENOMEM, 1 otherwise
 //
 int gn_invalidations();
+
+/// gn_init
+//
+// SUMMARY
+//  initialize gn module
+//
+int gn_init();
 
 /// gn_teardown
 //

@@ -304,10 +304,16 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	fatal(lw_reset, stax, staxa, *staxp);
 
 	if(ffn->targets_0)
-		fatal(list_resolvetoflat, ffn->targets_0, vmap, gp, stax, staxa, *staxp);
+	{
+		int pn = *staxp;
+		fatal(list_resolvetoflat, ffn->targets_0, vmap, gp, stax, staxa, &pn, 0);
+	}
 
 	if(ffn->targets_1)
-		fatal(list_resolvetoflat, ffn->targets_1, vmap, gp, stax, staxa, *staxp);
+	{
+		int pn = *staxp;
+		fatal(list_resolvetoflat, ffn->targets_1, vmap, gp, stax, staxa, &pn, 0);
+	}
 
 	// create fmlv(s) and attach graph nodes
 	if(ffn->flags & FFN_SINGLE)

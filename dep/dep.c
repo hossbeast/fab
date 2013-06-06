@@ -68,7 +68,7 @@ static int dep_add_single(
 	int pr = staxp;
 
 	// resolve the right-hand side
-	fatal(list_resolveflat, ffn->feeds, vmap, gp, stax, staxa, pr);
+	fatal(list_resolveflat, ffn->feeds, vmap, gp, stax, staxa, &staxp, 0);
 
 	// add edges, which are the cartesian product needs x feeds
 	LSTACK_ITERATE((*stax)[pl], i, goa);
@@ -237,11 +237,14 @@ static int dep_add_multi(
 	size_t newaa = 0;
 	size_t newal = 0;
 
+	int pli = staxp;			// left hand side instance
+	int pr = staxp + 1;		// right hand side
+
 	int x;
 	for(x = 0; x < (*stax)[pl]->l; x++)
 	{
 		// prepare space for new variable definition list
-		fatal(lw_reset, stax, staxa, staxp);
+		fatal(lw_reset, stax, staxa, pli);
 
 		// populate the "<" variable (left-hand side)
 		newal = (*stax)[pl]->s[x].l;
@@ -264,7 +267,6 @@ static int dep_add_multi(
 			else
 			{
 				fatal(gn_add
-//					, ffn->loc.ff->path->abs_dir
 					, g_args.init_fabfile_path->abs_dir
 					, sstk
 					, (*stax)[pl]->s[x].s[i].s
@@ -274,12 +276,13 @@ static int dep_add_multi(
 				);
 			}
 
-			fatal(lstack_obj_add, (*stax)[staxp], r, LISTWISE_TYPE_GNLW);
+			fatal(lstack_obj_add, (*stax)[pli], r, LISTWISE_TYPE_GNLW);
 		}
 
 		// resolve the right-hand side in the context of $<
-		fatal(var_set, vmap, "<", (*stax)[staxp], 0, 1, 0);
-		fatal(list_resolveflat, ffn->feeds, vmap, gp, stax, staxa, staxp + 1);
+		fatal(var_set, vmap, "<", (*stax)[pli], 0, 1, 0);
+		int pn = pr;
+		fatal(list_resolveflat, ffn->feeds, vmap, gp, stax, staxa, &pn, 0);
 
 		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
 		{
@@ -297,21 +300,21 @@ static int dep_add_multi(
 				Al = (*stax)[pl]->s[x].s[i].l;
 			}
 
-			LSTACK_ITERATE((*stax)[staxp + 1], j, gob);
+			LSTACK_ITERATE((*stax)[pr], j, gob);
 			if(gob)
 			{
 				void * B = 0;
 				int Bl = 0;
 				int Bt = 0;
-				if((*stax)[staxp + 1]->s[0].s[j].type)
+				if((*stax)[pr]->s[0].s[j].type)
 				{
-					B = *(void**)(*stax)[staxp + 1]->s[0].s[j].s;
+					B = *(void**)(*stax)[pr]->s[0].s[j].s;
 					Bt = LISTWISE_TYPE_GNLW;
 				}
 				else
 				{
-					B = (*stax)[staxp + 1]->s[0].s[j].s;
-					Bl = (*stax)[staxp + 1]->s[0].s[j].l;
+					B = (*stax)[pr]->s[0].s[j].s;
+					Bl = (*stax)[pr]->s[0].s[j].l;
 				}
 
 				int newb = 0;
@@ -440,15 +443,16 @@ int dep_process(
 )
 {
 	// resolve the left-hand side
-	fatal(list_resolveflat, ffn->needs, vmap, gp, stax, staxa, staxp);
+	int pn = staxp;
+	fatal(list_resolveflat, ffn->needs, vmap, gp, stax, staxa, &staxp, 0);
 
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(dep_add_single, ffn, sstk, vmap, gp, stax, staxa, staxp + 1, staxp, first, newn, newr, block);
+		fatal(dep_add_single, ffn, sstk, vmap, gp, stax, staxa, pn + 1, pn, first, newn, newr, block);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(dep_add_multi, ffn, sstk, vmap, gp, stax, staxa, staxp + 1, staxp, first, newn, newr, block);
+		fatal(dep_add_multi, ffn, sstk, vmap, gp, stax, staxa, pn + 1, pn, first, newn, newr, block);
 	}
 
 	finally : coda;

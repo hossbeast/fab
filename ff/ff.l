@@ -291,7 +291,7 @@
 																												POPSTATE(yyextra);
 																												return LEX(WORD);
 																											}
-<varref>[@*#<]																				{
+<varref>[@*#<!]																				{
 																												POPSTATE(yyextra);
 																												return LEX(WORD);
 																											}

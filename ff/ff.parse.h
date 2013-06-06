@@ -51,6 +51,9 @@ int ff_dsc_yyparse(void *, parse_param*);
 // defined in ff.var.tab.o (this declaration should be in ff.var.tab.h but isnt)
 int ff_var_yyparse(void *, parse_param*);
 
+// defined in ff.list.tab.o (this declaration should be in ff.var.tab.h but isnt)
+int ff_list_yyparse(void*, parse_param*);
+
 /// ff_yyerror
 //
 // SUMMARY

@@ -37,8 +37,13 @@
 #include "unitstring.h"
 #include "canon.h"
 #include "macros.h"
+#include "selector.h"
 
 struct g_args_t g_args;
+
+//
+// [[ static ]]
+//
 
 static void usage(int valid, int version, int help, int logopts, int operators)
 {
@@ -49,43 +54,13 @@ if(version)
 {
 	printf(" "
 #if DEVEL
-	XQUOTE(FABVERSION) "+DEVEL"
+	XQUOTE(FABVERSIONS) "+DEVEL"
 #else
-	XQUOTE(FABVERSION)
+	XQUOTE(FABVERSIONS)
 #endif
 	  "\n"
 	);
 }
-
-/*
-# add targets to these lists
-d - dump
-b - invalidate
-e - build
-
-# target modifiers
-v - sever
-
-# node selectors
-  -   text   : path match relative to init-fabfile-rel-dir
-  -  /text   : canonical path match
-  -  @text   : nofile reference
-  -  %B      : matches all nodes
-  -  %BP     : matches all primary nodes
-  -  %BS     : matches all secondary nodes
-  - [ text ] : matches nodes in the list
-
-# general-access variables
-$! - all nodes
-
-# listwise operators
-  - select primary
-  - select secondary
-  - select generated
-  - select task
-  - select nofile
-*/
-
 
 if(help)
 {
@@ -99,20 +74,24 @@ if(help)
 "\n"
 "----------- [ targets ] --------------------------------------------------------\n"
 "\n"
-" <node specifier>        fabrication target\n"
+" <node selector>         fabrication target\n"
 "\n"
 "----------- [ options ] --------------------------------------------------------\n"
+"\n"
+"\n"
+" selection modifiers\n"
+" -d                      append following selection(s) to inspect-list\n"
+" -b                      append following selection(s) to invalidate-list\n"
+" -t            (default) append following selection(s) to fabricate-list\n"
+" -x                      append following selection(s) to fabricate-exact-list\n"
 "\n"
 " execution modes\n"
 " -p                      buildplan only\n"
 " -u                      dependency discovery only\n"
-" -d <node specifier>     dump only\n"
 "\n"
 " -U                      perform dependency discovery upfront\n"
 "\n"
 " incremental builds\n"
-" -b <node specifier>     invalidate node(s)\n"
-" -e <node specifier>     invalidate node(s) and add as target(s)\n"
 " -B                      invalidate-all\n"
 "\n"
 " parallel builds\n"
@@ -130,18 +109,20 @@ if(help)
 " -v $var=[list]          scope-zero variable definition\n"
 " -v $var+=[list]         scope-zero variable transform-addition\n"
 " -v $var-=[list]         scope-zero variable transform-subtraction\n"
-" -v $var=~generator      scope-zero variable transform-listwise\n"
+" -v $var~=generator      scope-zero variable transform-listwise\n"
 "\n"
 " handling cycles\n"
 " --cycle-warn            warn when a cycle is detected (once per unique cycle)\n"
 " --cycle-fail            fail when a cycle is detected\n"
 " --cycle-deal            deal with cycles (halt traversal)\n"
 "\n"
-" <node specifier> is one of: \n"
-"  1.  text   : path match relative to init-fabfile-rel-dir\n"
-"  2. /text/  : regex match on can/abs/rel paths\n"
-"  3. /text   : canonical path match\n"
-"  4. @text   : nofile match\n"
+" <node selector> is one of: \n"
+"  1.  text    : path match relative to init-fabfile-rel-dir\n"
+"  3. /text    : canonical path match\n"
+"  4. @text    : nofile match\n"
+"  5. [ list ] : list selection, available vars - $! (all nodes)\n"
+"               ex. [ $! ~ fg/p ] - select all PRIMARY nodes\n"
+"               ex. [ $! ~ fg/s ] - select all SECONDARY nodes\n"
 "\n"
 	);
 }
@@ -212,8 +193,14 @@ if(help || logopts || operators)
 	exit(!valid);
 }
 
-int parse_args(int argc, char** argv)
+//
+// [[ public ]]
+//
+
+int args_parse(int argc, char** argv)
 {
+	char space[256];
+
 	path * fabpath = 0;
 
 	int help = 0;
@@ -232,11 +219,13 @@ int parse_args(int argc, char** argv)
 				, { "cycle-warn"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_WARN	}
 				, { "cycle-fail"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_FAIL }
 				, { "cycle-deal"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_DEAL }
+
+/* program switches */
 // a
-/* b */ , { 0	, required_argument	, 0			, 'b' }		// graph node invalidation
+/* b - append selection(s) to invalidate-list */
 /* c */	, { 0	, no_argument				, 0			, 'c' }		// MODE_GNID_RELATIVE	
-/* d */	,	{ 0	, required_argument	, 0			, 'd' }		// graph node dump
-/* e */	,	{ 0 , required_argument	, 0			, 'e' }		// graph node invalidation
+/* d - append selection(s) to inspect-list */
+// e
 /* f */ , { 0	, required_argument	, 0			, 'f' }		// init-fabfile-path
 // g
 /* h */ , { 0	, no_argument				, 0			, 'h' }		// help
@@ -251,11 +240,11 @@ int parse_args(int argc, char** argv)
 // q
 // r
 // s
-// t
+/* t - append selection(s) to fabricate-list */
 /* u */	, { 0	, no_argument				, 0			, 'u' }		// dependency discovery mode
 /* v */ , { 0	, required_argument	, 0			, 'v' }		// root-level variable definition
 // w
-// x
+/* x - append selection(s) to fabricate-exact-ist */
 // y
 // z
 // A
@@ -288,11 +277,14 @@ int parse_args(int argc, char** argv)
 	};
 
 	char* switches =
+		// getopt options
+		"-"
+
 		// no-argument switches
-		"chpuBIU"
+		"chpuBU"
 
 		// with-argument switches
-		"b:d:e:f:j:k:v:I:"
+		"f:j:k:v:I:"
 	;
 
 	//
@@ -314,88 +306,133 @@ int parse_args(int argc, char** argv)
 	fatal(path_create, &fabpath, g_args.cwd, "%s", DEFAULT_INIT_FABFILE);
 	fatal(path_copy, &g_args.init_fabfile_path, fabpath);
 
+	// default invokedirs - head of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], DEFAULT_INVOKEDIR);
 
+	// selectors apply to the following list(s)
+	uint32_t selector_lists = SELECTOR_FABRICATE;
+	int selector_mode = '+';
+
 	int x;
 	int indexptr;
-	opterr = 1;
+	opterr = 0;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
 	{
-		switch(x)
+		if(x == 1 || x == '?')
 		{
-			case 'h':
-				usage(1, 1, 1, 0, 0);
-				break;
-			case 'b':
-				fatal(xrealloc, &g_args.invalidations, sizeof(g_args.invalidations[0]), g_args.invalidationsl + 1, g_args.invalidationsl);
-				g_args.invalidations[g_args.invalidationsl++] = strdup(optarg);
-				break;
-			case 'c':
-				g_args.mode_gnid = MODE_GNID_CANON;
-				break;
-			case 'd':
-				fatal(xrealloc, &g_args.dumpnodes, sizeof(g_args.dumpnodes[0]), g_args.dumpnodesl + 1, g_args.dumpnodesl);
-				g_args.dumpnodes[g_args.dumpnodesl++] = strdup(optarg);
-				break;
-			case 'e':
-				fatal(xrealloc, &g_args.invalidations, sizeof(g_args.invalidations[0]), g_args.invalidationsl + 1, g_args.invalidationsl);
-				g_args.invalidations[g_args.invalidationsl++] = strdup(optarg);
+			char * s = 0;
+			if(x == 1)
+				s = optarg;
+			else if(x == '?')
+				s = argv[optind-1];
 
-				fatal(xrealloc, &g_args.targets, sizeof(g_args.targets[0]), g_args.targetsl + 1, g_args.targetsl);
-				g_args.targets[g_args.targetsl++] = strdup(optarg);
-				break;
-			case 'f':
-				path_xfree(&g_args.init_fabfile_path);
-				fatal(path_create, &g_args.init_fabfile_path, g_args.cwd, "%s", optarg);
-				break;
-			case 'p':
-				g_args.mode_exec = MODE_EXEC_BUILDPLAN;
-				break;
-			case 'u':
-				g_args.mode_exec = MODE_EXEC_DDSC;
-				break;
-			case 'k':
-				g_args.mode_exec = MODE_EXEC_BAKE;
-				xfree(&g_args.bakescript_path);
-				g_args.bakescript_path = strdup(optarg);
-				break;
-			case 'v':
+			if(s)
+			{
+				if(s[0] == '-' || s[0] == '+')
 				{
-					if(g_args.rootvarsl == g_args.rootvarsa)
+					if(s[1] >= 'a' && s[1] <= 'z')
 					{
-						int newa = g_args.rootvarsa ?: 3;
+						selector_mode = s[0];
+						selector_lists = 0;
+						
+						if(strchr(s, 'd'))
+							selector_lists |= SELECTOR_INSPECT;
+						if(strchr(s, 't'))
+							selector_lists |= SELECTOR_FABRICATE;
+						if(strchr(s, 'x'))
+							selector_lists |= SELECTOR_FABRICATEX;
+						if(strchr(s, 'b'))
+							selector_lists |= SELECTOR_INVALIDATE;
+						if(strchr(s, 'q'))
+							selector_lists |= SELECTOR_QUERY;
+					}
+				}
+				else
+				{
+					if(g_args.selectorsl == g_args.selectorsa)
+					{
+						int newa = g_args.selectorsa ?: 3;
 						newa = newa * 2 + newa / 2;
-						fatal(xrealloc, &g_args.rootvars, sizeof(g_args.rootvars[0]), newa, g_args.rootvarsa);
-						g_args.rootvarsa = newa;
+						fatal(xrealloc, &g_args.selectors, sizeof(g_args.selectors[0]), newa, g_args.selectorsa);
+						g_args.selectorsa = newa;
 					}
 
-					fatal(xsprintf, &g_args.rootvars[g_args.rootvarsl], "%s%c", optarg, 0);
-					g_args.rootvarsl++;
+					g_args.selectors[g_args.selectorsl++] = (selector){
+						  .mode = selector_mode
+						, .lists = selector_lists
+						, .s = strdup(s)
+					};
 				}
-				break;
-			case 'j':
-				{
-					int n = 0;
-					if(sscanf(optarg, "%d%n", &g_args.concurrency, &n) != 1 || n <= 0)
-					{
-						fail("badly formed option for -j : '%s'", optarg);
-					}
-				}
-				break;
-			case 'B':
-				g_args.invalidationsz = 1;
-				break;
-			case 'U':
-				g_args.mode_ddsc = MODE_DDSC_UPFRONT;
-				break;
-			case 'I':
-				fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-				fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
-				break;
-			case '?':
+			}
+		}
+		else if(x == 'c')
+		{
+			g_args.mode_gnid = MODE_GNID_CANON;
+		}
+		else if(x == 'f')
+		{
+			path_xfree(&g_args.init_fabfile_path);
+			fatal(path_create, &g_args.init_fabfile_path, g_args.cwd, "%s", optarg);
+		}
+		else if(x == 'h')
+		{
+			usage(1, 1, 1, 0, 0);
+		}
+		else if(x == 'j')
+		{
+			int n = 0;
+			if(sscanf(optarg, "%d%n", &g_args.concurrency, &n) != 1 || n <= 0)
+			{
+				fail("badly formed option for -j : '%s'", optarg);
+			}
+		}
+		else if(x == 'k')
+		{
+			g_args.mode_exec = MODE_EXEC_BAKE;
+			xfree(&g_args.bakescript_path);
+			g_args.bakescript_path = strdup(optarg);
+		}
+		else if(x == 'p')
+		{
+			g_args.mode_exec = MODE_EXEC_BUILDPLAN;
+		}
+		else if(x == 'u')
+		{
+			g_args.mode_exec = MODE_EXEC_DDSC;
+		}
+		else if(x == 'v')
+		{
+			if(g_args.rootvarsl == g_args.rootvarsa)
+			{
+				int newa = g_args.rootvarsa ?: 3;
+				newa = newa * 2 + newa / 2;
+				fatal(xrealloc, &g_args.rootvars, sizeof(g_args.rootvars[0]), newa, g_args.rootvarsa);
+				g_args.rootvarsa = newa;
+			}
+
+			fatal(xsprintf, &g_args.rootvars[g_args.rootvarsl], "%s%c", optarg, 0);
+			g_args.rootvarsl++;
+		}
+		else if(x == 'B')
+		{
+			g_args.invalidationsz = 1;
+		}
+		else if(x == 'U')
+		{
+			g_args.mode_ddsc = MODE_DDSC_UPFRONT;
+		}
+		else if(x == 'I')
+		{
+			fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
+			fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
+		}
+		else if(x == '?')
+		{
+			if(0)
+			{
 				usage(0, 1, 1, 0, 0);
-				break;
+			}
 		}
 	}
 
@@ -404,34 +441,9 @@ int parse_args(int argc, char** argv)
 		usage(1, 1, help, logopts, operators);
 	}
 
+	// default invokedirs - tail of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_args.init_fabfile_path->abs_dir);
-
-	// unprocessed options - fabrication targets
-	for(x = optind; x < argc; x++)
-	{
-		if(argv[x][0] != '+' && argv[x][0] != '-')
-		{
-			fatal(xrealloc, &g_args.targets, sizeof(g_args.targets[0]), g_args.targetsl + 1, g_args.targetsl);
-			g_args.targets[g_args.targetsl++] = strdup(argv[x]);
-		}
-	}
-
-	// lookup invalidations
-	for(x = 0; x < g_args.invalidationsl; x++)
-	{
-		char * N = malloc(512);
-		fatal(canon, g_args.invalidations[x], 0, N, 512, g_args.cwd, CAN_REALPATH);
-		free(g_args.invalidations[x]);
-		g_args.invalidations[x] = N;
-	}
-
-	// dumpnodes implies +DGRAPH and MODE_EXEC_DUMP
-	if(g_args.dumpnodes)
-	{
-		g_args.mode_exec = MODE_EXEC_DUMP;
-		log_parse("+DGRAPH", 0);
-	}
 
 	// MODE_BUILDPLAN implies +BPDUMP
 	if(g_args.mode_exec == MODE_EXEC_BUILDPLAN)
@@ -449,7 +461,7 @@ int parse_args(int argc, char** argv)
 
 	// log execution parameters under PARAMS
 	log(L_PARAMS	, "%11spid                =%u"						, ""	, g_args.pid);
-	log(L_PARAMS	, "%11sTid                =%u"						, ""	, g_args.sid);
+	log(L_PARAMS	, "%11ssid                =%u"						, ""	, g_args.sid);
 	log(L_PARAMS	, "%11seid                =%s/%d:%s/%d"	, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
 	log(L_PARAMS	, "%11srid                =%s/%d:%s/%d"	, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
 	log(L_PARAMS	, "%11scwd                =%s"						, ""	, g_args.cwd);
@@ -474,7 +486,6 @@ int parse_args(int argc, char** argv)
 	else
 		snprintf(buf, sizeof(buf)	, "%s", "unbounded");
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', buf);
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidations-all  =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 	{
@@ -482,31 +493,17 @@ int parse_args(int argc, char** argv)
 		log(L_ARGS | L_PARAMS			, " %s (  %c  ) invokedirs(s)      =%s", star ? "*" : " ", 'I', g_args.invokedirs[x]);
 	}
 
-	if(!g_args.invalidationsz)
-	{
-		if(!g_args.invalidations)
-			log(L_ARGS | L_PARAMS		, " %s ( %s ) invalidations(s)   =", " ", "b/e");
-		for(x = 0; x < g_args.invalidationsl; x++)
-			log(L_ARGS | L_PARAMS		, " %s ( %s ) invalidations(s)   =%s", "*", "b/e", g_args.invalidations[x]);
-	}
-
-	if(!g_args.dumpnodesz)
-	{
-		if(!g_args.dumpnodes)
-			log(L_ARGS | L_PARAMS		, " %s (  %c  ) dumpnodes(s)       =", " ", 'd');
-		for(x = 0; x < g_args.dumpnodesl; x++)         
-			log(L_ARGS | L_PARAMS		, " %s (  %c  ) dumpnodes(s)       =%s", "*", 'd', g_args.dumpnodes[x]);
-	}
-
-	if(!g_args.rootvarsl)
+	if(g_args.rootvarsl == 0)
 		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)     =", " ", ' ');
 	for(x = 0; x < g_args.rootvarsl; x++)
 		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)     =%s", "*", 'v', g_args.rootvars[x]);
 
-	if(!g_args.targets)
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) target(s)          =", " ", ' ');
-	for(x = 0; x < g_args.targetsl; x++)
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) target(s)          =%s", "*", ' ', g_args.targets[x]);
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidate-all     =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
+
+	if(g_args.selectorsl == 0)
+		log(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)        =", " ", ' ');
+	for(x = 0; x < g_args.selectorsl; x++)
+		log(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)        =%s", "*", ' ', selector_string(&g_args.selectors[x], space, sizeof(space)));
 
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 
@@ -524,27 +521,16 @@ void args_teardown()
 	free(g_args.cwd);
 
 	int x;
-	for(x = 0; x < g_args.targetsl; x++)
-		free(g_args.targets[x]);
-
-	for(x = 0; x < g_args.invalidationsl; x++)
-		free(g_args.invalidations[x]);
-
-	for(x = 0; x < g_args.dumpnodesl; x++)
-		free(g_args.dumpnodes[x]);
+	for(x = 0; x < g_args.selectorsl; x++)
+		free(g_args.selectors[x].s);
+	free(g_args.selectors);
 
 	for(x = 0; x < g_args.rootvarsl; x++)
-	{
 		free(g_args.rootvars[x]);
-	}
 	free(g_args.rootvars);
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 		free(g_args.invokedirs[x]);
-
-	free(g_args.targets);
-	free(g_args.invalidations);
-	free(g_args.dumpnodes);
 	free(g_args.invokedirs);
 
 	path_free(g_args.init_fabfile_path);
