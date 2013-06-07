@@ -359,7 +359,7 @@ int var_xfm_lw(map * restrict vmap, const char * restrict s, generator * const r
 	{
 		if(log_would(L_VAR | TAG(s)))
 		{
-			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) =~ %s ", "xfm-lw", KEYID(vmap, s), tex);
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) ~= %s ", "xfm-lw", KEYID(vmap, s), tex);
 			LOG_SRC(src);
 			log_finish("");
 		}

@@ -15,6 +15,7 @@
 static map * o_fabricationsmap;
 static map * o_fabricationxsmap;
 static map * o_invalidationsmap;
+static map * o_discoveriesmap;
 static map * o_inspectionsmap;
 static map * o_queriesmap;
 
@@ -52,6 +53,8 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 				fatal(map_set, o_fabricationxsmap, MM(g), 0, 0);
 			if(s->lists & SELECTOR_INVALIDATE)
 				fatal(map_set, o_invalidationsmap, MM(g), 0, 0);
+			if(s->lists & SELECTOR_DISCOVERY)
+				fatal(map_set, o_discoveriesmap, MM(g), 0, 0);
 			if(s->lists & SELECTOR_INSPECT)
 				fatal(map_set, o_inspectionsmap, MM(g), 0, 0);
 		}
@@ -63,6 +66,8 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 				fatal(map_delete, o_fabricationxsmap, MM(g));
 			if(s->lists & SELECTOR_INVALIDATE)
 				fatal(map_delete, o_invalidationsmap, MM(g));
+			if(s->lists & SELECTOR_DISCOVERY)
+				fatal(map_delete, o_discoveriesmap, MM(g));
 			if(s->lists & SELECTOR_INSPECT)
 				fatal(map_delete, o_inspectionsmap, MM(g));
 		}
@@ -136,6 +141,7 @@ int selector_init()
 	fatal(map_create, &o_fabricationsmap, 0);
 	fatal(map_create, &o_fabricationxsmap, 0);
 	fatal(map_create, &o_invalidationsmap, 0);
+	fatal(map_create, &o_discoveriesmap, 0);
 	fatal(map_create, &o_inspectionsmap, 0);
 	fatal(map_create, &o_queriesmap, 0);
 
@@ -146,6 +152,7 @@ int selector_finalize(
 	  gn **** fabrications, int * fabricationsl
 	, gn **** fabricationxs, int * fabricationxsl
 	, gn **** invalidations, int * invalidationsl
+	, gn **** discoveries, int * discoveriesl
 	, gn **** inspections, int * inspectionsl
 	, gn **** queries, int * queriesl
 )
@@ -153,6 +160,7 @@ int selector_finalize(
 	fatal(map_keys, o_fabricationsmap, fabrications, fabricationsl);
 	fatal(map_keys, o_fabricationxsmap, fabricationxs, fabricationxsl);
 	fatal(map_keys, o_invalidationsmap, invalidations, invalidationsl);
+	fatal(map_keys, o_discoveriesmap, discoveries, discoveriesl);
 	fatal(map_keys, o_inspectionsmap, inspections, inspectionsl);
 	fatal(map_keys, o_queriesmap, queries, queriesl);
 
@@ -166,6 +174,7 @@ void selector_teardown()
 	map_xfree(&o_fabricationsmap);
 	map_xfree(&o_fabricationxsmap);
 	map_xfree(&o_invalidationsmap);
+	map_xfree(&o_discoveriesmap);
 	map_xfree(&o_inspectionsmap);
 	map_xfree(&o_queriesmap);
 }

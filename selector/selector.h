@@ -33,8 +33,9 @@ struct gn;
 	_SELECTOR(SELECTOR_FABRICATE		, 0x01	, x)	/* fabricate */									\
 	_SELECTOR(SELECTOR_FABRICATEX		, 0x02	, x)	/* fabricate-exact */						\
 	_SELECTOR(SELECTOR_INVALIDATE		, 0x04	, x)	/* invalidate */								\
-	_SELECTOR(SELECTOR_INSPECT			, 0x08	, x)	/* inspect */										\
-	_SELECTOR(SELECTOR_QUERY				, 0x10	, x)	/* query */											\
+	_SELECTOR(SELECTOR_DISCOVERY		, 0x08	, x)	/* discovery */									\
+	_SELECTOR(SELECTOR_INSPECT			, 0x10	, x)	/* inspect */										\
+	_SELECTOR(SELECTOR_QUERY				, 0x20	, x)	/* query */											\
 
 enum {
 #define _SELECTOR(a, b, c) a = b,
@@ -73,6 +74,7 @@ int selector_finalize(
 	  struct gn **** restrict fabrications, int * restrict fabricationsl
 	, struct gn **** restrict fabricationxs, int * restrict fabricationxsl
 	, struct gn **** restrict invalidations, int * restrict invalidationsl
+	, struct gn **** restrict discoveries, int * restrict discoveriesl
 	, struct gn **** restrict inspections, int * restrict inspectionsl
 	, struct gn **** restrict queries, int * restrict queriesl
 )

@@ -66,70 +66,68 @@ if(help)
 {
 	printf(
 "\n"
-"usage : fab [[options] [logopts] [targets]]*\n"
+"usage : fab [[options] [logopts] [selectors]]*\n"
 "  --help|-h   : this message\n"
 "  --version   : version information\n"
 "  --logopts   : logging category listing\n"
-"  --operators : operator listing\n"
+"  --operators : operator listing (including fab-specific)\n"
 "\n"
-"----------- [ targets ] --------------------------------------------------------\n"
-"\n"
-" <node selector>         fabrication target\n"
-"\n"
-"----------- [ options ] --------------------------------------------------------\n"
-"\n"
-"\n"
-" selection modifiers\n"
-" -d                      append following selection(s) to inspect-list\n"
-" -b                      append following selection(s) to invalidate-list\n"
-" -t            (default) append following selection(s) to fabricate-list\n"
-" -x                      append following selection(s) to fabricate-exact-list\n"
-"\n"
-" execution modes\n"
-" -p                      buildplan only\n"
-" -u                      dependency discovery only\n"
-"\n"
-" -U                      perform dependency discovery upfront\n"
-"\n"
-" incremental builds\n"
-" -B                      invalidate-all\n"
-"\n"
-" parallel builds\n"
-" -j <number>             concurrency limit\n"
-"\n"
-" bakescript generation\n"
-" -k </path/to/output>    create bakescript\n"
-"\n"
-" logging\n"
-" -c                      set node identifier mode to GNID_CANON for logging\n"
-"\n"
-" fabfile processing\n"
-" -f <path/to/fabfile>    path to initial fabfile\n"
-" -I <path/to/directory>  directory for locating invocations\n"
-" -v $var=[list]          scope-zero variable definition\n"
-" -v $var+=[list]         scope-zero variable transform-addition\n"
-" -v $var-=[list]         scope-zero variable transform-subtraction\n"
-" -v $var~=generator      scope-zero variable transform-listwise\n"
-"\n"
-" handling cycles\n"
-" --cycle-warn            warn when a cycle is detected (once per unique cycle)\n"
-" --cycle-fail            fail when a cycle is detected\n"
-" --cycle-deal            deal with cycles (halt traversal)\n"
+"----------- [ selectors ] ----------------------------------------------------------------\n"
 "\n"
 " <node selector> is one of: \n"
-"  1.  text    : path match relative to init-fabfile-rel-dir\n"
+"  1.  text    : path match relative to cwd (%s)\n"
 "  3. /text    : canonical path match\n"
 "  4. @text    : nofile match\n"
 "  5. [ list ] : list selection, available vars - $! (all nodes)\n"
 "               ex. [ $! ~ fg/p ] - select all PRIMARY nodes\n"
 "               ex. [ $! ~ fg/s ] - select all SECONDARY nodes\n"
 "\n"
+"----------- [ options ] ------------------------------------------------------------------\n"
+"\n"
+" selection modifiers (may be clustered)\n"
+"  (+/-)t        (default) add/remove following selection(s) to/from fabricate-list\n"
+"  (+/-)x                  add/remove following selection(s) to/from fabricate-exact-list\n"
+"  (+/-)d                  add/remove following selection(s) to/from discovery-list\n"
+"  (+/-)b                  add/remove following selection(s) to/from invalidate-list\n"
+"  (+/-)i                  add/remove following selection(s) to/from inspect-list\n"
+"  (+/-)q                  add/remove following selection(s) to/from query-list\n"
+"\n"
+" execution modes\n"
+"  -p                      buildplan only - do not execute\n"
+"\n"
+" incremental builds\n"
+"  -B                      invalidate-all\n"
+"\n"
+" parallel builds\n"
+"  -j <number>             concurrency limit\n"
+"\n"
+" bakescript generation\n"
+"  -k </path/to/output>    create bakescript\n"
+"\n"
+" logging\n"
+"  -c                      set node identifier mode to GNID_CANON for logging\n"
+"\n"
+" fabfile processing\n"
+"  -f <path/to/fabfile>    path to initial fabfile\n"
+"  -I <path/to/directory>  directory for locating invocations\n"
+"  -v $var=[list]          scope-zero variable definition\n"
+"  -v $var+=[list]         scope-zero variable transform-addition\n"
+"  -v $var-=[list]         scope-zero variable transform-subtraction\n"
+"  -v $var~=generator      scope-zero variable transform-listwise\n"
+"\n"
+" handling cycles\n"
+"  --cycle-warn            warn when a cycle is detected (once per unique cycle)\n"
+"  --cycle-fail            fail when a cycle is detected\n"
+"  --cycle-deal            deal with cycles (halt traversal)\n"
+		, g_args.cwd
 	);
 }
+
 if(logopts)
 {
 	printf(
-"----------- [ logopts ] --------------------------------------------------------\n"
+"\n"
+"----------- [ logopts ] ------------------------------------------------------------------\n"
 "\n"
 " +<log name> to enable logging category\n"  
 " -<log name> to disable logging category\n"  
@@ -139,13 +137,13 @@ if(logopts)
 	int x;
 	for(x = 0; x < g_logs_l; x++)
 		printf("  %-10s %s\n", g_logs[x].s, g_logs[x].d);
-	printf("\n");
 }
 
 if(operators)
 {
 	printf(
-"----------------- [ operators ] ------------------------------------------------\n"
+"\n"
+"----------------- [ operators ] ------------------------------------------------------------\n"
 "\n"
 " 1  2  3  4  5  6  7  8  9    name  description\n"
 	);
@@ -179,12 +177,12 @@ if(operators)
 		" 8. OPERATION_FILESYSTEM\n"
 		" 9. OBJECT_NO\n"
 	);
-	printf("\n");
 }
 
 if(help || logopts || operators)
 {
 	printf(
+"\n"
 "For more information visit http://fabutil.org\n"
 	);
 }
@@ -241,7 +239,7 @@ int args_parse(int argc, char** argv)
 // r
 // s
 /* t - append selection(s) to fabricate-list */
-/* u */	, { 0	, no_argument				, 0			, 'u' }		// dependency discovery mode
+// u
 /* v */ , { 0	, required_argument	, 0			, 'v' }		// root-level variable definition
 // w
 /* x - append selection(s) to fabricate-exact-ist */
@@ -267,7 +265,7 @@ int args_parse(int argc, char** argv)
 // R
 // S
 // T
-/* U */	, { 0	, no_argument				, 0			, 'U' }		// dependency discovery upfront
+// U
 // V
 // W
 // X
@@ -281,7 +279,7 @@ int args_parse(int argc, char** argv)
 		"-"
 
 		// no-argument switches
-		"chpuBU"
+		"chpB"
 
 		// with-argument switches
 		"f:j:k:v:I:"
@@ -298,9 +296,8 @@ int args_parse(int argc, char** argv)
 	// args:defaults
 	//
 	g_args.concurrency		= DEFAULT_CONCURRENCY_LIMIT;
-	g_args.mode_exec			= DEFAULT_MODE_EXEC;
+	g_args.mode_bplan			= DEFAULT_MODE_BPLAN;
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
-	g_args.mode_ddsc			= DEFAULT_MODE_DDSC;
 	g_args.mode_cycl			= DEFAULT_MODE_CYCL;
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create, &fabpath, g_args.cwd, "%s", DEFAULT_INIT_FABFILE);
@@ -337,6 +334,8 @@ int args_parse(int argc, char** argv)
 						selector_lists = 0;
 						
 						if(strchr(s, 'd'))
+							selector_lists |= SELECTOR_DISCOVERY;
+						if(strchr(s, 'i'))
 							selector_lists |= SELECTOR_INSPECT;
 						if(strchr(s, 't'))
 							selector_lists |= SELECTOR_FABRICATE;
@@ -377,7 +376,7 @@ int args_parse(int argc, char** argv)
 		}
 		else if(x == 'h')
 		{
-			usage(1, 1, 1, 0, 0);
+			help = 1;
 		}
 		else if(x == 'j')
 		{
@@ -389,17 +388,13 @@ int args_parse(int argc, char** argv)
 		}
 		else if(x == 'k')
 		{
-			g_args.mode_exec = MODE_EXEC_BAKE;
+			g_args.mode_bplan = MODE_BPLAN_BAKE;
 			xfree(&g_args.bakescript_path);
 			g_args.bakescript_path = strdup(optarg);
 		}
 		else if(x == 'p')
 		{
-			g_args.mode_exec = MODE_EXEC_BUILDPLAN;
-		}
-		else if(x == 'u')
-		{
-			g_args.mode_exec = MODE_EXEC_DDSC;
+			g_args.mode_bplan = MODE_BPLAN_GENERATE;
 		}
 		else if(x == 'v')
 		{
@@ -417,10 +412,6 @@ int args_parse(int argc, char** argv)
 		else if(x == 'B')
 		{
 			g_args.invalidationsz = 1;
-		}
-		else if(x == 'U')
-		{
-			g_args.mode_ddsc = MODE_DDSC_UPFRONT;
 		}
 		else if(x == 'I')
 		{
@@ -446,7 +437,7 @@ int args_parse(int argc, char** argv)
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_args.init_fabfile_path->abs_dir);
 
 	// MODE_BUILDPLAN implies +BPDUMP
-	if(g_args.mode_exec == MODE_EXEC_BUILDPLAN)
+	if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
 		log_parse("+BPDUMP", 0);
 
 	// initialize logger
@@ -473,13 +464,12 @@ int args_parse(int argc, char** argv)
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->can);
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->abs);
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->rel);
-	log(L_ARGS | L_PARAMS				, " %s (%5s) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", "k/p/u", MODE_STR(g_args.mode_exec));
-	if(g_args.mode_exec == MODE_EXEC_BAKE)
+	log(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan         =%s", g_args.mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args.mode_bplan));
+	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
 	{
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) bakescript-path    =%s", strcmp(g_args.bakescript_path, DEFAULT_BAKE_PATH) == 0 ? " " : "*", 'k', g_args.bakescript_path);
+		log(L_ARGS | L_PARAMS			, " %s (  %c  ) bakescript-path    =%s", "*", 'k', g_args.bakescript_path);
 	}
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'c', MODE_STR(g_args.mode_gnid));
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'U', MODE_STR(g_args.mode_ddsc));
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycl          =%s", g_args.mode_cycl == DEFAULT_MODE_CYCL ? " " : "*", ' ', MODE_STR(g_args.mode_cycl));
 	if(g_args.concurrency > 0)
 		snprintf(buf, sizeof(buf)	, "%d", g_args.concurrency);

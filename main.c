@@ -89,6 +89,8 @@ int main(int argc, char** argv)
 	int									fabricationxsl = 0;
 	gn ***							invalidations = 0;
 	int									invalidationsl = 0;
+	gn ***							discoveries = 0;
+	int									discoveriesl = 0;
 	gn ***							inspections = 0;
 	int									inspectionsl = 0;
 	gn ***							queries = 0;
@@ -263,6 +265,7 @@ int main(int argc, char** argv)
 			, &fabrications, &fabricationsl
 			, &fabricationxs, &fabricationxsl
 			, &invalidations, &invalidationsl
+			, &discoveries, &discoveriesl
 			, &inspections, &inspectionsl
 			, &queries, &queriesl
 		);
@@ -270,19 +273,30 @@ int main(int argc, char** argv)
 		map_xfree(&tmap);
 	}
 
-	if(log_would(L_PARAMS))
+	if(log_would(L_LISTS))
 	{
+		if(fabricationsl + fabricationxsl + invalidationsl + discoveriesl + inspectionsl + queriesl == 0)
+		{
+			log(L_LISTS, "empty");
+		}
+		
 		for(x = 0; x < fabricationsl; x++)
-			log(L_PARAMS, " %s (  %c  ) fabrication(s)     =%s", " ", ' ', (*fabrications[x])->idstring);
+			log(L_LISTS, "fabrication(s)     =%s", " ", ' ', (*fabrications[x])->idstring);
 
 		for(x = 0; x < fabricationxsl; x++)
-			log(L_PARAMS, " %s (  %c  ) fabricationx(s)    =%s", " ", ' ', (*fabricationxs[x])->idstring);
+			log(L_LISTS, "fabricationx(s)    =%s", " ", ' ', (*fabricationxs[x])->idstring);
 
 		for(x = 0; x < invalidationsl; x++)
-			log(L_PARAMS, " %s (  %c  ) invalidation(s)    =%s", " ", ' ', (*invalidations[x])->idstring);
+			log(L_LISTS, "invalidation(s)    =%s", " ", ' ', (*invalidations[x])->idstring);
+
+		for(x = 0; x < discoveriesl; x++)
+			log(L_LISTS, "discover(y)(ies)   =%s", " ", ' ', (*discoveries[x])->idstring);
 
 		for(x = 0; x < inspectionsl; x++)
-			log(L_PARAMS, " %s (  %c  ) inspection(s)      =%s", " ", ' ', (*inspections[x])->idstring);
+			log(L_LISTS, "inspection(s)      =%s", " ", ' ', (*inspections[x])->idstring);
+
+		for(x = 0; x < queriesl; x++)
+			log(L_LISTS, "quer(y)(ies)       =%s", " ", ' ', (*queries[x])->idstring);
 	}
 
 exit(0);
@@ -302,6 +316,7 @@ exit(0);
 		}
 	}
 
+/*
 	// dump graph nodes, pending logging
 	if(g_args.mode_exec == MODE_EXEC_INSPECT)
 	{
@@ -383,6 +398,8 @@ exit(0);
 			}
 		}
 	}
+
+*/
 
 finally:
 	ff_freeparser(ffp);

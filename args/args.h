@@ -56,29 +56,22 @@ struct selector;
 
 #define DEFAULT_INIT_FABFILE 			"./fabfile"
 #define DEFAULT_INVALIDATE_ALL		0
-#define DEFAULT_MODE_EXEC					MODE_EXEC_FABRICATE
+#define DEFAULT_MODE_BPLAN				MODE_BPLAN_EXEC
 #define DEFAULT_MODE_GNID					MODE_GNID_RELATIVE
-#define DEFAULT_MODE_DDSC					MODE_DDSC_UPFRONT
 #define DEFAULT_MODE_CYCL					MODE_CYCL_WARN
 #define DEFAULT_CONCURRENCY_LIMIT	0
-#define DEFAULT_BAKE_PATH					"./bakescript"
 #define DEFAULT_INVOKEDIR					"/usr/lib/fab/lib"
 
 #define EXPIRATION_POLICY					(60 * 60 * 24 * 7)		/* 7 days */
 
 #define MODE_TABLE(x)																																							\
 /* execution modes */																																							\
-	_MODE(MODE_EXEC_FABRICATE	, 0x00	, x)		/* fabricate targets */																\
-	_MODE(MODE_EXEC_BUILDPLAN	, 0x01	, x)		/* generate buildplan only */													\
-	_MODE(MODE_EXEC_DDSC			, 0x02	, x)		/* perform dependency discovery only */								\
-	_MODE(MODE_EXEC_INSPECT		, 0x03	, x)		/* inspect graph nodes */															\
-	_MODE(MODE_EXEC_BAKE			, 0x04	, x)		/* bake the buildplan */															\
+	_MODE(MODE_BPLAN_GENERATE	, 0x01	, x)		/* generate the buildplan */													\
+	_MODE(MODE_BPLAN_BAKE			, 0x02	, x)		/* bake the buildplan */															\
+	_MODE(MODE_BPLAN_EXEC			, 0x03	, x)		/* execute the buildplan */														\
 /* path display modes */																																					\
 	_MODE(MODE_GNID_RELATIVE	, 0x05	, x)		/* path relative to the initial fabfile */						\
 	_MODE(MODE_GNID_CANON			, 0x06	, x)		/* canonical path */																	\
-/* dependency discovery modes */																																	\
-	_MODE(MODE_DDSC_DEFERRED	, 0x07	, x)		/* defer dependency discovery until bp prune */				\
-	_MODE(MODE_DDSC_UPFRONT		, 0x08	, x)		/* comprehensive dependency discovery upfront */			\
 /* cycle handling modes */																																				\
 	_MODE(MODE_CYCL_WARN			, 0x09	, x)		/* warn when a cycle is detected */										\
 	_MODE(MODE_CYCL_FAIL			, 0x0a	, x)		/* fail when a cycle is detected */										\
@@ -99,44 +92,43 @@ extern struct g_args_t
 // execution parameters
 //
 
-	pid_t				pid;									// pid of this process
-	pid_t				sid;									// session-id
-	char *			cwd;									// cwd
+	pid_t								pid;									// pid of this process
+	pid_t								sid;									// session-id
+	char *							cwd;									// cwd
 
-	uid_t				ruid;									// real-user-id
-	char *			ruid_name;
-	uid_t				euid;									// effective-user-id   (must be fabsys)
-	char *			euid_name;
-	gid_t				rgid;									// real-group-id
-	char *			rgid_name;
-	gid_t				egid;									// effective-group-id  (must be fabsys)
-	char *			egid_name;
+	uid_t								ruid;									// real-user-id
+	char *							ruid_name;
+	uid_t								euid;									// effective-user-id   (must be fabsys)
+	char *							euid_name;
+	gid_t								rgid;									// real-group-id
+	char *							rgid_name;
+	gid_t								egid;									// effective-group-id  (must be fabsys)
+	char *							egid_name;
 
 //
 // arguments
 //
 
-	int					mode_exec;						// execution mode
-	int					mode_gnid;						// mode for gn identification string
-	int					mode_ddsc;						// dependency discovery mode
-	int					mode_cycl;						// cycle handling mode
+	int									mode_bplan;						// buildplan mode
+	int									mode_gnid;						// gn identification mode
+	int									mode_cycl;						// cycle handling mode
 
-	int					concurrency;					// concurrently limiting factor
-	path *			init_fabfile_path;		// path to initial fabfile
-	char *			bakescript_path;			// path to bakescript
+	int									concurrency;					// concurrently limiting factor
+	path *							init_fabfile_path;		// path to initial fabfile
+	char *							bakescript_path;			// path to bakescript
 
-	char **			rootvars;							// root scope variable expressions
-	int					rootvarsl;
-	int					rootvarsa;
+	char **							rootvars;							// root scope variable expressions
+	int									rootvarsl;
+	int									rootvarsa;
 
-	char **			invokedirs;						// root directories for locating invocations
-	int					invokedirsl;
+	char **							invokedirs;						// root directories for locating invocations
+	int									invokedirsl;
 
-	struct selector * 	selectors;
-	int					selectorsa;
-	int					selectorsl;
+	struct selector * 	selectors;						// node selectors
+	int									selectorsa;
+	int									selectorsl;
 
-	int					invalidationsz;				// invalidate all nodes (-B)
+	int									invalidationsz;				// invalidate all nodes (-B)
 } g_args;
 
 /// args_parse
