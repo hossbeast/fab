@@ -73,7 +73,6 @@
 %token <str> WORD		"WORD"			/* string token */
 %token <str> GWORD	"GWORD"			/* whitespace-delimited generator-string token */
 %token <str> QWORD	"QWORD"			/* double-quote delimited string token */
-%token <str> WS			"WS"				/* single tab/space */
 %token <num> '$'								/* variable reference */
 %token <num> '@'								/* nofile reference */
 %token <num> '.'								/* nofile scoping */

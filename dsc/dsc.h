@@ -21,7 +21,6 @@
 #include <listwise.h>
 
 #include "gn.h"
-
 #include "map.h"
 
 #define restrict __restrict

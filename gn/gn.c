@@ -140,7 +140,7 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 /// public
 ///
 
-int gn_match(const char * const s, gn ** const r)
+int gn_lookup(const char * const s, const char * const base, gn ** const r)
 {
 	char can[512];
 
@@ -162,7 +162,7 @@ int gn_match(const char * const s, gn ** const r)
 	else
 	{
 		// relative to init-fabfile-path, or an absolute path
-		fatal(canon, s, 0, can, sizeof(can), g_args.init_fabfile_path->abs_dir, CAN_REALPATH);
+		fatal(canon, s, 0, can, sizeof(can), base, CAN_REALPATH);
 	}
 
 	gn ** R = 0;
@@ -312,41 +312,6 @@ int gn_edge_add(
 	finally : coda;
 }
 
-char* gn_designate(gn * gn)
-{
-	gn->flags = 0;
-
-	if(gn->path->is_nofile)
-		gn->flags |= GN_FLAGS_NOFILE;
-
-	if(gn->needs.l)
-		gn->flags |= GN_FLAGS_HASNEED;
-
-	if(gn->fabv)
-		gn->flags |= GN_FLAGS_CANFAB;
-	
-	if(gn->flags & GN_FLAGS_CANFAB)
-	{
-		if(gn->flags & GN_FLAGS_NOFILE)
-			gn->designation = GN_DESIGNATION_TASK;
-		else if(gn->flags & GN_FLAGS_HASNEED)
-			gn->designation = GN_DESIGNATION_SECONDARY;
-		else
-			gn->designation = GN_DESIGNATION_GENERATED;
-	}
-	else if(gn->flags & GN_FLAGS_NOFILE)
-		gn->designation = GN_DESIGNATION_NOFILE;
-	else if(gn->flags & GN_FLAGS_HASNEED)
-	{
-		// but there's no fmlv, which is a warning
-		gn->designation = GN_DESIGNATION_SECONDARY;
-	}
-	else
-		gn->designation = GN_DESIGNATION_PRIMARY;
-
-	return GN_DESIGNATION_STR(gn->designation);
-}
-
 int gn_secondary_reload(gn * const gn)
 {
 	if(gn->noforce_dir == 0)
@@ -436,7 +401,7 @@ int gn_secondary_rewrite_fab(gn * const gn, map * const ws)
 	// construct a map of PRIMARY needs for this node
 	int logic(struct gn * n, int d)
 	{
-		if(n->designation == GN_DESIGNATION_PRIMARY)
+		if(n->designate == GN_DESIGNATION_PRIMARY)
 			fatal(map_set, ws, MM(n->path->can_hash), MM(n));
 
 		finally : coda;
@@ -642,53 +607,15 @@ finally:
 coda;
 }
 
-int gn_invalidations()
-{
-	int x;
-
-	if(g_args.invalidationsz)
-	{
-		for(x = 0; x < gn_nodes.l; x++)
-		{
-			if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
-				gn_nodes.e[x]->invalid = 1;
-
-			if(gn_nodes.e[x]->designation == GN_DESIGNATION_SECONDARY)
-				gn_nodes.e[x]->invalid = 1;
-		}
-	}
-	else
-	{
-/*
-		for(x = 0; x < g_args.invalidationsl; x++)
-		{
-			gn * gn = 0;
-			fatal(lookup, g_args.init_fabfile_path->abs_dir, 0, g_args.invalidations[x], 0, &gn);
-
-			if(gn)
-			{
-				if(gn->designation == GN_DESIGNATION_PRIMARY)
-					gn->invalid = 1;
-
-				if(gn->designation == GN_DESIGNATION_SECONDARY)
-					gn->invalid = 1;
-			}
-			else
-			{
-				log(L_WARN, "invalidation : %s not found", g_args.invalidations[x]);
-			}
-		}
-*/
-	}
-
-return 1;
-//	finally : coda;
-}
-
 // necessary for a module to call which cannot include the struct gn definition
 char* gn_idstring(gn * const gn)
 {
 	return gn->idstring;
+}
+
+char * gn_designation(gn * gn)
+{
+	return gn->designation;
 }
 
 int gn_enclose_ff(gn * const gn, struct ff_file * const ff, int * const newa)
@@ -735,9 +662,9 @@ void gn_dump(gn * gn)
 		log(L_DG | L_DGRAPH, "%12s : %s", "ext"			, gn->path->ext);
 		log(L_DG | L_DGRAPH, "%12s : %s", "ext_last"	, gn->path->ext_last);
 
-		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn_designate(gn));
+		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn->designation);
 
-		if(gn->designation == GN_DESIGNATION_PRIMARY)
+		if(gn->designate == GN_DESIGNATION_PRIMARY)
 		{
 			if(gn->dscvsl)
 			{
@@ -867,6 +794,71 @@ int gn_init()
 	fatal(map_create, &gn_nodes.by_pathhash, 0);
 
 	finally : coda;
+}
+
+void gn_invalidate(gn *** invalidations, int invalidationsl)
+{
+	int x;
+
+	if(g_args.invalidationsz)
+	{
+		for(x = 0; x < gn_nodes.l; x++)
+		{
+			if(gn_nodes.e[x]->designate == GN_DESIGNATION_PRIMARY)
+				gn_nodes.e[x]->invalid = 1;
+
+			if(gn_nodes.e[x]->designate == GN_DESIGNATION_SECONDARY)
+				gn_nodes.e[x]->invalid = 1;
+		}
+	}
+	else
+	{
+		for(x = 0; x < invalidationsl; x++)
+		{
+			if((*invalidations[x])->designate == GN_DESIGNATION_PRIMARY)
+				(*invalidations[x])->invalid = 1;
+
+			if((*invalidations[x])->designate == GN_DESIGNATION_SECONDARY)
+				(*invalidations[x])->invalid = 1;
+		}
+	}
+}
+
+void gn_finalize()
+{
+	int x;
+	for(x = 0; x < gn_nodes.l; x++)
+	{
+		gn_nodes.e[x]->flags = 0;
+
+		if(gn_nodes.e[x]->path->is_nofile)
+			gn_nodes.e[x]->flags |= GN_FLAGS_NOFILE;
+		if(gn_nodes.e[x]->needs.l)
+			gn_nodes.e[x]->flags |= GN_FLAGS_HASNEED;
+		if(gn_nodes.e[x]->fabv)
+			gn_nodes.e[x]->flags |= GN_FLAGS_CANFAB;
+		
+		if(gn_nodes.e[x]->flags & GN_FLAGS_CANFAB)
+		{
+			if(gn_nodes.e[x]->flags & GN_FLAGS_NOFILE)
+				gn_nodes.e[x]->designate = GN_DESIGNATION_TASK;
+			else if(gn_nodes.e[x]->flags & GN_FLAGS_HASNEED)
+				gn_nodes.e[x]->designate = GN_DESIGNATION_SECONDARY;
+			else
+				gn_nodes.e[x]->designate = GN_DESIGNATION_GENERATED;
+		}
+		else if(gn_nodes.e[x]->flags & GN_FLAGS_NOFILE)
+			gn_nodes.e[x]->designate = GN_DESIGNATION_GROUP;
+		else if(gn_nodes.e[x]->flags & GN_FLAGS_HASNEED)
+		{
+			// but there's no fmlv, which is a warning
+			gn_nodes.e[x]->designate = GN_DESIGNATION_SECONDARY;
+		}
+		else
+			gn_nodes.e[x]->designate = GN_DESIGNATION_PRIMARY;
+
+		gn_nodes.e[x]->designation = GN_DESIGNATION_STR(gn_nodes.e[x]->designate);
+	}
 }
 
 void gn_teardown()

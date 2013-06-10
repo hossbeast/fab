@@ -462,7 +462,7 @@ int bp_eval(bp * const bp, int * const poison)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
-								, gn_designate(gn)
+								, gn_designation(gn)
 								, gn->idstring
 								, "SKIP"
 							);

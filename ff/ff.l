@@ -320,8 +320,8 @@
 																												PUSHSTATE(generatorws, yyextra);
 																												yyless(0);
 																											}
-<generatorws>[^\x00-\x1F\x20]+												{ return LEX(GWORD); }
-<generatorws>[ \t\n]																	{ POPSTATE(yyextra); yyless(0); }
+<generatorws>[^\x00-\x1F\x20\]]+											{ return LEX(GWORD); }
+<generatorws>[ \t\n\]]																{ POPSTATE(yyextra); yyless(0); }
 <quoteword>\\\\																				{ yytext++; yyleng--; return LEXX(QWORD, 1); }
 <quoteword>\\["]																			{ yytext++; yyleng--; return LEXX(QWORD, 1); }
 <quoteword>[^\\"\x00-\x1F\x7F-\xFF]+									{ return LEX(QWORD); }

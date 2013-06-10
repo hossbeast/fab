@@ -70,7 +70,6 @@ int main(int argc, char** argv)
 	map * 							rmap = 0;				// root-level map
 	map *								vmap = 0;				// init-level map
 	map *								tmap = 0;				// temp map
-	strstack *					sstk = 0;				// scope stack
 	gn *								first = 0;			// first dependency mentioned
 	lstack **						stax = 0;				// listwise stacks
 	int									staxa = 0;
@@ -149,11 +148,6 @@ int main(int argc, char** argv)
 	// create the rootmap
 	fatal(var_root, &rmap);
 
-	// seed the map identifier mechanism
-	fatal(map_set, rmap, MMS("?LVL"), MM((int[1]){ 0 }));
-	fatal(map_set, rmap, MMS("?NUM"), MM((int[1]){ 0 }));
-	fatal(map_set, rmap, MMS("?CLD"), MM((int[1]){ 0 }));
-
 	// parse variable expression text from cmdline (the -v option)
 	for(x = 0; x < g_args.rootvarsl; x++)
 	{
@@ -212,10 +206,6 @@ int main(int argc, char** argv)
 		}
 	}
 
-	// create stack for scope resolution
-	fatal(strstack_create, &sstk);
-	fatal(strstack_push, sstk, "..");
-
 	// use up one list and populate the # variable (relative directory path to the initial fabfile)
 	fatal(lw_reset, &stax, &staxa, staxp);
 	fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
@@ -225,20 +215,19 @@ int main(int argc, char** argv)
 	fatal(var_clone, rmap, &vmap);
 
 	// parse, starting with the initial fabfile, construct the graph
-	fatal(ffproc, ffp, g_args.init_fabfile_path, sstk, vmap, &stax, &staxa, &staxp, &first, 0);
+	fatal(ffproc, ffp, g_args.init_fabfile_path, vmap, &stax, &staxa, &staxp, &first, 0);
 
 	// comprehensive upfront dependency discovery on the entire graph
-	lista[0] = gn_nodes.l;
+	lista[0] = listl[0] = gn_nodes.l;
 	fatal(xmalloc, &list[0], sizeof(*list[0]) * lista[0]);
-	memcpy(list[0], gn_nodes.e, sizeof(*list[0]) * gn_nodes.l);
-	listl[0]++;
+	memcpy(list[0], gn_nodes.e, sizeof(*list[0]) * listl[0]);
 
 	fatal(dsc_exec, list[0], listl[0], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
 
-	// designate all nodes
-	for(x = 0; x < gn_nodes.l; x++)
-		gn_designate(gn_nodes.e[x]);
+	// apply flags and designations
+	fatal(gn_finalize);
 
+	// process selectors
 	if(g_args.selectorsl)
 	{
 		fatal(selector_init);
@@ -271,38 +260,35 @@ int main(int argc, char** argv)
 		);
 
 		map_xfree(&tmap);
-	}
 
-	if(log_would(L_LISTS))
-	{
-		if(fabricationsl + fabricationxsl + invalidationsl + discoveriesl + inspectionsl + queriesl == 0)
+		if(log_would(L_LISTS))
 		{
-			log(L_LISTS, "empty");
+			if(fabricationsl + fabricationxsl + invalidationsl + discoveriesl + inspectionsl + queriesl == 0)
+			{
+				log(L_LISTS, "empty");
+			}
+			
+			for(x = 0; x < fabricationsl; x++)
+				log(L_LISTS, "fabrication(s)     =%s", " ", ' ', (*fabrications[x])->idstring);
+
+			for(x = 0; x < fabricationxsl; x++)
+				log(L_LISTS, "fabricationx(s)    =%s", " ", ' ', (*fabricationxs[x])->idstring);
+
+			for(x = 0; x < invalidationsl; x++)
+				log(L_LISTS, "invalidation(s)    =%s", " ", ' ', (*invalidations[x])->idstring);
+
+			for(x = 0; x < discoveriesl; x++)
+				log(L_LISTS, "discover(y)(ies)   =%s", " ", ' ', (*discoveries[x])->idstring);
+
+			for(x = 0; x < inspectionsl; x++)
+				log(L_LISTS, "inspection(s)      =%s", " ", ' ', (*inspections[x])->idstring);
+
+			for(x = 0; x < queriesl; x++)
+				log(L_LISTS, "quer(y)(ies)       =%s", " ", ' ', (*queries[x])->idstring);
 		}
-		
-		for(x = 0; x < fabricationsl; x++)
-			log(L_LISTS, "fabrication(s)     =%s", " ", ' ', (*fabrications[x])->idstring);
-
-		for(x = 0; x < fabricationxsl; x++)
-			log(L_LISTS, "fabricationx(s)    =%s", " ", ' ', (*fabricationxs[x])->idstring);
-
-		for(x = 0; x < invalidationsl; x++)
-			log(L_LISTS, "invalidation(s)    =%s", " ", ' ', (*invalidations[x])->idstring);
-
-		for(x = 0; x < discoveriesl; x++)
-			log(L_LISTS, "discover(y)(ies)   =%s", " ", ' ', (*discoveries[x])->idstring);
-
-		for(x = 0; x < inspectionsl; x++)
-			log(L_LISTS, "inspection(s)      =%s", " ", ' ', (*inspections[x])->idstring);
-
-		for(x = 0; x < queriesl; x++)
-			log(L_LISTS, "quer(y)(ies)       =%s", " ", ' ', (*queries[x])->idstring);
 	}
 
 exit(0);
-
-	// apply invalidations, update designations
-	fatal(gn_invalidations);
 
 	// process hashblocks for regular fabfiles which have changed
 	for(x = 0; x < ff_files.l; x++)
@@ -407,7 +393,6 @@ finally:
 	map_free(rmap);
 	map_free(vmap);
 	map_free(tmap);
-	strstack_free(sstk);
 
 	for(x = 0; x < staxa; x++)
 	{

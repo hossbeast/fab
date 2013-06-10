@@ -57,8 +57,8 @@
 	_GN_DESIGNATION(GN_DESIGNATION_TASK								, 0x01	, "TASK"				, x)		\
 	_GN_DESIGNATION(GN_DESIGNATION_SECONDARY					, 0x02	, "SECONDARY"		, x)		\
 	_GN_DESIGNATION(GN_DESIGNATION_GENERATED					, 0x03	, "GENERATED"		, x)		\
-	_GN_DESIGNATION(GN_DESIGNATION_NOFILE							, 0x04	, "NOFILE"			, x)		\
-	_GN_DESIGNATION(GN_DESIGNATION_PRIMARY						, 0x05	, "PRIMARY"			, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_GROUP							, 0x04	, "GROUP"				, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_PRIMARY						, 0x05	, "PRIMARY"			, x)
 
 enum {
 #define _GN_DESIGNATION(a, b, c, d) a = b,
@@ -67,7 +67,7 @@ GN_DESIGNATION_TABLE(0)
 };
 
 #define _GN_DESIGNATION(a, b, c, d) (d) == b ? c :
-#define GN_DESIGNATION_STR(x) GN_DESIGNATION_TABLE(x) "unknown"
+#define GN_DESIGNATION_STR(gn) GN_DESIGNATION_TABLE(gn) "unknown"
 
 #define GN_FLAGS_HASNEED			0x01
 #define GN_FLAGS_CANFAB				0x02
@@ -118,11 +118,14 @@ typedef struct
 typedef struct gn
 {
 	uint8_t						flags;
-	uint8_t						designation;
+	uint8_t						designate;
 
 	path *						path;
-	char*							idstring;				// identifier string, subject to execution parameters
+	char *						idstring;				// identifier string, subject to execution parameters
 	int								idstringl;
+
+	char *						designation;
+	int								designationl;
 
 	/*
 	** the ff closure of an gn is all of the ff_files which might affect this node if they change
@@ -235,26 +238,23 @@ extern union gn_nodes_t
 	};
 } gn_nodes;
 
-/// gn_match
+/// gn_lookup
 //
 // SUMMARY
 //  get graph nodes whose path(s) match certain criteria
 //
 // PARAMETERS
-//  base - directory path for resolving relative paths
 //  s    - one of
-//          1) /s/ - regex to match on can/abs/rel paths
-//          2) .s  - nofile specifier
+//          2) @s  - nofile specifier
 //          3) /s  - canonical path
 //          4)  s  - path relative to base
-//  r    - results appended to this list
-//  rl   - length of r
-//  ra   - allocated size of r
+//  base - to resolve relative paths
+//  r    - matching node, if any, returned here
 //
 // RETURNS
 //  returns 0 on failure (memory, io) and 1 otherwise
 //
-int gn_match(const char * const restrict s, gn ** const restrict r)
+int gn_lookup(const char * const restrict s, const char * const restrict base, gn ** const restrict r)
 	__attribute__((nonnull));
 
 /// gn_add
@@ -366,27 +366,21 @@ int gn_primary_reload(gn * const restrict)
 int gn_primary_reload_dscv(gn * const restrict)
 	__attribute__((nonnull));
 
-/// gn_designate
+/// gn_designation
 //
-// populate gn->flags and gn->designation
+// only available after gn_finalize
 //
 // return GN_DESIGNATION_STR(gn->designation)
 //
-char * gn_designate(gn * gn)
+char * gn_designation(gn * gn)
 	__attribute__((nonnull));
 
 /// gn_invalidations
 //
 // SUMMARY
-//  process user-specified invalidations - also calls gn_designate on all nodes
+//  apply invalidations
 //
-//  for PRIMARY   - may set gn->changed
-//  for SECONDARY - may set gn->rebuild
-//
-// RETURNS
-//  0 on ENOMEM, 1 otherwise
-//
-int gn_invalidations();
+void gn_invalidations();
 
 /// gn_init
 //
@@ -394,6 +388,12 @@ int gn_invalidations();
 //  initialize gn module
 //
 int gn_init();
+
+/// gn_finalize
+//
+// gn fully loaded; populate flags and designation
+//
+void gn_finalize();
 
 /// gn_teardown
 //
