@@ -52,6 +52,7 @@ fml_0_0()
 	rm -rf 																	//usr/lib/fab/listwise 2>/dev/null
 	install -d															//usr/lib/fab/listwise
 	install ./fabdev/fablw/op/fi/fi.so			//usr/lib/fab/listwise/fi.so
+	install ./fabdev/fablw/op/fg/fg.so			//usr/lib/fab/listwise/fg.so
 
 
   X=$?
