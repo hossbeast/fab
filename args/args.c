@@ -103,6 +103,10 @@ if(help)
 "\n"
 " bakescript generation\n"
 "  -k </path/to/output>    create bakescript\n"
+#if DEVEL
+"  --bslic-standard        bakescripts have the standard license\n"
+"  --bslic-fab             bakescripts have the fab distribution license\n"
+#endif
 "\n"
 " logging\n"
 "  -c                      set node identifier mode to GNID_CANON for logging\n"
@@ -208,15 +212,20 @@ int args_parse(int argc, char** argv)
 
 	struct option longopts[] = {
 /* informational */
-				  { "help"				, no_argument	, &help, 1 }
-				, { "version"			, no_argument	, &version, 1 }
-				, { "logopts"			, no_argument	, &logopts, 1 }
-				, { "operators"		, no_argument	, &operators, 1 }
+				  { "help"						, no_argument	, &help, 1 }
+				, { "version"					, no_argument	, &version, 1 }
+				, { "logopts"					, no_argument	, &logopts, 1 }
+				, { "operators"				, no_argument	, &operators, 1 }
 
 /* program longopts */
-				, { "cycle-warn"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_WARN	}
-				, { "cycle-fail"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_FAIL }
-				, { "cycle-deal"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_DEAL }
+				, { "cycle-warn"			, no_argument	, &g_args.mode_cycl		, MODE_CYCL_WARN }
+				, { "cycle-fail"			, no_argument	, &g_args.mode_cycl		, MODE_CYCL_FAIL }
+				, { "cycle-deal"			, no_argument	, &g_args.mode_cycl		, MODE_CYCL_DEAL }
+
+#if DEVEL
+				, { "bslic-standard"	, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
+				, { "bslic-fab"				, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
+#endif
 
 /* program switches */
 // a
@@ -357,6 +366,9 @@ int args_parse(int argc, char** argv)
 						g_args.selectorsa = newa;
 					}
 
+					if(selector_lists & SELECTOR_QUERY)
+						g_args.selectors_arequery = 1;
+
 					g_args.selectors[g_args.selectorsl++] = (selector){
 						  .mode = selector_mode
 						, .lists = selector_lists
@@ -469,6 +481,9 @@ int args_parse(int argc, char** argv)
 	{
 		log(L_ARGS | L_PARAMS			, " %s (  %c  ) bakescript-path    =%s", "*", 'k', g_args.bakescript_path);
 	}
+#if DEVEL
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic         =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
+#endif
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'c', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycl          =%s", g_args.mode_cycl == DEFAULT_MODE_CYCL ? " " : "*", ' ', MODE_STR(g_args.mode_cycl));
 	if(g_args.concurrency > 0)

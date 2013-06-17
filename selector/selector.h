@@ -76,7 +76,6 @@ int selector_finalize(
 	, struct gn **** restrict invalidations, int * restrict invalidationsl
 	, struct gn **** restrict discoveries, int * restrict discoveriesl
 	, struct gn **** restrict inspections, int * restrict inspectionsl
-	, struct gn **** restrict queries, int * restrict queriesl
 )
 	__attribute__((nonnull));
 

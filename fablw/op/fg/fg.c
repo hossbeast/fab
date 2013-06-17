@@ -79,7 +79,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		if(strstr(o->args[0]->s, "t"))
 			set |= (0x01 << GN_DESIGNATION_TASK);
 		if(strstr(o->args[0]->s, "n"))
-			set |= (0x01 << GN_DESIGNATION_NOFILE);
+			set |= (0x01 << GN_DESIGNATION_GROUP);
 	}
 
 	int x;
@@ -95,7 +95,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 		if(g)
 		{
-			if(set & (0x01 << g->designation))
+			if(set & (0x01 << g->designate))
 				fatal(lstack_last_set, ls, x);
 		}
 	}

@@ -77,7 +77,9 @@ int bake_bp(
 	dprintf(fd, "#!/bin/bash\n");
 
 #ifdef DEVEL
-	dprintf(fd,
+	if(g_args.bslic_mode == MODE_BSLIC_FAB)
+	{
+		dprintf(fd,
 /* this is for producing the bakescripts distributed with the fab source code itself */
 "\n"
 "# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>\n"
@@ -97,8 +99,11 @@ int bake_bp(
 "# You should have received a copy of the GNU General Public License\n"
 "# along with fab.  If not, see <http://www.gnu.org/licenses/>.\n"
 "\n"
-	);
-#else
+		);
+	}
+	else
+	{
+#endif
 /* include licensing exception in bakescript output */
 	dprintf(fd,
 "\n"
@@ -112,6 +117,8 @@ int bake_bp(
 "#  of the build script and distribute that work under terms of your choice\n"
 "\n"
 	);
+#if DEVEL
+	}
 #endif
 
 	dprintf(fd, "# re-exec under time\n");

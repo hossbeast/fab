@@ -73,7 +73,9 @@ int identity_init()
 
 	g_args.egid_name = strdup(grp->gr_name);
 
-#ifndef DEVEL
+#if DEVEL
+	// this check is omitted in DEVEL mode because valgrind requires non-setgid and non-setuid executables
+#else
 	// this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions
 	if(strcmp(g_args.euid_name, "fabsys") || strcmp(g_args.egid_name, "fabsys"))
 	{

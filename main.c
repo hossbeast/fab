@@ -77,9 +77,11 @@ int main(int argc, char** argv)
 	ts **								ts = 0;
 	int									tsa = 0;
 	int									tsw = 0;
+/*
 	gn **								list[2] = { };
 	int									listl[2] = { };
 	int									lista[2] = { };
+*/
 
 	/* node selector produced lists */
 	gn ***							fabrications = 0;
@@ -92,8 +94,6 @@ int main(int argc, char** argv)
 	int									discoveriesl = 0;
 	gn ***							inspections = 0;
 	int									inspectionsl = 0;
-	gn ***							queries = 0;
-	int									queriesl = 0;
 
 	int x;
 	int y;
@@ -126,6 +126,8 @@ int main(int argc, char** argv)
 	for(x = 0; x < sizeof(FABLW_DIRS) / sizeof(FABLW_DIRS[0]); x++)
 		fatal(listwise_register_opdir, FABLW_DIRS[x]);
 
+	// should be a register here for default object interface, for OBJECT_NO operators
+
 	// parse cmdline arguments
 	//  (args_parse also calls log_init with a default string)
 	fatal(args_parse, argc, argv);
@@ -137,6 +139,7 @@ int main(int argc, char** argv)
 	fatal(gn_init);
 	fatal(traverse_init);
 	fatal(ff_mkparser, &ffp);
+	fatal(selector_init);
 
 	// unless LWVOCAL, arrange for liblistwise to write to /dev/null
 	if(!log_would(L_LWVOCAL))
@@ -144,6 +147,13 @@ int main(int argc, char** argv)
 		if((listwise_err_fd = open("/dev/null", O_WRONLY)) == -1)
 			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
 	}
+
+	// 
+	// >> attach to daemon <<
+	//  - parsed fabfiles
+	//  - graph nodes
+	//   - dsc results
+	//
 	
 	// create the rootmap
 	fatal(var_root, &rmap);
@@ -154,55 +164,51 @@ int main(int argc, char** argv)
 		ff_file * vff = 0;
 		fatal(ff_var_parse, ffp, g_args.rootvars[x], strlen(g_args.rootvars[x]), x, &vff);
 
-		if(vff)
+		if(!vff)
+			qfail();	// var_parse has a good error
+
+		// process variable expressions
+		int k;
+		for(k = 0; k < vff->ffn->statementsl; k++)
 		{
-			// process variable expressions
-			int k;
-			for(k = 0; k < vff->ffn->statementsl; k++)
+			ff_node * stmt = vff->ffn->statements[k];
+
+			if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARXFM_ADD || stmt->type == FFN_VARXFM_SUB)
 			{
-				ff_node * stmt = vff->ffn->statements[k];
+				int pn = staxp;
+				fatal(list_resolve, stmt->definition, rmap, ffp->gp, &stax, &staxa, &staxp, 0);
+				staxp++;
 
-				if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARXFM_ADD || stmt->type == FFN_VARXFM_SUB)
+				for(y = 0; y < stmt->varsl; y++)
 				{
-					int pn = staxp;
-					fatal(list_resolve, stmt->definition, rmap, ffp->gp, &stax, &staxa, &staxp, 0);
-					staxp++;
-
-					for(y = 0; y < stmt->varsl; y++)
+					if(stmt->type == FFN_VARASSIGN)
 					{
-						if(stmt->type == FFN_VARASSIGN)
-						{
-							fatal(var_set, rmap, stmt->vars[y]->name, stax[pn], 1, 0, stmt);
-						}
-						else if(stmt->type == FFN_VARXFM_ADD)
-						{
-							fatal(var_xfm_add, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
-						}
-						else if(stmt->type == FFN_VARXFM_SUB)
-						{
-							fatal(var_xfm_sub, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
-						}
+						fatal(var_set, rmap, stmt->vars[y]->name, stax[pn], 1, 0, stmt);
 					}
-				}
-				else if(stmt->type == FFN_VARXFM_LW)
-				{
-					for(y = 0; y < stmt->varsl; y++)
+					else if(stmt->type == FFN_VARXFM_ADD)
 					{
-						if(stmt->generator_node)
-						{
-							fatal(var_xfm_lw, rmap, stmt->vars[y]->name, stmt->generator_node->generator, stmt->generator_node->text, 1, stmt);
-						}
-						else if(stmt->generator_list_node)
-						{
-
-						}
+						fatal(var_xfm_add, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
+					}
+					else if(stmt->type == FFN_VARXFM_SUB)
+					{
+						fatal(var_xfm_sub, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
 					}
 				}
 			}
-		}
-		else
-		{
-			qfail();
+			else if(stmt->type == FFN_VARXFM_LW)
+			{
+				for(y = 0; y < stmt->varsl; y++)
+				{
+					if(stmt->generator_node)
+					{
+						fatal(var_xfm_lw, rmap, stmt->vars[y]->name, stmt->generator_node->generator, stmt->generator_node->text, 1, stmt);
+					}
+					else if(stmt->generator_list_node)
+					{
+
+					}
+				}
+			}
 		}
 	}
 
@@ -217,15 +223,19 @@ int main(int argc, char** argv)
 	// parse, starting with the initial fabfile, construct the graph
 	fatal(ffproc, ffp, g_args.init_fabfile_path, vmap, &stax, &staxa, &staxp, &first, 0);
 
-	// comprehensive upfront dependency discovery on the entire graph
-	lista[0] = listl[0] = gn_nodes.l;
-	fatal(xmalloc, &list[0], sizeof(*list[0]) * lista[0]);
-	memcpy(list[0], gn_nodes.e, sizeof(*list[0]) * listl[0]);
-
-	fatal(dsc_exec, list[0], listl[0], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+	// process hashblocks for regular fabfiles that have changed
+	fatal(ff_regular_reconcile);
 
 	// apply flags and designations
-	fatal(gn_finalize);
+	gn_finalize();
+	fatal(gn_primary_reload);
+
+	// comprehensive upfront dependency discovery on the entire graph
+	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+
+	// apply flags and designations
+	gn_finalize();
+	fatal(gn_primary_reload);
 
 	// process selectors
 	if(g_args.selectorsl)
@@ -246,9 +256,10 @@ int main(int argc, char** argv)
 
 		// process selectors
 		for(x = 0; x < g_args.selectorsl; x++)
-		{
 			fatal(selector_process, &g_args.selectors[x], x, ffp, tmap, &stax, &staxa, pn);
-		}
+
+		if(g_args.selectors_arequery)
+			qterm();		// terminate successfully
 
 		fatal(selector_finalize
 			, &fabrications, &fabricationsl
@@ -256,14 +267,13 @@ int main(int argc, char** argv)
 			, &invalidations, &invalidationsl
 			, &discoveries, &discoveriesl
 			, &inspections, &inspectionsl
-			, &queries, &queriesl
 		);
 
 		map_xfree(&tmap);
 
 		if(log_would(L_LISTS))
 		{
-			if(fabricationsl + fabricationxsl + invalidationsl + discoveriesl + inspectionsl + queriesl == 0)
+			if(fabricationsl + fabricationxsl + invalidationsl + discoveriesl + inspectionsl == 0)
 			{
 				log(L_LISTS, "empty");
 			}
@@ -282,24 +292,26 @@ int main(int argc, char** argv)
 
 			for(x = 0; x < inspectionsl; x++)
 				log(L_LISTS, "inspection(s)      =%s", " ", ' ', (*inspections[x])->idstring);
-
-			for(x = 0; x < queriesl; x++)
-				log(L_LISTS, "quer(y)(ies)       =%s", " ", ' ', (*queries[x])->idstring);
 		}
 	}
 
-exit(0);
-
-	// process hashblocks for regular fabfiles which have changed
-	for(x = 0; x < ff_files.l; x++)
+	// dependency discovery list
+	if(discoveriesl)
 	{
-		if(ff_files.e[x]->type == FFT_REGULAR)
-		{
-			if(hashblock_cmp(ff_files.e[x]->hb))
-			{
-				fatal(ff_regular_rewrite, ff_files.e[x]);
-			}
-		}
+		fatal(dsc_exec_specific, g_args.discoveries, g_args.discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+
+		qterm();	// terminate successfully
+	}
+	
+	// process invalidations
+	gn_invalidate(invalidations, invalidationsl);
+
+	// dependency discovery on invalidated primary nodes
+
+	// process inspections
+	for(x = 0; x < inspectionsl; x++)
+	{
+		gn_dump((*inspections[x]));
 	}
 
 /*
@@ -413,7 +425,6 @@ finally:
 	free(fabricationxs);
 	free(invalidations);
 	free(inspections);
-	free(queries);
 
 	gn_teardown();
 	fml_teardown();

@@ -17,7 +17,6 @@ static map * o_fabricationxsmap;
 static map * o_invalidationsmap;
 static map * o_discoveriesmap;
 static map * o_inspectionsmap;
-static map * o_queriesmap;
 
 char * selector_string(const selector * const s, char * const dst, const size_t z)
 {
@@ -39,7 +38,6 @@ char * selector_string(const selector * const s, char * const dst, const size_t 
 	l += snprintf(dst + l, z - l, " : %s }", s->s);
 	return dst;
 }
-
 
 int selector_process(selector * const s, int id, const ff_parser * const ffp, map * const tmap, lstack *** stax, int * staxa, int staxp)
 {
@@ -147,7 +145,6 @@ int selector_init()
 	fatal(map_create, &o_invalidationsmap, 0);
 	fatal(map_create, &o_discoveriesmap, 0);
 	fatal(map_create, &o_inspectionsmap, 0);
-	fatal(map_create, &o_queriesmap, 0);
 
 	finally : coda;
 }
@@ -158,7 +155,6 @@ int selector_finalize(
 	, gn **** invalidations, int * invalidationsl
 	, gn **** discoveries, int * discoveriesl
 	, gn **** inspections, int * inspectionsl
-	, gn **** queries, int * queriesl
 )
 {
 	fatal(map_keys, o_fabricationsmap, fabrications, fabricationsl);
@@ -166,7 +162,6 @@ int selector_finalize(
 	fatal(map_keys, o_invalidationsmap, invalidations, invalidationsl);
 	fatal(map_keys, o_discoveriesmap, discoveries, discoveriesl);
 	fatal(map_keys, o_inspectionsmap, inspections, inspectionsl);
-	fatal(map_keys, o_queriesmap, queries, queriesl);
 
 	selector_teardown();
 
@@ -180,5 +175,4 @@ void selector_teardown()
 	map_xfree(&o_invalidationsmap);
 	map_xfree(&o_discoveriesmap);
 	map_xfree(&o_inspectionsmap);
-	map_xfree(&o_queriesmap);
 }

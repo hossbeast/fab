@@ -58,27 +58,24 @@ void ts_reset(ts * ts)
 		ts->stde_txt->l		= 0;
 }
 
-int ts_ensure(ts *** ts, int * tsa, int n)
+int ts_ensure(ts *** ts, int * tsa, int tsl)
 {
 	int x;
 
-	if(n > (*tsa))
+	if(tsl > (*tsa))
 	{
 		// reallocate to appropriate size
-		fatal(xrealloc, ts, sizeof(**ts), n, *tsa);
+		fatal(xrealloc, ts, sizeof(**ts), tsl, *tsa);
 
 		// deep allocate
-		for(x = (*tsa); x < n; x++)
+		for(x = (*tsa); x < tsl; x++)
 		{
 			fatal(xmalloc, &(*ts)[x], sizeof(*(*ts)[0]));
 			fatal(ff_mkparser, &(*ts)[x]->ffp);
 		}
 
-		(*tsa) = n;
+		(*tsa) = tsl;
 	}
-
-	for(x = 0; x < n; x++)
-		ts_reset((*ts)[x]);
 
 	finally : coda;
 }

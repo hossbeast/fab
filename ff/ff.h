@@ -249,12 +249,14 @@ char * ff_idstring(ff_file * const restrict ff)
 int ff_regular_reload(ff_file * const restrict ff)
 	__attribute__((nonnull));
 
-/// ff_regular_rewrite
+/// ff_regular_reconcile
 //
-// for a REGULAR ff_file - write the current hashblock
+// for all REGULAR ff_files
+//  - 
 //
-int ff_regular_rewrite(ff_file * const restrict ff)
-	__attribute__((nonnull));
+//  - write the current hashblock
+//
+int ff_regular_reconcile();
 
 /// ff_teardown
 //
@@ -282,4 +284,3 @@ void ff_dump(ff_file * const restrict ff)
 
 #undef restrict
 #endif
-

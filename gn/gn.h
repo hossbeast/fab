@@ -356,8 +356,7 @@ int gn_secondary_rewrite_fab(gn * const restrict, map * const ws)
 //   - delete cached discovery results for this node
 //   - delete noforce_gn for all cached feed_secondary_skipweak
 //
-int gn_primary_reload(gn * const restrict)
-	__attribute__((nonnull));
+int gn_primary_reload();
 
 /// gn_primary_reload_dscv
 //
@@ -380,7 +379,8 @@ char * gn_designation(gn * gn)
 // SUMMARY
 //  apply invalidations
 //
-void gn_invalidations();
+void gn_invalidate(gn *** const restrict invalidations, int invalidationsl)
+	__attribute__((nonnull));
 
 /// gn_init
 //

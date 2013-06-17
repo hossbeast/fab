@@ -494,111 +494,117 @@ int gn_primary_reload_dscv(gn * const gn)
 	finally : coda;
 }
 
-int gn_primary_reload(gn * const gn)
+int gn_primary_reload()
 {
 	DIR * dh = 0;
 	char tmp[3][512];
 
-	if(gn->primary_hb == 0)
+	int x;
+	for(x = 0; x < gn_nodes.l; x++)
 	{
-		// create hashblock
-		fatal(hashblock_create, &gn->primary_hb, CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+		gn * const gn = gn_nodes.e[x];
 
-		// load the previous hashblocks
-		fatal(hashblock_read, gn->primary_hb);
-
-		// stat the file, compute new stathash
-		fatal(hashblock_stat, gn->path->can, gn->primary_hb, gn->primary_hb, 0);
-
-		// construct directory path for aneed_primary_skipweak for this node
-		snprintf(tmp[2], sizeof(tmp[2])
-			, CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY/afeed_secondary_skipweak"
-			, g_args.init_fabfile_path->can_hash
-			, gn->path->can_hash
-		);
-
-		fatal(identity_assume_fabsys);
-
-		// ensure that the directory exists
-		fatal(mkdirp, tmp[2], S_IRWXU | S_IRWXG | S_IRWXO);
-
-		// process a change to the source file
-		int r;
-		if((r = hashblock_cmp(gn->primary_hb)))
+		if(gn->primary_hb == 0)
 		{
-			log(L_CHANGE, "PRIMARY change (%7s) : %s"
-				,   r == HB_VERSION ? "version"
-					: r == HB_STAT ? "stat"
-					: r == HB_CONTENT ? "content"
-					: 0
-				, gn->idstring
+			// create hashblock
+			fatal(hashblock_create, &gn->primary_hb, CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+
+			// load the previous hashblocks
+			fatal(hashblock_read, gn->primary_hb);
+
+			// stat the file, compute new stathash
+			fatal(hashblock_stat, gn->path->can, gn->primary_hb, gn->primary_hb, 0);
+
+			// construct directory path for aneed_primary_skipweak for this node
+			snprintf(tmp[2], sizeof(tmp[2])
+				, CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY/afeed_secondary_skipweak"
+				, g_args.init_fabfile_path->can_hash
+				, gn->path->can_hash
 			);
 
-			// mark as changed for THIS execution
-			gn->changed = 1;
+			fatal(identity_assume_fabsys);
 
-			// delete discovery results for this node, if any
-			snprintf(tmp[0], sizeof(tmp[0]), CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+			// ensure that the directory exists
+			fatal(mkdirp, tmp[2], S_IRWXU | S_IRWXG | S_IRWXO);
 
-			if(unlink(tmp[0]) != 0 && errno != ENOENT)
-				fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
-
-			// process existing links
-			if((dh = opendir(tmp[2])) == 0)
+			// process a change to the source file
+			int r;
+			if((r = hashblock_cmp(gn->primary_hb)))
 			{
-				if(errno != ENOENT)
-					fail("opendir(%s)=[%d][%s]", tmp[2], errno, strerror(errno));
-			}
-			else
-			{
-				struct dirent ent;
-				struct dirent * entp = 0;
-				while(1)
+				log(L_CHANGE, "PRIMARY change (%7s) : %s"
+					,   r == HB_VERSION ? "version"
+						: r == HB_STAT ? "stat"
+						: r == HB_CONTENT ? "content"
+						: 0
+					, gn->idstring
+				);
+
+				// mark as changed for THIS execution
+				gn->changed = 1;
+
+				// delete discovery results for this node, if any
+				snprintf(tmp[0], sizeof(tmp[0]), CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+
+				if(unlink(tmp[0]) != 0 && errno != ENOENT)
+					fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+
+				// process existing links
+				if((dh = opendir(tmp[2])) == 0)
 				{
-					fatal_os(readdir_r, dh, &ent, &entp);
-
-					if(!entp)
-						break;
-
-					if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+					if(errno != ENOENT)
+						fail("opendir(%s)=[%d][%s]", tmp[2], errno, strerror(errno));
+				}
+				else
+				{
+					struct dirent ent;
+					struct dirent * entp = 0;
+					while(1)
 					{
-						// force fabrication of secondary node
-						snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/SECONDARY/fab/noforce_gn", tmp[2], entp->d_name);
-						if(unlink(tmp[0]) != 0 && errno != ENOENT)
-						{
-							if(errno == ENOENT)
-							{
-								// delete dangling links
-								snprintf(tmp[0], sizeof(tmp[0]), "%s/%s", tmp[2], entp->d_name);
-								unlink(tmp[0]);
-							}
-							else
-							{
-								fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
-							}
-						}
+						fatal_os(readdir_r, dh, &ent, &entp);
 
-						if(log_would(L_CHANGEL))
-						{
-							uint32_t canhash = 0;
-							if(parseuint(entp->d_name, SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) == 0)
-								fail("unexpected : %s/%s", tmp[2], entp->d_name);
+						if(!entp)
+							break;
 
-							struct gn ** g = 0;
-							if((g = map_get(gn_nodes.by_pathhash, MM(canhash))))
+						if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+						{
+							// force fabrication of secondary node
+							snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/SECONDARY/fab/noforce_gn", tmp[2], entp->d_name);
+							if(unlink(tmp[0]) != 0 && errno != ENOENT)
 							{
-								log(L_CHANGE | L_CHANGEL, " -> %s", (*g)->idstring);
+								if(errno == ENOENT)
+								{
+									// delete dangling links
+									snprintf(tmp[0], sizeof(tmp[0]), "%s/%s", tmp[2], entp->d_name);
+									unlink(tmp[0]);
+								}
+								else
+								{
+									fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+								}
+							}
+
+							if(log_would(L_CHANGEL))
+							{
+								uint32_t canhash = 0;
+								if(parseuint(entp->d_name, SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) == 0)
+									fail("unexpected : %s/%s", tmp[2], entp->d_name);
+
+								struct gn ** g = 0;
+								if((g = map_get(gn_nodes.by_pathhash, MM(canhash))))
+								{
+									log(L_CHANGE | L_CHANGEL, " -> %s", (*g)->idstring);
+								}
 							}
 						}
 					}
 				}
+
+				// commmit
+				fatal(hashblock_write, gn->primary_hb);
 			}
 
-			// commmit
-			fatal(hashblock_write, gn->primary_hb);
+			fatal(identity_assume_user);
 		}
-
-		fatal(identity_assume_user);
 	}
 
 finally:
@@ -796,7 +802,7 @@ int gn_init()
 	finally : coda;
 }
 
-void gn_invalidate(gn *** invalidations, int invalidationsl)
+void gn_invalidate(gn *** const invalidations, int invalidationsl)
 {
 	int x;
 

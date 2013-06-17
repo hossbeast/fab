@@ -191,6 +191,93 @@ finally:
 coda;
 }
 
+static int regular_rewrite(ff_file * ff)
+{
+	char tmpa[512];
+	char tmpb[512];
+
+	DIR * dh = 0;
+
+	fatal(identity_assume_fabsys);
+
+	// sort the affected gn list by canonical path hash
+	int cmp(const void * _A, const void * _B)
+	{
+		uint32_t A = (*(struct gn **)_A)->path->can_hash;
+		uint32_t B = (*(struct gn **)_B)->path->can_hash;
+
+		if(A > B) return 1;
+		else if(B > A) return -1;
+
+		return 0;
+	};
+	qsort(ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), cmp);
+
+	// ensure closure directory exists
+	fatal(mkdirp, ff->closure_gns_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	// create links to all nodes that are connected to this regular fabfile
+	int x;
+	for(x = 0; x < ff->closure_gnsl; x++)
+	{
+		// symlink to the gn
+		snprintf(tmpa, sizeof(tmpa), CACHEDIR_BASE "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, ff->closure_gns[x]->path->can_hash);
+		snprintf(tmpb, sizeof(tmpb), "%s/%u", ff->closure_gns_dir, ff->closure_gns[x]->path->can_hash);
+		if(symlink(tmpa, tmpb) != 0 && errno != EEXIST)
+			fail("symlink=[%d][%s]", errno, strerror(errno));
+	}
+
+	if((dh = opendir(ff->closure_gns_dir)) == 0)
+		fail("opendir(%s)=[%d][%s]", ff->closure_gns_dir, errno, strerror(errno));
+
+	struct dirent ent;
+	struct dirent * entp = 0;
+	while(1)
+	{
+		fatal_os(readdir_r, dh, &ent, &entp);
+
+		if(!entp)
+			break;
+
+		if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+		{
+			// get the canhash for this gn
+			uint32_t canhash = 0;
+			if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) == 0)
+				fail("unexpected file %s/%s", ff->closure_gns_dir, entp->d_name);
+
+			// delete
+			snprintf(tmpa, sizeof(tmpa), "%s/%u/PRIMARY/dscv", ff->closure_gns_dir, canhash);
+			if(unlink(tmpa) != 0 && errno != ENOENT)
+				fail("unlink(%s)=[%d][%s]", tmpa, errno, strerror(errno));
+
+			snprintf(tmpa, sizeof(tmpa), "%s/%u/SECONDARY/fab/noforce_ff", ff->closure_gns_dir, canhash);
+			if(unlink(tmpa) != 0 && errno != ENOENT)
+				fail("unlink(%s)=[%d][%s]", tmpa, errno, strerror(errno));
+
+			// If it is no longer in the closure, also delete the symlink
+			int kcmp(const void * K, const void * A)
+			{
+				return *(uint32_t*)K - (*(struct gn **)A)->path->can_hash;
+			};
+
+			if(bsearch(&canhash, ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), kcmp) == 0)
+			{
+				snprintf(tmpa, sizeof(tmpa), "%s/%u", ff->closure_gns_dir, canhash);
+				fatal_os(unlink, tmpa);
+			}
+		}
+	}
+
+	// rewrite the hashblock (reverts to user identity)
+	fatal(hashblock_write, ff->hb);
+
+finally:
+	if(dh)
+		closedir(dh);
+coda;
+}
+
 /// [[ api/public ]]
 
 int ff_mkparser(ff_parser ** const p)
@@ -367,91 +454,21 @@ void ff_teardown()
 	map_free(ff_files.by_canpath);
 }
 
-int ff_regular_rewrite(ff_file * ff)
+int ff_regular_reconcile()
 {
-	char tmpa[512];
-	char tmpb[512];
-
-	DIR * dh = 0;
-
-	fatal(identity_assume_fabsys);
-
-	// sort the affected gn list by canonical path hash
-	int cmp(const void * _A, const void * _B)
-	{
-		uint32_t A = (*(struct gn **)_A)->path->can_hash;
-		uint32_t B = (*(struct gn **)_B)->path->can_hash;
-
-		if(A > B) return 1;
-		else if(B > A) return -1;
-
-		return 0;
-	};
-	qsort(ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), cmp);
-
-	// ensure closure directory exists
-	fatal(mkdirp, ff->closure_gns_dir, S_IRWXU | S_IRWXG | S_IRWXO);
-
-	// create links to all nodes that are connected to this regular fabfile
 	int x;
-	for(x = 0; x < ff->closure_gnsl; x++)
+	for(x = 0; x < ff_files.l; x++)
 	{
-		// symlink to the gn
-		snprintf(tmpa, sizeof(tmpa), CACHEDIR_BASE "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, ff->closure_gns[x]->path->can_hash);
-		snprintf(tmpb, sizeof(tmpb), "%s/%u", ff->closure_gns_dir, ff->closure_gns[x]->path->can_hash);
-		if(symlink(tmpa, tmpb) != 0 && errno != EEXIST)
-			fail("symlink=[%d][%s]", errno, strerror(errno));
-	}
-
-	if((dh = opendir(ff->closure_gns_dir)) == 0)
-		fail("opendir(%s)=[%d][%s]", ff->closure_gns_dir, errno, strerror(errno));
-
-	struct dirent ent;
-	struct dirent * entp = 0;
-	while(1)
-	{
-		fatal_os(readdir_r, dh, &ent, &entp);
-
-		if(!entp)
-			break;
-
-		if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+		if(ff_files.e[x]->type == FFT_REGULAR)
 		{
-			// get the canhash for this gn
-			uint32_t canhash = 0;
-			if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) == 0)
-				fail("unexpected file %s/%s", ff->closure_gns_dir, entp->d_name);
-
-			// delete
-			snprintf(tmpa, sizeof(tmpa), "%s/%u/PRIMARY/dscv", ff->closure_gns_dir, canhash);
-			if(unlink(tmpa) != 0 && errno != ENOENT)
-				fail("unlink(%s)=[%d][%s]", tmpa, errno, strerror(errno));
-
-			snprintf(tmpa, sizeof(tmpa), "%s/%u/SECONDARY/fab/noforce_ff", ff->closure_gns_dir, canhash);
-			if(unlink(tmpa) != 0 && errno != ENOENT)
-				fail("unlink(%s)=[%d][%s]", tmpa, errno, strerror(errno));
-
-			// If it is no longer in the closure, also delete the symlink
-			int kcmp(const void * K, const void * A)
+			if(hashblock_cmp(ff_files.e[x]->hb))
 			{
-				return *(uint32_t*)K - (*(struct gn **)A)->path->can_hash;
-			};
-
-			if(bsearch(&canhash, ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), kcmp) == 0)
-			{
-				snprintf(tmpa, sizeof(tmpa), "%s/%u", ff->closure_gns_dir, canhash);
-				fatal_os(unlink, tmpa);
+				fatal(regular_rewrite, ff_files.e[x]);
 			}
 		}
 	}
 
-	// rewrite the hashblock (reverts to user identity)
-	fatal(hashblock_write, ff->hb);
-
-finally:
-	if(dh)
-		closedir(dh);
-coda;
+	finally : coda;
 }
 
 int ff_regular_enclose_gn(struct ff_file * const ff, gn * const gn)

@@ -316,9 +316,6 @@ int bp_eval(bp * const bp, int * const poison)
 	// begin with an assumption of a good build
 	(*poison) = 0;
 
-	// process invalidations, also update node designations
-	gn_invalidations();
-
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		int c = 0;
@@ -388,17 +385,17 @@ int bp_eval(bp * const bp, int * const poison)
 				}
 				else
 				{
-					if(gn->designation == GN_DESIGNATION_TASK)
+					if(gn->designate == GN_DESIGNATION_TASK)
 					{
 						// TASK node - must be fabricated every time
 						gn->rebuild = 1;
 					}
-					else if(gn->designation == GN_DESIGNATION_GENERATED)
+					else if(gn->designate == GN_DESIGNATION_GENERATED)
 					{
 						// GENERATED file - must be fabricated every time
 						gn->rebuild = 1;
 					}
-					else if(gn->designation == GN_DESIGNATION_SECONDARY)
+					else if(gn->designate == GN_DESIGNATION_SECONDARY)
 					{
 						// SECONDARY file
 						fatal(gn_secondary_reload, gn);
@@ -485,7 +482,7 @@ int bp_eval(bp * const bp, int * const poison)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
 								, x, c++
-								, gn_designate(gn)
+								, gn_designation(gn)
 								, gn->idstring
 								, "EXECUTE"
 							);
@@ -494,7 +491,7 @@ int bp_eval(bp * const bp, int * const poison)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
-								, gn_designate(gn)
+								, gn_designation(gn)
 								, gn->idstring
 								, "REBUILD"
 								,   gn->invalid      		? "invalidated"
@@ -508,7 +505,7 @@ int bp_eval(bp * const bp, int * const poison)
 						{
 							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 								, x, c++
-								, gn_designate(gn)
+								, gn_designation(gn)
 								, gn->idstring
 								, "REBUILD"
 								, "always fab"
@@ -519,7 +516,7 @@ int bp_eval(bp * const bp, int * const poison)
 					{
 						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 							, x, c++
-							, gn_designate(gn)
+							, gn_designation(gn)
 							, gn->idstring
 							, "REBUILD"
 							, "eval context product"
@@ -552,7 +549,7 @@ int bp_eval(bp * const bp, int * const poison)
 			{
 				log(L_ERROR | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
-					, gn_designate(gn)
+					, gn_designation(gn)
 					, gn->idstring
 					, ""
 					, "no formula"
@@ -562,7 +559,7 @@ int bp_eval(bp * const bp, int * const poison)
 			{
 				log(L_WARN | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 					, x, c++
-					, gn_designate(gn)
+					, gn_designation(gn)
 					, gn->idstring
 					, ""
 					, "no formula"
@@ -678,7 +675,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, i
 				for(q = 0; q < (*ts)[y]->fmlv->productsl; q++)
 				{
 					// secondary rewrite
-					if((*ts)[y]->fmlv->products[q]->designation == GN_DESIGNATION_SECONDARY)
+					if((*ts)[y]->fmlv->products[q]->designate == GN_DESIGNATION_SECONDARY)
 					{
 						fatal(gn_secondary_rewrite_fab, (*ts)[y]->fmlv->products[q], ws);
 					}
@@ -720,7 +717,7 @@ void bp_dump(bp * bp)
 				if(i)
 				{
 					log(L_BP | L_BPDUMP, "        %-9s %s"
-						, gn_designate(bp->stages[x].evals[y]->products[i])
+						, gn_designation(bp->stages[x].evals[y]->products[i])
 						, bp->stages[x].evals[y]->products[i]->idstring
 					);
 				}
@@ -729,7 +726,7 @@ void bp_dump(bp * bp)
 					log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s"
 						, x
 						, y
-						, gn_designate(bp->stages[x].evals[y]->products[i])
+						, gn_designation(bp->stages[x].evals[y]->products[i])
 						, bp->stages[x].evals[y]->products[i]->idstring
 					);
 				}
@@ -809,4 +806,3 @@ void bp_xfree(bp ** const restrict bp)
 	bp_free(*bp);
 	*bp = 0;
 }
-

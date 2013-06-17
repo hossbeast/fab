@@ -59,6 +59,9 @@ struct selector;
 #define DEFAULT_MODE_BPLAN				MODE_BPLAN_EXEC
 #define DEFAULT_MODE_GNID					MODE_GNID_RELATIVE
 #define DEFAULT_MODE_CYCL					MODE_CYCL_WARN
+#if DEVEL
+#define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
+#endif
 #define DEFAULT_CONCURRENCY_LIMIT	0
 #define DEFAULT_INVOKEDIR					"/usr/lib/fab/lib"
 
@@ -76,6 +79,9 @@ struct selector;
 	_MODE(MODE_CYCL_WARN			, 0x09	, x)		/* warn when a cycle is detected */										\
 	_MODE(MODE_CYCL_FAIL			, 0x0a	, x)		/* fail when a cycle is detected */										\
 	_MODE(MODE_CYCL_DEAL			, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */	\
+/* bakescript license modes */																																		\
+	_MODE(MODE_BSLIC_STD			, 0x0d	, x)		/* bakescripts have the standard license  */					\
+	_MODE(MODE_BSLIC_FAB			, 0x0e	, x)		/* bakescripts have the fab license */								\
 
 enum {
 #define _MODE(a, b, c) a = b,
@@ -92,43 +98,47 @@ extern struct g_args_t
 // execution parameters
 //
 
-	pid_t								pid;									// pid of this process
-	pid_t								sid;									// session-id
-	char *							cwd;									// cwd
+	pid_t								pid;										// pid of this process
+	pid_t								sid;										// session-id
+	char *							cwd;										// cwd
 
-	uid_t								ruid;									// real-user-id
+	uid_t								ruid;										// real-user-id
 	char *							ruid_name;
-	uid_t								euid;									// effective-user-id   (must be fabsys)
+	uid_t								euid;										// effective-user-id   (must be fabsys)
 	char *							euid_name;
-	gid_t								rgid;									// real-group-id
+	gid_t								rgid;										// real-group-id
 	char *							rgid_name;
-	gid_t								egid;									// effective-group-id  (must be fabsys)
+	gid_t								egid;										// effective-group-id  (must be fabsys)
 	char *							egid_name;
 
 //
 // arguments
 //
 
-	int									mode_bplan;						// buildplan mode
-	int									mode_gnid;						// gn identification mode
-	int									mode_cycl;						// cycle handling mode
+	int									mode_bplan;							// buildplan mode
+	int									mode_gnid;							// gn identification mode
+	int									mode_cycl;							// cycle handling mode
+#if DEVEL
+	int									mode_bslic;							// bakescript license mode
+#endif
 
-	int									concurrency;					// concurrently limiting factor
-	path *							init_fabfile_path;		// path to initial fabfile
-	char *							bakescript_path;			// path to bakescript
+	int									concurrency;						// concurrently limiting factor
+	path *							init_fabfile_path;			// path to initial fabfile
+	char *							bakescript_path;				// path to bakescript
 
-	char **							rootvars;							// root scope variable expressions
+	char **							rootvars;								// root scope variable expressions
 	int									rootvarsl;
 	int									rootvarsa;
 
-	char **							invokedirs;						// root directories for locating invocations
+	char **							invokedirs;							// root directories for locating invocations
 	int									invokedirsl;
 
-	struct selector * 	selectors;						// node selectors
+	struct selector * 	selectors;							// node selectors
 	int									selectorsa;
 	int									selectorsl;
+	int									selectors_arequery;			// whether any selectors target the QUERY list
 
-	int									invalidationsz;				// invalidate all nodes (-B)
+	int									invalidationsz;					// invalidate all nodes (-B)
 } g_args;
 
 /// args_parse

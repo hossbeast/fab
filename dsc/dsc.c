@@ -40,11 +40,119 @@
 #include "macros.h"
 #include "map.h"
 
+#define restrict __restrict
+
 //
 // static
 //
 
-static int depblock_process(const depblock * const db, gn * const dscvgn, int * const newnp, int * const newrp)
+static int dsc_execwave(
+	  map * vmap
+	, generator_parser * const  restrict gp
+	, lstack *** restrict stax
+	, int * restrict staxa
+	, int staxp
+	, ts ** restrict ts
+	, int tsl
+	, int * restrict tsw
+	, int * restrict newn
+	, int * restrict newr
+	, int i
+)
+{
+	int x;
+
+	// render formulas
+	for(x = 0; x < tsl; x++)
+	{
+		ts[x]->y = x;
+
+		// @ is a single element list containing the target of this dscv
+		fatal(lw_reset, stax, staxa, staxp);
+		fatal(lstack_obj_add, (*stax)[staxp], ts[x]->fmlv->target, LISTWISE_TYPE_GNLW);
+
+		// render the formula
+		fatal(map_set, ts[x]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
+		fatal(fml_render, ts[x], gp, stax, staxa, staxp + 1, 1);
+		fatal(map_delete, ts[x]->fmlv->bag, MMS("@"));
+	}
+
+	// execute all formulas in parallel
+	int res = 0;
+	fatal(ts_execwave, ts, tsl, tsw, i, L_DSC | L_DSCEXEC, L_DSC, &res);
+
+	// harvest the results - for a single PRIMARY node, all of its associated dscv
+	// evals will have executed in the same wave, AND they will be contiguous in ts
+	for(x = 0; x < tsl;)
+	{
+		// PRIMARY node for this discovery group
+		gn * dscvgn = ts[x]->fmlv->target;
+
+		// allocate dependency block for this node
+		fatal(depblock_allocate, dscvgn->dscv_block);
+
+		// process all dscvs for the node
+		for(; x < tsl && ts[x]->fmlv->target == dscvgn; x++)
+		{
+			if(ts[x]->r_status == 0 && ts[x]->r_signal == 0 && ts[x]->stde_txt->l == 0)
+			{
+				// parse the generated DDISC fabfile
+				ff_file * dff = 0;
+				fatal(ff_dsc_parse
+					, ts[x]->ffp
+					, ts[x]->stdo_txt->s
+					, ts[x]->stdo_txt->l
+					, ts[x]->stdo_path->s
+					, dscvgn
+					, &dff
+				);
+
+				if(dff)
+				{
+					// process dependencies, attempt to populate the dependency block
+					int k;
+					for(k = 0; k < dff->ffn->statementsl; k++)
+					{
+						if(dff->ffn->statements[k]->type == FFN_DEPENDENCY)
+						{
+							fatal(dep_process, dff->ffn->statements[k], 0, vmap, gp, stax, staxa, staxp, 0, newn, newr, dscvgn->dscv_block);
+						}
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+
+		if(x < tsl && ts[x]->fmlv->target == dscvgn)
+		{
+			// parse failure
+			res = 0;
+		}
+		else
+		{
+			// all were parsed; rewrite the dependency block to disk
+			fatal(depblock_write, dscvgn->dscv_block);
+		}
+
+		// advance to the next group
+		for(; x < tsl && ts[x]->fmlv->target == dscvgn; x++);
+	}
+
+	if(!res)
+		qfail();
+
+	finally : coda;
+}
+
+static int depblock_process(
+	  const depblock * const restrict db
+	, gn * const restrict dscvgn
+	, int * const restrict newnp
+	, int * const restrict newrp
+)
 {
 	int i;
 	int k;
@@ -111,74 +219,77 @@ static int depblock_process(const depblock * const db, gn * const dscvgn, int * 
 	finally : coda;
 }
 
-static int count_dscv(gn * r, int * c)
+static int count_dscv()
 {
-	int logic(gn * gn, int d)
+	int c = 0;
+	int x;
+	for(x = 0; x < gn_nodes.l; x++)
 	{
-		if(gn->designation == GN_DESIGNATION_PRIMARY)
+		if(gn_nodes.e[x]->designate == GN_DESIGNATION_PRIMARY)
 		{
-			int x;
-			for(x = 0; x < gn->dscvsl; x++)
+			int y;
+			for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
 			{
-				if(gn->dscvs[x]->dscv_mark == 0)
+				if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 0)
 				{
-					(*c)++;
-					gn->dscvs[x]->dscv_mark = 1;
+					c++;
+					gn_nodes.e[x]->dscvs[y]->dscv_mark = 1;
 				}
 			}
 		}
+	}
 
-		return 1;
-	};
-
-	return traverse_depth_bynodes_needsward_useweak(r, logic);
-}
-
-static int assign_dscv(gn * r, ts ** ts, int * tsl, gn ** cache, int * cachel)
-{
-	int logic(gn * gn, int d)
-	{
-		if(gn->designation == GN_DESIGNATION_PRIMARY)
-		{
-			int x;
-			for(x = 0; x < gn->dscvsl; x++)
-			{
-				if(gn->dscvs[x]->dscv_mark == 1)
-				{
-					// determine if the node has suitable cached discovery results
-					fatal(gn_primary_reload_dscv, gn);
-
-					if(gn->dscv_block->block)
-					{
-						cache[(*cachel)++] = gn;
-
-						// dscv results were loaded from cache so all of the dscvs for this node are skipped
-						int y;
-						for(y = 0; y < gn->dscvsl; y++)
-						{
-							gn->dscvs[y]->dscv_mark = 2;
-						}
-					}
-					else
-					{
-						ts[(*tsl)++]->fmlv = gn->dscvs[x];
-						gn->dscvs[x]->dscv_mark = 2;
-					}
-				}
-			}
-		}
-
-		finally : coda;
-	};
-
-	return traverse_depth_bynodes_needsward_useweak(r, logic);
+	return c;
 }
 
 //
 // public
 //
 
-int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
+int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
+{
+	int tsl = 0;
+	int x;
+	int y;
+
+	// assign each threadspace a discovery formula evaluation context
+	for(x = 0; x < listl; x++)
+	{
+		if((*list[x])->designate == GN_DESIGNATION_PRIMARY)
+		{
+			for(y = 0; y < (*list)[x]->dscvsl; y++)
+			{
+				if((*list[x])->dscvs[y]->dscv_mark == 1)
+				{
+					fatal(ts_ensure, ts, tsa, tsl + 1);
+					ts_reset((*ts)[tsl]);
+
+					(*ts)[tsl++]->fmlv = (*list[x])->dscvs[y];
+					(*list[x])->dscvs[y]->dscv_mark = 2;
+				}
+			}
+		}
+		else
+		{
+			// warn
+		}
+	}
+
+	log(L_DSC | L_DSCEXEC, "DISCOVERY --- executes %3d cached ---", tsl);
+
+	int newn = 0;
+	int newr = 0;
+	fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
+
+	if(new)
+		(*new) += newn + newr;
+
+	log(L_DSC | L_DSCEXEC, "DISCOVERY --- : %3d nodes and %3d edges", newn, newr);
+
+	finally : coda;
+}
+
+int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
 {
 	gn ** cache = 0;
 	int		cachel = 0;
@@ -187,17 +298,15 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, l
 	int		dscvl = 0;
 	int		tsl = 0;
 
-	// count not-yet-executed discovery fmleval contexts
 	int x;
-	for(x = 0; x < rootsl; x++)
-		fatal(count_dscv, roots[x], &dscvl);
-
 	int i;
+	int y;
+
+	// count not-yet-executed discovery fmleval contexts
+	dscvl = count_dscv();
+
 	for(i = 0; dscvl; i++)
 	{
-		// ensure enough threadspace as if all nodes require re-execution of discovery
-		fatal(ts_ensure, ts, tsa, dscvl);
-
 		// ensure enough cache space as if all nodes have cached discovery
 		if(dscvl > cachea)
 		{
@@ -208,120 +317,66 @@ int dsc_exec(gn ** roots, int rootsl, map * vmap, generator_parser * const gp, l
 		// assign each threadspace a discovery formula evaluation context
 		tsl = 0;
 		cachel = 0;
-		for(x = 0; x < rootsl; x++)
-			fatal(assign_dscv, roots[x], *ts, &tsl, cache, &cachel);
-
-		log(L_DSC | L_DSCEXEC, "DISCOVERY %d executes %d cached %d", i, tsl, cachel);
-
-		// render formulas
-		for(x = 0; x < tsl; x++)
+		for(x = 0; x < gn_nodes.l; x++)
 		{
-			(*ts)[x]->y = x;
-
-			// @ is a single element list containing the target of this dscv
-			fatal(lw_reset, stax, staxa, staxp);
-			fatal(lstack_obj_add, (*stax)[staxp], (*ts)[x]->fmlv->target, LISTWISE_TYPE_GNLW);
-
-			// render the formula
-			fatal(map_set, (*ts)[x]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
-			fatal(fml_render, (*ts)[x], gp, stax, staxa, staxp + 1, 1);
-			fatal(map_delete, (*ts)[x]->fmlv->bag, MMS("@"));
-		}
-
-		// execute all formulas in parallel
-		int res = 0;
-		fatal(ts_execwave, *ts, tsl, tsw, i, L_DSC | L_DSCEXEC, L_DSC, &res);
-
-		// harvest the results - for a single PRIMARY node, all of its associated dscv
-		// evals will have executed in the same wave, AND they will be contiguous in ts
-		int newn = 0;
-		int newr = 0;
-
-		for(x = 0; x < tsl;)
-		{
-			// PRIMARY node for this discovery group
-			gn * dscvgn = (*ts)[x]->fmlv->target;
-
-			// allocate dependency block for this node
-			fatal(depblock_allocate, dscvgn->dscv_block);
-
-			// process all dscvs for the node
-			for(; x < tsl && (*ts)[x]->fmlv->target == dscvgn; x++)
+			if(gn_nodes.e[x]->designate == GN_DESIGNATION_PRIMARY)
 			{
-				if((*ts)[x]->r_status == 0 && (*ts)[x]->r_signal == 0 && (*ts)[x]->stde_txt->l == 0)
+				for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
 				{
-					// parse the generated DDISC fabfile
-					ff_file * dff = 0;
-					fatal(ff_dsc_parse
-						, (*ts)[x]->ffp
-						, (*ts)[x]->stdo_txt->s
-						, (*ts)[x]->stdo_txt->l
-						, (*ts)[x]->stdo_path->s
-						, dscvgn
-						, &dff
-					);
+					if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 1)
+					{
+						// determine if the node has suitable cached discovery results
+						fatal(gn_primary_reload_dscv, gn_nodes.e[x]);
 
-					if(dff)
-					{
-						// process dependencies, attempt to populate the dependency block
-						int k;
-						for(k = 0; k < dff->ffn->statementsl; k++)
+						if(gn_nodes.e[x]->dscv_block->block)
 						{
-							if(dff->ffn->statements[k]->type == FFN_DEPENDENCY)
+							cache[cachel++] = gn_nodes.e[x];
+
+							// dscv results were loaded from cache so all of the dscvs for this node are skipped
+							int k;
+							for(k = 0; k < gn_nodes.e[x]->dscvsl; k++)
 							{
-								fatal(dep_process, dff->ffn->statements[k], 0, vmap, gp, stax, staxa, staxp, 0, &newn, &newr, dscvgn->dscv_block);
+								gn_nodes.e[x]->dscvs[k]->dscv_mark = 2;
 							}
+
+							break;
 						}
-					}
-					else
-					{
-						break;
+						else
+						{
+							fatal(ts_ensure, ts, tsa, tsl + 1);
+							ts_reset((*ts)[tsl]);
+
+							(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
+							gn_nodes.e[x]->dscvs[y]->dscv_mark = 2;
+						}
 					}
 				}
 			}
-
-			if(x < tsl && (*ts)[x]->fmlv->target == dscvgn)
-			{
-				// parse failure
-				res = 0;
-			}
-			else
-			{
-				// all were parsed; rewrite the dependency block to disk
-				fatal(depblock_write, dscvgn->dscv_block);
-			}
-
-			// advance to the next group
-			for(; x < tsl && (*ts)[x]->fmlv->target == dscvgn; x++);
 		}
 
-		if(!res)
-		{
-			qfail();
-		}
+		log(L_DSC | L_DSCEXEC, "DISCOVERY %3d executes %3d cached %3d", i, tsl, cachel);
+
+		int newn = 0;
+		int newr = 0;
+		fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, i);
 
 		// process cached results
 		for(x = 0; x < cachel; x++)
 		{
-			log(L_DSC | L_DSCEXEC, "(cache) %-9s %s", gn_designate(cache[x]), cache[x]->idstring);
+			log(L_DSC | L_DSCEXEC, "(cache) %-9s %s", gn_designation(cache[x]), cache[x]->idstring);
 
 			fatal(depblock_process, cache[x]->dscv_block, cache[x], &newn, &newr);
 			fatal(depblock_close, cache[x]->dscv_block);
 		}
 
-		// sum of discovered objects
+		// sum discovered objects
 		if(new)
 			(*new) += newn + newr;
 
-		log(L_DSC | L_DSCEXEC, "DISCOVERY %d : %d nodes and %d edges", i, newn, newr);
-
-		// apply user-specified invalidations, apply gn designations
-		gn_invalidations();
+		log(L_DSC | L_DSCEXEC, "DISCOVERY %3d : %3d nodes and %3d edges", i, newn, newr);
 
 		// recount - new nodes may need discovered
-		dscvl = 0;
-		for(x = 0; x < rootsl; x++)
-			fatal(count_dscv, roots[x], &dscvl);
+		dscvl = count_dscv();
 	}
 
 finally:
