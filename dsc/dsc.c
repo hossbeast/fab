@@ -74,7 +74,7 @@ static int dsc_execwave(
 		// render the formula
 		fatal(map_set, ts[x]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
 		fatal(fml_render, ts[x], gp, stax, staxa, staxp + 1, 1);
-		fatal(map_delete, ts[x]->fmlv->bag, MMS("@"));
+		map_delete(ts[x]->fmlv->bag, MMS("@"));
 	}
 
 	// execute all formulas in parallel
@@ -230,7 +230,7 @@ static int count_dscv()
 			int y;
 			for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
 			{
-				if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 0)
+				if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 0 || gn_nodes.e[x]->invalid)
 				{
 					c++;
 					gn_nodes.e[x]->dscvs[y]->dscv_mark = 1;
@@ -246,7 +246,7 @@ static int count_dscv()
 // public
 //
 
-int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
+int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
 	int tsl = 0;
 	int x;
@@ -281,15 +281,12 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * con
 	int newr = 0;
 	fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
 
-	if(new)
-		(*new) += newn + newr;
-
 	log(L_DSC | L_DSCEXEC, "DISCOVERY --- : %3d nodes and %3d edges", newn, newr);
 
 	finally : coda;
 }
 
-int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw, int * new)
+int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
 	gn ** cache = 0;
 	int		cachel = 0;
@@ -370,9 +367,6 @@ int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, in
 		}
 
 		// sum discovered objects
-		if(new)
-			(*new) += newn + newr;
-
 		log(L_DSC | L_DSCEXEC, "DISCOVERY %3d : %3d nodes and %3d edges", i, newn, newr);
 
 		// recount - new nodes may need discovered

@@ -232,41 +232,42 @@ static int log_vfinish(const char* fmt, va_list* va)
 	return R;
 }
 
+static void log_describe(struct filter * f)
+{
+	char buf[256];
+
+	char * s = buf;
+	size_t z = sizeof(buf);
+
+	size_t l = 0;
+	l += snprintf(s + l, z - l, "%c%c", f->o, f->m);
+
+	int y;
+	int i = 0;
+	for(y = 0; y < g_logs_l; y++)
+	{
+		if(g_logs[y].v & f->v)
+		{
+			if(i++)
+				l += snprintf(s + l, z - l, "|");
+			l += snprintf(s + l, z - l, "%s", g_logs[y].s);
+		}
+	}
+
+	l += snprintf(s + l, z - l, "%c"
+		, f->m == '(' ? ')'
+		: f->m == '[' ? ']'
+		: f->m == '{' ? '}'
+		: f->m == '<' ? '>' : ' '
+	);
+
+	log(L_INFO, "%.*s", l, s);
+}
+
+
 //
 // [[ public ]]
 //
-
-void log_active(char * s, size_t z)
-{
-	int l = 0;
-	int x;
-	for(x = 0; x < o_filter_l; x++)
-	{
-		if(x)
-			l += snprintf(s + l, z - l, " ");
-
-		l += snprintf(s + l, z - l, "%c%c", o_filter[x].o, o_filter[x].m);
-
-		int y;
-		int i = 0;
-		for(y = 0; y < g_logs_l; y++)
-		{
-			if(g_logs[y].v & o_filter[x].v)
-			{
-				if(i++)
-					l += snprintf(s + l, z - l, "|");
-				l += snprintf(s + l, z - l, "%s", g_logs[y].s);
-			}
-		}
-
-		l += snprintf(s + l, z - l, "%c"
-			, o_filter[x].m == '(' ? ')'
-			: o_filter[x].m == '[' ? ']'
-			: o_filter[x].m == '{' ? '}'
-			: o_filter[x].m == '<' ? '>' : ' '
-		);
-	}
-}
 
 void log_parse(char * args, int args_len)
 {
@@ -369,6 +370,8 @@ void log_parse(char * args, int args_len)
 						f->v = tag & L_TAG;
 						f->o = args[x];
 						f->m = lhs == ' ' ? '(' : lhs;
+
+						log_describe(f);
 					}
 				}
 			}

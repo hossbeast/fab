@@ -107,12 +107,6 @@ int log_init(char * args);
 //
 void log_parse(char * args, int args_len);
 
-/// log_active
-//
-// write a string describing active logging categories to s
-//
-void log_active(char* s, size_t l);
-
 /// log_would
 //
 // true if logs would print with the specified bits

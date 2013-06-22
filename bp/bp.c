@@ -133,7 +133,7 @@ static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
 // public
 //
 
-int bp_create(gn ** n, int l, bp ** bp)
+int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** const restrict fabricationxs, int fabricationxsl, bp ** const restrict bp)
 {
 	gn ** lvs = 0;
 	int lvsl = 0;
@@ -143,17 +143,17 @@ int bp_create(gn ** n, int l, bp ** bp)
 
 	// reset all depths/heights to -1
 	int x;
-	for(x = 0; x < l; x++)
-		fatal(reset, n[x]);
+	for(x = 0; x < fabricationsl; x++)
+		fatal(reset, *fabrications[x]);
 
 	// calculate node heights and max height
 	int maxheight = -1;
 	int change = 0;
-	for(x = 0; x < l; x++)
+	for(x = 0; x < fabricationsl; x++)
 	{
 		int nowchange = 0;
-		fatal(heights, n[x], &nowchange);
-		maxheight = MAX(maxheight, n[x]->height);
+		fatal(heights, *fabrications[x], &nowchange);
+		maxheight = MAX(maxheight, (*fabrications[x])->height);
 
 		if(change && nowchange)
 		{
@@ -172,8 +172,8 @@ int bp_create(gn ** n, int l, bp ** bp)
 	{
 		// get list of nodes for this stage - k is stage number
 		lvsl = 0;
-		for(x = 0; x < l; x++)
-			fatal(visit, n[x], k, &lvs, &lvsl, &lvsa);
+		for(x = 0; x < fabricationsl; x++)
+			fatal(visit, *fabrications[x], k, &lvs, &lvsl, &lvsa);
 
 		if((*bp)->stages_l <= k)
 		{
@@ -306,7 +306,7 @@ finally:
 coda;
 }
 
-int bp_eval(bp * const bp, int * const poison)
+int bp_eval(bp * const bp)
 {
 	int x;
 	int y;
@@ -314,7 +314,7 @@ int bp_eval(bp * const bp, int * const poison)
 	int k;
 
 	// begin with an assumption of a good build
-	(*poison) = 0;
+	int poison = 0;
 
 	for(x = 0; x < bp->stages_l; x++)
 	{
@@ -330,7 +330,7 @@ int bp_eval(bp * const bp, int * const poison)
 				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
 
 				// poison and propagate
-				(*poison) = 1;
+				poison = 1;
 				for(i = 0; i < gn->feeds.l; i++)
 					gn->feeds.e[i]->A->poison = 1;
 			}
@@ -535,7 +535,7 @@ int bp_eval(bp * const bp, int * const poison)
 			{
 				// file doesn't exist or has changed, is not a PRIMARY file, and cannot be fabricated
 				gn->poison = 1;
-				(*poison) = 1;
+				poison = 1;
 			}
 
 			// propagate the poison
@@ -568,37 +568,37 @@ int bp_eval(bp * const bp, int * const poison)
 		}
 	}
 
+	if(poison)
+		qfail();
+
 	// consolidate stages
-	if(!(*poison))
+	for(x = bp->stages_l - 1; x >= 0; x--)
 	{
-		for(x = bp->stages_l - 1; x >= 0; x--)
+		for(y = bp->stages[x].evals_l - 1; y >= 0; y--)
 		{
-			for(y = bp->stages[x].evals_l - 1; y >= 0; y--)
+			if(bp->stages[x].evals[y] == 0)
 			{
-				if(bp->stages[x].evals[y] == 0)
-				{
-					memmove(
-						  &bp->stages[x].evals[y]
-						, &bp->stages[x].evals[y + 1]
-						, (bp->stages[x].evals_l - y - 1) * sizeof(bp->stages[0].evals[0])
-					);
-
-					bp->stages[x].evals_l--;
-				}
-			}
-
-			if(bp->stages[x].evals_l == 0)
-			{
-				bp_freestage(&bp->stages[x]);
-
 				memmove(
-					  &bp->stages[x]
-					, &bp->stages[x + 1]
-					, (bp->stages_l - x - 1) * sizeof(bp->stages[0])
+						&bp->stages[x].evals[y]
+					, &bp->stages[x].evals[y + 1]
+					, (bp->stages[x].evals_l - y - 1) * sizeof(bp->stages[0].evals[0])
 				);
 
-				bp->stages_l--;
+				bp->stages[x].evals_l--;
 			}
+		}
+
+		if(bp->stages[x].evals_l == 0)
+		{
+			bp_freestage(&bp->stages[x]);
+
+			memmove(
+					&bp->stages[x]
+				, &bp->stages[x + 1]
+				, (bp->stages_l - x - 1) * sizeof(bp->stages[0])
+			);
+
+			bp->stages_l--;
 		}
 	}
 
@@ -651,7 +651,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, i
 			//  note that serialization in this loop is important, because fmlv's may share the same bag
 			fatal(map_set, (*ts)[i]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
 			fatal(fml_render, (*ts)[i], gp, stax, staxa, staxp + 1, 1);
-			fatal(map_delete, (*ts)[i]->fmlv->bag, MMS("@"));
+			map_delete((*ts)[i]->fmlv->bag, MMS("@"));
 
 			i++;
 		}
@@ -733,48 +733,6 @@ void bp_dump(bp * bp)
 			}
 		}
 	}
-}
-
-int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
-{
-	int add(gn * gn)
-	{
-		if(*gnl == *gna)
-		{
-			int ns = 10;
-			if(*gna)
-				ns = (*gna) * 2 + (*gna) / 2;
-
-			fatal(xrealloc, gns, sizeof(**gns), ns, *gna);
-			*gna = ns;
-		}
-	
-		(*gns)[(*gnl)++] = gn;
-
-		finally : coda;
-	};
-
-	*gnl = 0;
-
-	int x;
-	for(x = 0; x < bp->stages_l; x++)
-	{
-		int y;
-		for(y = 0; y < bp->stages[x].primary_l; y++)
-			fatal(add, bp->stages[x].primary[y]);
-
-		for(y = 0; y < bp->stages[x].nofmls_l; y++)
-			fatal(add, bp->stages[x].nofmls[y]);
-
-		for(y = 0; y < bp->stages[x].evals_l; y++)
-		{
-			int q;
-			for(q = 0; q < bp->stages[x].evals[y]->productsl; q++)
-				fatal(add, bp->stages[x].evals[y]->products[q]);
-		}
-	}
-
-	finally : coda;
 }
 
 void bp_freestage(bp_stage * const restrict bps)

@@ -70,7 +70,7 @@ if(help)
 "  --help|-h   : this message\n"
 "  --version   : version information\n"
 "  --logopts   : logging category listing\n"
-"  --operators : operator listing (including fab-specific)\n"
+"  --operators : listwise operator listing (including fab-specific)\n"
 "\n"
 "----------- [ selectors ] ----------------------------------------------------------------\n"
 "\n"
@@ -448,17 +448,8 @@ int args_parse(int argc, char** argv)
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_args.init_fabfile_path->abs_dir);
 
-	// MODE_BUILDPLAN implies +BPDUMP
-	if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
-		log_parse("+BPDUMP", 0);
-
 	// initialize logger
 	fatal(log_init, "+ERROR|WARN|INFO|INVOKE|BPEXEC|DSCINFO");
-
-	// active logs
-	char buf[256];
-	log_active(buf, sizeof(buf));
-	log(L_INFO, "%s", buf);
 
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 
@@ -487,10 +478,10 @@ int args_parse(int argc, char** argv)
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'c', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycl          =%s", g_args.mode_cycl == DEFAULT_MODE_CYCL ? " " : "*", ' ', MODE_STR(g_args.mode_cycl));
 	if(g_args.concurrency > 0)
-		snprintf(buf, sizeof(buf)	, "%d", g_args.concurrency);
+		snprintf(space, sizeof(space)	, "%d", g_args.concurrency);
 	else
-		snprintf(buf, sizeof(buf)	, "%s", "unbounded");
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', buf);
+		snprintf(space, sizeof(space)	, "%s", "unbounded");
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', space);
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 	{

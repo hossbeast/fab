@@ -39,7 +39,6 @@
 //  ts      - ts  (see ts_execwave)
 //  tsa     - ts   |
 //  tsw     - tsw  v
-//  [new]   - if not null, incremented by the number of edges and nodes discovered
 //
 int dsc_exec_entire(
 	  map * restrict vmap
@@ -50,7 +49,6 @@ int dsc_exec_entire(
 	, ts *** restrict ts
 	, int * restrict tsa
 	, int * restrict tsw
-	, int * restrict new
 )
 	__attribute__((nonnull(1, 2, 3, 4, 6, 7, 8)));
 
@@ -70,7 +68,6 @@ int dsc_exec_entire(
 //  ts      - ts  (see ts_execwave)
 //  tsa     - ts   |
 //  tsw     - tsw  v
-//  [new]   - if not null, incremented by the number of edges and nodes discovered
 //
 int dsc_exec_specific(
 	  gn *** const restrict list
@@ -83,7 +80,6 @@ int dsc_exec_specific(
 	, ts *** restrict ts
 	, int * restrict tsa
 	, int * restrict tsw
-	, int * restrict new
 )
 	__attribute__((nonnull(1, 3, 4, 5, 6, 8, 9, 10)));
 

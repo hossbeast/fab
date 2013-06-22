@@ -59,15 +59,15 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 		else if(s->mode == '-')
 		{
 			if(s->lists & SELECTOR_FABRICATE)
-				fatal(map_delete, o_fabricationsmap, MM(g));
+				map_delete(o_fabricationsmap, MM(g));
 			if(s->lists & SELECTOR_FABRICATEX)
-				fatal(map_delete, o_fabricationxsmap, MM(g));
+				map_delete(o_fabricationxsmap, MM(g));
 			if(s->lists & SELECTOR_INVALIDATE)
-				fatal(map_delete, o_invalidationsmap, MM(g));
+				map_delete(o_invalidationsmap, MM(g));
 			if(s->lists & SELECTOR_DISCOVERY)
-				fatal(map_delete, o_discoveriesmap, MM(g));
+				map_delete(o_discoveriesmap, MM(g));
 			if(s->lists & SELECTOR_INSPECT)
-				fatal(map_delete, o_inspectionsmap, MM(g));
+				map_delete(o_inspectionsmap, MM(g));
 		}
 
 		finally : coda;
