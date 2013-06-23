@@ -21,40 +21,72 @@
 	#include "generator/generator.def.h"
 	#include "generator/generator.tab.h"
 
-	void generator_yyerror(void* scanner, parse_param* pp, char const* err);
+	#include "macros.h"
 
-#define PTOKEN(token)																																													\
-		(token == OP ?   printf("%3d: OP   - '%.*s' (%p)\n", __LINE__, yylval->str.l, yylval->str.s, yylval->op.v)	\
-	: token == STR ?  printf("%3d: STR  - '%.*s'\n"			, __LINE__, yylval->str.l, yylval->str.s)								\
-	: token == I64 ?  printf("%3d: I64  - '%.*s'\n"			, __LINE__, yylval->str.l, yylval->str.s)								\
-	: token == BREF ? printf("%3d: BREF - '%.*s'\n"			, __LINE__, yylval->str.l, yylval->str.s)								\
-	: token == LF   ? printf("%3d: LF\n"								, __LINE__)																							\
-	:                 printf("%3d: TOK  - (%c) (%d)\n"	, __LINE__, token, token))
+	typedef unsigned short yytype_uint16;
+	static const char *const yytname[] =
+	{
+		"$end", "error", "$undefined", "STR", "BREF", "I64", "OP", "$accept",
+		"items", "item", "arg", "string", "strpart", 0
+	};
+	static const yytype_uint16 yytoknum[] =
+	{
+		0,   256,   257,   258,   259,   260,   261
+	};
+	#define YYNTOKENS  51
+	const char * generator_tokname(int tok)
+	{
+		int x;
+		for(x = 0; x < YYNTOKENS; x++)
+		{
+			if(yytoknum[x] == tok)
+			{
+				return yytname[x];
+			}
+		}
+		return 0;
+	}
 
-/*
-<INITIAL>\\[^0-9\\/\n][^\\/\n]*		{
-				 														yylval->str.s = strdup(yytext+1);
-				 														yylval->str.l = yyleng-1;
-				 														return LEX(STR);
-				 													}
-*/
+	void generator_yyerror(void* loc, void* scanner, parse_param* pp, char const* err);
 
-#if 0
-#	define LEX(token) PTOKEN(token), token
-#else
-#	define LEX(token) token
+	int generator_lexify(char * text, int leng, YYLTYPE * locp, YYSTYPE * valp, int token, int line)
+	{
+		locp->s = text;
+		locp->e = text + leng;
+
+#if TOKENSTREAM
+	char tmp[32] = { [0] = 0 };
+	if(token == I64)
+		snprintf(tmp, sizeof(tmp), "%ld", valp->i64);
+	if(token == BREF)
+		snprintf(tmp, sizeof(tmp), "%d", valp->bref);
+
+	printf("%14s ) '%.*s'%s%*s @ %d\n"
+		, generator_tokname(token)
+		, (int)(locp->e - locp->s), locp->s
+		, tmp
+		, MAX(0, 50 - (int)(locp->e - locp->s)- (int)strlen(tmp)), ""
+		, line
+	);
 #endif
+
+		return token;
+	}
+
+#define LEX(token)              return generator_lexify(yytext, yyleng, yylloc, yylval, token, __LINE__)
+#define LEXX(token, text, leng) return generator_lexify(text, leng, yylloc, yylval, token, __LINE__)
 %}
 
 %option noinput nounput noyywrap noyy_top_state
 %option reentrant
-%option bison-bridge 
+%option bison-bridge bison-locations
 %option prefix="generator_yy"
 %option extra-type="parse_param*"
 %option stack
 
 %x lit
 %x multilinecomment
+%x slash
 
 %%
 
@@ -64,52 +96,33 @@
 <multilinecomment>[*][/]					{ yy_pop_state(yyextra->scanner); }
 
 <INITIAL>[\t ]+										{ }
-<INITIAL>\\[/]										{
-																		yylval->str.s = strdup(yytext+1);
-																		yylval->str.l = yyleng-1;
-																		return LEX(STR);
-																	}
-<INITIAL>\\[<]										{
-																		yylval->str.s = strdup(yytext+1);
-																		yylval->str.l = yyleng-1;
-																		return LEX(STR);
-																	}
-<INITIAL>\\[\t ]									{
-																		yylval->str.s = strdup(yytext+1);
-																		yylval->str.l = yyleng-1;
-																		return LEX(STR);
-																	}
+<INITIAL>\\[/]										{ LEXX(STR, yytext+1, yyleng-1); }
+<INITIAL>\\[<]										{ LEXX(STR, yytext+1, yyleng-1); }
+<INITIAL>\\[\t ]									{ LEXX(STR, yytext+1, yyleng-1); }
 <INITIAL>\\[0-9]+									{
-				 														yylval->bref.s = strdup(yytext);
-				 														yylval->bref.l = yyleng;
-				 														sscanf(yytext + 1, "%d", &yylval->bref.v);
-				 														return LEX(BREF);
+				 														sscanf(yytext + 1, "%d", &yylval->bref);
+																		LEX(BREF);
 				 													}
+<INITIAL>[/]											{ yy_push_state(slash, yyextra->scanner); LEX(yytext[0]); }
+<slash>[/]												{ yy_pop_state(yyextra->scanner); yyless(0); LEXX(STR, "", 0); }
+<slash>[^/]												{ yy_pop_state(yyextra->scanner); yyless(0); }
 
-<INITIAL>[/]											{ return LEX(yytext[0]); }
-<INITIAL>[\n]											{ return LEX(LF); }
+<INITIAL>[\n]											{ LEX(LF); }
 <INITIAL>-?[0-9]+									{
-				 														yylval->i64.s = strdup(yytext);
-				 														yylval->i64.l = yyleng;
-				 														sscanf(yytext, "%ld", &yylval->i64.v);
-				 														return LEX(I64);
+				 														sscanf(yytext, "%ld", &yylval->i64);
+				 														LEX(I64);
 				 													}
 <INITIAL>[<]											{ yy_push_state(lit, yyextra->scanner); }
-
 <INITIAL>[^\t \\/<\n]+						{
-				 														yylval->str.s = strdup(yytext);
-				 														yylval->str.l = yyleng;
-
 				 														// determine whether this string happens to be an operator
-				 														if((yylval->op.v = op_lookup(yytext, yyleng)))
-				 															return LEX(OP);
+				 														if((yylval->op = op_lookup(yytext, yyleng)))
+																		{
+				 															LEX(OP);
+																		}
 				 														else
-				 															return LEX(STR);
+																		{
+				 															LEX(STR);
+																		}
 				 													}
-
-<lit>[^>]+												{
-																		yylval->str.s = strdup(yytext);
-																		yylval->str.l = yyleng;
-																		return LEX(STR);
-																	}
+<lit>[^>]+												{	LEX(STR); }
 <lit>[>]													{ yy_pop_state(yyextra->scanner); }

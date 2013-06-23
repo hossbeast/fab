@@ -115,7 +115,7 @@ void API generator_parser_xfree(generator_parser** p)
 	*p = 0;
 }
 
-void generator_yyerror(yyscan_t scanner, parse_param* pp, char const *err)
+void generator_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 {
 	printf("ERROR - %s\n", err);
 	pp->r = 0;

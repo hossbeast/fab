@@ -15,6 +15,29 @@
    You should have received a copy of the GNU General Public License
    along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
 
+%code requires {
+	#define YYLTYPE YYLTYPE
+	typedef struct YYLTYPE
+	{
+		char * s;
+		char * e;
+	} YYLTYPE;
+
+	#define YYLLOC_DEFAULT(Cur, Rhs, N)			\
+	do																			\
+	{																				\
+		if(N)																	\
+		{																			\
+			(Cur).s = YYRHSLOC(Rhs, 1).s;				\
+			(Cur).e = YYRHSLOC(Rhs, N).e;				\
+		}																			\
+		else																	\
+		{																			\
+			(Cur).s = YYRHSLOC(Rhs, 0).e;				\
+		}																			\
+	} while(0)
+}
+
 %code top {
 	#include <stdio.h>
 	#include <stdlib.h>
@@ -23,71 +46,63 @@
 
 	#include "generator.def.h"
 
-	int  generator_yylex(void* yylvalp, void* scanner);
-	void generator_yyerror(void* scanner, parse_param* pp, char const* err);
+	int  generator_yylex(void* yylocp, void* yylvalp, void* scanner);
+	void generator_yyerror(void* loc, void* scanner, parse_param* pp, char const* err);
 }
 
 %define api.pure
+%locations
 %token-table
 %error-verbose
 %name-prefix="generator_yy"
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
-%expect 8
 
 %union {
-	struct								// string segment
-	{
-		char*				s;
-		int					l;
-	}							str;
-
-	struct
-	{
-		char *			s;
-		int					l;
-		operator *	v;
-	}							op;
-
-	struct
-	{
-		char *			s;
-		int					l;
-		int					v;
-	}							bref;
-
-	struct
-	{
-		char *			s;
-		int					l;
-		int64_t			v;
-	}							i64;
-
+	operator *		op;
+	int						bref;
+	int64_t				i64;
 	arg *					arg;
 }
 
-%token	<str>			'/'
-%token	<str>			LF
+%token					STR
+%token          '/'
+%token          LF
+%token	<bref>	BREF
+%token  <i64>		I64
+%token	<op>		OP
 
-%token	<str>			STR
-%token	<bref>		BREF
-%token  <i64>		  I64
-%token	<op>			OP
-
-%type		<arg>			arg
-%type		<arg>			string
-
-/* sugar */
-%token END 0 "end of file"
+%type		<arg>		arg
+%type   <arg>   string
+%type   <arg>   strpart
 
 %%
 
+utterance
+	: sep_seq items sep_seq
+	| sep_seq items
+	| items sep_seq
+	| items
+	;
+
 items
-	: items items
+	: items sep_seq item
+	| item
+	;
+
+sep_seq
+	: sep_seq sep
+	| sep
+	;
+
+sep
+	: LF
 	| '/'
-	| LF
-	| OP
+	;
+
+item
+	: OP
 	{
 		if(parm->opsa == parm->g->opsl)
 		{
@@ -99,11 +114,10 @@ items
 		}
 
 		parm->g->ops[parm->g->opsl] = calloc(1, sizeof(*parm->g->ops[0]));
-		parm->g->ops[parm->g->opsl]->op = $1.v;
+		parm->g->ops[parm->g->opsl]->op = $1;
 		parm->g->opsl++;
 
 		parm->opargsa = 0;
-		free($1.s);
 	}
 	| arg
 	{
@@ -133,7 +147,7 @@ items
 
 			parm->g->ops[parm->g->opsl - 1]->args[parm->g->ops[parm->g->opsl - 1]->argsl++] = $1;
 		}
-	} 
+	}
 	;
 
 arg
@@ -142,46 +156,24 @@ arg
 	{
 		$$ = calloc(1, sizeof(*$$));
 
-		$$->l = $1.l;
-		$$->s = $1.s;
+		$$->s = strdup(@1.s);
+		$$->l = @1.e - @1.s;
 		$$->itype = ITYPE_I64;
-		$$->i64 = $1.v;
+		$$->i64 = $1;
 	}
 	;
 
 string
-	: string STR
+	: string strpart
 	{
 		$$ = $1;
 
 		char* o = $$->s;
 
 		// reallocate the string value of the argument
-		$$->s = realloc($$->s, $$->l + $2.l + 1);
-		memcpy($$->s + $$->l, $2.s, $2.l);
-		$$->s[$$->l + $2.l] = 0;
-
-		// update string pointers on previous references
-		int x;
-		for(x = 0; x < $$->refsl; x++)
-		{
-			$$->refs[x].s = $$->s + ($$->refs[x].s - o);
-			$$->refs[x].e = $$->refs[x].s + $$->refs[x].l;
-		}
-
-		$$->l += $2.l;
-		free($2.s);
-	}
-	| string BREF
-	{
-		$$ = $1;
-
-		char* o = $$->s;
-
-		// reallocate the string value of the argument
-		$$->s = realloc($$->s, $$->l + $2.l + 1);
-		memcpy($$->s + $$->l, $2.s, $2.l);
-		$$->s[$$->l + $2.l] = 0;
+		$$->s = realloc($$->s, $$->l + $2->l + 1);
+		memcpy($$->s + $$->l, $2->s, $2->l);
+		$$->s[$$->l + $2->l] = 0;
 
 		// update string pointers on previous references
 		int x;
@@ -192,33 +184,40 @@ string
 		}
 
 		// use new reference, if there is one
-		$$->refs = realloc($$->refs, ($$->refsl + 1) * sizeof(*$$->refs));
+		if($2->refs)
+		{
+			$$->refs = realloc($$->refs, ($$->refsl + 1) * sizeof(*$$->refs));
 
-		$$->refs[$$->refsl].s = $$->s + $$->l;
-		$$->refs[$$->refsl].l = $2.l;
-		$$->refs[$$->refsl].e = $$->s + $$->l + $2.l;
-		$$->refs[$$->refsl].k = REFTYPE_BREF;
-		$$->refs[$$->refsl].bref = $2.v;
+			$$->refs[$$->refsl].s = $$->s + $$->l;
+			$$->refs[$$->refsl].l = $2->l;
+			$$->refs[$$->refsl].e = $$->s + $$->l + $2->l;
+			$$->refs[$$->refsl].k = REFTYPE_BREF;
+			$$->refs[$$->refsl].bref = $2->refs[0].bref;
 
-		$$->ref_last = &$$->refs[$$->refsl];
-		$$->refsl++;
+			$$->ref_last = &$$->refs[$$->refsl];
+			$$->refsl++;
+		}
 
-		$$->l += $2.l;
-		free($2.s);
+		$$->l += $2->l;
+		free($2->s);
 	}
-	| STR
+	| strpart
+	;
+
+strpart
+	: STR
 	{
 		$$ = calloc(1, sizeof(*$$));
 
-		$$->s = $1.s;
-		$$->l = $1.l;
+		$$->s = strdup(@1.s);
+		$$->l = @1.e - @1.s;
 	}
 	| BREF
 	{
 		$$ = calloc(1, sizeof(*$$));
 
-		$$->s = $1.s;
-		$$->l = $1.l;
+		$$->s = strdup(@1.s);
+		$$->l = @1.e - @1.s;
 
 		$$->refs = calloc(1, sizeof(*$$->refs));
 
@@ -226,7 +225,7 @@ string
 		$$->refs[0].l = $$->l;
 		$$->refs[0].e = $$->s + $$->l;
 		$$->refs[0].k = REFTYPE_BREF;
-		$$->refs[0].bref = $1.v;
+		$$->refs[0].bref = $1;
 
 		$$->ref_last = &$$->refs[0];
 		$$->refsl = 1;
