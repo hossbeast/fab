@@ -230,7 +230,7 @@ static int count_dscv()
 			int y;
 			for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
 			{
-				if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 0 || gn_nodes.e[x]->invalid)
+				if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 0)
 				{
 					c++;
 					gn_nodes.e[x]->dscvs[y]->dscv_mark = 1;
@@ -259,14 +259,10 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * con
 		{
 			for(y = 0; y < (*list)[x]->dscvsl; y++)
 			{
-				if((*list[x])->dscvs[y]->dscv_mark == 1)
-				{
-					fatal(ts_ensure, ts, tsa, tsl + 1);
-					ts_reset((*ts)[tsl]);
+				fatal(ts_ensure, ts, tsa, tsl + 1);
+				ts_reset((*ts)[tsl]);
 
-					(*ts)[tsl++]->fmlv = (*list[x])->dscvs[y];
-					(*list[x])->dscvs[y]->dscv_mark = 2;
-				}
+				(*ts)[tsl++]->fmlv = (*list[x])->dscvs[y];
 			}
 		}
 		else
@@ -275,7 +271,7 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * con
 		}
 	}
 
-	log(L_DSC | L_DSCEXEC, "DISCOVERY --- executes %3d cached ---", tsl);
+	log(L_DSC | L_DSCINFO, "DISCOVERY --- executes %3d cached ---", tsl);
 
 	int newn = 0;
 	int newr = 0;
@@ -322,9 +318,6 @@ int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, in
 				{
 					if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 1)
 					{
-						// determine if the node has suitable cached discovery results
-						fatal(gn_primary_reload_dscv, gn_nodes.e[x]);
-
 						if(gn_nodes.e[x]->dscv_block->block)
 						{
 							cache[cachel++] = gn_nodes.e[x];
@@ -351,7 +344,7 @@ int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, in
 			}
 		}
 
-		log(L_DSC | L_DSCEXEC, "DISCOVERY %3d executes %3d cached %3d", i, tsl, cachel);
+		log(L_DSC | L_DSCINFO, "DISCOVERY %3d executes %3d cached %3d", i, tsl, cachel);
 
 		int newn = 0;
 		int newr = 0;

@@ -363,7 +363,7 @@ void map_clear(map* const restrict m)
 int map_delete(map* const restrict m, const void* const restrict k, int kl)
 {
 	uint32_t i = 0;
-	if(lookup(m, k, kl, &i))
+	if(lookup(m, k, kl, &i) == 0)
 	{
 		if(m->destructor)
 		{

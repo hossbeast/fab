@@ -221,16 +221,12 @@ int main(int argc, char** argv)
 	// process hashblocks for regular fabfiles that have changed
 	fatal(ff_regular_reconcile);
 
-	// apply flags and designations
-	gn_finalize();
-	fatal(gn_primary_reload);
+	// compute flags and designations, reload primary files and dscv cache
+	fatal(gn_finalize);
 
 	// comprehensive upfront dependency discovery on the entire graph
 	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
-
-	// apply flags and designations
-	gn_finalize();
-	fatal(gn_primary_reload);
+	fatal(gn_finalize);
 
 	// process selectors
 	if(g_args.selectorsl)
@@ -294,7 +290,6 @@ int main(int argc, char** argv)
 	if(discoveriesl)
 	{
 		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
-
 		qterm();	// terminate successfully
 	}
 	
@@ -303,6 +298,7 @@ int main(int argc, char** argv)
 
 	// dependency discovery on invalidated primary nodes
 	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+	fatal(gn_finalize);
 
 	// process inspections
 	if(inspectionsl)

@@ -393,7 +393,7 @@ int gn_init();
 //
 // gn fully loaded; populate flags and designation
 //
-void gn_finalize();
+int gn_finalize();
 
 /// gn_teardown
 //
