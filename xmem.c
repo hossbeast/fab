@@ -31,18 +31,22 @@ int xmalloc(void* target, size_t size)
 int xrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
 	void** t = ((void**)target);
-	void* a = realloc(*t, es * ec);
+	*t = realloc(*t, es * ec);
 
-	if(a)
+	if(es * ec)
 	{
-		*t = a;
+		if(*t)
+		{
+			if(((ssize_t)ec - (ssize_t)oec) > 0)
+				memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
 
-		if(ec - oec)
-			memset(((char*)*t) + (oec * es), 0, (ec - oec) * es);
+			return 1;
+		}
 
-		return 1;
+		return 0;
 	}
-	return 0;
+
+	return 1;
 }
 
 void xfree(void* target)
@@ -52,4 +56,3 @@ void xfree(void* target)
 	free(*t);
 	*t = 0;
 }
-
