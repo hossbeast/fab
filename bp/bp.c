@@ -61,7 +61,7 @@ static int fmleval_cmp(const void * _A, const void * _B)
 	return gn_cmp(&A->products[0], &B->products[0]);
 }
 
-static int reset(gn * r)
+static int reset(gn * r, int exact)
 {
 	int logic(gn * gn, int d)
 	{
@@ -71,10 +71,13 @@ static int reset(gn * r)
 		return 1;
 	};
 
-	return traverse_depth_bynodes_needsward_useweak(r, logic);
+	if(exact)
+		return logic(r, 0);
+	else
+		return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
-static int heights(gn * r, int * change)
+static int heights(gn * r, int exact, int * change)
 {
 	int logic(gn * gn, int d)
 	{
@@ -97,13 +100,18 @@ static int heights(gn * r, int * change)
 			(*change)++;
 		}
 
+printf("%d %s\n", gn->height, gn->idstring);
+
 		return 1;
 	};
 
-	return traverse_depth_bynodes_needsward_useweak(r, logic);
+	if(exact)
+		return logic(r, 0);
+	else
+		return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
-static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
+static int visit(gn * r, int k, gn *** lvs, int * l, int * a, int exact)
 {
 	int logic(gn * gn, int d)
 	{
@@ -126,7 +134,10 @@ static int visit(gn * r, int k, gn *** lvs, int * l, int * a)
 		finally : coda;
 	};
 
-	return traverse_depth_bynodes_needsward_useweak(r, logic);
+	if(exact)
+		return logic(r, 0);
+	else
+		return traverse_depth_bynodes_needsward_useweak(r, logic);
 }
 
 //
@@ -139,21 +150,30 @@ int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** cons
 	int lvsl = 0;
 	int lvsa = 0;
 
-	fatal(xmalloc, bp, sizeof(**bp));
-
 	// reset all depths/heights to -1
 	int x;
 	for(x = 0; x < fabricationsl; x++)
-		fatal(reset, *fabrications[x]);
+		fatal(reset, *fabrications[x], 0);
+
+	for(x = 0; x < fabricationxsl; x++)
+		fatal(reset, *fabricationxs[x], 1);
 
 	// calculate node heights and max height
 	int maxheight = -1;
 	int change = 0;
-	for(x = 0; x < fabricationsl; x++)
+	for(x = 0; x < fabricationsl + fabricationxsl; x++)
 	{
 		int nowchange = 0;
-		fatal(heights, *fabrications[x], &nowchange);
-		maxheight = MAX(maxheight, (*fabrications[x])->height);
+		if(x < fabricationsl)
+		{
+			fatal(heights, *fabrications[x], 0, &nowchange);
+			maxheight = MAX(maxheight, (*fabrications[x])->height);
+		}
+		else
+		{
+			fatal(heights, *fabricationxs[x - fabricationsl], 1, &nowchange);
+			maxheight = MAX(maxheight, (*fabricationxs[x - fabricationsl])->height);
+		}
 
 		if(change && nowchange)
 		{
@@ -167,20 +187,21 @@ int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** cons
 	}
 
 	// allocate stages in the buildplan and assign nodes
+	// allocate a new stage
+	fatal(xmalloc, bp, sizeof(**bp));
+	fatal(xmalloc, &(*bp)->stages, sizeof((*bp)->stages[0]) * maxheight);
+	(*bp)->stages_l = maxheight;
+
 	int k;
-	for(k = 0; k <= maxheight; k++)
+	for(k = 0; k < maxheight; k++)
 	{
-		// get list of nodes for this stage - k is stage number
+		// get list of nodes for this stage - k+1 is stage number
 		lvsl = 0;
 		for(x = 0; x < fabricationsl; x++)
-			fatal(visit, *fabrications[x], k, &lvs, &lvsl, &lvsa);
+			fatal(visit, *fabrications[x], k+1, &lvs, &lvsl, &lvsa, 0);
 
-		if((*bp)->stages_l <= k)
-		{
-			// allocate a new stage
-			fatal(xrealloc, &(*bp)->stages, sizeof((*bp)->stages[0]), (*bp)->stages_l + 1, (*bp)->stages_l);
-			(*bp)->stages_l++;
-		}
+		for(x = 0; x < fabricationxsl; x++)
+			fatal(visit, *fabricationxs[x], k+1, &lvs, &lvsl, &lvsa, 1);
 
 		// ptr to the stage we will add to
 		bp_stage * bps = &(*bp)->stages[k];
@@ -219,10 +240,10 @@ int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** cons
 					for(i = 0; i < lvs[y]->fabv->productsl; i++)
 						mheight = MAX(mheight, lvs[y]->fabv->products[i]->height);
 
-					if(mheight == k)
+					if(mheight == k+1)
 					{
 						for(i = 0; i < lvs[y]->fabv->productsl; i++)
-							lvs[y]->fabv->products[i]->stage = k;
+							lvs[y]->fabv->products[i]->stage = k+1;
 
 						for(i = 0; i < bps->evals_l; i++)
 						{
@@ -249,13 +270,13 @@ int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** cons
 					//
 					log(L_WARN, "SECONDARY has no formula - %s", lvs[y]->idstring);
 					bps->nofmls[bps->nofmls_l++] = lvs[y];
-					lvs[y]->stage = k;
+					lvs[y]->stage = k+1;
 				}
 				else
 				{
 					// this is a source file
 					bps->primary[bps->primary_l++] = lvs[y];
-					lvs[y]->stage = k;
+					lvs[y]->stage = k+1;
 				}
 			}
 		}
