@@ -69,7 +69,6 @@ int main(int argc, char** argv)
 	bp *								bp = 0;					// buildplan 
 	map * 							rmap = 0;				// root-level map
 	map *								vmap = 0;				// init-level map
-	map *								tmap = 0;				// temp map
 	gn *								first = 0;			// first dependency mentioned
 	lstack **						stax = 0;				// listwise stacks
 	int									staxa = 0;
@@ -79,6 +78,7 @@ int main(int argc, char** argv)
 	int									tsw = 0;
 
 	/* node selector produced lists */
+	map *								smap = 0;							// selector map (must have lifetime >= lifetime of the selector lists)
 	gn ***							fabrications = 0;
 	int									fabricationsl = 0;
 	gn ***							fabricationxs = 0;
@@ -241,13 +241,13 @@ int main(int argc, char** argv)
 			fatal(lstack_obj_add, stax[pn], gn_nodes.e[x], LISTWISE_TYPE_GNLW);
 
 		// map for processing selectors
-		fatal(map_create, &tmap, 0);
-		fatal(map_set, tmap, MMS("!"), MM(stax[pn]));
+		fatal(map_create, &smap, 0);
+		fatal(map_set, smap, MMS("!"), MM(stax[pn]));
 		pn++;
 
 		// process selectors
 		for(x = 0; x < g_args.selectorsl; x++)
-			fatal(selector_process, &g_args.selectors[x], x, ffp, tmap, &stax, &staxa, pn);
+			fatal(selector_process, &g_args.selectors[x], x, ffp, smap, &stax, &staxa, pn);
 
 		if(g_args.selectors_arequery)
 			qterm();		// terminate successfully
@@ -259,8 +259,6 @@ int main(int argc, char** argv)
 			, &discoveries, &discoveriesl
 			, &inspections, &inspectionsl
 		);
-
-		map_xfree(&tmap);
 
 		if(log_would(L_LISTS))
 		{
@@ -345,6 +343,9 @@ int main(int argc, char** argv)
 
 	fatal(bp_create, fabrications, fabricationsl, fabricationxs, fabricationxsl, &bp);
 
+	// selector lists not referenced again past this point
+	map_xfree(&smap);
+
 	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
 	{
 		// create bakescript
@@ -390,7 +391,7 @@ finally:
 	bp_free(bp);
 	map_free(rmap);
 	map_free(vmap);
-	map_free(tmap);
+	map_free(smap);
 
 	for(x = 0; x < staxa; x++)
 	{

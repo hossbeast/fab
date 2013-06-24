@@ -163,8 +163,6 @@ int selector_finalize(
 	fatal(map_keys, o_discoveriesmap, discoveries, discoveriesl);
 	fatal(map_keys, o_inspectionsmap, inspections, inspectionsl);
 
-	selector_teardown();
-
 	finally : coda;
 }
 
