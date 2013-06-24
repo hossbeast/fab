@@ -121,17 +121,38 @@ void generator_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const 
 	pp->r = 0;
 }
 
+size_t operation_write(char * s, size_t sz, const operation * const op)
+{
+	size_t z = 0;
+	z += snprintf(s + z, sz - z, "%s", op->op->s);
+
+	int x;
+	for(x = 0; x < op->argsl; x++)
+		z += snprintf(s + z, sz - z, "/%s", op->args[x]->s);
+
+	if(x && strlen(op->args[x - 1]->s) == 0)
+		z += snprintf(s + z, sz - z, "/");
+
+	return z;
+}
+
 void API generator_dump(generator* g)
 {
-	int x, y;
+	char buf[2048] = {};
+	char * s = buf;
+	size_t sz = sizeof(buf);
+	size_t z = 0;
 
-	char s[2048] = {};
+	int x;
+	int y;
 
 	printf("generator @ %p {\n", g);
 	printf("  initial list\n");
 	for(x = 0; x < g->argsl; x++)
 	{
-		sprintf(s + strlen(s), "%.*s/", g->args[x]->l, g->args[x]->s);
+		if(x)
+			z += snprintf(s + z, sz - z, "/");
+		z += snprintf(s + z, sz - z, "%.*s", g->args[x]->l, g->args[x]->s);
 
 		printf("    '%.*s'\n", g->args[x]->l, g->args[x]->s);
 	}
@@ -139,17 +160,15 @@ void API generator_dump(generator* g)
 	printf("  operations\n");
 	for(x = 0; x < g->opsl; x++)
 	{
-		if(x)
-			sprintf(s + strlen(s), "/");
-		sprintf(s + strlen(s), "%s", g->ops[x]->op->s);
+		if(x || z)
+			z += snprintf(s + z, sz - z, "/");
+
+		z += operation_write(s + z, sz - z, g->ops[x]);
 
 		printf("    OP - %s\n", g->ops[x]->op->s);
 		printf("      args\n");
 		for(y = 0; y < g->ops[x]->argsl; y++)
 		{
-			sprintf(s + strlen(s), "/");
-			sprintf(s + strlen(s), "%s", g->ops[x]->args[y]->s);
-
 			printf("        '%s'\n", g->ops[x]->args[y]->s);
 		}
 

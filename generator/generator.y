@@ -123,16 +123,19 @@ item
 	{
 		if(parm->g->opsl == 0)
 		{
-			if(parm->argsa == parm->g->argsl)
+			if($1->l)
 			{
-				int ns = parm->argsa ?: 10;
-				ns = ns * 2 + ns / 2;
+				if(parm->argsa == parm->g->argsl)
+				{
+					int ns = parm->argsa ?: 10;
+					ns = ns * 2 + ns / 2;
 
-				parm->g->args = realloc(parm->g->args, ns * sizeof(*parm->g->args));
-				parm->argsa = ns;
+					parm->g->args = realloc(parm->g->args, ns * sizeof(*parm->g->args));
+					parm->argsa = ns;
+				}
+
+				parm->g->args[parm->g->argsl++] = $1;
 			}
-
-			parm->g->args[parm->g->argsl++] = $1;
 		}
 		else
 		{

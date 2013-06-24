@@ -22,8 +22,6 @@
 
 #include "listwise/internal.h"
 
-#include "generator/generator.tab.h"
-
 #include "xmem.h"
 #include "xstring.h"
 #include "macros.h"
@@ -239,8 +237,11 @@ static int writestack(lstack* const restrict ls, int x, int y, const void* const
 		memcpy(ls->s[x].s[y].s, (void*)&s, sizeof(s));
 		ls->s[x].s[y].type = type;
 		ls->s[x].s[y].l = 0;
+
+		// dirty the temp space for this entry
+		ls->s[x].t[y].w = 0;
 	}
-	else
+	else if(l)
 	{
 		fatal(ensure, ls, x, y, l);
 
@@ -250,9 +251,6 @@ static int writestack(lstack* const restrict ls, int x, int y, const void* const
 		ls->s[x].s[y].l = l;
 		ls->s[x].s[y].type = 0;
 	}
-
-	// dirty the temp space for this entry
-	ls->s[x].t[y].w = 0;
 
 	finally : coda;
 }
@@ -299,11 +297,6 @@ static int exec_internal(generator* g, char** init, int* initls, int initl, lsta
 		fatal(xmalloc, ls, sizeof(*ls[0]));
 
 	int curl = 0;
-
-/*
-	if((*ls)->l)
-		(*ls)->s[0].l;
-*/
 
 	// write init elements to top of list stack
 	int x;
@@ -360,13 +353,10 @@ static int exec_internal(generator* g, char** init, int* initls, int initl, lsta
 				lstack_dump(*ls);
 
 			dprintf(listwise_err_fd, "\n");
-			dprintf(listwise_err_fd, " >> %s", g->ops[x]->op->s);
 
-			int y;
-			for(y = 0; y < g->ops[x]->argsl; y++)
-				dprintf(listwise_err_fd, "/%s", g->ops[x]->args[y]->s);
-
-			dprintf(listwise_err_fd, "\n");
+			char buf[128];
+			operation_write(buf, sizeof(buf), g->ops[x]);
+			dprintf(listwise_err_fd, " >> %s\n", buf);
 		}
 
 		// execute the operator
@@ -1152,8 +1142,3 @@ totcompares++;
 
 	finally : coda;
 }
-
-
-
-
-

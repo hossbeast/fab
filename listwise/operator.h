@@ -476,8 +476,3 @@ extern int listwise_allocation_seed;
 int listwise_register_opdir(char* dir);
 
 #endif
-
-
-
-
-

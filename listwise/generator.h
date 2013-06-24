@@ -42,6 +42,8 @@ typedef struct generator_parser_t generator_parser;
 /// [[ GENERATOR API ]]
 ///
 
+#define restrict __restrict
+
 /// generator_mkparser
 //
 // returns a generator parser
@@ -76,6 +78,9 @@ void generator_parser_xfree(generator_parser**);
 //
 void generator_dump(generator*);
 
+size_t operation_write(char * restrict s, size_t z, const operation * const restrict op)
+	__attribute__((nonnull));
+
 /// generator_free
 //
 // frees a generator returned from parse
@@ -83,9 +88,5 @@ void generator_dump(generator*);
 void generator_free(generator*);
 void generator_xfree(generator**);
 
+#undef restrict
 #endif
-
-
-
-
-

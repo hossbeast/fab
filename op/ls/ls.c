@@ -114,7 +114,8 @@ static int listing(lstack* ls, char * s, int recurse)
 					if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
 					{
 						fatal(lstack_addf, ls, "%s/%s", s, entp->d_name);
-						fatal(listing, ls, lstack_getstring(ls, 0, ls->s[0].l - 1), recurse);
+						if(recurse)
+							fatal(listing, ls, lstack_getstring(ls, 0, ls->s[0].l - 1), recurse);
 					}
 				}
 				else

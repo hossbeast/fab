@@ -50,8 +50,3 @@ extern union object_registry_t
 } object_registry;
 
 #endif
-
-
-
-
-
