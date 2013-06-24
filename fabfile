@@ -57,7 +57,7 @@ $listwise				= [ $dlistwise/$name ~ j ]
 # tasks
 #
 
-[ @install ]
+[ @install ] : [ $listwise ]
 {
 	install -d										[ $destdir/$bindir ]
 	install [ $listwise ]					[ $destdir/$bindir/$name ]
