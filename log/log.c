@@ -425,7 +425,7 @@ int log_would(const uint64_t bits)
 	int x;
 	for(x = 0; x < o_filter_l; x++)
 	{
-		int rr = 0;
+		uint64_t rr = 0;
 		if(o_filter[x].m == '(')
 			rr = bits & o_filter[x].v;
 		if(o_filter[x].m == '{')

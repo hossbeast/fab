@@ -388,8 +388,16 @@ int fml_exec(ts * const restrict ts, int num)
 		if(open("/dev/null", O_RDONLY) != 0)
 			fail("open(/dev/stderr)=[%d][%s]", errno, strerror(errno));
 
+		// save stdout
+		if(dup2(1, 501) == -1)
+			fail("dup2 failed : [%d][%s]", errno, strerror(errno));
+
 		// redirect stdout
 		if(dup2(ts->stdo_fd, 1) == -1)
+			fail("dup2 failed : [%d][%s]", errno, strerror(errno));
+
+		// save stderr
+		if(dup2(2, 502) == -1)
 			fail("dup2 failed : [%d][%s]", errno, strerror(errno));
 
 		// redirect stderr
