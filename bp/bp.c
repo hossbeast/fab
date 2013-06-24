@@ -100,8 +100,6 @@ static int heights(gn * r, int exact, int * change)
 			(*change)++;
 		}
 
-printf("%d %s\n", gn->height, gn->idstring);
-
 		return 1;
 	};
 
