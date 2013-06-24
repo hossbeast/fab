@@ -15,8 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# version
-$VERSION				= [ "v0.4.1" ]
+# version list - major, minor, revision, build
+$VERSIONL				= [ 0 4 2 0 ]
+
+# version string
+$VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]
+
+# version number
+$VERSIONN				= [ $VERSIONL ~ "j/s/^0/< >/g" ]
 
 # directories
 $dcommon				= [ $*/../common ]
@@ -31,7 +37,7 @@ $dfab						= [ $* ]
 $liblistwise = [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs [ -DFABVERSION=$VERSION ~ j ] ]
+$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs [ -DFABVERSIONS="\"" $VERSIONS "\"" ~ j ] [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ] ]
 $cflags					= [ $cflags -fms-extensions -fno-builtin-log ]
 $lflags					= [ $liblistwise ]
 $name						= [ fab ]
@@ -43,7 +49,7 @@ $fab						= [ $dfab/$name ~ j ]
 +[@std.y]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 
 # standard files - fPIC compilation
-+[@std.c]($gendir = $dfab; $rdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
++[@std.c]($gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # operator so's
 $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
@@ -58,10 +64,11 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 
 #
 # the executable
+#  -export-dynamic enables dloaded code (in particular, the fab-specific operator so's) to bind to symbols in the executable.
 #
 [ $fab ] : [ [ $dfab/main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [ $lflags ~ fx ]
+	[ $cc ] [ $cflags -export-dynamic ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [ $lflags ~ fi ]
 }
 
 #
@@ -69,7 +76,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 [ $faboplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
-	  [ $cc ] [ $cflags ~ ss/u/fx ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fx ] [
+	  [ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [
 	] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
 }
 
@@ -138,10 +145,11 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	install [ $dfab/fablib/std/c.fab ]			[ $destdir/usr/lib/fab/lib/std/c.fab ]
 	install [ $dfab/fablib/std/l.fab ]			[ $destdir/usr/lib/fab/lib/std/l.fab ]
 	install [ $dfab/fablib/std/y.fab ]			[ $destdir/usr/lib/fab/lib/std/y.fab ]
+
+	rm -rf 																	[ $destdir/usr/lib/fab/listwise ] 2>/dev/null
 	install -d															[ $destdir/usr/lib/fab/listwise ]
-	install [ $dfab/fablw/op/fx/fx.so ]			[ $destdir/usr/lib/fab/listwise/fx.so ]
-	install [ $dfab/fablw/op/fxc/fxc.so ]		[ $destdir/usr/lib/fab/listwise/fxc.so ]
-	install [ $dfab/fablw/op/fxw/fxw.so ]		[ $destdir/usr/lib/fab/listwise/fxw.so ]
+	install [ $dfab/fablw/op/fi/fi.so ]			[ $destdir/usr/lib/fab/listwise/fi.so ]
+	install [ $dfab/fablw/op/fg/fg.so ]			[ $destdir/usr/lib/fab/listwise/fg.so ]
 }
 
 [ @uninstall ]

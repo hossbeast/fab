@@ -21,20 +21,16 @@
 #include <listwise.h>
 
 #include "gn.h"
-
 #include "map.h"
 
 #define restrict __restrict
 
-/// dsc_exec
+/// dsc_exec_entire
 //
 // SUMMARY
-//  execute dependency discovery on a set of nodes, consisting of an initial set, plus
-//  all dependencies needsward, minus any node having already participated in discovery
+//  execute dependency discovery iteratively on the entire graph proceeding needsward
 //
 // PARAMETERS
-//  roots   - graph nodes
-//  rootsl  - len of gn
 //  vmap    - map for resolving var references
 //  gp      - generator parser
 //  stax    - listwise stax
@@ -43,11 +39,39 @@
 //  ts      - ts  (see ts_execwave)
 //  tsa     - ts   |
 //  tsw     - tsw  v
-//  [new]   - if not null, incremented by the number of edges and nodes discovered
 //
-int dsc_exec(
-	  gn ** restrict roots
-	, int rootsl
+int dsc_exec_entire(
+	  map * restrict vmap
+	, generator_parser * const restrict
+	, lstack *** restrict stax
+	, int * restrict staxa
+	, int staxp
+	, ts *** restrict ts
+	, int * restrict tsa
+	, int * restrict tsw
+)
+	__attribute__((nonnull(1, 2, 3, 4, 6, 7, 8)));
+
+/// dsc_exec_specific
+//
+// SUMMARY
+//  execute dependency discovery on a specific set of nodes
+//
+// PARAMETERS
+//  list    - graph nodes
+//  listl   - len of gn
+//  vmap    - map for resolving var references
+//  gp      - generator parser
+//  stax    - listwise stax
+//  staxa   - listwise stax
+//  staxp   - listwise stax
+//  ts      - ts  (see ts_execwave)
+//  tsa     - ts   |
+//  tsw     - tsw  v
+//
+int dsc_exec_specific(
+	  gn *** const restrict list
+	, int listl
 	, map * restrict vmap
 	, generator_parser * const restrict
 	, lstack *** restrict stax
@@ -56,10 +80,8 @@ int dsc_exec(
 	, ts *** restrict ts
 	, int * restrict tsa
 	, int * restrict tsw
-	, int * restrict new
 )
 	__attribute__((nonnull(1, 3, 4, 5, 6, 8, 9, 10)));
 
 #undef restrict
 #endif
-

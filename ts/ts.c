@@ -28,7 +28,7 @@
 
 #include "control.h"
 
-char * gn_designate(struct gn * const);
+char * gn_designation(struct gn * const);
 char * gn_idstring(struct gn * const);
 
 void ts_reset(ts * ts)
@@ -58,27 +58,24 @@ void ts_reset(ts * ts)
 		ts->stde_txt->l		= 0;
 }
 
-int ts_ensure(ts *** ts, int * tsa, int n)
+int ts_ensure(ts *** ts, int * tsa, int tsl)
 {
 	int x;
 
-	if(n > (*tsa))
+	if(tsl > (*tsa))
 	{
 		// reallocate to appropriate size
-		fatal(xrealloc, ts, sizeof(**ts), n, *tsa);
+		fatal(xrealloc, ts, sizeof(**ts), tsl, *tsa);
 
 		// deep allocate
-		for(x = (*tsa); x < n; x++)
+		for(x = (*tsa); x < tsl; x++)
 		{
 			fatal(xmalloc, &(*ts)[x], sizeof(*(*ts)[0]));
 			fatal(ff_mkparser, &(*ts)[x]->ffp);
 		}
 
-		(*tsa) = n;
+		(*tsa) = tsl;
 	}
-
-	for(x = 0; x < n; x++)
-		ts_reset((*ts)[x]);
 
 	finally : coda;
 }
@@ -177,7 +174,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 
 				if(k == 0)
 				{
-					int R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designate(t), gn_idstring(t));
+					int R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designation(t), gn_idstring(t));
 
 					if(e_stat)
 					{
@@ -199,7 +196,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				}
 				else
 				{
-					log(hi | e, "        %-9s %s", gn_designate(t), gn_idstring(t));
+					log(hi | e, "        %-9s %s", gn_designation(t), gn_idstring(t));
 				}
 
 				if(ts[x]->fmlv->flags & FFN_FABRICATION)

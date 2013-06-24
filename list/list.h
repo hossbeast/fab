@@ -111,7 +111,7 @@ int list_resolveto(ff_node * restrict list, map * restrict vmap, generator_parse
 // list_resolve
 // list_flatten
 //
-int list_resolveflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int staxp)
+int list_resolveflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int raw)
 	__attribute__((nonnull));
 
 /// list_resolvetoflat
@@ -119,7 +119,7 @@ int list_resolveflat(ff_node * restrict list, map * restrict vmap, generator_par
 // list_resolveto
 // list_flatten
 //
-int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int staxp)
+int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int raw)
 	__attribute__((nonnull));
 
 #undef restrict

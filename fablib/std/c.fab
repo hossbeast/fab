@@ -29,11 +29,11 @@
 #  paths      - paths to .c files
 #
 #  dscdirs   - (as above, but for discovery only)
-#  dscrdirs  - 
+#  rdscdirs  - 
 #  dscpaths  - 
 #
 #  fabdirs   - (as above, but for fabrication/dependency only)
-#  fabrdirs  - 
+#  rfabdirs  - 
 #  fabpaths  - 
 #
 #  ext       - file extension for object files resulting from fabrication
@@ -85,11 +85,11 @@ $cobjpaths = [ $cfabpaths ~ [ xs/<c>/< $ext >/y ~ j ] ]
 #
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ uu/fx ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<c>/< $ext >/fx ~ j ] ] [ $ext ]
+	[ $cc ] [ $cflags ~ uu/fi ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<c>/< $ext >/fi ~ j ] ] [ $ext ]
 }
 
 # fabrication and dependency
 [ $cobjpaths ~ dj/shift ] :: [ $< ~ [ rx/xs/< $ext >/<c> ~ j ] ]
 {
-	[ $cc ] [ $cflags ~ uu/fx ] -c [ $@ ~ rx/ineed/xm/<c>/uu/fx ] -o [ $@ ]
+	[ $cc ] [ $cflags ~ uu/fi ] -c [ $@ ~ rx/ineed/xm/<c>/uu/fi ] -o [ $@ ]
 }

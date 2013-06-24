@@ -33,9 +33,6 @@
 #define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
 #define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
 
-#define CSAVE				(char[3]){ 0x1b, 0x5b, 0x73 }, 3
-#define CRESTORE		(char[3]){ 0x1b, 0x5b, 0x75 }, 3
-
 static struct filter
 {
 	uint64_t	v;		// tag
@@ -87,6 +84,8 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_INVOKE		, .s = "INVOKE"		, .d = "fabfile invocations" }
 	, { .v = L_CHANGEL	, .s = "CHANGEL"	, .d = "source file changes - SECONDARY lists" }
 	, { .v = L_CHANGE		, .s = "CHANGE"		, .d = "source file changes" }
+	, { .v = L_SELECT		, .s = "SELECT"		, .d = "node selectors" }
+	, { .v = L_LISTS		, .s = "LISTS"		, .d = "node lists" }
 	, { .v = L_LWVOCAL	, .s = "LWVOCAL"	, .d = " ** VERBOSE ** liblistwise invocations" }
 };
 
@@ -233,41 +232,42 @@ static int log_vfinish(const char* fmt, va_list* va)
 	return R;
 }
 
+static void log_describe(struct filter * f)
+{
+	char buf[256];
+
+	char * s = buf;
+	size_t z = sizeof(buf);
+
+	size_t l = 0;
+	l += snprintf(s + l, z - l, "%c%c", f->o, f->m);
+
+	int y;
+	int i = 0;
+	for(y = 0; y < g_logs_l; y++)
+	{
+		if(g_logs[y].v & f->v)
+		{
+			if(i++)
+				l += snprintf(s + l, z - l, "|");
+			l += snprintf(s + l, z - l, "%s", g_logs[y].s);
+		}
+	}
+
+	l += snprintf(s + l, z - l, "%c"
+		, f->m == '(' ? ')'
+		: f->m == '[' ? ']'
+		: f->m == '{' ? '}'
+		: f->m == '<' ? '>' : ' '
+	);
+
+	log(L_INFO, "%.*s", l, s);
+}
+
+
 //
 // [[ public ]]
 //
-
-void log_active(char * s, size_t z)
-{
-	int l = 0;
-	int x;
-	for(x = 0; x < o_filter_l; x++)
-	{
-		if(x)
-			l += snprintf(s + l, z - l, " ");
-
-		l += snprintf(s + l, z - l, "%c%c", o_filter[x].o, o_filter[x].m);
-
-		int y;
-		int i = 0;
-		for(y = 0; y < g_logs_l; y++)
-		{
-			if(g_logs[y].v & o_filter[x].v)
-			{
-				if(i++)
-					l += snprintf(s + l, z - l, "|");
-				l += snprintf(s + l, z - l, "%s", g_logs[y].s);
-			}
-		}
-
-		l += snprintf(s + l, z - l, "%c"
-			, o_filter[x].m == '(' ? ')'
-			: o_filter[x].m == '[' ? ']'
-			: o_filter[x].m == '{' ? '}'
-			: o_filter[x].m == '<' ? '>' : ' '
-		);
-	}
-}
 
 void log_parse(char * args, int args_len)
 {
@@ -370,6 +370,8 @@ void log_parse(char * args, int args_len)
 						f->v = tag & L_TAG;
 						f->o = args[x];
 						f->m = lhs == ' ' ? '(' : lhs;
+
+						log_describe(f);
 					}
 				}
 			}

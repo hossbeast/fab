@@ -22,6 +22,12 @@
 #include <string.h>
 #include <getopt.h>
 
+#include <listwise.h>
+#include <listwise/operator.h>
+#include <listwise/ops.h>
+#include <listwise/generator.h>
+#include <listwise/lstack.h>
+
 #include "args.h"
 
 #include "log.h"
@@ -31,10 +37,15 @@
 #include "unitstring.h"
 #include "canon.h"
 #include "macros.h"
+#include "selector.h"
 
 struct g_args_t g_args;
 
-static void usage(int valid, int version, int help, int logopts)
+//
+// [[ static ]]
+//
+
+static void usage(int valid, int version, int help, int logopts, int operators)
 {
 	printf(
 "fab : parallel and incremental builds, integrated dependency discovery\n"
@@ -43,74 +54,84 @@ if(version)
 {
 	printf(" "
 #if DEVEL
-	XQUOTE(FABVERSION) "+DEVEL"
+	XQUOTE(FABVERSIONS) "+DEVEL"
 #else
-	XQUOTE(FABVERSION)
+	XQUOTE(FABVERSIONS)
 #endif
 	  "\n"
 	);
 }
+
 if(help)
 {
 	printf(
 "\n"
-"usage : fab [[options] [logopts] [targets]]*\n"
-"  --help|-h : this message\n"
-"  --version : version information\n"
-"  --logopts : logging category listing\n"
+"usage : fab [[options] [logopts] [selectors]]*\n"
+"  --help|-h   : this message\n"
+"  --version   : version information\n"
+"  --logopts   : logging category listing\n"
+"  --operators : listwise operator listing (including fab-specific)\n"
 "\n"
-"----------- [ targets ] --------------------------------------------------------\n"
+"----------- [ selectors ] ----------------------------------------------------------------\n"
 "\n"
-" <node specifier>        fabrication target\n"
+" <node selector> is one of: \n"
+"  1.  text    : path match relative to cwd (%s)\n"
+"  3. /text    : canonical path match\n"
+"  4. @text    : nofile match\n"
+"  5. [ list ] : list selection, available vars - $! (all nodes)\n"
+"               ex. [ $! ~ fg/p ] - select all PRIMARY nodes\n"
+"               ex. [ $! ~ fg/s ] - select all SECONDARY nodes\n"
 "\n"
-"----------- [ options ] --------------------------------------------------------\n"
+"----------- [ options ] ------------------------------------------------------------------\n"
+"\n"
+" selection modifiers (may be clustered)\n"
+"  (+/-)t        (default) add/remove following selection(s) to/from fabricate-list\n"
+"  (+/-)x                  add/remove following selection(s) to/from fabricate-exact-list\n"
+"  (+/-)d                  add/remove following selection(s) to/from discovery-list\n"
+"  (+/-)b                  add/remove following selection(s) to/from invalidate-list\n"
+"  (+/-)i                  add/remove following selection(s) to/from inspect-list\n"
+"  (+/-)q                  add/remove following selection(s) to/from query-list\n"
 "\n"
 " execution modes\n"
-" -p                      buildplan only\n"
-" -u                      dependency discovery only\n"
-" -d <node specifier>     dump only\n"
-"\n"
-" -U                      perform dependency discovery upfront\n"
+"  -p                      buildplan only - do not execute\n"
 "\n"
 " incremental builds\n"
-" -b <node specifier>     invalidate node(s)\n"
-" -e <node specifier>     invalidate node(s) and add as target(s)\n"
-" -B                      invalidate-all\n"
+"  -B                      invalidate-all\n"
 "\n"
 " parallel builds\n"
-" -j <number>             concurrency limit\n"
+"  -j <number>             concurrency limit\n"
 "\n"
 " bakescript generation\n"
-" -k </path/to/output>    create bakescript\n"
+"  -k </path/to/output>    create bakescript\n"
+#if DEVEL
+"  --bslic-standard        bakescripts have the standard license\n"
+"  --bslic-fab             bakescripts have the fab distribution license\n"
+#endif
 "\n"
 " logging\n"
-" -c                      set node identifier mode to GNID_CANON for logging\n"
+"  -c                      set node identifier mode to GNID_CANON for logging\n"
 "\n"
 " fabfile processing\n"
-" -f <path/to/fabfile>    path to initial fabfile\n"
-" -I <path/to/directory>  directory for locating invocations\n"
-" -v $var=[list]          scope-zero variable definition\n"
-" -v $var+=[list]         scope-zero variable transform-addition\n"
-" -v $var-=[list]         scope-zero variable transform-subtraction\n"
-" -v $var=~generator      scope-zero variable transform-listwise\n"
+"  -f <path/to/fabfile>    path to initial fabfile\n"
+"  -I <path/to/directory>  directory for locating invocations\n"
+"  -v $var=[list]          scope-zero variable definition\n"
+"  -v $var+=[list]         scope-zero variable transform-addition\n"
+"  -v $var-=[list]         scope-zero variable transform-subtraction\n"
+"  -v $var~=generator      scope-zero variable transform-listwise\n"
 "\n"
 " handling cycles\n"
-" --cycle-warn            warn when a cycle is detected (once per unique cycle)\n"
-" --cycle-fail            fail when a cycle is detected\n"
-" --cycle-deal            deal with cycles (halt traversal)\n"
-"\n"
-" <node specifier> is one of: \n"
-"  1.  text   : path match relative to init-fabfile-rel-dir\n"
-"  2. /text/  : regex match on can/abs/rel paths\n"
-"  3. /text   : canonical path match\n"
-"  4. @text   : nofile match\n"
-"\n"
+"  --cycle-warn            warn when a cycle is detected (once per unique cycle)\n"
+"  --cycle-fail            fail when a cycle is detected\n"
+"  --cycle-deal            deal with cycles (halt traversal)\n"
+		, g_args.cwd
 	);
 }
+
 if(logopts)
 {
 	printf(
-"----------- [ logopts ] --------------------------------------------------------\n"
+"\n"
+"----------- [ logopts ] ------------------------------------------------------------------\n"
 "\n"
 " +<log name> to enable logging category\n"  
 " -<log name> to disable logging category\n"  
@@ -120,42 +141,98 @@ if(logopts)
 	int x;
 	for(x = 0; x < g_logs_l; x++)
 		printf("  %-10s %s\n", g_logs[x].s, g_logs[x].d);
-	printf("\n");
 }
 
-if(help || logopts)
+if(operators)
 {
 	printf(
+"\n"
+"----------------- [ operators ] ------------------------------------------------------------\n"
+"\n"
+" 1  2  3  4  5  6  7  8  9    name  description\n"
+	);
+
+	int x;
+	for(x = 0; x < g_ops_l; x++)
+	{
+		printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s\n"
+			, g_ops[x]->optype & LWOP_SELECTION_READ				? 'x' : ' '
+			, g_ops[x]->optype & LWOP_SELECTION_WRITE				? 'x' : ' '
+			, g_ops[x]->optype & LWOP_SELECTION_RESET				? 'x' : ' '
+			, g_ops[x]->optype & LWOP_MODIFIERS_CANHAVE			? 'x' : ' '
+			, g_ops[x]->optype & LWOP_ARGS_CANHAVE					? 'x' : ' '
+			, g_ops[x]->optype & LWOP_OPERATION_PUSHBEFORE	? 'x' : ' '
+			, g_ops[x]->optype & LWOP_OPERATION_INPLACE			? 'x' : ' '
+			, g_ops[x]->optype & LWOP_OPERATION_FILESYSTEM	? 'x' : ' '
+			, g_ops[x]->optype & LWOP_OBJECT_NO							? 'x' : ' '
+			, g_ops[x]->s
+			, g_ops[x]->desc
+		);
+	}
+
+	printf(
+		" 1. SELECTION_READ\n"
+		" 2. SELECTION_WRITE\n"
+		" 3. SELECTION_RESET\n"
+		" 4. MODIFIERS_CANHAVE\n"
+		" 5. ARGS_CANHAVE\n"
+		" 6. OPERATION_PUSHBEFORE\n"
+		" 7. OPERATION_INPLACE\n"
+		" 8. OPERATION_FILESYSTEM\n"
+		" 9. OBJECT_NO\n"
+	);
+}
+
+if(help || logopts || operators)
+{
+	printf(
+"\n"
 "For more information visit http://fabutil.org\n"
 	);
 }
+
 	printf("\n");
 	exit(!valid);
 }
 
-int parse_args(int argc, char** argv)
+//
+// [[ public ]]
+//
+
+int args_parse(int argc, char** argv)
 {
+	char space[256];
+
 	path * fabpath = 0;
 
 	int help = 0;
-	int logopts = 0;
 	int version = 0;
+	int logopts = 0;
+	int operators = 0;
 
 	struct option longopts[] = {
 /* informational */
-				  { "help"				, no_argument	, &help, 1 }
-				, { "logopts"			, no_argument	, &logopts, 1 }
-				, { "version"			, no_argument	, &version, 1 }
+				  { "help"						, no_argument	, &help, 1 }
+				, { "version"					, no_argument	, &version, 1 }
+				, { "logopts"					, no_argument	, &logopts, 1 }
+				, { "operators"				, no_argument	, &operators, 1 }
 
 /* program longopts */
-				, { "cycle-warn"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_WARN	}
-				, { "cycle-fail"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_FAIL }
-				, { "cycle-deal"	, no_argument	, &g_args.mode_cycl, MODE_CYCL_DEAL }
+				, { "cycle-warn"			, no_argument	, &g_args.mode_cycl		, MODE_CYCL_WARN }
+				, { "cycle-fail"			, no_argument	, &g_args.mode_cycl		, MODE_CYCL_FAIL }
+				, { "cycle-deal"			, no_argument	, &g_args.mode_cycl		, MODE_CYCL_DEAL }
+
+#if DEVEL
+				, { "bslic-standard"	, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
+				, { "bslic-fab"				, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
+#endif
+
+/* program switches */
 // a
-/* b */ , { 0	, required_argument	, 0			, 'b' }		// graph node invalidation
+/* b - append selection(s) to invalidate-list */
 /* c */	, { 0	, no_argument				, 0			, 'c' }		// MODE_GNID_RELATIVE	
-/* d */	,	{ 0	, required_argument	, 0			, 'd' }		// graph node dump
-/* e */	,	{ 0 , required_argument	, 0			, 'e' }		// graph node invalidation
+/* d - append selection(s) to inspect-list */
+// e
 /* f */ , { 0	, required_argument	, 0			, 'f' }		// init-fabfile-path
 // g
 /* h */ , { 0	, no_argument				, 0			, 'h' }		// help
@@ -170,11 +247,11 @@ int parse_args(int argc, char** argv)
 // q
 // r
 // s
-// t
-/* u */	, { 0	, no_argument				, 0			, 'u' }		// dependency discovery mode
+/* t - append selection(s) to fabricate-list */
+// u
 /* v */ , { 0	, required_argument	, 0			, 'v' }		// root-level variable definition
 // w
-// x
+/* x - append selection(s) to fabricate-exact-ist */
 // y
 // z
 // A
@@ -197,7 +274,7 @@ int parse_args(int argc, char** argv)
 // R
 // S
 // T
-/* U */	, { 0	, no_argument				, 0			, 'U' }		// dependency discovery upfront
+// U
 // V
 // W
 // X
@@ -207,11 +284,14 @@ int parse_args(int argc, char** argv)
 	};
 
 	char* switches =
+		// getopt options
+		"-"
+
 		// no-argument switches
-		"chpuBIU"
+		"chpB"
 
 		// with-argument switches
-		"b:d:e:f:j:k:v:I:"
+		"f:j:k:v:I:"
 	;
 
 	//
@@ -225,150 +305,157 @@ int parse_args(int argc, char** argv)
 	// args:defaults
 	//
 	g_args.concurrency		= DEFAULT_CONCURRENCY_LIMIT;
-	g_args.mode_exec			= DEFAULT_MODE_EXEC;
+	g_args.mode_bplan			= DEFAULT_MODE_BPLAN;
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
-	g_args.mode_ddsc			= DEFAULT_MODE_DDSC;
 	g_args.mode_cycl			= DEFAULT_MODE_CYCL;
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create, &fabpath, g_args.cwd, "%s", DEFAULT_INIT_FABFILE);
 	fatal(path_copy, &g_args.init_fabfile_path, fabpath);
 
+	// default invokedirs - head of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], DEFAULT_INVOKEDIR);
 
+	// selectors apply to the following list(s)
+	uint32_t selector_lists = SELECTOR_FABRICATE;
+	int selector_mode = '+';
+
 	int x;
 	int indexptr;
-	opterr = 1;
+	opterr = 0;
 	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
 	{
-		switch(x)
+		if(x == 1 || x == '?')
 		{
-			case 'h':
-				usage(1, 1, 1, 0);
-				break;
-			case 'b':
-				fatal(xrealloc, &g_args.invalidations, sizeof(g_args.invalidations[0]), g_args.invalidationsl + 1, g_args.invalidationsl);
-				g_args.invalidations[g_args.invalidationsl++] = strdup(optarg);
-				break;
-			case 'c':
-				g_args.mode_gnid = MODE_GNID_CANON;
-				break;
-			case 'd':
-				fatal(xrealloc, &g_args.dumpnodes, sizeof(g_args.dumpnodes[0]), g_args.dumpnodesl + 1, g_args.dumpnodesl);
-				g_args.dumpnodes[g_args.dumpnodesl++] = strdup(optarg);
-				break;
-			case 'e':
-				fatal(xrealloc, &g_args.invalidations, sizeof(g_args.invalidations[0]), g_args.invalidationsl + 1, g_args.invalidationsl);
-				g_args.invalidations[g_args.invalidationsl++] = strdup(optarg);
+			char * s = 0;
+			if(x == 1)
+				s = optarg;
+			else if(x == '?')
+				s = argv[optind-1];
 
-				fatal(xrealloc, &g_args.targets, sizeof(g_args.targets[0]), g_args.targetsl + 1, g_args.targetsl);
-				g_args.targets[g_args.targetsl++] = strdup(optarg);
-				break;
-			case 'f':
-				path_xfree(&g_args.init_fabfile_path);
-				fatal(path_create, &g_args.init_fabfile_path, g_args.cwd, "%s", optarg);
-				break;
-			case 'p':
-				g_args.mode_exec = MODE_EXEC_BUILDPLAN;
-				break;
-			case 'u':
-				g_args.mode_exec = MODE_EXEC_DDSC;
-				break;
-			case 'k':
-				g_args.mode_exec = MODE_EXEC_BAKE;
-				xfree(&g_args.bakescript_path);
-				g_args.bakescript_path = strdup(optarg);
-				break;
-			case 'v':
+			if(s)
+			{
+				if(s[0] == '-' || s[0] == '+')
 				{
-					if(g_args.rootvarsl == g_args.rootvarsa)
+					if(s[1] >= 'a' && s[1] <= 'z')
 					{
-						int newa = g_args.rootvarsa ?: 3;
+						selector_mode = s[0];
+						selector_lists = 0;
+						
+						if(strchr(s, 'd'))
+							selector_lists |= SELECTOR_DISCOVERY;
+						if(strchr(s, 'i'))
+							selector_lists |= SELECTOR_INSPECT;
+						if(strchr(s, 't'))
+							selector_lists |= SELECTOR_FABRICATE;
+						if(strchr(s, 'x'))
+							selector_lists |= SELECTOR_FABRICATEX;
+						if(strchr(s, 'b'))
+							selector_lists |= SELECTOR_INVALIDATE;
+						if(strchr(s, 'q'))
+							selector_lists |= SELECTOR_QUERY;
+					}
+				}
+				else
+				{
+					if(g_args.selectorsl == g_args.selectorsa)
+					{
+						int newa = g_args.selectorsa ?: 3;
 						newa = newa * 2 + newa / 2;
-						fatal(xrealloc, &g_args.rootvars, sizeof(g_args.rootvars[0]), newa, g_args.rootvarsa);
-						g_args.rootvarsa = newa;
+						fatal(xrealloc, &g_args.selectors, sizeof(g_args.selectors[0]), newa, g_args.selectorsa);
+						g_args.selectorsa = newa;
 					}
 
-					fatal(xsprintf, &g_args.rootvars[g_args.rootvarsl], "%s%c", optarg, 0);
-					g_args.rootvarsl++;
+					if(selector_lists & SELECTOR_QUERY)
+						g_args.selectors_arequery = 1;
+
+					g_args.selectors[g_args.selectorsl++] = (selector){
+						  .mode = selector_mode
+						, .lists = selector_lists
+						, .s = strdup(s)
+					};
 				}
-				break;
-			case 'j':
-				{
-					int n = 0;
-					if(sscanf(optarg, "%d%n", &g_args.concurrency, &n) != 1 || n <= 0)
-					{
-						fail("badly formed option for -j : '%s'", optarg);
-					}
-				}
-				break;
-			case 'B':
-				g_args.invalidationsz = 1;
-				break;
-			case 'U':
-				g_args.mode_ddsc = MODE_DDSC_UPFRONT;
-				break;
-			case 'I':
-				fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-				fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
-				break;
-			case '?':
-				usage(0, 1, 1, 0);
-				break;
+			}
+		}
+		else if(x == 'c')
+		{
+			g_args.mode_gnid = MODE_GNID_CANON;
+		}
+		else if(x == 'f')
+		{
+			path_xfree(&g_args.init_fabfile_path);
+			fatal(path_create, &g_args.init_fabfile_path, g_args.cwd, "%s", optarg);
+		}
+		else if(x == 'h')
+		{
+			help = 1;
+		}
+		else if(x == 'j')
+		{
+			int n = 0;
+			if(sscanf(optarg, "%d%n", &g_args.concurrency, &n) != 1 || n <= 0)
+			{
+				fail("badly formed option for -j : '%s'", optarg);
+			}
+		}
+		else if(x == 'k')
+		{
+			g_args.mode_bplan = MODE_BPLAN_BAKE;
+			xfree(&g_args.bakescript_path);
+			g_args.bakescript_path = strdup(optarg);
+		}
+		else if(x == 'p')
+		{
+			g_args.mode_bplan = MODE_BPLAN_GENERATE;
+		}
+		else if(x == 'v')
+		{
+			if(g_args.rootvarsl == g_args.rootvarsa)
+			{
+				int newa = g_args.rootvarsa ?: 3;
+				newa = newa * 2 + newa / 2;
+				fatal(xrealloc, &g_args.rootvars, sizeof(g_args.rootvars[0]), newa, g_args.rootvarsa);
+				g_args.rootvarsa = newa;
+			}
+
+			fatal(xsprintf, &g_args.rootvars[g_args.rootvarsl], "%s%c", optarg, 0);
+			g_args.rootvarsl++;
+		}
+		else if(x == 'B')
+		{
+			g_args.invalidationsz = 1;
+		}
+		else if(x == 'I')
+		{
+			fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
+			fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
+		}
+		else if(x == '?')
+		{
+			if(0)
+			{
+				usage(0, 1, 1, 0, 0);
+			}
 		}
 	}
 
-	if(help || logopts || version)
+	if(help || version || logopts || operators)
 	{
-		usage(1, 1, help, logopts);
+		usage(1, 1, help, logopts, operators);
 	}
 
+	// default invokedirs - tail of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_args.init_fabfile_path->abs_dir);
 
-	// unprocessed options - fabrication targets
-	for(x = optind; x < argc; x++)
-	{
-		if(argv[x][0] != '+' && argv[x][0] != '-')
-		{
-			fatal(xrealloc, &g_args.targets, sizeof(g_args.targets[0]), g_args.targetsl + 1, g_args.targetsl);
-			g_args.targets[g_args.targetsl++] = strdup(argv[x]);
-		}
-	}
-
-	// lookup invalidations
-	for(x = 0; x < g_args.invalidationsl; x++)
-	{
-		char * N = malloc(512);
-		fatal(canon, g_args.invalidations[x], 0, N, 512, g_args.cwd, CAN_REALPATH);
-		free(g_args.invalidations[x]);
-		g_args.invalidations[x] = N;
-	}
-
-	// dumpnodes implies +DGRAPH and MODE_EXEC_DUMP
-	if(g_args.dumpnodes)
-	{
-		g_args.mode_exec = MODE_EXEC_DUMP;
-		log_parse("+DGRAPH", 0);
-	}
-
-	// MODE_BUILDPLAN implies +BPDUMP
-	if(g_args.mode_exec == MODE_EXEC_BUILDPLAN)
-		log_parse("+BPDUMP", 0);
-
 	// initialize logger
 	fatal(log_init, "+ERROR|WARN|INFO|INVOKE|BPEXEC|DSCINFO");
-
-	// active logs
-	char buf[256];
-	log_active(buf, sizeof(buf));
-	log(L_INFO, "%s", buf);
 
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 
 	// log execution parameters under PARAMS
 	log(L_PARAMS	, "%11spid                =%u"						, ""	, g_args.pid);
-	log(L_PARAMS	, "%11sTid                =%u"						, ""	, g_args.sid);
+	log(L_PARAMS	, "%11ssid                =%u"						, ""	, g_args.sid);
 	log(L_PARAMS	, "%11seid                =%s/%d:%s/%d"	, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
 	log(L_PARAMS	, "%11srid                =%s/%d:%s/%d"	, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
 	log(L_PARAMS	, "%11scwd                =%s"						, ""	, g_args.cwd);
@@ -380,20 +467,21 @@ int parse_args(int argc, char** argv)
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->can);
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->abs);
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->rel);
-	log(L_ARGS | L_PARAMS				, " %s (%5s) mode-exec          =%s", g_args.mode_exec == DEFAULT_MODE_EXEC ? " " : "*", "k/p/u", MODE_STR(g_args.mode_exec));
-	if(g_args.mode_exec == MODE_EXEC_BAKE)
+	log(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan         =%s", g_args.mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args.mode_bplan));
+	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
 	{
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) bakescript-path    =%s", strcmp(g_args.bakescript_path, DEFAULT_BAKE_PATH) == 0 ? " " : "*", 'k', g_args.bakescript_path);
+		log(L_ARGS | L_PARAMS			, " %s (  %c  ) bakescript-path    =%s", "*", 'k', g_args.bakescript_path);
 	}
+#if DEVEL
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic         =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
+#endif
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid          =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", 'c', MODE_STR(g_args.mode_gnid));
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-ddsc          =%s", g_args.mode_ddsc == DEFAULT_MODE_DDSC ? " " : "*", 'U', MODE_STR(g_args.mode_ddsc));
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycl          =%s", g_args.mode_cycl == DEFAULT_MODE_CYCL ? " " : "*", ' ', MODE_STR(g_args.mode_cycl));
 	if(g_args.concurrency > 0)
-		snprintf(buf, sizeof(buf)	, "%d", g_args.concurrency);
+		snprintf(space, sizeof(space)	, "%d", g_args.concurrency);
 	else
-		snprintf(buf, sizeof(buf)	, "%s", "unbounded");
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', buf);
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidations-all  =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
+		snprintf(space, sizeof(space)	, "%s", "unbounded");
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) concurrency        =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', space);
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 	{
@@ -401,31 +489,17 @@ int parse_args(int argc, char** argv)
 		log(L_ARGS | L_PARAMS			, " %s (  %c  ) invokedirs(s)      =%s", star ? "*" : " ", 'I', g_args.invokedirs[x]);
 	}
 
-	if(!g_args.invalidationsz)
-	{
-		if(!g_args.invalidations)
-			log(L_ARGS | L_PARAMS		, " %s ( %s ) invalidations(s)   =", " ", "b/e");
-		for(x = 0; x < g_args.invalidationsl; x++)
-			log(L_ARGS | L_PARAMS		, " %s ( %s ) invalidations(s)   =%s", "*", "b/e", g_args.invalidations[x]);
-	}
-
-	if(!g_args.dumpnodesz)
-	{
-		if(!g_args.dumpnodes)
-			log(L_ARGS | L_PARAMS		, " %s (  %c  ) dumpnodes(s)       =", " ", 'd');
-		for(x = 0; x < g_args.dumpnodesl; x++)         
-			log(L_ARGS | L_PARAMS		, " %s (  %c  ) dumpnodes(s)       =%s", "*", 'd', g_args.dumpnodes[x]);
-	}
-
-	if(!g_args.rootvarsl)
+	if(g_args.rootvarsl == 0)
 		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)     =", " ", ' ');
 	for(x = 0; x < g_args.rootvarsl; x++)
 		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)     =%s", "*", 'v', g_args.rootvars[x]);
 
-	if(!g_args.targets)
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) target(s)          =", " ", ' ');
-	for(x = 0; x < g_args.targetsl; x++)
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) target(s)          =%s", "*", ' ', g_args.targets[x]);
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidate-all     =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
+
+	if(g_args.selectorsl == 0)
+		log(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)        =", " ", ' ');
+	for(x = 0; x < g_args.selectorsl; x++)
+		log(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)        =%s", "*", ' ', selector_string(&g_args.selectors[x], space, sizeof(space)));
 
 	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
 
@@ -443,27 +517,16 @@ void args_teardown()
 	free(g_args.cwd);
 
 	int x;
-	for(x = 0; x < g_args.targetsl; x++)
-		free(g_args.targets[x]);
-
-	for(x = 0; x < g_args.invalidationsl; x++)
-		free(g_args.invalidations[x]);
-
-	for(x = 0; x < g_args.dumpnodesl; x++)
-		free(g_args.dumpnodes[x]);
+	for(x = 0; x < g_args.selectorsl; x++)
+		free(g_args.selectors[x].s);
+	free(g_args.selectors);
 
 	for(x = 0; x < g_args.rootvarsl; x++)
-	{
 		free(g_args.rootvars[x]);
-	}
 	free(g_args.rootvars);
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 		free(g_args.invokedirs[x]);
-
-	free(g_args.targets);
-	free(g_args.invalidations);
-	free(g_args.dumpnodes);
 	free(g_args.invokedirs);
 
 	path_free(g_args.init_fabfile_path);

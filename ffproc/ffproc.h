@@ -39,7 +39,6 @@
 // PARAMETERS
 //  ffp     - fabfile parser, for parsing fabfiles in invocations
 //  pth     - path object to the fabfile
-//  sstk    - scope stack
 //  vmap    - variables map
 //  stax    - listwise stax
 //  staxa   - listwise stax
@@ -50,14 +49,13 @@
 int ffproc(
     const ff_parser * const restrict ffp
 	, const path * const restrict inpath
-  , strstack * const restrict sstk
   , map * const restrict vmap
   , lstack *** const restrict stax
   , int * const restrict staxa
   , int * const restrict staxp
   , gn ** restrict first
 	, const uint32_t flags
-) __attribute__((nonnull(1,2,3,4,5,6)));
+) __attribute__((nonnull(1,2,3,4,5)));
 
 #undef restrict
 #endif

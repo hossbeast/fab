@@ -77,15 +77,15 @@ $lfabpaths = [
 # discovery
 [ $ldscpaths ] %
 {
-		  [ $flex ] [ $flexflags ~ uu/fx ] -t [ $@ ] [
-	] | [ $cc ] [ $cflags ~ uu/fx ] -MM -MP -MG -xc - [
-	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<l>/<lex. $ext >/y/fx ~ j ] ] [ $ext ]
+		  [ $flex ] [ $flexflags ~ uu/fi ] -t [ $@ ] [
+	] | [ $cc ] [ $cflags ~ uu/fi ] -MM -MP -MG -xc - [
+	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<l>/<lex. $ext >/y/fi ~ j ] ] [ $ext ]
 }
 
 # $flex : l -> { lex.c, lex.h }
 [ $lfabpaths ~ xs/<l>/<lex.c>/y/v/d/cp/u/xs/<lex.c>/<lex.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<lex.c>/<l>/xs/<lex.h>/<l>/ss/u ]
 {
-	  [ $flex ] [ $flexflags ~ uu/fx ] -o [ $@ ~ h/1/1 ] [
+	  [ $flex ] [ $flexflags ~ uu/fi ] -o [ $@ ~ h/1/1 ] [
 	] [ --header-file= [ $@ ~ h/0/1 ] ] [
 	] [ $@ ~ rx/ineed/xm/<l>/ss/u ]
 }

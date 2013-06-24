@@ -30,10 +30,10 @@
 #define restrict __restrict
 typedef struct
 {
+	int			d;			// deleted
+
 	size_t	a;			// allocated, in elements
 	size_t	l;			// length
-
-	map * 	owner;	// owner of this map slot
 
 	char		p[];		// payload
 } __attribute__((packed)) slot;
@@ -81,25 +81,43 @@ static uint32_t hashkey(const map* const restrict m, const char* const restrict 
 //
 // lookup the given key, returns the index found in *i
 //
-// returns 1 if found, 0 otherwise
+// returns
+//  0  : found
+//  1  : not found, and a deleted slot is in the probe sequence (i)
+//  -1 : not found
 //
 static int lookup(const map* const restrict m, const char* const restrict k, const int kl, uint32_t* const restrict i)
 {
 	*i = hashkey(m, k, kl);
 
+	uint32_t ij = 0;
+	uint32_t * ijp = &ij;
+
 	while(1)
 	{
-		if(m->tk[*i] && m->tk[*i]->l)
+		if(m->tk[*i] && (m->tk[*i]->l || m->tk[*i]->d))
 		{
-			if(m->tk[*i]->l == kl)
+			if(m->tk[*i]->d)
+			{
+				if(ijp)
+					*ijp = *i;
+
+				ijp = 0;
+			}
+			else if(m->tk[*i]->l == kl)
 			{
 				if(memcmp(k, m->tk[*i]->p, kl) == 0)
-					return 1;
+					return 0;
 			}
+		}
+		else if(ijp == 0)
+		{
+			*i = ij;
+			return 1;
 		}
 		else
 		{
-			return 0;
+			return -1;
 		}
 
 		// ring increment
@@ -145,8 +163,8 @@ void* map_set(map* const restrict m, const void* const restrict k, int kl, const
 
 	// perform lookup, see if this key is already mapped to something
 	uint32_t i = 0;
-	int isupdate = lookup(m, k, kl, &i);
-	if(isupdate)
+	int r = lookup(m, k, kl, &i);
+	if(r == 0)
 	{
 		// this entry will be updated with the new value
 		if(m->destructor)
@@ -154,8 +172,14 @@ void* map_set(map* const restrict m, const void* const restrict k, int kl, const
 
 		m->tv[i]->l = 0;
 	}
+	else if(r == 1)
+	{
+		// not found, and a suitable deleted slot exists
+	}
 	else if(m->kc == (int)(m->l * SATURATION))
 	{
+		// not found, and saturation has been reached
+
 		// linear list of set keys and values
 		fatal(xmalloc, &ks, m->kc * sizeof(*ks));
 		fatal(xmalloc, &vs, m->kc * sizeof(*vs));
@@ -169,6 +193,9 @@ void* map_set(map* const restrict m, const void* const restrict k, int kl, const
 		int x = 0;
 		for(x = 0; x < m->l; x++)
 		{
+			if(m->tk[x])
+				m->tk[x]->d = 0;
+
 			if(m->tk[x] && m->tk[x]->l)
 			{
 				ks[y] = m->tk[x];
@@ -260,7 +287,7 @@ void* map_set(map* const restrict m, const void* const restrict k, int kl, const
 	m->tv[i]->l = vl;
 
 	// copy the key
-	if(!isupdate)
+	if(r)
 	{
 		if(m->tk[i] == 0 || kl >= m->tk[i]->a)
 		{
@@ -277,6 +304,7 @@ void* map_set(map* const restrict m, const void* const restrict k, int kl, const
 		memcpy(m->tk[i]->p, k, kl);
 		m->tk[i]->p[kl] = 0;
 		m->tk[i]->l = kl;
+		m->tk[i]->d = 0;
 
 		m->kc++;
 	}
@@ -297,7 +325,7 @@ void* map_get(const map* const restrict m, const void* const restrict k, int kl)
 {
 	// perform lookup
 	uint32_t i = 0;
-	if(lookup(m, k, kl, &i))
+	if(lookup(m, k, kl, &i) == 0)
 		return m->tv[i]->p;
 
 	return 0;
@@ -324,6 +352,7 @@ void map_clear(map* const restrict m)
 				);
 			}
 			m->tk[x]->l = 0;
+			m->tk[x]->d = 0;
 			m->tv[x]->l = 0;
 		}
 	}
@@ -334,7 +363,7 @@ void map_clear(map* const restrict m)
 int map_delete(map* const restrict m, const void* const restrict k, int kl)
 {
 	uint32_t i = 0;
-	if(lookup(m, k, kl, &i))
+	if(lookup(m, k, kl, &i) == 0)
 	{
 		if(m->destructor)
 		{
@@ -345,6 +374,7 @@ int map_delete(map* const restrict m, const void* const restrict k, int kl)
 		}
 
 		m->tk[i]->l = 0;
+		m->tk[i]->d = 1;
 		m->tv[i]->l = 0;
 
 		m->kc--;
@@ -418,4 +448,3 @@ void map_xfree(map** const restrict m)
 	map_free(*m);
 	*m = 0;
 }
-

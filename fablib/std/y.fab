@@ -77,15 +77,15 @@ $yfabpaths = [
 # discovery
 [ $ydscpaths ] %
 {
-	    [ $bison ] [ $bisonflags ~ uu/fx ] -o /dev/stdout [ $@ ] [
-	] | [ $cc ] [ $cflags ~ uu/fx ] -MM -MP -MG -xc - [
-	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<y>/<tab. $ext >/y/fx ~ j ] ] [ $ext ]
+	    [ $bison ] [ $bisonflags ~ uu/fi ] -o /dev/stdout [ $@ ] [
+	] | [ $cc ] [ $cflags ~ uu/fi ] -MM -MP -MG -xc - [
+	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<y>/<tab. $ext >/y/fi ~ j ] ] [ $ext ]
 }
 
 # $bison : y -> { tab.c, tab.h }
 [ $yfabpaths ~ xs/<y>/<tab.c>/y/v/d/cp/u/xs/<tab.c>/<tab.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<tab.c>/<y>/xs/<tab.h>/<y>/ss/u ]
 {
-	[ $bison ] [ $bisonflags ~ uu/fx ] -o [ $@ ~ h/1/1 ] -d	[ $@ ~ rx/ineed/xm/<y>/uu ]
+	[ $bison ] [ $bisonflags ~ uu/fi ] -o [ $@ ~ h/1/1 ] -d	[ $@ ~ rx/ineed/xm/<y>/uu ]
 }
 
 # $cc : tab.c -> tab.o via std.c

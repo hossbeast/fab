@@ -32,7 +32,9 @@
 
 #define restrict __restrict
 
-static int proc(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, int star)
+static int procfile(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, const uint32_t flags);
+
+static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, int star)
 {
 	int x;
 	int y;
@@ -49,7 +51,7 @@ static int proc(ff_file * ff, ff_node* root, const ff_parser * const ffp, strsta
 		{
 			if(ff->count == 1)
 			{
-				fatal(proc, ff, stmt, ffp, sstk, vmap, stax, staxa, staxp, first, star);
+				fatal(procblock, ff, stmt, ffp, sstk, vmap, stax, staxa, staxp, first, star);
 			}
 		}
 		else if(stmt->type == FFN_DEPENDENCY)
@@ -220,7 +222,7 @@ static int proc(ff_file * ff, ff_node* root, const ff_parser * const ffp, strsta
 			}
 
 			// process the referenced fabfile
-			fatal(ffproc, ffp, pth, sstk, nmap, stax, staxa, staxp, 0, nflags);
+			fatal(procfile, ffp, pth, sstk, nmap, stax, staxa, staxp, 0, nflags);
 
 			// scope pop
 			if(stmt->scope)
@@ -241,11 +243,7 @@ finally:
 coda;
 }
 
-///
-/// public
-///
-
-int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, const uint32_t flags)
+int procfile(const ff_parser * const ffp, const path * const inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, const uint32_t flags)
 {
 	ff_file * ff = 0;
 
@@ -279,7 +277,26 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, strs
 	fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
 
 	// process the fabfile tree, construct the graph
-	fatal(proc, ff, ff->ffn, ffp, sstk, vmap, stax, staxa, staxp, first, star);
+	fatal(procblock, ff, ff->ffn, ffp, sstk, vmap, stax, staxa, staxp, first, star);
 
 	finally : coda;
+}
+
+///
+/// public
+///
+
+int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, const uint32_t flags)
+{
+	strstack * sstk = 0;
+
+	// create stack for scope resolution
+	fatal(strstack_create, &sstk);
+	fatal(strstack_push, sstk, "..");
+
+	fatal(procfile, ffp, inpath, sstk, vmap, stax, staxa, staxp, first, flags);
+
+finally :
+	strstack_free(sstk);
+coda;
 }

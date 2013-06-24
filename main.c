@@ -45,9 +45,11 @@
 #include "ffproc.h"
 #include "traverse.h"
 #include "lwutil.h"
+#include "selector.h"
 
-#include "macros.h"
+#include "log.h"
 #include "control.h"
+#include "macros.h"
 #include "xmem.h"
 
 // signal handling
@@ -61,26 +63,13 @@ static void signal_handler(int signum)
 	}
 }
 
-// process source file changes
-static int primary_reload()
-{
-	int x;
-	for(x = 0; x < gn_nodes.l; x++)
-	{
-		if(gn_nodes.e[x]->designation == GN_DESIGNATION_PRIMARY)
-			fatal(gn_primary_reload, gn_nodes.e[x]);
-	}
-
-	finally : coda;
-}
-
 int main(int argc, char** argv)
 {
 	ff_parser *					ffp = 0;				// fabfile parser
 	bp *								bp = 0;					// buildplan 
 	map * 							rmap = 0;				// root-level map
 	map *								vmap = 0;				// init-level map
-	strstack *					sstk = 0;				// scope stack
+	map *								tmap = 0;				// temp map
 	gn *								first = 0;			// first dependency mentioned
 	lstack **						stax = 0;				// listwise stacks
 	int									staxa = 0;
@@ -88,9 +77,21 @@ int main(int argc, char** argv)
 	ts **								ts = 0;
 	int									tsa = 0;
 	int									tsw = 0;
-	gn **								list[2] = { };
-	int									listl[2] = { };
-	int									lista[2] = { };
+
+	/* node selector produced lists */
+	gn ***							fabrications = 0;
+	int									fabricationsl = 0;
+	gn ***							fabricationxs = 0;
+	int									fabricationxsl = 0;
+	gn ***							invalidations = 0;
+	int									invalidationsl = 0;
+	gn ***							discoveries = 0;
+	int									discoveriesl = 0;
+	gn ***							inspections = 0;
+	int									inspectionsl = 0;
+
+	int x;
+	int y;
 
 	// get user identity of this process, assert user:group and permissions are set appropriately
 	fatal(identity_init);
@@ -104,7 +105,6 @@ int main(int argc, char** argv)
 	sigprocmask(SIG_UNBLOCK, &all, 0);
 
 	// ignore most signals
-	int x;
 	for(x = 0; x < NSIG; x++)
 		signal(x, SIG_DFL);
 
@@ -112,17 +112,6 @@ int main(int argc, char** argv)
 	signal(SIGINT		, signal_handler);	// terminate gracefully
 	signal(SIGQUIT	, signal_handler);
 	signal(SIGTERM	, signal_handler);
-
-	// parse cmdline arguments
-	//  (parse_args also calls log_init with a default string)
-	fatal(parse_args, argc, argv);
-
-	// create/cleanup tmp 
-	fatal(tmp_setup);
-
-	// other initializations
-	fatal(traverse_init);
-	fatal(ff_mkparser, &ffp);
 
 	// register object types with liblistwise
 	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
@@ -132,20 +121,37 @@ int main(int argc, char** argv)
 	for(x = 0; x < sizeof(FABLW_DIRS) / sizeof(FABLW_DIRS[0]); x++)
 		fatal(listwise_register_opdir, FABLW_DIRS[x]);
 
+	// should be a register here for default object interface, for LWOP_OBJECT_NO operators
+
+	// parse cmdline arguments
+	//  (args_parse also calls log_init with a default string)
+	fatal(args_parse, argc, argv);
+
+	// create/cleanup tmp 
+	fatal(tmp_setup);
+
+	// other initializations
+	fatal(gn_init);
+	fatal(traverse_init);
+	fatal(ff_mkparser, &ffp);
+	fatal(selector_init);
+
 	// unless LWVOCAL, arrange for liblistwise to write to /dev/null
 	if(!log_would(L_LWVOCAL))
 	{
 		if((listwise_err_fd = open("/dev/null", O_WRONLY)) == -1)
 			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
 	}
+
+	// 
+	// >> attach to daemon <<
+	//  - parsed fabfiles
+	//  - graph nodes
+	//   - dsc results
+	//
 	
 	// create the rootmap
 	fatal(var_root, &rmap);
-
-	// seed the map identifier mechanism
-	fatal(map_set, rmap, MMS("?LVL"), MM((int[1]){ 0 }));
-	fatal(map_set, rmap, MMS("?NUM"), MM((int[1]){ 0 }));
-	fatal(map_set, rmap, MMS("?CLD"), MM((int[1]){ 0 }));
 
 	// parse variable expression text from cmdline (the -v option)
 	for(x = 0; x < g_args.rootvarsl; x++)
@@ -153,63 +159,53 @@ int main(int argc, char** argv)
 		ff_file * vff = 0;
 		fatal(ff_var_parse, ffp, g_args.rootvars[x], strlen(g_args.rootvars[x]), x, &vff);
 
-		if(vff)
+		if(!vff)
+			qfail();	// var_parse has a good error
+
+		// process variable expressions
+		int k;
+		for(k = 0; k < vff->ffn->statementsl; k++)
 		{
-			// process variable expressions
-			int k;
-			for(k = 0; k < vff->ffn->statementsl; k++)
+			ff_node * stmt = vff->ffn->statements[k];
+
+			if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARXFM_ADD || stmt->type == FFN_VARXFM_SUB)
 			{
-				ff_node * stmt = vff->ffn->statements[k];
+				int pn = staxp;
+				fatal(list_resolve, stmt->definition, rmap, ffp->gp, &stax, &staxa, &staxp, 0);
+				staxp++;
 
-				if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARXFM_ADD || stmt->type == FFN_VARXFM_SUB)
+				for(y = 0; y < stmt->varsl; y++)
 				{
-					int pn = staxp;
-					fatal(list_resolve, stmt->definition, rmap, ffp->gp, &stax, &staxa, &staxp, 0);
-					staxp++;
-
-					int y;
-					for(y = 0; y < stmt->varsl; y++)
+					if(stmt->type == FFN_VARASSIGN)
 					{
-						if(stmt->type == FFN_VARASSIGN)
-						{
-							fatal(var_set, rmap, stmt->vars[y]->name, stax[pn], 1, 0, stmt);
-						}
-						else if(stmt->type == FFN_VARXFM_ADD)
-						{
-							fatal(var_xfm_add, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
-						}
-						else if(stmt->type == FFN_VARXFM_SUB)
-						{
-							fatal(var_xfm_sub, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
-						}
+						fatal(var_set, rmap, stmt->vars[y]->name, stax[pn], 1, 0, stmt);
+					}
+					else if(stmt->type == FFN_VARXFM_ADD)
+					{
+						fatal(var_xfm_add, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
+					}
+					else if(stmt->type == FFN_VARXFM_SUB)
+					{
+						fatal(var_xfm_sub, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
 					}
 				}
-				else if(stmt->type == FFN_VARXFM_LW)
+			}
+			else if(stmt->type == FFN_VARXFM_LW)
+			{
+				for(y = 0; y < stmt->varsl; y++)
 				{
-					int y;
-					for(y = 0; y < stmt->varsl; y++)
+					if(stmt->generator_node)
 					{
-						if(stmt->generator_node)
-						{
-							fatal(var_xfm_lw, rmap, stmt->vars[y]->name, stmt->generator_node->generator, stmt->generator_node->text, 1, stmt);
-						}
-						else if(stmt->generator_list_node)
-						{
+						fatal(var_xfm_lw, rmap, stmt->vars[y]->name, stmt->generator_node->generator, stmt->generator_node->text, 1, stmt);
+					}
+					else if(stmt->generator_list_node)
+					{
 
-						}
 					}
 				}
 			}
 		}
-		else
-		{
-			qfail();
-		}
 	}
-
-	// create stack for scope resolution
-	fatal(strstack_create, &sstk);
-	fatal(strstack_push, sstk, "..");
 
 	// use up one list and populate the # variable (relative directory path to the initial fabfile)
 	fatal(lw_reset, &stax, &staxa, staxp);
@@ -220,171 +216,169 @@ int main(int argc, char** argv)
 	fatal(var_clone, rmap, &vmap);
 
 	// parse, starting with the initial fabfile, construct the graph
-	fatal(ffproc, ffp, g_args.init_fabfile_path, sstk, vmap, &stax, &staxa, &staxp, &first, 0);
+	fatal(ffproc, ffp, g_args.init_fabfile_path, vmap, &stax, &staxa, &staxp, &first, 0);
 
-	// apply invalidations, update designations
-	fatal(gn_invalidations);
+	// process hashblocks for regular fabfiles that have changed
+	fatal(ff_regular_reconcile);
 
-	// process hashblocks for regular fabfiles which have changed
-	for(x = 0; x < ff_files.l; x++)
-	{
-		if(ff_files.e[x]->type == FFT_REGULAR)
-		{
-			if(hashblock_cmp(ff_files.e[x]->hb))
-			{
-				fatal(ff_regular_rewrite, ff_files.e[x]);
-			}
-		}
-	}
-
-	// process changes to source files
-	fatal(primary_reload);
+	// compute flags and designations, reload primary files and dscv cache
+	fatal(gn_finalize);
 
 	// comprehensive upfront dependency discovery on the entire graph
-	if(g_args.mode_ddsc == MODE_DDSC_UPFRONT)
-	{
-		gn ** gnl = alloca(sizeof(*gnl) * gn_nodes.l);
-		memcpy(gnl, gn_nodes.e, sizeof(*gnl) * gn_nodes.l);
-		fatal(dsc_exec, gnl, gn_nodes.l, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
+	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+	fatal(gn_finalize);
 
-		// process changes to source files
-		fatal(primary_reload);
+	// process selectors
+	if(g_args.selectorsl)
+	{
+		fatal(selector_init);
+
+		int pn = staxp;
+
+		// create $!
+		fatal(lw_reset, &stax, &staxa, pn);
+		for(x = 0; x < gn_nodes.l; x++)
+			fatal(lstack_obj_add, stax[pn], gn_nodes.e[x], LISTWISE_TYPE_GNLW);
+
+		// map for processing selectors
+		fatal(map_create, &tmap, 0);
+		fatal(map_set, tmap, MMS("!"), MM(stax[pn]));
+		pn++;
+
+		// process selectors
+		for(x = 0; x < g_args.selectorsl; x++)
+			fatal(selector_process, &g_args.selectors[x], x, ffp, tmap, &stax, &staxa, pn);
+
+		if(g_args.selectors_arequery)
+			qterm();		// terminate successfully
+
+		fatal(selector_finalize
+			, &fabrications, &fabricationsl
+			, &fabricationxs, &fabricationxsl
+			, &invalidations, &invalidationsl
+			, &discoveries, &discoveriesl
+			, &inspections, &inspectionsl
+		);
+
+		map_xfree(&tmap);
+
+		if(log_would(L_LISTS))
+		{
+			if(fabricationsl + fabricationxsl + invalidationsl + discoveriesl + inspectionsl == 0)
+			{
+				log(L_LISTS, "empty");
+			}
+			
+			for(x = 0; x < fabricationsl; x++)
+				log(L_LISTS, "fabrication(s)     =%s", (*fabrications[x])->idstring);
+
+			for(x = 0; x < fabricationxsl; x++)
+				log(L_LISTS, "fabricationx(s)    =%s", (*fabricationxs[x])->idstring);
+
+			for(x = 0; x < invalidationsl; x++)
+				log(L_LISTS, "invalidation(s)    =%s", (*invalidations[x])->idstring);
+
+			for(x = 0; x < discoveriesl; x++)
+				log(L_LISTS, "discover(y)(ies)   =%s", (*discoveries[x])->idstring);
+
+			for(x = 0; x < inspectionsl; x++)
+				log(L_LISTS, "inspection(s)      =%s", (*inspections[x])->idstring);
+		}
 	}
 
-	// dump graph nodes, pending logging
-	if(g_args.mode_exec == MODE_EXEC_DUMP)
+	// dependency discovery list
+	if(discoveriesl)
 	{
-		for(x = 0; x < g_args.dumpnodesl; x++)
-		{
-			int ll = listl[0];
-			fatal(gn_match, g_args.init_fabfile_path->abs_dir, g_args.dumpnodes[x], &list[0], &listl[0], &lista[0]);
+		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+		qterm();	// terminate successfully
+	}
+	
+	// process invalidations
+	gn_invalidate(invalidations, invalidationsl);
 
-			if(ll == listl[0])
-			{
-				log(L_WARN, "dumpnode : %s not found", g_args.dumpnodes[x]);
-			}
-		}
+	// dependency discovery on invalidated primary nodes
+	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+	fatal(gn_finalize);
 
-		int i;
-		for(i = 0; i < listl[0]; i++)
-		{
-			gn_dump(list[0][i]);
-		}
+	// process inspections
+	if(inspectionsl)
+	{
+		// enable DGRAPH
+		log_parse("+DGRAPH", 0);
+
+		for(x = 0; x < inspectionsl; x++)
+			gn_dump((*inspections[x]));
+
+		qterm();	// terminate successfully
+	}
+
+	//
+	// construct a buildplan - use the first node if none was specified
+	//
+	if(fabricationsl + fabricationxsl == 0)
+	{
+		fatal(xrealloc, &fabrications, sizeof(*fabrications), 1, 0);
+		fabrications[fabricationsl++] = &first;
+	}
+
+	// mixing task and non-task as buildplan targets does not make sense
+	for(x = 1; x < fabricationsl + fabricationxsl; x++)
+	{
+		int a = x - 1;
+		int b = x;
+		gn * A = 0;
+		gn * B = 0;
+
+		if(a < fabricationsl)
+			A = *fabrications[a];
+		else
+			A = *fabricationxs[a - fabricationsl];
+
+		if(b < fabricationsl)
+			B = *fabrications[b];
+		else
+			B = *fabricationxs[b - fabricationsl];
+
+		if((A->designate == GN_DESIGNATION_TASK) ^ (B->designate == GN_DESIGNATION_TASK))
+			fail("cannot mix task and non-task targets");
+	}
+
+	fatal(bp_create, fabrications, fabricationsl, fabricationxs, fabricationxsl, &bp);
+
+	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
+	{
+		// create bakescript
+		fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, g_args.bakescript_path);
 	}
 	else
 	{
-		// target list
-		for(x = 0; x < g_args.targetsl; x++)
-		{
-			int ll = listl[0];
-			fatal(gn_match, g_args.init_fabfile_path->abs_dir, g_args.targets[x], &list[0], &listl[0], &lista[0]);
+		// incremental build - prune the buildplan
+		qfatal(bp_eval, bp);
 
-			if(ll == listl[0])
+		if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
+			log_parse("+BPDUMP", 0);
+
+		// dump buildplan, pending logging
+		if(bp)
+			bp_dump(bp);
+
+		if(g_args.mode_bplan == MODE_BPLAN_EXEC)
+		{
+			if(!bp || bp->stages_l == 0)
 			{
-				fail("target : %s not found", g_args.targets[x]);
+				log(L_INFO, "nothing to fabricate");
 			}
-		}
-
-		// check for mixing task and non-task
-		if(listl[0])
-		{
-			gn_designate(list[0][0]);
-			for(x = 1; x < listl[0]; x++)
+			else
 			{
-				gn_designate(list[0][x]);
+				// execute the build plan, one stage at a time
+				qfatal(bp_exec, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
 
-				if((list[0][x-1]->designation == GN_DESIGNATION_TASK) ^ (list[0][x]->designation == GN_DESIGNATION_TASK))
-					fail("cannot mix task and non-task targets");
-			}
-		}
-		else if(first)
-		{
-			lista[0] = 1;
-			fatal(xmalloc, &list[0], sizeof(*list[0]) * lista[0]);
-			list[0][listl[0]++] = first;	// default target
-		}
-
-		if(listl[0])
-		{
-			if(g_args.mode_exec == MODE_EXEC_DDSC)
-			{
-				if(g_args.mode_ddsc == MODE_DDSC_DEFERRED)
+				// commit regular fabfile hashblocks
+				for(x = 0; x < ff_files.l; x++)
 				{
-					// execute discovery
-					fatal(dsc_exec, list[0], listl[0], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, 0);
-
-					// process changes to source files
-					fatal(primary_reload);
-				}
-			}
-			else if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN || g_args.mode_exec == MODE_EXEC_BAKE)
-			{
-				int new = 1;
-				while(new)
-				{
-					// traverse the graph, construct the build plan that culminates in the given target(s)
-					// bp_create also updates all node designations
-					bp_xfree(&bp);
-					fatal(bp_create, list[0], listl[0], &bp);
-
-					new = 0;
-					if(g_args.mode_ddsc == MODE_DDSC_DEFERRED)
+					if(ff_files.e[x]->type == FFT_REGULAR)
 					{
-						// flat list of nodes in the buildplan
-						fatal(bp_flatten, bp, &list[1], &listl[1], &lista[1]);
-
-						// execute discovery
-						fatal(dsc_exec, list[1], listl[1], vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, &new);
-
-						// process changes to source files
-						fatal(primary_reload);
-					}
-				}
-
-				if(g_args.mode_exec == MODE_EXEC_BAKE)
-				{
-					// dump buildplan, pending logging
-					if(bp)
-					{
-						bp_dump(bp);
-					
-						// create bakescript
-						fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, g_args.bakescript_path);
-					}
-				}
-				if(g_args.mode_exec == MODE_EXEC_FABRICATE || g_args.mode_exec == MODE_EXEC_BUILDPLAN)
-				{
-					// prune the buildplan of nodes which do not require updating - incremental build
-					int poison = 0;
-					qfatal(bp_eval, bp, &poison);
-
-					if(poison)
-						qfail();
-
-					// dump buildplan, pending logging
-					if(bp)
-						bp_dump(bp);
-					
-					if(g_args.mode_exec == MODE_EXEC_FABRICATE)
-					{
-						if(!bp || bp->stages_l == 0)
-						{
-							log(L_INFO, "nothing to fabricate");
-						}
-						else
-						{
-							// execute the build plan, one stage at a time
-							qfatal(bp_exec, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
-
-							// commit regular fabfile hashblocks
-							for(x = 0; x < ff_files.l; x++)
-							{
-								if(ff_files.e[x]->type == FFT_REGULAR)
-								{
-									fatal(hashblock_write, ff_files.e[x]->hb);
-								}
-							}
-						}
+						fatal(hashblock_write, ff_files.e[x]->hb);
 					}
 				}
 			}
@@ -396,7 +390,7 @@ finally:
 	bp_free(bp);
 	map_free(rmap);
 	map_free(vmap);
-	strstack_free(sstk);
+	map_free(tmap);
 
 	for(x = 0; x < staxa; x++)
 	{
@@ -410,14 +404,18 @@ finally:
 		ts_free(ts[x]);
 	free(ts);
 
-	for(x = 0; x < sizeof(list) / sizeof(list[0]); x++)
-		free(list[x]);
+	free(fabrications);
+	free(fabricationxs);
+	free(invalidations);
+	free(discoveries);
+	free(inspections);
 
 	gn_teardown();
 	fml_teardown();
 	ff_teardown();
 	args_teardown();
 	traverse_teardown();
+	selector_teardown();
 
 	log(L_INFO, "exiting with status : %d", !_coda_r);
 	log_teardown();

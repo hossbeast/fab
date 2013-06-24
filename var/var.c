@@ -359,7 +359,7 @@ int var_xfm_lw(map * restrict vmap, const char * restrict s, generator * const r
 	{
 		if(log_would(L_VAR | TAG(s)))
 		{
-			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) =~ %s ", "xfm-lw", KEYID(vmap, s), tex);
+			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) ~= %s", "xfm-lw", KEYID(vmap, s), tex);
 			LOG_SRC(src);
 			log_finish("");
 		}
@@ -448,6 +448,11 @@ int var_link(map * const restrict smap, const char * const restrict ss, map * co
 int var_root(map ** const map)
 {
 	fatal(map_create, map, map_destructor);
+
+	// seed the map identifier mechanism
+	fatal(map_set, *map, MMS("?LVL"), MM((int[1]){ 0 }));
+	fatal(map_set, *map, MMS("?NUM"), MM((int[1]){ 0 }));
+	fatal(map_set, *map, MMS("?CLD"), MM((int[1]){ 0 }));
 
 	finally : coda;
 }

@@ -109,7 +109,6 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstac
 			}
 			else
 			{
-//			vls = var_access(vmap, list->elements[x]->name);
 				fatal(var_access, vmap, list->elements[x]->name, stax, staxa, staxp, &vls);
 			}
 
@@ -198,24 +197,22 @@ int list_resolve(ff_node * list, map* vmap, generator_parser* const gp, lstack *
 	finally : coda;
 }
 
-int list_resolveflat(ff_node * list, map* vmap, generator_parser* const gp, lstack *** stax, int * staxa, int staxp)
+int list_resolveflat(ff_node * list, map* vmap, generator_parser* const gp, lstack *** stax, int * staxa, int * staxp, int raw)
 {
-	fatal(lw_reset, stax, staxa, staxp);
-
-	int pn = staxp;
-	fatal(resolve, list, vmap, gp, stax, staxa, &pn, 0);
-	fatal(lw_flatten, (*stax)[staxp]);
+	int pn = *staxp;
+	fatal(lw_reset, stax, staxa, pn);
+	fatal(resolve, list, vmap, gp, stax, staxa, staxp, raw);
+	fatal(lw_flatten, (*stax)[pn]);
 
 	finally : coda;
 }
 
-int list_resolvetoflat(ff_node * list, map* vmap, generator_parser* const gp, lstack *** stax, int * staxa, int staxp)
+int list_resolvetoflat(ff_node * list, map* vmap, generator_parser* const gp, lstack *** stax, int * staxa, int * staxp, int raw)
 {
-	fatal(lw_ensure, stax, staxa, staxp);
-
-	int pn = staxp;
-	fatal(resolve, list, vmap, gp, stax, staxa, &pn, 0);
-	fatal(lw_flatten, (*stax)[staxp]);
+	int pn = *staxp;
+	fatal(lw_ensure, stax, staxa, pn);
+	fatal(resolve, list, vmap, gp, stax, staxa, staxp, raw);
+	fatal(lw_flatten, (*stax)[pn]);
 
 	finally : coda;
 }

@@ -20,15 +20,17 @@
 
 #include <listwise.h>
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
-#include "interpolate.h"
+#include "gn.h"
+#include "control.h"
 
 /*
 
-(fab specific) fx operator - set list interpolation mode
+(fab specific) fg operator - select graph nodes
 
 ARGUMENTS
-	[0] - delimiter string
+	[0] - options string
 
 OPERATION
   with no arguments, fx is equivalent to fxc - set interpolation mode to INTERPOLATION_DELIM_WS
@@ -39,18 +41,22 @@ OPERATION
 static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
-operator op_desc = {
-	  .optype				= LWOP_ARGS_CANHAVE
-	, .op_validate	= op_validate
-	, .op_exec			= op_exec
-	, .desc					= "(fab specific) list interpolation mode"
+operator op_desc[] = {
+	{
+		  .s						= "fg"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "(fab specific) select graph nodes"
+	}
+	, {}
 };
 
 int op_validate(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1)
 	{
-		dprintf(listwise_err_fd, "fx -- arguments : %d", o->argsl);
+		dprintf(listwise_err_fd, "fg -- arguments : %d", o->argsl);
 		return 0;
 	}
 
@@ -59,16 +65,41 @@ int op_validate(operation* o)
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	if(o->argsl == 0)
+	uint32_t set = 0xFFFFFFFF;
+
+	if(o->argsl)
 	{
-		ls->flags = INTERPOLATE_DELIM_WS;
-	}
-	else if(o->argsl == 1)
-	{
-		ls->flags = INTERPOLATE_DELIM_CUST;
-		free(ls->ptr);
-		ls->ptr = strdup(o->args[0]->s);
+		set = 0;
+		if(strstr(o->args[0]->s, "p"))
+			set |= (0x01 << GN_DESIGNATION_PRIMARY);
+		if(strstr(o->args[0]->s, "s"))
+			set |= (0x01 << GN_DESIGNATION_SECONDARY);
+		if(strstr(o->args[0]->s, "g"))
+			set |= (0x01 << GN_DESIGNATION_GENERATED);
+		if(strstr(o->args[0]->s, "t"))
+			set |= (0x01 << GN_DESIGNATION_TASK);
+		if(strstr(o->args[0]->s, "n"))
+			set |= (0x01 << GN_DESIGNATION_GROUP);
 	}
 
-	return 1;
+	int x;
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		gn * g = 0;
+
+		if(ls->s[0].s[x].type)
+		{
+			g = *(void**)ls->s[0].s[x].s;
+		}
+
+		if(g)
+		{
+			if(set & (0x01 << g->designate))
+				fatal(lstack_last_set, ls, x);
+		}
+	}
+	LSTACK_ITEREND;
+
+	finally : coda;
 }

@@ -51,9 +51,20 @@ typedef struct
 
 /// bp_create
 //
-// create a bp for building the specified goals
+// SUMMARY
+//  create a buildplan culminating in the specified targets
 //
-int bp_create(gn ** goals, int goals_len, bp ** bp);
+// PARAMETERS
+//  fabrications   - build plan targets
+//  fabricationsl  - len
+//  fabricationxs  - exact buildplan targets
+//  fabricationxsl - len
+//
+// RETURNS
+//  0 in the case of failure, and 1 otherwise
+//
+int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** const restrict fabricationxs, int fabricationxsl, bp ** const restrict bp)
+	__attribute__((nonnull));
 
 /// bp_eval
 //
@@ -63,31 +74,23 @@ int bp_create(gn ** goals, int goals_len, bp ** bp);
 //
 // PARAMETERS
 //  bp     - buildplan
-//  poison - set to 1 if the bp cannot be executed (ex: missing source files)
 //
 // RETURNS
-//  0 in the case of failure (memory, io), and 1 otherwise
-//  check poison to determine whether the buildplan can be executed
+//  0 in the case of failure (memory, io, poisoned buildplan), and 1 otherwise
 //
-int bp_eval(bp * const restrict, int * const restrict)
+int bp_eval(bp * const restrict)
 	__attribute__((nonnull));
 
 /// bp_dump
 //
 // print a bp to stdout
 //
-void bp_dump(bp *);
-
-/// bp_flatten
-//
-//
-//
-int bp_flatten(bp * bp, gn *** gns, int * gnl, int * gna)
+void bp_dump(bp *)
 	__attribute__((nonnull));
 
 /// bp_exec
 //
-// execute the build plan one stage at a time
+// executing the build plan, one stage at a time
 //
 int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 	__attribute__((nonnull));
