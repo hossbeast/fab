@@ -16,13 +16,13 @@
    along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
 
 # version list - major, minor, revision, build
-$VERSIONL				= [ 0, 4, 2, 0 ]
+$VERSIONL				= [ 0 4 2 0 ]
 
 # version string
 $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]
 
 # version number
-$VERSIONN				= [ $VERSIONL ~ "j/s/^0/< >/g" ]
+$VERSIONN				= [ $VERSIONL ~ j/s/^0//g ]
 
 # directories
 $dcommon				= [ $*/../common ]
@@ -36,7 +36,7 @@ $dlistwise    	= [ $* ]
 $liblistwise		= [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags, [ -I $dlistwise ~ j ], $incdirs, [ -DFABVERSIONS="\"" $VERSIONS "\"" ~ j ], [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ] ]
+$cflags					= [ $cflags, [ -I $dlistwise ~ j ], $incdirs, [ -DFABVERSIONS="\"" $VERSIONS "\"" ~ j ], [ -DFABVERSIONN=$VERSIONN ~ j ] ]
 $lflags					= [ $liblistwise ]
 $name						= [ listwise ]
 $link						= [ lw ]
