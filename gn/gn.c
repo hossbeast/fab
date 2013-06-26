@@ -408,7 +408,7 @@ int gn_secondary_rewrite_fab(gn * const gn, map * const ws)
 	};
 
 	map_clear(ws);
-	fatal(traverse_depth_bynodes_needsward_skipweak, gn, logic);
+	fatal(traverse_depth_bynodes_needsward_skipweak_usebridge_usenofile, gn, logic);
 
 	// delete existing links which no longer apply
 	if((dh = opendir(tmp[2])) == 0)

@@ -22,7 +22,7 @@ $VERSIONL				= [ 0 4 2 0 ]
 $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]
 
 # version number
-$VERSIONN				= [ $VERSIONL ~ "j/s/^0/< >/g" ]
+$VERSIONN				= [ $VERSIONL ~ j/s/^0//g ]
 
 # directories
 $dcommon				= [ $*/../common ]
@@ -37,7 +37,7 @@ $dfab						= [ $* ]
 $liblistwise = [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs [ -DFABVERSIONS="\"" $VERSIONS "\"" ~ j ] [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ] ]
+$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs [ -DFABVERSIONS="\"" $VERSIONS "\"" ~ j ] [ -DFABVERSIONN=$VERSIONN ~ j ] ]
 $cflags					= [ $cflags -fms-extensions -fno-builtin-log ]
 $lflags					= [ $liblistwise ]
 $name						= [ fab ]
@@ -126,7 +126,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 # tasks
 #
 
-[ @install ]
+[ @install ] : [ @all ]
 {
 	install -d															[ $destdir/$bindir ]
 	install [ $fab ]												[ $destdir/$bindir/$name ]

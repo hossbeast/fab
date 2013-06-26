@@ -83,6 +83,8 @@ int main(int argc, char** argv)
 	int									fabricationsl = 0;
 	gn ***							fabricationxs = 0;
 	int									fabricationxsl = 0;
+	gn ***							fabricationns = 0;
+	int									fabricationnsl = 0;
 	gn ***							invalidations = 0;
 	int									invalidationsl = 0;
 	gn ***							discoveries = 0;
@@ -255,6 +257,7 @@ int main(int argc, char** argv)
 		fatal(selector_finalize
 			, &fabrications, &fabricationsl
 			, &fabricationxs, &fabricationxsl
+			, &fabricationns, &fabricationnsl
 			, &invalidations, &invalidationsl
 			, &discoveries, &discoveriesl
 			, &inspections, &inspectionsl
@@ -262,7 +265,7 @@ int main(int argc, char** argv)
 
 		if(log_would(L_LISTS))
 		{
-			if(fabricationsl + fabricationxsl + invalidationsl + discoveriesl + inspectionsl == 0)
+			if(fabricationsl + fabricationxsl + fabricationnsl + invalidationsl + discoveriesl + inspectionsl == 0)
 			{
 				log(L_LISTS, "empty");
 			}
@@ -272,6 +275,9 @@ int main(int argc, char** argv)
 
 			for(x = 0; x < fabricationxsl; x++)
 				log(L_LISTS, "fabricationx(s)    =%s", (*fabricationxs[x])->idstring);
+
+			for(x = 0; x < fabricationnsl; x++)
+				log(L_LISTS, "fabricationn(s)    =%s", (*fabricationns[x])->idstring);
 
 			for(x = 0; x < invalidationsl; x++)
 				log(L_LISTS, "invalidation(s)    =%s", (*invalidations[x])->idstring);
@@ -313,14 +319,14 @@ int main(int argc, char** argv)
 	//
 	// construct a buildplan - use the first node if none was specified
 	//
-	if(fabricationsl + fabricationxsl == 0)
+	if(fabricationsl + fabricationxsl + fabricationnsl == 0)
 	{
 		fatal(xrealloc, &fabrications, sizeof(*fabrications), 1, 0);
 		fabrications[fabricationsl++] = &first;
 	}
 
 	// mixing task and non-task as buildplan targets does not make sense
-	for(x = 1; x < fabricationsl + fabricationxsl; x++)
+	for(x = 1; x < fabricationsl + fabricationxsl + fabricationnsl; x++)
 	{
 		int a = x - 1;
 		int b = x;
@@ -329,19 +335,23 @@ int main(int argc, char** argv)
 
 		if(a < fabricationsl)
 			A = *fabrications[a];
-		else
+		else if(a < (fabricationsl + fabricationxsl))
 			A = *fabricationxs[a - fabricationsl];
+		else
+			A = *fabricationns[a - fabricationsl - fabricationxsl];
 
 		if(b < fabricationsl)
 			B = *fabrications[b];
-		else
+		else if(b < (fabricationsl + fabricationxsl))
 			B = *fabricationxs[b - fabricationsl];
+		else
+			B = *fabricationns[b - fabricationsl - fabricationxsl];
 
 		if((A->designate == GN_DESIGNATION_TASK) ^ (B->designate == GN_DESIGNATION_TASK))
 			fail("cannot mix task and non-task targets");
 	}
 
-	fatal(bp_create, fabrications, fabricationsl, fabricationxs, fabricationxsl, &bp);
+	fatal(bp_create, fabrications, fabricationsl, fabricationxs, fabricationxsl, fabricationns, fabricationnsl, &bp);
 
 	// selector lists not referenced again past this point
 	map_xfree(&smap);
@@ -407,6 +417,7 @@ finally:
 
 	free(fabrications);
 	free(fabricationxs);
+	free(fabricationns);
 	free(invalidations);
 	free(discoveries);
 	free(inspections);

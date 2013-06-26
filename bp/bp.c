@@ -61,7 +61,7 @@ static int fmleval_cmp(const void * _A, const void * _B)
 	return gn_cmp(&A->products[0], &B->products[0]);
 }
 
-static int reset(gn * r, int exact)
+static int reset(gn * r, int exact, int nofile)
 {
 	int logic(gn * gn, int d)
 	{
@@ -73,11 +73,13 @@ static int reset(gn * r, int exact)
 
 	if(exact)
 		return logic(r, 0);
+	else if(nofile)
+		return traverse_depth_bynodes_needsward_useweak_usebridge_usenofile(r, logic);
 	else
-		return traverse_depth_bynodes_needsward_useweak(r, logic);
+		return traverse_depth_bynodes_needsward_useweak_usebridge_nonofile(r, logic);
 }
 
-static int heights(gn * r, int exact, int * change)
+static int heights(gn * r, int exact, int nofile, int * change)
 {
 	int logic(gn * gn, int d)
 	{
@@ -105,11 +107,13 @@ static int heights(gn * r, int exact, int * change)
 
 	if(exact)
 		return logic(r, 0);
+	else if(nofile)
+		return traverse_depth_bynodes_needsward_useweak_usebridge_usenofile(r, logic);
 	else
-		return traverse_depth_bynodes_needsward_useweak(r, logic);
+		return traverse_depth_bynodes_needsward_useweak_usebridge_nonofile(r, logic);
 }
 
-static int visit(gn * r, int k, gn *** lvs, int * l, int * a, int exact)
+static int visit(gn * r, int k, gn *** lvs, int * l, int * a, int exact, int nofile)
 {
 	int logic(gn * gn, int d)
 	{
@@ -134,15 +138,25 @@ static int visit(gn * r, int k, gn *** lvs, int * l, int * a, int exact)
 
 	if(exact)
 		return logic(r, 0);
+	else if(nofile)
+		return traverse_depth_bynodes_needsward_useweak_usebridge_usenofile(r, logic);
 	else
-		return traverse_depth_bynodes_needsward_useweak(r, logic);
+		return traverse_depth_bynodes_needsward_useweak_usebridge_nonofile(r, logic);
 }
 
 //
 // public
 //
 
-int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** const restrict fabricationxs, int fabricationxsl, bp ** const restrict bp)
+int bp_create(
+	  gn *** const restrict fabrications
+	, int fabricationsl
+	, gn *** const restrict fabricationxs
+	, int fabricationxsl
+	, gn *** const restrict fabricationns
+	, int fabricationnsl
+	, bp ** const restrict bp
+)
 {
 	gn ** lvs = 0;
 	int lvsl = 0;
@@ -151,26 +165,34 @@ int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** cons
 	// reset all depths/heights to -1
 	int x;
 	for(x = 0; x < fabricationsl; x++)
-		fatal(reset, *fabrications[x], 0);
+		fatal(reset, *fabrications[x], 0, 1);
 
 	for(x = 0; x < fabricationxsl; x++)
-		fatal(reset, *fabricationxs[x], 1);
+		fatal(reset, *fabricationxs[x], 1, 0);
+
+	for(x = 0; x < fabricationnsl; x++)
+		fatal(reset, *fabricationns[x], 0, 0);
 
 	// calculate node heights and max height
 	int maxheight = -1;
 	int change = 0;
-	for(x = 0; x < fabricationsl + fabricationxsl; x++)
+	for(x = 0; x < fabricationsl + fabricationxsl + fabricationnsl; x++)
 	{
 		int nowchange = 0;
 		if(x < fabricationsl)
 		{
-			fatal(heights, *fabrications[x], 0, &nowchange);
+			fatal(heights, *fabrications[x], 0, 1, &nowchange);
 			maxheight = MAX(maxheight, (*fabrications[x])->height);
+		}
+		else if(x < (fabricationsl + fabricationxsl))
+		{
+			fatal(heights, *fabricationxs[x - fabricationsl], 1, 0, &nowchange);
+			maxheight = MAX(maxheight, (*fabricationxs[x - fabricationsl])->height);
 		}
 		else
 		{
-			fatal(heights, *fabricationxs[x - fabricationsl], 1, &nowchange);
-			maxheight = MAX(maxheight, (*fabricationxs[x - fabricationsl])->height);
+			fatal(heights, *fabricationns[x - fabricationsl - fabricationxsl], 0, 0, &nowchange);
+			maxheight = MAX(maxheight, (*fabricationns[x - fabricationsl - fabricationxsl])->height);
 		}
 
 		if(change && nowchange)
@@ -196,10 +218,13 @@ int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** cons
 		// get list of nodes for this stage - k+1 is stage number
 		lvsl = 0;
 		for(x = 0; x < fabricationsl; x++)
-			fatal(visit, *fabrications[x], k+1, &lvs, &lvsl, &lvsa, 0);
+			fatal(visit, *fabrications[x], k+1, &lvs, &lvsl, &lvsa, 0, 1);
 
 		for(x = 0; x < fabricationxsl; x++)
-			fatal(visit, *fabricationxs[x], k+1, &lvs, &lvsl, &lvsa, 1);
+			fatal(visit, *fabricationxs[x], k+1, &lvs, &lvsl, &lvsa, 1, 0);
+
+		for(x = 0; x < fabricationnsl; x++)
+			fatal(visit, *fabricationns[x], k+1, &lvs, &lvsl, &lvsa, 0, 0);
 
 		// ptr to the stage we will add to
 		bp_stage * bps = &(*bp)->stages[k];

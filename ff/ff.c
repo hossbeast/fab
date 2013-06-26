@@ -353,7 +353,7 @@ int ff_var_parse(const ff_parser * const p, char* b, int sz, int id, ff_file** c
 {
 	path * pth = 0;
 	fatal(path_create_canon, &pth, "/../cmdline/v/%d", id);
-	qfatal(parse, p, b, sz, pth, 0, 0, &id, ff);
+	qfatal(parse, p, b, sz, pth, 0, &id, 0, ff);
 
 finally:
 	path_free(pth);

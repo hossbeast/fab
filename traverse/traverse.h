@@ -25,14 +25,29 @@ void traverse_teardown();
 
 struct gn;
 
-/// traverse_depth_bynodes_needsward_useweak
+/// traverse
+//
+// _depth     - depth first
+// _breadth   - breadth first
+//
+// _bynodes   - apply logic at nodes
+// _byrels    - apply logic at relations
+//
+// _needsward - needs-wise
+// _feedsward - feeds-wise
+//
+// _useweak   - traverse weak relations
+// _noweak    - ignore weak relations
+// _skipweak  - ignore weak relations of this node, but traverse other weak relations
+//
+// _usebridge - traverse bridge relations
+// _nobridge  - ignore bridge relations
+//
+// _usenofile - traverse nofile boundaries
+// _nonofile  - ignore nofile boundaries
 //
 // SUMMARY
 //  traverse the graph starting at and including gn, detecting cycles
-//   - depth first
-//   - needs-wise
-//   - follow weak dependencies
-//  apply logic at each visited node
 //
 // LOGIC
 //  returns 0 to stop the traversal with failure
@@ -41,107 +56,30 @@ struct gn;
 //  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
 //  returns 1 on success
 //
-int traverse_depth_bynodes_needsward_useweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
-
-int traverse_depth_bynodes_needsward_useweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int));
-
-/// traverse_depth_bynodes_needsward_noweak
-//
-// SUMMARY
-//  traverse the graph starting at and including gn, detecting cycles
-//   - depth first
-//   - needs-wise
-//   - dont follow weak dependencies
-//  apply logic at each visited node
-//
-// LOGIC
-//  returns 0 to stop the traversal with failure
-//
-// RETURNS
-//  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
-//  returns 1 on success
-//
-int traverse_depth_bynodes_needsward_noweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
-
-int traverse_depth_bynodes_needsward_noweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int));
-
-/// traverse_depth_bynodes_needsward_skipweak
-//
-// SUMMARY
-//  traverse the graph starting at and including gn, detecting cycles
-//   - depth first
-//   - needs-wise
-//   - dont follow weak dependencies of the root node
-//   - follow all other weak dependencies
-//  apply logic at each visited node
-//
-// LOGIC
-//  returns 0 to stop the traversal with failure
-//
-// RETURNS
-//  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
-//  returns 1 on success
-//
-int traverse_depth_bynodes_needsward_skipweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
-
-/// traverse_depth_bynodes_feedsward_useweak
-//
-// SUMMARY
-//  traverse the graph starting at and including gn, detecting cycles
-//   - depth first
-//   - feeds-wise
-//   - follow weak dependencies
-//  apply logic at each visited node
-//
-// LOGIC
-//  returns 0 to stop the traversal with failure
-//
-// RETURNS
-//  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
-//  returns 1 on success
-//
-int traverse_depth_bynodes_feedsward_useweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
-
-int traverse_depth_bynodes_feedsward_useweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int));
-
-/// traverse_depth_bynodes_feedsward_noweak
-//
-// SUMMARY
-//  traverse the graph starting at and including gn, detecting cycles
-//   - depth first
-//   - feeds-wise
-//   - dont follow weak dependencies
-//  apply logic at each visited node
-//
-// LOGIC
-//  returns 0 to stop the traversal with failure
-//
-// RETURNS
-//  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
-//  returns 1 on success
-//
-int traverse_depth_bynodes_feedsward_noweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
-
-int traverse_depth_bynodes_feedsward_noweak_nobridge(struct gn * const restrict r, int (* const logic)(struct gn *, int));
-
-/// traverse_depth_bynodes_feedsward_skipweak
-//
-// SUMMARY
-//  traverse the graph starting at and including gn, detecting cycles
-//   - depth first
-//   - feeds-wise
-//   - dont follow weak dependencies
-//  apply logic at each visited node
-//
-// LOGIC
-//  returns 0 to stop the traversal with failure
-//
-// RETURNS
-//  returns 0 if an error was encountered (including a cycle or failed invocation of the logic callback)
-//  returns 1 on success
-//
-int traverse_depth_bynodes_feedsward_skipweak(struct gn * const restrict r, int (* const logic)(struct gn *, int));
+int traverse_depth_bynodes_needsward_noweak_nobridge_usenofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_noweak_nobridge_nonofile     (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_noweak_usebridge_usenofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_noweak_usebridge_nonofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_useweak_nobridge_usenofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_useweak_nobridge_nonofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_useweak_usebridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_useweak_usebridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_skipweak_nobridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_skipweak_nobridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_skipweak_usebridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_needsward_skipweak_usebridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_noweak_nobridge_usenofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_noweak_nobridge_nonofile     (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_noweak_usebridge_usenofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_noweak_usebridge_nonofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_useweak_nobridge_usenofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_useweak_nobridge_nonofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_useweak_usebridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_useweak_usebridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_skipweak_nobridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_skipweak_nobridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_skipweak_usebridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
 
 #undef restrict
 #endif
-

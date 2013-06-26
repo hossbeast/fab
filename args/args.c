@@ -87,6 +87,7 @@ if(help)
 " selection modifiers (may be clustered)\n"
 "  (+/-)t        (default) add/remove following selection(s) to/from fabricate-list\n"
 "  (+/-)x                  add/remove following selection(s) to/from fabricate-exact-list\n"
+"  (+/-)n                  add/remove following selection(s) to/from fabricate-nofile-list\n"
 "  (+/-)d                  add/remove following selection(s) to/from discovery-list\n"
 "  (+/-)b                  add/remove following selection(s) to/from invalidate-list\n"
 "  (+/-)i                  add/remove following selection(s) to/from inspect-list\n"
@@ -241,7 +242,7 @@ int args_parse(int argc, char** argv)
 /* k */	, { 0	, required_argument	, 0			, 'k'	}		// bakescript output path
 // l 
 // m
-// n
+// n - append selection(s) to fabricate-nofile-list */
 // o
 /* p */	, { 0	, no_argument				, 0			, 'p' } 	// implies BPDUMP
 // q
@@ -350,6 +351,8 @@ int args_parse(int argc, char** argv)
 							selector_lists |= SELECTOR_FABRICATE;
 						if(strchr(s, 'x'))
 							selector_lists |= SELECTOR_FABRICATEX;
+						if(strchr(s, 'n'))
+							selector_lists |= SELECTOR_FABRICATEN;
 						if(strchr(s, 'b'))
 							selector_lists |= SELECTOR_INVALIDATE;
 						if(strchr(s, 'q'))

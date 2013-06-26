@@ -32,10 +32,11 @@ struct gn;
 #define SELECTOR_TABLE(x)																												\
 	_SELECTOR(SELECTOR_FABRICATE		, 0x01	, x)	/* fabricate */									\
 	_SELECTOR(SELECTOR_FABRICATEX		, 0x02	, x)	/* fabricate-exact */						\
-	_SELECTOR(SELECTOR_INVALIDATE		, 0x04	, x)	/* invalidate */								\
-	_SELECTOR(SELECTOR_DISCOVERY		, 0x08	, x)	/* discovery */									\
-	_SELECTOR(SELECTOR_INSPECT			, 0x10	, x)	/* inspect */										\
-	_SELECTOR(SELECTOR_QUERY				, 0x20	, x)	/* query */											\
+	_SELECTOR(SELECTOR_FABRICATEN		, 0x04	, x)	/* fabricate-nofile */					\
+	_SELECTOR(SELECTOR_INVALIDATE		, 0x08	, x)	/* invalidate */								\
+	_SELECTOR(SELECTOR_DISCOVERY		, 0x10	, x)	/* discovery */									\
+	_SELECTOR(SELECTOR_INSPECT			, 0x20	, x)	/* inspect */										\
+	_SELECTOR(SELECTOR_QUERY				, 0x40	, x)	/* query */											\
 
 enum {
 #define _SELECTOR(a, b, c) a = b,
@@ -73,6 +74,7 @@ int selector_process(selector * const restrict s, const int id, const ff_parser 
 int selector_finalize(
 	  struct gn **** restrict fabrications, int * restrict fabricationsl
 	, struct gn **** restrict fabricationxs, int * restrict fabricationxsl
+	, struct gn **** restrict fabricationns, int * restrict fabricationnsl
 	, struct gn **** restrict invalidations, int * restrict invalidationsl
 	, struct gn **** restrict discoveries, int * restrict discoveriesl
 	, struct gn **** restrict inspections, int * restrict inspectionsl

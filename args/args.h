@@ -124,6 +124,7 @@ extern struct g_args_t
 
 	int									concurrency;						// concurrently limiting factor
 	path *							init_fabfile_path;			// path to initial fabfile
+
 	char *							bakescript_path;				// path to bakescript
 
 	char **							rootvars;								// root scope variable expressions

@@ -57,13 +57,23 @@ typedef struct
 // PARAMETERS
 //  fabrications   - build plan targets
 //  fabricationsl  - len
-//  fabricationxs  - exact buildplan targets
+//  fabricationxs  - buildplan targets (exact)
 //  fabricationxsl - len
+//  fabricationns  - buildplan targets (nofile-non-traversing)
+//  fabricationnsl - len
 //
 // RETURNS
 //  0 in the case of failure, and 1 otherwise
 //
-int bp_create(gn *** const restrict fabrications, int fabricationsl, gn *** const restrict fabricationxs, int fabricationxsl, bp ** const restrict bp)
+int bp_create(
+	  gn *** const restrict fabrications
+	, int fabricationsl
+	, gn *** const restrict fabricationxs
+	, int fabricationxsl
+	, gn *** const restrict fabricationns
+	, int fabricationnsl
+	, bp ** const restrict bp
+)
 	__attribute__((nonnull));
 
 /// bp_eval
