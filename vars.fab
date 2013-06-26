@@ -20,11 +20,10 @@ $dbug				= [ 0 ]
 # compilers and their flags
 $cc					= [ gcc ]
 $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE [ -I $dcommon ~ j ]
-
 	[ $dbug ~ s/1/-O0/y ]
+	[ $dbug ~ s/0/-O3/y ]
 	[ $dbug ~ s/1/-g/y ]
 	[ $dbug ~ s/1/-DDBUG/y ]
-	[ $dbug ~ s/0/-O3/y ]
 ]
 $flex				= [ flex ]
 $flexflags	= [ ]
