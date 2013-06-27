@@ -73,7 +73,7 @@ static int dsc_execwave(
 
 		// render the formula
 		fatal(map_set, ts[x]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
-		fatal(fml_render, ts[x], gp, stax, staxa, staxp + 1, 1);
+		fatal(fml_render, ts[x], gp, stax, staxa, staxp + 1, 0, 1);
 		map_delete(ts[x]->fmlv->bag, MMS("@"));
 	}
 

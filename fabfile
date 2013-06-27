@@ -68,7 +68,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 [ $fab ] : [ [ $dfab/main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
 {
-	[ $cc ] [ $cflags -export-dynamic ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [ $lflags ~ fi ]
+	[ $cc ] [ [ $cflags ~ s/a/A/g ] -export-dynamic ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [ $lflags ~ fi ]
 }
 
 #

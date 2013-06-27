@@ -92,7 +92,7 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 		if(vff)
 		{
 			int pn = staxp;
-			fatal(list_resolveflat, vff->ffn->statements[0], tmap, ffp->gp, stax, staxa, &staxp, 1);
+			fatal(list_resolveflat, vff->ffn->statements[0], tmap, ffp->gp, stax, staxa, &staxp, 1, 0);
 
 			int y;
 			LSTACK_ITERATE((*stax)[pn], y, go);

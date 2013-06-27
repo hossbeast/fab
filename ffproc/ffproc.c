@@ -68,7 +68,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 		else if(stmt->type == FFN_VARASSIGN)
 		{
 			int pn = (*staxp);
-			fatal(list_resolve, stmt->definition, vmap, ffp->gp, stax, staxa, staxp, 0);
+			fatal(list_resolve, stmt->definition, vmap, ffp->gp, stax, staxa, staxp, 0, 0);
 
 			for(y = 0; y < stmt->varsl; y++)
 				fatal(var_set, vmap, stmt->vars[y]->name, (*stax)[pn], 0, 1, stmt);
@@ -76,7 +76,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 		else if(stmt->type == FFN_INVOCATION)
 		{
 			int pn = (*staxp);
-			fatal(list_resolve, stmt->module, vmap, ffp->gp, stax, staxa, &pn, 0);
+			fatal(list_resolve, stmt->module, vmap, ffp->gp, stax, staxa, &pn, 0, 0);
 			fatal(list_render, (*stax)[(*staxp)], &inv);
 
 			// handle module reference
@@ -179,7 +179,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 							if(set->definition->type == FFN_LIST)
 							{
 								int pn = (*staxp);
-								fatal(list_resolve, set->definition, vmap, ffp->gp, stax, staxa, staxp, 0);
+								fatal(list_resolve, set->definition, vmap, ffp->gp, stax, staxa, staxp, 0, 0);
 
 								for(i = 0; i < set->varsl; i++)
 									fatal(var_set, cmap, set->vars[i]->name, (*stax)[pn], 1, 0, set);

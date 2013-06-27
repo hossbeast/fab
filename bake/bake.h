@@ -36,6 +36,7 @@ int bake_bp(
 	, lstack *** const restrict stax
 	, int * const restrict staxa
 	, int staxp
+	, map * const restrict bakemap
 	, ts *** const restrict ts
 	, int * const restrict tsa
 	, const int * const restrict tsw

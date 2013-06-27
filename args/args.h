@@ -131,6 +131,10 @@ extern struct g_args_t
 	int									rootvarsl;
 	int									rootvarsa;
 
+	char **							bakevars;								// baked variables
+	int									bakevarsl;
+	int									bakevarsa;
+
 	char **							invokedirs;							// root directories for locating invocations
 	int									invokedirsl;
 

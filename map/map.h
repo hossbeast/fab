@@ -141,6 +141,12 @@ int map_keys(const map* const restrict map, void* const restrict target, int* co
 int map_values(const map* const restrict map, void* const restrict target, int* const restrict count)
 	__attribute__((nonnull));
 
+/// map_clone
+//
+// copy all keys and values from src to dst
+//
+int map_clone(map* const restrict dst, const map * const restrict src)
+	__attribute__((nonnull));
+
 #undef restrict
 #endif
-

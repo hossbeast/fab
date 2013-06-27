@@ -46,6 +46,7 @@ int bake_bp(
 	, lstack *** const stax
 	, int * const staxa
 	, int staxp
+	, map * const bakemap
 	, ts *** const ts
 	, int * const tsa
 	, const int * const tsw
@@ -59,6 +60,15 @@ int bake_bp(
 	int x;
 	int i;
 	int k;
+
+	char ** keys	= 0;
+	int keysl			= 0;
+	map * lmap		= 0;
+	pstring * ps	= 0;
+
+	// create local bakemap and keyset
+	fatal(map_create, &lmap, 0);
+	fatal(map_keys, bakemap, &keys, &keysl);
 
 	// determine how many threads are needed
 	for(x = 0; x < bp->stages_l; x++)
@@ -107,10 +117,10 @@ int bake_bp(
 /* include licensing exception in bakescript output */
 	dprintf(fd,
 "\n"
-"# A build script made by fab " XQUOTE(FABVERSION) "\n"
+"# A build script made by fab " XQUOTE(FABVERSIONS) "\n"
 "#  fab is free software released under the GNU General Public License.\n"
 "#\n"
-"#  As a special exception, build scripts made by fab " XQUOTE(FABVERSION) " (including this\n"
+"#  As a special exception, build scripts made by fab " XQUOTE(FABVERSIONS) " (including this\n"
 "#  build script) are excluded from the license covering fab itself, even\n"
 "#  if substantial portions of the fab source code are copied verbatim into\n"
 "#  the build script. You may create a larger work that contains part or all\n"
@@ -151,9 +161,11 @@ int bake_bp(
 			for(k = 0; k < (*ts)[y]->fmlv->productsl; k++)
 				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[y]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
+			fatal(map_clone, lmap, bakemap);
+
 			// render the formula
 			fatal(map_set, (*ts)[y]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
-			fatal(fml_render, (*ts)[y], gp, stax, staxa, staxp + 1, 0);
+			fatal(fml_render, (*ts)[y], gp, stax, staxa, staxp + 1, lmap, 0);
 			map_delete((*ts)[y]->fmlv->bag, MMS("@"));
 
 			// index occupied by this formula in the stage.stage in which this formula is executed
@@ -185,15 +197,26 @@ int bake_bp(
 				  "  exec 1>/dev/null\n"		// discard stdout
 				  "  exec 2>&%d\n"					// save stderr to specific fd
 					"\n"
-					"  %.*s\n"								// the command
+				, x, y
+				, 100+index
+			);
+			for(k = 0; k < keysl; k++)		// baked variables
+			{
+				lstack ** vls = 0;
+				if((vls = map_get(lmap, MMS(keys[k]))) && *vls)
+				{
+					fatal(list_render, *vls, &ps);
+					dprintf(fd, "  [[ $%s ]] || local $%s = '%.*s'\n", keys[k], keys[k], (int)ps->l, ps->s);
+				}
+			}
+			dprintf(fd
+				, "  %.*s\n"								// the command
 					"\n"
 					"  X=$?\n"								// save exit status
 					"  echo %d 1>&99\n"				// echo our index
 					"  exit $X\n"							// return exit status
 				  "}\n"
 					"\n"
-				, x, y
-				, 100+index
 				, (int)(*ts)[y]->cmd_txt->l, (*ts)[y]->cmd_txt->s
 				, index
 			);
@@ -279,6 +302,8 @@ int bake_bp(
 
 finally:
 	close(fd);
+	free(keys);
+	map_free(lmap);
+	pstring_free(ps);
 coda;
 }
-

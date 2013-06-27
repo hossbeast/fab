@@ -104,6 +104,7 @@ if(help)
 "\n"
 " bakescript generation\n"
 "  -k </path/to/output>    create bakescript\n"
+"  \n"
 #if DEVEL
 "  --bslic-standard        bakescripts have the standard license\n"
 "  --bslic-fab             bakescripts have the fab distribution license\n"
@@ -230,9 +231,9 @@ int args_parse(int argc, char** argv)
 
 /* program switches */
 // a
-/* b - append selection(s) to invalidate-list */
+/* b - selection(s) apply to invalidate-list */
 /* c */	, { 0	, no_argument				, 0			, 'c' }		// MODE_GNID_RELATIVE	
-/* d - append selection(s) to inspect-list */
+/* d - selection(s) apply to inspect-list */
 // e
 /* f */ , { 0	, required_argument	, 0			, 'f' }		// init-fabfile-path
 // g
@@ -242,21 +243,21 @@ int args_parse(int argc, char** argv)
 /* k */	, { 0	, required_argument	, 0			, 'k'	}		// bakescript output path
 // l 
 // m
-// n - append selection(s) to fabricate-nofile-list */
+// n - selection(s) apply to fabricate-nofile-list */
 // o
 /* p */	, { 0	, no_argument				, 0			, 'p' } 	// implies BPDUMP
 // q
 // r
 // s
-/* t - append selection(s) to fabricate-list */
+/* t - selection(s) apply to fabricate-list */
 // u
 /* v */ , { 0	, required_argument	, 0			, 'v' }		// root-level variable definition
 // w
-/* x - append selection(s) to fabricate-exact-ist */
+/* x - selection(s) apply to fabricate-exact-ist */
 // y
 // z
 // A
-/* B */ , { 0	, no_argument				, 0			, 'B' }		// graph node invalidation
+/* B */ , { 0	, no_argument				, 0			, 'B' }		// global graph node invalidation
 // C
 // D
 // E
@@ -265,7 +266,7 @@ int args_parse(int argc, char** argv)
 // H
 /* I */	, { 0	, required_argument	, 0			, 'I' }		// directory to search for invocations
 // J
-// K
+/* K */ , { 0	, required_argument	, 0			, 'K' }		// baked variables
 // L
 // M
 // N
@@ -292,7 +293,7 @@ int args_parse(int argc, char** argv)
 		"chpB"
 
 		// with-argument switches
-		"f:j:k:v:I:"
+		"f:j:k:v:I:K:"
 	;
 
 	//
@@ -433,6 +434,18 @@ int args_parse(int argc, char** argv)
 			fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 			fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
 		}
+		else if(x == 'K')
+		{
+			if(g_args.bakevarsl == g_args.bakevarsa)
+			{
+				int newa = g_args.bakevarsa ?: 3;
+				newa = newa * 2 + newa / 2;
+				fatal(xrealloc, &g_args.bakevars, sizeof(g_args.bakevars[0]), newa, g_args.bakevarsa);
+				g_args.bakevarsa = newa;
+			}
+
+			g_args.bakevars[g_args.bakevarsl++] = strdup(optarg);
+		}
 		else if(x == '?')
 		{
 			if(0)
@@ -471,10 +484,13 @@ int args_parse(int argc, char** argv)
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->abs);
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->rel);
 	log(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan         =%s", g_args.mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args.mode_bplan));
-	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
-	{
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) bakescript-path    =%s", "*", 'k', g_args.bakescript_path);
-	}
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) bakescript-path    =%s", "*", 'k', g_args.bakescript_path);
+
+	if(g_args.bakevarsl == 0)
+		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)         =", " ", ' ');
+	for(x = 0; x < g_args.bakevarsl; x++)
+		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)         =%s", "*", 'K', g_args.bakevars[x]);
+
 #if DEVEL
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic         =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
 #endif
@@ -527,6 +543,10 @@ void args_teardown()
 	for(x = 0; x < g_args.rootvarsl; x++)
 		free(g_args.rootvars[x]);
 	free(g_args.rootvars);
+
+	for(x = 0; x < g_args.bakevarsl; x++)
+		free(g_args.bakevars[x]);
+	free(g_args.bakevars);
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 		free(g_args.invokedirs[x]);

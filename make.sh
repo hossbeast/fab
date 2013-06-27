@@ -1,21 +1,13 @@
 #!/bin/bash
 
-# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+# A build script made by fab v0.4.2.0
+#  fab is free software released under the GNU General Public License.
 #
-# This file is part of fab.
-#
-# fab is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# fab is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with fab.  If not, see <http://www.gnu.org/licenses/>.
+#  As a special exception, build scripts made by fab v0.4.2.0 (including this
+#  build script) are excluded from the license covering fab itself, even
+#  if substantial portions of the fab source code are copied verbatim into
+#  the build script. You may create a larger work that contains part or all
+#  of the build script and distribute that work under terms of your choice
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -32,8 +24,9 @@ fml_1_0()
   exec 1>/dev/null
   exec 2>&100
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I./../common'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -c ./../common/cksum.c -o ./../common/cksum.o
+	gcc $cflags -c ./../common/cksum.c -o ./../common/cksum.o
 
 
   X=$?
@@ -47,8 +40,9 @@ fml_1_1()
   exec 1>/dev/null
   exec 2>&101
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I./../common'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -c ./../common/coll.c -o ./../common/coll.o
+	gcc $cflags -c ./../common/coll.c -o ./../common/coll.o
 
 
   X=$?
@@ -62,8 +56,9 @@ fml_1_2()
   exec 1>/dev/null
   exec 2>&102
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I./../common'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -c ./../common/parseint.c -o ./../common/parseint.o
+	gcc $cflags -c ./../common/parseint.c -o ./../common/parseint.o
 
 
   X=$?
@@ -77,8 +72,9 @@ fml_1_3()
   exec 1>/dev/null
   exec 2>&103
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I./../common'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -c ./../common/pstring.c -o ./../common/pstring.o
+	gcc $cflags -c ./../common/pstring.c -o ./../common/pstring.o
 
 
   X=$?
@@ -92,8 +88,9 @@ fml_1_4()
   exec 1>/dev/null
   exec 2>&104
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I./../common'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -c ./../common/unitstring.c -o ./../common/unitstring.o
+	gcc $cflags -c ./../common/unitstring.c -o ./../common/unitstring.o
 
 
   X=$?
@@ -107,8 +104,9 @@ fml_1_5()
   exec 1>/dev/null
   exec 2>&105
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I./../common'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -c ./../common/xmem.c -o ./../common/xmem.o
+	gcc $cflags -c ./../common/xmem.c -o ./../common/xmem.o
 
 
   X=$?
@@ -122,8 +120,9 @@ fml_1_6()
   exec 1>/dev/null
   exec 2>&106
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I./../common'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -c ./../common/xstring.c -o ./../common/xstring.o
+	gcc $cflags -c ./../common/xstring.c -o ./../common/xstring.o
 
 
   X=$?
@@ -131,14 +130,15 @@ fml_1_6()
   exit $X
 }
 
-NAMES[7]='./args/args.o'
+NAMES[7]='./canon/canon.o'
 fml_1_7()
 {
   exec 1>/dev/null
   exec 2>&107
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./args/args.c -o ./args/args.o
+	gcc $cflags -c ./canon/canon.c -o ./canon/canon.o
 
 
   X=$?
@@ -146,14 +146,15 @@ fml_1_7()
   exit $X
 }
 
-NAMES[8]='./canon/canon.o'
+NAMES[8]='./depblock/depblock.o'
 fml_1_8()
 {
   exec 1>/dev/null
   exec 2>&108
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./canon/canon.c -o ./canon/canon.o
+	gcc $cflags -c ./depblock/depblock.c -o ./depblock/depblock.o
 
 
   X=$?
@@ -161,14 +162,15 @@ fml_1_8()
   exit $X
 }
 
-NAMES[9]='./depblock/depblock.o'
+NAMES[9]='./dirutil/dirutil.o'
 fml_1_9()
 {
   exec 1>/dev/null
   exec 2>&109
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./depblock/depblock.c -o ./depblock/depblock.o
+	gcc $cflags -c ./dirutil/dirutil.c -o ./dirutil/dirutil.o
 
 
   X=$?
@@ -176,14 +178,15 @@ fml_1_9()
   exit $X
 }
 
-NAMES[10]='./dirutil/dirutil.o'
+NAMES[10]='./fablw/op/fg/fg.pic.o'
 fml_1_10()
 {
   exec 1>/dev/null
   exec 2>&110
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log-fPIC'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./dirutil/dirutil.c -o ./dirutil/dirutil.o
+	gcc $cflags -c ./fablw/op/fg/fg.c -o ./fablw/op/fg/fg.pic.o
 
 
   X=$?
@@ -191,14 +194,15 @@ fml_1_10()
   exit $X
 }
 
-NAMES[11]='./fablw/op/fg/fg.pic.o'
+NAMES[11]='./fablw/op/fi/fi.pic.o'
 fml_1_11()
 {
   exec 1>/dev/null
   exec 2>&111
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log-fPIC'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -fPIC -c ./fablw/op/fg/fg.c -o ./fablw/op/fg/fg.pic.o
+	gcc $cflags -c ./fablw/op/fi/fi.c -o ./fablw/op/fi/fi.pic.o
 
 
   X=$?
@@ -206,14 +210,15 @@ fml_1_11()
   exit $X
 }
 
-NAMES[12]='./fablw/op/fi/fi.pic.o'
+NAMES[12]='{./ff/ff.dsc.tab.h, ./ff/ff.dsc.tab.c}'
 fml_1_12()
 {
   exec 1>/dev/null
   exec 2>&112
 
+[[ $cflags ]] || local $cflags = ''
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -fPIC -c ./fablw/op/fi/fi.c -o ./fablw/op/fi/fi.pic.o
+	bison --warnings=error -o ./ff/ff.dsc.tab.c -d	./ff/ff.dsc.y
 
 
   X=$?
@@ -221,14 +226,15 @@ fml_1_12()
   exit $X
 }
 
-NAMES[13]='{./ff/ff.dsc.tab.h, ./ff/ff.dsc.tab.c}'
+NAMES[13]='{./ff/ff.lex.h, ./ff/ff.lex.c}'
 fml_1_13()
 {
   exec 1>/dev/null
   exec 2>&113
 
+[[ $cflags ]] || local $cflags = ''
   
-	bison --warnings=error -o ./ff/ff.dsc.tab.c -d	./ff/ff.dsc.y
+	  flex  -o ./ff/ff.lex.c  --header-file=./ff/ff.lex.h  ./ff/ff.l
 
 
   X=$?
@@ -236,14 +242,15 @@ fml_1_13()
   exit $X
 }
 
-NAMES[14]='{./ff/ff.lex.h, ./ff/ff.lex.c}'
+NAMES[14]='{./ff/ff.list.tab.h, ./ff/ff.list.tab.c}'
 fml_1_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
+[[ $cflags ]] || local $cflags = ''
   
-	  flex  -o ./ff/ff.lex.c  --header-file=./ff/ff.lex.h  ./ff/ff.l
+	bison --warnings=error -o ./ff/ff.list.tab.c -d	./ff/ff.list.y
 
 
   X=$?
@@ -257,6 +264,7 @@ fml_1_15()
   exec 1>/dev/null
   exec 2>&115
 
+[[ $cflags ]] || local $cflags = ''
   
 	bison --warnings=error -o ./ff/ff.tab.c -d	./ff/ff.y
 
@@ -272,6 +280,7 @@ fml_1_16()
   exec 1>/dev/null
   exec 2>&116
 
+[[ $cflags ]] || local $cflags = ''
   
 	bison --warnings=error -o ./ff/ff.var.tab.c -d	./ff/ff.var.y
 
@@ -287,8 +296,9 @@ fml_1_17()
   exec 1>/dev/null
   exec 2>&117
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./gn/gnlw.c -o ./gn/gnlw.o
+	gcc $cflags -c ./gn/gnlw.c -o ./gn/gnlw.o
 
 
   X=$?
@@ -302,8 +312,9 @@ fml_1_18()
   exec 1>/dev/null
   exec 2>&118
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./hashblock/hashblock.c -o ./hashblock/hashblock.o
+	gcc $cflags -c ./hashblock/hashblock.c -o ./hashblock/hashblock.o
 
 
   X=$?
@@ -317,8 +328,9 @@ fml_1_19()
   exec 1>/dev/null
   exec 2>&119
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./identity/identity.c -o ./identity/identity.o
+	gcc $cflags -c ./identity/identity.c -o ./identity/identity.o
 
 
   X=$?
@@ -332,8 +344,9 @@ fml_1_20()
   exec 1>/dev/null
   exec 2>&120
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./log/log.c -o ./log/log.o
+	gcc $cflags -c ./log/log.c -o ./log/log.o
 
 
   X=$?
@@ -347,8 +360,9 @@ fml_1_21()
   exec 1>/dev/null
   exec 2>&121
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./lwutil/lwutil.c -o ./lwutil/lwutil.o
+	gcc $cflags -c ./lwutil/lwutil.c -o ./lwutil/lwutil.o
 
 
   X=$?
@@ -362,8 +376,9 @@ fml_1_22()
   exec 1>/dev/null
   exec 2>&122
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./map/map.c -o ./map/map.o
+	gcc $cflags -c ./map/map.c -o ./map/map.o
 
 
   X=$?
@@ -377,8 +392,9 @@ fml_1_23()
   exec 1>/dev/null
   exec 2>&123
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./path/path.c -o ./path/path.o
+	gcc $cflags -c ./path/path.c -o ./path/path.o
 
 
   X=$?
@@ -392,8 +408,9 @@ fml_1_24()
   exec 1>/dev/null
   exec 2>&124
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./strstack/strstack.c -o ./strstack/strstack.o
+	gcc $cflags -c ./strstack/strstack.c -o ./strstack/strstack.o
 
 
   X=$?
@@ -401,14 +418,15 @@ fml_1_24()
   exit $X
 }
 
-NAMES[25]='./tmp/tmp.o'
+NAMES[25]='./traverse/traverse.o'
 fml_1_25()
 {
   exec 1>/dev/null
   exec 2>&125
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./tmp/tmp.c -o ./tmp/tmp.o
+	gcc $cflags -c ./traverse/traverse.c -o ./traverse/traverse.o
 
 
   X=$?
@@ -416,31 +434,17 @@ fml_1_25()
   exit $X
 }
 
-NAMES[26]='./traverse/traverse.o'
-fml_1_26()
-{
-  exec 1>/dev/null
-  exec 2>&126
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./traverse/traverse.c -o ./traverse/traverse.o
-
-
-  X=$?
-  echo 26 1>&99
-  exit $X
-}
-
 
 # formulas and names for stage 2
-NAMES[27]='./fablw/op/fg/fg.so'
+NAMES[26]='./fablw/op/fg/fg.so'
 fml_2_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	  gcc -DFABVERSION=v0.4.2 -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -o ./fablw/op/fg/fg.so	./fablw/op/fg/fg.pic.o  -llistwise -shared -Wl,-soname,fg.so
+	  gcc $cflags -o ./fablw/op/fg/fg.so	./fablw/op/fg/fg.pic.o  -llistwise -shared -Wl,-soname,fg.so
 
 
   X=$?
@@ -448,14 +452,15 @@ fml_2_0()
   exit $X
 }
 
-NAMES[28]='./fablw/op/fi/fi.so'
+NAMES[27]='./fablw/op/fi/fi.so'
 fml_2_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	  gcc -DFABVERSION=v0.4.2 -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -o ./fablw/op/fi/fi.so	./fablw/op/fi/fi.pic.o  -llistwise -shared -Wl,-soname,fi.so
+	  gcc $cflags -o ./fablw/op/fi/fi.so	./fablw/op/fi/fi.pic.o  -llistwise -shared -Wl,-soname,fi.so
 
 
   X=$?
@@ -463,12 +468,13 @@ fml_2_1()
   exit $X
 }
 
-NAMES[29]='{./ff/ff.tokens.c, ./ff/ff.tokens.h}'
+NAMES[28]='{./ff/ff.tokens.c, ./ff/ff.tokens.h}'
 fml_2_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
+[[ $cflags ]] || local $cflags = ''
   
 	exec 1>./ff/ff.tokens.h
 
@@ -514,14 +520,15 @@ echo '}'
 
 
 # formulas and names for stage 3
-NAMES[30]='./bake/bake.o'
+NAMES[29]='./args/args.o'
 fml_3_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./bake/bake.c -o ./bake/bake.o
+	gcc $cflags -c ./args/args.c -o ./args/args.o
 
 
   X=$?
@@ -529,14 +536,15 @@ fml_3_0()
   exit $X
 }
 
-NAMES[31]='./bp/bp.o'
+NAMES[30]='./bake/bake.o'
 fml_3_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./bp/bp.c -o ./bp/bp.o
+	gcc $cflags -c ./bake/bake.c -o ./bake/bake.o
 
 
   X=$?
@@ -544,14 +552,15 @@ fml_3_1()
   exit $X
 }
 
-NAMES[32]='./dep/dep.o'
+NAMES[31]='./bp/bp.o'
 fml_3_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./dep/dep.c -o ./dep/dep.o
+	gcc $cflags -c ./bp/bp.c -o ./bp/bp.o
 
 
   X=$?
@@ -559,14 +568,15 @@ fml_3_2()
   exit $X
 }
 
-NAMES[33]='./dsc/dsc.o'
+NAMES[32]='./dep/dep.o'
 fml_3_3()
 {
   exec 1>/dev/null
   exec 2>&103
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./dsc/dsc.c -o ./dsc/dsc.o
+	gcc $cflags -c ./dep/dep.c -o ./dep/dep.o
 
 
   X=$?
@@ -574,14 +584,15 @@ fml_3_3()
   exit $X
 }
 
-NAMES[34]='./enclose/enclose.o'
+NAMES[33]='./dsc/dsc.o'
 fml_3_4()
 {
   exec 1>/dev/null
   exec 2>&104
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./enclose/enclose.c -o ./enclose/enclose.o
+	gcc $cflags -c ./dsc/dsc.c -o ./dsc/dsc.o
 
 
   X=$?
@@ -589,14 +600,15 @@ fml_3_4()
   exit $X
 }
 
-NAMES[35]='./ff/ff.dsc.tab.o'
+NAMES[34]='./enclose/enclose.o'
 fml_3_5()
 {
   exec 1>/dev/null
   exec 2>&105
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./ff/ff.dsc.tab.c -o ./ff/ff.dsc.tab.o
+	gcc $cflags -c ./enclose/enclose.c -o ./enclose/enclose.o
 
 
   X=$?
@@ -604,14 +616,15 @@ fml_3_5()
   exit $X
 }
 
-NAMES[36]='./ff/ff.lex.o'
+NAMES[35]='./ff/ff.dsc.tab.o'
 fml_3_6()
 {
   exec 1>/dev/null
   exec 2>&106
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./ff/ff.lex.c -o ./ff/ff.lex.o
+	gcc $cflags -c ./ff/ff.dsc.tab.c -o ./ff/ff.dsc.tab.o
 
 
   X=$?
@@ -619,14 +632,15 @@ fml_3_6()
   exit $X
 }
 
-NAMES[37]='./ff/ff.o'
+NAMES[36]='./ff/ff.lex.o'
 fml_3_7()
 {
   exec 1>/dev/null
   exec 2>&107
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./ff/ff.c -o ./ff/ff.o
+	gcc $cflags -c ./ff/ff.lex.c -o ./ff/ff.lex.o
 
 
   X=$?
@@ -634,14 +648,15 @@ fml_3_7()
   exit $X
 }
 
-NAMES[38]='./ff/ff.tab.o'
+NAMES[37]='./ff/ff.list.tab.o'
 fml_3_8()
 {
   exec 1>/dev/null
   exec 2>&108
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./ff/ff.tab.c -o ./ff/ff.tab.o
+	gcc $cflags -c ./ff/ff.list.tab.c -o ./ff/ff.list.tab.o
 
 
   X=$?
@@ -649,14 +664,15 @@ fml_3_8()
   exit $X
 }
 
-NAMES[39]='./ff/ff.tokens.o'
+NAMES[38]='./ff/ff.o'
 fml_3_9()
 {
   exec 1>/dev/null
   exec 2>&109
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./ff/ff.tokens.c -o ./ff/ff.tokens.o
+	gcc $cflags -c ./ff/ff.c -o ./ff/ff.o
 
 
   X=$?
@@ -664,14 +680,15 @@ fml_3_9()
   exit $X
 }
 
-NAMES[40]='./ff/ff.var.tab.o'
+NAMES[39]='./ff/ff.tab.o'
 fml_3_10()
 {
   exec 1>/dev/null
   exec 2>&110
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./ff/ff.var.tab.c -o ./ff/ff.var.tab.o
+	gcc $cflags -c ./ff/ff.tab.c -o ./ff/ff.tab.o
 
 
   X=$?
@@ -679,14 +696,15 @@ fml_3_10()
   exit $X
 }
 
-NAMES[41]='./ffn/ffn.o'
+NAMES[40]='./ff/ff.tokens.o'
 fml_3_11()
 {
   exec 1>/dev/null
   exec 2>&111
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./ffn/ffn.c -o ./ffn/ffn.o
+	gcc $cflags -c ./ff/ff.tokens.c -o ./ff/ff.tokens.o
 
 
   X=$?
@@ -694,14 +712,15 @@ fml_3_11()
   exit $X
 }
 
-NAMES[42]='./ffproc/ffproc.o'
+NAMES[41]='./ff/ff.var.tab.o'
 fml_3_12()
 {
   exec 1>/dev/null
   exec 2>&112
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./ffproc/ffproc.c -o ./ffproc/ffproc.o
+	gcc $cflags -c ./ff/ff.var.tab.c -o ./ff/ff.var.tab.o
 
 
   X=$?
@@ -709,14 +728,15 @@ fml_3_12()
   exit $X
 }
 
-NAMES[43]='./fml/fml.o'
+NAMES[42]='./ffn/ffn.o'
 fml_3_13()
 {
   exec 1>/dev/null
   exec 2>&113
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fml/fml.c -o ./fml/fml.o
+	gcc $cflags -c ./ffn/ffn.c -o ./ffn/ffn.o
 
 
   X=$?
@@ -724,14 +744,15 @@ fml_3_13()
   exit $X
 }
 
-NAMES[44]='./gn/gn.o'
+NAMES[43]='./ffproc/ffproc.o'
 fml_3_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./gn/gn.c -o ./gn/gn.o
+	gcc $cflags -c ./ffproc/ffproc.c -o ./ffproc/ffproc.o
 
 
   X=$?
@@ -739,14 +760,15 @@ fml_3_14()
   exit $X
 }
 
-NAMES[45]='./list/list.o'
+NAMES[44]='./fml/fml.o'
 fml_3_15()
 {
   exec 1>/dev/null
   exec 2>&115
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./list/list.c -o ./list/list.o
+	gcc $cflags -c ./fml/fml.c -o ./fml/fml.o
 
 
   X=$?
@@ -754,14 +776,15 @@ fml_3_15()
   exit $X
 }
 
-NAMES[46]='./main.o'
+NAMES[45]='./gn/gn.o'
 fml_3_16()
 {
   exec 1>/dev/null
   exec 2>&116
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./main.c -o ./main.o
+	gcc $cflags -c ./gn/gn.c -o ./gn/gn.o
 
 
   X=$?
@@ -769,14 +792,15 @@ fml_3_16()
   exit $X
 }
 
-NAMES[47]='./ts/ts.o'
+NAMES[46]='./list/list.o'
 fml_3_17()
 {
   exec 1>/dev/null
   exec 2>&117
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./ts/ts.c -o ./ts/ts.o
+	gcc $cflags -c ./list/list.c -o ./list/list.o
 
 
   X=$?
@@ -784,14 +808,15 @@ fml_3_17()
   exit $X
 }
 
-NAMES[48]='./var/var.o'
+NAMES[47]='./main.o'
 fml_3_18()
 {
   exec 1>/dev/null
   exec 2>&118
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./../common -O3 -I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./var/var.c -o ./var/var.o
+	gcc $cflags -c ./main.c -o ./main.o
 
 
   X=$?
@@ -799,16 +824,81 @@ fml_3_18()
   exit $X
 }
 
+NAMES[48]='./selector/selector.o'
+fml_3_19()
+{
+  exec 1>/dev/null
+  exec 2>&119
+
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
+  
+	gcc $cflags -c ./selector/selector.c -o ./selector/selector.o
+
+
+  X=$?
+  echo 19 1>&99
+  exit $X
+}
+
+NAMES[49]='./tmp/tmp.o'
+fml_3_20()
+{
+  exec 1>/dev/null
+  exec 2>&120
+
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
+  
+	gcc $cflags -c ./tmp/tmp.c -o ./tmp/tmp.o
+
+
+  X=$?
+  echo 20 1>&99
+  exit $X
+}
+
+NAMES[50]='./ts/ts.o'
+fml_3_21()
+{
+  exec 1>/dev/null
+  exec 2>&121
+
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
+  
+	gcc $cflags -c ./ts/ts.c -o ./ts/ts.o
+
+
+  X=$?
+  echo 21 1>&99
+  exit $X
+}
+
+NAMES[51]='./var/var.o'
+fml_3_22()
+{
+  exec 1>/dev/null
+  exec 2>&122
+
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
+  
+	gcc $cflags -c ./var/var.c -o ./var/var.o
+
+
+  X=$?
+  echo 22 1>&99
+  exit $X
+}
+
 
 # formulas and names for stage 4
-NAMES[49]='./fab'
+NAMES[52]='./fab'
 fml_4_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
+[[ $cflags ]] || local $cflags = '-m64-Wall-Werror-D_GNU_SOURCE-I./../common-O3-I. -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./selector -I./strstack -I./tmp -I./traverse -I./ts -I./var-DFABVERSIONS="v0.4.2.0"-DFABVERSIONN=420-fms-extensions-fno-builtin-log'
   
-	gcc -DFABVERSION=v0.4.2 -D_GNU_SOURCE -I. -I./../common -I./args -I./bake -I./bp -I./canon -I./dep -I./depblock -I./dirutil -I./dsc -I./enclose -I./ff -I./ffn -I./ffproc -I./fml -I./gn -I./hashblock -I./identity -I./list -I./log -I./lwutil -I./map -I./path -I./strstack -I./tmp -I./traverse -I./ts -I./var -O3 -Wall -Werror -export-dynamic -fms-extensions -fno-builtin-log -m64 -o ./fab ./../common/cksum.o ./../common/coll.o ./../common/parseint.o ./../common/pstring.o ./../common/unitstring.o ./../common/xmem.o ./../common/xstring.o ./args/args.o ./bake/bake.o ./bp/bp.o ./canon/canon.o ./dep/dep.o ./depblock/depblock.o ./dirutil/dirutil.o ./dsc/dsc.o ./enclose/enclose.o ./ff/ff.dsc.tab.o ./ff/ff.lex.o ./ff/ff.o ./ff/ff.tab.o ./ff/ff.tokens.o ./ff/ff.var.tab.o ./ffn/ffn.o ./ffproc/ffproc.o ./fml/fml.o ./gn/gn.o ./gn/gnlw.o ./hashblock/hashblock.o ./identity/identity.o ./list/list.o ./log/log.o ./lwutil/lwutil.o ./main.o ./map/map.o ./path/path.o ./strstack/strstack.o ./tmp/tmp.o ./traverse/traverse.o ./ts/ts.o ./var/var.o -llistwise
+	gcc $cflAgs -export-dynamic -o ./fab ./../common/cksum.o ./../common/coll.o ./../common/parseint.o ./../common/pstring.o ./../common/unitstring.o ./../common/xmem.o ./../common/xstring.o ./args/args.o ./bake/bake.o ./bp/bp.o ./canon/canon.o ./dep/dep.o ./depblock/depblock.o ./dirutil/dirutil.o ./dsc/dsc.o ./enclose/enclose.o ./ff/ff.dsc.tab.o ./ff/ff.lex.o ./ff/ff.list.tab.o ./ff/ff.o ./ff/ff.tab.o ./ff/ff.tokens.o ./ff/ff.var.tab.o ./ffn/ffn.o ./ffproc/ffproc.o ./fml/fml.o ./gn/gn.o ./gn/gnlw.o ./hashblock/hashblock.o ./identity/identity.o ./list/list.o ./log/log.o ./lwutil/lwutil.o ./main.o ./map/map.o ./path/path.o ./selector/selector.o ./strstack/strstack.o ./tmp/tmp.o ./traverse/traverse.o ./ts/ts.o ./var/var.o -llistwise
 
 
   X=$?
@@ -831,7 +921,7 @@ SKP=0
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=27))
+  ((SKP+=26))
 else
   # launch stage 1.0
   exec 100>$tmp ; rm -f $tmp ; fml_1_0 & PIDS[0]=$!
@@ -860,11 +950,10 @@ else
   exec 123>$tmp ; rm -f $tmp ; fml_1_23 & PIDS[23]=$!
   exec 124>$tmp ; rm -f $tmp ; fml_1_24 & PIDS[24]=$!
   exec 125>$tmp ; rm -f $tmp ; fml_1_25 & PIDS[25]=$!
-  exec 126>$tmp ; rm -f $tmp ; fml_1_26 & PIDS[26]=$!
 
   # harvest stage 1.0
   C=0
-  while [[ $C != 27 ]]; do
+  while [[ $C != 26 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -897,7 +986,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((27+$idx))
+    I=$((26+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -909,7 +998,7 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=19))
+  ((SKP+=23))
 else
   # launch stage 3.0
   exec 100>$tmp ; rm -f $tmp ; fml_3_0 & PIDS[0]=$!
@@ -931,16 +1020,20 @@ else
   exec 116>$tmp ; rm -f $tmp ; fml_3_16 & PIDS[16]=$!
   exec 117>$tmp ; rm -f $tmp ; fml_3_17 & PIDS[17]=$!
   exec 118>$tmp ; rm -f $tmp ; fml_3_18 & PIDS[18]=$!
+  exec 119>$tmp ; rm -f $tmp ; fml_3_19 & PIDS[19]=$!
+  exec 120>$tmp ; rm -f $tmp ; fml_3_20 & PIDS[20]=$!
+  exec 121>$tmp ; rm -f $tmp ; fml_3_21 & PIDS[21]=$!
+  exec 122>$tmp ; rm -f $tmp ; fml_3_22 & PIDS[22]=$!
 
   # harvest stage 3.0
   C=0
-  while [[ $C != 19 ]]; do
+  while [[ $C != 23 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((30+$idx))
+    I=$((29+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -965,7 +1058,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((49+$idx))
+    I=$((52+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
