@@ -15,16 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# version list - major, minor, revision, build
-$VERSIONL				= [ 0 4 2 0 ]
 
-# version string
-$VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]
-
-# version number
-$VERSIONN				= [ $VERSIONL ~ j/s/^0//g ]
-
-# directories
+# source directories
 $dcommon				= [ $*/../common ]
 $dfab						= [ $* ]
 
@@ -34,11 +26,17 @@ $dfab						= [ $* ]
 +[ $dcommon ]() @common
 
 # libraries to link
-$liblistwise = [ -llistwise ]
+$liblistwise 		= [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags [ $dfab ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs [ -DFABVERSIONS="\"" $VERSIONS "\"" ~ j ] [ -DFABVERSIONN=$VERSIONN ~ j ] ]
-$cflags					= [ $cflags -fms-extensions -fno-builtin-log ]
+$cflags					= [ $cflags	-fms-extensions -fno-builtin-log [ $dfab ~ lsr/xm/<h>/dn/uu/s/^/-I ] $incdirs
+	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
+	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
+	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
+	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
+	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
+]
 $lflags					= [ $liblistwise ]
 $name						= [ fab ]
 $fab						= [ $dfab/$name ~ j ]
@@ -68,7 +66,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 [ $fab ] : [ [ $dfab/main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
 {
-	[ $cc ] [ [ $cflags ~ s/a/A/g ] -export-dynamic ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [ $lflags ~ fi ]
+	[ $cc ] [ $cflags -export-dynamic ~ uu/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [ $lflags ~ fi ]
 }
 
 #
@@ -76,7 +74,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 [ $faboplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
-	  [ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/ss/u/fi ] [
+	  [ $cc ] [ $cflags ~ uu/fi ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [
 	] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
 }
 
@@ -134,31 +132,31 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	chmod u+s 															[ $destdir/$bindir/$name ]
 	chmod g+s 															[ $destdir/$bindir/$name ]
 	install [ $dfab/gcc-dep]								[ $destdir/$bindir/gcc-dep ]
-	install -d 															[ $destdir/var/cache/fab ]
-	chown fabsys:fabsys											[ $destdir/var/cache/fab ]
-	install -d 															[ $destdir/var/tmp/fab ]
-	chown fabsys:fabsys											[ $destdir/var/tmp/fab ]
-	install -d															[ $destdir/usr/lib/fab/lib/std ]
-	install -d															[ $destdir/usr/lib/fab/lib/std/c ]
-	install -d															[ $destdir/usr/lib/fab/lib/std/l ]
-	install -d															[ $destdir/usr/lib/fab/lib/std/y ]
-	install [ $dfab/fablib/std/c.fab ]			[ $destdir/usr/lib/fab/lib/std/c.fab ]
-	install [ $dfab/fablib/std/l.fab ]			[ $destdir/usr/lib/fab/lib/std/l.fab ]
-	install [ $dfab/fablib/std/y.fab ]			[ $destdir/usr/lib/fab/lib/std/y.fab ]
+	install -d 															[ $destdir/$fabcachedir ]
+	chown fabsys:fabsys											[ $destdir/$fabcachedir ]
+	install -d 															[ $destdir/$fabtmpdir ]
+	chown fabsys:fabsys											[ $destdir/$fabtmpdir ]
+	install -d															[ $destdir/$fabinvokedir/std ]
+	install -d															[ $destdir/$fabinvokedir/std/c ]
+	install -d															[ $destdir/$fabinvokedir/std/l ]
+	install -d															[ $destdir/$fabinvokedir/std/y ]
+	install [ $dfab/fablib/std/c.fab ]			[ $destdir/$fabinvokedir/std/c.fab ]
+	install [ $dfab/fablib/std/l.fab ]			[ $destdir/$fabinvokedir/std/l.fab ]
+	install [ $dfab/fablib/std/y.fab ]			[ $destdir/$fabinvokedir/std/y.fab ]
 
-	rm -rf 																	[ $destdir/usr/lib/fab/listwise ] 2>/dev/null
-	install -d															[ $destdir/usr/lib/fab/listwise ]
-	install [ $dfab/fablw/op/fi/fi.so ]			[ $destdir/usr/lib/fab/listwise/fi.so ]
-	install [ $dfab/fablw/op/fg/fg.so ]			[ $destdir/usr/lib/fab/listwise/fg.so ]
+	rm -rf 																	[ $destdir/$fablwopdir ] 2>/dev/null
+	install -d															[ $destdir/$fablwopdir ]
+	install [ $dfab/fablw/op/fi/fi.so ]			[ $destdir/$fablwopdir ]
+	install [ $dfab/fablw/op/fg/fg.so ]			[ $destdir/$fablwopdir ]
 }
 
 [ @uninstall ]
 {
-	rm -f																		[ $destdir/fab ]
-	rm -f																		[ $destdir/gcc-dep ]
-	rm -rf																	[ $destdir/var/cache/fab ]
-	rm -rf																	[ $destdir/var/tmp/fab ]
-	rm -rf																	[ $destdir/usr/lib/fab ]
+	rm -f																		[ $destdir/$bindir/fab ]
+	rm -f																		[ $destdir/$bindir/gcc-dep ]
+	rm -rf																	[ $destdir/$fabcachedir ]
+	rm -rf																	[ $destdir/$fabtmpdir ]
+	rm -rf																	[ $destdir/$fabinvokedir ]
 }
 
 [ @clean ] :* [ @common.clean ]
@@ -168,5 +166,5 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	find [ $dfab ] -name '*.lex.*' -delete 2>/dev/null
 	find [ $dfab ] -name '*.tab.*' -delete 2>/dev/null
 	find [ $dfab ] -name '*.tokens.*' -delete 2>/dev/null
-	rm -f [ $fab ]				2>/dev/null
+	rm -f [ $fab ] 2>/dev/null
 }

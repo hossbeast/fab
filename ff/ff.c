@@ -116,7 +116,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 		// closure dir
 		fatal(xsprintf, &ff->closure_gns_dir
-			, CACHEDIR_BASE "/INIT/%u/ff/%u/REGULAR/closure_gns"
+			, XQUOTE(FABCACHEDIR) "/INIT/%u/ff/%u/REGULAR/closure_gns"
 			, g_args.init_fabfile_path->can_hash
 			, ff->path->can_hash
 		);
@@ -168,7 +168,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 			// create hashblock
 			fatal(hashblock_create, &ff->hb
-				, CACHEDIR_BASE "/INIT/%u/ff/%u/REGULAR"
+				, XQUOTE(FABCACHEDIR) "/INIT/%u/ff/%u/REGULAR"
 				, g_args.init_fabfile_path->can_hash
 				, ff->path->can_hash
 			);
@@ -221,7 +221,7 @@ static int regular_rewrite(ff_file * ff)
 	for(x = 0; x < ff->closure_gnsl; x++)
 	{
 		// symlink to the gn
-		snprintf(tmpa, sizeof(tmpa), CACHEDIR_BASE "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, ff->closure_gns[x]->path->can_hash);
+		snprintf(tmpa, sizeof(tmpa), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, ff->closure_gns[x]->path->can_hash);
 		snprintf(tmpb, sizeof(tmpb), "%s/%u", ff->closure_gns_dir, ff->closure_gns[x]->path->can_hash);
 		if(symlink(tmpa, tmpb) != 0 && errno != EEXIST)
 			fail("symlink=[%d][%s]", errno, strerror(errno));

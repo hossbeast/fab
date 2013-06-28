@@ -22,30 +22,29 @@ fml_0_0()
   exec 1>/dev/null
   exec 2>&100
 
-[[ $destdir ]] || local $destdir = '/'
   
-	install -d															$destdir/usr/local/bin
-	install ./fab												$destdir/usr/local/bin/fab
-	chown fabsys:fabsys											$destdir/usr/local/bin/fab
-	chmod u+s 															$destdir/usr/local/bin/fab
-	chmod g+s 															$destdir/usr/local/bin/fab
-	install ./gcc-dep								$destdir/usr/local/bin/gcc-dep
-	install -d 															$destdir/var/cache/fab
-	chown fabsys:fabsys											$destdir/var/cache/fab
-	install -d 															$destdir/var/tmp/fab
-	chown fabsys:fabsys											$destdir/var/tmp/fab
-	install -d															$destdir/usr/lib/fab/lib/std
-	install -d															$destdir/usr/lib/fab/lib/std/c
-	install -d															$destdir/usr/lib/fab/lib/std/l
-	install -d															$destdir/usr/lib/fab/lib/std/y
-	install ./fablib/std/c.fab			$destdir/usr/lib/fab/lib/std/c.fab
-	install ./fablib/std/l.fab			$destdir/usr/lib/fab/lib/std/l.fab
-	install ./fablib/std/y.fab			$destdir/usr/lib/fab/lib/std/y.fab
+	install -d															//usr/local/bin
+	install ./fab												//usr/local/bin/fab
+	chown fabsys:fabsys											//usr/local/bin/fab
+	chmod u+s 															//usr/local/bin/fab
+	chmod g+s 															//usr/local/bin/fab
+	install ./gcc-dep								//usr/local/bin/gcc-dep
+	install -d 															//var/cache/fab
+	chown fabsys:fabsys											//var/cache/fab
+	install -d 															//var/tmp/fab
+	chown fabsys:fabsys											//var/tmp/fab
+	install -d															//usr/lib/fab/listwise/std
+	install -d															//usr/lib/fab/listwise/std/c
+	install -d															//usr/lib/fab/listwise/std/l
+	install -d															//usr/lib/fab/listwise/std/y
+	install ./fablib/std/c.fab			//usr/lib/fab/listwise/std/c.fab
+	install ./fablib/std/l.fab			//usr/lib/fab/listwise/std/l.fab
+	install ./fablib/std/y.fab			//usr/lib/fab/listwise/std/y.fab
 
-	rm -rf 																	$destdir/usr/lib/fab/listwise 2>/dev/null
-	install -d															$destdir/usr/lib/fab/listwise
-	install ./fablw/op/fi/fi.so			$destdir/usr/lib/fab/listwise/fi.so
-	install ./fablw/op/fg/fg.so			$destdir/usr/lib/fab/listwise/fg.so
+	rm -rf 																	//usr/lib/fab/lib 2>/dev/null
+	install -d															//usr/lib/fab/lib
+	install ./fablw/op/fi/fi.so			//usr/lib/fab/lib
+	install ./fablw/op/fg/fg.so			//usr/lib/fab/lib
 
 
   X=$?

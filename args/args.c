@@ -52,7 +52,7 @@ static void usage(int valid, int version, int help, int logopts, int operators)
 );
 if(version)
 {
-	printf(" "
+	printf(" fab-"
 #if DEVEL
 	XQUOTE(FABVERSIONS) "+DEVEL"
 #else
@@ -104,6 +104,7 @@ if(help)
 "\n"
 " bakescript generation\n"
 "  -k </path/to/output>    create bakescript\n"
+"  -K <variable name>      bakedvar (settable at runtime)\n"
 "  \n"
 #if DEVEL
 "  --bslic-standard        bakescripts have the standard license\n"
@@ -316,7 +317,7 @@ int args_parse(int argc, char** argv)
 
 	// default invokedirs - head of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], DEFAULT_INVOKEDIR);
+	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], XQUOTE(FABINVOKEDIR));
 
 	// selectors apply to the following list(s)
 	uint32_t selector_lists = SELECTOR_FABRICATE;
@@ -472,11 +473,13 @@ int args_parse(int argc, char** argv)
 	// log execution parameters under PARAMS
 	log(L_PARAMS	, "%11spid                =%u"						, ""	, g_args.pid);
 	log(L_PARAMS	, "%11ssid                =%u"						, ""	, g_args.sid);
-	log(L_PARAMS	, "%11seid                =%s/%d:%s/%d"	, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
-	log(L_PARAMS	, "%11srid                =%s/%d:%s/%d"	, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
+	log(L_PARAMS	, "%11seid                =%s/%d:%s/%d"		, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
+	log(L_PARAMS	, "%11srid                =%s/%d:%s/%d"		, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
 	log(L_PARAMS	, "%11scwd                =%s"						, ""	, g_args.cwd);
-	log(L_PARAMS	, "%11scache-dir-base     =%s"						, ""	, CACHEDIR_BASE);
-	log(L_PARAMS	, "%11stmp-dir-base       =%s"						, ""	,	TMPDIR_BASE);
+	log(L_PARAMS	, "%11scachedir           =%s"						, ""	, XQUOTE(FABCACHEDIR));
+	log(L_PARAMS	, "%11stmpdir             =%s"						, ""	,	XQUOTE(FFABTMPDIR));
+	log(L_PARAMS	, "%11slwopdir            =%s"						, ""	,	XQUOTE(FFABLWOPDIR));
+	log(L_PARAMS	, "%11sinvokedir          =%s"						, ""	,	XQUOTE(FABINVOKEDIR));
 	log(L_PARAMS	, "%11sexpiration-policy  =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS

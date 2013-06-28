@@ -65,7 +65,7 @@ int tmp_setup()
 	//
 	// TMPDIR/pid
 	//
-	fatal(mkdirp, TMPDIR_BASE "/pid", S_IRWXU | S_IRWXG | S_IRWXO); 
+	fatal(mkdirp, XQUOTE(FABTMPDIR) "/pid", S_IRWXU | S_IRWXG | S_IRWXO); 
 	{
 		int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
 		{
@@ -100,17 +100,17 @@ int tmp_setup()
 			return FTW_SKIP_SUBTREE;
 		};
 
-		fatal_os(nftw, TMPDIR_BASE "/pid", fn, 32, FTW_ACTIONRETVAL);
+		fatal_os(nftw, XQUOTE(FABTMPDIR) "/pid", fn, 32, FTW_ACTIONRETVAL);
 	}
 
 	// ensure directories for my own pid exist
-	snprintf(space, sizeof(space), TMPDIR_BASE "/pid/%d/fml", g_args.pid);
+	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/fml", g_args.pid);
 	fatal(mkdirp, space, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	//
 	// CACHEDIR/INIT
 	//
-	fatal(mkdirp, CACHEDIR_BASE "/INIT", S_IRWXU | S_IRWXG | S_IRWXO); 
+	fatal(mkdirp, XQUOTE(FABCACHEDIR) "/INIT", S_IRWXU | S_IRWXG | S_IRWXO); 
 	{
 		int lvl;
 		int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
@@ -142,8 +142,8 @@ int tmp_setup()
 			return FTW_CONTINUE;
 		};
 
-		lvl = 3; fatal_os(nftw, CACHEDIR_BASE "/INIT", fn, 32, FTW_ACTIONRETVAL);
-		lvl = 1; fatal_os(nftw, CACHEDIR_BASE "/INIT", fn, 32, FTW_ACTIONRETVAL);
+		lvl = 3; fatal_os(nftw, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL);
+		lvl = 1; fatal_os(nftw, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL);
 	}
 
 	// resume user identity

@@ -121,8 +121,7 @@ int main(int argc, char** argv)
 	fatal(listwise_register_object, LISTWISE_TYPE_LIST, &listlw);
 
 	// load additional fab-specific listwise operators
-	for(x = 0; x < sizeof(FABLW_DIRS) / sizeof(FABLW_DIRS[0]); x++)
-		fatal(listwise_register_opdir, FABLW_DIRS[x]);
+	fatal(listwise_register_opdir, XQUOTE(FABLWOPDIR));
 
 	// should be a register here for default object interface, for LWOP_OBJECT_NO operators
 

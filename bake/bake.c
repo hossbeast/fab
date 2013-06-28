@@ -206,7 +206,7 @@ int bake_bp(
 				if((vls = map_get(lmap, MMS(keys[k]))) && *vls)
 				{
 					fatal(list_render, *vls, &ps);
-					dprintf(fd, "  [[ $%s ]] || local $%s = '%.*s'\n", keys[k], keys[k], (int)ps->l, ps->s);
+					dprintf(fd, "  [[ $%s ]] || local %s='%.*s'\n", keys[k], keys[k], (int)ps->l, ps->s);
 				}
 			}
 			dprintf(fd

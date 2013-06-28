@@ -50,9 +50,12 @@ struct selector;
 ** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stde						stderr from cmd
 */
 
-#define CACHEDIR_BASE							"/var/cache/fab"
-#define TMPDIR_BASE								"/var/tmp/fab"
-#define FABLW_DIRS								(char*[]){ "/usr/lib/fab/listwise" }
+/*
+#define FABCACHEDIR								"/var/cache/fab"
+#define FABTMPDIR									"/var/tmp/fab"
+#define FABLWOPDIR								"/usr/lib/fab/listwise"
+#define FABINVOKEDIR							"/usr/lib/fab/lib"
+*/
 
 #define DEFAULT_INIT_FABFILE 			"./fabfile"
 #define DEFAULT_INVALIDATE_ALL		0
@@ -63,7 +66,6 @@ struct selector;
 #define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
 #endif
 #define DEFAULT_CONCURRENCY_LIMIT	0
-#define DEFAULT_INVOKEDIR					"/usr/lib/fab/lib"
 
 #define EXPIRATION_POLICY					(60 * 60 * 24 * 7)		/* 7 days */
 

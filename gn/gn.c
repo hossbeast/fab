@@ -39,6 +39,7 @@
 #include "map.h"
 #include "cksum.h"
 #include "parseint.h"
+#include "macros.h"
 
 #define restrict __restrict
 
@@ -317,7 +318,7 @@ int gn_secondary_reload(struct gn * const gn)
 	if(gn->noforce_dir == 0)
 	{
 		fatal(xsprintf, &gn->noforce_dir
-			, CACHEDIR_BASE "/INIT/%u/gn/%u/SECONDARY/fab"
+			, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/SECONDARY/fab"
 			, g_args.init_fabfile_path->can_hash
 			, gn->path->can_hash
 		);
@@ -390,7 +391,7 @@ int gn_secondary_rewrite_fab(gn * const gn, map * const ws)
 
 	// construct aneed_primary_skipweak dir for this node
 	snprintf(tmp[2], sizeof(tmp[2])
-		, CACHEDIR_BASE "/INIT/%u/gn/%u/SECONDARY/aneed_primary_skipweak"
+		, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/SECONDARY/aneed_primary_skipweak"
 		, g_args.init_fabfile_path->can_hash
 		, gn->path->can_hash
 	);
@@ -449,14 +450,14 @@ int gn_secondary_rewrite_fab(gn * const gn, map * const ws)
 		// primary node
 		uint32_t need = needs[x][0];
 
-		snprintf(tmp[0], sizeof(tmp[0]), CACHEDIR_BASE "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, need);
-		snprintf(tmp[1], sizeof(tmp[1]), CACHEDIR_BASE "/INIT/%u/gn/%u/SECONDARY/aneed_primary_skipweak/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash, need);
+		snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, need);
+		snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/SECONDARY/aneed_primary_skipweak/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash, need);
 
 		if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
 			fail("symlink=[%d][%s]", errno, strerror(errno));
 
-		snprintf(tmp[0], sizeof(tmp[0]), CACHEDIR_BASE "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
-		snprintf(tmp[1], sizeof(tmp[1]), CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY/afeed_secondary_skipweak/%u", g_args.init_fabfile_path->can_hash, need, gn->path->can_hash);
+		snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+		snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY/afeed_secondary_skipweak/%u", g_args.init_fabfile_path->can_hash, need, gn->path->can_hash);
 
 		if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
 			fail("symlink=[%d][%s]", errno, strerror(errno));
@@ -733,7 +734,7 @@ int gn_finalize()
 			if(gn->primary_hb == 0)
 			{
 				// create hashblock
-				fatal(hashblock_create, &gn->primary_hb, CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+				fatal(hashblock_create, &gn->primary_hb, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
 
 				// load the previous hashblocks
 				fatal(hashblock_read, gn->primary_hb);
@@ -743,7 +744,7 @@ int gn_finalize()
 
 				// construct directory path for aneed_primary_skipweak for this node
 				snprintf(tmp[2], sizeof(tmp[2])
-					, CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY/afeed_secondary_skipweak"
+					, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY/afeed_secondary_skipweak"
 					, g_args.init_fabfile_path->can_hash
 					, gn->path->can_hash
 				);
@@ -769,7 +770,7 @@ int gn_finalize()
 					gn->changed = 1;
 
 					// delete discovery results for this node, if any
-					snprintf(tmp[0], sizeof(tmp[0]), CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+					snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
 
 					if(unlink(tmp[0]) != 0 && errno != ENOENT)
 						fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
@@ -835,7 +836,7 @@ int gn_finalize()
 			if(gn->dscv_block == 0)
 			{
 				// allocate dscv block
-				fatal(depblock_create, &gn->dscv_block, CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+				fatal(depblock_create, &gn->dscv_block, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
 
 				// actually load the depblock from cache - it was deleted from the fs in the prceeding block
 				// if the backing file had changed
