@@ -1,19 +1,19 @@
 /* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
 
-   This file is part of listwise.
+   This file is part of fab.
    
-   listwise is free software: you can redistribute it and/or modify
+   fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
    
-   listwise is distributed in the hope that it will be useful,
+   fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
    
    You should have received a copy of the GNU General Public License
-   along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
 #include <errno.h>
@@ -32,6 +32,7 @@
 
 #include "xmem.h"
 #include "control.h"
+#include "macros.h"
 
 operator **	APIDATA g_ops;
 int									g_ops_a;
@@ -47,7 +48,7 @@ int			g_dls_l;
 
 static void __attribute__((constructor)) init()
 {
-	listwise_register_opdir("/usr/lib/listwise");
+	listwise_register_opdir(XQUOTE(LWOPDIR));	/* /usr/lib/listwise */
 }
 
 static void __attribute__((destructor)) teardown()

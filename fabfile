@@ -1,39 +1,39 @@
 /* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
 
-   This file is part of listwise.
+   This file is part of fab.
    
-   listwise is free software: you can redistribute it and/or modify
+   fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
    
-   listwise is distributed in the hope that it will be useful,
+   fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
    
    You should have received a copy of the GNU General Public License
-   along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# directories
+# source directories
 $dcommon			= [ $*/../common ]
 $dliblistwise	= [ $* ]
-$libdir				= [ usr/lib/x86_64-linux-gnu ]
-$dlibdir			= [ usr/lib ]
 
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
-$libname 			= [ liblistwise.so ]
-$liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
-
 +[ $dcommon/vars.fab ]
 +[ $dcommon ]() @common
+
 
 ##
 ## variables
 ##
-$cflags	= [ $cflags, -fPIC, [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] ]
-$lflags	= [ -lpcre, -ldl, -shared, [ "-Wl,--version-script=" $dliblistwise/exports ], [ "-Wl,-soname," $libname ] ]
+$libname 			= [ liblistwise.so ]
+$liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
+$cflags				= [ $cflags -fPIC [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ]
+	[ -DLWOPDIR="\""$lwopdir"\"" ~ j ]
+]
+$lflags				= [ -lpcre, -ldl, -shared, [ "-Wl,--version-script=" $dliblistwise/exports ], [ "-Wl,-soname," $libname ] ]
 
 # source files
 +[@std.c]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
@@ -87,12 +87,11 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 ## tasks
 ##
 
-[ @install ]
+[ @install ] : [ @all ]
 {
 	install -d																				[ $destdir/$libdir ]
 	install	[ $liblistwise ]													[ $destdir/$libdir/$libname.0.1 ]
 	ln -vfs [ $libname.0.1 ]													[ $destdir/$libdir/$libname ]
-	install -d																				[ $destdir/$incdir ]
 	install -d																				[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise.h	]							[ $destdir/$incdir/listwise.h ]
 	install [ $dliblistwise/listwise/operator.h ]			[ $destdir/$incdir/listwise/operator.h ]
@@ -101,10 +100,10 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 	install [ $dliblistwise/listwise/lstack.h ] 			[ $destdir/$incdir/listwise/lstack.h ]
 	install [ $dliblistwise/listwise/object.h ] 			[ $destdir/$incdir/listwise/object.h ]
 
-	rm -rf																						[ $destdir/$dlibdir/listwise ] 2>/dev/null
-	install -d																				[ $destdir/$dlibdir/listwise ]
+	rm -rf																						[ $destdir/$lwopdir ] 2>/dev/null
+	install -d																				[ $destdir/$lwopdir ]
 	for x in [ $oplist ~ fi ]; do \
-		install $x																			[ $destdir/$dlibdir/listwise ]
+		install $x																			[ $destdir/$lwopdir ]
 	done
 }
 
@@ -112,7 +111,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 {
 	rm -f																							[ $destdir/$libdir/$libname.0.1 ]
 	rm -f																							[ $destdir/$libdir/$libname ]
-	rm -rf																						[ $destdir/$dlibdir/listwise ]
+	rm -rf																						[ $destdir/$lwopdir ]
 	rm -f																							[ $destdir/$incdir/listwise.h ]
 }
 
