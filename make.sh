@@ -1,21 +1,13 @@
 #!/bin/bash
 
-# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+# A build script made by fab v0.4.2.0
+#  fab is free software released under the GNU General Public License.
 #
-# This file is part of fab.
-#
-# fab is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# fab is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with fab.  If not, see <http://www.gnu.org/licenses/>.
+#  As a special exception, build scripts made by fab v0.4.2.0 (including this
+#  build script) are excluded from the license covering fab itself, even
+#  if substantial portions of the fab source code are copied verbatim into
+#  the build script. You may create a larger work that contains part or all
+#  of the build script and distribute that work under terms of your choice
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -191,14 +183,14 @@ fml_1_10()
   exit $X
 }
 
-NAMES[11]='./fabdev/args/args.o'
+NAMES[11]='./fabdev/canon/canon.o'
 fml_1_11()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/args/args.c -o ./fabdev/args/args.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/canon/canon.c -o ./fabdev/canon/canon.o
 
 
   X=$?
@@ -206,14 +198,14 @@ fml_1_11()
   exit $X
 }
 
-NAMES[12]='./fabdev/canon/canon.o'
+NAMES[12]='./fabdev/depblock/depblock.o'
 fml_1_12()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/canon/canon.c -o ./fabdev/canon/canon.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/depblock/depblock.c -o ./fabdev/depblock/depblock.o
 
 
   X=$?
@@ -221,14 +213,14 @@ fml_1_12()
   exit $X
 }
 
-NAMES[13]='./fabdev/depblock/depblock.o'
+NAMES[13]='./fabdev/dirutil/dirutil.o'
 fml_1_13()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/depblock/depblock.c -o ./fabdev/depblock/depblock.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/dirutil/dirutil.c -o ./fabdev/dirutil/dirutil.o
 
 
   X=$?
@@ -236,14 +228,14 @@ fml_1_13()
   exit $X
 }
 
-NAMES[14]='./fabdev/dirutil/dirutil.o'
+NAMES[14]='./fabdev/fablw/op/fg/fg.pic.o'
 fml_1_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/dirutil/dirutil.c -o ./fabdev/dirutil/dirutil.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c ./fabdev/fablw/op/fg/fg.c -o ./fabdev/fablw/op/fg/fg.pic.o
 
 
   X=$?
@@ -251,14 +243,14 @@ fml_1_14()
   exit $X
 }
 
-NAMES[15]='./fabdev/fablw/op/fg/fg.pic.o'
+NAMES[15]='./fabdev/fablw/op/fi/fi.pic.o'
 fml_1_15()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -fPIC -c ./fabdev/fablw/op/fg/fg.c -o ./fabdev/fablw/op/fg/fg.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c ./fabdev/fablw/op/fi/fi.c -o ./fabdev/fablw/op/fi/fi.pic.o
 
 
   X=$?
@@ -266,14 +258,14 @@ fml_1_15()
   exit $X
 }
 
-NAMES[16]='./fabdev/fablw/op/fi/fi.pic.o'
+NAMES[16]='{./fabdev/ff/ff.dsc.tab.h, ./fabdev/ff/ff.dsc.tab.c}'
 fml_1_16()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -fPIC -c ./fabdev/fablw/op/fi/fi.c -o ./fabdev/fablw/op/fi/fi.pic.o
+	bison --warnings=error -o ./fabdev/ff/ff.dsc.tab.c -d	./fabdev/ff/ff.dsc.y
 
 
   X=$?
@@ -281,14 +273,14 @@ fml_1_16()
   exit $X
 }
 
-NAMES[17]='{./fabdev/ff/ff.dsc.tab.h, ./fabdev/ff/ff.dsc.tab.c}'
+NAMES[17]='{./fabdev/ff/ff.lex.h, ./fabdev/ff/ff.lex.c}'
 fml_1_17()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	bison --warnings=error -o ./fabdev/ff/ff.dsc.tab.c -d	./fabdev/ff/ff.dsc.y
+	  flex  -o ./fabdev/ff/ff.lex.c  --header-file=./fabdev/ff/ff.lex.h  ./fabdev/ff/ff.l
 
 
   X=$?
@@ -296,14 +288,14 @@ fml_1_17()
   exit $X
 }
 
-NAMES[18]='{./fabdev/ff/ff.lex.h, ./fabdev/ff/ff.lex.c}'
+NAMES[18]='{./fabdev/ff/ff.list.tab.h, ./fabdev/ff/ff.list.tab.c}'
 fml_1_18()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	  flex  -o ./fabdev/ff/ff.lex.c  --header-file=./fabdev/ff/ff.lex.h  ./fabdev/ff/ff.l
+	bison --warnings=error -o ./fabdev/ff/ff.list.tab.c -d	./fabdev/ff/ff.list.y
 
 
   X=$?
@@ -348,7 +340,7 @@ fml_1_21()
   exec 2>&121
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/gn/gnlw.c -o ./fabdev/gn/gnlw.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/gn/gnlw.c -o ./fabdev/gn/gnlw.o
 
 
   X=$?
@@ -363,7 +355,7 @@ fml_1_22()
   exec 2>&122
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/hashblock/hashblock.c -o ./fabdev/hashblock/hashblock.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/hashblock/hashblock.c -o ./fabdev/hashblock/hashblock.o
 
 
   X=$?
@@ -378,7 +370,7 @@ fml_1_23()
   exec 2>&123
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/identity/identity.c -o ./fabdev/identity/identity.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/identity/identity.c -o ./fabdev/identity/identity.o
 
 
   X=$?
@@ -393,7 +385,7 @@ fml_1_24()
   exec 2>&124
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/log/log.c -o ./fabdev/log/log.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/log/log.c -o ./fabdev/log/log.o
 
 
   X=$?
@@ -408,7 +400,7 @@ fml_1_25()
   exec 2>&125
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/lwutil/lwutil.c -o ./fabdev/lwutil/lwutil.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/lwutil/lwutil.c -o ./fabdev/lwutil/lwutil.o
 
 
   X=$?
@@ -423,7 +415,7 @@ fml_1_26()
   exec 2>&126
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/map/map.c -o ./fabdev/map/map.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/map/map.c -o ./fabdev/map/map.o
 
 
   X=$?
@@ -438,7 +430,7 @@ fml_1_27()
   exec 2>&127
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/path/path.c -o ./fabdev/path/path.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/path/path.c -o ./fabdev/path/path.o
 
 
   X=$?
@@ -453,7 +445,7 @@ fml_1_28()
   exec 2>&128
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/strstack/strstack.c -o ./fabdev/strstack/strstack.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/strstack/strstack.c -o ./fabdev/strstack/strstack.o
 
 
   X=$?
@@ -461,14 +453,14 @@ fml_1_28()
   exit $X
 }
 
-NAMES[29]='./fabdev/tmp/tmp.o'
+NAMES[29]='./fabdev/traverse/traverse.o'
 fml_1_29()
 {
   exec 1>/dev/null
   exec 2>&129
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/tmp/tmp.c -o ./fabdev/tmp/tmp.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/traverse/traverse.c -o ./fabdev/traverse/traverse.o
 
 
   X=$?
@@ -476,14 +468,14 @@ fml_1_29()
   exit $X
 }
 
-NAMES[30]='./fabdev/traverse/traverse.o'
+NAMES[30]='./liblistwise/apidata/apidata.pic.o'
 fml_1_30()
 {
   exec 1>/dev/null
   exec 2>&130
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/traverse/traverse.c -o ./fabdev/traverse/traverse.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/apidata/apidata.c -o ./liblistwise/apidata/apidata.pic.o
 
 
   X=$?
@@ -491,14 +483,14 @@ fml_1_30()
   exit $X
 }
 
-NAMES[31]='./liblistwise/apidata/apidata.pic.o'
+NAMES[31]='./liblistwise/exec/exec.pic.o'
 fml_1_31()
 {
   exec 1>/dev/null
   exec 2>&131
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/apidata/apidata.c -o ./liblistwise/apidata/apidata.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/exec/exec.c -o ./liblistwise/exec/exec.pic.o
 
 
   X=$?
@@ -506,14 +498,14 @@ fml_1_31()
   exit $X
 }
 
-NAMES[32]='./liblistwise/exec/exec.pic.o'
+NAMES[32]='{./liblistwise/generator/generator.lex.h, ./liblistwise/generator/generator.lex.c}'
 fml_1_32()
 {
   exec 1>/dev/null
   exec 2>&132
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/exec/exec.c -o ./liblistwise/exec/exec.pic.o
+	  flex  -o ./liblistwise/generator/generator.lex.c  --header-file=./liblistwise/generator/generator.lex.h  ./liblistwise/generator/generator.l
 
 
   X=$?
@@ -521,14 +513,14 @@ fml_1_32()
   exit $X
 }
 
-NAMES[33]='{./liblistwise/generator/generator.lex.h, ./liblistwise/generator/generator.lex.c}'
+NAMES[33]='{./liblistwise/generator/generator.tab.h, ./liblistwise/generator/generator.tab.c}'
 fml_1_33()
 {
   exec 1>/dev/null
   exec 2>&133
 
   
-	  flex  -o ./liblistwise/generator/generator.lex.c  --header-file=./liblistwise/generator/generator.lex.h  ./liblistwise/generator/generator.l
+	bison --warnings=error -o ./liblistwise/generator/generator.tab.c -d	./liblistwise/generator/generator.y
 
 
   X=$?
@@ -536,14 +528,14 @@ fml_1_33()
   exit $X
 }
 
-NAMES[34]='{./liblistwise/generator/generator.tab.h, ./liblistwise/generator/generator.tab.c}'
+NAMES[34]='./liblistwise/idx/idx.pic.o'
 fml_1_34()
 {
   exec 1>/dev/null
   exec 2>&134
 
   
-	bison --warnings=error -o ./liblistwise/generator/generator.tab.c -d	./liblistwise/generator/generator.y
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/idx/idx.c -o ./liblistwise/idx/idx.pic.o
 
 
   X=$?
@@ -551,14 +543,14 @@ fml_1_34()
   exit $X
 }
 
-NAMES[35]='./liblistwise/idx/idx.pic.o'
+NAMES[35]='./liblistwise/last/last.pic.o'
 fml_1_35()
 {
   exec 1>/dev/null
   exec 2>&135
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/idx/idx.c -o ./liblistwise/idx/idx.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/last/last.c -o ./liblistwise/last/last.pic.o
 
 
   X=$?
@@ -566,14 +558,14 @@ fml_1_35()
   exit $X
 }
 
-NAMES[36]='./liblistwise/last/last.pic.o'
+NAMES[36]='./liblistwise/lstack/lstack.pic.o'
 fml_1_36()
 {
   exec 1>/dev/null
   exec 2>&136
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/last/last.c -o ./liblistwise/last/last.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/lstack/lstack.c -o ./liblistwise/lstack/lstack.pic.o
 
 
   X=$?
@@ -588,7 +580,7 @@ fml_1_37()
   exec 2>&137
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/object/object.c -o ./liblistwise/object/object.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/object/object.c -o ./liblistwise/object/object.pic.o
 
 
   X=$?
@@ -603,7 +595,7 @@ fml_1_38()
   exec 2>&138
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/-X/-X.c -o ./liblistwise/op/-X/-X.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/-X/-X.c -o ./liblistwise/op/-X/-X.pic.o
 
 
   X=$?
@@ -618,7 +610,7 @@ fml_1_39()
   exec 2>&139
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/bn/bn.c -o ./liblistwise/op/bn/bn.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/bn/bn.c -o ./liblistwise/op/bn/bn.pic.o
 
 
   X=$?
@@ -633,7 +625,7 @@ fml_1_40()
   exec 2>&140
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/c/c.c -o ./liblistwise/op/c/c.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/c/c.c -o ./liblistwise/op/c/c.pic.o
 
 
   X=$?
@@ -648,7 +640,7 @@ fml_1_41()
   exec 2>&141
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/cp/cp.c -o ./liblistwise/op/cp/cp.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/cp/cp.c -o ./liblistwise/op/cp/cp.pic.o
 
 
   X=$?
@@ -663,7 +655,7 @@ fml_1_42()
   exec 2>&142
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/d/d.c -o ./liblistwise/op/d/d.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/d/d.c -o ./liblistwise/op/d/d.pic.o
 
 
   X=$?
@@ -678,7 +670,7 @@ fml_1_43()
   exec 2>&143
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/dj/dj.c -o ./liblistwise/op/dj/dj.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/dj/dj.c -o ./liblistwise/op/dj/dj.pic.o
 
 
   X=$?
@@ -693,7 +685,7 @@ fml_1_44()
   exec 2>&144
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/dn/dn.c -o ./liblistwise/op/dn/dn.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/dn/dn.c -o ./liblistwise/op/dn/dn.pic.o
 
 
   X=$?
@@ -708,7 +700,7 @@ fml_1_45()
   exec 2>&145
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/fn/fn.c -o ./liblistwise/op/fn/fn.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/fn/fn.c -o ./liblistwise/op/fn/fn.pic.o
 
 
   X=$?
@@ -723,7 +715,7 @@ fml_1_46()
   exec 2>&146
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/h/h.c -o ./liblistwise/op/h/h.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/h/h.c -o ./liblistwise/op/h/h.pic.o
 
 
   X=$?
@@ -738,7 +730,7 @@ fml_1_47()
   exec 2>&147
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/j/j.c -o ./liblistwise/op/j/j.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/j/j.c -o ./liblistwise/op/j/j.pic.o
 
 
   X=$?
@@ -753,7 +745,7 @@ fml_1_48()
   exec 2>&148
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/ls/ls.c -o ./liblistwise/op/ls/ls.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/ls/ls.c -o ./liblistwise/op/ls/ls.pic.o
 
 
   X=$?
@@ -768,7 +760,7 @@ fml_1_49()
   exec 2>&149
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/m/m.c -o ./liblistwise/op/m/m.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/m/m.c -o ./liblistwise/op/m/m.pic.o
 
 
   X=$?
@@ -783,7 +775,7 @@ fml_1_50()
   exec 2>&150
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/o/o.c -o ./liblistwise/op/o/o.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/o/o.c -o ./liblistwise/op/o/o.pic.o
 
 
   X=$?
@@ -798,7 +790,7 @@ fml_1_51()
   exec 2>&151
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/op.c -o ./liblistwise/op/op.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/op.c -o ./liblistwise/op/op.pic.o
 
 
   X=$?
@@ -813,7 +805,7 @@ fml_1_52()
   exec 2>&152
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/pop/pop.c -o ./liblistwise/op/pop/pop.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/pop/pop.c -o ./liblistwise/op/pop/pop.pic.o
 
 
   X=$?
@@ -828,7 +820,7 @@ fml_1_53()
   exec 2>&153
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/r/r.c -o ./liblistwise/op/r/r.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/r/r.c -o ./liblistwise/op/r/r.pic.o
 
 
   X=$?
@@ -843,7 +835,7 @@ fml_1_54()
   exec 2>&154
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/rp/rp.c -o ./liblistwise/op/rp/rp.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/rp/rp.c -o ./liblistwise/op/rp/rp.pic.o
 
 
   X=$?
@@ -858,7 +850,7 @@ fml_1_55()
   exec 2>&155
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/rx/rx.c -o ./liblistwise/op/rx/rx.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/rx/rx.c -o ./liblistwise/op/rx/rx.pic.o
 
 
   X=$?
@@ -873,7 +865,7 @@ fml_1_56()
   exec 2>&156
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/s/s.c -o ./liblistwise/op/s/s.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/s/s.c -o ./liblistwise/op/s/s.pic.o
 
 
   X=$?
@@ -888,7 +880,7 @@ fml_1_57()
   exec 2>&157
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/shift/shift.c -o ./liblistwise/op/shift/shift.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/shift/shift.c -o ./liblistwise/op/shift/shift.pic.o
 
 
   X=$?
@@ -903,7 +895,7 @@ fml_1_58()
   exec 2>&158
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/sn/sn.c -o ./liblistwise/op/sn/sn.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/sn/sn.c -o ./liblistwise/op/sn/sn.pic.o
 
 
   X=$?
@@ -918,7 +910,7 @@ fml_1_59()
   exec 2>&159
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/ss/ss.c -o ./liblistwise/op/ss/ss.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/ss/ss.c -o ./liblistwise/op/ss/ss.pic.o
 
 
   X=$?
@@ -933,7 +925,7 @@ fml_1_60()
   exec 2>&160
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/u/u.c -o ./liblistwise/op/u/u.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/u/u.c -o ./liblistwise/op/u/u.pic.o
 
 
   X=$?
@@ -948,7 +940,7 @@ fml_1_61()
   exec 2>&161
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/uu/uu.c -o ./liblistwise/op/uu/uu.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/uu/uu.c -o ./liblistwise/op/uu/uu.pic.o
 
 
   X=$?
@@ -963,7 +955,7 @@ fml_1_62()
   exec 2>&162
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/v/v.c -o ./liblistwise/op/v/v.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/v/v.c -o ./liblistwise/op/v/v.pic.o
 
 
   X=$?
@@ -978,7 +970,7 @@ fml_1_63()
   exec 2>&163
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/w/w.c -o ./liblistwise/op/w/w.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/w/w.c -o ./liblistwise/op/w/w.pic.o
 
 
   X=$?
@@ -993,7 +985,7 @@ fml_1_64()
   exec 2>&164
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xch/xch.c -o ./liblistwise/op/xch/xch.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/xch/xch.c -o ./liblistwise/op/xch/xch.pic.o
 
 
   X=$?
@@ -1008,7 +1000,7 @@ fml_1_65()
   exec 2>&165
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xm/xm.c -o ./liblistwise/op/xm/xm.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/xm/xm.c -o ./liblistwise/op/xm/xm.pic.o
 
 
   X=$?
@@ -1023,7 +1015,7 @@ fml_1_66()
   exec 2>&166
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xmf/xmf.c -o ./liblistwise/op/xmf/xmf.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/xmf/xmf.c -o ./liblistwise/op/xmf/xmf.pic.o
 
 
   X=$?
@@ -1038,7 +1030,7 @@ fml_1_67()
   exec 2>&167
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xs/xs.c -o ./liblistwise/op/xs/xs.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/xs/xs.c -o ./liblistwise/op/xs/xs.pic.o
 
 
   X=$?
@@ -1053,7 +1045,7 @@ fml_1_68()
   exec 2>&168
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/xsf/xsf.c -o ./liblistwise/op/xsf/xsf.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/xsf/xsf.c -o ./liblistwise/op/xsf/xsf.pic.o
 
 
   X=$?
@@ -1068,7 +1060,7 @@ fml_1_69()
   exec 2>&169
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/y/y.c -o ./liblistwise/op/y/y.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/y/y.c -o ./liblistwise/op/y/y.pic.o
 
 
   X=$?
@@ -1083,7 +1075,7 @@ fml_1_70()
   exec 2>&170
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/op/z/z.c -o ./liblistwise/op/z/z.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/op/z/z.c -o ./liblistwise/op/z/z.pic.o
 
 
   X=$?
@@ -1098,7 +1090,7 @@ fml_1_71()
   exec 2>&171
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/re/re.c -o ./liblistwise/re/re.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/re/re.c -o ./liblistwise/re/re.pic.o
 
 
   X=$?
@@ -1113,7 +1105,7 @@ fml_1_72()
   exec 2>&172
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/sel/sel.c -o ./liblistwise/sel/sel.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/sel/sel.c -o ./liblistwise/sel/sel.pic.o
 
 
   X=$?
@@ -1128,7 +1120,7 @@ fml_1_73()
   exec 2>&173
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./listwisedev/../common -O3 -I./listwisedev -I./liblistwise -DFABVERSION=v0.4.2 -c ./listwisedev/args.c -o ./listwisedev/args.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./listwisedev/../common -O3 -I./listwisedev -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -c ./listwisedev/args.c -o ./listwisedev/args.o
 
 
   X=$?
@@ -1143,7 +1135,7 @@ fml_1_74()
   exec 2>&174
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./listwisedev/../common -O3 -I./listwisedev -I./liblistwise -DFABVERSION=v0.4.2 -c ./listwisedev/main.c -o ./listwisedev/main.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./listwisedev/../common -O3 -I./listwisedev -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -c ./listwisedev/main.c -o ./listwisedev/main.o
 
 
   X=$?
@@ -1209,7 +1201,7 @@ fml_2_1()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/generator/generator.lex.c -o ./liblistwise/generator/generator.lex.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/generator/generator.lex.c -o ./liblistwise/generator/generator.lex.pic.o
 
 
   X=$?
@@ -1224,7 +1216,7 @@ fml_2_2()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/generator/generator.c -o ./liblistwise/generator/generator.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/generator/generator.c -o ./liblistwise/generator/generator.pic.o
 
 
   X=$?
@@ -1239,7 +1231,7 @@ fml_2_3()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/generator/generator.tab.c -o ./liblistwise/generator/generator.tab.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -DLWOPDIR="/usr/lib/listwise" -c ./liblistwise/generator/generator.tab.c -o ./liblistwise/generator/generator.tab.pic.o
 
 
   X=$?
@@ -1247,31 +1239,16 @@ fml_2_3()
   exit $X
 }
 
-NAMES[79]='./liblistwise/lstack/lstack.pic.o'
-fml_2_4()
-{
-  exec 1>/dev/null
-  exec 2>&104
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./liblistwise/../common -O3 -fPIC -I./liblistwise -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -c ./liblistwise/lstack/lstack.c -o ./liblistwise/lstack/lstack.pic.o
-
-
-  X=$?
-  echo 4 1>&99
-  exit $X
-}
-
 
 # formulas and names for stage 3
-NAMES[80]='./fabdev/bake/bake.o'
+NAMES[79]='./fabdev/args/args.o'
 fml_3_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/bake/bake.c -o ./fabdev/bake/bake.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/args/args.c -o ./fabdev/args/args.o
 
 
   X=$?
@@ -1279,14 +1256,14 @@ fml_3_0()
   exit $X
 }
 
-NAMES[81]='./fabdev/bp/bp.o'
+NAMES[80]='./fabdev/bake/bake.o'
 fml_3_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/bp/bp.c -o ./fabdev/bp/bp.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/bake/bake.c -o ./fabdev/bake/bake.o
 
 
   X=$?
@@ -1294,14 +1271,14 @@ fml_3_1()
   exit $X
 }
 
-NAMES[82]='./fabdev/dep/dep.o'
+NAMES[81]='./fabdev/bp/bp.o'
 fml_3_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/dep/dep.c -o ./fabdev/dep/dep.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/bp/bp.c -o ./fabdev/bp/bp.o
 
 
   X=$?
@@ -1309,14 +1286,14 @@ fml_3_2()
   exit $X
 }
 
-NAMES[83]='./fabdev/dsc/dsc.o'
+NAMES[82]='./fabdev/dep/dep.o'
 fml_3_3()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/dsc/dsc.c -o ./fabdev/dsc/dsc.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/dep/dep.c -o ./fabdev/dep/dep.o
 
 
   X=$?
@@ -1324,14 +1301,14 @@ fml_3_3()
   exit $X
 }
 
-NAMES[84]='./fabdev/enclose/enclose.o'
+NAMES[83]='./fabdev/dsc/dsc.o'
 fml_3_4()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/enclose/enclose.c -o ./fabdev/enclose/enclose.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/dsc/dsc.c -o ./fabdev/dsc/dsc.o
 
 
   X=$?
@@ -1339,14 +1316,14 @@ fml_3_4()
   exit $X
 }
 
-NAMES[85]='./fabdev/ff/ff.dsc.tab.o'
+NAMES[84]='./fabdev/enclose/enclose.o'
 fml_3_5()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.dsc.tab.c -o ./fabdev/ff/ff.dsc.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/enclose/enclose.c -o ./fabdev/enclose/enclose.o
 
 
   X=$?
@@ -1354,14 +1331,14 @@ fml_3_5()
   exit $X
 }
 
-NAMES[86]='./fabdev/ff/ff.lex.o'
+NAMES[85]='./fabdev/ff/ff.dsc.tab.o'
 fml_3_6()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.lex.c -o ./fabdev/ff/ff.lex.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ff/ff.dsc.tab.c -o ./fabdev/ff/ff.dsc.tab.o
 
 
   X=$?
@@ -1369,14 +1346,14 @@ fml_3_6()
   exit $X
 }
 
-NAMES[87]='./fabdev/ff/ff.o'
+NAMES[86]='./fabdev/ff/ff.lex.o'
 fml_3_7()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.c -o ./fabdev/ff/ff.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ff/ff.lex.c -o ./fabdev/ff/ff.lex.o
 
 
   X=$?
@@ -1384,14 +1361,14 @@ fml_3_7()
   exit $X
 }
 
-NAMES[88]='./fabdev/ff/ff.tab.o'
+NAMES[87]='./fabdev/ff/ff.list.tab.o'
 fml_3_8()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.tab.c -o ./fabdev/ff/ff.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ff/ff.list.tab.c -o ./fabdev/ff/ff.list.tab.o
 
 
   X=$?
@@ -1399,14 +1376,14 @@ fml_3_8()
   exit $X
 }
 
-NAMES[89]='./fabdev/ff/ff.tokens.o'
+NAMES[88]='./fabdev/ff/ff.o'
 fml_3_9()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.tokens.c -o ./fabdev/ff/ff.tokens.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ff/ff.c -o ./fabdev/ff/ff.o
 
 
   X=$?
@@ -1414,14 +1391,14 @@ fml_3_9()
   exit $X
 }
 
-NAMES[90]='./fabdev/ff/ff.var.tab.o'
+NAMES[89]='./fabdev/ff/ff.tab.o'
 fml_3_10()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/ff/ff.var.tab.c -o ./fabdev/ff/ff.var.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ff/ff.tab.c -o ./fabdev/ff/ff.tab.o
 
 
   X=$?
@@ -1429,14 +1406,14 @@ fml_3_10()
   exit $X
 }
 
-NAMES[91]='./fabdev/ffn/ffn.o'
+NAMES[90]='./fabdev/ff/ff.tokens.o'
 fml_3_11()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/ffn/ffn.c -o ./fabdev/ffn/ffn.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ff/ff.tokens.c -o ./fabdev/ff/ff.tokens.o
 
 
   X=$?
@@ -1444,14 +1421,14 @@ fml_3_11()
   exit $X
 }
 
-NAMES[92]='./fabdev/ffproc/ffproc.o'
+NAMES[91]='./fabdev/ff/ff.var.tab.o'
 fml_3_12()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/ffproc/ffproc.c -o ./fabdev/ffproc/ffproc.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ff/ff.var.tab.c -o ./fabdev/ff/ff.var.tab.o
 
 
   X=$?
@@ -1459,14 +1436,14 @@ fml_3_12()
   exit $X
 }
 
-NAMES[93]='./fabdev/fml/fml.o'
+NAMES[92]='./fabdev/ffn/ffn.o'
 fml_3_13()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/fml/fml.c -o ./fabdev/fml/fml.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ffn/ffn.c -o ./fabdev/ffn/ffn.o
 
 
   X=$?
@@ -1474,14 +1451,14 @@ fml_3_13()
   exit $X
 }
 
-NAMES[94]='./fabdev/gn/gn.o'
+NAMES[93]='./fabdev/ffproc/ffproc.o'
 fml_3_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/gn/gn.c -o ./fabdev/gn/gn.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ffproc/ffproc.c -o ./fabdev/ffproc/ffproc.o
 
 
   X=$?
@@ -1489,14 +1466,14 @@ fml_3_14()
   exit $X
 }
 
-NAMES[95]='./fabdev/list/list.o'
+NAMES[94]='./fabdev/fml/fml.o'
 fml_3_15()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/list/list.c -o ./fabdev/list/list.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/fml/fml.c -o ./fabdev/fml/fml.o
 
 
   X=$?
@@ -1504,14 +1481,14 @@ fml_3_15()
   exit $X
 }
 
-NAMES[96]='./fabdev/main.o'
+NAMES[95]='./fabdev/gn/gn.o'
 fml_3_16()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/main.c -o ./fabdev/main.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/gn/gn.c -o ./fabdev/gn/gn.o
 
 
   X=$?
@@ -1519,14 +1496,14 @@ fml_3_16()
   exit $X
 }
 
-NAMES[97]='./fabdev/ts/ts.o'
+NAMES[96]='./fabdev/list/list.o'
 fml_3_17()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/ts/ts.c -o ./fabdev/ts/ts.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/list/list.c -o ./fabdev/list/list.o
 
 
   X=$?
@@ -1534,14 +1511,14 @@ fml_3_17()
   exit $X
 }
 
-NAMES[98]='./fabdev/var/var.o'
+NAMES[97]='./fabdev/main.o'
 fml_3_18()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -I./fabdev -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -DFABVERSION=v0.4.2 -fms-extensions -fno-builtin-log -c ./fabdev/var/var.c -o ./fabdev/var/var.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/main.c -o ./fabdev/main.o
 
 
   X=$?
@@ -1549,20 +1526,14 @@ fml_3_18()
   exit $X
 }
 
-NAMES[99]='./liblistwise/liblistwise.so'
+NAMES[98]='./fabdev/selector/selector.o'
 fml_3_19()
 {
   exec 1>/dev/null
   exec 2>&119
 
   
-	  exec 1>./liblistwise/exports
-	  echo "{ global: "
-sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- ./liblistwise/last/last.c ./liblistwise/op/h/h.c ./liblistwise/op/r/r.c ./liblistwise/op/xm/xm.c ./liblistwise/op/sn/sn.c ./liblistwise/op/rp/rp.c ./liblistwise/op/xs/xs.c ./liblistwise/op/xsf/xsf.c ./liblistwise/op/xmf/xmf.c ./liblistwise/op/fn/fn.c ./liblistwise/op/bn/bn.c ./liblistwise/op/dn/dn.c ./liblistwise/op/m/m.c ./liblistwise/op/z/z.c ./liblistwise/op/rx/rx.c ./liblistwise/op/xch/xch.c ./liblistwise/op/j/j.c ./liblistwise/op/dj/dj.c ./liblistwise/op/cp/cp.c ./liblistwise/op/-X/-X.c ./liblistwise/op/s/s.c ./liblistwise/op/pop/pop.c ./liblistwise/op/shift/shift.c ./liblistwise/op/u/u.c ./liblistwise/op/d/d.c ./liblistwise/op/w/w.c ./liblistwise/op/ls/ls.c ./liblistwise/op/o/o.c ./liblistwise/op/c/c.c ./liblistwise/op/uu/uu.c ./liblistwise/op/v/v.c ./liblistwise/op/y/y.c ./liblistwise/op/ss/ss.c ./liblistwise/op/op.c ./liblistwise/object/object.c ./liblistwise/idx/idx.c ./liblistwise/exec/exec.c ./liblistwise/generator/generator.c ./liblistwise/apidata/apidata.c ./liblistwise/re/re.c ./liblistwise/lstack/lstack.c ./liblistwise/sel/sel.c )
-echo "local: *; };"
-
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/liblistwise.so ./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o -lpcre -ldl -shared -Wl,--version-script=./liblistwise/exports -Wl,-soname,liblistwise.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/selector/selector.c -o ./fabdev/selector/selector.o
 
 
   X=$?
@@ -1570,16 +1541,82 @@ echo "local: *; };"
   exit $X
 }
 
+NAMES[99]='./fabdev/tmp/tmp.o'
+fml_3_20()
+{
+  exec 1>/dev/null
+  exec 2>&120
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/tmp/tmp.c -o ./fabdev/tmp/tmp.o
+
+
+  X=$?
+  echo 20 1>&99
+  exit $X
+}
+
+NAMES[100]='./fabdev/ts/ts.o'
+fml_3_21()
+{
+  exec 1>/dev/null
+  exec 2>&121
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/ts/ts.c -o ./fabdev/ts/ts.o
+
+
+  X=$?
+  echo 21 1>&99
+  exit $X
+}
+
+NAMES[101]='./fabdev/var/var.o'
+fml_3_22()
+{
+  exec 1>/dev/null
+  exec 2>&122
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c ./fabdev/var/var.c -o ./fabdev/var/var.o
+
+
+  X=$?
+  echo 22 1>&99
+  exit $X
+}
+
+NAMES[102]='./liblistwise/liblistwise.so'
+fml_3_23()
+{
+  exec 1>/dev/null
+  exec 2>&123
+
+  
+	  exec 1>./liblistwise/exports
+	  echo "{ global: "
+sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
+	  cat -- ./liblistwise/last/last.c ./liblistwise/op/h/h.c ./liblistwise/op/r/r.c ./liblistwise/op/xm/xm.c ./liblistwise/op/sn/sn.c ./liblistwise/op/rp/rp.c ./liblistwise/op/xs/xs.c ./liblistwise/op/xsf/xsf.c ./liblistwise/op/xmf/xmf.c ./liblistwise/op/fn/fn.c ./liblistwise/op/bn/bn.c ./liblistwise/op/dn/dn.c ./liblistwise/op/m/m.c ./liblistwise/op/z/z.c ./liblistwise/op/rx/rx.c ./liblistwise/op/xch/xch.c ./liblistwise/op/j/j.c ./liblistwise/op/dj/dj.c ./liblistwise/op/cp/cp.c ./liblistwise/op/-X/-X.c ./liblistwise/op/s/s.c ./liblistwise/op/pop/pop.c ./liblistwise/op/shift/shift.c ./liblistwise/op/u/u.c ./liblistwise/op/d/d.c ./liblistwise/op/w/w.c ./liblistwise/op/ls/ls.c ./liblistwise/op/o/o.c ./liblistwise/op/c/c.c ./liblistwise/op/uu/uu.c ./liblistwise/op/v/v.c ./liblistwise/op/y/y.c ./liblistwise/op/ss/ss.c ./liblistwise/op/op.c ./liblistwise/object/object.c ./liblistwise/idx/idx.c ./liblistwise/exec/exec.c ./liblistwise/generator/generator.lex.c ./liblistwise/generator/generator.tab.c ./liblistwise/generator/generator.c ./liblistwise/apidata/apidata.c ./liblistwise/re/re.c ./liblistwise/lstack/lstack.c ./liblistwise/sel/sel.c )
+echo "local: *; };"
+
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/liblistwise.so ./common/coll.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/apidata/apidata.pic.o ./liblistwise/exec/exec.pic.o ./liblistwise/generator/generator.lex.pic.o ./liblistwise/generator/generator.pic.o ./liblistwise/generator/generator.tab.pic.o ./liblistwise/idx/idx.pic.o ./liblistwise/last/last.pic.o ./liblistwise/lstack/lstack.pic.o ./liblistwise/object/object.pic.o ./liblistwise/op/op.pic.o ./liblistwise/re/re.pic.o ./liblistwise/sel/sel.pic.o -lpcre -ldl -shared -Wl,--version-script=./liblistwise/exports -Wl,-soname,liblistwise.so
+
+
+  X=$?
+  echo 23 1>&99
+  exit $X
+}
+
 
 # formulas and names for stage 4
-NAMES[100]='./fabdev/fab'
+NAMES[103]='./fabdev/fab'
 fml_4_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -DFABVERSION=v0.4.2 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -export-dynamic -fms-extensions -fno-builtin-log -m64 -o ./fabdev/fab ./common/cksum.o ./common/coll.o ./common/parseint.o ./common/pstring.o ./common/unitstring.o ./common/xmem.o ./common/xstring.o ./fabdev/args/args.o ./fabdev/bake/bake.o ./fabdev/bp/bp.o ./fabdev/canon/canon.o ./fabdev/dep/dep.o ./fabdev/depblock/depblock.o ./fabdev/dirutil/dirutil.o ./fabdev/dsc/dsc.o ./fabdev/enclose/enclose.o ./fabdev/ff/ff.dsc.tab.o ./fabdev/ff/ff.lex.o ./fabdev/ff/ff.o ./fabdev/ff/ff.tab.o ./fabdev/ff/ff.tokens.o ./fabdev/ff/ff.var.tab.o ./fabdev/ffn/ffn.o ./fabdev/ffproc/ffproc.o ./fabdev/fml/fml.o ./fabdev/gn/gn.o ./fabdev/gn/gnlw.o ./fabdev/hashblock/hashblock.o ./fabdev/identity/identity.o ./fabdev/list/list.o ./fabdev/log/log.o ./fabdev/lwutil/lwutil.o ./fabdev/main.o ./fabdev/map/map.o ./fabdev/path/path.o ./fabdev/strstack/strstack.o ./fabdev/tmp/tmp.o ./fabdev/traverse/traverse.o ./fabdev/ts/ts.o ./fabdev/var/var.o ./liblistwise/liblistwise.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -export-dynamic -o ./fabdev/fab ./common/xmem.o ./common/xstring.o ./common/cksum.o ./fabdev/log/log.o ./fabdev/canon/canon.o ./fabdev/path/path.o ./common/unitstring.o ./common/coll.o ./fabdev/identity/identity.o ./fabdev/dirutil/dirutil.o ./fabdev/hashblock/hashblock.o ./fabdev/map/map.o ./fabdev/ff/ff.tokens.o ./fabdev/ffn/ffn.o ./fabdev/ff/ff.tab.o ./fabdev/ff/ff.dsc.tab.o ./fabdev/ff/ff.var.tab.o ./fabdev/ff/ff.list.tab.o ./fabdev/ff/ff.lex.o ./fabdev/depblock/depblock.o ./fabdev/strstack/strstack.o ./common/pstring.o ./fabdev/ts/ts.o ./fabdev/traverse/traverse.o ./fabdev/gn/gnlw.o ./fabdev/lwutil/lwutil.o ./fabdev/var/var.o ./fabdev/list/list.o ./fabdev/enclose/enclose.o ./fabdev/fml/fml.o ./common/parseint.o ./fabdev/gn/gn.o ./fabdev/ff/ff.o ./fabdev/selector/selector.o ./fabdev/args/args.o ./fabdev/bp/bp.o ./fabdev/dep/dep.o ./fabdev/dsc/dsc.o ./fabdev/tmp/tmp.o ./fabdev/bake/bake.o ./fabdev/ffproc/ffproc.o ./fabdev/main.o ./liblistwise/liblistwise.so
 
 
   X=$?
@@ -1587,14 +1624,14 @@ fml_4_0()
   exit $X
 }
 
-NAMES[101]='./fabdev/fablw/op/fg/fg.so'
+NAMES[104]='./fabdev/fablw/op/fg/fg.so'
 fml_4_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	  gcc -DFABVERSION=v0.4.2 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -o ./fabdev/fablw/op/fg/fg.so	./fabdev/fablw/op/fg/fg.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fg.so
+	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o ./fabdev/fablw/op/fg/fg.so	./fabdev/fablw/op/fg/fg.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fg.so
 
 
   X=$?
@@ -1602,14 +1639,14 @@ fml_4_1()
   exit $X
 }
 
-NAMES[102]='./fabdev/fablw/op/fi/fi.so'
+NAMES[105]='./fabdev/fablw/op/fi/fi.so'
 fml_4_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	  gcc -DFABVERSION=v0.4.2 -D_GNU_SOURCE -I./fabdev -I./fabdev/../common -I./fabdev/args -I./fabdev/bake -I./fabdev/bp -I./fabdev/canon -I./fabdev/dep -I./fabdev/depblock -I./fabdev/dirutil -I./fabdev/dsc -I./fabdev/enclose -I./fabdev/ff -I./fabdev/ffn -I./fabdev/ffproc -I./fabdev/fml -I./fabdev/gn -I./fabdev/hashblock -I./fabdev/identity -I./fabdev/list -I./fabdev/log -I./fabdev/lwutil -I./fabdev/map -I./fabdev/path -I./fabdev/strstack -I./fabdev/tmp -I./fabdev/traverse -I./fabdev/ts -I./fabdev/var -I./liblistwise -O3 -Wall -Werror -fms-extensions -fno-builtin-log -m64 -o ./fabdev/fablw/op/fi/fi.so	./fabdev/fablw/op/fi/fi.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fi.so
+	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -I./fabdev/../common -O3 -fms-extensions -fno-builtin-log -I./fabdev/list -I./fabdev/dsc -I./fabdev/ffn -I./fabdev/path -I./fabdev/identity -I./fabdev/dirutil -I./fabdev/traverse -I./fabdev -I./fabdev/depblock -I./fabdev/enclose -I./fabdev/ffproc -I./fabdev/bake -I./fabdev/dep -I./fabdev/ff -I./fabdev/fml -I./fabdev/strstack -I./fabdev/bp -I./fabdev/tmp -I./fabdev/var -I./fabdev/lwutil -I./fabdev/canon -I./fabdev/ts -I./fabdev/selector -I./fabdev/hashblock -I./fabdev/args -I./fabdev/log -I./fabdev/gn -I./fabdev/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o ./fabdev/fablw/op/fi/fi.so	./fabdev/fablw/op/fi/fi.pic.o  ./liblistwise/liblistwise.so -shared -Wl,-soname,fi.so
 
 
   X=$?
@@ -1617,14 +1654,14 @@ fml_4_2()
   exit $X
 }
 
-NAMES[103]='./liblistwise/op/-X/-X.so'
+NAMES[106]='./liblistwise/op/-X/-X.so'
 fml_4_3()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/-X/-X.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/-X/-X.so			\
 	./common/parseint.pic.o ./liblistwise/op/-X/-X.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,-X.so
@@ -1635,14 +1672,14 @@ fml_4_3()
   exit $X
 }
 
-NAMES[104]='./liblistwise/op/bn/bn.so'
+NAMES[107]='./liblistwise/op/bn/bn.so'
 fml_4_4()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/bn/bn.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/bn/bn.so			\
 	./liblistwise/op/bn/bn.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,bn.so
@@ -1653,14 +1690,14 @@ fml_4_4()
   exit $X
 }
 
-NAMES[105]='./liblistwise/op/c/c.so'
+NAMES[108]='./liblistwise/op/c/c.so'
 fml_4_5()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/c/c.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/c/c.so			\
 	./liblistwise/op/c/c.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,c.so
@@ -1671,14 +1708,14 @@ fml_4_5()
   exit $X
 }
 
-NAMES[106]='./liblistwise/op/cp/cp.so'
+NAMES[109]='./liblistwise/op/cp/cp.so'
 fml_4_6()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/cp/cp.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/cp/cp.so			\
 	./common/xmem.pic.o ./liblistwise/op/cp/cp.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,cp.so
@@ -1689,14 +1726,14 @@ fml_4_6()
   exit $X
 }
 
-NAMES[107]='./liblistwise/op/d/d.so'
+NAMES[110]='./liblistwise/op/d/d.so'
 fml_4_7()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/d/d.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/d/d.so			\
 	./liblistwise/op/d/d.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,d.so
@@ -1707,14 +1744,14 @@ fml_4_7()
   exit $X
 }
 
-NAMES[108]='./liblistwise/op/dj/dj.so'
+NAMES[111]='./liblistwise/op/dj/dj.so'
 fml_4_8()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/dj/dj.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/dj/dj.so			\
 	./liblistwise/op/dj/dj.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,dj.so
@@ -1725,14 +1762,14 @@ fml_4_8()
   exit $X
 }
 
-NAMES[109]='./liblistwise/op/dn/dn.so'
+NAMES[112]='./liblistwise/op/dn/dn.so'
 fml_4_9()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/dn/dn.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/dn/dn.so			\
 	./liblistwise/op/dn/dn.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,dn.so
@@ -1743,14 +1780,14 @@ fml_4_9()
   exit $X
 }
 
-NAMES[110]='./liblistwise/op/fn/fn.so'
+NAMES[113]='./liblistwise/op/fn/fn.so'
 fml_4_10()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/fn/fn.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/fn/fn.so			\
 	./liblistwise/op/fn/fn.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,fn.so
@@ -1761,14 +1798,14 @@ fml_4_10()
   exit $X
 }
 
-NAMES[111]='./liblistwise/op/h/h.so'
+NAMES[114]='./liblistwise/op/h/h.so'
 fml_4_11()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/h/h.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/h/h.so			\
 	./liblistwise/op/h/h.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,h.so
@@ -1779,14 +1816,14 @@ fml_4_11()
   exit $X
 }
 
-NAMES[112]='./liblistwise/op/j/j.so'
+NAMES[115]='./liblistwise/op/j/j.so'
 fml_4_12()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/j/j.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/j/j.so			\
 	./liblistwise/op/j/j.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,j.so
@@ -1797,14 +1834,14 @@ fml_4_12()
   exit $X
 }
 
-NAMES[113]='./liblistwise/op/ls/ls.so'
+NAMES[116]='./liblistwise/op/ls/ls.so'
 fml_4_13()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/ls/ls.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/ls/ls.so			\
 	./common/parseint.pic.o ./liblistwise/op/ls/ls.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,ls.so
@@ -1815,14 +1852,14 @@ fml_4_13()
   exit $X
 }
 
-NAMES[114]='./liblistwise/op/m/m.so'
+NAMES[117]='./liblistwise/op/m/m.so'
 fml_4_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/m/m.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/m/m.so			\
 	./liblistwise/op/m/m.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,m.so
@@ -1833,14 +1870,14 @@ fml_4_14()
   exit $X
 }
 
-NAMES[115]='./liblistwise/op/o/o.so'
+NAMES[118]='./liblistwise/op/o/o.so'
 fml_4_15()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/o/o.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/o/o.so			\
 	./liblistwise/op/o/o.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,o.so
@@ -1851,14 +1888,14 @@ fml_4_15()
   exit $X
 }
 
-NAMES[116]='./liblistwise/op/pop/pop.so'
+NAMES[119]='./liblistwise/op/pop/pop.so'
 fml_4_16()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/pop/pop.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/pop/pop.so			\
 	./liblistwise/op/pop/pop.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,pop.so
@@ -1869,14 +1906,14 @@ fml_4_16()
   exit $X
 }
 
-NAMES[117]='./liblistwise/op/r/r.so'
+NAMES[120]='./liblistwise/op/r/r.so'
 fml_4_17()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/r/r.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/r/r.so			\
 	./liblistwise/op/r/r.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,r.so
@@ -1887,14 +1924,14 @@ fml_4_17()
   exit $X
 }
 
-NAMES[118]='./liblistwise/op/rp/rp.so'
+NAMES[121]='./liblistwise/op/rp/rp.so'
 fml_4_18()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/rp/rp.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/rp/rp.so			\
 	./common/xmem.pic.o ./liblistwise/op/rp/rp.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,rp.so
@@ -1905,14 +1942,14 @@ fml_4_18()
   exit $X
 }
 
-NAMES[119]='./liblistwise/op/rx/rx.so'
+NAMES[122]='./liblistwise/op/rx/rx.so'
 fml_4_19()
 {
   exec 1>/dev/null
   exec 2>&119
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/rx/rx.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/rx/rx.so			\
 	./common/xmem.pic.o ./liblistwise/op/rx/rx.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,rx.so
@@ -1923,14 +1960,14 @@ fml_4_19()
   exit $X
 }
 
-NAMES[120]='./liblistwise/op/s/s.so'
+NAMES[123]='./liblistwise/op/s/s.so'
 fml_4_20()
 {
   exec 1>/dev/null
   exec 2>&120
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/s/s.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/s/s.so			\
 	./liblistwise/op/s/s.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,s.so
@@ -1941,14 +1978,14 @@ fml_4_20()
   exit $X
 }
 
-NAMES[121]='./liblistwise/op/shift/shift.so'
+NAMES[124]='./liblistwise/op/shift/shift.so'
 fml_4_21()
 {
   exec 1>/dev/null
   exec 2>&121
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/shift/shift.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/shift/shift.so			\
 	./liblistwise/op/shift/shift.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,shift.so
@@ -1959,14 +1996,14 @@ fml_4_21()
   exit $X
 }
 
-NAMES[122]='./liblistwise/op/sn/sn.so'
+NAMES[125]='./liblistwise/op/sn/sn.so'
 fml_4_22()
 {
   exec 1>/dev/null
   exec 2>&122
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/sn/sn.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/sn/sn.so			\
 	./common/parseint.pic.o ./liblistwise/op/sn/sn.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,sn.so
@@ -1977,14 +2014,14 @@ fml_4_22()
   exit $X
 }
 
-NAMES[123]='./liblistwise/op/ss/ss.so'
+NAMES[126]='./liblistwise/op/ss/ss.so'
 fml_4_23()
 {
   exec 1>/dev/null
   exec 2>&123
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/ss/ss.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/ss/ss.so			\
 	./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/op/ss/ss.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,ss.so
@@ -1995,14 +2032,14 @@ fml_4_23()
   exit $X
 }
 
-NAMES[124]='./liblistwise/op/u/u.so'
+NAMES[127]='./liblistwise/op/u/u.so'
 fml_4_24()
 {
   exec 1>/dev/null
   exec 2>&124
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/u/u.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/u/u.so			\
 	./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/op/u/u.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,u.so
@@ -2013,14 +2050,14 @@ fml_4_24()
   exit $X
 }
 
-NAMES[125]='./liblistwise/op/uu/uu.so'
+NAMES[128]='./liblistwise/op/uu/uu.so'
 fml_4_25()
 {
   exec 1>/dev/null
   exec 2>&125
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/uu/uu.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/uu/uu.so			\
 	./common/parseint.pic.o ./common/xmem.pic.o ./common/xstring.pic.o ./liblistwise/op/uu/uu.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,uu.so
@@ -2031,14 +2068,14 @@ fml_4_25()
   exit $X
 }
 
-NAMES[126]='./liblistwise/op/v/v.so'
+NAMES[129]='./liblistwise/op/v/v.so'
 fml_4_26()
 {
   exec 1>/dev/null
   exec 2>&126
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/v/v.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/v/v.so			\
 	./liblistwise/op/v/v.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,v.so
@@ -2049,14 +2086,14 @@ fml_4_26()
   exit $X
 }
 
-NAMES[127]='./liblistwise/op/w/w.so'
+NAMES[130]='./liblistwise/op/w/w.so'
 fml_4_27()
 {
   exec 1>/dev/null
   exec 2>&127
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/w/w.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/w/w.so			\
 	./liblistwise/op/w/w.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,w.so
@@ -2067,14 +2104,14 @@ fml_4_27()
   exit $X
 }
 
-NAMES[128]='./liblistwise/op/xch/xch.so'
+NAMES[131]='./liblistwise/op/xch/xch.so'
 fml_4_28()
 {
   exec 1>/dev/null
   exec 2>&128
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xch/xch.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xch/xch.so			\
 	./liblistwise/op/xch/xch.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xch.so
@@ -2085,14 +2122,14 @@ fml_4_28()
   exit $X
 }
 
-NAMES[129]='./liblistwise/op/xm/xm.so'
+NAMES[132]='./liblistwise/op/xm/xm.so'
 fml_4_29()
 {
   exec 1>/dev/null
   exec 2>&129
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xm/xm.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xm/xm.so			\
 	./liblistwise/op/xm/xm.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xm.so
@@ -2103,14 +2140,14 @@ fml_4_29()
   exit $X
 }
 
-NAMES[130]='./liblistwise/op/xmf/xmf.so'
+NAMES[133]='./liblistwise/op/xmf/xmf.so'
 fml_4_30()
 {
   exec 1>/dev/null
   exec 2>&130
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xmf/xmf.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xmf/xmf.so			\
 	./liblistwise/op/xmf/xmf.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xmf.so
@@ -2121,14 +2158,14 @@ fml_4_30()
   exit $X
 }
 
-NAMES[131]='./liblistwise/op/xs/xs.so'
+NAMES[134]='./liblistwise/op/xs/xs.so'
 fml_4_31()
 {
   exec 1>/dev/null
   exec 2>&131
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xs/xs.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xs/xs.so			\
 	./liblistwise/op/xs/xs.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xs.so
@@ -2139,14 +2176,14 @@ fml_4_31()
   exit $X
 }
 
-NAMES[132]='./liblistwise/op/xsf/xsf.so'
+NAMES[135]='./liblistwise/op/xsf/xsf.so'
 fml_4_32()
 {
   exec 1>/dev/null
   exec 2>&132
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xsf/xsf.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/xsf/xsf.so			\
 	./liblistwise/op/xsf/xsf.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,xsf.so
@@ -2157,14 +2194,14 @@ fml_4_32()
   exit $X
 }
 
-NAMES[133]='./liblistwise/op/y/y.so'
+NAMES[136]='./liblistwise/op/y/y.so'
 fml_4_33()
 {
   exec 1>/dev/null
   exec 2>&133
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/y/y.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/y/y.so			\
 	./common/xmem.pic.o ./liblistwise/op/y/y.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,y.so
@@ -2175,14 +2212,14 @@ fml_4_33()
   exit $X
 }
 
-NAMES[134]='./liblistwise/op/z/z.so'
+NAMES[137]='./liblistwise/op/z/z.so'
 fml_4_34()
 {
   exec 1>/dev/null
   exec 2>&134
 
   
-	gcc -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/z/z.so			\
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -I./liblistwise -I./liblistwise/../common -I./liblistwise/generator -I./liblistwise/idx -I./liblistwise/listwise -I./liblistwise/re -O3 -Wall -Werror -fPIC -m64 -o ./liblistwise/op/z/z.so			\
 	./liblistwise/op/z/z.pic.o						\
 	./liblistwise/liblistwise.so -shared										\
 	-Wl,-soname,z.so
@@ -2193,14 +2230,14 @@ fml_4_34()
   exit $X
 }
 
-NAMES[135]='./listwisedev/listwise'
+NAMES[138]='./listwisedev/listwise'
 fml_4_35()
 {
   exec 1>/dev/null
   exec 2>&135
 
   
-	gcc -DFABVERSION=v0.4.2 -D_GNU_SOURCE -I./liblistwise -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -m64 -o ./listwisedev/listwise ./listwisedev/args.o ./listwisedev/main.o ./liblistwise/liblistwise.so
+	gcc -DFABVERSIONN="420" -DFABVERSIONS="v0.4.2.0" -D_GNU_SOURCE -I./liblistwise -I./listwisedev -I./listwisedev/../common -O3 -Wall -Werror -m64 -o ./listwisedev/listwise ./listwisedev/args.o ./listwisedev/main.o ./liblistwise/liblistwise.so
 
 
   X=$?
@@ -2322,18 +2359,17 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=5))
+  ((SKP+=4))
 else
   # launch stage 2.0
   exec 100>$tmp ; rm -f $tmp ; fml_2_0 & PIDS[0]=$!
   exec 101>$tmp ; rm -f $tmp ; fml_2_1 & PIDS[1]=$!
   exec 102>$tmp ; rm -f $tmp ; fml_2_2 & PIDS[2]=$!
   exec 103>$tmp ; rm -f $tmp ; fml_2_3 & PIDS[3]=$!
-  exec 104>$tmp ; rm -f $tmp ; fml_2_4 & PIDS[4]=$!
 
   # harvest stage 2.0
   C=0
-  while [[ $C != 5 ]]; do
+  while [[ $C != 4 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -2351,7 +2387,7 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=20))
+  ((SKP+=24))
 else
   # launch stage 3.0
   exec 100>$tmp ; rm -f $tmp ; fml_3_0 & PIDS[0]=$!
@@ -2374,16 +2410,20 @@ else
   exec 117>$tmp ; rm -f $tmp ; fml_3_17 & PIDS[17]=$!
   exec 118>$tmp ; rm -f $tmp ; fml_3_18 & PIDS[18]=$!
   exec 119>$tmp ; rm -f $tmp ; fml_3_19 & PIDS[19]=$!
+  exec 120>$tmp ; rm -f $tmp ; fml_3_20 & PIDS[20]=$!
+  exec 121>$tmp ; rm -f $tmp ; fml_3_21 & PIDS[21]=$!
+  exec 122>$tmp ; rm -f $tmp ; fml_3_22 & PIDS[22]=$!
+  exec 123>$tmp ; rm -f $tmp ; fml_3_23 & PIDS[23]=$!
 
   # harvest stage 3.0
   C=0
-  while [[ $C != 20 ]]; do
+  while [[ $C != 24 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((80+$idx))
+    I=$((79+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -2443,7 +2483,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((100+$idx))
+    I=$((103+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))

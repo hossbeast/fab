@@ -1,21 +1,13 @@
 #!/bin/bash
 
-# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+# A build script made by fab v0.4.2.0
+#  fab is free software released under the GNU General Public License.
 #
-# This file is part of fab.
-#
-# fab is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# fab is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with fab.  If not, see <http://www.gnu.org/licenses/>.
+#  As a special exception, build scripts made by fab v0.4.2.0 (including this
+#  build script) are excluded from the license covering fab itself, even
+#  if substantial portions of the fab source code are copied verbatim into
+#  the build script. You may create a larger work that contains part or all
+#  of the build script and distribute that work under terms of your choice
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -24,35 +16,16 @@ if [[ $1 != "timed" ]]; then
 fi
 
 # formulas and names for stage 0
-NAMES[0]='/../fab/install'
+NAMES[0]='/../listwise/install'
 fml_0_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	install -d															//usr/local/bin
-	install ./fabdev/fab												//usr/local/bin/fab
-	chown fabsys:fabsys											//usr/local/bin/fab
-	chmod u+s 															//usr/local/bin/fab
-	chmod g+s 															//usr/local/bin/fab
-	install ./fabdev/gcc-dep								//usr/local/bin/gcc-dep
-	install -d 															//var/cache/fab
-	chown fabsys:fabsys											//var/cache/fab
-	install -d 															//var/tmp/fab
-	chown fabsys:fabsys											//var/tmp/fab
-	install -d															//usr/lib/fab/lib/std
-	install -d															//usr/lib/fab/lib/std/c
-	install -d															//usr/lib/fab/lib/std/l
-	install -d															//usr/lib/fab/lib/std/y
-	install ./fabdev/fablib/std/c.fab			//usr/lib/fab/lib/std/c.fab
-	install ./fabdev/fablib/std/l.fab			//usr/lib/fab/lib/std/l.fab
-	install ./fabdev/fablib/std/y.fab			//usr/lib/fab/lib/std/y.fab
-
-	rm -rf 																	//usr/lib/fab/listwise 2>/dev/null
-	install -d															//usr/lib/fab/listwise
-	install ./fabdev/fablw/op/fi/fi.so			//usr/lib/fab/listwise/fi.so
-	install ./fabdev/fablw/op/fg/fg.so			//usr/lib/fab/listwise/fg.so
+	install -d										//usr/local/bin
+	install ./listwisedev/listwise					//usr/local/bin/listwise
+	ln -vfs listwise							//usr/local/bin/lw
 
 
   X=$?
@@ -60,17 +33,18 @@ fml_0_0()
   exit $X
 }
 
+
+# formulas and names for stage 1
 NAMES[1]='/../liblistwise/install'
-fml_0_1()
+fml_1_0()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&100
 
   
 	install -d																				//usr/lib/x86_64-linux-gnu
 	install	./liblistwise/liblistwise.so													//usr/lib/x86_64-linux-gnu/liblistwise.so.0.1
 	ln -vfs liblistwise.so.0.1													//usr/lib/x86_64-linux-gnu/liblistwise.so
-	install -d																				//usr/include
 	install -d																				//usr/include/listwise
 	install ./liblistwise/listwise.h							//usr/include/listwise.h
 	install ./liblistwise/listwise/operator.h			//usr/include/listwise/operator.h
@@ -87,24 +61,45 @@ fml_0_1()
 
 
   X=$?
-  echo 1 1>&99
+  echo 0 1>&99
   exit $X
 }
 
-NAMES[2]='/../listwise/install'
-fml_0_2()
+
+# formulas and names for stage 2
+NAMES[2]='/../fab/install'
+fml_2_0()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&100
 
   
-	install -d										//usr/local/bin
-	install ./listwisedev/listwise					//usr/local/bin/listwise
-	ln -vfs listwise							//usr/local/bin/lw
+	install -d															//usr/local/bin
+	install ./fabdev/fab												//usr/local/bin/fab
+	chown fabsys:fabsys											//usr/local/bin/fab
+	chmod u+s 															//usr/local/bin/fab
+	chmod g+s 															//usr/local/bin/fab
+	install ./fabdev/gcc-dep								//usr/local/bin/gcc-dep
+	install -d 															//var/cache/fab
+	chown fabsys:fabsys											//var/cache/fab
+	install -d 															//var/tmp/fab
+	chown fabsys:fabsys											//var/tmp/fab
+	install -d															//usr/lib/fab/listwise/std
+	install -d															//usr/lib/fab/listwise/std/c
+	install -d															//usr/lib/fab/listwise/std/l
+	install -d															//usr/lib/fab/listwise/std/y
+	install ./fabdev/fablib/std/c.fab			//usr/lib/fab/listwise/std/c.fab
+	install ./fabdev/fablib/std/l.fab			//usr/lib/fab/listwise/std/l.fab
+	install ./fabdev/fablib/std/y.fab			//usr/lib/fab/listwise/std/y.fab
+
+	rm -rf 																	//usr/lib/fab/lib 2>/dev/null
+	install -d															//usr/lib/fab/lib
+	install ./fabdev/fablw/op/fi/fi.so			//usr/lib/fab/lib
+	install ./fabdev/fablw/op/fg/fg.so			//usr/lib/fab/lib
 
 
   X=$?
-  echo 2 1>&99
+  echo 0 1>&99
   exit $X
 }
 
@@ -123,16 +118,14 @@ SKP=0
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=3))
+  ((SKP+=1))
 else
   # launch stage 0.0
   exec 100>$tmp ; rm -f $tmp ; fml_0_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_0_1 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_0_2 & PIDS[2]=$!
 
   # harvest stage 0.0
   C=0
-  while [[ $C != 3 ]]; do
+  while [[ $C != 1 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -143,6 +136,56 @@ else
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
     printf '[%3d,%3d] X=%d %s\n' 0 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 1.0
+  exec 100>$tmp ; rm -f $tmp ; fml_1_0 & PIDS[0]=$!
+
+  # harvest stage 1.0
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((1+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 2.0
+  exec 100>$tmp ; rm -f $tmp ; fml_2_0 & PIDS[0]=$!
+
+  # harvest stage 2.0
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((2+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 2 $((idx+0)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
