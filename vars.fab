@@ -1,23 +1,49 @@
 /* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
 
-   This file is part of listwise.
+   This file is part of fab.
    
-   listwise is free software: you can redistribute it and/or modify
+   fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
    
-   listwise is distributed in the hope that it will be useful,
+   fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
    
    You should have received a copy of the GNU General Public License
-   along with listwise.  If not, see <http://www.gnu.org/licenses/>. */
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-$dbug				= [ 0 ]
+$VERSIONL				= [ 0 4 2 0 ]											# version list - major, minor, revision, build
+$VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
+$VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
+
+# enable debug compilation
+$dbug						= [ 0 ]
+
+# install directories
+$destdir				= [ ]															# root install directory - does not affect runtime directories
+$incdir					= [ /usr/include ]								# header files
+$bindir					= [ /usr/local/bin ]							# executables
+$libdir					= [ /usr/lib/x86_64-linux-gnu ]		# dynamically linked libraries
+
+# configurable runtime directories
+#  (that may be set at build-time)
+$dlibdir				= [ /usr/lib ]										# dloaded libraries
+$lwopdir				= [ $dlibdir/listwise ]						#  lw operators
+$fablwopdir			= [ $dlibdir/fab/lib ]						#  fab-specific lw operators
+$fabcachedir		= [ /var/cache/fab ]							# fab cache
+$fabtmpdir			= [ /var/tmp/fab ]								# fab tmp
+$fabinvokedir		= [ /usr/lib/fab/listwise ]				# fab-provided invocations
 
 # compilers and their flags
+$flex				= [ flex ]
+$flexflags	= [ ]
+
+$bison			= [ bison ]
+$bisonflags	= [ --warnings=error ]
+
 $cc					= [ gcc ]
 $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE [ -I $dcommon ~ j ]
 	[ $dbug ~ s/1/-O0/y ]
@@ -25,12 +51,3 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE [ -I $dcommon ~ j ]
 	[ $dbug ~ s/1/-g/y ]
 	[ $dbug ~ s/1/-DDBUG/y ]
 ]
-$flex				= [ flex ]
-$flexflags	= [ ]
-$bison			= [ bison ]
-$bisonflags	= [ --warnings=error ]
-
-# directories
-$destdir		= [ / ]									# directory to install to
-$incdir			= [ usr/include ]				# directory for .h's
-$bindir			= [ usr/local/bin ]			# directory for executables
