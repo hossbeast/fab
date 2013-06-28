@@ -1,21 +1,13 @@
 #!/bin/bash
 
-# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+# A build script made by fab v0.4.2.0
+#  fab is free software released under the GNU General Public License.
 #
-# This file is part of fab.
-#
-# fab is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# fab is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with fab.  If not, see <http://www.gnu.org/licenses/>.
+#  As a special exception, build scripts made by fab v0.4.2.0 (including this
+#  build script) are excluded from the license covering fab itself, even
+#  if substantial portions of the fab source code are copied verbatim into
+#  the build script. You may create a larger work that contains part or all
+#  of the build script and distribute that work under terms of your choice
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -30,10 +22,12 @@ fml_0_0()
   exec 1>/dev/null
   exec 2>&100
 
+  [[ $bindir ]] || local bindir='/usr/local/bin'
+  [[ $destdir ]] || local destdir=''
   
-	install -d										//usr/local/bin
-	install ./listwisedev/listwise					//usr/local/bin/listwise
-	ln -vfs listwise							//usr/local/bin/lw
+	install -d										$destdir/$bindir
+	install ./listwisedev/listwise					$destdir/$bindir/listwise
+	ln -vfs listwise							$destdir/$bindir/lw
 
 
   X=$?
@@ -49,22 +43,26 @@ fml_1_0()
   exec 1>/dev/null
   exec 2>&100
 
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  [[ $incdir ]] || local incdir='/usr/include'
+  [[ $lwopdir ]] || local lwopdir='/usr/lib/listwise'
   
-	install -d																				//usr/lib/x86_64-linux-gnu
-	install	./liblistwise/liblistwise.so													//usr/lib/x86_64-linux-gnu/liblistwise.so.0.1
-	ln -vfs liblistwise.so.0.1													//usr/lib/x86_64-linux-gnu/liblistwise.so
-	install -d																				//usr/include/listwise
-	install ./liblistwise/listwise.h							//usr/include/listwise.h
-	install ./liblistwise/listwise/operator.h			//usr/include/listwise/operator.h
-	install ./liblistwise/listwise/generator.h 	//usr/include/listwise/generator.h
-	install ./liblistwise/listwise/ops.h					//usr/include/listwise/ops.h
-	install ./liblistwise/listwise/lstack.h 			//usr/include/listwise/lstack.h
-	install ./liblistwise/listwise/object.h 			//usr/include/listwise/object.h
+	install -d																				$destdir/$libdir
+	install	./liblistwise/liblistwise.so													$destdir/$libdir/liblistwise.so.0.1
+	ln -vfs liblistwise.so.0.1													$destdir/$libdir/liblistwise.so
+	install -d																				$destdir/$incdir/listwise
+	install ./liblistwise/listwise.h							$destdir/$incdir/listwise.h
+	install ./liblistwise/listwise/operator.h			$destdir/$incdir/listwise/operator.h
+	install ./liblistwise/listwise/generator.h 	$destdir/$incdir/listwise/generator.h
+	install ./liblistwise/listwise/ops.h					$destdir/$incdir/listwise/ops.h
+	install ./liblistwise/listwise/lstack.h 			$destdir/$incdir/listwise/lstack.h
+	install ./liblistwise/listwise/object.h 			$destdir/$incdir/listwise/object.h
 
-	rm -rf																						//usr/lib/listwise 2>/dev/null
-	install -d																				//usr/lib/listwise
+	rm -rf																						$destdir/$lwopdir 2>/dev/null
+	install -d																				$destdir/$lwopdir
 	for x in ./liblistwise/op/h/h.so ./liblistwise/op/r/r.so ./liblistwise/op/xm/xm.so ./liblistwise/op/sn/sn.so ./liblistwise/op/rp/rp.so ./liblistwise/op/xs/xs.so ./liblistwise/op/xsf/xsf.so ./liblistwise/op/xmf/xmf.so ./liblistwise/op/fn/fn.so ./liblistwise/op/bn/bn.so ./liblistwise/op/dn/dn.so ./liblistwise/op/m/m.so ./liblistwise/op/z/z.so ./liblistwise/op/rx/rx.so ./liblistwise/op/xch/xch.so ./liblistwise/op/j/j.so ./liblistwise/op/dj/dj.so ./liblistwise/op/cp/cp.so ./liblistwise/op/-X/-X.so ./liblistwise/op/s/s.so ./liblistwise/op/pop/pop.so ./liblistwise/op/shift/shift.so ./liblistwise/op/u/u.so ./liblistwise/op/d/d.so ./liblistwise/op/w/w.so ./liblistwise/op/ls/ls.so ./liblistwise/op/o/o.so ./liblistwise/op/c/c.so ./liblistwise/op/uu/uu.so ./liblistwise/op/v/v.so ./liblistwise/op/y/y.so ./liblistwise/op/ss/ss.so; do \
-		install $x																			//usr/lib/listwise
+		install $x																			$destdir/$lwopdir
 	done
 
 
@@ -81,29 +79,35 @@ fml_2_0()
   exec 1>/dev/null
   exec 2>&100
 
+  [[ $bindir ]] || local bindir='/usr/local/bin'
+  [[ $fabtmpdir ]] || local fabtmpdir='/var/tmp/fab'
+  [[ $fabcachedir ]] || local fabcachedir='/var/cache/fab'
+  [[ $destdir ]] || local destdir=''
+  [[ $fabinvokedir ]] || local fabinvokedir='/usr/lib/fab/listwise'
+  [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/lib'
   
-	install -d															//usr/local/bin
-	install ./fabdev/fab												//usr/local/bin/fab
-	chown fabsys:fabsys											//usr/local/bin/fab
-	chmod u+s 															//usr/local/bin/fab
-	chmod g+s 															//usr/local/bin/fab
-	install ./fabdev/gcc-dep								//usr/local/bin/gcc-dep
-	install -d 															//var/cache/fab
-	chown fabsys:fabsys											//var/cache/fab
-	install -d 															//var/tmp/fab
-	chown fabsys:fabsys											//var/tmp/fab
-	install -d															//usr/lib/fab/listwise/std
-	install -d															//usr/lib/fab/listwise/std/c
-	install -d															//usr/lib/fab/listwise/std/l
-	install -d															//usr/lib/fab/listwise/std/y
-	install ./fabdev/fablib/std/c.fab			//usr/lib/fab/listwise/std/c.fab
-	install ./fabdev/fablib/std/l.fab			//usr/lib/fab/listwise/std/l.fab
-	install ./fabdev/fablib/std/y.fab			//usr/lib/fab/listwise/std/y.fab
+	install -d															$destdir/$bindir
+	install ./fabdev/fab												$destdir/$bindir/fab
+	chown fabsys:fabsys											$destdir/$bindir/fab
+	chmod u+s 															$destdir/$bindir/fab
+	chmod g+s 															$destdir/$bindir/fab
+	install ./fabdev/gcc-dep								$destdir/$bindir/gcc-dep
+	install -d 															$destdir/$fabcachedir
+	chown fabsys:fabsys											$destdir/$fabcachedir
+	install -d 															$destdir/$fabtmpdir
+	chown fabsys:fabsys											$destdir/$fabtmpdir
+	install -d															$destdir/$fabinvokedir/std
+	install -d															$destdir/$fabinvokedir/std/c
+	install -d															$destdir/$fabinvokedir/std/l
+	install -d															$destdir/$fabinvokedir/std/y
+	install ./fabdev/fablib/std/c.fab			$destdir/$fabinvokedir/std/c.fab
+	install ./fabdev/fablib/std/l.fab			$destdir/$fabinvokedir/std/l.fab
+	install ./fabdev/fablib/std/y.fab			$destdir/$fabinvokedir/std/y.fab
 
-	rm -rf 																	//usr/lib/fab/lib 2>/dev/null
-	install -d															//usr/lib/fab/lib
-	install ./fabdev/fablw/op/fi/fi.so			//usr/lib/fab/lib
-	install ./fabdev/fablw/op/fg/fg.so			//usr/lib/fab/lib
+	rm -rf 																	$destdir/$fablwopdir 2>/dev/null
+	install -d															$destdir/$fablwopdir
+	install ./fabdev/fablw/op/fi/fi.so			$destdir/$fablwopdir
+	install ./fabdev/fablw/op/fg/fg.so			$destdir/$fablwopdir
 
 
   X=$?

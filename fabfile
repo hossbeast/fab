@@ -1,22 +1,19 @@
-# Copyright (c) 2012-2013 Todd Freed <todd.freed\@gmail.com>
-#
-# This file is part of fab.
-#
-# fab is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# fab is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
 
-# version list - major, minor, revision, build
-$VERSIONL			= [ 0 4 2 0 ]
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # directories
 $dcommon      = [ $*/common ]
@@ -25,10 +22,9 @@ $dlistwise    = [ $*/listwisedev ]
 $dfab         = [ $*/fabdev ]
 
 # invocations
-+[ $dcommon ]()   							  																														@common
-+[ $dliblistwise ]($VERSIONL; -$liblistwise)																									@liblistwise
-+[ $dlistwise ]($VERSIONL; -$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )			@listwise
-+[ $dfab ]($VERSIONL; -$fab; -$faboplist; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )	@fab
++[ $dliblistwise ](-$liblistwise)																									@liblistwise
++[ $dlistwise ](-$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )		@listwise
++[ $dfab ](-$fab; -$faboplist; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )	@fab
 
 # default target - make everything
 [ @all ] 				: [ @liblistwise.all       $listwise      @fab.all ]
@@ -43,49 +39,8 @@ $dfab         = [ $*/fabdev ]
 [ @uninstall ]	: [               @liblistwise.uninstall @listwise.uninstall @fab.uninstall  ]
 [ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @fab.clean  ]
 
-[ $*/fab.tgz ~ j ]
+[ @scripts ]
 {
-	rm -rf [ $*/ar ]
-
-	mkdir -p																[ $*/ar/var/cache/fab ]
-	chown fabsys:fabsys											[ $*/ar/var/cache/fab ]
-	mkdir -p																[ $*/ar/var/tmp/fab ]
-	chown fabsys:fabsys											[ $*/ar/var/tmp/fab ]
-
-	mkdir -p																[ $*/ar/usr/local/bin ]
-
-	cp [ $dfab/fab ]												[ $*/ar/usr/local/bin/fab ]
-	chown fabsys:fabsys											[ $*/ar/usr/local/bin/fab ]
-	chmod u+s																[ $*/ar/usr/local/bin/fab ]
-	chmod g+s																[ $*/ar/usr/local/bin/fab ]
-	cp [ $dfab/gcc-dep ]										[ $*/ar/usr/local/bin/gcc-dep ]
-	cp [ $dlistwise/listwise ]							[ $*/ar/usr/local/bin/listwise ]
-	ln -fs listwise													[ $*/ar/usr/local/bin/lw ]
-
-	mkdir -p																[ $*/ar/usr/lib/fab/lib/std ]
-
-	cp [ $dfab/fablib/std/c.fab ]						[ $*/ar/usr/lib/fab/lib/std ]
-	cp [ $dfab/fablib/std/l.fab ]						[ $*/ar/usr/lib/fab/lib/std ]
-	cp [ $dfab/fablib/std/y.fab ]						[ $*/ar/usr/lib/fab/lib/std ]
-
-	mkdir -p																[ $*/ar/usr/lib/fab/listwise ]
-
-	cp [ $dfab/fablw/op/fi/fi.so ]					[ $*/ar/usr/lib/fab/listwise ]
-	cp [ $dfab/fablw/op/fg/fg.so ]					[ $*/ar/usr/lib/fab/listwise ]
-
-	mkdir -p																[ $*/ar/usr/lib64 ]
-
-	cp [ $dliblistwise/liblistwise.so ]			[ $*/ar/usr/lib64/liblistwise.so.0.1 ]
-	ln -fs liblistwise.so.0.1								[ $*/ar/usr/lib64/liblistwise.so ]
-
-	mkdir -p																[ $*/ar/usr/include/listwise ]
-
-	cp [ $dliblistwise/listwise.h]					[ $*/ar/usr/include/listwise.h ]
-	cp [ $dliblistwise/listwise/*.h ]				[ $*/ar/usr/include/listwise ]
-
-	mkdir -p																[ $*/ar/usr/lib/listwise ]
-
-	cp [ $dliblistwise/op/*/*.so ]					[ $*/ar/usr/lib/listwise ]
-
-	tar -C [ $*/ar ] -czvf [ $@ ~ rx/rp ] .
+	fab -k make.sh
+	fab -k install.sh +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 }
