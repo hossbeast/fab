@@ -1,13 +1,21 @@
 #!/bin/bash
 
-# A build script made by fab v0.4.2.0
-#  fab is free software released under the GNU General Public License.
+# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
 #
-#  As a special exception, build scripts made by fab v0.4.2.0 (including this
-#  build script) are excluded from the license covering fab itself, even
-#  if substantial portions of the fab source code are copied verbatim into
-#  the build script. You may create a larger work that contains part or all
-#  of the build script and distribute that work under terms of your choice
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>.
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
