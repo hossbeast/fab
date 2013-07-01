@@ -67,31 +67,72 @@ typedef struct depblock
 	size_t						size;
 	int								fd;
 
-	// dependency block
+	// dependency block - may point to heap-allocated or memmapped memory, depending on whether
+  // depblock_read or depblock_allocate was called
 	dep_relations *		block;
 } depblock;
 
-int depblock_create(depblock ** const restrict block, const char * const restrict dirfmt, ...)
-	__attribute__((nonnull));
+/// depblock_create
+//
+// allocate a depblock instance and populate blockpath
+//
+int depblock_create(depblock ** const restrict block, const char * const restrict fmt, ...)
+	__attribute__((nonnull(1, 2)));
 
-int depblock_allocate(depblock * const restrict block)
-	__attribute__((nonnull));
-
+///  depblock_free
+//
+// free a depblock (free semantics)
+//
 void depblock_free(depblock * const restrict block);
 
+///  depblock_xfree
+//
+// free a depblock (xfree semantics)
+//
 void depblock_xfree(depblock ** const restrict block)
 	__attribute__((nonnull));
 
-int depblock_read(depblock * const restrict block)
+/*
+** call path : allocate -> addrelation* -> write -> close
+*/
+
+/// depblock_allocate
+//
+// 
+//
+int depblock_allocate(depblock * const restrict block)
 	__attribute__((nonnull));
 
-int depblock_close(depblock * const restrict block)
+/// depblock_addrelation
+//
+//
+//
+int depblock_addrelation(depblock * const restrict block, const path * const restrict A, const path * const restrict B, int isweak, int isbridge)
 	__attribute__((nonnull));
 
+/// depblock_write
+//
+//
+//
 int depblock_write(const depblock * const restrict block)
 	__attribute__((nonnull));
 
-int depblock_addrelation(depblock * const restrict block, const path * const restrict A, const path * const restrict B, int isweak, int isbridge)
+/*
+** call path : read -> process -> close
+*/
+
+/// depblock_read
+//
+// load the depblock from the backing cache file
+//
+int depblock_read(depblock * const restrict block)
+	__attribute__((nonnull));
+
+/// depblock_close
+//
+//
+//
+int depblock_close(depblock * const restrict block)
 	__attribute__((nonnull));
 
 #undef restrict

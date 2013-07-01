@@ -135,6 +135,7 @@ static int dsc_execwave(
 		{
 			// all were parsed; rewrite the dependency block to disk
 			fatal(depblock_write, dscvgn->dscv_block);
+			fatal(depblock_close, dscvgn->dscv_block);
 		}
 
 		// advance to the next group

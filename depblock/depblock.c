@@ -36,19 +36,22 @@
 /// public
 ///
 
-int depblock_create(depblock ** const block, const char * const dirfmt, ...)
+int depblock_create(depblock ** const block, const char * const fmt, ...)
 {
 	fatal(xmalloc, block, sizeof(**block));
 
 	va_list va;
-	va_start(va, dirfmt);
-	int req = vsnprintf(0, 0, dirfmt, va);
+	va_start(va, fmt);
+	int req = vsnprintf(0, 0, fmt, va);
 	va_end(va);
 
 	fatal(xmalloc, &(*block)->blockpath, req + 1);
-	va_start(va, dirfmt);
-	vsprintf((*block)->blockpath, dirfmt, va);
+	va_start(va, fmt);
+	vsprintf((*block)->blockpath, fmt, va);
 	va_end(va);
+
+	(*block)->fd = -1;
+	(*block)->addr = MAP_FAILED;
 
 	finally : coda;
 }
@@ -57,16 +60,6 @@ void depblock_free(depblock * const block)
 {
 	if(block)
 	{
-		if(block->addr)
-		{
-			// in this case, block->block points to mmap'ed memory that is
-			// dealt with in depblock_close
-		}
-		else
-		{
-			free(block->block);
-		}
-
 		free(block->blockpath);
 	}
 
@@ -113,63 +106,6 @@ int depblock_read(depblock * const block)
 int depblock_allocate(depblock * const block)
 {
 	fatal(xmalloc, &block->block, sizeof(*block->block));
-
-	finally : coda;
-}
-
-int depblock_close(depblock * const block)
-{
-	if(block->block)
-	{
-		if(munmap(block->addr, block->size) == -1)
-			fail("munmap()=[%d][%s]", errno, strerror(errno));
-
-		if(close(block->fd) == -1)
-			fail("close()=[%d][%s]", errno, strerror(errno));
-
-		block->fd = 0;
-		block->addr = 0;
-		block->size = 0;
-		block->block = 0;
-	}
-
-	finally : coda;
-}
-
-int depblock_write(const depblock * const block)
-{
-	if(block->block)
-	{
-		int fd = 0;
-		void * addr = 0;
-		size_t size = sizeof(*block->block);
-
-		fatal(identity_assume_fabsys);
-
-		// open the file for writing
-		if((fd = open(block->blockpath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-			fail("open(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
-
-		// set the filesize
-		if(ftruncate(fd, size) == -1)
-			fail("ftruncate(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
-
-		// map the entire file writable
-		if((addr = mmap(0, size, PROT_WRITE, MAP_SHARED, fd, 0)) == MAP_FAILED)
-			fail("mmap(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
-
-		// copy the data in
-		memcpy(addr, block->block, size);
-
-		// close and unmap
-		if(munmap(addr, size) == -1)
-			fail("munmap()=[%d][%s]", errno, strerror(errno));
-
-		if(close(fd) == -1)
-			fail("close()=[%d][%s]", errno, strerror(errno));
-
-		fatal(identity_assume_user);
-	}
 
 	finally : coda;
 }
@@ -231,4 +167,67 @@ int depblock_addrelation(depblock * const db, const path * const A, const path *
 
 	memcpy(db->block->sets[x].feeds[db->block->sets[x].feedsl++], B->in, B->inl);
 	return 1;
+}
+
+int depblock_write(const depblock * const block)
+{
+	if(block->block)
+	{
+		int fd = 0;
+		void * addr = 0;
+		size_t size = sizeof(*block->block);
+
+		fatal(identity_assume_fabsys);
+
+		// open the file for writing
+		if((fd = open(block->blockpath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
+			fail("open(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
+
+		// set the filesize
+		if(ftruncate(fd, size) == -1)
+			fail("ftruncate(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
+
+		// map the entire file writable
+		if((addr = mmap(0, size, PROT_WRITE, MAP_SHARED, fd, 0)) == MAP_FAILED)
+			fail("mmap(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
+
+		// copy the data in
+		memcpy(addr, block->block, size);
+
+		// close and unmap
+		if(munmap(addr, size) == -1)
+			fail("munmap()=[%d][%s]", errno, strerror(errno));
+
+		if(close(fd) == -1)
+			fail("close()=[%d][%s]", errno, strerror(errno));
+
+		fatal(identity_assume_user);
+	}
+
+	finally : coda;
+}
+
+int depblock_close(depblock * const block)
+{
+	if(block->addr != MAP_FAILED)
+	{
+		if(munmap(block->addr, block->size) == -1)
+			fail("munmap()=[%d][%s]", errno, strerror(errno));
+
+		block->addr = MAP_FAILED;
+		block->block = 0;
+	}
+
+	if(block->fd != -1)
+	{
+		if(close(block->fd) == -1)
+			fail("close(%d)=[%d][%s]", block->fd, errno, strerror(errno));
+
+		block->fd = -1;
+	}
+
+	free(block->block);
+	block->block = 0;
+
+	finally : coda;
 }

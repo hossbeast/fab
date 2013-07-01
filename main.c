@@ -247,6 +247,9 @@ int main(int argc, char** argv)
 		fatal(map_set, smap, MMS("!"), MM(stax[pn]));
 		pn++;
 
+		if(g_args.selectors_arequery)
+			log_parse("+L_SELECT", 0);
+
 		// process selectors
 		for(x = 0; x < g_args.selectorsl; x++)
 			fatal(selector_process, &g_args.selectors[x], x, ffp, smap, &stax, &staxa, pn);

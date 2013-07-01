@@ -834,7 +834,7 @@ int gn_finalize()
 
 			if(gn->dscv_block == 0)
 			{
-				// create dscv block
+				// allocate dscv block
 				fatal(depblock_create, &gn->dscv_block, CACHEDIR_BASE "/INIT/%u/gn/%u/PRIMARY/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
 
 				// actually load the depblock from cache - it was deleted from the fs in the prceeding block
