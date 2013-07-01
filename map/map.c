@@ -24,6 +24,7 @@
 #include "control.h"
 #include "xmem.h"
 #include "xstring.h"
+#include "macros.h"
 
 #define SATURATION 0.45f			/* for 1000-sized table, reallocate at 450 keys */
 
@@ -32,7 +33,7 @@ typedef struct
 {
 	int			d;			// deleted
 
-	size_t	a;			// allocated, in elements
+	size_t	a;			// allocated
 	size_t	l;			// length
 
 	char		p[];		// payload
@@ -48,7 +49,6 @@ struct map_t
 	size_t			kc;				// number of stored k/v pairs
 	void (*destructor)(void*, void*);
 };
-
 
 static uint32_t hashkey(const map* const restrict m, const char* const restrict k, const int kl)
 {
@@ -274,16 +274,22 @@ void* map_set(map* const restrict m, const void* const restrict k, int kl, const
 		fatal(xrealloc
 			, &m->tv[i]
 			, 1
-			, sizeof(*m->tv[i]) + vl + 1
+			, sizeof(*m->tv[i]) + MAX(vl, sizeof(void*)) + 1
 			, sizeof(*m->tv[i]) + (m->tv[i] ? m->tv[i]->a : 0)
 		);
 
-		m->tv[i]->a = vl + 1;
+		m->tv[i]->a = MAX(vl, sizeof(void*)) + 1;
 	}
 
-	if(v)
+	if(v && vl >= sizeof(void*))
+	{
 		memcpy(m->tv[i]->p, v, vl);
-	m->tv[i]->p[vl] = 0;
+		m->tv[i]->p[vl] = 0;
+	}
+	else
+	{
+		memset(m->tv[i]->p, 0, sizeof(void*) + 1);
+	}
 	m->tv[i]->l = vl;
 
 	// copy the key
@@ -415,6 +421,99 @@ int map_values(const map* const restrict m, void* const restrict t, int* const r
 			(*(void***)t)[(*c)++] = m->tv[x]->p;
 		}
 	}
+
+	finally : coda;
+}
+
+int map_clone(map* const restrict dst, const map * const restrict src)
+{
+	int x;
+	map_clear(dst);
+
+	// the dst map must have precisely the same size in order for the probe sequences to work 
+	if(dst->l != src->l)
+	{
+		if(dst->l > src->l)
+		{
+			for(x = src->l; x < dst->l; x++)
+			{
+				free(dst->tk[x]);
+				free(dst->tv[x]);
+			}
+		}
+
+		fatal(xrealloc, &dst->tk, 1, sizeof(*dst->tk) * src->l, 0);
+		fatal(xrealloc, &dst->tv, 1, sizeof(*dst->tv) * src->l, 0);
+
+		dst->l = src->l;
+		dst->lm = src->lm;
+	}
+
+	for(x = 0; x < src->l; x++)
+	{
+		if(src->tk[x])
+		{
+			if(src->tk[x]->d)
+			{
+				if(dst->tk[x] == 0)
+				{
+					fatal(xmalloc, &dst->tk[x], sizeof(*dst->tk[x]));
+				}
+
+				dst->tk[x]->d = 1;
+				dst->tk[x]->l = 0;
+			}
+			else if(src->tk[x]->l)
+			{
+				// reallocate key slot if necessary
+				if(dst->tk[x] == 0 || src->tk[x]->l >= dst->tk[x]->a)
+				{
+					fatal(xrealloc
+						, &dst->tk[x]
+						, 1
+						, sizeof(*dst->tk[x]) + src->tk[x]->l + 1
+						, sizeof(*dst->tk[x]) + (dst->tk[x] ? dst->tk[x]->a : 0)
+					);
+
+					dst->tk[x]->a = src->tk[x]->l + 1;
+				}
+
+				// copy the key
+				memcpy(dst->tk[x]->p, src->tk[x]->p, src->tk[x]->l);
+				dst->tk[x]->p[src->tk[x]->l] = 0;
+				dst->tk[x]->l = src->tk[x]->l;
+				dst->tk[x]->d = 0;
+
+				// reallocate the value slot if necessary
+				if(dst->tv[x] == 0 || src->tv[x]->l >= dst->tv[x]->a)
+				{
+					fatal(xrealloc
+						, &dst->tv[x]
+						, 1
+						, sizeof(*dst->tv[x]) + MAX(src->tv[x]->l, sizeof(void*)) + 1
+						, sizeof(*dst->tv[x]) + (dst->tv[x] ? dst->tv[x]->a : 0)
+					);
+
+					dst->tv[x]->a = MAX(src->tv[x]->l, sizeof(void*)) + 1;
+				}
+
+				// copy the value
+				if(src->tv[x]->l >= sizeof(void*))
+				{
+					memcpy(dst->tv[x]->p, src->tv[x]->p, src->tv[x]->l);
+					dst->tv[x]->p[src->tv[x]->l] = 0;
+				}
+				else
+				{
+					memset(dst->tv[x]->p, 0, sizeof(void*) + 1);
+				}
+				dst->tv[x]->l = src->tv[x]->l;
+				dst->tv[x]->d = 0;
+			}
+		}
+	}
+
+	dst->kc = src->kc;
 
 	finally : coda;
 }

@@ -82,10 +82,10 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 /// fml_render
 //
 // SUMMARY
-//  ts->fmlv has been set; render the cmd for that evaluation to ts->cmd_txt
+//  ts->fmlv has been set; reset ts->cmd_txt and render the cmd for that evaluation to ts->cmd_txt, including an initial SHE-BANG directive
 //
-int fml_render(ts * const restrict ts, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
-	__attribute__((nonnull));
+int fml_render(ts * const restrict ts, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp, map * const restrict rawvars, int shebang)
+	__attribute__((nonnull(1, 2, 3, 4)));
 
 /// fml_exec
 //

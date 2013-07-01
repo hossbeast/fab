@@ -306,13 +306,13 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	if(ffn->targets_0)
 	{
 		int pn = *staxp;
-		fatal(list_resolvetoflat, ffn->targets_0, vmap, gp, stax, staxa, &pn, 0);
+		fatal(list_resolvetoflat, ffn->targets_0, vmap, gp, stax, staxa, &pn, 0, 0);
 	}
 
 	if(ffn->targets_1)
 	{
 		int pn = *staxp;
-		fatal(list_resolvetoflat, ffn->targets_1, vmap, gp, stax, staxa, &pn, 0);
+		fatal(list_resolvetoflat, ffn->targets_1, vmap, gp, stax, staxa, &pn, 0, 0);
 	}
 
 	// create fmlv(s) and attach graph nodes
@@ -328,21 +328,15 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	finally : coda;
 }
 
-int fml_render(ts * const restrict ts, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp, int standalone)
+int fml_render(ts * const restrict ts, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp, map * const restrict rawvars, int shebang)
 {
-	// resolve the list of command
+	// resolve the command list
 	int pn = staxp;
-	fatal(list_resolve, ts->fmlv->fml->ffn->command, ts->fmlv->bag, gp, stax, staxa, &pn, 1);
+	fatal(list_resolve, ts->fmlv->fml->ffn->command, ts->fmlv->bag, gp, stax, staxa, &pn, 1, rawvars);
 
-	if(standalone)
-	{
-		fatal(psprintf, &ts->cmd_txt, "#!/bin/bash\n\n");
-		fatal(list_renderto, (*stax)[staxp], &ts->cmd_txt);
-	}
-	else
-	{
-		fatal(list_render, (*stax)[staxp], &ts->cmd_txt);
-	}
+	// psprintf 1) allocates the pstring if necessary, and 2) sets the length
+	fatal(psprintf, &ts->cmd_txt, shebang ? "#!/bin/bash\n\n" : "");
+	fatal(list_renderto, (*stax)[staxp], &ts->cmd_txt);
 
 	finally : coda;
 }

@@ -69,6 +69,7 @@ int main(int argc, char** argv)
 	bp *								bp = 0;					// buildplan 
 	map * 							rmap = 0;				// root-level map
 	map *								vmap = 0;				// init-level map
+	map * 							bakemap = 0;		// bakedvars map
 	gn *								first = 0;			// first dependency mentioned
 	lstack **						stax = 0;				// listwise stacks
 	int									staxa = 0;
@@ -173,7 +174,7 @@ int main(int argc, char** argv)
 			if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARXFM_ADD || stmt->type == FFN_VARXFM_SUB)
 			{
 				int pn = staxp;
-				fatal(list_resolve, stmt->definition, rmap, ffp->gp, &stax, &staxa, &staxp, 0);
+				fatal(list_resolve, stmt->definition, rmap, ffp->gp, &stax, &staxa, &staxp, 0, 0);
 				staxp++;
 
 				for(y = 0; y < stmt->varsl; y++)
@@ -361,8 +362,14 @@ int main(int argc, char** argv)
 
 	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
 	{
+		// prepare bakevars map
+		fatal(map_create, &bakemap, 0);
+
+		for(x = 0; x < g_args.bakevarsl; x++)
+			fatal(map_set, bakemap, MMS(g_args.bakevars[x]), 0, 0);
+
 		// create bakescript
-		fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw, g_args.bakescript_path);
+		fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &ts, &tsa, &tsw, g_args.bakescript_path);
 	}
 	else
 	{
@@ -405,6 +412,7 @@ finally:
 	map_free(rmap);
 	map_free(vmap);
 	map_free(smap);
+	map_free(bakemap);
 
 	for(x = 0; x < staxa; x++)
 	{
