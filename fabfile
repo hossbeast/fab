@@ -41,6 +41,7 @@ $dfab         = [ $*/fabdev ]
 
 [ @scripts ]
 {
-	fab -k make.sh
-	fab -k install.sh +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
+	exec 2>/dev/null
+	fab --bslic-fab -j 4 -k [ $*/make64.sh ] @all
+	fab --bslic-fab -j 4 -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 }
