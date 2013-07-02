@@ -109,8 +109,8 @@ if(help)
 #if DEVEL
 "  --bslic-standard        bakescripts have the standard license\n"
 "  --bslic-fab             bakescripts have the fab distribution license\n"
-#endif
 "\n"
+#endif
 " logging\n"
 "  -c                      set node identifier mode to GNID_CANON for logging\n"
 "\n"
