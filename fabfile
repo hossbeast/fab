@@ -29,11 +29,12 @@ $dliblistwise	= [ $* ]
 ## variables
 ##
 $libname 			= [ liblistwise.so ]
+$soname				= [ $libname.0.1 ~ j ]
 $liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
 $cflags				= [ $cflags -fPIC [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ]
 	[ -DLWOPDIR="\""$lwopdir"\"" ~ j ]
 ]
-$lflags				= [ -lpcre, -ldl, -shared, [ "-Wl,--version-script=" $dliblistwise/exports ], [ "-Wl,-soname," $libname ] ]
+$lflags				= [ -lpcre, -ldl, -shared, [ "-Wl,--version-script=" $dliblistwise/exports ], [ "-Wl,-soname," $soname ] ]
 
 # source files
 +[@std.c]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
@@ -90,8 +91,8 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 [ @install ] : [ @all ]
 {
 	install -d																				[ $destdir/$libdir ]
-	install	[ $liblistwise ]													[ $destdir/$libdir/$libname.0.1 ]
-	ln -vfs [ $libname.0.1 ]													[ $destdir/$libdir/$libname ]
+	install	[ $liblistwise ]													[ $destdir/$libdir/$soname ]
+	ln -vfs [ $soname ]																[ $destdir/$libdir/$libname ]
 	install -d																				[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise.h	]							[ $destdir/$incdir/listwise.h ]
 	install [ $dliblistwise/listwise/operator.h ]			[ $destdir/$incdir/listwise/operator.h ]
@@ -109,7 +110,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 
 [ @uninstall ]
 {
-	rm -f																							[ $destdir/$libdir/$libname.0.1 ]
+	rm -f																							[ $destdir/$libdir/$soname ]
 	rm -f																							[ $destdir/$libdir/$libname ]
 	rm -rf																						[ $destdir/$lwopdir ]
 	rm -f																							[ $destdir/$incdir/listwise.h ]
