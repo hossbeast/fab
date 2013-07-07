@@ -1,6 +1,3 @@
-[submodule "fabdev"]
-	path = fabdev
-	url = git://github.com/hossbeast/fabdev.git
 [submodule "listwisedev"]
 	path = listwisedev
 	url = git://github.com/hossbeast/listwisedev.git

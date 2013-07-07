@@ -1,0 +1,95 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# @std.l.fab
+#  provides discovery formula for .l files
+#  provides fabrication formula for .lex.c -> .lex.o
+#  provides dependencies for lex.o -> .l
+
+# var/closure
+#  cc
+#  cflags 
+#  flex
+#  flexflags
+#
+#  dirs       - directories containing .l files
+#  rdirs      - directories containing .l files, recursive search
+#  paths      - paths to .l files
+#
+#  dscdirs    - (as above, but for discovery only)
+#  dscrdirs   - 
+#  dscpaths   - 
+#
+#  fabdirs    - (as above, but for fabrication/dependency only)
+#  fabrdirs   - 
+#  fabpaths   - 
+#
+
+# default object file extensions
+$ext = [ o ]
+
+# paths to l files for discovery
+$ldscpaths = [
+	$paths				# paths
+	$dscpaths			# paths, discovery only
+
+	[
+		$dirs				# directories
+		$dscdirs		# directories, discovery only
+	~ ls ]
+
+	[
+		$rdirs			# recursive directories
+		$rdscdirs		# recursive directories, discovery only
+	~ lsr ]
+~ xm/<l> ]
+
+# paths to l files for fabrication
+$lfabpaths = [
+	$paths				# paths
+	$fabpaths			# paths, discovery only
+
+	[
+		$dirs				# directories
+		$fabdirs		# directories, discovery only
+	~ ls ]
+
+	[
+		$rdirs			# recursive directories
+		$rfabdirs		# recursive directories, discovery only
+  ~ lsr ]
+~ xm/<l> ]
+
+# discovery
+[ $ldscpaths ] %
+{
+		  [ $flex ] [ $flexflags ~ uu/fi ] -t [ $@ ] [
+	] | [ $cc ] [ $cflags ~ uu/fi ] -MM -MP -MG -xc - [
+	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<l>/<lex. $ext >/y/fi ~ j ] ] [ $ext ]
+}
+
+# $flex : l -> { lex.c, lex.h }
+[ $lfabpaths ~ xs/<l>/<lex.c>/y/v/d/cp/u/xs/<lex.c>/<lex.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<lex.c>/<l>/xs/<lex.h>/<l>/ss/u ]
+{
+	  [ $flex ] [ $flexflags ~ uu/fi ] -o [ $@ ~ h/1/1 ] [
+	] [ --header-file= [ $@ ~ h/0/1 ] ] [
+	] [ $@ ~ rx/ineed/xm/<l>/ss/u ]
+}
+
+# $cc : lex.c -> lex.o via std.c
++[@std.c](-$cobjpaths; $cfabpaths = [ $lfabpaths ~ xs/<l>/<lex.c> ]; $cc $cflags; $cdscpaths)
+$lobjpaths = [ $cobjpaths ]
