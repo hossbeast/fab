@@ -4,6 +4,3 @@
 [submodule "listwise"]
 	path = listwise
 	url = git://github.com/hossbeast/listwise.git
-[submodule "liblistwise"]
-	path = liblistwise
-	url = git://github.com/hossbeast/liblistwise.git

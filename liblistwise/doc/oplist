@@ -1,0 +1,74 @@
+selection operators
+m       Match
+v       inVert selection
+u       select Unique
+z       select none
+h       select window on the list (head)
+
+selection filesystem operators
+-f      path references a plain file
+-d      path references a directory
+-l      path references a symbolic link
+
+inplace translation operators
+s       Substitution
+w       window (on each string)
+
+inplace filesystem/path operators
+rp      path canonicalization (with RealPath)
+bn      basename
+dn      dirname
+
+interlist operators
+d       sunDer selected
+c       Coalesce
+xch     eXCHange
+dj			DisJoin
+
+inplace intralist operators
+r       Reverse
+ss      Sort Strings (asc)
+sn      Sort Numeric (asc)
+
+implementation operators
+o       Or - 
+y       apply items affected by last operator to selection
+
+listpush filesystem operators
+ls      directory LiSting
+lsr     directory LiSting (Recursive)
+
+// TODO 
+// n     select by Number 
+//       select by expression on x (every other, etc) 
+// y     transliteration 
+// wl    window of strings in the list  
+// st    stat each path, printf(fmt) with results (like find printf) 
+// jw    join lists - window  
+// jm		 join lists - regex 
+//       (set) intersect - jw on whole string 
+//       (set) union - same as c 
+// ext   file name extension 
+//       replace bn/dp with window on '/' delimited sections 
+
+// append text to each entry
+// prepend text to each entry
+
+// apply the following operation to all lists on the stack
+// apply previous operation to all lists on the stack
+
+// select previous  - all rows up to and including the last selected row 
+// select following - all rows including and following the last selected row 
+// split lines
+   like disjoin, where the number of elements in list[0] is equal to the number of matches in all the
+   text comprising the current selection 
+
+// establish selections on each entry
+//  by offset/length window
+//  by regex-match window
+// THEN
+//  aggregate math operations
+//   sum/avg/stddev - push, write 1 entry with results
+//  sort lines based on value in window
+//  splice - remove window
+//  extract - invert, remove window(s)
