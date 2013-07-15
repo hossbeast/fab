@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "path.h"
 
@@ -26,11 +27,12 @@
 #include "xmem.h"
 #include "canon.h"
 #include "cksum.h"
+#include "args.h"
 
 //
 // static
 //
-int getdir(const char * const p, char ** const r)
+static int getdir(const char * const p, char ** const r)
 {
 	const char * s = p + strlen(p);
 	while(s != p && s[0] != '/')
@@ -51,7 +53,7 @@ int getdir(const char * const p, char ** const r)
 	return 0;
 }
 
-int getname(const char * const p, char ** const r)
+static int getname(const char * const p, char ** const r)
 {
 	const char * s = p + strlen(p);
 	while(s != p && s[0] != '/')
@@ -64,7 +66,7 @@ int getname(const char * const p, char ** const r)
 	return 0;
 }
 
-int getext(const char * const p, char ** const r)
+static int getext(const char * const p, char ** const r)
 {
 	const char * s = p + strlen(p);
 	while(s != p && s[0] != '/')
@@ -84,7 +86,7 @@ int getext(const char * const p, char ** const r)
 	return 1;
 }
 
-int getextlast(const char * const p, char ** const r)
+static int getextlast(const char * const p, char ** const r)
 {
 	const char * s = p + strlen(p);
 	while(s != p && s[0] != '/' && s[0] != '.')
@@ -106,7 +108,9 @@ static int path_init(path * const p)
 	// directories
 	fatal(getdir, p->can, &p->can_dir);
 	fatal(getdir, p->abs, &p->abs_dir);
-	fatal(getdir, p->rel, &p->rel_dir);
+	fatal(getdir, p->rel_cwd, &p->rel_cwd_dir);
+	fatal(getdir, p->rel_fab, &p->rel_fab_dir);
+	fatal(getdir, p->rel_nofile, &p->rel_nofile_dir);
 
 	// other properties
 	fatal(getname, p->can, &p->name);
@@ -114,21 +118,24 @@ static int path_init(path * const p)
 	fatal(getextlast, p->can, &p->ext_last);
 
 	// lengths
-	p->canl					= strlen(p->can);
-	p->absl					= strlen(p->abs);
-	p->rell					= strlen(p->rel);
-	p->can_dirl			= strlen(p->can_dir);
-	p->abs_dirl			= strlen(p->abs_dir);
-	p->rel_dirl			= strlen(p->rel_dir);
-	p->namel				= strlen(p->name);
+	p->canl							= strlen(p->can);
+	p->absl							= strlen(p->abs);
+	p->rel_cwdl					= strlen(p->rel_cwd);
+	p->rel_fabl					= strlen(p->rel_fab);
+	p->rel_nofilel			= strlen(p->rel_nofile);
+	p->can_dirl					= strlen(p->can_dir);
+	p->abs_dirl					= strlen(p->abs_dir);
+	p->rel_cwd_dirl			= strlen(p->rel_cwd_dir);
+	p->rel_fab_dirl			= strlen(p->rel_fab_dir);
+	p->rel_nofile_dirl	= strlen(p->rel_nofile_dir);
+	p->namel						= strlen(p->name);
 	if(p->ext)
-		p->extl				= strlen(p->ext);
+		p->extl						= strlen(p->ext);
 	if(p->ext_last)
-		p->ext_lastl	= strlen(p->ext_last);
+		p->ext_lastl			= strlen(p->ext_last);
 
-	if(p->base)
-		p->basel			= strlen(p->base);
-	p->inl					= strlen(p->in);
+	p->in_pathl					= strlen(p->in_path);
+	p->in_basel					= strlen(p->in_base);
 
 	// hash of the canonical path
 	p->can_hash			= cksum(p->can, p->canl);
@@ -139,11 +146,61 @@ static int path_init(path * const p)
 	finally : coda;
 }
 
+/// rebase
 //
-// public
+// reformulate a normalized absolute path into a relative path in terms of some base
 //
+// PARAMETERS
+//  abs    - absolute, normalized path path to rebase
+//  base   - absolute directory path to rebase against
+//  dst    - write path relative to base here
+//  siz    - size of dst
+//
+int rebase(const char * const abs, int absl, const char * const base, int basel, char * dst, size_t siz)
+{
+	absl = absl ?: strlen(abs);
+	basel = basel ?: strlen(base);
 
-int path_create(path ** const p, const char * const base, const char * const fmt, ...)
+	int x;
+	for(x = 0; x < absl && x < basel; x++)
+	{
+		int y = 0;
+		while((x + y) < absl && (x + y) < basel && abs[x + y] == base[x + y] && abs[x + y] != '/')
+			y++;
+
+		if((abs[x + y] == '/' || ((x + y) == absl)) &&  (base[x + y] == '/' || ((x + y) == basel)))
+		{
+			x += y;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	size_t z = 0;
+	int i;
+	for(i = x; i < basel; i++)
+	{
+		int y = 0;
+		while((i + y) < basel && base[i + y] != '/')
+			y++;
+
+		if(y)
+			z += snprintf(dst + z, siz - z, "../");
+
+		i += y;
+	}
+
+	if(abs[x] == '/' && absl - x)
+		x++;
+
+	z += snprintf(dst + z, siz - z, "%.*s", absl - x, abs + x);
+
+	return 1;
+}
+
+static int create(path ** const p, const char * const in_base, const char * const fmt, va_list va, int init)
 {
 	if(xmalloc(p, sizeof(**p)) == 0)
 		return 0;
@@ -154,37 +211,61 @@ int path_create(path ** const p, const char * const base, const char * const fmt
 	if(xmalloc(&(*p)->abs, 512) == 0)
 		return 0;
 
-	if(xmalloc(&(*p)->rel, 512) == 0)
+	if(xmalloc(&(*p)->rel_cwd, 512) == 0)
 		return 0;
 
-	va_list va;
-	va_start(va, fmt);
+	if(xmalloc(&(*p)->rel_fab, 512) == 0)
+		return 0;
+
+	if(xmalloc(&(*p)->rel_nofile, 512) == 0)
+		return 0;
+
 	char buf[512];
 	vsnprintf(buf, sizeof(buf), fmt, va);
-	va_end(va);
 
 	// save pameters of creation
-	(*p)->in = strdup(buf);
-	(*p)->base = strdup(base);
+	(*p)->in_path = strdup(buf);
+	(*p)->in_base = strdup(in_base);
 
+	//
 	// canonical path - fully canonicalized
 	//
-	if(canon(buf, 0, (*p)->can, 512, base, CAN_REALPATH) == 0)
+	if(canon(buf, 0, (*p)->can, 512, in_base, CAN_REALPATH) == 0)
 		return 0;
 
+	// 
 	// absolute path - close to the users representation - but forced to absolute notation
 	//  - will always begin with a slash (FORCE_DOT)
 	//	- all dots and dotdots resolved
 	//  - resolve internal symbolic links which do not cross mount points
 	//
-	if(canon(buf, 0, (*p)->abs, 512, base, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM) == 0)
+	if(canon(buf, 0, (*p)->abs, 512, in_base, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM) == 0)
 		return 0;
 
-	// relative path - very close to the users representation
-	//  - internal dots and dotdots are resolved
-	//  - resolve internal symbolic links which do not cross mount points
 	// 
-	if(canon(buf, 0, (*p)->rel, 512, base, CAN_NEXT_DOT | CAN_NEXT_SYM) == 0)
+	// absolute path rebased to cwd
+	//
+	if(rebase((*p)->abs, 0, g_args.cwd, 0, (*p)->rel_cwd, 512) == 0)
+		return 0;
+
+	// 
+	// absolute path rebased to init-fabfile-dir
+	//
+	if(init)
+	{
+		if(rebase((*p)->abs, 0, g_args.cwd, 0, (*p)->rel_fab, 512) == 0)
+			return 0;
+	}
+	else
+	{
+		if(rebase((*p)->abs, 0, g_args.init_fabfile_path->abs_dir, 0, (*p)->rel_fab, 512) == 0)
+			return 0;
+	}
+
+	// 
+	// absolute path rebased to /..
+	//
+	if(rebase((*p)->abs, 0, "/..", 0, (*p)->rel_nofile, 512) == 0)
 		return 0;
 
 	path_init(*p);
@@ -192,26 +273,30 @@ int path_create(path ** const p, const char * const base, const char * const fmt
 	return 1;
 }
 
-int path_create_canon(path ** const p, const char * fmt, ...)
+//
+// public
+//
+
+int path_create(path ** const p, const char * const in_base, const char * const fmt, ...)
 {
-	if(xmalloc(p, sizeof(**p)) == 0)
-		return 0;
-
-	if(xmalloc(&(*p)->can, 512) == 0)
-		return 0;
-
 	va_list va;
 	va_start(va, fmt);
-	vsnprintf((*p)->can, 512, fmt, va);
+
+	int r = create(p, in_base, fmt, va, 0);
+
 	va_end(va);
+	return r;
+}
 
-	(*p)->abs = strdup((*p)->can);
-	(*p)->rel = strdup((*p)->can);
-	(*p)->in  = strdup((*p)->can);
+int path_create_init(path ** const p, const char * const in_base, const char * const fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
 
-	path_init(*p);
+	int r = create(p, in_base, fmt, va, 1);
 
-	return 1;
+	va_end(va);
+	return r;
 }
 
 int path_cmp(const path * const A, const path * const B)
@@ -259,4 +344,3 @@ int path_copy(path ** const B, const path * const A)
 	
 	return 1;
 }
-

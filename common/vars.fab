@@ -20,6 +20,7 @@ $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
 $VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
 
 # enable debug compilation
+$dvel						= [ 0 ]			# dvel implies dbug
 $dbug						= [ 0 ]
 
 # install directories
@@ -46,8 +47,9 @@ $bisonflags	= [ --warnings=error ]
 
 $cc					= [ gcc ]
 $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE [ -I $dcommon ~ j ]
-	[ $dbug ~ s/1/-O0/y ]
-	[ $dbug ~ s/0/-O3/y ]
-	[ $dbug ~ s/1/-g/y ]
-	[ $dbug ~ s/1/-DDBUG/y ]
+	[ $dbug $dvel ~ s/1/-O0/y ]
+	[ $dbug $dvel ~ j/s/00/-O3/y ]
+	[ $dbug $dvel ~ s/1/-g/y ]
+	[ $dbug $dvel ~ s/1/-DDBUG/y ]
+	[       $dvel ~ s/1/-DDEVEL/y ]
 ]

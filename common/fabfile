@@ -39,4 +39,3 @@ $cflags = [ $cflags [ -I $dcommon ~ j ] ]
 {
 	rm -f [ $dcommon/*.o ] 2>/dev/null
 }
-

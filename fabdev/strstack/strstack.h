@@ -94,4 +94,3 @@ int strstack_string(strstack * const restrict stk, const char * const restrict l
   __attribute__((nonnull(1, 4)));
 
 #endif
-

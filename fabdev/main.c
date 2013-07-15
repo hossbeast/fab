@@ -211,7 +211,7 @@ int main(int argc, char** argv)
 
 	// use up one list and populate the # variable (relative directory path to the initial fabfile)
 	fatal(lw_reset, &stax, &staxa, staxp);
-	fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->rel_dir, g_args.init_fabfile_path->rel_dirl);
+	fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->abs_dir, g_args.init_fabfile_path->abs_dirl);
 	fatal(var_set, rmap, "#", stax[staxp++], 1, 0, 0);
 
 	// vmap for the initial fabfile is the first (and only) direct descendant of rootmap

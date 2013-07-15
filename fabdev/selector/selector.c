@@ -36,7 +36,7 @@ char * selector_string(const selector * const s, char * const dst, const size_t 
 		x <<= 1;
 	}
 
-	l += snprintf(dst + l, z - l, " : %s }", s->s);
+	l += snprintf(dst + l, z - l, ",%s : %s }", SELECTOR_BASE_STR(s->base), s->s);
 	return dst;
 }
 
@@ -105,7 +105,10 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 				}
 				else
 				{
-					fatal(gn_lookup, (*stax)[pn]->s[0].s[y].s, g_args.cwd, &g);
+					if(s->base == SELECTOR_BASE_CWD)
+						fatal(gn_lookup, (*stax)[pn]->s[0].s[y].s, g_args.cwd, &g);
+					else if(s->base == SELECTOR_BASE_FABFILE_DIR)
+						fatal(gn_lookup, (*stax)[pn]->s[0].s[y].s, g_args.init_fabfile_path->abs_dir, &g);
 				}
 
 				if(g)
@@ -125,7 +128,10 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 	else
 	{
 		gn * g = 0;
-		fatal(gn_lookup, s->s, g_args.cwd, &g);
+		if(s->base == SELECTOR_BASE_CWD)
+			fatal(gn_lookup, s->s, g_args.cwd, &g);
+		else if(s->base == SELECTOR_BASE_FABFILE_DIR)
+			fatal(gn_lookup, s->s, g_args.init_fabfile_path->abs_dir, &g);
 
 		if(g)
 		{

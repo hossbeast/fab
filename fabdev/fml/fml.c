@@ -409,6 +409,9 @@ int fml_exec(ts * const restrict ts, int num)
 		fatal_os(setresuid, g_args.ruid, g_args.ruid, g_args.ruid);
 		fatal_os(setresgid, g_args.rgid, g_args.rgid, g_args.rgid);
 
+		// chdir to the base directory
+		fatal_os(chdir, g_args.init_fabfile_path->can_dir);
+
 		// exec doesnt return
 		fatal_os(execl, ts->cmd_path->s, ts->cmd_path->s, (void*)0);
 	}

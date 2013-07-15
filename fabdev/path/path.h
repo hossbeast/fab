@@ -24,6 +24,7 @@
 
 typedef struct
 {
+	// managed strings
 	union
 	{
 		struct
@@ -33,33 +34,44 @@ typedef struct
 
 		struct
 		{
-			char *			can;				// fully canonicalized representation
-			char *			abs;				// non-normalized, but in absolute form
-			char *			rel;				// relative form
+			char *			in_path;			// input path
+			char *			in_base;			// input base
+
+			char *			can;					// fully canonicalized representation
 			char *			can_dir;
+			char *			abs;					// non-normalized, but in absolute form
 			char *			abs_dir;
-			char *			rel_dir;
+			char *			rel_cwd;			// relative to base
+			char *			rel_cwd_dir;
+			char *			rel_fab;			// relative to base
+			char *			rel_fab_dir;
+			char *			rel_nofile;		// relative to base
+			char *			rel_nofile_dir;
+
 			char *			name;
 			char *			ext;
 			char * 			ext_last;
-
-			char *			in;
-			char *			base;
 		};
 	};
 
+	int					in_pathl;
+	int					in_basel;
+
 	int					canl;
-	int					absl;
-	int					rell;
 	int					can_dirl;
+	int					absl;
 	int					abs_dirl;
-	int					rel_dirl;
+
+	int					rel_cwdl;					// relative to cwd
+	int					rel_cwd_dirl;
+	int					rel_fabl;					// relative to init-fabfile-dir
+	int					rel_fab_dirl;
+	int					rel_nofilel;			// relative to /..
+	int					rel_nofile_dirl;
+
 	int					namel;
 	int					extl;
 	int					ext_lastl;
-
-	int					inl;
-	int					basel;
 
 	uint32_t		can_hash;
 	int					is_nofile;
@@ -71,24 +83,14 @@ typedef struct
 //  create path instance from a relative path representation
 //
 // PARAMETERS
-//  p    - results go here
-//  base - for resolving the absolute path
-//  fmt  - 
+//  p        - result path object
+//  in_base  - input path is relative to this base
+//  fmt      - input path
 //
-int path_create(path ** const restrict p, const char * const restrict base, const char * const restrict fmt, ...)
+int path_create(path ** const restrict p, const char * const restrict in_base, const char * const restrict fmt, ...)
 	__attribute__((nonnull));
 
-/// path_create_canon
-//
-// SUMMARY
-//  create path instance from an already canonicalized path
-//
-// PARAMETERS
-//  p  - results go here
-//  s  - canonicalized path string
-//  l  - length of s, 0 for strlen
-//
-int path_create_canon(path ** const restrict p, const char * const restrict fmt, ...)
+int path_create_init(path ** const restrict p, const char * const restrict in_base, const char * const restrict fmt, ...)
 	__attribute__((nonnull));
 
 /// path_cmp
@@ -119,9 +121,12 @@ void path_xfree(path ** const restrict)
 // SUMMARY
 //  create a deep copy of a path object
 //
-int path_copy(path ** const restrict B, const path * const restrict A)
+// PARAMETERS
+//  dst -
+//  src -
+//
+int path_copy(path ** const restrict dst, const path * const restrict src)
 	__attribute__((nonnull));
 
 #undef restrict
 #endif
-

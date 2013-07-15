@@ -109,9 +109,13 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		{
 			ff->idstring = strdup(ff->path->can);
 		}
-		else if(g_args.mode_gnid == MODE_GNID_RELATIVE)
+		else if(g_args.mode_gnid == MODE_GNID_RELATIVE_CWD)
 		{
-			ff->idstring = strdup(ff->path->rel);
+			ff->idstring = strdup(ff->path->rel_cwd);
+		}
+		else if(g_args.mode_gnid == MODE_GNID_RELATIVE_FABFILE_DIR)
+		{
+			ff->idstring = strdup(ff->path->rel_fab);
 		}
 
 		// closure dir
@@ -341,7 +345,7 @@ coda;
 int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const fp, struct gn * dscv_gn, ff_file** const ff)
 {
 	path * pth = 0;
-	fatal(path_create_canon, &pth, "%s", fp);
+	fatal(path_create, &pth, "/../FABSYS/dscv", "%s", fp);
 	qfatal(parse, p, b, sz, pth, dscv_gn, 0, 0, ff);
 
 finally:
@@ -352,7 +356,7 @@ coda;
 int ff_var_parse(const ff_parser * const p, char* b, int sz, int id, ff_file** const ff)
 {
 	path * pth = 0;
-	fatal(path_create_canon, &pth, "/../cmdline/v/%d", id);
+	fatal(path_create, &pth, "/../FABSYS/cmdline/v", "%d", id);
 	qfatal(parse, p, b, sz, pth, 0, &id, 0, ff);
 
 finally:
@@ -363,7 +367,7 @@ coda;
 int ff_list_parse(const ff_parser * const p, char* b, int sz, int id, ff_file ** const ff)
 {
 	path * pth = 0;
-	fatal(path_create_canon, &pth, "/../cmdline/%d", id);
+	fatal(path_create, &pth, "/../FABSYS/cmdline/l", "%d", id);
 	qfatal(parse, p, b, sz, pth, 0, 0, &id, ff);
 
 finally:
@@ -497,13 +501,15 @@ void ff_dump(ff_file * const ff)
 	int x;
 	if(log_would(L_FF | L_FFFILE))
 	{
-		log(L_FF | L_FFFILE			, "%20s : %s", "idstring", ff->idstring);
-		log(L_FF | L_FFFILE			, "%20s : %s", "type", FFT_STRING(ff->type));
-		log(L_FF | L_FFFILE			, "%20s : %s", "can-path", ff->path->can);
-		log(L_FF | L_FFFILE			, "%20s : %s", "abs-path", ff->path->abs);
-		log(L_FF | L_FFFILE			, "%20s : %s", "rel-path", ff->path->rel);
-		log(L_FF | L_FFFILE			, "%20s : %s", "path-in", ff->path->in);
-		log(L_FF | L_FFFILE			, "%20s : %s", "path-base", ff->path->base);
+		log(L_FF | L_FFFILE			, "%20s : %s", "idstring"						, ff->idstring);
+		log(L_FF | L_FFFILE			, "%20s : %s", "type"								, FFT_STRING(ff->type));
+		log(L_FF | L_FFFILE			, "%20s : %s", "can-path"						, ff->path->can);
+		log(L_FF | L_FFFILE			, "%20s : %s", "in-path"						, ff->path->in_path);
+		log(L_FF | L_FFFILE			, "%20s : %s", "in-base"						, ff->path->in_base);
+		log(L_FF | L_FFFILE			, "%20s : %s", "abs-path"						, ff->path->abs);
+		log(L_FF | L_FFFILE			, "%20s : %s", "rel-cwd-path"				, ff->path->rel_cwd);
+		log(L_FF | L_FFFILE			, "%20s : %s", "rel-fab-path"				, ff->path->rel_fab);
+		log(L_FF | L_FFFILE			, "%20s : %s", "rel-nofile-path"		, ff->path->rel_nofile);
 		if(ff->type == FFT_REGULAR)
 		{
 			log(L_FF | L_FFFILE		, "%20s : %d", "closure-gns", ff->closure_gnsl);
@@ -526,4 +532,6 @@ void ff_dump(ff_file * const ff)
 
 	log(L_FF | L_FFFILE			, "%20s :", "tree");
 	ffn_dump(ff->ffn);
+
+	log(L_FF | L_FFFILE, "");
 }

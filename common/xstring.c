@@ -177,4 +177,3 @@ int xsprintf(char** s, char* fmt, ...)
 
 	return 1;
 }
-

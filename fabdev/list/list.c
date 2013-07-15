@@ -60,7 +60,7 @@ static int render(lstack * const ls, pstring ** const ps)
 		else if(ls->s[0].s[x].type == LISTWISE_TYPE_GNLW)
 		{
 			gn * A = *(void**)ls->s[0].s[x].s;
-			fatal(pscatf, ps, "%.*s", A->path->rell, A->path->rel);
+			fatal(pscatf, ps, "%.*s", A->path->absl, A->path->abs);
 		}
 		else
 		{

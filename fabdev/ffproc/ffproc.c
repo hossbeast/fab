@@ -120,6 +120,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 						, fl, f
 					);
 
+					// using euidaccess indicates a race condition ..
 					if(euidaccess(pth->can, F_OK) == 0)
 						break;
 				}
@@ -251,6 +252,8 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 	{
 		char * sstr = 0;
 		fatal(strstack_string, sstk, "/", "/", &sstr);
+
+		log(L_INVOKE, "%s @ %s", inpath->can, sstr);
 	}
 
 	// parse
@@ -270,7 +273,7 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 	}
 	else
 	{
-		fatal(lstack_add, (*stax)[(*staxp)], ff->path->rel_dir, ff->path->rel_dirl);
+		fatal(lstack_add, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
 	}
 
 	int star = (*staxp)++;

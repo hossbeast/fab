@@ -263,7 +263,7 @@ int gn_lookup(const char * const restrict s, const char * const restrict base, g
 //  lookup or create a graph node
 //
 // PARAMETERS
-//  [base] - directory path for resolving relative paths
+//  base   - directory path for resolving relative paths
 //  [sstk] - stringstack for resolving nofile paths
 //  A        1) filepath (relative to base), or
 //           2) nofile path (interpreted via sstk), or
@@ -276,7 +276,7 @@ int gn_lookup(const char * const restrict s, const char * const restrict base, g
 //  returns 0 on failure (memory, io) and 1 otherwise
 //
 int gn_add(const char * const restrict base, strstack * const restrict sstk, char * const restrict A, int Al, gn ** r, int * const restrict newa)
-	__attribute__((nonnull(3)));
+	__attribute__((nonnull(1, 3)));
 
 /// gn_edge_add
 //

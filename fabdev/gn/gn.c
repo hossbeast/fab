@@ -94,7 +94,7 @@ static void freenode(gn * const gn)
 //  lookup a gn by absolute path, relative path, or NOFILE-name
 //
 // PARAMETERS
-//  [base] - directory path for resolving relative paths
+//  base   - directory path for resolving relative paths
 //  [sstk] - stringstack for resolving nofile paths
 //  iscan  - skip canonicalization (path is already known to be canonicalized)
 //  s      - string
@@ -105,7 +105,7 @@ static void freenode(gn * const gn)
 //  0 on failure (ENOMEN) and 1 otherwise
 //
 static int lookup(const char * const restrict base, strstack * const restrict sstk, const char * const restrict s, int l, gn ** r)
-	__attribute__((nonnull(3)));
+	__attribute__((nonnull(1, 3)));
 
 static int lookup(const char * const base, strstack * const sstk, const char * const s, int l, gn ** r)
 {
@@ -122,7 +122,7 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 		canp = space;
 		canpl = strlen(canp);
 	}
-	else if(base)
+	else
 	{
 		fatal(canon, canp, canpl, space, sizeof(space), base, CAN_REALPATH);
 
@@ -188,24 +188,24 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		{
 			char * sstr;
 			fatal(strstack_string, sstk, "/", "/", &sstr);
-			fatal(path_create_canon, &(*gna)->path, "%s/%.*s", sstr, Al - 4, A + 4);
-		}
-		else if(base)
-		{
-			fatal(path_create, &(*gna)->path, base, "%.*s", Al, A);
+			fatal(path_create, &(*gna)->path, "/..", "%s/%.*s", sstr, Al - 4, A + 4);
 		}
 		else
 		{
-			fatal(path_create_canon, &(*gna)->path, "%.*s", Al, A);
+			fatal(path_create, &(*gna)->path, base, "%.*s", Al, A);
 		}
 
 		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
 
 		// idstring
-		if(g_args.mode_gnid == MODE_GNID_RELATIVE)
+		if(g_args.mode_gnid == MODE_GNID_RELATIVE_CWD)
 		{
-			(*gna)->idstring = strdup((*gna)->path->rel);
+			(*gna)->idstring = strdup((*gna)->path->rel_cwd);
+		}
+		else if(g_args.mode_gnid == MODE_GNID_RELATIVE_FABFILE_DIR)
+		{
+			(*gna)->idstring = strdup((*gna)->path->rel_fab);
 		}
 		else if(g_args.mode_gnid == MODE_GNID_CANON)
 		{
@@ -519,17 +519,19 @@ void gn_dump(gn * gn)
 	if(log_would(L_DG | L_DGRAPH))
 	{
 		// path properties
-		log(L_DG | L_DGRAPH, "%12s : %s", "can-path"	, gn->path->can);
-		log(L_DG | L_DGRAPH, "%12s : %s", "abs-path"	, gn->path->abs);
-		log(L_DG | L_DGRAPH, "%12s : %s", "rel-path"	, gn->path->rel);
-		log(L_DG | L_DGRAPH, "%12s : %s", "path-in"	, gn->path->in);
-		log(L_DG | L_DGRAPH, "%12s : %s", "path-base", gn->path->base);
-		log(L_DG | L_DGRAPH, "%12s : %u", "canhash"	, gn->path->can_hash);
-		log(L_DG | L_DGRAPH, "%12s : %s", "name"			, gn->path->name);
-		log(L_DG | L_DGRAPH, "%12s : %s", "ext"			, gn->path->ext);
-		log(L_DG | L_DGRAPH, "%12s : %s", "ext_last"	, gn->path->ext_last);
-
-		log(L_DG | L_DGRAPH, "%12s : %s", "designation", gn->designation);
+		log(L_DG | L_DGRAPH, "%18s : %s", "idstring"				, gn->idstring);
+		log(L_DG | L_DGRAPH, "%18s : %s", "designation"			, gn->designation);
+		log(L_DG | L_DGRAPH, "%18s : %s", "can-path"				, gn->path->can);
+		log(L_DG | L_DGRAPH, "%18s : %s", "in-path"					, gn->path->in_path);
+		log(L_DG | L_DGRAPH, "%18s : %s", "in-base"					, gn->path->in_base);
+		log(L_DG | L_DGRAPH, "%18s : %s", "abs-path"				, gn->path->abs);
+		log(L_DG | L_DGRAPH, "%18s : %s", "rel-fab-path"		, gn->path->rel_fab);
+		log(L_DG | L_DGRAPH, "%18s : %s", "rel-cwd-path"		, gn->path->rel_cwd);
+		log(L_DG | L_DGRAPH, "%18s : %s", "rel-nofile-path"	, gn->path->rel_nofile);
+		log(L_DG | L_DGRAPH, "%18s : %u", "canhash"					, gn->path->can_hash);
+		log(L_DG | L_DGRAPH, "%18s : %s", "name"						, gn->path->name);
+		log(L_DG | L_DGRAPH, "%18s : %s", "ext"							, gn->path->ext);
+		log(L_DG | L_DGRAPH, "%18s : %s", "ext_last"				, gn->path->ext_last);
 
 		if(gn->designate == GN_DESIGNATION_PRIMARY)
 		{
@@ -537,7 +539,7 @@ void gn_dump(gn * gn)
 			{
 				for(x = 0; x < gn->dscvsl; x++)
 				{
-					log(L_DG | L_DGRAPH, "%12s : (%s)[%3d,%3d - %3d,%3d]", "dsc formula"
+					log(L_DG | L_DGRAPH, "%18s : (%s)[%3d,%3d - %3d,%3d]", "dsc formula"
 						, ff_idstring(gn->dscvs[x]->fml->ffn->loc.ff)
 						, gn->dscvs[x]->fml->ffn->loc.f_lin + 1
 						, gn->dscvs[x]->fml->ffn->loc.f_col + 1
@@ -548,22 +550,22 @@ void gn_dump(gn * gn)
 			}
 			else
 			{
-				log(L_DG | L_DGRAPH, "%12s : none", "dsc formula");
+				log(L_DG | L_DGRAPH, "%18s : none", "dsc formula");
 			}
 
-			log(L_DG | L_DGRAPH, "%12s : %d", "size", (int)gn->primary_hb->size);
+			log(L_DG | L_DGRAPH, "%18s : %d", "size", (int)gn->primary_hb->size);
 			if(gn->primary_hb->mtime)
 			{
 				struct tm ltm;
 				localtime_r(&gn->primary_hb->mtime, &ltm);
 				strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
 
-				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-abs", space);
-				log(L_DG | L_DGRAPH, "%12s : %s", "mtime-del", durationstring(time(0) - gn->primary_hb->mtime));
+				log(L_DG | L_DGRAPH, "%18s : %s", "mtime-abs", space);
+				log(L_DG | L_DGRAPH, "%18s : %s", "mtime-del", durationstring(time(0) - gn->primary_hb->mtime));
 			}
 			else
 			{
-				log(L_DG | L_DGRAPH, "%12s : %s", "mtime", "");
+				log(L_DG | L_DGRAPH, "%18s : %s", "mtime", "");
 			}
 		}
 
@@ -571,7 +573,7 @@ void gn_dump(gn * gn)
 		{
 			if(gn->fabv)
 			{
-				log(L_DG | L_DGRAPH, "%12s : (%s)[%3d,%3d - %3d,%3d]", "fab formula"
+				log(L_DG | L_DGRAPH, "%18s : (%s)[%3d,%3d - %3d,%3d]", "fab formula"
 					, ff_idstring(gn->fabv->fml->ffn->loc.ff)
 					, gn->fabv->fml->ffn->loc.f_lin + 1
 					, gn->fabv->fml->ffn->loc.f_col + 1
@@ -583,24 +585,24 @@ void gn_dump(gn * gn)
 				{
 					int x;
 					for(x = 0; x < gn->fabv->productsl; x++)
-						log(L_DG | L_DGRAPH, "%12s --> %s", "", gn->fabv->products[x]->idstring);
+						log(L_DG | L_DGRAPH, "%18s --> %s", "", gn->fabv->products[x]->idstring);
 				}
 			}
 			else
 			{
-				log(L_WARN | L_DG | L_DGRAPH, "%12s : %s", "fab formula", "(no formula)");
+				log(L_WARN | L_DG | L_DGRAPH, "%18s : %s", "fab formula", "(no formula)");
 			}
 		}
 
-		log(L_DG | L_DGRAPH, "%12s : %d", "height", gn->height);
-		log(L_DG | L_DGRAPH, "%12s : %d", "stage", gn->stage);
+		log(L_DG | L_DGRAPH, "%18s : %d", "height", gn->height);
+		log(L_DG | L_DGRAPH, "%18s : %d", "stage", gn->stage);
 
-		log(L_DG | L_DGRAPH, "%12s : %d", "needs", gn->needs.l);
+		log(L_DG | L_DGRAPH, "%18s : %d", "needs", gn->needs.l);
 		for(x = 0; x < gn->needs.l; x++)
 		{
 			if(gn->needs.e[x]->type == GN_RELATION_REGULAR)
 			{
-				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
+				log(L_DG | L_DGRAPH, "%16s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
 					, ""
 					, gn->needs.e[x]->weak ? "*" : gn->needs.e[x]->bridge ? "^" : " "
 					, gn->needs.e[x]->B->idstring
@@ -613,7 +615,7 @@ void gn_dump(gn * gn)
 			}
 			else if(gn->needs.e[x]->type == GN_RELATION_CACHED)
 			{
-				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (DSC:%s)[%6s%s%6s]"
+				log(L_DG | L_DGRAPH, "%16s %s --> %-40s @ (DSC:%s)[%6s%s%6s]"
 					, ""
 					, gn->needs.e[x]->weak ? "*" : gn->needs.e[x]->bridge ? "^" : " "
 					, gn->needs.e[x]->B->idstring
@@ -623,12 +625,12 @@ void gn_dump(gn * gn)
 			}
 		}
 
-		log(L_DG | L_DGRAPH, "%12s : %d", "feeds", gn->feeds.l);
+		log(L_DG | L_DGRAPH, "%18s : %d", "feeds", gn->feeds.l);
 		for(x = 0; x < gn->feeds.l; x++)
 		{
 			if(gn->feeds.e[x]->type == GN_RELATION_REGULAR)
 			{
-				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
+				log(L_DG | L_DGRAPH, "%16s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
 					, ""
 					, gn->feeds.e[x]->weak ? "*" : gn->feeds.e[x]->bridge ? "^" : " "
 					, gn->feeds.e[x]->A->idstring
@@ -641,7 +643,7 @@ void gn_dump(gn * gn)
 			}
 			else if(gn->feeds.e[x]->type == GN_RELATION_CACHED)
 			{
-				log(L_DG | L_DGRAPH, "%10s %s --> %-40s @ (DSC:%s)[%6s%s%6s]"
+				log(L_DG | L_DGRAPH, "%16s %s --> %-40s @ (DSC:%s)[%6s%s%6s]"
 					, ""
 					, gn->feeds.e[x]->weak ? "*" : gn->feeds.e[x]->bridge ? "^" : " "
 					, gn->feeds.e[x]->A->idstring

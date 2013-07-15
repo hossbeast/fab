@@ -60,7 +60,7 @@ struct selector;
 #define DEFAULT_INIT_FABFILE 			"./fabfile"
 #define DEFAULT_INVALIDATE_ALL		0
 #define DEFAULT_MODE_BPLAN				MODE_BPLAN_EXEC
-#define DEFAULT_MODE_GNID					MODE_GNID_RELATIVE
+#define DEFAULT_MODE_GNID					MODE_GNID_RELATIVE_CWD
 #define DEFAULT_MODE_CYCL					MODE_CYCL_WARN
 #if DEVEL
 #define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
@@ -69,21 +69,23 @@ struct selector;
 
 #define EXPIRATION_POLICY					(60 * 60 * 24 * 7)		/* 7 days */
 
-#define MODE_TABLE(x)																																							\
-/* execution modes */																																							\
-	_MODE(MODE_BPLAN_GENERATE	, 0x01	, x)		/* generate the buildplan */													\
-	_MODE(MODE_BPLAN_BAKE			, 0x02	, x)		/* bake the buildplan */															\
-	_MODE(MODE_BPLAN_EXEC			, 0x03	, x)		/* execute the buildplan */														\
-/* path display modes */																																					\
-	_MODE(MODE_GNID_RELATIVE	, 0x05	, x)		/* path relative to the initial fabfile */						\
-	_MODE(MODE_GNID_CANON			, 0x06	, x)		/* canonical path */																	\
-/* cycle handling modes */																																				\
-	_MODE(MODE_CYCL_WARN			, 0x09	, x)		/* warn when a cycle is detected */										\
-	_MODE(MODE_CYCL_FAIL			, 0x0a	, x)		/* fail when a cycle is detected */										\
-	_MODE(MODE_CYCL_DEAL			, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */	\
-/* bakescript license modes */																																		\
-	_MODE(MODE_BSLIC_STD			, 0x0d	, x)		/* bakescripts have the standard license  */					\
-	_MODE(MODE_BSLIC_FAB			, 0x0e	, x)		/* bakescripts have the fab license */								\
+#define MODE_TABLE(x)																																													\
+/* execution modes */																																													\
+	_MODE(MODE_BPLAN_GENERATE							, 0x01	, x)		/* generate the buildplan */													\
+	_MODE(MODE_BPLAN_BAKE									, 0x02	, x)		/* bake the buildplan */															\
+	_MODE(MODE_BPLAN_EXEC									, 0x03	, x)		/* execute the buildplan */														\
+/* path display modes */																																											\
+	_MODE(MODE_GNID_RELATIVE_FABFILE_DIR	, 0x05	, x)		/* path relative to initial fabfile */								\
+	_MODE(MODE_GNID_RELATIVE_CWD					, 0x05	, x)		/* path relative to cwd */														\
+	_MODE(MODE_GNID_ABSOLUTE							, 0x06	, x)		/* absolute path */																		\
+	_MODE(MODE_GNID_CANON									, 0x07	, x)		/* canonical path */																	\
+/* cycle handling modes */																																										\
+	_MODE(MODE_CYCL_WARN									, 0x09	, x)		/* warn when a cycle is detected */										\
+	_MODE(MODE_CYCL_FAIL									, 0x0a	, x)		/* fail when a cycle is detected */										\
+	_MODE(MODE_CYCL_DEAL									, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */	\
+/* bakescript license modes */																																								\
+	_MODE(MODE_BSLIC_STD									, 0x0d	, x)		/* bakescripts have the standard license  */					\
+	_MODE(MODE_BSLIC_FAB									, 0x0e	, x)		/* bakescripts have the fab license */								\
 
 enum {
 #define _MODE(a, b, c) a = b,
@@ -167,4 +169,3 @@ int args_parse(int argc, char** argv);
 void args_teardown();
 
 #endif
-
