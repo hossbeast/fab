@@ -32,7 +32,7 @@
 
 #define restrict __restrict
 
-static int procfile(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, const uint32_t flags);
+static int procfile(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel);
 
 static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, int star)
 {
@@ -80,10 +80,12 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 			fatal(list_render, (*stax)[(*staxp)], &inv);
 
 			// handle module reference
-			uint32_t nflags = 0;
+			char * nofile = 0;
+			int    nofilel = 0;
 			if(inv->l >= 5 && memcmp(inv->s, "/../", 4) == 0)
 			{
-				nflags |= FFP_NOFILE;
+				nofile = inv->s;
+				nofilel = inv->l;
 
 				// last component
 				char * f = inv->s + inv->l - 1;
@@ -223,7 +225,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 			}
 
 			// process the referenced fabfile
-			fatal(procfile, ffp, pth, sstk, nmap, stax, staxa, staxp, 0, nflags);
+			fatal(procfile, ffp, pth, sstk, nmap, stax, staxa, staxp, 0, nofile, nofilel);
 
 			// scope pop
 			if(stmt->scope)
@@ -244,7 +246,7 @@ finally:
 coda;
 }
 
-int procfile(const ff_parser * const ffp, const path * const inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, const uint32_t flags)
+int procfile(const ff_parser * const ffp, const path * const inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel)
 {
 	ff_file * ff = 0;
 
@@ -257,7 +259,7 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 	}
 
 	// parse
-	fatal(ff_reg_load, ffp, inpath, &ff);
+	fatal(ff_reg_load, ffp, inpath, nofile, nofilel, &ff);
 
 	if(!ff)
 		qfail();
@@ -267,14 +269,7 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 	// use up one list and populate the * variable (path to the directory of the fabfile)
 	fatal(lw_reset, stax, staxa, (*staxp));
 
-	if(flags & FFP_NOFILE)
-	{
-		fatal(lstack_add, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
-	}
-	else
-	{
-		fatal(lstack_add, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
-	}
+	fatal(lstack_add, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
 
 	int star = (*staxp)++;
 	fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
@@ -289,7 +284,7 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 /// public
 ///
 
-int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, const uint32_t flags)
+int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first)
 {
 	strstack * sstk = 0;
 
@@ -297,7 +292,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map 
 	fatal(strstack_create, &sstk);
 	fatal(strstack_push, sstk, "..");
 
-	fatal(procfile, ffp, inpath, sstk, vmap, stax, staxa, staxp, first, flags);
+	fatal(procfile, ffp, inpath, sstk, vmap, stax, staxa, staxp, first, 0, 0);
 
 finally :
 	strstack_free(sstk);

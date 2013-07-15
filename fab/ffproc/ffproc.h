@@ -29,8 +29,6 @@
 
 #define restrict __restrict
 
-#define FFP_NOFILE			0x01	// $* is an absolute path (relative is default)
-
 /// ffproc
 //
 // SUMMARY
@@ -44,7 +42,6 @@
 //  staxa   - listwise stax
 //  staxp   - offset to next free stax
 //  [first] - set to the target of the first dependency found
-//  flags   - FFP_NOFILE     : referenced with a nofile path - affects the value of $*
 //
 int ffproc(
     const ff_parser * const restrict ffp
@@ -54,7 +51,6 @@ int ffproc(
   , int * const restrict staxa
   , int * const restrict staxp
   , gn ** restrict first
-	, const uint32_t flags
 ) __attribute__((nonnull(1,2,3,4,5)));
 
 #undef restrict

@@ -62,7 +62,7 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 // [[ static ]]
 //
 
-static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff)
+static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel)
 {
 	parse_param pp = {};
 
@@ -103,9 +103,15 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	else
 	{
 		ff->type = FFT_REGULAR;
+		if(nofile)
+			fatal(xsprintf, &ff->nofile, "%.*s", nofilel, nofile);
 
 		// idstring
-		if(g_args.mode_gnid == MODE_GNID_CANON)
+		if(ff->nofile && g_args.mode_gnid != MODE_GNID_CANON)
+		{
+			ff->idstring = strdup(ff->nofile);
+		}
+		else if(g_args.mode_gnid == MODE_GNID_CANON)
 		{
 			ff->idstring = strdup(ff->path->can);
 		}
@@ -298,7 +304,7 @@ int ff_mkparser(ff_parser ** const p)
 	return 1;
 }
 
-int ff_reg_load(const ff_parser * const p, const path * const in_path, ff_file ** const ff)
+int ff_reg_load(const ff_parser * const p, const path * const in_path, char * const nofile, const int nofilel, ff_file ** const ff)
 {
 	int			fd = 0;
 	char *	b = 0;
@@ -327,7 +333,7 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, ff_file *
 		if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
 			fail("read(%s,%d)=%d [%d][%s]", in_path->abs, (int)statbuf.st_size, (int)r, errno, strerror(errno));
 
-		qfatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff);
+		qfatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff, nofile, nofilel);
 
 		if(*ff)
 		{
@@ -346,7 +352,7 @@ int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const 
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/dscv", "%s", fp);
-	qfatal(parse, p, b, sz, pth, dscv_gn, 0, 0, ff);
+	qfatal(parse, p, b, sz, pth, dscv_gn, 0, 0, ff, 0, 0);
 
 finally:
 	path_free(pth);
@@ -357,7 +363,7 @@ int ff_var_parse(const ff_parser * const p, char* b, int sz, int id, ff_file** c
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/cmdline/v", "%d", id);
-	qfatal(parse, p, b, sz, pth, 0, &id, 0, ff);
+	qfatal(parse, p, b, sz, pth, 0, &id, 0, ff, 0, 0);
 
 finally:
 	path_free(pth);
@@ -368,7 +374,7 @@ int ff_list_parse(const ff_parser * const p, char* b, int sz, int id, ff_file **
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/cmdline/l", "%d", id);
-	qfatal(parse, p, b, sz, pth, 0, 0, &id, ff);
+	qfatal(parse, p, b, sz, pth, 0, 0, &id, ff, 0, 0);
 
 finally:
 	path_free(pth);

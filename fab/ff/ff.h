@@ -54,6 +54,7 @@ struct gn;
 typedef struct ff_file
 {
 	uint32_t					type;			// fabfile type
+	char *						nofile;		// nofile reference (if invoked via nofile syntax)
 	path *						path;			// fabfile path
 	char *						idstring;	// identifier string, subject to execution parameters
 
@@ -133,16 +134,17 @@ struct ff_parser_t
 int ff_mkparser(ff_parser ** const restrict p)
 	__attribute__((nonnull));
 
-/// ff_parse_path
+/// ff_reg_load
 //
 // SUMMARY
 //  load (parsing if necessary) the fabfile at the specified preconstructed path
 //  path is copied from ; it should be freed by the caller
 //
 // PARAMETERS
-//  p    - parser returned from mkparser
-//  path - path to fabfile
-//  ff   - results go here
+//  p      - parser returned from mkparser
+//  path   - path to fabfile
+//  nofile - (only important the first time) whether the fabfile was invoked via nofile syntax
+//  ff     - results go here
 //
 // RETURNS
 //  0 on error - check *ff to see if the parse was successful
@@ -150,9 +152,11 @@ int ff_mkparser(ff_parser ** const restrict p)
 int ff_reg_load(
 	  const ff_parser * const restrict p
 	, const path * const restrict path
+	, char * const restrict nofile
+	, const int nofilel
 	, ff_file ** const restrict ff
 )
-	__attribute__((nonnull));
+	__attribute__((nonnull(1, 2, 5)));
 
 /// ff_dsc_parse
 //

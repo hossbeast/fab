@@ -199,17 +199,25 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
 
 		// idstring
-		if(g_args.mode_gnid == MODE_GNID_RELATIVE_CWD)
+		if(Al > 4 && memcmp(A, "/../", 4) == 0 && sstk && g_args.mode_gnid != MODE_GNID_CANON)
+		{
+			fatal(xsprintf, &(*gna)->idstring, "%.*s", Al, A);
+		}
+		else if(g_args.mode_gnid == MODE_GNID_CANON)
+		{
+			(*gna)->idstring = strdup((*gna)->path->can);
+		}
+		else if(g_args.mode_gnid == MODE_GNID_ABSOLUTE)
+		{
+			(*gna)->idstring = strdup((*gna)->path->abs);
+		}
+		else if(g_args.mode_gnid == MODE_GNID_RELATIVE_CWD)
 		{
 			(*gna)->idstring = strdup((*gna)->path->rel_cwd);
 		}
 		else if(g_args.mode_gnid == MODE_GNID_RELATIVE_FABFILE_DIR)
 		{
 			(*gna)->idstring = strdup((*gna)->path->rel_fab);
-		}
-		else if(g_args.mode_gnid == MODE_GNID_CANON)
-		{
-			(*gna)->idstring = strdup((*gna)->path->can);
 		}
 		(*gna)->idstringl = strlen((*gna)->idstring);
 

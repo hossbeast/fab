@@ -218,7 +218,7 @@ int main(int argc, char** argv)
 	fatal(var_clone, rmap, &vmap);
 
 	// parse, starting with the initial fabfile, construct the graph
-	fatal(ffproc, ffp, g_args.init_fabfile_path, vmap, &stax, &staxa, &staxp, &first, 0);
+	fatal(ffproc, ffp, g_args.init_fabfile_path, vmap, &stax, &staxa, &staxp, &first);
 
 	// process hashblocks for regular fabfiles that have changed
 	fatal(ff_regular_reconcile);
