@@ -34,7 +34,7 @@ fml_0_0()
   [[ $destdir ]] || local destdir=''
   
 	install -d										$destdir/$bindir
-	install ./listwisedev/listwise					$destdir/$bindir/listwise
+	install ./listwise/listwise					$destdir/$bindir/listwise
 	ln -vfs listwise							$destdir/$bindir/lw
 
 
@@ -69,7 +69,7 @@ fml_1_0()
 
 	rm -rf																						$destdir/$lwopdir 2>/dev/null
 	install -d																				$destdir/$lwopdir
-	for x in ./liblistwise/op/xsf/xsf.so ./liblistwise/op/ls/ls.so ./liblistwise/op/xch/xch.so ./liblistwise/op/y/y.so ./liblistwise/op/o/o.so ./liblistwise/op/dj/dj.so ./liblistwise/op/h/h.so ./liblistwise/op/c/c.so ./liblistwise/op/rx/rx.so ./liblistwise/op/xm/xm.so ./liblistwise/op/m/m.so ./liblistwise/op/r/r.so ./liblistwise/op/rp/rp.so ./liblistwise/op/w/w.so ./liblistwise/op/j/j.so ./liblistwise/op/dn/dn.so ./liblistwise/op/ss/ss.so ./liblistwise/op/sn/sn.so ./liblistwise/op/v/v.so ./liblistwise/op/-X/-X.so ./liblistwise/op/s/s.so ./liblistwise/op/shift/shift.so ./liblistwise/op/d/d.so ./liblistwise/op/bn/bn.so ./liblistwise/op/z/z.so ./liblistwise/op/u/u.so ./liblistwise/op/fn/fn.so ./liblistwise/op/pop/pop.so ./liblistwise/op/cp/cp.so ./liblistwise/op/uu/uu.so ./liblistwise/op/xmf/xmf.so ./liblistwise/op/xs/xs.so; do \
+	for x in ./liblistwise/op/h/h.so ./liblistwise/op/r/r.so ./liblistwise/op/xm/xm.so ./liblistwise/op/sn/sn.so ./liblistwise/op/rp/rp.so ./liblistwise/op/xs/xs.so ./liblistwise/op/xsf/xsf.so ./liblistwise/op/xmf/xmf.so ./liblistwise/op/fn/fn.so ./liblistwise/op/bn/bn.so ./liblistwise/op/dn/dn.so ./liblistwise/op/m/m.so ./liblistwise/op/z/z.so ./liblistwise/op/rx/rx.so ./liblistwise/op/xch/xch.so ./liblistwise/op/j/j.so ./liblistwise/op/dj/dj.so ./liblistwise/op/cp/cp.so ./liblistwise/op/-X/-X.so ./liblistwise/op/s/s.so ./liblistwise/op/pop/pop.so ./liblistwise/op/shift/shift.so ./liblistwise/op/u/u.so ./liblistwise/op/d/d.so ./liblistwise/op/w/w.so ./liblistwise/op/ls/ls.so ./liblistwise/op/o/o.so ./liblistwise/op/c/c.so ./liblistwise/op/uu/uu.so ./liblistwise/op/v/v.so ./liblistwise/op/y/y.so ./liblistwise/op/ss/ss.so; do \
 		install $x																			$destdir/$lwopdir
 	done
 
@@ -95,11 +95,11 @@ fml_2_0()
   [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/lib'
   
 	install -d															$destdir/$bindir
-	install ./fabdev/fab												$destdir/$bindir/fab
+	install ./fab/fab												$destdir/$bindir/fab
 	chown fabsys:fabsys											$destdir/$bindir/fab
 	chmod u+s 															$destdir/$bindir/fab
 	chmod g+s 															$destdir/$bindir/fab
-	install ./fabdev/gcc-dep								$destdir/$bindir/gcc-dep
+	install ./fab/gcc-dep								$destdir/$bindir/gcc-dep
 	install -d 															$destdir/$fabcachedir
 	chown fabsys:fabsys											$destdir/$fabcachedir
 	install -d 															$destdir/$fabtmpdir
@@ -108,14 +108,14 @@ fml_2_0()
 	install -d															$destdir/$fabinvokedir/std/c
 	install -d															$destdir/$fabinvokedir/std/l
 	install -d															$destdir/$fabinvokedir/std/y
-	install ./fabdev/fablib/std/c.fab			$destdir/$fabinvokedir/std/c.fab
-	install ./fabdev/fablib/std/l.fab			$destdir/$fabinvokedir/std/l.fab
-	install ./fabdev/fablib/std/y.fab			$destdir/$fabinvokedir/std/y.fab
+	install ./fab/fablib/std/c.fab			$destdir/$fabinvokedir/std/c.fab
+	install ./fab/fablib/std/l.fab			$destdir/$fabinvokedir/std/l.fab
+	install ./fab/fablib/std/y.fab			$destdir/$fabinvokedir/std/y.fab
 
 	rm -rf 																	$destdir/$fablwopdir 2>/dev/null
 	install -d															$destdir/$fablwopdir
-	install ./fabdev/fablw/op/fi/fi.so			$destdir/$fablwopdir
-	install ./fabdev/fablw/op/fg/fg.so			$destdir/$fablwopdir
+	install ./fab/fablw/op/fi/fi.so			$destdir/$fablwopdir
+	install ./fab/fablw/op/fg/fg.so			$destdir/$fablwopdir
 
 
   X=$?

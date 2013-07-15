@@ -18,8 +18,8 @@
 # directories
 $dcommon      = [ $*/common ]
 $dliblistwise = [ $*/liblistwise ]
-$dlistwise    = [ $*/listwisedev ]
-$dfab         = [ $*/fabdev ]
+$dlistwise    = [ $*/listwise ]
+$dfab         = [ $*/fab ]
 
 # invocations
 +[ $dliblistwise ](-$liblistwise)																									@liblistwise
