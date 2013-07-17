@@ -75,7 +75,7 @@ struct selector;
 	_MODE(MODE_BPLAN_BAKE									, 0x02	, x)		/* bake the buildplan */															\
 	_MODE(MODE_BPLAN_EXEC									, 0x03	, x)		/* execute the buildplan */														\
 /* path display modes */																																											\
-	_MODE(MODE_GNID_RELATIVE_FABFILE_DIR	, 0x05	, x)		/* path relative to initial fabfile */								\
+	_MODE(MODE_GNID_RELATIVE_FABFILE_DIR	, 0x04	, x)		/* path relative to initial fabfile dir */						\
 	_MODE(MODE_GNID_RELATIVE_CWD					, 0x05	, x)		/* path relative to cwd */														\
 	_MODE(MODE_GNID_ABSOLUTE							, 0x06	, x)		/* absolute path */																		\
 	_MODE(MODE_GNID_CANON									, 0x07	, x)		/* canonical path */																	\

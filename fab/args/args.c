@@ -327,6 +327,10 @@ int args_parse(int argc, char** argv)
 	fatal(path_create_init, &fabpath, g_args.cwd, "%s", DEFAULT_INIT_FABFILE);
 	fatal(path_copy, &g_args.init_fabfile_path, fabpath);
 
+#if DEVEL
+	g_args.mode_bslic			= DEFAULT_MODE_BSLIC;
+#endif
+
 	// default invokedirs - head of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], XQUOTE(FABINVOKEDIR));
@@ -493,7 +497,7 @@ int args_parse(int argc, char** argv)
 	// initialize logger
 	fatal(log_init, "+ERROR|WARN|INFO|BPEXEC|DSCINFO");
 
-	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
+	log(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
 	// log execution parameters under PARAMS
 	log(L_PARAMS	, "%11spid                =%u"						, ""	, g_args.pid);
@@ -502,8 +506,8 @@ int args_parse(int argc, char** argv)
 	log(L_PARAMS	, "%11srid                =%s/%d:%s/%d"		, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
 	log(L_PARAMS	, "%11scwd                =%s"						, ""	, g_args.cwd);
 	log(L_PARAMS	, "%11scachedir           =%s"						, ""	, XQUOTE(FABCACHEDIR));
-	log(L_PARAMS	, "%11stmpdir             =%s"						, ""	,	XQUOTE(FFABTMPDIR));
-	log(L_PARAMS	, "%11slwopdir            =%s"						, ""	,	XQUOTE(FFABLWOPDIR));
+	log(L_PARAMS	, "%11stmpdir             =%s"						, ""	,	XQUOTE(FABTMPDIR));
+	log(L_PARAMS	, "%11slwopdir            =%s"						, ""	,	XQUOTE(FABLWOPDIR));
 	log(L_PARAMS	, "%11sinvokedir          =%s"						, ""	,	XQUOTE(FABINVOKEDIR));
 	log(L_PARAMS	, "%11sexpiration-policy  =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
@@ -516,7 +520,7 @@ int args_parse(int argc, char** argv)
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) bakescript-path        =%s", "*", 'k', g_args.bakescript_path);
 
 	if(g_args.bakevarsl == 0)
-		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =", " ", ' ');
+		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =", " ", 'K');
 	for(x = 0; x < g_args.bakevarsl; x++)
 		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
 
@@ -549,7 +553,7 @@ int args_parse(int argc, char** argv)
 	for(x = 0; x < g_args.selectorsl; x++)
 		log(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)            =%s", "*", ' ', selector_string(&g_args.selectors[x], space, sizeof(space)));
 
-	log(L_ARGS | L_PARAMS, "---------------------------------------------------");
+	log(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
 finally:
 	path_free(fabpath);
