@@ -68,16 +68,16 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 			log_finish("");
 	};
 
-	if(g_args.mode_cycl == MODE_CYCL_FAIL || g_args.mode_cycl == MODE_CYCL_WARN)
+	if(g_args.mode_cycles == MODE_CYCLES_FAIL || g_args.mode_cycles == MODE_CYCLES_WARN)
 	{
 		// skip the beginning of the traversal, to the start of the cycle
-		if(g_args.mode_cycl == MODE_CYCL_FAIL)
+		if(g_args.mode_cycles == MODE_CYCLES_FAIL)
 		{
 			log_start(L_ERROR, "detected cycle(%d) : ", stackl);
 			logcycle();
 			return 0;
 		}
-		else if(g_args.mode_cycl == MODE_CYCL_WARN)
+		else if(g_args.mode_cycles == MODE_CYCLES_WARN)
 		{
 			// hash this cycle
 			uint32_t cyc = cksum((*stack), stackl * sizeof(*(*stack)));

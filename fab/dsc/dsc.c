@@ -258,7 +258,7 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * con
 	{
 		if((*list[x])->designate == GN_DESIGNATION_PRIMARY)
 		{
-			for(y = 0; y < (*list)[x]->dscvsl; y++)
+			for(y = 0; y < (*list[x])->dscvsl; y++)
 			{
 				fatal(ts_ensure, ts, tsa, tsl + 1);
 				ts_reset((*ts)[tsl]);

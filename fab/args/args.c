@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <stdarg.h>
 
 #include <listwise.h>
 #include <listwise/operator.h>
@@ -45,7 +46,7 @@ struct g_args_t g_args;
 // [[ static ]]
 //
 
-static void usage(int valid, int version, int help, int logopts, int operators)
+static void usage(int valid, int version, int help, int logopts, int operators, char * fmt, ...)
 {
 	printf(
 "fab : parallel and incremental builds, integrated dependency discovery\n"
@@ -60,6 +61,14 @@ if(version)
 #endif
 	  "\n"
 	);
+}
+
+if(fmt)
+{
+	va_list va;
+	va_start(va, fmt);
+	vprintf(fmt, va);
+	va_end(va);
 }
 
 if(help)
@@ -85,55 +94,59 @@ if(help)
 "----------- [ options ] ------------------------------------------------------------------\n"
 "\n"
 " selection modifiers (may be clustered)\n"
-"  (+/-)t        (default) add/remove following selection(s) to/from fabricate-list\n"
-"  (+/-)x                  add/remove following selection(s) to/from fabricate-exact-list\n"
-"  (+/-)n                  add/remove following selection(s) to/from fabricate-nofile-list\n"
-"  (+/-)d                  add/remove following selection(s) to/from discovery-list\n"
-"  (+/-)b                  add/remove following selection(s) to/from invalidate-list\n"
-"  (+/-)i                  add/remove following selection(s) to/from inspect-list\n"
-"  (+/-)q                  add/remove following selection(s) to/from query-list\n"
+"  (+/-)t              (default) add/remove following selection(s) to/from fabricate-list\n"
+"  (+/-)x                        add/remove following selection(s) to/from fabricate-exact-list\n"
+"  (+/-)n                        add/remove following selection(s) to/from fabricate-nofile-list\n"
+"  (+/-)d                        add/remove following selection(s) to/from discovery-list\n"
+"  (+/-)b                        add/remove following selection(s) to/from invalidate-list\n"
+"  (+/-)i                        add/remove following selection(s) to/from inspect-list\n"
+"  (+/-)q                        add/remove following selection(s) to/from query-list\n"
 "\n"
-"       C        (default) following selectors resolve against cwd (current working directory)\n"
-"       F                  following selectors resolve against init-fabfile-dir\n"
+"       C              (default) following selectors resolve against cwd (current working directory)\n"
+"       F                        following selectors resolve against init-fabfile-dir\n"
 "\n"
 " execution modes\n"
-"  -p                      buildplan only - do not execute\n"
+"  -p                            buildplan only - do not execute\n"
 "\n"
 " incremental builds\n"
-"  -B                      invalidate all              equivalent to +b [ $! ]\n"
-"  -Bp                     invalidate primary          equivalent to +b [ $! ~ fg/p ]\n"
-"  -Bx                     invalidate non-primary      equivalent to +b [ $! ~ fg/p/v ]\n"
+"  -B                            invalidate all              equivalent to +b [ $! ]\n"
+"  -Bp                           invalidate primary          equivalent to +b [ $! ~ fg/p ]\n"
+"  -Bx                           invalidate non-primary      equivalent to +b [ $! ~ fg/p/v ]\n"
 "\n"
 " parallel builds\n"
-"  -j <number>             concurrency limit\n"
+"  -j <number>                   concurrency limit\n"
+"\n"
+" path generation\n"
+"  --paths-relative    (default) generate paths relative to init-fabfile-dir\n"
+"  --paths-absolute              generate absolute paths\n"
 "\n"
 " bakescript generation\n"
-"  -k </path/to/output>    create bakescript\n"
-"  -K <variable name>      bakedvar (settable at runtime)\n"
-"  \n"
+"  -k </path/to/output>          create bakescript\n"
+"  -K <variable name>            bakedvar (settable at runtime)\n"
+"\n"
 #if DEVEL
-"  --bslic-standard        bakescripts have the standard license\n"
-"  --bslic-fab             bakescripts have the fab distribution license\n"
+"  --bslic-standard    (default) bakescripts have the standard license\n"
+"  --bslic-fab                   bakescripts have the fab distribution license\n"
 "\n"
 #endif
 " logging\n"
-"  --gnid-relative-fabfile nodes are identified by path relative to init-fabfile-dir\n"
-"  --gnid-relative-cwd     nodes are identified by path relative to cwd (current working directory)\n"
-"  --gnid-absolute         nodes are identified by absolute path\n"
-"  --gnid-canon            nodes are identified by canonical path\n"
+"  --gnid-relative-cwd (default) nodes are identified by path relative to cwd (current working directory)\n"
+"  --gnid-relative-fabfile-dir   nodes are identified by path relative to init-fabfile-dir\n"
+"  --gnid-absolute               nodes are identified by absolute path\n"
+"  --gnid-canon                  nodes are identified by canonical path\n"
 "\n"
 " fabfile processing\n"
-"  -f <path/to/fabfile>    path to initial fabfile\n"
-"  -I <path/to/directory>  directory for locating invocations\n"
-"  -v $var=[list]          scope-zero variable definition\n"
-"  -v $var+=[list]         scope-zero variable transform-addition\n"
-"  -v $var-=[list]         scope-zero variable transform-subtraction\n"
-"  -v $var~=generator      scope-zero variable transform-listwise\n"
+"  -f <path/to/fabfile>          path to initial fabfile\n"
+"  -I <path/to/directory>        directory for locating invocations\n"
+"  -v $var=[list]                scope-zero variable definition\n"
+"  -v $var+=[list]               scope-zero variable transform-addition\n"
+"  -v $var-=[list]               scope-zero variable transform-subtraction\n"
+"  -v $var~=generator            scope-zero variable transform-listwise\n"
 "\n"
 " handling cycles\n"
-"  --cycle-warn            warn when a cycle is detected (once per unique cycle)\n"
-"  --cycle-fail            fail when a cycle is detected\n"
-"  --cycle-deal            deal with cycles (halt traversal)\n"
+"  --cycles-warn       (default) warn when a cycle is detected (once per unique cycle)\n"
+"  --cycles-fail                 fail when a cycle is detected\n"
+"  --cycles-deal                 deal with cycles (halt traversal)\n"
 		, g_args.cwd
 	);
 }
@@ -223,23 +236,25 @@ int args_parse(int argc, char** argv)
 
 	struct option longopts[] = {
 /* informational */
-				  { "help"										, no_argument	, &help, 1 }
-				, { "version"									, no_argument	, &version, 1 }
-				, { "logopts"									, no_argument	, &logopts, 1 }
-				, { "operators"								, no_argument	, &operators, 1 }
+				  { "help"												, no_argument	, &help, 1 }
+				, { "version"											, no_argument	, &version, 1 }
+				, { "logopts"											, no_argument	, &logopts, 1 }
+				, { "operators"										, no_argument	, &operators, 1 }
 
 /* program longopts */
-				, { "cycle-warn"							, no_argument	, &g_args.mode_cycl		, MODE_CYCL_WARN }
-				, { "cycle-fail"							, no_argument	, &g_args.mode_cycl		, MODE_CYCL_FAIL }
-				, { "cycle-deal"							, no_argument	, &g_args.mode_cycl		, MODE_CYCL_DEAL }
-				, { "gnid-relative-fabfile"		, no_argument	, &g_args.mode_gnid		, MODE_GNID_RELATIVE_FABFILE_DIR }
-				, { "gnid-relative-cwd"				, no_argument	, &g_args.mode_gnid		, MODE_GNID_RELATIVE_CWD }
-				, { "gnid-absolute"						, no_argument	, &g_args.mode_gnid		, MODE_GNID_ABSOLUTE }
-				, { "gnid-canon"							, no_argument	, &g_args.mode_gnid		, MODE_GNID_CANON }
+				, { "cycles-warn"									, no_argument	, &g_args.mode_cycles	, MODE_CYCLES_WARN }
+				, { "cycles-fail"									, no_argument	, &g_args.mode_cycles	, MODE_CYCLES_FAIL }
+				, { "cycles-deal"									, no_argument	, &g_args.mode_cycles	, MODE_CYCLES_DEAL }
+				, { "paths-relative"							, no_argument	, &g_args.mode_paths	, MODE_RELATIVE_FABFILE_DIR }
+				, { "paths-absolute"							, no_argument	, &g_args.mode_paths	, MODE_ABSOLUTE }
+				, { "gnid-relative-cwd"						, no_argument	, &g_args.mode_gnid		, MODE_RELATIVE_CWD }
+				, { "gnid-relative-fabfile-dir"		, no_argument	, &g_args.mode_gnid		, MODE_RELATIVE_FABFILE_DIR }
+				, { "gnid-absolute"								, no_argument	, &g_args.mode_gnid		, MODE_ABSOLUTE }
+				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid		, MODE_CANONICAL }
 
 #if DEVEL
-				, { "bslic-standard"					, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
-				, { "bslic-fab"								, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
+				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
+				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
 #endif
 
 /* program switches */
@@ -322,7 +337,8 @@ int args_parse(int argc, char** argv)
 	g_args.concurrency		= DEFAULT_CONCURRENCY_LIMIT;
 	g_args.mode_bplan			= DEFAULT_MODE_BPLAN;
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
-	g_args.mode_cycl			= DEFAULT_MODE_CYCL;
+	g_args.mode_cycles		= DEFAULT_MODE_CYCLES;
+	g_args.mode_paths			= DEFAULT_MODE_PATHS;
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create_init, &fabpath, g_args.cwd, "%s", DEFAULT_INIT_FABFILE);
 	fatal(path_copy, &g_args.init_fabfile_path, fabpath);
@@ -341,11 +357,15 @@ int args_parse(int argc, char** argv)
 	int selector_mode = '+';
 
 	int x;
-	int indexptr;
+	int indexptr = 0;
 	opterr = 0;
-	while((x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
+	while(indexptr = 0, (x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
 	{
-		if(x == 1 || x == '?')
+		if(indexptr)
+		{
+			// longopts
+		}
+		else if(x == 1 || x == '?')
 		{
 			char * s = 0;
 			if(x == 1)
@@ -383,6 +403,10 @@ int args_parse(int argc, char** argv)
 						else if(strchr(s, 'F'))
 							selector_base = SELECTOR_BASE_FABFILE_DIR;
 					}
+					else
+					{
+						usage(0, 1, 0, 0, 0, "unknown : %s", s);
+					}
 				}
 				else
 				{
@@ -409,15 +433,6 @@ int args_parse(int argc, char** argv)
 		else if(x == 'f')
 		{
 			path_xfree(&g_args.init_fabfile_path);
-/*
-			// absolute path 
-			fatal(canon, optarg, 0, space, sizeof(space), g_args.cwd, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM);
-
-			char * lastslash = strrchr(space, '/');
-			lastslash[0] = 0;
-
-			fatal(path_create, &g_args.init_fabfile_path, space, "%s", lastslash + 1);
-*/
 			fatal(path_create_init, &g_args.init_fabfile_path, g_args.cwd, "%s", optarg);
 		}
 		else if(x == 'h')
@@ -476,18 +491,15 @@ int args_parse(int argc, char** argv)
 
 			g_args.bakevars[g_args.bakevarsl++] = strdup(optarg);
 		}
-		else if(x == '?')
+		else
 		{
-			if(0)
-			{
-				usage(0, 1, 1, 0, 0);
-			}
+			usage(0, 1, 0, 0, 0, "unknown : %c", x);
 		}
 	}
 
 	if(help || version || logopts || operators)
 	{
-		usage(1, 1, help, logopts, operators);
+		usage(1, 1, help, logopts, operators, 0);
 	}
 
 	// default invokedirs - tail of list
@@ -500,16 +512,16 @@ int args_parse(int argc, char** argv)
 	log(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
 	// log execution parameters under PARAMS
-	log(L_PARAMS	, "%11spid                =%u"						, ""	, g_args.pid);
-	log(L_PARAMS	, "%11ssid                =%u"						, ""	, g_args.sid);
-	log(L_PARAMS	, "%11seid                =%s/%d:%s/%d"		, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
-	log(L_PARAMS	, "%11srid                =%s/%d:%s/%d"		, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
-	log(L_PARAMS	, "%11scwd                =%s"						, ""	, g_args.cwd);
-	log(L_PARAMS	, "%11scachedir           =%s"						, ""	, XQUOTE(FABCACHEDIR));
-	log(L_PARAMS	, "%11stmpdir             =%s"						, ""	,	XQUOTE(FABTMPDIR));
-	log(L_PARAMS	, "%11slwopdir            =%s"						, ""	,	XQUOTE(FABLWOPDIR));
-	log(L_PARAMS	, "%11sinvokedir          =%s"						, ""	,	XQUOTE(FABINVOKEDIR));
-	log(L_PARAMS	, "%11sexpiration-policy  =%s"						, ""	, durationstring(EXPIRATION_POLICY));
+	log(L_PARAMS	, "%11spid                    =%u"						, ""	, g_args.pid);
+	log(L_PARAMS	, "%11ssid                    =%u"						, ""	, g_args.sid);
+	log(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
+	log(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
+	log(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_args.cwd);
+	log(L_PARAMS	, "%11scachedir               =%s"						, ""	, XQUOTE(FABCACHEDIR));
+	log(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));
+	log(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));
+	log(L_PARAMS	, "%11sinvokedir              =%s"						, ""	,	XQUOTE(FABINVOKEDIR));
+	log(L_PARAMS	, "%11sexpiration-policy      =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->can);
@@ -528,7 +540,8 @@ int args_parse(int argc, char** argv)
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
 #endif
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycl              =%s", g_args.mode_cycl == DEFAULT_MODE_CYCL ? " " : "*", ' ', MODE_STR(g_args.mode_cycl));
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args.mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args.mode_paths));
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycles            =%s", g_args.mode_cycles == DEFAULT_MODE_CYCLES ? " " : "*", ' ', MODE_STR(g_args.mode_cycles));
 	if(g_args.concurrency > 0)
 		snprintf(space, sizeof(space)	, "%d", g_args.concurrency);
 	else

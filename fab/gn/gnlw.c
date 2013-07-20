@@ -22,6 +22,7 @@
 
 #include "control.h"
 
+#include "args.h"
 #include "xmem.h"
 
 static int lw_string(void * o, char* prop, char ** s, int * l);
@@ -93,8 +94,16 @@ int lw_string(void * o, char* prop, char ** s, int * l)
 
 	if(!prop || strcmp(prop, "path") == 0)
 	{
-		*s = ((gn*)o)->path->abs;
-		*l = ((gn*)o)->path->absl;
+		if(g_args.mode_paths == MODE_ABSOLUTE)
+		{
+			*s = ((gn*)o)->path->abs;
+			*l = ((gn*)o)->path->absl;
+		}
+		else if(g_args.mode_paths == MODE_RELATIVE_FABFILE_DIR)
+		{
+			*s = ((gn*)o)->path->rel_fab;
+			*l = ((gn*)o)->path->rel_fabl;
+		}
 	}
 	else if(strcmp(prop, "name") == 0)
 	{
@@ -103,8 +112,16 @@ int lw_string(void * o, char* prop, char ** s, int * l)
 	}
 	else if(strcmp(prop, "dir") == 0)
 	{
-		*s = ((gn*)o)->path->abs_dir;
-		*l = ((gn*)o)->path->abs_dirl;
+		if(g_args.mode_paths == MODE_ABSOLUTE)
+		{
+			*s = ((gn*)o)->path->abs_dir;
+			*l = ((gn*)o)->path->abs_dirl;
+		}
+		else if(g_args.mode_paths == MODE_RELATIVE_FABFILE_DIR)
+		{
+			*s = ((gn*)o)->path->rel_fab_dir;
+			*l = ((gn*)o)->path->rel_fab_dirl;
+		}
 	}
 	else if(strcmp(prop, "ext") == 0)
 	{

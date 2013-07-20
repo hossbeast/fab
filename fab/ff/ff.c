@@ -107,19 +107,19 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 			fatal(xsprintf, &ff->nofile, "%.*s", nofilel, nofile);
 
 		// idstring
-		if(ff->nofile && g_args.mode_gnid != MODE_GNID_CANON)
+		if(ff->nofile && g_args.mode_gnid != MODE_CANONICAL)
 		{
 			ff->idstring = strdup(ff->nofile);
 		}
-		else if(g_args.mode_gnid == MODE_GNID_CANON)
+		else if(g_args.mode_gnid == MODE_CANONICAL)
 		{
 			ff->idstring = strdup(ff->path->can);
 		}
-		else if(g_args.mode_gnid == MODE_GNID_RELATIVE_CWD)
+		else if(g_args.mode_gnid == MODE_RELATIVE_CWD)
 		{
 			ff->idstring = strdup(ff->path->rel_cwd);
 		}
-		else if(g_args.mode_gnid == MODE_GNID_RELATIVE_FABFILE_DIR)
+		else if(g_args.mode_gnid == MODE_RELATIVE_FABFILE_DIR)
 		{
 			ff->idstring = strdup(ff->path->rel_fab);
 		}

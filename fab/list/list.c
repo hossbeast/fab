@@ -60,7 +60,15 @@ static int render(lstack * const ls, pstring ** const ps)
 		else if(ls->s[0].s[x].type == LISTWISE_TYPE_GNLW)
 		{
 			gn * A = *(void**)ls->s[0].s[x].s;
-			fatal(pscatf, ps, "%.*s", A->path->absl, A->path->abs);
+
+			if(g_args.mode_paths == MODE_ABSOLUTE)
+			{
+				fatal(pscatf, ps, "%.*s", A->path->absl, A->path->abs);
+			}
+			else if(g_args.mode_paths == MODE_RELATIVE_FABFILE_DIR)
+			{
+				fatal(pscatf, ps, "%.*s", A->path->rel_fabl, A->path->rel_fab);
+			}
 		}
 		else
 		{

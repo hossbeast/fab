@@ -269,7 +269,10 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 	// use up one list and populate the * variable (path to the directory of the fabfile)
 	fatal(lw_reset, stax, staxa, (*staxp));
 
-	fatal(lstack_add, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
+	if(g_args.mode_paths == MODE_ABSOLUTE)
+		fatal(lstack_add, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
+	else if(g_args.mode_paths == MODE_RELATIVE_FABFILE_DIR)
+		fatal(lstack_add, (*stax)[(*staxp)], ff->path->rel_fab_dir, ff->path->rel_fab_dirl);
 
 	int star = (*staxp)++;
 	fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
