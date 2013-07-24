@@ -223,7 +223,7 @@ int main(int argc, char** argv)
 	// process hashblocks for regular fabfiles that have changed
 	fatal(ff_regular_reconcile);
 
-	// compute flags and designations, reload primary files and dscv cache
+	// compute flags and designations, reload files and dscv cache
 	fatal(gn_finalize);
 
 	// comprehensive upfront dependency discovery on the entire graph
@@ -301,7 +301,8 @@ int main(int argc, char** argv)
 	}
 	
 	// process invalidations
-	gn_invalidate(invalidations, invalidationsl);
+	fatal(gn_process_invalidations, invalidations, invalidationsl);
+	fatal(gn_finalize);
 
 	// dependency discovery on invalidated primary nodes
 	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);

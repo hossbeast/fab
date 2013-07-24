@@ -357,7 +357,7 @@ int bp_eval(bp * const bp)
 	int i;
 	int k;
 
-	// begin with an assumption of a good build
+	// begin with the assumption of a good build
 	int poison = 0;
 
 	for(x = 0; x < bp->stages_l; x++)
@@ -379,35 +379,12 @@ int bp_eval(bp * const bp)
 					gn->feeds.e[i]->A->poison = 1;
 			}
 
-			if(gn->changed || gn->invalid || gn->weak_invalid)
-			{
-				// change propagation
-				for(i = 0; i < gn->feeds.l; i++)
-				{
-					if(gn->feeds.e[i]->weak)
-					{
-						gn->feeds.e[i]->A->weak_invalid = 1;
-					}
-					else if(gn->feeds.e[i]->bridge)
-					{
-						// no-op
-					}
-					else
-					{
-//					gn->feeds.e[i]->A->rebuild = 1;
-						gn->feeds.e[i]->A->invalid = 1;
-					}
-				}
-			}
-
 			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
 				, x, c++
 				, "PRIMARY"
 				, gn->idstring
 				, ""
-				,   gn->invalid ?               "  invalid"
-					: gn->changed ?               "  changed"
-					:                             "unchanged"
+				, GN_INVALID_REASON(gn)
 			);
 		}
 
@@ -427,67 +404,9 @@ int bp_eval(bp * const bp)
 					for(i = 0; i < gn->feeds.l; i++)
 						gn->feeds.e[i]->A->poison = 1;
 				}
-				else
+				else if(GN_IS_INVALID(gn))
 				{
-					if(gn->designate == GN_DESIGNATION_TASK)
-					{
-						// TASK node - must be fabricated every time
-						gn->rebuild = 1;
-					}
-					else if(gn->designate == GN_DESIGNATION_GENERATED)
-					{
-						// GENERATED file - must be fabricated every time
-						gn->rebuild = 1;
-					}
-					else if(gn->designate == GN_DESIGNATION_SECONDARY)
-					{
-						// SECONDARY file
-						fatal(gn_secondary_reload, gn);
-
-						if(gn->fab_exists == 0)
-						{
-							gn->rebuild = 1;	// file doesnt exist
-						}
-						else if(gn->fab_force_ff)
-						{
-							gn->rebuild = 1;	// rebuild is forced (ff change)
-						}
-						else if(gn->fab_force_gn)
-						{
-							gn->rebuild = 1;	// rebuild is forced (source file change)
-						}
-						else if(gn->invalid)
-						{
-							gn->rebuild = 1;	// node has been invalidated
-						}
-					}
-
-					if(gn->rebuild || gn->invalid || gn->weak_invalid)
-					{
-						// change propagation
-						for(i = 0; i < gn->feeds.l; i++)
-						{
-							if(gn->feeds.e[i]->weak)
-							{
-								gn->feeds.e[i]->A->weak_invalid = 1;
-							}
-							else if(gn->feeds.e[i]->bridge)
-							{
-								// no-op
-							}
-							else
-							{
-		//					gn->feeds.e[i]->A->rebuild = 1;
-								gn->feeds.e[i]->A->invalid = 1;
-							}
-						}
-					}
-
-					// needs rebuilt
-					if(gn->rebuild)
-					{
-						keep++;
-					}
+					keep++;
 				}
 			}
 
@@ -499,15 +418,12 @@ int bp_eval(bp * const bp)
 
 					if(!gn->poison)
 					{
-						if(gn->needs.l)
-						{
-							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
-								, x, c++
-								, gn_designation(gn)
-								, gn->idstring
-								, "SKIP"
-							);
-						}
+						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
+							, x, c++
+							, gn_designation(gn)
+							, gn->idstring
+							, "SKIP"
+						);
 					}
 				}
 
@@ -520,52 +436,13 @@ int bp_eval(bp * const bp)
 				{
 					gn * gn = bp->stages[x].evals[y]->products[k];
 
-					if(gn->rebuild)
-					{
-						if(gn->flags & GN_FLAGS_NOFILE)
-						{
-							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
-								, x, c++
-								, gn_designation(gn)
-								, gn->idstring
-								, "EXECUTE"
-							);
-						}
-						else if(gn->flags & GN_FLAGS_HASNEED)
-						{
-							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
-								, x, c++
-								, gn_designation(gn)
-								, gn->idstring
-								, "REBUILD"
-								,   gn->invalid      		? "invalidated"
-								  : !gn->fab_exists  		? "does not exist"
-									: gn->fab_force_ff	  ? "fabfile changed"
-									: gn->fab_force_gn		? "sources changed"	// not useful to distinguish between these two cases
-									:                    		"sources changed"
-							);
-						}
-						else
-						{
-							log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
-								, x, c++
-								, gn_designation(gn)
-								, gn->idstring
-								, "REBUILD"
-								, "always fab"
-							);
-						}
-					}
-					else
-					{
-						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
-							, x, c++
-							, gn_designation(gn)
-							, gn->idstring
-							, "REBUILD"
-							, "eval context product"
-						);
-					}
+					log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+						, x, c++
+						, gn_designation(gn)
+						, gn->idstring
+						, "REBUILD"
+						, GN_INVALID_REASON(gn)
+					);
 				}
 			}
 		}
@@ -718,11 +595,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, i
 				int q;
 				for(q = 0; q < (*ts)[y]->fmlv->productsl; q++)
 				{
-					// secondary rewrite
-					if((*ts)[y]->fmlv->products[q]->designate == GN_DESIGNATION_SECONDARY)
-					{
-						fatal(gn_secondary_rewrite_fab, (*ts)[y]->fmlv->products[q], ws);
-					}
+					fatal(gn_reconcile_fab, (*ts)[y]->fmlv->products[q], ws);
 				}
 			}
 		}

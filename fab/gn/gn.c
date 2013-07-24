@@ -80,9 +80,12 @@ static void freenode(gn * const gn)
 
 		free(gn->closure_ffs);
 
-		free(gn->noforce_dir);
+		free(gn->cache_dir);
+		free(gn->ineed_skipweak_dir);
+		free(gn->ifeed_skipweak_dir);
+		free(gn->noforce_invalid_path);
+		free(gn->noforce_needs_path);
 		free(gn->noforce_ff_path);
-		free(gn->noforce_gn_path);
 	}
 
 	free(gn);
@@ -135,6 +138,104 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 		(*r) = *R;
 
 	finally : coda;
+}
+
+static int reconcile_completion(gn * const gn, map * const ws)
+{
+	char tmp[3][512];
+
+	int fd = 0;
+	DIR * dh = 0;
+	struct timespec times[2] = { { .tv_nsec = UTIME_NOW } , { .tv_nsec = UTIME_NOW } };
+
+	// create noforce dir
+	fatal(identity_assume_fabsys);
+
+	// create noforce files, thereby marking this file as up-to-date
+	if((fd = open(gn->noforce_invalid_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
+		fail("open(%s)=[%d][%s]", gn->noforce_invalid_path, errno, strerror(errno));
+	fatal_os(futimens, fd, times);
+	fatal_os(close, fd);
+	fd = 0;
+
+	if((fd = open(gn->noforce_ff_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
+		fail("open(%s)=[%d][%s]", gn->noforce_ff_path, errno, strerror(errno));
+	fatal_os(futimens, fd, times);
+	fatal_os(close, fd);
+	fd = 0;
+
+	if((fd = open(gn->noforce_needs_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
+		fail("open(%s)=[%d][%s]", gn->noforce_needs_path, errno, strerror(errno));
+	fatal_os(futimens, fd, times);
+	fatal_os(close, fd);
+	fd = 0;
+
+	if(gn->designate != GN_DESIGNATION_PRIMARY)
+	{
+		// construct a map of immediate needs for this node
+		map_clear(ws);
+		int x;
+		for(x = 0; x < gn->needs.l; x++)
+			fatal(map_set, ws, MM(gn->needs.e[x]->B->path->can_hash), MM(gn->needs.e[x]));
+
+		// delete existing links which no longer apply
+		if((dh = opendir(gn->ineed_skipweak_dir)) == 0)
+			fail("opendir(%s)=[%d][%s]", gn->ineed_skipweak_dir, errno, strerror(errno));
+
+		struct dirent ent;
+		struct dirent * entp = 0;
+		while(1)
+		{
+			fatal_os(readdir_r, dh, &ent, &entp);
+
+			if(!entp)
+				break;
+
+			if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+			{
+				// get the canhash for this gn
+				uint32_t canhash = 0;
+				if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) == 0)
+					fail("unexpected file %s/%s", gn->ineed_skipweak_dir, entp->d_name);
+
+				if(map_get(ws, MM(canhash)) == 0)
+				{
+					// remove link
+					snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/ifeed_skipweak/%u", gn->ineed_skipweak_dir, entp->d_name, gn->path->can_hash);
+					if(unlink(tmp[0]) != 0 && errno != ENOENT)
+						fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+				}
+			}
+		}
+
+		// finally, create bidirectional symlinks for immediate needs of this node
+		for(x = 0; x < gn->needs.l; x++)
+		{
+			// needed node
+			uint32_t need = gn->needs.e[x]->B->path->can_hash;
+
+			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, need);
+			snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ineed_skipweak/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash, need);
+
+			if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
+				fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+
+			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+			snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ifeed_skipweak/%u", g_args.init_fabfile_path->can_hash, need, gn->path->can_hash);
+
+			if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
+				fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+		}
+	}
+
+	fatal(identity_assume_user);
+
+finally:
+	if(fd)
+		close(fd);
+	if(dh)
+		closedir(dh);
+coda;
 }
 
 ///
@@ -197,6 +298,13 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 
 		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
+
+		fatal(xsprintf, &(*gna)->cache_dir						, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, (*gna)->path->can_hash);
+		fatal(xsprintf, &(*gna)->ineed_skipweak_dir		, "%s/ineed_skipweak"	, (*gna)->cache_dir);
+		fatal(xsprintf, &(*gna)->ifeed_skipweak_dir		, "%s/ifeed_skipweak"	, (*gna)->cache_dir);
+		fatal(xsprintf, &(*gna)->noforce_invalid_path	, "%s/noforce_invalid", (*gna)->cache_dir);
+		fatal(xsprintf, &(*gna)->noforce_ff_path			, "%s/noforce_ff"			, (*gna)->cache_dir);
+		fatal(xsprintf, &(*gna)->noforce_needs_path		, "%s/noforce_needs"	, (*gna)->cache_dir);
 
 		// idstring
 		if(Al > 4 && memcmp(A, "/../", 4) == 0 && sstk && g_args.mode_gnid != MODE_CANONICAL)
@@ -319,167 +427,6 @@ int gn_edge_add(
 	*B = gnb;
 
 	finally : coda;
-}
-
-int gn_secondary_reload(struct gn * const gn)
-{
-	if(gn->noforce_dir == 0)
-	{
-		fatal(xsprintf, &gn->noforce_dir
-			, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/SECONDARY/fab"
-			, g_args.init_fabfile_path->can_hash
-			, gn->path->can_hash
-		);
-		fatal(xsprintf, &gn->noforce_ff_path, "%s/noforce_ff", gn->noforce_dir);
-		fatal(xsprintf, &gn->noforce_gn_path, "%s/noforce_gn", gn->noforce_dir);
-
-		fatal(identity_assume_fabsys);
-
-		if(euidaccess(gn->path->can, F_OK) == 0)
-		{
-			gn->fab_exists = 1;
-		}
-		else if(errno != ENOENT)
-		{
-			fail("access(%s)=[%d][%s]", gn->path->can, errno, strerror(errno));
-		}
-
-		gn->fab_force_ff = 1;
-		if(euidaccess(gn->noforce_ff_path, F_OK) == 0)
-		{
-			gn->fab_force_ff = 0;
-		}
-		else if(errno != ENOENT)
-		{
-			fail("access(%s)=[%d][%s]", gn->noforce_ff_path, errno, strerror(errno));
-		}
-
-		gn->fab_force_gn = 1;
-		if(euidaccess(gn->noforce_gn_path, F_OK) == 0)
-		{
-			gn->fab_force_gn = 0;
-		}
-		else if(errno != ENOENT)
-		{
-			fail("access(%s)=[%d][%s]", gn->noforce_gn_path, errno, strerror(errno));
-		}
-
-		fatal(identity_assume_user);
-	}
-
-	finally : coda;
-}
-
-int gn_secondary_rewrite_fab(gn * const gn, map * const ws)
-{
-	char tmp[3][512];
-	uint32_t ** needs = 0;
-	int needsl = 0;
-
-	int fd = 0;
-	struct timespec times[2] = { { .tv_nsec = UTIME_NOW } , { .tv_nsec = UTIME_NOW } };
-
-	DIR * dh = 0;
-
-	// create noforce dir
-	fatal(identity_assume_fabsys);
-	fatal(mkdirp, gn->noforce_dir, S_IRWXU | S_IRWXG | S_IRWXO);
-
-	if((fd = open(gn->noforce_ff_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-		fail("open(%s)=[%d][%s]", gn->noforce_ff_path, errno, strerror(errno));
-	fatal_os(futimens, fd, times);
-	fatal_os(close, fd);
-	fd = 0;
-
-	if((fd = open(gn->noforce_gn_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-		fail("open(%s)=[%d][%s]", gn->noforce_gn_path, errno, strerror(errno));
-	fatal_os(futimens, fd, times);
-	fatal_os(close, fd);
-	fd = 0;
-
-	// construct aneed_primary_skipweak dir for this node
-	snprintf(tmp[2], sizeof(tmp[2])
-		, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/SECONDARY/aneed_primary_skipweak"
-		, g_args.init_fabfile_path->can_hash
-		, gn->path->can_hash
-	);
-
-	// ensure the directory exists
-	fatal(mkdirp, tmp[2], S_IRWXU | S_IRWXG | S_IRWXO);
-
-	// construct a map of PRIMARY needs for this node
-	int logic(struct gn * n, int d)
-	{
-		if(n->designate == GN_DESIGNATION_PRIMARY)
-			fatal(map_set, ws, MM(n->path->can_hash), MM(n));
-
-		finally : coda;
-	};
-
-	map_clear(ws);
-	fatal(traverse_depth_bynodes_needsward_skipweak_usebridge_usenofile, gn, logic);
-
-	// delete existing links which no longer apply
-	if((dh = opendir(tmp[2])) == 0)
-		fail("opendir(%s)=[%d][%s]", tmp[2], errno, strerror(errno));
-
-	struct dirent ent;
-	struct dirent * entp = 0;
-	while(1)
-	{
-		fatal_os(readdir_r, dh, &ent, &entp);
-
-		if(!entp)
-			break;
-
-		if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
-		{
-			// get the canhash for this gn
-			uint32_t canhash = 0;
-			if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) == 0)
-				fail("unexpected file %s/%s", tmp[2], entp->d_name);
-
-			if(map_get(ws, MM(canhash)) == 0)
-			{
-				// remove link
-				snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/PRIMARY/afeed_secondary_skipweak/%u", tmp[2], entp->d_name, gn->path->can_hash);
-				if(unlink(tmp[0]) != 0 && errno != ENOENT)
-					fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
-			}
-		}
-	}
-
-	// finally, create bidirectional symlinks for PRIMARY needs of this node
-	fatal(map_keys, ws, &needs, &needsl);
-
-	int x;
-	for(x = 0; x < needsl; x++)
-	{
-		// primary node
-		uint32_t need = needs[x][0];
-
-		snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, need);
-		snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/SECONDARY/aneed_primary_skipweak/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash, need);
-
-		if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
-			fail("symlink=[%d][%s]", errno, strerror(errno));
-
-		snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
-		snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY/afeed_secondary_skipweak/%u", g_args.init_fabfile_path->can_hash, need, gn->path->can_hash);
-
-		if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
-			fail("symlink=[%d][%s]", errno, strerror(errno));
-	}
-
-	fatal(identity_assume_user);
-
-finally:
-	if(fd)
-		close(fd);
-	if(dh)
-		closedir(dh);
-	free(needs);
-coda;
 }
 
 // necessary for a module to call which cannot include the struct gn definition
@@ -673,10 +620,250 @@ int gn_init()
 	finally : coda;
 }
 
-void gn_invalidate(gn *** const invalidations, int invalidationsl)
+int gn_reconcile_invalidation(gn * const root)
+{
+	int reconcile(gn * gn, int d)
+	{
+		log(L_INFO, "%*sinvalidated : %s", d, "", gn->idstring);
+
+		DIR * dh = 0;
+		char tmp[3][512];
+
+		if(gn->force_invalid == 0)
+		{
+			gn->force_invalid = 1;
+
+			// force action on this node 
+			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/noforce_invalid", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+
+			if(unlink(tmp[0]) != 0 && errno != ENOENT)
+				fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+
+			// delete discovery results for this node, if any
+			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+
+			if(unlink(tmp[0]) != 0 && errno != ENOENT)
+				fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+
+			fatal(depblock_close, gn->dscv_block);
+
+			// propagate to antecedent nodes
+			if((dh = opendir(gn->ifeed_skipweak_dir)) == 0)
+			{
+				if(errno != ENOENT)
+					fail("opendir(%s)=[%d][%s]", gn->ifeed_skipweak_dir, errno, strerror(errno));
+			}
+			else
+			{
+				struct dirent ent;
+				struct dirent * entp = 0;
+				while(1)
+				{
+					fatal_os(readdir_r, dh, &ent, &entp);
+
+					if(!entp)
+						break;
+
+					if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+					{
+						// force action
+						snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/noforce_needs", gn->ifeed_skipweak_dir, entp->d_name);
+						if(unlink(tmp[0]) != 0)
+						{
+							if(errno == ENOENT)
+							{
+								// delete dangling links
+								snprintf(tmp[0], sizeof(tmp[0]), "%s/%s", gn->ifeed_skipweak_dir, entp->d_name);
+								unlink(tmp[0]);
+							}
+							else
+							{
+								fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+							}
+						}
+
+						if(log_would(L_CHANGEL))
+						{
+							uint32_t canhash = 0;
+							if(parseuint(entp->d_name, SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) == 0)
+								fail("unexpected : %s/%s", gn->ifeed_skipweak_dir, entp->d_name);
+
+							struct gn ** g = 0;
+							if((g = map_get(gn_nodes.by_pathhash, MM(canhash))))
+							{
+								log(L_CHANGE | L_CHANGEL, " -> %s", (*g)->idstring);
+							}
+						}
+					}
+				}
+			}
+		}
+
+	finally:
+		if(dh)
+			closedir(dh);
+	coda;
+	};
+
+	if(root->force_invalid == 0)
+	{
+		fatal(identity_assume_fabsys);
+		fatal(traverse_depth_bynodes_feedsward_noweak_nobridge_nonofile, root, reconcile);
+		fatal(identity_assume_user);
+	}
+
+	finally : coda;
+}
+
+int gn_reconcile_dsc(gn * const gn)
+{
+	fatal(depblock_write, gn->dscv_block);
+	fatal(depblock_close, gn->dscv_block);
+	fatal(reconcile_completion, gn, 0);
+
+	finally : coda;
+}
+
+int gn_reconcile_fab(gn * const gn, map * const ws)
+{
+	return reconcile_completion(gn, ws);
+}
+
+int gn_finalize()
 {
 	int x;
-	int y;
+	for(x = 0; x < gn_nodes.l; x++)
+	{
+		gn * const gn = gn_nodes.e[x];
+
+		if(!gn->reloaded)
+		{
+			gn->flags = 0;
+			gn->reloaded = 1;
+
+			// compute flags and designation
+			if(gn->path->is_nofile)
+				gn->flags |= GN_FLAGS_NOFILE;
+			if(gn->needs.l)
+				gn->flags |= GN_FLAGS_HASNEED;
+			if(gn->fabv)
+				gn->flags |= GN_FLAGS_CANFAB;
+			
+			if(gn->flags & GN_FLAGS_CANFAB)
+			{
+				if(gn->flags & GN_FLAGS_NOFILE)
+					gn->designate = GN_DESIGNATION_TASK;
+				else if(gn->flags & GN_FLAGS_HASNEED)
+					gn->designate = GN_DESIGNATION_SECONDARY;
+				else
+					gn->designate = GN_DESIGNATION_GENERATED;
+			}
+			else if(gn->flags & GN_FLAGS_NOFILE)
+			{
+				gn->designate = GN_DESIGNATION_GROUP;
+			}
+			else if(gn->flags & GN_FLAGS_HASNEED)
+			{
+				gn->designate = GN_DESIGNATION_SECONDARY;
+			}
+			else
+			{
+				gn->designate = GN_DESIGNATION_PRIMARY;
+			}
+
+			gn->designation = GN_DESIGNATION_STR(gn->designate);
+
+			fatal(identity_assume_fabsys);
+
+			// ensure cache directories are in place
+			fatal(mkdirp, gn->ineed_skipweak_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+			fatal(mkdirp, gn->ifeed_skipweak_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+
+			gn->force_invalid = 1;
+			if(euidaccess(gn->noforce_invalid_path, F_OK) == 0)
+			{
+				gn->force_invalid = 0;
+			}
+			else if(errno != ENOENT)
+			{
+				fail("access(%s)=[%d][%s]", gn->path->can, errno, strerror(errno));
+			}
+
+			gn->force_ff = 1;
+			if(euidaccess(gn->noforce_ff_path, F_OK) == 0)
+			{
+				gn->force_ff = 0;
+			}
+			else if(errno != ENOENT)
+			{
+				fail("access(%s)=[%d][%s]", gn->noforce_ff_path, errno, strerror(errno));
+			}
+
+			gn->force_needs = 1;
+			if(euidaccess(gn->noforce_needs_path, F_OK) == 0)
+			{
+				gn->force_needs = 0;
+			}
+			else if(errno != ENOENT)
+			{
+				fail("access(%s)=[%d][%s]", gn->noforce_needs_path, errno, strerror(errno));
+			}
+
+			if(gn->designate == GN_DESIGNATION_SECONDARY)
+			{
+				gn->force_noexists = 1;
+				if(euidaccess(gn->path->can, F_OK) == 0)
+				{
+					gn->force_noexists = 0;
+				}
+				else if(errno != ENOENT)
+				{
+					fail("access(%s)=[%d][%s]", gn->path->can, errno, strerror(errno));
+				}
+			}
+
+			fatal(identity_assume_user);
+
+			if(gn->designate == GN_DESIGNATION_PRIMARY)
+			{
+				if(gn->primary_hb == 0)
+				{
+					// create hashblock
+					fatal(hashblock_create, &gn->primary_hb, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+
+					// load the previous hashblocks
+					fatal(hashblock_read, gn->primary_hb);
+
+					// stat the file, compute new stathash
+					fatal(hashblock_stat, gn->path->can, gn->primary_hb, gn->primary_hb, 0);
+
+					// process a change to the source file
+					if(hashblock_cmp(gn->primary_hb))
+					{
+						// reconcile invalidation
+						fatal(gn_reconcile_invalidation, gn);
+
+						// commit hashblock
+						fatal(hashblock_write, gn->primary_hb);
+					}
+
+					// allocate dscv block
+					fatal(depblock_create, &gn->dscv_block, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+
+					// actually load the depblock from cache - it was deleted from the fs in the prceeding block
+					// if the backing file had changed
+					fatal(depblock_read, gn->dscv_block);
+				}
+			}
+		}
+	}
+
+	finally : coda;
+}
+
+int gn_process_invalidations(gn *** const invalidations, int invalidationsl)
+{
+	int x;
 
 	int c = invalidationsl;
 	if(g_args.invalidationsz)
@@ -689,176 +876,11 @@ void gn_invalidate(gn *** const invalidations, int invalidationsl)
 			gn = gn_nodes.e[x];
 		else
 			gn = (*invalidations[x]);
-
-		gn->invalid = 1;
-		if(gn->designate == GN_DESIGNATION_PRIMARY)
-		{
-			for(y = 0; y < gn->dscvsl; y++)
-				gn->dscvs[y]->dscv_mark = 0;
-		}
-	}
-}
-
-int gn_finalize()
-{
-	DIR * dh = 0;
-	char tmp[3][512];
-
-	int x;
-	for(x = 0; x < gn_nodes.l; x++)
-	{
-		gn * const gn = gn_nodes.e[x];
-
-		gn->flags = 0;
-
-		if(gn->path->is_nofile)
-			gn->flags |= GN_FLAGS_NOFILE;
-		if(gn->needs.l)
-			gn->flags |= GN_FLAGS_HASNEED;
-		if(gn->fabv)
-			gn->flags |= GN_FLAGS_CANFAB;
 		
-		if(gn->flags & GN_FLAGS_CANFAB)
-		{
-			if(gn->flags & GN_FLAGS_NOFILE)
-				gn->designate = GN_DESIGNATION_TASK;
-			else if(gn->flags & GN_FLAGS_HASNEED)
-				gn->designate = GN_DESIGNATION_SECONDARY;
-			else
-				gn->designate = GN_DESIGNATION_GENERATED;
-		}
-		else if(gn->flags & GN_FLAGS_NOFILE)
-			gn->designate = GN_DESIGNATION_GROUP;
-		else if(gn->flags & GN_FLAGS_HASNEED)
-		{
-			// but there's no fmlv, which is a warning
-			gn->designate = GN_DESIGNATION_SECONDARY;
-		}
-		else
-			gn->designate = GN_DESIGNATION_PRIMARY;
-
-		gn->designation = GN_DESIGNATION_STR(gn->designate);
-
-		if(gn->designate == GN_DESIGNATION_PRIMARY)
-		{
-			if(gn->primary_hb == 0)
-			{
-				// create hashblock
-				fatal(hashblock_create, &gn->primary_hb, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
-
-				// load the previous hashblocks
-				fatal(hashblock_read, gn->primary_hb);
-
-				// stat the file, compute new stathash
-				fatal(hashblock_stat, gn->path->can, gn->primary_hb, gn->primary_hb, 0);
-
-				// construct directory path for aneed_primary_skipweak for this node
-				snprintf(tmp[2], sizeof(tmp[2])
-					, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY/afeed_secondary_skipweak"
-					, g_args.init_fabfile_path->can_hash
-					, gn->path->can_hash
-				);
-
-				fatal(identity_assume_fabsys);
-
-				// ensure that the directory exists
-				fatal(mkdirp, tmp[2], S_IRWXU | S_IRWXG | S_IRWXO);
-
-				// process a change to the source file
-				int r;
-				if((r = hashblock_cmp(gn->primary_hb)))
-				{
-					log(L_CHANGE, "PRIMARY change (%7s) : %s"
-						,   r == HB_VERSION ? "version"
-							: r == HB_STAT ? "stat"
-							: r == HB_CONTENT ? "content"
-							: 0
-						, gn->idstring
-					);
-
-					// mark as changed for THIS execution
-					gn->changed = 1;
-
-					// delete discovery results for this node, if any
-					snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
-
-					if(unlink(tmp[0]) != 0 && errno != ENOENT)
-						fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
-
-					// process existing links
-					if((dh = opendir(tmp[2])) == 0)
-					{
-						if(errno != ENOENT)
-							fail("opendir(%s)=[%d][%s]", tmp[2], errno, strerror(errno));
-					}
-					else
-					{
-						struct dirent ent;
-						struct dirent * entp = 0;
-						while(1)
-						{
-							fatal_os(readdir_r, dh, &ent, &entp);
-
-							if(!entp)
-								break;
-
-							if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
-							{
-								// force fabrication of secondary node
-								snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/SECONDARY/fab/noforce_gn", tmp[2], entp->d_name);
-								if(unlink(tmp[0]) != 0)
-								{
-									if(errno == ENOENT)
-									{
-										// delete dangling links
-										snprintf(tmp[0], sizeof(tmp[0]), "%s/%s", tmp[2], entp->d_name);
-										unlink(tmp[0]);
-									}
-									else
-									{
-										fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
-									}
-								}
-
-								if(log_would(L_CHANGEL))
-								{
-									uint32_t canhash = 0;
-									if(parseuint(entp->d_name, SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) == 0)
-										fail("unexpected : %s/%s", tmp[2], entp->d_name);
-
-									struct gn ** g = 0;
-									if((g = map_get(gn_nodes.by_pathhash, MM(canhash))))
-									{
-										log(L_CHANGE | L_CHANGEL, " -> %s", (*g)->idstring);
-									}
-								}
-							}
-						}
-					}
-
-					// commmit
-					fatal(hashblock_write, gn->primary_hb);
-				}
-
-				fatal(identity_assume_user);
-			}
-
-			if(gn->dscv_block == 0)
-			{
-				// allocate dscv block
-				fatal(depblock_create, &gn->dscv_block, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/PRIMARY/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
-
-				// actually load the depblock from cache - it was deleted from the fs in the prceeding block
-				// if the backing file had changed
-				fatal(depblock_read, gn->dscv_block);
-			}
-		}
+		fatal(gn_reconcile_invalidation, gn);
 	}
 
-finally:
-	if(dh)
-		closedir(dh);
-coda;
+	finally : coda;
 }
 
 void gn_teardown()

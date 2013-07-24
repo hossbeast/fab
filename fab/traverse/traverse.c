@@ -272,14 +272,14 @@ int traverse_depth_bynodes_needsward_skipweak_usebridge_nonofile (struct gn * co
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), 0, 0, 1, 1, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), 0, 0, 1, 1, 0, &stack, &num, logic, ++o_t);
 }
 int traverse_depth_bynodes_needsward_skipweak_usebridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), 0, 0, 1, 1, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), 0, 0, 1, 1, 1, &stack, &num, logic, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_noweak_nobridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {

@@ -134,8 +134,7 @@ static int dsc_execwave(
 		else
 		{
 			// all were parsed; rewrite the dependency block to disk
-			fatal(depblock_write, dscvgn->dscv_block);
-			fatal(depblock_close, dscvgn->dscv_block);
+			fatal(gn_reconcile_dsc, dscvgn);
 		}
 
 		// advance to the next group
@@ -220,22 +219,19 @@ static int depblock_process(
 	finally : coda;
 }
 
-static int count_dscv()
+static int count_dscv(int use_invalid)
 {
 	int c = 0;
 	int x;
 	for(x = 0; x < gn_nodes.l; x++)
 	{
-		if(gn_nodes.e[x]->designate == GN_DESIGNATION_PRIMARY)
+		int y;
+		for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
 		{
-			int y;
-			for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
+			if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 0 || (use_invalid && GN_IS_INVALID(gn_nodes.e[x])))
 			{
-				if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 0)
-				{
-					c++;
-					gn_nodes.e[x]->dscvs[y]->dscv_mark = 1;
-				}
+				c++;
+				gn_nodes.e[x]->dscvs[y]->dscv_mark = 1;
 			}
 		}
 	}
@@ -297,7 +293,7 @@ int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, in
 	int y;
 
 	// count not-yet-executed discovery fmleval contexts
-	dscvl = count_dscv();
+	dscvl = count_dscv(1);
 
 	for(i = 0; dscvl; i++)
 	{
@@ -319,26 +315,44 @@ int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, in
 				{
 					if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 1)
 					{
-						if(gn_nodes.e[x]->dscv_block->block)
+						if(gn_nodes.e[x]->dscv_block->block == 0)
 						{
-							cache[cachel++] = gn_nodes.e[x];
-
-							// dscv results were loaded from cache so all of the dscvs for this node are skipped
-							int k;
-							for(k = 0; k < gn_nodes.e[x]->dscvsl; k++)
+							if(gn_nodes.e[x]->primary_hb->stathash[1] == 0)
 							{
-								gn_nodes.e[x]->dscvs[k]->dscv_mark = 2;
+								log(L_ERROR, "%-9s file %s not found", "PRIMARY", gn_nodes.e[x]->idstring);
+								break;
 							}
-
-							break;
 						}
-						else
+					}
+				}
+ 
+				if(y == gn_nodes.e[x]->dscvsl)
+				{
+					for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
+					{
+						if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 1)
 						{
-							fatal(ts_ensure, ts, tsa, tsl + 1);
-							ts_reset((*ts)[tsl]);
+							if(gn_nodes.e[x]->dscv_block->block)
+							{
+								cache[cachel++] = gn_nodes.e[x];
 
-							(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
-							gn_nodes.e[x]->dscvs[y]->dscv_mark = 2;
+								// dscv results were loaded from cache so all of the dscvs for this node are skipped
+								int k;
+								for(k = 0; k < gn_nodes.e[x]->dscvsl; k++)
+								{
+									gn_nodes.e[x]->dscvs[k]->dscv_mark = 2;
+								}
+
+								break;
+							}
+							else
+							{
+								fatal(ts_ensure, ts, tsa, tsl + 1);
+								ts_reset((*ts)[tsl]);
+
+								(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
+								gn_nodes.e[x]->dscvs[y]->dscv_mark = 2;
+							}
 						}
 					}
 				}
@@ -364,7 +378,7 @@ int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, in
 		log(L_DSC | L_DSCEXEC, "DISCOVERY %3d : %3d nodes and %3d edges", i, newn, newr);
 
 		// recount - new nodes may need discovered
-		dscvl = count_dscv();
+		dscvl = count_dscv(0);
 	}
 
 finally:

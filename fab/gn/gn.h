@@ -89,6 +89,27 @@ GNR_TYPE_TABLE(0)
 #define _GNRT(a, b, c) (c) == b ? #a : 
 #define GNRT_STR(x) GNR_TYPE_TABLE(x) "unknown"
 
+#define GN_IS_INVALID(x) (																																											\
+	   (x)->designate == GN_DESIGNATION_TASK				/* always invalid */																					\
+	|| (x)->designate == GN_DESIGNATION_GENERATED		/* always invalid */																					\
+	|| (x)->force_invalid														/* has been invalidated */																		\
+	|| (x)->force_ff																/* has been invalidated due to associated FF invalidation	*/	\
+	|| (x)->force_needs															/* has been invalidated due to dependency gn invalidation	*/	\
+	|| (x)->force_noexists													/* is invalid because backing file is missing */							\
+	|| (x)->force_changed														/* is invalid because backing file has changed */							\
+)
+
+#define GN_INVALID_REASON(x) (																							\
+	  (x)->designate == GN_DESIGNATION_TASK					? "task"									\
+	: (x)->designate == GN_DESIGNATION_GENERATED		? "generated"							\
+	: (x)->force_invalid														? "invalidated"						\
+	: (x)->force_ff																	? "invalidated(FF)"				\
+	: (x)->force_needs															? "invalidated(GN)"				\
+	: (x)->force_noexists														? "invalidated(noexists)"	\
+	: (x)->force_changed														? "invalidated(changed)"	\
+	: 																							  "eval context product"	\
+)
+
 struct ff_file;
 struct ff_node;
 struct fmleval;
@@ -135,6 +156,22 @@ typedef struct gn
 	int								closure_ffsl;
 	int								closure_ffsa;
 
+	int								reloaded;												// whether this node has been reloaded
+
+	char *						cache_dir;											// canonical path to the cachedir for this node
+	char *						ineed_skipweak_dir;
+	char *						ifeed_skipweak_dir;
+
+	char *						noforce_invalid_path;						// canonical path to the noforce_invalid file
+	char *						noforce_needs_path;							// canonical path to the noforce_needs file
+	char *						noforce_ff_path;								// canonical path to the noforce_ff file
+
+	int								force_invalid;									// whether action is forced because this node has been invalidated
+	int								force_ff;												// whether action is forced because an associated FF_REG was invalidated
+	int								force_needs;										// whether action is forced because an antecedent node was invalidated
+	int								force_noexists;									// whether action is forced because the backing file does not exist
+	int								force_changed;									// whether action is forced because the backing file has changed
+
 	//
 	// PRIMARY
 	//
@@ -156,16 +193,6 @@ typedef struct gn
 	//
 	// SECONDARY
 	//
-	struct
-	{
-		char *						noforce_dir;
-		char *						noforce_ff_path;	// canonical path to the noforce file
-		char *						noforce_gn_path;	// canonical path to the noforce file
-
-		int								fab_exists;				// whether the file exists
-		int								fab_force_ff;			// whether fabrication of the file is forced
-		int								fab_force_gn;			// whether fabrication of the file is forced
-	};
 
 	//
 	// SECONDARY, GENERATED, TASK
@@ -214,11 +241,11 @@ typedef struct gn
 	int									travel;
 
 	// buildplan eval tracking
-	char								changed;
+//	char								changed;
 	char								rebuild;
 	char								poison;
-	char								invalid;
-	char								weak_invalid;
+//	char								invalid;
+//	char								weak_invalid;
 } gn;
 
 extern union gn_nodes_t
@@ -329,40 +356,27 @@ int gn_edge_add(
 //
 void gn_dump(gn *);
 
-/// gn_secondary_reload
-//
-// for a SECONDARY file - check whether the file exists, reload 
-//
-int gn_secondary_reload(gn * const restrict)
-	__attribute__((nonnull));
-
-/// gn_secondary_rewrite_fab
+/// gn_reconcile_dsc
 //
 // SUMMARY
-//  for a SECONDARY file - rewrite the fab/noforce file
+//  reconcile noforce files with the fact that discovery was successfully completed for a node
 //
 // PARAMETERS
-//  gn - a secondary node which was just successfully fabricated
-//  ws - workspace (required)
+//  gn - node for which discovery was successfully completed
 //
-int gn_secondary_rewrite_fab(gn * const restrict, map * const ws)
+int gn_reconcile_dsc(gn * const restrict)
 	__attribute__((nonnull));
 
-/// gn_primary_reload
+/// gn_reconcile_fab
 //
 // SUMMARY
-//  for a PRIMARY file - load the previous hashblocks, stat the file
-//  if the underlying source file has changed:
-//   - delete cached discovery results for this node
-//   - delete noforce_gn for all cached feed_secondary_skipweak
+//  reconcile noforce files with the fact that fabrication was successfully completed for a node
 //
-int gn_primary_reload();
-
-/// gn_primary_reload_dscv
+// PARAMETERS
+//  gn - node for which fabrication was successfully completed
+//  ws - workspace (required)
 //
-// for a PRIMARY file - call gn_primary_reload, load dscv block
-//
-int gn_primary_reload_dscv(gn * const restrict)
+int gn_reconcile_fab(gn * const gn, map * const ws)
 	__attribute__((nonnull));
 
 /// gn_designation
@@ -374,12 +388,12 @@ int gn_primary_reload_dscv(gn * const restrict)
 char * gn_designation(gn * gn)
 	__attribute__((nonnull));
 
-/// gn_invalidations
+/// gn_process_invalidations
 //
 // SUMMARY
 //  apply invalidations
 //
-void gn_invalidate(gn *** const restrict invalidations, int invalidationsl)
+int gn_process_invalidations(gn *** const restrict invalidations, int invalidationsl)
 	__attribute__((nonnull));
 
 /// gn_init
