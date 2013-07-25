@@ -624,13 +624,12 @@ int gn_reconcile_invalidation(gn * const root)
 {
 	int reconcile(gn * gn, int d)
 	{
-		log(L_INFO, "%*sinvalidated : %s", d, "", gn->idstring);
-
 		DIR * dh = 0;
 		char tmp[3][512];
 
 		if(gn->force_invalid == 0)
 		{
+			log(L_INFO, "%*sinvalidated : %s", d, "", gn->idstring);
 			gn->force_invalid = 1;
 
 			// force action on this node 

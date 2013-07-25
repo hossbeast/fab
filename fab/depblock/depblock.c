@@ -209,25 +209,28 @@ int depblock_write(const depblock * const block)
 
 int depblock_close(depblock * const block)
 {
-	if(block->addr != MAP_FAILED)
+	if(block)
 	{
-		if(munmap(block->addr, block->size) == -1)
-			fail("munmap()=[%d][%s]", errno, strerror(errno));
+		if(block->addr != MAP_FAILED)
+		{
+			if(munmap(block->addr, block->size) == -1)
+				fail("munmap()=[%d][%s]", errno, strerror(errno));
 
-		block->addr = MAP_FAILED;
+			block->addr = MAP_FAILED;
+			block->block = 0;
+		}
+
+		if(block->fd != -1)
+		{
+			if(close(block->fd) == -1)
+				fail("close(%d)=[%d][%s]", block->fd, errno, strerror(errno));
+
+			block->fd = -1;
+		}
+
+		free(block->block);
 		block->block = 0;
 	}
-
-	if(block->fd != -1)
-	{
-		if(close(block->fd) == -1)
-			fail("close(%d)=[%d][%s]", block->fd, errno, strerror(errno));
-
-		block->fd = -1;
-	}
-
-	free(block->block);
-	block->block = 0;
 
 	finally : coda;
 }
