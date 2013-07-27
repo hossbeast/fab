@@ -357,6 +357,8 @@ int bp_eval(bp * const bp)
 	int i;
 	int k;
 
+	char space[128];
+
 	// begin with the assumption of a good build
 	int poison = 0;
 
@@ -384,7 +386,7 @@ int bp_eval(bp * const bp)
 				, "PRIMARY"
 				, gn->idstring
 				, ""
-				, GN_INVALID_REASON(gn)
+				, gn_invalid_reason(space, sizeof(space), gn)
 			);
 		}
 
@@ -441,7 +443,7 @@ int bp_eval(bp * const bp)
 						, gn_designation(gn)
 						, gn->idstring
 						, "REBUILD"
-						, GN_INVALID_REASON(gn)
+						, gn_invalid_reason(space, sizeof(space), gn)
 					);
 				}
 			}

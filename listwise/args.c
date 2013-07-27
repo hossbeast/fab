@@ -222,4 +222,3 @@ void args_teardown()
 {
 	free(g_args.generator_file);
 }
-

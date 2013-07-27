@@ -92,9 +92,10 @@ static int dsc_execwave(
 		fatal(depblock_allocate, dscvgn->dscv_block);
 
 		// process all dscvs for the node
+		int reconcile = 1;
 		for(; x < tsl && ts[x]->fmlv->target == dscvgn; x++)
 		{
-			if(ts[x]->r_status == 0 && ts[x]->r_signal == 0 && ts[x]->stde_txt->l == 0)
+			if(ts[x]->pid && ts[x]->r_status == 0 && ts[x]->r_signal == 0 && ts[x]->stde_txt->l == 0)
 			{
 				// parse the generated DDISC fabfile
 				ff_file * dff = 0;
@@ -121,21 +122,19 @@ static int dsc_execwave(
 				}
 				else
 				{
-					break;
+					reconcile = 0;
 				}
+			}
+			else
+			{
+				reconcile = 0;
 			}
 		}
 
-		if(x < tsl && ts[x]->fmlv->target == dscvgn)
-		{
-			// parse failure
-			res = 0;
-		}
-		else
-		{
-			// all were parsed; rewrite the dependency block to disk
+		if(reconcile)
 			fatal(gn_reconcile_dsc, dscvgn);
-		}
+		else
+			res = 0;
 
 		// advance to the next group
 		for(; x < tsl && ts[x]->fmlv->target == dscvgn; x++);

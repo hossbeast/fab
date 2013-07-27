@@ -106,7 +106,7 @@ if(help)
 "       F                        following selectors resolve against init-fabfile-dir\n"
 "\n"
 " execution modes\n"
-"  -p                            buildplan only - do not execute\n"
+"  -p                            create buildplan only - do not execute buildplan\n"
 "\n"
 " incremental builds\n"
 "  -B                            invalidate all              equivalent to +b [ $! ]\n"
@@ -121,7 +121,7 @@ if(help)
 "  --paths-absolute              generate absolute paths\n"
 "\n"
 " bakescript generation\n"
-"  -k </path/to/output>          create bakescript\n"
+"  -k </path/to/output>          create bakescript - do not execute buildplan\n"
 "  -K <variable name>            bakedvar (settable at runtime)\n"
 "\n"
 #if DEVEL

@@ -72,7 +72,7 @@ struct selector;
 
 #define MODE_TABLE(x)																																													\
 /* execution modes */																																													\
-	_MODE(MODE_BPLAN_GENERATE							, 0x01	, x)		/* generate the buildplan */													\
+	_MODE(MODE_BPLAN_GENERATE							, 0x01	, x)		/* (only) generate the buildplan */										\
 	_MODE(MODE_BPLAN_BAKE									, 0x02	, x)		/* bake the buildplan */															\
 	_MODE(MODE_BPLAN_EXEC									, 0x03	, x)		/* execute the buildplan */														\
 /* path handling modes */																																											\

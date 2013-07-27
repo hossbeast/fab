@@ -27,8 +27,8 @@ struct gn;
 
 /// traverse
 //
-// _depth     - depth first
-// _breadth   - breadth first
+// _depth     - depth first (visit a nodes children before itself)
+// _breadth   - breadth first (visit a node before its children)
 //
 // _bynodes   - apply logic at nodes
 // _byrels    - apply logic at relations
@@ -80,6 +80,31 @@ int traverse_depth_bynodes_feedsward_skipweak_nobridge_usenofile  (struct gn * c
 int traverse_depth_bynodes_feedsward_skipweak_nobridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
 int traverse_depth_bynodes_feedsward_skipweak_usebridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
 int traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+
+int traverse_breadth_bynodes_needsward_noweak_nobridge_usenofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_noweak_nobridge_nonofile     (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_noweak_usebridge_usenofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_noweak_usebridge_nonofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_useweak_nobridge_usenofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_useweak_nobridge_nonofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_useweak_usebridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_useweak_usebridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_skipweak_nobridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_skipweak_nobridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_skipweak_usebridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_needsward_skipweak_usebridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_noweak_nobridge_usenofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_noweak_nobridge_nonofile     (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_noweak_usebridge_usenofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_noweak_usebridge_nonofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_useweak_nobridge_usenofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_useweak_nobridge_nonofile    (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_useweak_usebridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_useweak_usebridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_skipweak_nobridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_skipweak_nobridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_skipweak_usebridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
+int traverse_breadth_bynodes_feedsward_skipweak_usebridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int)) __attribute__((nonnull));
 
 #undef restrict
 #endif

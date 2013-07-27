@@ -107,25 +107,26 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 //  traversal
 //
 // PARAMETERS
-//  n           -
-//  rel_off     -
-//  rel_mem_off - 
-//  d           -
-//  weak        -
-//  nextweak    -
-//  bridge      -
-//  nofile      - 
-//  stack       -
-//  num         -
-//  logic       -
-//  t           -
+//  n           - node
+//  rel_off     - offset to collection of relations
+//  rel_mem_off - offset to relation member
+//  d           - depth
+//  weak        - traverse weak relations of this node
+//  nextweak    - traverse weak relations of subsequent nodes
+//  bridge      - traverse bridges
+//  nofile      - traverse nofile boundaries
+//  stack       - cycle stack
+//  num         - len of stack
+//  logic       - callback
+//  before      - breadth-first traversal, depth-first otherwise
+//  t           - traversal id
 //
 // RETURNS
 //  1 - success
 //  0 - callback failure, or fatal cycle
 // -1 - cycle detection (internal)
 //
-static int enter(gn * const n, size_t rel_off, size_t rel_mem_off, int d, int weak, int nextweak, int bridge, int nofile, gn * (* const stack)[64], int * num, int (*const logic)(struct gn *, int), int t)
+static int enter(gn * const n, size_t rel_off, size_t rel_mem_off, int d, int weak, int nextweak, int bridge, int nofile, gn * (* const stack)[64], int * num, int (*const logic)(struct gn *, int), int before, int t)
 {
 	if(n->guard)	// cycle
 	{
@@ -138,15 +139,21 @@ static int enter(gn * const n, size_t rel_off, size_t rel_mem_off, int d, int we
 
 	union relations * rels = (void*)(((char*)n) + rel_off);
 
+	if(before)
+	{
+		if(logic(n, d) == 0)
+			return 0;
+	}
+
 	n->travel = t;	// descend
 	n->guard = 1;
 
 	int x;
 	for(x = 0; x < rels->l; x++)
 	{
-		if(!rels->e[x]->weak || weak)
+		if(weak || !rels->e[x]->weak)
 		{
-			if(!rels->e[x]->bridge || bridge)
+			if(bridge || !rels->e[x]->bridge)
 			{
 				gn * next = *(gn**)(((char*)rels->e[x]) + rel_mem_off);
 
@@ -154,7 +161,7 @@ static int enter(gn * const n, size_t rel_off, size_t rel_mem_off, int d, int we
 				{
 					if(nofile || ((n->flags & GN_FLAGS_NOFILE) ^ (next->flags & GN_FLAGS_NOFILE)) == 0)
 					{
-						int e = enter(next, rel_off, rel_mem_off, d + 1, nextweak, nextweak, bridge, nofile, stack, num, logic, t);
+						int e = enter(next, rel_off, rel_mem_off, d + 1, nextweak, nextweak, bridge, nofile, stack, num, logic, before, t);
 						if(e == -1)
 						{
 							if((*num) < sizeof((*stack)) / sizeof((*stack)[0]))
@@ -188,8 +195,11 @@ static int enter(gn * const n, size_t rel_off, size_t rel_mem_off, int d, int we
 
 	n->guard = 0;	// ascend
 
-	if(logic(n, d) == 0)
-		return 0;
+	if(!before)
+	{
+		if(logic(n, d) == 0)
+			return 0;
+	}
 
 	return 1;
 }
@@ -205,168 +215,338 @@ int traverse_depth_bynodes_needsward_noweak_nobridge_nonofile   (struct gn * con
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 0, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_noweak_nobridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 0, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_noweak_usebridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 1, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 1, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_noweak_usebridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 1, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 1, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_useweak_nobridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 0, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_useweak_nobridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 0, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_useweak_usebridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 1, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 1, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_useweak_usebridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 1, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 1, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_skipweak_nobridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 0, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_skipweak_nobridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 0, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_skipweak_usebridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 1, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 1, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_needsward_skipweak_usebridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 1, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 1, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_noweak_nobridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 0, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_noweak_nobridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 0, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_noweak_usebridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 1, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 1, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_noweak_usebridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 1, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 1, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_useweak_nobridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 0, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_useweak_nobridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 0, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_useweak_usebridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 1, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 1, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_useweak_usebridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 1, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 1, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_skipweak_nobridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 0, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 0, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_skipweak_nobridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 0, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 0, 1, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 1, 0, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 1, 0, &stack, &num, logic, 0, ++o_t);
 }
 int traverse_depth_bynodes_feedsward_skipweak_usebridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
 {
 	gn * stack[64] = {};
 	int num = 0;
 
-	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 1, 1, &stack, &num, logic, ++o_t);
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 1, 1, &stack, &num, logic, 0, ++o_t);
+}
+
+
+int traverse_breadth_bynodes_needsward_noweak_nobridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 0, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_noweak_nobridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 0, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_noweak_usebridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 1, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_noweak_usebridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 0, 1, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_useweak_nobridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 0, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_useweak_nobridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 0, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_useweak_usebridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 1, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_useweak_usebridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 1, 1, 1, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_skipweak_nobridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 0, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_skipweak_nobridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 0, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_skipweak_usebridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 1, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_needsward_skipweak_usebridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), needs), offsetof(typeof(*r->needs.e[0]), B), 0, 0, 1, 1, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_noweak_nobridge_nonofile   (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 0, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_noweak_nobridge_usenofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 0, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_noweak_usebridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 1, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_noweak_usebridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 0, 1, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_useweak_nobridge_nonofile  (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 0, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_useweak_nobridge_usenofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 0, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_useweak_usebridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 1, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_useweak_usebridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 1, 1, 1, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_skipweak_nobridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 0, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_skipweak_nobridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 0, 1, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_skipweak_usebridge_nonofile (struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 1, 0, &stack, &num, logic, 1, ++o_t);
+}
+int traverse_breadth_bynodes_feedsward_skipweak_usebridge_usenofile(struct gn * const restrict r, int (* const logic)(struct gn *, int))
+{
+	gn * stack[64] = {};
+	int num = 0;
+
+	return enter(r, offsetof(typeof(*r), feeds), offsetof(typeof(*r->feeds.e[0]), A), 0, 0, 1, 1, 1, &stack, &num, logic, 1, ++o_t);
 }
 
 int traverse_init()

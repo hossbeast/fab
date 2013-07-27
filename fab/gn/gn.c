@@ -211,6 +211,8 @@ static int reconcile_completion(gn * const gn, map * const ws)
 		// finally, create bidirectional symlinks for immediate needs of this node
 		for(x = 0; x < gn->needs.l; x++)
 		{
+//		log(L_INFO, "%s -> %s", gn->idstring, gn->needs.e[x]->B->idstring);
+
 			// needed node
 			uint32_t need = gn->needs.e[x]->B->path->can_hash;
 
@@ -227,6 +229,13 @@ static int reconcile_completion(gn * const gn, map * const ws)
 				fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
 		}
 	}
+
+	gn->force_needs = 0;
+	gn->force_ff = 0;
+	gn->force_invalid = 0;
+	gn->force_changed = 0;
+
+	log(L_INVALID, "reconciled : %s", gn->idstring);
 
 	fatal(identity_assume_user);
 
@@ -466,6 +475,27 @@ int gn_enclose_ff(struct gn * const gn, struct ff_file * const ff, int * const n
 	finally : coda;
 }
 
+char * gn_invalid_reason(char * s, const size_t sz, gn * const gn)
+{
+	size_t z = 0;
+
+	if(gn->force_invalid)
+		z += snprintf(s + z, sz - z, "%s%s", z ? ", " : "", "invalidated");
+	if(gn->force_ff)
+		z += snprintf(s + z, sz - z, "%s%s", z ? ", " : "", "ff invalidated");
+	if(gn->force_needs)
+		z += snprintf(s + z, sz - z, "%s%s", z ? ", " : "", "needs invalidated");
+	if(gn->force_noexists)
+		z += snprintf(s + z, sz - z, "%s%s", z ? ", " : "", "noexists");
+	if(gn->force_changed)
+		z += snprintf(s + z, sz - z, "%s%s", z ? ", " : "", "changed");
+
+	if(z == 0)
+		z += snprintf(s + z, sz - z, "%s%s", z ? ", " : "", "valid");
+
+	return s;
+}
+
 void gn_dump(gn * gn)
 {
 	int x;
@@ -487,6 +517,11 @@ void gn_dump(gn * gn)
 		log(L_DG | L_DGRAPH, "%18s : %s", "name"						, gn->path->name);
 		log(L_DG | L_DGRAPH, "%18s : %s", "ext"							, gn->path->ext);
 		log(L_DG | L_DGRAPH, "%18s : %s", "ext_last"				, gn->path->ext_last);
+
+		if(gn->designate == GN_DESIGNATION_PRIMARY || gn->designate == GN_DESIGNATION_SECONDARY)
+		{
+			log(L_DG | L_DGRAPH, "%18s : %s - %s", "state"			, GN_IS_INVALID(gn) ? "invalid" : "valid", gn_invalid_reason(space, sizeof(space), gn));
+		}
 
 		if(gn->designate == GN_DESIGNATION_PRIMARY)
 		{
@@ -620,17 +655,17 @@ int gn_init()
 	finally : coda;
 }
 
-int gn_reconcile_invalidation(gn * const root)
+int gn_reconcile_invalidation(gn * const root, int degree)
 {
 	int reconcile(gn * gn, int d)
 	{
 		DIR * dh = 0;
-		char tmp[3][512];
+		char tmp[1][512];
 
-		if(gn->force_invalid == 0)
+		if(gn->force_invalid < degree)
 		{
-			log(L_INFO, "%*sinvalidated : %s", d, "", gn->idstring);
-			gn->force_invalid = 1;
+			log(L_INVALID, "%*sinvalidated : %s %d < %d", d, "", gn->idstring, gn->force_invalid, degree);
+			gn->force_invalid = degree;
 
 			// force action on this node 
 			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/noforce_invalid", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
@@ -704,10 +739,10 @@ int gn_reconcile_invalidation(gn * const root)
 	coda;
 	};
 
-	if(root->force_invalid == 0)
+	if(root->force_invalid < degree)
 	{
 		fatal(identity_assume_fabsys);
-		fatal(traverse_depth_bynodes_feedsward_noweak_nobridge_nonofile, root, reconcile);
+		fatal(traverse_breadth_bynodes_feedsward_noweak_nobridge_nonofile, root, reconcile);
 		fatal(identity_assume_user);
 	}
 
@@ -738,7 +773,6 @@ int gn_finalize()
 		if(!gn->reloaded)
 		{
 			gn->flags = 0;
-			gn->reloaded = 1;
 
 			// compute flags and designation
 			if(gn->path->is_nofile)
@@ -771,6 +805,16 @@ int gn_finalize()
 			}
 
 			gn->designation = GN_DESIGNATION_STR(gn->designate);
+		}
+	}
+
+	for(x = 0; x < gn_nodes.l; x++)
+	{
+		gn * const gn = gn_nodes.e[x];
+
+		if(!gn->reloaded)
+		{
+			gn->reloaded = 1;
 
 			fatal(identity_assume_fabsys);
 
@@ -840,7 +884,7 @@ int gn_finalize()
 					if(hashblock_cmp(gn->primary_hb))
 					{
 						// reconcile invalidation
-						fatal(gn_reconcile_invalidation, gn);
+						fatal(gn_reconcile_invalidation, gn, 3);
 
 						// commit hashblock
 						fatal(hashblock_write, gn->primary_hb);
@@ -876,7 +920,7 @@ int gn_process_invalidations(gn *** const invalidations, int invalidationsl)
 		else
 			gn = (*invalidations[x]);
 		
-		fatal(gn_reconcile_invalidation, gn);
+		fatal(gn_reconcile_invalidation, gn, 2);
 	}
 
 	finally : coda;

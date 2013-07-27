@@ -99,17 +99,6 @@ GNR_TYPE_TABLE(0)
 	|| (x)->force_changed														/* is invalid because backing file has changed */							\
 )
 
-#define GN_INVALID_REASON(x) (																							\
-	  (x)->designate == GN_DESIGNATION_TASK					? "task"									\
-	: (x)->designate == GN_DESIGNATION_GENERATED		? "generated"							\
-	: (x)->force_invalid														? "invalidated"						\
-	: (x)->force_ff																	? "invalidated(FF)"				\
-	: (x)->force_needs															? "invalidated(GN)"				\
-	: (x)->force_noexists														? "invalidated(noexists)"	\
-	: (x)->force_changed														? "invalidated(changed)"	\
-	: 																							  "eval context product"	\
-)
-
 struct ff_file;
 struct ff_node;
 struct fmleval;
@@ -424,6 +413,22 @@ void gn_teardown();
 //  newa - *newa incremented by 1 if ff_file was added to gn->affected_ff_file
 //
 int gn_enclose_ff(gn * const restrict gn, struct ff_file * const restrict ff, int * const restrict newa)
+	__attribute__((nonnull));
+
+/// gn_invalid_reason
+//
+// SUMMARY
+//  writes a string describing the validity of the node
+//
+// PARAMETERS
+//  s  - dest
+//  sz - size of dest
+//  gn - node
+//
+// RETURNS
+//  returns s
+//
+char * gn_invalid_reason(char * restrict s, const size_t sz, gn * const restrict gn)
 	__attribute__((nonnull));
 
 #undef restrict
