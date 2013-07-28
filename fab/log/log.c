@@ -83,8 +83,6 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_VARUSER	, .s = "VARUSER"	, .d = "variable definitions - user-defined" }
 	, { .v = L_VAR			, .s = "VAR"			, .d = "variable definitions" }
 	, { .v = L_INVOKE		, .s = "INVOKE"		, .d = "fabfile invocations" }
-	, { .v = L_CHANGEL	, .s = "CHANGEL"	, .d = "source file changes - SECONDARY lists" }
-	, { .v = L_CHANGE		, .s = "CHANGE"		, .d = "source file changes" }
 	, { .v = L_SELECT		, .s = "SELECT"		, .d = "node selectors" }
 	, { .v = L_LISTS		, .s = "LISTS"		, .d = "node lists" }
 	, { .v = L_INVALID	, .s = "INVALID"	, .d = "node invalidation" }

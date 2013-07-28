@@ -320,7 +320,9 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		// idstring
 		if(Al > 4 && memcmp(A, "/../", 4) == 0 && sstk && g_args.mode_gnid != MODE_CANONICAL)
 		{
-			fatal(xsprintf, &(*gna)->idstring, "%.*s", Al, A);
+			char * sstr;
+			fatal(strstack_string, sstk, "/", "/", &sstr);
+			fatal(xsprintf, &(*gna)->idstring, "%s/%.*s", sstr, Al - 4, A + 4);
 		}
 		else if(g_args.mode_gnid == MODE_CANONICAL)
 		{
@@ -716,19 +718,6 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 							else
 							{
 								fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
-							}
-						}
-
-						if(log_would(L_CHANGEL))
-						{
-							uint32_t canhash = 0;
-							if(parseuint(entp->d_name, SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
-								fail("unexpected : %s/%s", gn->ifeed_skipweak_dir, entp->d_name);
-
-							struct gn ** g = 0;
-							if((g = map_get(gn_nodes.by_pathhash, MM(canhash))))
-							{
-								log(L_CHANGE | L_CHANGEL, " -> %s", (*g)->idstring);
 							}
 						}
 					}
