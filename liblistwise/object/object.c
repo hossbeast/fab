@@ -69,5 +69,7 @@ int API listwise_enumerate_objects(listwise_object *** list, int * list_len)
 
 int API listwise_lookup_object(uint8_t type, listwise_object ** obj)
 {
-	return (int)(intptr_t)((*obj) = idx_lookup_val(object_registry.by_type, &type, 0));
+	if(((*obj) = idx_lookup_val(object_registry.by_type, &type, 0)))
+		return 0;
+	return 1;
 }

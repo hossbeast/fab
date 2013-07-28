@@ -27,6 +27,12 @@
 //
 int identity_init();
 
+/* 
+** working off of the assumption that seteuid/setegid are negligible
+** performance-wise, a pair of these calls should bracket every code block that needs to access
+** fabsys:fabsys files, within the same function
+*/
+
 /// identity_assume_user
 //
 // assume ruid identity, i.e. the user who executed the program

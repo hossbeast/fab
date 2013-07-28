@@ -31,7 +31,7 @@ int coll_singly_add(coll_singly* c, void* el, void* ret)
 
 		void* tmp = c->e;
 		if(!(c->e = calloc(ns, c->size)))
-			return 0;
+			return 1;
 		if(tmp)
 			memcpy(c->e, tmp, c->alloc * c->size);
 		free(tmp);
@@ -46,7 +46,7 @@ int coll_singly_add(coll_singly* c, void* el, void* ret)
 
 	c->len++;
 
-	return 1;
+	return 0;
 }
 
 int coll_doubly_add(coll_doubly* c, void* el, void* ret)
@@ -59,7 +59,7 @@ int coll_doubly_add(coll_doubly* c, void* el, void* ret)
 
 		void* tmp = c->e;
 		if(!(c->e = calloc(ns, sizeof(void*))))
-			return 0;
+			return 1;
 		if(tmp)
 			memcpy(c->e, tmp, c->alloc * sizeof(void*));
 		free(tmp);
@@ -80,7 +80,7 @@ int coll_doubly_add(coll_doubly* c, void* el, void* ret)
 
 	c->len++;
 
-	return 1;
+	return 0;
 }
 
 void coll_singly_free(coll_singly* c)

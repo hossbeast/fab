@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#define restrict __restrict
+
 // C
 #define L_COLOR_VALUE   0xF000000000000000ULL // C range
 
@@ -121,6 +123,13 @@ int log_would(const uint64_t bits);
 int log(const uint64_t bits, const char* fmt, ...)
 	__attribute__((nonnull(2)));
 
+/// log_error
+//
+// writes error messages (with trace) to stderr if log_would([bits])
+//
+int log_error(const uint64_t bits, const char * const restrict fmt, const char * const restrict function, const char * const restrict file, int line, ...)
+	__attribute__((nonnull));
+
 /// log_start
 //
 // begin writing a single log
@@ -153,4 +162,5 @@ int log_written();
 //
 void log_teardown();
 
+#undef restrict
 #endif

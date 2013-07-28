@@ -73,10 +73,11 @@ void map_xfree(map** const restrict map)
 //  key_len		- key length
 //  [value]		- pointer to value, or 0
 //  value_len	- value length
+//  [rv]      - internally cast to void**, returns pointer to the stored value
 //
-// returns pointer to the stored value, or 0 on error
+// returns zero on success
 //
-void* map_set(map* const restrict map, const void* const restrict key, int key_len, const void* const restrict value, int value_len)
+int map_set(map* const restrict map, const void* const restrict key, int key_len, const void* const restrict value, int value_len, void * restrict rv)
 	__attribute__((nonnull(1, 2)));
 
 /// map_get

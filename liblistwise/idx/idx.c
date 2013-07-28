@@ -206,8 +206,8 @@ static int elcmp(idx* i, int a, int b)
 int idx_mkindex(void* coll, size_t elen, size_t ewid, size_t foff, size_t fwid, uint32_t flags, idx** i)
 {
 	// allocate the index with an upper limit on the number of elements in locs
-	if(!xrealloc(i, sizeof(*i[0]) + (sizeof((*i)->locs[0]) * elen), 1, 0))
-		return 0;
+	if(xrealloc(i, sizeof(*i[0]) + (sizeof((*i)->locs[0]) * elen), 1, 0) != 0)
+		return 1;
 
 	(*i)->coll = coll;
 	(*i)->ewid = ewid;
@@ -242,7 +242,7 @@ int idx_mkindex(void* coll, size_t elen, size_t ewid, size_t foff, size_t fwid, 
 			// already keyed
 			if((flags & INDEX_KIND) == INDEX_UNIQUE)
 			{
-				return 0;
+				return 1;
 			}
 		}
 		else
@@ -299,7 +299,7 @@ int idx_mkindex(void* coll, size_t elen, size_t ewid, size_t foff, size_t fwid, 
 	// (*i)->len is <= nel that we used in the original malloc
 	(*i) = realloc((*i), sizeof(*i[0]) + (sizeof((*i)->locs[0]) * (*i)->len));
 
-	return 1;
+	return 0;
 }
 
 void* idx_lookup_val(idx* i, void* key, int key_l)
@@ -332,7 +332,7 @@ int idx_enumerate(idx* i, void* _list, int* len)
 	void*** list = (void***)_list;
 
 	if(!xmalloc(list, i->len * (sizeof(**list))))
-		return 0;
+		return 1;
 
 	int x;
 	for(x = 0; x < i->len; x++)
@@ -345,7 +345,7 @@ int idx_enumerate(idx* i, void* _list, int* len)
 
 	*len = i->len;
 
-	return 1;
+	return 0;
 }
 
 void idx_sortby(idx* i)
@@ -398,9 +398,3 @@ void idx_xfree(idx** i)
 	idx_free(*i);
 	*i = 0;
 }
-
-
-
-
-
-

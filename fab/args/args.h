@@ -63,10 +63,15 @@ struct selector;
 #define DEFAULT_MODE_GNID					MODE_RELATIVE_CWD
 #define DEFAULT_MODE_PATHS				MODE_RELATIVE_FABFILE_DIR
 #define DEFAULT_MODE_CYCLES				MODE_CYCLES_WARN
-#if DEVEL
-#define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
-#endif
 #define DEFAULT_CONCURRENCY_LIMIT	0
+
+#ifndef DEVEL
+# define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
+# define DEFAULT_MODE_ERRORS			MODE_ERRORS_IMMEDIATE
+#else
+# define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
+# define DEFAULT_MODE_ERRORS			MODE_ERRORS_UNWIND
+#endif
 
 #define EXPIRATION_POLICY					(60 * 60 * 24 * 7)		/* 7 days */
 
@@ -84,9 +89,12 @@ struct selector;
 	_MODE(MODE_CYCLES_WARN								, 0x09	, x)		/* warn when a cycle is detected */										\
 	_MODE(MODE_CYCLES_FAIL								, 0x0a	, x)		/* fail when a cycle is detected */										\
 	_MODE(MODE_CYCLES_DEAL								, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */	\
+/* error reporting modes */																																										\
+	_MODE(MODE_ERRORS_UNWIND							, 0x0d	, x)		/* unwind stack when reporting errors */							\
+	_MODE(MODE_ERRORS_IMMEDIATE						, 0x0e	, x)		/* report on immediate error condition only */				\
 /* bakescript license modes */																																								\
-	_MODE(MODE_BSLIC_STD									, 0x0d	, x)		/* bakescripts have the standard license  */					\
-	_MODE(MODE_BSLIC_FAB									, 0x0e	, x)		/* bakescripts have the fab license */								\
+	_MODE(MODE_BSLIC_STD									, 0x10	, x)		/* bakescripts have the standard license  */					\
+	_MODE(MODE_BSLIC_FAB									, 0x11	, x)		/* bakescripts have the fab license */								\
 
 enum {
 #define _MODE(a, b, c) a = b,
@@ -124,9 +132,8 @@ extern struct g_args_t
 	int									mode_gnid;									// gn identification mode
 	int									mode_cycles;								// cycle handling mode
 	int									mode_paths;									// path generation mode
-#if DEVEL
 	int									mode_bslic;									// bakescript license mode
-#endif
+	int									mode_errors;								// error reporting mode
 
 	int									concurrency;								// concurrently limiting factor
 	path *							init_fabfile_path;					// path to initial fabfile

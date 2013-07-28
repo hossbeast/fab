@@ -38,7 +38,7 @@ struct gn;
 //
 // _useweak   - traverse weak relations
 // _noweak    - ignore weak relations
-// _skipweak  - ignore weak relations of this node, but traverse other weak relations
+// _skipweak  - traverse weak relations, but do not invoke logic on consequent nodes
 //
 // _usebridge - traverse bridge relations
 // _nobridge  - ignore bridge relations

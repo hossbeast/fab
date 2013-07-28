@@ -29,7 +29,7 @@ int API lstack_last_clear(lstack* const restrict ls)
 	ls->last.sl = 0;
 	ls->last.l = 0;
 
-	return 1;
+	return 0;
 }
 
 int API lstack_last_set(lstack* const restrict ls, int y)
@@ -53,12 +53,7 @@ int API lstack_last_set(lstack* const restrict ls, int y)
 	if((ls->last.s[y/8] & (0x01 << (y%8))) == 0)
 		ls->last.l++;
 
-	ls->last.s[y/8] |= (0x01 << y%8);
+	ls->last.s[y/8] |= (0x01 << (y%8));
 
 	finally : coda;
 }
-
-
-
-
-

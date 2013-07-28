@@ -73,10 +73,10 @@ int op_validate_fi(operation* o)
 	if(o->argsl != 0 && o->argsl != 1)
 	{
 		dprintf(listwise_err_fd, "fi -- arguments : %d", o->argsl);
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 int op_validate_fic(operation* o)
@@ -84,10 +84,10 @@ int op_validate_fic(operation* o)
 	if(o->argsl != 0)
 	{
 		dprintf(listwise_err_fd, "fic -- arguments : %d", o->argsl);
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 int op_validate_fiw(operation* o)
@@ -95,10 +95,10 @@ int op_validate_fiw(operation* o)
 	if(o->argsl != 0)
 	{
 		dprintf(listwise_err_fd, "fiw -- arguments : %d", o->argsl);
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 int op_exec_fi(operation* o, lstack* ls, int** ovec, int* ovec_len)
@@ -114,19 +114,19 @@ int op_exec_fi(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		ls->ptr = strdup(o->args[0]->s);
 	}
 
-	return 1;
+	return 0;
 }
 
 int op_exec_fic(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	ls->flags = INTERPOLATE_DELIM_WS;
 
-	return 1;
+	return 0;
 }
 
 int op_exec_fiw(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	ls->flags = INTERPOLATE_ADJOIN;
 
-	return 1;
+	return 0;
 }

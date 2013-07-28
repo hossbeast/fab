@@ -48,7 +48,7 @@ static int minmodify(const char* dirpath, time_t * minmod)
 		return FTW_CONTINUE;
 	};
 
-	return nftw(dirpath, fn, 32, FTW_PHYS) == 0;
+	return nftw(dirpath, fn, 32, FTW_PHYS);
 }
 
 //
@@ -92,7 +92,7 @@ int tmp_setup()
 			// pid is myself, or it is unkillable
 			if(pid == g_args.pid || kill(pid, 0))
 			{
-				if(rmdir_recursive(fpath, 1) == 0)
+				if(rmdir_recursive(fpath, 1) != 0)
 					return FTW_STOP;
 			}
 
@@ -126,13 +126,13 @@ int tmp_setup()
 
 				// get the min modify time of everything in the directory
 				time_t minmod = sb->st_mtime;
-				if(minmodify(fpath, &minmod) == 0)
+				if(minmodify(fpath, &minmod) != 0)
 					return FTW_STOP;
 
 				// minimum modify time older than expiration
 				if((time(0) - minmod) > EXPIRATION_POLICY)
 				{
-					if(rmdir_recursive(fpath, 1) == 0)
+					if(rmdir_recursive(fpath, 1) != 0)
 						return FTW_STOP;
 				}
 

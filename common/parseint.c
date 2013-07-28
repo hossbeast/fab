@@ -39,7 +39,7 @@ printf("parseint('%s', '%s', %lld, %lld, %hhu, %hhu, %p, %p)", s, f, lo, hi, min
 #if DBUG_PARSEINT
 	printf("not numeric\n");
 #endif
-			return 0;
+			return 1;
 		}
 	}
 	if(strchr(f, 'i'))
@@ -49,7 +49,7 @@ printf("parseint('%s', '%s', %lld, %lld, %hhu, %hhu, %p, %p)", s, f, lo, hi, min
 #if DBUG_PARSEINT
 	printf("not numeric\n");
 #endif
-			return 0;
+			return 1;
 		}
 	}
 
@@ -58,35 +58,35 @@ printf("parseint('%s', '%s', %lld, %lld, %hhu, %hhu, %p, %p)", s, f, lo, hi, min
 #if DBUG_PARSEINT
 	printf(" = ERANGE\n");
 #endif
-		return 0;
+		return 1;
 	}
 	else if(tr < lo)						/* minimum value threshold	*/
 	{
 #if DBUG_PARSEINT
 	printf(" < lo\n");
 #endif
-		return 0;
+		return 1;
 	}
 	else if(tr > hi)						/* maximum value threshold	*/
 	{
 #if DBUG_PARSEINT
 	printf(" > hi\n");
 #endif
-		return 0;
+		return 1;
 	}
 	else if(tn < min)						/* minimum length threshold	*/
 	{
 #if DBUG_PARSEINT
 	printf(" < min\n");
 #endif
-		return 0;
+		return 1;
 	}
 	else if(tn > max)						/* maximum length threshold	*/
 	{
 #if DBUG_PARSEINT
 	printf(" > max\n");
 #endif
-		return 0;
+		return 1;
 	}
 
 	if(strstr(f, "ll") == f)
@@ -133,7 +133,7 @@ printf(" = %" "" "d" "\n", (signed int)tr);
 	if(rn)
 		*rn = tn;
 
-	return 1;
+	return 0;
 }
 
 int parseuint(const char* const s, char* f, uintmax_t lo, uintmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
@@ -153,7 +153,7 @@ printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, mi
 #if DBUG_PARSEINT
 	printf("not numeric\n");
 #endif
-			return 0;
+			return 1;
 		}
 	}
 	if(strchr(f, 'u'))
@@ -163,7 +163,7 @@ printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, mi
 #if DBUG_PARSEINT
 	printf("not numeric\n");
 #endif
-			return 0;
+			return 1;
 		}
 	}
 	if(strchr(f, 'x'))
@@ -173,7 +173,7 @@ printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, mi
 #if DBUG_PARSEINT
 	printf("not numeric\n");
 #endif
-			return 0;
+			return 1;
 		}
 	}
 
@@ -182,35 +182,35 @@ printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, mi
 #if DBUG_PARSEINT
 	printf(" = ERANGE\n");
 #endif
-		return 0;
+		return 1;
 	}
 	else if(tr < lo)						/* minimum value threshold	*/
 	{
 #if DBUG_PARSEINT
 	printf(" %llu < lo\n", tr);
 #endif
-		return 0;
+		return 1;
 	}
 	else if(tr > hi)						/* maximum value threshold	*/
 	{
 #if DBUG_PARSEINT
 	printf(" %llu > hi\n", tr);
 #endif
-		return 0;
+		return 1;
 	}
 	else if(tn < min)						/* minimum length threshold	*/
 	{
 #if DBUG_PARSEINT
 	printf(" %hhu < min\n", tn);
 #endif
-		return 0;
+		return 1;
 	}
 	else if(tn > max)						/* maximum length threshold	*/
 	{
 #if DBUG_PARSEINT
 	printf(" %hhu > max\n", tn);
 #endif
-		return 0;
+		return 1;
 	}
 
 	if(r)
@@ -255,6 +255,6 @@ printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, mi
 	if(rn)
 		*rn = tn;
 
-	return 1;
+	return 0;
 }
 

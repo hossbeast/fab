@@ -43,8 +43,3 @@ void __attribute__((destructor)) list_teardown()
 		free(listwise_identity->s);
 	free(listwise_identity);
 }
-
-
-
-
-

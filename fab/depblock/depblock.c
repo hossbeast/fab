@@ -113,16 +113,16 @@ int depblock_allocate(depblock * const block)
 int depblock_addrelation(depblock * const db, const path * const A, const path * const B, int isweak, int isbridge)
 {
 	if(A->in_basel >= (sizeof(db->block->sets[0].nbase) / sizeof(db->block->sets[0].nbase[0])))
-		return 0; // nbase too long
+		return 1; // nbase too long
 
 	if(A->in_pathl >= (sizeof(db->block->sets[0].needs) / sizeof(db->block->sets[0].needs[0])))
-		return 0;	// in too long
+		return 1;	// in too long
 
 	if(B->in_basel >- (sizeof(db->block->sets[0].fbase) / sizeof(db->block->sets[0].fbase[0])))
-		return 0; // fbase too long
+		return 1; // fbase too long
 
 	if(B->in_pathl >= (sizeof(db->block->sets[0].feeds) / sizeof((db->block->sets[0].feeds[0]))))
-		return 0;	// in too long
+		return 1;	// in too long
 
 	// locate a suitable set, which has matching bases, needs, and weak
 	int x;
@@ -147,7 +147,7 @@ int depblock_addrelation(depblock * const db, const path * const A, const path *
 	{
 		// no suitable set was found
 		if(x == (sizeof(db->block->sets) / sizeof(db->block->sets[0])))
-			return 0;	// nospace
+			return 1;	// nospace
 
 		if(A->in_base)
 			memcpy(db->block->sets[x].nbase, A->in_base, A->in_basel);
@@ -163,10 +163,10 @@ int depblock_addrelation(depblock * const db, const path * const A, const path *
 	}
 
 	if(db->block->sets[x].feedsl == (sizeof(db->block->sets[0].feeds) / sizeof(db->block->sets[0].feeds[0])))
-		return 0;	// too many feeds
+		return 1;	// too many feeds
 
 	memcpy(db->block->sets[x].feeds[db->block->sets[x].feedsl++], B->in_path, B->in_pathl);
-	return 1;
+	return 0;
 }
 
 int depblock_write(const depblock * const block)

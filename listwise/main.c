@@ -73,7 +73,7 @@ static int snarf(char * path, int * fd, void ** mem, size_t * sz, void ** mmem)
 			((char*)(*mem))[(*sz)] = 0;
 	}
  
-	return 1;
+	return 0;
 }
 
 int main(int argc, char** argv)
@@ -87,8 +87,9 @@ int main(int argc, char** argv)
 	void * mmem = 0;
 	size_t sz = 0;
 
-	if(generator_mkparser(&p) == 0)
-		FAIL("mkparser failed");
+	int __RR = generator_mkparser(&p);
+	if(__RR != 0)
+		FAIL("mkparser failed with %d", __RR);
 
 	if((ls = calloc(1, sizeof(*ls))) == 0)
 		FAIL("calloc(%zu)=[%d][%s]", sizeof(*ls), errno, strerror(errno));
@@ -99,7 +100,7 @@ int main(int argc, char** argv)
 	int x;
 	for(x = 0; x < g_args.init_listl; x++)
 	{
-		if(lstack_add(ls, g_args.init_list[x], strlen(g_args.init_list[x])) == 0)
+		if(lstack_add(ls, g_args.init_list[x], strlen(g_args.init_list[x])) != 0)
 			FAIL("lstack_add failed");
 	}
 
@@ -113,10 +114,10 @@ int main(int argc, char** argv)
 	if(g_args.generator_file)
 	{
 		// read generator-string from file
-		if(snarf(g_args.generator_file, &fd, &mem, &sz, &mmem) == 0)
+		if(snarf(g_args.generator_file, &fd, &mem, &sz, &mmem) != 0)
 			return 1;
 
-		if(generator_parse(p, mem, sz, &g) == 0)
+		if(generator_parse(p, mem, sz, &g) != 0)
 			FAIL("parse failed");
 	}
 	else
@@ -124,12 +125,12 @@ int main(int argc, char** argv)
 		if(genx < argc)
 		{
 			// read generator-string from argv
-			if(generator_parse(p, argv[genx], 0, &g) == 0)
+			if(generator_parse(p, argv[genx], 0, &g) != 0)
 				FAIL("parse failed");
 		}
 
 		// read list items from stdin
-		if(snarf("/dev/fd/0", &fd, &mem, &sz, &mmem) == 0)
+		if(snarf("/dev/fd/0", &fd, &mem, &sz, &mmem) != 0)
 			return 1;
 
 		char * s[2] = { mem, 0 };
@@ -137,7 +138,7 @@ int main(int argc, char** argv)
 		{
 			if(s[1] - s[0])
 			{
-				if(lstack_add(ls, s[0], s[1] - s[0]) == 0)
+				if(lstack_add(ls, s[0], s[1] - s[0]) != 0)
 					FAIL("lstack_add failed");
 			}
 			s[0] = s[1] + 1;
@@ -162,7 +163,7 @@ int main(int argc, char** argv)
 	if(g)
 	{
 		// execute 
-		if(lstack_exec_internal(g, 0, 0, 0, &ls, g_args.dump) == 0)
+		if(lstack_exec_internal(g, 0, 0, 0, &ls, g_args.dump) != 0)
 			FAIL("lstack_exec failed");
 	}
 	else
@@ -230,18 +231,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

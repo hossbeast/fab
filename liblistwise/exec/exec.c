@@ -26,13 +26,13 @@ int listwise_exec(char* s, int l, char** init, int* initls, int initl, lstack** 
 	// generator
 	generator* g = 0;
 
-	if(generator_mkparser(&p) == 0)
+	if(generator_mkparser(&p) != 0)
 		fail("mkparser failed\n");
 
-	if(generator_parse(p, s, l, &g) == 0)
+	if(generator_parse(p, s, l, &g) != 0)
 		fail("parse failed\n");
 
-	if(lstack_exec(g, init, initls, initl, ls) == 0)
+	if(lstack_exec(g, init, initls, initl, ls) != 0)
 		fail("lstack_exec failed");
 
 	generator_free(g);

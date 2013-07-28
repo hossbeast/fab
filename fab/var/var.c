@@ -132,7 +132,7 @@ static int getdef(map * const restrict vmap, const char * const restrict s, vard
 	else
 	{
 		fatal(xmalloc, c, sizeof(**c));
-		fatal(map_set, vmap, s, strlen(s), c, sizeof(*c));
+		fatal(map_set, vmap, s, strlen(s), c, sizeof(*c), 0);
 	}
 
 	finally : coda;
@@ -450,9 +450,9 @@ int var_root(map ** const map)
 	fatal(map_create, map, map_destructor);
 
 	// seed the map identifier mechanism
-	fatal(map_set, *map, MMS("?LVL"), MM((int[1]){ 0 }));
-	fatal(map_set, *map, MMS("?NUM"), MM((int[1]){ 0 }));
-	fatal(map_set, *map, MMS("?CLD"), MM((int[1]){ 0 }));
+	fatal(map_set, *map, MMS("?LVL"), MM((int[1]){ 0 }), 0);
+	fatal(map_set, *map, MMS("?NUM"), MM((int[1]){ 0 }), 0);
+	fatal(map_set, *map, MMS("?CLD"), MM((int[1]){ 0 }), 0);
 
 	finally : coda;
 }
@@ -517,9 +517,9 @@ int var_clone(map * const amap, map ** const bmap)
 	int BNUM = (*ACLD)++;
 	int BCLD = 0;
 
-	fatal(map_set, (*bmap), MMS("?LVL"), MM(BLVL));
-	fatal(map_set, (*bmap), MMS("?NUM"), MM(BNUM));
-	fatal(map_set, (*bmap), MMS("?CLD"), MM(BCLD));
+	fatal(map_set, (*bmap), MMS("?LVL"), MM(BLVL), 0);
+	fatal(map_set, (*bmap), MMS("?NUM"), MM(BNUM), 0);
+	fatal(map_set, (*bmap), MMS("?CLD"), MM(BCLD), 0);
 
 finally:
 	free(keys);

@@ -70,4 +70,3 @@ $listwise				= [ $dlistwise/$name ~ j ]
 	rm -f [ $dlistwise/$name ]		2>/dev/null
 	rm -f [ $dlistwise/$link ]		2>/dev/null
 }
-

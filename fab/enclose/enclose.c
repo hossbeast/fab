@@ -99,4 +99,3 @@ int enclose_vars(ff_node * const restrict root, ff_node *** restrict closure_var
 
 	finally : coda;
 }
-

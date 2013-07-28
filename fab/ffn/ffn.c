@@ -95,7 +95,7 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 	{
 		if(n->type == FFN_GENERATOR)
 		{
-			if(generator_parse(gp, n->text, 0, &n->generator) == 0)
+			if(generator_parse(gp, n->text, 0, &n->generator) != 0)
 			{
 				fail("failed to parse '%s' @ [%3d,%3d - %3d,%3d]"
 					, n->text
@@ -110,13 +110,13 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 		int x;
 		for(x = 0; x < n->listl; x++)
 		{
-			if(parse_generators(n->list[x], gp) == 0)
+			if(parse_generators(n->list[x], gp) != 0)
 				qfail();
 		}
 
 		for(x = 0; x < sizeof(n->nodes_owned) / sizeof(n->nodes_owned[0]); x++)
 		{
-			if(parse_generators(n->nodes_owned[x], gp) == 0)
+			if(parse_generators(n->nodes_owned[x], gp) != 0)
 				qfail();
 		}
 	}
@@ -248,7 +248,7 @@ int ffn_postprocess(ff_node * const ffn, generator_parser * const gp)
 	strmeasure(ffn);
 
 	// parse generator strings
-	if(parse_generators(ffn, gp) == 0)
+	if(parse_generators(ffn, gp) != 0)
 		qfail();
 
 	finally : coda;

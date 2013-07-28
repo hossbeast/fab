@@ -41,16 +41,16 @@ static int getdir(const char * const p, char ** const r)
 	if(s == p)
 	{
 		*r = strdup(".");
-		return 1;
+		return 0;
 	}
 
 	if(((*r) = calloc(1, (s - p) + 1)))
 	{
 		memcpy(*r, p, s - p);
-		return 1;
+		return 0;
 	}
 	
-	return 0;
+	return 1;
 }
 
 static int getname(const char * const p, char ** const r)
@@ -62,8 +62,8 @@ static int getname(const char * const p, char ** const r)
 	if(s[0] == '/')
 		s++;
 	if((*r = strdup(s)))
-		return 1;
-	return 0;
+		return 0;
+	return 1;
 }
 
 static int getext(const char * const p, char ** const r)
@@ -78,12 +78,12 @@ static int getext(const char * const p, char ** const r)
 	if(s[0] == '.')
 	{
 		if((*r = strdup(s + 1)))
-			return 1;
-		else
 			return 0;
+		else
+			return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 static int getextlast(const char * const p, char ** const r)
@@ -95,12 +95,12 @@ static int getextlast(const char * const p, char ** const r)
 	if(s[0] == '.')
 	{
 		if((*r = strdup(s + 1)))
-			return 1;
-		else
 			return 0;
+		else
+			return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 static int path_init(path * const p)
@@ -197,28 +197,28 @@ int rebase(const char * const abs, int absl, const char * const base, int basel,
 
 	z += snprintf(dst + z, siz - z, "%.*s", absl - x, abs + x);
 
-	return 1;
+	return 0;
 }
 
 static int create(path ** const p, const char * const in_base, const char * const fmt, va_list va, int init)
 {
-	if(xmalloc(p, sizeof(**p)) == 0)
-		return 0;
+	if(xmalloc(p, sizeof(**p)) != 0)
+		return 1;
 
-	if(xmalloc(&(*p)->can, 512) == 0)
-		return 0;
+	if(xmalloc(&(*p)->can, 512) != 0)
+		return 1;
 
-	if(xmalloc(&(*p)->abs, 512) == 0)
-		return 0;
+	if(xmalloc(&(*p)->abs, 512) != 0)
+		return 1;
 
-	if(xmalloc(&(*p)->rel_cwd, 512) == 0)
-		return 0;
+	if(xmalloc(&(*p)->rel_cwd, 512) != 0)
+		return 1;
 
-	if(xmalloc(&(*p)->rel_fab, 512) == 0)
-		return 0;
+	if(xmalloc(&(*p)->rel_fab, 512) != 0)
+		return 1;
 
-	if(xmalloc(&(*p)->rel_nofile, 512) == 0)
-		return 0;
+	if(xmalloc(&(*p)->rel_nofile, 512) != 0)
+		return 1;
 
 	char buf[512];
 	vsnprintf(buf, sizeof(buf), fmt, va);
@@ -230,8 +230,8 @@ static int create(path ** const p, const char * const in_base, const char * cons
 	//
 	// canonical path - fully canonicalized
 	//
-	if(canon(buf, 0, (*p)->can, 512, in_base, CAN_REALPATH) == 0)
-		return 0;
+	if(canon(buf, 0, (*p)->can, 512, in_base, CAN_REALPATH) != 0)
+		return 1;
 
 	// 
 	// absolute path - close to the users representation - but forced to absolute notation
@@ -239,38 +239,38 @@ static int create(path ** const p, const char * const in_base, const char * cons
 	//	- all dots and dotdots resolved
 	//  - resolve internal symbolic links which do not cross mount points
 	//
-	if(canon(buf, 0, (*p)->abs, 512, in_base, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM) == 0)
-		return 0;
+	if(canon(buf, 0, (*p)->abs, 512, in_base, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM) != 0)
+		return 1;
 
 	// 
 	// absolute path rebased to cwd
 	//
-	if(rebase((*p)->abs, 0, g_args.cwd, 0, (*p)->rel_cwd, 512) == 0)
-		return 0;
+	if(rebase((*p)->abs, 0, g_args.cwd, 0, (*p)->rel_cwd, 512) != 0)
+		return 1;
 
 	// 
 	// absolute path rebased to init-fabfile-dir
 	//
 	if(init)
 	{
-		if(rebase((*p)->abs, 0, g_args.cwd, 0, (*p)->rel_fab, 512) == 0)
-			return 0;
+		if(rebase((*p)->abs, 0, g_args.cwd, 0, (*p)->rel_fab, 512) != 0)
+			return 1;
 	}
 	else
 	{
-		if(rebase((*p)->abs, 0, g_args.init_fabfile_path->abs_dir, 0, (*p)->rel_fab, 512) == 0)
-			return 0;
+		if(rebase((*p)->abs, 0, g_args.init_fabfile_path->abs_dir, 0, (*p)->rel_fab, 512) != 0)
+			return 1;
 	}
 
 	// 
 	// absolute path rebased to /..
 	//
-	if(rebase((*p)->abs, 0, "/..", 0, (*p)->rel_nofile, 512) == 0)
-		return 0;
+	if(rebase((*p)->abs, 0, "/..", 0, (*p)->rel_nofile, 512) != 0)
+		return 1;
 
 	path_init(*p);
 
-	return 1;
+	return 0;
 }
 
 //
@@ -325,8 +325,8 @@ void path_xfree(path ** const p)
 
 int path_copy(path ** const B, const path * const A)
 {
-	if(xmalloc(B, sizeof(**B)) == 0)
-		return 0;
+	if(xmalloc(B, sizeof(**B)) != 0)
+		return 1;
 
 	// copy
 	(**B) = *A;
@@ -338,9 +338,9 @@ int path_copy(path ** const B, const path * const A)
 		if((*B)->strings[x])
 		{
 			if(((*B)->strings[x] = strdup((*B)->strings[x])) == 0)
-				return 0;
+				return 1;
 		}
 	}
 	
-	return 1;
+	return 0;
 }

@@ -170,13 +170,13 @@ static int reconcile_completion(gn * const gn, map * const ws)
 	fatal_os(close, fd);
 	fd = 0;
 
-	if(gn->designate != GN_DESIGNATION_PRIMARY)
+	if(gn->designate == GN_DESIGNATION_SECONDARY)
 	{
 		// construct a map of immediate needs for this node
 		map_clear(ws);
 		int x;
 		for(x = 0; x < gn->needs.l; x++)
-			fatal(map_set, ws, MM(gn->needs.e[x]->B->path->can_hash), MM(gn->needs.e[x]));
+			fatal(map_set, ws, MM(gn->needs.e[x]->B->path->can_hash), MM(gn->needs.e[x]), 0);
 
 		// delete existing links which no longer apply
 		if((dh = opendir(gn->ineed_skipweak_dir)) == 0)
@@ -195,13 +195,13 @@ static int reconcile_completion(gn * const gn, map * const ws)
 			{
 				// get the canhash for this gn
 				uint32_t canhash = 0;
-				if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) == 0)
+				if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) != 0)
 					fail("unexpected file %s/%s", gn->ineed_skipweak_dir, entp->d_name);
 
 				if(map_get(ws, MM(canhash)) == 0)
 				{
 					// remove link
-					snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/ifeed_skipweak/%u", gn->ineed_skipweak_dir, entp->d_name, gn->path->can_hash);
+					snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/ineed_skipweak/%u", gn->ineed_skipweak_dir, entp->d_name, gn->path->can_hash);
 					if(unlink(tmp[0]) != 0 && errno != ENOENT)
 						fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
 				}
@@ -211,22 +211,23 @@ static int reconcile_completion(gn * const gn, map * const ws)
 		// finally, create bidirectional symlinks for immediate needs of this node
 		for(x = 0; x < gn->needs.l; x++)
 		{
-//		log(L_INFO, "%s -> %s", gn->idstring, gn->needs.e[x]->B->idstring);
+			if(!gn->needs.e[x]->weak)
+			{
+				// needed node
+				uint32_t need = gn->needs.e[x]->B->path->can_hash;
 
-			// needed node
-			uint32_t need = gn->needs.e[x]->B->path->can_hash;
+				snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, need);
+				snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ineed_skipweak/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash, need);
 
-			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, need);
-			snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ineed_skipweak/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash, need);
+				if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
+					fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
 
-			if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
-				fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+				snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+				snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ifeed_skipweak/%u", g_args.init_fabfile_path->can_hash, need, gn->path->can_hash);
 
-			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
-			snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ifeed_skipweak/%u", g_args.init_fabfile_path->can_hash, need, gn->path->can_hash);
-
-			if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
-				fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+				if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
+					fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+			}
 		}
 	}
 
@@ -234,6 +235,7 @@ static int reconcile_completion(gn * const gn, map * const ws)
 	gn->force_ff = 0;
 	gn->force_invalid = 0;
 	gn->force_changed = 0;
+	gn->updated = 1;
 
 	log(L_INVALID, "reconciled : %s", gn->idstring);
 
@@ -338,8 +340,8 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		}
 		(*gna)->idstringl = strlen((*gna)->idstring);
 
-		map_set(gn_nodes.by_path, (*gna)->path->can, (*gna)->path->canl, gna, sizeof(*gna));
-		map_set(gn_nodes.by_pathhash, MM((*gna)->path->can_hash), gna, sizeof(*gna));
+		map_set(gn_nodes.by_path, (*gna)->path->can, (*gna)->path->canl, gna, sizeof(*gna), 0);
+		map_set(gn_nodes.by_pathhash, MM((*gna)->path->can_hash), gna, sizeof(*gna), 0);
 
 		if(new)
 			(*new)++;
@@ -408,8 +410,8 @@ int gn_edge_add(
 			fatal(coll_doubly_add, &gna->needs.c, &rel, 0);
 			fatal(coll_doubly_add, &gnb->feeds.c, &rel, 0);
 
-			fatal(map_set, gna->needs.by_B, &gnb, sizeof(gnb), &rel, sizeof(rel));
-			fatal(map_set, gnb->feeds.by_A, &gna, sizeof(gna), &rel, sizeof(rel));
+			fatal(map_set, gna->needs.by_B, &gnb, sizeof(gnb), &rel, sizeof(rel), 0);
+			fatal(map_set, gnb->feeds.by_A, &gna, sizeof(gna), &rel, sizeof(rel), 0);
 
 			rel->A = gna;
 			rel->B = gnb;
@@ -662,9 +664,9 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 		DIR * dh = 0;
 		char tmp[1][512];
 
-		if(gn->force_invalid < degree)
+		if(gn->force_invalid < degree && !gn->updated)
 		{
-			log(L_INVALID, "%*sinvalidated : %s %d < %d", d, "", gn->idstring, gn->force_invalid, degree);
+			log(L_INVALID, "%*sinvalidated : %s", d, "", gn->idstring);
 			gn->force_invalid = degree;
 
 			// force action on this node 
@@ -679,9 +681,10 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 			if(unlink(tmp[0]) != 0 && errno != ENOENT)
 				fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
 
-			fatal(depblock_close, gn->dscv_block);
+			if(gn->dscv_block)
+				fatal(depblock_close, gn->dscv_block);
 
-			// propagate to antecedent nodes
+			// propagate to consequent nodes
 			if((dh = opendir(gn->ifeed_skipweak_dir)) == 0)
 			{
 				if(errno != ENOENT)
@@ -719,7 +722,7 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 						if(log_would(L_CHANGEL))
 						{
 							uint32_t canhash = 0;
-							if(parseuint(entp->d_name, SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) == 0)
+							if(parseuint(entp->d_name, SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
 								fail("unexpected : %s/%s", gn->ifeed_skipweak_dir, entp->d_name);
 
 							struct gn ** g = 0;
@@ -739,10 +742,10 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 	coda;
 	};
 
-	if(root->force_invalid < degree)
+	if(root->force_invalid < degree && !root->updated)
 	{
 		fatal(identity_assume_fabsys);
-		fatal(traverse_breadth_bynodes_feedsward_noweak_nobridge_nonofile, root, reconcile);
+		fatal(traverse_breadth_bynodes_feedsward_skipweak_nobridge_nonofile, root, reconcile);
 		fatal(identity_assume_user);
 	}
 
@@ -763,7 +766,7 @@ int gn_reconcile_fab(gn * const gn, map * const ws)
 	return reconcile_completion(gn, ws);
 }
 
-int gn_finalize()
+int gn_finalize(int reconcile)
 {
 	int x;
 	for(x = 0; x < gn_nodes.l; x++)
@@ -880,14 +883,17 @@ int gn_finalize()
 					// stat the file, compute new stathash
 					fatal(hashblock_stat, gn->path->can, gn->primary_hb, gn->primary_hb, 0);
 
-					// process a change to the source file
-					if(hashblock_cmp(gn->primary_hb))
+					if(reconcile)
 					{
-						// reconcile invalidation
-						fatal(gn_reconcile_invalidation, gn, 3);
+						// process a change to the source file
+						if(hashblock_cmp(gn->primary_hb))
+						{
+							// reconcile invalidation
+							fatal(gn_reconcile_invalidation, gn, 3);
 
-						// commit hashblock
-						fatal(hashblock_write, gn->primary_hb);
+							// commit hashblock
+							fatal(hashblock_write, gn->primary_hb);
+						}
 					}
 
 					// allocate dscv block
@@ -897,6 +903,30 @@ int gn_finalize()
 					// if the backing file had changed
 					fatal(depblock_read, gn->dscv_block);
 				}
+			}
+		}
+	}
+
+	finally : coda;
+}
+
+int gn_reconcile()
+{
+	int x;
+	for(x = 0; x < gn_nodes.l; x++)
+	{
+		gn * const gn = gn_nodes.e[x];
+
+		if(gn->designate == GN_DESIGNATION_PRIMARY)
+		{
+			// process a change to the source file
+			if(hashblock_cmp(gn->primary_hb))
+			{
+				// reconcile invalidation
+				fatal(gn_reconcile_invalidation, gn, 3);
+
+				// commit hashblock
+				fatal(hashblock_write, gn->primary_hb);
 			}
 		}
 	}

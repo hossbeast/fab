@@ -55,10 +55,10 @@
 //
 #define GN_DESIGNATION_TABLE(x)																											\
 	_GN_DESIGNATION(GN_DESIGNATION_TASK								, 0x01	, "TASK"				, x)		\
-	_GN_DESIGNATION(GN_DESIGNATION_SECONDARY					, 0x02	, "SECONDARY"		, x)		\
 	_GN_DESIGNATION(GN_DESIGNATION_GENERATED					, 0x03	, "GENERATED"		, x)		\
 	_GN_DESIGNATION(GN_DESIGNATION_GROUP							, 0x04	, "GROUP"				, x)		\
-	_GN_DESIGNATION(GN_DESIGNATION_PRIMARY						, 0x05	, "PRIMARY"			, x)
+	_GN_DESIGNATION(GN_DESIGNATION_PRIMARY						, 0x05	, "PRIMARY"			, x)		\
+	_GN_DESIGNATION(GN_DESIGNATION_SECONDARY					, 0x02	, "SECONDARY"		, x)
 
 enum {
 #define _GN_DESIGNATION(a, b, c, d) a = b,
@@ -92,6 +92,7 @@ GNR_TYPE_TABLE(0)
 #define GN_IS_INVALID(x) (																																											\
 	   (x)->designate == GN_DESIGNATION_TASK				/* always invalid */																					\
 	|| (x)->designate == GN_DESIGNATION_GENERATED		/* always invalid */																					\
+	|| (x)->designate == GN_DESIGNATION_GROUP				/* doesnt make sense */																				\
 	|| (x)->force_invalid														/* has been invalidated */																		\
 	|| (x)->force_ff																/* has been invalidated due to associated FF invalidation	*/	\
 	|| (x)->force_needs															/* has been invalidated due to dependency gn invalidation	*/	\
@@ -145,8 +146,6 @@ typedef struct gn
 	int								closure_ffsl;
 	int								closure_ffsa;
 
-	int								reloaded;												// whether this node has been reloaded
-
 	char *						cache_dir;											// canonical path to the cachedir for this node
 	char *						ineed_skipweak_dir;
 	char *						ifeed_skipweak_dir;
@@ -160,6 +159,10 @@ typedef struct gn
 	int								force_needs;										// whether action is forced because an antecedent node was invalidated
 	int								force_noexists;									// whether action is forced because the backing file does not exist
 	int								force_changed;									// whether action is forced because the backing file has changed
+
+	/* apply to THIS run only */
+	int								reloaded;												// whether this node has been reloaded
+	int								updated;												// whether this node has been updated
 
 	//
 	// PRIMARY
@@ -397,6 +400,8 @@ int gn_init();
 // gn fully loaded; populate flags and designation
 //
 int gn_finalize();
+
+int gn_reconcile();
 
 /// gn_teardown
 //

@@ -154,7 +154,7 @@ int map_create(map** const restrict m, void (*destructor)(void*, void*))
 	finally : coda;
 }
 
-void* map_set(map* const restrict m, const void* const restrict k, int kl, const void* const restrict v, int vl)
+int map_set(map* const restrict m, const void* const restrict k, int kl, const void* const restrict v, int vl, void * restrict rv)
 {
 	slot** ks = 0;
 	slot** vs = 0;
@@ -321,10 +321,9 @@ finally:
 	free(uk);
 	free(uv);
 
-	if(_coda_r)
-		return m->tv[i]->p;
-
-	return 0;
+	if(_coda_r == 0 && rv)
+		*(void**)rv = m->tv[i]->p;
+coda;
 }
 
 void* map_get(const map* const restrict m, const void* const restrict k, int kl)
@@ -385,10 +384,10 @@ int map_delete(map* const restrict m, const void* const restrict k, int kl)
 
 		m->kc--;
 
-		return 1;
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 int map_keys(const map* const restrict m, void* const restrict t, int* const restrict c)

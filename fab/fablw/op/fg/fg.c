@@ -57,10 +57,10 @@ int op_validate(operation* o)
 	if(o->argsl != 0 && o->argsl != 1)
 	{
 		dprintf(listwise_err_fd, "fg -- arguments : %d", o->argsl);
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)

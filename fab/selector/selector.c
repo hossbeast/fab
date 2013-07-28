@@ -47,17 +47,17 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 		if(s->mode == '+')
 		{
 			if(s->lists & SELECTOR_FABRICATE)
-				fatal(map_set, o_fabricationsmap, MM(g), 0, 0);
+				fatal(map_set, o_fabricationsmap, MM(g), 0, 0, 0);
 			if(s->lists & SELECTOR_FABRICATEX)
-				fatal(map_set, o_fabricationxsmap, MM(g), 0, 0);
+				fatal(map_set, o_fabricationxsmap, MM(g), 0, 0, 0);
 			if(s->lists & SELECTOR_FABRICATEN)
-				fatal(map_set, o_fabricationnsmap, MM(g), 0, 0);
+				fatal(map_set, o_fabricationnsmap, MM(g), 0, 0, 0);
 			if(s->lists & SELECTOR_INVALIDATE)
-				fatal(map_set, o_invalidationsmap, MM(g), 0, 0);
+				fatal(map_set, o_invalidationsmap, MM(g), 0, 0, 0);
 			if(s->lists & SELECTOR_DISCOVERY)
-				fatal(map_set, o_discoveriesmap, MM(g), 0, 0);
+				fatal(map_set, o_discoveriesmap, MM(g), 0, 0, 0);
 			if(s->lists & SELECTOR_INSPECT)
-				fatal(map_set, o_inspectionsmap, MM(g), 0, 0);
+				fatal(map_set, o_inspectionsmap, MM(g), 0, 0, 0);
 		}
 		else if(s->mode == '-')
 		{

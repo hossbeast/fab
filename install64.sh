@@ -24,7 +24,7 @@ if [[ $1 != "timed" ]]; then
 fi
 
 # formulas and names for stage 0
-NAMES[0]='/../listwise/install'
+NAMES[0]='/../install'
 fml_0_0()
 {
   exec 1>/dev/null
@@ -34,7 +34,7 @@ fml_0_0()
   [[ $destdir ]] || local destdir=''
   
 	install -d										$destdir/$bindir
-	install ./listwise/listwise					$destdir/$bindir/listwise
+	install listwise/listwise					$destdir/$bindir/listwise
 	ln -vfs listwise							$destdir/$bindir/lw
 
 
@@ -45,7 +45,7 @@ fml_0_0()
 
 
 # formulas and names for stage 1
-NAMES[1]='/../liblistwise/install'
+NAMES[1]='/../install'
 fml_1_0()
 {
   exec 1>/dev/null
@@ -57,19 +57,19 @@ fml_1_0()
   [[ $lwopdir ]] || local lwopdir='/usr/lib/listwise'
   
 	install -d																				$destdir/$libdir
-	install	./liblistwise/liblistwise.so													$destdir/$libdir/liblistwise.so.0.1
+	install	liblistwise/liblistwise.so													$destdir/$libdir/liblistwise.so.0.1
 	ln -vfs liblistwise.so.0.1																$destdir/$libdir/liblistwise.so
 	install -d																				$destdir/$incdir/listwise
-	install ./liblistwise/listwise.h							$destdir/$incdir/listwise.h
-	install ./liblistwise/listwise/operator.h			$destdir/$incdir/listwise/operator.h
-	install ./liblistwise/listwise/generator.h 	$destdir/$incdir/listwise/generator.h
-	install ./liblistwise/listwise/ops.h					$destdir/$incdir/listwise/ops.h
-	install ./liblistwise/listwise/lstack.h 			$destdir/$incdir/listwise/lstack.h
-	install ./liblistwise/listwise/object.h 			$destdir/$incdir/listwise/object.h
+	install liblistwise/listwise.h							$destdir/$incdir/listwise.h
+	install liblistwise/listwise/operator.h			$destdir/$incdir/listwise/operator.h
+	install liblistwise/listwise/generator.h 	$destdir/$incdir/listwise/generator.h
+	install liblistwise/listwise/ops.h					$destdir/$incdir/listwise/ops.h
+	install liblistwise/listwise/lstack.h 			$destdir/$incdir/listwise/lstack.h
+	install liblistwise/listwise/object.h 			$destdir/$incdir/listwise/object.h
 
 	rm -rf																						$destdir/$lwopdir 2>/dev/null
 	install -d																				$destdir/$lwopdir
-	for x in ./liblistwise/op/h/h.so ./liblistwise/op/r/r.so ./liblistwise/op/xm/xm.so ./liblistwise/op/sn/sn.so ./liblistwise/op/rp/rp.so ./liblistwise/op/xs/xs.so ./liblistwise/op/xsf/xsf.so ./liblistwise/op/xmf/xmf.so ./liblistwise/op/fn/fn.so ./liblistwise/op/bn/bn.so ./liblistwise/op/dn/dn.so ./liblistwise/op/m/m.so ./liblistwise/op/z/z.so ./liblistwise/op/rx/rx.so ./liblistwise/op/xch/xch.so ./liblistwise/op/j/j.so ./liblistwise/op/dj/dj.so ./liblistwise/op/cp/cp.so ./liblistwise/op/-X/-X.so ./liblistwise/op/s/s.so ./liblistwise/op/pop/pop.so ./liblistwise/op/shift/shift.so ./liblistwise/op/u/u.so ./liblistwise/op/d/d.so ./liblistwise/op/w/w.so ./liblistwise/op/ls/ls.so ./liblistwise/op/o/o.so ./liblistwise/op/c/c.so ./liblistwise/op/uu/uu.so ./liblistwise/op/v/v.so ./liblistwise/op/y/y.so ./liblistwise/op/ss/ss.so; do \
+	for x in liblistwise/op/h/h.so liblistwise/op/r/r.so liblistwise/op/xm/xm.so liblistwise/op/sn/sn.so liblistwise/op/rp/rp.so liblistwise/op/xs/xs.so liblistwise/op/xsf/xsf.so liblistwise/op/xmf/xmf.so liblistwise/op/fn/fn.so liblistwise/op/bn/bn.so liblistwise/op/dn/dn.so liblistwise/op/m/m.so liblistwise/op/z/z.so liblistwise/op/rx/rx.so liblistwise/op/xch/xch.so liblistwise/op/j/j.so liblistwise/op/dj/dj.so liblistwise/op/cp/cp.so liblistwise/op/-X/-X.so liblistwise/op/s/s.so liblistwise/op/pop/pop.so liblistwise/op/shift/shift.so liblistwise/op/u/u.so liblistwise/op/d/d.so liblistwise/op/w/w.so liblistwise/op/ls/ls.so liblistwise/op/o/o.so liblistwise/op/c/c.so liblistwise/op/uu/uu.so liblistwise/op/v/v.so liblistwise/op/y/y.so liblistwise/op/ss/ss.so; do \
 		install $x																			$destdir/$lwopdir
 	done
 
@@ -81,7 +81,7 @@ fml_1_0()
 
 
 # formulas and names for stage 2
-NAMES[2]='/../fab/install'
+NAMES[2]='/../install'
 fml_2_0()
 {
   exec 1>/dev/null
@@ -95,11 +95,11 @@ fml_2_0()
   [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/lib'
   
 	install -d															$destdir/$bindir
-	install ./fab/fab												$destdir/$bindir/fab
+	install fab/fab												$destdir/$bindir/fab
 	chown fabsys:fabsys											$destdir/$bindir/fab
 	chmod u+s 															$destdir/$bindir/fab
 	chmod g+s 															$destdir/$bindir/fab
-	install ./fab/gcc-dep								$destdir/$bindir/gcc-dep
+	install fab/gcc-dep								$destdir/$bindir/gcc-dep
 	install -d 															$destdir/$fabcachedir
 	chown fabsys:fabsys											$destdir/$fabcachedir
 	install -d 															$destdir/$fabtmpdir
@@ -108,14 +108,14 @@ fml_2_0()
 	install -d															$destdir/$fabinvokedir/std/c
 	install -d															$destdir/$fabinvokedir/std/l
 	install -d															$destdir/$fabinvokedir/std/y
-	install ./fab/fablib/std/c.fab			$destdir/$fabinvokedir/std/c.fab
-	install ./fab/fablib/std/l.fab			$destdir/$fabinvokedir/std/l.fab
-	install ./fab/fablib/std/y.fab			$destdir/$fabinvokedir/std/y.fab
+	install fab/fablib/std/c.fab			$destdir/$fabinvokedir/std/c.fab
+	install fab/fablib/std/l.fab			$destdir/$fabinvokedir/std/l.fab
+	install fab/fablib/std/y.fab			$destdir/$fabinvokedir/std/y.fab
 
 	rm -rf 																	$destdir/$fablwopdir 2>/dev/null
 	install -d															$destdir/$fablwopdir
-	install ./fab/fablw/op/fi/fi.so			$destdir/$fablwopdir
-	install ./fab/fablw/op/fg/fg.so			$destdir/$fablwopdir
+	install fab/fablw/op/fi/fi.so			$destdir/$fablwopdir
+	install fab/fablw/op/fg/fg.so			$destdir/$fablwopdir
 
 
   X=$?

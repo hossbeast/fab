@@ -26,8 +26,8 @@
 
 int pvprintf(pstring ** p, char * fmt, va_list va)
 {
-	if(!*p && xmalloc(p, sizeof(**p)) == 0)
-		return 0;
+	if(!*p && xmalloc(p, sizeof(**p)) != 0)
+		return 1;
 
 	va_list va2;
 	va_copy(va2, va);
@@ -35,13 +35,13 @@ int pvprintf(pstring ** p, char * fmt, va_list va)
 	int size = vsnprintf(0, 0, fmt, va2);
 	va_end(va2);
 
-	if(psgrow(p, size) == 0)
-		return 0;
+	if(psgrow(p, size) != 0)
+		return 1;
 
 	vsprintf((*p)->s, fmt, va);
 	(*p)->l = size;
 
-	return 1;
+	return 0;
 }
 
 int psprintf(pstring ** p, char * fmt, ...)
@@ -49,17 +49,17 @@ int psprintf(pstring ** p, char * fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 
-	if(pvprintf(p, fmt, va) == 0)
-		return 0;
+	if(pvprintf(p, fmt, va) != 0)
+		return 1;
 	va_end(va);
 
-	return 1;
+	return 0;
 }
 
 int pscatvf(pstring ** p, char * fmt, va_list va)
 {
-	if(!*p && xmalloc(p, sizeof(**p)) == 0)
-		return 0;
+	if(!*p && xmalloc(p, sizeof(**p)) != 0)
+		return 1;
 
 	va_list va2;
 	va_copy(va2, va);
@@ -67,13 +67,13 @@ int pscatvf(pstring ** p, char * fmt, va_list va)
 	int size = vsnprintf(0, 0, fmt, va2);
 	va_end(va2);
 
-	if(psgrow(p, (*p)->l + size) == 0)
-		return 0;
+	if(psgrow(p, (*p)->l + size) != 0)
+		return 1;
 
 	vsprintf((*p)->s + (*p)->l, fmt, va);
 	(*p)->l += size;
 
-	return 1;
+	return 0;
 }
 
 int pscatf(pstring ** p, char * fmt, ...)
@@ -81,42 +81,42 @@ int pscatf(pstring ** p, char * fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 
-	if(pscatvf(p, fmt, va) == 0)
-		return 0;
+	if(pscatvf(p, fmt, va) != 0)
+		return 1;
 
 	va_end(va);
 
-	return 1;
+	return 0;
 }
 
 int pscat(pstring ** p, void * s, size_t l)
 {
-	if(!*p && xmalloc(p, sizeof(**p)) == 0)
-		return 0;
+	if(!*p && xmalloc(p, sizeof(**p)) != 0)
+		return 1;
 
-	if(psgrow(p, (*p)->l + l) == 0)
-		return 0;
+	if(psgrow(p, (*p)->l + l) != 0)
+		return 1;
 
 	memcpy((*p)->s + (*p)->l, s, l);
 	(*p)->l += l;
 
-	return 1;
+	return 0;
 }
 
 int psgrow(pstring ** p, size_t l)
 {
-	if(!*p && xmalloc(p, sizeof(**p)) == 0)
-		return 0;
+	if(!*p && xmalloc(p, sizeof(**p)) != 0)
+		return 1;
 
 	if(l >= (*p)->a)
 	{
-		if(xrealloc(&(*p)->s, 1, l+1, (*p)->a) == 0)
-			return 0;
+		if(xrealloc(&(*p)->s, 1, l+1, (*p)->a) != 0)
+			return 1;
 
 		(*p)->a = l+1;
 	}
 
-	return 1;
+	return 0;
 }
 
 void pstring_free(pstring * p)

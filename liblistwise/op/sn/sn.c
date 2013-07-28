@@ -54,7 +54,7 @@ operator op_desc[] = {
 
 int op_validate(operation* o)
 {
-	return 1;
+	return 0;
 }
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
@@ -106,5 +106,5 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	for(x = 0; x < i; x++)
 		ls->s[0].s[memb[x]] = T[mema[x]];
 
-	return 1;
+	return 0;
 }

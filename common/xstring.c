@@ -96,7 +96,7 @@ int xstrcat(char** s1, const char* s2)
 
 	int s2len = strlen(s2);
 
-	if(xmalloc(s1, s1len + s2len + 1))
+	if(xmalloc(s1, s1len + s2len + 1) == 0)
 	{
 		if(o)
 			memcpy(*s1, o, s1len);
@@ -105,9 +105,9 @@ int xstrcat(char** s1, const char* s2)
 		memcpy((*s1) + s1len, s2, s2len);
 	}
 	else
-		return 0;
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 int xstrcatf(char** s, char* fmt, ...)
@@ -122,7 +122,7 @@ int xstrcatf(char** s, char* fmt, ...)
 	int len = 0;
 	if(o)
 		len = strlen(o);
-	if(xmalloc(s, len + req + 1))
+	if(xmalloc(s, len + req + 1) == 0)
 	{
 		if(o)
 			memcpy(*s, o, len);
@@ -133,9 +133,9 @@ int xstrcatf(char** s, char* fmt, ...)
 		va_end(va);
 	}
 	else
-		return 0;
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 int xstrdup(char** s1, const char* s2)
@@ -148,7 +148,7 @@ int xstrdup(char** s1, const char* s2)
 	if(*s1 && s1len >= s2len)
 	{
 		memcpy(*s1, s2, s2len + 1);
-		return 1;
+		return 0;
 	}
 
 	free(*s1);
@@ -166,14 +166,14 @@ int xsprintf(char** s, char* fmt, ...)
 	va_end(va);
 
 	free(*s);
-	if(xmalloc(s, req + 1))
+	if(xmalloc(s, req + 1) == 0)
 	{
 		va_start(va, fmt);
 		vsprintf((*s), fmt, va);
 		va_end(va);
 	}
 	else
-		return 0;
+		return 1;
 
-	return 1;
+	return 0;
 }

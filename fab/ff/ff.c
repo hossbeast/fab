@@ -168,7 +168,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	{
 		ff->ffn = pp.ffn;
 
-		if(ffn_postprocess(ff->ffn, p->gp) == 0)
+		if(ffn_postprocess(ff->ffn, p->gp) != 0)
 			qfail();
 
 		if(ff->type == FFT_REGULAR)
@@ -253,7 +253,7 @@ static int regular_rewrite(ff_file * ff)
 		{
 			// get the canhash for this gn
 			uint32_t canhash = 0;
-			if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) == 0)
+			if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) != 0)
 				fail("unexpected file %s/%s", ff->closure_gns_dir, entp->d_name);
 
 			// delete
@@ -293,15 +293,15 @@ coda;
 int ff_mkparser(ff_parser ** const p)
 {
 	if((*p = calloc(1, sizeof(*p[0]))) == 0)
-		return 0;
+		return 1;
 
 	if(ff_yylex_init(&(*p)->p) != 0)
-		return 0;
+		return 1;
 
-	if(generator_mkparser(&(*p)->gp) == 0)
-		return 0;
+	if(generator_mkparser(&(*p)->gp) != 0)
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 int ff_reg_load(const ff_parser * const p, const path * const in_path, char * const nofile, const int nofilel, ff_file ** const ff)
@@ -337,7 +337,7 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, char * co
 
 		if(*ff)
 		{
-			fatal(map_set, ff_files.by_canpath, in_path->can, in_path->canl, ff, sizeof(*ff));
+			fatal(map_set, ff_files.by_canpath, in_path->can, in_path->canl, ff, sizeof(*ff), 0);
 		}
 	}
 
@@ -431,6 +431,8 @@ static void ff_freefile(ff_file * ff)
 {
 	if(ff)
 	{
+		free(ff->nofile);
+
 		if(ff->type == FFT_DDISC)
 		{
 			// no-op

@@ -48,7 +48,7 @@ operator op_desc[] = {
 
 int op_validate(operation* o)
 {
-	return 1;
+	return 0;
 }
 
 void swap(lstack* ls, int a, int b)
@@ -89,5 +89,5 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		}
 	}
 
-	return 1;
+	return 0;
 }

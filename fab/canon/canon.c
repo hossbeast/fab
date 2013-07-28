@@ -62,13 +62,13 @@ int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 		{
 			int ns = (*ia) ?: 10;
 			ns = ns * 2 + ns / 2;
-			if(xrealloc(i, sizeof(**i), ns, (*ia)) == 0)
+			if(xrealloc(i, sizeof(**i), ns, (*ia)) != 0)
 			{
 				int k;
 				for(k = 0; k < *ia; k++)
 					free((*i)->s);
 				free(*i);
-				return 0;
+				return 1;
 			}
 
 			(*ia) = ns;
@@ -120,7 +120,7 @@ int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 		at++;
 	}
 
-	return 1;
+	return 0;
 }
 
 static void add(size_t * z, char * const resolved, size_t sz, char * fmt, ...)
@@ -161,8 +161,8 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 			{
 				if(opts & CAN_INIT_DOT)
 				{
-					if(breakup(&i, &ia, &il, il, "%s/", base) == 0)
-						return 0;
+					if(breakup(&i, &ia, &il, il, "%s/", base) != 0)
+						return 1;
 				}
 			}
 		}
@@ -173,14 +173,14 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 	{
 		if(opts & CAN_FORCE_DOT)
 		{
-			if(breakup(&i, &ia, &il, il, "%s/", base) == 0)
-				return 0;
+			if(breakup(&i, &ia, &il, il, "%s/", base) != 0)
+				return 1;
 		}
 	}
 
 	int init = il;
-	if(breakup(&i, &ia, &il, il, "%.*s", pathl, path) == 0)
-		return 0;
+	if(breakup(&i, &ia, &il, il, "%.*s", pathl, path) != 0)
+		return 1;
 
 	resolved[0] = 0;
 
@@ -285,8 +285,8 @@ printf("init=%d\n", init);
 						// dangling links, and fulfilled links which do not cross mount points
 						if((isfinal && (opts & CAN_FINL_SYM)) || (!isfinal && (opts & CAN_NEXT_SYM)))
 						{
-							if(breakup(&i, &ia, &il, ix + 1, "%.*s", j, space) == 0)
-								return 0;
+							if(breakup(&i, &ia, &il, ix + 1, "%.*s", j, space) != 0)
+								return 1;
 
 							if(space[0] == '/')
 								z = 0;
@@ -298,8 +298,8 @@ printf("init=%d\n", init);
 					{
 						if((isfinal && (opts & CAN_FINL_SYMMNT)) || (!isfinal && (opts & CAN_NEXT_SYMMNT)))
 						{
-							if(breakup(&i, &ia, &il, ix + 1, "%.*s", j, space) == 0)
-								return 0;
+							if(breakup(&i, &ia, &il, ix + 1, "%.*s", j, space) != 0)
+								return 1;
 
 							if(space[0] == '/')
 								z = 0;
@@ -311,7 +311,7 @@ printf("init=%d\n", init);
 			}
 			else if(errno != ENOENT && errno != EACCES && errno != ENOTDIR)
 			{
-				return 0;
+				return 1;
 			}
 		}
 	}
@@ -321,5 +321,5 @@ printf("init=%d\n", init);
 		free(i[x].s);
 	free(i);
 	resolved[z] = 0;
-	return 1;
+	return 0;
 }

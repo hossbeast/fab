@@ -68,7 +68,7 @@ static int reset(gn * r, int exact, int nofile)
 		gn->height = -1;
 		gn->stage = -1;
 
-		return 1;
+		return 0;
 	};
 
 	if(exact)
@@ -102,7 +102,7 @@ static int heights(gn * r, int exact, int nofile, int * change)
 			(*change)++;
 		}
 
-		return 1;
+		return 0;
 	};
 
 	if(exact)
@@ -373,7 +373,7 @@ int bp_eval(bp * const bp)
 			if(gn->primary_hb->stathash[1] == 0)		// file does not exist
 			{
 				// PRIMARY file - not found
-				log(L_ERROR, "[%2d,%2d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
+				log(L_ERROR, "[%2d,%3d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
 
 				// poison and propagate
 				poison = 1;
@@ -381,12 +381,10 @@ int bp_eval(bp * const bp)
 					gn->feeds.e[i]->A->poison = 1;
 			}
 
-			log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+			log(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s |"
 				, x, c++
 				, "PRIMARY"
 				, gn->idstring
-				, ""
-				, gn_invalid_reason(space, sizeof(space), gn)
 			);
 		}
 
@@ -420,7 +418,7 @@ int bp_eval(bp * const bp)
 
 					if(!gn->poison)
 					{
-						log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s"
+						log(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s"
 							, x, c++
 							, gn_designation(gn)
 							, gn->idstring
@@ -438,7 +436,7 @@ int bp_eval(bp * const bp)
 				{
 					gn * gn = bp->stages[x].evals[y]->products[k];
 
-					log(L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+					log(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
 						, x, c++
 						, gn_designation(gn)
 						, gn->idstring
@@ -470,7 +468,7 @@ int bp_eval(bp * const bp)
 
 			if(gn->rebuild)
 			{
-				log(L_ERROR | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+				log(L_ERROR | L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
 					, x, c++
 					, gn_designation(gn)
 					, gn->idstring
@@ -480,7 +478,7 @@ int bp_eval(bp * const bp)
 			}
 			else
 			{
-				log(L_WARN | L_BP | L_BPEVAL, "[%2d,%2d] %9s %-65s | %-7s (%s)"
+				log(L_WARN | L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
 					, x, c++
 					, gn_designation(gn)
 					, gn->idstring
@@ -572,7 +570,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, i
 
 			// render the formula
 			//  note that serialization in this loop is important, because fmlv's may share the same bag
-			fatal(map_set, (*ts)[i]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
+			fatal(map_set, (*ts)[i]->fmlv->bag, MMS("@"), MM((*stax)[staxp]), 0);
 			fatal(fml_render, (*ts)[i], gp, stax, staxa, staxp + 1, 0, 1);
 			map_delete((*ts)[i]->fmlv->bag, MMS("@"));
 
@@ -642,7 +640,7 @@ void bp_dump(bp * bp)
 				}
 				else
 				{
-					log(L_BP | L_BPDUMP, "[%2d,%2d] %-9s %s"
+					log(L_BP | L_BPDUMP, "[%2d,%3d] %-9s %s"
 						, x
 						, y
 						, gn_designation(bp->stages[x].evals[y]->products[i])
@@ -683,3 +681,4 @@ void bp_xfree(bp ** const restrict bp)
 	bp_free(*bp);
 	*bp = 0;
 }
+

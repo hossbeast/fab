@@ -52,7 +52,7 @@ static int recurse_needs(gn * root, gn ** r, int * x, int useweak)
 			(*x)++;  // count mode
 		}
 
-		return 1;
+		return 0;
 	};
 
 	if(useweak)
@@ -74,7 +74,7 @@ static int recurse_feeds(gn * root, gn ** r, int * x, int useweak)
 			(*x)++;  // count mode
 		}
 
-		return 1;
+		return 0;
 	};
 
 	if(useweak)
@@ -129,7 +129,7 @@ int lw_string(void * o, char* prop, char ** s, int * l)
 		*l = ((gn*)o)->path->extl;
 	}
 
-	return 1;
+	return 0;
 }
 
 int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, int * rl)

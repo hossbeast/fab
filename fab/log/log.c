@@ -26,6 +26,7 @@
 #include "log.h"
 
 #include "xstring.h"
+#include "args.h"
 #include "cksum.h"
 #include "macros.h"
 
@@ -70,7 +71,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_FML			, .s = "FML"			, .d = "formulas" }
 	, { .v = L_FAB			, .s = "FAB"			, .d = "fabrication formulas" }
 	, { .v = L_DSCINFO	, .s = "DSCINFO"	, .d = "dependency discovery - flow" }
-	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - execution details" }
+	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - execution" }
 	, { .v = L_DSCNEW		, .s = "DSCNEW"		, .d = "dependency discovery - new nodes/edges" }
 	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery" }
 #if DEVEL
@@ -416,7 +417,7 @@ int log_init(char * str)
 
 	free(args);
 
-	return 1;
+	return 0;
 }
 
 int log_would(const uint64_t bits)
@@ -501,6 +502,23 @@ int log(const uint64_t e, const char* fmt, ...)
 		va_list va;
 		va_start(va, fmt);
 		log_vadd(fmt, va);
+
+		return log_vfinish(0, 0);
+	}
+
+	return 0;
+}
+
+int log_error(const uint64_t e, const char * const fmt, const char * const function, const char * const file, int line, ...)
+{
+	if(log_vstart(e))
+	{
+		va_list va;
+		va_start(va, line);
+		log_vadd(fmt, va);
+
+		if(g_args.mode_errors == MODE_ERRORS_UNWIND)
+			log_add(" in %s at %s:%d", function, file, line);
 
 		return log_vfinish(0, 0);
 	}

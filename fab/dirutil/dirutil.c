@@ -56,7 +56,7 @@ int rmdir_recursive(const char * const dirpath, int rmself)
 	};
 	
 	// depth-first
-	return nftw(dirpath, fn, 32, FTW_ACTIONRETVAL | FTW_DEPTH | FTW_PHYS) == 0;
+	return nftw(dirpath, fn, 32, FTW_ACTIONRETVAL | FTW_DEPTH | FTW_PHYS);
 }
 
 int mkdirp(const char * const path, mode_t mode)
@@ -81,4 +81,3 @@ int mkdirp(const char * const path, mode_t mode)
 
 	finally : coda;
 }
-

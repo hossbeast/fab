@@ -30,11 +30,11 @@
 #define finally				\
 	int _coda_r;				\
 	goto CODA_GOOD;			\
-CODA:									\
-	_coda_r = 0;				\
+CODA_BAD:							\
+	_coda_r = 1;				\
 	goto CODA_FINALLY;	\
 CODA_GOOD:						\
-	_coda_r = 1;				\
+	_coda_r = 0;				\
 CODA_FINALLY
 
 /// coda
@@ -66,7 +66,7 @@ CODA_FINALLY
 #define fail(fmt, ...)							\
 	do {															\
 		error(fmt "\n", ##__VA_ARGS__);	\
-		goto CODA;											\
+		goto CODA_BAD;									\
 	} while(0)
 
 /// qfail
@@ -74,7 +74,7 @@ CODA_FINALLY
 // SUMMARY
 //  silently terminate the current scope with failure
 //
-#define qfail()	goto CODA
+#define qfail()	goto CODA_BAD
 
 /// qterm
 //
@@ -89,17 +89,17 @@ CODA_FINALLY
 //  execute the specified function with zero-return-failure semantics and if it fails
 //  log an L_ERROR message and terminate the current scope with failure
 //
-#define fatal(x, ...)														\
-	do {																					\
-		if((x(__VA_ARGS__)) == 0)										\
-		{																						\
+#define fatal(x, ...)																				\
+	do {																											\
+		if((x(__VA_ARGS__)) != 0)																\
+		{																												\
 			dprintf(listwise_err_fd, #x " failed at [%s:%d (%s)]"	\
-				, __FILE__															\
-				, __LINE__															\
-				, __FUNCTION__													\
-			);																				\
-			goto CODA;																\
-		}																						\
+				, __FILE__																					\
+				, __LINE__																					\
+				, __FUNCTION__																			\
+			);																										\
+			goto CODA_BAD;																				\
+		}																												\
 	} while(0)
  
 /// qfatal
@@ -110,9 +110,9 @@ CODA_FINALLY
 //
 #define qfatal(x, ...)													\
 	do {																					\
-		if((x(__VA_ARGS__)) == 0)										\
+		if((x(__VA_ARGS__)) != 0)										\
 		{																						\
-			goto CODA;																\
+			goto CODA_BAD;														\
 		}																						\
 	} while(0)
 
@@ -122,19 +122,19 @@ CODA_FINALLY
 //  execute the specified function with nonzero-return-failure semantics and if it fails
 //  log an L_ERROR message and terminate the current scope with failure
 //
-#define fatal_os(x, ...)																				\
-	do {																													\
-		if((x(__VA_ARGS__)) != 0)																		\
-		{																														\
+#define fatal_os(x, ...)																										\
+	do {																																			\
+		if((x(__VA_ARGS__)) != 0)																								\
+		{																																				\
 			dprintf(listwise_err_fd, #x " failed with: [%d][%s] at [%s:%d (%s)]"	\
-				, errno																									\
-				, strerror(errno)																				\
-				, __FILE__																							\
-				, __LINE__																							\
-				, __FUNCTION__																					\
-			);																												\
-			goto CODA;																								\
-		}																														\
+				, errno																															\
+				, strerror(errno)																										\
+				, __FILE__																													\
+				, __LINE__																													\
+				, __FUNCTION__																											\
+			);																																		\
+			goto CODA_BAD;																												\
+		}																																				\
 	} while(0)
 
 /// fatal_os
@@ -147,15 +147,8 @@ CODA_FINALLY
 	do {																													\
 		if((x(__VA_ARGS__)) != 0)																		\
 		{																														\
-			goto CODA;																								\
+			goto CODA_BAD;																						\
 		}																														\
 	} while(0)
 
 #endif
-
-
-
-
-
-
-

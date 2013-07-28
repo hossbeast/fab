@@ -84,12 +84,12 @@ if(help)
 "----------- [ selectors ] ----------------------------------------------------------------\n"
 "\n"
 " <node selector> is one of: \n"
-"  1.  text    : path match relative to cwd (%s)\n"
+"  1.  text    : relative path match (see selector modifiers)\n"
 "  3. /text    : canonical path match\n"
 "  4. @text    : nofile match\n"
 "  5. [ list ] : list selection, available vars - $! (all nodes)\n"
-"               ex. [ $! ~ fg/p ] - select all PRIMARY nodes\n"
-"               ex. [ $! ~ fg/s ] - select all SECONDARY nodes\n"
+"   ex. [ $! ~ fg/p ] - select all PRIMARY nodes\n"
+"   ex. [ $! ~ fg/s ] - select all SECONDARY nodes\n"
 "\n"
 "----------- [ options ] ------------------------------------------------------------------\n"
 "\n"
@@ -110,8 +110,6 @@ if(help)
 "\n"
 " incremental builds\n"
 "  -B                            invalidate all              equivalent to +b [ $! ]\n"
-"  -Bp                           invalidate primary          equivalent to +b [ $! ~ fg/p ]\n"
-"  -Bx                           invalidate non-primary      equivalent to +b [ $! ~ fg/p/v ]\n"
 "\n"
 " parallel builds\n"
 "  -j <number>                   concurrency limit\n"
@@ -135,6 +133,12 @@ if(help)
 "  --gnid-absolute               nodes are identified by absolute path\n"
 "  --gnid-canon                  nodes are identified by canonical path\n"
 "\n"
+#if DEVEL
+" error reporting\n"
+"  --errors-unwind     (default) unwind error stack for error reporting\n"
+"  --errors-immediate            report immediate site of error only\n"
+"\n"
+#endif
 " fabfile processing\n"
 "  -f <path/to/fabfile>          path to initial fabfile\n"
 "  -I <path/to/directory>        directory for locating invocations\n"
@@ -147,7 +151,6 @@ if(help)
 "  --cycles-warn       (default) warn when a cycle is detected (once per unique cycle)\n"
 "  --cycles-fail                 fail when a cycle is detected\n"
 "  --cycles-deal                 deal with cycles (halt traversal)\n"
-		, g_args.cwd
 	);
 }
 
@@ -255,6 +258,9 @@ int args_parse(int argc, char** argv)
 #if DEVEL
 				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
 				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
+
+				, { "errors-unwind"								, no_argument	, &g_args.mode_errors	, MODE_ERRORS_UNWIND }
+				, { "errors-immediate"						, no_argument	, &g_args.mode_errors	, MODE_ERRORS_IMMEDIATE }
 #endif
 
 /* program switches */
@@ -339,13 +345,11 @@ int args_parse(int argc, char** argv)
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_cycles		= DEFAULT_MODE_CYCLES;
 	g_args.mode_paths			= DEFAULT_MODE_PATHS;
+	g_args.mode_errors		= DEFAULT_MODE_ERRORS;
+	g_args.mode_bslic			= DEFAULT_MODE_BSLIC;
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create_init, &fabpath, g_args.cwd, "%s", DEFAULT_INIT_FABFILE);
 	fatal(path_copy, &g_args.init_fabfile_path, fabpath);
-
-#if DEVEL
-	g_args.mode_bslic			= DEFAULT_MODE_BSLIC;
-#endif
 
 	// default invokedirs - head of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
@@ -529,15 +533,20 @@ int args_parse(int argc, char** argv)
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->rel_cwd);
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->rel_fab);
 	log(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan             =%s", g_args.mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args.mode_bplan));
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) bakescript-path        =%s", "*", 'k', g_args.bakescript_path);
 
-	if(g_args.bakevarsl == 0)
-		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =", " ", 'K');
-	for(x = 0; x < g_args.bakevarsl; x++)
-		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
+	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
+	{
+		log(L_ARGS | L_PARAMS				, " %s (  %c  ) bakescript-path        =%s", "*", 'k', g_args.bakescript_path);
+
+		if(g_args.bakevarsl == 0)
+			log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =", " ", 'K');
+		for(x = 0; x < g_args.bakevarsl; x++)
+			log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
+	}
 
 #if DEVEL
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-errors            =%s", g_args.mode_errors == DEFAULT_MODE_ERRORS ? " " : "*", ' ', MODE_STR(g_args.mode_errors));
 #endif
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args.mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args.mode_paths));

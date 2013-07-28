@@ -40,4 +40,3 @@ uint32_t cksum(const void * v, size_t l)
 
 	return h;
 }
-

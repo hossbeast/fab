@@ -136,7 +136,6 @@ int main(int argc, char** argv)
 	fatal(gn_init);
 	fatal(traverse_init);
 	fatal(ff_mkparser, &ffp);
-	fatal(selector_init);
 
 	// unless LWVOCAL, arrange for liblistwise to write to /dev/null
 	if(!log_would(L_LWVOCAL))
@@ -224,11 +223,12 @@ int main(int argc, char** argv)
 	fatal(ff_regular_reconcile);
 
 	// compute flags and designations, reload files and dscv cache
-	fatal(gn_finalize);
+	fatal(gn_finalize, 0);
 
 	// comprehensive upfront dependency discovery on the entire graph
 	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
-	fatal(gn_finalize);
+	fatal(gn_reconcile);
+	fatal(gn_finalize, 1);
 
 	// process selectors
 	if(g_args.selectorsl)
@@ -244,11 +244,11 @@ int main(int argc, char** argv)
 
 		// map for processing selectors
 		fatal(map_create, &smap, 0);
-		fatal(map_set, smap, MMS("!"), MM(stax[pn]));
+		fatal(map_set, smap, MMS("!"), MM(stax[pn]), 0);
 		pn++;
 
 		if(g_args.selectors_arequery)
-			log_parse("+L_SELECT", 0);
+			log_parse("+SELECT", 0);
 
 		// process selectors
 		for(x = 0; x < g_args.selectorsl; x++)
@@ -296,17 +296,18 @@ int main(int argc, char** argv)
 	// dependency discovery list
 	if(discoveriesl)
 	{
+		log_parse("+DSC", 0);
 		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
 		qterm();	// terminate successfully
 	}
 	
 	// process invalidations
 	fatal(gn_process_invalidations, invalidations, invalidationsl);
-	fatal(gn_finalize);
+	fatal(gn_finalize, 1);
 
 	// dependency discovery on invalidated primary nodes
 	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
-	fatal(gn_finalize);
+	fatal(gn_finalize, 1);
 
 	// process inspections
 	if(inspectionsl)
@@ -366,7 +367,7 @@ int main(int argc, char** argv)
 		fatal(map_create, &bakemap, 0);
 
 		for(x = 0; x < g_args.bakevarsl; x++)
-			fatal(map_set, bakemap, MMS(g_args.bakevars[x]), 0, 0);
+			fatal(map_set, bakemap, MMS(g_args.bakevars[x]), 0, 0, 0);
 
 		// create bakescript
 		fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &ts, &tsa, &tsw, g_args.bakescript_path);
@@ -385,11 +386,7 @@ int main(int argc, char** argv)
 
 		if(g_args.mode_bplan == MODE_BPLAN_EXEC)
 		{
-			if(!bp || bp->stages_l == 0)
-			{
-				log(L_INFO, "nothing to fabricate");
-			}
-			else
+			if(bp && bp->stages_l)
 			{
 				// execute the build plan, one stage at a time
 				qfatal(bp_exec, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
@@ -440,7 +437,7 @@ finally:
 	traverse_teardown();
 	selector_teardown();
 
-	log(L_INFO, "exiting with status : %d", !_coda_r);
+	log(L_INFO, "exiting with status : %d", _coda_r);
 	log_teardown();
-	return !_coda_r;
+	return _coda_r;
 }

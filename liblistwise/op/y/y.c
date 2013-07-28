@@ -51,7 +51,7 @@ operator op_desc[] = {
 
 int op_validate(operation* o)
 {
-	return 1;
+	return 0;
 }
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
@@ -66,7 +66,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		{
 			free(ls->sel.s);
 			if((ls->sel.s = calloc(1, ls->last.sl * sizeof(*ls->sel.s))) == 0)
-				return 0;
+				return 1;
 
 			ls->sel.sa = ls->last.sl;
 		}
@@ -81,10 +81,5 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		ls->sel.all = 0;
 	}
 
-	return 1;
+	return 0;
 }
-
-
-
-
-

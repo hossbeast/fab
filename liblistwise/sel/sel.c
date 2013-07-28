@@ -30,14 +30,14 @@ int API lstack_sel_none(lstack* const restrict ls)
 	ls->sel.sl = 0;
 	ls->sel.l = 0;
 
-	return 1;
+	return 0;
 }
 
 int API lstack_sel_all(lstack* const restrict ls)
 {
 	ls->sel.all = 1;
 
-	return 1;
+	return 0;
 }
 
 /*
@@ -104,8 +104,3 @@ int API lstack_sel_write(lstack* const restrict ls, uint8_t * news, int newsl)
 	}
 }
 */
-
-
-
-
-

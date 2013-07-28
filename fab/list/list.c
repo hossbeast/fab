@@ -126,7 +126,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstac
 				if(rawvars && map_get(rawvars, MMS(list->elements[x]->name)))
 				{
 					// save the list-value
-					fatal(map_set, rawvars, MMS(list->elements[x]->name), MM(vls));
+					fatal(map_set, rawvars, MMS(list->elements[x]->name), MM(vls), 0);
 
 					// render a reference to the variable by name
 					fatal(lstack_addf, (*stax)[pn], "$%s", list->elements[x]->name);
@@ -166,7 +166,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstac
 		fatal(render, (*stax)[pr], &gps);
 
 		generator_xfree(&g);
-		if(generator_parse(gp, gps->s, gps->l, &g) == 0)
+		if(generator_parse(gp, gps->s, gps->l, &g) != 0)
 		{
 			fail("failed to parse '%.*s'", gps->l, gps->s);
 		}
@@ -190,8 +190,8 @@ coda;
 
 int list_render(lstack * const ls, pstring ** const ps)
 {
-	if(!*ps && xmalloc(ps, sizeof(**ps)) == 0)
-		return 0;
+	if(!*ps && xmalloc(ps, sizeof(**ps)) != 0)
+		return 1;
 		
 	(*ps)->l = 0;
 
@@ -200,8 +200,8 @@ int list_render(lstack * const ls, pstring ** const ps)
 
 int list_renderto(lstack * const ls, pstring ** const ps)
 {
-	if(!*ps && xmalloc(ps, sizeof(**ps)) == 0)
-		return 0;
+	if(!*ps && xmalloc(ps, sizeof(**ps)) != 0)
+		return 1;
 		
 	return render(ls, ps);
 }

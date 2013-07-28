@@ -25,7 +25,7 @@ int xmalloc(void* target, size_t size)
 {
 	void** t = ((void**)target);
 	*t = calloc(size, 1);
-	return *t ? 1 : 0;
+	return *t ? 0 : 1;
 }
 
 int xrealloc(void* target, size_t es, size_t ec, size_t oec)
@@ -40,13 +40,13 @@ int xrealloc(void* target, size_t es, size_t ec, size_t oec)
 			if(((ssize_t)ec - (ssize_t)oec) > 0)
 				memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
 
-			return 1;
+			return 0;
 		}
 
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 void xfree(void* target)

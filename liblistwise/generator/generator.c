@@ -34,12 +34,12 @@ int generator_yyparse(yyscan_t, parse_param*);
 int API generator_mkparser(generator_parser** p)
 {
 	if((*p = calloc(1, sizeof(*p[0]))) == 0)
-		return 0;
+		return 1;
 
 	if(generator_yylex_init(&(*p)->p) != 0)
-		return 0;
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 int API generator_parse(generator_parser* p, char* s, int l, generator** g)
@@ -54,7 +54,7 @@ int API generator_parse(generator_parser* p, char* s, int l, generator** g)
 
 	if((state = generator_yy_scan_string(b, p->p)) == 0)
 	{
-		return 0;
+		return 1;
 	}
 
 	// allocate generator
@@ -62,7 +62,7 @@ int API generator_parse(generator_parser* p, char* s, int l, generator** g)
 
 	// results struct for this parse
 	parse_param pp = {
-		  .r = 1
+		  .r = 0
 		, .g = *g
 		, .scanner = p->p
 	};
@@ -85,14 +85,14 @@ int API generator_parse(generator_parser* p, char* s, int l, generator** g)
 			if((*g)->ops[x]->argsl)
 			{
 				dprintf(listwise_err_fd, "%s - arguments not expected\n", (*g)->ops[x]->op->s);
-				return 0;
+				return 1;
 			}
 		}
 
 		if((*g)->ops[x]->op->op_validate)
 		{
-			if((*g)->ops[x]->op->op_validate((*g)->ops[x]) == 0)
-				return 0;
+			if((*g)->ops[x]->op->op_validate((*g)->ops[x]) != 0)
+				return 1;
 		}
 	}
 
@@ -118,7 +118,7 @@ void API generator_parser_xfree(generator_parser** p)
 void generator_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
 {
 	printf("ERROR - %s\n", err);
-	pp->r = 0;
+	pp->r = 1;
 }
 
 size_t operation_write(char * s, size_t sz, const operation * const op)

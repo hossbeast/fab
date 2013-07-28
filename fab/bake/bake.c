@@ -164,7 +164,7 @@ int bake_bp(
 			fatal(map_clone, lmap, bakemap);
 
 			// render the formula
-			fatal(map_set, (*ts)[y]->fmlv->bag, MMS("@"), MM((*stax)[staxp]));
+			fatal(map_set, (*ts)[y]->fmlv->bag, MMS("@"), MM((*stax)[staxp]), 0);
 			fatal(fml_render, (*ts)[y], gp, stax, staxa, staxp + 1, lmap, 0);
 			map_delete((*ts)[y]->fmlv->bag, MMS("@"));
 

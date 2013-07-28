@@ -174,7 +174,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 
 				if(k == 0)
 				{
-					int R = log_start(hi | e, "[%2d,%2d] %-9s %s", waveno, ts[x]->y, gn_designation(t), gn_idstring(t));
+					int R = log_start(hi | e, "[%2d,%3d] %-9s %s", waveno, ts[x]->y, gn_designation(t), gn_idstring(t));
 
 					if(e_stat)
 					{
@@ -196,7 +196,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				}
 				else
 				{
-					log(hi | e, "        %-9s %s", gn_designation(t), gn_idstring(t));
+					log(hi | e, "         %-9s %s", gn_designation(t), gn_idstring(t));
 				}
 
 				if(ts[x]->fmlv->flags & FFN_FABRICATION)
@@ -265,4 +265,3 @@ void ts_xfree(ts ** ts)
 	ts_free(*ts);
 	*ts = 0;
 }
-

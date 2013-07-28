@@ -628,7 +628,7 @@ int API lstack_append(lstack * const restrict ls, int x, int y, const char* cons
 
 int API lstack_appendf(lstack* const restrict ls, int x, int y, const char* const restrict s, ...)
 {
-	return 0;
+	return 1;
 }
 
 int API lstack_write_alt(lstack* const restrict ls, int x, int y, const char* const restrict s, int l)
@@ -693,7 +693,7 @@ int API lstack_shift(lstack* const restrict ls)
 		ls->s[--ls->l] = T;
 	}
 
-	return 1;
+	return 0;
 }
 
 // pop removes the last list from the stack
@@ -702,7 +702,7 @@ int API lstack_pop(lstack* const restrict ls)
 	if(ls->l)
 		ls->l--;
 
-	return 1;
+	return 0;
 }
 
 // unshift allocates a new list at index 0
@@ -753,17 +753,17 @@ int API lstack_push(lstack* const restrict ls)
 
 int API lstack_cycle(lstack* const restrict ls)
 {
-	return 0;
+	return 1;
 }
 
 int API lstack_recycle(lstack* const restrict ls)
 {
-	return 0;
+	return 1;
 }
 
 int API lstack_xchg(lstack* const restrict ls)
 {
-	return 0;
+	return 1;
 }
 
 int API lstack_merge(lstack* const restrict ls, int to, int from)
@@ -825,7 +825,7 @@ int API lstack_move(lstack * const restrict ls, int ax, int ay, int bx, int by)
 	// adjust the length
 	ls->s[bx].l--;
 
-	return 1;
+	return 0;
 }
 
 int API lstack_displace(lstack * const restrict ls, int x, int y, int l)
@@ -879,7 +879,7 @@ int API lstack_delete(lstack * const restrict ls, int x, int y)
 
 	ls->s[x].l--;
 
-	return 1;
+	return 0;
 }
 
 int API lstack_string(lstack* const restrict ls, int x, int y, char ** r, int * rl)
@@ -892,16 +892,16 @@ int API lstack_string(lstack* const restrict ls, int x, int y, char ** r, int * 
 		{
 			o->string(*(void**)ls->s[x].s[y].s, o->string_property, r, rl);
 
-			return 1;
+			return 0;
 		}
 
-		return 0;
+		return 1;
 	}
 
 	*r  = ls->s[x].s[y].s;
 	*rl = ls->s[x].s[y].l;
 
-	return 1;
+	return 0;
 }
 
 typedef char* charstar;
@@ -912,7 +912,7 @@ charstar API lstack_getstring(lstack* const restrict ls, int x, int y)
 		char * r = 0;
 		int    rl = 0;
 
-		if(lstack_string(ls, x, y, &r, &rl))
+		if(lstack_string(ls, x, y, &r, &rl) == 0)
 		{
 			if(ls->s[x].t[y].a <= rl)
 			{
@@ -920,7 +920,7 @@ charstar API lstack_getstring(lstack* const restrict ls, int x, int y)
 					  &ls->s[x].t[y].s
 					, sizeof(ls->s[x].t[y].s[0])
 					, rl + 1
-					, ls->s[x].t[y].a) == 0)
+					, ls->s[x].t[y].a) != 0)
 				{
 					return 0;
 				}

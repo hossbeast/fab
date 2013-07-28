@@ -24,19 +24,23 @@
 #include <stdarg.h>
 
 #include "log.h"
+#include "args.h"
 
 /// finally
 //
 //
 //
-#define finally				\
-	int _coda_r;				\
-	goto CODA_GOOD;			\
-CODA:									\
-	_coda_r = 0;				\
-	goto CODA_FINALLY;	\
-CODA_GOOD:						\
-	_coda_r = 1;				\
+#define finally																			\
+	int _coda_r;																			\
+	goto CODA_GOOD;																		\
+CODA_BAD:																						\
+	if(g_args.mode_errors == MODE_ERRORS_IMMEDIATE)		\
+		_coda_r = -1;																		\
+	else																							\
+		_coda_r = 1;																		\
+	goto CODA_FINALLY;																\
+CODA_GOOD:																					\
+	_coda_r = 0;																			\
 CODA_FINALLY
 
 /// coda
@@ -50,14 +54,14 @@ CODA_FINALLY
 // SUMMARY
 //  log an L_ERROR message
 //
-#define error(fmt, ...)									\
-	do {																	\
-		log(L_ERROR, fmt " at [%s:%d (%s)]"	\
-			, ##__VA_ARGS__										\
-			, __FILE__												\
-			, __LINE__												\
-			, __FUNCTION__										\
-		);																	\
+#define error(fmt, ...)						\
+	do {														\
+		log_error(L_ERROR, fmt				\
+			, __FUNCTION__							\
+			, __FILE__									\
+			, __LINE__									\
+			, ##__VA_ARGS__							\
+		);														\
 	} while(0)
 
 /// fail
@@ -67,8 +71,13 @@ CODA_FINALLY
 //
 #define fail(fmt, ...)					\
 	do {													\
-		error(fmt, ##__VA_ARGS__);	\
-		goto CODA;									\
+		log_error(L_ERROR, fmt			\
+			, __FUNCTION__						\
+			, __FILE__								\
+			, __LINE__								\
+			, ##__VA_ARGS__						\
+		);													\
+		goto CODA_BAD;							\
 	} while(0)
 
 /// qfail
@@ -76,7 +85,7 @@ CODA_FINALLY
 // SUMMARY
 //  silently terminate the current scope with failure
 //
-#define qfail()	goto CODA
+#define qfail()	goto CODA_BAD
 
 /// qterm
 //
@@ -91,17 +100,21 @@ CODA_FINALLY
 //  execute the specified function with zero-return-failure semantics and if it fails
 //  log an L_ERROR message and terminate the current scope with failure
 //
-#define fatal(x, ...)														\
-	do {																					\
-		if((x(__VA_ARGS__)) == 0)										\
-		{																						\
-			log(L_ERROR, #x " failed at [%s:%d (%s)]"	\
-				, __FILE__															\
-				, __LINE__															\
-				, __FUNCTION__													\
-			);																				\
-			goto CODA;																\
-		}																						\
+#define fatal(x, ...)											\
+	do {																		\
+		int __r = x(__VA_ARGS__);							\
+		if(__r != 0)													\
+		{																			\
+			if(__r > 0)													\
+			{																		\
+				log_error(L_ERROR, #x " failed"		\
+					, __FUNCTION__									\
+					, __FILE__											\
+					, __LINE__											\
+				);																\
+			}																		\
+			goto CODA_BAD;											\
+		}																			\
 	} while(0)
  
 /// qfatal
@@ -112,9 +125,9 @@ CODA_FINALLY
 //
 #define qfatal(x, ...)													\
 	do {																					\
-		if((x(__VA_ARGS__)) == 0)										\
+		if((x(__VA_ARGS__)) != 0)										\
 		{																						\
-			goto CODA;																\
+			goto CODA_BAD;														\
 		}																						\
 	} while(0)
 
@@ -128,14 +141,14 @@ CODA_FINALLY
 	do {																													\
 		if((x(__VA_ARGS__)) != 0)																		\
 		{																														\
-			log(L_ERROR, #x " failed with: [%d][%s] at [%s:%d (%s)]"	\
-				, errno																									\
-				, strerror(errno)																				\
+			log_error(L_ERROR, #x " failed with: [%d][%s]"						\
+				, __FUNCTION__																					\
 				, __FILE__																							\
 				, __LINE__																							\
-				, __FUNCTION__																					\
+				, errno																									\
+				, strerror(errno)																				\
 			);																												\
-			goto CODA;																								\
+			goto CODA_BAD;																						\
 		}																														\
 	} while(0)
 
@@ -149,9 +162,8 @@ CODA_FINALLY
 	do {																													\
 		if((x(__VA_ARGS__)) != 0)																		\
 		{																														\
-			goto CODA;																								\
+			goto CODA_BAD;																						\
 		}																														\
 	} while(0)
 
 #endif
-

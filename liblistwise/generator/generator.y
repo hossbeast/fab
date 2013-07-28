@@ -203,6 +203,7 @@ string
 
 		$$->l += $2->l;
 		free($2->s);
+		free($2);
 	}
 	| strpart
 	;
