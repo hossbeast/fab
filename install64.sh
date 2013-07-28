@@ -24,7 +24,7 @@ if [[ $1 != "timed" ]]; then
 fi
 
 # formulas and names for stage 0
-NAMES[0]='/../install'
+NAMES[0]='/../listwise/install'
 fml_0_0()
 {
   exec 1>/dev/null
@@ -45,7 +45,7 @@ fml_0_0()
 
 
 # formulas and names for stage 1
-NAMES[1]='/../install'
+NAMES[1]='/../liblistwise/install'
 fml_1_0()
 {
   exec 1>/dev/null
@@ -81,7 +81,7 @@ fml_1_0()
 
 
 # formulas and names for stage 2
-NAMES[2]='/../install'
+NAMES[2]='/../fab/install'
 fml_2_0()
 {
   exec 1>/dev/null
