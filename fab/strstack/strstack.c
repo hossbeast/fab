@@ -108,7 +108,7 @@ void strstack_pop(strstack * const stk)
 		stk->l--;
 }
 
-int strstack_string(strstack * const stk, const char * const ldr, const char * const d, char ** const r)
+int strstack_string(strstack * const stk, const int off, const char * const ldr, const char * const d, char ** const r)
 {
 	int dl = 0;
 	int ldrl = 0;
@@ -133,7 +133,7 @@ int strstack_string(strstack * const stk, const char * const ldr, const char * c
 	stk->sl += ldrl;
 
 	int x;
-	for(x = 0; x < stk->l; x++)
+	for(x = off; x < stk->l; x++)
 	{
 		int t = stk->v[x].l;
 		if(stk->sl)
@@ -148,7 +148,7 @@ int strstack_string(strstack * const stk, const char * const ldr, const char * c
 			stk->sa = ns;
 		}
 
-		if(x)
+		if(x != off && d)
 		{
 			memcpy(stk->s + stk->sl, d, dl);
 			stk->sl += dl;

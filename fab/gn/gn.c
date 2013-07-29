@@ -119,7 +119,7 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 	if(canpl > 4 && memcmp(canp, "/../", 4) == 0 && sstk)
 	{
 		char * sstr = 0;
-		fatal(strstack_string, sstk, "/", "/", &sstr);
+		fatal(strstack_string, sstk, 0, "/", "/", &sstr);
 		fatal(canon, canp + 4, canpl - 4, space, sizeof(space), sstr, CAN_SLASH | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_FORCE_DOT);
 
 		canp = space;
@@ -299,7 +299,7 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		if(Al > 4 && memcmp(A, "/../", 4) == 0 && sstk)
 		{
 			char * sstr;
-			fatal(strstack_string, sstk, "/", "/", &sstr);
+			fatal(strstack_string, sstk, 0, "/", "/", &sstr);
 			fatal(path_create, &(*gna)->path, "/..", "%s/%.*s", sstr, Al - 4, A + 4);
 		}
 		else
@@ -321,8 +321,27 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		if(Al > 4 && memcmp(A, "/../", 4) == 0 && sstk && g_args.mode_gnid != MODE_CANONICAL)
 		{
 			char * sstr;
-			fatal(strstack_string, sstk, "/", "/", &sstr);
-			fatal(xsprintf, &(*gna)->idstring, "%s/%.*s", sstr, Al - 4, A + 4);
+			fatal(strstack_string, sstk, 1, "", ".", &sstr);
+			fatal(xsprintf, &(*gna)->idstring, "@%s", sstr);
+
+			int x;
+			for(x = 4; x < Al; x++)
+			{
+				int y;
+				for(y = x; y <= Al; y++)
+				{
+					if(A[y] == '/' || y == Al)
+					{
+						if(strlen((*gna)->idstring) > 1)
+							fatal(xstrcatf, &(*gna)->idstring, ".%.*s", y - x, &A[x]);
+						else
+							fatal(xstrcatf, &(*gna)->idstring, "%.*s", y - x, &A[x]);
+
+						x = y;
+						break;
+					}
+				}
+			}
 		}
 		else if(g_args.mode_gnid == MODE_CANONICAL)
 		{

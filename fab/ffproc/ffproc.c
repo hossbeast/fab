@@ -253,7 +253,7 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 	if(log_would(L_INVOKE))
 	{
 		char * sstr = 0;
-		fatal(strstack_string, sstk, "/", "/", &sstr);
+		fatal(strstack_string, sstk, 0, "/", "/", &sstr);
 
 		log(L_INVOKE, "%s @ %s", inpath->can, sstr);
 	}
