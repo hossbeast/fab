@@ -450,9 +450,12 @@ int var_root(map ** const map)
 	fatal(map_create, map, map_destructor);
 
 	// seed the map identifier mechanism
-	fatal(map_set, *map, MMS("?LVL"), MM((int[1]){ 0 }), 0);
-	fatal(map_set, *map, MMS("?NUM"), MM((int[1]){ 0 }), 0);
-	fatal(map_set, *map, MMS("?CLD"), MM((int[1]){ 0 }), 0);
+	int lvl = 0;
+	int num = 0;
+	int cld = 0;
+	fatal(map_set, *map, MMS("?LVL"), MM(lvl), 0);
+	fatal(map_set, *map, MMS("?NUM"), MM(num), 0);
+	fatal(map_set, *map, MMS("?CLD"), MM(cld), 0);
 
 	finally : coda;
 }
@@ -512,10 +515,13 @@ int var_clone(map * const amap, map ** const bmap)
 
 	int * ALVL = map_get(amap, MMS("?LVL"));
 	int * ACLD = map_get(amap, MMS("?CLD"));
+	int * ANUM = map_get(amap, MMS("?NUM"));
 
 	int BLVL = (*ALVL) + 1;
-	int BNUM = (*ACLD)++;
+	int BNUM = (*ANUM) + (*ACLD) + 1;
 	int BCLD = 0;
+
+	(*ACLD) = (*ACLD) + 1;
 
 	fatal(map_set, (*bmap), MMS("?LVL"), MM(BLVL), 0);
 	fatal(map_set, (*bmap), MMS("?NUM"), MM(BNUM), 0);

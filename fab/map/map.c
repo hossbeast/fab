@@ -281,14 +281,14 @@ int map_set(map* const restrict m, const void* const restrict k, int kl, const v
 		m->tv[i]->a = MAX(vl, sizeof(void*)) + 1;
 	}
 
-	if(v && vl >= sizeof(void*))
+	if(!v || vl < sizeof(void*))
+	{
+		memset(m->tv[i]->p, 0, sizeof(void*) + 1);
+	}
+	if(v)
 	{
 		memcpy(m->tv[i]->p, v, vl);
 		m->tv[i]->p[vl] = 0;
-	}
-	else
-	{
-		memset(m->tv[i]->p, 0, sizeof(void*) + 1);
 	}
 	m->tv[i]->l = vl;
 
@@ -497,15 +497,14 @@ int map_clone(map* const restrict dst, const map * const restrict src)
 				}
 
 				// copy the value
-				if(src->tv[x]->l >= sizeof(void*))
-				{
-					memcpy(dst->tv[x]->p, src->tv[x]->p, src->tv[x]->l);
-					dst->tv[x]->p[src->tv[x]->l] = 0;
-				}
-				else
+				if(src->tv[x]->l < sizeof(void*))
 				{
 					memset(dst->tv[x]->p, 0, sizeof(void*) + 1);
 				}
+
+				memcpy(dst->tv[x]->p, src->tv[x]->p, src->tv[x]->l);
+				dst->tv[x]->p[src->tv[x]->l] = 0;
+
 				dst->tv[x]->l = src->tv[x]->l;
 				dst->tv[x]->d = 0;
 			}
