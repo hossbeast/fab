@@ -206,143 +206,146 @@ int bp_create(
 		}
 	}
 
-	// allocate stages in the buildplan and assign nodes
-	// allocate a new stage
-	fatal(xmalloc, bp, sizeof(**bp));
-	fatal(xmalloc, &(*bp)->stages, sizeof((*bp)->stages[0]) * maxheight);
-	(*bp)->stages_l = maxheight;
-
-	int k;
-	for(k = 0; k < maxheight; k++)
+	if(maxheight > -1)
 	{
-		// get list of nodes for this stage - k+1 is stage number
-		lvsl = 0;
-		for(x = 0; x < fabricationsl; x++)
-			fatal(visit, *fabrications[x], k+1, &lvs, &lvsl, &lvsa, 0, 1);
+		// allocate stages in the buildplan and assign nodes
+		// allocate a new stage
+		fatal(xmalloc, bp, sizeof(**bp));
+		fatal(xmalloc, &(*bp)->stages, sizeof((*bp)->stages[0]) * maxheight);
+		(*bp)->stages_l = maxheight;
 
-		for(x = 0; x < fabricationxsl; x++)
-			fatal(visit, *fabricationxs[x], k+1, &lvs, &lvsl, &lvsa, 1, 0);
-
-		for(x = 0; x < fabricationnsl; x++)
-			fatal(visit, *fabricationns[x], k+1, &lvs, &lvsl, &lvsa, 0, 0);
-
-		// ptr to the stage we will add to
-		bp_stage * bps = &(*bp)->stages[k];
-
-		// reallocate the stage - the ceiling for these allocations is the number of nodes found
-		fatal(xrealloc
-			, &bps->evals
-			, sizeof(bps->evals[0])
-			, lvsl
-			, 0
-		);
-		fatal(xrealloc
-			, &bps->nofmls
-			, sizeof(bps->nofmls[0])
-			, lvsl
-			, 0
-		);
-		fatal(xrealloc
-			, &bps->primary
-			, sizeof(bps->primary[0])
-			, lvsl
-			, 0
-		);
-
-		// process nodes found on the last visit
-		int y;
-		for(y = 0; y < lvsl; y++)
+		int k;
+		for(k = 0; k < maxheight; k++)
 		{
-			if(lvs[y]->stage == -1)
+			// get list of nodes for this stage - k+1 is stage number
+			lvsl = 0;
+			for(x = 0; x < fabricationsl; x++)
+				fatal(visit, *fabrications[x], k+1, &lvs, &lvsl, &lvsa, 0, 1);
+
+			for(x = 0; x < fabricationxsl; x++)
+				fatal(visit, *fabricationxs[x], k+1, &lvs, &lvsl, &lvsa, 1, 0);
+
+			for(x = 0; x < fabricationnsl; x++)
+				fatal(visit, *fabricationns[x], k+1, &lvs, &lvsl, &lvsa, 0, 0);
+
+			// ptr to the stage we will add to
+			bp_stage * bps = &(*bp)->stages[k];
+
+			// reallocate the stage - the ceiling for these allocations is the number of nodes found
+			fatal(xrealloc
+				, &bps->evals
+				, sizeof(bps->evals[0])
+				, lvsl
+				, 0
+			);
+			fatal(xrealloc
+				, &bps->nofmls
+				, sizeof(bps->nofmls[0])
+				, lvsl
+				, 0
+			);
+			fatal(xrealloc
+				, &bps->primary
+				, sizeof(bps->primary[0])
+				, lvsl
+				, 0
+			);
+
+			// process nodes found on the last visit
+			int y;
+			for(y = 0; y < lvsl; y++)
 			{
-				if(lvs[y]->fabv)
+				if(lvs[y]->stage == -1)
 				{
-					// all nodes in an fmlv go into the same stage, the last stage any of them is required to be in
-					int mheight = lvs[y]->height;
-					int i;
-					for(i = 0; i < lvs[y]->fabv->productsl; i++)
-						mheight = MAX(mheight, lvs[y]->fabv->products[i]->height);
-
-					if(mheight == k+1)
+					if(lvs[y]->fabv)
 					{
+						// all nodes in an fmlv go into the same stage, the last stage any of them is required to be in
+						int mheight = lvs[y]->height;
+						int i;
 						for(i = 0; i < lvs[y]->fabv->productsl; i++)
-							lvs[y]->fabv->products[i]->stage = k+1;
+							mheight = MAX(mheight, lvs[y]->fabv->products[i]->height);
 
-						for(i = 0; i < bps->evals_l; i++)
+						if(mheight == k+1)
 						{
-							if(bps->evals[i] == lvs[y]->fabv)
-								break;
-						}
+							for(i = 0; i < lvs[y]->fabv->productsl; i++)
+								lvs[y]->fabv->products[i]->stage = k+1;
 
-						// add this eval context to the stage
-						if(i == bps->evals_l)
-							bps->evals[bps->evals_l++] = lvs[y]->fabv;
+							for(i = 0; i < bps->evals_l; i++)
+							{
+								if(bps->evals[i] == lvs[y]->fabv)
+									break;
+							}
+
+							// add this eval context to the stage
+							if(i == bps->evals_l)
+								bps->evals[bps->evals_l++] = lvs[y]->fabv;
+						}
 					}
-				}
-				else if(lvs[y]->path->canl >= 4 && memcmp(lvs[y]->path->can, "/../", 4) == 0)
-				{
-					// this is a NOFILE node - no error, but do not add to the stage
-				}
-				else if(lvs[y]->needs.l)
-				{
-					// this SECONDARY node is part of the buildplan but is not part of any fml eval context - it cannot
-					// be fabricated. we add a dummy node to the plan so that we can defer reporting this error
-					// until pruning the buildplan. there are two reasons to do this:
-					//  1 - this node may be pruned away and not actually needed after all.
-					//  2 - in order to report additional errors before failing out
-					//
-					log(L_WARN, "SECONDARY has no formula - %s", lvs[y]->idstring);
-					bps->nofmls[bps->nofmls_l++] = lvs[y];
-					lvs[y]->stage = k+1;
-				}
-				else
-				{
-					// this is a source file
-					bps->primary[bps->primary_l++] = lvs[y];
-					lvs[y]->stage = k+1;
+					else if(lvs[y]->path->canl >= 4 && memcmp(lvs[y]->path->can, "/../", 4) == 0)
+					{
+						// this is a NOFILE node - no error, but do not add to the stage
+					}
+					else if(lvs[y]->needs.l)
+					{
+						// this SECONDARY node is part of the buildplan but is not part of any fml eval context - it cannot
+						// be fabricated. we add a dummy node to the plan so that we can defer reporting this error
+						// until pruning the buildplan. there are two reasons to do this:
+						//  1 - this node may be pruned away and not actually needed after all.
+						//  2 - in order to report additional errors before failing out
+						//
+						log(L_WARN, "SECONDARY has no formula - %s", lvs[y]->idstring);
+						bps->nofmls[bps->nofmls_l++] = lvs[y];
+						lvs[y]->stage = k+1;
+					}
+					else
+					{
+						// this is a source file
+						bps->primary[bps->primary_l++] = lvs[y];
+						lvs[y]->stage = k+1;
+					}
 				}
 			}
 		}
-	}
 
-	// splice out empty stages
-	for(x = (*bp)->stages_l - 1; x >= 0; x--)
-	{
-		if(((*bp)->stages[x].primary_l + (*bp)->stages[x].evals_l + (*bp)->stages[x].nofmls_l) == 0)
+		// splice out empty stages
+		for(x = (*bp)->stages_l - 1; x >= 0; x--)
 		{
-			bp_freestage(&(*bp)->stages[x]);
+			if(((*bp)->stages[x].primary_l + (*bp)->stages[x].evals_l + (*bp)->stages[x].nofmls_l) == 0)
+			{
+				bp_freestage(&(*bp)->stages[x]);
 
-			memmove(
-					&(*bp)->stages[x]
-				, &(*bp)->stages[x + 1]
-				, ((*bp)->stages_l - x - 1) * sizeof((*bp)->stages[0])
-			);
+				memmove(
+						&(*bp)->stages[x]
+					, &(*bp)->stages[x + 1]
+					, ((*bp)->stages_l - x - 1) * sizeof((*bp)->stages[0])
+				);
 
-			(*bp)->stages_l--;
+				(*bp)->stages_l--;
+			}
 		}
-	}
 
-	// internally sort lists in each stage by name of their first product
-	for(x = 0; x < (*bp)->stages_l; x++)
-	{
-		qsort(
-			  (*bp)->stages[x].evals
-			, (*bp)->stages[x].evals_l
-			, sizeof((*bp)->stages[0].evals[0])
-			, fmleval_cmp
-		);
-		qsort(
-			  (*bp)->stages[x].nofmls
-			, (*bp)->stages[x].nofmls_l
-			, sizeof((*bp)->stages[0].nofmls[0])
-			, gn_cmp
-		);
-		qsort(
-			  (*bp)->stages[x].primary
-			, (*bp)->stages[x].primary_l
-			, sizeof((*bp)->stages[0].primary[0])
-			, gn_cmp
-		);
+		// internally sort lists in each stage by name of their first product
+		for(x = 0; x < (*bp)->stages_l; x++)
+		{
+			qsort(
+					(*bp)->stages[x].evals
+				, (*bp)->stages[x].evals_l
+				, sizeof((*bp)->stages[0].evals[0])
+				, fmleval_cmp
+			);
+			qsort(
+					(*bp)->stages[x].nofmls
+				, (*bp)->stages[x].nofmls_l
+				, sizeof((*bp)->stages[0].nofmls[0])
+				, gn_cmp
+			);
+			qsort(
+					(*bp)->stages[x].primary
+				, (*bp)->stages[x].primary_l
+				, sizeof((*bp)->stages[0].primary[0])
+				, gn_cmp
+			);
+		}
 	}
 
 finally:

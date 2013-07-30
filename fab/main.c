@@ -324,7 +324,7 @@ int main(int argc, char** argv)
 	//
 	// construct a buildplan - use the first node if none was specified
 	//
-	if(fabricationsl + fabricationxsl + fabricationnsl == 0)
+	if(fabricationsl + fabricationxsl + fabricationnsl == 0 && first)
 	{
 		fatal(xrealloc, &fabrications, sizeof(*fabrications), 1, 0);
 		fabrications[fabricationsl++] = &first;
@@ -361,42 +361,45 @@ int main(int argc, char** argv)
 	// selector lists not referenced again past this point
 	map_xfree(&smap);
 
-	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
+	if(bp)
 	{
-		// prepare bakevars map
-		fatal(map_create, &bakemap, 0);
-
-		for(x = 0; x < g_args.bakevarsl; x++)
-			fatal(map_set, bakemap, MMS(g_args.bakevars[x]), 0, 0, 0);
-
-		// create bakescript
-		fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &ts, &tsa, &tsw, g_args.bakescript_path);
-	}
-	else
-	{
-		// incremental build - prune the buildplan
-		qfatal(bp_eval, bp);
-
-		if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
-			log_parse("+BPDUMP", 0);
-
-		// dump buildplan, pending logging
-		if(bp)
-			bp_dump(bp);
-
-		if(g_args.mode_bplan == MODE_BPLAN_EXEC)
+		if(g_args.mode_bplan == MODE_BPLAN_BAKE)
 		{
-			if(bp && bp->stages_l)
-			{
-				// execute the build plan, one stage at a time
-				qfatal(bp_exec, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+			// prepare bakevars map
+			fatal(map_create, &bakemap, 0);
 
-				// commit regular fabfile hashblocks
-				for(x = 0; x < ff_files.l; x++)
+			for(x = 0; x < g_args.bakevarsl; x++)
+				fatal(map_set, bakemap, MMS(g_args.bakevars[x]), 0, 0, 0);
+
+			// create bakescript
+			fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &ts, &tsa, &tsw, g_args.bakescript_path);
+		}
+		else
+		{
+			// incremental build - prune the buildplan
+			qfatal(bp_eval, bp);
+
+			if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
+				log_parse("+BPDUMP", 0);
+
+			// dump buildplan, pending logging
+			if(bp)
+				bp_dump(bp);
+
+			if(g_args.mode_bplan == MODE_BPLAN_EXEC)
+			{
+				if(bp && bp->stages_l)
 				{
-					if(ff_files.e[x]->type == FFT_REGULAR)
+					// execute the build plan, one stage at a time
+					qfatal(bp_exec, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+
+					// commit regular fabfile hashblocks
+					for(x = 0; x < ff_files.l; x++)
 					{
-						fatal(hashblock_write, ff_files.e[x]->hb);
+						if(ff_files.e[x]->type == FFT_REGULAR)
+						{
+							fatal(hashblock_write, ff_files.e[x]->hb);
+						}
 					}
 				}
 			}
