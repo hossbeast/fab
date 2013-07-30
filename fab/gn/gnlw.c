@@ -198,7 +198,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		for(x = 0; x < (*rl); x++)
 		{
 			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
-			(*r)[x] = ((gn*)o)->feeds.e[x]->B;
+			(*r)[x] = ((gn*)o)->feeds.e[x]->A;
 		}
 	}
 	else if(strcmp(prop, "ifeed") == 0)
@@ -221,7 +221,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 			if(((gn*)o)->feeds.e[x]->weak == 0)
 			{
 				(*rtypes)[i] = LISTWISE_TYPE_GNLW;
-				(*r)[i] = ((gn*)o)->feeds.e[x]->B;
+				(*r)[i] = ((gn*)o)->feeds.e[x]->A;
 				i++;
 			}
 		}
