@@ -399,6 +399,11 @@ int var_alias(map * const restrict smap, const char * const restrict ss, map * c
 	}
 	else
 	{
+		// If it was cloned into this map as immutable, this is a no-op
+		// However if it was cloned into this map as writethrough, then aliasing it has the necessary effect of disabling writethrough
+		// and causing the def to revert to a normal immutable mapping
+		tc->val.write = IMMUTABLE;
+
 		if(log_would(L_VAR | TAG(ss)))
 		{
 			/* this could potentially merit a warning */
