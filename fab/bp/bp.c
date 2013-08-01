@@ -636,7 +636,7 @@ void bp_dump(bp * bp)
 			{
 				if(i)
 				{
-					log(L_BP | L_BPDUMP, "        %-9s %s"
+					log(L_BP | L_BPDUMP, "         %-9s %s"
 						, gn_designation(bp->stages[x].evals[y]->products[i])
 						, bp->stages[x].evals[y]->products[i]->idstring
 					);
