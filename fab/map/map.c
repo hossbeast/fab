@@ -21,7 +21,7 @@
 
 #include "map.h"
 
-#include "control.h"
+#include "fab_control.h"
 #include "xmem.h"
 #include "xstring.h"
 #include "macros.h"

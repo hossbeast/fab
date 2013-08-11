@@ -26,6 +26,8 @@
 
 #include "identity.h"
 
+#include "args.h"
+#include "params.h"
 #include "log.h"
 
 #define fail(fmt, ...)															\
@@ -46,48 +48,48 @@ int identity_init()
 
 	// get user identity of this process
 	uid_t suid;
-	getresuid(&g_args.ruid, &g_args.euid, &suid);
+	getresuid(&g_params.ruid, &g_params.euid, &suid);
 
 	// get group identity of this process
 	gid_t sgid;
-	getresgid(&g_args.rgid, &g_args.egid, &sgid);
+	getresgid(&g_params.rgid, &g_params.egid, &sgid);
 
 	errno = 0;
-	if((pwd = getpwuid(g_args.ruid)) == 0)
-		fail("cannot get ruid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_args.ruid, g_args.rgid, g_args.euid, g_args.egid);
+	if((pwd = getpwuid(g_params.ruid)) == 0)
+		fail("cannot get ruid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
 
-	g_args.ruid_name = strdup(pwd->pw_name);
-
-	errno = 0;
-	if((pwd = getpwuid(g_args.euid)) == 0)
-		fail("cannot get euid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_args.ruid, g_args.rgid, g_args.euid, g_args.egid);
-
-	g_args.euid_name = strdup(pwd->pw_name);
+	g_params.ruid_name = strdup(pwd->pw_name);
 
 	errno = 0;
-	if((grp = getgrgid(g_args.rgid)) == 0)
-		fail("cannot get rgid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_args.ruid, g_args.rgid, g_args.euid, g_args.egid);
+	if((pwd = getpwuid(g_params.euid)) == 0)
+		fail("cannot get euid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
 
-	g_args.rgid_name = strdup(grp->gr_name);
+	g_params.euid_name = strdup(pwd->pw_name);
 
 	errno = 0;
-	if((grp = getgrgid(g_args.egid)) == 0)
-		fail("cannot get egid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_args.ruid, g_args.rgid, g_args.euid, g_args.egid);
+	if((grp = getgrgid(g_params.rgid)) == 0)
+		fail("cannot get rgid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
 
-	g_args.egid_name = strdup(grp->gr_name);
+	g_params.rgid_name = strdup(grp->gr_name);
+
+	errno = 0;
+	if((grp = getgrgid(g_params.egid)) == 0)
+		fail("cannot get egid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
+
+	g_params.egid_name = strdup(grp->gr_name);
 
 #if DEVEL
 	// this check is omitted in DEVEL mode because valgrind requires non-setgid and non-setuid executables
 #else
 	// this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions
-	if(strcmp(g_args.euid_name, "fabsys") || strcmp(g_args.egid_name, "fabsys"))
+	if(strcmp(g_params.euid_name, "fabsys") || strcmp(g_params.egid_name, "fabsys"))
 	{
 		fail(
 			"fab executable must be owned by fabsys:fabsys and have u+s and g+s permissions\n"
 			" -> r:%s/%d:%s/%d\n"
 			" -> e:%s/%d:%s/%d"
-			, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid
-			, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid
+			, g_params.ruid_name, g_params.ruid, g_params.rgid_name, g_params.rgid
+			, g_params.euid_name, g_params.euid, g_params.egid_name, g_params.egid
 		);
 	}
 #endif
@@ -96,20 +98,20 @@ int identity_init()
 }
 
 #undef fail
-#include "control.h"
+#include "fab_control.h"
 
 int identity_assume_user()
 {
-	fatal_os(seteuid, g_args.ruid);
-	fatal_os(setegid, g_args.rgid);
+	fatal_os(seteuid, g_params.ruid);
+	fatal_os(setegid, g_params.rgid);
 
 	finally : coda;
 }
 
 int identity_assume_fabsys()
 {
-	fatal_os(seteuid, g_args.euid);
-	fatal_os(setegid, g_args.egid);
+	fatal_os(seteuid, g_params.euid);
+	fatal_os(setegid, g_params.egid);
 
 	finally : coda;
 }

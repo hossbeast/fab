@@ -30,7 +30,7 @@
 #include "traverse.h"
 
 #include "log.h"
-#include "control.h"
+#include "fab_control.h"
 #include "xmem.h"
 #include "macros.h"
 #include "list.h"

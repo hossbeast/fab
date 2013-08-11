@@ -23,7 +23,7 @@
 
 #include "path.h"
 
-#include "control.h"
+#include "fab_control.h"
 #include "xmem.h"
 #include "canon.h"
 #include "cksum.h"

@@ -28,7 +28,7 @@
 #include "identity.h"
 
 #include "dirutil.h"
-#include "control.h"
+#include "fab_control.h"
 #include "xmem.h"
 #include "xstring.h"
 

@@ -22,22 +22,23 @@ $dlistwise    = [ $*/listwise ]
 $dfab         = [ $*/fab ]
 
 # invocations
-+[ $dliblistwise ](-$liblistwise)																									@liblistwise
-+[ $dlistwise ](-$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )		@listwise
-+[ $dfab ](-$fab; -$faboplist; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )	@fab
++[ $dliblistwise ](-$liblistwise)																													@liblistwise
++[ $dlistwise ](-$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )						@listwise
++[ $dfab ](-$fab; -$faboplist; -$fabd; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )	@fab
 
 # default target - make everything
-[ @all ] 				: [ @liblistwise.all       $listwise      @fab.all ]
+[ @all ] 				: [ @liblistwise.all @listwise.all @fab.all ]
 
 # inter-module dependencies
 [ $listwise ]		:^ [ $liblistwise ]
 [ $fab ]				:^ [ $liblistwise ]
+[ $fabd ]				:^ [ $liblistwise ]
 [ $faboplist ]	:^ [ $liblistwise ]
 
 # supertasks
-[ @install ]		: [               @liblistwise.install   @listwise.install   @fab.install  ]
+[ @install ]		: [               @liblistwise.install   @listwise.install   @fab.install    ]
 [ @uninstall ]	: [               @liblistwise.uninstall @listwise.uninstall @fab.uninstall  ]
-[ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @fab.clean  ]
+[ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @fab.clean      ]
 
 [ @scripts ]
 {

@@ -34,7 +34,7 @@
 #include "enclose.h"
 #include "var.h"
 
-#include "control.h"
+#include "fab_control.h"
 #include "xmem.h"
 #include "map.h"
 #include "dirutil.h"
