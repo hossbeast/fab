@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "listwise/internal.h"
-#include "control.h"
+#include "liblistwise_control.h"
 
 int listwise_exec(char* s, int l, char** init, int* initls, int initl, lstack** ls)
 {

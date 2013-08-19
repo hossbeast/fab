@@ -24,7 +24,7 @@
 #include <listwise/operator.h>
 #include <listwise/lstack.h>
 
-#include "control.h"
+#include "liblistwise_control.h"
 #include "xstring.h"
 
 #include "parseint.h"

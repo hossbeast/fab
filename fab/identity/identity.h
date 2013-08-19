@@ -18,8 +18,6 @@
 #ifndef _IDENTITY_H
 #define _IDENTITY_H
 
-#include "args.h"
-
 /// identity_init
 //
 // populates the identity fields of g_args and assert that this

@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # source directories
-$dcommon				= [ $*/../common ]
+$dcommon				= [ $*/../common ~ j ]
 $dfab						= [ $* ]
 
 # variable defs, $cc, $cflags, etc
@@ -28,7 +28,7 @@ $dfab						= [ $* ]
 $liblistwise 		= [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags	-fms-extensions -fno-builtin-log [ $dfab ~ lsr/xm/<h>/dn/uu/s/^/-I ] $incdirs
+$cflags					= [ $cflags	-fms-extensions -fno-builtin-log [ $dfab $dcommon ~ lsr/c/-d/s/^/-I ] $incdirs
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
@@ -37,11 +37,11 @@ $cflags					= [ $cflags	-fms-extensions -fno-builtin-log [ $dfab ~ lsr/xm/<h>/dn
 	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
 ]
 $lflags					= [ $liblistwise ]
-$name						= [ fab ]
-$fab						= [ $dfab/$name ~ j ]
+$fab						= [ $dfab/fab ~ j ]
+$fabd						= [ $dfab/fabd ~ j ]
 
 # standard files - standard compilation
-+[@std.c]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $paths = [ $dfab/main.c ~ j ]; $cc $cflags)
++[@std.c]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $paths = [ [ $dfab/fab_main.c ~ j ] [ $dfab/fabd_main.c ~ j ] ]; $cc $cflags)
 +[@std.l]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $flex $flexflags)
 +[@std.y]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 
@@ -54,16 +54,21 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 # catchall node
 #
-[ @all ] : [ $fab @oplist ]
+[ @all ] : [ $fab $fabd @oplist ]
 
 # target for building all operators
 [ @oplist ] : [ $faboplist ]
 
 #
-# the executable
+# executables
 #  -export-dynamic enables dloaded code (in particular, the fab-specific operator so's) to bind to symbols in the executable.
 #
-[ $fab ] : [ [ $dfab/main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
+[ $fab ] : [ [ $dfab/fab_main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
+{
+	[ $cc ] [ $cflags -export-dynamic ~ uu/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [ $lflags ~ fi ]
+}
+
+[ $fabd ] : [ [ $dfab/fabd_main.o ~ j ] [ $dfab/ff/ff.tokens.o ~ j ] ]
 {
 	[ $cc ] [ $cflags -export-dynamic ~ uu/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [ $lflags ~ fi ]
 }
@@ -125,16 +130,19 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 
 [ @install ] : [ @all ]
 {
+	chown fabsys:fabsys		[ $fab, $fabd ]
+	chmod u+s 						[ $fab, $fabd ]
+	chmod g+s 						[ $fab, $fabd ]
 	install -d															[ $destdir/$bindir ]
-	install [ $fab ]												[ $destdir/$bindir/$name ]
-	chown fabsys:fabsys											[ $destdir/$bindir/$name ]
-	chmod u+s 															[ $destdir/$bindir/$name ]
-	chmod g+s 															[ $destdir/$bindir/$name ]
-	install [ $dfab/gcc-dep]								[ $destdir/$bindir/gcc-dep ]
+	install [ $fab ]												[ $destdir/$bindir ]
+	install [ $fabd ]												[ $destdir/$bindir ]
+	install [ $dfab/gcc-dep]								[ $destdir/$bindir ]
 	install -d 															[ $destdir/$fabcachedir ]
 	chown fabsys:fabsys											[ $destdir/$fabcachedir ]
 	install -d 															[ $destdir/$fabtmpdir ]
 	chown fabsys:fabsys											[ $destdir/$fabtmpdir ]
+	install -d 															[ $destdir/$fabipcdir ]
+	chown fabsys:fabsys											[ $destdir/$fabipcdir ]
 	install -d															[ $destdir/$fabinvokedir/std ]
 	install -d															[ $destdir/$fabinvokedir/std/c ]
 	install -d															[ $destdir/$fabinvokedir/std/l ]
@@ -165,5 +173,5 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	find [ $dfab ] -name '*.lex.*' -delete 2>/dev/null
 	find [ $dfab ] -name '*.tab.*' -delete 2>/dev/null
 	find [ $dfab ] -name '*.tokens.*' -delete 2>/dev/null
-	rm -f [ $fab ] 2>/dev/null
+	rm -f [ $fab, $fabd ] 2>/dev/null
 }

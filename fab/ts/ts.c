@@ -26,7 +26,7 @@
 #include "xmem.h"
 #include "pstring.h"
 
-#include "control.h"
+#include "fab_control.h"
 
 char * gn_designation(struct gn * const);
 char * gn_idstring(struct gn * const);

@@ -1,21 +1,13 @@
 #!/bin/bash
 
-# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+# A build script made by fab v0.4.2.0
+#  fab is free software released under the GNU General Public License.
 #
-# This file is part of fab.
-#
-# fab is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# fab is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with fab.  If not, see <http://www.gnu.org/licenses/>.
+#  As a special exception, build scripts made by fab v0.4.2.0 (including this
+#  build script) are excluded from the license covering fab itself, even
+#  if substantial portions of the fab source code are copied verbatim into
+#  the build script. You may create a larger work that contains part or all
+#  of the build script and distribute that work under terms of your choice
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -198,7 +190,7 @@ fml_1_11()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/canon/canon.c -o fab/canon/canon.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/canon/canon.c -o fab/canon/canon.o
 
 
   X=$?
@@ -213,7 +205,7 @@ fml_1_12()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/depblock/depblock.c -o fab/depblock/depblock.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/depblock/depblock.c -o fab/depblock/depblock.o
 
 
   X=$?
@@ -228,7 +220,7 @@ fml_1_13()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dirutil/dirutil.c -o fab/dirutil/dirutil.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dirutil/dirutil.c -o fab/dirutil/dirutil.o
 
 
   X=$?
@@ -243,7 +235,7 @@ fml_1_14()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c fab/fablw/op/fg/fg.c -o fab/fablw/op/fg/fg.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c fab/fablw/op/fg/fg.c -o fab/fablw/op/fg/fg.pic.o
 
 
   X=$?
@@ -258,7 +250,7 @@ fml_1_15()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c fab/fablw/op/fi/fi.c -o fab/fablw/op/fi/fi.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c fab/fablw/op/fi/fi.c -o fab/fablw/op/fi/fi.pic.o
 
 
   X=$?
@@ -348,7 +340,7 @@ fml_1_21()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/gn/gnlw.c -o fab/gn/gnlw.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/gn/gnlw.c -o fab/gn/gnlw.o
 
 
   X=$?
@@ -363,7 +355,7 @@ fml_1_22()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/hashblock/hashblock.c -o fab/hashblock/hashblock.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/hashblock/hashblock.c -o fab/hashblock/hashblock.o
 
 
   X=$?
@@ -378,7 +370,7 @@ fml_1_23()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/identity/identity.c -o fab/identity/identity.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/identity/identity.c -o fab/identity/identity.o
 
 
   X=$?
@@ -393,7 +385,7 @@ fml_1_24()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/log/log.c -o fab/log/log.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/log/log.c -o fab/log/log.o
 
 
   X=$?
@@ -408,7 +400,7 @@ fml_1_25()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/lwutil/lwutil.c -o fab/lwutil/lwutil.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/lwutil/lwutil.c -o fab/lwutil/lwutil.o
 
 
   X=$?
@@ -423,7 +415,7 @@ fml_1_26()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/map/map.c -o fab/map/map.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/map/map.c -o fab/map/map.o
 
 
   X=$?
@@ -438,7 +430,7 @@ fml_1_27()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/path/path.c -o fab/path/path.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/path/path.c -o fab/path/path.o
 
 
   X=$?
@@ -453,7 +445,7 @@ fml_1_28()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/strstack/strstack.c -o fab/strstack/strstack.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/strstack/strstack.c -o fab/strstack/strstack.o
 
 
   X=$?
@@ -468,7 +460,7 @@ fml_1_29()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/traverse/traverse.c -o fab/traverse/traverse.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/traverse/traverse.c -o fab/traverse/traverse.o
 
 
   X=$?
@@ -1128,7 +1120,7 @@ fml_1_73()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ilistwise/../common -O3 -Ilistwise -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -c listwise/args.c -o listwise/args.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ilistwise/../common -O3 -Ilistwise -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -c listwise/args.c -o listwise/args.o
 
 
   X=$?
@@ -1143,7 +1135,7 @@ fml_1_74()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ilistwise/../common -O3 -Ilistwise -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -c listwise/main.c -o listwise/main.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ilistwise/../common -O3 -Ilistwise -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -c listwise/main.c -o listwise/main.o
 
 
   X=$?
@@ -1256,7 +1248,7 @@ fml_3_0()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/args/args.c -o fab/args/args.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/args/args.c -o fab/args/args.o
 
 
   X=$?
@@ -1271,7 +1263,7 @@ fml_3_1()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/bake/bake.c -o fab/bake/bake.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/bake/bake.c -o fab/bake/bake.o
 
 
   X=$?
@@ -1286,7 +1278,7 @@ fml_3_2()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/bp/bp.c -o fab/bp/bp.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/bp/bp.c -o fab/bp/bp.o
 
 
   X=$?
@@ -1301,7 +1293,7 @@ fml_3_3()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dep/dep.c -o fab/dep/dep.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dep/dep.c -o fab/dep/dep.o
 
 
   X=$?
@@ -1316,7 +1308,7 @@ fml_3_4()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dsc/dsc.c -o fab/dsc/dsc.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dsc/dsc.c -o fab/dsc/dsc.o
 
 
   X=$?
@@ -1331,7 +1323,7 @@ fml_3_5()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/enclose/enclose.c -o fab/enclose/enclose.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/enclose/enclose.c -o fab/enclose/enclose.o
 
 
   X=$?
@@ -1346,7 +1338,7 @@ fml_3_6()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.dsc.tab.c -o fab/ff/ff.dsc.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.dsc.tab.c -o fab/ff/ff.dsc.tab.o
 
 
   X=$?
@@ -1361,7 +1353,7 @@ fml_3_7()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.lex.c -o fab/ff/ff.lex.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.lex.c -o fab/ff/ff.lex.o
 
 
   X=$?
@@ -1376,7 +1368,7 @@ fml_3_8()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.list.tab.c -o fab/ff/ff.list.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.list.tab.c -o fab/ff/ff.list.tab.o
 
 
   X=$?
@@ -1391,7 +1383,7 @@ fml_3_9()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.c -o fab/ff/ff.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.c -o fab/ff/ff.o
 
 
   X=$?
@@ -1406,7 +1398,7 @@ fml_3_10()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.tab.c -o fab/ff/ff.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.tab.c -o fab/ff/ff.tab.o
 
 
   X=$?
@@ -1421,7 +1413,7 @@ fml_3_11()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.tokens.c -o fab/ff/ff.tokens.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.tokens.c -o fab/ff/ff.tokens.o
 
 
   X=$?
@@ -1436,7 +1428,7 @@ fml_3_12()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.var.tab.c -o fab/ff/ff.var.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.var.tab.c -o fab/ff/ff.var.tab.o
 
 
   X=$?
@@ -1451,7 +1443,7 @@ fml_3_13()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ffn/ffn.c -o fab/ffn/ffn.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ffn/ffn.c -o fab/ffn/ffn.o
 
 
   X=$?
@@ -1466,7 +1458,7 @@ fml_3_14()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ffproc/ffproc.c -o fab/ffproc/ffproc.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ffproc/ffproc.c -o fab/ffproc/ffproc.o
 
 
   X=$?
@@ -1481,7 +1473,7 @@ fml_3_15()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/fml/fml.c -o fab/fml/fml.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/fml/fml.c -o fab/fml/fml.o
 
 
   X=$?
@@ -1496,7 +1488,7 @@ fml_3_16()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/gn/gn.c -o fab/gn/gn.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/gn/gn.c -o fab/gn/gn.o
 
 
   X=$?
@@ -1511,7 +1503,7 @@ fml_3_17()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/list/list.c -o fab/list/list.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/list/list.c -o fab/list/list.o
 
 
   X=$?
@@ -1526,7 +1518,7 @@ fml_3_18()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/main.c -o fab/main.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/main.c -o fab/main.o
 
 
   X=$?
@@ -1541,7 +1533,7 @@ fml_3_19()
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/selector/selector.c -o fab/selector/selector.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/selector/selector.c -o fab/selector/selector.o
 
 
   X=$?
@@ -1556,7 +1548,7 @@ fml_3_20()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/tmp/tmp.c -o fab/tmp/tmp.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/tmp/tmp.c -o fab/tmp/tmp.o
 
 
   X=$?
@@ -1571,7 +1563,7 @@ fml_3_21()
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ts/ts.c -o fab/ts/ts.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ts/ts.c -o fab/ts/ts.o
 
 
   X=$?
@@ -1586,7 +1578,7 @@ fml_3_22()
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/var/var.c -o fab/var/var.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/var/var.c -o fab/var/var.o
 
 
   X=$?
@@ -1624,7 +1616,7 @@ fml_4_0()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -export-dynamic -o fab/fab common/xmem.o common/xstring.o common/cksum.o fab/log/log.o fab/canon/canon.o fab/path/path.o common/unitstring.o common/coll.o fab/identity/identity.o fab/dirutil/dirutil.o fab/hashblock/hashblock.o fab/map/map.o fab/ff/ff.tokens.o fab/ffn/ffn.o fab/ff/ff.tab.o fab/ff/ff.dsc.tab.o fab/ff/ff.var.tab.o fab/ff/ff.list.tab.o fab/ff/ff.lex.o fab/depblock/depblock.o fab/strstack/strstack.o common/pstring.o fab/ts/ts.o fab/traverse/traverse.o fab/gn/gnlw.o fab/lwutil/lwutil.o fab/var/var.o fab/list/list.o fab/enclose/enclose.o fab/fml/fml.o common/parseint.o fab/gn/gn.o fab/ff/ff.o fab/selector/selector.o fab/args/args.o fab/bp/bp.o fab/dep/dep.o fab/dsc/dsc.o fab/tmp/tmp.o fab/bake/bake.o fab/ffproc/ffproc.o fab/main.o liblistwise/liblistwise.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -export-dynamic -o fab/fab common/xmem.o common/xstring.o common/cksum.o fab/log/log.o fab/canon/canon.o fab/path/path.o common/unitstring.o common/coll.o fab/identity/identity.o fab/dirutil/dirutil.o fab/hashblock/hashblock.o fab/map/map.o fab/ff/ff.tokens.o fab/ffn/ffn.o fab/ff/ff.tab.o fab/ff/ff.dsc.tab.o fab/ff/ff.var.tab.o fab/ff/ff.list.tab.o fab/ff/ff.lex.o fab/depblock/depblock.o fab/strstack/strstack.o common/pstring.o fab/ts/ts.o fab/traverse/traverse.o fab/gn/gnlw.o fab/lwutil/lwutil.o fab/var/var.o fab/list/list.o fab/enclose/enclose.o fab/fml/fml.o common/parseint.o fab/gn/gn.o fab/ff/ff.o fab/selector/selector.o fab/args/args.o fab/bp/bp.o fab/dep/dep.o fab/dsc/dsc.o fab/tmp/tmp.o fab/bake/bake.o fab/ffproc/ffproc.o fab/main.o liblistwise/liblistwise.so
 
 
   X=$?
@@ -1639,7 +1631,7 @@ fml_4_1()
   exec 2>&101
 
   
-	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o fab/fablw/op/fg/fg.so	fab/fablw/op/fg/fg.pic.o  liblistwise/liblistwise.so -shared -Wl,-soname,fg.so
+	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o fab/fablw/op/fg/fg.so	fab/fablw/op/fg/fg.pic.o  liblistwise/liblistwise.so -shared -Wl,-soname,fg.so
 
 
   X=$?
@@ -1654,7 +1646,7 @@ fml_4_2()
   exec 2>&102
 
   
-	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.0" -DFABVERSIONN="420" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o fab/fablw/op/fi/fi.so	fab/fablw/op/fi/fi.pic.o  liblistwise/liblistwise.so -shared -Wl,-soname,fi.so
+	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o fab/fablw/op/fi/fi.so	fab/fablw/op/fi/fi.pic.o  liblistwise/liblistwise.so -shared -Wl,-soname,fi.so
 
 
   X=$?
@@ -2245,7 +2237,7 @@ fml_4_35()
   exec 2>&103
 
   
-	gcc -DFABVERSIONN="420" -DFABVERSIONS="v0.4.2.0" -D_GNU_SOURCE -I./liblistwise -Ilistwise -Ilistwise/../common -O3 -Wall -Werror -m64 -o listwise/listwise listwise/args.o listwise/main.o liblistwise/liblistwise.so
+	gcc -DFABVERSIONN="421" -DFABVERSIONS="v0.4.2.1" -D_GNU_SOURCE -I./liblistwise -Ilistwise -Ilistwise/../common -O3 -Wall -Werror -m64 -o listwise/listwise listwise/args.o listwise/main.o liblistwise/liblistwise.so
 
 
   X=$?

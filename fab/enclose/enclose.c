@@ -19,7 +19,7 @@
 
 #include "ffn.h"
 
-#include "control.h"
+#include "fab_control.h"
 #include "xmem.h"
 
 #define restrict __restrict

@@ -26,7 +26,7 @@
 #include "var.h"
 #include "lwutil.h"
 
-#include "control.h"
+#include "fab_control.h"
 #include "map.h"
 #include "xmem.h"
 #include "macros.h"

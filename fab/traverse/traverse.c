@@ -23,7 +23,7 @@
 
 #include "gn.h"
 #include "log.h"
-#include "control.h"
+#include "fab_control.h"
 #include "args.h"
 
 #include "xmem.h"
