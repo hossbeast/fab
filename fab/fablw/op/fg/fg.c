@@ -47,7 +47,7 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "(fab specific) select graph nodes"
+		, .desc					= "(fab specific) select graph nodes (p|s|g|t|n)"
 	}
 	, {}
 };
