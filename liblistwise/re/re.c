@@ -97,8 +97,3 @@ int API re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len)
 
 	finally : coda;
 }
-
-
-
-
-

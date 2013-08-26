@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # source directories
-$dcommon			= [ $*/../common ]
+$dcommon			= [ $*/../common ~ j ]
 $dliblistwise	= [ $* ]
 
 # variable defs, $cc, $cflags, etc
