@@ -53,6 +53,7 @@ struct selector;
 /*
 #define FABCACHEDIR								"/var/cache/fab"
 #define FABTMPDIR									"/var/tmp/fab"
+#define FABIPCDIR									"/var/run/fab"
 #define FABLWOPDIR								"/usr/lib/fab/listwise"
 #define FABINVOKEDIR							"/usr/lib/fab/lib"
 */

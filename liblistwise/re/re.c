@@ -23,7 +23,7 @@
 
 #include "xmem.h"
 #include "macros.h"
-#include "control.h"
+#include "liblistwise_control.h"
 
 int API re_compile(char* s, struct re* re, char* mod)
 {

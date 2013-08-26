@@ -22,8 +22,8 @@ $dcommon = [ $* ]
 $cflags = [ $cflags [ -I $dcommon ~ j ] ]
 
 # c files
-+[@std.c]($gendir = $dcommon; $dirs = $dcommon; -$cfabpaths; $cc $cflags)
-+[@std.c]($gendir = $dcommon; $dirs = $dcommon; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
++[@std.c]($gendir = $dcommon; $rdirs = $dcommon; -$cfabpaths; $cc $cflags)
++[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 #
 # compile all o files

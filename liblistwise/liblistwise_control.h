@@ -15,28 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "listwise/internal.h"
-#include "liblistwise_control.h"
+#ifndef _LISTWISE_CONTROL_H
+#define _LISTWISE_CONTROL_H
 
-int listwise_exec(char* s, int l, char** init, int* initls, int initl, lstack** ls)
-{
-	// generator parser
-	generator_parser* p = 0;
+#include "control_core.h"
 
-	// generator
-	generator* g = 0;
+#define CODA_BAD_ACTION                             \
+	_coda_r = 1;                                    	\
 
-	if(generator_mkparser(&p) != 0)
-		fail("mkparser failed\n");
+#define CODA_GOOD_ACTION                            \
+  _coda_r = 0;                                      \
 
-	if(generator_parse(p, s, l, &g) != 0)
-		fail("parse failed\n");
+#define HANDLE_ERROR(fmt, ...)											\
+	dprintf(listwise_err_fd, fmt " at [%s:%d (%s)]\n"	\
+		, ##__VA_ARGS__																	\
+		, __FILE__																			\
+		, __LINE__																			\
+		, __FUNCTION__																	\
+	);																								\
 
-	if(lstack_exec(g, init, initls, initl, ls) != 0)
-		fail("lstack_exec failed");
-
-	generator_free(g);
-	generator_parser_free(p);
-
-	finally : coda;
-}
+#endif

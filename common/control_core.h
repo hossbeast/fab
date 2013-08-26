@@ -15,27 +15,33 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _CONTROL_H
-#define _CONTROL_H
+#ifndef _CONTROL_CORE_H
+#define _CONTROL_CORE_H
 
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 
+/*
+** CODA_BAD_ACTION  - executed in coda during error resolution
+** CODA_GOOD_ACTION - executed in coda during normal execution
+** HANDLE_ERROR     - handle errors
+*/
+
 /// finally
 //
 //
 //
-#define finally				\
-	int _coda_r;				\
-	goto CODA_GOOD;			\
-CODA_BAD:							\
-	_coda_r = 1;				\
-	goto CODA_FINALLY;	\
-CODA_GOOD:						\
-	_coda_r = 0;				\
-CODA_FINALLY
+#define finally						\
+	int _coda_r;						\
+	goto CODA_GOOD;					\
+CODA_BAD:									\
+	CODA_BAD_ACTION					\
+	goto CODA_FINALLY;			\
+CODA_GOOD:								\
+	CODA_GOOD_ACTION				\
+CODA_FINALLY							\
 
 /// coda
 //
@@ -46,27 +52,22 @@ CODA_FINALLY
 /// error
 //
 // SUMMARY
-//  log an L_ERROR message
+//  log an error
 //
-#define error(fmt, ...)																\
-	do {																								\
-		dprintf(listwise_err_fd, fmt " at [%s:%d (%s)]\n"	\
-			, ##__VA_ARGS__																	\
-			, __FILE__																			\
-			, __LINE__																			\
-			, __FUNCTION__																	\
-		);																								\
-	} while(0)
+#define error(fmt, ...)								\
+	do {																\
+		HANDLE_ERROR(fmt, ##__VA_ARGS__);	\
+	} while(0)													\
 
 /// fail
 //
 // SUMMARY
-//  log an L_ERROR message, terminate the current scope with failure
+//  log an error and terminate the current scope with failure
 //
-#define fail(fmt, ...)							\
-	do {															\
-		error(fmt "\n", ##__VA_ARGS__);	\
-		goto CODA_BAD;									\
+#define fail(fmt, ...)								\
+	do {																\
+		HANDLE_ERROR(fmt, ##__VA_ARGS__);	\
+		goto CODA_BAD;										\
 	} while(0)
 
 /// qfail
@@ -89,17 +90,17 @@ CODA_FINALLY
 //  execute the specified function with zero-return-failure semantics and if it fails
 //  log an L_ERROR message and terminate the current scope with failure
 //
-#define fatal(x, ...)																				\
-	do {																											\
-		if((x(__VA_ARGS__)) != 0)																\
-		{																												\
-			dprintf(listwise_err_fd, #x " failed at [%s:%d (%s)]"	\
-				, __FILE__																					\
-				, __LINE__																					\
-				, __FUNCTION__																			\
-			);																										\
-			goto CODA_BAD;																				\
-		}																												\
+#define fatal(x, ...)											\
+	do {																		\
+		int __r = x(__VA_ARGS__);							\
+		if(__r != 0)													\
+		{																			\
+			if(__r > 0)													\
+			{																		\
+				HANDLE_ERROR(#x " failed");				\
+			}																		\
+			goto CODA_BAD;											\
+		}																			\
 	} while(0)
  
 /// qfatal
@@ -122,19 +123,15 @@ CODA_FINALLY
 //  execute the specified function with nonzero-return-failure semantics and if it fails
 //  log an L_ERROR message and terminate the current scope with failure
 //
-#define fatal_os(x, ...)																										\
-	do {																																			\
-		if((x(__VA_ARGS__)) != 0)																								\
-		{																																				\
-			dprintf(listwise_err_fd, #x " failed with: [%d][%s] at [%s:%d (%s)]"	\
-				, errno																															\
-				, strerror(errno)																										\
-				, __FILE__																													\
-				, __LINE__																													\
-				, __FUNCTION__																											\
-			);																																		\
-			goto CODA_BAD;																												\
-		}																																				\
+#define fatal_os(x, ...)													\
+	do {																						\
+		if((x(__VA_ARGS__)) != 0)											\
+		{																							\
+			HANDLE_ERROR(#x " failed with: [%d][%s]"		\
+				, errno, strerror(errno)									\
+			);																					\
+			goto CODA_BAD;															\
+		}																							\
 	} while(0)
 
 /// fatal_os
