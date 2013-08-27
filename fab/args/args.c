@@ -39,6 +39,7 @@
 #include "canon.h"
 #include "macros.h"
 #include "selector.h"
+#include "params.h"
 
 struct g_args_t g_args;
 
@@ -331,13 +332,6 @@ int args_parse(int argc, char** argv)
 	;
 
 	//
-	// parameters
-	//
-	g_args.pid						= getpid();
-	g_args.sid						= getsid(0);
-	g_args.cwd						= getcwd(0, 0);
-
-	//
 	// args:defaults
 	//
 	g_args.concurrency		= DEFAULT_CONCURRENCY_LIMIT;
@@ -348,8 +342,7 @@ int args_parse(int argc, char** argv)
 	g_args.mode_errors		= DEFAULT_MODE_ERRORS;
 	g_args.mode_bslic			= DEFAULT_MODE_BSLIC;
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
-	fatal(path_create_init, &fabpath, g_args.cwd, "%s", DEFAULT_INIT_FABFILE);
-	fatal(path_copy, &g_args.init_fabfile_path, fabpath);
+	fatal(path_create_init, &fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
 
 	// default invokedirs - head of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
@@ -436,8 +429,7 @@ int args_parse(int argc, char** argv)
 		}
 		else if(x == 'f')
 		{
-			path_xfree(&g_args.init_fabfile_path);
-			fatal(path_create_init, &g_args.init_fabfile_path, g_args.cwd, "%s", optarg);
+			/* this was handled in main */
 		}
 		else if(x == 'h')
 		{
@@ -508,7 +500,7 @@ int args_parse(int argc, char** argv)
 
 	// default invokedirs - tail of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_args.init_fabfile_path->abs_dir);
+	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_params.init_fabfile_path->abs_dir);
 
 	// initialize logger
 	fatal(log_init, "+ERROR|WARN|INFO|BPEXEC|DSCINFO");
@@ -516,11 +508,11 @@ int args_parse(int argc, char** argv)
 	log(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
 	// log execution parameters under PARAMS
-	log(L_PARAMS	, "%11spid                    =%u"						, ""	, g_args.pid);
-	log(L_PARAMS	, "%11ssid                    =%u"						, ""	, g_args.sid);
-	log(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
-	log(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
-	log(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_args.cwd);
+	log(L_PARAMS	, "%11spid                    =%u"						, ""	, g_params.pid);
+	log(L_PARAMS	, "%11ssid                    =%u"						, ""	, g_params.sid);
+	log(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_params.euid_name, g_params.euid, g_params.egid_name, g_params.egid);
+	log(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_params.ruid_name, g_params.ruid, g_params.rgid_name, g_params.rgid);
+	log(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_params.cwd);
 	log(L_PARAMS	, "%11scachedir               =%s"						, ""	, XQUOTE(FABCACHEDIR));
 	log(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));
 	log(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));
@@ -528,10 +520,10 @@ int args_parse(int argc, char** argv)
 	log(L_PARAMS	, "%11sexpiration-policy      =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->can);
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->abs);
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->rel_cwd);
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_args.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_args.init_fabfile_path->rel_fab);
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->can);
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->abs);
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_cwd);
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_fab);
 	log(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan             =%s", g_args.mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args.mode_bplan));
 
 	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
@@ -584,12 +576,6 @@ coda;
 
 void args_teardown()
 {
-	free(g_args.ruid_name);
-	free(g_args.euid_name);
-	free(g_args.rgid_name);
-	free(g_args.egid_name);
-	free(g_args.cwd);
-
 	int x;
 	for(x = 0; x < g_args.selectorsl; x++)
 		free(g_args.selectors[x].s);
@@ -607,6 +593,5 @@ void args_teardown()
 		free(g_args.invokedirs[x]);
 	free(g_args.invokedirs);
 
-	path_free(g_args.init_fabfile_path);
 	free(g_args.bakescript_path);
 }

@@ -24,7 +24,7 @@
 #include <sys/types.h>
 
 #include "tmp.h"
-#include "args.h"
+#include "params.h"
 #include "identity.h"
 
 #include "log.h"
@@ -90,7 +90,7 @@ int tmp_setup()
 			}
 
 			// pid is myself, or it is unkillable
-			if(pid == g_args.pid || kill(pid, 0))
+			if(pid == g_params.pid || kill(pid, 0))
 			{
 				if(rmdir_recursive(fpath, 1) != 0)
 					return FTW_STOP;
@@ -104,7 +104,7 @@ int tmp_setup()
 	}
 
 	// ensure directories for my own pid exist
-	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/fml", g_args.pid);
+	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/fml", g_params.pid);
 	fatal(mkdirp, space, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	//

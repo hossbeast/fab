@@ -26,6 +26,7 @@
 #include "gn.h"
 #include "fml.h"
 #include "args.h"
+#include "params.h"
 #include "identity.h"
 #include "traverse.h"
 
@@ -218,14 +219,14 @@ static int reconcile_completion(gn * const gn, map * const ws)
 					// needed node
 					uint32_t need = gn->needs.e[x]->B->path->can_hash;
 
-					snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, need);
-					snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ineed_skipweak/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash, need);
+					snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, need);
+					snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ineed_skipweak/%u", g_params.init_fabfile_path->can_hash, gn->path->can_hash, need);
 
 					if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
 						fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
 
-					snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
-					snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ifeed_skipweak/%u", g_args.init_fabfile_path->can_hash, need, gn->path->can_hash);
+					snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
+					snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ifeed_skipweak/%u", g_params.init_fabfile_path->can_hash, need, gn->path->can_hash);
 
 					if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
 						fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
@@ -313,7 +314,7 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
 
-		fatal(xsprintf, &(*gna)->cache_dir						, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, (*gna)->path->can_hash);
+		fatal(xsprintf, &(*gna)->cache_dir						, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, (*gna)->path->can_hash);
 		fatal(xsprintf, &(*gna)->ineed_skipweak_dir		, "%s/ineed_skipweak"	, (*gna)->cache_dir);
 		fatal(xsprintf, &(*gna)->ifeed_skipweak_dir		, "%s/ifeed_skipweak"	, (*gna)->cache_dir);
 		fatal(xsprintf, &(*gna)->noforce_invalid_path	, "%s/noforce_invalid", (*gna)->cache_dir);
@@ -709,13 +710,13 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 			gn->force_invalid = degree;
 
 			// force action on this node 
-			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/noforce_invalid", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/noforce_invalid", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
 
 			if(unlink(tmp[0]) != 0 && errno != ENOENT)
 				fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
 
 			// delete discovery results for this node, if any
-			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/dscv", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
 
 			if(unlink(tmp[0]) != 0 && errno != ENOENT)
 				fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
@@ -903,7 +904,7 @@ int gn_finalize(int reconcile)
 					if(gn->primary_hb == 0)
 					{
 						// create hashblock
-						fatal(hashblock_create, &gn->primary_hb, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+						fatal(hashblock_create, &gn->primary_hb, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
 
 						// load the previous hashblocks
 						fatal(hashblock_read, gn->primary_hb);
@@ -925,7 +926,7 @@ int gn_finalize(int reconcile)
 						}
 
 						// allocate dscv block
-						fatal(depblock_create, &gn->dscv_block, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/dscv", g_args.init_fabfile_path->can_hash, gn->path->can_hash);
+						fatal(depblock_create, &gn->dscv_block, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/dscv", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
 
 						// actually load the depblock from cache - it was deleted from the fs in the prceeding block
 						// if the backing file had changed

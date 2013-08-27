@@ -6,7 +6,7 @@
 #include "selector.h"
 
 #include "gn.h"
-#include "args.h"
+#include "params.h"
 #include "list.h"
 
 #include "log.h"
@@ -106,9 +106,9 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 				else
 				{
 					if(s->base == SELECTOR_BASE_CWD)
-						fatal(gn_lookup, (*stax)[pn]->s[0].s[y].s, g_args.cwd, &g);
+						fatal(gn_lookup, (*stax)[pn]->s[0].s[y].s, g_params.cwd, &g);
 					else if(s->base == SELECTOR_BASE_FABFILE_DIR)
-						fatal(gn_lookup, (*stax)[pn]->s[0].s[y].s, g_args.init_fabfile_path->abs_dir, &g);
+						fatal(gn_lookup, (*stax)[pn]->s[0].s[y].s, g_params.init_fabfile_path->abs_dir, &g);
 				}
 
 				if(g)
@@ -129,9 +129,9 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 	{
 		gn * g = 0;
 		if(s->base == SELECTOR_BASE_CWD)
-			fatal(gn_lookup, s->s, g_args.cwd, &g);
+			fatal(gn_lookup, s->s, g_params.cwd, &g);
 		else if(s->base == SELECTOR_BASE_FABFILE_DIR)
-			fatal(gn_lookup, s->s, g_args.init_fabfile_path->abs_dir, &g);
+			fatal(gn_lookup, s->s, g_params.init_fabfile_path->abs_dir, &g);
 
 		if(g)
 		{

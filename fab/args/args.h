@@ -20,7 +20,6 @@
 
 #include <sys/types.h>
 
-#include "path.h"
 struct selector;
 
 /*
@@ -109,23 +108,6 @@ MODE_TABLE(0)
 extern struct g_args_t
 {
 //
-// execution parameters
-//
-
-	pid_t								pid;												// pid of this process
-	pid_t								sid;												// session-id
-	char *							cwd;												// cwd
-
-	uid_t								ruid;												// real-user-id
-	char *							ruid_name;
-	uid_t								euid;												// effective-user-id   (must be fabsys)
-	char *							euid_name;
-	gid_t								rgid;												// real-group-id
-	char *							rgid_name;
-	gid_t								egid;												// effective-group-id  (must be fabsys)
-	char *							egid_name;
-
-//
 // arguments
 //
 
@@ -137,7 +119,6 @@ extern struct g_args_t
 	int									mode_errors;								// error reporting mode
 
 	int									concurrency;								// concurrently limiting factor
-	path *							init_fabfile_path;					// path to initial fabfile
 
 	char *							bakescript_path;						// path to bakescript
 

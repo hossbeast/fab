@@ -27,7 +27,7 @@
 #include "xmem.h"
 #include "canon.h"
 #include "cksum.h"
-#include "args.h"
+#include "params.h"
 
 //
 // static
@@ -245,7 +245,7 @@ static int create(path ** const p, const char * const in_base, const char * cons
 	// 
 	// absolute path rebased to cwd
 	//
-	if(rebase((*p)->abs, 0, g_args.cwd, 0, (*p)->rel_cwd, 512) != 0)
+	if(rebase((*p)->abs, 0, g_params.cwd, 0, (*p)->rel_cwd, 512) != 0)
 		return 1;
 
 	// 
@@ -253,12 +253,12 @@ static int create(path ** const p, const char * const in_base, const char * cons
 	//
 	if(init)
 	{
-		if(rebase((*p)->abs, 0, g_args.cwd, 0, (*p)->rel_fab, 512) != 0)
+		if(rebase((*p)->abs, 0, g_params.cwd, 0, (*p)->rel_fab, 512) != 0)
 			return 1;
 	}
 	else
 	{
-		if(rebase((*p)->abs, 0, g_args.init_fabfile_path->abs_dir, 0, (*p)->rel_fab, 512) != 0)
+		if(rebase((*p)->abs, 0, g_params.init_fabfile_path->abs_dir, 0, (*p)->rel_fab, 512) != 0)
 			return 1;
 	}
 
