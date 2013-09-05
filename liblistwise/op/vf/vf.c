@@ -39,36 +39,45 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "vf"
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
-		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "select following"
 	}
 	, {}
 };
 
-int op_validate(operation* o)
-{
-	return 0;
-}
-
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	if(ls->l)
 	{
+		int i = -1;
+
 		int x;
 		LSTACK_ITERATE(ls, x, go);
-		if(!go)
+		if(go)
 		{
-			fatal(lstack_last_set, ls, x);
+			i = x;
 		}
 		LSTACK_ITEREND;
+
+		if(i > -1)
+		{
+			if(ls->l > 0)
+			{
+				for(x = 0; x < ls->s[0].l; x++)
+				{
+					if(x > i)
+					{
+						fatal(lstack_last_set, ls, x);
+					}
+				}
+			}
+		}
 	}
 
 	finally : coda;
