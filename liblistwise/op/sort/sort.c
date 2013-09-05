@@ -88,15 +88,15 @@ operator op_desc[] = {
 	, {
 		  .s						= "snm"
 		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate_ssm
-		, .op_exec			= op_exec_ssm
+		, .op_validate	= op_validate_snm
+		, .op_exec			= op_exec_snm
 		, .desc					= "sort numeric on regex"
 	}
 	, {
 		  .s						= "snw"
 		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate_ssw
-		, .op_exec			= op_exec_ssw
+		, .op_validate	= op_validate_snw
+		, .op_exec			= op_exec_snw
 		, .desc					= "sort numeric on window"
 	}, {}
 };
@@ -204,13 +204,11 @@ int op_validate_snw(operation * o)
 	finally : coda;
 }
 
-#define STRINGWISE	1
-#define NUMERIC			2
+#define STRING_WCASE	1
+#define STRING_NCASE	2
+#define NUMERIC				3
 
-#define NCASE				1
-#define WCASE				2
-
-static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int mode, int compar, int win_off, int win_len)
+static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int mode, int win, int win_off, int win_len, struct re * re)
 {
 	size_t num = ls->sel.all ? ls->s[0].l : ls->sel.l;
 
@@ -253,22 +251,17 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int mode
 
 #define FAIL(s)		do { if(s) { dprintf(listwise_err_fd, s); } qfail = 1; return 0; } while(0)
 
-		if(mode == 1)
+		if(mode == NUMERIC)
 		{
 			if((As = lstack_getstring(ls, 0, *(int*)A)) == 0)
 				FAIL("allocation failure");
 			if((Bs = lstack_getstring(ls, 0, *(int*)B)) == 0)
 				FAIL("allocation failure");
 
-			intmax_t Aval;
-			intmax_t Bval;
-
-			if(parseint(As, SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Aval, 0) == 0)
+			if(re || win)
 			{
-				if(parseint(Bs, SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Bval, 0) == 0)
-				{
-					r = Aval - Bval;
-				}
+				Asl = strlen(As);
+				Bsl = strlen(Bs);
 			}
 		}
 		else
@@ -277,78 +270,100 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int mode
 				FAIL("allocation failure");
 			if(lstack_string(ls, 0, *(int*)B, &Bs, &Bsl))
 				FAIL("allocation failure");
+		}
 
-			if(mode == 2)
+		if(re)
+		{
+			if(re_exec(re, As, Asl, 0, ovec, ovec_len))
+				FAIL(0);
+			if((*ovec)[0] <= 0)
 			{
-				if(re_exec(&o->args[0]->re, As, Asl, 0, ovec, ovec_len))
-					FAIL(0);
-				if((*ovec)[0] <= 0)
-				{
-					As = 0;
-				}
-				else
-				{
-					As = As + (*ovec)[1];
-					Asl = (*ovec)[2] - (*ovec)[1];
-				}
-
-				if(re_exec(&o->args[0]->re, Bs, Bsl, 0, ovec, ovec_len))
-					FAIL(0);
-				if((*ovec)[0] <= 0)
-				{
-					Bs = 0;
-				}
-				else
-				{
-					Bs = Bs + (*ovec)[1];
-					Bsl = (*ovec)[2] - (*ovec)[1];
-				}
+				As = 0;
 			}
-			else if(mode == 3)
+			else
 			{
-				int off = win_off;
-				int len = win_len;
-
-				if(win_off < 0)
-					off = Asl + win_off;
-				if(win_len == 0)
-					len = Asl - win_off;
-
-				if(off >= Asl || len <= 0)
-				{
-					As = 0;
-				}
-				else
-				{
-					As += off;
-					Asl = len;
-				}
-
-				off = win_off;
-				len = win_len;
-
-				if(win_off < 0)
-					off = Bsl + win_off;
-				if(win_len == 0)
-					len = Bsl - win_off;
-
-				if(off >= Bsl || len <= 0)
-				{
-					Bs = 0;
-				}
-				else
-				{
-					Bs += off;
-					Bsl = len;
-				}
+				As = As + (*ovec)[1];
+				Asl = (*ovec)[2] - (*ovec)[1];
 			}
 
-			if(As && Bs)
-				r = xstrcmp(As, Asl, Bs, Bsl, ncase);
-			else if(As)
-				r = 1;
-			else if(Bs)
-				r = -1;
+			if(re_exec(re, Bs, Bsl, 0, ovec, ovec_len))
+				FAIL(0);
+			if((*ovec)[0] <= 0)
+			{
+				Bs = 0;
+			}
+			else
+			{
+				Bs = Bs + (*ovec)[1];
+				Bsl = (*ovec)[2] - (*ovec)[1];
+			}
+		}
+		else if(win)
+		{
+			int off = win_off;
+			int len = win_len;
+
+			if(win_off < 0)
+				off = Asl + win_off;
+			if(win_len == 0)
+				len = Asl - win_off;
+
+			if(off >= Asl || len <= 0)
+			{
+				As = 0;
+			}
+			else
+			{
+				As += off;
+				Asl = len;
+			}
+
+			off = win_off;
+			len = win_len;
+
+			if(win_off < 0)
+				off = Bsl + win_off;
+			if(win_len == 0)
+				len = Bsl - win_off;
+
+			if(off >= Bsl || len <= 0)
+			{
+				Bs = 0;
+			}
+			else
+			{
+				Bs += off;
+				Bsl = len;
+			}
+		}
+
+		if(As && Bs)
+		{
+			if(mode == NUMERIC)
+			{
+				intmax_t Aval;
+				intmax_t Bval;
+
+				if(parseint(As, SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Aval, 0) == 0)
+				{
+					if(parseint(Bs, SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Bval, 0) == 0)
+					{
+						r = Aval - Bval;
+					}
+				}
+			}
+			else
+			{
+				r = xstrcmp(As, Asl, Bs, Bsl, mode == STRING_NCASE);
+			}
+		}
+		else if(As)
+		{
+			r = 1;
+		}
+		else if(Bs)
+		{
+			r = -1;
 		}
 
 		return r;
@@ -370,10 +385,12 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int mode
 
 int op_exec_ss(operation * o, lstack * ls, int ** ovec, int * ovec_len)
 {
+	int ncase = 0;
+
 	if(o->argsl >= 1)
 		ncase = strchr(o->args[0]->s, 'i') != 0;
 
-	return op_exec(o, ls, ovec, ovec_len, ncase, 0, 0);
+	return op_exec(o, ls, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE, 0, 0, 0, 0);
 }
 
 int op_exec_ssm(operation * o, lstack * ls, int ** ovec, int * ovec_len)
@@ -383,7 +400,7 @@ int op_exec_ssm(operation * o, lstack * ls, int ** ovec, int * ovec_len)
 	if(o->argsl >= 3)
 		ncase = strchr(o->args[2]->s, 'i') != 0;
 
-	return op_exec(o, ls, ovec, ovec_len, 2, ncase, 0, 0);
+	return op_exec(o, ls, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE, 0, 0, 0, &o->args[0]->re);
 }
 
 int op_exec_ssw(operation * o, lstack * ls, int ** ovec, int * ovec_len)
@@ -399,17 +416,17 @@ int op_exec_ssw(operation * o, lstack * ls, int ** ovec, int * ovec_len)
 	if(o->argsl >= 3)
 		ncase = strchr(o->args[2]->s, 'i') != 0;
 
-	return op_exec(o, ls, ovec, ovec_len, 3, ncase, win_off, win_len);
+	return op_exec(o, ls, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE, 1, win_off, win_len, 0);
 }
 
 int op_exec_sn(operation * o, lstack * ls, int ** ovec, int * ovec_len)
 {
-	return op_exec(o, ls, ovec, ovec_len, 1, 0, 0, 0);
+	return op_exec(o, ls, ovec, ovec_len, NUMERIC, 0, 0, 0, 0);
 }
 
 int op_exec_snm(operation * o, lstack * ls, int ** ovec, int * ovec_len)
 {
-	return op_exec(o, ls, ovec, ovec_len, 2, 0, 0, 0);
+	return op_exec(o, ls, ovec, ovec_len, NUMERIC, 0, 0, 0, &o->args[0]->re);
 }
 
 int op_exec_snw(operation * o, lstack * ls, int ** ovec, int * ovec_len)
@@ -422,5 +439,5 @@ int op_exec_snw(operation * o, lstack * ls, int ** ovec, int * ovec_len)
 	if(o->argsl >= 2)
 		win_len = o->args[1]->i64;
 
-	return op_exec(o, ls, ovec, ovec_len, 3, 0, win_off, win_len);
+	return op_exec(o, ls, ovec, ovec_len, NUMERIC, 1, win_off, win_len, 0);
 }
