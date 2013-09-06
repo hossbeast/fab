@@ -24,16 +24,20 @@
 #include <dirent.h>
 
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
 #include "liblistwise_control.h"
-
-#include "parseint.h"
 
 /*
 
 -f operator - select entries whose stringvalue is a path referencing a regular file
 -d operator - select entries whose stringvalue is a path referencing a directory
 -l operator - select entries whose stringvalue is a path referencing a symbolic link
+-e operator - select entries whose stringvalue is an existing path
+-z operator - select entries whose stringvalue is a file with zero-byte size
+-r operator - select entries whose stringvalue is a readable filesystem path (by the effective uid/gid of the process)
+-w operator - select entries whose stringvalue is a writable filesystem path (by the effective uid/gid of the process)
+-x operator - select entries whose stringvalue is a executable filesystem path (by the effective uid/gid of the process)
 
 NO ARGUMENTS
 
@@ -49,6 +53,11 @@ OPERATION
 static int op_exec_f(operation*, lstack*, int**, int*);
 static int op_exec_d(operation*, lstack*, int**, int*);
 static int op_exec_l(operation*, lstack*, int**, int*);
+static int op_exec_e(operation*, lstack*, int**, int*);
+static int op_exec_z(operation*, lstack*, int**, int*);
+static int op_exec_r(operation*, lstack*, int**, int*);
+static int op_exec_w(operation*, lstack*, int**, int*);
+static int op_exec_x(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -69,37 +78,70 @@ operator op_desc[] = {
 		, .op_exec			= op_exec_l
 		, .desc					= "select symbolic links"
 	}
+	, {
+		  .s						= "-e"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .op_exec			= op_exec_e
+		, .desc					= "select existing paths"
+	}
+	, {
+		  .s						= "-z"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .op_exec			= op_exec_z
+		, .desc					= "select zero-byte files"
+	}
+	, {
+		  .s						= "-r"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .op_exec			= op_exec_r
+		, .desc					= "select readable paths"
+	}
+	, {
+		  .s						= "-w"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .op_exec			= op_exec_w
+		, .desc					= "select writable paths"
+	}
+	, {
+		  .s						= "-x"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .op_exec			= op_exec_x
+		, .desc					= "select executable paths"
+	}
 	, {}
 };
 
-static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int (*selector)(struct stat *))
+#define USE_STAT  1
+#define USE_LSTAT 2
+
+static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int statmode, int (*selector)(struct stat *))
 {
 	int x;
-	for(x = 0; x < ls->s[0].l; x++)
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
 	{
-		int go = 1;
-		if(!ls->sel.all)
+		struct stat st;
+		int r = 1;
+		if(statmode == USE_STAT)
 		{
-			if(ls->sel.sl <= (x/8))	// could not be selected
-				break;
-
-			go = (ls->sel.s[x/8] & (0x01 << (x%8)));	// whether it is selected
+			r = stat(lstack_getstring(ls, 0, x), &st);
+		}
+		else if(statmode == USE_LSTAT)
+		{
+			r = lstat(lstack_getstring(ls, 0, x), &st);
 		}
 
-		if(go)
+		if(r == 0 || errno == ENOENT)
 		{
-			struct stat st;
-			if(stat(lstack_getstring(ls, 0, x), &st) == 0)
-			{
-				if(selector(&st))
-					fatal(lstack_last_set, ls, x);
-			}
-			else
-			{
-				dprintf(listwise_err_fd, "stat('%s')=[%d][%s]\n", lstack_getstring(ls, 0, x), errno, strerror(errno));
-			}
+			if(selector(errno == ENOENT ? 0 : &st))
+				fatal(lstack_last_set, ls, x);
+		}
+		else
+		{
+			dprintf(listwise_err_fd, "%s('%s')=[%d][%s]\n", statmode == USE_STAT ? "stat" : "lstat", lstack_getstring(ls, 0, x), errno, strerror(errno));
 		}
 	}
+	LSTACK_ITEREND
 
 	finally : coda;
 }
@@ -108,28 +150,96 @@ int op_exec_f(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	int selector(struct stat * st)
 	{
-		return S_ISREG(st->st_mode);
+		return st && S_ISREG(st->st_mode);
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, selector);
+	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
 }
 
 int op_exec_d(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	int selector(struct stat * st)
 	{
-		return S_ISDIR(st->st_mode);
+		return st && S_ISDIR(st->st_mode);
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, selector);
+	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
 }
 
 int op_exec_l(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	int selector(struct stat * st)
 	{
-		return S_ISLNK(st->st_mode);
+		return st && S_ISLNK(st->st_mode);
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, selector);
+	return op_exec(o, ls, ovec, ovec_len, USE_LSTAT, selector);
+}
+
+int op_exec_e(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	int selector(struct stat * st)
+	{
+		return !!st;
+	};
+
+	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
+}
+
+int op_exec_z(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	int selector(struct stat * st)
+	{
+		return st && st->st_size == 0;
+	};
+
+	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
+}
+
+int op_exec_r(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	int x;
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		if(euidaccess(lstack_getstring(ls, 0, x), R_OK) == 0)
+			fatal(lstack_last_set, ls, x);
+		else if(errno != EACCES && errno != ENOENT)
+			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_getstring(ls, 0, x), errno, strerror(errno));
+	}
+	LSTACK_ITEREND
+
+	finally : coda;
+}
+
+int op_exec_w(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	int x;
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		if(euidaccess(lstack_getstring(ls, 0, x), W_OK) == 0)
+			fatal(lstack_last_set, ls, x);
+		else if(errno != EACCES && errno != ENOENT)
+			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_getstring(ls, 0, x), errno, strerror(errno));
+	}
+	LSTACK_ITEREND
+
+	finally : coda;
+}
+
+int op_exec_x(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	int x;
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		if(euidaccess(lstack_getstring(ls, 0, x), X_OK) == 0)
+			fatal(lstack_last_set, ls, x);
+		else if(errno != EACCES && errno != ENOENT)
+			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_getstring(ls, 0, x), errno, strerror(errno));
+	}
+	LSTACK_ITEREND
+
+	finally : coda;
 }

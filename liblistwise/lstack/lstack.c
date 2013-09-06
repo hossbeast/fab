@@ -626,9 +626,30 @@ int API lstack_append(lstack * const restrict ls, int x, int y, const char* cons
 	finally : coda;
 }
 
-int API lstack_appendf(lstack* const restrict ls, int x, int y, const char* const restrict s, ...)
+int API lstack_appendf(lstack* const restrict ls, int x, int y, const char* const restrict fmt, ...)
 {
-	return 1;
+	va_list va;
+	va_start(va, fmt);
+
+	va_list va2;
+	va_copy(va2, va);
+
+	int l = vsnprintf(0, 0, fmt, va);
+	va_end(va);
+
+	// ensure stack has enough lists, stack has enough strings, string has enough bytes
+	fatal(ensure, ls, x, y, -1);
+	fatal(ensure, ls, x, y, ls->s[x].s[y].l + l + 1);
+
+	// append and cap the string
+	vsprintf(ls->s[x].s[y].s + ls->s[x].s[y].l, fmt, va2);
+	ls->s[x].s[y].s[ls->s[x].s[y].l + l] = 0;
+	ls->s[x].s[y].l += l;
+	ls->s[x].s[y].type = 0;
+
+	ls->s[x].t[y].w = 0;
+
+	finally : coda;
 }
 
 int API lstack_write_alt(lstack* const restrict ls, int x, int y, const char* const restrict s, int l)
