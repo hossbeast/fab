@@ -18,6 +18,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
+#include <time.h>
 
 #include <listwise/operator.h>
 #include <listwise/lstack.h>
@@ -26,12 +30,11 @@
 
 /*
 
-stat operator - eXtension Substitution
+stat operator - replace path entries with related filesystem information
 
 ARGUMENTS
-	[0] - full extension match
-	[1] - matching extension string
-	 2  - replacement extension string
+	[0] - replacement expression
+	[1] - flags
 
 OPERATION
 
@@ -64,12 +67,14 @@ int op_validate(operation* o)
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	int isstat = o->argsl == 2 && o->args[1]->l && strchr(o->args[1]->s, 'H');
+	char space[256];
 
 	// perms user group size modify name
 	char * fmt = "%m %u %g %s %t %f";
-	int x;
 
+	int isstat = o->argsl == 2 && o->args[1]->l && strchr(o->args[1]->s, 'H');
+
+	int x;
 	if((o->argsl == 1 || o->argsl == 2) && o->args[0]->l)
 	{
 		if(o->argsl == 2)
@@ -112,13 +117,23 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			lstack_clear(ls, 0, x);
 
 			int i;
-			for(i = 0; i < fmt; i++)
+			for(i = 0; i < strlen(fmt); i++)
 			{
-				if(((i + 1) < fmt) && fmt[i] == '%')
+				if(((i + 1) < strlen(fmt)) && fmt[i] == '%')
 				{
 					if(fmt[i + 1] == 'm')
 					{
-
+						fatal(lstack_appendf, ls, 0, x, "%c%c%c%c%c%c%c%c%c"
+							, st.st_mode & S_IRUSR ? 'r' : '-'
+							, st.st_mode & S_IWUSR ? 'w' : '-'
+							, st.st_mode & S_IXUSR ? 'x' : '-'
+							, st.st_mode & S_IRGRP ? 'r' : '-'
+							, st.st_mode & S_IWGRP ? 'w' : '-'
+							, st.st_mode & S_IXGRP ? 'x' : '-'
+							, st.st_mode & S_IROTH ? 'r' : '-'
+							, st.st_mode & S_IWOTH ? 'w' : '-'
+							, st.st_mode & S_IXOTH ? 'x' : '-'
+						);
 					}
 					else if(fmt[i + 1] == 'U')
 					{
@@ -126,8 +141,31 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 					}
 					else if(fmt[i + 1] == 'u')
 					{
-						struct passwd pwd;
-						getpwuid_r(st.st_uid, &pwd, 
+						char * name = "(none)";
+						struct passwd stor;
+						struct passwd * pwd;
+						if(getpwuid_r(st.st_uid, &stor, space, sizeof(space), &pwd) == 0)
+						{
+							if(pwd)
+							{
+								name = pwd->pw_name;
+							}
+							else
+							{
+								// name not found
+							}
+						}
+						else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
+						{
+							// name not found
+						}
+						else
+						{
+							// other error
+							fail("getpwd(%d)=[%d][%s]", st.st_uid, errno, strerror(errno));
+						}
+
+						fatal(lstack_appendf, ls, 0, x, "%s", name);
 					}
 					else if(fmt[i + 1] == 'G')
 					{
@@ -135,23 +173,60 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 					}
 					else if(fmt[i + 1] == 'g')
 					{
+						char * name = "(none)";
+						struct group stor;
+						struct group * grp;
+						if(getgrgid_r(st.st_gid, &stor, space, sizeof(space), &grp) == 0)
+						{
+							if(grp)
+							{
+								name = grp->gr_name;
+							}
+							else
+							{
+								// name not found
+							}
+						}
+						else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
+						{
+							// name not found
+						}
+						else
+						{
+							// other error
+							fail("getgrp(%d)=[%d][%s]", st.st_uid, errno, strerror(errno));
+						}
 
+						fatal(lstack_appendf, ls, 0, x, "%s", name);
 					}
 					else if(fmt[i + 1] == 't')
 					{
+						struct tm tm;
+						if(localtime_r(&st.st_mtime, &tm) == 0)
+							fail("localtime failed");
 
+						size_t z = 0;
+						if((z = strftime(space, sizeof(space), "%b %d %T", &tm)) == 0)
+							fail("strftime failed");
+
+						fatal(lstack_append, ls, 0, x, space, z);
+					}
+					else if(fmt[i + 1] == 's')
+					{
+						fatal(lstack_appendf, ls, 0, x, "%6zu", st.st_size);
 					}
 					else if(fmt[i + 1] == 'f')
 					{
-
+						fatal(lstack_appendf, ls, 0, x, "%s", s);
 					}
+
+					i++;
+				}
+				else
+				{
+					fatal(lstack_append, ls, 0, x, fmt + i, 1);
 				}
 			}
-			
-			// write the stat string
-			lstack_appendf(ls, 0, x, "%zu", st.st_size);
-
-			lstack_appendf(ls, 0, x, " %s", s);
 
 			// record this index was hit
 			fatal(lstack_last_set, ls, x);
