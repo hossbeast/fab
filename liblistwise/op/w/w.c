@@ -20,6 +20,7 @@
 #include <alloca.h>
 
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
 #include "liblistwise_control.h"
 
@@ -47,8 +48,15 @@ static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "w"
-		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		  .s						= "wc"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "replace entries with a window on their contents"
+	}
+	, {
+		  .s						= "wf"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "replace entries with a window on their contents"
@@ -68,51 +76,41 @@ int op_validate(operation* o)
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	int x;
-	for(x = 0; x < ls->s[0].l; x++)
+	LSTACK_ITERATE(ls, x, go)
+	if(go && (!ls->s[0].s || ls->s[0].s[x].type == 0))
 	{
-		int go = 1;
-		if(!ls->sel.all)
+		int off = 0;
+		int len = 0;
+
+		if(o->argsl >= 1)
+			off = o->args[0]->i64;
+		if(o->argsl >= 2)
+			len = o->args[1]->i64;
+
+		if(off < 0)
+			off = ls->s[0].s[x].l + off;
+		if(len == 0)
+			len = ls->s[0].s[x].l - off;
+
+		if(off < ls->s[0].s[x].l && len > 0)
 		{
-			if(ls->sel.sl <= (x/8))
-				break;
+			// copy of the starting string
+			int ssl = ls->s[0].s[x].l;
+			char * ss = alloca(ssl + 1);
+			memcpy(ss, ls->s[0].s[x].s, ssl);
+			ss[ssl] = 0;
 
-			go = (ls->sel.s[x/8] & (0x01 << (x%8)));
-		}
+			// clear this string on the stack
+			lstack_clear(ls, 0, x);
 
-		if(go && (!ls->s[0].s || ls->s[0].s[x].type == 0))
-		{
-			int off = 0;
-			int len = 0;
+			// write new string using the window
+			fatal(lstack_write, ls, 0, x, ss + off, len);
 
-			if(o->argsl >= 1)
-				off = o->args[0]->i64;
-			if(o->argsl >= 2)
-				len = o->args[1]->i64;
-
-			if(off < 0)
-				off = ls->s[0].s[x].l + off;
-			if(len == 0)
-				len = ls->s[0].s[x].l - off;
-
-			if(off < ls->s[0].s[x].l && len > 0)
-			{
-				// copy of the starting string
-				int ssl = ls->s[0].s[x].l;
-				char * ss = alloca(ssl + 1);
-				memcpy(ss, ls->s[0].s[x].s, ssl);
-				ss[ssl] = 0;
-
-				// clear this string on the stack
-				lstack_clear(ls, 0, x);
-
-				// write new string using the window
-				fatal(lstack_write, ls, 0, x, ss + off, len);
-
-				// record this index was hit
-				fatal(lstack_last_set, ls, x);
-			}
+			// record this index was hit
+			fatal(lstack_last_set, ls, x);
 		}
 	}
+	LSTACK_ITEREND
 
 	finally : coda;
 }

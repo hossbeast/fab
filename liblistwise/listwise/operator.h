@@ -237,14 +237,38 @@ int lstack_merge(lstack* const restrict ls, int a, int b)
 
 /// lstack_string
 //
-// get pointer/length of a string for the entry at the specified position
+// SUMMARY
+//  get pointer/length of a string for the entry at the specified position
+//
+// PARAMETERS
+//  ls - lstack instance
+//  x  - list index
+//  y  - entry index
+//  r  - string returned here
+//  rl - length returned here
+//
+// RETURNS
+//  zero on success, nonzero otherwise
+//
+// NOTES
+//  use lstack_getstring when a null-terminated string is required
 //
 int lstack_string(lstack* const restrict ls, int x, int y, char ** r, int * rl);
 
 /// lstack_getstring
 //
-// get a null-terminated string for the entry at the specified position
+// SUMMARY
+//  get a null-terminated string for the entry at the specified position
 //
+// PARAMETERS
+//  ls - lstack instance
+//  x  - list index
+//  y  - entry index
+//
+// RETURNS
+//  0 on error, otherwise pointer to the string
+//
+// NOTES
 //  ** use lstack_string wherever possible, this function consumes tmp space **
 //
 char* lstack_getstring(lstack* const restrict ls, int x, int y);
@@ -387,6 +411,30 @@ int lstack_last_clear(lstack* const restrict ls);
 //
 int lstack_last_set(lstack* const restrict ls, int y);
 
+/// lstack_window_set
+//
+// SUMMARY
+//  set the active window for the specified entry
+//
+int lstack_window_set(lstack* const restrict ls, int x, int y, int off, int len)
+	__attribute__((nonnull));
+
+/// lstack_window_add
+//
+// SUMMARY
+//  add a segment to the active window for the specified entry
+//
+int lstack_window_add(lstack* const restrict ls, int x, int y, int off, int len)
+	__attribute__((nonnull));
+
+/// lstack_window_set
+//
+// SUMMARY
+//  disable the window for the specified entry
+//
+int lstack_window_clear(lstack* const restrict ls, int x, int y)
+	__attribute__((nonnull));
+
 /// re_compile
 //
 // compile the re for an op arg representing a regex
@@ -442,6 +490,7 @@ int re_compile(char* s, struct re* re, char* mod);
 //
 int re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len);
 
+#if SANITY
 /// listwise_sanity
 //
 // cause lstack_exec* family of functions to perform sanity checks on ls before
@@ -456,6 +505,7 @@ int re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len);
 //  0 - no sanity checks
 //
 extern int listwise_sanity;
+#endif
 
 /// listwise_allocation_seed
 //

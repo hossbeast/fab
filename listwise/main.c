@@ -211,7 +211,8 @@ int main(int argc, char** argv)
 				char * ss = 0;
 				int    ssl = 0;
 				lstack_string(ls, y, x, &ss, &ssl);
-				printf("%.*s", ssl, ss);
+				if(fwrite(ss, 1, ssl, stdout) == -1)
+					FAIL("write=[%d][%s]", errno, strerror(errno));
 
 				if(g_args.out_null)
 					printf("%c", 0);

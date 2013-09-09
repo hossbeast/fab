@@ -29,7 +29,7 @@
 struct lstack;
 typedef struct lstack
 {
-	struct	// stack
+	struct		// stack
 	{
 		struct // list
 		{
@@ -41,6 +41,21 @@ typedef struct lstack
 			uint8_t	type;	// object type - see list/object interface
 		}					*s;
 
+		struct	// window
+		{
+			struct
+			{
+				int		o;		// offset
+				int		l;		// length
+			}				*s;
+
+			int			l;		// len - elements in s that are in use
+			int			a;		// alloc
+
+			int			zl;		// sum(w[-].l)
+			int			y;		// isset
+		}					*w;
+
 		struct	// internal tmp space
 		{
 			char*		s;
@@ -48,7 +63,7 @@ typedef struct lstack
 			int			l;
 			int			a;
 
-			int			w;	// isset
+			int			y;	// isset
 		}					*t;
 
 		int			l;	// len - number of strings
@@ -77,8 +92,8 @@ typedef struct lstack
 										// as specified in s comprise the current selection
 	} sel;
 
-	uint64_t	flags;	// application-use
-	void *		ptr;		// application-use
+	uint64_t	flags;	// available for application-use
+	void *		ptr;		// available for application-use
 } lstack;
 
 /// listwise_exec
@@ -126,12 +141,19 @@ void lstack_xfree(lstack ** const restrict)
 //
 // SUMMARY
 //  create a deep copy of an lstack
-//  selection and last are not copied
+//
+// PARAMETERS
+//  dst - copy returned here
+//  src - 
+//  all - entire allocations are copied (the default is only up to the in-use size)
 //
 // RETURNS
 //  0 on failure (allocation) and 1 otherwise
 //
-int lstack_deepcopy(lstack * const restrict, lstack ** const restrict)
+// NOTES
+//  selection, last and windows are not copied
+//
+int lstack_deepcopy(lstack ** const restrict, lstack * const restrict)
 	__attribute__((nonnull));
 
 /// listwise_err_fd
@@ -153,8 +175,3 @@ extern lstack * listwise_identity;
 
 #undef restrict
 #endif
-
-
-
-
-

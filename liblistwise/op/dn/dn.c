@@ -92,7 +92,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 					);
 
 					ls->s[0].s[x].l = e - s;
-					ls->s[0].t[x].w = 0;
+					ls->s[0].t[x].y = 0;
 
 					// record this index was hit
 					fatal(lstack_last_set, ls, x);
@@ -103,8 +103,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	finally : coda;
 }
-
-
-
-
-

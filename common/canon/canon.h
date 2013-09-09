@@ -62,6 +62,25 @@ int canon(
 )
 	__attribute((nonnull));
 
+/// rebase
+//
+// reformulate a normalized absolute path into a relative path in terms of some base
+//
+// PARAMETERS
+//  abs    - absolute, normalized path to rebase
+//  base   - absolute directory path to rebase against
+//  dst    - write path relative to base here
+//  siz    - size of dst
+//
+int rebase(
+	  const char * const restrict abs
+	, int absl
+	, const char * const restrict base
+	, int basel
+	, char * restrict dst
+	, size_t siz
+)
+	__attribute__((nonnull));
+
 #undef restrict
 #endif
-

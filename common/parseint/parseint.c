@@ -28,7 +28,7 @@ int parseint(const char* const s, char* f, intmax_t lo, intmax_t hi, uint8_t min
 	int		tn = 0;
 
 #if DBUG_PARSEINT
-printf("parseint('%s', '%s', %lld, %lld, %hhu, %hhu, %p, %p)", s, f, lo, hi, min, max, r, rn);
+printf("parseint('%s', '%s', %"PRIdMAX", %"PRIdMAX", %hhu, %hhu, %p, %p)", s, f, lo, hi, min, max, r, rn);
 #endif
 
 	errno = 0;
@@ -92,7 +92,7 @@ printf("parseint('%s', '%s', %lld, %lld, %hhu, %hhu, %p, %p)", s, f, lo, hi, min
 	if(strstr(f, "ll") == f)
 	{
 #if DBUG_PARSEINT
-printf(" = %" "ll" "d" "\n", tr);
+printf(" = %"PRIdMAX"\n", tr);
 #endif
 		if(r)
 			*(signed long long*)r = tr;
@@ -142,7 +142,7 @@ int parseuint(const char* const s, char* f, uintmax_t lo, uintmax_t hi, uint8_t 
 	int		tn = 0;
 
 #if DBUG_PARSEINT
-printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, min, max, r, rn);
+printf("parseuint('%s', '%s', %"PRIuMAX", %"PRIuMAX", %hhu, %hhu, %p, %p)", s, f, lo, hi, min, max, r, rn);
 #endif
 
 	errno = 0;
@@ -187,14 +187,14 @@ printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, mi
 	else if(tr < lo)						/* minimum value threshold	*/
 	{
 #if DBUG_PARSEINT
-	printf(" %llu < lo\n", tr);
+	printf(" %"PRIuMAX" < lo\n", tr);
 #endif
 		return 1;
 	}
 	else if(tr > hi)						/* maximum value threshold	*/
 	{
 #if DBUG_PARSEINT
-	printf(" %llu > hi\n", tr);
+	printf(" %"PRIuMAX" > hi\n", tr);
 #endif
 		return 1;
 	}
@@ -218,7 +218,7 @@ printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, mi
 		if(strstr(f, "ll") == f)
 		{
 #if DBUG_PARSEINT
-	printf(" = %" "ll" "d" "\n", tr);
+	printf(" = %"PRIdMAX"\n", tr);
 #endif
 			*(unsigned long long*)r = tr;
 		}
@@ -257,4 +257,3 @@ printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, mi
 
 	return 0;
 }
-

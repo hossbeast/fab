@@ -48,6 +48,20 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
+		, .desc					= "join entries possibly with a delimiter"
+	}
+	, {
+		  .s						= "jm"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .desc					= "join strings possibly with a delimiter"
+	}
+	, {
+		  .s						= "jw"
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
 		, .desc					= "join strings possibly with a delimiter"
 	}, {}
 };

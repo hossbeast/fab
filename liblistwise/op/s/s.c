@@ -24,6 +24,8 @@
 
 #include "liblistwise_control.h"
 
+#include "parseint.h"
+
 /*
 
 s operator - search and replace
@@ -54,6 +56,48 @@ operator op_desc[] = {
 		, .desc					= "substitution by regex"
 	}, {}
 };
+
+static int append(lstack * ls, int x, char * s, int l)
+{
+	int i;
+	for(i = 0; i < l; i++)
+	{
+		if(((i + 1) < l) && s[i] == '\\')
+		{
+			if(s[i + 1] == 'r')
+			  fatal(lstack_append, ls, 0, x, "\r", 1);
+			else if(s[i + 1] == 'n')
+			  fatal(lstack_append, ls, 0, x, "\n", 1);
+			else if(s[i + 1] == '0')
+			  fatal(lstack_append, ls, 0, x, "\0", 1);
+			else if(s[i + 1] == '\\')
+			  fatal(lstack_append, ls, 0, x, "\\", 1);
+			else if(s[i + 1] == 't')
+			  fatal(lstack_append, ls, 0, x, "\t", 1);
+			else if(s[i + 1] == 'x')
+			{
+			  if((i + 3) < l)
+			  {
+			    int v;
+			    if(parseuint(s + i + 2, SCNx8, 0, 0xFF, 2, 2, &v, 0) == 0)
+			    {
+			      fatal(lstack_appendf, ls, 0, x, "%c", v);
+			    }
+			
+			    i += 2;
+			  }
+			}
+
+			i++;
+		}
+		else
+		{
+			fatal(lstack_append, ls, 0, x, s + i, 1);
+		}
+	}
+
+	finally : coda;
+}
 
 int op_validate(operation* o)
 {
@@ -122,48 +166,24 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				lstack_clear(ls, 0, x);
 
 				// text in the subject string before the first match
-				fatal(lstack_append
-					, ls
-					, 0
-					, x
-					, ss
-					, (*ovec)[1]
-				);
+				fatal(append, ls, x, ss, (*ovec)[1]);
 
 				do
 				{
 					// text in the subject string following the previous match, if any, and preceeding the current match
 					if(loff)
 					{
-						fatal(lstack_append
-							, ls
-							, 0
-							, x
-							, ss + loff
-							, (*ovec)[1] - loff
-						);
+						fatal(append, ls, x, ss + loff, (*ovec)[1] - loff);
 					}
 
 					// text in the replacement string before the first backreference
 					if(o->args[1]->refsl)
 					{
-						fatal(lstack_append
-							, ls
-							, 0
-							, x
-							, o->args[1]->s
-							, o->args[1]->refs[0].s - o->args[1]->s
-						);
+						fatal(append, ls, x, o->args[1]->s, o->args[1]->refs[0].s - o->args[1]->s);
 					}
 					else
 					{
-						fatal(lstack_append
-							, ls
-							, 0
-							, x
-							, o->args[1]->s
-							, o->args[1]->l
-						);
+						fatal(append, ls, x, o->args[1]->s, o->args[1]->l);
 					}
 
 					// foreach backreference
@@ -173,13 +193,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 						// text in the replacement string between this and the previous backreference
 						if(i)
 						{
-							fatal(lstack_append
-								, ls
-								, 0
-								, x
-								, o->args[1]->refs[i-1].e
-								, o->args[1]->refs[i].s - o->args[1]->refs[i-1].e
-							);
+							fatal(append, ls, x, o->args[1]->refs[i-1].e, o->args[1]->refs[i].s - o->args[1]->refs[i-1].e);
 						}
 
 						// text of the backreference itself, if the corresponding subcapture was populated
@@ -196,13 +210,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 					// text in the replacement string following the last backreference
 					if(o->args[1]->refsl)
 					{
-						fatal(lstack_append
-							, ls
-							, 0
-							, x
-							, o->args[1]->ref_last->e
-							, o->args[1]->l - (o->args[1]->ref_last->e - o->args[1]->s) 
-						);
+						fatal(append, ls, x, o->args[1]->ref_last->e, o->args[1]->l - (o->args[1]->ref_last->e - o->args[1]->s));
 					}
 
 					loff = (*ovec)[2];
@@ -214,13 +222,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				} while(isglobal && (*ovec)[0] > 0);
 
 				// text in the subject string following the last match
-				fatal(lstack_append
-					, ls
-					, 0
-					, x
-					, ss + loff
-					, ssl - loff
-				);
+				fatal(append, ls, x, ss + loff, ssl - loff);
 
 				fatal(lstack_last_set, ls, x);
 			}

@@ -29,13 +29,13 @@
 
 /*
 
-vf operator - select following
+vp operator - select preceeding
 
 NO ARGUMENTS
 
 OPERATION
 
- 1. select items following last selected item
+ 1. select items preceeding first selected item
 
 */
 
@@ -43,10 +43,10 @@ static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "vf"
+		  .s						= "vp"
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
 		, .op_exec			= op_exec
-		, .desc					= "select following"
+		, .desc					= "select preceeding"
 	}
 	, {}
 };
@@ -58,7 +58,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		int i = -1;
 
 		int x;
-		LSTACK_ITERATE(ls, x, go);
+		LSTACK_ITERREV(ls, x, go);
 		if(go)
 		{
 			i = x;

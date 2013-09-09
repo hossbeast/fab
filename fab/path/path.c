@@ -146,60 +146,6 @@ static int path_init(path * const p)
 	finally : coda;
 }
 
-/// rebase
-//
-// reformulate a normalized absolute path into a relative path in terms of some base
-//
-// PARAMETERS
-//  abs    - absolute, normalized path path to rebase
-//  base   - absolute directory path to rebase against
-//  dst    - write path relative to base here
-//  siz    - size of dst
-//
-int rebase(const char * const abs, int absl, const char * const base, int basel, char * dst, size_t siz)
-{
-	absl = absl ?: strlen(abs);
-	basel = basel ?: strlen(base);
-
-	int x;
-	for(x = 0; x < absl && x < basel; x++)
-	{
-		int y = 0;
-		while((x + y) < absl && (x + y) < basel && abs[x + y] == base[x + y] && abs[x + y] != '/')
-			y++;
-
-		if((abs[x + y] == '/' || ((x + y) == absl)) &&  (base[x + y] == '/' || ((x + y) == basel)))
-		{
-			x += y;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	size_t z = 0;
-	int i;
-	for(i = x; i < basel; i++)
-	{
-		int y = 0;
-		while((i + y) < basel && base[i + y] != '/')
-			y++;
-
-		if(y)
-			z += snprintf(dst + z, siz - z, "../");
-
-		i += y;
-	}
-
-	if(abs[x] == '/' && absl - x)
-		x++;
-
-	z += snprintf(dst + z, siz - z, "%.*s", absl - x, abs + x);
-
-	return 0;
-}
-
 static int create(path ** const p, const char * const in_base, const char * const fmt, va_list va, int init)
 {
 	if(xmalloc(p, sizeof(**p)) != 0)

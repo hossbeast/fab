@@ -178,7 +178,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				fatal(lstack_ensure, ls, 0, x, newl);
 				sprintf(ls->s[0].s[x].s + o, "%.*s", rxl, rxs);
 				ls->s[0].s[x].l = newl;
-				ls->s[0].t[x].w = 0;
+				ls->s[0].t[x].y = 0;
 
 				fatal(lstack_last_set, ls, x);
 			}

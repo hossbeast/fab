@@ -68,7 +68,7 @@ int op_validate(operation* o)
 	else
 		fail("m -- arguments : %d", o->argsl);
 
-	o->args[0]->itype = 1;
+	o->args[0]->itype = ITYPE_RE;
 
 	finally : coda;
 }

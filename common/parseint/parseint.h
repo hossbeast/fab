@@ -37,7 +37,7 @@
 //  [rn]  - if not null, receives number of characters parsed
 //          only written to if parseint returns 1
 //
-// returns 1 if an integer was parsed with the given constraints, 0 otherwise
+// returns 0 if an integer was parsed with the given constraints, nonzero otherwise
 //
 int parseint(
 	  const char* const	s
@@ -62,4 +62,3 @@ int parseuint(
 ) __attribute__((nonnull(2)));
 
 #endif
-

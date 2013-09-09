@@ -22,25 +22,31 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <listwise/operator.h>
 #include <listwise/lstack.h>
 
 #include "liblistwise_control.h"
 
+#include "canon.h"
+#include "parseint.h"
+#include "xmem.h"
+#include "color.h"
+
 /*
 
 stat operator - replace path entries with related filesystem information
 
 ARGUMENTS
-	[0] - replacement expression
+	[0] - printf-style expression (taken after find)
 	[1] - flags
 
 OPERATION
 
-	1. if nothing selected, select all
-	2. foreach selected entry
-		2.1. replace each entry with 
+	1. foreach selected entry
+    1.1. render expression using directives and escapes against the entry as a path
+		1.1. replace the entry with the resulting string
 
 */
 
@@ -50,10 +56,10 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "stat"
-		, .optype				= LWOP_SELECTION_READ | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
+		, .optype				= LWOP_SELECTION_READ | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "get filesystem stat information"
+		, .desc					= "get filesystem properties"
 	}, {}
 };
 
@@ -67,63 +73,104 @@ int op_validate(operation* o)
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
+	// workspace
 	char space[256];
-
-	// perms user group size modify name
-	char * fmt = "%m %u %g %s %t %f";
-
-	int isstat = o->argsl == 2 && o->args[1]->l && strchr(o->args[1]->s, 'H');
-
+	char space2[256];
 	int x;
-	if((o->argsl == 1 || o->argsl == 2) && o->args[0]->l)
+	int i;
+	size_t z;
+	char * cwd = 0;
+	char * s = 0;
+	int sl = 0;
+	int sa = 0;
+
+	// format and flags
+	char * fmt = 0;
+	int isstat = 1;
+	int iscolor = 1;
+	int isrebase = 0;
+
+	// process arguments and flags
+	for(x = 0; x < o->argsl; x++)
 	{
-		if(o->argsl == 2)
+		i = o->args[x]->l;
+		if(fmt == 0)
 		{
-			fmt = o->args[0]->s;
-		}
-		else
-		{
-			for(x = 0; x < o->args[0]->l; x++)
+			for(i = 0; i < o->args[x]->l; i++)
 			{
-				if(o->args[0]->s[x] == 'H') { }
+				if(o->args[x]->s[i] == 'L') { }
+				else if(o->args[x]->s[i] == 'C') { }
+				else if(o->args[x]->s[i] == 'F') { }
 				else
 				{
 					break;
 				}
 			}
+		}
 
-			if(x < o->args[0]->l)
-			{
-				fmt = o->args[0]->s;
-			}
+		if(i < o->args[x]->l)
+		{
+			fmt = o->args[x]->s;
+		}
+		else
+		{
+			isstat  = !strchr(o->args[x]->s, 'L');
+			iscolor = !strchr(o->args[x]->s, 'C');
+			isrebase = !!strchr(o->args[x]->s, 'F');
 		}
 	}
+
+	// default format - perms user group size modify {path rebased to cwd}
+	if(!fmt)
+	{
+		if(isrebase)
+			fmt = "%m %u %g %s %t %F";
+		else
+			fmt = "%m %u %g %s %t %p";
+	}
+
+	int fmtl = strlen(fmt);
 
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
 		struct stat st;
 		int r = 1;
-		char * s = lstack_getstring(ls, 0, x);
 
 		if(isstat)
-			r = stat(s, &st);
+			r = stat(ls->s[0].s[x].s, &st);
 		else
-			r = lstat(s, &st);
+			r = lstat(ls->s[0].s[x].s, &st);
+
+		// copy of the starting string
+		sl = ls->s[0].s[x].l;
+		if(sl >= sa)
+		{
+			fatal(xrealloc, &s, 1, sl + 1, sa);
+			sa = sl + 1;
+		}
+		memcpy(s, ls->s[0].s[x].s, sl);
+		s[sl] = 0;
 
 		if(r == 0)
 		{
 			// clear this string on the stack
 			lstack_clear(ls, 0, x);
 
-			int i;
-			for(i = 0; i < strlen(fmt); i++)
+			for(i = 0; i < fmtl; i++)
 			{
-				if(((i + 1) < strlen(fmt)) && fmt[i] == '%')
+				if(((i + 1) < fmtl) && fmt[i] == '%')
 				{
 					if(fmt[i + 1] == 'm')
 					{
-						fatal(lstack_appendf, ls, 0, x, "%c%c%c%c%c%c%c%c%c"
+						fatal(lstack_appendf, ls, 0, x, "%c%c%c%c%c%c%c%c%c%c"
+							,   S_ISDIR(st.st_mode)  ? 'd'
+								: S_ISCHR(st.st_mode)  ? 'c'
+								: S_ISBLK(st.st_mode)  ? 'b'
+								: S_ISFIFO(st.st_mode) ? 'f'
+								: S_ISLNK(st.st_mode)  ? 'l'
+								: S_ISSOCK(st.st_mode) ? 's'
+								:                        '-'
 							, st.st_mode & S_IRUSR ? 'r' : '-'
 							, st.st_mode & S_IWUSR ? 'w' : '-'
 							, st.st_mode & S_IXUSR ? 'x' : '-'
@@ -182,15 +229,8 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 							{
 								name = grp->gr_name;
 							}
-							else
-							{
-								// name not found
-							}
 						}
-						else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
-						{
-							// name not found
-						}
+						else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM) { }
 						else
 						{
 							// other error
@@ -205,7 +245,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 						if(localtime_r(&st.st_mtime, &tm) == 0)
 							fail("localtime failed");
 
-						size_t z = 0;
 						if((z = strftime(space, sizeof(space), "%b %d %T", &tm)) == 0)
 							fail("strftime failed");
 
@@ -215,9 +254,101 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 					{
 						fatal(lstack_appendf, ls, 0, x, "%6zu", st.st_size);
 					}
-					else if(fmt[i + 1] == 'f')
+					else if(fmt[i + 1] == 'p' || fmt[i + 1] == 'r' || fmt[i + 1] == 'f' || fmt[i + 1] == 'h' || fmt[i + 1] == 'F')
 					{
-						fatal(lstack_appendf, ls, 0, x, "%s", s);
+						int wascolor = iscolor;
+						if(iscolor)
+						{
+							if(S_ISDIR(st.st_mode))
+								fatal(lstack_append, ls, 0, x, COLOR(BLUE));
+							else if(S_ISCHR(st.st_mode))
+								fatal(lstack_append, ls, 0, x, COLOR(YELLOW));
+							else if(S_ISLNK(st.st_mode))
+								fatal(lstack_append, ls, 0, x, COLOR(CYAN));
+							else if(euidaccess(s, X_OK) == 0)
+								fatal(lstack_append, ls, 0, x, COLOR(GREEN));
+							else
+								wascolor = 0;
+						}
+
+						if(fmt[i + 1] == 'p')	// path as it came in
+						{
+							fatal(lstack_appendf, ls, 0, x, "%.*s", sl, s);
+						}
+						else
+						{
+							if(cwd == 0 && (cwd = getcwd(0, 0)) == 0)
+								fail("getcwd=[%d][%s]", errno, strerror(errno));
+
+							fatal(canon, s, sl, space, sizeof(space), cwd, CAN_REALPATH);
+
+							if(fmt[i + 1] == 'r')	// realpath
+							{
+								fatal(lstack_appendf, ls, 0, x, "%s", space);
+							}
+							else if(fmt[i + 1] == 'F')	// path, rebased to cwd
+							{
+								fatal(rebase, space, 0, cwd, 0, space2, sizeof(space2));
+								fatal(lstack_appendf, ls, 0, x, "%s", space2);
+							}
+							else if(fmt[i + 1] == 'f' || fmt[i + 1] == 'h')
+							{
+								char * slash = space + strlen(space);
+								while(slash[0] != '/')
+									slash--;
+
+								if(fmt[i + 1] == 'f')				// filename component
+								{
+									fatal(lstack_appendf, ls, 0, x, "%s", slash + 1);
+								}
+								else if(fmt[i + 1] == 'h')	// directory component
+								{
+									slash[0] = 0;
+									fatal(lstack_appendf, ls, 0, x, "%s", space);
+								}
+							}
+						}
+
+						if(wascolor)
+						{
+							fatal(lstack_append, ls, 0, x, NOCOLOR);
+						}
+
+						if(fmt[i + 1] != 'h' && S_ISLNK(st.st_mode))
+						{
+							if((z = readlink(s, space, sizeof(space))) != -1)
+							{
+								fatal(lstack_appendf, ls, 0, x, " -> %.*s", z, space);
+							}
+						}
+					}
+
+					i++;
+				}
+				else if(((i + 1) < fmtl) && fmt[i] == '\\')
+				{
+					if(fmt[i + 1] == 'r')
+						fatal(lstack_append, ls, 0, x, "\r", 1);
+					else if(fmt[i + 1] == 'n')
+						fatal(lstack_append, ls, 0, x, "\n", 1);
+					else if(fmt[i + 1] == '0')
+						fatal(lstack_append, ls, 0, x, "\0", 1);
+					else if(fmt[i + 1] == '\\')
+						fatal(lstack_append, ls, 0, x, "\\", 1);
+					else if(fmt[i + 1] == 't')
+						fatal(lstack_append, ls, 0, x, "\t", 1);
+					else if(fmt[i + 1] == 'x')
+					{
+						if((i + 3) < fmtl)
+						{
+							int v;
+							if(parseuint(fmt + i + 2, SCNx8, 0, 0xFF, 2, 2, &v, 0) == 0)
+							{
+								fatal(lstack_appendf, ls, 0, x, "%c", v);
+							}
+
+							i += 2;
+						}
 					}
 
 					i++;
@@ -238,5 +369,8 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	}
 	LSTACK_ITEREND
 
-	finally : coda;
+finally:
+	free(cwd);
+	free(s);
+coda;
 }
