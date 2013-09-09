@@ -99,8 +99,8 @@ int API lstack_window_add(lstack* const restrict ls, int x, int y, int off, int 
 
 int API lstack_window_clear(lstack* const restrict ls, int x, int y)
 {
-	ls->s[x].w[y].y = 0;
-	ls->s[x].t[y].y = 0;
+	ls->s[x].w[y].y = 0;	// window : unset
+	ls->s[x].t[y].y = 0;	// temp : dirty
 
 	return 0;
 }
