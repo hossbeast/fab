@@ -27,7 +27,6 @@
 
 re operator - execute regex : select by regex, and window regex matches
 m operator  - window regex matches
-fm operator - window by fields delimited by regex matches
 
 ARGUMENTS
 
@@ -43,31 +42,22 @@ OPERATION
 
 static int op_validate_re(operation* o);
 static int op_validate_fm(operation* o);
-static int op_exec_re(operation*, lstack*, int**, int*);
-static int op_exec_m(operation*, lstack*, int**, int*);
-static int op_exec_fm(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "re"
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate_re
-		, .op_exec			= op_exec_re
+		, .op_exec			= op_exec
 		, .desc					= "select by regex and window regex matches"
 	}
 	, {
 		  .s						= "m"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_READ                        | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate_m
-		, .op_exec			= op_exec_re
+		, .op_exec			= op_exec
 		, .desc					= "window by regex"
-	}
-	, {
-		  .s						= "fm"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate_f
-		, .op_exec			= op_exec_f
-		, .desc					= "window by substring"
 	}
 	, {}
 };
@@ -92,16 +82,7 @@ static int op_validate(operation* o, char * name)
 	finally : coda;
 }
 
-static int op_validate_f(operation* o)
-{
-	if(o->argsl == 1) { }
-	else
-		fail("f -- arguments : %d", name, o->argsl);
-
-	finally : coda;
-}
-
-static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int win, int win_off, int win_len)
+int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	int isglobal = o->argsl == 2 && o->args[1]->l && strchr(o->args[1]->s, 'g');
 
@@ -111,74 +92,21 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int win,
 	{
 		char * ss;
 		int ssl;
-		fatal(lstack_string, ls, 0, x, &ss, &ssl);
+		fatal(lstack_getbytes, ls, 0, x, &ss, &ssl);
 
-		int off = 0;
-		int len = 0;
+		fatal(re_exec, &o->args[0]->re, ss, ssl, 0, ovec, ovec_len);
 
-		if(re)
+		if((*ovec)[0] > 0)
 		{
-			fatal(re_exec, &o->args[0]->re, ss, ssl, 0, ovec, ovec_len);
-
-			if((*ovec)[0] > 0)
-			{
-				off = (*ovec)[1];
-				len = (*ovec)[2] - (*ovec)[1];
-			}
-		}
-		else if(win)
-		{
-			off = win_off;
-			len = win_len;
-
-			if(win_off < 0)
-				off = ssl + win_off;
-			if(win_len == 0)
-				len = ssl - off;
-			else
-				len = MIN(len, ssl - off);
-		}
-
-		if(off < ssl && len > 0)
-		{
-			// offset to the end of the last match
-			int loff = 0;
-
-			// clear this string on the stack
-			lstack_clear(ls, 0, x);
-
-			// text in the subject before the first match
-			fatal(lstack_append, ls, 0, x, ss, off);
-
 			do
 			{
-				if(loff)
-				{
-					fatal(lstack_append, ls, 0, x, ss + loff, (*ovec)[1] - loff);
-				}
-
-				// write new string using the window
-				fatal(lstack_append, ls, 0, x, COLOR(RED));
-				fatal(lstack_append, ls, 0, x, ss + off, len);
-				fatal(lstack_append, ls, 0, x, NOCOLOR);
-
-				loff = off + len;
-				off = len = 0;
+				fatal(lstack_window_add, ls, 0, x, (*ovec)[1], (*ovec)[2] - (*ovec)[1]);
 
 				if(isglobal)
 				{
-					fatal(re_exec, &o->args[0]->re, ss, ssl, loff, ovec, ovec_len);
-
-					if((*ovec)[0])
-					{
-						off = (*ovec)[1];
-						len = (*ovec)[2] - (*ovec)[1];
-					}
+					fatal(re_exec, &o->args[0]->re, ss, ssl, (*ovec)[2], ovec, ovec_len);
 				}
-			} while(off < ssl && len > 0);
-
-			// text in the subject following the last match
-			fatal(lstack_append, ls, 0, x, ss + loff, ssl - loff);
+			} while((*ovec)[0] > 0);
 
 			// record this index was hit
 			fatal(lstack_last_set, ls, x);
@@ -195,19 +123,4 @@ int op_validate_re(operation* o)
 int op_validate_m(operation* o)
 {
 	return op_validate(o, "m");
-}
-
-int op_validate_f(operation* o)
-{
-	return op_validate_f(o);
-}
-
-int op_exec_re(operation* o, lstack* ls, int** ovec, int* ovec_len)
-{
-	return op_exec(o, ls, ovec, ovec_len);
-}
-
-int op_exec_m(operation* o, lstack* ls, int** ovec, int* ovec_len)
-{
-	return op_exec(o, ls, ovec, ovec_len);
 }
