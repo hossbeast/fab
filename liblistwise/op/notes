@@ -1,0 +1,36 @@
+WINDOW
+
+: all windows are reset at the end of lstack_exec
+: rename h -> w "select a window of entries"
+: rename j -> "meld" (join is reserved for the aggregate api)
+: get rid of OBJECT_NO, and there is no WINDOW_NO
+: existing operators should be declared listwise/builtin_operators.h
+: window-manipulation operators will update the last-set
+: remove snm/snw/ssm/ssw
+
+window-manipulation operators
+ wm  - window regex-matches (first, global)
+ wc  - window offset/length - chars
+ wfs - window offset/length - fields (string delimited)
+ wfm - window offset/length - fields (regex delimited)
+ wv  - invert window
+ wvf - set window to following
+ wvp - set window to preceeding
+ wz  - reset window
+
+the immediately following window-manipulation operator is cumulative, rather than overwrite
+ o - 
+
+window-consumption operators
+ x  - e(X)tract window - replace entry with its window
+ t  - (T)ear windowed segments into new entries
+
+MAP/REDUCE/AGGREGATE - combine selected entries
+
+ j (join/map/group) - create groups which will be reduced separately (partitioned selection - otherwise the entire selection is reduced at once)
+
+reduce operators take an expression referring to window segments, then compute
+
+ xsum/sum/avg/min/max/cnt - 1 result row (per partition)
+
+ e - printf expression - preserve rows, directives available for aggregates on the set
