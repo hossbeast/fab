@@ -33,8 +33,6 @@
 
 sn operator  - sort numbers (in ascending order)
 ss operator  - sort strings (in ascending order)
-ssm operator - sort strings (in ascending order) on a regex
-ssw operator - sort strings (in ascending order) on a window
 
 NO ARGUMENTS
 
@@ -66,39 +64,11 @@ operator op_desc[] = {
 		, .desc					= "sort stringwise"
 	}
 	, {
-		  .s						= "ssm"
-		, .optype				= LWOP_SELECTION_READ | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate_ssm
-		, .op_exec			= op_exec_ssm
-		, .desc					= "sort stringwise on regex"
-	}
-	, {
-		  .s						= "ssw"
-		, .optype				= LWOP_SELECTION_READ | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate_ssw
-		, .op_exec			= op_exec_ssw
-		, .desc					= "sort stringwise on window"
-	}
-	, {
 		  .s						= "sn"
 		, .optype				= LWOP_SELECTION_READ
 		, .op_exec			= op_exec_sn
 		, .desc					= "sort numeric"
 	}
-	, {
-		  .s						= "snm"
-		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate_snm
-		, .op_exec			= op_exec_snm
-		, .desc					= "sort numeric on regex"
-	}
-	, {
-		  .s						= "snw"
-		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate_snw
-		, .op_exec			= op_exec_snw
-		, .desc					= "sort numeric on window"
-	}, {}
 };
 
 int op_validate_ssm(operation * o)

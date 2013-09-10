@@ -235,6 +235,7 @@ static int writestack_alt(lstack* const restrict ls, int x, int y, const void* c
 
 	// dirty the temp space for this entry
 	ls->s[x].t[y].y = 0;
+	ls->s[x].w[y].y = 0;
 
 	finally : coda;
 }
@@ -253,6 +254,7 @@ static int writestack(lstack* const restrict ls, int x, int y, const void* const
 
 		// dirty the temp space for this entry
 		ls->s[x].t[y].y = 0;
+		ls->s[x].w[y].y = 0;
 	}
 	else if(l)
 	{
@@ -286,6 +288,7 @@ static int vwritestack(lstack* const restrict ls, int x, int y, const char* cons
 
 	// dirty the temp space for this entry
 	ls->s[x].t[y].y = 0;
+	ls->s[x].w[y].y = 0;
 
 	finally : coda;
 }
@@ -392,7 +395,21 @@ static int exec_internal(generator* g, char** init, int* initls, int initl, lsta
 			fatal(yoper.op->op_exec, &yoper, *ls, &ovec, &ovec_len);
 	}
 
+	// last reset
 	fatal(lstack_last_clear, *ls);
+
+	// window reset
+	for(x = 0; x < (*ls)->l; x++)
+	{
+		int y;
+		for(y = 0; y < (*ls)->s[x].l; y++)
+		{
+			if((*ls)->s[x].t[y].y == 2)
+				(*ls)->s[x].t[y].y = 0;
+
+			(*ls)->s[x].w[y].y = 0;
+		}
+	}
 
 	// clear string props set with the fx operator
 	for(x = 0; x < object_registry.l; x++)
@@ -993,33 +1010,39 @@ int API lstack_string(lstack* const restrict ls, int x, int y, char ** r, int * 
 	// if there is a window in effect for this entry
 	if(ls->s[x].w[y].y)
 	{
-		if(ls->s[x].t[y].a <= ls->s[x].w[y].zl)
+		if(ls->s[x].t[y].y != 2)
 		{
-			if(xrealloc(
-				  &ls->s[x].t[y].s
-				, sizeof(ls->s[x].t[y].s[0])
-				, ls->s[x].w[y].zl + 1
-				, ls->s[x].t[y].a) != 0)
+			if(ls->s[x].t[y].a <= ls->s[x].w[y].zl)
 			{
-				return 0;
+				if(xrealloc(
+						&ls->s[x].t[y].s
+					, sizeof(ls->s[x].t[y].s[0])
+					, ls->s[x].w[y].zl + 1
+					, ls->s[x].t[y].a) != 0)
+				{
+					return 1;
+				}
+
+				ls->s[x].t[y].a = ls->s[x].w[y].zl + 1;
 			}
 
-			ls->s[x].t[y].a = ls->s[x].w[y].zl + 1;
+			size_t z = 0;
+			int i;
+			for(i = 0; i < ls->s[x].w[y].l; i++)
+			{
+				memcpy(ls->s[x].t[y].s + z, ls->s[x].s[y].s + ls->s[x].w[y].s[i].o, ls->s[x].w[y].s[i].l);
+				z += ls->s[x].w[y].s[i].l;
+			}
+
+			ls->s[x].t[y].y = 2;
 		}
 
-		size_t z = 0;
-		int i;
-		for(i = 0; i < ls->s[x].w[y].l; i++)
-		{
-			memcpy(ls->s[x].t[y].s + z, ls->s[x].s[y].s + ls->s[x].w[y].s[i].o, ls->s[x].w[y].s[i].l);
-			z += ls->s[x].w[y].s[i].l;
-		}
+		zr = ls->s[x].t[y].s;
+		zrl = ls->s[x].t[y].l;
 	}
-	else
-	{
-		*r  = zr;
-		*rl = zrl;
-	}
+
+	*r  = zr;
+	*rl = zrl;
 
 	return 0;
 }
@@ -1031,11 +1054,9 @@ charstar API lstack_getstring(lstack* const restrict ls, int x, int y)
 	int    rl = 0;
 
 	if(lstack_string(ls, x, y, &r, &rl) != 0)
-	{
 		return 0;
-	}
 	
-	if(ls->s[x].w[y].y == 0 && ls->s[x].t[y].y == 0)
+	if(ls->s[x].t[y].y == 0)
 	{
 		if(ls->s[x].t[y].a <= rl)
 		{

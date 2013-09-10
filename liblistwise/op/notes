@@ -6,13 +6,14 @@ WINDOW
 : get rid of OBJECT_NO, and there is no WINDOW_NO
 : existing operators should be declared listwise/builtin_operators.h
 : window-manipulation operators will update the last-set
-: remove snm/snw/ssm/ssw
+: remove snm/snw/ssm/ssw/hlm/hlw
+: re - rename m:re
 
 window-manipulation operators
- wm  - window regex-matches (first, global)
- wc  - window offset/length - chars
- wfs - window offset/length - fields (string delimited)
- wfm - window offset/length - fields (regex delimited)
+ m   - window regex-matches (first, global)
+ c   - window offset/length - chars
+ fs  - window offset/length - fields (string delimited)
+ fm  - window offset/length - fields (regex delimited)
  wv  - invert window
  wvf - set window to following
  wvp - set window to preceeding
@@ -34,3 +35,6 @@ reduce operators take an expression referring to window segments, then compute
  xsum/sum/avg/min/max/cnt - 1 result row (per partition)
 
  e - printf expression - preserve rows, directives available for aggregates on the set
+
+OTHER IDEAS
+ g  - slurp (replace filepath with lines of its content, stat-style expression for including line information)
