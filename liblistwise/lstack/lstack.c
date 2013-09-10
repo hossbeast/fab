@@ -251,10 +251,6 @@ static int writestack(lstack* const restrict ls, int x, int y, const void* const
 		memcpy(ls->s[x].s[y].s, (void*)&s, sizeof(s));
 		ls->s[x].s[y].type = type;
 		ls->s[x].s[y].l = 0;
-
-		// dirty the temp space for this entry
-		ls->s[x].t[y].y = 0;
-		ls->s[x].w[y].y = 0;
 	}
 	else if(l)
 	{
@@ -266,6 +262,10 @@ static int writestack(lstack* const restrict ls, int x, int y, const void* const
 		ls->s[x].s[y].l = l;
 		ls->s[x].s[y].type = 0;
 	}
+
+	// dirty the temp space for this entry
+	ls->s[x].t[y].y = 0;
+	ls->s[x].w[y].y = 0;
 
 	finally : coda;
 }
@@ -650,7 +650,7 @@ void API lstack_dump(lstack* ls)
 			{
 				char * s;
 				int l;
-				lstack_string(ls, x, y, &s, &l);
+				lstack_getbytes(ls, x, y, &s, &l);
 
 				dprintf(listwise_err_fd, "[%hhu]%p/%p (%.*s)", ls->s[x].s[y].type, *(void**)ls->s[x].s[y].s, ls->s[x].s[y].s, l, s);
 			}
@@ -983,32 +983,23 @@ int API lstack_delete(lstack * const restrict ls, int x, int y)
 	return 0;
 }
 
-int API lstack_string(lstack* const restrict ls, int x, int y, char ** r, int * rl)
+int API lstack_readrow(lstack* const ls, int x, int y, char ** const r, int * const rl, int obj, int win, int str)
 {
-	char * zr = 0;
-	int zrl = 0;
+	char * zs = ls->s[x].s[y].s;
+	int zsl   = ls->s[x].s[y].l;
 
-	if(ls->s[x].s[y].type)
+	if(obj && ls->s[x].s[y].type)
 	{
 		listwise_object* o = idx_lookup_val(object_registry.by_type, &ls->s[x].s[y].type, 0);
 
-		if(o)
-		{
-			o->string(*(void**)ls->s[x].s[y].s, o->string_property, &zr, &zrl);
-		}
-		else
-		{
+		if(o == 0)
 			return 1;
-		}
-	}
-	else
-	{
-		zr = ls->s[x].s[y].s;
-		zrl = ls->s[x].s[y].l;
+
+		o->string(*(void**)ls->s[x].s[y].s, o->string_property, &zs, &zsl);
 	}
 
 	// if there is a window in effect for this entry
-	if(ls->s[x].w[y].y)
+	if(win && ls->s[x].w[y].y)
 	{
 		if(ls->s[x].t[y].y != 2)
 		{
@@ -1030,55 +1021,65 @@ int API lstack_string(lstack* const restrict ls, int x, int y, char ** r, int * 
 			int i;
 			for(i = 0; i < ls->s[x].w[y].l; i++)
 			{
-				memcpy(ls->s[x].t[y].s + z, ls->s[x].s[y].s + ls->s[x].w[y].s[i].o, ls->s[x].w[y].s[i].l);
+				memcpy(ls->s[x].t[y].s + z, zs + ls->s[x].w[y].s[i].o, ls->s[x].w[y].s[i].l);
 				z += ls->s[x].w[y].s[i].l;
 			}
-
+			ls->s[x].t[y].s[ls->s[x].w[y].zl] = 0;
+			ls->s[x].t[y].l = ls->s[x].w[y].zl;
 			ls->s[x].t[y].y = 2;
 		}
 
-		zr = ls->s[x].t[y].s;
-		zrl = ls->s[x].t[y].l;
+		zs = ls->s[x].t[y].s;
+		zsl = ls->s[x].t[y].l;
+	}
+	else if(str)
+	{
+		if(ls->s[x].t[y].y != 1)
+		{
+			if(ls->s[x].t[y].a <= zsl)
+			{
+				if(xrealloc(
+						&ls->s[x].t[y].s
+					, sizeof(ls->s[x].t[y].s[0])
+					, zsl + 1
+					, ls->s[x].t[y].a) != 0)
+				{
+					return 1;
+				}
+
+				ls->s[x].t[y].a = zsl + 1;
+			}
+
+			memcpy(ls->s[x].t[y].s, zs, zsl);
+			ls->s[x].t[y].s[zsl] = 0;
+			ls->s[x].t[y].l = zsl;
+			ls->s[x].t[y].y = 1;
+		}
+		
+		zs = ls->s[x].t[y].s;
+		zsl = ls->s[x].t[y].l;
 	}
 
-	*r  = zr;
-	*rl = zrl;
+	*r  = zs;
+	*rl = zsl;
 
 	return 0;
+}
+
+int API lstack_getbytes(lstack* const restrict ls, int x, int y, char ** r, int * rl)
+{
+	return lstack_readrow(ls, x, y, r, rl, 1, 1, 0);
 }
 
 typedef char* charstar;
 charstar API lstack_getstring(lstack* const restrict ls, int x, int y)
 {
-	char * r = 0;
-	int    rl = 0;
-
-	if(lstack_string(ls, x, y, &r, &rl) != 0)
+	char * r;
+	int    rl;
+	if(lstack_readrow(ls, x, y, &r, &rl, 1, 1, 1) != 0)
 		return 0;
-	
-	if(ls->s[x].t[y].y == 0)
-	{
-		if(ls->s[x].t[y].a <= rl)
-		{
-			if(xrealloc(
-					&ls->s[x].t[y].s
-				, sizeof(ls->s[x].t[y].s[0])
-				, rl + 1
-				, ls->s[x].t[y].a) != 0)
-			{
-				return 0;
-			}
 
-			ls->s[x].t[y].a = rl + 1;
-		}
-
-		memcpy(ls->s[x].t[y].s, r, rl);
-		ls->s[x].t[y].s[rl] = 0;
-		ls->s[x].t[y].l = rl;
-		ls->s[x].t[y].y = 1;
-	}
-
-	return ls->s[x].t[y].s;
+	return r;
 }
 
 #if SANITY

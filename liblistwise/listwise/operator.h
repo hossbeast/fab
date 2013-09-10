@@ -235,6 +235,23 @@ int lstack_xchg(lstack* const restrict ls)
 int lstack_merge(lstack* const restrict ls, int a, int b)
 	__attribute__((nonnull));
 
+/// lstack_readrow
+//
+// SUMMARY
+//
+// PARAMETERS
+//  ls    - lstack instance
+//  x     - list offset
+//  y     - row offset
+//  r     - return value - ptr
+//  rl    - return value - length
+//  [obj] - whether object references are resolved
+//  [win] - whether windowing is resolved
+//  [str] - whether the return value is required to be null-terminated
+//
+int lstack_readrow(lstack* const restrict ls, int x, int y, char ** const restrict r, int * const restrict rl, int obj, int win, int str)
+	__attribute__((nonnull));
+
 /// lstack_string
 //
 // SUMMARY
@@ -253,7 +270,8 @@ int lstack_merge(lstack* const restrict ls, int a, int b)
 // NOTES
 //  use lstack_getstring when a null-terminated string is required
 //
-int lstack_string(lstack* const restrict ls, int x, int y, char ** r, int * rl);
+int lstack_getbytes(lstack* const restrict ls, int x, int y, char ** const restrict r, int * const restrict rl)
+	__attribute__((nonnull));
 
 /// lstack_getstring
 //

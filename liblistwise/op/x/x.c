@@ -42,7 +42,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "x"
-		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
 		, .desc					= "extract row window"
 	}
@@ -53,34 +53,20 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)
-	if(go && (!ls->s[0].s || ls->s[0].s[x].type == 0))
+	if(go)
 	{
-		int off = 0;
-		int len = 0;
-
-		if(o->argsl >= 1)
-			off = o->args[0]->i64;
-		if(o->argsl >= 2)
-			len = o->args[1]->i64;
-
-		if(off < 0)
-			off = ls->s[0].s[x].l + off;
-		if(len == 0)
-			len = ls->s[0].s[x].l - off;
-
-		if(off < ls->s[0].s[x].l && len > 0)
+		if(ls->s[0].w[x].y)
 		{
-			// copy of the starting string
-			int ssl = ls->s[0].s[x].l;
-			char * ss = alloca(ssl + 1);
-			memcpy(ss, ls->s[0].s[x].s, ssl);
-			ss[ssl] = 0;
+			// because there is a window in effect, getbytes must return the temp space for the row
+			char * zs;
+			int    zsl;
+			fatal(lstack_getybtes, ls, 0, x, &zs, &zsl);
 
 			// clear this string on the stack
 			lstack_clear(ls, 0, x);
 
 			// write new string using the window
-			fatal(lstack_write, ls, 0, x, ss + off, len);
+			fatal(lstack_write, ls, 0, x, zs, zsl);
 
 			// record this index was hit
 			fatal(lstack_last_set, ls, x);

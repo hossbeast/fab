@@ -51,7 +51,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "hl"
-		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE
+		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
 		, .desc					= "highlight windows"
 	}
@@ -60,51 +60,41 @@ operator op_desc[] = {
 
 static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	char * ss = 0;
-	int ssa = 0;
-
 	int x;
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		// copy of the starting string
-		char * zs;
-		int ssl;
-		fatal(lstack_string, ls, 0, x, &zs, &ssl);
-		
-		if(ssl >= ssa)
+		if(ls->s[0].w[x].y)
 		{
-			fatal(xrealloc, &ss, 1, ssl + 1, ssa);
-			ssa = ssl + 1;
-		}
-		memcpy(ss, zs, ssl);
-		ss[ssl] = 0;
+			// because there is a window in effect, getbytes must return the temp space for the row
+			char * zs;
+			int    zsl;
+			fatal(lstack_getybtes, ls, 0, x, &zs, &zsl);
 
-		// clear this string on the stack
-		lstack_clear(ls, 0, x);
+			// clear this string on the stack
+			lstack_clear(ls, 0, x);
 
-		// text in the subject before the first segment
-		fatal(lstack_append, ls, 0, x, ss, ls->s[0].w[x].o);
+			// text in the subject before the first windowed segment
+			fatal(lstack_append, ls, 0, x, zs, ls->s[0].w[x].o);
 
-		int i;
-		for(i = 0; i < ls->s[0].w[x].l; i++)
-		{
-			// write new string using the window
-			fatal(lstack_append, ls, 0, x, COLOR(RED));
-			fatal(lstack_append, ls, 0, x, ss + ls->s[0].w[x].o, ls->s[0].w[x].l);
-			fatal(lstack_append, ls, 0, x, NOCOLOR);
-		}
+			int i;
+			for(i = 0; i < ls->s[0].w[x].l; i++)
+			{
+				// write the windowed segment bracketed by color escapes
+				fatal(lstack_append, ls, 0, x, COLOR(RED));
+				fatal(lstack_append, ls, 0, x, zs + ls->s[0].w[x].o, ls->s[0].w[x].l);
+				fatal(lstack_append, ls, 0, x, NOCOLOR);
+			}
 
-		// text in the subject following the last segment
-		if(i)
-		{
-			i--;
-			fatal(lstack_append, ls, 0, x, ss + ls->s[0].w[i].o + ls->s[0].w[i].l, ssl - (ls->s[0].w[i].o + ls->s[0].w[i].l, ssl));
+			// text in the subject following the last windowed segment
+			if(i)
+			{
+				i--;
+				fatal(lstack_append, ls, 0, x, zs + ls->s[0].w[i].o + ls->s[0].w[i].l, zsl - (ls->s[0].w[i].o + ls->s[0].w[i].l));
+			}
 		}
 	}
 	LSTACK_ITEREND
 
-finally:
-	free(ss);
-coda;
+	finally : coda;
 }

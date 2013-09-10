@@ -63,7 +63,7 @@ operator op_desc[] = {
 		, .desc					= "window by regex"
 	}
 	, {
-		  .s						= "f"
+		  .s						= "fm"
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate_f
 		, .op_exec			= op_exec_f
