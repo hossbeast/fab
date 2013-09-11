@@ -20,6 +20,7 @@
 #include <alloca.h>
 
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
 #include "liblistwise_control.h"
 
@@ -42,7 +43,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "dn"
-		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
 		, .desc					= "get component of filepath preceeding the filename"
 	}
@@ -52,54 +53,55 @@ operator op_desc[] = {
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	int x;
-	for(x = 0; x < ls->s[0].l; x++)
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
 	{
-		int go = 1;
-		if(!ls->sel.all)
-		{
-			if(ls->sel.sl <= (x/8))
-				break;
+		char * ss;
+		int ssl;
+		int raw;
 
-			go = (ls->sel.s[x/8] & (0x01 << (x%8)));
-		}
+		// raw is true if this row is not an object entry, and no window is in effect
+		fatal(lstack_readrow, ls, 0, x, &ss, &ssl, 1, 1, 0, &raw);
 
-		if(go)
+		if(ssl)
 		{
-			if(ls->s[0].s[x].type == 0 && ls->s[0].s[x].l)
+			char * s = ss;
+			char * e = ss + ssl - 1;
+
+			while(e != s && e[0] == '/')
+				e--;
+
+			if(e != s)
+				e--;
+
+			while(e != s && e[0] != '/')
+				e--;
+
+			while(e != s && e[0] == '/')
+				e--;
+
+			if(s != e || s[0] == '.')
 			{
-				char * s = ls->s[0].s[x].s;
-				char * e = ls->s[0].s[x].s + ls->s[0].s[x].l - 1;
+				e++;
 
-				while(e != s && e[0] == '/')
-					e--;
-
-				if(e != s)
-					e--;
-
-				while(e != s && e[0] != '/')
-					e--;
-
-				while(e != s && e[0] == '/')
-					e--;
-
-				if(s != e || s[0] == '.')
+				if(raw)
 				{
-					e++;
-					memmove(
-							ls->s[0].s[x].s
-						, s
-						, e - s
-					);
-
 					ls->s[0].s[x].l = e - s;
+					ls->s[0].w[x].y = 0;
 					ls->s[0].t[x].y = 0;
-
-					// record this index was hit
-					fatal(lstack_last_set, ls, x);
 				}
+				else
+				{
+					// rewrite the entry
+					fatal(lstack_write, ls, 0, x, s, e - s);
+				}
+
+				// record this index was hit
+				fatal(lstack_last_set, ls, x);
 			}
 		}
 	}
+	LSTACK_ITEREND
 
 	finally : coda;
 }

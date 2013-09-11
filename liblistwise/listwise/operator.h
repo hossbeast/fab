@@ -248,9 +248,10 @@ int lstack_merge(lstack* const restrict ls, int a, int b)
 //  [obj] - whether object references are resolved
 //  [win] - whether windowing is resolved
 //  [str] - whether the return value is required to be null-terminated
+//  [raw] - indicates whether the raw storage was returned (object entry not resolved, window not resolved, and str not specified)
 //
-int lstack_readrow(lstack* const restrict ls, int x, int y, char ** const restrict r, int * const restrict rl, int obj, int win, int str)
-	__attribute__((nonnull));
+int lstack_readrow(lstack* const restrict ls, int x, int y, char ** const restrict r, int * const restrict rl, int obj, int win, int str, int * const raw)
+	__attribute__((nonnull(1, 4, 5)));
 
 /// lstack_string
 //
@@ -282,14 +283,36 @@ int lstack_getbytes(lstack* const restrict ls, int x, int y, char ** const restr
 //  ls - lstack instance
 //  x  - list index
 //  y  - entry index
+//  r  - string returned here
+//  rl - length returned here
+//
+// RETURNS
+//  zero on success, nonzero otherwise
+//
+// NOTES
+//  lstack_getbytes is the preferred API, getstring requires tmp space
+//
+int lstack_getstring(lstack* const restrict ls, int x, int y, char ** const restrict r, int * const restrict rl)
+	__attribute__((nonnull));
+
+/// lstack_string
+//
+// SUMMARY
+//  get a null-terminated string for the entry at the specified position
+//
+// PARAMETERS
+//  ls - lstack instance
+//  x  - list index
+//  y  - entry index
 //
 // RETURNS
 //  0 on error, otherwise pointer to the string
 //
 // NOTES
-//  ** use lstack_string wherever possible, this function consumes tmp space **
+//  lstack_getbytes is the preferred API, getstring requires tmp space
 //
-char* lstack_getstring(lstack* const restrict ls, int x, int y);
+char* lstack_string(lstack* const restrict ls, int x, int y)
+	__attribute__((nonnull));
 
 /// allocate
 //

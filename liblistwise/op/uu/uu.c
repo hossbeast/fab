@@ -87,8 +87,8 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	int compar(const void * A, const void * B)
 	{
-		lstack_string(ls, 0, *(int*)A, &As, &Asl);
-		lstack_string(ls, 0, *(int*)B, &Bs, &Bsl);
+		lstack_getbytes(ls, 0, *(int*)A, &As, &Asl);
+		lstack_getbytes(ls, 0, *(int*)B, &Bs, &Bsl);
 
 		return xstrcmp(As, Asl, Bs, Bsl, 0);
 	}
@@ -98,18 +98,18 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	if(i)
 	{
 		fatal(lstack_last_set, ls, mema[0]);
-		lstack_string(ls, 0, mema[0], &As, &Asl);
+		lstack_getbytes(ls, 0, mema[0], &As, &Asl);
 
 		for(x = 1; x < i; x++)
 		{
 			if(x % 2)
 			{
-				lstack_string(ls, 0, mema[x], &Bs, &Bsl);
+				lstack_getbytes(ls, 0, mema[x], &Bs, &Bsl);
 				r = xstrcmp(As, Asl, Bs, Bsl, 0);
 			}
 			else
 			{
-				lstack_string(ls, 0, mema[x], &As, &Asl);
+				lstack_getbytes(ls, 0, mema[x], &As, &Asl);
 				r = xstrcmp(Bs, Bsl, As, Asl, 0);
 			}
 

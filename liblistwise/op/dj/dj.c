@@ -123,6 +123,11 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			, j * sizeof(ls->s[0].s[0])
 		);
 		memmove(
+			  &ls->s[ls->l - 1].w[0]
+			, &ls->s[ls->l - 1].w[N - j]
+			, j * sizeof(ls->s[0].w[0])
+		);
+		memmove(
 			  &ls->s[ls->l - 1].t[0]
 			, &ls->s[ls->l - 1].t[N - j]
 			, j * sizeof(ls->s[0].t[0])

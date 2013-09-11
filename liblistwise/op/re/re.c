@@ -20,6 +20,7 @@
 #include <alloca.h>
 
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
 #include "liblistwise_control.h"
 
@@ -40,34 +41,33 @@ OPERATION
 
 */
 
-static int op_validate_re(operation* o);
-static int op_validate_fm(operation* o);
+static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "re"
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate_re
+		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "select by regex and window regex matches"
 	}
 	, {
 		  .s						= "m"
 		, .optype				= LWOP_SELECTION_READ                        | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate_m
+		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "window by regex"
 	}
 	, {}
 };
 
-static int op_validate(operation* o, char * name)
+static int op_validate(operation* o)
 {
 	if(o->argsl == 1 || o->argsl == 2)
 	{
 		if(o->args[0]->l == 0)
-			fail("%s -- empty first argument", name);
+			fail("%s -- empty first argument", o->op->s);
 
 		if(o->argsl == 1 || o->args[1]->l == 0)
 			fatal(re_compile, o->args[0]->s, &o->args[0]->re, 0);
@@ -75,7 +75,7 @@ static int op_validate(operation* o, char * name)
 			fatal(re_compile, o->args[0]->s, &o->args[0]->re, o->args[1]->s);
 	}
 	else
-		fail("%s -- arguments : %d", name, o->argsl);
+		fail("%s -- arguments : %d", o->op->s, o->argsl);
 
 	o->args[0]->itype = ITYPE_RE;
 
@@ -113,14 +113,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		}
 	}
 	LSTACK_ITEREND
-}
 
-int op_validate_re(operation* o)
-{
-	return op_validate(o, "re");
-}
-
-int op_validate_m(operation* o)
-{
-	return op_validate(o, "m");
+	finally : coda;
 }

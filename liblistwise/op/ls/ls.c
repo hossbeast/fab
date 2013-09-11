@@ -116,7 +116,7 @@ static int listing(lstack* ls, char * s, int recurse)
 						fatal(lstack_addf, ls, "%s/%s", s, entp->d_name);
 
 						if(recurse)
-							fatal(listing, ls, lstack_getstring(ls, 0, ls->s[0].l - 1), recurse);
+							fatal(listing, ls, lstack_string(ls, 0, ls->s[0].l - 1), recurse);
 					}
 				}
 				else
@@ -166,7 +166,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int recurse)
 				}
 
 				if(go)
-					fatal(listing, ls, lstack_getstring(ls, 1, x), recurse);
+					fatal(listing, ls, lstack_string(ls, 1, x), recurse);
 			}
 		}
 

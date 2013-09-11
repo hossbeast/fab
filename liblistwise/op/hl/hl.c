@@ -69,20 +69,20 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			// because there is a window in effect, getbytes must return the temp space for the row
 			char * zs;
 			int    zsl;
-			fatal(lstack_getybtes, ls, 0, x, &zs, &zsl);
+			fatal(lstack_getbytes, ls, 0, x, &zs, &zsl);
 
 			// clear this string on the stack
 			lstack_clear(ls, 0, x);
 
 			// text in the subject before the first windowed segment
-			fatal(lstack_append, ls, 0, x, zs, ls->s[0].w[x].o);
+			fatal(lstack_append, ls, 0, x, zs, ls->s[0].w[x].s[0].o);
 
 			int i;
 			for(i = 0; i < ls->s[0].w[x].l; i++)
 			{
 				// write the windowed segment bracketed by color escapes
 				fatal(lstack_append, ls, 0, x, COLOR(RED));
-				fatal(lstack_append, ls, 0, x, zs + ls->s[0].w[x].o, ls->s[0].w[x].l);
+				fatal(lstack_append, ls, 0, x, zs + ls->s[0].w[x].s[i].o, ls->s[0].w[x].s[i].l);
 				fatal(lstack_append, ls, 0, x, NOCOLOR);
 			}
 
@@ -90,7 +90,7 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			if(i)
 			{
 				i--;
-				fatal(lstack_append, ls, 0, x, zs + ls->s[0].w[i].o + ls->s[0].w[i].l, zsl - (ls->s[0].w[i].o + ls->s[0].w[i].l));
+				fatal(lstack_append, ls, 0, x, zs + ls->s[0].w[x].s[i].o + ls->s[0].w[x].s[i].l, zsl - (ls->s[0].w[x].s[i].o + ls->s[0].w[x].s[i].l));
 			}
 		}
 	}

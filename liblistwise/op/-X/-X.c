@@ -34,7 +34,7 @@
 -d operator - select entries whose stringvalue is a path referencing a directory
 -l operator - select entries whose stringvalue is a path referencing a symbolic link
 -e operator - select entries whose stringvalue is an existing path
--z operator - select entries whose stringvalue is a file with zero-byte size
+-z operator - select entries whose stringvalue is a file with zero-byte size, or a directory with no entries
 -r operator - select entries whose stringvalue is a readable filesystem path (by the effective uid/gid of the process)
 -w operator - select entries whose stringvalue is a writable filesystem path (by the effective uid/gid of the process)
 -x operator - select entries whose stringvalue is a executable filesystem path (by the effective uid/gid of the process)
@@ -88,7 +88,7 @@ operator op_desc[] = {
 		  .s						= "-z"
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_z
-		, .desc					= "select zero-byte files"
+		, .desc					= "select zero-byte files and zero-entry directories"
 	}
 	, {
 		  .s						= "-r"
@@ -124,11 +124,11 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int stat
 		int r = 1;
 		if(statmode == USE_STAT)
 		{
-			r = stat(lstack_getstring(ls, 0, x), &st);
+			r = stat(lstack_string(ls, 0, x), &st);
 		}
 		else if(statmode == USE_LSTAT)
 		{
-			r = lstat(lstack_getstring(ls, 0, x), &st);
+			r = lstat(lstack_string(ls, 0, x), &st);
 		}
 
 		if(r == 0 || errno == ENOENT)
@@ -138,7 +138,7 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int stat
 		}
 		else
 		{
-			dprintf(listwise_err_fd, "%s('%s')=[%d][%s]\n", statmode == USE_STAT ? "stat" : "lstat", lstack_getstring(ls, 0, x), errno, strerror(errno));
+			dprintf(listwise_err_fd, "%s('%s')=[%d][%s]\n", statmode == USE_STAT ? "stat" : "lstat", lstack_string(ls, 0, x), errno, strerror(errno));
 		}
 	}
 	LSTACK_ITEREND
@@ -190,7 +190,7 @@ int op_exec_z(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	int selector(struct stat * st)
 	{
-		return st && st->st_size == 0;
+		return st && S_ISDIR(st->st_mode) ? st->st_nlink == 0 : st->st_size == 0;
 	};
 
 	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
@@ -202,10 +202,10 @@ int op_exec_r(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		if(euidaccess(lstack_getstring(ls, 0, x), R_OK) == 0)
+		if(euidaccess(lstack_string(ls, 0, x), R_OK) == 0)
 			fatal(lstack_last_set, ls, x);
 		else if(errno != EACCES && errno != ENOENT)
-			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_getstring(ls, 0, x), errno, strerror(errno));
+			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
 	}
 	LSTACK_ITEREND
 
@@ -218,10 +218,10 @@ int op_exec_w(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		if(euidaccess(lstack_getstring(ls, 0, x), W_OK) == 0)
+		if(euidaccess(lstack_string(ls, 0, x), W_OK) == 0)
 			fatal(lstack_last_set, ls, x);
 		else if(errno != EACCES && errno != ENOENT)
-			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_getstring(ls, 0, x), errno, strerror(errno));
+			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
 	}
 	LSTACK_ITEREND
 
@@ -234,10 +234,10 @@ int op_exec_x(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		if(euidaccess(lstack_getstring(ls, 0, x), X_OK) == 0)
+		if(euidaccess(lstack_string(ls, 0, x), X_OK) == 0)
 			fatal(lstack_last_set, ls, x);
 		else if(errno != EACCES && errno != ENOENT)
-			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_getstring(ls, 0, x), errno, strerror(errno));
+			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
 	}
 	LSTACK_ITEREND
 

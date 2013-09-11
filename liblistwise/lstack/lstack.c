@@ -983,10 +983,11 @@ int API lstack_delete(lstack * const restrict ls, int x, int y)
 	return 0;
 }
 
-int API lstack_readrow(lstack* const ls, int x, int y, char ** const r, int * const rl, int obj, int win, int str)
+int API lstack_readrow(lstack* const ls, int x, int y, char ** const r, int * const rl, int obj, int win, int str, int * _raw)
 {
 	char * zs = ls->s[x].s[y].s;
 	int zsl   = ls->s[x].s[y].l;
+	int raw = 1;
 
 	if(obj && ls->s[x].s[y].type)
 	{
@@ -996,6 +997,7 @@ int API lstack_readrow(lstack* const ls, int x, int y, char ** const r, int * co
 			return 1;
 
 		o->string(*(void**)ls->s[x].s[y].s, o->string_property, &zs, &zsl);
+		raw = 0;
 	}
 
 	// if there is a window in effect for this entry
@@ -1031,6 +1033,7 @@ int API lstack_readrow(lstack* const ls, int x, int y, char ** const r, int * co
 
 		zs = ls->s[x].t[y].s;
 		zsl = ls->s[x].t[y].l;
+		raw = 0;
 	}
 	else if(str)
 	{
@@ -1058,25 +1061,33 @@ int API lstack_readrow(lstack* const ls, int x, int y, char ** const r, int * co
 		
 		zs = ls->s[x].t[y].s;
 		zsl = ls->s[x].t[y].l;
+		raw = 0;
 	}
 
 	*r  = zs;
 	*rl = zsl;
+	if(_raw)
+		*_raw = raw;
 
 	return 0;
 }
 
 int API lstack_getbytes(lstack* const restrict ls, int x, int y, char ** r, int * rl)
 {
-	return lstack_readrow(ls, x, y, r, rl, 1, 1, 0);
+	return lstack_readrow(ls, x, y, r, rl, 1, 1, 0, 0);
+}
+
+int API lstack_getstring(lstack* const restrict ls, int x, int y, char ** r, int * rl)
+{
+	return lstack_readrow(ls, x, y, r, rl, 1, 1, 1, 0);
 }
 
 typedef char* charstar;
-charstar API lstack_getstring(lstack* const restrict ls, int x, int y)
+charstar API lstack_string(lstack* const restrict ls, int x, int y)
 {
 	char * r;
 	int    rl;
-	if(lstack_readrow(ls, x, y, &r, &rl, 1, 1, 1) != 0)
+	if(lstack_readrow(ls, x, y, &r, &rl, 1, 1, 1, 0) != 0)
 		return 0;
 
 	return r;

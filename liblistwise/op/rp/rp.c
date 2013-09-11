@@ -23,6 +23,7 @@
 #include <dirent.h>
 
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
 #include "liblistwise_control.h"
 #include "xmem.h"
@@ -48,7 +49,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "rp"
-		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM | LWOP_OBJECT_NO
+		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "path canonicalization with realpath"
@@ -65,37 +66,31 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	char * ss = 0;
 	int x;
-	for(x = 0; x < ls->s[0].l; x++)
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
 	{
-		int go = 1;
-		if(!ls->sel.all)
-		{
-			if(ls->sel.sl <= (x/8))	// could not be selected
-				break;
+		char * s;
+		int l;
+		fatal(lstack_getstring, ls, 0, x, &s, &l);
 
-			go = (ls->sel.s[x/8] & (0x01 << (x%8)));	// whether it is selected
+		xfree(&ss);
+		if((ss = realpath(s, 0)))
+		{
+			fatal(lstack_write
+				, ls
+				, 0
+				, x
+				, ss
+				, strlen(ss)
+			);
+			fatal(lstack_last_set, ls, x);
 		}
-
-		if(go && ls->s[0].s[x].type == 0)
+		else
 		{
-			xfree(&ss);
-			if((ss = realpath(ls->s[0].s[x].s, 0)))
-			{
-				fatal(lstack_write
-					, ls
-					, 0
-					, x
-					, ss
-					, strlen(ss)
-				);
-				fatal(lstack_last_set, ls, x);
-			}
-			else
-			{
-				dprintf(listwise_err_fd, "realpath('%s')=[%d][%s]\n", ls->s[0].s[x].s, errno, strerror(errno));
-			}
+			dprintf(listwise_err_fd, "realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
 		}
 	}
+	LSTACK_ITEREND
 
 finally:
 	free(ss);

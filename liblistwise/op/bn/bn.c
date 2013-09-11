@@ -20,6 +20,7 @@
 #include <alloca.h>
 
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
 #include "liblistwise_control.h"
 
@@ -41,7 +42,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "bn"
-		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
+		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
 		, .desc					= "get component of filepath following the last slash"
 	}
@@ -51,56 +52,49 @@ operator op_desc[] = {
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	int x;
-	for(x = 0; x < ls->s[0].l; x++)
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
 	{
-		int go = 1;
-		if(!ls->sel.all)
-		{
-			if(ls->sel.sl <= (x/8))
-				break;
+		char * ss;
+		int ssl;
+		fatal(lstack_getbytes, ls, 0, x, &ss, &ssl);
 
-			go = (ls->sel.s[x/8] & (0x01 << (x%8)));
-		}
-
-		if(go)
+		if(ssl)
 		{
-			if(ls->s[0].s[x].l && ls->s[0].s[x].type == 0)
+			char * o = ls->s[0].s[x].s;
+			char * s = ls->s[0].s[x].s;
+			char * e = ls->s[0].s[x].s + ls->s[0].s[x].l - 1;
+
+			while(e != s && e[0] == '/')
+				e--;
+
+			if((s = e) != o)
+				s--;
+
+			while(s != o && s[0] != '/')
+				s--;
+
+			if(s != e)
 			{
-				char * o = ls->s[0].s[x].s;
-				char * s = ls->s[0].s[x].s;
-				char * e = ls->s[0].s[x].s + ls->s[0].s[x].l - 1;
+				e++;
+				if(s[0] == '/')
+					s++;
 
-				while(e != s && e[0] == '/')
-					e--;
-
-				if((s = e) != o)
-					s--;
-
-				while(s != o && s[0] != '/')
-					s--;
-
-				if(s != e)
+				if(e - s != 1 || s[0] != '.')
 				{
-					e++;
-					if(s[0] == '/')
-						s++;
-
-					if(e - s != 1 || s[0] != '.')
+					if(e - s != 2 || s[0] != '.' || s[1] != '.')
 					{
-						if(e - s != 2 || s[0] != '.' || s[1] != '.')
-						{
-							memmove(
-									ls->s[0].s[x].s
-								, s
-								, e - s
-							);
+						memmove(
+								ls->s[0].s[x].s
+							, s
+							, e - s
+						);
 
-							ls->s[0].s[x].l = e - s;
-							ls->s[0].t[x].y = 0;
+						ls->s[0].s[x].l = e - s;
+						ls->s[0].t[x].y = 0;
 
-							// record this index was hit
-							fatal(lstack_last_set, ls, x);
-						}
+						// record this index was hit
+						fatal(lstack_last_set, ls, x);
 					}
 				}
 			}

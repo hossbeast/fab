@@ -77,7 +77,7 @@ int op_validate(operation* o)
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	typeof(ls->s[0].w[0].s[0]) * ws = 0;
+	typeof(ls->s[0].w[0].s[0]) * wws = 0;
 	int wl = 0;
 	int wa = 0;
 
@@ -85,19 +85,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		if(ls->s[0].w[x].y)
-		{
-			// take a copy of the window for this row
-			if(ls->s[0].w[x].l >= wa)
-			{
-				fatal(xrealloc, &ws, sizeof(*ws), ls->s[0].w[x].l, wa);
-				wa = ls->s[0].w[x].l;
-			}
-
-			memcpy(ws, ls->s[0].w[x].s, sizeof(*ws) * ls->s[0].w[x].l);
-			wl = ls->s[0].w[x].l;
-		}
-
 		if(ls->s[0].w[x].y == 0)
 		{
 			char * ss = 0;
@@ -136,6 +123,10 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		}
 		else
 		{
+			// original windows length
+			typeof(ls->s[0].w[0].s[0]) * ws = ls->s[0].w[x].s;
+			wl = ls->s[0].w[x].l;
+
 			int wasreset = 0;
 			int i;
 			for(i = 0; i < o->argsl; i += 2)
@@ -168,6 +159,15 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 					{
 						if(!wasreset)
 						{
+							// take a copy of the window for this row
+							if(wl > wa)
+							{
+								fatal(xrealloc, &wws, sizeof(*ws), wl, wa);
+								wa = wl;
+							}
+							memcpy(wws, ls->s[0].w[x].s, sizeof(*ws) * wl);
+							ws = wws;
+
 							// reset the window
 							fatal(lstack_window_clear, ls, 0, x);
 							wasreset = 1;
@@ -186,6 +186,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	LSTACK_ITEREND
 
 finally:
-	free(ws);
+	free(wws);
 coda;
 }

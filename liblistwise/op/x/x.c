@@ -60,7 +60,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			// because there is a window in effect, getbytes must return the temp space for the row
 			char * zs;
 			int    zsl;
-			fatal(lstack_getybtes, ls, 0, x, &zs, &zsl);
+			fatal(lstack_getbytes, ls, 0, x, &zs, &zsl);
 
 			// clear this string on the stack
 			lstack_clear(ls, 0, x);

@@ -137,19 +137,23 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		struct stat st;
 		int r = 1;
 
+		char * ss;
+		int ssl;
+		fatal(lstack_getstring, ls, 0, x, &ss, &ssl);
+
 		if(isstat)
-			r = stat(ls->s[0].s[x].s, &st);
+			r = stat(ss, &st);
 		else
-			r = lstat(ls->s[0].s[x].s, &st);
+			r = lstat(ss, &st);
 
 		// copy of the starting string
-		sl = ls->s[0].s[x].l;
+		sl = ssl;
 		if(sl >= sa)
 		{
 			fatal(xrealloc, &s, 1, sl + 1, sa);
 			sa = sl + 1;
 		}
-		memcpy(s, ls->s[0].s[x].s, sl);
+		memcpy(s, ss, sl);
 		s[sl] = 0;
 
 		if(r == 0)
@@ -364,7 +368,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		}
 		else
 		{
-			dprintf(listwise_err_fd, "%s('%s')=[%d][%s]\n", isstat ? "stat" : "lstat", lstack_getstring(ls, 0, x), errno, strerror(errno));
+			dprintf(listwise_err_fd, "%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", ssl, ss, errno, strerror(errno));
 		}
 	}
 	LSTACK_ITEREND
