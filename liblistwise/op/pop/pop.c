@@ -39,7 +39,7 @@ static int op_validate(operation*);
 operator op_desc[] = {
 	{
 		  .s						= "pop"
-		, .optype				= LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE
 		, .op_exec			= op_exec
 		, .op_validate	= op_validate
 		, .desc					= "delete the nth list"
@@ -65,6 +65,9 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	int x;
 	for(x = 0; x < N; x++)
 		fatal(lstack_pop, ls);
+
+	// blow away any selection
+	fatal(lstack_sel_all, ls);
 
 	finally : coda;
 }

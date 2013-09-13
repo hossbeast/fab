@@ -43,7 +43,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "c"
-		, .optype				= LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "coalesce lists on the stack"

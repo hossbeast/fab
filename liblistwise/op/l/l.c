@@ -26,18 +26,17 @@
 
 /*
 
-re operator - execute regex : select by regex, and window regex matches
-m operator  - window regex matches
+l operator - (Locate) substring matches - select matching rows, window matches
 
 ARGUMENTS
 
-  0  - regex
+  0  - string
 	1* - options string
 
 OPERATION
 
 	1. foreach item in selection, or, if no selection, in top list
-	2. select that item if regex matches, subject to options
+	2. select that item if it contains the substring, subject to options
 
 */
 
@@ -46,11 +45,11 @@ static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "re"
+		  .s						= "l"
 		, .optype				= LWOP_WINDOWS_WRITE | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "locate regex matches"
+		, .desc					= "locate substring matches"
 	}
 	, {}
 };
@@ -61,22 +60,18 @@ static int op_validate(operation* o)
 	{
 		if(o->args[0]->l == 0)
 			fail("%s -- empty first argument", o->op->s);
-
-		if(o->argsl == 1 || o->args[1]->l == 0)
-			fatal(re_compile, o->args[0]->s, &o->args[0]->re, 0);
-		else if(o->argsl == 2)
-			fatal(re_compile, o->args[0]->s, &o->args[0]->re, o->args[1]->s);
 	}
 	else
+	{
 		fail("%s -- arguments : %d", o->op->s, o->argsl);
-
-	o->args[0]->itype = ITYPE_RE;
+	}
 
 	finally : coda;
 }
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
+	int isncase  = o->argsl == 2 && o->args[1]->l && strchr(o->args[0]->s, 'i');
 	int isglobal = o->argsl == 2 && o->args[1]->l && strchr(o->args[1]->s, 'g');
 
 	int x;
@@ -87,19 +82,21 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		int ssl;
 		fatal(lstack_getbytes, ls, 0, x, &ss, &ssl);
 
-		fatal(re_exec, &o->args[0]->re, ss, ssl, 0, ovec, ovec_len);
+		char * s = xstrstr(ss, ssl, o->args[0]->s, o->args[0]->l, isncase);
 
-		if((*ovec)[0] > 0)
+		if(s)
 		{
+			int off = 0;
 			do
 			{
-				fatal(lstack_window_add, ls, 0, x, (*ovec)[1], (*ovec)[2] - (*ovec)[1]);
+				fatal(lstack_window_add, ls, 0, x, s - ss, o->args[0]->l);
 
 				if(isglobal)
 				{
-					fatal(re_exec, &o->args[0]->re, ss, ssl, (*ovec)[2], ovec, ovec_len);
+					off += o->args[0]->l;
+					s = xstrstr(s + off + 1, ssl - off - 1, o->args[0]->s, o->args[0]->l, isncase);
 				}
-			} while((*ovec)[0] > 0);
+			} while(s);
 
 			// record this index was hit
 			fatal(lstack_last_set, ls, x);

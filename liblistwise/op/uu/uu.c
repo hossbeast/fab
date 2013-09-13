@@ -51,30 +51,24 @@ operator op_desc[] = {
 	{
 			.s						= "uu"
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
-		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "select unique (sort not required)"
 	}
 	, {}
 };
 
-int op_validate(operation* o)
-{
-	return 0;
-}
-
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	size_t num = ls->sel.all ? ls->s[0].l : ls->sel.l;
-
 	// indexes to be sorted
-	int * mema = calloc(num, sizeof(*mema));
+	int * mema = 0;
 
 	char * As = 0;
 	int    Asl = 0;
 	char * Bs = 0;
 	int    Bsl = 0;
 	int    r = 0;
+
+	fatal(xmalloc, &mema, (ls->sel.all ? ls->s[0].l : ls->sel.l) * sizeof(*mema));
 
 	int i = 0;
 	int x;
@@ -98,18 +92,18 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	if(i)
 	{
 		fatal(lstack_last_set, ls, mema[0]);
-		lstack_getbytes(ls, 0, mema[0], &As, &Asl);
+		fatal(lstack_getbytes, ls, 0, mema[0], &As, &Asl);
 
 		for(x = 1; x < i; x++)
 		{
 			if(x % 2)
 			{
-				lstack_getbytes(ls, 0, mema[x], &Bs, &Bsl);
+				fatal(lstack_getbytes, ls, 0, mema[x], &Bs, &Bsl);
 				r = xstrcmp(As, Asl, Bs, Bsl, 0);
 			}
 			else
 			{
-				lstack_getbytes(ls, 0, mema[x], &As, &Asl);
+				fatal(lstack_getbytes, ls, 0, mema[x], &As, &Asl);
 				r = xstrcmp(Bs, Bsl, As, Asl, 0);
 			}
 

@@ -41,16 +41,19 @@ struct arg;
 //
 enum
 {
-	  LWOP_SELECTION_READ					= 0x0001			// uses the current selection
-	, LWOP_SELECTION_WRITE				= 0x0002			// implicitly apply the y operator after this operator
-	, LWOP_SELECTION_RESET				= 0x0004			// resets the current selection
-	, LWOP_MODIFIERS_CANHAVE			= 0x0008			// last argument is a modifiers string
-	, LWOP_ARGS_CANHAVE						= 0x0010			// can have arguments
-	, LWOP_OPERATION_PUSHBEFORE		= 0x0020			// first operation is to push an empty list
-	, LWOP_OPERATION_INPLACE			= 0x0040			// modifies the string in the top list in-place
-	, LWOP_OPERATION_FILESYSTEM		= 0x0080			// filesystem operator
-	, LWOP_OBJECT_NO							= 0x0100			// operator ignores object entries
-	, LWOP_EMPTYSTACK_YES					= 0x0200			// operator invoked even in the context of an empty stack
+/* these actually have some effect on processing */
+	  LWOP_SELECTION_WRITE				= 0x0001			// implicitly apply the y operator after this operator
+	, LWOP_ARGS_CANHAVE						= 0x0002			// can have arguments
+	, LWOP_EMPTYSTACK_YES					= 0x0004			// operator is invoked even in the context of an empty stack
+	, LWOP_WINDOWS_WRITE					= 0x0008
+
+/* there are informational */
+	, LWOP_STACKOP								= 0x0010			// stack operation : manipulation of entire lists
+	, LWOP_SELECTION_RESET				= 0x0020			// resets the current selection
+	, LWOP_MODIFIERS_CANHAVE			= 0x0040			// last argument is a modifiers string
+	, LWOP_OPERATION_PUSHBEFORE		= 0x0080			// first operation is to push an empty list
+	, LWOP_OPERATION_INPLACE			= 0x0100			// modifies the rows in the top list in-place
+	, LWOP_OPERATION_FILESYSTEM		= 0x0200			// operator reads from the filesystem
 };
 
 //

@@ -57,13 +57,16 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	{
 		char * ss;
 		int ssl;
-		fatal(lstack_getbytes, ls, 0, x, &ss, &ssl);
+		int raw;
+
+		// raw is true if this row is not an object entry, and has no window in effect
+		fatal(lstack_readrow, ls, 0, x, &ss, &ssl, 1, 1, 0, &raw);
 
 		if(ssl)
 		{
-			char * o = ls->s[0].s[x].s;
-			char * s = ls->s[0].s[x].s;
-			char * e = ls->s[0].s[x].s + ls->s[0].s[x].l - 1;
+			char * o = ss;
+			char * s = ss;
+			char * e = ss + ssl - 1;
 
 			while(e != s && e[0] == '/')
 				e--;
@@ -84,14 +87,23 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				{
 					if(e - s != 2 || s[0] != '.' || s[1] != '.')
 					{
-						memmove(
-								ls->s[0].s[x].s
-							, s
-							, e - s
-						);
+						if(raw)
+						{
+							memmove(
+									ls->s[0].s[x].s
+								, s
+								, e - s
+							);
 
-						ls->s[0].s[x].l = e - s;
-						ls->s[0].t[x].y = 0;
+							ls->s[0].s[x].l = e - s;
+							ls->s[0].w[x].y = 0;
+							ls->s[0].t[x].y = 0;
+						}
+						else
+						{
+							// rewrite the entry
+							fatal(lstack_write, ls, 0, x, s, e - s);
+						}
 
 						// record this index was hit
 						fatal(lstack_last_set, ls, x);
@@ -100,6 +112,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			}
 		}
 	}
+	LSTACK_ITEREND
 
 	finally : coda;
 }

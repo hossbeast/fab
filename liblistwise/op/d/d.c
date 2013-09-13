@@ -44,17 +44,11 @@ operator op_desc[] = {
 	{
 		  .s						= "d"
 		, .optype				= LWOP_SELECTION_RESET
-		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "extract selected items into a new list"
 	}
 	, {}
 };
-
-int op_validate(operation* o)
-{
-	return 0;
-}
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {

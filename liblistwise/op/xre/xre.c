@@ -53,18 +53,18 @@ static int op_exec_xmf(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "xm"
+		  .s						= "xre"
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_xm
-		, .desc					= "select by filename extension"
+		, .desc					= "select by filename extension and window extension"
 	}
 	, {
-		  .s						= "xmf"
+		  .s						= "xref"
 		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_xmf
-		, .desc					= "select by full filename extension"
+		, .desc					= "select by full filename extension and window extension"
 	}
 	, {}
 };

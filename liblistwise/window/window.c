@@ -57,6 +57,8 @@ int API lstack_window_add(lstack* const restrict ls, int x, int y, int off, int 
 			int noff = MIN(ls->s[x].w[y].s[i].o, off);
 			int nlen = MAX(ls->s[x].w[y].s[i].o + ls->s[x].w[y].s[i].l, off + len) - noff;
 
+			ls->s[x].w[y].zl += (nlen - ls->s[x].w[y].s[i].l);
+
 			ls->s[x].w[y].s[i].o = noff;
 			ls->s[x].w[y].s[i].l = nlen;
 
@@ -88,6 +90,7 @@ int API lstack_window_add(lstack* const restrict ls, int x, int y, int off, int 
 			ls->s[x].w[y].s[i].o = off;
 			ls->s[x].w[y].s[i].l = len;
 			ls->s[x].w[y].l++;
+			ls->s[x].w[y].zl += len;
 		}
 
 		ls->s[x].w[y].y = 1;	// window : set
@@ -101,6 +104,7 @@ int API lstack_window_clear(lstack* const restrict ls, int x, int y)
 {
 	ls->s[x].w[y].y = 0;	// window : unset
 	ls->s[x].t[y].y = 0;	// temp : dirty
+	ls->s[x].w[y].zl = 0;
 
 	return 0;
 }
@@ -108,6 +112,7 @@ int API lstack_window_clear(lstack* const restrict ls, int x, int y)
 int API lstack_window_set(lstack* const restrict ls, int x, int y, int off, int len)
 {
 	ls->s[x].w[y].l = 0;
+	ls->s[x].w[y].zl = 0;
 
 	return lstack_window_add(ls, x, y, off, len);
 }

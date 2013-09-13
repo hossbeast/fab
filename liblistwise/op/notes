@@ -8,6 +8,7 @@ WINDOW
 : window-manipulation operators will update the last-set
 : remove snm/snw/ssm/ssw/hlm/hlw
 : re - rename m:re
+: f (fields) - rename p (partition) ?
 
 window-manipulation operators
  m   - window regex-matches (first, global)
@@ -28,7 +29,7 @@ window-consumption operators
 
 MAP/REDUCE/AGGREGATE - combine selected entries
 
- j (join/map/group) - create groups which will be reduced separately (partitioned selection - otherwise the entire selection is reduced at once)
+ j (map/group) - create groups which will be reduced separately (partitioned selection - otherwise the entire selection is reduced at once)
 
 reduce operators take an expression referring to window segments, then compute
 
@@ -36,5 +37,5 @@ reduce operators take an expression referring to window segments, then compute
 
  e - printf expression - preserve rows, directives available for aggregates on the set
 
-OTHER IDEAS
- g  - slurp (replace filepath with lines of its content, stat-style expression for including line information)
+LOCKING
+ j (join) - associate elements in the top list with elements in following lists. Then movements (sorting) is mirrored into the sublist(s) on the joins
