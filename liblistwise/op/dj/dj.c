@@ -57,7 +57,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "dj"
-		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_OPERATION_PUSHBEFORE
+		, .optype				= LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_OPERATION_PUSHBEFORE | LWOP_STACKOP
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "split list into a stack of lists"
@@ -174,9 +174,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		, T
 		, i * sizeof(ls->s[0])
 	);
-
-	// selection reset
-	fatal(lstack_sel_all, ls);
 
 	finally : coda;
 }

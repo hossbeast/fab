@@ -28,31 +28,21 @@
 
 /*
 
-z operator - select none
+z operator - select all
 
 NO ARGUMENTS
 
 OPERATION
 
- 1. clear selection
+ 1. select all
 
 */
-
-static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "z"
 		, .optype				= LWOP_SELECTION_RESET
-		, .op_exec			= op_exec
-		, .desc					= "select none"
+		, .desc					= "select all"
 	}
 	, {}
 };
-
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
-{
-	lstack_sel_none(ls);
-	return 0;
-}

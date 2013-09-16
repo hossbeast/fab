@@ -44,7 +44,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "vp"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
+		, .optype				= LWOP_SELECTION_ACTIVATE
 		, .op_exec			= op_exec
 		, .desc					= "select preceeding"
 	}
@@ -73,7 +73,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				{
 					if(x < i)
 					{
-						fatal(lstack_last_set, ls, x);
+						fatal(lstack_sel_stage, ls, x);
 					}
 				}
 			}

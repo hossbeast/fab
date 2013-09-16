@@ -27,7 +27,6 @@
 /*
 
 re operator - execute regex : select by regex, and window regex matches
-m operator  - window regex matches
 
 ARGUMENTS
 
@@ -47,7 +46,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "re"
-		, .optype				= LWOP_WINDOWS_WRITE | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_WINDOWS_STAGE | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "locate regex matches"
@@ -102,7 +101,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			} while((*ovec)[0] > 0);
 
 			// record this index was hit
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND

@@ -49,7 +49,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "cp"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "duplicate list entries"
@@ -102,7 +102,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		{
 			int y;
 			for(y = 0; y <= N; y++)
-				fatal(lstack_last_set, ls, x + y + c);
+				fatal(lstack_sel_stage, ls, x + y + c);
 
 			c += N;
 		}
@@ -111,8 +111,3 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	finally : coda;
 }
-
-
-
-
-

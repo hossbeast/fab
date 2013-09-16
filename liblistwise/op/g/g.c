@@ -60,9 +60,9 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "g"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
+		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
 		, .op_exec			= op_exec
-		, .desc					= "create new list from file content(s)"
+		, .desc					= "create new list from file content(s) one row per line"
 	}
 	, {}
 };
@@ -123,9 +123,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			}
 			LSTACK_ITEREND
 		}
-
-		// if anything was selected, its now used up
-		fatal(lstack_sel_all, ls);
 	}
 
 	finally : coda;

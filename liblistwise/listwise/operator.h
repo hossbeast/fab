@@ -30,6 +30,10 @@
 /*
 ** LISTWISE OPERATOR API
 **
+**  listwise/lstack.h    - additional functionality for manipulating lstacks
+**  listwise/object.h    - additional functionality for manipulating object entries
+**  listwise/ops.h       - additional functionality for accessing listwise operators
+**  listwise/generator.h - additional functionality for maniuplating generators
 */
 
 struct operation;
@@ -42,18 +46,20 @@ struct arg;
 enum
 {
 /* these actually have some effect on processing */
-	  LWOP_SELECTION_WRITE				= 0x0001			// implicitly apply the y operator after this operator
-	, LWOP_ARGS_CANHAVE						= 0x0002			// can have arguments
-	, LWOP_EMPTYSTACK_YES					= 0x0004			// operator is invoked even in the context of an empty stack
-	, LWOP_WINDOWS_WRITE					= 0x0008
+	, LWOP_SELECTION_STAGE				= 0x0001			// stages selections (which may be activated with the y operator)
+	, LWOP_SELECTION_ACTIVATE			= 0x0003			//  implicitly apply the y operator after this operator
+	, LWOP_WINDOW_STAGE						= 0x0004			// stages windows (which may be ratified with the y operator)
+	, LWOP_WINDOW_ACTIVATE				= 0x000C			//  implicitly apply the y operator after this operator
+	, LWOP_ARGS_CANHAVE						= 0x0010			// can have arguments (verified before op_validate)
+	, LWOP_EMPTYSTACK_YES					= 0x0020			// operator is invoked even in the context of an empty stack
+	, LWOP_SELECTION_RESET				= 0x0040			// lw resets the selection after executing the operator
 
 /* there are informational */
-	, LWOP_STACKOP								= 0x0010			// stack operation : manipulation of entire lists
-	, LWOP_SELECTION_RESET				= 0x0020			// resets the current selection
-	, LWOP_MODIFIERS_CANHAVE			= 0x0040			// last argument is a modifiers string
-	, LWOP_OPERATION_PUSHBEFORE		= 0x0080			// first operation is to push an empty list
-	, LWOP_OPERATION_INPLACE			= 0x0100			// modifies the rows in the top list in-place
-	, LWOP_OPERATION_FILESYSTEM		= 0x0200			// operator reads from the filesystem
+	, LWOP_STACKOP								= 0x0080			// stack operation : manipulation of entire lists
+	, LWOP_MODIFIERS_CANHAVE			= 0x0100			// last argument is a modifiers string
+	, LWOP_OPERATION_PUSHBEFORE		= 0x0280			// first operation is to push an empty list
+	, LWOP_OPERATION_INPLACE			= 0x0400			// modifies the contents of rows in the top list in-place
+	, LWOP_OPERATION_FILESYSTEM		= 0x0800			// operator reads from the filesystem
 };
 
 //
@@ -401,83 +407,97 @@ int lstack_delete(lstack * const restrict ls, int x, int y)
 int lstack_displace(lstack * const restrict ls, int x, int y, int l)
 	__attribute__((nonnull));
 
-/// sel_clear
-//
-// clear the selection
-//
-int lstack_sel_clear(lstack* const restrict ls)
-	__attribute__((nonnull));
-
-/// sel_set
-//
-// select the entry at 0:y
-//
-int lstack_sel_set(lstack* const restrict ls, int y)
-	__attribute__((nonnull));
-
-/// sel_write
-//
-// select exactly those entries specified in news
-//
-// PARAMETERS
-//  ls    - list-stack
-//  news  - bitvector specifying the selection
-//  newsl - elements in news
-//
-int lstack_sel_write(lstack* const restrict ls, uint8_t * news, int newsl)
-	__attribute__((nonnull));
+///
+/// SELECTION API
+///
 
 /// lstack_sel_all
 //
 // SUMMARY
 //  select all entries
 //
-int lstack_sel_all(lstack* const restrict ls);
+int lstack_sel_all(lstack* const restrict ls)
+	__attribute__((nonnull));
 
 /// lstack_sel_none
 //
 // SUMMARY
 //  select none
 //
-int lstack_sel_none(lstack* const restrict ls);
-
-/// lstack_last_clear
-//
-// SUMMARY
-//  reset the last-list
-//
-int lstack_last_clear(lstack* const restrict ls);
-
-/// lstack_last_set
-//
-// SUMMARY
-//  add 0:y to the last-list
-//
-int lstack_last_set(lstack* const restrict ls, int y);
-
-/// lstack_window_set
-//
-// SUMMARY
-//  set the active window for the specified entry
-//
-int lstack_window_set(lstack* const restrict ls, int x, int y, int off, int len)
+int lstack_sel_none(lstack* const restrict ls)
 	__attribute__((nonnull));
 
-/// lstack_window_add
+/// lstack_sel_stage
 //
 // SUMMARY
-//  add a segment to the active window for the specified entry
+//  stage the selection 0:y
 //
-int lstack_window_add(lstack* const restrict ls, int x, int y, int off, int len)
+int lstack_sel_stage(lstack* const restrict ls, int y)
 	__attribute__((nonnull));
 
-/// lstack_window_set
+/// lstack_sel_unstage
 //
 // SUMMARY
-//  disable the window for the specified entry
+//  unstage staged selections
 //
-int lstack_window_clear(lstack* const restrict ls, int x, int y)
+int lstack_sel_unstage(lstack* const restrict ls)
 	__attribute__((nonnull));
+
+/// lstack_sel_ratify
+//
+// SUMMARY
+//  activate selections staged by the previous operation
+//
+int lstack_sel_ratify(lstack * const restrict ls)
+	__attribute__((nonnull));
+
+///
+/// WINDOWING API
+///
+
+/// lstack_window_stage
+//
+// SUMMARY
+//  add a segment to the staged window for the specified row
+//
+int lstack_window_stage(lstack* const restrict ls, int y, int off, int len)
+	__attribute__((nonnull));
+
+/// lstack_window_reset
+//
+// SUMMARY
+//  reset the window for the specified row
+//
+int lstack_window_reset(lstack* const restrict ls, int y, int off, int len)
+	__attribute__((nonnull));
+
+/// lstack_windows_ratify
+//
+// SUMMARY
+//  activate staged windows
+//
+int lstack_windows_ratify(lstack* const restrict ls)
+	__attribute__((nonnull));
+
+/// lstack_windows_unstage
+//
+// SUMMARY
+//  unstage staged windows
+//
+int lstack_windows_unstage(lstack* const restrict ls)
+	__attribute__((nonnull));
+
+/// lstack_windows_reset
+//
+// SUMMARY
+//  deactivate windows
+//
+int lstack_windows_reset(lstack* const restrict ls)
+	__attribute__((nonnull));
+
+///
+/// RE API
+///
 
 /// re_compile
 //

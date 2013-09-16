@@ -43,7 +43,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "c"
-		, .optype				= LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET
+		, .optype				= LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_STACKOP
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "coalesce lists on the stack"
@@ -74,8 +74,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	int x;
 	for(x = from; x >= 1; x--)
 		fatal(lstack_merge, ls, 0, x);
-
-	fatal(lstack_sel_all, ls);
 
 	finally : coda;
 }

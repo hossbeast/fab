@@ -1,20 +1,15 @@
 WINDOW
 
-: all windows are reset at the end of lstack_exec
-: rename h -> w "select a window of entries"
-: rename j -> "meld" (join is reserved for the aggregate api)
-: get rid of OBJECT_NO, and there is no WINDOW_NO
 : existing operators should be declared listwise/builtin_operators.h
-: window-manipulation operators will update the last-set
-: remove snm/snw/ssm/ssw/hlm/hlw
-: re - rename m:re
-: f (fields) - rename p (partition) ?
+: c -> m (merge)
+: j -> c (concatenate)
+: g -> 
 
 window-manipulation operators
- m   - window regex-matches (first, global)
- c   - window offset/length - chars
- fs  - window offset/length - fields (string delimited)
- fm  - window offset/length - fields (regex delimited)
+ m   - window regex-matches (first, global)									re
+ c   - window offset/length - chars													f
+ fs  - window offset/length - fields (string delimited)			l/f
+ fm  - window offset/length - fields (regex delimited)			re/f
  wv  - invert window
  wvf - set window to following
  wvp - set window to preceeding
@@ -24,16 +19,15 @@ the immediately following window-manipulation operator is cumulative, rather tha
  o - 
 
 window-consumption operators
- x  - e(X)tract window - replace entry with its window
  t  - (T)ear windowed segments into new entries
 
 MAP/REDUCE/AGGREGATE - combine selected entries
 
- j (map/group) - create groups which will be reduced separately (partitioned selection - otherwise the entire selection is reduced at once)
+ g (group) - create groups which will be reduced separately (grouped selection - otherwise the entire selection is reduced at once)
 
 reduce operators take an expression referring to window segments, then compute
 
- xsum/sum/avg/min/max/cnt - 1 result row (per partition)
+ xsum/sum/avg/min/max/cnt - 1 result row (per group)
 
  e - printf expression - preserve rows, directives available for aggregates on the set
 

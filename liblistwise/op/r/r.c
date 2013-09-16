@@ -38,18 +38,12 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "r"
-		, .optype				= LWOP_SELECTION_READ
-		, .op_validate	= op_validate
+		, .optype				= 0
 		, .op_exec			= op_exec
 		, .desc					= "reverse selected items"
 	}
 	, {}
 };
-
-int op_validate(operation* o)
-{
-	return 0;
-}
 
 void swap(lstack* ls, int a, int b)
 {
@@ -60,7 +54,7 @@ void swap(lstack* ls, int a, int b)
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	if(ls->sel.all || ls->sel.l == ls->s[0].l)
+	if(ls->sel.all)
 	{
 		int x;
 		for(x = 0; x < (ls->s[0].l / 2); x++)

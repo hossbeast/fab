@@ -36,7 +36,6 @@ OPERATION
 
 	1. do not reset the "last list" before the next operator
 	2. do not excute the implicit "y" after the preceeding operator
-  3. a window-manipulation operator that follows is cumulative
 
 */
 
@@ -46,12 +45,6 @@ operator op_desc[] = {
 	{
 		  .s						= "o"
 		, .optype				= 0
-		, .op_exec			= op_exec
-		, .desc					= "OR : aggregate selections across operators"
+		, .desc					= "OR : aggregate selections and windows across operators"
 	}, {}
 };
-
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
-{
-	return 0;
-}

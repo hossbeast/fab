@@ -39,7 +39,7 @@ static int op_validate(operation*);
 operator op_desc[] = {
 	{
 		  .s						= "shift"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_STACKOP
 		, .op_exec			= op_exec
 		, .op_validate	= op_validate
 		, .desc					= "delete the 0th list"
@@ -66,9 +66,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	int x;
 	for(x = 0; x < N; x++)
 		fatal(lstack_shift, ls);
-
-	// if anything was selected, its now used up
-	fatal(lstack_sel_all, ls);
 
 	finally : coda;
 }

@@ -51,13 +51,13 @@ static int op_exec_sn(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "ss"
-		, .optype				= LWOP_SELECTION_READ | LWOP_MODIFIERS_CANHAVE
+		, .optype				= LWOP_MODIFIERS_CANHAVE
 		, .op_exec			= op_exec_ss
 		, .desc					= "sort stringwise"
 	}
 	, {
 		  .s						= "sn"
-		, .optype				= LWOP_SELECTION_READ
+		, .optype				= 0
 		, .op_exec			= op_exec_sn
 		, .desc					= "sort numeric"
 	}

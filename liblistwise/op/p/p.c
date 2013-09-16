@@ -28,7 +28,7 @@
 
 /*
 
-f operator - window by fields (or characters, when no window in effect)
+p operator - partition : window by fields (or characters, when no window in effect)
 
 ARGUMENTS (1, or multiples of 2)
 	 1  - offset, in fields, to start of window
@@ -51,8 +51,8 @@ static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "f"
-		, .optype				= LWOP_OPERATION_INPLACE | LWOP_WINDOWS_WRITE
+		  .s						= "p"
+		, .optype				= LWOP_OPERATION_INPLACE | LWOP_WINDOWS_WRITE | LWOP_SELECTION_STAGE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "window by fields or characters"
@@ -63,13 +63,13 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl != 1 && (o->argsl % 2) != 0)
-		fail("f - %d arguments", o->argsl);
+		fail("%s - %d arguments", o->op->s, o->argsl);
 
 	int x;
 	for(x = 0; x < o->argsl; x++)
 	{
 		if(o->args[x]->itype != ITYPE_I64)
-			fail("f - args[%d] should be i64", x);
+			fail("%s - args[%d] should be i64", o->op->s, x);
 	}
 
 	finally : coda;
@@ -117,7 +117,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 					fatal(lstack_window_add, ls, 0, x, off, len);
 
 					// record this index was hit
-					fatal(lstack_last_set, ls, x);
+					fatal(lstack_sel_stage, ls, x);
 				}
 			}
 		}
@@ -169,15 +169,15 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 							ws = wws;
 
 							// reset the window
-							fatal(lstack_window_clear, ls, 0, x);
+							fatal(lstack_window_reset, ls, 0, x);
 							wasreset = 1;
 						}
 
 						// append window segment
-						fatal(lstack_window_add, ls, 0, x, ws[off].o, nlen);
+						fatal(lstack_window_stage, ls, 0, x, ws[off].o, nlen);
 
 						// record this index was hit
-						fatal(lstack_last_set, ls, x);
+						fatal(lstack_sel_stage, ls, x);
 					}
 				}
 			}

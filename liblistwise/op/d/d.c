@@ -43,7 +43,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "d"
-		, .optype				= LWOP_SELECTION_RESET
+		, .optype				= LWOP_SELECTION_RESET | LWOP_STACKOP
 		, .op_exec			= op_exec
 		, .desc					= "extract selected items into a new list"
 	}
@@ -70,8 +70,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			}
 		}
 	}
-
-	fatal(lstack_sel_all, ls);
 
 	finally : coda;
 }

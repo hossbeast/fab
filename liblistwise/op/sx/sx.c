@@ -26,39 +26,36 @@
 
 /*
 
-xsf operator - Fullmatch eXtension Substitution
-
-exactly as the xs operator, except fullmatch mode is the default
+sx  operator - substitution by filename extension
+sxf operator - substitution by filename extension (fullmatch)
 
 */
 
 static int op_validate(operation* o);
-static int op_exec_xs(operation*, lstack*, int**, int*);
-static int op_exec_xsf(operation*, lstack*, int**, int*);
+static int op_exec_sx(operation*, lstack*, int**, int*);
+static int op_exec_sxf(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "xs"
-		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
+		  .s						= "sx"
+		, .optype				= LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_SELECTION_STAGE | LWOP_WINDOW_STAGE
 		, .op_validate	= op_validate
-		, .op_exec			= op_exec_xs
+		, .op_exec			= op_exec_sx
 		, .desc					= "substitution by filename extension"
 	}
 	, {
-		  .s						= "xsf"
-		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
+		  .s						= "sxf"
+		, .optype				= LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_SELECTION_STAGE | LWOP_WINDOW_STAGE
 		, .op_validate	= op_validate
-		, .op_exec			= op_exec_xsf
+		, .op_exec			= op_exec_sxf
 		, .desc					= "substitution by full filename extension"
 	}, {}
 };
 
 int op_validate(operation* o)
 {
-	if(o->argsl != 1 && o->argsl != 2 && o->argsl != 3)
-		fail("xsf -- arguments : %d", o->argsl);
-	if(o->argsl == 1 && o->args[0]->itype == ITYPE_I64)
-		fail("xsf -- arguments : %d, [0]=ITYPE_I64", o->argsl);
+	if(o->argsl != 1 && o->argsl != 2)
+		fail("%s -- arguments : %d", o->op->s, o->argsl);
 
 	finally : coda;
 }
@@ -70,24 +67,7 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int full
 	char * rxs = 0;
 	int rxl = 0;
 
-	if(o->args[0]->itype == ITYPE_I64)
-	{
-		fullmatch = o->args[0]->i64;
-
-		if(o->argsl == 2)
-		{
-			rxs = o->args[1]->s;
-			rxl = o->args[1]->l;
-		}
-		else if(o->argsl == 3)
-		{
-			rxs = o->args[2]->s;
-			rxl = o->args[2]->l;
-			mxs = o->args[1]->s;
-			mxl = o->args[1]->l;
-		}
-	}
-	else if(o->argsl == 1)
+	if(o->argsl == 1)
 	{
 		rxs = o->args[0]->s;
 		rxl = o->args[0]->l;
@@ -172,11 +152,12 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int full
 		if(at)
 		{
 			// calling getstring ensures that s points to the temp space for this row
-			// if getbytes prevously returned the temp space, then this call resolves as a no-op
+			// if getbytes prevously returned the temp space, then this call resolves to a no-op
 			fatal(lstack_getstring, ls, 0, x, &s, &l);
 
 			fatal(lstack_writef, ls, 0, x, "%.*s%.*s", at - s, s, rxl, rxs);
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
+			fatal(lstack_window_stage, ls, x, at - s, rxl);
 		}
 	}
 	LSTACK_ITEREND
@@ -184,12 +165,12 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int full
 	finally : coda;
 }
 
-int op_exec_xs(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_sx(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 0);
 }
 
-int op_exec_xsf(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_sxf(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 1);
 }

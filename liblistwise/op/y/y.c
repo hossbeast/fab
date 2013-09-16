@@ -26,13 +26,15 @@
 
 /*
 
-y operator - select those items affected by the last operation
+ys operator - activate those selections staged by the previous operation
+yw operator - activate those windows staged by the previous operator
 
 NO ARGUMENTS
 
 OPERATION
 
-	1. select those items affected by the preceeding operator
+	1. activate those windows staged by the preceeding operator
+	2. activate those selections staged by the preceeding operator
 
 */
 
@@ -44,36 +46,27 @@ operator op_desc[] = {
 		  .s						= "y"
 		, .optype				= LWOP_SELECTION_RESET
 		, .op_exec			= op_exec
-		, .desc					= "select entries affected by preceeding operator"
+		, .desc					= "activate staged selections and windows"
 	}, {}
 };
 
+int op_exec_yw(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	return lstack_windows_ratify(ls);
+}
+
+int op_exec_ys(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	return lstack_sel_ratify(ls);
+}
+
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	if(ls->last.l == ls->s[0].l)
-	{
-		ls->sel.all = 1;
-	}
-	else
-	{
-		if(ls->sel.sa < ls->last.sl)
-		{
-			free(ls->sel.s);
-			if((ls->sel.s = calloc(1, ls->last.sl * sizeof(*ls->sel.s))) == 0)
-				return 1;
+	if(op_exec_yw(o, ls, ovec, ovec_len) != 0)
+		return 1;
 
-			ls->sel.sa = ls->last.sl;
-		}
-
-		memcpy(
-				ls->sel.s
-			, ls->last.s
-			, ls->last.sl * sizeof(ls->sel.s[0])
-		);
-		ls->sel.l = ls->last.l;
-		ls->sel.sl = ls->last.sl;
-		ls->sel.all = 0;
-	}
+	if(op_exec_ys(o, ls, ovec, ovec_len) != 0)
+		return 1;
 
 	return 0;
 }

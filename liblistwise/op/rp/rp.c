@@ -49,7 +49,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "rp"
-		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "path canonicalization with realpath"
@@ -83,7 +83,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				, ss
 				, strlen(ss)
 			);
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		}
 		else
 		{

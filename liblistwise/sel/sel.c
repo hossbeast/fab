@@ -40,67 +40,63 @@ int API lstack_sel_all(lstack* const restrict ls)
 	return 0;
 }
 
-/*
-int API lstack_sel_set(lstack* const restrict ls, int y)
+int API lstack_sel_unstage(lstack* const restrict ls)
 {
-	if(!ls->sel.all)
-	{
-		// reallocate if necessary
-		if(ls->sel.sa <= (y / 8))
-		{
-			fatal(xrealloc, &ls->sel.s, sizeof(ls->sel.s[0]), (y/8)+1, ls->sel.sa);
-			ls->sel.sa = (y/8)+1;
-		}
+	ls->stage.sl = 0;
+	ls->stage.l = 0;
 
-		// reset any already-allocated elements now visible
-		int x;
-		for(x = ls->sel.sl; x <= (y/8); x++)
-			ls->sel.s[x] = 0;
-
-		// increase length
-		ls->sel.sl = MAX(ls->sel.sl, (y/8)+1);
-
-		// set this particular bit
-		if((ls->sel.s[y/8] & (0x01 << (y%8))) == 0)
-			ls->sel.l++;
-
-		ls->sel.s[y/8] |= (0x01 << y%8);
-
-		if(ls->sel.l == ls->s[0].l)
-			ls->sel.all = 1;
-	}
-
-	return 1;
+	return 0;
 }
-*/
 
-/*
-int API lstack_sel_write(lstack* const restrict ls, uint8_t * news, int newsl)
+int API lstack_sel_stage(lstack* const restrict ls, int y)
 {
-	ls->sel.all = 0;
-
 	// reallocate if necessary
-	if(ls->sel.sa < newsl)
+	if(ls->stage.sa <= (y / 8))
 	{
-		fatal(xrealloc, &ls->sel.s, sizeof(ls->sel.s[0]), newsl, ls->sel.sa);
-		ls->sel.sa = newsl;	
+		fatal(xrealloc, &ls->stage.s, sizeof(ls->stage.s[0]), (y/8)+1, ls->stage.sa);
+		ls->stage.sa = (y/8)+1;
 	}
 
-	ls->sel.sl = newsl;
-
-	// reset
-	memset(ls->sel.s, 0, sizeof(ls->sel.s[0]) * ls->sel.sl);
-	ls->sel.l = 0;
-
-	// set those bits necessary
+	// reset any already-allocated elements now visible
 	int x;
-	for(x = 0; x < (newsl * 8); x++)
-	{
-		if(news[x/8] & (0x01 << (x%8)))
-		{
-			ls->sel.s[x/8] |= 0x01 << (x%8);
-			ls->sel.l++;
-		}
-	}
+	for(x = ls->stage.sl; x <= (y/8); x++)
+		ls->stage.s[x] = 0;
+
+	// increase length
+	ls->stage.sl = MAX(ls->stage.sl, (y/8)+1);
+
+	// set this particular bit
+	if((ls->stage.s[y/8] & (0x01 << (y%8))) == 0)
+		ls->stage.l++;
+
+	ls->stage.s[y/8] |= (0x01 << (y%8));
+
+	finally : coda;
 }
-*/
+
+int API lstack_sel_ratify(lstack * const restrict ls)
+{
+	if(ls->stage.l == ls->s[0].l)
+	{
+		ls->sel.all = 1;
+	}
+	else
+	{
+		if(ls->sel.sa < ls->stage.sl)
+		{
+			fatal(xrealloc, &ls->sel.s, sizeof(*ls->sel.s), ls->stage.sl, ls->sel.sa);
+			ls->sel.sa = ls->stage.sl;
+		}
+
+		memcpy(
+				ls->sel.s
+			, ls->stage.s
+			, ls->stage.sl * sizeof(ls->sel.s[0])
+		);
+		ls->sel.l = ls->stage.l;
+		ls->sel.sl = ls->stage.sl;
+		ls->sel.all = 0;
+	}
+
+	finally : coda;
+}

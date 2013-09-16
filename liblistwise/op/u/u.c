@@ -31,7 +31,7 @@
 
 /*
 
-u operator - select stringwise-unique entries (expects an already-sorted list)
+u operator - select stringwise-unique entries from an already-sorted list
 
 NO ARGUMENTS
 
@@ -49,7 +49,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "u"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
+		, .optype				= LWOP_SELECTION_ACTIVATE
 		, .op_exec			= op_exec
 		, .desc					= "select unique (already sorted)"
 	}, {}
@@ -75,7 +75,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 		if(p == -1 || xstrcmp(As, Asl, Bs, Bsl, 0))
 		{
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		}
 
 		p = x;

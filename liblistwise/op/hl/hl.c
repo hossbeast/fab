@@ -28,8 +28,7 @@
 
 /*
 
-hlm operator - highlight regex matches within each entry with terminal color escapes
-hlw operator - highlight regex matches within each entry with terminal color escapes
+hl operator - highlight window within each row with terminal color escapes
 
 ARGUMENTS
 	 1  - offset to start of window
@@ -51,7 +50,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "hl"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_INPLACE
+		, .optype				= LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
 		, .desc					= "highlight windows"
 	}

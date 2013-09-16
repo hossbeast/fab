@@ -26,8 +26,3 @@ extern int						g_ops_l;
 operator*							op_lookup(char* s, int l);
 
 #endif
-
-
-
-
-

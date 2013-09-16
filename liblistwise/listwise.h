@@ -24,7 +24,7 @@
 
 /// list-stack
 //
-// stack of lists of strings
+// stack of lists of rows
 //
 struct lstack;
 typedef struct lstack
@@ -38,7 +38,7 @@ typedef struct lstack
 			int			l;		// len - number of characters
 			int			a;		// alloc
 
-			uint8_t	type;	// object type - see list/object interface
+			uint8_t	type;	// object type - see listwise/object.h interface
 		}					*s;
 
 		struct	// window
@@ -53,7 +53,7 @@ typedef struct lstack
 			int			a;		// alloc
 
 			int			zl;		// sum(w[-].l)
-			int			y;		// isset
+			int			y;		// isset(0=inactive, -1=staged, 1=active)
 		}					*w;
 
 		struct	// internal tmp space
@@ -73,22 +73,22 @@ typedef struct lstack
 	int			l;	// len - number of lists
 	int			a;	// alloc
 
-	struct					// items affected by the last operation - on the top list
+	struct						// selection stage (rows affected by the previous operation)
 	{
-		uint8_t *	s;	// bitvector
-		int				l;	// number of bits set in s
-		int				sl;	// length of s
-		int				sa;	// allocated size of s
-	} last;
+		uint8_t *	s;		// bitvector
+		int				l;		// number of bits set in s
+		int				sl;		// length of s
+		int				sa;		// allocated size of s
+	} stage;
 
-	struct 						// currently selected items - on the top list
+	struct 						// currently selected rows
 	{
 		uint8_t *	s;		// bitvector
 		int				l;		// number of bits set in s
 		int				sl;		// length of s
 		int				sa;		// allocated size of s
 
-		char			all;	// if true, all items are selected - otherwise, exactly those items
+		char			all;	// if true, all rows are selected - otherwise, exactly those rows
 										// as specified in s comprise the current selection
 	} sel;
 
@@ -104,9 +104,9 @@ typedef struct lstack
 // PARAMETERS
 //  s      - generator string
 //  l      - s length, or 0 for strlen
-//  init   - items to write to the stack before executing
-//  initls - lengths for items in init, 0 for strlen
-//  initl  - number of items in init
+//  init   - rows to write to the stack before executing
+//  initls - lengths for rows in init, 0 for strlen
+//  initl  - number of rows in init
 //  r      - receives results
 //
 // RETURNS
@@ -144,14 +144,13 @@ void lstack_xfree(lstack ** const restrict)
 //
 // PARAMETERS
 //  dst - copy returned here
-//  src - 
-//  all - entire allocations are copied (the default is only up to the in-use size)
+//  src - source lstack
 //
 // RETURNS
 //  0 on failure (allocation) and 1 otherwise
 //
 // NOTES
-//  selection, last and windows are not copied
+//  selection and windows are reset in the copy
 //
 int lstack_deepcopy(lstack ** const restrict, lstack * const restrict)
 	__attribute__((nonnull));

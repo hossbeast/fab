@@ -43,7 +43,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "up"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_RESET
+		, .optype				= LWOP_SELECTION_RESET | LWOP_SELECTION_STAGE
 		, .op_exec			= op_exec
 		, .desc					= "move selected entries to head of list"
 	}, {}
@@ -51,7 +51,7 @@ operator op_desc[] = {
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	if(ls->sel.all == 0 && ls->sel.l != ls->s[0].l)
+	if(ls->sel.all == 0)
 	{
 		int i = 0;
 		int x;
@@ -64,9 +64,10 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			i++;
 		}
 		LSTACK_ITEREND;
-	}
 
-	fatal(lstack_sel_all, ls);
+		for(x = 0; x < i; x++)
+			fatal(lstack_sel_stage, ls, x);
+	}
 
 	finally : coda;
 }

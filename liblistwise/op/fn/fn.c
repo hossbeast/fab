@@ -42,7 +42,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "fn"
-		, .optype				= LWOP_SELECTION_READ | LWOP_OPERATION_INPLACE
+		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
 		, .desc					= "get filename component"
 	}
@@ -92,7 +92,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				}
 
 				// record this index was hit
-				fatal(lstack_last_set, ls, x);
+				fatal(lstack_sel_stage, ls, x);
 			}
 		}
 	}

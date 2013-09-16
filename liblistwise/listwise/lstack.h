@@ -112,8 +112,3 @@ void lstack_dump(lstack*);
 void lstack_reset(lstack*);
 
 #endif
-
-
-
-
-

@@ -82,7 +82,5 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		ls->s[to] = T;
 	}
 
-	fatal(lstack_sel_all, ls);
-
 	finally : coda;
 }

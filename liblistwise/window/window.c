@@ -29,7 +29,7 @@
 #define RIGHT 3
 #define INTER 4
 
-int API lstack_window_add(lstack* const restrict ls, int x, int y, int off, int len)
+static int window_stage(lstack* const restrict ls, int x, int y, int off, int len)
 {
 	int type = LEFT;
 
@@ -70,49 +70,93 @@ int API lstack_window_add(lstack* const restrict ls, int x, int y, int off, int 
 	{
 		if(type == LEFT || type == RIGHT)
 		{
-			// reallocate if necessary
-			if(ls->s[x].w[y].a == ls->s[x].w[y].l)
+			if(len)
 			{
-				int ns = ls->s[x].w[y].a ?: listwise_allocation_seed;
-				ns = ns * 2 + ns / 2;
+				// reallocate if necessary
+				if(ls->s[x].w[y].a == ls->s[x].w[y].l)
+				{
+					int ns = ls->s[x].w[y].a ?: listwise_allocation_seed;
+					ns = ns * 2 + ns / 2;
 
-				fatal(xrealloc, &ls->s[x].w[y].s, sizeof(*ls->s[0].w[0].s), ns, ls->s[x].w[y].a);
-				ls->s[x].w[y].a = ns;
+					fatal(xrealloc, &ls->s[x].w[y].s, sizeof(*ls->s[0].w[0].s), ns, ls->s[x].w[y].a);
+					ls->s[x].w[y].a = ns;
+				}
+
+				// move down
+				memmove(
+						&ls->s[x].w[y].s[i + 1]
+					, &ls->s[x].w[y].s[i]
+					, (ls->s[x].w[y].a - i - 1) * sizeof(ls->s[0].w[0].s[0])
+				);
+
+				ls->s[x].w[y].s[i].o = off;
+				ls->s[x].w[y].s[i].l = len;
+				ls->s[x].w[y].l++;
+				ls->s[x].w[y].zl += len;
 			}
-
-			// move down
-			memmove(
-				  &ls->s[x].w[y].s[i + 1]
-				, &ls->s[x].w[y].s[i]
-				, (ls->s[x].w[y].a - i - 1) * sizeof(ls->s[0].w[0].s[0])
-			);
-
-			ls->s[x].w[y].s[i].o = off;
-			ls->s[x].w[y].s[i].l = len;
-			ls->s[x].w[y].l++;
-			ls->s[x].w[y].zl += len;
 		}
 
-		ls->s[x].w[y].y = 1;	// window : set
-		ls->s[x].t[y].y = 0;	// temp : dirty
+		ls->s[x].w[y].y = -1;	// window : staged
 	}
 
 	finally : coda;
 }
 
-int API lstack_window_clear(lstack* const restrict ls, int x, int y)
+int API lstack_window_reset(lstack * const restrict ls, int x, int y)
 {
-	ls->s[x].w[y].y = 0;	// window : unset
-	ls->s[x].t[y].y = 0;	// temp : dirty
-	ls->s[x].w[y].zl = 0;
+	if(ls->s[0].t[y] == 2)
+		ls->s[0].t[y].y = 0;	// temp : dirty
+
+	ls->s[0].w[y].y = 0;		// window : inactive
+	ls->s[0].w[y].zl = 0;
 
 	return 0;
 }
 
-int API lstack_window_set(lstack* const restrict ls, int x, int y, int off, int len)
+int API lstack_windows_unstage(lstack* const restrict ls)
 {
-	ls->s[x].w[y].l = 0;
-	ls->s[x].w[y].zl = 0;
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		if(ls->s[0].w[x].y == -1)
+		{
+			fatal(lstack_window_reset, ls, 0, x);
+		}
+	}
+	LSTACK_ITEREND
 
-	return lstack_window_add(ls, x, y, off, len);
+	return 0;
+}
+
+int API lstack_windows_reset(lstack* const restrict ls)
+{
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		fatal(lstack_window_reset, ls, 0, x);
+	}
+	LSTACK_ITEREND
+
+	return 0;
+}
+
+int API lstack_window_stage(lstack* const restrict ls, int y, int off, int len)
+{
+	return window_stage(ls, 0, y, off, len);
+}
+
+int API lstack_windows_ratify(lstack* const restrict ls, int y)
+{
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		if(ls->s[0].w[y].y == -1)
+		{
+			ls->s[0].w[y].y = 1;	// window : active 
+			ls->s[0].t[y].y = 0;	// temp : dirty
+		}
+	}
+	LSTACK_ITEREND
+
+	return 0;
 }

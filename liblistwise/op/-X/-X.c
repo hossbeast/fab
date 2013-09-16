@@ -62,49 +62,49 @@ static int op_exec_x(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "-f"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_f
 		, .desc					= "select regular files"
 	}
 	, {
 		  .s						= "-d"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_d
 		, .desc					= "select directories"
 	}
 	, {
 		  .s						= "-l"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_l
 		, .desc					= "select symbolic links"
 	}
 	, {
 		  .s						= "-e"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_e
 		, .desc					= "select existing paths"
 	}
 	, {
 		  .s						= "-z"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_z
 		, .desc					= "select zero-byte files and zero-entry directories"
 	}
 	, {
 		  .s						= "-r"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_r
 		, .desc					= "select readable paths"
 	}
 	, {
 		  .s						= "-w"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_w
 		, .desc					= "select writable paths"
 	}
 	, {
 		  .s						= "-x"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_x
 		, .desc					= "select executable paths"
 	}
@@ -134,7 +134,7 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int stat
 		if(r == 0 || errno == ENOENT)
 		{
 			if(selector(errno == ENOENT ? 0 : &st))
-				fatal(lstack_last_set, ls, x);
+				fatal(lstack_sel_stage, ls, x);
 		}
 		else
 		{
@@ -203,7 +203,7 @@ int op_exec_r(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		if(euidaccess(lstack_string(ls, 0, x), R_OK) == 0)
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		else if(errno != EACCES && errno != ENOENT)
 			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
 	}
@@ -219,7 +219,7 @@ int op_exec_w(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		if(euidaccess(lstack_string(ls, 0, x), W_OK) == 0)
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		else if(errno != EACCES && errno != ENOENT)
 			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
 	}
@@ -235,7 +235,7 @@ int op_exec_x(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		if(euidaccess(lstack_string(ls, 0, x), X_OK) == 0)
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		else if(errno != EACCES && errno != ENOENT)
 			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
 	}

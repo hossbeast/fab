@@ -46,7 +46,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "l"
-		, .optype				= LWOP_WINDOWS_WRITE | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOW_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "locate substring matches"
@@ -89,7 +89,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			int off = 0;
 			do
 			{
-				fatal(lstack_window_add, ls, 0, x, s - ss, o->args[0]->l);
+				fatal(lstack_window_stage, ls, 0, x, s - ss, o->args[0]->l);
 
 				if(isglobal)
 				{
@@ -99,7 +99,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			} while(s);
 
 			// record this index was hit
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND

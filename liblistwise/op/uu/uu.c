@@ -50,7 +50,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 			.s						= "uu"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
+		, .optype				= LWOP_SELECTION_ACTIVATE
 		, .op_exec			= op_exec
 		, .desc					= "select unique (sort not required)"
 	}
@@ -91,7 +91,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	if(i)
 	{
-		fatal(lstack_last_set, ls, mema[0]);
+		fatal(lstack_sel_stage, ls, mema[0]);
 		fatal(lstack_getbytes, ls, 0, mema[0], &As, &Asl);
 
 		for(x = 1; x < i; x++)
@@ -109,7 +109,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 			if(r)
 			{
-				fatal(lstack_last_set, ls, mema[x]);
+				fatal(lstack_sel_stage, ls, mema[x]);
 			}
 		}
 	}

@@ -46,10 +46,6 @@ OPERATION
       for each item in the the directory listing
         append path to the item (relative to the argument given)
 
-*/
-
-/*
-
 lsr operator - recursive directory listing
 
 ARGUMENTS
@@ -77,14 +73,14 @@ static int op_exec_lsr(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "ls"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
+		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_ls
 		, .desc					= "create new list from directory listing(s)"
 	}
 	, {
 		  .s						= "lsr"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
+		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_lsr
 		, .desc					= "create new list from recursive directory listing(s)"
@@ -142,36 +138,30 @@ coda;
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int recurse)
 {
-	if(o->argsl || ls->l)
+	int x;
+	fatal(lstack_unshift, ls);
+
+	if(o->argsl)
 	{
-		int x;
-		fatal(lstack_unshift, ls);
-
-		if(o->argsl)
+		for(x = 0; x < o->argsl; x++)
+			fatal(listing, ls, o->args[x]->s, recurse);
+	}
+	else
+	{
+		for(x = 0; x < ls->s[1].l; x++)
 		{
-			for(x = 0; x < o->argsl; x++)
-				fatal(listing, ls, o->args[x]->s, recurse);
-		}
-		else
-		{
-			for(x = 0; x < ls->s[1].l; x++)
+			int go = 1;
+			if(!ls->sel.all)
 			{
-				int go = 1;
-				if(!ls->sel.all)
-				{
-					if(ls->sel.sl <= (x/8))
-						break;
+				if(ls->sel.sl <= (x/8))
+					break;
 
-					go = (ls->sel.s[x/8] & (0x01 << (x%8)));
-				}
-
-				if(go)
-					fatal(listing, ls, lstack_string(ls, 1, x), recurse);
+				go = (ls->sel.s[x/8] & (0x01 << (x%8)));
 			}
-		}
 
-		// if anything was selected, its now used up
-		fatal(lstack_sel_all, ls);
+			if(go)
+				fatal(listing, ls, lstack_string(ls, 1, x), recurse);
+		}
 	}
 
 	finally : coda;

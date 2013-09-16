@@ -26,7 +26,8 @@
 
 /*
 
-xm operator - Match by filename eXtension
+lx operator  - Locate by filename eXtension
+lxf operator - Locate by Full filename eXtension
 
 ARGUMENTS
 
@@ -40,30 +41,27 @@ OPERATION
 	   2.1 [default mode]    select that item if its stringvalue ends with "." extension
      2.2 [full match mode] select that item if its stringvalue has a complete extension equal to extension
 
-
-xmf operator - Match by Full filename eXtension
-
-exactly as the xm operator, except fullmatch mode is the default operation
+lxf - exactly as the lx operator, except fullmatch mode is the default operation
 
 */
 
 static int op_validate(operation* o);
-static int op_exec_xm(operation*, lstack*, int**, int*);
-static int op_exec_xmf(operation*, lstack*, int**, int*);
+static int op_exec_lx(operation*, lstack*, int**, int*);
+static int op_exec_lxf(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "xre"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
+		  .s						= "lx"
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOW_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
-		, .op_exec			= op_exec_xm
+		, .op_exec			= op_exec_lx
 		, .desc					= "select by filename extension and window extension"
 	}
 	, {
-		  .s						= "xref"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_ARGS_CANHAVE
+		  .s						= "lxf"
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOW_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
-		, .op_exec			= op_exec_xmf
+		, .op_exec			= op_exec_lxf
 		, .desc					= "select by full filename extension and window extension"
 	}
 	, {}
@@ -124,7 +122,8 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int full
 						{
 							if(memcmp(o, xs, xl) == 0)
 							{
-								fatal(lstack_last_set, ls, x);
+								fatal(lstack_window_stage, ls, x, o - s, xl);
+								fatal(lstack_sel_stage, ls, x);
 							}
 						}
 					}
@@ -140,7 +139,8 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int full
 				{
 					if(memcmp(s + (l - xl), xs, xl) == 0)
 					{
-						fatal(lstack_last_set, ls, x);
+						fatal(lstack_window_stage, ls, x, l - xl, xl);
+						fatal(lstack_sel_stage, ls, x);
 					}
 				}
 			}
@@ -151,12 +151,12 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int full
 	finally : coda;
 }
 
-static int op_exec_xm(operation* o, lstack* ls, int** ovec, int* ovec_len)
+static int op_exec_lx(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 0);
 }
 
-static int op_exec_xmf(operation* o, lstack* ls, int** ovec, int* ovec_len)
+static int op_exec_lxf(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 1);
 }

@@ -45,7 +45,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "v"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE
+		, .optype				= LWOP_SELECTION_ACTIVATE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "invert selection"
@@ -60,16 +60,13 @@ int op_validate(operation* o)
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	if(ls->l)
+	int x;
+	LSTACK_ITERATE(ls, x, go);
+	if(!go)
 	{
-		int x;
-		LSTACK_ITERATE(ls, x, go);
-		if(!go)
-		{
-			fatal(lstack_last_set, ls, x);
-		}
-		LSTACK_ITEREND;
+		fatal(lstack_sel_stage, ls, x);
 	}
+	LSTACK_ITEREND;
 
 	finally : coda;
 }

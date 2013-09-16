@@ -29,7 +29,7 @@
 
 /*
 
-s operator - search and replace
+s operator - substitution by regex (search and replace)
 
 ARGUMENTS
 
@@ -51,7 +51,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "s"
-		, .optype				= LWOP_SELECTION_READ | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
+		, .optype				= LWOP_SELECTION_STAGE | LWOP_WINDOWS_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "substitution by regex"
@@ -178,6 +178,9 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 					fatal(append, ls, x, ss + loff, (*ovec)[1] - loff);
 				}
 
+				// start offset of replacement
+				int A = ls->s[0].s[x].l;
+
 				// text in the replacement string before the first backreference
 				if(o->args[1]->refsl)
 				{
@@ -215,6 +218,11 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 					fatal(append, ls, x, o->args[1]->ref_last->e, o->args[1]->l - (o->args[1]->ref_last->e - o->args[1]->s));
 				}
 
+				// end offset of replacement
+				int B = ls->s[0].s[x].l;
+
+				fatal(lstack_window_stage, ls, x, A, B - A);
+
 				loff = (*ovec)[2];
 
 				if(isglobal)
@@ -226,7 +234,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			// text in the subject string following the last match
 			fatal(append, ls, x, ss + loff, ssl - loff);
 
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND

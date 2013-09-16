@@ -39,24 +39,17 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
 static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "j"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
-		, .op_validate	= op_validate
+		, .optype				= LWOP_SELECTION_STAGE | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
 		, .desc					= "concatenate rows possibly with a delimiter"
 	}
 	, {}
 };
-
-int op_validate(operation* o)
-{
-	return 0;
-}
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
@@ -160,8 +153,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	fatal(lstack_add, ls, ns, nl);
 
 	// selection
-	fatal(lstack_sel_all, ls);
-	fatal(lstack_last_set, ls, ls->s[0].l - 1);
+	fatal(lstack_sel_stage, ls, ls->s[0].l - 1);
 
 	finally : coda;
 }

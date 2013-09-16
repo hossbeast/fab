@@ -42,7 +42,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "x"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_OPERATION_INPLACE
+		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
 		, .desc					= "extract row window"
 	}
@@ -57,19 +57,16 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	{
 		if(ls->s[0].w[x].y)
 		{
-			// because there is a window in effect, getbytes must return the temp space for the row
+			// because there is a window in effect, getbytes returns the temp space for the row
 			char * zs;
 			int    zsl;
 			fatal(lstack_getbytes, ls, 0, x, &zs, &zsl);
-
-			// clear this string on the stack
-			lstack_clear(ls, 0, x);
 
 			// write new string using the window
 			fatal(lstack_write, ls, 0, x, zs, zsl);
 
 			// record this index was hit
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND

@@ -305,10 +305,12 @@ static int exec_internal(generator* g, char** init, int* initls, int initl, lsta
 #endif
 
 	// empty operation for implicit y operator execution
-	operator* yop = op_lookup("y", 1);
+	operator* ysop = op_lookup("ys", 1);
+	operator* ywop = op_lookup("yw", 1);
 	operator* oop = op_lookup("o", 1);
 
-	struct operation yoper = { .op = yop };
+	struct operation ysoper = { .op = ysop };
+	struct operation ywoper = { .op = ywop };
 
 	// list stack allocation
 	if(!*ls)
@@ -357,14 +359,39 @@ static int exec_internal(generator* g, char** init, int* initls, int initl, lsta
 
 		if(!isor)
 		{
-			if(x && (g->ops[x-1]->op->optype & LWOP_SELECTION_WRITE))
+			// if the previous operator staged windows, activate or unstage them
+			if(x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE))
 			{
-				if((*ls)->l || yoper.op->optype & LWOP_EMPTYSTACK_YES)
-					fatal(yoper.op->op_exec, &yoper, *ls, &ovec, &ovec_len);
+				if(g->ops[x]->op != yop)
+				{
+					if(g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE)
+					{
+						if((*ls)->l || ywoper.op->optype & LWOP_EMPTYSTACK_YES)
+							fatal(ywoper.op->op_exec, &ywoper, *ls, &ovec, &ovec_len);
+					}
+					else
+					{
+						fatal(lstack_windows_unstage, *ls);
+					}
+				}
 			}
 
-			if(g->ops[x]->op != yop)
-				fatal(lstack_last_clear, *ls);
+			// if the previous operator staged selections, activate or unstage them
+			if(x && (g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE))
+			{
+				if(g->ops[x]->op != yop)
+				{
+					if(g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE)
+					{
+						if((*ls)->l || ysoper.op->optype & LWOP_EMPTYSTACK_YES)
+							fatal(ysoper.op->op_exec, &ysoper, *ls, &ovec, &ovec_len);
+					}
+					else
+					{
+						fatal(lstack_sel_unstage, *ls);
+					}
+				}
+			}
 		}
 
 		if(dump)
@@ -380,36 +407,20 @@ static int exec_internal(generator* g, char** init, int* initls, int initl, lsta
 		}
 
 		// execute the operator
-		if((*ls)->l || g->ops[x]->op->optype & LWOP_EMPTYSTACK_YES)
+		if(((*ls)->l || g->ops[x]->op->optype & LWOP_EMPTYSTACK_YES) && g->ops[x]->op->op_exec)
 			fatal(g->ops[x]->op->op_exec, g->ops[x], *ls, &ovec, &ovec_len);
 
 #if SANITY
 		if(listwise_sanity)
 			fatal(sanity, *ls, sb);
 #endif
+
+		if(g->ops[x]->op->optype & LWOP_SELECTION_RESET)
+			fatal(lstack_sel_all, *ls);
 	}
 
-	if(x && (g->ops[x-1]->op->optype & LWOP_SELECTION_WRITE))
-	{
-		if((*ls)->l || yoper.op->optype & LWOP_EMPTYSTACK_YES)
-			fatal(yoper.op->op_exec, &yoper, *ls, &ovec, &ovec_len);
-	}
-
-	// last reset
-	fatal(lstack_last_clear, *ls);
-
-	// window reset
-	for(x = 0; x < (*ls)->l; x++)
-	{
-		int y;
-		for(y = 0; y < (*ls)->s[x].l; y++)
-		{
-			if((*ls)->s[x].t[y].y == 2)
-				(*ls)->s[x].t[y].y = 0;
-
-			(*ls)->s[x].w[y].y = 0;
-		}
-	}
+	fatal(lstack_windows_reset, *ls);		// reset windows
+	fatal(lstack_sel_unstage, *ls);			// unstage selections (the selection itself remains)
 
 	// clear string props set with the fx operator
 	for(x = 0; x < object_registry.l; x++)

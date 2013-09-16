@@ -56,7 +56,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "stat"
-		, .optype				= LWOP_SELECTION_READ | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
+		, .optype				= LWOP_SELECTION_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "get filesystem properties"
@@ -66,7 +66,7 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1 && o->argsl != 2)
-		fail("stat -- arguments : %d", o->argsl);
+		fail("%s -- arguments : %d", o-op->s, o->argsl);
 
 	finally : coda;
 }
@@ -364,7 +364,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			}
 
 			// record this index was hit
-			fatal(lstack_last_set, ls, x);
+			fatal(lstack_sel_stage, ls, x);
 		}
 		else
 		{
