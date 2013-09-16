@@ -48,18 +48,19 @@ enum
 /* these actually have some effect on processing */
 	, LWOP_SELECTION_STAGE				= 0x0001			// stages selections (which may be activated with the y operator)
 	, LWOP_SELECTION_ACTIVATE			= 0x0003			//  implicitly apply the y operator after this operator
-	, LWOP_WINDOW_STAGE						= 0x0004			// stages windows (which may be ratified with the y operator)
-	, LWOP_WINDOW_ACTIVATE				= 0x000C			//  implicitly apply the y operator after this operator
-	, LWOP_ARGS_CANHAVE						= 0x0010			// can have arguments (verified before op_validate)
-	, LWOP_EMPTYSTACK_YES					= 0x0020			// operator is invoked even in the context of an empty stack
-	, LWOP_SELECTION_RESET				= 0x0040			// lw resets the selection after executing the operator
+	, LWOP_SELECTION_RESET				= 0x0004			// lw resets the selection after executing the operator (apart from the staging mechanism)
+	, LWOP_WINDOW_STAGE						= 0x0008			// stages windows (which may be ratified with the y operator)
+	, LWOP_WINDOW_ACTIVATE				= 0x0018			//  implicitly apply the y operator after this operator
+	, LWOP_WINDOW_RESET						= 0x0020			// lw resets all windows after executing the operator (apart from the staging mechanism)
+	, LWOP_ARGS_CANHAVE						= 0x0040			// can have arguments (verified before op_validate)
+	, LWOP_EMPTYSTACK_YES					= 0x0080			// operator is invoked even in the context of an empty stack
 
 /* there are informational */
-	, LWOP_STACKOP								= 0x0080			// stack operation : manipulation of entire lists
-	, LWOP_MODIFIERS_CANHAVE			= 0x0100			// last argument is a modifiers string
-	, LWOP_OPERATION_PUSHBEFORE		= 0x0280			// first operation is to push an empty list
-	, LWOP_OPERATION_INPLACE			= 0x0400			// modifies the contents of rows in the top list in-place
-	, LWOP_OPERATION_FILESYSTEM		= 0x0800			// operator reads from the filesystem
+	, LWOP_STACKOP								= 0x0100			// stack operation : manipulation of entire lists
+	, LWOP_MODIFIERS_CANHAVE			= 0x0200			// last argument is a modifiers string
+	, LWOP_OPERATION_PUSHBEFORE		= 0x0480			// first operation is to push an empty list
+	, LWOP_OPERATION_INPLACE			= 0x0800			// modifies the contents of rows in the top list in-place
+	, LWOP_OPERATION_FILESYSTEM		= 0x1000			// operator reads from the filesystem
 };
 
 //

@@ -36,7 +36,7 @@
 
 /*
 
-g operator - snarf file contents
+g operator - gobble file contents
 
 ARGUMENTS
 
@@ -67,7 +67,7 @@ operator op_desc[] = {
 	, {}
 };
 
-static int snarf(lstack* ls, char * path)
+static int gobble(lstack* ls, char * path)
 {
 	int					fd = 0;
 	size_t			size = 0;
@@ -112,14 +112,14 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		if(o->argsl)
 		{
 			for(x = 0; x < o->argsl; x++)
-				fatal(snarf, ls, o->args[x]->s);
+				fatal(gobble, ls, o->args[x]->s);
 		}
 		else
 		{
 			LSTACK_ITERATE(ls, x, go)
 			if(go)
 			{
-				fatal(snarf, ls, lstack_string(ls, 1, x));
+				fatal(gobble, ls, lstack_string(ls, 1, x));
 			}
 			LSTACK_ITEREND
 		}

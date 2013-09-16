@@ -415,6 +415,9 @@ static int exec_internal(generator* g, char** init, int* initls, int initl, lsta
 			fatal(sanity, *ls, sb);
 #endif
 
+		if(g->ops[x]->op->optype & LWOP_WINDOW_RESET)
+			fatal(lstack_windows_reset, *ls);
+
 		if(g->ops[x]->op->optype & LWOP_SELECTION_RESET)
 			fatal(lstack_sel_all, *ls);
 	}

@@ -52,7 +52,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "p"
-		, .optype				= LWOP_OPERATION_INPLACE | LWOP_WINDOWS_WRITE | LWOP_SELECTION_STAGE
+		, .optype				= LWOP_WINDOWS_WRITE | LWOP_SELECTION_STAGE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "window by fields or characters"

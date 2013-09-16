@@ -16,31 +16,27 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
-#include <alloca.h>
-#include <sys/types.h>
-#include <errno.h>
 #include <string.h>
-#include <dirent.h>
+#include <alloca.h>
 
 #include <listwise/operator.h>
 
 /*
 
-z operator - select all
+zw operator - reset window
 
 NO ARGUMENTS
 
-OPERATION
-
- 1. select all
-
 */
+
+static int op_validate(operation* o);
+static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "z"
-		, .optype				= LWOP_SELECTION_RESET
-		, .desc					= "select all"
+		  .s						= "zw"
+		, .optype				= LWOP_WINDOW_RESET
+		, .desc					= "reset windows"
 	}
 	, {}
 };
