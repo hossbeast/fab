@@ -18,7 +18,7 @@
 #include "listwise/internal.h"
 #include "liblistwise_control.h"
 
-int listwise_exec(char* s, int l, char** init, int* initls, int initl, lstack** ls)
+int listwise_exec(char* s, int l, char** init, int* initls, int initl, lwx ** lx, lstack** ls)
 {
 	// generator parser
 	generator_parser* p = 0;

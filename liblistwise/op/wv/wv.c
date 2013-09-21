@@ -32,9 +32,6 @@ vw operator - invert windows
 
 NO ARGUMENTS
 
-NOTES
- an OR operator before wv will not work properly - wv will invert the current set of windows, whether staged or not
-
 */
 
 static int op_exec(operation*, lstack*, int**, int*);
@@ -42,7 +39,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "vw"
-		, .optype				= LWOP_WINDOWS_WRITE // LWOP_WINDOWS_
+		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_WINDOWS_READ
 		, .op_exec			= op_exec
 		, .desc					= "invert windows"
 	}

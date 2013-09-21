@@ -84,31 +84,47 @@
 
 /// lstack_exec
 //
-// if *r == 0, create it as the empty list stack
+// SUMMARY
+//  execute the generator, g against an lstack, *ls
 //
-// then, executes the generator against *r
+// PARAMETERS
+//  g        - generator
+//  [init]   - initial items to write at top of list stack
+//  [initls] - lenghts of items in init, 0 for strlen
+//  initl    - number of items in init
+//  [lx]     - listwise execution context
+//  ls        - input/output list stack
 //
-// parameters
-//  g      - generator
-//  init   - initial items to write at top of list stack
-//  initls - lenghts of items in init, 0 for strlen
-//  initl  - number of items in init
-//  r      - input/output list stack
+// REMARKS
+//  if *ls == 0, create it as the empty list stack
 //
-int lstack_exec(generator* g, char** init, int* initls, int initl, lstack** r);
+int lstack_exec(
+	  const generator * const restrict g
+	, const char ** const restrict init
+	, const int * const restrict initls
+	, const int initl
+	, const lwx ** const restrict lx
+	, const lstack ** const restrict ls
+)
+	__attribute__((nonnull(1, 6)));
 
 /// lstack_dump
 //
-// print a list-stack to stdout
+// SUMMARY
+//  print a list-stack to stdout
 //
-void lstack_dump(lstack*);
+void lstack_dump(const lstack * const restrict)
+	__attribute__((nonnull));
 
 /// lstack_reset
 //
-// reset (but do not deallocate) a list stack
+// SUMMARY
+//  reset (but do not deallocate) an lstac k
 //
-// no-op with zero-valued parameter
+// REMARKS
+//  no-op with zero-valued parameter
 //
-void lstack_reset(lstack*);
+void lstack_reset(lstack * const restrict)
+	__attribute__((nonnull);
 
 #endif

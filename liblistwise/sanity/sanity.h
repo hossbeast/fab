@@ -15,24 +15,40 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _GENERATOR_DEF_H
-#define _GENERATOR_DEF_H
+#ifndef _LISTWISE_SANITY_H
+#define _LISTWISE_SANITY_H
 
-#include <stdio.h>
-#include <stdint.h>
-
-#include "listwise/internal.h"
-
+#ifdef SANITY
 typedef struct
 {
-	int							r;			// return value of the parse
-	void*						scanner;
+	struct
+	{
+		int l;
+		int a;
+		uint8_t t;
 
-	int							argsa;
-	int							opsa;
-	int							opargsa;
+		int x;
+		int y;
+		typeof(((lstack*)0)->s[0].s[0].s[0]) *	s;
+		typeof(((lstack*)0)->s[0].s[0].s[0]) *	o;
+		int ol;
+		int oa;
+	} *																	s_strings;
+	int																	s_stringsl;
+	int																	s_stringsa;
+} sanityblock;
 
-	generator*			g;			// completed generator goes here
-} parse_param;
+static int sanityblock_create(sanityblock ** const restrict sb)
+	__attribute__((nonnull));
+
+static void sanityblock_free(sanityblock * const restrict sb)
+	__attribute__((nonnull));
+
+static void sanityblock_reset(sanityblock * const restrict sb)
+	__attribute__((nonnull));
+
+static int sanity(lstack * const restrict ls, sanityblock * const restrict sb)
+	__attribute__((nonnull));
+#endif
 
 #endif

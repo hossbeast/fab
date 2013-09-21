@@ -29,72 +29,32 @@
 struct lstack;
 typedef struct lstack
 {
-	struct		// stack
-	{
-		struct // list
-		{
-			char*		s;		// string
+  struct // stack
+  {
+    struct // list
+    {
+      char*   s;    // string
 
-			int			l;		// len - number of characters
-			int			a;		// alloc
+      int     l;    // len - number of characters
+      int     a;    // alloc
 
-			uint8_t	type;	// object type - see listwise/object.h interface
-		}					*s;
+      uint8_t type; // object type - see listwise/object.h interface
+    }         *s;
 
-		struct	// window
-		{
-			struct
-			{
-				int		o;		// offset
-				int		l;		// length
-			}				*s;
+    int     l;  // len - number of rows
+    int     a;  // alloc
+  }         *s;
 
-			int			l;		// len - elements in s that are in use
-			int			a;		// alloc
+  int     l;  // len - number of lists
+  int     a;  // alloc
 
-			int			zl;		// sum(w[-].l)
-			int			y;		// isset(0=inactive, -1=staged, 1=active)
-		}					*w;
-
-		struct	// internal tmp space
-		{
-			char*		s;
-
-			int			l;
-			int			a;
-
-			int			y;	// isset
-		}					*t;
-
-		int			l;	// len - number of strings
-		int			a;	// alloc
-	}					*s;
-
-	int			l;	// len - number of lists
-	int			a;	// alloc
-
-	struct						// selection stage (rows affected by the previous operation)
-	{
-		uint8_t *	s;		// bitvector
-		int				l;		// number of bits set in s
-		int				sl;		// length of s
-		int				sa;		// allocated size of s
-	} stage;
-
-	struct 						// currently selected rows
-	{
-		uint8_t *	s;		// bitvector
-		int				l;		// number of bits set in s
-		int				sl;		// length of s
-		int				sa;		// allocated size of s
-
-		char			all;	// if true, all rows are selected - otherwise, exactly those rows
-										// as specified in s comprise the current selection
-	} sel;
-
-	uint64_t	flags;	// available for application-use
-	void *		ptr;		// available for application-use
+  uint64_t  flags;  // available for application-use
+  void *    ptr;    // available for application-use
 } lstack;
+
+// listwise context, an opaque type
+struct lwx_t;
+typedef struct lwx_t lwx;
 
 /// listwise_exec
 //
@@ -102,17 +62,59 @@ typedef struct lstack
 //  execute the listwise generator, receive an lstack result
 //
 // PARAMETERS
-//  s      - generator string
-//  l      - s length, or 0 for strlen
-//  init   - rows to write to the stack before executing
-//  initls - lengths for rows in init, 0 for strlen
-//  initl  - number of rows in init
-//  r      - receives results
+//  s        - generator string
+//  l        - s length, or 0 for strlen
+//  [init]   - rows to write to the stack before executing
+//  [initls] - lengths for rows in init, 0 for strlen
+//  initl    - number of rows in init
+//  [lx]     - listwise execution context
+//  ls       - input/output lstack
 //
 // RETURNS
-//  1 for success
+//  0 for success
 //
-int listwise_exec(char* s, int l, char** init, int* initls, int initl, lstack** r);
+// REMARKS
+//  if lx is null, an internal context is used
+//  otherwise, if *lx is null, a new context is created and returned
+//  otherwise, an existing context is reused
+//
+//  if *ls is null, a new lstack is created and returned
+//  otherwise, an existing lstack is reused
+//
+int listwise_exec(
+	  const char * const restrict s
+	, int l
+	, const char ** const restrict init
+	, const int * const restrict initls
+	, const int initl
+	, const lwx ** const restrict lx
+	, const lstack ** const restrict ls
+	, int dump
+)
+  __attribute__((nonnull(1, 7)));
+
+/// lwx_alloc
+//
+// SUMMARY
+//  allocate an lwx
+//
+int lwx_alloc(lwx ** const restrict lx)
+  __attribute__((nonnull));
+
+/// lwx_free
+//
+// SUMMARY
+//  free an lwx with free semantics
+//
+void lwx_free(lwx * const restrict lx);
+
+/// lwx_xfree
+//
+// SUMMARY
+//  free an lwx with xfree semantics
+//
+void lwx_xfree(lwx ** const restrict lx)
+  __attribute__((nonnull));
 
 /// lstack_create
 //
@@ -120,7 +122,7 @@ int listwise_exec(char* s, int l, char** init, int* initls, int initl, lstack** 
 //  allocate an lstack
 //
 int lstack_create(lstack ** const restrict)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// lstack_free
 //
@@ -135,7 +137,7 @@ void lstack_free(lstack * const restrict);
 //  free an lstack with xfree-like semantics
 //
 void lstack_xfree(lstack ** const restrict)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// lstack_deepcopy
 //
@@ -153,7 +155,7 @@ void lstack_xfree(lstack ** const restrict)
 //  selection and windows are reset in the copy
 //
 int lstack_deepcopy(lstack ** const restrict, lstack * const restrict)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// listwise_err_fd
 //

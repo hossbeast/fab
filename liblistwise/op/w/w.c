@@ -41,7 +41,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "h"
+		  .s						= "w"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
@@ -52,9 +52,9 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl >= 1 && o->args[0]->itype != ITYPE_I64)
-		fail("h - first argument should be i64");
+		fail("%s - first argument should be i64", o->op->s);
 	if(o->argsl >= 2 && o->args[1]->itype != ITYPE_I64)
-		fail("h - second argument should be i64");
+		fail("%s - second argument should be i64", o->op->s);
 
 	finally : coda;
 }

@@ -46,17 +46,11 @@ operator op_desc[] = {
 	{
 		  .s						= "v"
 		, .optype				= LWOP_SELECTION_ACTIVATE
-		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "invert selection"
 	}
 	, {}
 };
-
-int op_validate(operation* o)
-{
-	return 0;
-}
 
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {

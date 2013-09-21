@@ -27,6 +27,7 @@
 
 #include "coll.h"
 #include "idx.h"
+#include "lwx.h"
 
 #define API __attribute__((visibility("protected")))
 #define APIDATA
