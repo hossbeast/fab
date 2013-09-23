@@ -24,26 +24,16 @@
 #include "liblistwise_control.h"
 #include "macros.h"
 
-int API lstack_sel_none(lstack* const restrict ls)
+int API lstack_sel_reset(lwx * const restrict lx)
 {
-	ls->sel.all = 0;
-	ls->sel.sl = 0;
-	ls->sel.l = 0;
+	lx->sel.active = 0;
 
 	return 0;
 }
 
-int API lstack_sel_all(lstack* const restrict ls)
+int API lstack_sel_unstage(lwx * const restrict lx)
 {
-	ls->sel.all = 1;
-
-	return 0;
-}
-
-int API lstack_sel_unstage(lstack* const restrict ls)
-{
-	ls->stage.sl = 0;
-	ls->stage.l = 0;
+	lx->sel.staged = 0;
 
 	return 0;
 }
@@ -74,8 +64,10 @@ int API lstack_sel_stage(lstack* const restrict ls, int y)
 	finally : coda;
 }
 
-int API lstack_sel_ratify(lstack * const restrict ls)
+int API lstack_sel_activate(lwx * const restrict lx)
 {
+	lx->sel.active = lx->sel.staged;
+
 	if(ls->stage.l == ls->s[0].l)
 	{
 		ls->sel.all = 1;

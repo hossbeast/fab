@@ -160,22 +160,17 @@ int listwise_lookup_object(uint8_t type, listwise_object ** obj);
 //
 // place an object instance at x:y
 //
-int lstack_obj_write(lstack* const restrict ls, int x, int y, const void* const restrict o, uint8_t type)
+int lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
-int lstack_obj_write_alt(lstack* const restrict ls, int x, int y, const void* const restrict o, uint8_t type)
+int lstack_obj_write_alt(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
 /// lstack_obj_add
 //
 // place an object instance at the next unused entry of list 0
 //
-int lstack_obj_add(lstack* const restrict ls, const void* const restrict o, uint8_t type)
+int lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
 #endif
-
-
-
-
-

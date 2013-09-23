@@ -111,16 +111,12 @@ static int flatten(lstack * lso)
 
 int lw_flatten(lstack * ls)
 {
-	fatal(flatten, ls);
-
-	finally : coda;
+	return flatten(ls);
 }
 
 int lw_ensure(lstack *** stax, int * staxa, int staxp)
 {
-	fatal(ensure, stax, staxa, staxp);
-
-	finally : coda;
+	return ensure(stax, staxa, staxp);
 }
 
 int lw_reset(lstack *** stax, int * staxa, int staxp)

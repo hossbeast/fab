@@ -15,38 +15,27 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <alloca.h>
-#include <sys/types.h>
-#include <errno.h>
-#include <string.h>
-#include <dirent.h>
+#include "listwise/internal.h"
 
-#include <listwise/operator.h>
-
-#include "liblistwise_control.h"
-
-/*
-
-o operator - aggregate selections (this OR that)
-
-NO ARGUMENTS
-
-OPERATION
-
-	1. do not reset the "last list" before the next operator
-	2. do not excute the implicit "y" after the preceeding operator
-
-	1. do not unstage selections
-	2. do not unstage windows
-
-*/
-
-static int op_exec(operation*, lstack*, int**, int*);
-
-operator op_desc[] = {
+void API lwx_iterate_loop(lwx * const restrict lx, const int y, int * const restrict go)
+{
+	*go = 1;
+	if(lx->sel.active)
 	{
-		  .s						= "o"
-		, .desc					= "OR : aggregate selections and windows across operators"
-	}, {}
-};
+		*go = 0;
+		if(lx->sel.active->sl > (y / 8))
+		{
+			*go = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
+		}
+	}
+}
+
+void API lwx_lists(lwx * const restrict lx)
+{
+	return lx->l;
+}
+
+void API lwx_rows(lwx * const restrict lx, const int x)
+{
+	return lx->s[x].l;
+}

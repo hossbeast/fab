@@ -115,6 +115,8 @@ int API lstack_window_reset(lstack * const restrict ls, int x, int y)
 
 int API lstack_windows_unstage(lstack* const restrict ls)
 {
+	lx->era++;
+
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
@@ -128,7 +130,7 @@ int API lstack_windows_unstage(lstack* const restrict ls)
 	return 0;
 }
 
-int API lstack_windows_reset(lstack* const restrict ls)
+int API lstack_windows_reset(lwx * const restrict lx)
 {
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
@@ -145,14 +147,14 @@ int API lstack_window_stage(lstack* const restrict ls, int y, int off, int len)
 	return window_stage(ls, 0, y, off, len);
 }
 
-int API lstack_windows_ratify(lstack* const restrict ls, int y)
+int API lstack_windows_activate(lstack* const restrict ls, int y)
 {
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
+		ls->win.s[x].active = ls->win.s[x].staged;
 		if(ls->s[0].w[y].y == -1)
 		{
-			ls->s[0].w[y].y = 1;	// window : active 
 			ls->s[0].t[y].y = 0;	// temp : dirty
 		}
 	}

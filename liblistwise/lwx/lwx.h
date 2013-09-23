@@ -24,74 +24,28 @@
 // listwise execution context
 //
 struct lwx_t
-{
-	// temp storage associated with each row
-	struct
-	{
-		struct // stack
-		{
-			struct  // tmp space
-			{
-				char*   s;
-			
-				int     l;
-				int     a;
-			
-				int     y;  // isset (0=unset, 2=window)
-			} * t;
-			
-			int     l;  // len - number of rows
-			int     a;  // alloc
-		} * s;
 
-		int		l;		// len - number of lists
-		int		a;		// alloc
-	} tmp;
+/// lwx_alloc
+//
+// SUMMARY
+//  allocate an lwx
+//
+int lwx_alloc(lwx ** const restrict lx)
+  __attribute__((nonnull));
 
-	// subset of string for each row - applies to top list only
-	struct
-	{
-		struct
-		{
-			struct window
-			{
-				struct
-				{
-					int   o;    // offset
-					int   l;    // length
-				}       *s;
-				
-				int     l;    // len - elements in s that are in use
-				int     a;    // alloc
-				
-				int     zl;   // sum(s[-].l)
-			} storage[2];
+/// lwx_free
+//
+// SUMMARY
+//  free an lwx with free semantics
+//
+void lwx_free(lwx * const restrict lx);
 
-			struct window * active;
-			struct window * staged;
-		} * s;
-
-		int l;		// len - number of rows (first list)
-		int a;		// alloc
-	}	win;
-
-	// subset of rows - top list only
-	struct
-	{
-		struct selection
-		{
-			uint8_t *	s;		// bitvector
-			int				l;		// number of bits set in s
-			int				sl;		// length of s
-			int				sa;		// allocated size of s
-
-			char			all;	// if true, all rows are selected - otherwise, exactly those rows
-											// as specified in s comprise the current selection
-		} storage[2];
-
-		struct selection *		active;
-		struct selection *		staged;
-	} sel;
-};
+/// lwx_xfree
+//
+// SUMMARY
+//  free an lwx with xfree semantics
+//
+void lwx_xfree(lwx ** const restrict lx)
+  __attribute__((nonnull));
 
 #endif

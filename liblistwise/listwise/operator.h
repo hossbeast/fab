@@ -21,19 +21,19 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <pcre.h>
-
 #include <listwise.h>
+#include <pcre.h>
 
 #define restrict __restrict
 
 /*
 ** LISTWISE OPERATOR API
 **
-**  listwise/lstack.h    - additional functionality for manipulating lstacks
-**  listwise/object.h    - additional functionality for manipulating object entries
-**  listwise/ops.h       - additional functionality for accessing listwise operators
-**  listwise/generator.h - additional functionality for maniuplating generators
+**  listiwse/operator.h  - core operator functionality
+**   extra functionality
+**  listwise/object.h    - manipulating object entries
+**  listwise/ops.h       - enumerating and looking up listwise operators
+**  listwise/generator.h - manipulating generators
 */
 
 struct operation;
@@ -46,19 +46,19 @@ struct arg;
 enum
 {
 /* these actually have some effect on processing */
-	, LWOP_SELECTION_STAGE				= 0x0001			// stages selections (which may be activated with the y operator)
-	, LWOP_SELECTION_ACTIVATE			= 0x0003			//  implicitly apply the y operator after this operator
+	  LWOP_SELECTION_STAGE				= 0x0001			// stages selections (which may be activated with the y operator)
+	, LWOP_SELECTION_ACTIVATE			= 0x0002 | LWOP_SELECTION_STAGE			//  lw applies the y operator after this operator
 	, LWOP_SELECTION_RESET				= 0x0004			// lw resets the selection after executing the operator (apart from the staging mechanism)
 	, LWOP_WINDOW_STAGE						= 0x0008			// stages windows (which may be ratified with the y operator)
-	, LWOP_WINDOW_ACTIVATE				= 0x0018			//  implicitly apply the y operator after this operator
-	, LWOP_WINDOW_RESET						= 0x0020			// lw resets all windows after executing the operator (apart from the staging mechanism)
+	, LWOP_WINDOW_ACTIVATE				= 0x0010 | LWOP_WINDOW_STAGE				//  lw applies the y operator after this operator
+	, LWOP_WINDOW_RESET						= 0x0020			// lw resets all windows after executing this operator (apart from the staging mechanism)
 	, LWOP_ARGS_CANHAVE						= 0x0040			// can have arguments (verified before op_validate)
 	, LWOP_EMPTYSTACK_YES					= 0x0080			// operator is invoked even in the context of an empty stack
 
 /* there are informational */
-	, LWOP_STACKOP								= 0x0100			// stack operation : manipulation of entire lists
+	, LWOP_STACKOP								= 0x0100 | LWOP_SELECTION_RESET | LWOP_WINDOW_RESET			// stack operation : manipulation of entire lists
 	, LWOP_MODIFIERS_CANHAVE			= 0x0200			// last argument is a modifiers string
-	, LWOP_OPERATION_PUSHBEFORE		= 0x0480			// first operation is to push an empty list
+	, LWOP_OPERATION_PUSHBEFORE		= 0x0480 | LWOP_STACKOP																	// first operation is to push an empty list
 	, LWOP_OPERATION_INPLACE			= 0x0800			// modifies the contents of rows in the top list in-place
 	, LWOP_OPERATION_FILESYSTEM		= 0x1000			// operator reads from the filesystem
 };
@@ -73,7 +73,7 @@ typedef struct operator
 
 	// methods
 	int 		(*op_validate)(struct operation*);
-	int 		(*op_exec)(struct operation*, lstack*, int**, int*);
+	int 		(*op_exec)(struct operation*, lwx*, int**, int*);
 
 	char		s[6];			// name; overwritten by liblist during initialization
 	int			sl;				// name length
@@ -148,194 +148,115 @@ typedef struct operation
 //
 // append text to the entry at x:y
 //
-int lstack_append(lstack * const restrict ls, int x, int y, const char* const restrict s, int l)
+int lstack_append(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
 	__attribute__((nonnull));
 
 /// lstack_appendf
 //
 // append text to the entry at x:y using printf-style args
 //
-int lstack_appendf(lstack* const restrict ls, int x, int y, const char* const restrict s, ...)
+int lstack_appendf(lwx * const restrict lx, int x, int y, const char* const restrict s, ...)
 	__attribute__((nonnull));
 
 /// lstack_write
 //
 // write text to the entry at x:y
 //
-int lstack_write(lstack* const restrict ls, int x, int y, const char* const restrict s, int l)
+int lstack_write(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
 	__attribute__((nonnull));
 
-int lstack_write_alt(lstack* const restrict ls, int x, int y, const char* const restrict s, int l)
+int lstack_write_alt(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
 	__attribute__((nonnull));
 
 /// lstack_writef
 //
 // write text to the entry at x:y using printf-style args
 //
-int lstack_writef(lstack* const restrict ls, int x, int y, const char* const restrict s, ...)
+int lstack_writef(lwx * const restrict lx, int x, int y, const char* const restrict s, ...)
 	__attribute__((nonnull));
 
 /// lstack_add
 //
 // write text to the next unused entry of list 0
 //
-int lstack_add(lstack* const restrict ls, const char* const restrict s, int l)
+int lstack_add(lwx * const restrict lx, const char* const restrict s, int l)
 	__attribute__((nonnull));
 
 /// lstack_addf
 //
 // write text to the next unused entry of list 0 using printf-style args
 //
-int lstack_addf(lstack* const restrict ls, const char* const restrict fmt, ...)
+int lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
 	__attribute__((nonnull));
 
 /// lstack_shift
 //
 // delete the 0th list - all other lists are shifted down
 //
-int lstack_shift(lstack* const restrict ls)
+int lstack_shift(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_unshift
 //
 // unshift an empty list onto the stack at index zero - all other lists are shifted up
 //
-int lstack_unshift(lstack* const restrict ls)
+int lstack_unshift(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_pop
 //
 // delete the Nth list
 //
-int lstack_pop(lstack* const restrict ls)
+int lstack_pop(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_push
 //
 // push an empty list onto the end of the stack
 //
-int lstack_push(lstack* const restrict ls)
+int lstack_push(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_cycle
 //
 // move the first list on the stack to the last position
 //
-int lstack_cycle(lstack* const restrict ls)
+int lstack_cycle(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_recycle
 //
 // move the last list on the stack to the first position
 //
-int lstack_recycle(lstack* const restrict ls)
+int lstack_recycle(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_xchg
 //
 // exchange the first and second lists on the stack
 //
-int lstack_xchg(lstack* const restrict ls)
+int lstack_xchg(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_merge
 //
 //
 //
-int lstack_merge(lstack* const restrict ls, int a, int b)
-	__attribute__((nonnull));
-
-/// lstack_readrow
-//
-// SUMMARY
-//
-// PARAMETERS
-//  ls    - lstack instance
-//  x     - list offset
-//  y     - row offset
-//  r     - return value - ptr
-//  rl    - return value - length
-//  [obj] - whether object references are resolved
-//  [win] - whether windowing is resolved
-//  [str] - whether the return value is required to be null-terminated
-//  [raw] - indicates whether the raw storage was returned (object entry not resolved, window not resolved, and str not specified)
-//
-int lstack_readrow(lstack* const restrict ls, int x, int y, char ** const restrict r, int * const restrict rl, int obj, int win, int str, int * const raw)
-	__attribute__((nonnull(1, 4, 5)));
-
-/// lstack_string
-//
-// SUMMARY
-//  get pointer/length of a string for the entry at the specified position
-//
-// PARAMETERS
-//  ls - lstack instance
-//  x  - list index
-//  y  - entry index
-//  r  - string returned here
-//  rl - length returned here
-//
-// RETURNS
-//  zero on success, nonzero otherwise
-//
-// NOTES
-//  use lstack_getstring when a null-terminated string is required
-//
-int lstack_getbytes(lstack* const restrict ls, int x, int y, char ** const restrict r, int * const restrict rl)
-	__attribute__((nonnull));
-
-/// lstack_getstring
-//
-// SUMMARY
-//  get a null-terminated string for the entry at the specified position
-//
-// PARAMETERS
-//  ls - lstack instance
-//  x  - list index
-//  y  - entry index
-//  r  - string returned here
-//  rl - length returned here
-//
-// RETURNS
-//  zero on success, nonzero otherwise
-//
-// NOTES
-//  lstack_getbytes is the preferred API, getstring requires tmp space
-//
-int lstack_getstring(lstack* const restrict ls, int x, int y, char ** const restrict r, int * const restrict rl)
-	__attribute__((nonnull));
-
-/// lstack_string
-//
-// SUMMARY
-//  get a null-terminated string for the entry at the specified position
-//
-// PARAMETERS
-//  ls - lstack instance
-//  x  - list index
-//  y  - entry index
-//
-// RETURNS
-//  0 on error, otherwise pointer to the string
-//
-// NOTES
-//  lstack_getbytes is the preferred API, getstring requires tmp space
-//
-char* lstack_string(lstack* const restrict ls, int x, int y)
+int lstack_merge(lwx * const restrict lx, int a, int b)
 	__attribute__((nonnull));
 
 /// allocate
 //
 //
 //
-int lstack_allocate(lstack* const restrict ls, int x, int y, int z);
+int lstack_allocate(lwx * const restrict lx, int x, int y, int z);
 
 /// lstack_clear
 //
 // SUMMARY
 //  reset the entry x:y
 //
-void lstack_clear(const lstack * const restrict ls, int x, int y);
+void lstack_clear(const lwx * const restrict lx, int x, int y);
 
 /// ensure
 //
@@ -349,7 +270,7 @@ void lstack_clear(const lstack * const restrict ls, int x, int y);
 // updates stack and list length to be at least the dimension specified
 //  ** this is NOT done for string length **
 //
-int lstack_ensure(lstack* const restrict ls, int x, int y, int z);
+int lstack_ensure(lwx * const restrict lx, int x, int y, int z);
 
 /// lstack_move
 //
@@ -366,7 +287,7 @@ int lstack_ensure(lstack* const restrict ls, int x, int y, int z);
 // RETURNS
 //  lstack_move returns 1
 //
-int lstack_move(lstack* const restrict ls, int ax, int ay, int bx, int by)
+int lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 	__attribute__((nonnull));
 
 /// lstack_delete
@@ -383,7 +304,7 @@ int lstack_move(lstack* const restrict ls, int ax, int ay, int bx, int by)
 // RETURNS
 //  lstack_delete returns 1
 //
-int lstack_delete(lstack * const restrict ls, int x, int y)
+int lstack_delete(lwx * const restrict lx, int x, int y)
 	__attribute__((nonnull));
 
 /// lstack_displace
@@ -405,7 +326,7 @@ int lstack_delete(lstack * const restrict ls, int x, int y)
 // RETURNS
 //  0 on error, 1 otherwise
 //
-int lstack_displace(lstack * const restrict ls, int x, int y, int l)
+int lstack_displace(lwx * const restrict lx, int x, int y, int l)
 	__attribute__((nonnull));
 
 ///
@@ -417,15 +338,7 @@ int lstack_displace(lstack * const restrict ls, int x, int y, int l)
 // SUMMARY
 //  select all entries
 //
-int lstack_sel_all(lstack* const restrict ls)
-	__attribute__((nonnull));
-
-/// lstack_sel_none
-//
-// SUMMARY
-//  select none
-//
-int lstack_sel_none(lstack* const restrict ls)
+int lstack_sel_reset(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_sel_stage
@@ -433,7 +346,7 @@ int lstack_sel_none(lstack* const restrict ls)
 // SUMMARY
 //  stage the selection 0:y
 //
-int lstack_sel_stage(lstack* const restrict ls, int y)
+int lstack_sel_stage(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_sel_unstage
@@ -441,7 +354,7 @@ int lstack_sel_stage(lstack* const restrict ls, int y)
 // SUMMARY
 //  unstage staged selections
 //
-int lstack_sel_unstage(lstack* const restrict ls)
+int lstack_sel_unstage(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_sel_ratify
@@ -449,7 +362,7 @@ int lstack_sel_unstage(lstack* const restrict ls)
 // SUMMARY
 //  activate selections staged by the previous operation
 //
-int lstack_sel_ratify(lstack * const restrict ls)
+int lstack_sel_ratify(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 ///
@@ -461,7 +374,7 @@ int lstack_sel_ratify(lstack * const restrict ls)
 // SUMMARY
 //  add a segment to the staged window for the specified row
 //
-int lstack_window_stage(lstack* const restrict ls, int y, int off, int len)
+int lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 	__attribute__((nonnull));
 
 /// lstack_window_reset
@@ -469,7 +382,7 @@ int lstack_window_stage(lstack* const restrict ls, int y, int off, int len)
 // SUMMARY
 //  reset the window for the specified row
 //
-int lstack_window_reset(lstack* const restrict ls, int y, int off, int len)
+int lstack_window_reset(lwx * const restrict lx, int y, int off, int len)
 	__attribute__((nonnull));
 
 /// lstack_windows_ratify
@@ -477,7 +390,7 @@ int lstack_window_reset(lstack* const restrict ls, int y, int off, int len)
 // SUMMARY
 //  activate staged windows
 //
-int lstack_windows_ratify(lstack* const restrict ls)
+int lstack_windows_ratify(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_windows_unstage
@@ -485,7 +398,7 @@ int lstack_windows_ratify(lstack* const restrict ls)
 // SUMMARY
 //  unstage staged windows
 //
-int lstack_windows_unstage(lstack* const restrict ls)
+int lstack_windows_unstage(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_windows_reset
@@ -493,7 +406,7 @@ int lstack_windows_unstage(lstack* const restrict ls)
 // SUMMARY
 //  deactivate windows
 //
-int lstack_windows_reset(lstack* const restrict ls)
+int lstack_windows_reset(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 ///
@@ -555,22 +468,23 @@ int re_compile(char* s, struct re* re, char* mod);
 //
 int re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len);
 
-#if SANITY
-/// listwise_sanity
+/// lstack_readrow
 //
-// cause lstack_exec* family of functions to perform sanity checks on ls before
-// beginning, after every operator completes, and upon completion
+// SUMMARY
 //
-// if a sanity check fails, further use of ls will cause the program to crash or
-// memory will be lost
+// PARAMETERS
+//  lx    - lw context
+//  x     - list offset
+//  y     - row offset
+//  r     - return value - ptr
+//  rl    - return value - length
+//  [obj] - whether object references are resolved
+//  [win] - whether windowing is resolved
+//  [str] - whether the return value is required to be null-terminated and in tmp space
+//  [raw] - indicates whether the raw storage was returned (object entry not resolved, window not resolved, and str was not specified)
 //
-// if a sanity check fails, print error(s) to listwise_err_fd and call exit(1)
-//
-// DEFAULT
-//  0 - no sanity checks
-//
-extern int listwise_sanity;
-#endif
+int lstack_readrow(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl, int obj, int win, int str, int * const restrict raw)
+	__attribute__((nonnull(1, 4, 5)));
 
 /// listwise_allocation_seed
 //
@@ -582,12 +496,5 @@ extern int listwise_sanity;
 //
 extern int listwise_allocation_seed;
 
-/// listwise_register_opdir
-//
-// SUMMARY
-//  register an application-specific directory as containing compiled operator .so's
-//  in addition to the default locations liblistwise loads these from
-//
-int listwise_register_opdir(char* dir);
-
+#undef restrict
 #endif

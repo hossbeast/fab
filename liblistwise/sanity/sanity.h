@@ -49,6 +49,21 @@ static void sanityblock_reset(sanityblock * const restrict sb)
 
 static int sanity(lstack * const restrict ls, sanityblock * const restrict sb)
 	__attribute__((nonnull));
-#endif
 
+/// listwise_sanity
+//
+// cause lstack_exec* family of functions to perform sanity checks on ls before
+// beginning, after every operator completes, and upon completion
+//
+// if a sanity check fails, further use of ls will either 1) cause the program to crash
+// or 2) memory will be lost
+//
+// if a sanity check fails, print error(s) to listwise_err_fd and call exit(1)
+//
+// DEFAULT
+//  0 - no sanity checks
+//
+extern int listwise_sanity;
+
+#endif
 #endif

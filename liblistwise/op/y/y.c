@@ -27,7 +27,7 @@
 /*
 
 ys operator - activate those selections staged by the previous operation
-yw operator - activate those windows staged by the previous operator
+yw operator - activate those windows staged by the previous operation
 
 NO ARGUMENTS
 
@@ -44,29 +44,7 @@ static int op_exec(operation*, lstack*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "y"
-		, .optype				= LWOP_SELECTION_RESET
-		, .op_exec			= op_exec
+		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET
 		, .desc					= "activate staged selections and windows"
 	}, {}
 };
-
-int op_exec_yw(operation* o, lstack* ls, int** ovec, int* ovec_len)
-{
-	return lstack_windows_ratify(ls);
-}
-
-int op_exec_ys(operation* o, lstack* ls, int** ovec, int* ovec_len)
-{
-	return lstack_sel_ratify(ls);
-}
-
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
-{
-	if(op_exec_yw(o, ls, ovec, ovec_len) != 0)
-		return 1;
-
-	if(op_exec_ys(o, ls, ovec, ovec_len) != 0)
-		return 1;
-
-	return 0;
-}
