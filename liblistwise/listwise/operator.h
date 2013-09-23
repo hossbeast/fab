@@ -240,7 +240,8 @@ int lstack_xchg(lwx * const restrict lx)
 
 /// lstack_merge
 //
-//
+// SUMMARY
+//  append the rows in list b to the end of list a
 //
 int lstack_merge(lwx * const restrict lx, int a, int b)
 	__attribute__((nonnull));
@@ -285,7 +286,7 @@ int lstack_ensure(lwx * const restrict lx, int x, int y, int z);
 //  5. ls->s[bx].l--
 //
 // RETURNS
-//  lstack_move returns 1
+//  lstack_move returns 0
 //
 int lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 	__attribute__((nonnull));
@@ -324,7 +325,7 @@ int lstack_delete(lwx * const restrict lx, int x, int y)
 //  no-op when l == 0
 //
 // RETURNS
-//  0 on error, 1 otherwise
+//  1 on error
 //
 int lstack_displace(lwx * const restrict lx, int x, int y, int l)
 	__attribute__((nonnull));

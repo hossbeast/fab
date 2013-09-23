@@ -481,7 +481,7 @@ int lstack_deepcopy(lwx ** const A, lwx * const B)
 	return 1;	// not implemented
 }
 
-int API lstack_dump(lwx * lx)
+int API lstack_dump(const lwx * const lx)
 {
 	int x;
 	int y;
@@ -556,15 +556,52 @@ int API lstack_dump(lwx * lx)
 				int i;
 				for(i = 0; i < sl; i++)
 				{
-					if(z != -1 && i >= lx->win.s[y].active->s[z].o && ((i - lx->win.s[y].active->s[z].o) < lx->win.s[y].active->s[z].l))
+					if(i >= lx->win.s[y].active->s[z].o)
 					{
-						dprintf(listwise_err_fd, "^");
+						if((i - lx->win.s[y].active->s[z].o) <= lx->win.s[y].active->s[z].l)
+						{
+							dprintf(listwise_err_fd, "^");
+						}
+						else
+						{
+							z++;
+						}
 					}
 					else
 					{
 						dprintf(listwise_err_fd, " ");
 					}
 				}
+				dprintf(listwise_err_fd, "\n");
+			}
+
+			// indicate stagedwindows
+			if(x == 0 && lx->win.s[y].staged)
+			{
+				int z = -1;
+				if(lx->win.s[y].staged->s[0].o == 0)
+					z = 0;
+
+				int i;
+				for(i = 0; i < sl; i++)
+				{
+					if(i >= lx->win.s[y].staged->s[z].o)
+					{
+						if((i - lx->win.s[y].staged->s[z].o) <= lx->win.s[y].staged->s[z].l)
+						{
+							dprintf(listwise_err_fd, "*");
+						}
+						else
+						{
+							z++;
+						}
+					}
+					else
+					{
+						dprintf(listwise_err_fd, " ");
+					}
+				}
+				dprintf(listwise_err_fd, "\n");
 			}
 		}
 	}
@@ -598,8 +635,13 @@ int API lstack_append(lwx * const restrict lx, int x, int y, const char* const r
 	lx->s[x].s[y].l += l;
 	lx->s[x].s[y].type = 0;
 
-	lx->s[x].w[y].y = 0;
 	lx->s[x].t[y].y = LWTMP_UNSET;
+
+	if(x == 0)
+	{
+		lx->win.s[y].active = 0;
+		lx->win.s[y].staged = 0;
+	}
 
 	finally : coda;
 }
@@ -625,8 +667,13 @@ int API lstack_appendf(lwx * const restrict lx, int x, int y, const char* const 
 	lx->s[x].s[y].l += l;
 	lx->s[x].s[y].type = 0;
 
-	lx->s[x].w[y].y = 0;
 	lx->s[x].t[y].y = LWTMP_UNSET;
+
+	if(x == 0)
+	{
+		lx->win.s[y].active = 0;
+		lx->win.s[y].staged = 0;
+	}
 
 	finally : coda;
 }
@@ -691,6 +738,13 @@ int API lstack_shift(lwx * const restrict lx)
 		);
 
 		lx->s[--lx->l] = T;
+
+		// selection reset 
+		lx->sel.active = 0;
+		lx->sel.staged = 0;
+
+		// window reset
+		lx->era++;
 	}
 
 	return 0;
@@ -732,6 +786,13 @@ int API lstack_unshift(lwx * const restrict lx)
 	// reset it
 	lx->s[0].l = 0;
 
+	// selection reset 
+	lx->sel.active = 0;
+	lx->sel.staged = 0;
+
+	// window reset
+	lx->era++;
+
 	finally : coda;
 }
 
@@ -772,6 +833,7 @@ int API lstack_merge(lwx * const restrict lx, int to, int from)
 	int tox = lx->s[to].l;
 	fatal(ensure, lx, to, lx->s[to].l + lx->s[from].l - 1, -1);
 
+	// copy rows
 	memcpy(
 		  lx->s[to].s + tox
 		, lx->s[from].s
@@ -780,6 +842,16 @@ int API lstack_merge(lwx * const restrict lx, int to, int from)
 
 	lx->s[from].a = 0;
 	lx->s[from].l = 0;
+
+	if(to == 0 || from == 0)
+	{
+		// selection reset 
+		lx->sel.active = 0;
+		lx->sel.staged = 0;
+
+		// window reset
+		lx->era++;
+	}
 
 	while(from < lx->l && lx->s[from].l == 0)
 		from++;
@@ -824,6 +896,16 @@ int API lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 
 	// adjust the length
 	lx->s[bx].l--;
+
+	if(ax == 0 || bx == 0)
+	{
+		// selection reset 
+		lx->sel.active = 0;
+		lx->sel.staged = 0;
+
+		// window reset
+		lx->era++;
+	}
 
 	return 0;
 }

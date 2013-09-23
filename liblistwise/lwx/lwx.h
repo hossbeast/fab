@@ -23,7 +23,7 @@
 //
 // listwise execution context
 //
-struct lwx_t
+struct lwx_t;
 
 /// lwx_alloc
 //
