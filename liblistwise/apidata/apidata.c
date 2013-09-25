@@ -23,7 +23,7 @@ int APIDATA listwise_err_fd = 2;
 int APIDATA listwise_sanity = 0;
 int APIDATA listwise_allocation_seed = 10;
 
-lstack * APIDATA listwise_identity = 0;
+lwx * APIDATA listwise_identity = 0;
 
 /// initialize
 //

@@ -24,29 +24,46 @@
 #include "liblistwise_control.h"
 #include "macros.h"
 
+#define restrict __restrict
+
 #define SAME  1
 #define LEFT  2
 #define RIGHT 3
 #define INTER 4
 
-static int window_stage(lstack* const restrict ls, int x, int y, int off, int len)
+int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 {
+	if(lx->win.s[y].staged == 0)
+	{
+		lx->win.s[y].staged = &lx->win.s[y].storage[0];
+
+		if(lx->win.s[y].staged == lx->win.s[y].active)
+			lx->win.s[y].staged = &lx->win.s[y].storage[1];
+
+		lx->win.s[y].staged->l = 0;
+	}
+	
+	if(lx->win.s[y].staged->lease != lx->win.staged_era)
+		lx->win.s[y].staged->l = 0;
+
+	lx->win.s[y].staged->lease = lx->win.staged_era;
+
 	int type = LEFT;
 
 	int i;
-	for(i = 0; i < ls->s[x].w[y].l; i++)
+	for(i = 0; i < lx->win.s[y].staged->l; i++)
 	{
-		if(off == ls->s[x].w[y].s[i].o && len == ls->s[x].w[y].s[i].l)
+		if(off == lx->win.s[y].staged->s[i].o && len == lx->win.s[y].staged->s[i].l)
 		{
 			type = SAME; // same segment
 			break;
 		}
-		else if((off + len) < ls->s[x].w[y].s[i].o)
+		else if((off + len) < lx->win.s[y].staged->s[i].o)
 		{
 			type = LEFT; // disjoint on the left
 			break;
 		}
-		else if(off > (ls->s[x].w[y].s[i].o + ls->s[x].w[y].s[i].l))
+		else if(off > (lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l))
 		{
 			type = RIGHT; // disjoint on the right
 		}
@@ -54,109 +71,83 @@ static int window_stage(lstack* const restrict ls, int x, int y, int off, int le
 		{
 			type = INTER; // overlapping
 
-			int noff = MIN(ls->s[x].w[y].s[i].o, off);
-			int nlen = MAX(ls->s[x].w[y].s[i].o + ls->s[x].w[y].s[i].l, off + len) - noff;
+			int noff = MIN(lx->win.s[y].staged->s[i].o, off);
+			int nlen = MAX(lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l, off + len) - noff;
 
-			ls->s[x].w[y].zl += (nlen - ls->s[x].w[y].s[i].l);
+			lx->win.s[y].staged->zl += (nlen - lx->win.s[y].staged->s[i].l);
 
-			ls->s[x].w[y].s[i].o = noff;
-			ls->s[x].w[y].s[i].l = nlen;
+			lx->win.s[y].staged->s[i].o = noff;
+			lx->win.s[y].staged->s[i].l = nlen;
 
 			break;
 		}
 	}
 
-	if(type == LEFT || type == RIGHT || type == INTER)
+	if(type == LEFT || type == RIGHT)
 	{
-		if(type == LEFT || type == RIGHT)
+		if(len)
 		{
-			if(len)
+			// reallocate if necessary
+			if(lx->win.s[y].staged->a == lx->win.s[y].staged->l)
 			{
-				// reallocate if necessary
-				if(ls->s[x].w[y].a == ls->s[x].w[y].l)
-				{
-					int ns = ls->s[x].w[y].a ?: listwise_allocation_seed;
-					ns = ns * 2 + ns / 2;
+				int ns = lx->win.s[y].staged->a ?: listwise_allocation_seed;
+				ns = ns * 2 + ns / 2;
 
-					fatal(xrealloc, &ls->s[x].w[y].s, sizeof(*ls->s[0].w[0].s), ns, ls->s[x].w[y].a);
-					ls->s[x].w[y].a = ns;
-				}
-
-				// move down
-				memmove(
-						&ls->s[x].w[y].s[i + 1]
-					, &ls->s[x].w[y].s[i]
-					, (ls->s[x].w[y].a - i - 1) * sizeof(ls->s[0].w[0].s[0])
-				);
-
-				ls->s[x].w[y].s[i].o = off;
-				ls->s[x].w[y].s[i].l = len;
-				ls->s[x].w[y].l++;
-				ls->s[x].w[y].zl += len;
+				fatal(xrealloc, &lx->win.s[y].staged->s, sizeof(*lx->win.s[0].staged->s), ns, lx->win.s[y].staged->a);
+				lx->win.s[y].staged->a = ns;
 			}
-		}
 
-		ls->s[x].w[y].y = -1;	// window : staged
+			// move down
+			memmove(
+					&lx->win.s[y].staged->s[i + 1]
+				, &lx->win.s[y].staged->s[i]
+				, (lx->win.s[y].staged->a - i - 1) * sizeof(lx->win.s[0].staged->s[0])
+			);
+
+			lx->win.s[y].staged->s[i].o = off;
+			lx->win.s[y].staged->s[i].l = len;
+			lx->win.s[y].staged->l++;
+			lx->win.s[y].staged->zl += len;
+		}
 	}
 
 	finally : coda;
 }
 
-int API lstack_window_reset(lstack * const restrict ls, int x, int y)
+int API lstack_window_reset(lwx * const restrict lx, int y)
 {
-	if(ls->s[0].t[y] == 2)
-		ls->s[0].t[y].y = 0;	// temp : dirty
-
-	ls->s[0].w[y].y = 0;		// window : inactive
-	ls->s[0].w[y].zl = 0;
+	lx->win.s[y].active = 0;
+	lx->win.s[y].staged = 0;
 
 	return 0;
 }
 
-int API lstack_windows_unstage(lstack* const restrict ls)
+int API lstack_windows_unstage(lwx * const restrict lx)
 {
-	lx->era++;
-
-	LSTACK_ITERATE(ls, x, go)
-	if(go)
-	{
-		if(ls->s[0].w[x].y == -1)
-		{
-			fatal(lstack_window_reset, ls, 0, x);
-		}
-	}
-	LSTACK_ITEREND
+	lx->win.staged_era++;
 
 	return 0;
 }
 
 int API lstack_windows_reset(lwx * const restrict lx)
 {
-	LSTACK_ITERATE(ls, x, go)
-	if(go)
-	{
-		fatal(lstack_window_reset, ls, 0, x);
-	}
-	LSTACK_ITEREND
+	lx->win.staged_era++;
+	lx->win.active_era++;
 
 	return 0;
 }
 
-int API lstack_window_stage(lstack* const restrict ls, int y, int off, int len)
+int API lstack_windows_activate(lwx * const restrict lx)
 {
-	return window_stage(ls, 0, y, off, len);
-}
-
-int API lstack_windows_activate(lstack* const restrict ls, int y)
-{
-	LSTACK_ITERATE(ls, x, go)
+	int y;
+	LSTACK_ITERATE(lx, y, go)
 	if(go)
 	{
-		ls->win.s[x].active = ls->win.s[x].staged;
-		if(ls->s[0].w[y].y == -1)
-		{
-			ls->s[0].t[y].y = 0;	// temp : dirty
-		}
+		lx->win.s[y].active = lx->win.s[y].staged;
+		lx->win.s[y].staged = 0;
+
+		if(lx->s[0].t[y].y == LWTMP_WINDOW)
+			lx->s[0].t[y].y = LWTMP_UNSET;
 	}
 	LSTACK_ITEREND
 

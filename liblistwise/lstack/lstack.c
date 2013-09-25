@@ -27,10 +27,6 @@
 #include "macros.h"
 #include "liblistwise_control.h"
 
-#if SANITY
-#include "sanity.h"
-#endif
-
 #define restrict __restrict
 
 ///
@@ -198,8 +194,8 @@ static int writestack_alt(lwx * const restrict lx, int x, int y, const void* con
 	// reset the window for this row
 	if(x == 0)
 	{
-		ls->win.s[y].active = 0;
-		ls->win.s[y].staged = 0;
+		lx->win.s[y].active = 0;
+		lx->win.s[y].staged = 0;
 	}
 
 	finally : coda;
@@ -234,8 +230,8 @@ static int writestack(lwx * const restrict lx, int x, int y, const void* const r
 	// reset the window for this row
 	if(x == 0)
 	{
-		ls->win.s[y].active = 0;
-		ls->win.s[y].staged = 0;
+		lx->win.s[y].active = 0;
+		lx->win.s[y].staged = 0;
 	}
 
 	finally : coda;
@@ -263,8 +259,8 @@ static int vwritestack(lwx * const restrict lx, int x, int y, const char* const 
 	// reset the window for this row
 	if(x == 0)
 	{
-		ls->win.s[y].active = 0;
-		ls->win.s[y].staged = 0;
+		lx->win.s[y].active = 0;
+		lx->win.s[y].staged = 0;
 	}
 
 	finally : coda;
@@ -274,149 +270,7 @@ static int vwritestack(lwx * const restrict lx, int x, int y, const char* const 
 // API
 //
 
-static int __attribute__((nonnull(1, 5, 6))) listwise_exec_generator(
-	  const generator * const restrict g
-	, const char ** const restrict init
-	, const int * const restrict initls
-	, const int initl
-	, const lstack ** const restrict lx
-	, int dump
-)
-{
-	// ovec workspace
-	int* ovec = 0;
-	int ovec_len = 0;
-
-#if SANITY
-	// sanity
-	sanityblock * sb = 0;
-#endif
-
-	// system implemented operators
-	operator * yop = op_lookup("y", 1);
-	operator * oop = op_lookup("o", 1);
-
-	// list stack allocation
-	if(!*lx)
-		fatal(xmalloc, lx, sizeof(*lx[0]));
-
-	// write init elements to top of list stack
-	int x;
-	for(x = 0; x < initl; x++)
-	{
-		fatal(writestack, *lx, 0, x, init[x], initls[x], 0);
-	}
-
-	// write initial generator args at top of list stack
-	for(x = 0; x < g->argsl; x++)
-	{
-		fatal(writestack, *lx, 0, x + initl, g->args[x]->s, g->args[x]->l, 0);
-	}
-
-	// the initial state of the selection is all
-	fatal(lstack_sel_reset, *lx);
-
-	if(dump)
-		lstack_dump(*lx);
-
-#if SANITY
-	if(listwise_sanity)
-	{
-		fatal(sanityblock_create, &sb);
-		fatal(sanity, *lx, sb);
-	}
-#endif
-
-	// execute operations
-	for(x = 0; x < g->opsl; x++)
-	{
-		int isor = g->ops[x]->op == oop;
-		while(g->ops[x]->op == oop)
-		{
-			if(++x == g->opsl)
-				break;
-		}
-
-		if(!isor)
-		{
-			// if the previous operator staged windows, activate or unstage them
-			if(x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE) || g->ops[x]->op == yop)
-			{
-				if(g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE || g->ops[x]->op == yop)
-				{
-					fatal(lstack_windows_activate, *lx);
-				}
-				else
-				{
-					fatal(lstack_windows_unstage, *lx);
-				}
-			}
-
-			// if the previous operator staged selections, activate or unstage them
-			if(x && (g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE) || g->ops[x]->op == yop)
-			{
-				if(g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE || g->ops[x]->op == yop)
-				{
-					fatal(lstack_sel_activate, *lx);
-				}
-				else
-				{
-					fatal(lstack_sel_unstage, *lx);
-				}
-			}
-		}
-
-		if(dump)
-		{
-			if(x)
-				lstack_dump(*lx);
-
-			dprintf(listwise_err_fd, "\n");
-
-			char buf[128];
-			operation_write(buf, sizeof(buf), g->ops[x]);
-			dprintf(listwise_err_fd, " >> %s\n", buf);
-		}
-
-		// execute the operator
-		if(((*lx)->l || g->ops[x]->op->optype & LWOP_EMPTYSTACK_YES) && g->ops[x]->op->op_exec)
-			fatal(g->ops[x]->op->op_exec, g->ops[x], *lx, &ovec, &ovec_len);
-
-#if SANITY
-		if(listwise_sanity)
-			fatal(sanity, *lx, sb);
-#endif
-
-		if(g->ops[x]->op->optype & LWOP_WINDOW_RESET)
-			fatal(lstack_windows_reset, *lx);
-
-		if(g->ops[x]->op->optype & LWOP_SELECTION_RESET)
-			fatal(lstack_sel_all, *lx);
-	}
-
-	(*lx)->era++;												// age windows
-
-	// clear string props set with the fx operator
-	for(x = 0; x < object_registry.l; x++)
-		xfree(&object_registry.e[x]->string_property);
-
-	if(dump)
-		lstack_dump(*lx);
-
-finally:
-	free(ovec);
-#if SANITY
-	sanityblock_free(sb);
-#endif
-coda;
-}
-
-int API lstack_create(lstack ** const restrict lx)
-{
-	return xmalloc(lx, sizeof(**lx));
-}
-
-void API lstack_free(lwx * lx)
+void API lwx_free(lwx * lx)
 {
 	if(lx && lx != listwise_identity)
 	{
@@ -448,13 +302,13 @@ void API lstack_free(lwx * lx)
 	}
 }
 
-void API lstack_xfree(lstack** lx)
+void API lwx_xfree(lwx ** lx)
 {
-	lstack_free(*lx);
+	lwx_free(*lx);
 	*lx = 0;
 }
 
-void API lstack_reset(lwx * lx)
+void API lwx_reset(lwx * lx)
 {
 	int x;
 	int y;
@@ -476,12 +330,7 @@ void API lstack_reset(lwx * lx)
 	}
 }
 
-int lstack_deepcopy(lwx ** const A, lwx * const B)
-{
-	return 1;	// not implemented
-}
-
-int API lstack_dump(const lwx * const lx)
+int API lstack_dump(lwx * const lx)
 {
 	int x;
 	int y;
@@ -525,23 +374,19 @@ int API lstack_dump(const lwx * const lx)
 				, x
 				, y
 				, select ? ">" : " "
-				, staged ? ">" : " "
+				, staged ? "+" : " "
 			);
 
 			// display the string value of the row
 			char * s;
-			char * sl;
-			fatal(lstack_readrow, lx, x, y, &os, &osl, 1, 0, 0, 0);
+			int sl;
+			fatal(lstack_readrow, lx, x, y, &s, &sl, 1, 0, 0, 0);
 
-			dprintf(listwise_err_fd, "'%.*s'", lx->s[x].s[y].l, lx->s[x].s[y].s);
+			dprintf(listwise_err_fd, "'%.*s'", sl, s);
 
 			// also display object properties if applicable
 			if(lx->s[x].s[y].type)
 			{
-				char * os;
-				int ol;
-				fatal(lstack_readrow, lx, x, y, &s, &l, 0, 0, 0, 0);
-
 				dprintf(listwise_err_fd, "[%hhu]%p/%p", lx->s[x].s[y].type, *(void**)lx->s[x].s[y].s, lx->s[x].s[y].s);
 			}
 			dprintf(listwise_err_fd, "\n");
@@ -575,7 +420,7 @@ int API lstack_dump(const lwx * const lx)
 				dprintf(listwise_err_fd, "\n");
 			}
 
-			// indicate stagedwindows
+			// indicate staged windows
 			if(x == 0 && lx->win.s[y].staged)
 			{
 				int z = -1;
@@ -738,13 +583,6 @@ int API lstack_shift(lwx * const restrict lx)
 		);
 
 		lx->s[--lx->l] = T;
-
-		// selection reset 
-		lx->sel.active = 0;
-		lx->sel.staged = 0;
-
-		// window reset
-		lx->era++;
 	}
 
 	return 0;
@@ -785,13 +623,6 @@ int API lstack_unshift(lwx * const restrict lx)
 
 	// reset it
 	lx->s[0].l = 0;
-
-	// selection reset 
-	lx->sel.active = 0;
-	lx->sel.staged = 0;
-
-	// window reset
-	lx->era++;
 
 	finally : coda;
 }
@@ -843,16 +674,6 @@ int API lstack_merge(lwx * const restrict lx, int to, int from)
 	lx->s[from].a = 0;
 	lx->s[from].l = 0;
 
-	if(to == 0 || from == 0)
-	{
-		// selection reset 
-		lx->sel.active = 0;
-		lx->sel.staged = 0;
-
-		// window reset
-		lx->era++;
-	}
-
 	while(from < lx->l && lx->s[from].l == 0)
 		from++;
 	from--;
@@ -896,16 +717,6 @@ int API lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 
 	// adjust the length
 	lx->s[bx].l--;
-
-	if(ax == 0 || bx == 0)
-	{
-		// selection reset 
-		lx->sel.active = 0;
-		lx->sel.staged = 0;
-
-		// window reset
-		lx->era++;
-	}
 
 	return 0;
 }
@@ -982,7 +793,7 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 	}
 
 	// if there is a window in effect for this entry
-	if(win && x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->era)
+	if(win && x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
 	{
 		if(lx->s[x].t[y].y != LWTMP_WINDOW)
 		{

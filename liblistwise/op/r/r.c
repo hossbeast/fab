@@ -15,7 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 /*
 
@@ -32,29 +33,29 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "r"
 		, .optype				= 0
 		, .op_exec			= op_exec
+		, .mnemonic			= "reverse"
 		, .desc					= "reverse selected items"
 	}
 	, {}
 };
 
-void swap(lstack* ls, int a, int b)
+void swap(lwx* ls, int a, int b)
 {
 	typeof(ls->s[0].s[0]) t = ls->s[0].s[a];
 	ls->s[0].s[a]						= ls->s[0].s[b];
 	ls->s[0].s[b]						= t;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	if(ls->sel.all)
+	if(ls->sel.active == 0)
 	{
 		int x;
 		for(x = 0; x < (ls->s[0].l / 2); x++)
@@ -63,22 +64,22 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	else
 	{
 		int a = 0;
-		while((ls->sel.s[a/8] & (0x01 << (a%8))) == 0)
+		while((ls->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
 			a++;
 
-		int b = (ls->sel.sl * 8) + 7;
-		while((b/8) >= ls->sel.sl || (ls->sel.s[b/8] & (0x01 << (b%8))) == 0)
+		int b = (ls->sel.active->sl * 8) + 7;
+		while((b/8) >= ls->sel.active->sl || (ls->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
 			b--;
 
 		int x;
-		for(x = 0; x < (ls->sel.l / 2); x++)
+		for(x = 0; x < (ls->sel.active->l / 2); x++)
 		{
 			swap(ls, a++, b--);
 
-			while((ls->sel.s[a/8] & (0x01 << (a%8))) == 0)
+			while((ls->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
 				a++;
 
-			while((ls->sel.s[b/8] & (0x01 << (b%8))) == 0)
+			while((ls->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
 				b--;
 		}
 	}

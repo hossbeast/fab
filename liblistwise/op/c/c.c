@@ -15,7 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -38,7 +39,7 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -61,7 +62,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int from = -1;
 

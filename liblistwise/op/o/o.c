@@ -22,7 +22,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
 
 #include "liblistwise_control.h"
 
@@ -42,11 +42,10 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lstack*, int**, int*);
-
 operator op_desc[] = {
 	{
 		  .s						= "o"
+		, .mnemonic			= "or"
 		, .desc					= "OR : aggregate selections and windows across operators"
 	}, {}
 };

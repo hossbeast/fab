@@ -20,8 +20,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -45,8 +45,8 @@ OPERATION
 
 */
 
-static int op_exec_ss(operation*, lstack*, int**, int*);
-static int op_exec_sn(operation*, lstack*, int**, int*);
+static int op_exec_ss(operation*, lwx*, int**, int*);
+static int op_exec_sn(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -67,13 +67,16 @@ operator op_desc[] = {
 #define STRING_NCASE	2
 #define NUMERIC				3
 
-static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int mode)
+static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int mode)
 {
+	typeof(ls->s[0].s[0]) * Ts = 0;
+	typeof(ls->s[0].t[0]) * Tt = 0;
+	typeof(ls->win.s[0]) * Tw = 0;
+
 	int * mema = 0;
 	int * memb = 0;
-	typeof(ls->s[0].s[0]) * T = 0;
 
-	size_t num = ls->sel.all ? ls->s[0].l : ls->sel.l;
+	size_t num = ls->sel.active ? ls->sel.active->l : ls->s[0].l;
 
 	// indexes to be sorted
 	fatal(xmalloc, &mema, num * sizeof(*mema));
@@ -82,8 +85,14 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int mode
 	fatal(xmalloc, &memb, num * sizeof(*memb));
 
 	// copies of entries to be swapped
-	fatal(xmalloc, &T, ls->s[0].l * sizeof(*T));
-	memcpy(T, ls->s[0].s, ls->s[0].l * sizeof(*T));
+	fatal(xmalloc, &Ts, ls->s[0].l * sizeof(*Ts));
+	memcpy(Ts, ls->s[0].s, ls->s[0].l * sizeof(*Ts));
+
+	fatal(xmalloc, &Tt, ls->s[0].l * sizeof(*Tt));
+	memcpy(Tt, ls->s[0].t, ls->s[0].l * sizeof(*Tt));
+
+	fatal(xmalloc, &Tw, ls->s[0].l * sizeof(*Tw));
+	memcpy(Tw, ls->win.s, ls->s[0].l * sizeof(*Tw));
 
 	int i = 0;
 	int x;
@@ -151,17 +160,21 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int mode
 
 	for(x = 0; x < i; x++)
 	{
-		ls->s[0].s[memb[x]] = T[mema[x]];
+		ls->s[0].s[memb[x]] = Ts[mema[x]];
+		ls->s[0].t[memb[x]] = Tt[mema[x]];
+		ls->win.s[memb[x]] = ls->win.s[mema[x]];
 	}
 
 finally:
 	free(mema);
 	free(memb);
-	free(T);
+	free(Ts);
+	free(Tt);
+	free(Tw);
 coda;
 }
 
-int op_exec_ss(operation * o, lstack * ls, int ** ovec, int * ovec_len)
+int op_exec_ss(operation * o, lwx * ls, int ** ovec, int * ovec_len)
 {
 	int ncase = 0;
 
@@ -171,7 +184,7 @@ int op_exec_ss(operation * o, lstack * ls, int ** ovec, int * ovec_len)
 	return op_exec(o, ls, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE);
 }
 
-int op_exec_sn(operation * o, lstack * ls, int ** ovec, int * ovec_len)
+int op_exec_sn(operation * o, lwx * ls, int ** ovec, int * ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, NUMERIC);
 }

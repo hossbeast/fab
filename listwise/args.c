@@ -21,15 +21,18 @@
 #include <string.h>
 #include <getopt.h>
 
-#include <listwise.h>
-#include <listwise/operator.h>
-#include <listwise/ops.h>
-#include <listwise/generator.h>
-#include <listwise/lstack.h>
+#include "listwise.h"
+#include "listwise/operator.h"
+#include "listwise/ops.h"
+#include "listwise/generator.h"
+
+#include "listwise_control.h"
 
 #include "args.h"
 
 #include "macros.h"
+#include "xmem.h"
+#include "xstring.h"
 
 struct g_args_t g_args;
 
@@ -68,6 +71,7 @@ if(help)
 " -z         separate output items with null byte instead of newline\n"
 " -0         separate input items read from file by null byte instead of newline\n"
 " -i <item>  initial list item\n"
+" -l <path>  read initial list items from <path>\n"
 " -f <path>  read generator-string from <path> instead of argv\n"
 "            <path> of - indicates read from stdin\n"
 " -          equal to -f -\n"
@@ -82,37 +86,54 @@ if(operators)
 	printf(
 "----------------- [ operators ] ------------------------------------------------\n"
 "\n"
-" 1  2  3  4  5  6  7  8  9    name  description\n"
+" 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
 	);
 
 	int x;
 	for(x = 0; x < g_ops_l; x++)
 	{
-		printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s\n"
-			, g_ops[x]->optype & LWOP_SELECTION_READ				? 'x' : ' '
-			, g_ops[x]->optype & LWOP_SELECTION_WRITE				? 'x' : ' '
+		printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s"
+/* have some effect */
+			, g_ops[x]->optype & LWOP_SELECTION_STAGE ? 'x' : ' '
+			, g_ops[x]->optype & LWOP_SELECTION_ACTIVATE ? 'x' : ' '
 			, g_ops[x]->optype & LWOP_SELECTION_RESET				? 'x' : ' '
-			, g_ops[x]->optype & LWOP_MODIFIERS_CANHAVE			? 'x' : ' '
+			, g_ops[x]->optype & LWOP_WINDOWS_STAGE ? 'x' : ' '
+			, g_ops[x]->optype & LWOP_WINDOWS_ACTIVATE ? 'x' : ' '
+			, g_ops[x]->optype & LWOP_WINDOWS_RESET				? 'x' : ' '
 			, g_ops[x]->optype & LWOP_ARGS_CANHAVE					? 'x' : ' '
+			, g_ops[x]->optype & LWOP_EMPTYSTACK_YES ? 'x' : ' '
+
+/* informational */
+			, g_ops[x]->optype & LWOP_STACKOP ? 'x' : ' '
+			, g_ops[x]->optype & LWOP_MODIFIERS_CANHAVE					? 'x' : ' '
 			, g_ops[x]->optype & LWOP_OPERATION_PUSHBEFORE	? 'x' : ' '
 			, g_ops[x]->optype & LWOP_OPERATION_INPLACE			? 'x' : ' '
 			, g_ops[x]->optype & LWOP_OPERATION_FILESYSTEM	? 'x' : ' '
-			, g_ops[x]->optype & LWOP_OBJECT_NO							? 'x' : ' '
 			, g_ops[x]->s
 			, g_ops[x]->desc
 		);
+
+		if(g_ops[x]->mnemonic)
+		{
+			printf(" (%s)", g_ops[x]->mnemonic);
+		}
+		printf("\n");
 	}
 
 	printf(
-		" 1. SELECTION_READ\n"
-		" 2. SELECTION_WRITE\n"
+		" 1. SELECTION_STAGE\n"
+		" 2. SELECTION_ACTIVATE\n"
 		" 3. SELECTION_RESET\n"
-		" 4. MODIFIERS_CANHAVE\n"
-		" 5. ARGS_CANHAVE\n"
-		" 6. OPERATION_PUSHBEFORE\n"
-		" 7. OPERATION_INPLACE\n"
-		" 8. OPERATION_FILESYSTEM\n"
-		" 9. OBJECT_NO\n"
+		" 4. WINDOWS_STAGE\n"
+		" 5. WINDOWS_ACTIVATE\n"
+		" 6. WINDOWS_RESET\n"
+		" 7. ARGS_CANHAVE\n"
+		" 8. EMPTYSTACK_YES\n"
+		" 9. STACKOP\n"
+		" A. MODIFIERS_CANHAVE\n"
+		" B. OPERATION_PUSHBEFORE\n"
+		" C. OPERATION_INPLACE\n"
+		" D. OPERATION_FILESYSTEM\n"
 	);
 	printf("\n");
 }
@@ -128,10 +149,8 @@ if(help || operators)
 	exit(!valid);
 }
 
-int parse_args(int argc, char** argv)
+int parse_args(const int argc, char ** const argv, int * const genx)
 {
-	int init_lista = 0;
-
 	int help = 0;
 	int version = 0;
 	int operators = 0;
@@ -148,7 +167,7 @@ int parse_args(int argc, char** argv)
 		"adhknz0"
 
 		// with-argument switches
-		"f:i:"
+		"f:l:i:"
 	;
 
 	int c;
@@ -181,17 +200,24 @@ int parse_args(int argc, char** argv)
 				free(g_args.generator_file);
 				g_args.generator_file = strdup(optarg);
 				break;
+			case 'l':
+				free(g_args.init_file);
+				g_args.init_file = strdup(optarg);
+				break;
 			case 'i':
 				{
-					if(g_args.init_listl == init_lista)
+					if(g_args.init_listl == g_args.init_lista)
 					{
-						int ns = init_lista ?: 10;
+						int ns = g_args.init_lista ?: 10;
 						ns = ns * 2 + ns / 2;
 
-						g_args.init_list = realloc(g_args.init_list, sizeof(*g_args.init_list) * ns);
-						init_lista = ns;
+						fatal(xrealloc, &g_args.init_list, sizeof(*g_args.init_list), ns, g_args.init_lista);
+						fatal(xrealloc, &g_args.init_list_lens, sizeof(*g_args.init_list_lens), ns, g_args.init_lista);
+						g_args.init_lista = ns;
 					}
-					g_args.init_list[g_args.init_listl++] = strdup(optarg);
+					g_args.init_list[g_args.init_listl] = strdup(optarg);
+					g_args.init_list_lens[g_args.init_listl] = strlen(optarg);
+					g_args.init_listl++;
 				}
 				break;
 			case 'h':
@@ -210,15 +236,23 @@ int parse_args(int argc, char** argv)
 
 	if(optind < argc && strcmp(argv[optind], "-") == 0)
 	{
-		free(g_args.generator_file);
-		g_args.generator_file = strdup("-");
+		fatal(xstrdup, &g_args.generator_file, "-");
 		optind++;
 	}
 
-	return optind;
+	(*genx) = optind;
+
+	finally : coda;
 }
 
 void args_teardown()
 {
+	int x;
+	for(x = 0; x < g_args.init_listl; x++)
+		free(g_args.init_list[x]);
+
+	free(g_args.init_list);
 	free(g_args.generator_file);
+	free(g_args.init_file);
+	free(g_args.init_list_lens);
 }

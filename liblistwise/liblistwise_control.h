@@ -15,10 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_CONTROL_H
-#define _LISTWISE_CONTROL_H
+#ifndef _LIBLISTWISE_CONTROL_H
+#define _LIBLISTWISE_CONTROL_H
 
 #include "control_core.h"
+#include "listwise/xtra.h"
 
 #define CODA_BAD_ACTION                             \
 	_coda_r = 1;                                    	\

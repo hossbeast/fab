@@ -20,8 +20,8 @@
 
 /* fml - formula for executing an external process */
 
-#include <listwise.h>
-#include <listwise/generator.h>
+#include "listwise.h"
+#include "listwise/generator.h"
 
 #include "ffn.h"
 #include "ts.h"

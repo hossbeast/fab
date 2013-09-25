@@ -17,14 +17,16 @@
 
 # directories
 $dcommon      = [ $*/common ]
-$dliblistwise = [ $*/liblistwise ]
+$dliblistwise = [ $*/liblistwise ~ j ]
 $dlistwise    = [ $*/listwise ]
 $dfab         = [ $*/fab ]
 
+$incdirs 			= [ $dliblistwise [ $dliblistwise/listwise ~ j ] ~ s/^/-I ]
+
 # invocations
-+[ $dliblistwise ](-$liblistwise)																													@liblistwise
-+[ $dlistwise ](-$listwise; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )						@listwise
-+[ $dfab ](-$fab; -$faboplist; -$fabd; $liblistwise; $incdirs = [ -I$dliblistwise ~ j ] )	@fab
++[ $dliblistwise ](-$liblistwise)																							@liblistwise
++[ $dlistwise ](-$listwise; $liblistwise $dliblistwise $incdirs)							@listwise
++[ $dfab ](-$fab; -$faboplist; -$fabd; $liblistwise $dliblistwise $incdirs)		@fab
 
 # default target - make everything
 [ @all ] 				: [ @liblistwise.all @listwise.all @fab.all ]

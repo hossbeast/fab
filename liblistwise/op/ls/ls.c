@@ -21,7 +21,8 @@
 #include <string.h>
 #include <dirent.h>
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -67,8 +68,8 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec_ls(operation*, lstack*, int**, int*);
-static int op_exec_lsr(operation*, lstack*, int**, int*);
+static int op_exec_ls(operation*, lwx*, int**, int*);
+static int op_exec_lsr(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -93,7 +94,7 @@ int op_validate(operation* o)
 	return 0;
 }
 
-static int listing(lstack* ls, char * s, int recurse)
+static int listing(lwx* ls, char * s, int recurse)
 {
 	DIR * dd = 0;
 	if((dd = opendir(s)))
@@ -132,11 +133,12 @@ static int listing(lstack* ls, char * s, int recurse)
 	}
 
 finally:
-	closedir(dd);
+	if(dd)
+		closedir(dd);
 coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int recurse)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse)
 {
 	int x;
 	fatal(lstack_unshift, ls);
@@ -148,31 +150,23 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int recurse)
 	}
 	else
 	{
-		for(x = 0; x < ls->s[1].l; x++)
+		LSTACK_ITERATE(ls, x, go)
+		if(go)
 		{
-			int go = 1;
-			if(!ls->sel.all)
-			{
-				if(ls->sel.sl <= (x/8))
-					break;
-
-				go = (ls->sel.s[x/8] & (0x01 << (x%8)));
-			}
-
-			if(go)
-				fatal(listing, ls, lstack_string(ls, 1, x), recurse);
+			fatal(listing, ls, lstack_string(ls, 1, x), recurse);
 		}
+		LSTACK_ITEREND
 	}
 
 	finally : coda;
 }
 
-int op_exec_ls(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_ls(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 0);
 }
 
-int op_exec_lsr(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_lsr(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 1);
 }

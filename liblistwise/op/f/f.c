@@ -18,8 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -28,7 +28,7 @@
 
 /*
 
-p operator - partition : window by fields (or characters, when no window in effect)
+f operator - fields : window by fields
 
 ARGUMENTS (1, or multiples of 2)
 	 1  - offset, in fields, to start of window
@@ -39,23 +39,18 @@ ARGUMENTS (1, or multiples of 2)
 
 OPERATION
 
-	1. if nothing selected, select all
-	2. foreach selected row
-    2.1. if no window is in effect, 
-		2.2. replace that string with a slice of itself specified by the arguments
-
 */
 
 static int op_validate(operation*);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "p"
+		  .s						= "f"
 		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "window by fields or characters"
+		, .desc					= "window by fields"
 	}
 	, {}
 };
@@ -75,57 +70,21 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	typeof(ls->s[0].w[0].s[0]) * wws = 0;
+	typeof(lx->win.s[0].active->s[0]) * wws = 0;
 	int wl = 0;
 	int wa = 0;
 
 	int x;
-	LSTACK_ITERATE(ls, x, go)
+	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(ls->s[0].w[x].y == 0)
-		{
-			char * ss = 0;
-			int ssl   = 0;
-
-			fatal(lstack_readrow, ls, 0, x, &ss, &ssl, 1, 0, 0, 0);
-
-			int i;
-			for(i = 0; i < o->argsl; i += 2)
-			{
-				int win_off = o->args[i]->i64;
-				int win_len = 0;
-
-				if(o->argsl > i)
-					win_len = o->args[i + 1]->i64;
-
-				int off = win_off;
-				int len = win_len;
-
-				if(win_off < 0)
-					off = ssl + win_off;
-				if(win_len == 0)
-					len = ssl - off;
-				else
-					len = MIN(len, ssl - off);
-
-				if(off < ssl && len > 0)
-				{
-					// append window segment
-					fatal(lstack_window_add, ls, 0, x, off, len);
-
-					// record this index was hit
-					fatal(lstack_sel_stage, ls, x);
-				}
-			}
-		}
-		else
+		if(lx->win.s[x].active)
 		{
 			// original windows length
-			typeof(ls->s[0].w[0].s[0]) * ws = ls->s[0].w[x].s;
-			wl = ls->s[0].w[x].l;
+			typeof(lx->win.s[0].active->s[0]) * ws = lx->win.s[x].active->s;
+			wl = lx->win.s[x].active->l;
 
 			int wasreset = 0;
 			int i;
@@ -162,22 +121,22 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 							// take a copy of the window for this row
 							if(wl > wa)
 							{
-								fatal(xrealloc, &wws, sizeof(*ws), wl, wa);
+								fatal(xrealloc, &wws, sizeof(*wws), wl, wa);
 								wa = wl;
 							}
-							memcpy(wws, ls->s[0].w[x].s, sizeof(*ws) * wl);
+							memcpy(wws, lx->win.s[x].active->s, sizeof(*wws) * wl);
 							ws = wws;
 
 							// reset the window
-							fatal(lstack_window_reset, ls, 0, x);
+							fatal(lstack_window_reset, lx, x);
 							wasreset = 1;
+
+							// record this index was hit
+							fatal(lstack_sel_stage, lx, x);
 						}
 
 						// append window segment
-						fatal(lstack_window_stage, ls, 0, x, ws[off].o, nlen);
-
-						// record this index was hit
-						fatal(lstack_sel_stage, ls, x);
+						fatal(lstack_window_stage, lx, x, ws[off].o, nlen);
 					}
 				}
 			}

@@ -18,8 +18,8 @@
 #ifndef _LWUTIL_H
 #define _LWUTIL_H
 
-#include <listwise.h>
-#include <listwise/generator.h>
+#include "listwise.h"
+#include "listwise/generator.h"
 
 // listwise interface to list objects
 //  (this type is a placeholder - instances of this object are NOT ever passed into liblistwise)

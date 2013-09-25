@@ -19,7 +19,8 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -37,36 +38,35 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "d"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_STACKOP
+		, .optype				= LWOP_STACKOP
 		, .op_exec			= op_exec
 		, .desc					= "extract selected items into a new list"
 	}
 	, {}
 };
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	// create a new list at index 0
 	fatal(lstack_unshift, ls);
 
-	if(!ls->sel.all && ls->sel.l != ls->s[1].l)
+	if(ls->sel.active)
 	{
 		// ensure allocation in the new list @ [0]
-		fatal(lstack_ensure, ls, 0, ls->s[1].l - ls->sel.l - 1, -1);
+		fatal(lstack_ensure, ls, 0, ls->s[1].l - ls->sel.active->l - 1, -1);
 
 		int i = 0;
 		int x;
 		for(x = ls->s[1].l - 1; x >= 0; x--)
 		{
-			if((ls->sel.sl <= (x/8)) || (ls->sel.s[x/8] & (0x01 << (x%8))) == 0)
+			if((ls->sel.active->sl <= (x/8)) || (ls->sel.active->s[x/8] & (0x01 << (x%8))) == 0)
 			{
-				fatal(lstack_move, ls, 0, ls->s[1].l - ls->sel.l - 1 - i, 1, x);
+				fatal(lstack_move, ls, 0, ls->s[1].l - ls->sel.active->l - 1 - i, 1, x);
 			}
 		}
 	}

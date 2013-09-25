@@ -19,7 +19,8 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -37,7 +38,7 @@ ARGUMENTS
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -59,7 +60,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int off = 0;
 	int len = 0;
@@ -73,37 +74,27 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		off = ls->s[0].l + off;
 	if(len == 0)
 	{
-		if(ls->sel.all)
+		if(ls->sel.active == 0)
 			len = ls->s[0].l;
 		else
-			len = ls->sel.l;
+			len = ls->sel.active->l;
 	}
 
 	int x;
 	int i = 0;
 	int j = 0;
-	for(x = 0; x < ls->s[0].l; x++)
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
 	{
-		int go = 1;
-		if(!ls->sel.all)
+		if(i >= off && j < len)
 		{
-			if(ls->sel.sl <= (x/8))
-				break;
-
-			go = (ls->sel.s[x/8] & (0x01 << (x%8)));
+			fatal(lstack_sel_stage, ls, x);
+			j++;
 		}
 
-		if(go)
-		{
-			if(i >= off && j < len)
-			{
-				fatal(lstack_sel_stage, ls, x);
-				j++;
-			}
-
-			i++;
-		}
+		i++;
 	}
+	LSTACK_ITEREND
 
 	finally : coda;
 }

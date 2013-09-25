@@ -20,15 +20,14 @@
 
 #include <stdint.h>
 
-/*
+/* liblistwise API
+**
 ** core functionality
-**  listwise.h      - listwise evaluation, iterate lstacks, read lstack rows
+**  listwise.h         - listwise evaluation, iterate lstacks, read lstack rows
 **
 ** extra functionality
 **  listwise/xtra.h - register additional operators, tune execution parameters, etc
 */
-
-#define restrict __restrict
 
 /// listwise execution context
 //
@@ -36,6 +35,11 @@
 //
 struct lwx_t;
 typedef struct lwx_t lwx;
+
+// implementation for LSTACK_ITER* macros
+#include <listwise/iterate.h>
+
+#define restrict __restrict
 
 /// listwise_exec
 //
@@ -58,53 +62,14 @@ typedef struct lwx_t lwx;
 //  otherwise, an existing lw context is reused
 //
 int listwise_exec(
-    const char * const restrict s
+    char * const restrict s
   , int l
-  , const char ** const restrict init
-  , const int * const restrict initls
+  , char ** const restrict init
+  , int * const restrict initls
   , const int initl
-  , const lwx ** const restrict ls
+  , lwx ** restrict lx
 )
   __attribute__((nonnull(1, 6)));
-
-/// lwx_reset 
-//
-// SUMMARY
-//  reset (but do not deallocate) an lw context
-//
-// REMARKS
-//  no-op with zero-valued parameter
-//
-void lwx_reset(lwx * const restrict)
-  __attribute__((nonnull));
-
-/// lwx_getflags
-//
-// get application-use flags associated with lw
-//
-uint64_t lwx_getflags(lwx * const restrict)
-	__attribute__((nonnull));
-
-/// lwx_setflags
-//
-// set application-use flags associated with lw
-//
-uint64_t lwx_setflags(lwx * const restrict, const uint64_t)
-	__attribute__((nonnull));
-
-/// lwx_getptr
-//
-// get application-use ptr associated with lw
-//
-void * lwx_getptr(lwx * const restrict)
-	__attribute__((nonnull));
-
-/// lwx_setptr
-//
-// set application-use ptr associated with lw
-//
-void * lwx_setptr(lwx * const, void * const)
-	__attribute__((nonnull(1)));
 
 /// lwx_free
 //
@@ -121,88 +86,36 @@ void lwx_free(lwx * const restrict);
 void lwx_xfree(lwx ** const restrict)
   __attribute__((nonnull));
 
-/// lwx_deepcopy
-//
-// SUMMARY
-//  create a deep copy of an lw context
-//
-// PARAMETERS
-//  dst - copy returned here
-//  src - source lwx
-//
-// RETURNS
-//  0 for success
-//
-// REMARKS
-//  selection and windows are reset in the copy
-//  the data associated with the *ptr and *flags apis are reset in the copy
-//
-int lwx_deepcopy(lwx ** const restrict, lwx * const restrict)
-  __attribute__((nonnull));
-
 ///
 /// macros for iterating the lstack in an lw context
 ///
 
-void lwx_iterate_loop(lwx * const restrict lx, const int y, int * const restrict go)
-  __attribute__((nonnull));
-
-void lwx_lists(lwx * const restrict lx)
-  __attribute__((nonnull));
-  
-void lwx_rows(lwx * const restrict lx, const int x)
-  __attribute__((nonnull));
-
-#define LSTACK_ITERATE_LOOP(lx, y, go)          \
-  int go;                                       \
-  lwx_iterate_loop(lx, y, &go);
-
-#define LSTACK_ITERATE_HEADER(lx, x, y, go)     \
-  if(lwx_lists(lx) > x)                         \
-  {                                             \
-    for(y = 0; y < lwx_rows(lx, x); y++)        \
-
-#define LSTACK_ITERREV_HEADER(lx, x, y, go)     \
-  if(lwx_lists(lx) > x)                         \
-  {                                             \
-    for(y = lwx_rows(lx, x) - 1; y >= 0; y--)   \
-    {
-
 // iterate the selected elements of the 0th list of the lstack
-#define LSTACK_ITERATE(lx, y, go)       \
-  LSTACK_ITERATE_HEADER(lx, 0, y, go)   \
-  LSTACK_ITERATE_LOOP(lx, y, go)
+#define LSTACK_ITERATE(lx, y, go) LSTACK_ITERATE_LIST(lx, 0, y, go)
 
 // iterate in reverse the selected elements of the 0th list of the lstack
-#define LSTACK_ITERREV(lx, y, go)       \
-  LSTACK_ITERREV_HEADER(lx, 0, y, go)   \
-  LSTACK_ITERATE_LOOP(lx, y, go)
+#define LSTACK_ITERREV(lx, y, go) LSTACK_ITERREV_LIST(lx, 0, y, go)
 
-// iterate the selected elements of the xth list on the lstack
+// iterate elements of the xth list on the lstack
+//  iteration limited to selected elements when x == 0
 #define LSTACK_ITERATE_LIST(lx, x, y, go) \
   LSTACK_ITERATE_HEADER(lx, x, y, go)     \
-  LSTACK_ITERATE_LOOP(lx, y, go)
+  LSTACK_ITERATE_LOOP(lx, x, y, go)
 
-// iterate in reverse the selected elements of the xth list on the lstack
+// iterate in reverse elements of the xth list on the lstack
+//  iteration limited to selected elements when x == 0
 #define LSTACK_ITERREV_LIST(lx, x, y, go) \
   LSTACK_ITERREV_HEADER(lx, x, y, go)     \
-  LSTACK_ITERATE_LOOP(lx, y, go)
+  LSTACK_ITERATE_LOOP(lx, x, y, go)
 
 // close an iterate block
 #define LSTACK_ITEREND }}
 
-// count selection in the top list
-#define LSTACK_COUNT(lx) ({   \
-  int c = 0;                  \
-  int x;                      \
-  LSTACK_ITERATE(lx, x, go)   \
-  if(go)                      \
-  {                           \
-    c++;                      \
-  }                           \
-  LSTACK_ITEREND;             \
-  c;                          \
-})
+// get the number of selected elements of the 0th list of the lstack
+#define LSTACK_COUNT(lx) LSTACK_COUNT_LIST(lx, 0)
+
+// get the number of lists in the lstack
+#define LSTACK_LISTS(lx) lwx_lists(lx)
 
 /// lstack_getbytes
 //
@@ -263,6 +176,45 @@ int lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restri
 //
 char * lstack_string(lwx * const restrict lx, int x, int y)
   __attribute__((nonnull));
+
+/// lwx_reset 
+//
+// SUMMARY
+//  reset (but do not deallocate) an lw context
+//
+// REMARKS
+//  no-op with zero-valued parameter
+//
+void lwx_reset(lwx * const restrict)
+  __attribute__((nonnull));
+
+/// lwx_getflags
+//
+// get application-use flags associated with lw
+//
+uint64_t lwx_getflags(lwx * const restrict)
+	__attribute__((nonnull));
+
+/// lwx_setflags
+//
+// set application-use flags associated with lw
+//
+uint64_t lwx_setflags(lwx * const restrict, const uint64_t)
+	__attribute__((nonnull));
+
+/// lwx_getptr
+//
+// get application-use ptr associated with lw
+//
+void * lwx_getptr(lwx * const restrict)
+	__attribute__((nonnull));
+
+/// lwx_setptr
+//
+// set application-use ptr associated with lw
+//
+void * lwx_setptr(lwx * const, void * const)
+	__attribute__((nonnull(1)));
 
 #undef restrict
 #endif

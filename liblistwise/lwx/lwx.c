@@ -17,38 +17,48 @@
 
 #include "listwise/internal.h"
 
-/// lwx_getflags
-//
-// get application-use flags associated with lw
-//
+#define restrict __restrict
+
 uint64_t API lwx_getflags(lwx * const lx)
 {
 	return lx->flags;
 }
 
-/// lwx_setflags
-//
-// set application-use flags associated with lw
-//
 uint64_t API lwx_setflags(lwx * const lx, const uint64_t g)
 {
 	return ((lx->flags = g));
 }
 
-/// lwx_getptr
-//
-// get application-use ptr associated with lw
-//
-void * API lwx_getptr(lwx * const lx)
+typedef void * voidstar;
+voidstar API lwx_getptr(lwx * const lx)
 {
 	return lx->ptr;
 }
 
-/// lwx_setptr
-//
-// set application-use ptr associated with lw
-//
-void * API lwx_setptr(lwx * const lx, void * const g)
+voidstar API lwx_setptr(lwx * const lx, void * const g)
 {
 	return ((lx->ptr = g));
+}
+
+void API lwx_iterate_loop(lwx * const restrict lx, const int x, const int y, int * const restrict go)
+{
+	*go = 1;
+	if(x == 0 && lx->sel.active)
+	{
+		*go = 0;
+		if(lx->sel.active->sl > (y / 8))
+		{
+			*go = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
+		}
+	}
+}
+
+int API lwx_lists(lwx * const restrict lx)
+{
+	return lx->l;
+}
+
+int API lwx_rows(lwx * const restrict lx, const int x)
+{
+	return lx->s[x].l;
 }

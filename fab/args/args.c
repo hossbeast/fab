@@ -23,11 +23,10 @@
 #include <getopt.h>
 #include <stdarg.h>
 
-#include <listwise.h>
-#include <listwise/operator.h>
-#include <listwise/ops.h>
-#include <listwise/generator.h>
-#include <listwise/lstack.h>
+#include "listwise.h"
+#include "listwise/operator.h"
+#include "listwise/ops.h"
+#include "listwise/generator.h"
 
 #include "args.h"
 

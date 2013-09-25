@@ -18,8 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -34,79 +34,61 @@ NO ARGUMENTS
 
 */
 
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "vw"
-		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_WINDOWS_READ
+		, .optype				= LWOP_WINDOWS_ACTIVATE
 		, .op_exec			= op_exec
+		, .mnemonic			= "WindowsinVert"
 		, .desc					= "invert windows"
 	}
 	, {}
 };
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	typeof(ls->s[0].w[0].s[0]) * ws = 0;
+	typeof(lx->win.s[0].active->s[0]) * ws = 0;
 	int wl = 0;
 	int wa = 0;
 
 	int x;
-	LSTACK_ITERATE(ls, x, go)
+	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(ls->s[0].w[x].y == 0 || ls->s[0].w[x].l == 0)
-		{
-			fatal(lstack_window_stage, ls, x, 0, 0);
-		}
-		else
+		if(lx->win.s[x].active)
 		{
 			// take a copy of the window for this row
-			wl = ls->s[0].w[x].l;
+			wl = lx->win.s[x].active->l;
 			if(wl > wa)
 			{
 				fatal(xrealloc, &ws, sizeof(*ws), wl, wa);
 				wa = wl;
 			}
-			memcpy(ws, ls->s[0].w[x].s, sizeof(*ws) * wl);
+			memcpy(ws, lx->win.s[x].active->s, sizeof(*ws) * wl);
 
 			// reset the window
-			fatal(lstack_window_reset, ls, 0, x);
+			fatal(lstack_window_reset, lx, x);
 
 			if(wl)
 			{
 				char * s = 0;
 				int sl = 0;
-				fatal(lstack_readrow, ls, 0, x, &s, &sl, 1, 0, 0, 0);
+				fatal(lstack_readrow, lx, 0, x, &s, &sl, 1, 0, 0, 0);
 
 				// before the first windowed segment
-				fatal(lstack_window_stage, ls, x, 0, ws[0].o);
+				fatal(lstack_window_stage, lx, x, 0, ws[0].o);
 
 				int i;
 				for(i = 1; i < wl; i++)
 				{
-					if(off < wl)
-					{
-						int nlen = 0;
-
-						int j;
-						for(j = off; j < len; j++)
-							nlen += ws[j].l;
-
-						if(nlen > 0)
-						{
-							// append window segment
-							fatal(lstack_window_stage, ls, 0, x, ws[off].o, nlen);
-
-							// record this index was hit
-							fatal(lstack_sel_stage, ls, x);
-						}
-					}
+					// region following the previous segment and preceeding the current segment
+					fatal(lstack_window_stage, lx, x, ws[i - 1].o + ws[i - 1].l, ws[i].o - (ws[i - 1].o + ws[i - 1].l));
 				}
 
 				// following the last windowed segment
-				fatal(lstack_window_stage, ls, x, ws[i].o + ws[i].l, 
+				fatal(lstack_window_stage, lx, x, ws[i - 1].o + ws[i - 1].l, sl - (ws[i - 1].o + ws[i - 1].l));
 			}
 		}
 	}

@@ -49,14 +49,6 @@ struct selector;
 ** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stde						stderr from cmd
 */
 
-/*
-#define FABCACHEDIR								"/var/cache/fab"
-#define FABTMPDIR									"/var/tmp/fab"
-#define FABIPCDIR									"/var/run/fab"
-#define FABLWOPDIR								"/usr/lib/fab/listwise"
-#define FABINVOKEDIR							"/usr/lib/fab/lib"
-*/
-
 #define DEFAULT_INIT_FABFILE 			"./fabfile"
 #define DEFAULT_INVALIDATE_ALL		0
 #define DEFAULT_MODE_BPLAN				MODE_BPLAN_EXEC

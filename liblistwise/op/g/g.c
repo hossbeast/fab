@@ -27,8 +27,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -55,19 +55,20 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "g"
 		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
 		, .op_exec			= op_exec
+		, .mnemonic			= "gobble"
 		, .desc					= "create new list from file content(s) one row per line"
 	}
 	, {}
 };
 
-static int gobble(lstack* ls, char * path)
+static int gobble(lwx* ls, char * path)
 {
 	int					fd = 0;
 	size_t			size = 0;
@@ -102,7 +103,7 @@ finally:
 coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	if(o->argsl || ls->l)
 	{

@@ -18,7 +18,7 @@
 #ifndef _DSC_H
 #define _DSC_H
 
-#include <listwise.h>
+#include "listwise.h"
 
 #include "gn.h"
 #include "map.h"

@@ -19,6 +19,11 @@
 #define _LISTWISE_SANITY_H
 
 #ifdef SANITY
+
+#include "listwise/lwx.h"
+
+#define restrict __restrict
+
 typedef struct
 {
 	struct
@@ -29,8 +34,8 @@ typedef struct
 
 		int x;
 		int y;
-		typeof(((lstack*)0)->s[0].s[0].s[0]) *	s;
-		typeof(((lstack*)0)->s[0].s[0].s[0]) *	o;
+		typeof(((struct lwx_t*)0)->s[0].s[0].s[0]) *	s;
+		typeof(((struct lwx_t*)0)->s[0].s[0].s[0]) *	o;
 		int ol;
 		int oa;
 	} *																	s_strings;
@@ -38,16 +43,16 @@ typedef struct
 	int																	s_stringsa;
 } sanityblock;
 
-static int sanityblock_create(sanityblock ** const restrict sb)
+int sanityblock_create(sanityblock ** const restrict sb)
 	__attribute__((nonnull));
 
-static void sanityblock_free(sanityblock * const restrict sb)
+void sanityblock_free(sanityblock * const restrict sb)
 	__attribute__((nonnull));
 
-static void sanityblock_reset(sanityblock * const restrict sb)
+void sanityblock_reset(sanityblock * const restrict sb)
 	__attribute__((nonnull));
 
-static int sanity(lstack * const restrict ls, sanityblock * const restrict sb)
+int sanity(struct lwx_t * const restrict lx, sanityblock * const restrict sb)
 	__attribute__((nonnull));
 
 /// listwise_sanity
@@ -65,5 +70,6 @@ static int sanity(lstack * const restrict ls, sanityblock * const restrict sb)
 //
 extern int listwise_sanity;
 
+#undef restrict
 #endif
 #endif

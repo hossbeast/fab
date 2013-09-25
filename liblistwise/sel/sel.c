@@ -24,6 +24,52 @@
 #include "liblistwise_control.h"
 #include "macros.h"
 
+#define restrict __restrict
+
+int API lstack_sel_stage(lwx * const restrict lx, int y)
+{
+	if(lx->sel.staged == 0)
+	{
+		lx->sel.staged = &lx->sel.storage[0];
+		if(lx->sel.staged == lx->sel.active)
+			lx->sel.staged = &lx->sel.storage[1];
+	}
+
+	// reallocate if necessary
+	if(lx->sel.staged->sa <= (y / 8))
+	{
+		fatal(xrealloc, &lx->sel.staged->s, sizeof(*lx->sel.staged->s), (y/8)+1, lx->sel.staged->sa);
+		lx->sel.staged->sa = (y/8)+1;
+	}
+
+	// reset any already-allocated elements now visible
+	int x;
+	for(x = lx->sel.staged->sl; x <= (y/8); x++)
+		lx->sel.staged->s[x] = 0;
+
+	// increase length
+	lx->sel.staged->sl = MAX(lx->sel.staged->sl, (y/8)+1);
+
+	// set this particular bit
+	if((lx->sel.staged->s[y/8] & (0x01 << (y%8))) == 0)
+		lx->sel.staged->l++;
+
+	lx->sel.staged->s[y/8] |= (0x01 << (y%8));
+
+	finally : coda;
+}
+
+int API lstack_sel_activate(lwx * const restrict lx)
+{
+	if(lx->sel.staged)
+	{
+		lx->sel.active = lx->sel.staged;
+		lx->sel.staged = 0;
+	}
+
+	return 0;
+}
+
 int API lstack_sel_reset(lwx * const restrict lx)
 {
 	lx->sel.active = 0;
@@ -36,59 +82,4 @@ int API lstack_sel_unstage(lwx * const restrict lx)
 	lx->sel.staged = 0;
 
 	return 0;
-}
-
-int API lstack_sel_stage(lstack* const restrict ls, int y)
-{
-	// reallocate if necessary
-	if(ls->stage.sa <= (y / 8))
-	{
-		fatal(xrealloc, &ls->stage.s, sizeof(ls->stage.s[0]), (y/8)+1, ls->stage.sa);
-		ls->stage.sa = (y/8)+1;
-	}
-
-	// reset any already-allocated elements now visible
-	int x;
-	for(x = ls->stage.sl; x <= (y/8); x++)
-		ls->stage.s[x] = 0;
-
-	// increase length
-	ls->stage.sl = MAX(ls->stage.sl, (y/8)+1);
-
-	// set this particular bit
-	if((ls->stage.s[y/8] & (0x01 << (y%8))) == 0)
-		ls->stage.l++;
-
-	ls->stage.s[y/8] |= (0x01 << (y%8));
-
-	finally : coda;
-}
-
-int API lstack_sel_activate(lwx * const restrict lx)
-{
-	lx->sel.active = lx->sel.staged;
-
-	if(ls->stage.l == ls->s[0].l)
-	{
-		ls->sel.all = 1;
-	}
-	else
-	{
-		if(ls->sel.sa < ls->stage.sl)
-		{
-			fatal(xrealloc, &ls->sel.s, sizeof(*ls->sel.s), ls->stage.sl, ls->sel.sa);
-			ls->sel.sa = ls->stage.sl;
-		}
-
-		memcpy(
-				ls->sel.s
-			, ls->stage.s
-			, ls->stage.sl * sizeof(ls->sel.s[0])
-		);
-		ls->sel.l = ls->stage.l;
-		ls->sel.sl = ls->stage.sl;
-		ls->sel.all = 0;
-	}
-
-	finally : coda;
 }

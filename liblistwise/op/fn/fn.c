@@ -19,8 +19,8 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -37,7 +37,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -49,7 +49,7 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)
@@ -82,8 +82,10 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 				if(raw)
 				{
 					ls->s[0].s[x].l = e - s;
-					ls->s[0].w[x].y = 0;
-					ls->s[0].t[x].y = 0;
+					ls->s[0].t[x].y = LWTMP_UNSET;
+
+					ls->win.s[x].active = 0;
+					ls->win.s[x].staged = 0;
 				}
 				else
 				{

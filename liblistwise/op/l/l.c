@@ -19,8 +19,9 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
+
+#include "xstring.h"
 
 #include "liblistwise_control.h"
 
@@ -41,12 +42,12 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "l"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOW_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "locate substring matches"
@@ -69,7 +70,7 @@ static int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int isncase  = o->argsl == 2 && o->args[1]->l && strchr(o->args[0]->s, 'i');
 	int isglobal = o->argsl == 2 && o->args[1]->l && strchr(o->args[1]->s, 'g');
@@ -89,7 +90,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			int off = 0;
 			do
 			{
-				fatal(lstack_window_stage, ls, 0, x, s - ss, o->args[0]->l);
+				fatal(lstack_window_stage, ls, x, s - ss, o->args[0]->l);
 
 				if(isglobal)
 				{

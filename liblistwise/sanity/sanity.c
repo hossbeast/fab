@@ -19,6 +19,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "sanity.h"
 #include "listwise/internal.h"
@@ -56,7 +57,7 @@ void sanityblock_free(sanityblock * const sb)
 	free(sb);
 }
 
-int sanity(lstack * const restrict ls, sanityblock * const restrict sb)
+int sanity(struct lwx_t * const restrict ls, sanityblock * const restrict sb)
 {
 	int R = 0;
 

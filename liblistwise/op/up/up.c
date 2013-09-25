@@ -17,8 +17,8 @@
 
 #include <stdlib.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -38,35 +38,40 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "up"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_SELECTION_STAGE
+		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET | LWOP_SELECTION_STAGE
 		, .op_exec			= op_exec
 		, .desc					= "move selected entries to head of list"
 	}, {}
 };
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	if(ls->sel.all == 0)
+	if(lx->sel.active)
 	{
 		int i = 0;
 		int x;
-		LSTACK_ITERATE(ls, x, go)
+		LSTACK_ITERATE(lx, x, go)
 		if(go)
 		{
-			typeof(ls->s[0].s[0]) T = ls->s[0].s[i];
-			ls->s[0].s[i] = ls->s[0].s[x];
-			ls->s[0].s[x] = T;
+			typeof(lx->s[0].s[0]) Ts = lx->s[0].s[i];
+			lx->s[0].s[i] = lx->s[0].s[x];
+			lx->s[0].s[x] = Ts;
+
+			typeof(lx->s[0].t[0]) Tt = lx->s[0].t[i];
+			lx->s[0].t[i] = lx->s[0].t[x];
+			lx->s[0].t[x] = Tt;
+
 			i++;
 		}
 		LSTACK_ITEREND;
 
 		for(x = 0; x < i; x++)
-			fatal(lstack_sel_stage, ls, x);
+			fatal(lstack_sel_stage, lx, x);
 	}
 
 	finally : coda;

@@ -18,8 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <listwise.h>
-#include <listwise/operator.h>
+#include "listwise.h"
+#include "listwise/operator.h"
 
 #include "interpolate.h"
 

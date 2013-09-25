@@ -23,8 +23,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
 
 #include "liblistwise_control.h"
 
@@ -50,14 +49,14 @@ OPERATION
 
 */
 
-static int op_exec_f(operation*, lstack*, int**, int*);
-static int op_exec_d(operation*, lstack*, int**, int*);
-static int op_exec_l(operation*, lstack*, int**, int*);
-static int op_exec_e(operation*, lstack*, int**, int*);
-static int op_exec_z(operation*, lstack*, int**, int*);
-static int op_exec_r(operation*, lstack*, int**, int*);
-static int op_exec_w(operation*, lstack*, int**, int*);
-static int op_exec_x(operation*, lstack*, int**, int*);
+static int op_exec_f(operation*, lwx*, int**, int*);
+static int op_exec_d(operation*, lwx*, int**, int*);
+static int op_exec_l(operation*, lwx*, int**, int*);
+static int op_exec_e(operation*, lwx*, int**, int*);
+static int op_exec_z(operation*, lwx*, int**, int*);
+static int op_exec_r(operation*, lwx*, int**, int*);
+static int op_exec_w(operation*, lwx*, int**, int*);
+static int op_exec_x(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -114,7 +113,7 @@ operator op_desc[] = {
 #define USE_STAT  1
 #define USE_LSTAT 2
 
-static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int statmode, int (*selector)(struct stat *))
+static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int statmode, int (*selector)(struct stat *))
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)
@@ -146,7 +145,7 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int stat
 	finally : coda;
 }
 
-int op_exec_f(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_f(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int selector(struct stat * st)
 	{
@@ -156,7 +155,7 @@ int op_exec_f(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
 }
 
-int op_exec_d(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int selector(struct stat * st)
 	{
@@ -166,7 +165,7 @@ int op_exec_d(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
 }
 
-int op_exec_l(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int selector(struct stat * st)
 	{
@@ -176,7 +175,7 @@ int op_exec_l(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	return op_exec(o, ls, ovec, ovec_len, USE_LSTAT, selector);
 }
 
-int op_exec_e(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int selector(struct stat * st)
 	{
@@ -186,7 +185,7 @@ int op_exec_e(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
 }
 
-int op_exec_z(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int selector(struct stat * st)
 	{
@@ -196,7 +195,7 @@ int op_exec_z(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
 }
 
-int op_exec_r(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)
@@ -212,7 +211,7 @@ int op_exec_r(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	finally : coda;
 }
 
-int op_exec_w(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)
@@ -228,7 +227,7 @@ int op_exec_w(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	finally : coda;
 }
 
-int op_exec_x(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)

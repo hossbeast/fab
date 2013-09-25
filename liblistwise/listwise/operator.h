@@ -21,7 +21,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <listwise.h>
+#include "listwise.h"
+
 #include <pcre.h>
 
 #define restrict __restrict
@@ -30,6 +31,7 @@
 ** LISTWISE OPERATOR API
 **
 **  listiwse/operator.h  - core operator functionality
+**  listwise/lwx.h       - lwx definition
 **   extra functionality
 **  listwise/object.h    - manipulating object entries
 **  listwise/ops.h       - enumerating and looking up listwise operators
@@ -49,14 +51,14 @@ enum
 	  LWOP_SELECTION_STAGE				= 0x0001			// stages selections (which may be activated with the y operator)
 	, LWOP_SELECTION_ACTIVATE			= 0x0002 | LWOP_SELECTION_STAGE			//  lw applies the y operator after this operator
 	, LWOP_SELECTION_RESET				= 0x0004			// lw resets the selection after executing the operator (apart from the staging mechanism)
-	, LWOP_WINDOW_STAGE						= 0x0008			// stages windows (which may be ratified with the y operator)
-	, LWOP_WINDOW_ACTIVATE				= 0x0010 | LWOP_WINDOW_STAGE				//  lw applies the y operator after this operator
-	, LWOP_WINDOW_RESET						= 0x0020			// lw resets all windows after executing this operator (apart from the staging mechanism)
+	, LWOP_WINDOWS_STAGE					= 0x0008			// stages windows (which may be ratified with the y operator)
+	, LWOP_WINDOWS_ACTIVATE				= 0x0010 | LWOP_WINDOWS_STAGE				//  lw applies the y operator after this operator
+	, LWOP_WINDOWS_RESET					= 0x0020			// lw resets all windows after executing this operator (apart from the staging mechanism)
 	, LWOP_ARGS_CANHAVE						= 0x0040			// can have arguments (verified before op_validate)
 	, LWOP_EMPTYSTACK_YES					= 0x0080			// operator is invoked even in the context of an empty stack
 
 /* there are informational */
-	, LWOP_STACKOP								= 0x0100 | LWOP_SELECTION_RESET | LWOP_WINDOW_RESET			// stack operation : manipulation of entire lists
+	, LWOP_STACKOP								= 0x0100 | LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET			// stack operation : manipulation of entire lists
 	, LWOP_MODIFIERS_CANHAVE			= 0x0200			// last argument is a modifiers string
 	, LWOP_OPERATION_PUSHBEFORE		= 0x0480 | LWOP_STACKOP																	// first operation is to push an empty list
 	, LWOP_OPERATION_INPLACE			= 0x0800			// modifies the contents of rows in the top list in-place
@@ -69,7 +71,8 @@ enum
 typedef struct operator
 {
 	uint64_t	optype;		// OPTYPE_*
-	char*			desc;			// operator description
+	char *		desc;			// operator description
+	char *		mnemonic;	// longform name
 
 	// methods
 	int 		(*op_validate)(struct operation*);
@@ -188,6 +191,13 @@ int lstack_add(lwx * const restrict lx, const char* const restrict s, int l)
 //
 int lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
 	__attribute__((nonnull));
+
+///
+/// STACKOPS API
+///
+///  typically after performing one of these operations, selection and/or windows need to be
+///  reset or adjusted
+///
 
 /// lstack_shift
 //
@@ -358,12 +368,12 @@ int lstack_sel_stage(lwx * const restrict lx, int y)
 int lstack_sel_unstage(lwx * const restrict lx)
 	__attribute__((nonnull));
 
-/// lstack_sel_ratify
+/// lstack_sel_activate
 //
 // SUMMARY
 //  activate selections staged by the previous operation
 //
-int lstack_sel_ratify(lwx * const restrict lx)
+int lstack_sel_activate(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 ///
@@ -383,15 +393,7 @@ int lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 // SUMMARY
 //  reset the window for the specified row
 //
-int lstack_window_reset(lwx * const restrict lx, int y, int off, int len)
-	__attribute__((nonnull));
-
-/// lstack_windows_ratify
-//
-// SUMMARY
-//  activate staged windows
-//
-int lstack_windows_ratify(lwx * const restrict lx)
+int lstack_window_reset(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_windows_unstage
@@ -408,6 +410,14 @@ int lstack_windows_unstage(lwx * const restrict lx)
 //  deactivate windows
 //
 int lstack_windows_reset(lwx * const restrict lx)
+	__attribute__((nonnull));
+
+/// lstack_windows_activate
+//
+// SUMMARY
+//  activate staged windows
+//
+int lstack_windows_activate(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 ///

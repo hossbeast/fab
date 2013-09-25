@@ -18,9 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <listwise.h>
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise.h"
+#include "listwise/operator.h"
 
 #include "gn.h"
 #include "fab_control.h"

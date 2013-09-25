@@ -24,8 +24,8 @@
 #include <unistd.h>
 #include <time.h>
 
-#include <listwise.h>
-#include <listwise/object.h>
+#include "listwise.h"
+#include "listwise/object.h"
 
 #include "gn.h"
 

@@ -19,8 +19,7 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
 
 #include "liblistwise_control.h"
 
@@ -41,12 +40,12 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "re"
-		, .optype				= LWOP_WINDOWS_STAGE | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_WINDOWS_STAGE | LWOP_SELECTION_ACTIVATE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "locate regex matches"
@@ -74,7 +73,7 @@ static int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int isglobal = o->argsl == 2 && o->args[1]->l && strchr(o->args[1]->s, 'g');
 
@@ -92,8 +91,9 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		{
 			do
 			{
-				fatal(lstack_window_add, ls, 0, x, (*ovec)[1], (*ovec)[2] - (*ovec)[1]);
+				fatal(lstack_window_stage, ls, x, (*ovec)[1], (*ovec)[2] - (*ovec)[1]);
 
+				(*ovec)[0] = 0;
 				if(isglobal)
 				{
 					fatal(re_exec, &o->args[0]->re, ss, ssl, (*ovec)[2], ovec, ovec_len);

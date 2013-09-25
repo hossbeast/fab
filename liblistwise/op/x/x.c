@@ -19,8 +19,8 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -37,7 +37,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -49,24 +49,24 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
 	int x;
-	LSTACK_ITERATE(ls, x, go)
+	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(ls->s[0].w[x].y)
+		if(lx->win.s[x].active)
 		{
 			// because there is a window in effect, getbytes returns the temp space for the row
 			char * zs;
 			int    zsl;
-			fatal(lstack_getbytes, ls, 0, x, &zs, &zsl);
+			fatal(lstack_getbytes, lx, 0, x, &zs, &zsl);
 
 			// write new string using the window
-			fatal(lstack_write, ls, 0, x, zs, zsl);
+			fatal(lstack_write, lx, 0, x, zs, zsl);
 
 			// record this index was hit
-			fatal(lstack_sel_stage, ls, x);
+			fatal(lstack_sel_stage, lx, x);
 		}
 	}
 	LSTACK_ITEREND

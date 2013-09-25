@@ -19,8 +19,7 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
 
 #include "liblistwise_control.h"
 
@@ -46,20 +45,20 @@ lxf - exactly as the lx operator, except fullmatch mode is the default operation
 */
 
 static int op_validate(operation* o);
-static int op_exec_lx(operation*, lstack*, int**, int*);
-static int op_exec_lxf(operation*, lstack*, int**, int*);
+static int op_exec_lx(operation*, lwx*, int**, int*);
+static int op_exec_lxf(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "lx"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOW_STAGE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_lx
 		, .desc					= "select by filename extension and window extension"
 	}
 	, {
 		  .s						= "lxf"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOW_STAGE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_lxf
 		, .desc					= "select by full filename extension and window extension"
@@ -75,7 +74,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int fullmatch)
+static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmatch)
 {
 	char* xs;
 	int xl;
@@ -151,12 +150,12 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int full
 	finally : coda;
 }
 
-static int op_exec_lx(operation* o, lstack* ls, int** ovec, int* ovec_len)
+static int op_exec_lx(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 0);
 }
 
-static int op_exec_lxf(operation* o, lstack* ls, int** ovec, int* ovec_len)
+static int op_exec_lxf(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 1);
 }

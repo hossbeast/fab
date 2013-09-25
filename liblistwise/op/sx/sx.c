@@ -19,8 +19,7 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
 
 #include "liblistwise_control.h"
 
@@ -32,20 +31,20 @@ sxf operator - substitution by filename extension (fullmatch)
 */
 
 static int op_validate(operation* o);
-static int op_exec_sx(operation*, lstack*, int**, int*);
-static int op_exec_sxf(operation*, lstack*, int**, int*);
+static int op_exec_sx(operation*, lwx*, int**, int*);
+static int op_exec_sxf(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "sx"
-		, .optype				= LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_SELECTION_STAGE | LWOP_WINDOW_STAGE
+		, .optype				= LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_SELECTION_STAGE | LWOP_WINDOWS_STAGE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_sx
 		, .desc					= "substitution by filename extension"
 	}
 	, {
 		  .s						= "sxf"
-		, .optype				= LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_SELECTION_STAGE | LWOP_WINDOW_STAGE
+		, .optype				= LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_SELECTION_STAGE | LWOP_WINDOWS_STAGE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_sxf
 		, .desc					= "substitution by full filename extension"
@@ -60,7 +59,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int fullmatch)
+static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmatch)
 {
 	char * mxs = 0;
 	int mxl = 0;
@@ -165,12 +164,12 @@ static int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len, int full
 	finally : coda;
 }
 
-int op_exec_sx(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_sx(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 0);
 }
 
-int op_exec_sxf(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_sxf(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	return op_exec(o, ls, ovec, ovec_len, 1);
 }

@@ -21,8 +21,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
 
 #include "liblistwise_control.h"
 #include "xstring.h"
@@ -44,18 +43,19 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "u"
 		, .optype				= LWOP_SELECTION_ACTIVATE
 		, .op_exec			= op_exec
+		, .mnemonic			= "unique"
 		, .desc					= "select unique (already sorted)"
 	}, {}
 };
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int p = -1;
 	int x;

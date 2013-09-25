@@ -18,7 +18,185 @@
 #include "listwise/internal.h"
 #include "liblistwise_control.h"
 
-int listwise_exec(char* s, int l, char** init, int* initls, int initl, lwx ** lx, lstack** ls)
+#if SANITY
+#include "sanity.h"
+#endif
+
+#include "xmem.h"
+
+#define restrict __restrict
+
+int API listwise_exec_generator(
+	  const generator * const restrict g
+	, char ** const restrict init
+	, int * const restrict initls
+	, const int initl
+	, lwx ** restrict lx
+	, int dump
+)
+{
+	// ovec workspace
+	int* ovec = 0;
+	int ovec_len = 0;
+
+#if SANITY
+	// sanity
+	sanityblock * sb = 0;
+#endif
+
+	// system implemented operators
+	operator * yop = op_lookup("y", 1);
+	operator * oop = op_lookup("o", 1);
+
+	// list stack allocation
+	if(!*lx)
+		fatal(xmalloc, lx, sizeof(*lx[0]));
+
+	// write init elements to top of list stack
+	int x;
+	for(x = 0; x < initl; x++)
+	{
+		fatal(lstack_write, *lx, 0, x, init[x], initls[x]);
+	}
+
+	// write initial generator args at top of list stack
+	for(x = 0; x < g->argsl; x++)
+	{
+		fatal(lstack_write, *lx, 0, x + initl, g->args[x]->s, g->args[x]->l);
+	}
+
+	// the initial state of the selection is all
+	fatal(lstack_sel_reset, *lx);
+
+	if(dump)
+		lstack_dump(*lx);
+
+#if SANITY
+	if(listwise_sanity)
+	{
+		fatal(sanityblock_create, &sb);
+		fatal(sanity, *lx, sb);
+	}
+#endif
+
+	// execute operations
+	for(x = 0; x < g->opsl; x++)
+	{
+		int isor = g->ops[x]->op == oop;
+		while(g->ops[x]->op == oop)
+		{
+			if(++x == g->opsl)
+				break;
+		}
+
+		if(!isor)
+		{
+			// if the previous operator staged windows, activate or unstage them
+			if((x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE)) || g->ops[x]->op == yop)
+			{
+				if((x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE)) || g->ops[x]->op == yop)
+				{
+					fatal(lstack_windows_activate, *lx);
+				}
+				else
+				{
+					fatal(lstack_windows_unstage, *lx);
+				}
+			}
+
+			// if the previous operator staged selections, activate or unstage them
+			if((x && (g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE)) || g->ops[x]->op == yop)
+			{
+				if((x && g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) || g->ops[x]->op == yop)
+				{
+					fatal(lstack_sel_activate, *lx);
+				}
+				else
+				{
+					fatal(lstack_sel_unstage, *lx);
+				}
+			}
+		}
+
+		if(dump)
+		{
+			if(x)
+				lstack_dump(*lx);
+
+			dprintf(listwise_err_fd, "\n");
+
+			char buf[128];
+			operation_write(buf, sizeof(buf), g->ops[x]);
+			dprintf(listwise_err_fd, " >> %s\n", buf);
+		}
+
+		// execute the operator
+		if(((*lx)->l || g->ops[x]->op->optype & LWOP_EMPTYSTACK_YES) && g->ops[x]->op->op_exec)
+			fatal(g->ops[x]->op->op_exec, g->ops[x], *lx, &ovec, &ovec_len);
+
+#if SANITY
+		if(listwise_sanity)
+			fatal(sanity, *lx, sb);
+#endif
+
+		if(g->ops[x]->op->optype & LWOP_WINDOWS_RESET)
+			fatal(lstack_windows_reset, *lx);
+
+		if(g->ops[x]->op->optype & LWOP_SELECTION_RESET)
+			fatal(lstack_sel_reset, *lx);
+	}
+
+	if(dump)
+	{
+		// if the previous operator staged windows, activate or unstage them
+		if(x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE))
+		{
+			if(g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE)
+			{
+				fatal(lstack_windows_activate, *lx);
+			}
+			else
+			{
+				fatal(lstack_windows_unstage, *lx);
+			}
+		}
+	}
+
+	// if the previous operator staged selections, activate or unstage them
+	if(x && (g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE))
+	{
+		if(g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE)
+		{
+			fatal(lstack_sel_activate, *lx);
+		}
+	}
+
+	if(dump)
+		lstack_dump(*lx);
+
+	(*lx)->win.staged_era++;	// age windows
+	(*lx)->win.active_era++;	// age windows
+
+	// clear string props set with the fx operator
+	for(x = 0; x < object_registry.l; x++)
+		xfree(&object_registry.e[x]->string_property);
+
+finally:
+	free(ovec);
+#if SANITY
+	sanityblock_free(sb);
+#endif
+coda;
+}
+
+int listwise_exec(
+    char * const restrict s
+  , int l
+  , char ** const restrict init
+  , int * const restrict initls
+  , const int initl
+  , lwx ** restrict lx
+)
 {
 	// generator parser
 	generator_parser* p = 0;
@@ -32,8 +210,8 @@ int listwise_exec(char* s, int l, char** init, int* initls, int initl, lwx ** lx
 	if(generator_parse(p, s, l, &g) != 0)
 		fail("parse failed\n");
 
-	if(lstack_exec(g, init, initls, initl, ls) != 0)
-		fail("lstack_exec failed");
+	if(listwise_exec_generator(g, init, initls, initl, lx, 0) != 0)
+		fail("listwise_exec_generator failed");
 
 	generator_free(g);
 	generator_parser_free(p);

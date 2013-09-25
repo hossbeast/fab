@@ -29,8 +29,8 @@ $dliblistwise	= [ $* ]
 ## variables
 ##
 $libname 			= [ liblistwise.so ]
-$soname				= [ $libname.0.1 ~ j ]
-$liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# name of the library
+$soname				= [ $libname ~ j ]
+$liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# path to the library .so
 $cflags				= [ $cflags -fPIC [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs
 	[ -DLWOPDIR="\""$lwopdir"\"" ~ j ]
 ]
@@ -91,12 +91,12 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 [ @install ] : [ @all ]
 {
 	install -d																				[ $destdir/$libdir ]
-	install	[ $liblistwise ]													[ $destdir/$libdir/$soname ]
-	ln -vfs [ $soname ]																[ $destdir/$libdir/$libname ]
+	install [ $liblistwise ]													[ $destdir/$libdir/$libname ]
+#	ln -vfs [ $libname ]															[ $destdir/$libdir/$soname ]
 	install -d																				[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise.h	]							[ $destdir/$incdir/listwise.h ]
 	install [ $dliblistwise/listwise/operator.h ]			[ $destdir/$incdir/listwise/operator.h ]
-	install [ $dliblistwise/listwise/generator.h	] 	[ $destdir/$incdir/listwise/generator.h ]
+	install [ $dliblistwise/listwise/generator.h	]		[ $destdir/$incdir/listwise/generator.h ]
 	install [ $dliblistwise/listwise/ops.h ]					[ $destdir/$incdir/listwise/ops.h ]
 	install [ $dliblistwise/listwise/lstack.h ] 			[ $destdir/$incdir/listwise/lstack.h ]
 	install [ $dliblistwise/listwise/object.h ] 			[ $destdir/$incdir/listwise/object.h ]
@@ -110,7 +110,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 
 [ @uninstall ]
 {
-	rm -f																							[ $destdir/$libdir/$soname ]
+#	rm -f																							[ $destdir/$libdir/$soname ]
 	rm -f																							[ $destdir/$libdir/$libname ]
 	rm -rf																						[ $destdir/$lwopdir ]
 	rm -f																							[ $destdir/$incdir/listwise.h ]

@@ -19,6 +19,8 @@
 #ifndef _ARGS_H
 #define _ARGS_H
 
+#define restrict __restrict
+
 struct g_args_t
 {
 	char		dump;							// -d
@@ -28,15 +30,17 @@ struct g_args_t
 	char		out_stack;				// -k
 	char		out_list;					// -a
 	char *	generator_file;		// -f/-
+	char *	init_file;				// -l
 
 	char **	init_list;				// -i 
-	int			init_listl;
-
-	
+	int *		init_list_lens;		// -i 
+	int			init_listl;				// -i
+	int			init_lista;				// -i
 } g_args;
 
-int parse_args(int argc, char ** argv);
+int parse_args(const int argc, char ** const restrict argv, int * const restrict genx)
+	__attribute__((nonnull));
+
 void args_teardown();
 
 #endif
-

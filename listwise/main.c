@@ -27,129 +27,157 @@
 #include <getopt.h>
 #include <fcntl.h>
 
-#include <listwise.h>
-#include <listwise/operator.h>
-#include <listwise/ops.h>
-#include <listwise/generator.h>
-#include <listwise/lstack.h>
-#include <listwise/object.h>
+#include "listwise.h"
+#include "listwise/xtra.h"
+#include "listwise/operator.h"
+#include "listwise/ops.h"
+#include "listwise/generator.h"
+#include "listwise/object.h"
 
-// not part of the actual API
-extern int lstack_exec_internal(generator* g, char** init, int* initls, int initl, lstack** ls, int dump);
+#include "listwise_control.h"
 
 #include "args.h"
 
-#define FAIL(x, ...) { printf(x "\n", ##__VA_ARGS__); return 1; }
+#include "xmem.h"
 
-static int snarf(char * path, int * fd, void ** mem, size_t * sz, void ** mmem)
+/// snarf
+//
+// SUMMARY
+//  read a file into memory
+//
+// PARAMETERS
+//  path - path to file to load, or "-" for stdin
+//  mem  - memory containing the loaded file
+//  sz   - size of mem
+//
+static int snarf(char * path, void ** mem, size_t * sz)
 {
-	if(((*fd) = open(strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY)) == -1)
-		FAIL("open(%s)=[%d][%s]", path, errno, strerror(errno));
+	int fd = -1;
+
+	xfree(mem);
+
+	if((fd = open(strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY)) == -1)
+		fail("open(%s)=[%d][%s]", path, errno, strerror(errno));
 
 	struct stat st;
-	if(fstat((*fd), &st) == -1)
-		FAIL("fstat(%d)=[%d][%s]", (*fd), errno, strerror(errno));
+	if(fstat(fd, &st) == -1)
+		fail("fstat(%d)=[%d][%s]", fd, errno, strerror(errno));
 
-	if(S_ISREG(st.st_mode))
-	{
-		(*sz) = st.st_size;
-
-		if(((*mem) = mmap(0, (*sz), PROT_READ, MAP_PRIVATE, (*fd), 0)) == MAP_FAILED)
-			FAIL("mmap(%d)=[%d][%s]", (*fd), errno, strerror(errno));
-
-		(*mmem) = (*mem);
-	}
-	else if(S_ISFIFO(st.st_mode))
+	if(S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode))
 	{
 		char blk[512];
-		int r = 0;
-		while((r = read((*fd), blk, sizeof(blk) / sizeof(blk[0]))) > 0)
+		int r = 1;
+		while(r > 0)
 		{
-			(*mem) = realloc((*mem), (*sz) + r + 1);
-			memcpy(((char*)(*mem)) + (*sz), blk, r);
-			(*sz) += r;
+			if((r = read(fd, blk, sizeof(blk) / sizeof(blk[0]))) == -1)
+				fail("read(%d)=[%d][%s]", fd, errno, strerror(errno));
+
+			else if(r > 0)
+			{
+				fatal(xrealloc, mem, 1, (*sz) + r + 1, (*sz));
+				memcpy(((char*)(*mem)) + (*sz), blk, r);
+				(*sz) += r;
+			}
 		}
-		if(*mem)
-			((char*)(*mem))[(*sz)] = 0;
+	}
+	else if(S_ISCHR(st.st_mode))
+	{
+		// dev/null
+	}
+	else
+	{
+		fail("unable to process file of type %s (%d)"
+			,   S_ISREG(st.st_mode)			? "REG"
+				: S_ISDIR(st.st_mode)			? "DIR"
+				: S_ISCHR(st.st_mode)			? "CHR"
+				: S_ISBLK(st.st_mode)			? "BLK"
+				: S_ISFIFO(st.st_mode)		? "FIFO"
+				: S_ISLNK(st.st_mode)			? "LNK"
+				: S_ISSOCK(st.st_mode)		? "SOCK"
+				: 												  "UNKNOWN"
+			, st.st_mode & S_IFMT
+		);
 	}
  
-	return 0;
+finally:
+	if(fd != -1)
+		fatal_os(close, fd);
+coda;
 }
 
 int main(int argc, char** argv)
 {
 	generator_parser* p = 0;		// generator parser
 	generator* g = 0;						// generator
-	lstack* ls = 0;							// list stack
+	lwx * lx = 0;								// list stack
 
-	int fd = 0;				// file
 	void * mem = 0;
-	void * mmem = 0;
 	size_t sz = 0;
 
-	int __RR = generator_mkparser(&p);
-	if(__RR != 0)
-		FAIL("mkparser failed with %d", __RR);
-
-	if((ls = calloc(1, sizeof(*ls))) == 0)
-		FAIL("calloc(%zu)=[%d][%s]", sizeof(*ls), errno, strerror(errno));
+	fatal(generator_mkparser, &p);
 
 	// parse cmdline arguments
-	int genx = parse_args(argc, argv);
-
-	int x;
-	for(x = 0; x < g_args.init_listl; x++)
-	{
-		if(lstack_add(ls, g_args.init_list[x], strlen(g_args.init_list[x])) != 0)
-			FAIL("lstack_add failed");
-	}
+	int genx = 0;
+	fatal(parse_args, argc, argv, &genx);
 
 	// arrange for liblistwise to write errors to /dev/null
 	if(!g_args.dump)
 	{
 		if((listwise_err_fd = open("/dev/null", O_WRONLY)) == -1)
-			FAIL("open(/dev/null)=[%d][%s]", errno, strerror(errno));
+			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
 	}
 
 	if(g_args.generator_file)
 	{
 		// read generator-string from file
-		if(snarf(g_args.generator_file, &fd, &mem, &sz, &mmem) != 0)
-			return 1;
+		fatal(snarf, g_args.generator_file, &mem, &sz);
 
-		if(generator_parse(p, mem, sz, &g) != 0)
-			FAIL("parse failed");
+		// parse generator-string from file
+		fatal(generator_parse, p, mem, sz, &g);
 	}
-	else
+	else if(genx < argc)
 	{
-		if(genx < argc)
-		{
-			// read generator-string from argv
-			if(generator_parse(p, argv[genx], 0, &g) != 0)
-				FAIL("parse failed");
-		}
-
-		// read list items from stdin
-		if(snarf("/dev/fd/0", &fd, &mem, &sz, &mmem) != 0)
-			return 1;
-
-		char * s[2] = { mem, 0 };
-		while((s[1] = memchr(s[0], '\n', sz - (s[0] - ((char*)mem)))))
-		{
-			if(s[1] - s[0])
-			{
-				if(lstack_add(ls, s[0], s[1] - s[0]) != 0)
-					FAIL("lstack_add failed");
-			}
-			s[0] = s[1] + 1;
-		}
+		// parse generator-string from argv
+		fatal(generator_parse, p, argv[genx], 0, &g);
 	}
 
-	if(fd)
-		close(fd);
+	// attempt to read initial list items from stdin and a specified file
+	int x;
+	for(x = 0; x < 2; x++)
+	{
+		char * p = 0;
+		if(x == 0 && (g_args.generator_file == 0 || (strcmp(g_args.generator_file, "-") && strcmp(g_args.generator_file, "/dev/fd/0"))))
+			p = "-";
+		if(x == 1)
+			p = g_args.init_file;
 
-	if(mmem)
-		munmap(mmem, sz);
+		if(p)
+		{
+			// read list items from stdin
+			fatal(snarf, p, &mem, &sz);
+
+			char * s[2] = { mem, 0 };
+			while((s[1] = memchr(s[0], '\n', sz - (s[0] - ((char*)mem)))))
+			{
+				if(s[1] - s[0])
+				{
+					if(g_args.init_listl == g_args.init_lista)
+					{
+						int ns = g_args.init_lista ?: 10;
+						ns = ns * 2 + ns / 2;
+
+						g_args.init_list = realloc(g_args.init_list, sizeof(*g_args.init_list) * ns);
+						g_args.init_list_lens = realloc(g_args.init_list_lens, sizeof(*g_args.init_list_lens) * ns);
+						g_args.init_lista = ns;
+					}
+					g_args.init_list[g_args.init_listl] = strndup(s[0], s[1] - s[0]);
+					g_args.init_list_lens[g_args.init_listl] = s[1] - s[0];
+					g_args.init_listl++;
+				}
+				s[0] = s[1] + 1;
+			}
+		}
+	}
 
 	if(g_args.dump)
 	{
@@ -163,18 +191,17 @@ int main(int argc, char** argv)
 	if(g)
 	{
 		// execute 
-		if(lstack_exec_internal(g, 0, 0, 0, &ls, g_args.dump) != 0)
-			FAIL("lstack_exec failed");
+		fatal(listwise_exec_generator, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx, g_args.dump);
 	}
 	else
 	{
-		ls->sel.all = 1;
+		// listwise_exec with some kind of identity generator
 	}
 
 	// OUTPUT
 	int i = 0;
 	int y = 0;
-	for(y = 0; y < ls->l; y++)
+	for(y = 0; y < LSTACK_LISTS(lx); y++)
 	{
 		if(y)
 		{
@@ -186,18 +213,9 @@ int main(int argc, char** argv)
 			i = 0;
 		}
 
-		for(x = 0; x < ls->s[y].l; x++)
+		int x;
+		LSTACK_ITERATE_LIST(lx, y, x, go)
 		{
-			int go = 1;
-			if(!g_args.out_list && !ls->sel.all)
-			{
-				go = 0;
-				if(ls->sel.sl > (x/8))
-				{
-					go = ls->sel.s[x/8] & (0x01 << (x%8));
-				}
-			}
-
 			if(go)
 			{
 				if(g_args.number)
@@ -210,9 +228,10 @@ int main(int argc, char** argv)
 
 				char * ss = 0;
 				int    ssl = 0;
-				lstack_string(ls, y, x, &ss, &ssl);
+				fatal(lstack_getstring, lx, y, x, &ss, &ssl);
+
 				if(fwrite(ss, 1, ssl, stdout) == -1)
-					FAIL("write=[%d][%s]", errno, strerror(errno));
+					fail("write()=[%d][%s]", errno, strerror(errno));
 
 				if(g_args.out_null)
 					printf("%c", 0);
@@ -220,15 +239,18 @@ int main(int argc, char** argv)
 					printf("\n");
 			}
 		}
+		LSTACK_ITEREND
 
 		if(!g_args.out_stack)
 			break;
 	}
 
-	lstack_xfree(&ls);
-	generator_xfree(&g);
-	generator_parser_xfree(&p);
-	args_teardown();
+finally:
+	free(mem);
 
-	return 0;
+	lwx_free(lx);
+	generator_free(g);
+	generator_parser_free(p);
+	args_teardown();
+coda;
 }

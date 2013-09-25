@@ -129,47 +129,68 @@ static void op_sort()
 // public
 //
 
-int API listwise_register_opdir(char * dir)
+static int read_opdir(char * s)
 {
-	DIR* dd = 0;
-
 	char space[256];
-	snprintf(space, sizeof(space), "%s", dir);
+	snprintf(space, sizeof(space) - 1, "%s", s);
 
-	if((dd = opendir(space)) == 0)
-		fail("opendir(%s)=[%d][%s]", space, errno, strerror(errno));
+  DIR * dd = 0;
+  if((dd = opendir(space)))
+  {
+		space[strlen(space)] = '/';
 
-	space[strlen(dir)] = '/';
-
-	struct dirent* tmp = alloca(sizeof(*tmp));
-	fatal_os(readdir_r, dd, tmp, &tmp);
-
-	while(tmp)
-	{
-		snprintf(space + strlen(dir) + 1, sizeof(space) - strlen(dir) - 1, "%s", tmp->d_name);
-
-		if(strcmp(tmp->d_name, ".") == 0)
-		{
-			// dot
-		}
-		else if(strcmp(tmp->d_name, "..") == 0)
-		{
-			// dot-dot
-		}
-		else
-		{
-			fatal(op_load, space);
-		}
-
-		fatal_os(readdir_r, dd, tmp, &tmp);
-	}
-
-	op_sort();
+    struct dirent ent;
+    struct dirent * entp = 0;
+    int r = 0;
+    while(1)
+    {
+      if((r = readdir_r(dd, &ent, &entp)) == 0)
+      {
+        if(entp)
+        {
+          if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+          {
+						if(entp->d_type == DT_DIR)
+						{
+							snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
+							fatal(read_opdir, space);
+						}
+						else if(strlen(entp->d_name) > 3 && strcmp(entp->d_name + strlen(entp->d_name) - 3, ".so") == 0)
+						{
+							snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
+							fatal(op_load, space);
+						}
+          }
+        }
+        else
+        {
+          break;
+        }
+      }
+      else
+      {
+        fail("readdir(%s)=[%d][%s]", s, r, strerror(r));
+      }
+    }
+  }
+  else if(errno != ENOTDIR)
+  {
+    dprintf(listwise_err_fd, "opendir(%s)=[%d][%s]\n", s, errno, strerror(errno));
+  }
 
 finally:
 	if(dd)
-		closedir(dd);
+	  closedir(dd);
 coda;
+}
+
+int API listwise_register_opdir(char * dir)
+{
+	fatal(read_opdir, dir);
+
+	op_sort();
+
+	finally : coda;
 }
 
 operator* op_lookup(char* s, int l)

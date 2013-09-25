@@ -18,8 +18,8 @@
 #ifndef _BP_H
 #define _BP_H
 
-#include <listwise.h>
-#include <listwise/generator.h>
+#include "listwise.h"
+#include "listwise/generator.h"
 
 #include "gn.h"
 #include "fml.h"

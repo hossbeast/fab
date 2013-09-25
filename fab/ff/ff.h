@@ -22,8 +22,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <listwise.h>
-#include <listwise/generator.h>
+#include "listwise.h"
+#include "listwise/generator.h"
 
 #include "coll.h"
 #include "hashblock.h"

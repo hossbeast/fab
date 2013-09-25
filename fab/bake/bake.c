@@ -19,9 +19,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#include <listwise.h>
-#include <listwise/lstack.h>
-#include <listwise/object.h>
+#include "listwise.h"
+#include "listwise/object.h"
 
 #include "bake.h"
 #include "fml.h"

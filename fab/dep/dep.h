@@ -18,7 +18,7 @@
 #ifndef _DEP_H
 #define _DEP_H
 
-#include <listwise.h>
+#include "listwise.h"
 
 #include "ffn.h"
 #include "gn.h"

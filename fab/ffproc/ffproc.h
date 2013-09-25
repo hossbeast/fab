@@ -18,7 +18,7 @@
 #ifndef _FFPROC_H
 #define _FFPROC_H
 
-#include <listwise.h>
+#include "listwise.h"
 
 #include "gn.h"
 #include "ff.h"

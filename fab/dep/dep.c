@@ -23,8 +23,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <listwise/lstack.h>
-#include <listwise/object.h>
+#include "listwise/object.h"
 
 #include "dep.h"
 

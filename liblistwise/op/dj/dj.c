@@ -19,7 +19,8 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -52,7 +53,7 @@ n+1 ..) contents of the stack beyond list 0 when we started
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -72,7 +73,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int N = 1;
 	if(o->argsl)
@@ -87,32 +88,21 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	int j = 0;
 	int x;
-	for(x = ls->s[0].l - 1; x >= 0; x--)
+	LSTACK_ITERREV(ls, x, go)
+	if(go)
 	{
-		int go = 1;
-		if(!ls->sel.all)
+		if(j == 0)
 		{
-			go = 0;
-			if(ls->sel.sl > (x/8))	// could not be selected
-			{
-				go = (ls->sel.s[x/8] & (0x01 << (x%8)));	// whether it is selected
-			}
+			k++;
+			fatal(lstack_push, ls);
 		}
 
-		if(go)
-		{
-			if(j == 0)
-			{
-				k++;
-				fatal(lstack_push, ls);
-			}
+		fatal(lstack_ensure, ls, ls->l - 1, N - j - 1, 0);
+		fatal(lstack_move, ls, ls->l - 1, N - j - 1, 0, x);
 
-			fatal(lstack_ensure, ls, ls->l - 1, N - j - 1, 0);
-			fatal(lstack_move, ls, ls->l - 1, N - j - 1, 0, x);
-
-			j = (j + 1) % N;
-		}
+		j = (j + 1) % N;
 	}
+	LSTACK_ITEREND
 
 	// possibly shrink the last list created
 	if(j)
@@ -121,11 +111,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			  &ls->s[ls->l - 1].s[0]
 			, &ls->s[ls->l - 1].s[N - j]
 			, j * sizeof(ls->s[0].s[0])
-		);
-		memmove(
-			  &ls->s[ls->l - 1].w[0]
-			, &ls->s[ls->l - 1].w[N - j]
-			, j * sizeof(ls->s[0].w[0])
 		);
 		memmove(
 			  &ls->s[ls->l - 1].t[0]

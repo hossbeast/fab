@@ -31,7 +31,7 @@ $cflags					= [ $cflags  [ -I$dlistwise ~ j ] $incdirs
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 ]
-$lflags					= [ $liblistwise ]
+$lflags					= [ $lflags $liblistwise ]
 $name						= [ listwise ]
 $link						= [ lw ]
 $listwise				= [ $dlistwise/$name ~ j ]
@@ -39,12 +39,15 @@ $listwise				= [ $dlistwise/$name ~ j ]
 # c files
 +[@std.c]($gendir = $dlistwise; $dirs = $dlistwise; -$cfabpaths; $cc $cflags)
 
+# catchall node
+[ @all ] : [ $listwise ]
+
 #
 # formulas
 #
 [ $listwise ] : [ $cfabpaths ~ xs/<o> ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneed/xm/<o>/ss/u/fi ] [ $lflags ~ fi ]
+	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [ $lflags ~ fi ]
 }
 
 #

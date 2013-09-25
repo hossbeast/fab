@@ -19,8 +19,8 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -39,19 +39,20 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "j"
 		, .optype				= LWOP_SELECTION_STAGE | LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
+		, .mnemonic			= "join"
 		, .desc					= "concatenate rows possibly with a delimiter"
 	}
 	, {}
 };
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	// delimiter string
 	char * ds = 0;
@@ -79,7 +80,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	// deleted entries stored here
 	typeof(ls->s[0].s[0]) Ts[cnt];
-	typeof(ls->s[0].w[0]) Tw[cnt];
 	typeof(ls->s[0].t[0]) Tt[cnt];
 
 	int i = 0;
@@ -118,7 +118,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 		// store rows about to be overwritten
 		Ts[i] = ls->s[0].s[x];
-		Tw[i] = ls->s[0].w[x];
 		Tt[i] = ls->s[0].t[x];
 		i++;
 
@@ -127,11 +126,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			  &ls->s[0].s[x]
 			, &ls->s[0].s[x+1]
 			, (ls->s[0].l - x - 1) * sizeof(ls->s[0].s[0])
-		);
-		memmove(
-			  &ls->s[0].w[x]
-			, &ls->s[0].w[x+1]
-			, (ls->s[0].l - x - 1) * sizeof(ls->s[0].w[0])
 		);
 		memmove(
 			  &ls->s[0].t[x]
@@ -146,7 +140,6 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	// place deleted entries at the end to be reused/freed by the library
 	memcpy(&ls->s[0].s[ls->s[0].l], Ts, sizeof(Ts));
-	memcpy(&ls->s[0].w[ls->s[0].l], Tw, sizeof(Tw));
 	memcpy(&ls->s[0].t[ls->s[0].l], Tt, sizeof(Tt));
 
 	// add new entry from the accumulator

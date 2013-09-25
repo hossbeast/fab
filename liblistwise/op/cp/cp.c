@@ -18,9 +18,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
-#include <listwise/object.h>
+#include "listwise/operator.h"
+#include "listwise/object.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 #include "xmem.h"
@@ -44,7 +44,7 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -64,7 +64,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int N = 1;
 	if(o->argsl)

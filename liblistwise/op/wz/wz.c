@@ -19,23 +19,20 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
 
 /*
 
-zw operator - reset window
+wz operator - reset window
 
 NO ARGUMENTS
 
 */
 
-static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
-
 operator op_desc[] = {
 	{
 		  .s						= "zw"
-		, .optype				= LWOP_WINDOW_RESET
+		, .optype				= LWOP_WINDOWS_RESET
 		, .desc					= "reset windows"
 	}
 	, {}

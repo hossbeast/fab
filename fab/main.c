@@ -24,8 +24,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <listwise/lstack.h>
-#include <listwise/object.h>
+#include "listwise/object.h"
 
 #include "args.h"
 #include "ff.h"
@@ -122,8 +121,6 @@ int main(int argc, char** argv)
 
 	// load additional fab-specific listwise operators
 	fatal(listwise_register_opdir, XQUOTE(FABLWOPDIR));
-
-	// should be a register here for default object interface, for LWOP_OBJECT_NO operators
 
 	// parse cmdline arguments
 	//  (args_parse also calls log_init with a default string)

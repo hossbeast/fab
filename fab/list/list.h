@@ -18,9 +18,9 @@
 #ifndef _LIST_H
 #define _LIST_H
 
-#include <listwise.h>
-#include <listwise/object.h>
-#include <listwise/generator.h>
+#include "listwise.h"
+#include "listwise/object.h"
+#include "listwise/generator.h"
 
 #include "ff.h"
 #include "ffn.h"

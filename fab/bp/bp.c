@@ -17,8 +17,7 @@
 
 #include <stdio.h>
 
-#include <listwise.h>
-#include <listwise/lstack.h>
+#include "listwise.h"
 
 #include "bp.h"
 #include "ts.h"

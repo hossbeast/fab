@@ -24,8 +24,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <listwise/operator.h>
-#include <listwise/lstack.h>
+#include "listwise/operator.h"
 
 #include "liblistwise_control.h"
 
@@ -51,7 +50,7 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -66,12 +65,12 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1 && o->argsl != 2)
-		fail("%s -- arguments : %d", o-op->s, o->argsl);
+		fail("%s -- arguments : %d", o->op->s, o->argsl);
 
 	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	// workspace
 	char space[256];

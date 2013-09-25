@@ -15,10 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <listwise.h>
-#include <listwise/object.h>
-#include <listwise/lstack.h>
-#include <listwise/generator.h>
+#include "listwise.h"
+#include "listwise/object.h"
+#include "listwise/generator.h"
 
 #include "list.h"
 #include "gnlw.h"

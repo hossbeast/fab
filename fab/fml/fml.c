@@ -20,8 +20,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <listwise.h>
-#include <listwise/lstack.h>
+#include "listwise.h"
 
 #include "fml.h"
 #include "args.h"

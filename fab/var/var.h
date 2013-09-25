@@ -18,8 +18,8 @@
 #ifndef _VAR_H
 #define _VAR_H
 
-#include <listwise.h>
-#include <listwise/object.h>
+#include "listwise.h"
+#include "listwise/object.h"
 
 #include "map.h"
 

@@ -19,7 +19,7 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
 
 #include "liblistwise_control.h"
 #include "xmem.h"
@@ -38,13 +38,10 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
-
 operator op_desc[] = {
 	{
 		  .s						= "y"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET
+		, .optype				= 0
 		, .desc					= "activate staged selections and windows"
 	}, {}
 };

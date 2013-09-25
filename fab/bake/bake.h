@@ -18,8 +18,8 @@
 #ifndef _BAKE_H
 #define _BAKE_H
 
-#include <listwise.h>
-#include <listwise/generator.h>
+#include "listwise.h"
+#include "listwise/generator.h"
 
 #include "bp.h"
 

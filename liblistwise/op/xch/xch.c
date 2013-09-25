@@ -19,7 +19,8 @@
 #include <string.h>
 #include <alloca.h>
 
-#include <listwise/operator.h>
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -40,12 +41,12 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "xch"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_ARGS_CANHAVE | LWOP_STACKOP
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "exchange lists"
@@ -63,7 +64,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	int to = 1;
 	if(o->argsl)
@@ -82,5 +83,5 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		ls->s[to] = T;
 	}
 
-	finally : coda;
+	return 0;
 }

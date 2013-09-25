@@ -29,15 +29,28 @@ $incdir					= [ /usr/include ]								# header files
 $bindir					= [ /usr/local/bin ]							# executables
 $libdir					= [ /usr/lib/x86_64-linux-gnu ]		# dynamically linked libraries
 
+#
 # configurable runtime directories
 #  (that may be set at build-time)
-$dlibdir				= [ /usr/lib ]										# dloaded libraries
-$lwopdir				= [ $dlibdir/listwise ]						#  lw operators
-$fablwopdir			= [ $dlibdir/fab/lib ]						#  fab-specific lw operators
-$fabcachedir		= [ /var/cache/fab ]							# fab cache
-$fabtmpdir			= [ /var/tmp/fab ]								# fab tmp
-$fabipcdir			= [ /var/run/fab ]								# fab shm/ipc files
-$fabinvokedir		= [ /usr/lib/fab/listwise ]				# fab-provided invocations
+#
+
+# install-time values
+$dlibdir								= [ /usr/lib ]										# dloaded libraries
+$fabcachedir						= [ /var/cache/fab ]							# fab cache
+$fabtmpdir							= [ /var/tmp/fab ]								# fab tmp
+$fabipcdir							= [ /var/run/fab ]								# fab shm/ipc files
+$lwopdir								= [
+	[ $dbug $dvel ~ [ j/s/00/< $dlibdir/listwise >/y ~ j ] ]			# lw operators - regular build
+	[ $dbug $dvel ~ [ s/1/< [ $dliblistwise ~ rp ] /op>/y ~ j ] ]						# lw operators - dev build
+]
+$fablwopdir							= [
+	[ $dbug $dvel ~ [ j/s/00/< $dlibdir/fab/lib >/y ~ j ] ]				# fab-specific lw operators - regular build
+	[ $dbug $dvel ~ [ s/1/< $dfab/fablw/op>/y ~ j ] ]							# fab-specific lw operators - dev build
+]
+$fabinvokedir						= [
+	[ $dbug $dvel ~ [ j/s/00/< $dlibdir/fab/listwise >/y ~ j ] ]	# fab-provided invocations - regular build
+	[ $dbug $dvel ~ [ s/1/< $dfab/fablib >/y ~ j ] ]							# fab-provided invocations - dev build
+]
 
 # compilers and their flags
 $flex				= [ flex ]
@@ -54,4 +67,8 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE [ $dcommon [ $dcommon ~ ls/-d ]
 	[ $dbug $dvel ~ s/1/-DDBUG/y ]
 	[       $dvel ~ s/1/-DDEVEL/y ]
 	[       $dvel ~ s/1/-DSANITY/y ]
+]
+
+$lflags			= [
+	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ~ rp ] >/y ~ j ] ]
 ]
