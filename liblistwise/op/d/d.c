@@ -50,23 +50,23 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
 	// create a new list at index 0
-	fatal(lstack_unshift, ls);
+	fatal(lstack_unshift, lx);
 
-	if(ls->sel.active)
+	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
 	{
 		// ensure allocation in the new list @ [0]
-		fatal(lstack_ensure, ls, 0, ls->s[1].l - ls->sel.active->l - 1, -1);
+		fatal(lstack_ensure, lx, 0, lx->s[1].l - lx->sel.active->l - 1, -1);
 
 		int i = 0;
 		int x;
-		for(x = ls->s[1].l - 1; x >= 0; x--)
+		for(x = lx->s[1].l - 1; x >= 0; x--)
 		{
-			if((ls->sel.active->sl <= (x/8)) || (ls->sel.active->s[x/8] & (0x01 << (x%8))) == 0)
+			if((lx->sel.active->sl <= (x/8)) || (lx->sel.active->s[x/8] & (0x01 << (x%8))) == 0)
 			{
-				fatal(lstack_move, ls, 0, ls->s[1].l - ls->sel.active->l - 1 - i, 1, x);
+				fatal(lstack_move, lx, 0, lx->s[1].l - lx->sel.active->l - 1 - i, 1, x);
 			}
 		}
 	}

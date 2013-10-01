@@ -146,7 +146,7 @@ static int ensure(lwx * const restrict lx, int x, int y, int z)
 			if(lx->s[x].l <= y)
 				lx->s[x].l = y + 1;
 
-			if(z > 0)
+			if(z >= 0)
 			{
 				// ensure string has enough space
 				if(lx->s[x].s[y].a <= z)
@@ -213,7 +213,7 @@ static int writestack(lwx * const restrict lx, int x, int y, const void* const r
 		lx->s[x].s[y].type = type;
 		lx->s[x].s[y].l = 0;
 	}
-	else if(l)
+	else
 	{
 		fatal(ensure, lx, x, y, l);
 
@@ -308,26 +308,39 @@ void API lwx_xfree(lwx ** lx)
 	*lx = 0;
 }
 
-void API lwx_reset(lwx * lx)
+int API lwx_reset(lwx * lx)
 {
 	int x;
-	int y;
-
-	if(lx)
+	for(x = 0; x < lx->l; x++)
 	{
-		for(x = 0; x < lx->l; x++)
-		{
-			for(y = 0; y < lx->s[x].a; y++)
-				lstack_clear(lx, x, y);
+		int y;
+		for(y = 0; y < lx->s[x].l; y++)
+			lstack_clear(lx, x, y);
 
-			lx->s[x].l = 0;
-		}
-
-		lx->l = 0;
-
-		lx->sel.active = 0;
-		lx->sel.staged = 0;
+		lx->s[x].l = 0;
 	}
+
+	lx->l = 0;
+	lx->sel.active = 0;
+	lx->sel.staged = 0;
+
+	return 0;
+}
+
+int API lstack_clear(const lwx * const restrict lx, int x, int y)
+{
+	lx->s[x].s[y].l = 0;
+	lx->s[x].s[y].type = 0;
+
+	lx->s[x].t[y].y = LWTMP_UNSET;
+
+	if(x == 0)
+	{
+		lx->win.s[y].active = 0;
+		lx->win.s[y].staged = 0;
+	}
+
+	return 0;
 }
 
 int API lstack_dump(lwx * const lx)
@@ -351,7 +364,7 @@ int API lstack_dump(lwx * const lx)
 			if(x == 0)
 			{
 				select = 1;
-				if(lx->sel.active)
+				if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
 				{
 					select = 0;
 					if(lx->sel.active->sl > (y / 8))
@@ -360,7 +373,7 @@ int API lstack_dump(lwx * const lx)
 					}
 				}
 
-				if(lx->sel.staged)
+				if(lx->sel.staged && lx->sel.staged->lease == lx->sel.staged_era)
 				{
 					if(lx->sel.staged->sl > (y / 8))
 					{
@@ -392,23 +405,28 @@ int API lstack_dump(lwx * const lx)
 			dprintf(listwise_err_fd, "\n");
 
 			// indicate active windows
-			if(x == 0 && lx->win.s[y].active)
+			if(x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
 			{
-				int z = -1;
-				if(lx->win.s[y].active->s[0].o == 0)
-					z = 0;
+				dprintf(listwise_err_fd, "%16s", " ");
 
+				int z = -1;
 				int i;
 				for(i = 0; i < sl; i++)
 				{
-					if(i >= lx->win.s[y].active->s[z].o)
+					if(z == -1 && lx->win.s[y].active->s[0].o == i)
 					{
-						if((i - lx->win.s[y].active->s[z].o) <= lx->win.s[y].active->s[z].l)
+						z = 0;
+					}
+
+					if(z >= 0 && z < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[z].o)
+					{
+						if((i - lx->win.s[y].active->s[z].o) < lx->win.s[y].active->s[z].l)
 						{
 							dprintf(listwise_err_fd, "^");
 						}
 						else
 						{
+							dprintf(listwise_err_fd, " ");
 							z++;
 						}
 					}
@@ -421,23 +439,28 @@ int API lstack_dump(lwx * const lx)
 			}
 
 			// indicate staged windows
-			if(x == 0 && lx->win.s[y].staged)
+			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
 			{
-				int z = -1;
-				if(lx->win.s[y].staged->s[0].o == 0)
-					z = 0;
+				dprintf(listwise_err_fd, "%16s", " ");
 
+				int z = -1;
 				int i;
 				for(i = 0; i < sl; i++)
 				{
-					if(i >= lx->win.s[y].staged->s[z].o)
+					if(z == -1 && lx->win.s[y].staged->s[0].o == i)
 					{
-						if((i - lx->win.s[y].staged->s[z].o) <= lx->win.s[y].staged->s[z].l)
+						z = 0;
+					}
+
+					if(z >= 0 && z < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[z].o)
+					{
+						if((i - lx->win.s[y].staged->s[z].o) < lx->win.s[y].staged->s[z].l)
 						{
-							dprintf(listwise_err_fd, "*");
+							dprintf(listwise_err_fd, "+");
 						}
 						else
 						{
+							dprintf(listwise_err_fd, " ");
 							z++;
 						}
 					}
@@ -454,25 +477,11 @@ int API lstack_dump(lwx * const lx)
 	finally : coda;
 }
 
-void API lstack_clear(const lwx * const restrict lx, int x, int y)
-{
-	lx->s[x].s[y].l = 0;
-	lx->s[x].s[y].type = 0;
-
-	lx->s[x].t[y].y = LWTMP_UNSET;
-
-	if(x == 0)
-	{
-		lx->win.s[y].active = 0;
-		lx->win.s[y].staged = 0;
-	}
-}
-
 int API lstack_append(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
 {
 	// ensure stack has enough lists, stack has enough strings, string has enough bytes
 	fatal(ensure, lx, x, y, -1);
-	fatal(ensure, lx, x, y, lx->s[x].s[y].l + l + 1);
+	fatal(ensure, lx, x, y, lx->s[x].s[y].l + l);
 
 	// append and cap the string
 	memcpy(lx->s[x].s[y].s + lx->s[x].s[y].l, s, l);

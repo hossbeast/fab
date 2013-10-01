@@ -32,8 +32,6 @@
 
 #include "liblistwise_control.h"
 
-#include "parseint.h"
-
 /*
 
 g operator - gobble file contents
@@ -70,17 +68,14 @@ operator op_desc[] = {
 
 static int gobble(lwx* ls, char * path)
 {
-	int					fd = 0;
+	int					fd = -1;
 	size_t			size = 0;
-	void *			addr = 0;
+	void *			addr = MAP_FAILED;
 
 	if((fd = open(path, O_RDONLY)) == -1)
 		fail("open(%s)=[%d][%s]", path, errno, strerror(errno));
 
 	if((size = lseek(fd, 0, SEEK_END)) ==  (off_t)-1)
-		fail("lseek(%u)=[%d][%s]", 0, errno, strerror(errno));
-
-	if(lseek(fd, 0, SEEK_SET) == (off_t)-1)
 		fail("lseek(%u)=[%d][%s]", 0, errno, strerror(errno));
 
 	if((addr = mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
@@ -95,35 +90,32 @@ static int gobble(lwx* ls, char * path)
 	}
 
 finally:
-	if(addr)
+	if(addr != MAP_FAILED)
 		munmap(addr, size);
 
-	if(fd)
+	if(fd != -1)
 		close(fd);
 coda;
 }
 
 int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	if(o->argsl || ls->l)
-	{
-		int x;
-		fatal(lstack_unshift, ls);
+	int x;
+	fatal(lstack_unshift, ls);
 
-		if(o->argsl)
+	if(o->argsl)
+	{
+		for(x = 0; x < o->argsl; x++)
+			fatal(gobble, ls, o->args[x]->s);
+	}
+	else
+	{
+		LSTACK_ITERATE_FWD(ls, 1, x, 1, go)
+		if(go)
 		{
-			for(x = 0; x < o->argsl; x++)
-				fatal(gobble, ls, o->args[x]->s);
+			fatal(gobble, ls, lstack_string(ls, 1, x));
 		}
-		else
-		{
-			LSTACK_ITERATE(ls, x, go)
-			if(go)
-			{
-				fatal(gobble, ls, lstack_string(ls, 1, x));
-			}
-			LSTACK_ITEREND
-		}
+		LSTACK_ITEREND
 	}
 
 	finally : coda;

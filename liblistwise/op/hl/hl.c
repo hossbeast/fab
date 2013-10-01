@@ -50,7 +50,7 @@ static int op_exec(operation*, lwx*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "hl"
-		, .optype				= LWOP_OPERATION_INPLACE
+		, .optype				= LWOP_OPERATION_INPLACE | LWOP_WINDOWS_ACTIVATE
 		, .op_exec			= op_exec
 		, .mnemonic			= "highlight"
 		, .desc					= "highlight windows"
@@ -64,25 +64,32 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active)
+		// clearing/appending will reset the windows
+		typeof(*lx->win.s[0].active) * win = lx->win.s[x].active;
+
+		if(win && lx->win.s[x].active->lease == lx->win.active_era)
 		{
-			// because there is a window in effect, getbytes must return the temp space for the row
+			// request that readrow return temp space
 			char * zs;
 			int    zsl;
-			fatal(lstack_getbytes, lx, 0, x, &zs, &zsl);
+			fatal(lstack_readrow, lx, 0, x, &zs, &zsl, 1, 0, 1, 0);
 
 			// clear this string on the stack
 			lstack_clear(lx, 0, x);
 
 			// text in the subject before the first windowed segment
-			fatal(lstack_append, lx, 0, x, zs, lx->win.s[x].active->s[0].o);
+			fatal(lstack_append, lx, 0, x, zs, win->s[0].o);
 
 			int i;
-			for(i = 0; i < lx->win.s[x].active->l; i++)
+			for(i = 0; i < win->l; i++)
 			{
+				// text following the last segment, and preceeding this segment
+				if(i)
+					fatal(lstack_append, lx, 0, x, zs + win->s[i - 1].o + win->s[i - 1].l, win->s[i].o - (win->s[i - 1].o + win->s[i - 1].l));
+
 				// write the windowed segment bracketed by color escapes
 				fatal(lstack_append, lx, 0, x, COLOR(RED));
-				fatal(lstack_append, lx, 0, x, zs + lx->win.s[x].active->s[i].o, lx->win.s[x].active->s[i].l);
+				fatal(lstack_append, lx, 0, x, zs + win->s[i].o, win->s[i].l);
 				fatal(lstack_append, lx, 0, x, NOCOLOR);
 			}
 
@@ -90,7 +97,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 			if(i)
 			{
 				i--;
-				fatal(lstack_append, lx, 0, x, zs + lx->win.s[x].active->s[i].o + lx->win.s[x].active->s[i].l, zsl - (lx->win.s[x].active->s[i].o + lx->win.s[x].active->s[i].l));
+				fatal(lstack_append, lx, 0, x, zs + win->s[i].o + win->s[i].l, zsl - (win->s[i].o + win->s[i].l));
 			}
 		}
 	}

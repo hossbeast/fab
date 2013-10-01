@@ -26,8 +26,9 @@
 
 /*
 
-ys operator - activate those selections staged by the previous operation
-yw operator - activate those windows staged by the previous operation
+y operator  - activate staged selections and windows
+sy operator - activate staged selections
+wy operator - activate staged windows
 
 NO ARGUMENTS
 
@@ -38,10 +39,49 @@ OPERATION
 
 */
 
+static int op_exec_y(operation*, lwx*, int**, int*);
+static int op_exec_sy(operation*, lwx*, int**, int*);
+static int op_exec_wy(operation*, lwx*, int**, int*);
+
 operator op_desc[] = {
 	{
 		  .s						= "y"
 		, .optype				= 0
+		, .op_exec			= op_exec_y
 		, .desc					= "activate staged selections and windows"
+	}
+	, {
+		  .s						= "sy"
+		, .optype				= 0
+		, .op_exec			= op_exec_sy
+		, .desc					= "activate staged selections"
+	}
+	, {
+		  .s						= "wy"
+		, .optype				= 0
+		, .op_exec			= op_exec_wy
+		, .desc					= "activate staged windows"
 	}, {}
 };
+
+int op_exec_y(operation* o, lwx* lx, int** ovec, int* ovec_len)
+{
+	fatal(lstack_windows_activate, lx);
+	fatal(lstack_sel_activate, lx);
+
+	finally : coda;
+}
+
+int op_exec_sy(operation* o, lwx* lx, int** ovec, int* ovec_len)
+{
+	fatal(lstack_sel_activate, lx);
+
+	finally : coda;
+}
+
+int op_exec_wy(operation* o, lwx* lx, int** ovec, int* ovec_len)
+{
+	fatal(lstack_windows_activate, lx);
+
+	finally : coda;
+}

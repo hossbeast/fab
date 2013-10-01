@@ -31,9 +31,17 @@ int API lstack_sel_stage(lwx * const restrict lx, int y)
 	if(lx->sel.staged == 0)
 	{
 		lx->sel.staged = &lx->sel.storage[0];
+
 		if(lx->sel.staged == lx->sel.active)
 			lx->sel.staged = &lx->sel.storage[1];
+
+		lx->sel.staged->l = 0;
 	}
+
+	if(lx->sel.staged->lease != lx->sel.staged_era)
+		lx->sel.staged->l = 0;
+
+	lx->sel.staged->lease = lx->sel.staged_era;
 
 	// reallocate if necessary
 	if(lx->sel.staged->sa <= (y / 8))
@@ -59,27 +67,23 @@ int API lstack_sel_stage(lwx * const restrict lx, int y)
 	finally : coda;
 }
 
+int API lstack_sel_unstage(lwx * const restrict lx)
+{
+	lx->sel.staged = 0;
+
+	return 0;
+}
+
 int API lstack_sel_activate(lwx * const restrict lx)
 {
 	if(lx->sel.staged)
 	{
 		lx->sel.active = lx->sel.staged;
 		lx->sel.staged = 0;
+
+		// renew lease
+		lx->sel.active->lease = lx->sel.active_era;
 	}
-
-	return 0;
-}
-
-int API lstack_sel_reset(lwx * const restrict lx)
-{
-	lx->sel.active = 0;
-
-	return 0;
-}
-
-int API lstack_sel_unstage(lwx * const restrict lx)
-{
-	lx->sel.staged = 0;
 
 	return 0;
 }

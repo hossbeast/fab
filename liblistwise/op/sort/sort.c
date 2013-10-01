@@ -67,16 +67,14 @@ operator op_desc[] = {
 #define STRING_NCASE	2
 #define NUMERIC				3
 
-static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int mode)
+static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 {
-	typeof(ls->s[0].s[0]) * Ts = 0;
-	typeof(ls->s[0].t[0]) * Tt = 0;
-	typeof(ls->win.s[0]) * Tw = 0;
-
 	int * mema = 0;
 	int * memb = 0;
 
-	size_t num = ls->sel.active ? ls->sel.active->l : ls->s[0].l;
+	size_t num = lx->s[0].l;
+	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
+		num = lx->sel.active->l;
 
 	// indexes to be sorted
 	fatal(xmalloc, &mema, num * sizeof(*mema));
@@ -84,19 +82,9 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int mode)
 	// copy of indexes
 	fatal(xmalloc, &memb, num * sizeof(*memb));
 
-	// copies of entries to be swapped
-	fatal(xmalloc, &Ts, ls->s[0].l * sizeof(*Ts));
-	memcpy(Ts, ls->s[0].s, ls->s[0].l * sizeof(*Ts));
-
-	fatal(xmalloc, &Tt, ls->s[0].l * sizeof(*Tt));
-	memcpy(Tt, ls->s[0].t, ls->s[0].l * sizeof(*Tt));
-
-	fatal(xmalloc, &Tw, ls->s[0].l * sizeof(*Tw));
-	memcpy(Tw, ls->win.s, ls->s[0].l * sizeof(*Tw));
-
 	int i = 0;
 	int x;
-	LSTACK_ITERATE(ls, x, go)
+	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
 		mema[i] = x;
@@ -122,16 +110,16 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int mode)
 
 		if(mode == NUMERIC)
 		{
-			if((As = lstack_string(ls, 0, *(int*)A)) == 0)
+			if((As = lstack_string(lx, 0, *(int*)A)) == 0)
 				FAIL("allocation failure");
-			if((Bs = lstack_string(ls, 0, *(int*)B)) == 0)
+			if((Bs = lstack_string(lx, 0, *(int*)B)) == 0)
 				FAIL("allocation failure");
 		}
 		else
 		{
-			if(lstack_getstring(ls, 0, *(int*)A, &As, &Asl))
+			if(lstack_getstring(lx, 0, *(int*)A, &As, &Asl))
 				FAIL("allocation failure");
-			if(lstack_getstring(ls, 0, *(int*)B, &Bs, &Bsl))
+			if(lstack_getstring(lx, 0, *(int*)B, &Bs, &Bsl))
 				FAIL("allocation failure");
 		}
 
@@ -160,31 +148,55 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int mode)
 
 	for(x = 0; x < i; x++)
 	{
-		ls->s[0].s[memb[x]] = Ts[mema[x]];
-		ls->s[0].t[memb[x]] = Tt[mema[x]];
-		ls->win.s[memb[x]] = ls->win.s[mema[x]];
+		int a = mema[x];
+		int b = memb[x];
+
+		mema[x] = 0xFFFF;
+
+		if(a != b)
+		{
+			int y;
+			for(y = 0; y < i; y++)
+			{
+				if(mema[y] == b)
+					break;
+			}
+
+			// swap
+			typeof(lx->s[0].s[0]) Ts = lx->s[0].s[a];
+			typeof(lx->s[0].t[0]) Tt = lx->s[0].t[a];
+			typeof(lx->win.s[0])  Tw = lx->win.s[a];
+
+			lx->s[0].s[a] = lx->s[0].s[b];
+			lx->s[0].t[a] = lx->s[0].t[b];
+			lx->win.s[a]  = lx->win.s[b];
+
+			lx->s[0].s[b] = Ts;
+			lx->s[0].t[b] = Tt;
+			lx->win.s[b]  = Tw;
+
+			if(y < i)
+				mema[y] = a;
+		}
 	}
 
 finally:
 	free(mema);
 	free(memb);
-	free(Ts);
-	free(Tt);
-	free(Tw);
 coda;
 }
 
-int op_exec_ss(operation * o, lwx * ls, int ** ovec, int * ovec_len)
+int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
 	int ncase = 0;
 
 	if(o->argsl >= 1)
 		ncase = strchr(o->args[0]->s, 'i') != 0;
 
-	return op_exec(o, ls, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE);
+	return op_exec(o, lx, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE);
 }
 
-int op_exec_sn(operation * o, lwx * ls, int ** ovec, int * ovec_len)
+int op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
-	return op_exec(o, ls, ovec, ovec_len, NUMERIC);
+	return op_exec(o, lx, ovec, ovec_len, NUMERIC);
 }

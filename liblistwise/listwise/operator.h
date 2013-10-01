@@ -265,9 +265,15 @@ int lstack_allocate(lwx * const restrict lx, int x, int y, int z);
 /// lstack_clear
 //
 // SUMMARY
-//  reset the entry x:y
+//  clear the row at x:y
 //
-void lstack_clear(const lwx * const restrict lx, int x, int y);
+// PARAMETERS
+//  lx - lw context
+//  x  - list index
+//  y  - row index
+//
+int lstack_clear(const lwx * const restrict lx, int x, int y)
+  __attribute__((nonnull));
 
 /// ensure
 //
@@ -344,14 +350,6 @@ int lstack_displace(lwx * const restrict lx, int x, int y, int l)
 /// SELECTION API
 ///
 
-/// lstack_sel_all
-//
-// SUMMARY
-//  select all entries
-//
-int lstack_sel_reset(lwx * const restrict lx)
-	__attribute__((nonnull));
-
 /// lstack_sel_stage
 //
 // SUMMARY
@@ -388,13 +386,23 @@ int lstack_sel_activate(lwx * const restrict lx)
 int lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 	__attribute__((nonnull));
 
-/// lstack_window_reset
+/// lstack_window_unstage
 //
 // SUMMARY
-//  reset the window for the specified row
+//  reset the staged window for the specified row
 //
-int lstack_window_reset(lwx * const restrict lx, int y)
+int lstack_window_unstage(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
+
+/// lstack_windows_activate
+//
+// SUMMARY
+//  activate staged windows (even if their lease has expired)
+//
+int lstack_windows_activate(lwx * const restrict lx)
+	__attribute__((nonnull));
+
+#if 0
 
 /// lstack_windows_unstage
 //
@@ -412,13 +420,7 @@ int lstack_windows_unstage(lwx * const restrict lx)
 int lstack_windows_reset(lwx * const restrict lx)
 	__attribute__((nonnull));
 
-/// lstack_windows_activate
-//
-// SUMMARY
-//  activate staged windows
-//
-int lstack_windows_activate(lwx * const restrict lx)
-	__attribute__((nonnull));
+#endif
 
 ///
 /// RE API

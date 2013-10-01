@@ -45,7 +45,6 @@ int API listwise_exec_generator(
 #endif
 
 	// system implemented operators
-	operator * yop = op_lookup("y", 1);
 	operator * oop = op_lookup("o", 1);
 
 	// list stack allocation
@@ -66,7 +65,10 @@ int API listwise_exec_generator(
 	}
 
 	// the initial state of the selection is all
-	fatal(lstack_sel_reset, *lx);
+	(*lx)->sel.active_era++;
+	(*lx)->sel.staged_era++;
+	(*lx)->win.active_era++;
+	(*lx)->win.staged_era++;
 
 	if(dump)
 		lstack_dump(*lx);
@@ -92,46 +94,46 @@ int API listwise_exec_generator(
 		if(!isor)
 		{
 			// if the previous operator staged windows, activate or unstage them
-			if((x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE)) || g->ops[x]->op == yop)
+			if(x && ((g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE) == LWOP_WINDOWS_STAGE))
 			{
-				if((x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE)) || g->ops[x]->op == yop)
+				if(x && ((g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE))
 				{
 					fatal(lstack_windows_activate, *lx);
-				}
-				else
-				{
-					fatal(lstack_windows_unstage, *lx);
 				}
 			}
 
 			// if the previous operator staged selections, activate or unstage them
-			if((x && (g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE)) || g->ops[x]->op == yop)
+			if(x && ((g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE) == LWOP_SELECTION_STAGE))
 			{
-				if((x && g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) || g->ops[x]->op == yop)
+				if(x && ((g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE))
 				{
 					fatal(lstack_sel_activate, *lx);
-				}
-				else
-				{
-					fatal(lstack_sel_unstage, *lx);
 				}
 			}
 		}
 
+		if(x && dump)
+		{
+			lstack_dump(*lx);
+		}
+
+		if(!isor)
+		{
+			(*lx)->win.staged_era++;
+			(*lx)->sel.staged_era++;
+		}
+
 		if(dump)
 		{
-			if(x)
-				lstack_dump(*lx);
-
 			dprintf(listwise_err_fd, "\n");
 
 			char buf[128];
 			operation_write(buf, sizeof(buf), g->ops[x]);
 			dprintf(listwise_err_fd, " >> %s\n", buf);
 		}
-
+ 
 		// execute the operator
-		if(((*lx)->l || g->ops[x]->op->optype & LWOP_EMPTYSTACK_YES) && g->ops[x]->op->op_exec)
+		if(((*lx)->l || (g->ops[x]->op->optype & LWOP_EMPTYSTACK_YES) == LWOP_EMPTYSTACK_YES) && g->ops[x]->op->op_exec)
 			fatal(g->ops[x]->op->op_exec, g->ops[x], *lx, &ovec, &ovec_len);
 
 #if SANITY
@@ -139,33 +141,29 @@ int API listwise_exec_generator(
 			fatal(sanity, *lx, sb);
 #endif
 
-		if(g->ops[x]->op->optype & LWOP_WINDOWS_RESET)
-			fatal(lstack_windows_reset, *lx);
+		if((g->ops[x]->op->optype & LWOP_WINDOWS_RESET) == LWOP_WINDOWS_RESET)
+			(*lx)->win.active_era++;
 
-		if(g->ops[x]->op->optype & LWOP_SELECTION_RESET)
-			fatal(lstack_sel_reset, *lx);
+		if((g->ops[x]->op->optype & LWOP_SELECTION_RESET) == LWOP_SELECTION_RESET)
+			(*lx)->sel.active_era++;
 	}
 
 	if(dump)
 	{
 		// if the previous operator staged windows, activate or unstage them
-		if(x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE))
+		if(x && ((g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE) == LWOP_WINDOWS_STAGE))
 		{
-			if(g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE)
+			if((g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE)
 			{
 				fatal(lstack_windows_activate, *lx);
-			}
-			else
-			{
-				fatal(lstack_windows_unstage, *lx);
 			}
 		}
 	}
 
 	// if the previous operator staged selections, activate or unstage them
-	if(x && (g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE))
+	if(x && ((g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE) == LWOP_SELECTION_STAGE))
 	{
-		if(g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE)
+		if((g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE)
 		{
 			fatal(lstack_sel_activate, *lx);
 		}
@@ -174,8 +172,7 @@ int API listwise_exec_generator(
 	if(dump)
 		lstack_dump(*lx);
 
-	(*lx)->win.staged_era++;	// age windows
-	(*lx)->win.active_era++;	// age windows
+	(*lx)->win.active_era++;	// age active windows
 
 	// clear string props set with the fx operator
 	for(x = 0; x < object_registry.l; x++)

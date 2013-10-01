@@ -150,7 +150,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse)
 	}
 	else
 	{
-		LSTACK_ITERATE(ls, x, go)
+		LSTACK_ITERATE_FWD(ls, 1, x, 1, go)
 		if(go)
 		{
 			fatal(listing, ls, lstack_string(ls, 1, x), recurse);

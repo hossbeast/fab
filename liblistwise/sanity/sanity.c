@@ -52,6 +52,13 @@ void sanityblock_free(sanityblock * const sb)
 {
 	if(sb)
 	{
+		int x;
+		for(x = 0; x < sb->s_stringsa; x++)
+		{
+			free(sb->s_strings[x].s);
+			free(sb->s_strings[x].o);
+		}
+
 		free(sb->s_strings);
 	}
 	free(sb);

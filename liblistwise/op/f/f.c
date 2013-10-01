@@ -72,20 +72,12 @@ int op_validate(operation* o)
 
 int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	typeof(lx->win.s[0].active->s[0]) * wws = 0;
-	int wl = 0;
-	int wa = 0;
-
 	int x;
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active)
+		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
 		{
-			// original windows length
-			typeof(lx->win.s[0].active->s[0]) * ws = lx->win.s[x].active->s;
-			wl = lx->win.s[x].active->l;
-
 			int wasreset = 0;
 			int i;
 			for(i = 0; i < o->argsl; i += 2)
@@ -100,35 +92,26 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 				int len = win_len;
 
 				if(win_off < 0)
-					off = wl + win_off;
+					off = lx->win.s[x].active->l + win_off;
 				if(win_len == 0)
-					len = wl - off;
+					len = lx->win.s[x].active->l - off;
 				else
-					len = MIN(len, wl - off);
+					len = MIN(len, lx->win.s[x].active->l - off);
 
-				if(off < wl)
+				if(off < lx->win.s[x].active->l)
 				{
 					int nlen = 0;
 
 					int j;
 					for(j = off; j < len; j++)
-						nlen += ws[j].l;
+						nlen += lx->win.s[x].active->s[j].l;
 
 					if(nlen > 0)
 					{
 						if(!wasreset)
 						{
-							// take a copy of the window for this row
-							if(wl > wa)
-							{
-								fatal(xrealloc, &wws, sizeof(*wws), wl, wa);
-								wa = wl;
-							}
-							memcpy(wws, lx->win.s[x].active->s, sizeof(*wws) * wl);
-							ws = wws;
-
-							// reset the window
-							fatal(lstack_window_reset, lx, x);
+							// reset staged window, if any
+							fatal(lstack_window_unstage, lx, x);
 							wasreset = 1;
 
 							// record this index was hit
@@ -136,7 +119,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 						}
 
 						// append window segment
-						fatal(lstack_window_stage, lx, x, ws[off].o, nlen);
+						fatal(lstack_window_stage, lx, x, lx->win.s[x].active->s[off].o, nlen);
 					}
 				}
 			}
@@ -144,7 +127,5 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 	}
 	LSTACK_ITEREND
 
-finally:
-	free(wws);
-coda;
+	finally : coda;
 }

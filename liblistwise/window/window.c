@@ -114,25 +114,9 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 	finally : coda;
 }
 
-int API lstack_window_reset(lwx * const restrict lx, int y)
+int API lstack_window_unstage(lwx * const restrict lx, int y)
 {
-	lx->win.s[y].active = 0;
 	lx->win.s[y].staged = 0;
-
-	return 0;
-}
-
-int API lstack_windows_unstage(lwx * const restrict lx)
-{
-	lx->win.staged_era++;
-
-	return 0;
-}
-
-int API lstack_windows_reset(lwx * const restrict lx)
-{
-	lx->win.staged_era++;
-	lx->win.active_era++;
 
 	return 0;
 }
@@ -143,11 +127,18 @@ int API lstack_windows_activate(lwx * const restrict lx)
 	LSTACK_ITERATE(lx, y, go)
 	if(go)
 	{
-		lx->win.s[y].active = lx->win.s[y].staged;
-		lx->win.s[y].staged = 0;
+		if(lx->win.s[y].staged)
+		{
+			lx->win.s[y].active = lx->win.s[y].staged;
+			lx->win.s[y].staged = 0;
 
-		if(lx->s[0].t[y].y == LWTMP_WINDOW)
-			lx->s[0].t[y].y = LWTMP_UNSET;
+			// renew lease
+			lx->win.s[y].active->lease = lx->win.active_era;
+
+			// reset temp
+			if(lx->s[0].t[y].y == LWTMP_WINDOW)
+				lx->s[0].t[y].y = LWTMP_UNSET;
+		}
 	}
 	LSTACK_ITEREND
 

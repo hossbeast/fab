@@ -91,22 +91,18 @@ void lwx_xfree(lwx ** const restrict)
 ///
 
 // iterate the selected elements of the 0th list of the lstack
-#define LSTACK_ITERATE(lx, y, go) LSTACK_ITERATE_LIST(lx, 0, y, go)
+#define LSTACK_ITERATE(lx, y, go) LSTACK_ITERATE_FWD(lx, 0, y, 1, go)
 
 // iterate in reverse the selected elements of the 0th list of the lstack
-#define LSTACK_ITERREV(lx, y, go) LSTACK_ITERREV_LIST(lx, 0, y, go)
+#define LSTACK_ITERREV(lx, y, go) LSTACK_ITERREV_REV(lx, 0, y, 1, go)
 
 // iterate elements of the xth list on the lstack
 //  iteration limited to selected elements when x == 0
-#define LSTACK_ITERATE_LIST(lx, x, y, go) \
-  LSTACK_ITERATE_HEADER(lx, x, y, go)     \
-  LSTACK_ITERATE_LOOP(lx, x, y, go)
+#define LSTACK_ITERATE_LIST(lx, x, y, go) LSTACK_ITERATE_FWD(lx, x, y, x == 0, go)
 
 // iterate in reverse elements of the xth list on the lstack
 //  iteration limited to selected elements when x == 0
-#define LSTACK_ITERREV_LIST(lx, x, y, go) \
-  LSTACK_ITERREV_HEADER(lx, x, y, go)     \
-  LSTACK_ITERATE_LOOP(lx, x, y, go)
+#define LSTACK_ITERREV_LIST(lx, x, y, go) LSTACK_ITERATE_REV(lx, x, y, x == 0, go)
 
 // close an iterate block
 #define LSTACK_ITEREND }}
@@ -125,7 +121,7 @@ void lwx_xfree(lwx ** const restrict)
 // PARAMETERS
 //  lx - lw context
 //  x  - list index
-//  y  - entry index
+//  y  - row index
 //  r  - string returned here
 //  rl - length returned here
 //
@@ -146,7 +142,7 @@ int lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restric
 // PARAMETERS
 //  lx - lw context
 //  x  - list index
-//  y  - entry index
+//  y  - row index
 //  r  - string returned here
 //  rl - length returned here
 //
@@ -167,7 +163,7 @@ int lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restri
 // PARAMETERS
 //  lx - lw context
 //  x  - list index
-//  y  - entry index
+//  y  - row index
 //
 // RETURNS
 //  0 on success
@@ -185,7 +181,7 @@ char * lstack_string(lwx * const restrict lx, int x, int y)
 // REMARKS
 //  no-op with zero-valued parameter
 //
-void lwx_reset(lwx * const restrict)
+int lwx_reset(lwx * const restrict)
   __attribute__((nonnull));
 
 /// lwx_getflags

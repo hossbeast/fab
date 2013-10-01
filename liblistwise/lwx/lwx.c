@@ -40,10 +40,10 @@ voidstar API lwx_setptr(lwx * const lx, void * const g)
 	return ((lx->ptr = g));
 }
 
-void API lwx_iterate_loop(lwx * const restrict lx, const int x, const int y, int * const restrict go)
+void API lwx_iterate_loop(lwx * const restrict lx, const int x, const int y, const int sel, int * const restrict go)
 {
 	*go = 1;
-	if(x == 0 && lx->sel.active)
+	if(sel && lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
 	{
 		*go = 0;
 		if(lx->sel.active->sl > (y / 8))

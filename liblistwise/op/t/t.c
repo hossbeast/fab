@@ -19,18 +19,25 @@
 #include <string.h>
 
 #include "listwise/operator.h"
+#include "listwise/object.h"
 #include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
-
-#include "macros.h"
 #include "xmem.h"
 
 /*
 
-vw operator - invert windows
+t operator - tear windowed segments into new rows
 
 NO ARGUMENTS
+
+OPERATION
+
+ use current select, ELSE
+ use entire top list
+
+ for each entry
+	1. create N copies of this entry at indexes x + 1 .. N
 
 */
 
@@ -38,51 +45,53 @@ static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "wv"
-		, .optype				= LWOP_WINDOWS_ACTIVATE
+		  .s						= "t"
+		, .optype				= LWOP_OPERATION_PUSHBEFORE
 		, .op_exec			= op_exec
-		, .mnemonic			= "WindowsinVert"
-		, .desc					= "invert windows"
-	}
-	, {}
+		, .desc					= "tear windows segments of rows into a new list"
+		, .mnemonic			= "tear"
+	}, {}
 };
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
+static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
+	typeof(lx->win.s[0].active->s[0]) * ws = 0;
+	int wl = 0;
+	int wa = 0;
+
+	fatal(lstack_unshift, lx);
+
 	int x;
-	LSTACK_ITERATE(lx, x, go)
+	LSTACK_ITERATE_FWD(lx, 1, x, 1, go)
 	if(go)
 	{
 		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
 		{
-			typeof(lx->win.s[0].active->s[0]) * ws = lx->win.s[x].active->s;
-			int wl = lx->win.s[x].active->l;
+			// request that readrow return temp space, and not to resolve the active window
+			char * zs;
+			int    zsl;
+			fatal(lstack_readrow, lx, 1, x, &zs, &zsl, 1, 0, 1, 0);
 
-			if(wl)
+			// take a copy of the window for this row
+			wl = lx->win.s[x].active->l;
+			if(wl > wa)
 			{
-				// reset staged windows, if any
-				fatal(lstack_window_unstage, lx, x);
+				fatal(xrealloc, &ws, sizeof(*ws), wl, wa);
+				wa = wl;
+			}
+			memcpy(ws, lx->win.s[x].active->s, sizeof(*ws) * wl);
 
-				char * s = 0;
-				int sl = 0;
-				fatal(lstack_readrow, lx, 0, x, &s, &sl, 1, 0, 0, 0);
-
-				// before the first windowed segment
-				fatal(lstack_window_stage, lx, x, 0, ws[0].o);
-
-				int i;
-				for(i = 1; i < wl; i++)
-				{
-					// region following the previous segment and preceeding the current segment
-					fatal(lstack_window_stage, lx, x, ws[i - 1].o + ws[i - 1].l, ws[i].o - (ws[i - 1].o + ws[i - 1].l));
-				}
-
-				// following the last windowed segment
-				fatal(lstack_window_stage, lx, x, ws[i - 1].o + ws[i - 1].l, sl - (ws[i - 1].o + ws[i - 1].l));
+			int i;
+			for(i = 0; i < wl; i++)
+			{
+				// write the windowed segment
+				fatal(lstack_add, lx, zs + ws[i].o, ws[i].l);
 			}
 		}
 	}
 	LSTACK_ITEREND
 
-	finally : coda;
+finally:
+	free(ws);
+coda;
 }
