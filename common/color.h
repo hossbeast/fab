@@ -15,22 +15,51 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#define COLORHEX(x) (o_colors[(x & COLOR_VALUE) >> 60])
-#define COLOR(x)    (char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
-#define NOCOLOR     (char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
+#include <sys/types.h>
 
-#define COLOR_VALUE   0xF000000000000000ULL
-#define RED           0x1000000000000000ULL // this message red in the terminal
-#define GREEN         0x2000000000000000ULL // this message green in the terminal
-#define YELLOW        0x3000000000000000ULL // this message yellow in the terminal
-#define CYAN          0x4000000000000000ULL // this message cyan in the terminal
-#define BLUE          0x5000000000000000ULL // this message blue in the terminal
+char (*g_colors_7)[7];
+char (*g_colors_6)[6];
 
-static unsigned char o_colors[] = {
-  /* NO COLOR */   0x00
-  /* RED    */   , 0x31
-  /* GREEN  */   , 0x32
-  /* YELLOW */   , 0x33
-  /* CYAN   */   , 0x36
-  /* BLUE   */   , 0x34
-};
+#define CSEVEN(x) g_colors_7[x]
+#define CSIX(x)   g_colors_6[x]
+
+#define RED					CSEVEN(0)
+#define GREEN				CSEVEN(1)
+#define YELLOW			CSEVEN(2)
+#define BLUE				CSEVEN(3)
+#define THIRTFIVE		CSEVEN(4)
+#define CYAN				CSEVEN(5)
+#define NONE				CSIX(0)
+
+#define COLOR(x) x, sizeof(x)
+#define CSIZE(x) sizeof(x)
+
+#if 0
+#define COLOR_TABLE							\
+	_COLOR(RED, g_colors_7[0])		\
+
+#define _COLOR(a, b) static char ** a = &b;
+COLOR_TABLE
+#undef _COLOR
+
+#define _COLOR(a, b) static size_t a ## SIZE = sizeof(b);
+COLOR_TABLE
+#undef _COLOR
+
+#define COLOR(a) a, sizeof(a)
+#define RED					COLOR(COLOR_RED)
+#define GREEN				COLOR(COLOR_GREEN)
+#define YELLOW			COLOR(COLOR_YELLOW)
+#define BLUE				COLOR(COLOR_BLUE)
+#define THIRTFIVE		COLOR(COLOR_THIRTYFIVE)
+#define CYAN				COLOR(COLOR_CYAN)
+#define NONE				COLOR(COLOR_NONE)
+
+#define RED_SIZE				sizeof(COLOR_RED)
+#define GREEN_SIZE			sizeof(COLOR_GREEN)
+#define YELLOW_SIZE			sizeof(COLOR_YELLOW)
+#define BLUE_SIZE				sizeof(COLOR_BLUE)
+#define THIRTFIVE_SIZE	sizeof(COLOR_THIRTYFIVE)
+#define CYAN_SIZE				sizeof(COLOR_CYAN)
+#define NONE_SIZE				sizeof(COLOR_NONE)
+#endif

@@ -195,7 +195,6 @@ static int writestack_alt(lwx * const restrict lx, int x, int y, const void* con
 	if(x == 0)
 	{
 		lx->win.s[y].active = 0;
-		lx->win.s[y].staged = 0;
 	}
 
 	finally : coda;
@@ -231,7 +230,6 @@ static int writestack(lwx * const restrict lx, int x, int y, const void* const r
 	if(x == 0)
 	{
 		lx->win.s[y].active = 0;
-		lx->win.s[y].staged = 0;
 	}
 
 	finally : coda;
@@ -260,7 +258,6 @@ static int vwritestack(lwx * const restrict lx, int x, int y, const char* const 
 	if(x == 0)
 	{
 		lx->win.s[y].active = 0;
-		lx->win.s[y].staged = 0;
 	}
 
 	finally : coda;
@@ -337,7 +334,6 @@ int API lstack_clear(const lwx * const restrict lx, int x, int y)
 	if(x == 0)
 	{
 		lx->win.s[y].active = 0;
-		lx->win.s[y].staged = 0;
 	}
 
 	return 0;
@@ -494,7 +490,6 @@ int API lstack_append(lwx * const restrict lx, int x, int y, const char* const r
 	if(x == 0)
 	{
 		lx->win.s[y].active = 0;
-		lx->win.s[y].staged = 0;
 	}
 
 	finally : coda;
@@ -526,7 +521,6 @@ int API lstack_appendf(lwx * const restrict lx, int x, int y, const char* const 
 	if(x == 0)
 	{
 		lx->win.s[y].active = 0;
-		lx->win.s[y].staged = 0;
 	}
 
 	finally : coda;
