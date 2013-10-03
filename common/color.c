@@ -17,7 +17,9 @@
 
 #include "color.h"
 
-char (*g_colors)[7] = (char[][7]){
+#define APIDATA 
+
+char (* APIDATA g_colors_7)[7] = (char[][7]){
 #define COLORDEF(x) { 0x1b, 0x5b, 0x31, 0x3b, 0x33, x, 0x6d }
 	  COLORDEF(0x31)	// RED
 	, COLORDEF(0x32)	// GREEN
@@ -28,6 +30,6 @@ char (*g_colors)[7] = (char[][7]){
 #undef COLORDEF
 };
 
-char (*g_color_6)[6] = (char[][6]){
+char (* APIDATA g_colors_6)[6] = (char[][6]){
 	  { 0x1b, 0x5b, 0x30, 0x3b, 0x30, 0x6d }
 };

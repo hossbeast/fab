@@ -272,7 +272,7 @@ int lstack_allocate(lwx * const restrict lx, int x, int y, int z);
 //  x  - list index
 //  y  - row index
 //
-int lstack_clear(const lwx * const restrict lx, int x, int y)
+int lstack_clear(lwx * const restrict lx, int x, int y)
   __attribute__((nonnull));
 
 /// ensure
@@ -384,6 +384,14 @@ int lstack_sel_activate(lwx * const restrict lx)
 //  add a segment to the staged window for the specified row
 //
 int lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
+	__attribute__((nonnull));
+
+/// lstack_window_deactivate
+//
+// SUMMARY
+//  reset the active window for the specified row
+//
+int lstack_window_deactivate(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_window_unstage

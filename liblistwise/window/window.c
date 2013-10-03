@@ -38,8 +38,15 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 		lx->win.s[y].staged = &lx->win.s[y].storage[0];
 
 		if(lx->win.s[y].staged == lx->win.s[y].active)
+		{
 			lx->win.s[y].staged = &lx->win.s[y].storage[1];
+		}
+		else if(lx->win.s[y].active == 0 && lx->win.s[y].staged->mark)
+		{
+			lx->win.s[y].staged = &lx->win.s[y].storage[1];
+		}
 
+		lx->win.s[y].staged->mark = 0;
 		lx->win.s[y].staged->l = 0;
 	}
 	
@@ -114,9 +121,23 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 	finally : coda;
 }
 
+/*
+** These api's ensure that the next active/staged window will be at the other index
+*/
+
 int API lstack_window_unstage(lwx * const restrict lx, int y)
 {
 	lx->win.s[y].staged = 0;
+
+	return 0;
+}
+
+int API lstack_window_deactivate(lwx * const restrict lx, int y)
+{
+	if(lx->win.s[y].active)
+		lx->win.s[y].active->mark = 1;
+
+	lx->win.s[y].active = 0;
 
 	return 0;
 }

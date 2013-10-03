@@ -314,7 +314,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 
 						if(wascolor)
 						{
-							fatal(lstack_append, ls, 0, x, NOCOLOR);
+							fatal(lstack_append, ls, 0, x, COLOR(NONE));
 						}
 
 						if(fmt[i + 1] != 'h' && S_ISLNK(st.st_mode))

@@ -64,11 +64,11 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		// clearing/appending will reset the windows
-		typeof(*lx->win.s[0].active) * win = lx->win.s[x].active;
-
-		if(win && lx->win.s[x].active->lease == lx->win.active_era)
+		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
 		{
+			// clearing/appending will reset the windows
+			typeof(*lx->win.s[0].active) * win = lx->win.s[x].active;
+
 			// request that readrow return temp space
 			char * zs;
 			int    zsl;

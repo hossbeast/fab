@@ -17,8 +17,8 @@
 
 #include <sys/types.h>
 
-char (*g_colors_7)[7];
-char (*g_colors_6)[6];
+extern char (*g_colors_7)[7];
+extern char (*g_colors_6)[6];
 
 #define CSEVEN(x) g_colors_7[x]
 #define CSIX(x)   g_colors_6[x]

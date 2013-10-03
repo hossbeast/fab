@@ -46,7 +46,7 @@ static int op_exec(operation*, lwx*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "p"
-		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE
+		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .mnemonic			= "partition"
@@ -87,7 +87,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 			int win_off = o->args[i]->i64;
 			int win_len = 0;
 
-			if(o->argsl > i)
+			if(o->argsl > (i + 1))
 				win_len = o->args[i + 1]->i64;
 
 			int off = win_off;
@@ -100,7 +100,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 			else
 				len = MIN(len, ssl - off);
 
-			if(off < ssl && len > 0)
+			if(off >= 0 && off < ssl && len > 0)
 			{
 				// append window segment
 				fatal(lstack_window_stage, lx, x, off, len);

@@ -72,11 +72,18 @@ static int allocate(lwx * const restrict lx, int x, int y, int z)
 				// list of temp space
 				fatal(xrealloc, &lx->s[x].t, sizeof(*lx->s[0].t), ns, lx->s[x].a);
 
-				// list of windows
-				if(x == 0)
-					fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->s[0].a);
-
 				lx->s[x].a = ns;
+			}
+
+			// ensure window list
+			if(x == 0 && lx->win.a <= y)
+			{
+				int ns = lx->win.a ?: listwise_allocation_seed;
+				while(ns <= y)
+					ns = ns * 2 + ns / 2;
+
+				fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->win.a);
+				lx->win.a = ns;
 			}
 
 			if(z >= 0)
@@ -136,11 +143,18 @@ static int ensure(lwx * const restrict lx, int x, int y, int z)
 				// list of tmp space
 				fatal(xrealloc, &lx->s[x].t, sizeof(lx->s[x].t[0]), ns, lx->s[x].a);
 
-				// list of windows
-				if(x == 0)
-					fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->s[0].a);
-
 				lx->s[x].a = ns;
+			}
+
+			// ensure window list
+			if(x == 0 && lx->win.a <= y)
+			{
+				int ns = lx->win.a ?: listwise_allocation_seed;
+				while(ns <= y)
+					ns = ns * 2 + ns / 2;
+
+				fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->win.a);
+				lx->win.a = ns;
 			}
 
 			if(lx->s[x].l <= y)
@@ -194,7 +208,7 @@ static int writestack_alt(lwx * const restrict lx, int x, int y, const void* con
 	// reset the window for this row
 	if(x == 0)
 	{
-		lx->win.s[y].active = 0;
+//		lstack_window_deactivate(lx, y);
 	}
 
 	finally : coda;
@@ -229,7 +243,7 @@ static int writestack(lwx * const restrict lx, int x, int y, const void* const r
 	// reset the window for this row
 	if(x == 0)
 	{
-		lx->win.s[y].active = 0;
+//		lstack_window_deactivate(lx, y);
 	}
 
 	finally : coda;
@@ -257,7 +271,7 @@ static int vwritestack(lwx * const restrict lx, int x, int y, const char* const 
 	// reset the window for this row
 	if(x == 0)
 	{
-		lx->win.s[y].active = 0;
+//		lstack_window_deactivate(lx, y);
 	}
 
 	finally : coda;
@@ -324,7 +338,7 @@ int API lwx_reset(lwx * lx)
 	return 0;
 }
 
-int API lstack_clear(const lwx * const restrict lx, int x, int y)
+int API lstack_clear(lwx * const restrict lx, int x, int y)
 {
 	lx->s[x].s[y].l = 0;
 	lx->s[x].s[y].type = 0;
@@ -333,7 +347,7 @@ int API lstack_clear(const lwx * const restrict lx, int x, int y)
 
 	if(x == 0)
 	{
-		lx->win.s[y].active = 0;
+		lstack_window_deactivate(lx, y);
 	}
 
 	return 0;
@@ -405,6 +419,7 @@ int API lstack_dump(lwx * const lx)
 			{
 				dprintf(listwise_err_fd, "%16s", " ");
 
+				int escaping = 0;
 				int z = -1;
 				int i;
 				for(i = 0; i < sl; i++)
@@ -414,31 +429,46 @@ int API lstack_dump(lwx * const lx)
 						z = 0;
 					}
 
+					int marked = 0;
 					if(z >= 0 && z < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[z].o)
 					{
 						if((i - lx->win.s[y].active->s[z].o) < lx->win.s[y].active->s[z].l)
 						{
 							dprintf(listwise_err_fd, "^");
+							marked = 1;
+						}
+					}
+
+					if(!marked)
+					{
+						// between internal windows
+						if(escaping)
+						{
+							if(s[i] == 0x6d)
+								escaping = 0;
+						}
+						else if(s[i] == 0x1b)
+						{
+							escaping = 1;
 						}
 						else
 						{
 							dprintf(listwise_err_fd, " ");
-							z++;
 						}
-					}
-					else
-					{
-						dprintf(listwise_err_fd, " ");
+
+						if(z >= 0 && z < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[z].o)
+							z++;
 					}
 				}
 				dprintf(listwise_err_fd, "\n");
 			}
 
 			// indicate staged windows
-			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
+			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.active_era)
 			{
 				dprintf(listwise_err_fd, "%16s", " ");
 
+				int escaping = 0;
 				int z = -1;
 				int i;
 				for(i = 0; i < sl; i++)
@@ -448,21 +478,35 @@ int API lstack_dump(lwx * const lx)
 						z = 0;
 					}
 
+					int marked = 0;
 					if(z >= 0 && z < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[z].o)
 					{
 						if((i - lx->win.s[y].staged->s[z].o) < lx->win.s[y].staged->s[z].l)
 						{
 							dprintf(listwise_err_fd, "+");
+							marked = 1;
+						}
+					}
+
+					if(!marked)
+					{
+						// between internal windows
+						if(escaping)
+						{
+							if(s[i] == 0x6d)
+								escaping = 0;
+						}
+						else if(s[i] == 0x1b)
+						{
+							escaping = 1;
 						}
 						else
 						{
 							dprintf(listwise_err_fd, " ");
-							z++;
 						}
-					}
-					else
-					{
-						dprintf(listwise_err_fd, " ");
+
+						if(z >= 0 && z < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[z].o)
+							z++;
 					}
 				}
 				dprintf(listwise_err_fd, "\n");
@@ -489,7 +533,7 @@ int API lstack_append(lwx * const restrict lx, int x, int y, const char* const r
 
 	if(x == 0)
 	{
-		lx->win.s[y].active = 0;
+		lstack_window_deactivate(lx, y);
 	}
 
 	finally : coda;
@@ -520,7 +564,7 @@ int API lstack_appendf(lwx * const restrict lx, int x, int y, const char* const 
 
 	if(x == 0)
 	{
-		lx->win.s[y].active = 0;
+		lstack_window_deactivate(lx, y);
 	}
 
 	finally : coda;
