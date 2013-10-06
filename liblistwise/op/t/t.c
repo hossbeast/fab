@@ -48,7 +48,7 @@ operator op_desc[] = {
 		  .s						= "t"
 		, .optype				= LWOP_OPERATION_PUSHBEFORE
 		, .op_exec			= op_exec
-		, .desc					= "tear windowed segments into a new list"
+		, .desc					= "tear windows into a new list"
 		, .mnemonic			= "tear"
 	}, {}
 };

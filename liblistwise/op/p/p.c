@@ -50,7 +50,7 @@ operator op_desc[] = {
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .mnemonic			= "partition"
-		, .desc					= "window by characters"
+		, .desc					= "window by offset/length"
 	}
 	, {}
 };

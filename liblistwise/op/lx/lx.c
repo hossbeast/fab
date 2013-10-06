@@ -54,14 +54,14 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_lx
-		, .desc					= "select by filename extension and window extension"
+		, .desc					= "select by filename extension"
 	}
 	, {
 		  .s						= "lxf"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_lxf
-		, .desc					= "select by full filename extension and window extension"
+		, .desc					= "select by full filename extension"
 	}
 	, {}
 };

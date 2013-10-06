@@ -24,6 +24,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "listwise/internal.h"
 #include "liblistwise_control.h"
 
 #include "canon.h"
@@ -31,6 +32,8 @@
 #include "xmem.h"
 #include "color.h"
 #include "macros.h"
+
+#define restrict __restrict
 
 /// snwrite
 //
@@ -46,20 +49,26 @@
 // RETURNS
 //  number of bytes copied
 //
-size_t snwrite(char * dst, size_t siz, char * src, size_t amt)
+static size_t snwrite(char * const restrict dst, const size_t siz, const char * const restrict src, const size_t amt)
 {
 	size_t z = MIN(siz, amt);
 	memcpy(dst, src, z);
 	return z;
 }
 
-int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz)
+int API fs_statfmt(
+	  const char * const restrict s
+	, int sl
+	, const char * restrict fmt
+	, const char * const restrict flags
+	, char * const restrict dst
+	, size_t sz
+	, size_t * const z
+)
 {
 	// workspace
 	char space[256];
 	char space2[256];
-	int x;
-	int i;
 	char * cwd = 0;
 
 	// process flags
@@ -74,15 +83,13 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 	}
 
 	// default format - perms user group size modify {path rebased to cwd}
-	if(!fmt)
-	{
-		if(isrebase)
-			fmt = "%m %u %g %s %t %F";
-		else
-			fmt = "%m %u %g %s %t %p";
-	}
+	if(!fmt && isrebase)
+		fmt = "%m %u %g %s %t %F";
+	else if(!fmt)
+		fmt = "%m %u %g %s %t %p";
 
 	int fmtl = strlen(fmt);
+	sl = sl ?: strlen(s);
 
 	struct stat st;
 	int r = 1;
@@ -99,16 +106,15 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 	}
 	else
 	{
-		size_t z = 0;
-		(*sz) = 0;
-
+		(*z) = 0;
+		int i;
 		for(i = 0; i < fmtl; i++)
 		{
 			if(((i + 1) < fmtl) && fmt[i] == '%')
 			{
 				if(fmt[i + 1] == 'm')
 				{
-					z += snprintf(dst + z, (*sz) - z, "%c%c%c%c%c%c%c%c%c%c"
+					(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%c%c%c%c%c%c%c%c%c%c"
 						,   S_ISDIR(st.st_mode)  ? 'd'
 							: S_ISCHR(st.st_mode)  ? 'c'
 							: S_ISBLK(st.st_mode)  ? 'b'
@@ -129,7 +135,7 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 				}
 				else if(fmt[i + 1] == 'U')
 				{
-					z += snprintf(dst + z, (*sz) - z, "%u", st.st_uid);
+					(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%u", st.st_uid);
 				}
 				else if(fmt[i + 1] == 'u')
 				{
@@ -157,11 +163,11 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 						fail("getpwd(%d)=[%d][%s]", st.st_uid, errno, strerror(errno));
 					}
 
-					z += snprintf(dst + z, (*sz) - z, "%s", name);
+					(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%s", name);
 				}
 				else if(fmt[i + 1] == 'G')
 				{
-					z += snprintf(dst + z, (*sz) - z, "%u", st.st_gid);
+					(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%u", st.st_gid);
 				}
 				else if(fmt[i + 1] == 'g')
 				{
@@ -182,7 +188,7 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 						fail("getgrp(%d)=[%d][%s]", st.st_uid, errno, strerror(errno));
 					}
 
-					z += snprintf(dst + z, (*sz) - z, "%s", name);
+					(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%s", name);
 				}
 				else if(fmt[i + 1] == 't')
 				{
@@ -194,11 +200,11 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 					if((zz = strftime(space, sizeof(space), "%b %d %T", &tm)) == 0)
 						fail("strftime failed");
 
-					z += snwrite(dst + z, (*sz) - z, space, zz);
+					(*z) += snwrite(dst + (*z), sz - (*z) - 1, space, zz);
 				}
 				else if(fmt[i + 1] == 's')
 				{
-					z += snprintf(dst + z, (*sz) - z, "%6zu", st.st_size);
+					(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%6zu", st.st_size);
 				}
 				else if(fmt[i + 1] == 'p' || fmt[i + 1] == 'r' || fmt[i + 1] == 'f' || fmt[i + 1] == 'h' || fmt[i + 1] == 'F')
 				{
@@ -206,20 +212,20 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 					if(iscolor)
 					{
 						if(S_ISDIR(st.st_mode))
-							z += snwrite(dst + z, (*sz) - z, COLOR(BLUE));
+							(*z) += snwrite(dst + (*z), sz - (*z) - 1, COLOR(BLUE));
 						else if(S_ISCHR(st.st_mode))
-							z += snwrite(dst + z, (*sz) - z, COLOR(YELLOW));
+							(*z) += snwrite(dst + (*z), sz - (*z) - 1, COLOR(YELLOW));
 						else if(S_ISLNK(st.st_mode))
-							z += snwrite(dst + z, (*sz) - z, COLOR(CYAN));
+							(*z) += snwrite(dst + (*z), sz - (*z) - 1, COLOR(CYAN));
 						else if(euidaccess(s, X_OK) == 0)
-							z += snwrite(dst + z, (*sz) - z, COLOR(GREEN));
+							(*z) += snwrite(dst + (*z), sz - (*z) - 1, COLOR(GREEN));
 						else
 							wascolor = 0;
 					}
 
 					if(fmt[i + 1] == 'p')	// path as it came in
 					{
-						z += snprintf(dst + z, (*sz) - z, "%.*s", sl, s);
+						(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%.*s", sl, s);
 					}
 					else
 					{
@@ -230,12 +236,12 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 
 						if(fmt[i + 1] == 'r')	// realpath
 						{
-							z += snprintf(dst + z, (*sz) - z, "%s", space);
+							(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%s", space);
 						}
 						else if(fmt[i + 1] == 'F')	// path, rebased to cwd
 						{
 							fatal(rebase, space, 0, cwd, 0, space2, sizeof(space2));
-							z += snprintf(dst + z, (*sz) - z, "%s", space2);
+							(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%s", space2);
 						}
 						else if(fmt[i + 1] == 'f' || fmt[i + 1] == 'h')
 						{
@@ -245,19 +251,19 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 
 							if(fmt[i + 1] == 'f')				// filename component
 							{
-								z += snprintf(dst + z, (*sz) - z, "%s", slash + 1);
+								(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%s", slash + 1);
 							}
 							else if(fmt[i + 1] == 'h')	// directory component
 							{
 								slash[0] = 0;
-								z += snprintf(dst + z, (*sz) - z, "%s", space);
+								(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%s", space);
 							}
 						}
 					}
 
 					if(wascolor)
 					{
-						z += snwrite(dst + z, (*sz) - z, COLOR(NONE));
+						(*z) += snwrite(dst + (*z), sz - (*z) - 1, COLOR(NONE));
 					}
 
 					if(fmt[i + 1] != 'h' && S_ISLNK(st.st_mode))
@@ -265,14 +271,18 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 						size_t zz;
 						if((zz = readlink(s, space, sizeof(space))) != -1)
 						{
-							z += snprintf(dst + z, (*sz) - z, " -> %.*s", zz, space);
+							(*z) += snprintf(dst + (*z), sz - (*z) - 1, " -> %.*s", (int)zz, space);
 						}
 					}
+				}
+				else if(fmt[i + 1] == 'x')
+				{
+					(*z) += snwrite(dst + (*z), sz - (*z) - 1, "%x   ", 5);
 				}
 				else
 				{
 					// not a recognized escape
-					z += snwrite(dst + z, (*sz) - z, &fmt[i], 2);
+					(*z) += snwrite(dst + (*z), sz - (*z) - 1, &fmt[i], 2);
 				}
 
 				i++;
@@ -280,15 +290,15 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 			else if(((i + 1) < fmtl) && fmt[i] == '\\')
 			{
 				if(fmt[i + 1] == 'r')
-					z += snwrite(dst + z, (*sz) - z, "\r", 1);
+					(*z) += snwrite(dst + (*z), sz - (*z) - 1, "\r", 1);
 				else if(fmt[i + 1] == 'n')
-					z += snwrite(dst + z, (*sz) - z, "\n", 1);
+					(*z) += snwrite(dst + (*z), sz - (*z) - 1, "\n", 1);
 				else if(fmt[i + 1] == '0')
-					z += snwrite(dst + z, (*sz) - z, "\0", 1);
+					(*z) += snwrite(dst + (*z), sz - (*z) - 1, "\0", 1);
 				else if(fmt[i + 1] == '\\')
-					z += snwrite(dst + z, (*sz) - z, "\\", 1);
+					(*z) += snwrite(dst + (*z), sz - (*z) - 1, "\\", 1);
 				else if(fmt[i + 1] == 't')
-					z += snwrite(dst + z, (*sz) - z, "\t", 1);
+					(*z) += snwrite(dst + (*z), sz - (*z) - 1, "\t", 1);
 				else if(fmt[i + 1] == 'x')
 				{
 					if((i + 3) < fmtl)
@@ -296,7 +306,7 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 						int v;
 						if(parseuint(fmt + i + 2, SCNx8, 0, 0xFF, 2, 2, &v, 0) == 0)
 						{
-							z += snprintf(dst + z, (*sz) - z, "%c", v);
+							(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%c", v);
 						}
 
 						i += 2;
@@ -307,16 +317,14 @@ int stat_fmt(char * s, int sl, char * fmt, char * flags, char * dst, size_t * sz
 			}
 			else
 			{
-				z += snwrite(dst + z, (*sz) - z, fmt + i, 1);
+				(*z) += snwrite(dst + (*z), sz - (*z) - 1, fmt + i, 1);
 			}
 		}
 
-		// record this index was hit
-		fatal(lstack_sel_stage, ls, x);
+		snwrite(dst + (*z), sz - (*z), "\0", 1);
 	}
 
 finally:
 	free(cwd);
-	free(s);
 coda;
 }

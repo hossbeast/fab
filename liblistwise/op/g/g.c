@@ -29,6 +29,7 @@
 
 #include "listwise/operator.h"
 #include "listwise/lwx.h"
+#include "listwise/fs.h"
 
 #include "liblistwise_control.h"
 
@@ -58,19 +59,32 @@ static int op_exec(operation*, lwx*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "g"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
+		, .optype				= LWOP_OPERATION_PUSHBEFORE | LWOP_ARGS_CANHAVE | LWOP_MODIFIERS_CANHAVE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
 		, .op_exec			= op_exec
 		, .mnemonic			= "gobble"
-		, .desc					= "create new list from file content(s) one row per line"
+		, .desc					= "create new list from file content(s) at one row per line"
 	}
 	, {}
 };
 
-static int gobble(lwx* ls, char * path)
+static int gobble(lwx* lx, char * path, char * fmt, char * flags)
 {
+	char space[256];
+	size_t sz = 0;
+
+	char space2[32];
+
 	int					fd = -1;
 	size_t			size = 0;
 	void *			addr = MAP_FAILED;
+
+	char *			xref = 0;
+
+	if(fmt)
+	{
+		fatal(fs_statfmt, path, 0, fmt, flags, space, sizeof(space), &sz);
+		xref = strstr(space, "%x");
+	}
 
 	if((fd = open(path, O_RDONLY)) == -1)
 		fail("open(%s)=[%d][%s]", path, errno, strerror(errno));
@@ -83,9 +97,24 @@ static int gobble(lwx* ls, char * path)
 
 	char * s = addr;
 	char * e = 0;
+	int x = 0;
 	while((e = strstr(s, "\n")))
 	{
-		fatal(lstack_add, ls, s, e - s);
+		if(sz)
+		{
+			if(xref)
+			{
+				snprintf(space2, sizeof(space2), "%5d", ++x);
+				memcpy(xref, space2, 5);
+			}
+
+			fatal(lstack_addf, lx, "%.*s %.*s", (int)sz, space, (int)(e - s), s);
+		}
+		else
+		{
+			fatal(lstack_add, lx, s, e - s);
+		}
+
 		s = e + 1;
 	}
 
@@ -98,25 +127,52 @@ finally:
 coda;
 }
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	int x;
-	fatal(lstack_unshift, ls);
+	// format and flags
+	char * fmt = 0;
+	char * flags = 0;
 
-	if(o->argsl)
+	// find format and flags
+	int x;
+	for(x = 0; x < o->argsl; x++)
 	{
-		for(x = 0; x < o->argsl; x++)
-			fatal(gobble, ls, o->args[x]->s);
-	}
-	else
-	{
-		LSTACK_ITERATE_FWD(ls, 1, x, 1, go)
-		if(go)
+		int i = o->args[x]->l;
+		if(fmt == 0)
 		{
-			fatal(gobble, ls, lstack_string(ls, 1, x));
+			for(i = 0; i < o->args[x]->l; i++)
+			{
+				// listwise/fs flags
+				if(o->args[x]->s[i] == 'L') { }
+				else if(o->args[x]->s[i] == 'C') { }
+				else if(o->args[x]->s[i] == 'F') { }
+
+				// gobble-specific flags
+				else if(o->args[x]->s[i] == 'S') { }
+				else
+				{
+					break;
+				}
+			}
 		}
-		LSTACK_ITEREND
+
+		if(i < o->args[x]->l)
+			fmt = o->args[x]->s;
+		else
+			flags = o->args[x]->s;
 	}
+
+	if(flags && strchr(flags, 'S'))
+		fmt = "%F:%x:";
+
+	fatal(lstack_unshift, lx);
+
+	LSTACK_ITERATE_FWD(lx, 1, x, 1, go)
+	if(go)
+	{
+		fatal(gobble, lx, lstack_string(lx, 1, x), fmt, flags);
+	}
+	LSTACK_ITEREND
 
 	finally : coda;
 }

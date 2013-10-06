@@ -21,8 +21,6 @@
 #include "generator/generator.tab.h"
 #include "generator/generator.lex.h"
 
-#include "re.h"
-
 struct generator_parser_t
 {
 	void * p;		// scanner

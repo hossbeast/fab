@@ -82,8 +82,24 @@ static int allocate(lwx * const restrict lx, int x, int y, int z)
 				while(ns <= y)
 					ns = ns * 2 + ns / 2;
 
+				void * old = lx->win.s;
 				fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->win.a);
 				lx->win.a = ns;
+
+				if(old != lx->win.s)
+				{
+					// if this reallocation moves lx->win.s, any lx->win.s[-].{active,staged} that was
+					// nonzero will then be invalid
+					int k;
+					for(k = 0; k < lx->s[0].l; k++)
+					{
+						if(lx->win.s[k].active)
+							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_index];
+
+						if(lx->win.s[k].staged)
+							lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_index];
+					}
+				}
 			}
 
 			if(z >= 0)
@@ -153,8 +169,24 @@ static int ensure(lwx * const restrict lx, int x, int y, int z)
 				while(ns <= y)
 					ns = ns * 2 + ns / 2;
 
+				void * old = lx->win.s;
 				fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->win.a);
 				lx->win.a = ns;
+
+				if(old != lx->win.s)
+				{
+					// if this reallocation moves lx->win.s, any lx->win.s[-].{active,staged} that was
+					// nonzero will then be invalid
+					int k;
+					for(k = 0; k < lx->s[0].l; k++)
+					{
+						if(lx->win.s[k].active)
+							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_index];
+
+						if(lx->win.s[k].staged)
+							lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_index];
+					}
+				}
 			}
 
 			if(lx->s[x].l <= y)
@@ -228,6 +260,7 @@ static int writestack(lwx * const restrict lx, int x, int y, const void* const r
 	}
 	else
 	{
+		l = l ?: strlen(s);
 		fatal(ensure, lx, x, y, l);
 
 		// write and cap the string

@@ -28,7 +28,6 @@
 #include <pcre.h>
 
 #include "listwise/internal.h"
-#include "re.h"
 
 #include "xmem.h"
 #include "liblistwise_control.h"

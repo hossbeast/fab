@@ -25,8 +25,8 @@
 ** core functionality
 **  listwise.h         - listwise evaluation, iterate lstacks, read lstack rows
 **
-** extra functionality
-**  listwise/xtra.h - register additional operators, tune execution parameters, etc
+** additional functionality
+**  listwise/xtra.h    - register additional operators, tune execution parameters, etc
 */
 
 /// listwise execution context
@@ -183,34 +183,6 @@ char * lstack_string(lwx * const restrict lx, int x, int y)
 //
 int lwx_reset(lwx * const restrict)
   __attribute__((nonnull));
-
-/// lwx_getflags
-//
-// get application-use flags associated with lw
-//
-uint64_t lwx_getflags(lwx * const restrict)
-	__attribute__((nonnull));
-
-/// lwx_setflags
-//
-// set application-use flags associated with lw
-//
-uint64_t lwx_setflags(lwx * const restrict, const uint64_t)
-	__attribute__((nonnull));
-
-/// lwx_getptr
-//
-// get application-use ptr associated with lw
-//
-void * lwx_getptr(lwx * const restrict)
-	__attribute__((nonnull));
-
-/// lwx_setptr
-//
-// set application-use ptr associated with lw
-//
-void * lwx_setptr(lwx * const, void * const)
-	__attribute__((nonnull(1)));
 
 #undef restrict
 #endif

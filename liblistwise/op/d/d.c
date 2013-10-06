@@ -45,7 +45,8 @@ operator op_desc[] = {
 		  .s						= "d"
 		, .optype				= LWOP_STACKOP
 		, .op_exec			= op_exec
-		, .desc					= "extract selected items into a new list"
+		, .mnemonic			= "delete"
+		, .desc					= "extract rows into a new list"
 	}
 	, {}
 };

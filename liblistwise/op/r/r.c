@@ -41,7 +41,7 @@ operator op_desc[] = {
 		, .optype				= 0
 		, .op_exec			= op_exec
 		, .mnemonic			= "reverse"
-		, .desc					= "reverse selected items"
+		, .desc					= "reverse rows"
 	}
 	, {}
 };

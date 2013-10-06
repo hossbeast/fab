@@ -33,7 +33,7 @@ operator op_desc[] = {
 	{
 		  .s						= "wz"
 		, .optype				= LWOP_WINDOWS_RESET
-		, .desc					= "reset windows"
+		, .desc					= "reset windows - no windows"
 	}
 	, {}
 };

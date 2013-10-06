@@ -18,13 +18,17 @@
 #ifndef _LISTWISE_INTERNAL_H
 #define _LISTWISE_INTERNAL_H
 
+// liblistwise api
 #include "listwise.h"
-#include "listwise/lwx.h"
+#include "listwise/xtra.h"
+
+// liblistwise operator api
 #include "listwise/operator.h"
+#include "listwise/lwx.h"
 #include "listwise/generator.h"
 #include "listwise/ops.h"
 #include "listwise/object.h"
-#include "listwise/xtra.h"
+#include "listwise/re.h"
 
 #include "coll.h"
 #include "idx.h"

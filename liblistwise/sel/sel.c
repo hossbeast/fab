@@ -36,10 +36,14 @@ int API lstack_sel_stage(lwx * const restrict lx, int y)
 			lx->sel.staged = &lx->sel.storage[1];
 
 		lx->sel.staged->l = 0;
+		lx->sel.staged->sl = 0;
 	}
 
 	if(lx->sel.staged->lease != lx->sel.staged_era)
+	{
 		lx->sel.staged->l = 0;
+		lx->sel.staged->sl = 0;
+	}
 
 	lx->sel.staged->lease = lx->sel.staged_era;
 

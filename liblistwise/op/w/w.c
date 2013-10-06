@@ -22,6 +22,8 @@
 #include "listwise/operator.h"
 #include "listwise/lwx.h"
 
+#include "macros.h"
+
 #include "liblistwise_control.h"
 
 /*
@@ -46,55 +48,69 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "select a window of rows by offset/length"
+		, .mnemonic			= "window"
+		, .desc					= "select rows by offset/length"
 	}, {}
 };
 
 int op_validate(operation* o)
 {
-	if(o->argsl >= 1 && o->args[0]->itype != ITYPE_I64)
-		fail("%s - first argument should be i64", o->op->s);
-	if(o->argsl >= 2 && o->args[1]->itype != ITYPE_I64)
-		fail("%s - second argument should be i64", o->op->s);
+	if(o->argsl != 1 && (o->argsl % 2) != 0)
+		fail("%s - %d arguments", o->op->s, o->argsl);
+
+	int x;
+	for(x = 0; x < o->argsl; x++)
+	{
+		if(o->args[x]->itype != ITYPE_I64)
+			fail("%s - args[%d] should be i64", o->op->s, x);
+	}
 
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	int off = 0;
-	int len = 0;
+	// number of already selected rows in top list
+	int count = LSTACK_COUNT(lx);
 
-	if(o->argsl >= 1)
-		off = o->args[0]->i64;
-	if(o->argsl >= 2)
-		len = o->args[1]->i64;
-
-	if(off < 0)
-		off = ls->s[0].l + off;
-	if(len == 0)
+	int i;
+	for(i = 0; i < o->argsl; i += 2)
 	{
-		if(ls->sel.active == 0)
-			len = ls->s[0].l;
+		int win_off = o->args[i]->i64;
+		int win_len = 0;
+
+		if(o->argsl > (i + 1))
+			win_len = o->args[i + 1]->i64;
+
+		int off = win_off;
+		int len = win_len;
+
+		if(win_off < 0)
+			off = count + win_off;
+		if(win_len == 0)
+			len = count - off;
 		else
-			len = ls->sel.active->l;
-	}
+			len = MIN(len, count - off);
 
-	int x;
-	int i = 0;
-	int j = 0;
-	LSTACK_ITERATE(ls, x, go)
-	if(go)
-	{
-		if(i >= off && j < len)
+		if(off >= 0 && off < count && len > 0)
 		{
-			fatal(lstack_sel_stage, ls, x);
-			j++;
-		}
+			int x;
+			int j = 0;
+			int k = 0;
+			LSTACK_ITERATE(lx, x, go)
+			if(go)
+			{
+				if(k >= off && j < len)
+				{
+					fatal(lstack_sel_stage, lx, x);
+					j++;
+				}
 
-		i++;
+				k++;
+			}
+			LSTACK_ITEREND
+		}
 	}
-	LSTACK_ITEREND
 
 	finally : coda;
 }

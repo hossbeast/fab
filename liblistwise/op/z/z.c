@@ -40,7 +40,7 @@ operator op_desc[] = {
 	{
 		  .s						= "z"
 		, .optype				= LWOP_SELECTION_RESET
-		, .desc					= "select all"
+		, .desc					= "reset selection - select all"
 	}
 	, {}
 };

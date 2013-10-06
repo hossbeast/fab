@@ -33,9 +33,12 @@
 **  listiwse/operator.h  - core operator functionality
 **  listwise/lwx.h       - lwx definition
 **   extra functionality
+**  listwise/re.h        - libpcre apis
+**  listwise/iterate.h   - iterating lstack contents
 **  listwise/object.h    - manipulating object entries
 **  listwise/ops.h       - enumerating and looking up listwise operators
 **  listwise/generator.h - manipulating generators
+**  listwise/fs.h        - filesystem apis
 */
 
 struct operation;
@@ -410,88 +413,10 @@ int lstack_window_unstage(lwx * const restrict lx, int y)
 int lstack_windows_activate(lwx * const restrict lx)
 	__attribute__((nonnull));
 
-#if 0
-
-/// lstack_windows_unstage
-//
-// SUMMARY
-//  unstage staged windows
-//
-int lstack_windows_unstage(lwx * const restrict lx)
-	__attribute__((nonnull));
-
-/// lstack_windows_reset
-//
-// SUMMARY
-//  deactivate windows
-//
-int lstack_windows_reset(lwx * const restrict lx)
-	__attribute__((nonnull));
-
-#endif
-
-///
-/// RE API
-///
-
-/// re_compile
-//
-// compile the re for an op arg representing a regex
-//
-// parameters
-//  re  - regex op arg
-//  mod - modifier string arg, if any
-//
-int re_compile(char* s, struct re* re, char* mod);
-
-/// re_exec
-//
-// execute an regex against a string
-//
-// parameters
-//  re       - regex already compiled with re_compile
-//  s        - subject string
-//  l        - length of s
-//  o        - offset from s to start matching
-//  ovec     - results and subcapture information written to *ovec
-//  ovec_len - *ovec size is at *ovec_len
-//
-// returns 1 on success, 0 on failure (memory allocation, bad pcre, etc)
-//
-// example
-//    char* s;
-//    int l;
-//    int* ovec;
-//    int ovec_len;
-//		if(re_exec(re, s, l, 0, &ovec, &ovec_len) == 0)
-//		{
-//			/* failure */
-//		}
-//		else if(ovec[0] > 0)
-//		{
-//			int x;
-//			for(x = 0; x < ovec[0]; x++)
-//			{
-//				int a = ovec[1 + (x * 2) + 0];
-//				int b = ovec[1 + (x * 2) + 1];
-//
-//				if(a >= 0 && b >= 0)
-//				{
-//					/* print x'th subcapture - recall the 0th subcapture is the entire match */
-//					printf("%.*s", b - a, s + a);
-//				}
-//			}
-//		}
-//		else
-//		{
-//			/* no match */
-//		}
-//
-int re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len);
-
 /// lstack_readrow
 //
 // SUMMARY
+//  read the contents of an lstack row
 //
 // PARAMETERS
 //  lx    - lw context

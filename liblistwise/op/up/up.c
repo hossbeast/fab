@@ -45,7 +45,8 @@ operator op_desc[] = {
 		  .s						= "up"
 		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET | LWOP_SELECTION_STAGE
 		, .op_exec			= op_exec
-		, .desc					= "move selected entries to head of list"
+		, .mnemonic			= "up"
+		, .desc					= "move rows to the top"
 	}, {}
 };
 

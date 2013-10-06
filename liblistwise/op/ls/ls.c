@@ -131,6 +131,10 @@ static int listing(lwx* ls, char * s, int recurse)
 	{
 		dprintf(listwise_err_fd, "opendir('%s')=[%d][%s]\n", s, errno, strerror(errno));
 	}
+	else
+	{
+		fatal(lstack_add, ls, s, 0);
+	}
 
 finally:
 	if(dd)
