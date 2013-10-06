@@ -48,7 +48,7 @@ operator op_desc[] = {
 		  .s						= "t"
 		, .optype				= LWOP_OPERATION_PUSHBEFORE
 		, .op_exec			= op_exec
-		, .desc					= "tear windows segments of rows into a new list"
+		, .desc					= "tear windowed segments into a new list"
 		, .mnemonic			= "tear"
 	}, {}
 };
@@ -74,7 +74,6 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 			int i;
 			for(i = 0; i < wl; i++)
 			{
-printf("add '%.*s'\n", ws[i].l, zs + ws[i].o);
 				// write the windowed segment
 				fatal(lstack_add, lx, zs + ws[i].o, ws[i].l);
 			}

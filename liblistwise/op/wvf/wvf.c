@@ -28,7 +28,7 @@
 
 /*
 
-wv operator - invert windows
+wvf operator - window following
 
 NO ARGUMENTS
 
@@ -38,10 +38,10 @@ static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "wv"
+		  .s						= "wvf"
 		, .optype				= LWOP_WINDOWS_ACTIVATE
 		, .op_exec			= op_exec
-		, .desc					= "invert windows"
+		, .desc					= "window following"
 	}
 	, {}
 };
@@ -59,25 +59,15 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 
 			if(wl)
 			{
-				// reset staged windows, if any
+				// reset staged windows
 				fatal(lstack_window_unstage, lx, x);
 
-				char * s = 0;
-				int sl = 0;
-				fatal(lstack_readrow, lx, 0, x, &s, &sl, 1, 0, 0, 0);
-
-				// before the first windowed segment
-				fatal(lstack_window_stage, lx, x, 0, ws[0].o);
-
-				int i;
-				for(i = 1; i < wl; i++)
-				{
-					// region following the previous segment and preceeding the current segment
-					fatal(lstack_window_stage, lx, x, ws[i - 1].o + ws[i - 1].l, ws[i].o - (ws[i - 1].o + ws[i - 1].l));
-				}
+				// read the row
+				int ssl = 0;
+				fatal(lstack_readrow, lx, 0, x, 0, &ssl, 1, 0, 0, 0);
 
 				// following the last windowed segment
-				fatal(lstack_window_stage, lx, x, ws[i - 1].o + ws[i - 1].l, sl - (ws[i - 1].o + ws[i - 1].l));
+				fatal(lstack_window_stage, lx, x, ws[wl - 1].o + ws[wl - 1].l, ssl - (ws[wl - 1].o + ws[wl - 1].l));
 			}
 		}
 	}

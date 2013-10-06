@@ -45,10 +45,19 @@ static int op_exec(operation*, lwx*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "re"
-		, .optype				= LWOP_WINDOWS_STAGE | LWOP_SELECTION_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "locate regex matches"
+		, .mnemonic			= "regex"
+		, .desc					= "window by regex matches"
+	}
+	, {
+		  .s						= "m"
+		, .optype				= LWOP_WINDOWS_STAGE | LWOP_SELECTION_ACTIVATE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .op_validate	= op_validate
+		, .op_exec			= op_exec
+		, .mnemonic			= "match"
+		, .desc					= "select by regex matches"
 	}
 	, {}
 };

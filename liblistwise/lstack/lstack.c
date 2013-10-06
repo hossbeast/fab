@@ -903,8 +903,10 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 		raw = 0;
 	}
 
-	*r  = zs;
-	*rl = zsl;
+	if(r)
+		*r  = zs;
+	if(rl)
+		*rl = zsl;
 	if(_raw)
 		*_raw = raw;
 

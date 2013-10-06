@@ -1,19 +1,12 @@
 WINDOW
 
-: existing operators should be declared listwise/builtin_operators.h
-
 window-manipulation operators
- vw  - invert window
- vfw - set window to following
- vpw - set window to preceeding
- zw  - reset window
-
-window-consumption operators
- t  - (T)ear windowed segments into new entries
+ wvf - set window to following
+ wvp - set window to preceeding
 
 MAP/REDUCE/AGGREGATE - combine selected entries
 
- m (map) - create groups which will be reduced separately (grouped selection - otherwise the entire selection is reduced at once)
+ (map) - create groups which will be reduced separately (grouped selection - otherwise the entire selection is reduced at once)
 
 reduce operators take an expression referring to window segments, then compute
 

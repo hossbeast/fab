@@ -34,7 +34,7 @@ $liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# path to the library .so
 $cflags				= [ $cflags -fPIC [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs
 	[ -DLWOPDIR="\""$lwopdir"\"" ~ j ]
 ]
-$lflags				= [ -lpcre, -ldl, -shared, [ "-Wl,--version-script=" $dliblistwise/exports ], [ "-Wl,-soname," $soname ] ]
+$lflags				= [ -lpcre, -ldl, -shared, [ "-Wl,-soname," $soname ] ]
 
 # source files
 +[@std.c]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
@@ -61,24 +61,16 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 ##
 
 # link the library
-[ $liblistwise ] : [ $dliblistwise/exports ~ j ]
+[ $liblistwise ]
 {
-	  exec 1>[ $dliblistwise/exports ]
+	  exec 99>&1 1>[ $dliblistwise/exports ]
 	  echo "{ global: "
 	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- [ $cfabpaths ~ fi ] )
+	  cat -- [ $@ ~ rx/aneedw/xm/<c>/ss/u/fi ] )
 	> echo "local: *; };"
+		exec 1>&99
 
-	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/xm/<o>/ss/u/fi ] [ $lflags ]
-}
-
-[ $dliblistwise/exports ~ j ]
-{
-	  exec 1>[ $@ ]
-	  echo "{ global: "
-	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- [ $@ ~ rx/afeed/rx/aneedw/rx/xm/<c>/ss/u/fi ] )
-	> echo "local: *; };"
+	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/xm/<o>/ss/u/fi ] [ $lflags ] [ "-Wl,--version-script=" $dliblistwise/exports]
 }
 
 # link an operator so - which depends on its own .o

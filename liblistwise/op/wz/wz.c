@@ -31,7 +31,7 @@ NO ARGUMENTS
 
 operator op_desc[] = {
 	{
-		  .s						= "zw"
+		  .s						= "wz"
 		, .optype				= LWOP_WINDOWS_RESET
 		, .desc					= "reset windows"
 	}

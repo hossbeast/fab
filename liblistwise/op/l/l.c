@@ -50,7 +50,7 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "locate substring matches"
+		, .desc					= "select by substring match"
 	}
 	, {}
 };
@@ -96,6 +96,10 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 				{
 					off += o->args[0]->l;
 					s = xstrstr(s + off + 1, ssl - off - 1, o->args[0]->s, o->args[0]->l, isncase);
+				}
+				else
+				{
+					s = 0;
 				}
 			} while(s);
 
