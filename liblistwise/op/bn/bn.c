@@ -44,6 +44,7 @@ operator op_desc[] = {
 		  .s						= "bn"
 		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
+		, .mnemonic			= "basename"
 		, .desc					= "get component of filepath following the last slash"
 	}
 	, {}

@@ -63,24 +63,28 @@ operator op_desc[] = {
 		  .s						= "-f"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_f
+		, .mnemonic			= "files"
 		, .desc					= "select regular files"
 	}
 	, {
 		  .s						= "-d"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_d
+		, .mnemonic			= "directories"
 		, .desc					= "select directories"
 	}
 	, {
 		  .s						= "-l"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_l
+		, .mnemonic			= "links"
 		, .desc					= "select symbolic links"
 	}
 	, {
 		  .s						= "-e"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_e
+		, .mnemonic			= "exists"
 		, .desc					= "select existing paths"
 	}
 	, {
@@ -93,18 +97,21 @@ operator op_desc[] = {
 		  .s						= "-r"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_r
+		, .mnemonic			= "readable"
 		, .desc					= "select readable paths"
 	}
 	, {
 		  .s						= "-w"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_w
+		, .mnemonic			= "writable"
 		, .desc					= "select writable paths"
 	}
 	, {
 		  .s						= "-x"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_OPERATION_FILESYSTEM
 		, .op_exec			= op_exec_x
+		, .mnemonic			= "executable"
 		, .desc					= "select executable paths"
 	}
 	, {}

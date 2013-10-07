@@ -28,81 +28,81 @@
 
 /*
 
-f operator - fields : window by window-delimited fields
+f operator - fields : window delimited fields
 
-ARGUMENTS (1, or multiples of 2)
-	 1  - offset, in fields, to start of window
-		    if negative, interpreted as offset from the end of the string
-		    default : 0
-	*2  - length, in fields, of window
-		    default : 0 - entire string
+ARGUMENTS (any number)
 
-OPERATION
+ offset - offset, in fields
+ length - number of fields
+ flags  - D to include delimiters
 
 */
 
-static int op_validate(operation*);
 static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "f"
-		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate
+		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE | LWOP_MODIFIERS_CANHAVE
 		, .op_exec			= op_exec
 		, .mnemonic			= "fields"
-		, .desc					= "window by fields"
+		, .desc					= "window delimited fields"
 	}
 	, {}
 };
 
-int op_validate(operation* o)
-{
-	if(o->argsl != 1 && (o->argsl % 2) != 0)
-		fail("%s - %d arguments", o->op->s, o->argsl);
-
-	int x;
-	for(x = 0; x < o->argsl; x++)
-	{
-		if(o->args[x]->itype != ITYPE_I64)
-			fail("%s - args[%d] should be i64", o->op->s, x);
-	}
-
-	finally : coda;
-}
-
 int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
+	int argsl = o->argsl;
+	if(argsl && o->args[argsl - 1]->itype != ITYPE_I64)
+		argsl--;
+
+	char isdelim = 0;
+	if(argsl != o->argsl)
+		isdelim = !!strchr(o->args[argsl]->s, 'D');
+
 	int x;
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
 		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
 		{
-			char * ss = 0;
-			int ssl = 0;
+			// number of delimited fields
+			int pairs = lx->win.s[x].active->l / 2;
+
+			// whether this row has been reset
 			int wasreset = 0;
-			int wasread = 0;
-			int i;
-			for(i = 0; i < o->argsl; i += 2)
+
+			int i = 0;
+			do
 			{
-				int win_off = o->args[i]->i64;
+				int win_off = 0;
 				int win_len = 0;
 
-				if(o->argsl > (i + 1))
-					win_len = o->args[i + 1]->i64;
+				if(i == argsl)
+				{
+					// first and only iteration of this loop when this operation has no arguments
+				}
+				else
+				{
+					win_off = o->args[i]->i64;
+					win_len = 0;
+
+					if(argsl > (i + 1))
+						win_len = o->args[i + 1]->i64;
+				}
 
 				int off = win_off;
 				int len = win_len;
 
 				if(win_off < 0)
-					off = (lx->win.s[x].active->l + win_off) + 1;
+					off = (pairs + win_off) + 1;
 				if(win_len == 0)
-					len = lx->win.s[x].active->l - off + 1;
+					len = pairs - off + 1;
 				else
-					len = MIN(len, (lx->win.s[x].active->l + 1) - off);
+					len = MIN(len, (pairs + 1) - off);
 
-				if(off >= 0 && off < (lx->win.s[x].active->l + 1) && len > 0)
+				if(off >= 0 && off < (pairs + 1) && len > 0)
 				{
 					if(!wasreset)
 					{
@@ -115,34 +115,24 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 						fatal(lstack_sel_stage, lx, x);
 					}
 
-					// append window segment
-					int A;
-					int B;
-					if(off == 0)
-						A = 0;
-					off--;
-
-					if(off > -1)
-						A = lx->win.s[x].active->s[off].o + lx->win.s[x].active->s[off].l;
-
-					if(off + len < lx->win.s[x].active->l)
+					// append delimited segment(s)
+					int j;
+					for(j = 0; j < len; j++)
 					{
-						B = lx->win.s[x].active->s[off + len].o;
-					}
-					else
-					{
-						if(!wasread)
-						{
-							wasread = 1;
-							fatal(lstack_readrow, lx, 0, x, &ss, &ssl, 1, 0, 0, 0);
-						}
+						int A = lx->win.s[x].active->s[((off + j) * 2) + 0].o;
+						if(!isdelim)
+							A += lx->win.s[x].active->s[((off + j) * 2) + 0].l;
 
-						B = ssl;
+						int B = lx->win.s[x].active->s[((off + j) * 2) + 1].o;
+						if(isdelim)
+							B += lx->win.s[x].active->s[((off + j) * 2) + 1].l;
+
+						fatal(lstack_window_stage, lx, x, A, B - A);
 					}
-				
-					fatal(lstack_window_stage, lx, x, A, B - A);
 				}
-			}
+
+				i += 2;
+			} while(i < argsl);
 		}
 	}
 	LSTACK_ITEREND

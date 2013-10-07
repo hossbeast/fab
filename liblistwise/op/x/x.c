@@ -42,7 +42,7 @@ static int op_exec(operation*, lwx*, int**, int*);
 operator op_desc[] = {
 	{
 		  .s						= "x"
-		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE
+		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE | LWOP_ARGS_CANHAVE
 		, .op_exec			= op_exec
 		, .desc					= "extract row window"
 	}
@@ -51,22 +51,55 @@ operator op_desc[] = {
 
 int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
+	// delimiter string
+	char * ds = 0;
+	int dl = 0;
+	if(o->argsl)
+	{
+		ds = o->args[0]->s;
+		dl = o->args[0]->l;
+	}
+
 	int x;
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active)
+		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
 		{
-			// because there is a window in effect, getbytes returns the temp space for the row
 			char * zs;
 			int    zsl;
-			fatal(lstack_getbytes, lx, 0, x, &zs, &zsl);
 
-			// write new string using the window
-			fatal(lstack_write, lx, 0, x, zs, zsl);
+			if(ds)
+			{
+				// clearing/appending will reset the windows
+				typeof(*lx->win.s[0].active) * win = lx->win.s[x].active;
 
-			// record this index was hit
-			fatal(lstack_sel_stage, lx, x);
+				// the str parameter will cause readrow to return the temp space for the row
+				fatal(lstack_readrow, lx, 0, x, &zs, &zsl, 1, 0, 1, 0);
+
+				// clear this row
+				fatal(lstack_clear, lx, 0, x);
+
+				int i;
+				for(i = 0; i < win->l; i++)
+				{
+					if(i)
+						fatal(lstack_append, lx, 0, x, ds, dl);
+
+					fatal(lstack_append, lx, 0, x, zs + win->s[i].o, win->s[i].l);
+				}
+			}
+			else
+			{
+				// because there is a window in effect, getbytes returns the temp space for the row
+				fatal(lstack_getbytes, lx, 0, x, &zs, &zsl);
+
+				// write new string using the window
+				fatal(lstack_write, lx, 0, x, zs, zsl);
+
+				// record this index was hit
+				fatal(lstack_sel_stage, lx, x);
+			}
 		}
 	}
 	LSTACK_ITEREND

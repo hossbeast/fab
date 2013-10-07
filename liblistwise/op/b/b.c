@@ -19,7 +19,6 @@
 #include <string.h>
 
 #include "listwise/operator.h"
-#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
 
@@ -28,7 +27,7 @@
 
 /*
 
-p operator - partition : window by fields
+b operator - window by character offset/length
 
 ARGUMENTS (1, or multiples of 2)
 	 1  - offset, in fields, to start of window
@@ -46,12 +45,12 @@ static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "p"
+		  .s						= "b"
 		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .mnemonic			= "fields"
-		, .desc					= "window by fields"
+		, .mnemonic			= "bytes"
+		, .desc					= "window by character offset/length"
 	}
 	, {}
 };
@@ -77,71 +76,37 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
+		char * ss = 0;
+		int ssl   = 0;
+
+		fatal(lstack_readrow, lx, 0, x, &ss, &ssl, 1, 0, 0, 0);
+
+		int i;
+		for(i = 0; i < o->argsl; i += 2)
 		{
-			char * ss = 0;
-			int ssl = 0;
-			int wasreset = 0;
-			int wasread = 0;
-			int i;
-			for(i = 0; i < o->argsl; i += 2)
+			int win_off = o->args[i]->i64;
+			int win_len = 0;
+
+			if(o->argsl > (i + 1))
+				win_len = o->args[i + 1]->i64;
+
+			int off = win_off;
+			int len = win_len;
+
+			if(win_off < 0)
+				off = ssl + win_off;
+			if(win_len == 0)
+				len = ssl - off;
+			else
+				len = MIN(len, ssl - off);
+
+			if(off >= 0 && off < ssl && len > 0)
 			{
-				int win_off = o->args[i]->i64;
-				int win_len = 0;
+				// append window segment
+				fatal(lstack_window_stage, lx, x, off, len);
 
-				if(o->argsl > (i + 1))
-					win_len = o->args[i + 1]->i64;
-
-				int off = win_off;
-				int len = win_len;
-
-				if(win_off < 0)
-					off = (lx->win.s[x].active->l + win_off) + 1;
-				if(win_len == 0)
-					len = lx->win.s[x].active->l - off + 1;
-				else
-					len = MIN(len, (lx->win.s[x].active->l + 1) - off);
-
-				if(off >= 0 && off < (lx->win.s[x].active->l + 1) && len > 0)
-				{
-					if(!wasreset)
-					{
-						wasreset = 1;
-
-						// reset staged window, if any
-						fatal(lstack_window_unstage, lx, x);
-
-						// record this index was hit
-						fatal(lstack_sel_stage, lx, x);
-					}
-
-					// append window segment
-					int A;
-					int B;
-					if(off == 0)
-						A = 0;
-					off--;
-
-					if(off > -1)
-						A = lx->win.s[x].active->s[off].o + lx->win.s[x].active->s[off].l;
-
-					if(off + len < lx->win.s[x].active->l)
-					{
-						B = lx->win.s[x].active->s[off + len].o;
-					}
-					else
-					{
-						if(!wasread)
-						{
-							wasread = 1;
-							fatal(lstack_readrow, lx, 0, x, &ss, &ssl, 1, 0, 0, 0);
-						}
-
-						B = ssl;
-					}
-				
-					fatal(lstack_window_stage, lx, x, A, B - A);
-				}
+				// record this index was hit
+				fatal(lstack_sel_stage, lx, x);
 			}
 		}
 	}

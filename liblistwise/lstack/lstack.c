@@ -260,7 +260,6 @@ static int writestack(lwx * const restrict lx, int x, int y, const void* const r
 	}
 	else
 	{
-		l = l ?: strlen(s);
 		fatal(ensure, lx, x, y, l);
 
 		// write and cap the string

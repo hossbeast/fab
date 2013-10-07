@@ -51,6 +51,7 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
+		, .mnemonic			= "realpath"
 		, .desc					= "path canonicalization with realpath"
 	}
 	, {}

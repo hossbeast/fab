@@ -50,6 +50,7 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
+		, .mnemonic			= "locate"
 		, .desc					= "select by substring match"
 	}
 	, {}

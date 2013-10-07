@@ -45,6 +45,7 @@ operator op_desc[] = {
 		  .s						= "dn"
 		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
+		, .mnemonic			= "dirname"
 		, .desc					= "get component of filepath preceeding the filename"
 	}
 	, {}

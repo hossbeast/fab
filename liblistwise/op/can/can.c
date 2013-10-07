@@ -16,90 +16,83 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
+#include <limits.h>
+#include <sys/types.h>
+#include <errno.h>
 #include <string.h>
-#include <alloca.h>
+#include <dirent.h>
 
 #include "listwise/operator.h"
-#include "listwise/lwx.h"
 
 #include "liblistwise_control.h"
+#include "xmem.h"
 
 /*
 
-fn operator - filename : replace filenames of the form 'prefix.suffix [ .. .Nix ]' with prefix
+can operator - path canonicalization (with canon)
 
 NO ARGUMENTS
 
+ use current selection, ELSE
+ use entire top list
+
 OPERATION
 
-	1. foreach selected string
-		2. replace that string with its filename component
+ 1. rewrite the item as a canonicalized path
 
 */
 
+static int op_validate(operation* o);
 static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
-		  .s						= "fn"
-		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE
+		  .s						= "can"
+		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
+		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .mnemonic			= "filename"
-		, .desc					= "get filename component"
+		, .mnemonic			= "canon"
+		, .desc					= "path canonicalization with canon"
 	}
 	, {}
 };
 
+int op_validate(operation* o)
+{
+	return 0;
+}
+
 int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
+	char * ss = 0;
 	int x;
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		char * ss;
-		int ssl;
-		int raw;
+		char * s;
+		int l;
+		fatal(lstack_getstring, ls, 0, x, &s, &l);
 
-		// raw is true if this row is not an object entry, and has no window in effect
-		fatal(lstack_readrow, ls, 0, x, &ss, &ssl, 1, 1, 0, &raw);
-
-		if(ssl)
+		xfree(&ss);
+		if((ss = realpath(s, 0)))
 		{
-			char * s = ss;
-			char * e = ss + ssl - 1;
-			char * oe = e;
-
-			while(e != s && e[0] == '/')
-				e--;
-
-			while(e != s && e[0] != '/')
-				e--;
-
-			while(e != oe && e[0] != '.')
-				e++;
-
-			if(s != e)
-			{
-				if(raw)
-				{
-					ls->s[0].s[x].l = e - s;
-					ls->s[0].t[x].y = LWTMP_UNSET;
-
-					ls->win.s[x].active = 0;
-					ls->win.s[x].staged = 0;
-				}
-				else
-				{
-					// rewrite the entry
-					fatal(lstack_write, ls, 0, x, s, e - s);
-				}
-
-				// record this index was hit
-				fatal(lstack_sel_stage, ls, x);
-			}
+			fatal(lstack_write
+				, ls
+				, 0
+				, x
+				, ss
+				, strlen(ss)
+			);
+			fatal(lstack_sel_stage, ls, x);
+		}
+		else
+		{
+			dprintf(listwise_err_fd, "realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
 		}
 	}
 	LSTACK_ITEREND
 
-	finally : coda;
+finally:
+	free(ss);
+coda;
 }

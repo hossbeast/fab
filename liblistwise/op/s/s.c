@@ -55,7 +55,8 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_STAGE | LWOP_WINDOWS_STAGE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "substitution by regex"
+		, .mnemonic			= "substitution"
+		, .desc					= "search and replace by regex"
 	}, {}
 };
 
