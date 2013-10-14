@@ -15,24 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <grp.h>
-#include <time.h>
-#include <unistd.h>
-
 #include "listwise/operator.h"
 #include "listwise/fs.h"
 
 #include "liblistwise_control.h"
-
-#include "canon.h"
-#include "parseint.h"
-#include "xmem.h"
-#include "color.h"
 
 /*
 

@@ -125,11 +125,11 @@ int API listwise_exec_generator(
 
 		if(dump)
 		{
-			dprintf(listwise_err_fd, "\n");
+			dprintf(listwise_info_fd, "\n");
 
 			char buf[128];
 			operation_write(buf, sizeof(buf), g->ops[x]);
-			dprintf(listwise_err_fd, " >> %s\n", buf);
+			dprintf(listwise_info_fd, " >> %s\n", buf);
 		}
  
 		// execute the operator

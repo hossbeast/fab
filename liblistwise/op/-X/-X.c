@@ -137,14 +137,21 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int statmod
 			r = lstat(lstack_string(ls, 0, x), &st);
 		}
 
-		if(r == 0 || errno == ENOENT)
+		if(r == 0)
 		{
-			if(selector(errno == ENOENT ? 0 : &st))
+			if(selector(&st))
+				fatal(lstack_sel_stage, ls, x);
+		}
+		else if(errno == ENOENT || errno == ENOTDIR)
+		{
+			dprintf(listwise_info_fd, "%s('%s')=[%d][%s]\n", statmode == USE_STAT ? "stat" : "lstat", lstack_string(ls, 0, x), errno, strerror(errno));
+
+			if(selector(0))
 				fatal(lstack_sel_stage, ls, x);
 		}
 		else
 		{
-			dprintf(listwise_err_fd, "%s('%s')=[%d][%s]\n", statmode == USE_STAT ? "stat" : "lstat", lstack_string(ls, 0, x), errno, strerror(errno));
+			fail("%s('%s')=[%d][%s]\n", statmode == USE_STAT ? "stat" : "lstat", lstack_string(ls, 0, x), errno, strerror(errno));
 		}
 	}
 	LSTACK_ITEREND
@@ -209,9 +216,21 @@ int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		if(euidaccess(lstack_string(ls, 0, x), R_OK) == 0)
+		{
 			fatal(lstack_sel_stage, ls, x);
-		else if(errno != EACCES && errno != ENOENT)
-			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
+		}
+		else if(errno == EACCES)
+		{
+			/* nothing */
+		}
+		else if(errno == ENOENT || errno == ENOTDIR)
+		{
+			dprintf(listwise_info_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
+		}
+		else
+		{
+			fail("euidaccess('%s')=[%d][%s]", lstack_string(ls, 0, x), errno, strerror(errno));
+		}
 	}
 	LSTACK_ITEREND
 
@@ -225,9 +244,21 @@ int op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		if(euidaccess(lstack_string(ls, 0, x), W_OK) == 0)
+		{
 			fatal(lstack_sel_stage, ls, x);
-		else if(errno != EACCES && errno != ENOENT)
-			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
+		}
+		else if(errno == EACCES)
+		{
+			/* nothing */
+		}
+		else if(errno == ENOENT || errno == ENOTDIR)
+		{
+			dprintf(listwise_info_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
+		}
+		else
+		{
+			fail("euidaccess('%s')=[%d][%s]", lstack_string(ls, 0, x), errno, strerror(errno));
+		}
 	}
 	LSTACK_ITEREND
 
@@ -241,9 +272,21 @@ int op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		if(euidaccess(lstack_string(ls, 0, x), X_OK) == 0)
+		{
 			fatal(lstack_sel_stage, ls, x);
-		else if(errno != EACCES && errno != ENOENT)
-			dprintf(listwise_err_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
+		}
+		else if(errno == EACCES)
+		{
+			/* nothing */
+		}
+		else if(errno == ENOENT || errno == ENOTDIR)
+		{
+			dprintf(listwise_info_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
+		}
+		else
+		{
+			fail("euidaccess('%s')=[%d][%s]", lstack_string(ls, 0, x), errno, strerror(errno));
+		}
 	}
 	LSTACK_ITEREND
 

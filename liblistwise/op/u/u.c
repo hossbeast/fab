@@ -51,7 +51,7 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_ACTIVATE
 		, .op_exec			= op_exec
 		, .mnemonic			= "unique"
-		, .desc					= "select unique (already sorted)"
+		, .desc					= "select unique - already sorted"
 	}, {}
 };
 

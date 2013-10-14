@@ -42,11 +42,13 @@
 //  that ENOENT is not an error)
 //
 // PARAMETERS
-//  path				- path to convert
-//  pathl       - length of path, 0 for strlen
-//  resolved	  - resolved path is written here, but no more than sz bytes are written
-//  sz          - size of resolved
-//  base        - used to resolve initial references to "." and ".."
+//  path        - path to be canonicalized
+//  [pathl]     - length of path, 0 for strlen
+//  [base]      - used to resolve initial references to "." and ".."
+//  [basel]     - length of base, 0 for strlen
+//  dst         - resolved path is written here
+//  siz         - max bytes to write to dst
+//  [z]         - returns the number of bytes written
 //  opts        - bitwise mask of operations to perform - 0 = CAN_REALPATH
 //
 // RETURNS
@@ -55,32 +57,38 @@
 int canon(
 	  const char * restrict path
 	, int pathl
-	, char * const restrict resolved
-	, const size_t sz
 	, const char * const restrict base
-	, const uint32_t opts
+	, int basel
+	, char * const restrict dst
+	, const size_t siz
+	, size_t * restrict z
+	, uint32_t opts
 )
-	__attribute((nonnull));
+	__attribute((nonnull(1, 5)));
 
 /// rebase
 //
-// reformulate a normalized absolute path into a relative path in terms of some base
+// reformulate a normalized absolute path into a relative path in terms of some absolute base path
 //
 // PARAMETERS
-//  abs    - absolute, normalized path to rebase
-//  base   - absolute directory path to rebase against
-//  dst    - write path relative to base here
-//  siz    - size of dst
+//  path      - absolute, normalized path to rebase
+//  [pathl]   - length of path, 0 for strlen
+//  base      - absolute directory path to rebase against
+//  [basel]   - length of base, 0 for strlen
+//  dst       - path relative to base is written here
+//  siz       - max bytes to write to dst
+//  [z]       - returns the number of bytes written
 //
 int rebase(
-	  const char * const restrict abs
-	, int absl
+	  const char * const restrict path
+	, int pathl
 	, const char * const restrict base
 	, int basel
-	, char * restrict dst
-	, size_t siz
+	, char * const restrict dst
+	, const size_t siz
+	, size_t * restrict z
 )
-	__attribute__((nonnull));
+	__attribute__((nonnull(1, 3, 5)));
 
 #undef restrict
 #endif

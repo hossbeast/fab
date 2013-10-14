@@ -93,10 +93,10 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 	}
 	LSTACK_ITEREND;
 
-	int qfail = 0;
+	int waserr = 0;
 	int compar(const void * A, const void * B)
 	{
-		if(qfail)
+		if(waserr)
 			return 0;
 
 		char *	As = 0;
@@ -106,7 +106,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 
 		int r = 0;
 
-#define FAIL(s)		do { if(s) { dprintf(listwise_err_fd, s); } qfail = 1; return 0; } while(0)
+#define FAIL(s)		do { if(s) { dprintf(listwise_error_fd, s); } waserr = 1; return 0; } while(0)
 
 		if(mode == NUMERIC)
 		{
@@ -145,6 +145,8 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 	}
 
 	qsort(mema, i, sizeof(*mema), compar);
+	if(waserr)
+		qfail();
 
 	for(x = 0; x < i; x++)
 	{

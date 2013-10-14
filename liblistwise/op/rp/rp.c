@@ -42,25 +42,18 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
 static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "rp"
 		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
-		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .mnemonic			= "realpath"
 		, .desc					= "path canonicalization with realpath"
 	}
 	, {}
 };
-
-int op_validate(operation* o)
-{
-	return 0;
-}
 
 int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
@@ -85,9 +78,13 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 			);
 			fatal(lstack_sel_stage, ls, x);
 		}
+		else if(errno == ENOENT || errno == ENOTDIR)
+		{
+			dprintf(listwise_info_fd, "realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
+		}
 		else
 		{
-			dprintf(listwise_err_fd, "realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
+			fail("realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
 		}
 	}
 	LSTACK_ITEREND

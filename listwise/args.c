@@ -36,7 +36,24 @@
 
 struct g_args_t g_args;
 
-static void usage(int valid, int version, int help, int operators)
+struct optypes
+{
+	int _1;
+	int _2;
+	int _3;
+	int _4;
+	int _5;
+	int _6;
+	int _7;
+	int _8;
+	int _9;
+	int _a;
+	int _b;
+	int _c;
+	int _d;
+};
+
+static void usage(int valid, int version, int help, int operators, struct optypes * optypes)
 {
 	printf(
 "listwise : list transformation utility\n"
@@ -57,19 +74,27 @@ if(help)
 	printf(
 "\n"
 "usage : lw [options] generator-string\n"
-"  --help|-h   : this message\n"
-"  --version   : version information\n"
-"  --operators : operator listing\n"
+" --help|-h   : this message\n"
+" --version   : version information\n"
+" --operators : operator listing\n"
 "\n"
-"----------------- [ options ] --------------------------------------------------\n"
+"----------------- [ operator listing options] ----------------------------------\n"
+"\n"
+"  --o1      type 1        restrict listing to those operators of matching type\n"
+"  --o2      type 2\n"
+"   ...\n"
+"  --od      type d\n"
+"\n"
+"----------------- [ listwise execution options ] -------------------------------\n"
 "\n"
 " -a         output entire list, not just selected entries\n"
 " -k         output entire stack, not just top list\n"
-"            implies -a\n"
-" -d         dump list-stack at each step during execution\n"
-" -n         number output items\n"
-" -z         separate output items with null byte instead of newline\n"
-" -0         separate input items read from file by null byte instead of newline\n"
+" -d         dump list-stack at each step during execution (debug)\n"
+"            do not suppress liblistwise info/warn messages\n"
+" -n         number output rows 0 .. n\n"
+" -N         number output rows with their list index\n"
+" -z         separate output rows with null byte instead of newline\n"
+" -0         separate input rows read from file by null byte instead of newline\n"
 " -i <item>  initial list item\n"
 " -l <path>  read initial list items from <path>\n"
 " -f <path>  read generator-string from <path> instead of argv\n"
@@ -89,36 +114,73 @@ if(operators)
 " 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
 	);
 
+	uint64_t mask = 0;
+
+	if(optypes && optypes->_1)
+		mask |= 0x1ULL << (0x1 - 1);
+	if(optypes && optypes->_2)
+		mask |= 0x1ULL << (0x2 - 1);
+	if(optypes && optypes->_3)
+		mask |= 0x1ULL << (0x3 - 1);
+	if(optypes && optypes->_4)
+		mask |= 0x1ULL << (0x4 - 1);
+	if(optypes && optypes->_5)
+		mask |= 0x1ULL << (0x5 - 1);
+	if(optypes && optypes->_6)
+		mask |= 0x1ULL << (0x6 - 1);
+	if(optypes && optypes->_7)
+		mask |= 0x1ULL << (0x7 - 1);
+	if(optypes && optypes->_8)
+		mask |= 0x1ULL << (0x8 - 1);
+	if(optypes && optypes->_9)
+		mask |= 0x1ULL << (0x9 - 1);
+	if(optypes && optypes->_a)
+		mask |= 0x1ULL << (0xa - 1);
+	if(optypes && optypes->_b)
+		mask |= 0x1ULL << (0xb - 1);
+	if(optypes && optypes->_c)
+		mask |= 0x1ULL << (0xc - 1);
+	if(optypes && optypes->_d)
+		mask |= 0x1ULL << (0xd - 1);
+
+	int i = 0;
 	int x;
 	for(x = 0; x < g_ops_l; x++)
 	{
-		printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s"
-/* have some effect */
-			, g_ops[x]->optype & LWOP_SELECTION_STAGE ? 'x' : ' '
-			, g_ops[x]->optype & LWOP_SELECTION_ACTIVATE ? 'x' : ' '
-			, g_ops[x]->optype & LWOP_SELECTION_RESET				? 'x' : ' '
-			, g_ops[x]->optype & LWOP_WINDOWS_STAGE ? 'x' : ' '
-			, g_ops[x]->optype & LWOP_WINDOWS_ACTIVATE ? 'x' : ' '
-			, g_ops[x]->optype & LWOP_WINDOWS_RESET				? 'x' : ' '
-			, g_ops[x]->optype & LWOP_ARGS_CANHAVE					? 'x' : ' '
-			, g_ops[x]->optype & LWOP_EMPTYSTACK_YES ? 'x' : ' '
-
-/* informational */
-			, g_ops[x]->optype & LWOP_STACKOP ? 'x' : ' '
-			, g_ops[x]->optype & LWOP_MODIFIERS_CANHAVE					? 'x' : ' '
-			, g_ops[x]->optype & LWOP_OPERATION_PUSHBEFORE	? 'x' : ' '
-			, g_ops[x]->optype & LWOP_OPERATION_INPLACE			? 'x' : ' '
-			, g_ops[x]->optype & LWOP_OPERATION_FILESYSTEM	? 'x' : ' '
-			, g_ops[x]->s
-			, g_ops[x]->desc
-		);
-
-		if(g_ops[x]->mnemonic)
+		if((g_ops[x]->optype & mask) == mask)
 		{
-			printf(" (%s)", g_ops[x]->mnemonic);
+			printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s"
+	/* effectual */
+				, g_ops[x]->optype & LWOP_SELECTION_STAGE 			? 'x' : ' '
+				, g_ops[x]->optype & LWOP_SELECTION_ACTIVATE		? 'x' : ' '
+				, g_ops[x]->optype & LWOP_SELECTION_RESET				? 'x' : ' '
+				, g_ops[x]->optype & LWOP_WINDOWS_STAGE					? 'x' : ' '
+				, g_ops[x]->optype & LWOP_WINDOWS_ACTIVATE			? 'x' : ' '
+				, g_ops[x]->optype & LWOP_WINDOWS_RESET					? 'x' : ' '
+				, g_ops[x]->optype & LWOP_ARGS_CANHAVE					? 'x' : ' '
+				, g_ops[x]->optype & LWOP_EMPTYSTACK_YES				? 'x' : ' '
+
+	/* informational */
+				, g_ops[x]->optype & LWOP_STACKOP								? 'x' : ' '
+				, g_ops[x]->optype & LWOP_MODIFIERS_CANHAVE			? 'x' : ' '
+				, g_ops[x]->optype & LWOP_OPERATION_PUSHBEFORE	? 'x' : ' '
+				, g_ops[x]->optype & LWOP_OPERATION_INPLACE			? 'x' : ' '
+				, g_ops[x]->optype & LWOP_OPERATION_FILESYSTEM	? 'x' : ' '
+				, g_ops[x]->s
+				, g_ops[x]->desc
+			);
+
+			if(g_ops[x]->mnemonic)
+			{
+				printf(" (%s)", g_ops[x]->mnemonic);
+			}
+			printf("\n");
+
+			i++;
 		}
-		printf("\n");
 	}
+
+	printf("%d operators\n", i);
 
 	printf(
 		" 1. SELECTION_STAGE\n"
@@ -155,16 +217,31 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 	int version = 0;
 	int operators = 0;
 
+	struct optypes optypes = {};
+
 	struct option longopts[] = {
 		  { "help"				, no_argument	, &help, 1 } 
 		, { "version"			, no_argument	, &version, 1 } 
 		, { "operators"		, no_argument	, &operators, 1 } 
+		, { "o1"					, no_argument	, &optypes._1, 1 }
+		, { "o2"					, no_argument	, &optypes._2, 1 }
+		, { "o3"					, no_argument	, &optypes._3, 1 }
+		, { "o4"					, no_argument	, &optypes._4, 1 }
+		, { "o5"					, no_argument	, &optypes._5, 1 }
+		, { "o6"					, no_argument	, &optypes._6, 1 }
+		, { "o7"					, no_argument	, &optypes._7, 1 }
+		, { "o8"					, no_argument	, &optypes._8, 1 }
+		, { "o9"					, no_argument	, &optypes._9, 1 }
+		, { "oa"					, no_argument	, &optypes._a, 1 }
+		, { "ob"					, no_argument	, &optypes._b, 1 }
+		, { "oc"					, no_argument	, &optypes._c, 1 }
+		, { "od"					, no_argument	, &optypes._d, 1 }
 		, { }
 	};
 
 	char * switches =
 		// no-argument switches
-		"adhknz0"
+		"adhknz0N"
 
 		// with-argument switches
 		"f:l:i:"
@@ -185,10 +262,12 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 				break;
 			case 'k':
 				g_args.out_stack = 1;
-				g_args.out_list = 1;
 				break;
 			case 'n':
 				g_args.number = 1;
+				break;
+			case 'N':
+				g_args.number = 2;
 				break;
 			case 'z':
 				g_args.out_null = 1;
@@ -221,17 +300,17 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 				}
 				break;
 			case 'h':
-				usage(1, 1, 1, 0);
+				usage(1, 1, 1, 0, 0);
 				break;
 			case '?':
-				usage(0, 1, 1, 0);
+				usage(0, 1, 1, 0, 0);
 				break;
 		}
 	}
 
 	if(help || version || operators)
 	{
-		usage(1, 1, help, operators);
+		usage(1, 1, help, operators, &optypes);
 	}
 
 	if(optind < argc && strcmp(argv[optind], "-") == 0)

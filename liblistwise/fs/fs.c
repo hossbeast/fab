@@ -102,7 +102,7 @@ int API fs_statfmt(
 
 	if(r)
 	{
-		dprintf(listwise_err_fd, "%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
+		dprintf(listwise_info_fd, "%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
 	}
 	else
 	{
@@ -232,7 +232,7 @@ int API fs_statfmt(
 						if(cwd == 0 && (cwd = getcwd(0, 0)) == 0)
 							fail("getcwd=[%d][%s]", errno, strerror(errno));
 
-						fatal(canon, s, sl, space, sizeof(space), cwd, CAN_REALPATH);
+						fatal(canon, s, sl, cwd, 0, space, sizeof(space), 0, CAN_REALPATH);
 
 						if(fmt[i + 1] == 'r')	// realpath
 						{
@@ -240,8 +240,9 @@ int API fs_statfmt(
 						}
 						else if(fmt[i + 1] == 'F')	// path, rebased to cwd
 						{
-							fatal(rebase, space, 0, cwd, 0, space2, sizeof(space2));
-							(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%s", space2);
+							size_t zl;
+							fatal(rebase, space, 0, cwd, 0, space2, sizeof(space2), &zl);
+							(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%.*s", (int)zl, space2);
 						}
 						else if(fmt[i + 1] == 'f' || fmt[i + 1] == 'h')
 						{

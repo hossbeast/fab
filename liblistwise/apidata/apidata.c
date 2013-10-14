@@ -19,7 +19,9 @@
 
 #include "xmem.h"
 
-int APIDATA listwise_err_fd = 2;
+int APIDATA listwise_error_fd = 2;
+int APIDATA listwise_warn_fd = 2;
+int APIDATA listwise_info_fd = 2;
 int APIDATA listwise_sanity = 0;
 int APIDATA listwise_allocation_seed = 10;
 

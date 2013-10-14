@@ -28,7 +28,7 @@
   _coda_r = 0;                                      \
 
 #define HANDLE_ERROR(fmt, ...)											\
-	dprintf(listwise_err_fd, fmt " at [%s:%d (%s)]\n"	\
+	dprintf(listwise_error_fd, fmt " at [%s:%d (%s)]\n"	\
 		, ##__VA_ARGS__																	\
 		, __FILE__																			\
 		, __LINE__																			\

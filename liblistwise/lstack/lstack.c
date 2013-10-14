@@ -392,11 +392,11 @@ int API lstack_dump(lwx * const lx)
 	for(x = lx->l - 1; x >= 0; x--)
 	{
 		if(x != lx->l - 1)
-			dprintf(listwise_err_fd, "\n");
+			dprintf(listwise_info_fd, "\n");
 
 		if(lx->s[x].l == 0)
 		{
-			dprintf(listwise_err_fd, "[%4d     ] -- empty \n", x);
+			dprintf(listwise_info_fd, "[%4d     ] -- empty \n", x);
 		}
 
 		for(y = 0; y < lx->s[x].l; y++)
@@ -425,7 +425,7 @@ int API lstack_dump(lwx * const lx)
 			}
 
 			// for each entry : indexes, whether selected, staged
-			dprintf(listwise_err_fd, "[%4d,%4d] %s%s "
+			dprintf(listwise_info_fd, "[%4d,%4d] %s%s "
 				, x
 				, y
 				, select ? ">" : " "
@@ -437,19 +437,19 @@ int API lstack_dump(lwx * const lx)
 			int sl;
 			fatal(lstack_readrow, lx, x, y, &s, &sl, 1, 0, 0, 0);
 
-			dprintf(listwise_err_fd, "'%.*s'", sl, s);
+			dprintf(listwise_info_fd, "'%.*s'", sl, s);
 
 			// also display object properties if applicable
 			if(lx->s[x].s[y].type)
 			{
-				dprintf(listwise_err_fd, "[%hhu]%p/%p", lx->s[x].s[y].type, *(void**)lx->s[x].s[y].s, lx->s[x].s[y].s);
+				dprintf(listwise_info_fd, "[%hhu]%p/%p", lx->s[x].s[y].type, *(void**)lx->s[x].s[y].s, lx->s[x].s[y].s);
 			}
-			dprintf(listwise_err_fd, "\n");
+			dprintf(listwise_info_fd, "\n");
 
 			// indicate active windows
 			if(x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
 			{
-				dprintf(listwise_err_fd, "%16s", " ");
+				dprintf(listwise_info_fd, "%16s", " ");
 
 				int escaping = 0;
 				int z = -1;
@@ -466,7 +466,7 @@ int API lstack_dump(lwx * const lx)
 					{
 						if((i - lx->win.s[y].active->s[z].o) < lx->win.s[y].active->s[z].l)
 						{
-							dprintf(listwise_err_fd, "^");
+							dprintf(listwise_info_fd, "^");
 							marked = 1;
 						}
 					}
@@ -485,20 +485,20 @@ int API lstack_dump(lwx * const lx)
 						}
 						else
 						{
-							dprintf(listwise_err_fd, " ");
+							dprintf(listwise_info_fd, " ");
 						}
 
 						if(z >= 0 && z < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[z].o)
 							z++;
 					}
 				}
-				dprintf(listwise_err_fd, "\n");
+				dprintf(listwise_info_fd, "\n");
 			}
 
 			// indicate staged windows
 			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.active_era)
 			{
-				dprintf(listwise_err_fd, "%16s", " ");
+				dprintf(listwise_info_fd, "%16s", " ");
 
 				int escaping = 0;
 				int z = -1;
@@ -515,7 +515,7 @@ int API lstack_dump(lwx * const lx)
 					{
 						if((i - lx->win.s[y].staged->s[z].o) < lx->win.s[y].staged->s[z].l)
 						{
-							dprintf(listwise_err_fd, "+");
+							dprintf(listwise_info_fd, "+");
 							marked = 1;
 						}
 					}
@@ -534,14 +534,14 @@ int API lstack_dump(lwx * const lx)
 						}
 						else
 						{
-							dprintf(listwise_err_fd, " ");
+							dprintf(listwise_info_fd, " ");
 						}
 
 						if(z >= 0 && z < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[z].o)
 							z++;
 					}
 				}
-				dprintf(listwise_err_fd, "\n");
+				dprintf(listwise_info_fd, "\n");
 			}
 		}
 	}

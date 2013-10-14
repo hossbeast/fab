@@ -52,7 +52,7 @@ operator op_desc[] = {
 			.s						= "uu"
 		, .optype				= LWOP_SELECTION_ACTIVATE
 		, .op_exec			= op_exec
-		, .desc					= "select unique (sort not required)"
+		, .desc					= "select unique - sort not required"
 	}
 	, {}
 };

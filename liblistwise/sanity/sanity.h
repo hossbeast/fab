@@ -63,7 +63,7 @@ int sanity(struct lwx_t * const restrict lx, sanityblock * const restrict sb)
 // if a sanity check fails, further use of ls will either 1) cause the program to crash
 // or 2) memory will be lost
 //
-// if a sanity check fails, print error(s) to listwise_err_fd and call exit(1)
+// if a sanity check fails, print error(s) to listwise_warn_fd and call exit(1)
 //
 // DEFAULT
 //  0 - no sanity checks

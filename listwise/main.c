@@ -110,6 +110,7 @@ int main(int argc, char** argv)
 	generator_parser* p = 0;		// generator parser
 	generator* g = 0;						// generator
 	lwx * lx = 0;								// list stack
+	int nullfd = -1;						// fd to /dev/null
 
 	void * mem = 0;
 	size_t sz = 0;
@@ -120,11 +121,14 @@ int main(int argc, char** argv)
 	int genx = 0;
 	fatal(parse_args, argc, argv, &genx);
 
-	// arrange for liblistwise to write errors to /dev/null
+	// arrange for liblistwise to write to /dev/null
 	if(!g_args.dump)
 	{
-		if((listwise_err_fd = open("/dev/null", O_WRONLY)) == -1)
+		if((nullfd = open("/dev/null", O_WRONLY)) == -1)
 			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
+
+		listwise_info_fd = nullfd;
+		listwise_warn_fd = nullfd;
 	}
 
 	if(g_args.generator_file)
@@ -220,10 +224,14 @@ int main(int argc, char** argv)
 			{
 				if(g_args.number)
 				{
+					int j = i++;
+					if(g_args.number == 2)
+						j = x;
+
 					if(g_args.out_stack)
-						printf("%3d %3d ", y, i++);
+						printf("%3d %3d ", y, j);
 					else
-						printf("%3d ", i++);
+						printf("%3d ", j);
 				}
 
 				char * ss = 0;
@@ -247,6 +255,9 @@ int main(int argc, char** argv)
 
 finally:
 	free(mem);
+
+	if(nullfd != -1)
+		close(nullfd);
 
 	lwx_free(lx);
 	generator_free(g);

@@ -24,7 +24,7 @@
 struct g_args_t
 {
 	char		dump;							// -d
-	char		number;						// -n
+	char		number;						// -n=1 -N=2
 	char		in_null;					// -0
 	char		out_null;					// -z
 	char		out_stack;				// -k

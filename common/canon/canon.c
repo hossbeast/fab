@@ -140,12 +140,32 @@ static void add(size_t * z, char * const resolved, size_t sz, char * fmt, ...)
 // public
 //
 
-int canon(const char * path, int pathl, char * const resolved, size_t sz, const char * base, uint32_t opts)
+int canon(
+	  const char * path
+	, int pathl
+	, const char * const base
+	, int basel
+	, char * const dst
+	, const size_t siz
+	, size_t * z
+	, uint32_t opts
+)
 {
 	opts = opts ?: CAN_REALPATH;
 	pathl = pathl ?: strlen(path);
 
-	size_t	z = 0;
+	if(base)
+	{
+		basel = basel ?: strlen(base);
+	}
+
+	size_t local_z;
+	if(z == 0)
+	{
+		z = &local_z;
+	}
+
+	(*z) = 0;
 
 	item *	i = 0;
 	int			ia = 0;
@@ -161,7 +181,7 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 			{
 				if(opts & CAN_INIT_DOT)
 				{
-					if(breakup(&i, &ia, &il, il, "%s/", base) != 0)
+					if(breakup(&i, &ia, &il, il, "%.*s/", basel, base) != 0)
 						return 1;
 				}
 			}
@@ -173,7 +193,7 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 	{
 		if(opts & CAN_FORCE_DOT)
 		{
-			if(breakup(&i, &ia, &il, il, "%s/", base) != 0)
+			if(breakup(&i, &ia, &il, il, "%.*s/", basel, base) != 0)
 				return 1;
 		}
 	}
@@ -182,7 +202,7 @@ int canon(const char * path, int pathl, char * const resolved, size_t sz, const 
 	if(breakup(&i, &ia, &il, il, "%.*s", pathl, path) != 0)
 		return 1;
 
-	resolved[0] = 0;
+	dst[0] = 0;
 
 /*
 for(ix = 0; ix < il; ix++)
@@ -203,20 +223,20 @@ printf("init=%d\n", init);
 	{
 		if(i[ix].t == SLASH)
 		{
-			if(z == 0)
-				z += snprintf(resolved + z, sz - z, "/");
+			if((*z) == 0)
+				(*z) += snprintf(dst + (*z), siz - (*z), "/");
 		}
 		else if(i[ix].t == DOT)
 		{
 			if(init != -1)
 			{
 				if((opts & CAN_INIT_DOT) == 0)
-					add(&z, resolved, sz, ".");
+					add(z, dst, siz, ".");
 			}
 			else
 			{
 				if((opts & CAN_NEXT_DOT) == 0)
-					add(&z, resolved, sz, ".");
+					add(z, dst, siz, ".");
 			}
 		}
 		else if(i[ix].t == DOTDOT)
@@ -233,17 +253,17 @@ printf("init=%d\n", init);
 					no = 1;
 			}
 
-			if(no || z == 0 || (z == 1 && resolved[0] == '/'))
+			if(no || (*z) == 0 || ((*z) == 1 && dst[0] == '/'))
 			{
 				// cannot backup; append the DOTDOT
-				add(&z, resolved, sz, "..");
+				add(z, dst, siz, "..");
 			}
 			else
 			{
-				if(z)
-					z--;
-				while(z && resolved[z] != '/')
-					z--;
+				if(*z)
+					(*z)--;
+				while((*z) && dst[(*z)] != '/')
+					(*z)--;
 			}
 		}
 		else
@@ -262,21 +282,21 @@ printf("init=%d\n", init);
 			}
 
 			// append the link name to pass to stat
-			size_t oldz = z;
-			add(&z, resolved, sz, "%.*s", i[ix].l, i[ix].s);
+			size_t oldz = (*z);
+			add(z, dst, siz, "%.*s", i[ix].l, i[ix].s);
 
 			struct stat stb[2] = {};
-			if(lstat(resolved, &stb[0]) == 0)
+			if(lstat(dst, &stb[0]) == 0)
 			{
 				if(S_ISLNK(stb[0].st_mode))
 				{
 					char space[512];
 
-					int j = readlink(resolved, space, sizeof(space));
+					int j = readlink(dst, space, sizeof(space));
 					space[j] = 0;
 
 					char space2[512];
-					snprintf(space2, sizeof(space2), "%.*s/%s", (int)oldz, resolved, space);
+					snprintf(space2, sizeof(space2), "%.*s/%s", (int)oldz, dst, space);
 
 					int r = lstat(space2, &stb[1]);
 
@@ -289,9 +309,9 @@ printf("init=%d\n", init);
 								return 1;
 
 							if(space[0] == '/')
-								z = 0;
+								(*z) = 0;
 							else
-								z = oldz;
+								(*z) = oldz;
 						}
 					}
 					else
@@ -302,9 +322,9 @@ printf("init=%d\n", init);
 								return 1;
 
 							if(space[0] == '/')
-								z = 0;
+								(*z) = 0;
 							else
-								z = oldz;
+								(*z) = oldz;
 						}
 					}
 				}
@@ -320,23 +340,38 @@ printf("init=%d\n", init);
 	for(x = 0; x < ia; x++)
 		free(i[x].s);
 	free(i);
-	resolved[z] = 0;
+	dst[(*z)] = 0;
 	return 0;
 }
 
-int rebase(const char * const abs, int absl, const char * const base, int basel, char * dst, size_t siz)
+int rebase(
+	  const char * const path
+	, int pathl
+	, const char * const base
+	, int basel
+	, char * const dst
+	, const size_t siz
+	, size_t * z
+)
 {
-	absl = absl ?: strlen(abs);
+	pathl = pathl ?: strlen(path);
 	basel = basel ?: strlen(base);
 
+	size_t local_z;
+	if(z == 0)
+	{
+		z = &local_z;
+	}
+
+	// match up as many segments between path and base as possible
 	int x;
-	for(x = 0; x < absl && x < basel; x++)
+	for(x = 0; x < pathl && x < basel; x++)
 	{
 		int y = 0;
-		while((x + y) < absl && (x + y) < basel && abs[x + y] == base[x + y] && abs[x + y] != '/')
+		while((x + y) < pathl && (x + y) < basel && path[x + y] == base[x + y] && path[x + y] != '/')
 			y++;
 
-		if((abs[x + y] == '/' || ((x + y) == absl)) &&  (base[x + y] == '/' || ((x + y) == basel)))
+		if((path[x + y] == '/' || ((x + y) == pathl)) &&  (base[x + y] == '/' || ((x + y) == basel)))
 		{
 			x += y;
 		}
@@ -346,7 +381,8 @@ int rebase(const char * const abs, int absl, const char * const base, int basel,
 		}
 	}
 
-	size_t z = 0;
+	// for each segment in base beyond path, append ".."
+	(*z) = 0;
 	int i;
 	for(i = x; i < basel; i++)
 	{
@@ -355,15 +391,23 @@ int rebase(const char * const abs, int absl, const char * const base, int basel,
 			y++;
 
 		if(y)
-			z += snprintf(dst + z, siz - z, "../");
+		{
+			if(i != x)
+				(*z) += snprintf(dst + (*z), siz - (*z), "/");
+			(*z) += snprintf(dst + (*z), siz - (*z), "..");
+		}
 
 		i += y;
 	}
 
-	if(abs[x] == '/' && absl - x)
-		x++;
+	// append the remainder of the path
+	if((pathl - x) > 0)
+	{
+		if(*z)
+			(*z) += snprintf(dst + (*z), siz - (*z), "/");
 
-	z += snprintf(dst + z, siz - z, "%.*s", absl - x, abs + x);
+		(*z) += snprintf(dst + (*z), siz - (*z), "%.*s", pathl - x, path + x);
+	}
 
 	return 0;
 }

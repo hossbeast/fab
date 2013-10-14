@@ -127,9 +127,9 @@ static int listing(lwx* ls, char * s, int recurse)
 			}
 		}
 	}
-	else if(errno != ENOTDIR)
+	else if(errno == ENOTDIR || errno == ENOENT)
 	{
-		dprintf(listwise_err_fd, "opendir('%s')=[%d][%s]\n", s, errno, strerror(errno));
+		dprintf(listwise_info_fd, "opendir('%s')=[%d][%s]\n", s, errno, strerror(errno));
 	}
 	else
 	{

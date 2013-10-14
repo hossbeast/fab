@@ -74,7 +74,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 
 	if(!(ls->l > to))
 	{
-		dprintf(listwise_err_fd, "xch/%d out of range\n", to);
+		dprintf(listwise_info_fd, "xch/%d out of range\n", to);
 	}
 	else
 	{
