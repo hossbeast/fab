@@ -19,8 +19,13 @@
 	#define YYLTYPE YYLTYPE
 	typedef struct YYLTYPE
 	{
-		char * s;
-		char * e;
+		int			f_lin;
+		int			f_col;
+		int			l_lin;
+		int			l_col;
+
+		char *	s;
+		char *	e;
 	} YYLTYPE;
 
 	#define YYLLOC_DEFAULT(Cur, Rhs, N)			\

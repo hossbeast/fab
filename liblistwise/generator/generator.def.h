@@ -25,14 +25,20 @@
 
 typedef struct
 {
-	int							r;			// return value of the parse
+	generator*			g;				// completed generator goes here
 	void*						scanner;
+
+	int							states[64];		// start states stack
+	int							states_n;
+
+	char						space[256];		// temp space
+	char						space2[256];
 
 	int							argsa;
 	int							opsa;
 	int							opargsa;
 
-	generator*			g;			// completed generator goes here
+	int							r;						// return value of the parse ; zeroed in yyerror
 } parse_param;
 
 #endif
