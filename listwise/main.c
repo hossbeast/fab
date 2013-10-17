@@ -115,21 +115,28 @@ int main(int argc, char** argv)
 	void * mem = 0;
 	size_t sz = 0;
 
-	fatal(generator_mkparser, &p);
-
 	// parse cmdline arguments
 	int genx = 0;
 	fatal(parse_args, argc, argv, &genx);
 
-	// arrange for liblistwise to write to /dev/null
-	if(!g_args.dump)
+	int x;
+
+	if(g_args.dump)
 	{
+		listwise_errors_unwind = 1;
+	}
+	else
+	{
+		// arrange for liblistwise to write to /dev/null
 		if((nullfd = open("/dev/null", O_WRONLY)) == -1)
 			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
 
 		listwise_info_fd = nullfd;
 		listwise_warn_fd = nullfd;
 	}
+
+	// create generator parser
+	fatal(generator_mkparser, &p);
 
 	if(g_args.generator_file)
 	{
@@ -141,12 +148,15 @@ int main(int argc, char** argv)
 	}
 	else if(genx < argc)
 	{
+		// concatenate remaining arguments with spaces
+		for(x = genx; x < (argc - 1); x++)
+			argv[x][strlen(argv[x])] = ' ';
+
 		// parse generator-string from argv
 		fatal(generator_parse, p, argv[genx], 0, &g);
 	}
 
 	// attempt to read initial list items from stdin and a specified file
-	int x;
 	for(x = 0; x < 2; x++)
 	{
 		char * p = 0;

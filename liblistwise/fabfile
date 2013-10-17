@@ -85,6 +85,48 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 # operators also depend on the library for linking
 [ $oplist ] :^ [ $liblistwise ]
 
+# generated files
++[@std.c]($gendir = $dliblistwise; $fabpaths = [ $dliblistwise/generator/generator.tokens.c ~ j ]; $cc $cflags)
+
+[ [ $dliblistwise/generator/generator.tokens.c ~ j ] [ $dliblistwise/generator/generator.tokens.h ~ j ] ] :: [ $dliblistwise/generator/generator.tab.c ~ j ]
+{
+	exec 1>[ $dliblistwise/generator/generator.tokens.h ]
+
+	> echo "#ifndef generator_TOK_H"
+	> echo "#define generator_TOK_H"
+	> echo "const char* generator_tokname(int);"
+	> sed   -ne '/yytokentype/,/;/ p' 																\
+	  <[ $dliblistwise/generator/generator.tab.c ]										\
+	>  | sed -e 's/\(yytokentype\)/generator_\1/'											\
+	>  | sed -e '/ *[A-Z]/s/\([A-Z]\)/generator_\1/'
+	> echo "#endif"
+
+	exec 1>[ $dliblistwise/generator/generator.tokens.c ]
+
+	> echo "typedef unsigned short yytype_uint16;"
+	> sed -ne '/yytname\[\]/,/};/ p'																	\
+	  <[ $dliblistwise/generator/generator.tab.c ]										\
+	>  | sed -e 's/\\"\|'"'"'//g'
+	> sed -ne '/yytoknum\[\]/,/};/ p'																	\
+	  <[ $dliblistwise/generator/generator.tab.c ]
+	> grep 'define YYNTOKENS'																					\
+	  <[ $dliblistwise/generator/generator.tab.c ]
+	> echo '#define API __attribute__((visibility("protected")))'
+	> echo '#include <stdio.h>'
+	> echo "const char API * generator_tokname(int tok)"
+	> echo "{"
+	> echo '  int x;'
+	> echo '  for(x = 0; x < YYNTOKENS; x++)'
+	> echo '  {'
+	> echo '  	 if(yytoknum[x] == tok)'
+	> echo '		 {'
+	> echo '      return yytname[x];'
+	> echo '    }'
+	> echo '  }'
+	> echo '  return 0;'
+	> echo '}'
+}
+
 ##
 ## tasks
 ##

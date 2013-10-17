@@ -22,7 +22,10 @@
 #include "listwise/xtra.h"
 
 #define CODA_BAD_ACTION                             \
-	_coda_r = 1;                                    	\
+	if(listwise_errors_unwind)												\
+		_coda_r = 1;																		\
+	else																							\
+		_coda_r = -1;																		\
 
 #define CODA_GOOD_ACTION                            \
   _coda_r = 0;                                      \
