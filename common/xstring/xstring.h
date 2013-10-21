@@ -55,7 +55,7 @@ char* xstrstr(char * restrict A, int alen, const char * const restrict B, int bl
 //
 // calculates size required to vprintf, reallocates *s and appends the new string onto *s
 //
-// returns zero on malloc failure
+// returns nonzero on malloc failure
 //
 int xstrcatf(char** s, char* fmt, ...);
 
@@ -63,7 +63,7 @@ int xstrcatf(char** s, char* fmt, ...);
 //
 // reallocates *s1, appends s2 onto *s1
 //
-// returns zero on malloc failure
+// returns nonzero on malloc failure
 //
 int xstrcat(char** s1, const char* s2);
 
@@ -71,7 +71,7 @@ int xstrcat(char** s1, const char* s2);
 //
 // copies s2 to *s1, reallocating *s1 if necessary, deallocating it if it was already allocated
 //
-// returns zero on malloc failure
+// returns nonzero on malloc failure
 //
 int xstrdup(char** s1, const char* s2);
 
@@ -83,6 +83,23 @@ int xstrdup(char** s1, const char* s2);
 //
 int xsprintf(char** s, char* fmt, ...);
 
+/// xstresc
+//
+// SUMMARY
+//  write a string to a buffer with all nonprinting characters and non-space whitespace replaced
+//  with hex escape sequences
+//
+// PARAMETERS
+//  src - source string
+//  len - length of src, 0 for strlen
+//  dst - dst buffer
+//  sz  - size of dst
+//
+// RETURNS
+//  returns number of bytes written
+//
+int xstresc(char * const restrict src, const size_t len, char * const restrict dst, const size_t sz)
+	__attribute__((nonnull(1, 3)));
+
 #undef restrict
 #endif
-

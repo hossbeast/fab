@@ -177,3 +177,25 @@ int xsprintf(char** s, char* fmt, ...)
 
 	return 0;
 }
+
+
+int xstresc(char * const src, const size_t len, char * const dst, const size_t sz)
+{
+	size_t z  = 0;
+	int x;
+	for(x = 0; x < (len ?: strlen(src)); x++)
+	{
+		if(src[x] == 0x09)
+			z += snprintf(dst + z, sz - z, "\\t");
+		else if(src[x] == 0x0a)
+			z += snprintf(dst + z, sz - z, "\\n");
+		else if(src[x] == 0x0d)
+			z += snprintf(dst + z, sz - z, "\\r");
+		else if(src[x] >= 0x20 && src[x] <= 0x7e)
+			z += snprintf(dst + z, sz - z, "%c", src[x]);
+		else
+			z += snprintf(dst + z, sz - z, "\\x%02hhx", src[x]);
+	}
+
+	return z;
+}

@@ -25,7 +25,16 @@
 
 	#include "macros.h"
 
-	#define TOPSTATE(x) (x->states_n ? x->states[x->states_n-1] : 0)
+	/// YYUSAY
+	//
+	// write informational messages to listwise_info_fd
+	//
+	#define YYUSAY(...) dprintf(listwise_info_fd, ##__VA_ARGS__)
+
+	/// STATENAME
+	//
+	// get state name from state
+	//
 	#define STATENAME(x)																			\
 	    x == INITIAL					? "INITIAL"											\
 	  : x == next							? "next"												\
@@ -35,76 +44,19 @@
 	  : x == argument					? "argument"										\
 	  : x == multilinecomment	? "multilinecomment" : "UNKNWN"
 
-	#define PUSHSTATE(a)																											\
-		do {																																		\
-			int al = snprintf(yyextra->space, sizeof(yyextra->space), "%s -> %s"	\
-				, STATENAME(TOPSTATE(yyextra))																			\
-				, STATENAME(a)																											\
-			);																																		\
-																																						\
-			dprintf(listwise_info_fd, "(%2d) %.*s %*s @ %*s %d\n"									\
-				, yyextra->states_n																									\
-				, al																																\
-				, yyextra->space																										\
-				, MAX(58 - al, 0)																										\
-				, ""																																\
-				, 21																																\
-				, ""																																\
-				, __LINE__																													\
-			);																																		\
-																																						\
-			yyextra->states[yyextra->states_n++] = a;															\
-			yy_push_state(a, yyextra->scanner);																		\
-		} while(0)
-
-	#define POPSTATE																													\
-		do {																																		\
-			int x = TOPSTATE(yyextra);																						\
-			yy_pop_state(yyextra->scanner);																				\
-			yyextra->states_n--;																									\
-																																						\
-			int al = snprintf(yyextra->space, sizeof(yyextra->space), "%s <- %s"	\
-				, STATENAME(TOPSTATE(yyextra))																			\
-				, STATENAME(x)																											\
-			);																																		\
-																																						\
-			dprintf(listwise_info_fd, "(%2d) %.*s %*s @ %*s %d\n"									\
-				, yyextra->states_n																									\
-				, al																																\
-				, yyextra->space																										\
-				, MAX(58 - al, 0)																										\
-				, ""																																\
-				, 21																																\
-				, ""																																\
-				, __LINE__																													\
-			);																																		\
-		} while(0)
-
-	#define PTOKEN(text, leng, lval, lloc, token, xtra, line)														\
-		do {																																							\
-			int al = stresc(xtra->space, sizeof(xtra->space), text, leng);									\
-																																											\
-			int bl = 0;																																			\
-			if(token == I64)																																\
-				bl = snprintf(xtra->space2, sizeof(xtra->space2), "%"PRId64, lval->i64);			\
-			else if(token == BREF)																													\
-				bl = snprintf(xtra->space2, sizeof(xtra->space2), " %d", lval->bref);					\
-																																											\
-			dprintf(listwise_info_fd, "%8s ) '%.*s'%.*s %*s @ [%3d,%3d - %3d,%3d] - %d\n"		\
-				, generator_tokname(token)																										\
-				, al																																					\
-				, xtra->space																																	\
-				, bl																																					\
-				, xtra->space2 																																\
-				, MAX(50 - al - bl, 0)																												\
-				, ""																																					\
-				, lloc->f_lin																																	\
-				, lloc->f_col																																	\
-				, lloc->l_lin																																	\
-				, lloc->l_col																																	\
-				, line																																				\
-			);																																							\
-		}	while(0)																																				\
+	/// YYULVAL
+	//
+	// write textual description of a token/lval to a buffer
+	//
+	#define YYULVAL(token, lval, xtra, bbuf, blen)										\
+		bbuf = xtra->space2;																						\
+		blen = 0;																												\
+		if(token == I64)																								\
+			blen = snprintf(bbuf, sizeof(bbuf), "%"PRId64, lval->i64);		\
+		else if(token == BREF)																					\
+			blen = snprintf(bbuf, sizeof(bbuf), "%d", lval->bref);				\
+																																										
+	#include "yyutil.h"
 
 	#define LEX(token)	\
 		lexify(yytext, yyleng, 0,   yylval, yylloc, token, yyextra, 0, 0, 0, 0,   __LINE__)
@@ -127,71 +79,12 @@
 	#define LEXO(token, op)	\
 		lexify(yytext, yyleng, 0,   yylval, yylloc, token, yyextra, 0, 0, op, 0, __LINE__)
 
-	#define LOCWRITE locwrite(yyextra, yylloc, yytext, yyleng, 0)
-	#define LOCRESET locreset(yyextra, yylloc)
-
-	int stresc(char * const buf, size_t sz, const char * const s, int l)
-	{
-		int o = 0;
-		int x;
-		for(x = 0; x < l; x++)
-		{
-			int r = 0;
-			if(s[x] == 0x09)
-				r = snprintf(buf + o, sz - o, "\\t");
-			else if(s[x] == 0x0a)
-				r = snprintf(buf + o, sz - o, "\\n");
-			else if(s[x] == 0x0d)
-				r = snprintf(buf + o, sz - o, "\\r");
-			else if(s[x] >= 0x20 && s[x] <= 0x7e)
-				r = snprintf(buf + o, sz - o, "%c", s[x]);
-			else
-				r = snprintf(buf + o, sz - o, "\\x%02hhx", s[x]);
-
-			if(r >= (sz - o))
-				break;
-			else
-				o += r;
-		}
-
-		return o;
-	}
-
-	void locreset(parse_param * xtra, YYLTYPE * lloc)
-	{
-		xtra->loc.f_lin++;
-		xtra->loc.l_lin = xtra->loc.f_lin;
-
-		xtra->loc.f_col = 0;
-		xtra->loc.l_col = 0;
-	}
-
-	void locwrite(parse_param* xtra, YYLTYPE* lloc, char * text, int leng, int del)
-	{
-		xtra->loc.f_col = xtra->loc.l_col;
-		xtra->loc.l_col = xtra->loc.f_col + leng;
-		xtra->loc.s     = text;
-		xtra->loc.e     = text + leng;
-
-		lloc->f_col = xtra->loc.f_col + del;
-		lloc->l_col = xtra->loc.l_col + del - 1;
-		lloc->f_lin = xtra->loc.f_lin;
-		lloc->l_lin = xtra->loc.l_lin;
-		lloc->s = xtra->loc.s + del;
-		lloc->e = xtra->loc.s - del - 1;
-
-		xtra->loc.f_col += del;
-		xtra->loc.l_col += del;
-		xtra->loc.s += del;
-		xtra->loc.e -= del;
-	}
-
 	int lexify(char * text, int leng, int del, YYSTYPE * lval, YYLTYPE * lloc, int token, parse_param * xtra, int bref, int i64, void * op, int lf, int line)
 	{
 		if(lf)
-			locreset(xtra, lloc);
+			yyu_locreset(xtra, lloc);
 		else
-			locwrite(xtra, lloc, text, leng, del);
+			yyu_locwrite(xtra, lloc, text, leng, del);
 
 		if(bref)
 			sscanf(text + del, "%d", &lval->bref);
@@ -201,7 +94,7 @@
 			lval->op = op;
 
 		/* print the token if requested */
-		PTOKEN(text, leng, lval, lloc, token, xtra, line);
+		PTOKEN(token, lval, lloc, xtra, text, leng, line);
 
 		/* store for error reporting */
 		memcpy(&xtra->last_loc, lloc, sizeof(xtra->last_loc));
@@ -224,7 +117,6 @@
 %x operator
 %x slash
 %x argument
-
 %x multilinecomment
 
 ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
@@ -265,9 +157,8 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													}
 																													else
 																													{
-																														char space[64];
-																														snprintf(space, sizeof(space), "unknown operator : %s", yytext);
-																														generator_yyerror(0, 0, yyextra, space);
+																														snprintf(yyextra->space, sizeof(yyextra->space), "unknown operator : %s", yytext);
+																														generator_yyerror(0, 0, yyextra, yyextra->space);
 																														return 0;
 																													}
 																												}
