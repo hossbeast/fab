@@ -178,7 +178,6 @@ int xsprintf(char** s, char* fmt, ...)
 	return 0;
 }
 
-
 int xstresc(char * const src, const size_t len, char * const dst, const size_t sz)
 {
 	size_t z  = 0;

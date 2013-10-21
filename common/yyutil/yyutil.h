@@ -40,6 +40,48 @@ typedef struct
 	int     l;			// length of location, equal to e - s
 } yyu_location;
 
+/// yyu_extra
+//
+// structure for parsing data (yyextra)
+//
+typedef struct yyu_extra
+{
+	int							r;							// set to 1 in yyu_error
+	void *					scanner;				// flex scanner
+	int							states[64];			// start states stack
+	int							states_n;
+	yyu_location	 	loc;						// running location track for this parse
+	char						space[256];			// temp space
+	char						space2[256];
+
+	yyu_location		last_loc;				// location of last scanned token
+	int							last_token;			// last token scanned
+	int							last_line;			// line number in the scanner of the last scanned token
+	void *					last_lval;			// semantic value of last scanned token
+	size_t					last_lval_aloc;	// allocated size of last_lval
+
+	// whether yyu should include scanner line number in output messages
+	int							output_line;
+
+	// yyu calls this function to write info messages
+	void						(*info)(char * fmt, ...);
+
+	// yyu calls this function to write error messages
+	void						(*error)(char * fmt, ...);
+
+	// yyu calls this function to get a token name from a token
+	char *					(*tokname)(int token);
+
+	// yyu calls this function to get a state name from a state
+	char *					(*statename)(int token);
+
+	// yyu calls this function to get a name for the input for location messages
+	int							(*inputname)(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);
+
+	// yyu calls this function get a textual description of a scanned token
+	int							(*lvalstr)(int token, void * restrict lval, struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);
+} yyu_extra;
+
 ///
 /// use yyu_location
 ///
@@ -72,56 +114,26 @@ do																					\
 	}																					\
 } while(0)
 
-/// yyu_extra
-//
-// structure for parsing data (yyextra)
-//
-typedef struct
-{
-	void *					scanner;
-
-	int							states[64];		// start states stack
-	int							states_n;
-
-	yyu_location	 	loc;					// running location track for this parse
-	yyu_location		last_loc;			// location of last parsed token
-	int							last_tok;			// last token parsed
-
-	char						space[256];		// temp space
-
-	// yyu calls this function to write info messages
-	void						(*info)(char * fmt, ...);
-
-	// yyu calls this function to write error messages
-	void						(*error)(char * fmt, ...);
-
-	// yyu calls this function to get a token name from a token
-	char *					(*tokname)(int token);
-
-	// yyu calls this function get a textual description of a scanned token
-	void						(*lvalstr)(int token, void * const restrict lval, yyu_extra * const restrict xtra, char ** const restrict buf, int * const restrict blen);
-} yyu_extra;
-
 ///  yyu_locwrite
 //
 // SUMMARY
-//  update the location tracking for a token just parsed
+//  update the location tracking for a token just parsed (that does not contain newline(s))
 //  
 // PARAMETERS
-//  xtra - yyextra
 //  lloc - yylloc
+//  xtra - yyextra
 //  text - yytext
 //  leng - yyleng
 //  del  - offset from yytext to start of location for this token
 //
-void yyu_locwrite(yyu_extra * const restrict xtra, yyu_location * const restrict lloc, char * const restrict text, const int leng, const int del)
+void yyu_locwrite(yyu_location * const restrict lloc, yyu_extra * const restrict xtra, char * const restrict text, const int leng, const int del)
 	__attribute__((nonnull));
 
 /// LOCWRITE
 //
 // call yyu_locwrite with default parameters from a scanner rule
 //
-#define LOCWRITE yyu_locwrite(yyextra, yylloc, yytext, yyleng, 0)
+#define LOCWRITE yyu_locwrite(yylloc, yyextra, yytext, yyleng, 0)
 
 /// yyu_locreset
 //
@@ -129,17 +141,17 @@ void yyu_locwrite(yyu_extra * const restrict xtra, yyu_location * const restrict
 //  reset the location track (i.e. a single newline was just parsed)
 //
 // PARAMETERS
-//  xtra - yyextra
 //  lloc - yylloc
+//  xtra - yyextra
 //
-void yyu_locreset(yyu_extra * const restrict xtra, yyu_location * const restrict lloc)
+void yyu_locreset(yyu_location * const restrict lloc, yyu_extra * const restrict xtra)
 	__attribute__((nonnull));
 
 /// LOCRESET
 //
 // call yyu_locreset with default parameters from a scanner rule
 //
-#define LOCRESET yyu_locreset(yyextra, yylloc)
+#define LOCRESET yyu_locreset(yylloc, yyextra)
 
 /// yyu_topstate
 //
@@ -161,13 +173,14 @@ int yyu_topstate(yyu_extra * const restrict xtra)
 //  push a state onto the yyextra-maintained state stack and print an info message
 //
 // PARAMETERS
-//  xtra  - yyextra
 //  state - state
+//  xtra  - yyextra
+//  line  - line number in the scanner
 //
 // REMARKS
 //  typically you need to call this with PUSHSTATE in order to to also affect the scanner state stack
 //
-void yyu_pushstate(yyu_extra * const restrict xtra, int state)
+void yyu_pushstate(const int state, yyu_extra * const restrict xtra, const int line)
 	__attribute__((nonnull));
 
 /// PUSHSTATE
@@ -176,7 +189,7 @@ void yyu_pushstate(yyu_extra * const restrict xtra, int state)
 //
 #define PUSHSTATE(state)											\
 	do {																				\
-		yyu_pushstate(yyextra, state, __LINE__);	\
+		yyu_pushstate(state, yyextra, __LINE__);	\
 		yy_push_state(state, yyextra->scanner);		\
 	} while(0)
 
@@ -187,11 +200,12 @@ void yyu_pushstate(yyu_extra * const restrict xtra, int state)
 //
 // PARAMETERS
 //  xtra - yyextra
+//  line - line number in the scanner
 //
 // REMARKS
 //  typically you need to call this with POPSTATE in order to to also affect the scanner state stack
 //
-void yyu_popstate(yyu_extra * const restrict xtra)
+void yyu_popstate(yyu_extra * const restrict xtra, const int line)
 	__attribute__((nonnull));
 
 /// POPSTATE
@@ -213,18 +227,20 @@ void yyu_popstate(yyu_extra * const restrict xtra)
 //  token - token
 //  lval  - yylval
 //  lloc  - yylloc
+//  xtra  - yyextra
 //  text  - yytext (text the token was parsed from)
 //  leng  - yyleng 
+//  del   - offset from text
 //  line  - line number where the token was scanned
 //
-void yyu_ptoken(const int token, void * const restrict lval, yyu_location * const restrict lloc, yyu_extra * const restrict xtra, char * restrict text, const int leng, const int line)
+void yyu_ptoken(const int token, void * const restrict lval, yyu_location * const restrict lloc, yyu_extra * const restrict xtra, char * restrict text, const int leng, const int del, const int line)
 	__attribute__((nonnull));
 
 /// PTOKEN
 //
-// call yyu_ptoken from a scanner rule
+// call yyu_ptoken with default parameters from a scanner rule
 //
-#define PTOKEN(token) yyu_ptoken(token, yylval, yylloc, yytext, yyleng, __LINE__)
+#define PTOKEN(token) yyu_ptoken(token, yylval, yylloc, yyextra, yytext, yyleng, 0, __LINE__)
 
 /// yyu_error
 //
@@ -233,6 +249,43 @@ void yyu_ptoken(const int token, void * const restrict lval, yyu_location * cons
 //
 void yyu_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_extra * const restrict xtra, char const * err)
 	__attribute__((nonnull));
+
+/// yyu_lexify
+//
+// SUMMARY
+//  process a just scanned token
+//
+// PARAMETERS
+//  token - token
+//  lval  - yylval
+//  lvalsz - sizeof(yylval)
+//  lloc  - yylloc
+//  xtra  - yyextra
+//  text  - yytext
+//  leng  - yyleng
+//  del   - offset from start of yytext
+//  isnl  - whether this token is a single newline
+//  line  - line number in the scanner
+//
+int yyu_lexify(
+	  const int token
+	, void * const restrict lval
+	, const size_t lvalsz
+	, yyu_location * const restrict lloc
+	, yyu_extra * const restrict xtra
+	, char * const restrict text
+	, const int leng
+	, const int del
+	, const int isnl
+	, const int line
+)
+	__attribute__((nonnull));
+
+/// LEXIFY
+//
+// call yyu_lexify with default parameters from a scanner rule
+//
+#define LEXIFY(token) yyu_lexify(token, yylval, sizeof(yylval), yylloc, yyextra, yytext, yyleng, 0, 0, __LINE__)
 
 #undef restrict
 #endif

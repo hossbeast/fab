@@ -21,9 +21,10 @@
 
 #include "yyutil.h"
 
+#include "xmem.h"
 #include "macros.h"
 
-void yyu_locreset(yyu_extra * xtra, yyu_location * lloc)
+void yyu_locreset(yyu_location * const lloc, yyu_extra * const xtra)
 {
 	// increment line number
 	xtra->loc.f_lin++;
@@ -34,7 +35,7 @@ void yyu_locreset(yyu_extra * xtra, yyu_location * lloc)
 	xtra->loc.l_col = 0;
 }
 
-void yyu_locwrite(yyu_extra* xtra, yyu_location* lloc, char * text, int leng, int del)
+void yyu_locwrite(yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del)
 {
 	// update running location track
 	xtra->loc.f_col = xtra->loc.l_col;
@@ -56,19 +57,13 @@ void yyu_locwrite(yyu_extra* xtra, yyu_location* lloc, char * text, int leng, in
 	xtra->loc.e -= del;
 }
 
-void yyu_error(yyu_location * loc, void * scanner, yyu_extra * xtra, char const * err)
-{
-	xtra->r = 0;
-	YYU_ESAY(
-}
-
-void yyu_pushstate(yyu_extra * xtra, int state, const int line)
+void yyu_pushstate(const int state, yyu_extra * const xtra, const int line)
 {
 	if(xtra->info)
 	{
 		int al = snprintf(xtra->space, sizeof(xtra->space), "%s -> %s"
-			, STATENAME(TOPSTATE)
-			, STATENAME(a)
+			, xtra->statename(yyu_topstate(xtra))
+			, xtra->statename(state)
 		);
 
 		xtra->info("(%2d) %.*s %*s @ %*s %d\n"
@@ -83,20 +78,19 @@ void yyu_pushstate(yyu_extra * xtra, int state, const int line)
 		);
 	}
 
-	yyextra->states[yyextra->states_n++] = state;
+	xtra->states[xtra->states_n++] = state;
 }
 
-void yyu_popstate(yyu_extra * xtra, const int line)
+void yyu_popstate(yyu_extra * const xtra, const int line)
 {
-	int x = TOPSTATE;
-	yy_pop_state(xtra->scanner);
+	int x = yyu_topstate(xtra);
 	xtra->states_n--;
 
 	if(xtra->info)
 	{
 		int al = snprintf(xtra->space, sizeof(xtra->space), "%s <- %s"
-			, STATENAME(TOPSTATE)
-			, STATENAME(x)
+			, xtra->statename(yyu_topstate(xtra))
+			, xtra->statename(x)
 		);
 
 		xtra->info("(%2d) %.*s %*s @ %*s %d\n"
@@ -117,35 +111,56 @@ int yyu_topstate(yyu_extra * const xtra)
 	return xtra->states_n ? xtra->states[xtra->states_n-1] : 0;
 }
 
-void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng, const int line)
+void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng, const int del, const int line)
 {
-	int alen = xstresc(xtra->space, sizeof(xtra->space), text, leng);
-
-	char * bbuf = 0;
-	size_t blen = 0;
-	if(xtra->lvalstr)
-		xtra->lvalstr(token, lval, xtra, &bbuf, &blen);
-
 	if(xtra->info)
 	{
-		xtra->info("%8s ) '%.*s'%.*s %*s @ [%3d,%3d - %3d,%3d] - %d\n"
-			, extra->tokname(token)
-			, alen
-			, xtra->space
-			, blen
+		// token source string
+		char * abuf = xtra->space;
+		size_t alen = xstresc(text, leng, xtra->space, sizeof(xtra->space));
+
+		// token value
+		char * bbuf = 0;
+		size_t blen = 0;
+		if(xtra->lvalstr)
+			xtra->lvalstr(xtra->last_token, xtra->last_lval, xtra, &bbuf, &blen);
+
+		// input name
+		char * cbuf = 0;
+		size_t clen = 0;
+		if(xtra->inputname)
+			xtra->inputname(xtra, &cbuf, &clen);
+
+		// line number
+		char * dbuf = xtra->space2;
+		size_t dlen = 0;
+		if(xtra->output_line)
+			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
+
+		xtra->info("%8s ) '%.*s'%.*s %*s @ %s[%3d,%3d - %3d,%3d] line:%d"
+			, xtra->tokname(token)				// token name
+			, alen												// escaped string from which the token was scanned
+			, abuf
+			, blen												// representation of the semantic value for the token
 			, bbuf
-			, MAX(50 - al - blen, 0)
+			, MAX(50 - alen - blen, 0)		// padding
 			, ""
-			, lloc->f_lin
-			, lloc->f_col
-			, lloc->l_lin
-			, lloc->l_col
-			, line
+			, clen ? "(" : ""							// name of input
+			, clen
+			, cbuf
+			, clen ? ")" : ""
+			, lloc->f_lin + 1							// location within input
+			, lloc->f_col + 1
+			, lloc->l_lin + 1
+			, lloc->l_col + 1
+			, dlen ? " " : ""
+			, dlen												// scanner line number
+			, dbuf
 		);
 	}
 }
 
-void yyu_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_extra * const restrict xtra, char const * err)
+void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
 {
 	xtra->r = 1;
 
@@ -154,25 +169,75 @@ void yyu_error(yyu_location * const restrict lloc, void * const restrict scanner
 
 	if(xtra->error)
 	{
-		int t           = xtra->last_tok;
-		const char * s  = xtra->last_loc->s;
-		const char * e  = xtra->last_loc->e;
-		int l           = e - s;
-		ff_loc * lc     = pp->last_loc;
-		
-		// log last good token
-		log(L_ERROR | L_FF, "last token - %s '%.*s' @ (%s)[%3d,%3d - %3d,%3d]"
-			, xtra->tokname(xtra->last_tok)
-		  , MIN(t == ff_LF ? 0 : t == ff_WS ? 0 : l, 50)
-		  , t == ff_LF ? "" : t == ff_WS ? "" : s
-		  , ff_idstring(pp->ff)
-		  , xtra->last_loc.f_lin + 1
+		// token source string
+		char * s  	= xtra->last_loc.s;
+		char * e  	= xtra->last_loc.e;
+		char * abuf = xtra->last_loc.s;
+		size_t alen = xstresc(s, e - s, xtra->space, sizeof(xtra->space));
+
+		// token value
+		char * bbuf = 0;
+		size_t blen = 0;
+		if(xtra->lvalstr)
+			xtra->lvalstr(xtra->last_token, xtra->last_lval, xtra, &bbuf, &blen);
+
+		// input name
+		char * cbuf = 0;
+		size_t clen = 0;
+		if(xtra->inputname)
+			xtra->inputname(xtra, &cbuf, &clen);
+
+		// line number
+		char * dbuf = xtra->space2;
+		size_t dlen = 0;
+		if(xtra->output_line)
+			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", xtra->last_line);
+
+		// log the last good token
+		xtra->error("last token - %s '%.*s'%.*s @ %s%.*s%s[%3d,%3d - %3d,%3d]%s%.*s"
+			, xtra->tokname(xtra->last_token)		// token name
+			, MIN(alen, 50)											// escaped string from which the token was scanned
+			, abuf
+			, blen															// representation of the semantic value for the token
+			, bbuf
+			, clen ? "(" : ""										// name of input
+			, clen
+			, cbuf
+			, clen ? ")" : ""
+		  , xtra->last_loc.f_lin + 1					// location within input
 		  , xtra->last_loc.f_col + 1
 		  , xtra->last_loc.l_lin + 1
 		  , xtra->last_loc.l_col + 1
+			, dlen ? " " : ""
+			, dlen															// scanner line number
+			, dbuf
 		);
 	}
 }
 
-#undef restrict
-#endif
+int yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del, const int isnl, const int line)
+{
+	if(isnl)
+		yyu_locreset(lloc, xtra);
+	else
+		yyu_locwrite(lloc, xtra, text, leng, del);
+
+	// print the token if requested
+	yyu_ptoken(token, lval, lloc, xtra, text, leng, line);
+
+	// store location for error reporting
+	memcpy(&xtra->last_loc, lloc, sizeof(xtra->last_loc));
+	xtra->last_token = token;
+
+	// store lval for error reporting
+	if(lvalsz >= xtra->last_lval_aloc)
+	{
+		xrealloc(&xtra->last_lval, lvalsz, 1, xtra->last_lval_aloc);
+		xtra->last_lval_aloc = lvalsz + 1;
+	}
+
+	memcpy(xtra->last_lval, lval, lvalsz);
+	xtra->last_lval[lvalsz] = 0;
+
+	return token;
+}
