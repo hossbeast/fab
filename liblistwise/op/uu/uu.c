@@ -57,8 +57,11 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
+	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
+		return 0;
+
 	// indexes to be sorted
 	int * mema = 0;
 
@@ -68,11 +71,11 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	int    Bsl = 0;
 	int    r = 0;
 
-	fatal(xmalloc, &mema, (ls->sel.active ? ls->sel.active->l : ls->s[0].l) * sizeof(*mema));
+	fatal(xmalloc, &mema, (lx->sel.active ? lx->sel.active->l : lx->s[0].l) * sizeof(*mema));
 
 	int i = 0;
 	int x;
-	LSTACK_ITERATE(ls, x, go)
+	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
 		mema[i++] = x;
@@ -81,8 +84,8 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 
 	int compar(const void * A, const void * B)
 	{
-		lstack_getbytes(ls, 0, *(int*)A, &As, &Asl);
-		lstack_getbytes(ls, 0, *(int*)B, &Bs, &Bsl);
+		lstack_getbytes(lx, 0, *(int*)A, &As, &Asl);
+		lstack_getbytes(lx, 0, *(int*)B, &Bs, &Bsl);
 
 		return xstrcmp(As, Asl, Bs, Bsl, 0);
 	}
@@ -91,25 +94,25 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 
 	if(i)
 	{
-		fatal(lstack_sel_stage, ls, mema[0]);
-		fatal(lstack_getbytes, ls, 0, mema[0], &As, &Asl);
+		fatal(lstack_sel_stage, lx, mema[0]);
+		fatal(lstack_getbytes, lx, 0, mema[0], &As, &Asl);
 
 		for(x = 1; x < i; x++)
 		{
 			if(x % 2)
 			{
-				fatal(lstack_getbytes, ls, 0, mema[x], &Bs, &Bsl);
+				fatal(lstack_getbytes, lx, 0, mema[x], &Bs, &Bsl);
 				r = xstrcmp(As, Asl, Bs, Bsl, 0);
 			}
 			else
 			{
-				fatal(lstack_getbytes, ls, 0, mema[x], &As, &Asl);
+				fatal(lstack_getbytes, lx, 0, mema[x], &As, &Asl);
 				r = xstrcmp(Bs, Bsl, As, Asl, 0);
 			}
 
 			if(r)
 			{
-				fatal(lstack_sel_stage, ls, mema[x]);
+				fatal(lstack_sel_stage, lx, mema[x]);
 			}
 		}
 	}

@@ -28,7 +28,7 @@
 #include <fcntl.h>
 
 #include "listwise.h"
-#include "liblistwise/listwise/xtra.h"
+#include "listwise/xtra.h"
 #include "listwise/operator.h"
 #include "listwise/ops.h"
 #include "listwise/generator.h"

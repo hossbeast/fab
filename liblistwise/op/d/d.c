@@ -58,16 +58,22 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
 	{
+		size_t num;
+		if(lx->sel.active->nil)
+			num = 0;
+		else
+			num = lx->sel.active->l;
+
 		// ensure allocation in the new list @ [0]
-		fatal(lstack_ensure, lx, 0, lx->s[1].l - lx->sel.active->l - 1, -1);
+		fatal(lstack_ensure, lx, 0, lx->s[1].l - num - 1, -1);
 
 		int i = 0;
 		int x;
 		for(x = lx->s[1].l - 1; x >= 0; x--)
 		{
-			if((lx->sel.active->sl <= (x/8)) || (lx->sel.active->s[x/8] & (0x01 << (x%8))) == 0)
+			if(lx->sel.active->nil || (lx->sel.active->sl <= (x/8)) || (lx->sel.active->s[x/8] & (0x01 << (x%8))) == 0)
 			{
-				fatal(lstack_move, lx, 0, lx->s[1].l - lx->sel.active->l - 1 - i, 1, x);
+				fatal(lstack_move, lx, 0, lx->s[1].l - num - 1 - i, 1, x);
 			}
 		}
 	}

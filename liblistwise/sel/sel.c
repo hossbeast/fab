@@ -45,6 +45,7 @@ int API lstack_sel_stage(lwx * const restrict lx, int y)
 		lx->sel.staged->sl = 0;
 	}
 
+	lx->sel.staged->nil = 0;
 	lx->sel.staged->lease = lx->sel.staged_era;
 
 	// reallocate if necessary
@@ -80,14 +81,21 @@ int API lstack_sel_unstage(lwx * const restrict lx)
 
 int API lstack_sel_activate(lwx * const restrict lx)
 {
-	if(lx->sel.staged)
+	if(lx->sel.staged && lx->sel.staged->lease == lx->sel.staged_era)
 	{
 		lx->sel.active = lx->sel.staged;
-		lx->sel.staged = 0;
-
-		// renew lease
-		lx->sel.active->lease = lx->sel.active_era;
 	}
+	else
+	{
+		lx->sel.active = &lx->sel.storage[0];
+		lx->sel.active->nil = 1;
+	}
+
+	// renew lease
+	lx->sel.active->lease = lx->sel.active_era;
+
+	// reset staged
+	lx->sel.staged = 0;
 
 	return 0;
 }

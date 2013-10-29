@@ -60,7 +60,7 @@ $bison			= [ bison ]
 $bisonflags	= [ --warnings=error ]
 
 $cc					= [ gcc ]
-$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE [ $dcommon [ $dcommon ~ ls/-d ] ~ s/^/-I ]
+$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions [ $dcommon [ $dcommon ~ ls/-d ] ~ s/^/-I ]
 	[ $dbug $dvel ~ s/1/-O0/y ]
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
 	[ $dbug $dvel ~ s/1/-g/y ]

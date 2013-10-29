@@ -15,27 +15,39 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LIBLISTWISE_CONTROL_H
-#define _LIBLISTWISE_CONTROL_H
+#ifndef _LISTWISE_FS_H
+#define _LISTWISE_FS_H
 
-#include "control_core.h"
-#include "listwise/xtra.h"
+#include <sys/types.h>
+#include <stdint.h>
 
-#define CODA_BAD_ACTION                             	\
-	if(listwise_errors_unwind)													\
-		_coda_r = 1;																			\
-	else																								\
-		_coda_r = -1;																			\
+#define restrict __restrict
 
-#define CODA_GOOD_ACTION                            	\
-  _coda_r = 0;                                      	\
+/// fs_statfmt
+//
+// SUMMARY
+//
+// PARAMETERS
+//  s       - path
+//  [sl]    - length of s, 0 for strlen
+//  [fmt]   - printf-style expression (modelled after find)
+//  [flags] - flags string (L, C, F)
+//  dst     - write here
+//  sz      - maximum number of bytes to write to dst
+//  z       - returns the number of bytes written
+//
+// REMARKS
+//
+int fs_statfmt(
+	  const char * const restrict s
+	, int sl
+	, const char * restrict fmt
+	, const char * const restrict flags
+	, char * const restrict dst
+	, size_t sz
+	, size_t * const restrict z
+)
+	__attribute__((nonnull(1, 5, 7)));
 
-#define HANDLE_ERROR(fmt, ...)												\
-	dprintf(listwise_error_fd, fmt " at [%s:%d (%s)]\n"	\
-		, ##__VA_ARGS__																		\
-		, __FILE__																				\
-		, __LINE__																				\
-		, __FUNCTION__																		\
-	);																									\
-
+#undef restrict
 #endif

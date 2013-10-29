@@ -46,7 +46,7 @@ void API lwx_iterate_loop(lwx * const restrict lx, const int x, const int y, con
 	if(sel && lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
 	{
 		*go = 0;
-		if(lx->sel.active->sl > (y / 8))
+		if(lx->sel.active->nil == 0 && lx->sel.active->sl > (y / 8))
 		{
 			*go = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
 		}

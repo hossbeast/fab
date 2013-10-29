@@ -1,0 +1,90 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# c.fab
+#  provides fabrication formula for .lex.h -> { .states.c, .states.h }
+#  provides dependencies for { .states.c, .states.h } -> .lex.h
+#
+# var/closure
+#
+#  dirs       - directories containing .lex.h files
+#  rdirs      - directories containing .lex.h files, recursive search
+#  paths      - paths to .lex.h files
+#
+#  fabdirs    - (as above, but for fabrication/dependency only)
+#  rfabdirs   - 
+#  fabpaths   - 
+
+# paths to l files for fabrication
+$lexhfabpaths = [
+	$paths				# paths
+	$fabpaths			# paths, fabrication only
+
+	[
+		$dirs				# directories
+		$fabdirs		# directories, fabrication only
+	~ ls ]
+
+	[
+		$rdirs			# recursive directories
+		$rfabdirs		# recursive directories, fabrication only
+	~ lsr ]
+~ xm/<l> ]
+
+# lex.h -> { .states.c, .states.h }
+[ $lexhfabpaths ~ xs/<l>/<states.c>/y/v/d/cp/u/xs/<states.c>/<states.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<states.c>/<lex.h>/xs/<states.h>/<lex.h>/ss/u ]
+{
+	src=[ $@ ~ rx/ineed/uu ]
+	states_h=[ $@ ~ h/0/1 ]
+	states_c=[ $@ ~ h/1/1 ]
+	pfx=[ $@ ~ h/0/1/rx/bn/fn ]
+
+	> exec 1>${states_h}
+	> echo "#ifndef ${pfx}_STATES_H"
+	> echo "#define ${pfx}_STATES_H"
+	> echo "const char* ${pfx}_statename(int);"
+	> echo "enum ${pfx}_statenames {"
+	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
+	>  | sed -ne "s/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/${pfx}_\1 = \2,/p"
+	> echo "};"	
+	> echo "#endif"
+
+	> exec 1>${states_c}
+	> echo "const char * ${pfx}_statenames[] = {"
+	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
+	>  | sed -ne 's/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/"\1",/p'
+	> echo "};"	
+	> echo "const int ${pfx}_statenumbers[] = {"
+	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
+	>  | sed -ne "s/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/\2,/p"
+	> echo "};"	
+	> echo "const char * ${pfx}_statename(int state){"
+	> echo "  int x;"
+	> echo "  for(x = 0; x < sizeof(${pfx}_statenames) / sizeof(${pfx}_statenames[0]); x++)"
+	> echo "  {"
+	> echo "    if(${pfx}_statenumbers[x] == state)"
+	> echo "    {"
+	> echo "      return ${pfx}_statenames[x];"
+	> echo "    }"
+	> echo "  }"
+	> echo "  return 0;"
+	> echo "}"
+}
+
+# cc : tokens.c -> tokens.o @ std.c
++[@std.c](-$cobjpaths; $cfabpaths = [ $lexhfabpaths ~ xs/<l>/<states.c> ]; $cc $cflags)
+$lexhobjpaths = [ $cobjpaths ]

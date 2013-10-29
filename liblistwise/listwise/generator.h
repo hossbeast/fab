@@ -61,9 +61,17 @@ int generator_mkparser(generator_parser** p);
 //   l  - length of generator string, or 0 for strlen
 //   r  - receives parsed generator
 //
+//   [name] - also specify a name for this input (that is only used in informational output, such as error messages)
+//
 // returns zero on failure
 //
 int generator_parse(generator_parser* p, char* s, int l, generator** r);
+
+/// generator_parse_named
+//
+// see generator_parse
+//
+int generator_parse_named(generator_parser* p, char* s, int l, char * name, int namel, generator** r);
 
 /// generator_freeparser 
 //
@@ -78,6 +86,10 @@ void generator_parser_xfree(generator_parser**);
 //
 void generator_dump(generator*);
 
+/// operation_write
+//
+// write a string describing an operation
+//
 size_t operation_write(char * restrict s, size_t z, const operation * const restrict op)
 	__attribute__((nonnull));
 

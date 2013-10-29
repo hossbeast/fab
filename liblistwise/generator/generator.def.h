@@ -23,39 +23,28 @@
 
 #include "listwise/internal.h"
 
+#include "yyutil.h"
 
 typedef struct
 {
-	int			f_lin;
-	int			f_col;
-	int			l_lin;
-	int			l_col;
+	/* yyu-defined xtra fields */
+	yyu_extra;
 
-	char *	s;
-	char *	e;
-} generator_loc;
+	generator * 		g;						// parsing results
 
-typedef struct
-{
-	generator*			g;						// completed generator goes here
-	void*						scanner;
+	char						temp[256];		// temp space
+	char *					name;					// input name
+	int							namel;
 
-	int							states[64];		// start states stack
-	int							states_n;
-
-	generator_loc 	loc;					// running location track for this parse
-	generator_loc		last_loc;			// location of last parsed token
-	int							last_tok;			// last parsed token
-
-	char						space[256];		// temp space
-	char						space2[256];
-
-	int							argsa;
+	/* intermediary allocation tracking */
+	int							opsl;
 	int							opsa;
-	int							opargsa;
-
-	int							r;						// return value of the parse ; zeroed in yyerror
+	int							argsl;
+	int							argsa;
 } parse_param;
+
+// defined in generator.tab.o
+int generator_yyparse(void*, parse_param*);
 
 /// generator_yyerror
 //
@@ -67,6 +56,7 @@ typedef struct
 // DETAILS
 //  called from tab.o and lex.o
 //
-void generator_yyerror(void* loc, void* scanner, parse_param* pp, char const* err);
+static void generator_yyerror(void* loc, void* scanner, parse_param* pp, char const* err)
+	__attribute__((weakref("yyu_error")));
 
 #endif

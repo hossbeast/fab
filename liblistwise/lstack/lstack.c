@@ -409,7 +409,7 @@ int API lstack_dump(lwx * const lx)
 				if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
 				{
 					select = 0;
-					if(lx->sel.active->sl > (y / 8))
+					if(lx->sel.active->nil == 0 && lx->sel.active->sl > (y / 8))
 					{
 						select = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
 					}
@@ -496,7 +496,7 @@ int API lstack_dump(lwx * const lx)
 			}
 
 			// indicate staged windows
-			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.active_era)
+			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
 			{
 				dprintf(listwise_info_fd, "%16s", " ");
 

@@ -31,19 +31,6 @@
 	//
 	#define YYUSAY(...) dprintf(listwise_info_fd, ##__VA_ARGS__)
 
-	/// STATENAME
-	//
-	// get state name from state
-	//
-	#define STATENAME(x)																			\
-	    x == INITIAL					? "INITIAL"											\
-	  : x == next							? "next"												\
-	  : x == ws 							? "ws"													\
-	  : x == operator					? "operator"										\
-	  : x == slash						? "slash"												\
-	  : x == argument					? "argument"										\
-	  : x == multilinecomment	? "multilinecomment" : "UNKNWN"
-
 	/// YYULVAL
 	//
 	// write textual description of a token/lval to a buffer
@@ -58,51 +45,35 @@
 																																										
 	#include "yyutil.h"
 
-	#define LEX(token)	\
-		lexify(yytext, yyleng, 0,   yylval, yylloc, token, yyextra, 0, 0, 0, 0,   __LINE__)
+	#define LEX(token, del, v)	\
+		lexify(										\
+			  token									\
+			, yylval								\
+			, yylloc								\
+			, yyextra								\
+			, yytext								\
+			, yyleng								\
+			, del										\
+			, __LINE__							\
+			, token == LF						\
+			, token == BREF					\
+			, token == I64					\
+			, token == OP						\
+			, v											\
+		)
 
-	#define LEXLF	\
-		lexify(yytext, yyleng, 0,   yylval, yylloc, LF,    yyextra, 0, 0, 0, 1,   __LINE__)
-
-	#define LEXX(token, del)	\
-		lexify(yytext, yyleng, del, yylval, yylloc, token, yyextra, 0, 0, 0, 0,   __LINE__)
-
-	#define LEXS(token, text, leng)	\
-		lexify(text,   leng,     0, yylval, yylloc, token, yyextra, 0, 0, 0, 0,   __LINE__)
-
-	#define LEXB(token, del)	\
-		lexify(yytext, yyleng, del, yylval, yylloc, token, yyextra, 1, 0, 0, 0,   __LINE__)
-
-	#define LEXI(token)	\
-		lexify(yytext, yyleng, 0,   yylval, yylloc, token, yyextra, 0, 1, 0, 0,   __LINE__)
-
-	#define LEXO(token, op)	\
-		lexify(yytext, yyleng, 0,   yylval, yylloc, token, yyextra, 0, 0, op, 0, __LINE__)
-
-	int lexify(char * text, int leng, int del, YYSTYPE * lval, YYLTYPE * lloc, int token, parse_param * xtra, int bref, int i64, void * op, int lf, int line)
+	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int del, const int line, const int isnl, const int isbref, const int isi64, const int isop, void * const v)
 	{
-		if(lf)
-			yyu_locreset(xtra, lloc);
-		else
-			yyu_locwrite(xtra, lloc, text, leng, del);
-
-		if(bref)
+		// populate lexical value if any
+		if(isbref)
 			sscanf(text + del, "%d", &lval->bref);
-		else if(i64)
+		else if(isi64)
 			sscanf(text + del, "%"SCNd64, &lval->i64);
-		else if(op)
-			lval->op = op;
+		else if(isop)
+			lval->op = *(operator **)v;
 
-		/* print the token if requested */
-		PTOKEN(token, lval, lloc, xtra, text, leng, line);
-
-		/* store for error reporting */
-		memcpy(&xtra->last_loc, lloc, sizeof(xtra->last_loc));
-		xtra->last_tok = token;
-
-		return token;
+		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, del, isnl, line);
 	}
-
 %}
 
 %option noinput nounput noyywrap noyy_top_state
@@ -130,7 +101,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <multilinecomment>[/]																		{ LOCWRITE; }
 <INITIAL,multilinecomment>[\n]													{ LOCRESET; }
 
-<INITIAL>[\t ]+																					{ LOCWRITE; }
+<INITIAL>[\t ]+																					{ return LEX(WS, 0, 0); }
 <INITIAL>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /]+					{
 																													PUSHSTATE(next);
 																													typeof(*yylval->op) * op;
@@ -141,34 +112,34 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														PUSHSTATE(argument);
 																													yyless(0);
 																												}
-<next>[\n]																							{ PUSHSTATE(ws); LEXLF; }
-<next>[\t ]+																						{ PUSHSTATE(ws); LEX(WS); }
-<next>[/]																								{ PUSHSTATE(slash); LEX(yytext[0]); }
-<ws>[\n]																								{ LEXLF; }
-<ws>[\t ]+																							{ LEX(WS); }
-<ws>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ]+								{ POPSTATE; PUSHSTATE(operator); }
+<next>[\n]																							{ PUSHSTATE(ws); return LEX(LF, 0, 0); }
+<next>[\t ]+																						{ PUSHSTATE(ws); return LEX(WS, 0, 0); }
+<next>[/]																								{ PUSHSTATE(slash); return LEX(yytext[0], 0, 0); }
+<ws>[\n]																								{ return LEX(LF, 0, 0); }
+<ws>[\t ]+																							{ return LEX(WS, 0, 0); }
+<ws>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ]+								{ POPSTATE; PUSHSTATE(operator); yyless(0); }
 <operator>[-a-zA-Z]+																		{
 																													POPSTATE;
 
 																													typeof(*yylval->op) * op;
 				 																									if((op = op_lookup(yytext, yyleng)))
 																													{
-				 																										return LEXO(OP, op);
+				 																										return LEX(OP, 0, &op);
 																													}
 																													else
 																													{
-																														snprintf(yyextra->space, sizeof(yyextra->space), "unknown operator : %s", yytext);
-																														generator_yyerror(0, 0, yyextra, yyextra->space);
+																														snprintf(yyextra->temp, sizeof(yyextra->temp), "unknown operator : %s", yytext);
+																														generator_yyerror(0, 0, yyextra, yyextra->temp);
 																														return 0;
 																													}
 																												}
-<slash>[/]																							{ POPSTATE; yyless(0); LEXS(STR, "", 0); }
+<slash>[/]																							{ POPSTATE; yyless(0); return LEX(STR, 1, 0); }
 <slash>[^\x00-\x08\x0B-\x1F\x7F-\xFF/]+									{ POPSTATE; PUSHSTATE(argument); yyless(0); }
-<argument>\\[0-9]+																			{ LEXB(BREF, 1); }
-<argument>\\[/]																					{ LEXX(STR, 1); }
-<argument>\\[\t ]+																			{ LEXX(STR, 1); }
-<argument>-?[0-9]+																			{ LEXI(I64); }
-<argument>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+				{ LEX(STR); }
+<argument>\\[0-9]+																			{ return LEX(BREF, 1, 0); }
+<argument>\\[/]																					{ return LEX(STR, 1, 0); }
+<argument>\\[\t ]+																			{ return LEX(STR, 1, 0); }
+<argument>-?[0-9]+																			{ return LEX(I64, 0, 0); }
+<argument>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+				{ return LEX(STR, 0, 0); }
 <argument>[\n\t /]																			{ POPSTATE; yyless(0); }
 <*>[\x00]																								{
 																													while(yyextra->states_n)
@@ -178,12 +149,12 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													return 0;
 																												}
 <*>[\x01-\x1F\x7F-\xFF]																	{
-																													snprintf(yyextra->space, sizeof(yyextra->space), "unknown character : (0x%02hhx)", yytext[0]);
-																													generator_yyerror(0, 0, yyextra, yyextra->space);
+																													snprintf(yyextra->temp, sizeof(yyextra->temp), "unknown character : (0x%02hhx)", yytext[0]);
+																													generator_yyerror(0, 0, yyextra, yyextra->temp);
 																													return 0;
 																												}
 <*>[\x20-\x7E]																					{
-																													snprintf(yyextra->space, sizeof(yyextra->space), "unknown character : '%1$c'(0x%1$02hhx)", yytext[0]);
-																													generator_yyerror(0, 0, yyextra, yyextra->space);
+																													snprintf(yyextra->temp, sizeof(yyextra->temp), "unknown character : '%1$c'(0x%1$02hhx)", yytext[0]);
+																													generator_yyerror(0, 0, yyextra, yyextra->temp);
 																													return 0;
 																												}

@@ -190,6 +190,9 @@ coda;
 
 int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
+	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
+		return 0;	// nothing selected
+
 	int ncase = 0;
 
 	if(o->argsl >= 1)
@@ -200,5 +203,8 @@ int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 
 int op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
+	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
+		return 0;	// nothing selected
+
 	return op_exec(o, lx, ovec, ovec_len, NUMERIC);
 }

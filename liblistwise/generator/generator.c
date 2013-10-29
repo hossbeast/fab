@@ -15,19 +15,157 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdarg.h>
+#include <inttypes.h>
+
 #include "listwise/internal.h"
 
 #include "generator/generator.def.h"
 #include "generator/generator.tab.h"
 #include "generator/generator.lex.h"
+#include "generator/generator.tokens.h"
+#include "generator/generator.states.h"
+
+#include "xmem.h"
+
+#include "liblistwise_control.h"
+
+#define restrict __restrict
 
 struct generator_parser_t
 {
 	void * p;		// scanner
 };
 
-// defined in the bison parser
-int generator_yyparse(yyscan_t, parse_param*);
+static void write_info(char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vdprintf(listwise_info_fd, fmt, va);
+	va_end(va);
+
+	dprintf(listwise_info_fd, "\n");
+}
+
+static void write_error(char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vdprintf(listwise_error_fd, fmt, va);
+	va_end(va);
+
+	dprintf(listwise_info_fd, "\n");
+}
+
+static int generator_inputname(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
+{
+	parse_param * pp = (parse_param*)xtra;
+
+	*buf = 0;
+	*bufl = 0;
+
+	if(pp->name)
+	{
+		snprintf(pp->temp, sizeof(pp->temp), "%.*s", pp->namel, pp->name);
+		*buf = pp->temp;
+		*bufl = pp->namel;
+	}
+
+	return 0;
+}
+
+static int generator_lvalstr(int token, void * restrict lval, struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
+{
+	parse_param * pp = (parse_param*)xtra;
+
+	*buf = 0;
+	*bufl = 0;
+
+	if(token == generator_I64 || token == generator_BREF || token == generator_OP)
+	{
+		if(token == generator_I64)
+			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%ld", ((YYSTYPE*)lval)->i64);
+		if(token == generator_BREF)
+			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%d", ((YYSTYPE*)lval)->bref);
+		if(token == generator_OP)
+			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%s", ((YYSTYPE*)lval)->op->s);
+
+		*buf = pp->temp;
+	}
+
+	return 0;
+}
+
+static int parse(generator_parser* p, char* s, int l, char * name, int namel, generator** g)
+{
+	// create state specific to this parse
+	void * state = 0;
+
+	// results struct for this parse
+	parse_param pp = {
+		  .r = 0
+		, .output_line	= 1
+		, .info				= write_info
+		, .error			= write_error
+		, .tokname		= generator_tokenname
+		, .statename	= generator_statename
+		, .inputname	= generator_inputname
+		, .lvalstr		= generator_lvalstr
+	};
+
+	// specific exception for "shebang" line exactly at the beginning
+
+	char * b = s;
+	if(strlen(s) > 1 && memcmp(s, "#!", 2) == 0 && strstr(s, "\n"))
+		b = strstr(s, "\n") + 1;
+
+	if((state = generator_yy_scan_string(b, p->p)) == 0)
+		qfail();
+
+	// results struct for this parse
+	pp.scanner = p->p;
+
+	// make it available to the lexer
+	generator_yyset_extra(&pp, p->p);
+
+	// parse
+	generator_yyparse(p->p, &pp);
+
+	if(pp.r)
+		qfail();
+
+	// postprocessing
+	int x;
+	for(x = 0; x < pp.g->opsl; x++)
+	{
+		if((pp.g->ops[x]->op->optype & LWOP_ARGS_CANHAVE) == 0)
+		{
+			if(pp.g->ops[x]->argsl)
+			{
+				fail("%s - arguments not expected\n", pp.g->ops[x]->op->s);
+			}
+		}
+
+		if(pp.g->ops[x]->op->op_validate)
+		{
+			fatal(pp.g->ops[x]->op->op_validate, pp.g->ops[x]);
+		}
+	}
+
+	(*g) = pp.g;
+	pp.g = 0;
+
+finally:
+	// cleanup state for this parse
+	generator_yy_delete_buffer(state, p->p);
+	generator_free(pp.g);
+	yyu_extra_destroy(&pp);
+coda;
+}
+
+///
+/// public
+///
 
 int API generator_mkparser(generator_parser** p)
 {
@@ -38,63 +176,6 @@ int API generator_mkparser(generator_parser** p)
 		return 1;
 
 	return 0;
-}
-
-int API generator_parse(generator_parser* p, char* s, int l, generator** g)
-{
-	// create state specific to this parse
-	// specific exception for "shebang" line exactly at the beginning
-	void* state = 0;
-
-	char * b = s;
-	if(strlen(s) > 1 && memcmp(s, "#!", 2) == 0 && strstr(s, "\n"))
-		b = strstr(s, "\n") + 1;
-
-	if((state = generator_yy_scan_string(b, p->p)) == 0)
-	{
-		return 1;
-	}
-
-	// allocate generator
-	(*g) = calloc(1, sizeof(*g[0]));
-
-	// results struct for this parse
-	parse_param pp = {
-		  .r = 0
-		, .g = *g
-		, .scanner = p->p
-	};
-
-	// make it available to the lexer
-	generator_yyset_extra(&pp, p->p);
-
-	// parse
-	generator_yyparse(p->p, &pp);
-
-	// cleanup state for this parse
-	generator_yy_delete_buffer(state, p->p);
-
-	// postprocessing
-	int x;
-	for(x = 0; x < (*g)->opsl; x++)
-	{
-		if(((*g)->ops[x]->op->optype & LWOP_ARGS_CANHAVE) == 0)
-		{
-			if((*g)->ops[x]->argsl)
-			{
-				dprintf(listwise_error_fd, "%s - arguments not expected\n", (*g)->ops[x]->op->s);
-				return 1;
-			}
-		}
-
-		if((*g)->ops[x]->op->op_validate)
-		{
-			if((*g)->ops[x]->op->op_validate((*g)->ops[x]) != 0)
-				return 1;
-		}
-	}
-
-	return pp.r;
 }
 
 void API generator_parser_free(generator_parser* p)
@@ -111,12 +192,6 @@ void API generator_parser_xfree(generator_parser** p)
 {
 	generator_parser_free(*p);
 	*p = 0;
-}
-
-void generator_yyerror(void* loc, yyscan_t scanner, parse_param* pp, char const *err)
-{
-	printf("ERROR - %s\n", err);
-	pp->r = 1;
 }
 
 size_t operation_write(char * s, size_t sz, const operation * const op)
@@ -234,4 +309,14 @@ void API generator_xfree(generator** g)
 {
 	generator_free(*g);
 	*g = 0;
+}
+
+int API generator_parse(generator_parser* p, char* s, int l, generator** g)
+{
+	return parse(p, s, l, 0, 0, g);
+}
+
+int API generator_parse_named(generator_parser* p, char* s, int l, char * name, int namel, generator** g)
+{
+	return parse(p, s, l, name, namel, g);
 }

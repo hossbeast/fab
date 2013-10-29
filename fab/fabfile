@@ -28,7 +28,7 @@ $dfab						= [ $* ]
 $liblistwise 		= [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags	-fms-extensions -fno-builtin-log [ $dfab $dcommon ~ lsr/c/-d/s/^/-I ] $incdirs
+$cflags					= [ $cflags	-fno-builtin-log [ $dfab $dcommon ~ lsr/c/-d/s/^/-I ] $incdirs
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]

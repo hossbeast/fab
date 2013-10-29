@@ -93,7 +93,7 @@ int API listwise_exec_generator(
 
 		if(!isor)
 		{
-			// if the previous operator staged windows, activate or unstage them
+			// possibly activate windows staged by the previous operator
 			if(x && ((g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE) == LWOP_WINDOWS_STAGE))
 			{
 				if(x && ((g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE))
@@ -102,7 +102,7 @@ int API listwise_exec_generator(
 				}
 			}
 
-			// if the previous operator staged selections, activate or unstage them
+			// possibly activate selections staged by the previous operator
 			if(x && ((g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE) == LWOP_SELECTION_STAGE))
 			{
 				if(x && ((g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE))
@@ -150,7 +150,7 @@ int API listwise_exec_generator(
 
 	if(dump)
 	{
-		// if the previous operator staged windows, activate or unstage them
+		// possibly activate windows staged by the previous operator
 		if(x && ((g->ops[x-1]->op->optype & LWOP_WINDOWS_STAGE) == LWOP_WINDOWS_STAGE))
 		{
 			if((g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE)
@@ -160,7 +160,7 @@ int API listwise_exec_generator(
 		}
 	}
 
-	// if the previous operator staged selections, activate or unstage them
+	// possibly activate selections staged by the previous operator
 	if(x && ((g->ops[x-1]->op->optype & LWOP_SELECTION_STAGE) == LWOP_SELECTION_STAGE))
 	{
 		if((g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE)

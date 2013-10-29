@@ -15,27 +15,48 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LIBLISTWISE_CONTROL_H
-#define _LIBLISTWISE_CONTROL_H
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <getopt.h>
+#include <stdarg.h>
 
-#include "control_core.h"
-#include "listwise/xtra.h"
+#include "listwise.h"
+#include "listwise/operator.h"
+#include "listwise/ops.h"
+#include "listwise/generator.h"
 
-#define CODA_BAD_ACTION                             	\
-	if(listwise_errors_unwind)													\
-		_coda_r = 1;																			\
-	else																								\
-		_coda_r = -1;																			\
+#include "params.h"
 
-#define CODA_GOOD_ACTION                            	\
-  _coda_r = 0;                                      	\
+struct g_params_t g_params;
 
-#define HANDLE_ERROR(fmt, ...)												\
-	dprintf(listwise_error_fd, fmt " at [%s:%d (%s)]\n"	\
-		, ##__VA_ARGS__																		\
-		, __FILE__																				\
-		, __LINE__																				\
-		, __FUNCTION__																		\
-	);																									\
+//
+// [[ public ]]
+//
 
-#endif
+int params_setup()
+{
+	//
+	// parameters
+	//
+	g_params.pid = getpid();
+	g_params.ppid = getppid();
+	g_params.sid = getsid(0);
+	g_params.cwd = getcwd(0, 0);
+
+	return 0;
+}
+
+void params_teardown()
+{
+	free(g_params.cwd);
+
+	free(g_params.ruid_name);
+	free(g_params.euid_name);
+	free(g_params.rgid_name);
+	free(g_params.egid_name);
+
+	path_free(g_params.init_fabfile_path);
+}

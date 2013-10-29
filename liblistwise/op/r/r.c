@@ -57,12 +57,18 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
 	if(ls->sel.active == 0)
 	{
+		// all items are selected ; reverse the entire list
 		int x;
 		for(x = 0; x < (ls->s[0].l / 2); x++)
 			swap(ls, x, ls->s[0].l - 1 - x);
 	}
+	else if(ls->sel.active->nil)
+	{
+		// no items selected ; no-op
+	}
 	else
 	{
+		// subset of items is selected ; reverse those items among themselves
 		int a = 0;
 		while((ls->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
 			a++;

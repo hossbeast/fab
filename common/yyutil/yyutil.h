@@ -70,10 +70,10 @@ typedef struct yyu_extra
 	void						(*error)(char * fmt, ...);
 
 	// yyu calls this function to get a token name from a token
-	char *					(*tokname)(int token);
+	const char *		(*tokname)(int token);
 
 	// yyu calls this function to get a state name from a state
-	char *					(*statename)(int token);
+	const char *		(*statename)(int token);
 
 	// yyu calls this function to get a name for the input for location messages
 	int							(*inputname)(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);
@@ -81,6 +81,9 @@ typedef struct yyu_extra
 	// yyu calls this function get a textual description of a scanned token
 	int							(*lvalstr)(int token, void * restrict lval, struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);
 } yyu_extra;
+
+void yyu_extra_destroy(yyu_extra * const restrict)
+	__attribute__((nonnull));
 
 ///
 /// use yyu_location
@@ -112,6 +115,23 @@ do																					\
 																						\
 		(Cur).s = YYRHSLOC(Rhs, 0).e;						\
 	}																					\
+} while(0)
+
+/// YYU_FATAL
+//
+//
+//
+#define YYU_FATAL(x, ...)					\
+do {															\
+	int __r = x(__VA_ARGS__);				\
+	if(__r != 0)										\
+	{																\
+		if(__r > 0)										\
+		{															\
+			YYU_ERROR(#x "failed");			\
+			YYABORT;										\
+		}															\
+	}																\
 } while(0)
 
 ///  yyu_locwrite

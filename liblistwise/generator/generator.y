@@ -15,34 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-%code requires {
-	#define YYLTYPE generator_loc
-
-	#define YYLLOC_DEFAULT(Cur, Rhs, N)					\
-	do																					\
-	{																						\
-		if(N)																			\
-		{																					\
-			(Cur).f_lin = YYRHSLOC(Rhs, 1).f_lin;		\
-			(Cur).f_col = YYRHSLOC(Rhs, 1).f_col;		\
-			(Cur).l_lin = YYRHSLOC(Rhs, N).l_lin;		\
-			(Cur).l_col = YYRHSLOC(Rhs, N).l_col;		\
-																							\
-			(Cur).s = YYRHSLOC(Rhs, 1).s;						\
-			(Cur).e = YYRHSLOC(Rhs, N).e;						\
-		}																					\
-		else																			\
-		{																					\
-			(Cur).f_lin = YYRHSLOC(Rhs, 0).l_lin;		\
-			(Cur).l_lin = YYRHSLOC(Rhs, 0).l_lin;		\
-			(Cur).f_col = YYRHSLOC(Rhs, 0).l_col;		\
-			(Cur).l_col = YYRHSLOC(Rhs, 0).l_col;		\
-																							\
-			(Cur).s = YYRHSLOC(Rhs, 0).e;						\
-		}																					\
-	} while(0)
-}
-
 %code top {
 	#include <stdio.h>
 	#include <stdlib.h>
@@ -51,7 +23,12 @@
 
 	#include "generator.def.h"
 
-	int  generator_yylex(void* yylocp, void* yylvalp, void* scanner);
+	#include "xmem.h"
+
+	// defined in generator.lex.o
+	int generator_yylex(void* yylvalp, void* yyllocp, void* scanner);
+
+	#define YYU_ERROR(...) dprintf(listwise_error_fd, #__VA_ARGS__)
 }
 
 %define api.pure
@@ -66,10 +43,15 @@
 %initial-action { memset(&@$, 0, sizeof(@$)); }
 
 %union {
+	generator *		generator;
+	operation **  operations;
+	operation *		operation;
 	operator *		op;
+	arg **				args;
+
+	arg *					arg;
 	int						bref;
 	int64_t				i64;
-	arg *					arg;
 }
 
 %token					STR
@@ -80,47 +62,136 @@
 %token  <i64>		I64
 %token	<op>		OP
 
-%type		<arg>		argument
+%type   <generator> generator
+%type   <operation> operation
+%type   <operations> operations
+%type   <args>  args
+
+%type		<arg>		arg
 %type   <arg>   string
 %type   <arg>   strpart
 
+%right '/' STR
+
 %%
 
+utterance
+	: opsep generator
+	{
+		parm->g = $2;
+	}
+	| generator
+	{
+		parm->g = $1;
+	}
+	;
+
 generator
-	: opsep operations
+	: args opsep operations
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		$$->args = $1;
+		$$->argsl = 0;
+
+		typeof(*$1) * T = $1;
+		while(*T)
+		{
+			$$->argsl++;
+			T++;
+		}
+
+		$$->ops = $3;
+		$$->opsl = parm->opsl;
+	}
+	| args
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		$$->args = $1;
+		$$->argsl = parm->argsl;
+	}
 	| operations
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		$$->ops = $1;
+		$$->opsl = parm->opsl;
+	}
 	;
 
 operations
-	: operation opsep operation
-	| operation opsep
-	| operation
-	;
+	: operations opsep operation
+	{
+		$$ = $1;
+		if(parm->opsa == parm->opsl)
+		{
+			int ns = parm->opsa ?: 6;
+			ns = ns * 2 + ns / 2;
 
-operation
-	: OP argsep args
-	| OP
+			YYU_FATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->opsa);
+			parm->opsa = ns;
+		}
+		$$[parm->opsl++] = $3;
+	}
+	| operation
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$) * 2);
+		parm->opsa = 1;
+		parm->opsl = 0;
+		$$[parm->opsl++] = $1;
+	}
 	;
 
 opsep
-	: LF
+	: opsep LF
+	| opsep WS
+	| LF
 	| WS
 	;
 
+operation
+	: operation argsep args %prec STR
+	{
+		$$ = $1;
+		$$->args = $3;
+		$$->argsl = parm->argsl;
+	}
+	| OP
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		$$->op = $1;
+	}
+	;
+
 args
-	: argument argsep argument
-	| argument
+	: args argsep arg
+	{
+		$$ = $1;
+		if(parm->argsa == parm->argsl)
+		{
+			int ns = parm->argsa ?: 3;
+			ns = ns * 2 + ns / 2;
+			YYU_FATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->argsa);
+			parm->argsa = ns;
+		}
+		$$[parm->argsl++] = $3;
+	}
+	| arg
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$) * 2);
+		parm->argsl = 0;
+		parm->argsa = 1;
+		$$[parm->argsl++] = $1;
+	}
 	;
 
 argsep
 	: '/'
 	;
 
-argument
+arg
 	: string
 	| I64
 	{
-		$$ = calloc(1, sizeof(*$$));
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 
 		$$->s = strdup(@1.s);
 		$$->l = @1.e - @1.s;
@@ -138,7 +209,7 @@ string
 		char* o = $$->s;
 
 		// reallocate the string value of the argument
-		$$->s = realloc($$->s, $$->l + $2->l + 1);
+		YYU_FATAL(xrealloc, &$$->s, 1, $$->l + $2->l + 1, 0);
 		memcpy($$->s + $$->l, $2->s, $2->l);
 		$$->s[$$->l + $2->l] = 0;
 
@@ -153,7 +224,7 @@ string
 		// use new reference, if there is one
 		if($2->refs)
 		{
-			$$->refs = realloc($$->refs, ($$->refsl + 1) * sizeof(*$$->refs));
+			YYU_FATAL(xrealloc, &$$->refs, sizeof(*$$), $$->refsl + 1, 0);
 
 			$$->refs[$$->refsl].s = $$->s + $$->l;
 			$$->refs[$$->refsl].l = $2->l;
@@ -175,19 +246,19 @@ string
 strpart
 	: STR
 	{
-		$$ = calloc(1, sizeof(*$$));
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 
 		$$->s = strdup(@1.s);
 		$$->l = @1.e - @1.s;
 	}
 	| BREF
 	{
-		$$ = calloc(1, sizeof(*$$));
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 
 		$$->s = strdup(@1.s);
 		$$->l = @1.e - @1.s;
 
-		$$->refs = calloc(1, sizeof(*$$->refs));
+		YYU_FATAL(xmalloc, &$$->refs, sizeof(*$$->refs));
 
 		$$->refs[0].s = $$->s;
 		$$->refs[0].l = $$->l;

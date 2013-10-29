@@ -15,27 +15,29 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LIBLISTWISE_CONTROL_H
-#define _LIBLISTWISE_CONTROL_H
+#ifndef _FAB_CONTROL_H
+#define _FAB_CONTROL_H
 
 #include "control_core.h"
-#include "listwise/xtra.h"
 
-#define CODA_BAD_ACTION                             	\
-	if(listwise_errors_unwind)													\
-		_coda_r = 1;																			\
-	else																								\
-		_coda_r = -1;																			\
+#include "log.h"
+#include "args.h"
 
-#define CODA_GOOD_ACTION                            	\
-  _coda_r = 0;                                      	\
+#define CODA_BAD_ACTION															\
+	if(g_args.mode_errors == MODE_ERRORS_IMMEDIATE)		\
+		_coda_r = -1;																		\
+	else																							\
+		_coda_r = 1;																		\
 
-#define HANDLE_ERROR(fmt, ...)												\
-	dprintf(listwise_error_fd, fmt " at [%s:%d (%s)]\n"	\
-		, ##__VA_ARGS__																		\
-		, __FILE__																				\
-		, __LINE__																				\
-		, __FUNCTION__																		\
-	);																									\
+#define CODA_GOOD_ACTION														\
+	_coda_r = 0;																			\
+
+#define HANDLE_ERROR(fmt, ...)	\
+	log_error(L_ERROR, fmt				\
+		, __FUNCTION__							\
+		, __FILE__									\
+		, __LINE__									\
+		, ##__VA_ARGS__							\
+	);														\
 
 #endif

@@ -52,7 +52,15 @@ operator op_desc[] = {
 
 int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	if(lx->sel.active)
+	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
+	{
+		// everything selected ; no-op
+	}
+	else if(lx->sel.active->nil)
+	{
+		// nothing selected ; no-op
+	}
+	else
 	{
 		int i = 0;
 		int x;
