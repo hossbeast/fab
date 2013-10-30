@@ -102,7 +102,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL,multilinecomment>[\n]													{ LOCRESET; }
 
 <INITIAL>[\t ]+																					{ return LEX(WS, 0, 0); }
-<INITIAL>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /]+					{
+<INITIAL>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+				{
 																													PUSHSTATE(next);
 																													typeof(*yylval->op) * op;
 
@@ -135,9 +135,13 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																												}
 <slash>[/]																							{ POPSTATE; yyless(0); return LEX(STR, 1, 0); }
 <slash>[^\x00-\x08\x0B-\x1F\x7F-\xFF/]+									{ POPSTATE; PUSHSTATE(argument); yyless(0); }
-<argument>\\[0-9]+																			{ return LEX(BREF, 1, 0); }
+<argument>\\[\\]																				{ return LEX(STR, 1, 0); }
 <argument>\\[/]																					{ return LEX(STR, 1, 0); }
-<argument>\\[\t ]+																			{ return LEX(STR, 1, 0); }
+<argument>\\[\t]																				{ return LEX(STR, 1, 0); }
+<argument>\\[ ]																					{ return LEX(STR, 1, 0); }
+<argument>\\x[0-9a-fA-F]{1,2}														{ return LEX(STR, 1, 0); }
+<argument>\\x\{[0-9a-fA-F]{1,2}\}?											{ return LEX(STR, 1, 0); }
+<argument>\\[0-9]+																			{ return LEX(BREF, 1, 0); }
 <argument>-?[0-9]+																			{ return LEX(I64, 0, 0); }
 <argument>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+				{ return LEX(STR, 0, 0); }
 <argument>[\n\t /]																			{ POPSTATE; yyless(0); }

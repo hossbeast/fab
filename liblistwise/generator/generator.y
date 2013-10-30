@@ -59,6 +59,7 @@
 %token          WS
 %token          '/'
 %token	<bref>	BREF
+%token  <href>  HREF
 %token  <i64>		I64
 %token	<op>		OP
 
