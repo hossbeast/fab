@@ -91,7 +91,6 @@ typedef struct operator
 enum
 {
 	  REFTYPE_BREF = 10
-	, REFTYPE_HREF = 20
 };
 
 //
@@ -114,7 +113,7 @@ typedef struct arg
 
 			union
 			{
-				int		ref;		// for REFTYPE_{B,H}REF - value of the backreference
+				int		ref;		// value of the backreference
 			};
 		}				*v;
 

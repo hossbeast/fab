@@ -59,6 +59,7 @@
 %token          WS
 %token          '/'
 %token	<ref>		BREF
+%token	<ref>		CREF
 %token	<ref>		HREF
 %token  <i64>		I64
 %token	<op>		OP
@@ -249,15 +250,33 @@ strpart
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 
-		$$->s = strdup(@1.s);
 		$$->l = @1.e - @1.s;
+		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		memcpy($$->s, @1.s, $$->l);
+	}
+	| HREF
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+
+		$$->l = 1;
+		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		$$->s[0] = $1;
+	}
+	| CREF
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+
+		$$->l = 1;
+		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		$$->s[0] = $1;
 	}
 	| BREF
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 
-		$$->s = strdup(@1.s);
 		$$->l = @1.e - @1.s;
+		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		memcpy($$->s, @1.s, $$->l);
 
 		YYU_FATAL(xmalloc, &$$->refs.v, sizeof(*$$->refs.v));
 
@@ -265,24 +284,6 @@ strpart
 		$$->refs.v[0].l = $$->l;
 		$$->refs.v[0].e = $$->s + $$->l;
 		$$->refs.v[0].k = REFTYPE_BREF;
-		$$->refs.v[0].ref = $1;
-
-		$$->refs.last = &$$->refs.v[0];
-		$$->refs.l = 1;
-	}
-	| HREF
-	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
-
-		$$->s = strdup(@1.s);
-		$$->l = @1.e - @1.s;
-
-		YYU_FATAL(xmalloc, &$$->refs.v, sizeof(*$$->refs.v));
-
-		$$->refs.v[0].s = $$->s;
-		$$->refs.v[0].l = $$->l;
-		$$->refs.v[0].e = $$->s + $$->l;
-		$$->refs.v[0].k = REFTYPE_HREF;
 		$$->refs.v[0].ref = $1;
 
 		$$->refs.last = &$$->refs.v[0];

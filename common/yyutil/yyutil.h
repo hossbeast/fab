@@ -173,19 +173,27 @@ void yyu_locreset(yyu_location * const restrict lloc, yyu_extra * const restrict
 //
 #define LOCRESET yyu_locreset(yylloc, yyextra)
 
-/// yyu_topstate
+/// yyu_nstate
 //
 // SUMMARY
-//  retrieve the top state from the yyextra-maintained state stack
+//  retrieve the nth state from the top of the yyextra-maintained state stack
+//   0 - current state
+//   1 - next state following POP
 //
-int yyu_topstate(yyu_extra * const restrict xtra)
+int yyu_nstate(yyu_extra * const restrict xtra, const int n)
 	__attribute__((nonnull));
+
+/// NSTATE
+//
+// call yyu_nstate with default parameters from a scanner rule
+//
+#define NSTATE(n) yyu_nstate(yyextra, n)
 
 /// TOPSTATE
 //
-// call yyu_topstate with default parameters from a scanner rule
+// call yyu_nstate with default parameters and the 0th state from a scanner rule
 //
-#define TOPSTATE yyu_topstate(yyextra)
+#define TOPSTATE NSTATE(0)
 
 /// yyu_pushstate
 //
@@ -267,7 +275,7 @@ void yyu_ptoken(const int token, void * const restrict lval, yyu_location * cons
 //  yyerror - write error messages, set extra->r = 1
 //
 void yyu_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_extra * const restrict xtra, char const * err)
-	__attribute__((nonnull));
+	__attribute__((nonnull(3)));
 
 /// yyu_lexify
 //

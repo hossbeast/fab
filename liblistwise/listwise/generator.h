@@ -82,16 +82,9 @@ void generator_parser_xfree(generator_parser**);
 
 /// generator_dump
 //
-// print a generator to stdout
+// write a string describing a generator to listwise_info_fd
 //
 void generator_dump(generator*);
-
-/// operation_write
-//
-// write a string describing an operation
-//
-size_t operation_write(char * restrict s, size_t z, const operation * const restrict op)
-	__attribute__((nonnull));
 
 /// generator_free
 //

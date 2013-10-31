@@ -45,32 +45,46 @@
 																																										
 	#include "yyutil.h"
 
-	#define LEX(token)							\
-		lexify(												\
-			  token											\
-			, yylval										\
-			, yylloc										\
-			, yyextra										\
-			, yytext										\
-			, yyleng										\
-			, 0													\
-			, 0													\
-			, __LINE__									\
-			, 0													\
+	#define LEX(token)						\
+		lexify(											\
+			  token										\
+			, yylval									\
+			, yylloc									\
+			, yyextra									\
+			, yytext									\
+			, yyleng									\
+			, 0												\
+			, 0												\
+			, __LINE__								\
+			, 0												\
 		)
 
-	#define LEXS(token, ldel)				\
-		lexify(												\
-			  token											\
-			, yylval										\
-			, yylloc										\
-			, yyextra										\
-			, yytext										\
-			, yyleng										\
-			, ldel											\
-			, 0													\
-			, __LINE__									\
-			, 0													\
+	#define LEXS(token, ldel)			\
+		lexify(											\
+			  token										\
+			, yylval									\
+			, yylloc									\
+			, yyextra									\
+			, yytext									\
+			, yyleng									\
+			, ldel										\
+			, 0												\
+			, __LINE__								\
+			, 0												\
+		)
+
+	#define LEXC(token, vdel)			\
+		lexify(											\
+			  token										\
+			, yylval									\
+			, yylloc									\
+			, yyextra									\
+			, yytext									\
+			, yyleng									\
+			, 0												\
+			, vdel										\
+			, __LINE__								\
+			, 0												\
 		)
 
 	#define LEXV(token, vdel, v)	\
@@ -90,7 +104,24 @@
 	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int locdel, const int valdel, const int line, void * const v)
 	{
 		// populate lexical value if any
-		if(token == BREF)
+		if(token == CREF)
+		{
+			if(text[valdel] == 'a')
+				lval->ref = 0x07;
+			else if(text[valdel] == 'b')
+				lval->ref = 0x08;
+			else if(text[valdel] == 't')
+				lval->ref = 0x09;
+			else if(text[valdel] == 'n')
+				lval->ref = 0x0a;
+			else if(text[valdel] == 'v')
+				lval->ref = 0x0b;
+			else if(text[valdel] == 'f')
+				lval->ref = 0x0c;
+			else if(text[valdel] == 'r')
+				lval->ref = 0x0d;
+		}
+		else if(token == BREF)
 			sscanf(text + valdel, "%d", &lval->ref);
 		else if(token == HREF)
 			sscanf(text + valdel, "%x", &lval->ref);
@@ -129,22 +160,34 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL,multilinecomment>[\n]													{ LOCRESET; }
 
 <INITIAL>[\t ]+																					{ return LEX(WS); }
-<INITIAL>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+				{
+<INITIAL>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ]+						{
+																													if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_SLASH)
+																														PUSHSTATE(slash);
+																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_COMMA)
+																														PUSHSTATE(comma);
+																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_BRACES)
+																														PUSHSTATE(braces);
+
 																													PUSHSTATE(next);
 																													typeof(*yylval->op) * op;
 
 				 																									if((op = op_lookup(yytext, yyleng)))
 																														PUSHSTATE(operator);
-																													else
+																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_SLASH)
 																														PUSHSTATE(argument);
+																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_COMMA)
+																														PUSHSTATE(comma);
+																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_BRACES)
+																														PUSHSTATE(braces);
+
 																													yyless(0);
 																												}
 <next>[\n]																							{ PUSHSTATE(ws); return LEX(LF); }
 <next>[\t ]+																						{ PUSHSTATE(ws); return LEX(WS); }
-<next>[/]																								{ PUSHSTATE(slash); return LEX(yytext[0]); }
-<next>[!][/\\]+																					{ }
+<next>[^\x00-\x08\x0B-\x1F\x7F-\xFF]										{ PUSHSTATE(NSTATE(1)); yyless(0); }
 <ws>[\n]																								{ return LEX(LF); }
 <ws>[\t ]+																							{ return LEX(WS); }
+<ws>[!][/{}\\,]+																				{ POPSTATE; }
 <ws>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ]+								{ POPSTATE; PUSHSTATE(operator); yyless(0); }
 <operator>[-a-zA-Z]+																		{
 																													POPSTATE;
@@ -161,18 +204,29 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														return 0;
 																													}
 																												}
-<slash>[/]																							{ POPSTATE; yyless(0); return LEXS(STR, 1); }
-<slash>[^\x00-\x08\x0B-\x1F\x7F-\xFF/]+									{ POPSTATE; PUSHSTATE(argument); yyless(0); }
-<argument>\\[\\]																				{ return LEXS(STR, 1); }
-<argument>\\[/]																					{ return LEXS(STR, 1); }
-<argument>\\[\t]																				{ return LEXS(STR, 1); }
-<argument>\\[ ]																					{ return LEXS(STR, 1); }
-<argument>\\x[0-9a-fA-F]{1,2}														{ return LEXV(HREF, 2, 0); }
-<argument>\\x\{[0-9a-fA-F]{1,2}\}												{ return LEXV(HREF, 3, 0); }
-<argument>\\[0-9]+																			{ return LEXV(BREF, 1, 0); }
-<argument>-?[0-9]+																			{ return LEXV(I64, 0, 0); }
-<argument>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+				{ return LEX(STR); }
-<argument>[\n\t /]																			{ POPSTATE; yyless(0); }
+<slash>[^\x00-\x08\x0B-\x1F\x7F-\xFF/]									{ POPSTATE; yyless(0); if(GS_REFS(yyextra->scanmode)) { PUSHSTATE(slash_arg_withrefs); } else { PUSHSTATE(slash_arg_norefs); } }
+
+<slash_arg_norefs>[\n\t /]															{ POPSTATE; yyless(0); }
+<slash_arg_norefs>-?[0-9]+															{ return LEXV(I64, 0, 0); }
+<slash_arg_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /]+	{ return LEX(STR); }
+
+<slash_arg_withrefs>\\[/]																			{ return LEXS(STR, 1); }
+<slash_arg_withrefs>\\[\\]																		{ return LEXS(STR, 1); }
+<slash_arg_withrefs>\\[ ]																			{ return LEXS(STR, 1); }
+<slash_arg_withrefs>\\[\n]																		{ return LEXC(CREF, 1); }
+<slash_arg_withrefs>\\[\r]																		{ return LEXC(CREF, 1); }
+<slash_arg_withrefs>\\[\b]																		{ return LEXC(CREF, 1); }
+<slash_arg_withrefs>\\[\t]																		{ return LEXC(CREF, 1); }
+<slash_arg_withrefs>\\[\f]																		{ return LEXC(CREF, 1); }
+<slash_arg_withrefs>\\[\a]																		{ return LEXC(CREF, 1); }
+<slash_arg_withrefs>\\[\v]																		{ return LEXC(CREF, 1); }
+<slash_arg_withrefs>\\x[0-9a-fA-F]{1,2}												{ return LEXV(HREF, 2, 0); }
+<slash_arg_withrefs>\\x\{[0-9a-fA-F]{1,2}\}										{ return LEXV(HREF, 3, 0); }
+<slash_arg_withrefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
+<slash_arg_withrefs>[\n\t /]																	{ POPSTATE; yyless(0); }
+<slash_arg_withrefs>-?[0-9]+																	{ return LEXV(I64, 0, 0); }
+<slash_arg_withrefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+		{ return LEX(STR); }
+
 <*>[\x00]																								{
 																													while(yyextra->states_n)
 																													{

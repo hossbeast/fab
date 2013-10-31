@@ -58,7 +58,7 @@ void yyu_pushstate(const int state, yyu_extra * const xtra, const int line)
 	if(xtra->info)
 	{
 		int al = snprintf(xtra->space, sizeof(xtra->space), "%s -> %s"
-			, xtra->statename(yyu_topstate(xtra))
+			, xtra->statename(yyu_nstate(xtra, 0))
 			, xtra->statename(state)
 		);
 
@@ -87,13 +87,13 @@ void yyu_pushstate(const int state, yyu_extra * const xtra, const int line)
 
 void yyu_popstate(yyu_extra * const xtra, const int line)
 {
-	int x = yyu_topstate(xtra);
+	int x = yyu_nstate(xtra, 0);
 	xtra->states_n--;
 
 	if(xtra->info)
 	{
 		int al = snprintf(xtra->space, sizeof(xtra->space), "%s <- %s"
-			, xtra->statename(yyu_topstate(xtra))
+			, xtra->statename(yyu_nstate(xtra, 0))
 			, xtra->statename(x)
 		);
 
@@ -118,9 +118,9 @@ void yyu_popstate(yyu_extra * const xtra, const int line)
 	}
 }
 
-int yyu_topstate(yyu_extra * const xtra)
+int yyu_nstate(yyu_extra * const xtra, const int n)
 {
-	return xtra->states_n ? xtra->states[xtra->states_n-1] : 0;
+	return (xtra->states_n > n) ? xtra->states[xtra->states_n - n - 1] : -1;
 }
 
 void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng, const int line)
@@ -178,10 +178,10 @@ void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * cons
 {
 	xtra->r = 1;
 
-	if(xtra->error)
+	if(xtra->error && err)
 		xtra->error("%s", err);
 
-	if(xtra->error)
+	if(xtra->error && xtra->last_token)
 	{
 		// token source string
 		char * s  	= xtra->last_loc.s;

@@ -78,7 +78,7 @@ static int op_load(char* path)
 	if(g_dls_a == g_dls_l)
 	{
 		int n = g_dls_a ? g_dls_a * 2 + g_dls_a / 2 : 10;
-		fatal(xrealloc, &g_dls, sizeof(g_dls[0]), n, g_dls_a);
+		fatal(xrealloc, &g_dls, sizeof(*g_dls), n, g_dls_a);
 		g_dls_a = n;
 	}
 
@@ -87,13 +87,13 @@ static int op_load(char* path)
 		dprintf(listwise_warn_fd, "FAILED TO LOAD: %s [%s]\n", path, dlerror());
 		/* I guess this segfaults .. 
 		dlclose(g_dls[g_dls_l - 1]); */
-		g_dls[g_dls_l--] = 0;
+		g_dls[--g_dls_l] = 0;
 	}
 	else if((op = dlsym(g_dls[g_dls_l - 1], "op_desc")) == 0)
 	{
 		dprintf(listwise_warn_fd, "FAILED TO LOAD: %s\n", path);
 		dlclose(g_dls[g_dls_l - 1]);
-		g_dls[g_dls_l--] = 0;
+		g_dls[--g_dls_l] = 0;
 	}
 	else
 	{

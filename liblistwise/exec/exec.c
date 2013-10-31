@@ -128,8 +128,8 @@ int API listwise_exec_generator(
 			dprintf(listwise_info_fd, "\n");
 
 			char buf[128];
-			operation_write(buf, sizeof(buf), g->ops[x]);
-			dprintf(listwise_info_fd, " >> %s\n", buf);
+			size_t z = generator_operation_write(g->ops[x], buf, sizeof(buf), 0);
+			dprintf(listwise_info_fd, " >> %.*s\n", (int)z, buf);
 		}
  
 		// execute the operator

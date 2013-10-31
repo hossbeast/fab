@@ -14,8 +14,13 @@ backslash escapes
 \\x{?[0-9a-fA-F]{1,2}}?				hexreference
 \\[\\]												escaped backslash
 \\[ ]													escaped whitespace
-\\[\t]												escaped whitespace
-\\[\n]												escaped whitespace
+\\[\n]												escaped character
+\\[\r]												escaped character
+\\[\b]												escaped character
+\\[\t]												escaped character
+\\[\f]												escaped character
+\\[\a]												escaped character
+\\[\v]												escaped character
 
 \\[/]
 \\[,]
@@ -31,4 +36,4 @@ scanning mode can be changed in place - i.e. the same string may be scanned usin
  the tokens are concatenated in the parser
 
 for a regex string, you want backslash escaping OFF, so that the RE engine can handle backslashes
-for a replacement string, you want backslash ON, so that the replacement string can contain backreferences and escaped bytes-by-hex
+for a replacement string, you want backslash ON, so that the replacement string can contain backreferences and hexreferences

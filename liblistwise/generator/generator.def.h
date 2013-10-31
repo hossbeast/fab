@@ -35,6 +35,7 @@ typedef struct
 	char						temp[256];		// temp space
 	char *					name;					// input name
 	int							namel;
+	uint32_t				scanmode;			// one of GENSCAN_*
 
 	/* intermediary allocation tracking */
 	int							opsl;
