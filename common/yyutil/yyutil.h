@@ -250,10 +250,9 @@ void yyu_popstate(yyu_extra * const restrict xtra, const int line)
 //  xtra  - yyextra
 //  text  - yytext (text the token was parsed from)
 //  leng  - yyleng 
-//  del   - offset from text
 //  line  - line number where the token was scanned
 //
-void yyu_ptoken(const int token, void * const restrict lval, yyu_location * const restrict lloc, yyu_extra * const restrict xtra, char * restrict text, const int leng, const int del, const int line)
+void yyu_ptoken(const int token, void * const restrict lval, yyu_location * const restrict lloc, yyu_extra * const restrict xtra, char * restrict text, const int leng, const int line)
 	__attribute__((nonnull));
 
 /// PTOKEN

@@ -123,7 +123,7 @@ int yyu_topstate(yyu_extra * const xtra)
 	return xtra->states_n ? xtra->states[xtra->states_n-1] : 0;
 }
 
-void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng, const int del, const int line)
+void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng, const int line)
 {
 	if(xtra->info)
 	{
@@ -237,7 +237,7 @@ int yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_loca
 		yyu_locwrite(lloc, xtra, text, leng, del);
 
 	// print the token if requested
-	yyu_ptoken(token, lval, lloc, xtra, text, leng, del, line);
+	yyu_ptoken(token, lval, lloc, xtra, text, leng, line);
 
 	// store location for error reporting
 	memcpy(&xtra->last_loc, lloc, sizeof(xtra->last_loc));

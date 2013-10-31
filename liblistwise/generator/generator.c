@@ -81,13 +81,15 @@ static int generator_lvalstr(int token, void * restrict lval, struct yyu_extra *
 	*buf = 0;
 	*bufl = 0;
 
-	if(token == generator_I64 || token == generator_BREF || token == generator_OP)
+	if(token == generator_I64 || token == generator_BREF || token == generator_HREF || token == generator_OP)
 	{
 		if(token == generator_I64)
 			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%ld", ((YYSTYPE*)lval)->i64);
-		if(token == generator_BREF)
-			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%d", ((YYSTYPE*)lval)->bref);
-		if(token == generator_OP)
+		else if(token == generator_BREF)
+			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%d", ((YYSTYPE*)lval)->ref);
+		else if(token == generator_HREF)
+			*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\x{%02x}", ((YYSTYPE*)lval)->ref);
+		else if(token == generator_OP)
 			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%s", ((YYSTYPE*)lval)->op->s);
 
 		*buf = pp->temp;
@@ -265,7 +267,7 @@ void API generator_free(generator* g)
 		for(x = 0; x < g->argsl; x++)
 		{
 			free(g->args[x]->s);
-			free(g->args[x]->refs);
+			free(g->args[x]->refs.v);
 
 			if(g->args[x]->itype == ITYPE_RE)
 			{
@@ -284,7 +286,7 @@ void API generator_free(generator* g)
 			for(y = 0; y < g->ops[x]->argsl; y++)
 			{
 				free(g->ops[x]->args[y]->s);
-				free(g->ops[x]->args[y]->refs);
+				free(g->ops[x]->args[y]->refs.v);
 
 				if(g->ops[x]->args[y]->itype == ITYPE_RE)
 				{

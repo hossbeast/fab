@@ -10,9 +10,9 @@ op  : [-a-zA-Z], preceeded by whitespace
 init: [^ \t\n/\\]
 
 backslash escapes
-\\[\\]												escaped backslash
 \\[0-9]												backreference
-\\x{?[0-9a-fA-F]{1,2}}?				escaped byte-by-hex
+\\x{?[0-9a-fA-F]{1,2}}?				hexreference
+\\[\\]												escaped backslash
 \\[ ]													escaped whitespace
 \\[\t]												escaped whitespace
 \\[\n]												escaped whitespace

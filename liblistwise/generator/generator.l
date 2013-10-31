@@ -45,34 +45,61 @@
 																																										
 	#include "yyutil.h"
 
-	#define LEX(token, del, v)	\
-		lexify(										\
-			  token									\
-			, yylval								\
-			, yylloc								\
-			, yyextra								\
-			, yytext								\
-			, yyleng								\
-			, del										\
-			, __LINE__							\
-			, token == LF						\
-			, token == BREF					\
-			, token == I64					\
-			, token == OP						\
-			, v											\
+	#define LEX(token)							\
+		lexify(												\
+			  token											\
+			, yylval										\
+			, yylloc										\
+			, yyextra										\
+			, yytext										\
+			, yyleng										\
+			, 0													\
+			, 0													\
+			, __LINE__									\
+			, 0													\
 		)
 
-	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int del, const int line, const int isnl, const int isbref, const int isi64, const int isop, void * const v)
+	#define LEXS(token, ldel)				\
+		lexify(												\
+			  token											\
+			, yylval										\
+			, yylloc										\
+			, yyextra										\
+			, yytext										\
+			, yyleng										\
+			, ldel											\
+			, 0													\
+			, __LINE__									\
+			, 0													\
+		)
+
+	#define LEXV(token, vdel, v)	\
+		lexify(											\
+			  token										\
+			, yylval									\
+			, yylloc									\
+			, yyextra									\
+			, yytext									\
+			, yyleng									\
+			, 0												\
+			, vdel										\
+			, __LINE__								\
+			, v												\
+		)
+
+	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int locdel, const int valdel, const int line, void * const v)
 	{
 		// populate lexical value if any
-		if(isbref)
-			sscanf(text + del, "%d", &lval->bref);
-		else if(isi64)
-			sscanf(text + del, "%"SCNd64, &lval->i64);
-		else if(isop)
+		if(token == BREF)
+			sscanf(text + valdel, "%d", &lval->ref);
+		else if(token == HREF)
+			sscanf(text + valdel, "%x", &lval->ref);
+		else if(token == I64)
+			sscanf(text + valdel, "%"SCNd64, &lval->i64);
+		else if(token == OP)
 			lval->op = *(operator **)v;
 
-		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, del, isnl, line);
+		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, locdel, token == LF, line);
 	}
 %}
 
@@ -101,7 +128,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <multilinecomment>[/]																		{ LOCWRITE; }
 <INITIAL,multilinecomment>[\n]													{ LOCRESET; }
 
-<INITIAL>[\t ]+																					{ return LEX(WS, 0, 0); }
+<INITIAL>[\t ]+																					{ return LEX(WS); }
 <INITIAL>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+				{
 																													PUSHSTATE(next);
 																													typeof(*yylval->op) * op;
@@ -112,11 +139,12 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														PUSHSTATE(argument);
 																													yyless(0);
 																												}
-<next>[\n]																							{ PUSHSTATE(ws); return LEX(LF, 0, 0); }
-<next>[\t ]+																						{ PUSHSTATE(ws); return LEX(WS, 0, 0); }
-<next>[/]																								{ PUSHSTATE(slash); return LEX(yytext[0], 0, 0); }
-<ws>[\n]																								{ return LEX(LF, 0, 0); }
-<ws>[\t ]+																							{ return LEX(WS, 0, 0); }
+<next>[\n]																							{ PUSHSTATE(ws); return LEX(LF); }
+<next>[\t ]+																						{ PUSHSTATE(ws); return LEX(WS); }
+<next>[/]																								{ PUSHSTATE(slash); return LEX(yytext[0]); }
+<next>[!][/\\]+																					{ }
+<ws>[\n]																								{ return LEX(LF); }
+<ws>[\t ]+																							{ return LEX(WS); }
 <ws>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ]+								{ POPSTATE; PUSHSTATE(operator); yyless(0); }
 <operator>[-a-zA-Z]+																		{
 																													POPSTATE;
@@ -124,7 +152,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													typeof(*yylval->op) * op;
 				 																									if((op = op_lookup(yytext, yyleng)))
 																													{
-				 																										return LEX(OP, 0, &op);
+				 																										return LEXV(OP, 0, &op);
 																													}
 																													else
 																													{
@@ -133,17 +161,17 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														return 0;
 																													}
 																												}
-<slash>[/]																							{ POPSTATE; yyless(0); return LEX(STR, 1, 0); }
+<slash>[/]																							{ POPSTATE; yyless(0); return LEXS(STR, 1); }
 <slash>[^\x00-\x08\x0B-\x1F\x7F-\xFF/]+									{ POPSTATE; PUSHSTATE(argument); yyless(0); }
-<argument>\\[\\]																				{ return LEX(STR, 1, 0); }
-<argument>\\[/]																					{ return LEX(STR, 1, 0); }
-<argument>\\[\t]																				{ return LEX(STR, 1, 0); }
-<argument>\\[ ]																					{ return LEX(STR, 1, 0); }
-<argument>\\x[0-9a-fA-F]{1,2}														{ return LEX(STR, 1, 0); }
-<argument>\\x\{[0-9a-fA-F]{1,2}\}?											{ return LEX(STR, 1, 0); }
-<argument>\\[0-9]+																			{ return LEX(BREF, 1, 0); }
-<argument>-?[0-9]+																			{ return LEX(I64, 0, 0); }
-<argument>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+				{ return LEX(STR, 0, 0); }
+<argument>\\[\\]																				{ return LEXS(STR, 1); }
+<argument>\\[/]																					{ return LEXS(STR, 1); }
+<argument>\\[\t]																				{ return LEXS(STR, 1); }
+<argument>\\[ ]																					{ return LEXS(STR, 1); }
+<argument>\\x[0-9a-fA-F]{1,2}														{ return LEXV(HREF, 2, 0); }
+<argument>\\x\{[0-9a-fA-F]{1,2}\}												{ return LEXV(HREF, 3, 0); }
+<argument>\\[0-9]+																			{ return LEXV(BREF, 1, 0); }
+<argument>-?[0-9]+																			{ return LEXV(I64, 0, 0); }
+<argument>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+				{ return LEX(STR); }
 <argument>[\n\t /]																			{ POPSTATE; yyless(0); }
 <*>[\x00]																								{
 																													while(yyextra->states_n)

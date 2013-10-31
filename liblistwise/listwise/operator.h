@@ -90,7 +90,8 @@ typedef struct operator
 //
 enum
 {
-	REFTYPE_BREF = 10
+	  REFTYPE_BREF = 10
+	, REFTYPE_HREF = 20
 };
 
 //
@@ -101,23 +102,28 @@ typedef struct arg
 	char*		s;		// string value of the arg, null-terminated
 	int			l;		// string length
 
-	struct ref		// references within the string
+	struct
 	{
-		char* s;		// start of the reference 
-		char* e;		//   end of the reference (pointer to the character following the last character of the reference)
-		int		l;		// length of the reference (l = e - s)
-
-		int		k;		// REFTYPE_*
-
-		union
+		struct ref		// references within the string
 		{
-			int		bref;		// for REFTYPE_BREF, value of the backreference
-		};
-	}				*refs;
-	int			refsl;	// number of references
+			char* s;		// start of the reference 
+			char* e;		//   end of the reference (pointer to the character following the last character of the reference)
+			int		l;		// length of the reference (l = e - s)
 
-	// pointer to the last reference, if any
-	struct ref* ref_last;
+			int		k;		// REFTYPE_*
+
+			union
+			{
+				int		ref;		// for REFTYPE_{B,H}REF - value of the backreference
+			};
+		}				*v;
+
+		int			l;	// number of references
+		int			a;	// alloc
+
+		// pointer to the last reference, if any
+		struct ref * last;
+	} refs;
 
 #define ITYPE_RE		1
 #define ITYPE_I64		2

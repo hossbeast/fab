@@ -50,7 +50,7 @@
 	arg **				args;
 
 	arg *					arg;
-	int						bref;
+	int						ref;
 	int64_t				i64;
 }
 
@@ -58,8 +58,8 @@
 %token          LF
 %token          WS
 %token          '/'
-%token	<bref>	BREF
-%token  <href>  HREF
+%token	<ref>		BREF
+%token	<ref>		HREF
 %token  <i64>		I64
 %token	<op>		OP
 
@@ -216,25 +216,25 @@ string
 
 		// update string pointers on previous references
 		int x;
-		for(x = 0; x < $$->refsl; x++)
+		for(x = 0; x < $$->refs.l; x++)
 		{
-			$$->refs[x].s = $$->s + ($$->refs[x].s - o);
-			$$->refs[x].e = $$->refs[x].s + $$->refs[x].l;
+			$$->refs.v[x].s = $$->s + ($$->refs.v[x].s - o);
+			$$->refs.v[x].e = $$->refs.v[x].s + $$->refs.v[x].l;
 		}
 
 		// use new reference, if there is one
-		if($2->refs)
+		if($2->refs.v)
 		{
-			YYU_FATAL(xrealloc, &$$->refs, sizeof(*$$), $$->refsl + 1, 0);
+			YYU_FATAL(xrealloc, &$$->refs, sizeof(*$$), $$->refs.l + 1, 0);
 
-			$$->refs[$$->refsl].s = $$->s + $$->l;
-			$$->refs[$$->refsl].l = $2->l;
-			$$->refs[$$->refsl].e = $$->s + $$->l + $2->l;
-			$$->refs[$$->refsl].k = REFTYPE_BREF;
-			$$->refs[$$->refsl].bref = $2->refs[0].bref;
+			$$->refs.v[$$->refs.l].s = $$->s + $$->l;
+			$$->refs.v[$$->refs.l].l = $2->l;
+			$$->refs.v[$$->refs.l].e = $$->s + $$->l + $2->l;
+			$$->refs.v[$$->refs.l].k = $2->refs.v[0].k;
+			$$->refs.v[$$->refs.l].ref = $2->refs.v[0].ref;
 
-			$$->ref_last = &$$->refs[$$->refsl];
-			$$->refsl++;
+			$$->refs.last = &$$->refs.v[$$->refs.l];
+			$$->refs.l++;
 		}
 
 		$$->l += $2->l;
@@ -259,15 +259,33 @@ strpart
 		$$->s = strdup(@1.s);
 		$$->l = @1.e - @1.s;
 
-		YYU_FATAL(xmalloc, &$$->refs, sizeof(*$$->refs));
+		YYU_FATAL(xmalloc, &$$->refs.v, sizeof(*$$->refs.v));
 
-		$$->refs[0].s = $$->s;
-		$$->refs[0].l = $$->l;
-		$$->refs[0].e = $$->s + $$->l;
-		$$->refs[0].k = REFTYPE_BREF;
-		$$->refs[0].bref = $1;
+		$$->refs.v[0].s = $$->s;
+		$$->refs.v[0].l = $$->l;
+		$$->refs.v[0].e = $$->s + $$->l;
+		$$->refs.v[0].k = REFTYPE_BREF;
+		$$->refs.v[0].ref = $1;
 
-		$$->ref_last = &$$->refs[0];
-		$$->refsl = 1;
+		$$->refs.last = &$$->refs.v[0];
+		$$->refs.l = 1;
+	}
+	| HREF
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+
+		$$->s = strdup(@1.s);
+		$$->l = @1.e - @1.s;
+
+		YYU_FATAL(xmalloc, &$$->refs.v, sizeof(*$$->refs.v));
+
+		$$->refs.v[0].s = $$->s;
+		$$->refs.v[0].l = $$->l;
+		$$->refs.v[0].e = $$->s + $$->l;
+		$$->refs.v[0].k = REFTYPE_HREF;
+		$$->refs.v[0].ref = $1;
+
+		$$->refs.last = &$$->refs.v[0];
+		$$->refs.l = 1;
 	}
 	;

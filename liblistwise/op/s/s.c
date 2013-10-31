@@ -121,11 +121,11 @@ int op_validate(operation* o)
 
 	// validate backreferences in the substitution string
 	int x;
-	for(x = 0; x < o->args[1]->refsl; x++)
+	for(x = 0; x < o->args[1]->refs.l; x++)
 	{
-		if(o->args[1]->refs[x].bref > o->args[0]->re.c_caps)
+		if(o->args[1]->refs.v[x].ref > o->args[0]->re.c_caps)
 		{
-			fail("backref: %d, captures: %d", o->args[1]->refs[x].bref, o->args[0]->re.c_caps);
+			fail("backref: %d, captures: %d", o->args[1]->refs.v[x].ref, o->args[0]->re.c_caps);
 		}
 	}
 
@@ -184,9 +184,9 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 				int A = lx->s[0].s[x].l;
 
 				// text in the replacement string before the first backreference
-				if(o->args[1]->refsl)
+				if(o->args[1]->refs.l)
 				{
-					fatal(append, lx, x, o->args[1]->s, o->args[1]->refs[0].s - o->args[1]->s);
+					fatal(append, lx, x, o->args[1]->s, o->args[1]->refs.v[0].s - o->args[1]->s);
 				}
 				else
 				{
@@ -195,19 +195,19 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 
 				// foreach backreference
 				int i;
-				for(i = 0; i < o->args[1]->refsl; i++)
+				for(i = 0; i < o->args[1]->refs.l; i++)
 				{
 					// text in the replacement string between this and the previous backreference
 					if(i)
 					{
-						fatal(append, lx, x, o->args[1]->refs[i-1].e, o->args[1]->refs[i].s - o->args[1]->refs[i-1].e);
+						fatal(append, lx, x, o->args[1]->refs.v[i-1].e, o->args[1]->refs.v[i].s - o->args[1]->refs.v[i-1].e);
 					}
 
 					// text of the backreference itself, if the corresponding subcapture was populated
-					if((*ovec)[0] > o->args[1]->refs[i].bref)
+					if((*ovec)[0] > o->args[1]->refs.v[i].ref)
 					{
-						int a = (*ovec)[1 + (o->args[1]->refs[i].bref * 2) + 0];
-						int b = (*ovec)[1 + (o->args[1]->refs[i].bref * 2) + 1];
+						int a = (*ovec)[1 + (o->args[1]->refs.v[i].ref * 2) + 0];
+						int b = (*ovec)[1 + (o->args[1]->refs.v[i].ref * 2) + 1];
 
 						if(a >= 0 && b >= 0)
 							fatal(lstack_append, lx, 0, x, ss + a, b - a);
@@ -215,9 +215,9 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 				}
 
 				// text in the replacement string following the last backreference
-				if(o->args[1]->refsl)
+				if(o->args[1]->refs.l)
 				{
-					fatal(append, lx, x, o->args[1]->ref_last->e, o->args[1]->l - (o->args[1]->ref_last->e - o->args[1]->s));
+					fatal(append, lx, x, o->args[1]->refs.last->e, o->args[1]->l - (o->args[1]->refs.last->e - o->args[1]->s));
 				}
 
 				// end offset of replacement
