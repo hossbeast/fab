@@ -76,4 +76,4 @@ uint32_t genscan_parse(char * s, int l)
 #define _GENSCAN(a, b, c, d, e, f, g) g == b ? #a :
 #define GENSCAN_STR(x) GENSCAN_TABLE(x) "GENSCAN_UNKNWN"
 
-#undef
+#endif

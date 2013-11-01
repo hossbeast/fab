@@ -24,13 +24,20 @@
 #include "xmem.h"
 #include "macros.h"
 
-void yyu_locreset(yyu_location * const lloc, yyu_extra * const xtra)
+void yyu_locreset(yyu_location * const lloc, yyu_extra * const xtra, const int del)
 {
-	// increment line number
+	// assign location for current token
+	lloc->f_col = xtra->loc.f_col + del;
+	lloc->l_col = xtra->loc.l_col - 1;
+	lloc->f_lin = xtra->loc.f_lin;
+	lloc->l_lin = xtra->loc.l_lin;
+	lloc->s = xtra->loc.s + del;
+	lloc->e = xtra->loc.e;
+	lloc->l = lloc->e - lloc->s;
+
+	// reset running location track
 	xtra->loc.f_lin++;
 	xtra->loc.l_lin = xtra->loc.f_lin;
-
-	// reset columns
 	xtra->loc.f_col = 0;
 	xtra->loc.l_col = 0;
 }
@@ -176,6 +183,9 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 
 void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
 {
+	if(xtra->r == 1)
+		return;
+
 	xtra->r = 1;
 
 	if(xtra->error && err)
@@ -232,7 +242,7 @@ void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * cons
 int yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del, const int isnl, const int line)
 {
 	if(isnl)
-		yyu_locreset(lloc, xtra);
+		yyu_locreset(lloc, xtra, del);
 	else
 		yyu_locwrite(lloc, xtra, text, leng, del);
 

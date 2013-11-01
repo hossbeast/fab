@@ -158,20 +158,21 @@ void yyu_locwrite(yyu_location * const restrict lloc, yyu_extra * const restrict
 /// yyu_locreset
 //
 // SUMMARY
-//  reset the location track (i.e. a single newline was just parsed)
+//  reset the location track (i.e. exactly one newline was just parsed possibly preceeded by {del} non-newline characters)
 //
 // PARAMETERS
 //  lloc - yylloc
 //  xtra - yyextra
+//  del  - offset from start of this token to the newline
 //
-void yyu_locreset(yyu_location * const restrict lloc, yyu_extra * const restrict xtra)
+void yyu_locreset(yyu_location * const restrict lloc, yyu_extra * const restrict xtra, const int del)
 	__attribute__((nonnull));
 
 /// LOCRESET
 //
 // call yyu_locreset with default parameters from a scanner rule
 //
-#define LOCRESET yyu_locreset(yylloc, yyextra)
+#define LOCRESET yyu_locreset(yylloc, yyextra, 0)
 
 /// yyu_nstate
 //

@@ -23,6 +23,8 @@
 #include "generator/genscan.h"
 #undef _GENSCAN
 
+#include "generator/generator.states.h"
+
 uint32_t genscan_parse(char * s, int l)
 {
 	int bslash = 0;
@@ -38,7 +40,7 @@ uint32_t genscan_parse(char * s, int l)
 		int i;
 		for(i = 0; i < genscan_num; i++)
 		{
-			if(s[l] == genscan_opener[genscan_modes[i]])
+			if(s[x] == genscan_opener[genscan_modes[i]])
 				break;
 		}
 
@@ -67,13 +69,13 @@ GENSCAN_TABLE(0)
 };
 
 int * genscan_basestate = (int[]){
-#define _GENSCAN(a, b, c, d, e, f, g) generator_ ## e,
+#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## e,
 GENSCAN_TABLE(0)
 #undef _GENSCAN
 };
 
 int * genscan_argstate = (int[]){
-#define _GENSCAN(a, b, c, d, e, f, g) generator_ ## e ## _ ## f,
+#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## e ## _arg_ ## f,
 GENSCAN_TABLE(0)
 #undef _GENSCAN
 };

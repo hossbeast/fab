@@ -56,33 +56,28 @@ $tabcfabpaths = [
 	> exec 1>${tokens_h}
 	> echo "#ifndef ${pfx}_TOKENS_H"
 	> echo "#define ${pfx}_TOKENS_H"
-	> echo "const char* ${pfx}_tokenname(int);"
-	> echo "enum ${pfx}_tokentype {"
+	> echo "int ${pfx}_numtokens;"
+	> echo "int * ${pfx}_tokennumbers;"
+	> echo "char ** ${pfx}_tokennames;"
+	> echo "enum ${pfx}_tokennames {"
 	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
 	>  | sed -ne "s/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/${pfx}_\1 = \2,/p"
 	> echo "};"	
 	> echo "#endif"
 
 	> exec 1>${tokens_c}
-	> echo "const char * ${pfx}_tokennames[] = {"
+	> echo "char ** ${pfx}_tokennames = (char *[]) {"
 	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
-	>  | sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/"\1",/p'
+	>  | sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/[\2] = "\1",/p'
 	> echo "};"	
-	> echo "const int ${pfx}_tokennumbers[] = {"
+	> echo "int * ${pfx}_tokennumbers = (int []) {"
 	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
-	>  | sed -ne "s/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2,/p"
+	>  | sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2,/p'
 	> echo "};"	
-	> echo "const char * ${pfx}_tokenname(int token){"
-	> echo "  int x;"
-	> echo "  for(x = 0; x < sizeof(${pfx}_tokennames) / sizeof(${pfx}_tokennames[0]); x++)"
-	> echo "  {"
-	> echo "    if(${pfx}_tokennumbers[x] == token)"
-	> echo "    {"
-	> echo "      return ${pfx}_tokennames[x];"
-	> echo "    }"
-	> echo "  }"
-	> echo "  return 0;"
-	> echo "}"
+	> echo "int ${pfx}_numtokens = sizeof((int []) {"
+	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+	>  | sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2,/p'
+	> echo "}) / sizeof(int);"	
 }
 
 # cc : tokens.c -> tokens.o @ std.c

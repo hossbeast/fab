@@ -56,63 +56,23 @@ extern union object_registry_t
 	};
 } object_registry;
 
-#define GENSCAN_MODE								0x00F
-#define GENSCAN_MODE_WITHREFS				0x000
-#define GENSCAN_MODE_NOREFS					0x001
-
-#define GS_REFS(x) (((x) & GENSCAN_MODE) == GENSCAN_MODE_REFS)
-
-#define GENSCAN_CLOSURE							0x0F0
-#define GENSCAN_CLOSURE_OPEN				0x000
-#define GENSCAN_CLOSURE_CLOSED			0x010
-
-#define GS_CLOSED(x) (((x) & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED)
-
-#define GENSCAN_CHAR								0xFF0
-#define GENSCAN_CHAR_SLASH					(0x000 | GENSCAN_CLOSURE_OPEN)
-#define GENSCAN_CHAR_COMMA					(0x100 | GENSCAN_CLOSURE_OPEN)
-#define GENSCAN_CHAR_BRACES					(0x200 | GENSCAN_CLOSURE_CLOSED)
-
-// table of genscan modes
-#define GENSCAN_TABLE(x) 																																																	\
-  _GENSCAN(GENSCAN_SLASH_NOREFS			, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_SLASH	, '/'	, '/'	, slash		,	norefs		, x)	\
-  _GENSCAN(GENSCAN_SLASH_WITHREFS		, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_SLASH	, '/'	, '/'	, slash		,	withrefs	, x)	\
-  _GENSCAN(GENSCAN_COMMA_NOREFS			, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_COMMA	, ','	, ','	, comma		,	norefs		, x)	\
-  _GENSCAN(GENSCAN_COMMA_WITHREFS		, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_COMMA	, ','	, ','	, comma		,	withrefs	, x)	\
-  _GENSCAN(GENSCAN_BRACES_NOREFS		, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_BRACES	, '{'	, '}'	, braces	,	norefs		, x)	\
-  _GENSCAN(GENSCAN_BRACES_WITHREFS	, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_BRACES	, '{'	, '}'	, braces	,	withrefs	, x)	\
-
-// declare genscan modes
-enum {
-#define _GENSCAN(a, b, c, d, e, f, g) a = b,
-GENSCAN_TABLE(0)
-#undef _GENSCAN
-};
-
-// number of genscan modes
-int genscan_num;
-
-// zero-based indexed up to genscan_num, contains genscan_mode values
-uint32_t * genscan_modes;
-
-// indexed by genscan mode, yields opening char
-char * genscan_opener;
-
-// indexed by genscan mode, yields closing char
-char * genscan_closer;
-
-// indexed by genscan mode, yields base state for that scanmode
-int * genscan_basestate;
-
-// indexed by genscan mode, yields arg parsing state for that scanmode
-int * genscan_argstate;
-
-// parse a genscan mode from a !scanmode directive
-uint32_t genscan_parse(char * s, int l)
-	__attribute__((nonnull));
-
-#define _GENSCAN(a, b, c, d, e, f, g) g == b ? #a :
-#define GENSCAN_STR(x) GENSCAN_TABLE(x) "GENSCAN_UNKNWN"
+/// generator_operations_write
+//
+// SUMMARY
+//  write a string describing a sequence of operations in a generator to a buffer
+//
+// PARAMETERS
+//  ops        - operation list
+//  opsl       - operations len
+//  buf        - buffer
+//  sz         - max bytes to write to buffer, including null byte
+//  [scanmode] - scanning mode, one of GENSCAN_*
+//
+// RETURNS
+//  number of bytes wriitten to buf
+//
+size_t generator_operations_write(operation ** const ops, int opsl, char * const restrict buf, const size_t sz, uint32_t * sm)
+	__attribute__((nonnull(1, 3)));
 
 /// generator_operation_write
 //
@@ -128,7 +88,43 @@ uint32_t genscan_parse(char * s, int l)
 // RETURNS
 //  number of bytes wriitten to buf
 //
-size_t generator_operation_write(const operation * const restrict oper, char * restrict buf, const size_t sz, uint32_t * scanmode)
+size_t generator_operation_write(operation * const restrict oper, char * restrict buf, const size_t sz, uint32_t * scanmode)
+	__attribute__((nonnull(1, 2)));
+
+/// generator_args_write
+//
+// SUMMARY
+//  write a string describing a sequence of arguments to a buffer
+//
+// PARAMETERS
+//  args       - args list
+//  argsl      - args len
+//  buf        - buffer
+//  sz         - max bytes to write to buffer, including null byte
+//  [scanmode] - scanning mode, one of GENSCAN_*
+//
+// RETURNS
+//  number of bytes wriitten to buf
+//
+size_t generator_args_write(arg ** const restrict args, const int argsl, char * const restrict buf, const size_t sz, uint32_t * sm)
+	__attribute__((nonnull(1, 3)));
+
+/// generator_arg_write
+//
+// SUMMARY
+//  write a string describing an argument to a buffer
+//
+// PARAMETERS
+//  args       - args list
+//  argsl      - args len
+//  buf        - buffer
+//  sz         - max bytes to write to buffer, including null byte
+//  [scanmode] - scanning mode, one of GENSCAN_*
+//
+// RETURNS
+//  number of bytes wriitten to buf
+//
+size_t generator_arg_write(arg * const arg, char * const restrict buf, const size_t sz, uint32_t * sm)
 	__attribute__((nonnull(1, 2)));
 
 #undef restrict
