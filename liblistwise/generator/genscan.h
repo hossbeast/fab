@@ -15,46 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_INTERNAL_H
-#define _LISTWISE_INTERNAL_H
-
-// liblistwise api
-#include "listwise.h"
-#include "listwise/xtra.h"
-
-// liblistwise operator api
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
-#include "listwise/generator.h"
-#include "listwise/ops.h"
-#include "listwise/object.h"
-#include "listwise/re.h"
-
-#include "coll.h"
-#include "idx.h"
-
-#define API __attribute__((visibility("protected")))
-#define APIDATA
-
-#define restrict __restrict
-
-// collection of registered object types
-// with lookup index by type id
-extern union object_registry_t
-{
-	coll_doubly c;
-
-	struct
-	{
-		int l;
-		int a;
-		int z;
-
-		struct listwise_object ** e;		// object defs
-
-		idx * by_type;									// indexed by type
-	};
-} object_registry;
+#ifndef _GENSCAN_H
+#define _GENSCAN_H
 
 #define GENSCAN_MODE								0x00F
 #define GENSCAN_MODE_WITHREFS				0x000
@@ -114,22 +76,4 @@ uint32_t genscan_parse(char * s, int l)
 #define _GENSCAN(a, b, c, d, e, f, g) g == b ? #a :
 #define GENSCAN_STR(x) GENSCAN_TABLE(x) "GENSCAN_UNKNWN"
 
-/// generator_operation_write
-//
-// SUMMARY
-//  write a string describing an operation in a generator to a buffer
-//
-// PARAMETERS
-//  oper       - operation
-//  buf        - buffer
-//  sz         - max bytes to write to buffer, including null byte
-//  [scanmode] - scanning mode, one of GENSCAN_*
-//
-// RETURNS
-//  number of bytes wriitten to buf
-//
-size_t generator_operation_write(const operation * const restrict oper, char * restrict buf, const size_t sz, uint32_t * scanmode)
-	__attribute__((nonnull(1, 2)));
-
-#undef restrict
-#endif
+#undef

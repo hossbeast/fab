@@ -119,6 +119,11 @@ static int generator_lvalstr(int token, void * restrict lval, struct yyu_extra *
 	return 0;
 }
 
+static const char * generator_statename(int state)
+{
+	return generator_statenames[state];
+}
+
 static int parse(generator_parser* p, char* s, int l, char * name, int namel, generator** g)
 {
 	// create state specific to this parse

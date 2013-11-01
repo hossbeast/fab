@@ -22,6 +22,7 @@
 	#include "generator/generator.def.h"
 	#include "generator/generator.tab.h"
 	#include "generator/generator.tokens.h"
+	#include "generator/genscan.h"
 
 	#include "macros.h"
 
@@ -152,50 +153,25 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 %%
 
-<INITIAL,multilinecomment>[/][*]												{ LOCWRITE; PUSHSTATE(multilinecomment); }
+<INITIAL,ws,multilinecomment>[/][*]											{ LOCWRITE; PUSHSTATE(multilinecomment); }
 <multilinecomment>[*][/]																{ LOCWRITE; POPSTATE; }
 <multilinecomment>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n*/]+		{ LOCWRITE; }
 <multilinecomment>[*][^\x00-\x08\x0B-\x1F\x7F-\xFF\n/]	{ LOCWRITE; }
 <multilinecomment>[/]																		{ LOCWRITE; }
-<INITIAL,multilinecomment>[\n]													{ LOCRESET; }
+<multilinecomment>[\n]																	{ LOCRESET; }
 
-<INITIAL>[\t ]+																					{ return LEX(WS); }
-<INITIAL>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ]+						{
-																													if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_SLASH)
-																														PUSHSTATE(slash);
-																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_COMMA)
-																														PUSHSTATE(comma);
-																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_BRACES)
-																														PUSHSTATE(braces);
-
-																													PUSHSTATE(next);
-																													typeof(*yylval->op) * op;
-
-				 																									if((op = op_lookup(yytext, yyleng)))
-																														PUSHSTATE(operator);
-																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_SLASH)
-																														PUSHSTATE(argument);
-																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_COMMA)
-																														PUSHSTATE(comma);
-																													else if((yyextra->scanmode & GENSCAN_CHAR) == GENSCAN_CHAR_BRACES)
-																														PUSHSTATE(braces);
-
-																													yyless(0);
-																												}
-<next>[\n]																							{ PUSHSTATE(ws); return LEX(LF); }
-<next>[\t ]+																						{ PUSHSTATE(ws); return LEX(WS); }
-<next>[^\x00-\x08\x0B-\x1F\x7F-\xFF]										{ PUSHSTATE(NSTATE(1)); yyless(0); }
-<ws>[\n]																								{ return LEX(LF); }
-<ws>[\t ]+																							{ return LEX(WS); }
-<ws>[!][/{}\\,]+																				{ POPSTATE; }
-<ws>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ]+								{ POPSTATE; PUSHSTATE(operator); yyless(0); }
-<operator>[-a-zA-Z]+																		{
-																													POPSTATE;
-
+<INITIAL,ws>[\n]																				{ return LEX(LF); }
+<INITIAL,ws>[\t ]+																			{ return LEX(WS); }
+<INITIAL,ws>[-a-zA-Z]+																	{
 																													typeof(*yylval->op) * op;
 				 																									if((op = op_lookup(yytext, yyleng)))
 																													{
 				 																										return LEXV(OP, 0, &op);
+																													}
+																													else if(TOPSTATE == INITIAL)
+																													{
+																														PUSHSTATE(genscan_argstate[yyextra->scanmode]);
+																														return LEX(STR);
 																													}
 																													else
 																													{
@@ -204,6 +180,9 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														return 0;
 																													}
 																												}
+<INITIAL,ws>[!][/{}\\,]+																{ yyextra->scanmode = genscan_parse(yytext, yyleng); }
+<INITIAL,ws>[^\x00-\x08\x0B-\x1F\x7F-\xFF]							{ PUSHSTATE(genscan_basestate[yyextra->scanmode]); yyless(0); }
+
 <slash>[^\x00-\x08\x0B-\x1F\x7F-\xFF/]									{ POPSTATE; yyless(0); if(GS_REFS(yyextra->scanmode)) { PUSHSTATE(slash_arg_withrefs); } else { PUSHSTATE(slash_arg_norefs); } }
 
 <slash_arg_norefs>[\n\t /]															{ POPSTATE; yyless(0); }

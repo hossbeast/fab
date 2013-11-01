@@ -56,6 +56,9 @@ $lexhfabpaths = [
 	> exec 1>${states_h}
 	> echo "#ifndef ${pfx}_STATES_H"
 	> echo "#define ${pfx}_STATES_H"
+	> echo "const int ${pfx}_numstates;"
+	> echo "const int * ${pfx}_statenumbers;"
+	> echo "const char * ${pfx}_statenames;"
 	> echo "const char* ${pfx}_statename(int);"
 	> echo "enum ${pfx}_statenames {"
 	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
@@ -64,25 +67,15 @@ $lexhfabpaths = [
 	> echo "#endif"
 
 	> exec 1>${states_c}
-	> echo "const char * ${pfx}_statenames[] = {"
+	> echo "const char * ${pfx}_statenames =(char *[]) {"
 	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
-	>  | sed -ne 's/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/"\1",/p'
+	>  | sed -ne 's/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/[\2] = "\1",/p'
 	> echo "};"	
-	> echo "const int ${pfx}_statenumbers[] = {"
+	> echo "const int * ${pfx}_statenumbers = (int []) {"
 	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
 	>  | sed -ne "s/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/\2,/p"
 	> echo "};"	
-	> echo "const char * ${pfx}_statename(int state){"
-	> echo "  int x;"
-	> echo "  for(x = 0; x < sizeof(${pfx}_statenames) / sizeof(${pfx}_statenames[0]); x++)"
-	> echo "  {"
-	> echo "    if(${pfx}_statenumbers[x] == state)"
-	> echo "    {"
-	> echo "      return ${pfx}_statenames[x];"
-	> echo "    }"
-	> echo "  }"
-	> echo "  return 0;"
-	> echo "}"
+	> echo "const int numstates = sizeof(generator_statenumbers) / sizeof(generator_statenumbers[0]);"
 }
 
 # cc : tokens.c -> tokens.o @ std.c

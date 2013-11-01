@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "listwise/internal.h"
-#undef _GENSCAN
 
 #include "xmem.h"
 
@@ -47,23 +46,3 @@ void __attribute__((destructor)) list_teardown()
 		free(listwise_identity->s);
 	free(listwise_identity);
 }
-
-char * genscan_opener = (char[]){
-#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = c,
-GENSCAN_TABLE(0)
-#undef _GENSCAN
-};
-
-char * genscan_closer = (char[]){
-#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = d,
-GENSCAN_TABLE(0)
-#undef _GENSCAN
-};
-
-int * genscan_basestate = (int[]){
-#define _GENSCAN(a, b, c, d, e, f, g) generator_ ## e,
-};
-
-int * genscan_argstate = (int[]){
-#define _GENSCAN(a, b, c, d, e, f, g) generator_ ## e ## _ ## f,
-};
