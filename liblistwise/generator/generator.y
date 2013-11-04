@@ -71,13 +71,11 @@
 %type   <operation> operation
 %type   <operations> operations
 %type   <args>  args
-%type   <args>  args_noopen
-%type   <args>  argseq
 
 %type		<arg>		arg
 %type   <arg>   string
 
-%right '/' ',' '{' '}' STR
+%right '/' ',' '.' ';' ':' '{' '}' '[' ']' '(' ')' '<' '>' STR
 
 %%
 
@@ -154,7 +152,7 @@ opsep
 	;
 
 operation
-	: operation argopen args_noopen %prec STR
+	: operation argdiv args %prec STR
 	{
 		$$ = $1;
 		$$->args = $3;
@@ -168,27 +166,7 @@ operation
 	;
 
 args
-	: argopen argseq argclose
-	{
-		$$ = $2;
-	}
-	| argseq argclose
-	{
-		$$ = $1;
-	}
-	| argseq
-	;
-
-args_noopen
-	: argseq argclose
-	{
-		$$ = $1;
-	}
-	| argseq
-	;
-
-argseq
-	: argseq argsep arg
+	: args argdiv arg
 	{
 		$$ = $1;
 		if(parm->argsa == parm->argsl)
@@ -200,6 +178,10 @@ argseq
 		}
 		$$[parm->argsl++] = $3;
 	}
+	| args divclose %prec STR
+	{
+		$$ = $1;
+	}
 	| arg
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$) * 2);
@@ -209,18 +191,47 @@ argseq
 	}
 	;
 
+argdiv
+	: divsep divopen
+	| divsep
+	| divopen
+	;
+
+divclose
+	: divclose argclose
+	| argclose
+	;
+
+divsep
+	: divsep argsep
+	| argsep
+	;
+
+divopen
+	: divopen argopen
+	| argopen
+	;
+
 argsep
 	: '/'
 	| ','
-	| '}' '{'
+	| '.'
+	| ';'
+	| ':'
 	;
 
 argopen
 	: '{'
+	| '['
+	| '('
+	| '<'
 	;
 
 argclose
 	: '}'
+	| ']'
+	| ')'
+	| '>'
 	;
 
 arg

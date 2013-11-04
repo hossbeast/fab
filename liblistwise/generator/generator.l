@@ -145,9 +145,17 @@
 %x ws
 %x multilinecomment
 %x emptyarg
+
 %x slash_norefs slash_dorefs
 %x comma_norefs comma_dorefs
+%x dot_norefs dot_dorefs
+%x colon_norefs colon_dorefs
+%x semicolon_norefs semicolon_dorefs
+
 %x braces braces_norefs braces_dorefs
+%x brackets brackets_norefs brackets_dorefs
+%x parens parens_norefs parens_dorefs
+%x angles angles_norefs angles_dorefs
 
 /* bytes that cannot appear in the string being scanned */
 ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
@@ -164,7 +172,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 <INITIAL,ws>[\n]																				{ return LEX(LF); }
 <INITIAL,ws>[\t ]+																			{ return LEX(WS); }
-<INITIAL>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t !]+					{
+<INITIAL>[-a-zA-Z]+																			{
 																													PUSHSTATE(ws);
 																													typeof(*yylval->op) * op;
 																													if((op = op_lookup(yytext, yyleng)))
@@ -176,6 +184,11 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														PUSHSTATE(genscan_basestate[yyextra->scanmode]);
 																														yyless(0);
 																													}
+																												}
+<INITIAL>[^-\x00-\x08\x0B-\x1F\x7F-\xFFa-zA-Z\n\t !]+		{
+																													PUSHSTATE(ws);
+																													PUSHSTATE(genscan_basestate[yyextra->scanmode]);
+																													yyless(0);
 																												}
 <ws>[-a-zA-Z]+																					{
 																													typeof(*yylval->op) * op;
@@ -190,16 +203,17 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														return 0;
 																													}
 																												}
-<INITIAL,ws>!{1,2}[/{,]																	{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
+<INITIAL>!{1,2}[/,.:;{[(<]															{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
+<ws>!{1,2}[/,.:;{[(<]																		{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); POPSTATE; }
+<ws>[\t ]+!{1,2}[/,.:;{[(<][\t ]+												{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); POPSTATE; }
 <ws>[^\x00-\x08\x0B-\x1F\x7F-\xFF]											{ PUSHSTATE(genscan_basestate[yyextra->scanmode]); yyless(0); }
 
  /* fabricate an empty-string STR token */
-<emptyarg>[\x00-\xff]																					{ POPSTATE; yyless(0); return LEXS(STR, 1); }
+<emptyarg>[\x00-\xff]																		{ POPSTATE; yyless(0); return LEXS(STR, 1); }
 
  /* slash-delimited scanner */
 <slash_norefs,slash_dorefs>[/]													{ return LEX(yytext[0]); }
 <slash_norefs,slash_dorefs>[/][/]												{ PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0]); }
-<slash_norefs,slash_dorefs>[/][\t ]+!{1,2}[/{,][\t ]+		{ LOCWRITE; POPSTATE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
 <slash_norefs,slash_dorefs>[\n\t ]											{ POPSTATE; yyless(0); }
 <slash_norefs,slash_dorefs>-?[0-9]+											{ return LEXV(I64, 0, 0); }
 
@@ -215,7 +229,6 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
  /* comma-delimited scanner */
 <comma_norefs,comma_dorefs>[,]													{ return LEX(yytext[0]); }
 <comma_norefs,comma_dorefs>[,][,]												{ PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0]); }
-<comma_norefs,comma_dorefs>[,][\t ]+!{1,2}[/{,][\t ]+		{ LOCWRITE; POPSTATE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
 <comma_norefs,comma_dorefs>[\n\t ]											{ POPSTATE; yyless(0); }
 <comma_norefs,comma_dorefs>-?[0-9]+											{ return LEXV(I64, 0, 0); }
 
@@ -228,13 +241,56 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <comma_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
 <comma_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ,\\]+		{ return LEX(STR); }
 
+ /* dot-delimited scanner */
+<dot_norefs,dot_dorefs>[.]															{ return LEX(yytext[0]); }
+<dot_norefs,dot_dorefs>[.][.]														{ PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0]); }
+<dot_norefs,dot_dorefs>[\n\t ]													{ POPSTATE; yyless(0); }
+<dot_norefs,dot_dorefs>-?[0-9]+													{ return LEXV(I64, 0, 0); }
+
+<dot_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t .]+				{ return LEX(STR); }
+
+<dot_dorefs>\\[\\\n\t .]																{ return LEXS(STR, 1); }
+<dot_dorefs>\\[abtnvfr]																	{ return LEXC(CREF, 1); }
+<dot_dorefs>\\x[0-9a-fA-F]{1,2}													{ return LEXV(HREF, 2, 0); }
+<dot_dorefs>\\x\{[0-9a-fA-F]{1,2}\}											{ return LEXV(HREF, 3, 0); }
+<dot_dorefs>\\[0-9]+																		{ return LEXV(BREF, 1, 0); }
+<dot_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t .\\]+			{ return LEX(STR); }
+
+ /* colon-delimited scanner */
+<colon_norefs,colon_dorefs>[:]													{ return LEX(yytext[0]); }
+<colon_norefs,colon_dorefs>[:][:]												{ PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0]); }
+<colon_norefs,colon_dorefs>[\n\t ]											{ POPSTATE; yyless(0); }
+<colon_norefs,colon_dorefs>-?[0-9]+											{ return LEXV(I64, 0, 0); }
+
+<colon_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t :]+			{ return LEX(STR); }
+
+<colon_dorefs>\\[\\\n\t :]															{ return LEXS(STR, 1); }
+<colon_dorefs>\\[abtnvfr]																{ return LEXC(CREF, 1); }
+<colon_dorefs>\\x[0-9a-fA-F]{1,2}												{ return LEXV(HREF, 2, 0); }
+<colon_dorefs>\\x\{[0-9a-fA-F]{1,2}\}										{ return LEXV(HREF, 3, 0); }
+<colon_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
+<colon_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t :\\]+		{ return LEX(STR); }
+
+ /* semicolon-delimited scanner */
+<semicolon_norefs,semicolon_dorefs>[:]										{ return LEX(yytext[0]); }
+<semicolon_norefs,semicolon_dorefs>[:][:]									{ PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0]); }
+<semicolon_norefs,semicolon_dorefs>[\n\t ]								{ POPSTATE; yyless(0); }
+<semicolon_norefs,semicolon_dorefs>-?[0-9]+								{ return LEXV(I64, 0, 0); }
+
+<semicolon_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t :]+		{ return LEX(STR); }
+
+<semicolon_dorefs>\\[\\\n\t :]														{ return LEXS(STR, 1); }
+<semicolon_dorefs>\\[abtnvfr]															{ return LEXC(CREF, 1); }
+<semicolon_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
+<semicolon_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
+<semicolon_dorefs>\\[0-9]+																{ return LEXV(BREF, 1, 0); }
+<semicolon_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t :\\]+	{ return LEX(STR); }
+
  /* braces-enclosed scanner */
 <braces>[{]																							{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(yytext[0]); }
-<braces>[}]																							{ POPSTATE; return LEX(yytext[0]); }
 <braces>[\n\t ]																					{ POPSTATE; yyless(0); }
-<braces>[\t ]+!{1,2}[/{,][\t ]+													{ LOCWRITE; POPSTATE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
 <braces_norefs,braces_dorefs>[{]												{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(STR); }
-<braces_norefs,braces_dorefs>[}]												{ POPSTATE; return LEX(STR); }
+<braces_norefs,braces_dorefs>[}]												{ POPSTATE; if(TOPSTATE == braces) { return LEX(yytext[0]); } else { return LEX(STR); } }
 
 <braces_norefs,braces_dorefs>-?[0-9]+										{ return LEXV(I64, 0, 0); }
 
@@ -246,6 +302,57 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <braces_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
 <braces_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
 <braces_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF{}\\]+			{ return LEX(STR); }
+
+ /* brackets-enclosed scanner */
+<brackets>[[]																						{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(yytext[0]); }
+<brackets>[\n\t ]																				{ POPSTATE; yyless(0); }
+<brackets_norefs,brackets_dorefs>[[]										{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(STR); }
+<brackets_norefs,brackets_dorefs>[\]]										{ POPSTATE; if(TOPSTATE == brackets) { return LEX(yytext[0]); } else { return LEX(STR); } }
+
+<brackets_norefs,brackets_dorefs>-?[0-9]+								{ return LEXV(I64, 0, 0); }
+
+<brackets_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF[\]]+			{ return LEX(STR); }
+
+<brackets_dorefs>\\[\\}]																{ return LEXS(STR, 1); }
+<brackets_dorefs>\\[abtnvfr]														{ return LEXS(STR, 1); }
+<brackets_dorefs>\\x[0-9a-fA-F]{1,2}										{ return LEXV(HREF, 2, 0); }
+<brackets_dorefs>\\x\{[0-9a-fA-F]{1,2}\}								{ return LEXV(HREF, 3, 0); }
+<brackets_dorefs>\\[0-9]+																{ return LEXV(BREF, 1, 0); }
+<brackets_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF[\]\\]+		{ return LEX(STR); }
+
+ /* parens-enclosed scanner */
+<parens>[(]																							{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(yytext[0]); }
+<parens>[\n\t ]																					{ POPSTATE; yyless(0); }
+<parens_norefs,parens_dorefs>[(]												{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(STR); }
+<parens_norefs,parens_dorefs>[)]												{ POPSTATE; if(TOPSTATE == parens) { return LEX(yytext[0]); } else { return LEX(STR); } }
+
+<parens_norefs,parens_dorefs>-?[0-9]+										{ return LEXV(I64, 0, 0); }
+
+<parens_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF()]+				{ return LEX(STR); }
+
+<parens_dorefs>\\[\\}]																	{ return LEXS(STR, 1); }
+<parens_dorefs>\\[abtnvfr]															{ return LEXS(STR, 1); }
+<parens_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
+<parens_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
+<parens_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
+<parens_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF()\\]+			{ return LEX(STR); }
+
+ /* angles-enclosed scanner */
+<angles>[<]																							{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(yytext[0]); }
+<angles>[\n\t ]																					{ POPSTATE; yyless(0); }
+<angles_norefs,angles_dorefs>[<]												{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(STR); }
+<angles_norefs,angles_dorefs>[>]												{ POPSTATE; if(TOPSTATE == angles) { return LEX(yytext[0]); } else { return LEX(STR); } }
+
+<angles_norefs,angles_dorefs>-?[0-9]+										{ return LEXV(I64, 0, 0); }
+
+<angles_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF<>]+				{ return LEX(STR); }
+
+<angles_dorefs>\\[\\}]																	{ return LEXS(STR, 1); }
+<angles_dorefs>\\[abtnvfr]															{ return LEXS(STR, 1); }
+<angles_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
+<angles_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
+<angles_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
+<angles_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF<>\\]+			{ return LEX(STR); }
 
 <*>[\x00-\x1F\x7F-\xFF]																	{
 																													snprintf(yyextra->temp, sizeof(yyextra->temp), "unknown character : (0x%02hhx)", yytext[0]);
