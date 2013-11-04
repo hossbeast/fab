@@ -27,12 +27,12 @@
 
 uint32_t genscan_parse(char * s, int l)
 {
-	int bslash = 0;
+	int bang = 0;
 	int x;	
 	for(x = 0; x < l; x++)
 	{
-		if(s[x] == '\\')
-			bslash++;
+		if(s[x] == '!')
+			bang++;
 	}
 
 	for(x = 0; x < l; x++)
@@ -46,7 +46,7 @@ uint32_t genscan_parse(char * s, int l)
 
 		if(i < genscan_num)
 		{
-			if(bslash)
+			if(bang == 1)
 				return genscan_modes[i + 1];
 			else
 				return genscan_modes[i];
@@ -75,7 +75,7 @@ GENSCAN_TABLE(0)
 };
 
 int * genscan_argstate = (int[]){
-#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## e ## _arg_ ## f,
+#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## f,
 GENSCAN_TABLE(0)
 #undef _GENSCAN
 };

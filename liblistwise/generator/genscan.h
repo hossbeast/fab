@@ -36,13 +36,13 @@
 #define GENSCAN_CHAR_BRACES					(0x200 | GENSCAN_CLOSURE_CLOSED)
 
 // table of genscan modes
-#define GENSCAN_TABLE(x) 																																																	\
-  _GENSCAN(GENSCAN_SLASH_NOREFS			, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_SLASH	, '/'	, '/'	, slash		,	norefs		, x)	\
-  _GENSCAN(GENSCAN_SLASH_WITHREFS		, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_SLASH	, '/'	, '/'	, slash		,	withrefs	, x)	\
-  _GENSCAN(GENSCAN_COMMA_NOREFS			, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_COMMA	, ','	, ','	, comma		,	norefs		, x)	\
-  _GENSCAN(GENSCAN_COMMA_WITHREFS		, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_COMMA	, ','	, ','	, comma		,	withrefs	, x)	\
-  _GENSCAN(GENSCAN_BRACES_NOREFS		, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_BRACES	, '{'	, '}'	, braces	,	norefs		, x)	\
-  _GENSCAN(GENSCAN_BRACES_WITHREFS	, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_BRACES	, '{'	, '}'	, braces	,	withrefs	, x)	\
+#define GENSCAN_TABLE(x) 																																																						\
+  _GENSCAN(GENSCAN_SLASH_NOREFS			, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_SLASH	, '/'	, 0		, slash_norefs	,	slash_norefs	, x)	\
+  _GENSCAN(GENSCAN_SLASH_WITHREFS		, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_SLASH	, '/'	, 0		, slash_dorefs	,	slash_dorefs	, x)	\
+  _GENSCAN(GENSCAN_COMMA_NOREFS			, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_COMMA	, ','	, 0		, comma_norefs	,	slash_norefs	, x)	\
+  _GENSCAN(GENSCAN_COMMA_WITHREFS		, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_COMMA	, ','	, 0		, comma_norefs	,	slash_dorefs	, x)	\
+  _GENSCAN(GENSCAN_BRACES_NOREFS		, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_BRACES	, '{'	, '}'	, braces				,	braces_norefs	, x)	\
+  _GENSCAN(GENSCAN_BRACES_WITHREFS	, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_BRACES	, '{'	, '}'	, braces				,	braces_dorefs	, x)	\
 
 // declare genscan modes
 enum {
@@ -63,10 +63,10 @@ char * genscan_opener;
 // indexed by genscan mode, yields closing char
 char * genscan_closer;
 
-// indexed by genscan mode, yields base state for that scanmode
+// indexed by genscan mode, yields initial scan state for that scanmode
 int * genscan_basestate;
 
-// indexed by genscan mode, yields arg parsing state for that scanmode
+// indexed by genscan mode, yields arg scanning state for that scanmode
 int * genscan_argstate;
 
 // parse a genscan mode from a !scanmode directive

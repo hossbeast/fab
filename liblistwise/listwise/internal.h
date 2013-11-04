@@ -56,7 +56,23 @@ extern union object_registry_t
 	};
 } object_registry;
 
-/// generator_operations_write
+/// generator_snwrite
+//
+// SUMMARY
+//  write a string describing a generator to a buffer
+//
+// PARAMETERS
+//  dst        - buffer
+//  sz         - max bytes to write to buffer, including null byte
+//  g          - generator
+//
+// RETURNS
+//  number of bytes wriitten to dst
+//
+size_t generator_snwrite(char * const restrict dst, const size_t sz, generator * const g)
+	__attribute__((nonnull(1, 3)));
+
+/// generator_operations_snwrite
 //
 // SUMMARY
 //  write a string describing a sequence of operations in a generator to a buffer
@@ -64,34 +80,34 @@ extern union object_registry_t
 // PARAMETERS
 //  ops        - operation list
 //  opsl       - operations len
-//  buf        - buffer
+//  dst        - buffer
 //  sz         - max bytes to write to buffer, including null byte
 //  [scanmode] - scanning mode, one of GENSCAN_*
 //
 // RETURNS
-//  number of bytes wriitten to buf
+//  number of bytes wriitten to dst
 //
-size_t generator_operations_write(operation ** const ops, int opsl, char * const restrict buf, const size_t sz, uint32_t * sm)
+size_t generator_operations_snwrite(char * const restrict dst, const size_t sz, operation ** const ops, int opsl, uint32_t sm)
 	__attribute__((nonnull(1, 3)));
 
-/// generator_operation_write
+/// generator_operation_snwrite
 //
 // SUMMARY
 //  write a string describing an operation in a generator to a buffer
 //
 // PARAMETERS
 //  oper       - operation
-//  buf        - buffer
+//  dst        - buffer
 //  sz         - max bytes to write to buffer, including null byte
 //  [scanmode] - scanning mode, one of GENSCAN_*
 //
 // RETURNS
-//  number of bytes wriitten to buf
+//  number of bytes wriitten to dst
 //
-size_t generator_operation_write(operation * const restrict oper, char * restrict buf, const size_t sz, uint32_t * scanmode)
-	__attribute__((nonnull(1, 2)));
+size_t generator_operation_snwrite(char * const restrict dst, const size_t sz, operation * const restrict oper, uint32_t sm)
+	__attribute__((nonnull(1, 3)));
 
-/// generator_args_write
+/// generator_args_snwrite
 //
 // SUMMARY
 //  write a string describing a sequence of arguments to a buffer
@@ -99,17 +115,17 @@ size_t generator_operation_write(operation * const restrict oper, char * restric
 // PARAMETERS
 //  args       - args list
 //  argsl      - args len
-//  buf        - buffer
+//  dst        - buffer
 //  sz         - max bytes to write to buffer, including null byte
 //  [scanmode] - scanning mode, one of GENSCAN_*
 //
 // RETURNS
-//  number of bytes wriitten to buf
+//  number of bytes wriitten to dst
 //
-size_t generator_args_write(arg ** const restrict args, const int argsl, char * const restrict buf, const size_t sz, uint32_t * sm)
+size_t generator_args_snwrite(char * const restrict dst, const size_t sz, arg ** const restrict args, const int argsl, uint32_t sm)
 	__attribute__((nonnull(1, 3)));
 
-/// generator_arg_write
+/// generator_arg_snwrite
 //
 // SUMMARY
 //  write a string describing an argument to a buffer
@@ -117,15 +133,23 @@ size_t generator_args_write(arg ** const restrict args, const int argsl, char * 
 // PARAMETERS
 //  args       - args list
 //  argsl      - args len
-//  buf        - buffer
+//  dst        - buffer
 //  sz         - max bytes to write to buffer, including null byte
 //  [scanmode] - scanning mode, one of GENSCAN_*
 //
 // RETURNS
-//  number of bytes wriitten to buf
+//  number of bytes wriitten to dst
 //
-size_t generator_arg_write(arg * const arg, char * const restrict buf, const size_t sz, uint32_t * sm)
-	__attribute__((nonnull(1, 2)));
+size_t generator_arg_snwrite(char * const restrict dst, const size_t sz, arg * const arg, uint32_t sm)
+	__attribute__((nonnull(1, 3)));
+
+/// generator_arg_scanmode
+//
+// SUMMARY
+//  get the scanmode best suited for representing the specified arg
+//
+uint32_t generator_arg_scanmode(arg * const arg)
+	__attribute__((nonnull));
 
 #undef restrict
 #endif

@@ -86,31 +86,19 @@ static int generator_lvalstr(int token, void * restrict lval, struct yyu_extra *
 	*buf = 0;
 	*bufl = 0;
 
-	if(token == generator_I64 || token == generator_BREF || token == generator_HREF || token == generator_OP)
+	if(token == generator_I64 || token == generator_BREF || token == generator_HREF || token == generator_CREF || token == generator_OP)
 	{
-		if(token == generator_CREF)
+		if(token == generator_CREF || token == generator_HREF)
 		{
-			if(((YYSTYPE*)lval)->ref == 0x07)
-				*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\a");
-			else if(((YYSTYPE*)lval)->ref == 0x08)
-				*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\b");
-			else if(((YYSTYPE*)lval)->ref == 0x09)
-				*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\t");
-			else if(((YYSTYPE*)lval)->ref == 0x0a)
-				*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\n");
-			else if(((YYSTYPE*)lval)->ref == 0x0b)
-				*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\v");
-			else if(((YYSTYPE*)lval)->ref == 0x0c)
-				*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\f");
-			else if(((YYSTYPE*)lval)->ref == 0x0d)
-				*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\r");
+			if(((YYSTYPE*)lval)->ref < 0x20 || ((YYSTYPE*)lval)->ref > 0x7E)
+				*bufl = snprintf(pp->temp, sizeof(pp->temp), "0x%02x", ((YYSTYPE*)lval)->ref);
+			else
+				*bufl = snprintf(pp->temp, sizeof(pp->temp), "0x%1$02x=%1$1c", ((YYSTYPE*)lval)->ref);
 		}
 		else if(token == generator_I64)
 			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%"PRId64, ((YYSTYPE*)lval)->i64);
 		else if(token == generator_BREF)
-			*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\%d", ((YYSTYPE*)lval)->ref);
-		else if(token == generator_HREF)
-			*bufl = snprintf(pp->temp, sizeof(pp->temp), "\\x{%02x}", ((YYSTYPE*)lval)->ref);
+			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%d", ((YYSTYPE*)lval)->ref);
 		else if(token == generator_OP)
 			*bufl = snprintf(pp->temp, sizeof(pp->temp), "%s", ((YYSTYPE*)lval)->op->s);
 
@@ -298,132 +286,187 @@ void API generator_dump(generator* g)
 {
 	char space[2048];
 
-	int x;
-	int y;
-
-	printf("generator @ %p {\n", g);
-	printf("  initial list\n");
-
-	char * s = space;
-	size_t sz = sizeof(space);
-	uint32_t sm = 0;
 	size_t z = 0;
 
-	z += generator_args_write(g->args, g->argsl, s + z, sz - z, &sm);
+	// expanded generator description
+	dprintf(listwise_info_fd, "generator @ %p {\n", g);
+	dprintf(listwise_info_fd, "  initial list\n");
 
+	int x;
 	for(x = 0; x < g->argsl; x++)
 	{
-		printf("    '%.*s'\n", g->args[x]->l, g->args[x]->s);
+		z = generator_arg_snwrite(space, sizeof(space), g->args[x], 0);
+		dprintf(listwise_info_fd, "    %.*s\n", (int)z, space);
 	}
 
-	printf("  operations\n");
+	dprintf(listwise_info_fd, "  operations\n");
 	for(x = 0; x < g->opsl; x++)
 	{
-		if(x || z)
-			z += snprintf(s + z, sz - z, " ");
+		dprintf(listwise_info_fd, "    OP - %s\n", g->ops[x]->op->s);
+		dprintf(listwise_info_fd, "      args\n");
 
-		z += generator_operation_write(g->ops[x], s + z, sz - z, &sm);
-
-		printf("    OP - %s\n", g->ops[x]->op->s);
-		printf("      args\n");
+		int y;
 		for(y = 0; y < g->ops[x]->argsl; y++)
 		{
-			printf("        '%s'\n", g->ops[x]->args[y]->s);
+			z = generator_arg_snwrite(space, sizeof(space), g->ops[x]->args[y], 0);
+			dprintf(listwise_info_fd, "        %.*s\n", (int)z, space);
 		}
 
 		if(y == 0)
-			printf("        none\n");
+			dprintf(listwise_info_fd, "        none\n");
 	}
 
 	if(x == 0)
-		printf("    none\n");
+		dprintf(listwise_info_fd, "    none\n");
 
-	printf("\n");
-	printf(" --> %s\n", s);
-	printf("}\n");
+	// normalized generator-string
+	dprintf(listwise_info_fd, "\n");
+
+	z = generator_snwrite(space, sizeof(space), g);
+	dprintf(listwise_info_fd, " --> %.*s\n", (int)z, space);
+
+	dprintf(listwise_info_fd, "}\n");
 }
 
 ///
 /// public
 ///
 
-size_t generator_operations_write(operation ** const ops, int opsl, char * const buf, const size_t sz, uint32_t * sm)
+size_t generator_snwrite(char * const dst, const size_t sz, generator * const g)
 {
-	uint32_t local_sm;
-	if(!sm)
-	{
-		local_sm = GENSCAN_SLASH_WITHREFS;
-		sm = &local_sm;
-	}
+	uint32_t sm = GENSCAN_SLASH_WITHREFS;
 
+	size_t z = 0;
+	z += generator_args_snwrite(dst + z, sz - z, g->args, g->argsl, sm);
+
+	if(z)
+		z += snprintf(dst + z, sz - z, " ");
+
+	return z + generator_operations_snwrite(dst + z, sz - z, g->ops, g->opsl, sm);
+}
+
+size_t generator_operations_snwrite(char * const dst, const size_t sz, operation ** const ops, int opsl, uint32_t sm)
+{
 	size_t z = 0;
 	
 	int x;
 	for(x = 0; x < opsl; x++)
 	{
 		if(x)
-			z += snprintf(buf + z, sz - z, " ");
+			z += snprintf(dst + z, sz - z, " ");
 
-		z += generator_operation_write(ops[x], buf + z, sz - z, sm);
+		z += generator_operation_snwrite(dst + z, sz - z, ops[x], sm);
 	}
 
 	return z;
 }
 
-size_t generator_operation_write(operation * const oper, char * const buf, const size_t sz, uint32_t * sm)
+size_t generator_operation_snwrite(char * const dst, const size_t sz, operation * const oper, uint32_t sm)
 {
-	uint32_t local_sm;
-	if(!sm)
-	{
-		local_sm = GENSCAN_SLASH_WITHREFS;
-		sm = &local_sm;
-	}
-
 	size_t z = 0;
-	z += snprintf(buf + z, sz - z, "%s", oper->op->s);
+	z += snprintf(dst + z, sz - z, "%s", oper->op->s);
 
 	// emit the delimiter
 	if(oper->argsl)
-		z += snprintf(buf + z, sz - z, "%c", genscan_opener[*sm]);
+		z += snprintf(dst + z, sz - z, "%c", genscan_opener[sm]);
 
-	z += generator_args_write(oper->args, oper->argsl, buf, sz - z, sm);
-
-	return z;
+	return z + generator_args_snwrite(dst + z, sz - z, oper->args, oper->argsl, sm);
 }
 
-size_t generator_args_write(arg ** const args, const int argsl, char * const buf, const size_t sz, uint32_t * sm)
+size_t generator_args_snwrite(char * const dst, const size_t sz, arg ** const args, const int argsl, uint32_t sm)
 {
 	size_t z = 0;
-	uint32_t local_sm;
-	if(!sm)
-	{
-		local_sm = GENSCAN_SLASH_WITHREFS;
-		sm = &local_sm;
-	}
 
 	int x;
 	for(x = 0; x < argsl; x++)
 	{
-		// emit the delimiter
-		if(x)
-			z += snprintf(buf + z, sz - z, "%c", genscan_opener[*sm]);
+		// emit the opener
+		if((sm & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED)
+			z += snprintf(dst + z, sz - z, "%c", genscan_opener[sm]);
+		else if(x)
+			z += snprintf(dst + z, sz - z, "%c", genscan_opener[sm]);
 
-		z += generator_arg_write(args[x], buf, sz - z, sm);
+		// emit the argument string
+		z += generator_arg_snwrite(dst + z, sz - z, args[x], sm);
+
+		// emit the closer
+		if((sm & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED)
+			z += snprintf(dst + z, sz - z, "%c", genscan_closer[sm]);
+		else if(x == (argsl - 1) && args[x]->l == 0)
+			z += snprintf(dst + z, sz - z, "%c", genscan_opener[sm]);
 	}
 
 	return z;
 }
 
-size_t generator_arg_write(arg * const arg, char * const buf, const size_t sz, uint32_t * sm)
+size_t generator_arg_snwrite(char * const dst, const size_t sz, arg * const arg, uint32_t sm)
 {
 	size_t z = 0;
-	uint32_t local_sm;
-	if(!sm)
+
+	// track backreferences
+	int k = 0;
+
+	// emit characters according to the scanmode
+	int i;
+	for(i = 0; i < arg->l; i++)
 	{
-		local_sm = GENSCAN_SLASH_WITHREFS;
-		sm = &local_sm;
+		if(arg->refs.l > k && arg->refs.v[k].s == &arg->s[i])
+		{
+			z += snprintf(dst + z, sz - z, "\\%d", arg->refs.v[k].ref);
+
+			i += arg->refs.v[k].l - 1;
+			k++;
+		}
+		else if(arg->s[i] == ' ')
+		{
+			if((sm & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_OPEN)
+				z += snprintf(dst + z, sz - z, "\\x{%02hhx}", arg->s[i]);
+			else if((sm & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED)
+				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
+		}
+		else if(arg->s[i] == '/')
+		{
+			if((sm & GENSCAN_CHAR) == GENSCAN_CHAR_SLASH)
+				z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
+			else
+				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
+		}
+		else if(arg->s[i] == ',')
+		{
+			if((sm & GENSCAN_CHAR) == GENSCAN_CHAR_COMMA)
+				z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
+			else
+				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
+		}
+		else if(arg->s[i] == '}')
+		{
+			if((sm & GENSCAN_CHAR) == GENSCAN_CHAR_BRACES)
+				z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
+			else
+				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
+		}
+		else if(arg->s[i] == '\\')
+		{
+			if((sm & GENSCAN_MODE) == GENSCAN_MODE_WITHREFS)
+				z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
+			else
+				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
+		}
+		else if(arg->s[i] <= 0x1f || arg->s[i] >= 0x7f)
+		{
+			z += snprintf(dst + z, sz - z, "\\x{%02hhx}", arg->s[i]);
+		}
+		else
+		{
+			z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
+		}
 	}
 
+	return z;
+}
+
+uint32_t generator_arg_scanmode(arg * const arg)
+{
 	int brefs = 0;
 	int hrefs = 0;
 	int ws = 0;
@@ -456,100 +499,19 @@ size_t generator_arg_write(arg * const arg, char * const buf, const size_t sz, u
 	}
 
 	// determine the appropriate scanmode for this argument
-	uint32_t newsm = 0;
+	uint32_t sm = 0;
 
 	if(brefs || hrefs)
-		newsm |= GENSCAN_MODE_WITHREFS;
+		sm |= GENSCAN_MODE_WITHREFS;
 
 	if(ws)
-		newsm |= GENSCAN_CHAR_BRACES;
+		sm |= GENSCAN_CHAR_BRACES;
 	else if(!slash)
-		newsm |= GENSCAN_CHAR_SLASH;
+		sm |= GENSCAN_CHAR_SLASH;
 	else if(!comma)
-		newsm |= GENSCAN_CHAR_COMMA;
+		sm |= GENSCAN_CHAR_COMMA;
 	else
-		newsm |= GENSCAN_CHAR_BRACES;
+		sm |= GENSCAN_CHAR_BRACES;
 
-	// if the scanmode is changing, emit a scanmode directive
-	if(newsm != *sm)
-	{
-		z += snprintf(buf + z, sz - z, " !");
-
-		if((newsm & GENSCAN_CHAR) == GENSCAN_CHAR_SLASH)
-			z += snprintf(buf + z, sz - z, "/");
-		else if((newsm & GENSCAN_CHAR) == GENSCAN_CHAR_COMMA)
-			z += snprintf(buf + z, sz - z, ",");
-		else if((newsm & GENSCAN_CHAR) == GENSCAN_CHAR_BRACES)
-			z += snprintf(buf + z, sz - z, "{}");
-
-		if((newsm & GENSCAN_MODE) == GENSCAN_MODE_WITHREFS)
-			z += snprintf(buf + z, sz - z, "\\");
-
-		z += snprintf(buf + z, sz - z, " ");
-		*sm = newsm;
-	}
-
-	// track backreferences
-	int k = 0;
-
-	// emit characters according to the scanmode
-	for(i = 0; i < arg->l; i++)
-	{
-		if(arg->refs.l > k && arg->refs.v[k].s == &arg->s[i])
-		{
-			z += snprintf(buf + z, sz - z, "\\%d", arg->refs.v[k].ref);
-
-			k++;
-			i += arg->refs.v[k].l - 1;
-		}
-		else if(arg->s[i] == ' ')
-		{
-			if(((*sm) & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_OPEN)
-				z += snprintf(buf + z, sz - z, "\\x{%02hhx}", arg->s[i]);
-			else if(((*sm) & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED)
-				z += snprintf(buf + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] == '/')
-		{
-			if(((*sm) & GENSCAN_CHAR) == GENSCAN_CHAR_SLASH)
-				z += snprintf(buf + z, sz - z, "\\%c", arg->s[i]);
-			else
-				z += snprintf(buf + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] == ',')
-		{
-			if(((*sm) & GENSCAN_CHAR) == GENSCAN_CHAR_COMMA)
-				z += snprintf(buf + z, sz - z, "\\%c", arg->s[i]);
-			else
-				z += snprintf(buf + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] == '}')
-		{
-			if(((*sm) & GENSCAN_CHAR) == GENSCAN_CHAR_BRACES)
-				z += snprintf(buf + z, sz - z, "\\%c", arg->s[i]);
-			else
-				z += snprintf(buf + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] == '\\')
-		{
-			if(((*sm) & GENSCAN_MODE) == GENSCAN_MODE_WITHREFS)
-				z += snprintf(buf + z, sz - z, "\\%c", arg->s[i]);
-			else
-				z += snprintf(buf + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] <= 0x1f || arg->s[i] >= 0x7f)
-		{
-			z += snprintf(buf + z, sz - z, "\\x{%02hhx}", arg->s[i]);
-		}
-		else
-		{
-			z += snprintf(buf + z, sz - z, "%c", arg->s[i]);
-		}
-	}
-
-	// emit the closing token if any
-	if((((*sm) & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED) || arg->l == 0)
-		z += snprintf(buf + z, sz - z, "%c", genscan_closer[*sm]);
-
-	return z;
+	return sm;
 }

@@ -55,8 +55,16 @@ void yyu_locwrite(yyu_location * const lloc, yyu_extra * const xtra, char * cons
 	lloc->l_col = xtra->loc.l_col - 1;
 	lloc->f_lin = xtra->loc.f_lin;
 	lloc->l_lin = xtra->loc.l_lin;
-	lloc->s = xtra->loc.s + del;
-	lloc->e = xtra->loc.e;
+	if(xtra->loc.s == xtra->loc.e)
+	{
+		lloc->s = xtra->loc.s + del;
+		lloc->e = xtra->loc.s + del;
+	}
+	else
+	{
+		lloc->s = xtra->loc.s + del;
+		lloc->e = xtra->loc.e;
+	}
 	lloc->l = lloc->e - lloc->s;
 }
 
@@ -218,16 +226,18 @@ void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * cons
 			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", xtra->last_line);
 
 		// log the last good token
-		xtra->error("last token - %s '%.*s'%.*s @ %s%.*s%s[%3d,%3d - %3d,%3d]%s%.*s"
+		xtra->error("last token - %s %.*s%s%.*s%s @ %s%.*s%s[%3d,%3d - %3d,%3d]%s%.*s"
 			, xtra->tokname(xtra->last_token)		// token name
 			, MIN(alen, 50)											// escaped string from which the token was scanned
 			, abuf
+			, blen ? " (" : ""
 			, blen															// representation of the semantic value for the token
 			, bbuf
-			, clen ? "(" : ""										// name of input
+			, blen ? ")" : ""
+			, clen ? " (" : ""										// name of input
 			, clen
 			, cbuf
-			, clen ? ")" : ""
+			, clen ? ") " : ""
 		  , xtra->last_loc.f_lin + 1					// location within input
 		  , xtra->last_loc.f_col + 1
 		  , xtra->last_loc.l_lin + 1

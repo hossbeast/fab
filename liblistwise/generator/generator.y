@@ -58,6 +58,9 @@
 %token          LF
 %token          WS
 %token          '/'
+%token          ','
+%token          '{'
+%token          '}'
 %token	<ref>		BREF
 %token	<ref>		CREF
 %token	<ref>		HREF
@@ -68,12 +71,13 @@
 %type   <operation> operation
 %type   <operations> operations
 %type   <args>  args
+%type   <args>  args_noopen
+%type   <args>  argseq
 
 %type		<arg>		arg
 %type   <arg>   string
-%type   <arg>   strpart
 
-%right '/' STR
+%right '/' ',' '{' '}' STR
 
 %%
 
@@ -150,7 +154,7 @@ opsep
 	;
 
 operation
-	: operation argsep args %prec STR
+	: operation argopen args_noopen %prec STR
 	{
 		$$ = $1;
 		$$->args = $3;
@@ -164,7 +168,27 @@ operation
 	;
 
 args
-	: args argsep arg
+	: argopen argseq argclose
+	{
+		$$ = $2;
+	}
+	| argseq argclose
+	{
+		$$ = $1;
+	}
+	| argseq
+	;
+
+args_noopen
+	: argseq argclose
+	{
+		$$ = $1;
+	}
+	| argseq
+	;
+
+argseq
+	: argseq argsep arg
 	{
 		$$ = $1;
 		if(parm->argsa == parm->argsl)
@@ -187,31 +211,27 @@ args
 
 argsep
 	: '/'
+	| ','
+	| '}' '{'
+	;
+
+argopen
+	: '{'
+	;
+
+argclose
+	: '}'
 	;
 
 arg
-	: string
-	| I64
-	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
-
-		$$->s = strdup(@1.s);
-		$$->l = @1.e - @1.s;
-
-		$$->itype = ITYPE_I64;
-		$$->i64 = $1;
-	}
-	;
-
-string
-	: string strpart
+	: arg string
 	{
 		$$ = $1;
 
 		char* o = $$->s;
 
 		// reallocate the string value of the argument
-		YYU_FATAL(xrealloc, &$$->s, 1, $$->l + $2->l + 1, 0);
+		YYU_FATAL(xrealloc, &$$->s, 1, $$->l + $2->l + 1, $$->l);
 		memcpy($$->s + $$->l, $2->s, $2->l);
 		$$->s[$$->l + $2->l] = 0;
 
@@ -226,7 +246,7 @@ string
 		// use new reference, if there is one
 		if($2->refs.v)
 		{
-			YYU_FATAL(xrealloc, &$$->refs, sizeof(*$$), $$->refs.l + 1, 0);
+			YYU_FATAL(xrealloc, &$$->refs, sizeof(*$$), $$->refs.l + 1, $$->refs.l);
 
 			$$->refs.v[$$->refs.l].s = $$->s + $$->l;
 			$$->refs.v[$$->refs.l].l = $2->l;
@@ -242,10 +262,43 @@ string
 		free($2->s);
 		free($2);
 	}
-	| strpart
+	| arg I64
+	{
+		$$ = $1;
+
+		char* o = $$->s;
+
+		// reallocate the string value of the argument
+		YYU_FATAL(xrealloc, &$$->s, 1, $$->l + (@2.e - @2.s) + 1, $$->l);
+		memcpy($$->s + $$->l, @2.s, (@2.e - @2.s));
+		$$->s[$$->l + (@2.e - @2.s)] = 0;
+
+		// update string pointers on previous references
+		int x;
+		for(x = 0; x < $$->refs.l; x++)
+		{
+			$$->refs.v[x].s = $$->s + ($$->refs.v[x].s - o);
+			$$->refs.v[x].e = $$->refs.v[x].s + $$->refs.v[x].l;
+		}
+
+		$$->l += (@2.e - @2.s);
+		$$->itype = 0;
+	}
+	| I64
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+
+		$$->l = @1.e - @1.s;
+		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		memcpy($$->s, @1.s, $$->l);
+
+		$$->itype = ITYPE_I64;
+		$$->i64 = $1;
+	}
+	| string
 	;
 
-strpart
+string
 	: STR
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
@@ -274,9 +327,9 @@ strpart
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 
-		$$->l = @1.e - @1.s;
+		$$->l = 1;
 		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
-		memcpy($$->s, @1.s, $$->l);
+		$$->s[0] = $1;
 
 		YYU_FATAL(xmalloc, &$$->refs.v, sizeof(*$$->refs.v));
 

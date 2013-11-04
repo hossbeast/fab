@@ -144,14 +144,17 @@
 
 %x ws
 %x multilinecomment
-%x slash slash_arg_norefs slash_arg_withrefs
-%x comma comma_arg_norefs comma_arg_withrefs
-%x braces braces_arg_norefs braces_arg_withrefs
+%x emptyarg
+%x slash_norefs slash_dorefs
+%x comma_norefs comma_dorefs
+%x braces braces_norefs braces_dorefs
 
+/* bytes that cannot appear in the string being scanned */
 ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 %%
 
+ /* multiline comments are nestable */
 <INITIAL,ws,multilinecomment>[/][*]											{ LOCWRITE; PUSHSTATE(multilinecomment); }
 <multilinecomment>[*][/]																{ LOCWRITE; POPSTATE; }
 <multilinecomment>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n*/]+		{ LOCWRITE; }
@@ -170,7 +173,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													}
 																													else
 																													{
-																														PUSHSTATE(genscan_argstate[yyextra->scanmode]);
+																														PUSHSTATE(genscan_basestate[yyextra->scanmode]);
 																														yyless(0);
 																													}
 																												}
@@ -187,33 +190,62 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														return 0;
 																													}
 																												}
-<INITIAL>[!][/{}\\,]+																		{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
-<ws>[!][/{}\\,]+																				{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
+<INITIAL,ws>!{1,2}[/{,]																	{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
 <ws>[^\x00-\x08\x0B-\x1F\x7F-\xFF]											{ PUSHSTATE(genscan_basestate[yyextra->scanmode]); yyless(0); }
 
-<slash_arg_norefs,slash_arg_withrefs,slash>[/]								{ POPSTATE; PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(yytext[0]); }
-<slash_arg_norefs,slash_arg_withrefs>[\n\t ]									{ POPSTATE; yyless(0); }
+ /* fabricate an empty-string STR token */
+<emptyarg>[\x00-\xff]																					{ POPSTATE; yyless(0); return LEXS(STR, 1); }
 
-<slash_arg_norefs>-?[0-9]+																		{ return LEXV(I64, 0, 0); }
-<slash_arg_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /]+				{ return LEX(STR); }
+ /* slash-delimited scanner */
+<slash_norefs,slash_dorefs>[/]													{ return LEX(yytext[0]); }
+<slash_norefs,slash_dorefs>[/][/]												{ PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0]); }
+<slash_norefs,slash_dorefs>[/][\t ]+!{1,2}[/{,][\t ]+		{ LOCWRITE; POPSTATE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
+<slash_norefs,slash_dorefs>[\n\t ]											{ POPSTATE; yyless(0); }
+<slash_norefs,slash_dorefs>-?[0-9]+											{ return LEXV(I64, 0, 0); }
 
-<slash_arg_withrefs>\\[\\]																		{ return LEXS(STR, 1); }
-<slash_arg_withrefs>\\[\n]																		{ return LEXS(STR, 1); }
-<slash_arg_withrefs>\\[\t]																		{ return LEXS(STR, 1); }
-<slash_arg_withrefs>\\[ ]																			{ return LEXS(STR, 1); }
-<slash_arg_withrefs>\\[/]																			{ return LEXS(STR, 1); }
-<slash_arg_withrefs>\\[a]																			{ return LEXC(CREF, 1); }
-<slash_arg_withrefs>\\[b]																			{ return LEXC(CREF, 1); }
-<slash_arg_withrefs>\\[t]																			{ return LEXC(CREF, 1); }
-<slash_arg_withrefs>\\[n]																			{ return LEXC(CREF, 1); }
-<slash_arg_withrefs>\\[v]																			{ return LEXC(CREF, 1); }
-<slash_arg_withrefs>\\[f]																			{ return LEXC(CREF, 1); }
-<slash_arg_withrefs>\\[r]																			{ return LEXC(CREF, 1); }
-<slash_arg_withrefs>\\x[0-9a-fA-F]{1,2}												{ return LEXV(HREF, 2, 0); }
-<slash_arg_withrefs>\\x\{[0-9a-fA-F]{1,2}\}										{ return LEXV(HREF, 3, 0); }
-<slash_arg_withrefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
-<slash_arg_withrefs>-?[0-9]+																	{ return LEXV(I64, 0, 0); }
-<slash_arg_withrefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+		{ return LEX(STR); }
+<slash_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /]+			{ return LEX(STR); }
+
+<slash_dorefs>\\[\\\n\t /]															{ return LEXS(STR, 1); }
+<slash_dorefs>\\[abtnvfr]																{ return LEXC(CREF, 1); }
+<slash_dorefs>\\x[0-9a-fA-F]{1,2}												{ return LEXV(HREF, 2, 0); }
+<slash_dorefs>\\x\{[0-9a-fA-F]{1,2}\}										{ return LEXV(HREF, 3, 0); }
+<slash_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
+<slash_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /\\]+		{ return LEX(STR); }
+
+ /* comma-delimited scanner */
+<comma_norefs,comma_dorefs>[,]													{ return LEX(yytext[0]); }
+<comma_norefs,comma_dorefs>[,][,]												{ PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0]); }
+<comma_norefs,comma_dorefs>[,][\t ]+!{1,2}[/{,][\t ]+		{ LOCWRITE; POPSTATE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
+<comma_norefs,comma_dorefs>[\n\t ]											{ POPSTATE; yyless(0); }
+<comma_norefs,comma_dorefs>-?[0-9]+											{ return LEXV(I64, 0, 0); }
+
+<comma_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ,]+			{ return LEX(STR); }
+
+<comma_dorefs>\\[\\\n\t ,]															{ return LEXS(STR, 1); }
+<comma_dorefs>\\[abtnvfr]																{ return LEXC(CREF, 1); }
+<comma_dorefs>\\x[0-9a-fA-F]{1,2}												{ return LEXV(HREF, 2, 0); }
+<comma_dorefs>\\x\{[0-9a-fA-F]{1,2}\}										{ return LEXV(HREF, 3, 0); }
+<comma_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
+<comma_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ,\\]+		{ return LEX(STR); }
+
+ /* braces-enclosed scanner */
+<braces>[{]																							{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(yytext[0]); }
+<braces>[}]																							{ POPSTATE; return LEX(yytext[0]); }
+<braces>[\n\t ]																					{ POPSTATE; yyless(0); }
+<braces>[\t ]+!{1,2}[/{,][\t ]+													{ LOCWRITE; POPSTATE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
+<braces_norefs,braces_dorefs>[{]												{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(STR); }
+<braces_norefs,braces_dorefs>[}]												{ POPSTATE; return LEX(STR); }
+
+<braces_norefs,braces_dorefs>-?[0-9]+										{ return LEXV(I64, 0, 0); }
+
+<braces_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF{}]+				{ return LEX(STR); }
+
+<braces_dorefs>\\[\\}]																	{ return LEXS(STR, 1); }
+<braces_dorefs>\\[abtnvfr]															{ return LEXS(STR, 1); }
+<braces_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
+<braces_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
+<braces_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
+<braces_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF{}\\]+			{ return LEX(STR); }
 
 <*>[\x00-\x1F\x7F-\xFF]																	{
 																													snprintf(yyextra->temp, sizeof(yyextra->temp), "unknown character : (0x%02hhx)", yytext[0]);
