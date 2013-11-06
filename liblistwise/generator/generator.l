@@ -205,7 +205,9 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																												}
 <INITIAL>!{1,2}[/,.:;{[(<]															{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
 <ws>!{1,2}[/,.:;{[(<]																		{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); POPSTATE; }
+ /*
 <ws>[\t ]+!{1,2}[/,.:;{[(<][\t ]+												{ LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); POPSTATE; }
+ */
 <ws>[^\x00-\x08\x0B-\x1F\x7F-\xFF]											{ PUSHSTATE(genscan_basestate[yyextra->scanmode]); yyless(0); }
 
  /* fabricate an empty-string STR token */
@@ -272,19 +274,19 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <colon_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t :\\]+		{ return LEX(STR); }
 
  /* semicolon-delimited scanner */
-<semicolon_norefs,semicolon_dorefs>[:]										{ return LEX(yytext[0]); }
-<semicolon_norefs,semicolon_dorefs>[:][:]									{ PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0]); }
+<semicolon_norefs,semicolon_dorefs>[;]										{ return LEX(yytext[0]); }
+<semicolon_norefs,semicolon_dorefs>[;][;]									{ PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0]); }
 <semicolon_norefs,semicolon_dorefs>[\n\t ]								{ POPSTATE; yyless(0); }
 <semicolon_norefs,semicolon_dorefs>-?[0-9]+								{ return LEXV(I64, 0, 0); }
 
-<semicolon_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t :]+		{ return LEX(STR); }
+<semicolon_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ;]+		{ return LEX(STR); }
 
-<semicolon_dorefs>\\[\\\n\t :]														{ return LEXS(STR, 1); }
+<semicolon_dorefs>\\[\\\n\t ;]														{ return LEXS(STR, 1); }
 <semicolon_dorefs>\\[abtnvfr]															{ return LEXC(CREF, 1); }
 <semicolon_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
 <semicolon_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
 <semicolon_dorefs>\\[0-9]+																{ return LEXV(BREF, 1, 0); }
-<semicolon_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t :\\]+	{ return LEX(STR); }
+<semicolon_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ;\\]+	{ return LEX(STR); }
 
  /* braces-enclosed scanner */
 <braces>[{]																							{ PUSHSTATE(genscan_argstate[yyextra->scanmode]); return LEX(yytext[0]); }
@@ -296,7 +298,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 <braces_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF{}]+				{ return LEX(STR); }
 
-<braces_dorefs>\\[\\}]																	{ return LEXS(STR, 1); }
+<braces_dorefs>\\[}]																		{ return LEXS(STR, 1); }
 <braces_dorefs>\\[abtnvfr]															{ return LEXS(STR, 1); }
 <braces_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
 <braces_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
@@ -313,7 +315,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 <brackets_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF[\]]+			{ return LEX(STR); }
 
-<brackets_dorefs>\\[\\}]																{ return LEXS(STR, 1); }
+<brackets_dorefs>\\[\]]																	{ return LEXS(STR, 1); }
 <brackets_dorefs>\\[abtnvfr]														{ return LEXS(STR, 1); }
 <brackets_dorefs>\\x[0-9a-fA-F]{1,2}										{ return LEXV(HREF, 2, 0); }
 <brackets_dorefs>\\x\{[0-9a-fA-F]{1,2}\}								{ return LEXV(HREF, 3, 0); }
@@ -330,7 +332,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 <parens_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF()]+				{ return LEX(STR); }
 
-<parens_dorefs>\\[\\}]																	{ return LEXS(STR, 1); }
+<parens_dorefs>\\[)]																		{ return LEXS(STR, 1); }
 <parens_dorefs>\\[abtnvfr]															{ return LEXS(STR, 1); }
 <parens_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
 <parens_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
@@ -347,7 +349,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 <angles_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF<>]+				{ return LEX(STR); }
 
-<angles_dorefs>\\[\\}]																	{ return LEXS(STR, 1); }
+<angles_dorefs>\\[>]																		{ return LEXS(STR, 1); }
 <angles_dorefs>\\[abtnvfr]															{ return LEXS(STR, 1); }
 <angles_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
 <angles_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }

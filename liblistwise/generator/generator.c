@@ -334,7 +334,7 @@ void API generator_dump(generator* g)
 
 size_t generator_snwrite(char * const dst, const size_t sz, generator * const g)
 {
-	uint32_t sm = GENSCAN_SLASH_WITHREFS;
+	uint32_t sm = GENSCAN_SLASH_DOREFS;
 
 	size_t z = 0;
 	z += generator_args_snwrite(dst + z, sz - z, g->args, g->argsl, sm);
@@ -417,44 +417,25 @@ size_t generator_arg_snwrite(char * const dst, const size_t sz, arg * const arg,
 			i += arg->refs.v[k].l - 1;
 			k++;
 		}
-		else if(arg->s[i] == ' ')
-		{
-			if((sm & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_OPEN)
-				z += snprintf(dst + z, sz - z, "\\x{%02hhx}", arg->s[i]);
-			else if((sm & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED)
-				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] == '/')
-		{
-			if((sm & GENSCAN_CHAR) == GENSCAN_CHAR_SLASH)
-				z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
-			else
-				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] == ',')
-		{
-			if((sm & GENSCAN_CHAR) == GENSCAN_CHAR_COMMA)
-				z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
-			else
-				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] == '}')
-		{
-			if((sm & GENSCAN_CHAR) == GENSCAN_CHAR_BRACES)
-				z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
-			else
-				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] == '\\')
-		{
-			if((sm & GENSCAN_MODE) == GENSCAN_MODE_WITHREFS)
-				z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
-			else
-				z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
-		}
-		else if(arg->s[i] <= 0x1f || arg->s[i] >= 0x7f)
+		else if((arg->s[i] == ' ' || arg->s[i] == '\t' || arg->s[i] == '\n') && GS_OPEN(sm))
 		{
 			z += snprintf(dst + z, sz - z, "\\x{%02hhx}", arg->s[i]);
+		}
+		else if((arg->s[i] != ' ' || arg->s[i] != '\t' || arg->s[i] != '\n') && (arg->s[i] <= 0x20 || arg->s[i] >= 0x7f))
+		{
+			z += snprintf(dst + z, sz - z, "\\x{%02hhx}", arg->s[i]);
+		}
+		else if(arg->s[i] == '\\' && GS_DOREFS(sm))
+		{
+			z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
+		}
+		else if(GS_OPEN(sm) && arg->s[i] == genscan_opener[sm])
+		{
+			z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
+		}
+		else if(GS_CLOSED(sm) && arg->s[i] == genscan_closer[sm])
+		{
+			z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
 		}
 		else
 		{
@@ -502,16 +483,16 @@ uint32_t generator_arg_scanmode(arg * const arg)
 	uint32_t sm = 0;
 
 	if(brefs || hrefs)
-		sm |= GENSCAN_MODE_WITHREFS;
+		sm |= GENSCAN_MODE_DOREFS;
 
 	if(ws)
-		sm |= GENSCAN_CHAR_BRACES;
+		sm |= GENSCAN_TOKENS_BRACES;
 	else if(!slash)
-		sm |= GENSCAN_CHAR_SLASH;
+		sm |= GENSCAN_TOKENS_SLASH;
 	else if(!comma)
-		sm |= GENSCAN_CHAR_COMMA;
+		sm |= GENSCAN_TOKENS_COMMA;
 	else
-		sm |= GENSCAN_CHAR_BRACES;
+		sm |= GENSCAN_TOKENS_BRACES;
 
 	return sm;
 }

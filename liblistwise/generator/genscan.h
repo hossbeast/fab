@@ -18,51 +18,66 @@
 #ifndef _GENSCAN_H
 #define _GENSCAN_H
 
+/* mode is whether the scanmode supports references */
 #define GENSCAN_MODE								0x00F
-#define GENSCAN_MODE_WITHREFS				0x000
+#define GENSCAN_MODE_DOREFS					0x000
 #define GENSCAN_MODE_NOREFS					0x001
 
-#define GS_REFS(x) (((x) & GENSCAN_MODE) == GENSCAN_MODE_REFS)
+#define GS_DOREFS(x) (((x) & GENSCAN_MODE) == GENSCAN_MODE_DOREFS)
+#define GS_NOREFS(x) (!(GS_DOREFS(x)))
 
+/* closure is whether the scanmode has enclosed arguments */
 #define GENSCAN_CLOSURE							0x0F0
 #define GENSCAN_CLOSURE_OPEN				0x000
 #define GENSCAN_CLOSURE_CLOSED			0x010
 
 #define GS_CLOSED(x) (((x) & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED)
+#define GS_OPEN(x)   (!(GS_CLOSED(x)))
 
-#define GENSCAN_CHAR								0xFF0
-#define GENSCAN_CHAR_SLASH					(0x000 | GENSCAN_CLOSURE_OPEN)
-#define GENSCAN_CHAR_COMMA					(0x100 | GENSCAN_CLOSURE_OPEN)
-#define GENSCAN_CHAR_DOT						(0x100 | GENSCAN_CLOSURE_OPEN)
-#define GENSCAN_CHAR_COLON					(0x100 | GENSCAN_CLOSURE_OPEN)
-#define GENSCAN_CHAR_SEMICOLON			(0x100 | GENSCAN_CLOSURE_OPEN)
-#define GENSCAN_CHAR_BRACES					(0x200 | GENSCAN_CLOSURE_CLOSED)
-#define GENSCAN_CHAR_BRACKETS				(0x200 | GENSCAN_CLOSURE_CLOSED)
-#define GENSCAN_CHAR_PARENS					(0x200 | GENSCAN_CLOSURE_CLOSED)
-#define GENSCAN_CHAR_ANGLES					(0x200 | GENSCAN_CLOSURE_CLOSED)
+/* tokens is an identifier for the token(s) used by the scanmode - which implies a closure setting */
+#define GENSCAN_TOKENS								 0xFFF0
+#define GENSCAN_TOKENS_SLASH					(0x0000 | GENSCAN_CLOSURE_OPEN)
+#define GENSCAN_TOKENS_COMMA					(0x0100 | GENSCAN_CLOSURE_OPEN)
+#define GENSCAN_TOKENS_DOT						(0x0200 | GENSCAN_CLOSURE_OPEN)
+#define GENSCAN_TOKENS_COLON					(0x0400 | GENSCAN_CLOSURE_OPEN)
+#define GENSCAN_TOKENS_SEMICOLON			(0x0800 | GENSCAN_CLOSURE_OPEN)
+#define GENSCAN_TOKENS_BRACES					(0x1000 | GENSCAN_CLOSURE_CLOSED)
+#define GENSCAN_TOKENS_BRACKETS				(0x2000 | GENSCAN_CLOSURE_CLOSED)
+#define GENSCAN_TOKENS_PARENS					(0x4000 | GENSCAN_CLOSURE_CLOSED)
+#define GENSCAN_TOKENS_ANGLES					(0x8000 | GENSCAN_CLOSURE_CLOSED)
+
+#define GS_SLASH(x) 		(((x) & GENSCAN_TOKENS) == GENSCAN_TOKENS_SLASH)
+#define GS_COMMA(x) 		(((x) & GENSCAN_TOKENS) == GENSCAN_TOKENS_COMMA)
+#define GS_DOT(x) 			(((x) & GENSCAN_TOKENS) == GENSCAN_TOKENS_DOT)
+#define GS_COLON(x) 		(((x) & GENSCAN_TOKENS) == GENSCAN_TOKENS_COLON)
+#define GS_SEMICOLON(x) (((x) & GENSCAN_TOKENS) == GENSCAN_TOKENS_SEMICOLON)
+#define GS_BRACES(x) 		(((x) & GENSCAN_TOKENS) == GENSCAN_TOKENS_BRACES)
+#define GS_BRACKETS(x)	(((x) & GENSCAN_TOKENS) == GENSCAN_TOKENS_BRACKETS)
+#define GS_PARENS(x) 		(((x) & GENSCAN_TOKENS) == GENSCAN_TOKENS_PARENS)		
+#define GS_ANGLES(x) 		(((x) & GENSCAN_TOKENS) == GENSCAN_TOKENS_ANGLES)
 
 // table of genscan modes
-#define GENSCAN_TABLE(x) 																																																													\
-	/* delimited scanmodes */																																																												\
-  _GENSCAN(GENSCAN_SLASH_NOREFS				, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_SLASH			, '/'	, 0		, slash_norefs			,	slash_norefs			, x)	\
-  _GENSCAN(GENSCAN_SLASH_WITHREFS			, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_SLASH			, '/'	, 0		, slash_dorefs			,	slash_dorefs			, x)	\
-  _GENSCAN(GENSCAN_COMMA_NOREFS				, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_COMMA			, ','	, 0		, comma_norefs			,	comma_norefs			, x)	\
-  _GENSCAN(GENSCAN_COMMA_WITHREFS			, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_COMMA			, ','	, 0		, comma_norefs			,	comma_dorefs			, x)	\
-  _GENSCAN(GENSCAN_DOT_NOREFS					, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_DOT				, '.'	, 0		, dot_norefs				,	dot_norefs				, x)	\
-  _GENSCAN(GENSCAN_DOT_WITHREFS				, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_DOT				, '.'	, 0		, dot_norefs				,	dot_dorefs				, x)	\
-  _GENSCAN(GENSCAN_COLON_NOREFS				, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_COLON			, ':'	, 0		, colon_norefs			,	colon_norefs			, x)	\
-  _GENSCAN(GENSCAN_COLON_WITHREFS			, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_COLON			, ':'	, 0		, colon_norefs			,	colon_dorefs			, x)	\
-  _GENSCAN(GENSCAN_SEMICOLON_NOREFS		, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_SEMICOLON	, ';'	, 0		, semicolon_norefs	,	semicolon_norefs	, x)	\
-  _GENSCAN(GENSCAN_SEMICOLON_WITHREFS	, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_SEMICOLON	, ';'	, 0		, semicolon_norefs	,	semicolon_dorefs	, x)	\
-	/* enclosed scanmodes */																																																												\
-  _GENSCAN(GENSCAN_BRACES_NOREFS			, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_BRACES			, '{'	, '}'	, braces						,	braces_norefs			, x)	\
-  _GENSCAN(GENSCAN_BRACES_WITHREFS		, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_BRACES			, '{'	, '}'	, braces						,	braces_dorefs			, x)	\
-  _GENSCAN(GENSCAN_BRACKETS_NOREFS		, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_BRACKETS		, '['	, ']'	, brackets					,	brackets_norefs		, x)	\
-  _GENSCAN(GENSCAN_BRACKETS_WITHREFS	, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_BRACKETS		, '['	, ']'	, brackets					,	brackets_dorefs		, x)	\
-  _GENSCAN(GENSCAN_PARENS_NOREFS			, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_PARENS			, '('	, ')'	, parens						,	parens_norefs			, x)	\
-  _GENSCAN(GENSCAN_PARENS_WITHREFS		, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_PARENS			, '('	, ')'	, parens						,	parens_dorefs			, x)	\
-  _GENSCAN(GENSCAN_ANGLES_NOREFS			, GENSCAN_MODE_NOREFS		| GENSCAN_CHAR_ANGLES			, '<'	, '>'	, angles						,	angles_norefs			, x)	\
-  _GENSCAN(GENSCAN_ANGLES_WITHREFS		, GENSCAN_MODE_WITHREFS	| GENSCAN_CHAR_ANGLES			, '<'	, '>'	, angles						,	angles_dorefs			, x)	\
+#define GENSCAN_TABLE(x) 																																																												\
+	/* delimited scanmodes */																																																											\
+  _GENSCAN(GENSCAN_SLASH_NOREFS			, GENSCAN_MODE_NOREFS	| GENSCAN_TOKENS_SLASH			, '/'	, 0		, slash_norefs			,	slash_norefs			, x)	\
+  _GENSCAN(GENSCAN_SLASH_DOREFS			, GENSCAN_MODE_DOREFS	| GENSCAN_TOKENS_SLASH			, '/'	, 0		, slash_dorefs			,	slash_dorefs			, x)	\
+  _GENSCAN(GENSCAN_COMMA_NOREFS			, GENSCAN_MODE_NOREFS	| GENSCAN_TOKENS_COMMA			, ','	, 0		, comma_norefs			,	comma_norefs			, x)	\
+  _GENSCAN(GENSCAN_COMMA_DOREFS			, GENSCAN_MODE_DOREFS	| GENSCAN_TOKENS_COMMA			, ','	, 0		, comma_norefs			,	comma_dorefs			, x)	\
+  _GENSCAN(GENSCAN_DOT_NOREFS				, GENSCAN_MODE_NOREFS	| GENSCAN_TOKENS_DOT				, '.'	, 0		, dot_norefs				,	dot_norefs				, x)	\
+  _GENSCAN(GENSCAN_DOT_DOREFS				, GENSCAN_MODE_DOREFS	| GENSCAN_TOKENS_DOT				, '.'	, 0		, dot_norefs				,	dot_dorefs				, x)	\
+  _GENSCAN(GENSCAN_COLON_NOREFS			, GENSCAN_MODE_NOREFS	| GENSCAN_TOKENS_COLON			, ':'	, 0		, colon_norefs			,	colon_norefs			, x)	\
+  _GENSCAN(GENSCAN_COLON_DOREFS			, GENSCAN_MODE_DOREFS	| GENSCAN_TOKENS_COLON			, ':'	, 0		, colon_norefs			,	colon_dorefs			, x)	\
+  _GENSCAN(GENSCAN_SEMICOLON_NOREFS	, GENSCAN_MODE_NOREFS	| GENSCAN_TOKENS_SEMICOLON	, ';'	, 0		, semicolon_norefs	,	semicolon_norefs	, x)	\
+  _GENSCAN(GENSCAN_SEMICOLON_DOREFS	, GENSCAN_MODE_DOREFS	| GENSCAN_TOKENS_SEMICOLON	, ';'	, 0		, semicolon_norefs	,	semicolon_dorefs	, x)	\
+	/* enclosed scanmodes */																																																											\
+  _GENSCAN(GENSCAN_BRACES_NOREFS		, GENSCAN_MODE_NOREFS	| GENSCAN_TOKENS_BRACES			, '{'	, '}'	, braces						,	braces_norefs			, x)	\
+  _GENSCAN(GENSCAN_BRACES_DOREFS		, GENSCAN_MODE_DOREFS	| GENSCAN_TOKENS_BRACES			, '{'	, '}'	, braces						,	braces_dorefs			, x)	\
+  _GENSCAN(GENSCAN_BRACKETS_NOREFS	, GENSCAN_MODE_NOREFS	| GENSCAN_TOKENS_BRACKETS		, '['	, ']'	, brackets					,	brackets_norefs		, x)	\
+  _GENSCAN(GENSCAN_BRACKETS_DOREFS	, GENSCAN_MODE_DOREFS	| GENSCAN_TOKENS_BRACKETS		, '['	, ']'	, brackets					,	brackets_dorefs		, x)	\
+  _GENSCAN(GENSCAN_PARENS_NOREFS		, GENSCAN_MODE_NOREFS	| GENSCAN_TOKENS_PARENS			, '('	, ')'	, parens						,	parens_norefs			, x)	\
+  _GENSCAN(GENSCAN_PARENS_DOREFS		, GENSCAN_MODE_DOREFS	| GENSCAN_TOKENS_PARENS			, '('	, ')'	, parens						,	parens_dorefs			, x)	\
+  _GENSCAN(GENSCAN_ANGLES_NOREFS		, GENSCAN_MODE_NOREFS	| GENSCAN_TOKENS_ANGLES			, '<'	, '>'	, angles						,	angles_norefs			, x)	\
+  _GENSCAN(GENSCAN_ANGLES_DOREFS		, GENSCAN_MODE_DOREFS	| GENSCAN_TOKENS_ANGLES			, '<'	, '>'	, angles						,	angles_dorefs			, x)	\
 
 // declare genscan modes
 enum {
