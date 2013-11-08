@@ -38,4 +38,20 @@
 		, __FUNCTION__																		\
 	);																									\
 
+#define HANDLE_INFO(fmt, ...)													\
+	dprintf(listwise_info_fd, fmt " at [%s:%d (%s)]\n"	\
+		, ##__VA_ARGS__																		\
+		, __FILE__																				\
+		, __LINE__																				\
+		, __FUNCTION__																		\
+	);																									\
+
+#define HANDLE_WARN(fmt, ...)													\
+	dprintf(listwise_warn_fd, fmt " at [%s:%d (%s)]\n"	\
+		, ##__VA_ARGS__																		\
+		, __FILE__																				\
+		, __LINE__																				\
+		, __FUNCTION__																		\
+	);																									\
+
 #endif

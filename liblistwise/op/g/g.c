@@ -93,7 +93,12 @@ static int gobble(lwx* lx, char * path, char * fmt, char * flags)
 		fail("lseek(%u)=[%d][%s]", 0, errno, strerror(errno));
 
 	if((addr = mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
-		fail("mmap(%zu)=[%d][%s]", size, errno, strerror(errno));
+	{
+		if(errno == EACCES || errno == ENODEV)
+			leave("mmap(%s,%zu)=[%d][%s]", path, size, errno, strerror(errno));
+		else
+			fail("mmap(%s,%zu)=[%d][%s]", path, size, errno, strerror(errno));
+	}
 
 	char * s = addr;
 	char * e = 0;

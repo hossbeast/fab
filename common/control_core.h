@@ -26,12 +26,13 @@
 /*
 ** CODA_BAD_ACTION  - executed in coda during error resolution
 ** CODA_GOOD_ACTION - executed in coda during normal execution
-** HANDLE_ERROR     - handle errors
+** HANDLE_ERROR     - handle error message
+** HANDLE_INFO      - handle info message
 */
 
 /// finally
 //
-//
+// statements between finally and coda are executed even upon fail/leave
 //
 #define finally						\
 	int _coda_r;						\
@@ -43,31 +44,28 @@ CODA_GOOD:								\
 	CODA_GOOD_ACTION				\
 CODA_FINALLY							\
 
-/// coda
-//
-//
-//
 #define coda return _coda_r
-
-/// error
-//
-// SUMMARY
-//  log an error
-//
-#define error(fmt, ...)								\
-	do {																\
-		HANDLE_ERROR(fmt, ##__VA_ARGS__);	\
-	} while(0)													\
 
 /// fail
 //
 // SUMMARY
-//  log an error and terminate the current scope with failure
+//  log an error message and terminate the current scope with failure
 //
 #define fail(fmt, ...)								\
 	do {																\
 		HANDLE_ERROR(fmt, ##__VA_ARGS__);	\
 		goto CODA_BAD;										\
+	} while(0)
+
+/// leave
+//
+// SUMMARY
+//  log an info message and terminate the current scope with success
+//
+#define leave(fmt, ...)								\
+	do {																\
+		HANDLE_INFO(fmt, ##__VA_ARGS__);	\
+		goto CODA_GOOD;										\
 	} while(0)
 
 /// qfail
@@ -82,7 +80,7 @@ CODA_FINALLY							\
 // SUMMARY
 //  silently terminate the current scope with success
 //
-#define qterm() goto CODA_GOOD
+#define qleave() goto CODA_GOOD
 
 /// fatal
 //
@@ -121,7 +119,7 @@ CODA_FINALLY							\
 //
 // SUMMARY
 //  execute the specified function with nonzero-return-failure semantics and if it fails
-//  log an L_ERROR message and terminate the current scope with failure
+//  log an error message and terminate the current scope with failure
 //
 #define fatal_os(x, ...)													\
 	do {																						\

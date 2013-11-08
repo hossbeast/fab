@@ -215,7 +215,7 @@ int main(int argc, char** argv)
 	// OUTPUT
 	int i = 0;
 	int y = 0;
-	for(y = 0; y < LSTACK_LISTS(lx); y++)
+	for(y = 0; lx && y < LSTACK_LISTS(lx); y++)
 	{
 		if(y)
 		{
