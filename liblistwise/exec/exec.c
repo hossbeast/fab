@@ -154,19 +154,19 @@ int API listwise_exec_generator(
 	if(dump)
 	{
 		// possibly activate windows staged by the previous operator
-		if((g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE)
+		if(x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE)
 		{
 			fatal(lstack_windows_activate, *lx);
 		}
 	}
 
 	// possibly activate selections staged by the previous operator
-	if((g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE)
+	if(x && (g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE)
 	{
 		fatal(lstack_sel_activate, *lx);
 	}
 
-	if(dump)
+	if(dump && g->opsl)
 		lstack_dump(*lx);
 
 	(*lx)->win.active_era++;	// age active windows

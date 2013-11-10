@@ -61,6 +61,7 @@ operator op_desc[] = {
 		, .op_exec			= op_exec_sn
 		, .desc					= "sort numeric"
 	}
+	, {}
 };
 
 #define STRING_WCASE	1
