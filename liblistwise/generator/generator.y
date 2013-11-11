@@ -135,6 +135,19 @@ operations
 		}
 		$$[parm->opsl++] = $3;
 	}
+	| operations operation
+	{
+		$$ = $1;
+		if(parm->opsa == parm->opsl)
+		{
+			int ns = parm->opsa ?: 6;
+			ns = ns * 2 + ns / 2;
+
+			YYU_FATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->opsa);
+			parm->opsa = ns;
+		}
+		$$[parm->opsl++] = $2;
+	}
 	| operation
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$) * 2);

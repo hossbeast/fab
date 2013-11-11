@@ -368,7 +368,7 @@ size_t generator_operation_snwrite(char * const dst, const size_t sz, operation 
 
 	// emit the delimiter
 	if(oper->argsl)
-		z += snprintf(dst + z, sz - z, "%c", genscan_opener[sm]);
+		z += snprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
 
 	return z + generator_args_snwrite(dst + z, sz - z, oper->args, oper->argsl, sm);
 }
@@ -381,19 +381,19 @@ size_t generator_args_snwrite(char * const dst, const size_t sz, arg ** const ar
 	for(x = 0; x < argsl; x++)
 	{
 		// emit the opener
-		if((sm & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED)
-			z += snprintf(dst + z, sz - z, "%c", genscan_opener[sm]);
+		if(GS_ENCLOSED(sm))
+			z += snprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
 		else if(x)
-			z += snprintf(dst + z, sz - z, "%c", genscan_opener[sm]);
+			z += snprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
 
 		// emit the argument string
 		z += generator_arg_snwrite(dst + z, sz - z, args[x], sm);
 
 		// emit the closer
-		if((sm & GENSCAN_CLOSURE) == GENSCAN_CLOSURE_CLOSED)
-			z += snprintf(dst + z, sz - z, "%c", genscan_closer[sm]);
+		if(GS_ENCLOSED(sm))
+			z += snprintf(dst + z, sz - z, "%c", genscan_closing_char[sm]);
 		else if(x == (argsl - 1) && args[x]->l == 0)
-			z += snprintf(dst + z, sz - z, "%c", genscan_opener[sm]);
+			z += snprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
 	}
 
 	return z;
@@ -417,7 +417,7 @@ size_t generator_arg_snwrite(char * const dst, const size_t sz, arg * const arg,
 			i += arg->refs.v[k].l - 1;
 			k++;
 		}
-		else if((arg->s[i] == ' ' || arg->s[i] == '\t' || arg->s[i] == '\n') && GS_OPEN(sm))
+		else if((arg->s[i] == ' ' || arg->s[i] == '\t' || arg->s[i] == '\n') && GS_DELIMITED(sm))
 		{
 			z += snprintf(dst + z, sz - z, "\\x{%02hhx}", arg->s[i]);
 		}
@@ -429,11 +429,11 @@ size_t generator_arg_snwrite(char * const dst, const size_t sz, arg * const arg,
 		{
 			z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
 		}
-		else if(GS_OPEN(sm) && arg->s[i] == genscan_opener[sm])
+		else if(GS_DELIMITED(sm) && arg->s[i] == genscan_opening_char[sm])
 		{
 			z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
 		}
-		else if(GS_CLOSED(sm) && arg->s[i] == genscan_closer[sm])
+		else if(GS_ENCLOSED(sm) && arg->s[i] == genscan_closing_char[sm])
 		{
 			z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
 		}
@@ -483,7 +483,7 @@ uint32_t generator_arg_scanmode(arg * const arg)
 	uint32_t sm = 0;
 
 	if(brefs || hrefs)
-		sm |= GENSCAN_MODE_DOREFS;
+		sm |= GENSCAN_ESCAPE_MODE_DOREFS;
 
 	if(ws)
 		sm |= GENSCAN_TOKENS_BRACES;

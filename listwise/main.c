@@ -193,23 +193,13 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if(g_args.dump)
-	{
-		if(g)
-		{
-			printf("GENERATOR: \n");
-			generator_dump(g);
-		}
-	}
-
 	if(g)
 	{
+		if(g_args.dump)
+			generator_dump(g);
+
 		// execute 
 		fatal(listwise_exec_generator, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx, g_args.dump);
-	}
-	else
-	{
-		// listwise_exec with some kind of identity generator
 	}
 
 	// OUTPUT

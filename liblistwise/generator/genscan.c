@@ -27,67 +27,83 @@
 
 uint32_t genscan_parse(char * s, int l)
 {
-	int bang = 0;
-	int x;	
-	for(x = 0; x < l; x++)
+	uint32_t * modes = 0;
+
+	int x;
+	for(x = 1; x < l; x++)
 	{
-		if(s[x] == '!')
-			bang++;
+		if(s[x] == '?' && modes == 0)
+			modes = genscan_by_opening_char_dorefs;
+
+		else if(s[x] == '?')
+			modes = genscan_by_opening_char_norefs;
+
+		else if(modes && modes[(int)s[x]] != UINT32_MAX)
+			return modes[(int)s[x]];
 	}
 
-	for(x = 0; x < l; x++)
-	{
-		int i;
-		for(i = 0; i < genscan_num; i++)
-		{
-			if(s[x] == genscan_opener[genscan_modes[i]])
-				break;
-		}
-
-		if(i < genscan_num)
-		{
-			if(bang == 1)
-				return genscan_modes[i + 1];
-			else
-				return genscan_modes[i];
-		}
-	}
-
+	/* 0 happens to be the default scanmode */
 	return 0;
 }
 
-char * genscan_opener = (char[]){
-#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = c,
-GENSCAN_TABLE(0)
-#undef _GENSCAN
-};
-
-char * genscan_closer = (char[]){
-#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = d,
-GENSCAN_TABLE(0)
-#undef _GENSCAN
-};
-
-int * genscan_basestate = (int[]){
-#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## e,
-GENSCAN_TABLE(0)
-#undef _GENSCAN
-};
-
-int * genscan_argstate = (int[]){
-#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## f,
-GENSCAN_TABLE(0)
-#undef _GENSCAN
-};
+/*
+** define all of the lookup tables
+*/
 
 int genscan_num = sizeof((int[]){
 #define _GENSCAN(a, b, c, d, e, f, g) 1,
-GENSCAN_TABLE(0)
+GENSCAN_TABLE_DOREFS(0)
+GENSCAN_TABLE_NOREFS(0)
 #undef _GENSCAN
 }) / sizeof(int);
 
-uint32_t * genscan_modes = (uint32_t[]){
+uint32_t * genscan_by_number = (uint32_t[]){
 #define _GENSCAN(a, b, c, d, e, f, g) b,
-GENSCAN_TABLE(0)
+GENSCAN_TABLE_DOREFS(0)
+GENSCAN_TABLE_NOREFS(0)
+#undef _GENSCAN
+};
+
+uint32_t * genscan_by_opening_char_dorefs = (uint32_t[]){
+	/* indexable by any int8_t, yields -1 for chars for which there is no such scanmode */
+ [ 0 ... 255 ] = UINT32_MAX,
+#define _GENSCAN(a, b, c, d, e, f, g) [ c ] = b,
+GENSCAN_TABLE_DOREFS(0)
+#undef _GENSCAN
+};
+
+uint32_t * genscan_by_opening_char_norefs = (uint32_t[]){
+	/* indexable by any int8_t, yields -1 for chars for which there is no such scanmode */
+ [ 0 ... 255 ] = UINT32_MAX,
+#define _GENSCAN(a, b, c, d, e, f, g) [ c ] = b,
+GENSCAN_TABLE_NOREFS(0)
+#undef _GENSCAN
+};
+
+char * genscan_opening_char = (char[]){
+#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = c,
+GENSCAN_TABLE_DOREFS(0)
+GENSCAN_TABLE_NOREFS(0)
+#undef _GENSCAN
+};
+
+char * genscan_closing_char = (char[]){
+#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = d,
+GENSCAN_TABLE_DOREFS(0)
+GENSCAN_TABLE_NOREFS(0)
+#undef _GENSCAN
+};
+
+int * genscan_startcondition_initial = (int[]){
+#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## e,
+GENSCAN_TABLE_DOREFS(0)
+GENSCAN_TABLE_NOREFS(0)
+#undef _GENSCAN
+};
+
+int * genscan_startcondition_argscan = (int[]){
+#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## f,
+GENSCAN_TABLE_DOREFS(0)
+GENSCAN_TABLE_NOREFS(0)
 #undef _GENSCAN
 };

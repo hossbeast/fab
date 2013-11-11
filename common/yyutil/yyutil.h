@@ -18,6 +18,22 @@
 #ifndef _YYUTIL_H
 #define _YYUTIL_H
 
+/*
+** yyutil contains common implementation details for scanner/parser systems, including :
+**
+**  uniform logging output : tokens scanned, start condition changes, grammar and scanner errors
+**
+**  location tracking - provides a generic location struct including starting/ending line/column/string and a macro
+**   for combining locations in parser productions
+**
+**  start condition management - provides a mechanism for storing a stack of start conditions in tandem with but outside of flex
+**   which 1) does not make them accessible for logging purposes, and 2) intermittently crashes when calling topstate
+**   
+**  fatal macros for use within the parser - for things such as allocating memory
+**
+**  yyerror implementation - 
+*/
+
 #include <stdio.h>
 
 #include "xstring.h"
@@ -82,17 +98,23 @@ typedef struct yyu_extra
 	int							(*lvalstr)(int token, void * restrict lval, struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);
 } yyu_extra;
 
+/// yyu_extra_destroy
+//
+// free memory associated with an yyu_extra struct
+//
 void yyu_extra_destroy(yyu_extra * const restrict)
 	__attribute__((nonnull));
 
-///
-/// use yyu_location
-///
+/// YYULTYPE
+//
+// use yyu_location within bison
+//
 #define YYLTYPE yyu_location
 
-///
-/// aggregate yyu_locations in the parser
-///
+/// YYULLOC_DEFAULT
+//
+// aggregate yyu_locations in the parser
+//
 #define YYLLOC_DEFAULT(Cur, Rhs, N)					\
 do																					\
 {																						\
@@ -119,7 +141,7 @@ do																					\
 
 /// YYU_FATAL
 //
-//
+// equivalent of fatal for use within grammar rules
 //
 #define YYU_FATAL(x, ...)					\
 do {															\
@@ -134,7 +156,7 @@ do {															\
 	}																\
 } while(0)
 
-///  yyu_locwrite
+/// yyu_locwrite
 //
 // SUMMARY
 //  update the location tracking for a token just parsed (that does not contain newline(s))
@@ -281,7 +303,7 @@ void yyu_error(yyu_location * const restrict lloc, void * const restrict scanner
 /// yyu_lexify
 //
 // SUMMARY
-//  process a just scanned token
+//  process a just scanned token : print the token, assign its location and lexical value
 //
 // PARAMETERS
 //  token - token
