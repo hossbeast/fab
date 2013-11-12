@@ -266,7 +266,11 @@ printf("init=%d\n", init);
 			add(&z, resolved, sz, "%.*s", i[ix].l, i[ix].s);
 
 			struct stat stb[2] = {};
-			if(lstat(resolved, &stb[0]) == 0)
+			if(*z >= 4 && memcmp(resolved, "/../", 4) == 0)
+			{
+				/* do not resolve nofile references against the filesystem lest they be resolved against slash (/) */
+			}
+			else if(lstat(resolved, &stb[0]) == 0)
 			{
 				if(S_ISLNK(stb[0].st_mode))
 				{
