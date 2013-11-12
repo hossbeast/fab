@@ -143,7 +143,7 @@ uint32_t genscan_parse(char * s, int l)
 //
 // get string name from genscan mode
 //
-#define _GENSCAN(a, b, c, d, e, f, g) g == b ? #a :
+#define _GENSCAN(a, b, c, d, e, f, g) (g) == (b) ? #a :
 #define GENSCAN_STR(x) GENSCAN_TABLE_DOREFS(x) GENSCAN_TABLE_NOREFS(x) "GENSCAN_UNKNWN"
 
 #endif

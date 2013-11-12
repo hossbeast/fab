@@ -30,7 +30,7 @@ uint32_t genscan_parse(char * s, int l)
 	uint32_t * modes = 0;
 
 	int x;
-	for(x = 1; x < l; x++)
+	for(x = 0; x < l; x++)
 	{
 		if(s[x] == '?' && modes == 0)
 			modes = genscan_by_opening_char_dorefs;
