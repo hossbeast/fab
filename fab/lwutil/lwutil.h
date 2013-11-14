@@ -39,7 +39,7 @@ listwise_object listlw;
 //  staxa - listwise stax
 //  staxp - offset to next free stax
 //
-int lw_ensure(lstack *** stax, int * staxa, int staxp)
+int lw_ensure(lwx *** stax, int * staxa, int staxp)
 	__attribute__((nonnull));
 
 /// lw_reset
@@ -52,14 +52,14 @@ int lw_ensure(lstack *** stax, int * staxa, int staxp)
 //  staxa - listwise stax
 //  staxp - offset to next free stax
 //
-int lw_reset(lstack *** stax, int * staxa, int staxp)
+int lw_reset(lwx *** stax, int * staxa, int staxp)
 	__attribute__((nonnull));
 
 /// lw_flatten
 //
 // replace LISTWISE_TYPE_LIST objects with their contents
 //
-int lw_flatten(lstack * restrict ls)
+int lw_flatten(lwx * restrict ls)
 	__attribute__((nonnull));
 
 /// lw_lstack_exec
@@ -67,7 +67,7 @@ int lw_flatten(lstack * restrict ls)
 // SUMMARY
 //  execute listwise
 //
-int lw_exec(generator * gen, char * tex, lstack ** ls)
+int lw_exec(generator * gen, char * tex, lwx ** ls)
 	__attribute__((nonnull));
 
 #undef restrict

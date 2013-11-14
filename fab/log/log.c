@@ -86,7 +86,9 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_SELECT		, .s = "SELECT"		, .d = "node selectors" }
 	, { .v = L_LISTS		, .s = "LISTS"		, .d = "node lists" }
 	, { .v = L_INVALID	, .s = "INVALID"	, .d = "node invalidation" }
+#if DEBUG
 	, { .v = L_LWVOCAL	, .s = "LWVOCAL"	, .d = " ** VERBOSE ** liblistwise invocations" }
+#endif
 };
 
 struct g_logs_t * g_logs = o_logs;

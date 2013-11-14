@@ -38,10 +38,10 @@
 	int _coda_r;						\
 	goto CODA_GOOD;					\
 CODA_BAD:									\
-	CODA_BAD_ACTION					\
+	CODA_BAD_ACTION;				\
 	goto CODA_FINALLY;			\
 CODA_GOOD:								\
-	CODA_GOOD_ACTION				\
+	CODA_GOOD_ACTION;				\
 CODA_FINALLY							\
 
 #define coda return _coda_r
@@ -56,6 +56,14 @@ CODA_FINALLY							\
 		HANDLE_ERROR(fmt, ##__VA_ARGS__);	\
 		goto CODA_BAD;										\
 	} while(0)
+
+/// error
+//
+// SUMMARY
+//  log an error message
+//
+#define error(fmt, ...)								\
+	HANDLE_ERROR(fmt, ##__VA_ARGS__)
 
 /// leave
 //

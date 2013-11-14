@@ -85,7 +85,11 @@
 #define L_SELECT				0x0000000040000000ULL
 #define L_LISTS					0x0000000080000000ULL
 #define L_INVALID				0x0000000100000000ULL
-#define L_LWVOCAL				0x0000000200000000ULL
+#if DEBUG
+# define L_LWVOCAL			0x0000000200000000ULL
+#else
+# define L_LWVOCAL			0
+#endif
 
 struct g_logs_t {
 	uint64_t		v;	// tag definition

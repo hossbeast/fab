@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "listwise.h"
+#include "listwise/xtra.h"
 #include "listwise/object.h"
 #include "listwise/generator.h"
 
@@ -28,7 +29,7 @@
 /// static
 ///
 
-static int ensure(lstack *** stax, int * staxa, int staxp)
+static int ensure(lwx *** stax, int * staxa, int staxp)
 {
 	// ensure enough lstacks are allocated
 	if((*staxa) <= staxp)
@@ -40,19 +41,21 @@ static int ensure(lstack *** stax, int * staxa, int staxp)
 		(*staxa) = ns;
 	}
 
+/*
 	// ensure lstack at this spot is allocated
 	if(!(*stax)[staxp])
 		fatal(lstack_create, &(*stax)[staxp]);
+*/
 
 	finally : coda;
 }
 
-static int flatten(lstack * lso)
+static int flatten(lwx * lso)
 {
 	int x;
 	int c = 0;
 
-	lstack * lsi = 0;
+	lwx * lsi = 0;
 
 	// iterate the outer list
 	LSTACK_ITERREV(lso, x, goo);
@@ -99,7 +102,7 @@ static int flatten(lstack * lso)
 	// as a special case, a list with a single entry which is itself a list inherits
 	// the interpolation context of the inner list
 	if(c == 1 && lsi)
-		lso->flags = lsi->flags;
+		lwx_setflags(lso, lwx_getflags(lsi));
 
 	finally : coda;
 }
@@ -108,28 +111,28 @@ static int flatten(lstack * lso)
 /// public
 ///
 
-int lw_flatten(lstack * ls)
+int lw_flatten(lwx * ls)
 {
 	return flatten(ls);
 }
 
-int lw_ensure(lstack *** stax, int * staxa, int staxp)
+int lw_ensure(lwx *** stax, int * staxa, int staxp)
 {
 	return ensure(stax, staxa, staxp);
 }
 
-int lw_reset(lstack *** stax, int * staxa, int staxp)
+int lw_reset(lwx *** stax, int * staxa, int staxp)
 {
 	fatal(ensure, stax, staxa, staxp);
-	lstack_reset((*stax)[staxp]);
+	lwx_reset((*stax)[staxp]);
 
 	finally : coda;
 }
 
-int lw_exec(generator * gen, char * tex, lstack ** ls)
+int lw_exec(generator * gen, char * tex, lwx ** ls)
 {
 	// in liblistwise.so
-	extern int lstack_exec_internal(generator* g, char** init, int* initls, int initl, lstack** ls, int dump);
+	extern int lstack_exec_internal(generator* g, char** init, int* initls, int initl, lwx ** ls, int dump);
 
 	// flatten first
 	fatal(flatten, (*ls));

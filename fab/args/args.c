@@ -56,6 +56,8 @@ if(version)
 	printf(" fab-"
 #if DEVEL
 	XQUOTE(FABVERSIONS) "+DEVEL"
+#elif DEBUG
+	XQUOTE(FABVERSIONS) "+DEBUG"
 #else
 	XQUOTE(FABVERSIONS)
 #endif
@@ -133,10 +135,15 @@ if(help)
 "  --gnid-absolute               nodes are identified by absolute path\n"
 "  --gnid-canon                  nodes are identified by canonical path\n"
 "\n"
-#if DEVEL
+#if DEBUG
 " error reporting\n"
 "  --errors-unwind     (default) unwind error stack for error reporting\n"
 "  --errors-immediate            report immediate site of error only\n"
+"\n"
+#endif
+#if DEVEL
+" sanity checking\n"
+"  --sanity                      enable sanity checks for all liblistwise invocations\n"
 "\n"
 #endif
 " fabfile processing\n"
@@ -172,42 +179,99 @@ if(logopts)
 
 if(operators)
 {
+	if(!help)
+		printf("\n");
+
 	printf(
+"----------------- [ operators ] ------------------------------------------------\n"
 "\n"
-"----------------- [ operators ] ------------------------------------------------------------\n"
-"\n"
-" 1  2  3  4  5  6  7  8  9    name  description\n"
+" 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
 	);
 
+	uint64_t mask = 0;
+
+	if(optypes && optypes->_1)
+		mask |= 0x1ULL << (0x1 - 1);
+	if(optypes && optypes->_2)
+		mask |= 0x1ULL << (0x2 - 1);
+	if(optypes && optypes->_3)
+		mask |= 0x1ULL << (0x3 - 1);
+	if(optypes && optypes->_4)
+		mask |= 0x1ULL << (0x4 - 1);
+	if(optypes && optypes->_5)
+		mask |= 0x1ULL << (0x5 - 1);
+	if(optypes && optypes->_6)
+		mask |= 0x1ULL << (0x6 - 1);
+	if(optypes && optypes->_7)
+		mask |= 0x1ULL << (0x7 - 1);
+	if(optypes && optypes->_8)
+		mask |= 0x1ULL << (0x8 - 1);
+	if(optypes && optypes->_9)
+		mask |= 0x1ULL << (0x9 - 1);
+	if(optypes && optypes->_a)
+		mask |= 0x1ULL << (0xa - 1);
+	if(optypes && optypes->_b)
+		mask |= 0x1ULL << (0xb - 1);
+	if(optypes && optypes->_c)
+		mask |= 0x1ULL << (0xc - 1);
+	if(optypes && optypes->_d)
+		mask |= 0x1ULL << (0xd - 1);
+
+	int i = 0;
 	int x;
 	for(x = 0; x < g_ops_l; x++)
 	{
-		printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s\n"
-			, g_ops[x]->optype & LWOP_SELECTION_READ				? 'x' : ' '
-			, g_ops[x]->optype & LWOP_SELECTION_WRITE				? 'x' : ' '
-			, g_ops[x]->optype & LWOP_SELECTION_RESET				? 'x' : ' '
-			, g_ops[x]->optype & LWOP_MODIFIERS_CANHAVE			? 'x' : ' '
-			, g_ops[x]->optype & LWOP_ARGS_CANHAVE					? 'x' : ' '
-			, g_ops[x]->optype & LWOP_OPERATION_PUSHBEFORE	? 'x' : ' '
-			, g_ops[x]->optype & LWOP_OPERATION_INPLACE			? 'x' : ' '
-			, g_ops[x]->optype & LWOP_OPERATION_FILESYSTEM	? 'x' : ' '
-			, g_ops[x]->optype & LWOP_OBJECT_NO							? 'x' : ' '
-			, g_ops[x]->s
-			, g_ops[x]->desc
-		);
+		if((g_ops[x]->optype & mask) == mask)
+		{
+			printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s"
+	/* effectual */
+				, g_ops[x]->optype & LWOP_SELECTION_STAGE 			? 'x' : ' '
+				, g_ops[x]->optype & LWOP_SELECTION_ACTIVATE		? 'x' : ' '
+				, g_ops[x]->optype & LWOP_SELECTION_RESET				? 'x' : ' '
+				, g_ops[x]->optype & LWOP_WINDOWS_STAGE					? 'x' : ' '
+				, g_ops[x]->optype & LWOP_WINDOWS_ACTIVATE			? 'x' : ' '
+				, g_ops[x]->optype & LWOP_WINDOWS_RESET					? 'x' : ' '
+				, g_ops[x]->optype & LWOP_ARGS_CANHAVE					? 'x' : ' '
+				, g_ops[x]->optype & LWOP_EMPTYSTACK_YES				? 'x' : ' '
+
+	/* informational */
+				, g_ops[x]->optype & LWOP_STACKOP								? 'x' : ' '
+				, g_ops[x]->optype & LWOP_MODIFIERS_CANHAVE			? 'x' : ' '
+				, g_ops[x]->optype & LWOP_OPERATION_PUSHBEFORE	? 'x' : ' '
+				, g_ops[x]->optype & LWOP_OPERATION_INPLACE			? 'x' : ' '
+				, g_ops[x]->optype & LWOP_OPERATION_FILESYSTEM	? 'x' : ' '
+				, g_ops[x]->s
+				, g_ops[x]->desc
+			);
+
+			if(g_ops[x]->mnemonic)
+			{
+				printf(" (%s)", g_ops[x]->mnemonic);
+			}
+			printf("\n");
+
+			i++;
+		}
 	}
 
+	printf("%d operators\n", i);
+
 	printf(
-		" 1. SELECTION_READ\n"
-		" 2. SELECTION_WRITE\n"
+		" 1. SELECTION_STAGE\n"
+		" 2. SELECTION_ACTIVATE\n"
 		" 3. SELECTION_RESET\n"
-		" 4. MODIFIERS_CANHAVE\n"
-		" 5. ARGS_CANHAVE\n"
-		" 6. OPERATION_PUSHBEFORE\n"
-		" 7. OPERATION_INPLACE\n"
-		" 8. OPERATION_FILESYSTEM\n"
-		" 9. OBJECT_NO\n"
+		" 4. WINDOWS_STAGE\n"
+		" 5. WINDOWS_ACTIVATE\n"
+		" 6. WINDOWS_RESET\n"
+		" 7. ARGS_CANHAVE\n"
+		" 8. EMPTYSTACK_YES\n"
+		" 9. STACKOP\n"
+		" A. MODIFIERS_CANHAVE\n"
+		" B. OPERATION_PUSHBEFORE\n"
+		" C. OPERATION_INPLACE\n"
+		" D. OPERATION_FILESYSTEM\n"
 	);
+	printf("\n");
 }
 
 if(help || logopts || operators)
@@ -255,12 +319,16 @@ int args_parse(int argc, char** argv)
 				, { "gnid-absolute"								, no_argument	, &g_args.mode_gnid		, MODE_ABSOLUTE }
 				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid		, MODE_CANONICAL }
 
+#if DEBUG
+				, { "errors-unwind"								, no_argument	, &g_args.mode_errors	, MODE_ERRORS_UNWIND }
+				, { "errors-immediate"						, no_argument	, &g_args.mode_errors	, MODE_ERRORS_IMMEDIATE }
+#endif
+
 #if DEVEL
 				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
 				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
 
-				, { "errors-unwind"								, no_argument	, &g_args.mode_errors	, MODE_ERRORS_UNWIND }
-				, { "errors-immediate"						, no_argument	, &g_args.mode_errors	, MODE_ERRORS_IMMEDIATE }
+				, { "sanity"											, no_argument	, &g_args.mode_sanity	, MODE_ERRORS_IMMEDIATE }
 #endif
 
 /* program switches */
@@ -535,9 +603,12 @@ int args_parse(int argc, char** argv)
 			log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
 	}
 
+#if DEBUG
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-errors            =%s", g_args.mode_errors == DEFAULT_MODE_ERRORS ? " " : "*", ' ', MODE_STR(g_args.mode_errors));
+#endif
 #if DEVEL
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-errors            =%s", g_args.mode_errors == DEFAULT_MODE_ERRORS ? " " : "*", ' ', MODE_STR(g_args.mode_errors));
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-sanity            =%s", g_args.mode_bslic == DEFAULT_MODE_SANITY ? " " : "*", ' ', MODE_STR(g_args.mode_sanity));
 #endif
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args.mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args.mode_paths));
