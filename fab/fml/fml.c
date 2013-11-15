@@ -356,6 +356,9 @@ int fml_exec(ts * const restrict ts, int num)
 	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/fml/%d", g_args.pid, num);
 	fatal(mkdirp, ts->stdo_path->s, S_IRWXU | S_IRWXG | S_IRWXO);
 
+	// reassume user identity
+	fatal(identity_assume_user);
+
 	// create tmp file for the cmd
 	fatal(psprintf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/fml/%d/cmd", g_args.pid, num);
 	if((ts->cmd_fd = open(ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG)) == -1)
@@ -412,9 +415,6 @@ int fml_exec(ts * const restrict ts, int num)
 		// exec doesnt return
 		fatal_os(execl, ts->cmd_path->s, ts->cmd_path->s, (void*)0);
 	}
-
-	// reassume user identity
-	fatal(identity_assume_user);
 
 	finally : coda;
 }

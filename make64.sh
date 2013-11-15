@@ -1156,6 +1156,7 @@ fml_2_0()
 
 echo "#ifndef ff_TOK_H"
 echo "#define ff_TOK_H"
+echo "#define YY_NULL 0"
 echo "const char* ff_tokname(int);"
 sed   -ne '/yytokentype/,/;/ p' 					\
 	  <fab/ff/ff.tab.c										\
@@ -1165,6 +1166,7 @@ echo "#endif"
 
 	exec 1>fab/ff/ff.tokens.c
 
+echo "#define YY_NULL 0"
 echo "typedef unsigned short yytype_uint16;"
 sed -ne '/yytname\[\]/,/};/ p'						\
 	  <fab/ff/ff.tab.c										\

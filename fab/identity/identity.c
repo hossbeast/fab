@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <pwd.h>
 #include <grp.h>
 
@@ -91,6 +92,13 @@ int identity_init()
 		);
 	}
 #endif
+
+	/*
+	** In addition, this program requires explicit control over file and directory permissions for
+	** created files. In particular, the directories in /var/tmp/fab are owned by fabsys:fabsys (so
+	** they can be deleted) but the files are user:user (so they can be executed)
+	*/
+	umask(0);
 
 	return 0;
 }

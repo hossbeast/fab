@@ -86,6 +86,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 
 	> echo "#ifndef ff_TOK_H"
 	> echo "#define ff_TOK_H"
+	> echo "#define YY_NULL 0"
 	> echo "const char* ff_tokname(int);"
 	> sed   -ne '/yytokentype/,/;/ p' 					\
 	  <[ $dfab/ff/ff.tab.c ]										\
@@ -95,6 +96,7 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 
 	exec 1>[ $dfab/ff/ff.tokens.c ]
 
+	> echo "#define YY_NULL 0"
 	> echo "typedef unsigned short yytype_uint16;"
 	> sed -ne '/yytname\[\]/,/};/ p'						\
 	  <[ $dfab/ff/ff.tab.c ]										\
