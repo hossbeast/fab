@@ -19,9 +19,36 @@ $VERSIONL				= [ 0 4 3 0 ]											# version list - major, minor, revision, bu
 $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
 $VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
 
-# enable debug compilation
-$dvel						= [ 0 ]			# dvel implies dbug
+#
+# debug enables
+#  - disable compiler optimizations
+#  - enable compiler debug symbol generation
+#  - the --errors-unwind and --errors-immediate options
+#  - these logging categories
+#    L_FMLTARG
+#    L_DGDEPS
+#    L_LWVOCAL
+#
 $dbug						= [ 0 ]
+
+#
+# dvel includes debug, and also enables
+#  - the --bslic-fab option (for generating bakescripts that are part of the fab distribution)
+#  - these logging categories
+#     L_FFTOKN
+#     L_FFSTAT
+#     L_FFTREE
+#     L_FFFILE
+#     L_FF
+#  - disable u+s and g+s checks (to facilitate execution under valgrind)
+#  - enable compiler options to use files from the compilation directories, including :
+#   - listwise operators
+#   - fab-listwise operators
+#   - fab-provided invocations
+#   - libraries (liblistwise.so via rpath)
+#  - the --sanity option
+#
+$dvel						= [ 0 ]
 
 # install directories
 $destdir				= [ ]															# root install directory - does not affect runtime directories
@@ -61,9 +88,9 @@ $bisonflags	= [ --warnings=error ]
 
 $cc					= [ gcc ]
 $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions [ $dliblistwise $dcommon [ $dcommon ~ ls/-d ] ~ s/^/-I ]
-	[ $dbug $dvel ~ s/1/-O0/y ]
+	[ $dbug $dvel ~ s/1/-O0/y ]					# disable compiler optimizations
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
-	[ $dbug $dvel ~ s/1/-g/y ]
+	[ $dbug $dvel ~ s/1/-g/y ]					# enable debug symbol generation
 	[ $dbug $dvel ~ s/1/-DDBUG/y ]
 	[       $dvel ~ s/1/-DDEVEL/y ]
 	[       $dvel ~ s/1/-DSANITY/y ]
