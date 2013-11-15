@@ -32,7 +32,7 @@
 #include "args.h"
 
 #include "log.h"
-#include "fab_control.h"
+#include "control.h"
 #include "xmem.h"
 #include "xstring.h"
 #include "unitstring.h"

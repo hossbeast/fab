@@ -19,7 +19,7 @@
 
 #include "strstack.h"
 
-#include "fab_control.h"
+#include "control.h"
 #include "xmem.h"
 
 struct strstack_t

@@ -22,7 +22,7 @@
 #include <listwise/lstack.h>
 #include <listwise/object.h>
 
-#include "liblistwise_control.h"
+#include "control.h"
 #include "xmem.h"
 
 /*

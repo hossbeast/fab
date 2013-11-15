@@ -22,8 +22,8 @@
 
 #include "lwutil.h"
 
-#include "fab_control.h"
-#include "xmem/xmem.h"
+#include "control.h"
+#include "xmem.h"
 
 ///
 /// static

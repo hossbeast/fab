@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-$VERSIONL				= [ 0 4 3 0 ]											# version list - major, minor, revision, build
+$VERSIONL				= [ 0 4 2 1 ]											# version list - major, minor, revision, build
 $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
 $VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
 
@@ -36,7 +36,6 @@ $lwopdir				= [ $dlibdir/listwise ]						#  lw operators
 $fablwopdir			= [ $dlibdir/fab/lib ]						#  fab-specific lw operators
 $fabcachedir		= [ /var/cache/fab ]							# fab cache
 $fabtmpdir			= [ /var/tmp/fab ]								# fab tmp
-$fabipcdir			= [ /var/run/fab ]								# fab shm/ipc files
 $fabinvokedir		= [ /usr/lib/fab/listwise ]				# fab-provided invocations
 
 # compilers and their flags
@@ -47,7 +46,7 @@ $bison			= [ bison ]
 $bisonflags	= [ --warnings=error ]
 
 $cc					= [ gcc ]
-$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE [ $dcommon [ $dcommon ~ ls/-d ] ~ s/^/-I ]
+$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE [ -I $dcommon ~ j ]
 	[ $dbug $dvel ~ s/1/-O0/y ]
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
 	[ $dbug $dvel ~ s/1/-g/y ]

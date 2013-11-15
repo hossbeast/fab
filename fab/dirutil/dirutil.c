@@ -24,7 +24,7 @@
 #include "dirutil.h"
 
 #include "log.h"
-#include "fab_control.h"
+#include "control.h"
 
 int rmdir_recursive(const char * const dirpath, int rmself)
 {

@@ -10,7 +10,7 @@
 #include "list.h"
 
 #include "log.h"
-#include "fab_control.h"
+#include "control.h"
 
 static map * o_fabricationsmap;
 static map * o_fabricationxsmap;

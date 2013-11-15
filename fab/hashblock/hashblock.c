@@ -25,7 +25,7 @@
 #include "hashblock.h"
 
 #include "log.h"
-#include "fab_control.h"
+#include "control.h"
 #include "identity.h"
 #include "args.h"
 

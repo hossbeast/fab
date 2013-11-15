@@ -39,7 +39,7 @@
 #include "enclose.h"
 
 #include "log.h"
-#include "fab_control.h"
+#include "control.h"
 #include "xmem.h"
 #include "macros.h"
 #include "cksum.h"

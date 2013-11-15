@@ -21,7 +21,7 @@
 #include "listwise/internal.h"
 
 #include "xmem.h"
-#include "liblistwise_control.h"
+#include "control.h"
 #include "macros.h"
 
 int API lstack_last_clear(lstack* const restrict ls)
