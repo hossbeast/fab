@@ -69,7 +69,7 @@ fml_1_0()
 
 	rm -rf																						$destdir/$lwopdir 2>/dev/null
 	install -d																				$destdir/$lwopdir
-	for x in liblistwise/op/z/z.so liblistwise/op/o/o.so liblistwise/op/w/w.so liblistwise/op/shift/shift.so liblistwise/op/dj/dj.so liblistwise/op/uu/uu.so liblistwise/op/u/u.so liblistwise/op/bn/bn.so liblistwise/op/rp/rp.so liblistwise/op/ls/ls.so liblistwise/op/j/j.so liblistwise/op/-X/-X.so liblistwise/op/cp/cp.so liblistwise/op/xsf/xsf.so liblistwise/op/c/c.so liblistwise/op/ss/ss.so liblistwise/op/r/r.so liblistwise/op/xch/xch.so liblistwise/op/xs/xs.so liblistwise/op/s/s.so liblistwise/op/dn/dn.so liblistwise/op/sn/sn.so liblistwise/op/d/d.so liblistwise/op/m/m.so liblistwise/op/xmf/xmf.so liblistwise/op/xm/xm.so liblistwise/op/rx/rx.so liblistwise/op/y/y.so liblistwise/op/fn/fn.so liblistwise/op/h/h.so liblistwise/op/pop/pop.so liblistwise/op/v/v.so; do \
+	for x in liblistwise/op/w/w.so liblistwise/op/y/y.so liblistwise/op/bn/bn.so liblistwise/op/xsf/xsf.so liblistwise/op/dj/dj.so liblistwise/op/rp/rp.so liblistwise/op/xs/xs.so liblistwise/op/xch/xch.so liblistwise/op/d/d.so liblistwise/op/u/u.so liblistwise/op/fn/fn.so liblistwise/op/s/s.so liblistwise/op/ss/ss.so liblistwise/op/uu/uu.so liblistwise/op/shift/shift.so liblistwise/op/v/v.so liblistwise/op/h/h.so liblistwise/op/o/o.so liblistwise/op/rx/rx.so liblistwise/op/pop/pop.so liblistwise/op/c/c.so liblistwise/op/z/z.so liblistwise/op/xm/xm.so liblistwise/op/-X/-X.so liblistwise/op/ls/ls.so liblistwise/op/dn/dn.so liblistwise/op/cp/cp.so liblistwise/op/m/m.so liblistwise/op/xmf/xmf.so liblistwise/op/j/j.so liblistwise/op/sn/sn.so liblistwise/op/r/r.so; do \
 		install $x																			$destdir/$lwopdir
 	done
 
