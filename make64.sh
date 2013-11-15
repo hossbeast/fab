@@ -1,13 +1,21 @@
 #!/bin/bash
 
-# A build script made by fab v0.4.2.0
-#  fab is free software released under the GNU General Public License.
+# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
 #
-#  As a special exception, build scripts made by fab v0.4.2.0 (including this
-#  build script) are excluded from the license covering fab itself, even
-#  if substantial portions of the fab source code are copied verbatim into
-#  the build script. You may create a larger work that contains part or all
-#  of the build script and distribute that work under terms of your choice
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>.
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -82,14 +90,14 @@ NAMES[4]='common/parseint.pic.o'
 fml_1_4()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&104
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Icommon -O3 -fPIC -c common/parseint.c -o common/parseint.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 4 1>&99
   exit $X
 }
 
@@ -97,14 +105,14 @@ NAMES[5]='common/pstring.o'
 fml_1_5()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&105
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Icommon -O3 -c common/pstring.c -o common/pstring.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 5 1>&99
   exit $X
 }
 
@@ -112,14 +120,14 @@ NAMES[6]='common/unitstring.o'
 fml_1_6()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&106
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Icommon -O3 -c common/unitstring.c -o common/unitstring.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 6 1>&99
   exit $X
 }
 
@@ -127,14 +135,14 @@ NAMES[7]='common/xmem.o'
 fml_1_7()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&107
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Icommon -O3 -c common/xmem.c -o common/xmem.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 7 1>&99
   exit $X
 }
 
@@ -142,14 +150,14 @@ NAMES[8]='common/xmem.pic.o'
 fml_1_8()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&108
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Icommon -O3 -fPIC -c common/xmem.c -o common/xmem.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 8 1>&99
   exit $X
 }
 
@@ -157,14 +165,14 @@ NAMES[9]='common/xstring.o'
 fml_1_9()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&109
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Icommon -O3 -c common/xstring.c -o common/xstring.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 9 1>&99
   exit $X
 }
 
@@ -172,14 +180,14 @@ NAMES[10]='common/xstring.pic.o'
 fml_1_10()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&110
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Icommon -O3 -fPIC -c common/xstring.c -o common/xstring.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 10 1>&99
   exit $X
 }
 
@@ -187,14 +195,14 @@ NAMES[11]='fab/canon/canon.o'
 fml_1_11()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/canon/canon.c -o fab/canon/canon.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/canon/canon.c -o fab/canon/canon.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 11 1>&99
   exit $X
 }
 
@@ -202,14 +210,14 @@ NAMES[12]='fab/depblock/depblock.o'
 fml_1_12()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/depblock/depblock.c -o fab/depblock/depblock.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/depblock/depblock.c -o fab/depblock/depblock.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 12 1>&99
   exit $X
 }
 
@@ -217,14 +225,14 @@ NAMES[13]='fab/dirutil/dirutil.o'
 fml_1_13()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dirutil/dirutil.c -o fab/dirutil/dirutil.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dirutil/dirutil.c -o fab/dirutil/dirutil.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 13 1>&99
   exit $X
 }
 
@@ -232,14 +240,14 @@ NAMES[14]='fab/fablw/op/fg/fg.pic.o'
 fml_1_14()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c fab/fablw/op/fg/fg.c -o fab/fablw/op/fg/fg.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c fab/fablw/op/fg/fg.c -o fab/fablw/op/fg/fg.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 14 1>&99
   exit $X
 }
 
@@ -247,14 +255,14 @@ NAMES[15]='fab/fablw/op/fi/fi.pic.o'
 fml_1_15()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c fab/fablw/op/fi/fi.c -o fab/fablw/op/fi/fi.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -fPIC -c fab/fablw/op/fi/fi.c -o fab/fablw/op/fi/fi.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 15 1>&99
   exit $X
 }
 
@@ -262,14 +270,14 @@ NAMES[16]='{fab/ff/ff.dsc.tab.h, fab/ff/ff.dsc.tab.c}'
 fml_1_16()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&116
 
   
 	bison --warnings=error -o fab/ff/ff.dsc.tab.c -d	fab/ff/ff.dsc.y
 
 
   X=$?
-  echo 0 1>&99
+  echo 16 1>&99
   exit $X
 }
 
@@ -277,14 +285,14 @@ NAMES[17]='{fab/ff/ff.lex.h, fab/ff/ff.lex.c}'
 fml_1_17()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&117
 
   
 	  flex  -o fab/ff/ff.lex.c  --header-file=fab/ff/ff.lex.h  fab/ff/ff.l
 
 
   X=$?
-  echo 1 1>&99
+  echo 17 1>&99
   exit $X
 }
 
@@ -292,14 +300,14 @@ NAMES[18]='{fab/ff/ff.list.tab.h, fab/ff/ff.list.tab.c}'
 fml_1_18()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&118
 
   
 	bison --warnings=error -o fab/ff/ff.list.tab.c -d	fab/ff/ff.list.y
 
 
   X=$?
-  echo 2 1>&99
+  echo 18 1>&99
   exit $X
 }
 
@@ -307,14 +315,14 @@ NAMES[19]='{fab/ff/ff.tab.h, fab/ff/ff.tab.c}'
 fml_1_19()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&119
 
   
 	bison --warnings=error -o fab/ff/ff.tab.c -d	fab/ff/ff.y
 
 
   X=$?
-  echo 3 1>&99
+  echo 19 1>&99
   exit $X
 }
 
@@ -322,14 +330,14 @@ NAMES[20]='{fab/ff/ff.var.tab.h, fab/ff/ff.var.tab.c}'
 fml_1_20()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&120
 
   
 	bison --warnings=error -o fab/ff/ff.var.tab.c -d	fab/ff/ff.var.y
 
 
   X=$?
-  echo 0 1>&99
+  echo 20 1>&99
   exit $X
 }
 
@@ -337,14 +345,14 @@ NAMES[21]='fab/gn/gnlw.o'
 fml_1_21()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&121
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/gn/gnlw.c -o fab/gn/gnlw.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/gn/gnlw.c -o fab/gn/gnlw.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 21 1>&99
   exit $X
 }
 
@@ -352,14 +360,14 @@ NAMES[22]='fab/hashblock/hashblock.o'
 fml_1_22()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&122
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/hashblock/hashblock.c -o fab/hashblock/hashblock.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/hashblock/hashblock.c -o fab/hashblock/hashblock.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 22 1>&99
   exit $X
 }
 
@@ -367,14 +375,14 @@ NAMES[23]='fab/identity/identity.o'
 fml_1_23()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&123
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/identity/identity.c -o fab/identity/identity.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/identity/identity.c -o fab/identity/identity.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 23 1>&99
   exit $X
 }
 
@@ -382,14 +390,14 @@ NAMES[24]='fab/log/log.o'
 fml_1_24()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&124
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/log/log.c -o fab/log/log.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/log/log.c -o fab/log/log.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 24 1>&99
   exit $X
 }
 
@@ -397,14 +405,14 @@ NAMES[25]='fab/lwutil/lwutil.o'
 fml_1_25()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&125
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/lwutil/lwutil.c -o fab/lwutil/lwutil.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/lwutil/lwutil.c -o fab/lwutil/lwutil.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 25 1>&99
   exit $X
 }
 
@@ -412,14 +420,14 @@ NAMES[26]='fab/map/map.o'
 fml_1_26()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&126
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/map/map.c -o fab/map/map.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/map/map.c -o fab/map/map.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 26 1>&99
   exit $X
 }
 
@@ -427,14 +435,14 @@ NAMES[27]='fab/path/path.o'
 fml_1_27()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&127
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/path/path.c -o fab/path/path.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/path/path.c -o fab/path/path.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 27 1>&99
   exit $X
 }
 
@@ -442,14 +450,14 @@ NAMES[28]='fab/strstack/strstack.o'
 fml_1_28()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&128
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/strstack/strstack.c -o fab/strstack/strstack.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/strstack/strstack.c -o fab/strstack/strstack.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 28 1>&99
   exit $X
 }
 
@@ -457,14 +465,14 @@ NAMES[29]='fab/traverse/traverse.o'
 fml_1_29()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&129
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/traverse/traverse.c -o fab/traverse/traverse.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/traverse/traverse.c -o fab/traverse/traverse.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 29 1>&99
   exit $X
 }
 
@@ -472,14 +480,14 @@ NAMES[30]='liblistwise/apidata/apidata.pic.o'
 fml_1_30()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&130
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/apidata/apidata.c -o liblistwise/apidata/apidata.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 30 1>&99
   exit $X
 }
 
@@ -487,14 +495,14 @@ NAMES[31]='liblistwise/exec/exec.pic.o'
 fml_1_31()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&131
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/exec/exec.c -o liblistwise/exec/exec.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 31 1>&99
   exit $X
 }
 
@@ -502,14 +510,14 @@ NAMES[32]='{liblistwise/generator/generator.lex.h, liblistwise/generator/generat
 fml_1_32()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&132
 
   
 	  flex  -o liblistwise/generator/generator.lex.c  --header-file=liblistwise/generator/generator.lex.h  liblistwise/generator/generator.l
 
 
   X=$?
-  echo 0 1>&99
+  echo 32 1>&99
   exit $X
 }
 
@@ -517,635 +525,650 @@ NAMES[33]='{liblistwise/generator/generator.tab.h, liblistwise/generator/generat
 fml_1_33()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&133
 
   
 	bison --warnings=error -o liblistwise/generator/generator.tab.c -d	liblistwise/generator/generator.y
 
 
   X=$?
-  echo 1 1>&99
+  echo 33 1>&99
   exit $X
 }
 
-NAMES[34]='liblistwise/idx/idx.pic.o'
+NAMES[34]='liblistwise/generator/generator.tokens.pic.o'
 fml_1_34()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&134
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/generator/generator.tokens.c -o liblistwise/generator/generator.tokens.pic.o
+
+
+  X=$?
+  echo 34 1>&99
+  exit $X
+}
+
+NAMES[35]='liblistwise/idx/idx.pic.o'
+fml_1_35()
+{
+  exec 1>/dev/null
+  exec 2>&135
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/idx/idx.c -o liblistwise/idx/idx.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 35 1>&99
   exit $X
 }
 
-NAMES[35]='liblistwise/last/last.pic.o'
-fml_1_35()
+NAMES[36]='liblistwise/last/last.pic.o'
+fml_1_36()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&136
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/last/last.c -o liblistwise/last/last.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 36 1>&99
   exit $X
 }
 
-NAMES[36]='liblistwise/lstack/lstack.pic.o'
-fml_1_36()
+NAMES[37]='liblistwise/lstack/lstack.pic.o'
+fml_1_37()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&137
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/lstack/lstack.c -o liblistwise/lstack/lstack.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 37 1>&99
   exit $X
 }
 
-NAMES[37]='liblistwise/object/object.pic.o'
-fml_1_37()
+NAMES[38]='liblistwise/object/object.pic.o'
+fml_1_38()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&138
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/object/object.c -o liblistwise/object/object.pic.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 38 1>&99
   exit $X
 }
 
-NAMES[38]='liblistwise/op/-X/-X.pic.o'
-fml_1_38()
+NAMES[39]='liblistwise/op/-X/-X.pic.o'
+fml_1_39()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&139
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/-X/-X.c -o liblistwise/op/-X/-X.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 39 1>&99
   exit $X
 }
 
-NAMES[39]='liblistwise/op/bn/bn.pic.o'
-fml_1_39()
+NAMES[40]='liblistwise/op/bn/bn.pic.o'
+fml_1_40()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&140
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/bn/bn.c -o liblistwise/op/bn/bn.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 40 1>&99
   exit $X
 }
 
-NAMES[40]='liblistwise/op/c/c.pic.o'
-fml_1_40()
+NAMES[41]='liblistwise/op/c/c.pic.o'
+fml_1_41()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&141
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/c/c.c -o liblistwise/op/c/c.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 41 1>&99
   exit $X
 }
 
-NAMES[41]='liblistwise/op/cp/cp.pic.o'
-fml_1_41()
+NAMES[42]='liblistwise/op/cp/cp.pic.o'
+fml_1_42()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&142
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/cp/cp.c -o liblistwise/op/cp/cp.pic.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 42 1>&99
   exit $X
 }
 
-NAMES[42]='liblistwise/op/d/d.pic.o'
-fml_1_42()
+NAMES[43]='liblistwise/op/d/d.pic.o'
+fml_1_43()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&143
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/d/d.c -o liblistwise/op/d/d.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 43 1>&99
   exit $X
 }
 
-NAMES[43]='liblistwise/op/dj/dj.pic.o'
-fml_1_43()
+NAMES[44]='liblistwise/op/dj/dj.pic.o'
+fml_1_44()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&144
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/dj/dj.c -o liblistwise/op/dj/dj.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 44 1>&99
   exit $X
 }
 
-NAMES[44]='liblistwise/op/dn/dn.pic.o'
-fml_1_44()
+NAMES[45]='liblistwise/op/dn/dn.pic.o'
+fml_1_45()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&145
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/dn/dn.c -o liblistwise/op/dn/dn.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 45 1>&99
   exit $X
 }
 
-NAMES[45]='liblistwise/op/fn/fn.pic.o'
-fml_1_45()
+NAMES[46]='liblistwise/op/fn/fn.pic.o'
+fml_1_46()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&146
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/fn/fn.c -o liblistwise/op/fn/fn.pic.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 46 1>&99
   exit $X
 }
 
-NAMES[46]='liblistwise/op/h/h.pic.o'
-fml_1_46()
+NAMES[47]='liblistwise/op/h/h.pic.o'
+fml_1_47()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&147
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/h/h.c -o liblistwise/op/h/h.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 47 1>&99
   exit $X
 }
 
-NAMES[47]='liblistwise/op/j/j.pic.o'
-fml_1_47()
+NAMES[48]='liblistwise/op/j/j.pic.o'
+fml_1_48()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&148
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/j/j.c -o liblistwise/op/j/j.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 48 1>&99
   exit $X
 }
 
-NAMES[48]='liblistwise/op/ls/ls.pic.o'
-fml_1_48()
+NAMES[49]='liblistwise/op/ls/ls.pic.o'
+fml_1_49()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&149
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/ls/ls.c -o liblistwise/op/ls/ls.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 49 1>&99
   exit $X
 }
 
-NAMES[49]='liblistwise/op/m/m.pic.o'
-fml_1_49()
+NAMES[50]='liblistwise/op/m/m.pic.o'
+fml_1_50()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&150
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/m/m.c -o liblistwise/op/m/m.pic.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 50 1>&99
   exit $X
 }
 
-NAMES[50]='liblistwise/op/o/o.pic.o'
-fml_1_50()
+NAMES[51]='liblistwise/op/o/o.pic.o'
+fml_1_51()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&151
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/o/o.c -o liblistwise/op/o/o.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 51 1>&99
   exit $X
 }
 
-NAMES[51]='liblistwise/op/op.pic.o'
-fml_1_51()
+NAMES[52]='liblistwise/op/op.pic.o'
+fml_1_52()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&152
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/op.c -o liblistwise/op/op.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 52 1>&99
   exit $X
 }
 
-NAMES[52]='liblistwise/op/pop/pop.pic.o'
-fml_1_52()
+NAMES[53]='liblistwise/op/pop/pop.pic.o'
+fml_1_53()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&153
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/pop/pop.c -o liblistwise/op/pop/pop.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 53 1>&99
   exit $X
 }
 
-NAMES[53]='liblistwise/op/r/r.pic.o'
-fml_1_53()
+NAMES[54]='liblistwise/op/r/r.pic.o'
+fml_1_54()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&154
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/r/r.c -o liblistwise/op/r/r.pic.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 54 1>&99
   exit $X
 }
 
-NAMES[54]='liblistwise/op/rp/rp.pic.o'
-fml_1_54()
+NAMES[55]='liblistwise/op/rp/rp.pic.o'
+fml_1_55()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&155
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/rp/rp.c -o liblistwise/op/rp/rp.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 55 1>&99
   exit $X
 }
 
-NAMES[55]='liblistwise/op/rx/rx.pic.o'
-fml_1_55()
+NAMES[56]='liblistwise/op/rx/rx.pic.o'
+fml_1_56()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&156
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/rx/rx.c -o liblistwise/op/rx/rx.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 56 1>&99
   exit $X
 }
 
-NAMES[56]='liblistwise/op/s/s.pic.o'
-fml_1_56()
+NAMES[57]='liblistwise/op/s/s.pic.o'
+fml_1_57()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&157
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/s/s.c -o liblistwise/op/s/s.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 57 1>&99
   exit $X
 }
 
-NAMES[57]='liblistwise/op/shift/shift.pic.o'
-fml_1_57()
+NAMES[58]='liblistwise/op/shift/shift.pic.o'
+fml_1_58()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&158
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/shift/shift.c -o liblistwise/op/shift/shift.pic.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 58 1>&99
   exit $X
 }
 
-NAMES[58]='liblistwise/op/sn/sn.pic.o'
-fml_1_58()
+NAMES[59]='liblistwise/op/sn/sn.pic.o'
+fml_1_59()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&159
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/sn/sn.c -o liblistwise/op/sn/sn.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 59 1>&99
   exit $X
 }
 
-NAMES[59]='liblistwise/op/ss/ss.pic.o'
-fml_1_59()
+NAMES[60]='liblistwise/op/ss/ss.pic.o'
+fml_1_60()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&160
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/ss/ss.c -o liblistwise/op/ss/ss.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 60 1>&99
   exit $X
 }
 
-NAMES[60]='liblistwise/op/u/u.pic.o'
-fml_1_60()
+NAMES[61]='liblistwise/op/u/u.pic.o'
+fml_1_61()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&161
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/u/u.c -o liblistwise/op/u/u.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 61 1>&99
   exit $X
 }
 
-NAMES[61]='liblistwise/op/uu/uu.pic.o'
-fml_1_61()
+NAMES[62]='liblistwise/op/uu/uu.pic.o'
+fml_1_62()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&162
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/uu/uu.c -o liblistwise/op/uu/uu.pic.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 62 1>&99
   exit $X
 }
 
-NAMES[62]='liblistwise/op/v/v.pic.o'
-fml_1_62()
+NAMES[63]='liblistwise/op/v/v.pic.o'
+fml_1_63()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&163
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/v/v.c -o liblistwise/op/v/v.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 63 1>&99
   exit $X
 }
 
-NAMES[63]='liblistwise/op/w/w.pic.o'
-fml_1_63()
+NAMES[64]='liblistwise/op/w/w.pic.o'
+fml_1_64()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&164
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/w/w.c -o liblistwise/op/w/w.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 64 1>&99
   exit $X
 }
 
-NAMES[64]='liblistwise/op/xch/xch.pic.o'
-fml_1_64()
+NAMES[65]='liblistwise/op/xch/xch.pic.o'
+fml_1_65()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&165
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/xch/xch.c -o liblistwise/op/xch/xch.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 65 1>&99
   exit $X
 }
 
-NAMES[65]='liblistwise/op/xm/xm.pic.o'
-fml_1_65()
+NAMES[66]='liblistwise/op/xm/xm.pic.o'
+fml_1_66()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&166
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/xm/xm.c -o liblistwise/op/xm/xm.pic.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 66 1>&99
   exit $X
 }
 
-NAMES[66]='liblistwise/op/xmf/xmf.pic.o'
-fml_1_66()
+NAMES[67]='liblistwise/op/xmf/xmf.pic.o'
+fml_1_67()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&167
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/xmf/xmf.c -o liblistwise/op/xmf/xmf.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 67 1>&99
   exit $X
 }
 
-NAMES[67]='liblistwise/op/xs/xs.pic.o'
-fml_1_67()
+NAMES[68]='liblistwise/op/xs/xs.pic.o'
+fml_1_68()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&168
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/xs/xs.c -o liblistwise/op/xs/xs.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 68 1>&99
   exit $X
 }
 
-NAMES[68]='liblistwise/op/xsf/xsf.pic.o'
-fml_1_68()
+NAMES[69]='liblistwise/op/xsf/xsf.pic.o'
+fml_1_69()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&169
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/xsf/xsf.c -o liblistwise/op/xsf/xsf.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 69 1>&99
   exit $X
 }
 
-NAMES[69]='liblistwise/op/y/y.pic.o'
-fml_1_69()
+NAMES[70]='liblistwise/op/y/y.pic.o'
+fml_1_70()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&170
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/y/y.c -o liblistwise/op/y/y.pic.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 70 1>&99
   exit $X
 }
 
-NAMES[70]='liblistwise/op/z/z.pic.o'
-fml_1_70()
+NAMES[71]='liblistwise/op/z/z.pic.o'
+fml_1_71()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&171
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/op/z/z.c -o liblistwise/op/z/z.pic.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 71 1>&99
   exit $X
 }
 
-NAMES[71]='liblistwise/re/re.pic.o'
-fml_1_71()
+NAMES[72]='liblistwise/re/re.pic.o'
+fml_1_72()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&172
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/re/re.c -o liblistwise/re/re.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 72 1>&99
   exit $X
 }
 
-NAMES[72]='liblistwise/sel/sel.pic.o'
-fml_1_72()
+NAMES[73]='liblistwise/sel/sel.pic.o'
+fml_1_73()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&173
 
   
 	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Iliblistwise/../common -O3 -fPIC -Iliblistwise -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -DLWOPDIR="/usr/lib/listwise" -c liblistwise/sel/sel.c -o liblistwise/sel/sel.pic.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 73 1>&99
   exit $X
 }
 
-NAMES[73]='listwise/args.o'
-fml_1_73()
-{
-  exec 1>/dev/null
-  exec 2>&101
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ilistwise/../common -O3 -Ilistwise -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -c listwise/args.c -o listwise/args.o
-
-
-  X=$?
-  echo 1 1>&99
-  exit $X
-}
-
-NAMES[74]='listwise/main.o'
+NAMES[74]='listwise/args.o'
 fml_1_74()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&174
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ilistwise/../common -O3 -Ilistwise -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -c listwise/main.c -o listwise/main.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ilistwise/../common -O3 -Ilistwise -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -c listwise/args.c -o listwise/args.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 74 1>&99
+  exit $X
+}
+
+NAMES[75]='listwise/main.o'
+fml_1_75()
+{
+  exec 1>/dev/null
+  exec 2>&175
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ilistwise/../common -O3 -Ilistwise -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -c listwise/main.c -o listwise/main.o
+
+
+  X=$?
+  echo 75 1>&99
   exit $X
 }
 
 
 # formulas and names for stage 2
-NAMES[75]='{fab/ff/ff.tokens.c, fab/ff/ff.tokens.h}'
+NAMES[76]='{fab/ff/ff.tokens.c, fab/ff/ff.tokens.h}'
 fml_2_0()
 {
   exec 1>/dev/null
@@ -1196,7 +1219,7 @@ echo '}'
   exit $X
 }
 
-NAMES[76]='liblistwise/generator/generator.lex.pic.o'
+NAMES[77]='liblistwise/generator/generator.lex.pic.o'
 fml_2_1()
 {
   exec 1>/dev/null
@@ -1211,7 +1234,7 @@ fml_2_1()
   exit $X
 }
 
-NAMES[77]='liblistwise/generator/generator.pic.o'
+NAMES[78]='liblistwise/generator/generator.pic.o'
 fml_2_2()
 {
   exec 1>/dev/null
@@ -1226,7 +1249,7 @@ fml_2_2()
   exit $X
 }
 
-NAMES[78]='liblistwise/generator/generator.tab.pic.o'
+NAMES[79]='liblistwise/generator/generator.tab.pic.o'
 fml_2_3()
 {
   exec 1>/dev/null
@@ -1243,14 +1266,14 @@ fml_2_3()
 
 
 # formulas and names for stage 3
-NAMES[79]='fab/args/args.o'
+NAMES[80]='fab/args/args.o'
 fml_3_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/args/args.c -o fab/args/args.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/args/args.c -o fab/args/args.o
 
 
   X=$?
@@ -1258,14 +1281,14 @@ fml_3_0()
   exit $X
 }
 
-NAMES[80]='fab/bake/bake.o'
+NAMES[81]='fab/bake/bake.o'
 fml_3_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/bake/bake.c -o fab/bake/bake.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/bake/bake.c -o fab/bake/bake.o
 
 
   X=$?
@@ -1273,14 +1296,14 @@ fml_3_1()
   exit $X
 }
 
-NAMES[81]='fab/bp/bp.o'
+NAMES[82]='fab/bp/bp.o'
 fml_3_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/bp/bp.c -o fab/bp/bp.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/bp/bp.c -o fab/bp/bp.o
 
 
   X=$?
@@ -1288,14 +1311,14 @@ fml_3_2()
   exit $X
 }
 
-NAMES[82]='fab/dep/dep.o'
+NAMES[83]='fab/dep/dep.o'
 fml_3_3()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dep/dep.c -o fab/dep/dep.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dep/dep.c -o fab/dep/dep.o
 
 
   X=$?
@@ -1303,322 +1326,322 @@ fml_3_3()
   exit $X
 }
 
-NAMES[83]='fab/dsc/dsc.o'
+NAMES[84]='fab/dsc/dsc.o'
 fml_3_4()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dsc/dsc.c -o fab/dsc/dsc.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/dsc/dsc.c -o fab/dsc/dsc.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 4 1>&99
   exit $X
 }
 
-NAMES[84]='fab/enclose/enclose.o'
+NAMES[85]='fab/enclose/enclose.o'
 fml_3_5()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/enclose/enclose.c -o fab/enclose/enclose.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/enclose/enclose.c -o fab/enclose/enclose.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 5 1>&99
   exit $X
 }
 
-NAMES[85]='fab/ff/ff.dsc.tab.o'
+NAMES[86]='fab/ff/ff.dsc.tab.o'
 fml_3_6()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.dsc.tab.c -o fab/ff/ff.dsc.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.dsc.tab.c -o fab/ff/ff.dsc.tab.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 6 1>&99
   exit $X
 }
 
-NAMES[86]='fab/ff/ff.lex.o'
+NAMES[87]='fab/ff/ff.lex.o'
 fml_3_7()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.lex.c -o fab/ff/ff.lex.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.lex.c -o fab/ff/ff.lex.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 7 1>&99
   exit $X
 }
 
-NAMES[87]='fab/ff/ff.list.tab.o'
+NAMES[88]='fab/ff/ff.list.tab.o'
 fml_3_8()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.list.tab.c -o fab/ff/ff.list.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.list.tab.c -o fab/ff/ff.list.tab.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 8 1>&99
   exit $X
 }
 
-NAMES[88]='fab/ff/ff.o'
+NAMES[89]='fab/ff/ff.o'
 fml_3_9()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.c -o fab/ff/ff.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.c -o fab/ff/ff.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 9 1>&99
   exit $X
 }
 
-NAMES[89]='fab/ff/ff.tab.o'
+NAMES[90]='fab/ff/ff.tab.o'
 fml_3_10()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.tab.c -o fab/ff/ff.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.tab.c -o fab/ff/ff.tab.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 10 1>&99
   exit $X
 }
 
-NAMES[90]='fab/ff/ff.tokens.o'
+NAMES[91]='fab/ff/ff.tokens.o'
 fml_3_11()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.tokens.c -o fab/ff/ff.tokens.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.tokens.c -o fab/ff/ff.tokens.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 11 1>&99
   exit $X
 }
 
-NAMES[91]='fab/ff/ff.var.tab.o'
+NAMES[92]='fab/ff/ff.var.tab.o'
 fml_3_12()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.var.tab.c -o fab/ff/ff.var.tab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ff/ff.var.tab.c -o fab/ff/ff.var.tab.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 12 1>&99
   exit $X
 }
 
-NAMES[92]='fab/ffn/ffn.o'
+NAMES[93]='fab/ffn/ffn.o'
 fml_3_13()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ffn/ffn.c -o fab/ffn/ffn.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ffn/ffn.c -o fab/ffn/ffn.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 13 1>&99
   exit $X
 }
 
-NAMES[93]='fab/ffproc/ffproc.o'
+NAMES[94]='fab/ffproc/ffproc.o'
 fml_3_14()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ffproc/ffproc.c -o fab/ffproc/ffproc.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ffproc/ffproc.c -o fab/ffproc/ffproc.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 14 1>&99
   exit $X
 }
 
-NAMES[94]='fab/fml/fml.o'
+NAMES[95]='fab/fml/fml.o'
 fml_3_15()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/fml/fml.c -o fab/fml/fml.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/fml/fml.c -o fab/fml/fml.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 15 1>&99
   exit $X
 }
 
-NAMES[95]='fab/gn/gn.o'
+NAMES[96]='fab/gn/gn.o'
 fml_3_16()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/gn/gn.c -o fab/gn/gn.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/gn/gn.c -o fab/gn/gn.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 16 1>&99
   exit $X
 }
 
-NAMES[96]='fab/list/list.o'
+NAMES[97]='fab/list/list.o'
 fml_3_17()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&117
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/list/list.c -o fab/list/list.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/list/list.c -o fab/list/list.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 17 1>&99
   exit $X
 }
 
-NAMES[97]='fab/main.o'
+NAMES[98]='fab/main.o'
 fml_3_18()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&118
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/main.c -o fab/main.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/main.c -o fab/main.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 18 1>&99
   exit $X
 }
 
-NAMES[98]='fab/selector/selector.o'
+NAMES[99]='fab/selector/selector.o'
 fml_3_19()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&119
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/selector/selector.c -o fab/selector/selector.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/selector/selector.c -o fab/selector/selector.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 19 1>&99
   exit $X
 }
 
-NAMES[99]='fab/tmp/tmp.o'
+NAMES[100]='fab/tmp/tmp.o'
 fml_3_20()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&120
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/tmp/tmp.c -o fab/tmp/tmp.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/tmp/tmp.c -o fab/tmp/tmp.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 20 1>&99
   exit $X
 }
 
-NAMES[100]='fab/ts/ts.o'
+NAMES[101]='fab/ts/ts.o'
 fml_3_21()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&121
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ts/ts.c -o fab/ts/ts.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/ts/ts.c -o fab/ts/ts.o
 
 
   X=$?
-  echo 1 1>&99
+  echo 21 1>&99
   exit $X
 }
 
-NAMES[101]='fab/var/var.o'
+NAMES[102]='fab/var/var.o'
 fml_3_22()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&122
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/var/var.c -o fab/var/var.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -c fab/var/var.c -o fab/var/var.o
 
 
   X=$?
-  echo 2 1>&99
+  echo 22 1>&99
   exit $X
 }
 
-NAMES[102]='liblistwise/liblistwise.so'
+NAMES[103]='liblistwise/liblistwise.so'
 fml_3_23()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&123
 
   
 	  exec 1>liblistwise/exports
 	  echo "{ global: "
 sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- liblistwise/last/last.c liblistwise/op/h/h.c liblistwise/op/r/r.c liblistwise/op/xm/xm.c liblistwise/op/sn/sn.c liblistwise/op/rp/rp.c liblistwise/op/xs/xs.c liblistwise/op/xsf/xsf.c liblistwise/op/xmf/xmf.c liblistwise/op/fn/fn.c liblistwise/op/bn/bn.c liblistwise/op/dn/dn.c liblistwise/op/m/m.c liblistwise/op/z/z.c liblistwise/op/rx/rx.c liblistwise/op/xch/xch.c liblistwise/op/j/j.c liblistwise/op/dj/dj.c liblistwise/op/cp/cp.c liblistwise/op/-X/-X.c liblistwise/op/s/s.c liblistwise/op/pop/pop.c liblistwise/op/shift/shift.c liblistwise/op/u/u.c liblistwise/op/d/d.c liblistwise/op/w/w.c liblistwise/op/ls/ls.c liblistwise/op/o/o.c liblistwise/op/c/c.c liblistwise/op/uu/uu.c liblistwise/op/v/v.c liblistwise/op/y/y.c liblistwise/op/ss/ss.c liblistwise/op/op.c liblistwise/object/object.c liblistwise/idx/idx.c liblistwise/exec/exec.c liblistwise/generator/generator.lex.c liblistwise/generator/generator.tab.c liblistwise/generator/generator.c liblistwise/apidata/apidata.c liblistwise/re/re.c liblistwise/lstack/lstack.c liblistwise/sel/sel.c )
+	  cat -- liblistwise/exec/exec.c liblistwise/idx/idx.c liblistwise/object/object.c liblistwise/op/z/z.c liblistwise/op/o/o.c liblistwise/op/w/w.c liblistwise/op/shift/shift.c liblistwise/op/dj/dj.c liblistwise/op/uu/uu.c liblistwise/op/u/u.c liblistwise/op/bn/bn.c liblistwise/op/rp/rp.c liblistwise/op/ls/ls.c liblistwise/op/j/j.c liblistwise/op/-X/-X.c liblistwise/op/cp/cp.c liblistwise/op/xsf/xsf.c liblistwise/op/c/c.c liblistwise/op/ss/ss.c liblistwise/op/r/r.c liblistwise/op/xch/xch.c liblistwise/op/xs/xs.c liblistwise/op/s/s.c liblistwise/op/dn/dn.c liblistwise/op/sn/sn.c liblistwise/op/d/d.c liblistwise/op/m/m.c liblistwise/op/xmf/xmf.c liblistwise/op/xm/xm.c liblistwise/op/rx/rx.c liblistwise/op/y/y.c liblistwise/op/fn/fn.c liblistwise/op/h/h.c liblistwise/op/pop/pop.c liblistwise/op/op.c liblistwise/op/v/v.c liblistwise/re/re.c liblistwise/lstack/lstack.c liblistwise/last/last.c liblistwise/apidata/apidata.c liblistwise/sel/sel.c liblistwise/generator/generator.lex.c liblistwise/generator/generator.c liblistwise/generator/generator.tab.c liblistwise/generator/generator.tokens.c )
 echo "local: *; };"
 
-	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/liblistwise.so common/coll.pic.o common/xmem.pic.o common/xstring.pic.o liblistwise/apidata/apidata.pic.o liblistwise/exec/exec.pic.o liblistwise/generator/generator.lex.pic.o liblistwise/generator/generator.pic.o liblistwise/generator/generator.tab.pic.o liblistwise/idx/idx.pic.o liblistwise/last/last.pic.o liblistwise/lstack/lstack.pic.o liblistwise/object/object.pic.o liblistwise/op/op.pic.o liblistwise/re/re.pic.o liblistwise/sel/sel.pic.o -lpcre -ldl -shared -Wl,--version-script=liblistwise/exports -Wl,-soname,liblistwise.so.0.1
+	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/liblistwise.so common/coll.pic.o common/xmem.pic.o common/xstring.pic.o liblistwise/apidata/apidata.pic.o liblistwise/exec/exec.pic.o liblistwise/generator/generator.lex.pic.o liblistwise/generator/generator.pic.o liblistwise/generator/generator.tab.pic.o liblistwise/generator/generator.tokens.pic.o liblistwise/idx/idx.pic.o liblistwise/last/last.pic.o liblistwise/lstack/lstack.pic.o liblistwise/object/object.pic.o liblistwise/op/op.pic.o liblistwise/re/re.pic.o liblistwise/sel/sel.pic.o -lpcre -ldl -shared -Wl,--version-script=liblistwise/exports -Wl,-soname,liblistwise.so.0.1
 
 
   X=$?
-  echo 3 1>&99
+  echo 23 1>&99
   exit $X
 }
 
 
 # formulas and names for stage 4
-NAMES[103]='fab/fab'
+NAMES[104]='fab/fab'
 fml_4_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -export-dynamic -o fab/fab common/xmem.o common/xstring.o common/cksum.o fab/log/log.o fab/canon/canon.o fab/path/path.o common/unitstring.o common/coll.o fab/identity/identity.o fab/dirutil/dirutil.o fab/hashblock/hashblock.o fab/map/map.o fab/ff/ff.tokens.o fab/ffn/ffn.o fab/ff/ff.tab.o fab/ff/ff.dsc.tab.o fab/ff/ff.var.tab.o fab/ff/ff.list.tab.o fab/ff/ff.lex.o fab/depblock/depblock.o fab/strstack/strstack.o common/pstring.o fab/ts/ts.o fab/traverse/traverse.o fab/gn/gnlw.o fab/lwutil/lwutil.o fab/var/var.o fab/list/list.o fab/enclose/enclose.o fab/fml/fml.o common/parseint.o fab/gn/gn.o fab/ff/ff.o fab/selector/selector.o fab/args/args.o fab/bp/bp.o fab/dep/dep.o fab/dsc/dsc.o fab/tmp/tmp.o fab/bake/bake.o fab/ffproc/ffproc.o fab/main.o liblistwise/liblistwise.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -export-dynamic -o fab/fab common/xmem.o common/xstring.o common/cksum.o fab/log/log.o fab/canon/canon.o fab/path/path.o common/unitstring.o common/coll.o fab/identity/identity.o fab/dirutil/dirutil.o fab/hashblock/hashblock.o fab/map/map.o fab/ff/ff.tokens.o fab/ffn/ffn.o fab/ff/ff.tab.o fab/ff/ff.dsc.tab.o fab/ff/ff.var.tab.o fab/ff/ff.list.tab.o fab/ff/ff.lex.o fab/depblock/depblock.o fab/strstack/strstack.o common/pstring.o fab/ts/ts.o fab/traverse/traverse.o fab/gn/gnlw.o fab/lwutil/lwutil.o fab/var/var.o fab/list/list.o fab/enclose/enclose.o fab/fml/fml.o common/parseint.o fab/gn/gn.o fab/ff/ff.o fab/selector/selector.o fab/args/args.o fab/bp/bp.o fab/dep/dep.o fab/dsc/dsc.o fab/tmp/tmp.o fab/bake/bake.o fab/ffproc/ffproc.o fab/main.o liblistwise/liblistwise.so
 
 
   X=$?
@@ -1626,14 +1649,14 @@ fml_4_0()
   exit $X
 }
 
-NAMES[104]='fab/fablw/op/fg/fg.so'
+NAMES[105]='fab/fablw/op/fg/fg.so'
 fml_4_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o fab/fablw/op/fg/fg.so	fab/fablw/op/fg/fg.pic.o  liblistwise/liblistwise.so -shared -Wl,-soname,fg.so
+	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o fab/fablw/op/fg/fg.so	fab/fablw/op/fg/fg.pic.o  liblistwise/liblistwise.so -shared -Wl,-soname,fg.so
 
 
   X=$?
@@ -1641,14 +1664,14 @@ fml_4_1()
   exit $X
 }
 
-NAMES[105]='fab/fablw/op/fi/fi.so'
+NAMES[106]='fab/fablw/op/fi/fi.so'
 fml_4_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/dsc -Ifab/ffn -Ifab/path -Ifab/identity -Ifab/dirutil -Ifab/traverse -Ifab -Ifab/depblock -Ifab/enclose -Ifab/ffproc -Ifab/bake -Ifab/dep -Ifab/ff -Ifab/fml -Ifab/strstack -Ifab/bp -Ifab/tmp -Ifab/var -Ifab/lwutil -Ifab/canon -Ifab/ts -Ifab/selector -Ifab/hashblock -Ifab/args -Ifab/log -Ifab/gn -Ifab/map -I./liblistwise -DFABVERSIONS="v0.4.2.1" -DFABVERSIONN="421" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o fab/fablw/op/fi/fi.so	fab/fablw/op/fi/fi.pic.o  liblistwise/liblistwise.so -shared -Wl,-soname,fi.so
+	  gcc -m64 -Wall -Werror -D_GNU_SOURCE -Ifab/../common -O3 -fms-extensions -fno-builtin-log -Ifab/list -Ifab/bp -Ifab/dep -Ifab/ff -Ifab/ts -Ifab/depblock -Ifab -Ifab/tmp -Ifab/strstack -Ifab/path -Ifab/ffproc -Ifab/dirutil -Ifab/lwutil -Ifab/gn -Ifab/map -Ifab/dsc -Ifab/hashblock -Ifab/canon -Ifab/fml -Ifab/bake -Ifab/selector -Ifab/enclose -Ifab/log -Ifab/args -Ifab/ffn -Ifab/traverse -Ifab/identity -Ifab/var -I./liblistwise -DFABVERSIONS="v0.4.2.2" -DFABVERSIONN="422" -DFABCACHEDIR="/var/cache/fab" -DFABTMPDIR="/var/tmp/fab" -DFABLWOPDIR="/usr/lib/fab/lib" -DFABINVOKEDIR="/usr/lib/fab/listwise" -o fab/fablw/op/fi/fi.so	fab/fablw/op/fi/fi.pic.o  liblistwise/liblistwise.so -shared -Wl,-soname,fi.so
 
 
   X=$?
@@ -1656,7 +1679,7 @@ fml_4_2()
   exit $X
 }
 
-NAMES[106]='liblistwise/op/-X/-X.so'
+NAMES[107]='liblistwise/op/-X/-X.so'
 fml_4_3()
 {
   exec 1>/dev/null
@@ -1674,11 +1697,11 @@ fml_4_3()
   exit $X
 }
 
-NAMES[107]='liblistwise/op/bn/bn.so'
+NAMES[108]='liblistwise/op/bn/bn.so'
 fml_4_4()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&104
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/bn/bn.so			\
@@ -1688,15 +1711,15 @@ fml_4_4()
 
 
   X=$?
-  echo 0 1>&99
+  echo 4 1>&99
   exit $X
 }
 
-NAMES[108]='liblistwise/op/c/c.so'
+NAMES[109]='liblistwise/op/c/c.so'
 fml_4_5()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&105
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/c/c.so			\
@@ -1706,15 +1729,15 @@ fml_4_5()
 
 
   X=$?
-  echo 1 1>&99
+  echo 5 1>&99
   exit $X
 }
 
-NAMES[109]='liblistwise/op/cp/cp.so'
+NAMES[110]='liblistwise/op/cp/cp.so'
 fml_4_6()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&106
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/cp/cp.so			\
@@ -1724,15 +1747,15 @@ fml_4_6()
 
 
   X=$?
-  echo 2 1>&99
+  echo 6 1>&99
   exit $X
 }
 
-NAMES[110]='liblistwise/op/d/d.so'
+NAMES[111]='liblistwise/op/d/d.so'
 fml_4_7()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&107
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/d/d.so			\
@@ -1742,15 +1765,15 @@ fml_4_7()
 
 
   X=$?
-  echo 3 1>&99
+  echo 7 1>&99
   exit $X
 }
 
-NAMES[111]='liblistwise/op/dj/dj.so'
+NAMES[112]='liblistwise/op/dj/dj.so'
 fml_4_8()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&108
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/dj/dj.so			\
@@ -1760,15 +1783,15 @@ fml_4_8()
 
 
   X=$?
-  echo 0 1>&99
+  echo 8 1>&99
   exit $X
 }
 
-NAMES[112]='liblistwise/op/dn/dn.so'
+NAMES[113]='liblistwise/op/dn/dn.so'
 fml_4_9()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&109
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/dn/dn.so			\
@@ -1778,15 +1801,15 @@ fml_4_9()
 
 
   X=$?
-  echo 1 1>&99
+  echo 9 1>&99
   exit $X
 }
 
-NAMES[113]='liblistwise/op/fn/fn.so'
+NAMES[114]='liblistwise/op/fn/fn.so'
 fml_4_10()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&110
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/fn/fn.so			\
@@ -1796,15 +1819,15 @@ fml_4_10()
 
 
   X=$?
-  echo 2 1>&99
+  echo 10 1>&99
   exit $X
 }
 
-NAMES[114]='liblistwise/op/h/h.so'
+NAMES[115]='liblistwise/op/h/h.so'
 fml_4_11()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&111
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/h/h.so			\
@@ -1814,15 +1837,15 @@ fml_4_11()
 
 
   X=$?
-  echo 3 1>&99
+  echo 11 1>&99
   exit $X
 }
 
-NAMES[115]='liblistwise/op/j/j.so'
+NAMES[116]='liblistwise/op/j/j.so'
 fml_4_12()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&112
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/j/j.so			\
@@ -1832,15 +1855,15 @@ fml_4_12()
 
 
   X=$?
-  echo 0 1>&99
+  echo 12 1>&99
   exit $X
 }
 
-NAMES[116]='liblistwise/op/ls/ls.so'
+NAMES[117]='liblistwise/op/ls/ls.so'
 fml_4_13()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&113
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/ls/ls.so			\
@@ -1850,15 +1873,15 @@ fml_4_13()
 
 
   X=$?
-  echo 1 1>&99
+  echo 13 1>&99
   exit $X
 }
 
-NAMES[117]='liblistwise/op/m/m.so'
+NAMES[118]='liblistwise/op/m/m.so'
 fml_4_14()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&114
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/m/m.so			\
@@ -1868,15 +1891,15 @@ fml_4_14()
 
 
   X=$?
-  echo 2 1>&99
+  echo 14 1>&99
   exit $X
 }
 
-NAMES[118]='liblistwise/op/o/o.so'
+NAMES[119]='liblistwise/op/o/o.so'
 fml_4_15()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&115
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/o/o.so			\
@@ -1886,15 +1909,15 @@ fml_4_15()
 
 
   X=$?
-  echo 3 1>&99
+  echo 15 1>&99
   exit $X
 }
 
-NAMES[119]='liblistwise/op/pop/pop.so'
+NAMES[120]='liblistwise/op/pop/pop.so'
 fml_4_16()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&116
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/pop/pop.so			\
@@ -1904,15 +1927,15 @@ fml_4_16()
 
 
   X=$?
-  echo 0 1>&99
+  echo 16 1>&99
   exit $X
 }
 
-NAMES[120]='liblistwise/op/r/r.so'
+NAMES[121]='liblistwise/op/r/r.so'
 fml_4_17()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&117
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/r/r.so			\
@@ -1922,15 +1945,15 @@ fml_4_17()
 
 
   X=$?
-  echo 1 1>&99
+  echo 17 1>&99
   exit $X
 }
 
-NAMES[121]='liblistwise/op/rp/rp.so'
+NAMES[122]='liblistwise/op/rp/rp.so'
 fml_4_18()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&118
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/rp/rp.so			\
@@ -1940,15 +1963,15 @@ fml_4_18()
 
 
   X=$?
-  echo 2 1>&99
+  echo 18 1>&99
   exit $X
 }
 
-NAMES[122]='liblistwise/op/rx/rx.so'
+NAMES[123]='liblistwise/op/rx/rx.so'
 fml_4_19()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&119
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/rx/rx.so			\
@@ -1958,15 +1981,15 @@ fml_4_19()
 
 
   X=$?
-  echo 3 1>&99
+  echo 19 1>&99
   exit $X
 }
 
-NAMES[123]='liblistwise/op/s/s.so'
+NAMES[124]='liblistwise/op/s/s.so'
 fml_4_20()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&120
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/s/s.so			\
@@ -1976,15 +1999,15 @@ fml_4_20()
 
 
   X=$?
-  echo 0 1>&99
+  echo 20 1>&99
   exit $X
 }
 
-NAMES[124]='liblistwise/op/shift/shift.so'
+NAMES[125]='liblistwise/op/shift/shift.so'
 fml_4_21()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&121
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/shift/shift.so			\
@@ -1994,15 +2017,15 @@ fml_4_21()
 
 
   X=$?
-  echo 1 1>&99
+  echo 21 1>&99
   exit $X
 }
 
-NAMES[125]='liblistwise/op/sn/sn.so'
+NAMES[126]='liblistwise/op/sn/sn.so'
 fml_4_22()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&122
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/sn/sn.so			\
@@ -2012,15 +2035,15 @@ fml_4_22()
 
 
   X=$?
-  echo 2 1>&99
+  echo 22 1>&99
   exit $X
 }
 
-NAMES[126]='liblistwise/op/ss/ss.so'
+NAMES[127]='liblistwise/op/ss/ss.so'
 fml_4_23()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&123
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/ss/ss.so			\
@@ -2030,15 +2053,15 @@ fml_4_23()
 
 
   X=$?
-  echo 3 1>&99
+  echo 23 1>&99
   exit $X
 }
 
-NAMES[127]='liblistwise/op/u/u.so'
+NAMES[128]='liblistwise/op/u/u.so'
 fml_4_24()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&124
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/u/u.so			\
@@ -2048,15 +2071,15 @@ fml_4_24()
 
 
   X=$?
-  echo 0 1>&99
+  echo 24 1>&99
   exit $X
 }
 
-NAMES[128]='liblistwise/op/uu/uu.so'
+NAMES[129]='liblistwise/op/uu/uu.so'
 fml_4_25()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&125
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/uu/uu.so			\
@@ -2066,15 +2089,15 @@ fml_4_25()
 
 
   X=$?
-  echo 1 1>&99
+  echo 25 1>&99
   exit $X
 }
 
-NAMES[129]='liblistwise/op/v/v.so'
+NAMES[130]='liblistwise/op/v/v.so'
 fml_4_26()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&126
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/v/v.so			\
@@ -2084,15 +2107,15 @@ fml_4_26()
 
 
   X=$?
-  echo 2 1>&99
+  echo 26 1>&99
   exit $X
 }
 
-NAMES[130]='liblistwise/op/w/w.so'
+NAMES[131]='liblistwise/op/w/w.so'
 fml_4_27()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&127
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/w/w.so			\
@@ -2102,15 +2125,15 @@ fml_4_27()
 
 
   X=$?
-  echo 3 1>&99
+  echo 27 1>&99
   exit $X
 }
 
-NAMES[131]='liblistwise/op/xch/xch.so'
+NAMES[132]='liblistwise/op/xch/xch.so'
 fml_4_28()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&128
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/xch/xch.so			\
@@ -2120,15 +2143,15 @@ fml_4_28()
 
 
   X=$?
-  echo 0 1>&99
+  echo 28 1>&99
   exit $X
 }
 
-NAMES[132]='liblistwise/op/xm/xm.so'
+NAMES[133]='liblistwise/op/xm/xm.so'
 fml_4_29()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&129
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/xm/xm.so			\
@@ -2138,15 +2161,15 @@ fml_4_29()
 
 
   X=$?
-  echo 1 1>&99
+  echo 29 1>&99
   exit $X
 }
 
-NAMES[133]='liblistwise/op/xmf/xmf.so'
+NAMES[134]='liblistwise/op/xmf/xmf.so'
 fml_4_30()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&130
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/xmf/xmf.so			\
@@ -2156,15 +2179,15 @@ fml_4_30()
 
 
   X=$?
-  echo 2 1>&99
+  echo 30 1>&99
   exit $X
 }
 
-NAMES[134]='liblistwise/op/xs/xs.so'
+NAMES[135]='liblistwise/op/xs/xs.so'
 fml_4_31()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&131
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/xs/xs.so			\
@@ -2174,15 +2197,15 @@ fml_4_31()
 
 
   X=$?
-  echo 3 1>&99
+  echo 31 1>&99
   exit $X
 }
 
-NAMES[135]='liblistwise/op/xsf/xsf.so'
+NAMES[136]='liblistwise/op/xsf/xsf.so'
 fml_4_32()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&132
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/xsf/xsf.so			\
@@ -2192,15 +2215,15 @@ fml_4_32()
 
 
   X=$?
-  echo 0 1>&99
+  echo 32 1>&99
   exit $X
 }
 
-NAMES[136]='liblistwise/op/y/y.so'
+NAMES[137]='liblistwise/op/y/y.so'
 fml_4_33()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&133
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/y/y.so			\
@@ -2210,15 +2233,15 @@ fml_4_33()
 
 
   X=$?
-  echo 1 1>&99
+  echo 33 1>&99
   exit $X
 }
 
-NAMES[137]='liblistwise/op/z/z.so'
+NAMES[138]='liblistwise/op/z/z.so'
 fml_4_34()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&134
 
   
 	gcc -DLWOPDIR="/usr/lib/listwise" -D_GNU_SOURCE -Iliblistwise -Iliblistwise/../common -Iliblistwise/generator -Iliblistwise/idx -Iliblistwise/listwise -Iliblistwise/re -O3 -Wall -Werror -fPIC -m64 -o liblistwise/op/z/z.so			\
@@ -2228,22 +2251,22 @@ fml_4_34()
 
 
   X=$?
-  echo 2 1>&99
+  echo 34 1>&99
   exit $X
 }
 
-NAMES[138]='listwise/listwise'
+NAMES[139]='listwise/listwise'
 fml_4_35()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&135
 
   
-	gcc -DFABVERSIONN="421" -DFABVERSIONS="v0.4.2.1" -D_GNU_SOURCE -I./liblistwise -Ilistwise -Ilistwise/../common -O3 -Wall -Werror -m64 -o listwise/listwise listwise/args.o listwise/main.o liblistwise/liblistwise.so
+	gcc -DFABVERSIONN="422" -DFABVERSIONS="v0.4.2.2" -D_GNU_SOURCE -I./liblistwise -Ilistwise -Ilistwise/../common -O3 -Wall -Werror -m64 -o listwise/listwise listwise/args.o listwise/main.o liblistwise/liblistwise.so
 
 
   X=$?
-  echo 3 1>&99
+  echo 35 1>&99
   exit $X
 }
 
@@ -2262,17 +2285,89 @@ SKP=0
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
+  ((SKP+=76))
 else
   # launch stage 1.0
   exec 100>$tmp ; rm -f $tmp ; fml_1_0 & PIDS[0]=$!
   exec 101>$tmp ; rm -f $tmp ; fml_1_1 & PIDS[1]=$!
   exec 102>$tmp ; rm -f $tmp ; fml_1_2 & PIDS[2]=$!
   exec 103>$tmp ; rm -f $tmp ; fml_1_3 & PIDS[3]=$!
+  exec 104>$tmp ; rm -f $tmp ; fml_1_4 & PIDS[4]=$!
+  exec 105>$tmp ; rm -f $tmp ; fml_1_5 & PIDS[5]=$!
+  exec 106>$tmp ; rm -f $tmp ; fml_1_6 & PIDS[6]=$!
+  exec 107>$tmp ; rm -f $tmp ; fml_1_7 & PIDS[7]=$!
+  exec 108>$tmp ; rm -f $tmp ; fml_1_8 & PIDS[8]=$!
+  exec 109>$tmp ; rm -f $tmp ; fml_1_9 & PIDS[9]=$!
+  exec 110>$tmp ; rm -f $tmp ; fml_1_10 & PIDS[10]=$!
+  exec 111>$tmp ; rm -f $tmp ; fml_1_11 & PIDS[11]=$!
+  exec 112>$tmp ; rm -f $tmp ; fml_1_12 & PIDS[12]=$!
+  exec 113>$tmp ; rm -f $tmp ; fml_1_13 & PIDS[13]=$!
+  exec 114>$tmp ; rm -f $tmp ; fml_1_14 & PIDS[14]=$!
+  exec 115>$tmp ; rm -f $tmp ; fml_1_15 & PIDS[15]=$!
+  exec 116>$tmp ; rm -f $tmp ; fml_1_16 & PIDS[16]=$!
+  exec 117>$tmp ; rm -f $tmp ; fml_1_17 & PIDS[17]=$!
+  exec 118>$tmp ; rm -f $tmp ; fml_1_18 & PIDS[18]=$!
+  exec 119>$tmp ; rm -f $tmp ; fml_1_19 & PIDS[19]=$!
+  exec 120>$tmp ; rm -f $tmp ; fml_1_20 & PIDS[20]=$!
+  exec 121>$tmp ; rm -f $tmp ; fml_1_21 & PIDS[21]=$!
+  exec 122>$tmp ; rm -f $tmp ; fml_1_22 & PIDS[22]=$!
+  exec 123>$tmp ; rm -f $tmp ; fml_1_23 & PIDS[23]=$!
+  exec 124>$tmp ; rm -f $tmp ; fml_1_24 & PIDS[24]=$!
+  exec 125>$tmp ; rm -f $tmp ; fml_1_25 & PIDS[25]=$!
+  exec 126>$tmp ; rm -f $tmp ; fml_1_26 & PIDS[26]=$!
+  exec 127>$tmp ; rm -f $tmp ; fml_1_27 & PIDS[27]=$!
+  exec 128>$tmp ; rm -f $tmp ; fml_1_28 & PIDS[28]=$!
+  exec 129>$tmp ; rm -f $tmp ; fml_1_29 & PIDS[29]=$!
+  exec 130>$tmp ; rm -f $tmp ; fml_1_30 & PIDS[30]=$!
+  exec 131>$tmp ; rm -f $tmp ; fml_1_31 & PIDS[31]=$!
+  exec 132>$tmp ; rm -f $tmp ; fml_1_32 & PIDS[32]=$!
+  exec 133>$tmp ; rm -f $tmp ; fml_1_33 & PIDS[33]=$!
+  exec 134>$tmp ; rm -f $tmp ; fml_1_34 & PIDS[34]=$!
+  exec 135>$tmp ; rm -f $tmp ; fml_1_35 & PIDS[35]=$!
+  exec 136>$tmp ; rm -f $tmp ; fml_1_36 & PIDS[36]=$!
+  exec 137>$tmp ; rm -f $tmp ; fml_1_37 & PIDS[37]=$!
+  exec 138>$tmp ; rm -f $tmp ; fml_1_38 & PIDS[38]=$!
+  exec 139>$tmp ; rm -f $tmp ; fml_1_39 & PIDS[39]=$!
+  exec 140>$tmp ; rm -f $tmp ; fml_1_40 & PIDS[40]=$!
+  exec 141>$tmp ; rm -f $tmp ; fml_1_41 & PIDS[41]=$!
+  exec 142>$tmp ; rm -f $tmp ; fml_1_42 & PIDS[42]=$!
+  exec 143>$tmp ; rm -f $tmp ; fml_1_43 & PIDS[43]=$!
+  exec 144>$tmp ; rm -f $tmp ; fml_1_44 & PIDS[44]=$!
+  exec 145>$tmp ; rm -f $tmp ; fml_1_45 & PIDS[45]=$!
+  exec 146>$tmp ; rm -f $tmp ; fml_1_46 & PIDS[46]=$!
+  exec 147>$tmp ; rm -f $tmp ; fml_1_47 & PIDS[47]=$!
+  exec 148>$tmp ; rm -f $tmp ; fml_1_48 & PIDS[48]=$!
+  exec 149>$tmp ; rm -f $tmp ; fml_1_49 & PIDS[49]=$!
+  exec 150>$tmp ; rm -f $tmp ; fml_1_50 & PIDS[50]=$!
+  exec 151>$tmp ; rm -f $tmp ; fml_1_51 & PIDS[51]=$!
+  exec 152>$tmp ; rm -f $tmp ; fml_1_52 & PIDS[52]=$!
+  exec 153>$tmp ; rm -f $tmp ; fml_1_53 & PIDS[53]=$!
+  exec 154>$tmp ; rm -f $tmp ; fml_1_54 & PIDS[54]=$!
+  exec 155>$tmp ; rm -f $tmp ; fml_1_55 & PIDS[55]=$!
+  exec 156>$tmp ; rm -f $tmp ; fml_1_56 & PIDS[56]=$!
+  exec 157>$tmp ; rm -f $tmp ; fml_1_57 & PIDS[57]=$!
+  exec 158>$tmp ; rm -f $tmp ; fml_1_58 & PIDS[58]=$!
+  exec 159>$tmp ; rm -f $tmp ; fml_1_59 & PIDS[59]=$!
+  exec 160>$tmp ; rm -f $tmp ; fml_1_60 & PIDS[60]=$!
+  exec 161>$tmp ; rm -f $tmp ; fml_1_61 & PIDS[61]=$!
+  exec 162>$tmp ; rm -f $tmp ; fml_1_62 & PIDS[62]=$!
+  exec 163>$tmp ; rm -f $tmp ; fml_1_63 & PIDS[63]=$!
+  exec 164>$tmp ; rm -f $tmp ; fml_1_64 & PIDS[64]=$!
+  exec 165>$tmp ; rm -f $tmp ; fml_1_65 & PIDS[65]=$!
+  exec 166>$tmp ; rm -f $tmp ; fml_1_66 & PIDS[66]=$!
+  exec 167>$tmp ; rm -f $tmp ; fml_1_67 & PIDS[67]=$!
+  exec 168>$tmp ; rm -f $tmp ; fml_1_68 & PIDS[68]=$!
+  exec 169>$tmp ; rm -f $tmp ; fml_1_69 & PIDS[69]=$!
+  exec 170>$tmp ; rm -f $tmp ; fml_1_70 & PIDS[70]=$!
+  exec 171>$tmp ; rm -f $tmp ; fml_1_71 & PIDS[71]=$!
+  exec 172>$tmp ; rm -f $tmp ; fml_1_72 & PIDS[72]=$!
+  exec 173>$tmp ; rm -f $tmp ; fml_1_73 & PIDS[73]=$!
+  exec 174>$tmp ; rm -f $tmp ; fml_1_74 & PIDS[74]=$!
+  exec 175>$tmp ; rm -f $tmp ; fml_1_75 & PIDS[75]=$!
 
   # harvest stage 1.0
   C=0
-  while [[ $C != 4 ]]; do
+  while [[ $C != 76 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -2283,509 +2378,6 @@ else
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
     printf '[%3d,%3d] X=%d %s\n' 1 $((idx+0)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.1
-  exec 100>$tmp ; rm -f $tmp ; fml_1_4 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_5 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_6 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_7 & PIDS[3]=$!
-
-  # harvest stage 1.1
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((4+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+4)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.2
-  exec 100>$tmp ; rm -f $tmp ; fml_1_8 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_9 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_10 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_11 & PIDS[3]=$!
-
-  # harvest stage 1.2
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((8+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+8)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.3
-  exec 100>$tmp ; rm -f $tmp ; fml_1_12 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_13 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_14 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_15 & PIDS[3]=$!
-
-  # harvest stage 1.3
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((12+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+12)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.4
-  exec 100>$tmp ; rm -f $tmp ; fml_1_16 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_17 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_18 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_19 & PIDS[3]=$!
-
-  # harvest stage 1.4
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((16+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+16)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.5
-  exec 100>$tmp ; rm -f $tmp ; fml_1_20 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_21 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_22 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_23 & PIDS[3]=$!
-
-  # harvest stage 1.5
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((20+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+20)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.6
-  exec 100>$tmp ; rm -f $tmp ; fml_1_24 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_25 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_26 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_27 & PIDS[3]=$!
-
-  # harvest stage 1.6
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((24+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+24)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.7
-  exec 100>$tmp ; rm -f $tmp ; fml_1_28 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_29 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_30 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_31 & PIDS[3]=$!
-
-  # harvest stage 1.7
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((28+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+28)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.8
-  exec 100>$tmp ; rm -f $tmp ; fml_1_32 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_33 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_34 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_35 & PIDS[3]=$!
-
-  # harvest stage 1.8
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((32+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+32)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.9
-  exec 100>$tmp ; rm -f $tmp ; fml_1_36 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_37 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_38 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_39 & PIDS[3]=$!
-
-  # harvest stage 1.9
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((36+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+36)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.10
-  exec 100>$tmp ; rm -f $tmp ; fml_1_40 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_41 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_42 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_43 & PIDS[3]=$!
-
-  # harvest stage 1.10
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((40+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+40)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.11
-  exec 100>$tmp ; rm -f $tmp ; fml_1_44 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_45 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_46 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_47 & PIDS[3]=$!
-
-  # harvest stage 1.11
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((44+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+44)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.12
-  exec 100>$tmp ; rm -f $tmp ; fml_1_48 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_49 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_50 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_51 & PIDS[3]=$!
-
-  # harvest stage 1.12
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((48+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+48)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.13
-  exec 100>$tmp ; rm -f $tmp ; fml_1_52 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_53 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_54 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_55 & PIDS[3]=$!
-
-  # harvest stage 1.13
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((52+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+52)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.14
-  exec 100>$tmp ; rm -f $tmp ; fml_1_56 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_57 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_58 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_59 & PIDS[3]=$!
-
-  # harvest stage 1.14
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((56+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+56)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.15
-  exec 100>$tmp ; rm -f $tmp ; fml_1_60 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_61 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_62 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_63 & PIDS[3]=$!
-
-  # harvest stage 1.15
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((60+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+60)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.16
-  exec 100>$tmp ; rm -f $tmp ; fml_1_64 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_65 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_66 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_67 & PIDS[3]=$!
-
-  # harvest stage 1.16
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((64+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+64)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 1.17
-  exec 100>$tmp ; rm -f $tmp ; fml_1_68 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_69 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_70 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_71 & PIDS[3]=$!
-
-  # harvest stage 1.17
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((68+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+68)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=3))
-else
-  # launch stage 1.18
-  exec 100>$tmp ; rm -f $tmp ; fml_1_72 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_73 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_74 & PIDS[2]=$!
-
-  # harvest stage 1.18
-  C=0
-  while [[ $C != 3 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((72+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+72)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
@@ -2809,7 +2401,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((75+$idx))
+    I=$((76+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -2821,23 +2413,43 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
+  ((SKP+=24))
 else
   # launch stage 3.0
   exec 100>$tmp ; rm -f $tmp ; fml_3_0 & PIDS[0]=$!
   exec 101>$tmp ; rm -f $tmp ; fml_3_1 & PIDS[1]=$!
   exec 102>$tmp ; rm -f $tmp ; fml_3_2 & PIDS[2]=$!
   exec 103>$tmp ; rm -f $tmp ; fml_3_3 & PIDS[3]=$!
+  exec 104>$tmp ; rm -f $tmp ; fml_3_4 & PIDS[4]=$!
+  exec 105>$tmp ; rm -f $tmp ; fml_3_5 & PIDS[5]=$!
+  exec 106>$tmp ; rm -f $tmp ; fml_3_6 & PIDS[6]=$!
+  exec 107>$tmp ; rm -f $tmp ; fml_3_7 & PIDS[7]=$!
+  exec 108>$tmp ; rm -f $tmp ; fml_3_8 & PIDS[8]=$!
+  exec 109>$tmp ; rm -f $tmp ; fml_3_9 & PIDS[9]=$!
+  exec 110>$tmp ; rm -f $tmp ; fml_3_10 & PIDS[10]=$!
+  exec 111>$tmp ; rm -f $tmp ; fml_3_11 & PIDS[11]=$!
+  exec 112>$tmp ; rm -f $tmp ; fml_3_12 & PIDS[12]=$!
+  exec 113>$tmp ; rm -f $tmp ; fml_3_13 & PIDS[13]=$!
+  exec 114>$tmp ; rm -f $tmp ; fml_3_14 & PIDS[14]=$!
+  exec 115>$tmp ; rm -f $tmp ; fml_3_15 & PIDS[15]=$!
+  exec 116>$tmp ; rm -f $tmp ; fml_3_16 & PIDS[16]=$!
+  exec 117>$tmp ; rm -f $tmp ; fml_3_17 & PIDS[17]=$!
+  exec 118>$tmp ; rm -f $tmp ; fml_3_18 & PIDS[18]=$!
+  exec 119>$tmp ; rm -f $tmp ; fml_3_19 & PIDS[19]=$!
+  exec 120>$tmp ; rm -f $tmp ; fml_3_20 & PIDS[20]=$!
+  exec 121>$tmp ; rm -f $tmp ; fml_3_21 & PIDS[21]=$!
+  exec 122>$tmp ; rm -f $tmp ; fml_3_22 & PIDS[22]=$!
+  exec 123>$tmp ; rm -f $tmp ; fml_3_23 & PIDS[23]=$!
 
   # harvest stage 3.0
   C=0
-  while [[ $C != 4 ]]; do
+  while [[ $C != 24 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((79+$idx))
+    I=$((80+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -2849,391 +2461,59 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 3.1
-  exec 100>$tmp ; rm -f $tmp ; fml_3_4 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_3_5 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_3_6 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_3_7 & PIDS[3]=$!
-
-  # harvest stage 3.1
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((83+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 3 $((idx+4)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 3.2
-  exec 100>$tmp ; rm -f $tmp ; fml_3_8 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_3_9 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_3_10 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_3_11 & PIDS[3]=$!
-
-  # harvest stage 3.2
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((87+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 3 $((idx+8)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 3.3
-  exec 100>$tmp ; rm -f $tmp ; fml_3_12 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_3_13 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_3_14 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_3_15 & PIDS[3]=$!
-
-  # harvest stage 3.3
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((91+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 3 $((idx+12)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 3.4
-  exec 100>$tmp ; rm -f $tmp ; fml_3_16 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_3_17 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_3_18 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_3_19 & PIDS[3]=$!
-
-  # harvest stage 3.4
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((95+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 3 $((idx+16)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 3.5
-  exec 100>$tmp ; rm -f $tmp ; fml_3_20 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_3_21 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_3_22 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_3_23 & PIDS[3]=$!
-
-  # harvest stage 3.5
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((99+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 3 $((idx+20)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
+  ((SKP+=36))
 else
   # launch stage 4.0
   exec 100>$tmp ; rm -f $tmp ; fml_4_0 & PIDS[0]=$!
   exec 101>$tmp ; rm -f $tmp ; fml_4_1 & PIDS[1]=$!
   exec 102>$tmp ; rm -f $tmp ; fml_4_2 & PIDS[2]=$!
   exec 103>$tmp ; rm -f $tmp ; fml_4_3 & PIDS[3]=$!
+  exec 104>$tmp ; rm -f $tmp ; fml_4_4 & PIDS[4]=$!
+  exec 105>$tmp ; rm -f $tmp ; fml_4_5 & PIDS[5]=$!
+  exec 106>$tmp ; rm -f $tmp ; fml_4_6 & PIDS[6]=$!
+  exec 107>$tmp ; rm -f $tmp ; fml_4_7 & PIDS[7]=$!
+  exec 108>$tmp ; rm -f $tmp ; fml_4_8 & PIDS[8]=$!
+  exec 109>$tmp ; rm -f $tmp ; fml_4_9 & PIDS[9]=$!
+  exec 110>$tmp ; rm -f $tmp ; fml_4_10 & PIDS[10]=$!
+  exec 111>$tmp ; rm -f $tmp ; fml_4_11 & PIDS[11]=$!
+  exec 112>$tmp ; rm -f $tmp ; fml_4_12 & PIDS[12]=$!
+  exec 113>$tmp ; rm -f $tmp ; fml_4_13 & PIDS[13]=$!
+  exec 114>$tmp ; rm -f $tmp ; fml_4_14 & PIDS[14]=$!
+  exec 115>$tmp ; rm -f $tmp ; fml_4_15 & PIDS[15]=$!
+  exec 116>$tmp ; rm -f $tmp ; fml_4_16 & PIDS[16]=$!
+  exec 117>$tmp ; rm -f $tmp ; fml_4_17 & PIDS[17]=$!
+  exec 118>$tmp ; rm -f $tmp ; fml_4_18 & PIDS[18]=$!
+  exec 119>$tmp ; rm -f $tmp ; fml_4_19 & PIDS[19]=$!
+  exec 120>$tmp ; rm -f $tmp ; fml_4_20 & PIDS[20]=$!
+  exec 121>$tmp ; rm -f $tmp ; fml_4_21 & PIDS[21]=$!
+  exec 122>$tmp ; rm -f $tmp ; fml_4_22 & PIDS[22]=$!
+  exec 123>$tmp ; rm -f $tmp ; fml_4_23 & PIDS[23]=$!
+  exec 124>$tmp ; rm -f $tmp ; fml_4_24 & PIDS[24]=$!
+  exec 125>$tmp ; rm -f $tmp ; fml_4_25 & PIDS[25]=$!
+  exec 126>$tmp ; rm -f $tmp ; fml_4_26 & PIDS[26]=$!
+  exec 127>$tmp ; rm -f $tmp ; fml_4_27 & PIDS[27]=$!
+  exec 128>$tmp ; rm -f $tmp ; fml_4_28 & PIDS[28]=$!
+  exec 129>$tmp ; rm -f $tmp ; fml_4_29 & PIDS[29]=$!
+  exec 130>$tmp ; rm -f $tmp ; fml_4_30 & PIDS[30]=$!
+  exec 131>$tmp ; rm -f $tmp ; fml_4_31 & PIDS[31]=$!
+  exec 132>$tmp ; rm -f $tmp ; fml_4_32 & PIDS[32]=$!
+  exec 133>$tmp ; rm -f $tmp ; fml_4_33 & PIDS[33]=$!
+  exec 134>$tmp ; rm -f $tmp ; fml_4_34 & PIDS[34]=$!
+  exec 135>$tmp ; rm -f $tmp ; fml_4_35 & PIDS[35]=$!
 
   # harvest stage 4.0
   C=0
-  while [[ $C != 4 ]]; do
+  while [[ $C != 36 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((103+$idx))
+    I=$((104+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
     printf '[%3d,%3d] X=%d %s\n' 4 $((idx+0)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 4.1
-  exec 100>$tmp ; rm -f $tmp ; fml_4_4 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_4_5 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_4_6 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_4_7 & PIDS[3]=$!
-
-  # harvest stage 4.1
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((107+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+4)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 4.2
-  exec 100>$tmp ; rm -f $tmp ; fml_4_8 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_4_9 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_4_10 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_4_11 & PIDS[3]=$!
-
-  # harvest stage 4.2
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((111+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+8)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 4.3
-  exec 100>$tmp ; rm -f $tmp ; fml_4_12 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_4_13 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_4_14 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_4_15 & PIDS[3]=$!
-
-  # harvest stage 4.3
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((115+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+12)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 4.4
-  exec 100>$tmp ; rm -f $tmp ; fml_4_16 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_4_17 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_4_18 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_4_19 & PIDS[3]=$!
-
-  # harvest stage 4.4
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((119+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+16)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 4.5
-  exec 100>$tmp ; rm -f $tmp ; fml_4_20 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_4_21 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_4_22 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_4_23 & PIDS[3]=$!
-
-  # harvest stage 4.5
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((123+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+20)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 4.6
-  exec 100>$tmp ; rm -f $tmp ; fml_4_24 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_4_25 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_4_26 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_4_27 & PIDS[3]=$!
-
-  # harvest stage 4.6
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((127+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+24)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 4.7
-  exec 100>$tmp ; rm -f $tmp ; fml_4_28 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_4_29 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_4_30 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_4_31 & PIDS[3]=$!
-
-  # harvest stage 4.7
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((131+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+28)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=4))
-else
-  # launch stage 4.8
-  exec 100>$tmp ; rm -f $tmp ; fml_4_32 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_4_33 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_4_34 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_4_35 & PIDS[3]=$!
-
-  # harvest stage 4.8
-  C=0
-  while [[ $C != 4 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((135+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+32)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
