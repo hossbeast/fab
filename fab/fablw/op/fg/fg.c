@@ -18,10 +18,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "listwise.h"
 #include "listwise/operator.h"
+#include "listwise/object.h"
+#include "listwise/xtra.h"
 
 #include "gn.h"
+#include "gnlw.h"
+
 #include "fab_control.h"
 
 /*
@@ -38,14 +41,15 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lstack*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
 		  .s						= "fg"
-		, .optype				= LWOP_SELECTION_READ | LWOP_SELECTION_WRITE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
+		, .mnemonic			= "fab-graph"
 		, .desc					= "(fab specific) select graph nodes (p|s|g|t|n)"
 	}
 	, {}
@@ -55,14 +59,13 @@ int op_validate(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1)
 	{
-		dprintf(listwise_err_fd, "fg -- arguments : %d", o->argsl);
-		return 1;
+		fail("fg -- arguments : %d", o->argsl);
 	}
 
-	return 0;
+	finally : coda;
 }
 
-int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
 	uint32_t set = 0xFFFFFFFF;
 
@@ -82,20 +85,24 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 	}
 
 	int x;
-	LSTACK_ITERATE(ls, x, go)
+	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
 		gn * g = 0;
 
-		if(ls->s[0].s[x].type)
+		char * sp = 0;
+		uint8_t st = 0;
+		fatal(lstack_getobject, lx, 0, x, &sp, &st);
+
+		if(st == LISTWISE_TYPE_GNLW)
 		{
-			g = *(void**)ls->s[0].s[x].s;
+			g = *(void**)sp;
 		}
 
 		if(g)
 		{
 			if(set & (0x01 << g->designate))
-				fatal(lstack_last_set, ls, x);
+				fatal(lstack_sel_stage, lx, x);
 		}
 	}
 	LSTACK_ITEREND;

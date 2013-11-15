@@ -72,7 +72,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 			// request that readrow return temp space
 			char * zs;
 			int    zsl;
-			fatal(lstack_readrow, lx, 0, x, &zs, &zsl, 1, 0, 1, 0);
+			fatal(lstack_readrow, lx, 0, x, &zs, &zsl, 0, 1, 0, 1, 0);
 
 			// clear this string on the stack
 			fatal(lstack_clear, lx, 0, x);

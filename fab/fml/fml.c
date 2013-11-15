@@ -86,7 +86,7 @@ static int dscv_attach(gn * t, fmleval * fmlv)
 	finally : coda;
 }
 
-static int fml_attach_singly(fml * const restrict fml, strstack * const restrict sstk, map * const restrict bag, lstack * const restrict ls)
+static int fml_attach_singly(fml * const restrict fml, strstack * const restrict sstk, map * const restrict bag, lwx * const restrict ls)
 {
 	int y;
 
@@ -111,7 +111,7 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 		// get the target graph node
 		char * s = 0;
 		int l = 0;
-		fatal(lstack_string, ls, 0, y, &s, &l);
+		fatal(lstack_getstring, ls, 0, y, &s, &l);
 
 		gn * t = 0;
 		fatal(gn_add
@@ -163,13 +163,13 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 	finally : coda;
 }
 
-static int fml_attach_multi(fml * const restrict fml, strstack * const restrict sstk, map * const restrict bag, lstack * const restrict ls)
+static int fml_attach_multi(fml * const restrict fml, strstack * const restrict sstk, map * const restrict bag, lwx * const restrict ls)
 {
 	int x;
 	int y;
 
 	// multi-target formula
-	for(x = 0; x < ls->l; x++)
+	for(x = 0; x < lwx_lists(ls); x++)
 	{
 		// create a new fmleval
 		if(fml->evalsl == fml->evalsa)
@@ -198,11 +198,13 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 		}
 
 		// get the target graph nodes
-		fmlv->productsl = ls->s[x].l;
+		fmlv->productsl = lwx_rows(ls, x);
 		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->productsl);
 
-		for(y = 0; y < ls->s[x].l; y++)
+		for(y = 0; y < fmlv->productsl; y++)
 		{
+			readrow
+
 			gn * t = 0;
 			fatal(gn_add
 				, g_params.init_fabfile_path->abs_dir
@@ -261,7 +263,7 @@ static void fml_free(fml * fml)
 //
 // public
 //
-int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, generator_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 {
 	// create fml if necessary
 	fml * fml = ffn->fml;
@@ -287,7 +289,7 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	fatal(map_create, &fml->bags[fml->bagsl++], 0);
 
 	// populate the bag
-	lstack * ls = 0;
+	lwx * ls = 0;
 	int x = 0;
 	for(x = 0; x < fml->closure_varsl; x++)
 	{
@@ -329,7 +331,7 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	finally : coda;
 }
 
-int fml_render(ts * const restrict ts, generator_parser * const gp, lstack *** const restrict stax, int * const restrict staxa, int staxp, map * const restrict rawvars, int shebang)
+int fml_render(ts * const restrict ts, generator_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int staxp, map * const restrict rawvars, int shebang)
 {
 	// resolve the command list
 	int pn = staxp;

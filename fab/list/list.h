@@ -32,7 +32,7 @@
 #define restrict __restrict
 
 /*
-** you "resolve" an FFN_LIST node to an lstack*
+** you "resolve" an FFN_LIST node to an lwx*
 **  - resolve variable references
 **  - resolve a generator, if any
 **  - if there is a generator, flatten first
@@ -40,7 +40,7 @@
 **   - dependency targets
 **   - formula targets
 **
-** you "render" an lstack* to a string
+** you "render" an lwx* to a string
 **  - rendering has a delimiter
 **  - embedded lists have their own delimiter
 **  ex:
@@ -51,31 +51,31 @@
 /// list_render
 //
 // SUMMARY
-//  render an lstack object to an empty pstring
+//  render an lwx object to an empty pstring
 //
 // PARAMETERS
-//  ls  - lstack object
+//  ls  - lwx object
 //  ps  - pstring
 //
-int list_render(lstack * const restrict ls, pstring ** const restrict ps)
+int list_render(lwx * const restrict ls, pstring ** const restrict ps)
 	__attribute__((nonnull));
 
 /// list_renderto
 //
 // SUMMARY
-//  render an lstack object, appending to a pstring
+//  render an lwx object, appending to a pstring
 //
 // PARAMETERS
-//  ls  - lstack object
+//  ls  - lwx object
 //  ps  - pstring
 //
-int list_renderto(lstack * const restrict ls, pstring ** const restrict ps)
+int list_renderto(lwx * const restrict ls, pstring ** const restrict ps)
 	__attribute__((nonnull));
 
 /// list_resolve
 //
 // SUMMARY
-//  reset an lstack, then resolve an FFN_LIST into that lstack
+//  reset an lwx, then resolve an FFN_LIST into that lwx
 //
 // PARAMETERS
 //  list  - FFN_LIST node
@@ -86,13 +86,13 @@ int list_renderto(lstack * const restrict ls, pstring ** const restrict ps)
 //  staxp - offset to next free stax
 //  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolve(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
+int list_resolve(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lwx *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
 	__attribute__((nonnull(1, 2, 3, 4, 5, 6)));
 
 /// list_resolveto
 //
 // SUMMARY
-//  resolve an FFN_LIST into an lstack
+//  resolve an FFN_LIST into an lwx
 //
 // PARAMETERS
 //  list  - FFN_LIST node
@@ -103,7 +103,7 @@ int list_resolve(ff_node * restrict list, map * restrict vmap, generator_parser 
 //  staxp - offset to next free stax
 //  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolveto(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
+int list_resolveto(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lwx *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
 	__attribute__((nonnull(1, 2, 3, 4, 5, 6)));
 
 /// list_resolveflat
@@ -111,7 +111,7 @@ int list_resolveto(ff_node * restrict list, map * restrict vmap, generator_parse
 // list_resolve
 // list_flatten
 //
-int list_resolveflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
+int list_resolveflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lwx *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
 	__attribute__((nonnull(1, 2, 3, 4, 5, 6)));
 
 /// list_resolvetoflat
@@ -119,7 +119,7 @@ int list_resolveflat(ff_node * restrict list, map * restrict vmap, generator_par
 // list_resolveto
 // list_flatten
 //
-int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lstack *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
+int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, generator_parser * const restrict gp, lwx *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
 	__attribute__((nonnull(1, 2, 3, 4, 5, 6)));
 
 #undef restrict

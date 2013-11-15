@@ -56,9 +56,9 @@ $tabcfabpaths = [
 	> exec 1>${tokens_h}
 	> echo "#ifndef ${pfx}_TOKENS_H"
 	> echo "#define ${pfx}_TOKENS_H"
-	> echo "int ${pfx}_numtokens;"
-	> echo "int * ${pfx}_tokennumbers;"
-	> echo "char ** ${pfx}_tokennames;"
+	> echo "extern int ${pfx}_numtokens;"
+	> echo "extern int * ${pfx}_tokennumbers;"
+	> echo "extern char ** ${pfx}_tokennames;"
 	> echo "enum ${pfx}_tokennames {"
 	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
 	>  | sed -ne "s/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/${pfx}_\1 = \2,/p"

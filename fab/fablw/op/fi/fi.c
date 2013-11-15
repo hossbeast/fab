@@ -20,8 +20,11 @@
 
 #include "listwise.h"
 #include "listwise/operator.h"
+#include "listwise/xtra.h"
 
 #include "interpolate.h"
+
+#include "fab_control.h"
 
 /*
 
@@ -39,9 +42,9 @@ OPERATION
 static int op_validate_fi(operation* o);
 static int op_validate_fic(operation* o);
 static int op_validate_fiw(operation* o);
-static int op_exec_fi(operation*, lstack*, int**, int*);
-static int op_exec_fic(operation*, lstack*, int**, int*);
-static int op_exec_fiw(operation*, lstack*, int**, int*);
+static int op_exec_fi(operation*,  lwx*, int**, int*);
+static int op_exec_fic(operation*, lwx*, int**, int*);
+static int op_exec_fiw(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -49,6 +52,7 @@ operator op_desc[] = {
 		, .optype				= LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate_fi
 		, .op_exec			= op_exec_fi
+		, .mnemonic			= "fab-interpolation"
 		, .desc					= "(fab specific) list interpolation mode"
 	}
 	, {
@@ -72,61 +76,58 @@ int op_validate_fi(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1)
 	{
-		dprintf(listwise_err_fd, "fi -- arguments : %d", o->argsl);
-		return 1;
+		fail("fi -- arguments : %d", o->argsl);
 	}
 
-	return 0;
+	finally : coda;
 }
 
 int op_validate_fic(operation* o)
 {
 	if(o->argsl != 0)
 	{
-		dprintf(listwise_err_fd, "fic -- arguments : %d", o->argsl);
-		return 1;
+		fail("fic -- arguments : %d", o->argsl);
 	}
 
-	return 0;
+	finally : coda;
 }
 
 int op_validate_fiw(operation* o)
 {
 	if(o->argsl != 0)
 	{
-		dprintf(listwise_err_fd, "fiw -- arguments : %d", o->argsl);
-		return 1;
+		fail("fiw -- arguments : %d", o->argsl);
 	}
 
-	return 0;
+	finally : coda;
 }
 
-int op_exec_fi(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_fi(operation* o, lwx * lx, int** ovec, int* ovec_len)
 {
 	if(o->argsl == 0)
 	{
-		ls->flags = INTERPOLATE_DELIM_WS;
+		lwx_setflags(lx, INTERPOLATE_DELIM_WS);
 	}
 	else if(o->argsl == 1)
 	{
-		ls->flags = INTERPOLATE_DELIM_CUST;
-		free(ls->ptr);
-		ls->ptr = strdup(o->args[0]->s);
+		lwx_setflags(lx, INTERPOLATE_DELIM_CUST);
+		free(lwx_getptr(lx));
+		lwx_setptr(lx, strdup(o->args[0]->s));
 	}
 
 	return 0;
 }
 
-int op_exec_fic(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_fic(operation* o, lwx * lx, int** ovec, int* ovec_len)
 {
-	ls->flags = INTERPOLATE_DELIM_WS;
+	lwx_setflags(lx, INTERPOLATE_DELIM_WS);
 
 	return 0;
 }
 
-int op_exec_fiw(operation* o, lstack* ls, int** ovec, int* ovec_len)
+int op_exec_fiw(operation* o, lwx * lx, int** ovec, int* ovec_len)
 {
-	ls->flags = INTERPOLATE_ADJOIN;
+	lwx_setflags(lx, INTERPOLATE_ADJOIN);
 
 	return 0;
 }

@@ -435,7 +435,7 @@ int API lstack_dump(lwx * const lx)
 			// display the string value of the row
 			char * s;
 			int sl;
-			fatal(lstack_readrow, lx, x, y, &s, &sl, 1, 0, 0, 0);
+			fatal(lstack_readrow, lx, x, y, &s, &sl, 0, 1, 0, 0, 0);
 
 			dprintf(listwise_info_fd, "'%.*s'", sl, s);
 
@@ -854,10 +854,11 @@ int API lstack_delete(lwx * const restrict lx, int x, int y)
 	return 0;
 }
 
-int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * const rl, int obj, int win, int str, int * const _raw)
+int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * const rl, uint8_t * const rt, int obj, int win, int str, int * const _raw)
 {
-	char * zs = lx->s[x].s[y].s;
-	int zsl   = lx->s[x].s[y].l;
+	char * zs		= lx->s[x].s[y].s;
+	int zsl			= lx->s[x].s[y].l;
+	uint8_t zst	= lx->s[x].s[y].type;
 	int raw = 1;
 
 	if(obj && lx->s[x].s[y].type)
@@ -939,20 +940,27 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 		*r  = zs;
 	if(rl)
 		*rl = zsl;
+	if(rt)
+		*rt = zst;
 	if(_raw)
 		*_raw = raw;
 
 	return 0;
 }
 
-int API lstack_getbytes(lwx * const restrict lx, int x, int y, char ** r, int * rl)
+int API lstack_getobject(lwx * const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
 {
-	return lstack_readrow(lx, x, y, r, rl, 1, 1, 0, 0);
+	return lstack_readrow(lx, x, y, r, 0, rt, 0, 0, 0, 0);
 }
 
-int API lstack_getstring(lwx * const restrict lx, int x, int y, char ** r, int * rl)
+int API lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
 {
-	return lstack_readrow(lx, x, y, r, rl, 1, 1, 1, 0);
+	return lstack_readrow(lx, x, y, r, rl, 0, 1, 1, 0, 0);
+}
+
+int API lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
+{
+	return lstack_readrow(lx, x, y, r, rl, 0, 1, 1, 1, 0);
 }
 
 typedef char* charstar;
@@ -960,7 +968,7 @@ charstar API lstack_string(lwx * const restrict lx, int x, int y)
 {
 	char * r;
 	int    rl;
-	if(lstack_readrow(lx, x, y, &r, &rl, 1, 1, 1, 0) != 0)
+	if(lstack_readrow(lx, x, y, &r, &rl, 0, 1, 1, 1, 0) != 0)
 		return 0;
 
 	return r;

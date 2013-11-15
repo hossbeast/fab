@@ -176,7 +176,7 @@ static int create(path ** const p, const char * const in_base, const char * cons
 	//
 	// canonical path - fully canonicalized
 	//
-	if(canon(buf, 0, (*p)->can, 512, in_base, CAN_REALPATH) != 0)
+	if(canon(buf, 0, in_base, 0, (*p)->can, 512, 0, CAN_REALPATH) != 0)
 		return 1;
 
 	// 
@@ -185,13 +185,13 @@ static int create(path ** const p, const char * const in_base, const char * cons
 	//	- all dots and dotdots resolved
 	//  - resolve internal symbolic links which do not cross mount points
 	//
-	if(canon(buf, 0, (*p)->abs, 512, in_base, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM) != 0)
+	if(canon(buf, 0, in_base, 0, (*p)->abs, 512, 0, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM) != 0)
 		return 1;
 
 	// 
 	// absolute path rebased to cwd
 	//
-	if(rebase((*p)->abs, 0, g_params.cwd, 0, (*p)->rel_cwd, 512) != 0)
+	if(rebase((*p)->abs, 0, g_params.cwd, 0, (*p)->rel_cwd, 512, 0) != 0)
 		return 1;
 
 	// 
@@ -199,19 +199,19 @@ static int create(path ** const p, const char * const in_base, const char * cons
 	//
 	if(init)
 	{
-		if(rebase((*p)->abs, 0, g_params.cwd, 0, (*p)->rel_fab, 512) != 0)
+		if(rebase((*p)->abs, 0, g_params.cwd, 0, (*p)->rel_fab, 512, 0) != 0)
 			return 1;
 	}
 	else
 	{
-		if(rebase((*p)->abs, 0, g_params.init_fabfile_path->abs_dir, 0, (*p)->rel_fab, 512) != 0)
+		if(rebase((*p)->abs, 0, g_params.init_fabfile_path->abs_dir, 0, (*p)->rel_fab, 512, 0) != 0)
 			return 1;
 	}
 
 	// 
 	// absolute path rebased to /..
 	//
-	if(rebase((*p)->abs, 0, "/..", 0, (*p)->rel_nofile, 512) != 0)
+	if(rebase((*p)->abs, 0, "/..", 0, (*p)->rel_nofile, 512, 0) != 0)
 		return 1;
 
 	path_init(*p);

@@ -88,49 +88,49 @@ GENSCAN_TABLE_NOREFS(0)
 //
 // number of genscan modes
 //
-int genscan_num;
+extern int genscan_num;
 
 /// genscan_by_number
 //
 // zero-based indexed up to genscan_num-1, contains genscan_mode values
 //
-uint32_t * genscan_by_number;
+extern uint32_t * genscan_by_number;
 
 /// genscan_by_opening_char_dorefs
 //
 // indexed by int8_t, yields the DOREFS genscan_mode with that opening char
 //
-uint32_t * genscan_by_opening_char_dorefs;
+extern uint32_t * genscan_by_opening_char_dorefs;
 
 /// genscan_by_opening_char_norefs
 //
 // indexed by int8_t, yields the NOREFS genscan_mode with that opening char
 //
-uint32_t * genscan_by_opening_char_norefs;
+extern uint32_t * genscan_by_opening_char_norefs;
 
 /// genscan_opening_char
 //
 // indexed by scanmode, yields opening char
 //
-char * genscan_opening_char;
+extern char * genscan_opening_char;
 
 /// genscan_closing_char
 //
 // indexed by scanmode, yields closing char
 //
-char * genscan_closing_char;
+extern char * genscan_closing_char;
 
 /// genscan_startcondition_initial
 //
 // indexed by scanmode, yields initial start condition (scanner state) for that scanmode
 //
-int * genscan_startcondition_initial;
+extern int * genscan_startcondition_initial;
 
 /// genscan_startcondition_argscan
 //
 // indexed by scanmode, yields arg scanning start condition (scanner state) for that scanmode
 //
-int * genscan_startcondition_argscan;
+extern int * genscan_startcondition_argscan;
 
 /// genscan_parse
 //

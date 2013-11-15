@@ -78,7 +78,7 @@ char * selector_string(const selector * const restrict s, char * const restrict 
 //
 // SUMMARY
 //
-int selector_process(selector * const restrict s, const int id, const ff_parser * const restrict ffp, map * const restrict tmap, lstack *** restrict stax, int * restrict staxa, int staxp);
+int selector_process(selector * const restrict s, const int id, const ff_parser * const restrict ffp, map * const restrict tmap, lwx *** restrict stax, int * restrict staxa, int staxp);
 
 /// selector_finalize
 //

@@ -116,7 +116,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 					}
 
 					// append window segment
-					int A;
+					int A = 0;
 					int B;
 					if(off == 0)
 						A = 0;
@@ -134,7 +134,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 						if(!wasread)
 						{
 							wasread = 1;
-							fatal(lstack_readrow, lx, 0, x, &ss, &ssl, 1, 0, 0, 0);
+							fatal(lstack_readrow, lx, 0, x, &ss, &ssl, 0, 1, 0, 0, 0);
 						}
 
 						B = ssl;

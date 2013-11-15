@@ -42,11 +42,28 @@
 
 struct g_args_t g_args;
 
+struct optypes
+{
+	int _1;
+	int _2;
+	int _3;
+	int _4;
+	int _5;
+	int _6;
+	int _7;
+	int _8;
+	int _9;
+	int _a;
+	int _b;
+	int _c;
+	int _d;
+};
+
 //
 // [[ static ]]
 //
 
-static void usage(int valid, int version, int help, int logopts, int operators, char * fmt, ...)
+static void usage(int valid, int version, int help, int logopts, int operators, struct optypes * optypes, char * fmt, ...)
 {
 	printf(
 "fab : parallel and incremental builds, integrated dependency discovery\n"
@@ -301,12 +318,28 @@ int args_parse(int argc, char** argv)
 	int logopts = 0;
 	int operators = 0;
 
+	struct optypes optypes = {};
+
 	struct option longopts[] = {
 /* informational */
 				  { "help"												, no_argument	, &help, 1 }
 				, { "version"											, no_argument	, &version, 1 }
 				, { "logopts"											, no_argument	, &logopts, 1 }
 				, { "operators"										, no_argument	, &operators, 1 }
+				, { "o1"													, no_argument	, &optypes._1, 1 }
+				, { "o2"													, no_argument	, &optypes._2, 1 }
+				, { "o3"													, no_argument	, &optypes._3, 1 }
+				, { "o4"													, no_argument	, &optypes._4, 1 }
+				, { "o5"													, no_argument	, &optypes._5, 1 }
+				, { "o6"													, no_argument	, &optypes._6, 1 }
+				, { "o7"													, no_argument	, &optypes._7, 1 }
+				, { "o8"													, no_argument	, &optypes._8, 1 }
+				, { "o9"													, no_argument	, &optypes._9, 1 }
+				, { "oa"													, no_argument	, &optypes._a, 1 }
+				, { "ob"													, no_argument	, &optypes._b, 1 }
+				, { "oc"													, no_argument	, &optypes._c, 1 }
+				, { "od"													, no_argument	, &optypes._d, 1 }
+
 
 /* program longopts */
 				, { "cycles-warn"									, no_argument	, &g_args.mode_cycles	, MODE_CYCLES_WARN }
@@ -407,7 +440,10 @@ int args_parse(int argc, char** argv)
 	g_args.mode_cycles		= DEFAULT_MODE_CYCLES;
 	g_args.mode_paths			= DEFAULT_MODE_PATHS;
 	g_args.mode_errors		= DEFAULT_MODE_ERRORS;
+#if DEVEL
 	g_args.mode_bslic			= DEFAULT_MODE_BSLIC;
+	g_args.mode_sanity		= DEFAULT_MODE_SANITY;
+#endif
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create_init, &fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
 
@@ -469,7 +505,7 @@ int args_parse(int argc, char** argv)
 					}
 					else
 					{
-						usage(0, 1, 0, 0, 0, "unknown : %s", s);
+						usage(0, 1, 0, 0, 0, 0, "unknown : %s", s);
 					}
 				}
 				else
@@ -556,13 +592,13 @@ int args_parse(int argc, char** argv)
 		}
 		else
 		{
-			usage(0, 1, 0, 0, 0, "unknown : %c", x);
+			usage(0, 1, 0, 0, 0, 0, "unknown : %c", x);
 		}
 	}
 
 	if(help || version || logopts || operators)
 	{
-		usage(1, 1, help, logopts, operators, 0);
+		usage(1, 1, help, logopts, operators, &optypes, 0);
 	}
 
 	// default invokedirs - tail of list

@@ -64,7 +64,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 
 				// read the row
 				int ssl = 0;
-				fatal(lstack_readrow, lx, 0, x, 0, &ssl, 1, 0, 0, 0);
+				fatal(lstack_readrow, lx, 0, x, 0, &ssl, 0, 1, 0, 0, 0);
 
 				// following the last windowed segment
 				fatal(lstack_window_stage, lx, x, ws[wl - 1].o + ws[wl - 1].l, ssl - (ws[wl - 1].o + ws[wl - 1].l));

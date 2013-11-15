@@ -61,10 +61,14 @@ static int flatten(lwx * lso)
 	LSTACK_ITERREV(lso, x, goo);
 	if(goo)
 	{
-		if(lso->s[0].s[x].type == LISTWISE_TYPE_LIST)
+		char * sp = 0;
+		uint8_t st = 0;
+		fatal(lstack_getobject, lso, 0, x, &sp, &st);
+
+		if(st == LISTWISE_TYPE_LIST)
 		{
 			// get reference to the inner list
-			lsi = *(void**)lso->s[0].s[x].s;
+			lsi = *(void**)sp;
 
 			// flatten the inner list
 			fatal(flatten, lsi);
@@ -82,13 +86,18 @@ static int flatten(lwx * lso)
 			LSTACK_ITERATE(lsi, y, goi)
 			if(goi)
 			{
-				if(lsi->s[0].s[y].type)
+				char * isp;
+				int isl;
+				uint8_t ist;
+				fatal(lstack_readrow, lsi, 0, y, &isp, &isl, &ist, 0, 0, 0, 0);
+
+				if(ist)
 				{
-					fatal(lstack_obj_write_alt, lso, 0, x + i, *(void**)lsi->s[0].s[y].s, lsi->s[0].s[y].type);
+					fatal(lstack_obj_write_alt, lso, 0, x + i, *(void**)isp, ist);
 				}
 				else
 				{
-					fatal(lstack_write_alt, lso, 0, x + i, lsi->s[0].s[y].s, lsi->s[0].s[y].l);
+					fatal(lstack_write_alt, lso, 0, x + i, isp, isl);
 				}
 				i++;
 			}

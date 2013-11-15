@@ -75,7 +75,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 				typeof(*lx->win.s[0].active) * win = lx->win.s[x].active;
 
 				// the str parameter will cause readrow to return the temp space for the row
-				fatal(lstack_readrow, lx, 0, x, &zs, &zsl, 1, 0, 1, 0);
+				fatal(lstack_readrow, lx, 0, x, &zs, &zsl, 0, 1, 0, 1, 0);
 
 				// clear this row
 				fatal(lstack_clear, lx, 0, x);

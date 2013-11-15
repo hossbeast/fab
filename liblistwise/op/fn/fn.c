@@ -61,7 +61,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		int raw;
 
 		// raw is true if this row is not an object entry, and has no window in effect
-		fatal(lstack_readrow, ls, 0, x, &ss, &ssl, 1, 1, 0, &raw);
+		fatal(lstack_readrow, ls, 0, x, &ss, &ssl, 0, 1, 1, 0, &raw);
 
 		if(ssl)
 		{

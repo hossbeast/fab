@@ -59,7 +59,7 @@ int lwx_rows(struct lwx_t * const restrict lx, const int x)
     for(__y = lwx_rows(lx, __x) - 1; __y >= 0; __y--)   \
     {
 
-// count selection in the top list
+// get the number of selected elements of the xth list
 #define LSTACK_COUNT_LIST(lx, __x) ({   \
   int c = 0;                            \
   int __y;                              \

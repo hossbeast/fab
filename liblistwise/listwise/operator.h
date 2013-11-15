@@ -429,12 +429,13 @@ int lstack_windows_activate(lwx * const restrict lx)
 //  y     - row offset
 //  [r]   - return value - ptr
 //  [rl]  - return value - length
+//  [rt]  - return value - type
 //  [obj] - whether object references are resolved
 //  [win] - whether windowing is resolved
 //  [str] - whether the return value is required to be null-terminated and in tmp space
 //  [raw] - indicates whether the raw storage was returned (object entry not resolved, window not resolved, and str was not specified)
 //
-int lstack_readrow(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl, int obj, int win, int str, int * const restrict raw)
+int lstack_readrow(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl, uint8_t * const restrict rt, int obj, int win, int str, int * const restrict raw)
 	__attribute__((nonnull(1)));
 
 /// listwise_allocation_seed

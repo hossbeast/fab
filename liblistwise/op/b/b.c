@@ -79,7 +79,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 		char * ss = 0;
 		int ssl   = 0;
 
-		fatal(lstack_readrow, lx, 0, x, &ss, &ssl, 1, 0, 0, 0);
+		fatal(lstack_readrow, lx, 0, x, &ss, &ssl, 0, 1, 0, 0, 0);
 
 		int i;
 		for(i = 0; i < o->argsl; i += 2)

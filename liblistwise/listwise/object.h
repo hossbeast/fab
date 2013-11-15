@@ -173,4 +173,25 @@ int lstack_obj_write_alt(lwx * const restrict lx, int x, int y, const void* cons
 int lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
+/// lstack_getobject
+//
+// SUMMARY
+//  get pointer/type for the object stored in the specified row
+//
+// PARAMETERS
+//  lx - lw context
+//  x  - list index
+//  y  - row index
+//  r  - string returned here
+//  rt - type returned here
+//
+// RETURNS
+//  0 on success
+//
+// REMARKS
+//  getobject will return 0 in rt for a non-object entry. getobject does not use tmp space
+//
+int lstack_getobject(lwx * const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
+  __attribute__((nonnull));
+
 #endif

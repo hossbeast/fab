@@ -30,12 +30,12 @@ struct ff_node;
 /// var_set
 //
 // SUMMARY
-//  set an lstack as the definition for a variable
+//  set an lwx as the definition for a variable
 //
 // PARAMETERS
 //  vmap    - variable map
 //  s       - target variable
-//  ls      - lstack instance
+//  ls      - lwx instance
 //  inherit - whether to create an inherited definition
 //  mutable - whether to create a mutable definition
 //  [src]   - FFN_VAR* node (for logging)
@@ -43,13 +43,13 @@ struct ff_node;
 // RETURNS
 //  nonzero on success
 //
-int var_set(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, int mutable, const struct ff_node * const restrict src)
+int var_set(map * restrict vmap, const char * restrict s, lwx * const restrict ls, int inherit, int mutable, const struct ff_node * const restrict src)
 	__attribute__((nonnull(1,2,3)));
 
 /// var_xfm_add
 //
 // SUMMARY
-//  add an lstack-addition-xfm to the definition for a variable
+//  add an lwx-addition-xfm to the definition for a variable
 //
 // PARAMETERS
 //  vmap    - variable map
@@ -61,13 +61,13 @@ int var_set(map * restrict vmap, const char * restrict s, lstack * const restric
 // RETURNS
 //  nonzero on success
 //
-int var_xfm_add(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
+int var_xfm_add(map * restrict vmap, const char * restrict s, lwx * const restrict ls, int inherit, const struct ff_node * const restrict src)
 	__attribute__((nonnull(1,2,3)));
 
 /// var_sub
 //
 // SUMMARY
-//  add an lstack-subtraction-xfm to the definition for a variable
+//  add an lwx-subtraction-xfm to the definition for a variable
 //
 // PARAMETERS
 //  vmap    - variable map
@@ -79,7 +79,7 @@ int var_xfm_add(map * restrict vmap, const char * restrict s, lstack * const res
 // RETURNS
 //  nonzero on success
 //
-int var_xfm_sub(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
+int var_xfm_sub(map * restrict vmap, const char * restrict s, lwx * const restrict ls, int inherit, const struct ff_node * const restrict src)
 	__attribute__((nonnull(1,2,3)));
 
 /// var_xfm_lw
@@ -161,7 +161,7 @@ int var_clone(map * const restrict amap, map ** const restrict bmap)
 // RETURNS
 //  the definition, or listwise_identity if the variable is not defined, or has an empty definition stack
 //
-int var_access(const map * const restrict vmap, const char * restrict s, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp, lstack ** const restrict ls)
+int var_access(const map * const restrict vmap, const char * restrict s, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp, lwx ** const restrict ls)
 	__attribute__((nonnull));
 
 #undef restrict
