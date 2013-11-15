@@ -56,37 +56,39 @@ struct selector;
 #define DEFAULT_MODE_PATHS				MODE_RELATIVE_FABFILE_DIR
 #define DEFAULT_MODE_CYCLES				MODE_CYCLES_WARN
 #define DEFAULT_CONCURRENCY_LIMIT	0
+#define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
 
-#ifndef DEVEL
-# define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
-# define DEFAULT_MODE_ERRORS			MODE_ERRORS_IMMEDIATE
-#else
-# define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
+#ifdef DEBUG
 # define DEFAULT_MODE_ERRORS			MODE_ERRORS_UNWIND
+#else
+# define DEFAULT_MODE_ERRORS			MODE_ERRORS_IMMEDIATE
 #endif
 
 #define EXPIRATION_POLICY					(60 * 60 * 24 * 7)		/* 7 days */
 
-#define MODE_TABLE(x)																																													\
-/* execution modes */																																													\
-	_MODE(MODE_BPLAN_GENERATE							, 0x01	, x)		/* (only) generate the buildplan */										\
-	_MODE(MODE_BPLAN_BAKE									, 0x02	, x)		/* bake the buildplan */															\
-	_MODE(MODE_BPLAN_EXEC									, 0x03	, x)		/* execute the buildplan */														\
-/* path handling modes */																																											\
-	_MODE(MODE_RELATIVE_FABFILE_DIR				, 0x04	, x)		/* path relative to initial fabfile dir */						\
-	_MODE(MODE_RELATIVE_CWD								, 0x05	, x)		/* path relative to cwd */														\
-	_MODE(MODE_ABSOLUTE										, 0x06	, x)		/* absolute path */																		\
-	_MODE(MODE_CANONICAL									, 0x07	, x)		/* canonical path */																	\
-/* cycle handling modes */																																										\
-	_MODE(MODE_CYCLES_WARN								, 0x09	, x)		/* warn when a cycle is detected */										\
-	_MODE(MODE_CYCLES_FAIL								, 0x0a	, x)		/* fail when a cycle is detected */										\
-	_MODE(MODE_CYCLES_DEAL								, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */	\
-/* error reporting modes */																																										\
-	_MODE(MODE_ERRORS_UNWIND							, 0x0d	, x)		/* unwind stack when reporting errors */							\
-	_MODE(MODE_ERRORS_IMMEDIATE						, 0x0e	, x)		/* report on immediate error condition only */				\
-/* bakescript license modes */																																								\
-	_MODE(MODE_BSLIC_STD									, 0x10	, x)		/* bakescripts have the standard license  */					\
-	_MODE(MODE_BSLIC_FAB									, 0x11	, x)		/* bakescripts have the fab license */								\
+#define MODE_TABLE(x)																																														\
+/* execution modes */																																														\
+	_MODE(MODE_BPLAN_GENERATE							, 0x01	, x)		/* (only) generate the buildplan */											\
+	_MODE(MODE_BPLAN_BAKE									, 0x02	, x)		/* bake the buildplan */																\
+	_MODE(MODE_BPLAN_EXEC									, 0x03	, x)		/* execute the buildplan */															\
+/* path handling modes */																																												\
+	_MODE(MODE_RELATIVE_FABFILE_DIR				, 0x04	, x)		/* path relative to initial fabfile dir */							\
+	_MODE(MODE_RELATIVE_CWD								, 0x05	, x)		/* path relative to cwd */															\
+	_MODE(MODE_ABSOLUTE										, 0x06	, x)		/* absolute path */																			\
+	_MODE(MODE_CANONICAL									, 0x07	, x)		/* canonical path */																		\
+/* cycle handling modes */																																											\
+	_MODE(MODE_CYCLES_WARN								, 0x09	, x)		/* warn when a cycle is detected */											\
+	_MODE(MODE_CYCLES_FAIL								, 0x0a	, x)		/* fail when a cycle is detected */											\
+	_MODE(MODE_CYCLES_DEAL								, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */		\
+/* error reporting modes */																																											\
+	_MODE(MODE_ERRORS_UNWIND							, 0x0d	, x)		/* unwind stack when reporting errors */								\
+	_MODE(MODE_ERRORS_IMMEDIATE						, 0x0e	, x)		/* report on immediate error condition only */					\
+/* bakescript license modes */																																									\
+	_MODE(MODE_BSLIC_STD									, 0x10	, x)		/* bakescripts have the standard license  */						\
+	_MODE(MODE_BSLIC_FAB									, 0x11	, x)		/* bakescripts have the fab license */									\
+/* sanity checking modes */																																											\
+	_MODE(MODE_SANITY_DISABLE							, 0x13	, x)		/* disable sanity checks for liblistwise invocations */	\
+	_MODE(MODE_SANITY_ENABLE							, 0x14	, x)		/* enable sanity checks for liblistwise invocations */	\
 
 enum {
 #define _MODE(a, b, c) a = b,
@@ -107,8 +109,11 @@ extern struct g_args_t
 	int									mode_gnid;									// gn identification mode
 	int									mode_cycles;								// cycle handling mode
 	int									mode_paths;									// path generation mode
-	int									mode_bslic;									// bakescript license mode
 	int									mode_errors;								// error reporting mode
+#if DEVEL
+	int									mode_bslic;									// bakescript license mode
+	int									mode_sanity;								// sanity checking mode
+#endif
 
 	int									concurrency;								// concurrently limiting factor
 

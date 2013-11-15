@@ -68,28 +68,28 @@ int listwise_register_opdir(char* dir);
 
 /// lwx_getflags
 //
-// get application-use flags associated with lw
+// get application-use flags associated with an lwx
 //
 uint64_t lwx_getflags(lwx * const restrict)
 	__attribute__((nonnull));
 
 /// lwx_setflags
 //
-// set application-use flags associated with lw
+// set application-use flags associated with an lwx
 //
 uint64_t lwx_setflags(lwx * const restrict, const uint64_t)
 	__attribute__((nonnull));
 
 /// lwx_getptr
 //
-// get application-use ptr associated with lw
+// get application-use ptr associated with an lwx
 //
 void * lwx_getptr(lwx * const restrict)
 	__attribute__((nonnull));
 
 /// lwx_setptr
 //
-// set application-use ptr associated with lw
+// set application-use ptr associated with an lwx
 //
 void * lwx_setptr(lwx * const, void * const)
 	__attribute__((nonnull(1)));

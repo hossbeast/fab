@@ -23,7 +23,7 @@
 /* liblistwise API
 **
 ** core functionality
-**  listwise.h         - listwise evaluation, iterate lstacks, read lstack rows
+**  listwise.h         - listwise evaluation, read lstack contents
 **
 ** additional functionality
 **  listwise/xtra.h    - register additional operators, tune execution parameters, etc
