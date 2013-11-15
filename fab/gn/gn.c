@@ -216,20 +216,23 @@ static int reconcile_completion(gn * const gn, map * const ws)
 			{
 				if(!gn->needs.e[x]->weak)
 				{
-					// needed node
-					uint32_t need = gn->needs.e[x]->B->path->can_hash;
+					if(gn->needs.e[x]->B->designate == GN_DESIGNATION_PRIMARY || gn->needs.e[x]->B->designate == GN_DESIGNATION_SECONDARY)
+					{
+						// needed node
+						uint32_t need = gn->needs.e[x]->B->path->can_hash;
 
-					snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, need);
-					snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ineed_skipweak/%u", g_params.init_fabfile_path->can_hash, gn->path->can_hash, need);
+						snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, need);
+						snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ineed_skipweak/%u", g_params.init_fabfile_path->can_hash, gn->path->can_hash, need);
 
-					if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
-						fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+						if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
+							fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
 
-					snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
-					snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ifeed_skipweak/%u", g_params.init_fabfile_path->can_hash, need, gn->path->can_hash);
+						snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
+						snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ifeed_skipweak/%u", g_params.init_fabfile_path->can_hash, need, gn->path->can_hash);
 
-					if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
-						fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+						if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
+							fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+					}
 				}
 			}
 		}
