@@ -150,7 +150,7 @@ if(help)
 " handling cycles\n"
 "  --cycles-warn       (default) warn when a cycle is detected (once per unique cycle)\n"
 "  --cycles-fail                 fail when a cycle is detected\n"
-"  --cycles-deal                 deal with cycles (by terminating the traversal)\n"
+"  --cycles-deal                 deal with cycles (halt traversal)\n"
 	);
 }
 
