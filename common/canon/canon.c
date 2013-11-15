@@ -286,7 +286,7 @@ printf("init=%d\n", init);
 			add(z, dst, siz, "%.*s", i[ix].l, i[ix].s);
 
 			struct stat stb[2] = {};
-			if(*z >= 4 && memcmp(dst, "/../", 4) == 0)
+			if((*z) >= 4 && memcmp(dst, "/../", 4) == 0)
 			{
 				/* do not resolve nofile references against the filesystem lest they be resolved against slash (/) */
 			}
