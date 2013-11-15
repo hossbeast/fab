@@ -80,6 +80,8 @@ int hashblock_stat(const char * const path, hashblock * const hb0, hashblock * c
 	if(hb2)
 		hbs[hbsl++] = hb2;
 
+	fatal(identity_assume_fabsys);
+
 	int x;
 
 	// STAT for A
@@ -119,6 +121,8 @@ int hashblock_stat(const char * const path, hashblock * const hb0, hashblock * c
 		for(x = 0; x < hbsl; x++)
 			hbs[x]->stathash[1] = 0;
 	}
+
+	fatal(identity_assume_user);
 
 	finally : coda;
 }

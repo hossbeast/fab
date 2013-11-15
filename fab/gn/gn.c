@@ -853,8 +853,6 @@ int gn_finalize(int reconcile)
 				fatal(mkdirp, gn->ineed_skipweak_dir, S_IRWXU | S_IRWXG | S_IRWXO);
 				fatal(mkdirp, gn->ifeed_skipweak_dir, S_IRWXU | S_IRWXG | S_IRWXO);
 
-				fatal(identity_assume_user);
-
 				gn->force_invalid = 1;
 				if(euidaccess(gn->noforce_invalid_path, F_OK) == 0)
 				{
@@ -897,6 +895,8 @@ int gn_finalize(int reconcile)
 						fail("access(%s)=[%d][%s]", gn->path->can, errno, strerror(errno));
 					}
 				}
+
+				fatal(identity_assume_user);
 
 				if(gn->designate == GN_DESIGNATION_PRIMARY)
 				{
