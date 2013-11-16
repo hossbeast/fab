@@ -59,6 +59,7 @@ fml_1_0()
 	install -d																				$destdir/$libdir
 	install	liblistwise/liblistwise.so													$destdir/$libdir/liblistwise.so.0.1
 	ln -vfs liblistwise.so.0.1																$destdir/$libdir/liblistwise.so
+  rm -rf                                            $destdir/$incdir/listwise
 	install -d																				$destdir/$incdir/listwise
 	install liblistwise/listwise.h							$destdir/$incdir/listwise.h
 	install liblistwise/listwise/operator.h			$destdir/$incdir/listwise/operator.h

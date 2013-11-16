@@ -90,30 +90,32 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 
 [ @install ] : [ @all ]
 {
-	install -d																				[ $destdir/$libdir ]
-	install	[ $liblistwise ]													[ $destdir/$libdir/$soname ]
-	ln -vfs [ $soname ]																[ $destdir/$libdir/$libname ]
-	install -d																				[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise.h	]							[ $destdir/$incdir/listwise.h ]
-	install [ $dliblistwise/listwise/operator.h ]			[ $destdir/$incdir/listwise/operator.h ]
-	install [ $dliblistwise/listwise/generator.h	] 	[ $destdir/$incdir/listwise/generator.h ]
-	install [ $dliblistwise/listwise/ops.h ]					[ $destdir/$incdir/listwise/ops.h ]
-	install [ $dliblistwise/listwise/lstack.h ] 			[ $destdir/$incdir/listwise/lstack.h ]
-	install [ $dliblistwise/listwise/object.h ] 			[ $destdir/$incdir/listwise/object.h ]
-
-	rm -rf																						[ $destdir/$lwopdir ] 2>/dev/null
-	install -d																				[ $destdir/$lwopdir ]
+	install -d                                         [ $destdir/$libdir ]
+	install  [ $liblistwise ]                          [ $destdir/$libdir/$soname ]
+	ln -vfs [ $soname ]                                [ $destdir/$libdir/$libname ]
+ 
+	rm -rf                                             [ $destdir/$incdir/listwise ]
+	install -d                                         [ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise.h  ]              [ $destdir/$incdir/listwise.h ]
+	install [ $dliblistwise/listwise/operator.h ]      [ $destdir/$incdir/listwise/operator.h ]
+	install [ $dliblistwise/listwise/generator.h  ]    [ $destdir/$incdir/listwise/generator.h ]
+	install [ $dliblistwise/listwise/ops.h ]           [ $destdir/$incdir/listwise/ops.h ]
+	install [ $dliblistwise/listwise/lstack.h ]        [ $destdir/$incdir/listwise/lstack.h ]
+	install [ $dliblistwise/listwise/object.h ]        [ $destdir/$incdir/listwise/object.h ]
+ 
+	rm -rf                                             [ $destdir/$lwopdir ] 2>/dev/null
+	install -d                                         [ $destdir/$lwopdir ]
 	for x in [ $oplist ~ fi ]; do \
-		install $x																			[ $destdir/$lwopdir ]
+		install $x                                       [ $destdir/$lwopdir ]
 	done
 }
 
 [ @uninstall ]
 {
-	rm -f																							[ $destdir/$libdir/$soname ]
-	rm -f																							[ $destdir/$libdir/$libname ]
-	rm -rf																						[ $destdir/$lwopdir ]
-	rm -f																							[ $destdir/$incdir/listwise.h ]
+  rm -f                                              [ $destdir/$libdir/$soname ]
+  rm -f                                              [ $destdir/$libdir/$libname ]
+  rm -rf                                             [ $destdir/$lwopdir ]
+  rm -f                                              [ $destdir/$incdir/listwise.h ]
 }
 
 [ @clean ] :* [ @common.clean ]
