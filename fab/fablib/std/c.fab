@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# c.fab
+# @std.c.fab
 #  provides discovery formula for .c files
 #  provides fabrication formula for .c -> .o
 #  provides dependencies for .o -> .c
@@ -39,10 +39,13 @@
 #  ext       - file extension for object files resulting from fabrication
 #  gendir    - parameter to gcc-dep, directory path for the location of generated files
 
-# default object file extension
-$ext = [ o ]
+# default source file full extension
+$sext = [ c ]
 
-# paths to c files for discovery
+# default object file extension
+$dext = [ o ]
+
+# paths to source files for discovery
 $cdscpaths = [
 	$paths				# paths
 	$dscpaths			# paths, discovery only
@@ -50,15 +53,15 @@ $cdscpaths = [
 	[
 		$dirs				# directories
 		$dscdirs		# directories, discovery only
-	~ ls ]
+	~ [ ls/xmf/< $sext > ~ j ] ]
 
 	[
 		$rdirs			# recursive directories
 		$rdscdirs		# recursive directories, discovery only
-	~ lsr ]
-~ xm/<c> ]
+	~ [ lsr/xmf/< $sext > ~ j ] ]
+]
 
-# paths to c files for fabrication
+# paths to source files for fabrication
 $cfabpaths = [
 	$paths				# paths
 	$fabpaths			# paths, fabrication only
@@ -66,16 +69,16 @@ $cfabpaths = [
 	[
 		$dirs				# directories
 		$fabdirs		# directories, fabrication only
-	~ ls ]
+	~ [ ls/xmf/< $sext > ~ j ] ]
 
 	[
 		$rdirs			# recursive directories
 		$rfabdirs		# recursive directories, fabrication only
-	~ lsr ]
-~ xm/<c> ]
+	~ [ lsr/xmf/< $sext > ~ j ] ]
+]
 
 # paths to object files
-$cobjpaths = [ $cfabpaths ~ [ xs/<c>/< $ext >/y ~ j ] ]
+$cobjpaths = [ $cfabpaths ~ [ xs/< $sext >/< $dext >/y ~ j ] ]
 
 # discovery
 #
@@ -85,11 +88,11 @@ $cobjpaths = [ $cfabpaths ~ [ xs/<c>/< $ext >/y ~ j ] ]
 #
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ uu/fi ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<c>/< $ext >/fi ~ j ] ] [ $ext ]
+	[ $cc ] [ $cflags ~ uu/fi ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/< $sext >/< $dext >/fi ~ j ] ] [ $dext ]
 }
 
 # fabrication and dependency
-[ $cobjpaths ~ dj/shift ] :: [ $< ~ [ rx/xs/< $ext >/<c> ~ j ] ]
+[ $cobjpaths ~ dj/shift ] :: [ $< ~ [ rx/xs/< $dext >/< $sext > ~ j ] ]
 {
-	[ $cc ] [ $cflags ~ uu/fi ] -c [ $@ ~ rx/ineed/xm/<c>/uu/fi ] -o [ $@ ]
+	[ $cc ] [ $cflags ~ uu/fi ] -c [ $@ ~ [ rx/ineed/xm/< $sext >/uu/fi ~ j ] ] -o [ $@ ]
 }

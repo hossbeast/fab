@@ -18,7 +18,7 @@
 # @std.l.fab
 #  provides discovery formula for .l files
 #  provides fabrication formula for .lex.c -> .lex.o
-#  provides dependencies for lex.o -> .l
+#  provides dependencies for .lex.o -> .l
 
 # var/closure
 #  cc

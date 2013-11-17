@@ -3,11 +3,10 @@
 *.s
 *.o
 *.tab.*
-*.tokens.*
 *.lex.*
+*.tokens.*
 *.states.*
 /fab/fab
-/fab/fabd
 /listwise/listwise
 /listwise/lw
-exports
+/liblistwise/exports

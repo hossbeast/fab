@@ -22,12 +22,16 @@ $dlistwise    	= [ $* ]
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
 +[ $dcommon/vars.fab ]
++[ $dcommon ]() @common
+
+# include paths
+$dliblistwise		= [ $dlistwise/../liblistwise ~j ]
 
 # libraries to link
 $liblistwise		= [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags  [ -I$dlistwise ~ j ] $incdirs
+$cflags					= [ $cflags  [ $dlistwise $dliblistwise ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 ]
@@ -37,7 +41,7 @@ $link						= [ lw ]
 $listwise				= [ $dlistwise/$name ~ j ]
 
 # c files
-+[@std.c]($gendir = $dlistwise; $dirs = $dlistwise; -$cfabpaths; $cc $cflags)
++[@std.c]($gendir = $dlistwise; $dirs = $dlistwise; $cc $cflags)
 
 # catchall node
 [ @all ] : [ $listwise ]
@@ -45,7 +49,7 @@ $listwise				= [ $dlistwise/$name ~ j ]
 #
 # formulas
 #
-[ $listwise ] : [ $cfabpaths ~ xs/<o> ]
+[ $listwise ] : [ $dlistwise/main.o ~ j ]
 {
 	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [ $lflags ~ fi ]
 }

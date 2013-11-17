@@ -82,21 +82,19 @@ static int op_load(char* path)
 		g_dls_a = n;
 	}
 
-	if((g_dls[g_dls_l++] = dlopen(path, RTLD_NOW | RTLD_GLOBAL)) == 0)
+	void * dl = 0;
+	if((dl = dlopen(path, RTLD_NOW | RTLD_GLOBAL)) == 0)
 	{
 		dprintf(listwise_warn_fd, "FAILED TO LOAD: %s [%s]\n", path, dlerror());
-		/* I guess this segfaults .. 
-		dlclose(g_dls[g_dls_l - 1]); */
-		g_dls[--g_dls_l] = 0;
 	}
-	else if((op = dlsym(g_dls[g_dls_l - 1], "op_desc")) == 0)
+	else if((op = dlsym(dl, "op_desc")) == 0)
 	{
-		dprintf(listwise_warn_fd, "FAILED TO LOAD: %s\n", path);
-		dlclose(g_dls[g_dls_l - 1]);
-		g_dls[--g_dls_l] = 0;
+		dprintf(listwise_warn_fd, "FAILED TO LOAD: %s [%s]\n", path, dlerror());
 	}
 	else
 	{
+		g_dls[g_dls_l++] = dl;
+
 		while(op->desc)
 		{
 			if(g_ops_a == g_ops_l)
