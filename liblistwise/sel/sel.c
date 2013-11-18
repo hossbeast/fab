@@ -99,3 +99,10 @@ int API lstack_sel_activate(lwx * const restrict lx)
 
 	return 0;
 }
+
+int API lstack_sel_reset(lwx * const restrict lx)
+{
+	(*lx)->sel.active_era++;
+
+	return 0;
+}

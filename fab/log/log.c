@@ -518,7 +518,7 @@ int log_error(const uint64_t e, const char * const fmt, const char * const funct
 		log_vadd(fmt, va);
 
 		log_add(" in %s", function);
-		if(g_args.mode_errors == MODE_ERRORS_UNWIND)
+		if(UNWIND_ERRORS)
 			log_add(" at %s:%d", file, line);
 
 		return log_vfinish(0, 0);

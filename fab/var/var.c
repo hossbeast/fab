@@ -17,6 +17,7 @@
 
 #include <string.h>
 
+#include "listwise/xtra.h"
 #include "listwise/generator.h"
 
 #include "var.h"
@@ -57,7 +58,7 @@ typedef struct
 	{
 		struct					// VV_LS
 		{
-			lstack *	ls;
+			lwx *	ls;
 		};
 
 		struct					// VV_AL
@@ -76,8 +77,8 @@ typedef struct
 	union
 	{
 		void *			xfm;
-		lstack *		add;	// XFM_ADD			( not owned here - all lstacks owned by main )
-		lstack *		sub;	// XFM_SUB			( not owned here - all lstacks owned by main )
+		lwx *		add;	// XFM_ADD			( not owned here - all lstacks owned by main )
+		lwx *		sub;	// XFM_SUB			( not owned here - all lstacks owned by main )
 
 		struct {					// XFM_LW				( not owned here - all generators owned by FFN_NODEs )
 			generator * gen;
@@ -150,7 +151,7 @@ static void map_destructor(void* tk, void* tv)
 	}
 }
 
-static void dumplist(lstack * const ls)
+static int dumplist(lwx * const ls)
 {
 	int i = 0;
 	int j = 0;
@@ -159,33 +160,35 @@ static void dumplist(lstack * const ls)
 	if(go)
 	{
 		if(j++)
-			log_add(" ");
+			fatal(log_add, " ");
 
-		if(ls->s[0].s[i].type == LISTWISE_TYPE_GNLW)
+		char * rv;
+		int rl;
+		uint8_t rt;
+		fatal(lstack_readrow, ls, 0, i, &rv, &rl, &rt, 0, 0, 0, 0);
+
+		if(rt == LISTWISE_TYPE_GNLW)
 		{
-			char * vs = 0;
-			int    vl = 0;
-			lstack_string(ls, 0, i, &vs, &vl);
-
-			log_add("[%hhu]%p (%.*s)"
-				, ls->s[0].s[i].type
-				, *(void**)ls->s[0].s[i].s
-				, vl
-				, vs
+			fatal(log_add, "[%hhu]%p (%.*s)"
+				, rt
+				, *(void**)rv
+				, lstack_string(ls, 0, i)
 			);
 		}
-		else if(ls->s[0].s[i].type == LISTWISE_TYPE_LIST)
+		else if(rt == LISTWISE_TYPE_LIST)
 		{
-			log_add("[ ");
-			dumplist(*(void**)ls->s[0].s[i].s);
-			log_add(" ]");
+			fatal(log_add, "[ ");
+			dumplist(*(void**)rv);
+			fatal(log_add, " ]");
 		}
 		else
 		{
-			log_add("%.*s", ls->s[0].s[i].l, ls->s[0].s[i].s);
+			fatal(log_add, "%.*s", rl, rv);
 		}
 	}
 	LSTACK_ITEREND;
+
+	finally : coda;
 }
 
 static int xfm_add(map * restrict vmap, const char * restrict s, int type, void * const restrict xfm, char * const restrict tex, int inherit, const struct ff_node * const restrict src, vardef ** c)
@@ -230,7 +233,7 @@ static int xfm_add(map * restrict vmap, const char * restrict s, int type, void 
 /// public
 ///
 
-int var_set(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, int mutable, const struct ff_node * const restrict src)
+int var_set(map * restrict vmap, const char * restrict s, lwx * const restrict ls, int inherit, int mutable, const struct ff_node * const restrict src)
 {
 	int * inh = (int[1]) { inherit };
 	int * wrt = (int[1]) { mutable ? ASSIGNABLE : IMMUTABLE };
@@ -264,7 +267,7 @@ int var_set(map * restrict vmap, const char * restrict s, lstack * const restric
 
 		c->val.type				= VAL_LS;
 
-		if(ls->l && ls->s[0].l)
+		if(lwx_lists(ls) && lwx_rows(ls, 0))
 			c->val.ls				= ls;
 		else
 			c->val.ls				= listwise_identity;
@@ -272,7 +275,7 @@ int var_set(map * restrict vmap, const char * restrict s, lstack * const restric
 		if(log_would(L_VAR | TAG(s)))
 		{
 			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "set", KEYID(vmap, s));
-			dumplist(c->val.ls);
+			fatal(dumplist, c->val.ls);
 			log_add(" ] )");
 			LOG_SRC(src);
 			log_finish("");
@@ -291,7 +294,7 @@ int var_set(map * restrict vmap, const char * restrict s, lstack * const restric
 	finally : coda;
 }
 
-int var_xfm_add(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
+int var_xfm_add(map * restrict vmap, const char * restrict s, lwx * const restrict ls, int inherit, const struct ff_node * const restrict src)
 {
 	vardef * c = 0;
 	fatal(xfm_add, vmap, s, XFM_ADD, ls, 0, inherit, src, &c);
@@ -301,7 +304,7 @@ int var_xfm_add(map * restrict vmap, const char * restrict s, lstack * const res
 		if(log_would(L_VAR | TAG(s)))
 		{
 			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "xfm-add", KEYID(vmap, s));
-			dumplist(ls);
+			fatal(dumplist, ls);
 			log_add(" ] )");
 			LOG_SRC(src);
 			log_finish("");
@@ -320,7 +323,7 @@ int var_xfm_add(map * restrict vmap, const char * restrict s, lstack * const res
 	finally : coda;
 }
 
-int var_xfm_sub(map * restrict vmap, const char * restrict s, lstack * const restrict ls, int inherit, const struct ff_node * const restrict src)
+int var_xfm_sub(map * restrict vmap, const char * restrict s, lwx * const restrict ls, int inherit, const struct ff_node * const restrict src)
 {
 	vardef * c = 0;
 	fatal(xfm_add, vmap, s, XFM_SUB, ls, 0, inherit, src, &c);
@@ -330,7 +333,7 @@ int var_xfm_sub(map * restrict vmap, const char * restrict s, lstack * const res
 		if(log_would(L_VAR | TAG(s)))
 		{
 			log_start(L_VAR | TAG(s), "%10s(%d:%d:%s) = [ ", "xfm-sub", KEYID(vmap, s));
-			dumplist(ls);
+			fatal(dumplist, ls);
 			log_add(" ] )");
 			LOG_SRC(src);
 			log_finish("");
@@ -537,7 +540,7 @@ finally:
 coda;
 }
 
-int var_access(const map * const restrict vmap, const char * restrict vs, lstack *** const restrict stax, int * const restrict staxa, int * const restrict staxp, lstack ** const restrict ls)
+int var_access(const map * const restrict vmap, const char * restrict vs, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp, lwx ** const restrict ls)
 {
 	const map * m = vmap;
 	const char * s = vs;

@@ -15,14 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-%code requires {
+%code top {
 	#include <stdio.h>
 	#include <stdint.h>
 	#include <string.h>
 	#include <stdlib.h>
-}
 
-%code top {
 	#include "ff.parse.h"
 	#include "ffn.h"
 
@@ -31,10 +29,13 @@
 
 	// defined in ff.lex.o
 	int ff_yylex(void* yylvalp, void* yylloc, void* scanner);
+
+	#define YYU_ERROR(...) log_error(L_ERROR, #__VA_ARGS__)
 }
 
 %define api.pure
 %error-verbose
+%locations
 %name-prefix="ff_yy"
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
@@ -126,9 +127,6 @@
 %type  <node> varref
 %type  <node> varrefs
 %type  <node> onceblock
-
-/* sugar */
-%token END 0 "end of file"
 
 %destructor { ffn_free($$); } <node>
 %destructor { free($$.v); } <wordparts>
@@ -451,7 +449,7 @@ nofile
 		{
 			int ns = la ?: 3;
 			ns = ns * 2 + ns / 2;
-			xrealloc(&l, sizeof(*l), ns, la);
+			YYU_FATAL(xrealloc, &l, sizeof(*l), ns, la);
 			la = ns;
 		}
 		xstrdup(&l[ll++], "..");
@@ -467,7 +465,7 @@ nofile
 			{
 				int ns = la ?: 3;
 				ns = ns * 2 + ns / 2;
-				l = realloc(l, sizeof(*l) * ns);
+				YYU_FATAL(xrealloc, &l, sizeof(*l), ns, la);
 				la = ns;
 			}
 			xstrdup(&l[ll++], n->text);
@@ -501,7 +499,8 @@ word
 	}
 	| WORD
 	{
-		char* v = calloc(1, ($1.e - $1.s) + 1);
+		char * v;
+		YYU_FATAL(xmalloc, &v, ($1.e - $1.s) + 1);
 		memcpy(v, $1.s, $1.e - $1.s);
 
 		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
@@ -516,9 +515,8 @@ gwordparts
 		int l = strlen($$.v);
 		int nl = $2.e - $2.s;
 
-		$$.v = realloc($$.v, l + nl + 1);
+		YYU_FATAL(xrealloc, &$$.v, 1, l + nl + 1, l);
 		memcpy($$.v + l, $2.s, nl);
-		$$.v[l + nl] = 0;
 
 		$$.e = (char*)$2.e;
 	}
@@ -527,7 +525,7 @@ gwordparts
 		$$.s = $1.s;
 		$$.e = $1.e;
 
-		$$.v = calloc(1, ($$.e - $$.s) + 1);
+		YYU_FATAL(xmalloc, &$$.v, ($$.e - $$.s) + 1);
 		memcpy($$.v, $$.s, $$.e - $$.s);
 	}
 	;
@@ -540,9 +538,8 @@ qwordparts
 		int l = strlen($$.v);
 		int nl = $2.e - $2.s;
 
-		$$.v = realloc($$.v, l + nl + 1);
+		YYU_FATAL(xrealloc, &$$.v, 1, l + nl + 1, l);
 		memcpy($$.v + l, $2.s, nl);
-		$$.v[l + nl] = 0;
 
 		$$.e = (char*)$2.e;
 	}

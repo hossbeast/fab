@@ -42,7 +42,7 @@ int bake_bp(
 	  const bp * const bp
 	, map * const vmap
 	, generator_parser * const gp
-	, lstack *** const stax
+	, lwx *** const stax
 	, int * const staxa
 	, int staxp
 	, map * const bakemap
@@ -201,7 +201,7 @@ int bake_bp(
 			);
 			for(k = 0; k < keysl; k++)		// baked variables
 			{
-				lstack ** vls = 0;
+				lwx ** vls = 0;
 				if((vls = map_get(lmap, MMS(keys[k]))) && *vls)
 				{
 					fatal(list_render, *vls, &ps);

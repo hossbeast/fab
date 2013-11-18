@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "listwise.h"
+#include "listwise/xtra.h"
 #include "listwise/object.h"
 #include "listwise/generator.h"
 
@@ -34,13 +35,13 @@
 /// static
 ///
 
-static int render(lstack * const ls, pstring ** const ps)
+static int render(lwx * const ls, pstring ** const ps)
 {
 	char * dm = " ";
-	if(ls->flags == INTERPOLATE_ADJOIN)
+	if(lwx_getflags(ls) == INTERPOLATE_ADJOIN)
 		dm = "";
-	else if(ls->flags == INTERPOLATE_DELIM_CUST)
-		dm = ls->ptr;
+	else if(lwx_getflags(ls) == INTERPOLATE_DELIM_CUST)
+		dm = lwx_getptr(ls);
 
 	int k = 0;
 	int x;
@@ -48,17 +49,20 @@ static int render(lstack * const ls, pstring ** const ps)
 	if(go)
 	{
 		if(k++)
-		{
 			fatal(pscatf, ps, "%s", dm);
-		}
 
-		if(ls->s[0].s[x].type == LISTWISE_TYPE_LIST)
+		char * rv;
+		int rl;
+		uint8_t rt;
+		fatal(lstack_readrow, ls, 0, x, &rv, &rl, &rt, 0, 0, 0, 0);
+
+		if(rt == LISTWISE_TYPE_LIST)
 		{
-			fatal(render, *(void**)ls->s[0].s[x].s, ps);
+			fatal(render, *(void**)rv, ps);
 		}
-		else if(ls->s[0].s[x].type == LISTWISE_TYPE_GNLW)
+		else if(rt == LISTWISE_TYPE_GNLW)
 		{
-			gn * A = *(void**)ls->s[0].s[x].s;
+			gn * A = *(void**)rv;
 
 			if(g_args.mode_paths == MODE_ABSOLUTE)
 			{
@@ -71,10 +75,7 @@ static int render(lstack * const ls, pstring ** const ps)
 		}
 		else
 		{
-			char * s;
-			int l;
-			fatal(lstack_string, ls, 0, x, &s, &l);
-			fatal(pscat, ps, s, l);
+			fatal(pscat, ps, rv, rl);
 		}
 	}
 	LSTACK_ITEREND;
@@ -82,7 +83,7 @@ static int render(lstack * const ls, pstring ** const ps)
 	finally : coda;
 }
 
-static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstack *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
 {
 	// resolved lstack goes here
 	int pn = (*staxp)++;
@@ -107,10 +108,10 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstac
 		}
 		else if(list->elements[x]->type == FFN_VARREF)
 		{
-			lstack * vls = 0;
+			lwx * vls = 0;
 			if(rawmap)
 			{
-				lstack ** cc = 0;
+				lwx ** cc = 0;
 				if((cc = map_get(vmap, MMS(list->elements[x]->name))))
 					vls = *cc;
 			}
@@ -147,9 +148,9 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstac
 
 	// apply interpolation context from the FFN_LIST node to the lstack* instance
 	if(list->flags & FFN_WSSEP)
-		(*stax)[pn]->flags = INTERPOLATE_ADJOIN;
+		lwx_setflags((*stax)[pn], INTERPOLATE_ADJOIN);
 	else if(list->flags & FFN_COMMASEP)
-		(*stax)[pn]->flags = INTERPOLATE_DELIM_WS;
+		lwx_setflags((*stax)[pn], INTERPOLATE_DELIM_WS);
 
 	if(list->generator_node)
 	{
@@ -174,7 +175,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstac
 	}
 	else
 	{
-		(*stax)[pn]->sel.all = 1;
+		fatal(lstack_sel_reset, (*stax)[pn]);
 	}
 
 finally:
@@ -187,7 +188,7 @@ coda;
 /// public
 ///
 
-int list_render(lstack * const ls, pstring ** const ps)
+int list_render(lwx * const ls, pstring ** const ps)
 {
 	if(!*ps && xmalloc(ps, sizeof(**ps)) != 0)
 		return 1;
@@ -197,7 +198,7 @@ int list_render(lstack * const ls, pstring ** const ps)
 	return render(ls, ps);
 }
 
-int list_renderto(lstack * const ls, pstring ** const ps)
+int list_renderto(lwx * const ls, pstring ** const ps)
 {
 	if(!*ps && xmalloc(ps, sizeof(**ps)) != 0)
 		return 1;
@@ -205,7 +206,7 @@ int list_renderto(lstack * const ls, pstring ** const ps)
 	return render(ls, ps);
 }
 
-int list_resolveto(ff_node * list, map* vmap, generator_parser* const gp, lstack *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+int list_resolveto(ff_node * list, map* vmap, generator_parser* const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
 {
 	fatal(lw_ensure, stax, staxa, (*staxp));
 	fatal(resolve, list, vmap, gp, stax, staxa, staxp, rawmap, rawvars);
@@ -213,7 +214,7 @@ int list_resolveto(ff_node * list, map* vmap, generator_parser* const gp, lstack
 	finally : coda;
 }
 
-int list_resolve(ff_node * list, map* vmap, generator_parser* const gp, lstack *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+int list_resolve(ff_node * list, map* vmap, generator_parser* const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
 {
 	fatal(lw_reset, stax, staxa, (*staxp));
 	fatal(resolve, list, vmap, gp, stax, staxa, staxp, rawmap, rawvars);
@@ -221,7 +222,7 @@ int list_resolve(ff_node * list, map* vmap, generator_parser* const gp, lstack *
 	finally : coda;
 }
 
-int list_resolveflat(ff_node * list, map* vmap, generator_parser* const gp, lstack *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+int list_resolveflat(ff_node * list, map* vmap, generator_parser* const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
 {
 	int pn = *staxp;
 	fatal(lw_reset, stax, staxa, pn);
@@ -231,7 +232,7 @@ int list_resolveflat(ff_node * list, map* vmap, generator_parser* const gp, lsta
 	finally : coda;
 }
 
-int list_resolvetoflat(ff_node * list, map* vmap, generator_parser* const gp, lstack *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+int list_resolvetoflat(ff_node * list, map* vmap, generator_parser* const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
 {
 	int pn = *staxp;
 	fatal(lw_ensure, stax, staxa, pn);

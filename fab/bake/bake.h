@@ -33,7 +33,7 @@ int bake_bp(
 	  const bp * const bp
 	, map * const restrict vmap
 	, generator_parser * const gp
-	, lstack *** const restrict stax
+	, lwx *** const restrict stax
 	, int * const restrict staxa
 	, int staxp
 	, map * const restrict bakemap

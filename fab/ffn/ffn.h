@@ -25,6 +25,8 @@
 #include "listwise.h"
 #include "listwise/generator.h"
 
+#include "yyutil.h"
+
 #define restrict __restrict
 
 // FFN flags
@@ -71,10 +73,7 @@ struct ff_file;
 
 typedef struct ff_loc
 {
-	int				f_lin;
-	int				f_col;
-	int				l_lin;
-	int				l_col;
+	yyu_location;
 
 	struct ff_file *	ff;
 } __attribute__((packed)) ff_loc;
@@ -254,4 +253,3 @@ void ffn_dump(ff_node * const restrict root)
 
 #undef restrict
 #endif
-

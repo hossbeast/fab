@@ -439,7 +439,9 @@ int args_parse(int argc, char** argv)
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_cycles		= DEFAULT_MODE_CYCLES;
 	g_args.mode_paths			= DEFAULT_MODE_PATHS;
+#if DEBUG
 	g_args.mode_errors		= DEFAULT_MODE_ERRORS;
+#endif
 #if DEVEL
 	g_args.mode_bslic			= DEFAULT_MODE_BSLIC;
 	g_args.mode_sanity		= DEFAULT_MODE_SANITY;

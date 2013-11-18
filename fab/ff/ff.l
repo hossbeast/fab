@@ -26,6 +26,9 @@
 	#include "log.h"
 	#include "macros.h"
 
+	// contains much of the implementation of the scanner
+	#include "yyutil.h"
+
 	#define TOPSTATE(x) (x->states_n ? x->states[x->states_n-1] : 0)
 	#define STATENAME(x)																			\
 		  x == INITIAL					? "INITIAL"											\

@@ -528,7 +528,7 @@ int bp_eval(bp * const bp)
 	finally : coda;
 }
 
-int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
+int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
 	int tsl				= 0;		// thread count
 	int tot				= 0;		// total targets

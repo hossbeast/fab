@@ -51,7 +51,7 @@ static int dep_add_single(
 	, strstack * const restrict sstk
 	, map * vmap
 	, generator_parser * const gp
-	, lstack *** stax
+	, lwx *** stax
 	, int * staxa
 	, int staxp
 	, int pl
@@ -221,7 +221,7 @@ static int dep_add_multi(
 	, strstack * const restrict sstk
 	, map * vmap
 	, generator_parser * const gp
-	, lstack *** stax
+	, lwx *** stax
 	, int * staxa
 	, int staxp
 	, int pl
@@ -432,7 +432,7 @@ int dep_process(
 	, strstack * const sstk
 	, map * const vmap
 	, generator_parser * const gp
-	, lstack *** const stax
+	, lwx *** const stax
 	, int * const staxa
 	, int staxp
 	, gn ** const first

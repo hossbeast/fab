@@ -18,6 +18,10 @@
 #ifndef _LISTWISE_OBJECT_H
 #define _LISTWISE_OBJECT_H
 
+#include <stdint.h>
+
+#include "listwise.h"
+
 #define restrict __restrict
 
 /* LISTWISE OBJECT API

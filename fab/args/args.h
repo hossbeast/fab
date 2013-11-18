@@ -22,6 +22,12 @@
 
 struct selector;
 
+#if DEBUG
+# define UNWIND_ERRORS (g_args.mode_errors == MODE_ERRORS_IMMEDIATE)
+#else
+# define UNWIND_ERRORS 0
+#endif
+
 /*
 ** PER-GN : delete if newest file is older than <policy>  (pertains to a given gn)
 ** -------------------------------------------------------------------------------------------------------------------------------
@@ -92,6 +98,7 @@ struct selector;
 /* error reporting modes */																																											\
 	_MODE(MODE_ERRORS_UNWIND							, 0x0d	, x)		/* unwind stack when reporting errors */								\
 	_MODE(MODE_ERRORS_IMMEDIATE						, 0x0e	, x)		/* report on immediate error condition only */					\
+
 #endif
 
 #if DEVEL
@@ -102,6 +109,7 @@ struct selector;
 /* sanity checking modes */																																											\
 	_MODE(MODE_SANITY_DISABLE							, 0x13	, x)		/* disable sanity checks for liblistwise invocations */	\
 	_MODE(MODE_SANITY_ENABLE							, 0x14	, x)		/* enable sanity checks for liblistwise invocations */	\
+
 #endif
 
 enum {

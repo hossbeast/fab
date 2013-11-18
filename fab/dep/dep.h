@@ -51,7 +51,7 @@ int dep_process(
 	, strstack * const restrict sstk
 	, map * const restrict vmap
 	, generator_parser * const gp
-	, lstack *** const restrict stax
+	, lwx *** const restrict stax
 	, int * const restrict staxa
 	, int staxp
 	, gn ** const restrict first

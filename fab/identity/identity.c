@@ -31,15 +31,15 @@
 #include "params.h"
 #include "log.h"
 
-#define fail(fmt, ...)															\
-	do {																							\
-		fprintf(stderr, fmt "\n" 												\
-			, ##__VA_ARGS__																\
-		);																							\
-		if(g_args.mode_errors == MODE_ERRORS_IMMEDIATE)	\
-			return -1;																		\
-		else																						\
-			return 1;																			\
+#define fail(fmt, ...)				\
+	do {												\
+		fprintf(stderr, fmt "\n" 	\
+			, ##__VA_ARGS__					\
+		);												\
+		if(UNWIND_ERRORS)					\
+			return 1;								\
+		else											\
+			return -1;							\
 	} while(0)
 
 int identity_init()

@@ -25,10 +25,10 @@
 
 #define CODA_BAD_ACTION															\
 	do {																							\
-		if(g_args.mode_errors == MODE_ERRORS_IMMEDIATE)	\
-			_coda_r = -1;																	\
-		else																						\
+		if(UNWIND_ERRORS)																\
 			_coda_r = 1;																	\
+		else																						\
+			_coda_r = -1;																	\
 	} while(0)
 
 #define CODA_GOOD_ACTION														\
