@@ -122,35 +122,36 @@ int log_would(const uint64_t bits);
 //
 // writes messages to stderr if log_would([bits])
 //
-int log(const uint64_t bits, const char* fmt, ...)
-	__attribute__((nonnull(2)));
+int vlog(const uint64_t bits, const char* fmt, va_list va) __attribute__((nonnull(2)));
+int  log(const uint64_t bits, const char* fmt, ...)        __attribute__((nonnull(2)));
 
 /// log_error
 //
-// writes error messages (with trace) to stderr if log_would([bits])
+// writes messages with trace to stderr if log_would([bits])
 //
-int log_error(const uint64_t bits, const char * const restrict fmt, const char * const restrict function, const char * const restrict file, int line, ...)
-	__attribute__((nonnull));
+int vlog_trace(const uint64_t bits, const char * const restrict fmt, const char * const restrict function, const char * const restrict file, int line, va_list va) __attribute__((nonnull(2,3,4)));
+int  log_trace(const uint64_t bits, const char * const restrict fmt, const char * const restrict function, const char * const restrict file, int line, ...)        __attribute__((nonnull(2,3,4)));
 
 /// log_start
 //
 // begin writing a single log
 //
-int log_start(const uint64_t bits, const char* fmt, ...)
-	__attribute__((nonnull(2)));
+int vlog_start(const uint64_t bits, const char* fmt, va_list va) __attribute__((nonnull(2)));
+int  log_start(const uint64_t bits, const char* fmt, ...)        __attribute__((nonnull(2)));
 
 /// log_add
 //
 // append to the log under construction
 //
-int log_add(const char* fmt, ...)
-	__attribute__((nonnull(1)));
+int vlog_add(const char * fmt, va_list va) __attribute__((nonnull));
+int  log_add(const char * fmt, ...)	       __attribute__((nonnull(1)));
 
 /// log_finish
 //
 // complete the log begun with log_start
 //
-int log_finish(const char* fmt, ...);
+int vlog_finish(const char * fmt, va_list va) __attribute__((nonnull(1)));
+int  log_finish(const char * fmt, ...)        __attribute__((nonnull(1)));
 
 /// log_written
 //

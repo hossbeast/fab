@@ -32,6 +32,7 @@
 #include "ff/ff.list.tab.h"
 #include "ff/ff.lex.h"
 #include "ff/ff.tokens.h"
+#include "ff/ff.states.h"
 
 #include "args.h"
 #include "params.h"

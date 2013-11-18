@@ -35,7 +35,7 @@
 	_coda_r = 0
 
 #define HANDLE_ERROR(__fmt, ...)										\
-	log_error(L_ERROR, __fmt													\
+	log_trace(L_ERROR, __fmt													\
 		, __FUNCTION__																	\
 		, __FILE__																			\
 		, __LINE__																			\

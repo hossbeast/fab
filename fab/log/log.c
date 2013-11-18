@@ -195,7 +195,7 @@ static int start(const uint64_t e)
 	return R;
 }
 
-static int log_vstart(const uint64_t e)
+static int vstart(const uint64_t e)
 {
 	if(log_would(e))
 	{
@@ -208,16 +208,16 @@ static int log_vstart(const uint64_t e)
 	return 0;
 }
 
-static int log_vadd(const char* fmt, va_list va)
+static int vadd(const char* fmt, va_list va)
 {
 	return logvprintf(fmt, va);
 }
 
-static int log_vfinish(const char* fmt, va_list* va)
+static int vfinish(const char* fmt, void * va)
 {
 	int R = 0;
 	if(fmt)
-		R = log_vadd(fmt, *va);
+		R = vadd(fmt, *(va_list*)va);
 
 	if((o_e & L_COLOR_VALUE) && COLORHEX(o_e))
 	{
@@ -234,7 +234,7 @@ static int log_vfinish(const char* fmt, va_list* va)
 	return R;
 }
 
-static void log_describe(struct filter * f)
+static void describe(struct filter * f)
 {
 	char buf[256];
 
@@ -265,7 +265,6 @@ static void log_describe(struct filter * f)
 
 	log(L_INFO, "%.*s", l, s);
 }
-
 
 //
 // [[ public ]]
@@ -373,7 +372,7 @@ void log_parse(char * args, int args_len)
 						f->o = args[x];
 						f->m = lhs == ' ' ? '(' : lhs;
 
-						log_describe(f);
+						describe(f);
 					}
 				}
 			}
@@ -451,14 +450,32 @@ int log_would(const uint64_t bits)
 	return r;
 }
 
-int log_start(const uint64_t e, const char* fmt, ...)
+int vlog_start(const uint64_t e, const char* fmt, va_list va) 
 {
 	int R = 0;
-	if((R = log_vstart(e)))
+	if((R = vstart(e)))
 	{
-		va_list va;
-		va_start(va, fmt);
-		return R + log_vadd(fmt, va);
+		return R + vadd(fmt, va);
+	}
+
+	return 0;
+}
+
+int log_start(const uint64_t e, const char* fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	int r = vlog_start(e, fmt, va);
+	va_end(va);
+
+	return r;
+}
+
+int vlog_add(const char* fmt, va_list va) 
+{
+	if(log_would(o_e))
+	{
+		return vadd(fmt, va);
 	}
 
 	return 0;
@@ -466,11 +483,19 @@ int log_start(const uint64_t e, const char* fmt, ...)
 
 int log_add(const char* fmt, ...)
 {
+	va_list va;
+	va_start(va, fmt);
+	int r = vlog_add(fmt, va);
+	va_end(va);
+
+	return r;
+}
+
+int vlog_finish(const char * fmt, va_list va)
+{
 	if(log_would(o_e))
 	{
-		va_list va;
-		va_start(va, fmt);
-		return log_vadd(fmt, va);
+		return vfinish(fmt, &va);
 	}
 
 	return 0;
@@ -478,53 +503,63 @@ int log_add(const char* fmt, ...)
 
 int log_finish(const char* fmt, ...)
 {
-	if(log_would(o_e))
-	{
-		va_list va;
-		if(fmt)
-			va_start(va, fmt);
+	va_list va;
+	va_start(va, fmt);
+	int r = vlog_finish(fmt, va);
+	va_end(va);
 
-		return log_vfinish(fmt, &va);
+	return r;
+}
+
+int vlog_trace(const uint64_t e, const char * const fmt, const char * const function, const char * const file, int line, va_list va)
+{
+	if(vstart(e))
+	{
+		vadd(fmt, va);
+		log_add(" in %s", function);
+
+		if(UNWIND_ERRORS)
+			log_add(" at %s:%d", file, line);
+
+		return vfinish(0, 0);
 	}
 
 	return 0;
+}
+
+int log_trace(const uint64_t e, const char * const fmt, const char * const function, const char * const file, int line, ...)
+{
+	va_list va;
+	va_start(va, line);
+	int r = vlog_trace(e, fmt, function, file, line, va);
+	va_end(va);
+
+	return r;
+}
+
+int vlog(const uint64_t e, const char* fmt, va_list va)
+{
+	if(vstart(e))
+	{
+		return vfinish(fmt, &va);
+	}
+
+	return 0;
+}
+
+int log(const uint64_t e, const char* fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	int r = vlog(e, fmt, va);
+	va_end(va);
+
+	return r;
 }
 
 int log_written()
 {
 	return o_space_l;
-}
-
-int log(const uint64_t e, const char* fmt, ...)
-{
-	if(log_vstart(e))
-	{
-		va_list va;
-		va_start(va, fmt);
-		log_vadd(fmt, va);
-
-		return log_vfinish(0, 0);
-	}
-
-	return 0;
-}
-
-int log_error(const uint64_t e, const char * const fmt, const char * const function, const char * const file, int line, ...)
-{
-	if(log_vstart(e))
-	{
-		va_list va;
-		va_start(va, line);
-		log_vadd(fmt, va);
-
-		log_add(" in %s", function);
-		if(UNWIND_ERRORS)
-			log_add(" at %s:%d", file, line);
-
-		return log_vfinish(0, 0);
-	}
-
-	return 0;
 }
 
 void log_teardown()
