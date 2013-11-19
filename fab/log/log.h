@@ -150,8 +150,8 @@ int  log_add(const char * fmt, ...)	       __attribute__((nonnull(1)));
 //
 // complete the log begun with log_start
 //
-int vlog_finish(const char * fmt, va_list va) __attribute__((nonnull(1)));
-int  log_finish(const char * fmt, ...)        __attribute__((nonnull(1)));
+int vlog_finish(const char * fmt, va_list va);
+int  log_finish(const char * fmt, ...);
 
 /// log_written
 //

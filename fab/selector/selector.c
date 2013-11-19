@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "listwise.h"
+#include "listwise/xtra.h"
 
 #include "selector.h"
 
@@ -39,7 +40,7 @@ char * selector_string(const selector * const s, char * const dst, const size_t 
 	return dst;
 }
 
-int selector_process(selector * const s, int id, const ff_parser * const ffp, map * const tmap, lstack *** stax, int * staxa, int staxp)
+int selector_process(selector * const s, int id, const ff_parser * const ffp, map * const tmap, lwx *** stax, int * staxa, int staxp)
 {
 	int select(selector * s, gn * g)
 	{
@@ -97,17 +98,22 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 			LSTACK_ITERATE((*stax)[pn], y, go);
 			if(go)
 			{
+				char * rv;
+				int rl;
+				uint8_t rt;
+				fatal(lstack_readrow, (*stax)[pn], 0, y, &rv, &rl, &rt, 0, 0, 0, 0);
+
 				gn * g = 0;
-				if((*stax)[pn]->s[0].s[y].type)
+				if(rt)
 				{
-					g = *(void**)(*stax)[pn]->s[0].s[y].s;
+					g = *(void**)rv;
 				}
 				else
 				{
 					if(s->base == SELECTOR_BASE_CWD)
-						fatal(gn_lookup, (*stax)[pn]->s[0].s[y].s, g_params.cwd, &g);
+						fatal(gn_lookup, rv, rl, g_params.cwd, g_params.cwdl, &g);
 					else if(s->base == SELECTOR_BASE_FABFILE_DIR)
-						fatal(gn_lookup, (*stax)[pn]->s[0].s[y].s, g_params.init_fabfile_path->abs_dir, &g);
+						fatal(gn_lookup, rv, rl, g_params.init_fabfile_path->abs_dir, g_params.init_fabfile_path->abs_dirl, &g);
 				}
 
 				if(g)
@@ -128,9 +134,9 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 	{
 		gn * g = 0;
 		if(s->base == SELECTOR_BASE_CWD)
-			fatal(gn_lookup, s->s, g_params.cwd, &g);
+			fatal(gn_lookup, s->s, s->sl, g_params.cwd, g_params.cwdl, &g);
 		else if(s->base == SELECTOR_BASE_FABFILE_DIR)
-			fatal(gn_lookup, s->s, g_params.init_fabfile_path->abs_dir, &g);
+			fatal(gn_lookup, s->s, s->sl, g_params.init_fabfile_path->abs_dir, g_params.init_fabfile_path->abs_dirl, &g);
 
 		if(g)
 		{

@@ -121,14 +121,14 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 	{
 		char * sstr = 0;
 		fatal(strstack_string, sstk, 0, "/", "/", &sstr);
-		fatal(canon, canp + 4, canpl - 4, space, sizeof(space), sstr, CAN_SLASH | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_FORCE_DOT);
+		fatal(canon, canp + 4, canpl - 4, sstr, 0, space, sizeof(space), 0, CAN_SLASH | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_FORCE_DOT);
 
 		canp = space;
 		canpl = strlen(canp);
 	}
 	else
 	{
-		fatal(canon, canp, canpl, space, sizeof(space), base, CAN_REALPATH);
+		fatal(canon, canp, canpl, base, 0, space, sizeof(space), 0, CAN_REALPATH);
 
 		canp = space;
 		canpl = strlen(canp);
@@ -260,29 +260,29 @@ coda;
 /// public
 ///
 
-int gn_lookup(const char * const s, const char * const base, gn ** const r)
+int gn_lookup(const char * const s, int sl, const char * const base, int basel, gn ** const r)
 {
 	char can[512];
 
-	if(s[0] == '@')
+	if(sl > 0 && s[0] == '@')
 	{
 		// nofile
 		int d = 0;
 		d += snprintf(can + d, sizeof(can) - d, "/..");
 
 		const char * p[2] = { [0] = s + 1 };
-		while((p[1] = strstr(p[0], ".")))
+		while((p[1] = memchr(p[0], '.', sl - (p[0] - s))))
 		{
 			d += snprintf(can + d, sizeof(can) - d, "/%.*s", (int)(p[1] - p[0]), p[0]);
 			p[0] = p[1] + 1;
 		}
 
-		d += snprintf(can + d, sizeof(can) - d, "/%s", p[0]);
+		d += snprintf(can + d, sizeof(can) - d, "/%.*s", (int)(sl - (p[0] - s)), p[0]);
 	}
 	else
 	{
 		// relative to init-fabfile-path, or an absolute path
-		fatal(canon, s, 0, can, sizeof(can), base, CAN_REALPATH);
+		fatal(canon, s, sl, base, basel, can, sizeof(can), 0, CAN_REALPATH);
 	}
 
 	gn ** R = 0;

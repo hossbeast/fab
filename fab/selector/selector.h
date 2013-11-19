@@ -63,6 +63,7 @@ SELECTOR_BASE_TABLE(0)
 // node selectors
 typedef struct selector {
 	char * 			s;					// selector text
+	int					sl;					// selector text length
 	char				mode;				// '-' : remove, '+' : append
 	uint8_t			base;				// base for path resolution
 	uint32_t		lists;			// list(s) affected

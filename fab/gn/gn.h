@@ -263,17 +263,19 @@ extern union gn_nodes_t
 //  get graph nodes whose path(s) match certain criteria
 //
 // PARAMETERS
-//  s    - one of
-//          2) @s  - nofile specifier
-//          3) /s  - canonical path
-//          4)  s  - path relative to base
-//  base - to resolve relative paths
-//  r    - matching node, if any, returned here
+//  s     - one of
+//           2) @s  - nofile specifier
+//           3) /s  - canonical path
+//           4)  s  - path relative to base
+//  [sl]  - length of s (0 for strlen)
+//  base  - to resolve relative paths
+//  basel - length of base (0 for strlen)
+//  r     - matching node, if any, returned here
 //
 // RETURNS
 //  returns 0 on failure (memory, io) and 1 otherwise
 //
-int gn_lookup(const char * const restrict s, const char * const restrict base, gn ** const restrict r)
+int gn_lookup(const char * const restrict s, int sl, const char * const restrict base, int basel, gn ** const restrict r)
 	__attribute__((nonnull));
 
 /// gn_add

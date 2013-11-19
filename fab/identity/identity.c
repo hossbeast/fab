@@ -60,24 +60,28 @@ int identity_init()
 		fail("cannot get ruid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
 
 	g_params.ruid_name = strdup(pwd->pw_name);
+	g_params.ruid_namel = strlen(g_params.ruid_name);
 
 	errno = 0;
 	if((pwd = getpwuid(g_params.euid)) == 0)
 		fail("cannot get euid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
 
 	g_params.euid_name = strdup(pwd->pw_name);
+	g_params.euid_namel = strlen(g_params.euid_name);
 
 	errno = 0;
 	if((grp = getgrgid(g_params.rgid)) == 0)
 		fail("cannot get rgid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
 
 	g_params.rgid_name = strdup(grp->gr_name);
+	g_params.rgid_namel = strlen(g_params.rgid_name);
 
 	errno = 0;
 	if((grp = getgrgid(g_params.egid)) == 0)
 		fail("cannot get egid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
 
 	g_params.egid_name = strdup(grp->gr_name);
+	g_params.egid_namel = strlen(g_params.egid_name);
 
 #if DEVEL
 	// this check is omitted in DEVEL mode because valgrind requires non-setgid and non-setuid executables

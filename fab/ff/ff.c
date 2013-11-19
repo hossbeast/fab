@@ -96,8 +96,8 @@ static int ff_inputname(struct yyu_extra * restrict xtra, char ** restrict buf, 
 	
 	if(pp->ff)
 	{
-		*buf = pp->ff.idstring;
-		*bufl = pp->ff.idstringl;
+		*buf = pp->ff->idstring;
+		*bufl = strlen(*buf);
 	}
 	
 	return 0;
@@ -105,7 +105,7 @@ static int ff_inputname(struct yyu_extra * restrict xtra, char ** restrict buf, 
 
 static int ff_lvalstr(int token, void * restrict lval, struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
 {
-
+	return 0;
 }
 
 static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel)
@@ -191,9 +191,6 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	pp.orig_len = sz;
 	pp.r = 1;
 
-	fatal(xmalloc, &pp.loc, sizeof(*pp.loc));
-	fatal(xmalloc, &pp.last_loc, sizeof(*pp.last_loc));
-
 	// make available to the lexer
 	ff_yyset_extra(&pp, p->p);
 
@@ -248,9 +245,8 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		(*rff) = ff;
 	}
 
-finally:
-	free(pp.loc);
-	free(pp.last_loc);
+finally :
+	yyu_extra_destroy(&pp);
 coda;
 }
 
@@ -449,30 +445,6 @@ void ff_xfreeparser(ff_parser ** const p)
 {
 	ff_freeparser(*p);
 	*p = 0;
-}
-
-void ff_yyerror(void* loc, void * scanner, parse_param* pp, char const *err)
-{
-	pp->r = 0;
-	log(L_ERROR | L_FF, "%s", err);
-
-	int t						= pp->last_tok;
-	const char * s	= pp->last_s;
-	const char * e	= pp->last_e;
-	int l						= e - s;
-	ff_loc * lc			= pp->last_loc;
-
-	// log last good token
-	log(L_ERROR | L_FF, "last token - %s '%.*s' @ (%s)[%3d,%3d - %3d,%3d]"
-		, ff_tokname(pp->last_tok)
-		, MIN(t == ff_LF ? 0 : t == ff_WS ? 0 : l, 50)
-		, t == ff_LF ? "" : t == ff_WS ? "" : s
-		, ff_idstring(pp->ff)
-		, lc->f_lin + 1
-		, lc->f_col + 1
-		, lc->l_lin + 1
-		, lc->l_col + 1
-	);
 }
 
 char * ff_idstring(ff_file * const ff)

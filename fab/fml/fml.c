@@ -203,14 +203,15 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 
 		for(y = 0; y < fmlv->productsl; y++)
 		{
-			readrow
+			char * rv;
+			int rl;
+			fatal(lstack_getstring, ls, x, y, &rv, &rl);
 
 			gn * t = 0;
 			fatal(gn_add
 				, g_params.init_fabfile_path->abs_dir
 				, sstk
-				, ls->s[x].s[y].s
-				, ls->s[x].s[y].l
+				, rv, rl
 				, &t
 				, 0
 			);

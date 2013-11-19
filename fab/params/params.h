@@ -32,15 +32,20 @@ extern struct g_params_t
 	pid_t								ppid;												// pid of parent process
 	pid_t								sid;												// session-id
 	char *							cwd;												// cwd
+	int									cwdl;
 
 	uid_t								ruid;												// real-user-id
 	char *							ruid_name;
+	int									ruid_namel;
 	uid_t								euid;												// effective-user-id   (must be fabsys)
 	char *							euid_name;
+	int									euid_namel;
 	gid_t								rgid;												// real-group-id
 	char *							rgid_name;
+	int									rgid_namel;
 	gid_t								egid;												// effective-group-id  (must be fabsys)
 	char *							egid_name;
+	int									egid_namel;
 
 	path *							init_fabfile_path;					// path to initial fabfile
 } g_params;
