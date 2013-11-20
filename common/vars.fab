@@ -20,11 +20,12 @@ $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
 $VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
 
 #
-# debug enables
+# under dbug :
 #  - disable compiler optimizations
 #  - enable compiler debug symbol generation
-#  - the --errors-unwind and --errors-immediate options
-#  - these logging categories
+#  - include these options :
+#   - the --errors-unwind and --errors-immediate options
+#  - include these logging categories
 #    L_FMLTARG
 #    L_DGDEPS
 #    L_LWVOCAL
@@ -32,9 +33,11 @@ $VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
 $dbug						= [ 0 ]
 
 #
-# dvel includes debug, and also enables
-#  - the --bslic-fab option (for generating bakescripts that are part of the fab distribution)
-#  - these logging categories
+# under dvel : (dvel also includes dbug)
+#  - include these options :
+#   - the --bslic-fab option (for generating bakescripts that are part of the fab distribution)
+#   - the --sanity option
+#  - include these logging categories
 #     L_FFTOKN
 #     L_FFSTAT
 #     L_FFTREE
@@ -46,7 +49,6 @@ $dbug						= [ 0 ]
 #   - fab-listwise operators
 #   - fab-provided invocations
 #   - libraries (liblistwise.so via rpath)
-#  - the --sanity option
 #
 $dvel						= [ 0 ]
 
@@ -91,7 +93,7 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions [ $dliblistw
 	[ $dbug $dvel ~ s/1/-O0/y ]					# disable compiler optimizations
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
 	[ $dbug $dvel ~ s/1/-g/y ]					# enable debug symbol generation
-	[ $dbug $dvel ~ s/1/-DDBUG/y ]
+	[ $dbug $dvel ~ s/1/-DDEBUG/y ]
 	[       $dvel ~ s/1/-DDEVEL/y ]
 	[       $dvel ~ s/1/-DSANITY/y ]
 ]

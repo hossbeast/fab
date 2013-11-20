@@ -47,7 +47,7 @@ int ffproc(
     const ff_parser * const restrict ffp
 	, const path * const restrict inpath
   , map * const restrict vmap
-  , lstack *** const restrict stax
+  , lwx *** const restrict stax
   , int * const restrict staxa
   , int * const restrict staxp
   , gn ** restrict first
@@ -55,4 +55,3 @@ int ffproc(
 
 #undef restrict
 #endif
-

@@ -48,7 +48,7 @@
 static int dsc_execwave(
 	  map * vmap
 	, generator_parser * const  restrict gp
-	, lstack *** restrict stax
+	, lwx *** restrict stax
 	, int * restrict staxa
 	, int staxp
 	, ts ** restrict ts
@@ -241,7 +241,7 @@ static int count_dscv(int use_invalid)
 // public
 //
 
-int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
+int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
 	int tsl = 0;
 	int x;
@@ -277,7 +277,7 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * con
 	finally : coda;
 }
 
-int dsc_exec_entire(map * vmap, generator_parser * const gp, lstack *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
+int dsc_exec_entire(map * vmap, generator_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
 	gn ** cache = 0;
 	int		cachel = 0;

@@ -148,7 +148,7 @@ int lw_exec(generator * gen, char * tex, lwx ** ls)
 
 	// pass through listwise
 	log(L_LWVOCAL, "%s", tex);
-	fatal(lstack_exec_internal, gen, 0, 0, 0, ls, log_would(L_LWVOCAL));
+	fatal(listwise_exec_generator, gen, 0, 0, 0, ls, log_would(L_LWVOCAL));
 
 	finally : coda;
 }

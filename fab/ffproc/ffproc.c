@@ -24,6 +24,7 @@
 #include "var.h"
 #include "dep.h"
 #include "args.h"
+#include "params.h"
 
 #include "fab_control.h"
 #include "path.h"
@@ -31,9 +32,9 @@
 
 #define restrict __restrict
 
-static int procfile(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel);
+static int procfile(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel);
 
-static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, int star)
+static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, int star)
 {
 	int x;
 	int y;
@@ -154,7 +155,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 					path_xfree(&pth);
 					fatal(path_create
 						, &pth
-						, g_args.init_fabfile_path->abs_dir
+						, g_params.init_fabfile_path->abs_dir
 						, "%.*s"
 						, inv->l, inv->s
 					);
@@ -245,7 +246,7 @@ finally:
 coda;
 }
 
-int procfile(const ff_parser * const ffp, const path * const inpath, strstack * const sstk, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel)
+int procfile(const ff_parser * const ffp, const path * const inpath, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel)
 {
 	ff_file * ff = 0;
 
@@ -286,7 +287,7 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 /// public
 ///
 
-int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map * const vmap, lstack *** const stax, int * const staxa, int * const staxp, gn ** first)
+int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first)
 {
 	strstack * sstk = 0;
 

@@ -25,8 +25,10 @@
 #include <sys/stat.h>
 
 #include "listwise/object.h"
+#include "listwise/xtra.h"
 
 #include "args.h"
+#include "params.h"
 #include "ff.h"
 #include "gn.h"
 #include "gnlw.h"
@@ -70,7 +72,7 @@ int main(int argc, char** argv)
 	map *								vmap = 0;				// init-level map
 	map * 							bakemap = 0;		// bakedvars map
 	gn *								first = 0;			// first dependency mentioned
-	lstack **						stax = 0;				// listwise stacks
+	lwx **							stax = 0;				// listwise stacks
 	int									staxa = 0;
 	int 								staxp = 0;
 	ts **								ts = 0;
@@ -94,6 +96,9 @@ int main(int argc, char** argv)
 
 	int x;
 	int y;
+
+	// process parameter gathering
+	fatal(params_setup);
 
 	// get user identity of this process, assert user:group and permissions are set appropriately
 	fatal(identity_init);
@@ -137,7 +142,7 @@ int main(int argc, char** argv)
 	// unless LWVOCAL, arrange for liblistwise to write to /dev/null
 	if(!log_would(L_LWVOCAL))
 	{
-		if((listwise_err_fd = open("/dev/null", O_WRONLY)) == -1)
+		if((listwise_error_fd = open("/dev/null", O_WRONLY)) == -1)
 			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
 	}
 
@@ -207,14 +212,14 @@ int main(int argc, char** argv)
 
 	// use up one list and populate the # variable (relative directory path to the initial fabfile)
 	fatal(lw_reset, &stax, &staxa, staxp);
-	fatal(lstack_add, stax[staxp], g_args.init_fabfile_path->abs_dir, g_args.init_fabfile_path->abs_dirl);
+	fatal(lstack_add, stax[staxp], g_params.init_fabfile_path->abs_dir, g_params.init_fabfile_path->abs_dirl);
 	fatal(var_set, rmap, "#", stax[staxp++], 1, 0, 0);
 
 	// vmap for the initial fabfile is the first (and only) direct descendant of rootmap
 	fatal(var_clone, rmap, &vmap);
 
 	// parse, starting with the initial fabfile, construct the graph
-	fatal(ffproc, ffp, g_args.init_fabfile_path, vmap, &stax, &staxa, &staxp, &first);
+	fatal(ffproc, ffp, g_params.init_fabfile_path, vmap, &stax, &staxa, &staxp, &first);
 
 	// process hashblocks for regular fabfiles that have changed
 	fatal(ff_regular_reconcile);
@@ -252,7 +257,7 @@ int main(int argc, char** argv)
 			fatal(selector_process, &g_args.selectors[x], x, ffp, smap, &stax, &staxa, pn);
 
 		if(g_args.selectors_arequery)
-			qterm();		// terminate successfully
+			qleave();		// terminate successfully
 
 		fatal(selector_finalize
 			, &fabrications, &fabricationsl
@@ -295,7 +300,7 @@ int main(int argc, char** argv)
 	{
 		log_parse("+DSC", 0);
 		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
-		qterm();	// terminate successfully
+		qleave();	// terminate successfully
 	}
 	
 	// process invalidations
@@ -315,7 +320,7 @@ int main(int argc, char** argv)
 		for(x = 0; x < inspectionsl; x++)
 			gn_dump((*inspections[x]));
 
-		qterm();	// terminate successfully
+		qleave();	// terminate successfully
 	}
 
 	//
@@ -414,8 +419,8 @@ finally:
 	for(x = 0; x < staxa; x++)
 	{
 		if(stax[x])
-			free(stax[x]->ptr);
-		lstack_free(stax[x]);
+			free(lwx_getptr(stax[x]));
+		lwx_free(stax[x]);
 	}
 	free(stax);
 

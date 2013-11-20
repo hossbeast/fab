@@ -24,6 +24,7 @@
 	#include "ff.parse.h"
 	#include "ffn.h"
 
+	#include "log.h"
 	#include "xstring.h"
 	#include "xmem.h"
 

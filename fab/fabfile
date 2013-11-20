@@ -37,7 +37,7 @@ $cflags					= [ $cflags	-fno-builtin-log [ $dfab $dcommon $dliblistwise ~ lsr/c/
 	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
 	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
 ]
-$lflags					= [ $liblistwise ]
+$lflags					= [ $lflags $liblistwise ]
 $fab						= [ $dfab/fab ~ j ]
 
 # standard files - standard compilation

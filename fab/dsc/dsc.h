@@ -43,7 +43,7 @@
 int dsc_exec_entire(
 	  map * restrict vmap
 	, generator_parser * const restrict
-	, lstack *** restrict stax
+	, lwx *** restrict stax
 	, int * restrict staxa
 	, int staxp
 	, ts *** restrict ts
@@ -74,7 +74,7 @@ int dsc_exec_specific(
 	, int listl
 	, map * restrict vmap
 	, generator_parser * const restrict
-	, lstack *** restrict stax
+	, lwx *** restrict stax
 	, int * restrict staxa
 	, int staxp
 	, ts *** restrict ts

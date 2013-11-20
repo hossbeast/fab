@@ -61,8 +61,10 @@ static void usage(int valid, int version, int help, int operators, struct optype
 if(version)
 {
 	printf(" fab-"
-#if DBUG
-	XQUOTE(FABVERSIONS) "+DBUG"
+#if DEVEL
+	XQUOTE(FABVERSIONS) "+DEVEL"
+#elif DEBUG
+	XQUOTE(FABVERSIONS) "+DEBUG"
 #else
 	XQUOTE(FABVERSIONS)
 #endif

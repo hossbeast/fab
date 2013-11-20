@@ -361,7 +361,7 @@ int args_parse(int argc, char** argv)
 				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
 				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
 
-				, { "sanity"											, no_argument	, &g_args.mode_sanity	, MODE_ERRORS_IMMEDIATE }
+				, { "sanity"											, no_argument	, &g_args.mode_sanity	, MODE_SANITY_DISABLE }
 #endif
 
 /* program switches */
@@ -448,6 +448,7 @@ int args_parse(int argc, char** argv)
 #endif
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create_init, &fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
+	fatal(path_copy, &g_params.init_fabfile_path, fabpath);
 
 	// default invokedirs - head of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
@@ -534,7 +535,8 @@ int args_parse(int argc, char** argv)
 		}
 		else if(x == 'f')
 		{
-			/* this was handled in main */
+			path_xfree(&g_params.init_fabfile_path);
+			fatal(path_create_init, &g_params.init_fabfile_path, g_params.cwd, "%s", optarg);
 		}
 		else if(x == 'h')
 		{

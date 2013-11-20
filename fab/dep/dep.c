@@ -24,9 +24,11 @@
 #include <unistd.h>
 
 #include "listwise/object.h"
+#include "listwise/xtra.h"
 
 #include "dep.h"
 
+#include "params.h"
 #include "args.h"
 #include "gnlw.h"
 #include "fml.h"
@@ -73,36 +75,31 @@ static int dep_add_single(
 	LSTACK_ITERATE((*stax)[pl], i, goa);
 	if(goa)
 	{
-		void * A = 0;
-		int Al = 0;
-		int At = 0;
-		if((*stax)[pl]->s[0].s[i].type)
-		{
-			A = *(void**)(*stax)[pl]->s[0].s[i].s;
-			At = LISTWISE_TYPE_GNLW;
-		}
+		char * As;
+		void * Ap;
+		int Al;
+		uint8_t At;
+		fatal(lstack_readrow, (*stax)[pl], 0, i, &As, &Al, &At, 0, 0, 0, 0);
+
+		if(At)
+			Ap = *(void**)As;
 		else
-		{
-			A = (*stax)[pl]->s[0].s[i].s;
-			Al = (*stax)[pl]->s[0].s[i].l;
-		}
+			Ap = As;
 
 		LSTACK_ITERATE((*stax)[pr], j, gob);
 		if(gob)
 		{
-			void * B = 0;
+			char * Bs = 0;
+			void * Bp = 0;
 			int Bl = 0;
-			int Bt = 0;
-			if((*stax)[pr]->s[0].s[j].type)
-			{
-				B = *(void**)(*stax)[pr]->s[0].s[j].s;
-				Bt = LISTWISE_TYPE_GNLW;
-			}
+			uint8_t Bt = 0;
+
+			fatal(lstack_readrow, (*stax)[pr], 0, j, &Bs, &Bl, &Bt, 0, 0, 0, 0);
+
+			if(Bt)
+				Bp = *(void**)Bs;
 			else
-			{
-				B = (*stax)[pr]->s[0].s[j].s;
-				Bl = (*stax)[pr]->s[0].s[j].l;
-			}
+				Bp = Bs;
 
 			int newa = 0;
 			int newb = 0;
@@ -113,12 +110,12 @@ static int dep_add_single(
 				// dependencies arising from an FFN_DEPENDENCY node in a DDISC fabfile yield paths which
 				// are specified relative to base path of the DDISC node itself
 				fatal(gn_edge_add
-					, g_args.init_fabfile_path->abs_dir
+					, g_params.init_fabfile_path->abs_dir
 					, sstk
-					, &A
+					, &Ap
 					, Al
 					, At
-					, &B
+					, &Bp
 					, Bl
 					, Bt
 					, ffn
@@ -135,12 +132,12 @@ static int dep_add_single(
 				// dependencies arising from an FFN_DEPENDENCY node in a regular fabfile yield paths which
 				// are specified relative to the absolute directory of the fabfile
 				fatal(gn_edge_add
-					, g_args.init_fabfile_path->abs_dir
+					, g_params.init_fabfile_path->abs_dir
 					, sstk
-					, &A
+					, &Ap
 					, Al
 					, At
-					, &B
+					, &Bp
 					, Bl
 					, Bt
 					, ffn
@@ -153,8 +150,8 @@ static int dep_add_single(
 				);
 
 				// update affected lists
-				fatal(ff_regular_enclose_gn, ffn->loc.ff, A);
-				fatal(ff_regular_enclose_gn, ffn->loc.ff, B);
+				fatal(ff_regular_enclose_gn, ffn->loc.ff, Ap);
+				fatal(ff_regular_enclose_gn, ffn->loc.ff, Bp);
 			}
 
 			// if A was a string, gn_edge_add has just made it a gn*
@@ -163,7 +160,7 @@ static int dep_add_single(
 			if(block && block->block)
 			{
 				// attempt to add the relation to the block
-				if(depblock_addrelation(block, ((gn*)A)->path, ((gn*)B)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) != 0)
+				if(depblock_addrelation(block, ((gn*)Ap)->path, ((gn*)Bp)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) != 0)
 				{
 					log(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
 					xfree(&block->block);
@@ -181,7 +178,7 @@ static int dep_add_single(
 			}
 			if(first)
 			{
-				*first = A;
+				*first = Ap;
 				first = 0;
 			}
 
@@ -204,8 +201,8 @@ static int dep_add_single(
 					, ffn->loc.f_col + 1
 					, ffn->loc.l_lin + 1
 					, ffn->loc.l_col + 1
-					, ((gn*)A)->idstring
-					, ((gn*)B)->idstring
+					, ((gn*)Ap)->idstring
+					, ((gn*)Bp)->idstring
 				);
 			}
 		}
@@ -240,13 +237,14 @@ static int dep_add_multi(
 	int pr = staxp + 1;		// right hand side
 
 	int x;
-	for(x = 0; x < (*stax)[pl]->l; x++)
+	for(x = 0; x < lwx_lists((*stax)[pl]); x++)
 	{
 		// prepare space for new variable definition list
 		fatal(lw_reset, stax, staxa, pli);
 
 		// populate the "<" variable (left-hand side)
-		newal = (*stax)[pl]->s[x].l;
+//		newal = (*stax)[pl]->s[x].l;
+		newal = lwx_rows((*stax)[pl], x);
 		if(newaa < newal)
 		{
 			newaa = newal;
@@ -256,20 +254,25 @@ static int dep_add_multi(
 		
 		int i;
 		int j;
-		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
+		for(i = 0; i < lwx_rows((*stax)[pl], x); i++)
 		{
+			char * rv;
+			int rl;
+			uint8_t rt;
+			fatal(lstack_readrow, (*stax)[pl], x, i, &rv, &rl, &rt, 0, 0, 0, 0);
+
 			gn * r = 0;
-			if((*stax)[pl]->s[x].s[i].type)
+			if(rt)
 			{
-				r = *(void**)(*stax)[pl]->s[x].s[i].s;
+				r = *(void**)rv;
 			}
 			else
 			{
 				fatal(gn_add
-					, g_args.init_fabfile_path->abs_dir
+					, g_params.init_fabfile_path->abs_dir
 					, sstk
-					, (*stax)[pl]->s[x].s[i].s
-					, (*stax)[pl]->s[x].s[i].l
+					, rv
+					, rl
 					, &r
 					, &newa[i]
 				);
@@ -283,38 +286,32 @@ static int dep_add_multi(
 		int pn = pr;
 		fatal(list_resolveflat, ffn->feeds, vmap, gp, stax, staxa, &pn, 0, 0);
 
-		for(i = 0; i < (*stax)[pl]->s[x].l; i++)
+		for(i = 0; i < lwx_rows((*stax)[pl], x); i++)
 		{
-			void * A = 0;
+			char * As = 0;
+			void * Ap = 0;
 			int Al = 0;
-			int At = 0;
-			if((*stax)[pl]->s[x].s[i].type)
-			{
-				A = *(void**)(*stax)[pl]->s[x].s[i].s;
-				At = LISTWISE_TYPE_GNLW;
-			}
+			uint8_t At = 0;
+			fatal(lstack_readrow, (*stax)[pl], x, i, &As, &Al, &At, 0, 0, 0, 0);
+
+			if(At)
+				Ap = *(void**)As;
 			else
-			{
-				A = (*stax)[pl]->s[x].s[i].s;
-				Al = (*stax)[pl]->s[x].s[i].l;
-			}
+				Ap = As;
 
 			LSTACK_ITERATE((*stax)[pr], j, gob);
 			if(gob)
 			{
-				void * B = 0;
+				char * Bs = 0;
+				void * Bp = 0;
 				int Bl = 0;
-				int Bt = 0;
-				if((*stax)[pr]->s[0].s[j].type)
-				{
-					B = *(void**)(*stax)[pr]->s[0].s[j].s;
-					Bt = LISTWISE_TYPE_GNLW;
-				}
+				uint8_t Bt = 0;
+				fatal(lstack_readrow, (*stax)[pl], 0, j, &Bs, &Bl, &Bt, 0, 0, 0, 0);
+
+				if(Bt)
+					Bp = *(void**)Bs;
 				else
-				{
-					B = (*stax)[pr]->s[0].s[j].s;
-					Bl = (*stax)[pr]->s[0].s[j].l;
-				}
+					Bp = Bs;
 
 				int newb = 0;
 				int newr = 0;
@@ -322,12 +319,12 @@ static int dep_add_multi(
 				if(ffn->loc.ff->type == FFT_DDISC)
 				{
 					fatal(gn_edge_add
-						, g_args.init_fabfile_path->abs_dir
+						, g_params.init_fabfile_path->abs_dir
 						, sstk
-						, &A
+						, &Ap
 						, Al
 						, At
-						, &B
+						, &Bp
 						, Bl
 						, Bt
 						, ffn
@@ -342,12 +339,12 @@ static int dep_add_multi(
 				else
 				{
 					fatal(gn_edge_add
-						, g_args.init_fabfile_path->abs_dir
+						, g_params.init_fabfile_path->abs_dir
 						, sstk
-						, &A
+						, &Ap
 						, Al
 						, At
-						, &B
+						, &Bp
 						, Bl
 						, Bt
 						, ffn
@@ -360,8 +357,8 @@ static int dep_add_multi(
 					);
 
 					// update affected lists
-					fatal(ff_regular_enclose_gn, ffn->loc.ff, A);
-					fatal(ff_regular_enclose_gn, ffn->loc.ff, B);
+					fatal(ff_regular_enclose_gn, ffn->loc.ff, Ap);
+					fatal(ff_regular_enclose_gn, ffn->loc.ff, Bp);
 				}
 
 				// if A was a string, gn_edge_add has just made it a gn*
@@ -370,7 +367,7 @@ static int dep_add_multi(
 				if(block && block->block)
 				{
 					// attempt to add the relation to the block
-					if(depblock_addrelation(block, ((gn*)A)->path, ((gn*)B)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) != 0)
+					if(depblock_addrelation(block, ((gn*)Ap)->path, ((gn*)Bp)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) != 0)
 					{
 						log(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
 						xfree(&block->block);
@@ -388,7 +385,7 @@ static int dep_add_multi(
 				}
 				if(first)
 				{
-					*first = A;
+					*first = Ap;
 					first = 0;
 				}
 
@@ -411,8 +408,8 @@ static int dep_add_multi(
 						, ffn->loc.f_col + 1
 						, ffn->loc.l_lin + 1
 						, ffn->loc.l_col + 1
-						, ((gn*)A)->idstring
-						, ((gn*)B)->idstring
+						, ((gn*)Ap)->idstring
+						, ((gn*)Bp)->idstring
 					);
 				}
 			}
