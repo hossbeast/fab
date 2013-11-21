@@ -217,7 +217,7 @@ static int vfinish(const char* fmt, void * va)
 {
 	int R = 0;
 	if(fmt)
-		R = vadd(fmt, *(va_list*)va);
+		R = vadd(fmt, *(void**)va);
 
 	if((o_e & L_COLOR_VALUE) && COLORHEX(o_e))
 	{

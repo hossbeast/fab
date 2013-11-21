@@ -23,7 +23,7 @@
 struct selector;
 
 #if DEBUG
-# define UNWIND_ERRORS (g_args.mode_errors == MODE_ERRORS_IMMEDIATE)
+# define UNWIND_ERRORS (g_args.mode_errors == MODE_ERRORS_UNWIND)
 #else
 # define UNWIND_ERRORS 0
 #endif
