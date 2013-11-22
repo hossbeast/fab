@@ -72,7 +72,7 @@ int tmp_setup()
 			if(typeflag != FTW_D)
 			{
 				// something other than a directory
-				log(L_ERROR, "unexpected file %s", fpath);
+				error("unexpected file %s", fpath);
 				return FTW_STOP;
 			}
 			else if(ftwbuf->level == 0)
@@ -85,7 +85,7 @@ int tmp_setup()
 			if(sscanf(fpath + ftwbuf->base, "%d%n", &pid, &n) != 1 || (ftwbuf->base + n) != strlen(fpath))
 			{
 				// dirname consists of something other than <pid>
-				log(L_ERROR, "unexpected file %s", fpath);
+				error("unexpected file %s", fpath);
 				return FTW_STOP;
 			}
 
@@ -100,7 +100,7 @@ int tmp_setup()
 			return FTW_SKIP_SUBTREE;
 		};
 
-		fatal_os(nftw, XQUOTE(FABTMPDIR) "/pid", fn, 32, FTW_ACTIONRETVAL);
+		fatal(xnftw, XQUOTE(FABTMPDIR) "/pid", fn, 32, FTW_ACTIONRETVAL);
 	}
 
 	// ensure directories for my own pid exist
@@ -120,7 +120,7 @@ int tmp_setup()
 				if(typeflag != FTW_D)
 				{
 					// something other than a directory
-					log(L_ERROR, "unexpected file %s", fpath);
+					error("unexpected file %s", fpath);
 					return FTW_STOP;
 				}
 
@@ -142,8 +142,8 @@ int tmp_setup()
 			return FTW_CONTINUE;
 		};
 
-		lvl = 3; fatal_os(nftw, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL);
-		lvl = 1; fatal_os(nftw, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL);
+		lvl = 3; fatal(xnftw, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL);
+		lvl = 1; fatal(xnftw, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL);
 	}
 
 	// resume user identity

@@ -17,7 +17,6 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <ftw.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -25,6 +24,22 @@
 
 #include "log.h"
 #include "fab_control.h"
+
+int xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
+{
+	// depth-first
+	int r;
+	if((r = nftw(dirpath, fn, nopenfd, flags | FTW_ACTIONRETVAL)) == FTW_STOP)
+	{
+		qfail();	// fn should have called error()
+	}
+	else if(r != 0)
+	{
+		fail("nftw failed with: [%d]", r);
+	}
+
+	finally : coda;
+}
 
 int rmdir_recursive(const char * const dirpath, int rmself)
 {
@@ -56,18 +71,7 @@ int rmdir_recursive(const char * const dirpath, int rmself)
 		return FTW_STOP;
 	};
 	
-	// depth-first
-	int r;
-	if((r = nftw(dirpath, fn, 32, FTW_ACTIONRETVAL | FTW_DEPTH | FTW_PHYS)) == FTW_STOP)
-	{
-		qfail();	// already errored in fn
-	}
-	else if(r != 0)
-	{
-		fail("nftw failed with: [%d]", r);
-	}
-
-	finally : coda;
+	return xnftw(dirpath, fn, 32, FTW_DEPTH | FTW_PHYS);
 }
 
 int mkdirp(const char * const path, mode_t mode)

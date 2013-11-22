@@ -41,11 +41,9 @@ static int ensure(lwx *** stax, int * staxa, int staxp)
 		(*staxa) = ns;
 	}
 
-/*
 	// ensure lstack at this spot is allocated
 	if(!(*stax)[staxp])
-		fatal(lstack_create, &(*stax)[staxp]);
-*/
+		fatal(lwx_alloc, &(*stax)[staxp]);
 
 	finally : coda;
 }

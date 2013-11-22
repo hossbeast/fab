@@ -71,6 +71,14 @@ int listwise_exec(
 )
   __attribute__((nonnull(1, 6)));
 
+/// lwx_alloc
+//
+// SUMMARY
+//  allocate an lw context
+//
+int lwx_alloc(lwx ** const restrict)
+  __attribute__((nonnull));
+
 /// lwx_free
 //
 // SUMMARY

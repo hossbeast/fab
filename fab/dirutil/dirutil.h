@@ -18,9 +18,24 @@
 #ifndef _DIRUTIL_H
 #define _DIRUTIL_H
 
+#include <ftw.h>
 #include <sys/types.h>
 
 #define restrict __restrict
+
+/// nftw
+//
+// SUMMARY
+//  call nftw with fatal-izeable semantics
+//
+// NOTES
+//  flags is OR'ed with FTW_ACTIONRETVAL
+//
+// RETURNS
+//  nonzero on error
+//
+int xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
+	__attribute__((nonnull));
 
 /// rmdir_recursive
 //

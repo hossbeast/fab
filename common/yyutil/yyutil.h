@@ -79,11 +79,14 @@ typedef struct yyu_extra
 	// whether yyu should include scanner line number in output messages
 	int							output_line;
 
-	// yyu calls this function to write info messages
-	void						(*info)(char * fmt, ...);
+	// yyu calls this function to log statechange messages
+	void						(*log_state)(char * fmt, ...);
 
-	// yyu calls this function to write error messages
-	void						(*error)(char * fmt, ...);
+	// yyu calls this function to log token messages
+	void						(*log_token)(char * fmt, ...);
+
+	// yyu calls this function to write error messages (from yyerror)
+	void						(*log_error)(char * fmt, ...);
 
 	// yyu calls this function to get a token name from a token
 	const char *		(*tokname)(int token);
@@ -91,8 +94,8 @@ typedef struct yyu_extra
 	// yyu calls this function to get a state name from a state
 	const char *		(*statename)(int token);
 
-	// yyu calls this function to get a name for the input for location messages
-	int							(*inputname)(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);
+	// yyu calls this function to get a description of the input for location messages
+	int							(*inputstr)(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);
 
 	// yyu calls this function get a textual description of a scanned token
 	int							(*lvalstr)(int token, void * restrict lval, struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);

@@ -52,7 +52,7 @@ int API listwise_exec_generator(
 
 	// list stack allocation
 	if(!*lx)
-		fatal(xmalloc, lx, sizeof(*lx[0]));
+		fatal(lwx_alloc, lx);
 
 	// write init elements to top of list stack
 	int x;

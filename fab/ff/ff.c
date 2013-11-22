@@ -64,15 +64,23 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 // [[ static ]]
 //
 
-static void ff_info(char * fmt, ...)
+static void ff_log_token(char * fmt, ...)
 {
   va_list va;
   va_start(va, fmt);
-	vlog(L_INFO, fmt, va);
+	vlog(L_FFTOKN, fmt, va);
   va_end(va);
 }
 
-static void ff_error(char * fmt, ...)
+static void ff_log_state(char * fmt, ...)
+{
+  va_list va;
+  va_start(va, fmt);
+	vlog(L_FFSTAT, fmt, va);
+  va_end(va);
+}
+
+static void ff_log_error(char * fmt, ...)
 {
   va_list va;
   va_start(va, fmt);
@@ -90,7 +98,7 @@ static const char * ff_statename(int state)
   return ff_statenames[state];
 }
 
-static int ff_inputname(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
+static int ff_inputstr(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
 {
   parse_param * pp = (parse_param*)xtra;
 	
@@ -111,12 +119,14 @@ static int ff_lvalstr(int token, void * restrict lval, struct yyu_extra * restri
 static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel)
 {
 	parse_param pp = {
-	    .info				= ff_info
-		, .error			= ff_error
-		, .tokname		= ff_tokenname
-		, .statename	= ff_statename
-		, .inputname	= ff_inputname
-		, .lvalstr		= ff_lvalstr
+		  .output_line	= 1
+	  , .log_token		= ff_log_token
+		, .log_state		= ff_log_state
+		, .log_error		= ff_log_error
+		, .tokname			= ff_tokenname
+		, .statename		= ff_statename
+		, .inputstr			= ff_inputstr
+		, .lvalstr			= ff_lvalstr
 	};
 
 	// create state specific to this parse

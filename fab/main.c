@@ -146,13 +146,6 @@ int main(int argc, char** argv)
 			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
 	}
 
-	// 
-	// >> attach to daemon <<
-	//  - parsed fabfiles
-	//  - graph nodes
-	//   - dsc results
-	//
-	
 	// create the rootmap
 	fatal(var_root, &rmap);
 

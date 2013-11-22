@@ -17,7 +17,14 @@
 
 #include "listwise/internal.h"
 
+#include "xmem.h"
+
 #define restrict __restrict
+
+int API lwx_alloc(lwx ** const lx)
+{
+	return xmalloc(lx, sizeof(**lx));
+}
 
 uint64_t API lwx_getflags(lwx * const lx)
 {

@@ -108,7 +108,20 @@ CODA_FINALLY							\
 			goto CODA_BAD;											\
 		}																			\
 	} while(0)
- 
+
+#define fatal_args(x, ...)								\
+	do {																		\
+		int __r = x(__VA_ARGS__);							\
+		if(__r != 0)													\
+		{																			\
+			if(__r > 0)													\
+			{																		\
+				HANDLE_ERROR(#x " failed");				\
+			}																		\
+			goto CODA_BAD;											\
+		}																			\
+	} while(0) 
+
 /// qfatal
 //
 // SUMMARY
@@ -153,5 +166,7 @@ CODA_FINALLY							\
 			goto CODA_BAD;																						\
 		}																														\
 	} while(0)
+
+#define assert(x, 
 
 #endif

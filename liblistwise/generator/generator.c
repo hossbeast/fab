@@ -62,7 +62,7 @@ static void write_error(char * fmt, ...)
 	dprintf(listwise_error_fd, "\n");
 }
 
-static int generator_inputname(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
+static int generator_inputstr(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
 {
 	parse_param * pp = (parse_param*)xtra;
 
@@ -125,14 +125,14 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 
 	// results struct for this parse
 	parse_param pp = {
-		  .r = 0
-		, .output_line	= 1
-		, .info				= write_info
-		, .error			= write_error
-		, .tokname		= generator_tokenname
-		, .statename	= generator_statename
-		, .inputname	= generator_inputname
-		, .lvalstr		= generator_lvalstr
+		  .output_line	= 1
+		, .log_state		= write_info
+		, .log_token		= write_info
+		, .log_error		= write_error
+		, .tokname			= generator_tokenname
+		, .statename		= generator_statename
+		, .inputstr			= generator_inputstr
+		, .lvalstr			= generator_lvalstr
 	};
 
 	// specific exception for "shebang" line exactly at the beginning
