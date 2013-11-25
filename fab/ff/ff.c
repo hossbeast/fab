@@ -119,8 +119,7 @@ static int ff_lvalstr(int token, void * restrict lval, struct yyu_extra * restri
 static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel)
 {
 	parse_param pp = {
-		  .output_line	= 1
-	  , .log_token		= ff_log_token
+	    .log_token		= ff_log_token
 		, .log_state		= ff_log_state
 		, .log_error		= ff_log_error
 		, .tokname			= ff_tokenname
@@ -128,6 +127,11 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		, .inputstr			= ff_inputstr
 		, .lvalstr			= ff_lvalstr
 	};
+
+#if DEBUG
+	// causes yyerror to include the scanner line number where the last token was lexed
+	pp.output_line = 1;
+#endif
 
 	// create state specific to this parse
 	void* state = 0;
@@ -199,37 +203,41 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	pp.ff = ff;
 	pp.orig_base = b;
 	pp.orig_len = sz;
-	pp.r = 1;
 
 	// make available to the lexer
 	ff_yyset_extra(&pp, p->p);
 
+	// return value from yyparse - whether the input was reduced according to the grammar
+	int r = 0;
 	if(ff->type == FFT_DDISC)
 	{
-		ff_dsc_yyparse(p->p, &pp);	// parse with ff/ff.dsc.y
+		r = ff_dsc_yyparse(p->p, &pp);	// parse with ff/ff.dsc.y
 	}
 	else if(ff->type == FFT_VAREXPR)
 	{
-		ff_var_yyparse(p->p, &pp);	// parse with ff/ff.var.y
+		r = ff_var_yyparse(p->p, &pp);	// parse with ff/ff.var.y
 	}
 	else if(ff->type == FFT_LISTEXPR)
 	{
-		ff_list_yyparse(p->p, &pp);	// parse with ff/ff.list.y
+		r = ff_list_yyparse(p->p, &pp);	// parse with ff/ff.list.y
 	}
 	else
 	{
-		ff_yyparse(p->p, &pp);			// parse with ff/ff.y
+		r = ff_yyparse(p->p, &pp);			// parse with ff/ff.y
 	}
+
+	// in addition, pp.r is nonzero whenever yyerror has been called, which covers a few more
+	// cases than failure-to-reduce, such as when the scanner encounters invalid byte(s)
+	r |= pp.r;
 
 	// cleanup state for this parse
 	ff_yy_delete_buffer(state, p->p);
 
-	if(pp.r)
+	if(r != 0)
 	{
 		ff->ffn = pp.ffn;
 
-		if(ffn_postprocess(ff->ffn, p->gp) != 0)
-			qfail();
+		fatal(ffn_postprocess, ff->ffn, p->gp);
 
 		if(ff->type == FFT_REGULAR)
 		{
@@ -392,12 +400,14 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, char * co
 		if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
 			fail("read(%s,%d)=%d [%d][%s]", in_path->abs, (int)statbuf.st_size, (int)r, errno, strerror(errno));
 
-		qfatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff, nofile, nofilel);
+		fatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff, nofile, nofilel);
 
-		if(*ff)
+		if(ff == 0)
 		{
-			fatal(map_set, ff_files.by_canpath, in_path->can, in_path->canl, ff, sizeof(*ff), 0);
+			fail("");
 		}
+
+		fatal(map_set, ff_files.by_canpath, in_path->can, in_path->canl, ff, sizeof(*ff), 0);
 	}
 
 finally:
@@ -411,7 +421,7 @@ int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const 
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/dscv", "%s", fp);
-	qfatal(parse, p, b, sz, pth, dscv_gn, 0, 0, ff, 0, 0);
+	fatal(parse, p, b, sz, pth, dscv_gn, 0, 0, ff, 0, 0);
 
 finally:
 	path_free(pth);
@@ -422,7 +432,12 @@ int ff_var_parse(const ff_parser * const p, char* b, int sz, int id, ff_file** c
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/cmdline/v", "%d", id);
-	qfatal(parse, p, b, sz, pth, 0, &id, 0, ff, 0, 0);
+	fatal(parse, p, b, sz, pth, 0, &id, 0, ff, 0, 0);
+
+	if(*ff == 0)
+	{
+		fail("");
+	}
 
 finally:
 	path_free(pth);
@@ -433,7 +448,12 @@ int ff_list_parse(const ff_parser * const p, char* b, int sz, int id, ff_file **
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/cmdline/l", "%d", id);
-	qfatal(parse, p, b, sz, pth, 0, 0, &id, ff, 0, 0);
+	fatal(parse, p, b, sz, pth, 0, 0, &id, ff, 0, 0);
+
+	if(*ff == 0)
+	{
+		fail("");
+	}
 
 finally:
 	path_free(pth);

@@ -261,14 +261,6 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 	// parse
 	fatal(ff_reg_load, ffp, inpath, nofile, nofilel, &ff);
 
-	fatalize(ff_reg_load(ffp, inpath, nofile, nofilel, &ff) != 0)
-	{
-		
-	}
-
-	if(!ff)
-		qfail();
-
 	ff->count++;
 
 	// use up one list and populate the * variable (path to the directory of the fabfile)

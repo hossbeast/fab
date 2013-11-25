@@ -24,10 +24,11 @@
 #include <stdarg.h>
 
 /*
+** UNWIND_ERRORS		- whether to return a different value on failure depending on whether this is the immediate site of the error
 ** CODA_BAD_ACTION  - executed in coda during error resolution
 ** CODA_GOOD_ACTION - executed in coda during normal execution
-** HANDLE_ERROR     - handle error message
-** HANDLE_INFO      - handle info message
+** LOG_ERROR     		- handle error message
+** LOG_INFO      		- handle info message
 */
 
 /// finally
@@ -46,16 +47,19 @@ CODA_FINALLY							\
 
 #define coda return _coda_r
 
-/// fail
+/// FAILURE_CODE
 //
 // SUMMARY
-//  log an error message and terminate the current scope with failure
+//  value to return from a function to indicate failure
 //
-#define fail(fmt, ...)								\
-	do {																\
-		HANDLE_ERROR(fmt, ##__VA_ARGS__);	\
-		goto CODA_BAD;										\
-	} while(0)
+#define FAILURE_CODE									\
+	({																	\
+		int __x = -1;											\
+		if(UNWIND_ERRORS)									\
+			__x = 1;												\
+																			\
+		__x;															\
+	})
 
 /// error
 //
@@ -63,7 +67,20 @@ CODA_FINALLY							\
 //  log an error message
 //
 #define error(fmt, ...)								\
-	HANDLE_ERROR(fmt, ##__VA_ARGS__)
+	LOG_ERROR(fmt, ##__VA_ARGS__)
+
+/// fail
+//
+// SUMMARY
+//  log an error message and terminate the current scope with failure
+//
+#define fail(fmt, ...)								\
+	do {																\
+		LOG_ERROR(fmt, ##__VA_ARGS__);		\
+		goto CODA_BAD;										\
+	} while(0)
+
+#define qfail()	goto CODA_BAD
 
 /// leave
 //
@@ -72,22 +89,10 @@ CODA_FINALLY							\
 //
 #define leave(fmt, ...)								\
 	do {																\
-		HANDLE_INFO(fmt, ##__VA_ARGS__);	\
+		LOG_INFO(fmt, ##__VA_ARGS__);			\
 		goto CODA_GOOD;										\
 	} while(0)
 
-/// qfail
-//
-// SUMMARY
-//  silently terminate the current scope with failure
-//
-#define qfail()	goto CODA_BAD
-
-/// qterm
-//
-// SUMMARY
-//  silently terminate the current scope with success
-//
 #define qleave() goto CODA_GOOD
 
 /// fatal
@@ -103,37 +108,19 @@ CODA_FINALLY							\
 		{																			\
 			if(__r > 0)													\
 			{																		\
-				HANDLE_ERROR(#x " failed");				\
+				LOG_ERROR(#x " failed");					\
 			}																		\
 			goto CODA_BAD;											\
 		}																			\
 	} while(0)
 
-#define fatal_args(x, ...)								\
+#define qfatal(x, ...)										\
 	do {																		\
 		int __r = x(__VA_ARGS__);							\
 		if(__r != 0)													\
 		{																			\
-			if(__r > 0)													\
-			{																		\
-				HANDLE_ERROR(#x " failed");				\
-			}																		\
 			goto CODA_BAD;											\
 		}																			\
-	} while(0) 
-
-/// qfatal
-//
-// SUMMARY
-//  execute the specified function with zero-return-failure semantics and if it fails
-//  silently terminate the current scope with failure
-//
-#define qfatal(x, ...)													\
-	do {																					\
-		if((x(__VA_ARGS__)) != 0)										\
-		{																						\
-			goto CODA_BAD;														\
-		}																						\
 	} while(0)
 
 /// fatal_os
@@ -146,27 +133,11 @@ CODA_FINALLY							\
 	do {																						\
 		if((x(__VA_ARGS__)) != 0)											\
 		{																							\
-			HANDLE_ERROR(#x " failed with: [%d][%s]"		\
+			LOG_ERROR(#x " failed with: [%d][%s]"				\
 				, errno, strerror(errno)									\
 			);																					\
 			goto CODA_BAD;															\
 		}																							\
 	} while(0)
-
-/// fatal_os
-//
-// SUMMARY
-//  execute the specified function with nonzero-return-failure semantics and if it fails
-//  silently terminate the current scope with failure
-//
-#define qfatal_os(x, ...)																				\
-	do {																													\
-		if((x(__VA_ARGS__)) != 0)																		\
-		{																														\
-			goto CODA_BAD;																						\
-		}																														\
-	} while(0)
-
-#define assert(x, 
 
 #endif

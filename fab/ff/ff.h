@@ -147,7 +147,7 @@ int ff_mkparser(ff_parser ** const restrict p)
 //  ff     - results go here
 //
 // RETURNS
-//  0 on error - check *ff to see if the parse was successful
+//  nonzer on error - otherwise *ff is nonzero
 //
 int ff_reg_load(
 	  const ff_parser * const restrict p
@@ -172,7 +172,7 @@ int ff_reg_load(
 //  ff     - results go here
 //
 // RETURNS
-//  0 on error - check *ff to see if the parse was successful
+//  nonzero on error - otherwise *ff is nonzero
 //
 int ff_dsc_parse(
 	  const ff_parser * const restrict p
@@ -196,6 +196,9 @@ int ff_dsc_parse(
 //  id     - unique id for this variable expression text
 //  ff     - results go here
 //
+// RETURNS
+//  nonzero on error - otherwise *ff is nonzero
+//
 int ff_var_parse(
 	  const ff_parser * const restrict p
 	, char * b
@@ -216,6 +219,9 @@ int ff_var_parse(
 //  sz     - number of bytes to parse
 //  id     - unique id for this list expression text
 //  ff     - results go here
+//
+// RETURNS
+//  nonzero on error - otherwise *ff is nonzero
 //
 int ff_list_parse(
 	  const ff_parser * const restrict p

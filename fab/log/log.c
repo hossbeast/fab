@@ -65,7 +65,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_BPDUMP		, .s = "BPDUMP"		, .d = "buildplan - dump the final buildplan" }
 	, { .v = L_BP				, .s = "BP"				, .d = "buildplan" }
 	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	, .d = "formulas - execution results/details" }
-#if DEVEL
+#if DEBUG
 	, { .v = L_FMLTARG	, .s = "FMLTARG"	, .d = "formulas - target resolution/assignment" }
 #endif
 	, { .v = L_FML			, .s = "FML"			, .d = "formulas" }
@@ -74,7 +74,7 @@ struct g_logs_t o_logs[] = {
 	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - execution" }
 	, { .v = L_DSCNEW		, .s = "DSCNEW"		, .d = "dependency discovery - new nodes/edges" }
 	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery" }
-#if DEVEL
+#if DEBUG
 	, { .v = L_DGDEPS		, .s = "DGDEPS"		, .d = "dependency graph - dependencies" }
 #endif
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
@@ -100,8 +100,17 @@ int g_logs_l = sizeof(o_logs) / sizeof(o_logs[0]);
 //
 
 static char * 	o_space;			// storage between vadd/flush calls
-static int			o_space_l;
-static int			o_space_a;
+static int			o_space_a;		// allocation
+static int			o_space_l;		// bytes
+static int			o_space_w;		// visible characters
+
+static char *		o_func;				// trace storage
+static int			o_func_a;
+static int			o_func_l;
+static char * 	o_file;
+static int			o_file_a;
+static int			o_file_l;
+static int			o_line;
 
 static int o_name_len;
 
@@ -125,8 +134,12 @@ static void __attribute__((constructor)) init()
 	}
 }
 
-static int logwrite(const char * s, size_t l)
+static int logwrite(const char * s, size_t l, int w)
 {
+	/*
+	** w specifies whether this segment comprises "visible chars", or not
+	*/
+
 	if((o_space_l + l) >= o_space_a)
 	{
 		o_space = realloc(o_space, o_space_l + l + 1);
@@ -136,6 +149,9 @@ static int logwrite(const char * s, size_t l)
 	memcpy(o_space + o_space_l, s, l);
 	o_space_l += l;
 
+	if(w)
+		o_space_w += l;
+
 	return l;
 }
 
@@ -144,41 +160,41 @@ static int logvprintf(const char * fmt, va_list va)
 	va_list va2;
 	va_copy(va2, va);
 	
-	int size = vsnprintf(0, 0, fmt, va2);
+	int w = vsnprintf(0, 0, fmt, va2);
 	va_end(va2);
 
-	if((o_space_l + size) >= o_space_a)
+	if((o_space_l + w) >= o_space_a)
 	{
-		o_space = realloc(o_space, o_space_l + size + 1);
-		o_space_a = o_space_l + size + 1;
+		o_space = realloc(o_space, o_space_l + w + 1);
+		o_space_a = o_space_l + w + 1;
 	}
 
 	vsprintf(o_space + o_space_l, fmt, va);
 
-	o_space_l += size;
+	o_space_l += w;
+	o_space_w += w;
 
-	return size;
+	return w;
 }
 
 static int logprintf(const char * fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-
-	int R = logvprintf(fmt, va);
+	int w = logvprintf(fmt, va);
 	va_end(va);
 
-	return R;
+	return w;
 }
 
 static int start(const uint64_t e)
 {
-	int R = 0;
+	int w = 0;
 
 	// colorization
 	if((e & L_COLOR_VALUE) && COLORHEX(e))
 	{
-		logwrite(COLOR(e));
+		logwrite(COLOR(e), 0);
 	}
 
 	// prefix
@@ -187,12 +203,12 @@ static int start(const uint64_t e)
 	{
 		if((e & g_logs[x].v) == g_logs[x].v)
 		{
-			R = logprintf("%*s : ", o_name_len, g_logs[x].s);
+			w += logprintf("%*s : ", o_name_len, g_logs[x].s);
 			break;
 		}
 	}
 
-	return R;
+	return w;
 }
 
 static int vstart(const uint64_t e)
@@ -200,6 +216,9 @@ static int vstart(const uint64_t e)
 	if(log_would(e))
 	{
 		o_space_l = 0;
+		o_space_w = 0;
+		o_func_l = 0;
+		o_file_l = 0;
 		o_e = e;
 
 		return start(e);
@@ -215,23 +234,27 @@ static int vadd(const char* fmt, va_list va)
 
 static int vfinish(const char* fmt, void * va)
 {
-	int R = 0;
+	int w = 0;
 	if(fmt)
-		R = vadd(fmt, *(void**)va);
+		w += vadd(fmt, *(void**)va);
+
+	// location trace for errors
+	if(((o_e & L_TAG) == (L_ERROR & L_TAG)) && UNWIND_ERRORS)
+		w += log_add(" in %s at %s:%d", o_func, o_file, o_line);
 
 	if((o_e & L_COLOR_VALUE) && COLORHEX(o_e))
 	{
-		logwrite(NOCOLOR);
+		logwrite(NOCOLOR, 0);
 	}
 
-	logwrite("\n", 1);
+	logwrite("\n", 1, 0);
 
 	// flush to stderr
 	int __attribute__((unused)) r = write(2, o_space, o_space_l);
 
 	o_e = 0;
 
-	return R;
+	return w;
 }
 
 static void describe(struct filter * f)
@@ -264,6 +287,30 @@ static void describe(struct filter * f)
 	);
 
 	log(L_INFO, "%.*s", l, s);
+}
+
+static void prep_trace(const char * const func, const char * const file, int line)
+{
+	int funcl = strlen(func);
+	int filel = strlen(file);
+
+	if(o_func_a <= funcl)
+	{
+		o_func = realloc(o_func, funcl + 1);
+		o_func_a = funcl + 1;
+	}
+	memcpy(o_func, func, funcl);
+	o_func[funcl] = 0;
+
+	if(o_file_a <= filel)
+	{
+		o_file = realloc(o_file, filel + 1);
+		o_file_a = filel + 1;
+	}
+	memcpy(o_file, file, filel);
+	o_file[filel] = 0;
+
+	o_line = line;
 }
 
 //
@@ -419,7 +466,7 @@ int log_init(char * str)
 	return 0;
 }
 
-int log_would(const uint64_t bits)
+int log_would(const uint64_t e)
 {
 	if(o_filter_l == 0)
 		return 1;
@@ -430,13 +477,13 @@ int log_would(const uint64_t bits)
 	{
 		uint64_t rr = 0;
 		if(o_filter[x].m == '(')
-			rr = bits & o_filter[x].v;
+			rr = e & o_filter[x].v;
 		if(o_filter[x].m == '{')
-			rr = ((bits & o_filter[x].v) == bits);
+			rr = ((e & o_filter[x].v) == e);
 		if(o_filter[x].m == '[')
-			rr = ((bits & o_filter[x].v) == o_filter[x].v);
+			rr = ((e & o_filter[x].v) == o_filter[x].v);
 		if(o_filter[x].m == '<')
-			rr = (bits == o_filter[x].v);
+			rr = (e == o_filter[x].v);
 
 		if(rr)
 		{
@@ -450,25 +497,38 @@ int log_would(const uint64_t bits)
 	return r;
 }
 
-int vlog_start(const uint64_t e, const char* fmt, va_list va) 
+#if UNWIND
+int vlog_trace_start(const char * const func, const char * const file, int line, const uint64_t e, const char* fmt, va_list va)
+#else
+int vlog_trace_start(const uint64_t e, const char* fmt, va_list va)
+#endif
 {
-	int R = 0;
-	if((R = vstart(e)))
+	int w = 0;
+	if((w = vstart(e)))
 	{
-		return R + vadd(fmt, va);
+#if UNWIND
+		// store trace
+		prep_trace(func, file, line);
+#endif
+
+		return w + vadd(fmt, va);
 	}
 
 	return 0;
 }
 
-int log_start(const uint64_t e, const char* fmt, ...)
+int log_trace_start(const char * const func, const char * const file, int line, const uint64_t e, const char* fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	int r = vlog_start(e, fmt, va);
+#if UNWIND
+	int w = vlog_trace_start(func, file, line, e, fmt, va);
+#else
+	int w = vlog_trace_start(e, fmt, va);
+#endif
 	va_end(va);
 
-	return r;
+	return w;
 }
 
 int vlog_add(const char* fmt, va_list va) 
@@ -485,10 +545,10 @@ int log_add(const char* fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	int r = vlog_add(fmt, va);
+	int w = vlog_add(fmt, va);
 	va_end(va);
 
-	return r;
+	return w;
 }
 
 int vlog_finish(const char * fmt, va_list va)
@@ -505,65 +565,67 @@ int log_finish(const char* fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	int r = vlog_finish(fmt, va);
+	int w = vlog_finish(fmt, va);
 	va_end(va);
 
-	return r;
+	return w;
 }
 
-int vlog_trace(const uint64_t e, const char * const fmt, const char * const function, const char * const file, int line, va_list va)
+#if UNWIND
+int vlog_trace(const char * const func, const char * const file, int line, const uint64_t e, const char * const fmt, va_list va)
+#else
+int vlog_trace(const uint64_t e, const char * const fmt, va_list va)
+#endif
 {
-	if(vstart(e))
+	int w = 0;
+	if((w = vstart(e)))
 	{
-		vadd(fmt, va);
-		log_add(" in %s", function);
+		// error message
+		w += vadd(fmt, va);
 
-		if(UNWIND_ERRORS)
-			log_add(" at %s:%d", file, line);
+#if UNWIND
+		// store trace info
+		prep_trace(func, file, line);
+#endif
 
-		return vfinish(0, 0);
+		return w + vfinish(0, 0);
 	}
 
 	return 0;
 }
 
-int log_trace(const uint64_t e, const char * const fmt, const char * const function, const char * const file, int line, ...)
-{
-	va_list va;
-	va_start(va, line);
-	int r = vlog_trace(e, fmt, function, file, line, va);
-	va_end(va);
-
-	return r;
-}
-
-int vlog(const uint64_t e, const char* fmt, va_list va)
-{
-	if(vstart(e))
-	{
-		return vfinish(fmt, &va);
-	}
-
-	return 0;
-}
-
-int log(const uint64_t e, const char* fmt, ...)
+#if UNWIND
+int log_trace(const char * const func, const char * const file, int line, const uint64_t e, const char * const fmt, ...)
+#else
+int log_trace(const uint64_t e, const char * const fmt, ...)
+#endif
 {
 	va_list va;
 	va_start(va, fmt);
-	int r = vlog(e, fmt, va);
+#if UNWIND
+	int w = vlog_trace(func, file, line, e, fmt, va);
+#else
+	int w = vlog_trace(e, fmt, va);
+#endif
 	va_end(va);
 
-	return r;
+	return w;
 }
 
-int log_written()
+int logged_bytes()
 {
 	return o_space_l;
+}
+
+int logged_chars()
+{
+	return o_space_w;
 }
 
 void log_teardown()
 {
 	free(o_space);
+	free(o_func);
+	free(o_file);
 	free(o_filter);
 }

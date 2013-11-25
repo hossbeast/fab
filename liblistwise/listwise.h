@@ -37,7 +37,7 @@ struct lwx_t;
 typedef struct lwx_t lwx;
 
 // implementation for LSTACK_ITER* macros
-#include <listwise/iterate.h>
+#include "listwise/iterate.h"
 
 #define restrict __restrict
 

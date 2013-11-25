@@ -31,14 +31,16 @@ int xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct stat *
 	int r;
 	if((r = nftw(dirpath, fn, nopenfd, flags | FTW_ACTIONRETVAL)) == FTW_STOP)
 	{
-		qfail();	// fn should have called error()
+		// fn should have called error()
+		return FAILURE_CODE;
 	}
 	else if(r != 0)
 	{
-		fail("nftw failed with: [%d]", r);
+		error("nftw failed with: [%d]", r);
+		return FAILURE_CODE;
 	}
 
-	finally : coda;
+	return 0;
 }
 
 int rmdir_recursive(const char * const dirpath, int rmself)

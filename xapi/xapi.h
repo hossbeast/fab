@@ -15,27 +15,27 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_CONTROL_H
-#define _LISTWISE_CONTROL_H
+#ifndef _XAPI_H
+#define _XAPI_H
 
-#include "control_core.h"
-#include "listwise/xtra.h"
+/*
+** xapi is an interface for propagating detailed and specific error information
+**
+** xapi specifies a calling convention and provides macros to facilitate its application
+**
+** xapi-enabled code operates in one of three modes specifying what is provided when an error occurs :
+**  1. unwind    - a complete backtrace
+**  2. immediate - an error message
+**  3. errcode   - a nonzero error code
+**
+** which of these modes is possible is specified at compile-time, and selected at runtime during
+** program initialization
+*/
 
-#if UNWIND
-# define UNWIND_ERRORS listwise_errors_unwind
+#if XAPI_UNWIND
+# include "xapi/unwind.h"
+#elif XAPI_ERRCODE
+# include "xapi/errcode.h"
 #else
-# define UNWIND_ERRORS 0
-#endif
-
-#define CODA_BAD_ACTION                             \
-	_coda_r = FAILURE_CODE
-
-#define CODA_GOOD_ACTION                            \
-  _coda_r = 0;                                      \
-
-#define LOG_ERROR(fmt, ...)													\
-	printf(fmt "\n"																		\
-		, ##__VA_ARGS__																	\
-	);																								\
-
+# error "either XAPI_UNWIND or XAPI_ERRCODE must be defined"
 #endif

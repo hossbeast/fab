@@ -21,34 +21,23 @@
 #include "control_core.h"
 
 #include "log.h"
+
+// includes the definition of UNWIND_ERRORS
 #include "args.h"
 
 #define CODA_BAD_ACTION															\
-	do {																							\
-		if(UNWIND_ERRORS)																\
-			_coda_r = 1;																	\
-		else																						\
-			_coda_r = -1;																	\
-	} while(0)
+	_coda_r = FAILURE_CODE	
 
 #define CODA_GOOD_ACTION														\
 	_coda_r = 0
 
-#define HANDLE_ERROR(__fmt, ...)										\
-	log_trace(L_ERROR, __fmt													\
-		, __FUNCTION__																	\
-		, __FILE__																			\
-		, __LINE__																			\
+#define LOG_ERROR(__fmt, ...)												\
+	log(L_ERROR, __fmt																\
 		, ##__VA_ARGS__																	\
 	)																									\
 
-#define HANDLE_INFO(fmt, ...)												\
+#define LOG_INFO(fmt, ...)													\
 	log(L_INFO, fmt 																	\
-		, ##__VA_ARGS__																	\
-	)																									\
-
-#define HANDLE_WARN(fmt, ...)												\
-	log(L_WARN, fmt 																	\
 		, ##__VA_ARGS__																	\
 	)																									\
 

@@ -155,9 +155,6 @@ int main(int argc, char** argv)
 		ff_file * vff = 0;
 		fatal(ff_var_parse, ffp, g_args.rootvars[x], strlen(g_args.rootvars[x]), x, &vff);
 
-		if(!vff)
-			qfail();	// var_parse has a good error
-
 		// process variable expressions
 		int k;
 		for(k = 0; k < vff->ffn->statementsl; k++)

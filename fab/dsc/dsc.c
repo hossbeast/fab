@@ -77,11 +77,11 @@ static int dsc_execwave(
 	}
 
 	// execute all formulas in parallel
-	int res = 0;
-	fatal(ts_execwave, ts, tsl, tsw, i, L_DSC | L_DSCEXEC, L_DSC, &res);
+	fatal(ts_execwave, ts, tsl, tsw, i, L_DSC | L_DSCEXEC, L_DSC, 0);
 
 	// harvest the results - for a single PRIMARY node, all of its associated dscv
 	// evals will have executed in the same wave, AND they will be contiguous in ts
+	int bad = 0;
 	for(x = 0; x < tsl;)
 	{
 		// PRIMARY node for this discovery group
@@ -133,13 +133,13 @@ static int dsc_execwave(
 		if(reconcile)
 			fatal(gn_reconcile_dsc, dscvgn);
 		else
-			res = 0;
+			bad++;
 
 		// advance to the next group
 		for(; x < tsl && ts[x]->fmlv->target == dscvgn; x++);
 	}
 
-	if(!res)
+	if(bad)
 		qfail();
 
 	finally : coda;

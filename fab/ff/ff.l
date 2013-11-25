@@ -184,11 +184,11 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													char space[64];
 																													snprintf(space, sizeof(space), "unknown character : (0x%02hhx)", yytext[0]);
 																													ff_yyerror(0, 0, yyextra, space);
-																													return 0;
+																													return 0;	/* return end-of-input */
 																												}
 <*>[\x20-\x7E]																					{
 																													char space[64];
 																													snprintf(space, sizeof(space), "unknown character : '%1$c'(0x%1$02hhx)", yytext[0]);
 																													ff_yyerror(0, 0, yyextra, space);
-																													return 0;
+																													return 0; /* return end-of-input */
 																												}

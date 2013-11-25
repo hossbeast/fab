@@ -36,8 +36,8 @@
 #define L_TAG           0x0000FFFFFFFFFFFFULL // D range
 
 // E
-#define L_ERROR         0x0000000000000001ULL | L_RED		
-#define L_WARN          0x0000000000000002ULL | L_YELLOW
+#define L_ERROR        (0x0000000000000001ULL | L_RED)
+#define L_WARN         (0x0000000000000002ULL | L_YELLOW)
 #define L_INFO          0x0000000000000004ULL
 #define L_ARGS 					0x0000000000000008ULL
 #define L_PARAMS				0x0000000000000010ULL
@@ -60,7 +60,7 @@
 #define L_BPDUMP				0x0000000000002000ULL
 #define L_BP						0x0000000000004000ULL
 #define L_FMLEXEC				0x0000000000008000ULL
-#if DEVEL
+#if DEBUG
 # define L_FMLTARG			0x0000000000010000ULL
 #else
 # define L_FMLTARG			0
@@ -71,7 +71,7 @@
 #define L_DSCEXEC				0x0000000000100000ULL
 #define L_DSCNEW				0x0000000000200000ULL
 #define L_DSC						0x0000000000400000ULL
-#if DEVEL
+#if DEBUG
 # define L_DGDEPS				0x0000000000800000ULL
 #else
 # define L_DGDEPS				0
@@ -102,62 +102,146 @@ int g_logs_l;
 
 /// log_init
 //
-// initialize logging, parse cmdline args as well as {args}
+// SUMMARY
+//  initialize logging, parse cmdline args as well as {args}
 //
 int log_init(char * args);
 
 // log_parse
 //
-// parse the log string to enable/disable tags
+// SUMMARY
+//  parse the logging directive to enable/disable tags
 //
 void log_parse(char * args, int args_len);
 
 /// log_would
 //
-// true if logs would print with the specified bits
+// SUMMARY
+//  true if logs would print with the specified bits
 //
 int log_would(const uint64_t bits);
 
+/// log_trace
+//
+// SUMMARY
+//  log messages if log_would([bits]) and provide trace info
+//
+// PARAMETERS
+//  func - function name
+//  file - file name
+//  line - line number
+//  bits - log bits
+//  fmt  - format string
+//
+// RETURNS
+//  number of visible characters written (excludes colorizing control bytes)
+// 
+#if DEBUG
+int vlog_trace(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, va_list va) __attribute__((nonnull(1,2,5)));
+int  log_trace(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, ...)        __attribute__((nonnull(1,2,5)));
+#else
+int vlog_trace(const uint64_t bits, const char * const restrict fmt, va_list va) __attribute__((nonnull(2)));
+int  log_trace(const uint64_t bits, const char * const restrict fmt, ...)        __attribute__((nonnull(2)));
+#endif
+
 /// log
 //
-// writes messages to stderr if log_would([bits])
+// SUMMARY
+//  log messages if log_would([bits])
 //
-int vlog(const uint64_t bits, const char* fmt, va_list va) __attribute__((nonnull(2)));
-int  log(const uint64_t bits, const char* fmt, ...)        __attribute__((nonnull(2)));
+// PARAMETERS
+//  bits - log bits
+//  fmt  - format string
+//
+// RETURNS
+//  number of visible characters written (excludes colorizing control bytes)
+//
+#if DEBUG
+# define vlog(...) vlog_trace(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+# define  log(...)  log_trace(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+#else
+# define vlog(...) vlog_trace(__VA_ARGS__)
+# define  log(...)  log_trace(__VA_ARGS__)
+#endif
 
-/// log_error
+/// log_trace_start
 //
-// writes messages with trace to stderr if log_would([bits])
+// SUMMARY
+//  begin logging a message if log_would([bits]) and provide trace info
 //
-int vlog_trace(const uint64_t bits, const char * const restrict fmt, const char * const restrict function, const char * const restrict file, int line, va_list va) __attribute__((nonnull(2,3,4)));
-int  log_trace(const uint64_t bits, const char * const restrict fmt, const char * const restrict function, const char * const restrict file, int line, ...)        __attribute__((nonnull(2,3,4)));
+// PARAMETERS
+//  func - function name
+//  file - file name
+//  line - line number
+//  bits - log bits
+//  fmt  - format string
+//
+// RETURNS
+//  number of visible characters written (excludes colorizing control bytes)
+//
+#if DEBUG
+int vlog_trace_start(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char* fmt, va_list va) __attribute__((nonnull(2)));
+int  log_trace_start(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char* fmt, ...)        __attribute__((nonnull(2)));
+#else
+int vlog_trace_start(const uint64_t bits, const char* fmt, va_list va) __attribute__((nonnull(2)));
+int  log_trace_start(const uint64_t bits, const char* fmt, ...)        __attribute__((nonnull(2)));
+#endif
 
 /// log_start
 //
-// begin writing a single log
+// SUMMARY
+//  begin logging a message if log_would([bits])
 //
-int vlog_start(const uint64_t bits, const char* fmt, va_list va) __attribute__((nonnull(2)));
-int  log_start(const uint64_t bits, const char* fmt, ...)        __attribute__((nonnull(2)));
+// PARAMETERS
+//  bits - log bits
+//  fmt  - format string
+//
+// RETURNS
+//  number of visible characters written (excludes colorizing control bytes)
+//
+#if DEBUG
+# define vlog_start(...) vlog_trace_start(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+# define  log_start(...)  log_trace_start(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+#else
+# define vlog_start(...) vlog_trace_start(__VA_ARGS__)
+# define  log_start(...)  log_trace_start(__VA_ARGS__)
+#endif
 
 /// log_add
 //
-// append to the log under construction
+// SUMMARY
+//  append to the log that was started with log_start
+//
+// RETURNS
+//  number of visible characters written (excludes colorizing control bytes)
 //
 int vlog_add(const char * fmt, va_list va) __attribute__((nonnull));
 int  log_add(const char * fmt, ...)	       __attribute__((nonnull(1)));
 
 /// log_finish
 //
-// complete the log begun with log_start
+// SUMMARY
+//  complete the log that was started with log_start
+//
+// RETURNS
+//  number of visible characters written (excludes colorizing control bytes)
 //
 int vlog_finish(const char * fmt, va_list va);
 int  log_finish(const char * fmt, ...);
 
-/// log_written
+/// logged_bytes
 //
-// returns the number of bytes written thus far for a log_start/log_add* sequence
+// SUMMARY
+//  returns the number of bytes written thus far for a log_start/log_add* sequence
 //
-int log_written();
+int logged_bytes();
+
+/// logged_chars
+//
+// SUMMARY
+//  returns the number of visible characters thus far for a log_start/log_add* sequence (excludes colorizing control bytes)
+//
+int logged_chars();
 
 /// log_teardown
 //

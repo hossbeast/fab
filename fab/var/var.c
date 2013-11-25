@@ -111,7 +111,7 @@ do {																					\
 	if(s)																				\
 	{																						\
 		log_add("%*s @ (%s)[%3d,%3d - %3d,%3d]"		\
-			, 70 - MIN(log_written(), 70)						\
+			, 70 - MIN(logged_chars(), 70)					\
 			, ""																		\
 			, s->loc.ff->idstring										\
 			, s->loc.f_lin + 1											\

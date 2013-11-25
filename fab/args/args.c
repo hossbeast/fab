@@ -152,13 +152,13 @@ if(help)
 "  --gnid-absolute               nodes are identified by absolute path\n"
 "  --gnid-canon                  nodes are identified by canonical path\n"
 "\n"
-#if DEBUG
+#if UNWIND
 " error reporting\n"
 "  --errors-unwind     (default) unwind error stack for error reporting\n"
 "  --errors-immediate            report immediate site of error only\n"
 "\n"
 #endif
-#if DEVEL
+#if SANITY
 " sanity checking\n"
 "  --sanity                      enable sanity checks for all liblistwise invocations\n"
 "\n"
@@ -352,7 +352,7 @@ int args_parse(int argc, char** argv)
 				, { "gnid-absolute"								, no_argument	, &g_args.mode_gnid		, MODE_ABSOLUTE }
 				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid		, MODE_CANONICAL }
 
-#if DEBUG
+#if UNWIND
 				, { "errors-unwind"								, no_argument	, &g_args.mode_errors	, MODE_ERRORS_UNWIND }
 				, { "errors-immediate"						, no_argument	, &g_args.mode_errors	, MODE_ERRORS_IMMEDIATE }
 #endif
@@ -360,7 +360,9 @@ int args_parse(int argc, char** argv)
 #if DEVEL
 				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
 				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
+#endif
 
+#if SANITY
 				, { "sanity"											, no_argument	, &g_args.mode_sanity	, MODE_SANITY_DISABLE }
 #endif
 
@@ -439,11 +441,13 @@ int args_parse(int argc, char** argv)
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_cycles		= DEFAULT_MODE_CYCLES;
 	g_args.mode_paths			= DEFAULT_MODE_PATHS;
-#if DEBUG
+#if UNWIND
 	g_args.mode_errors		= DEFAULT_MODE_ERRORS;
 #endif
 #if DEVEL
 	g_args.mode_bslic			= DEFAULT_MODE_BSLIC;
+#endif
+#if SANITY
 	g_args.mode_sanity		= DEFAULT_MODE_SANITY;
 #endif
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
@@ -643,11 +647,13 @@ int args_parse(int argc, char** argv)
 			log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
 	}
 
-#if DEBUG
+#if UNWIND
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-errors            =%s", g_args.mode_errors == DEFAULT_MODE_ERRORS ? " " : "*", ' ', MODE_STR(g_args.mode_errors));
 #endif
 #if DEVEL
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
+#endif
+#if SANITY
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-sanity            =%s", g_args.mode_bslic == DEFAULT_MODE_SANITY ? " " : "*", ' ', MODE_STR(g_args.mode_sanity));
 #endif
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));

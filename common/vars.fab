@@ -25,6 +25,7 @@ $VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
 #  - enable compiler debug symbol generation
 #  - include these options :
 #   - the --errors-unwind and --errors-immediate options
+#  - cfg-parser error messages will include the scanner line number
 #  - include these logging categories
 #    L_FMLTARG
 #    L_DGDEPS
@@ -43,16 +44,16 @@ $dbug						= [ 0 ]
 #     L_FFTREE
 #     L_FFFILE
 #     L_FF
-#  - disable u+s and g+s checks (to facilitate execution under valgrind)
+#  - disable ug+s check (to facilitate execution under valgrind)
 #  - enable compiler options to use files from the compilation directories, including :
 #   - listwise operators
 #   - fab-listwise operators
 #   - fab-provided invocations
-#   - libraries (liblistwise.so via rpath)
+#   - libraries (via rpath : liblistwise.so)
 #
 $dvel						= [ 0 ]
 
-# install directories
+# install directories (these are suitable for ubuntu-64)
 $destdir				= [ ]															# root install directory - does not affect runtime directories
 $incdir					= [ /usr/include ]								# header files
 $bindir					= [ /usr/local/bin ]							# executables
@@ -94,6 +95,7 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions [ $dliblistw
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
 	[ $dbug $dvel ~ s/1/-g/y ]					# enable debug symbol generation
 	[ $dbug $dvel ~ s/1/-DDEBUG/y ]
+	[ $dbug $dvel ~ s/1/-DUNWIND/y ]
 	[       $dvel ~ s/1/-DDEVEL/y ]
 	[       $dvel ~ s/1/-DSANITY/y ]
 ]

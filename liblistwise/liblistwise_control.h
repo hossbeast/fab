@@ -19,18 +19,17 @@
 #define _LIBLISTWISE_CONTROL_H
 
 #include "control_core.h"
-#include "listwise/xtra.h"
+
+// includes the definition of UNWIND_ERRORS
+#include "listwise/internal.h"
 
 #define CODA_BAD_ACTION                             	\
-	if(listwise_errors_unwind)													\
-		_coda_r = 1;																			\
-	else																								\
-		_coda_r = -1;																			\
+		_coda_r = FAILURE_CODE
 
 #define CODA_GOOD_ACTION                            	\
-  _coda_r = 0;                                      	\
+  _coda_r = 0
 
-#define HANDLE_ERROR(fmt, ...)												\
+#define LOG_ERROR(fmt, ...)												\
 	dprintf(listwise_error_fd, fmt " at [%s:%d (%s)]\n"	\
 		, ##__VA_ARGS__																		\
 		, __FILE__																				\
@@ -38,16 +37,8 @@
 		, __FUNCTION__																		\
 	);																									\
 
-#define HANDLE_INFO(fmt, ...)													\
+#define LOG_INFO(fmt, ...)													\
 	dprintf(listwise_info_fd, fmt " at [%s:%d (%s)]\n"	\
-		, ##__VA_ARGS__																		\
-		, __FILE__																				\
-		, __LINE__																				\
-		, __FUNCTION__																		\
-	);																									\
-
-#define HANDLE_WARN(fmt, ...)													\
-	dprintf(listwise_warn_fd, fmt " at [%s:%d (%s)]\n"	\
 		, ##__VA_ARGS__																		\
 		, __FILE__																				\
 		, __LINE__																				\

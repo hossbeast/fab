@@ -22,7 +22,7 @@
 
 struct selector;
 
-#if DEBUG
+#if UNWIND
 # define UNWIND_ERRORS (g_args.mode_errors == MODE_ERRORS_UNWIND)
 #else
 # define UNWIND_ERRORS 0
@@ -64,13 +64,13 @@ struct selector;
 #define DEFAULT_CONCURRENCY_LIMIT	0
 #define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
 
-#if DEBUG
+#if UNWIND
 # define DEFAULT_MODE_ERRORS			MODE_ERRORS_UNWIND
 #else
 # define DEFAULT_MODE_ERRORS			MODE_ERRORS_IMMEDIATE
 #endif
 
-#if DEVEL
+#if SANITY
 # define DEFAULT_MODE_SANITY			MODE_SANITY_ENABLE
 #endif
 
@@ -89,47 +89,48 @@ struct selector;
 /* cycle handling modes */																																											\
 	_MODE(MODE_CYCLES_WARN								, 0x09	, x)		/* warn when a cycle is detected */											\
 	_MODE(MODE_CYCLES_FAIL								, 0x0a	, x)		/* fail when a cycle is detected */											\
-	_MODE(MODE_CYCLES_DEAL								, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */		\
-
-#if DEBUG
-#define MODE_TABLE_DEBUG(x)																																											\
+	_MODE(MODE_CYCLES_DEAL								, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */
+#if UNWIND
+#define MODE_TABLE_UNWIND(x)																																										\
 /* error reporting modes */																																											\
 	_MODE(MODE_ERRORS_UNWIND							, 0x0d	, x)		/* unwind stack when reporting errors */								\
-	_MODE(MODE_ERRORS_IMMEDIATE						, 0x0e	, x)		/* report on immediate error condition only */					\
-
+	_MODE(MODE_ERRORS_IMMEDIATE						, 0x0e	, x)		/* report on immediate error condition only */
 #endif
-
 #if DEVEL
 #define MODE_TABLE_DEVEL(x)																																											\
 /* bakescript license modes */																																									\
 	_MODE(MODE_BSLIC_STD									, 0x10	, x)		/* bakescripts have the standard license  */						\
-	_MODE(MODE_BSLIC_FAB									, 0x11	, x)		/* bakescripts have the fab license */									\
+	_MODE(MODE_BSLIC_FAB									, 0x11	, x)		/* bakescripts have the fab license */
+#endif
+#if SANITY
+#define MODE_TABLE_SANITY(x)																																										\
 /* sanity checking modes */																																											\
 	_MODE(MODE_SANITY_DISABLE							, 0x13	, x)		/* disable sanity checks for liblistwise invocations */	\
-	_MODE(MODE_SANITY_ENABLE							, 0x14	, x)		/* enable sanity checks for liblistwise invocations */	\
-
+	_MODE(MODE_SANITY_ENABLE							, 0x14	, x)		/* enable sanity checks for liblistwise invocations */
 #endif
 
 enum {
 #define _MODE(a, b, c) a = b,
-#if DEBUG
-MODE_TABLE_DEBUG(0)
+#if UNWIND
+MODE_TABLE_UNWIND(0)
 #endif
 #if DEVEL
 MODE_TABLE_DEVEL(0)
+#endif
+#if SANITY
+MODE_TABLE_SANITY(0)
 #endif
 MODE_TABLE(0)
 #undef _MODE
 };
 
 #define _MODE(a, b, c) (c) == b ? #a :
-
 #if DEVEL
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "unknown"
+# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_UNWIND(x) MODE_TABLE_DEVEL(x) "UNKNWN"
 #elif DEBUG
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) "unknown"
+# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_UNWIND(x) "UNKNWN"
 #else
-# define MODE_STR(x) MODE_TABLE(x) "unknown"
+# define MODE_STR(x) MODE_TABLE(x) "UNKNWN"
 #endif
 
 extern struct g_args_t
@@ -142,11 +143,13 @@ extern struct g_args_t
 	int									mode_gnid;									// gn identification mode
 	int									mode_cycles;								// cycle handling mode
 	int									mode_paths;									// path generation mode
-#if DEBUG
+#if UNWIND
 	int									mode_errors;								// error reporting mode
 #endif
 #if DEVEL
 	int									mode_bslic;									// bakescript license mode
+#endif
+#if SANITY
 	int									mode_sanity;								// sanity checking mode
 #endif
 

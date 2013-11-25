@@ -15,27 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_CONTROL_H
-#define _LISTWISE_CONTROL_H
+#ifndef _ERRORS_H
+#define _ERRORS_H
 
-#include "control_core.h"
-#include "listwise/xtra.h"
+#include "xapi.h"
 
-#if UNWIND
-# define UNWIND_ERRORS listwise_errors_unwind
-#else
-# define UNWIND_ERRORS 0
-#endif
+#define EPREFIX LW_ERROR
 
-#define CODA_BAD_ACTION                             \
-	_coda_r = FAILURE_CODE
+#define ETABLE																																	\
+	_E(GENERATOR_SYNTAX		, 0x01	, "generator string could not be parsed")				\
+	_E(GENERATOR_INVALID	, 0x02	, "generator contains invalid elements")				\
+	_E(GENERATOR_ILLBYTE	, 0x03	, "generator string contains illegal byte(s)")	\
+	_E(GENERATOR_BACKREF	, 0x04	, "generator contains illegal backreference")
 
-#define CODA_GOOD_ACTION                            \
-  _coda_r = 0;                                      \
+enum
+{
+#define _E(a, b, c) EPREFIX _ a = b,
+ETABLE
+#undef _E
+};
 
-#define LOG_ERROR(fmt, ...)													\
-	printf(fmt "\n"																		\
-		, ##__VA_ARGS__																	\
-	);																								\
+extern etable etable;
 
 #endif

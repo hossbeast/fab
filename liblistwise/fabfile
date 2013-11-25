@@ -42,8 +42,8 @@ $lflags				= [ -lpcre, -ldl, -shared, [ "-Wl,-soname," $soname ] ]
 +[@std.y]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
 
 # generated files
-+[@fablib.flex.states] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
-+[@fablib.bison.tokens]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
++[@flex.states] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
++[@bison.tokens]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
 
 # path to each operator so
 $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]

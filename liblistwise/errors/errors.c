@@ -15,27 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_CONTROL_H
-#define _LISTWISE_CONTROL_H
+#include "errors.h"
 
-#include "control_core.h"
-#include "listwise/xtra.h"
-
-#if UNWIND
-# define UNWIND_ERRORS listwise_errors_unwind
-#else
-# define UNWIND_ERRORS 0
-#endif
-
-#define CODA_BAD_ACTION                             \
-	_coda_r = FAILURE_CODE
-
-#define CODA_GOOD_ACTION                            \
-  _coda_r = 0;                                      \
-
-#define LOG_ERROR(fmt, ...)													\
-	printf(fmt "\n"																		\
-		, ##__VA_ARGS__																	\
-	);																								\
-
-#endif
+etable etable = {
+	  .name = "LW"
+	, .v = (typeof(((etable*)0)->v[0])[]) {
+#define _E(a, b, c) [ b ] = { .name = a, .desc = c },
+ETABLE
+#undef _E
+	}
+};

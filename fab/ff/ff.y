@@ -31,7 +31,7 @@
 	// defined in ff.lex.o
 	int ff_yylex(void* yylvalp, void* yylloc, void* scanner);
 
-	#define YYU_ERROR(...) log_trace(L_ERROR, #__VA_ARGS__, __FUNCTION__, __FILE__, __LINE__)
+	#define YYU_ERROR(...) log(L_ERROR, #__VA_ARGS__)
 }
 
 %define api.pure

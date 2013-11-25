@@ -38,6 +38,8 @@
 
 #define restrict __restrict
 
+#define UNWIND_ERRORS listwise_errors_unwind
+
 // collection of registered object types
 // with lookup index by type id
 extern union object_registry_t

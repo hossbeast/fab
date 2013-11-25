@@ -80,7 +80,7 @@ int ts_ensure(ts *** ts, int * tsa, int tsl)
 	finally : coda;
 }
 
-int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo, int * res)
+int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo, int * bad)
 {
 	int x;
 	int j;
@@ -93,14 +93,15 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 	if(g_args.concurrency > 0)
 		step = g_args.concurrency;
 
-	(*res) = 1;
+	int local_bad;
+	if(!bad)
+		bad = &local_bad;
+
+	(*bad) = 0;
 
 	// execute all formulas in parallel processes
-	for(j = 0; j < n; j += step)
+	for(j = 0; (*bad) == 0 && j < n; j += step)
 	{
-		if((*res) == 0)
-			break;
-
 		for(x = j; x < (j + step) && x < n; x++)
 			fatal(fml_exec, ts[x], ((*waveid) * 1000) + x);
 
@@ -161,7 +162,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			uint64_t e = e_stat | e_sign | e_stde; // whether there has been an error
 
 			if(e)
-				(*res) = 0;
+				(*bad)++;
 
 			int k = 0;
 			while(1)

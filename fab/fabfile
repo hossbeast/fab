@@ -49,8 +49,8 @@ $fab						= [ $dfab/fab ~ j ]
 +[@std.c]($gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # generated files
-+[@fablib.flex.states] ($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
-+[@fablib.bison.tokens]($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
++[@flex.states] ($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
++[@bison.tokens]($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
 
 # operator so's
 $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]

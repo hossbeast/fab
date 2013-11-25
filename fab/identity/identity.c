@@ -102,7 +102,7 @@ int identity_init()
 	/*
 	** In addition, this program requires explicit control over file and directory permissions for
 	** created files. In particular, the directories in /var/tmp/fab are owned by fabsys:fabsys (so
-	** they can be deleted) but the files are user:user (so they can be executed)
+	** they can be unlinked) but the files are user:user (so they can be executed)
 	*/
 	umask(0);
 

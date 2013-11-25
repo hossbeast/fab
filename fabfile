@@ -16,31 +16,34 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # directories
-$dcommon      = [ $*/common ]
+$dcommon      = [ $*/common ~ j ]
 $dliblistwise = [ $*/liblistwise ~ j ]
-$dlistwise    = [ $*/listwise ]
-$dfab         = [ $*/fab ]
+$dlistwise    = [ $*/listwise ~ j ]
+$xapi					= [ $*/xapi ~ j ]
+$dfab         = [ $*/fab ~ j ]
 
 $incdirs 			= [ $dliblistwise [ $dliblistwise/listwise ~ j ] ~ s/^/-I ]
 
 # invocations
 +[ $dliblistwise ](-$liblistwise)																							@liblistwise
 +[ $dlistwise ](-$listwise; $liblistwise $dliblistwise $incdirs)							@listwise
++[ $dxapi ](-$libxapi; $dcommon)																							@xapi
 +[ $dfab ](-$fab; -$faboplist; -$fabd; $liblistwise $dliblistwise $incdirs)		@fab
 
 # default target - make everything
-[ @all ] 				: [ @liblistwise.all @listwise.all @fab.all ]
+[ @all ] 				: [ @liblistwise.all @listwise.all @xapi.all @fab.all ]
 
 # inter-module dependencies
-[ $listwise ]		:^ [ $liblistwise ]
-[ $fab ]				:^ [ $liblistwise ]
-[ $fabd ]				:^ [ $liblistwise ]
-[ $faboplist ]	:^ [ $liblistwise ]
+[ $liblistwise ] :^ [ $libxapi ]
+[ $listwise ]		 :^ [ $libxapi $liblistwise ]
+[ $fab ]				 :^ [ $libxapi $liblistwise ]
+[ $fabd ]				 :^ [ $libxapi $liblistwise ]
+[ $faboplist ]	 :^ [ $libxapi $liblistwise ]
 
 # supertasks
-[ @install ]		: [               @liblistwise.install   @listwise.install   @fab.install    ]
-[ @uninstall ]	: [               @liblistwise.uninstall @listwise.uninstall @fab.uninstall  ]
-[ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @fab.clean      ]
+[ @install ]		: [               @liblistwise.install   @listwise.install   @xapi.install @fab.install ]
+[ @uninstall ]	: [               @liblistwise.uninstall @listwise.uninstall @xapi.uninstall @fab.uninstall ]
+[ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @xapi.clean @fab.clean ]
 
 [ @scripts ]
 {
