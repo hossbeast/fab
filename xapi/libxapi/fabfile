@@ -30,7 +30,7 @@ $dcommon			= [ $*/../../common ~ j ]
 $libname 			= [ lixapi.so ]
 $soname				= [ $libname ~ j ]
 $libxapi  		= [ $dlibxapi/libxapi.so ~ j ]		# path to the library .so
-$cflags				= [ $cflags -fPIC [ $dlibxapi ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs ]
+$cflags				= [ $cflags -fPIC -DXAPI_UNWIND [ [ $dlibxapi/.. ~ j ] $dlibxapi ~ s/^/-I ] $incdirs ]
 $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 
 # source files
@@ -47,8 +47,20 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 ## formulas
 ##
 
+# the SYS errtab is generated from system header files
+[ $dlibxapi/sys.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
+{
+	exec > [ $@ ]
+
+	cat [ $@ ~ rx/ineed/uu/fi ] | \
+	> sed -e 's/#define\s\+\(E[A-Z]\+\)\s\+\([0-9]\+\)\s\+\/\*\s*\(.*\)\s\+\*\//\2\t\1\t\3/p; d'
+}
+
+# compiled sys errtab
++[@xapi.errtab]($gendir = $dlibxapi; $paths = [ $dlibxapi/sys.errtab ~ j ]; $ext = [ o ]; $cc $cflags)
+
 # link the library
-[ $libxapi ] : [ $cfabpaths ~ xs/<c>/<pic.o> ]
+[ $libxapi ] : [ [ $cfabpaths ~ xs/<c>/<pic.o> ] [ $dlibxapi/sys.errtab.o ~ j ] ]
 {
 	  exec 99>&1 1>[ $dlibxapi/exports ]
 	  echo "{ global: "

@@ -39,3 +39,5 @@
 #else
 # error "either XAPI_UNWIND or XAPI_ERRCODE must be defined"
 #endif
+
+#endif

@@ -15,23 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_INTERNAL_H
-#define _XAPI_INTERNAL_H
+#ifndef _XAPI_CALLSTACK_H
+#define _XAPI_CALLSTACK_H
 
-#include "xapi.h"
+#define restrict __restrict
+
+struct etable;
 
 /// callstack
 //
 // SUMMARY
 //  tracks the call stack
 //
-typedef struct callstack
+typedef struct
 {
 	struct
 	{
 		struct frame
 		{
-			etable *	table;	// error table
+			struct etable *	table;	// error table
 			int				code;		// error code
 
 			char * 		file;
@@ -67,14 +69,10 @@ typedef struct callstack
 	} frames;
 
 	int top;		// current frame
-	int code;		// return code of the current frame
-
-	struct frame * root;		// frame containing the site of the error	; frames.v[frames.l - 1]
-	struct frame * top;			// current frame while unwinding					; frames.v[i]
-};
+} callstack_t;
 
 // per-thread callstack
-extern __thread callstack callstack;
+extern __thread callstack_t callstack;
 
 /// callstack_push
 //
@@ -91,7 +89,7 @@ int callstack_push(const int n);
 // RETURNS
 //  the frames return code
 //
-int callstack_frame(const etable * const restrict table, const int code, const char * const restrict file, const int line, const char * const restrict func)
+int callstack_frame(const struct etable * const restrict etab, const int code, const char * const restrict file, const int line, const char * const restrict func)
 	__attribute__((nonnull));
 
 #define CALLSTACK_FRAME(table, code)	\
@@ -113,4 +111,5 @@ int callstack_frame_message(const char * const restrict fmt, ...)
 int callstack_frame_info(char imp, const char * const k, int kl, const char * const restrict vfmt, ...)
 	__attribute__((nonnull));
 
+#undef restrict
 #endif

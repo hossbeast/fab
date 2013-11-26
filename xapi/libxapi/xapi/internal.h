@@ -18,8 +18,8 @@
 #ifndef _XAPI_INTERNAL_H
 #define _XAPI_INTERNAL_H
 
-#include "xapi.h"
-#include "xapi/unwind.h"
+#include "unwind.h"
 #include "xapi/callstack.h"
+#include "errors/errors.h"
 
 #endif

@@ -20,7 +20,7 @@
 
 #include "xapi/callstack.h"
 
-typedef struct etable
+typedef struct
 {
 	// indexed by error code
 	struct
@@ -30,7 +30,7 @@ typedef struct etable
 	} * v;
 
 	char * name;				// i.e. "PCRE", "SYS", "FAB", "LW"
-};
+} etable;
 
 /*
 ** use at the site of an error

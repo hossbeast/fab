@@ -20,7 +20,7 @@
 #include "xmem.h"
 
 // callstack per thread
-__thread callstack callstack;
+__thread callstack_t callstack;
 
 /*
 ** helper macros

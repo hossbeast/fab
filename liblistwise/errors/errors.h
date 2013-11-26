@@ -35,6 +35,6 @@ ETABLE
 #undef _E
 };
 
-extern etable etable;
+extern etable errtab_LIBLW;
 
 #endif
