@@ -18,16 +18,64 @@
 #ifndef _XAPI_ERRCODE_H
 #define _XAPI_ERRCODE_H
 
-typedef struct etable
-{
-	// indexed by error code
-	struct
-	{
-		char * name;		// i.e. ENOMEM
-		char * desc;		// i.e. Not enough space
-	} * v;
+int __thread __xapi_r;
 
-	char * name;				// i.e. "PCRE", "SYS", "FAB", "LW"
-};
+/*
+** use at the site of an error
+*/
+
+// raise an error
+#define fail(code, ...)												\
+	do {																				\
+		__xapi_r = code;													\
+		goto XAPI_FINALLY;												\
+	} while(0)
+
+// if the called function fails, raise an error on its behalf
+#define fatalize(code, func, ...)							\
+	do {																				\
+		if(func(__VA_ARGS__) != 0)								\
+		{																					\
+			__xapi_r = code;												\
+			goto XAPI_FINALLY;											\
+		}																					\
+	} while(0)
+
+/*
+** called elsewhere in the stack
+*/
+
+#define fatal(func, ...)											\
+	do {																				\
+		if(func(__VA_ARGS__) != 0)								\
+		{																					\
+			goto XAPI_FINALLY;											\
+		}																					\
+	} while(0)
+
+
+/*
+** called after coda to provide info for the current frame
+*/ 
+
+#define XAPI_INFO(imp, k, vfmt, ...)
+
+#define XAPI_FAILING 0
+
+/// finally
+//
+// SUMMARY
+//  statements between finally and coda are executed even upon fail/leave
+//
+#define finally																\
+	__xapi_r = 0;																\
+XAPI_FINALLY
+
+/// coda
+//
+// SUMMARY
+//  return from the current function
+//
+#define coda return __xapi_r
 
 #endif

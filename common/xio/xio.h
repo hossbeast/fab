@@ -15,26 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ERRORS_H
-#define _ERRORS_H
+#ifndef _XOPEN_H
+#define _XOPEN_H
 
-#include "xapi.h"
+/// xopen
+//
+// SUMMARY
+//  call open xapi-style
+//
+int xopen(const char * path, int flags, int * const fd)
+	__attribute__((nonnull));
 
-#define EPREFIX LW_ERROR
-
-#define ETABLE																																	\
-	_E(GENERATOR_SYNTAX		, 0x01	, "generator string could not be parsed")				\
-	_E(GENERATOR_INVALID	, 0x02	, "generator contains invalid elements")				\
-	_E(GENERATOR_ILLBYTE	, 0x03	, "generator string contains illegal byte(s)")	\
-	_E(GENERATOR_BACKREF	, 0x04	, "generator contains illegal backreference")
-
-enum
-{
-#define _E(a, b, c) EPREFIX _ a = b,
-ETABLE
-#undef _E
-};
-
-extern etable errtab_LIBLW;
+/// xopen_mode
+//
+// SUMMARY
+//  call open xapi-style
+//
+int xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
+	__attribute__((nonnull));
 
 #endif

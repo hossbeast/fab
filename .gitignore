@@ -6,7 +6,9 @@
 *.lex.*
 *.tokens.*
 *.states.*
+*.errtab.*
 /fab/fab
 /listwise/listwise
 /listwise/lw
 /liblistwise/exports
+/xapi/libxapi/exports

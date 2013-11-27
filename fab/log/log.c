@@ -104,6 +104,7 @@ static int			o_space_a;		// allocation
 static int			o_space_l;		// bytes
 static int			o_space_w;		// visible characters
 
+#if UNWIND
 static char *		o_func;				// trace storage
 static int			o_func_a;
 static int			o_func_l;
@@ -111,6 +112,7 @@ static char * 	o_file;
 static int			o_file_a;
 static int			o_file_l;
 static int			o_line;
+#endif
 
 static int o_name_len;
 
@@ -215,10 +217,12 @@ static int vstart(const uint64_t e)
 {
 	if(log_would(e))
 	{
+#if UNWIND
 		o_space_l = 0;
 		o_space_w = 0;
 		o_func_l = 0;
 		o_file_l = 0;
+#endif
 		o_e = e;
 
 		return start(e);
@@ -289,6 +293,7 @@ static void describe(struct filter * f)
 	log(L_INFO, "%.*s", l, s);
 }
 
+#if UNWIND
 static void prep_trace(const char * const func, const char * const file, int line)
 {
 	int funcl = strlen(func);
@@ -312,6 +317,7 @@ static void prep_trace(const char * const func, const char * const file, int lin
 
 	o_line = line;
 }
+#endif
 
 //
 // [[ public ]]

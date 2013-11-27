@@ -15,13 +15,4 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "errors.h"
-
-etable etable = {
-	  .name = "LW"
-	, .v = (typeof(((etable*)0)->v[0])[]) {
-#define _E(a, b, c) [ b ] = { .name = a, .desc = c },
-ETABLE
-#undef _E
-	}
-};
+1	EBADFILE	unable to process file

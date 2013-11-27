@@ -15,14 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_INTERNAL_H
-#define _XAPI_INTERNAL_H
-
-#include "unwind.h"
-#include "callstack/callstack.h"
-#include "SYS.errtab.h"
-
-#define API __attribute__((visibility("protected")))
-#define APIDATA
-
-#endif
+1	GENERATOR_SYNTAX	generator string could not be parsed
+2	GENERATOR_INVALID	generator contains invalid elements
+3	GENERATOR_ILLBYTE	generator string contains illegal byte(s)
+4	GENERATOR_BACKREF	generator contains illegal backreference

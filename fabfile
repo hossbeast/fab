@@ -19,26 +19,25 @@
 $dcommon      = [ $*/common ~ j ]
 $dliblistwise = [ $*/liblistwise ~ j ]
 $dlistwise    = [ $*/listwise ~ j ]
-$xapi					= [ $*/xapi ~ j ]
+$dxapi				= [ $*/xapi ~ j ]
 $dfab         = [ $*/fab ~ j ]
 
 $incdirs 			= [ $dliblistwise [ $dliblistwise/listwise ~ j ] ~ s/^/-I ]
 
 # invocations
 +[ $dliblistwise ](-$liblistwise)																							@liblistwise
-+[ $dlistwise ](-$listwise; $liblistwise $dliblistwise $incdirs)							@listwise
-+[ $dxapi ](-$libxapi; $dcommon)																							@xapi
-+[ $dfab ](-$fab; -$faboplist; -$fabd; $liblistwise $dliblistwise $incdirs)		@fab
++[ $dxapi ](-$libxapi; $dcommon $dxapi)																				@xapi
++[ $dlistwise ](-$listwise; $liblistwise $libxapi $incdirs)										@listwise
++[ $dfab ](-$fab; -$faboplist; $liblistwise $libxapi $incdirs)								@fab
 
 # default target - make everything
 [ @all ] 				: [ @liblistwise.all @listwise.all @xapi.all @fab.all ]
 
 # inter-module dependencies
 [ $liblistwise ] :^ [ $libxapi ]
-[ $listwise ]		 :^ [ $libxapi $liblistwise ]
-[ $fab ]				 :^ [ $libxapi $liblistwise ]
-[ $fabd ]				 :^ [ $libxapi $liblistwise ]
-[ $faboplist ]	 :^ [ $libxapi $liblistwise ]
+[ $listwise ]		 :^ [ $libxapi $liblistwise $libxapi ]
+[ $fab ]				 :^ [ $libxapi $liblistwise $libxapi ]
+[ $faboplist ]	 :^ [ $libxapi $liblistwise $libxapi ]
 
 # supertasks
 [ @install ]		: [               @liblistwise.install   @listwise.install   @xapi.install @fab.install ]

@@ -90,5 +90,12 @@ struct callstack
 // per-thread callstacks
 extern __thread struct callstack callstack;
 
+/// xapi_callstack_free
+//
+// SUMMARY
+//  free the callstack for this thread with free semantics
+//
+void callstack_free();
+
 #undef restrict
 #endif

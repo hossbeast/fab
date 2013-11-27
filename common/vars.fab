@@ -90,7 +90,10 @@ $bison			= [ bison ]
 $bisonflags	= [ --warnings=error ]
 
 $cc					= [ gcc ]
-$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions [ $dliblistwise $dcommon [ $dcommon ~ ls/-d ] ~ s/^/-I ]
+$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
+		# include paths
+	[ $dxapi $dlibxapi $dliblistwise $dcommon [ $dcommon ~ ls/-d ] ~ s/^/-I ]
+	[ -DXAPI_UNWIND ]
 	[ $dbug $dvel ~ s/1/-O0/y ]					# disable compiler optimizations
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
 	[ $dbug $dvel ~ s/1/-g/y ]					# enable debug symbol generation
@@ -103,3 +106,7 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions [ $dliblistw
 $lflags			= [
 	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ~ rp ] >/y ~ j ] ]
 ]
+
+# default library names
+$liblistwise	= [ -llistwise ]
+$libxapi			= [ -lxapi ]

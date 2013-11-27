@@ -15,14 +15,27 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_INTERNAL_H
-#define _XAPI_INTERNAL_H
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 
-#include "unwind.h"
-#include "callstack/callstack.h"
-#include "SYS.errtab.h"
+#include "xapi.h"
 
-#define API __attribute__((visibility("protected")))
-#define APIDATA
+#include "xio.h"
 
-#endif
+int xopen(const char * path, int flags, int * const fd)
+{
+	if((*fd = open(path, flags)) == -1)
+		fatality("open", &errtab_SYS, errno);
+
+	finally : coda;
+}
+
+int xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
+{
+	if((*fd = open(path, flags, mode)) == -1)
+		fatality("open", errtab_SYS, errno);
+
+	finally : coda;
+}

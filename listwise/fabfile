@@ -16,32 +16,32 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # directories
-$dcommon				= [ $*/../common ~ j ]
 $dlistwise    	= [ $* ]
+$dcommon				= [ $dlistwise/../common ~ j ]
+$dliblistwise		= [ $dlistwise/../liblistwise ~ j ]
+$dxapi					= [ $dlistwise/../xapi ~ j ]
+$dlibxapi				= [ $dlistwise/../xapi/libxapi ~ j ]
 
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
 +[ $dcommon/vars.fab ]
 +[ $dcommon ]() @common
 
-# include paths
-$dliblistwise		= [ $dlistwise/../liblistwise ~j ]
-
-# libraries to link
-$liblistwise		= [ -llistwise ]
-
 # variables
-$cflags					= [ $cflags  [ $dlistwise $dliblistwise ~ s/^/-I ]
+$cflags					= [ $cflags  [ $dlistwise $dliblistwise $dxapi $dlibxapi ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 ]
-$lflags					= [ $lflags $liblistwise ]
+$lflags					= [ $lflags $liblistwise $libxapi ]
 $name						= [ listwise ]
 $link						= [ lw ]
 $listwise				= [ $dlistwise/$name ~ j ]
 
 # c files
 +[@std.c]($gendir = $dlistwise; $dirs = $dlistwise; $cc $cflags)
+
+# errtab
++[@xapi.errtab]($gendir = $dlistwise; $dirs = $dlistwise; $cc $cflags)
 
 # catchall node
 [ @all ] : [ $listwise ]

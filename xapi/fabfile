@@ -16,16 +16,29 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # directories
-$dcommon      = [ $*/../common ~ j ]
-$dlibxapi			= [ $*/libxapi ~ j ]
+$dxapi				= [ $* ]
+$dcommon      = [ $dxapi/../common ~ j ]
+$dlibxapi			= [ $dxapi/libxapi ~ j ]
 
 # invocations
-+[ $dlibxapi](-$libxapi) @xapi
++[$dlibxapi] @libxapi
 
 # default target - make everything
 [ @all ] 				: [ @libxapi.all ]
 
 # supertasks
-[ @install ]		: [ @xapi.install ]
-[ @uninstall ]	: [ @xapi.uninstall ]
-[ @clean ]			: [ @xapi.clean ]
+[ @install ]		: [ @libxapi.install ]
+{
+	install -d													[ $destdir/$incdir ]
+	install [ $dxapi/xapi.h ]						[ $destdir/$incdir ]
+	install [ $dxapi/xapi/unwind.h ]		[ $destdir/$incdir/xapi ]
+	install [ $dxapi/xapi/errcode.h ]		[ $destdir/$incdir/xapi ]
+}
+
+[ @uninstall ]	: [ @libxapi.uninstall ]
+{
+	rm -f																[ $destdir/$incdir/xapi.h ]
+	rm -rf															[ $destdir/$incdir/xapi ]
+}
+
+[ @clean ]			: [ @libxapi.clean ]

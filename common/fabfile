@@ -16,10 +16,10 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # variable defs, $cc, $cflags, etc
-$dcommon = [ $* ]
-+[ $dcommon/vars.fab ]
-
-$cflags = [ $cflags [ -I $dcommon ~ j ] ]
+$dcommon	= [ $* ]
+$dxapi		= [ $dcommon/../xapi ~ j ]
+$dlibxapi	= [ $dcommon/../xapi/libxapi ~ j ]
++[$dcommon/vars.fab]
 
 # c files
 +[@std.c]($gendir = $dcommon; $rdirs = $dcommon; -$cfabpaths; $cc $cflags)

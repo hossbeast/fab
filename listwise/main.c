@@ -34,11 +34,12 @@
 #include "listwise/generator.h"
 #include "listwise/object.h"
 
-#include "listwise_control.h"
+#include "xapi.h"
 
 #include "args.h"
 
 #include "xmem.h"
+#include "xio.h"
 
 /// snarf
 //
@@ -128,8 +129,7 @@ int main(int argc, char** argv)
 	else
 	{
 		// arrange for liblistwise to write to /dev/null
-		if((nullfd = open("/dev/null", O_WRONLY)) == -1)
-			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
+		fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
 
 		listwise_info_fd = nullfd;
 		listwise_warn_fd = nullfd;
