@@ -19,23 +19,32 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-
-#include "xapi.h"
+#include <unistd.h>
 
 #include "xio.h"
 
 int xopen(const char * path, int flags, int * const fd)
 {
 	if((*fd = open(path, flags)) == -1)
-		fatality("open", &errtab_SYS, errno);
+		return -1;
 
-	finally : coda;
+	return 0;
 }
 
 int xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 {
 	if((*fd = open(path, flags, mode)) == -1)
-		fatality("open", errtab_SYS, errno);
+		return -1;
 
-	finally : coda;
+	return 0;
+}
+
+int xread(int fd, void * buf, size_t count, ssize_t * bytes)
+{
+	if(bytes && (*bytes = read(fd, buf, count)) == -1)
+		return -1;
+	else if(read(fd, buf, count) == -1)
+		return -1;
+
+	return 0;
 }

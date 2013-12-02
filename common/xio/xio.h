@@ -21,7 +21,7 @@
 /// xopen
 //
 // SUMMARY
-//  call open xapi-style
+//  fatalize-able wrapper for open
 //
 int xopen(const char * path, int flags, int * const fd)
 	__attribute__((nonnull));
@@ -29,9 +29,17 @@ int xopen(const char * path, int flags, int * const fd)
 /// xopen_mode
 //
 // SUMMARY
-//  call open xapi-style
+//  fatalize-able wrapper for open
 //
 int xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 	__attribute__((nonnull));
+
+/// xread
+//
+// SUMMARY
+//  fatalize-able wrapper for read
+//
+int xread(int fd, void * buf, size_t count, ssize_t * bytes)
+	__attribute__((nonnull(2)));
 
 #endif

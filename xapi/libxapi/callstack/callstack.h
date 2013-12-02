@@ -22,7 +22,48 @@
 ** callstack definition ; libxapi-visibility
 */
 
-struct etable;
+struct frame
+{
+	const struct etable *	etab;		// error table
+	int										code;		// error code
+
+	const char * 		file;
+	int							line;
+	const char * 		func;
+
+	char *		msg;		// error message
+	int				msga;
+	int				msgl;
+
+	struct
+	{
+		struct frame_info
+		{
+			char *	ks;		// key
+			int			ka;
+			int			kl;
+
+			char *	vs;		// value
+			int			va;
+			int			vl;
+
+			char		imp;	// important
+		} * v;
+
+		int a;
+		int l;
+	} info;
+};
+
+struct frame_static
+{
+	struct frame;
+
+	char buf_msg[64];
+	struct frame_info buf_info[3];
+	char buf_info_ks[3][64];
+	char buf_info_vs[3][64];
+};
 
 /// callstack
 //
@@ -33,47 +74,19 @@ struct callstack
 {
 	struct
 	{
+		// storage of dynamically allocated frames
 		struct
 		{
-			struct frame
-			{
-				const struct etable *	etab;		// error table
-				int										code;		// error code
-
-				const char * 		file;
-				int							line;
-				const char * 		func;
-
-				char *		msg;		// error message
-				int				msga;
-				int				msgl;
-
-				struct
-				{
-					struct
-					{
-						char *	ks;		// key
-						int			ka;
-						int			kl;
-
-						char *	vs;		// value
-						int			va;
-						int			vl;
-
-						char		imp;	// important
-					} * v;
-
-					int a;
-					int l;
-				} info;
-			} * v;	
-
-			int a;
-			int l;
-		} stor;		// storage of dynamically allocated frames
+			struct frame *	v;
+			int							a;
+			int							l;
+		} stor;
 
 		// the base frame is not dynamically allocated
-		struct frame base;
+		struct frame_static base;
+
+		// the alt frames are not dynamically allocated
+		struct frame_static alt[2];
 	} frames;
 
 	// stack frames
@@ -85,6 +98,11 @@ struct callstack
 
 	// current frame - grows and shrinks with each call
 	int top;
+
+	int alt_top;
+
+	// transient value indicating that the current frame is finalized (execution has passed the XAPI_FINALLY label)
+	int finalized;
 };
 
 // per-thread callstacks

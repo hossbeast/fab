@@ -44,7 +44,7 @@ typedef struct etable
 } etable;
 
 // an error table for system errors is provided by libxapi
-extern etable errtab_SYS;
+extern etable * perrtab_SYS;
 
 /*
 ** called at the site of an error
@@ -55,8 +55,15 @@ extern etable errtab_SYS;
 	do {																															\
 		/* populate top stack frame */																	\
 		XAPI_FRAME_SET(perrtab, code);																	\
-		xapi_frame_set_message(fmt, #__VA_ARGS__);											\
-		goto XAPI_FAILURE;																							\
+		if(xapi_frame_set_message(fmt, #__VA_ARGS__) != 0)							\
+		{																																\
+			/* xapi_frame_set_message populated alt[1] with ENOMEM */			\
+			XAPI_FRAME_SET(0, -1);																				\
+		}																																\
+		if(!xapi_frame_finalized())																			\
+		{																																\
+			goto XAPI_FAILURE;																						\
+		}																																\
 	} while(0)
 
 // raise an error on behalf of another function
@@ -64,7 +71,8 @@ extern etable errtab_SYS;
 	do {																															\
 		if(xapi_frame_push() != 0)																			\
 		{																																\
-			/* xapi_frame_push populated my frame with ENOMEM */					\
+			/* xapi_frame_push populated alt[1] with ENOMEM */						\
+			XAPI_FRAME_SET(0, -1);																				\
 			goto XAPI_FAILURE;																						\
 		}																																\
 																																		\
@@ -74,15 +82,23 @@ extern etable errtab_SYS;
 																																		\
 		/* populate stack frame for myself */														\
 		XAPI_FRAME_SET(0, -1);																					\
-		goto XAPI_FAILURE;																							\
+		if(!xapi_frame_finalized())																			\
+		{																																\
+			goto XAPI_FAILURE;																						\
+		}																																\
 	} while(0)
+
+// fatality macro for SYS
+#define fatality_sys(func, code)																		\
+	fatality(func, perrtab_SYS, code)
 
 // if the called function fails, raise an error on its behalf
 #define fatalize(table, code, func, ...)														\
 	do {																															\
 		if(xapi_frame_push() != 0)																			\
 		{																																\
-			/* xapi_frame_push populated my frame with ENOMEM */					\
+			/* xapi_frame_push populated alt[1] with ENOMEM */						\
+			XAPI_FRAME_SET(0, -1);																				\
 			goto XAPI_FAILURE;																						\
 		}																																\
 																																		\
@@ -95,9 +111,16 @@ extern etable errtab_SYS;
 																																		\
 			/* populate stack frame for myself */													\
 			XAPI_FRAME_SET(0, -1);																				\
-			goto XAPI_FAILURE;																						\
+			if(!xapi_frame_finalized())																		\
+			{																															\
+				goto XAPI_FAILURE;																					\
+			}																															\
 		}																																\
 	} while(0)
+
+// fatalize macro for calling sys
+#define fatalize_sys(func, ...)																			\
+	fatalize(perrtab_SYS, errno, func, __VA_ARGS__)
 
 /*
 ** called elsewhere in the stack
@@ -107,7 +130,8 @@ extern etable errtab_SYS;
 	do {																															\
 		if(xapi_frame_push() != 0)																			\
 		{																																\
-			/* xapi_frame_push populated my frame with ENOMEM */					\
+			/* xapi_frame_push populated alt[1] with ENOMEM */						\
+			XAPI_FRAME_SET(0, -1);																				\
 			goto XAPI_FAILURE;																						\
 		}																																\
 																																		\
@@ -116,7 +140,10 @@ extern etable errtab_SYS;
 		{																																\
 			/* populate stack frame for myself */													\
 			XAPI_FRAME_SET(0, -1);																				\
-			goto XAPI_FAILURE;																						\
+			if(!xapi_frame_finalized())																		\
+			{																															\
+				goto XAPI_FAILURE;																					\
+			}																															\
 		}																																\
 	} while(0)
 
@@ -128,8 +155,10 @@ extern etable errtab_SYS;
 #define finally																\
 	goto XAPI_SUCCESS;													\
 XAPI_FAILURE:																	\
+	xapi_frame_finalize();											\
 	goto XAPI_FINALLY;													\
 XAPI_SUCCESS:																	\
+	xapi_frame_finalize();											\
 	xapi_frame_pop();														\
 XAPI_FINALLY
 
@@ -138,7 +167,10 @@ XAPI_FINALLY
 // SUMMARY
 //  return from the current function
 //
-#define coda XAPI_LEAVE : return xapi_frame_leave()
+#define coda																	\
+	goto XAPI_LEAVE;														\
+XAPI_LEAVE:																		\
+	return xapi_frame_exit() || xapi_frame_top_code_alt()
 
 /*
 ** called after finally
@@ -148,11 +180,14 @@ XAPI_FINALLY
 //
 // set info for the current frame
 //
-//
 #define XAPI_INFO(imp, k, vfmt, ...)															\
 	do {																														\
 		if(xapi_frame_add_info(imp, k, 0, vfmt, ##__VA_ARGS__) != 0)	\
+		{																															\
+			/* xapi_frame_add_info populated alt[1] with ENOMEM */			\
+			XAPI_FRAME_SET(0, -1);																			\
 			goto XAPI_LEAVE;																						\
+		}																															\
 	} while(0)
 
 /// XAPI_FAILING
@@ -253,7 +288,6 @@ size_t xapi_trace_pithy(char * const restrict dst, const size_t sz)
 // PARAMETERS
 //  dst  - buffer to write to
 //  sz   - max bytes to write, including null byte
-//  x    - frame index
 //
 size_t xapi_trace_full(char * const restrict dst, const size_t sz)
 	__attribute__((nonnull));
@@ -265,10 +299,16 @@ size_t xapi_trace_full(char * const restrict dst, const size_t sz)
 //
 void xapi_pithytrace();
 
-/// xapi_backtrace
+/// xapi_fulltrace
 //
 // SUMMARY
 //  call xapi_trace_full and write the output to stderr
+//
+void xapi_fulltrace();
+
+/// xapi_backtrace
+//
+// synonym for xapi_fulltrace
 //
 void xapi_backtrace();
 

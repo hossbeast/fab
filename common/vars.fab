@@ -105,6 +105,7 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 
 $lflags			= [
 	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ~ rp ] >/y ~ j ] ]
+	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dlibxapi ~ rp ] >/y ~ j ] ]
 ]
 
 # default library names

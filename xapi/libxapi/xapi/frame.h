@@ -41,7 +41,25 @@ int xapi_frame_push();
 //
 // callstack.top--
 //
-int xapi_frame_leave();
+void xapi_frame_leave();
+
+/// xapi_frame_exit
+//
+// callstack.top--
+//
+int xapi_frame_exit();
+
+/// xapi_frame_finalize
+//
+//
+//
+void xapi_frame_finalize();
+
+/// xapi_frame_finalized
+//
+// 
+//
+int xapi_frame_finalized();
 
 /// xapi_frame_pop
 //
@@ -55,6 +73,12 @@ void xapi_frame_pop();
 //
 int xapi_frame_top_code();
 
+/// xapi_frame_top_code_alt
+//
+// returns the code of the top frame of the alt stack
+//
+int xapi_frame_top_code_alt();
+
 /// xapi_frame_set
 //
 // SUMMARY
@@ -63,16 +87,33 @@ int xapi_frame_top_code();
 // PARAMETERS
 //  [etab] - errtab table
 //  code   - error code
-//  file   - file name
-//  line   - line number
-//  func   - function name
+//  [file] - file name
+//  [line] - line number
+//  [func] - function name
 //
-void xapi_frame_set(const struct etable * const restrict etab, const int code, const char * const restrict file, const int line, const char * const restrict func)
-	__attribute__((nonnull(3,5)));
+void xapi_frame_set(const struct etable * const restrict etab, const int code, const char * const restrict file, const int line, const char * const restrict func);
+
+/// xapi_frame_set_alt
+//
+// SUMMARY
+//  set properties for the top frame of the alt stack
+//
+// PARAMETERS
+//  [etab] - errtab table
+//  code   - error code
+//  [file] - file name
+//  [line] - line number
+//  [func] - function name
+//
+void xapi_frame_set_alt(const struct etable * const restrict etab, const int code, const char * const restrict file, const int line, const char * const restrict func);
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET(etab, code)	\
 	xapi_frame_set(etab, code, __FILE__, __LINE__, __FUNCTION__)
+
+// call xapi_frame_set_alt with current file name, line number, and function name
+#define XAPI_FRAME_SET_ALT(etab, code)	\
+	xapi_frame_set_alt(etab, code, __FILE__, __LINE__, __FUNCTION__)
 
 /// xapi_frame_set_message
 //

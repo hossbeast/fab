@@ -35,6 +35,7 @@
 #include "listwise/object.h"
 
 #include "xapi.h"
+#include "LW.errtab.h"
 
 #include "args.h"
 
@@ -57,12 +58,10 @@ static int snarf(char * path, void ** mem, size_t * sz)
 
 	xfree(mem);
 
-	if((fd = open(strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY)) == -1)
-		fail("open(%s)=[%d][%s]", path, errno, strerror(errno));
+	fatalize_sys(xopen, strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY, &fd);
 
 	struct stat st;
-	if(fstat(fd, &st) == -1)
-		fail("fstat(%d)=[%d][%s]", fd, errno, strerror(errno));
+	fatalize_sys(fstat, fd, &st);
 
 	if(S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode))
 	{
@@ -70,10 +69,10 @@ static int snarf(char * path, void ** mem, size_t * sz)
 		int r = 1;
 		while(r > 0)
 		{
-			if((r = read(fd, blk, sizeof(blk) / sizeof(blk[0]))) == -1)
-				fail("read(%d)=[%d][%s]", fd, errno, strerror(errno));
+			ssize_t r;
+			fatalize_sys(xread, fd, blk, sizeof(blk) / sizeof(*blk), &r);
 
-			else if(r > 0)
+			if(r > 0)
 			{
 				fatal(xrealloc, mem, 1, (*sz) + r + 1, (*sz));
 				memcpy(((char*)(*mem)) + (*sz), blk, r);
@@ -87,7 +86,7 @@ static int snarf(char * path, void ** mem, size_t * sz)
 	}
 	else
 	{
-		fail("unable to process file of type %s (%d)"
+		fail(EBADFILE, "type : %s (%d)", 
 			,   S_ISREG(st.st_mode)			? "REG"
 				: S_ISDIR(st.st_mode)			? "DIR"
 				: S_ISCHR(st.st_mode)			? "CHR"
@@ -102,7 +101,7 @@ static int snarf(char * path, void ** mem, size_t * sz)
  
 finally:
 	if(fd != -1)
-		fatal_os(close, fd);
+		fatalize_sys(close, fd);
 coda;
 }
 

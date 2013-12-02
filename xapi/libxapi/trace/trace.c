@@ -178,7 +178,15 @@ size_t API xapi_trace_full(char * const dst, const size_t sz)
 	return z;
 }
 
-void API xapi_backtrace()
+void API xapi_pithytrace()
+{
+	char space[512];
+
+	size_t z = xapi_trace_pithy(space, sizeof(space));
+	dprintf(2, "%.*s\n", (int)z, space);
+}
+
+void API xapi_fulltrace()
 {
 	char space[512];
 
@@ -186,10 +194,10 @@ void API xapi_backtrace()
 	dprintf(2, "%.*s\n", (int)z, space);
 }
 
-void API xapi_pithytrace()
+void API xapi_backtrace()
 {
 	char space[512];
 
-	size_t z = xapi_trace_pithy(space, sizeof(space));
+	size_t z = xapi_trace_full(space, sizeof(space));
 	dprintf(2, "%.*s\n", (int)z, space);
 }

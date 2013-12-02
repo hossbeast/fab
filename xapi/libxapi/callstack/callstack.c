@@ -24,31 +24,33 @@ void callstack_free()
 	if(callstack.v)
 	{
 		int x;
-		for(x = 0; x < callstack.frames.stor.a; x++)
+		for(x = -3; x < callstack.frames.stor.a; x++)
 		{
-			free(callstack.frames.stor.v[x].msg);
+			struct frame * A;
+
+			if(x == -3)
+				A = &callstack.frames.base;
+			else if(x == -2)
+				A = &callstack.frames.alt[0];
+			else if(x == -1)
+				A = &callstack.frames.alt[1];
+			else
+				A = &callstack.frames.stor.v[x];
+
+			free(A->msg);
 
 			int y;
-			for(y = 0; y < callstack.frames.stor.v[x].info.a; y++)
+			for(y = 0; y < A->info.a; y++)
 			{
-				free(callstack.frames.stor.v[x].info.v[y].ks);
-				free(callstack.frames.stor.v[x].info.v[y].vs);
+				free(A->info.v[y].ks);
+				free(A->info.v[y].vs);
 			}
-			free(callstack.frames.stor.v[x].info.v);
+			free(A->info.v);
 		}
-
-		free(callstack.frames.base.msg);
-
-		int y;
-		for(y = 0; y < callstack.frames.base.info.a; y++)
-		{
-			free(callstack.frames.base.info.v[y].ks);
-			free(callstack.frames.base.info.v[y].vs);
-		}
-		free(callstack.frames.base.info.v);
 
 		free(callstack.frames.stor.v);
 	}
 
 	free(callstack.v);
+	callstack.v = 0;
 }
