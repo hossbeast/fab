@@ -91,8 +91,6 @@ int API xapi_frame_push()
 		callstack.frames.alt[0].code = 0;
 		callstack.frames.alt[1].code = 0;
 
-printf("finalized=0\n");
-		callstack.finalized = 0;
 		callstack.alt_top = 0;
 	}
 
@@ -140,6 +138,9 @@ printf("%d <- %d\n", callstack.top + 1, callstack.top);
 	{
 		callstack_free();
 	}
+
+printf("finalized=0\n");
+		callstack.finalized = 0;
 
 	return r;
 }

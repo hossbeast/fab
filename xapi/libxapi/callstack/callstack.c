@@ -24,18 +24,9 @@ void callstack_free()
 	if(callstack.v)
 	{
 		int x;
-		for(x = -3; x < callstack.frames.stor.a; x++)
+		for(x = 0; x < callstack.frames.stor.a; x++)
 		{
-			struct frame * A;
-
-			if(x == -3)
-				A = &callstack.frames.base;
-			else if(x == -2)
-				A = &callstack.frames.alt[0];
-			else if(x == -1)
-				A = &callstack.frames.alt[1];
-			else
-				A = &callstack.frames.stor.v[x];
+			struct frame * A = &callstack.frames.stor.v[x];
 
 			free(A->msg);
 

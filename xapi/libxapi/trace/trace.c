@@ -26,6 +26,32 @@
 
 #define SAY(...) z += snprintf(dst + z, sz - z, __VA_ARGS__)
 
+static size_t frame_trace(char * const dst, const size_t sz, int x, int loc)
+{
+	size_t z = 0;
+
+	z += snprintf(dst + z, sz - z, "at ");
+	z += xapi_frame_function(dst + z, sz - z, x);
+	if(callstack.v[x]->info.l)
+	{
+		z += snprintf(dst + z, sz - z, "(");
+		z += xapi_frame_info(dst + z, sz - z, x);
+		z += snprintf(dst + z, sz - z, ")");
+	}
+
+	if(loc)
+	{
+		z += snprintf(dst + z, sz - z, " in ");
+		z += xapi_frame_location(dst + z, sz - z, x);
+	}
+
+	return z;
+}
+
+///
+/// API
+///
+
 size_t API xapi_frame_error(char * const dst, const size_t sz, int x)
 {
 	size_t z = 0;
@@ -107,20 +133,7 @@ size_t API xapi_frame_info(char * const dst, const size_t sz, int x)
 
 size_t API xapi_frame_trace(char * const dst, const size_t sz, int x)
 {
-	size_t z = 0;
-
-	z += snprintf(dst + z, sz - z, "at ");
-	z += xapi_frame_function(dst + z, sz - z, x);
-	if(callstack.v[x]->info.l)
-	{
-		z += snprintf(dst + z, sz - z, "(");
-		z += xapi_frame_info(dst + z, sz - z, x);
-		z += snprintf(dst + z, sz - z, ")");
-	}
-	z += snprintf(dst + z, sz - z, " in ");
-	z += xapi_frame_location(dst + z, sz - z, x);
-
-	return z;
+	return frame_trace(dst, sz, x, 1);
 }
 
 size_t API xapi_trace_pithy(char * const dst, const size_t sz)
@@ -129,7 +142,7 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 
 	z += xapi_frame_error(dst + z, sz - z, callstack.l - 1);
 	z += snprintf(dst + z, sz - z, " ");
-	z += xapi_frame_trace(dst + z, sz - z, callstack.l - 1);
+	z += frame_trace(dst + z, sz - z, callstack.l - 1, 0);
 
 	size_t zt = z;
 
