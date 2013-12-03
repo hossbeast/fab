@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <errno.h>
 
 #include "xapi.h"
@@ -8,12 +9,18 @@
 int beta(int num)
 {
 printf("-> beta\n");
-	if(num == 25)
+	if(num == 125)
 		fail(ERESTART, "restarting");
 
 finally:
 	XAPI_INFO(0, "betanum", "%d", num);
 printf("<- beta\n");
+
+	if(num == 25)
+	{
+		fatalize_sys(close, -1);
+	}
+
 coda;
 }
 
@@ -23,16 +30,16 @@ printf("-> alpha\n");
 	fatal(beta, num);
 
 finally:
-	XAPI_INFO(1, "alphanum", "%d", num);
+	XAPI_INFO(0, "alphanum", "%d", num);
 printf("<- alpha\n");
 coda;
 }
 
 int main()
 {
+	fatal(alpha, 25);
 	fatal(alpha, 13);
 	fatal(alpha, 0);
-	fatal(alpha, 25);
 
 finally :
 if(XAPI_FAILING)

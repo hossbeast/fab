@@ -83,6 +83,7 @@ int API xapi_frame_push()
 	{
 		/* use the base frame for the current call */
 		callstack.v[0] = &callstack.frames.base;
+		callstack.v[0]->type = 1;
 		callstack.l = 1;
 
 		/* reset some state */
@@ -172,12 +173,17 @@ int API xapi_frame_top_code_alt()
 	return callstack.frames.alt[0].code;
 }
 
+typeof(callstack) *T;
+
 void API xapi_frame_set(const etable * const etab, const int code, const char * const file, const int line, const char * const func)
 {
+T = &callstack;
+
 	if(callstack.finalized)
 	{
 		if(callstack.alt_top < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
 		{
+printf("setting alt frame %d -> %s\n", callstack.alt_top, func);
 			frame_set(&callstack.frames.alt[callstack.alt_top], etab, code, file, line, func);
 		}
 		else
@@ -187,6 +193,7 @@ void API xapi_frame_set(const etable * const etab, const int code, const char * 
 	}
 	else
 	{
+printf("setting reg frame %d -> %s\n", callstack.l, func);
 		frame_set(TOP, etab, code, file, line, func);
 	}
 }
@@ -198,6 +205,8 @@ int API xapi_frame_set_message(const char * const fmt, ...)
 
 	if(callstack.finalized)
 	{
+		dprintf(2, "MESSAGE ON ALT STACK\n");
+/*
 		int w;
 
 		if(callstack.alt_top < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
@@ -209,6 +218,7 @@ int API xapi_frame_set_message(const char * const fmt, ...)
 			f->msg  = f->buf_msg;
 			f->msgl = w;
 		}
+*/
 	}
 	else
 	{
@@ -250,32 +260,29 @@ int API xapi_frame_add_info(char imp, const char * const k, int kl, const char *
 
 	kl = kl ?: strlen(k);
 
-	if(callstack.finalized)
+	if(TOP->type)
 	{
-		if(callstack.alt_top < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
+		struct frame_static * f = (struct frame_static*)TOP;
+		
+		if(f->info.l < (sizeof(f->buf_info) / sizeof(f->buf_info[0])))
 		{
-			struct frame_static * f = &callstack.frames.alt[callstack.alt_top];
+			f->info.v = f->buf_info;
+			f->info.v[f->info.l].imp = imp;
+			f->info.v[f->info.l].ks = f->buf_info_ks[f->info.l];
+			f->info.v[f->info.l].vs = f->buf_info_vs[f->info.l];
 			
-			if(f->info.l < (sizeof(f->buf_info) / sizeof(f->buf_info[0])))
-			{
-				f->info.v = f->buf_info;
-				f->info.v[f->info.l].imp = imp;
-				f->info.v[f->info.l].ks = f->buf_info_ks[f->info.l];
-				f->info.v[f->info.l].vs = f->buf_info_vs[f->info.l];
-				
-				// key
-				memcpy(f->info.v[f->info.l].ks, k, MIN(sizeof(f->buf_info_ks[0]), kl - 1));
-				f->info.v[f->info.l].ks[kl] = 0;
-				f->info.v[f->info.l].kl = kl;
+			// key
+			memcpy(f->info.v[f->info.l].ks, k, MIN(sizeof(f->buf_info_ks[0]), kl - 1));
+			f->info.v[f->info.l].ks[kl] = 0;
+			f->info.v[f->info.l].kl = kl;
 
-				// value
-				va_list va;
-				va_start(va, vfmt);
+			// value
+			va_list va;
+			va_start(va, vfmt);
 
-				f->info.v[f->info.l].vl = vsnprintf(f->info.v[f->info.l].vs, sizeof(f->buf_info_vs[0]), vfmt, va);
+			f->info.v[f->info.l].vl = vsnprintf(f->info.v[f->info.l].vs, sizeof(f->buf_info_vs[0]), vfmt, va);
 
-				f->info.l++;
-			}
+			f->info.l++;
 		}
 	}
 	else

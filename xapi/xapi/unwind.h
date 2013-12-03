@@ -200,6 +200,20 @@ XAPI_LEAVE:																		\
 ** called after finally iff XAPI_FAILING
 */
 
+/// xapi_frame_count
+//
+// SUMMARY
+//  returns the number of frames in the callstack
+//
+int xapi_frame_count();
+
+/// xapi_frame_count_alt
+//
+// SUMMARY
+//  returns the number of frames in the alt callstack
+//
+int xapi_frame_count_alt();
+
 /// xapi_frame_error
 //
 // SUMMARY
@@ -211,6 +225,9 @@ XAPI_LEAVE:																		\
 //  x    - frame index
 //
 size_t xapi_frame_error(char * const restrict dst, const size_t sz, int x)
+	__attribute__((nonnull));
+
+size_t xapi_frame_error_alt(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
 
 /// xapi_frame_function
@@ -226,6 +243,9 @@ size_t xapi_frame_error(char * const restrict dst, const size_t sz, int x)
 size_t xapi_frame_function(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
 
+size_t xapi_frame_function_alt(char * const restrict dst, const size_t sz, int x)
+	__attribute__((nonnull));
+
 /// xapi_frame_location
 //
 // SUMMARY
@@ -239,6 +259,9 @@ size_t xapi_frame_function(char * const restrict dst, const size_t sz, int x)
 size_t xapi_frame_location(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
 
+size_t xapi_frame_location_alt(char * const restrict dst, const size_t sz, int x)
+	__attribute__((nonnull));
+
 /// xapi_frame_info
 //
 // SUMMARY
@@ -248,6 +271,9 @@ size_t xapi_frame_location(char * const restrict dst, const size_t sz, int x)
 //  dst  - buffer to write to
 //  sz   - max bytes to write, including null byte
 //  x    - frame index
+//
+// REMARKS
+//  alt stack frames do not have info k/v pairs
 //
 size_t xapi_frame_info(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
@@ -263,6 +289,9 @@ size_t xapi_frame_info(char * const restrict dst, const size_t sz, int x)
 //  x    - frame index
 //
 size_t xapi_frame_trace(char * const restrict dst, const size_t sz, int x)
+	__attribute__((nonnull));
+
+size_t xapi_frame_trace_alt(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
 
 /// xapi_trace_pithy
@@ -300,16 +329,12 @@ size_t xapi_trace_full(char * const restrict dst, const size_t sz)
 void xapi_pithytrace();
 
 /// xapi_fulltrace
+/// xapi_backtrace
 //
 // SUMMARY
 //  call xapi_trace_full and write the output to stderr
 //
 void xapi_fulltrace();
-
-/// xapi_backtrace
-//
-// synonym for xapi_fulltrace
-//
 void xapi_backtrace();
 
 #undef restrict

@@ -24,6 +24,8 @@
 
 struct frame
 {
+	int type;		// 0=regular, 1=frame_static
+
 	const struct etable *	etab;		// error table
 	int										code;		// error code
 
@@ -55,6 +57,10 @@ struct frame
 	} info;
 };
 
+/*
+** the base frame and frames in the alt stack are statically allocated
+** alt stack frames never have msg or info populated
+*/ 
 struct frame_static
 {
 	struct frame;
@@ -99,6 +105,7 @@ struct callstack
 	// current frame - grows and shrinks with each call
 	int top;
 
+	// current alt frame - grows when finalized != 0
 	int alt_top;
 
 	// transient value indicating that the current frame is finalized (execution has passed the XAPI_FINALLY label)
