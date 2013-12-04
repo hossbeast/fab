@@ -18,6 +18,8 @@
 #ifndef _XAPI_FRAME_H
 #define _XAPI_FRAME_H
 
+#include <stdint.h>
+
 /*
 ** application-visible frame manipulation functions used in XAPI_UNWIND mode
 **
@@ -91,7 +93,7 @@ int xapi_frame_top_code_alt();
 //  [line] - line number
 //  [func] - function name
 //
-void xapi_frame_set(const struct etable * const restrict etab, const int code, const char * const restrict file, const int line, const char * const restrict func);
+void xapi_frame_set(const struct etable * const restrict etab, const uint16_t code, const char * const restrict file, const int line, const char * const restrict func);
 
 /// xapi_frame_set_alt
 //
@@ -105,7 +107,7 @@ void xapi_frame_set(const struct etable * const restrict etab, const int code, c
 //  [line] - line number
 //  [func] - function name
 //
-void xapi_frame_set_alt(const struct etable * const restrict etab, const int code, const char * const restrict file, const int line, const char * const restrict func);
+void xapi_frame_set_alt(const struct etable * const restrict etab, const uint16_t code, const char * const restrict file, const int line, const char * const restrict func);
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET(etab, code)	\

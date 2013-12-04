@@ -18,6 +18,8 @@
 #ifndef _XAPI_CALLSTACK_H
 #define _XAPI_CALLSTACK_H
 
+#include <stdint.h>
+
 /*
 ** callstack definition ; libxapi-visibility
 */
@@ -27,7 +29,7 @@ struct frame
 	int type;		// 0=regular, 1=frame_static
 
 	const struct etable *	etab;		// error table
-	int										code;		// error code
+	uint16_t							code;		// error code
 
 	const char * 		file;
 	int							line;
@@ -106,7 +108,7 @@ struct callstack
 	int top;
 
 	// current alt frame - grows when finalized != 0
-	int alt_top;
+	int alt_len;
 
 	// transient value indicating that the current frame is finalized (execution has passed the XAPI_FINALLY label)
 	int finalized;

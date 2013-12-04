@@ -18,19 +18,47 @@
 #ifndef _XAPI_H
 #define _XAPI_H
 
+#include <stdint.h>
+
 /*
-** xapi is an interface for propagating detailed and specific error information
+** xapi is an interface for propagating detailed and specific error information. It is a
+** calling convention and these header(s) provides macros to facilitate its application
 **
-** xapi specifies a calling convention and provides macros to facilitate its application
+** xapi-enabled code is compiled in one of two modes specifying what is available when an error occurs:
+**  1. UNWIND   - a complete backtrace
+**  2. ERRCODE  - a nonzero error code
 **
-** xapi-enabled code operates in one of three modes specifying what is provided when an error occurs :
-**  1. unwind    - a complete backtrace
-**  2. immediate - an error message
-**  3. errcode   - a nonzero error code
+** for UNWIND-ing mode, the complete backtrace is accessible via the xapi_frame_* functions. there are
+** also functions for producing a terse and complete error string from the backtrace information
 **
-** which of these modes is possible is specified at compile-time, and selected at runtime during
-** program initialization
+** non UNWIND-ing code (even non-xapi-code) that calls UNWIND-ing code simply receives an error code
 */
+
+#if XAPI_UNWIND || XAPI_LIBXAPI
+// error table struct
+typedef struct etable
+{
+	// indexed by lower uint16 of the error code
+	struct
+	{
+		char * name;		// i.e. ENOMEM
+		char * desc;		// i.e. Not enough space
+	} * v;
+
+	char *  tag;			// i.e. "PCRE", "SYS", "FAB", "LW"
+	int16_t id;				// upper 7 bits of the error code (MSB is zero)
+} etable;
+
+// an error table for system errors is provided by libxapi
+extern etable * perrtab_SYS;
+
+/// xapi_errstr
+//
+// SUMMARY
+//  returns a static string associated with an error code returned from a libxapi
+//
+const char * xapi_errstr(const int code);
+#endif
 
 #if XAPI_UNWIND
 # include "xapi/unwind.h"

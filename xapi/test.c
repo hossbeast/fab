@@ -9,17 +9,19 @@
 int beta(int num)
 {
 printf("-> beta\n");
-	if(num == 125)
+	if(num == 25)
 		fail(ERESTART, "restarting");
 
 finally:
 	XAPI_INFO(0, "betanum", "%d", num);
 printf("<- beta\n");
 
+/*
 	if(num == 25)
 	{
 		fatalize_sys(close, -1);
 	}
+*/
 
 coda;
 }
@@ -30,13 +32,15 @@ printf("-> alpha\n");
 	fatal(beta, num);
 
 finally:
-	XAPI_INFO(0, "alphanum", "%d", num);
+	XAPI_INFO(1, "alphanum", "%d", num);
 printf("<- alpha\n");
 coda;
 }
 
 int main()
 {
+	int r = alpha(25);
+	printf("alpha(25)=%d\n", r);
 	fatal(alpha, 25);
 	fatal(alpha, 13);
 	fatal(alpha, 0);

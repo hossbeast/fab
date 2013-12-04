@@ -19,6 +19,8 @@
 
 #include "xapi/internal.h"
 
+#include "xmem.h"
+
 void callstack_free()
 {
 	if(callstack.v)
@@ -28,20 +30,30 @@ void callstack_free()
 		{
 			struct frame * A = &callstack.frames.stor.v[x];
 
-			free(A->msg);
+			xfree(&A->msg);
 
 			int y;
 			for(y = 0; y < A->info.a; y++)
 			{
-				free(A->info.v[y].ks);
-				free(A->info.v[y].vs);
+				xfree(&A->info.v[y].ks);
+				A->info.v[y].ka = 0;
+				A->info.v[y].kl = 0;
+
+				xfree(&A->info.v[y].vs);
+				A->info.v[y].va = 0;
+				A->info.v[y].vl = 0;
 			}
-			free(A->info.v);
+			xfree(&A->info.v);
+			A->info.a = 0;
+			A->info.l = 0;
 		}
 
-		free(callstack.frames.stor.v);
+		xfree(&callstack.frames.stor.v);
+		callstack.frames.stor.a = 0;
+		callstack.frames.stor.l = 0;
 	}
 
-	free(callstack.v);
-	callstack.v = 0;
+	xfree(&callstack.v);
+	callstack.a = 0;
+	callstack.l = 0;
 }

@@ -30,22 +30,6 @@
 
 #define restrict __restrict
 
-// error table struct
-typedef struct etable
-{
-	// indexed by error code
-	struct
-	{
-		char * name;		// i.e. ENOMEM
-		char * desc;		// i.e. Not enough space
-	} * v;
-
-	char * name;			// i.e. "PCRE", "SYS", "FAB", "LW"
-} etable;
-
-// an error table for system errors is provided by libxapi
-extern etable * perrtab_SYS;
-
 /*
 ** called at the site of an error
 */
@@ -170,7 +154,7 @@ XAPI_FINALLY
 #define coda																	\
 	goto XAPI_LEAVE;														\
 XAPI_LEAVE:																		\
-	return xapi_frame_exit() || xapi_frame_top_code_alt()
+	return xapi_frame_exit() ?: xapi_frame_top_code_alt()
 
 /*
 ** called after finally
@@ -186,6 +170,7 @@ XAPI_LEAVE:																		\
 		{																															\
 			/* xapi_frame_add_info populated alt[1] with ENOMEM */			\
 			XAPI_FRAME_SET(0, -1);																			\
+			xapi_frame_leave();																					\
 			goto XAPI_LEAVE;																						\
 		}																															\
 	} while(0)
@@ -324,7 +309,7 @@ size_t xapi_trace_full(char * const restrict dst, const size_t sz)
 /// xapi_pithytrace
 //
 // SUMMARY
-//  call xapi_trace_pity and write the output to stderr
+//  call xapi_trace_pithy and write the output to stderr
 //
 void xapi_pithytrace();
 

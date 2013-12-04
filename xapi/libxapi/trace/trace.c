@@ -41,7 +41,7 @@ static size_t frame_error(char * const dst, const size_t sz, struct frame * f)
 	if(f->etab && f->code > 0 && f->msg)
 	{
 		SAY("[%s:%s] %.*s"
-			, f->etab->name
+			, f->etab->tag
 			, f->etab->v[f->code].name
 			, f->msgl, f->msg 
 		);
@@ -49,7 +49,7 @@ static size_t frame_error(char * const dst, const size_t sz, struct frame * f)
 	else if(f->etab && f->code > 0)
 	{
 		SAY("[%s:%s] %s"
-			, f->etab->name
+			, f->etab->tag
 			, f->etab->v[f->code].name
 			, f->etab->v[f->code].desc
 		);
@@ -57,7 +57,7 @@ static size_t frame_error(char * const dst, const size_t sz, struct frame * f)
 	else if(f->etab && f->msg)
 	{
 		SAY("[%s] %.*s"
-			, f->etab->name
+			, f->etab->tag
 			, f->msgl, f->msg 
 		);
 	}
@@ -105,7 +105,7 @@ static size_t frame_location(char * const dst, const size_t sz, struct frame * f
 	return z;
 }
 
-static size_t write_trace(char * const dst, const size_t sz, struct frame * f, int loc)
+static size_t frame_trace(char * const dst, const size_t sz, struct frame * f, int loc)
 {
 	size_t z = 0;
 
@@ -127,11 +127,6 @@ static size_t write_trace(char * const dst, const size_t sz, struct frame * f, i
 	return z;
 }
 
-static size_t frame_trace(char * const dst, const size_t sz, struct frame * f)
-{
-	return write_trace(dst, sz, f, 1);
-}
-
 ///
 /// API
 ///
@@ -143,7 +138,7 @@ int API xapi_frame_count()
 
 int API xapi_frame_count_alt()
 {
-	return callstack.alt_top;
+	return callstack.alt_len;
 }
 
 size_t API xapi_frame_error(char * const dst, const size_t sz, int x)
@@ -183,25 +178,40 @@ size_t API xapi_frame_info(char * const dst, const size_t sz, int x)
 
 size_t API xapi_frame_trace(char * const dst, const size_t sz, int x)
 {
-	return frame_trace(dst, sz, callstack.v[x]);
+	return frame_trace(dst, sz, callstack.v[x], 1);
 }
 
 size_t API xapi_frame_trace_alt(char * const dst, const size_t sz, int x)
 {
-	return frame_trace(dst, sz, &callstack.frames.alt[x]);
+	return frame_trace(dst, sz, &callstack.frames.alt[x], 1);
 }
 
 size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 {
 	size_t z = 0;
 
-	z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
-	z += snprintf(dst + z, sz - z, " ");
-	z += write_trace(dst + z, sz - z, callstack.v[callstack.l - 1], 0);
+	// alt stack
+	int x;
+	if(callstack.alt_len)
+	{
+		z += frame_error(dst + z, sz - z, &callstack.frames.alt[0]);
+		z += snprintf(dst + z, sz - z, " ");
+		z += frame_trace(dst + z, sz - z, &callstack.frames.alt[0], 0);
+	}
+
+	// norm stack
+	if(callstack.v[callstack.l - 1]->code > 0)
+	{
+		if(callstack.alt_len)
+			z += snprintf(dst + z, sz - z, " after ");
+
+		z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
+		z += snprintf(dst + z, sz - z, " ");
+		z += frame_trace(dst + z, sz - z, callstack.v[callstack.l - 1], 0);
+	}
 
 	size_t zt = z;
 
-	int x;
 	for(x = callstack.l - 1; x >= 0; x--)
 	{
 		int y;
@@ -227,25 +237,31 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 	return z;
 }
 
+typeof(callstack) * T;
+
 size_t API xapi_trace_full(char * const dst, const size_t sz)
 {
 	size_t z = 0;
 
+T = &callstack;
+
 	// alt stack
 	int x;
-	if(callstack.alt_top)
+	if(callstack.alt_len)
 	{
 		z += frame_error(dst + z, sz - z, &callstack.frames.alt[0]);
 
-		for(x = 0; x <= callstack.alt_top; x++)
+		for(x = 0; x < callstack.alt_len; x++)
 		{
 			z += snprintf(dst + z, sz - z, "\n");
 			z += snprintf(dst + z, sz - z, " %d : ", x);
-			z += frame_trace(dst + z, sz - z, &callstack.frames.alt[x]);
+			z += frame_trace(dst + z, sz - z, &callstack.frames.alt[x], 1);
 		}
 	}
 
 	// norm stack
+	if(z)
+		z += snprintf(dst + z, sz - z, "\n");
 	z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
 	z += snprintf(dst + z, sz - z, "\n");
 
@@ -255,7 +271,7 @@ size_t API xapi_trace_full(char * const dst, const size_t sz)
 			z += snprintf(dst + z, sz - z, "\n");
 
 		z += snprintf(dst + z, sz - z, " %d : ", x);
-		z += frame_trace(dst + z, sz - z, callstack.v[x]);
+		z += frame_trace(dst + z, sz - z, callstack.v[x], 1);
 	}
 
 	return z;

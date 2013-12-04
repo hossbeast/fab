@@ -32,8 +32,12 @@ __thread struct callstack callstack;
 
 #define restrict __restrict
 
-static void frame_set(struct frame * const restrict frame, const etable * const restrict etab, const int code, const char * const restrict file, const int line, const char * const restrict func)
+typeof(callstack) * T;
+
+static void frame_set(struct frame * const restrict frame, const etable * const restrict etab, const uint16_t code, const char * const restrict file, const int line, const char * const restrict func)
 {
+T = &callstack;
+
 	frame->etab = etab;
 	frame->code = code;
 	frame->file = file;
@@ -81,6 +85,8 @@ int API xapi_frame_push()
 	/* the initial frame-push, i.e. in a function that was not itself fatally called */
 	if(callstack.l == 0)
 	{
+printf("CALLSTACK INITIALIZE\n");
+
 		/* use the base frame for the current call */
 		callstack.v[0] = &callstack.frames.base;
 		callstack.v[0]->type = 1;
@@ -92,7 +98,7 @@ int API xapi_frame_push()
 		callstack.frames.alt[0].code = 0;
 		callstack.frames.alt[1].code = 0;
 
-		callstack.alt_top = 0;
+		callstack.alt_len = 0;
 	}
 
 	/* dynamic frame allocation */
@@ -119,7 +125,7 @@ void API xapi_frame_leave()
 {
 	if(callstack.finalized)
 	{
-		callstack.alt_top++;
+		callstack.alt_len++;
 	}
 	else
 	{
@@ -131,19 +137,21 @@ printf("%d <- %d\n", callstack.top + 1, callstack.top);
 
 int API xapi_frame_exit()
 {
-	int r = callstack.v[callstack.top--]->code;
+	uint16_t rc = callstack.v[callstack.l - 1]->code;
+	int16_t rt = (rc == 0 || rc == 0xFFFF) ? 0 : callstack.v[callstack.l - 1]->etab->id;
 
-printf("%d <- %d\n", callstack.top + 1, callstack.top);
+	callstack.top--;
 
 	if(callstack.top == -1)
 	{
+printf("CALLSTACK FREE\n");
 		callstack_free();
 	}
 
 printf("finalized=0\n");
 		callstack.finalized = 0;
 
-	return r;
+	return (rt << 16) | rc;
 }
 
 void API xapi_frame_finalize()
@@ -165,26 +173,28 @@ void API xapi_frame_pop()
 
 int API xapi_frame_top_code()
 {
-	return TOP->code;
+	uint16_t rc = TOP->code;
+	int16_t rt = (rc == 0 || rc == 0xFFFF) ? 0 : TOP->etab->id;
+
+	return (rt << 16) | rc;
 }
 
 int API xapi_frame_top_code_alt()
 {
-	return callstack.frames.alt[0].code;
+	uint16_t rc = callstack.frames.alt[0].code;
+	int16_t rt = (rc == 0 || rc == 0xFFFF) ? 0 : callstack.frames.alt[0].etab->id;
+
+	return (rt << 16) | rc;
 }
 
-typeof(callstack) *T;
-
-void API xapi_frame_set(const etable * const etab, const int code, const char * const file, const int line, const char * const func)
+void API xapi_frame_set(const etable * const etab, const uint16_t code, const char * const file, const int line, const char * const func)
 {
-T = &callstack;
-
 	if(callstack.finalized)
 	{
-		if(callstack.alt_top < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
+		if(callstack.alt_len < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
 		{
-printf("setting alt frame %d -> %s\n", callstack.alt_top, func);
-			frame_set(&callstack.frames.alt[callstack.alt_top], etab, code, file, line, func);
+printf("setting alt frame %d -> %s\n", callstack.alt_len, func);
+			frame_set(&callstack.frames.alt[callstack.alt_len], etab, code, file, line, func);
 		}
 		else
 		{
@@ -209,9 +219,9 @@ int API xapi_frame_set_message(const char * const fmt, ...)
 /*
 		int w;
 
-		if(callstack.alt_top < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
+		if(callstack.alt_len < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
 		{
-			struct frame_static * f = &callstack.frames.alt[callstack.alt_top];
+			struct frame_static * f = &callstack.frames.alt[callstack.alt_len];
 
 			w = vsnprintf(f->buf_msg, sizeof(f->buf_msg), fmt, va);
 
@@ -293,8 +303,17 @@ int API xapi_frame_add_info(char imp, const char * const k, int kl, const char *
 			int ns = TOP->info.a ?: 3;
 			ns = ns * 2 + ns / 2;
 
-			if(xrealloc(&TOP->info.v, sizeof(*TOP->info.v), ns, TOP->info.a) != 0)
-				return nomem();
+static int C;
+			if(0 && C++ == 0)
+			{
+				if(xrealloc(&TOP->info.v, sizeof(*TOP->info.v), ns, TOP->info.a) == 0)
+					return nomem();
+			}
+			else
+			{
+				if(xrealloc(&TOP->info.v, sizeof(*TOP->info.v), ns, TOP->info.a) != 0)
+					return nomem();
+			}
 
 			TOP->info.a = ns;
 		}

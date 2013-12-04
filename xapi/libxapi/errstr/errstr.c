@@ -15,15 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_INTERNAL_H
-#define _XAPI_INTERNAL_H
+#include "xapi/internal.h"
 
-#include "xapi.h"
-#include "unwind.h"
-#include "callstack/callstack.h"
-#include "SYS.errtab.h"
+void __attribute__((constructor)) init()
+{
+	perrtab->id = 0;
+}
 
-#define API __attribute__((visibility("protected")))
-#define APIDATA
-
-#endif
+const char * xapi_errstr(const int code)
+{
+	return perrtab->v[code & 0xFFFF].name;
+}
