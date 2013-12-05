@@ -22,6 +22,7 @@
 #include "unwind.h"
 #include "callstack/callstack.h"
 #include "SYS.errtab.h"
+#define perrtab perrtab_SYS
 
 #define API __attribute__((visibility("protected")))
 #define APIDATA

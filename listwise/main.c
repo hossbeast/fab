@@ -36,6 +36,7 @@
 
 #include "xapi.h"
 #include "LW.errtab.h"
+#define perrtab perrtab_LW
 
 #include "args.h"
 
@@ -63,6 +64,8 @@ static int snarf(char * path, void ** mem, size_t * sz)
 	struct stat st;
 	fatalize_sys(fstat, fd, &st);
 
+	fail(LW_EBADFILE, "epic fail");
+
 	if(S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode))
 	{
 		char blk[512];
@@ -86,7 +89,7 @@ static int snarf(char * path, void ** mem, size_t * sz)
 	}
 	else
 	{
-		fail(EBADFILE, "type : %s (%d)", 
+		fail(LW_EBADFILE, "type : %s (%d)", 
 			,   S_ISREG(st.st_mode)			? "REG"
 				: S_ISDIR(st.st_mode)			? "DIR"
 				: S_ISCHR(st.st_mode)			? "CHR"
@@ -238,7 +241,7 @@ int main(int argc, char** argv)
 				fatal(lstack_getstring, lx, y, x, &ss, &ssl);
 
 				if(fwrite(ss, 1, ssl, stdout) == -1)
-					fail("write()=[%d][%s]", errno, strerror(errno));
+					fatality_sys("fwrite");
 
 				if(g_args.out_null)
 					printf("%c", 0);
@@ -262,5 +265,11 @@ finally:
 	generator_free(g);
 	generator_parser_free(p);
 	args_teardown();
+
+if(XAPI_FAILING)
+{
+	xapi_backtrace();
+}
+
 coda;
 }

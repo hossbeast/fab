@@ -85,8 +85,6 @@ int API xapi_frame_push()
 	/* the initial frame-push, i.e. in a function that was not itself fatally called */
 	if(callstack.l == 0)
 	{
-printf("CALLSTACK INITIALIZE\n");
-
 		/* use the base frame for the current call */
 		callstack.v[0] = &callstack.frames.base;
 		callstack.v[0]->type = 1;
@@ -116,8 +114,6 @@ printf("CALLSTACK INITIALIZE\n");
 	callstack.l++;
 	callstack.top++;
 
-printf("%d -> %d\n", callstack.top - 1, callstack.top);
-
 	return 0;
 }
 
@@ -130,8 +126,6 @@ void API xapi_frame_leave()
 	else
 	{
 		callstack.top--;
-
-printf("%d <- %d\n", callstack.top + 1, callstack.top);
 	}
 }
 
@@ -144,12 +138,10 @@ int API xapi_frame_exit()
 
 	if(callstack.top == -1)
 	{
-printf("CALLSTACK FREE\n");
 		callstack_free();
 	}
 
-printf("finalized=0\n");
-		callstack.finalized = 0;
+	callstack.finalized = 0;
 
 	return (rt << 16) | rc;
 }
@@ -157,7 +149,6 @@ printf("finalized=0\n");
 void API xapi_frame_finalize()
 {
 	callstack.finalized = 1;
-printf("finalized=1\n");
 }
 
 int API xapi_frame_finalized()
@@ -193,7 +184,6 @@ void API xapi_frame_set(const etable * const etab, const uint16_t code, const ch
 	{
 		if(callstack.alt_len < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
 		{
-printf("setting alt frame %d -> %s\n", callstack.alt_len, func);
 			frame_set(&callstack.frames.alt[callstack.alt_len], etab, code, file, line, func);
 		}
 		else
@@ -203,7 +193,6 @@ printf("setting alt frame %d -> %s\n", callstack.alt_len, func);
 	}
 	else
 	{
-printf("setting reg frame %d -> %s\n", callstack.l, func);
 		frame_set(TOP, etab, code, file, line, func);
 	}
 }

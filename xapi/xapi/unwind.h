@@ -73,8 +73,8 @@
 	} while(0)
 
 // fatality macro for SYS
-#define fatality_sys(func, code)																		\
-	fatality(func, perrtab_SYS, code)
+#define fatality_sys(func)																					\
+	fatality(func, perrtab_SYS, errno)
 
 // if the called function fails, raise an error on its behalf
 #define fatalize(table, code, func, ...)														\

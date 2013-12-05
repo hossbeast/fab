@@ -76,7 +76,6 @@ $errtabpaths = [
 	> echo "};"
 
 	> echo "extern etable * perrtab_${pfx};"
-	> echo "extern etable * perrtab;"
 	> echo "#endif"
 
 	> exec >${cfl}
@@ -90,8 +89,10 @@ $errtabpaths = [
 	> echo "#undef _E"
 	> echo "}};"
 	> echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
-	> echo "etable * ${api} perrtab = &errtab_${pfx};"
 }
+
+# echo "etable * ${api} perrtab = &errtab_${pfx};"
+# echo "#extern etable * perrtab;"
 
 # cc : errors.c -> errors.o @ std.c
 +[@std.c](-$cobjpaths; $cfabpaths = [ $errtabpaths ~ xs/<errtab>/<errtab.c> ]; $cc $cflags)
