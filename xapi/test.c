@@ -6,15 +6,13 @@
 
 #define perrtab perrtab_SYS
 
-int beta(int num)
+int foxtrot(int num)
 {
-printf("-> beta\n");
 	if(num == 25)
 		fail(ERESTART, "restarting");
 
 finally:
-	XAPI_INFO(0, "betanum", "%d", num);
-printf("<- beta\n");
+	XAPI_INFO(0, "foxtrotnum", "%d", num);
 
 /*
 	if(num == 25)
@@ -22,32 +20,73 @@ printf("<- beta\n");
 		fatalize_sys(close, -1);
 	}
 */
+coda;
+}
 
+int echo(int num)
+{
+	fatal(foxtrot, num);
+
+finally:
+	XAPI_INFO(1, "echonum", "%d", num);
+coda;
+}
+
+int delta(int num)
+{
+	fatal(echo, num);
+
+finally:
+	XAPI_INFO(1, "deltanum", "%d", num);
+coda;
+}
+
+int charlie(int num)
+{
+	fatal(delta, num);
+
+finally:
+	XAPI_INFO(1, "charlienum", "%d", num);
+coda;
+}
+
+int bravo(int num)
+{
+	fatal(charlie, num);
+
+finally:
+	XAPI_INFO(1, "bravonum", "%d", num);
 coda;
 }
 
 int alpha(int num)
 {
-printf("-> alpha\n");
-	fatal(beta, num);
+	fatal(bravo, num);
 
 finally:
 	XAPI_INFO(1, "alphanum", "%d", num);
-printf("<- alpha\n");
 coda;
+}
+
+int reg()
+{
+	return 0;
 }
 
 int main()
 {
-	int r = alpha(25);
-	printf("alpha(25)=%d\n", r);
+	fatal(reg);
+	fatal(reg);
+	fatal(reg);
 	fatal(alpha, 25);
 	fatal(alpha, 13);
-	fatal(alpha, 0);
+	fatal(alpha, 10);
 
 finally :
-if(XAPI_FAILING)
+if(XAPI_UNWINDING)
 {
+XAPI_INFO(1, "mainnum", "%d", 0);
+
 	printf("backtrace: \n");
 		xapi_backtrace();
 

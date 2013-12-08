@@ -105,11 +105,13 @@ static size_t frame_location(char * const dst, const size_t sz, struct frame * f
 	return z;
 }
 
-static size_t frame_trace(char * const dst, const size_t sz, struct frame * f, int loc)
+static size_t frame_trace(char * const dst, const size_t sz, struct frame * f, int loc, int at)
 {
 	size_t z = 0;
 
-	z += snprintf(dst + z, sz - z, "at ");
+	if(at)
+		z += snprintf(dst + z, sz - z, "at ");
+
 	z += frame_function(dst + z, sz - z, f);
 	if(f->info.l)
 	{
@@ -138,7 +140,7 @@ int API xapi_frame_count()
 
 int API xapi_frame_count_alt()
 {
-	return callstack.alt_len;
+	return callstack.alt_l;
 }
 
 size_t API xapi_frame_error(char * const dst, const size_t sz, int x)
@@ -178,12 +180,12 @@ size_t API xapi_frame_info(char * const dst, const size_t sz, int x)
 
 size_t API xapi_frame_trace(char * const dst, const size_t sz, int x)
 {
-	return frame_trace(dst, sz, callstack.v[x], 1);
+	return frame_trace(dst, sz, callstack.v[x], 1, 1);
 }
 
 size_t API xapi_frame_trace_alt(char * const dst, const size_t sz, int x)
 {
-	return frame_trace(dst, sz, &callstack.frames.alt[x], 1);
+	return frame_trace(dst, sz, &callstack.frames.alt[x], 1, 1);
 }
 
 size_t API xapi_trace_pithy(char * const dst, const size_t sz)
@@ -192,27 +194,28 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 
 	// alt stack
 	int x;
-	if(callstack.alt_len)
+	if(callstack.alt_l)
 	{
 		z += frame_error(dst + z, sz - z, &callstack.frames.alt[0]);
 		z += snprintf(dst + z, sz - z, " ");
-		z += frame_trace(dst + z, sz - z, &callstack.frames.alt[0], 0);
+		z += frame_trace(dst + z, sz - z, &callstack.frames.alt[0], 0, 1);
 	}
 
 	// norm stack
-	if(callstack.v[callstack.l - 1]->code > 0)
-	{
-		if(callstack.alt_len)
-			z += snprintf(dst + z, sz - z, " after ");
+	if(callstack.alt_l)
+		z += snprintf(dst + z, sz - z, " after ");
 
-		z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
+	if(callstack.v[0]->code)
+	{
+		z += frame_error(dst + z, sz - z, callstack.v[0]);
 		z += snprintf(dst + z, sz - z, " ");
-		z += frame_trace(dst + z, sz - z, callstack.v[callstack.l - 1], 0);
 	}
+
+	z += frame_trace(dst + z, sz - z, callstack.v[0], 0, callstack.v[0]->code);
 
 	size_t zt = z;
 
-	for(x = callstack.l - 1; x >= 0; x--)
+	for(x = 1; x <= callstack.l; x++)
 	{
 		int y;
 		for(y = 0; y < callstack.v[x]->info.l; y++)
@@ -247,31 +250,34 @@ T = &callstack;
 
 	// alt stack
 	int x;
-	if(callstack.alt_len)
+	if(callstack.alt_l)
 	{
 		z += frame_error(dst + z, sz - z, &callstack.frames.alt[0]);
 
-		for(x = 0; x < callstack.alt_len; x++)
+		for(x = 0; x <= callstack.alt_l; x++)
 		{
 			z += snprintf(dst + z, sz - z, "\n");
 			z += snprintf(dst + z, sz - z, " %d : ", x);
-			z += frame_trace(dst + z, sz - z, &callstack.frames.alt[x], 1);
+			z += frame_trace(dst + z, sz - z, &callstack.frames.alt[x], 1, 1);
 		}
 	}
 
 	// norm stack
 	if(z)
 		z += snprintf(dst + z, sz - z, "\n");
-	z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
-	z += snprintf(dst + z, sz - z, "\n");
-
-	for(x = callstack.l - 1; x >= 0; x--)
+	if(callstack.v[0]->code)
 	{
-		if(x != callstack.l - 1)
+		z += frame_error(dst + z, sz - z, callstack.v[0]);
+		z += snprintf(dst + z, sz - z, "\n");
+	}
+
+	for(x = 0; x <= callstack.l; x++)
+	{
+		if(x)
 			z += snprintf(dst + z, sz - z, "\n");
 
-		z += snprintf(dst + z, sz - z, " %d : ", x);
-		z += frame_trace(dst + z, sz - z, callstack.v[x], 1);
+		z += snprintf(dst + z, sz - z, " %d : ", callstack.l - x);
+		z += frame_trace(dst + z, sz - z, callstack.v[x], 1, 1);
 	}
 
 	return z;

@@ -87,7 +87,6 @@ struct callstack
 		{
 			struct frame *	v;
 			int							a;
-			int							l;
 		} stor;
 
 		// the base frame is not dynamically allocated
@@ -101,14 +100,14 @@ struct callstack
 	struct frame ** v;
 	int							a;
 
-	// number of stack frames - grows with each call, shrinks with each successful exit
+	// number of stack frames when unwinding
 	int l;
 
-	// current frame - grows and shrinks with each call
-	int top;
+	// number of alt stack frames when unwinding
+	int alt_l;
 
-	// current alt frame - grows when finalized != 0
-	int alt_len;
+	// number of frames deep that current execution requires
+	int depth;
 
 	// transient value indicating that the current frame is finalized (execution has passed the XAPI_FINALLY label)
 	int finalized;

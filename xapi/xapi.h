@@ -32,6 +32,7 @@
 ** also functions for producing a terse and complete error string from the backtrace information
 **
 ** non UNWIND-ing code (even non-xapi-code) that calls UNWIND-ing code simply receives an error code
+**
 */
 
 #if XAPI_UNWIND || XAPI_LIBXAPI

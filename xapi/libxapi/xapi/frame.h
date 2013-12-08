@@ -39,6 +39,13 @@ struct callstack;
 //
 int xapi_frame_push();
 
+/// xapi_frame_depth
+//
+// SUMMARY
+//  return the depth of the callstack
+//
+int xapi_frame_depth();
+
 /// xapi_frame_leave
 //
 // callstack.top--
@@ -68,12 +75,6 @@ int xapi_frame_finalized();
 // callstack.l--
 //
 void xapi_frame_pop();
-
-/// xapi_frame_top_code
-//
-// returns the code of the top frame
-//
-int xapi_frame_top_code();
 
 /// xapi_frame_top_code_alt
 //

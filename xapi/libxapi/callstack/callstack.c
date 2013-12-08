@@ -50,7 +50,6 @@ void callstack_free()
 
 		xfree(&callstack.frames.stor.v);
 		callstack.frames.stor.a = 0;
-		callstack.frames.stor.l = 0;
 	}
 
 	xfree(&callstack.v);
