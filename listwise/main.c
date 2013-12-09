@@ -64,8 +64,6 @@ static int snarf(char * path, void ** mem, size_t * sz)
 	struct stat st;
 	fatalize_sys(fstat, fd, &st);
 
-	fail(LW_EBADFILE, "epic fail");
-
 	if(S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode))
 	{
 		char blk[512];
@@ -266,9 +264,13 @@ finally:
 	generator_parser_free(p);
 	args_teardown();
 
-if(XAPI_FAILING)
+if(XAPI_UNWINDING)
 {
+printf("backtrace : \n");
 	xapi_backtrace();
+
+printf("pithytrace : \n");
+	xapi_pithytrace();
 }
 
 coda;

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -14,12 +15,10 @@ int foxtrot(int num)
 finally:
 	XAPI_INFO(0, "foxtrotnum", "%d", num);
 
-/*
-	if(num == 25)
+	if(num == 255)
 	{
 		fatalize_sys(close, -1);
 	}
-*/
 coda;
 }
 
@@ -52,15 +51,20 @@ coda;
 
 int bravo(int num)
 {
-	fatal(charlie, num);
+	int fd = 0;
+//	fatal(charlie, num);
 
 finally:
 	XAPI_INFO(1, "bravonum", "%d", num);
+
+	fatalize_sys(close, fd);
 coda;
 }
 
 int alpha(int num)
 {
+	int fd = 0;
+
 	fatal(bravo, num);
 
 finally:
@@ -68,19 +72,9 @@ finally:
 coda;
 }
 
-int reg()
+int launch()
 {
-	return 0;
-}
-
-int main()
-{
-	fatal(reg);
-	fatal(reg);
-	fatal(reg);
 	fatal(alpha, 25);
-	fatal(alpha, 13);
-	fatal(alpha, 10);
 
 finally :
 if(XAPI_UNWINDING)
@@ -94,4 +88,12 @@ XAPI_INFO(1, "mainnum", "%d", 0);
 		xapi_pithytrace();
 }
 coda;
+}
+
+int main()
+{
+	int r =	launch();
+	printf("launch()=%d\n", r);
+
+	return r;
 }

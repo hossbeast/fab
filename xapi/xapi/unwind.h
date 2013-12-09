@@ -34,35 +34,48 @@
 ** called at the site of an error
 */
 
-// raise an error
+/// fail
+//
+// SUMMARY
+//  raise an error with the specified code and the current errtab
+//
 #define fail(code, fmt, ...)																				\
 	do {																															\
 		/* populate top stack frame */																	\
 		XAPI_FRAME_SET(perrtab, code);																	\
+																																		\
+		/* set message for top stack frame */														\
 		if(xapi_frame_set_message(fmt, #__VA_ARGS__) != 0)							\
 		{																																\
-			/* xapi_frame_set_message populated alt[1] with ENOMEM */			\
-			XAPI_FRAME_SET(0, 0);																					\
+			/* xapi_frame_set_message populated alt[0] with ENOMEM */			\
+			XAPI_FRAME_SET_AND_LEAVE(0, 0);																\
 		}																																\
+																																		\
+		/* jump to the end unless the frame is already finalized */			\
 		if(!xapi_frame_finalized())																			\
 		{																																\
 			goto XAPI_FAILURE;																						\
 		}																																\
 	} while(0)
 
-// raise an error on behalf of another function
+/// fatality
+//
+// SUMMARY
+//  raise an error on behalf of another function that just failed
+//
 #define fatality(func, table, code)																	\
 	do {																															\
 		if(xapi_frame_push() != 0)																			\
 		{																																\
-			/* xapi_frame_push populated alt[1] with ENOMEM */						\
-			XAPI_FRAME_SET(0, 0);																					\
+			/* xapi_frame_push populated alt[0] with ENOMEM */						\
+			XAPI_FRAME_SET_AND_LEAVE(0, 0);																\
+																																		\
+			/* while isalt, frame_push cannot return nonzero */						\
 			goto XAPI_FAILURE;																						\
 		}																																\
 																																		\
 		/* populate stack frame for the called function */							\
-		xapi_frame_set(table, code, 0, 0, func);												\
-		xapi_frame_leave();																							\
+		xapi_frame_set_and_leave(table, code, 0, 0, func);							\
 																																		\
 		/* populate stack frame for myself */														\
 		XAPI_FRAME_SET(0, 0);																						\
@@ -86,23 +99,23 @@
 		int __d = xapi_frame_depth();																		\
 		if(xapi_frame_push() != 0)																			\
 		{																																\
-			/* xapi_frame_push populated alt[1] with ENOMEM */						\
-			XAPI_FRAME_SET(0, 0);																					\
+			/* xapi_frame_push populated alt[0] with ENOMEM */						\
+			XAPI_FRAME_SET_AND_LEAVE(0, 0);																\
 			goto XAPI_FAILURE;																						\
 		}																																\
 		int after = xapi_frame_depth();	\
 																																		\
 		int __r = func(__VA_ARGS__);																		\
-if(1)	\
+if(0)	\
 {	\
 printf(#func " : %d, %d -> %d -> %d\n", __r,  __d, after, xapi_frame_depth());		\
 }	\
-		if(xapi_frame_depth() != __d || xapi_frame_finalized())																		\
+		if(xapi_frame_depth() != __d)																		\
 		{																																\
 			if(__r != 0)																									\
 			{																															\
 				/* populate stack frame on called functions behalf */				\
-				xapi_frame_set(table, code, 0, 0, #func);										\
+				xapi_frame_set(table, code || __r, 0, 0, #func);						\
 			}																															\
 			xapi_frame_leave();																						\
 		}																																\
@@ -146,7 +159,7 @@ XAPI_FINALLY
 #define coda																	\
 	goto XAPI_LEAVE;														\
 XAPI_LEAVE:																		\
-	return xapi_frame_exit() ?: xapi_frame_top_code_alt()
+	return xapi_frame_exit()
 
 /*
 ** called after finally
@@ -160,9 +173,8 @@ XAPI_LEAVE:																		\
 	do {																														\
 		if(xapi_frame_add_info(imp, k, 0, vfmt, ##__VA_ARGS__) != 0)	\
 		{																															\
-			/* xapi_frame_add_info populated alt[1] with ENOMEM */			\
-			XAPI_FRAME_SET(0, 0);																				\
-			xapi_frame_leave();																					\
+			/* xapi_frame_add_info populated alt[0] with ENOMEM */			\
+			XAPI_FRAME_SET_AND_LEAVE(0, 0);															\
 			goto XAPI_LEAVE;																						\
 		}																															\
 	} while(0)

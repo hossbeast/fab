@@ -46,6 +46,13 @@ int xapi_frame_push();
 //
 int xapi_frame_depth();
 
+/// xapi_frame_unwinding
+//
+// SUMMARY
+//  true when unwinding the callstack
+//
+int xapi_frame_unwinding();
+
 /// xapi_frame_leave
 //
 // callstack.top--
@@ -96,27 +103,9 @@ int xapi_frame_top_code_alt();
 //
 void xapi_frame_set(const struct etable * const restrict etab, const uint16_t code, const char * const restrict file, const int line, const char * const restrict func);
 
-/// xapi_frame_set_alt
-//
-// SUMMARY
-//  set properties for the top frame of the alt stack
-//
-// PARAMETERS
-//  [etab] - errtab table
-//  code   - error code
-//  [file] - file name
-//  [line] - line number
-//  [func] - function name
-//
-void xapi_frame_set_alt(const struct etable * const restrict etab, const uint16_t code, const char * const restrict file, const int line, const char * const restrict func);
-
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET(etab, code)	\
 	xapi_frame_set(etab, code, __FILE__, __LINE__, __FUNCTION__)
-
-// call xapi_frame_set_alt with current file name, line number, and function name
-#define XAPI_FRAME_SET_ALT(etab, code)	\
-	xapi_frame_set_alt(etab, code, __FILE__, __LINE__, __FUNCTION__)
 
 /// xapi_frame_set_message
 //
@@ -142,6 +131,17 @@ int xapi_frame_set_message(const char * const restrict fmt, ...)
 //
 int xapi_frame_add_info(char imp, const char * const k, int kl, const char * const restrict vfmt, ...)
 	__attribute__((nonnull));
+
+/// xapi_frame_set_and_leave
+//
+// SUMMARY
+//  call xapi_frame_set then xapi_frame_leave
+//
+void xapi_frame_set_and_leave(const struct etable * const restrict etab, const uint16_t code, const char * const restrict file, const int line, const char * const restrict func);
+
+// call xapi_frame_set_and_leave with current file name, line number, and function name
+#define XAPI_FRAME_SET_AND_LEAVE(etab, code)	\
+	xapi_frame_set_and_leave(etab, code, __FILE__, __LINE__, __FUNCTION__)
 
 #undef restrict
 #endif

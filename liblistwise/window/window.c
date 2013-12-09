@@ -21,7 +21,6 @@
 #include "listwise/internal.h"
 
 #include "xmem.h"
-#include "liblistwise_control.h"
 #include "macros.h"
 
 #define restrict __restrict

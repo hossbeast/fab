@@ -23,7 +23,6 @@
 
 #include "xstring.h"
 
-#include "liblistwise_control.h"
 
 /*
 

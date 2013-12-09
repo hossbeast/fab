@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "xapi/internal.h"
 
@@ -55,4 +56,7 @@ void callstack_free()
 	xfree(&callstack.v);
 	callstack.a = 0;
 	callstack.l = 0;
+	callstack.depth = 0;
+
+	memset(&callstack.alt, sizeof(callstack.alt), 0);
 }

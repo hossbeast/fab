@@ -25,7 +25,6 @@
 
 #include "listwise/operator.h"
 
-#include "liblistwise_control.h"
 #include "xmem.h"
 #include "canon.h"
 

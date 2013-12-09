@@ -21,7 +21,6 @@
 
 #include "listwise/operator.h"
 
-#include "liblistwise_control.h"
 
 /*
 

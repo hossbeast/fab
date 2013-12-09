@@ -30,7 +30,6 @@
 #include "listwise/internal.h"
 
 #include "xmem.h"
-#include "liblistwise_control.h"
 #include "macros.h"
 
 operator **	APIDATA g_ops;

@@ -24,8 +24,8 @@
 #include <dirent.h>
 
 #include "listwise/operator.h"
+#include "xapi.h"
 
-#include "liblistwise_control.h"
 
 /*
 

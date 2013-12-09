@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "listwise/internal.h"
-#include "liblistwise_control.h"
 
 #if SANITY
 #include "sanity.h"

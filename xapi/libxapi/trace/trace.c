@@ -140,7 +140,7 @@ int API xapi_frame_count()
 
 int API xapi_frame_count_alt()
 {
-	return callstack.alt_l;
+	return callstack.alt.l;
 }
 
 size_t API xapi_frame_error(char * const dst, const size_t sz, int x)
@@ -150,7 +150,7 @@ size_t API xapi_frame_error(char * const dst, const size_t sz, int x)
 
 size_t API xapi_frame_error_alt(char * const dst, const size_t sz, int x)
 {
-	return frame_error(dst, sz, &callstack.frames.alt[x]);
+	return frame_error(dst, sz, callstack.alt.v[x]);
 }
 
 size_t API xapi_frame_function(char * const dst, const size_t sz, int x)
@@ -160,7 +160,7 @@ size_t API xapi_frame_function(char * const dst, const size_t sz, int x)
 
 size_t API xapi_frame_function_alt(char * const dst, const size_t sz, int x)
 {
-	return frame_function(dst, sz, &callstack.frames.alt[x]);
+	return frame_function(dst, sz, callstack.alt.v[x]);
 }
 
 size_t API xapi_frame_location(char * const dst, const size_t sz, int x)
@@ -170,7 +170,7 @@ size_t API xapi_frame_location(char * const dst, const size_t sz, int x)
 
 size_t API xapi_frame_location_alt(char * const dst, const size_t sz, int x)
 {
-	return frame_location(dst, sz, &callstack.frames.alt[x]);
+	return frame_location(dst, sz, callstack.alt.v[x]);
 }
 
 size_t API xapi_frame_info(char * const dst, const size_t sz, int x)
@@ -185,7 +185,7 @@ size_t API xapi_frame_trace(char * const dst, const size_t sz, int x)
 
 size_t API xapi_frame_trace_alt(char * const dst, const size_t sz, int x)
 {
-	return frame_trace(dst, sz, &callstack.frames.alt[x], 1, 1);
+	return frame_trace(dst, sz, callstack.alt.v[x], 1, 1);
 }
 
 size_t API xapi_trace_pithy(char * const dst, const size_t sz)
@@ -194,45 +194,59 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 
 	// alt stack
 	int x;
-	if(callstack.alt_l)
+	if(callstack.alt.l)
 	{
-		z += frame_error(dst + z, sz - z, &callstack.frames.alt[0]);
+		z += frame_error(dst + z, sz - z, callstack.alt.v[0]);
 		z += snprintf(dst + z, sz - z, " ");
-		z += frame_trace(dst + z, sz - z, &callstack.frames.alt[0], 0, 1);
+		z += frame_trace(dst + z, sz - z, callstack.alt.v[0], 0, 1);
 	}
 
-	// norm stack
-	if(callstack.alt_l)
-		z += snprintf(dst + z, sz - z, " after ");
-
-	if(callstack.v[0]->code)
+	if(callstack.v == 0)
 	{
-		z += frame_error(dst + z, sz - z, callstack.v[0]);
-		z += snprintf(dst + z, sz - z, " ");
+		/*
+		** this is possible when there is only the alt stack, i.e. the first xapi_frame_push hit ENOMEM
+		*/
 	}
-
-	z += frame_trace(dst + z, sz - z, callstack.v[0], 0, callstack.v[0]->code);
-
-	size_t zt = z;
-
-	for(x = 1; x <= callstack.l; x++)
+	else
 	{
-		int y;
-		for(y = 0; y < callstack.v[x]->info.l; y++)
+		// norm stack
+		if(callstack.v[0]->code)
 		{
-			if(callstack.v[x]->info.v[y].imp)
-			{
-				if(z == zt)
-					z += snprintf(dst + z, sz - z, " with ");
-				else
-					SAY(", ");
+			if(callstack.alt.l)
+				z += snprintf(dst + z, sz - z, " after ");
 
-				SAY("%.*s=%.*s"
-					, callstack.v[x]->info.v[y].kl
-					, callstack.v[x]->info.v[y].ks
-					, callstack.v[x]->info.v[y].vl
-					, callstack.v[x]->info.v[y].vs
-				);
+			z += frame_error(dst + z, sz - z, callstack.v[0]);
+			z += snprintf(dst + z, sz - z, " ");
+		}
+		else
+		{
+			if(callstack.alt.l)
+				z += snprintf(dst + z, sz - z, " at ");
+		}
+
+		z += frame_trace(dst + z, sz - z, callstack.v[0], 0, callstack.v[0]->code);
+
+		size_t zt = z;
+
+		for(x = 1; x <= callstack.l; x++)
+		{
+			int y;
+			for(y = 0; y < callstack.v[x]->info.l; y++)
+			{
+				if(callstack.v[x]->info.v[y].imp)
+				{
+					if(z == zt)
+						z += snprintf(dst + z, sz - z, " with ");
+					else
+						SAY(", ");
+
+					SAY("%.*s=%.*s"
+						, callstack.v[x]->info.v[y].kl
+						, callstack.v[x]->info.v[y].ks
+						, callstack.v[x]->info.v[y].vl
+						, callstack.v[x]->info.v[y].vs
+					);
+				}
 			}
 		}
 	}
@@ -250,34 +264,44 @@ T = &callstack;
 
 	// alt stack
 	int x;
-	if(callstack.alt_l)
+	if(callstack.alt.l)
 	{
-		z += frame_error(dst + z, sz - z, &callstack.frames.alt[0]);
+		z += frame_error(dst + z, sz - z, callstack.alt.v[0]);
 
-		for(x = 0; x <= callstack.alt_l; x++)
+		for(x = 0; x < callstack.alt.l; x++)
 		{
 			z += snprintf(dst + z, sz - z, "\n");
 			z += snprintf(dst + z, sz - z, " %d : ", x);
-			z += frame_trace(dst + z, sz - z, &callstack.frames.alt[x], 1, 1);
+			z += frame_trace(dst + z, sz - z, callstack.alt.v[x], 1, 1);
 		}
 	}
 
 	// norm stack
-	if(z)
-		z += snprintf(dst + z, sz - z, "\n");
-	if(callstack.v[0]->code)
+	if(callstack.v == 0)
 	{
-		z += frame_error(dst + z, sz - z, callstack.v[0]);
-		z += snprintf(dst + z, sz - z, "\n");
+		/*
+		** this is possible when there is only the alt stack, i.e. the first xapi_frame_push hit ENOMEM
+		*/
 	}
-
-	for(x = 0; x <= callstack.l; x++)
+	else
 	{
-		if(x)
+		if(z)
 			z += snprintf(dst + z, sz - z, "\n");
 
-		z += snprintf(dst + z, sz - z, " %d : ", callstack.l - x);
-		z += frame_trace(dst + z, sz - z, callstack.v[x], 1, 1);
+		if(callstack.v[0]->code)
+		{
+			z += frame_error(dst + z, sz - z, callstack.v[0]);
+			z += snprintf(dst + z, sz - z, "\n");
+		}
+
+		for(x = 0; x <= callstack.l; x++)
+		{
+			if(x)
+				z += snprintf(dst + z, sz - z, "\n");
+
+			z += snprintf(dst + z, sz - z, " %d : ", callstack.l - x);
+			z += frame_trace(dst + z, sz - z, callstack.v[x], 1, 1);
+		}
 	}
 
 	return z;

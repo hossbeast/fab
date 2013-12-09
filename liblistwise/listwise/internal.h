@@ -33,6 +33,9 @@
 #include "coll.h"
 #include "idx.h"
 
+#include "LW.errtab.h"
+#define perrtab perrtab_LW
+
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 

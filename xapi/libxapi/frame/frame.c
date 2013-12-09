@@ -34,26 +34,17 @@ __thread struct callstack callstack;
 
 typeof(callstack) * T;
 
-static void frame_set(struct frame * const restrict frame, const etable * const restrict etab, const uint16_t code, const char * const restrict file, const int line, const char * const restrict func)
-{
-T = &callstack;
-
-	frame->etab = etab;
-	frame->code = code;
-	frame->file = file;
-	frame->line = line;
-	frame->func = func;
-
-	frame->msgl = 0;
-	frame->info.l = 0;
-}
-
 static int nomem()
 {
-	// populate the alternate frame with an ENOMEM error
-	frame_set(&callstack.frames.alt[0], perrtab_SYS, SYS_ENOMEM, 0, 0, "xrealloc");
+	// switch to alt stack
+	callstack.isalt = 1;
 
-	xapi_frame_leave();
+	// add alt frames
+	xapi_frame_push();
+	xapi_frame_push();
+
+	// populate the alternate frame with an ENOMEM error
+	xapi_frame_set_and_leave(perrtab_SYS, SYS_ENOMEM, 0, 0, "xrealloc");
 
 	return -1;
 }
@@ -65,95 +56,94 @@ static int nomem()
 ///
 int API xapi_frame_push()
 {
-	// if the current frame has already been finalized, do nothing ; we are now using the alt stack
-	if(callstack.finalized)
+	if(callstack.isalt || callstack.finalized)
 	{
-		return 0;
+//printf("isalt enter, l %d, depth %d -> %d\n", callstack.alt.l, callstack.alt.depth, callstack.alt.depth + 2);
+
+		callstack.isalt = 1;
+		callstack.alt.depth++;
 	}
-
-	callstack.depth++;
-
-	/* ensure dynamic frame allocation */
-	if(callstack.depth > callstack.frames.stor.a)
+	else
 	{
-		int ns = callstack.frames.stor.a ?: 10;
-		ns = ns * 2 + ns / 2;
-		if(xrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) != 0)
-			return nomem();
+//printf("isreg enter, l %d, depth %d -> %d\n", callstack.l, callstack.depth, callstack.depth + 1);
+		callstack.depth++;
 
-		callstack.frames.stor.a = ns;
-	}
+		/* ensure dynamic frame allocation */
+		if(callstack.depth > callstack.frames.stor.a)
+		{
+			int ns = callstack.frames.stor.a ?: 10;
+			ns = ns * 2 + ns / 2;
 
-	/* ensure frame list allocation for at least 2 frames */
-	if(callstack.depth >= callstack.a)
-	{
-		int ns = callstack.a ?: 10;
-		ns = ns * 2 + ns / 2;
-		if(xrealloc(&callstack.v, sizeof(*callstack.v), ns, callstack.a) != 0)
-			return nomem();
+			ns = callstack.depth;
+static int C;
+			if(C++ == -1)
+			{
+				if(xrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) == 0)
+				{
+					xapi_frame_leave();
+					return nomem();
+				}
+			}
+			else
+			{
+				if(xrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) != 0)
+				{
+					xapi_frame_leave();
+					return nomem();
+				}
+			}
 
-		callstack.a = ns;
+			callstack.frames.stor.a = ns;
+		}
+
+		/* ensure frame list allocation for at least 2 frames */
+		if(callstack.depth >= callstack.a)
+		{
+			int ns = callstack.a ?: 10;
+			ns = ns * 2 + ns / 2;
+			if(xrealloc(&callstack.v, sizeof(*callstack.v), ns, callstack.a) != 0)
+			{
+				xapi_frame_leave();
+				return nomem();
+			}
+
+			callstack.a = ns;
+		}
 	}
 
 	return 0;
 }
-
-#if 0
-	/* the initial frame-push, i.e. in a function that was not itself fatally called */
-	if(callstack.l == 0)
-	{
-		/* use the base frame for the current call */
-		callstack.v[0] = &callstack.frames.base;
-		callstack.v[0]->type = 1;
-		callstack.l = 1;
-
-		/* reset some state */
-		callstack.top = 0;
-		callstack.frames.stor.l = 0;
-		callstack.frames.alt[0].code = 0;
-		callstack.frames.alt[1].code = 0;
-
-		callstack.alt_l = 0;
-	}
-
-	/* dynamic frame allocation */
-	if(callstack.frames.stor.a == callstack.frames.stor.l)
-	{
-		int ns = callstack.frames.stor.a ?: 10;
-		ns = ns * 2 + ns / 2;
-		if(xrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) != 0)
-			return nomem();
-
-		callstack.frames.stor.a = ns;
-	}
-
-	callstack.v[callstack.l] = &callstack.frames.stor.v[callstack.frames.stor.l++];
-	callstack.l++;
-	callstack.top++;
-
-printf("%d -> %d\n", callstack.top - 1, callstack.top);
-
-	return 0;
-}
-#endif
 
 int API xapi_frame_depth()
 {
-	return callstack.depth;
+	if(callstack.isalt || callstack.finalized)
+		return callstack.alt.depth + 1;
+	else
+		return callstack.depth;
 }
 
 void API xapi_frame_leave()
 {
-	if(callstack.finalized)
+	if(callstack.isalt)
 	{
-		callstack.alt_l++;
+//printf("isalt leaving, l %d -> %d, depth %d -> %d%s\n", callstack.alt.l, callstack.alt.l + 1, callstack.alt.depth, callstack.alt.depth - 1, callstack.alt.depth == 1 ? " ISALT OFF" : "");
+		if(callstack.alt.v[callstack.alt.l])
+			callstack.alt.l++;
+
+		if(--callstack.alt.depth == 0)
+			callstack.isalt = 0;
 	}
 	else
 	{
-		if(TOP)
+//printf("isreg leaving, depth %d -> %d%s\n", callstack.depth, callstack.depth - 1, callstack.depth == 0 ? " FREEING" : "");
+		if(callstack.v && callstack.v[callstack.l])
 			callstack.l++;
 
-		callstack.depth--;
+		/*
+		** depth goes to -1 when a function exits that was not itself called with UNWIND-ing
+		*/
+		if(callstack.depth-- == 0)
+			callstack_free();
 	}
 }
 
@@ -162,19 +152,31 @@ int API xapi_frame_exit()
 	uint16_t rc = 0;
 	int16_t rt = 0;
 
-	if(TOP)
+	if(callstack.l && callstack.v[0]->code)
 	{
-		rc = TOP->code;
-		rt = (rc == 0 || rc == 0xFFFF) ? 0 : TOP->etab->id;
-
-		callstack.l++;
+		rc = callstack.v[0]->code;
+		rt = (rc == 0 || rc == 0xFFFF) ? 0 : callstack.v[0]->etab->id;
+	}
+	else if(callstack.alt.l)
+	{
+		rc = callstack.frames.alt[0].code;
+		rt = (rc == 0 || rc == 0xFFFF) ? 0 : callstack.frames.alt[0].etab->id;
 	}
 
-	if(callstack.depth-- == 0)
-		callstack_free();
+	if(callstack.isalt)
+	{
+		/*
+		** this can happen when 
+		*/
+		dprintf(2, "EXIT WHILE ISALT DEPTH=%d\n", callstack.alt.depth);
+		exit(0);
+	}
+
+	xapi_frame_leave();
 
 	callstack.finalized = 0;
 
+//	printf("exiting with %d\n", (rt << 16) | rc);
 	return (rt << 16) | rc;
 }
 
@@ -188,33 +190,25 @@ int API xapi_frame_finalized()
 	return callstack.finalized;
 }
 
-void API xapi_frame_pop()
-{
-	TOP->code = 0;
-}
-
 int API xapi_frame_unwinding()
 {
-	return (int)(intptr_t)TOP;
-}
-
-int API xapi_frame_top_code_alt()
-{
-	uint16_t rc = callstack.frames.alt[0].code;
-	int16_t rt = (rc == 0 || rc == 0xFFFF) ? 0 : callstack.frames.alt[0].etab->id;
-
-	return (rt << 16) | rc;
+T = &callstack;
+	return callstack.l || callstack.alt.l;
 }
 
 void API xapi_frame_set(const etable * const etab, const uint16_t code, const char * const file, const int line, const char * const func)
 {
 T = &callstack;
 
-	if(callstack.finalized)
+	struct frame * f = 0;
+
+	if(callstack.isalt)
 	{
-		if(callstack.alt_l < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
+//printf("setting alt[%d] %s at %s:%d\n", callstack.alt.l, func, file, line);
+		if(callstack.alt.l < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
 		{
-			frame_set(&callstack.frames.alt[callstack.alt_l], etab, code, file, line, func);
+			f = callstack.alt.v[callstack.alt.l] = &callstack.frames.alt[callstack.alt.l];
+			f->type = 1;
 		}
 		else
 		{
@@ -226,16 +220,40 @@ T = &callstack;
 		if(callstack.depth == 0)
 		{
 			// use the base frame for the initial call
-			TOP = &callstack.frames.base;
-			TOP->type = 1;
+			if(!TOP)
+			{
+//printf("setting reg[%d] %s at %s:%d\n", callstack.l, func, file, line);
+				f = TOP = &callstack.frames.base;
+				f->type = 1;
+			}
 		}
 		else
 		{
-			TOP = &callstack.frames.stor.v[callstack.l];
+			if(!TOP)
+			{
+//printf("setting reg[%d] %s at %s:%d\n", callstack.l, func, file, line);
+				f = TOP = &callstack.frames.stor.v[callstack.l];
+			}
 		}
-
-		frame_set(TOP, etab, code, file, line, func);
 	}
+
+	if(f)
+	{
+		f->etab = etab;
+		f->code = code;
+		f->file = file;
+		f->line = line;
+		f->func = func;
+
+		f->msgl = 0;
+		f->info.l = 0;
+	}
+}
+
+void API xapi_frame_set_and_leave(const etable * const etab, const uint16_t code, const char * const file, const int line, const char * const func)
+{
+	xapi_frame_set(etab, code, file, line, func);
+	xapi_frame_leave();
 }
 
 int API xapi_frame_set_message(const char * const fmt, ...)
@@ -243,22 +261,9 @@ int API xapi_frame_set_message(const char * const fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 
-	if(callstack.finalized)
+	if(callstack.isalt)
 	{
 		dprintf(2, "MESSAGE ON ALT STACK\n");
-/*
-		int w;
-
-		if(callstack.alt_l < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
-		{
-			struct frame_static * f = &callstack.frames.alt[callstack.alt_l];
-
-			w = vsnprintf(f->buf_msg, sizeof(f->buf_msg), fmt, va);
-
-			f->msg  = f->buf_msg;
-			f->msgl = w;
-		}
-*/
 	}
 	else
 	{
@@ -279,8 +284,17 @@ int API xapi_frame_set_message(const char * const fmt, ...)
 				ns = ns * 2 + ns / 2;
 			}
 			
-			if(xrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) != 0)
-				return nomem();
+static int C;
+			if(C++ == 0)
+			{
+				if(xrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) == 0)
+					return nomem();
+			}
+			else
+			{
+				if(xrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) != 0)
+					return nomem();
+			}	
 
 			TOP->msga = ns;
 		}
@@ -295,79 +309,87 @@ int API xapi_frame_set_message(const char * const fmt, ...)
 
 int API xapi_frame_add_info(char imp, const char * const k, int kl, const char * const vfmt, ...)
 {
-	if(TOP)
+	struct frame * f = 0;
+
+	if(callstack.v)
+		f = callstack.v[callstack.l];
+	else if(callstack.alt.l)
+		f = callstack.alt.v[callstack.alt.l - 1];	
+
+	if(f)
 	{
 		kl = kl ?: strlen(k);
 
-		if(TOP->type)
+		if(f->type)
 		{
-			struct frame_static * f = (struct frame_static*)TOP;
+			struct frame_static * fs = (struct frame_static*)f;
 			
-			if(f->info.l < (sizeof(f->buf_info) / sizeof(f->buf_info[0])))
+			if(fs->info.l < (sizeof(fs->buf_info) / sizeof(fs->buf_info[0])))
 			{
-				f->info.v = f->buf_info;
-				f->info.v[f->info.l].imp = imp;
-				f->info.v[f->info.l].ks = f->buf_info_ks[f->info.l];
-				f->info.v[f->info.l].vs = f->buf_info_vs[f->info.l];
+				fs->info.v = fs->buf_info;
+				fs->info.v[fs->info.l].imp = imp;
+				fs->info.v[fs->info.l].ks = fs->buf_info_ks[fs->info.l];
+				fs->info.v[fs->info.l].vs = fs->buf_info_vs[fs->info.l];
 				
 				// key
-				memcpy(f->info.v[f->info.l].ks, k, MIN(sizeof(f->buf_info_ks[0]), kl - 1));
-				f->info.v[f->info.l].ks[kl] = 0;
-				f->info.v[f->info.l].kl = kl;
+				memcpy(fs->info.v[fs->info.l].ks, k, MIN(sizeof(fs->buf_info_ks[0]) - 1, kl));
+				fs->info.v[fs->info.l].ks[kl] = 0;
+				fs->info.v[fs->info.l].kl = kl;
 
 				// value
 				va_list va;
 				va_start(va, vfmt);
 
-				f->info.v[f->info.l].vl = vsnprintf(f->info.v[f->info.l].vs, sizeof(f->buf_info_vs[0]), vfmt, va);
+				fs->info.v[fs->info.l].vl = vsnprintf(fs->info.v[fs->info.l].vs, sizeof(fs->buf_info_vs[0]), vfmt, va);
 
-				f->info.l++;
+				fs->info.l++;
 			}
 		}
 		else
 		{
 			// reallocate the info list
-			if(TOP->info.l == TOP->info.a)
+			if(f->info.l == f->info.a)
 			{
-				int ns = TOP->info.a ?: 3;
+				int ns = f->info.a ?: 3;
 				ns = ns * 2 + ns / 2;
 
-	static int C;
-				if(0 && C++ == 0)
+ns = f->info.l + 1;
+static int C;
+				if(C++ == -1)
 				{
-					if(xrealloc(&TOP->info.v, sizeof(*TOP->info.v), ns, TOP->info.a) == 0)
+					if(xrealloc(&f->info.v, sizeof(*f->info.v), ns, f->info.a) == 0)
 						return nomem();
 				}
 				else
 				{
-					if(xrealloc(&TOP->info.v, sizeof(*TOP->info.v), ns, TOP->info.a) != 0)
+					if(xrealloc(&f->info.v, sizeof(*f->info.v), ns, f->info.a) != 0)
 						return nomem();
 				}
 
-				TOP->info.a = ns;
+				f->info.a = ns;
 			}
 
-			TOP->info.v[TOP->info.l].imp = imp;
+			f->info.v[f->info.l].imp = imp;
 
 			// populate key
-			if(TOP->info.v[TOP->info.l].ka <= kl)
+			if(f->info.v[f->info.l].ka <= kl)
 			{
-				int ns = TOP->info.v[TOP->info.l].ka;
+				int ns = f->info.v[f->info.l].ka;
 				while(ns <= kl)
 				{
 					ns = ns ?: 10;
 					ns = ns * 2 + ns / 2;
 				}
 				
-				if(xrealloc(&TOP->info.v[TOP->info.l].ks, sizeof(*TOP->info.v[0].ks), ns, TOP->info.v[TOP->info.l].ka) != 0)
+				if(xrealloc(&f->info.v[f->info.l].ks, sizeof(*f->info.v[0].ks), ns, f->info.v[f->info.l].ka) != 0)
 					return nomem();
 
-				TOP->info.v[TOP->info.l].ka = ns;
+				f->info.v[f->info.l].ka = ns;
 			}
 
-			memcpy(TOP->info.v[TOP->info.l].ks, k, kl);
-			TOP->info.v[TOP->info.l].ks[kl] = 0;
-			TOP->info.v[TOP->info.l].kl = kl;
+			memcpy(f->info.v[f->info.l].ks, k, kl);
+			f->info.v[f->info.l].ks[kl] = 0;
+			f->info.v[f->info.l].kl = kl;
 
 			// populate value
 			va_list va;
@@ -381,25 +403,25 @@ int API xapi_frame_add_info(char imp, const char * const k, int kl, const char *
 			va_end(va2);
 
 			// reallocate
-			if(TOP->info.v[TOP->info.l].va <= w)
+			if(f->info.v[f->info.l].va <= w)
 			{
-				int ns = TOP->info.v[TOP->info.l].va;
+				int ns = f->info.v[f->info.l].va;
 				while(ns <= w)
 				{
 					ns = ns ?: 10;
 					ns = ns * 2 + ns / 2;
 				}
 				
-				if(xrealloc(&TOP->info.v[TOP->info.l].vs, sizeof(*TOP->info.v[0].vs), ns, TOP->info.v[TOP->info.l].va) != 0)
+				if(xrealloc(&f->info.v[f->info.l].vs, sizeof(*f->info.v[0].vs), ns, f->info.v[f->info.l].va) != 0)
 					return nomem();
 
-				TOP->info.v[TOP->info.l].va = ns;
+				f->info.v[f->info.l].va = ns;
 			}
 
-			TOP->info.v[TOP->info.l].vl = vsprintf(TOP->info.v[TOP->info.l].vs, vfmt, va);
+			f->info.v[f->info.l].vl = vsprintf(f->info.v[f->info.l].vs, vfmt, va);
 			va_end(va);
 
-			TOP->info.l++;
+			f->info.l++;
 		}
 	}
 

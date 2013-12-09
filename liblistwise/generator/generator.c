@@ -29,7 +29,6 @@
 
 #include "xmem.h"
 
-#include "liblistwise_control.h"
 
 #define restrict __restrict
 

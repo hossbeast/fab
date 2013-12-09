@@ -103,11 +103,18 @@ struct callstack
 	// number of stack frames when unwinding
 	int l;
 
-	// number of alt stack frames when unwinding
-	int alt_l;
-
 	// number of frames deep that current execution requires
 	int depth;
+
+	struct
+	{
+		struct frame * v[2];
+		int l;
+		int depth;
+	} alt;
+
+	// transient value indicating that the alt stack is being populated
+	int isalt;
 
 	// transient value indicating that the current frame is finalized (execution has passed the XAPI_FINALLY label)
 	int finalized;

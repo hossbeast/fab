@@ -22,7 +22,6 @@
 #include "coll.h"
 #include "idx.h"
 
-#include "liblistwise_control.h"
 
 union object_registry_t object_registry = { { .size = sizeof(listwise_object*) } };
 

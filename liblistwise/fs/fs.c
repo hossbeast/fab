@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "listwise/internal.h"
-#include "liblistwise_control.h"
 
 #include "canon.h"
 #include "parseint.h"

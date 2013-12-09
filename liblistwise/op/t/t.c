@@ -22,7 +22,6 @@
 #include "listwise/object.h"
 #include "listwise/lwx.h"
 
-#include "liblistwise_control.h"
 #include "xmem.h"
 
 /*

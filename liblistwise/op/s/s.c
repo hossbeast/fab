@@ -23,7 +23,6 @@
 #include "listwise/lwx.h"
 #include "listwise/re.h"
 
-#include "liblistwise_control.h"
 
 #include "xmem.h"
 #include "parseint.h"

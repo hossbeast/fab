@@ -25,7 +25,6 @@
 #include "xmem.h"
 #include "xstring.h"
 #include "macros.h"
-#include "liblistwise_control.h"
 
 #define restrict __restrict
 
