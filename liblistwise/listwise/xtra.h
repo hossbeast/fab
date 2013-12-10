@@ -142,32 +142,6 @@ extern int listwise_info_fd;
 //
 extern int listwise_warn_fd;
 
-/// listwise_error_fd
-//
-// SUMMARY
-//  listwise writes errors to this fd before returning nonzero from some API (indicating failure)
-//
-// EXAMPLES
-//  listwise operator has unexpected arguments
-//  listwise operator encounters a fatal filesystem error
-//  other fatal errors (memory allocation, io, etc)
-//
-// DEFAULT
-//  2 - stderr
-//
-extern int listwise_error_fd;
-
-/// listwise_errors_unwind
-//
-// SUMMARY
-//  0 - report on site of immediate error only
-//  1 - unwind stack when reporting errors
-//
-// DEFAULT
-//  0
-//
-extern int listwise_errors_unwind;
-
 /// listwise_identity 
 //
 // SUMMARY

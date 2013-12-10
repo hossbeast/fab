@@ -134,7 +134,7 @@ printf(#func " : %d, %d -> %d -> %d\n", __r,  __d, after, xapi_frame_depth());		
 #define fatalize_sys(func, ...)																			\
 	fatalize(perrtab_SYS, errno, func, __VA_ARGS__)
 
-// fatal assumes that the called function is UNWIND-ing
+// by using fatal instead of fatalize assumes that the called function is UNWIND-ing
 #define fatal(func, ...) fatalize(0, 0, func, __VA_ARGS__)
 
 /// finally
@@ -167,7 +167,7 @@ XAPI_LEAVE:																		\
 
 /// XAPI_INFO
 //
-// set info for the current frame
+// set info for the current frame if XAPI_UNWINDING
 //
 #define XAPI_INFO(imp, k, vfmt, ...)															\
 	do {																														\

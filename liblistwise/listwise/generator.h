@@ -24,13 +24,16 @@
 struct generator_t;
 typedef struct generator_t generator;
 
+struct arg;
+struct operation;
+
 struct generator_t
 {
-	arg **				args;		// initial list contents
-	int						argsl;
+	struct arg **				args;		// initial list contents
+	int									argsl;
 
-	operation **	ops;		// operator/args pairs to be executed sequentially
-	int						opsl;
+	struct operation **	ops;		// operator/args pairs to be executed sequentially
+	int									opsl;
 };
 
 

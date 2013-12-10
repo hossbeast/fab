@@ -15,7 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	GENERATOR_SYNTAX	generator string could not be parsed
-2	GENERATOR_INVALID	generator contains invalid elements
-3	GENERATOR_ILLBYTE	generator string contains illegal byte(s)
-4	GENERATOR_BACKREF	generator contains illegal backreference
+1	SYNTAX		generator string could not be parsed
+2	ILLBYTE		generator string contains illegal byte(s)
+3	ILLREF		generator contains illegal backreference
+4	ILLOP			generator contains 
+5	ARGSNUM		wrong number of arguments
+6	ARGSTYPE	argument of the wrong type
+7	ARGSDOM		argument out of expected range

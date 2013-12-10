@@ -23,9 +23,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "listwise/operator.h"
-#include "xapi.h"
-
+#include "listwise/internal.h"
 
 /*
 
@@ -117,41 +115,72 @@ operator op_desc[] = {
 	, {}
 };
 
-#define USE_STAT  1
-#define USE_LSTAT 2
+static int wrapstat(char * s, int linkstat, struct stat * st, int * r)
+{
+	if(linkstat)
+		(*r) = lstat(s, st);
+	else
+		(*r) = stat(s, st);
 
-static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int statmode, int (*selector)(struct stat *))
+	if(*r)
+	{
+		if(errno == ENOENT || errno == ENOTDIR)
+		{
+			dprintf(listwise_info_fd, "%s('%s')=[%d][%s]\n", linkstat ? "lstat" : "stat", s, errno, strerror(errno));
+		}
+		else
+		{
+			fatality_sys(linkstat ? "lstat" : "stat");
+		}
+	}
+
+finally:
+	XAPI_INFO(1, "path", "%s", s);
+coda;
+}
+
+static int wrapeuidaccess(char * s, int mode, int * r)
+{
+	if(((*r) = euidaccess(s, mode)) == 0)
+	{
+		/* nothing */
+	}
+	else if(errno == EACCES)
+	{
+		/* nothing */
+	}
+	else if(errno == ENOENT || errno == ENOTDIR)
+	{
+		dprintf(listwise_info_fd, "euidaccess('%s')=[%d][%s]\n", s, errno, strerror(errno));
+	}
+	else
+	{
+		fatality_sys("euidaccess");
+	}
+
+finally:
+	XAPI_INFO(1, "path", "%s", s);
+coda;
+}
+
+static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linkstat, int (*selector)(struct stat *))
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
 		struct stat st;
-		int r = 1;
-		if(statmode == USE_STAT)
-		{
-			r = stat(lstack_string(ls, 0, x), &st);
-		}
-		else if(statmode == USE_LSTAT)
-		{
-			r = lstat(lstack_string(ls, 0, x), &st);
-		}
+		int r;
+		fatal(wrapstat, lstack_string(ls, 0, x), linkstat, &st, &r);
 
 		if(r == 0)
 		{
 			if(selector(&st))
 				fatal(lstack_sel_stage, ls, x);
 		}
-		else if(errno == ENOENT || errno == ENOTDIR)
+		else if(selector(0))
 		{
-			dprintf(listwise_info_fd, "%s('%s')=[%d][%s]\n", statmode == USE_STAT ? "stat" : "lstat", lstack_string(ls, 0, x), errno, strerror(errno));
-
-			if(selector(0))
-				fatal(lstack_sel_stage, ls, x);
-		}
-		else
-		{
-			fail("%s('%s')=[%d][%s]\n", statmode == USE_STAT ? "stat" : "lstat", lstack_string(ls, 0, x), errno, strerror(errno));
+			fatal(lstack_sel_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND
@@ -166,7 +195,7 @@ int op_exec_f(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return st && S_ISREG(st->st_mode);
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
+	return op_exec(o, ls, ovec, ovec_len, 0, selector);
 }
 
 int op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len)
@@ -176,7 +205,7 @@ int op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return st && S_ISDIR(st->st_mode);
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
+	return op_exec(o, ls, ovec, ovec_len, 0, selector);
 }
 
 int op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len)
@@ -186,7 +215,7 @@ int op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return st && S_ISLNK(st->st_mode);
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, USE_LSTAT, selector);
+	return op_exec(o, ls, ovec, ovec_len, 1, selector);
 }
 
 int op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len)
@@ -196,7 +225,7 @@ int op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return !!st;
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
+	return op_exec(o, ls, ovec, ovec_len, 0, selector);
 }
 
 int op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len)
@@ -206,7 +235,7 @@ int op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return st && S_ISDIR(st->st_mode) ? st->st_nlink == 0 : st->st_size == 0;
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, USE_STAT, selector);
+	return op_exec(o, ls, ovec, ovec_len, 0, selector);
 }
 
 int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)
@@ -215,21 +244,12 @@ int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		if(euidaccess(lstack_string(ls, 0, x), R_OK) == 0)
+		int r;
+		fatal(wrapeuidaccess, lstack_string(ls, 0, x), R_OK, &r);
+
+		if(r == 0)
 		{
 			fatal(lstack_sel_stage, ls, x);
-		}
-		else if(errno == EACCES)
-		{
-			/* nothing */
-		}
-		else if(errno == ENOENT || errno == ENOTDIR)
-		{
-			dprintf(listwise_info_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
-		}
-		else
-		{
-			fail("euidaccess('%s')=[%d][%s]", lstack_string(ls, 0, x), errno, strerror(errno));
 		}
 	}
 	LSTACK_ITEREND
@@ -243,21 +263,12 @@ int op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		if(euidaccess(lstack_string(ls, 0, x), W_OK) == 0)
+		int r;
+		fatal(wrapeuidaccess, lstack_string(ls, 0, x), W_OK, &r);
+
+		if(r == 0)
 		{
 			fatal(lstack_sel_stage, ls, x);
-		}
-		else if(errno == EACCES)
-		{
-			/* nothing */
-		}
-		else if(errno == ENOENT || errno == ENOTDIR)
-		{
-			dprintf(listwise_info_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
-		}
-		else
-		{
-			fail("euidaccess('%s')=[%d][%s]", lstack_string(ls, 0, x), errno, strerror(errno));
 		}
 	}
 	LSTACK_ITEREND
@@ -271,21 +282,12 @@ int op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		if(euidaccess(lstack_string(ls, 0, x), X_OK) == 0)
+		int r;
+		fatal(wrapeuidaccess, lstack_string(ls, 0, x), X_OK, &r);
+
+		if(r == 0)
 		{
 			fatal(lstack_sel_stage, ls, x);
-		}
-		else if(errno == EACCES)
-		{
-			/* nothing */
-		}
-		else if(errno == ENOENT || errno == ENOTDIR)
-		{
-			dprintf(listwise_info_fd, "euidaccess('%s')=[%d][%s]\n", lstack_string(ls, 0, x), errno, strerror(errno));
-		}
-		else
-		{
-			fail("euidaccess('%s')=[%d][%s]", lstack_string(ls, 0, x), errno, strerror(errno));
 		}
 	}
 	LSTACK_ITEREND

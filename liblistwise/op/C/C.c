@@ -23,9 +23,7 @@
 #include <dirent.h>
 #include <inttypes.h>
 
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
-
+#include "listwise/internal.h"
 
 /*
 
@@ -75,17 +73,21 @@ int op_validate(operation* o)
 {
 	if(o->argsl != 1)
 	{
-		fail("%s -- args: %d", o->op->s, o->argsl);
+		fail(LW_ARGSNUM, "expected 1 actual : %d", o->argsl);
+	}
+
+	if(o->args[0]->itype != ITYPE_I64)
+	{
+		fail(LW_ARGSTYPE, "should be i64", 0);
 	}
 
 	if(o->args[0]->i64 < 1)
 	{
-		fail("%s -- expected : > 0, actual : %"PRIi64, o->op->s, o->args[0]->i64);
+		fail(LW_ARGSDOM, "expected >= 0, actual : %"PRIi64, o->args[0]->i64);
 	}
 
 	finally : coda;
 }
-
 
 static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int bef, int af)
 {

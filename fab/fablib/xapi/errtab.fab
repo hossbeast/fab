@@ -66,7 +66,7 @@ $errtabpaths = [
 	> echo "#define ETABLE \\"
 
 	cat [ $@ ~ rx/ineed/uu/fi ] | \
-	> sed -e 's/\([^\t]\+\)\t\+\([^\t]\+\)\(\t\+\([^\t]\+\)\)\?/_E(\1, \2, "\4") \\/p; d'
+	> sed -e 's/^\([-0-9]\+\)[\t ]\+\([^\t ]\+\)\([\t ]\+\(.*\)\)\?/_E(\1, \2, "\4") \\/p; d'
 
 	> echo
 	> echo "enum {"
@@ -77,11 +77,11 @@ $errtabpaths = [
 
 	> echo -n "#define ERRMIN_${pfx} "
 	cat [ $@ ~ rx/ineed/uu/fi ] | \
-	> perl -e '$min=0xFFFF;while(<>){ if(/^([^\t]+)/ && int($1)) { $min = [$min,$1]->[$min > $1] } } print $min, "\n"'
+	> perl -e '$min=0xFFFF;while(<>){ if(/^([^\t ]+)/ && int($1)) { $min = [$min,$1]->[$min > $1] } } print $min, "\n"'
 
 	> echo -n "#define ERRMAX_${pfx} "
 	cat [ $@ ~ rx/ineed/uu/fi ] | \
-	> perl -e '$max=-0xFFFF;while(<>){ if(/^([^\t]+)/ && int($1)) { $max = [$max,$1]->[$max < $1] } } print $max, "\n"'
+	> perl -e '$max=-0xFFFF;while(<>){ if(/^([^\t ]+)/ && int($1)) { $max = [$max,$1]->[$max < $1] } } print $max, "\n"'
 
 	> echo "extern etable * perrtab_${pfx};"
 	> echo "#endif"

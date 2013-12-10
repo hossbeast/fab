@@ -149,7 +149,7 @@ void API xapi_frame_leave()
 
 int API xapi_frame_exit()
 {
-	uint16_t rc = 0;
+	int16_t rc = 0;
 	int16_t rt = 0;
 
 	if(callstack.l && callstack.v[0]->code)
@@ -196,7 +196,7 @@ T = &callstack;
 	return callstack.l || callstack.alt.l;
 }
 
-void API xapi_frame_set(const etable * const etab, const uint16_t code, const char * const file, const int line, const char * const func)
+void API xapi_frame_set(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func)
 {
 T = &callstack;
 
@@ -250,7 +250,7 @@ T = &callstack;
 	}
 }
 
-void API xapi_frame_set_and_leave(const etable * const etab, const uint16_t code, const char * const file, const int line, const char * const func)
+void API xapi_frame_set_and_leave(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func)
 {
 	xapi_frame_set(etab, code, file, line, func);
 	xapi_frame_leave();

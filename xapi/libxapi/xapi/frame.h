@@ -101,7 +101,7 @@ int xapi_frame_top_code_alt();
 //  [line] - line number
 //  [func] - function name
 //
-void xapi_frame_set(const struct etable * const restrict etab, const uint16_t code, const char * const restrict file, const int line, const char * const restrict func);
+void xapi_frame_set(const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func);
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET(etab, code)	\
@@ -137,7 +137,7 @@ int xapi_frame_add_info(char imp, const char * const k, int kl, const char * con
 // SUMMARY
 //  call xapi_frame_set then xapi_frame_leave
 //
-void xapi_frame_set_and_leave(const struct etable * const restrict etab, const uint16_t code, const char * const restrict file, const int line, const char * const restrict func);
+void xapi_frame_set_and_leave(const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func);
 
 // call xapi_frame_set_and_leave with current file name, line number, and function name
 #define XAPI_FRAME_SET_AND_LEAVE(etab, code)	\

@@ -18,8 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "listwise/operator.h"
-
+#include "listwise/internal.h"
 
 #include "macros.h"
 #include "xmem.h"
@@ -57,13 +56,13 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl != 1 && (o->argsl % 2) != 0)
-		fail("%s - %d arguments", o->op->s, o->argsl);
+		fail(LW_ARGSNUM, "actual : %d", o->argsl);
 
 	int x;
 	for(x = 0; x < o->argsl; x++)
 	{
 		if(o->args[x]->itype != ITYPE_I64)
-			fail("%s - args[%d] should be i64", o->op->s, x);
+			fail(LW_ARGSTYPE, "should be i64", x);
 	}
 
 	finally : coda;

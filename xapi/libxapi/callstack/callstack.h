@@ -29,7 +29,7 @@ struct frame
 	int type;		// 0=regular, 1=frame_static
 
 	const struct etable *	etab;		// error table
-	uint16_t							code;		// error code
+	int16_t								code;		// error code
 
 	const char * 		file;
 	int							line;

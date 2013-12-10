@@ -39,15 +39,17 @@
 // error table struct
 typedef struct etable
 {
-	// indexed by lower uint16 of the error code
+	// indexed by lower int16 of the error code + jump
 	struct
 	{
 		char * name;		// i.e. ENOMEM
 		char * desc;		// i.e. Not enough space
+		char * str;			// i.e. ENOMEM : Not enough space
 	} * v;
 
 	char *  tag;			// i.e. "PCRE", "SYS", "FAB", "LW"
-	int16_t id;				// upper 7 bits of the error code (MSB is zero)
+	int16_t id;				// upper 2 bytes of the error code
+	int16_t	jump;
 } etable;
 
 // an error table for system errors is provided by libxapi
