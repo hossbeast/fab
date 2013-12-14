@@ -27,9 +27,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
-#include "listwise/fs.h"
+#include "listwise/internal.h"
 
 
 /*

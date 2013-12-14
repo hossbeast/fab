@@ -15,43 +15,39 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <string.h>
-#include <alloca.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
 
-#include "listwise/internal.h"
+#include "xapi.h"
 
-#include "xmem.h"
+#include "xdlfcn.h"
 
-/*
-
-y operator  - activate staged selections and windows
-sy operator - activate staged selections
-wy operator - activate staged windows
-
-NO ARGUMENTS
-
-OPERATION
-
-	1. activate those windows staged by the preceeding operator
-	2. activate those selections staged by the preceeding operator
-
-*/
-
-operator op_desc[] = {
+int xdlopen(const char * filename, int flag, void ** dl)
+{
+	if(((*dl) = dlopen(filename, flag)) == 0)
 	{
-		  .s						= "y"
-		, .optype				= 0
-		, .desc					= "activate staged selections and windows"
+		fail(0, "%s", dlerror());
 	}
-	, {
-		  .s						= "sy"
-		, .optype				= 0
-		, .desc					= "activate staged selections"
+
+finally :
+	XAPI_INFO(1, "path", "%s", filename);
+coda;
+}
+
+int xdlsym(void * dl, const char * sym, void ** psym)
+{
+	dlerror();
+	(*sym) = dlsym(dl, sym);
+	char * e = dlerror();
+	if(e)
+	{
+		fail(0, "%s", dlerror());
 	}
-	, {
-		  .s						= "wy"
-		, .optype				= 0
-		, .desc					= "activate staged windows"
-	}, {}
-};
+
+finally :
+	XAPI_INFO(1, "sym", "%s", sym);
+coda;
+}

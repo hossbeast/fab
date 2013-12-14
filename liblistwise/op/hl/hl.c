@@ -18,9 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
-
+#include "listwise/internal.h"
 
 #include "color.h"
 #include "macros.h"

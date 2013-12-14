@@ -22,7 +22,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "listwise/operator.h"
+#include "listwise/internal.h"
 
 #include "xmem.h"
 
@@ -79,7 +79,9 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		}
 		else if(errno == ENOENT || errno == ENOTDIR)
 		{
-			dprintf(listwise_info_fd, "realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
+#if DEBUG
+			dprintf(listwise_debug_fd, "realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
+#endif
 		}
 		else
 		{

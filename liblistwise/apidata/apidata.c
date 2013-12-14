@@ -19,12 +19,17 @@
 
 #include "xmem.h"
 
-int APIDATA listwise_error_fd = 2;
-int APIDATA listwise_warn_fd = 2;
 int APIDATA listwise_info_fd = 2;
+#if DEBUG
+int APIDATA listwise_debug_fd = 2;
+#endif
+#if DEVEL
+int APIDATA listwise_devel_fd = 2;
+#endif
+#if SANITY
 int APIDATA listwise_sanity = 0;
+#endif
 int APIDATA listwise_allocation_seed = 10;
-int APIDATA	listwise_errors_unwind = 0;
 
 lwx * APIDATA listwise_identity = 0;
 

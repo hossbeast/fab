@@ -103,6 +103,8 @@ static int snarf(char * path, void ** mem, size_t * sz)
 finally:
 	if(fd != -1)
 		fatalize_sys(close, fd);
+
+	XAPI_INFO(1, "path", "%s", path);
 coda;
 }
 
@@ -122,11 +124,7 @@ int main(int argc, char** argv)
 
 	int x;
 
-	if(g_args.dump)
-	{
-		listwise_errors_unwind = 1;
-	}
-	else
+	if(!g_args.dump)
 	{
 		// arrange for liblistwise to write to /dev/null
 		fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
@@ -264,11 +262,13 @@ finally:
 	generator_parser_free(p);
 	args_teardown();
 
-if(XAPI_UNWINDING)
+if(g_args.dump)
 {
 printf("backtrace : \n");
 	xapi_backtrace();
-
+}
+else
+{
 printf("pithytrace : \n");
 	xapi_pithytrace();
 }

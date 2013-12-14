@@ -117,6 +117,26 @@ static const char * generator_tokenname(int token)
 	return generator_tokennames[token];
 }
 
+static int operation_validate(operation * op)
+{
+	if((op->op->optype & LWOP_ARGS_CANHAVE) == 0)
+	{
+		if(op->argsl)
+		{
+			fail(LW_ARGSNUM, "expected: 0, actual: %d", op->argsl);
+		}
+	}
+
+	if(op->op->op_validate)
+	{
+		fatal(op->op->op_validate, op);
+	}
+
+finally :
+	XAPI_INFO(1, "operator", "%s", op->s);
+coda;
+}
+
 static int parse(generator_parser* p, char* s, int l, char * name, int namel, generator** g)
 {
 	// create state specific to this parse
@@ -158,20 +178,7 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 	// postprocessing
 	int x;
 	for(x = 0; x < pp.g->opsl; x++)
-	{
-		if((pp.g->ops[x]->op->optype & LWOP_ARGS_CANHAVE) == 0)
-		{
-			if(pp.g->ops[x]->argsl)
-			{
-				fail("%s - arguments not expected\n", pp.g->ops[x]->op->s);
-			}
-		}
-
-		if(pp.g->ops[x]->op->op_validate)
-		{
-			fatal(pp.g->ops[x]->op->op_validate, pp.g->ops[x]);
-		}
-	}
+		fatal(operation_validate, pp.g->ops[x]);
 
 	(*g) = pp.g;
 	pp.g = 0;

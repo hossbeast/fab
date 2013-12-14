@@ -121,11 +121,11 @@ int API listwise_exec_generator(
 
 		if(dump)
 		{
-			dprintf(listwise_info_fd, "\n");
+			dprintf(listwise_debug_fd, "\n");
 
 			char buf[128];
 			size_t z = generator_operation_snwrite(buf, sizeof(buf), g->ops[x], 0);
-			dprintf(listwise_info_fd, " >> %.*s\n", (int)z, buf);
+			dprintf(listwise_debug_fd, " >> %.*s\n", (int)z, buf);
 		}
 
 		if(g->ops[x]->op == yop || g->ops[x]->op == wyop)
@@ -197,17 +197,12 @@ int listwise_exec(
 	// generator
 	generator* g = 0;
 
-	if(generator_mkparser(&p) != 0)
-		fail("mkparser failed\n");
+	fatal(generator_mkparser, &p);
+	fatal(generator_parse, p, s, l, &g);
+	fatal(listwise_exec_generator, g, init, initls, initl, lx, 0);
 
-	if(generator_parse(p, s, l, &g) != 0)
-		fail("parse failed\n");
-
-	if(listwise_exec_generator(g, init, initls, initl, lx, 0) != 0)
-		fail("listwise_exec_generator failed");
-
+finally:
 	generator_free(g);
 	generator_parser_free(p);
-
-	finally : coda;
+coda;
 }

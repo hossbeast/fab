@@ -19,9 +19,7 @@
 #include <string.h>
 #include <alloca.h>
 
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
-
+#include "listwise/internal.h"
 
 /*
 
@@ -73,7 +71,9 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 
 	if(!(ls->l > to))
 	{
-		dprintf(listwise_info_fd, "xch/%d out of range\n", to);
+#if DEBUG
+		dprintf(listwise_debug_fd, "xch/%d out of range\n", to);
+#endif
 	}
 	else
 	{

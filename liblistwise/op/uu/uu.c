@@ -21,12 +21,10 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
+#include "listwise/internal.h"
 
 #include "xstring.h"
 #include "xmem.h"
-
 #include "parseint.h"
 
 /*

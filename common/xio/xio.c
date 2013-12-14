@@ -48,3 +48,24 @@ int xread(int fd, void * buf, size_t count, ssize_t * bytes)
 
 	return 0;
 }
+
+int xopendir(const char * name, DIR ** dd)
+{
+	if(((*dd) = opendir(name)) == 0)
+	{
+		return -1;
+	}
+
+	return 0;
+}
+
+int xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
+{
+	int r;
+	if((r = readdir_r(dirp, entry, result)))
+	{
+		errno = r;
+	}
+
+	return 0;
+}

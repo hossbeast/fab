@@ -20,8 +20,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
+#include "listwise/internal.h"
 
 #include "xstring.h"
 #include "xmem.h"

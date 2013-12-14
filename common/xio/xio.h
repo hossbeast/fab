@@ -42,4 +42,20 @@ int xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 int xread(int fd, void * buf, size_t count, ssize_t * bytes)
 	__attribute__((nonnull(2)));
 
+/// xdiropen
+//
+// SUMMARY
+//  fatalize-able wrapper for diropen
+//
+int xopendir(const char * name, DIR ** dd)
+	__attribute__((nonnull));
+
+/// xreaddir_r
+//
+// SUMMARY
+//  fatalize-able wrapper for readdir_r
+//
+int xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
+	__attribute__((nonnull));
+
 #endif

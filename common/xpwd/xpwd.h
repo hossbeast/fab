@@ -15,43 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <string.h>
-#include <alloca.h>
+#ifndef _XOPEN_H
+#define _XOPEN_H
 
-#include "listwise/internal.h"
+#include <sys/types.h>
+#include <pwd.h>
 
-#include "xmem.h"
+/// xgetpwuid_r
+//
+// SUMMARY
+//  fatalize-able wrapper for getpwuid_r
+//
+int xgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result);
 
-/*
-
-y operator  - activate staged selections and windows
-sy operator - activate staged selections
-wy operator - activate staged windows
-
-NO ARGUMENTS
-
-OPERATION
-
-	1. activate those windows staged by the preceeding operator
-	2. activate those selections staged by the preceeding operator
-
-*/
-
-operator op_desc[] = {
-	{
-		  .s						= "y"
-		, .optype				= 0
-		, .desc					= "activate staged selections and windows"
-	}
-	, {
-		  .s						= "sy"
-		, .optype				= 0
-		, .desc					= "activate staged selections"
-	}
-	, {
-		  .s						= "wy"
-		, .optype				= 0
-		, .desc					= "activate staged windows"
-	}, {}
-};
+#endif

@@ -37,7 +37,7 @@
 /// fail
 //
 // SUMMARY
-//  raise an error with the specified code and the current errtab
+//  raise an error with the specified code and the prevailing errtab
 //
 #define fail(code, fmt, ...)																				\
 	do {																															\
@@ -93,7 +93,11 @@
 ** called elsewhere in the stack
 */
 
-// if the called function fails, raise an error on its behalf
+/// fatalize
+//
+// SUMMARY
+//  call a function. if it fails, and did not UNWIND, raise an error on its behalf
+//
 #define fatalize(table, code, func, ...)														\
 	do {																															\
 		int __d = xapi_frame_depth();																		\
@@ -134,7 +138,11 @@ printf(#func " : %d, %d -> %d -> %d\n", __r,  __d, after, xapi_frame_depth());		
 #define fatalize_sys(func, ...)																			\
 	fatalize(perrtab_SYS, errno, func, __VA_ARGS__)
 
-// by using fatal instead of fatalize assumes that the called function is UNWIND-ing
+/// fatal
+//
+// SUMMARY
+//  call a function that is known to be UNWIND-ing
+//
 #define fatal(func, ...) fatalize(0, 0, func, __VA_ARGS__)
 
 /// finally

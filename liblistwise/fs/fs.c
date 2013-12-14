@@ -15,11 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <pwd.h>
 #include <grp.h>
 #include <time.h>
 #include <unistd.h>
@@ -31,6 +31,7 @@
 #include "xmem.h"
 #include "color.h"
 #include "macros.h"
+#include "xpwd.h"
 
 #define restrict __restrict
 
@@ -101,7 +102,9 @@ int API fs_statfmt(
 
 	if(r)
 	{
-		dprintf(listwise_info_fd, "%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
+#if DEVEL
+		dprintf(listwise_devel_fd, "%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
+#endif
 	}
 	else
 	{
@@ -141,25 +144,10 @@ int API fs_statfmt(
 					char * name = "(none)";
 					struct passwd stor;
 					struct passwd * pwd;
-					if(getpwuid_r(st.st_uid, &stor, space, sizeof(space), &pwd) == 0)
+					fatalize_sys(xgetpwuid_r, st.st_uid, &stor, space, sizeof(space), &pwd);
+					if(pwd)
 					{
-						if(pwd)
-						{
-							name = pwd->pw_name;
-						}
-						else
-						{
-							// name not found
-						}
-					}
-					else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
-					{
-						// name not found
-					}
-					else
-					{
-						// other error
-						fail("getpwd(%d)=[%d][%s]", st.st_uid, errno, strerror(errno));
+						name = pwd->pw_name;
 					}
 
 					(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%s", name);

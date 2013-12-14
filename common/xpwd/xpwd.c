@@ -15,43 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <string.h>
-#include <alloca.h>
+#include <errno.h>
 
-#include "listwise/internal.h"
+#include "xpwd.h"
 
-#include "xmem.h"
-
-/*
-
-y operator  - activate staged selections and windows
-sy operator - activate staged selections
-wy operator - activate staged windows
-
-NO ARGUMENTS
-
-OPERATION
-
-	1. activate those windows staged by the preceeding operator
-	2. activate those selections staged by the preceeding operator
-
-*/
-
-operator op_desc[] = {
+int xgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
+{
+	if(getpwuid_r(uid, pwd, buf, buflen, result) == 0)
 	{
-		  .s						= "y"
-		, .optype				= 0
-		, .desc					= "activate staged selections and windows"
+		// possibly found, check *result
 	}
-	, {
-		  .s						= "sy"
-		, .optype				= 0
-		, .desc					= "activate staged selections"
+	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
+	{
+		// name not found
 	}
-	, {
-		  .s						= "wy"
-		, .optype				= 0
-		, .desc					= "activate staged windows"
-	}, {}
-};
+	else
+	{
+ 		// some error : check errno
+		return errno;
+	}
+
+	return 0;
+}

@@ -19,10 +19,7 @@
 #include <string.h>
 #include <alloca.h>
 
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
-#include "listwise/re.h"
-
+#include "listwise/internal.h"
 
 #include "xmem.h"
 #include "parseint.h"

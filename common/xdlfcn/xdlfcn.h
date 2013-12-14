@@ -15,43 +15,21 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <string.h>
-#include <alloca.h>
+#ifndef _XDLFCN_H
+#define _XDLFCN_H
 
-#include "listwise/internal.h"
+/// xdlopen
+//
+// SUMMARY
+//  fatalize-able wrapper for dlopen
+//
+int xdlopen(const char * filename, int flag, void ** dl);
 
-#include "xmem.h"
+/// xdlsym
+//
+// SUMMARY
+//  fatalize-able wrapper for dlsym
+//
+int xdlsym(void * dl, const char * sym, void ** psym);
 
-/*
-
-y operator  - activate staged selections and windows
-sy operator - activate staged selections
-wy operator - activate staged windows
-
-NO ARGUMENTS
-
-OPERATION
-
-	1. activate those windows staged by the preceeding operator
-	2. activate those selections staged by the preceeding operator
-
-*/
-
-operator op_desc[] = {
-	{
-		  .s						= "y"
-		, .optype				= 0
-		, .desc					= "activate staged selections and windows"
-	}
-	, {
-		  .s						= "sy"
-		, .optype				= 0
-		, .desc					= "activate staged selections"
-	}
-	, {
-		  .s						= "wy"
-		, .optype				= 0
-		, .desc					= "activate staged windows"
-	}, {}
-};
+#endif

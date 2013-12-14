@@ -23,7 +23,7 @@
 #include <dirent.h>
 #include <unistd.h>
 
-#include "listwise/operator.h"
+#include "listwise/internal.h"
 
 #include "xmem.h"
 #include "canon.h"

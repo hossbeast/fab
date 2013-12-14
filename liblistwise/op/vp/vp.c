@@ -22,9 +22,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
-
+#include "listwise/internal.h"
 
 /*
 

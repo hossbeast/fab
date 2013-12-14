@@ -34,14 +34,13 @@
 #include "idx.h"
 
 #include "LW.errtab.h"
+#include "PCRE.errtab.h"
 #define perrtab perrtab_LW
 
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
 #define restrict __restrict
-
-#define UNWIND_ERRORS listwise_errors_unwind
 
 // collection of registered object types
 // with lookup index by type id

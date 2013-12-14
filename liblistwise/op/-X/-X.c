@@ -126,7 +126,9 @@ static int wrapstat(char * s, int linkstat, struct stat * st, int * r)
 	{
 		if(errno == ENOENT || errno == ENOTDIR)
 		{
-			dprintf(listwise_info_fd, "%s('%s')=[%d][%s]\n", linkstat ? "lstat" : "stat", s, errno, strerror(errno));
+#if DEBUG
+			dprintf(listwise_debug_fd, "%s('%s')=[%d][%s]\n", linkstat ? "lstat" : "stat", s, errno, strerror(errno));
+#endif
 		}
 		else
 		{
@@ -151,7 +153,9 @@ static int wrapeuidaccess(char * s, int mode, int * r)
 	}
 	else if(errno == ENOENT || errno == ENOTDIR)
 	{
-		dprintf(listwise_info_fd, "euidaccess('%s')=[%d][%s]\n", s, errno, strerror(errno));
+#if DEBUG
+		dprintf(listwise_debug_fd, "euidaccess('%s')=[%d][%s]\n", s, errno, strerror(errno));
+#endif
 	}
 	else
 	{

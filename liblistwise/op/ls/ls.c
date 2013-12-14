@@ -21,8 +21,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "listwise/operator.h"
-#include "listwise/lwx.h"
+#include "listwise/internal.h"
 
 
 #include "parseint.h"
@@ -128,7 +127,9 @@ static int listing(lwx* ls, char * s, int recurse)
 	}
 	else if(errno == ENOTDIR || errno == ENOENT)
 	{
-		dprintf(listwise_info_fd, "opendir('%s')=[%d][%s]\n", s, errno, strerror(errno));
+#if DEBUG
+		dprintf(listwise_debug_fd, "opendir('%s')=[%d][%s]\n", s, errno, strerror(errno));
+#endif
 	}
 	else
 	{

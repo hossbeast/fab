@@ -82,30 +82,21 @@ static int op_load(char* path)
 	}
 
 	void * dl = 0;
-	if((dl = dlopen(path, RTLD_NOW | RTLD_GLOBAL)) == 0)
-	{
-		dprintf(listwise_warn_fd, "FAILED TO LOAD: %s [%s]\n", path, dlerror());
-	}
-	else if((op = dlsym(dl, "op_desc")) == 0)
-	{
-		dprintf(listwise_warn_fd, "FAILED TO LOAD: %s [%s]\n", path, dlerror());
-	}
-	else
-	{
-		g_dls[g_dls_l++] = dl;
+	fatal(xdlopen, path, RTLD_NOW | RTLD_GLOBAL, &dl);
+	fatal(xdlsym, dl, "op_desc", &op);
+	g_dls[g_dls_l++] = dl;
 
-		while(op->desc)
+	while(op->desc)
+	{
+		if(g_ops_a == g_ops_l)
 		{
-			if(g_ops_a == g_ops_l)
-			{
-				int n = g_ops_a ? g_ops_a * 2 + g_ops_a / 2 : 10;
-				fatal(xrealloc, &g_ops, sizeof(g_ops[0]), n, g_ops_a);
-				g_ops_a = n;
-			}
-
-			op->sl = strlen(op->s);
-			g_ops[g_ops_l++] = op++;
+			int n = g_ops_a ? g_ops_a * 2 + g_ops_a / 2 : 10;
+			fatal(xrealloc, &g_ops, sizeof(g_ops[0]), n, g_ops_a);
+			g_ops_a = n;
 		}
+
+		op->sl = strlen(op->s);
+		g_ops[g_ops_l++] = op++;
 	}
 
 	finally : coda;
@@ -125,54 +116,44 @@ static void op_sort()
 // public
 //
 
-static int read_opdir(char * s)
+static int read_opdir(char * s, int fatalize)
 {
 	char space[256];
 	snprintf(space, sizeof(space) - 1, "%s", s);
 
   DIR * dd = 0;
-  if((dd = opendir(space)))
-  {
-		space[strlen(space)] = '/';
+	fatalize_sys(xopendir, space, &dd);
 
-    struct dirent ent;
-    struct dirent * entp = 0;
-    int r = 0;
-    while(1)
-    {
-      if((r = readdir_r(dd, &ent, &entp)) == 0)
-      {
-        if(entp)
-        {
-          if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
-          {
-						if(entp->d_type == DT_DIR)
-						{
-							snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
-							fatal(read_opdir, space);
-						}
-						else if(strlen(entp->d_name) > 3 && strcmp(entp->d_name + strlen(entp->d_name) - 3, ".so") == 0)
-						{
-							snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
-							fatal(op_load, space);
-						}
-          }
-        }
-        else
-        {
-          break;
-        }
-      }
-      else
-      {
-        fail("readdir(%s)=[%d][%s]", s, r, strerror(r));
-      }
-    }
-  }
-  else
-  {
-    fail("opendir(%s)=[%d][%s]\n", s, errno, strerror(errno));
-  }
+	space[strlen(space)] = '/';
+
+	struct dirent ent;
+	struct dirent * entp = 0;
+	int r = 0;
+	while(1)
+	{
+		fatalize_sys(xreaddir_r, dd, &ent, &entp);
+
+		if(entp)
+		{
+			if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+			{
+				if(entp->d_type == DT_DIR)
+				{
+					snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
+					fatal(read_opdir, space);
+				}
+				else if(strlen(entp->d_name) > 3 && strcmp(entp->d_name + strlen(entp->d_name) - 3, ".so") == 0)
+				{
+					snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
+					fatal(op_load, space);
+				}
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
 finally:
 	if(dd)

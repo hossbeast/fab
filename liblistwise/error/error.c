@@ -19,20 +19,22 @@
 
 #include "listwise/internal.h"
 
-static etable * tab[2] = {
-	  [ 0 ] = perrtab_SYS
-	, [ 1 ] = perrtab_PCRE
-	, [ 2 ] = perrtab_LW
-};
+static etable * tab[2];
 
 void __attribute__((constructor)) init()
 {
-	perrtab_SYS->id = 0;
-	perrtab_PCRE->id = 1;
-	perrtab_LW->id = 2;
+	tab[0] = perrtab_SYS;
+	tab[0]->id = 0;
+
+	tab[1] = perrtab_PCRE;
+	tab[1]->id = 1;
+
+	tab[2] = perrtab_LW;	
+	tab[2]->id = 2;
 }
 
-const char * API listwise_errname(const int code)
+typedef char * charstar;
+const char * listwise_errname(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
@@ -40,10 +42,10 @@ const char * API listwise_errname(const int code)
 	if(rt < 0 || rt > 2)
 		return 0;
 
-	return tab[rt]->v[rc + tab[rt]->jump]->name;
+	return tab[rt]->v[rc + tab[rt]->jump].name;
 }
 
-const char * API listwise_errdesc(const int code)
+const char * listwise_errdesc(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
@@ -51,10 +53,10 @@ const char * API listwise_errdesc(const int code)
 	if(rt < 0 || rt > 2)
 		return 0;
 
-	return tab[rt]->v[rc + tab[rt]->jump]->desc;
+	return tab[rt]->v[rc + tab[rt]->jump].desc;
 }
 
-const char * API listwise_errstr(const int code)
+const char * listwise_errstr(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
@@ -62,5 +64,5 @@ const char * API listwise_errstr(const int code)
 	if(rt < 0 || rt > 2)
 		return 0;
 
-	return tab[rt]->v[rc + tab[rt]->jump]->str;
+	return tab[rt]->v[rc + tab[rt]->jump].str;
 }

@@ -53,7 +53,7 @@ int listwise_exec_generator(
 /// lstack_dump
 //
 // SUMMARY
-//  print a list-stack to listwise_info_fd
+//  print a list-stack to listwise_debug_fd
 //
 int lstack_dump(lwx * const restrict)
 	__attribute__((nonnull));
@@ -117,30 +117,47 @@ int lstack_readrow(lwx * const restrict lx, int x, int y, char ** const restrict
 /// listwise_info_fd
 //
 // SUMMARY
-//  liblistwise writes informational messages to this fd
+//  liblistwise writes infor messages to this fd
 //
 // EXAMPLES
-//  listwise operators unable to perform some function (ls on a nonexistent path, for example)
 //  lstack_dump writes to this fd
-//  lstack_exec writes to this fd when debug != 0
+//  lstack_exec writes to this fd (when the dump parameter to that function is true)
 //
 // DEFAULT
 //  2 - stderr
 //
 extern int listwise_info_fd;
 
-/// listwise_warn_fd
+#if DEBUG
+/// listwise_debug_fd
 //
 // SUMMARY
-//  liblistwise writes warning messages to this fd
+//  liblistwise writes debug messages to this fd
 //
 // EXAMPLES
-//  liblistwise cannot open a directory for loading operators
+//  lstack_dump writes to this fd
+//  lstack_exec writes to this fd (when the debug parameter to that function is true)
 //
 // DEFAULT
 //  2 - stderr
 //
-extern int listwise_warn_fd;
+extern int listwise_debug_fd;
+#endif
+
+#if DEVEL
+/// listwise_devel_fd
+//
+// SUMMARY
+//  liblistwise writes devel messages to this fd
+//
+// EXAMPLES
+//  listwise operators unable to perform some function (ls on a nonexistent path, for example)
+//
+// DEFAULT
+//  2 - stderr
+//
+extern int listwise_devel_fd;
+#endif
 
 /// listwise_identity 
 //
