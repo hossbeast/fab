@@ -15,46 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XMEM_H
-#define _XMEM_H
+#ifndef _XDIRENT_H
+#define _XDIRENT_H
 
-#include <stdlib.h>
 #include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
 
-/// xmalloc
+/// xdiropen
 //
 // SUMMARY
-//  does this: *target = calloc(size, 1);
-//  recall that calloc zeroes out the memory it allocates
+//  proxy for diropen
 //
-// RETURNS
-//  returns 0 on success
-//  
-int xmalloc(void* target, size_t size)
-	__attribute__((nonnull));
+int xopendir(const char * name, DIR ** dd);
 
-/// xrealloc
+/// xreaddir_r
 //
 // SUMMARY
-//  does this: realloc(*target, size) AND ensures that any new portion of memory is zeroed out
+//  proxy for readdir_r
 //
-// PARAMETERS
-//  es  - element size
-//  ec  - element count
-//  oec - old element count
-//
-// RETURNS
-//  returns 0 on success
-//
-int xrealloc(void* target, size_t es, size_t ec, size_t oec)
-	__attribute__((nonnull));
-
-/// xfree
-//
-// SUMMARY
-//  does this: free(*target); *target = 0;
-//
-void xfree(void* target)
-	__attribute__((nonnull));
+int xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result);
 
 #endif

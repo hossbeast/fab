@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XOPEN_H
-#define _XOPEN_H
+#ifndef _XPWD_H
+#define _XPWD_H
 
 #include <sys/types.h>
 #include <pwd.h>

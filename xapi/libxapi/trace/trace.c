@@ -233,20 +233,17 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 			int y;
 			for(y = 0; y < callstack.v[x]->info.l; y++)
 			{
-				if(callstack.v[x]->info.v[y].imp)
-				{
-					if(z == zt)
-						z += snprintf(dst + z, sz - z, " with ");
-					else
-						SAY(", ");
+				if(z == zt)
+					z += snprintf(dst + z, sz - z, " with ");
+				else
+					SAY(", ");
 
-					SAY("%.*s=%.*s"
-						, callstack.v[x]->info.v[y].kl
-						, callstack.v[x]->info.v[y].ks
-						, callstack.v[x]->info.v[y].vl
-						, callstack.v[x]->info.v[y].vs
-					);
-				}
+				SAY("%.*s=%.*s"
+					, callstack.v[x]->info.v[y].kl
+					, callstack.v[x]->info.v[y].ks
+					, callstack.v[x]->info.v[y].vl
+					, callstack.v[x]->info.v[y].vs
+				);
 			}
 		}
 	}

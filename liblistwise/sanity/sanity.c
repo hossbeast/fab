@@ -67,7 +67,7 @@ int sanity(struct lwx_t * const restrict ls, sanityblock * const restrict sb)
 {
 	int R = 0;
 
-#define err(fmt, ...) dprintf(listwise_warn_fd, fmt "\n", ##__VA_ARGS__); R++
+#define err(fmt, ...) dprintf(listwise_sanity_fd, fmt "\n", ##__VA_ARGS__); R++
 
 uint64_t totlists = 0;
 uint64_t totstrings = 0;
@@ -231,7 +231,7 @@ totcompares++;
 		}
 	}
 
-	dprintf(listwise_warn_fd, "SANITY : %3lu lists @ %6.2f apiece, %5d strings, compares : %lu\n", totlists, ((double)totstrings) / ((double)ls->a), sb->s_stringsl, totcompares);
+	dprintf(listwise_sanity_fd, "SANITY : %3lu lists @ %6.2f apiece, %5d strings, compares : %lu\n", totlists, ((double)totstrings) / ((double)ls->a), sb->s_stringsl, totcompares);
 
 	if(R)
 		exit(1);

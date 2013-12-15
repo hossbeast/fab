@@ -50,8 +50,6 @@ struct frame
 			char *	vs;		// value
 			int			va;
 			int			vl;
-
-			char		imp;	// important
 		} * v;
 
 		int a;

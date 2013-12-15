@@ -20,9 +20,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <grp.h>
-#include <time.h>
-#include <unistd.h>
 
 #include "listwise/internal.h"
 
@@ -32,6 +29,9 @@
 #include "color.h"
 #include "macros.h"
 #include "xpwd.h"
+#include "xgrp.h"
+#include "xtime.h"
+#include "xunistd.h"
 
 #define restrict __restrict
 
@@ -102,8 +102,8 @@ int API fs_statfmt(
 
 	if(r)
 	{
-#if DEVEL
-		dprintf(listwise_devel_fd, "%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
+#if DEBUG
+		dprintf(listwise_debug_fd, "%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
 #endif
 	}
 	else
@@ -144,7 +144,7 @@ int API fs_statfmt(
 					char * name = "(none)";
 					struct passwd stor;
 					struct passwd * pwd;
-					fatalize_sys(xgetpwuid_r, st.st_uid, &stor, space, sizeof(space), &pwd);
+					fatal(xgetpwuid_r, st.st_uid, &stor, space, sizeof(space), &pwd);
 					if(pwd)
 					{
 						name = pwd->pw_name;
@@ -161,18 +161,10 @@ int API fs_statfmt(
 					char * name = "(none)";
 					struct group stor;
 					struct group * grp;
-					if(getgrgid_r(st.st_gid, &stor, space, sizeof(space), &grp) == 0)
+					fatal(xgetgrgid_r, st.st_gid, &stor, space, sizeof(space), &grp);
+					if(grp)
 					{
-						if(grp)
-						{
-							name = grp->gr_name;
-						}
-					}
-					else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM) { }
-					else
-					{
-						// other error
-						fail("getgrp(%d)=[%d][%s]", st.st_uid, errno, strerror(errno));
+						name = grp->gr_name;
 					}
 
 					(*z) += snprintf(dst + (*z), sz - (*z) - 1, "%s", name);
@@ -180,13 +172,9 @@ int API fs_statfmt(
 				else if(fmt[i + 1] == 't')
 				{
 					struct tm tm;
-					if(localtime_r(&st.st_mtime, &tm) == 0)
-						fail("localtime failed");
+					fatal(xlocaltime_r, &st.st_mtime, &tm);
 
-					size_t zz;
-					if((zz = strftime(space, sizeof(space), "%b %d %T", &tm)) == 0)
-						fail("strftime failed");
-
+					size_t zz = strftime(space, sizeof(space), "%b %d %T", &tm);
 					(*z) += snwrite(dst + (*z), sz - (*z) - 1, space, zz);
 				}
 				else if(fmt[i + 1] == 's')
@@ -216,8 +204,8 @@ int API fs_statfmt(
 					}
 					else
 					{
-						if(cwd == 0 && (cwd = getcwd(0, 0)) == 0)
-							fail("getcwd=[%d][%s]", errno, strerror(errno));
+						if(cwd == 0)
+							fatal(xgetcwd, 0, 0, &cwd);
 
 						fatal(canon, s, sl, cwd, 0, space, sizeof(space), 0, CAN_REALPATH);
 

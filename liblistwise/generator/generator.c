@@ -41,25 +41,17 @@ struct generator_parser_t
 /// static
 ///
 
+#if DEVEL
 static void write_info(char * fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	vdprintf(listwise_info_fd, fmt, va);
+	vdprintf(listwise_devel_fd, fmt, va);
 	va_end(va);
 
-	dprintf(listwise_info_fd, "\n");
+	dprintf(listwise_devel_fd, "\n");
 }
-
-static void write_error(char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	vdprintf(listwise_error_fd, fmt, va);
-	va_end(va);
-
-	dprintf(listwise_error_fd, "\n");
-}
+#endif
 
 static int generator_inputstr(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
 {
@@ -133,7 +125,39 @@ static int operation_validate(operation * op)
 	}
 
 finally :
-	XAPI_INFO(1, "operator", "%s", op->s);
+	XAPI_INFO("operator", "%s", op->op->s);
+coda;
+}
+
+static int reduce(parse_param * pp)
+{
+	// return value from yyparse - whether the input was reduced according to the grammar
+	int r = generator_yyparse(pp->scanner, pp);
+
+	// in addition, pp->r is nonzero if yyerror has been called, which covers a few more cases
+	// than failure-to-reduce, such as when the scanner encounters invalid byte(s)
+	if(r || pp->r == -1)
+	{	// error from the parser
+		fatality("generator_yyparse", perrtab_LW, LW_SYNTAX, "%s", pp->errorstring);
+	}
+	else if(pp->r)
+	{	// error from the scanner
+		fatality("generator_yyparse", perrtab_LW, pp->r, "%s", pp->errorstring);
+	}
+
+finally :
+	if(XAPI_UNWINDING)
+	{
+		XAPI_INFO("token", "%s", pp->tokenstring);
+		XAPI_INFO("input", "%.*s", pp->namel, pp->name);
+		XAPI_INFO("loc", "[%d,%d - %d,%d]"
+			, pp->last_loc.f_lin + 1
+			, pp->last_loc.f_col + 1
+			, pp->last_loc.l_lin + 1
+			, pp->last_loc.l_col + 1
+		);
+		XAPI_INFO("line", "%d", pp->last_line);
+	}
 coda;
 }
 
@@ -144,14 +168,13 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 
 	// results struct for this parse
 	parse_param pp = {
-		  .output_line	= 1
-		, .log_state		= write_info
-		, .log_token		= write_info
-		, .log_error		= write_error
-		, .tokname			= generator_tokenname
-		, .statename		= generator_statename
-		, .inputstr			= generator_inputstr
-		, .lvalstr			= generator_lvalstr
+		  .line_numbering	= 1
+		, .log_state			= write_info
+		, .log_token			= write_info
+		, .tokname				= generator_tokenname
+		, .statename			= generator_statename
+		, .inputstr				= generator_inputstr
+		, .lvalstr				= generator_lvalstr
 	};
 
 	// specific exception for "shebang" line exactly at the beginning
@@ -161,7 +184,7 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 		b = strstr(s, "\n") + 1;
 
 	if((state = generator_yy_scan_string(b, p->p)) == 0)
-		qfail();
+		fatality("generator_yy_scan_string", perrtab_SYS, ENOMEM, 0);
 
 	// results struct for this parse
 	pp.scanner = p->p;
@@ -169,11 +192,8 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 	// make it available to the lexer
 	generator_yyset_extra(&pp, p->p);
 
-	// parse
-	generator_yyparse(p->p, &pp);
-
-	if(pp.r)
-		qfail();
+	// invoke the parser, raise errors as necessary
+	fatal(reduce, &pp);
 
 	// postprocessing
 	int x;

@@ -31,6 +31,39 @@
 #define restrict __restrict
 
 /*
+
+in xapi-code, you use fail at the site of an error, and fatal to call other xapi-functions
+
+when calling non-xapi code, you have a couple of options.
+
+1) if the function you are calling follows the zero-return-success, nonzero-return-error model
+   you can call that function directly with fatalize, and supply the table/code to use in the event
+   of failure
+
+    ADVANTAGES    - call it directly
+    DISADVANTAGES - cannot supply message, or info k/v/p
+                  - will NOT work with a function that provides a freeform error string or which otherwise
+                    cannot be made to fit the return code model (like dlopen) - see #3 for this case
+
+2) you can write a wrapper function that follows the zero-return-success nonzero-return-error
+   model, and call that function with fatalize
+
+    ADVANTAGES/DISADVANTAGES - see above, also you must write the (small) wrapper
+
+    by convention, these wrapper functions are named "w<function>"
+
+3) you can write a proxy function that invokes that function, and calls fatality when an error
+   occurs. Any relevant message should be supplied to fatality, and info k/v/p provided in the
+   finally section of the proxy. You call the proxy with fatal.
+
+    ADVANTAGES    - full information : code, message, k/v/p
+    DISADVANTAGES - you must write the proxy
+
+    by convention, these proxy functions are named "x<function>"
+
+*/
+
+/*
 ** called at the site of an error
 */
 
@@ -63,7 +96,7 @@
 // SUMMARY
 //  raise an error on behalf of another function that just failed
 //
-#define fatality(func, table, code)																	\
+#define fatality(func, table, code, fmt, ...)												\
 	do {																															\
 		if(xapi_frame_push() != 0)																			\
 		{																																\
@@ -75,7 +108,15 @@
 		}																																\
 																																		\
 		/* populate stack frame for the called function */							\
-		xapi_frame_set_and_leave(table, code, 0, 0, func);							\
+		xapi_frame_set(table, code, 0, 0, func);												\
+																																		\
+		if(xapi_frame_set_message(fmt, ##__VA_ARGS__) != 0)							\
+		{																																\
+			/* xapi_frame_set_message populated alt[0] with ENOMEM */			\
+			XAPI_FRAME_SET_AND_LEAVE(0, 0);																\
+		}																																\
+																																		\
+		xapi_frame_leave();																							\
 																																		\
 		/* populate stack frame for myself */														\
 		XAPI_FRAME_SET(0, 0);																						\
@@ -85,9 +126,9 @@
 		}																																\
 	} while(0)
 
-// fatality macro for SYS
-#define fatality_sys(func)																					\
-	fatality(func, perrtab_SYS, errno)
+// fatality macro for SYS - assumes there is no message
+#define sysfatality(func)																						\
+	fatality(func, perrtab_SYS, errno, 0)
 
 /*
 ** called elsewhere in the stack
@@ -119,7 +160,7 @@ printf(#func " : %d, %d -> %d -> %d\n", __r,  __d, after, xapi_frame_depth());		
 			if(__r != 0)																									\
 			{																															\
 				/* populate stack frame on called functions behalf */				\
-				xapi_frame_set(table, code || __r, 0, 0, #func);						\
+				xapi_frame_set(table, code ?: __r, 0, 0, #func);						\
 			}																															\
 			xapi_frame_leave();																						\
 		}																																\
@@ -135,7 +176,7 @@ printf(#func " : %d, %d -> %d -> %d\n", __r,  __d, after, xapi_frame_depth());		
 	} while(0)
 
 // fatalize macro for calling sys
-#define fatalize_sys(func, ...)																			\
+#define sysfatalize(func, ...)																			\
 	fatalize(perrtab_SYS, errno, func, __VA_ARGS__)
 
 /// fatal
@@ -177,9 +218,9 @@ XAPI_LEAVE:																		\
 //
 // set info for the current frame if XAPI_UNWINDING
 //
-#define XAPI_INFO(imp, k, vfmt, ...)															\
+#define XAPI_INFO(k, vfmt, ...)																		\
 	do {																														\
-		if(xapi_frame_add_info(imp, k, 0, vfmt, ##__VA_ARGS__) != 0)	\
+		if(xapi_frame_add_info(k, 0, vfmt, ##__VA_ARGS__) != 0)				\
 		{																															\
 			/* xapi_frame_add_info populated alt[0] with ENOMEM */			\
 			XAPI_FRAME_SET_AND_LEAVE(0, 0);															\

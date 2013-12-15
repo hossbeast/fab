@@ -41,7 +41,8 @@
 #include "args.h"
 
 #include "xmem.h"
-#include "xio.h"
+#include "xfcntl.h"
+#include "xunistd.h"
 
 /// snarf
 //
@@ -59,10 +60,10 @@ static int snarf(char * path, void ** mem, size_t * sz)
 
 	xfree(mem);
 
-	fatalize_sys(xopen, strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY, &fd);
+	fatal(xopen, strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY, &fd);
 
 	struct stat st;
-	fatalize_sys(fstat, fd, &st);
+	sysfatalize(fstat, fd, &st);
 
 	if(S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode))
 	{
@@ -71,7 +72,7 @@ static int snarf(char * path, void ** mem, size_t * sz)
 		while(r > 0)
 		{
 			ssize_t r;
-			fatalize_sys(xread, fd, blk, sizeof(blk) / sizeof(*blk), &r);
+			fatal(xread, fd, blk, sizeof(blk) / sizeof(*blk), &r);
 
 			if(r > 0)
 			{
@@ -102,9 +103,9 @@ static int snarf(char * path, void ** mem, size_t * sz)
  
 finally:
 	if(fd != -1)
-		fatalize_sys(close, fd);
+		sysfatalize(close, fd);
 
-	XAPI_INFO(1, "path", "%s", path);
+	XAPI_INFO("path", "%s", path);
 coda;
 }
 
@@ -130,7 +131,10 @@ int main(int argc, char** argv)
 		fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
 
 		listwise_info_fd = nullfd;
-		listwise_warn_fd = nullfd;
+
+#if DEBUG
+		listwise_debug_fd = nullfd;
+#endif
 	}
 
 	// create generator parser
@@ -236,8 +240,7 @@ int main(int argc, char** argv)
 				int    ssl = 0;
 				fatal(lstack_getstring, lx, y, x, &ss, &ssl);
 
-				if(fwrite(ss, 1, ssl, stdout) == -1)
-					fatality_sys("fwrite");
+				fatal(xwrite, 1, ss, ssl, 0);
 
 				if(g_args.out_null)
 					printf("%c", 0);

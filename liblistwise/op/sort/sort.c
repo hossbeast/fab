@@ -104,21 +104,21 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 
 		int r = 0;
 
-#define FAIL(s)		do { if(s) { dprintf(listwise_error_fd, s); } waserr = 1; return 0; } while(0)
+#define FAIL(s) do { waserr = 1; return 0; } while(0)
 
 		if(mode == NUMERIC)
 		{
 			if((As = lstack_string(lx, 0, *(int*)A)) == 0)
-				FAIL("allocation failure");
+				FAIL;
 			if((Bs = lstack_string(lx, 0, *(int*)B)) == 0)
-				FAIL("allocation failure");
+				FAIL;
 		}
 		else
 		{
 			if(lstack_getstring(lx, 0, *(int*)A, &As, &Asl))
-				FAIL("allocation failure");
+				FAIL;
 			if(lstack_getstring(lx, 0, *(int*)B, &Bs, &Bsl))
-				FAIL("allocation failure");
+				FAIL;
 		}
 
 		if(mode == NUMERIC)
@@ -143,8 +143,11 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 	}
 
 	qsort(mema, i, sizeof(*mema), compar);
+
 	if(waserr)
-		qfail();
+	{
+		fatality("lstack_getstring", perrtab_SYS, SYS_ENOMEM, 0);
+	}
 
 	for(x = 0; x < i; x++)
 	{

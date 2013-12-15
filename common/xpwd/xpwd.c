@@ -17,6 +17,8 @@
 
 #include <errno.h>
 
+#include "xapi.h"
+
 #include "xpwd.h"
 
 int xgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
@@ -31,9 +33,10 @@ int xgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struc
 	}
 	else
 	{
- 		// some error : check errno
-		return errno;
+		sysfatality("getpwuid_r");
 	}
 
-	return 0;
+finally :
+	XAPI_INFO("uid", "%zu", uid);
+coda;
 }

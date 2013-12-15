@@ -15,10 +15,28 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	SYNTAX		generator string could not be parsed
-2	ILLBYTE		generator string contains illegal byte(s)
-3	ILLREF		generator contains illegal backreference
-4	ILLOP			generator contains unknown operator
-5	ARGSNUM		generator wrong number of arguments
-6	ARGSTYPE	generator argument of the wrong type
-7	ARGSDOM		generator argument out of expected range
+#include <errno.h>
+
+#include "xapi.h"
+
+#include "xfcntl.h"
+
+int xopen(const char * path, int flags, int * const fd)
+{
+	if((*fd = open(path, flags)) == -1)
+		sysfatality("open");
+
+finally:
+	XAPI_INFO("path", "%s", path);
+coda;
+}
+
+int xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
+{
+	if((*fd = open(path, flags, mode)) == -1)
+		sysfatality("open");
+
+finally:
+	XAPI_INFO("path", "%s", path);
+coda;
+}

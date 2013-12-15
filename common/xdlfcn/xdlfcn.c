@@ -15,11 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <unistd.h>
 
 #include "xapi.h"
 
@@ -29,25 +25,25 @@ int xdlopen(const char * filename, int flag, void ** dl)
 {
 	if(((*dl) = dlopen(filename, flag)) == 0)
 	{
-		fail(0, "%s", dlerror());
+		fatality("dlopen", 0, 0, "%s", dlerror());
 	}
 
 finally :
-	XAPI_INFO(1, "path", "%s", filename);
+	XAPI_INFO("path", "%s", filename);
 coda;
 }
 
 int xdlsym(void * dl, const char * sym, void ** psym)
 {
 	dlerror();
-	(*sym) = dlsym(dl, sym);
+	(*psym) = dlsym(dl, sym);
 	char * e = dlerror();
 	if(e)
 	{
-		fail(0, "%s", dlerror());
+		fatality("dlsym", 0, 0, "%s", dlerror());
 	}
 
 finally :
-	XAPI_INFO(1, "sym", "%s", sym);
+	XAPI_INFO("sym", "%s", sym);
 coda;
 }

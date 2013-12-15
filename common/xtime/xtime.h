@@ -15,10 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	SYNTAX		generator string could not be parsed
-2	ILLBYTE		generator string contains illegal byte(s)
-3	ILLREF		generator contains illegal backreference
-4	ILLOP			generator contains unknown operator
-5	ARGSNUM		generator wrong number of arguments
-6	ARGSTYPE	generator argument of the wrong type
-7	ARGSDOM		generator argument out of expected range
+#ifndef _XTIME_H
+#define _XTIME_H
+
+#include <time.h>
+
+/// xlocaltime_r
+//
+// SUMMARY
+//  proxy for localtime_r
+//
+int xlocaltime_r(const time_t * timep, struct tm * result);
+
+#endif

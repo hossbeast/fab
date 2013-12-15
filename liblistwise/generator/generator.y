@@ -27,8 +27,6 @@
 
 	// defined in generator.lex.o
 	int generator_yylex(void* yylvalp, void* yyllocp, void* scanner);
-
-	#define YYU_ERROR(...) dprintf(listwise_error_fd, #__VA_ARGS__)
 }
 
 %define api.pure

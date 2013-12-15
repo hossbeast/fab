@@ -28,6 +28,7 @@ int APIDATA listwise_devel_fd = 2;
 #endif
 #if SANITY
 int APIDATA listwise_sanity = 0;
+int APIDATA listwise_sanity_fd = 2;
 #endif
 int APIDATA listwise_allocation_seed = 10;
 

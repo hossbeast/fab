@@ -15,10 +15,41 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	SYNTAX		generator string could not be parsed
-2	ILLBYTE		generator string contains illegal byte(s)
-3	ILLREF		generator contains illegal backreference
-4	ILLOP			generator contains unknown operator
-5	ARGSNUM		generator wrong number of arguments
-6	ARGSTYPE	generator argument of the wrong type
-7	ARGSDOM		generator argument out of expected range
+#include <errno.h>
+
+#include "xapi.h"
+
+#include "xunistd.h"
+
+int xread(int fd, void * buf, size_t count, ssize_t * bytes)
+{
+	if(bytes && (*bytes = read(fd, buf, count)) == -1)
+		sysfatality("read");
+
+	else if(read(fd, buf, count) == -1)
+		sysfatality("read");
+
+	finally : coda;
+}
+
+int xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
+{
+	if(bytes && (*bytes = write(fd, buf, count)) == -1)
+		sysfatality("write");
+
+	else if(write(fd, buf, count) == -1)
+		sysfatality("write");
+
+	finally : coda;
+}
+
+int xgetcwd(char * buf, size_t size, char ** res)
+{
+	if(res && (((*res) = getcwd(buf, size)) == 0))
+		sysfatality("getcwd");
+
+	else if(getcwd(buf, size) == 0)
+		sysfatality("getcwd");
+
+	finally : coda;
+}

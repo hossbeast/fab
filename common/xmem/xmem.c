@@ -15,17 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <errno.h>
 #include <string.h>
+
+#include "xapi.h"
 
 #include "xmem.h"
 
 int xmalloc(void* target, size_t size)
 {
-	void** t = ((void**)target);
-	*t = calloc(size, 1);
-	return *t ? 0 : 1;
+	if(((*(void**)target) = calloc(size, 1)) == 0)
+	{
+		sysfatality("calloc");
+	}
+	
+finally :
+	XAPI_INFO("size", "%zu", size);
+coda;
 }
 
 int xrealloc(void* target, size_t es, size_t ec, size_t oec)
@@ -39,15 +45,18 @@ int xrealloc(void* target, size_t es, size_t ec, size_t oec)
 		{
 			if(((ssize_t)ec - (ssize_t)oec) > 0)
 				memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
-
-			return 0;
 		}
-
-		return 1;
+		else
+		{
+			sysfatality("realloc");
+		}
 	}
 
-	return 0;
+finally :
+	XAPI_INFO("size", "%zu", es * ec);
+coda;
 }
+
 
 void xfree(void* target)
 {

@@ -189,7 +189,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													else
 																													{
 																														snprintf(yyextra->temp, sizeof(yyextra->temp), "unknown operator : %s", yytext);
-																														generator_yyerror(0, 0, yyextra, yyextra->temp);
+																														generator_yyerror(0, (void*)LW_ILLOP, yyextra, yyextra->temp);
 																														return 0;
 																													}
 																												}
@@ -348,11 +348,11 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 <*>[\x00-\x1F\x7F-\xFF]																	{
 																													snprintf(yyextra->temp, sizeof(yyextra->temp), "unknown character : (0x%02hhx)", yytext[0]);
-																													generator_yyerror(0, 0, yyextra, yyextra->temp);
+																													generator_yyerror(0, (void*)LW_ILLBYTE, yyextra, yyextra->temp);
 																													return 0;
 																												}
 <*>[\x20-\x7E]																					{
 																													snprintf(yyextra->temp, sizeof(yyextra->temp), "unknown character : '%1$c'(0x%1$02hhx)", yytext[0]);
-																													generator_yyerror(0, 0, yyextra, yyextra->temp);
+																													generator_yyerror(0, (void*)LW_ILLBYTE, yyextra, yyextra->temp);
 																													return 0;
 																												}

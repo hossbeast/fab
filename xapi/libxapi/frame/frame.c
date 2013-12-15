@@ -258,56 +258,59 @@ void API xapi_frame_set_and_leave(const etable * const etab, const int16_t code,
 
 int API xapi_frame_set_message(const char * const fmt, ...)
 {
-	va_list va;
-	va_start(va, fmt);
-
-	if(callstack.isalt)
+	if(fmt)
 	{
-		dprintf(2, "MESSAGE ON ALT STACK\n");
-	}
-	else
-	{
-		va_list va2;
-		va_copy(va2, va);
+		va_list va;
+		va_start(va, fmt);
 
-		// measure
-		int w = vsnprintf(0, 0, fmt, va2);
-		va_end(va2);
-
-		// reallocate
-		if(TOP->msga <= w)
+		if(callstack.isalt)
 		{
-			int ns = TOP->msga;
-			while(ns <= w)
-			{
-				ns = ns ?: 10;
-				ns = ns * 2 + ns / 2;
-			}
-			
-static int C;
-			if(C++ == 0)
-			{
-				if(xrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) == 0)
-					return nomem();
-			}
-			else
-			{
-				if(xrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) != 0)
-					return nomem();
-			}	
+			dprintf(2, "MESSAGE ON ALT STACK\n");
+		}
+		else
+		{
+			va_list va2;
+			va_copy(va2, va);
 
-			TOP->msga = ns;
+			// measure
+			int w = vsnprintf(0, 0, fmt, va2);
+			va_end(va2);
+
+			// reallocate
+			if(TOP->msga <= w)
+			{
+				int ns = TOP->msga;
+				while(ns <= w)
+				{
+					ns = ns ?: 10;
+					ns = ns * 2 + ns / 2;
+				}
+				
+	static int C;
+				if(C++ == 0)
+				{
+					if(xrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) == 0)
+						return nomem();
+				}
+				else
+				{
+					if(xrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) != 0)
+						return nomem();
+				}	
+
+				TOP->msga = ns;
+			}
+
+			TOP->msgl = vsprintf(TOP->msg, fmt, va);
 		}
 
-		TOP->msgl = vsprintf(TOP->msg, fmt, va);
+		va_end(va);
 	}
-
-	va_end(va);
 
 	return 0;
 }
 
-int API xapi_frame_add_info(char imp, const char * const k, int kl, const char * const vfmt, ...)
+int API xapi_frame_add_info(const char * const k, int kl, const char * const vfmt, ...)
 {
 	struct frame * f = 0;
 
@@ -327,7 +330,6 @@ int API xapi_frame_add_info(char imp, const char * const k, int kl, const char *
 			if(fs->info.l < (sizeof(fs->buf_info) / sizeof(fs->buf_info[0])))
 			{
 				fs->info.v = fs->buf_info;
-				fs->info.v[fs->info.l].imp = imp;
 				fs->info.v[fs->info.l].ks = fs->buf_info_ks[fs->info.l];
 				fs->info.v[fs->info.l].vs = fs->buf_info_vs[fs->info.l];
 				
@@ -368,8 +370,6 @@ static int C;
 
 				f->info.a = ns;
 			}
-
-			f->info.v[f->info.l].imp = imp;
 
 			// populate key
 			if(f->info.v[f->info.l].ka <= kl)

@@ -135,8 +135,7 @@ extern int listwise_info_fd;
 //  liblistwise writes debug messages to this fd
 //
 // EXAMPLES
-//  lstack_dump writes to this fd
-//  lstack_exec writes to this fd (when the debug parameter to that function is true)
+//  listwise operators unable to perform some function (ls on a nonexistent path, for example)
 //
 // DEFAULT
 //  2 - stderr
@@ -151,12 +150,25 @@ extern int listwise_debug_fd;
 //  liblistwise writes devel messages to this fd
 //
 // EXAMPLES
-//  listwise operators unable to perform some function (ls on a nonexistent path, for example)
+//  generator token parsing
+//  generator state changes
 //
 // DEFAULT
 //  2 - stderr
 //
 extern int listwise_devel_fd;
+#endif
+
+#if SANITY
+/// listwise_sanity_fd
+//
+// SUMMARY
+//  liblistwise writes sanity messages to this fd
+//
+// DEFAULT
+//  2 - stderr
+//
+extern int listwise_sanity_fd;
 #endif
 
 /// listwise_identity 

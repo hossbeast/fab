@@ -15,47 +15,40 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XOPEN_H
-#define _XOPEN_H
+#ifndef _XUNISTD_H
+#define _XUNISTD_H
 
-/// xopen
-//
-// SUMMARY
-//  fatalize-able wrapper for open
-//
-int xopen(const char * path, int flags, int * const fd)
-	__attribute__((nonnull));
-
-/// xopen_mode
-//
-// SUMMARY
-//  fatalize-able wrapper for open
-//
-int xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
-	__attribute__((nonnull));
+#include <unistd.h>
 
 /// xread
 //
 // SUMMARY
-//  fatalize-able wrapper for read
+//  proxy for read
 //
-int xread(int fd, void * buf, size_t count, ssize_t * bytes)
-	__attribute__((nonnull(2)));
+// PARAMETERS
+//  [bytes] - returns the number of bytes read
+//
+int xread(int fd, void * buf, size_t count, ssize_t * bytes);
 
-/// xdiropen
+
+/// xwrite
 //
 // SUMMARY
-//  fatalize-able wrapper for diropen
+//  proxy for write
 //
-int xopendir(const char * name, DIR ** dd)
-	__attribute__((nonnull));
+// PARAMETERS
+//  [bytes] - returns the number of bytes written
+//
+int xwrite(int fd, const void * buf, size_t count, ssize_t * bytes);
 
-/// xreaddir_r
+/// xgetcwd
 //
 // SUMMARY
-//  fatalize-able wrapper for readdir_r
+//  proxy for getcwd
 //
-int xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
-	__attribute__((nonnull));
+// PARAMETERS
+//  [res] - *res is set to the return from getcwd
+//
+int xgetcwd(char * buf, size_t size, char ** res);
 
 #endif

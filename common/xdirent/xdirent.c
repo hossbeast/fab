@@ -15,57 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
+#include "xapi.h"
 
-#include "xio.h"
-
-int xopen(const char * path, int flags, int * const fd)
-{
-	if((*fd = open(path, flags)) == -1)
-		return -1;
-
-	return 0;
-}
-
-int xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
-{
-	if((*fd = open(path, flags, mode)) == -1)
-		return -1;
-
-	return 0;
-}
-
-int xread(int fd, void * buf, size_t count, ssize_t * bytes)
-{
-	if(bytes && (*bytes = read(fd, buf, count)) == -1)
-		return -1;
-	else if(read(fd, buf, count) == -1)
-		return -1;
-
-	return 0;
-}
+#include "xdirent.h"
 
 int xopendir(const char * name, DIR ** dd)
 {
 	if(((*dd) = opendir(name)) == 0)
-	{
-		return -1;
-	}
+		sysfatality("opendir");
 
-	return 0;
+finally:
+	XAPI_INFO("path", "%s", name);
+coda;
 }
 
 int xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
 {
 	int r;
 	if((r = readdir_r(dirp, entry, result)))
-	{
-		errno = r;
-	}
+		fatality("readdir_r", perrtab_SYS, r, 0);
 
-	return 0;
+	finally : coda;
 }

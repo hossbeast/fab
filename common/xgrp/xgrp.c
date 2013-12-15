@@ -15,10 +15,28 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	SYNTAX		generator string could not be parsed
-2	ILLBYTE		generator string contains illegal byte(s)
-3	ILLREF		generator contains illegal backreference
-4	ILLOP			generator contains unknown operator
-5	ARGSNUM		generator wrong number of arguments
-6	ARGSTYPE	generator argument of the wrong type
-7	ARGSDOM		generator argument out of expected range
+#include <errno.h>
+
+#include "xapi.h"
+
+#include "xgrp.h"
+
+int xgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
+{
+	if(getgrgid_r(gid, grp, buf, buflen, result) == 0)
+	{
+		// possibly found, check *result
+	}
+	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
+	{
+		// name not found
+	}
+	else
+	{
+		sysfatality("getgrgid_r");
+	}
+
+finally :
+	XAPI_INFO("gid", "%zu", gid);
+coda;
+}

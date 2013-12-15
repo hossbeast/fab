@@ -80,7 +80,7 @@ void yyu_pushstate(const int state, yyu_extra * const xtra, const int line)
 		// line number
 		char * dbuf = xtra->space2;
 		size_t dlen = 0;
-		if(xtra->output_line)
+		if(xtra->line_numbering)
 			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
 
 		xtra->log_state("(%2d) %.*s %*s @ %*s %s%.*s"
@@ -115,7 +115,7 @@ void yyu_popstate(yyu_extra * const xtra, const int line)
 		// line number
 		char * dbuf = xtra->space2;
 		size_t dlen = 0;
-		if(xtra->output_line)
+		if(xtra->line_numbering)
 			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
 
 		xtra->log_state("(%2d) %.*s %*s @ %*s %s%.*s"
@@ -161,7 +161,7 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 		// line number
 		char * dbuf = xtra->space2;
 		size_t dlen = 0;
-		if(xtra->output_line)
+		if(xtra->line_numbering)
 			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
 
 		xtra->log_token("%8s ) '%.*s'%s%.*s%s %*s @ %s%.*s%s[%3d,%3d - %3d,%3d]%s%.*s"
@@ -191,15 +191,21 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 
 void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
 {
-	if(xtra->r == 1)
-		return;
+	if(lloc)	// called from parser
+	{
+		xtra->r = -1;
+	}
+	else			// called from scanner
+	{
+		xtra->r = (int)(intptr_t)scanner;
+	}
 
-	xtra->r = 1;
+	// save the error string
+	if(err)
+		snprintf(xtra->errorstring, sizeof(xtra->errorstring), "%s", err);
 
-	if(xtra->log_error && err)
-		xtra->log_error("%s", err);
-
-	if(xtra->log_error && xtra->last_token)
+	// save the tokenstring
+	if(xtra->last_token)
 	{
 		// token source string
 		char * s  	= xtra->last_loc.s;
@@ -213,38 +219,15 @@ void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * cons
 		if(xtra->lvalstr)
 			xtra->lvalstr(xtra->last_token, xtra->last_lval, xtra, &bbuf, &blen);
 
-		// input name
-		char * cbuf = 0;
-		size_t clen = 0;
-		if(xtra->inputstr)
-			xtra->inputstr(xtra, &cbuf, &clen);
-
-		// line number
-		char * dbuf = xtra->space2;
-		size_t dlen = 0;
-		if(xtra->output_line)
-			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", xtra->last_line);
-
-		// log the last good token
-		xtra->log_error("last token - %s %.*s%s%.*s%s @ %s%.*s%s[%3d,%3d - %3d,%3d]%s%.*s"
+		snprintf(xtra->tokenstring, sizeof(xtra->tokenstring)
+			, "%s %.*s%s%.*s%s"
 			, xtra->tokname(xtra->last_token)		// token name
-			, MIN(alen, 50)											// escaped string from which the token was scanned
+			, (int)alen															// escaped string from which the token was scanned
 			, abuf
 			, blen ? " (" : ""
-			, blen															// representation of the semantic value for the token
+			, (int)blen															// representation of the semantic value for the token
 			, bbuf
 			, blen ? ")" : ""
-			, clen ? " (" : ""									// name of input
-			, clen
-			, cbuf
-			, clen ? ") " : ""
-		  , xtra->last_loc.f_lin + 1					// location within input
-		  , xtra->last_loc.f_col + 1
-		  , xtra->last_loc.l_lin + 1
-		  , xtra->last_loc.l_col + 1
-			, dlen ? " " : ""
-			, dlen															// scanner line number
-			, dbuf
 		);
 	}
 }

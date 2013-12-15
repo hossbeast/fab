@@ -115,8 +115,7 @@ void xapi_frame_set(const struct etable * const restrict etab, const int16_t cod
 // PARAMETERS
 //  fmt - format string
 //
-int xapi_frame_set_message(const char * const restrict fmt, ...)
-	__attribute__((nonnull));
+int xapi_frame_set_message(const char * const restrict fmt, ...);
 
 /// xapi_frame_add_info
 //
@@ -124,12 +123,11 @@ int xapi_frame_set_message(const char * const restrict fmt, ...)
 //  add key/value info to the top frame
 //
 // PARAMETERS
-//  imp  - whether this info is marked as important
 //  k    - key
 //  [kl] - key length, or 0 for strlen
 //  vfmt - format string
 //
-int xapi_frame_add_info(char imp, const char * const k, int kl, const char * const restrict vfmt, ...)
+int xapi_frame_add_info(const char * const k, int kl, const char * const restrict vfmt, ...)
 	__attribute__((nonnull));
 
 /// xapi_frame_set_and_leave

@@ -18,6 +18,8 @@
 #ifndef _XDLFCN_H
 #define _XDLFCN_H
 
+#include <dlfcn.h>
+
 /// xdlopen
 //
 // SUMMARY

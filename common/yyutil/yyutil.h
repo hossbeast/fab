@@ -62,7 +62,7 @@ typedef struct
 //
 typedef struct yyu_extra
 {
-	int							r;							// set to 1 in yyu_error
+	int							r;							// in yyerror, set to -1 for a parser error, or a positive value for a scanner error
 	void *					scanner;				// flex scanner
 	int							states[64];			// start states stack
 	int							states_n;
@@ -76,17 +76,16 @@ typedef struct yyu_extra
 	void *					last_lval;			// semantic value of last scanned token
 	size_t					last_lval_aloc;	// allocated size of last_lval
 
-	// whether yyu should include scanner line number in output messages
-	int							output_line;
+	char						errorstring[256];	// last error string
+	char						tokenstring[256];	// last tokenstring
 
-	// yyu calls this function to log statechange messages
+	int							line_numbering;	// whether yyu should include scanner line number in output messages
+
+	// yyu calls this function to log scanner state changes
 	void						(*log_state)(char * fmt, ...);
 
-	// yyu calls this function to log token messages
+	// yyu calls this function to log parsed tokens
 	void						(*log_token)(char * fmt, ...);
-
-	// yyu calls this function to write error messages (from yyerror)
-	void						(*log_error)(char * fmt, ...);
 
 	// yyu calls this function to get a token name from a token
 	const char *		(*tokname)(int token);
@@ -146,17 +145,22 @@ do																					\
 //
 // equivalent of fatal for use within grammar rules
 //
-#define YYU_FATAL(x, ...)					\
-do {															\
-	int __r = x(__VA_ARGS__);				\
-	if(__r != 0)										\
-	{																\
-		if(__r > 0)										\
-		{															\
-			YYU_ERROR(#x "failed");			\
-			YYABORT;										\
-		}															\
-	}																\
+// NOTE
+//  requires that you have these lines in your .y file
+//  %parse-param { void * scanner }
+//  %parse-param { parse_param * parm }
+//
+#define YYU_FATAL(x, ...)														\
+do {																								\
+	int __r = x(__VA_ARGS__);													\
+	if(__r != 0)																			\
+	{																									\
+		if(__r > 0)																			\
+		{																								\
+			yyerror(&yylloc, scanner, parm, #x "failed");	\
+			YYABORT;																			\
+		}																								\
+	}																									\
 } while(0)
 
 /// yyu_locwrite
