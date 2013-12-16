@@ -44,7 +44,7 @@ $lflags				= [ -lpcre, -ldl, -shared, [ "-Wl,-soname," $soname ] ]
 # generated files
 +[@flex.states] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
 +[@bison.tokens]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
-+[@xapi.errtab] ($gendir = $dliblistwise; $dirs = $dliblistwise ; $ext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/PCRE.errtab ])
++[@xapi.errtab] ($gendir = $dliblistwise; $dirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/PCRE.errtab ~ j ])
 
 # path to each operator so
 $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]

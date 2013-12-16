@@ -62,7 +62,7 @@ int op_validate(operation* o)
 	for(x = 0; x < o->argsl; x++)
 	{
 		if(o->args[x]->itype != ITYPE_I64)
-			fail(LW_ARGSTYPE, "should be i64", x);
+			fail(LW_ARGSTYPE, "should be i64");
 	}
 
 	finally : coda;

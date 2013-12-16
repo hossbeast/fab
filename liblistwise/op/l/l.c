@@ -60,11 +60,11 @@ static int op_validate(operation* o)
 	if(o->argsl == 1 || o->argsl == 2)
 	{
 		if(o->args[0]->l == 0)
-			fail("%s -- empty first argument", o->op->s);
+			fail(LW_ARGSDOM, "empty argument");
 	}
 	else
 	{
-		fail("%s -- arguments : %d", o->op->s, o->argsl);
+		fail(LW_ARGSNUM, "expected : 1 or 2, actual : %d", o->argsl);
 	}
 
 	finally : coda;

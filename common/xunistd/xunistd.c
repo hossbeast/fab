@@ -53,3 +53,14 @@ int xgetcwd(char * buf, size_t size, char ** res)
 
 	finally : coda;
 }
+
+int xlseek(int fd, off_t offset, int whence, off_t * res)
+{
+	if(res && ((*res) = lseek(fd, offset, whence)) == (off_t)-1)
+		sysfatality("lseek");
+
+	else if(lseek(fd, offset, whence) == (off_t)-1)
+		sysfatality("lseek");
+
+	finally : coda;
+}

@@ -125,17 +125,27 @@ int main(int argc, char** argv)
 
 	int x;
 
-	if(!g_args.dump)
+	// arrange for liblistwise to write to /dev/null
+	fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
+
+	if(!g_args.lw_info)
 	{
-		// arrange for liblistwise to write to /dev/null
-		fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
-
-		listwise_info_fd = nullfd;
-
-#if DEBUG
-		listwise_debug_fd = nullfd;
-#endif
+		listwise_info_fd = nullfd;		// lstack_dump, lstack_exec
 	}
+#if DEBUG
+	if(!g_args.lw_debug)
+		listwise_debug_fd = nullfd;		// operator failures - normally silent (ls nonexistent path)
+#endif
+#if DEVEL
+	if(!g_args.lw_devel)
+		listwise_devel_fd = nullfd;		// generator token parsing, state changes
+#endif
+#if SANITY
+	if(g_args.lw_sanity)
+		listwise_sanity = 1;					// sanity checks
+	else
+		listwise_sanity_fd = nullfd;	// sanity output
+#endif
 
 	// create generator parser
 	fatal(generator_mkparser, &p);
@@ -197,11 +207,11 @@ int main(int argc, char** argv)
 
 	if(g)
 	{
-		if(g_args.dump)
+		if(g_args.lw_info)
 			generator_dump(g);
 
 		// execute 
-		fatal(listwise_exec_generator, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx, g_args.dump);
+		fatal(listwise_exec_generator, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx, g_args.lw_info);
 	}
 
 	// OUTPUT
@@ -224,10 +234,10 @@ int main(int argc, char** argv)
 		{
 			if(go)
 			{
-				if(g_args.number)
+				if(g_args.numbering)
 				{
 					int j = i++;
-					if(g_args.number == 2)
+					if(g_args.numbering == 2)
 						j = x;
 
 					if(g_args.out_stack)
@@ -265,16 +275,16 @@ finally:
 	generator_parser_free(p);
 	args_teardown();
 
-if(g_args.dump)
-{
-printf("backtrace : \n");
-	xapi_backtrace();
-}
-else
-{
-printf("pithytrace : \n");
-	xapi_pithytrace();
-}
-
+	if(XAPI_UNWINDING)
+	{
+		if(g_args.lw_info)
+		{
+			xapi_backtrace();
+		}
+		else
+		{
+			xapi_pithytrace();
+		}
+	}
 coda;
 }

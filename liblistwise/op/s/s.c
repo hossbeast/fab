@@ -103,7 +103,7 @@ int op_validate(operation* o)
 	if(o->argsl == 2 || o->argsl == 3)
 	{
 		if(o->args[0]->l == 0)
-			fail("s -- empty first argument");
+			fail(LW_ARGSDOM, "empty argument");
 
 		if(o->argsl == 2 || o->args[2]->l == 0)
 			fatal(re_compile, o->args[0]->s, &o->args[0]->re, 0);
@@ -111,7 +111,9 @@ int op_validate(operation* o)
 			fatal(re_compile, o->args[0]->s, &o->args[0]->re, o->args[2]->s);
 	}
 	else
-		fail("s -- requires 2 or 3 args, actual: %d", o->argsl);
+	{
+		fail(LW_ARGSNUM, "expected : 2 or 3, actual : %d", o->argsl);
+	}
 
 	o->args[0]->itype = ITYPE_RE;
 
@@ -121,7 +123,7 @@ int op_validate(operation* o)
 	{
 		if(o->args[1]->refs.v[x].ref > o->args[0]->re.c_caps)
 		{
-			fail("backref: %d, captures: %d", o->args[1]->refs.v[x].ref, o->args[0]->re.c_caps);
+			fail(LW_ILLREF, "captures : %d, backref: %d", o->args[0]->re.c_caps, o->args[1]->refs.v[x].ref);
 		}
 	}
 

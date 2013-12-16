@@ -39,7 +39,7 @@
 // error table struct
 typedef struct etable
 {
-	// indexed by lower int16 of the error code + jump
+	// indexed by lower int16 of the error code + (min * -1)
 	struct
 	{
 		char * name;		// i.e. ENOMEM
@@ -49,7 +49,8 @@ typedef struct etable
 
 	char *  tag;			// i.e. "PCRE", "SYS", "FAB", "LW"
 	int16_t id;				// upper 2 bytes of the error code
-	int16_t	jump;
+	int16_t	min;			// min err
+	int16_t max;			// max err
 } etable;
 
 // an error table for system errors is provided by libxapi

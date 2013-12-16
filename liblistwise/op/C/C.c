@@ -78,7 +78,7 @@ int op_validate(operation* o)
 
 	if(o->args[0]->itype != ITYPE_I64)
 	{
-		fail(LW_ARGSTYPE, "should be i64", 0);
+		fail(LW_ARGSTYPE, "should be i64");
 	}
 
 	if(o->args[0]->i64 < 1)

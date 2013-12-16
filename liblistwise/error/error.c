@@ -19,7 +19,7 @@
 
 #include "listwise/internal.h"
 
-static etable * tab[2];
+static etable * tab[3];
 
 void __attribute__((constructor)) init()
 {
@@ -42,7 +42,7 @@ const char * listwise_errname(const int code)
 	if(rt < 0 || rt > 2)
 		return 0;
 
-	return tab[rt]->v[rc + tab[rt]->jump].name;
+	return tab[rt]->v[rc + (tab[rt]->min * -1)].name;
 }
 
 const char * listwise_errdesc(const int code)
@@ -53,7 +53,7 @@ const char * listwise_errdesc(const int code)
 	if(rt < 0 || rt > 2)
 		return 0;
 
-	return tab[rt]->v[rc + tab[rt]->jump].desc;
+	return tab[rt]->v[rc + (tab[rt]->min * -1)].desc;
 }
 
 const char * listwise_errstr(const int code)
@@ -64,5 +64,5 @@ const char * listwise_errstr(const int code)
 	if(rt < 0 || rt > 2)
 		return 0;
 
-	return tab[rt]->v[rc + tab[rt]->jump].str;
+	return tab[rt]->v[rc + (tab[rt]->min * -1)].str;
 }

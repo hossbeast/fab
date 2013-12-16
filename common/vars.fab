@@ -98,7 +98,6 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
 	[ $dbug $dvel ~ s/1/-g/y ]					# enable debug symbol generation
 	[ $dbug $dvel ~ s/1/-DDEBUG/y ]
-	[ $dbug $dvel ~ s/1/-DUNWIND/y ]
 	[       $dvel ~ s/1/-DDEVEL/y ]
 	[       $dvel ~ s/1/-DSANITY/y ]
 ]

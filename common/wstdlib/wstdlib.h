@@ -15,50 +15,38 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XUNISTD_H
-#define _XUNISTD_H
+#ifndef _WSTDLIB_H
+#define _WSTDLIB_H
 
-#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
 
-/// xread
+/// xmalloc
 //
 // SUMMARY
-//  proxy for read
+//  does this: *t = calloc(sz, 1);
+//  recall that calloc zeroes out the memory it allocates
 //
-// PARAMETERS
-//  [bytes] - returns the number of bytes read
-//
-int xread(int fd, void * buf, size_t count, ssize_t * bytes);
+// RETURNS
+//  returns 0 on success
+//  
+int wmalloc(void* t, size_t sz)
+	__attribute__((nonnull));
 
-
-/// xwrite
+/// xrealloc
 //
 // SUMMARY
-//  proxy for write
+//  does this: realloc(*t, sz) AND ensures that any new portion of memory is zeroed out
 //
 // PARAMETERS
-//  [bytes] - returns the number of bytes written
+//  es  - element size
+//  ec  - element count
+//  oec - old element count
 //
-int xwrite(int fd, const void * buf, size_t count, ssize_t * bytes);
-
-/// xgetcwd
+// RETURNS
+//  returns 0 on success
 //
-// SUMMARY
-//  proxy for getcwd
-//
-// PARAMETERS
-//  [res] - *res is set to the return from getcwd
-//
-int xgetcwd(char * buf, size_t size, char ** res);
-
-/// xlseek
-//
-// SUMMARY
-//  proxy for lseek
-//
-// PARAMETERS
-//  [res] - *res is set to the return from lseek
-//
-int xlseek(int fd, off_t offset, int whence, off_t * res);
+int wrealloc(void* t, size_t es, size_t ec, size_t oec)
+	__attribute__((nonnull));
 
 #endif

@@ -132,16 +132,16 @@ static int wrapstat(char * s, int linkstat, struct stat * st, int * r)
 		}
 		else
 		{
-			fatality_sys(linkstat ? "lstat" : "stat");
+			sysfatality(linkstat ? "lstat" : "stat");
 		}
 	}
 
 finally:
-	XAPI_INFO(1, "path", "%s", s);
+	XAPI_INFO("path", "%s", s);
 coda;
 }
 
-static int wrapeuidaccess(char * s, int mode, int * r)
+static int xeuidaccess(char * s, int mode, int * r)
 {
 	if(((*r) = euidaccess(s, mode)) == 0)
 	{
@@ -159,11 +159,11 @@ static int wrapeuidaccess(char * s, int mode, int * r)
 	}
 	else
 	{
-		fatality_sys("euidaccess");
+		sysfatality("euidaccess");
 	}
 
 finally:
-	XAPI_INFO(1, "path", "%s", s);
+	XAPI_INFO("path", "%s", s);
 coda;
 }
 
@@ -249,7 +249,7 @@ int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		int r;
-		fatal(wrapeuidaccess, lstack_string(ls, 0, x), R_OK, &r);
+		fatal(xeuidaccess, lstack_string(ls, 0, x), R_OK, &r);
 
 		if(r == 0)
 		{
@@ -268,7 +268,7 @@ int op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		int r;
-		fatal(wrapeuidaccess, lstack_string(ls, 0, x), W_OK, &r);
+		fatal(xeuidaccess, lstack_string(ls, 0, x), W_OK, &r);
 
 		if(r == 0)
 		{
@@ -287,7 +287,7 @@ int op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		int r;
-		fatal(wrapeuidaccess, lstack_string(ls, 0, x), X_OK, &r);
+		fatal(xeuidaccess, lstack_string(ls, 0, x), X_OK, &r);
 
 		if(r == 0)
 		{

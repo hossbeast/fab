@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,7 +23,6 @@
 #include "xapi/internal.h"
 
 #include "macros.h"
-#include "xmem.h"
 
 // per-thread callstacks
 __thread struct callstack callstack;
@@ -34,6 +34,25 @@ __thread struct callstack callstack;
 
 typeof(callstack) * T;
 
+static int wrealloc(void* target, size_t es, size_t ec, size_t oec)
+{
+	void** t = ((void**)target);
+	*t = realloc(*t, es * ec);
+
+	if(es * ec)
+	{
+		if(*t)
+		{
+			if(((ssize_t)ec - (ssize_t)oec) > 0)
+				memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
+
+			return 0;
+		}
+		return 1;
+	}
+	return 0;
+}
+
 static int nomem()
 {
 	// switch to alt stack
@@ -44,7 +63,7 @@ static int nomem()
 	xapi_frame_push();
 
 	// populate the alternate frame with an ENOMEM error
-	xapi_frame_set_and_leave(perrtab_SYS, SYS_ENOMEM, 0, 0, "xrealloc");
+	xapi_frame_set_and_leave(perrtab_SYS, SYS_ENOMEM, 0, 0, "realloc");
 
 	return -1;
 }
@@ -56,6 +75,8 @@ static int nomem()
 ///
 int API xapi_frame_push()
 {
+T = &callstack;
+
 	if(callstack.isalt || callstack.finalized)
 	{
 //printf("isalt enter, l %d, depth %d -> %d\n", callstack.alt.l, callstack.alt.depth, callstack.alt.depth + 2);
@@ -74,24 +95,20 @@ int API xapi_frame_push()
 			int ns = callstack.frames.stor.a ?: 10;
 			ns = ns * 2 + ns / 2;
 
-			ns = callstack.depth;
-static int C;
-			if(C++ == -1)
+#if 0
+ns = callstack.depth;
+			if(wrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) == 0)
 			{
-				if(xrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) == 0)
-				{
-					xapi_frame_leave();
-					return nomem();
-				}
+				xapi_frame_leave();
+				return nomem();
 			}
-			else
+#else
+			if(wrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) != 0)
 			{
-				if(xrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) != 0)
-				{
-					xapi_frame_leave();
-					return nomem();
-				}
+				xapi_frame_leave();
+				return nomem();
 			}
+#endif
 
 			callstack.frames.stor.a = ns;
 		}
@@ -101,7 +118,7 @@ static int C;
 		{
 			int ns = callstack.a ?: 10;
 			ns = ns * 2 + ns / 2;
-			if(xrealloc(&callstack.v, sizeof(*callstack.v), ns, callstack.a) != 0)
+			if(wrealloc(&callstack.v, sizeof(*callstack.v), ns, callstack.a) != 0)
 			{
 				xapi_frame_leave();
 				return nomem();
@@ -143,7 +160,10 @@ void API xapi_frame_leave()
 		** depth goes to -1 when a function exits that was not itself called with UNWIND-ing
 		*/
 		if(callstack.depth-- == 0)
+		{
+//printf("callstack free\n");
 			callstack_free();
+		}
 	}
 }
 
@@ -217,6 +237,16 @@ T = &callstack;
 	}
 	else
 	{
+#if 1
+if(!callstack.v)
+{
+	/*
+	** when and UNWIND-ing function is called without fatal, AND there is an active callstack, then
+	** when that function returns, the callstack is freed. while processing a subsequent error this
+	** condition will be true and the program will segfault
+	*/
+}
+#endif
 		if(callstack.depth == 0)
 		{
 			// use the base frame for the initial call
@@ -287,14 +317,14 @@ int API xapi_frame_set_message(const char * const fmt, ...)
 				}
 				
 	static int C;
-				if(C++ == 0)
+				if(C++ == -1)
 				{
-					if(xrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) == 0)
+					if(wrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) == 0)
 						return nomem();
 				}
 				else
 				{
-					if(xrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) != 0)
+					if(wrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) != 0)
 						return nomem();
 				}	
 
@@ -355,19 +385,14 @@ int API xapi_frame_add_info(const char * const k, int kl, const char * const vfm
 				int ns = f->info.a ?: 3;
 				ns = ns * 2 + ns / 2;
 
+#if 0
 ns = f->info.l + 1;
-static int C;
-				if(C++ == -1)
-				{
-					if(xrealloc(&f->info.v, sizeof(*f->info.v), ns, f->info.a) == 0)
-						return nomem();
-				}
-				else
-				{
-					if(xrealloc(&f->info.v, sizeof(*f->info.v), ns, f->info.a) != 0)
-						return nomem();
-				}
-
+				if(wrealloc(&f->info.v, sizeof(*f->info.v), ns, f->info.a) == 0)
+					return nomem();
+#else
+				if(wrealloc(&f->info.v, sizeof(*f->info.v), ns, f->info.a) != 0)
+					return nomem();
+#endif
 				f->info.a = ns;
 			}
 
@@ -381,7 +406,7 @@ static int C;
 					ns = ns * 2 + ns / 2;
 				}
 				
-				if(xrealloc(&f->info.v[f->info.l].ks, sizeof(*f->info.v[0].ks), ns, f->info.v[f->info.l].ka) != 0)
+				if(wrealloc(&f->info.v[f->info.l].ks, sizeof(*f->info.v[0].ks), ns, f->info.v[f->info.l].ka) != 0)
 					return nomem();
 
 				f->info.v[f->info.l].ka = ns;
@@ -412,7 +437,7 @@ static int C;
 					ns = ns * 2 + ns / 2;
 				}
 				
-				if(xrealloc(&f->info.v[f->info.l].vs, sizeof(*f->info.v[0].vs), ns, f->info.v[f->info.l].va) != 0)
+				if(wrealloc(&f->info.v[f->info.l].vs, sizeof(*f->info.v[0].vs), ns, f->info.v[f->info.l].va) != 0)
 					return nomem();
 
 				f->info.v[f->info.l].va = ns;

@@ -29,6 +29,7 @@
 #include "listwise/ops.h"
 #include "listwise/object.h"
 #include "listwise/re.h"
+#include "listwise/fs.h"
 
 #include "coll.h"
 #include "idx.h"

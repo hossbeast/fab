@@ -20,6 +20,9 @@
 
 #include "xapi/internal.h"
 
+#include "macros.h"
+#include "xstring.h"
+
 ///
 /// backtrace generation
 ///
@@ -42,7 +45,7 @@ static size_t frame_error(char * const dst, const size_t sz, struct frame * f)
 	{
 		SAY("[%s:%s] %.*s"
 			, f->etab->tag
-			, f->etab->v[f->code].name
+			, f->etab->v[f->code + (f->etab->min * -1)].name
 			, f->msgl, f->msg 
 		);
 	}
@@ -50,8 +53,8 @@ static size_t frame_error(char * const dst, const size_t sz, struct frame * f)
 	{
 		SAY("[%s:%s] %s"
 			, f->etab->tag
-			, f->etab->v[f->code].name
-			, f->etab->v[f->code].desc
+			, f->etab->v[f->code + (f->etab->min * -1)].name
+			, f->etab->v[f->code + (f->etab->min * -1)].desc
 		);
 	}
 	else if(f->etab && f->msg)
@@ -227,23 +230,48 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 		z += frame_trace(dst + z, sz - z, callstack.v[0], 0, callstack.v[0]->code);
 
 		size_t zt = z;
-
-		for(x = 1; x <= callstack.l; x++)
+		for(x = 1; x <= MIN(callstack.l, 4 /* heuristic */); x++)
 		{
 			int y;
 			for(y = 0; y < callstack.v[x]->info.l; y++)
 			{
-				if(z == zt)
-					z += snprintf(dst + z, sz - z, " with ");
-				else
-					SAY(", ");
+				// determine whether an info by this name has already been used
+				int xx;
+				for(xx = 0; xx < x; xx++)
+				{
+					int yy;
+					for(yy = 0; yy < callstack.v[xx]->info.l; yy++)
+					{
+						if(xstrcmp(
+							  callstack.v[x]->info.v[y].ks
+							, callstack.v[x]->info.v[y].kl
+							, callstack.v[xx]->info.v[yy].ks
+							, callstack.v[xx]->info.v[yy].kl
+							, 0) == 0)
+						{
+							break;
+						}
+					}
+					if(yy < callstack.v[xx]->info.l)
+					{
+						break;
+					}
+				}
 
-				SAY("%.*s=%.*s"
-					, callstack.v[x]->info.v[y].kl
-					, callstack.v[x]->info.v[y].ks
-					, callstack.v[x]->info.v[y].vl
-					, callstack.v[x]->info.v[y].vs
-				);
+				if(xx == x)
+				{
+					if(z == zt)
+						z += snprintf(dst + z, sz - z, " with ");
+					else
+						SAY(", ");
+
+					SAY("%.*s=%.*s"
+						, callstack.v[x]->info.v[y].kl
+						, callstack.v[x]->info.v[y].ks
+						, callstack.v[x]->info.v[y].vl
+						, callstack.v[x]->info.v[y].vs
+					);
+				}
 			}
 		}
 	}

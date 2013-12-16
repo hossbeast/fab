@@ -23,8 +23,8 @@
 
 #include "listwise/internal.h"
 
-
 #include "parseint.h"
+#include "xdirent.h"
 
 /*
 
@@ -99,29 +99,22 @@ static int listing(lwx* ls, char * s, int recurse)
 	{
 		struct dirent ent;
 		struct dirent * entp = 0;
-		int r = 0;
 		while(1)
 		{
-			if((r = readdir_r(dd, &ent, &entp)) == 0)
+			fatal(xreaddir_r, dd, &ent, &entp);
+			if(entp)
 			{
-				if(entp)
+				if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
 				{
-					if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
-					{
-						fatal(lstack_addf, ls, "%s/%s", s, entp->d_name);
+					fatal(lstack_addf, ls, "%s/%s", s, entp->d_name);
 
-						if(recurse)
-							fatal(listing, ls, lstack_string(ls, 0, ls->s[0].l - 1), recurse);
-					}
-				}
-				else
-				{
-					break;
+					if(recurse)
+						fatal(listing, ls, lstack_string(ls, 0, ls->s[0].l - 1), recurse);
 				}
 			}
 			else
 			{
-				fail("readdir('%s')=[%d][%s]", s, r, strerror(r));
+				break;
 			}
 		}
 	}

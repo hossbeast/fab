@@ -136,27 +136,30 @@ static int reduce(parse_param * pp)
 
 	// in addition, pp->r is nonzero if yyerror has been called, which covers a few more cases
 	// than failure-to-reduce, such as when the scanner encounters invalid byte(s)
-	if(r || pp->r == -1)
-	{	// error from the parser
-		fatality("generator_yyparse", perrtab_LW, LW_SYNTAX, "%s", pp->errorstring);
-	}
-	else if(pp->r)
+	if(pp->r > 0)
 	{	// error from the scanner
 		fatality("generator_yyparse", perrtab_LW, pp->r, "%s", pp->errorstring);
+	}
+	else if(r || pp->r)
+	{	// error from the parser
+		fatality("generator_yyparse", perrtab_LW, LW_SYNTAX, "%s", pp->errorstring);
 	}
 
 finally :
 	if(XAPI_UNWINDING)
 	{
-		XAPI_INFO("token", "%s", pp->tokenstring);
-		XAPI_INFO("input", "%.*s", pp->namel, pp->name);
-		XAPI_INFO("loc", "[%d,%d - %d,%d]"
+		XAPI_INFO("last", "%s", pp->tokenstring);
+		if(pp->namel)
+			XAPI_INFO("input", "%.*s", pp->namel, pp->name);
+		XAPI_INFO("loc", "[%d,%d-%d,%d]"
 			, pp->last_loc.f_lin + 1
 			, pp->last_loc.f_col + 1
 			, pp->last_loc.l_lin + 1
 			, pp->last_loc.l_col + 1
 		);
-		XAPI_INFO("line", "%d", pp->last_line);
+#if DEBUG
+		XAPI_INFO("scanline", "%d", pp->last_line);
+#endif
 	}
 coda;
 }
@@ -169,8 +172,10 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 	// results struct for this parse
 	parse_param pp = {
 		  .line_numbering	= 1
+#if DEVEL
 		, .log_state			= write_info
 		, .log_token			= write_info
+#endif
 		, .tokname				= generator_tokenname
 		, .statename			= generator_statename
 		, .inputstr				= generator_inputstr

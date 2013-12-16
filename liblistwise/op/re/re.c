@@ -65,7 +65,7 @@ static int op_validate(operation* o)
 	if(o->argsl == 1 || o->argsl == 2)
 	{
 		if(o->args[0]->l == 0)
-			fail("%s -- empty first argument", o->op->s);
+			fail(LW_ARGSDOM, "empty argument");
 
 		if(o->argsl == 1 || o->args[1]->l == 0)
 			fatal(re_compile, o->args[0]->s, &o->args[0]->re, 0);
@@ -73,7 +73,9 @@ static int op_validate(operation* o)
 			fatal(re_compile, o->args[0]->s, &o->args[0]->re, o->args[1]->s);
 	}
 	else
-		fail("%s -- arguments : %d", o->op->s, o->argsl);
+	{
+		fail(LW_ARGSNUM, "expected : 1 or 2, actual : %d", o->argsl);
+	}
 
 	o->args[0]->itype = ITYPE_RE;
 

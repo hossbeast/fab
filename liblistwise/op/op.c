@@ -31,6 +31,8 @@
 
 #include "xmem.h"
 #include "macros.h"
+#include "xdlfcn.h"
+#include "xdirent.h"
 
 operator **	APIDATA g_ops;
 int									g_ops_a;
@@ -83,7 +85,7 @@ static int op_load(char* path)
 
 	void * dl = 0;
 	fatal(xdlopen, path, RTLD_NOW | RTLD_GLOBAL, &dl);
-	fatal(xdlsym, dl, "op_desc", &op);
+	fatal(xdlsym, dl, "op_desc", (void*)&op);
 	g_dls[g_dls_l++] = dl;
 
 	while(op->desc)
@@ -116,22 +118,21 @@ static void op_sort()
 // public
 //
 
-static int read_opdir(char * s, int fatalize)
+static int read_opdir(char * s)
 {
 	char space[256];
 	snprintf(space, sizeof(space) - 1, "%s", s);
 
   DIR * dd = 0;
-	fatalize_sys(xopendir, space, &dd);
+	fatal(xopendir, space, &dd);
 
 	space[strlen(space)] = '/';
 
 	struct dirent ent;
 	struct dirent * entp = 0;
-	int r = 0;
 	while(1)
 	{
-		fatalize_sys(xreaddir_r, dd, &ent, &entp);
+		fatal(xreaddir_r, dd, &ent, &entp);
 
 		if(entp)
 		{

@@ -18,64 +18,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "listwise/internal.h"
-
 #include <pcre.h>
 
-// error string from libpcre
+#include "listwise/internal.h"
 
-#if PCRE_MAJOR == 8
-#define LIBPCRE_ERR_STR(x) (                                          		\
-	(x) == PCRE_ERROR_NOMATCH						? "PCRE_ERROR_NOMATCH"					: 	\
-	(x) == PCRE_ERROR_NULL							? "PCRE_ERROR_NULL"							: 	\
-	(x) == PCRE_ERROR_BADOPTION					? "PCRE_ERROR_BADOPTION"				: 	\
-	(x) == PCRE_ERROR_BADMAGIC					? "PCRE_ERROR_BADMAGIC"					: 	\
-	(x) == PCRE_ERROR_UNKNOWN_OPCODE		? "PCRE_ERROR_UNKNOWN_OPCODE"		: 	\
-	(x) == PCRE_ERROR_UNKNOWN_NODE			? "PCRE_ERROR_UNKNOWN_NODE"			: 	\
-	(x) == PCRE_ERROR_NOMEMORY					? "PCRE_ERROR_NOMEMORY"					: 	\
-	(x) == PCRE_ERROR_NOSUBSTRING				? "PCRE_ERROR_NOSUBSTRING"			: 	\
-	(x) == PCRE_ERROR_MATCHLIMIT				? "PCRE_ERROR_MATCHLIMIT"				: 	\
-	(x) == PCRE_ERROR_CALLOUT						? "PCRE_ERROR_CALLOUT"					: 	\
-	(x) == PCRE_ERROR_BADUTF8						? "PCRE_ERROR_BADUTF8"					: 	\
-	(x) == PCRE_ERROR_BADUTF8_OFFSET		? "PCRE_ERROR_BADUTF8_OFFSET"		: 	\
-	(x) == PCRE_ERROR_PARTIAL						? "PCRE_ERROR_PARTIAL"					: 	\
-	(x) == PCRE_ERROR_BADPARTIAL				? "PCRE_ERROR_BADPARTIAL"				: 	\
-	(x) == PCRE_ERROR_INTERNAL					? "PCRE_ERROR_INTERNAL"					: 	\
-	(x) == PCRE_ERROR_BADCOUNT					? "PCRE_ERROR_BADCOUNT"					: 	\
-	(x) == PCRE_ERROR_DFA_UITEM					? "PCRE_ERROR_DFA_UITEM"				: 	\
-	(x) == PCRE_ERROR_DFA_UCOND					? "PCRE_ERROR_DFA_UCOND"				: 	\
-	(x) == PCRE_ERROR_DFA_UMLIMIT				? "PCRE_ERROR_DFA_UMLIMIT"			: 	\
-	(x) == PCRE_ERROR_DFA_WSSIZE				? "PCRE_ERROR_DFA_WSSIZE"				: 	\
-	(x) == PCRE_ERROR_DFA_RECURSE				? "PCRE_ERROR_DFA_RECURSE"			: 	\
-	(x) == PCRE_ERROR_RECURSIONLIMIT		? "PCRE_ERROR_RECURSIONLIMIT"		: 	\
-	(x) == PCRE_ERROR_NULLWSLIMIT				? "PCRE_ERROR_NULLWSLIMIT"			: 	\
-	(x) == PCRE_ERROR_BADNEWLINE				? "PCRE_ERROR_BADNEWLINE"				: 	\
-	(x) == PCRE_ERROR_BADOFFSET					? "PCRE_ERROR_BADOFFSET"				: 	\
-	(x) == PCRE_ERROR_SHORTUTF8					? "PCRE_ERROR_SHORTUTF8"				: "PCRE_UNKNOWN" )
-#endif
-#if PCRE_MAJOR == 6
-#define LIBPCRE_ERR_STR(x) (																					  \
-		(x) == PCRE_ERROR_NOMATCH					? "PCRE_ERROR_NOMATCH"					: \
-		(x) == PCRE_ERROR_NULL						? "PCRE_ERROR_NULL"							: \
-		(x) == PCRE_ERROR_BADOPTION				? "PCRE_ERROR_BADOPTION"				: \
-		(x) == PCRE_ERROR_BADMAGIC				? "PCRE_ERROR_BADMAGIC"					: \
-		(x) == PCRE_ERROR_UNKNOWN_NODE		? "PCRE_ERROR_UNKNOWN_NODE"			: \
-		(x) == PCRE_ERROR_NOMEMORY				? "PCRE_ERROR_NOMEMORY"					: \
-		(x) == PCRE_ERROR_NOSUBSTRING			? "PCRE_ERROR_NOSUBSTRING"			: \
-		(x) == PCRE_ERROR_MATCHLIMIT			? "PCRE_ERROR_MATCHLIMIT"				: \
-		(x) == PCRE_ERROR_CALLOUT					? "PCRE_ERROR_CALLOUT"					: \
-		(x) == PCRE_ERROR_BADUTF8					? "PCRE_ERROR_BADUTF8"					: \
-		(x) == PCRE_ERROR_BADUTF8_OFFSET	? "PCRE_ERROR_BADUTF8_OFFSET"		: \
-		(x) == PCRE_ERROR_PARTIAL					? "PCRE_ERROR_PARTIAL"					: \
-		(x) == PCRE_ERROR_BADPARTIAL			? "PCRE_ERROR_BADPARTIAL"				: \
-		(x) == PCRE_ERROR_INTERNAL				? "PCRE_ERROR_INTERNAL"					: \
-		(x) == PCRE_ERROR_BADCOUNT				? "PCRE_ERROR_BADCOUNT"					: \
-		(x) == PCRE_ERROR_DFA_UITEM				? "PCRE_ERROR_DFA_UITEM"				: \
-		(x) == PCRE_ERROR_DFA_UCOND				? "PCRE_ERROR_DFA_UCOND"				: \
-		(x) == PCRE_ERROR_DFA_UMLIMIT			? "PCRE_ERROR_DFA_UMLIMIT"			: \
-		(x) == PCRE_ERROR_DFA_WSSIZE			? "PCRE_ERROR_DFA_WSSIZE"				: \
-		(x) == PCRE_ERROR_DFA_RECURSE			? "PCRE_ERROR_DFA_RECURSE"			: "PCRE_UNKNOWN" )
-#endif
+/* libpcre error table */
+#include "PCRE.errtab.h"
+#define pcrefatality(func, e, fmt, ...) fatality(func, perrtab_PCRE, e, fmt, ##__VA_ARGS__)
 
 #include "xmem.h"
 #include "macros.h"
@@ -90,26 +39,34 @@ int API re_compile(char* s, struct re* re, char* mod)
 	if(mod && strchr(mod, 's'))
 		reopts |= PCRE_DOTALL;
 
-	const char* err;
-	int err_off;
-	if((re->c_pcre = pcre_compile(s, reopts, &err, &err_off, 0)) == 0)
+	const char* err = 0;
+	int off = -1;
+	if((re->c_pcre = pcre_compile(s, reopts, &err, &off, 0)) == 0)
 	{
-		fail("pcre: '%s', offset: %d, err: %s", s, err_off, err);
+		pcrefatality("pcre_compile", 0, "%s", err);
 	}
 
+	err = 0;
+	off = -1;
 	re->c_pcre_extra = pcre_study(re->c_pcre, 0, &err);
 	if(err)
 	{
-		fail("pcre: '%s', err: %s", s, err);
+		pcrefatality("pcre_study", 0, "%s", err);
 	}
 
 	int r;
 	if((r = pcre_fullinfo(re->c_pcre, re->c_pcre_extra, PCRE_INFO_CAPTURECOUNT, &re->c_caps)) != 0)
 	{
-		fail("pcre: '%s', err: [%d][%s]", s, r, LIBPCRE_ERR_STR(r));
+		pcrefatality("pcre_fullinfo", r, 0);
 	}
 
-	finally : coda;
+finally:
+	XAPI_INFO("pcre", "%s", s);
+	if(mod)
+		XAPI_INFO("mod", "%s", mod);
+	if(off)
+		XAPI_INFO("off", "%d", off);
+coda;
 }
 
 int API re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len)
@@ -133,7 +90,7 @@ int API re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len)
 
 	if((*ovec)[0] < 0 && (*ovec)[0] != PCRE_ERROR_NOMATCH)
 	{
-		fail("pcre_exec failed: [%d][%s]", (*ovec)[0], LIBPCRE_ERR_STR((*ovec)[0]));
+		pcrefatality("pcre_exec", (*ovec)[0], 0);
 	}
 
 #if 0

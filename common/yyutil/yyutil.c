@@ -21,7 +21,7 @@
 
 #include "yyutil.h"
 
-#include "xmem.h"
+#include "wstdlib.h"
 #include "macros.h"
 
 void yyu_locreset(yyu_location * const lloc, yyu_extra * const xtra, const int del)
@@ -191,6 +191,9 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 
 void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
 {
+	if(xtra->r)
+		return;
+
 	if(lloc)	// called from parser
 	{
 		xtra->r = -1;
@@ -220,12 +223,14 @@ void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * cons
 			xtra->lvalstr(xtra->last_token, xtra->last_lval, xtra, &bbuf, &blen);
 
 		snprintf(xtra->tokenstring, sizeof(xtra->tokenstring)
-			, "%s %.*s%s%.*s%s"
+			, "%s%s%.*s%s%s%.*s%s"
 			, xtra->tokname(xtra->last_token)		// token name
-			, (int)alen															// escaped string from which the token was scanned
+			, alen ? " (" : ""
+			, (int)alen													// escaped string from which the token was scanned
 			, abuf
+			, alen ? ")" : ""
 			, blen ? " (" : ""
-			, (int)blen															// representation of the semantic value for the token
+			, (int)blen													// representation of the semantic value for the token
 			, bbuf
 			, blen ? ")" : ""
 		);
@@ -249,7 +254,7 @@ int yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_loca
 	// store lval for error reporting
 	if(lvalsz >= xtra->last_lval_aloc)
 	{
-		xrealloc(&xtra->last_lval, lvalsz + 1, 1, xtra->last_lval_aloc);
+		wrealloc(&xtra->last_lval, lvalsz + 1, 1, xtra->last_lval_aloc);
 		xtra->last_lval_aloc = lvalsz + 1;
 	}
 

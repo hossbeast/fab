@@ -15,35 +15,37 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <errno.h>
+#include <string.h>
 
 #include "xapi.h"
 
-#include "xdlfcn.h"
+#include "wstdlib.h"
 
-int xdlopen(const char * filename, int flag, void ** dl)
+int wmalloc(void* target, size_t size)
 {
-	if(((*dl) = dlopen(filename, flag)) == 0)
-	{
-		fatality("dlopen", perrtab_SYS, 0, "%s", dlerror());
-	}
+	if(((*(void**)target) = calloc(size, 1)) == 0)
+		return 1;
 
-finally :
-	XAPI_INFO("path", "%s", filename);
-coda;
+	return 0;
 }
 
-int xdlsym(void * dl, const char * sym, void ** psym)
+int wrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
-	dlerror();
-	(*psym) = dlsym(dl, sym);
-	char * e = dlerror();
-	if(e)
+	void** t = ((void**)target);
+	*t = realloc(*t, es * ec);
+
+	if(es * ec)
 	{
-		fatality("dlsym", perrtab_SYS, 0, "%s", dlerror());
+		if(*t)
+		{
+			if(((ssize_t)ec - (ssize_t)oec) > 0)
+				memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
+		}
+		else
+		{
+			return 1;
+		}
 	}
 
-finally :
-	XAPI_INFO("sym", "%s", sym);
-coda;
+	return 0;
 }

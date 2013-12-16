@@ -29,6 +29,8 @@
 
 #include "listwise/internal.h"
 
+#include "xfcntl.h"
+#include "xunistd.h"
 
 /*
 
@@ -74,7 +76,6 @@ static int gobble(lwx* lx, char * path, char * fmt, char * flags)
 	int					fd = -1;
 	size_t			size = 0;
 	void *			addr = MAP_FAILED;
-
 	char *			xref = 0;
 
 	if(fmt)
@@ -83,41 +84,45 @@ static int gobble(lwx* lx, char * path, char * fmt, char * flags)
 		xref = strstr(space, "%x");
 	}
 
-	if((fd = open(path, O_RDONLY)) == -1)
-		fail("open(%s)=[%d][%s]", path, errno, strerror(errno));
-
-	if((size = lseek(fd, 0, SEEK_END)) ==  (off_t)-1)
-		fail("lseek(%u)=[%d][%s]", 0, errno, strerror(errno));
+	fatal(xopen, path, O_RDONLY, &fd);
+	fatal(xlseek, fd, 0, SEEK_END, 0);
 
 	if((addr = mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
 	{
 		if(errno == EACCES || errno == ENODEV)
-			leave("mmap(%s,%zu)=[%d][%s]", path, size, errno, strerror(errno));
+		{
+			/* this file cannot be mmapped - should implement a read/loop for this case */
+		}
 		else
-			fail("mmap(%s,%zu)=[%d][%s]", path, size, errno, strerror(errno));
+		{
+			sysfatality("mmap");
+		}
 	}
 
-	char * s = addr;
-	char * e = 0;
-	int x = 0;
-	while((e = strstr(s, "\n")))
+	if(addr != MAP_FAILED)
 	{
-		if(sz)
+		char * s = addr;
+		char * e = 0;
+		int x = 0;
+		while((e = strstr(s, "\n")))
 		{
-			if(xref)
+			if(sz)
 			{
-				snprintf(space2, sizeof(space2), "%5d", ++x);
-				memcpy(xref, space2, 5);
+				if(xref)
+				{
+					snprintf(space2, sizeof(space2), "%5d", ++x);
+					memcpy(xref, space2, 5);
+				}
+
+				fatal(lstack_addf, lx, "%.*s %.*s", (int)sz, space, (int)(e - s), s);
+			}
+			else
+			{
+				fatal(lstack_add, lx, s, e - s);
 			}
 
-			fatal(lstack_addf, lx, "%.*s %.*s", (int)sz, space, (int)(e - s), s);
+			s = e + 1;
 		}
-		else
-		{
-			fatal(lstack_add, lx, s, e - s);
-		}
-
-		s = e + 1;
 	}
 
 finally:

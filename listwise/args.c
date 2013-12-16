@@ -103,6 +103,15 @@ if(help)
 " -f <path>  read generator-string from <path> instead of argv\n"
 "            <path> of - means read from stdin\n"
 " -          equal to -f -\n"
+#if DEBUG
+" -D         listwise operator failures - normally silent (i.e. ls ENOENT)\n"
+#endif
+#if DEVEL
+" -V         generator token parsing, state changes\n"
+#endif
+#if SANITY
+" -S         liblistwise sanity checks\n"
+#endif
 "\n"
 	);
 }
@@ -244,7 +253,7 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 
 	char * switches =
 		// no-argument switches
-		"adhknz0N"
+		"adhknz0DNSV"
 
 		// with-argument switches
 		"f:l:i:"
@@ -261,16 +270,13 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 				g_args.out_list = 1;
 				break;
 			case 'd':
-				g_args.dump = 1;
+				g_args.lw_info = 1;
 				break;
 			case 'k':
 				g_args.out_stack = 1;
 				break;
 			case 'n':
-				g_args.number = 1;
-				break;
-			case 'N':
-				g_args.number = 2;
+				g_args.numbering = 1;
 				break;
 			case 'z':
 				g_args.out_null = 1;
@@ -302,6 +308,24 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 					g_args.init_listl++;
 				}
 				break;
+#if DEBUG
+			case 'D':
+				g_args.lw_debug = 1;
+				break;
+#endif
+			case 'N':
+				g_args.numbering = 2;
+				break;
+#if SANITY
+			case 'S':
+				g_args.lw_sanity = 1;
+				break;
+#endif
+#if DEVEL
+			case 'V':
+				g_args.lw_devel = 1;
+				break;
+#endif
 			case 'h':
 				usage(1, 1, 1, 0, 0);
 				break;

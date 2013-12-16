@@ -48,7 +48,7 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl && o->args[0]->itype != ITYPE_I64)
-		fail("shift -- expected first argument : i64");
+		fail(LW_ARGSTYPE, "should be i64");
 
 	finally : coda;
 }

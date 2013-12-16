@@ -121,11 +121,11 @@ int API listwise_exec_generator(
 
 		if(dump)
 		{
-			dprintf(listwise_debug_fd, "\n");
+			dprintf(listwise_info_fd, "\n");
 
 			char buf[128];
 			size_t z = generator_operation_snwrite(buf, sizeof(buf), g->ops[x], 0);
-			dprintf(listwise_debug_fd, " >> %.*s\n", (int)z, buf);
+			dprintf(listwise_info_fd, " >> %.*s\n", (int)z, buf);
 		}
 
 		if(g->ops[x]->op == yop || g->ops[x]->op == wyop)

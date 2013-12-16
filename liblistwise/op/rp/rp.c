@@ -85,7 +85,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		}
 		else
 		{
-			fail("realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
+			sysfatality("realpath");
 		}
 	}
 	LSTACK_ITEREND

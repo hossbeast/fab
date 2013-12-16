@@ -27,6 +27,7 @@
 
 #include "xmem.h"
 #include "canon.h"
+#include "xunistd.h"
 
 /*
 
@@ -61,7 +62,7 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1 && o->argsl != 2)
-		fail("%s -- args : %d", o->op->s, o->argsl);
+		fail(LW_ARGSNUM, "expected : 0 1 or 2, actual : %d", o->op->s, o->argsl);
 
 	finally : coda;
 }
@@ -121,9 +122,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 
 	if(base == 0 || isrelative)
 	{
-		if((cwd = getcwd(0, 0)) == 0)
-			fail("getcwd=[%d][%s]", errno, strerror(errno));
-
+		fatal(xgetcwd, 0, 0, &cwd);
 		cwdl = strlen(cwd);
 
 		if(base == 0)

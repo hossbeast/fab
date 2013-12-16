@@ -10,14 +10,17 @@
 int foxtrot(int num)
 {
 	if(num == 25)
+	{
+printf("foxtrot failing\n");
 		fail(ERESTART, "restarting");
+	}
 
 finally:
-	XAPI_INFO(0, "foxtrotnum", "%d", num);
+	XAPI_INFO("foxtrotnum", "%d", num);
 
 	if(num == 255)
 	{
-		fatalize_sys(close, -1);
+		sysfatalize(close, -1);
 	}
 coda;
 }
@@ -27,7 +30,7 @@ int echo(int num)
 	fatal(foxtrot, num);
 
 finally:
-	XAPI_INFO(1, "echonum", "%d", num);
+	XAPI_INFO("echonum", "%d", num);
 coda;
 }
 
@@ -36,7 +39,7 @@ int delta(int num)
 	fatal(echo, num);
 
 finally:
-	XAPI_INFO(1, "deltanum", "%d", num);
+	XAPI_INFO("deltanum", "%d", num);
 coda;
 }
 
@@ -45,19 +48,16 @@ int charlie(int num)
 	fatal(delta, num);
 
 finally:
-	XAPI_INFO(1, "charlienum", "%d", num);
+	XAPI_INFO("charlienum", "%d", num);
 coda;
 }
 
 int bravo(int num)
 {
-	int fd = 0;
-//	fatal(charlie, num);
+	fatal(charlie, num);
 
 finally:
-	XAPI_INFO(1, "bravonum", "%d", num);
-
-	fatalize_sys(close, fd);
+	XAPI_INFO("bravonum", "%d", num);
 coda;
 }
 
@@ -65,21 +65,24 @@ int alpha(int num)
 {
 	int fd = 0;
 
-	fatal(bravo, num);
+	int r = bravo(num);
+printf("bravo returns %d\n", r);
+	if(r != 0)
+		fatality("bravo", perrtab, ENOMEM, 0);
 
 finally:
-	XAPI_INFO(1, "alphanum", "%d", num);
+	XAPI_INFO("alphanum", "%d", num);
 coda;
 }
 
-int launch()
+int main()
 {
 	fatal(alpha, 25);
 
 finally :
 if(XAPI_UNWINDING)
 {
-XAPI_INFO(1, "mainnum", "%d", 0);
+XAPI_INFO("mainnum", "%d", 0);
 
 	printf("backtrace: \n");
 		xapi_backtrace();
@@ -88,12 +91,4 @@ XAPI_INFO(1, "mainnum", "%d", 0);
 		xapi_pithytrace();
 }
 coda;
-}
-
-int main()
-{
-	int r =	launch();
-	printf("launch()=%d\n", r);
-
-	return r;
 }

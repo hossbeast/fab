@@ -23,8 +23,7 @@
 
 struct g_args_t
 {
-	char		dump;							// -d
-	char		number;						// -n=1 -N=2
+	char		numbering;				// -n=1(0..n), -N=2(list index)
 	char		in_null;					// -0
 	char		out_null;					// -z
 	char		out_stack;				// -k
@@ -36,6 +35,17 @@ struct g_args_t
 	int *		init_list_lens;		// -i 
 	int			init_listl;				// -i
 	int			init_lista;				// -i
+
+	char		lw_info;					// -d ; lstack_dump, lstack_exec
+#if DEBUG
+	char		lw_debug;					// -D ; listwise operator failures - normally silent (i.e., ls ENOENT)
+#endif
+#if DEVEL
+	char		lw_devel;					// -V ; generator token parsing, state changes
+#endif
+#if SANITY
+	char		lw_sanity;				// -S ; liblistwise sanity checks
+#endif
 } g_args;
 
 int parse_args(const int argc, char ** const restrict argv, int * const restrict genx)
