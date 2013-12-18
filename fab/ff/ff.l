@@ -299,7 +299,7 @@
 																												POPSTATE(yyextra);
 																												return LEX(WORD);
 																											}
-<nofile>[a-zA-Z_][a-zA-Z0-9_]*												{ return LEX(WORD); }
+<nofile>[a-zA-Z_^][a-zA-Z0-9_^]*											{ return LEX(WORD); }
 <nofile>[.]																						{ return LEX(yytext[0]); }
 <nofile>[\x00-\xFF]																		{ POPSTATE(yyextra); yyless(0); }
 

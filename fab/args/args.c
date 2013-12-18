@@ -336,6 +336,7 @@ int args_parse(int argc, char** argv)
 	g_args.pid						= getpid();
 	g_args.sid						= getsid(0);
 	g_args.cwd						= getcwd(0, 0);
+	g_args.time						= time(0);
 
 	//
 	// args:defaults
@@ -521,6 +522,7 @@ int args_parse(int argc, char** argv)
 	log(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_args.euid_name, g_args.euid, g_args.egid_name, g_args.egid);
 	log(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_args.ruid_name, g_args.ruid, g_args.rgid_name, g_args.rgid);
 	log(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_args.cwd);
+	log(L_PARAMS	, "%11stime                   =%s"						, ""	, (strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", localtime(&g_args.time)), space));
 	log(L_PARAMS	, "%11scachedir               =%s"						, ""	, XQUOTE(FABCACHEDIR));
 	log(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));
 	log(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));

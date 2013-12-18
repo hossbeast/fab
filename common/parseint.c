@@ -257,4 +257,3 @@ printf("parseuint('%s', '%s', %llu, %llu, %hhu, %hhu, %p, %p)", s, f, lo, hi, mi
 
 	return 0;
 }
-

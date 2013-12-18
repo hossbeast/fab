@@ -19,6 +19,7 @@
 #define _ARGS_H
 
 #include <sys/types.h>
+#include <time.h>
 
 #include "path.h"
 struct selector;
@@ -123,6 +124,8 @@ extern struct g_args_t
 	char *							rgid_name;
 	gid_t								egid;												// effective-group-id  (must be fabsys)
 	char *							egid_name;
+
+	time_t							time;												// unix time when fab was executed
 
 //
 // arguments

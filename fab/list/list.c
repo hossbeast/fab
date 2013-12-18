@@ -100,7 +100,17 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstac
 		}
 		else if(list->elements[x]->type == FFN_NOFILE)
 		{
-			fatal(lstack_add, (*stax)[pn], list->elements[x]->text, strlen(list->elements[x]->text));
+			if(strlen(list->elements[x]->text) >= 6 && memcmp(list->elements[x]->text, "/../^/", 6) == 0)
+			{
+				if(strcmp(list->elements[x]->text + 6, "time") == 0)
+				{
+					fatal(lstack_addf, (*stax)[pn], "%u", g_args.time);
+				}
+			}
+			else
+			{
+				fatal(lstack_add, (*stax)[pn], list->elements[x]->text, strlen(list->elements[x]->text));
+			}
 		}
 		else if(list->elements[x]->type == FFN_LF)
 		{
