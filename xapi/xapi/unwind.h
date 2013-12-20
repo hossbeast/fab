@@ -24,6 +24,7 @@
 */
 
 #include <sys/types.h>
+#include <errno.h>
 
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
@@ -127,18 +128,49 @@ when calling non-xapi code, you have a couple of options.
 	} while(0)
 
 // fatality macro for SYS - assumes there is no message
-#define sysfatality(func)																						\
-	fatality(func, perrtab_SYS, errno, 0)
+#define sysfatality(func)																		\
+	fatality(#func, perrtab_SYS, errno, 0)
 
 /*
 ** called elsewhere in the stack
 */
+
+#define XINVOKE(func, ...)																	\
+	({																												\
+		int __d = xapi_frame_depth();														\
+		if(xapi_frame_push() != 0)															\
+		{																												\
+			/* xapi_frame_push populated alt[0] with ENOMEM */		\
+			XAPI_FRAME_SET_AND_LEAVE(0, 0);												\
+			goto XAPI_FAILURE;																		\
+		}																												\
+																														\
+		int __r = func(__VA_ARGS__);														\
+																														\
+		if(xapi_frame_depth() != __d)														\
+		{																												\
+			xapi_frame_leave();																		\
+		}																												\
+		__r;																										\
+	})
+
+#define XALTINVOKE(func, ...)																\
+	({																												\
+		int __d = xapi_frame_depth();														\
+		xapi_frame_alt_push();																	\
+		int __r = func(__VA_ARGS__);														\
+		if(xapi_frame_depth() != __d)														\
+			xapi_frame_leave();																		\
+		}																												\
+		__r;																										\
+	})
 
 /// fatalize
 //
 // SUMMARY
 //  call a function. if it fails, and did not UNWIND, raise an error on its behalf
 //
+
 #define fatalize(table, code, func, ...)														\
 	do {																															\
 		int __d = xapi_frame_depth();																		\
@@ -148,13 +180,8 @@ when calling non-xapi code, you have a couple of options.
 			XAPI_FRAME_SET_AND_LEAVE(0, 0);																\
 			goto XAPI_FAILURE;																						\
 		}																																\
-		int after = xapi_frame_depth();	\
 																																		\
 		int __r = func(__VA_ARGS__);																		\
-if(0)	\
-{	\
-printf(#func " : %d, %d -> %d -> %d\n", __r,  __d, after, xapi_frame_depth());		\
-}	\
 		if(xapi_frame_depth() != __d)																		\
 		{																																\
 			if(__r != 0)																									\
@@ -205,10 +232,20 @@ XAPI_FINALLY
 // SUMMARY
 //  return from the current function
 //
-#define coda																	\
-	goto XAPI_LEAVE;														\
-XAPI_LEAVE:																		\
+#define coda										\
+	goto XAPI_LEAVE;							\
+XAPI_LEAVE:											\
 	return xapi_frame_exit()
+
+
+/// coda_custom
+//
+// SUMMARY
+//
+#define coda_custom									\
+	goto XAPI_LEAVE;									\
+XAPI_LEAVE:													\
+	_xapi_r = xapi_frame_exit()
 
 /*
 ** called after finally

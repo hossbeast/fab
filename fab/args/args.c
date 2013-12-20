@@ -31,7 +31,7 @@
 #include "args.h"
 
 #include "log.h"
-#include "fab_control.h"
+#include "global.h"
 #include "xmem.h"
 #include "xstring.h"
 #include "unitstring.h"

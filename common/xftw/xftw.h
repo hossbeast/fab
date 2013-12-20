@@ -15,30 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FAB_CONTROL_H
-#define _FAB_CONTROL_H
+#ifndef _XFTW_H
+#define _XFTW_H
 
-#include "control_core.h"
+#include <ftw.h>
 
-#include "log.h"
-
-// includes the definition of UNWIND_ERRORS
-#include "args.h"
-
-#define CODA_BAD_ACTION															\
-	_coda_r = FAILURE_CODE	
-
-#define CODA_GOOD_ACTION														\
-	_coda_r = 0
-
-#define LOG_ERROR(__fmt, ...)												\
-	log(L_ERROR, __fmt																\
-		, ##__VA_ARGS__																	\
-	)																									\
-
-#define LOG_INFO(fmt, ...)													\
-	log(L_INFO, fmt 																	\
-		, ##__VA_ARGS__																	\
-	)																									\
+/// xftw
+//
+// SUMMARY
+//  proxy for ftw
+//
+int xnftw(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags);
 
 #endif

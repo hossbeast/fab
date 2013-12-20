@@ -19,29 +19,14 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <string.h>
 
 #include "dirutil.h"
 
 #include "log.h"
-#include "fab_control.h"
+#include "global.h"
 
-int xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
-{
-	// depth-first
-	int r;
-	if((r = nftw(dirpath, fn, nopenfd, flags | FTW_ACTIONRETVAL)) == FTW_STOP)
-	{
-		// fn should have called error()
-		return FAILURE_CODE;
-	}
-	else if(r != 0)
-	{
-		error("nftw failed with: [%d]", r);
-		return FAILURE_CODE;
-	}
-
-	return 0;
-}
+#include "xftw.h"
 
 int rmdir_recursive(const char * const dirpath, int rmself)
 {
@@ -49,31 +34,26 @@ int rmdir_recursive(const char * const dirpath, int rmself)
 	{
 		if(typeflag == FTW_F || typeflag == FTW_SL)
 		{
-			if(unlink(fpath) != 0)
-			{
-				error("unlink(%s)=[%d][%s]", fpath, errno, strerror(errno));
-				return FTW_STOP;
-			}
-			return FTW_CONTINUE;
+			sysfatalize(unlink, fpath);
 		}
 		else if(typeflag == FTW_DP)
 		{
 			if(ftwbuf->level > 0 || rmself)
 			{
-				if(rmdir(fpath) != 0)
-				{
-					error("rmdir(%s)=[%d][%s]", fpath, errno, strerror(errno));
-					return FTW_STOP;
-				}
+				sysfatalize(rmdir, fpath);
 			}
-			return FTW_CONTINUE;
+		}
+		else
+		{
+			fail(0, 0, "unexpected %s", fpath);
 		}
 
-		error("unexpected %s", fpath);
-		return FTW_STOP;
+		finally : coda;
 	};
 	
-	return xnftw(dirpath, fn, 32, FTW_DEPTH | FTW_PHYS);
+	fatal(xnftw, dirpath, fn, 32, FTW_DEPTH | FTW_PHYS);
+
+	finally : coda;
 }
 
 int mkdirp(const char * const path, mode_t mode)
@@ -93,8 +73,10 @@ int mkdirp(const char * const path, mode_t mode)
 		space[t - path] = 0;
 
 		if(mkdir(space, mode) == -1 && errno != EEXIST)
-			fail("mkdir(%s)=%s", space, strerror(errno));
+			sysfatality(mkdir);
 	}
 
-	finally : coda;
+finally:
+	XAPI_INFO("path", "%s", space);
+coda;
 }

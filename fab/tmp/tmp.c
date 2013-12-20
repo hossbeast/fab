@@ -28,7 +28,7 @@
 #include "identity.h"
 
 #include "log.h"
-#include "fab_control.h"
+#include "global.h"
 #include "dirutil.h"
 #include "macros.h"
 

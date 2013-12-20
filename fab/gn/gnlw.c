@@ -20,7 +20,7 @@
 #include "gnlw.h"
 #include "traverse.h"
 
-#include "fab_control.h"
+#include "global.h"
 
 #include "args.h"
 #include "xmem.h"

@@ -29,7 +29,7 @@
 #include "lwutil.h"
 
 #include "xmem.h"
-#include "fab_control.h"
+#include "global.h"
 #include "macros.h"
 
 #define restrict __restrict

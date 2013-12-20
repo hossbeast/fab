@@ -26,7 +26,7 @@
 #include "args.h"
 #include "params.h"
 
-#include "fab_control.h"
+#include "global.h"
 #include "path.h"
 #include "xmem.h"
 

@@ -131,6 +131,13 @@ ns = callstack.depth;
 	return 0;
 }
 
+void API xapi_frame_alt_push()
+{
+	callstack.isalt = 1;
+
+	xapi_frame_push();
+}
+
 int API xapi_frame_depth()
 {
 	if(callstack.isalt || callstack.finalized)

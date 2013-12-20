@@ -25,7 +25,7 @@
 #include "gn.h"
 #include "gnlw.h"
 
-#include "fab_control.h"
+#include "global.h"
 
 /*
 

@@ -26,7 +26,7 @@
 #include <sys/shm.h>
 
 #include "log.h"
-#include "fab_control.h"
+#include "global.h"
 
 #include "args.h"
 #include "params.h"

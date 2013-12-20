@@ -110,7 +110,7 @@ int identity_init()
 }
 
 #undef fail
-#include "fab_control.h"
+#include "global.h"
 
 int identity_assume_user()
 {

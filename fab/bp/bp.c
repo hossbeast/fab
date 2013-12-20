@@ -29,7 +29,7 @@
 #include "traverse.h"
 
 #include "log.h"
-#include "fab_control.h"
+#include "global.h"
 #include "xmem.h"
 #include "macros.h"
 #include "list.h"

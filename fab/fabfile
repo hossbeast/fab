@@ -19,6 +19,7 @@
 $dfab						= [ $* ]
 $dcommon				= [ $dfab/../common ~ j ]
 $dliblistwise		= [ $dfab/../liblistwise ~ j ]
+$dxapi					= [ $dfab/../xapi ~ j ]
 
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
@@ -29,7 +30,7 @@ $dliblistwise		= [ $dfab/../liblistwise ~ j ]
 $liblistwise 		= [ -llistwise ]
 
 # variables
-$cflags					= [ $cflags	-fno-builtin-log [ $dfab $dcommon $dliblistwise ~ lsr/c/-d/s/^/-I ]
+$cflags					= [ $cflags	-fno-builtin-log [ $dfab $dcommon $dliblistwise $dxapi ~ lsr/c/-d/s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
@@ -51,6 +52,7 @@ $fab						= [ $dfab/fab ~ j ]
 # generated files
 +[@flex.states] ($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
 +[@bison.tokens]($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
++[@xapi.errtab] ($gendir = $dfab; $dirs = $dfab; $cc $cflags)
 
 # operator so's
 $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]

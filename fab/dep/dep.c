@@ -39,7 +39,7 @@
 #include "list.h"
 #include "lwutil.h"
 
-#include "fab_control.h"
+#include "global.h"
 #include "xmem.h"
 
 #define restrict __restrict

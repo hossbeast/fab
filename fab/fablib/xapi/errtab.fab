@@ -59,9 +59,6 @@ $errtabpaths = [
 	> exec >${hfl}
 	> echo "#ifndef _${pfx}_ERRORS_H"
 	> echo "#define _${pfx}_ERRORS_H"
-	> echo "#ifndef XAPI_UNWIND"
-	> echo "#define XAPI_UNWIND"
-	> echo "#endif"
 	> echo "#include \"xapi.h\""
 	> echo "#define ETABLE_${pfx} \\"
 

@@ -33,7 +33,7 @@
 #include "list.h"
 #include "lwutil.h"
 #include "log.h"
-#include "fab_control.h"
+#include "global.h"
 #include "macros.h"
 #include "xmem.h"
 #include "map.h"
