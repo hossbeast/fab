@@ -47,7 +47,7 @@ operator op_desc[] = {
 		  .s						= "datef"
 		, .optype				= LWOP_SELECTION_READ | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE | LWOP_OBJECT_NO
 		, .op_exec			= op_exec
-		, .desc					= "substitution by regex"
+		, .desc					= "format unix date to a string"
 	}, {}
 };
 

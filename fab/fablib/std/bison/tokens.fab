@@ -1,0 +1,87 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# c.fab
+#  provides fabrication formula for .tab.c -> { .tokens.c, .tokens.h }
+#  provides dependencies for { .tokens.c, .tokens.h } -> .tab.c
+#
+# var/closure
+#
+#  dirs       - directories containing .tab.c files
+#  rdirs      - directories containing .tab.c files, recursive search
+#  paths      - paths to .tab.c files
+#
+#  fabdirs    - (as above, but for fabrication/dependency only)
+#  rfabdirs   - 
+#  fabpaths   - 
+
+# paths to y files for fabrication
+$tabcfabpaths = [
+	$paths				# paths
+	$fabpaths			# paths, fabrication only
+
+	[
+		$dirs				# directories
+		$fabdirs		# directories, fabrication only
+	~ ls ]
+
+	[
+		$rdirs			# recursive directories
+		$rfabdirs		# recursive directories, fabrication only
+	~ lsr ]
+~ xm/<y> ]
+
+# tab.c -> { .tokens.c, .tokens.h }
+[ $tabcfabpaths ~ xs/<y>/<tokens.c>/y/v/d/cp/u/xs/<tokens.c>/<tokens.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<tokens.c>/<tab.c>/xs/<tokens.h>/<tab.c>/ss/u ]
+{
+	src=[ $@ ~ rx/ineed/uu ]
+	tokens_h=[ $@ ~ h/0/1 ]
+	tokens_c=[ $@ ~ h/1/1 ]
+	pfx=[ $@ ~ h/0/1/rx/bn/fn ]
+
+	> exec 1>${tokens_h}
+	> echo "#ifndef ${pfx}_TOKENS_H"
+	> echo "#define ${pfx}_TOKENS_H"
+	> echo "#define YY_NULL 0"
+	> echo "extern int ${pfx}_numtokens;"
+	> echo "extern int * ${pfx}_tokennumbers;"
+	> echo "extern char ** ${pfx}_tokennames;"
+	> echo "enum ${pfx}_tokennames {"
+	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+	>  | sed -ne "s/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/${pfx}_\1 = \2,/p"
+	> echo "};"	
+	> echo "#endif"
+
+	> exec 1>${tokens_c}
+	> echo "#define YY_NULL 0"
+	> echo "char ** ${pfx}_tokennames = (char *[]) {"
+	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+	>  | sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/[\2] = "\1",/p'
+	> echo "};"	
+	> echo "int * ${pfx}_tokennumbers = (int []) {"
+	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+	>  | sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2,/p'
+	> echo "};"	
+	> echo "int ${pfx}_numtokens = sizeof((int []) {"
+	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+	>  | sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2,/p'
+	> echo "}) / sizeof(int);"	
+}
+
+# cc : tokens.c -> tokens.o @ std.c
++[@std.c](-$cobjpaths; $cfabpaths = [ $tabcfabpaths ~ xs/<y>/<tokens.c> ]; $cc $cflags)
+$tabcobjpaths = [ $cobjpaths ]

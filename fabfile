@@ -45,3 +45,5 @@ $dfab         = [ $*/fab ]
 	fab --bslic-fab -k [ $*/make64.sh ] @all
 	fab --bslic-fab -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 }
+
++[@std.bison.tokens]($paths = [ $dliblistwise/generator/generator.y ~ j])
