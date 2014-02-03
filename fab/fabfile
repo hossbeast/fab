@@ -50,9 +50,9 @@ $fab						= [ $dfab/fab ~ j ]
 +[@std.c]($gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # generated files
-+[@flex.states] ($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
-+[@bison.tokens]($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
-+[@xapi.errtab] ($gendir = $dfab; $dirs = $dfab; $cc $cflags)
++[@std.flex.states] ($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
++[@std.bison.tokens]($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
++[@std.xapi.errtab] ($gendir = $dfab; $dirs = $dfab; $cc $cflags)
 
 # operator so's
 $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]

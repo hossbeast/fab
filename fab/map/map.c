@@ -315,14 +315,14 @@ int map_set(map* const restrict m, const void* const restrict k, int kl, const v
 		m->kc++;
 	}
 
+	if(rv)
+		*(void**)rv = m->tv[i]->p;
+
 finally:
 	free(ks);
 	free(vs);
 	free(uk);
 	free(uv);
-
-	if(_coda_r == 0 && rv)
-		*(void**)rv = m->tv[i]->p;
 coda;
 }
 

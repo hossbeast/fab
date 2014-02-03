@@ -35,6 +35,9 @@
 #include "cksum.h"
 #include "xstring.h"
 #include "dirutil.h"
+#include "xstat.h"
+#include "xfcntl.h"
+#include "xunistd.h"
 
 #define restrict __restrict
 
@@ -83,7 +86,8 @@ int hashblock_stat(const char * const path, hashblock * const hb0, hashblock * c
 	int x;
 
 	// STAT for A
-	if(stat(path, &stb) == 0)
+	fatal(xstat, path, &stb);
+	if(stb.st_dev)
 	{
 		uint32_t cks = 0;
 
@@ -110,10 +114,6 @@ int hashblock_stat(const char * const path, hashblock * const hb0, hashblock * c
 			hbs[x]->stathash[1] = cks;
 		}
 	}
-	else if(errno != ENOENT)
-	{
-		fail("stat(%s)=[%d][%s]", path, errno, strerror(errno));
-	}
 	else
 	{
 		for(x = 0; x < hbsl; x++)
@@ -125,57 +125,43 @@ int hashblock_stat(const char * const path, hashblock * const hb0, hashblock * c
 
 int hashblock_read(hashblock * const hb)
 {
-	int fd = 0;
+	int fd = -1;
 
 	fatal(identity_assume_fabsys);
 
-	if((fd = open(hb->stathash_path, O_RDONLY)) == -1 && errno != ENOENT)
+	fatal(gxopen, hb->stathash_path, O_RDONLY, &fd);
+
+	if(fd != -1)
 	{
-		fail("open(%s)=[%d][%s]", hb->stathash_path, errno, strerror(errno));
-	}
-	else if(fd > 0)
-	{
-		if(read(fd, &hb->stathash[0], sizeof(hb->stathash[0])) == -1)
-			fail("read failed [%d][%s]", errno, strerror(errno));
-		close(fd);
-		fd = 0;
+		fatal(xread, fd, &hb->stathash[0], sizeof(hb->stathash[0]), 0);
 	}
 
-	if((fd = open(hb->contenthash_path, O_RDONLY)) == -1 && errno != ENOENT)
+	fatal(ixclose, &fd);
+	fatal(gxopen, hb->contenthash_path, O_RDONLY, &fd);
+
+	if(fd != -1)
 	{
-		fail("open(%s)=[%d][%s]", hb->contenthash_path, errno, strerror(errno));
-	}
-	else if(fd > 0)
-	{
-		if(read(fd, &hb->contenthash[0], sizeof(hb->contenthash[0])) == -1)
-			fail("read failed [%d][%s]", errno, strerror(errno));
-		close(fd);
-		fd = 0;
+		fatal(xread, fd, &hb->contenthash[0], sizeof(hb->contenthash[0]), 0);
 	}
 
-	if((fd = open(hb->vrshash_path, O_RDONLY)) == -1 && errno != ENOENT)
+	fatal(ixclose, &fd);
+	fatal(gxopen, hb->vrshash_path, O_RDONLY, &fd);
+
+	if(fd != -1)
 	{
-		fail("open(%s)=[%d][%s]", hb->vrshash_path, errno, strerror(errno));
-	}
-	else if(fd > 0)
-	{
-		if(read(fd, &hb->vrshash[0], sizeof(hb->vrshash[0])) == -1)
-			fail("read failed [%d][%s]", errno, strerror(errno));
-		close(fd);
-		fd = 0;
+		fatal(xread, fd, &hb->vrshash[0], sizeof(hb->vrshash[0]), 0);
 	}
 
 	fatal(identity_assume_user);
 
 finally:
-	if(fd > 0)
-		close(fd);
+	fatal(ixclose, &fd);
 coda;
 }
 
 int hashblock_write(const hashblock * const hb)
 {
-	int fd = 0;
+	int fd = -1;
 
 	fatal(identity_assume_fabsys);
 
@@ -184,31 +170,26 @@ int hashblock_write(const hashblock * const hb)
 
 	if(hb->stathash[1])
 	{
-		if((fd = open(hb->stathash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-			fail("open(%s) failed [%d][%s]", hb->stathash_path, errno, strerror(errno));
-		if(write(fd, &hb->stathash[1], sizeof(hb->stathash[0])) == -1)
-			fail("write failed [%d][%s]", errno, strerror(errno));
-		close(fd);
+		fatal(xopen_mode, hb->stathash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+		fatal(xwrite, fd, &hb->stathash[1], sizeof(hb->stathash[0]), 0);
 	}
 
 	if(hb->contenthash[1])
 	{
-		if((fd = open(hb->contenthash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-			fail("open(%s) failed [%d][%s]", hb->contenthash_path, errno, strerror(errno));
-		if(write(fd, &hb->contenthash[1], sizeof(hb->contenthash[0])) == -1)
-			fail("write failed [%d][%s]", errno, strerror(errno));
-		close(fd);
+		fatal(ixclose, &fd);
+		fatal(xopen_mode, hb->contenthash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+		fatal(xwrite, fd, &hb->contenthash[1], sizeof(hb->contenthash[0]), 0);
 	}
 
-	if((fd = open(hb->vrshash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-		fail("open(%s) failed [%d][%s]", hb->vrshash_path, errno, strerror(errno));
-	if(write(fd, &hb->vrshash[1], sizeof(hb->vrshash[0])) == -1)
-		fail("write failed [%d][%s]", errno, strerror(errno));
-	close(fd);
+	fatal(ixclose, &fd);
+	fatal(xopen_mode, hb->vrshash_path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+	fatal(xwrite, fd, &hb->vrshash[1], sizeof(hb->vrshash[0]), 0);
 
 	fatal(identity_assume_user);
 
-	finally : coda;
+finally:
+	fatal(ixclose, &fd);
+coda;
 }
 
 int hashblock_cmp(const hashblock * const hb)

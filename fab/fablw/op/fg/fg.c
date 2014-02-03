@@ -21,6 +21,7 @@
 #include "listwise/operator.h"
 #include "listwise/object.h"
 #include "listwise/xtra.h"
+#include "listwise/LW.errtab.h"
 
 #include "gn.h"
 #include "gnlw.h"
@@ -59,7 +60,7 @@ int op_validate(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1)
 	{
-		fail("fg -- arguments : %d", o->argsl);
+		fail(LW_ARGSNUM, "expected 0 or 1, actual : %d", o->argsl);
 	}
 
 	finally : coda;

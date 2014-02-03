@@ -114,16 +114,16 @@ int identity_init()
 
 int identity_assume_user()
 {
-	fatal_os(seteuid, g_params.ruid);
-	fatal_os(setegid, g_params.rgid);
+	sysfatalize(seteuid, g_params.ruid);
+	sysfatalize(setegid, g_params.rgid);
 
 	finally : coda;
 }
 
 int identity_assume_fabsys()
 {
-	fatal_os(seteuid, g_params.euid);
-	fatal_os(setegid, g_params.egid);
+	sysfatalize(seteuid, g_params.euid);
+	sysfatalize(setegid, g_params.egid);
 
 	finally : coda;
 }

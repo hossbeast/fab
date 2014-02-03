@@ -15,30 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XFTW_H
-#define _XFTW_H
+#ifndef _XMMAN_H
+#define _XMMAN_H
 
-#include <ftw.h>
+#include <sys/mman.h>
 
-/// xftw
+#define restrict __restrict
+
+/// xmmap
 //
 // SUMMARY
-//  proxy for ftw
+//  proxy for mmap
 //
-// CALLBACK
-//  xnftw uses an internal callback which is passed to nftw. the callback specified for xnftw is invoked by that callback, and is expected
-//  to follow the xapi calling convention
-//
-int xnftw(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags);
+int xmmap(void * restrict addr, size_t length, int prot, int flags, int fd, off_t offset, void ** restrict r);
 
-/// xnftw_nth
+/// xmunmap
 //
 // SUMMARY
-//  proxy for ftw which skips entries other than nth-level entries
+//  proxy for munmap
 //
-// CALLBACK
-//  as for xnftw
-//
-int xnftw_nth(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags, int level);
+int xmunmap(void * addr, size_t length);
 
+#undef restrict
 #endif

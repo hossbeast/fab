@@ -242,9 +242,11 @@ static int vfinish(const char* fmt, void * va)
 	if(fmt)
 		w += vadd(fmt, *(void**)va);
 
+#if UNWIND
 	// location trace for errors
 	if(((o_e & L_TAG) == (L_ERROR & L_TAG)) && UNWIND_ERRORS)
 		w += log_add(" in %s at %s:%d", o_func, o_file, o_line);
+#endif
 
 	if((o_e & L_COLOR_VALUE) && COLORHEX(o_e))
 	{
@@ -523,7 +525,11 @@ int vlog_trace_start(const uint64_t e, const char* fmt, va_list va)
 	return 0;
 }
 
+#if UNWIND
 int log_trace_start(const char * const func, const char * const file, int line, const uint64_t e, const char* fmt, ...)
+#else
+int log_trace_start(const uint64_t e, const char* fmt, ...)
+#endif
 {
 	va_list va;
 	va_start(va, fmt);
@@ -631,7 +637,9 @@ int logged_chars()
 void log_teardown()
 {
 	free(o_space);
+#if UNWIND
 	free(o_func);
 	free(o_file);
+#endif
 	free(o_filter);
 }

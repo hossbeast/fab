@@ -58,5 +58,5 @@ void callstack_free()
 	callstack.l = 0;
 	callstack.depth = 0;
 
-	memset(&callstack.alt, sizeof(callstack.alt), 0);
+	memset(&callstack.alt, 0, sizeof(callstack.alt));
 }

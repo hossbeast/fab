@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
@@ -31,6 +32,8 @@
 #include "global.h"
 #include "dirutil.h"
 #include "macros.h"
+#include "xftw.h"
+#include "args.h"
 
 /// minmodify
 //
@@ -66,42 +69,31 @@ int tmp_setup()
 	// TMPDIR/pid
 	//
 	fatal(mkdirp, XQUOTE(FABTMPDIR) "/pid", S_IRWXU | S_IRWXG | S_IRWXO); 
+
+	int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
 	{
-		int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
+		if(typeflag != FTW_D)
+			fail(FAB_BADTMP, "not a directory");
+
+		pid_t pid = 0;
+		int n = 0;
+		if(sscanf(fpath + ftwbuf->base, "%d%n", &pid, &n) != 1 || (ftwbuf->base + n) != strlen(fpath))
 		{
-			if(typeflag != FTW_D)
-			{
-				// something other than a directory
-				error("unexpected file %s", fpath);
-				return FTW_STOP;
-			}
-			else if(ftwbuf->level == 0)
-			{
-				return FTW_CONTINUE;
-			}
+			fail(FAB_BADTMP, "not numeric"); // dirname consists of something other than <pid>
+		}
 
-			pid_t pid = 0;
-			int n = 0;
-			if(sscanf(fpath + ftwbuf->base, "%d%n", &pid, &n) != 1 || (ftwbuf->base + n) != strlen(fpath))
-			{
-				// dirname consists of something other than <pid>
-				error("unexpected file %s", fpath);
-				return FTW_STOP;
-			}
+		// pid is myself, or it is unkillable
+		if(pid == g_params.pid || kill(pid, 0))
+		{
+			fatal(rmdir_recursive, fpath, 1);
+		}
 
-			// pid is myself, or it is unkillable
-			if(pid == g_params.pid || kill(pid, 0))
-			{
-				if(rmdir_recursive(fpath, 1) != 0)
-					return FTW_STOP;
-			}
+	finally :
+		XAPI_INFO("path", "%s", fpath);
+	coda;
+	};
 
-			// process only toplevel files
-			return FTW_SKIP_SUBTREE;
-		};
-
-		fatal(xnftw, XQUOTE(FABTMPDIR) "/pid", fn, 32, FTW_ACTIONRETVAL);
-	}
+	fatal(xnftw_nth, XQUOTE(FABTMPDIR) "/pid", fn, 32, 0, 1);
 
 	// ensure directories for my own pid exist
 	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/fml", g_params.pid);
@@ -112,38 +104,28 @@ int tmp_setup()
 	//
 	fatal(mkdirp, XQUOTE(FABCACHEDIR) "/INIT", S_IRWXU | S_IRWXG | S_IRWXO); 
 	{
-		int lvl;
 		int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
 		{
-			if(ftwbuf->level == lvl)
+			if(typeflag != FTW_D)
+				fail(FAB_BADTMP, "not a directory");
+
+			// get the min modify time of everything in the directory
+			time_t minmod = sb->st_mtime;
+			minmodify(fpath, &minmod);
+
+			// minimum modify time older than expiration
+			if((time(0) - minmod) > EXPIRATION_POLICY)
 			{
-				if(typeflag != FTW_D)
-				{
-					// something other than a directory
-					error("unexpected file %s", fpath);
-					return FTW_STOP;
-				}
-
-				// get the min modify time of everything in the directory
-				time_t minmod = sb->st_mtime;
-				if(minmodify(fpath, &minmod) != 0)
-					return FTW_STOP;
-
-				// minimum modify time older than expiration
-				if((time(0) - minmod) > EXPIRATION_POLICY)
-				{
-					if(rmdir_recursive(fpath, 1) != 0)
-						return FTW_STOP;
-				}
-
-				return FTW_SKIP_SUBTREE;
+				fatal(rmdir_recursive, fpath, 1);
 			}
 
-			return FTW_CONTINUE;
+		finally:
+			XAPI_INFO("path", "%s", fpath);
+		coda;
 		};
 
-		lvl = 3; fatal(xnftw, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL);
-		lvl = 1; fatal(xnftw, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL);
+		fatal(xnftw_nth, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL, 3);
+		fatal(xnftw_nth, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL, 1);
 	}
 
 	// resume user identity

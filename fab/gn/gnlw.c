@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "gnlw.h"
 #include "traverse.h"

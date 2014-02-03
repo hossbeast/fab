@@ -21,6 +21,7 @@
 #include "listwise.h"
 #include "listwise/operator.h"
 #include "listwise/xtra.h"
+#include "listwise/LW.errtab.h"
 
 #include "interpolate.h"
 
@@ -76,7 +77,7 @@ int op_validate_fi(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1)
 	{
-		fail("fi -- arguments : %d", o->argsl);
+		fail(LW_ARGSNUM, "expected 0 or 1, actual : %d", o->argsl);
 	}
 
 	finally : coda;
@@ -86,7 +87,7 @@ int op_validate_fic(operation* o)
 {
 	if(o->argsl != 0)
 	{
-		fail("fic -- arguments : %d", o->argsl);
+		fail(LW_ARGSNUM, "expected 0, actual : %d", o->argsl);
 	}
 
 	finally : coda;
@@ -96,7 +97,7 @@ int op_validate_fiw(operation* o)
 {
 	if(o->argsl != 0)
 	{
-		fail("fiw -- arguments : %d", o->argsl);
+		fail(LW_ARGSNUM, "expected 0, actual : %d", o->argsl);
 	}
 
 	finally : coda;

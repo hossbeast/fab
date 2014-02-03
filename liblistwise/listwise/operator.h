@@ -33,6 +33,7 @@
 **
 **  listiwse/operator.h  - core operator functionality
 **  listwise/lwx.h       - lwx definition
+**  LW.errtab.h          - liblistwise error table
 **   extra functionality
 **  listwise/re.h        - libpcre apis
 **  listwise/iterate.h   - iterating lstack contents

@@ -64,3 +64,21 @@ int xlseek(int fd, off_t offset, int whence, off_t * res)
 
 	finally : coda;
 }
+
+int xclose(int fd)
+{
+	sysfatalize(close, fd);
+
+	finally : coda;
+}
+
+int ixclose(int * fd)
+{
+	if(*fd != -1)
+	{
+		sysfatalize(close, *fd);
+		*fd = -1;
+	}
+
+	finally : coda;
+}

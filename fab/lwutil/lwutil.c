@@ -23,7 +23,8 @@
 #include "lwutil.h"
 
 #include "global.h"
-#include "xmem/xmem.h"
+#include "xmem.h"
+#include "log.h"
 
 ///
 /// static

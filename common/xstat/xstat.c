@@ -15,57 +15,33 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
 #include <errno.h>
 
 #include "xapi.h"
 
-#include "xfcntl.h"
+#include "xstat.h"
 
-int xopen(const char * path, int flags, int * const fd)
+int xstat(const char * path, struct stat * buf)
 {
-	if((*fd = open(path, flags)) == -1)
-		sysfatality("open");
-
+	if(stat(path, buf) != 0)
+		sysfatality("xstat");
+	
 finally:
 	XAPI_INFO("path", "%s", path);
 coda;
 }
 
-int gxopen(const char * path, int flags, int * const fd)
+int gxstat(const char * path, struct stat * buf)
 {
-	if((*fd = open(path, flags)) == -1)
+	if(stat(path, buf) != 0)
 	{
 		if(errno != ENOENT)
-			sysfatality("open");
+			sysfatality("xstat");
 
-		*fd = -1;
+		memset(buf, 0, sizeof(*buf));
 	}
-
-finally:
-	XAPI_INFO("path", "%s", path);
-coda;
-}
-
-int xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
-{
-	if((*fd = open(path, flags, mode)) == -1)
-		sysfatality("open");
-
-finally:
-	XAPI_INFO("path", "%s", path);
-coda;
-}
-
-int gxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
-{
-	if((*fd = open(path, flags, mode)) == -1)
-	{
-		if(errno != ENOENT)
-			sysfatality("open");
-
-		*fd = -1;
-	}
-
+	
 finally:
 	XAPI_INFO("path", "%s", path);
 coda;

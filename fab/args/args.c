@@ -131,7 +131,9 @@ if(help)
 "  -B                            invalidate all              equivalent to +b [ $! ]\n"
 "\n"
 " parallel builds\n"
-"  -j <number>                   concurrency limit\n"
+"  -j -1               (default) concurrency limit set to heuristic based on detected CPUs\n"
+"  -j 0                          concurrency limit is unbounded\n"
+"  -j <number>                   concurrency limit is <number>\n"
 "\n"
 " path generation\n"
 "  --paths-relative    (default) generate paths relative to init-fabfile-dir\n"
@@ -549,7 +551,7 @@ int args_parse(int argc, char** argv)
 		else if(x == 'j')
 		{
 			int n = 0;
-			if(sscanf(optarg, "%d%n", &g_args.concurrency, &n) != 1 || n <= 0)
+			if(sscanf(optarg, "%d%n", &g_args.concurrency, &n) != 1 || n < -1)
 			{
 				fail("badly formed option for -j : '%s'", optarg);
 			}
@@ -613,6 +615,24 @@ int args_parse(int argc, char** argv)
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
 	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_params.init_fabfile_path->abs_dir);
 
+	// CPU count heuristic
+	long procs = -1;
+	if(g_args.concurrency == -1)
+	{
+		if((procs = sysconf(_SC_NPROCESSORS_ONLN)) == -1)
+		{
+			// unable to determine available CPU count
+		}
+		else if(procs < 1)
+		{
+			// shenanigans
+		}
+		else
+		{
+			g_args.concurrency = (float)procs * 1.2f;
+		}
+	}
+
 	// initialize logger
 	fatal(log_init, "+ERROR|WARN|INFO|BPEXEC|DSCINFO");
 
@@ -659,11 +679,15 @@ int args_parse(int argc, char** argv)
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args.mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args.mode_paths));
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycles            =%s", g_args.mode_cycles == DEFAULT_MODE_CYCLES ? " " : "*", ' ', MODE_STR(g_args.mode_cycles));
-	if(g_args.concurrency > 0)
-		snprintf(space, sizeof(space)	, "%d", g_args.concurrency);
+
+	if(procs > 0)
+		snprintf(space, sizeof(space)  , "%d (heuristic)", g_args.concurrency);
+	else if(g_args.concurrency == 0)
+		snprintf(space, sizeof(space)  , "%s", "unbounded");
 	else
-		snprintf(space, sizeof(space)	, "%s", "unbounded");
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) concurrency            =%s", g_args.concurrency == DEFAULT_CONCURRENCY_LIMIT ? " " : "*", 'j', space);
+		snprintf(space, sizeof(space)  , "%d", g_args.concurrency);
+
+	log(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", procs > 0 ? " " : "*", 'j', space);
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 	{

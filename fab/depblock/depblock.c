@@ -17,20 +17,21 @@
 
 #include <stdlib.h>
 #include <sys/types.h>
-#include <fcntl.h>
-#include <sys/mman.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+#include <stdarg.h>
 
 #include "depblock.h"
-
 #include "identity.h"
 
-#include "dirutil.h"
 #include "global.h"
+
+#include "dirutil.h"
 #include "xmem.h"
 #include "xstring.h"
+#include "xfcntl.h"
+#include "xunistd.h"
+#include "xmman.h"
 
 ///
 /// public
@@ -76,26 +77,22 @@ int depblock_read(depblock * const block)
 {
 	fatal(identity_assume_fabsys);
 
-	// open the file readonly
-	if((block->fd = open(block->blockpath, O_RDONLY)) > 0)
+	// open the file readonly - gxopen only fails when errno != ENOENT
+	fatal(gxopen, block->blockpath, O_RDONLY, &block->fd);
+
+	if(block->fd != -1)
 	{
 		// get the size of the file
-		if((block->size = lseek(block->fd, 0, SEEK_END)) == (off_t)-1)
-			fail("lseek(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
+		fatal(xlseek, block->fd, 0, SEEK_END, (void*)&block->size);
 
 		// seek back to the start
-		if(lseek(block->fd, 0, SEEK_SET) == (off_t)-1)
-			fail("lseek(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
-
+		fatal(xlseek, block->fd, 0, SEEK_SET, 0);
+		
 		if((block->addr = mmap(0, block->size, PROT_READ, MAP_PRIVATE, block->fd, 0)) == MAP_FAILED)
-			fail("mmap(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
+			sysfatality("mmap");
 
 		// block is ready to process
 		block->block = block->addr;
-	}
-	else if(errno != ENOENT)
-	{
-		fail("open(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
 	}
 
 	fatal(identity_assume_user);
@@ -180,26 +177,21 @@ int depblock_write(const depblock * const block)
 		fatal(identity_assume_fabsys);
 
 		// open the file for writing
-		if((fd = open(block->blockpath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-			fail("open(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
+		fatal(xopen_mode, block->blockpath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
 
 		// set the filesize
-		if(ftruncate(fd, size) == -1)
-			fail("ftruncate(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
+		sysfatalize(ftruncate, fd, size);
 
 		// map the entire file writable
-		if((addr = mmap(0, size, PROT_WRITE, MAP_SHARED, fd, 0)) == MAP_FAILED)
-			fail("mmap(%s)=[%d][%s]", block->blockpath, errno, strerror(errno));
+		fatal(xmmap, 0, size, PROT_WRITE, MAP_SHARED, fd, 0, &addr);
 
 		// copy the data in
 		memcpy(addr, block->block, size);
 
 		// close and unmap
-		if(munmap(addr, size) == -1)
-			fail("munmap()=[%d][%s]", errno, strerror(errno));
+		fatal(xmunmap, addr, size);
 
-		if(close(fd) == -1)
-			fail("close()=[%d][%s]", errno, strerror(errno));
+		fatal(xclose, fd);
 
 		fatal(identity_assume_user);
 	}
@@ -213,8 +205,7 @@ int depblock_close(depblock * const block)
 	{
 		if(block->addr != MAP_FAILED)
 		{
-			if(munmap(block->addr, block->size) == -1)
-				fail("munmap()=[%d][%s]", errno, strerror(errno));
+			fatal(xmunmap, block->addr, block->size);
 
 			block->addr = MAP_FAILED;
 			block->block = 0;
@@ -222,8 +213,7 @@ int depblock_close(depblock * const block)
 
 		if(block->fd != -1)
 		{
-			if(close(block->fd) == -1)
-				fail("close(%d)=[%d][%s]", block->fd, errno, strerror(errno));
+			fatal(xclose, block->fd);
 
 			block->fd = -1;
 		}

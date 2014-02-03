@@ -15,30 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XFTW_H
-#define _XFTW_H
+#ifndef _XSTAT_H
+#define _XSTAT_H
 
-#include <ftw.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-/// xftw
+#define restrict __restrict
+
+/// xstat
 //
 // SUMMARY
-//  proxy for ftw
+//  proxy for stat
 //
-// CALLBACK
-//  xnftw uses an internal callback which is passed to nftw. the callback specified for xnftw is invoked by that callback, and is expected
-//  to follow the xapi calling convention
-//
-int xnftw(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags);
+int xstat(const char * restrict path, struct stat * restrict buf)
+	__attribute__((nonnull));
 
-/// xnftw_nth
+/// gxstat
 //
 // SUMMARY
-//  proxy for ftw which skips entries other than nth-level entries
+//  proxy for stat which only fails when errno != ENOENT
+//  if stat fails and errno == ENOENT, buf is zeroed
 //
-// CALLBACK
-//  as for xnftw
-//
-int xnftw_nth(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags, int level);
+int gxstat(const char * restrict path, struct stat * restrict buf)
+	__attribute__((nonnull));
 
+#undef restrict
 #endif

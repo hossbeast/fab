@@ -57,8 +57,8 @@ $errtabpaths = [
 	api=[ $apidata ~ s/1/APIDATA/y ]
 
 	> exec >${hfl}
-	> echo "#ifndef _${pfx}_ERRORS_H"
-	> echo "#define _${pfx}_ERRORS_H"
+	> echo "#ifndef _${pfx}_ERRTAB_H"
+	> echo "#define _${pfx}_ERRTAB_H"
 	> echo "#include \"xapi.h\""
 	> echo "#define ETABLE_${pfx} \\"
 

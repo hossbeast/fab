@@ -41,7 +41,7 @@ $listwise				= [ $dlistwise/$name ~ j ]
 +[@std.c]($gendir = $dlistwise; $dirs = $dlistwise; $cc $cflags)
 
 # errtab
-+[@xapi.errtab]($gendir = $dlistwise; $dirs = $dlistwise; $cc $cflags)
++[@std.xapi.errtab]($gendir = $dlistwise; $dirs = $dlistwise; $cc $cflags)
 
 # catchall node
 [ @all ] : [ $listwise ]

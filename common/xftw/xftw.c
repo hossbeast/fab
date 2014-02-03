@@ -48,3 +48,37 @@ finally:
 	XAPI_INFO("path", "%s", dirpath);
 coda;
 }
+
+int xnftw_nth(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags, int level)
+{
+  int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+  {
+		int _xapi_r;
+		if(ftwbuf->level == level)
+			fatal(fn, fpath, sb, typeflag, ftwbuf);
+
+		// coda custom sets _xapi_r to the return value
+		finally : coda_custom;
+
+		if(_xapi_r == 0)
+		{
+			if(ftwbuf->level == level)
+				return FTW_SKIP_SUBTREE;	// process only nth-level files
+			else
+				return FTW_CONTINUE;
+		}
+
+		return FTW_STOP;
+  };
+
+  // depth-first
+  int r;
+  if((r = nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL)) == FTW_STOP || r != 0)
+  {
+    fatality("nftw", 0, 0, 0);
+  }
+	
+finally:
+	XAPI_INFO("path", "%s", dirpath);
+coda;
+}

@@ -20,6 +20,8 @@
 
 #include <unistd.h>
 
+#define restrict __restrict
+
 /// xread
 //
 // SUMMARY
@@ -28,8 +30,8 @@
 // PARAMETERS
 //  [bytes] - returns the number of bytes read
 //
-int xread(int fd, void * buf, size_t count, ssize_t * bytes);
-
+int xread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
+	__attribute__((nonnull(2)));
 
 /// xwrite
 //
@@ -61,4 +63,26 @@ int xgetcwd(char * buf, size_t size, char ** res);
 //
 int xlseek(int fd, off_t offset, int whence, off_t * res);
 
+/// xclose
+//
+// SUMMARY
+//  proxy for close
+//
+int xclose(int fd);
+
+/// ixclose
+//
+// SUMMARY
+//  idempotent proxy for close
+//
+int ixclose(int * const restrict fd)
+	__attribute__((nonnull));
+
+/// xread
+//
+// SUMMARY
+//  proxy for read
+//
+
+#undef restrict
 #endif

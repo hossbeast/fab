@@ -1,0 +1,24 @@
+in all cases, if the return value of the underlying function may be useful to the
+caller, it is returned via the final parameter to the wrapper/proxy
+
+if a function has both a TYPE and OPERATION modifier, the TYPE modifier is first
+
+TYPE
+----
+w<function>
+ non-xapi wrapper function that follows the zero-return-success model and fails exactly
+ when the underlying function fails
+
+x<function>
+ xapi-enabled proxy function that invokes fatality on failure fails exactly when the
+ underlying function fails
+
+OPERATION
+---------
+i<function> (idempotent)
+ accepts a pointer to an identifier to some resource and, upon successful completion, sets
+ the value pointed to to the identity value for that resource type
+
+aeoiu
+g<function>
+ fails only in some subset of failure cases of the underlying function as specified

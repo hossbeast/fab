@@ -15,39 +15,27 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XFCNTL_H
-#define _XFCNTL_H
+#include <errno.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "xapi.h"
 
-/// xopen
-//
-// SUMMARY
-//  proxy for open
-//
-int xopen(const char * path, int flags, int * const fd);
+#include "xmman.h"
 
-/// xopen
-//
-// SUMMARY
-//  proxy for open that only fails when errno != ENOENT
-//
-int gxopen(const char * path, int flags, int * const fd);
+int xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
+{
+	if(r && (*r = mmap(addr, length, prot, flags, fd, offset)) == MAP_FAILED)
+		sysfatality("mmap");
+	else if(mmap(addr, length, prot, flags, fd, offset) == MAP_FAILED)
+		sysfatality("mmap");
+	
+finally:
+	XAPI_INFO("length", "%zu", length);
+coda;
+}
 
-/// xopen_mode
-//
-// SUMMARY
-//  proxy for open
-//
-int xopen_mode(const char * path, int flags, mode_t mode, int * const fd);
+int xmunmap(void * addr, size_t length)
+{
+	sysfatalize(munmap, addr, length);
 
-/// xopen_mode
-//
-// SUMMARY
-//  proxy for open that only fails when errno != ENOENT
-//
-int gxopen_mode(const char * path, int flags, mode_t mode, int * const fd);
-
-#endif
+	finally : coda;
+}

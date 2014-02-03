@@ -45,22 +45,25 @@ when calling non-xapi code, you have a couple of options.
     DISADVANTAGES - cannot supply message, or info k/v/p
                   - will NOT work with a function that provides a freeform error string or which otherwise
                     cannot be made to fit the return code model (like dlopen) - see #3 for this case
+		EXAMPLE : fatalize(perrtab_SYS, errno, setrlimit, ...);
 
 2) you can write a wrapper function that follows the zero-return-success nonzero-return-error
    model, and call that function with fatalize
 
-    ADVANTAGES/DISADVANTAGES - see above, also you must write the (small) wrapper
+	 by convention, these wrapper functions are named "w<function>"
 
-    by convention, these wrapper functions are named "w<function>"
+    ADVANTAGES/DISADVANTAGES - see above, also you must write the (small) wrapper
+		EXAMPLE : wstdlib/wmalloc
 
 3) you can write a proxy function that invokes that function, and calls fatality when an error
    occurs. Any relevant message should be supplied to fatality, and info k/v/p provided in the
    finally section of the proxy. You call the proxy with fatal.
 
+   by convention, these proxy functions are named "x<function>"
+
     ADVANTAGES    - full information : code, message, k/v/p
     DISADVANTAGES - you must write the proxy
-
-    by convention, these proxy functions are named "x<function>"
+		EXAMPLE : xdlfcn/xdlopen
 
 */
 
@@ -170,7 +173,6 @@ when calling non-xapi code, you have a couple of options.
 // SUMMARY
 //  call a function. if it fails, and did not UNWIND, raise an error on its behalf
 //
-
 #define fatalize(table, code, func, ...)														\
 	do {																															\
 		int __d = xapi_frame_depth();																		\

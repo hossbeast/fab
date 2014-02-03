@@ -432,8 +432,8 @@ int API lstack_dump(lwx * const lx)
 			);
 
 			// display the string value of the row
-			char * s;
-			int sl;
+			char * s = 0;
+			int sl = 0;
 			fatal(lstack_readrow, lx, x, y, &s, &sl, 0, 1, 0, 0, 0);
 
 			dprintf(listwise_info_fd, "'%.*s'", sl, s);
