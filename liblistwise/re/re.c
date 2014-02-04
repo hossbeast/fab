@@ -26,7 +26,7 @@
 #include "PCRE.errtab.h"
 #define pcrefatality(func, e, fmt, ...) fatality(func, perrtab_PCRE, e, fmt, ##__VA_ARGS__)
 
-#include "xmem.h"
+#include "xlinux.h"
 #include "macros.h"
 
 int API re_compile(char* s, struct re* re, char* mod)

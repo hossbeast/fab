@@ -15,34 +15,28 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
 #include <errno.h>
 
-#include "xapi.h"
+#include "internal.h"
 
-#include "xstat.h"
+#include "xpwd.h"
 
-int xstat(const char * path, struct stat * buf)
+int API xgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
 {
-	if(stat(path, buf) != 0)
-		sysfatality("xstat");
-	
-finally:
-	XAPI_INFO("path", "%s", path);
-coda;
-}
-
-int gxstat(const char * path, struct stat * buf)
-{
-	if(stat(path, buf) != 0)
+	if(getpwuid_r(uid, pwd, buf, buflen, result) == 0)
 	{
-		if(errno != ENOENT)
-			sysfatality("xstat");
-
-		memset(buf, 0, sizeof(*buf));
+		// possibly found, check *result
 	}
-	
-finally:
-	XAPI_INFO("path", "%s", path);
+	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
+	{
+		// name not found
+	}
+	else
+	{
+		sysfatality("getpwuid_r");
+	}
+
+finally :
+	XAPI_INFO("uid", "%zu", uid);
 coda;
 }

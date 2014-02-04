@@ -20,6 +20,7 @@ $dcommon      = [ $*/common ~ j ]
 $dliblistwise = [ $*/liblistwise ~ j ]
 $dlistwise    = [ $*/listwise ~ j ]
 $dxapi				= [ $*/xapi ~ j ]
+$dlibxlinux		= [ $*/libxlinux ~ j ]
 $dfab         = [ $*/fab ~ j ]
 
 $incdirs 			= [ $dliblistwise [ $dliblistwise/listwise ~ j ] ~ s/^/-I ]
@@ -27,22 +28,24 @@ $incdirs 			= [ $dliblistwise [ $dliblistwise/listwise ~ j ] ~ s/^/-I ]
 # invocations
 +[ $dliblistwise ](-$liblistwise)																							@liblistwise
 +[ $dxapi ](-$libxapi; $dcommon $dxapi)																				@xapi
++[ $dlibxlinux ](-$libxlinux; $libxapi $dcommon $dxapi)												@libxlinux
 +[ $dlistwise ](-$listwise; $liblistwise $libxapi $incdirs)										@listwise
 +[ $dfab ](-$fab; -$faboplist; $liblistwise $libxapi $incdirs)								@fab
 
 # default target - make everything
-[ @all ] 				: [ @liblistwise.all @listwise.all @xapi.all @fab.all ]
+[ @all ] 				: [ @liblistwise.all @listwise.all @xapi.all @libxlinux.all @fab.all ]
 
 # inter-module dependencies
-[ $liblistwise ] :^ [ $libxapi ]
-[ $listwise ]		 :^ [ $libxapi $liblistwise $libxapi ]
-[ $fab ]				 :^ [ $libxapi $liblistwise $libxapi ]
-[ $faboplist ]	 :^ [ $libxapi $liblistwise $libxapi ]
+[ $libxlinux ]   :^ [ $libxapi ]
+[ $liblistwise ] :^ [ $libxapi $libxlinux ]
+[ $listwise ]		 :^ [ $libxapi $libxlinux $liblistwise $libxapi ]
+[ $fab ]				 :^ [ $libxapi $libxlinux $liblistwise $libxapi ]
+[ $faboplist ]	 :^ [ $libxapi $libxlinux $liblistwise $libxapi ]
 
 # supertasks
-[ @install ]		: [               @liblistwise.install   @listwise.install   @xapi.install @fab.install ]
-[ @uninstall ]	: [               @liblistwise.uninstall @listwise.uninstall @xapi.uninstall @fab.uninstall ]
-[ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @xapi.clean @fab.clean ]
+[ @install ]		: [               @liblistwise.install   @listwise.install   @xapi.install	 @libxlinux.install   @fab.install ]
+[ @uninstall ]	: [               @liblistwise.uninstall @listwise.uninstall @xapi.uninstall @libxlinux.uninstall @fab.uninstall ]
+[ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @xapi.clean		 @libxlinux.clean     @fab.clean ]
 
 [ @scripts ]
 {

@@ -1,0 +1,28 @@
+{ global: 
+xopendir;
+xreaddir_r;
+xdlopen;
+xdlsym;
+xopen;
+gxopen;
+xopen_mode;
+gxopen_mode;
+xnftw;
+xnftw_nth;
+xgetgrgid_r;
+xmmap;
+xmunmap;
+xgetpwuid_r;
+xstat;
+gxstat;
+xmalloc;
+xrealloc;
+xfree;
+xlocaltime_r;
+xread;
+xwrite;
+xgetcwd;
+xlseek;
+xclose;
+ixclose;
+local: *; };

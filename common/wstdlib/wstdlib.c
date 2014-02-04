@@ -17,8 +17,6 @@
 
 #include <string.h>
 
-#include "xapi.h"
-
 #include "wstdlib.h"
 
 int wmalloc(void* target, size_t size)

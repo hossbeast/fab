@@ -17,11 +17,11 @@
 
 #include <errno.h>
 
-#include "xapi.h"
+#include "internal.h"
 
 #include "xmman.h"
 
-int xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
+int API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
 {
 	if(r && (*r = mmap(addr, length, prot, flags, fd, offset)) == MAP_FAILED)
 		sysfatality("mmap");
@@ -33,7 +33,7 @@ finally:
 coda;
 }
 
-int xmunmap(void * addr, size_t length)
+int API xmunmap(void * addr, size_t length)
 {
 	sysfatalize(munmap, addr, length);
 

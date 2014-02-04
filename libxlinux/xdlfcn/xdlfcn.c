@@ -16,52 +16,34 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <errno.h>
-#include <string.h>
 
-#include "xapi.h"
+#include "internal.h"
 
-#include "xmem.h"
+#include "xdlfcn.h"
 
-int xmalloc(void* target, size_t size)
+int API xdlopen(const char * filename, int flag, void ** dl)
 {
-	if(((*(void**)target) = calloc(size, 1)) == 0)
+	if(((*dl) = dlopen(filename, flag)) == 0)
 	{
-		sysfatality("calloc");
-	}
-	
-finally :
-	XAPI_INFO("size", "%zu", size);
-coda;
-}
-
-int xrealloc(void* target, size_t es, size_t ec, size_t oec)
-{
-	void** t = ((void**)target);
-	*t = realloc(*t, es * ec);
-
-	if(es * ec)
-	{
-		if(*t)
-		{
-			if(((ssize_t)ec - (ssize_t)oec) > 0)
-				memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
-		}
-		else
-		{
-			sysfatality("realloc");
-		}
+		fatality("dlopen", perrtab_SYS, 0, "%s", dlerror());
 	}
 
 finally :
-	XAPI_INFO("size", "%zu", es * ec);
+	XAPI_INFO("path", "%s", filename);
 coda;
 }
 
-
-void xfree(void* target)
+int API xdlsym(void * dl, const char * sym, void ** psym)
 {
-	void** t = (void**)target;
+	dlerror();
+	(*psym) = dlsym(dl, sym);
+	char * e = dlerror();
+	if(e)
+	{
+		fatality("dlsym", perrtab_SYS, 0, "%s", dlerror());
+	}
 
-	free(*t);
-	*t = 0;
+finally :
+	XAPI_INFO("sym", "%s", sym);
+coda;
 }

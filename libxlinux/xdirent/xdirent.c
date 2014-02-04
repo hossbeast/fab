@@ -15,28 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <errno.h>
+#include "internal.h"
 
-#include "xapi.h"
-
-#include "xgrp.h"
-
-int xgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
+int API xopendir(const char * name, DIR ** dd)
 {
-	if(getgrgid_r(gid, grp, buf, buflen, result) == 0)
-	{
-		// possibly found, check *result
-	}
-	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
-	{
-		// name not found
-	}
-	else
-	{
-		sysfatality("getgrgid_r");
-	}
+	if(((*dd) = opendir(name)) == 0)
+		sysfatality("opendir");
 
-finally :
-	XAPI_INFO("gid", "%zu", gid);
+finally:
+	XAPI_INFO("path", "%s", name);
 coda;
+}
+
+int API xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
+{
+	int r;
+	if((r = readdir_r(dirp, entry, result)))
+		fatality("readdir_r", perrtab_SYS, r, 0);
+
+	finally : coda;
 }

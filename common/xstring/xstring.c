@@ -22,7 +22,7 @@
 
 #include "xstring.h"
 
-#include "xmem.h"
+#include "wstdlib.h"
 
 int xstrcmp(char* A, int alen, char* B, int blen, int case_insensitive)
 {
@@ -96,7 +96,7 @@ int xstrcat(char** s1, const char* s2)
 
 	int s2len = strlen(s2);
 
-	if(xmalloc(s1, s1len + s2len + 1) == 0)
+	if(wmalloc(s1, s1len + s2len + 1) == 0)
 	{
 		if(o)
 			memcpy(*s1, o, s1len);
@@ -122,7 +122,7 @@ int xstrcatf(char** s, char* fmt, ...)
 	int len = 0;
 	if(o)
 		len = strlen(o);
-	if(xmalloc(s, len + req + 1) == 0)
+	if(wmalloc(s, len + req + 1) == 0)
 	{
 		if(o)
 			memcpy(*s, o, len);
@@ -166,7 +166,7 @@ int xsprintf(char** s, char* fmt, ...)
 	va_end(va);
 
 	free(*s);
-	if(xmalloc(s, req + 1) == 0)
+	if(wmalloc(s, req + 1) == 0)
 	{
 		va_start(va, fmt);
 		vsprintf((*s), fmt, va);

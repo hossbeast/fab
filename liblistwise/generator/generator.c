@@ -27,8 +27,7 @@
 #include "generator/generator.states.h"
 #include "genscan.h"
 
-#include "xmem.h"
-
+#include "xlinux.h"
 
 #define restrict __restrict
 

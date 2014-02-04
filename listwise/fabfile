@@ -21,6 +21,7 @@ $dcommon				= [ $dlistwise/../common ~ j ]
 $dliblistwise		= [ $dlistwise/../liblistwise ~ j ]
 $dxapi					= [ $dlistwise/../xapi ~ j ]
 $dlibxapi				= [ $dlistwise/../xapi/libxapi ~ j ]
+$dlibxlinux			= [ $dlistwise/../libxlinux ~ j ]
 
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
@@ -28,11 +29,11 @@ $dlibxapi				= [ $dlistwise/../xapi/libxapi ~ j ]
 +[ $dcommon ]() @common
 
 # variables
-$cflags					= [ $cflags  [ $dlistwise $dliblistwise $dxapi $dlibxapi ~ s/^/-I ]
+$cflags					= [ $cflags  [ $dlistwise $dliblistwise $dxapi $dlibxapi $dlibxlinux ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 ]
-$lflags					= [ $lflags $liblistwise $libxapi ]
+$lflags					= [ $lflags $liblistwise $libxapi $libxlinux ]
 $name						= [ listwise ]
 $link						= [ lw ]
 $listwise				= [ $dlistwise/$name ~ j ]

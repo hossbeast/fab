@@ -17,11 +17,11 @@
 
 #include <errno.h>
 
-#include "xapi.h"
+#include "internal.h"
 
 #include "xftw.h"
 
-int xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
+int API xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
 {
   int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
   {
@@ -49,7 +49,7 @@ finally:
 coda;
 }
 
-int xnftw_nth(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags, int level)
+int API xnftw_nth(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags, int level)
 {
   int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
   {

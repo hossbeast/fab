@@ -27,11 +27,11 @@
 #include "listwise/generator.h"
 
 #include "xapi.h"
+#include "xlinux.h"
 
 #include "args.h"
 
 #include "macros.h"
-#include "xmem.h"
 #include "xstring.h"
 
 struct g_args_t g_args;

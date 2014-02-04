@@ -553,7 +553,7 @@ int args_parse(int argc, char** argv)
 			int n = 0;
 			if(sscanf(optarg, "%d%n", &g_args.concurrency, &n) != 1 || n < -1)
 			{
-				fail("badly formed option for -j : '%s'", optarg);
+				fail(FAB_BADARGS, "badly formed option for -j : '%s'", optarg);
 			}
 		}
 		else if(x == 'k')

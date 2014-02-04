@@ -20,7 +20,7 @@
 
 #include "listwise/internal.h"
 
-#include "xmem.h"
+#include "xlinux.h"
 #include "macros.h"
 
 #define restrict __restrict

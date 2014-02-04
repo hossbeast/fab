@@ -29,8 +29,7 @@
 
 #include "listwise/internal.h"
 
-#include "xfcntl.h"
-#include "xunistd.h"
+#include "xlinux.h"
 
 /*
 

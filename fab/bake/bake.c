@@ -37,6 +37,7 @@
 #include "macros.h"
 #include "xmem.h"
 #include "map.h"
+#include "xfcntl.h"
 
 int bake_bp(
 	  const bp * const bp
@@ -80,8 +81,7 @@ int bake_bp(
 	fatal(ts_ensure, ts, tsa, tsl);
 
 	// open the bakescript
-	if((fd = open(dst, O_CREAT | O_TRUNC | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
-		fail("open(%s)=[%d][%s]", dst, errno, strerror(errno));
+	fatal(xopen, dst, O_CREAT | O_TRUNC | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &fd);
 
 	dprintf(fd, "#!/bin/bash\n");
 

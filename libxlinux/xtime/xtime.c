@@ -17,26 +17,14 @@
 
 #include <errno.h>
 
-#include "xapi.h"
+#include "internal.h"
 
-#include "xpwd.h"
+#include "xtime.h"
 
-int xgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
+int API xlocaltime_r(const time_t * timep, struct tm * result)
 {
-	if(getpwuid_r(uid, pwd, buf, buflen, result) == 0)
-	{
-		// possibly found, check *result
-	}
-	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
-	{
-		// name not found
-	}
-	else
-	{
-		sysfatality("getpwuid_r");
-	}
+	if(localtime_r(timep, result) == 0)
+		sysfatality("localtime_r");
 
-finally :
-	XAPI_INFO("uid", "%zu", uid);
-coda;
+	finally : coda;
 }

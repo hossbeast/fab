@@ -17,7 +17,7 @@
 
 #include "listwise/internal.h"
 
-#include "xmem.h"
+#include "xlinux.h"
 
 #define restrict __restrict
 

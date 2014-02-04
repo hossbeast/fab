@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "xmem.h"
+#include "xlinux.h"
 #include "xstring.h"
 
 #include "idx.h"

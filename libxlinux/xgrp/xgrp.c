@@ -17,33 +17,26 @@
 
 #include <errno.h>
 
-#include "xapi.h"
+#include "internal.h"
 
-#include "xdlfcn.h"
+#include "xgrp.h"
 
-int xdlopen(const char * filename, int flag, void ** dl)
+int API xgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
 {
-	if(((*dl) = dlopen(filename, flag)) == 0)
+	if(getgrgid_r(gid, grp, buf, buflen, result) == 0)
 	{
-		fatality("dlopen", perrtab_SYS, 0, "%s", dlerror());
+		// possibly found, check *result
+	}
+	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
+	{
+		// name not found
+	}
+	else
+	{
+		sysfatality("getgrgid_r");
 	}
 
 finally :
-	XAPI_INFO("path", "%s", filename);
-coda;
-}
-
-int xdlsym(void * dl, const char * sym, void ** psym)
-{
-	dlerror();
-	(*psym) = dlsym(dl, sym);
-	char * e = dlerror();
-	if(e)
-	{
-		fatality("dlsym", perrtab_SYS, 0, "%s", dlerror());
-	}
-
-finally :
-	XAPI_INFO("sym", "%s", sym);
+	XAPI_INFO("gid", "%zu", gid);
 coda;
 }

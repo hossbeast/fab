@@ -17,7 +17,7 @@
 
 #include "listwise/internal.h"
 
-#include "xmem.h"
+#include "xlinux.h"
 
 int APIDATA listwise_info_fd = 2;
 #if DEBUG

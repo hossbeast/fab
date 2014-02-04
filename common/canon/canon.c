@@ -25,7 +25,7 @@
 #include <errno.h>
 
 #include "canon.h"
-#include "xmem.h"
+#include "wstdlib.h"
 
 //
 // static
@@ -62,7 +62,7 @@ int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 		{
 			int ns = (*ia) ?: 10;
 			ns = ns * 2 + ns / 2;
-			if(xrealloc(i, sizeof(**i), ns, (*ia)) != 0)
+			if(wrealloc(i, sizeof(**i), ns, (*ia)) != 0)
 			{
 				int k;
 				for(k = 0; k < *ia; k++)

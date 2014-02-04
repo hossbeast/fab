@@ -24,7 +24,7 @@
 #include "SYS.errtab.h"
 
 #include "xstring.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "parseint.h"
 
 /*

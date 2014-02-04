@@ -29,10 +29,8 @@
 
 #include "listwise/internal.h"
 
-#include "xmem.h"
+#include "xlinux.h"
 #include "macros.h"
-#include "xdlfcn.h"
-#include "xdirent.h"
 
 operator **	APIDATA g_ops;
 int									g_ops_a;

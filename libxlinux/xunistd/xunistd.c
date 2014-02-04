@@ -17,11 +17,11 @@
 
 #include <errno.h>
 
-#include "xapi.h"
+#include "internal.h"
 
 #include "xunistd.h"
 
-int xread(int fd, void * buf, size_t count, ssize_t * bytes)
+int API xread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
 	if(bytes && (*bytes = read(fd, buf, count)) == -1)
 		sysfatality("read");
@@ -32,7 +32,7 @@ int xread(int fd, void * buf, size_t count, ssize_t * bytes)
 	finally : coda;
 }
 
-int xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
+int API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 {
 	if(bytes && (*bytes = write(fd, buf, count)) == -1)
 		sysfatality("write");
@@ -43,7 +43,7 @@ int xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 	finally : coda;
 }
 
-int xgetcwd(char * buf, size_t size, char ** res)
+int API xgetcwd(char * buf, size_t size, char ** res)
 {
 	if(res && (((*res) = getcwd(buf, size)) == 0))
 		sysfatality("getcwd");
@@ -54,7 +54,7 @@ int xgetcwd(char * buf, size_t size, char ** res)
 	finally : coda;
 }
 
-int xlseek(int fd, off_t offset, int whence, off_t * res)
+int API xlseek(int fd, off_t offset, int whence, off_t * res)
 {
 	if(res && ((*res) = lseek(fd, offset, whence)) == (off_t)-1)
 		sysfatality("lseek");
@@ -65,14 +65,14 @@ int xlseek(int fd, off_t offset, int whence, off_t * res)
 	finally : coda;
 }
 
-int xclose(int fd)
+int API xclose(int fd)
 {
 	sysfatalize(close, fd);
 
 	finally : coda;
 }
 
-int ixclose(int * fd)
+int API ixclose(int * fd)
 {
 	if(*fd != -1)
 	{

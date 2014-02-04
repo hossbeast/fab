@@ -21,7 +21,7 @@
 
 #include "listwise/internal.h"
 
-#include "xmem.h"
+#include "xlinux.h"
 #include "parseint.h"
 
 /*

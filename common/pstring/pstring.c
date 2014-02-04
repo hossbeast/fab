@@ -22,11 +22,11 @@
 
 #include "pstring.h"
 
-#include "xmem.h"
+#include "wstdlib.h"
 
 int pvprintf(pstring ** p, char * fmt, va_list va)
 {
-	if(!*p && xmalloc(p, sizeof(**p)) != 0)
+	if(!*p && wmalloc(p, sizeof(**p)) != 0)
 		return 1;
 
 	va_list va2;
@@ -58,7 +58,7 @@ int psprintf(pstring ** p, char * fmt, ...)
 
 int pscatvf(pstring ** p, char * fmt, va_list va)
 {
-	if(!*p && xmalloc(p, sizeof(**p)) != 0)
+	if(!*p && wmalloc(p, sizeof(**p)) != 0)
 		return 1;
 
 	va_list va2;
@@ -91,7 +91,7 @@ int pscatf(pstring ** p, char * fmt, ...)
 
 int pscat(pstring ** p, void * s, size_t l)
 {
-	if(!*p && xmalloc(p, sizeof(**p)) != 0)
+	if(!*p && wmalloc(p, sizeof(**p)) != 0)
 		return 1;
 
 	if(psgrow(p, (*p)->l + l) != 0)
@@ -105,12 +105,12 @@ int pscat(pstring ** p, void * s, size_t l)
 
 int psgrow(pstring ** p, size_t l)
 {
-	if(!*p && xmalloc(p, sizeof(**p)) != 0)
+	if(!*p && wmalloc(p, sizeof(**p)) != 0)
 		return 1;
 
 	if(l >= (*p)->a)
 	{
-		if(xrealloc(&(*p)->s, 1, l+1, (*p)->a) != 0)
+		if(wrealloc(&(*p)->s, 1, l+1, (*p)->a) != 0)
 			return 1;
 
 		(*p)->a = l+1;
@@ -127,7 +127,7 @@ void pstring_free(pstring * p)
 	free(p);
 }
 
-void pstring_xfree(pstring ** p)
+void pstring_wfree(pstring ** p)
 {
 	pstring_free(*p);
 	*p = 0;

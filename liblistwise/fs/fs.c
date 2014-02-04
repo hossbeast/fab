@@ -22,16 +22,12 @@
 #include <sys/types.h>
 
 #include "listwise/internal.h"
+#include "xlinux.h"
 
 #include "canon.h"
 #include "parseint.h"
-#include "xmem.h"
 #include "color.h"
 #include "macros.h"
-#include "xpwd.h"
-#include "xgrp.h"
-#include "xtime.h"
-#include "xunistd.h"
 
 #define restrict __restrict
 

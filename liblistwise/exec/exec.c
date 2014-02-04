@@ -21,7 +21,7 @@
 #include "sanity.h"
 #endif
 
-#include "xmem.h"
+#include "xlinux.h"
 
 #define restrict __restrict
 

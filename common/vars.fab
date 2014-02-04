@@ -92,7 +92,7 @@ $bisonflags	= [ --warnings=error ]
 $cc					= [ gcc ]
 $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 		# include paths
-	[ $dxapi $dlibxapi $dliblistwise $dcommon [ $dcommon ~ ls/-d ] ~ s/^/-I ]
+	[ $dxapi $dlibxapi $dlibxlinux $dliblistwise $dcommon [ $dcommon ~ ls/-d ] ~ s/^/-I ]
 	[ -DXAPI_UNWIND ]
 	[ $dbug $dvel ~ s/1/-O0/y ]					# disable compiler optimizations
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
@@ -105,8 +105,10 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 $lflags			= [
 	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ~ rp ] >/y ~ j ] ]
 	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dlibxapi ~ rp ] >/y ~ j ] ]
+	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dlibxlinux ~ rp ] >/y ~ j ] ]
 ]
 
 # default library names
 $liblistwise	= [ -llistwise ]
 $libxapi			= [ -lxapi ]
+$libxlinux		= [ -lxlinux ]

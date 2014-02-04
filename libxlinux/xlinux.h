@@ -15,16 +15,19 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <errno.h>
+#ifndef _XLINUX_H
+#define _XLINUX_H
 
-#include "xapi.h"
+#include "xlinux/xdirent.h"
+#include "xlinux/xdlfcn.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xftw.h"
+#include "xlinux/xgrp.h"
+#include "xlinux/xmman.h"
+#include "xlinux/xpwd.h"
+#include "xlinux/xstat.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xtime.h"
+#include "xlinux/xunistd.h"
 
-#include "xtime.h"
-
-int xlocaltime_r(const time_t * timep, struct tm * result)
-{
-	if(localtime_r(timep, result) == 0)
-		sysfatality("localtime_r");
-
-	finally : coda;
-}
+#endif

@@ -38,11 +38,9 @@
 #include "LW.errtab.h"
 #define perrtab perrtab_LW
 
-#include "args.h"
+#include "xlinux.h"
 
-#include "xmem.h"
-#include "xfcntl.h"
-#include "xunistd.h"
+#include "args.h"
 
 /// snarf
 //

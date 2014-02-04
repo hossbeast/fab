@@ -24,7 +24,7 @@
 #include "listwise/internal.h"
 
 #include "parseint.h"
-#include "xdirent.h"
+#include "xlinux.h"
 
 /*
 

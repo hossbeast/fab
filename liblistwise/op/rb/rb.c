@@ -25,9 +25,8 @@
 
 #include "listwise/internal.h"
 
-#include "xmem.h"
 #include "canon.h"
-#include "xunistd.h"
+#include "xlinux.h"
 
 /*
 

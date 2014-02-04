@@ -15,25 +15,52 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
+#include <errno.h>
+#include <string.h>
 
-#include "xdirent.h"
+#include "internal.h"
 
-int xopendir(const char * name, DIR ** dd)
+#include "xstdlib.h"
+
+int API xmalloc(void* target, size_t size)
 {
-	if(((*dd) = opendir(name)) == 0)
-		sysfatality("opendir");
-
-finally:
-	XAPI_INFO("path", "%s", name);
+	if(((*(void**)target) = calloc(size, 1)) == 0)
+	{
+		sysfatality("calloc");
+	}
+	
+finally :
+	XAPI_INFO("size", "%zu", size);
 coda;
 }
 
-int xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
+int API xrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
-	int r;
-	if((r = readdir_r(dirp, entry, result)))
-		fatality("readdir_r", perrtab_SYS, r, 0);
+	void** t = ((void**)target);
+	*t = realloc(*t, es * ec);
 
-	finally : coda;
+	if(es * ec)
+	{
+		if(*t)
+		{
+			if(((ssize_t)ec - (ssize_t)oec) > 0)
+				memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
+		}
+		else
+		{
+			sysfatality("realloc");
+		}
+	}
+
+finally :
+	XAPI_INFO("size", "%zu", es * ec);
+coda;
+}
+
+void API xfree(void* target)
+{
+	void** t = (void**)target;
+
+	free(*t);
+	*t = 0;
 }
