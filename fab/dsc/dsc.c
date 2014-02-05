@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "listwise.h"
 
@@ -35,7 +36,7 @@
 
 #include "log.h"
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "macros.h"
 #include "map.h"
 
@@ -140,7 +141,7 @@ static int dsc_execwave(
 	}
 
 	if(bad)
-		qfail();
+		fail(FAB_FMLFAIL, "");
 
 	finally : coda;
 }

@@ -28,7 +28,7 @@
 
 #include "global.h"
 #include "map.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "macros.h"
 
 ///

@@ -24,7 +24,7 @@
 #include "global.h"
 
 #include "args.h"
-#include "xmem.h"
+#include "xlinux.h"
 
 static int lw_string(void * o, char* prop, char ** s, int * l);
 static int lw_reflect(void * o, char* property, void *** r, uint8_t ** rtypes, int ** rls, int * rl);

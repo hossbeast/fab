@@ -32,7 +32,7 @@
 
 #include "log.h"
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "unitstring.h"
 #include "canon.h"
 #include "xstring.h"

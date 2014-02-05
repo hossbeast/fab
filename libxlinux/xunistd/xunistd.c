@@ -32,6 +32,22 @@ int API xread(int fd, void * buf, size_t count, ssize_t * bytes)
 	finally : coda;
 }
 
+int API axread(int fd, void * buf, size_t count, ssize_t * bytes)
+{
+	size_t actual;
+
+	if((actual = read(fd, buf, count) == -1) || actual != count)
+		sysfatality("read");
+
+finally:
+	if(bytes)
+		*bytes = actual;
+
+	XAPI_INFO("expected", "%zu", count);
+	XAPI_INFO("actual", "%zu", actual);
+coda;
+}
+
 int API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 {
 	if(bytes && (*bytes = write(fd, buf, count)) == -1)
@@ -79,6 +95,36 @@ int API ixclose(int * fd)
 		sysfatalize(close, *fd);
 		*fd = -1;
 	}
+
+	finally : coda;
+}
+
+int API xsymlink(const char * target, const char * linkpath)
+{
+	sysfatalize(symlink, target, linkpath);
+
+	finally : coda;
+}
+
+int API uxsymlink(const char * target, const char * linkpath)
+{
+	if(symlink(target, linkpath) != 0 && errno != EEXIST)
+		sysfatality("symlink");
+
+	finally : coda;
+}
+
+int xunlink(const char * pathname)
+{
+	sysfatalize(unlink, pathname);
+
+	finally : coda;
+}
+
+int uxunlink(const char * pathname)
+{
+	if(unlink(pathname) != 0 && errno != ENOENT)
+		fatality("unlink");
 
 	finally : coda;
 }

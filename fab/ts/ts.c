@@ -23,7 +23,7 @@
 #include "fml.h"
 #include "args.h"
 
-#include "xmem.h"
+#include "xlinux.h"
 #include "pstring.h"
 
 #include "global.h"

@@ -29,7 +29,7 @@
 //
 int xopen(const char * path, int flags, int * const fd);
 
-/// xopen
+/// gxopen
 //
 // SUMMARY
 //  proxy for open that only fails when errno != ENOENT

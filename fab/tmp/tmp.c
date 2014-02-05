@@ -19,10 +19,10 @@
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
-#include <unistd.h>
-#include <ftw.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include "xlinux.h"
 
 #include "tmp.h"
 #include "params.h"
@@ -32,7 +32,6 @@
 #include "global.h"
 #include "dirutil.h"
 #include "macros.h"
-#include "xftw.h"
 #include "args.h"
 
 /// minmodify

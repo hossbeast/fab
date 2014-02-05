@@ -24,7 +24,7 @@
 #include "path.h"
 
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "canon.h"
 #include "cksum.h"
 #include "params.h"

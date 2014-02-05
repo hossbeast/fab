@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "listwise.h"
 
@@ -30,7 +31,7 @@
 
 #include "log.h"
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "macros.h"
 #include "list.h"
 #include "lwutil.h"
@@ -492,7 +493,7 @@ int bp_eval(bp * const bp)
 	}
 
 	if(poison)
-		qfail();
+		fail(FAB_UNSATISFIED, "buildplan cannot be executed");
 
 	// consolidate stages
 	for(x = bp->stages_l - 1; x >= 0; x--)
@@ -603,9 +604,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lwx *** stax, int 
 		}
 
 		if(!res)
-		{
-			qfail();
-		}
+			fail(FAB_FMLFAIL, "");
 	}
 
 finally:

@@ -16,11 +16,12 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
+#include <string.h>
 
 #include "listwise.h"
 #include "listwise/object.h"
+
+#include "xlinux.h"
 
 #include "bake.h"
 #include "fml.h"
@@ -29,15 +30,12 @@
 #include "gnlw.h"
 #include "var.h"
 #include "args.h"
-
 #include "list.h"
 #include "lwutil.h"
 #include "log.h"
 #include "global.h"
 #include "macros.h"
-#include "xmem.h"
 #include "map.h"
-#include "xfcntl.h"
 
 int bake_bp(
 	  const bp * const bp
@@ -81,7 +79,7 @@ int bake_bp(
 	fatal(ts_ensure, ts, tsa, tsl);
 
 	// open the bakescript
-	fatal(xopen, dst, O_CREAT | O_TRUNC | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &fd);
+	fatal(xopen_mode, dst, O_CREAT | O_TRUNC | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &fd);
 
 	dprintf(fd, "#!/bin/bash\n");
 

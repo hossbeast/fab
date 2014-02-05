@@ -1,5 +1,3 @@
-SUMMARY
--------
 in all cases, if the return value of the underlying function may be useful to the
 caller, it is returned via the final parameter to the wrapper/proxy
 
@@ -21,7 +19,10 @@ i<function> (idempotent)
  accepts a pointer to an identifier to some resource and, upon successful completion, sets
  the value pointed to to the identity value for that resource type
 
-u<function> (union)
+u<function>
  fails only in some subset of failure cases of the underlying function as specified
+
+a<function>
+ fails in some superset of failure cases of the underlying function as specified
 
 aeo

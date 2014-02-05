@@ -31,7 +31,7 @@
 
 #include "log.h"
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "macros.h"
 #include "args.h"
 #include "cksum.h"

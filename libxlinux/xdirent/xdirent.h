@@ -22,10 +22,10 @@
 #include <dirent.h>
 #include <errno.h>
 
-/// xdiropen
+/// xopendir
 //
 // SUMMARY
-//  proxy for diropen
+//  proxy for opendir
 //
 int xopendir(const char * name, DIR ** dd);
 

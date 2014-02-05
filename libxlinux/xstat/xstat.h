@@ -41,5 +41,22 @@ int xstat(const char * restrict path, struct stat * restrict buf)
 int gxstat(const char * restrict path, struct stat * restrict buf)
 	__attribute__((nonnull));
 
+/// xfstat
+//
+// SUMMARY
+//  proxy for fstat
+//
+int xfstat(int fd, struct stat * restrict buf)
+	__attribute__((nonnull));
+
+/// uxfstat
+//
+// SUMMARY
+//  proxy for stat which only fails when errno != ENOENT
+//  if stat fails and errno == ENOENT, buf is zeroed
+//
+int uxfstat(int fd, struct stat * restrict buf)
+	__attribute__((nonnull));
+
 #undef restrict
 #endif

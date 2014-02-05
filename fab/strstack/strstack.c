@@ -20,7 +20,7 @@
 #include "strstack.h"
 
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 
 struct strstack_t
 {

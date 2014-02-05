@@ -26,7 +26,7 @@
 #include "global.h"
 #include "args.h"
 
-#include "xmem.h"
+#include "xlinux.h"
 #include "map.h"
 #include "cksum.h"
 

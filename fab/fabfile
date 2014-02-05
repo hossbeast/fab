@@ -20,17 +20,15 @@ $dfab						= [ $* ]
 $dcommon				= [ $dfab/../common ~ j ]
 $dliblistwise		= [ $dfab/../liblistwise ~ j ]
 $dxapi					= [ $dfab/../xapi ~ j ]
+$dlibxlinux			= [ $dfab/../libxlinux ~ j ]
 
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
 +[ $dcommon/vars.fab ]
 +[ $dcommon ]() @common
 
-# libraries to link
-$liblistwise 		= [ -llistwise ]
-
 # variables
-$cflags					= [ $cflags	-fno-builtin-log [ $dfab $dcommon $dliblistwise $dxapi ~ lsr/c/-d/s/^/-I ]
+$cflags					= [ $cflags	-fno-builtin-log [ $dfab $dcommon $dliblistwise $dlibxlinux $dxapi ~ lsr/c/-d/s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
@@ -38,7 +36,7 @@ $cflags					= [ $cflags	-fno-builtin-log [ $dfab $dcommon $dliblistwise $dxapi ~
 	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
 	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
 ]
-$lflags					= [ $lflags $liblistwise ]
+$lflags					= [ $lflags $libxapi $liblistwise $libxlinux ]
 $fab						= [ $dfab/fab ~ j ]
 
 # standard files - standard compilation

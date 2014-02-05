@@ -22,6 +22,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "xlinux.h"
+
 #include "hashblock.h"
 
 #include "log.h"
@@ -30,14 +32,11 @@
 #include "args.h"
 
 #include "args.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "unitstring.h"
 #include "cksum.h"
 #include "xstring.h"
 #include "dirutil.h"
-#include "xstat.h"
-#include "xfcntl.h"
-#include "xunistd.h"
 
 #define restrict __restrict
 

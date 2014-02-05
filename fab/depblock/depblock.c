@@ -27,11 +27,8 @@
 #include "global.h"
 
 #include "dirutil.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "xstring.h"
-#include "xfcntl.h"
-#include "xunistd.h"
-#include "xmman.h"
 
 ///
 /// public

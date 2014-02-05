@@ -28,7 +28,7 @@
 
 #include "global.h"
 #include "path.h"
-#include "xmem.h"
+#include "xlinux.h"
 
 #define restrict __restrict
 

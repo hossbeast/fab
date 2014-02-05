@@ -16,11 +16,12 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "ffn.h"
 
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 
 #define restrict __restrict
 

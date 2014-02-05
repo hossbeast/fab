@@ -34,7 +34,7 @@
 #include "identity.h"
 
 #include "macros.h"
-#include "xmem.h"
+#include "xlinux.h"
 
 // signal handling
 static int o_signum;

@@ -26,7 +26,7 @@
 #include "log.h"
 #include "global.h"
 
-#include "xftw.h"
+#include "xlinux.h"
 
 int rmdir_recursive(const char * const dirpath, int rmself)
 {

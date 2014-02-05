@@ -35,7 +35,7 @@
 #include "var.h"
 
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "map.h"
 #include "dirutil.h"
 #include "macros.h"

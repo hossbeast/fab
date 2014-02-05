@@ -26,7 +26,7 @@
 
 	#include "log.h"
 	#include "xstring.h"
-	#include "xmem.h"
+	#include "xlinux.h"
 
 	// defined in ff.lex.o
 	int ff_yylex(void* yylvalp, void* yylloc, void* scanner);

@@ -27,6 +27,8 @@
 #include "listwise/object.h"
 #include "listwise/xtra.h"
 
+#include "xlinux.h"
+
 #include "args.h"
 #include "params.h"
 #include "ff.h"
@@ -51,7 +53,6 @@
 #include "log.h"
 #include "global.h"
 #include "macros.h"
-#include "xmem.h"
 
 // signal handling
 static int o_signum;

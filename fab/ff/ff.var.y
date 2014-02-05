@@ -27,7 +27,7 @@
 	#include "ffn.h"
 
 	#include "xstring.h"
-	#include "xmem.h"
+	#include "xlinux.h"
 
 	static int __attribute__((weakref, alias("ff_yylex"))) ff_var_yylex(); 
 	static int __attribute__((weakref, alias("ff_yyerror"))) ff_var_yyerror(); 

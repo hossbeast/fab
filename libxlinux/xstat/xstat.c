@@ -25,7 +25,7 @@
 int API xstat(const char * path, struct stat * buf)
 {
 	if(stat(path, buf) != 0)
-		sysfatality("xstat");
+		sysfatality("stat");
 	
 finally:
 	XAPI_INFO("path", "%s", path);
@@ -37,12 +37,37 @@ int API gxstat(const char * path, struct stat * buf)
 	if(stat(path, buf) != 0)
 	{
 		if(errno != ENOENT)
-			sysfatality("xstat");
+			sysfatality("stat");
 
 		memset(buf, 0, sizeof(*buf));
 	}
 	
 finally:
 	XAPI_INFO("path", "%s", path);
+coda;
+}
+
+int API xfstat(int fd, struct stat * buf)
+{
+	if(fstat(fd, buf) != 0)
+		sysfatality("fstat");
+	
+finally:
+	XAPI_INFO("fd", "%s", fd);
+coda;
+}
+
+int API uxfstat(int fd, struct stat * buf)
+{
+	if(fstat(fd, buf) != 0)
+	{
+		if(errno != ENOENT)
+			sysfatality("fstat");
+
+		memset(buf, 0, sizeof(*buf));
+	}
+	
+finally:
+	XAPI_INFO("fd", "%s", fd);
 coda;
 }

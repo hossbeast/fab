@@ -22,7 +22,7 @@
 #include "map.h"
 
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "xstring.h"
 #include "macros.h"
 

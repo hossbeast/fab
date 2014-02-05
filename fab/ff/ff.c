@@ -42,7 +42,7 @@
 
 #include "log.h"
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "macros.h"
 #include "cksum.h"
 #include "xstring.h"
@@ -80,14 +80,6 @@ static void ff_log_state(char * fmt, ...)
   va_end(va);
 }
 
-static void ff_log_error(char * fmt, ...)
-{
-  va_list va;
-  va_start(va, fmt);
-	vlog(L_ERROR, fmt, va);
-  va_end(va);
-}
-
 static const char * ff_tokenname(int token)
 {
   return ff_tokennames[token];
@@ -121,7 +113,6 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	parse_param pp = {
 	    .log_token		= ff_log_token
 		, .log_state		= ff_log_state
-		, .log_error		= ff_log_error
 		, .tokname			= ff_tokenname
 		, .statename		= ff_statename
 		, .inputstr			= ff_inputstr
@@ -136,7 +127,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	// create state specific to this parse
 	void* state = 0;
 	if((state = ff_yy_scan_bytes(b, sz + 2, p->p)) == 0)
-		fail("scan_bytes failed");
+		fatality("yy_scan_bytes", perrtab_SYS, ENOMEM, 0);
 
 	// all ff_files are tracked in ff_files
 	ff_file * ff = 0;
@@ -300,18 +291,17 @@ static int regular_rewrite(ff_file * ff)
 		// symlink to the gn
 		snprintf(tmpa, sizeof(tmpa), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, ff->closure_gns[x]->path->can_hash);
 		snprintf(tmpb, sizeof(tmpb), "%s/%u", ff->closure_gns_dir, ff->closure_gns[x]->path->can_hash);
-		if(symlink(tmpa, tmpb) != 0 && errno != EEXIST)
-			fail("symlink=[%d][%s]", errno, strerror(errno));
+
+		fatal(uxsymlink, tmpa, tmpb);
 	}
 
-	if((dh = opendir(ff->closure_gns_dir)) == 0)
-		fail("opendir(%s)=[%d][%s]", ff->closure_gns_dir, errno, strerror(errno));
+	fatal(xopendir, ff->closure_gns_dir, &dh);
 
 	struct dirent ent;
 	struct dirent * entp = 0;
 	while(1)
 	{
-		fatal_os(readdir_r, dh, &ent, &entp);
+		fatal(xreaddir_r, dh, &ent, &entp);
 
 		if(!entp)
 			break;
@@ -321,16 +311,14 @@ static int regular_rewrite(ff_file * ff)
 			// get the canhash for this gn
 			uint32_t canhash = 0;
 			if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) != 0)
-				fail("unexpected file %s/%s", ff->closure_gns_dir, entp->d_name);
+				fail(FAB_BADCACHE, "unexpected file %s/%s", ff->closure_gns_dir, entp->d_name);
 
 			// delete
 			snprintf(tmpa, sizeof(tmpa), "%s/%u/PRIMARY/dscv", ff->closure_gns_dir, canhash);
-			if(unlink(tmpa) != 0 && errno != ENOENT)
-				fail("unlink(%s)=[%d][%s]", tmpa, errno, strerror(errno));
+			fatal(uxunlink, tmpa);
 
 			snprintf(tmpa, sizeof(tmpa), "%s/%u/SECONDARY/fab/noforce_ff", ff->closure_gns_dir, canhash);
-			if(unlink(tmpa) != 0 && errno != ENOENT)
-				fail("unlink(%s)=[%d][%s]", tmpa, errno, strerror(errno));
+			fatal(uxunlink, tmpa);
 
 			// If it is no longer in the closure, also delete the symlink
 			int kcmp(const void * K, const void * A)
@@ -341,7 +329,7 @@ static int regular_rewrite(ff_file * ff)
 			if(bsearch(&canhash, ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), kcmp) == 0)
 			{
 				snprintf(tmpa, sizeof(tmpa), "%s/%u", ff->closure_gns_dir, canhash);
-				fatal_os(unlink, tmpa);
+				fatal(xunlink, tmpa);
 			}
 		}
 	}
@@ -388,21 +376,18 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, char * co
 	else
 	{
 		// open the file
-		if((fd = open(in_path->abs, O_RDONLY)) == -1)
-			fail("open(%s)=[%d][%s]", in_path->abs, errno, strerror(errno));
+		fatal(xopen, in_path->abs, O_RDONLY, &fd);
 
 		// snarf the file
 		struct stat statbuf;
-		fatal_os(fstat, fd, &statbuf);
-
+		fatal(xfstat, fd, &statbuf);
 		fatal(xmalloc, &b, statbuf.st_size + 2);
-		ssize_t r = 0;
-		if((r = read(fd, b, statbuf.st_size)) != statbuf.st_size)
-			fail("read(%s,%d)=%d [%d][%s]", in_path->abs, (int)statbuf.st_size, (int)r, errno, strerror(errno));
+		fatal(axread, fd, b, statbuf.st_size, 0);
 
+		// parse the file
 		fatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff, nofile, nofilel);
 
-		if(ff == 0)
+		if(*ff == 0)
 		{
 			fail("");
 		}

@@ -23,7 +23,7 @@
 #include "lwutil.h"
 
 #include "global.h"
-#include "xmem.h"
+#include "xlinux.h"
 #include "log.h"
 
 ///

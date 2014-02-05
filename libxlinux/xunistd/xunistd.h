@@ -33,6 +33,17 @@
 int xread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
 	__attribute__((nonnull(2)));
 
+/// xxread
+//
+// SUMMARY
+//  proxy for read that also fails when count != actual
+//
+// PARAMETERS
+//  [bytes] - returns the number of bytes read
+//
+int axread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
+	__attribute__((nonnull(2)));
+
 /// xwrite
 //
 // SUMMARY
@@ -78,11 +89,37 @@ int xclose(int fd);
 int ixclose(int * const restrict fd)
 	__attribute__((nonnull));
 
-/// xread
+/// xsymlink
 //
 // SUMMARY
-//  proxy for read
+//  proxy for symlink
 //
+int xsymlink(const char * restrict target, const char * restrict linkpath)
+	__attribute__((nonnull));
+
+/// uxsymlink
+//
+// SUMMARY
+//  proxy for symlink which only fails when errno != EEXIST
+//
+int uxsymlink(const char * restrict target, const char * restrict linkpath)
+	__attribute__((nonnull));
+
+/// xunlink
+//
+// SUMMARY
+//  proxy for unlink
+//
+int xunlink(const char * restrict pathname)
+	__attribute__((nonnull));
+
+/// uxunlink
+//
+// SUMMARY
+//  proxy for unlink that fails only when errno != ENOENT
+//
+int uxunlink(const char * restrict pathname)
+	__attribute__((nonnull));
 
 #undef restrict
 #endif

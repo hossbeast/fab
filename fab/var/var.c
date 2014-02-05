@@ -28,7 +28,7 @@
 #include "ffn.h"
 #include "lwutil.h"
 
-#include "xmem.h"
+#include "xlinux.h"
 #include "global.h"
 #include "macros.h"
 
