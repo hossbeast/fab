@@ -121,5 +121,40 @@ int xunlink(const char * restrict pathname)
 int uxunlink(const char * restrict pathname)
 	__attribute__((nonnull));
 
+/// xfork
+//
+// SUMMARY
+//  proxy for fork
+//
+int xfork(pid_t * const restrict pid);
+
+/// xdup
+//
+// SUMMARY
+//  proxy for dup
+//
+int xdup(int oldfd);
+
+/// xdup2
+//
+// SUMMARY
+//  proxy for dup2
+//
+int xdup2(int oldfd, int newfd);
+
+/// xsetresuid
+//
+// SUMMARY
+//  proxy for setresuid
+//
+int xsetresuid(uid_t ruid, uid_t euid, uid_t suid);
+
+/// xsetresgid
+//
+// SUMMARY
+//  proxy for setresgid
+//
+int xsetresgid(gid_t rgid, gid_t egid, gid_t sgid);
+
 #undef restrict
 #endif

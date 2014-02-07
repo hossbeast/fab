@@ -33,6 +33,7 @@
 #include "identity.h"
 #include "enclose.h"
 #include "var.h"
+#include "log.h"
 
 #include "global.h"
 #include "xlinux.h"
@@ -364,59 +365,50 @@ int fml_exec(ts * const restrict ts, int num)
 
 	// create tmp file for the cmd
 	fatal(psprintf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/fml/%d/cmd", g_params.pid, num);
-	if((ts->cmd_fd = open(ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG)) == -1)
-		fail("open(%s)=[%d][%s]", ts->cmd_path->s, errno, strerror(errno));
+	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG, &ts->cmd_fd);
 
 	// write the cmd to the tmp file
-	if(write(ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l) == -1)
-		fail("write failed : [%d][%s]", errno, strerror(errno));
-
-	close(ts->cmd_fd);
+	fatal(xwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l, 0);
+	fatal(xclose, ts->cmd_fd);
 
 	// create tmp file to capture stdout, remain-through-exec
 	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/fml/%d/out", g_params.pid, num);
-	if((ts->stdo_fd = open(ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
-		fail("open(%s)=[%d][%s]", ts->stdo_path->s, errno, strerror(errno));
+	fatal(xopen_mode, ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &ts->stdo_fd);
 
 	// create tmp file to capture stderr, remain-through-exec
 	fatal(psprintf, &ts->stde_path, XQUOTE(FABTMPDIR) "/pid/%d/fml/%d/err", g_params.pid, num);
-	if((ts->stde_fd = open(ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
-		fail("open(%s)=[%d][%s]", ts->stde_path->s, errno, strerror(errno));
+	fatal(xopen_mode, ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &ts->stde_fd);
 
 	// fork off the child
 	ts->pid = 0;
-	if((ts->pid = fork()) == -1)
-		fail("fork failed");
+	fatal(xfork, &ts->pid);
 
 	if(ts->pid == 0)
 	{
 		// reopen stdin
-		close(0);
-		if(open("/dev/null", O_RDONLY) != 0)
-			fail("open(/dev/stderr)=[%d][%s]", errno, strerror(errno));
+		fatal(xclose, 0);
+		fatal(xopen, "/dev/null", O_RDONLY, 0);
 
 		// save stdout
-		if(dup2(1, 501) == -1)
-			fail("dup2 failed : [%d][%s]", errno, strerror(errno));
+		fatal(xdup2, 1, 501);
 
 		// redirect stdout
-		if(dup2(ts->stdo_fd, 1) == -1)
-			fail("dup2 failed : [%d][%s]", errno, strerror(errno));
+		fatal(xdup2, ts->stdo_fd, 1);
 
 		// save stderr
-		if(dup2(2, 502) == -1)
-			fail("dup2 failed : [%d][%s]", errno, strerror(errno));
+		fatal(xdup2, 2, 502);
 
 		// redirect stderr
-		if(dup2(ts->stde_fd, 2) == -1)
-			fail("dup2 failed : [%d][%s]", errno, strerror(errno));
+		fatal(xdup2, ts->stde_fd, 2);
 
 		// irretrievably drop fabsys:fabsys identity
-		fatal_os(setresuid, g_params.ruid, g_params.ruid, g_params.ruid);
-		fatal_os(setresgid, g_params.rgid, g_params.rgid, g_params.rgid);
+		fatal(xsetresuid, g_params.ruid, g_params.ruid, g_params.ruid);
+		fatal(xsetresgid, g_params.rgid, g_params.rgid, g_params.rgid);
 
 		// exec doesnt return
-		fatal_os(execl, ts->cmd_path->s, ts->cmd_path->s, (void*)0);
+		execl(ts->cmd_path->s, ts->cmd_path->s, (void*)0);
+
+		sysfatality("execl");
 	}
 
 	finally : coda;

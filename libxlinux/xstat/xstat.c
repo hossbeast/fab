@@ -71,3 +71,10 @@ finally:
 	XAPI_INFO("fd", "%s", fd);
 coda;
 }
+
+int xfutimens(int fd, const struct timespec times[2])
+{
+	sysfatal(futimens, fd, times);
+
+	finally : coda;
+}

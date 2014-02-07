@@ -20,7 +20,11 @@
 
 #include "xapi/internal.h"
 
-#include "xmem.h"
+void xfree(void * v)
+{
+	free(*(void**)v);
+	*(void**)v = 0;
+}
 
 void callstack_free()
 {

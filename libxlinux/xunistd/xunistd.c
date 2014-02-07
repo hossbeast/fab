@@ -124,7 +124,48 @@ int xunlink(const char * pathname)
 int uxunlink(const char * pathname)
 {
 	if(unlink(pathname) != 0 && errno != ENOENT)
-		fatality("unlink");
+		sysfatality("unlink");
+
+	finally : coda;
+}
+
+int xfork(pid_t * r)
+{
+	if(r && (((*r) = fork()) == -1))
+		sysfatality("fork");
+	
+	else if(fork() == -1)
+		sysfatality("fork");
+
+	finally : coda;
+}
+
+int xdup(int oldfd)
+{
+	if(dup(oldfd) == -1)
+		sysfatality("dup");
+
+	finally : coda;
+}
+
+int xdup2(int oldfd, int newfd)
+{
+	if(dup2(oldfd, newfd) == -1)
+		sysfatality("dup2");
+
+	finally : coda;
+}
+
+int xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
+{
+	sysfatal(setresuid, ruid, euid, suid);
+
+	finally : coda;
+}
+
+int xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
+{
+	sysfatal(setresgid, rgid, egid, sgid);
 
 	finally : coda;
 }

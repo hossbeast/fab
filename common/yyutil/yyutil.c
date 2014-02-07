@@ -200,7 +200,7 @@ void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * cons
 	}
 	else			// called from scanner
 	{
-		xtra->r = (int)(intptr_t)scanner;
+		xtra->r = 1;
 	}
 
 	// save the error string

@@ -29,6 +29,13 @@
 //
 int xopendir(const char * name, DIR ** dd);
 
+/// uxopendir
+//
+// SUMMARY
+//  proxy for opendir that fails only when errno != ENOENT
+//
+int uxopendir(const char * name, DIR ** dd);
+
 /// xreaddir_r
 //
 // SUMMARY

@@ -23,7 +23,10 @@
 
 int API xopen(const char * path, int flags, int * const fd)
 {
-	if((*fd = open(path, flags)) == -1)
+	if(fd && (*fd = open(path, flags)) == -1)
+		sysfatality("open");
+
+	else if(open(path, flags) == -1)
 		sysfatality("open");
 
 finally:
@@ -48,7 +51,10 @@ coda;
 
 int API xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 {
-	if((*fd = open(path, flags, mode)) == -1)
+	if(fd && (*fd = open(path, flags, mode)) == -1)
+		sysfatality("open");
+
+	else if(open(path, flags, mode) == -1)
 		sysfatality("open");
 
 finally:

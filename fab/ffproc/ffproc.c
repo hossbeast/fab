@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
 
 #include "ffproc.h"
 
@@ -25,6 +26,7 @@
 #include "dep.h"
 #include "args.h"
 #include "params.h"
+#include "log.h"
 
 #include "global.h"
 #include "path.h"
@@ -101,16 +103,10 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 					fl++;
 				}
 
-				if(f == inv->s)
-				{
-					fail("invalid invocation string : '%.*s'", inv->l, inv->s);
-				}
-				else
-				{
-					pl -= fl;
-					f++;
-					fl--;
-				}
+				// assuming f != inv->s (should be implied by the grammar)
+				pl -= fl;
+				f++;
+				fl--;
 
 				for(i = 0; i < g_args.invokedirsl; i++)
 				{
@@ -129,7 +125,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 
 				if(i == g_args.invokedirsl)
 				{
-					fail("invocation not found %.*s", inv->l, inv->s);
+					fail(FAB_NOINVOKE, "invocation not found %.*s", inv->l, inv->s);
 				}
 			}
 			else

@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/types.h>
@@ -89,35 +90,31 @@ static void strmeasure(ff_node* n)
 	}
 }
 
+static int parse_generator(ff_node * n, generator_parser * gp)
+{
+	fatal(generator_parse, gp, n->text, 0, &n->generator);
+
+finally :
+	XAPI_INFO("location", "[%3d,%3d - %3d,%3d]", n->loc.f_lin + 1, n->loc.f_col + 1, n->loc.l_lin + 1, n->loc.l_col + 1);
+coda;
+}
+
 static int parse_generators(ff_node* n, generator_parser * gp)
 {
 	if(n)
 	{
 		if(n->type == FFN_GENERATOR)
-		{
-			if(generator_parse(gp, n->text, 0, &n->generator) != 0)
-			{
-				fail("failed to parse '%s' @ [%3d,%3d - %3d,%3d]"
-					, n->text
-					, n->loc.f_lin + 1
-					, n->loc.f_col + 1
-					, n->loc.l_lin + 1
-					, n->loc.l_col + 1
-				);
-			}
-		}
+			fatal(parse_generator, n, gp);
 
 		int x;
 		for(x = 0; x < n->listl; x++)
 		{
-			if(parse_generators(n->list[x], gp) != 0)
-				qfail();
+			fatal(parse_generators, n->list[x], gp);
 		}
 
 		for(x = 0; x < sizeof(n->nodes_owned) / sizeof(n->nodes_owned[0]); x++)
 		{
-			if(parse_generators(n->nodes_owned[x], gp) != 0)
-				qfail();
+			fatal(parse_generators, n->nodes_owned[x], gp);
 		}
 	}
 
@@ -248,8 +245,7 @@ int ffn_postprocess(ff_node * const ffn, generator_parser * const gp)
 	strmeasure(ffn);
 
 	// parse generator strings
-	if(parse_generators(ffn, gp) != 0)
-		qfail();
+	fatal(parse_generators, ffn, gp);
 
 	finally : coda;
 }

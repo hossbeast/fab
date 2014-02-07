@@ -27,6 +27,16 @@ finally:
 coda;
 }
 
+int API uxopendir(const char * name, DIR ** dd)
+{
+	if(((*dd) = opendir(name)) == 0 && errno != ENOENT)
+		sysfatality("opendir");
+
+finally:
+	XAPI_INFO("path", "%s", name);
+coda;
+}
+
 int API xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
 {
 	int r;

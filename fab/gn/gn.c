@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
 #include <unistd.h>
 #include <alloca.h>
 #include <fcntl.h>
@@ -145,7 +146,7 @@ static int reconcile_completion(gn * const gn, map * const ws)
 {
 	char tmp[3][512];
 
-	int fd = 0;
+	int fd = -1;
 	DIR * dh = 0;
 	struct timespec times[2] = { { .tv_nsec = UTIME_NOW } , { .tv_nsec = UTIME_NOW } };
 
@@ -155,23 +156,17 @@ static int reconcile_completion(gn * const gn, map * const ws)
 		fatal(identity_assume_fabsys);
 
 		// create noforce files, thereby marking this file as up-to-date
-		if((fd = open(gn->noforce_invalid_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-			fail("open(%s)=[%d][%s]", gn->noforce_invalid_path, errno, strerror(errno));
-		fatal_os(futimens, fd, times);
-		fatal_os(close, fd);
-		fd = 0;
+		fatal(xopen_mode, gn->noforce_invalid_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+		fatal(xfutimens, fd, times);
+		fatal(ixclose, &fd);
 
-		if((fd = open(gn->noforce_ff_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-			fail("open(%s)=[%d][%s]", gn->noforce_ff_path, errno, strerror(errno));
-		fatal_os(futimens, fd, times);
-		fatal_os(close, fd);
-		fd = 0;
+		fatal(xopen_mode, gn->noforce_ff_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+		fatal(xfutimens, fd, times);
+		fatal(ixclose, &fd);
 
-		if((fd = open(gn->noforce_needs_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)
-			fail("open(%s)=[%d][%s]", gn->noforce_needs_path, errno, strerror(errno));
-		fatal_os(futimens, fd, times);
-		fatal_os(close, fd);
-		fd = 0;
+		fatal(xopen_mode, gn->noforce_needs_path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+		fatal(xfutimens, fd, times);
+		fatal(ixclose, &fd);
 
 		if(gn->designate == GN_DESIGNATION_SECONDARY)
 		{
@@ -182,14 +177,13 @@ static int reconcile_completion(gn * const gn, map * const ws)
 				fatal(map_set, ws, MM(gn->needs.e[x]->B->path->can_hash), MM(gn->needs.e[x]), 0);
 
 			// delete existing links which no longer apply
-			if((dh = opendir(gn->ineed_skipweak_dir)) == 0)
-				fail("opendir(%s)=[%d][%s]", gn->ineed_skipweak_dir, errno, strerror(errno));
+			fatal(xopendir, gn->ineed_skipweak_dir, &dh);
 
 			struct dirent ent;
 			struct dirent * entp = 0;
 			while(1)
 			{
-				fatal_os(readdir_r, dh, &ent, &entp);
+				fatal(xreaddir_r, dh, &ent, &entp);
 
 				if(!entp)
 					break;
@@ -199,14 +193,13 @@ static int reconcile_completion(gn * const gn, map * const ws)
 					// get the canhash for this gn
 					uint32_t canhash = 0;
 					if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) != 0)
-						fail("unexpected file %s/%s", gn->ineed_skipweak_dir, entp->d_name);
+						fail(FAB_BADCACHE, "unexpected file %s/%s", gn->ineed_skipweak_dir, entp->d_name);
 
 					if(map_get(ws, MM(canhash)) == 0)
 					{
 						// remove link
 						snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/ineed_skipweak/%u", gn->ineed_skipweak_dir, entp->d_name, gn->path->can_hash);
-						if(unlink(tmp[0]) != 0 && errno != ENOENT)
-							fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+						fatal(uxunlink, tmp[0]);
 					}
 				}
 			}
@@ -224,14 +217,12 @@ static int reconcile_completion(gn * const gn, map * const ws)
 						snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, need);
 						snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ineed_skipweak/%u", g_params.init_fabfile_path->can_hash, gn->path->can_hash, need);
 
-						if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
-							fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+						fatal(uxsymlink, tmp[0], tmp[1]);
 
 						snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
 						snprintf(tmp[1], sizeof(tmp[1]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/ifeed_skipweak/%u", g_params.init_fabfile_path->can_hash, need, gn->path->can_hash);
 
-						if(symlink(tmp[0], tmp[1]) != 0 && errno != EEXIST)
-							fail("symlink(%s,%s)=[%d][%s]", tmp[0], tmp[1], errno, strerror(errno));
+						fatal(uxsymlink, tmp[0], tmp[1]);
 					}
 				}
 			}
@@ -249,8 +240,7 @@ static int reconcile_completion(gn * const gn, map * const ws)
 	}
 
 finally:
-	if(fd)
-		close(fd);
+	fatal(ixclose, &fd);
 	if(dh)
 		closedir(dh);
 coda;
@@ -421,7 +411,7 @@ int gn_edge_add(
 
 		// error check
 		if(gnb->path->is_nofile && !gna->path->is_nofile)
-			fail("file-backed node %s may not depend on non-file-backed node %s", gna->path->can, gnb->path->can);
+			fail(FAB_BADPLAN, "file-backed node %s may not depend on non-file-backed node %s", gna->path->can, gnb->path->can);
 
 		relation * rel = 0;
 
@@ -715,31 +705,26 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 			// force action on this node 
 			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/noforce_invalid", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
 
-			if(unlink(tmp[0]) != 0 && errno != ENOENT)
-				fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+			fatal(uxunlink, tmp[0]);
 
 			// delete discovery results for this node, if any
 			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/dscv", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
 
-			if(unlink(tmp[0]) != 0 && errno != ENOENT)
-				fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+			fatal(uxunlink, tmp[0]);
 
 			if(gn->dscv_block)
 				fatal(depblock_close, gn->dscv_block);
 
 			// propagate to consequent nodes
-			if((dh = opendir(gn->ifeed_skipweak_dir)) == 0)
-			{
-				if(errno != ENOENT)
-					fail("opendir(%s)=[%d][%s]", gn->ifeed_skipweak_dir, errno, strerror(errno));
-			}
-			else
+			fatal(uxopendir, gn->ifeed_skipweak_dir, &dh);
+
+			if(dh)
 			{
 				struct dirent ent;
 				struct dirent * entp = 0;
 				while(1)
 				{
-					fatal_os(readdir_r, dh, &ent, &entp);
+					fatal(xreaddir_r, dh, &ent, &entp);
 
 					if(!entp)
 						break;

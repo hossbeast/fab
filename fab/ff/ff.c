@@ -108,7 +108,48 @@ static int ff_lvalstr(int token, void * restrict lval, struct yyu_extra * restri
 	return 0;
 }
 
-static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel)
+static int reduce(int (*parser)(void *, parse_param*), parse_param * pp, int fail_unless_reduce)
+{
+	// error from the parser means failure to reduce
+	int r = parser(pp->scanner, pp);
+
+	if(r == 2)
+	{
+		// memory exhaustion error from the parser
+		fatality("yyparse", perrtab_SYS, ENOMEM, "%s", pp->errorstring);
+	}
+	else if(fail_unless_reduce)
+	{
+		if(pp->r > 0)
+		{
+			// error from the scanner
+			fatality("yyparse", perrtab_FAB, FAB_ILLBYTE, "%s", pp->errorstring);
+		}
+		else if(r == 1 || pp->r < 0)
+		{
+			// failure to reduce
+			fatality("yyparse", perrtab_FAB, FAB_SYNTAX, "%s", pp->errorstring);
+		}
+	}
+
+finally :
+	if(XAPI_UNWINDING)
+	{
+		XAPI_INFO("last", "%s", pp->tokenstring);
+	  XAPI_INFO("loc", "[%d,%d-%d,%d]"
+	  	, pp->last_loc.f_lin + 1
+	  	, pp->last_loc.f_col + 1
+	  	, pp->last_loc.l_lin + 1
+	  	, pp->last_loc.l_col + 1
+	  );
+	#if DEBUG
+	    XAPI_INFO("scanline", "%d", pp->last_line);
+	#endif
+	}
+coda;
+}
+
+static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel, const int fail_unless_reduce)
 {
 	parse_param pp = {
 	    .log_token		= ff_log_token
@@ -120,7 +161,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	};
 
 #if DEBUG
-	// causes yyerror to include the scanner line number where the last token was lexed
+	// causes yyerror to include the scanner line number in FFTOKN output
 	pp.output_line = 1;
 #endif
 
@@ -198,33 +239,17 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	// make available to the lexer
 	ff_yyset_extra(&pp, p->p);
 
-	// return value from yyparse - whether the input was reduced according to the grammar
-	int r = 0;
+	// invoke the appropriate parser, raise errors as needed
 	if(ff->type == FFT_DDISC)
-	{
-		r = ff_dsc_yyparse(p->p, &pp);	// parse with ff/ff.dsc.y
-	}
+		fatal(reduce, ff_dsc_yyparse, &pp, fail_unless_reduce);
 	else if(ff->type == FFT_VAREXPR)
-	{
-		r = ff_var_yyparse(p->p, &pp);	// parse with ff/ff.var.y
-	}
+		fatal(reduce, ff_var_yyparse, &pp, fail_unless_reduce);
 	else if(ff->type == FFT_LISTEXPR)
-	{
-		r = ff_list_yyparse(p->p, &pp);	// parse with ff/ff.list.y
-	}
-	else
-	{
-		r = ff_yyparse(p->p, &pp);			// parse with ff/ff.y
-	}
+		fatal(reduce, ff_list_yyparse, &pp, fail_unless_reduce);
+	else if(ff->type == FFT_VAREXPR)
+		fatal(reduce, ff_yyparse, &pp, fail_unless_reduce);
 
-	// in addition, pp.r is nonzero whenever yyerror has been called, which covers a few more
-	// cases than failure-to-reduce, such as when the scanner encounters invalid byte(s)
-	r |= pp.r;
-
-	// cleanup state for this parse
-	ff_yy_delete_buffer(state, p->p);
-
-	if(r != 0)
+	if(ff)
 	{
 		ff->ffn = pp.ffn;
 
@@ -255,6 +280,8 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	}
 
 finally :
+	// cleanup state for this parse
+	ff_yy_delete_buffer(state, p->p);
 	yyu_extra_destroy(&pp);
 coda;
 }
@@ -385,13 +412,9 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, char * co
 		fatal(axread, fd, b, statbuf.st_size, 0);
 
 		// parse the file
-		fatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff, nofile, nofilel);
+		fatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff, nofile, nofilel, 1);
 
-		if(*ff == 0)
-		{
-			fail("");
-		}
-
+		// save it
 		fatal(map_set, ff_files.by_canpath, in_path->can, in_path->canl, ff, sizeof(*ff), 0);
 	}
 
@@ -406,7 +429,7 @@ int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const 
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/dscv", "%s", fp);
-	fatal(parse, p, b, sz, pth, dscv_gn, 0, 0, ff, 0, 0);
+	fatal(parse, p, b, sz, pth, dscv_gn, 0, 0, ff, 0, 0, 0);
 
 finally:
 	path_free(pth);
@@ -417,12 +440,7 @@ int ff_var_parse(const ff_parser * const p, char* b, int sz, int id, ff_file** c
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/cmdline/v", "%d", id);
-	fatal(parse, p, b, sz, pth, 0, &id, 0, ff, 0, 0);
-
-	if(*ff == 0)
-	{
-		fail("");
-	}
+	fatal(parse, p, b, sz, pth, 0, &id, 0, ff, 0, 0, 1);
 
 finally:
 	path_free(pth);
@@ -433,12 +451,7 @@ int ff_list_parse(const ff_parser * const p, char* b, int sz, int id, ff_file **
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/cmdline/l", "%d", id);
-	fatal(parse, p, b, sz, pth, 0, 0, &id, ff, 0, 0);
-
-	if(*ff == 0)
-	{
-		fail("");
-	}
+	fatal(parse, p, b, sz, pth, 0, 0, &id, ff, 0, 0, 1);
 
 finally:
 	path_free(pth);

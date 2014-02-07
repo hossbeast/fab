@@ -175,20 +175,19 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <quoteword>[^\\"\x00-\x1F\x7F-\xFF]+										{ return LEX(QWORD, 0); }
 <quoteword>["]																					{ POPSTATE; LOCWRITE; }
 
-<*>[\x00]																								{
+<*>[\x00-\x1F\x7F-\xFF]																	{
 																													while(yyextra->states_n)
 																														POPSTATE;
-																													return 0;
-																												}
-<*>[\x01-\x1F\x7F-\xFF]																	{
 																													char space[64];
-																													snprintf(space, sizeof(space), "unknown character : (0x%02hhx)", yytext[0]);
+																													snprintf(space, sizeof(space), "unexpected byte : (0x%02hhx)", yytext[0]);
 																													ff_yyerror(0, 0, yyextra, space);
 																													return 0;	/* return end-of-input */
 																												}
 <*>[\x20-\x7E]																					{
+																													while(yyextra->states_n)
+																														POPSTATE;
 																													char space[64];
-																													snprintf(space, sizeof(space), "unknown character : '%1$c'(0x%1$02hhx)", yytext[0]);
+																													snprintf(space, sizeof(space), "unexpected character : '%1$c'(0x%1$02hhx)", yytext[0]);
 																													ff_yyerror(0, 0, yyextra, space);
 																													return 0; /* return end-of-input */
 																												}

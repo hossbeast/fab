@@ -58,5 +58,13 @@ int xfstat(int fd, struct stat * restrict buf)
 int uxfstat(int fd, struct stat * restrict buf)
 	__attribute__((nonnull));
 
+/// xfutimens
+//
+// SUMMARY
+//  proxy for futimens
+//
+int xfutimens(int fd, const struct timespec times[2])
+	__attribute__((nonnull));
+
 #undef restrict
 #endif
