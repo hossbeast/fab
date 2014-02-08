@@ -114,14 +114,14 @@ int API uxsymlink(const char * target, const char * linkpath)
 	finally : coda;
 }
 
-int xunlink(const char * pathname)
+int API xunlink(const char * pathname)
 {
 	sysfatalize(unlink, pathname);
 
 	finally : coda;
 }
 
-int uxunlink(const char * pathname)
+int API uxunlink(const char * pathname)
 {
 	if(unlink(pathname) != 0 && errno != ENOENT)
 		sysfatality("unlink");
@@ -129,7 +129,7 @@ int uxunlink(const char * pathname)
 	finally : coda;
 }
 
-int xfork(pid_t * r)
+int API xfork(pid_t * r)
 {
 	if(r && (((*r) = fork()) == -1))
 		sysfatality("fork");
@@ -140,7 +140,7 @@ int xfork(pid_t * r)
 	finally : coda;
 }
 
-int xdup(int oldfd)
+int API xdup(int oldfd)
 {
 	if(dup(oldfd) == -1)
 		sysfatality("dup");
@@ -148,7 +148,7 @@ int xdup(int oldfd)
 	finally : coda;
 }
 
-int xdup2(int oldfd, int newfd)
+int API xdup2(int oldfd, int newfd)
 {
 	if(dup2(oldfd, newfd) == -1)
 		sysfatality("dup2");
@@ -156,16 +156,27 @@ int xdup2(int oldfd, int newfd)
 	finally : coda;
 }
 
-int xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
+int API xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
-	sysfatal(setresuid, ruid, euid, suid);
+	sysfatalize(setresuid, ruid, euid, suid);
 
 	finally : coda;
 }
 
-int xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
+int API xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
 {
-	sysfatal(setresgid, rgid, egid, sgid);
+	sysfatalize(setresgid, rgid, egid, sgid);
 
 	finally : coda;
 }
+
+int API xeuidaccess(const char * pathname, int mode, int * const r)
+{
+	if(r && ((*r) = euidaccess(pathname, mode)) == -1 && errno != ENOENT)
+		sysfatality("euidaccess");
+		
+	else if(euidaccess(pathname, mode) == -1)
+		sysfatality("euidaccess");
+
+	finally : coda;
+}	

@@ -72,9 +72,9 @@ finally:
 coda;
 }
 
-int xfutimens(int fd, const struct timespec times[2])
+int API xfutimens(int fd, const struct timespec times[2])
 {
-	sysfatal(futimens, fd, times);
+	sysfatalize(futimens, fd, times);
 
 	finally : coda;
 }

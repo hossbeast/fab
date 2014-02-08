@@ -704,12 +704,10 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 
 			// force action on this node 
 			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/noforce_invalid", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
-
 			fatal(uxunlink, tmp[0]);
 
 			// delete discovery results for this node, if any
 			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/dscv", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
-
 			fatal(uxunlink, tmp[0]);
 
 			if(gn->dscv_block)
@@ -743,7 +741,7 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 							}
 							else
 							{
-								fail("unlink(%s)=[%d][%s]", tmp[0], errno, strerror(errno));
+								sysfatality("unlink");
 							}
 						}
 					}
@@ -845,45 +843,34 @@ int gn_finalize(int reconcile)
 				fatal(identity_assume_user);
 
 				gn->force_invalid = 1;
-				if(euidaccess(gn->noforce_invalid_path, F_OK) == 0)
+				int ok = 0;
+				fatal(xeuidaccess, gn->noforce_invalid_path, F_OK, &ok);
+				if(ok == 0)
 				{
 					gn->force_invalid = 0;
 				}
-				else if(errno != ENOENT)
-				{
-					fail("access(%s)=[%d][%s]", gn->path->can, errno, strerror(errno));
-				}
 
 				gn->force_ff = 1;
-				if(euidaccess(gn->noforce_ff_path, F_OK) == 0)
+				fatal(xeuidaccess, gn->noforce_ff_path, F_OK, &ok);
+				if(ok == 0)
 				{
 					gn->force_ff = 0;
 				}
-				else if(errno != ENOENT)
-				{
-					fail("access(%s)=[%d][%s]", gn->noforce_ff_path, errno, strerror(errno));
-				}
 
 				gn->force_needs = 1;
-				if(euidaccess(gn->noforce_needs_path, F_OK) == 0)
+				fatal(xeuidaccess, gn->noforce_needs_path, F_OK, &ok);
+				if(ok == 0)
 				{
 					gn->force_needs = 0;
-				}
-				else if(errno != ENOENT)
-				{
-					fail("access(%s)=[%d][%s]", gn->noforce_needs_path, errno, strerror(errno));
 				}
 
 				if(gn->designate == GN_DESIGNATION_SECONDARY)
 				{
 					gn->force_noexists = 1;
-					if(euidaccess(gn->path->can, F_OK) == 0)
+					fatal(xeuidaccess, gn->path->can, F_OK, &ok);
+					if(ok == 0)
 					{
 						gn->force_noexists = 0;
-					}
-					else if(errno != ENOENT)
-					{
-						fail("access(%s)=[%d][%s]", gn->path->can, errno, strerror(errno));
 					}
 				}
 

@@ -1,13 +1,21 @@
 #!/bin/bash
 
-# A build script made by fab v0.4.2.0
-#  fab is free software released under the GNU General Public License.
+# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
 #
-#  As a special exception, build scripts made by fab v0.4.2.0 (including this
-#  build script) are excluded from the license covering fab itself, even
-#  if substantial portions of the fab source code are copied verbatim into
-#  the build script. You may create a larger work that contains part or all
-#  of the build script and distribute that work under terms of your choice
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>.
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -49,19 +57,24 @@ fml_1_0()
   [[ $lwopdir ]] || local lwopdir='/usr/lib/listwise'
   
 	install -d																				$destdir/$libdir
-	install	liblistwise/liblistwise.so													$destdir/$libdir/liblistwise.so.0.1
-	ln -vfs liblistwise.so.0.1																$destdir/$libdir/liblistwise.so
-	install -d																				$destdir/$incdir/listwise
+	install liblistwise/liblistwise.so													$destdir/$libdir/liblistwise.so
 	install liblistwise/listwise.h							$destdir/$incdir/listwise.h
-	install liblistwise/listwise/operator.h			$destdir/$incdir/listwise/operator.h
-	install liblistwise/listwise/generator.h 	$destdir/$incdir/listwise/generator.h
-	install liblistwise/listwise/ops.h					$destdir/$incdir/listwise/ops.h
-	install liblistwise/listwise/lstack.h 			$destdir/$incdir/listwise/lstack.h
-	install liblistwise/listwise/object.h 			$destdir/$incdir/listwise/object.h
+
+	install -d																				$destdir/$incdir/listwise
+	install liblistwise/listwise/fs.h						$destdir/$incdir/listwise
+	install liblistwise/listwise/generator.h		$destdir/$incdir/listwise
+	install liblistwise/listwise/internal.h			$destdir/$incdir/listwise
+	install liblistwise/listwise/iterate.h			$destdir/$incdir/listwise
+	install liblistwise/listwise/lwx.h					$destdir/$incdir/listwise
+	install liblistwise/listwise/object.h				$destdir/$incdir/listwise
+	install liblistwise/listwise/operator.h			$destdir/$incdir/listwise
+	install liblistwise/listwise/ops.h					$destdir/$incdir/listwise
+	install liblistwise/listwise/re.h						$destdir/$incdir/listwise
+	install liblistwise/listwise/xtra.h					$destdir/$incdir/listwise
 
 	rm -rf																						$destdir/$lwopdir 2>/dev/null
 	install -d																				$destdir/$lwopdir
-	for x in liblistwise/op/h/h.so liblistwise/op/r/r.so liblistwise/op/xm/xm.so liblistwise/op/sn/sn.so liblistwise/op/rp/rp.so liblistwise/op/xs/xs.so liblistwise/op/xsf/xsf.so liblistwise/op/xmf/xmf.so liblistwise/op/fn/fn.so liblistwise/op/bn/bn.so liblistwise/op/dn/dn.so liblistwise/op/m/m.so liblistwise/op/z/z.so liblistwise/op/rx/rx.so liblistwise/op/xch/xch.so liblistwise/op/j/j.so liblistwise/op/dj/dj.so liblistwise/op/cp/cp.so liblistwise/op/-X/-X.so liblistwise/op/s/s.so liblistwise/op/pop/pop.so liblistwise/op/shift/shift.so liblistwise/op/u/u.so liblistwise/op/d/d.so liblistwise/op/w/w.so liblistwise/op/ls/ls.so liblistwise/op/o/o.so liblistwise/op/c/c.so liblistwise/op/uu/uu.so liblistwise/op/v/v.so liblistwise/op/y/y.so liblistwise/op/ss/ss.so; do \
+	for x in liblistwise/op/wz/wz.so liblistwise/op/z/z.so liblistwise/op/o/o.so liblistwise/op/vf/vf.so liblistwise/op/wvp/wvp.so liblistwise/op/sort/sort.so liblistwise/op/w/w.so liblistwise/op/shift/shift.so liblistwise/op/dj/dj.so liblistwise/op/uu/uu.so liblistwise/op/u/u.so liblistwise/op/bn/bn.so liblistwise/op/re/re.so liblistwise/op/rp/rp.so liblistwise/op/f/f.so liblistwise/op/ls/ls.so liblistwise/op/lx/lx.so liblistwise/op/hl/hl.so liblistwise/op/rb/rb.so liblistwise/op/j/j.so liblistwise/op/wv/wv.so liblistwise/op/-X/-X.so liblistwise/op/up/up.so liblistwise/op/cp/cp.so liblistwise/op/p/p.so liblistwise/op/c/c.so liblistwise/op/r/r.so liblistwise/op/xch/xch.so liblistwise/op/t/t.so liblistwise/op/s/s.so liblistwise/op/wvf/wvf.so liblistwise/op/dn/dn.so liblistwise/op/stat/stat.so liblistwise/op/g/g.so liblistwise/op/d/d.so liblistwise/op/vp/vp.so liblistwise/op/can/can.so liblistwise/op/x/x.so liblistwise/op/b/b.so liblistwise/op/C/C.so liblistwise/op/rx/rx.so liblistwise/op/y/y.so liblistwise/op/fn/fn.so liblistwise/op/pop/pop.so liblistwise/op/sx/sx.so liblistwise/op/l/l.so liblistwise/op/v/v.so; do \
 		install $x																			$destdir/$lwopdir
 	done
 
@@ -71,9 +84,65 @@ fml_1_0()
   exit $X
 }
 
+NAMES[2]='@libxlinux.install'
+fml_1_1()
+{
+  exec 1>/dev/null
+  exec 2>&101
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  [[ $incdir ]] || local incdir='/usr/include'
+  
+	install -d																					$destdir/$libdir
+	install libxlinux/libxlinux.so															$destdir/$libdir/libxlinux.so
+	install libxlinux/xlinux.h										$destdir/$incdir/xlinux.h
+
+	install -d																					$destdir/$incdir/xlinux
+	install libxlinux/xlinux/wstdlib/wstdlib.h		$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xdirent/xdirent.h		$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xdlfcn/xdlfcn.h			$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xfcntl/xfcntl.h			$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xftw/xftw.h					$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xgrp/xgrp.h					$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xmman/xmman.h				$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xpwd/xpwd.h					$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xstat/xstat.h				$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xstdlib/xstdlib.h		$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xtime/xtime.h				$destdir/$incdir/xlinux/
+	install libxlinux/xlinux/xunistd/xunistd.h		$destdir/$incdir/xlinux/
+
+
+  X=$?
+  echo 1 1>&99
+  exit $X
+}
+
+NAMES[3]='@xapi.libxapi.install'
+fml_1_2()
+{
+  exec 1>/dev/null
+  exec 2>&102
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  [[ $incdir ]] || local incdir='/usr/include'
+  
+	install -d																$destdir/$libdir
+	install ./common/../xapi/libxapi/libxapi.so											$destdir/$libdir/libxapi.so
+
+	install -d																$destdir/$incdir/xapi
+	install ./common/../xapi/libxapi/xapi/frame.h				$destdir/$incdir/xapi
+
+
+  X=$?
+  echo 2 1>&99
+  exit $X
+}
+
 
 # formulas and names for stage 2
-NAMES[2]='@fab.install'
+NAMES[4]='@fab.install'
 fml_2_0()
 {
   exec 1>/dev/null
@@ -86,16 +155,18 @@ fml_2_0()
   [[ $fabinvokedir ]] || local fabinvokedir='/usr/lib/fab/listwise'
   [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/lib'
   
+	chown fabsys:fabsys		fab/fab
+	chmod u+s 						fab/fab
+	chmod g+s 						fab/fab
 	install -d															$destdir/$bindir
-	install fab/fab												$destdir/$bindir/fab
-	chown fabsys:fabsys											$destdir/$bindir/fab
-	chmod u+s 															$destdir/$bindir/fab
-	chmod g+s 															$destdir/$bindir/fab
-	install fab/gcc-dep								$destdir/$bindir/gcc-dep
+	install fab/fab												$destdir/$bindir
+	install fab/gcc-dep								$destdir/$bindir
 	install -d 															$destdir/$fabcachedir
 	chown fabsys:fabsys											$destdir/$fabcachedir
 	install -d 															$destdir/$fabtmpdir
 	chown fabsys:fabsys											$destdir/$fabtmpdir
+	install -d 															$destdir//var/run/fab
+	chown fabsys:fabsys											$destdir//var/run/fab
 	install -d															$destdir/$fabinvokedir/std
 	install -d															$destdir/$fabinvokedir/std/c
 	install -d															$destdir/$fabinvokedir/std/l
@@ -112,6 +183,26 @@ fml_2_0()
 
   X=$?
   echo 0 1>&99
+  exit $X
+}
+
+NAMES[5]='@xapi.install'
+fml_2_1()
+{
+  exec 1>/dev/null
+  exec 2>&101
+
+  [[ $destdir ]] || local destdir=''
+  [[ $incdir ]] || local incdir='/usr/include'
+  
+	install -d													$destdir/$incdir
+	install ./xapi/xapi.h						$destdir/$incdir
+	install ./xapi/xapi/unwind.h		$destdir/$incdir/xapi
+	install ./xapi/xapi/errcode.h		$destdir/$incdir/xapi
+
+
+  X=$?
+  echo 1 1>&99
   exit $X
 }
 
@@ -155,14 +246,16 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
+  ((SKP+=3))
 else
   # launch stage 1.0
   exec 100>$tmp ; rm -f $tmp ; fml_1_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_1_1 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_1_2 & PIDS[2]=$!
 
   # harvest stage 1.0
   C=0
-  while [[ $C != 1 ]]; do
+  while [[ $C != 3 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -180,20 +273,21 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
+  ((SKP+=2))
 else
   # launch stage 2.0
   exec 100>$tmp ; rm -f $tmp ; fml_2_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_2_1 & PIDS[1]=$!
 
   # harvest stage 2.0
   C=0
-  while [[ $C != 1 ]]; do
+  while [[ $C != 2 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((2+$idx))
+    I=$((4+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))

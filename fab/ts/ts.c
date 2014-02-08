@@ -22,6 +22,7 @@
 #include "ts.h"
 #include "fml.h"
 #include "args.h"
+#include "log.h"
 
 #include "xlinux.h"
 #include "pstring.h"
@@ -250,12 +251,12 @@ void ts_free(ts * ts)
 		ff_xfreeparser(&ts->ffp);
 		ffn_xfree(&ts->ffn);
 
-		pstring_xfree(&ts->cmd_path);
-		pstring_xfree(&ts->cmd_txt);
-		pstring_xfree(&ts->stdo_path);
-		pstring_xfree(&ts->stdo_txt);
-		pstring_xfree(&ts->stde_path);
-		pstring_xfree(&ts->stde_txt);
+		pstring_wfree(&ts->cmd_path);
+		pstring_wfree(&ts->cmd_txt);
+		pstring_wfree(&ts->stdo_path);
+		pstring_wfree(&ts->stdo_txt);
+		pstring_wfree(&ts->stde_path);
+		pstring_wfree(&ts->stde_txt);
 	}
 
 	free(ts);

@@ -92,7 +92,7 @@ $bisonflags	= [ --warnings=error ]
 $cc					= [ gcc ]
 $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 		# include paths
-	[ $dxapi $dlibxapi $dlibxlinux $dliblistwise $dcommon [ $dcommon ~ ls/-d ] ~ s/^/-I ]
+	[ $dxapi $dlibxapi $dlibxlinux $dliblistwise [ $dcommon ~ lsr/c/-d ] ~ s/^/-I ]
 	[ -DXAPI_UNWIND ]
 	[ $dbug $dvel ~ s/1/-O0/y ]					# disable compiler optimizations
 	[ $dbug $dvel ~ j/s/00/-O3/y ]

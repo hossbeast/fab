@@ -26,11 +26,11 @@ $dfab         = [ $*/fab ~ j ]
 $incdirs 			= [ $dliblistwise [ $dliblistwise/listwise ~ j ] ~ s/^/-I ]
 
 # invocations
-+[ $dliblistwise ](-$liblistwise)																							@liblistwise
 +[ $dxapi ](-$libxapi; $dcommon $dxapi)																				@xapi
 +[ $dlibxlinux ](-$libxlinux; $libxapi $dcommon $dxapi)												@libxlinux
-+[ $dlistwise ](-$listwise; $liblistwise $libxapi $incdirs)										@listwise
-+[ $dfab ](-$fab; -$faboplist; $liblistwise $libxapi $incdirs)								@fab
++[ $dliblistwise ](-$liblistwise; $libxapi $libxlinux)												@liblistwise
++[ $dlistwise ](-$listwise; $liblistwise $libxapi $libxlinux $incdirs)				@listwise
++[ $dfab ](-$fab; -$faboplist; $liblistwise $libxapi $libxlinux $incdirs)			@fab
 
 # default target - make everything
 [ @all ] 				: [ @liblistwise.all @listwise.all @xapi.all @libxlinux.all @fab.all ]
@@ -50,6 +50,6 @@ $incdirs 			= [ $dliblistwise [ $dliblistwise/listwise ~ j ] ~ s/^/-I ]
 [ @scripts ]
 {
 	exec 2>/dev/null
-	fab --bslic-fab -j 4 -k [ $*/make64.sh ] @all
-	fab --bslic-fab -j 4 -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
+	fab --bslic-fab -k [ $*/make64.sh ] @all
+	fab --bslic-fab -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 }

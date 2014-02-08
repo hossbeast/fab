@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
+
 #include "listwise.h"
 #include "listwise/xtra.h"
 #include "listwise/object.h"
@@ -162,14 +164,11 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lwx *
 		fatal(lw_reset, stax, staxa, pr);
 		fatal(list_resolve, list->generator_list_node, vmap, gp, stax, staxa, staxp, rawmap, 0);
 
-		pstring_xfree(&gps);
+		pstring_wfree(&gps);
 		fatal(render, (*stax)[pr], &gps);
 
 		generator_xfree(&g);
-		if(generator_parse(gp, gps->s, gps->l, &g) != 0)
-		{
-			fail("failed to parse '%.*s'", gps->l, gps->s);
-		}
+		fatal(generator_parse, gp, gps->s, gps->l, &g);
 
 		fatal(lw_exec, g, gps->s, &(*stax)[pn]);
 	}

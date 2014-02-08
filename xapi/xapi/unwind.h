@@ -131,7 +131,7 @@ when calling non-xapi code, you have a couple of options.
 	} while(0)
 
 // fatality macro for SYS - assumes there is no message
-#define sysfatality(func)																		\
+#define sysfatality(func)																						\
 	fatality(#func, perrtab_SYS, errno, 0)
 
 /*
@@ -238,7 +238,6 @@ XAPI_FINALLY
 	goto XAPI_LEAVE;							\
 XAPI_LEAVE:											\
 	return xapi_frame_exit()
-
 
 /// coda_custom
 //

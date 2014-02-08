@@ -140,13 +140,6 @@ int main(int argc, char** argv)
 	fatal(traverse_init);
 	fatal(ff_mkparser, &ffp);
 
-	// unless LWVOCAL, arrange for liblistwise to write to /dev/null
-	if(!log_would(L_LWVOCAL))
-	{
-		if((listwise_error_fd = open("/dev/null", O_WRONLY)) == -1)
-			fail("open(/dev/null)=[%d][%s]", errno, strerror(errno));
-	}
-
 	// create the rootmap
 	fatal(var_root, &rmap);
 
@@ -247,151 +240,155 @@ int main(int argc, char** argv)
 		for(x = 0; x < g_args.selectorsl; x++)
 			fatal(selector_process, &g_args.selectors[x], x, ffp, smap, &stax, &staxa, pn);
 
-		if(g_args.selectors_arequery)
-			qleave();		// terminate successfully
-
-		fatal(selector_finalize
-			, &fabrications, &fabricationsl
-			, &fabricationxs, &fabricationxsl
-			, &fabricationns, &fabricationnsl
-			, &invalidations, &invalidationsl
-			, &discoveries, &discoveriesl
-			, &inspections, &inspectionsl
-		);
-
-		if(log_would(L_LISTS))
+		if(g_args.selectors_arequery == 0)
 		{
-			if(fabricationsl + fabricationxsl + fabricationnsl + invalidationsl + discoveriesl + inspectionsl == 0)
+			fatal(selector_finalize
+				, &fabrications, &fabricationsl
+				, &fabricationxs, &fabricationxsl
+				, &fabricationns, &fabricationnsl
+				, &invalidations, &invalidationsl
+				, &discoveries, &discoveriesl
+				, &inspections, &inspectionsl
+			);
+
+			if(log_would(L_LISTS))
 			{
-				log(L_LISTS, "empty");
-			}
-			
-			for(x = 0; x < fabricationsl; x++)
-				log(L_LISTS, "fabrication(s)     =%s", (*fabrications[x])->idstring);
-
-			for(x = 0; x < fabricationxsl; x++)
-				log(L_LISTS, "fabricationx(s)    =%s", (*fabricationxs[x])->idstring);
-
-			for(x = 0; x < fabricationnsl; x++)
-				log(L_LISTS, "fabricationn(s)    =%s", (*fabricationns[x])->idstring);
-
-			for(x = 0; x < invalidationsl; x++)
-				log(L_LISTS, "invalidation(s)    =%s", (*invalidations[x])->idstring);
-
-			for(x = 0; x < discoveriesl; x++)
-				log(L_LISTS, "discover(y)(ies)   =%s", (*discoveries[x])->idstring);
-
-			for(x = 0; x < inspectionsl; x++)
-				log(L_LISTS, "inspection(s)      =%s", (*inspections[x])->idstring);
-		}
-	}
-
-	// dependency discovery list
-	if(discoveriesl)
-	{
-		log_parse("+DSC", 0);
-		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
-		qleave();	// terminate successfully
-	}
-	
-	// process invalidations
-	fatal(gn_process_invalidations, invalidations, invalidationsl);
-	fatal(gn_finalize, 1);
-
-	// dependency discovery on invalidated primary nodes
-	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
-	fatal(gn_finalize, 1);
-
-	// process inspections
-	if(inspectionsl)
-	{
-		// enable DGRAPH
-		log_parse("+DGRAPH", 0);
-
-		for(x = 0; x < inspectionsl; x++)
-			gn_dump((*inspections[x]));
-
-		qleave();	// terminate successfully
-	}
-
-	//
-	// construct a buildplan - use the first node if none was specified
-	//
-	if(fabricationsl + fabricationxsl + fabricationnsl == 0 && first)
-	{
-		fatal(xrealloc, &fabrications, sizeof(*fabrications), 1, 0);
-		fabrications[fabricationsl++] = &first;
-	}
-
-	// mixing task and non-task as buildplan targets does not make sense
-	for(x = 1; x < fabricationsl + fabricationxsl + fabricationnsl; x++)
-	{
-		int a = x - 1;
-		int b = x;
-		gn * A = 0;
-		gn * B = 0;
-
-		if(a < fabricationsl)
-			A = *fabrications[a];
-		else if(a < (fabricationsl + fabricationxsl))
-			A = *fabricationxs[a - fabricationsl];
-		else
-			A = *fabricationns[a - fabricationsl - fabricationxsl];
-
-		if(b < fabricationsl)
-			B = *fabrications[b];
-		else if(b < (fabricationsl + fabricationxsl))
-			B = *fabricationxs[b - fabricationsl];
-		else
-			B = *fabricationns[b - fabricationsl - fabricationxsl];
-
-		if((A->designate == GN_DESIGNATION_TASK) ^ (B->designate == GN_DESIGNATION_TASK))
-			fail("cannot mix task and non-task targets");
-	}
-
-	fatal(bp_create, fabrications, fabricationsl, fabricationxs, fabricationxsl, fabricationns, fabricationnsl, &bp);
-
-	// selector lists not referenced again past this point
-	map_xfree(&smap);
-
-	if(bp)
-	{
-		if(g_args.mode_bplan == MODE_BPLAN_BAKE)
-		{
-			// prepare bakevars map
-			fatal(map_create, &bakemap, 0);
-
-			for(x = 0; x < g_args.bakevarsl; x++)
-				fatal(map_set, bakemap, MMS(g_args.bakevars[x]), 0, 0, 0);
-
-			// create bakescript
-			fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &ts, &tsa, &tsw, g_args.bakescript_path);
-		}
-		else
-		{
-			// incremental build - prune the buildplan
-			qfatal(bp_eval, bp);
-
-			if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
-				log_parse("+BPDUMP", 0);
-
-			// dump buildplan, pending logging
-			if(bp)
-				bp_dump(bp);
-
-			if(g_args.mode_bplan == MODE_BPLAN_EXEC)
-			{
-				if(bp && bp->stages_l)
+				if(fabricationsl + fabricationxsl + fabricationnsl + invalidationsl + discoveriesl + inspectionsl == 0)
 				{
-					// execute the build plan, one stage at a time
-					qfatal(bp_exec, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+					log(L_LISTS, "empty");
+				}
+				
+				for(x = 0; x < fabricationsl; x++)
+					log(L_LISTS, "fabrication(s)     =%s", (*fabrications[x])->idstring);
 
-					// commit regular fabfile hashblocks
-					for(x = 0; x < ff_files.l; x++)
+				for(x = 0; x < fabricationxsl; x++)
+					log(L_LISTS, "fabricationx(s)    =%s", (*fabricationxs[x])->idstring);
+
+				for(x = 0; x < fabricationnsl; x++)
+					log(L_LISTS, "fabricationn(s)    =%s", (*fabricationns[x])->idstring);
+
+				for(x = 0; x < invalidationsl; x++)
+					log(L_LISTS, "invalidation(s)    =%s", (*invalidations[x])->idstring);
+
+				for(x = 0; x < discoveriesl; x++)
+					log(L_LISTS, "discover(y)(ies)   =%s", (*discoveries[x])->idstring);
+
+				for(x = 0; x < inspectionsl; x++)
+					log(L_LISTS, "inspection(s)      =%s", (*inspections[x])->idstring);
+			}
+		}
+	}
+
+	if(g_args.selectors_arequery == 0)
+	{
+		// dependency discovery list
+		if(discoveriesl)
+		{
+			log_parse("+DSC", 0);
+			fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+		}
+		else
+		{
+			// process invalidations
+			fatal(gn_process_invalidations, invalidations, invalidationsl);
+			fatal(gn_finalize, 1);
+
+			// dependency discovery on invalidated primary nodes
+			fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+			fatal(gn_finalize, 1);
+
+			// process inspections
+			if(inspectionsl)
+			{
+				// enable DGRAPH
+				log_parse("+DGRAPH", 0);
+
+				for(x = 0; x < inspectionsl; x++)
+					gn_dump((*inspections[x]));
+			}
+			else
+			{
+				//
+				// construct a buildplan - use the first node if none was specified
+				//
+				if(fabricationsl + fabricationxsl + fabricationnsl == 0 && first)
+				{
+					fatal(xrealloc, &fabrications, sizeof(*fabrications), 1, 0);
+					fabrications[fabricationsl++] = &first;
+				}
+
+				// mixing task and non-task as buildplan targets does not make sense
+				for(x = 1; x < fabricationsl + fabricationxsl + fabricationnsl; x++)
+				{
+					int a = x - 1;
+					int b = x;
+					gn * A = 0;
+					gn * B = 0;
+
+					if(a < fabricationsl)
+						A = *fabrications[a];
+					else if(a < (fabricationsl + fabricationxsl))
+						A = *fabricationxs[a - fabricationsl];
+					else
+						A = *fabricationns[a - fabricationsl - fabricationxsl];
+
+					if(b < fabricationsl)
+						B = *fabrications[b];
+					else if(b < (fabricationsl + fabricationxsl))
+						B = *fabricationxs[b - fabricationsl];
+					else
+						B = *fabricationns[b - fabricationsl - fabricationxsl];
+
+					if((A->designate == GN_DESIGNATION_TASK) ^ (B->designate == GN_DESIGNATION_TASK))
+						fail(FAB_BADPLAN, "cannot mix task and non-task targets");
+				}
+
+				fatal(bp_create, fabrications, fabricationsl, fabricationxs, fabricationxsl, fabricationns, fabricationnsl, &bp);
+
+				// selector lists not referenced again past this point
+				map_xfree(&smap);
+
+				if(bp)
+				{
+					if(g_args.mode_bplan == MODE_BPLAN_BAKE)
 					{
-						if(ff_files.e[x]->type == FFT_REGULAR)
+						// prepare bakevars map
+						fatal(map_create, &bakemap, 0);
+
+						for(x = 0; x < g_args.bakevarsl; x++)
+							fatal(map_set, bakemap, MMS(g_args.bakevars[x]), 0, 0, 0);
+
+						// create bakescript
+						fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &ts, &tsa, &tsw, g_args.bakescript_path);
+					}
+					else
+					{
+						// incremental build - prune the buildplan
+						fatal(bp_eval, bp);
+
+						if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
+							log_parse("+BPDUMP", 0);
+
+						// dump buildplan, pending logging
+						if(bp)
+							bp_dump(bp);
+
+						if(g_args.mode_bplan == MODE_BPLAN_EXEC)
 						{
-							fatal(hashblock_write, ff_files.e[x]->hb);
+							if(bp && bp->stages_l)
+							{
+								// execute the build plan, one stage at a time
+								fatal(bp_exec, bp, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
+
+								// commit regular fabfile hashblocks
+								for(x = 0; x < ff_files.l; x++)
+								{
+									if(ff_files.e[x]->type == FFT_REGULAR)
+									{
+										fatal(hashblock_write, ff_files.e[x]->hb);
+									}
+								}
+							}
 						}
 					}
 				}
@@ -433,7 +430,11 @@ finally:
 	traverse_teardown();
 	selector_teardown();
 
-	log(L_INFO, "exiting with status : %d", _coda_r);
+	int _xapi_r;
+coda_custom;
+	
+	log(L_INFO, "exiting with status : %d", _xapi_r);
 	log_teardown();
-	return _coda_r;
+
+	return _xapi_r;
 }

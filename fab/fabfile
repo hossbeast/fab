@@ -25,10 +25,10 @@ $dlibxlinux			= [ $dfab/../libxlinux ~ j ]
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc
 +[ $dcommon/vars.fab ]
-+[ $dcommon ]() @common
++[ $dcommon ] @common
 
 # variables
-$cflags					= [ $cflags	-fno-builtin-log [ $dfab $dcommon $dliblistwise $dlibxlinux $dxapi ~ lsr/c/-d/s/^/-I ]
+$cflags					= [ $cflags	-fno-builtin-log [ $dfab lsr/c/-d/s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]

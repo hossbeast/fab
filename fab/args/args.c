@@ -154,10 +154,13 @@ if(help)
 "  --gnid-absolute               nodes are identified by absolute path\n"
 "  --gnid-canon                  nodes are identified by canonical path\n"
 "\n"
-#if UNWIND
-" error reporting\n"
-"  --errors-unwind     (default) unwind error stack for error reporting\n"
-"  --errors-immediate            report immediate site of error only\n"
+#if DEBUG
+" backtrace generation\n"
+"  --trace-pithy       (default) produce a summary of the callstack upon error\n"
+"  --trace-full                  produce a complete description of the callstack upon error\n"
+"\n"
+" logging\n"
+"  --log-trace                   include file/function/line in log messages\n"
 "\n"
 #endif
 #if SANITY
@@ -354,9 +357,9 @@ int args_parse(int argc, char** argv)
 				, { "gnid-absolute"								, no_argument	, &g_args.mode_gnid		, MODE_ABSOLUTE }
 				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid		, MODE_CANONICAL }
 
-#if UNWIND
-				, { "errors-unwind"								, no_argument	, &g_args.mode_errors	, MODE_ERRORS_UNWIND }
-				, { "errors-immediate"						, no_argument	, &g_args.mode_errors	, MODE_ERRORS_IMMEDIATE }
+#if DEBUG
+				, { "trace-pithy"									, no_argument	, &g_args.mode_errors	, MODE_BACKTRACE_PITHY }
+				, { "trace-full"									, no_argument	, &g_args.mode_errors	, MODE_BACKTRACE_FULL }
 #endif
 
 #if DEVEL
@@ -443,7 +446,7 @@ int args_parse(int argc, char** argv)
 	g_args.mode_gnid			= DEFAULT_MODE_GNID;
 	g_args.mode_cycles		= DEFAULT_MODE_CYCLES;
 	g_args.mode_paths			= DEFAULT_MODE_PATHS;
-#if UNWIND
+#if DEBUG
 	g_args.mode_errors		= DEFAULT_MODE_ERRORS;
 #endif
 #if DEVEL

@@ -22,12 +22,6 @@
 
 struct selector;
 
-#if UNWIND
-# define UNWIND_ERRORS (g_args.mode_errors == MODE_ERRORS_UNWIND)
-#else
-# define UNWIND_ERRORS 0
-#endif
-
 /*
 ** PER-GN : delete if newest file is older than <policy>  (pertains to a given gn)
 ** -------------------------------------------------------------------------------------------------------------------------------
@@ -63,12 +57,7 @@ struct selector;
 #define DEFAULT_MODE_CYCLES				MODE_CYCLES_WARN
 #define DEFAULT_CONCURRENCY_LIMIT	-1
 #define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
-
-#if UNWIND
-# define DEFAULT_MODE_ERRORS			MODE_ERRORS_UNWIND
-#else
-# define DEFAULT_MODE_ERRORS			MODE_ERRORS_IMMEDIATE
-#endif
+#define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_PITHY
 
 #if SANITY
 # define DEFAULT_MODE_SANITY			MODE_SANITY_ENABLE
@@ -90,11 +79,11 @@ struct selector;
 	_MODE(MODE_CYCLES_WARN								, 0x09	, x)		/* warn when a cycle is detected */											\
 	_MODE(MODE_CYCLES_FAIL								, 0x0a	, x)		/* fail when a cycle is detected */											\
 	_MODE(MODE_CYCLES_DEAL								, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */
-#if UNWIND
-#define MODE_TABLE_UNWIND(x)																																										\
+#if DEBUG
+#define MODE_TABLE_DEBUG(x)																																											\
 /* error reporting modes */																																											\
-	_MODE(MODE_ERRORS_UNWIND							, 0x0d	, x)		/* unwind stack when reporting errors */								\
-	_MODE(MODE_ERRORS_IMMEDIATE						, 0x0e	, x)		/* report on immediate error condition only */
+	_MODE(MODE_BACKTRACE_FULL							, 0x0d	, x)		/* report on immediate error condition only */					\
+	_MODE(MODE_BACKTRACE_PITHY	 					, 0x0e	, x)		/* unwind stack when reporting errors */
 #endif
 #if DEVEL
 #define MODE_TABLE_DEVEL(x)																																											\
@@ -111,8 +100,8 @@ struct selector;
 
 enum {
 #define _MODE(a, b, c) a = b,
-#if UNWIND
-MODE_TABLE_UNWIND(0)
+#if DEBUG
+MODE_TABLE_DEBUG(0)
 #endif
 #if DEVEL
 MODE_TABLE_DEVEL(0)
@@ -126,9 +115,9 @@ MODE_TABLE(0)
 
 #define _MODE(a, b, c) (c) == b ? #a :
 #if DEVEL
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_UNWIND(x) MODE_TABLE_DEVEL(x) "UNKNWN"
+# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "UNKNWN"
 #elif DEBUG
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_UNWIND(x) "UNKNWN"
+# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) "UNKNWN"
 #else
 # define MODE_STR(x) MODE_TABLE(x) "UNKNWN"
 #endif
@@ -143,8 +132,8 @@ extern struct g_args_t
 	int									mode_gnid;									// gn identification mode
 	int									mode_cycles;								// cycle handling mode
 	int									mode_paths;									// path generation mode
-#if UNWIND
-	int									mode_errors;								// error reporting mode
+#if DEBUG
+	int									mode_backtrace;							// backtrace generation mode
 #endif
 #if DEVEL
 	int									mode_bslic;									// bakescript license mode

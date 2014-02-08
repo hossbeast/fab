@@ -156,5 +156,13 @@ int xsetresuid(uid_t ruid, uid_t euid, uid_t suid);
 //
 int xsetresgid(gid_t rgid, gid_t egid, gid_t sgid);
 
+/// xeuidaccess
+//
+// SUMMARY
+//  proxy for euidaccess
+//
+int xeuidaccess(const char * restrict pathname, int mode, int * const restrict r)
+	__attribute__((nonnull(1)));
+
 #undef restrict
 #endif

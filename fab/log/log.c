@@ -104,7 +104,7 @@ static int			o_space_a;		// allocation
 static int			o_space_l;		// bytes
 static int			o_space_w;		// visible characters
 
-#if UNWIND
+#if DEBUG
 static char *		o_func;				// trace storage
 static int			o_func_a;
 static int			o_func_l;
@@ -217,7 +217,7 @@ static int vstart(const uint64_t e)
 {
 	if(log_would(e))
 	{
-#if UNWIND
+#if DEBUG
 		o_space_l = 0;
 		o_space_w = 0;
 		o_func_l = 0;
@@ -242,9 +242,9 @@ static int vfinish(const char* fmt, void * va)
 	if(fmt)
 		w += vadd(fmt, *(void**)va);
 
-#if UNWIND
+#if DEBUG
 	// location trace for errors
-	if(((o_e & L_TAG) == (L_ERROR & L_TAG)) && UNWIND_ERRORS)
+	if((o_e & L_TAG) == (L_ERROR & L_TAG))
 		w += log_add(" in %s at %s:%d", o_func, o_file, o_line);
 #endif
 
@@ -295,7 +295,7 @@ static void describe(struct filter * f)
 	log(L_INFO, "%.*s", l, s);
 }
 
-#if UNWIND
+#if DEBUG
 static void prep_trace(const char * const func, const char * const file, int line)
 {
 	int funcl = strlen(func);
@@ -505,7 +505,7 @@ int log_would(const uint64_t e)
 	return r;
 }
 
-#if UNWIND
+#if DEBUG
 int vlog_trace_start(const char * const func, const char * const file, int line, const uint64_t e, const char* fmt, va_list va)
 #else
 int vlog_trace_start(const uint64_t e, const char* fmt, va_list va)
@@ -514,7 +514,7 @@ int vlog_trace_start(const uint64_t e, const char* fmt, va_list va)
 	int w = 0;
 	if((w = vstart(e)))
 	{
-#if UNWIND
+#if DEBUG
 		// store trace
 		prep_trace(func, file, line);
 #endif
@@ -525,7 +525,7 @@ int vlog_trace_start(const uint64_t e, const char* fmt, va_list va)
 	return 0;
 }
 
-#if UNWIND
+#if DEBUG
 int log_trace_start(const char * const func, const char * const file, int line, const uint64_t e, const char* fmt, ...)
 #else
 int log_trace_start(const uint64_t e, const char* fmt, ...)
@@ -533,7 +533,7 @@ int log_trace_start(const uint64_t e, const char* fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-#if UNWIND
+#if DEBUG
 	int w = vlog_trace_start(func, file, line, e, fmt, va);
 #else
 	int w = vlog_trace_start(e, fmt, va);
@@ -583,7 +583,7 @@ int log_finish(const char* fmt, ...)
 	return w;
 }
 
-#if UNWIND
+#if DEBUG
 int vlog_trace(const char * const func, const char * const file, int line, const uint64_t e, const char * const fmt, va_list va)
 #else
 int vlog_trace(const uint64_t e, const char * const fmt, va_list va)
@@ -595,7 +595,7 @@ int vlog_trace(const uint64_t e, const char * const fmt, va_list va)
 		// error message
 		w += vadd(fmt, va);
 
-#if UNWIND
+#if DEBUG
 		// store trace info
 		prep_trace(func, file, line);
 #endif
@@ -606,7 +606,7 @@ int vlog_trace(const uint64_t e, const char * const fmt, va_list va)
 	return 0;
 }
 
-#if UNWIND
+#if DEBUG
 int log_trace(const char * const func, const char * const file, int line, const uint64_t e, const char * const fmt, ...)
 #else
 int log_trace(const uint64_t e, const char * const fmt, ...)
@@ -614,7 +614,7 @@ int log_trace(const uint64_t e, const char * const fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-#if UNWIND
+#if DEBUG
 	int w = vlog_trace(func, file, line, e, fmt, va);
 #else
 	int w = vlog_trace(e, fmt, va);
@@ -637,7 +637,7 @@ int logged_chars()
 void log_teardown()
 {
 	free(o_space);
-#if UNWIND
+#if DEBUG
 	free(o_func);
 	free(o_file);
 #endif

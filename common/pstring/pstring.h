@@ -50,7 +50,7 @@ int psgrow(pstring ** restrict p, size_t l)
 
 void pstring_free(pstring *);
 
-void pstring_xfree(pstring **)
+void pstring_wfree(pstring **)
 	__attribute__((nonnull));
 
 #undef restrict
