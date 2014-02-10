@@ -24,4 +24,6 @@
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
+#include "XLINUX.errtab.h"
+
 #endif

@@ -56,8 +56,15 @@ struct selector;
 #define DEFAULT_MODE_PATHS				MODE_RELATIVE_FABFILE_DIR
 #define DEFAULT_MODE_CYCLES				MODE_CYCLES_WARN
 #define DEFAULT_CONCURRENCY_LIMIT	-1
-#define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
-#define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_PITHY
+
+#if DEBUG
+# define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_PITHY
+# define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
+#endif
+
+#if DEVEL
+# define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
+#endif
 
 #if SANITY
 # define DEFAULT_MODE_SANITY			MODE_SANITY_ENABLE
@@ -76,14 +83,16 @@ struct selector;
 	_MODE(MODE_ABSOLUTE										, 0x06	, x)		/* absolute path */																			\
 	_MODE(MODE_CANONICAL									, 0x07	, x)		/* canonical path */																		\
 /* cycle handling modes */																																											\
-	_MODE(MODE_CYCLES_WARN								, 0x09	, x)		/* warn when a cycle is detected */											\
-	_MODE(MODE_CYCLES_FAIL								, 0x0a	, x)		/* fail when a cycle is detected */											\
-	_MODE(MODE_CYCLES_DEAL								, 0x0b	, x)		/* deal when a cycle is detected (halt traversal) */
+	_MODE(MODE_CYCLES_WARN								, 0x08	, x)		/* warn when a cycle is detected */											\
+	_MODE(MODE_CYCLES_FAIL								, 0x09	, x)		/* fail when a cycle is detected */											\
+	_MODE(MODE_CYCLES_DEAL								, 0x0a	, x)		/* deal when a cycle is detected (halt traversal) */
 #if DEBUG
 #define MODE_TABLE_DEBUG(x)																																											\
 /* error reporting modes */																																											\
-	_MODE(MODE_BACKTRACE_FULL							, 0x0d	, x)		/* report on immediate error condition only */					\
-	_MODE(MODE_BACKTRACE_PITHY	 					, 0x0e	, x)		/* unwind stack when reporting errors */
+	_MODE(MODE_BACKTRACE_FULL							, 0x0b	, x)		/* report on immediate error condition only */					\
+	_MODE(MODE_BACKTRACE_PITHY	 					, 0x0c	, x)		/* unwind stack when reporting errors */								\
+	_MODE(MODE_LOGTRACE_NONE							, 0x0d	, x)		/* disable log trace */																	\
+	_MODE(MODE_LOGTRACE_FULL							, 0x0e	, x)		/* enable log trace */
 #endif
 #if DEVEL
 #define MODE_TABLE_DEVEL(x)																																											\
@@ -115,7 +124,11 @@ MODE_TABLE(0)
 
 #define _MODE(a, b, c) (c) == b ? #a :
 #if DEVEL
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "UNKNWN"
+# if SANITY
+#  define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) MODE_TABLE_SANITY(x) "UNKNWN"
+# else
+#  define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "UNKNWN"
+# endif
 #elif DEBUG
 # define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) "UNKNWN"
 #else
@@ -134,6 +147,7 @@ extern struct g_args_t
 	int									mode_paths;									// path generation mode
 #if DEBUG
 	int									mode_backtrace;							// backtrace generation mode
+	int									mode_logtrace;							// log trace mode
 #endif
 #if DEVEL
 	int									mode_bslic;									// bakescript license mode

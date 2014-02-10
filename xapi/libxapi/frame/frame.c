@@ -86,7 +86,7 @@ T = &callstack;
 	}
 	else
 	{
-//printf("isreg enter, l %d, depth %d -> %d\n", callstack.l, callstack.depth, callstack.depth + 1);
+//printf("isreg enter, depth %d -> %d, l %d \n", callstack.depth, callstack.depth + 1, callstack.l);
 		callstack.depth++;
 
 		/* ensure dynamic frame allocation */
@@ -150,7 +150,7 @@ void API xapi_frame_leave()
 {
 	if(callstack.isalt)
 	{
-//printf("isalt leaving, l %d -> %d, depth %d -> %d%s\n", callstack.alt.l, callstack.alt.l + 1, callstack.alt.depth, callstack.alt.depth - 1, callstack.alt.depth == 1 ? " ISALT OFF" : "");
+//printf("isalt leave, l %d -> %d, depth %d -> %d%s\n", callstack.alt.l, callstack.alt.l + 1, callstack.alt.depth, callstack.alt.depth - 1, callstack.alt.depth == 1 ? " ISALT OFF" : "");
 		if(callstack.alt.v[callstack.alt.l])
 			callstack.alt.l++;
 
@@ -159,16 +159,21 @@ void API xapi_frame_leave()
 	}
 	else
 	{
-//printf("isreg leaving, depth %d -> %d%s\n", callstack.depth, callstack.depth - 1, callstack.depth == 0 ? " FREEING" : "");
 		if(callstack.v && callstack.v[callstack.l])
+		{
+//printf("isreg leave, depth %d -> %d, l %d -> %d %s\n", callstack.depth, callstack.depth - 1, callstack.l, callstack.l + 1, callstack.depth == 0 ? " FREEING" : "");
 			callstack.l++;
+		}
+		else
+		{
+//printf("isreg leave, depth %d -> %d, l %d :: %d %s\n", callstack.depth, callstack.depth - 1, callstack.l, callstack.l, callstack.depth == 0 ? " FREEING" : "");
+		}
 
 		/*
 		** depth goes to -1 when a function exits that was not itself called with UNWIND-ing
 		*/
 		if(callstack.depth-- == 0)
 		{
-//printf("callstack free\n");
 			callstack_free();
 		}
 	}
@@ -248,7 +253,7 @@ T = &callstack;
 if(!callstack.v)
 {
 	/*
-	** when and UNWIND-ing function is called without fatal, AND there is an active callstack, then
+	** when an UNWIND-ing function is called without fatal, AND there is an active callstack, then
 	** when that function returns, the callstack is freed. while processing a subsequent error this
 	** condition will be true and the program will segfault
 	*/
@@ -277,7 +282,7 @@ if(!callstack.v)
 	if(f)
 	{
 		f->etab = etab;
-		f->code = code;
+		f->code = code ?: 1;
 		f->file = file;
 		f->line = line;
 		f->func = func;

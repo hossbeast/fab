@@ -21,7 +21,7 @@
 
 #include "xpwd.h"
 
-int API xgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
+int API uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
 {
 	if(getpwuid_r(uid, pwd, buf, buflen, result) == 0)
 	{
@@ -39,4 +39,13 @@ int API xgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, s
 finally :
 	XAPI_INFO("uid", "%zu", uid);
 coda;
+}
+
+int API xgetpwuid(uid_t uid, struct passwd ** const pwd)
+{
+	errno = 0;
+	if(((*pwd) = getpwuid(uid)) == 0)
+		sysfatality("getpwuid");
+
+	finally : coda;
 }

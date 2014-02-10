@@ -28,7 +28,7 @@ $dlibxlinux			= [ $dfab/../libxlinux ~ j ]
 +[ $dcommon ] @common
 
 # variables
-$cflags					= [ $cflags	-fno-builtin-log [ $dfab lsr/c/-d/s/^/-I ]
+$cflags					= [ $cflags	-fno-builtin-log [ $dfab ~ lsr/c/-d/s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]

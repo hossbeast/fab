@@ -25,7 +25,8 @@ int API xdlopen(const char * filename, int flag, void ** dl)
 {
 	if(((*dl) = dlopen(filename, flag)) == 0)
 	{
-		fatality("dlopen", perrtab_SYS, 0, "%s", dlerror());
+		char * e = dlerror();
+		fatality("dlopen", perrtab_XLINUX, XLINUX_DLERROR, "%s", e);
 	}
 
 finally :
@@ -40,7 +41,7 @@ int API xdlsym(void * dl, const char * sym, void ** psym)
 	char * e = dlerror();
 	if(e)
 	{
-		fatality("dlsym", perrtab_SYS, 0, "%s", dlerror());
+		fatality("dlsym", perrtab_XLINUX, XLINUX_DLERROR, "%s", dlerror());
 	}
 
 finally :

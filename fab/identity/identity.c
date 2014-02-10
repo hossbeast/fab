@@ -21,65 +21,37 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <pwd.h>
-#include <grp.h>
 
 #include "identity.h"
 
 #include "args.h"
 #include "params.h"
 #include "log.h"
-
-#define fail(fmt, ...)				\
-	do {												\
-		fprintf(stderr, fmt "\n" 	\
-			, ##__VA_ARGS__					\
-		);												\
-		if(UNWIND_ERRORS)					\
-			return 1;								\
-		else											\
-			return -1;							\
-	} while(0)
+#include "global.h"
+#include "xlinux.h"
 
 int identity_init()
 {
 	struct passwd *	pwd;
 	struct group *	grp;
 
-	// get user identity of this process
-	uid_t suid;
-	getresuid(&g_params.ruid, &g_params.euid, &suid);
-
-	// get group identity of this process
-	gid_t sgid;
-	getresgid(&g_params.rgid, &g_params.egid, &sgid);
-
-	errno = 0;
-	if((pwd = getpwuid(g_params.ruid)) == 0)
-		fail("cannot get ruid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
-
+	// get real-user-id name for this process
+	fatal(xgetpwuid, g_params.ruid, &pwd);
 	g_params.ruid_name = strdup(pwd->pw_name);
 	g_params.ruid_namel = strlen(g_params.ruid_name);
 
-	errno = 0;
-	if((pwd = getpwuid(g_params.euid)) == 0)
-		fail("cannot get euid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
-
+	// get effective-user-id name for this process
+	fatal(xgetpwuid, g_params.euid, &pwd);
 	g_params.euid_name = strdup(pwd->pw_name);
 	g_params.euid_namel = strlen(g_params.euid_name);
 
-	errno = 0;
-	if((grp = getgrgid(g_params.rgid)) == 0)
-		fail("cannot get rgid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
-
+	// get real-group-id name for this process
+	fatal(xgetgrgid, g_params.rgid, &grp);
 	g_params.rgid_name = strdup(grp->gr_name);
 	g_params.rgid_namel = strlen(g_params.rgid_name);
 
-	errno = 0;
-	if((grp = getgrgid(g_params.egid)) == 0)
-		fail("cannot get egid name : [%d][%s] (ruid=%d rgid=%d euid=%d egid=%d)", errno, strerror(errno), g_params.ruid, g_params.rgid, g_params.euid, g_params.egid);
-
+	// get effective-group-id name for this process
+	fatal(xgetgrgid, g_params.egid, &grp);
 	g_params.egid_name = strdup(grp->gr_name);
 	g_params.egid_namel = strlen(g_params.egid_name);
 
@@ -89,7 +61,7 @@ int identity_init()
 	// this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions
 	if(strcmp(g_params.euid_name, "fabsys") || strcmp(g_params.egid_name, "fabsys"))
 	{
-		fail(
+		fail(FAB_EXESUID,
 			"fab executable must be owned by fabsys:fabsys and have u+s and g+s permissions\n"
 			" -> r:%s/%d:%s/%d\n"
 			" -> e:%s/%d:%s/%d"
@@ -106,11 +78,8 @@ int identity_init()
 	*/
 	umask(0);
 
-	return 0;
+	finally : coda;
 }
-
-#undef fail
-#include "global.h"
 
 int identity_assume_user()
 {

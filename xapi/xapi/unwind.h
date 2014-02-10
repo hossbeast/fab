@@ -138,6 +138,7 @@ when calling non-xapi code, you have a couple of options.
 ** called elsewhere in the stack
 */
 
+#if 0
 #define XINVOKE(func, ...)																	\
 	({																												\
 		int __d = xapi_frame_depth();														\
@@ -167,6 +168,7 @@ when calling non-xapi code, you have a couple of options.
 		}																												\
 		__r;																										\
 	})
+#endif
 
 /// fatalize
 //

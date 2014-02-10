@@ -140,7 +140,7 @@ int API fs_statfmt(
 					char * name = "(none)";
 					struct passwd stor;
 					struct passwd * pwd;
-					fatal(xgetpwuid_r, st.st_uid, &stor, space, sizeof(space), &pwd);
+					fatal(uxgetpwuid_r, st.st_uid, &stor, space, sizeof(space), &pwd);
 					if(pwd)
 					{
 						name = pwd->pw_name;
@@ -157,7 +157,7 @@ int API fs_statfmt(
 					char * name = "(none)";
 					struct group stor;
 					struct group * grp;
-					fatal(xgetgrgid_r, st.st_gid, &stor, space, sizeof(space), &grp);
+					fatal(uxgetgrgid_r, st.st_gid, &stor, space, sizeof(space), &grp);
 					if(grp)
 					{
 						name = grp->gr_name;

@@ -46,7 +46,22 @@ int			g_dls_l;
 
 static void __attribute__((constructor)) init()
 {
-	listwise_register_opdir(XQUOTE(LWOPDIR));	/* /usr/lib/listwise */
+/*
+** because this can only happen when liblistwise was compiled incorrectly I will just
+** dump the whole backtrace to stderr
+*/
+
+	fatal(listwise_register_opdir, XQUOTE(LWOPDIR));	/* /usr/lib/listwise */
+
+finally :
+	if(XAPI_UNWINDING)
+		xapi_backtrace();
+
+int __attribute__((unused)) _xapi_r;
+coda_custom;
+
+	if(_xapi_r)
+		exit(0);
 }
 
 static void __attribute__((destructor)) teardown()

@@ -153,18 +153,18 @@ if(help)
 "  --gnid-relative-fabfile-dir   nodes are identified by path relative to init-fabfile-dir\n"
 "  --gnid-absolute               nodes are identified by absolute path\n"
 "  --gnid-canon                  nodes are identified by canonical path\n"
-"\n"
 #if DEBUG
+"\n"
+"  --logtrace-no       (default) do not include file/function/line in log messages\n"
+"  --logtrace                    include file/function/line in log messages\n"
+"\n"
 " backtrace generation\n"
-"  --trace-pithy       (default) produce a summary of the callstack upon error\n"
-"  --trace-full                  produce a complete description of the callstack upon error\n"
-"\n"
-" logging\n"
-"  --log-trace                   include file/function/line in log messages\n"
-"\n"
+"  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
+"  --backtrace-full              produce a complete description of the callstack upon failure\n"
 #endif
+"\n"
 #if SANITY
-" sanity checking\n"
+" sanity checks\n"
 "  --sanity                      enable sanity checks for all liblistwise invocations\n"
 "\n"
 #endif
@@ -358,8 +358,10 @@ int args_parse(int argc, char** argv)
 				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid		, MODE_CANONICAL }
 
 #if DEBUG
-				, { "trace-pithy"									, no_argument	, &g_args.mode_errors	, MODE_BACKTRACE_PITHY }
-				, { "trace-full"									, no_argument	, &g_args.mode_errors	, MODE_BACKTRACE_FULL }
+				, { "backtrace-pithy"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
+				, { "backtrace-full"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
+				, { "logtrace-no"									, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
+				, { "logtrace"										, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
 #endif
 
 #if DEVEL
@@ -441,19 +443,20 @@ int args_parse(int argc, char** argv)
 	//
 	// args:defaults
 	//
-	g_args.concurrency		= DEFAULT_CONCURRENCY_LIMIT;
-	g_args.mode_bplan			= DEFAULT_MODE_BPLAN;
-	g_args.mode_gnid			= DEFAULT_MODE_GNID;
-	g_args.mode_cycles		= DEFAULT_MODE_CYCLES;
-	g_args.mode_paths			= DEFAULT_MODE_PATHS;
+	g_args.concurrency			= DEFAULT_CONCURRENCY_LIMIT;
+	g_args.mode_bplan				= DEFAULT_MODE_BPLAN;
+	g_args.mode_gnid				= DEFAULT_MODE_GNID;
+	g_args.mode_cycles			= DEFAULT_MODE_CYCLES;
+	g_args.mode_paths				= DEFAULT_MODE_PATHS;
 #if DEBUG
-	g_args.mode_errors		= DEFAULT_MODE_ERRORS;
+	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
+	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
 #endif
 #if DEVEL
-	g_args.mode_bslic			= DEFAULT_MODE_BSLIC;
+	g_args.mode_bslic				= DEFAULT_MODE_BSLIC;
 #endif
 #if SANITY
-	g_args.mode_sanity		= DEFAULT_MODE_SANITY;
+	g_args.mode_sanity			= DEFAULT_MODE_SANITY;
 #endif
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create_init, &fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
@@ -670,8 +673,9 @@ int args_parse(int argc, char** argv)
 			log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
 	}
 
-#if UNWIND
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-errors            =%s", g_args.mode_errors == DEFAULT_MODE_ERRORS ? " " : "*", ' ', MODE_STR(g_args.mode_errors));
+#if DEBUG
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace          =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
+	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace           =%s", g_args.mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_logtrace));
 #endif
 #if DEVEL
 	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));

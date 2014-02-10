@@ -162,7 +162,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 #if DEBUG
 	// causes yyerror to include the scanner line number in FFTOKN output
-	pp.output_line = 1;
+	pp.line_numbering = 1;
 #endif
 
 	// create state specific to this parse

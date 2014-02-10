@@ -21,11 +21,22 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-/// xgetpwuid_r
+#define restrict __restrict
+
+/// uxgetpwuid_r
 //
 // SUMMARY
-//  fatalize-able wrapper for getpwuid_r
+//  proxy for getpwuid_r that only fails when errno != { ENOENT, ESRCH, EBAD, EPERM }
 //
-int xgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result);
+int uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result);
 
+/// xgetpwuid
+//
+// SUMMARY
+//  proxy for getpwuid
+//
+int xgetpwuid(uid_t uid, struct passwd ** const restrict pwd)
+	__attribute__((nonnull));
+
+#undef restrict
 #endif

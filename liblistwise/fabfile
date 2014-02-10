@@ -45,7 +45,7 @@ $lflags				= [ -lpcre, -ldl, $libxlinux, -shared, [ "-Wl,-soname," $soname ] ]
 # generated files
 +[@std.flex.states] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
 +[@std.bison.tokens]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
-+[@std.xapi.errtab] ($gendir = $dliblistwise; $dirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/PCRE.errtab ~ j ])
++[@std.xapi.errtab] ($gendir = $dliblistwise; $dirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/PCRE.errtab ~ j ]; $apidata = [1])
 
 # path to each operator so
 $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
@@ -82,10 +82,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 # link an operator so - which depends on its own .o
 [ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ]			\
-	[ $@ ~ rx/aneedw/xm/<o>/ss/u/fi ]						\
-	[ $liblistwise ] -shared										\
-	[ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
+	[ $cc ] [ $cflags ~ uu/fi ] -o [ $@ ]	[ $@ ~ rx/aneedw/xm/<o>/ss/u/fi ] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
 }
 
 # operators also depend on the library for linking

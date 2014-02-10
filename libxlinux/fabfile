@@ -37,6 +37,7 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 
 # source files
 +[@std.c]($gendir = $dlibxlinux; $rdirs = $dlibxlinux; $ext = [ pic.o ]; -$cobjpaths; $cc $cflags)
++[@std.xapi.errtab] ($gendir = $dlibxlinux; $dirs = $dlibxlinux; $ext = [ pic.o ]; $cc $cflags)
 
 ##
 ## dependencies

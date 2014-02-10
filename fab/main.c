@@ -430,6 +430,23 @@ finally:
 	traverse_teardown();
 	selector_teardown();
 
+printf("unwinding : %d\n", XAPI_UNWINDING);
+	if(XAPI_UNWINDING)
+	{
+#if DEBUG
+		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
+		{
+#endif
+			xapi_pithytrace();
+#if DEBUG
+		}
+		else
+		{
+			xapi_backtrace();
+		}
+#endif
+	}
+
 	int _xapi_r;
 coda_custom;
 	

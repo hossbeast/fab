@@ -15,37 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <errno.h>
-
-#include "internal.h"
-
-#include "xgrp.h"
-
-int API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
-{
-	if(getgrgid_r(gid, grp, buf, buflen, result) == 0)
-	{
-		// possibly found, check *result
-	}
-	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
-	{
-		// name not found
-	}
-	else
-	{
-		sysfatality("getgrgid_r");
-	}
-
-finally :
-	XAPI_INFO("gid", "%zu", gid);
-coda;
-}
-
-int API xgetgrgid(gid_t gid, struct group ** const grp)
-{
-	errno = 0;
-	if(((*grp) = getgrgid(gid)) == 0)
-		sysfatality("getgrgid");
-
-	finally : coda;
-}
+1		SYNTAX				fabfile could not be parsed
+2		ILLBYTE				fabfile contains illegal byte(s)
+3		BADTMP				unexpected file(s) in temp directory
+4		BADCACHE			unexpected file(s) in cache directory
+5		BADARGS				invalid command-line arguments
+6		UNSATISFIED		buildplan has unsatisfied dependencies
+7		FMLFAIL				formula failed to execute successfully
+8		DSCPARSE			dependency discovery results were not parsed
+9		NOINVOKE			invocation target could not be resolved
+10	BADPLAN				buildplan cannot be constructed
+11	EXESUID				fab executable does not have ug+s permissions

@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,6 +29,8 @@ void xfree(void * v)
 
 void callstack_free()
 {
+//printf("CALLSTACK_FREE\n");
+
 	if(callstack.v)
 	{
 		int x;

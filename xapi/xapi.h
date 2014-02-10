@@ -35,7 +35,7 @@
 **
 */
 
-#if XAPI_UNWIND || XAPI_LIBXAPI
+#if XAPI_UNWIND
 // error table struct
 typedef struct etable
 {
