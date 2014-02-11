@@ -35,6 +35,14 @@ int identity_init()
 	struct passwd *	pwd;
 	struct group *	grp;
 
+	// get user identity
+	uid_t __attribute__((unused)) suid;
+	fatal(xgetresuid, &g_params.ruid, &g_params.euid, &suid);
+
+	// get group identity
+	gid_t __attribute__((unused)) sgid;
+	fatal(xgetresgid, &g_params.rgid, &g_params.egid, &sgid);
+
 	// get real-user-id name for this process
 	fatal(xgetpwuid, g_params.ruid, &pwd);
 	g_params.ruid_name = strdup(pwd->pw_name);
@@ -83,16 +91,16 @@ int identity_init()
 
 int identity_assume_user()
 {
-	sysfatalize(seteuid, g_params.ruid);
-	sysfatalize(setegid, g_params.rgid);
+	fatal(xseteuid, g_params.ruid);
+	fatal(xsetegid, g_params.rgid);
 
 	finally : coda;
 }
 
 int identity_assume_fabsys()
 {
-	sysfatalize(seteuid, g_params.euid);
-	sysfatalize(setegid, g_params.egid);
+	fatal(xseteuid, g_params.euid);
+	fatal(xsetegid, g_params.egid);
 
 	finally : coda;
 }

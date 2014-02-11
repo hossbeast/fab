@@ -164,5 +164,35 @@ int xsetresgid(gid_t rgid, gid_t egid, gid_t sgid);
 int xeuidaccess(const char * restrict pathname, int mode, int * const restrict r)
 	__attribute__((nonnull(1)));
 
+/// xseteuid
+//
+// SUMMARY
+//  proxy for seteuid
+//
+int xseteuid(uid_t euid);
+
+/// xsetegid
+//
+// SUMMARY
+//  proxy for setegid
+//
+int xsetegid(gid_t egid);
+
+/// xgetresuid
+//
+// SUMMARY
+//  proxy for getresuid
+//
+int xgetresuid(uid_t * const restrict ruid, uid_t * const restrict euid, uid_t * const restrict suid)
+	__attribute__((nonnull));
+
+/// xgetresgid
+//
+// SUMMARY
+//  proxy for getresgid
+//
+int xgetresgid(gid_t * const restrict rgid, gid_t * const restrict egid, gid_t * const restrict sgid)
+	__attribute__((nonnull));
+
 #undef restrict
 #endif

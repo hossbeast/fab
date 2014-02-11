@@ -35,8 +35,7 @@ int API xread(int fd, void * buf, size_t count, ssize_t * bytes)
 int API axread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
 	size_t actual;
-
-	if((actual = read(fd, buf, count) == -1) || actual != count)
+	if(((actual = read(fd, buf, count)) == -1) || actual != count)
 		sysfatality("read");
 
 finally:
@@ -156,6 +155,20 @@ int API xdup2(int oldfd, int newfd)
 	finally : coda;
 }
 
+int API xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
+{
+	sysfatalize(getresuid, ruid, euid, suid);
+
+	finally : coda;
+}
+
+int API xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
+{
+	sysfatalize(getresgid, rgid, egid, sgid);
+
+	finally : coda;
+}
+
 int API xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
 	sysfatalize(setresuid, ruid, euid, suid);
@@ -180,3 +193,21 @@ int API xeuidaccess(const char * pathname, int mode, int * const r)
 
 	finally : coda;
 }	
+
+int API xseteuid(uid_t euid)
+{
+	sysfatalize(seteuid, euid);
+
+finally:
+	XAPI_INFO("euid", "%d", euid);
+coda;
+}
+
+int API xsetegid(gid_t egid)
+{
+	sysfatalize(setegid, egid);
+
+finally:
+	XAPI_INFO("egid", "%d", egid);
+coda;
+}

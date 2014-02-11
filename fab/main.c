@@ -430,7 +430,6 @@ finally:
 	traverse_teardown();
 	selector_teardown();
 
-printf("unwinding : %d\n", XAPI_UNWINDING);
 	if(XAPI_UNWINDING)
 	{
 #if DEBUG
