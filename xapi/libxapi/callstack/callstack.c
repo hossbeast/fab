@@ -29,8 +29,6 @@ void xfree(void * v)
 
 void callstack_free()
 {
-//printf("CALLSTACK_FREE\n");
-
 	if(callstack.v)
 	{
 		int x;
@@ -60,10 +58,11 @@ void callstack_free()
 		callstack.frames.stor.a = 0;
 	}
 
-	xfree(&callstack.v);
+	if(callstack.v == &callstack.frames.alt)
+		callstack.v = 0;
+	else
+		xfree(&callstack.v);
+
 	callstack.a = 0;
 	callstack.l = 0;
-	callstack.depth = 0;
-
-	memset(&callstack.alt, 0, sizeof(callstack.alt));
 }

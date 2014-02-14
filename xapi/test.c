@@ -7,6 +7,7 @@
 
 #define perrtab perrtab_SYS
 
+#if 0
 int foxtrot(int num)
 {
 	if(num == 25)
@@ -51,10 +52,11 @@ finally:
 	XAPI_INFO("charlienum", "%d", num);
 coda;
 }
+#endif
 
 int bravo(int num)
 {
-	fatal(charlie, num);
+	fail(ENOMEM, "sadface");
 
 finally:
 	XAPI_INFO("bravonum", "%d", num);
@@ -63,14 +65,9 @@ coda;
 
 int alpha(int num)
 {
-	int fd = 0;
-
-	int r = bravo(num);
-printf("bravo returns %d\n", r);
-	if(r != 0)
-		fatality("bravo", perrtab, ENOMEM, 0);
-
 finally:
+	fatal(bravo, num);
+
 	XAPI_INFO("alphanum", "%d", num);
 coda;
 }
@@ -82,8 +79,6 @@ int main()
 finally :
 if(XAPI_UNWINDING)
 {
-XAPI_INFO("mainnum", "%d", 0);
-
 	printf("backtrace: \n");
 		xapi_backtrace();
 

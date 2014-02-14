@@ -27,12 +27,15 @@
 // per-thread callstacks
 __thread struct callstack callstack;
 
-// refers to the top frame
-#define TOP (callstack.v[callstack.l])
-
 #define restrict __restrict
 
+#if DEBUG
+/*
+** set to the callstack for the executing thread on every api call
+** makes it easy to access the callstack from gdb
+*/
 typeof(callstack) * T;
+#endif
 
 static int wrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
@@ -53,233 +56,169 @@ static int wrealloc(void* target, size_t es, size_t ec, size_t oec)
 	return 0;
 }
 
-static int nomem()
-{
-	// switch to alt stack
-	callstack.isalt = 1;
-
-	// add alt frames
-	xapi_frame_push();
-	xapi_frame_push();
-
-	// populate the alternate frame with an ENOMEM error
-	xapi_frame_set_and_leave(perrtab_SYS, SYS_ENOMEM, 0, 0, "realloc");
-
-	return -1;
-}
-
 #undef restrict
 
 ///
 /// callstack manipulation
 ///
-int API xapi_frame_push()
+int API xapi_frame_enter()
 {
-T = &callstack;
+#if DEBUG
+	T = &callstack;
+#endif
+printf("ENTER, l %d -> %d, l %d\n", callstack.l, callstack.l + 1, callstack.l);
 
-	if(callstack.isalt || callstack.finalized)
+	// not unwinding
+	callstack.x = -1;
+
+	// ensure frame allocation
+	if(callstack.l == callstack.a)
 	{
-//printf("isalt enter, l %d, depth %d -> %d\n", callstack.alt.l, callstack.alt.depth, callstack.alt.depth + 2);
+		int ns = callstack.frames.stor.a ?: 10;
+		ns = ns * 2 + ns / 2;
 
-		callstack.isalt = 1;
-		callstack.alt.depth++;
+		if(wrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) == 0)
+		{
+			/*
+			** the frame list is allocated with 2 extra slots ; one for the base frame (at the beginning) and one
+			** for the alt frame (at the end)
+			*/
+			if(wrealloc(&callstack.v, sizeof(*callstack.v), ns + 2, callstack.a) == 0)
+			{
+				callstack.a = ns;
+			}
+		}
+	}
+
+	if(callstack.l == callstack.a)
+	{
+		// if the frame list has been allocated, append the alt frames to it
+		if(callstack.v == 0)
+		{
+			callstack.v = &callstack.frames.alt;
+
+			// base frame
+			callstack.l++;
+		}
+
+		callstack.v[callstack.l] = &callstack.frames.alt;
+		callstack.v[callstack.l]->finalized = 0;
+		callstack.v[callstack.l]->populated = 0;
+		callstack.v[callstack.l]->msgl = 0;
+		callstack.v[callstack.l]->info.l = 0;
+		callstack.l++;
+		
+		// populate the alternate frame with an ENOMEM error
+		xapi_frame_set_and_leave(perrtab_SYS, SYS_ENOMEM, 0, 0, "malloc");
+
+		return -1;
 	}
 	else
 	{
-//printf("isreg enter, depth %d -> %d, l %d \n", callstack.depth, callstack.depth + 1, callstack.l);
-		callstack.depth++;
-
-		/* ensure dynamic frame allocation */
-		if(callstack.depth > callstack.frames.stor.a)
+		// push a frame for the base frame on the first push
+		while(callstack.l < 2)
 		{
-			int ns = callstack.frames.stor.a ?: 10;
-			ns = ns * 2 + ns / 2;
-
-#if 0
-ns = callstack.depth;
-			if(wrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) == 0)
-			{
-				xapi_frame_leave();
-				return nomem();
-			}
-#else
-			if(wrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) != 0)
-			{
-				xapi_frame_leave();
-				return nomem();
-			}
-#endif
-
-			callstack.frames.stor.a = ns;
-		}
-
-		/* ensure frame list allocation for at least 2 frames */
-		if(callstack.depth >= callstack.a)
-		{
-			int ns = callstack.a ?: 10;
-			ns = ns * 2 + ns / 2;
-			if(wrealloc(&callstack.v, sizeof(*callstack.v), ns, callstack.a) != 0)
-			{
-				xapi_frame_leave();
-				return nomem();
-			}
-
-			callstack.a = ns;
+			callstack.v[callstack.l] = &callstack.frames.stor[callstack.l];
+			callstack.v[callstack.l]->code = 0;
+			callstack.l++;
 		}
 	}
 
 	return 0;
 }
 
-void API xapi_frame_alt_push()
+int API xapi_frame_leave()
 {
-	callstack.isalt = 1;
+#if DEBUG
+	T = &callstack;
+#endif
 
-	xapi_frame_push();
-}
-
-int API xapi_frame_depth()
-{
-	if(callstack.isalt || callstack.finalized)
-		return callstack.alt.depth + 1;
-	else
-		return callstack.depth;
-}
-
-void API xapi_frame_leave()
-{
-	if(callstack.isalt)
-	{
-//printf("isalt leave, l %d -> %d, depth %d -> %d%s\n", callstack.alt.l, callstack.alt.l + 1, callstack.alt.depth, callstack.alt.depth - 1, callstack.alt.depth == 1 ? " ISALT OFF" : "");
-		if(callstack.alt.v[callstack.alt.l])
-			callstack.alt.l++;
-
-		if(--callstack.alt.depth == 0)
-			callstack.isalt = 0;
-	}
-	else
-	{
-		if(callstack.v && callstack.v[callstack.l])
-		{
-//printf("isreg leave, depth %d -> %d, l %d -> %d %s\n", callstack.depth, callstack.depth - 1, callstack.l, callstack.l + 1, callstack.depth == 0 ? " FREEING" : "");
-			callstack.l++;
-		}
-		else
-		{
-//printf("isreg leave, depth %d -> %d, l %d :: %d %s\n", callstack.depth, callstack.depth - 1, callstack.l, callstack.l, callstack.depth == 0 ? " FREEING" : "");
-		}
-
-		/*
-		** depth goes to -1 when a function exits that was not itself called with UNWIND-ing
-		*/
-		if(callstack.depth-- == 0)
-		{
-			callstack_free();
-		}
-	}
-}
-
-int API xapi_frame_exit()
-{
 	int16_t rc = 0;
 	int16_t rt = 0;
 
-	if(callstack.l && callstack.v[0]->code)
+	if((rc = callstack.v[callstack.x]->code))
 	{
-		rc = callstack.v[0]->code;
-		rt = (rc == 0 || rc == 0xFFFF) ? 0 : callstack.v[0]->etab->id;
+		rt = callstack.v[callstack.x]->etab->id;
 	}
-	else if(callstack.alt.l)
+	else if(callstack.v[callstack.l - 1]->code)
 	{
-		rc = callstack.frames.alt[0].code;
-		rt = (rc == 0 || rc == 0xFFFF) ? 0 : callstack.frames.alt[0].etab->id;
+		// unwinding; keep the frame
+	}
+	else
+	{
+		callstack.l--;
 	}
 
-	if(callstack.isalt)
+	if(callstack.x-- == -1)
 	{
 		/*
-		** this can happen when 
+		** x goes to -1 when a function exits that was not itself called with UNWIND-ing, e.g. main
 		*/
-		dprintf(2, "EXIT WHILE ISALT DEPTH=%d\n", callstack.alt.depth);
-		exit(0);
+		callstack_free();
 	}
 
-	xapi_frame_leave();
-
-	callstack.finalized = 0;
-
-//	printf("exiting with %d\n", (rt << 16) | rc);
+printf("LEAVE :: [x=%2d][l=%2d][t=%2d]\n", callstack.x, callstack.l, callstack.t);
 	return (rt << 16) | rc;
 }
 
 void API xapi_frame_finalize()
 {
-	callstack.finalized = 1;
+#if DEBUG
+	T = &callstack;
+#endif
+
+	callstack.v[callstack.x]->finalized = 1;
 }
 
 int API xapi_frame_finalized()
 {
-	return callstack.finalized;
+#if DEBUG
+	T = &callstack;
+#endif
+
+	return callstack.v[callstack.x]->finalized;
 }
 
-int API xapi_frame_unwinding()
+int API xapi_unwinding()
 {
-T = &callstack;
-	return callstack.l || callstack.alt.l;
+#if DEBUG
+	T = &callstack;
+#endif
+
+	return callstack.v[callstack.l - 1]->code;
 }
 
 void API xapi_frame_set(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func)
 {
-T = &callstack;
-
-	struct frame * f = 0;
-
-	if(callstack.isalt)
+#if DEBUG
+	T = &callstack;
+	if(!callstack.v)
 	{
-//printf("setting alt[%d] %s at %s:%d\n", callstack.alt.l, func, file, line);
-		if(callstack.alt.l < (sizeof(callstack.frames.alt) / sizeof(callstack.frames.alt[0])))
-		{
-			f = callstack.alt.v[callstack.alt.l] = &callstack.frames.alt[callstack.alt.l];
-			f->type = 1;
-		}
-		else
-		{
-			/* lost */
-		}
+		/*
+		** when an UNWIND-ing function is called without fatal, AND there is an active callstack, then
+		** when that function returns, the callstack is freed. while processing a subsequent error this
+		** condition will be true and the program will segfault
+		*/
+		dprintf(2, "UNWIND-ing function called without fatal in the presence of active callstack\n");
+	}
+#endif
+
+printf("setting reg[%d] %s at %s:%d\n", callstack.l, func, file, line);
+
+	//
+	// no-op if this frame has already been populated
+	//
+	
+	if(callstack.x == -1)
+		callstack.x = callstack.l - 1;
+
+	struct frame * f = callstack.v[callstack.x];
+
+	if(f->code)
+	{
+		f->populated = 1;
 	}
 	else
-	{
-#if 1
-if(!callstack.v)
-{
-	/*
-	** when an UNWIND-ing function is called without fatal, AND there is an active callstack, then
-	** when that function returns, the callstack is freed. while processing a subsequent error this
-	** condition will be true and the program will segfault
-	*/
-}
-#endif
-		if(callstack.depth == 0)
-		{
-			// use the base frame for the initial call
-			if(!TOP)
-			{
-//printf("setting reg[%d] %s at %s:%d\n", callstack.l, func, file, line);
-				f = TOP = &callstack.frames.base;
-				f->type = 1;
-			}
-		}
-		else
-		{
-			if(!TOP)
-			{
-//printf("setting reg[%d] %s at %s:%d\n", callstack.l, func, file, line);
-				f = TOP = &callstack.frames.stor.v[callstack.l];
-			}
-		}
-	}
-
-	if(f)
 	{
 		f->etab = etab;
 		f->code = code ?: 1;
@@ -287,84 +226,257 @@ if(!callstack.v)
 		f->line = line;
 		f->func = func;
 
+		f->finalized = 0;
+		f->populated = 0;
 		f->msgl = 0;
-		f->info.l = 0;
+		f->info.l= 0;
 	}
 }
 
 void API xapi_frame_set_and_leave(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func)
 {
+#if DEBUG
+	T = &callstack;
+#endif
+
 	xapi_frame_set(etab, code, file, line, func);
 	xapi_frame_leave();
 }
 
-int API xapi_frame_set_message(const char * const fmt, ...)
+void API xapi_frame_message(const char * const msg, int msgl)
 {
-	if(fmt)
+#if DEBUG
+	T = &callstack;
+#endif
+
+	struct frame * f = callstack.v[callstack.x];
+
+	//
+	// no-op if either:
+	//  - fmt is null, or
+	//  - this frame is already populated
+	//
+
+	if(fmt && f->populated == 0)
+	{
+		if(f->type)
+		{
+			struct frame_static * fs = (struct frame_static*)f;
+
+			fs->msgl = MIN(sizeof(fs->buf_msg) - 1, msgl);
+			memcpy(fs->buf_msg, msg, fs->msgl);
+			fs->buf_msg[fs->msgl] = 0;
+			fs->msg = fs->buf_msg;
+		}
+		else
+		{
+			// ensure allocation
+			if(msgl >= f->msga)
+			{
+				int ns = f->msga ?: 10;
+				while(msgl >= ns)
+					ns = ns * 2 + ns / 2;
+
+				if(wrealloc(&f->msg, sizeof(*f->msg), ns, f->msga) == 0)
+					f->msga = ns;
+			}
+
+			if(msgl < f->msga)
+			{
+				f->msgl = msgl;
+				memcpy(f->msg, msg, msgl);
+				f->msg[msgl] = 0;
+			}
+		}
+	}
+}
+
+void API xapi_frame_vmessage(const char * const fmt, ...)
+{
+#if DEBUG
+	T = &callstack;
+#endif
+
+	struct frame * f = callstack.v[callstack.x];
+
+	//
+	// no-op if either:
+	//  - fmt is null, or
+	//  - this frame is already populated
+	//
+
+	if(fmt && f->populated == 0)
 	{
 		va_list va;
 		va_start(va, fmt);
 
-		if(callstack.isalt)
+		if(f->type)
 		{
-			dprintf(2, "MESSAGE ON ALT STACK\n");
+			struct frame_static * fs = (struct frame_static*)f;
+
+			fs->msgl = vsnprintf(fs->buf_msg, sizeof(fs->buf_msg), fmt, va);
+			fs->msg = fs->buf_msg;
 		}
 		else
 		{
+			// measure the message
 			va_list va2;
 			va_copy(va2, va);
 
-			// measure
 			int w = vsnprintf(0, 0, fmt, va2);
 			va_end(va2);
 
-			// reallocate
-			if(TOP->msga <= w)
+			// ensure allocation
+			if(w >= f->msga)
 			{
-				int ns = TOP->msga;
-				while(ns <= w)
-				{
-					ns = ns ?: 10;
+				int ns = f->msga ?: 10;
+				while(w >= ns)
 					ns = ns * 2 + ns / 2;
-				}
-				
-	static int C;
-				if(C++ == -1)
-				{
-					if(wrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) == 0)
-						return nomem();
-				}
-				else
-				{
-					if(wrealloc(&TOP->msg, sizeof(*TOP->msg), ns, TOP->msga) != 0)
-						return nomem();
-				}	
 
-				TOP->msga = ns;
+				if(wrealloc(&f->msg, sizeof(*f->msg), ns, f->msga) == 0)
+					f->msga = ns;
 			}
 
-			TOP->msgl = vsprintf(TOP->msg, fmt, va);
+			if(w < f->msga)
+				f->msgl = vsprintf(f->msg, fmt, va);
 		}
 
 		va_end(va);
 	}
-
-	return 0;
 }
 
-int API xapi_frame_add_info(const char * const k, int kl, const char * const vfmt, ...)
+void API xapi_frame_info(const char * const k, int kl, const char * const v, int vl)
 {
-	struct frame * f = 0;
+#if DEBUG
+	T = &callstack;
+#endif
 
-	if(callstack.v)
-		f = callstack.v[callstack.l];
-	else if(callstack.alt.l)
-		f = callstack.alt.v[callstack.alt.l - 1];	
-
-	if(f)
-	{
+	if(k)
 		kl = kl ?: strlen(k);
+	if(v)
+		vl = vl ?: strlen(v);
 
+	struct frame * f = callstack.v[callstack.x];
+
+	//
+	// no-op if either:
+	//  - fmt is null, or
+	//  - this frame is already populated
+	//
+
+	if(k && kl && v && vl && f->populated == 0)
+	{
+		if(f->type)
+		{
+			struct frame_static * fs = (struct frame_static*)f;
+			
+			if(fs->info.l < (sizeof(fs->buf_info) / sizeof(fs->buf_info[0])))
+			{
+				fs->info.v = fs->buf_info;
+				fs->info.v[fs->info.l].ks = fs->buf_info_ks[fs->info.l];
+				fs->info.v[fs->info.l].vs = fs->buf_info_vs[fs->info.l];
+				
+				// key
+				fs->info.v[fs->info.l].kl = MIN(sizeof(fs->buf_info_ks[0]) - 1, kl);
+				memcpy(fs->info.v[fs->info.l].ks, k, fs->info.v[fs->info.l].kl);
+				fs->info.v[fs->info.l].ks[fs->info.v[fs->info.l].kl] = 0;
+
+				// value
+				fs->info.v[fs->info.l].vl = MIN(sizeof(fs->buf_info_vs[0]) - 1, vl);
+				memcpy(fs->info.v[fs->info.l].vs, v, fs->info.v[fs->info.l].vl);
+				fs->info.v[fs->info.l].vs[fs->info.v[fs->info.l].vl] = 0;
+
+				fs->info.l++;
+			}
+		}
+		else
+		{
+			// ensure allocation for the info list
+			if(f->info.l == f->info.a)
+			{
+				int ns = f->info.a ?: 3;
+				ns = ns * 2 + ns / 2;
+
+				if(wrealloc(&f->info.v, sizeof(*f->info.v), ns, f->info.a) == 0)
+					f->info.a = ns;
+			}
+
+			if(f->info.l < f->info.a)
+			{
+				// ensure allocation for the key
+				if(kl >= f->info.v[f->info.l].ka)
+				{
+					int ns = f->info.v[f->info.l].ka ?: 10;
+					while(ns <= kl)
+						ns = ns * 2 + ns / 2;
+	
+					if(wrealloc(&f->info.v[f->info.l].ks, sizeof(*f->info.v[0].ks), ns, f->info.v[f->info.l].ka) == 0)
+						f->info.v[f->info.l].ka = ns;
+				}
+
+				if(kl < f->info.v[f->info.l].ka)
+				{
+					// ensure allocation for the value
+					if(vl >= f->info.v[f->info.l].va)
+					{
+						int ns = f->info.v[f->info.l].va ?: 10;
+						while(ns <= vl)
+							ns = ns * 2 + ns / 2;
+	
+						if(wrealloc(&f->info.v[f->info.l].vs, sizeof(*f->info.v[0].vs), ns, f->info.v[f->info.l].va) == 0)
+							f->info.v[f->info.l].va = ns;
+					}
+
+					if(vl < f->info.v[f->info.l].va)
+					{
+						// populate the key
+						memcpy(f->info.v[f->info.l].ks, k, kl);
+						f->info.v[f->info.l].ks[kl] = 0;
+						f->info.v[f->info.l].kl = kl;
+
+						// populate the value
+						memcpy(f->info.v[f->info.l].vs, v, vl);
+						f->info.v[f->info.l].vs[vl] = 0;
+						f->info.v[f->info.l].vl = vl;
+
+						f->info.l++;
+					}
+
+				}
+				va_end(va);
+			}
+		}
+	}
+}
+
+void API xapi_frame_vinfo(const char * const k, int kl, const char * const vfmt, ...)
+{
+#if DEBUG
+	T = &callstack;
+#endif
+
+	kl = kl ?: strlen(k);
+
+	struct frame * f = callstack.v[callstack.x];
+
+	// measure the value
+	va_list va;
+	va_start(va, vfmt);
+	
+	va_list va2;
+	va_copy(va2, va);
+
+	int vl = vsnprintf(0, 0, vfmt, va2);
+	va_end(va2);
+
+	//
+	// no-op if either:
+	//  - fmt is null, or
+	//  - this frame is already populated
+	//
+
+	if(k && kl && vl && f->populated == 0)
+	{
 		if(f->type)
 		{
 			struct frame_static * fs = (struct frame_static*)f;
@@ -381,9 +493,6 @@ int API xapi_frame_add_info(const char * const k, int kl, const char * const vfm
 				fs->info.v[fs->info.l].kl = kl;
 
 				// value
-				va_list va;
-				va_start(va, vfmt);
-
 				fs->info.v[fs->info.l].vl = vsnprintf(fs->info.v[fs->info.l].vs, sizeof(fs->buf_info_vs[0]), vfmt, va);
 
 				fs->info.l++;
@@ -391,76 +500,58 @@ int API xapi_frame_add_info(const char * const k, int kl, const char * const vfm
 		}
 		else
 		{
-			// reallocate the info list
+			// ensure allocation for the info list
 			if(f->info.l == f->info.a)
 			{
 				int ns = f->info.a ?: 3;
 				ns = ns * 2 + ns / 2;
 
-#if 0
-ns = f->info.l + 1;
 				if(wrealloc(&f->info.v, sizeof(*f->info.v), ns, f->info.a) == 0)
-					return nomem();
-#else
-				if(wrealloc(&f->info.v, sizeof(*f->info.v), ns, f->info.a) != 0)
-					return nomem();
-#endif
-				f->info.a = ns;
+					f->info.a = ns;
 			}
 
-			// populate key
-			if(f->info.v[f->info.l].ka <= kl)
+			if(f->info.l < f->info.a)
 			{
-				int ns = f->info.v[f->info.l].ka;
-				while(ns <= kl)
+
+				// ensure allocation for the key
+				if(kl >= f->info.v[f->info.l].ka)
 				{
-					ns = ns ?: 10;
-					ns = ns * 2 + ns / 2;
+					int ns = f->info.v[f->info.l].ka ?: 10;
+					while(ns <= kl)
+						ns = ns * 2 + ns / 2;
+	
+					if(wrealloc(&f->info.v[f->info.l].ks, sizeof(*f->info.v[0].ks), ns, f->info.v[f->info.l].ka) == 0)
+						f->info.v[f->info.l].ka = ns;
 				}
-				
-				if(wrealloc(&f->info.v[f->info.l].ks, sizeof(*f->info.v[0].ks), ns, f->info.v[f->info.l].ka) != 0)
-					return nomem();
 
-				f->info.v[f->info.l].ka = ns;
-			}
-
-			memcpy(f->info.v[f->info.l].ks, k, kl);
-			f->info.v[f->info.l].ks[kl] = 0;
-			f->info.v[f->info.l].kl = kl;
-
-			// populate value
-			va_list va;
-			va_start(va, vfmt);
-			
-			va_list va2;
-			va_copy(va2, va);
-
-			// measure
-			int w = vsnprintf(0, 0, vfmt, va2);
-			va_end(va2);
-
-			// reallocate
-			if(f->info.v[f->info.l].va <= w)
-			{
-				int ns = f->info.v[f->info.l].va;
-				while(ns <= w)
+				if(kl < f->info.v[f->info.l].ka)
 				{
-					ns = ns ?: 10;
-					ns = ns * 2 + ns / 2;
+					// ensure allocation for the value
+					if(vl >= f->info.v[f->info.l].va)
+					{
+						int ns = f->info.v[f->info.l].va ?: 10;
+						while(ns <= vl)
+							ns = ns * 2 + ns / 2;
+	
+						if(wrealloc(&f->info.v[f->info.l].vs, sizeof(*f->info.v[0].vs), ns, f->info.v[f->info.l].va) == 0)
+							f->info.v[f->info.l].va = ns;
+					}
+
+					if(vl < f->info.v[f->info.l].va)
+					{
+						// populate the key
+						memcpy(f->info.v[f->info.l].ks, k, kl);
+						f->info.v[f->info.l].ks[kl] = 0;
+						f->info.v[f->info.l].kl = kl;
+
+						// populate the value
+						f->info.v[f->info.l].vl = vsprintf(f->info.v[f->info.l].vs, vfmt, va);
+						f->info.l++;
+					}
 				}
-				
-				if(wrealloc(&f->info.v[f->info.l].vs, sizeof(*f->info.v[0].vs), ns, f->info.v[f->info.l].va) != 0)
-					return nomem();
-
-				f->info.v[f->info.l].va = ns;
 			}
-
-			f->info.v[f->info.l].vl = vsprintf(f->info.v[f->info.l].vs, vfmt, va);
-			va_end(va);
-
-			f->info.l++;
 		}
 	}
 
-	return 0;
+	va_end(va);
 }

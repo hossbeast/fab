@@ -32,62 +32,46 @@
 struct etable;
 struct callstack;
 
-/// xapi_frame_push
+/// xapi_frame_enter
 //
 // SUMMARY
 //  push a frame onto the callstack
 //
-int xapi_frame_push();
-
-/// xapi_frame_depth
+// RETURNS
+//  zero on success
 //
-// SUMMARY
-//  return the depth of the callstack
-//
-int xapi_frame_depth();
-
-/// xapi_frame_unwinding
-//
-// SUMMARY
-//  true when unwinding the callstack
-//
-int xapi_frame_unwinding();
+int xapi_frame_enter();
 
 /// xapi_frame_leave
 //
-// callstack.top--
+// SUMMARY
+//  pop a frame from the callstack
 //
-void xapi_frame_leave();
+// RETURNS
+//  zero when no error has been raised; otherwise, the error id
+//
+int xapi_frame_leave();
 
-/// xapi_frame_exit
+/// xapi_unwinding
 //
-// callstack.top--
+// SUMMARY
+//  true if an error has been raised
 //
-int xapi_frame_exit();
+int xapi_unwinding();
 
 /// xapi_frame_finalize
 //
-//
+// SUMMARY
+//  record that execution has passed the XAPI_FINALLY label in the current frame
 //
 void xapi_frame_finalize();
 
 /// xapi_frame_finalized
 //
-// 
+// SUMMARY
+//  true if execution has passed the XAPI_FINALLY label in current frame
 //
 int xapi_frame_finalized();
-
-/// xapi_frame_pop
-//
-// callstack.l--
-//
-void xapi_frame_pop();
-
-/// xapi_frame_top_code_alt
-//
-// returns the code of the top frame of the alt stack
-//
-int xapi_frame_top_code_alt();
 
 /// xapi_frame_set
 //
@@ -101,41 +85,49 @@ int xapi_frame_top_code_alt();
 //  [line] - line number
 //  [func] - function name
 //
-void xapi_frame_set(const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func);
+void xapi_frame_set(const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
+	__attribute__((nonnull));
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET(etab, code)	\
 	xapi_frame_set(etab, code, __FILE__, __LINE__, __FUNCTION__)
 
-/// xapi_frame_set_message
+/// xapi_frame_message/xapi_frame_vmessage
 //
 // SUMMARY
-//  set error message for the top frame
+//  set error message for the top frame (no-op if msg/fmt is null or 0-length)
 //
 // PARAMETERS
-//  fmt - format string
+//  [msg] - message
+//  [fmt] - format string
 //
-int xapi_frame_set_message(const char * const restrict fmt, ...);
+void xapi_frame_message(const char * const restrict msg);
 
-/// xapi_frame_add_info
+void xapi_frame_vmessage(const char * const restrict fmt, ...);
+
+/// xapi_frame_info/xapi_frame_vinfo
 //
 // SUMMARY
-//  add key/value info to the top frame
+//  add key/value info to the top frame (no-op if key or value is null or 0-length)
 //
 // PARAMETERS
-//  k    - key
-//  [kl] - key length, or 0 for strlen
-//  vfmt - format string
+//  k      - key
+//  [kl]   - key length, or 0 for strlen
+//  [v]    - value
+//  [vl]   - value length
+//  [vfmt] - format string for value
 //
-int xapi_frame_add_info(const char * const k, int kl, const char * const restrict vfmt, ...)
-	__attribute__((nonnull));
+void xapi_frame_info(const char * const restrict k, int kl, const char * const restrict v, int vl);
+
+void xapi_frame_vinfo(const char * const restrict k, int kl, const char * const restrict vfmt, ...);
 
 /// xapi_frame_set_and_leave
 //
 // SUMMARY
 //  call xapi_frame_set then xapi_frame_leave
 //
-void xapi_frame_set_and_leave(const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func);
+void xapi_frame_set_and_leave(const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
+	__attribute__((nonnull));
 
 // call xapi_frame_set_and_leave with current file name, line number, and function name
 #define XAPI_FRAME_SET_AND_LEAVE(etab, code)	\

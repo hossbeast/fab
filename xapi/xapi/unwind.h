@@ -74,140 +74,110 @@ when calling non-xapi code, you have a couple of options.
 /// fail
 //
 // SUMMARY
-//  raise an error with the specified code and the prevailing errtab
+//  fail the current frame with the specified error
 //
-#define fail(code, fmt, ...)																				\
-	do {																															\
-		/* populate top stack frame */																	\
-		XAPI_FRAME_SET(perrtab, code);																	\
-																																		\
-		/* set message for top stack frame */														\
-		if(xapi_frame_set_message(fmt, #__VA_ARGS__) != 0)							\
-		{																																\
-			/* xapi_frame_set_message populated alt[0] with ENOMEM */			\
-			XAPI_FRAME_SET_AND_LEAVE(0, 0);																\
-		}																																\
-																																		\
-		/* jump to the end unless the frame is already finalized */			\
-		if(!xapi_frame_finalized())																			\
-		{																																\
-			goto XAPI_FAILURE;																						\
-		}																																\
+// ARGUMENTS
+//  table  - error table
+//  code   - error code
+//
+#define fail(table, code)																	\
+	do {																										\
+		/* populate the current stack frame */								\
+		XAPI_FRAME_SET(table, code);													\
+																													\
+		/* jump to the finally label */												\
+		goto XAPI_FAILURE;																		\
 	} while(0)
 
-/// fatality
+/// sfail
 //
 // SUMMARY
-//  raise an error on behalf of another function that just failed
+//  fail the current frame with the specified error and message
 //
-#define fatality(func, table, code, fmt, ...)												\
-	do {																															\
-		if(xapi_frame_push() != 0)																			\
-		{																																\
-			/* xapi_frame_push populated alt[0] with ENOMEM */						\
-			XAPI_FRAME_SET_AND_LEAVE(0, 0);																\
-																																		\
-			/* while isalt, frame_push cannot return nonzero */						\
-			goto XAPI_FAILURE;																						\
-		}																																\
-																																		\
-		/* populate stack frame for the called function */							\
-		xapi_frame_set(table, code, 0, 0, func);												\
-																																		\
-		if(xapi_frame_set_message(fmt, ##__VA_ARGS__) != 0)							\
-		{																																\
-			/* xapi_frame_set_message populated alt[0] with ENOMEM */			\
-			XAPI_FRAME_SET_AND_LEAVE(0, 0);																\
-		}																																\
-																																		\
-		xapi_frame_leave();																							\
-																																		\
-		/* populate stack frame for myself */														\
-		XAPI_FRAME_SET(0, 0);																						\
-		if(!xapi_frame_finalized())																			\
-		{																																\
-			goto XAPI_FAILURE;																						\
-		}																																\
+// ARGUMENTS
+//  table  - error table
+//  code   - error code
+//  [msg]  - error message
+//  [msgl] - error message length (0 for strlen)
+//
+#define sfail(table, code, msg, msgl)											\
+	do {																										\
+		/* populate the current stack frame */								\
+		XAPI_FRAME_SET(table, code);													\
+																													\
+		/* set message for top stack frame */									\
+		xapi_frame_message(msg, msgl);												\
+																													\
+		/* jump to the finally label */												\
+		goto XAPI_FAILURE;																		\
 	} while(0)
 
-// fatality macro for SYS - assumes there is no message
-#define sysfatality(func)																						\
-	fatality(#func, perrtab_SYS, errno, 0)
+/// vfail
+//
+// SUMMARY
+//  fail the current frame with the specified error and message
+//
+// ARGUMENTS
+//  table - error table
+//  code  - error code
+//  [fmt] - format string for error message
+//
+#define vfail(table, code, fmt, ...)											\
+	do {																										\
+		/* populate the current stack frame */								\
+		XAPI_FRAME_SET(table, code);													\
+																													\
+		/* set message for top stack frame */									\
+		xapi_frame_set_message(fmt, #__VA_ARGS__);						\
+																													\
+		/* jump to the finally label */												\
+		goto XAPI_FAILURE;																		\
+	} while(0)
 
 /*
 ** called elsewhere in the stack
 */
 
-#if 0
-#define XINVOKE(func, ...)																	\
-	({																												\
-		int __d = xapi_frame_depth();														\
-		if(xapi_frame_push() != 0)															\
-		{																												\
-			/* xapi_frame_push populated alt[0] with ENOMEM */		\
-			XAPI_FRAME_SET_AND_LEAVE(0, 0);												\
-			goto XAPI_FAILURE;																		\
-		}																												\
-																														\
-		int __r = func(__VA_ARGS__);														\
-																														\
-		if(xapi_frame_depth() != __d)														\
-		{																												\
-			xapi_frame_leave();																		\
-		}																												\
-		__r;																										\
-	})
-
-#define XALTINVOKE(func, ...)																\
-	({																												\
-		int __d = xapi_frame_depth();														\
-		xapi_frame_alt_push();																	\
-		int __r = func(__VA_ARGS__);														\
-		if(xapi_frame_depth() != __d)														\
-			xapi_frame_leave();																		\
-		}																												\
-		__r;																										\
-	})
-#endif
+/// fatal
+//
+// SUMMARY
+//  invoke an UNWIND-ing function and fail if it fails
+//
+#define fatal(func, ...)																					\
+	do {																														\
+		if(xapi_frame_enter() || func(__VA_ARGS__))										\
+		{																															\
+			/* populate the current stack frame	*/											\
+			XAPI_FRAME_SET(0, 0);																				\
+																																	\
+			/* jump to the finally label */															\
+			goto XAPI_FAILURE;																					\
+		}																															\
+	} while(0)
 
 /// fatalize
 //
 // SUMMARY
-//  call a function. if it fails, and did not UNWIND, raise an error on its behalf
+//  invoke a non-UNWIND-ing function and if it fails, capture its
+//  error code and message for the current frame and fail
 //
-#define fatalize(table, code, func, ...)														\
-	do {																															\
-		int __d = xapi_frame_depth();																		\
-		if(xapi_frame_push() != 0)																			\
-		{																																\
-			/* xapi_frame_push populated alt[0] with ENOMEM */						\
-			XAPI_FRAME_SET_AND_LEAVE(0, 0);																\
-			goto XAPI_FAILURE;																						\
-		}																																\
-																																		\
-		int __r = func(__VA_ARGS__);																		\
-		if(xapi_frame_depth() != __d)																		\
-		{																																\
-			if(__r != 0)																									\
-			{																															\
-				/* populate stack frame on called functions behalf */				\
-				xapi_frame_set(table, code ?: __r, 0, 0, #func);						\
-			}																															\
-			xapi_frame_leave();																						\
-		}																																\
-		if(__r != 0)																										\
-		{																																\
-			/* populate stack frame for myself */													\
-			XAPI_FRAME_SET(0, 0);																					\
-			if(!xapi_frame_finalized())																		\
-			{																															\
-				goto XAPI_FAILURE;																					\
-			}																															\
-		}																																\
+// REMARKS
+//  fatalize is typically used in a wrapper for some function
+//
+#define fatalize(func, table, code, msg, ...)											\
+	do {																														\
+		if(func(__VA_ARGS__))																					\
+		{																															\
+			XAPI_FRAME_SET(table, code);																\
+																																	\
+			xapi_frame_set_message_direct(msg);													\
+																																	\
+			goto XAPI_FAILURE;																					\
+		}																															\
 	} while(0)
 
 // fatalize macro for calling sys
-#define sysfatalize(func, ...)																			\
+#define sysfatalize(func, ...)																		\
 	fatalize(perrtab_SYS, errno, func, __VA_ARGS__)
 
 /// fatal
@@ -223,12 +193,11 @@ when calling non-xapi code, you have a couple of options.
 //  statements between finally and coda are executed even upon fail/leave
 //
 #define finally																\
-	goto XAPI_SUCCESS;													\
 XAPI_FAILURE:																	\
+	if(xapi_frame_finalized())									\
+		goto XAPI_LEAVE;													\
 	xapi_frame_finalize();											\
 	goto XAPI_FINALLY;													\
-XAPI_SUCCESS:																	\
-	xapi_frame_finalize();											\
 XAPI_FINALLY
 
 /// coda
@@ -239,16 +208,17 @@ XAPI_FINALLY
 #define coda										\
 	goto XAPI_LEAVE;							\
 XAPI_LEAVE:											\
-	return xapi_frame_exit()
+	return xapi_frame_leave()
 
-/// coda_custom
+/// conclude
 //
 // SUMMARY
+//  capture the error code from the current function
 //
-#define coda_custom									\
+#define conclude										\
 	goto XAPI_LEAVE;									\
 XAPI_LEAVE:													\
-	_xapi_r = xapi_frame_exit()
+	_xapi_r = xapi_frame_leave()
 
 /*
 ** called after finally
@@ -256,23 +226,23 @@ XAPI_LEAVE:													\
 
 /// XAPI_INFO
 //
-// set info for the current frame if XAPI_UNWINDING
+// SUMMARY
+//  add info kvp to the current frame
 //
-#define XAPI_INFO(k, vfmt, ...)																		\
-	do {																														\
-		if(xapi_frame_add_info(k, 0, vfmt, ##__VA_ARGS__) != 0)				\
-		{																															\
-			/* xapi_frame_add_info populated alt[0] with ENOMEM */			\
-			XAPI_FRAME_SET_AND_LEAVE(0, 0);															\
-			goto XAPI_LEAVE;																						\
-		}																															\
+// REMARKS
+//  this is a no-op when not unwinding
+//
+#define XAPI_INFO(k, vfmt, ...)												\
+	do {																								\
+		xapi_frame_add_info(k, 0, vfmt, ##__VA_ARGS__);
 	} while(0)
 
 /// XAPI_UNWINDING
 //
-// true if the current frame is about to return with failure
+// SUMMARY
+//  true if an error has been raised
 //
-#define XAPI_UNWINDING xapi_frame_unwinding()
+#define XAPI_UNWINDING xapi_unwinding()
 
 /*
 ** called after finally iff XAPI_UNWINDING
@@ -285,13 +255,6 @@ XAPI_LEAVE:													\
 //
 int xapi_frame_count();
 
-/// xapi_frame_count_alt
-//
-// SUMMARY
-//  returns the number of frames in the alt callstack
-//
-int xapi_frame_count_alt();
-
 /// xapi_frame_error
 //
 // SUMMARY
@@ -303,9 +266,6 @@ int xapi_frame_count_alt();
 //  x    - frame index
 //
 size_t xapi_frame_error(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-size_t xapi_frame_error_alt(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
 
 /// xapi_frame_function
@@ -321,9 +281,6 @@ size_t xapi_frame_error_alt(char * const restrict dst, const size_t sz, int x)
 size_t xapi_frame_function(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
 
-size_t xapi_frame_function_alt(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
 /// xapi_frame_location
 //
 // SUMMARY
@@ -337,9 +294,6 @@ size_t xapi_frame_function_alt(char * const restrict dst, const size_t sz, int x
 size_t xapi_frame_location(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
 
-size_t xapi_frame_location_alt(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
 /// xapi_frame_info
 //
 // SUMMARY
@@ -349,9 +303,6 @@ size_t xapi_frame_location_alt(char * const restrict dst, const size_t sz, int x
 //  dst  - buffer to write to
 //  sz   - max bytes to write, including null byte
 //  x    - frame index
-//
-// REMARKS
-//  alt stack frames do not have info k/v pairs
 //
 size_t xapi_frame_info(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
@@ -367,9 +318,6 @@ size_t xapi_frame_info(char * const restrict dst, const size_t sz, int x)
 //  x    - frame index
 //
 size_t xapi_frame_trace(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-size_t xapi_frame_trace_alt(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
 
 /// xapi_trace_pithy

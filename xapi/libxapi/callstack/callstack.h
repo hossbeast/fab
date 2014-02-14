@@ -22,6 +22,11 @@
 
 /*
 ** callstack definition ; libxapi-visibility
+**
+** the callstack represents execution from the first UNWIND-ing call to the site of the first error
+** errors that take place beyond the first (which must necessarily begin after the XAPI_FINALLY label
+** in the failing function) are not tracked. normally, the first error should trigger cleanup/unwinding
+** but there are certain cleanup functions which can fail (close is the best example)
 */
 
 struct frame
@@ -55,11 +60,15 @@ struct frame
 		int a;
 		int l;
 	} info;
+
+	int finalized;		// whether execution has passed the XAPI_FINALLY label in this frame
+	int populated;		// whether this frame has already been populated (not necessarily set, but if it is set, then its true)
 };
 
 /*
-** the base frame and frames in the alt stack are statically allocated
-** alt stack frames never have msg or info populated
+** there are 3 statically allocated frames:
+**  - the base frame
+**  - 2 frames for out of memory reporting if libxapi cannot allocate more frames
 */ 
 struct frame_static
 {
@@ -80,42 +89,19 @@ struct callstack
 {
 	struct
 	{
-		// storage of dynamically allocated frames
-		struct
-		{
-			struct frame *	v;
-			int							a;
-		} stor;
+		// dynamically allocated frames
+		struct frame * 			stor;
 
-		// the base frame is not dynamically allocated
-		struct frame_static base;
-
-		// the alt frames are not dynamically allocated
-		struct frame_static alt[2];
+		// statically allocated frames
+		struct frame_static	alt[2];
 	} frames;
 
-	// stack frames
+	// stack frame list
 	struct frame ** v;
 	int							a;
 
-	// number of stack frames when unwinding
-	int l;
-
-	// number of frames deep that current execution requires
-	int depth;
-
-	struct
-	{
-		struct frame * v[2];
-		int l;
-		int depth;
-	} alt;
-
-	// transient value indicating that the alt stack is being populated
-	int isalt;
-
-	// transient value indicating that the current frame is finalized (execution has passed the XAPI_FINALLY label)
-	int finalized;
+	int l;	// 1-based count of stack frames (depth)
+	int x;	// 0-based index of current stack frame while unwinding
 };
 
 // per-thread callstacks
