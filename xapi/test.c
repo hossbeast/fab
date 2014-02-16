@@ -7,22 +7,25 @@
 
 #define perrtab perrtab_SYS
 
-#if 0
+int xclose(int fd)
+{
+printf(" >> IN XCLOSE\n");
+
+	fatalize(errno, close, fd);
+
+finally :
+	XAPI_INFOF("fd", "%d", fd);
+coda;
+}
+
 int foxtrot(int num)
 {
-	if(num == 25)
-	{
-printf("foxtrot failing\n");
-		fail(ERESTART, "restarting");
-	}
+	//fails(ERESTART, "restarting");
 
 finally:
-	XAPI_INFO("foxtrotnum", "%d", num);
+	XAPI_INFOF("foxtrotnum", "%d", num);
 
-	if(num == 255)
-	{
-		sysfatalize(close, -1);
-	}
+	fatal(xclose, 0);
 coda;
 }
 
@@ -31,7 +34,7 @@ int echo(int num)
 	fatal(foxtrot, num);
 
 finally:
-	XAPI_INFO("echonum", "%d", num);
+	XAPI_INFOF("echonum", "%d", num);
 coda;
 }
 
@@ -40,7 +43,9 @@ int delta(int num)
 	fatal(echo, num);
 
 finally:
-	XAPI_INFO("deltanum", "%d", num);
+	XAPI_INFOF("deltanum", "%d", num);
+
+	fatal(xclose, -1);
 coda;
 }
 
@@ -49,26 +54,25 @@ int charlie(int num)
 	fatal(delta, num);
 
 finally:
-	XAPI_INFO("charlienum", "%d", num);
+	XAPI_INFOF("charlienum", "%d", num);
 coda;
 }
-#endif
 
 int bravo(int num)
 {
-	fail(ENOMEM, "sadface");
+	fatal(charlie, num);
 
 finally:
-	XAPI_INFO("bravonum", "%d", num);
+	XAPI_INFOF("bravonum", "%d", num);
 coda;
 }
 
 int alpha(int num)
 {
-finally:
 	fatal(bravo, num);
-
-	XAPI_INFO("alphanum", "%d", num);
+finally :
+	fatal(bravo, num);
+	XAPI_INFOF("alphanum", "%d", num);
 coda;
 }
 

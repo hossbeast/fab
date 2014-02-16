@@ -27,7 +27,10 @@
 /// backtrace generation
 ///
 
-#define SAY(...) z += snprintf(dst + z, sz - z, __VA_ARGS__)
+#define SAY(...) do {																\
+		if(sz - z)																			\
+			z += snprintf(dst + z, sz - z, __VA_ARGS__);	\
+	} while(0)
 
 static size_t frame_function(char * const dst, const size_t sz, struct frame * f)
 {
@@ -141,19 +144,9 @@ int API xapi_frame_count()
 	return callstack.l;
 }
 
-int API xapi_frame_count_alt()
-{
-	return callstack.alt.l;
-}
-
 size_t API xapi_frame_error(char * const dst, const size_t sz, int x)
 {
 	return frame_error(dst, sz, callstack.v[x]);
-}
-
-size_t API xapi_frame_error_alt(char * const dst, const size_t sz, int x)
-{
-	return frame_error(dst, sz, callstack.alt.v[x]);
 }
 
 size_t API xapi_frame_function(char * const dst, const size_t sz, int x)
@@ -161,22 +154,12 @@ size_t API xapi_frame_function(char * const dst, const size_t sz, int x)
 	return frame_function(dst, sz, callstack.v[x]);
 }
 
-size_t API xapi_frame_function_alt(char * const dst, const size_t sz, int x)
-{
-	return frame_function(dst, sz, callstack.alt.v[x]);
-}
-
 size_t API xapi_frame_location(char * const dst, const size_t sz, int x)
 {
 	return frame_location(dst, sz, callstack.v[x]);
 }
 
-size_t API xapi_frame_location_alt(char * const dst, const size_t sz, int x)
-{
-	return frame_location(dst, sz, callstack.alt.v[x]);
-}
-
-size_t API xapi_frame_info(char * const dst, const size_t sz, int x)
+size_t API xapi_frame_infostring(char * const dst, const size_t sz, int x)
 {
 	return frame_info(dst, sz, callstack.v[x]);
 }
@@ -186,92 +169,57 @@ size_t API xapi_frame_trace(char * const dst, const size_t sz, int x)
 	return frame_trace(dst, sz, callstack.v[x], 1, 1);
 }
 
-size_t API xapi_frame_trace_alt(char * const dst, const size_t sz, int x)
-{
-	return frame_trace(dst, sz, callstack.alt.v[x], 1, 1);
-}
-
 size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 {
 	size_t z = 0;
 
-	// alt stack
+	z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
+	z += snprintf(dst + z, sz - z, " ");
+	z += frame_trace(dst + z, sz - z, callstack.v[callstack.l - 1], 0, callstack.v[callstack.l - 1]->code);
+
+	size_t zt = z;
 	int x;
-	if(callstack.alt.l)
+	for(x = callstack.l - 2; x >= MAX(callstack.l - 5 /* heuristic */, 0); x--)
 	{
-		z += frame_error(dst + z, sz - z, callstack.alt.v[0]);
-		z += snprintf(dst + z, sz - z, " ");
-		z += frame_trace(dst + z, sz - z, callstack.alt.v[0], 0, 1);
-	}
-
-	if(callstack.v == 0)
-	{
-		/*
-		** this is possible when there is only the alt stack, i.e. the first xapi_frame_push hit ENOMEM
-		*/
-	}
-	else
-	{
-		// norm stack
-		if(callstack.v[0]->code)
+		int y;
+		for(y = 0; y < callstack.v[x]->info.l; y++)
 		{
-			if(callstack.alt.l)
-				z += snprintf(dst + z, sz - z, " after ");
-
-			z += frame_error(dst + z, sz - z, callstack.v[0]);
-			z += snprintf(dst + z, sz - z, " ");
-		}
-		else
-		{
-			if(callstack.alt.l)
-				z += snprintf(dst + z, sz - z, " at ");
-		}
-
-		z += frame_trace(dst + z, sz - z, callstack.v[0], 0, callstack.v[0]->code);
-
-		size_t zt = z;
-		for(x = 1; x <= MIN(callstack.l, 4 /* heuristic */); x++)
-		{
-			int y;
-			for(y = 0; y < callstack.v[x]->info.l; y++)
+			// determine whether an info by this name has already been used
+			int xx;
+			for(xx = x + 1; xx < callstack.l; xx++)
 			{
-				// determine whether an info by this name has already been used
-				int xx;
-				for(xx = 0; xx < x; xx++)
+				int yy;
+				for(yy = 0; yy < callstack.v[xx]->info.l; yy++)
 				{
-					int yy;
-					for(yy = 0; yy < callstack.v[xx]->info.l; yy++)
-					{
-						if(xstrcmp(
-							  callstack.v[x]->info.v[y].ks
-							, callstack.v[x]->info.v[y].kl
-							, callstack.v[xx]->info.v[yy].ks
-							, callstack.v[xx]->info.v[yy].kl
-							, 0) == 0)
-						{
-							break;
-						}
-					}
-					if(yy < callstack.v[xx]->info.l)
+					if(xstrcmp(
+							callstack.v[x]->info.v[y].ks
+						, callstack.v[x]->info.v[y].kl
+						, callstack.v[xx]->info.v[yy].ks
+						, callstack.v[xx]->info.v[yy].kl
+						, 0) == 0)
 					{
 						break;
 					}
 				}
-
-				if(xx == x)
+				if(yy < callstack.v[xx]->info.l)
 				{
-					if(z == zt)
-						z += snprintf(dst + z, sz - z, " with ");
-					else
-						SAY(", ");
-
-					SAY("%.*s=%.*s"
-						, callstack.v[x]->info.v[y].kl
-						, callstack.v[x]->info.v[y].ks
-						, callstack.v[x]->info.v[y].vl
-						, callstack.v[x]->info.v[y].vs
-					);
+					break;
 				}
+			}
+
+			if(xx == callstack.l)
+			{
+				if(z == zt)
+					z += snprintf(dst + z, sz - z, " with ");
+				else
+					SAY(", ");
+
+				SAY("%.*s=%.*s"
+					, callstack.v[x]->info.v[y].kl
+					, callstack.v[x]->info.v[y].ks
+					, callstack.v[x]->info.v[y].vl
+					, callstack.v[x]->info.v[y].vs
+				);
 			}
 		}
 	}
@@ -279,54 +227,21 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 	return z;
 }
 
-typeof(callstack) * T;
-
 size_t API xapi_trace_full(char * const dst, const size_t sz)
 {
 	size_t z = 0;
 
-T = &callstack;
+	z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
+	z += snprintf(dst + z, sz - z, "\n");
 
-	// alt stack
 	int x;
-	if(callstack.alt.l)
+	for(x = callstack.l - 1; x >= 0; x--)
 	{
-		z += frame_error(dst + z, sz - z, callstack.alt.v[0]);
-
-		for(x = 0; x < callstack.alt.l; x++)
-		{
-			z += snprintf(dst + z, sz - z, "\n");
-			z += snprintf(dst + z, sz - z, " %d : ", x);
-			z += frame_trace(dst + z, sz - z, callstack.alt.v[x], 1, 1);
-		}
-	}
-
-	// norm stack
-	if(callstack.v == 0)
-	{
-		/*
-		** this is possible when there is only the alt stack, i.e. the first xapi_frame_push hit ENOMEM
-		*/
-	}
-	else
-	{
-		if(z)
+		if(x != callstack.l - 1)
 			z += snprintf(dst + z, sz - z, "\n");
 
-		if(callstack.v[0]->code)
-		{
-			z += frame_error(dst + z, sz - z, callstack.v[0]);
-			z += snprintf(dst + z, sz - z, "\n");
-		}
-
-		for(x = 0; x <= callstack.l; x++)
-		{
-			if(x)
-				z += snprintf(dst + z, sz - z, "\n");
-
-			z += snprintf(dst + z, sz - z, " %d : ", callstack.l - x);
-			z += frame_trace(dst + z, sz - z, callstack.v[x], 1, 1);
-		}
+		z += snprintf(dst + z, sz - z, " %d : ", x);
+		z += frame_trace(dst + z, sz - z, callstack.v[x], 1, 1);
 	}
 
 	return z;

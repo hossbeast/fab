@@ -74,64 +74,50 @@ when calling non-xapi code, you have a couple of options.
 /// fail
 //
 // SUMMARY
-//  fail the current frame with the specified error
+//  fail the current frame with the specified error and the prevailing error table
 //
 // ARGUMENTS
-//  table  - error table
-//  code   - error code
-//
-#define fail(table, code)																	\
-	do {																										\
-		/* populate the current stack frame */								\
-		XAPI_FRAME_SET(table, code);													\
-																													\
-		/* jump to the finally label */												\
-		goto XAPI_FAILURE;																		\
-	} while(0)
-
-/// sfail
-//
-// SUMMARY
-//  fail the current frame with the specified error and message
-//
-// ARGUMENTS
-//  table  - error table
+//  [table]- error table
 //  code   - error code
 //  [msg]  - error message
 //  [msgl] - error message length (0 for strlen)
+//  [fmt]  - format string for error message
 //
-#define sfail(table, code, msg, msgl)											\
+// VARIANTS
+//  fails - error message specified as null-terminated string
+//  failw - error message specified as pointer/length pair
+//  failf - error message specified in printf/style
+//
+#define fail(code)																				\
 	do {																										\
 		/* populate the current stack frame */								\
-		XAPI_FRAME_SET(table, code);													\
-																													\
-		/* set message for top stack frame */									\
-		xapi_frame_message(msg, msgl);												\
-																													\
-		/* jump to the finally label */												\
-		goto XAPI_FAILURE;																		\
+		if(XAPI_FRAME_SET(perrtab, code))											\
+		{																											\
+			/* jump to the finally label */											\
+			goto XAPI_FINALIZE;																	\
+		}																											\
 	} while(0)
 
-/// vfail
-//
-// SUMMARY
-//  fail the current frame with the specified error and message
-//
-// ARGUMENTS
-//  table - error table
-//  code  - error code
-//  [fmt] - format string for error message
-//
-#define vfail(table, code, fmt, ...)											\
+#define fails(code, msg) failw(code, msg, 0)
+
+#define failw(code, msg, msgl)														\
 	do {																										\
 		/* populate the current stack frame */								\
-		XAPI_FRAME_SET(table, code);													\
-																													\
-		/* set message for top stack frame */									\
-		xapi_frame_set_message(fmt, #__VA_ARGS__);						\
-																													\
-		/* jump to the finally label */												\
-		goto XAPI_FAILURE;																		\
+		if(XAPI_FRAME_SET_MESSAGEW(perrtab, code, msg, msgl))	\
+		{																											\
+			/* jump to the finally label */											\
+			goto XAPI_FINALIZE;																	\
+		}																											\
+	} while(0)
+
+#define failf(code, fmt, ...)																				\
+	do {																															\
+		/* populate the current stack frame */													\
+		if(XAPI_FRAME_SET_MESSAGEF(perrtab, code, fmt, ##__VA_ARGS__))	\
+		{																																\
+			/* jump to the finally label */																\
+			goto XAPI_FINALIZE;																						\
+		}																																\
 	} while(0)
 
 /*
@@ -141,51 +127,50 @@ when calling non-xapi code, you have a couple of options.
 /// fatal
 //
 // SUMMARY
-//  invoke an UNWIND-ing function and fail if it fails
+//  invoke an UNWIND-ing function and fail the current frame if that function fails
 //
-#define fatal(func, ...)																					\
-	do {																														\
-		if(xapi_frame_enter() || func(__VA_ARGS__))										\
-		{																															\
-			/* populate the current stack frame	*/											\
-			XAPI_FRAME_SET(0, 0);																				\
-																																	\
-			/* jump to the finally label */															\
-			goto XAPI_FAILURE;																					\
-		}																															\
+#define fatal(func, ...)																																	\
+	do {																																										\
+		if(xapi_frame_enter() != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)))		\
+			fail(0);																																						\
 	} while(0)
 
 /// fatalize
 //
 // SUMMARY
-//  invoke a non-UNWIND-ing function and if it fails, capture its
-//  error code and message for the current frame and fail
+//  invoke a non-UNWIND-ing function and if it fails, capture its error code and possibly
+//  message and fail the current frame using that code/msg and the prevailing error table
+//
+//  fatalize should not be used in a finally block
 //
 // REMARKS
-//  fatalize is typically used in a wrapper for some function
+//  fatalize is typically used in a small wrapper for some underlying function. A new frame is not
+//  created for the underlying function, its failures are "subsumed" into the calling frame
 //
-#define fatalize(func, table, code, msg, ...)											\
+// ARGUMENTS
+//  [table]- error table
+//  code   - error code returned from the function
+//  [msg]  - error message returned from the function
+//  [msgl] - error message length (0 for strlen)
+//
+// VARIANTS
+//  fatalizes - error message specified as null-terminated string
+//  fatalizew - error message specified as pointer/length pair
+//
+#define fatalize(code, func, ...)																	\
 	do {																														\
 		if(func(__VA_ARGS__))																					\
-		{																															\
-			XAPI_FRAME_SET(table, code);																\
-																																	\
-			xapi_frame_set_message_direct(msg);													\
-																																	\
-			goto XAPI_FAILURE;																					\
-		}																															\
+			fail(code);																									\
 	} while(0)
 
-// fatalize macro for calling sys
-#define sysfatalize(func, ...)																		\
-	fatalize(perrtab_SYS, errno, func, __VA_ARGS__)
+#define fatalizes(code, msg, func, ...)														\
+	fatalizew(code, msg, 0, func, ##__VA_ARGS__)
 
-/// fatal
-//
-// SUMMARY
-//  call a function that is known to be UNWIND-ing
-//
-#define fatal(func, ...) fatalize(0, 0, func, __VA_ARGS__)
+#define fatalizew(code, msg, msgl, func, ...)											\
+	do {																														\
+		if(func(__VA_ARGS__))																					\
+			failw(code, msg, msgl);																			\
+	} while(0)
 
 /// finally
 //
@@ -193,10 +178,10 @@ when calling non-xapi code, you have a couple of options.
 //  statements between finally and coda are executed even upon fail/leave
 //
 #define finally																\
-XAPI_FAILURE:																	\
-	if(xapi_frame_finalized())									\
-		goto XAPI_LEAVE;													\
-	xapi_frame_finalize();											\
+XAPI_FINALIZE:																\
+if(xapi_frame_finalized())										\
+	goto XAPI_LEAVE;														\
+xapi_frame_finalize();												\
 	goto XAPI_FINALLY;													\
 XAPI_FINALLY
 
@@ -232,9 +217,22 @@ XAPI_LEAVE:													\
 // REMARKS
 //  this is a no-op when not unwinding
 //
-#define XAPI_INFO(k, vfmt, ...)												\
+// VARIANTS
+//  infos - value string specified as a null-terminated string
+//  infow - value string specified as a pointer/length pair
+//  infof - value string specified in prinft-style
+//
+#define XAPI_INFOS(k, vstr)														\
+	XAPI_INFOW(k, vstr, 0)
+
+#define XAPI_INFOW(k, vstr, vlen)											\
 	do {																								\
-		xapi_frame_add_info(k, 0, vfmt, ##__VA_ARGS__);
+		xapi_frame_infow(k, 0, vstr, vlen);								\
+	} while(0)
+
+#define XAPI_INFOF(k, vfmt, ...)											\
+	do {																								\
+		xapi_frame_infof(k, 0, vfmt, ##__VA_ARGS__);			\
 	} while(0)
 
 /// XAPI_UNWINDING
@@ -304,7 +302,7 @@ size_t xapi_frame_location(char * const restrict dst, const size_t sz, int x)
 //  sz   - max bytes to write, including null byte
 //  x    - frame index
 //
-size_t xapi_frame_info(char * const restrict dst, const size_t sz, int x)
+size_t xapi_frame_infostring(char * const restrict dst, const size_t sz, int x)
 	__attribute__((nonnull));
 
 /// xapi_frame_trace

@@ -39,6 +39,10 @@ typeof(callstack) * T;
 
 static int wrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
+static int Z;
+	if(Z++ == 0x6)
+		return 1;
+
 	void** t = ((void**)target);
 	*t = realloc(*t, es * ec);
 
@@ -61,69 +65,104 @@ static int wrealloc(void* target, size_t es, size_t ec, size_t oec)
 ///
 /// callstack manipulation
 ///
+int API xapi_frame_enter_last()
+{
+	return callstack.r;
+}
+
 int API xapi_frame_enter()
 {
 #if DEBUG
 	T = &callstack;
 #endif
-printf("ENTER, l %d -> %d, l %d\n", callstack.l, callstack.l + 1, callstack.l);
 
-	// not unwinding
-	callstack.x = -1;
+	if(callstack.x && callstack.v[callstack.l - 1]->code)
+	{
+		// unwinding is underway ; no new frame
+		callstack.r = -1;
+		return -1;
+	}
+
+	// first push
+	if(callstack.x == 0)
+		callstack.x = -1;
+
+printf("ENTER :: [x=%2d][l=%2d] => ", callstack.x, callstack.l);
 
 	// ensure frame allocation
+	int ns = callstack.a;
 	if(callstack.l == callstack.a)
 	{
-		int ns = callstack.frames.stor.a ?: 10;
+		ns = callstack.a ?: 10;
 		ns = ns * 2 + ns / 2;
 
-		if(wrealloc(&callstack.frames.stor.v, sizeof(*callstack.frames.stor.v), ns, callstack.frames.stor.a) == 0)
+		ns = callstack.a + 2;
+
+		/*
+		** the frame list is allocated with 2 extra slots ; one for the base frame (at the beginning) and one
+		** for the alt frame (at the end)
+		*/
+		if(wrealloc(&callstack.v, sizeof(*callstack.v), ns + 2, callstack.a) == 0)
 		{
-			/*
-			** the frame list is allocated with 2 extra slots ; one for the base frame (at the beginning) and one
-			** for the alt frame (at the end)
-			*/
-			if(wrealloc(&callstack.v, sizeof(*callstack.v), ns + 2, callstack.a) == 0)
+			if(wrealloc(&callstack.frames.stor, sizeof(*callstack.frames.stor), ns, callstack.a) == 0)
 			{
-				callstack.a = ns;
+				int x;
+				for(x = callstack.a; x < ns; x++)
+				{
+					if(wrealloc(&callstack.frames.stor[x], sizeof(*callstack.frames.stor[0]), 1, 0))
+						break;
+				}
+
+				callstack.a = x;
 			}
 		}
 	}
 
-	if(callstack.l == callstack.a)
+	if(callstack.a != ns)
+//	if(callstack.l == callstack.a)
 	{
-		// if the frame list has been allocated, append the alt frames to it
+		// if the frame list has not yet been allocated, use the static frame list
 		if(callstack.v == 0)
-		{
-			callstack.v = &callstack.frames.alt;
+			callstack.v = callstack.frames.alt_list;
 
-			// base frame
+		if(callstack.l == 0)	// base frame
+		{
+			callstack.v[callstack.l] = &callstack.frames.alt[0];
+			callstack.v[callstack.l]->finalized = 0;
+			callstack.v[callstack.l]->populated = 0;
+			callstack.x++;
 			callstack.l++;
 		}
 
-		callstack.v[callstack.l] = &callstack.frames.alt;
+		callstack.v[callstack.l] = &callstack.frames.alt[1];
 		callstack.v[callstack.l]->finalized = 0;
 		callstack.v[callstack.l]->populated = 0;
-		callstack.v[callstack.l]->msgl = 0;
-		callstack.v[callstack.l]->info.l = 0;
+		callstack.x++;
 		callstack.l++;
+
+printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
 		
 		// populate the alternate frame with an ENOMEM error
-		xapi_frame_set_and_leave(perrtab_SYS, SYS_ENOMEM, 0, 0, "malloc");
+		xapi_frame_set(perrtab_SYS, SYS_ENOMEM, 0, 0, "libxapi::malloc");
+		xapi_frame_leave();
 
-		return -1;
+		callstack.r = 1;
+		return 1;
 	}
-	else
+
+	// push a frame for the base frame on the first push
+	do
 	{
-		// push a frame for the base frame on the first push
-		while(callstack.l < 2)
-		{
-			callstack.v[callstack.l] = &callstack.frames.stor[callstack.l];
-			callstack.v[callstack.l]->code = 0;
-			callstack.l++;
-		}
-	}
+		callstack.v[callstack.l] = callstack.frames.stor[callstack.l];
+		callstack.v[callstack.l]->code = 0;
+		callstack.v[callstack.l]->finalized = 0;
+		callstack.v[callstack.l]->populated = 0;
+		callstack.x++;
+		callstack.l++;
+	} while(callstack.l < 2);
 
+printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
+	callstack.r = 0;
 	return 0;
 }
 
@@ -132,24 +171,28 @@ int API xapi_frame_leave()
 #if DEBUG
 	T = &callstack;
 #endif
+printf("LEAVE :: [x=%2d][l=%2d] => ", callstack.x, callstack.l);
 
 	int16_t rc = 0;
 	int16_t rt = 0;
 
 	if((rc = callstack.v[callstack.x]->code))
 	{
+		// error raised in this frame
 		rt = callstack.v[callstack.x]->etab->id;
 	}
-	else if(callstack.v[callstack.l - 1]->code)
+	else if((rc = callstack.v[callstack.l - 1]->code))
 	{
-		// unwinding; keep the frame
+		// unwinding is underway
+		rt = callstack.v[callstack.l - 1]->etab->id;
 	}
 	else
 	{
+		// discard the frame
 		callstack.l--;
 	}
 
-	if(callstack.x-- == -1)
+	if(--callstack.x == -1)
 	{
 		/*
 		** x goes to -1 when a function exits that was not itself called with UNWIND-ing, e.g. main
@@ -157,7 +200,7 @@ int API xapi_frame_leave()
 		callstack_free();
 	}
 
-printf("LEAVE :: [x=%2d][l=%2d][t=%2d]\n", callstack.x, callstack.l, callstack.t);
+printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
 	return (rt << 16) | rc;
 }
 
@@ -188,7 +231,7 @@ int API xapi_unwinding()
 	return callstack.v[callstack.l - 1]->code;
 }
 
-void API xapi_frame_set(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func)
+int API xapi_frame_set(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func)
 {
 #if DEBUG
 	T = &callstack;
@@ -203,51 +246,47 @@ void API xapi_frame_set(const etable * const etab, const int16_t code, const cha
 	}
 #endif
 
-printf("setting reg[%d] %s at %s:%d\n", callstack.l, func, file, line);
-
 	//
-	// no-op if this frame has already been populated
+	// first frame_set initiates unwinding ; initialize x
 	//
-	
 	if(callstack.x == -1)
 		callstack.x = callstack.l - 1;
 
 	struct frame * f = callstack.v[callstack.x];
 
-	if(f->code)
+	if(f->func)
 	{
+		//
+		// no-op if this frame has already been populated
+		//
+		
 		f->populated = 1;
 	}
 	else
 	{
 		f->etab = etab;
-		f->code = code ?: 1;
+		f->code = code;
 		f->file = file;
 		f->line = line;
 		f->func = func;
 
-		f->finalized = 0;
-		f->populated = 0;
 		f->msgl = 0;
 		f->info.l= 0;
 	}
+
+	// whether to jump
+	return !f->finalized;
 }
 
-void API xapi_frame_set_and_leave(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func)
+int API xapi_frame_set_messagew(const etable * const etab, const int16_t code, const char * const msg, int msgl, const char * const file, const int line, const char * const func)
 {
 #if DEBUG
 	T = &callstack;
 #endif
 
-	xapi_frame_set(etab, code, file, line, func);
-	xapi_frame_leave();
-}
+	int r = xapi_frame_set(etab, code, file, line, func);
 
-void API xapi_frame_message(const char * const msg, int msgl)
-{
-#if DEBUG
-	T = &callstack;
-#endif
+	msgl = msgl ?: msg ? strlen(msg) : 0;
 
 	struct frame * f = callstack.v[callstack.x];
 
@@ -257,7 +296,7 @@ void API xapi_frame_message(const char * const msg, int msgl)
 	//  - this frame is already populated
 	//
 
-	if(fmt && f->populated == 0)
+	if(msgl && f->populated == 0)
 	{
 		if(f->type)
 		{
@@ -289,13 +328,17 @@ void API xapi_frame_message(const char * const msg, int msgl)
 			}
 		}
 	}
+
+	return r;
 }
 
-void API xapi_frame_vmessage(const char * const fmt, ...)
+int API xapi_frame_set_messagef(const etable * const etab, const int16_t code, const char * const fmt, const char * const file, const int line, const char * const func, ...)
 {
 #if DEBUG
 	T = &callstack;
 #endif
+
+	int r = xapi_frame_set(etab, code, file, line, func);
 
 	struct frame * f = callstack.v[callstack.x];
 
@@ -308,7 +351,7 @@ void API xapi_frame_vmessage(const char * const fmt, ...)
 	if(fmt && f->populated == 0)
 	{
 		va_list va;
-		va_start(va, fmt);
+		va_start(va, func);
 
 		if(f->type)
 		{
@@ -343,9 +386,11 @@ void API xapi_frame_vmessage(const char * const fmt, ...)
 
 		va_end(va);
 	}
+
+	return r;
 }
 
-void API xapi_frame_info(const char * const k, int kl, const char * const v, int vl)
+void API xapi_frame_infow(const char * const k, int kl, const char * const v, int vl)
 {
 #if DEBUG
 	T = &callstack;
@@ -443,13 +488,12 @@ void API xapi_frame_info(const char * const k, int kl, const char * const v, int
 					}
 
 				}
-				va_end(va);
 			}
 		}
 	}
 }
 
-void API xapi_frame_vinfo(const char * const k, int kl, const char * const vfmt, ...)
+void API xapi_frame_infof(const char * const k, int kl, const char * const vfmt, ...)
 {
 #if DEBUG
 	T = &callstack;

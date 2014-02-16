@@ -29,12 +29,13 @@ void xfree(void * v)
 
 void callstack_free()
 {
+printf("CALLSTACK FREE\n");
 	if(callstack.v)
 	{
 		int x;
-		for(x = 0; x < callstack.frames.stor.a; x++)
+		for(x = 0; x < callstack.a; x++)
 		{
-			struct frame * A = &callstack.frames.stor.v[x];
+			struct frame * A = callstack.frames.stor[x];
 
 			xfree(&A->msg);
 
@@ -52,13 +53,15 @@ void callstack_free()
 			xfree(&A->info.v);
 			A->info.a = 0;
 			A->info.l = 0;
+
+			xfree(&A);
 		}
 
-		xfree(&callstack.frames.stor.v);
-		callstack.frames.stor.a = 0;
+		xfree(&callstack.frames.stor);
+		callstack.a = 0;
 	}
 
-	if(callstack.v == &callstack.frames.alt)
+	if(callstack.v == callstack.frames.alt_list)
 		callstack.v = 0;
 	else
 		xfree(&callstack.v);

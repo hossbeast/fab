@@ -90,10 +90,12 @@ struct callstack
 	struct
 	{
 		// dynamically allocated frames
-		struct frame * 			stor;
+		struct frame ** 		stor;
 
 		// statically allocated frames
 		struct frame_static	alt[2];
+
+		struct frame *			alt_list[2];
 	} frames;
 
 	// stack frame list
@@ -102,6 +104,8 @@ struct callstack
 
 	int l;	// 1-based count of stack frames (depth)
 	int x;	// 0-based index of current stack frame while unwinding
+
+	int r;	// return value from the last xapi_frame_set call
 };
 
 // per-thread callstacks
