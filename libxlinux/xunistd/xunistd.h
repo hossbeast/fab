@@ -110,16 +110,16 @@ int uxsymlink(const char * restrict target, const char * restrict linkpath)
 // SUMMARY
 //  proxy for unlink
 //
-int xunlink(const char * restrict pathname)
-	__attribute__((nonnull));
+int xunlink(const char * restrict pathname, int * restrict r)
+	__attribute__((nonnull(1)));
 
 /// uxunlink
 //
 // SUMMARY
 //  proxy for unlink that fails only when errno != ENOENT
 //
-int uxunlink(const char * restrict pathname)
-	__attribute__((nonnull));
+int uxunlink(const char * restrict pathname, int * restrict r)
+	__attribute__((nonnull(1)));
 
 /// xfork
 //
@@ -164,6 +164,14 @@ int xsetresgid(gid_t rgid, gid_t egid, gid_t sgid);
 int xeuidaccess(const char * restrict pathname, int mode, int * const restrict r)
 	__attribute__((nonnull(1)));
 
+/// uxeuidaccess
+//
+// SUMMARY
+//  proxy for euidaccess that only fails when errno !: { EACCES, ENOENT, ENOTDIR }
+//
+int uxeuidaccess(const char * restrict pathname, int mode, int * const restrict r)
+	__attribute__((nonnull(1)));
+
 /// xseteuid
 //
 // SUMMARY
@@ -192,6 +200,29 @@ int xgetresuid(uid_t * const restrict ruid, uid_t * const restrict euid, uid_t *
 //  proxy for getresgid
 //
 int xgetresgid(gid_t * const restrict rgid, gid_t * const restrict egid, gid_t * const restrict sgid)
+	__attribute__((nonnull));
+
+/// xtruncate
+//
+// SUMMARY
+//  proxy for truncate
+//
+int xtruncate(const char * restrict path, off_t length)
+	__attribute__((nonnull));
+
+/// xftruncate
+//
+// SUMMARY
+//  proxy for ftruncate
+//
+int xftruncate(int fd, off_t length);
+
+/// xrmdir
+//
+// SUMMARY
+//  proxy for rmdir
+//
+int xrmdir(const char * restrict pathname)
 	__attribute__((nonnull));
 
 #undef restrict

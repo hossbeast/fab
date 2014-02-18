@@ -44,20 +44,20 @@ static size_t frame_error(char * const dst, const size_t sz, struct frame * f)
 {
 	size_t z = 0;
 
-	if(f->etab && f->code > 0 && f->msg)
+	if(f->etab && f->code && f->msg)
 	{
 		SAY("[%s:%s] %.*s"
 			, f->etab->tag
-			, f->etab->v[f->code + (f->etab->min * -1)].name
+			, f->code > f->etab->max ? "UNKNWN" : f->etab->v[f->code + (f->etab->min * -1)].name
 			, f->msgl, f->msg 
 		);
 	}
-	else if(f->etab && f->code > 0)
+	else if(f->etab && f->code)
 	{
 		SAY("[%s:%s] %s"
 			, f->etab->tag
-			, f->etab->v[f->code + (f->etab->min * -1)].name
-			, f->etab->v[f->code + (f->etab->min * -1)].desc
+			, f->code > f->etab->max ? "UNKNWN" : f->etab->v[f->code + (f->etab->min * -1)].name
+			, f->code > f->etab->max ? "unspecified error" : f->etab->v[f->code + (f->etab->min * -1)].desc
 		);
 	}
 	else if(f->etab && f->msg)
@@ -67,14 +67,14 @@ static size_t frame_error(char * const dst, const size_t sz, struct frame * f)
 			, f->msgl, f->msg 
 		);
 	}
-	else if(f->code > 0 && f->msg)
+	else if(f->code && f->msg)
 	{
 		SAY("[%d] %.*s"
 			, f->code
 			, f->msgl, f->msg 
 		);
 	}
-	else if(f->code > 0)
+	else if(f->code)
 	{
 		SAY("[%d]", f->code);
 	}

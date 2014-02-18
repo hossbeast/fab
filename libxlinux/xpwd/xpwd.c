@@ -33,11 +33,11 @@ int API uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, 
 	}
 	else
 	{
-		sysfatality("getpwuid_r");
+		fail(errno);
 	}
 
 finally :
-	XAPI_INFO("uid", "%zu", uid);
+	XAPI_INFOF("uid", "%zu", uid);
 coda;
 }
 
@@ -45,7 +45,7 @@ int API xgetpwuid(uid_t uid, struct passwd ** const pwd)
 {
 	errno = 0;
 	if(((*pwd) = getpwuid(uid)) == 0)
-		sysfatality("getpwuid");
+		fail(errno);
 
 	finally : coda;
 }

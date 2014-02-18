@@ -26,6 +26,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <fcntl.h>
+#include <sys/uio.h>
 
 #include "listwise.h"
 #include "listwise/xtra.h"
@@ -61,7 +62,7 @@ static int snarf(char * path, void ** mem, size_t * sz)
 	fatal(xopen, strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY, &fd);
 
 	struct stat st;
-	sysfatalize(fstat, fd, &st);
+	fatal(xfstat, fd, &st);
 
 	if(S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode))
 	{
@@ -86,7 +87,7 @@ static int snarf(char * path, void ** mem, size_t * sz)
 	}
 	else
 	{
-		fail(LW_EBADFILE, "type : %s (%d)", 
+		failf(LW_EBADFILE, "type : %s (%d)"
 			,   S_ISREG(st.st_mode)			? "REG"
 				: S_ISDIR(st.st_mode)			? "DIR"
 				: S_ISCHR(st.st_mode)			? "CHR"
@@ -100,15 +101,16 @@ static int snarf(char * path, void ** mem, size_t * sz)
 	}
  
 finally:
-	if(fd != -1)
-		sysfatalize(close, fd);
+	fatal(ixclose, &fd);
 
-	XAPI_INFO("path", "%s", path);
+	XAPI_INFOF("path", "%s", path);
 coda;
 }
 
 int main(int argc, char** argv)
 {
+	char space[128];
+
 	generator_parser* p = 0;		// generator parser
 	generator* g = 0;						// generator
 	lwx * lx = 0;								// list stack
@@ -116,12 +118,11 @@ int main(int argc, char** argv)
 
 	void * mem = 0;
 	size_t sz = 0;
+	int x;
 
 	// parse cmdline arguments
 	int genx = 0;
 	fatal(parse_args, argc, argv, &genx);
-
-	int x;
 
 	// arrange for liblistwise to write to /dev/null
 	fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
@@ -232,6 +233,10 @@ int main(int argc, char** argv)
 		{
 			if(go)
 			{
+				int spacel = 0;
+				space[0] = 0;
+
+				// numbering
 				if(g_args.numbering)
 				{
 					int j = i++;
@@ -239,21 +244,30 @@ int main(int argc, char** argv)
 						j = x;
 
 					if(g_args.out_stack)
-						printf("%3d %3d ", y, j);
+						spacel = snprintf(space, sizeof(space), "%3d %3d ", y, j);
 					else
-						printf("%3d ", j);
+						spacel = snprintf(space, sizeof(space), "%3d ", j);
 				}
 
+				// string value
 				char * ss = 0;
 				int    ssl = 0;
 				fatal(lstack_getstring, lx, y, x, &ss, &ssl);
 
-				fatal(xwrite, 1, ss, ssl, 0);
-
+				// delimiter
+				char delim[1];
 				if(g_args.out_null)
-					printf("%c", 0);
+					delim[0] = '\0';
 				else
-					printf("\n");
+					delim[0] = '\n';
+
+				writev(1
+					, (struct iovec[]) {
+						  { .iov_base = space	, .iov_len = spacel }
+						, { .iov_base = ss		, .iov_len = ssl }
+						, { .iov_base = delim	, .iov_len = 1 }
+					}, 3
+				);
 			}
 		}
 		LSTACK_ITEREND

@@ -340,7 +340,7 @@ int main(int argc, char** argv)
 						B = *fabricationns[b - fabricationsl - fabricationxsl];
 
 					if((A->designate == GN_DESIGNATION_TASK) ^ (B->designate == GN_DESIGNATION_TASK))
-						fail(FAB_BADPLAN, "cannot mix task and non-task targets");
+						fails(FAB_BADPLAN, "cannot mix task and non-task targets");
 				}
 
 				fatal(bp_create, fabrications, fabricationsl, fabricationxs, fabricationxsl, fabricationns, fabricationnsl, &bp);
@@ -447,7 +447,7 @@ finally:
 	}
 
 	int _xapi_r;
-coda_custom;
+conclude;
 	
 	log(L_INFO, "exiting with status : %d", _xapi_r);
 	log_teardown();

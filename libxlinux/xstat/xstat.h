@@ -29,17 +29,34 @@
 // SUMMARY
 //  proxy for stat
 //
-int xstat(const char * restrict path, struct stat * restrict buf)
-	__attribute__((nonnull));
+int xstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
+	__attribute__((nonnull(1, 2)));
 
-/// gxstat
+/// uxstat
 //
 // SUMMARY
 //  proxy for stat which only fails when errno != ENOENT
-//  if stat fails and errno == ENOENT, buf is zeroed
+//  if stat fails but uxstat does not, buf is zeroed
 //
-int gxstat(const char * restrict path, struct stat * restrict buf)
-	__attribute__((nonnull));
+int uxstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
+	__attribute__((nonnull(1,2)));
+
+/// xlstat
+//
+// SUMMARY
+//  proxy for lstat
+//
+int xlstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
+	__attribute__((nonnull(1,2)));
+
+/// uxlstat
+//
+// SUMMARY
+//  proxy for lstat which only fails when errno != ENOENT
+//  if lstat fails but uxlstat does not, buf is zeroed
+//
+int uxlstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
+	__attribute__((nonnull(1,2)));
 
 /// xfstat
 //
@@ -64,6 +81,22 @@ int uxfstat(int fd, struct stat * restrict buf)
 //  proxy for futimens
 //
 int xfutimens(int fd, const struct timespec times[2])
+	__attribute__((nonnull));
+
+/// xmkdir
+//
+// SUMMARY
+//  proxy for mkdir
+//
+int xmkdir(const char * restrict pathname, mode_t mode)
+	__attribute__((nonnull));
+
+/// uxmkdir
+//
+// SUMMARY
+//  proxy for mkdir which only fails when errno != ENOENT
+//
+int uxmkdir(const char * restrict pathname, mode_t mode)
 	__attribute__((nonnull));
 
 #undef restrict

@@ -21,16 +21,16 @@
 
 #include "xdlfcn.h"
 
+#undef perrtab
+#define perrtab perrtab_XLINUX
+
 int API xdlopen(const char * filename, int flag, void ** dl)
 {
 	if(((*dl) = dlopen(filename, flag)) == 0)
-	{
-		char * e = dlerror();
-		fatality("dlopen", perrtab_XLINUX, XLINUX_DLERROR, "%s", e);
-	}
+		fails(XLINUX_DLERROR, dlerror());
 
 finally :
-	XAPI_INFO("path", "%s", filename);
+	XAPI_INFOF("path", "%s", filename);
 coda;
 }
 
@@ -40,11 +40,9 @@ int API xdlsym(void * dl, const char * sym, void ** psym)
 	(*psym) = dlsym(dl, sym);
 	char * e = dlerror();
 	if(e)
-	{
-		fatality("dlsym", perrtab_XLINUX, XLINUX_DLERROR, "%s", dlerror());
-	}
+		fails(XLINUX_DLERROR, e);
 
 finally :
-	XAPI_INFO("sym", "%s", sym);
+	XAPI_INFOF("sym", "%s", sym);
 coda;
 }

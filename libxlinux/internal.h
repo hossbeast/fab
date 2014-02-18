@@ -25,5 +25,6 @@
 #define APIDATA
 
 #include "XLINUX.errtab.h"
+#define perrtab perrtab_SYS
 
 #endif

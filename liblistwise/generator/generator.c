@@ -114,7 +114,7 @@ static int operation_validate(operation * op)
 	{
 		if(op->argsl)
 		{
-			fail(LW_ARGSNUM, "expected: 0, actual: %d", op->argsl);
+			failf(LW_ARGSNUM, "expected: 0, actual: %d", op->argsl);
 		}
 	}
 
@@ -124,7 +124,7 @@ static int operation_validate(operation * op)
 	}
 
 finally :
-	XAPI_INFO("operator", "%s", op->op->s);
+	XAPI_INFOF("op", "%s", op->op->s);
 coda;
 }
 
@@ -137,27 +137,29 @@ static int reduce(parse_param * pp)
 	// than failure-to-reduce, such as when the scanner encounters invalid byte(s)
 	if(pp->r > 0)
 	{	// error from the scanner
-		fatality("generator_yyparse", perrtab_LW, pp->r, "%s", pp->errorstring);
+//		fatality("generator_yyparse", perrtab_LW, pp->r, "%s", pp->errorstring);
+		fails(pp->r, pp->errorstring);
 	}
 	else if(r || pp->r)
 	{	// error from the parser
-		fatality("generator_yyparse", perrtab_LW, LW_SYNTAX, "%s", pp->errorstring);
+//		fatality("generator_yyparse", perrtab_LW, LW_SYNTAX, "%s", pp->errorstring);
+		fails(LW_SYNTAX, pp->errorstring);
 	}
 
 finally :
 	if(XAPI_UNWINDING)
 	{
-		XAPI_INFO("last", "%s", pp->tokenstring);
+		XAPI_INFOF("last", "%s", pp->tokenstring);
 		if(pp->namel)
-			XAPI_INFO("input", "%.*s", pp->namel, pp->name);
-		XAPI_INFO("loc", "[%d,%d-%d,%d]"
+			XAPI_INFOF("input", "%.*s", pp->namel, pp->name);
+		XAPI_INFOF("loc", "[%d,%d-%d,%d]"
 			, pp->last_loc.f_lin + 1
 			, pp->last_loc.f_col + 1
 			, pp->last_loc.l_lin + 1
 			, pp->last_loc.l_col + 1
 		);
 #if DEBUG
-		XAPI_INFO("scanline", "%d", pp->last_line);
+		XAPI_INFOF("scanline", "%d", pp->last_line);
 #endif
 	}
 coda;
@@ -182,13 +184,12 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 	};
 
 	// specific exception for "shebang" line exactly at the beginning
-
 	char * b = s;
 	if(strlen(s) > 1 && memcmp(s, "#!", 2) == 0 && strstr(s, "\n"))
 		b = strstr(s, "\n") + 1;
 
 	if((state = generator_yy_scan_string(b, p->p)) == 0)
-		fatality("generator_yy_scan_string", perrtab_SYS, ENOMEM, 0);
+		tfail(perrtab_SYS, ENOMEM);
 
 	// results struct for this parse
 	pp.scanner = p->p;
@@ -223,13 +224,12 @@ coda;
 
 int API generator_mkparser(generator_parser** p)
 {
-	if((*p = calloc(1, sizeof(*p[0]))) == 0)
-		return 1;
+	fatal(xmalloc, p, sizeof(**p));
 
 	if(generator_yylex_init(&(*p)->p) != 0)
-		return 1;
+		tfail(perrtab_SYS, ENOMEM);
 
-	return 0;
+	finally : coda;
 }
 
 void API generator_parser_free(generator_parser* p)
@@ -305,6 +305,12 @@ void API generator_xfree(generator** g)
 int API generator_parse(generator_parser* p, char* s, int l, generator** g)
 {
 	return parse(p, s, l, 0, 0, g);
+
+/*
+	fatal(parse, p, s, l, 0, 0, g);
+
+	finally : coda;
+*/
 }
 
 int API generator_parse_named(generator_parser* p, char* s, int l, char * name, int namel, generator** g)

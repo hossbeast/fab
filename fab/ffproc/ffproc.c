@@ -125,7 +125,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 
 				if(i == g_args.invokedirsl)
 				{
-					fail(FAB_NOINVOKE, "invocation not found %.*s", inv->l, inv->s);
+					failf(FAB_NOINVOKE, "invocation not found %.*s", inv->l, inv->s);
 				}
 			}
 			else

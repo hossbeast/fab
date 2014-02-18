@@ -20,12 +20,11 @@ coda;
 
 int foxtrot(int num)
 {
-	//fails(ERESTART, "restarting");
+	if(num == 425)
+		fails(ERESTART, "restarting");
 
 finally:
 	XAPI_INFOF("foxtrotnum", "%d", num);
-
-	fatal(xclose, 0);
 coda;
 }
 
@@ -44,8 +43,6 @@ int delta(int num)
 
 finally:
 	XAPI_INFOF("deltanum", "%d", num);
-
-	fatal(xclose, -1);
 coda;
 }
 
@@ -58,9 +55,17 @@ finally:
 coda;
 }
 
+int normal()
+{
+	printf("normal\n");
+
+	finally : coda;
+}
+
 int bravo(int num)
 {
 	fatal(charlie, num);
+	printf("bravo %d\n", num);
 
 finally:
 	XAPI_INFOF("bravonum", "%d", num);
@@ -70,17 +75,24 @@ coda;
 int alpha(int num)
 {
 	fatal(bravo, num);
+//	bravo(17);
+//	fatal(normal);
+
 finally :
-	fatal(bravo, num);
+//	fatal(bravo, num);
 	XAPI_INFOF("alphanum", "%d", num);
 coda;
 }
 
-int main()
+int foo()
 {
-	fatal(alpha, 25);
+	fatal(alpha, 125);
+	fatal(alpha, 225);
+	fatal(alpha, 325);
+	fatal(alpha, 425);
 
 finally :
+	fatal(alpha, 425);
 if(XAPI_UNWINDING)
 {
 	printf("backtrace: \n");
@@ -90,4 +102,10 @@ if(XAPI_UNWINDING)
 		xapi_pithytrace();
 }
 coda;
+}
+
+int main()
+{
+	printf("FOO INVOKE\n"); foo(); printf("FOO LEAVE\n");
+	printf("FOO INVOKE\n"); foo(); printf("FOO LEAVE\n");
 }

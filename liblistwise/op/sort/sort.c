@@ -92,38 +92,20 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 	}
 	LSTACK_ITEREND;
 
-	int waserr = 0;
-	int compar(const void * A, const void * B)
+	int compar(const void * A, const void * B, void * T, int * r)
 	{
-		if(waserr)
-			return 0;
-
 		char *	As = 0;
 		int			Asl = 0;
 		char *	Bs = 0;
 		int			Bsl = 0;
 
-		int r = 0;
-
-#define FAIL do { waserr = 1; return 0; } while(0)
+		(*r) = 0;
 
 		if(mode == NUMERIC)
 		{
-			if((As = lstack_string(lx, 0, *(int*)A)) == 0)
-				FAIL;
-			if((Bs = lstack_string(lx, 0, *(int*)B)) == 0)
-				FAIL;
-		}
-		else
-		{
-			if(lstack_getstring(lx, 0, *(int*)A, &As, &Asl))
-				FAIL;
-			if(lstack_getstring(lx, 0, *(int*)B, &Bs, &Bsl))
-				FAIL;
-		}
+			fatal(lstack_getstring, lx, 0, *(int*)A, &As, &Asl);
+			fatal(lstack_getstring, lx, 0, *(int*)B, &Bs, &Bsl);
 
-		if(mode == NUMERIC)
-		{
 			intmax_t Aval;
 			intmax_t Bval;
 
@@ -131,24 +113,22 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 			{
 				if(parseint(Bs, SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Bval, 0) == 0)
 				{
-					r = Aval - Bval;
+					(*r) = Aval - Bval;
 				}
 			}
 		}
 		else
 		{
-			r = xstrcmp(As, Asl, Bs, Bsl, mode == STRING_NCASE);
+			fatal(lstack_getbytes, lx, 0, *(int*)A, &As, &Asl);
+			fatal(lstack_getbytes, lx, 0, *(int*)B, &Bs, &Bsl);
+
+			(*r) = xstrcmp(As, Asl, Bs, Bsl, mode == STRING_NCASE);
 		}
 
-		return r;
+		finally : coda;
 	}
 
-	qsort(mema, i, sizeof(*mema), compar);
-
-	if(waserr)
-	{
-		fatality("lstack_getstring", perrtab_SYS, SYS_ENOMEM, 0);
-	}
+	fatal(xqsort_r, mema, i, sizeof(*mema), compar, 0);
 
 	for(x = 0; x < i; x++)
 	{

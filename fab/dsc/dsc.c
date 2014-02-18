@@ -141,7 +141,7 @@ static int dsc_execwave(
 	}
 
 	if(bad)
-		fail(FAB_DSCPARSE, 0);
+		fail(FAB_DSCPARSE);
 
 	finally : coda;
 }

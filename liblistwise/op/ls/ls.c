@@ -65,7 +65,6 @@ OPERATION
 
 */
 
-static int op_validate(operation* o);
 static int op_exec_ls(operation*, lwx*, int**, int*);
 static int op_exec_lsr(operation*, lwx*, int**, int*);
 
@@ -73,24 +72,17 @@ operator op_desc[] = {
 	{
 		  .s						= "ls"
 		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
-		, .op_validate	= op_validate
 		, .op_exec			= op_exec_ls
 		, .desc					= "create new list from directory listing(s)"
 	}
 	, {
 		  .s						= "lsr"
 		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
-		, .op_validate	= op_validate
 		, .op_exec			= op_exec_lsr
 		, .desc					= "create new list from recursive directory listing(s)"
 	}
 	, {}
 };
-
-int op_validate(operation* o)
-{
-	return 0;
-}
 
 static int listing(lwx* ls, char * s, int recurse)
 {

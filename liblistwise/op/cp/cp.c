@@ -56,7 +56,7 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl >= 1 && o->args[0]->itype != ITYPE_I64)
-		fail(LW_ARGSDOM, "should be i64");
+		fails(LW_ARGSDOM, "should be i64");
 
 	finally : coda;
 }

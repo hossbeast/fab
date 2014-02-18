@@ -21,6 +21,9 @@
 
 #include "xftw.h"
 
+#undef perrtab
+#define perrtab perrtab_XLINUX
+
 int API xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
 {
   int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -28,8 +31,8 @@ int API xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct st
 		int _xapi_r;
     fatal(fn, fpath, sb, typeflag, ftwbuf);
 
-		// coda custom sets _xapi_r to the return value
-		finally : coda_custom;
+		// conclude sets _xapi_r to the return value
+		finally : conclude;
 
 		if(_xapi_r == 0)
 			return FTW_CONTINUE;
@@ -40,12 +43,10 @@ int API xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct st
   // depth-first
   int r;
   if((r = nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL)) == FTW_STOP || r != 0)
-  {
-    fatality("nftw", 0, 0, 0);
-  }
+		fail(XLINUX_FTWERROR);
 	
 finally:
-	XAPI_INFO("path", "%s", dirpath);
+	XAPI_INFOF("path", "%s", dirpath);
 coda;
 }
 
@@ -58,7 +59,7 @@ int API xnftw_nth(const char *dirpath, int (*fn) (const char *fpath, const struc
 			fatal(fn, fpath, sb, typeflag, ftwbuf);
 
 		// coda custom sets _xapi_r to the return value
-		finally : coda_custom;
+		finally : conclude;
 
 		if(_xapi_r == 0)
 		{
@@ -74,11 +75,9 @@ int API xnftw_nth(const char *dirpath, int (*fn) (const char *fpath, const struc
   // depth-first
   int r;
   if((r = nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL)) == FTW_STOP || r != 0)
-  {
-    fatality("nftw", 0, 0, 0);
-  }
+		fail(XLINUX_FTWERROR);
 	
 finally:
-	XAPI_INFO("path", "%s", dirpath);
+	XAPI_INFOF("path", "%s", dirpath);
 coda;
 }

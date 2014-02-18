@@ -69,7 +69,7 @@ int identity_init()
 	// this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions
 	if(strcmp(g_params.euid_name, "fabsys") || strcmp(g_params.egid_name, "fabsys"))
 	{
-		fail(FAB_EXESUID,
+		failf(FAB_EXESUID,
 			"fab executable must be owned by fabsys:fabsys and have u+s and g+s permissions\n"
 			" -> r:%s/%d:%s/%d\n"
 			" -> e:%s/%d:%s/%d"

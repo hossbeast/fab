@@ -193,13 +193,13 @@ static int reconcile_completion(gn * const gn, map * const ws)
 					// get the canhash for this gn
 					uint32_t canhash = 0;
 					if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) != 0)
-						fail(FAB_BADCACHE, "unexpected file %s/%s", gn->ineed_skipweak_dir, entp->d_name);
+						failf(FAB_BADCACHE, "unexpected file %s/%s", gn->ineed_skipweak_dir, entp->d_name);
 
 					if(map_get(ws, MM(canhash)) == 0)
 					{
 						// remove link
 						snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/ineed_skipweak/%u", gn->ineed_skipweak_dir, entp->d_name, gn->path->can_hash);
-						fatal(uxunlink, tmp[0]);
+						fatal(uxunlink, tmp[0], 0);
 					}
 				}
 			}
@@ -411,7 +411,7 @@ int gn_edge_add(
 
 		// error check
 		if(gnb->path->is_nofile && !gna->path->is_nofile)
-			fail(FAB_BADPLAN, "file-backed node %s may not depend on non-file-backed node %s", gna->path->can, gnb->path->can);
+			failf(FAB_BADPLAN, "file-backed node %s may not depend on non-file-backed node %s", gna->path->can, gnb->path->can);
 
 		relation * rel = 0;
 
@@ -704,11 +704,11 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 
 			// force action on this node 
 			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/noforce_invalid", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
-			fatal(uxunlink, tmp[0]);
+			fatal(uxunlink, tmp[0], 0);
 
 			// delete discovery results for this node, if any
 			snprintf(tmp[0], sizeof(tmp[0]), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u/dscv", g_params.init_fabfile_path->can_hash, gn->path->can_hash);
-			fatal(uxunlink, tmp[0]);
+			fatal(uxunlink, tmp[0], 0);
 
 			if(gn->dscv_block)
 				fatal(depblock_close, gn->dscv_block);
@@ -731,18 +731,15 @@ int gn_reconcile_invalidation(gn * const root, int degree)
 					{
 						// force action
 						snprintf(tmp[0], sizeof(tmp[0]), "%s/%s/noforce_needs", gn->ifeed_skipweak_dir, entp->d_name);
-						if(unlink(tmp[0]) != 0)
+
+						int r;
+						fatal(uxunlink, tmp[0], &r);
+
+						if(r != 0)
 						{
-							if(errno == ENOENT)
-							{
-								// delete dangling links
-								snprintf(tmp[0], sizeof(tmp[0]), "%s/%s", gn->ifeed_skipweak_dir, entp->d_name);
-								unlink(tmp[0]);
-							}
-							else
-							{
-								sysfatality("unlink");
-							}
+							// delete dangling links
+							snprintf(tmp[0], sizeof(tmp[0]), "%s/%s", gn->ifeed_skipweak_dir, entp->d_name);
+							fatal(uxunlink, tmp[0], 0);
 						}
 					}
 				}

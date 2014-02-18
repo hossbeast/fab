@@ -25,12 +25,10 @@
 int API xmalloc(void* target, size_t size)
 {
 	if(((*(void**)target) = calloc(size, 1)) == 0)
-	{
-		sysfatality("calloc");
-	}
+		fail(errno);
 	
 finally :
-	XAPI_INFO("size", "%zu", size);
+	XAPI_INFOF("size", "%zu", size);
 coda;
 }
 
@@ -48,19 +46,51 @@ int API xrealloc(void* target, size_t es, size_t ec, size_t oec)
 		}
 		else
 		{
-			sysfatality("realloc");
+			fail(errno);
 		}
 	}
 
 finally :
-	XAPI_INFO("size", "%zu", es * ec);
+	XAPI_INFOF("size", "%zu", es * ec);
 coda;
 }
 
-void API xfree(void* target)
+void API ifree(void* target)
 {
 	void** t = (void**)target;
 
 	free(*t);
 	*t = 0;
+}
+
+int API xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const void *, const void *, void *, int * r), void * arg)
+{
+	int hasfailed = 0;
+
+	int compar(const void * A, const void * B, void * T)
+	{
+		if(hasfailed)
+			return 0;
+
+		int r;
+		fatal(xcompar, A, B, T, &r);
+
+		int _xapi_r;
+		finally : conclude;
+
+		if(_xapi_r)
+		{
+			hasfailed = 1;
+			r = 0;
+		}
+
+		return r;
+	};
+
+	qsort_r(base, nmemb, size, compar, arg);
+
+	if(hasfailed)
+		fail(0);
+
+	finally : coda;
 }

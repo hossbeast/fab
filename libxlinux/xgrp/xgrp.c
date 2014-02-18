@@ -33,11 +33,11 @@ int API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, s
 	}
 	else
 	{
-		sysfatality("getgrgid_r");
+		fail(errno);
 	}
 
 finally :
-	XAPI_INFO("gid", "%zu", gid);
+	XAPI_INFOF("gid", "%zu", gid);
 coda;
 }
 
@@ -45,7 +45,7 @@ int API xgetgrgid(gid_t gid, struct group ** const grp)
 {
 	errno = 0;
 	if(((*grp) = getgrgid(gid)) == 0)
-		sysfatality("getgrgid");
+		fail(errno);
 
 	finally : coda;
 }

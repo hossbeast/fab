@@ -85,7 +85,7 @@ int hashblock_stat(const char * const path, hashblock * const hb0, hashblock * c
 	int x;
 
 	// STAT for A
-	fatal(xstat, path, &stb);
+	fatal(xstat, path, &stb, 0);
 	if(stb.st_dev)
 	{
 		uint32_t cks = 0;

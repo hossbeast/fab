@@ -20,20 +20,20 @@
 int API xopendir(const char * name, DIR ** dd)
 {
 	if(((*dd) = opendir(name)) == 0)
-		sysfatality("opendir");
+		fail(errno);
 
 finally:
-	XAPI_INFO("path", "%s", name);
+	XAPI_INFOF("path", "%s", name);
 coda;
 }
 
 int API uxopendir(const char * name, DIR ** dd)
 {
 	if(((*dd) = opendir(name)) == 0 && errno != ENOENT)
-		sysfatality("opendir");
+		fail(errno);
 
 finally:
-	XAPI_INFO("path", "%s", name);
+	XAPI_INFOF("path", "%s", name);
 coda;
 }
 
@@ -41,7 +41,7 @@ int API xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
 {
 	int r;
 	if((r = readdir_r(dirp, entry, result)))
-		fatality("readdir_r", perrtab_SYS, r, 0);
+		fail(r);
 
 	finally : coda;
 }

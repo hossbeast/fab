@@ -18,6 +18,7 @@
 #include "listwise/internal.h"
 
 #include "xlinux.h"
+#include "wstdlib.h"
 
 int APIDATA listwise_info_fd = 2;
 #if DEBUG
@@ -40,8 +41,8 @@ lwx * APIDATA listwise_identity = 0;
 //
 static void __attribute__((constructor)) init()
 {
-	xmalloc(&listwise_identity, sizeof(*listwise_identity));
-	xmalloc(&listwise_identity->s, sizeof(listwise_identity->s[0]) * 1);
+	wmalloc(&listwise_identity, sizeof(*listwise_identity));
+	wmalloc(&listwise_identity->s, sizeof(listwise_identity->s[0]) * 1);
 	listwise_identity->l = 1;
 	listwise_identity->a = 1;
 }

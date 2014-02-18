@@ -28,27 +28,29 @@
 
 #include "xlinux.h"
 
-int rmdir_recursive(const char * const dirpath, int rmself)
+int rmdir_recursive(const char * const dirpath, int rmself, int errcode)
 {
 	int fn(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
 	{
 		if(typeflag == FTW_F || typeflag == FTW_SL)
 		{
-			sysfatalize(unlink, fpath);
+			fatal(xunlink, fpath, 0);
 		}
 		else if(typeflag == FTW_DP)
 		{
 			if(ftwbuf->level > 0 || rmself)
 			{
-				sysfatalize(rmdir, fpath);
+				fatal(xrmdir, fpath);
 			}
 		}
 		else
 		{
-			fail(0, 0, "unexpected %s", fpath);
+			fail(errcode);
 		}
 
-		finally : coda;
+	finally:
+		XAPI_INFOS("path", fpath);
+	coda;
 	};
 	
 	fatal(xnftw, dirpath, fn, 32, FTW_DEPTH | FTW_PHYS);
@@ -72,11 +74,10 @@ int mkdirp(const char * const path, mode_t mode)
 		memcpy(space, path, t - path);
 		space[t - path] = 0;
 
-		if(mkdir(space, mode) == -1 && errno != EEXIST)
-			sysfatality(mkdir);
+		fatal(xmkdir, space, mode);
 	}
 
 finally:
-	XAPI_INFO("path", "%s", space);
+	XAPI_INFOS("path", space);
 coda;
 }

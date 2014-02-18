@@ -24,7 +24,7 @@
 int API xlocaltime_r(const time_t * timep, struct tm * result)
 {
 	if(localtime_r(timep, result) == 0)
-		sysfatality("localtime_r");
+		fail(errno);
 
 	finally : coda;
 }

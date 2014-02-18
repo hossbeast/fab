@@ -24,18 +24,19 @@
 int API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
 {
 	if(r && (*r = mmap(addr, length, prot, flags, fd, offset)) == MAP_FAILED)
-		sysfatality("mmap");
-	else if(mmap(addr, length, prot, flags, fd, offset) == MAP_FAILED)
-		sysfatality("mmap");
+		fail(errno);
+
+	else if(!r && mmap(addr, length, prot, flags, fd, offset) == MAP_FAILED)
+		fail(errno);
 	
 finally:
-	XAPI_INFO("length", "%zu", length);
+	XAPI_INFOF("length", "%zu", length);
 coda;
 }
 
 int API xmunmap(void * addr, size_t length)
 {
-	sysfatalize(munmap, addr, length);
+	fatalize(errno, munmap, addr, length);
 
 	finally : coda;
 }

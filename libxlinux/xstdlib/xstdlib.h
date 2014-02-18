@@ -49,12 +49,20 @@ int xmalloc(void* target, size_t size)
 int xrealloc(void* target, size_t es, size_t ec, size_t oec)
 	__attribute__((nonnull));
 
-/// xfree
+/// ifree
 //
 // SUMMARY
 //  does this: free(*target); *target = 0;
 //
-void xfree(void* target)
+void ifree(void* target)
 	__attribute__((nonnull));
+
+/// xqsort_r
+//
+// SUMMARY
+//  proxy for qsort_r which invokes the sorting function with fatal
+//
+int xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const void *, const void *, void *, int * r), void * arg)
+	__attribute__((nonnull(1, 4)));
 
 #endif

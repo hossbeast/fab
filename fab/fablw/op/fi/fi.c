@@ -77,7 +77,7 @@ int op_validate_fi(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1)
 	{
-		fail(LW_ARGSNUM, "expected 0 or 1, actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "expected 0 or 1, actual : %d", o->argsl);
 	}
 
 	finally : coda;
@@ -87,7 +87,7 @@ int op_validate_fic(operation* o)
 {
 	if(o->argsl != 0)
 	{
-		fail(LW_ARGSNUM, "expected 0, actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "expected 0, actual : %d", o->argsl);
 	}
 
 	finally : coda;
@@ -97,7 +97,7 @@ int op_validate_fiw(operation* o)
 {
 	if(o->argsl != 0)
 	{
-		fail(LW_ARGSNUM, "expected 0, actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "expected 0, actual : %d", o->argsl);
 	}
 
 	finally : coda;

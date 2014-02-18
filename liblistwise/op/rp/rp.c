@@ -85,7 +85,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		}
 		else
 		{
-			sysfatality("realpath");
+			tfail(perrtab_SYS, errno);
 		}
 	}
 	LSTACK_ITEREND

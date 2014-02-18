@@ -47,8 +47,9 @@ int xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct stat *
 // PARAMETERS
 //  dirpath - 
 //  rmself  - if true, delete directory itself as well
+//  errcode - error code to raise if unexpected files are encountered
 //
-int rmdir_recursive(const char * const restrict dirpath, int rmself)
+int rmdir_recursive(const char * const restrict dirpath, int rmself, int errcode)
 	__attribute__((nonnull));
 
 /// mkdirp

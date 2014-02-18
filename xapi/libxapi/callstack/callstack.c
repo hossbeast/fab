@@ -29,7 +29,6 @@ void xfree(void * v)
 
 void callstack_free()
 {
-printf("CALLSTACK FREE\n");
 	if(callstack.v)
 	{
 		int x;
@@ -68,4 +67,5 @@ printf("CALLSTACK FREE\n");
 
 	callstack.a = 0;
 	callstack.l = 0;
+	callstack.x = 0;
 }

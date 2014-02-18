@@ -73,17 +73,17 @@ int op_validate(operation* o)
 {
 	if(o->argsl != 1)
 	{
-		fail(LW_ARGSNUM, "expected 1 actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "expected 1 actual : %d", o->argsl);
 	}
 
 	if(o->args[0]->itype != ITYPE_I64)
 	{
-		fail(LW_ARGSTYPE, "should be i64");
+		failf(LW_ARGSTYPE, "should be i64");
 	}
 
 	if(o->args[0]->i64 < 1)
 	{
-		fail(LW_ARGSDOM, "expected >= 0, actual : %"PRIi64, o->args[0]->i64);
+		failf(LW_ARGSDOM, "expected >= 0, actual : %"PRIi64, o->args[0]->i64);
 	}
 
 	finally : coda;

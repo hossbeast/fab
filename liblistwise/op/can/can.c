@@ -61,7 +61,7 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1 && o->argsl != 2)
-		fail(LW_ARGSNUM, "actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "actual : %d", o->argsl);
 
 	finally : coda;
 }

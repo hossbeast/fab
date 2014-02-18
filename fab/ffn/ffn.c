@@ -95,7 +95,7 @@ static int parse_generator(ff_node * n, generator_parser * gp)
 	fatal(generator_parse, gp, n->text, 0, &n->generator);
 
 finally :
-	XAPI_INFO("location", "[%3d,%3d - %3d,%3d]", n->loc.f_lin + 1, n->loc.f_col + 1, n->loc.l_lin + 1, n->loc.l_col + 1);
+	XAPI_INFOF("location", "[%3d,%3d - %3d,%3d]", n->loc.f_lin + 1, n->loc.f_col + 1, n->loc.l_lin + 1, n->loc.l_col + 1);
 coda;
 }
 

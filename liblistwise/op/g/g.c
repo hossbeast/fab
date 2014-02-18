@@ -94,7 +94,7 @@ static int gobble(lwx* lx, char * path, char * fmt, char * flags)
 		}
 		else
 		{
-			sysfatality("mmap");
+			tfail(perrtab_SYS, errno);
 		}
 	}
 

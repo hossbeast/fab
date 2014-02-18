@@ -40,7 +40,12 @@ struct callstack;
 // RETURNS
 //  zero on success
 //
+#if DEBUG
+int xapi_frame_enter(void * calling_frame);
+void * xapi_frame_caller();
+#else
 int xapi_frame_enter();
+#endif
 
 int xapi_frame_enter_last();
 

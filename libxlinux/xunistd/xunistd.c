@@ -24,10 +24,10 @@
 int API xread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
 	if(bytes && (*bytes = read(fd, buf, count)) == -1)
-		sysfatality("read");
+		fail(errno);
 
-	else if(read(fd, buf, count) == -1)
-		sysfatality("read");
+	else if(!bytes && read(fd, buf, count) == -1)
+		fail(errno);
 
 	finally : coda;
 }
@@ -36,24 +36,24 @@ int API axread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
 	size_t actual;
 	if(((actual = read(fd, buf, count)) == -1) || actual != count)
-		sysfatality("read");
+		fail(errno);
 
 finally:
 	if(bytes)
 		*bytes = actual;
 
-	XAPI_INFO("expected", "%zu", count);
-	XAPI_INFO("actual", "%zu", actual);
+	XAPI_INFOF("expected", "%zu", count);
+	XAPI_INFOF("actual", "%zu", actual);
 coda;
 }
 
 int API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 {
 	if(bytes && (*bytes = write(fd, buf, count)) == -1)
-		sysfatality("write");
+		fail(errno);
 
-	else if(write(fd, buf, count) == -1)
-		sysfatality("write");
+	else if(!bytes && write(fd, buf, count) == -1)
+		fail(errno);
 
 	finally : coda;
 }
@@ -61,10 +61,10 @@ int API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 int API xgetcwd(char * buf, size_t size, char ** res)
 {
 	if(res && (((*res) = getcwd(buf, size)) == 0))
-		sysfatality("getcwd");
+		fail(errno);
 
-	else if(getcwd(buf, size) == 0)
-		sysfatality("getcwd");
+	else if(!res && getcwd(buf, size) == 0)
+		fail(errno);
 
 	finally : coda;
 }
@@ -72,17 +72,17 @@ int API xgetcwd(char * buf, size_t size, char ** res)
 int API xlseek(int fd, off_t offset, int whence, off_t * res)
 {
 	if(res && ((*res) = lseek(fd, offset, whence)) == (off_t)-1)
-		sysfatality("lseek");
+		fail(errno);
 
-	else if(lseek(fd, offset, whence) == (off_t)-1)
-		sysfatality("lseek");
+	else if(!res && lseek(fd, offset, whence) == (off_t)-1)
+		fail(errno);
 
 	finally : coda;
 }
 
 int API xclose(int fd)
 {
-	sysfatalize(close, fd);
+	fatalize(errno, close, fd);
 
 	finally : coda;
 }
@@ -91,7 +91,7 @@ int API ixclose(int * fd)
 {
 	if(*fd != -1)
 	{
-		sysfatalize(close, *fd);
+		fatalize(errno, close, *fd);
 		*fd = -1;
 	}
 
@@ -100,7 +100,7 @@ int API ixclose(int * fd)
 
 int API xsymlink(const char * target, const char * linkpath)
 {
-	sysfatalize(symlink, target, linkpath);
+	fatalize(errno, symlink, target, linkpath);
 
 	finally : coda;
 }
@@ -108,22 +108,29 @@ int API xsymlink(const char * target, const char * linkpath)
 int API uxsymlink(const char * target, const char * linkpath)
 {
 	if(symlink(target, linkpath) != 0 && errno != EEXIST)
-		sysfatality("symlink");
+		fail(errno);
 
 	finally : coda;
 }
 
-int API xunlink(const char * pathname)
+int API xunlink(const char * pathname, int * r)
 {
-	sysfatalize(unlink, pathname);
+	if(r && ((*r) = unlink(pathname)) != 0)
+		fail(errno);
+
+	else if(!r && unlink(pathname) != 0)
+		fail(errno);
 
 	finally : coda;
 }
 
-int API uxunlink(const char * pathname)
+int API uxunlink(const char * pathname, int * r)
 {
-	if(unlink(pathname) != 0 && errno != ENOENT)
-		sysfatality("unlink");
+	if(r && ((*r) = unlink(pathname)) != 0 && errno != ENOENT)
+		fail(errno);
+
+	else if(!r && unlink(pathname) != 0 && errno != ENOENT)
+		fail(errno);
 
 	finally : coda;
 }
@@ -131,10 +138,10 @@ int API uxunlink(const char * pathname)
 int API xfork(pid_t * r)
 {
 	if(r && (((*r) = fork()) == -1))
-		sysfatality("fork");
+		fail(errno);
 	
-	else if(fork() == -1)
-		sysfatality("fork");
+	else if(!r && fork() == -1)
+		fail(errno);
 
 	finally : coda;
 }
@@ -142,7 +149,7 @@ int API xfork(pid_t * r)
 int API xdup(int oldfd)
 {
 	if(dup(oldfd) == -1)
-		sysfatality("dup");
+		fail(errno);
 
 	finally : coda;
 }
@@ -150,64 +157,101 @@ int API xdup(int oldfd)
 int API xdup2(int oldfd, int newfd)
 {
 	if(dup2(oldfd, newfd) == -1)
-		sysfatality("dup2");
+		fail(errno);
 
 	finally : coda;
 }
 
 int API xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
 {
-	sysfatalize(getresuid, ruid, euid, suid);
+	fatalize(errno, getresuid, ruid, euid, suid);
 
 	finally : coda;
 }
 
 int API xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
 {
-	sysfatalize(getresgid, rgid, egid, sgid);
+	fatalize(errno, getresgid, rgid, egid, sgid);
 
 	finally : coda;
 }
 
 int API xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
-	sysfatalize(setresuid, ruid, euid, suid);
+	fatalize(errno, setresuid, ruid, euid, suid);
 
 	finally : coda;
 }
 
 int API xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
 {
-	sysfatalize(setresgid, rgid, egid, sgid);
+	fatalize(errno, setresgid, rgid, egid, sgid);
 
 	finally : coda;
 }
 
 int API xeuidaccess(const char * pathname, int mode, int * const r)
 {
-	if(r && ((*r) = euidaccess(pathname, mode)) == -1 && errno != ENOENT)
-		sysfatality("euidaccess");
-		
-	else if(euidaccess(pathname, mode) == -1)
-		sysfatality("euidaccess");
+	if((r && ((*r) = euidaccess(pathname, mode)) == -1) || (!r && euidaccess(pathname, mode) == -1))
+		fail(errno);
 
-	finally : coda;
+finally:
+	XAPI_INFOS("path", pathname);
+coda;
+}	
+
+int API uxeuidaccess(const char * pathname, int mode, int * const r)
+{
+	if(r && ((*r) = euidaccess(pathname, mode)) == -1 && errno != EACCES && errno != ENOENT && errno != ENOTDIR)
+		fail(errno);
+		
+	else if(!r && euidaccess(pathname, mode) == -1 && errno != EACCES && errno != ENOENT && errno != ENOTDIR)
+		fail(errno);
+
+finally:
+	XAPI_INFOS("path", pathname);
+coda;
 }	
 
 int API xseteuid(uid_t euid)
 {
-	sysfatalize(seteuid, euid);
+	fatalize(errno, seteuid, euid);
 
 finally:
-	XAPI_INFO("euid", "%d", euid);
+	XAPI_INFOF("euid", "%d", euid);
 coda;
 }
 
 int API xsetegid(gid_t egid)
 {
-	sysfatalize(setegid, egid);
+	fatalize(errno, setegid, egid);
 
 finally:
-	XAPI_INFO("egid", "%d", egid);
+	XAPI_INFOF("egid", "%d", egid);
+coda;
+}
+
+int API xtruncate(const char * path, off_t length)
+{
+	fatalize(errno, truncate, path, length);
+
+finally :
+	XAPI_INFOS("path", path);
+coda;
+}
+
+int API xftruncate(int fd, off_t length)
+{
+	fatalize(errno, ftruncate, fd, length);
+
+	finally : coda;
+}
+
+int API xrmdir(const char * pathname)
+{
+	fatalize(errno, rmdir, pathname);
+
+finally:
+	XAPI_INFOS("pathname", pathname);
 coda;
 }

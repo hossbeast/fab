@@ -25,6 +25,8 @@
 
 #include "listwise/internal.h"
 
+#include "xlinux.h"
+
 /*
 
 -f operator - select entries whose stringvalue is a path referencing a regular file
@@ -115,58 +117,6 @@ operator op_desc[] = {
 	, {}
 };
 
-static int wrapstat(char * s, int linkstat, struct stat * st, int * r)
-{
-	if(linkstat)
-		(*r) = lstat(s, st);
-	else
-		(*r) = stat(s, st);
-
-	if(*r)
-	{
-		if(errno == ENOENT || errno == ENOTDIR)
-		{
-#if DEBUG
-			dprintf(listwise_debug_fd, "%s('%s')=[%d][%s]\n", linkstat ? "lstat" : "stat", s, errno, strerror(errno));
-#endif
-		}
-		else
-		{
-			sysfatality(linkstat ? "lstat" : "stat");
-		}
-	}
-
-finally:
-	XAPI_INFO("path", "%s", s);
-coda;
-}
-
-static int xeuidaccess(char * s, int mode, int * r)
-{
-	if(((*r) = euidaccess(s, mode)) == 0)
-	{
-		/* nothing */
-	}
-	else if(errno == EACCES)
-	{
-		/* nothing */
-	}
-	else if(errno == ENOENT || errno == ENOTDIR)
-	{
-#if DEBUG
-		dprintf(listwise_debug_fd, "euidaccess('%s')=[%d][%s]\n", s, errno, strerror(errno));
-#endif
-	}
-	else
-	{
-		sysfatality("euidaccess");
-	}
-
-finally:
-	XAPI_INFO("path", "%s", s);
-coda;
-}
-
 static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linkstat, int (*selector)(struct stat *))
 {
 	int x;
@@ -175,7 +125,10 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linksta
 	{
 		struct stat st;
 		int r;
-		fatal(wrapstat, lstack_string(ls, 0, x), linkstat, &st, &r);
+		if(linkstat)
+			fatal(uxlstat, lstack_string(ls, 0, x), &st, &r);
+		else
+			fatal(uxstat, lstack_string(ls, 0, x), &st, &r);
 
 		if(r == 0)
 		{

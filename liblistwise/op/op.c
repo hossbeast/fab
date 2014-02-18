@@ -57,8 +57,8 @@ finally :
 	if(XAPI_UNWINDING)
 		xapi_backtrace();
 
-int __attribute__((unused)) _xapi_r;
-coda_custom;
+int _xapi_r;
+conclude;
 
 	if(_xapi_r)
 		exit(0);

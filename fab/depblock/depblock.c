@@ -85,8 +85,8 @@ int depblock_read(depblock * const block)
 		// seek back to the start
 		fatal(xlseek, block->fd, 0, SEEK_SET, 0);
 		
-		if((block->addr = mmap(0, block->size, PROT_READ, MAP_PRIVATE, block->fd, 0)) == MAP_FAILED)
-			sysfatality("mmap");
+		// map the file
+		fatal(xmmap, 0, block->size, PROT_READ, MAP_PRIVATE, block->fd, 0, 0);
 
 		// block is ready to process
 		block->block = block->addr;
@@ -167,17 +167,18 @@ int depblock_write(const depblock * const block)
 {
 	if(block->block)
 	{
-		int fd = 0;
+		int fd = -1;
 		void * addr = 0;
 		size_t size = sizeof(*block->block);
 
+		// assume fabsys identity
 		fatal(identity_assume_fabsys);
 
 		// open the file for writing
 		fatal(xopen_mode, block->blockpath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
 
 		// set the filesize
-		sysfatalize(ftruncate, fd, size);
+		fatal(xftruncate, fd, size);
 
 		// map the entire file writable
 		fatal(xmmap, 0, size, PROT_WRITE, MAP_SHARED, fd, 0, &addr);
@@ -187,9 +188,9 @@ int depblock_write(const depblock * const block)
 
 		// close and unmap
 		fatal(xmunmap, addr, size);
-
 		fatal(xclose, fd);
 
+		// reassume user identity
 		fatal(identity_assume_user);
 	}
 

@@ -408,7 +408,7 @@ int fml_exec(ts * const restrict ts, int num)
 		// exec doesnt return
 		execl(ts->cmd_path->s, ts->cmd_path->s, (void*)0);
 
-		sysfatality("execl");
+		fail(0);
 	}
 
 	finally : coda;

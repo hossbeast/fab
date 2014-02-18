@@ -63,6 +63,10 @@ struct frame
 
 	int finalized;		// whether execution has passed the XAPI_FINALLY label in this frame
 	int populated;		// whether this frame has already been populated (not necessarily set, but if it is set, then its true)
+
+#if DEBUG
+	void * calling_frame;	// address of the calling stack frame
+#endif
 };
 
 /*
@@ -103,7 +107,7 @@ struct callstack
 	int							a;
 
 	int l;	// 1-based count of stack frames (depth)
-	int x;	// 0-based index of current stack frame while unwinding
+	int x;	// while unwinding, 0-based index of current stack frame; otherwise, undefined
 
 	int r;	// return value from the last xapi_frame_set call
 };

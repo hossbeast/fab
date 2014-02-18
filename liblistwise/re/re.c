@@ -39,33 +39,33 @@ int API re_compile(char* s, struct re* re, char* mod)
 	if(mod && strchr(mod, 's'))
 		reopts |= PCRE_DOTALL;
 
-	const char* err = 0;
+	const char* errstr = 0;
 	int off = -1;
-	if((re->c_pcre = pcre_compile(s, reopts, &err, &off, 0)) == 0)
+	if((re->c_pcre = pcre_compile(s, reopts, &errstr, &off, 0)) == 0)
 	{
-		pcrefatality("pcre_compile", 0, "%s", err);
+		tfails(perrtab_PCRE, 0, errstr);
 	}
 
-	err = 0;
+	errstr = 0;
 	off = -1;
-	re->c_pcre_extra = pcre_study(re->c_pcre, 0, &err);
-	if(err)
+	re->c_pcre_extra = pcre_study(re->c_pcre, 0, &errstr);
+	if(errstr)
 	{
-		pcrefatality("pcre_study", 0, "%s", err);
+		tfails(perrtab_PCRE, 0, errstr);
 	}
 
 	int r;
 	if((r = pcre_fullinfo(re->c_pcre, re->c_pcre_extra, PCRE_INFO_CAPTURECOUNT, &re->c_caps)) != 0)
 	{
-		pcrefatality("pcre_fullinfo", r, 0);
+		tfail(perrtab_PCRE, r);
 	}
 
 finally:
-	XAPI_INFO("pcre", "%s", s);
+	XAPI_INFOF("pcre", "%s", s);
 	if(mod)
-		XAPI_INFO("mod", "%s", mod);
+		XAPI_INFOF("mod", "%s", mod);
 	if(off)
-		XAPI_INFO("off", "%d", off);
+		XAPI_INFOF("off", "%d", off);
 coda;
 }
 
@@ -90,7 +90,7 @@ int API re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len)
 
 	if((*ovec)[0] < 0 && (*ovec)[0] != PCRE_ERROR_NOMATCH)
 	{
-		pcrefatality("pcre_exec", (*ovec)[0], 0);
+		tfail(perrtab_PCRE, (*ovec)[0]);
 	}
 
 #if 0

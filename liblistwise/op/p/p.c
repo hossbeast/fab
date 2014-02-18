@@ -56,13 +56,13 @@ operator op_desc[] = {
 int op_validate(operation* o)
 {
 	if(o->argsl != 1 && (o->argsl % 2) != 0)
-		fail(LW_ARGSNUM, "actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "actual : %d", o->argsl);
 
 	int x;
 	for(x = 0; x < o->argsl; x++)
 	{
 		if(o->args[x]->itype != ITYPE_I64)
-			fail(LW_ARGSTYPE, "should be i64");
+			fails(LW_ARGSTYPE, "should be i64");
 	}
 
 	finally : coda;

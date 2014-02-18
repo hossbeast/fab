@@ -493,7 +493,7 @@ int bp_eval(bp * const bp)
 	}
 
 	if(poison)
-		fail(FAB_UNSATISFIED, "buildplan cannot be executed");
+		fails(FAB_UNSATISFIED, "buildplan cannot be executed");
 
 	// consolidate stages
 	for(x = bp->stages_l - 1; x >= 0; x--)
@@ -604,7 +604,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lwx *** stax, int 
 		}
 
 		if(!res)
-			fail(FAB_FMLFAIL, "");
+			fail(FAB_FMLFAIL);
 	}
 
 finally:

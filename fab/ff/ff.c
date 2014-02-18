@@ -116,34 +116,34 @@ static int reduce(int (*parser)(void *, parse_param*), parse_param * pp, int fai
 	if(r == 2)
 	{
 		// memory exhaustion error from the parser
-		fatality("yyparse", perrtab_SYS, ENOMEM, "%s", pp->errorstring);
+		tfails(perrtab_SYS, ENOMEM, pp->errorstring);
 	}
 	else if(fail_unless_reduce)
 	{
 		if(pp->r > 0)
 		{
 			// error from the scanner
-			fatality("yyparse", perrtab_FAB, FAB_ILLBYTE, "%s", pp->errorstring);
+			fails(FAB_ILLBYTE, pp->errorstring);
 		}
 		else if(r == 1 || pp->r < 0)
 		{
 			// failure to reduce
-			fatality("yyparse", perrtab_FAB, FAB_SYNTAX, "%s", pp->errorstring);
+			fails(FAB_SYNTAX, pp->errorstring);
 		}
 	}
 
 finally :
 	if(XAPI_UNWINDING)
 	{
-		XAPI_INFO("last", "%s", pp->tokenstring);
-	  XAPI_INFO("loc", "[%d,%d-%d,%d]"
+		XAPI_INFOS("last", pp->tokenstring);
+	  XAPI_INFOF("loc", "[%d,%d-%d,%d]"
 	  	, pp->last_loc.f_lin + 1
 	  	, pp->last_loc.f_col + 1
 	  	, pp->last_loc.l_lin + 1
 	  	, pp->last_loc.l_col + 1
 	  );
 	#if DEBUG
-	    XAPI_INFO("scanline", "%d", pp->last_line);
+	    XAPI_INFOF("scanline", "%d", pp->last_line);
 	#endif
 	}
 coda;
@@ -168,7 +168,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	// create state specific to this parse
 	void* state = 0;
 	if((state = ff_yy_scan_bytes(b, sz + 2, p->p)) == 0)
-		fatality("yy_scan_bytes", perrtab_SYS, ENOMEM, 0);
+		tfail(perrtab_SYS, ENOMEM);
 
 	// all ff_files are tracked in ff_files
 	ff_file * ff = 0;
@@ -338,14 +338,14 @@ static int regular_rewrite(ff_file * ff)
 			// get the canhash for this gn
 			uint32_t canhash = 0;
 			if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) != 0)
-				fail(FAB_BADCACHE, "unexpected file %s/%s", ff->closure_gns_dir, entp->d_name);
+				failf(FAB_BADCACHE, "unexpected file %s/%s", ff->closure_gns_dir, entp->d_name);
 
 			// delete
 			snprintf(tmpa, sizeof(tmpa), "%s/%u/PRIMARY/dscv", ff->closure_gns_dir, canhash);
-			fatal(uxunlink, tmpa);
+			fatal(uxunlink, tmpa, 0);
 
 			snprintf(tmpa, sizeof(tmpa), "%s/%u/SECONDARY/fab/noforce_ff", ff->closure_gns_dir, canhash);
-			fatal(uxunlink, tmpa);
+			fatal(uxunlink, tmpa, 0);
 
 			// If it is no longer in the closure, also delete the symlink
 			int kcmp(const void * K, const void * A)
@@ -356,7 +356,7 @@ static int regular_rewrite(ff_file * ff)
 			if(bsearch(&canhash, ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), kcmp) == 0)
 			{
 				snprintf(tmpa, sizeof(tmpa), "%s/%u", ff->closure_gns_dir, canhash);
-				fatal(xunlink, tmpa);
+				fatal(xunlink, tmpa, 0);
 			}
 		}
 	}

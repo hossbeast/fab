@@ -60,7 +60,7 @@ int op_validate(operation* o)
 {
 	if(o->argsl != 0 && o->argsl != 1)
 	{
-		fail(LW_ARGSNUM, "expected 0 or 1, actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "expected 0 or 1, actual : %d", o->argsl);
 	}
 
 	finally : coda;

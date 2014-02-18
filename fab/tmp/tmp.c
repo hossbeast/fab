@@ -72,23 +72,23 @@ int tmp_setup()
 	int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
 	{
 		if(typeflag != FTW_D)
-			fail(FAB_BADTMP, "not a directory");
+			fails(FAB_BADTMP, "not a directory");
 
 		pid_t pid = 0;
 		int n = 0;
 		if(sscanf(fpath + ftwbuf->base, "%d%n", &pid, &n) != 1 || (ftwbuf->base + n) != strlen(fpath))
 		{
-			fail(FAB_BADTMP, "not numeric"); // dirname consists of something other than <pid>
+			fails(FAB_BADTMP, "not numeric"); // dirname consists of something other than <pid>
 		}
 
 		// pid is myself, or it is unkillable
 		if(pid == g_params.pid || kill(pid, 0))
 		{
-			fatal(rmdir_recursive, fpath, 1);
+			fatal(rmdir_recursive, fpath, 1, FAB_BADTMP);
 		}
 
 	finally :
-		XAPI_INFO("path", "%s", fpath);
+		XAPI_INFOF("path", "%s", fpath);
 	coda;
 	};
 
@@ -106,7 +106,7 @@ int tmp_setup()
 		int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
 		{
 			if(typeflag != FTW_D)
-				fail(FAB_BADTMP, "not a directory");
+				fails(FAB_BADCACHE, "not a directory");
 
 			// get the min modify time of everything in the directory
 			time_t minmod = sb->st_mtime;
@@ -115,11 +115,11 @@ int tmp_setup()
 			// minimum modify time older than expiration
 			if((time(0) - minmod) > EXPIRATION_POLICY)
 			{
-				fatal(rmdir_recursive, fpath, 1);
+				fatal(rmdir_recursive, fpath, 1, FAB_BADCACHE);
 			}
 
 		finally:
-			XAPI_INFO("path", "%s", fpath);
+			XAPI_INFOF("path", "%s", fpath);
 		coda;
 		};
 
