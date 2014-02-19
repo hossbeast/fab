@@ -57,10 +57,10 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 }
 
 # compiled sys errtab
-+[@std.xapi.errtab]($gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [ $dlibxapi/SYS.errtab ~ j ]; $ext = [ pic.o ]; $cc $cflags)
++[@std.xapi.errtab]($gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [[ $dlibxapi/SYS.errtab ~ j ] [ $dlibxapi/XAPI.errtab ~ j]]; $ext = [ pic.o ]; $cc $cflags)
 
 # link the library
-[ $libxapi ] : [ [ $cfabpaths ~ xs/<c>/<pic.o> ] [ $dlibxapi/SYS.errtab.pic.o ~ j ] ]
+[ $libxapi ] : [ [ $cfabpaths ~ xs/<c>/<pic.o> ] [ $dlibxapi/SYS.errtab.pic.o ~ j ] [ $dlibxapi/XAPI.errtab.pic.o ~ j ] ]
 {
 	  exec 99>&1 1>[ $dlibxapi/exports ]
 	  echo "{ global: "

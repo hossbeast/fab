@@ -304,18 +304,16 @@ void API generator_xfree(generator** g)
 
 int API generator_parse(generator_parser* p, char* s, int l, generator** g)
 {
-	return parse(p, s, l, 0, 0, g);
-
-/*
 	fatal(parse, p, s, l, 0, 0, g);
 
 	finally : coda;
-*/
 }
 
 int API generator_parse_named(generator_parser* p, char* s, int l, char * name, int namel, generator** g)
 {
-	return parse(p, s, l, name, namel, g);
+	fatal(parse, p, s, l, name, namel, g);
+
+	finally : coda;
 }
 
 void API generator_dump(generator* g)

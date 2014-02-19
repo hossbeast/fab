@@ -219,6 +219,11 @@ voidstar API xapi_frame_caller()
 	else
 		return callstack.v[callstack.l - 1]->calling_frame;
 }
+
+int API xapi_frame_depth()
+{
+	return callstack.l;
+}
 #endif
 
 int API xapi_frame_leave()

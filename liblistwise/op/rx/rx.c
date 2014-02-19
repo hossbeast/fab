@@ -75,9 +75,9 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 
 		if(def)
 		{
-			xfree(&r);
-			xfree(&rtypes);
-			xfree(&rls);
+			ifree(&r);
+			ifree(&rtypes);
+			ifree(&rls);
 
 			// call the reflection method on the appropriate object
 			fatal(def->reflect, *(void**)ls->s[0].s[x].s, prop, &r, &rtypes, &rls, &rl);

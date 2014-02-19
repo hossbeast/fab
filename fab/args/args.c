@@ -565,7 +565,7 @@ int args_parse(int argc, char** argv)
 		else if(x == 'k')
 		{
 			g_args.mode_bplan = MODE_BPLAN_BAKE;
-			xfree(&g_args.bakescript_path);
+			ifree(&g_args.bakescript_path);
 			g_args.bakescript_path = strdup(optarg);
 		}
 		else if(x == 'p')

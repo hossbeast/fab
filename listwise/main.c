@@ -57,7 +57,7 @@ static int snarf(char * path, void ** mem, size_t * sz)
 {
 	int fd = -1;
 
-	xfree(mem);
+	ifree(mem);
 
 	fatal(xopen, strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY, &fd);
 

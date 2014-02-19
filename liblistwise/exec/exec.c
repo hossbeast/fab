@@ -172,7 +172,7 @@ int API listwise_exec_generator(
 
 	// clear string props set with the fx operator
 	for(x = 0; x < object_registry.l; x++)
-		xfree(&object_registry.e[x]->string_property);
+		ifree(&object_registry.e[x]->string_property);
 
 finally:
 	free(ovec);

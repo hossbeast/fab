@@ -603,12 +603,12 @@ int API lstack_appendf(lwx * const restrict lx, int x, int y, const char* const 
 
 int API lstack_write_alt(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
 {
-	return writestack_alt(lx, x, y, s, l, 0);
+	proxy(writestack_alt, lx, x, y, s, l, 0);
 }
 
 int API lstack_write(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
 {
-	return writestack(lx, x, y, s, l, 0);
+	proxy(writestack, lx, x, y, s, l, 0);
 }
 
 int API lstack_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)

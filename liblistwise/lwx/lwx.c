@@ -23,7 +23,9 @@
 
 int API lwx_alloc(lwx ** const lx)
 {
-	return xmalloc(lx, sizeof(**lx));
+	fatal(xmalloc, lx, sizeof(**lx));
+
+	finally : coda;
 }
 
 uint64_t API lwx_getflags(lwx * const lx)

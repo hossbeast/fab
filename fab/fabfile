@@ -81,6 +81,9 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
 }
 
+# also a bridge dependency on the fab executable
+[ $faboplist ~ dj/shift ] ::^ [ $fab ]
+
 #
 # tasks
 #

@@ -27,7 +27,7 @@ xmkdir;
 uxmkdir;
 xmalloc;
 xrealloc;
-xfree;
+ifree;
 xqsort_r;
 xlocaltime_r;
 xread;

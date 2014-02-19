@@ -65,7 +65,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		int l;
 		fatal(lstack_getstring, ls, 0, x, &s, &l);
 
-		xfree(&ss);
+		ifree(&ss);
 		if((ss = realpath(s, 0)))
 		{
 			fatal(lstack_write

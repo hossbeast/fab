@@ -29,14 +29,15 @@
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
 
+#if DEBUG
+#include "XAPI.errtab.h"
+#endif
+
 /*
 ** when DEBUG
 **  detect non-UNWIND-ing function invoked with fatal
 **  [x] detect UNWIND-ing function invoked without fatal in the presence of an active callstack
 */
-
-#include "libxapi/callstack/callstack.h"
-#include <stdio.h>
 
 #define restrict __restrict
 
@@ -139,6 +140,10 @@ when calling non-xapi code, you have a couple of options.
 ** called elsewhere in the stack
 */
 
+#define proxy(func, ...)				\
+	fatal(func, ##__VA_ARGS__);		\
+	finally : coda
+
 /// fatal
 //
 // SUMMARY
@@ -147,12 +152,14 @@ when calling non-xapi code, you have a couple of options.
 #if DEBUG
 #define fatal(func, ...)																																														\
 	do {																																																							\
-		int ___x = callstack.l;																																													\
+		int ___x = xapi_frame_depth();																																									\
 		if(xapi_frame_enter(__builtin_frame_address(0)) != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)))		\
-			fail(0);																																																			\
-		if(___x && ___x != callstack.l)																																									\
 		{																																																								\
-			tfailf(perrtab_SYS, 0, "non-unwinding function invoked with fatal : %d, %d", ___x, callstack.l);							\
+			fail(0);																																																			\
+		}																																																								\
+		else if(___x && ___x != xapi_frame_depth())																																			\
+		{																																																								\
+			tfails(perrtab_XAPI, XAPI_ILLFATAL, #func);																																		\
 		}																																																								\
 	} while(0)
 #else
@@ -223,14 +230,13 @@ XAPI_FINALLY
 //  return from the current function
 //
 #if DEBUG
-#define coda																																								\
-	goto XAPI_LEAVE;																																					\
-XAPI_LEAVE:																																									\
-	if(__builtin_frame_address(1) != xapi_frame_caller())																			\
-	{																																													\
-		xapi_frame_enter(0);																																		\
-		XAPI_FRAME_SET_MESSAGEW(perrtab_SYS, 0, "unwinding function invoked without fatal", 0);	\
-	}																																													\
+#define coda																							\
+	goto XAPI_LEAVE;																				\
+XAPI_LEAVE:																								\
+	if(__builtin_frame_address(1) != xapi_frame_caller())		\
+	{																												\
+		XAPI_FRAME_SET(perrtab_XAPI, XAPI_NOFATAL);						\
+	}																												\
 	return xapi_frame_leave()
 #else
 #define coda										\

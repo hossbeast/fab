@@ -43,6 +43,7 @@ struct callstack;
 #if DEBUG
 int xapi_frame_enter(void * calling_frame);
 void * xapi_frame_caller();
+int xapi_frame_depth();
 #else
 int xapi_frame_enter();
 #endif
