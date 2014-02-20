@@ -125,10 +125,12 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linksta
 	{
 		struct stat st;
 		int r;
+		char * zs = 0;
+		fatal(lstack_string, ls, 0, x, &zs);
 		if(linkstat)
-			fatal(uxlstat, lstack_string(ls, 0, x), &st, &r);
+			fatal(uxlstat, zs, &st, &r);
 		else
-			fatal(uxstat, lstack_string(ls, 0, x), &st, &r);
+			fatal(uxstat, zs, &st, &r);
 
 		if(r == 0)
 		{
@@ -202,7 +204,9 @@ int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		int r;
-		fatal(xeuidaccess, lstack_string(ls, 0, x), R_OK, &r);
+		char * zs =0;
+		fatal(lstack_string, ls, 0, x, &zs);
+		fatal(xeuidaccess, zs, R_OK, &r);
 
 		if(r == 0)
 		{
@@ -221,7 +225,9 @@ int op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		int r;
-		fatal(xeuidaccess, lstack_string(ls, 0, x), W_OK, &r);
+		char * zs = 0;
+		fatal(lstack_string, ls, 0, x, &zs);
+		fatal(xeuidaccess, zs, W_OK, &r);
 
 		if(r == 0)
 		{
@@ -240,7 +246,9 @@ int op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	if(go)
 	{
 		int r;
-		fatal(xeuidaccess, lstack_string(ls, 0, x), X_OK, &r);
+		char * zs = 0;
+		fatal(lstack_string, ls, 0, x, &zs);
+		fatal(xeuidaccess, zs, X_OK, &r);
 
 		if(r == 0)
 		{

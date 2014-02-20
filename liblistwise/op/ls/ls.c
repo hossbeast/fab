@@ -101,7 +101,11 @@ static int listing(lwx* ls, char * s, int recurse)
 					fatal(lstack_addf, ls, "%s/%s", s, entp->d_name);
 
 					if(recurse)
-						fatal(listing, ls, lstack_string(ls, 0, ls->s[0].l - 1), recurse);
+					{
+						char * zs = 0;
+						fatal(lstack_string, ls, 0, ls->s[0].l - 1, &zs);
+						fatal(listing, ls, zs, recurse);
+					}
 				}
 			}
 			else
@@ -142,7 +146,9 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse)
 		LSTACK_ITERATE_FWD(ls, 1, x, 1, go)
 		if(go)
 		{
-			fatal(listing, ls, lstack_string(ls, 1, x), recurse);
+			char * zs = 0;
+			fatal(lstack_string, ls, 1, x);
+			fatal(listing, ls, zs, recurse);
 		}
 		LSTACK_ITEREND
 	}

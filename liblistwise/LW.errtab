@@ -22,3 +22,4 @@
 5	ARGSNUM		generator wrong number of arguments
 6	ARGSTYPE	generator argument of the wrong type
 7	ARGSDOM		generator argument out of expected range
+8 NOOBJ			unknown object type referenced

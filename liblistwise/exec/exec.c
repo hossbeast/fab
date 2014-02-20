@@ -73,7 +73,7 @@ int API listwise_exec_generator(
 	(*lx)->win.staged_era++;
 
 	if(dump)
-		lstack_dump(*lx);
+		fatal(lstack_dump, *lx);
 
 #if SANITY
 	if(listwise_sanity)
@@ -110,7 +110,7 @@ int API listwise_exec_generator(
 
 		if(x && dump)
 		{
-			lstack_dump(*lx);
+			fatal(lstack_dump, *lx);
 		}
 
 		if(g->ops[x]->op != yop && g->ops[x]->op != wyop && !isor)
@@ -166,7 +166,7 @@ int API listwise_exec_generator(
 	}
 
 	if(dump && g->opsl)
-		lstack_dump(*lx);
+		fatal(lstack_dump, *lx);
 
 	(*lx)->win.active_era++;	// age active windows
 

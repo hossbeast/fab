@@ -176,9 +176,7 @@ int lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restri
 // RETURNS
 //  0 on success
 //
-// REMARKS
-//
-char * lstack_string(lwx * const restrict lx, int x, int y)
+int lstack_string(lwx * const restrict lx, int x, int y, char ** restrict r)
   __attribute__((nonnull));
 
 /// lwx_reset 

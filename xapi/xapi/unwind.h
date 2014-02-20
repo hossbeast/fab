@@ -140,10 +140,6 @@ when calling non-xapi code, you have a couple of options.
 ** called elsewhere in the stack
 */
 
-#define proxy(func, ...)				\
-	fatal(func, ##__VA_ARGS__);		\
-	finally : coda
-
 /// fatal
 //
 // SUMMARY
@@ -159,7 +155,7 @@ when calling non-xapi code, you have a couple of options.
 		}																																																								\
 		else if(___x && ___x != xapi_frame_depth())																																			\
 		{																																																								\
-			tfails(perrtab_XAPI, XAPI_ILLFATAL, #func);																																		\
+			tfails(perrtab_XAPI, XAPI_ILLFATAL, "function " #func " invoked with fatal");																	\
 		}																																																								\
 	} while(0)
 #else
@@ -210,6 +206,14 @@ when calling non-xapi code, you have a couple of options.
 #define fatalize(code, func, ...)  tfatalize (perrtab, code, func, ##__VA_ARGS__)
 #define fatalizes(code, func, ...) tfatalizes(perrtab, code, func, ##__VA_ARGS__)
 #define fatalizew(code, func, ...) tfatalizew(perrtab, code, func, ##__VA_ARGS__)
+
+/// xproxy
+//
+//
+//
+#define xproxy(func, ...)				\
+	fatal(func, ##__VA_ARGS__);		\
+	finally : coda
 
 /// finally
 //

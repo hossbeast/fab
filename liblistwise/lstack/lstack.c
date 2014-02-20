@@ -603,12 +603,12 @@ int API lstack_appendf(lwx * const restrict lx, int x, int y, const char* const 
 
 int API lstack_write_alt(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
 {
-	proxy(writestack_alt, lx, x, y, s, l, 0);
+	xproxy(writestack_alt, lx, x, y, s, l, 0);
 }
 
 int API lstack_write(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
 {
-	proxy(writestack, lx, x, y, s, l, 0);
+	xproxy(writestack, lx, x, y, s, l, 0);
 }
 
 int API lstack_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
@@ -616,22 +616,22 @@ int API lstack_writef(lwx * const restrict lx, int x, int y, const char* const r
 	va_list va;
 	va_start(va, fmt);
 
-	return vwritestack(lx, x, y, fmt, va);
+	xproxy(vwritestack, lx, x, y, fmt, va);
 }
 
 int API lstack_obj_write_alt(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 {
-	return writestack_alt(lx, x, y, o, 0, type);
+	xproxy(writestack_alt, lx, x, y, o, 0, type);
 }
 
 int API lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 {
-	return writestack(lx, x, y, o, 0, type);
+	xproxy(writestack, lx, x, y, o, 0, type);
 }
 
 int API lstack_add(lwx * const restrict lx, const char* const restrict s, int l)
 {
-	return writestack(lx, 0, lx->l ? lx->s[0].l : 0, s, l, 0);
+	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, s, l, 0);
 }
 
 int API lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
@@ -644,7 +644,7 @@ int API lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...
 
 int API lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
 {
-	return writestack(lx, 0, lx->l ? lx->s[0].l : 0, o, 0, type);
+	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, o, 0, type);
 }
 
 // shift removes the first list from the stack
@@ -767,12 +767,12 @@ int API lstack_merge(lwx * const restrict lx, int to, int from)
 
 int API lstack_allocate(lwx * const restrict lx, int x, int y, int z)
 {
-	return allocate(lx, x, y, z);
+	xproxy(allocate, lx, x, y, z);
 }
 
 int API lstack_ensure(lwx * const restrict lx, int x, int y, int z)
 {
-	return ensure(lx, x, y, z);
+	xproxy(ensure, lx, x, y, z);
 }
 
 int API lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
@@ -853,6 +853,18 @@ int API lstack_delete(lwx * const restrict lx, int x, int y)
 	return 0;
 }
 
+static int object_lookup(uint8_t type, listwise_object ** o)
+{
+	if(((*o) = idx_lookup_val(object_registry.by_type, &type, 0)) == 0)
+	{
+		fail(LW_NOOBJ);
+	}
+
+finally:
+	XAPI_INFOF("type", "%hhu", type);
+coda;
+}
+
 int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * const rl, uint8_t * const rt, int obj, int win, int str, int * const _raw)
 {
 	char * zs		= lx->s[x].s[y].s;
@@ -862,10 +874,8 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 
 	if(obj && lx->s[x].s[y].type)
 	{
-		listwise_object* o = idx_lookup_val(object_registry.by_type, &lx->s[x].s[y].type, 0);
-
-		if(o == 0)
-			return 1;
+		listwise_object * o = 0;
+		fatal(object_lookup, lx->s[x].s[y].type, &o);
 
 		o->string(*(void**)lx->s[x].s[y].s, o->string_property, &zs, &zsl);
 		raw = 0;
@@ -878,14 +888,12 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 		{
 			if(lx->s[x].t[y].a <= lx->win.s[y].active->zl)
 			{
-				if(xrealloc(
-						&lx->s[x].t[y].s
+				fatal(xrealloc
+					, &lx->s[x].t[y].s
 					, sizeof(*lx->s[0].t[0].s)
 					, lx->win.s[y].active->zl + 1
-					, lx->s[x].t[y].a) != 0)
-				{
-					return 1;
-				}
+					, lx->s[x].t[y].a
+				);
 
 				lx->s[x].t[y].a = lx->win.s[y].active->zl + 1;
 			}
@@ -912,14 +920,12 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 		{
 			if(lx->s[x].t[y].a <= zsl)
 			{
-				if(xrealloc(
-						&lx->s[x].t[y].s
+				fatal(xrealloc
+					, &lx->s[x].t[y].s
 					, sizeof(lx->s[x].t[y].s[0])
 					, zsl + 1
-					, lx->s[x].t[y].a) != 0)
-				{
-					return 1;
-				}
+					, lx->s[x].t[y].a
+				);
 
 				lx->s[x].t[y].a = zsl + 1;
 			}
@@ -944,31 +950,25 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 	if(_raw)
 		*_raw = raw;
 
-	return 0;
+	finally : coda;
 }
 
 int API lstack_getobject(lwx * const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
 {
-	return lstack_readrow(lx, x, y, r, 0, rt, 0, 0, 0, 0);
+	xproxy(lstack_readrow, lx, x, y, r, 0, rt, 0, 0, 0, 0);
 }
 
 int API lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
 {
-	return lstack_readrow(lx, x, y, r, rl, 0, 1, 1, 0, 0);
+	xproxy(lstack_readrow, lx, x, y, r, rl, 0, 1, 1, 0, 0);
 }
 
 int API lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
 {
-	return lstack_readrow(lx, x, y, r, rl, 0, 1, 1, 1, 0);
+	xproxy(lstack_readrow, lx, x, y, r, rl, 0, 1, 1, 1, 0);
 }
 
-typedef char* charstar;
-charstar API lstack_string(lwx * const restrict lx, int x, int y)
+int API lstack_string(lwx * const restrict lx, int x, int y, char ** r)
 {
-	char * r;
-	int    rl;
-	if(lstack_readrow(lx, x, y, &r, &rl, 0, 1, 1, 1, 0) != 0)
-		return 0;
-
-	return r;
+	xproxy(lstack_readrow, lx, x, y, r, 0, 0, 1, 1, 1, 0);
 }

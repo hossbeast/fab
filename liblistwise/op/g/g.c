@@ -176,7 +176,9 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 	LSTACK_ITERATE_FWD(lx, 1, x, 1, go)
 	if(go)
 	{
-		fatal(gobble, lx, lstack_string(lx, 1, x), fmt, flags);
+		char * zs = 0;
+		fatal(lstack_string, lx, 1, x);
+		fatal(gobble, lx, zs, fmt, flags);
 	}
 	LSTACK_ITEREND
 
