@@ -13,3 +13,5 @@
 /liblistwise/exports
 /xapi/libxapi/exports
 /libxlinux/exports
+/liblistwise/PCRE.errtab
+/libxapi/SYS.errtab
