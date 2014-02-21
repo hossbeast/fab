@@ -639,7 +639,7 @@ int API lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...
 	va_list va;
 	va_start(va, fmt);
 
-	return vwritestack(lx, 0, lx->l ? lx->s[0].l : 0, fmt, va);
+	xproxy(vwritestack, lx, 0, lx->l ? lx->s[0].l : 0, fmt, va);
 }
 
 int API lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)

@@ -19,7 +19,7 @@
 $dfab						= [ $* ]
 $dcommon				= [ $dfab/../common ~ j ]
 $dliblistwise		= [ $dfab/../liblistwise ~ j ]
-$dxapi					= [ $dfab/../xapi ~ j ]
+$dlibxapi				= [ $dfab/../libxapi ~ j ]
 $dlibxlinux			= [ $dfab/../libxlinux ~ j ]
 
 # variable defs, $cc, $cflags, etc

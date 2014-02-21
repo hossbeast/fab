@@ -17,8 +17,7 @@
 
 # variable defs, $cc, $cflags, etc
 $dcommon	= [ $* ]
-$dxapi		= [ $dcommon/../xapi ~ j ]
-$dlibxapi	= [ $dcommon/../xapi/libxapi ~ j ]
+$dlibxapi	= [ $dcommon/../libxapi ~ j ]
 +[$dcommon/vars.fab]
 
 # c files

@@ -1,3 +1,4 @@
+#if 0
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -109,3 +110,4 @@ int main()
 	printf("FOO INVOKE\n"); foo(); printf("FOO LEAVE\n");
 	printf("FOO INVOKE\n"); foo(); printf("FOO LEAVE\n");
 }
+#endif

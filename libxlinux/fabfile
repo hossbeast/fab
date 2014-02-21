@@ -18,8 +18,7 @@
 # source directories
 $dcommon			= [ $*/../common ~ j ]
 $dlibxlinux	  = [ $* ]
-$dxapi				= [ $dcommon/xapi ~ j ]
-$dlibxapi			= [ $dxapi/libxapi ~ j ]
+$dlibxapi			= [ $dcommon/../libxapi ~ j ]
 
 # variable defs, $cc, $cflags, etc
 # common targets xmem, map, etc

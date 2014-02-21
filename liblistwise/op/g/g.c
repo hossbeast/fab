@@ -177,7 +177,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 	if(go)
 	{
 		char * zs = 0;
-		fatal(lstack_string, lx, 1, x);
+		fatal(lstack_string, lx, 1, x, &zs);
 		fatal(gobble, lx, zs, fmt, flags);
 	}
 	LSTACK_ITEREND

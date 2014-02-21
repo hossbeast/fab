@@ -19,8 +19,7 @@
 $dlistwise    	= [ $* ]
 $dcommon				= [ $dlistwise/../common ~ j ]
 $dliblistwise		= [ $dlistwise/../liblistwise ~ j ]
-$dxapi					= [ $dlistwise/../xapi ~ j ]
-$dlibxapi				= [ $dlistwise/../xapi/libxapi ~ j ]
+$dlibxapi				= [ $dlistwise/../libxapi ~ j ]
 $dlibxlinux			= [ $dlistwise/../libxlinux ~ j ]
 
 # variable defs, $cc, $cflags, etc
@@ -29,7 +28,7 @@ $dlibxlinux			= [ $dlistwise/../libxlinux ~ j ]
 +[ $dcommon ]() @common
 
 # variables
-$cflags					= [ $cflags  [ $dlistwise $dliblistwise $dxapi $dlibxapi $dlibxlinux ~ s/^/-I ]
+$cflags					= [ $cflags  [ $dlistwise $dliblistwise $dlibxapi $dlibxlinux ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 ]

@@ -170,7 +170,7 @@ static int dumplist(lwx * const ls)
 		if(rt == LISTWISE_TYPE_GNLW)
 		{
 			char * zs = 0;
-			fatal(lstack_string, ls, 0, i);
+			fatal(lstack_string, ls, 0, i, &zs);
 			fatal(log_add, "[%hhu]%p (%.*s)"
 				, rt
 				, *(void**)rv

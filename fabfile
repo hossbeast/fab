@@ -17,35 +17,32 @@
 
 # directories
 $dcommon      = [ $*/common ~ j ]
+$dlibxapi			= [ $*/libxapi ~ j ]
+$dlibxlinux		= [ $*/libxlinux ~ j ]
 $dliblistwise = [ $*/liblistwise ~ j ]
 $dlistwise    = [ $*/listwise ~ j ]
-$dxapi				= [ $*/xapi ~ j ]
-$dlibxlinux		= [ $*/libxlinux ~ j ]
 $dfab         = [ $*/fab ~ j ]
 
-$incdirs 			= [ $dliblistwise [ $dliblistwise/listwise ~ j ] ~ s/^/-I ]
-
 # invocations
-+[ $dxapi ](-$libxapi; $dcommon $dxapi)																				@xapi
-+[ $dlibxlinux ](-$libxlinux; $libxapi $dcommon $dxapi)												@libxlinux
-+[ $dliblistwise ](-$liblistwise; $libxapi $libxlinux)												@liblistwise
-+[ $dlistwise ](-$listwise; $liblistwise $libxapi $libxlinux $incdirs)				@listwise
-+[ $dfab ](-$fab; -$faboplist; $liblistwise $libxapi $libxlinux $incdirs)			@fab
++[ $dlibxapi ](-$libxapi; $dcommon)																	@libxapi
++[ $dlibxlinux ](-$libxlinux; $libxapi $dcommon)										@libxlinux
++[ $dliblistwise ](-$liblistwise; $libxapi $libxlinux)							@liblistwise
++[ $dlistwise ](-$listwise; $liblistwise $libxapi $libxlinux)				@listwise
++[ $dfab ](-$fab; -$faboplist; $liblistwise $libxapi $libxlinux)		@fab
 
 # default target - make everything
-[ @all ] 				: [ @liblistwise.all @listwise.all @xapi.all @libxlinux.all @fab.all ]
+[ @all ] 				: [ @libxapi.all @libxlinux.all @liblistwise.all @listwise.all @fab.all ]
 
 # inter-module dependencies
 [ $libxlinux ]   :^ [ $libxapi ]
 [ $liblistwise ] :^ [ $libxapi $libxlinux ]
-[ $listwise ]		 :^ [ $libxapi $libxlinux $liblistwise $libxapi ]
-[ $fab ]				 :^ [ $libxapi $libxlinux $liblistwise $libxapi ]
-[ $faboplist ]	 :^ [ $libxapi $libxlinux $liblistwise $libxapi ]
+[ $listwise ]		 :^ [ $libxapi $libxlinux $liblistwise ]
+[ $fab ]				 :^ [ $libxapi $libxlinux $liblistwise ]
+[ $faboplist ]	 :^ [ $libxapi $libxlinux $liblistwise ]
 
 # supertasks
-[ @install ]		: [               @liblistwise.install   @listwise.install   @xapi.install	 @libxlinux.install   @fab.install ]
-[ @uninstall ]	: [               @liblistwise.uninstall @listwise.uninstall @xapi.uninstall @libxlinux.uninstall @fab.uninstall ]
-[ @clean ]			: [ @common.clean @liblistwise.clean     @listwise.clean     @xapi.clean		 @libxlinux.clean     @fab.clean ]
+[ @install ]		: [ @xapi.install	  @libxlinux.install   @liblistwise.install   @listwise.install   @fab.install ]
+[ @uninstall ]	: [ @xapi.uninstall @libxlinux.uninstall @liblistwise.uninstall @listwise.uninstall @fab.uninstall ]
 
 [ @scripts ]
 {

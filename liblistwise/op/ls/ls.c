@@ -147,7 +147,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse)
 		if(go)
 		{
 			char * zs = 0;
-			fatal(lstack_string, ls, 1, x);
+			fatal(lstack_string, ls, 1, x, &zs);
 			fatal(listing, ls, zs, recurse);
 		}
 		LSTACK_ITEREND
