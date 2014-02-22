@@ -90,7 +90,7 @@ $bison			= [ bison ]
 $bisonflags	= [ --warnings=error ]
 
 $cc					= [ gcc ]
-$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
+$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Wno-unused-label
 		# include paths
 	[ $dlibxapi $dlibxlinux $dliblistwise [ $dcommon ~ lsr/c/-d ] ~ s/^/-I ]
 	[ -DXAPI_UNWIND ]

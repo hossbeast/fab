@@ -154,7 +154,7 @@ int op_exec_f(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return st && S_ISREG(st->st_mode);
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, 0, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector);
 }
 
 int op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len)
@@ -164,7 +164,7 @@ int op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return st && S_ISDIR(st->st_mode);
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, 0, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector);
 }
 
 int op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len)
@@ -174,7 +174,7 @@ int op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return st && S_ISLNK(st->st_mode);
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, 1, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 1, selector);
 }
 
 int op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len)
@@ -184,7 +184,7 @@ int op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return !!st;
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, 0, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector);
 }
 
 int op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len)
@@ -194,7 +194,7 @@ int op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		return st && S_ISDIR(st->st_mode) ? st->st_nlink == 0 : st->st_size == 0;
 	};
 
-	return op_exec(o, ls, ovec, ovec_len, 0, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector);
 }
 
 int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)

@@ -173,20 +173,32 @@ coda;
 int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
+	{
 		return 0;	// nothing selected
+	}
+	else
+	{
+		int ncase = 0;
 
-	int ncase = 0;
+		if(o->argsl >= 1)
+			ncase = strchr(o->args[0]->s, 'i') != 0;
 
-	if(o->argsl >= 1)
-		ncase = strchr(o->args[0]->s, 'i') != 0;
+		fatal(op_exec, o, lx, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE);
+	}
 
-	return op_exec(o, lx, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE);
+	finally : coda;
 }
 
 int op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
+	{
 		return 0;	// nothing selected
+	}
+	else
+	{
+		fatal(op_exec, o, lx, ovec, ovec_len, NUMERIC);
+	}
 
-	return op_exec(o, lx, ovec, ovec_len, NUMERIC);
+	finally : coda;
 }

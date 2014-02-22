@@ -152,10 +152,10 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmat
 
 static int op_exec_lx(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	return op_exec(o, ls, ovec, ovec_len, 0);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0);
 }
 
 static int op_exec_lxf(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	return op_exec(o, ls, ovec, ovec_len, 1);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 1);
 }

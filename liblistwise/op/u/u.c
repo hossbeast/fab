@@ -55,28 +55,23 @@ operator op_desc[] = {
 
 int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	int p = -1;
+	char * As = 0;
+	int    Asl = 0;
+	char * Bs = 0;
+	int    Bsl = 0;
+
 	int x;
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
 	{
-		char * As = 0;
-		int    Asl = 0;
-		char * Bs = 0;
-		int    Bsl = 0;
+		As = Bs;
+		Asl = Bsl;
+		fatal(lstack_getbytes, ls, 0, x, &Bs, &Bsl);
 
-		if(p != -1)
-		{
-			lstack_getbytes(ls, 0, p, &As, &Asl);
-			lstack_getbytes(ls, 0, x, &Bs, &Bsl);
-		}
-
-		if(p == -1 || xstrcmp(As, Asl, Bs, Bsl, 0))
+		if(As && xstrcmp(As, Asl, Bs, Bsl, 0))
 		{
 			fatal(lstack_sel_stage, ls, x);
 		}
-
-		p = x;
 	}
 	LSTACK_ITEREND
 

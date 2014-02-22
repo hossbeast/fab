@@ -120,15 +120,15 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int bef, in
 
 int op_exec_A(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	return op_exec(o, lx, ovec, ovec_len, 0, 1);
+	xproxy(op_exec, o, lx, ovec, ovec_len, 0, 1);
 }
 
 int op_exec_B(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	return op_exec(o, lx, ovec, ovec_len, 1, 0);
+	xproxy(op_exec, o, lx, ovec, ovec_len, 1, 0);
 }
 
 int op_exec_C(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	return op_exec(o, lx, ovec, ovec_len, 1, 1);
+	xproxy(op_exec, o, lx, ovec, ovec_len, 1, 1);
 }

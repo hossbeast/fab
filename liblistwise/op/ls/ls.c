@@ -158,10 +158,10 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse)
 
 int op_exec_ls(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	return op_exec(o, ls, ovec, ovec_len, 0);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0);
 }
 
 int op_exec_lsr(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	return op_exec(o, ls, ovec, ovec_len, 1);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 1);
 }

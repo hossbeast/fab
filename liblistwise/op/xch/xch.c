@@ -82,5 +82,5 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		ls->s[to] = T;
 	}
 
-	return 0;
+	finally : coda;
 }

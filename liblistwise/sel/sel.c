@@ -75,7 +75,7 @@ int API lstack_sel_unstage(lwx * const restrict lx)
 {
 	lx->sel.staged = 0;
 
-	return 0;
+	finally : coda;
 }
 
 int API lstack_sel_activate(lwx * const restrict lx)
@@ -96,12 +96,12 @@ int API lstack_sel_activate(lwx * const restrict lx)
 	// reset staged
 	lx->sel.staged = 0;
 
-	return 0;
+	finally : coda;
 }
 
 int API lstack_sel_reset(lwx * const restrict lx)
 {
 	lx->sel.active_era++;
 
-	return 0;
+	finally : coda;
 }
