@@ -23,6 +23,7 @@
 
 #include "wstdlib.h"
 #include "macros.h"
+#include "strutil.h"
 
 void yyu_locreset(yyu_location * const lloc, yyu_extra * const xtra, const int del)
 {
@@ -144,7 +145,7 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 	{
 		// token source string
 		char * abuf = xtra->space;
-		size_t alen = xstresc(text, leng, xtra->space, sizeof(xtra->space));
+		size_t alen = stresc(text, leng, xtra->space, sizeof(xtra->space));
 
 		// token value
 		char * bbuf = 0;
@@ -214,7 +215,7 @@ void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * cons
 		char * s  	= xtra->last_loc.s;
 		char * e  	= xtra->last_loc.e;
 		char * abuf = xtra->last_loc.s;
-		size_t alen = xstresc(s, e - s, xtra->space, sizeof(xtra->space));
+		size_t alen = stresc(s, e - s, xtra->space, sizeof(xtra->space));
 
 		// token value
 		char * bbuf = 0;

@@ -25,10 +25,10 @@
 
 #include "log.h"
 
-#include "xstring.h"
 #include "args.h"
 #include "cksum.h"
 #include "macros.h"
+#include "strutil.h"
 
 #define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 60])
 #define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
@@ -382,7 +382,7 @@ void log_parse(char * args, int args_len)
 								break;
 						}
 
-						if(xstrcmp(&args[x+off], k-off, "TAG", 3, 0) == 0)
+						if(estrcmp(&args[x+off], k-off, "TAG", 3, 0) == 0)
 						{
 							// special case for TAG to exclude LWVOCAL
 							tag |= L_TAG & ~L_LWVOCAL;
@@ -393,7 +393,7 @@ void log_parse(char * args, int args_len)
 							int i;
 							for(i = 0; i < g_logs_l; i++)
 							{
-								if(xstrcmp(&args[x+off], k-off, g_logs[i].s, g_logs[i].l, 0) == 0)
+								if(estrcmp(&args[x+off], k-off, g_logs[i].s, g_logs[i].l, 0) == 0)
 									break;
 							}
 

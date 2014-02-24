@@ -29,12 +29,12 @@
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
 
-#if DEBUG
+#if XAPI_RUNTIME_CHECKS
 #include "XAPI.errtab.h"
 #endif
 
 /*
-** when DEBUG
+** when XAPI_RUNTIME_CHECKS
 **  detect non-UNWIND-ing function invoked with fatal
 **  [x] detect UNWIND-ing function invoked without fatal in the presence of an active callstack
 */
@@ -145,7 +145,7 @@ when calling non-xapi code, you have a couple of options.
 // SUMMARY
 //  invoke an UNWIND-ing function and fail the current frame if that function fails
 //
-#if DEBUG
+#if XAPI_RUNTIME_CHECKS
 #define fatal(func, ...)																																														\
 	do {																																																							\
 		int ___x = xapi_frame_depth();																																									\
@@ -209,45 +209,71 @@ when calling non-xapi code, you have a couple of options.
 
 /// xproxy
 //
-//
+// enables writing 1-liner wrappers around UNWIND-ing functions
 //
 #define xproxy(func, ...)				\
 	fatal(func, ##__VA_ARGS__);		\
 	finally : coda
+
+/// prologue
+//
+// to be called at the beginning of an UNWIND-ing function which was not itself called with fatal
+//  example : xqsort_r
+//
+#if XAPI_RUNTIME_CHECKS
+#define prologue																			\
+	do {																								\
+		if(xapi_frame_enter(__builtin_frame_address(1)))	\
+		{																									\
+			fail(0);																				\
+		}																									\
+	} while(0)
+#else
+#define prologue								\
+	do {													\
+		if(xapi_frame_enter())			\
+			fail(0)										\
+	} while(0)
+#endif
 
 /// finally
 //
 // SUMMARY
 //  statements between finally and coda are executed even upon fail/leave
 //
+#if XAPI_RUNTIME_CHECKS
+#define finally																																		\
+	goto XAPI_FINALIZE;																															\
+XAPI_FINALIZE:																																		\
+if(xapi_frame_finalized())																												\
+	goto XAPI_LEAVE;																																\
+xapi_frame_finalize();																														\
+	if(xapi_frame_caller() && (__builtin_frame_address(1) != xapi_frame_caller()))	\
+	{																																								\
+		XAPI_FRAME_SET(perrtab_XAPI, XAPI_NOFATAL);																		\
+	}																																								\
+	goto XAPI_FINALLY;																															\
+XAPI_FINALLY
+#else
 #define finally																\
+	goto XAPI_FINALIZE;													\
 XAPI_FINALIZE:																\
 if(xapi_frame_finalized())										\
 	goto XAPI_LEAVE;														\
 xapi_frame_finalize();												\
 	goto XAPI_FINALLY;													\
 XAPI_FINALLY
+#endif
 
 /// coda
 //
 // SUMMARY
 //  return from the current function
 //
-#if DEBUG
-#define coda																							\
-	goto XAPI_LEAVE;																				\
-XAPI_LEAVE:																								\
-	if(__builtin_frame_address(1) != xapi_frame_caller())		\
-	{																												\
-		XAPI_FRAME_SET(perrtab_XAPI, XAPI_NOFATAL);						\
-	}																												\
+#define coda												\
+	goto XAPI_LEAVE;									\
+XAPI_LEAVE:													\
 	return xapi_frame_leave()
-#else
-#define coda										\
-	goto XAPI_LEAVE;							\
-XAPI_LEAVE:											\
-	return xapi_frame_leave()
-#endif
 
 /// conclude
 //

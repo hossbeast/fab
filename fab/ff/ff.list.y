@@ -26,7 +26,6 @@
 	#include "ff.parse.h"
 	#include "ffn.h"
 
-	#include "xstring.h"
 	#include "xlinux.h"
 
 	static int __attribute__((weakref, alias("ff_yylex"))) ff_list_yylex(); 
@@ -225,33 +224,33 @@ nofile
 		char * e = $2->e;
 
 		// add to text
-		xstrcatf(&v, "/..");
+		YYU_FATAL(ixstrcatf, &v, "/..");
 
 		// add to parts
 		if(ll == la)
 		{
 			int ns = la ?: 3;
 			ns = ns * 2 + ns / 2;
-			xrealloc(&l, sizeof(*l), ns, la);
+			YYU_FATAL(xrealloc, &l, sizeof(*l), ns, la);
 			la = ns;
 		}
-		xstrdup(&l[ll++], "..");
+		YYU_FATAL(ixstrdup, &l[ll++], "..");
 
 		ff_node * n = $2;
 		while(n)
 		{
 			// add to text
-			xstrcatf(&v, "/%s", n->text);
+			YYU_FATAL(ixstrcatf, &v, "/%s", n->text);
 
 			// add to parts
 			if(ll == la)
 			{
 				int ns = la ?: 3;
 				ns = ns * 2 + ns / 2;
-				l = realloc(l, sizeof(*l) * ns);
+				YYU_FATAL(xrealloc, &l, sizeof(*l), ns, la);
 				la = ns;
 			}
-			xstrdup(&l[ll++], n->text);
+			YYU_FATAL(ixstrdup, &l[ll++], n->text);
 
 			ff_node * nn = n->next;
 			n->next = 0;

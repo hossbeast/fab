@@ -35,7 +35,6 @@
 #include "xlinux.h"
 #include "unitstring.h"
 #include "cksum.h"
-#include "xstring.h"
 #include "dirutil.h"
 
 #define restrict __restrict
@@ -58,9 +57,9 @@ int hashblock_create(hashblock ** const hb, const char * const dirfmt, ...)
 	vsprintf((*hb)->hashdir, dirfmt, va);
 	va_end(va);
 
-	fatal(xsprintf, &(*hb)->stathash_path, "%s/stat", (*hb)->hashdir);
-	fatal(xsprintf, &(*hb)->contenthash_path, "%s/content", (*hb)->hashdir);
-	fatal(xsprintf, &(*hb)->vrshash_path, "%s/vrs", (*hb)->hashdir);
+	fatal(ixsprintf, &(*hb)->stathash_path, "%s/stat", (*hb)->hashdir);
+	fatal(ixsprintf, &(*hb)->contenthash_path, "%s/content", (*hb)->hashdir);
+	fatal(ixsprintf, &(*hb)->vrshash_path, "%s/vrs", (*hb)->hashdir);
 
 	// attach version id
 	(*hb)->vrshash[1] = FABVERSIONN;

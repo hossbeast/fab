@@ -40,7 +40,7 @@ struct callstack;
 // RETURNS
 //  zero on success
 //
-#if DEBUG
+#if XAPI_RUNTIME_CHECKS
 int xapi_frame_enter(void * calling_frame);
 void * xapi_frame_caller();
 int xapi_frame_depth();

@@ -23,9 +23,9 @@
 
 #include "listwise/internal.h"
 
-#include "xstring.h"
 #include "xlinux.h"
 #include "parseint.h"
+#include "strutil.h"
 
 /*
 
@@ -78,15 +78,17 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 		}
 		LSTACK_ITEREND;
 
-		int compar(const void * A, const void * B)
+		int compar(const void * A, const void * B, void * T, int * r)
 		{
-			lstack_getbytes(lx, 0, *(int*)A, &As, &Asl);
-			lstack_getbytes(lx, 0, *(int*)B, &Bs, &Bsl);
+			fatal(lstack_getbytes, lx, 0, *(int*)A, &As, &Asl);
+			fatal(lstack_getbytes, lx, 0, *(int*)B, &Bs, &Bsl);
 
-			return xstrcmp(As, Asl, Bs, Bsl, 0);
+			(*r) = estrcmp(As, Asl, Bs, Bsl, 0);
+
+			finally : coda;
 		}
 
-		qsort(mema, i, sizeof(*mema), compar);
+		fatal(xqsort_r, mema, i, sizeof(*mema), compar, 0);
 
 		if(i)
 		{
@@ -98,12 +100,12 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 				if(x % 2)
 				{
 					fatal(lstack_getbytes, lx, 0, mema[x], &Bs, &Bsl);
-					r = xstrcmp(As, Asl, Bs, Bsl, 0);
+					r = estrcmp(As, Asl, Bs, Bsl, 0);
 				}
 				else
 				{
 					fatal(lstack_getbytes, lx, 0, mema[x], &As, &Asl);
-					r = xstrcmp(Bs, Bsl, As, Asl, 0);
+					r = estrcmp(Bs, Bsl, As, Asl, 0);
 				}
 
 				if(r)

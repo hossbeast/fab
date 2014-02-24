@@ -20,11 +20,11 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "xstring.h"
+#include "strutil.h"
 
 #include "wstdlib.h"
 
-int xstrcmp(char* A, int alen, char* B, int blen, int case_insensitive)
+int estrcmp(char* A, int alen, char* B, int blen, int case_insensitive)
 {
 	if(!alen)
 		alen = strlen(A);
@@ -56,7 +56,7 @@ int xstrcmp(char* A, int alen, char* B, int blen, int case_insensitive)
 	return result;
 }
 
-char* xstrstr(char * A, int alen, const char * const B, int blen, const int case_insensitive)
+char* estrstr(char * A, int alen, const char * const B, int blen, const int case_insensitive)
 {
 	alen = alen ?: strlen(A);
 	blen = blen ?: strlen(B);
@@ -87,7 +87,8 @@ char* xstrstr(char * A, int alen, const char * const B, int blen, const int case
 	return 0;
 }
 
-int xstrcat(char** s1, const char* s2)
+/*
+int wstrcat(char** s1, const char* s2)
 {
 	char* o = *s1;
 	int s1len = 0;
@@ -110,7 +111,7 @@ int xstrcat(char** s1, const char* s2)
 	return 0;
 }
 
-int xstrcatf(char** s, char* fmt, ...)
+int wstrcatf(char** s, char* fmt, ...)
 {
 	va_list va;
 
@@ -138,7 +139,7 @@ int xstrcatf(char** s, char* fmt, ...)
 	return 0;
 }
 
-int xstrdup(char** s1, const char* s2)
+int wstrdup(char** s1, const char* s2)
 {
 	int s1len = 0;
 	int s2len = strlen(s2);
@@ -154,10 +155,10 @@ int xstrdup(char** s1, const char* s2)
 	free(*s1);
 	*s1 = 0;
 
-	return xstrcat(s1, s2);
+	return wstrcat(s1, s2);
 }
 
-int xsprintf(char** s, char* fmt, ...)
+int wsprintf(char** s, char* fmt, ...)
 {
 	va_list va;
 
@@ -177,8 +178,9 @@ int xsprintf(char** s, char* fmt, ...)
 
 	return 0;
 }
+*/
 
-int xstresc(char * const src, const size_t len, char * const dst, const size_t sz)
+int stresc(char * const src, const size_t len, char * const dst, const size_t sz)
 {
 	size_t z  = 0;
 	int x;

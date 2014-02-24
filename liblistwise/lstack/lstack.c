@@ -23,7 +23,6 @@
 #include "listwise/internal.h"
 
 #include "xlinux.h"
-#include "xstring.h"
 #include "macros.h"
 
 #define restrict __restrict
@@ -366,7 +365,7 @@ int API lwx_reset(lwx * lx)
 	lx->sel.active = 0;
 	lx->sel.staged = 0;
 
-	return 0;
+	finally : coda;
 }
 
 int API lstack_clear(lwx * const restrict lx, int x, int y)
@@ -378,10 +377,10 @@ int API lstack_clear(lwx * const restrict lx, int x, int y)
 
 	if(x == 0)
 	{
-		lstack_window_deactivate(lx, y);
+		fatal(lstack_window_deactivate, lx, y);
 	}
 
-	return 0;
+	finally : coda;
 }
 
 int API lstack_dump(lwx * const lx)
@@ -564,7 +563,7 @@ int API lstack_append(lwx * const restrict lx, int x, int y, const char* const r
 
 	if(x == 0)
 	{
-		lstack_window_deactivate(lx, y);
+		fatal(lstack_window_deactivate, lx, y);
 	}
 
 	finally : coda;
@@ -595,7 +594,7 @@ int API lstack_appendf(lwx * const restrict lx, int x, int y, const char* const 
 
 	if(x == 0)
 	{
-		lstack_window_deactivate(lx, y);
+		fatal(lstack_window_deactivate, lx, y);
 	}
 
 	finally : coda;
@@ -663,7 +662,7 @@ int API lstack_shift(lwx * const restrict lx)
 		lx->s[--lx->l] = T;
 	}
 
-	return 0;
+	finally : coda;
 }
 
 // pop removes the last list from the stack
@@ -672,7 +671,7 @@ int API lstack_pop(lwx * const restrict lx)
 	if(lx->l)
 		lx->l--;
 
-	return 0;
+	finally : coda;
 }
 
 // unshift allocates a new list at index 0
@@ -796,7 +795,7 @@ int API lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 	// adjust the length
 	lx->s[bx].l--;
 
-	return 0;
+	finally : coda;
 }
 
 int API lstack_displace(lwx * const restrict lx, int x, int y, int l)
@@ -850,7 +849,7 @@ int API lstack_delete(lwx * const restrict lx, int x, int y)
 
 	lx->s[x].l--;
 
-	return 0;
+	finally : coda;
 }
 
 static int object_lookup(uint8_t type, listwise_object ** o)

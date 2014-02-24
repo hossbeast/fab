@@ -18,7 +18,6 @@
 #include <errno.h>
 
 #include "internal.h"
-
 #include "xtime.h"
 
 int API xlocaltime_r(const time_t * timep, struct tm * result)

@@ -25,7 +25,6 @@
 #include "listwise/internal.h"
 
 #include "xlinux.h"
-#include "xstring.h"
 #include "macros.h"
 
 #define restrict __restrict

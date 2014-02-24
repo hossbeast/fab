@@ -21,8 +21,7 @@
 
 #include "listwise/internal.h"
 
-#include "xstring.h"
-
+#include "strutil.h"
 
 /*
 
@@ -83,7 +82,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		int ssl;
 		fatal(lstack_getbytes, ls, 0, x, &ss, &ssl);
 
-		char * s = xstrstr(ss, ssl, o->args[0]->s, o->args[0]->l, isncase);
+		char * s = estrstr(ss, ssl, o->args[0]->s, o->args[0]->l, isncase);
 
 		if(s)
 		{
@@ -95,7 +94,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 				if(isglobal)
 				{
 					off += o->args[0]->l;
-					s = xstrstr(s + off + 1, ssl - off - 1, o->args[0]->s, o->args[0]->l, isncase);
+					s = estrstr(s + off + 1, ssl - off - 1, o->args[0]->s, o->args[0]->l, isncase);
 				}
 				else
 				{

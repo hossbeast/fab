@@ -165,7 +165,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 			int loff = 0;
 
 			// clear this string on the stack
-			lstack_clear(lx, 0, x);
+			fatal(lstack_clear, lx, 0, x);
 
 			// text in the subject string before the first match
 			fatal(append, lx, x, ss, (*ovec)[1]);

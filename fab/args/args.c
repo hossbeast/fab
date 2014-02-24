@@ -33,7 +33,6 @@
 #include "log.h"
 #include "global.h"
 #include "xlinux.h"
-#include "xstring.h"
 #include "unitstring.h"
 #include "canon.h"
 #include "macros.h"
@@ -464,7 +463,7 @@ int args_parse(int argc, char** argv)
 
 	// default invokedirs - head of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], XQUOTE(FABINVOKEDIR));
+	fatal(ixstrdup, &g_args.invokedirs[g_args.invokedirsl++], XQUOTE(FABINVOKEDIR));
 
 	// selectors apply to the following list(s)
 	uint32_t selector_lists = SELECTOR_FABRICATE;
@@ -582,7 +581,7 @@ int args_parse(int argc, char** argv)
 				g_args.rootvarsa = newa;
 			}
 
-			fatal(xsprintf, &g_args.rootvars[g_args.rootvarsl], "%s%c", optarg, 0);
+			fatal(ixsprintf, &g_args.rootvars[g_args.rootvarsl], "%s%c", optarg, 0);
 			g_args.rootvarsl++;
 		}
 		else if(x == 'B')
@@ -592,7 +591,7 @@ int args_parse(int argc, char** argv)
 		else if(x == 'I')
 		{
 			fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-			fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
+			fatal(ixstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
 		}
 		else if(x == 'K')
 		{
@@ -619,7 +618,7 @@ int args_parse(int argc, char** argv)
 
 	// default invokedirs - tail of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-	fatal(xstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_params.init_fabfile_path->abs_dir);
+	fatal(ixstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_params.init_fabfile_path->abs_dir);
 
 	// CPU count heuristic
 	long procs = -1;

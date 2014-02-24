@@ -21,7 +21,7 @@
 #include "xapi/internal.h"
 
 #include "macros.h"
-#include "xstring.h"
+#include "strutil.h"
 
 ///
 /// backtrace generation
@@ -191,7 +191,7 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 				int yy;
 				for(yy = 0; yy < callstack.v[xx]->info.l; yy++)
 				{
-					if(xstrcmp(
+					if(estrcmp(
 							callstack.v[x]->info.v[y].ks
 						, callstack.v[x]->info.v[y].kl
 						, callstack.v[xx]->info.v[yy].ks

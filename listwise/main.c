@@ -59,7 +59,7 @@ static int snarf(char * path, void ** mem, size_t * sz)
 
 	ifree(mem);
 
-	fatal(xopen, strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY, &fd);
+	fatal(xopen, strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY | O_NONBLOCK, &fd);
 
 	struct stat st;
 	fatal(xfstat, fd, &st);
@@ -67,11 +67,10 @@ static int snarf(char * path, void ** mem, size_t * sz)
 	if(S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode))
 	{
 		char blk[512];
-		int r = 1;
-		while(r > 0)
+		ssize_t r = 1;
+		while(r != 0)
 		{
-			ssize_t r;
-			fatal(xread, fd, blk, sizeof(blk) / sizeof(*blk), &r);
+			fatal(uxread, fd, blk, sizeof(blk) / sizeof(*blk), &r);
 
 			if(r > 0)
 			{
@@ -151,6 +150,7 @@ int main(int argc, char** argv)
 
 	if(g_args.generator_file)
 	{
+printf("reading from file %s\n", g_args.generator_file);
 		// read generator-string from file
 		fatal(snarf, g_args.generator_file, &mem, &sz);
 
@@ -289,6 +289,9 @@ finally:
 
 	if(XAPI_UNWINDING)
 	{
+#if DEBUG
+		xapi_backtrace();
+#else
 		if(g_args.lw_info)
 		{
 			xapi_backtrace();
@@ -297,6 +300,7 @@ finally:
 		{
 			xapi_pithytrace();
 		}
+#endif
 	}
 coda;
 }

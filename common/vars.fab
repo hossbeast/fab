@@ -90,7 +90,7 @@ $bison			= [ bison ]
 $bisonflags	= [ --warnings=error ]
 
 $cc					= [ gcc ]
-$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Wno-unused-label
+$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 		# include paths
 	[ $dlibxapi $dlibxlinux $dliblistwise [ $dcommon ~ lsr/c/-d ] ~ s/^/-I ]
 	[ -DXAPI_UNWIND ]
@@ -98,6 +98,7 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Wno-unused-
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
 	[ $dbug $dvel ~ s/1/-g/y ]					# enable debug symbol generation
 	[ $dbug $dvel ~ s/1/-DDEBUG/y ]
+	[ $dbug $dvel ~ s/1/-DXAPI_RUNTIME_CHECKS/y ]
 	[       $dvel ~ s/1/-DDEVEL/y ]
 	[       $dvel ~ s/1/-DSANITY/y ]
 ]

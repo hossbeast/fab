@@ -34,7 +34,6 @@
 #include "args.h"
 
 #include "macros.h"
-#include "xstring.h"
 
 struct g_args_t g_args;
 
@@ -344,7 +343,7 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 
 	if(optind < argc && strcmp(argv[optind], "-") == 0)
 	{
-		fatal(xstrdup, &g_args.generator_file, "-");
+		fatal(ixstrdup, &g_args.generator_file, "-");
 		optind++;
 	}
 

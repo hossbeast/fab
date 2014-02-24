@@ -89,5 +89,5 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		}
 	}
 
-	return 0;
+	finally : coda;
 }

@@ -23,7 +23,6 @@
 
 #include "global.h"
 #include "xlinux.h"
-#include "xstring.h"
 #include "macros.h"
 
 #define SATURATION 0.45f			/* for 1000-sized table, reallocate at 450 keys */

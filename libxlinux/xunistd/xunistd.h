@@ -33,7 +33,21 @@
 int xread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
 	__attribute__((nonnull(2)));
 
-/// xxread
+/// uxread
+//
+// SUMMARY
+//  proxy for read that only fails when errno != EAGAIN
+//
+// PARAMETERS
+//  [bytes] - returns the number of bytes read
+//
+// REMARKS
+//  using uxread with an fd not marked with O_NONBLOCK is probably an error
+//
+int uxread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
+	__attribute__((nonnull(2)));
+
+/// axread
 //
 // SUMMARY
 //  proxy for read that also fails when count != actual

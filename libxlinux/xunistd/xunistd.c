@@ -21,13 +21,30 @@
 
 #include "xunistd.h"
 
+#include <stdio.h>
+
 int API xread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
-	if(bytes && (*bytes = read(fd, buf, count)) == -1)
+	if(bytes && ((*bytes) = read(fd, buf, count)) == -1)
 		fail(errno);
 
 	else if(!bytes && read(fd, buf, count) == -1)
 		fail(errno);
+
+	finally : coda;
+}
+
+int API uxread(int fd, void * buf, size_t count, ssize_t * bytes)
+{
+	if(bytes && ((*bytes) = read(fd, buf, count)) == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
+	{
+		fail(errno);
+	}
+
+	else if(!bytes && read(fd, buf, count) == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
+	{
+		fail(errno);
+	}
 
 	finally : coda;
 }

@@ -36,7 +36,6 @@
 #include "xlinux.h"
 #include "unitstring.h"
 #include "canon.h"
-#include "xstring.h"
 #include "dirutil.h"
 #include "map.h"
 #include "cksum.h"
@@ -307,19 +306,19 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
 		(*gna)->feeds.z		= sizeof((*gna)->feeds.e[0]);
 
-		fatal(xsprintf, &(*gna)->cache_dir						, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, (*gna)->path->can_hash);
-		fatal(xsprintf, &(*gna)->ineed_skipweak_dir		, "%s/ineed_skipweak"	, (*gna)->cache_dir);
-		fatal(xsprintf, &(*gna)->ifeed_skipweak_dir		, "%s/ifeed_skipweak"	, (*gna)->cache_dir);
-		fatal(xsprintf, &(*gna)->noforce_invalid_path	, "%s/noforce_invalid", (*gna)->cache_dir);
-		fatal(xsprintf, &(*gna)->noforce_ff_path			, "%s/noforce_ff"			, (*gna)->cache_dir);
-		fatal(xsprintf, &(*gna)->noforce_needs_path		, "%s/noforce_needs"	, (*gna)->cache_dir);
+		fatal(ixsprintf, &(*gna)->cache_dir							, XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_params.init_fabfile_path->can_hash, (*gna)->path->can_hash);
+		fatal(ixsprintf, &(*gna)->ineed_skipweak_dir		, "%s/ineed_skipweak"	, (*gna)->cache_dir);
+		fatal(ixsprintf, &(*gna)->ifeed_skipweak_dir		, "%s/ifeed_skipweak"	, (*gna)->cache_dir);
+		fatal(ixsprintf, &(*gna)->noforce_invalid_path	, "%s/noforce_invalid", (*gna)->cache_dir);
+		fatal(ixsprintf, &(*gna)->noforce_ff_path				, "%s/noforce_ff"			, (*gna)->cache_dir);
+		fatal(ixsprintf, &(*gna)->noforce_needs_path		, "%s/noforce_needs"	, (*gna)->cache_dir);
 
 		// idstring
 		if(Al > 4 && memcmp(A, "/../", 4) == 0 && sstk && g_args.mode_gnid != MODE_CANONICAL)
 		{
 			char * sstr;
 			fatal(strstack_string, sstk, 1, "", ".", &sstr);
-			fatal(xsprintf, &(*gna)->idstring, "@%s", sstr);
+			fatal(ixsprintf, &(*gna)->idstring, "@%s", sstr);
 
 			int x;
 			for(x = 4; x < Al; x++)
@@ -330,9 +329,9 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 					if(A[y] == '/' || y == Al)
 					{
 						if(strlen((*gna)->idstring) > 1)
-							fatal(xstrcatf, &(*gna)->idstring, ".%.*s", y - x, &A[x]);
+							fatal(ixstrcatf, &(*gna)->idstring, ".%.*s", y - x, &A[x]);
 						else
-							fatal(xstrcatf, &(*gna)->idstring, "%.*s", y - x, &A[x]);
+							fatal(ixstrcatf, &(*gna)->idstring, "%.*s", y - x, &A[x]);
 
 						x = y;
 						break;

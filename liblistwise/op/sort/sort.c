@@ -23,9 +23,9 @@
 #include "listwise/internal.h"
 #include "SYS.errtab.h"
 
-#include "xstring.h"
 #include "xlinux.h"
 #include "parseint.h"
+#include "strutil.h"
 
 /*
 
@@ -122,7 +122,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 			fatal(lstack_getbytes, lx, 0, *(int*)A, &As, &Asl);
 			fatal(lstack_getbytes, lx, 0, *(int*)B, &Bs, &Bsl);
 
-			(*r) = xstrcmp(As, Asl, Bs, Bsl, mode == STRING_NCASE);
+			(*r) = estrcmp(As, Asl, Bs, Bsl, mode == STRING_NCASE);
 		}
 
 		finally : coda;
@@ -174,7 +174,7 @@ int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
 	{
-		return 0;	// nothing selected
+		// nothing selected
 	}
 	else
 	{
@@ -193,7 +193,7 @@ int op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
 	{
-		return 0;	// nothing selected
+		// nothing selected
 	}
 	else
 	{

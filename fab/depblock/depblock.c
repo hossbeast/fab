@@ -28,7 +28,6 @@
 
 #include "dirutil.h"
 #include "xlinux.h"
-#include "xstring.h"
 
 ///
 /// public

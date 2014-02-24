@@ -15,14 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XSTRING_H
-#define _XSTRING_H
+#ifndef _STRUTIL_H
+#define _STRUTIL_H
 
 #define restrict __restrict
 
-/* wrappers around certain functions from string.h */
-
-/// xstrcmp
+/// estrcmp
 //
 // semantically equivalent to strcmp, except that this function accepts length values
 // for the two strings, which need not be null-terminated.
@@ -37,9 +35,9 @@
 // B    - second string
 // blen - length of B, or 0 if length of B == strlen(B)
 //
-int xstrcmp(char* A, int alen, char* B, int blen, int case_insensitive);
+int estrcmp(char* A, int alen, char* B, int blen, int case_insensitive);
 
-/// xstrstr
+/// estrstr
 //
 // locates the byte sequence { B, B + blen } within the byte sequence { A, A + alen }
 //
@@ -48,42 +46,44 @@ int xstrcmp(char* A, int alen, char* B, int blen, int case_insensitive);
 //
 // returns a pointer offset from A where B was found, or 0
 //
-char* xstrstr(char * restrict A, int alen, const char * const restrict B, int blen, const int case_insensitive)
+char* estrstr(char * restrict A, int alen, const char * const restrict B, int blen, const int case_insensitive)
 	__attribute__((nonnull));
 
-/// xstrcatf
+/*
+/// wstrcatf
 //
 // calculates size required to vprintf, reallocates *s and appends the new string onto *s
 //
 // returns nonzero on malloc failure
 //
-int xstrcatf(char** s, char* fmt, ...);
+int wstrcatf(char** s, char* fmt, ...);
 
-/// xstrcat
+/// wstrcat
 //
 // reallocates *s1, appends s2 onto *s1
 //
 // returns nonzero on malloc failure
 //
-int xstrcat(char** s1, const char* s2);
+int wstrcat(char** s1, const char* s2);
 
-/// xstrdup
+/// wstrdup
 //
 // copies s2 to *s1, reallocating *s1 if necessary, deallocating it if it was already allocated
 //
 // returns nonzero on malloc failure
 //
-int xstrdup(char** s1, const char* s2);
+int wstrdup(char** s1, const char* s2);
 
-/// xsprintf
+/// wsprintf
 //
 // - free(*s)
 // - allocate(*s)
 // - sprintf(fmt, ...) -> *s
 //
-int xsprintf(char** s, char* fmt, ...);
+int wsprintf(char** s, char* fmt, ...);
+*/
 
-/// xstresc
+/// stresc
 //
 // SUMMARY
 //  write a string to a buffer with all nonprinting characters and non-space whitespace replaced
@@ -98,7 +98,7 @@ int xsprintf(char** s, char* fmt, ...);
 // RETURNS
 //  returns number of bytes written
 //
-int xstresc(char * const restrict src, const size_t len, char * const restrict dst, const size_t sz)
+int stresc(char * const restrict src, const size_t len, char * const restrict dst, const size_t sz)
 	__attribute__((nonnull(1, 3)));
 
 #undef restrict

@@ -131,7 +131,7 @@ int API lstack_window_unstage(lwx * const restrict lx, int y)
 {
 	lx->win.s[y].staged = 0;
 
-	return 0;
+	finally : coda;
 }
 
 int API lstack_window_deactivate(lwx * const restrict lx, int y)
@@ -141,7 +141,7 @@ int API lstack_window_deactivate(lwx * const restrict lx, int y)
 
 	lx->win.s[y].active = 0;
 
-	return 0;
+	finally : coda;
 }
 
 int API lstack_windows_activate(lwx * const restrict lx)
@@ -167,5 +167,5 @@ int API lstack_windows_activate(lwx * const restrict lx)
 	}
 	LSTACK_ITEREND
 
-	return 0;
+	finally : coda;
 }

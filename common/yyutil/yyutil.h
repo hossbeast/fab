@@ -36,7 +36,6 @@
 
 #include <stdio.h>
 
-#include "xstring.h"
 
 #define restrict __restrict
 

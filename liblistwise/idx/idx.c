@@ -20,9 +20,10 @@
 #include <string.h>
 
 #include "xlinux.h"
-#include "xstring.h"
 
 #include "idx.h"
+
+#include "strutil.h"
 
 //
 // [[ static functions ]]
@@ -61,7 +62,7 @@ static int cmp(idx* i, const char* A, int Al, const char* B)
 	else if((i->flags & INDEX_TYPE) == INDEX_STRING)
 	{
 		if(Al)
-			return xstrcmp(*((char**)A), Al, *((char**)B), 0, 0);
+			return estrcmp(*((char**)A), Al, *((char**)B), 0, 0);
 		else
 			return strcmp(*((char**)A), *((char**)B));
 	}

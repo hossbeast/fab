@@ -45,7 +45,6 @@
 #include "xlinux.h"
 #include "macros.h"
 #include "cksum.h"
-#include "xstring.h"
 #include "dirutil.h"
 #include "parseint.h"
 
@@ -183,27 +182,27 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		ff->dscv_gn = dscv_gn;
 
 		// idstring
-		fatal(xsprintf, &ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
+		fatal(ixsprintf, &ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
 	}
 	else if(var_id)
 	{
 		ff->type = FFT_VAREXPR;
 		ff->id = *var_id;
 
-		fatal(xsprintf, &ff->idstring, "VAR:%s", ff->path->can);
+		fatal(ixsprintf, &ff->idstring, "VAR:%s", ff->path->can);
 	}
 	else if(list_id)
 	{
 		ff->type = FFT_LISTEXPR;
 		ff->id = *list_id;
 
-		fatal(xsprintf, &ff->idstring, "LIST:%s", ff->path->can);
+		fatal(ixsprintf, &ff->idstring, "LIST:%s", ff->path->can);
 	}
 	else
 	{
 		ff->type = FFT_REGULAR;
 		if(nofile)
-			fatal(xsprintf, &ff->nofile, "%.*s", nofilel, nofile);
+			fatal(ixsprintf, &ff->nofile, "%.*s", nofilel, nofile);
 
 		// idstring
 		if(ff->nofile && g_args.mode_gnid != MODE_CANONICAL)
@@ -224,7 +223,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		}
 
 		// closure dir
-		fatal(xsprintf, &ff->closure_gns_dir
+		fatal(ixsprintf, &ff->closure_gns_dir
 			, XQUOTE(FABCACHEDIR) "/INIT/%u/ff/%u/REGULAR/closure_gns"
 			, g_params.init_fabfile_path->can_hash
 			, ff->path->can_hash

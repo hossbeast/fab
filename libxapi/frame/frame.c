@@ -34,7 +34,7 @@ __thread struct callstack callstack;
 ** set to the callstack for the executing thread on every api call
 ** makes it easy to access the callstack from gdb
 */
-typeof(callstack) * T;
+typeof(callstack) * CS;
 #endif
 
 static int wrealloc(void* target, size_t es, size_t ec, size_t oec)
@@ -102,14 +102,14 @@ int API xapi_frame_enter_last()
 	return callstack.r;
 }
 
-#if DEBUG
+#if XAPI_RUNTIME_CHECKS
 int API xapi_frame_enter(void * calling_frame)
 #else
 int API xapi_frame_enter()
 #endif
 {
 #if DEBUG
-	T = &callstack;
+	CS = &callstack;
 #endif
 
 //	if(callstack.x && callstack.v[callstack.l - 1]->code)
@@ -164,9 +164,6 @@ int API xapi_frame_enter()
 			callstack.v[callstack.l] = &callstack.frames.alt[0];
 			callstack.v[callstack.l]->finalized = 0;
 			callstack.v[callstack.l]->populated = 0;
-#if DEBUG
-	callstack.v[callstack.l]->calling_frame = calling_frame;
-#endif
 //			callstack.x++;
 			callstack.l++;
 		}
@@ -174,7 +171,7 @@ int API xapi_frame_enter()
 		callstack.v[callstack.l] = &callstack.frames.alt[1];
 		callstack.v[callstack.l]->finalized = 0;
 		callstack.v[callstack.l]->populated = 0;
-#if DEBUG
+#if XAPI_RUNTIME_CHECKS
 	callstack.v[callstack.l]->calling_frame = calling_frame;
 #endif
 //		callstack.x++;
@@ -197,20 +194,20 @@ int API xapi_frame_enter()
 		callstack.v[callstack.l]->code = 0;
 		callstack.v[callstack.l]->finalized = 0;
 		callstack.v[callstack.l]->populated = 0;
-
-#if DEBUG
-	callstack.v[callstack.l]->calling_frame = calling_frame;
-#endif
 //		callstack.x++;
 		callstack.l++;
 	} while(callstack.l < 2);
+
+#if XAPI_RUNTIME_CHECKS
+	callstack.v[callstack.l - 1]->calling_frame = calling_frame;
+#endif
 
 //printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
 	callstack.r = 0;
 	return 0;
 }
 
-#if DEBUG
+#if XAPI_RUNTIME_CHECKS
 typedef void * voidstar;
 voidstar API xapi_frame_caller()
 {
@@ -229,7 +226,7 @@ int API xapi_frame_depth()
 int API xapi_frame_leave()
 {
 #if DEBUG
-	T = &callstack;
+	CS = &callstack;
 #endif
 //printf("LEAVE :: [x=%2d][l=%2d] => ", callstack.x, callstack.l);
 
@@ -276,7 +273,7 @@ int API xapi_frame_leave()
 void API xapi_frame_finalize()
 {
 #if DEBUG
-	T = &callstack;
+	CS = &callstack;
 #endif
 
 //	callstack.v[callstack.x]->finalized = 1;
@@ -291,7 +288,7 @@ void API xapi_frame_finalize()
 int API xapi_frame_finalized()
 {
 #if DEBUG
-	T = &callstack;
+	CS = &callstack;
 #endif
 
 	if(callstack.v[callstack.l - 1]->code)
@@ -303,7 +300,7 @@ int API xapi_frame_finalized()
 int API xapi_unwinding()
 {
 #if DEBUG
-	T = &callstack;
+	CS = &callstack;
 #endif
 
 	return callstack.v[callstack.l - 1]->code;
@@ -317,7 +314,7 @@ int API xapi_frame_set(const etable * const etab, const int16_t code, const char
 int API xapi_frame_set_messagew(const etable * const etab, const int16_t code, const char * const msg, int msgl, const char * const file, const int line, const char * const func)
 {
 #if DEBUG
-	T = &callstack;
+	CS = &callstack;
 #endif
 
 	int r = frame_set(etab, code, file, line, func, 0);
@@ -371,7 +368,7 @@ int API xapi_frame_set_messagew(const etable * const etab, const int16_t code, c
 int API xapi_frame_set_messagef(const etable * const etab, const int16_t code, const char * const fmt, const char * const file, const int line, const char * const func, ...)
 {
 #if DEBUG
-	T = &callstack;
+	CS = &callstack;
 #endif
 
 	int r = frame_set(etab, code, file, line, func, 0);
@@ -429,7 +426,7 @@ int API xapi_frame_set_messagef(const etable * const etab, const int16_t code, c
 void API xapi_frame_infow(const char * const k, int kl, const char * const v, int vl)
 {
 #if DEBUG
-	T = &callstack;
+	CS = &callstack;
 #endif
 
 	//
@@ -538,7 +535,7 @@ void API xapi_frame_infow(const char * const k, int kl, const char * const v, in
 void API xapi_frame_infof(const char * const k, int kl, const char * const vfmt, ...)
 {
 #if DEBUG
-	T = &callstack;
+	CS = &callstack;
 #endif
 
 	//
