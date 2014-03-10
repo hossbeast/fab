@@ -27,8 +27,8 @@
 #include "xlinux/xpwd.h"
 #include "xlinux/xstat.h"
 #include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 #include "xlinux/xtime.h"
 #include "xlinux/xunistd.h"
-#include "xlinux/xstring.h"
 
 #endif

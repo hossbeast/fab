@@ -21,16 +21,17 @@
 	#include <string.h>
 	#include <stdlib.h>
 
+	#include "xlinux.h"
+
 	#include "ff.parse.h"
 	#include "ffn.h"
 
 	#include "log.h"
-	#include "xlinux.h"
+	#include "wstdlib.h"
+	#include "wstring.h"
 
 	// defined in ff.lex.o
 	int ff_yylex(void* yylvalp, void* yylloc, void* scanner);
-
-	#define YYU_ERROR(...) log(L_ERROR, #__VA_ARGS__)
 }
 
 %define api.pure
@@ -160,7 +161,7 @@ statement
 onceblock
 	: ONCE '{' statements '}'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_ONCEBLOCK, $1.s, $4.e, $3);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_ONCEBLOCK, @1.s, @4.e, $3);
 	}
 	;
 
@@ -174,27 +175,27 @@ varassign
 invocation
 	: '+' list
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $2->e, $2, (void*)0, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, @1.s, $2->e, $2, (void*)0, (void*)0, 0);
 	}
 	| '+' list nofile
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $3->e, $2, (void*)0, $3, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, @1.s, $3->e, $2, (void*)0, $3, 0);
 	}
 	| '+' list '(' ')'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $4.e, $2, (void*)0, (void*)0, FFN_SUBCONTEXT);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, @1.s, @4.e, $2, (void*)0, (void*)0, FFN_SUBCONTEXT);
 	}
 	| '+' list '(' ')' nofile
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5->e, $2, (void*)0, $5, FFN_SUBCONTEXT);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, @1.s, $5->e, $2, (void*)0, $5, FFN_SUBCONTEXT);
 	}
 	| '+' list '(' varsettings ')'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $5.e, $2, $4, (void*)0, FFN_SUBCONTEXT);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, @1.s, @5.e, $2, $4, (void*)0, FFN_SUBCONTEXT);
 	}
 	| '+' list '(' varsettings ')' nofile
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, $1.s, $6->e, $2, $4, $6, FFN_SUBCONTEXT);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_INVOCATION, @1.s, $6->e, $2, $4, $6, FFN_SUBCONTEXT);
 	}
 	;
 
@@ -234,7 +235,7 @@ varlink
 	| '-' varrefs
 	{
 		/* same-name link */
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARLINK, $1.s, $2->e, $2, (void*)0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_VARLINK, @1.s, $2->e, $2, (void*)0);
 	}
 	;
 
@@ -268,28 +269,28 @@ dependency
 fabrication
 	: dependency '{' command '}'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, (void*)0, $1->needs, $3, $1->flags | FFN_FABRICATION);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, @4.e, (void*)0, $1->needs, $3, $1->flags | FFN_FABRICATION);
 		$$ = ffn_addchain($1, $$);
 	}
 	| list '{' command '}'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $4.e, $1, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, @4.e, $1, (void*)0, $3, FFN_SINGLE | FFN_FABRICATION);
 	}
 	| list ':' '{' command '}'
 	{
 		/* this form is redundant but is included for completeness */
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_FABRICATION);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, @5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_FABRICATION);
 	}
 	| list ':' ':' '{' command '}'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $6.e, $1, (void*)0, $5, FFN_MULTI | FFN_FABRICATION);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, @6.e, $1, (void*)0, $5, FFN_MULTI | FFN_FABRICATION);
 	}
 	;
 
 discovery
 	: list '%' '{' command '}'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, $5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_DISCOVERY);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_FORMULA, $1->s, @5.e, $1, (void*)0, $4, FFN_SINGLE | FFN_DISCOVERY);
 	}
 	;
 
@@ -317,58 +318,58 @@ commandpart
 lf
 	: LF
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LF, $1.s, $1.e, $1.s, $1.e);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LF, @1.s, @1.e, @1.s, @1.e);
 	}
 	;
 
 list
 	: '[' listpartsnone ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2      , (void*)0, (void*)0, FFN_WSSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @3.e, $2      , (void*)0, (void*)0, FFN_WSSEP);
 	}
 	| '[' listpartscomma ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2      , (void*)0, (void*)0, FFN_COMMASEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @3.e, $2      , (void*)0, (void*)0, FFN_COMMASEP);
 	}
 	| '[' listpart ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $3.e, $2      , (void*)0, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @3.e, $2      , (void*)0, (void*)0, 0);
 	}
 	| '[' ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $2.e, (void*)0, (void*)0, (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @2.e, (void*)0, (void*)0, (void*)0, 0);
 	}
 	| '[' listpartsnone '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , $4      , (void*)0, FFN_WSSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @5.e, $2      , $4      , (void*)0, FFN_WSSEP);
 	}
 	| '[' listpartscomma '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , $4      , (void*)0, FFN_COMMASEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @5.e, $2      , $4      , (void*)0, FFN_COMMASEP);
 	}
 	| '[' listpart '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , $4      , (void*)0, 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @5.e, $2      , $4      , (void*)0, 0);
 	}
 	| '[' '~' generator ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, (void*)0, $3      , 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @4.e, (void*)0, (void*)0, $3      , 0);
 	}
 	| '[' listpartsnone '~' list ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , (void*)0, $4      , FFN_WSSEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @5.e, $2      , (void*)0, $4      , FFN_WSSEP);
 	}
 	| '[' listpartscomma '~' list ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , (void*)0, $4      , FFN_COMMASEP);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @5.e, $2      , (void*)0, $4      , FFN_COMMASEP);
 	}
 	| '[' listpart '~' list ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $5.e, $2      , (void*)0, $4      , 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @5.e, $2      , (void*)0, $4      , 0);
 	}
 	| '[' '~' list ']'
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, $1.s, $4.e, (void*)0, (void*)0, $3      , 0);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_LIST, @1.s, @4.e, (void*)0, (void*)0, $3      , 0);
 	}
 	;
 
@@ -476,7 +477,7 @@ nofile
 			n = nn;
 		}
 
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_NOFILE, $1.s, e, v, l, ll);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_NOFILE, @1.s, e, v, l, ll);
 	}
 	;
 
@@ -491,19 +492,19 @@ nofileparts
 word
 	: qwordparts
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, $1.v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, @1.s, @1.e, $1.v);
 	}
 	| gwordparts
 	{
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, $1.v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, @1.s, @1.e, $1.v);
 	}
 	| WORD
 	{
-		char * v;
-		YYU_FATAL(xmalloc, &v, ($1.e - $1.s) + 1);
-		memcpy(v, $1.s, $1.e - $1.s);
+		char * v = 0;
+		YYU_FATAL(xmalloc, &v, (@1.e - @1.s) + 1);
+		memcpy(v, @1.s, @1.e - @1.s);
 
-		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, $1.s, $1.e, v);
+		$$ = ffn_mknode(&@$, sizeof(@$), parm->ff, FFN_WORD, @1.s, @1.e, v);
 	}
 	;
 
@@ -513,17 +514,17 @@ gwordparts
 		$$ = $1;
 
 		int l = strlen($$.v);
-		int nl = $2.e - $2.s;
+		int nl = @2.e - @2.s;
 
 		YYU_FATAL(xrealloc, &$$.v, 1, l + nl + 1, l);
-		memcpy($$.v + l, $2.s, nl);
+		memcpy($$.v + l, @2.s, nl);
 
-		$$.e = (char*)$2.e;
+		$$.e = (char*)@2.e;
 	}
 	| GWORD
 	{
-		$$.s = $1.s;
-		$$.e = $1.e;
+		$$.s = @1.s;
+		$$.e = @1.e;
 
 		YYU_FATAL(xmalloc, &$$.v, ($$.e - $$.s) + 1);
 		memcpy($$.v, $$.s, $$.e - $$.s);
@@ -536,17 +537,17 @@ qwordparts
 		$$ = $1;
 
 		int l = strlen($$.v);
-		int nl = $2.e - $2.s;
+		int nl = @2.e - @2.s;
 
 		YYU_FATAL(xrealloc, &$$.v, 1, l + nl + 1, l);
-		memcpy($$.v + l, $2.s, nl);
+		memcpy($$.v + l, @2.s, nl);
 
-		$$.e = (char*)$2.e;
+		$$.e = (char*)@2.e;
 	}
 	| QWORD
 	{
-		$$.s = $1.s;
-		$$.e = $1.e;
+		$$.s = @1.s;
+		$$.e = @1.e;
 
 		$$.v = calloc(1, ($$.e - $$.s) + 1);
 		memcpy($$.v, $$.s, $$.e - $$.s);

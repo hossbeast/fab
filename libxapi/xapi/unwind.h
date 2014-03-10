@@ -29,15 +29,14 @@
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
 
+/*
+** enable XAPI_RUNTIME_CHECKS to :
+**  [x] detect non-UNWIND-ing function invoked with fatal
+**  [x] detect UNWIND-ing function invoked without fatal in the presence of an active callstack
+*/
 #if XAPI_RUNTIME_CHECKS
 #include "XAPI.errtab.h"
 #endif
-
-/*
-** when XAPI_RUNTIME_CHECKS
-**  detect non-UNWIND-ing function invoked with fatal
-**  [x] detect UNWIND-ing function invoked without fatal in the presence of an active callstack
-*/
 
 #define restrict __restrict
 
@@ -151,7 +150,7 @@ when calling non-xapi code, you have a couple of options.
 		int ___x = xapi_frame_depth();																																									\
 		if(xapi_frame_enter(__builtin_frame_address(0)) != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)))		\
 		{																																																								\
-			fail(0);																																																			\
+			tfail(perrtab_XAPI, 0);																																																	\
 		}																																																								\
 		else if(___x && ___x != xapi_frame_depth())																																			\
 		{																																																								\
@@ -162,7 +161,7 @@ when calling non-xapi code, you have a couple of options.
 #define fatal(func, ...)																																	\
 	do {																																										\
 		if(xapi_frame_enter() != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)))		\
-			fail(0);																																						\
+			tfail(perrtab_XAPI, 0);																																				\
 	} while(0)
 #endif
 
@@ -220,19 +219,27 @@ when calling non-xapi code, you have a couple of options.
 // to be called at the beginning of an UNWIND-ing function which was not itself called with fatal
 //  example : xqsort_r
 //
+//
 #if XAPI_RUNTIME_CHECKS
 #define prologue																			\
+	__label__ XAPI_FINALLY;															\
+	__label__ XAPI_FINALIZE;														\
+	__label__ XAPI_LEAVE;																\
 	do {																								\
 		if(xapi_frame_enter(__builtin_frame_address(1)))	\
 		{																									\
-			fail(0);																				\
+			tfail(perrtab_XAPI, 0);													\
 		}																									\
 	} while(0)
 #else
 #define prologue								\
+	__label__ XAPI_FINALIZE;			\
+	__label__ XAPI_LEAVE;					\
 	do {													\
 		if(xapi_frame_enter())			\
-			fail(0)										\
+		{														\
+			tfail(perrtab_XAPI, 0);		\
+		}														\
 	} while(0)
 #endif
 

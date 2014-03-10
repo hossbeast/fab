@@ -36,6 +36,7 @@
 
 #include <stdio.h>
 
+#include "xapi.h"
 
 #define restrict __restrict
 
@@ -61,22 +62,27 @@ typedef struct
 //
 typedef struct yyu_extra
 {
-	int							r;							// in yyerror, set to -1 for a parser error, or a positive value for a scanner error
-	void *					scanner;				// flex scanner
-	int							states[64];			// start states stack
+	int							scanerr;					// error from scanner
+	int							gramerr;					// error from parser
+
+	void *					scanner;					// flex scanner
+	int							states[64];				// start states stack
 	int							states_n;
-	yyu_location	 	loc;						// running location track for this parse
-	char						space[256];			// temp space
+	yyu_location	 	loc;							// running location track for this parse
+	char						space[256];				// temp space
 	char						space2[256];
 
-	yyu_location		last_loc;				// location of last scanned token
-	int							last_token;			// last token scanned
-	int							last_line;			// line number in the scanner of the last scanned token
-	void *					last_lval;			// semantic value of last scanned token
-	size_t					last_lval_aloc;	// allocated size of last_lval
+																		// last successfully scanned token
+	yyu_location		last_loc;					//  location
+	int							last_token;				//  token
+	int							last_line;				//  line number in the scanner
+	void *					last_lval;				//  semantic value
+	size_t					last_lval_aloc;		//  allocated size
 
-	char						errorstring[256];	// last error string
-	char						tokenstring[256];	// last tokenstring
+																		// upon error
+	yyu_location		error_loc;				//  location
+	char						error_str[256];		//  string
+	char						tokenstring[256];	//  tokenstring (gramerr only)
 
 	int							line_numbering;	// whether yyu should include scanner line number in output messages
 
@@ -142,24 +148,23 @@ do																					\
 
 /// YYU_FATAL
 //
-// equivalent of fatal for use within grammar rules
+// fatal for use within grammar rules - invokes YYABORT
 //
 // NOTE
 //  requires that you have these lines in your .y file
 //  %parse-param { void * scanner }
 //  %parse-param { parse_param * parm }
 //
-#define YYU_FATAL(x, ...)														\
-do {																								\
-	int __r = x(__VA_ARGS__);													\
-	if(__r != 0)																			\
-	{																									\
-		if(__r > 0)																			\
-		{																								\
-			yyerror(&yylloc, scanner, parm, #x "failed");	\
-			YYABORT;																			\
-		}																								\
-	}																									\
+#define YYU_FATAL(x, ...)							\
+do {																	\
+	prologue;														\
+	fatal(x, ##__VA_ARGS__);						\
+	int _xapi_r;												\
+	finally : conclude;									\
+	if(_xapi_r)													\
+	{																		\
+		YYABORT;													\
+	}																		\
 } while(0)
 
 /// yyu_locwrite
@@ -298,13 +303,21 @@ void yyu_ptoken(const int token, void * const restrict lval, yyu_location * cons
 //
 #define PTOKEN(token) yyu_ptoken(token, yylval, yylloc, yyextra, yytext, yyleng, 0, __LINE__)
 
-/// yyu_error
+/// yyu_scanner_error
 //
 // SUMMARY
-//  yyerror - write error messages, set extra->r = 1
+//  invoked by scanner rule to report invalid input before returning 0 to indicate end-of-input
 //
-void yyu_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_extra * const restrict xtra, char const * err)
-	__attribute__((nonnull(3)));
+void yyu_scanner_error(yyu_location * const restrict lloc, yyu_extra * const restrict xtra, const int error, char const * fmt, ...)
+	__attribute__((nonnull(1,2,4)));
+
+/// yyu_grammar_error
+//
+// SUMMARY
+//  yyerror - invoked by yyparse to report failure-to-reduce before returning 1
+//
+void yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_extra * const restrict xtra, char const * err)
+	__attribute__((nonnull(1,2,3)));
 
 /// yyu_lexify
 //

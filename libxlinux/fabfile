@@ -17,17 +17,12 @@
 
 # source directories
 $dcommon			= [ $*/../common ~ j ]
-$dlibxlinux	  = [ $* ]
-$dlibxapi			= [ $dcommon/../libxapi ~ j ]
-
-# variable defs, $cc, $cflags, etc
-# common targets xmem, map, etc
 +[ $dcommon/vars.fab ]
+
+# source invocations
 +[ $dcommon ] @common
 
-##
-## variables
-##
+# variables
 $libname 			= [ libxlinux.so ]
 $soname				= [ $libname ~ j ]
 $libxlinux		= [ $dlibxlinux/libxlinux.so ~ j ]		# path to the library .so
@@ -43,7 +38,7 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 ##
 
 # default NOFILE target - build library and all operators
-[ @all ] : [ $libxlinux $oplist ]
+[ @all ] : [ $libxlinux ]
 
 ##
 ## formulas
@@ -85,11 +80,4 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 	install [ $dlibxlinux/xlinux/xstdlib/xstdlib.h ]		[ $destdir/$incdir/xlinux/ ]
 	install [ $dlibxlinux/xlinux/xtime/xtime.h ]				[ $destdir/$incdir/xlinux/ ]
 	install [ $dlibxlinux/xlinux/xunistd/xunistd.h ]		[ $destdir/$incdir/xlinux/ ]
-}
-
-[ @uninstall ]
-{
-	rm -f																							[ $destdir/$libdir/$libname ]
-	rm -f																							[ $destdir/$incdir/xlinux.h ]
-	rm -f																							[ $destdir/$incdir/xlinux ]
 }

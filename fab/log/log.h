@@ -112,7 +112,7 @@ int log_init(char * args);
 // SUMMARY
 //  parse the logging directive to enable/disable tags
 //
-void log_parse(char * args, int args_len);
+int log_parse(char * args, int args_len);
 
 /// log_would
 //
@@ -228,6 +228,43 @@ int  log_add(const char * fmt, ...)	       __attribute__((nonnull(1)));
 //
 int vlog_finish(const char * fmt, va_list va);
 int  log_finish(const char * fmt, ...);
+
+/// log_trace_write
+//
+// SUMMARY
+//  write to log if log_would([bits]) and provide trace info
+//
+// PARAMETERS
+//  func - function name
+//  file - file name
+//  line - line number
+//  bits - log bits
+//  src  - source buffer
+//  len  - byte count
+//
+#if DEBUG
+void log_trace_write(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict src, size_t len) __attribute__((nonnull(1,2,5)));
+#else
+void log_trace_write(const uint64_t bits, const char * const restrict src, size_t len) __attribute__((nonnull(2)));
+#endif
+
+/// log_write
+//
+// SUMMARY
+//  begin logging a message if log_would([bits])
+//
+// PARAMETERS
+//  bits - log bits
+//  fmt  - format string
+//
+// RETURNS
+//  number of visible characters written (excludes colorizing control bytes)
+//
+#if DEBUG
+# define log_write(...)  log_trace_write(__FUNCTION__, __FILE__, __LINE__, ##__VA_ARGS__)
+#else
+# define log_write(...)  log_trace_write(##__VA_ARGS__)
+#endif
 
 /// logged_bytes
 //

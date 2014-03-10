@@ -24,14 +24,15 @@
 #undef perrtab
 #define perrtab perrtab_XLINUX
 
-int API xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
+int API xnftw(const char *dirpath, int (*xfn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
 {
   int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
   {
-		int _xapi_r;
-    fatal(fn, fpath, sb, typeflag, ftwbuf);
+		prologue;
 
-		// conclude sets _xapi_r to the return value
+    fatal(xfn, fpath, sb, typeflag, ftwbuf);
+
+		int _xapi_r;
 		finally : conclude;
 
 		if(_xapi_r == 0)
@@ -41,24 +42,32 @@ int API xnftw(const char *dirpath, int (*fn) (const char *fpath, const struct st
   };
 
   // depth-first
-  int r;
-  if((r = nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL)) == FTW_STOP || r != 0)
-		fail(XLINUX_FTWERROR);
+	if(nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
+	{
+		fail(0);	// user callback raised an error
+	}
+	/*
+	else
+	{
+		fail(XLINUX_FTWERROR);	// internal-to-ftw error
+	}
+	*/
 	
 finally:
 	XAPI_INFOF("path", "%s", dirpath);
 coda;
 }
 
-int API xnftw_nth(const char *dirpath, int (*fn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags, int level)
+int API xnftw_nth(const char *dirpath, int (*xfn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags, int level)
 {
   int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
   {
-		int _xapi_r;
-		if(ftwbuf->level == level)
-			fatal(fn, fpath, sb, typeflag, ftwbuf);
+		prologue;
 
-		// coda custom sets _xapi_r to the return value
+		if(ftwbuf->level == level)
+			fatal(xfn, fpath, sb, typeflag, ftwbuf);
+
+		int _xapi_r;
 		finally : conclude;
 
 		if(_xapi_r == 0)
@@ -73,9 +82,16 @@ int API xnftw_nth(const char *dirpath, int (*fn) (const char *fpath, const struc
   };
 
   // depth-first
-  int r;
-  if((r = nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL)) == FTW_STOP || r != 0)
-		fail(XLINUX_FTWERROR);
+	if(nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
+	{
+		fail(0);	// user callback raised an error
+	}
+	/*
+	else
+	{
+		fail(XLINUX_FTWERROR);	// internal-to-ftw error
+	}
+	*/
 	
 finally:
 	XAPI_INFOF("path", "%s", dirpath);

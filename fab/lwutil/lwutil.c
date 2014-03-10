@@ -132,7 +132,7 @@ int lw_ensure(lwx *** stax, int * staxa, int staxp)
 int lw_reset(lwx *** stax, int * staxa, int staxp)
 {
 	fatal(ensure, stax, staxa, staxp);
-	lwx_reset((*stax)[staxp]);
+	fatal(lwx_reset, (*stax)[staxp]);
 
 	finally : coda;
 }

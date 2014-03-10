@@ -73,7 +73,7 @@ static int gobble(lwx* lx, char * path, char * fmt, char * flags)
 	char space2[32];
 
 	int					fd = -1;
-	size_t			size = 0;
+	off_t				size = 0;
 	void *			addr = MAP_FAILED;
 	char *			xref = 0;
 
@@ -84,7 +84,7 @@ static int gobble(lwx* lx, char * path, char * fmt, char * flags)
 	}
 
 	fatal(xopen, path, O_RDONLY, &fd);
-	fatal(xlseek, fd, 0, SEEK_END, 0);
+	fatal(xlseek, fd, 0, SEEK_END, &size);
 
 	if((addr = mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
 	{
@@ -130,6 +130,8 @@ finally:
 
 	if(fd != -1)
 		close(fd);
+XAPI_INFOS("path", path);
+XAPI_INFOF("size", "%d", size);
 coda;
 }
 

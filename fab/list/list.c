@@ -189,20 +189,24 @@ coda;
 
 int list_render(lwx * const ls, pstring ** const ps)
 {
-	if(!*ps && xmalloc(ps, sizeof(**ps)) != 0)
-		return 1;
-		
+	if(!*ps)
+		fatal(xmalloc, ps, sizeof(**ps));
+
 	(*ps)->l = 0;
 
-	return render(ls, ps);
+	fatal(render, ls, ps);
+
+	finally : coda;
 }
 
 int list_renderto(lwx * const ls, pstring ** const ps)
 {
-	if(!*ps && xmalloc(ps, sizeof(**ps)) != 0)
-		return 1;
-		
-	return render(ls, ps);
+	if(!*ps)
+		fatal(xmalloc, ps, sizeof(**ps));
+
+	fatal(render, ls, ps);
+
+	finally : coda;
 }
 
 int list_resolveto(ff_node * list, map* vmap, generator_parser* const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)

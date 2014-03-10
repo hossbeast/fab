@@ -27,8 +27,8 @@
 #include "listwise/generator.h"
 
 #include "xapi.h"
-#include "LW.errtab.h"
-#define perrtab perrtab_LW
+#include "LISTWISE.errtab.h"
+#define perrtab perrtab_LISTWISE
 #include "xlinux.h"
 
 #include "args.h"

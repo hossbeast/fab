@@ -20,20 +20,12 @@
 #include "listwise/internal.h"
 
 #include "coll.h"
-#include "idx.h"
+#include "map.h"
 
-
-union object_registry_t object_registry = { { .size = sizeof(listwise_object*) } };
 
 static void __attribute__((destructor)) teardown()
 {
-	int x;
-	for(x = 0; x < object_registry.l; x++)
-		free(object_registry.e[x]->string_property);
-
-	free(object_registry.e);
-
-	idx_free(object_registry.by_type);
+	map_free(object_registry);
 }
 
 ///
@@ -44,31 +36,26 @@ int API listwise_register_object(uint8_t type, listwise_object * def)
 {
 	def->type = type;
 
-	// add this type to the collection
-	fatal(coll_doubly_add, &object_registry.c, &def, 0);
+	if(object_registry == 0)
+		fatal(map_create, &object_registry, 0);
 
-	// reindex
-	fatal(idx_mkindex
-		, object_registry.e
-		, object_registry.l
-		, object_registry.z
-		, offsetof(typeof(object_registry.e[0][0]), type)
-		, sizeof(((typeof(object_registry.e[0][0])*)0)->type)
-		, INDEX_UNIQUE | INDEX_NUMERIC | INDEX_DEREF
-		, &object_registry.by_type
-	);
+	// cache for lookup
+	fatal(map_set, object_registry, MM(type), MM(def), 0);
 
 	finally : coda;
 }
 
 int API listwise_enumerate_objects(listwise_object *** list, int * list_len)
 {
-	return idx_enumerate(object_registry.by_type, list, list_len);
+	xproxy(map_values, object_registry, list, list_len);
 }
 
 int API listwise_lookup_object(uint8_t type, listwise_object ** obj)
 {
-	if(((*obj) = idx_lookup_val(object_registry.by_type, &type, 0)))
-		return 0;
-	return 1;
+	if(((*obj) = map_get(object_registry, MM(type))) == 0)
+		fail(LW_NOOBJ);
+
+finally:
+	XAPI_INFOF("type", "%hhu", type);
+coda;
 }

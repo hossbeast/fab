@@ -74,7 +74,7 @@ int mkdirp(const char * const path, mode_t mode)
 		memcpy(space, path, t - path);
 		space[t - path] = 0;
 
-		fatal(xmkdir, space, mode);
+		fatal(uxmkdir, space, mode);
 	}
 
 finally:

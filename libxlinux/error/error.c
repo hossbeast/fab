@@ -19,18 +19,20 @@
 
 #include "internal.h"
 
-static etable * tab[2];
+static etable * tab[3];
 
 void __attribute__((constructor)) init()
 {
 	tab[0] = perrtab_SYS;
 	tab[0]->id = 0;
 
-	tab[1] = perrtab_XLINUX;
+	tab[1] = perrtab_SYS;
 	tab[1]->id = 1;
+
+	tab[2] = perrtab_XLINUX;
+	tab[2]->id = 2;
 }
 
-typedef char * charstar;
 const char * xlinux_errname(const int code)
 {
 	int16_t rt = code >> 16;			// table index
@@ -62,4 +64,26 @@ const char * xlinux_errstr(const int code)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].str;
+}
+
+const etable * xlinux_errtab(const int code)
+{
+	int16_t rt = code >> 16;			// table index
+	int16_t rc = code & 0xFFFF;		// code index
+
+	if(rt < 0 || rt > 2)
+		return 0;
+
+	return tab[rt];
+}
+
+int xlinux_errcode(const int code)
+{
+	int16_t rt = code >> 16;			// table index
+	int16_t rc = code & 0xFFFF;		// code index
+
+	if(rt < 0 || rt > 2)
+		return 0;
+
+	return rc + (tab[rt]->min * -1);
 }

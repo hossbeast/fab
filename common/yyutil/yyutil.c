@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -166,7 +167,7 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
 
 		xtra->log_token("%8s ) '%.*s'%s%.*s%s %*s @ %s%.*s%s[%3d,%3d - %3d,%3d]%s%.*s"
-			, xtra->tokname(token) 				// token name
+			, xtra->tokname(token) ?: "" 	// token name
 			, alen												// escaped string from which the token was scanned
 			, abuf
 			, blen ? " (" : ""
@@ -190,51 +191,78 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 	}
 }
 
-void yyu_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
+void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra, const int error, char const * fmt, ...)
 {
-	if(xtra->r)
-		return;
-
-	if(lloc)	// called from parser
-	{
-		xtra->r = -1;
-	}
-	else			// called from scanner
-	{
-		xtra->r = 1;
-	}
+	// save the error
+	xtra->scanerr = error;
 
 	// save the error string
-	if(err)
-		snprintf(xtra->errorstring, sizeof(xtra->errorstring), "%s", err);
-
-	// save the tokenstring
-	if(xtra->last_token)
+	if(fmt)
 	{
-		// token source string
-		char * s  	= xtra->last_loc.s;
-		char * e  	= xtra->last_loc.e;
-		char * abuf = xtra->last_loc.s;
-		size_t alen = stresc(s, e - s, xtra->space, sizeof(xtra->space));
+		va_list va;
+		va_start(va, fmt);
+		vsnprintf(xtra->error_str, sizeof(xtra->error_str), fmt, va);
+		va_end(va);
+	}
 
-		// token value
-		char * bbuf = 0;
-		size_t blen = 0;
-		if(xtra->lvalstr)
-			xtra->lvalstr(xtra->last_token, xtra->last_lval, xtra, &bbuf, &blen);
+	// save the location
+	memcpy(&xtra->error_loc, lloc, sizeof(xtra->error_loc));
+}
 
-		snprintf(xtra->tokenstring, sizeof(xtra->tokenstring)
-			, "%s%s%.*s%s%s%.*s%s"
-			, xtra->tokname(xtra->last_token)		// token name
-			, alen ? " (" : ""
-			, (int)alen													// escaped string from which the token was scanned
-			, abuf
-			, alen ? ")" : ""
-			, blen ? " (" : ""
-			, (int)blen													// representation of the semantic value for the token
-			, bbuf
-			, blen ? ")" : ""
-		);
+void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
+{
+	if(xtra->gramerr || xtra->scanerr)
+	{
+		// already called
+	}
+	else
+	{
+		xtra->gramerr = -1;
+
+		// save the error string
+		if(err)
+		{
+			if(err && strstr(err, "syntax error, ") == err)
+			{
+				err += 14;
+			}
+
+			int errlen = MIN(sizeof(xtra->error_str) - 1, strlen(err));
+			memcpy(xtra->error_str, err, errlen);
+			xtra->error_str[errlen] = 0;
+		}
+
+		// save the location
+		memcpy(&xtra->error_loc, lloc, sizeof(xtra->error_loc));
+
+		// save the tokenstring for the last scanned token
+		if(xtra->last_token)
+		{
+			// token source string
+			char * s  	= xtra->last_loc.s;
+			char * e  	= xtra->last_loc.e;
+			char * abuf = xtra->last_loc.s;
+			size_t alen = stresc(s, e - s, xtra->space, sizeof(xtra->space));
+
+			// token value
+			char * bbuf = 0;
+			size_t blen = 0;
+			if(xtra->lvalstr)
+				xtra->lvalstr(xtra->last_token, xtra->last_lval, xtra, &bbuf, &blen);
+
+			snprintf(xtra->tokenstring, sizeof(xtra->tokenstring)
+				, "%s%s%.*s%s%s%.*s%s"
+				, xtra->tokname(xtra->last_token) ?: ""		// token name
+				, alen ? " (" : ""
+				, (int)alen													// escaped string from which the token was scanned
+				, abuf
+				, alen ? ")" : ""
+				, blen ? " (" : ""
+				, (int)blen													// representation of the semantic value for the token
+				, bbuf
+				, blen ? ")" : ""
+			);
+		}
 	}
 }
 

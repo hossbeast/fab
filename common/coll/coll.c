@@ -19,47 +19,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xlinux.h"
+#include "xapi.h"
+
 #include "coll.h"
-
-int coll_singly_add(coll_singly* c, void* el, void* ret)
-{
-	if(c->len == c->alloc)
-	{
-		int ns = 8;
-		if(c->alloc)
-			ns = (c->alloc * 2) + (c->alloc / 2);
-
-		void* tmp = c->e;
-		if(!(c->e = calloc(ns, c->size)))
-			return 1;
-		if(tmp)
-			memcpy(c->e, tmp, c->alloc * c->size);
-		free(tmp);
-		c->alloc = ns;
-	}
-
-	if(el)
-		memcpy(c->e + (c->size * c->len), el, c->size);
-
-	if(ret)
-		*(void**)ret = c->e + (c->size * c->len);
-
-	c->len++;
-
-	return 0;
-}
 
 int coll_doubly_add(coll_doubly* c, void* el, void* ret)
 {
 	if(c->len == c->alloc)
 	{
-		int ns = 8;
-		if(c->alloc)
-			ns = (c->alloc * 2) + (c->alloc / 2);
+		int ns = c->alloc ?: 10;
+		ns = ns * 2 + ns / 2;
 
 		void* tmp = c->e;
-		if(!(c->e = calloc(ns, sizeof(void*))))
-			return 1;
+		fatal(xmalloc, &c->e, ns * sizeof(void*));
 		if(tmp)
 			memcpy(c->e, tmp, c->alloc * sizeof(void*));
 		free(tmp);
@@ -72,7 +45,7 @@ int coll_doubly_add(coll_doubly* c, void* el, void* ret)
 		memcpy(t, el, sizeof(void*));
 	else
 	{
-		*t = calloc(1, c->size);
+		fatal(xmalloc, t, c->size);
 	}
 
 	if(ret)
@@ -80,16 +53,7 @@ int coll_doubly_add(coll_doubly* c, void* el, void* ret)
 
 	c->len++;
 
-	return 0;
-}
-
-void coll_singly_free(coll_singly* c)
-{
-	free(c->e);
-
-	c->len = 0;
-	c->alloc = 0;
-	c->e = 0;
+	finally : coda;
 }
 
 void coll_doubly_free(coll_doubly* c)
@@ -104,4 +68,3 @@ void coll_doubly_free(coll_doubly* c)
 	c->alloc = 0;
 	c->e = 0;
 }
-

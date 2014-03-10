@@ -67,7 +67,7 @@ struct selector;
 #endif
 
 #if SANITY
-# define DEFAULT_MODE_SANITY			MODE_SANITY_ENABLE
+# define DEFAULT_MODE_SANITY			MODE_SANITY_DISABLE
 #endif
 
 #define EXPIRATION_POLICY					(60 * 60 * 24 * 7)		/* 7 days */

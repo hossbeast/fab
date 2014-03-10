@@ -49,6 +49,7 @@
 #include "traverse.h"
 #include "lwutil.h"
 #include "selector.h"
+#include "error.h"
 
 #include "log.h"
 #include "global.h"
@@ -67,6 +68,8 @@ static void signal_handler(int signum)
 
 int main(int argc, char** argv)
 {
+	char space[1024];
+
 	ff_parser *					ffp = 0;				// fabfile parser
 	bp *								bp = 0;					// buildplan 
 	map * 							rmap = 0;				// root-level map
@@ -97,6 +100,9 @@ int main(int argc, char** argv)
 
 	int x;
 	int y;
+
+	// initialize error tables
+	error_setup();
 
 	// process parameter gathering
 	fatal(params_setup);
@@ -131,6 +137,19 @@ int main(int argc, char** argv)
 	// parse cmdline arguments
 	//  (args_parse also calls log_init with a default string)
 	fatal(args_parse, argc, argv);
+
+#if SANITY
+	if(g_args.mode_sanity == MODE_SANITY_ENABLE)
+		listwise_sanity = 1;
+	else
+		listwise_sanity_fd = -1;
+#endif
+#if DEVEL
+	listwise_devel_fd = -1;
+#endif
+#if DEBUG
+	listwise_debug_fd = -1;
+#endif
 
 	// create/cleanup tmp 
 	fatal(tmp_setup);
@@ -234,7 +253,7 @@ int main(int argc, char** argv)
 		pn++;
 
 		if(g_args.selectors_arequery)
-			log_parse("+SELECT", 0);
+			fatal(log_parse, "+SELECT", 0);
 
 		// process selectors
 		for(x = 0; x < g_args.selectorsl; x++)
@@ -284,7 +303,7 @@ int main(int argc, char** argv)
 		// dependency discovery list
 		if(discoveriesl)
 		{
-			log_parse("+DSC", 0);
+			fatal(log_parse, "+DSC", 0);
 			fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
 		}
 		else
@@ -301,7 +320,7 @@ int main(int argc, char** argv)
 			if(inspectionsl)
 			{
 				// enable DGRAPH
-				log_parse("+DGRAPH", 0);
+				fatal(log_parse, "+DGRAPH", 0);
 
 				for(x = 0; x < inspectionsl; x++)
 					gn_dump((*inspections[x]));
@@ -367,7 +386,7 @@ int main(int argc, char** argv)
 						fatal(bp_eval, bp);
 
 						if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
-							log_parse("+BPDUMP", 0);
+							fatal(log_parse, "+BPDUMP", 0);
 
 						// dump buildplan, pending logging
 						if(bp)
@@ -430,18 +449,19 @@ finally:
 	traverse_teardown();
 	selector_teardown();
 
+	size_t tracesz = 0;
 	if(XAPI_UNWINDING)
 	{
 #if DEBUG
 		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
 		{
 #endif
-			xapi_pithytrace();
+			tracesz = xapi_trace_pithy(space, sizeof(space));
 #if DEBUG
 		}
 		else
 		{
-			xapi_backtrace();
+			tracesz = xapi_trace_full(space, sizeof(space));
 		}
 #endif
 	}
@@ -449,8 +469,14 @@ finally:
 	int _xapi_r;
 conclude;
 	
-	log(L_INFO, "exiting with status : %d", _xapi_r);
-	log_teardown();
+	if(tracesz)
+	{
+		log_write(L_ERROR, space, tracesz);
+		if(_xapi_r 
+	}
+	else
+		log(L_INFO, "exiting with status : %d", _xapi_r);
 
+	log_teardown();
 	return _xapi_r;
 }

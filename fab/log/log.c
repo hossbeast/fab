@@ -24,6 +24,8 @@
 #include <fcntl.h>
 
 #include "log.h"
+#include "global.h"
+#include "xlinux.h"
 
 #include "args.h"
 #include "cksum.h"
@@ -189,31 +191,7 @@ static int logprintf(const char * fmt, ...)
 	return w;
 }
 
-static int start(const uint64_t e)
-{
-	int w = 0;
-
-	// colorization
-	if((e & L_COLOR_VALUE) && COLORHEX(e))
-	{
-		logwrite(COLOR(e), 0);
-	}
-
-	// prefix
-	int x;
-	for(x = 0; x < g_logs_l; x++)
-	{
-		if((e & g_logs[x].v) == g_logs[x].v)
-		{
-			w += logprintf("%*s : ", o_name_len, g_logs[x].s);
-			break;
-		}
-	}
-
-	return w;
-}
-
-static int vstart(const uint64_t e)
+static int start(const uint64_t e, int pfx)
 {
 	if(log_would(e))
 	{
@@ -225,7 +203,29 @@ static int vstart(const uint64_t e)
 #endif
 		o_e = e;
 
-		return start(e);
+		int w = 0;
+
+		// colorization
+		if((e & L_COLOR_VALUE) && COLORHEX(e))
+		{
+			logwrite(COLOR(e), 0);
+		}
+
+		if(pfx)
+		{
+			// prefix
+			int x;
+			for(x = 0; x < g_logs_l; x++)
+			{
+				if((e & g_logs[x].v) == g_logs[x].v)
+				{
+					w += logprintf("%*s : ", o_name_len, g_logs[x].s);
+					break;
+				}
+			}
+		}
+
+		return w;
 	}
 
 	return 0;
@@ -236,16 +236,19 @@ static int vadd(const char* fmt, va_list va)
 	return logvprintf(fmt, va);
 }
 
-static int vfinish(const char* fmt, void * va)
+static int vfinish(const char* fmt, void * va, int trace)
 {
 	int w = 0;
 	if(fmt)
 		w += vadd(fmt, *(void**)va);
 
 #if DEBUG
-	// location trace for errors
-	if((o_e & L_TAG) == (L_ERROR & L_TAG))
-		w += log_add(" in %s at %s:%d", o_func, o_file, o_line);
+	if(trace)
+	{
+		// location trace for errors
+		if((o_e & L_TAG) == (L_ERROR & L_TAG))
+			w += log_add(" in %s at %s:%d", o_func, o_file, o_line);
+	}
 #endif
 
 	if((o_e & L_COLOR_VALUE) && COLORHEX(o_e))
@@ -325,7 +328,7 @@ static void prep_trace(const char * const func, const char * const file, int lin
 // [[ public ]]
 //
 
-void log_parse(char * args, int args_len)
+int log_parse(char * args, int args_len)
 {
 	args_len = args_len ?: strlen(args);
 
@@ -417,7 +420,7 @@ void log_parse(char * args, int args_len)
 							if(o_filter_a)
 								ns = o_filter_a * 2 + o_filter_a / 2;
 
-							o_filter = realloc(o_filter, sizeof(*o_filter) * ns);
+							fatal(xrealloc, &o_filter, sizeof(*o_filter), ns, o_filter_a);
 							o_filter_a = ns;
 						}
 
@@ -433,30 +436,30 @@ void log_parse(char * args, int args_len)
 			}
 		}
 	}
+
+	finally : coda;
 }
 
 int log_init(char * str)
 {
-	// apply initial args string
-	log_parse(str, 0);
-
-	// parse cmdline
-	int fd = open("/proc/self/cmdline", O_RDONLY);
-
+	int			fd = -1;
 	char *	args = 0;
 	int			args_len = 0;
 	int			nlen = 0;
 
+	// apply initial args string
+	fatal(log_parse, str, 0);
+
+	// parse cmdline
+	fatal(xopen, "/proc/self/cmdline", O_RDONLY, &fd);
+
 	do
 	{
 		size_t newlen = args_len ? (args_len + (args_len / 2 ) + (args_len * 2)) : 10;
-
-		args = realloc(args, newlen);
+		fatal(xrealloc, &args, 1, newlen, nlen);
 		nlen = newlen;
 
 	} while((args_len += (read(fd, &args[args_len], nlen - args_len))) == nlen);
-
-	close(fd);
 
 	args_len--;
 	int x;
@@ -467,11 +470,12 @@ int log_init(char * str)
 	}
 
 	// parse cmdline args
-	log_parse(args, args_len);
+	fatal(log_parse, args, args_len);
 
+finally:
 	free(args);
-
-	return 0;
+	fatal(ixclose, &fd);
+coda;
 }
 
 int log_would(const uint64_t e)
@@ -512,7 +516,7 @@ int vlog_trace_start(const uint64_t e, const char* fmt, va_list va)
 #endif
 {
 	int w = 0;
-	if((w = vstart(e)))
+	if((w = start(e, 1)))
 	{
 #if DEBUG
 		// store trace
@@ -567,7 +571,7 @@ int vlog_finish(const char * fmt, va_list va)
 {
 	if(log_would(o_e))
 	{
-		return vfinish(fmt, &va);
+		return vfinish(fmt, &va, 1);
 	}
 
 	return 0;
@@ -590,7 +594,7 @@ int vlog_trace(const uint64_t e, const char * const fmt, va_list va)
 #endif
 {
 	int w = 0;
-	if((w = vstart(e)))
+	if((w = start(e, 1)))
 	{
 		// error message
 		w += vadd(fmt, va);
@@ -600,7 +604,7 @@ int vlog_trace(const uint64_t e, const char * const fmt, va_list va)
 		prep_trace(func, file, line);
 #endif
 
-		return w + vfinish(0, 0);
+		return w + vfinish(0, 0, 1);
 	}
 
 	return 0;
@@ -622,6 +626,31 @@ int log_trace(const uint64_t e, const char * const fmt, ...)
 	va_end(va);
 
 	return w;
+}
+
+#if DEBUG
+void log_trace_write(const char * const func, const char * const file, int line, const uint64_t e, const char * const src, size_t len)
+#else
+void log_trace_write(const uint64_t e, const char * const src, size_t len)
+#endif
+{
+	if(log_would(e))
+	{
+		start(e, 0);
+
+#if DEBUG
+		prep_trace(func, file, line);
+#endif
+
+		// colorization
+		if((e & L_COLOR_VALUE) && COLORHEX(e))
+		{
+			logwrite(COLOR(e), 0);
+		}
+
+		logwrite(src, len, 0);
+		vfinish(0, 0, 0);
+	}
 }
 
 int logged_bytes()

@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "xapi/internal.h"
+#include "internal.h"
 
 #include "macros.h"
 

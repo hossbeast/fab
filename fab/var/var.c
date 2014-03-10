@@ -160,7 +160,7 @@ static int dumplist(lwx * const ls)
 	if(go)
 	{
 		if(j++)
-			fatal(log_add, " ");
+			log_add(" ");
 
 		char * rv;
 		int rl;
@@ -171,7 +171,7 @@ static int dumplist(lwx * const ls)
 		{
 			char * zs = 0;
 			fatal(lstack_string, ls, 0, i, &zs);
-			fatal(log_add, "[%hhu]%p (%.*s)"
+			log_add("[%hhu]%p (%.*s)"
 				, rt
 				, *(void**)rv
 				, zs
@@ -179,13 +179,13 @@ static int dumplist(lwx * const ls)
 		}
 		else if(rt == LISTWISE_TYPE_LIST)
 		{
-			fatal(log_add, "[ ");
-			dumplist(*(void**)rv);
-			fatal(log_add, " ]");
+			log_add("[ ");
+			fatal(dumplist, *(void**)rv);
+			log_add(" ]");
 		}
 		else
 		{
-			fatal(log_add, "%.*s", rl, rv);
+			log_add("%.*s", rl, rv);
 		}
 	}
 	LSTACK_ITEREND;

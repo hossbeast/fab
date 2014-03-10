@@ -21,7 +21,7 @@
 
 #include "map.h"
 
-#include "global.h"
+#include "xapi.h"
 #include "xlinux.h"
 #include "macros.h"
 

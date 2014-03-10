@@ -36,8 +36,8 @@
 #include "listwise/object.h"
 
 #include "xapi.h"
-#include "LW.errtab.h"
-#define perrtab perrtab_LW
+#include "LISTWISE.errtab.h"
+#define perrtab perrtab_LISTWISE
 
 #include "xlinux.h"
 
@@ -86,7 +86,7 @@ static int snarf(char * path, void ** mem, size_t * sz)
 	}
 	else
 	{
-		failf(LW_EBADFILE, "type : %s (%d)"
+		failf(LISTWISE_BADFILE, "type : %s (%d)"
 			,   S_ISREG(st.st_mode)			? "REG"
 				: S_ISDIR(st.st_mode)			? "DIR"
 				: S_ISCHR(st.st_mode)			? "CHR"
@@ -150,7 +150,6 @@ int main(int argc, char** argv)
 
 	if(g_args.generator_file)
 	{
-printf("reading from file %s\n", g_args.generator_file);
 		// read generator-string from file
 		fatal(snarf, g_args.generator_file, &mem, &sz);
 
@@ -171,7 +170,7 @@ printf("reading from file %s\n", g_args.generator_file);
 	for(x = 0; x < 2; x++)
 	{
 		char * p = 0;
-		if(x == 0 && (g_args.generator_file == 0 || (strcmp(g_args.generator_file, "-") && strcmp(g_args.generator_file, "/dev/fd/0"))))
+		if(x == 0 && (g_args.generator_file == 0 || strcmp(g_args.generator_file, "-") == 0 || strcmp(g_args.generator_file, "/dev/fd/0") == 0))
 			p = "-";
 		if(x == 1)
 			p = g_args.init_file;
@@ -261,7 +260,7 @@ printf("reading from file %s\n", g_args.generator_file);
 				else
 					delim[0] = '\n';
 
-				writev(1
+				int __attribute__((unused)) rr = writev(1
 					, (struct iovec[]) {
 						  { .iov_base = space	, .iov_len = spacel }
 						, { .iov_base = ss		, .iov_len = ssl }
@@ -289,9 +288,6 @@ finally:
 
 	if(XAPI_UNWINDING)
 	{
-#if DEBUG
-		xapi_backtrace();
-#else
 		if(g_args.lw_info)
 		{
 			xapi_backtrace();
@@ -300,7 +296,6 @@ finally:
 		{
 			xapi_pithytrace();
 		}
-#endif
 	}
 coda;
 }

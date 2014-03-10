@@ -32,7 +32,7 @@
 #include "listwise/fs.h"
 
 #include "coll.h"
-#include "idx.h"
+#include "map.h"
 
 #include "LW.errtab.h"
 #include "PCRE.errtab.h"
@@ -43,23 +43,8 @@
 
 #define restrict __restrict
 
-// collection of registered object types
-// with lookup index by type id
-extern union object_registry_t
-{
-	coll_doubly c;
-
-	struct
-	{
-		int l;
-		int a;
-		int z;
-
-		struct listwise_object ** e;		// object defs
-
-		idx * by_type;									// indexed by type
-	};
-} object_registry;
+// collection of registered object types with lookup index by type id
+map * object_registry;
 
 /// generator_snwrite
 //

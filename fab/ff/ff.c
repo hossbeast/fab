@@ -107,48 +107,52 @@ static int ff_lvalstr(int token, void * restrict lval, struct yyu_extra * restri
 	return 0;
 }
 
-static int reduce(int (*parser)(void *, parse_param*), parse_param * pp, int fail_unless_reduce)
+static int reduce(int (*parser)(void *, parse_param*), parse_param * pp)
 {
 	// error from the parser means failure to reduce
-	int r = parser(pp->scanner, pp);
-
-	if(r == 2)
+	int r;
+	if((r = parser(pp->scanner, pp)) || pp->scanerr)
 	{
-		// memory exhaustion error from the parser
-		tfails(perrtab_SYS, ENOMEM, pp->errorstring);
-	}
-	else if(fail_unless_reduce)
-	{
-		if(pp->r > 0)
+		if(r == 2)
 		{
-			// error from the scanner
-			fails(FAB_ILLBYTE, pp->errorstring);
+			// memory exhaustion error from the parser
+			tfail(perrtab_SYS, ENOMEM);
 		}
-		else if(r == 1 || pp->r < 0)
+		else if(pp->scanerr)
+		{
+			// scanner error
+			fails(pp->scanerr, pp->error_str);
+		}
+		else if(pp->gramerr)
 		{
 			// failure to reduce
-			fails(FAB_SYNTAX, pp->errorstring);
+			fails(FAB_SYNTAX, pp->error_str);
+		}
+		else
+		{
+			// error thrown from a grammar rule (such as ENOMEM)
+			fail(0);
 		}
 	}
 
 finally :
 	if(XAPI_UNWINDING)
 	{
-		XAPI_INFOS("last", pp->tokenstring);
-	  XAPI_INFOF("loc", "[%d,%d-%d,%d]"
-	  	, pp->last_loc.f_lin + 1
-	  	, pp->last_loc.f_col + 1
-	  	, pp->last_loc.l_lin + 1
-	  	, pp->last_loc.l_col + 1
-	  );
-	#if DEBUG
-	    XAPI_INFOF("scanline", "%d", pp->last_line);
-	#endif
+		if(pp->scanerr || pp->gramerr)
+		{
+			XAPI_INFOS("last", pp->tokenstring);
+			XAPI_INFOF("loc", "[%d,%d - %d,%d]"
+				, pp->last_loc.f_lin + 1
+				, pp->last_loc.f_col + 1
+				, pp->last_loc.l_lin + 1
+				, pp->last_loc.l_col + 1
+			);
+		}
 	}
 coda;
 }
 
-static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel, const int fail_unless_reduce)
+static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel)
 {
 	parse_param pp = {
 	    .log_token		= ff_log_token
@@ -164,21 +168,30 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	pp.line_numbering = 1;
 #endif
 
+	ff_file * ff = 0;
+	uint32_t type = FFT_REGULAR;
+	if(dscv_gn)
+		type = FFT_DDISC;
+	else if(var_id)
+		type = FFT_VAREXPR;
+	else if(list_id)
+		type = FFT_LISTEXPR;
+
 	// create state specific to this parse
 	void* state = 0;
-	if((state = ff_yy_scan_bytes(b, sz + 2, p->p)) == 0)
+	if((state = ff_yy_scan_bytes(b, sz, p->p)) == 0)
 		tfail(perrtab_SYS, ENOMEM);
 
 	// all ff_files are tracked in ff_files
-	ff_file * ff = 0;
 	fatal(coll_doubly_add, &ff_files.c, 0, &ff);
 
 	// create copy of the path
 	fatal(path_copy, &ff->path, in_path);
 
+	ff->type = type;
+
 	if(dscv_gn)
 	{
-		ff->type = FFT_DDISC;
 		ff->dscv_gn = dscv_gn;
 
 		// idstring
@@ -186,21 +199,18 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	}
 	else if(var_id)
 	{
-		ff->type = FFT_VAREXPR;
 		ff->id = *var_id;
 
 		fatal(ixsprintf, &ff->idstring, "VAR:%s", ff->path->can);
 	}
 	else if(list_id)
 	{
-		ff->type = FFT_LISTEXPR;
 		ff->id = *list_id;
 
 		fatal(ixsprintf, &ff->idstring, "LIST:%s", ff->path->can);
 	}
 	else
 	{
-		ff->type = FFT_REGULAR;
 		if(nofile)
 			fatal(ixsprintf, &ff->nofile, "%.*s", nofilel, nofile);
 
@@ -240,13 +250,13 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 	// invoke the appropriate parser, raise errors as needed
 	if(ff->type == FFT_DDISC)
-		fatal(reduce, ff_dsc_yyparse, &pp, fail_unless_reduce);
+		fatal(reduce, ff_dsc_yyparse, &pp);
 	else if(ff->type == FFT_VAREXPR)
-		fatal(reduce, ff_var_yyparse, &pp, fail_unless_reduce);
+		fatal(reduce, ff_var_yyparse, &pp);
 	else if(ff->type == FFT_LISTEXPR)
-		fatal(reduce, ff_list_yyparse, &pp, fail_unless_reduce);
-	else if(ff->type == FFT_VAREXPR)
-		fatal(reduce, ff_yyparse, &pp, fail_unless_reduce);
+		fatal(reduce, ff_list_yyparse, &pp);
+	else if(ff->type == FFT_REGULAR)
+		fatal(reduce, ff_yyparse, &pp);
 
 	if(ff)
 	{
@@ -282,6 +292,8 @@ finally :
 	// cleanup state for this parse
 	ff_yy_delete_buffer(state, p->p);
 	yyu_extra_destroy(&pp);
+
+XAPI_INFOS("type", FFT_STRING(type));
 coda;
 }
 
@@ -373,16 +385,11 @@ coda;
 
 int ff_mkparser(ff_parser ** const p)
 {
-	if((*p = calloc(1, sizeof(*p[0]))) == 0)
-		return 1;
+	fatal(xmalloc, p, sizeof(**p));
+	tfatalize(perrtab_SYS, ENOMEM, ff_yylex_init, &(*p)->p);
+	fatal(generator_mkparser, &(*p)->gp);
 
-	if(ff_yylex_init(&(*p)->p) != 0)
-		return 1;
-
-	if(generator_mkparser(&(*p)->gp) != 0)
-		return 1;
-
-	return 0;
+	finally : coda;
 }
 
 int ff_reg_load(const ff_parser * const p, const path * const in_path, char * const nofile, const int nofilel, ff_file ** const ff)
@@ -411,7 +418,7 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, char * co
 		fatal(axread, fd, b, statbuf.st_size, 0);
 
 		// parse the file
-		fatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff, nofile, nofilel, 1);
+		fatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff, nofile, nofilel);
 
 		// save it
 		fatal(map_set, ff_files.by_canpath, in_path->can, in_path->canl, ff, sizeof(*ff), 0);
@@ -428,7 +435,7 @@ int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const 
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/dscv", "%s", fp);
-	fatal(parse, p, b, sz, pth, dscv_gn, 0, 0, ff, 0, 0, 0);
+	fatal(parse, p, b, sz, pth, dscv_gn, 0, 0, ff, 0, 0);
 
 finally:
 	path_free(pth);
@@ -439,7 +446,7 @@ int ff_var_parse(const ff_parser * const p, char* b, int sz, int id, ff_file** c
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/cmdline/v", "%d", id);
-	fatal(parse, p, b, sz, pth, 0, &id, 0, ff, 0, 0, 1);
+	fatal(parse, p, b, sz, pth, 0, &id, 0, ff, 0, 0);
 
 finally:
 	path_free(pth);
@@ -450,7 +457,7 @@ int ff_list_parse(const ff_parser * const p, char* b, int sz, int id, ff_file **
 {
 	path * pth = 0;
 	fatal(path_create, &pth, "/../FABSYS/cmdline/l", "%d", id);
-	fatal(parse, p, b, sz, pth, 0, 0, &id, ff, 0, 0, 1);
+	fatal(parse, p, b, sz, pth, 0, 0, &id, ff, 0, 0);
 
 finally:
 	path_free(pth);

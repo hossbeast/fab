@@ -273,7 +273,9 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 	// process the fabfile tree, construct the graph
 	fatal(procblock, ff, ff->ffn, ffp, sstk, vmap, stax, staxa, staxp, first, star);
 
-	finally : coda;
+finally:
+	XAPI_INFOS("path", inpath->rel_cwd);
+coda;
 }
 
 ///

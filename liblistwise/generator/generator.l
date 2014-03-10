@@ -347,12 +347,16 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <angles_dorefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF<>\\]+			{ return LEX(STR, 0); }
 
 <*>[\x00-\x1F\x7F-\xFF]																	{
-																													snprintf(yyextra->temp, sizeof(yyextra->temp), "unexpected character : (0x%02hhx)", yytext[0]);
-																													generator_yyerror(0, (void*)LW_ILLBYTE, yyextra, yyextra->temp);
-																													return 0;
+																													while(yyextra->states_n)
+																														POPSTATE;
+																													LOCWRITE;
+																													yyu_scanner_error(yylloc, yyextra, LW_ILLBYTE, "unexpected byte 0x%02hhx", yytext[0]);
+																													return 0;	/* return end-of-input */
 																												}
 <*>[\x20-\x7E]																					{
-																													snprintf(yyextra->temp, sizeof(yyextra->temp), "unexpected character : '%1$c'(0x%1$02hhx)", yytext[0]);
-																													generator_yyerror(0, (void*)LW_ILLBYTE, yyextra, yyextra->temp);
-																													return 0;
+																													while(yyextra->states_n)
+																														POPSTATE;
+																													LOCWRITE;
+																													yyu_scanner_error(yylloc, yyextra, LW_ILLBYTE, "unexpected character '%1$c'(0x%1$02hhx)", yytext[0]);
+																													return 0;	/* return end-of-input */
 																												}

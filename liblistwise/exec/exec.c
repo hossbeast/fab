@@ -170,10 +170,6 @@ int API listwise_exec_generator(
 
 	(*lx)->win.active_era++;	// age active windows
 
-	// clear string props set with the fx operator
-	for(x = 0; x < object_registry.l; x++)
-		ifree(&object_registry.e[x]->string_property);
-
 finally:
 	free(ovec);
 #if SANITY

@@ -15,18 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# source directories
-$dlibxapi 		= [ $* ]
-$dcommon			= [ $*/../../common ~ j ]
-
-# variable defs, $cc, $cflags, etc
-# common targets xmem, map, etc
+# definitions
+$dcommon			= [ $*/../common ~ j ]
 +[ $dcommon/vars.fab ]
+
+# source invocations
 +[ $dcommon ] @common
 
-##
-## variables
-##
+# variables
 $libname 			= [ libxapi.so ]
 $soname				= [ $libname ~ j ]
 $libxapi  		= [ $dlibxapi/libxapi.so ~ j ]		# path to the library .so
@@ -47,7 +43,7 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 ## formulas
 ##
 
-# the SYS errtab is generated from system header files
+# the SYS errtab is generated from available system header files
 [ $dlibxapi/SYS.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
 {
 	exec > [ $@ ]
@@ -84,17 +80,4 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 
 	install -d																[ $destdir/$incdir/xapi ]
 	install [ $dlibxapi/xapi/frame.h ]				[ $destdir/$incdir/xapi ]
-}
-
-[ @uninstall ]
-{
-	rm -f																			[ $destdir/$libdir/$libname ]
-	rm -f																			[ $destdir/$incdir/xapi/frame.h ]
-}
-
-[ @clean ] :* [ @common.clean ]
-{
-	find [ $dlibxapi ] -name '*.o' -delete
-	find [ $dlibxapi ] -name '*.so' -delete
-	find [ $dlibxapi ] -name exports -delete
 }

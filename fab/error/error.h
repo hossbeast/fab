@@ -15,4 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	EBADFILE	unable to process file
+#ifndef _FAB_ERROR_H
+#define _FAB_ERROR_H
+
+#include "xapi.h"
+
+void error_setup();
+const char * fab_errname(const int code);
+const char * fab_errdesc(const int code);
+const char * fab_errstr(const int code);
+const etable * fab_errtab(const int code);
+int fab_errtab(const int code);
+
+#endif

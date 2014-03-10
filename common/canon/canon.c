@@ -24,8 +24,10 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "xapi.h"
+#include "xlinux.h"
+
 #include "canon.h"
-#include "wstdlib.h"
 
 //
 // static
@@ -53,8 +55,6 @@ int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 	int inl = vsnprintf(in, sizeof(in), fmt, va);
 	va_end(va);
 
-//printf("breakup(%.*s)\n", inl, in);
-
 	int x = 0;
 	while(x < inl)
 	{
@@ -62,6 +62,10 @@ int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 		{
 			int ns = (*ia) ?: 10;
 			ns = ns * 2 + ns / 2;
+
+			fatal(xrealloc, i, sizeof(**i), ns, *ia);
+			*ia = ns;
+/*
 			if(wrealloc(i, sizeof(**i), ns, (*ia)) != 0)
 			{
 				int k;
@@ -70,6 +74,7 @@ int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 				free(*i);
 				return 1;
 			}
+*/
 
 			(*ia) = ns;
 		}
@@ -120,7 +125,7 @@ int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 		at++;
 	}
 
-	return 0;
+	finally : coda;
 }
 
 static void add(size_t * z, char * const resolved, size_t sz, char * fmt, ...)
@@ -151,6 +156,7 @@ int canon(
 	, uint32_t opts
 )
 {
+	int x;
 	opts = opts ?: CAN_REALPATH;
 	pathl = pathl ?: strlen(path);
 
@@ -181,8 +187,7 @@ int canon(
 			{
 				if(opts & CAN_INIT_DOT)
 				{
-					if(breakup(&i, &ia, &il, il, "%.*s/", basel, base) != 0)
-						return 1;
+					fatal(breakup, &i, &ia, &il, il, "%.*s/", basel, base);
 				}
 			}
 		}
@@ -193,14 +198,12 @@ int canon(
 	{
 		if(opts & CAN_FORCE_DOT)
 		{
-			if(breakup(&i, &ia, &il, il, "%.*s/", basel, base) != 0)
-				return 1;
+			fatal(breakup, &i, &ia, &il, il, "%.*s/", basel, base);
 		}
 	}
 
 	int init = il;
-	if(breakup(&i, &ia, &il, il, "%.*s", pathl, path) != 0)
-		return 1;
+	fatal(breakup, &i, &ia, &il, il, "%.*s", pathl, path);
 
 	dst[0] = 0;
 
@@ -309,8 +312,7 @@ printf("init=%d\n", init);
 						// dangling links, and fulfilled links which do not cross mount points
 						if((isfinal && (opts & CAN_FINL_SYM)) || (!isfinal && (opts & CAN_NEXT_SYM)))
 						{
-							if(breakup(&i, &ia, &il, ix + 1, "%.*s", j, space) != 0)
-								return 1;
+							fatal(breakup, &i, &ia, &il, ix + 1, "%.*s", j, space);
 
 							if(space[0] == '/')
 								(*z) = 0;
@@ -322,8 +324,7 @@ printf("init=%d\n", init);
 					{
 						if((isfinal && (opts & CAN_FINL_SYMMNT)) || (!isfinal && (opts & CAN_NEXT_SYMMNT)))
 						{
-							if(breakup(&i, &ia, &il, ix + 1, "%.*s", j, space) != 0)
-								return 1;
+							fatal(breakup, &i, &ia, &il, ix + 1, "%.*s", j, space);
 
 							if(space[0] == '/')
 								(*z) = 0;
@@ -340,12 +341,13 @@ printf("init=%d\n", init);
 		}
 	}
 
-	int x;
+	dst[(*z)] = 0;
+
+finally:
 	for(x = 0; x < ia; x++)
 		free(i[x].s);
 	free(i);
-	dst[(*z)] = 0;
-	return 0;
+coda;
 }
 
 int rebase(
@@ -413,5 +415,5 @@ int rebase(
 		(*z) += snprintf(dst + (*z), siz - (*z), "%.*s", pathl - x, path + x);
 	}
 
-	return 0;
+	finally : coda;
 }

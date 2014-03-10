@@ -17,23 +17,20 @@
 
 #include <stdint.h>
 
-#include "listwise/internal.h"
+#include "xapi.h"
 
-static etable * tab[3];
+static etable * tab[2];
 
 void __attribute__((constructor)) init()
 {
 	tab[0] = perrtab_SYS;
 	tab[0]->id = 0;
 
-	tab[1] = perrtab_PCRE;
+	tab[1] = perrtab_SYS;
 	tab[1]->id = 1;
-
-	tab[2] = perrtab_LW;	
-	tab[2]->id = 2;
 }
 
-const char * listwise_errname(const int code)
+const char * xapi_errname(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
@@ -44,7 +41,7 @@ const char * listwise_errname(const int code)
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].name;
 }
 
-const char * listwise_errdesc(const int code)
+const char * xapi_errdesc(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
@@ -55,7 +52,7 @@ const char * listwise_errdesc(const int code)
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].desc;
 }
 
-const char * listwise_errstr(const int code)
+const char * xapi_errstr(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
@@ -66,24 +63,23 @@ const char * listwise_errstr(const int code)
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].str;
 }
 
-const etable * fab_errtab(const int code)
+const etable * xapi_errtab(const int code)
 {
-  int16_t rt = code >> 16;      // table index
-  int16_t rc = code & 0xFFFF;   // code index
+	int16_t rt = code >> 16;			// table index
 
-  if(rt < 0 || rt > 2)
-    return 0;
+	if(rt < 0 || rt > 2)
+		return 0;
 
-  return tab[rt];
+	return tab[rt];
 }
 
-int fab_errcode(const int code)
+int xapi_errcode(const int code)
 {
-  int16_t rt = code >> 16;      // table index
-  int16_t rc = code & 0xFFFF;   // code index
+	int16_t rt = code >> 16;			// table index
+	int16_t rc = code & 0xFFFF;		// code index
 
-  if(rt < 0 || rt > 2)
-    return 0;
+	if(rt < 0 || rt > 2)
+		return 0;
 
-  return rc + (tab[rt]->min * -1);
+	return rc + (tab[rt]->min * -1);
 }

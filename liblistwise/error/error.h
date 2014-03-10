@@ -15,14 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi/internal.h"
+#ifndef _LISTWISE_ERROR_H
+#define _LISTWISE_ERROR_H
 
-void __attribute__((constructor)) init()
-{
-	perrtab->id = 0;
-}
+#include "xapi.h"
 
-const char * xapi_errstr(const int code)
-{
-	return perrtab->v[code & 0xFFFF].name;
-}
+const char * listwise_errname(const int code);
+const char * listwise_errdesc(const int code);
+const char * listwise_errstr(const int code);
+const etable * listwise_errtab(const int code);
+int listwise_errcode(const int code);
+
+#endif

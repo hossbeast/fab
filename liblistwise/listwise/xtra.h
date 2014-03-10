@@ -117,7 +117,7 @@ int lstack_readrow(lwx * const restrict lx, int x, int y, char ** const restrict
 /// listwise_info_fd
 //
 // SUMMARY
-//  liblistwise writes infor messages to this fd
+//  liblistwise writes info messages to this fd
 //
 // EXAMPLES
 //  lstack_dump writes to this fd

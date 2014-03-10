@@ -15,16 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# directories
-$dlistwise    	= [ $* ]
-$dcommon				= [ $dlistwise/../common ~ j ]
-$dliblistwise		= [ $dlistwise/../liblistwise ~ j ]
-$dlibxapi				= [ $dlistwise/../libxapi ~ j ]
-$dlibxlinux			= [ $dlistwise/../libxlinux ~ j ]
-
-# variable defs, $cc, $cflags, etc
-# common targets xmem, map, etc
+# definitions
+$dcommon				= [ $*/../common ~ j ]
 +[ $dcommon/vars.fab ]
+
+# source invocations
 +[ $dcommon ]() @common
 
 # variables
@@ -63,17 +58,4 @@ $listwise				= [ $dlistwise/$name ~ j ]
 	install -d										[ $destdir/$bindir ]
 	install [ $listwise ]					[ $destdir/$bindir/$name ]
 	ln -vfs [ $name ]							[ $destdir/$bindir/$link ]
-}
-
-[ @uninstall ]
-{
-	rm -f													[ $destdir/$bindir/$listwise ]
-	rm -f													[ $destdir/$bindir/$link ]
-}
-
-[ @clean ]
-{
-	rm -f [ $dlistwise/*.o ]			2>/dev/null
-	rm -f [ $dlistwise/$name ]		2>/dev/null
-	rm -f [ $dlistwise/$link ]		2>/dev/null
 }

@@ -19,6 +19,13 @@ $VERSIONL				= [ 0 5 0 0 ]											# version list - major, minor, revision, bu
 $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
 $VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
 
+# source directories
+$dlibxapi				= [ $dcommon/../libxapi ~ j ]
+$dlibxlinux			= [ $dcommon/../libxlinux ~ j ]
+$dliblistwise		= [ $dcommon/../liblistwise ~ j ]
+$dlistwise			= [ $dcommon/../listwise ~ j ]
+$dfab						= [ $dcommon/../fab ~ j ]
+
 #
 # under dbug :
 #  - disable compiler optimizations

@@ -160,7 +160,7 @@ totcompares++;
 
 			if(sbs->t)
 			{
-				listwise_object* o = idx_lookup_val(object_registry.by_type, &sbs->t, 0);
+				listwise_object * o = map_get(object_registry, MM(sbs->t));
 				if(o)
 				{
 					char * s;

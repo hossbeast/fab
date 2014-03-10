@@ -108,6 +108,8 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 				i--;
 				fatal(lstack_append, lx, 0, x, zs + win->s[i].o + win->s[i].l, zsl - (win->s[i].o + win->s[i].l));
 			}
+
+			fatal(lstack_sel_stage, lx, x);
 		}
 	}
 	LSTACK_ITEREND

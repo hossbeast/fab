@@ -56,6 +56,6 @@ int ff_list_yyparse(void*, parse_param*);
 //  called from tab.o and lex.o
 //
 static void ff_yyerror(void * loc, void* scanner, parse_param* pp, char const* err)
-	__attribute__((weakref("yyu_error")));
+	__attribute__((weakref("yyu_grammar_error")));
 
 #endif

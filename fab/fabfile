@@ -15,16 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# source directories
-$dfab						= [ $* ]
-$dcommon				= [ $dfab/../common ~ j ]
-$dliblistwise		= [ $dfab/../liblistwise ~ j ]
-$dlibxapi				= [ $dfab/../libxapi ~ j ]
-$dlibxlinux			= [ $dfab/../libxlinux ~ j ]
-
-# variable defs, $cc, $cflags, etc
-# common targets xmem, map, etc
+# definitions
+$dcommon = [ $*/../common ~ j ]
 +[ $dcommon/vars.fab ]
+
+# source invocations
 +[ $dcommon ] @common
 
 # variables
@@ -50,7 +45,7 @@ $fab						= [ $dfab/fab ~ j ]
 # generated files
 +[@std.flex.states] ($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
 +[@std.bison.tokens]($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
-+[@std.xapi.errtab] ($gendir = $dfab; $dirs = $dfab; $cc $cflags)
++[@std.xapi.errtab] ($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
 
 # operator so's
 $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
@@ -114,24 +109,4 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	install -d															[ $destdir/$fablwopdir ]
 	install [ $dfab/fablw/op/fi/fi.so ]			[ $destdir/$fablwopdir ]
 	install [ $dfab/fablw/op/fg/fg.so ]			[ $destdir/$fablwopdir ]
-}
-
-[ @uninstall ]
-{
-	rm -f																		[ $destdir/$bindir/fab ]
-	rm -f																		[ $destdir/$bindir/gcc-dep ]
-	rm -rf																	[ $destdir/$fabcachedir ]
-	rm -rf																	[ $destdir/$fabtmpdir ]
-	rm -rf																	[ $destdir/$fabinvokedir ]
-}
-
-[ @clean ] :* [ @common.clean ]
-{
-	find [ $dfab ] -name '*.o' -delete 2>/dev/null
-	find [ $dfab ] -name '*.so' -delete 2>/dev/null
-	find [ $dfab ] -name '*.lex.*' -delete 2>/dev/null
-	find [ $dfab ] -name '*.tab.*' -delete 2>/dev/null
-	find [ $dfab ] -name '*.tokens.*' -delete 2>/dev/null
-	find [ $dfab ] -name '*.states.*' -delete 2>/dev/null
-	rm -f [ $fab ] 2>/dev/null
 }

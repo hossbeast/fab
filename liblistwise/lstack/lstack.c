@@ -356,7 +356,7 @@ int API lwx_reset(lwx * lx)
 	{
 		int y;
 		for(y = 0; y < lx->s[x].l; y++)
-			lstack_clear(lx, x, y);
+			fatal(lstack_clear, lx, x, y);
 
 		lx->s[x].l = 0;
 	}
@@ -852,18 +852,6 @@ int API lstack_delete(lwx * const restrict lx, int x, int y)
 	finally : coda;
 }
 
-static int object_lookup(uint8_t type, listwise_object ** o)
-{
-	if(((*o) = idx_lookup_val(object_registry.by_type, &type, 0)) == 0)
-	{
-		fail(LW_NOOBJ);
-	}
-
-finally:
-	XAPI_INFOF("type", "%hhu", type);
-coda;
-}
-
 int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * const rl, uint8_t * const rt, int obj, int win, int str, int * const _raw)
 {
 	char * zs		= lx->s[x].s[y].s;
@@ -874,7 +862,7 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 	if(obj && lx->s[x].s[y].type)
 	{
 		listwise_object * o = 0;
-		fatal(object_lookup, lx->s[x].s[y].type, &o);
+		fatal(listwise_lookup_object, lx->s[x].s[y].type, &o);
 
 		o->string(*(void**)lx->s[x].s[y].s, o->string_property, &zs, &zsl);
 		raw = 0;

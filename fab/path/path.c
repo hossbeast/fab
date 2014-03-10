@@ -40,17 +40,15 @@ static int getdir(const char * const p, char ** const r)
 
 	if(s == p)
 	{
-		*r = strdup(".");
-		return 0;
+		fatal(ixstrdup, r, ".");
+	}
+	else
+	{
+		fatal(xmalloc, r, (s - p) + 1);
+		memcpy(*r, p, s - p);
 	}
 
-	if(((*r) = calloc(1, (s - p) + 1)))
-	{
-		memcpy(*r, p, s - p);
-		return 0;
-	}
-	
-	return 1;
+	finally : coda;
 }
 
 static int getname(const char * const p, char ** const r)
@@ -61,9 +59,10 @@ static int getname(const char * const p, char ** const r)
 
 	if(s[0] == '/')
 		s++;
-	if((*r = strdup(s)))
-		return 0;
-	return 1;
+
+	fatal(ixstrdup, r, s);
+
+	finally : coda;
 }
 
 static int getext(const char * const p, char ** const r)
@@ -77,13 +76,10 @@ static int getext(const char * const p, char ** const r)
 
 	if(s[0] == '.')
 	{
-		if((*r = strdup(s + 1)))
-			return 0;
-		else
-			return 1;
+		fatal(ixstrdup, r, s + 1);
 	}
 
-	return 0;
+	finally : coda;
 }
 
 static int getextlast(const char * const p, char ** const r)
@@ -94,13 +90,10 @@ static int getextlast(const char * const p, char ** const r)
 
 	if(s[0] == '.')
 	{
-		if((*r = strdup(s + 1)))
-			return 0;
-		else
-			return 1;
+		fatal(ixstrdup, r, s + 1);
 	}
 
-	return 0;
+	finally : coda;
 }
 
 static int path_init(path * const p)
@@ -148,36 +141,24 @@ static int path_init(path * const p)
 
 static int create(path ** const p, const char * const in_base, const char * const fmt, va_list va, int init)
 {
-	if(xmalloc(p, sizeof(**p)) != 0)
-		return 1;
-
-	if(xmalloc(&(*p)->can, 512) != 0)
-		return 1;
-
-	if(xmalloc(&(*p)->abs, 512) != 0)
-		return 1;
-
-	if(xmalloc(&(*p)->rel_cwd, 512) != 0)
-		return 1;
-
-	if(xmalloc(&(*p)->rel_fab, 512) != 0)
-		return 1;
-
-	if(xmalloc(&(*p)->rel_nofile, 512) != 0)
-		return 1;
+	fatal(xmalloc, p, sizeof(**p));
+	fatal(xmalloc, &(*p)->can, 512);
+	fatal(xmalloc, &(*p)->abs, 512);
+	fatal(xmalloc, &(*p)->rel_cwd, 512);
+	fatal(xmalloc, &(*p)->rel_fab, 512);
+	fatal(xmalloc, &(*p)->rel_nofile, 512);
 
 	char buf[512];
 	vsnprintf(buf, sizeof(buf), fmt, va);
 
 	// save pameters of creation
-	(*p)->in_path = strdup(buf);
-	(*p)->in_base = strdup(in_base);
+	fatal(ixstrdup, &(*p)->in_path, buf);
+	fatal(ixstrdup, &(*p)->in_base, in_base);
 
 	//
 	// canonical path - fully canonicalized
 	//
-	if(canon(buf, 0, in_base, 0, (*p)->can, 512, 0, CAN_REALPATH) != 0)
-		return 1;
+	fatal(canon, buf, 0, in_base, 0, (*p)->can, 512, 0, CAN_REALPATH);
 
 	// 
 	// absolute path - close to the users representation - but forced to absolute notation
@@ -185,38 +166,34 @@ static int create(path ** const p, const char * const in_base, const char * cons
 	//	- all dots and dotdots resolved
 	//  - resolve internal symbolic links which do not cross mount points
 	//
-	if(canon(buf, 0, in_base, 0, (*p)->abs, 512, 0, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM) != 0)
-		return 1;
+	fatal(canon, buf, 0, in_base, 0, (*p)->abs, 512, 0, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM);
 
 	// 
 	// absolute path rebased to cwd
 	//
-	if(rebase((*p)->abs, 0, g_params.cwd, 0, (*p)->rel_cwd, 512, 0) != 0)
-		return 1;
+	fatal(rebase, (*p)->abs, 0, g_params.cwd, 0, (*p)->rel_cwd, 512, 0);
 
 	// 
 	// absolute path rebased to init-fabfile-dir
 	//
 	if(init)
 	{
-		if(rebase((*p)->abs, 0, g_params.cwd, 0, (*p)->rel_fab, 512, 0) != 0)
-			return 1;
+		fatal(rebase, (*p)->abs, 0, g_params.cwd, 0, (*p)->rel_fab, 512, 0);
 	}
 	else
 	{
-		if(rebase((*p)->abs, 0, g_params.init_fabfile_path->abs_dir, 0, (*p)->rel_fab, 512, 0) != 0)
-			return 1;
+		fatal(rebase, (*p)->abs, 0, g_params.init_fabfile_path->abs_dir, 0, (*p)->rel_fab, 512, 0);
 	}
 
 	// 
 	// absolute path rebased to /..
 	//
-	if(rebase((*p)->abs, 0, "/..", 0, (*p)->rel_nofile, 512, 0) != 0)
-		return 1;
+	fatal(rebase, (*p)->abs, 0, "/..", 0, (*p)->rel_nofile, 512, 0);
 
-	path_init(*p);
+	// initialize
+	fatal(path_init, *p);
 
-	return 0;
+	finally : coda;
 }
 
 //
@@ -228,10 +205,11 @@ int path_create(path ** const p, const char * const in_base, const char * const 
 	va_list va;
 	va_start(va, fmt);
 
-	int r = create(p, in_base, fmt, va, 0);
+	fatal(create, p, in_base, fmt, va, 0);
 
+finally:
 	va_end(va);
-	return r;
+coda;
 }
 
 int path_create_init(path ** const p, const char * const in_base, const char * const fmt, ...)
@@ -239,10 +217,11 @@ int path_create_init(path ** const p, const char * const in_base, const char * c
 	va_list va;
 	va_start(va, fmt);
 
-	int r = create(p, in_base, fmt, va, 1);
+	fatal(create, p, in_base, fmt, va, 1);
 
+finally:
 	va_end(va);
-	return r;
+coda;
 }
 
 int path_cmp(const path * const A, const path * const B)
@@ -271,8 +250,7 @@ void path_xfree(path ** const p)
 
 int path_copy(path ** const B, const path * const A)
 {
-	if(xmalloc(B, sizeof(**B)) != 0)
-		return 1;
+	fatal(xmalloc, B, sizeof(**B));
 
 	// copy
 	(**B) = *A;
@@ -283,10 +261,11 @@ int path_copy(path ** const B, const path * const A)
 	{
 		if((*B)->strings[x])
 		{
-			if(((*B)->strings[x] = strdup((*B)->strings[x])) == 0)
-				return 1;
+			char * z = 0;
+			fatal(ixstrdup, &z, (*B)->strings[x]);
+			(*B)->strings[x] = z;
 		}
 	}
 	
-	return 0;
+	finally : coda;
 }

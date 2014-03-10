@@ -15,20 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# directories
-$dcommon      = [ $*/common ~ j ]
-$dlibxapi			= [ $*/libxapi ~ j ]
-$dlibxlinux		= [ $*/libxlinux ~ j ]
-$dliblistwise = [ $*/liblistwise ~ j ]
-$dlistwise    = [ $*/listwise ~ j ]
-$dfab         = [ $*/fab ~ j ]
+# definitions
+$dcommon = [ $*/common ~ j ]
++[ $dcommon/vars.fab ]
 
-# invocations
-+[ $dlibxapi ](-$libxapi; $dcommon)																	@libxapi
-+[ $dlibxlinux ](-$libxlinux; $libxapi $dcommon)										@libxlinux
+# source invocations
++[ $dcommon ]()																											@common
++[ $dlibxapi ](-$libxapi)			 																			@libxapi
++[ $dlibxlinux ](-$libxlinux;     $libxapi)													@libxlinux
 +[ $dliblistwise ](-$liblistwise; $libxapi $libxlinux)							@liblistwise
-+[ $dlistwise ](-$listwise; $liblistwise $libxapi $libxlinux)				@listwise
-+[ $dfab ](-$fab; -$faboplist; $liblistwise $libxapi $libxlinux)		@fab
++[ $dlistwise ](-$listwise;       $libxapi $libxlinux $liblistwise)	@listwise
++[ $dfab ](-$fab; -$faboplist;    $libxapi $libxlinux $liblistwise)	@fab
 
 # default target - make everything
 [ @all ] 				: [ @libxapi.all @libxlinux.all @liblistwise.all @listwise.all @fab.all ]
@@ -42,8 +39,8 @@ $dfab         = [ $*/fab ~ j ]
 
 # supertasks
 [ @install ]		: [ @xapi.install	  @libxlinux.install   @liblistwise.install   @listwise.install   @fab.install ]
-[ @uninstall ]	: [ @xapi.uninstall @libxlinux.uninstall @liblistwise.uninstall @listwise.uninstall @fab.uninstall ]
 
+# create scripts
 [ @scripts ]
 {
 	exec 2>/dev/null

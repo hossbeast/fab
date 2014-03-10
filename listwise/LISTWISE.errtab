@@ -15,6 +15,4 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# c files
-+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; -$cfabpaths; $cc $cflags)
-+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
+1	BADFILE	unable to process file

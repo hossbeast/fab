@@ -18,6 +18,8 @@
 %{
 	#include <stdio.h>
 
+	#include "global.h"
+
 	#include "ff.parse.h"
 	#include "ffn.h"
 	#include "ff/ff.tab.h"
@@ -178,16 +180,16 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <*>[\x00-\x1F\x7F-\xFF]																	{
 																													while(yyextra->states_n)
 																														POPSTATE;
-																													char space[64];
-																													snprintf(space, sizeof(space), "unexpected byte : (0x%02hhx)", yytext[0]);
-																													ff_yyerror(0, 0, yyextra, space);
+																													LOCWRITE;
+printf("match 1\n");
+																													yyu_scanner_error(yylloc, yyextra, FAB_ILLBYTE, "unexpected byte 0x%02hhx", yytext[0]);
 																													return 0;	/* return end-of-input */
 																												}
 <*>[\x20-\x7E]																					{
 																													while(yyextra->states_n)
 																														POPSTATE;
-																													char space[64];
-																													snprintf(space, sizeof(space), "unexpected character : '%1$c'(0x%1$02hhx)", yytext[0]);
-																													ff_yyerror(0, 0, yyextra, space);
+																													LOCWRITE;
+printf("match 2\n");
+																													yyu_scanner_error(yylloc, yyextra, FAB_ILLBYTE, "unexpected character '%1$c'(0x%1$02hhx)", yytext[0]);
 																													return 0; /* return end-of-input */
 																												}

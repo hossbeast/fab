@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "xapi/internal.h"
+#include "internal.h"
 
 void xfree(void * v)
 {

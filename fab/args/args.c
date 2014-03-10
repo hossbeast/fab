@@ -519,7 +519,7 @@ int args_parse(int argc, char** argv)
 					}
 					else
 					{
-						usage(0, 1, 0, 0, 0, 0, "unknown : %s", s);
+						failf(FAB_BADARGS, "unkown : %s", s);
 					}
 				}
 				else
@@ -607,7 +607,7 @@ int args_parse(int argc, char** argv)
 		}
 		else
 		{
-			usage(0, 1, 0, 0, 0, 0, "unknown : %c", x);
+			failf(FAB_BADARGS, "unkown : %c", x);
 		}
 	}
 

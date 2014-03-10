@@ -17,50 +17,56 @@
 
 #include <stdint.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
-static etable * tab[3];
+static etable * tab[5];
 
-void __attribute__((constructor)) init()
+void error_setup()
 {
-	tab[0] = perrtab_SYS;
+	tab[0] = perrtab_SYS;				// system errors
 	tab[0]->id = 0;
 
-	tab[1] = perrtab_PCRE;
+	tab[1] = perrtab_XAPI;			// libxapi errors
 	tab[1]->id = 1;
 
-	tab[2] = perrtab_LW;	
+	tab[2] = perrtab_XLINUX;		// libxlinux errors
 	tab[2]->id = 2;
+
+	tab[3] = perrtab_PCRE;			// libpcre errors
+	tab[3]->id = 3;
+
+	tab[4] = perrtab_LW;				// liblistwise errors
+	tab[4]->id = 4;
 }
 
-const char * listwise_errname(const int code)
+const char * fab_errname(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 2)
+	if(rt < 0 || rt > 4)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].name;
 }
 
-const char * listwise_errdesc(const int code)
+const char * fab_errdesc(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 2)
+	if(rt < 0 || rt > 4)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].desc;
 }
 
-const char * listwise_errstr(const int code)
+const char * fab_errstr(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 2)
+	if(rt < 0 || rt > 4)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].str;
@@ -68,22 +74,22 @@ const char * listwise_errstr(const int code)
 
 const etable * fab_errtab(const int code)
 {
-  int16_t rt = code >> 16;      // table index
-  int16_t rc = code & 0xFFFF;   // code index
+	int16_t rt = code >> 16;			// table index
+	int16_t rc = code & 0xFFFF;		// code index
 
-  if(rt < 0 || rt > 2)
-    return 0;
+	if(rt < 0 || rt > 4)
+		return 0;
 
-  return tab[rt];
+	return tab[rt];
 }
 
 int fab_errcode(const int code)
 {
-  int16_t rt = code >> 16;      // table index
-  int16_t rc = code & 0xFFFF;   // code index
+	int16_t rt = code >> 16;			// table index
+	int16_t rc = code & 0xFFFF;		// code index
 
-  if(rt < 0 || rt > 2)
-    return 0;
+	if(rt < 0 || rt > 4)
+		return 0;
 
-  return rc + (tab[rt]->min * -1);
+	return rc + (tab[rt]->min * -1);
 }

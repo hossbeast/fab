@@ -15,6 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# c files
-+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; -$cfabpaths; $cc $cflags)
-+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
+#ifndef _XAPI_ERROR_H
+#define _XAPI_ERROR_H
+
+#include "xapi.h"
+
+const char * xapi_errname(const int code);
+const char * xapi_errdesc(const int code);
+const char * xapi_errstr(const int code);
+const etable * xapi_errtab(const int code);
+int xapi_errcode(const int code);
+
+#endif

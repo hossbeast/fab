@@ -17,18 +17,12 @@
 
 # source directories
 $dcommon			= [ $*/../common ~ j ]
-$dliblistwise	= [ $* ]
-$dlibxlinux		= [ $dcommon/../libxlinux ~ j ]
-
-# variable defs, $cc, $cflags, etc
-# common targets xmem, map, etc
 +[ $dcommon/vars.fab ]
+
+# source invocations
 +[ $dcommon ] @common
 
-
-##
-## variables
-##
+# variables
 $libname 			= [ liblistwise.so ]
 $soname				= [ $libname ~ j ]
 $liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# path to the library .so
@@ -45,7 +39,7 @@ $lflags				= [ -lpcre, -ldl, $libxlinux, -shared, [ "-Wl,-soname," $soname ] ]
 # generated files
 +[@std.flex.states] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
 +[@std.bison.tokens]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
-+[@std.xapi.errtab] ($gendir = $dliblistwise; $dirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/PCRE.errtab ~ j ]; $apidata = [1])
++[@std.xapi.errtab] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/PCRE.errtab ~ j ]; $apidata = [1])
 
 # path to each operator so
 $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
@@ -123,20 +117,4 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 	for x in [ $oplist ~ fi ]; do \
 		install $x																			[ $destdir/$lwopdir ]
 	done
-}
-
-[ @uninstall ]
-{
-	rm -f																							[ $destdir/$libdir/$libname ]
-	rm -rf																						[ $destdir/$lwopdir ]
-	rm -f																							[ $destdir/$incdir/listwise.h ]
-}
-
-[ @clean ] :* [ @common.clean ]
-{
-	find [ $dliblistwise ] -name '*.o' -delete
-	find [ $dliblistwise ] -name '*.so' -delete
-	find [ $dliblistwise ] -name '*.lex.*' -delete
-	find [ $dliblistwise ] -name '*.tab.*' -delete
-	find [ $dliblistwise ] -name exports -delete
 }

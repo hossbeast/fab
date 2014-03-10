@@ -55,10 +55,10 @@ int enclose_vars(ff_node * const restrict root, ff_node *** restrict closure_var
 
 			int x;
 			for(x = 0; x < ffn->listl; x++)
-				find(ffn->list[x]);
+				fatal(find, ffn->list[x]);
 
 			for(x = 0; x < sizeof(ffn->nodes_owned) / sizeof(ffn->nodes_owned[0]); x++)
-				find(ffn->nodes_owned[x]);
+				fatal(find, ffn->nodes_owned[x]);
 		}
 
 		finally : coda;

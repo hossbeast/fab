@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "xapi/internal.h"
+#include "internal.h"
 
 #include "macros.h"
 #include "strutil.h"
@@ -106,7 +106,15 @@ static size_t frame_info(char * const dst, const size_t sz, struct frame * f)
 static size_t frame_location(char * const dst, const size_t sz, struct frame * f)
 {
 	size_t z = 0;
-	SAY("%s:%d", f->file, f->line);
+
+	const char * file = f->file;
+	const char * n;
+	while((n = strstr(file, "/")))
+	{
+		file = n + 1;
+	}
+
+	SAY("%s:%d", file, f->line);
 
 	return z;
 }
@@ -116,19 +124,19 @@ static size_t frame_trace(char * const dst, const size_t sz, struct frame * f, i
 	size_t z = 0;
 
 	if(at)
-		z += snprintf(dst + z, sz - z, "at ");
+		SAY("at ");
 
 	z += frame_function(dst + z, sz - z, f);
 	if(f->info.l)
 	{
-		z += snprintf(dst + z, sz - z, "(");
+		SAY("(");
 		z += frame_info(dst + z, sz - z, f);
-		z += snprintf(dst + z, sz - z, ")");
+		SAY(")");
 	}
 
 	if(loc && f->file)
 	{
-		z += snprintf(dst + z, sz - z, " in ");
+		SAY(" in ");
 		z += frame_location(dst + z, sz - z, f);
 	}
 
@@ -174,12 +182,12 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 	size_t z = 0;
 
 	z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
-	z += snprintf(dst + z, sz - z, " ");
-	z += frame_trace(dst + z, sz - z, callstack.v[callstack.l - 1], 0, callstack.v[callstack.l - 1]->code);
+	SAY(" ");
+//	z += frame_trace(dst + z, sz - z, callstack.v[callstack.l - 1], 0, callstack.v[callstack.l - 1]->code);
 
 	size_t zt = z;
 	int x;
-	for(x = callstack.l - 2; x >= MAX(callstack.l - 5 /* heuristic */, 0); x--)
+	for(x = callstack.l; x >= MAX(callstack.l - 5 /* heuristic */, 0); x--)
 	{
 		int y;
 		for(y = 0; y < callstack.v[x]->info.l; y++)
@@ -210,7 +218,7 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 			if(xx == callstack.l)
 			{
 				if(z == zt)
-					z += snprintf(dst + z, sz - z, " with ");
+					SAY("with ");
 				else
 					SAY(", ");
 
@@ -232,15 +240,15 @@ size_t API xapi_trace_full(char * const dst, const size_t sz)
 	size_t z = 0;
 
 	z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
-	z += snprintf(dst + z, sz - z, "\n");
+	SAY("\n");
 
 	int x;
 	for(x = callstack.l - 1; x >= 0; x--)
 	{
 		if(x != callstack.l - 1)
-			z += snprintf(dst + z, sz - z, "\n");
+			SAY("\n");
 
-		z += snprintf(dst + z, sz - z, " %d : ", x);
+		SAY(" %d : ", x);
 		z += frame_trace(dst + z, sz - z, callstack.v[x], 1, 1);
 	}
 

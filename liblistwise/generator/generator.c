@@ -130,37 +130,51 @@ coda;
 
 static int reduce(parse_param * pp)
 {
-	// return value from yyparse - whether the input was reduced according to the grammar
-	int r = generator_yyparse(pp->scanner, pp);
-
-	// in addition, pp->r is nonzero if yyerror has been called, which covers a few more cases
-	// than failure-to-reduce, such as when the scanner encounters invalid byte(s)
-	if(pp->r > 0)
-	{	// error from the scanner
-//		fatality("generator_yyparse", perrtab_LW, pp->r, "%s", pp->errorstring);
-		fails(pp->r, pp->errorstring);
-	}
-	else if(r || pp->r)
-	{	// error from the parser
-//		fatality("generator_yyparse", perrtab_LW, LW_SYNTAX, "%s", pp->errorstring);
-		fails(LW_SYNTAX, pp->errorstring);
+	int r;
+	if((r = generator_yyparse(pp->scanner, pp)) || pp->scanerr)
+	{
+		if(r == 2)
+		{
+			// memory exhaustion error from the parser
+			tfail(perrtab_SYS, ENOMEM);
+		}
+		else if(pp->scanerr)
+		{
+			// error from the scanner
+			fails(pp->scanerr, pp->error_str);
+		}
+		else if(pp->gramerr)
+		{
+			// error from the parser
+			fails(LW_SYNTAX, pp->error_str);
+		}
+		else
+		{
+			// error thrown from a grammar rule (such as ENOMEM)
+			fail(0);
+		}
 	}
 
 finally :
 	if(XAPI_UNWINDING)
 	{
-		XAPI_INFOF("last", "%s", pp->tokenstring);
-		if(pp->namel)
-			XAPI_INFOF("input", "%.*s", pp->namel, pp->name);
-		XAPI_INFOF("loc", "[%d,%d-%d,%d]"
-			, pp->last_loc.f_lin + 1
-			, pp->last_loc.f_col + 1
-			, pp->last_loc.l_lin + 1
-			, pp->last_loc.l_col + 1
-		);
-#if DEBUG
-		XAPI_INFOF("scanline", "%d", pp->last_line);
-#endif
+		if(pp->scanerr || pp->gramerr)
+		{
+			if(pp->namel)
+				XAPI_INFOF("input", "%.*s", pp->namel, pp->name);
+
+			XAPI_INFOF("loc", "[%d,%d - %d,%d]"
+				, pp->error_loc.f_lin + 1
+				, pp->error_loc.f_col + 1
+				, pp->error_loc.l_lin + 1
+				, pp->error_loc.l_col + 1
+			);
+
+			if(pp->gramerr)
+			{
+				XAPI_INFOF("token", "%s", pp->tokenstring);
+			}
+		}
 	}
 coda;
 }

@@ -11,7 +11,7 @@
 /listwise/listwise
 /listwise/lw
 /liblistwise/exports
+/liblistwise/PCRE.errtab
 /xapi/libxapi/exports
 /libxlinux/exports
-/liblistwise/PCRE.errtab
 /libxapi/SYS.errtab
