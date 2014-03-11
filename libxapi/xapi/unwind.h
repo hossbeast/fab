@@ -35,7 +35,7 @@
 **  [x] detect UNWIND-ing function invoked without fatal in the presence of an active callstack
 */
 #if XAPI_RUNTIME_CHECKS
-#include "XAPI.errtab.h"
+#include "xapi/XAPI.errtab.h"
 #endif
 
 #define restrict __restrict

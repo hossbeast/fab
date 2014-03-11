@@ -236,6 +236,8 @@ int API xapi_frame_leave()
 //	if((rc = callstack.v[callstack.x]->code))
 	if((rc = callstack.v[callstack.l - 1]->code))
 	{
+		rt = callstack.v[callstack.l - 1]->etab->id;
+
 		// unwinding is underway
 		if(--callstack.x == -1)
 		{

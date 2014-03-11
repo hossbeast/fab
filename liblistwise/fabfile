@@ -39,7 +39,7 @@ $lflags				= [ -lpcre, -ldl, $libxlinux, -shared, [ "-Wl,-soname," $soname ] ]
 # generated files
 +[@std.flex.states] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
 +[@std.bison.tokens]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
-+[@std.xapi.errtab] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/PCRE.errtab ~ j ]; $apidata = [1])
++[@std.xapi.errtab] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
 
 # path to each operator so
 $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
@@ -83,7 +83,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 [ $oplist ] :^ [ $liblistwise ]
 
 # PCRE errtab is generated from their header file
-[ $dliblistwise/PCRE.errtab ~ j ] : [ /usr/include/pcre.h ~ j ]
+[ $dliblistwise/error/PCRE.errtab ~ j ] : [ /usr/include/pcre.h ~ j ]
 {
 	exec 1>[ $@ ]
 	> sed -e 's/#define \(PCRE_ERROR_[A-Z_]\+\) \+(\([-0-9]\+\)).*/\2\t\1/p; d' <\

@@ -26,7 +26,7 @@ $dcommon			= [ $*/../common ~ j ]
 $libname 			= [ libxapi.so ]
 $soname				= [ $libname ~ j ]
 $libxapi  		= [ $dlibxapi/libxapi.so ~ j ]		# path to the library .so
-$cflags				= [ $cflags -fPIC -DXAPI_UNWIND [ [ $dlibxapi/.. ~ j ] $dlibxapi ~ s/^/-I ] $incdirs ]
+$cflags				= [ $cflags -fPIC -DXAPI_UNWIND [ $dlibxapi ~ lsr/c/-d/s/^/-I ] $incdirs ]
 $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 
 # source files
@@ -53,10 +53,10 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 }
 
 # compiled sys errtab
-+[@std.xapi.errtab]($gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [[ $dlibxapi/SYS.errtab ~ j ] [ $dlibxapi/XAPI.errtab ~ j]]; $ext = [ pic.o ]; $cc $cflags)
++[@std.xapi.errtab]($gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $ext = [ pic.o ]; $cc $cflags)
 
 # link the library
-[ $libxapi ] : [ [ $cfabpaths ~ xs/<c>/<pic.o> ] [ $dlibxapi/SYS.errtab.pic.o ~ j ] [ $dlibxapi/XAPI.errtab.pic.o ~ j ] ]
+[ $libxapi ] : [ [ $cfabpaths ~ xs/<c>/<pic.o> ] [ $dlibxapi/error/SYS.errtab.pic.o ~ j ] [ $dlibxapi/error/XAPI.errtab.pic.o ~ j ] ]
 {
 	  exec 99>&1 1>[ $dlibxapi/exports ]
 	  echo "{ global: "

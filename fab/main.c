@@ -472,10 +472,21 @@ conclude;
 	if(tracesz)
 	{
 		log_write(L_ERROR, space, tracesz);
-		if(_xapi_r 
+
+		const etable * etab = fab_errtab(_xapi_r);
+		int code = fab_errcode(_xapi_r);
+
+printf("etab : %p\n", etab);
+printf("code : %d\n", code);
+		if(etab == perrtab_FAB && code == FAB_BADARGS)
+		{
+printf("ARGSZ\n");
+		}
 	}
 	else
+	{
 		log(L_INFO, "exiting with status : %d", _xapi_r);
+	}
 
 	log_teardown();
 	return _xapi_r;

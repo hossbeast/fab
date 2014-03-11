@@ -121,12 +121,12 @@ static int flatten(lwx * lso)
 
 int lw_flatten(lwx * ls)
 {
-	return flatten(ls);
+	xproxy(flatten, ls);
 }
 
 int lw_ensure(lwx *** stax, int * staxa, int staxp)
 {
-	return ensure(stax, staxa, staxp);
+	xproxy(ensure, stax, staxa, staxp);
 }
 
 int lw_reset(lwx *** stax, int * staxa, int staxp)

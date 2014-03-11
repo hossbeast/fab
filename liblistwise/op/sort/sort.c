@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "listwise/internal.h"
-#include "SYS.errtab.h"
+#include "xapi/SYS.errtab.h"
 
 #include "xlinux.h"
 #include "parseint.h"

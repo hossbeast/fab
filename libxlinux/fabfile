@@ -26,12 +26,12 @@ $dcommon			= [ $*/../common ~ j ]
 $libname 			= [ libxlinux.so ]
 $soname				= [ $libname ~ j ]
 $libxlinux		= [ $dlibxlinux/libxlinux.so ~ j ]		# path to the library .so
-$cflags				= [ $cflags -fPIC [ $dlibxlinux ~ s/^/-I ] $incdirs ]
+$cflags				= [ -fPIC [ $dlibxlinux ~ lsr/c/-d/s/^/-I ] $cflags ]
 $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 
 # source files
 +[@std.c]($gendir = $dlibxlinux; $rdirs = $dlibxlinux; $ext = [ pic.o ]; -$cobjpaths; $cc $cflags)
-+[@std.xapi.errtab] ($gendir = $dlibxlinux; $dirs = $dlibxlinux; $ext = [ pic.o ]; $cc $cflags)
++[@std.xapi.errtab] ($gendir = $dlibxlinux; $rdirs = $dlibxlinux; $ext = [ pic.o ]; $apidata = [1]; $cc $cflags)
 
 ##
 ## dependencies

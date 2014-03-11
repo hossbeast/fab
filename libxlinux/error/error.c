@@ -69,7 +69,6 @@ const char * xlinux_errstr(const int code)
 const etable * xlinux_errtab(const int code)
 {
 	int16_t rt = code >> 16;			// table index
-	int16_t rc = code & 0xFFFF;		// code index
 
 	if(rt < 0 || rt > 2)
 		return 0;

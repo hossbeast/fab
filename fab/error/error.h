@@ -25,6 +25,6 @@ const char * fab_errname(const int code);
 const char * fab_errdesc(const int code);
 const char * fab_errstr(const int code);
 const etable * fab_errtab(const int code);
-int fab_errtab(const int code);
+int fab_errcode(const int code);
 
 #endif

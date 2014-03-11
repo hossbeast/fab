@@ -1,4 +1,5 @@
 { global: 
+perrtab_XLINUX;
 xopendir;
 uxopendir;
 xreaddir_r;

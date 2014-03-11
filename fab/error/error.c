@@ -17,9 +17,13 @@
 
 #include <stdint.h>
 
-#include "internal.h"
+#include "global.h"
 
-static etable * tab[5];
+#include "xlinux/XLINUX.errtab.h"
+#include "listwise/LW.errtab.h"
+#include "listwise/PCRE.errtab.h"
+
+static etable * tab[6];
 
 void error_setup()
 {
@@ -37,6 +41,9 @@ void error_setup()
 
 	tab[4] = perrtab_LW;				// liblistwise errors
 	tab[4]->id = 4;
+
+	tab[5] = perrtab_FAB;				// fab errors
+	tab[5]->id = 5;
 }
 
 const char * fab_errname(const int code)
@@ -44,7 +51,7 @@ const char * fab_errname(const int code)
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 4)
+	if(rt < 0 || rt > 5)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].name;
@@ -55,7 +62,7 @@ const char * fab_errdesc(const int code)
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 4)
+	if(rt < 0 || rt > 5)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].desc;
@@ -66,7 +73,7 @@ const char * fab_errstr(const int code)
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 4)
+	if(rt < 0 || rt > 5)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].str;
@@ -75,9 +82,8 @@ const char * fab_errstr(const int code)
 const etable * fab_errtab(const int code)
 {
 	int16_t rt = code >> 16;			// table index
-	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 4)
+	if(rt < 0 || rt > 5)
 		return 0;
 
 	return tab[rt];
@@ -88,7 +94,7 @@ int fab_errcode(const int code)
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 4)
+	if(rt < 0 || rt > 5)
 		return 0;
 
 	return rc + (tab[rt]->min * -1);
