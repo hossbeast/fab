@@ -60,6 +60,16 @@ int xapi_frame_enter_last();
 //
 int xapi_frame_leave();
 
+/// xapi_frame_leave2
+//
+// SUMMARY
+//  as for xapi_frame_leave, but returns a pointer to the error table and the error code
+//
+// REMARKS
+//  the return value from xapi_frame_leave is a composite of the etab id and error code
+//
+int xapi_frame_leave2(const etable ** etab, int * code);
+
 /// xapi_unwinding
 //
 // SUMMARY

@@ -357,8 +357,8 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		}
 		(*gna)->idstringl = strlen((*gna)->idstring);
 
-		map_set(gn_nodes.by_path, (*gna)->path->can, (*gna)->path->canl, gna, sizeof(*gna), 0);
-		map_set(gn_nodes.by_pathhash, MM((*gna)->path->can_hash), gna, sizeof(*gna), 0);
+		fatal(map_set, gn_nodes.by_path, (*gna)->path->can, (*gna)->path->canl, gna, sizeof(*gna), 0);
+		fatal(map_set, gn_nodes.by_pathhash, MM((*gna)->path->can_hash), gna, sizeof(*gna), 0);
 
 		if(new)
 			(*new)++;
@@ -410,7 +410,7 @@ int gn_edge_add(
 
 		// error check
 		if(gnb->path->is_nofile && !gna->path->is_nofile)
-			failf(FAB_BADPLAN, "file-backed node %s may not depend on non-file-backed node %s", gna->path->can, gnb->path->can);
+			failf(FAB_BADPLAN, "file-backed node %s may not depend on non-file-backed node %s", gna->path->abs, gnb->path->abs);
 
 		relation * rel = 0;
 

@@ -26,3 +26,4 @@
 9		NOINVOKE			invocation target could not be resolved
 10	BADPLAN				buildplan cannot be constructed
 11	EXESUID				fab executable does not have ug+s permissions
+12	CYCLE					dependency graph contains a cycle

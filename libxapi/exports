@@ -6,6 +6,7 @@ xapi_frame_enter;
 xapi_frame_enter;
 xapi_frame_caller;
 xapi_frame_depth;
+xapi_frame_leave2;
 xapi_frame_leave;
 xapi_frame_finalize;
 xapi_frame_finalized;

@@ -32,10 +32,10 @@ int API xnftw(const char *dirpath, int (*xfn) (const char *fpath, const struct s
 
     fatal(xfn, fpath, sb, typeflag, ftwbuf);
 
-		int _xapi_r;
-		finally : conclude;
+		int R = 0;
+		finally : conclude(&R);
 
-		if(_xapi_r == 0)
+		if(R == 0)
 			return FTW_CONTINUE;
 
 		return FTW_STOP;
@@ -67,10 +67,10 @@ int API xnftw_nth(const char *dirpath, int (*xfn) (const char *fpath, const stru
 		if(ftwbuf->level == level)
 			fatal(xfn, fpath, sb, typeflag, ftwbuf);
 
-		int _xapi_r;
-		finally : conclude;
+		int R;
+		finally : conclude(&R);
 
-		if(_xapi_r == 0)
+		if(R == 0)
 		{
 			if(ftwbuf->level == level)
 				return FTW_SKIP_SUBTREE;	// process only nth-level files

@@ -159,9 +159,9 @@ do																					\
 do {																	\
 	prologue;														\
 	fatal(x, ##__VA_ARGS__);						\
-	int _xapi_r;												\
-	finally : conclude;									\
-	if(_xapi_r)													\
+	int R;															\
+	finally : conclude(&R);							\
+	if(R)																\
 	{																		\
 		YYABORT;													\
 	}																		\

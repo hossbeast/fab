@@ -75,10 +75,10 @@ int API xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const vo
 		if(!hasfailed)
 			fatal(xcompar, A, B, T, &r);
 
-		int _xapi_r;
-		finally : conclude;
+		int R = 0;
+		finally : conclude(&R);
 
-		if(_xapi_r)
+		if(R)
 		{
 			hasfailed = 1;
 			r = 0;

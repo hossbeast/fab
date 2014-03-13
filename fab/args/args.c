@@ -519,7 +519,7 @@ int args_parse(int argc, char** argv)
 					}
 					else
 					{
-						failf(FAB_BADARGS, "unkown : %s", s);
+						failf(FAB_BADARGS, "unknown : %s", s);
 					}
 				}
 				else

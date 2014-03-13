@@ -248,7 +248,7 @@ size_t API xapi_trace_full(char * const dst, const size_t sz)
 		if(x != callstack.l - 1)
 			SAY("\n");
 
-		SAY(" %d : ", x);
+		SAY(" %2d : ", x);
 		z += frame_trace(dst + z, sz - z, callstack.v[x], 1, 1);
 	}
 

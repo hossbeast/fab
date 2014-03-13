@@ -57,10 +57,10 @@ finally :
 	if(XAPI_UNWINDING)
 		xapi_backtrace();
 
-int _xapi_r;
-conclude;
+int R;
+conclude(&R);
 
-	if(_xapi_r)
+	if(R)
 		exit(0);
 }
 

@@ -105,7 +105,7 @@ int main(int argc, char** argv)
 	error_setup();
 
 	// process parameter gathering
-	fatal(params_setup);
+	params_setup();
 
 	// get user identity of this process, assert user:group and permissions are set appropriately
 	fatal(identity_init);
@@ -466,28 +466,24 @@ finally:
 #endif
 	}
 
-	int _xapi_r;
-conclude;
+	const etable * etab = 0;
+	int code = 0;
+conclude2(&etab, &code);
 	
 	if(tracesz)
 	{
 		log_write(L_ERROR, space, tracesz);
 
-		const etable * etab = fab_errtab(_xapi_r);
-		int code = fab_errcode(_xapi_r);
-
-printf("etab : %p\n", etab);
-printf("code : %d\n", code);
 		if(etab == perrtab_FAB && code == FAB_BADARGS)
 		{
-printf("ARGSZ\n");
+//			usage(0);
 		}
 	}
 	else
 	{
-		log(L_INFO, "exiting with status : %d", _xapi_r);
+		log(L_INFO, "exiting with status : %d", code);
 	}
 
 	log_teardown();
-	return _xapi_r;
+	return code;
 }
