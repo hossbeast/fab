@@ -154,22 +154,10 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 
 	else if(strcmp(prop, "ineedw") == 0)
 	{
-		*rl = ((gn*)o)->needs.l;
-		fatal(xmalloc, r, sizeof(gn*) * (*rl));
-		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
-
-		for(x = 0; x < (*rl); x++)
-		{
-			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
-			(*r)[x] = ((gn*)o)->needs.e[x]->B;
-		}
-	}
-	else if(strcmp(prop, "ineed") == 0)
-	{
 		(*rl) = 0;
 		for(x = 0; x < ((gn*)o)->needs.l; x++)
 		{
-			if(((gn*)o)->needs.e[x]->weak == 0)
+			if(((gn*)o)->needs.e[x]->bridge == 0)
 			{
 				(*rl)++;
 			}
@@ -181,7 +169,32 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		int i = 0;
 		for(x = 0; x < ((gn*)o)->needs.l; x++)
 		{
-			if(((gn*)o)->needs.e[x]->weak == 0)
+			if(((gn*)o)->needs.e[x]->bridge == 0)
+			{
+				(*rtypes)[i] = LISTWISE_TYPE_GNLW;
+				(*r)[i] = ((gn*)o)->needs.e[x]->B;
+				i++;
+			}
+		}
+	}
+	else if(strcmp(prop, "ineed") == 0)
+	{
+		(*rl) = 0;
+		for(x = 0; x < ((gn*)o)->needs.l; x++)
+		{
+			if(((((gn*)o)->needs.e[x]->weak == 0) && ((gn*)o)->needs.e[x]->bridge == 0))
+			{
+				(*rl)++;
+			}
+		}
+
+		fatal(xmalloc, r, sizeof(gn*) * (*rl));
+		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
+
+		int i = 0;
+		for(x = 0; x < ((gn*)o)->needs.l; x++)
+		{
+			if(((((gn*)o)->needs.e[x]->weak == 0) && ((gn*)o)->needs.e[x]->bridge == 0))
 			{
 				(*rtypes)[i] = LISTWISE_TYPE_GNLW;
 				(*r)[i] = ((gn*)o)->needs.e[x]->B;
@@ -191,22 +204,10 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 	}
 	else if(strcmp(prop, "ifeedw") == 0)
 	{
-		*rl = ((gn*)o)->feeds.l;
-		fatal(xmalloc, r, sizeof(gn*) * (*rl));
-		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
-
-		for(x = 0; x < (*rl); x++)
-		{
-			(*rtypes)[x] = LISTWISE_TYPE_GNLW;
-			(*r)[x] = ((gn*)o)->feeds.e[x]->A;
-		}
-	}
-	else if(strcmp(prop, "ifeed") == 0)
-	{
 		(*rl) = 0;
 		for(x = 0; x < ((gn*)o)->feeds.l; x++)
 		{
-			if(((gn*)o)->feeds.e[x]->weak == 0)
+			if(((gn*)o)->feeds.e[x]->bridge == 0)
 			{
 				(*rl)++;
 			}
@@ -218,7 +219,32 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		int i = 0;
 		for(x = 0; x < ((gn*)o)->feeds.l; x++)
 		{
-			if(((gn*)o)->feeds.e[x]->weak == 0)
+			if(((gn*)o)->feeds.e[x]->bridge == 0)
+			{
+				(*rtypes)[i] = LISTWISE_TYPE_GNLW;
+				(*r)[i] = ((gn*)o)->feeds.e[x]->A;
+				i++;
+			}
+		}
+	}
+	else if(strcmp(prop, "ifeed") == 0)
+	{
+		(*rl) = 0;
+		for(x = 0; x < ((gn*)o)->feeds.l; x++)
+		{
+			if((((gn*)o)->feeds.e[x]->weak == 0) && (((gn*)o)->feeds.e[x]->bridge == 0))
+			{
+				(*rl)++;
+			}
+		}
+
+		fatal(xmalloc, r, sizeof(gn*) * (*rl));
+		fatal(xmalloc, rtypes, sizeof(*rtypes[0]) * (*rl));
+
+		int i = 0;
+		for(x = 0; x < ((gn*)o)->feeds.l; x++)
+		{
+			if((((gn*)o)->feeds.e[x]->weak == 0) && (((gn*)o)->feeds.e[x]->bridge == 0))
 			{
 				(*rtypes)[i] = LISTWISE_TYPE_GNLW;
 				(*r)[i] = ((gn*)o)->feeds.e[x]->A;

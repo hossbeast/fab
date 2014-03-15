@@ -49,13 +49,13 @@ typedef struct
 		uint8_t	weak;
 		uint8_t bridge;
 
-		char		needs[256];
-		char		nbase[256];
+		char		needs[512];
+		char		nbase[512];
 
 		uint8_t	feedsl;
-		char		fbase[256];
-		char		feeds[128][256];
-	} sets[8];
+		char		fbase[512];
+		char		feeds[512][512];
+	} sets[32];
 } dep_relations;
 
 typedef struct depblock

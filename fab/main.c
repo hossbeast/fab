@@ -365,6 +365,10 @@ int main(int argc, char** argv)
 	{
 		if(g_args.mode_bplan == MODE_BPLAN_BAKE)
 		{
+			// dump buildplan, pending logging
+			if(bp)
+				bp_dump(bp);
+
 			// prepare bakevars map
 			fatal(map_create, &bakemap, 0);
 
