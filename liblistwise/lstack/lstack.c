@@ -307,6 +307,170 @@ static int vwritestack(lwx * const restrict lx, int x, int y, const char* const 
 	finally : coda;
 }
 
+static int dump(lwx * const lx, void ** udata)
+{
+	int x;
+	int y;
+	for(x = lx->l - 1; x >= 0; x--)
+	{
+		if(x != lx->l - 1)
+			lw_log_dump("\n");
+
+		if(lx->s[x].l == 0)
+		{
+			lw_log_dump("[%4d     ] -- empty \n", x);
+		}
+
+		for(y = 0; y < lx->s[x].l; y++)
+		{
+			int __attribute__((unused)) select = 0;
+			int __attribute__((unused)) staged = 0;
+			if(x == 0)
+			{
+				select = 1;
+				if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
+				{
+					select = 0;
+					if(lx->sel.active->nil == 0 && lx->sel.active->sl > (y / 8))
+					{
+						select = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
+					}
+				}
+
+				if(lx->sel.staged && lx->sel.staged->lease == lx->sel.staged_era)
+				{
+					if(lx->sel.staged->sl > (y / 8))
+					{
+						staged = lx->sel.staged->s[y / 8] & (0x01 << (y % 8));
+					}
+				}
+			}
+
+			// for each entry : indexes, whether selected, staged
+			lw_log_dump("[%4d,%4d] %s%s "
+				, x
+				, y
+				, select ? ">" : " "
+				, staged ? "+" : " "
+			);
+
+			// display the string value of the row
+			char * s = 0;
+			int sl = 0;
+			fatal(lstack_readrow, lx, x, y, &s, &sl, 0, 1, 0, 0, 0);
+
+			lw_log_dump("'%.*s'", sl, s);
+
+			// also display object properties if applicable
+			if(lx->s[x].s[y].type)
+			{
+				lw_log_dump("[%hhu]%p/%p", lx->s[x].s[y].type, *(void**)lx->s[x].s[y].s, lx->s[x].s[y].s);
+			}
+			lw_log_dump("\n");
+
+			// indicate active windows
+			if(x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
+			{
+				lw_log_dump("%16s", " ");
+
+				int escaping = 0;
+				int z = -1;
+				int i;
+				for(i = 0; i < sl; i++)
+				{
+					if(z == -1 && lx->win.s[y].active->s[0].o == i)
+					{
+						z = 0;
+					}
+
+					int marked = 0;
+					if(z >= 0 && z < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[z].o)
+					{
+						if((i - lx->win.s[y].active->s[z].o) < lx->win.s[y].active->s[z].l)
+						{
+							lw_log_dump("^");
+							marked = 1;
+						}
+					}
+
+					if(!marked)
+					{
+						// between internal windows
+						if(escaping)
+						{
+							if(s[i] == 0x6d)
+								escaping = 0;
+						}
+						else if(s[i] == 0x1b)
+						{
+							escaping = 1;
+						}
+						else
+						{
+							lw_log_dump(" ");
+						}
+
+						if(z >= 0 && z < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[z].o)
+							z++;
+					}
+				}
+				lw_log_dump("\n");
+			}
+
+			// indicate staged windows
+			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
+			{
+				lw_log_dump("%16s", " ");
+
+				int escaping = 0;
+				int z = -1;
+				int i;
+				for(i = 0; i < sl; i++)
+				{
+					if(z == -1 && lx->win.s[y].staged->s[0].o == i)
+					{
+						z = 0;
+					}
+
+					int marked = 0;
+					if(z >= 0 && z < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[z].o)
+					{
+						if((i - lx->win.s[y].staged->s[z].o) < lx->win.s[y].staged->s[z].l)
+						{
+							lw_log_dump("+");
+							marked = 1;
+						}
+					}
+
+					if(!marked)
+					{
+						// between internal windows
+						if(escaping)
+						{
+							if(s[i] == 0x6d)
+								escaping = 0;
+						}
+						else if(s[i] == 0x1b)
+						{
+							escaping = 1;
+						}
+						else
+						{
+							lw_log_dump(" ");
+						}
+
+						if(z >= 0 && z < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[z].o)
+							z++;
+					}
+				}
+				lw_log_dump("\n");
+			}
+		}
+	}
+
+	finally : coda;
+}
+
 //
 // API
 //
@@ -385,167 +549,15 @@ int API lstack_clear(lwx * const restrict lx, int x, int y)
 
 int API lstack_dump(lwx * const lx)
 {
-	int x;
-	int y;
-	for(x = lx->l - 1; x >= 0; x--)
-	{
-		if(x != lx->l - 1)
-			dprintf(listwise_info_fd, "\n");
-
-		if(lx->s[x].l == 0)
-		{
-			dprintf(listwise_info_fd, "[%4d     ] -- empty \n", x);
-		}
-
-		for(y = 0; y < lx->s[x].l; y++)
-		{
-			int select = 0;
-			int staged = 0;
-			if(x == 0)
-			{
-				select = 1;
-				if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
-				{
-					select = 0;
-					if(lx->sel.active->nil == 0 && lx->sel.active->sl > (y / 8))
-					{
-						select = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
-					}
-				}
-
-				if(lx->sel.staged && lx->sel.staged->lease == lx->sel.staged_era)
-				{
-					if(lx->sel.staged->sl > (y / 8))
-					{
-						staged = lx->sel.staged->s[y / 8] & (0x01 << (y % 8));
-					}
-				}
-			}
-
-			// for each entry : indexes, whether selected, staged
-			dprintf(listwise_info_fd, "[%4d,%4d] %s%s "
-				, x
-				, y
-				, select ? ">" : " "
-				, staged ? "+" : " "
-			);
-
-			// display the string value of the row
-			char * s = 0;
-			int sl = 0;
-			fatal(lstack_readrow, lx, x, y, &s, &sl, 0, 1, 0, 0, 0);
-
-			dprintf(listwise_info_fd, "'%.*s'", sl, s);
-
-			// also display object properties if applicable
-			if(lx->s[x].s[y].type)
-			{
-				dprintf(listwise_info_fd, "[%hhu]%p/%p", lx->s[x].s[y].type, *(void**)lx->s[x].s[y].s, lx->s[x].s[y].s);
-			}
-			dprintf(listwise_info_fd, "\n");
-
-			// indicate active windows
-			if(x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
-			{
-				dprintf(listwise_info_fd, "%16s", " ");
-
-				int escaping = 0;
-				int z = -1;
-				int i;
-				for(i = 0; i < sl; i++)
-				{
-					if(z == -1 && lx->win.s[y].active->s[0].o == i)
-					{
-						z = 0;
-					}
-
-					int marked = 0;
-					if(z >= 0 && z < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[z].o)
-					{
-						if((i - lx->win.s[y].active->s[z].o) < lx->win.s[y].active->s[z].l)
-						{
-							dprintf(listwise_info_fd, "^");
-							marked = 1;
-						}
-					}
-
-					if(!marked)
-					{
-						// between internal windows
-						if(escaping)
-						{
-							if(s[i] == 0x6d)
-								escaping = 0;
-						}
-						else if(s[i] == 0x1b)
-						{
-							escaping = 1;
-						}
-						else
-						{
-							dprintf(listwise_info_fd, " ");
-						}
-
-						if(z >= 0 && z < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[z].o)
-							z++;
-					}
-				}
-				dprintf(listwise_info_fd, "\n");
-			}
-
-			// indicate staged windows
-			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
-			{
-				dprintf(listwise_info_fd, "%16s", " ");
-
-				int escaping = 0;
-				int z = -1;
-				int i;
-				for(i = 0; i < sl; i++)
-				{
-					if(z == -1 && lx->win.s[y].staged->s[0].o == i)
-					{
-						z = 0;
-					}
-
-					int marked = 0;
-					if(z >= 0 && z < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[z].o)
-					{
-						if((i - lx->win.s[y].staged->s[z].o) < lx->win.s[y].staged->s[z].l)
-						{
-							dprintf(listwise_info_fd, "+");
-							marked = 1;
-						}
-					}
-
-					if(!marked)
-					{
-						// between internal windows
-						if(escaping)
-						{
-							if(s[i] == 0x6d)
-								escaping = 0;
-						}
-						else if(s[i] == 0x1b)
-						{
-							escaping = 1;
-						}
-						else
-						{
-							dprintf(listwise_info_fd, " ");
-						}
-
-						if(z >= 0 && z < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[z].o)
-							z++;
-					}
-				}
-				dprintf(listwise_info_fd, "\n");
-			}
-		}
-	}
-
-	finally : coda;
+	xproxy(dump, lx, 0);
 }
+
+#if DEBUG
+int API lstack_dump2(lwx * const lx, void * udata)
+{
+	xproxy(dump, lx, &udata);
+}
+#endif
 
 int API lstack_append(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
 {

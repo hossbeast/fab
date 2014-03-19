@@ -43,9 +43,9 @@ OPERATION
 static int op_validate_fi(operation* o);
 static int op_validate_fic(operation* o);
 static int op_validate_fiw(operation* o);
-static int op_exec_fi(operation*,  lwx*, int**, int*);
-static int op_exec_fic(operation*, lwx*, int**, int*);
-static int op_exec_fiw(operation*, lwx*, int**, int*);
+static int op_exec_fi(operation*,  lwx*, int**, int*, void **);
+static int op_exec_fic(operation*, lwx*, int**, int*, void **);
+static int op_exec_fiw(operation*, lwx*, int**, int*, void **);
 
 operator op_desc[] = {
 	{
@@ -103,7 +103,7 @@ int op_validate_fiw(operation* o)
 	finally : coda;
 }
 
-int op_exec_fi(operation* o, lwx * lx, int** ovec, int* ovec_len)
+int op_exec_fi(operation* o, lwx * lx, int** ovec, int* ovec_len, void ** udata)
 {
 	if(o->argsl == 0)
 	{
@@ -116,19 +116,19 @@ int op_exec_fi(operation* o, lwx * lx, int** ovec, int* ovec_len)
 		lwx_setptr(lx, strdup(o->args[0]->s));
 	}
 
-	return 0;
+	finally : coda;
 }
 
-int op_exec_fic(operation* o, lwx * lx, int** ovec, int* ovec_len)
+int op_exec_fic(operation* o, lwx * lx, int** ovec, int* ovec_len, void ** udata)
 {
 	lwx_setflags(lx, INTERPOLATE_DELIM_WS);
 
-	return 0;
+	finally : coda;
 }
 
-int op_exec_fiw(operation* o, lwx * lx, int** ovec, int* ovec_len)
+int op_exec_fiw(operation* o, lwx * lx, int** ovec, int* ovec_len, void ** udata)
 {
 	lwx_setflags(lx, INTERPOLATE_ADJOIN);
 
-	return 0;
+	finally : coda;
 }

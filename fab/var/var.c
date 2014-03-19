@@ -586,7 +586,7 @@ int var_access(const map * const restrict vmap, const char * restrict vs, lwx **
 				else if((*cc)->xfms[x].type == XFM_LW)
 				{
 					fatal(lstack_obj_add, (*stax)[pn], (*ls), LISTWISE_TYPE_LIST);
-					fatal(lw_exec, (*cc)->xfms[x].gen, (*cc)->xfms[x].tex, &(*stax)[pn]);
+					fatal(lw_exec, (*cc)->xfms[x].gen, &(*stax)[pn]);
 				}
 
 				(*ls) = (*stax)[pn];

@@ -31,7 +31,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 static int op_validate(operation*);
 
 operator op_desc[] = {
@@ -52,7 +52,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int N = 1;
 	if(o->argsl)

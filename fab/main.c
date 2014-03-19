@@ -100,6 +100,7 @@ int main(int argc, char** argv)
 
 	int x;
 	int y;
+	size_t tracesz = 0;
 
 	// initialize error tables
 	error_setup();
@@ -127,6 +128,10 @@ int main(int argc, char** argv)
 	signal(SIGQUIT	, signal_handler);
 	signal(SIGTERM	, signal_handler);
 
+	// parse cmdline arguments
+	//  (args_parse also calls log_init with a default string)
+	fatal(args_parse, argc, argv);
+
 	// register object types with liblistwise
 	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
 	fatal(listwise_register_object, LISTWISE_TYPE_LIST, &listlw);
@@ -134,27 +139,13 @@ int main(int argc, char** argv)
 	// load additional fab-specific listwise operators
 	fatal(listwise_register_opdir, XQUOTE(FABLWOPDIR));
 
-	// parse cmdline arguments
-	//  (args_parse also calls log_init with a default string)
-	fatal(args_parse, argc, argv);
-
-#if SANITY
-	if(g_args.mode_sanity == MODE_SANITY_ENABLE)
-		listwise_sanity = 1;
-	else
-		listwise_sanity_fd = -1;
+#if DEBUG || DEVEL || SANITY
+	// configure liblistwise logging
+	lw_configure_logging();
 #endif
-#if DEVEL
-	listwise_devel_fd = -1;
-#endif
-#if DEBUG
-	listwise_debug_fd = -1;
-#endif
-
-	// create/cleanup tmp 
-	fatal(tmp_setup);
 
 	// other initializations
+	fatal(tmp_setup);
 	fatal(gn_init);
 	fatal(traverse_init);
 	fatal(ff_mkparser, &ffp);
@@ -253,7 +244,7 @@ int main(int argc, char** argv)
 		pn++;
 
 		if(g_args.selectors_arequery)
-			fatal(log_parse, "+SELECT", 0);
+			fatal(log_parse_and_describe, "+SELECT", 0, L_INFO);
 
 		// process selectors
 		for(x = 0; x < g_args.selectorsl; x++)
@@ -303,7 +294,7 @@ int main(int argc, char** argv)
 		// dependency discovery list
 		if(discoveriesl)
 		{
-			fatal(log_parse, "+DSC", 0);
+			fatal(log_parse_and_describe, "+DSC", 0, L_INFO);
 			fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
 		}
 		else
@@ -320,7 +311,7 @@ int main(int argc, char** argv)
 			if(inspectionsl)
 			{
 				// enable DGRAPH
-				fatal(log_parse, "+DGRAPH", 0);
+				fatal(log_parse_and_describe, "+DGRAPH", 0, L_INFO);
 
 				for(x = 0; x < inspectionsl; x++)
 					gn_dump((*inspections[x]));
@@ -377,6 +368,10 @@ int main(int argc, char** argv)
 						for(x = 0; x < g_args.bakevarsl; x++)
 							fatal(map_set, bakemap, MMS(g_args.bakevars[x]), 0, 0, 0);
 
+						// dump buildplan, pending logging
+						if(bp)
+							bp_dump(bp);
+
 						// create bakescript
 						fatal(bake_bp, bp, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &ts, &tsa, &tsw, g_args.bakescript_path);
 					}
@@ -386,7 +381,7 @@ int main(int argc, char** argv)
 						fatal(bp_eval, bp);
 
 						if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
-							fatal(log_parse, "+BPDUMP", 0);
+							fatal(log_parse_and_describe, "+BPDUMP", 0, L_INFO);
 
 						// dump buildplan, pending logging
 						if(bp)
@@ -446,10 +441,10 @@ finally:
 	fml_teardown();
 	ff_teardown();
 	args_teardown();
+	params_teardown();
 	traverse_teardown();
 	selector_teardown();
 
-	size_t tracesz = 0;
 	if(XAPI_UNWINDING)
 	{
 #if DEBUG

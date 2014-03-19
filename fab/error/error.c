@@ -19,6 +19,7 @@
 
 #include "global.h"
 
+#include "xapi/XAPI.errtab.h"
 #include "xlinux/XLINUX.errtab.h"
 #include "listwise/LW.errtab.h"
 #include "listwise/PCRE.errtab.h"

@@ -68,15 +68,17 @@ static int reset(gn * r, int exact, int nofile)
 		gn->height = -1;
 		gn->stage = -1;
 
-		return 0;
+		finally : coda;
 	};
 
 	if(exact)
-		return logic(r, 0);
+		fatal(logic, r, 0);
 	else if(nofile)
-		return traverse_depth_bynodes_needsward_useweak_usebridge_usenofile(r, logic);
+		fatal(traverse_depth_bynodes_needsward_useweak_usebridge_usenofile, r, logic);
 	else
-		return traverse_depth_bynodes_needsward_useweak_usebridge_nonofile(r, logic);
+		fatal(traverse_depth_bynodes_needsward_useweak_usebridge_nonofile, r, logic);
+
+	finally : coda;
 }
 
 static int heights(gn * r, int exact, int nofile, int * change)
@@ -102,15 +104,17 @@ static int heights(gn * r, int exact, int nofile, int * change)
 			(*change)++;
 		}
 
-		return 0;
+		finally : coda;
 	};
 
 	if(exact)
-		return logic(r, 0);
+		fatal(logic, r, 0);
 	else if(nofile)
-		return traverse_depth_bynodes_needsward_useweak_usebridge_usenofile(r, logic);
+		fatal(traverse_depth_bynodes_needsward_useweak_usebridge_usenofile, r, logic);
 	else
-		return traverse_depth_bynodes_needsward_useweak_usebridge_nonofile(r, logic);
+		fatal(traverse_depth_bynodes_needsward_useweak_usebridge_nonofile, r, logic);
+
+	finally : coda;
 }
 
 static int visit(gn * r, int k, gn *** lvs, int * l, int * a, int exact, int nofile)
@@ -137,11 +141,13 @@ static int visit(gn * r, int k, gn *** lvs, int * l, int * a, int exact, int nof
 	};
 
 	if(exact)
-		return logic(r, 0);
+		fatal(logic, r, 0);
 	else if(nofile)
-		return traverse_depth_bynodes_needsward_useweak_usebridge_usenofile(r, logic);
+		fatal(traverse_depth_bynodes_needsward_useweak_usebridge_usenofile, r, logic);
 	else
-		return traverse_depth_bynodes_needsward_useweak_usebridge_nonofile(r, logic);
+		fatal(traverse_depth_bynodes_needsward_useweak_usebridge_nonofile, r, logic);
+
+	finally : coda;
 }
 
 //
@@ -567,7 +573,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lwx *** stax, int 
 			// prepare lstack(s) for variables resident in this context
 			fatal(lw_reset, stax, staxa, staxp);
 
-			// @ is a list of expected products of this eval context
+			// $@ is a list of expected products of this eval context
 			for(k = 0; k < (*ts)[i]->fmlv->productsl; k++)
 				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
@@ -582,8 +588,8 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lwx *** stax, int 
 
 		// execute all formulas in parallel processes - res is true if all formulas
 		// executed successfully
-		int res = 0;
-		fatal(ts_execwave, *ts, i, tsw, x, L_BP | L_BPEXEC, L_FAB, &res);
+		int bad = 0;
+		fatal(ts_execwave, *ts, i, tsw, x, L_BP | L_BPEXEC, L_FAB, &bad);
 
 		// harvest the results
 		for(y = 0; y < i; y++)
@@ -603,7 +609,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lwx *** stax, int 
 			}
 		}
 
-		if(!res)
+		if(bad)
 			fail(FAB_FMLFAIL);
 	}
 

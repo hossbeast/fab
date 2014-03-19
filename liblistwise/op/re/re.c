@@ -38,7 +38,7 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -82,7 +82,7 @@ static int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int isglobal = o->argsl == 2 && o->args[1]->l && strchr(o->args[1]->s, 'g');
 

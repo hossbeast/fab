@@ -34,7 +34,7 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -54,7 +54,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
 	// tmp space
 	char space[256];
@@ -97,7 +97,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 
 		// resolve the stat format
 		size_t sz;
-		fatal(fs_statfmt, ss, ssl, fmt, flags, space, sizeof(space), &sz);
+		fatal(fs_statfmt, ss, ssl, fmt, flags, space, sizeof(space), &sz, udata);
 
 		if(sz)
 		{

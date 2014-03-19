@@ -69,6 +69,8 @@
 %type   <operation> operation
 %type   <operations> operations
 %type   <args>  args
+%type   <args>  args_enclosed
+%type   <args>  args_delimited
 
 %type		<arg>		arg
 %type   <arg>   string
@@ -163,10 +165,16 @@ opsep
 	;
 
 operation
-	: operation argdiv args %prec STR
+	: operation argsep args_delimited %prec STR
 	{
 		$$ = $1;
 		$$->args = $3;
+		$$->argsl = parm->argsl;
+	}
+	| operation args_enclosed %prec STR
+	{
+		$$ = $1;
+		$$->args = $2;
 		$$->argsl = parm->argsl;
 	}
 	| OP
@@ -177,7 +185,12 @@ operation
 	;
 
 args
-	: args argdiv arg
+	: args_enclosed
+	| args_delimited
+	;
+
+args_delimited
+	: args_delimited argsep arg
 	{
 		$$ = $1;
 		if(parm->argsa == parm->argsl)
@@ -189,10 +202,6 @@ args
 		}
 		$$[parm->argsl++] = $3;
 	}
-	| args divclose %prec STR
-	{
-		$$ = $1;
-	}
 	| arg
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$) * 2);
@@ -202,33 +211,34 @@ args
 	}
 	;
 
-argdiv
-	: divsep divopen
-	| divsep
-	| divopen
-	;
-
-divclose
-	: divclose argclose
-	| argclose
-	;
-
-divsep
-	: divsep argsep
-	| argsep
-	;
-
-divopen
-	: divopen argopen
-	| argopen
-	;
-
 argsep
 	: '/'
 	| ','
 	| '.'
 	| ';'
 	| ':'
+	;
+
+args_enclosed
+	: args_enclosed argopen arg argclose %prec STR
+	{
+		$$ = $1;
+		if(parm->argsa == parm->argsl)
+		{
+			int ns = parm->argsa ?: 3;
+			ns = ns * 2 + ns / 2;
+			YYU_FATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->argsa);
+			parm->argsa = ns;
+		}
+		$$[parm->argsl++] = $3;
+	}
+	| argopen arg argclose
+	{
+		YYU_FATAL(xmalloc, &$$, sizeof(*$$) * 2);
+		parm->argsl = 0;
+		parm->argsa = 1;
+		$$[parm->argsl++] = $2;
+	}
 	;
 
 argopen

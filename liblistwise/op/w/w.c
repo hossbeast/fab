@@ -37,7 +37,7 @@ ARGUMENTS
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -65,7 +65,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
 	// number of already selected rows in top list
 	int count = LSTACK_COUNT(lx);

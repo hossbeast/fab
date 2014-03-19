@@ -36,7 +36,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -49,7 +49,7 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
 	// create a new list at index 0
 	fatal(lstack_unshift, lx);

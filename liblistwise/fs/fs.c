@@ -60,6 +60,7 @@ int API fs_statfmt(
 	, char * const restrict dst
 	, size_t sz
 	, size_t * const z
+	, void ** udata
 )
 {
 	// workspace
@@ -98,9 +99,7 @@ int API fs_statfmt(
 
 	if(r)
 	{
-#if DEBUG
-		dprintf(listwise_debug_fd, "%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
-#endif
+		lw_log_opinfo("%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
 	}
 	else
 	{

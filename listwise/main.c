@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-
+#include <stdarg.h>
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -34,14 +34,63 @@
 #include "listwise/ops.h"
 #include "listwise/generator.h"
 #include "listwise/object.h"
+#include "listwise/log.h"
 
 #include "xapi.h"
 #include "LISTWISE.errtab.h"
+#undef perrtab
 #define perrtab perrtab_LISTWISE
 
 #include "xlinux.h"
 
 #include "args.h"
+#include "log.h"
+
+#if DEBUG
+void log_dump(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWEXEC, fmt, va);
+	va_end(va);
+}
+
+void log_opinfo(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWOPINFO, fmt, va);
+	va_end(va);
+}
+#endif
+
+#if DEVEL
+void log_tokens(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWTOKEN, fmt, va);
+	va_end(va);
+}
+
+void log_states(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWSTATE, fmt, va);
+	va_end(va);
+}
+#endif
+
+#if SANITY
+void log_sanity(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWSANITY, fmt, va);
+	va_end(va);
+}
+#endif
 
 /// snarf
 //
@@ -126,23 +175,20 @@ int main(int argc, char** argv)
 	// arrange for liblistwise to write to /dev/null
 	fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
 
-	if(!g_args.lw_info)
-	{
-		listwise_info_fd = nullfd;		// lstack_dump, lstack_exec
-	}
+#if DEBUG || DEVEL || SANITY
+	listwise_configure_logging((struct listwise_logging[]) {{
 #if DEBUG
-	if(!g_args.lw_debug)
-		listwise_debug_fd = nullfd;		// operator failures - normally silent (ls nonexistent path)
+		  .log_dump		= log_dump
+		, .log_opinfo	= log_opinfo
 #endif
 #if DEVEL
-	if(!g_args.lw_devel)
-		listwise_devel_fd = nullfd;		// generator token parsing, state changes
+		, .log_tokens	= log_tokens
+		, .log_states	= log_states
 #endif
 #if SANITY
-	if(g_args.lw_sanity)
-		listwise_sanity = 1;					// sanity checks
-	else
-		listwise_sanity_fd = nullfd;	// sanity output
+		, .log_sanity	= log_sanity
+#endif
+	}});
 #endif
 
 	// create generator parser
@@ -154,7 +200,13 @@ int main(int argc, char** argv)
 		fatal(snarf, g_args.generator_file, &mem, &sz);
 
 		// parse generator-string from file
+#if DEVEL
+		fatal(generator_parse2, p, mem, sz, &g, 0);
+
+		
+#else
 		fatal(generator_parse, p, mem, sz, &g);
+#endif
 	}
 	else if(genx < argc)
 	{
@@ -163,7 +215,11 @@ int main(int argc, char** argv)
 			argv[x][strlen(argv[x])] = ' ';
 
 		// parse generator-string from argv
-		fatal(generator_parse, p, argv[genx], 0, &g);
+#if DEVEL
+		fatal(generator_parse2, p, argv[genx], 0, &g, 0);
+#else
+		fatal(generator_parse, p , argv[genx], 0, &g);
+#endif
 	}
 
 	// attempt to read initial list items from stdin and a specified file
@@ -205,11 +261,11 @@ int main(int argc, char** argv)
 
 	if(g)
 	{
-		if(g_args.lw_info)
-			generator_dump(g);
-
-		// execute 
-		fatal(listwise_exec_generator, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx, g_args.lw_info);
+#if DEBUG || DEVEL || SANITY
+		fatal(listwise_exec_generator2, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx, 0);
+#else
+		fatal(listwise_exec_generator, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx);
+#endif
 	}
 
 	// OUTPUT

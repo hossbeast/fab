@@ -26,7 +26,7 @@ int API xopen(const char * path, int flags, int * const fd)
 	if(fd && (*fd = open(path, flags)) == -1)
 		fail(errno);
 
-	else if(open(path, flags) == -1)
+	else if(!fd && open(path, flags) == -1)
 		fail(errno);
 
 finally:
@@ -54,7 +54,7 @@ int API xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 	if(fd && (*fd = open(path, flags, mode)) == -1)
 		fail(errno);
 
-	else if(open(path, flags, mode) == -1)
+	else if(!fd && open(path, flags, mode) == -1)
 		fail(errno);
 
 finally:

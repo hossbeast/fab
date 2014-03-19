@@ -40,18 +40,6 @@ struct generator_parser_t
 /// static
 ///
 
-#if DEVEL
-static void write_info(char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	vdprintf(listwise_devel_fd, fmt, va);
-	va_end(va);
-
-	dprintf(listwise_devel_fd, "\n");
-}
-#endif
-
 static int generator_inputstr(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
 {
 	parse_param * pp = (parse_param*)xtra;
@@ -179,7 +167,7 @@ finally :
 coda;
 }
 
-static int parse(generator_parser* p, char* s, int l, char * name, int namel, generator** g)
+static int parse(generator_parser* p, char* s, int l, char * name, int namel, generator** g, void ** udata)
 {
 	// create state specific to this parse
 	void * state = 0;
@@ -187,15 +175,24 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 	// results struct for this parse
 	parse_param pp = {
 		  .line_numbering	= 1
-#if DEVEL
-		, .log_state			= write_info
-		, .log_token			= write_info
-#endif
 		, .tokname				= generator_tokenname
 		, .statename			= generator_statename
 		, .inputstr				= generator_inputstr
 		, .lvalstr				= generator_lvalstr
 	};
+
+#if DEVEL
+	if(udata)
+	{
+		pp.udata = *udata;
+
+		if(lw_would_tokens())
+			pp.log_token = listwise_logging_config->log_tokens;
+
+		if(lw_would_states())
+			pp.log_state = listwise_logging_config->log_states;
+	}
+#endif
 
 	// specific exception for "shebang" line exactly at the beginning
 	char * b = s;
@@ -228,6 +225,52 @@ finally:
 	generator_free(pp.g);
 	yyu_extra_destroy(&pp);
 coda;
+}
+
+static void dump(generator* g, void ** udata)
+{
+	char space[2048];
+
+	size_t z = 0;
+
+	// expanded generator description
+	lw_log_dump("generator @ %p {\n", g);
+	lw_log_dump("  initial list\n");
+
+	int x;
+	for(x = 0; x < g->argsl; x++)
+	{
+		z = generator_arg_snwrite(space, sizeof(space), g->args[x], 0);
+		lw_log_dump("    %.*s\n", (int)z, space);
+	}
+
+	lw_log_dump("  operations\n");
+	for(x = 0; x < g->opsl; x++)
+	{
+		lw_log_dump("    OP - %s\n", g->ops[x]->op->s);
+		lw_log_dump("      args\n");
+
+		int y;
+		for(y = 0; y < g->ops[x]->argsl; y++)
+		{
+			z = generator_arg_snwrite(space, sizeof(space), g->ops[x]->args[y], 0);
+			lw_log_dump("        %.*s\n", (int)z, space);
+		}
+
+		if(y == 0)
+			lw_log_dump("        none\n");
+	}
+
+	if(x == 0)
+		lw_log_dump("    none\n");
+
+	// normalized generator-string
+	lw_log_dump("\n");
+
+	z = generator_snwrite(space, sizeof(space), g);
+	lw_log_dump(" --> %.*s\n", (int)z, space);
+
+	lw_log_dump("}\n");
 }
 
 #undef restrict
@@ -318,63 +361,47 @@ void API generator_xfree(generator** g)
 
 int API generator_parse(generator_parser* p, char* s, int l, generator** g)
 {
-	fatal(parse, p, s, l, 0, 0, g);
+	fatal(parse, p, s, l, 0, 0, g, 0);
 
 	finally : coda;
 }
+
+#if DEVEL
+int API generator_parse2(generator_parser* p, char* s, int l, generator** g, void * udata)
+{
+	fatal(parse, p, s, l, 0, 0, g, &udata);
+
+	finally : coda;
+}
+#endif
 
 int API generator_parse_named(generator_parser* p, char* s, int l, char * name, int namel, generator** g)
 {
-	fatal(parse, p, s, l, name, namel, g);
+	fatal(parse, p, s, l, name, namel, g, 0);
 
 	finally : coda;
 }
 
+#if DEVEL
+int API generator_parse_named2(generator_parser* p, char* s, int l, char * name, int namel, generator** g, void * udata)
+{
+	fatal(parse, p, s, l, name, namel, g, &udata);
+
+	finally : coda;
+}
+#endif
+
 void API generator_dump(generator* g)
 {
-	char space[2048];
-
-	size_t z = 0;
-
-	// expanded generator description
-	dprintf(listwise_info_fd, "generator @ %p {\n", g);
-	dprintf(listwise_info_fd, "  initial list\n");
-
-	int x;
-	for(x = 0; x < g->argsl; x++)
-	{
-		z = generator_arg_snwrite(space, sizeof(space), g->args[x], 0);
-		dprintf(listwise_info_fd, "    %.*s\n", (int)z, space);
-	}
-
-	dprintf(listwise_info_fd, "  operations\n");
-	for(x = 0; x < g->opsl; x++)
-	{
-		dprintf(listwise_info_fd, "    OP - %s\n", g->ops[x]->op->s);
-		dprintf(listwise_info_fd, "      args\n");
-
-		int y;
-		for(y = 0; y < g->ops[x]->argsl; y++)
-		{
-			z = generator_arg_snwrite(space, sizeof(space), g->ops[x]->args[y], 0);
-			dprintf(listwise_info_fd, "        %.*s\n", (int)z, space);
-		}
-
-		if(y == 0)
-			dprintf(listwise_info_fd, "        none\n");
-	}
-
-	if(x == 0)
-		dprintf(listwise_info_fd, "    none\n");
-
-	// normalized generator-string
-	dprintf(listwise_info_fd, "\n");
-
-	z = generator_snwrite(space, sizeof(space), g);
-	dprintf(listwise_info_fd, " --> %.*s\n", (int)z, space);
-
-	dprintf(listwise_info_fd, "}\n");
+	dump(g, 0);
 }
+
+#if DEBUG
+void API generator_dump2(generator* g, void * udata)
+{
+	dump(g, &udata);
+}
+#endif
 
 ///
 /// public
@@ -465,11 +492,23 @@ size_t generator_arg_snwrite(char * const dst, const size_t sz, arg * const arg,
 			i += arg->refs.v[k].l - 1;
 			k++;
 		}
-		else if((arg->s[i] == ' ' || arg->s[i] == '\t' || arg->s[i] == '\n') && GS_DELIMITED(sm))
+		else if(arg->s[i] == ' ' && GS_DELIMITED(sm))
 		{
-			z += snprintf(dst + z, sz - z, "\\x{%02hhx}", arg->s[i]);
+			z += snprintf(dst + z, sz - z, "\\s");
 		}
-		else if((arg->s[i] != ' ' || arg->s[i] != '\t' || arg->s[i] != '\n') && (arg->s[i] <= 0x20 || arg->s[i] >= 0x7f))
+		else if(arg->s[i] == '\t' && GS_DELIMITED(sm))
+		{
+			z += snprintf(dst + z, sz - z, "\\t");
+		}
+		else if(arg->s[i] == '\r' && GS_DELIMITED(sm))
+		{
+			z += snprintf(dst + z, sz - z, "\\r");
+		}
+		else if(arg->s[i] == '\n' && GS_DELIMITED(sm))
+		{
+			z += snprintf(dst + z, sz - z, "\\n");
+		}
+		else if((arg->s[i] != ' ' || arg->s[i] != '\t' || arg->s[i] != '\n' || arg->s[i] != '\r') && (arg->s[i] <= 0x20 || arg->s[i] >= 0x7f))
 		{
 			z += snprintf(dst + z, sz - z, "\\x{%02hhx}", arg->s[i]);
 		}

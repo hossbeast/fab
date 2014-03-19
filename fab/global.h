@@ -19,6 +19,7 @@
 #define _GLOBAL_H
 
 #include "FAB.errtab.h"
+#undef perrtab
 #define perrtab perrtab_FAB
 
 #endif

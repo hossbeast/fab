@@ -50,13 +50,15 @@
 			, yyleng									\
 			, ldel										\
 			, 0												\
+			, __FUNCTION__						\
+			, __FILE__								\
 			, __LINE__								\
 			, 0												\
 		)
 
-	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, const int line, void * const v)
+	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, const char * func, const char * file, int line, void * const v)
 	{
-		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, ldel, token == LF, line);
+		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, ldel, token == LF, func, file, line);
 	}
 %}
 
@@ -181,7 +183,6 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													while(yyextra->states_n)
 																														POPSTATE;
 																													LOCWRITE;
-printf("match 1\n");
 																													yyu_scanner_error(yylloc, yyextra, FAB_ILLBYTE, "unexpected byte 0x%02hhx", yytext[0]);
 																													return 0;	/* return end-of-input */
 																												}
@@ -189,7 +190,6 @@ printf("match 1\n");
 																													while(yyextra->states_n)
 																														POPSTATE;
 																													LOCWRITE;
-printf("match 2\n");
-																													yyu_scanner_error(yylloc, yyextra, FAB_ILLBYTE, "unexpected character '%1$c'(0x%1$02hhx)", yytext[0]);
+																													yyu_scanner_error(yylloc, yyextra, FAB_ILLBYTE, "unexpected character '%c'", yytext[0]);
 																													return 0; /* return end-of-input */
 																												}

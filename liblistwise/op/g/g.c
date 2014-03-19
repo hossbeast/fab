@@ -52,7 +52,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -65,7 +65,7 @@ operator op_desc[] = {
 	, {}
 };
 
-static int gobble(lwx* lx, char * path, char * fmt, char * flags)
+static int gobble(lwx* lx, char * path, char * fmt, char * flags, void ** udata)
 {
 	char space[256];
 	size_t sz = 0;
@@ -79,7 +79,7 @@ static int gobble(lwx* lx, char * path, char * fmt, char * flags)
 
 	if(fmt)
 	{
-		fatal(fs_statfmt, path, 0, fmt, flags, space, sizeof(space), &sz);
+		fatal(fs_statfmt, path, 0, fmt, flags, space, sizeof(space), &sz, udata);
 		xref = strstr(space, "%x");
 	}
 
@@ -135,7 +135,7 @@ XAPI_INFOF("size", "%d", size);
 coda;
 }
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
 	// format and flags
 	char * fmt = 0;
@@ -180,7 +180,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 	{
 		char * zs = 0;
 		fatal(lstack_string, lx, 1, x, &zs);
-		fatal(gobble, lx, zs, fmt, flags);
+		fatal(gobble, lx, zs, fmt, flags, udata);
 	}
 	LSTACK_ITEREND
 

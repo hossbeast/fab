@@ -58,13 +58,12 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 # link the library
 [ $libxapi ] : [ [ $cfabpaths ~ xs/<c>/<pic.o> ] [ $dlibxapi/error/SYS.errtab.pic.o ~ j ] [ $dlibxapi/error/XAPI.errtab.pic.o ~ j ] ]
 {
-	  exec 99>&1 1>[ $dlibxapi/exports ]
-	  echo "{ global: "
+	  (echo "{ global: "
 	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
 	  cat -- [ $@ ~ rx/aneedw/xm/<c>/ss/u/fi ] )
 	  echo "callstack;"
 	> echo "local: *; };"
-		exec 1>&99
+	) 1>[ $dlibxapi/exports ]
 
 	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/xm/<o>/ss/u/fi ] [ $lflags ] [ "-Wl,--version-script=" $dlibxapi/exports]
 }

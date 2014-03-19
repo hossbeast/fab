@@ -21,7 +21,7 @@ $dcommon = [ $*/common ~ j ]
 
 # source invocations
 +[ $dcommon ]()																											@common
-+[ $dlibxapi ](-$libxapi)			 																			@libxapi
++[ $dlibxapi ](-$libxapi)																						@libxapi
 +[ $dlibxlinux ](-$libxlinux;     $libxapi)													@libxlinux
 +[ $dliblistwise ](-$liblistwise; $libxapi $libxlinux)							@liblistwise
 +[ $dlistwise ](-$listwise;       $libxapi $libxlinux $liblistwise)	@listwise
@@ -31,7 +31,7 @@ $dcommon = [ $*/common ~ j ]
 [ @all ] 				: [ @libxapi.all @libxlinux.all @liblistwise.all @listwise.all @fab.all ]
 
 # inter-module dependencies
-[ $libxlinux ]   :^ [ $libxapi ]
+[ $libxlinux ]	:^ [ $libxapi ]
 [ $liblistwise ] :^ [ $libxapi $libxlinux ]
 [ $listwise ]		 :^ [ $libxapi $libxlinux $liblistwise ]
 [ $fab ]				 :^ [ $libxapi $libxlinux $liblistwise ]
@@ -44,6 +44,9 @@ $dcommon = [ $*/common ~ j ]
 [ @scripts ]
 {
 	exec 2>/dev/null
-	fab --bslic-fab -k [ $*/make64.sh ] @all
-	fab --bslic-fab -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
+	> fab -v '$dvel=[1]' --bslic-fab @all	\
+	-k [ $*/make64.sh ]
+
+	> fab -v '$dvel=[1]' --bslic-fab +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir	\
+	-k [ $*/install64.sh ]
 }

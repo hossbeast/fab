@@ -52,7 +52,7 @@ void sanityblock_free(sanityblock * const restrict sb)
 void sanityblock_reset(sanityblock * const restrict sb)
 	__attribute__((nonnull));
 
-int sanity(struct lwx_t * const restrict lx, sanityblock * const restrict sb)
+int sanity(struct lwx_t * const restrict lx, sanityblock * const restrict sb, void ** udata)
 	__attribute__((nonnull));
 
 #undef restrict

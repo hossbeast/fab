@@ -33,13 +33,16 @@
 **  listiwse/operator.h  - core operator functionality
 **  listwise/lwx.h       - lwx definition
 **  LW.errtab.h          - liblistwise error table
+**  PCRE.errtab.h        - libpcre error table
+**
 **   extra functionality
-**  listwise/re.h        - libpcre apis
+**  listwise/re.h        - libpcre wrappers
 **  listwise/iterate.h   - iterating lstack contents
 **  listwise/object.h    - manipulating object entries
 **  listwise/ops.h       - enumerating and looking up listwise operators
 **  listwise/generator.h - manipulating generators
 **  listwise/fs.h        - filesystem apis
+**  listwise/log.h       - logging functions
 */
 
 struct operation;
@@ -78,9 +81,26 @@ typedef struct operator
 	char *		desc;			// operator description
 	char *		mnemonic;	// longform name
 
-	// methods
+	/// op_validate
+	//
+	// SUMMARY
+	//  validate the operation
+	//
 	int 		(*op_validate)(struct operation*);
-	int 		(*op_exec)(struct operation*, lwx*, int**, int*);
+
+	/// op_exec
+	//
+	// SUMMARY
+	//  execute operator
+	//
+	// PARAMETERS
+	//  o        - operation
+	//  lx       - lstack
+	//  ovec     - (see listwise/re.h)
+	//  ovec_len -
+	//  udata    - (see listwise/log.h)
+	//
+	int 		(*op_exec)(struct operation*, lwx*, int**, int*, void**);
 
 	char		s[6];			// name; overwritten by liblist during initialization
 	int			sl;				// name length

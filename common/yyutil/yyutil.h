@@ -85,12 +85,13 @@ typedef struct yyu_extra
 	char						tokenstring[256];	//  tokenstring (gramerr only)
 
 	int							line_numbering;	// whether yyu should include scanner line number in output messages
+	void *					udata;
 
 	// yyu calls this function to log scanner state changes
-	void						(*log_state)(char * fmt, ...);
+	void						(*log_state)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
 
 	// yyu calls this function to log parsed tokens
-	void						(*log_token)(char * fmt, ...);
+	void						(*log_token)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
 
 	// yyu calls this function to get a token name from a token
 	const char *		(*tokname)(int token);
@@ -242,17 +243,23 @@ int yyu_nstate(yyu_extra * const restrict xtra, const int n)
 // REMARKS
 //  typically you need to call this with PUSHSTATE in order to to also affect the scanner state stack
 //
-void yyu_pushstate(const int state, yyu_extra * const restrict xtra, const int line)
+void yyu_pushstate(
+	  const int state
+	, yyu_extra * const restrict xtra
+	, const char * func
+	, const char * file
+	, const int line
+)
 	__attribute__((nonnull));
 
 /// PUSHSTATE
 //
 // call yyu_pushstate from a scanner rule - and push a state into the internal scanner stack
 //
-#define PUSHSTATE(state)											\
-	do {																				\
-		yyu_pushstate(state, yyextra, __LINE__);	\
-		yy_push_state(state, yyextra->scanner);		\
+#define PUSHSTATE(state)																							\
+	do {																																\
+		yyu_pushstate(state, yyextra, __FUNCTION__, __FILE__, __LINE__);	\
+		yy_push_state(state, yyextra->scanner);														\
 	} while(0)
 
 /// yyu_popstate
@@ -267,17 +274,22 @@ void yyu_pushstate(const int state, yyu_extra * const restrict xtra, const int l
 // REMARKS
 //  typically you need to call this with POPSTATE in order to to also affect the scanner state stack
 //
-void yyu_popstate(yyu_extra * const restrict xtra, const int line)
+void yyu_popstate(
+	  yyu_extra * const restrict xtra
+	, const char * func
+	, const char * file
+	, const int line
+)
 	__attribute__((nonnull));
 
 /// POPSTATE
 //
 // call yyu_popstate from a scanner rule - also pop a state from the internal scanner stack
 //
-#define POPSTATE											\
-	do {																\
-		yy_pop_state(yyextra->scanner);		\
-		yyu_popstate(yyextra, __LINE__);	\
+#define POPSTATE																							\
+	do {																												\
+		yy_pop_state(yyextra->scanner);														\
+		yyu_popstate(yyextra, __FUNCTION__, __FILE__, __LINE__);	\
 	} while(0)
 
 /// yyu_ptoken
@@ -294,14 +306,24 @@ void yyu_popstate(yyu_extra * const restrict xtra, const int line)
 //  leng  - yyleng 
 //  line  - line number where the token was scanned
 //
-void yyu_ptoken(const int token, void * const restrict lval, yyu_location * const restrict lloc, yyu_extra * const restrict xtra, char * restrict text, const int leng, const int line)
+void yyu_ptoken(
+	  const int token
+	, void * const restrict lval
+	, yyu_location * const restrict lloc
+	, yyu_extra * const restrict xtra
+	, char * restrict text
+	, const int leng
+	, const char * func
+	, const char * file
+	, const int line
+)
 	__attribute__((nonnull));
 
 /// PTOKEN
 //
 // call yyu_ptoken with default parameters from a scanner rule
 //
-#define PTOKEN(token) yyu_ptoken(token, yylval, yylloc, yyextra, yytext, yyleng, 0, __LINE__)
+#define PTOKEN(token) yyu_ptoken(token, yylval, yylloc, yyextra, yytext, yyleng, 0, __FUNCTION__, __FILE__, __LINE__)
 
 /// yyu_scanner_error
 //
@@ -346,6 +368,8 @@ int yyu_lexify(
 	, const int leng
 	, const int del
 	, const int isnl
+	, const char * func
+	, const char * file
 	, const int line
 )
 	__attribute__((nonnull));
@@ -354,7 +378,7 @@ int yyu_lexify(
 //
 // call yyu_lexify with default parameters from a scanner rule
 //
-#define LEXIFY(token) yyu_lexify(token, yylval, sizeof(yylval), yylloc, yyextra, yytext, yyleng, 0, 0, __LINE__)
+#define LEXIFY(token) yyu_lexify(token, yylval, sizeof(yylval), yylloc, yyextra, yytext, yyleng, 0, 0, __FUNCTION__, __FILE__, __LINE__)
 
 #undef restrict
 #endif

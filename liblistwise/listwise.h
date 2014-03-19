@@ -24,9 +24,10 @@
 **
 ** core functionality
 **  listwise.h         - listwise evaluation, read lstack contents
+**  listwise/error.h   - listwise error table and error code lookup
 **
 ** additional functionality
-**  listwise/xtra.h    - register additional operators, tune execution parameters, etc
+**  listwise/xtra.h    - register additional operators, tune execution parameters, configure logging, etc
 */
 
 /// listwise execution context
@@ -189,27 +190,6 @@ int lstack_string(lwx * const restrict lx, int x, int y, char ** restrict r)
 //
 int lwx_reset(lwx * const restrict)
   __attribute__((nonnull));
-
-/// listwise_errname
-//
-// SUMMARY
-//  get a static string for the name of an error code returned from liblistwise
-//
-const char * listwise_errname(const int code);
-
-/// listwise_errdesc
-//
-// SUMMARY
-//  get a static string for the description of an error code returned from liblistwise
-//
-const char * listwise_errdesc(const int code);
-
-/// listwise_errstr
-//
-// SUMMARY
-//  get a static string for the name and description of an error code returned from liblistwise
-//
-const char * listwise_errstr(const int code);
 
 #undef restrict
 #endif

@@ -25,15 +25,21 @@
 
 #define restrict __restrict
 
-int API listwise_exec_generator(
+///
+/// static
+///
+
+static int exec_generator(
 	  const generator * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl
 	, lwx ** restrict lx
-	, int dump
+	, void ** udata
 )
 {
+	char space[256];
+
 	// ovec workspace
 	int* ovec = 0;
 	int ovec_len = 0;
@@ -72,14 +78,21 @@ int API listwise_exec_generator(
 	(*lx)->win.active_era++;
 	(*lx)->win.staged_era++;
 
-	if(dump)
-		fatal(lstack_dump, *lx);
+#if DEBUG
+	if(lw_would_dump())
+	{
+		size_t __attribute__((unused)) z = generator_snwrite(space, sizeof(space), (void*)g);
+		lw_log_dump(" >> %.*s\n", (int)z, space);
+
+		fatal(lstack_dump2, *lx, udata);
+	}
+#endif
 
 #if SANITY
 	if(listwise_sanity)
 	{
 		fatal(sanityblock_create, &sb);
-		fatal(sanity, *lx, sb);
+		fatal(sanity, *lx, sb, udata);
 	}
 #endif
 
@@ -108,10 +121,10 @@ int API listwise_exec_generator(
 			}
 		}
 
-		if(x && dump)
-		{
-			fatal(lstack_dump, *lx);
-		}
+#if DEBUG
+		if(x)
+			fatal(lstack_dump2, *lx, udata);
+#endif
 
 		if(g->ops[x]->op != yop && g->ops[x]->op != wyop && !isor)
 			(*lx)->win.staged_era++;
@@ -119,13 +132,12 @@ int API listwise_exec_generator(
 		if(g->ops[x]->op != yop && g->ops[x]->op != syop && !isor)
 			(*lx)->sel.staged_era++;
 
-		if(dump)
+		if(lw_would_dump())
 		{
-			dprintf(listwise_info_fd, "\n");
+			lw_log_dump("\n");
 
-			char buf[128];
-			size_t z = generator_operation_snwrite(buf, sizeof(buf), g->ops[x], 0);
-			dprintf(listwise_info_fd, " >> %.*s\n", (int)z, buf);
+			size_t __attribute__((unused)) z = generator_operation_snwrite(space, sizeof(space), g->ops[x], 0);
+			lw_log_dump(" >> %.*s\n", (int)z, space);
 		}
 
 		if(g->ops[x]->op == yop || g->ops[x]->op == wyop)
@@ -136,11 +148,11 @@ int API listwise_exec_generator(
 
 		// execute the operator
 		if(((*lx)->l || (g->ops[x]->op->optype & LWOP_EMPTYSTACK_YES) == LWOP_EMPTYSTACK_YES) && g->ops[x]->op->op_exec)
-			fatal(g->ops[x]->op->op_exec, g->ops[x], *lx, &ovec, &ovec_len);
+			fatal(g->ops[x]->op->op_exec, g->ops[x], *lx, &ovec, &ovec_len, udata);
 
 #if SANITY
 		if(listwise_sanity)
-			fatal(sanity, *lx, sb);
+			fatal(sanity, *lx, sb, udata);
 #endif
 
 		if((g->ops[x]->op->optype & LWOP_WINDOWS_RESET) == LWOP_WINDOWS_RESET)
@@ -150,7 +162,7 @@ int API listwise_exec_generator(
 			(*lx)->sel.active_era++;
 	}
 
-	if(dump)
+	if(lw_would_dump())
 	{
 		// possibly activate windows staged by the previous operator
 		if(x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE)
@@ -165,8 +177,10 @@ int API listwise_exec_generator(
 		fatal(lstack_sel_activate, *lx);
 	}
 
-	if(dump && g->opsl)
-		fatal(lstack_dump, *lx);
+#if DEBUG
+	if(g->opsl)
+		fatal(lstack_dump2, *lx, udata);
+#endif
 
 	(*lx)->win.active_era++;	// age active windows
 
@@ -178,7 +192,36 @@ finally:
 coda;
 }
 
-int listwise_exec(
+///
+/// API
+///
+
+int API listwise_exec_generator(
+	  const generator * const restrict g
+	, char ** const restrict init
+	, int * const restrict initls
+	, const int initl
+	, lwx ** restrict lx
+)
+{
+	xproxy(exec_generator, g, init, initls, initl, lx, 0);
+}
+
+#if DEBUG || DEVEL || SANITY
+int API listwise_exec_generator2(
+	  const generator * const restrict g
+	, char ** const restrict init
+	, int * const restrict initls
+	, const int initl
+	, lwx ** restrict lx
+	, void * udata
+)
+{
+	xproxy(exec_generator, g, init, initls, initl, lx, &udata);
+}
+#endif
+
+int API listwise_exec(
     char * const restrict s
   , int l
   , char ** const restrict init
@@ -195,7 +238,7 @@ int listwise_exec(
 
 	fatal(generator_mkparser, &p);
 	fatal(generator_parse, p, s, l, &g);
-	fatal(listwise_exec_generator, g, init, initls, initl, lx, 0);
+	fatal(exec_generator, g, init, initls, initl, lx, 0);
 
 finally:
 	generator_free(g);

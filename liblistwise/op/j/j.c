@@ -36,7 +36,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -49,7 +49,7 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	// delimiter string
 	char * ds = 0;

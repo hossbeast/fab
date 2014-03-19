@@ -49,14 +49,14 @@ OPERATION
 
 */
 
-static int op_exec_f(operation*, lwx*, int**, int*);
-static int op_exec_d(operation*, lwx*, int**, int*);
-static int op_exec_l(operation*, lwx*, int**, int*);
-static int op_exec_e(operation*, lwx*, int**, int*);
-static int op_exec_z(operation*, lwx*, int**, int*);
-static int op_exec_r(operation*, lwx*, int**, int*);
-static int op_exec_w(operation*, lwx*, int**, int*);
-static int op_exec_x(operation*, lwx*, int**, int*);
+static int op_exec_f(operation*, lwx*, int**, int*, void**);
+static int op_exec_d(operation*, lwx*, int**, int*, void**);
+static int op_exec_l(operation*, lwx*, int**, int*, void**);
+static int op_exec_e(operation*, lwx*, int**, int*, void**);
+static int op_exec_z(operation*, lwx*, int**, int*, void**);
+static int op_exec_r(operation*, lwx*, int**, int*, void**);
+static int op_exec_w(operation*, lwx*, int**, int*, void**);
+static int op_exec_x(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -117,7 +117,7 @@ operator op_desc[] = {
 	, {}
 };
 
-static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linkstat, int (*selector)(struct stat *))
+static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linkstat, int (*selector)(struct stat *), void ** udata)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)
@@ -147,57 +147,57 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linksta
 	finally : coda;
 }
 
-int op_exec_f(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec_f(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int selector(struct stat * st)
 	{
 		return st && S_ISREG(st->st_mode);
 	};
 
-	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector, udata);
 }
 
-int op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int selector(struct stat * st)
 	{
 		return st && S_ISDIR(st->st_mode);
 	};
 
-	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector, udata);
 }
 
-int op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int selector(struct stat * st)
 	{
 		return st && S_ISLNK(st->st_mode);
 	};
 
-	xproxy(op_exec, o, ls, ovec, ovec_len, 1, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 1, selector, udata);
 }
 
-int op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int selector(struct stat * st)
 	{
 		return !!st;
 	};
 
-	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector, udata);
 }
 
-int op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int selector(struct stat * st)
 	{
 		return st && S_ISDIR(st->st_mode) ? st->st_nlink == 0 : st->st_size == 0;
 	};
 
-	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0, selector, udata);
 }
 
-int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)
@@ -218,7 +218,7 @@ int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	finally : coda;
 }
 
-int op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)
@@ -239,7 +239,7 @@ int op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len)
 	finally : coda;
 }
 
-int op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go)

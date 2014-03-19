@@ -70,7 +70,7 @@ void yyu_locwrite(yyu_location * const lloc, yyu_extra * const xtra, char * cons
 	lloc->l = lloc->e - lloc->s;
 }
 
-void yyu_pushstate(const int state, yyu_extra * const xtra, const int line)
+void yyu_pushstate(const int state, yyu_extra * const xtra, const char * func, const char * file, const int line)
 {
 	if(xtra->log_state)
 	{
@@ -85,7 +85,8 @@ void yyu_pushstate(const int state, yyu_extra * const xtra, const int line)
 		if(xtra->line_numbering)
 			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
 
-		xtra->log_state("(%2d) %.*s %*s @ %*s %s%.*s"
+		xtra->log_state(xtra->udata, func, file, line
+			, "(%2d) %.*s %*s @ %*s %s%.*s"
 			, xtra->states_n
 			, al
 			, xtra->space
@@ -102,7 +103,7 @@ void yyu_pushstate(const int state, yyu_extra * const xtra, const int line)
 	xtra->states[xtra->states_n++] = state;
 }
 
-void yyu_popstate(yyu_extra * const xtra, const int line)
+void yyu_popstate(yyu_extra * const xtra, const char * func, const char * file, const int line)
 {
 	int x = yyu_nstate(xtra, 0);
 	xtra->states_n--;
@@ -120,7 +121,8 @@ void yyu_popstate(yyu_extra * const xtra, const int line)
 		if(xtra->line_numbering)
 			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
 
-		xtra->log_state("(%2d) %.*s %*s @ %*s %s%.*s"
+		xtra->log_state(xtra->udata, func, file, line
+			, "(%2d) %.*s %*s @ %*s %s%.*s"
 			, xtra->states_n
 			, al
 			, xtra->space
@@ -140,7 +142,7 @@ int yyu_nstate(yyu_extra * const xtra, const int n)
 	return (xtra->states_n > n) ? xtra->states[xtra->states_n - n - 1] : -1;
 }
 
-void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng, const int line)
+void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng, const char * func, const char * file, const int line)
 {
 	if(xtra->log_token)
 	{
@@ -166,7 +168,8 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 		if(xtra->line_numbering)
 			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
 
-		xtra->log_token("%8s ) '%.*s'%s%.*s%s %*s @ %s%.*s%s[%3d,%3d - %3d,%3d]%s%.*s"
+		xtra->log_token(xtra->udata, func, file, line
+			, "%8s ) '%.*s'%s%.*s%s %*s @ %s%.*s%s[%3d,%3d - %3d,%3d]%s%.*s"
 			, xtra->tokname(token) ?: "" 	// token name
 			, alen												// escaped string from which the token was scanned
 			, abuf
@@ -266,7 +269,7 @@ void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_extr
 	}
 }
 
-int yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del, const int isnl, const int line)
+int yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del, const int isnl, const char * func, const char * file, const int line)
 {
 	if(isnl)
 		yyu_locreset(lloc, xtra, del);
@@ -274,7 +277,7 @@ int yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_loca
 		yyu_locwrite(lloc, xtra, text, leng, del);
 
 	// print the token if requested
-	yyu_ptoken(token, lval, lloc, xtra, text, leng, line);
+	yyu_ptoken(token, lval, lloc, xtra, text, leng, func, file, line);
 
 	// store location for error reporting
 	memcpy(&xtra->last_loc, lloc, sizeof(xtra->last_loc));

@@ -28,8 +28,8 @@ $cflags					= [ $cflags	-fno-builtin-log [ $dfab ~ lsr/c/-d/s/^/-I ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
 	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
-	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
-	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
+	[ -DFABLWOPDIR="\""[ $fablwopdir ~ rp ]"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""[ $fabinvokedir ~ rp ]"\"" ~ j ]
 ]
 $lflags					= [ $lflags $libxapi $liblistwise $libxlinux ]
 $fab						= [ $dfab/fab ~ j ]
@@ -40,6 +40,9 @@ $fab						= [ $dfab/fab ~ j ]
 +[@std.y]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 
 # standard files - fPIC compilation
+#  no discovery on these files, because they would then depend on *.pic.o files within fab which
+#  do not exist ; instead those link-time references are satisfied by the fab executable
+#
 +[@std.c]($gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # generated files
@@ -68,16 +71,16 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 }
 
 #
-# fab-specific operator so's
+# fab-specific operator so's - only link the immediate object. This so depends on fab for many symbols
 #
 [ $faboplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
-	  [ $cc ] [ $cflags ~ uu/fi ] -o [ $@ ]	[ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [
-	] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
+	  [ $cc ] [ $cflags ~ uu/fi ] -o [ $@ ]	[ $@ ~ rx/ineed/fi ] [
+	] -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
 }
 
 # also a bridge dependency on the fab executable
-[ $faboplist ~ dj/shift ] ::^ [ $fab ]
+[ $dfab/fablw/op ~ j/lsr/xs/<c>/<pic.o>/y ] ::^ [ $fab ]
 
 #
 # tasks

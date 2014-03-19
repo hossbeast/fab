@@ -116,6 +116,57 @@ static int flatten(lwx * lso)
 }
 
 ///
+/// liblistwise logging bindings
+///
+
+#if DEBUG
+void log_dump(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWEXEC, fmt, va);
+	va_end(va);
+}
+
+void log_opinfo(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWOPINFO, fmt, va);
+	va_end(va);
+}
+#endif
+
+#if DEVEL
+void log_tokens(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWTOKEN, fmt, va);
+	va_end(va);
+}
+
+void log_states(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWSTATE, fmt, va);
+	va_end(va);
+}
+#endif
+
+#if SANITY
+void log_sanity(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWSANITY, fmt, va);
+	va_end(va);
+}
+#endif
+
+
+///
 /// public
 ///
 
@@ -137,17 +188,34 @@ int lw_reset(lwx *** stax, int * staxa, int staxp)
 	finally : coda;
 }
 
-int lw_exec(generator * gen, char * tex, lwx ** ls)
+int lw_exec(generator * gen, lwx ** ls)
 {
-	// in liblistwise.so
-	extern int lstack_exec_internal(generator* g, char** init, int* initls, int initl, lwx ** ls, int dump);
-
 	// flatten first
 	fatal(flatten, (*ls));
 
-	// pass through listwise
-	log(L_LWVOCAL, "%s", tex);
-	fatal(listwise_exec_generator, gen, 0, 0, 0, ls, log_would(L_LWVOCAL));
+	// execute
+	fatal(listwise_exec_generator, gen, 0, 0, 0, ls);
 
 	finally : coda;
 }
+
+#if DEBUG || DEVEL || SANITY
+void lw_configure_logging()
+{
+#if DEBUG || DEVEL || SANITY
+  listwise_configure_logging((struct listwise_logging[]) {{
+#if DEBUG
+      .log_dump   = log_dump
+    , .log_opinfo = log_opinfo
+#endif
+#if DEVEL
+    , .log_tokens = log_tokens
+    , .log_states = log_states
+#endif
+#if SANITY
+    , .log_sanity = log_sanity
+#endif
+  }});
+#endif
+}
+#endif

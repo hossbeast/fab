@@ -41,7 +41,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -54,7 +54,7 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	char * ss = 0;
 	int x;
@@ -79,9 +79,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 		}
 		else if(errno == ENOENT || errno == ENOTDIR)
 		{
-#if DEBUG
-			dprintf(listwise_debug_fd, "realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
-#endif
+			lw_log_opinfo("realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
 		}
 		else
 		{

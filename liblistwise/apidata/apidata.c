@@ -20,20 +20,9 @@
 #include "xlinux.h"
 #include "wstdlib.h"
 
-int APIDATA listwise_info_fd = 2;
-#if DEBUG
-int APIDATA listwise_debug_fd = 2;
-#endif
-#if DEVEL
-int APIDATA listwise_devel_fd = 2;
-#endif
-#if SANITY
-int APIDATA listwise_sanity = 0;
-int APIDATA listwise_sanity_fd = 2;
-#endif
 int APIDATA listwise_allocation_seed = 10;
-
 lwx * APIDATA listwise_identity = 0;
+struct listwise_logging * APIDATA listwise_logging_config = 0;
 
 /// initialize
 //

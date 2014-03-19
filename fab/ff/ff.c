@@ -63,22 +63,6 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 // [[ static ]]
 //
 
-static void ff_log_token(char * fmt, ...)
-{
-  va_list va;
-  va_start(va, fmt);
-	vlog(L_FFTOKN, fmt, va);
-  va_end(va);
-}
-
-static void ff_log_state(char * fmt, ...)
-{
-  va_list va;
-  va_start(va, fmt);
-	vlog(L_FFSTAT, fmt, va);
-  va_end(va);
-}
-
 static const char * ff_tokenname(int token)
 {
   return ff_tokennames[token];
@@ -140,13 +124,17 @@ finally :
 	{
 		if(pp->scanerr || pp->gramerr)
 		{
-			XAPI_INFOS("last", pp->tokenstring);
 			XAPI_INFOF("loc", "[%d,%d - %d,%d]"
-				, pp->last_loc.f_lin + 1
-				, pp->last_loc.f_col + 1
-				, pp->last_loc.l_lin + 1
-				, pp->last_loc.l_col + 1
+				, pp->error_loc.f_lin + 1
+				, pp->error_loc.f_col + 1
+				, pp->error_loc.l_lin + 1
+				, pp->error_loc.l_col + 1
 			);
+
+			if(pp->gramerr)
+			{
+				XAPI_INFOS("token", pp->tokenstring);
+			}
 		}
 	}
 coda;
@@ -154,14 +142,35 @@ coda;
 
 static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel)
 {
+#if DEVEL
+	void logtoken(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+	{
+		va_list va;
+		va_start(va, fmt);
+		vlogi(func, file, line, L_FFTOKEN, fmt, va);
+		va_end(va);
+	}
+
+	void logstate(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+	{
+		va_list va;
+		va_start(va, fmt);
+		vlogi(func, file, line, L_FFSTATE, fmt, va);
+		va_end(va);
+	}
+#endif
+
 	parse_param pp = {
-	    .log_token		= ff_log_token
-		, .log_state		= ff_log_state
-		, .tokname			= ff_tokenname
+		  .tokname			= ff_tokenname
 		, .statename		= ff_statename
 		, .inputstr			= ff_inputstr
 		, .lvalstr			= ff_lvalstr
 	};
+
+#if DEVEL
+	pp.log_token = logtoken;
+	pp.log_state = logstate;
+#endif
 
 #if DEBUG
 	// causes yyerror to include the scanner line number in FFTOKN output
@@ -293,7 +302,8 @@ finally :
 	ff_yy_delete_buffer(state, p->p);
 	yyu_extra_destroy(&pp);
 
-XAPI_INFOS("type", FFT_STRING(type));
+if(type != FFT_REGULAR)
+	XAPI_INFOS("type", FFT_STRING(type));
 coda;
 }
 

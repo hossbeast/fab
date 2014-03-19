@@ -30,12 +30,14 @@
 #include "listwise/object.h"
 #include "listwise/re.h"
 #include "listwise/fs.h"
+#include "listwise/log.h"
 
 #include "coll.h"
 #include "map.h"
 
 #include "LW.errtab.h"
 #include "PCRE.errtab.h"
+#undef perrtab
 #define perrtab perrtab_LW
 
 #define API __attribute__((visibility("protected")))

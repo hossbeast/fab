@@ -165,7 +165,7 @@ when calling non-xapi code, you have a couple of options.
 #define fatal(func, ...)																																	\
 	do {																																										\
 		if(xapi_frame_enter() != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)))		\
-			tfail(perrtab_XAPI, 0);																															\
+			fail(0);																																						\
 	} while(0)
 #endif
 
@@ -236,12 +236,13 @@ when calling non-xapi code, you have a couple of options.
 	} while(0)
 #else
 #define prologue								\
+	__label__ XAPI_FINALLY;				\
 	__label__ XAPI_FINALIZE;			\
 	__label__ XAPI_LEAVE;					\
 	do {													\
 		if(xapi_frame_enter())			\
 		{														\
-			tfail(perrtab_XAPI, 0);		\
+			fail(0);									\
 		}														\
 	} while(0)
 #endif

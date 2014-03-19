@@ -28,10 +28,12 @@
 
 #include "xapi.h"
 #include "LISTWISE.errtab.h"
+#undef perrtab
 #define perrtab perrtab_LISTWISE
 #include "xlinux.h"
 
 #include "args.h"
+#include "log.h"
 
 #include "macros.h"
 
@@ -54,7 +56,7 @@ struct optypes
 	int _d;
 };
 
-static void usage(int valid, int version, int help, int operators, struct optypes * optypes)
+static void usage(int valid, int version, int help, int logopts, int operators, struct optypes * optypes)
 {
 	printf(
 "listwise : list transformation utility\n"
@@ -76,46 +78,67 @@ if(help)
 {
 	printf(
 "\n"
-"usage : lw [options] generator-string\n"
+"usage : lw [[options] [logopts] [generator-string]]*\n"
 " --help|-h   : this message\n"
 " --version   : version information\n"
-" --operators : operator listing\n"
+" --logopts   : logging category listing\n"
+" --operators : listwise operator listing\n"
 "\n"
-"----------------- [ operator listing options] ----------------------------------\n"
+"----------------- [ operator listing options] --------------------------------------------\n"
 "\n"
 " --o1       type 1        restrict listing to those operators of matching type\n"
 " --o2       type 2\n"
 "  ...\n"
 " --od       type d\n"
 "\n"
-"----------------- [ listwise execution options ] -------------------------------\n"
+"----------------- [ options ] ------------------------------------------------------------\n"
 "\n"
-" -a         output entire list, not just selected entries\n"
-" -k         output entire stack, not just top list\n"
-" -d         dump list-stack at each step during execution (debug)\n"
-"            do not suppress liblistwise info/warn messages or error traces\n"
-" -n         number output rows 0 .. n\n"
-" -N         number output rows with their list index\n"
-" -z         separate output rows with null byte instead of newline\n"
-" -0         separate input rows read from file by null byte instead of newline\n"
-" -i <item>  initial list item\n"
-" -l <path>  read initial list items from <path>\n"
-"            <path> of - means read from stdin\n"
-" -f <path>  read generator-string from <path> instead of argv\n"
-"            <path> of - means read from stdin\n"
-" -          equal to -f -\n"
+" -a                             output entire list, not just selected entries\n"
+" -k                             output entire stack, not just top list\n"
+" -d                             dump list-stack at each step during execution (debug)\n"
+"                                do not suppress liblistwise info/warn messages or error traces\n"
+" -n                             number output rows 0 .. n\n"
+" -N                             number output rows with their list index\n"
+" -z                             separate output rows with null byte instead of newline\n"
+" -0                             separate input rows read from file by null byte instead of newline\n"
+" -i <item>                      initial list item\n"
+" -l <path>                      read initial list items from <path>\n"
+"                                <path> of - means read from stdin\n"
+" -f <path>                      read generator-string from <path> instead of argv\n"
+"                                <path> of - means read from stdin\n"
+" -                              equal to -f -\n"
 #if DEBUG
-" -D         listwise operator failures - normally silent (i.e. ls ENOENT)\n"
-#endif
-#if DEVEL
-" -V         generator token parsing, state changes\n"
+"\n"
+"  --logtrace-no       (default) do not include file/function/line in log messages\n"
+"  --logtrace                    include file/function/line in log messages\n"
+"\n"
+"  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
+"  --backtrace-full              produce a complete description of the callstack upon failure\n"
 #endif
 #if SANITY
-" -S         liblistwise sanity checks\n"
-#endif
 "\n"
+" liblistwise sanity checks\n"
+"  --sanity                      enable sanity checks for all liblistwise invocations (slow)\n"
+#endif
 	);
 }
+
+if(logopts)
+{
+	printf(
+"\n"
+"----------- [ logopts ] ------------------------------------------------------------------\n"
+"\n"
+" +<log name> to enable logging category\n"  
+" -<log name> to disable logging category\n"  
+"\n"
+);
+
+	int x;
+	for(x = 0; x < g_logs_l; x++)
+		printf("  %-10s %s\n", g_logs[x].s, g_logs[x].d);
+}
+
 if(operators)
 {
 	if(!help)
@@ -213,7 +236,7 @@ if(operators)
 	printf("\n");
 }
 
-if(help || operators)
+if(help || logopts || operators)
 {
 	printf(
 "For more information visit http://fabutil.org\n"
@@ -228,37 +251,61 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 {
 	int help = 0;
 	int version = 0;
+	int	logopts = 0;
 	int operators = 0;
 
 	struct optypes optypes = {};
 
 	struct option longopts[] = {
-		  { "help"				, no_argument	, &help, 1 } 
-		, { "version"			, no_argument	, &version, 1 } 
-		, { "operators"		, no_argument	, &operators, 1 } 
-		, { "o1"					, no_argument	, &optypes._1, 1 }
-		, { "o2"					, no_argument	, &optypes._2, 1 }
-		, { "o3"					, no_argument	, &optypes._3, 1 }
-		, { "o4"					, no_argument	, &optypes._4, 1 }
-		, { "o5"					, no_argument	, &optypes._5, 1 }
-		, { "o6"					, no_argument	, &optypes._6, 1 }
-		, { "o7"					, no_argument	, &optypes._7, 1 }
-		, { "o8"					, no_argument	, &optypes._8, 1 }
-		, { "o9"					, no_argument	, &optypes._9, 1 }
-		, { "oa"					, no_argument	, &optypes._a, 1 }
-		, { "ob"					, no_argument	, &optypes._b, 1 }
-		, { "oc"					, no_argument	, &optypes._c, 1 }
-		, { "od"					, no_argument	, &optypes._d, 1 }
+		  { "help"												, no_argument	, &help, 1 } 
+		, { "version"											, no_argument	, &version, 1 } 
+		, { "logopts"											, no_argument	, &logopts, 1 } 
+		, { "operators"										, no_argument	, &operators, 1 } 
+		, { "o1"													, no_argument	, &optypes._1, 1 }
+		, { "o2"													, no_argument	, &optypes._2, 1 }
+		, { "o3"													, no_argument	, &optypes._3, 1 }
+		, { "o4"													, no_argument	, &optypes._4, 1 }
+		, { "o5"													, no_argument	, &optypes._5, 1 }
+		, { "o6"													, no_argument	, &optypes._6, 1 }
+		, { "o7"													, no_argument	, &optypes._7, 1 }
+		, { "o8"													, no_argument	, &optypes._8, 1 }
+		, { "o9"													, no_argument	, &optypes._9, 1 }
+		, { "oa"													, no_argument	, &optypes._a, 1 }
+		, { "ob"													, no_argument	, &optypes._b, 1 }
+		, { "oc"													, no_argument	, &optypes._c, 1 }
+		, { "od"													, no_argument	, &optypes._d, 1 }
+
+#if DEBUG
+		, { "backtrace-pithy"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
+		, { "backtrace-full"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
+		, { "logtrace-no"									, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
+		, { "logtrace"										, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
+#endif
+
+#if SANITY
+		, { "sanity"											, no_argument	, &g_args.mode_sanity	, MODE_SANITY_DISABLE }
+#endif
 		, { }
 	};
 
 	char * switches =
 		// no-argument switches
-		"adhknz0DNSV"
+		"ahknz0N"
 
 		// with-argument switches
 		"f:l:i:"
 	;
+
+	//
+	// args:defaults
+	//
+#if DEBUG
+	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
+	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
+#endif
+#if SANITY
+	g_args.mode_sanity			= DEFAULT_MODE_SANITY;
+#endif
 
 	int c;
 	int indexptr;
@@ -269,9 +316,6 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 		{
 			case 'a':
 				g_args.out_list = 1;
-				break;
-			case 'd':
-				g_args.lw_info = 1;
 				break;
 			case 'k':
 				g_args.out_stack = 1;
@@ -309,36 +353,21 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 					g_args.init_listl++;
 				}
 				break;
-#if DEBUG
-			case 'D':
-				g_args.lw_debug = 1;
-				break;
-#endif
 			case 'N':
 				g_args.numbering = 2;
 				break;
-#if SANITY
-			case 'S':
-				g_args.lw_sanity = 1;
-				break;
-#endif
-#if DEVEL
-			case 'V':
-				g_args.lw_devel = 1;
-				break;
-#endif
 			case 'h':
-				usage(1, 1, 1, 0, 0);
+				help = 1;
 				break;
 			case '?':
-				usage(0, 1, 1, 0, 0);
+				failf(LISTWISE_BADARGS, "unknown : %s", optarg);
 				break;
 		}
 	}
 
-	if(help || version || operators)
+	if(help || version || logopts || operators)
 	{
-		usage(1, 1, help, operators, &optypes);
+		usage(1, 1, help, logopts, operators, &optypes);
 	}
 
 	if(optind < argc && strcmp(argv[optind], "-") == 0)
@@ -348,6 +377,13 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 	}
 
 	(*genx) = optind;
+
+	// initialize logger
+#if DEBUG
+	fatal(log_parse, "+LWPARSE", 0);
+#endif
+
+	fatal(log_init, 0);
 
 	finally : coda;
 }

@@ -15,4 +15,32 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	BADFILE	unable to process file
+#ifndef _LOG_H
+#define _LOG_H
+
+#include "logger.h"
+
+// E
+# define L_LWPARSE			0x0000000800000000ULL
+
+#if DEBUG
+# define L_LWEXEC				0x0000000200000000ULL
+# define L_LWOPINFO			0x0000000400000000ULL
+#else
+# define L_LWEXEC				0
+# define L_LWOPINFO			0
+#endif
+#if DEVEL
+# define L_LWTOKEN			0x0000001000000000ULL
+# define L_LWSTATE			0x0000002000000000ULL
+#else
+# define L_LWTOKEN			0
+# define L_LWSTATE			0
+#endif
+#if SANITY
+# define L_LWSANITY			0x0000004000000000ULL
+#else
+# define L_LWSANITY			0
+#endif
+
+#endif

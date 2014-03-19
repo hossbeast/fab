@@ -127,7 +127,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			{
 				off_t sz = lseek(ts[x]->stde_fd, 0, SEEK_END);
 				lseek(ts[x]->stde_fd, 0, SEEK_SET);
-				psgrow(&ts[x]->stde_txt, sz + 2);
+				fatal(psgrow, &ts[x]->stde_txt, sz + 2);
 				__r = read(ts[x]->stde_fd, ts[x]->stde_txt->s, sz);
 				ts[x]->stde_txt->s[sz+0] = 0;
 				ts[x]->stde_txt->s[sz+1] = 0;
@@ -139,7 +139,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			{
 				off_t sz = lseek(ts[x]->stdo_fd, 0, SEEK_END);
 				lseek(ts[x]->stdo_fd, 0, SEEK_SET);
-				psgrow(&ts[x]->stdo_txt, sz + 2);
+				fatal(psgrow, &ts[x]->stdo_txt, sz + 2);
 				__r = read(ts[x]->stdo_fd, ts[x]->stdo_txt->s, sz);
 				ts[x]->stdo_txt->s[sz+0] = 0;
 				ts[x]->stdo_txt->s[sz+1] = 0;

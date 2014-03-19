@@ -157,16 +157,10 @@ if(help)
 "  --logtrace-no       (default) do not include file/function/line in log messages\n"
 "  --logtrace                    include file/function/line in log messages\n"
 "\n"
-" backtrace generation\n"
 "  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
 "  --backtrace-full              produce a complete description of the callstack upon failure\n"
 #endif
 "\n"
-#if SANITY
-" sanity checks\n"
-"  --sanity                      enable sanity checks for all liblistwise invocations\n"
-"\n"
-#endif
 " fabfile processing\n"
 "  -f <path/to/fabfile>          path to initial fabfile\n"
 "  -I <path/to/directory>        directory for locating invocations\n"
@@ -179,6 +173,11 @@ if(help)
 "  --cycles-warn       (default) warn when a cycle is detected (once per unique cycle)\n"
 "  --cycles-fail                 fail when a cycle is detected\n"
 "  --cycles-deal                 deal with cycles (by terminating the traversal)\n"
+#if SANITY
+"\n"
+" liblistwise sanity checks\n"
+"  --sanity                      enable sanity checks for all liblistwise invocations (slow)\n"
+#endif
 	);
 }
 
@@ -639,7 +638,8 @@ int args_parse(int argc, char** argv)
 	}
 
 	// initialize logger
-	fatal(log_init, "+ERROR|WARN|INFO|BPEXEC|DSCINFO");
+	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, L_INFO);
+	fatal(log_init_and_describe, L_TAG, L_INFO);
 
 	log(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 

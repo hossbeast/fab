@@ -43,8 +43,8 @@ OPERATION
 
 */
 
-static int op_exec_ss(operation*, lwx*, int**, int*);
-static int op_exec_sn(operation*, lwx*, int**, int*);
+static int op_exec_ss(operation*, lwx*, int**, int*, void **);
+static int op_exec_sn(operation*, lwx*, int**, int*, void **);
 
 operator op_desc[] = {
 	{
@@ -66,7 +66,7 @@ operator op_desc[] = {
 #define STRING_NCASE	2
 #define NUMERIC				3
 
-static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
+static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode, void ** udata)
 {
 	int * mema = 0;
 	int * memb = 0;
@@ -170,7 +170,7 @@ finally:
 coda;
 }
 
-int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len)
+int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
 {
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
 	{
@@ -183,13 +183,13 @@ int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 		if(o->argsl >= 1)
 			ncase = strchr(o->args[0]->s, 'i') != 0;
 
-		fatal(op_exec, o, lx, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE);
+		fatal(op_exec, o, lx, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE, udata);
 	}
 
 	finally : coda;
 }
 
-int op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len)
+int op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
 {
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
 	{
@@ -197,7 +197,7 @@ int op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 	}
 	else
 	{
-		fatal(op_exec, o, lx, ovec, ovec_len, NUMERIC);
+		fatal(op_exec, o, lx, ovec, ovec_len, NUMERIC, udata);
 	}
 
 	finally : coda;

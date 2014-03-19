@@ -156,7 +156,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lwx *
 
 	if(list->generator_node)
 	{
-		fatal(lw_exec, list->generator_node->generator, list->generator_node->text, &(*stax)[pn]);
+		fatal(lw_exec, list->generator_node->generator, &(*stax)[pn]);
 	}
 	else if(list->generator_list_node)
 	{
@@ -170,7 +170,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lwx *
 		generator_xfree(&g);
 		fatal(generator_parse, gp, gps->s, gps->l, &g);
 
-		fatal(lw_exec, g, gps->s, &(*stax)[pn]);
+		fatal(lw_exec, g, &(*stax)[pn]);
 	}
 	else
 	{

@@ -32,7 +32,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -52,7 +52,7 @@ void swap(lwx* ls, int a, int b)
 	ls->s[0].s[b]						= t;
 }
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	if(ls->sel.active == 0)
 	{

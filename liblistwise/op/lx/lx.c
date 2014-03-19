@@ -43,8 +43,8 @@ lxf - exactly as the lx operator, except fullmatch mode is the default operation
 */
 
 static int op_validate(operation* o);
-static int op_exec_lx(operation*, lwx*, int**, int*);
-static int op_exec_lxf(operation*, lwx*, int**, int*);
+static int op_exec_lx(operation*, lwx*, int**, int*, void**);
+static int op_exec_lxf(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -74,7 +74,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmatch)
+static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmatch, void** udata)
 {
 	char* xs;
 	int xl;
@@ -150,12 +150,12 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmat
 	finally : coda;
 }
 
-static int op_exec_lx(operation* o, lwx* ls, int** ovec, int* ovec_len)
+static int op_exec_lx(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
-	xproxy(op_exec, o, ls, ovec, ovec_len, 0);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0, udata);
 }
 
-static int op_exec_lxf(operation* o, lwx* ls, int** ovec, int* ovec_len)
+static int op_exec_lxf(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
-	xproxy(op_exec, o, ls, ovec, ovec_len, 1);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 1, udata);
 }

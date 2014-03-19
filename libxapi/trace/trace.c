@@ -182,8 +182,8 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 	size_t z = 0;
 
 	z += frame_error(dst + z, sz - z, callstack.v[callstack.l - 1]);
-	SAY(" ");
-//	z += frame_trace(dst + z, sz - z, callstack.v[callstack.l - 1], 0, callstack.v[callstack.l - 1]->code);
+
+	struct frame_info * nfo = 0;
 
 	size_t zt = z;
 	int x;
@@ -217,19 +217,38 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 
 			if(xx == callstack.l)
 			{
-				if(z == zt)
-					SAY("with ");
-				else
-					SAY(", ");
+				if(nfo)
+				{
+					if(z == zt)
+						SAY(" with ");
+					else
+						SAY(", ");
 
-				SAY("%.*s=%.*s"
-					, callstack.v[x]->info.v[y].kl
-					, callstack.v[x]->info.v[y].ks
-					, callstack.v[x]->info.v[y].vl
-					, callstack.v[x]->info.v[y].vs
-				);
+					SAY("%.*s=%.*s"
+						, nfo->kl
+						, nfo->ks
+						, nfo->vl
+						, nfo->vs
+					);
+				}
+				nfo = &callstack.v[x]->info.v[y];
 			}
 		}
+	}
+
+	if(nfo)
+	{
+		if(z == zt)
+			SAY(" with ");
+		else
+			SAY(" and ");
+
+		SAY("%.*s=%.*s"
+			, nfo->kl
+			, nfo->ks
+			, nfo->vl
+			, nfo->vs
+		);
 	}
 
 	return z;

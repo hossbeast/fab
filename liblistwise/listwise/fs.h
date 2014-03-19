@@ -46,6 +46,7 @@ int fs_statfmt(
 	, char * const restrict dst
 	, size_t sz
 	, size_t * const restrict z
+	, void ** udata
 )
 	__attribute__((nonnull(1, 5, 7)));
 

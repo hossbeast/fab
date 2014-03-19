@@ -48,6 +48,8 @@
 			, yyleng									\
 			, ldel										\
 			, 0												\
+			, __FUNCTION__						\
+			, __FILE__								\
 			, __LINE__								\
 			, 0												\
 		)
@@ -72,6 +74,8 @@
 			, yyleng									\
 			, 0												\
 			, vdel										\
+			, __FUNCTION__						\
+			, __FILE__								\
 			, __LINE__								\
 			, v												\
 		)
@@ -81,7 +85,7 @@
 	// SUMMARY
 	//  populate semantic value, invoke yyu_lexify
 	//
-	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, const int line, void * const v)
+	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, const char * func, const char * file, const int line, void * const v)
 	{
 		// populate semantic value if any on a per token basis
 		if(token == CREF)
@@ -100,6 +104,8 @@
 				lval->ref = 0x0c;
 			else if(text[vdel] == 'r')
 				lval->ref = 0x0d;
+			else if(text[vdel] == 's')
+				lval->ref = 0x20;
 		}
 		else if(token == BREF)
 			sscanf(text + vdel, "%d", &lval->ref);
@@ -110,7 +116,7 @@
 		else if(token == OP)
 			lval->op = *(operator **)v;
 
-		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, ldel, token == LF, line);
+		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, ldel, token == LF, func, file, line);
 	}
 %}
 
@@ -188,8 +194,10 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													}
 																													else
 																													{
-																														snprintf(yyextra->temp, sizeof(yyextra->temp), "unknown operator : %s", yytext);
-																														generator_yyerror(0, (void*)LW_ILLOP, yyextra, yyextra->temp);
+																														while(yyextra->states_n)
+																															POPSTATE;
+																														LOCWRITE;
+																														yyu_scanner_error(yylloc, yyextra, LW_ILLOP, "unknown operator : %s", yytext);
 																														return 0;
 																													}
 																												}
@@ -212,7 +220,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <slash_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t /]+			{ return LEX(STR, 0); }
 
 <slash_dorefs>\\[\\\n\t /]															{ return LEX(STR, 1); }
-<slash_dorefs>\\[abtnvfr]																{ return LEXV(CREF, 1, 0); }
+<slash_dorefs>\\[abtnvfrs]															{ return LEXV(CREF, 1, 0); }
 <slash_dorefs>\\x[0-9a-fA-F]{1,2}												{ return LEXV(HREF, 2, 0); }
 <slash_dorefs>\\x\{[0-9a-fA-F]{1,2}\}										{ return LEXV(HREF, 3, 0); }
 <slash_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
@@ -227,7 +235,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <comma_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ,]+			{ return LEX(STR, 0); }
 
 <comma_dorefs>\\[\\\n\t ,]															{ return LEX(STR, 1); }
-<comma_dorefs>\\[abtnvfr]																{ return LEXV(CREF, 1, 0); }
+<comma_dorefs>\\[abtnvfrs]															{ return LEXV(CREF, 1, 0); }
 <comma_dorefs>\\x[0-9a-fA-F]{1,2}												{ return LEXV(HREF, 2, 0); }
 <comma_dorefs>\\x\{[0-9a-fA-F]{1,2}\}										{ return LEXV(HREF, 3, 0); }
 <comma_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
@@ -242,7 +250,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <dot_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t .]+				{ return LEX(STR, 0); }
 
 <dot_dorefs>\\[\\\n\t .]																{ return LEX(STR, 1); }
-<dot_dorefs>\\[abtnvfr]																	{ return LEXV(CREF, 1, 0); }
+<dot_dorefs>\\[abtnvfrs]																{ return LEXV(CREF, 1, 0); }
 <dot_dorefs>\\x[0-9a-fA-F]{1,2}													{ return LEXV(HREF, 2, 0); }
 <dot_dorefs>\\x\{[0-9a-fA-F]{1,2}\}											{ return LEXV(HREF, 3, 0); }
 <dot_dorefs>\\[0-9]+																		{ return LEXV(BREF, 1, 0); }
@@ -257,7 +265,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <colon_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t :]+			{ return LEX(STR, 0); }
 
 <colon_dorefs>\\[\\\n\t :]															{ return LEX(STR, 1); }
-<colon_dorefs>\\[abtnvfr]																{ return LEXV(CREF, 1, 0); }
+<colon_dorefs>\\[abtnvfrs]															{ return LEXV(CREF, 1, 0); }
 <colon_dorefs>\\x[0-9a-fA-F]{1,2}												{ return LEXV(HREF, 2, 0); }
 <colon_dorefs>\\x\{[0-9a-fA-F]{1,2}\}										{ return LEXV(HREF, 3, 0); }
 <colon_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
@@ -272,7 +280,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <semicolon_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF\n\t ;]+		{ return LEX(STR, 0); }
 
 <semicolon_dorefs>\\[\\\n\t ;]														{ return LEX(STR, 1); }
-<semicolon_dorefs>\\[abtnvfr]															{ return LEXV(CREF, 1, 0); }
+<semicolon_dorefs>\\[abtnvfrs]														{ return LEXV(CREF, 1, 0); }
 <semicolon_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
 <semicolon_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
 <semicolon_dorefs>\\[0-9]+																{ return LEXV(BREF, 1, 0); }
@@ -289,7 +297,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <braces_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF{}]+				{ return LEX(STR, 0); }
 
 <braces_dorefs>\\[}]																		{ return LEX(STR, 1); }
-<braces_dorefs>\\[abtnvfr]															{ return LEX(STR, 1); }
+<braces_dorefs>\\[abtnvfrs]															{ return LEXV(CREF, 1, 0); }
 <braces_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
 <braces_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
 <braces_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
@@ -306,7 +314,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <brackets_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF[\]]+			{ return LEX(STR, 0); }
 
 <brackets_dorefs>\\[\]]																	{ return LEX(STR, 1); }
-<brackets_dorefs>\\[abtnvfr]														{ return LEX(STR, 1); }
+<brackets_dorefs>\\[abtnvfrs]														{ return LEXV(CREF, 1, 0); }
 <brackets_dorefs>\\x[0-9a-fA-F]{1,2}										{ return LEXV(HREF, 2, 0); }
 <brackets_dorefs>\\x\{[0-9a-fA-F]{1,2}\}								{ return LEXV(HREF, 3, 0); }
 <brackets_dorefs>\\[0-9]+																{ return LEXV(BREF, 1, 0); }
@@ -323,7 +331,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <parens_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF()]+				{ return LEX(STR, 0); }
 
 <parens_dorefs>\\[)]																		{ return LEX(STR, 1); }
-<parens_dorefs>\\[abtnvfr]															{ return LEX(STR, 1); }
+<parens_dorefs>\\[abtnvfrs]															{ return LEXV(CREF, 1, 0); }
 <parens_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
 <parens_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
 <parens_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }
@@ -340,7 +348,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <angles_norefs>[^\x00-\x08\x0B-\x1F\x7F-\xFF<>]+				{ return LEX(STR, 0); }
 
 <angles_dorefs>\\[>]																		{ return LEX(STR, 1); }
-<angles_dorefs>\\[abtnvfr]															{ return LEX(STR, 1); }
+<angles_dorefs>\\[abtnvfrs]															{ return LEXV(CREF, 1, 0); }
 <angles_dorefs>\\x[0-9a-fA-F]{1,2}											{ return LEXV(HREF, 2, 0); }
 <angles_dorefs>\\x\{[0-9a-fA-F]{1,2}\}									{ return LEXV(HREF, 3, 0); }
 <angles_dorefs>\\[0-9]+																	{ return LEXV(BREF, 1, 0); }

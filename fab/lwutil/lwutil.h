@@ -67,8 +67,16 @@ int lw_flatten(lwx * restrict ls)
 // SUMMARY
 //  execute listwise
 //
-int lw_exec(generator * gen, char * tex, lwx ** ls)
+int lw_exec(generator * gen, lwx ** ls)
 	__attribute__((nonnull));
+
+/// lw_configure_logging
+//
+// SUMMARY
+//  setup liblistwise logging
+//
+void lw_configure_logging();
+;
 
 #undef restrict
 #endif

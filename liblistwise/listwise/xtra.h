@@ -23,6 +23,36 @@
 
 #define restrict __restrict
 
+#if DEBUG || DEVEL || SANITY
+struct listwise_logging
+{
+#if DEBUG
+	// lstack dumping and exec progress
+	void (*log_dump)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+
+	// listwise operators - info
+	void (*log_opinfo)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+#endif
+
+#if DEVEL
+	// generator parsing - tokens
+	void (*log_tokens)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+
+	// generator parsing - states
+	void (*log_states)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+#endif
+
+#if SANITY
+	// listwise sanity checks
+	void (*log_sanity)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+#endif
+} * listwise_logging_config;
+
+void listwise_configure_logging(struct listwise_logging *)
+	__attribute__((nonnull));
+
+#endif
+
 /// exec_generator
 //
 // SUMMARY
@@ -46,17 +76,38 @@ int listwise_exec_generator(
 	, int * const restrict initls
 	, const int initl
 	, lwx ** restrict lx
-	, int dump
 )
 	__attribute__((nonnull(1, 5)));
+
+#if DEBUG || SANITY
+int listwise_exec_generator2(
+	  const generator * const restrict g
+	, char ** const restrict init
+	, int * const restrict initls
+	, const int initl
+	, lwx ** restrict lx
+	, void * udata
+)
+	__attribute__((nonnull(1, 5)));
+#endif
 
 /// lstack_dump
 //
 // SUMMARY
-//  print a list-stack to listwise_debug_fd
+//  print a list-stack to stderr
 //
 int lstack_dump(lwx * const restrict)
 	__attribute__((nonnull));
+
+#if DEBUG
+/// lstack_dump2
+//
+// SUMMARY
+//  log an list-lstack using the configured logging mechanism
+//
+int lstack_dump2(lwx * const restrict, void * udata)
+	__attribute__((nonnull));
+#endif
 
 /// listwise_register_opdir
 //
@@ -114,62 +165,7 @@ void * lwx_setptr(lwx * const, void * const)
 int lstack_readrow(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl, uint8_t * const restrict rt, int obj, int win, int str, int * const restrict raw)
 	__attribute__((nonnull(1)));
 
-/// listwise_info_fd
-//
-// SUMMARY
-//  liblistwise writes info messages to this fd
-//
-// EXAMPLES
-//  lstack_dump writes to this fd
-//  lstack_exec writes to this fd (when the dump parameter to that function is true)
-//
-// DEFAULT
-//  2 - stderr
-//
-extern int listwise_info_fd;
-
-#if DEBUG
-/// listwise_debug_fd
-//
-// SUMMARY
-//  liblistwise writes debug messages to this fd
-//
-// EXAMPLES
-//  listwise operators unable to perform some function (ls on a nonexistent path, for example)
-//
-// DEFAULT
-//  2 - stderr
-//
-extern int listwise_debug_fd;
-#endif
-
-#if DEVEL
-/// listwise_devel_fd
-//
-// SUMMARY
-//  liblistwise writes devel messages to this fd
-//
-// EXAMPLES
-//  generator token parsing
-//  generator state changes
-//
-// DEFAULT
-//  2 - stderr
-//
-extern int listwise_devel_fd;
-#endif
-
 #if SANITY
-/// listwise_sanity_fd
-//
-// SUMMARY
-//  liblistwise writes sanity messages to this fd
-//
-// DEFAULT
-//  2 - stderr
-//
-extern int listwise_sanity_fd;
-
 /// listwise_sanity
 //
 // cause lstack_exec* family of functions to perform sanity checks on ls before
@@ -183,7 +179,7 @@ extern int listwise_sanity_fd;
 // DEFAULT
 //  0 - no sanity checks
 //
-extern int listwise_sanity;
+int listwise_sanity;
 #endif
 
 /// listwise_identity 

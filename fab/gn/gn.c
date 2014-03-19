@@ -772,7 +772,7 @@ int gn_reconcile_dsc(gn * const gn)
 
 int gn_reconcile_fab(gn * const gn, map * const ws)
 {
-	return reconcile_completion(gn, ws);
+	xproxy(reconcile_completion, gn, ws);
 }
 
 int gn_finalize(int reconcile)

@@ -55,6 +55,7 @@ typedef struct etable
 
 // an error table for system errors is provided by libxapi
 extern etable * perrtab_SYS;
+#define perrtab perrtab_SYS
 
 /// xapi_errstr
 //

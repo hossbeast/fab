@@ -146,7 +146,7 @@ extern struct g_args_t
 	int									mode_cycles;								// cycle handling mode
 	int									mode_paths;									// path generation mode
 #if DEBUG
-	int									mode_backtrace;							// backtrace generation mode
+	int									mode_backtrace;							// backtrace reporting mode
 	int									mode_logtrace;							// log trace mode
 #endif
 #if DEVEL

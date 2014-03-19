@@ -38,7 +38,7 @@ OPERATION
 */
 
 static int op_validate(operation* o);
-static int op_exec(operation*, lwx*, int**, int*);
+static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -61,7 +61,7 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
+int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int to = 1;
 	if(o->argsl)
@@ -71,9 +71,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 
 	if(!(ls->l > to))
 	{
-#if DEBUG
-		dprintf(listwise_debug_fd, "xch/%d out of range\n", to);
-#endif
+		lw_log_opinfo("xch/%d out of range", to);
 	}
 	else
 	{
