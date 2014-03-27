@@ -151,7 +151,6 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 	}
 
 /* collection-based property reflection */
-
 	else if(strcmp(prop, "ineedw") == 0)
 	{
 		(*rl) = 0;
@@ -182,7 +181,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		(*rl) = 0;
 		for(x = 0; x < ((gn*)o)->needs.l; x++)
 		{
-			if(((((gn*)o)->needs.e[x]->weak == 0) && ((gn*)o)->needs.e[x]->bridge == 0))
+			if((((gn*)o)->needs.e[x]->weak == 0) && (((gn*)o)->needs.e[x]->bridge == 0))
 			{
 				(*rl)++;
 			}
@@ -194,7 +193,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 		int i = 0;
 		for(x = 0; x < ((gn*)o)->needs.l; x++)
 		{
-			if(((((gn*)o)->needs.e[x]->weak == 0) && ((gn*)o)->needs.e[x]->bridge == 0))
+			if((((gn*)o)->needs.e[x]->weak == 0) && (((gn*)o)->needs.e[x]->bridge == 0))
 			{
 				(*rtypes)[i] = LISTWISE_TYPE_GNLW;
 				(*r)[i] = ((gn*)o)->needs.e[x]->B;
@@ -226,8 +225,7 @@ int lw_reflect(void * o, char* prop, void *** r, uint8_t ** rtypes, int ** rls, 
 				i++;
 			}
 		}
-	}
-	else if(strcmp(prop, "ifeed") == 0)
+	}else if(strcmp(prop, "ifeed") == 0)
 	{
 		(*rl) = 0;
 		for(x = 0; x < ((gn*)o)->feeds.l; x++)
@@ -319,4 +317,3 @@ void lw_destroy(void * o)
   ** and I free them all at shutdown
 	*/
 }
-

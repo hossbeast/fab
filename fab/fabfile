@@ -141,9 +141,13 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	install -d															[ $destdir/$fabinvokedir/std/c ]
 	install -d															[ $destdir/$fabinvokedir/std/l ]
 	install -d															[ $destdir/$fabinvokedir/std/y ]
+	install -d															[ $destdir/$fabinvokedir/std/flex ]
+	install -d															[ $destdir/$fabinvokedir/std/bison ]
 	install [ $dfab/fablib/std/c.fab ]			[ $destdir/$fabinvokedir/std/c.fab ]
 	install [ $dfab/fablib/std/l.fab ]			[ $destdir/$fabinvokedir/std/l.fab ]
 	install [ $dfab/fablib/std/y.fab ]			[ $destdir/$fabinvokedir/std/y.fab ]
+	install [ $dfab/fablib/std/flex/states.fab ]			[ $destdir/$fabinvokedir/std/flex/states.fab ]
+	install [ $dfab/fablib/std/bison/tokens.fab ]			[ $destdir/$fabinvokedir/std/bison/tokens.fab ]
 
 	rm -rf 																	[ $destdir/$fablwopdir ] 2>/dev/null
 	install -d															[ $destdir/$fablwopdir ]
