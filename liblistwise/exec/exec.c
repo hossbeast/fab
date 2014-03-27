@@ -79,10 +79,10 @@ static int exec_generator(
 	(*lx)->win.staged_era++;
 
 #if DEBUG
-	if(lw_would_dump())
+	if(lw_would_exec())
 	{
 		size_t __attribute__((unused)) z = generator_snwrite(space, sizeof(space), (void*)g);
-		lw_log_dump(" >> %.*s\n", (int)z, space);
+		lw_log_exec(" >> %.*s\n", (int)z, space);
 
 		fatal(lstack_dump2, *lx, udata);
 	}
@@ -122,7 +122,7 @@ static int exec_generator(
 		}
 
 #if DEBUG
-		if(x)
+		if(x && lw_would_exec())
 			fatal(lstack_dump2, *lx, udata);
 #endif
 
@@ -132,12 +132,12 @@ static int exec_generator(
 		if(g->ops[x]->op != yop && g->ops[x]->op != syop && !isor)
 			(*lx)->sel.staged_era++;
 
-		if(lw_would_dump())
+		if(lw_would_exec())
 		{
-			lw_log_dump("\n");
+			lw_log_exec("\n");
 
 			size_t __attribute__((unused)) z = generator_operation_snwrite(space, sizeof(space), g->ops[x], 0);
-			lw_log_dump(" >> %.*s\n", (int)z, space);
+			lw_log_exec(" >> %.*s\n", (int)z, space);
 		}
 
 		if(g->ops[x]->op == yop || g->ops[x]->op == wyop)
@@ -162,7 +162,7 @@ static int exec_generator(
 			(*lx)->sel.active_era++;
 	}
 
-	if(lw_would_dump())
+	if(lw_would_exec())
 	{
 		// possibly activate windows staged by the previous operator
 		if(x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE)
@@ -178,7 +178,7 @@ static int exec_generator(
 	}
 
 #if DEBUG
-	if(g->opsl)
+	if(g->opsl && lw_would_exec())
 		fatal(lstack_dump2, *lx, udata);
 #endif
 

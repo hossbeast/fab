@@ -68,7 +68,7 @@ static void signal_handler(int signum)
 
 int main(int argc, char** argv)
 {
-	char space[1024];
+	char space[2048];
 
 	ff_parser *					ffp = 0;				// fabfile parser
 	bp *								bp = 0;					// buildplan 

@@ -19,9 +19,14 @@
 #ifndef _ARGS_H
 #define _ARGS_H
 
+#include "pstring.h"
+
 #define restrict __restrict
 
 #if DEBUG
+# define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_FULL
+# define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
+#else
 # define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_PITHY
 # define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
 #endif
@@ -93,7 +98,7 @@ struct g_args_t
 #endif
 } g_args;
 
-int parse_args(const int argc, char ** const restrict argv, int * const restrict genx)
+int parse_args(pstring ** remnant)
 	__attribute__((nonnull));
 
 void args_teardown();

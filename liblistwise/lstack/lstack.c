@@ -314,11 +314,11 @@ static int dump(lwx * const lx, void ** udata)
 	for(x = lx->l - 1; x >= 0; x--)
 	{
 		if(x != lx->l - 1)
-			lw_log_dump("\n");
+			lw_log_lstack("\n");
 
 		if(lx->s[x].l == 0)
 		{
-			lw_log_dump("[%4d     ] -- empty \n", x);
+			lw_log_lstack("[%4d     ] -- empty \n", x);
 		}
 
 		for(y = 0; y < lx->s[x].l; y++)
@@ -347,7 +347,7 @@ static int dump(lwx * const lx, void ** udata)
 			}
 
 			// for each entry : indexes, whether selected, staged
-			lw_log_dump("[%4d,%4d] %s%s "
+			lw_log_lstack("[%4d,%4d] %s%s "
 				, x
 				, y
 				, select ? ">" : " "
@@ -359,19 +359,19 @@ static int dump(lwx * const lx, void ** udata)
 			int sl = 0;
 			fatal(lstack_readrow, lx, x, y, &s, &sl, 0, 1, 0, 0, 0);
 
-			lw_log_dump("'%.*s'", sl, s);
+			lw_log_lstack("'%.*s'", sl, s);
 
 			// also display object properties if applicable
 			if(lx->s[x].s[y].type)
 			{
-				lw_log_dump("[%hhu]%p/%p", lx->s[x].s[y].type, *(void**)lx->s[x].s[y].s, lx->s[x].s[y].s);
+				lw_log_lstack("[%hhu]%p/%p", lx->s[x].s[y].type, *(void**)lx->s[x].s[y].s, lx->s[x].s[y].s);
 			}
-			lw_log_dump("\n");
+			lw_log_lstack("\n");
 
 			// indicate active windows
 			if(x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
 			{
-				lw_log_dump("%16s", " ");
+				lw_log_lstack("%16s", " ");
 
 				int escaping = 0;
 				int z = -1;
@@ -388,7 +388,7 @@ static int dump(lwx * const lx, void ** udata)
 					{
 						if((i - lx->win.s[y].active->s[z].o) < lx->win.s[y].active->s[z].l)
 						{
-							lw_log_dump("^");
+							lw_log_lstack("^");
 							marked = 1;
 						}
 					}
@@ -407,20 +407,20 @@ static int dump(lwx * const lx, void ** udata)
 						}
 						else
 						{
-							lw_log_dump(" ");
+							lw_log_lstack(" ");
 						}
 
 						if(z >= 0 && z < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[z].o)
 							z++;
 					}
 				}
-				lw_log_dump("\n");
+				lw_log_lstack("\n");
 			}
 
 			// indicate staged windows
 			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
 			{
-				lw_log_dump("%16s", " ");
+				lw_log_lstack("%16s", " ");
 
 				int escaping = 0;
 				int z = -1;
@@ -437,7 +437,7 @@ static int dump(lwx * const lx, void ** udata)
 					{
 						if((i - lx->win.s[y].staged->s[z].o) < lx->win.s[y].staged->s[z].l)
 						{
-							lw_log_dump("+");
+							lw_log_lstack("+");
 							marked = 1;
 						}
 					}
@@ -456,14 +456,14 @@ static int dump(lwx * const lx, void ** udata)
 						}
 						else
 						{
-							lw_log_dump(" ");
+							lw_log_lstack(" ");
 						}
 
 						if(z >= 0 && z < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[z].o)
 							z++;
 					}
 				}
-				lw_log_dump("\n");
+				lw_log_lstack("\n");
 			}
 		}
 	}

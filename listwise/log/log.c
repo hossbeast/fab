@@ -19,7 +19,9 @@
 
 // logtag definitions
 struct g_logs_t logs[] = {
-	  { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "liblistwise - generator parsing" }
+	  { .v = L_INFO			, .s = "INFO"			, .d = "normal execution" }
+	, { .v = L_ERROR		, .s = "ERROR"		, .d = "fatal errors" }
+	, { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "liblistwise - generator parsing" }
 #if DEBUG
 	, { .v = L_LWEXEC		, .s = "LWEXEC"		, .d = "liblistwise - execution" }
 	, { .v = L_LWOPINFO	, .s = "LWOPINFO"	, .d = "liblistwise - operator info messages" }
@@ -33,5 +35,5 @@ struct g_logs_t logs[] = {
 #endif
 };
 
-struct g_logs_t * o_logs = logs;
-int o_logs_l = sizeof(logs) / sizeof(logs[0]);
+struct g_logs_t * g_logs = logs;
+int g_logs_l = sizeof(logs) / sizeof(logs[0]);

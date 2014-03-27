@@ -21,18 +21,20 @@
 #include "logger.h"
 
 // E
-# define L_LWPARSE			0x0000000800000000ULL
+#define L_INFO					0x0000000000000001ULL
+#define L_ERROR					0x0000000000000002ULL | L_RED
+#define L_LWPARSE				0x0000000800000000ULL		/* dump the generator */
 
 #if DEBUG
-# define L_LWEXEC				0x0000000200000000ULL
-# define L_LWOPINFO			0x0000000400000000ULL
+# define L_LWEXEC				0x0000000200000000ULL		/* step-by-step LW exectution */
+# define L_LWOPINFO			0x0000000400000000ULL		/* operator informational messages */
 #else
 # define L_LWEXEC				0
 # define L_LWOPINFO			0
 #endif
 #if DEVEL
-# define L_LWTOKEN			0x0000001000000000ULL
-# define L_LWSTATE			0x0000002000000000ULL
+# define L_LWTOKEN			0x0000001000000000ULL		/* scanner token stream */
+# define L_LWSTATE			0x0000002000000000ULL		/* scanner state changes */
 #else
 # define L_LWTOKEN			0
 # define L_LWSTATE			0

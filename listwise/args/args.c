@@ -233,8 +233,9 @@ if(operators)
 		" C. OPERATION_INPLACE\n"
 		" D. OPERATION_FILESYSTEM\n"
 	);
-	printf("\n");
 }
+
+printf("\n");
 
 if(help || logopts || operators)
 {
@@ -247,7 +248,7 @@ if(help || logopts || operators)
 	exit(!valid);
 }
 
-int parse_args(const int argc, char ** const argv, int * const genx)
+int parse_args(pstring ** remnant)
 {
 	int help = 0;
 	int version = 0;
@@ -289,6 +290,9 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 	};
 
 	char * switches =
+		// getopt options
+		"-"
+
 		// no-argument switches
 		"ahknz0N"
 
@@ -307,61 +311,87 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 	g_args.mode_sanity			= DEFAULT_MODE_SANITY;
 #endif
 
-	int c;
-	int indexptr;
-	opterr = 1;
-	while((c = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
-	{
-		switch(c)
-		{
-			case 'a':
-				g_args.out_list = 1;
-				break;
-			case 'k':
-				g_args.out_stack = 1;
-				break;
-			case 'n':
-				g_args.numbering = 1;
-				break;
-			case 'z':
-				g_args.out_null = 1;
-				break;
-			case '0':
-				g_args.in_null = 1;
-				break;
-			case 'f':
-				free(g_args.generator_file);
-				g_args.generator_file = strdup(optarg);
-				break;
-			case 'l':
-				free(g_args.init_file);
-				g_args.init_file = strdup(optarg);
-				break;
-			case 'i':
-				{
-					if(g_args.init_listl == g_args.init_lista)
-					{
-						int ns = g_args.init_lista ?: 10;
-						ns = ns * 2 + ns / 2;
+	// initialize logger - prepare g_argc/g_argv
+#if DEBUG
+	fatal(log_parse_and_describe, "+INFO|ERROR|LWPARSE", 0, L_INFO);
+	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
+		fatal(log_init_and_describe, L_TAG, L_INFO);
+	else
+		fatal(log_init_and_describe, 0, L_INFO);
+#else
+	fatal(log_parse, "+ERROR", 0);
+	fatal(log_init, 0);
+#endif
 
-						fatal(xrealloc, &g_args.init_list, sizeof(*g_args.init_list), ns, g_args.init_lista);
-						fatal(xrealloc, &g_args.init_list_lens, sizeof(*g_args.init_list_lens), ns, g_args.init_lista);
-						g_args.init_lista = ns;
+	int x;
+	int indexptr;
+	opterr = 0;
+	while(indexptr = 0, (x = getopt_long(g_argc, &g_argv[0], switches, longopts, &indexptr)) != -1)
+	{
+		if(indexptr)
+		{
+			// longopts
+		}
+		else if(x == 1 || x == '?')
+		{
+			// unrecognized
+			if(*remnant)
+				fatal(pscat, remnant, " ", 1);
+			fatal(pscat, remnant, optarg, 0);
+		}
+		else
+		{
+			switch(x)
+			{
+				case 'a':
+					g_args.out_list = 1;
+					break;
+				case 'k':
+					g_args.out_stack = 1;
+					break;
+				case 'n':
+					g_args.numbering = 1;
+					break;
+				case 'z':
+					g_args.out_null = 1;
+					break;
+				case '0':
+					g_args.in_null = 1;
+					break;
+				case 'f':
+					free(g_args.generator_file);
+					g_args.generator_file = strdup(optarg);
+					break;
+				case 'l':
+					free(g_args.init_file);
+					g_args.init_file = strdup(optarg);
+					break;
+				case 'i':
+					{
+						if(g_args.init_listl == g_args.init_lista)
+						{
+							int ns = g_args.init_lista ?: 10;
+							ns = ns * 2 + ns / 2;
+
+							fatal(xrealloc, &g_args.init_list, sizeof(*g_args.init_list), ns, g_args.init_lista);
+							fatal(xrealloc, &g_args.init_list_lens, sizeof(*g_args.init_list_lens), ns, g_args.init_lista);
+							g_args.init_lista = ns;
+						}
+						g_args.init_list[g_args.init_listl] = strdup(optarg);
+						g_args.init_list_lens[g_args.init_listl] = strlen(optarg);
+						g_args.init_listl++;
 					}
-					g_args.init_list[g_args.init_listl] = strdup(optarg);
-					g_args.init_list_lens[g_args.init_listl] = strlen(optarg);
-					g_args.init_listl++;
-				}
-				break;
-			case 'N':
-				g_args.numbering = 2;
-				break;
-			case 'h':
-				help = 1;
-				break;
-			case '?':
-				failf(LISTWISE_BADARGS, "unknown : %s", optarg);
-				break;
+					break;
+				case 'N':
+					g_args.numbering = 2;
+					break;
+				case 'h':
+					help = 1;
+					break;
+				case '?':
+					failf(LISTWISE_BADARGS, "unknown : %s", optarg);
+					break;
+			}
 		}
 	}
 
@@ -370,20 +400,11 @@ int parse_args(const int argc, char ** const argv, int * const genx)
 		usage(1, 1, help, logopts, operators, &optypes);
 	}
 
-	if(optind < argc && strcmp(argv[optind], "-") == 0)
+	if(optind < g_argc && strcmp(g_argv[optind], "-") == 0)
 	{
 		fatal(ixstrdup, &g_args.generator_file, "-");
 		optind++;
 	}
-
-	(*genx) = optind;
-
-	// initialize logger
-#if DEBUG
-	fatal(log_parse, "+LWPARSE", 0);
-#endif
-
-	fatal(log_init, 0);
 
 	finally : coda;
 }

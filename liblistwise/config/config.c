@@ -17,9 +17,7 @@
 
 #include "listwise/internal.h"
 
-#if DEBUG || DEVEL || SANITY
 void API listwise_configure_logging(struct listwise_logging * logging)
 {
 	listwise_logging_config = logging;
 }
-#endif

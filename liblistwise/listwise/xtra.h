@@ -23,12 +23,17 @@
 
 #define restrict __restrict
 
-#if DEBUG || DEVEL || SANITY
 struct listwise_logging
 {
+	// generator_dump2
+	void (*log_generator)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+
+	// lstack_dump2
+	void (*log_lstack)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+
 #if DEBUG
-	// lstack dumping and exec progress
-	void (*log_dump)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	// exec progress - also invokes log_lstack to dump lstack along the way
+	void (*log_exec)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
 
 	// listwise operators - info
 	void (*log_opinfo)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
@@ -50,8 +55,6 @@ struct listwise_logging
 
 void listwise_configure_logging(struct listwise_logging *)
 	__attribute__((nonnull));
-
-#endif
 
 /// exec_generator
 //

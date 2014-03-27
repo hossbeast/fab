@@ -35,17 +35,25 @@
 
 #define L_TAG           0x0000FFFFFFFFFFFFULL // D range
 
-struct g_logs_t {
+extern struct g_logs_t {
 	uint64_t		v;	// tag definition
 	char *			s;	// name
 	int					l;	// length of name
 	char *			d;	// description
 } * g_logs;
 
-extern struct g_logs_t * o_logs;
-extern int o_logs_l;
+/// 
+// application-provided logs
+//
+extern int g_logs_l;
 
-int g_logs_l;
+///
+// logger-provided program args
+//
+extern char ** g_argv;	// array of args as delimited by nulls
+extern int g_argc;			// count of g_argv
+extern char * g_argvs;	// single string, nulls replaced with spaces
+extern int g_argvsl;		// length of g_argvs
 
 /// log_init
 //
@@ -54,7 +62,7 @@ int g_logs_l;
 //
 // PARAMETERS
 //  trace  - matching logs will emit trace info
-//  [bits]   - bits to use when logging the description
+//  [bits] - bits to use when logging the description
 //
 int log_init(uint64_t trace)
 	__attribute__((nonnull));

@@ -52,6 +52,11 @@ static uint64_t o_e;						// when a log is being constructed, effective bits
 struct g_logs_t * g_logs;
 int g_logs_l;
 
+char ** g_argv;
+int g_argc;
+char * g_argvs;
+int g_argvsl;
+
 //
 // [[ static ]]
 //
@@ -86,9 +91,6 @@ static unsigned char o_colors[] = {
 
 static void __attribute__((constructor)) init()
 {
-	g_logs = o_logs;
-	g_logs_l = o_logs_l;
-
 	// determine logtag len
 	int x;
 	for(x = 0; x < g_logs_l; x++)
@@ -286,7 +288,7 @@ static void prep(const char * const func, const char * const file, int line)
 // [[ public ]]
 //
 
-static int logparse(char * args, int args_len, char * dst, size_t sz, size_t * z)
+static int logparse(char * args, int args_len, char * dst, size_t sz, size_t * z, int * cnt)
 {
 	args_len = args_len ?: strlen(args);
 
@@ -347,6 +349,7 @@ static int logparse(char * args, int args_len, char * dst, size_t sz, size_t * z
 						{
 							// special case : TAG excludes liblistwise-specific tags
 //							tag |= L_TAG & ~(L_LWTOKEN | L_LWSTATE | L_LWPARSE | L_LWEXEC | L_LWSANITY);
+							tag |= L_TAG;
 							off += 3;
 						}
 						else
@@ -392,6 +395,8 @@ static int logparse(char * args, int args_len, char * dst, size_t sz, size_t * z
 							(*z) = describe(f, dst, sz);
 						else if(dst)
 							describe(f, dst, sz);
+						if(cnt)
+							(*cnt)++;
 					}
 				}
 			}
@@ -403,7 +408,7 @@ static int logparse(char * args, int args_len, char * dst, size_t sz, size_t * z
 
 int log_parse(char * args, int args_len)
 {
-	xproxy(logparse, args, args_len, 0, 0, 0);
+	xproxy(logparse, args, args_len, 0, 0, 0, 0);
 }
 
 int log_parse_and_describe(char * args, int args_len, uint64_t bits)
@@ -411,66 +416,116 @@ int log_parse_and_describe(char * args, int args_len, uint64_t bits)
 	char space[256];
 	size_t sz = 0;
 
-	fatal(logparse, args, args_len, space, sizeof(space), &sz);
+	fatal(logparse, args, args_len, space, sizeof(space), &sz, 0);
 
-	log(bits, "%.*s", sz, space);
+	if(sz)
+		log(bits, "%.*s", sz, space);
 
 	finally : coda;
 }
 
-static int loginit(uint64_t trace, char * dst, size_t sz, size_t * z)
+static int loginit(uint64_t trace, uint64_t bits)
 {
 	int			fd = -1;
-	char *	args = 0;
-	int			args_len = 0;
-	int			nlen = 0;
+	int			argsa = 0;	// g_argvs allocated size
+	int			argva = 0;
 
 	// save trace settings
 	o_trace_bits = trace;
 
-	// parse cmdline
+	// snarf the cmdline
 	fatal(xopen, "/proc/self/cmdline", O_RDONLY, &fd);
 
+	// read into g_argvs - single string containing entire cmdline
 	do
 	{
-		size_t newlen = args_len ? (args_len + (args_len / 2 ) + (args_len * 2)) : 10;
-		fatal(xrealloc, &args, 1, newlen, nlen);
-		nlen = newlen;
+		int newa = argsa ?: 10;
+		newa += newa * 2 + newa / 2;
+		fatal(xrealloc, &g_argvs, sizeof(*g_argvs), newa, argsa);
+		argsa = newa;
+	} while((g_argvsl += (read(fd, &g_argvs[g_argvsl], argsa - g_argvsl))) == argsa);
 
-	} while((args_len += (read(fd, &args[args_len], nlen - args_len))) == nlen);
+	g_argvsl--;
 
-	args_len--;
+	// 1. replace nulls with spaces in g_argvs
+	// 2. construct g_argv, array of arguments
 	int x;
-	for(x = 0; x < args_len; x++)
+	int i = 0;
+	for(x = 0; x <= g_argvsl; x++)
 	{
-		if(args[x] == 0)
-			args[x] = ' ';
+		if(g_argvs[x] == 0)
+		{
+			int len = strlen(&g_argvs[i]);
+			if(len)
+			{
+				if(g_argc == argva)
+				{
+					int newa = argva ?: 10;
+					newa += newa * 2 + newa / 2;
+					fatal(xrealloc, &g_argv, sizeof(*g_argv), newa, argva);
+					argva = newa;
+				}
+
+				fatal(xmalloc, &g_argv[g_argc], len + 1);
+				memcpy(g_argv[g_argc], &g_argvs[i], len);
+				g_argc++;
+				i = x + 1;
+			}
+
+			if(x < g_argvsl)
+				g_argvs[x] = ' ';
+		}
 	}
 
-	// parse cmdline args
-	fatal(logparse, args, args_len, dst, sz, z);
+	// parse elements of g_argv, splicing out recognized logger-options
+	for(x = 0; x < g_argc; x++)
+	{
+		int cnt = 0;
+		if(bits)
+		{
+			char space[128];
+			size_t sz = 0;
+			fatal(logparse, g_argv[x], 0, space, sizeof(space), &sz, &cnt);
+
+			if(sz)
+				log(bits, "%.*s", sz, space);
+		}
+		else
+		{
+			fatal(logparse, g_argv[x], 0, 0, 0, 0, &cnt);
+		}
+
+		if(cnt)
+			g_argv[x] = 0;
+	}
+
+	// shrink g_argv to size
+	for(x = g_argc - 1; x >= 0; x--)
+	{
+		if(g_argv[x] == 0)
+		{
+			memmove(
+			    &g_argv[x]
+				, &g_argv[x+1]
+				, g_argc - x - 1
+			);
+			g_argc--;
+		}
+	}
 
 finally:
-	free(args);
 	fatal(ixclose, &fd);
 coda;
 }
 
 int log_init(uint64_t trace)
 {
-	xproxy(loginit, trace, 0, 0, 0);
+	xproxy(loginit, trace, 0);
 }
 
 int log_init_and_describe(uint64_t trace, uint64_t bits)
 {
-	char space[256];
-	size_t sz = 0;
-
-	fatal(loginit, trace, space, sizeof(space), &sz);
-
-	log(bits, "%.*s", sz, space);
-
-	finally : coda;
+	xproxy(loginit, trace, bits);
 }
 
 int log_would(const uint64_t e)
@@ -666,4 +721,10 @@ void log_teardown()
 	free(o_file);
 #endif
 	free(o_filter);
+
+	free(g_argvs);
+	int x;
+	for(x = 0; x < g_argc; x++)
+		free(g_argv[x]);
+	free(g_argv);
 }

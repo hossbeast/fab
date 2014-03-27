@@ -42,7 +42,7 @@ int pscatvf(pstring ** restrict p, char * restrict fmt, va_list va)
 int pscatf(pstring ** restrict p, char * restrict fmt, ...)
 	__attribute__((nonnull));
 
-int pscat(pstring ** restrict p, void * restrict s, size_t l)
+int pscat(pstring ** restrict p, char * restrict s, size_t l)
 	__attribute__((nonnull));
 
 int psgrow(pstring ** restrict p, size_t l)

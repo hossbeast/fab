@@ -81,8 +81,10 @@ int pscatf(pstring ** p, char * fmt, ...)
 	finally : coda;
 }
 
-int pscat(pstring ** p, void * s, size_t l)
+int pscat(pstring ** p, char * s, size_t l)
 {
+	l = l ?: strlen(s);
+
 	if(!*p)
 		fatal(xmalloc, p, sizeof(**p));
 

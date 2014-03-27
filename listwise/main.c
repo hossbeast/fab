@@ -43,11 +43,29 @@
 
 #include "xlinux.h"
 
+#include "pstring.h"
+
 #include "args.h"
 #include "log.h"
 
+void log_generator(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_LWPARSE, fmt, va);
+	va_end(va);
+}
+
+void log_lstack(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	vlogi(func, file, line, L_INFO, fmt, va);
+	va_end(va);
+}
+
 #if DEBUG
-void log_dump(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+void log_exec(void * udata, const char * func, const char * file, int line, char * fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -155,41 +173,43 @@ finally:
 coda;
 }
 
-int main(int argc, char** argv)
+int main(int g_argc, char** g_argv)
 {
-	char space[128];
+	char space[2048];
+	size_t tracesz = 0;
 
 	generator_parser* p = 0;		// generator parser
 	generator* g = 0;						// generator
 	lwx * lx = 0;								// list stack
 	int nullfd = -1;						// fd to /dev/null
 
+	pstring * args_remnant = 0;	// concatenated unprocessed arguments
+
 	void * mem = 0;
 	size_t sz = 0;
 	int x;
 
 	// parse cmdline arguments
-	int genx = 0;
-	fatal(parse_args, argc, argv, &genx);
+	fatal(parse_args, &args_remnant);
 
 	// arrange for liblistwise to write to /dev/null
 	fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
 
-#if DEBUG || DEVEL || SANITY
 	listwise_configure_logging((struct listwise_logging[]) {{
+		  .log_generator	= log_generator
+		, .log_lstack			= log_opinfo
 #if DEBUG
-		  .log_dump		= log_dump
-		, .log_opinfo	= log_opinfo
+		, .log_exec				= log_exec
+		, .log_opinfo			= log_opinfo
 #endif
 #if DEVEL
-		, .log_tokens	= log_tokens
-		, .log_states	= log_states
+		, .log_tokens			= log_tokens
+		, .log_states			= log_states
 #endif
 #if SANITY
-		, .log_sanity	= log_sanity
+		, .log_sanity			= log_sanity
 #endif
 	}});
-#endif
 
 	// create generator parser
 	fatal(generator_mkparser, &p);
@@ -202,24 +222,23 @@ int main(int argc, char** argv)
 		// parse generator-string from file
 #if DEVEL
 		fatal(generator_parse2, p, mem, sz, &g, 0);
-
-		
 #else
 		fatal(generator_parse, p, mem, sz, &g);
 #endif
 	}
-	else if(genx < argc)
+	else if(args_remnant && args_remnant->l)
 	{
-		// concatenate remaining arguments with spaces
-		for(x = genx; x < (argc - 1); x++)
-			argv[x][strlen(argv[x])] = ' ';
-
-		// parse generator-string from argv
+		// parse generator-string from rgv
 #if DEVEL
-		fatal(generator_parse2, p, argv[genx], 0, &g, 0);
+		fatal(generator_parse2, p, args_remnant->s, args_remnant->l, &g, 0);
 #else
-		fatal(generator_parse, p , argv[genx], 0, &g);
+		fatal(generator_parse, p, args_remnant->s, args_remnant->l, &g);
 #endif
+	}
+
+	if(log_would(L_LWPARSE))
+	{
+		generator_dump2(g, 0);
 	}
 
 	// attempt to read initial list items from stdin and a specified file
@@ -341,17 +360,25 @@ finally:
 	generator_free(g);
 	generator_parser_free(p);
 	args_teardown();
+	pstring_free(args_remnant);
 
 	if(XAPI_UNWINDING)
 	{
-		if(g_args.lw_info)
+#if DEBUG
+		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
 		{
-			xapi_backtrace();
+#endif
+			tracesz = xapi_trace_pithy(space, sizeof(space));
+#if DEBUG
 		}
 		else
 		{
-			xapi_pithytrace();
+			tracesz = xapi_trace_full(space, sizeof(space));
 		}
+#endif
+
+		log_write(L_ERROR, space, tracesz);
 	}
+
 coda;
 }

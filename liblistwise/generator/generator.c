@@ -234,43 +234,43 @@ static void dump(generator* g, void ** udata)
 	size_t z = 0;
 
 	// expanded generator description
-	lw_log_dump("generator @ %p {\n", g);
-	lw_log_dump("  initial list\n");
+	lw_log_generator("generator @ %p {", g);
+	lw_log_generator("  initial list");
 
 	int x;
 	for(x = 0; x < g->argsl; x++)
 	{
 		z = generator_arg_snwrite(space, sizeof(space), g->args[x], 0);
-		lw_log_dump("    %.*s\n", (int)z, space);
+		lw_log_generator("    %.*s", (int)z, space);
 	}
 
-	lw_log_dump("  operations\n");
+	lw_log_generator("  operations");
 	for(x = 0; x < g->opsl; x++)
 	{
-		lw_log_dump("    OP - %s\n", g->ops[x]->op->s);
-		lw_log_dump("      args\n");
+		lw_log_generator("    OP - %s", g->ops[x]->op->s);
+		lw_log_generator("      args");
 
 		int y;
 		for(y = 0; y < g->ops[x]->argsl; y++)
 		{
 			z = generator_arg_snwrite(space, sizeof(space), g->ops[x]->args[y], 0);
-			lw_log_dump("        %.*s\n", (int)z, space);
+			lw_log_generator("        %.*s", (int)z, space);
 		}
 
 		if(y == 0)
-			lw_log_dump("        none\n");
+			lw_log_generator("        none");
 	}
 
 	if(x == 0)
-		lw_log_dump("    none\n");
+		lw_log_generator("    none");
 
 	// normalized generator-string
-	lw_log_dump("\n");
+	lw_log_generator("");
 
 	z = generator_snwrite(space, sizeof(space), g);
-	lw_log_dump(" --> %.*s\n", (int)z, space);
+	lw_log_generator(" --> %.*s", (int)z, space);
 
-	lw_log_dump("}\n");
+	lw_log_generator("}");
 }
 
 #undef restrict

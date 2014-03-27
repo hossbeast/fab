@@ -120,7 +120,7 @@ static int flatten(lwx * lso)
 ///
 
 #if DEBUG
-void log_dump(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+void log_exec(void * udata, const char * func, const char * file, int line, char * fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -205,7 +205,7 @@ void lw_configure_logging()
 #if DEBUG || DEVEL || SANITY
   listwise_configure_logging((struct listwise_logging[]) {{
 #if DEBUG
-      .log_dump   = log_dump
+      .log_exec   = log_exec
     , .log_opinfo = log_opinfo
 #endif
 #if DEVEL
