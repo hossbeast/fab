@@ -44,9 +44,12 @@ $dcommon = [ $*/common ~ j ]
 [ @scripts ]
 {
 	exec 2>/dev/null
-	> fab -v '$dvel=[1]' --bslic-fab @all	\
-	-k [ $*/make64.sh ]
+	fab --bslic-fab -k [ $*/make64.sh ] @all
+	fab --bslic-fab -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 
-	> fab -v '$dvel=[1]' --bslic-fab +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir	\
-	-k [ $*/install64.sh ]
+	fab --bslic-fab -v '$dbug=["[" 1 "]"]' -k [ $*/make64-debug.sh ] @all
+	fab --bslic-fab -v '$dbug=["[" 1 "]"]' -k [ $*/install64-debug.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
+
+	fab --bslic-fab -v '$dvel=["[" 1 "]"]' -k [ $*/make64-devel.sh ] @all
+	fab --bslic-fab -v '$dvel=["[" 1 "]"]' -k [ $*/install64-devel.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 }

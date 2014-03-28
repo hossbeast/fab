@@ -55,6 +55,18 @@ while(<STDIN>)
 			$line =~ s/\.tab\.h/.tab/;
 			push @W, $line;				# weak dependency on the object
 		}
+		elsif($line =~ /\.states\.h$/)
+		{
+			push @S, $line;				# strong dependency on the header
+			$line =~ s/\.states\.h/.states/;
+			push @W, $line;				# weak dependency on the object
+		}
+		elsif($line =~ /\.tokens\.h$/)
+		{
+			push @S, $line;				# strong dependency on the header
+			$line =~ s/\.tokens\.h/.tokens/;
+			push @W, $line;				# weak dependency on the object
+		}
 		else
 		{
 			push @S, $line;				# strong dependency on the header
