@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "xlinux.h"
 
@@ -49,25 +49,59 @@ voidstar API lwx_setptr(lwx * const lx, void * const g)
 	return ((lx->ptr = g));
 }
 
-void API lwx_iterate_loop(lwx * const restrict lx, const int x, const int y, const int sel, int * const restrict go)
+void API lwx_free(lwx * lx)
 {
-	*go = 1;
-	if(sel && lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
+	if(lx && lx != listwise_identity)
 	{
-		*go = 0;
-		if(lx->sel.active->nil == 0 && lx->sel.active->sl > (y / 8))
+		int x;
+		int y;
+		for(x = 0; x < lx->a; x++)
 		{
-			*go = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
+			for(y = 0; y < lx->s[x].a; y++)
+			{
+				free(lx->s[x].s[y].s);
+				free(lx->s[x].t[y].s);
+
+				if(x == 0)
+				{
+					free(lx->win.s[y].storage[0].s);
+					free(lx->win.s[y].storage[1].s);
+				}
+			}
+
+			free(lx->s[x].s);
+			free(lx->s[x].t);
 		}
+
+		free(lx->s);
+		free(lx->win.s);
+		free(lx->sel.storage[0].s);
+		free(lx->sel.storage[1].s);
+		free(lx);
 	}
 }
 
-int API lwx_lists(lwx * const restrict lx)
+void API lwx_xfree(lwx ** lx)
 {
-	return lx->l;
+	lwx_free(*lx);
+	*lx = 0;
 }
 
-int API lwx_rows(lwx * const restrict lx, const int x)
+int API lwx_reset(lwx * lx)
 {
-	return lx->s[x].l;
+	int x;
+	for(x = 0; x < lx->l; x++)
+	{
+		int y;
+		for(y = 0; y < lx->s[x].l; y++)
+			fatal(lstack_clear, lx, x, y);
+
+		lx->s[x].l = 0;
+	}
+
+	lx->l = 0;
+	lx->sel.active = 0;
+	lx->sel.staged = 0;
+
+	finally : coda;
 }

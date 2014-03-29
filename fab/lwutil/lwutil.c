@@ -15,10 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdarg.h>
+
 #include "listwise.h"
 #include "listwise/xtra.h"
 #include "listwise/object.h"
 #include "listwise/generator.h"
+#include "listwise/logging.h"
 
 #include "lwutil.h"
 
@@ -202,8 +205,7 @@ int lw_exec(generator * gen, lwx ** ls)
 #if DEBUG || DEVEL || SANITY
 void lw_configure_logging()
 {
-#if DEBUG || DEVEL || SANITY
-  listwise_configure_logging((struct listwise_logging[]) {{
+  listwise_logging_configure((struct listwise_logging[]) {{
 #if DEBUG
       .log_exec   = log_exec
     , .log_opinfo = log_opinfo
@@ -216,6 +218,5 @@ void lw_configure_logging()
     , .log_sanity = log_sanity
 #endif
   }});
-#endif
 }
 #endif

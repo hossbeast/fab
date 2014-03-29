@@ -23,39 +23,6 @@
 
 #define restrict __restrict
 
-struct listwise_logging
-{
-	// generator_dump2
-	void (*log_generator)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
-
-	// lstack_dump2
-	void (*log_lstack)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
-
-#if DEBUG
-	// exec progress - also invokes log_lstack to dump lstack along the way
-	void (*log_exec)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
-
-	// listwise operators - info
-	void (*log_opinfo)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
-#endif
-
-#if DEVEL
-	// generator parsing - tokens
-	void (*log_tokens)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
-
-	// generator parsing - states
-	void (*log_states)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
-#endif
-
-#if SANITY
-	// listwise sanity checks
-	void (*log_sanity)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
-#endif
-} * listwise_logging_config;
-
-void listwise_configure_logging(struct listwise_logging *)
-	__attribute__((nonnull));
-
 /// exec_generator
 //
 // SUMMARY
@@ -74,7 +41,7 @@ void listwise_configure_logging(struct listwise_logging *)
 //  otherwise, an existing lw context is reused
 //
 int listwise_exec_generator(
-	  const generator * const restrict g
+	  generator * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl
@@ -84,7 +51,7 @@ int listwise_exec_generator(
 
 #if DEBUG || SANITY
 int listwise_exec_generator2(
-	  const generator * const restrict g
+	  generator * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl

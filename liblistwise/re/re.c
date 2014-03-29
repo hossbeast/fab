@@ -20,7 +20,7 @@
 
 #include <pcre.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 /* libpcre error table */
 #include "PCRE.errtab.h"

@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "yyutil.h"
 

@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #if SANITY
 #include "sanity.h"
@@ -30,15 +30,15 @@
 ///
 
 static int exec_generator(
-	  const generator * const restrict g
+	  generator * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl
 	, lwx ** restrict lx
-	, void ** udata
+	, void * udata
 )
 {
-	char space[256];
+	pstring * ps = 0;
 
 	// ovec workspace
 	int* ovec = 0;
@@ -81,10 +81,8 @@ static int exec_generator(
 #if DEBUG
 	if(lw_would_exec())
 	{
-		size_t __attribute__((unused)) z = generator_snwrite(space, sizeof(space), (void*)g);
-		lw_log_exec(" >> %.*s\n", (int)z, space);
-
-		fatal(lstack_dump2, *lx, udata);
+		fatal(generator_canon_log, g, &ps, udata);
+		fatal(lstack_description_log, *lx, &ps, udata);
 	}
 #endif
 
@@ -123,7 +121,7 @@ static int exec_generator(
 
 #if DEBUG
 		if(x && lw_would_exec())
-			fatal(lstack_dump2, *lx, udata);
+			fatal(lstack_description_log, *lx, &ps, udata);
 #endif
 
 		if(g->ops[x]->op != yop && g->ops[x]->op != wyop && !isor)
@@ -134,10 +132,11 @@ static int exec_generator(
 
 		if(lw_would_exec())
 		{
-			lw_log_exec("\n");
+extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps);
 
-			size_t __attribute__((unused)) z = generator_operation_snwrite(space, sizeof(space), g->ops[x], 0);
-			lw_log_exec(" >> %.*s\n", (int)z, space);
+			lw_log_exec("");
+			fatal(operation_canon_pswrite, g->ops[x], 0, &ps);
+			lw_log_exec(" >> %.*s", (int)ps->l, ps->s);
 		}
 
 		if(g->ops[x]->op == yop || g->ops[x]->op == wyop)
@@ -179,13 +178,14 @@ static int exec_generator(
 
 #if DEBUG
 	if(g->opsl && lw_would_exec())
-		fatal(lstack_dump2, *lx, udata);
+		fatal(lstack_description_log, *lx, &ps, udata);
 #endif
 
 	(*lx)->win.active_era++;	// age active windows
 
 finally:
 	free(ovec);
+	psfree(ps);
 #if SANITY
 	sanityblock_free(sb);
 #endif
@@ -197,7 +197,7 @@ coda;
 ///
 
 int API listwise_exec_generator(
-	  const generator * const restrict g
+	  generator * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl
@@ -209,7 +209,7 @@ int API listwise_exec_generator(
 
 #if DEBUG || DEVEL || SANITY
 int API listwise_exec_generator2(
-	  const generator * const restrict g
+	  generator * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl

@@ -27,7 +27,7 @@ $libname 			= [ libxlinux.so ]
 $soname				= [ $libname ~ j ]
 $libxlinux		= [ $dlibxlinux/libxlinux.so ~ j ]		# path to the library .so
 $cflags				= [ -fPIC [ $dlibxlinux ~ lsr/c/-d/s/^/-I ] $cflags ]
-$lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
+$lflags				= [ $libxapi, -shared, [ "-Wl,-soname," $soname ] ]
 
 # source files
 +[@std.c]($gendir = $dlibxlinux; $rdirs = $dlibxlinux; $ext = [ pic.o ]; -$cobjpaths; $cc $cflags)

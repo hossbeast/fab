@@ -19,7 +19,7 @@
 #include <string.h>
 #include <alloca.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "macros.h"
 

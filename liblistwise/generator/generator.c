@@ -18,7 +18,7 @@
 #include <stdarg.h>
 #include <inttypes.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "generator/generator.def.h"
 #include "generator/generator.tab.h"
@@ -28,6 +28,8 @@
 #include "genscan.h"
 
 #include "xlinux.h"
+
+#include "macros.h"
 
 #define restrict __restrict
 
@@ -227,54 +229,6 @@ finally:
 coda;
 }
 
-static void dump(generator* g, void ** udata)
-{
-	char space[2048];
-
-	size_t z = 0;
-
-	// expanded generator description
-	lw_log_generator("generator @ %p {", g);
-	lw_log_generator("  initial list");
-
-	int x;
-	for(x = 0; x < g->argsl; x++)
-	{
-		z = generator_arg_snwrite(space, sizeof(space), g->args[x], 0);
-		lw_log_generator("    %.*s", (int)z, space);
-	}
-
-	lw_log_generator("  operations");
-	for(x = 0; x < g->opsl; x++)
-	{
-		lw_log_generator("    OP - %s", g->ops[x]->op->s);
-		lw_log_generator("      args");
-
-		int y;
-		for(y = 0; y < g->ops[x]->argsl; y++)
-		{
-			z = generator_arg_snwrite(space, sizeof(space), g->ops[x]->args[y], 0);
-			lw_log_generator("        %.*s", (int)z, space);
-		}
-
-		if(y == 0)
-			lw_log_generator("        none");
-	}
-
-	if(x == 0)
-		lw_log_generator("    none");
-
-	// normalized generator-string
-	lw_log_generator("");
-
-	z = generator_snwrite(space, sizeof(space), g);
-	lw_log_generator(" --> %.*s", (int)z, space);
-
-	lw_log_generator("}");
-}
-
-#undef restrict
-
 ///
 /// API
 ///
@@ -390,196 +344,3 @@ int API generator_parse_named2(generator_parser* p, char* s, int l, char * name,
 	finally : coda;
 }
 #endif
-
-void API generator_dump(generator* g)
-{
-	dump(g, 0);
-}
-
-#if DEBUG
-void API generator_dump2(generator* g, void * udata)
-{
-	dump(g, &udata);
-}
-#endif
-
-///
-/// public
-///
-
-size_t generator_snwrite(char * const dst, const size_t sz, generator * const g)
-{
-	uint32_t sm = GENSCAN_SLASH_DOREFS;
-
-	size_t z = 0;
-	z += generator_args_snwrite(dst + z, sz - z, g->args, g->argsl, sm);
-
-	if(z)
-		z += snprintf(dst + z, sz - z, " ");
-
-	return z + generator_operations_snwrite(dst + z, sz - z, g->ops, g->opsl, sm);
-}
-
-size_t generator_operations_snwrite(char * const dst, const size_t sz, operation ** const ops, int opsl, uint32_t sm)
-{
-	size_t z = 0;
-	
-	int x;
-	for(x = 0; x < opsl; x++)
-	{
-		if(x)
-			z += snprintf(dst + z, sz - z, " ");
-
-		z += generator_operation_snwrite(dst + z, sz - z, ops[x], sm);
-	}
-
-	return z;
-}
-
-size_t generator_operation_snwrite(char * const dst, const size_t sz, operation * const oper, uint32_t sm)
-{
-	size_t z = 0;
-	z += snprintf(dst + z, sz - z, "%s", oper->op->s);
-
-	// emit the delimiter
-	if(oper->argsl)
-		z += snprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
-
-	return z + generator_args_snwrite(dst + z, sz - z, oper->args, oper->argsl, sm);
-}
-
-size_t generator_args_snwrite(char * const dst, const size_t sz, arg ** const args, const int argsl, uint32_t sm)
-{
-	size_t z = 0;
-
-	int x;
-	for(x = 0; x < argsl; x++)
-	{
-		// emit the opener
-		if(GS_ENCLOSED(sm))
-			z += snprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
-		else if(x)
-			z += snprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
-
-		// emit the argument string
-		z += generator_arg_snwrite(dst + z, sz - z, args[x], sm);
-
-		// emit the closer
-		if(GS_ENCLOSED(sm))
-			z += snprintf(dst + z, sz - z, "%c", genscan_closing_char[sm]);
-		else if(x == (argsl - 1) && args[x]->l == 0)
-			z += snprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
-	}
-
-	return z;
-}
-
-size_t generator_arg_snwrite(char * const dst, const size_t sz, arg * const arg, uint32_t sm)
-{
-	size_t z = 0;
-
-	// track backreferences
-	int k = 0;
-
-	// emit characters according to the scanmode
-	int i;
-	for(i = 0; i < arg->l; i++)
-	{
-		if(arg->refs.l > k && arg->refs.v[k].s == &arg->s[i])
-		{
-			z += snprintf(dst + z, sz - z, "\\%d", arg->refs.v[k].ref);
-
-			i += arg->refs.v[k].l - 1;
-			k++;
-		}
-		else if(arg->s[i] == ' ' && GS_DELIMITED(sm))
-		{
-			z += snprintf(dst + z, sz - z, "\\s");
-		}
-		else if(arg->s[i] == '\t' && GS_DELIMITED(sm))
-		{
-			z += snprintf(dst + z, sz - z, "\\t");
-		}
-		else if(arg->s[i] == '\r' && GS_DELIMITED(sm))
-		{
-			z += snprintf(dst + z, sz - z, "\\r");
-		}
-		else if(arg->s[i] == '\n' && GS_DELIMITED(sm))
-		{
-			z += snprintf(dst + z, sz - z, "\\n");
-		}
-		else if((arg->s[i] != ' ' || arg->s[i] != '\t' || arg->s[i] != '\n' || arg->s[i] != '\r') && (arg->s[i] <= 0x20 || arg->s[i] >= 0x7f))
-		{
-			z += snprintf(dst + z, sz - z, "\\x{%02hhx}", arg->s[i]);
-		}
-		else if(arg->s[i] == '\\' && GS_DOREFS(sm))
-		{
-			z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
-		}
-		else if(GS_DELIMITED(sm) && arg->s[i] == genscan_opening_char[sm])
-		{
-			z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
-		}
-		else if(GS_ENCLOSED(sm) && arg->s[i] == genscan_closing_char[sm])
-		{
-			z += snprintf(dst + z, sz - z, "\\%c", arg->s[i]);
-		}
-		else
-		{
-			z += snprintf(dst + z, sz - z, "%c", arg->s[i]);
-		}
-	}
-
-	return z;
-}
-
-uint32_t generator_arg_scanmode(arg * const arg)
-{
-	int brefs = 0;
-	int hrefs = 0;
-	int ws = 0;
-	int slash = 0;
-	int comma = 0;
-	int rbrace = 0;
-
-	int i;
-	for(i = 0; i < arg->l; i++)
-	{
-		if(arg->s[i] == ' ')
-			ws++;
-		else if(arg->s[i] == '/')
-			slash++;
-		else if(arg->s[i] == ',')
-			comma++;
-		else if(arg->s[i] == '}')
-			rbrace++;
-		else if(arg->s[i] <= 0x1f || arg->s[i] >= 0x7f)
-			hrefs++;
-	}
-
-	for(i = 0; i < arg->refs.l; i++)
-	{
-		if(arg->refs.v[i].k == REFTYPE_BREF)
-		{
-			brefs++;
-			break;
-		}
-	}
-
-	// determine the appropriate scanmode for this argument
-	uint32_t sm = 0;
-
-	if(brefs || hrefs)
-		sm |= GENSCAN_ESCAPE_MODE_DOREFS;
-
-	if(ws)
-		sm |= GENSCAN_TOKENS_BRACES;
-	else if(!slash)
-		sm |= GENSCAN_TOKENS_SLASH;
-	else if(!comma)
-		sm |= GENSCAN_TOKENS_COMMA;
-	else
-		sm |= GENSCAN_TOKENS_BRACES;
-
-	return sm;
-}

@@ -22,7 +22,7 @@
 #include <stdint.h>
 
 #include "sanity.h"
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "xlinux.h"
 #include "macros.h"

@@ -17,7 +17,7 @@
 
 #include <stdint.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 static etable * tab[3];
 

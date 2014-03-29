@@ -15,14 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "xlinux.h"
 #include "wstdlib.h"
 
 int APIDATA listwise_allocation_seed = 10;
 lwx * APIDATA listwise_identity = 0;
-struct listwise_logging * APIDATA listwise_logging_config = 0;
 
 /// initialize
 //

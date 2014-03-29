@@ -18,14 +18,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "xlinux.h"
 #include "macros.h"
 
 #define restrict __restrict
 
-int API lstack_sel_stage(lwx * const restrict lx, int y)
+int API lstack_selection_stage(lwx * const restrict lx, int y)
 {
 	if(lx->sel.staged == 0)
 	{
@@ -71,14 +71,14 @@ int API lstack_sel_stage(lwx * const restrict lx, int y)
 	finally : coda;
 }
 
-int API lstack_sel_unstage(lwx * const restrict lx)
+int API lstack_selection_unstage(lwx * const restrict lx)
 {
 	lx->sel.staged = 0;
 
 	finally : coda;
 }
 
-int API lstack_sel_activate(lwx * const restrict lx)
+int API lstack_selection_activate(lwx * const restrict lx)
 {
 	if(lx->sel.staged && lx->sel.staged->lease == lx->sel.staged_era)
 	{
@@ -99,7 +99,7 @@ int API lstack_sel_activate(lwx * const restrict lx)
 	finally : coda;
 }
 
-int API lstack_sel_reset(lwx * const restrict lx)
+int API lstack_selection_reset(lwx * const restrict lx)
 {
 	lx->sel.active_era++;
 

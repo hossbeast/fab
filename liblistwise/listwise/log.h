@@ -21,17 +21,17 @@
 extern struct listwise_logging * listwise_logging_config;
 
 #if DEBUG || DEVEL || SANITY
-#define LW_WOULD(cb, udata) (listwise_logging_config && listwise_logging_config->cb && udata)
+#define LW_WOULD(cb) (listwise_logging_config && listwise_logging_config->cb)
 #define LW_LOG(cb, udata, func, file, line, fmt, ...)															\
 do {																																							\
-	if(LW_WOULD(cb, udata))																													\
+	if(LW_WOULD(cb))																																\
 	{																																								\
-		listwise_logging_config->cb((*udata), func, file, line, fmt, ##__VA_ARGS__);	\
+		listwise_logging_config->cb(udata, func, file, line, fmt, ##__VA_ARGS__);			\
 	}																																								\
 } while(0)
 #else
 #define LW_LOG(cb, udata, func, file, line, fmt, ...)
-#define LW_WOULD(cb, udata) 0
+#define LW_WOULD(cb) 0
 #endif
 
 #define lw_log_generator(fmt, ...)		LW_LOG(log_generator  , udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
@@ -42,12 +42,12 @@ do {																																							\
 #define lw_log_states(fmt, ...)				LW_LOG(log_states			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 #define lw_log_sanity(fmt, ...)				LW_LOG(log_sanity			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
-#define lw_would_generator()	LW_WOULD(log_generator  , udata)
-#define lw_would_exec()   		LW_WOULD(log_exec  			, udata)
-#define lw_would_lstack()   	LW_WOULD(log_lstack  		, udata)
-#define lw_would_opinfo() 		LW_WOULD(log_opinfo			, udata)
-#define lw_would_tokens() 		LW_WOULD(log_tokens			, udata)
-#define lw_would_states() 		LW_WOULD(log_states			, udata)
-#define lw_would_sanity() 		LW_WOULD(log_sanity			, udata)
+#define lw_would_generator()	LW_WOULD(log_generator)
+#define lw_would_exec()   		LW_WOULD(log_exec)
+#define lw_would_lstack()   	LW_WOULD(log_lstack)
+#define lw_would_opinfo() 		LW_WOULD(log_opinfo)
+#define lw_would_tokens() 		LW_WOULD(log_tokens)
+#define lw_would_states() 		LW_WOULD(log_states)
+#define lw_would_sanity() 		LW_WOULD(log_sanity)
 
 #endif

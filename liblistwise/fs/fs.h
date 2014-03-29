@@ -15,44 +15,40 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VSTRING_H
-#define _VSTRING_H
+#ifndef _LISTWISE_FS_H
+#define _LISTWISE_FS_H
 
-#include <stdarg.h>
 #include <sys/types.h>
+#include <stdint.h>
 
 #define restrict __restrict
 
-typedef struct
-{
-	char *		s;
-	size_t		a;
-	size_t		l;
-} pstring;
-
-int pvprintf(pstring ** restrict p, char * restrict fmt, va_list va)
-	__attribute__((nonnull));
-
-int psprintf(pstring ** restrict p, char * restrict fmt, ...)
-	__attribute__((nonnull));
-
-int pscatvf(pstring ** restrict p, char * restrict fmt, va_list va)
-	__attribute__((nonnull));
-
-int pscatf(pstring ** restrict p, char * restrict fmt, ...)
-	__attribute__((nonnull));
-
-int pscat(pstring ** restrict p, char * restrict s, size_t l)
-	__attribute__((nonnull));
-
-int psgrow(pstring ** restrict p, size_t l)
-	__attribute__((nonnull));
-
-void pstring_free(pstring *);
-
-void pstring_wfree(pstring **)
-	__attribute__((nonnull));
+/// fs_statfmt
+//
+// SUMMARY
+//
+// PARAMETERS
+//  s       - path
+//  [sl]    - length of s, 0 for strlen
+//  [fmt]   - printf-style expression (modelled after find)
+//  [flags] - flags string (L, C, F)
+//  dst     - write here
+//  sz      - maximum number of bytes to write to dst
+//  z       - returns the number of bytes written
+//
+// REMARKS
+//
+int fs_statfmt(
+	  const char * const restrict s
+	, int sl
+	, const char * restrict fmt
+	, const char * const restrict flags
+	, char * const restrict dst
+	, size_t sz
+	, size_t * const restrict z
+	, void ** udata
+)
+	__attribute__((nonnull(1, 5, 7)));
 
 #undef restrict
 #endif
-

@@ -32,8 +32,12 @@
 ** also functions for producing a terse and complete error string from the backtrace information
 **
 ** non UNWIND-ing code (even non-xapi-code) that calls UNWIND-ing code simply receives an error code
-**
 */
+
+/*
+** having functions return xapi is a convenient way of indicating that they obey this calling convention
+*/
+typedef int xapi;
 
 #if XAPI_UNWIND
 // error table struct

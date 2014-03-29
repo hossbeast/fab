@@ -34,7 +34,8 @@
 #include "listwise/ops.h"
 #include "listwise/generator.h"
 #include "listwise/object.h"
-#include "listwise/log.h"
+#include "listwise/logging.h"
+#include "listwise/describe.h"
 
 #include "xapi.h"
 #include "LISTWISE.errtab.h"
@@ -48,6 +49,7 @@
 #include "args.h"
 #include "log.h"
 
+#if DEBUG
 void log_generator(void * udata, const char * func, const char * file, int line, char * fmt, ...)
 {
 	va_list va;
@@ -60,11 +62,11 @@ void log_lstack(void * udata, const char * func, const char * file, int line, ch
 {
 	va_list va;
 	va_start(va, fmt);
-	vlogi(func, file, line, L_INFO, fmt, va);
+	log_starti(func, file, line, L_LWEXEC, "\n");
+	vlog_finish(fmt, va);
 	va_end(va);
 }
 
-#if DEBUG
 void log_exec(void * udata, const char * func, const char * file, int line, char * fmt, ...)
 {
 	va_list va;
@@ -184,6 +186,7 @@ int main(int g_argc, char** g_argv)
 	int nullfd = -1;						// fd to /dev/null
 
 	pstring * args_remnant = 0;	// concatenated unprocessed arguments
+	pstring * temp = 0;
 
 	void * mem = 0;
 	size_t sz = 0;
@@ -195,10 +198,10 @@ int main(int g_argc, char** g_argv)
 	// arrange for liblistwise to write to /dev/null
 	fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
 
-	listwise_configure_logging((struct listwise_logging[]) {{
-		  .log_generator	= log_generator
-		, .log_lstack			= log_opinfo
+	listwise_logging_configure((struct listwise_logging[]) {{
 #if DEBUG
+		  .log_generator	= log_generator
+		, .log_lstack			= log_lstack
 		, .log_exec				= log_exec
 		, .log_opinfo			= log_opinfo
 #endif
@@ -234,11 +237,6 @@ int main(int g_argc, char** g_argv)
 #else
 		fatal(generator_parse, p, args_remnant->s, args_remnant->l, &g);
 #endif
-	}
-
-	if(log_would(L_LWPARSE))
-	{
-		generator_dump2(g, 0);
 	}
 
 	// attempt to read initial list items from stdin and a specified file
@@ -280,6 +278,11 @@ int main(int g_argc, char** g_argv)
 
 	if(g)
 	{
+		if(log_would(L_LWPARSE))
+		{
+			generator_description_log(g, &temp, 0);
+		}
+
 #if DEBUG || DEVEL || SANITY
 		fatal(listwise_exec_generator2, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx, 0);
 #else
@@ -360,7 +363,8 @@ finally:
 	generator_free(g);
 	generator_parser_free(p);
 	args_teardown();
-	pstring_free(args_remnant);
+	psfree(temp);
+	psfree(args_remnant);
 
 	if(XAPI_UNWINDING)
 	{

@@ -18,7 +18,7 @@
 #include <stdarg.h>
 #include <inttypes.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "generator/genscan.h"
 #undef _GENSCAN

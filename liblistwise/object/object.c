@@ -17,7 +17,7 @@
 
 #include <stddef.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "coll.h"
 #include "map.h"

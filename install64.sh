@@ -54,7 +54,7 @@ fml_1_0()
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
   [[ $incdir ]] || local incdir='/usr/include'
-  [[ $lwopdir ]] || local lwopdir='/home/todd/fab/liblistwise/op'
+  [[ $lwopdir ]] || local lwopdir='/usr/lib/listwise'
   
 	install -d																				$destdir/$libdir
 	install liblistwise/../common/../liblistwise/liblistwise.so													$destdir/$libdir/liblistwise.so
@@ -130,33 +130,38 @@ fml_2_0()
   [[ $fabtmpdir ]] || local fabtmpdir='/var/tmp/fab'
   [[ $fabcachedir ]] || local fabcachedir='/var/cache/fab'
   [[ $destdir ]] || local destdir=''
-  [[ $fabinvokedir ]] || local fabinvokedir='fab/../common/../fab/fablib'
-  [[ $fablwopdir ]] || local fablwopdir='fab/../common/../fab/fablw/op'
+  [[ $fabinvokedir ]] || local fabinvokedir='/usr/lib/fab/listwise'
+  [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/lib'
   
 	chown fabsys:fabsys		fab/../common/../fab/fab
 	chmod u+s 						fab/../common/../fab/fab
 	chmod g+s 						fab/../common/../fab/fab
-	install -d															$destdir/$bindir
-	install fab/../common/../fab/fab												$destdir/$bindir
-	install fab/../common/../fab/gcc-dep								$destdir/$bindir
-	install -d 															$destdir/$fabcachedir
-	chown fabsys:fabsys											$destdir/$fabcachedir
-	install -d 															$destdir/$fabtmpdir
-	chown fabsys:fabsys											$destdir/$fabtmpdir
-	install -d 															$destdir//var/run/fab
-	chown fabsys:fabsys											$destdir//var/run/fab
-	install -d															$destdir/$fabinvokedir/std
-	install -d															$destdir/$fabinvokedir/std/c
-	install -d															$destdir/$fabinvokedir/std/l
-	install -d															$destdir/$fabinvokedir/std/y
-	install fab/../common/../fab/fablib/std/c.fab			$destdir/$fabinvokedir/std/c.fab
-	install fab/../common/../fab/fablib/std/l.fab			$destdir/$fabinvokedir/std/l.fab
-	install fab/../common/../fab/fablib/std/y.fab			$destdir/$fabinvokedir/std/y.fab
+	install -d																			$destdir/$bindir
+	install fab/../common/../fab/fab																$destdir/$bindir
+	install fab/../common/../fab/gcc-dep												$destdir/$bindir
+	install -d 																			$destdir/$fabcachedir
+	chown fabsys:fabsys															$destdir/$fabcachedir
+	install -d 																			$destdir/$fabtmpdir
+	chown fabsys:fabsys															$destdir/$fabtmpdir
+	install -d 																			$destdir//var/run/fab
+	chown fabsys:fabsys															$destdir//var/run/fab
+	install -d																			$destdir/$fabinvokedir/std
+	install -d																			$destdir/$fabinvokedir/std/c
+	install -d																			$destdir/$fabinvokedir/std/l
+	install -d																			$destdir/$fabinvokedir/std/y
+	install -d																			$destdir/$fabinvokedir/std/flex
+	install -d																			$destdir/$fabinvokedir/std/bison
+	install fab/../common/../fab/fablib/std/c.fab							$destdir/$fabinvokedir/std/c.fab
+	install fab/../common/../fab/fablib/std/l.fab							$destdir/$fabinvokedir/std/l.fab
+	install fab/../common/../fab/fablib/std/y.fab							$destdir/$fabinvokedir/std/y.fab
+	install fab/../common/../fab/fablib/std/flex/states.fab		$destdir/$fabinvokedir/std/flex/states.fab
+	install fab/../common/../fab/fablib/std/bison/tokens.fab		$destdir/$fabinvokedir/std/bison/tokens.fab
+  
 
-	rm -rf 																	$destdir/$fablwopdir 2>/dev/null
-	install -d															$destdir/$fablwopdir
-	install fab/../common/../fab/fablw/op/fi/fi.so			$destdir/$fablwopdir
-	install fab/../common/../fab/fablw/op/fg/fg.so			$destdir/$fablwopdir
+	rm -rf 																					$destdir/$fablwopdir 2>/dev/null
+	install -d																			$destdir/$fablwopdir
+	install fab/../common/../fab/fablw/op/fi/fi.so							$destdir/$fablwopdir
+	install fab/../common/../fab/fablw/op/fg/fg.so							$destdir/$fablwopdir
 
 
   X=$?

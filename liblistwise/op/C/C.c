@@ -23,7 +23,7 @@
 #include <dirent.h>
 #include <inttypes.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 /*
 

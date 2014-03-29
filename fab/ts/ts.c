@@ -251,12 +251,12 @@ void ts_free(ts * ts)
 		ff_xfreeparser(&ts->ffp);
 		ffn_xfree(&ts->ffn);
 
-		pstring_wfree(&ts->cmd_path);
-		pstring_wfree(&ts->cmd_txt);
-		pstring_wfree(&ts->stdo_path);
-		pstring_wfree(&ts->stdo_txt);
-		pstring_wfree(&ts->stde_path);
-		pstring_wfree(&ts->stde_txt);
+		pswfree(&ts->cmd_path);
+		pswfree(&ts->cmd_txt);
+		pswfree(&ts->stdo_path);
+		pswfree(&ts->stdo_txt);
+		pswfree(&ts->stde_path);
+		pswfree(&ts->stde_txt);
 	}
 
 	free(ts);

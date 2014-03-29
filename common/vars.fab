@@ -23,6 +23,7 @@ $VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
 $dlibxapi				= [ $dcommon/../libxapi ~ j ]
 $dlibxlinux			= [ $dcommon/../libxlinux ~ j ]
 $dliblistwise		= [ $dcommon/../liblistwise ~ j ]
+$dlibpstring		= [ $dcommon/../libpstring ~ j ]
 $dlistwise			= [ $dcommon/../listwise ~ j ]
 $dfab						= [ $dcommon/../fab ~ j ]
 
@@ -99,7 +100,7 @@ $bisonflags	= [ --warnings=error ]
 $cc					= [ gcc ]
 $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 		# include paths
-	[ $dlibxapi $dlibxlinux $dliblistwise [ $dcommon ~ lsr/c/-d ] ~ s/^/-I ]
+	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring [ $dcommon ~ lsr/c/-d ] ~ s/^/-I ]
 	[ -DXAPI_UNWIND ]
 	[ $dbug $dvel ~ s/1/-O0/y ]					# disable compiler optimizations
 	[ $dbug $dvel ~ j/s/00/-O3/y ]
@@ -114,9 +115,11 @@ $lflags			= [
 	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ~ rp ] >/y ~ j ] ]
 	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dlibxapi ~ rp ] >/y ~ j ] ]
 	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dlibxlinux ~ rp ] >/y ~ j ] ]
+	[ $dbug $dvel ~ [ "s/1/<-Wl,-rpath," [ $dlibpstring ~ rp ] >/y ~ j ] ]
 ]
 
 # default library names
 $liblistwise	= [ -llistwise ]
 $libxapi			= [ -lxapi ]
 $libxlinux		= [ -lxlinux ]
+$libpstring		= [ -lpstring ]

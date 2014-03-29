@@ -164,7 +164,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lwx *
 		fatal(lw_reset, stax, staxa, pr);
 		fatal(list_resolve, list->generator_list_node, vmap, gp, stax, staxa, staxp, rawmap, 0);
 
-		pstring_wfree(&gps);
+		pswfree(&gps);
 		fatal(render, (*stax)[pr], &gps);
 
 		generator_xfree(&g);
@@ -179,7 +179,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lwx *
 
 finally:
 	generator_free(g);
-	pstring_free(gps);
+	psfree(gps);
 coda;
 }
 

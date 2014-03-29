@@ -26,10 +26,10 @@ $dcommon			= [ $*/../common ~ j ]
 $libname 			= [ liblistwise.so ]
 $soname				= [ $libname ~ j ]
 $liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# path to the library .so
-$cflags				= [ $cflags -fPIC [ $dliblistwise ~ lsr/xm/<h>/dn/ss/u/s/^/-I ] $incdirs
+$cflags				= [ $cflags -fPIC [ $dliblistwise ~ ls/c/-d/s/^/-I ]
 	[ -DLWOPDIR="\""$lwopdir"\"" ~ j ]
 ]
-$lflags				= [ -lpcre, -ldl, $libxlinux, -shared, [ "-Wl,-soname," $soname ] ]
+$lflags				= [ -lpcre, -ldl, $libxapi, $libxlinux, $libpstring, -shared, [ "-Wl,-soname," $soname ] ]
 
 # source files
 +[@std.c]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
@@ -52,7 +52,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 [ @all ] : [ $liblistwise $oplist ]
 
 # library depends on .o for each c, l, and y
-[ $liblistwise ] : [ [ $cfabpaths ~ xs/<c>/<pic.o>/y/m/</op/>/v ] [ $dliblistwise/op/op.pic.o ~ j ] ]
+[ $liblistwise ] : [ [ $cfabpaths ~ xs/<c>/<pic.o>/y/m/</op/>/v ] ]
 [ $liblistwise ] : [ $lfabpaths ~ xs/<l>/<lex.pic.o>/y ]
 [ $liblistwise ] : [ $yfabpaths ~ xs/<y>/<tab.pic.o>/y ]
 

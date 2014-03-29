@@ -301,6 +301,6 @@ finally:
 	close(fd);
 	free(keys);
 	map_free(lmap);
-	pstring_free(ps);
+	psfree(ps);
 coda;
 }

@@ -33,4 +33,21 @@
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
 
+/// znprintf
+//
+// summary
+//  allows the following idiom without buffer overflow (which snprintf would permit)
+//
+// z += znprintf(dst + z, sz - z, fmt, ...)
+// z += znprintf(dst + z, sz - z, fmt, ...)
+//
+#define znprintf(dst, sz, fmt, ...) ({										\
+	size_t _z = 0;																					\
+	if(sz)																									\
+	{																												\
+		_z = MIN(sz, snprintf(dst, sz, fmt, ##__VA_ARGS__));	\
+	}																												\
+	_z; 																										\
+})
+
 #endif

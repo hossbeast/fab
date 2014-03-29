@@ -27,7 +27,7 @@
 
 #include <pcre.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "xlinux.h"
 #include "macros.h"
@@ -48,7 +48,7 @@ static void __attribute__((constructor)) init()
 {
 /*
 ** because this can only happen when liblistwise was compiled incorrectly I will just
-** dump the whole backtrace to stderr
+** dump the whole backtrace to stderr if it is not successful
 */
 
 	fatal(listwise_register_opdir, XQUOTE(LWOPDIR));	/* /usr/lib/listwise */
@@ -127,10 +127,6 @@ static void op_sort()
 	qsort(g_ops, g_ops_l, sizeof(g_ops[0]), (void*)op_compare);
 }
 
-//
-// public
-//
-
 static int read_opdir(char * s)
 {
 	char space[256];
@@ -175,14 +171,9 @@ finally:
 coda;
 }
 
-int API listwise_register_opdir(char * dir)
-{
-	fatal(read_opdir, dir);
-
-	op_sort();
-
-	finally : coda;
-}
+//
+// public
+//
 
 operator* op_lookup(char* s, int l)
 {
@@ -209,4 +200,17 @@ operator* op_lookup(char* s, int l)
 		return *r;
 
 	return 0;
+}
+
+//
+// API
+//
+
+int API listwise_register_opdir(char * dir)
+{
+	fatal(read_opdir, dir);
+
+	op_sort();
+
+	finally : coda;
 }

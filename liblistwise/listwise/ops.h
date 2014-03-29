@@ -18,6 +18,9 @@
 #ifndef _LISTWISE_OPS_H
 #define _LISTWISE_OPS_H
 
+#include "listwise.h"
+#include "listwise/operator.h"
+
 // available operators - dloaded at init time
 extern operator** 		g_ops;
 extern int						g_ops_l;

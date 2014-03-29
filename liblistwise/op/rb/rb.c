@@ -23,7 +23,7 @@
 #include <dirent.h>
 #include <unistd.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 
 #include "canon.h"
 #include "xlinux.h"

@@ -236,7 +236,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 	}
 
 finally:
-	pstring_free(inv);
+	psfree(inv);
 	path_free(pth);
 	map_free(cmap);
 coda;

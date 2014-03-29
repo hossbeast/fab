@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "listwise/internal.h"
+#include "internal.h"
 #include "xapi/SYS.errtab.h"
 
 #include "xlinux.h"

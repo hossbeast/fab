@@ -15,9 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "listwise/internal.h"
+#include "internal.h"
 
-void API listwise_configure_logging(struct listwise_logging * logging)
+struct listwise_logging * APIDATA listwise_logging_config;
+
+void API listwise_logging_configure(struct listwise_logging * logging)
 {
 	listwise_logging_config = logging;
 }

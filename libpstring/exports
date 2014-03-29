@@ -1,0 +1,11 @@
+{ global: 
+psgrow;
+psvprintf;
+psprintf;
+psprint;
+psvcatf;
+pscatf;
+pscat;
+psfree;
+pswfree;
+local: *; };
