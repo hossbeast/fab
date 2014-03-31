@@ -109,7 +109,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 				fatal(lstack_append, lx, 0, x, zs + win->s[i].o + win->s[i].l, zsl - (win->s[i].o + win->s[i].l));
 			}
 
-			fatal(lstack_sel_stage, lx, x);
+			fatal(lstack_selection_stage, lx, x);
 		}
 	}
 	LSTACK_ITEREND

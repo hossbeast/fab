@@ -1,10 +1,13 @@
 { global: 
 psgrow;
+psclear;
 psvprintf;
 psprintf;
+psprints;
 psprint;
 psvcatf;
 pscatf;
+pscats;
 pscat;
 psfree;
 pswfree;

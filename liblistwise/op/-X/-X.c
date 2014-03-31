@@ -135,11 +135,11 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linksta
 		if(r == 0)
 		{
 			if(selector(&st))
-				fatal(lstack_sel_stage, ls, x);
+				fatal(lstack_selection_stage, ls, x);
 		}
 		else if(selector(0))
 		{
-			fatal(lstack_sel_stage, ls, x);
+			fatal(lstack_selection_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND
@@ -210,7 +210,7 @@ int op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 
 		if(r == 0)
 		{
-			fatal(lstack_sel_stage, ls, x);
+			fatal(lstack_selection_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND
@@ -231,7 +231,7 @@ int op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 
 		if(r == 0)
 		{
-			fatal(lstack_sel_stage, ls, x);
+			fatal(lstack_selection_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND
@@ -252,7 +252,7 @@ int op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 
 		if(r == 0)
 		{
-			fatal(lstack_sel_stage, ls, x);
+			fatal(lstack_selection_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND

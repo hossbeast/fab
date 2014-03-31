@@ -22,6 +22,7 @@
 #include "listwise/object.h"
 #include "listwise/xtra.h"
 #include "listwise/LW.errtab.h"
+#include "listwise/selection.h"
 
 #include "gn.h"
 #include "gnlw.h"
@@ -103,7 +104,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		if(g)
 		{
 			if(set & (0x01 << g->designate))
-				fatal(lstack_sel_stage, lx, x);
+				fatal(lstack_selection_stage, lx, x);
 		}
 	}
 	LSTACK_ITEREND;

@@ -55,22 +55,45 @@ extern int g_argc;			// count of g_argv
 extern char * g_argvs;	// single string, nulls replaced with spaces
 extern int g_argvsl;		// length of g_argvs
 
-/// log_init
+/// (XAPI) log_init
 //
 // SUMMARY
-//  initialize logging, parse cmdline args as well as {args}
+//  initialize logging and parse cmdline args
 //
 // PARAMETERS
-//  trace  - matching logs will emit trace info
+//  [func] - function name
+//  [file] - file name
+//  [line] - line number
 //  [bits] - bits to use when logging the description
 //
-int log_init(uint64_t trace)
+int log_init();
+#if DEBUG
+int log_log_init_and_describe(const char * const restrict func, const char * const restrict file, int line, uint64_t bits)
 	__attribute__((nonnull));
 
-int log_init_and_describe(uint64_t trace, uint64_t bits)
-	__attribute__((nonnull));
+# define log_init_and_describe(...) log_log_init_and_describe(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+#else
+int log_log_init_and_describe(uint64_t bits);
 
-// log_parse
+# define log_init_and_describe(...) log_log_init_and_describe(__VA_ARGS__)
+#endif
+
+/// log_config
+// 
+// SUMMARY
+//  configure logging options
+//
+// PARAMETERS
+//  [prefix] - matching logs will emit preceeding prefix
+//  [trace]  - matching logs will emit trailing trace
+//
+#if DEBUG
+void log_config(uint64_t prefix, uint64_t trace);
+#else
+void log_config(uint64_t trace);
+#endif
+
+// (XAPI) log_parse
 //
 // SUMMARY
 //  parse the logging directive to enable/disable tags
@@ -79,15 +102,27 @@ int log_init_and_describe(uint64_t trace, uint64_t bits)
 //  log_parse MAY be called BEFORE log_init (to give cmd-line switches precedence)
 //
 // PARAMETERS
-//  args     - directive text
-//  args_len - length of args
-//  [bits]   - bits to use when logging the description
+//  [func]     - function name
+//  [file]     - file name
+//  [line]     - line number
+//  args       - directive text
+//  [args_len] - length of args, or 0 for strlen
+//  [bits]     - bits to use when logging the description
 //
 int log_parse(char * args, int args_len)
 	__attribute__((nonnull(1)));
 
-int log_parse_and_describe(char * args, int args_len, uint64_t bits)
+#if DEBUG
+int log_log_parse_and_describe(const char * const restrict func, const char * const restrict file, int line, char * args, int args_len, uint64_t bits)
+	__attribute__((nonnull(1, 2, 4)));
+
+#define log_parse_and_describe(...) log_log_parse_and_describe(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+#else
+int log_log_parse_and_describe(char * args, int args_len, uint64_t bits)
 	__attribute__((nonnull(1)));
+
+#define log_parse_and_describe(...) log_log_parse_and_describe(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+#endif
 
 /// log_would
 //
@@ -106,29 +141,50 @@ int log_would(const uint64_t bits);
 //  [file] - file name
 //  [line] - line number
 //  bits   - log bits
-//  fmt    - format string
+//  [fmt]  - format string
+//  [src]  - source bytes
+//  [len]  - count of bytes from src (0 != strlen)
+//  [s]    - string to write
 //
 // RETURNS
-//  number of visible characters written (excludes colorizing control bytes)
+//  if called after log_start, returns 1
+//  otherwise, returns log_would(bits)
 // 
 #ifndef DEBUG
-int vlogi(const uint64_t bits, const char * const restrict fmt, va_list va) __attribute__((nonnull(2)));
-int  logi(const uint64_t bits, const char * const restrict fmt, ...)        __attribute__((nonnull(2)));
+int log_vlogf(const uint64_t bits, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull(2)));
+int log_logf(const uint64_t bits, const char * const restrict fmt, ...)
+	__attribute__((nonnull(2)));
+int log_logs(const uint64_t bits, const char * const restrict s)
+	__attribute__((nonnull));
+int log_log(const uint64_t bits, const char * const restrict src, size_t len)
+	__attribute__((nonnull));
 
-# define vlog(...) vlogi(__VA_ARGS__)
-# define  log(...)  logi(__VA_ARGS__)
+# define vlogf(...) log_vlogf(__VA_ARGS__)
+# define  logf(...) log_logf(__VA_ARGS__)
+# define  logs(...) log_logs(__VA_ARGS__)
+# define   log(...) log_log(__VA_ARGS__)
 #else
-int vlogi(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, va_list va) __attribute__((nonnull(1,2,5)));
-int  logi(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, ...)        __attribute__((nonnull(1,2,5)));
+int log_vlogf(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull(1,2,5)));
+int log_logf(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, ...)
+	__attribute__((nonnull(1,2,5)));
+int log_logs(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict s)
+	__attribute__((nonnull));
+int log_log(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict src, size_t len)
+	__attribute__((nonnull));
 
-# define vlog(...) vlogi(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-# define  log(...)  logi(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+# define vlogf(...) log_vlogf(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+# define  logf(...) log_logf(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+# define  logs(...) log_logs(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+# define   log(...) log_log(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 #endif
 
-/// log_start
+/// logstart
 //
 // SUMMARY
 //  begin logging a message if log_would([bits])
+//  subsequent log* calls append to this log until logfinish is called
 //
 // PARAMETERS
 //  [func] - function name
@@ -138,80 +194,39 @@ int  logi(const char * const restrict func, const char * const restrict file, in
 //  fmt    - format string
 //
 // RETURNS
-//  number of visible characters written (excludes colorizing control bytes)
+//  log_would(bits)
 //
 #ifndef DEBUG
-int vlog_starti(const uint64_t bits, const char* fmt, va_list va) __attribute__((nonnull(2)));
-int  log_starti(const uint64_t bits, const char* fmt, ...)        __attribute__((nonnull(2)));
-
-# define vlog_start(...) vlog_starti(__VA_ARGS__)
-# define  log_start(...)  log_starti(__VA_ARGS__)
+int log_log_start(const uint64_t bits);
+# define log_start(bits) log_log_start(bits)
 #else
-int vlog_starti(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char* fmt, va_list va) __attribute__((nonnull(2)));
-int  log_starti(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char* fmt, ...)        __attribute__((nonnull(2)));
-
-# define vlog_start(...) vlog_starti(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-# define  log_start(...)  log_starti(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+int log_log_start(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits)
+	__attribute__((nonnull(2)));
+# define log_start(bits) log_log_start(__FUNCTION__, __FILE__, __LINE__, bits)
 #endif
-
-/// log_add
-//
-// SUMMARY
-//  append to the log that was started with log_start
-//
-// RETURNS
-//  number of visible characters written (excludes colorizing control bytes)
-//
-int vlog_add(const char * fmt, va_list va) __attribute__((nonnull));
-int  log_add(const char * fmt, ...)	       __attribute__((nonnull(1)));
 
 /// log_finish
 //
 // SUMMARY
-//  complete the log that was started with log_start
+//  complete the log that was started with logstart
 //
-// RETURNS
-//  number of visible characters written (excludes colorizing control bytes)
-//
-int vlog_finish(const char * fmt, va_list va);
-int  log_finish(const char * fmt, ...);
-
-/// log_write
-//
-// SUMMARY
-//  write to log if log_would([bits])
-//
-// PARAMETERS
-//  [func] - function name
-//  [file] - file name
-//  [line] - line number
-//  bits   - log bits
-//  src    - source buffer
-//  len    - byte count
-//
-#ifndef DEBUG
-void log_writei(const uint64_t bits, const char * const restrict src, size_t len) __attribute__((nonnull(2)));
-
-# define log_write(...)  log_writei(__VA_ARGS__)
-#else
-void log_writei(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict src, size_t len) __attribute__((nonnull(1,2,5)));
-
-# define log_write(...)  log_writei(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-#endif
+void log_finish();
 
 /// logged_bytes
 //
 // SUMMARY
-//  returns the number of bytes written thus far for a log_start/log_add* sequence
+//  if called after log_start, returns the number of bytes written since log_start
+//  otherwise, returns the number of bytes written on the last log* call or log_start/log_finish sequence
 //
 int logged_bytes();
 
 /// logged_chars
 //
 // SUMMARY
-//  returns the number of visible characters thus far for a log_start/log_add* sequence (excludes colorizing control bytes)
+//  if called after log_start, returns the number of characters written since log_start (excludes control bytes)
+//  otherwise, returns the number of characters written on the last log* call or log_start/log_finish sequence
 //
-int logged_chars();
+int logged_characters();
 
 /// log_teardown
 //

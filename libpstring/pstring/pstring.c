@@ -21,7 +21,7 @@
 #include <stdarg.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 
@@ -35,13 +35,30 @@ int API psgrow(pstring ** p, size_t l)
 {
 	if(!*p || l >= (*p)->a)
 	{
-		int ns = (*p)->a;
+		size_t oec = 0;
+		int ns = 6;
+
+		if(*p)
+		{
+			ns = (*p)->a;
+			oec = sizeof(**p) + (*p)->a;
+		}
+
 		while(ns <= l)
 			ns = ns * 2 + ns / 2;
 
-		fatal(xmalloc, p, sizeof(**p) + ns);
+		fatal(xrealloc, p, 1, sizeof(**p) + ns, oec);
 		(*p)->a = ns;
 	}
+
+	finally : coda;
+}
+
+int API psclear(pstring ** restrict p)
+{
+	fatal(psgrow, p, 100);
+
+	(*p)->l = 0;
 
 	finally : coda;
 }
@@ -76,10 +93,14 @@ int API psprintf(pstring ** restrict p, const char * const restrict fmt, ...)
 	finally : coda;
 }
 
+int API psprints(pstring ** restrict p, char * const restrict s)
+{
+	xproxy(psprint, p, s, strlen(s));
+}
+
 int API psprint(pstring ** restrict p, char * const restrict s, size_t l)
 {
 	fatal(psgrow, p, 100);
-	l = l ?: strlen(s);
 	fatal(psgrow, p, l);
 	memcpy((*p)->s, s, l);
 	(*p)->s[(*p)->l] = 0;
@@ -117,10 +138,14 @@ int API pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
 	finally : coda;
 }
 
+int API pscats(pstring ** restrict p, char * const restrict s)
+{
+	xproxy(pscat, p, s, strlen(s));
+}
+
 int API pscat(pstring ** restrict p, char * const restrict s, size_t l)
 {
 	fatal(psgrow, p, 100);
-	l = l ?: strlen(s);
 	fatal(psgrow, p, (*p)->l + l);
 	memcpy((*p)->s + (*p)->l, s, l);
 	(*p)->l += l;

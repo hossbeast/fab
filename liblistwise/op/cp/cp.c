@@ -99,7 +99,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		{
 			int y;
 			for(y = 0; y <= N; y++)
-				fatal(lstack_sel_stage, ls, x + y + c);
+				fatal(lstack_selection_stage, ls, x + y + c);
 
 			c += N;
 		}

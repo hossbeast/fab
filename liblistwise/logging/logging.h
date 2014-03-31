@@ -23,33 +23,50 @@
 #define restrict __restrict
 
 #if DEBUG || DEVEL || SANITY
+typedef int (*listwise_logging_would)(void * token, void * udata);
+typedef void (*listwise_logging_log)(void* token, void * udata, const char * func, const char * file, int line, char * fmt, ...);
+
 struct listwise_logging
 {
 #if DEBUG
 	// generator_log
-	void (*log_generator)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	void * 									generator_token;
+	listwise_logging_would	generator_would;
+	listwise_logging_log		generator_log;
 
 	// lstack_log
-	void (*log_lstack)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	void * 									lstack_token;
+	listwise_logging_would	lstack_would;
+	listwise_logging_log		lstack_log;
 
-	// exec progress - also invokes log_lstack to dump lstack along the way
-	void (*log_exec)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	// exec progress - also invokes lstack_log to dump lstack along the way
+	void * 									exec_token;
+	listwise_logging_would	exec_would;
+	listwise_logging_log		exec_log;
 
 	// listwise operators - info
-	void (*log_opinfo)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	void * 									opinfo_token;
+	listwise_logging_would	opinfo_would;
+	listwise_logging_log		opinfo_log;
 #endif
 
 #if DEVEL
 	// generator parsing - tokens
-	void (*log_tokens)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	void * 									tokens_token;
+	listwise_logging_would	tokens_would;
+	listwise_logging_log		tokens_log;
 
 	// generator parsing - states
-	void (*log_states)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	void * 									states_token;
+	listwise_logging_would	states_would;
+	listwise_logging_log		states_log;
 #endif
 
 #if SANITY
 	// listwise sanity checks
-	void (*log_sanity)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	void * 									sanity_token;
+	listwise_logging_would	sanity_would;
+	listwise_logging_log		sanity_log;
 #endif
 } * listwise_logging_config;
 

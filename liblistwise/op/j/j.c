@@ -143,7 +143,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	fatal(lstack_add, ls, ns, nl);
 
 	// selection
-	fatal(lstack_sel_stage, ls, ls->s[0].l - 1);
+	fatal(lstack_selection_stage, ls, ls->s[0].l - 1);
 
 	finally : coda;
 }

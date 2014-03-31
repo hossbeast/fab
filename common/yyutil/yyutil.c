@@ -72,21 +72,15 @@ void yyu_locwrite(yyu_location * const lloc, yyu_extra * const xtra, char * cons
 
 void yyu_pushstate(const int state, yyu_extra * const xtra, const char * func, const char * file, const int line)
 {
-	if(xtra->log_state)
+	if(xtra->state_log && xtra->state_would && xtra->state_would(xtra->state_token, xtra->udata))
 	{
 		int al = snprintf(xtra->space, sizeof(xtra->space), "%s -> %s"
 			, xtra->statename(yyu_nstate(xtra, 0))
 			, xtra->statename(state)
 		);
 
-		// line number
-		char * dbuf = xtra->space2;
-		size_t dlen = 0;
-		if(xtra->line_numbering)
-			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
-
-		xtra->log_state(xtra->udata, func, file, line
-			, "(%2d) %.*s %*s @ %*s %s%.*s"
+		xtra->state_log(xtra->state_token, xtra->udata, func, file, line
+			, "(%2d) %.*s %*s @ %*s "
 			, xtra->states_n
 			, al
 			, xtra->space
@@ -94,9 +88,6 @@ void yyu_pushstate(const int state, yyu_extra * const xtra, const char * func, c
 			, ""
 			, 18
 			, ""
-			, dlen ? " " : ""		// scanner line number
-			, dlen
-			, dbuf
 		);
 	}
 
@@ -108,21 +99,15 @@ void yyu_popstate(yyu_extra * const xtra, const char * func, const char * file, 
 	int x = yyu_nstate(xtra, 0);
 	xtra->states_n--;
 
-	if(xtra->log_state)
+	if(xtra->state_log && xtra->state_would && xtra->state_would(xtra->state_token, xtra->udata))
 	{
 		int al = snprintf(xtra->space, sizeof(xtra->space), "%s <- %s"
 			, xtra->statename(yyu_nstate(xtra, 0))
 			, xtra->statename(x)
 		);
 
-		// line number
-		char * dbuf = xtra->space2;
-		size_t dlen = 0;
-		if(xtra->line_numbering)
-			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
-
-		xtra->log_state(xtra->udata, func, file, line
-			, "(%2d) %.*s %*s @ %*s %s%.*s"
+		xtra->state_log(xtra->state_token, xtra->udata, func, file, line
+			, "(%2d) %.*s %*s @ %*s "
 			, xtra->states_n
 			, al
 			, xtra->space
@@ -130,9 +115,6 @@ void yyu_popstate(yyu_extra * const xtra, const char * func, const char * file, 
 			, ""
 			, 18
 			, ""
-			, dlen ? " " : ""		// scanner line number
-			, dlen
-			, dbuf
 		);
 	}
 }
@@ -144,7 +126,7 @@ int yyu_nstate(yyu_extra * const xtra, const int n)
 
 void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng, const char * func, const char * file, const int line)
 {
-	if(xtra->log_token)
+	if(xtra->token_log && xtra->token_would && xtra->token_would(xtra->token_token, xtra->udata))
 	{
 		// token source string
 		char * abuf = xtra->space;
@@ -162,14 +144,8 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 		if(xtra->inputstr)
 			xtra->inputstr(xtra, &cbuf, &clen);
 
-		// line number
-		char * dbuf = xtra->space2;
-		size_t dlen = 0;
-		if(xtra->line_numbering)
-			dlen = snprintf(xtra->space2, sizeof(xtra->space2), "line:%d", line);
-
-		xtra->log_token(xtra->udata, func, file, line
-			, "%8s ) '%.*s'%s%.*s%s %*s @ %s%.*s%s[%3d,%3d - %3d,%3d]%s%.*s"
+		xtra->token_log(xtra->token_token, xtra->udata, func, file, line
+			, "%8s ) '%.*s'%s%.*s%s %*s @ %s%.*s%s[%3d,%3d - %3d,%3d]"
 			, xtra->tokname(token) ?: "" 	// token name
 			, alen												// escaped string from which the token was scanned
 			, abuf
@@ -187,9 +163,6 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
 			, lloc->f_col + 1
 			, lloc->l_lin + 1
 			, lloc->l_col + 1
-			, dlen ? " " : ""
-			, dlen												// scanner line number
-			, dbuf
 		);
 	}
 }

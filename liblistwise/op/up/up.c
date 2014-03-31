@@ -77,7 +77,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		LSTACK_ITEREND;
 
 		for(x = 0; x < i; x++)
-			fatal(lstack_sel_stage, lx, x);
+			fatal(lstack_selection_stage, lx, x);
 	}
 
 	finally : coda;

@@ -116,7 +116,7 @@ static int listing(lwx* ls, char * s, int recurse, void ** udata)
 	}
 	else if(errno == ENOTDIR || errno == ENOENT)
 	{
-		lw_log_opinfo("opendir('%s')=[%d][%s]\n", s, errno, strerror(errno));
+		lw_log_opinfo("opendir('%s')=[%d][%s]", s, errno, strerror(errno));
 	}
 	else
 	{

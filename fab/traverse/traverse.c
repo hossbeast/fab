@@ -57,15 +57,15 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 		for(x = stackl - 1; x >= 0; x--)
 		{
 			if(x != stackl)
-				log_add(" -> ");
+				logs(0, " -> ");
 
-			log_add("%s", (*stack)[x]->idstring);
+			logf(0, "%s", (*stack)[x]->idstring);
 		}
 
 		if(stackl == (sizeof((*stack)) / sizeof((*stack)[0])))
-			log_finish(" -> ...");
-		else
-			log_finish("");
+			logs(0, " -> ...");
+
+		log_finish();
 	};
 
 	if(g_args.mode_cycles == MODE_CYCLES_FAIL || g_args.mode_cycles == MODE_CYCLES_WARN)
@@ -73,8 +73,11 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 		// skip the beginning of the traversal, to the start of the cycle
 		if(g_args.mode_cycles == MODE_CYCLES_FAIL)
 		{
-			log_start(L_ERROR, "detected cycle(%d) : ", stackl);
-			logcycle();
+			if(log_start(L_ERROR))
+			{
+				logf(L_ERROR, "detected cycle(%d) : ", stackl);
+				logcycle();
+			}
 			return 0;
 		}
 		else if(g_args.mode_cycles == MODE_CYCLES_WARN)
@@ -92,8 +95,11 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 
 			if((*c)++ == 0)
 			{
-				log_start(L_WARN, "detected cycle(%d) : ", stackl);
-				logcycle();
+				if(log_start(L_WARN))
+				{
+					logf(L_WARN, "detected cycle(%d) : ", stackl);
+					logcycle();
+				}
 			}
 		}
 	}

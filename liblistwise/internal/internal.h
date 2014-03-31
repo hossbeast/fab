@@ -35,6 +35,8 @@
 #include "logging.h"
 #include "log.h"
 #include "describe.h"
+#include "selection.h"
+#include "window.h"
 
 // common modules
 #include "coll.h"

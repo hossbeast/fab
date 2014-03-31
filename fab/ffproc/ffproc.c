@@ -17,6 +17,9 @@
 
 #include <string.h>
 
+#include "listwise.h"
+#include "listwise/lstack.h"
+
 #include "ffproc.h"
 
 #include "fml.h"
@@ -251,7 +254,7 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 		char * sstr = 0;
 		fatal(strstack_string, sstk, 0, "/", "/", &sstr);
 
-		log(L_INVOKE, "%s @ %s", inpath->can, sstr);
+		logf(L_INVOKE, "%s @ %s", inpath->can, sstr);
 	}
 
 	// parse

@@ -81,7 +81,7 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 
 	char space[128];
 
-	log(L_SELECT, "%s", selector_string(s, space, sizeof(space)));
+	logf(L_SELECT, "%s", selector_string(s, space, sizeof(space)));
 
 	int l = 0;
 	if(s->s[0] == '[')
@@ -117,7 +117,7 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 
 			if(g)
 			{
-				log(L_SELECT, " > %s", g->idstring);
+				logf(L_SELECT, " > %s", g->idstring);
 				fatal(select, s, g);
 				l++;
 			}
@@ -134,7 +134,7 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 
 		if(g)
 		{
-			log(L_SELECT, " > %s", g->idstring);
+			logf(L_SELECT, " > %s", g->idstring);
 			fatal(select, s, g);
 			l++;
 		}
@@ -142,7 +142,7 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 
 	if(l == 0)
 	{
-		log(L_WARN, "selector : %s matches nothing", s->s);
+		logf(L_WARN, "selector : %s matches nothing", s->s);
 	}
 
 	finally : coda;

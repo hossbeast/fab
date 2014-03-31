@@ -169,32 +169,27 @@ finally :
 coda;
 }
 
-static int parse(generator_parser* p, char* s, int l, char * name, int namel, generator** g, void ** udata)
+static int parse(generator_parser* p, char* s, int l, char * name, int namel, generator** g, void * udata)
 {
 	// create state specific to this parse
 	void * state = 0;
 
 	// results struct for this parse
 	parse_param pp = {
-		  .line_numbering	= 1
-		, .tokname				= generator_tokenname
+		  .tokname				= generator_tokenname
 		, .statename			= generator_statename
 		, .inputstr				= generator_inputstr
 		, .lvalstr				= generator_lvalstr
-	};
-
 #if DEVEL
-	if(udata)
-	{
-		pp.udata = *udata;
-
-		if(lw_would_tokens())
-			pp.log_token = listwise_logging_config->log_tokens;
-
-		if(lw_would_states())
-			pp.log_state = listwise_logging_config->log_states;
-	}
+		, .udata					= udata
+		, .token_token		= listwise_logging_config->tokens_token
+		, .token_would		= listwise_logging_config->tokens_would
+		, .token_log			= listwise_logging_config->tokens_log
+		, .state_token		= listwise_logging_config->states_token
+		, .state_would		= listwise_logging_config->states_would
+		, .state_log			= listwise_logging_config->states_log
 #endif
+	};
 
 	// specific exception for "shebang" line exactly at the beginning
 	char * b = s;
@@ -213,19 +208,22 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 	// invoke the parser, raise errors as necessary
 	fatal(reduce, &pp);
 
-	// postprocessing
-	int x;
-	for(x = 0; x < pp.g->opsl; x++)
-		fatal(operation_validate, pp.g->ops[x]);
+	if(((*g) = pp.g))
+	{
+		pp.g = 0;
 
-	(*g) = pp.g;
-	pp.g = 0;
+		// postprocessing
+		int x;
+		for(x = 0; x < (*g)->opsl; x++)
+			fatal(operation_validate, (*g)->ops[x]);
+	}
 
 finally:
 	// cleanup state for this parse
 	generator_yy_delete_buffer(state, p->p);
 	generator_free(pp.g);
 	yyu_extra_destroy(&pp);
+XAPI_INFOW("transform-string", s, l);
 coda;
 }
 
@@ -323,7 +321,7 @@ int API generator_parse(generator_parser* p, char* s, int l, generator** g)
 #if DEVEL
 int API generator_parse2(generator_parser* p, char* s, int l, generator** g, void * udata)
 {
-	fatal(parse, p, s, l, 0, 0, g, &udata);
+	fatal(parse, p, s, l, 0, 0, g, udata);
 
 	finally : coda;
 }
@@ -339,7 +337,7 @@ int API generator_parse_named(generator_parser* p, char* s, int l, char * name, 
 #if DEVEL
 int API generator_parse_named2(generator_parser* p, char* s, int l, char * name, int namel, generator** g, void * udata)
 {
-	fatal(parse, p, s, l, name, namel, g, &udata);
+	fatal(parse, p, s, l, name, namel, g, udata);
 
 	finally : coda;
 }

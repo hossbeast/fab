@@ -162,7 +162,7 @@ static int dep_add_single(
 				// attempt to add the relation to the block
 				if(depblock_addrelation(block, ((gn*)Ap)->path, ((gn*)Bp)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) != 0)
 				{
-					log(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
+					logf(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
 					ifree(&block->block);
 				}
 			}
@@ -191,7 +191,7 @@ static int dep_add_single(
 
 			if(newr)
 			{
-				log(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
+				logf(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
 					, "S"
 					, newa ? "x" : ""
 					, newb ? "x" : ""
@@ -369,7 +369,7 @@ static int dep_add_multi(
 					// attempt to add the relation to the block
 					if(depblock_addrelation(block, ((gn*)Ap)->path, ((gn*)Bp)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) != 0)
 					{
-						log(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
+						logf(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
 						ifree(&block->block);
 					}
 				}
@@ -398,7 +398,7 @@ static int dep_add_multi(
 
 				if(newr)
 				{
-					log(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
+					logf(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
 						, "M"
 						, newa[i] ? "x" : ""
 						, newb ? "x" : ""

@@ -122,7 +122,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	LSTACK_ITEREND
 
 	for(x = 0; x < lastl; x++)
-		fatal(lstack_sel_stage, ls, last[x]);
+		fatal(lstack_selection_stage, ls, last[x]);
 
 finally:
 	free(r);

@@ -122,7 +122,7 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmat
 							if(memcmp(o, xs, xl) == 0)
 							{
 								fatal(lstack_window_stage, ls, x, o - s, xl);
-								fatal(lstack_sel_stage, ls, x);
+								fatal(lstack_selection_stage, ls, x);
 							}
 						}
 					}
@@ -139,7 +139,7 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmat
 					if(memcmp(s + (l - xl), xs, xl) == 0)
 					{
 						fatal(lstack_window_stage, ls, x, l - xl, xl);
-						fatal(lstack_sel_stage, ls, x);
+						fatal(lstack_selection_stage, ls, x);
 					}
 				}
 			}

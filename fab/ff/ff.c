@@ -143,19 +143,16 @@ coda;
 static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel)
 {
 #if DEVEL
-	void logtoken(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+	int logwould(void * token, void * udata)
 	{
-		va_list va;
-		va_start(va, fmt);
-		vlogi(func, file, line, L_FFTOKEN, fmt, va);
-		va_end(va);
+		return log_would(*(uint64_t*)token);
 	}
 
-	void logstate(void * udata, const char * func, const char * file, int line, char * fmt, ...)
+	void loglog(void * token, void * udata, const char * func, const char * file, int line, char * fmt, ...)
 	{
 		va_list va;
 		va_start(va, fmt);
-		vlogi(func, file, line, L_FFSTATE, fmt, va);
+		log_vlogf(func, file, line, *(uint64_t*)token, fmt, va);
 		va_end(va);
 	}
 #endif
@@ -165,17 +162,16 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		, .statename		= ff_statename
 		, .inputstr			= ff_inputstr
 		, .lvalstr			= ff_lvalstr
-	};
 
 #if DEVEL
-	pp.log_token = logtoken;
-	pp.log_state = logstate;
+	  , .token_token	= (uint64_t[]) { L_FFTOKEN }
+	  , .token_would	= logwould
+	  , .token_log		= loglog
+	  , .state_token	= (uint64_t[]) { L_FFSTATE }
+	  , .state_would	= logwould
+	  , .state_log		= loglog
 #endif
-
-#if DEBUG
-	// causes yyerror to include the scanner line number in FFTOKN output
-	pp.line_numbering = 1;
-#endif
+	};
 
 	ff_file * ff = 0;
 	uint32_t type = FFT_REGULAR;
@@ -578,37 +574,37 @@ void ff_dump(ff_file * const ff)
 	int x;
 	if(log_would(L_FF | L_FFFILE))
 	{
-		log(L_FF | L_FFFILE			, "%20s : %s", "idstring"						, ff->idstring);
-		log(L_FF | L_FFFILE			, "%20s : %s", "type"								, FFT_STRING(ff->type));
-		log(L_FF | L_FFFILE			, "%20s : %s", "can-path"						, ff->path->can);
-		log(L_FF | L_FFFILE			, "%20s : %s", "in-path"						, ff->path->in_path);
-		log(L_FF | L_FFFILE			, "%20s : %s", "in-base"						, ff->path->in_base);
-		log(L_FF | L_FFFILE			, "%20s : %s", "abs-path"						, ff->path->abs);
-		log(L_FF | L_FFFILE			, "%20s : %s", "rel-cwd-path"				, ff->path->rel_cwd);
-		log(L_FF | L_FFFILE			, "%20s : %s", "rel-fab-path"				, ff->path->rel_fab);
-		log(L_FF | L_FFFILE			, "%20s : %s", "rel-nofile-path"		, ff->path->rel_nofile);
+		logf(L_FF | L_FFFILE			, "%20s : %s", "idstring"						, ff->idstring);
+		logf(L_FF | L_FFFILE			, "%20s : %s", "type"								, FFT_STRING(ff->type));
+		logf(L_FF | L_FFFILE			, "%20s : %s", "can-path"						, ff->path->can);
+		logf(L_FF | L_FFFILE			, "%20s : %s", "in-path"						, ff->path->in_path);
+		logf(L_FF | L_FFFILE			, "%20s : %s", "in-base"						, ff->path->in_base);
+		logf(L_FF | L_FFFILE			, "%20s : %s", "abs-path"						, ff->path->abs);
+		logf(L_FF | L_FFFILE			, "%20s : %s", "rel-cwd-path"				, ff->path->rel_cwd);
+		logf(L_FF | L_FFFILE			, "%20s : %s", "rel-fab-path"				, ff->path->rel_fab);
+		logf(L_FF | L_FFFILE			, "%20s : %s", "rel-nofile-path"		, ff->path->rel_nofile);
 		if(ff->type == FFT_REGULAR)
 		{
-			log(L_FF | L_FFFILE		, "%20s : %d", "closure-gns", ff->closure_gnsl);
+			logf(L_FF | L_FFFILE		, "%20s : %d", "closure-gns", ff->closure_gnsl);
 			for(x = 0; x < ff->closure_gnsl; x++)
 			{
-				log(L_FF | L_FFFILE , "  %20s : %s", "", ff->closure_gns[x]->idstring);
+				logf(L_FF | L_FFFILE , "  %20s : %s", "", ff->closure_gns[x]->idstring);
 			}
 
-			log(L_FF | L_FFFILE		, "%20s : %d", "closure-vars", ff->closure_varsl);
+			logf(L_FF | L_FFFILE		, "%20s : %d", "closure-vars", ff->closure_varsl);
 			for(x = 0; x < ff->closure_varsl; x++)
 			{
-				log(L_FF | L_FFFILE	, "  %20s : %s", "", ff->closure_vars[x]->text);
+				logf(L_FF | L_FFFILE	, "  %20s : %s", "", ff->closure_vars[x]->text);
 			}
 		}
 		else if(ff->type == FFT_DDISC)
 		{
-			log(L_FF | L_FFFILE		, "%20s : %s", "dscv-gn", ff->dscv_gn);
+			logf(L_FF | L_FFFILE		, "%20s : %s", "dscv-gn", ff->dscv_gn);
 		}
 	}
 
-	log(L_FF | L_FFFILE			, "%20s :", "tree");
+	logf(L_FF | L_FFFILE			, "%20s :", "tree");
 	ffn_dump(ff->ffn);
 
-	log(L_FF | L_FFFILE, "");
+	logs(L_FF | L_FFFILE, "");
 }

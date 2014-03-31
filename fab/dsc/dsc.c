@@ -201,7 +201,7 @@ static int depblock_process(
 
 			if(newr)
 			{
-				log(L_DG | L_DGDEPS | L_DSC | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
+				logf(L_DG | L_DGDEPS | L_DSC | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
 					, "S"
 					, newa ? "x" : ""
 					, newb ? "x" : ""
@@ -267,13 +267,13 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, generator_parser * con
 		}
 	}
 
-	log(L_DSC | L_DSCINFO, "DISCOVERY --- executes %3d cached ---", tsl);
+	logf(L_DSC | L_DSCINFO, "DISCOVERY --- executes %3d cached ---", tsl);
 
 	int newn = 0;
 	int newr = 0;
 	fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
 
-	log(L_DSC | L_DSCEXEC, "DISCOVERY --- : %3d nodes and %3d edges", newn, newr);
+	logf(L_DSC | L_DSCEXEC, "DISCOVERY --- : %3d nodes and %3d edges", newn, newr);
 
 	finally : coda;
 }
@@ -318,7 +318,7 @@ int dsc_exec_entire(map * vmap, generator_parser * const gp, lwx *** stax, int *
 						{
 							if(gn_nodes.e[x]->primary_hb->stathash[1] == 0)
 							{
-								log(L_ERROR, "%-9s file %s not found", "PRIMARY", gn_nodes.e[x]->idstring);
+								logf(L_ERROR, "%-9s file %s not found", "PRIMARY", gn_nodes.e[x]->idstring);
 								break;
 							}
 						}
@@ -358,7 +358,7 @@ int dsc_exec_entire(map * vmap, generator_parser * const gp, lwx *** stax, int *
 			}
 		}
 
-		log(L_DSC | L_DSCINFO, "DISCOVERY %3d executes %3d cached %3d", i, tsl, cachel);
+		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d executes %3d cached %3d", i, tsl, cachel);
 
 		int newn = 0;
 		int newr = 0;
@@ -367,14 +367,14 @@ int dsc_exec_entire(map * vmap, generator_parser * const gp, lwx *** stax, int *
 		// process cached results
 		for(x = 0; x < cachel; x++)
 		{
-			log(L_DSC | L_DSCEXEC, "(cache) %-9s %s", gn_designation(cache[x]), cache[x]->idstring);
+			logf(L_DSC | L_DSCEXEC, "(cache) %-9s %s", gn_designation(cache[x]), cache[x]->idstring);
 
 			fatal(depblock_process, cache[x]->dscv_block, cache[x], &newn, &newr);
 			fatal(depblock_close, cache[x]->dscv_block);
 		}
 
 		// sum discovered objects
-		log(L_DSC | L_DSCEXEC, "DISCOVERY %3d : %3d nodes and %3d edges", i, newn, newr);
+		logf(L_DSC | L_DSCEXEC, "DISCOVERY %3d : %3d nodes and %3d edges", i, newn, newr);
 
 		// recount - new nodes may need discovered
 		dscvl = count_dscv(0);

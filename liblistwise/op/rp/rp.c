@@ -75,11 +75,11 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 				, ss
 				, strlen(ss)
 			);
-			fatal(lstack_sel_stage, ls, x);
+			fatal(lstack_selection_stage, ls, x);
 		}
 		else if(errno == ENOENT || errno == ENOTDIR)
 		{
-			lw_log_opinfo("realpath(%.*s)=[%d][%s]\n", l, s, errno, strerror(errno));
+			lw_log_opinfo("realpath(%.*s)=[%d][%s]", l, s, errno, strerror(errno));
 		}
 		else
 		{

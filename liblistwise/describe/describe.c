@@ -50,7 +50,7 @@ static int zwrite(char * const restrict dst, const size_t sz, size_t * restrict 
 static int pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
 {
 	size_t ol = 0;
-	if(ps)
+	if(*ps)
 		ol = (*ps)->l;
 
 	va_list va;
@@ -357,7 +357,7 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 
 		if(lx->s[x].l == 0)
 		{
-			SAY("[%4d     ] -- empty \n", x);
+			SAY("[%4d     ] -- empty", x);
 		}
 
 		for(y = 0; y < lx->s[x].l; y++)
@@ -384,6 +384,9 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 					}
 				}
 			}
+			
+			if(x != lx->l - 1 || y)
+				SAY("\n");
 
 			// for each entry : indexes, whether selected, staged
 			SAY("[%4d,%4d] %s%s "
@@ -405,11 +408,11 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 			{
 				SAY("[%hhu]%p/%p", lx->s[x].s[y].type, *(void**)lx->s[x].s[y].s, lx->s[x].s[y].s);
 			}
-			SAY("\n");
 
 			// indicate active windows
 			if(x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
 			{
+				SAY("\n");
 				SAY("%16s", " ");
 
 				int escaping = 0;
@@ -453,12 +456,12 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 							w++;
 					}
 				}
-				SAY("\n");
 			}
 
 			// indicate staged windows
 			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
 			{
+				SAY("\n");
 				SAY("%16s", " ");
 
 				int escaping = 0;
@@ -502,7 +505,6 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 							w++;
 					}
 				}
-				SAY("\n");
 			}
 		}
 	}
@@ -517,6 +519,7 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps)
 {
 	size_t lz = 0;
+	fatal(psclear, ps);
 	xproxy(generator_operation_canon, oper, sm, 0, 0, &lz, ps, pswrite);
 }
 
@@ -526,21 +529,26 @@ int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** rest
 
 int API generator_canon_write(generator * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
 {
-	return generator_canon(g, dst, sz, z, 0, zwrite);
+	size_t lz = 0;
+	if(!z)
+		z = &lz;
+
+	xproxy(generator_canon, g, dst, sz, z, 0, zwrite);
 }
 
 int API generator_canon_pswrite(generator * const restrict g, pstring ** restrict ps)
 {
 	size_t lz = 0;
+	fatal(psclear, ps);
 	xproxy(generator_canon, g, 0, 0, &lz, ps, pswrite);
 }
 
 int API generator_canon_dump(generator * const restrict g, pstring ** restrict ps)
 {
 	pstring * lps = 0;
-
-	if(ps == 0)
+	if(!ps)
 		ps = &lps;
+	fatal(psclear, ps);
 
 	size_t lz = 0;
 	fatal(generator_canon, g, 0, 0, &lz, ps, pswrite);
@@ -555,9 +563,9 @@ coda;
 int API generator_canon_log(generator * const restrict g, pstring ** restrict ps, void * restrict udata)
 {
 	pstring * lps = 0;
-
-	if(ps == 0)
+	if(!ps)
 		ps = &lps;
+	fatal(psclear, ps);
 
 	if(lw_would_generator())
 	{
@@ -584,6 +592,7 @@ int API generator_description_write(generator * const restrict g, char * const r
 int API generator_description_pswrite(generator * const restrict g, pstring ** restrict ps)
 {
 	size_t lz = 0;
+	fatal(psclear, ps);
 	xproxy(generator_description, g, 0, 0, &lz, ps, pswrite);
 }
 
@@ -592,6 +601,7 @@ int API generator_description_dump(generator * const restrict g, pstring ** rest
 	pstring * lps = 0;
 	if(!ps)
 		ps = &lps;
+	fatal(psclear, ps);
 
 	size_t lz = 0;
 	fatal(generator_description, g, 0, 0, &lz, ps, pswrite);
@@ -611,6 +621,7 @@ int API generator_description_log(generator * const restrict g, pstring ** restr
 	{
 		if(!ps)
 			ps = &lps;
+		fatal(psclear, ps);
 
 		size_t lz = 0;
 		fatal(generator_description, g, 0, 0, &lz, ps, pswrite);
@@ -635,6 +646,7 @@ xapi API lstack_description_write(lwx * const restrict lx, char * const restrict
 xapi API lstack_description_pswrite(lwx * const restrict lx, pstring ** restrict ps)
 {
 	size_t z = 0;
+	fatal(psclear, ps);
 	xproxy(lstack_description, lx, 0, 0, &z, ps, pswrite);
 }
 
@@ -643,6 +655,7 @@ xapi API lstack_description_dump(lwx * const restrict lx, pstring ** restrict ps
 	pstring * lps = 0;
 	if(!ps)
 		ps = &lps;
+	fatal(psclear, ps);
 
 	size_t lz = 0;
 	fatal(lstack_description, lx, 0, 0, &lz, ps, pswrite);
@@ -662,6 +675,7 @@ xapi API lstack_description_log(lwx * const restrict lx, pstring ** restrict ps,
 	{
 		if(!ps)
 			ps = &lps;
+		fatal(psclear, ps);
 
 		size_t lz = 0;
 		fatal(lstack_description, lx, 0, 0, &lz, ps, pswrite);

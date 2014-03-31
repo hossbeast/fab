@@ -81,8 +81,8 @@ static int exec_generator(
 #if DEBUG
 	if(lw_would_exec())
 	{
-		fatal(generator_canon_log, g, &ps, udata);
-		fatal(lstack_description_log, *lx, &ps, udata);
+		fatal(generator_canon_pswrite, g, &ps);
+		lw_log_exec(" >> [  ] %.*s", (int)ps->l, ps->s);
 	}
 #endif
 
@@ -115,13 +115,16 @@ static int exec_generator(
 			// possibly activate selections staged by the previous operator
 			if(x && ((g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE))
 			{
-				fatal(lstack_sel_activate, *lx);
+				fatal(lstack_selection_activate, *lx);
 			}
 		}
 
 #if DEBUG
-		if(x && lw_would_exec())
-			fatal(lstack_description_log, *lx, &ps, udata);
+		if(lw_would_exec())
+		{
+			fatal(lstack_description_pswrite, *lx, &ps);
+			lw_log_exec("%.*s", (int)ps->l, ps->s);
+		}
 #endif
 
 		if(g->ops[x]->op != yop && g->ops[x]->op != wyop && !isor)
@@ -130,20 +133,22 @@ static int exec_generator(
 		if(g->ops[x]->op != yop && g->ops[x]->op != syop && !isor)
 			(*lx)->sel.staged_era++;
 
+#if DEBUG
 		if(lw_would_exec())
 		{
 extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps);
 
 			lw_log_exec("");
 			fatal(operation_canon_pswrite, g->ops[x], 0, &ps);
-			lw_log_exec(" >> %.*s", (int)ps->l, ps->s);
+			lw_log_exec(" >> [%2d] %.*s", x, (int)ps->l, ps->s);
 		}
+#endif
 
 		if(g->ops[x]->op == yop || g->ops[x]->op == wyop)
 			fatal(lstack_windows_activate, *lx);
 
 		if(g->ops[x]->op == yop || g->ops[x]->op == syop)
-			fatal(lstack_sel_activate, *lx);
+			fatal(lstack_selection_activate, *lx);
 
 		// execute the operator
 		if(((*lx)->l || (g->ops[x]->op->optype & LWOP_EMPTYSTACK_YES) == LWOP_EMPTYSTACK_YES) && g->ops[x]->op->op_exec)
@@ -173,7 +178,7 @@ extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring 
 	// possibly activate selections staged by the previous operator
 	if(x && (g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE)
 	{
-		fatal(lstack_sel_activate, *lx);
+		fatal(lstack_selection_activate, *lx);
 	}
 
 #if DEBUG

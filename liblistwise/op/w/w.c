@@ -99,7 +99,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 			{
 				if(k >= off && j < len)
 				{
-					fatal(lstack_sel_stage, lx, x);
+					fatal(lstack_selection_stage, lx, x);
 					j++;
 				}
 

@@ -70,7 +70,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 
 		if(As && estrcmp(As, Asl, Bs, Bsl, 0))
 		{
-			fatal(lstack_sel_stage, ls, x);
+			fatal(lstack_selection_stage, ls, x);
 		}
 	}
 	LSTACK_ITEREND

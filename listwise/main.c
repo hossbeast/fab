@@ -49,68 +49,22 @@
 #include "args.h"
 #include "log.h"
 
+int listwise_would(void * token, void * udata)
+{
+	return log_would(*(uint64_t*)token);
+}
+
+void listwise_log(void * token, void * udata, const char * func, const char * file, int line, char * fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
 #if DEBUG
-void log_generator(void * udata, const char * func, const char * file, int line, char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	vlogi(func, file, line, L_LWPARSE, fmt, va);
-	va_end(va);
-}
-
-void log_lstack(void * udata, const char * func, const char * file, int line, char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	log_starti(func, file, line, L_LWEXEC, "\n");
-	vlog_finish(fmt, va);
-	va_end(va);
-}
-
-void log_exec(void * udata, const char * func, const char * file, int line, char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	vlogi(func, file, line, L_LWEXEC, fmt, va);
-	va_end(va);
-}
-
-void log_opinfo(void * udata, const char * func, const char * file, int line, char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	vlogi(func, file, line, L_LWOPINFO, fmt, va);
-	va_end(va);
-}
+	log_vlogf(func, file, line, *(uint64_t*)token, fmt, va);
+#else
+	log_vlogf(*(uint64_t*)token, fmt, va);
 #endif
-
-#if DEVEL
-void log_tokens(void * udata, const char * func, const char * file, int line, char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	vlogi(func, file, line, L_LWTOKEN, fmt, va);
 	va_end(va);
 }
-
-void log_states(void * udata, const char * func, const char * file, int line, char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	vlogi(func, file, line, L_LWSTATE, fmt, va);
-	va_end(va);
-}
-#endif
-
-#if SANITY
-void log_sanity(void * udata, const char * func, const char * file, int line, char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	vlogi(func, file, line, L_LWSANITY, fmt, va);
-	va_end(va);
-}
-#endif
 
 /// snarf
 //
@@ -199,18 +153,32 @@ int main(int g_argc, char** g_argv)
 	fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
 
 	listwise_logging_configure((struct listwise_logging[]) {{
+		  .generator_token	= (uint64_t[]) { L_LWPARSE }
+		, .generator_would	= listwise_would
+		, .generator_log		= listwise_log
 #if DEBUG
-		  .log_generator	= log_generator
-		, .log_lstack			= log_lstack
-		, .log_exec				= log_exec
-		, .log_opinfo			= log_opinfo
+		, .lstack_token			= (uint64_t[]) { L_LWEXEC }
+		, .lstack_would			= listwise_would
+		, .lstack_log				= listwise_log
+		, .exec_token				= (uint64_t[]) { L_LWEXEC }
+		, .exec_would				= listwise_would
+		, .exec_log					= listwise_log
+		, .opinfo_token			= (uint64_t[]) { L_LWOPINFO }
+		, .opinfo_would			= listwise_would
+		, .opinfo_log				= listwise_log
 #endif
 #if DEVEL
-		, .log_tokens			= log_tokens
-		, .log_states			= log_states
+		, .tokens_token			= (uint64_t[]) { L_LWTOKEN }
+		, .tokens_would			= listwise_would
+		, .tokens_log				= listwise_log
+		, .states_token			= (uint64_t[]) { L_LWSTATE }
+		, .states_would			= listwise_would
+		, .states_log				= listwise_log
 #endif
 #if SANITY
-		, .log_sanity			= log_sanity
+		, .sanity_token			= (uint64_t[]) { L_LWSANITY }
+		, .sanity_would			= listwise_would
+		, .sanity_log				= listwise_log
 #endif
 	}});
 
@@ -381,8 +349,9 @@ finally:
 		}
 #endif
 
-		log_write(L_ERROR, space, tracesz);
+		log(L_ERROR, space, tracesz);
 	}
 
+	log_teardown();
 coda;
 }

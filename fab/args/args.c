@@ -639,52 +639,52 @@ int args_parse(int argc, char** argv)
 
 	// initialize logger
 	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, L_INFO);
-	fatal(log_init_and_describe, L_TAG, L_INFO);
+	fatal(log_init_and_describe, L_INFO);
 
-	log(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
+	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
 	// log execution parameters under PARAMS
-	log(L_PARAMS	, "%11spid                    =%u"						, ""	, g_params.pid);
-	log(L_PARAMS	, "%11ssid                    =%u"						, ""	, g_params.sid);
-	log(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_params.euid_name, g_params.euid, g_params.egid_name, g_params.egid);
-	log(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_params.ruid_name, g_params.ruid, g_params.rgid_name, g_params.rgid);
-	log(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_params.cwd);
-	log(L_PARAMS	, "%11scachedir               =%s"						, ""	, XQUOTE(FABCACHEDIR));
-	log(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));
-	log(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));
-	log(L_PARAMS	, "%11sinvokedir              =%s"						, ""	,	XQUOTE(FABINVOKEDIR));
-	log(L_PARAMS	, "%11sexpiration-policy      =%s"						, ""	, durationstring(EXPIRATION_POLICY));
+	logf(L_PARAMS	, "%11spid                    =%u"						, ""	, g_params.pid);
+	logf(L_PARAMS	, "%11ssid                    =%u"						, ""	, g_params.sid);
+	logf(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_params.euid_name, g_params.euid, g_params.egid_name, g_params.egid);
+	logf(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_params.ruid_name, g_params.ruid, g_params.rgid_name, g_params.rgid);
+	logf(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_params.cwd);
+	logf(L_PARAMS	, "%11scachedir               =%s"						, ""	, XQUOTE(FABCACHEDIR));
+	logf(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));
+	logf(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));
+	logf(L_PARAMS	, "%11sinvokedir              =%s"						, ""	,	XQUOTE(FABINVOKEDIR));
+	logf(L_PARAMS	, "%11sexpiration-policy      =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->can);
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->abs);
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_cwd);
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_fab);
-	log(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan             =%s", g_args.mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args.mode_bplan));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->can);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->abs);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_cwd);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_fab);
+	logf(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan             =%s", g_args.mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args.mode_bplan));
 
 	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
 	{
-		log(L_ARGS | L_PARAMS				, " %s (  %c  ) bakescript-path        =%s", "*", 'k', g_args.bakescript_path);
+		logf(L_ARGS | L_PARAMS				, " %s (  %c  ) bakescript-path        =%s", "*", 'k', g_args.bakescript_path);
 
 		if(g_args.bakevarsl == 0)
-			log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =", " ", 'K');
+			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =", " ", 'K');
 		for(x = 0; x < g_args.bakevarsl; x++)
-			log(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
+			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
 	}
 
 #if DEBUG
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace          =%s", g_args.mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_logtrace));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace          =%s", g_args.mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_logtrace));
 #endif
 #if DEVEL
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
 #endif
 #if SANITY
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-sanity            =%s", g_args.mode_bslic == DEFAULT_MODE_SANITY ? " " : "*", ' ', MODE_STR(g_args.mode_sanity));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-sanity            =%s", g_args.mode_bslic == DEFAULT_MODE_SANITY ? " " : "*", ' ', MODE_STR(g_args.mode_sanity));
 #endif
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args.mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args.mode_paths));
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycles            =%s", g_args.mode_cycles == DEFAULT_MODE_CYCLES ? " " : "*", ' ', MODE_STR(g_args.mode_cycles));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args.mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args.mode_paths));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycles            =%s", g_args.mode_cycles == DEFAULT_MODE_CYCLES ? " " : "*", ' ', MODE_STR(g_args.mode_cycles));
 
 	if(procs > 0)
 		snprintf(space, sizeof(space)  , "%d (heuristic)", g_args.concurrency);
@@ -693,27 +693,27 @@ int args_parse(int argc, char** argv)
 	else
 		snprintf(space, sizeof(space)  , "%d", g_args.concurrency);
 
-	log(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", procs > 0 ? " " : "*", 'j', space);
+	logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", procs > 0 ? " " : "*", 'j', space);
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 	{
 		int star = x && x != (g_args.invokedirsl - 1);
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) invokedirs(s)          =%s", star ? "*" : " ", 'I', g_args.invokedirs[x]);
+		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) invokedirs(s)          =%s", star ? "*" : " ", 'I', g_args.invokedirs[x]);
 	}
 
 	if(g_args.rootvarsl == 0)
-		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)         =", " ", ' ');
+		logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)         =", " ", ' ');
 	for(x = 0; x < g_args.rootvarsl; x++)
-		log(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)         =%s", "*", 'v', g_args.rootvars[x]);
+		logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)         =%s", "*", 'v', g_args.rootvars[x]);
 
-	log(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidate-all         =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidate-all         =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
 
 	if(g_args.selectorsl == 0)
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)            =", " ", ' ');
+		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)            =", " ", ' ');
 	for(x = 0; x < g_args.selectorsl; x++)
-		log(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)            =%s", "*", ' ', selector_string(&g_args.selectors[x], space, sizeof(space)));
+		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)            =%s", "*", ' ', selector_string(&g_args.selectors[x], space, sizeof(space)));
 
-	log(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
+	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
 finally:
 	path_free(fabpath);

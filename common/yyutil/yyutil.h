@@ -84,14 +84,18 @@ typedef struct yyu_extra
 	char						error_str[256];		//  string
 	char						tokenstring[256];	//  tokenstring (gramerr only)
 
-	int							line_numbering;	// whether yyu should include scanner line number in output messages
-	void *					udata;
+	// logging configuration
+	void *					udata;						// passed to logging callbacks
 
 	// yyu calls this function to log scanner state changes
-	void						(*log_state)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	void *					state_token;			// passed to state logging callback
+	int							(*state_would)(void * token, void * udata);
+	void						(*state_log)(void * token, void * udata, const char * func, const char * file, int line, char * fmt, ...);
 
 	// yyu calls this function to log parsed tokens
-	void						(*log_token)(void * udata, const char * func, const char * file, int line, char * fmt, ...);
+	void *					token_token;			// passed to token logging callback
+	int							(*token_would)(void * token, void * udata);
+	void						(*token_log)(void * token, void * udata, const char * func, const char * file, int line, char * fmt, ...);
 
 	// yyu calls this function to get a token name from a token
 	const char *		(*tokname)(int token);

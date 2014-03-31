@@ -313,11 +313,8 @@ int parse_args(pstring ** remnant)
 
 	// initialize logger - prepare g_argc/g_argv
 #if DEBUG
-	fatal(log_parse_and_describe, "+INFO|ERROR|LWPARSE", 0, L_INFO);
-	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
-		fatal(log_init_and_describe, L_TAG, L_INFO);
-	else
-		fatal(log_init_and_describe, 0, L_INFO);
+	fatal(log_parse_and_describe, "+ERROR", 0, L_INFO);
+	fatal(log_init_and_describe, L_INFO);
 #else
 	fatal(log_parse, "+ERROR", 0);
 	fatal(log_init, 0);
@@ -332,78 +329,92 @@ int parse_args(pstring ** remnant)
 		{
 			// longopts
 		}
-		else if(x == 1 || x == '?')
+		else if(x == 'a')
 		{
-			// unrecognized
+			g_args.out_list = 1;
+		}
+		else if(x == 'k')
+		{
+			g_args.out_stack = 1;
+		}
+		else if(x == 'n')
+		{
+			g_args.numbering = 1;
+		}
+		else if(x == 'z')
+		{
+			g_args.out_null = 1;
+		}
+		else if(x == '0')
+		{
+			g_args.in_null = 1;
+		}
+		else if(x == 'f')
+		{
+			free(g_args.generator_file);
+			g_args.generator_file = strdup(optarg);
+		}
+		else if(x == 'l')
+		{
+			free(g_args.init_file);
+			g_args.init_file = strdup(optarg);
+		}
+		else if(x == 'i')
+		{
+			if(g_args.init_listl == g_args.init_lista)
+			{
+				int ns = g_args.init_lista ?: 10;
+				ns = ns * 2 + ns / 2;
+
+				fatal(xrealloc, &g_args.init_list, sizeof(*g_args.init_list), ns, g_args.init_lista);
+				fatal(xrealloc, &g_args.init_list_lens, sizeof(*g_args.init_list_lens), ns, g_args.init_lista);
+				g_args.init_lista = ns;
+			}
+			g_args.init_list[g_args.init_listl] = strdup(optarg);
+			g_args.init_list_lens[g_args.init_listl] = strlen(optarg);
+			g_args.init_listl++;
+		}
+		else if(x == 'N')
+		{
+			g_args.numbering = 2;
+		}
+		else if(x == 'h')
+		{
+			help = 1;
+		}
+		else if(x == '?')
+		{
+			// unrecognized argv element
 			if(*remnant)
-				fatal(pscat, remnant, " ", 1);
-			fatal(pscat, remnant, optarg, 0);
+				fatal(pscats, remnant, " ");
+			fatal(pscatf, remnant, "-%c", optopt);
 		}
 		else
 		{
-			switch(x)
-			{
-				case 'a':
-					g_args.out_list = 1;
-					break;
-				case 'k':
-					g_args.out_stack = 1;
-					break;
-				case 'n':
-					g_args.numbering = 1;
-					break;
-				case 'z':
-					g_args.out_null = 1;
-					break;
-				case '0':
-					g_args.in_null = 1;
-					break;
-				case 'f':
-					free(g_args.generator_file);
-					g_args.generator_file = strdup(optarg);
-					break;
-				case 'l':
-					free(g_args.init_file);
-					g_args.init_file = strdup(optarg);
-					break;
-				case 'i':
-					{
-						if(g_args.init_listl == g_args.init_lista)
-						{
-							int ns = g_args.init_lista ?: 10;
-							ns = ns * 2 + ns / 2;
-
-							fatal(xrealloc, &g_args.init_list, sizeof(*g_args.init_list), ns, g_args.init_lista);
-							fatal(xrealloc, &g_args.init_list_lens, sizeof(*g_args.init_list_lens), ns, g_args.init_lista);
-							g_args.init_lista = ns;
-						}
-						g_args.init_list[g_args.init_listl] = strdup(optarg);
-						g_args.init_list_lens[g_args.init_listl] = strlen(optarg);
-						g_args.init_listl++;
-					}
-					break;
-				case 'N':
-					g_args.numbering = 2;
-					break;
-				case 'h':
-					help = 1;
-					break;
-				case '?':
-					failf(LISTWISE_BADARGS, "unknown : %s", optarg);
-					break;
-			}
+			// non-option argv elements
+			if(*remnant)
+				fatal(pscats, remnant, " ");
+			fatal(pscats, remnant, optarg);
 		}
 	}
+
+	for(; optind < g_argc; optind++)
+	{
+		// options following --
+		if(*remnant)
+			fatal(pscats, remnant, " ");
+		fatal(pscats, remnant, g_argv[optind]);
+	}
+
+	// configure logger prefix and trace
+	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
+		log_config(L_INFO | L_LWOPINFO | L_LWTOKEN | L_LWSTATE, L_LWOPINFO | L_LWTOKEN | L_LWSTATE);
+	else
+		log_config(L_INFO | L_LWOPINFO | L_LWTOKEN | L_LWSTATE, 0);
 
 	if(help || version || logopts || operators)
 	{
 		usage(1, 1, help, logopts, operators, &optypes);
-	}
-
-	if(optind < g_argc && strcmp(g_argv[optind], "-") == 0)
-	{
-		fatal(ixstrdup, &g_args.generator_file, "-");
-		optind++;
 	}
 
 	finally : coda;
@@ -416,7 +427,7 @@ void args_teardown()
 		free(g_args.init_list[x]);
 
 	free(g_args.init_list);
+	free(g_args.init_list_lens);
 	free(g_args.generator_file);
 	free(g_args.init_file);
-	free(g_args.init_list_lens);
 }

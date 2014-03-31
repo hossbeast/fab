@@ -21,6 +21,8 @@
 #include "listwise/xtra.h"
 #include "listwise/object.h"
 #include "listwise/generator.h"
+#include "listwise/selection.h"
+#include "listwise/lstack.h"
 
 #include "list.h"
 #include "gnlw.h"
@@ -174,7 +176,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lwx *
 	}
 	else
 	{
-		fatal(lstack_sel_reset, (*stax)[pn]);
+		fatal(lstack_selection_reset, (*stax)[pn]);
 	}
 
 finally:

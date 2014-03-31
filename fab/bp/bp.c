@@ -299,7 +299,7 @@ int bp_create(
 						//  1 - this node may be pruned away and not actually needed after all.
 						//  2 - in order to report additional errors before failing out
 						//
-						log(L_WARN, "SECONDARY has no formula - %s", lvs[y]->idstring);
+						logf(L_WARN, "SECONDARY has no formula - %s", lvs[y]->idstring);
 						bps->nofmls[bps->nofmls_l++] = lvs[y];
 						lvs[y]->stage = k+1;
 					}
@@ -382,7 +382,7 @@ int bp_eval(bp * const bp)
 			if(gn->primary_hb->stathash[1] == 0)		// file does not exist
 			{
 				// PRIMARY file - not found
-				log(L_ERROR, "[%2d,%3d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
+				logf(L_ERROR, "[%2d,%3d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
 
 				// poison and propagate
 				poison = 1;
@@ -390,7 +390,7 @@ int bp_eval(bp * const bp)
 					gn->feeds.e[i]->A->poison = 1;
 			}
 
-			log(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s |"
+			logf(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s |"
 				, x, c++
 				, "PRIMARY"
 				, gn->idstring
@@ -427,7 +427,7 @@ int bp_eval(bp * const bp)
 
 					if(!gn->poison)
 					{
-						log(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s"
+						logf(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s"
 							, x, c++
 							, gn_designation(gn)
 							, gn->idstring
@@ -445,7 +445,7 @@ int bp_eval(bp * const bp)
 				{
 					gn * gn = bp->stages[x].evals[y]->products[k];
 
-					log(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
+					logf(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
 						, x, c++
 						, gn_designation(gn)
 						, gn->idstring
@@ -477,7 +477,7 @@ int bp_eval(bp * const bp)
 
 			if(gn->rebuild)
 			{
-				log(L_ERROR | L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
+				logf(L_ERROR | L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
 					, x, c++
 					, gn_designation(gn)
 					, gn->idstring
@@ -487,7 +487,7 @@ int bp_eval(bp * const bp)
 			}
 			else
 			{
-				log(L_WARN | L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
+				logf(L_WARN | L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
 					, x, c++
 					, gn_designation(gn)
 					, gn->idstring
@@ -562,7 +562,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lwx *** stax, int 
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		i = 0;
-		log(L_BP | L_BPINFO, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
+		logf(L_BP | L_BPINFO, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
 
 		// render formulas for each eval context on this stage
 		for(y = 0; y < bp->stages[x].evals_l; y++)
@@ -631,7 +631,7 @@ void bp_dump(bp * bp)
 
 	for(x = 0; x < bp->stages_l; x++)
 	{
-		log(L_BP | L_BPDUMP, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
+		logf(L_BP | L_BPDUMP, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
 
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
@@ -640,14 +640,14 @@ void bp_dump(bp * bp)
 			{
 				if(i)
 				{
-					log(L_BP | L_BPDUMP, "         %-9s %s"
+					logf(L_BP | L_BPDUMP, "         %-9s %s"
 						, gn_designation(bp->stages[x].evals[y]->products[i])
 						, bp->stages[x].evals[y]->products[i]->idstring
 					);
 				}
 				else
 				{
-					log(L_BP | L_BPDUMP, "[%2d,%3d] %-9s %s"
+					logf(L_BP | L_BPDUMP, "[%2d,%3d] %-9s %s"
 						, x
 						, y
 						, gn_designation(bp->stages[x].evals[y]->products[i])

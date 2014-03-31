@@ -23,20 +23,26 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "logger.h"
 #include "xlinux.h"
 #include "xapi.h"
-#if 0
-#include "global.h"
-#include "args.h"
-#endif
-#include "cksum.h"
+
+#include "logger.h"
 #include "macros.h"
 #include "strutil.h"
 
 #define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 60])
 #define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
 #define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
+
+#if DEBUG
+#define TRACEARGS const char * const func, const char * const file, int line,
+#define TRACEPASS func, file, line,
+#define NOTRACE   0, 0, 0,
+#else
+#define TRACEARGS
+#define TRACEPASS
+#define NOTRACE
+#endif
 
 static struct filter
 {
@@ -46,8 +52,6 @@ static struct filter
 } * 							o_filter;
 static int				o_filter_a;
 static int				o_filter_l;
-
-static uint64_t o_e;						// when a log is being constructed, effective bits
 
 struct g_logs_t * g_logs;
 int g_logs_l;
@@ -61,24 +65,27 @@ int g_argvsl;
 // [[ static ]]
 //
 
-static char * 	o_space;			// storage between vadd/flush calls
+static uint64_t o_space_bits;	// when a log is being constructed, effective bits
+static char * 	o_space;			// storage between logvprintf/flush calls
 static int			o_space_a;		// allocation
 static int			o_space_l;		// bytes
 static int			o_space_w;		// visible characters
 
-#if DEBUG
-static uint64_t	o_trace_bits;
+static uint64_t	o_prefix_bits = ~0ULL;	// prefix decision bits
 
-static char *		o_func;				// trace storage
-static int			o_func_a;
-static int			o_func_l;
-static char * 	o_file;
-static int			o_file_a;
-static int			o_file_l;
-static int			o_line;
+#if DEBUG
+static uint64_t	o_trace_bits  = 0ULL;		// trace decision bits
+
+static char *		o_trace_func;		// trace storage
+static int			o_trace_func_a;
+static int			o_trace_func_l;
+static char * 	o_trace_file;
+static int			o_trace_file_a;
+static int			o_trace_file_l;
+static int			o_trace_line;
 #endif
 
-static int o_name_len;
+static int o_name_len;	// max prefix name length
 
 static unsigned char o_colors[] = {
 	/* NO COLOR */   0x00
@@ -153,19 +160,17 @@ static int logprintf(const char * fmt, ...)
 	return w;
 }
 
-static int start(const uint64_t e, int pfx)
+static int start(const uint64_t e)
 {
 	if(log_would(e))
 	{
 #if DEBUG
 		o_space_l = 0;
 		o_space_w = 0;
-		o_func_l = 0;
-		o_file_l = 0;
+		o_trace_func_l = 0;
+		o_trace_file_l = 0;
 #endif
-		o_e = e;
-
-		int w = 0;
+		o_space_bits = e;
 
 		// colorization
 		if((e & L_COLOR_VALUE) && COLORHEX(e))
@@ -173,7 +178,7 @@ static int start(const uint64_t e, int pfx)
 			logwrite(COLOR(e), 0);
 		}
 
-		if(pfx)
+		if(o_space_bits & o_prefix_bits)
 		{
 			// prefix
 			int x;
@@ -181,39 +186,29 @@ static int start(const uint64_t e, int pfx)
 			{
 				if((e & g_logs[x].v) == g_logs[x].v)
 				{
-					w += logprintf("%*s : ", o_name_len, g_logs[x].s);
+					logprintf("%*s : ", o_name_len, g_logs[x].s);
 					break;
 				}
 			}
 		}
 
-		return w;
+		return 1;
 	}
 
 	return 0;
 }
 
-static int vadd(const char* fmt, va_list va)
-{
-	return logvprintf(fmt, va);
-}
-
-static int vfinish(const char* fmt, void * va, int trace)
+static int finish()
 {
 	int w = 0;
-	if(fmt)
-		w += vadd(fmt, *(void**)va);
 
 #if DEBUG
-	if(trace)
-	{
-		// location trace for errors
-		if(o_e & o_trace_bits)
-			w += log_add(" in %s at %s:%d", o_func, o_file, o_line);
-	}
+	// location trace for errors
+	if(o_space_bits & o_trace_bits)
+		w += logprintf(" in %s at %s:%d", o_trace_func, o_trace_file, o_trace_line);
 #endif
 
-	if((o_e & L_COLOR_VALUE) && COLORHEX(o_e))
+	if((o_space_bits & L_COLOR_VALUE) && COLORHEX(o_space_bits))
 	{
 		logwrite(NOCOLOR, 0);
 	}
@@ -223,7 +218,7 @@ static int vfinish(const char* fmt, void * va, int trace)
 	// flush to stderr
 	int __attribute__((unused)) r = write(2, o_space, o_space_l);
 
-	o_e = 0;
+	o_space_bits = 0;
 
 	return w;
 }
@@ -259,34 +254,35 @@ static int describe(struct filter * f, char * dst, size_t sz)
 }
 
 #if DEBUG
-static void prep(const char * const func, const char * const file, int line)
+static void prep(const char * const func, const char * file, int line)
 {
 	int funcl = strlen(func);
+
+	char * slash = 0;
+	if((slash = strrchr(file, '/')))
+		file = slash + 1;
+
 	int filel = strlen(file);
 
-	if(o_func_a <= funcl)
+	if(o_trace_func_a <= funcl)
 	{
-		o_func = realloc(o_func, funcl + 1);
-		o_func_a = funcl + 1;
+		o_trace_func = realloc(o_trace_func, funcl + 1);
+		o_trace_func_a = funcl + 1;
 	}
-	memcpy(o_func, func, funcl);
-	o_func[funcl] = 0;
+	memcpy(o_trace_func, func, funcl);
+	o_trace_func[funcl] = 0;
 
-	if(o_file_a <= filel)
+	if(o_trace_file_a <= filel)
 	{
-		o_file = realloc(o_file, filel + 1);
-		o_file_a = filel + 1;
+		o_trace_file = realloc(o_trace_file, filel + 1);
+		o_trace_file_a = filel + 1;
 	}
-	memcpy(o_file, file, filel);
-	o_file[filel] = 0;
+	memcpy(o_trace_file, file, filel);
+	o_trace_file[filel] = 0;
 
-	o_line = line;
+	o_trace_line = line;
 }
 #endif
-
-//
-// [[ public ]]
-//
 
 static int logparse(char * args, int args_len, char * dst, size_t sz, size_t * z, int * cnt)
 {
@@ -406,32 +402,11 @@ static int logparse(char * args, int args_len, char * dst, size_t sz, size_t * z
 	finally : coda;
 }
 
-int log_parse(char * args, int args_len)
-{
-	xproxy(logparse, args, args_len, 0, 0, 0, 0);
-}
-
-int log_parse_and_describe(char * args, int args_len, uint64_t bits)
-{
-	char space[256];
-	size_t sz = 0;
-
-	fatal(logparse, args, args_len, space, sizeof(space), &sz, 0);
-
-	if(sz)
-		log(bits, "%.*s", sz, space);
-
-	finally : coda;
-}
-
-static int loginit(uint64_t trace, uint64_t bits)
+static int loginit(TRACEARGS uint64_t bits)
 {
 	int			fd = -1;
 	int			argsa = 0;	// g_argvs allocated size
 	int			argva = 0;
-
-	// save trace settings
-	o_trace_bits = trace;
 
 	// snarf the cmdline
 	fatal(xopen, "/proc/self/cmdline", O_RDONLY, &fd);
@@ -488,7 +463,9 @@ static int loginit(uint64_t trace, uint64_t bits)
 			fatal(logparse, g_argv[x], 0, space, sizeof(space), &sz, &cnt);
 
 			if(sz)
-				log(bits, "%.*s", sz, space);
+			{
+				log_logf(TRACEPASS bits, "%.*s", sz, space);
+			}
 		}
 		else
 		{
@@ -507,7 +484,7 @@ static int loginit(uint64_t trace, uint64_t bits)
 			memmove(
 			    &g_argv[x]
 				, &g_argv[x+1]
-				, g_argc - x - 1
+				, (g_argc - x - 1) * sizeof(g_argv[0])
 			);
 			g_argc--;
 		}
@@ -518,14 +495,51 @@ finally:
 coda;
 }
 
-int log_init(uint64_t trace)
+//
+// [[ public ]]
+//
+
+int log_parse(char * args, int args_len)
 {
-	xproxy(loginit, trace, 0);
+	xproxy(logparse, args, args_len, 0, 0, 0, 0);
 }
 
-int log_init_and_describe(uint64_t trace, uint64_t bits)
+int log_log_parse_and_describe(TRACEARGS char * args, int args_len, uint64_t bits)
 {
-	xproxy(loginit, trace, bits);
+	char space[256];
+	size_t sz = 0;
+
+	fatal(logparse, args, args_len, space, sizeof(space), &sz, 0);
+
+	if(sz)
+	{
+		log_logf(TRACEPASS bits, "%.*s", sz, space);
+	}
+
+	finally : coda;
+}
+
+int log_init()
+{
+	xproxy(loginit, NOTRACE 0);
+}
+
+int log_log_init_and_describe(TRACEARGS uint64_t bits)
+{
+	xproxy(loginit, TRACEPASS bits);
+}
+
+#if DEBUG
+void log_config(uint64_t prefix, uint64_t trace)
+#else
+void log_config(uint64_t prefix)
+#endif
+{
+#if DEBUG
+	// save trace settings
+	o_trace_bits = trace;
+#endif
+	o_prefix_bits = prefix;
 }
 
 int log_would(const uint64_t e)
@@ -559,148 +573,91 @@ int log_would(const uint64_t e)
 	return r;
 }
 
-int vlog_starti(
-#if DEBUG
-const char * const func, const char * const file, int line,
-#endif
-const uint64_t e, const char* fmt, va_list va)
+int log_log_start(TRACEARGS const uint64_t e)
 {
-	int w = 0;
-	if((w = start(e, 1)))
+	if(start(e))
 	{
 #if DEBUG
 		// store trace
 		prep(func, file, line);
 #endif
 
-		return w + vadd(fmt, va);
+		return 1;
 	}
 
 	return 0;
 }
 
-int log_starti(
-#if DEBUG
-const char * const func, const char * const file, int line,
-#endif
-const uint64_t e, const char* fmt, ...)
+void log_finish()
 {
-	va_list va;
-	va_start(va, fmt);
-#if DEBUG
-	int w = vlog_starti(func, file, line, e, fmt, va);
-#else
-	int w = vlog_starti(e, fmt, va);
-#endif
-	va_end(va);
-
-	return w;
+	finish();
 }
 
-int vlog_add(const char* fmt, va_list va) 
+int log_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va)
 {
-	if(log_would(o_e))
+	if(o_space_bits)
 	{
-		return vadd(fmt, va);
+		logvprintf(fmt, va);
 	}
-
-	return 0;
-}
-
-int log_add(const char* fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	int w = vlog_add(fmt, va);
-	va_end(va);
-
-	return w;
-}
-
-int vlog_finish(const char * fmt, va_list va)
-{
-	if(log_would(o_e))
+	else if(start(e))
 	{
-		return vfinish(fmt, &va, 1);
-	}
-
-	return 0;
-}
-
-int log_finish(const char* fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	int w = vlog_finish(fmt, va);
-	va_end(va);
-
-	return w;
-}
-
-int vlogi(
-#if DEBUG
-const char * const func, const char * const file, int line,
-#endif
-const uint64_t e, const char * const fmt, va_list va)
-{
-	int w = 0;
-	if((w = start(e, 1)))
-	{
-		// error message
-		w += vadd(fmt, va);
+		// the message
+		logvprintf(fmt, va);
 
 #if DEBUG
 		// store trace info
 		prep(func, file, line);
 #endif
 
-		return w + vfinish(0, 0, 1);
+		finish();
+	}
+	else
+	{
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
-int logi(
-#if DEBUG
-const char * const func, const char * const file, int line,
-#endif
-const uint64_t e, const char * const fmt, ...)
+int log_logf(TRACEARGS const uint64_t e, const char * const fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-#if DEBUG
-	int w = vlogi(func, file, line, e, fmt, va);
-#else
-	int w = vlogi(e, fmt, va);
-#endif
+	int r = log_vlogf(TRACEPASS e, fmt, va);
 	va_end(va);
 
-	return w;
+	return r;
 }
 
-void log_writei(
-#if DEBUG
-const char * const func, const char * const file, int line,
-#endif
-const uint64_t e, const char * const src, size_t len)
+int log_logs(TRACEARGS const uint64_t e, const char * const s)
 {
-	if(log_would(e))
+	return log_log(TRACEPASS e, s, strlen(s));
+}
+
+int log_log(TRACEARGS const uint64_t e, const char * const src, size_t len)
+{
+	if(o_space_bits)
 	{
-		start(e, 0);
+		logwrite(src, len, 1);
+	}
+	else if(start(e))
+	{
+		// the message
+		logwrite(src, len, 1);
 
 #if DEBUG
+		// store trace info
 		prep(func, file, line);
 #endif
 
-		// colorization
-		if((e & L_COLOR_VALUE) && COLORHEX(e))
-		{
-			logwrite(COLOR(e), 0);
-		}
-
-		logwrite(src, len, 0);
-		vfinish(0, 0, 0);
+		finish();
 	}
+	else
+	{
+		return 0;
+	}
+
+	return 1;
 }
 
 int logged_bytes()
@@ -708,7 +665,7 @@ int logged_bytes()
 	return o_space_l;
 }
 
-int logged_chars()
+int logged_characters()
 {
 	return o_space_w;
 }
@@ -717,8 +674,8 @@ void log_teardown()
 {
 	free(o_space);
 #if DEBUG
-	free(o_func);
-	free(o_file);
+	free(o_trace_func);
+	free(o_trace_file);
 #endif
 	free(o_filter);
 

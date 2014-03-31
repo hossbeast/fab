@@ -56,6 +56,17 @@ int psvprintf(pstring ** restrict p, const char * const restrict fmt, va_list va
 int psprintf(pstring ** restrict p, const char * const restrict fmt, ...)
 	__attribute__((nonnull(1, 2)));
 
+/// psprints
+//
+// SUMMARY
+//  copy { s, s + strlen(s) } to the contents of the pstring
+//
+// PARAMETERS
+//  p - pstring
+//
+int psprints(pstring ** restrict p, char * const restrict s)
+	__attribute__((nonnull));
+
 /// psprint
 //
 // SUMMARY
@@ -63,6 +74,8 @@ int psprintf(pstring ** restrict p, const char * const restrict fmt, ...)
 //
 // PARAMETERS
 //  p - pstring
+//  s - source bytes
+//  l - length of s (0 : no-op)
 //
 int psprint(pstring ** restrict p, char * const restrict s, size_t l)
 	__attribute__((nonnull));
@@ -89,6 +102,17 @@ int psvcatf(pstring ** restrict p, const char * const restrict fmt, va_list va)
 int pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
 	__attribute__((nonnull(1, 2)));
 
+/// pscats
+//
+// SUMMARY
+//  concatenate { s, s + strlen(s) } to the contents of the pstring
+//
+// PARAMETERS
+//  p - pstring
+//
+int pscats(pstring ** restrict p, char * const restrict s)
+	__attribute__((nonnull));
+
 /// pscat
 //
 // SUMMARY
@@ -96,6 +120,8 @@ int pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
 //
 // PARAMETERS
 //  p - pstring
+//  s - source bytes
+//  l - length of s (0 : no-op)
 //
 int pscat(pstring ** restrict p, char * const restrict s, size_t l)
 	__attribute__((nonnull));

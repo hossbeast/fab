@@ -106,7 +106,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 						}
 
 						// record this index was hit
-						fatal(lstack_sel_stage, ls, x);
+						fatal(lstack_selection_stage, ls, x);
 					}
 				}
 			}

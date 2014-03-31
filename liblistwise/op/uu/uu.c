@@ -92,7 +92,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 
 		if(i)
 		{
-			fatal(lstack_sel_stage, lx, mema[0]);
+			fatal(lstack_selection_stage, lx, mema[0]);
 			fatal(lstack_getbytes, lx, 0, mema[0], &As, &Asl);
 
 			for(x = 1; x < i; x++)
@@ -110,7 +110,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 
 				if(r)
 				{
-					fatal(lstack_sel_stage, lx, mema[x]);
+					fatal(lstack_selection_stage, lx, mema[x]);
 				}
 			}
 		}

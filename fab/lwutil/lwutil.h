@@ -76,7 +76,6 @@ int lw_exec(generator * gen, lwx ** ls)
 //  setup liblistwise logging
 //
 void lw_configure_logging();
-;
 
 #undef restrict
 #endif

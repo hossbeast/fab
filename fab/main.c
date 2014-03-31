@@ -24,8 +24,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "listwise.h"
 #include "listwise/object.h"
 #include "listwise/xtra.h"
+#include "listwise/lstack.h"
 
 #include "xlinux.h"
 
@@ -36,7 +38,6 @@
 #include "gnlw.h"
 #include "fml.h"
 #include "bp.h"
-#include "log.h"
 #include "map.h"
 #include "var.h"
 #include "list.h"
@@ -265,26 +266,26 @@ int main(int argc, char** argv)
 			{
 				if(fabricationsl + fabricationxsl + fabricationnsl + invalidationsl + discoveriesl + inspectionsl == 0)
 				{
-					log(L_LISTS, "empty");
+					logf(L_LISTS, "empty");
 				}
 				
 				for(x = 0; x < fabricationsl; x++)
-					log(L_LISTS, "fabrication(s)     =%s", (*fabrications[x])->idstring);
+					logf(L_LISTS, "fabrication(s)     =%s", (*fabrications[x])->idstring);
 
 				for(x = 0; x < fabricationxsl; x++)
-					log(L_LISTS, "fabricationx(s)    =%s", (*fabricationxs[x])->idstring);
+					logf(L_LISTS, "fabricationx(s)    =%s", (*fabricationxs[x])->idstring);
 
 				for(x = 0; x < fabricationnsl; x++)
-					log(L_LISTS, "fabricationn(s)    =%s", (*fabricationns[x])->idstring);
+					logf(L_LISTS, "fabricationn(s)    =%s", (*fabricationns[x])->idstring);
 
 				for(x = 0; x < invalidationsl; x++)
-					log(L_LISTS, "invalidation(s)    =%s", (*invalidations[x])->idstring);
+					logf(L_LISTS, "invalidation(s)    =%s", (*invalidations[x])->idstring);
 
 				for(x = 0; x < discoveriesl; x++)
-					log(L_LISTS, "discover(y)(ies)   =%s", (*discoveries[x])->idstring);
+					logf(L_LISTS, "discover(y)(ies)   =%s", (*discoveries[x])->idstring);
 
 				for(x = 0; x < inspectionsl; x++)
-					log(L_LISTS, "inspection(s)      =%s", (*inspections[x])->idstring);
+					logf(L_LISTS, "inspection(s)      =%s", (*inspections[x])->idstring);
 			}
 		}
 	}
@@ -467,7 +468,7 @@ conclude2(&etab, &code);
 	
 	if(tracesz)
 	{
-		log_write(L_ERROR, space, tracesz);
+		log(L_ERROR, space, tracesz);
 
 		if(etab == perrtab_FAB && code == FAB_BADARGS)
 		{
@@ -476,7 +477,7 @@ conclude2(&etab, &code);
 	}
 	else
 	{
-		log(L_INFO, "exiting with status : %d", code);
+		logf(L_INFO, "exiting with status : %d", code);
 	}
 
 	log_teardown();

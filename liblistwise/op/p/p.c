@@ -109,7 +109,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 						fatal(lstack_window_unstage, lx, x);
 
 						// record this index was hit
-						fatal(lstack_sel_stage, lx, x);
+						fatal(lstack_selection_stage, lx, x);
 					}
 
 					// append window segment

@@ -176,29 +176,31 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 
 				if(k == 0)
 				{
-					int R = log_start(hi | e, "[%2d,%3d] %-9s %s", waveno, ts[x]->y, gn_designation(t), gn_idstring(t));
-
-					if(e_stat)
+					if(log_start(hi | e))
 					{
-						log_add("%*s%d", 100 - R, "", ts[x]->r_status);
+						logf(0, "[%2d,%3d] %-9s %s", waveno, ts[x]->y, gn_designation(t), gn_idstring(t));
+						if(e_stat)
+						{
+							logf(0, "%*s%d", 100 - logged_characters(), "", ts[x]->r_status);
+						}
+						else if(e_sign)
+						{
+							logf(0, "%*ss=%d", 98 - logged_characters(), "", ts[x]->r_signal);
+						}
+						else if(e_stde)
+						{
+							logf(0, "%*se=%d", 98 - logged_characters(), "", ts[x]->stde_txt->l);
+						}
+						else
+						{
+							logf(0, "%*s0", 100 - logged_characters(), "");
+						}
+						log_finish();
 					}
-					else if(e_sign)
-					{
-						log_add("%*ss=%d", 98 - R, "", ts[x]->r_signal);
-					}
-					else if(e_stde)
-					{
-						log_add("%*se=%d", 98 - R, "", ts[x]->stde_txt->l);
-					}
-					else
-					{
-						log_add("%*s0", 100 - R, "");
-					}
-					log_finish(0);
 				}
 				else
 				{
-					log(hi | e, "         %-9s %s", gn_designation(t), gn_idstring(t));
+					logf(hi | e, "         %-9s %s", gn_designation(t), gn_idstring(t));
 				}
 
 				if(ts[x]->fmlv->flags & FFN_FABRICATION)
@@ -214,17 +216,17 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 
 			if(log_would(lo | L_FML | L_FMLEXEC))
 			{
-				log(lo | L_FML | L_FMLEXEC 													, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
+				logf(lo | L_FML | L_FMLEXEC 													, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
 				__r = write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
 
 				if(ts[x]->cmd_txt->l && ts[x]->cmd_txt->s[ts[x]->cmd_txt->l - 1] != '\n')
 					__r = write(2, "\n", 1);
 			}
-			log(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
-			log(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
+			logf(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
+			logf(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
 			if(log_would(lo | L_FML | L_FMLEXEC))
 			{
-				log(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
+				logf(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
 				__r = write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
 
 				if(ts[x]->stdo_txt->l && ts[x]->stdo_txt->s[ts[x]->stdo_txt->l - 1] != '\n')
@@ -232,7 +234,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			}
 			if(log_would(lo | L_FML | L_FMLEXEC | e_stde))
 			{
-				log(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
+				logf(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
 				__r = write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
 
 				if(ts[x]->stde_txt->l && ts[x]->stde_txt->s[ts[x]->stde_txt->l - 1] != '\n')

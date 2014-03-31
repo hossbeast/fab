@@ -21,33 +21,42 @@
 extern struct listwise_logging * listwise_logging_config;
 
 #if DEBUG || DEVEL || SANITY
-#define LW_WOULD(cb) (listwise_logging_config && listwise_logging_config->cb)
-#define LW_LOG(cb, udata, func, file, line, fmt, ...)															\
+
+#define WOULD(type) listwise_logging_config->type ## _would
+#define TOKEN(type) listwise_logging_config->type ## _token
+#define LOG(type)   listwise_logging_config->type ## _log
+
+#define LW_WOULD(type, udata)																															\
+	(	   listwise_logging_config	\
+		&& WOULD(type) \
+		&& WOULD(type)(TOKEN(type), udata)	\
+	)
+#define LW_LOG(type, udata, func, file, line, fmt, ...)														\
 do {																																							\
-	if(LW_WOULD(cb))																																\
+	if(LW_WOULD(type, udata))																												\
 	{																																								\
-		listwise_logging_config->cb(udata, func, file, line, fmt, ##__VA_ARGS__);			\
+		LOG(type)(TOKEN(type), udata, func, file, line, fmt, ##__VA_ARGS__);	\
 	}																																								\
 } while(0)
 #else
-#define LW_LOG(cb, udata, func, file, line, fmt, ...)
-#define LW_WOULD(cb) 0
+#define LW_LOG(type, udata, func, file, line, fmt, ...)
+#define LW_WOULD(type, udata) 0
 #endif
 
-#define lw_log_generator(fmt, ...)		LW_LOG(log_generator  , udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define lw_log_exec(fmt, ...)  				LW_LOG(log_exec  			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define lw_log_lstack(fmt, ...)  			LW_LOG(log_lstack  		, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define lw_log_opinfo(fmt, ...)				LW_LOG(log_opinfo			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define lw_log_tokens(fmt, ...)				LW_LOG(log_tokens			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define lw_log_states(fmt, ...)				LW_LOG(log_states			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define lw_log_sanity(fmt, ...)				LW_LOG(log_sanity			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define lw_log_generator(fmt, ...)		LW_LOG(generator  , udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define lw_log_exec(fmt, ...)  				LW_LOG(exec  			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define lw_log_lstack(fmt, ...)  			LW_LOG(lstack  		, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define lw_log_opinfo(fmt, ...)				LW_LOG(opinfo			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define lw_log_tokens(fmt, ...)				LW_LOG(tokens			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define lw_log_states(fmt, ...)				LW_LOG(states			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define lw_log_sanity(fmt, ...)				LW_LOG(sanity			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
-#define lw_would_generator()	LW_WOULD(log_generator)
-#define lw_would_exec()   		LW_WOULD(log_exec)
-#define lw_would_lstack()   	LW_WOULD(log_lstack)
-#define lw_would_opinfo() 		LW_WOULD(log_opinfo)
-#define lw_would_tokens() 		LW_WOULD(log_tokens)
-#define lw_would_states() 		LW_WOULD(log_states)
-#define lw_would_sanity() 		LW_WOULD(log_sanity)
+#define lw_would_generator()	LW_WOULD(generator, udata)
+#define lw_would_exec()   		LW_WOULD(exec, udata)
+#define lw_would_lstack()   	LW_WOULD(lstack, udata)
+#define lw_would_opinfo() 		LW_WOULD(opinfo, udata)
+#define lw_would_tokens() 		LW_WOULD(tokens, udata)
+#define lw_would_states() 		LW_WOULD(states, udata)
+#define lw_would_sanity() 		LW_WOULD(sanity, udata)
 
 #endif
