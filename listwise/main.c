@@ -36,6 +36,7 @@
 #include "listwise/object.h"
 #include "listwise/logging.h"
 #include "listwise/describe.h"
+#include "listwise/lstack.h"
 
 #include "xapi.h"
 #include "LISTWISE.errtab.h"
@@ -47,7 +48,7 @@
 #include "pstring.h"
 
 #include "args.h"
-#include "log.h"
+#include "logs.h"
 
 int listwise_would(void * token, void * udata)
 {
@@ -72,22 +73,22 @@ void listwise_log(void * token, void * udata, const char * func, const char * fi
 //  read a file into memory
 //
 // PARAMETERS
-//  path - path to file to load, or "-" for stdin
-//  mem  - memory containing the loaded file
-//  sz   - size of mem
+//  path - path to file to load
+//  mem  - contents returned here
 //
-static int snarf(char * path, void ** mem, size_t * sz)
+static int snarf(char * path, pstring ** mem)
 {
 	int fd = -1;
-
-	ifree(mem);
-
-	fatal(xopen, strcmp(path, "-") == 0 ? "/dev/fd/0" : path, O_RDONLY | O_NONBLOCK, &fd);
-
 	struct stat st;
+
+	if(strcmp(path, "-") == 0)
+		path = "/dev/fd/0";
+
+	fatal(psclear, mem);
+	fatal(xopen, path, O_RDONLY | O_NONBLOCK, &fd);
 	fatal(xfstat, fd, &st);
 
-	if(S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode))
+	if(S_ISREG(st.st_mode) || S_ISFIFO(st.st_mode))
 	{
 		char blk[512];
 		ssize_t r = 1;
@@ -96,16 +97,14 @@ static int snarf(char * path, void ** mem, size_t * sz)
 			fatal(uxread, fd, blk, sizeof(blk) / sizeof(*blk), &r);
 
 			if(r > 0)
-			{
-				fatal(xrealloc, mem, 1, (*sz) + r + 1, (*sz));
-				memcpy(((char*)(*mem)) + (*sz), blk, r);
-				(*sz) += r;
-			}
+				fatal(pscatw, mem, blk, r);
 		}
 	}
 	else if(S_ISCHR(st.st_mode))
 	{
-		// dev/null
+		/*
+		** /dev/fd/0 is connected to a character device (/dev/pts/x) when nothing is piped to the processes stdin
+		*/
 	}
 	else
 	{
@@ -131,32 +130,23 @@ coda;
 
 int main(int g_argc, char** g_argv)
 {
-	char space[2048];
+	char space[4096];
 	size_t tracesz = 0;
-
-	generator_parser* p = 0;		// generator parser
-	generator* g = 0;						// generator
-	lwx * lx = 0;								// list stack
-	int nullfd = -1;						// fd to /dev/null
 
 	pstring * args_remnant = 0;	// concatenated unprocessed arguments
 	pstring * temp = 0;
 
-	void * mem = 0;
-	size_t sz = 0;
-	int x;
+	generator* g = 0;						// generator
+	lwx * lx = 0;								// list stack
 
 	// parse cmdline arguments
 	fatal(parse_args, &args_remnant);
 
-	// arrange for liblistwise to write to /dev/null
-	fatal(xopen, "/dev/null", O_WRONLY, &nullfd);
-
+	// setup liblistwise logging
 	listwise_logging_configure((struct listwise_logging[]) {{
 		  .generator_token	= (uint64_t[]) { L_LWPARSE }
 		, .generator_would	= listwise_would
 		, .generator_log		= listwise_log
-#if DEBUG
 		, .lstack_token			= (uint64_t[]) { L_LWEXEC }
 		, .lstack_would			= listwise_would
 		, .lstack_log				= listwise_log
@@ -166,7 +156,6 @@ int main(int g_argc, char** g_argv)
 		, .opinfo_token			= (uint64_t[]) { L_LWOPINFO }
 		, .opinfo_would			= listwise_would
 		, .opinfo_log				= listwise_log
-#endif
 #if DEVEL
 		, .tokens_token			= (uint64_t[]) { L_LWTOKEN }
 		, .tokens_would			= listwise_would
@@ -174,40 +163,35 @@ int main(int g_argc, char** g_argv)
 		, .states_token			= (uint64_t[]) { L_LWSTATE }
 		, .states_would			= listwise_would
 		, .states_log				= listwise_log
-#endif
-#if SANITY
 		, .sanity_token			= (uint64_t[]) { L_LWSANITY }
 		, .sanity_would			= listwise_would
 		, .sanity_log				= listwise_log
 #endif
 	}});
 
-	// create generator parser
-	fatal(generator_mkparser, &p);
-
 	if(g_args.generator_file)
 	{
-		// read generator-string from file
-		fatal(snarf, g_args.generator_file, &mem, &sz);
-
-		// parse generator-string from file
-#if DEVEL
-		fatal(generator_parse2, p, mem, sz, &g, 0);
-#else
-		fatal(generator_parse, p, mem, sz, &g);
-#endif
+		// read transform-file
+		fatal(snarf, g_args.generator_file, &temp);
 	}
-	else if(args_remnant && args_remnant->l)
+
+	if(args_remnant && args_remnant->l)
 	{
-		// parse generator-string from rgv
+		// transform-string from argv
+		fatal(pscatw, &temp, args_remnant->s, args_remnant->l);
+	}
+
+	if(temp)
+	{
 #if DEVEL
-		fatal(generator_parse2, p, args_remnant->s, args_remnant->l, &g, 0);
+		fatal(generator_parse2, 0, temp->s, temp->l, &g, 0);
 #else
-		fatal(generator_parse, p, args_remnant->s, args_remnant->l, &g);
+		fatal(generator_parse, 0, temp->s, temp->l, &g);
 #endif
 	}
 
 	// attempt to read initial list items from stdin and a specified file
+	int x;
 	for(x = 0; x < 2; x++)
 	{
 		char * p = 0;
@@ -218,11 +202,11 @@ int main(int g_argc, char** g_argv)
 
 		if(p)
 		{
-			// read list items from stdin
-			fatal(snarf, p, &mem, &sz);
+			// read in the specified file
+			fatal(snarf, p, &temp);
 
-			char * s[2] = { mem, 0 };
-			while((s[1] = memchr(s[0], '\n', sz - (s[0] - ((char*)mem)))))
+			char * s[2] = { temp->s, 0 };
+			while((s[1] = memchr(s[0], '\n', temp->l - (s[0] - ((char*)temp->s)))))
 			{
 				if(s[1] - s[0])
 				{
@@ -231,11 +215,11 @@ int main(int g_argc, char** g_argv)
 						int ns = g_args.init_lista ?: 10;
 						ns = ns * 2 + ns / 2;
 
-						g_args.init_list = realloc(g_args.init_list, sizeof(*g_args.init_list) * ns);
-						g_args.init_list_lens = realloc(g_args.init_list_lens, sizeof(*g_args.init_list_lens) * ns);
+						fatal(xrealloc, &g_args.init_list, sizeof(*g_args.init_list), ns, g_args.init_lista);
+						fatal(xrealloc, &g_args.init_list_lens, sizeof(*g_args.init_list_lens), ns, g_args.init_lista);
 						g_args.init_lista = ns;
 					}
-					g_args.init_list[g_args.init_listl] = strndup(s[0], s[1] - s[0]);
+					fatal(ixstrndup, &g_args.init_list[g_args.init_listl], s[0], s[1] - s[0]);
 					g_args.init_list_lens[g_args.init_listl] = s[1] - s[0];
 					g_args.init_listl++;
 				}
@@ -244,17 +228,19 @@ int main(int g_argc, char** g_argv)
 		}
 	}
 
+	fatal(lwx_alloc, &lx);
+
+	for(x = 0; x < g_args.init_listl; x++)
+	{
+		fatal(lstack_write, lx, 0, x, g_args.init_list[x], g_args.init_list_lens[x]);
+	}
+
 	if(g)
 	{
-		if(log_would(L_LWPARSE))
-		{
-			generator_description_log(g, &temp, 0);
-		}
-
 #if DEBUG || DEVEL || SANITY
-		fatal(listwise_exec_generator2, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx, 0);
+		fatal(listwise_exec_generator2, g, 0, 0, 0, &lx, 0);
 #else
-		fatal(listwise_exec_generator, g, g_args.init_list, g_args.init_list_lens, g_args.init_listl, &lx);
+		fatal(listwise_exec_generator, g , 0, 0, 0, &lx);
 #endif
 	}
 
@@ -322,26 +308,20 @@ int main(int g_argc, char** g_argv)
 	}
 
 finally:
-	free(mem);
-
-	if(nullfd != -1)
-		close(nullfd);
-
 	lwx_free(lx);
 	generator_free(g);
-	generator_parser_free(p);
 	args_teardown();
 	psfree(temp);
 	psfree(args_remnant);
 
 	if(XAPI_UNWINDING)
 	{
-#if DEBUG
+#if DEVEL
 		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
 		{
 #endif
 			tracesz = xapi_trace_pithy(space, sizeof(space));
-#if DEBUG
+#if DEVEL
 		}
 		else
 		{
@@ -349,7 +329,7 @@ finally:
 		}
 #endif
 
-		log(L_ERROR, space, tracesz);
+		logw(L_RED, space, tracesz);
 	}
 
 	log_teardown();

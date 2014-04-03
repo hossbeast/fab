@@ -79,7 +79,7 @@ static int render(lwx * const ls, pstring ** const ps)
 		}
 		else
 		{
-			fatal(pscat, ps, rv, rl);
+			fatal(pscatw, ps, rv, rl);
 		}
 	}
 	LSTACK_ITEREND;
@@ -87,7 +87,7 @@ static int render(lwx * const ls, pstring ** const ps)
 	finally : coda;
 }
 
-static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
 {
 	// resolved lstack goes here
 	int pn = (*staxp)++;
@@ -170,7 +170,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lwx *
 		fatal(render, (*stax)[pr], &gps);
 
 		generator_xfree(&g);
-		fatal(generator_parse, gp, gps->s, gps->l, &g);
+		fatal(generator_parse, &gp, gps->s, gps->l, &g);
 
 		fatal(lw_exec, g, &(*stax)[pn]);
 	}

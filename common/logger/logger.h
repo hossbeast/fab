@@ -157,13 +157,13 @@ int log_logf(const uint64_t bits, const char * const restrict fmt, ...)
 	__attribute__((nonnull(2)));
 int log_logs(const uint64_t bits, const char * const restrict s)
 	__attribute__((nonnull));
-int log_log(const uint64_t bits, const char * const restrict src, size_t len)
+int log_logw(const uint64_t bits, const char * const restrict src, size_t len)
 	__attribute__((nonnull));
 
 # define vlogf(...) log_vlogf(__VA_ARGS__)
 # define  logf(...) log_logf(__VA_ARGS__)
 # define  logs(...) log_logs(__VA_ARGS__)
-# define   log(...) log_log(__VA_ARGS__)
+# define  logw(...) log_logw(__VA_ARGS__)
 #else
 int log_vlogf(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull(1,2,5)));
@@ -171,13 +171,13 @@ int log_logf(const char * const restrict func, const char * const restrict file,
 	__attribute__((nonnull(1,2,5)));
 int log_logs(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict s)
 	__attribute__((nonnull));
-int log_log(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict src, size_t len)
+int log_logw(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict src, size_t len)
 	__attribute__((nonnull));
 
 # define vlogf(...) log_vlogf(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 # define  logf(...) log_logf(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 # define  logs(...) log_logs(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-# define   log(...) log_log(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+# define  logw(...) log_logw(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 #endif
 
 /// logstart

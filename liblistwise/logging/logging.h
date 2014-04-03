@@ -22,13 +22,11 @@
 
 #define restrict __restrict
 
-#if DEBUG || DEVEL || SANITY
 typedef int (*listwise_logging_would)(void * token, void * udata);
 typedef void (*listwise_logging_log)(void* token, void * udata, const char * func, const char * file, int line, char * fmt, ...);
 
 struct listwise_logging
 {
-#if DEBUG
 	// generator_log
 	void * 									generator_token;
 	listwise_logging_would	generator_would;
@@ -48,7 +46,6 @@ struct listwise_logging
 	void * 									opinfo_token;
 	listwise_logging_would	opinfo_would;
 	listwise_logging_log		opinfo_log;
-#endif
 
 #if DEVEL
 	// generator parsing - tokens
@@ -60,9 +57,7 @@ struct listwise_logging
 	void * 									states_token;
 	listwise_logging_would	states_would;
 	listwise_logging_log		states_log;
-#endif
 
-#if SANITY
 	// listwise sanity checks
 	void * 									sanity_token;
 	listwise_logging_would	sanity_would;
@@ -77,7 +72,6 @@ struct listwise_logging
 //
 void listwise_logging_configure(struct listwise_logging *)
 	__attribute__((nonnull));
-#endif
 
 #undef restrict
 #endif

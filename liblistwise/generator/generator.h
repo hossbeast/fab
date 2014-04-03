@@ -44,32 +44,32 @@ typedef struct generator
 //
 // returns a generator parser
 //
-int generator_mkparser(generator_parser** p);
+int generator_mkparser(generator_parser ** p);
 
-/// XAPI generator_parse
+/// (XAPI) generator_parse
 //
 // parse a generator string
 //
 // parameters
 //
-//   p  - parser returned from mkparser, or 
-//   s  - generator string
-//   l  - length of generator string, or 0 for strlen
-//   r  - receives parsed generator
+//  [p]    - parser returned from mkparser
+//   s     - generator string
+//   l     - length of generator string, or 0 for strlen
+//   r     - receives parsed generator
 //  [name] - also specify a name for this input (that is only used in informational and error messages)
 //
-int generator_parse(generator_parser* p, char* s, int l, generator** r);
+int generator_parse(generator_parser ** p, char* s, int l, generator** r);
 #if DEVEL
-int generator_parse2(generator_parser* p, char* s, int l, generator** r, void * udata);
+int generator_parse2(generator_parser ** p, char* s, int l, generator** r, void * udata);
 #endif
 
 /// generator_parse_named
 //
 // see generator_parse
 //
-int generator_parse_named(generator_parser* p, char* s, int l, char * name, int namel, generator** r);
+int generator_parse_named(generator_parser ** p, char* s, int l, char * name, int namel, generator** r);
 #if DEVEL
-int generator_parse_named2(generator_parser* p, char* s, int l, char * name, int namel, generator** r, void * udata);
+int generator_parse_named2(generator_parser ** p, char* s, int l, char * name, int namel, generator** r, void * udata);
 #endif
 
 /// generator_freeparser 

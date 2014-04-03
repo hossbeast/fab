@@ -468,7 +468,7 @@ conclude2(&etab, &code);
 	
 	if(tracesz)
 	{
-		log(L_ERROR, space, tracesz);
+		logw(L_RED, space, tracesz);
 
 		if(etab == perrtab_FAB && code == FAB_BADARGS)
 		{

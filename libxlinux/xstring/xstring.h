@@ -44,6 +44,14 @@ int ixstrcatf(char** s, char* fmt, ...);
 //
 int ixstrdup(char** s1, const char* s2);
 
+/// xstrndup
+//
+// copies s2 to *s1, reallocating *s1 if necessary, deallocating it if it was already allocated
+//
+// returns nonzero on malloc failure
+//
+int ixstrndup(char** s1, const char* s2, const size_t l);
+
 /// ixsprintf
 //
 // - free(*s)

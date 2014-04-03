@@ -33,7 +33,7 @@
 #include "xlinux.h"
 
 #include "args.h"
-#include "log.h"
+#include "logs.h"
 
 #include "macros.h"
 
@@ -66,8 +66,6 @@ if(version)
 	printf(" fab-"
 #if DEVEL
 	XQUOTE(FABVERSIONS) "+DEVEL"
-#elif DEBUG
-	XQUOTE(FABVERSIONS) "+DEBUG"
 #else
 	XQUOTE(FABVERSIONS)
 #endif
@@ -78,47 +76,36 @@ if(help)
 {
 	printf(
 "\n"
-"usage : lw [[options] [logopts] [generator-string]]*\n"
+"usage : lw [[options] [logopts] [transform-string]]*\n"
 " --help|-h   : this message\n"
 " --version   : version information\n"
 " --logopts   : logging category listing\n"
 " --operators : listwise operator listing\n"
 "\n"
-"----------------- [ operator listing options] --------------------------------------------\n"
-"\n"
-" --o1       type 1        restrict listing to those operators of matching type\n"
-" --o2       type 2\n"
-"  ...\n"
-" --od       type d\n"
-"\n"
 "----------------- [ options ] ------------------------------------------------------------\n"
 "\n"
 " -a                             output entire list, not just selected entries\n"
 " -k                             output entire stack, not just top list\n"
-" -d                             dump list-stack at each step during execution (debug)\n"
-"                                do not suppress liblistwise info/warn messages or error traces\n"
 " -n                             number output rows 0 .. n\n"
 " -N                             number output rows with their list index\n"
-" -z                             separate output rows with null byte instead of newline\n"
-" -0                             separate input rows read from file by null byte instead of newline\n"
+" -z                             separate output rows by null byte instead of by newline\n"
 " -i <item>                      initial list item\n"
 " -l <path>                      read initial list items from <path>\n"
 "                                <path> of - means read from stdin\n"
-" -f <path>                      read generator-string from <path> instead of argv\n"
+" -0                             separate initial list items read from file by null byte instead of by newline\n"
+" -f <path>                      read transform-string from <path> instead of argv\n"
 "                                <path> of - means read from stdin\n"
 " -                              equal to -f -\n"
-#if DEBUG
+#if DEVEL
 "\n"
 "  --logtrace-no       (default) do not include file/function/line in log messages\n"
 "  --logtrace                    include file/function/line in log messages\n"
 "\n"
 "  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
 "  --backtrace-full              produce a complete description of the callstack upon failure\n"
-#endif
-#if SANITY
 "\n"
 " liblistwise sanity checks\n"
-"  --sanity                      enable sanity checks for all liblistwise invocations (slow)\n"
+"  --sanity                      enable liblistwise sanity checks (slow)\n"
 #endif
 	);
 }
@@ -127,7 +114,7 @@ if(logopts)
 {
 	printf(
 "\n"
-"----------- [ logopts ] ------------------------------------------------------------------\n"
+"----------------- [ logopts ] ------------------------------------------------------------\n"
 "\n"
 " +<log name> to enable logging category\n"  
 " -<log name> to disable logging category\n"  
@@ -141,11 +128,16 @@ if(logopts)
 
 if(operators)
 {
-	if(!help)
-		printf("\n");
-
 	printf(
-"----------------- [ operators ] ------------------------------------------------\n"
+"\n"
+"----------------- [ listing options] ----------------------------------------------------\n"
+"\n"
+" --o1       type 1        restrict listing to those operators of matching type\n"
+" --o2       type 2\n"
+"  ...\n"
+" --od       type d\n"
+"\n"
+"----------------- [ operators ] ---------------------------------------------------------\n"
 "\n"
 " 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
 	);
@@ -235,16 +227,12 @@ if(operators)
 	);
 }
 
-printf("\n");
-
-if(help || logopts || operators)
-{
-	printf(
+printf(
+"\n"
 "For more information visit http://fabutil.org\n"
-	);
-}
+"\n"
+);
 
-	printf("\n");
 	exit(!valid);
 }
 
@@ -276,15 +264,11 @@ int parse_args(pstring ** remnant)
 		, { "oc"													, no_argument	, &optypes._c, 1 }
 		, { "od"													, no_argument	, &optypes._d, 1 }
 
-#if DEBUG
+#if DEVEL
 		, { "backtrace-pithy"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
 		, { "backtrace-full"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
 		, { "logtrace-no"									, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
 		, { "logtrace"										, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
-#endif
-
-#if SANITY
-		, { "sanity"											, no_argument	, &g_args.mode_sanity	, MODE_SANITY_DISABLE }
 #endif
 		, { }
 	};
@@ -303,20 +287,15 @@ int parse_args(pstring ** remnant)
 	//
 	// args:defaults
 	//
-#if DEBUG
+#if DEVEL
 	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
 	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
 #endif
-#if SANITY
-	g_args.mode_sanity			= DEFAULT_MODE_SANITY;
-#endif
 
 	// initialize logger - prepare g_argc/g_argv
-#if DEBUG
-	fatal(log_parse_and_describe, "+ERROR", 0, L_INFO);
-	fatal(log_init_and_describe, L_INFO);
+#if DEVEL
+	fatal(log_init_and_describe, L_LOGGER);
 #else
-	fatal(log_parse, "+ERROR", 0);
 	fatal(log_init, 0);
 #endif
 
@@ -325,7 +304,7 @@ int parse_args(pstring ** remnant)
 	opterr = 0;
 	while(indexptr = 0, (x = getopt_long(g_argc, &g_argv[0], switches, longopts, &indexptr)) != -1)
 	{
-		if(indexptr)
+		if(x == 0)
 		{
 			// longopts
 		}
@@ -351,13 +330,11 @@ int parse_args(pstring ** remnant)
 		}
 		else if(x == 'f')
 		{
-			free(g_args.generator_file);
-			g_args.generator_file = strdup(optarg);
+			fatal(ixstrdup, &g_args.generator_file, optarg);
 		}
 		else if(x == 'l')
 		{
-			free(g_args.init_file);
-			g_args.init_file = strdup(optarg);
+			fatal(ixstrdup, &g_args.init_file, optarg);
 		}
 		else if(x == 'i')
 		{
@@ -370,7 +347,7 @@ int parse_args(pstring ** remnant)
 				fatal(xrealloc, &g_args.init_list_lens, sizeof(*g_args.init_list_lens), ns, g_args.init_lista);
 				g_args.init_lista = ns;
 			}
-			g_args.init_list[g_args.init_listl] = strdup(optarg);
+			fatal(ixstrdup, &g_args.init_list[g_args.init_listl], optarg);
 			g_args.init_list_lens[g_args.init_listl] = strlen(optarg);
 			g_args.init_listl++;
 		}
@@ -388,6 +365,11 @@ int parse_args(pstring ** remnant)
 			if(*remnant)
 				fatal(pscats, remnant, " ");
 			fatal(pscatf, remnant, "-%c", optopt);
+		}
+		else if(strcmp(optarg, "-") == 0)
+		{
+			// the argument "-"
+			fatal(ixstrdup, &g_args.generator_file, optarg);
 		}
 		else
 		{
@@ -407,10 +389,19 @@ int parse_args(pstring ** remnant)
 	}
 
 	// configure logger prefix and trace
+	uint64_t prefix = L_LWOPINFO;
+	
+#if DEVEL
+	uint64_t trace = 0;
+	prefix |= L_LOGGER | L_LWTOKEN | L_LWSTATE;
 	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
-		log_config(L_INFO | L_LWOPINFO | L_LWTOKEN | L_LWSTATE, L_LWOPINFO | L_LWTOKEN | L_LWSTATE);
-	else
-		log_config(L_INFO | L_LWOPINFO | L_LWTOKEN | L_LWSTATE, 0);
+		trace = L_LWOPINFO | L_LWTOKEN | L_LWSTATE;
+
+	log_config(prefix, trace);
+#else
+	log_config(prefix);
+#endif
+
 
 	if(help || version || logopts || operators)
 	{

@@ -15,34 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOG_H
-#define _LOG_H
+#ifndef _LOGS_H
+#define _LOGS_H
 
 #include "logger.h"
 
-// E
-#define L_INFO					0x0000000000000001ULL
-#define L_ERROR					0x0000000000000002ULL | L_RED
-#define L_LWPARSE				0x0000000800000000ULL		/* dump the generator */
-
-#if DEBUG
-# define L_LWEXEC				0x0000000200000000ULL		/* step-by-step LW exectution */
-# define L_LWOPINFO			0x0000000400000000ULL		/* operator informational messages */
-#else
-# define L_LWEXEC				0
-# define L_LWOPINFO			0
-#endif
 #if DEVEL
-# define L_LWTOKEN			0x0000001000000000ULL		/* scanner token stream */
-# define L_LWSTATE			0x0000002000000000ULL		/* scanner state changes */
-#else
-# define L_LWTOKEN			0
-# define L_LWSTATE			0
+# define L_LOGGER				0x0000000000000001ULL
 #endif
-#if SANITY
-# define L_LWSANITY			0x0000004000000000ULL
-#else
-# define L_LWSANITY			0
+#define L_LWPARSE				0x0000000000000002ULL		/* display the parsed generator */
+#define L_LWEXEC				0x0000000000000004ULL		/* step-by-step LW exectution */
+#define L_LWOPINFO			0x0000000000000008ULL		/* operator informational messages */
+
+#if DEVEL
+# define L_LWTOKEN			0x0000000000000010ULL		/* scanner token stream */
+# define L_LWSTATE			0x0000000000000020ULL		/* scanner state changes */
+# define L_LWSANITY			0x0000000000000040ULL
 #endif
 
 #endif

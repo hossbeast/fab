@@ -95,10 +95,10 @@ int API psprintf(pstring ** restrict p, const char * const restrict fmt, ...)
 
 int API psprints(pstring ** restrict p, char * const restrict s)
 {
-	xproxy(psprint, p, s, strlen(s));
+	xproxy(psprintw, p, s, strlen(s));
 }
 
-int API psprint(pstring ** restrict p, char * const restrict s, size_t l)
+int API psprintw(pstring ** restrict p, char * const restrict s, size_t l)
 {
 	fatal(psgrow, p, 100);
 	fatal(psgrow, p, l);
@@ -140,10 +140,10 @@ int API pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
 
 int API pscats(pstring ** restrict p, char * const restrict s)
 {
-	xproxy(pscat, p, s, strlen(s));
+	xproxy(pscatw, p, s, strlen(s));
 }
 
-int API pscat(pstring ** restrict p, char * const restrict s, size_t l)
+int API pscatw(pstring ** restrict p, char * const restrict s, size_t l)
 {
 	fatal(psgrow, p, 100);
 	fatal(psgrow, p, (*p)->l + l);

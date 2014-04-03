@@ -82,7 +82,7 @@ static int exec_generator(
 	if(lw_would_exec())
 	{
 		fatal(generator_canon_pswrite, g, &ps);
-		lw_log_exec(" >> [  ] %.*s", (int)ps->l, ps->s);
+		lw_log_exec(" >>      %.*s", (int)ps->l, ps->s);
 	}
 #endif
 
@@ -235,18 +235,13 @@ int API listwise_exec(
   , lwx ** restrict lx
 )
 {
-	// generator parser
-	generator_parser* p = 0;
-
 	// generator
 	generator* g = 0;
 
-	fatal(generator_mkparser, &p);
-	fatal(generator_parse, p, s, l, &g);
+	fatal(generator_parse, 0, s, l, &g);
 	fatal(exec_generator, g, init, initls, initl, lx, 0);
 
 finally:
 	generator_free(g);
-	generator_parser_free(p);
 coda;
 }

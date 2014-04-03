@@ -473,7 +473,10 @@ static int loginit(TRACEARGS uint64_t bits)
 		}
 
 		if(cnt)
+		{
+			free(g_argv[x]);
 			g_argv[x] = 0;
+		}
 	}
 
 	// shrink g_argv to size
@@ -544,29 +547,33 @@ void log_config(uint64_t prefix)
 
 int log_would(const uint64_t e)
 {
-	if(o_filter_l == 0)
-		return 1;
-
 	int r = 0;
-	int x;
-	for(x = 0; x < o_filter_l; x++)
+	if((e & L_TAG) == 0)
 	{
-		uint64_t rr = 0;
-		if(o_filter[x].m == '(')
-			rr = e & o_filter[x].v;
-		if(o_filter[x].m == '{')
-			rr = ((e & o_filter[x].v) == e);
-		if(o_filter[x].m == '[')
-			rr = ((e & o_filter[x].v) == o_filter[x].v);
-		if(o_filter[x].m == '<')
-			rr = (e == o_filter[x].v);
-
-		if(rr)
+		r = 1;
+	}
+	else
+	{
+		int x;
+		for(x = 0; x < o_filter_l; x++)
 		{
-			if(o_filter[x].o == '+')
-				r = 1;
-			if(o_filter[x].o == '-')
-				r = 0;
+			uint64_t rr = 0;
+			if(o_filter[x].m == '(')
+				rr = e & o_filter[x].v;
+			if(o_filter[x].m == '{')
+				rr = ((e & o_filter[x].v) == e);
+			if(o_filter[x].m == '[')
+				rr = ((e & o_filter[x].v) == o_filter[x].v);
+			if(o_filter[x].m == '<')
+				rr = (e == o_filter[x].v);
+
+			if(rr)
+			{
+				if(o_filter[x].o == '+')
+					r = 1;
+				if(o_filter[x].o == '-')
+					r = 0;
+			}
 		}
 	}
 
@@ -631,10 +638,10 @@ int log_logf(TRACEARGS const uint64_t e, const char * const fmt, ...)
 
 int log_logs(TRACEARGS const uint64_t e, const char * const s)
 {
-	return log_log(TRACEPASS e, s, strlen(s));
+	return log_logw(TRACEPASS e, s, strlen(s));
 }
 
-int log_log(TRACEARGS const uint64_t e, const char * const src, size_t len)
+int log_logw(TRACEARGS const uint64_t e, const char * const src, size_t len)
 {
 	if(o_space_bits)
 	{

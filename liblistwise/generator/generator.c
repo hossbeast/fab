@@ -169,8 +169,17 @@ finally :
 coda;
 }
 
-static int parse(generator_parser* p, char* s, int l, char * name, int namel, generator** g, void * udata)
+static int parse(generator_parser ** p, char* s, int l, char * name, int namel, generator** g, void * udata)
 {
+	// local parser
+	generator_parser * lp = 0;
+
+	if(!p)
+		p = &lp;
+
+	if(!*p)
+		fatal(generator_mkparser, p);
+
 	// create state specific to this parse
 	void * state = 0;
 
@@ -196,14 +205,14 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 	if(strlen(s) > 1 && memcmp(s, "#!", 2) == 0 && strstr(s, "\n"))
 		b = strstr(s, "\n") + 1;
 
-	if((state = generator_yy_scan_string(b, p->p)) == 0)
+	if((state = generator_yy_scan_string(b, (*p)->p)) == 0)
 		tfail(perrtab_SYS, ENOMEM);
 
 	// results struct for this parse
-	pp.scanner = p->p;
+	pp.scanner = (*p)->p;
 
 	// make it available to the lexer
-	generator_yyset_extra(&pp, p->p);
+	generator_yyset_extra(&pp, (*p)->p);
 
 	// invoke the parser, raise errors as necessary
 	fatal(reduce, &pp);
@@ -216,13 +225,17 @@ static int parse(generator_parser* p, char* s, int l, char * name, int namel, ge
 		int x;
 		for(x = 0; x < (*g)->opsl; x++)
 			fatal(operation_validate, (*g)->ops[x]);
+
+		fatal(generator_description_log, *g, 0, udata);
 	}
 
 finally:
 	// cleanup state for this parse
-	generator_yy_delete_buffer(state, p->p);
+	generator_yy_delete_buffer(state, (*p)->p);
 	generator_free(pp.g);
 	yyu_extra_destroy(&pp);
+	generator_parser_free(lp);
+
 XAPI_INFOW("transform-string", s, l);
 coda;
 }
@@ -231,7 +244,7 @@ coda;
 /// API
 ///
 
-int API generator_mkparser(generator_parser** p)
+int API generator_mkparser(generator_parser ** p)
 {
 	fatal(xmalloc, p, sizeof(**p));
 
@@ -241,7 +254,7 @@ int API generator_mkparser(generator_parser** p)
 	finally : coda;
 }
 
-void API generator_parser_free(generator_parser* p)
+void API generator_parser_free(generator_parser * p)
 {
 	if(p)
 	{
@@ -251,7 +264,7 @@ void API generator_parser_free(generator_parser* p)
 	free(p);
 }
 
-void API generator_parser_xfree(generator_parser** p)
+void API generator_parser_xfree(generator_parser ** p)
 {
 	generator_parser_free(*p);
 	*p = 0;
@@ -311,7 +324,7 @@ void API generator_xfree(generator** g)
 	*g = 0;
 }
 
-int API generator_parse(generator_parser* p, char* s, int l, generator** g)
+int API generator_parse(generator_parser ** p, char* s, int l, generator** g)
 {
 	fatal(parse, p, s, l, 0, 0, g, 0);
 
@@ -319,7 +332,7 @@ int API generator_parse(generator_parser* p, char* s, int l, generator** g)
 }
 
 #if DEVEL
-int API generator_parse2(generator_parser* p, char* s, int l, generator** g, void * udata)
+int API generator_parse2(generator_parser ** p, char* s, int l, generator** g, void * udata)
 {
 	fatal(parse, p, s, l, 0, 0, g, udata);
 
@@ -327,7 +340,7 @@ int API generator_parse2(generator_parser* p, char* s, int l, generator** g, voi
 }
 #endif
 
-int API generator_parse_named(generator_parser* p, char* s, int l, char * name, int namel, generator** g)
+int API generator_parse_named(generator_parser ** p, char* s, int l, char * name, int namel, generator** g)
 {
 	fatal(parse, p, s, l, name, namel, g, 0);
 
@@ -335,7 +348,7 @@ int API generator_parse_named(generator_parser* p, char* s, int l, char * name, 
 }
 
 #if DEVEL
-int API generator_parse_named2(generator_parser* p, char* s, int l, char * name, int namel, generator** g, void * udata)
+int API generator_parse_named2(generator_parser ** p, char* s, int l, char * name, int namel, generator** g, void * udata)
 {
 	fatal(parse, p, s, l, name, namel, g, udata);
 

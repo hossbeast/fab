@@ -91,7 +91,7 @@ utterance
 	;
 
 generator
-	: args opsep operations
+	: args opsep operations opsep_epsilon
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 		$$->args = $1;
@@ -107,13 +107,13 @@ generator
 		$$->ops = $3;
 		$$->opsl = parm->opsl;
 	}
-	| args
+	| args opsep_epsilon
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 		$$->args = $1;
 		$$->argsl = parm->argsl;
 	}
-	| operations
+	| operations opsep_epsilon
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 		$$->ops = $1;
@@ -162,6 +162,11 @@ opsep
 	| opsep WS
 	| LF
 	| WS
+	;
+
+opsep_epsilon
+	:
+	| opsep
 	;
 
 operation

@@ -68,7 +68,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		Asl = Bsl;
 		fatal(lstack_getbytes, ls, 0, x, &Bs, &Bsl);
 
-		if(As && estrcmp(As, Asl, Bs, Bsl, 0))
+		if(As == 0 || estrcmp(As, Asl, Bs, Bsl, 0))
 		{
 			fatal(lstack_selection_stage, ls, x);
 		}

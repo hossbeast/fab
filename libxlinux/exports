@@ -33,6 +33,7 @@ xqsort_r;
 ixstrcat;
 ixstrcatf;
 ixstrdup;
+ixstrndup;
 ixsprintf;
 xlocaltime_r;
 xread;

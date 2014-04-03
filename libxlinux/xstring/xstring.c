@@ -68,8 +68,13 @@ int API ixstrcatf(char** s, char* fmt, ...)
 
 int API ixstrdup(char** s1, const char* s2)
 {
-	int s1len = 0;
-	int s2len = strlen(s2);
+	xproxy(ixstrndup, s1, s2, strlen(s2));
+}
+
+int API ixstrndup(char** s1, const char* s2, const size_t l)
+{
+	int s1len = 0 ;
+	int s2len = l ?: strlen(s2);
 	if(*s1)
 		s1len = strlen(*s1);
 

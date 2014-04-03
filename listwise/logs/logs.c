@@ -15,23 +15,21 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "log.h"
+#include "logs.h"
 
 // logtag definitions
 struct g_logs_t logs[] = {
-	  { .v = L_INFO			, .s = "INFO"			, .d = "normal execution" }
-	, { .v = L_ERROR		, .s = "ERROR"		, .d = "fatal errors" }
-	, { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "liblistwise - generator parsing" }
-#if DEBUG
-	, { .v = L_LWEXEC		, .s = "LWEXEC"		, .d = "liblistwise - execution" }
-	, { .v = L_LWOPINFO	, .s = "LWOPINFO"	, .d = "liblistwise - operator info messages" }
-#endif
 #if DEVEL
-	, { .v = L_LWTOKEN	, .s = "LWTOKEN"	, .d = "liblistwise - generator parsing - token stream" }
-	, { .v = L_LWSTATE	, .s = "LWSTATE"	, .d = "liblistwise - generator parsing - lexer states" }
+	  { .v = L_LOGGER		, .s = "LOGGER"		, .d = "logger - operation" }
+	,
 #endif
-#if SANITY
-	, { .v = L_LWSANITY	, .s = "LWSANITY"	, .d = "liblistwise - sanity checks" }
+	  { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "display the parsed generator" }
+	, { .v = L_LWEXEC		, .s = "LWEXEC"		, .d = "step-by-step listwise execution" }
+	, { .v = L_LWOPINFO	, .s = "LWOPINFO"	, .d = "operator informational messages" }
+#if DEVEL
+	, { .v = L_LWTOKEN	, .s = "LWTOKEN"	, .d = "generator parsing - token stream" }
+	, { .v = L_LWSTATE	, .s = "LWSTATE"	, .d = "generator parsing - lexer states" }
+	, { .v = L_LWSANITY	, .s = "LWSANITY"	, .d = "liblistwise sanity checks" }
 #endif
 };
 

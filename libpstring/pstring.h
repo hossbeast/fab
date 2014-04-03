@@ -77,7 +77,7 @@ int psprints(pstring ** restrict p, char * const restrict s)
 //  s - source bytes
 //  l - length of s (0 : no-op)
 //
-int psprint(pstring ** restrict p, char * const restrict s, size_t l)
+int psprintw(pstring ** restrict p, char * const restrict s, size_t l)
 	__attribute__((nonnull));
 
 /// psvcatf
@@ -113,7 +113,7 @@ int pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
 int pscats(pstring ** restrict p, char * const restrict s)
 	__attribute__((nonnull));
 
-/// pscat
+/// pscatw
 //
 // SUMMARY
 //  concatenate { s, s + l } to the contents of the pstring
@@ -123,7 +123,7 @@ int pscats(pstring ** restrict p, char * const restrict s)
 //  s - source bytes
 //  l - length of s (0 : no-op)
 //
-int pscat(pstring ** restrict p, char * const restrict s, size_t l)
+int pscatw(pstring ** restrict p, char * const restrict s, size_t l)
 	__attribute__((nonnull));
 
 /// psgrow

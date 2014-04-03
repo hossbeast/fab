@@ -23,55 +23,26 @@
 
 #define restrict __restrict
 
-#if DEBUG
+#if DEVEL
 # define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_FULL
-# define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
-#else
-# define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_PITHY
-# define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
-#endif
+# define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_FULL
 
-#if SANITY
-# define DEFAULT_MODE_SANITY			MODE_SANITY_DISABLE
-#endif
-
-#if DEBUG
-#define MODE_TABLE_DEBUG(x)																																											\
+#define MODE_TABLE_DEVEL(x)																																											\
 /* error reporting modes */																																											\
 	_MODE(MODE_BACKTRACE_FULL							, 0x0b	, x)		/* report on immediate error condition only */					\
 	_MODE(MODE_BACKTRACE_PITHY	 					, 0x0c	, x)		/* unwind stack when reporting errors */								\
+/* logging modes */																																															\
 	_MODE(MODE_LOGTRACE_NONE							, 0x0d	, x)		/* disable log trace */																	\
 	_MODE(MODE_LOGTRACE_FULL							, 0x0e	, x)		/* enable log trace */
-#endif
-#if SANITY
-#define MODE_TABLE_SANITY(x)																																										\
-/* sanity checking modes */																																											\
-	_MODE(MODE_SANITY_DISABLE							, 0x13	, x)		/* disable sanity checks for liblistwise invocations */	\
-	_MODE(MODE_SANITY_ENABLE							, 0x14	, x)		/* enable sanity checks for liblistwise invocations */
-#endif
 
-#if DEBUG || SANITY
 #define _MODE(a, b, c) a = b,
 enum {
-#if DEBUG
-MODE_TABLE_DEBUG(0)
-#endif
-#if SANITY
-MODE_TABLE_SANITY(0)
-#endif
+MODE_TABLE_DEVEL(0)
 };
 #undef _MODE
-#endif
 
 #define _MODE(a, b, c) (c) == b ? #a :
-#if DEVEL
-# if SANITY
-#  define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) MODE_TABLE_SANITY(x) "UNKNWN"
-# else
-#  define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "UNKNWN"
-# endif
-#elif DEBUG
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) "UNKNWN"
+# define MODE_STR(x) MODE_TABLE_DEVEL(x) "UNKNWN"
 #endif
 
 struct g_args_t
@@ -89,12 +60,9 @@ struct g_args_t
 	int			init_listl;				// -i
 	int			init_lista;				// -i
 
-#if DEBUG
+#if DEVEL
 	int			mode_backtrace;		// backtrace reporting mode
 	int			mode_logtrace;		// backtrace reporting mode
-#endif
-#if SANITY
-	int			mode_sanity;			// liblistwise sanity checks
 #endif
 } g_args;
 
