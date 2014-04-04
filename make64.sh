@@ -418,59 +418,17 @@ fml_1_19()
   exit $X
 }
 
-NAMES[20]='{libxapi/error/SYS.errtab.h, libxapi/error/SYS.errtab.c}'
+NAMES[20]='libxapi/error/SYS.errtab'
 fml_1_20()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	hfl=libxapi/error/SYS.errtab.h
-	hin=SYS.errtab.h
-	cfl=libxapi/error/SYS.errtab.c
-	pfx=SYS
-	api=APIDATA
+	exec > libxapi/error/SYS.errtab
 
-exec >${hfl}
-echo "#ifndef _${pfx}_ERRTAB_H"
-echo "#define _${pfx}_ERRTAB_H"
-echo "#include \"xapi.h\""
-echo "#define ETABLE_${pfx} \\"
-
-	cat libxapi/error/SYS.errtab | \
-sed -e 's/^\([-0-9]\+\)[\t ]\+\([^\t ]\+\)\([\t ]\+\(.*\)\)\?/_E(\1, \2, "\4") \\/p; d'
-
-echo
-echo "enum {"
-echo "#define _E(a, b, c) ${pfx}_ ## b = a,"
-echo "ETABLE_${pfx}"
-echo "#undef _E"
-echo "};"
-
-echo -n "#define ERRMIN_${pfx} "
-	cat libxapi/error/SYS.errtab | \
-perl -e '$min=0xFFFF;while(<>){ if(/^([^\t ]+)/ && int($1)) { $min = [$min,$1]->[$min > $1] } } print $min, "\n"'
-
-echo -n "#define ERRMAX_${pfx} "
-	cat libxapi/error/SYS.errtab | \
-perl -e '$max=-0xFFFF;while(<>){ if(/^([^\t ]+)/ && int($1)) { $max = [$max,$1]->[$max < $1] } } print $max, "\n"'
-
-echo "extern etable * perrtab_${pfx};"
-echo "#endif"
-
-exec >${cfl}
-echo "#include \"${hin}\""
-echo "#define APIDATA"
-echo "etable errtab_${pfx} = {"
-echo "   .tag = \"${pfx}\""
-echo " , .min = ERRMIN_${pfx}"
-echo " , .max = ERRMAX_${pfx}"
-echo " , .v =  (typeof(((etable*)0)->v[0])[]) {"
-echo "#define _E(a, b, c) [ a + (ERRMIN_${pfx} * -1) ] = { .name = #b, .desc = c },"
-echo "ETABLE_${pfx}"
-echo "#undef _E"
-echo "}};"
-echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
+	cat ../../../usr/include/asm-generic/errno-base.h ../../../usr/include/asm-generic/errno.h | \
+sed -e 's/#define\s\+\(E[A-Z]\+\)\s\+\([0-9]\+\)\s\+\/\*\s*\(.*\)\s\+\*\//\2\t\1\t\3/p; d'
 
 
   X=$?
@@ -1260,14 +1218,59 @@ fml_2_27()
   exit $X
 }
 
-NAMES[53]='libxapi/callstack/callstack.pic.o'
+NAMES[53]='{libxapi/error/SYS.errtab.h, libxapi/error/SYS.errtab.c}'
 fml_2_28()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/callstack/callstack.c -o libxapi/callstack/callstack.pic.o
+	hfl=libxapi/error/SYS.errtab.h
+	hin=SYS.errtab.h
+	cfl=libxapi/error/SYS.errtab.c
+	pfx=SYS
+	api=APIDATA
+
+exec >${hfl}
+echo "#ifndef _${pfx}_ERRTAB_H"
+echo "#define _${pfx}_ERRTAB_H"
+echo "#include \"xapi.h\""
+echo "#define ETABLE_${pfx} \\"
+
+	cat libxapi/error/SYS.errtab | \
+sed -e 's/^\([-0-9]\+\)[\t ]\+\([^\t ]\+\)\([\t ]\+\(.*\)\)\?/_E(\1, \2, "\4") \\/p; d'
+
+echo
+echo "enum {"
+echo "#define _E(a, b, c) ${pfx}_ ## b = a,"
+echo "ETABLE_${pfx}"
+echo "#undef _E"
+echo "};"
+
+echo -n "#define ERRMIN_${pfx} "
+	cat libxapi/error/SYS.errtab | \
+perl -e '$min=0xFFFF;while(<>){ if(/^([^\t ]+)/ && int($1)) { $min = [$min,$1]->[$min > $1] } } print $min, "\n"'
+
+echo -n "#define ERRMAX_${pfx} "
+	cat libxapi/error/SYS.errtab | \
+perl -e '$max=-0xFFFF;while(<>){ if(/^([^\t ]+)/ && int($1)) { $max = [$max,$1]->[$max < $1] } } print $max, "\n"'
+
+echo "extern etable * perrtab_${pfx};"
+echo "#endif"
+
+exec >${cfl}
+echo "#include \"${hin}\""
+echo "#define APIDATA"
+echo "etable errtab_${pfx} = {"
+echo "   .tag = \"${pfx}\""
+echo " , .min = ERRMIN_${pfx}"
+echo " , .max = ERRMAX_${pfx}"
+echo " , .v =  (typeof(((etable*)0)->v[0])[]) {"
+echo "#define _E(a, b, c) [ a + (ERRMIN_${pfx} * -1) ] = { .name = #b, .desc = c },"
+echo "ETABLE_${pfx}"
+echo "#undef _E"
+echo "}};"
+echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
 
 
   X=$?
@@ -1275,14 +1278,14 @@ fml_2_28()
   exit $X
 }
 
-NAMES[54]='libxapi/error/SYS.errtab.pic.o'
+NAMES[54]='libxapi/error/XAPI.errtab.pic.o'
 fml_2_29()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/error/SYS.errtab.c -o libxapi/error/SYS.errtab.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/error/XAPI.errtab.c -o libxapi/error/XAPI.errtab.pic.o
 
 
   X=$?
@@ -1290,14 +1293,14 @@ fml_2_29()
   exit $X
 }
 
-NAMES[55]='libxapi/error/XAPI.errtab.pic.o'
+NAMES[55]='libxapi/error/error.pic.o'
 fml_2_30()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/error/XAPI.errtab.c -o libxapi/error/XAPI.errtab.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/error/error.c -o libxapi/error/error.pic.o
 
 
   X=$?
@@ -1305,14 +1308,14 @@ fml_2_30()
   exit $X
 }
 
-NAMES[56]='libxapi/error/error.pic.o'
+NAMES[56]='libxlinux/error/XLINUX.errtab.pic.o'
 fml_2_31()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/error/error.c -o libxapi/error/error.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/error/XLINUX.errtab.c -o libxlinux/error/XLINUX.errtab.pic.o
 
 
   X=$?
@@ -1320,14 +1323,14 @@ fml_2_31()
   exit $X
 }
 
-NAMES[57]='libxapi/frame/frame.pic.o'
+NAMES[57]='libxlinux/error/error.pic.o'
 fml_2_32()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/frame/frame.c -o libxapi/frame/frame.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/error/error.c -o libxlinux/error/error.pic.o
 
 
   X=$?
@@ -1335,14 +1338,14 @@ fml_2_32()
   exit $X
 }
 
-NAMES[58]='libxapi/trace/trace.pic.o'
+NAMES[58]='libxlinux/xdirent/xdirent.pic.o'
 fml_2_33()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/trace/trace.c -o libxapi/trace/trace.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xdirent/xdirent.c -o libxlinux/xdirent/xdirent.pic.o
 
 
   X=$?
@@ -1350,14 +1353,14 @@ fml_2_33()
   exit $X
 }
 
-NAMES[59]='libxlinux/error/XLINUX.errtab.pic.o'
+NAMES[59]='libxlinux/xdlfcn/xdlfcn.pic.o'
 fml_2_34()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/error/XLINUX.errtab.c -o libxlinux/error/XLINUX.errtab.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xdlfcn/xdlfcn.c -o libxlinux/xdlfcn/xdlfcn.pic.o
 
 
   X=$?
@@ -1365,14 +1368,14 @@ fml_2_34()
   exit $X
 }
 
-NAMES[60]='libxlinux/error/error.pic.o'
+NAMES[60]='libxlinux/xfcntl/xfcntl.pic.o'
 fml_2_35()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/error/error.c -o libxlinux/error/error.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xfcntl/xfcntl.c -o libxlinux/xfcntl/xfcntl.pic.o
 
 
   X=$?
@@ -1380,14 +1383,14 @@ fml_2_35()
   exit $X
 }
 
-NAMES[61]='libxlinux/xdirent/xdirent.pic.o'
+NAMES[61]='libxlinux/xftw/xftw.pic.o'
 fml_2_36()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xdirent/xdirent.c -o libxlinux/xdirent/xdirent.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xftw/xftw.c -o libxlinux/xftw/xftw.pic.o
 
 
   X=$?
@@ -1395,14 +1398,14 @@ fml_2_36()
   exit $X
 }
 
-NAMES[62]='libxlinux/xdlfcn/xdlfcn.pic.o'
+NAMES[62]='libxlinux/xgrp/xgrp.pic.o'
 fml_2_37()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xdlfcn/xdlfcn.c -o libxlinux/xdlfcn/xdlfcn.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xgrp/xgrp.c -o libxlinux/xgrp/xgrp.pic.o
 
 
   X=$?
@@ -1410,14 +1413,14 @@ fml_2_37()
   exit $X
 }
 
-NAMES[63]='libxlinux/xfcntl/xfcntl.pic.o'
+NAMES[63]='libxlinux/xmman/xmman.pic.o'
 fml_2_38()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xfcntl/xfcntl.c -o libxlinux/xfcntl/xfcntl.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xmman/xmman.c -o libxlinux/xmman/xmman.pic.o
 
 
   X=$?
@@ -1425,14 +1428,14 @@ fml_2_38()
   exit $X
 }
 
-NAMES[64]='libxlinux/xftw/xftw.pic.o'
+NAMES[64]='libxlinux/xpwd/xpwd.pic.o'
 fml_2_39()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xftw/xftw.c -o libxlinux/xftw/xftw.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xpwd/xpwd.c -o libxlinux/xpwd/xpwd.pic.o
 
 
   X=$?
@@ -1440,14 +1443,14 @@ fml_2_39()
   exit $X
 }
 
-NAMES[65]='libxlinux/xgrp/xgrp.pic.o'
+NAMES[65]='libxlinux/xstat/xstat.pic.o'
 fml_2_40()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xgrp/xgrp.c -o libxlinux/xgrp/xgrp.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xstat/xstat.c -o libxlinux/xstat/xstat.pic.o
 
 
   X=$?
@@ -1455,14 +1458,14 @@ fml_2_40()
   exit $X
 }
 
-NAMES[66]='libxlinux/xmman/xmman.pic.o'
+NAMES[66]='libxlinux/xstdlib/xstdlib.pic.o'
 fml_2_41()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xmman/xmman.c -o libxlinux/xmman/xmman.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xstdlib/xstdlib.c -o libxlinux/xstdlib/xstdlib.pic.o
 
 
   X=$?
@@ -1470,14 +1473,14 @@ fml_2_41()
   exit $X
 }
 
-NAMES[67]='libxlinux/xpwd/xpwd.pic.o'
+NAMES[67]='libxlinux/xstring/xstring.pic.o'
 fml_2_42()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xpwd/xpwd.c -o libxlinux/xpwd/xpwd.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xstring/xstring.c -o libxlinux/xstring/xstring.pic.o
 
 
   X=$?
@@ -1485,14 +1488,14 @@ fml_2_42()
   exit $X
 }
 
-NAMES[68]='libxlinux/xstat/xstat.pic.o'
+NAMES[68]='libxlinux/xtime/xtime.pic.o'
 fml_2_43()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xstat/xstat.c -o libxlinux/xstat/xstat.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xtime/xtime.c -o libxlinux/xtime/xtime.pic.o
 
 
   X=$?
@@ -1500,14 +1503,14 @@ fml_2_43()
   exit $X
 }
 
-NAMES[69]='libxlinux/xstdlib/xstdlib.pic.o'
+NAMES[69]='libxlinux/xunistd/xunistd.pic.o'
 fml_2_44()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xstdlib/xstdlib.c -o libxlinux/xstdlib/xstdlib.pic.o
+	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xunistd/xunistd.c -o libxlinux/xunistd/xunistd.pic.o
 
 
   X=$?
@@ -1515,14 +1518,14 @@ fml_2_44()
   exit $X
 }
 
-NAMES[70]='libxlinux/xstring/xstring.pic.o'
+NAMES[70]='listwise/args/args.o'
 fml_2_45()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xstring/xstring.c -o libxlinux/xstring/xstring.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/args/args.c -o listwise/args/args.o
 
 
   X=$?
@@ -1530,14 +1533,14 @@ fml_2_45()
   exit $X
 }
 
-NAMES[71]='libxlinux/xtime/xtime.pic.o'
+NAMES[71]='listwise/error/LISTWISE.errtab.o'
 fml_2_46()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xtime/xtime.c -o libxlinux/xtime/xtime.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/error/LISTWISE.errtab.c -o listwise/error/LISTWISE.errtab.o
 
 
   X=$?
@@ -1545,14 +1548,14 @@ fml_2_46()
   exit $X
 }
 
-NAMES[72]='libxlinux/xunistd/xunistd.pic.o'
+NAMES[72]='listwise/logs/logs.o'
 fml_2_47()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -fPIC -Ilibxlinux/../common/../libxlinux/xgrp -Ilibxlinux/../common/../libxlinux/error -Ilibxlinux/../common/../libxlinux/xstat -Ilibxlinux/../common/../libxlinux/xunistd -Ilibxlinux/../common/../libxlinux/xpwd -Ilibxlinux/../common/../libxlinux/xmman -Ilibxlinux/../common/../libxlinux/xdirent -Ilibxlinux/../common/../libxlinux/internal -Ilibxlinux/../common/../libxlinux/xfcntl -Ilibxlinux/../common/../libxlinux/xftw -Ilibxlinux/../common/../libxlinux/xstdlib -Ilibxlinux/../common/../libxlinux/xdlfcn -Ilibxlinux/../common/../libxlinux/xstring -Ilibxlinux/../common/../libxlinux/xlinux -Ilibxlinux/../common/../libxlinux/xtime -Ilibxlinux/../common/../libxlinux -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxlinux/../common/../libxapi -Ilibxlinux/../common/../liblistwise -Ilibxlinux/../common/../libpstring -Ilibxlinux/../common/unitstring -Ilibxlinux/../common/coll -Ilibxlinux/../common/wstdlib -Ilibxlinux/../common/parseint -Ilibxlinux/../common/logger -Ilibxlinux/../common/map -Ilibxlinux/../common/canon -Ilibxlinux/../common/yyutil -Ilibxlinux/../common/cksum -Ilibxlinux/../common/strutil -Ilibxlinux/../common/color -Ilibxlinux/../common/wstring -Ilibxlinux/../common -DXAPI_UNWIND -O3 -c libxlinux/xunistd/xunistd.c -o libxlinux/xunistd/xunistd.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/logs/logs.c -o listwise/logs/logs.o
 
 
   X=$?
@@ -1560,14 +1563,14 @@ fml_2_47()
   exit $X
 }
 
-NAMES[73]='listwise/args/args.o'
+NAMES[73]='listwise/main.o'
 fml_2_48()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/args/args.c -o listwise/args/args.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/main.c -o listwise/main.o
 
 
   X=$?
@@ -1575,54 +1578,9 @@ fml_2_48()
   exit $X
 }
 
-NAMES[74]='listwise/error/LISTWISE.errtab.o'
-fml_2_49()
-{
-  exec 1>/dev/null
-  exec 2>&111
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/error/LISTWISE.errtab.c -o listwise/error/LISTWISE.errtab.o
-
-
-  X=$?
-  echo 11 1>&99
-  exit $X
-}
-
-NAMES[75]='listwise/logs/logs.o'
-fml_2_50()
-{
-  exec 1>/dev/null
-  exec 2>&112
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/logs/logs.c -o listwise/logs/logs.o
-
-
-  X=$?
-  echo 12 1>&99
-  exit $X
-}
-
-NAMES[76]='listwise/main.o'
-fml_2_51()
-{
-  exec 1>/dev/null
-  exec 2>&113
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/main.c -o listwise/main.o
-
-
-  X=$?
-  echo 13 1>&99
-  exit $X
-}
-
 
 # formulas and names for stage 3
-NAMES[77]='fab/args/args.o'
+NAMES[74]='fab/args/args.o'
 fml_3_0()
 {
   exec 1>/dev/null
@@ -1637,7 +1595,7 @@ fml_3_0()
   exit $X
 }
 
-NAMES[78]='fab/bake/bake.o'
+NAMES[75]='fab/bake/bake.o'
 fml_3_1()
 {
   exec 1>/dev/null
@@ -1652,7 +1610,7 @@ fml_3_1()
   exit $X
 }
 
-NAMES[79]='fab/bp/bp.o'
+NAMES[76]='fab/bp/bp.o'
 fml_3_2()
 {
   exec 1>/dev/null
@@ -1667,7 +1625,7 @@ fml_3_2()
   exit $X
 }
 
-NAMES[80]='fab/dep/dep.o'
+NAMES[77]='fab/dep/dep.o'
 fml_3_3()
 {
   exec 1>/dev/null
@@ -1682,7 +1640,7 @@ fml_3_3()
   exit $X
 }
 
-NAMES[81]='fab/dsc/dsc.o'
+NAMES[78]='fab/dsc/dsc.o'
 fml_3_4()
 {
   exec 1>/dev/null
@@ -1697,7 +1655,7 @@ fml_3_4()
   exit $X
 }
 
-NAMES[82]='fab/enclose/enclose.o'
+NAMES[79]='fab/enclose/enclose.o'
 fml_3_5()
 {
   exec 1>/dev/null
@@ -1712,7 +1670,7 @@ fml_3_5()
   exit $X
 }
 
-NAMES[83]='fab/error/error.o'
+NAMES[80]='fab/error/error.o'
 fml_3_6()
 {
   exec 1>/dev/null
@@ -1727,7 +1685,7 @@ fml_3_6()
   exit $X
 }
 
-NAMES[84]='fab/ff/ff.dsc.tab.o'
+NAMES[81]='fab/ff/ff.dsc.tab.o'
 fml_3_7()
 {
   exec 1>/dev/null
@@ -1742,7 +1700,7 @@ fml_3_7()
   exit $X
 }
 
-NAMES[85]='fab/ff/ff.lex.o'
+NAMES[82]='fab/ff/ff.lex.o'
 fml_3_8()
 {
   exec 1>/dev/null
@@ -1757,7 +1715,7 @@ fml_3_8()
   exit $X
 }
 
-NAMES[86]='fab/ff/ff.list.tab.o'
+NAMES[83]='fab/ff/ff.list.tab.o'
 fml_3_9()
 {
   exec 1>/dev/null
@@ -1772,7 +1730,7 @@ fml_3_9()
   exit $X
 }
 
-NAMES[87]='fab/ff/ff.o'
+NAMES[84]='fab/ff/ff.o'
 fml_3_10()
 {
   exec 1>/dev/null
@@ -1787,7 +1745,7 @@ fml_3_10()
   exit $X
 }
 
-NAMES[88]='fab/ff/ff.states.o'
+NAMES[85]='fab/ff/ff.states.o'
 fml_3_11()
 {
   exec 1>/dev/null
@@ -1802,7 +1760,7 @@ fml_3_11()
   exit $X
 }
 
-NAMES[89]='fab/ff/ff.tab.o'
+NAMES[86]='fab/ff/ff.tab.o'
 fml_3_12()
 {
   exec 1>/dev/null
@@ -1817,7 +1775,7 @@ fml_3_12()
   exit $X
 }
 
-NAMES[90]='fab/ff/ff.tokens.o'
+NAMES[87]='fab/ff/ff.tokens.o'
 fml_3_13()
 {
   exec 1>/dev/null
@@ -1832,7 +1790,7 @@ fml_3_13()
   exit $X
 }
 
-NAMES[91]='fab/ff/ff.var.tab.o'
+NAMES[88]='fab/ff/ff.var.tab.o'
 fml_3_14()
 {
   exec 1>/dev/null
@@ -1847,7 +1805,7 @@ fml_3_14()
   exit $X
 }
 
-NAMES[92]='fab/ffn/ffn.o'
+NAMES[89]='fab/ffn/ffn.o'
 fml_3_15()
 {
   exec 1>/dev/null
@@ -1862,7 +1820,7 @@ fml_3_15()
   exit $X
 }
 
-NAMES[93]='fab/ffproc/ffproc.o'
+NAMES[90]='fab/ffproc/ffproc.o'
 fml_3_16()
 {
   exec 1>/dev/null
@@ -1877,7 +1835,7 @@ fml_3_16()
   exit $X
 }
 
-NAMES[94]='fab/fml/fml.o'
+NAMES[91]='fab/fml/fml.o'
 fml_3_17()
 {
   exec 1>/dev/null
@@ -1892,7 +1850,7 @@ fml_3_17()
   exit $X
 }
 
-NAMES[95]='fab/gn/gn.o'
+NAMES[92]='fab/gn/gn.o'
 fml_3_18()
 {
   exec 1>/dev/null
@@ -1907,7 +1865,7 @@ fml_3_18()
   exit $X
 }
 
-NAMES[96]='fab/list/list.o'
+NAMES[93]='fab/list/list.o'
 fml_3_19()
 {
   exec 1>/dev/null
@@ -1922,7 +1880,7 @@ fml_3_19()
   exit $X
 }
 
-NAMES[97]='fab/main.o'
+NAMES[94]='fab/main.o'
 fml_3_20()
 {
   exec 1>/dev/null
@@ -1937,7 +1895,7 @@ fml_3_20()
   exit $X
 }
 
-NAMES[98]='fab/selector/selector.o'
+NAMES[95]='fab/selector/selector.o'
 fml_3_21()
 {
   exec 1>/dev/null
@@ -1952,7 +1910,7 @@ fml_3_21()
   exit $X
 }
 
-NAMES[99]='fab/tmp/tmp.o'
+NAMES[96]='fab/tmp/tmp.o'
 fml_3_22()
 {
   exec 1>/dev/null
@@ -1967,7 +1925,7 @@ fml_3_22()
   exit $X
 }
 
-NAMES[100]='fab/ts/ts.o'
+NAMES[97]='fab/ts/ts.o'
 fml_3_23()
 {
   exec 1>/dev/null
@@ -1982,7 +1940,7 @@ fml_3_23()
   exit $X
 }
 
-NAMES[101]='fab/var/var.o'
+NAMES[98]='fab/var/var.o'
 fml_3_24()
 {
   exec 1>/dev/null
@@ -1997,7 +1955,7 @@ fml_3_24()
   exit $X
 }
 
-NAMES[102]='liblistwise/apidata/apidata.pic.o'
+NAMES[99]='liblistwise/apidata/apidata.pic.o'
 fml_3_25()
 {
   exec 1>/dev/null
@@ -2012,7 +1970,7 @@ fml_3_25()
   exit $X
 }
 
-NAMES[103]='liblistwise/describe/describe.pic.o'
+NAMES[100]='liblistwise/describe/describe.pic.o'
 fml_3_26()
 {
   exec 1>/dev/null
@@ -2027,7 +1985,7 @@ fml_3_26()
   exit $X
 }
 
-NAMES[104]='liblistwise/error/PCRE.errtab.pic.o'
+NAMES[101]='liblistwise/error/PCRE.errtab.pic.o'
 fml_3_27()
 {
   exec 1>/dev/null
@@ -2042,7 +2000,7 @@ fml_3_27()
   exit $X
 }
 
-NAMES[105]='liblistwise/error/error.pic.o'
+NAMES[102]='liblistwise/error/error.pic.o'
 fml_3_28()
 {
   exec 1>/dev/null
@@ -2057,7 +2015,7 @@ fml_3_28()
   exit $X
 }
 
-NAMES[106]='liblistwise/exec/exec.pic.o'
+NAMES[103]='liblistwise/exec/exec.pic.o'
 fml_3_29()
 {
   exec 1>/dev/null
@@ -2072,7 +2030,7 @@ fml_3_29()
   exit $X
 }
 
-NAMES[107]='liblistwise/fs/fs.pic.o'
+NAMES[104]='liblistwise/fs/fs.pic.o'
 fml_3_30()
 {
   exec 1>/dev/null
@@ -2087,7 +2045,7 @@ fml_3_30()
   exit $X
 }
 
-NAMES[108]='liblistwise/generator/generator.lex.pic.o'
+NAMES[105]='liblistwise/generator/generator.lex.pic.o'
 fml_3_31()
 {
   exec 1>/dev/null
@@ -2102,7 +2060,7 @@ fml_3_31()
   exit $X
 }
 
-NAMES[109]='liblistwise/generator/generator.pic.o'
+NAMES[106]='liblistwise/generator/generator.pic.o'
 fml_3_32()
 {
   exec 1>/dev/null
@@ -2117,7 +2075,7 @@ fml_3_32()
   exit $X
 }
 
-NAMES[110]='liblistwise/generator/generator.states.pic.o'
+NAMES[107]='liblistwise/generator/generator.states.pic.o'
 fml_3_33()
 {
   exec 1>/dev/null
@@ -2132,7 +2090,7 @@ fml_3_33()
   exit $X
 }
 
-NAMES[111]='liblistwise/generator/generator.tab.pic.o'
+NAMES[108]='liblistwise/generator/generator.tab.pic.o'
 fml_3_34()
 {
   exec 1>/dev/null
@@ -2147,7 +2105,7 @@ fml_3_34()
   exit $X
 }
 
-NAMES[112]='liblistwise/generator/generator.tokens.pic.o'
+NAMES[109]='liblistwise/generator/generator.tokens.pic.o'
 fml_3_35()
 {
   exec 1>/dev/null
@@ -2162,7 +2120,7 @@ fml_3_35()
   exit $X
 }
 
-NAMES[113]='liblistwise/generator/genscan.pic.o'
+NAMES[110]='liblistwise/generator/genscan.pic.o'
 fml_3_36()
 {
   exec 1>/dev/null
@@ -2177,7 +2135,7 @@ fml_3_36()
   exit $X
 }
 
-NAMES[114]='liblistwise/iterate/iterate.pic.o'
+NAMES[111]='liblistwise/iterate/iterate.pic.o'
 fml_3_37()
 {
   exec 1>/dev/null
@@ -2192,7 +2150,7 @@ fml_3_37()
   exit $X
 }
 
-NAMES[115]='liblistwise/logging/logging.pic.o'
+NAMES[112]='liblistwise/logging/logging.pic.o'
 fml_3_38()
 {
   exec 1>/dev/null
@@ -2207,7 +2165,7 @@ fml_3_38()
   exit $X
 }
 
-NAMES[116]='liblistwise/lstack/lstack.pic.o'
+NAMES[113]='liblistwise/lstack/lstack.pic.o'
 fml_3_39()
 {
   exec 1>/dev/null
@@ -2222,7 +2180,7 @@ fml_3_39()
   exit $X
 }
 
-NAMES[117]='liblistwise/lwx/lwx.pic.o'
+NAMES[114]='liblistwise/lwx/lwx.pic.o'
 fml_3_40()
 {
   exec 1>/dev/null
@@ -2237,7 +2195,7 @@ fml_3_40()
   exit $X
 }
 
-NAMES[118]='liblistwise/object/object.pic.o'
+NAMES[115]='liblistwise/object/object.pic.o'
 fml_3_41()
 {
   exec 1>/dev/null
@@ -2252,7 +2210,7 @@ fml_3_41()
   exit $X
 }
 
-NAMES[119]='liblistwise/op/-X/-X.pic.o'
+NAMES[116]='liblistwise/op/-X/-X.pic.o'
 fml_3_42()
 {
   exec 1>/dev/null
@@ -2267,7 +2225,7 @@ fml_3_42()
   exit $X
 }
 
-NAMES[120]='liblistwise/op/C/C.pic.o'
+NAMES[117]='liblistwise/op/C/C.pic.o'
 fml_3_43()
 {
   exec 1>/dev/null
@@ -2282,7 +2240,7 @@ fml_3_43()
   exit $X
 }
 
-NAMES[121]='liblistwise/op/b/b.pic.o'
+NAMES[118]='liblistwise/op/b/b.pic.o'
 fml_3_44()
 {
   exec 1>/dev/null
@@ -2297,7 +2255,7 @@ fml_3_44()
   exit $X
 }
 
-NAMES[122]='liblistwise/op/bn/bn.pic.o'
+NAMES[119]='liblistwise/op/bn/bn.pic.o'
 fml_3_45()
 {
   exec 1>/dev/null
@@ -2312,7 +2270,7 @@ fml_3_45()
   exit $X
 }
 
-NAMES[123]='liblistwise/op/c/c.pic.o'
+NAMES[120]='liblistwise/op/c/c.pic.o'
 fml_3_46()
 {
   exec 1>/dev/null
@@ -2327,7 +2285,7 @@ fml_3_46()
   exit $X
 }
 
-NAMES[124]='liblistwise/op/can/can.pic.o'
+NAMES[121]='liblistwise/op/can/can.pic.o'
 fml_3_47()
 {
   exec 1>/dev/null
@@ -2342,7 +2300,7 @@ fml_3_47()
   exit $X
 }
 
-NAMES[125]='liblistwise/op/cp/cp.pic.o'
+NAMES[122]='liblistwise/op/cp/cp.pic.o'
 fml_3_48()
 {
   exec 1>/dev/null
@@ -2357,7 +2315,7 @@ fml_3_48()
   exit $X
 }
 
-NAMES[126]='liblistwise/op/d/d.pic.o'
+NAMES[123]='liblistwise/op/d/d.pic.o'
 fml_3_49()
 {
   exec 1>/dev/null
@@ -2372,7 +2330,7 @@ fml_3_49()
   exit $X
 }
 
-NAMES[127]='liblistwise/op/dj/dj.pic.o'
+NAMES[124]='liblistwise/op/dj/dj.pic.o'
 fml_3_50()
 {
   exec 1>/dev/null
@@ -2387,7 +2345,7 @@ fml_3_50()
   exit $X
 }
 
-NAMES[128]='liblistwise/op/dn/dn.pic.o'
+NAMES[125]='liblistwise/op/dn/dn.pic.o'
 fml_3_51()
 {
   exec 1>/dev/null
@@ -2402,7 +2360,7 @@ fml_3_51()
   exit $X
 }
 
-NAMES[129]='liblistwise/op/f/f.pic.o'
+NAMES[126]='liblistwise/op/f/f.pic.o'
 fml_3_52()
 {
   exec 1>/dev/null
@@ -2417,7 +2375,7 @@ fml_3_52()
   exit $X
 }
 
-NAMES[130]='liblistwise/op/fn/fn.pic.o'
+NAMES[127]='liblistwise/op/fn/fn.pic.o'
 fml_3_53()
 {
   exec 1>/dev/null
@@ -2432,7 +2390,7 @@ fml_3_53()
   exit $X
 }
 
-NAMES[131]='liblistwise/op/g/g.pic.o'
+NAMES[128]='liblistwise/op/g/g.pic.o'
 fml_3_54()
 {
   exec 1>/dev/null
@@ -2447,7 +2405,7 @@ fml_3_54()
   exit $X
 }
 
-NAMES[132]='liblistwise/op/hl/hl.pic.o'
+NAMES[129]='liblistwise/op/hl/hl.pic.o'
 fml_3_55()
 {
   exec 1>/dev/null
@@ -2462,7 +2420,7 @@ fml_3_55()
   exit $X
 }
 
-NAMES[133]='liblistwise/op/j/j.pic.o'
+NAMES[130]='liblistwise/op/j/j.pic.o'
 fml_3_56()
 {
   exec 1>/dev/null
@@ -2477,7 +2435,7 @@ fml_3_56()
   exit $X
 }
 
-NAMES[134]='liblistwise/op/l/l.pic.o'
+NAMES[131]='liblistwise/op/l/l.pic.o'
 fml_3_57()
 {
   exec 1>/dev/null
@@ -2492,7 +2450,7 @@ fml_3_57()
   exit $X
 }
 
-NAMES[135]='liblistwise/op/ls/ls.pic.o'
+NAMES[132]='liblistwise/op/ls/ls.pic.o'
 fml_3_58()
 {
   exec 1>/dev/null
@@ -2507,7 +2465,7 @@ fml_3_58()
   exit $X
 }
 
-NAMES[136]='liblistwise/op/lx/lx.pic.o'
+NAMES[133]='liblistwise/op/lx/lx.pic.o'
 fml_3_59()
 {
   exec 1>/dev/null
@@ -2522,7 +2480,7 @@ fml_3_59()
   exit $X
 }
 
-NAMES[137]='liblistwise/op/o/o.pic.o'
+NAMES[134]='liblistwise/op/o/o.pic.o'
 fml_3_60()
 {
   exec 1>/dev/null
@@ -2537,7 +2495,7 @@ fml_3_60()
   exit $X
 }
 
-NAMES[138]='liblistwise/op/p/p.pic.o'
+NAMES[135]='liblistwise/op/p/p.pic.o'
 fml_3_61()
 {
   exec 1>/dev/null
@@ -2552,7 +2510,7 @@ fml_3_61()
   exit $X
 }
 
-NAMES[139]='liblistwise/op/pop/pop.pic.o'
+NAMES[136]='liblistwise/op/pop/pop.pic.o'
 fml_3_62()
 {
   exec 1>/dev/null
@@ -2567,7 +2525,7 @@ fml_3_62()
   exit $X
 }
 
-NAMES[140]='liblistwise/op/r/r.pic.o'
+NAMES[137]='liblistwise/op/r/r.pic.o'
 fml_3_63()
 {
   exec 1>/dev/null
@@ -2582,7 +2540,7 @@ fml_3_63()
   exit $X
 }
 
-NAMES[141]='liblistwise/op/rb/rb.pic.o'
+NAMES[138]='liblistwise/op/rb/rb.pic.o'
 fml_3_64()
 {
   exec 1>/dev/null
@@ -2597,7 +2555,7 @@ fml_3_64()
   exit $X
 }
 
-NAMES[142]='liblistwise/op/re/re.pic.o'
+NAMES[139]='liblistwise/op/re/re.pic.o'
 fml_3_65()
 {
   exec 1>/dev/null
@@ -2612,7 +2570,7 @@ fml_3_65()
   exit $X
 }
 
-NAMES[143]='liblistwise/op/rp/rp.pic.o'
+NAMES[140]='liblistwise/op/rp/rp.pic.o'
 fml_3_66()
 {
   exec 1>/dev/null
@@ -2627,7 +2585,7 @@ fml_3_66()
   exit $X
 }
 
-NAMES[144]='liblistwise/op/rx/rx.pic.o'
+NAMES[141]='liblistwise/op/rx/rx.pic.o'
 fml_3_67()
 {
   exec 1>/dev/null
@@ -2642,7 +2600,7 @@ fml_3_67()
   exit $X
 }
 
-NAMES[145]='liblistwise/op/s/s.pic.o'
+NAMES[142]='liblistwise/op/s/s.pic.o'
 fml_3_68()
 {
   exec 1>/dev/null
@@ -2657,7 +2615,7 @@ fml_3_68()
   exit $X
 }
 
-NAMES[146]='liblistwise/op/shift/shift.pic.o'
+NAMES[143]='liblistwise/op/shift/shift.pic.o'
 fml_3_69()
 {
   exec 1>/dev/null
@@ -2672,7 +2630,7 @@ fml_3_69()
   exit $X
 }
 
-NAMES[147]='liblistwise/op/sort/sort.pic.o'
+NAMES[144]='liblistwise/op/sort/sort.pic.o'
 fml_3_70()
 {
   exec 1>/dev/null
@@ -2687,7 +2645,7 @@ fml_3_70()
   exit $X
 }
 
-NAMES[148]='liblistwise/op/stat/stat.pic.o'
+NAMES[145]='liblistwise/op/stat/stat.pic.o'
 fml_3_71()
 {
   exec 1>/dev/null
@@ -2702,7 +2660,7 @@ fml_3_71()
   exit $X
 }
 
-NAMES[149]='liblistwise/op/sx/sx.pic.o'
+NAMES[146]='liblistwise/op/sx/sx.pic.o'
 fml_3_72()
 {
   exec 1>/dev/null
@@ -2717,7 +2675,7 @@ fml_3_72()
   exit $X
 }
 
-NAMES[150]='liblistwise/op/t/t.pic.o'
+NAMES[147]='liblistwise/op/t/t.pic.o'
 fml_3_73()
 {
   exec 1>/dev/null
@@ -2732,7 +2690,7 @@ fml_3_73()
   exit $X
 }
 
-NAMES[151]='liblistwise/op/u/u.pic.o'
+NAMES[148]='liblistwise/op/u/u.pic.o'
 fml_3_74()
 {
   exec 1>/dev/null
@@ -2747,7 +2705,7 @@ fml_3_74()
   exit $X
 }
 
-NAMES[152]='liblistwise/op/up/up.pic.o'
+NAMES[149]='liblistwise/op/up/up.pic.o'
 fml_3_75()
 {
   exec 1>/dev/null
@@ -2762,7 +2720,7 @@ fml_3_75()
   exit $X
 }
 
-NAMES[153]='liblistwise/op/uu/uu.pic.o'
+NAMES[150]='liblistwise/op/uu/uu.pic.o'
 fml_3_76()
 {
   exec 1>/dev/null
@@ -2777,7 +2735,7 @@ fml_3_76()
   exit $X
 }
 
-NAMES[154]='liblistwise/op/v/v.pic.o'
+NAMES[151]='liblistwise/op/v/v.pic.o'
 fml_3_77()
 {
   exec 1>/dev/null
@@ -2792,7 +2750,7 @@ fml_3_77()
   exit $X
 }
 
-NAMES[155]='liblistwise/op/vf/vf.pic.o'
+NAMES[152]='liblistwise/op/vf/vf.pic.o'
 fml_3_78()
 {
   exec 1>/dev/null
@@ -2807,7 +2765,7 @@ fml_3_78()
   exit $X
 }
 
-NAMES[156]='liblistwise/op/vp/vp.pic.o'
+NAMES[153]='liblistwise/op/vp/vp.pic.o'
 fml_3_79()
 {
   exec 1>/dev/null
@@ -2822,7 +2780,7 @@ fml_3_79()
   exit $X
 }
 
-NAMES[157]='liblistwise/op/w/w.pic.o'
+NAMES[154]='liblistwise/op/w/w.pic.o'
 fml_3_80()
 {
   exec 1>/dev/null
@@ -2837,7 +2795,7 @@ fml_3_80()
   exit $X
 }
 
-NAMES[158]='liblistwise/op/wv/wv.pic.o'
+NAMES[155]='liblistwise/op/wv/wv.pic.o'
 fml_3_81()
 {
   exec 1>/dev/null
@@ -2852,7 +2810,7 @@ fml_3_81()
   exit $X
 }
 
-NAMES[159]='liblistwise/op/wvf/wvf.pic.o'
+NAMES[156]='liblistwise/op/wvf/wvf.pic.o'
 fml_3_82()
 {
   exec 1>/dev/null
@@ -2867,7 +2825,7 @@ fml_3_82()
   exit $X
 }
 
-NAMES[160]='liblistwise/op/wvp/wvp.pic.o'
+NAMES[157]='liblistwise/op/wvp/wvp.pic.o'
 fml_3_83()
 {
   exec 1>/dev/null
@@ -2882,7 +2840,7 @@ fml_3_83()
   exit $X
 }
 
-NAMES[161]='liblistwise/op/wz/wz.pic.o'
+NAMES[158]='liblistwise/op/wz/wz.pic.o'
 fml_3_84()
 {
   exec 1>/dev/null
@@ -2897,7 +2855,7 @@ fml_3_84()
   exit $X
 }
 
-NAMES[162]='liblistwise/op/x/x.pic.o'
+NAMES[159]='liblistwise/op/x/x.pic.o'
 fml_3_85()
 {
   exec 1>/dev/null
@@ -2912,7 +2870,7 @@ fml_3_85()
   exit $X
 }
 
-NAMES[163]='liblistwise/op/xch/xch.pic.o'
+NAMES[160]='liblistwise/op/xch/xch.pic.o'
 fml_3_86()
 {
   exec 1>/dev/null
@@ -2927,7 +2885,7 @@ fml_3_86()
   exit $X
 }
 
-NAMES[164]='liblistwise/op/y/y.pic.o'
+NAMES[161]='liblistwise/op/y/y.pic.o'
 fml_3_87()
 {
   exec 1>/dev/null
@@ -2942,7 +2900,7 @@ fml_3_87()
   exit $X
 }
 
-NAMES[165]='liblistwise/op/z/z.pic.o'
+NAMES[162]='liblistwise/op/z/z.pic.o'
 fml_3_88()
 {
   exec 1>/dev/null
@@ -2957,7 +2915,7 @@ fml_3_88()
   exit $X
 }
 
-NAMES[166]='liblistwise/operator/operator.pic.o'
+NAMES[163]='liblistwise/operator/operator.pic.o'
 fml_3_89()
 {
   exec 1>/dev/null
@@ -2972,7 +2930,7 @@ fml_3_89()
   exit $X
 }
 
-NAMES[167]='liblistwise/re/re.pic.o'
+NAMES[164]='liblistwise/re/re.pic.o'
 fml_3_90()
 {
   exec 1>/dev/null
@@ -2987,7 +2945,7 @@ fml_3_90()
   exit $X
 }
 
-NAMES[168]='liblistwise/sanity/sanity.pic.o'
+NAMES[165]='liblistwise/sanity/sanity.pic.o'
 fml_3_91()
 {
   exec 1>/dev/null
@@ -3002,7 +2960,7 @@ fml_3_91()
   exit $X
 }
 
-NAMES[169]='liblistwise/selection/selection.pic.o'
+NAMES[166]='liblistwise/selection/selection.pic.o'
 fml_3_92()
 {
   exec 1>/dev/null
@@ -3017,7 +2975,7 @@ fml_3_92()
   exit $X
 }
 
-NAMES[170]='liblistwise/window/window.pic.o'
+NAMES[167]='liblistwise/window/window.pic.o'
 fml_3_93()
 {
   exec 1>/dev/null
@@ -3032,11 +2990,73 @@ fml_3_93()
   exit $X
 }
 
-NAMES[171]='libxapi/libxapi.so'
+NAMES[168]='libxapi/callstack/callstack.pic.o'
 fml_3_94()
 {
   exec 1>/dev/null
   exec 2>&118
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/callstack/callstack.c -o libxapi/callstack/callstack.pic.o
+
+
+  X=$?
+  echo 18 1>&99
+  exit $X
+}
+
+NAMES[169]='libxapi/error/SYS.errtab.pic.o'
+fml_3_95()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/error/SYS.errtab.c -o libxapi/error/SYS.errtab.pic.o
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+NAMES[170]='libxapi/frame/frame.pic.o'
+fml_3_96()
+{
+  exec 1>/dev/null
+  exec 2>&101
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/frame/frame.c -o libxapi/frame/frame.pic.o
+
+
+  X=$?
+  echo 1 1>&99
+  exit $X
+}
+
+NAMES[171]='libxapi/trace/trace.pic.o'
+fml_3_97()
+{
+  exec 1>/dev/null
+  exec 2>&102
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilibxapi/../common/../libxapi -Ilibxapi/../common/../libxlinux -Ilibxapi/../common/../liblistwise -Ilibxapi/../common/../libpstring -Ilibxapi/../common/unitstring -Ilibxapi/../common/coll -Ilibxapi/../common/wstdlib -Ilibxapi/../common/parseint -Ilibxapi/../common/logger -Ilibxapi/../common/map -Ilibxapi/../common/canon -Ilibxapi/../common/yyutil -Ilibxapi/../common/cksum -Ilibxapi/../common/strutil -Ilibxapi/../common/color -Ilibxapi/../common/wstring -Ilibxapi/../common -DXAPI_UNWIND -O3 -fPIC -Ilibxapi/../common/../libxapi/error -Ilibxapi/../common/../libxapi/trace -Ilibxapi/../common/../libxapi/callstack -Ilibxapi/../common/../libxapi/internal -Ilibxapi/../common/../libxapi/xapi -Ilibxapi/../common/../libxapi/frame -c libxapi/trace/trace.c -o libxapi/trace/trace.pic.o
+
+
+  X=$?
+  echo 2 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 4
+NAMES[172]='libxapi/libxapi.so'
+fml_4_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
 
   
 	  (echo "{ global: "
@@ -3050,14 +3070,14 @@ echo "local: *; };"
 
 
   X=$?
-  echo 18 1>&99
+  echo 0 1>&99
   exit $X
 }
 
 
-# formulas and names for stage 4
-NAMES[172]='libxlinux/libxlinux.so'
-fml_4_0()
+# formulas and names for stage 5
+NAMES[173]='libxlinux/libxlinux.so'
+fml_5_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -3078,9 +3098,9 @@ echo "local: *; };"
 }
 
 
-# formulas and names for stage 5
-NAMES[173]='libpstring/libpstring.so'
-fml_5_0()
+# formulas and names for stage 6
+NAMES[174]='libpstring/libpstring.so'
+fml_6_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -3101,9 +3121,9 @@ echo "local: *; };"
 }
 
 
-# formulas and names for stage 6
-NAMES[174]='liblistwise/liblistwise.so'
-fml_6_0()
+# formulas and names for stage 7
+NAMES[175]='liblistwise/liblistwise.so'
+fml_7_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -3124,9 +3144,9 @@ echo "local: *; };"
 }
 
 
-# formulas and names for stage 7
-NAMES[175]='fab/fab'
-fml_7_0()
+# formulas and names for stage 8
+NAMES[176]='fab/fab'
+fml_8_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -3140,8 +3160,8 @@ fml_7_0()
   exit $X
 }
 
-NAMES[176]='liblistwise/op/-X/-X.so'
-fml_7_1()
+NAMES[177]='liblistwise/op/-X/-X.so'
+fml_8_1()
 {
   exec 1>/dev/null
   exec 2>&101
@@ -3155,8 +3175,8 @@ fml_7_1()
   exit $X
 }
 
-NAMES[177]='liblistwise/op/C/C.so'
-fml_7_2()
+NAMES[178]='liblistwise/op/C/C.so'
+fml_8_2()
 {
   exec 1>/dev/null
   exec 2>&102
@@ -3170,8 +3190,8 @@ fml_7_2()
   exit $X
 }
 
-NAMES[178]='liblistwise/op/b/b.so'
-fml_7_3()
+NAMES[179]='liblistwise/op/b/b.so'
+fml_8_3()
 {
   exec 1>/dev/null
   exec 2>&103
@@ -3185,8 +3205,8 @@ fml_7_3()
   exit $X
 }
 
-NAMES[179]='liblistwise/op/bn/bn.so'
-fml_7_4()
+NAMES[180]='liblistwise/op/bn/bn.so'
+fml_8_4()
 {
   exec 1>/dev/null
   exec 2>&104
@@ -3200,8 +3220,8 @@ fml_7_4()
   exit $X
 }
 
-NAMES[180]='liblistwise/op/c/c.so'
-fml_7_5()
+NAMES[181]='liblistwise/op/c/c.so'
+fml_8_5()
 {
   exec 1>/dev/null
   exec 2>&105
@@ -3215,8 +3235,8 @@ fml_7_5()
   exit $X
 }
 
-NAMES[181]='liblistwise/op/can/can.so'
-fml_7_6()
+NAMES[182]='liblistwise/op/can/can.so'
+fml_8_6()
 {
   exec 1>/dev/null
   exec 2>&106
@@ -3230,8 +3250,8 @@ fml_7_6()
   exit $X
 }
 
-NAMES[182]='liblistwise/op/cp/cp.so'
-fml_7_7()
+NAMES[183]='liblistwise/op/cp/cp.so'
+fml_8_7()
 {
   exec 1>/dev/null
   exec 2>&107
@@ -3245,8 +3265,8 @@ fml_7_7()
   exit $X
 }
 
-NAMES[183]='liblistwise/op/d/d.so'
-fml_7_8()
+NAMES[184]='liblistwise/op/d/d.so'
+fml_8_8()
 {
   exec 1>/dev/null
   exec 2>&108
@@ -3260,8 +3280,8 @@ fml_7_8()
   exit $X
 }
 
-NAMES[184]='liblistwise/op/dj/dj.so'
-fml_7_9()
+NAMES[185]='liblistwise/op/dj/dj.so'
+fml_8_9()
 {
   exec 1>/dev/null
   exec 2>&109
@@ -3275,8 +3295,8 @@ fml_7_9()
   exit $X
 }
 
-NAMES[185]='liblistwise/op/dn/dn.so'
-fml_7_10()
+NAMES[186]='liblistwise/op/dn/dn.so'
+fml_8_10()
 {
   exec 1>/dev/null
   exec 2>&110
@@ -3290,8 +3310,8 @@ fml_7_10()
   exit $X
 }
 
-NAMES[186]='liblistwise/op/f/f.so'
-fml_7_11()
+NAMES[187]='liblistwise/op/f/f.so'
+fml_8_11()
 {
   exec 1>/dev/null
   exec 2>&111
@@ -3305,8 +3325,8 @@ fml_7_11()
   exit $X
 }
 
-NAMES[187]='liblistwise/op/fn/fn.so'
-fml_7_12()
+NAMES[188]='liblistwise/op/fn/fn.so'
+fml_8_12()
 {
   exec 1>/dev/null
   exec 2>&112
@@ -3320,8 +3340,8 @@ fml_7_12()
   exit $X
 }
 
-NAMES[188]='liblistwise/op/g/g.so'
-fml_7_13()
+NAMES[189]='liblistwise/op/g/g.so'
+fml_8_13()
 {
   exec 1>/dev/null
   exec 2>&113
@@ -3335,8 +3355,8 @@ fml_7_13()
   exit $X
 }
 
-NAMES[189]='liblistwise/op/hl/hl.so'
-fml_7_14()
+NAMES[190]='liblistwise/op/hl/hl.so'
+fml_8_14()
 {
   exec 1>/dev/null
   exec 2>&114
@@ -3350,8 +3370,8 @@ fml_7_14()
   exit $X
 }
 
-NAMES[190]='liblistwise/op/j/j.so'
-fml_7_15()
+NAMES[191]='liblistwise/op/j/j.so'
+fml_8_15()
 {
   exec 1>/dev/null
   exec 2>&115
@@ -3365,8 +3385,8 @@ fml_7_15()
   exit $X
 }
 
-NAMES[191]='liblistwise/op/l/l.so'
-fml_7_16()
+NAMES[192]='liblistwise/op/l/l.so'
+fml_8_16()
 {
   exec 1>/dev/null
   exec 2>&116
@@ -3380,8 +3400,8 @@ fml_7_16()
   exit $X
 }
 
-NAMES[192]='liblistwise/op/ls/ls.so'
-fml_7_17()
+NAMES[193]='liblistwise/op/ls/ls.so'
+fml_8_17()
 {
   exec 1>/dev/null
   exec 2>&117
@@ -3395,8 +3415,8 @@ fml_7_17()
   exit $X
 }
 
-NAMES[193]='liblistwise/op/lx/lx.so'
-fml_7_18()
+NAMES[194]='liblistwise/op/lx/lx.so'
+fml_8_18()
 {
   exec 1>/dev/null
   exec 2>&118
@@ -3410,8 +3430,8 @@ fml_7_18()
   exit $X
 }
 
-NAMES[194]='liblistwise/op/o/o.so'
-fml_7_19()
+NAMES[195]='liblistwise/op/o/o.so'
+fml_8_19()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -3425,8 +3445,8 @@ fml_7_19()
   exit $X
 }
 
-NAMES[195]='liblistwise/op/p/p.so'
-fml_7_20()
+NAMES[196]='liblistwise/op/p/p.so'
+fml_8_20()
 {
   exec 1>/dev/null
   exec 2>&101
@@ -3440,8 +3460,8 @@ fml_7_20()
   exit $X
 }
 
-NAMES[196]='liblistwise/op/pop/pop.so'
-fml_7_21()
+NAMES[197]='liblistwise/op/pop/pop.so'
+fml_8_21()
 {
   exec 1>/dev/null
   exec 2>&102
@@ -3455,8 +3475,8 @@ fml_7_21()
   exit $X
 }
 
-NAMES[197]='liblistwise/op/r/r.so'
-fml_7_22()
+NAMES[198]='liblistwise/op/r/r.so'
+fml_8_22()
 {
   exec 1>/dev/null
   exec 2>&103
@@ -3470,8 +3490,8 @@ fml_7_22()
   exit $X
 }
 
-NAMES[198]='liblistwise/op/rb/rb.so'
-fml_7_23()
+NAMES[199]='liblistwise/op/rb/rb.so'
+fml_8_23()
 {
   exec 1>/dev/null
   exec 2>&104
@@ -3485,8 +3505,8 @@ fml_7_23()
   exit $X
 }
 
-NAMES[199]='liblistwise/op/re/re.so'
-fml_7_24()
+NAMES[200]='liblistwise/op/re/re.so'
+fml_8_24()
 {
   exec 1>/dev/null
   exec 2>&105
@@ -3500,8 +3520,8 @@ fml_7_24()
   exit $X
 }
 
-NAMES[200]='liblistwise/op/rp/rp.so'
-fml_7_25()
+NAMES[201]='liblistwise/op/rp/rp.so'
+fml_8_25()
 {
   exec 1>/dev/null
   exec 2>&106
@@ -3515,8 +3535,8 @@ fml_7_25()
   exit $X
 }
 
-NAMES[201]='liblistwise/op/rx/rx.so'
-fml_7_26()
+NAMES[202]='liblistwise/op/rx/rx.so'
+fml_8_26()
 {
   exec 1>/dev/null
   exec 2>&107
@@ -3530,8 +3550,8 @@ fml_7_26()
   exit $X
 }
 
-NAMES[202]='liblistwise/op/s/s.so'
-fml_7_27()
+NAMES[203]='liblistwise/op/s/s.so'
+fml_8_27()
 {
   exec 1>/dev/null
   exec 2>&108
@@ -3545,8 +3565,8 @@ fml_7_27()
   exit $X
 }
 
-NAMES[203]='liblistwise/op/shift/shift.so'
-fml_7_28()
+NAMES[204]='liblistwise/op/shift/shift.so'
+fml_8_28()
 {
   exec 1>/dev/null
   exec 2>&109
@@ -3560,8 +3580,8 @@ fml_7_28()
   exit $X
 }
 
-NAMES[204]='liblistwise/op/sort/sort.so'
-fml_7_29()
+NAMES[205]='liblistwise/op/sort/sort.so'
+fml_8_29()
 {
   exec 1>/dev/null
   exec 2>&110
@@ -3575,8 +3595,8 @@ fml_7_29()
   exit $X
 }
 
-NAMES[205]='liblistwise/op/stat/stat.so'
-fml_7_30()
+NAMES[206]='liblistwise/op/stat/stat.so'
+fml_8_30()
 {
   exec 1>/dev/null
   exec 2>&111
@@ -3590,8 +3610,8 @@ fml_7_30()
   exit $X
 }
 
-NAMES[206]='liblistwise/op/sx/sx.so'
-fml_7_31()
+NAMES[207]='liblistwise/op/sx/sx.so'
+fml_8_31()
 {
   exec 1>/dev/null
   exec 2>&112
@@ -3605,8 +3625,8 @@ fml_7_31()
   exit $X
 }
 
-NAMES[207]='liblistwise/op/t/t.so'
-fml_7_32()
+NAMES[208]='liblistwise/op/t/t.so'
+fml_8_32()
 {
   exec 1>/dev/null
   exec 2>&113
@@ -3620,8 +3640,8 @@ fml_7_32()
   exit $X
 }
 
-NAMES[208]='liblistwise/op/u/u.so'
-fml_7_33()
+NAMES[209]='liblistwise/op/u/u.so'
+fml_8_33()
 {
   exec 1>/dev/null
   exec 2>&114
@@ -3635,8 +3655,8 @@ fml_7_33()
   exit $X
 }
 
-NAMES[209]='liblistwise/op/up/up.so'
-fml_7_34()
+NAMES[210]='liblistwise/op/up/up.so'
+fml_8_34()
 {
   exec 1>/dev/null
   exec 2>&115
@@ -3650,8 +3670,8 @@ fml_7_34()
   exit $X
 }
 
-NAMES[210]='liblistwise/op/uu/uu.so'
-fml_7_35()
+NAMES[211]='liblistwise/op/uu/uu.so'
+fml_8_35()
 {
   exec 1>/dev/null
   exec 2>&116
@@ -3665,8 +3685,8 @@ fml_7_35()
   exit $X
 }
 
-NAMES[211]='liblistwise/op/v/v.so'
-fml_7_36()
+NAMES[212]='liblistwise/op/v/v.so'
+fml_8_36()
 {
   exec 1>/dev/null
   exec 2>&117
@@ -3680,8 +3700,8 @@ fml_7_36()
   exit $X
 }
 
-NAMES[212]='liblistwise/op/vf/vf.so'
-fml_7_37()
+NAMES[213]='liblistwise/op/vf/vf.so'
+fml_8_37()
 {
   exec 1>/dev/null
   exec 2>&118
@@ -3695,8 +3715,8 @@ fml_7_37()
   exit $X
 }
 
-NAMES[213]='liblistwise/op/vp/vp.so'
-fml_7_38()
+NAMES[214]='liblistwise/op/vp/vp.so'
+fml_8_38()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -3710,8 +3730,8 @@ fml_7_38()
   exit $X
 }
 
-NAMES[214]='liblistwise/op/w/w.so'
-fml_7_39()
+NAMES[215]='liblistwise/op/w/w.so'
+fml_8_39()
 {
   exec 1>/dev/null
   exec 2>&101
@@ -3725,8 +3745,8 @@ fml_7_39()
   exit $X
 }
 
-NAMES[215]='liblistwise/op/wv/wv.so'
-fml_7_40()
+NAMES[216]='liblistwise/op/wv/wv.so'
+fml_8_40()
 {
   exec 1>/dev/null
   exec 2>&102
@@ -3740,8 +3760,8 @@ fml_7_40()
   exit $X
 }
 
-NAMES[216]='liblistwise/op/wvf/wvf.so'
-fml_7_41()
+NAMES[217]='liblistwise/op/wvf/wvf.so'
+fml_8_41()
 {
   exec 1>/dev/null
   exec 2>&103
@@ -3755,8 +3775,8 @@ fml_7_41()
   exit $X
 }
 
-NAMES[217]='liblistwise/op/wvp/wvp.so'
-fml_7_42()
+NAMES[218]='liblistwise/op/wvp/wvp.so'
+fml_8_42()
 {
   exec 1>/dev/null
   exec 2>&104
@@ -3770,8 +3790,8 @@ fml_7_42()
   exit $X
 }
 
-NAMES[218]='liblistwise/op/wz/wz.so'
-fml_7_43()
+NAMES[219]='liblistwise/op/wz/wz.so'
+fml_8_43()
 {
   exec 1>/dev/null
   exec 2>&105
@@ -3785,8 +3805,8 @@ fml_7_43()
   exit $X
 }
 
-NAMES[219]='liblistwise/op/x/x.so'
-fml_7_44()
+NAMES[220]='liblistwise/op/x/x.so'
+fml_8_44()
 {
   exec 1>/dev/null
   exec 2>&106
@@ -3800,8 +3820,8 @@ fml_7_44()
   exit $X
 }
 
-NAMES[220]='liblistwise/op/xch/xch.so'
-fml_7_45()
+NAMES[221]='liblistwise/op/xch/xch.so'
+fml_8_45()
 {
   exec 1>/dev/null
   exec 2>&107
@@ -3815,8 +3835,8 @@ fml_7_45()
   exit $X
 }
 
-NAMES[221]='liblistwise/op/y/y.so'
-fml_7_46()
+NAMES[222]='liblistwise/op/y/y.so'
+fml_8_46()
 {
   exec 1>/dev/null
   exec 2>&108
@@ -3830,8 +3850,8 @@ fml_7_46()
   exit $X
 }
 
-NAMES[222]='liblistwise/op/z/z.so'
-fml_7_47()
+NAMES[223]='liblistwise/op/z/z.so'
+fml_8_47()
 {
   exec 1>/dev/null
   exec 2>&109
@@ -3845,8 +3865,8 @@ fml_7_47()
   exit $X
 }
 
-NAMES[223]='listwise/listwise'
-fml_7_48()
+NAMES[224]='listwise/listwise'
+fml_8_48()
 {
   exec 1>/dev/null
   exec 2>&110
@@ -3861,9 +3881,9 @@ fml_7_48()
 }
 
 
-# formulas and names for stage 8
-NAMES[224]='fab/fablw/op/fg/fg.pic.o'
-fml_8_0()
+# formulas and names for stage 9
+NAMES[225]='fab/fablw/op/fg/fg.pic.o'
+fml_9_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -3877,8 +3897,8 @@ fml_8_0()
   exit $X
 }
 
-NAMES[225]='fab/fablw/op/fi/fi.pic.o'
-fml_8_1()
+NAMES[226]='fab/fablw/op/fi/fi.pic.o'
+fml_9_1()
 {
   exec 1>/dev/null
   exec 2>&101
@@ -3893,9 +3913,9 @@ fml_8_1()
 }
 
 
-# formulas and names for stage 9
-NAMES[226]='fab/fablw/op/fg/fg.so'
-fml_9_0()
+# formulas and names for stage 10
+NAMES[227]='fab/fablw/op/fg/fg.so'
+fml_10_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -3909,8 +3929,8 @@ fml_9_0()
   exit $X
 }
 
-NAMES[227]='fab/fablw/op/fi/fi.so'
-fml_9_1()
+NAMES[228]='fab/fablw/op/fi/fi.so'
+fml_10_1()
 {
   exec 1>/dev/null
   exec 2>&101
@@ -4098,7 +4118,7 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=14))
+  ((SKP+=11))
 else
   # launch stage 2.2
   exec 100>$tmp ; rm -f $tmp ; fml_2_38 & PIDS[0]=$!
@@ -4112,13 +4132,10 @@ else
   exec 108>$tmp ; rm -f $tmp ; fml_2_46 & PIDS[8]=$!
   exec 109>$tmp ; rm -f $tmp ; fml_2_47 & PIDS[9]=$!
   exec 110>$tmp ; rm -f $tmp ; fml_2_48 & PIDS[10]=$!
-  exec 111>$tmp ; rm -f $tmp ; fml_2_49 & PIDS[11]=$!
-  exec 112>$tmp ; rm -f $tmp ; fml_2_50 & PIDS[12]=$!
-  exec 113>$tmp ; rm -f $tmp ; fml_2_51 & PIDS[13]=$!
 
   # harvest stage 2.2
   C=0
-  while [[ $C != 14 ]]; do
+  while [[ $C != 11 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -4167,7 +4184,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((77+$idx))
+    I=$((74+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4210,7 +4227,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((96+$idx))
+    I=$((93+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4253,7 +4270,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((115+$idx))
+    I=$((112+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4296,7 +4313,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((134+$idx))
+    I=$((131+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4339,11 +4356,38 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((153+$idx))
+    I=$((150+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
     printf '[%3d,%3d] X=%d %s\n' 3 $((idx+76)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=3))
+else
+  # launch stage 3.5
+  exec 100>$tmp ; rm -f $tmp ; fml_3_95 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_3_96 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_3_97 & PIDS[2]=$!
+
+  # harvest stage 3.5
+  C=0
+  while [[ $C != 3 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((169+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 3 $((idx+95)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
@@ -4426,32 +4470,14 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=19))
+  ((SKP+=1))
 else
   # launch stage 7.0
   exec 100>$tmp ; rm -f $tmp ; fml_7_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_7_1 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_7_2 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_7_3 & PIDS[3]=$!
-  exec 104>$tmp ; rm -f $tmp ; fml_7_4 & PIDS[4]=$!
-  exec 105>$tmp ; rm -f $tmp ; fml_7_5 & PIDS[5]=$!
-  exec 106>$tmp ; rm -f $tmp ; fml_7_6 & PIDS[6]=$!
-  exec 107>$tmp ; rm -f $tmp ; fml_7_7 & PIDS[7]=$!
-  exec 108>$tmp ; rm -f $tmp ; fml_7_8 & PIDS[8]=$!
-  exec 109>$tmp ; rm -f $tmp ; fml_7_9 & PIDS[9]=$!
-  exec 110>$tmp ; rm -f $tmp ; fml_7_10 & PIDS[10]=$!
-  exec 111>$tmp ; rm -f $tmp ; fml_7_11 & PIDS[11]=$!
-  exec 112>$tmp ; rm -f $tmp ; fml_7_12 & PIDS[12]=$!
-  exec 113>$tmp ; rm -f $tmp ; fml_7_13 & PIDS[13]=$!
-  exec 114>$tmp ; rm -f $tmp ; fml_7_14 & PIDS[14]=$!
-  exec 115>$tmp ; rm -f $tmp ; fml_7_15 & PIDS[15]=$!
-  exec 116>$tmp ; rm -f $tmp ; fml_7_16 & PIDS[16]=$!
-  exec 117>$tmp ; rm -f $tmp ; fml_7_17 & PIDS[17]=$!
-  exec 118>$tmp ; rm -f $tmp ; fml_7_18 & PIDS[18]=$!
 
   # harvest stage 7.0
   C=0
-  while [[ $C != 19 ]]; do
+  while [[ $C != 1 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -4471,28 +4497,28 @@ fi
 if [[ $DIE -ne 0 ]]; then
   ((SKP+=19))
 else
-  # launch stage 7.1
-  exec 100>$tmp ; rm -f $tmp ; fml_7_19 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_7_20 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_7_21 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_7_22 & PIDS[3]=$!
-  exec 104>$tmp ; rm -f $tmp ; fml_7_23 & PIDS[4]=$!
-  exec 105>$tmp ; rm -f $tmp ; fml_7_24 & PIDS[5]=$!
-  exec 106>$tmp ; rm -f $tmp ; fml_7_25 & PIDS[6]=$!
-  exec 107>$tmp ; rm -f $tmp ; fml_7_26 & PIDS[7]=$!
-  exec 108>$tmp ; rm -f $tmp ; fml_7_27 & PIDS[8]=$!
-  exec 109>$tmp ; rm -f $tmp ; fml_7_28 & PIDS[9]=$!
-  exec 110>$tmp ; rm -f $tmp ; fml_7_29 & PIDS[10]=$!
-  exec 111>$tmp ; rm -f $tmp ; fml_7_30 & PIDS[11]=$!
-  exec 112>$tmp ; rm -f $tmp ; fml_7_31 & PIDS[12]=$!
-  exec 113>$tmp ; rm -f $tmp ; fml_7_32 & PIDS[13]=$!
-  exec 114>$tmp ; rm -f $tmp ; fml_7_33 & PIDS[14]=$!
-  exec 115>$tmp ; rm -f $tmp ; fml_7_34 & PIDS[15]=$!
-  exec 116>$tmp ; rm -f $tmp ; fml_7_35 & PIDS[16]=$!
-  exec 117>$tmp ; rm -f $tmp ; fml_7_36 & PIDS[17]=$!
-  exec 118>$tmp ; rm -f $tmp ; fml_7_37 & PIDS[18]=$!
+  # launch stage 8.0
+  exec 100>$tmp ; rm -f $tmp ; fml_8_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_8_1 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_8_2 & PIDS[2]=$!
+  exec 103>$tmp ; rm -f $tmp ; fml_8_3 & PIDS[3]=$!
+  exec 104>$tmp ; rm -f $tmp ; fml_8_4 & PIDS[4]=$!
+  exec 105>$tmp ; rm -f $tmp ; fml_8_5 & PIDS[5]=$!
+  exec 106>$tmp ; rm -f $tmp ; fml_8_6 & PIDS[6]=$!
+  exec 107>$tmp ; rm -f $tmp ; fml_8_7 & PIDS[7]=$!
+  exec 108>$tmp ; rm -f $tmp ; fml_8_8 & PIDS[8]=$!
+  exec 109>$tmp ; rm -f $tmp ; fml_8_9 & PIDS[9]=$!
+  exec 110>$tmp ; rm -f $tmp ; fml_8_10 & PIDS[10]=$!
+  exec 111>$tmp ; rm -f $tmp ; fml_8_11 & PIDS[11]=$!
+  exec 112>$tmp ; rm -f $tmp ; fml_8_12 & PIDS[12]=$!
+  exec 113>$tmp ; rm -f $tmp ; fml_8_13 & PIDS[13]=$!
+  exec 114>$tmp ; rm -f $tmp ; fml_8_14 & PIDS[14]=$!
+  exec 115>$tmp ; rm -f $tmp ; fml_8_15 & PIDS[15]=$!
+  exec 116>$tmp ; rm -f $tmp ; fml_8_16 & PIDS[16]=$!
+  exec 117>$tmp ; rm -f $tmp ; fml_8_17 & PIDS[17]=$!
+  exec 118>$tmp ; rm -f $tmp ; fml_8_18 & PIDS[18]=$!
 
-  # harvest stage 7.1
+  # harvest stage 8.0
   C=0
   while [[ $C != 19 ]]; do
     read -u 99 idx
@@ -4500,11 +4526,54 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((194+$idx))
+    I=$((176+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 7 $((idx+19)) $X "$N"
+    printf '[%3d,%3d] X=%d %s\n' 8 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=19))
+else
+  # launch stage 8.1
+  exec 100>$tmp ; rm -f $tmp ; fml_8_19 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_8_20 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_8_21 & PIDS[2]=$!
+  exec 103>$tmp ; rm -f $tmp ; fml_8_22 & PIDS[3]=$!
+  exec 104>$tmp ; rm -f $tmp ; fml_8_23 & PIDS[4]=$!
+  exec 105>$tmp ; rm -f $tmp ; fml_8_24 & PIDS[5]=$!
+  exec 106>$tmp ; rm -f $tmp ; fml_8_25 & PIDS[6]=$!
+  exec 107>$tmp ; rm -f $tmp ; fml_8_26 & PIDS[7]=$!
+  exec 108>$tmp ; rm -f $tmp ; fml_8_27 & PIDS[8]=$!
+  exec 109>$tmp ; rm -f $tmp ; fml_8_28 & PIDS[9]=$!
+  exec 110>$tmp ; rm -f $tmp ; fml_8_29 & PIDS[10]=$!
+  exec 111>$tmp ; rm -f $tmp ; fml_8_30 & PIDS[11]=$!
+  exec 112>$tmp ; rm -f $tmp ; fml_8_31 & PIDS[12]=$!
+  exec 113>$tmp ; rm -f $tmp ; fml_8_32 & PIDS[13]=$!
+  exec 114>$tmp ; rm -f $tmp ; fml_8_33 & PIDS[14]=$!
+  exec 115>$tmp ; rm -f $tmp ; fml_8_34 & PIDS[15]=$!
+  exec 116>$tmp ; rm -f $tmp ; fml_8_35 & PIDS[16]=$!
+  exec 117>$tmp ; rm -f $tmp ; fml_8_36 & PIDS[17]=$!
+  exec 118>$tmp ; rm -f $tmp ; fml_8_37 & PIDS[18]=$!
+
+  # harvest stage 8.1
+  C=0
+  while [[ $C != 19 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((195+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 8 $((idx+19)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
@@ -4514,20 +4583,20 @@ fi
 if [[ $DIE -ne 0 ]]; then
   ((SKP+=11))
 else
-  # launch stage 7.2
-  exec 100>$tmp ; rm -f $tmp ; fml_7_38 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_7_39 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_7_40 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_7_41 & PIDS[3]=$!
-  exec 104>$tmp ; rm -f $tmp ; fml_7_42 & PIDS[4]=$!
-  exec 105>$tmp ; rm -f $tmp ; fml_7_43 & PIDS[5]=$!
-  exec 106>$tmp ; rm -f $tmp ; fml_7_44 & PIDS[6]=$!
-  exec 107>$tmp ; rm -f $tmp ; fml_7_45 & PIDS[7]=$!
-  exec 108>$tmp ; rm -f $tmp ; fml_7_46 & PIDS[8]=$!
-  exec 109>$tmp ; rm -f $tmp ; fml_7_47 & PIDS[9]=$!
-  exec 110>$tmp ; rm -f $tmp ; fml_7_48 & PIDS[10]=$!
+  # launch stage 8.2
+  exec 100>$tmp ; rm -f $tmp ; fml_8_38 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_8_39 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_8_40 & PIDS[2]=$!
+  exec 103>$tmp ; rm -f $tmp ; fml_8_41 & PIDS[3]=$!
+  exec 104>$tmp ; rm -f $tmp ; fml_8_42 & PIDS[4]=$!
+  exec 105>$tmp ; rm -f $tmp ; fml_8_43 & PIDS[5]=$!
+  exec 106>$tmp ; rm -f $tmp ; fml_8_44 & PIDS[6]=$!
+  exec 107>$tmp ; rm -f $tmp ; fml_8_45 & PIDS[7]=$!
+  exec 108>$tmp ; rm -f $tmp ; fml_8_46 & PIDS[8]=$!
+  exec 109>$tmp ; rm -f $tmp ; fml_8_47 & PIDS[9]=$!
+  exec 110>$tmp ; rm -f $tmp ; fml_8_48 & PIDS[10]=$!
 
-  # harvest stage 7.2
+  # harvest stage 8.2
   C=0
   while [[ $C != 11 ]]; do
     read -u 99 idx
@@ -4535,37 +4604,11 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((213+$idx))
+    I=$((214+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 7 $((idx+38)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=2))
-else
-  # launch stage 8.0
-  exec 100>$tmp ; rm -f $tmp ; fml_8_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_8_1 & PIDS[1]=$!
-
-  # harvest stage 8.0
-  C=0
-  while [[ $C != 2 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((224+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 8 $((idx+0)) $X "$N"
+    printf '[%3d,%3d] X=%d %s\n' 8 $((idx+38)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
@@ -4587,11 +4630,37 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((226+$idx))
+    I=$((225+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
     printf '[%3d,%3d] X=%d %s\n' 9 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=2))
+else
+  # launch stage 10.0
+  exec 100>$tmp ; rm -f $tmp ; fml_10_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_10_1 & PIDS[1]=$!
+
+  # harvest stage 10.0
+  C=0
+  while [[ $C != 2 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((227+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 10 $((idx+0)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
