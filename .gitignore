@@ -6,7 +6,7 @@
 *.lex.*
 *.tokens.*
 *.states.*
-*.errtab.*
+#*.errtab.*
 /fab/fab
 /fab/make64.sh
 /fab/install64.sh

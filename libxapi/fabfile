@@ -44,7 +44,7 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 ##
 
 # the SYS errtab is generated from available system header files
-[ $dlibxapi/SYS.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
+[ $dlibxapi/error/SYS.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
 {
 	exec > [ $@ ]
 
@@ -65,7 +65,7 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 	> echo "local: *; };"
 	) 1>[ $dlibxapi/exports ]
 
-	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/xm/<o>/ss/u/fi ] [ $lflags ] [ "-Wl,--version-script=" $dlibxapi/exports]
+	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/xm/<o>/ss/u/fi ] [ $lflags ] [ "-Wl,--version-script=" $dlibxapi/exports ]
 }
 
 ##
