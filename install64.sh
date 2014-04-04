@@ -53,24 +53,10 @@ fml_1_0()
 
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
-  [[ $incdir ]] || local incdir='/usr/include'
   [[ $lwopdir ]] || local lwopdir='/usr/lib/listwise'
   
 	install -d																				$destdir/$libdir
 	install liblistwise/../common/../liblistwise/liblistwise.so													$destdir/$libdir/liblistwise.so
-	install liblistwise/../common/../liblistwise/listwise.h							$destdir/$incdir/listwise.h
-
-	install -d																				$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/fs.h						$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/generator.h		$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/internal.h			$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/iterate.h			$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/lwx.h					$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/object.h				$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/operator.h			$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/ops.h					$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/re.h						$destdir/$incdir/listwise
-	install liblistwise/../common/../liblistwise/listwise/xtra.h					$destdir/$incdir/listwise
 
 	rm -rf																						$destdir/$lwopdir 2>/dev/null
 	install -d																				$destdir/$lwopdir
@@ -84,7 +70,7 @@ fml_1_0()
   exit $X
 }
 
-NAMES[2]='@libxlinux.install'
+NAMES[2]='@libpstring.install'
 fml_1_1()
 {
   exec 1>/dev/null
@@ -92,25 +78,9 @@ fml_1_1()
 
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
-  [[ $incdir ]] || local incdir='/usr/include'
   
 	install -d																					$destdir/$libdir
-	install libxlinux/../common/../libxlinux/libxlinux.so															$destdir/$libdir/libxlinux.so
-	install libxlinux/../common/../libxlinux/xlinux.h										$destdir/$incdir/xlinux.h
-
-	install -d																					$destdir/$incdir/xlinux
-	install libxlinux/../common/../libxlinux/xlinux/xdirent.h						$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xdlfcn.h							$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xfcntl.h							$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xftw.h								$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xgrp.h								$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xmman.h							$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xpwd.h								$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xstat.h							$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xstdlib.h						$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xstring.h						$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xtime.h							$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xunistd.h						$destdir/$incdir/xlinux/
+	install libpstring/../common/../libpstring/libpstring.so															$destdir/$libdir/libpstring.so
 
 
   X=$?
@@ -118,9 +88,45 @@ fml_1_1()
   exit $X
 }
 
+NAMES[3]='@libxapi.install'
+fml_1_2()
+{
+  exec 1>/dev/null
+  exec 2>&102
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																$destdir/$libdir
+	install libxapi/../common/../libxapi/libxapi.so											$destdir/$libdir/libxapi.so
+
+
+  X=$?
+  echo 2 1>&99
+  exit $X
+}
+
+NAMES[4]='@libxlinux.install'
+fml_1_3()
+{
+  exec 1>/dev/null
+  exec 2>&103
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																					$destdir/$libdir
+	install libxlinux/../common/../libxlinux/libxlinux.so															$destdir/$libdir/libxlinux.so
+
+
+  X=$?
+  echo 3 1>&99
+  exit $X
+}
+
 
 # formulas and names for stage 2
-NAMES[3]='@fab.install'
+NAMES[5]='@fab.install'
 fml_2_0()
 {
   exec 1>/dev/null
@@ -209,15 +215,17 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=2))
+  ((SKP+=4))
 else
   # launch stage 1.0
   exec 100>$tmp ; rm -f $tmp ; fml_1_0 & PIDS[0]=$!
   exec 101>$tmp ; rm -f $tmp ; fml_1_1 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_1_2 & PIDS[2]=$!
+  exec 103>$tmp ; rm -f $tmp ; fml_1_3 & PIDS[3]=$!
 
   # harvest stage 1.0
   C=0
-  while [[ $C != 2 ]]; do
+  while [[ $C != 4 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -248,7 +256,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((3+$idx))
+    I=$((5+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))

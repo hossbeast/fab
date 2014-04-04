@@ -64,7 +64,12 @@ $lflags				= [ $libxapi, -shared, [ "-Wl,-soname," $soname ] ]
 {
 	install -d																					[ $destdir/$libdir ]
 	install [ $libxlinux ]															[ $destdir/$libdir/$libname ]
-	install [ $dlibxlinux/xlinux.h	]										[ $destdir/$incdir/xlinux.h ]
+}
+
+[ @installdevheaders ]
+{
+	install -d																					[ $destdir/$incdir ]
+	install [ $dlibxlinux/xlinux.h ]										[ $destdir/$incdir/xlinux/ ]
 
 	install -d																					[ $destdir/$incdir/xlinux ]
 	install [ $dlibxlinux/xlinux/xdirent.h ]						[ $destdir/$incdir/xlinux/ ]

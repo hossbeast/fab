@@ -76,6 +76,12 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 {
 	install -d																[ $destdir/$libdir ]
 	install [ $libxapi ]											[ $destdir/$libdir/$libname ]
+}
+
+[ @installdevheaders ]
+{
+	install -d																[ $destdir/$incdir ]
+	install [ $dlibxapi/xapi.h ]							[ $destdir/$incdir ]
 
 	install -d																[ $destdir/$incdir/xapi ]
 	install [ $dlibxapi/xapi/frame.h ]				[ $destdir/$incdir/xapi ]

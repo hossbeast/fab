@@ -63,5 +63,10 @@ $lflags				= [ $libxapi, $libxlinux, -shared, [ "-Wl,-soname," $soname ] ]
 {
 	install -d																					[ $destdir/$libdir ]
 	install [ $libpstring ]															[ $destdir/$libdir/$libname ]
-	install [ $dlibpstring/pstring.h	]										[ $destdir/$incdir/pstring.h ]
+}
+
+[ @installdevheaders ]
+{
+	install -d																					[ $destdir/$incdir ]
+	install [ $dlibpstring/pstring.h	]									[ $destdir/$incdir/pstring.h ]
 }

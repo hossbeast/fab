@@ -97,6 +97,17 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 {
 	install -d																				[ $destdir/$libdir ]
 	install [ $liblistwise ]													[ $destdir/$libdir/$libname ]
+
+	rm -rf																						[ $destdir/$lwopdir ] 2>/dev/null
+	install -d																				[ $destdir/$lwopdir ]
+	for x in [ $oplist ~ fi ]; do \
+		install $x																			[ $destdir/$lwopdir ]
+	done
+}
+
+[ @installdevheaders ] 
+{
+	install -d																				[ $destdir/$incdir ]
 	install [ $dliblistwise/listwise.h	]							[ $destdir/$incdir/listwise.h ]
 
 	install -d																				[ $destdir/$incdir/listwise ]
@@ -110,10 +121,4 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 	install [ $dliblistwise/listwise/ops.h ]					[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise/re.h ]						[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise/xtra.h ]					[ $destdir/$incdir/listwise ]
-
-	rm -rf																						[ $destdir/$lwopdir ] 2>/dev/null
-	install -d																				[ $destdir/$lwopdir ]
-	for x in [ $oplist ~ fi ]; do \
-		install $x																			[ $destdir/$lwopdir ]
-	done
 }
