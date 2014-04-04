@@ -49,7 +49,6 @@ int listwise_exec_generator(
 )
 	__attribute__((nonnull(1, 5)));
 
-#if DEBUG || SANITY
 int listwise_exec_generator2(
 	  generator * const restrict g
 	, char ** const restrict init
@@ -59,7 +58,6 @@ int listwise_exec_generator2(
 	, void * udata
 )
 	__attribute__((nonnull(1, 5)));
-#endif
 
 /// lstack_dump
 //
@@ -69,7 +67,6 @@ int listwise_exec_generator2(
 int lstack_dump(lwx * const restrict)
 	__attribute__((nonnull));
 
-#if DEBUG
 /// lstack_dump2
 //
 // SUMMARY
@@ -77,7 +74,6 @@ int lstack_dump(lwx * const restrict)
 //
 int lstack_dump2(lwx * const restrict, void * udata)
 	__attribute__((nonnull));
-#endif
 
 /// listwise_register_opdir
 //

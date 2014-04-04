@@ -67,7 +67,7 @@ extern int g_argvsl;		// length of g_argvs
 //  [bits] - bits to use when logging the description
 //
 int log_init();
-#if DEBUG
+#if DEVEL
 int log_log_init_and_describe(const char * const restrict func, const char * const restrict file, int line, uint64_t bits)
 	__attribute__((nonnull));
 
@@ -87,7 +87,7 @@ int log_log_init_and_describe(uint64_t bits);
 //  [prefix] - matching logs will emit preceeding prefix
 //  [trace]  - matching logs will emit trailing trace
 //
-#if DEBUG
+#if DEVEL
 void log_config(uint64_t prefix, uint64_t trace);
 #else
 void log_config(uint64_t trace);
@@ -112,7 +112,7 @@ void log_config(uint64_t trace);
 int log_parse(char * args, int args_len)
 	__attribute__((nonnull(1)));
 
-#if DEBUG
+#if DEVEL
 int log_log_parse_and_describe(const char * const restrict func, const char * const restrict file, int line, char * args, int args_len, uint64_t bits)
 	__attribute__((nonnull(1, 2, 4)));
 
@@ -121,7 +121,7 @@ int log_log_parse_and_describe(const char * const restrict func, const char * co
 int log_log_parse_and_describe(char * args, int args_len, uint64_t bits)
 	__attribute__((nonnull(1)));
 
-#define log_parse_and_describe(...) log_log_parse_and_describe(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+#define log_parse_and_describe(...) log_log_parse_and_describe(__VA_ARGS__)
 #endif
 
 /// log_would
@@ -150,7 +150,7 @@ int log_would(const uint64_t bits);
 //  if called after log_start, returns 1
 //  otherwise, returns log_would(bits)
 // 
-#ifndef DEBUG
+#ifndef DEVEL
 int log_vlogf(const uint64_t bits, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull(2)));
 int log_logf(const uint64_t bits, const char * const restrict fmt, ...)
@@ -196,7 +196,7 @@ int log_logw(const char * const restrict func, const char * const restrict file,
 // RETURNS
 //  log_would(bits)
 //
-#ifndef DEBUG
+#ifndef DEVEL
 int log_log_start(const uint64_t bits);
 # define log_start(bits) log_log_start(bits)
 #else

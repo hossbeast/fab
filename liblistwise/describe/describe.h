@@ -65,7 +65,6 @@ int generator_canon_pswrite(generator * const restrict g, pstring ** restrict ps
 int generator_canon_dump(generator * const restrict g, pstring ** restrict ps)
 	__attribute__((nonnull));
 
-#if DEBUG
 /// generator_canon_log
 //
 // SUMMARY
@@ -78,7 +77,6 @@ int generator_canon_dump(generator * const restrict g, pstring ** restrict ps)
 //
 int generator_canon_log(generator * const restrict g, pstring ** restrict ps, void * restrict udata)
 	__attribute__((nonnull(1)));
-#endif
 
 /// generator_description_write
 //
@@ -121,7 +119,6 @@ int generator_description_pswrite(generator * const restrict g, pstring ** restr
 int generator_description_dump(generator * const restrict g, pstring ** restrict ps)
 	__attribute__((nonnull));
 
-#if DEBUG
 /// generator_description_log
 //
 // SUMMARY
@@ -134,7 +131,6 @@ int generator_description_dump(generator * const restrict g, pstring ** restrict
 //
 int generator_description_log(generator * const restrict g, pstring ** restrict ps, void * restrict udata)
 	__attribute__((nonnull(1)));
-#endif
 
 /// lstack_description_write
 //
@@ -174,7 +170,6 @@ int lstack_description_pswrite(lwx * const restrict lx, pstring ** const restric
 int lstack_description_dump(lwx * const restrict, pstring ** restrict ps)
 	__attribute__((nonnull));
 
-#if DEBUG
 /// lstack_description_log
 //
 // SUMMARY
@@ -187,7 +182,6 @@ int lstack_description_dump(lwx * const restrict, pstring ** restrict ps)
 //
 int lstack_description_log(lwx * const restrict, pstring ** restrict ps, void * restrict udata)
 	__attribute__((nonnull));
-#endif
 
 #undef restrict
 #endif

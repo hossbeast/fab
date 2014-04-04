@@ -59,7 +59,7 @@ void listwise_log(void * token, void * udata, const char * func, const char * fi
 {
 	va_list va;
 	va_start(va, fmt);
-#if DEBUG
+#if DEVEL
 	log_vlogf(func, file, line, *(uint64_t*)token, fmt, va);
 #else
 	log_vlogf(*(uint64_t*)token, fmt, va);
@@ -237,11 +237,7 @@ int main(int g_argc, char** g_argv)
 
 	if(g)
 	{
-#if DEBUG || DEVEL || SANITY
 		fatal(listwise_exec_generator2, g, 0, 0, 0, &lx, 0);
-#else
-		fatal(listwise_exec_generator, g , 0, 0, 0, &lx);
-#endif
 	}
 
 	// OUTPUT

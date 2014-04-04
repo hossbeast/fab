@@ -123,7 +123,6 @@ static int flatten(lwx * lso)
 /// liblistwise logging bindings
 ///
 
-#if DEBUG || DEVEL || SANITY
 int listwise_would(void * token, void * udata)
 {
 	return log_would(*(uint64_t*)token);
@@ -133,14 +132,13 @@ void listwise_log(void * token, void * udata, const char * func, const char * fi
 {
 	va_list va;
 	va_start(va, fmt);
-#if DEBUG
+#if DEVEL
 	log_vlogf(func, file, line, *(uint64_t*)token, fmt, va);
 #else
 	log_vlogf(*(uint64_t*)token, fmt, va);
 #endif
 	va_end(va);
 }
-#endif
 
 ///
 /// public
@@ -175,11 +173,9 @@ int lw_exec(generator * gen, lwx ** ls)
 	finally : coda;
 }
 
-#if DEBUG || DEVEL || SANITY
 void lw_configure_logging()
 {
 	listwise_logging_configure((struct listwise_logging[]) {{
-#if DEBUG
       .generator_token  = (uint64_t[]) { L_LWPARSE }
     , .generator_would  = listwise_would
     , .generator_log    = listwise_log
@@ -192,7 +188,6 @@ void lw_configure_logging()
     , .opinfo_token     = (uint64_t[]) { L_LWOPINFO }
     , .opinfo_would     = listwise_would
     , .opinfo_log       = listwise_log
-#endif
 #if DEVEL
     , .tokens_token     = (uint64_t[]) { L_LWTOKEN }
     , .tokens_would     = listwise_would
@@ -208,4 +203,3 @@ void lw_configure_logging()
 #endif
   }});
 }
-#endif

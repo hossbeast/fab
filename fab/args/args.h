@@ -57,12 +57,9 @@ struct selector;
 #define DEFAULT_MODE_CYCLES				MODE_CYCLES_WARN
 #define DEFAULT_CONCURRENCY_LIMIT	-1
 
-#if DEBUG
+#if DEVEL
 # define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_PITHY
 # define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
-#endif
-
-#if DEVEL
 # define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
 #endif
 
@@ -86,37 +83,22 @@ struct selector;
 	_MODE(MODE_CYCLES_WARN								, 0x08	, x)		/* warn when a cycle is detected */											\
 	_MODE(MODE_CYCLES_FAIL								, 0x09	, x)		/* fail when a cycle is detected */											\
 	_MODE(MODE_CYCLES_DEAL								, 0x0a	, x)		/* deal when a cycle is detected (halt traversal) */
-#if DEBUG
-#define MODE_TABLE_DEBUG(x)																																											\
+#if DEVEL
+#define MODE_TABLE_DEVEL(x)																																											\
 /* error reporting modes */																																											\
 	_MODE(MODE_BACKTRACE_FULL							, 0x0b	, x)		/* report on immediate error condition only */					\
 	_MODE(MODE_BACKTRACE_PITHY	 					, 0x0c	, x)		/* unwind stack when reporting errors */								\
 	_MODE(MODE_LOGTRACE_NONE							, 0x0d	, x)		/* disable log trace */																	\
-	_MODE(MODE_LOGTRACE_FULL							, 0x0e	, x)		/* enable log trace */
-#endif
-#if DEVEL
-#define MODE_TABLE_DEVEL(x)																																											\
+	_MODE(MODE_LOGTRACE_FULL							, 0x0e	, x)		/* enable log trace */																	\
 /* bakescript license modes */																																									\
 	_MODE(MODE_BSLIC_STD									, 0x10	, x)		/* bakescripts have the standard license  */						\
 	_MODE(MODE_BSLIC_FAB									, 0x11	, x)		/* bakescripts have the fab license */
 #endif
-#if SANITY
-#define MODE_TABLE_SANITY(x)																																										\
-/* sanity checking modes */																																											\
-	_MODE(MODE_SANITY_DISABLE							, 0x13	, x)		/* disable sanity checks for liblistwise invocations */	\
-	_MODE(MODE_SANITY_ENABLE							, 0x14	, x)		/* enable sanity checks for liblistwise invocations */
-#endif
 
 enum {
 #define _MODE(a, b, c) a = b,
-#if DEBUG
-MODE_TABLE_DEBUG(0)
-#endif
 #if DEVEL
 MODE_TABLE_DEVEL(0)
-#endif
-#if SANITY
-MODE_TABLE_SANITY(0)
 #endif
 MODE_TABLE(0)
 #undef _MODE
@@ -124,13 +106,7 @@ MODE_TABLE(0)
 
 #define _MODE(a, b, c) (c) == b ? #a :
 #if DEVEL
-# if SANITY
-#  define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) MODE_TABLE_SANITY(x) "UNKNWN"
-# else
-#  define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "UNKNWN"
-# endif
-#elif DEBUG
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) "UNKNWN"
+# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEVEL(x) "UNKNWN"
 #else
 # define MODE_STR(x) MODE_TABLE(x) "UNKNWN"
 #endif
@@ -145,15 +121,10 @@ extern struct g_args_t
 	int									mode_gnid;									// gn identification mode
 	int									mode_cycles;								// cycle handling mode
 	int									mode_paths;									// path generation mode
-#if DEBUG
+#if DEVEL
 	int									mode_backtrace;							// backtrace reporting mode
 	int									mode_logtrace;							// log trace mode
-#endif
-#if DEVEL
 	int									mode_bslic;									// bakescript license mode
-#endif
-#if SANITY
-	int									mode_sanity;								// sanity checking mode
 #endif
 
 	int									concurrency;								// concurrently limiting factor
@@ -189,9 +160,7 @@ extern struct g_args_t
 // invalid, for example required options are not present, or invalid
 // parameters are given to an option
 //
-// returns zero on failure (malloc failure, for example)
-//
-int args_parse(int argc, char** argv);
+int args_parse();
 
 /// args_teardown
 //

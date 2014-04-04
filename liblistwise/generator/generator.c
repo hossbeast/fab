@@ -174,14 +174,14 @@ static int parse(generator_parser ** p, char* s, int l, char * name, int namel, 
 	// local parser
 	generator_parser * lp = 0;
 
+	// create state specific to this parse
+	void * state = 0;
+
 	if(!p)
 		p = &lp;
 
 	if(!*p)
 		fatal(generator_mkparser, p);
-
-	// create state specific to this parse
-	void * state = 0;
 
 	// results struct for this parse
 	parse_param pp = {

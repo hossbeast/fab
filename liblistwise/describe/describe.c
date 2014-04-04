@@ -559,7 +559,6 @@ finally:
 coda;
 }
 
-#if DEBUG
 int API generator_canon_log(generator * const restrict g, pstring ** restrict ps, void * restrict udata)
 {
 	pstring * lps = 0;
@@ -578,7 +577,6 @@ finally:
 	psfree(lps);
 coda;
 }
-#endif
 
 int API generator_description_write(generator * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
 {
@@ -612,7 +610,6 @@ finally:
 coda;
 }
 
-#if DEBUG
 int API generator_description_log(generator * const restrict g, pstring ** restrict ps, void * restrict udata)
 {
 	pstring * lps = 0;
@@ -632,7 +629,6 @@ finally:
 	psfree(lps);
 coda;
 }
-#endif
 
 xapi API lstack_description_write(lwx * const restrict lx, char * const restrict dst, const size_t sz, size_t * restrict z)
 {
@@ -666,7 +662,6 @@ finally:
 coda;
 }
 
-#if DEBUG
 xapi API lstack_description_log(lwx * const restrict lx, pstring ** restrict ps, void * restrict udata)
 {
 	pstring * lps = 0;
@@ -686,4 +681,3 @@ finally:
 	psfree(lps);
 coda;
 }
-#endif

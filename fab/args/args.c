@@ -72,8 +72,6 @@ if(version)
 	printf(" fab-"
 #if DEVEL
 	XQUOTE(FABVERSIONS) "+DEVEL"
-#elif DEBUG
-	XQUOTE(FABVERSIONS) "+DEBUG"
 #else
 	XQUOTE(FABVERSIONS)
 #endif
@@ -152,7 +150,7 @@ if(help)
 "  --gnid-relative-fabfile-dir   nodes are identified by path relative to init-fabfile-dir\n"
 "  --gnid-absolute               nodes are identified by absolute path\n"
 "  --gnid-canon                  nodes are identified by canonical path\n"
-#if DEBUG
+#if DEVEL
 "\n"
 "  --logtrace-no       (default) do not include file/function/line in log messages\n"
 "  --logtrace                    include file/function/line in log messages\n"
@@ -173,11 +171,6 @@ if(help)
 "  --cycles-warn       (default) warn when a cycle is detected (once per unique cycle)\n"
 "  --cycles-fail                 fail when a cycle is detected\n"
 "  --cycles-deal                 deal with cycles (by terminating the traversal)\n"
-#if SANITY
-"\n"
-" liblistwise sanity checks\n"
-"  --sanity                      enable sanity checks for all liblistwise invocations (slow)\n"
-#endif
 	);
 }
 
@@ -355,20 +348,13 @@ int args_parse(int argc, char** argv)
 				, { "gnid-absolute"								, no_argument	, &g_args.mode_gnid		, MODE_ABSOLUTE }
 				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid		, MODE_CANONICAL }
 
-#if DEBUG
+#if DEVEL
 				, { "backtrace-pithy"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
 				, { "backtrace-full"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
 				, { "logtrace-no"									, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
 				, { "logtrace"										, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
-#endif
-
-#if DEVEL
 				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
 				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
-#endif
-
-#if SANITY
-				, { "sanity"											, no_argument	, &g_args.mode_sanity	, MODE_SANITY_DISABLE }
 #endif
 
 /* program switches */
@@ -446,15 +432,10 @@ int args_parse(int argc, char** argv)
 	g_args.mode_gnid				= DEFAULT_MODE_GNID;
 	g_args.mode_cycles			= DEFAULT_MODE_CYCLES;
 	g_args.mode_paths				= DEFAULT_MODE_PATHS;
-#if DEBUG
+#if DEVEL
 	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
 	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
-#endif
-#if DEVEL
 	g_args.mode_bslic				= DEFAULT_MODE_BSLIC;
-#endif
-#if SANITY
-	g_args.mode_sanity			= DEFAULT_MODE_SANITY;
 #endif
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create_init, &fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
@@ -672,15 +653,10 @@ int args_parse(int argc, char** argv)
 			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
 	}
 
-#if DEBUG
+#if DEVEL
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace          =%s", g_args.mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_logtrace));
-#endif
-#if DEVEL
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
-#endif
-#if SANITY
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-sanity            =%s", g_args.mode_bslic == DEFAULT_MODE_SANITY ? " " : "*", ' ', MODE_STR(g_args.mode_sanity));
 #endif
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args.mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args.mode_paths));

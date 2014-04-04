@@ -78,13 +78,11 @@ static int exec_generator(
 	(*lx)->win.active_era++;
 	(*lx)->win.staged_era++;
 
-#if DEBUG
 	if(lw_would_exec())
 	{
 		fatal(generator_canon_pswrite, g, &ps);
 		lw_log_exec(" >>      %.*s", (int)ps->l, ps->s);
 	}
-#endif
 
 #if SANITY
 	if(listwise_sanity)
@@ -119,13 +117,11 @@ static int exec_generator(
 			}
 		}
 
-#if DEBUG
 		if(lw_would_exec())
 		{
 			fatal(lstack_description_pswrite, *lx, &ps);
 			lw_log_exec("%.*s", (int)ps->l, ps->s);
 		}
-#endif
 
 		if(g->ops[x]->op != yop && g->ops[x]->op != wyop && !isor)
 			(*lx)->win.staged_era++;
@@ -133,7 +129,6 @@ static int exec_generator(
 		if(g->ops[x]->op != yop && g->ops[x]->op != syop && !isor)
 			(*lx)->sel.staged_era++;
 
-#if DEBUG
 		if(lw_would_exec())
 		{
 extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps);
@@ -142,7 +137,6 @@ extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring 
 			fatal(operation_canon_pswrite, g->ops[x], 0, &ps);
 			lw_log_exec(" >> [%2d] %.*s", x, (int)ps->l, ps->s);
 		}
-#endif
 
 		if(g->ops[x]->op == yop || g->ops[x]->op == wyop)
 			fatal(lstack_windows_activate, *lx);
@@ -181,10 +175,8 @@ extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring 
 		fatal(lstack_selection_activate, *lx);
 	}
 
-#if DEBUG
 	if(g->opsl && lw_would_exec())
 		fatal(lstack_description_log, *lx, &ps, udata);
-#endif
 
 	(*lx)->win.active_era++;	// age active windows
 
@@ -212,7 +204,6 @@ int API listwise_exec_generator(
 	xproxy(exec_generator, g, init, initls, initl, lx, 0);
 }
 
-#if DEBUG || DEVEL || SANITY
 int API listwise_exec_generator2(
 	  generator * const restrict g
 	, char ** const restrict init
@@ -224,7 +215,6 @@ int API listwise_exec_generator2(
 {
 	xproxy(exec_generator, g, init, initls, initl, lx, &udata);
 }
-#endif
 
 int API listwise_exec(
     char * const restrict s

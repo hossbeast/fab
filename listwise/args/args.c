@@ -103,9 +103,6 @@ if(help)
 "\n"
 "  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
 "  --backtrace-full              produce a complete description of the callstack upon failure\n"
-"\n"
-" liblistwise sanity checks\n"
-"  --sanity                      enable liblistwise sanity checks (slow)\n"
 #endif
 	);
 }
@@ -362,9 +359,12 @@ int parse_args(pstring ** remnant)
 		else if(x == '?')
 		{
 			// unrecognized argv element
-			if(*remnant)
-				fatal(pscats, remnant, " ");
-			fatal(pscatf, remnant, "-%c", optopt);
+			if(optopt)
+			{
+				if(*remnant)
+					fatal(pscats, remnant, " ");
+				fatal(pscatf, remnant, "-%c", optopt);
+			}
 		}
 		else if(strcmp(optarg, "-") == 0)
 		{

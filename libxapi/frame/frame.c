@@ -29,7 +29,7 @@ __thread struct callstack callstack;
 
 #define restrict __restrict
 
-#if DEBUG
+#if DEVEL
 /*
 ** set to the callstack for the executing thread on every api call
 ** makes it easy to access the callstack from gdb
@@ -108,7 +108,7 @@ int API xapi_frame_enter(void * calling_frame)
 int API xapi_frame_enter()
 #endif
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 
@@ -225,7 +225,7 @@ int API xapi_frame_depth()
 
 int API xapi_frame_leave2(const etable ** etab, int * code)
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 //printf("LEAVE :: [x=%2d][l=%2d] => ", callstack.x, callstack.l);
@@ -271,7 +271,7 @@ int API xapi_frame_leave2(const etable ** etab, int * code)
 
 int API xapi_frame_leave()
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 	
@@ -287,7 +287,7 @@ int API xapi_frame_leave()
 
 void API xapi_frame_finalize()
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 
@@ -302,7 +302,7 @@ void API xapi_frame_finalize()
 
 int API xapi_frame_finalized()
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 
@@ -314,7 +314,7 @@ int API xapi_frame_finalized()
 
 int API xapi_unwinding()
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 
@@ -328,7 +328,7 @@ int API xapi_frame_set(const etable * const etab, const int16_t code, const char
 
 int API xapi_frame_set_messagew(const etable * const etab, const int16_t code, const char * const msg, int msgl, const char * const file, const int line, const char * const func)
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 
@@ -382,7 +382,7 @@ int API xapi_frame_set_messagew(const etable * const etab, const int16_t code, c
 
 int API xapi_frame_set_messagef(const etable * const etab, const int16_t code, const char * const fmt, const char * const file, const int line, const char * const func, ...)
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 
@@ -440,7 +440,7 @@ int API xapi_frame_set_messagef(const etable * const etab, const int16_t code, c
 
 void API xapi_frame_infow(const char * const k, int kl, const char * const v, int vl)
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 
@@ -549,7 +549,7 @@ void API xapi_frame_infow(const char * const k, int kl, const char * const v, in
 
 void API xapi_frame_infof(const char * const k, int kl, const char * const vfmt, ...)
 {
-#if DEBUG
+#if DEVEL
 	CS = &callstack;
 #endif
 
