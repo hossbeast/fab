@@ -1567,7 +1567,7 @@ fml_2_48()
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/log -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/args/args.c -o listwise/args/args.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/args/args.c -o listwise/args/args.o
 
 
   X=$?
@@ -1582,7 +1582,7 @@ fml_2_49()
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/log -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/error/LISTWISE.errtab.c -o listwise/error/LISTWISE.errtab.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/error/LISTWISE.errtab.c -o listwise/error/LISTWISE.errtab.o
 
 
   X=$?
@@ -1590,14 +1590,14 @@ fml_2_49()
   exit $X
 }
 
-NAMES[75]='listwise/log/log.o'
+NAMES[75]='listwise/logs/logs.o'
 fml_2_50()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/log -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/log/log.c -o listwise/log/log.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/logs/logs.c -o listwise/logs/logs.o
 
 
   X=$?
@@ -1612,7 +1612,7 @@ fml_2_51()
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/log -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/main.c -o listwise/main.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/unitstring -Ilistwise/../common/coll -Ilistwise/../common/wstdlib -Ilistwise/../common/parseint -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/canon -Ilistwise/../common/yyutil -Ilistwise/../common/cksum -Ilistwise/../common/strutil -Ilistwise/../common/color -Ilistwise/../common/wstring -Ilistwise/../common -DXAPI_UNWIND -O3 -fno-builtin-log -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise -DFABVERSIONS="v0.5.0.0" -DFABVERSIONN="500" -c listwise/main.c -o listwise/main.o
 
 
   X=$?
@@ -3852,7 +3852,7 @@ fml_7_48()
   exec 2>&110
 
   
-	gcc -DFABVERSIONN="500" -DFABVERSIONS="v0.5.0.0" -DXAPI_UNWIND -D_GNU_SOURCE -Ilistwise/../common -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../listwise -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/log -Ilistwise/../common/canon -Ilistwise/../common/cksum -Ilistwise/../common/coll -Ilistwise/../common/color -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/parseint -Ilistwise/../common/strutil -Ilistwise/../common/unitstring -Ilistwise/../common/wstdlib -Ilistwise/../common/wstring -Ilistwise/../common/yyutil -O3 -Wall -Werror -fno-builtin-log -fplan9-extensions -m64 -o listwise/listwise listwise/error/LISTWISE.errtab.o common/wstdlib/wstdlib.o common/strutil/strutil.o common/logger/logger.o listwise/log/log.o listwise/args/args.o listwise/main.o libpstring/../common/../libpstring/libpstring.so liblistwise/../common/../liblistwise/liblistwise.so libxapi/../common/../libxapi/libxapi.so libxlinux/../common/../libxlinux/libxlinux.so
+	gcc -DFABVERSIONN="500" -DFABVERSIONS="v0.5.0.0" -DXAPI_UNWIND -D_GNU_SOURCE -Ilistwise/../common -Ilistwise/../common/../liblistwise -Ilistwise/../common/../libpstring -Ilistwise/../common/../libxapi -Ilistwise/../common/../libxlinux -Ilistwise/../common/../listwise -Ilistwise/../common/../listwise/args -Ilistwise/../common/../listwise/error -Ilistwise/../common/../listwise/logs -Ilistwise/../common/canon -Ilistwise/../common/cksum -Ilistwise/../common/coll -Ilistwise/../common/color -Ilistwise/../common/logger -Ilistwise/../common/map -Ilistwise/../common/parseint -Ilistwise/../common/strutil -Ilistwise/../common/unitstring -Ilistwise/../common/wstdlib -Ilistwise/../common/wstring -Ilistwise/../common/yyutil -O3 -Wall -Werror -fno-builtin-log -fplan9-extensions -m64 -o listwise/listwise listwise/error/LISTWISE.errtab.o common/wstdlib/wstdlib.o common/strutil/strutil.o common/logger/logger.o listwise/logs/logs.o listwise/args/args.o listwise/main.o libpstring/../common/../libpstring/libpstring.so liblistwise/../common/../liblistwise/liblistwise.so libxapi/../common/../libxapi/libxapi.so libxlinux/../common/../libxlinux/libxlinux.so
 
 
   X=$?
