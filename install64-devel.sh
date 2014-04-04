@@ -54,7 +54,7 @@ fml_1_0()
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
   [[ $incdir ]] || local incdir='/usr/include'
-  [[ $lwopdir ]] || local lwopdir='/home/todd/fab/liblistwise/op'
+  [[ $lwopdir ]] || local lwopdir='liblistwise/../common/../liblistwise/op'
   
 	install -d																				$destdir/$libdir
 	install liblistwise/../common/../liblistwise/liblistwise.so													$destdir/$libdir/liblistwise.so

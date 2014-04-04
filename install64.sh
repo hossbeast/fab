@@ -99,18 +99,18 @@ fml_1_1()
 	install libxlinux/../common/../libxlinux/xlinux.h										$destdir/$incdir/xlinux.h
 
 	install -d																					$destdir/$incdir/xlinux
-	install libxlinux/../common/../libxlinux/xlinux/wstdlib/wstdlib.h		$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xdirent/xdirent.h		$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xdlfcn/xdlfcn.h			$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xfcntl/xfcntl.h			$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xftw/xftw.h					$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xgrp/xgrp.h					$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xmman/xmman.h				$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xpwd/xpwd.h					$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xstat/xstat.h				$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xstdlib/xstdlib.h		$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xtime/xtime.h				$destdir/$incdir/xlinux/
-	install libxlinux/../common/../libxlinux/xlinux/xunistd/xunistd.h		$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xdirent.h						$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xdlfcn.h							$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xfcntl.h							$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xftw.h								$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xgrp.h								$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xmman.h							$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xpwd.h								$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xstat.h							$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xstdlib.h						$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xstring.h						$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xtime.h							$destdir/$incdir/xlinux/
+	install libxlinux/../common/../libxlinux/xlinux/xunistd.h						$destdir/$incdir/xlinux/
 
 
   X=$?

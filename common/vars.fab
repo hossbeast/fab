@@ -62,16 +62,16 @@ $fabcachedir						= [ /var/cache/fab ]							# fab cache
 $fabtmpdir							= [ /var/tmp/fab ]								# fab tmp
 $fabipcdir							= [ /var/run/fab ]								# fab shm/ipc files
 $lwopdir								= [
-	[ $devel ~ [ j/s/0/< $dlibdir/listwise >/y ~ j ] ]				# lw operators - regular build
-	[ $devel ~ [ s/1/< [ $dliblistwise ~ rp ] /op>/y ~ j ] ]	# lw operators - devel build
+	[ $devel ~ [ j/s/0/< $dlibdir/listwise >/y ~ j ] ]			# lw operators - regular build
+	[ $devel ~ [ s/1/< [ $dliblistwise  ] /op>/y ~ j ] ]		# lw operators - devel build
 ]
 $fablwopdir							= [
 	[ $devel ~ [ j/s/0/< $dlibdir/fab/lib >/y ~ j ] ]				# fab-specific lw operators - regular build
-	[ $devel ~ [ s/1/< $dfab/fablw/op>/y ~ j ] ]							# fab-specific lw operators - devel build
+	[ $devel ~ [ s/1/< $dfab/fablw/op>/y ~ j ] ]						# fab-specific lw operators - devel build
 ]
 $fabinvokedir						= [
-	[ $devel ~ [ j/s/0/< $dlibdir/fab/listwise >/y ~ j ] ]		# fab-provided invocations - regular build
-	[ $devel ~ [ s/1/< $dfab/fablib >/y ~ j ] ]								# fab-provided invocations - devel build
+	[ $devel ~ [ j/s/0/< $dlibdir/fab/listwise >/y ~ j ] ]	# fab-provided invocations - regular build
+	[ $devel ~ [ s/1/< $dfab/fablib >/y ~ j ] ]							# fab-provided invocations - devel build
 ]
 
 # compilers and their flags
@@ -95,10 +95,10 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 ]
 
 $lflags			= [
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxapi ~ rp ] >/y ~ j ] ]
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxlinux ~ rp ] >/y ~ j ] ]
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibpstring ~ rp ] >/y ~ j ] ]
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ~ rp ] >/y ~ j ] ]
+	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxapi ] >/y ~ j ] ]
+	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxlinux ] >/y ~ j ] ]
+	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibpstring ] >/y ~ j ] ]
+	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ] >/y ~ j ] ]
 ]
 
 # default library names
