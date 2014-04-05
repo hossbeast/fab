@@ -63,12 +63,14 @@ static void usage(int valid, int version, int help, int logopts, int operators, 
 );
 if(version)
 {
-	printf(" fab-"
+	printf(" fab-" XQUOTE(FABVERSIONS)
 #if DEVEL
-	XQUOTE(FABVERSIONS) "+DEVEL"
-#else
-	XQUOTE(FABVERSIONS)
+	"+DEVEL"
 #endif
+#if BETA
+	"+BETA"
+#endif
+		" @ " XQUOTE(BUILDSTAMP)
 		"\n"
 	);
 }

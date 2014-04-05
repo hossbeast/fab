@@ -94,7 +94,8 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 	[ $beta $devel ~ s/1/-O0/y ]				# compiler optimizations
 	[ $beta $devel ~ j/s/00/-O3/y ]
 	[ $beta $devel ~ s/1/-g/y ]					# debug symbol generation
-	[ $beta $devel ~ s/1/-DDEVEL/y ]
+	[ $beta        ~ s/1/-DBETA/y ]
+	[       $devel ~ s/1/-DDEVEL/y ]
 	[ $beta $devel ~ s/1/-DXAPI_RUNTIME_CHECKS/y ]
 	[ $beta $devel ~ s/1/-DSANITY/y ]
 ]
