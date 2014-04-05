@@ -170,7 +170,13 @@ opsep_epsilon
 	;
 
 operation
-	: operation argsep args_delimited %prec STR
+	: operation argsep args_delimited argsep %prec STR
+	{
+		$$ = $1;
+		$$->args = $3;
+		$$->argsl = parm->argsl;
+	}
+	| operation argsep args_delimited %prec STR
 	{
 		$$ = $1;
 		$$->args = $3;

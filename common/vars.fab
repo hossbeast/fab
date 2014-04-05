@@ -19,16 +19,8 @@ $VERSIONL				= [ 0 5 0 0 ]											# version list - major, minor, revision, bu
 $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
 $VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
 
-# source directories
-$dlibxapi				= [ $dcommon/../libxapi ~ j ]
-$dlibxlinux			= [ $dcommon/../libxlinux ~ j ]
-$dliblistwise		= [ $dcommon/../liblistwise ~ j ]
-$dlibpstring		= [ $dcommon/../libpstring ~ j ]
-$dlistwise			= [ $dcommon/../listwise ~ j ]
-$dfab						= [ $dcommon/../fab ~ j ]
-
 #
-# under devel :
+# beta :
 #  - disable compiler optimizations
 #  - enable compiler debug symbol generation
 #  - include additional logging categories and cmdline options related to logging
@@ -37,13 +29,26 @@ $dfab						= [ $dcommon/../fab ~ j ]
 #   - the *TOKEN and *STATE logging catories
 #   - SANITY logging categories and related options
 #  - disable ug+s check (to facilitate execution under valgrind)
+#
+$beta						= [ 0 ]
+
+#
+# devel : (beta, but nonportable)
 #  - enable compilation options to use files from the source directories, including :
 #   - listwise operators
 #   - fab-listwise operators
 #   - fab-provided invocations
-#   - libraries, via rpath
+#   - all libraries, via rpath
 #
 $devel					= [ 0 ]
+
+# source directories
+$dlibxapi				= [ $dcommon/../libxapi ~ j ]
+$dlibxlinux			= [ $dcommon/../libxlinux ~ j ]
+$dliblistwise		= [ $dcommon/../liblistwise ~ j ]
+$dlibpstring		= [ $dcommon/../libpstring ~ j ]
+$dlistwise			= [ $dcommon/../listwise ~ j ]
+$dfab						= [ $dcommon/../fab ~ j ]
 
 # install directories (these are suitable for ubuntu-64)
 $destdir				= [ ]															# root install directory - does not affect runtime directories
@@ -57,21 +62,21 @@ $libdir					= [ /usr/lib/x86_64-linux-gnu ]		# dynamically linked libraries
 #
 
 # install-time values
-$dlibdir								= [ /usr/lib ]										# dloaded libraries
-$fabcachedir						= [ /var/cache/fab ]							# fab cache
-$fabtmpdir							= [ /var/tmp/fab ]								# fab tmp
-$fabipcdir							= [ /var/run/fab ]								# fab shm/ipc files
+$dlibdir								= [ /usr/lib ]						# dloaded libraries
+$fabcachedir						= [ /var/cache/fab ]			# fab cache
+$fabtmpdir							= [ /var/tmp/fab ]				# fab tmp
+$fabipcdir							= [ /var/run/fab ]				# fab shm/ipc files
 $lwopdir								= [
-	[ $devel ~ [ j/s/0/< $dlibdir/listwise >/y ~ j ] ]			# lw operators - regular build
-	[ $devel ~ [ s/1/< [ $dliblistwise  ] /op>/y ~ j ] ]		# lw operators - devel build
+	[ $devel ~ [ j/s/0/< $dlibdir/listwise >/y ~ j ] ]					# lw operators - regular/beta build
+	[ $devel ~ [ s/1/< [ $dliblistwise/op ~ j/rp ] >/y ~ j ] ]	# lw operators - devel build
 ]
 $fablwopdir							= [
-	[ $devel ~ [ j/s/0/< $dlibdir/fab/lib >/y ~ j ] ]				# fab-specific lw operators - regular build
-	[ $devel ~ [ s/1/< $dfab/fablw/op>/y ~ j ] ]						# fab-specific lw operators - devel build
+	[ $devel ~ [ j/s/0/< $dlibdir/fab/lib >/y ~ j ] ]						# fab-specific lw operators - regular/beta build
+	[ $devel ~ [ s/1/< [ $dfab/fablw/op ~ j/rp ] >/y ~ j ] ]		# fab-specific lw operators - devel build
 ]
 $fabinvokedir						= [
-	[ $devel ~ [ j/s/0/< $dlibdir/fab/listwise >/y ~ j ] ]	# fab-provided invocations - regular build
-	[ $devel ~ [ s/1/< $dfab/fablib >/y ~ j ] ]							# fab-provided invocations - devel build
+	[ $devel ~ [ j/s/0/< $dlibdir/fab/listwise >/y ~ j ] ]			# fab-provided invocations - regular/beta build
+	[ $devel ~ [ s/1/< [ $dfab/fablib ~ j/rp ] >/y ~ j ] ]			# fab-provided invocations - devel build
 ]
 
 # compilers and their flags
@@ -86,19 +91,19 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 		# include paths
 	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring [ $dcommon ~ lsr/c/-d ] ~ s/^/-I ]
 	[ -DXAPI_UNWIND ]
-	[ $devel ~ s/1/-O0/y ]				# compiler optimizations
-	[ $devel ~ j/s/0/-O3/y ]
-	[ $devel ~ s/1/-g/y ]					# debug symbol generation
-	[ $devel ~ s/1/-DXAPI_RUNTIME_CHECKS/y ]
-	[ $devel ~ s/1/-DSANITY/y ]
-	[ $devel ~ s/1/-DDEVEL/y ]
+	[ $beta $devel ~ s/1/-O0/y ]				# compiler optimizations
+	[ $beta $devel ~ j/s/00/-O3/y ]
+	[ $beta $devel ~ s/1/-g/y ]					# debug symbol generation
+	[ $beta $devel ~ s/1/-DDEVEL/y ]
+	[ $beta $devel ~ s/1/-DXAPI_RUNTIME_CHECKS/y ]
+	[ $beta $devel ~ s/1/-DSANITY/y ]
 ]
 
 $lflags			= [
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxapi ] >/y ~ j ] ]
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxlinux ] >/y ~ j ] ]
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibpstring ] >/y ~ j ] ]
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ] >/y ~ j ] ]
+	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxapi ~ rp ] >/y ~ j ] ]
+	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxlinux ~ rp ] >/y ~ j ] ]
+	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibpstring ~ rp ] >/y ~ j ] ]
+	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ~ rp ] >/y ~ j ] ]
 ]
 
 # default library names

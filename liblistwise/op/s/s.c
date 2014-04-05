@@ -221,7 +221,8 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 				// end offset of replacement
 				int B = lx->s[0].s[x].l;
 
-				fatal(lstack_window_stage, lx, x, A, B - A);
+				if(B - A)
+					fatal(lstack_window_stage, lx, x, A, B - A);
 
 				loff = (*ovec)[2];
 

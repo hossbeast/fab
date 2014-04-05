@@ -86,7 +86,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 {
 	exec 1>[ $@ ]
 	> sed -e 's/#define \(PCRE_ERROR_[A-Z_]\+\) \+(\([-0-9]\+\)).*/\2\t\1/p; d' <\
-	[ $@ ~ rx/ineed ]
+	/usr/include/pcre.h
 }
 
 ##

@@ -380,7 +380,7 @@ fml_1_17()
   
 	exec 1>liblistwise/error/PCRE.errtab
 sed -e 's/#define \(PCRE_ERROR_[A-Z_]\+\) \+(\([-0-9]\+\)).*/\2\t\1/p; d' <\
-	../../../usr/include/pcre.h
+	/usr/include/pcre.h
 
 
   X=$?
@@ -427,7 +427,7 @@ fml_1_20()
   
 	exec > libxapi/error/SYS.errtab
 
-	cat ../../../usr/include/asm-generic/errno-base.h ../../../usr/include/asm-generic/errno.h | \
+	cat /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h  | \
 sed -e 's/#define\s\+\(E[A-Z]\+\)\s\+\([0-9]\+\)\s\+\/\*\s*\(.*\)\s\+\*\//\2\t\1\t\3/p; d'
 
 

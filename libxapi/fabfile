@@ -48,7 +48,7 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 {
 	exec > [ $@ ]
 
-	cat [ $@ ~ rx/ineed/uu/fi ] | \
+	cat /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h  | \
 	> sed -e 's/#define\s\+\(E[A-Z]\+\)\s\+\([0-9]\+\)\s\+\/\*\s*\(.*\)\s\+\*\//\2\t\1\t\3/p; d'
 }
 
