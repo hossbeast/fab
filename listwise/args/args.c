@@ -66,8 +66,7 @@ if(version)
 	printf(" fab-" XQUOTE(FABVERSIONS)
 #if DEVEL
 	"+DEVEL"
-#endif
-#if BETA
+#elif BETA
 	"+BETA"
 #endif
 		" @ " XQUOTE(BUILDSTAMP)

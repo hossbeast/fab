@@ -45,46 +45,46 @@ operator op_desc[] = {
 	, {}
 };
 
-void swap(lwx* ls, int a, int b)
+void swap(lwx* lx, int a, int b)
 {
-	typeof(ls->s[0].s[0]) t = ls->s[0].s[a];
-	ls->s[0].s[a]						= ls->s[0].s[b];
-	ls->s[0].s[b]						= t;
+	typeof(lx->s[0].s[0]) t = lx->s[0].s[a];
+	lx->s[0].s[a]						= lx->s[0].s[b];
+	lx->s[0].s[b]						= t;
 }
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
-	if(ls->sel.active == 0)
+	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
 	{
 		// all items are selected ; reverse the entire list
 		int x;
-		for(x = 0; x < (ls->s[0].l / 2); x++)
-			swap(ls, x, ls->s[0].l - 1 - x);
+		for(x = 0; x < (lx->s[0].l / 2); x++)
+			swap(lx, x, lx->s[0].l - 1 - x);
 	}
-	else if(ls->sel.active->nil)
+	else if(lx->sel.active->nil)
 	{
 		// no items selected ; no-op
 	}
 	else
 	{
-		// subset of items is selected ; reverse those items among themselves
-		int a = 0;
-		while((ls->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
+		// subset of items is selected ; reverse those items amongst themselves
+		int a = 0;	// first selected row
+		while((lx->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
 			a++;
 
-		int b = (ls->sel.active->sl * 8) + 7;
-		while((b/8) >= ls->sel.active->sl || (ls->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
+		int b = (lx->sel.active->sl * 8) + 7;	// last selected row
+		while((b/8) >= lx->sel.active->sl || (lx->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
 			b--;
 
 		int x;
-		for(x = 0; x < (ls->sel.active->l / 2); x++)
+		for(x = 0; x < (lx->sel.active->l / 2); x++)
 		{
-			swap(ls, a++, b--);
+			swap(lx, a++, b--);
 
-			while((ls->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
+			while((lx->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
 				a++;
 
-			while((ls->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
+			while((lx->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
 				b--;
 		}
 	}
