@@ -45,13 +45,6 @@ operator op_desc[] = {
 	, {}
 };
 
-void swap(lwx* lx, int a, int b)
-{
-	typeof(lx->s[0].s[0]) t = lx->s[0].s[a];
-	lx->s[0].s[a]						= lx->s[0].s[b];
-	lx->s[0].s[b]						= t;
-}
-
 int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
 	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
@@ -59,7 +52,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		// all items are selected ; reverse the entire list
 		int x;
 		for(x = 0; x < (lx->s[0].l / 2); x++)
-			swap(lx, x, lx->s[0].l - 1 - x);
+			fatal(lstack_swaptop, lx, x, lx->s[0].l - 1 - x);
 	}
 	else if(lx->sel.active->nil)
 	{
@@ -79,7 +72,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		int x;
 		for(x = 0; x < (lx->sel.active->l / 2); x++)
 		{
-			swap(lx, a++, b--);
+			fatal(lstack_swaptop, lx, a++, b--);
 
 			while((lx->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
 				a++;

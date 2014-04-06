@@ -40,6 +40,11 @@ OPERATION
 	2. if regex matches, apply replacement
 	3. if the y modifier is present, change the selection to be those items which matched
 
+REMARKS
+	if windows exist on a row, the substitution takes place only on the windowed section, and the
+	entire row (not just the windowed section) is replaced with the result of that operation
+	(? could it be otherwise ?)
+
 */
 
 static int op_validate(operation* o);

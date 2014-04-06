@@ -92,10 +92,10 @@ static int allocate(lwx * const restrict lx, int x, int y, int z)
 					for(k = 0; k < lx->s[0].l; k++)
 					{
 						if(lx->win.s[k].active)
-							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_index];
+							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_storage_index];
 
 						if(lx->win.s[k].staged)
-							lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_index];
+							lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_storage_index];
 					}
 				}
 			}
@@ -179,10 +179,10 @@ static int ensure(lwx * const restrict lx, int x, int y, int z)
 					for(k = 0; k < lx->s[0].l; k++)
 					{
 						if(lx->win.s[k].active)
-							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_index];
+							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_storage_index];
 
 						if(lx->win.s[k].staged)
-							lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_index];
+							lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_storage_index];
 					}
 				}
 			}
@@ -737,4 +737,25 @@ int API lstack_getstring(lwx * const restrict lx, int x, int y, char ** const re
 int API lstack_string(lwx * const restrict lx, int x, int y, char ** r)
 {
 	xproxy(lstack_readrow, lx, x, y, r, 0, 0, 1, 1, 1, 0);
+}
+
+int API lstack_swaptop(lwx * const restrict lx, int ay, int by)
+{
+	typeof(lx->s[0].s[0]) Ts = lx->s[0].s[ay];
+	typeof(lx->s[0].t[0]) Tt = lx->s[0].t[ay];
+	typeof(lx->win.s[0])  Tw = lx->win.s[ay];
+
+	lx->s[0].s[ay] = lx->s[0].s[by];
+	lx->s[0].t[ay] = lx->s[0].t[by];
+	lx->win.s[ay]	= lx->win.s[by];
+	lx->win.s[ay].active = &lx->win.s[ay].storage[lx->win.s[ay].active_storage_index];
+	lx->win.s[ay].staged = &lx->win.s[ay].storage[lx->win.s[ay].staged_storage_index];
+
+	lx->s[0].s[by] = Ts;
+	lx->s[0].t[by] = Tt;
+	lx->win.s[by]	= Tw;
+	lx->win.s[by].active = &lx->win.s[by].storage[lx->win.s[by].active_storage_index];
+	lx->win.s[by].staged = &lx->win.s[by].storage[lx->win.s[by].staged_storage_index];
+
+	finally : coda;
 }

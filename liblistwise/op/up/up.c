@@ -64,13 +64,17 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		LSTACK_ITERATE(lx, x, go)
 		if(go)
 		{
+			// swap the row storage
 			typeof(lx->s[0].s[0]) Ts = lx->s[0].s[i];
 			lx->s[0].s[i] = lx->s[0].s[x];
 			lx->s[0].s[x] = Ts;
 
+			// swap the row temp storage
 			typeof(lx->s[0].t[0]) Tt = lx->s[0].t[i];
 			lx->s[0].t[i] = lx->s[0].t[x];
 			lx->s[0].t[x] = Tt;
+
+			// WINDOWS_RESET : not necessary to swap the row window
 
 			i++;
 		}

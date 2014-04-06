@@ -81,6 +81,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode, v
 	// copy of indexes
 	fatal(xmalloc, &memb, num * sizeof(*memb));
 
+	// populate the indexes
 	int i = 0;
 	int x;
 	LSTACK_ITERATE(lx, x, go)
@@ -128,12 +129,13 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode, v
 		finally : coda;
 	}
 
+	// sort mema
 	fatal(xqsort_r, mema, i, sizeof(*mema), compar, 0);
 
 	for(x = 0; x < i; x++)
 	{
-		int a = mema[x];
-		int b = memb[x];
+		int a = mema[x];	// new location
+		int b = memb[x];	// old location
 
 		mema[x] = 0xFFFF;
 
@@ -146,18 +148,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode, v
 					break;
 			}
 
-			// swap
-			typeof(lx->s[0].s[0]) Ts = lx->s[0].s[a];
-			typeof(lx->s[0].t[0]) Tt = lx->s[0].t[a];
-			typeof(lx->win.s[0])  Tw = lx->win.s[a];
-
-			lx->s[0].s[a] = lx->s[0].s[b];
-			lx->s[0].t[a] = lx->s[0].t[b];
-			lx->win.s[a]  = lx->win.s[b];
-
-			lx->s[0].s[b] = Ts;
-			lx->s[0].t[b] = Tt;
-			lx->win.s[b]  = Tw;
+			fatal(lstack_swaptop, lx, a, b);
 
 			if(y < i)
 				mema[y] = a;

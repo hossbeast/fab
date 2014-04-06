@@ -50,14 +50,16 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_A
-		, .desc					= "select leading context"
+		, .desc					= "select trailing context"
+		, .mnemonic			= "after"
 	}
 	, {
 		  .s						= "B"
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_B
-		, .desc					= "select trailing context"
+		, .desc					= "select leading context"
+		, .mnemonic			= "before"
 	}
 	, {
 		  .s						= "C"
@@ -65,6 +67,7 @@ operator op_desc[] = {
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_C
 		, .desc					= "select leading and trailing context"
+		, .mnemonic			= "context"
 	}
 	, {}
 };

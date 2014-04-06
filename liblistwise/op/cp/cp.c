@@ -50,6 +50,7 @@ operator op_desc[] = {
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "duplicate list entries"
+		, .mnemonic			= "copy"
 	}, {}
 };
 

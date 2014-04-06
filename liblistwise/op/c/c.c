@@ -44,7 +44,8 @@ operator op_desc[] = {
 		, .optype				= LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_STACKOP
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "coalesce lists on the stack"
+		, .desc					= "combine lists on the stack"
+		, .mnemonic			= "coalesce"
 	}, {}
 };
 

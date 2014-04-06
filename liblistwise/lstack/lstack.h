@@ -241,6 +241,18 @@ int lstack_delete(lwx * const restrict lx, int x, int y)
 int lstack_displace(lwx * const restrict lx, int x, int y, int l)
 	__attribute__((nonnull));
 
+/// lstack_swaptop
+//
+// SUMMARY
+//  swap two entries in the top list
+//
+// PARAMETERS
+//  ay - list index of entry 1
+//  by - list index of entry 2
+//
+int lstack_swaptop(lwx * const restrict lx, int ay, int by)
+	__attribute__((nonnull));
+
 /// lwx_getflags
 //
 // get application-use flags associated with an lwx

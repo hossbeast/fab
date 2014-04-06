@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,6 +134,7 @@ if(operators)
 " --o2       type 2\n"
 "  ...\n"
 " --od       type d\n"
+" --o                      restrict listing to those operators matching this operator\n"
 "\n"
 "----------------- [ operators ] ---------------------------------------------------------\n"
 "\n"

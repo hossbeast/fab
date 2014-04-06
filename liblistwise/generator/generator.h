@@ -59,18 +59,14 @@ int generator_mkparser(generator_parser ** p);
 //  [name] - also specify a name for this input (that is only used in informational and error messages)
 //
 int generator_parse(generator_parser ** p, char* s, int l, generator** r);
-#if DEVEL
 int generator_parse2(generator_parser ** p, char* s, int l, generator** r, void * udata);
-#endif
 
 /// generator_parse_named
 //
 // see generator_parse
 //
 int generator_parse_named(generator_parser ** p, char* s, int l, char * name, int namel, generator** r);
-#if DEVEL
 int generator_parse_named2(generator_parser ** p, char* s, int l, char * name, int namel, generator** r, void * udata);
-#endif
 
 /// generator_freeparser 
 //

@@ -59,6 +59,7 @@ operator op_desc[] = {
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "split list into a stack of lists"
+		, .mnemonic			= "disjoin"
 	}, {}
 };
 

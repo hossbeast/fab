@@ -35,17 +35,17 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 	if(lx->win.s[y].staged == 0)
 	{
 		lx->win.s[y].staged = &lx->win.s[y].storage[0];
-		lx->win.s[y].staged_index = 0;
+		lx->win.s[y].staged_storage_index = 0;
 
 		if(lx->win.s[y].staged == lx->win.s[y].active)
 		{
 			lx->win.s[y].staged = &lx->win.s[y].storage[1];
-			lx->win.s[y].staged_index = 1;
+			lx->win.s[y].staged_storage_index = 1;
 		}
 		else if(lx->win.s[y].active == 0 && lx->win.s[y].staged->mark)
 		{
 			lx->win.s[y].staged = &lx->win.s[y].storage[1];
-			lx->win.s[y].staged_index = 1;
+			lx->win.s[y].staged_storage_index = 1;
 		}
 
 		lx->win.s[y].staged->mark = 0;
@@ -153,7 +153,7 @@ int API lstack_windows_activate(lwx * const restrict lx)
 		if(lx->win.s[y].staged)
 		{
 			lx->win.s[y].active = lx->win.s[y].staged;
-			lx->win.s[y].active_index = lx->win.s[y].staged_index;
+			lx->win.s[y].active_storage_index = lx->win.s[y].staged_storage_index;
 
 			lx->win.s[y].staged = 0;
 

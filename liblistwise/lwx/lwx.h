@@ -82,10 +82,10 @@ struct lwx_t
 			} storage[2];
 
 			struct window * active;
-			int							active_index;
+			int							active_storage_index;		// index into storage that active points to
 
 			struct window * staged;
-			int							staged_index;
+			int							staged_storage_index;		// index into storage that staged points to
 		} * s;
 
 		int a;		// alloc

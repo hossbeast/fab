@@ -1,2 +1,0 @@
-- relative numbering, absolute numbering (list-index based vs 0 based)
-- each op .so should be able to furnish 1+ operators, for code reuse purposes
