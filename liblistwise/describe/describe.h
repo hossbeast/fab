@@ -20,7 +20,7 @@
 
 #include "pstring.h"
 
-#include "listwise/operator.h"
+#include "listwise/generator.h"
 
 #define restrict __restrict
 
@@ -164,7 +164,7 @@ int lstack_description_pswrite(lwx * const restrict lx, pstring ** const restric
 //  write a multiline description of the specified list-stack to stdout
 //
 // PARAMETERS
-//  lx      - lstack instance
+//  lx   - lstack instance
 //  [ps] - pstring to write to
 //
 int lstack_description_dump(lwx * const restrict, pstring ** restrict ps)

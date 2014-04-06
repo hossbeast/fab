@@ -18,10 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "listwise.h"
 #include "listwise/operator.h"
-#include "listwise/xtra.h"
-#include "listwise/LW.errtab.h"
 
 #include "interpolate.h"
 

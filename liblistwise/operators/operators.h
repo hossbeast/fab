@@ -15,17 +15,28 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_OPS_H
-#define _LISTWISE_OPS_H
+#ifndef _LISTWISE_OPERATORS_H
+#define _LISTWISE_OPERATORS_H
 
-#include "listwise.h"
-#include "listwise/operator.h"
+#define restrict __restrict
+
+struct operator;
+
+/// listwise_register_opdir
+//
+// SUMMARY
+//  register an application-specific directory as containing compiled operator .so's
+//  in addition to the default locations liblistwise loads these from
+//
+int listwise_register_opdir(char * const restrict dir)
+	__attribute__((nonnull));
 
 // available operators - dloaded at init time
-extern operator** 		g_ops;
-extern int						g_ops_l;
+extern struct operator** 		g_ops;
+extern int									g_ops_l;
 
 // lookup an operator by name
-operator*							op_lookup(char* s, int l);
+struct operator*						op_lookup(char* s, int l);
 
+#undef restrict
 #endif

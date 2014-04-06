@@ -29,7 +29,6 @@
 #include <sys/uio.h>
 
 #include "listwise.h"
-#include "listwise/xtra.h"
 #include "listwise/operator.h"
 #include "listwise/ops.h"
 #include "listwise/generator.h"
@@ -37,6 +36,7 @@
 #include "listwise/logging.h"
 #include "listwise/describe.h"
 #include "listwise/lstack.h"
+#include "listwise/exec.h"
 
 #include "xapi.h"
 #include "LISTWISE.errtab.h"

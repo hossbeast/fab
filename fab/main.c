@@ -26,8 +26,8 @@
 
 #include "listwise.h"
 #include "listwise/object.h"
-#include "listwise/xtra.h"
 #include "listwise/lstack.h"
+#include "listwise/operators.h"
 
 #include "xlinux.h"
 

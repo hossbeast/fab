@@ -17,8 +17,9 @@
 
 #include <string.h>
 
-#include "listwise/xtra.h"
+#include "listwise.h"
 #include "listwise/generator.h"
+#include "listwise/lstack.h"
 
 #include "var.h"
 

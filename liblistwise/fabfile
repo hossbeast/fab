@@ -75,7 +75,7 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 # link an operator so - which depends on its own .o
 [ $oplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
 {
-	[ $cc ] [ $cflags ~ uu/fi ] -o [ $@ ]	[ $@ ~ rx/aneedw/xm/<o>/ss/u/fi ] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
+	[ $cc ] [ $cflags ~ uu/fi ] -o [ $@ ] [ $@ ~ rx/ineed ]	[ $@ ~ rx/aneedw/m/liblistwise/d/xm/<o>/ss/u/fi ] [ $liblistwise ] -shared [ "-Wl,-soname," [ $@ ~ rx/bn/fn ] .so ]
 }
 
 # operators also depend on the library for linking
@@ -120,5 +120,4 @@ $oplist	= [ $dliblistwise ~ s/$/\/op/lsr/m/</op\.c>/v/xs/<c>/<so>/y ]
 	install [ $dliblistwise/listwise/operator.h ]			[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise/ops.h ]					[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise/re.h ]						[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/xtra.h ]					[ $destdir/$incdir/listwise ]
 }

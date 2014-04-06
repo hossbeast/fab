@@ -19,10 +19,6 @@
 #include <string.h>
 
 #include "listwise/operator.h"
-#include "listwise/object.h"
-#include "listwise/xtra.h"
-#include "listwise/LW.errtab.h"
-#include "listwise/selection.h"
 
 #include "gn.h"
 #include "gnlw.h"

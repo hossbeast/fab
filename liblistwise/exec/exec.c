@@ -213,7 +213,7 @@ int API listwise_exec_generator2(
 	, void * udata
 )
 {
-	xproxy(exec_generator, g, init, initls, initl, lx, &udata);
+	xproxy(exec_generator, g, init, initls, initl, lx, udata);
 }
 
 int API listwise_exec(

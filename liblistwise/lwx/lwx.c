@@ -18,8 +18,30 @@
 #include "internal.h"
 
 #include "xlinux.h"
+#include "wstdlib.h"
 
 #define restrict __restrict
+
+lwx * APIDATA listwise_identity = 0;
+
+static void __attribute__((constructor)) identity_init()
+{
+	wmalloc(&listwise_identity, sizeof(*listwise_identity));
+	wmalloc(&listwise_identity->s, sizeof(listwise_identity->s[0]) * 1);
+	listwise_identity->l = 1;
+	listwise_identity->a = 1;
+}
+
+void __attribute__((destructor)) identity_teardown()
+{
+	if(listwise_identity)
+		free(listwise_identity->s);
+	free(listwise_identity);
+}
+
+///
+/// API
+///
 
 int API lwx_alloc(lwx ** const lx)
 {

@@ -24,7 +24,7 @@
 #include <unistd.h>
 
 #include "listwise/object.h"
-#include "listwise/xtra.h"
+#include "listwise/lstack.h"
 
 #include "dep.h"
 

@@ -20,20 +20,23 @@
 
 #include <stdint.h>
 
-/* liblistwise API
+/*
+** liblistwise API
 **
 ** core functionality
-**  listwise.h         - listwise evaluation, read lstack contents
-**  listwise/error.h   - listwise error table and error code lookup
+**  listwise.h           - listwise evaluation, read lstack rows
+**  listwise/error.h     - listwise error table and error code lookup
 **
 ** additional functionality
-**  listwise/xtra.h    - register additional operators, tune execution parameters, configure logging, etc
+**  listwise/exec.h      - additional listwise_exec* forms
+**  listwise/lstack.h    - lstack manipulation
+**  listwise/describe.h  - human-readable descriptions of lstacks and generators
+**  listwise/tune.h      - tunable execution parameters
+**  listwise/logging.h   - logging hooks
+**  listwise/operators.h - enumerate and lookup loaded operators, register additional operators
 */
 
-/// listwise execution context
-//
-// an opaque type
-//
+// listwise execution context - an opaque type
 struct lwx_t;
 typedef struct lwx_t lwx;
 
@@ -190,6 +193,13 @@ int lstack_string(lwx * const restrict lx, int x, int y, char ** restrict r)
 //
 int lwx_reset(lwx * const restrict)
   __attribute__((nonnull));
+
+/// listwise_identity 
+//
+// SUMMARY
+//  pointer to singleton liblistwise-managed lwx object with a single 0-element list
+//
+extern lwx * listwise_identity;
 
 #undef restrict
 #endif

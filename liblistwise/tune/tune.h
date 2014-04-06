@@ -15,26 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_CONTROL_H
-#define _LISTWISE_CONTROL_H
+#ifndef _LISTWISE_TUNE_H
+#define _LISTWISE_TUNE_H
 
-#include "control_core.h"
-
-#if UNWIND
-# define UNWIND_ERRORS listwise_errors_unwind
-#else
-# define UNWIND_ERRORS 0
-#endif
-
-#define CODA_BAD_ACTION                             \
-	_coda_r = FAILURE_CODE
-
-#define CODA_GOOD_ACTION                            \
-  _coda_r = 0;                                      \
-
-#define LOG_ERROR(fmt, ...)													\
-	printf(fmt "\n"																		\
-		, ##__VA_ARGS__																	\
-	);																								\
+/// listwise_allocation_seed
+//
+// SUMMARY
+//  initial size for new stack, list, and string allocations
+//
+// DEFAULT
+//  10
+//
+extern int listwise_allocation_seed;
 
 #endif

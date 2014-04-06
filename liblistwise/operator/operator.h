@@ -22,6 +22,11 @@
 #include <stdio.h>
 
 #include "listwise.h"
+#include "listwise/lstack.h"
+#include "listwise/LW.errtab.h"
+#include "listwise/PCRE.errtab.h"
+#include "listwise/selection.h"
+#include "listwise/window.h"
 
 #include <pcre.h>
 
@@ -179,16 +184,6 @@ typedef struct operation
 	arg**							args;		// arguments
 	int								argsl;
 } operation;
-
-/// listwise_allocation_seed
-//
-// SUMMARY
-//  initial size for new stack, list, and string allocations
-//
-// DEFAULT
-//  10
-//
-extern int listwise_allocation_seed;
 
 #undef restrict
 #endif

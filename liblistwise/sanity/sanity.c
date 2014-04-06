@@ -30,6 +30,8 @@
 #define restrict __restrict
 
 #if SANITY
+int API listwise_sanity = 0;
+
 int sanityblock_create(sanityblock ** const sb)
 {
 	fatal(xmalloc, sb, sizeof(**sb));

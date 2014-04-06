@@ -25,8 +25,6 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include <pcre.h>
-
 #include "internal.h"
 
 #include "xlinux.h"
@@ -172,10 +170,11 @@ coda;
 }
 
 //
-// public
+// API
 //
 
-operator* op_lookup(char* s, int l)
+typedef operator * opstar;
+opstar op_lookup(char* s, int l)
 {
 	int op_compare(const void* __attribute__((unused)) K, const operator** B)
 	{
@@ -201,10 +200,6 @@ operator* op_lookup(char* s, int l)
 
 	return 0;
 }
-
-//
-// API
-//
 
 int API listwise_register_opdir(char * dir)
 {
