@@ -22,7 +22,7 @@
 #include "traverse.h"
 
 #include "gn.h"
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "args.h"
 

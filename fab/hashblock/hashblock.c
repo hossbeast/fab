@@ -26,7 +26,7 @@
 
 #include "hashblock.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "identity.h"
 #include "args.h"

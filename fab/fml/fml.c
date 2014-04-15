@@ -33,7 +33,7 @@
 #include "identity.h"
 #include "enclose.h"
 #include "var.h"
-#include "log.h"
+#include "logs.h"
 
 #include "global.h"
 #include "xlinux.h"

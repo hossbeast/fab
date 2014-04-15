@@ -23,7 +23,7 @@
 
 #include "var.h"
 
-#include "log.h"
+#include "logs.h"
 #include "gnlw.h"
 #include "ff.h"
 #include "ffn.h"

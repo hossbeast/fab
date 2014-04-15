@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -29,7 +29,7 @@
 #include "var.h"
 #include "traverse.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "xlinux.h"
 #include "macros.h"

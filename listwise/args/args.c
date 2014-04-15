@@ -305,6 +305,7 @@ int parse_args(pstring ** remnant)
 	{
 		if(x == 0)
 		{
+printf("longopts\n");
 			// longopts
 		}
 		else if(x == 'a')
@@ -363,9 +364,11 @@ int parse_args(pstring ** remnant)
 			// unrecognized argv element
 			if(optopt)
 			{
-				if(*remnant)
-					fatal(pscats, remnant, " ");
-				fatal(pscatf, remnant, "-%c", optopt);
+				failf(LISTWISE_BADARGS, "unknown switch : -%c", optopt);
+			}
+			else
+			{
+				failf(LISTWISE_BADARGS, "unknown argument : %s", g_argv[optind-1]);
 			}
 		}
 		else if(strcmp(optarg, "-") == 0)

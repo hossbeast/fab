@@ -30,7 +30,7 @@
 #include "ff.parse.h"
 #include "ff/ff.tokens.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "xlinux.h"
 #include "macros.h"

@@ -26,7 +26,7 @@
 	#include "ff.parse.h"
 	#include "ffn.h"
 
-	#include "log.h"
+	#include "logs.h"
 	#include "wstdlib.h"
 	#include "wstring.h"
 

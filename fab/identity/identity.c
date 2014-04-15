@@ -26,7 +26,7 @@
 
 #include "args.h"
 #include "params.h"
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "xlinux.h"
 

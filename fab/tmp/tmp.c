@@ -28,7 +28,7 @@
 #include "params.h"
 #include "identity.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "dirutil.h"
 #include "macros.h"

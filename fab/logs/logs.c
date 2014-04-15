@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "log.h"
+#include "logs.h"
 
 // logtag definitions
 struct g_logs_t logs[] = {
@@ -37,18 +37,12 @@ struct g_logs_t logs[] = {
 	, { .v = L_BPDUMP		, .s = "BPDUMP"		, .d = "buildplan - dump the final buildplan" }
 	, { .v = L_BP				, .s = "BP"				, .d = "buildplan" }
 	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	, .d = "formulas - execution results/details" }
-#if DEBUG
-	, { .v = L_FMLTARG	, .s = "FMLTARG"	, .d = "formulas - target resolution/assignment" }
-#endif
 	, { .v = L_FML			, .s = "FML"			, .d = "formulas" }
 	, { .v = L_FAB			, .s = "FAB"			, .d = "fabrication formulas" }
 	, { .v = L_DSCINFO	, .s = "DSCINFO"	, .d = "dependency discovery - flow" }
 	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - execution" }
 	, { .v = L_DSCNEW		, .s = "DSCNEW"		, .d = "dependency discovery - new nodes/edges" }
 	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery" }
-#if DEBUG
-	, { .v = L_DGDEPS		, .s = "DGDEPS"		, .d = "dependency graph - dependencies" }
-#endif
 	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
 	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
 	, { .v = L_VARAUTO	, .s = "VARAUTO"	, .d = "variable definitions - automatic" }
@@ -58,12 +52,10 @@ struct g_logs_t logs[] = {
 	, { .v = L_SELECT		, .s = "SELECT"		, .d = "node selectors" }
 	, { .v = L_LISTS		, .s = "LISTS"		, .d = "node lists" }
 	, { .v = L_INVALID	, .s = "INVALID"	, .d = "node invalidation" }
-#if DEBUG
+#if DEVEL
 	, { .v = L_LWEXEC		, .s = "LWEXEC"		, .d = "liblistwise - execution" }
 	, { .v = L_LWOPINFO	, .s = "LWOPINFO"	, .d = "liblistwise - operator info messages" }
-#endif
 	, { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "liblistwise - generator parsing" }
-#if DEVEL
 	, { .v = L_LWTOKEN	, .s = "LWTOKEN"	, .d = "liblistwise - generator parsing - token stream" }
 	, { .v = L_LWSTATE	, .s = "LWSTATE"	, .d = "liblistwise - generator parsing - lexer states" }
 #endif

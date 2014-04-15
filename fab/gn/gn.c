@@ -31,7 +31,7 @@
 #include "identity.h"
 #include "traverse.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "xlinux.h"
 #include "unitstring.h"

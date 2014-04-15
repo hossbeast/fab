@@ -28,7 +28,7 @@
 
 #include "global.h"
 #include "xlinux.h"
-#include "log.h"
+#include "logs.h"
 
 ///
 /// static

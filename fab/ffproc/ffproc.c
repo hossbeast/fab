@@ -29,7 +29,7 @@
 #include "dep.h"
 #include "args.h"
 #include "params.h"
-#include "log.h"
+#include "logs.h"
 
 #include "global.h"
 #include "path.h"

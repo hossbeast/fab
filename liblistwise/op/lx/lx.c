@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -68,30 +68,14 @@ operator op_desc[] = {
 
 int op_validate(operation* o)
 {
-	if(o->argsl != 1 && o->argsl != 2)
-		failf(LW_ARGSNUM, "expected : 1 or 2, actual : %d", o->argsl);
+	if(o->argsl < 1)
+		failf(LW_ARGSNUM, "expected : N > 0, actual : %d", o->argsl);
 
 	finally : coda;
 }
 
-static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmatch, void** udata)
+static int op_exec(operation* op, lwx* ls, int** ovec, int* ovec_len, int fullmatch, void** udata)
 {
-	char* xs;
-	int xl;
-
-	if(o->args[0]->itype == ITYPE_I64)
-	{
-		fullmatch = o->args[0]->i64;
-
-		xs = o->args[1]->s;
-		xl = o->args[1]->l;
-	}
-	else
-	{
-		xs = o->args[0]->s;
-		xl = o->args[0]->l;
-	}
-
 	int x;
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
@@ -102,46 +86,55 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmat
 
 		if(fullmatch)
 		{
-			if(l > xl)
-			{
-				// find the entire extension, is it exactly equal to <extension>
-				char * o = s + l - 1;
-				while(o != s && o[0] != '/')
-					o--;
+			// find the entire extension
+			char * o = s + l - 1;
+			while(o != s && o[0] != '/')
+				o--;
 
-				while(o != (s + l) && o[0] != '.')
+			while(o != (s + l) && o[0] != '.')
+				o++;
+
+			if(o[0] == '.')
+			{
+				if(o != (s + l))
+				{
 					o++;
 
-				if(o[0] == '.')
-				{
-					if(o != (s + l))
+					int i;
+					for(i = 0; i < op->argsl; i++)
 					{
-						o++;
-						if((l - (o - s)) == xl)
-						{
-							if(memcmp(o, xs, xl) == 0)
-							{
-								fatal(lstack_window_stage, ls, x, o - s, xl);
-								fatal(lstack_selection_stage, ls, x);
-							}
-						}
+						if((l - (o - s)) != op->args[i]->l)
+							continue;
+						if(memcmp(o, op->args[i]->s, op->args[i]->l) == 0)
+							break;
+					}
+
+					if(i < op->argsl)	// match
+					{
+						fatal(lstack_window_stage, ls, x, o - s, op->args[i]->l);
+						fatal(lstack_selection_stage, ls, x);
 					}
 				}
 			}
 		}
 		else
 		{
-			if(l > xl)
+			// does stringvalue terminate with .<extension>
+			int i;
+			for(i = 0; i < op->argsl; i++)
 			{
-				// does stringvalue terminate with .<extension>
-				if(s[l - xl - 1] == '.')
-				{
-					if(memcmp(s + (l - xl), xs, xl) == 0)
-					{
-						fatal(lstack_window_stage, ls, x, l - xl, xl);
-						fatal(lstack_selection_stage, ls, x);
-					}
-				}
+				if((l - op->args[i]->l) < 1)
+					continue;
+				if(s[l - op->args[i]->l - 1] != '.')
+					continue;
+				if(memcmp(s + (l - op->args[i]->l), op->args[i]->s, op->args[i]->l) == 0)
+					break;
+			}
+
+			if(i < op->argsl)
+			{
+				fatal(lstack_window_stage, ls, x, l - op->args[i]->l, op->args[i]->l);
+				fatal(lstack_selection_stage, ls, x);
 			}
 		}
 	}

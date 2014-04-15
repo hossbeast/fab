@@ -52,7 +52,7 @@
 #include "selector.h"
 #include "error.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "macros.h"
 
@@ -131,7 +131,7 @@ int main(int argc, char** argv)
 
 	// parse cmdline arguments
 	//  (args_parse also calls log_init with a default string)
-	fatal(args_parse, argc, argv);
+	fatal(args_parse);
 
 	// register object types with liblistwise
 	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
@@ -460,26 +460,12 @@ finally:
 			tracesz = xapi_trace_full(space, sizeof(space));
 		}
 #endif
-	}
 
-	const etable * etab = 0;
-	int code = 0;
-conclude2(&etab, &code);
-	
-	if(tracesz)
-	{
 		logw(L_RED, space, tracesz);
-
-		if(etab == perrtab_FAB && code == FAB_BADARGS)
-		{
-//			usage(0);
-		}
 	}
 	else
 	{
-		logf(L_INFO, "exiting with status : %d", code);
+		logs(L_INFO, "exiting with status : 0");
 	}
-
-	log_teardown();
-	return code;
+coda;
 }

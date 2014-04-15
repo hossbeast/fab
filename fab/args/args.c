@@ -30,7 +30,7 @@
 
 #include "args.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "xlinux.h"
 #include "unitstring.h"
@@ -61,6 +61,68 @@ struct optypes
 //
 // [[ static ]]
 //
+
+static int selector_parse(char * const s, uint32_t * const lists, uint8_t * const base, int * const mode)
+{
+	if(s)
+	{
+		if(s[0] == '-' || s[0] == '+')
+		{
+			if((s[1] >= 'a' && s[1] <= 'z') || (s[1] >= 'A' && s[1] <= 'Z'))
+			{
+				(*mode) = s[0];
+				(*lists) = 0;
+				(*base) = SELECTOR_BASE_CWD;
+				
+				if(strchr(s, 'd'))
+					(*lists) |= SELECTOR_DISCOVERY;
+				if(strchr(s, 'i'))
+					(*lists) |= SELECTOR_INSPECT;
+				if(strchr(s, 't'))
+					(*lists) |= SELECTOR_FABRICATE;
+				if(strchr(s, 'x'))
+					(*lists) |= SELECTOR_FABRICATEX;
+				if(strchr(s, 'n'))
+					(*lists) |= SELECTOR_FABRICATEN;
+				if(strchr(s, 'b'))
+					(*lists) |= SELECTOR_INVALIDATE;
+				if(strchr(s, 'q'))
+					(*lists) |= SELECTOR_QUERY;
+
+				if(strchr(s, 'C'))
+					(*base) = SELECTOR_BASE_CWD;
+				else if(strchr(s, 'F'))
+					(*base) = SELECTOR_BASE_FABFILE_DIR;
+			}
+			else
+			{
+				failf(FAB_BADARGS, "unknown : %s", s);
+			}
+		}
+		else
+		{
+			if(g_args.selectorsl == g_args.selectorsa)
+			{
+				int newa = g_args.selectorsa ?: 3;
+				newa = newa * 2 + newa / 2;
+				fatal(xrealloc, &g_args.selectors, sizeof(g_args.selectors[0]), newa, g_args.selectorsa);
+				g_args.selectorsa = newa;
+			}
+
+			if((*lists) & SELECTOR_QUERY)
+				g_args.selectors_arequery = 1;
+
+			g_args.selectors[g_args.selectorsl++] = (selector){
+					.mode = (*mode)
+				, .lists = (*lists)
+				, .base = (*base)
+				, .s = strdup(s)
+			};
+		}
+	}
+
+	finally : coda;
+}
 
 static void usage(int valid, int version, int help, int logopts, int operators, struct optypes * optypes, char * fmt, ...)
 {
@@ -197,6 +259,7 @@ if(operators)
 		printf("\n");
 
 	printf(
+"\n"
 "----------------- [ operators ] ------------------------------------------------\n"
 "\n"
 " 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
@@ -285,7 +348,6 @@ if(operators)
 		" C. OPERATION_INPLACE\n"
 		" D. OPERATION_FILESYSTEM\n"
 	);
-	printf("\n");
 }
 
 if(help || logopts || operators)
@@ -293,10 +355,10 @@ if(help || logopts || operators)
 	printf(
 "\n"
 "For more information visit http://fabutil.org\n"
+"\n"
 	);
 }
 
-	printf("\n");
 	exit(!valid);
 }
 
@@ -304,7 +366,7 @@ if(help || logopts || operators)
 // [[ public ]]
 //
 
-int args_parse(int argc, char** argv)
+int args_parse()
 {
 	char space[512];
 
@@ -339,23 +401,23 @@ int args_parse(int argc, char** argv)
 
 
 /* program longopts */
-				, { "cycles-warn"									, no_argument	, &g_args.mode_cycles	, MODE_CYCLES_WARN }
-				, { "cycles-fail"									, no_argument	, &g_args.mode_cycles	, MODE_CYCLES_FAIL }
-				, { "cycles-deal"									, no_argument	, &g_args.mode_cycles	, MODE_CYCLES_DEAL }
-				, { "paths-relative"							, no_argument	, &g_args.mode_paths	, MODE_RELATIVE_FABFILE_DIR }
-				, { "paths-absolute"							, no_argument	, &g_args.mode_paths	, MODE_ABSOLUTE }
-				, { "gnid-relative-cwd"						, no_argument	, &g_args.mode_gnid		, MODE_RELATIVE_CWD }
-				, { "gnid-relative-fabfile-dir"		, no_argument	, &g_args.mode_gnid		, MODE_RELATIVE_FABFILE_DIR }
-				, { "gnid-absolute"								, no_argument	, &g_args.mode_gnid		, MODE_ABSOLUTE }
-				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid		, MODE_CANONICAL }
+				, { "cycles-warn"									, no_argument	, &g_args.mode_cycles		, MODE_CYCLES_WARN }
+				, { "cycles-fail"									, no_argument	, &g_args.mode_cycles		, MODE_CYCLES_FAIL }
+				, { "cycles-deal"									, no_argument	, &g_args.mode_cycles		, MODE_CYCLES_DEAL }
+				, { "paths-relative"							, no_argument	, &g_args.mode_paths		, MODE_RELATIVE_FABFILE_DIR }
+				, { "paths-absolute"							, no_argument	, &g_args.mode_paths		, MODE_ABSOLUTE }
+				, { "gnid-relative-cwd"						, no_argument	, &g_args.mode_gnid			, MODE_RELATIVE_CWD }
+				, { "gnid-relative-fabfile-dir"		, no_argument	, &g_args.mode_gnid			, MODE_RELATIVE_FABFILE_DIR }
+				, { "gnid-absolute"								, no_argument	, &g_args.mode_gnid			, MODE_ABSOLUTE }
+				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid			, MODE_CANONICAL }
 
 #if DEVEL
 				, { "backtrace-pithy"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
 				, { "backtrace-full"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
 				, { "logtrace-no"									, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
 				, { "logtrace"										, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
-				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_STD }
-				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic	, MODE_BSLIC_FAB }
+				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic		, MODE_BSLIC_STD }
+				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic		, MODE_BSLIC_FAB }
 #endif
 
 /* program switches */
@@ -451,88 +513,34 @@ int args_parse(int argc, char** argv)
 	uint8_t selector_base = SELECTOR_BASE_CWD;
 	int selector_mode = '+';
 
+	// initialize logger
+	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, L_INFO);
+	fatal(log_init_and_describe, L_INFO);
+
 	int x;
-	int indexptr = 0;
+
+for(x = 0; x < g_argc; x++)
+	printf("%d '%s'\n", x, g_argv[x]);
+
 	opterr = 0;
-	while(indexptr = 0, (x = getopt_long(argc, argv, switches, longopts, &indexptr)) != -1)
+	while((x = getopt_long(g_argc, g_argv, switches, longopts, 0)) != -1)
 	{
-		if(indexptr)
+/*
+printf("\n");
+printf("x=%d %c\n", x, x);
+printf("optarg=%s\n", optarg);
+printf("optind=%d\n", optind);
+printf("optopt=%c\n", optopt);
+*/
+
+		if(x == 0)
 		{
-			// longopts
-		}
-		else if(x == 1 || x == '?')
-		{
-			char * s = 0;
-			if(x == 1)
-				s = optarg;
-			else if(x == '?')
-				s = argv[optind-1];
-
-			if(s)
-			{
-				if(s[0] == '-' || s[0] == '+')
-				{
-					if((s[1] >= 'a' && s[1] <= 'z') || (s[1] >= 'A' && s[1] <= 'Z'))
-					{
-						selector_mode = s[0];
-						selector_lists = 0;
-						selector_base = SELECTOR_BASE_CWD;
-						
-						if(strchr(s, 'd'))
-							selector_lists |= SELECTOR_DISCOVERY;
-						if(strchr(s, 'i'))
-							selector_lists |= SELECTOR_INSPECT;
-						if(strchr(s, 't'))
-							selector_lists |= SELECTOR_FABRICATE;
-						if(strchr(s, 'x'))
-							selector_lists |= SELECTOR_FABRICATEX;
-						if(strchr(s, 'n'))
-							selector_lists |= SELECTOR_FABRICATEN;
-						if(strchr(s, 'b'))
-							selector_lists |= SELECTOR_INVALIDATE;
-						if(strchr(s, 'q'))
-							selector_lists |= SELECTOR_QUERY;
-
-						if(strchr(s, 'C'))
-							selector_base = SELECTOR_BASE_CWD;
-						else if(strchr(s, 'F'))
-							selector_base = SELECTOR_BASE_FABFILE_DIR;
-					}
-					else
-					{
-						failf(FAB_BADARGS, "unknown : %s", s);
-					}
-				}
-				else
-				{
-					if(g_args.selectorsl == g_args.selectorsa)
-					{
-						int newa = g_args.selectorsa ?: 3;
-						newa = newa * 2 + newa / 2;
-						fatal(xrealloc, &g_args.selectors, sizeof(g_args.selectors[0]), newa, g_args.selectorsa);
-						g_args.selectorsa = newa;
-					}
-
-					if(selector_lists & SELECTOR_QUERY)
-						g_args.selectors_arequery = 1;
-
-					g_args.selectors[g_args.selectorsl++] = (selector){
-						  .mode = selector_mode
-						, .lists = selector_lists
-						, .base = selector_base
-						, .s = strdup(s)
-					};
-				}
-			}
+			// recognized longopts
 		}
 		else if(x == 'f')
 		{
 			path_xfree(&g_params.init_fabfile_path);
 			fatal(path_create_init, &g_params.init_fabfile_path, g_params.cwd, "%s", optarg);
-		}
-		else if(x == 'h')
-		{
-			help = 1;
 		}
 		else if(x == 'j')
 		{
@@ -586,11 +594,43 @@ int args_parse(int argc, char** argv)
 
 			g_args.bakevars[g_args.bakevarsl++] = strdup(optarg);
 		}
+		else if(x == 'h')
+		{
+			help = 1;
+		}
+		else if(x == '?')
+		{
+			if(optopt)
+			{
+				failf(FAB_BADARGS, "unknown switch : -%c", optopt);
+			}
+			else
+			{
+				failf(FAB_BADARGS, "unknown argument : %s", g_argv[optind-1]);
+			}
+		}
 		else
 		{
-			failf(FAB_BADARGS, "unkown : %c", x);
+			fatal(selector_parse, optarg, &selector_lists, &selector_base, &selector_mode);
 		}
 	}
+
+	for(; optind < g_argc; optind++)
+	{
+		// options following --
+		fatal(selector_parse, g_argv[optind], &selector_lists, &selector_base, &selector_mode);
+	}
+
+	// configure logger prefix and trace
+#if !DEVEL
+	uint64_t trace = 0;
+	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
+		log_config(L_TAG, L_LWOPINFO | L_LWTOKEN | L_LWSTATE | L_FFTOKEN | L_FFSTATE);
+	else
+		log_config(L_TAG, 0);
+#else
+	log_config(L_TAG, 0);
+#endif
 
 	if(help || version || logopts || operators)
 	{
@@ -618,10 +658,6 @@ int args_parse(int argc, char** argv)
 			g_args.concurrency = (float)procs * 1.2f;
 		}
 	}
-
-	// initialize logger
-	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, L_INFO);
-	fatal(log_init_and_describe, L_INFO);
 
 	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
@@ -691,6 +727,8 @@ int args_parse(int argc, char** argv)
 		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)            =%s", "*", ' ', selector_string(&g_args.selectors[x], space, sizeof(space)));
 
 	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
+
+exit(0);
 
 finally:
 	path_free(fabpath);

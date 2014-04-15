@@ -32,7 +32,7 @@
 #include "args.h"
 #include "list.h"
 #include "lwutil.h"
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "macros.h"
 #include "map.h"
@@ -89,7 +89,7 @@ int bake_bp(
 		dprintf(fd,
 /* this is for producing the bakescripts distributed with the fab source code itself */
 "\n"
-"# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>\n"
+"# Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>\n"
 "#\n"
 "# This file is part of fab.\n"
 "#\n"

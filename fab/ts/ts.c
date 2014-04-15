@@ -22,7 +22,7 @@
 #include "ts.h"
 #include "fml.h"
 #include "args.h"
-#include "log.h"
+#include "logs.h"
 
 #include "xlinux.h"
 #include "pstring.h"

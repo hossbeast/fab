@@ -25,7 +25,7 @@
 	#include "ff/ff.tab.h"
 	#include "ff/ff.tokens.h"
 
-	#include "log.h"
+	#include "logs.h"
 	#include "macros.h"
 
 	// contains much of the implementation of the scanner

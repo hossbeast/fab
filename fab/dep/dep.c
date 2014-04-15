@@ -33,7 +33,7 @@
 #include "gnlw.h"
 #include "fml.h"
 #include "bp.h"
-#include "log.h"
+#include "logs.h"
 #include "map.h"
 #include "var.h"
 #include "list.h"

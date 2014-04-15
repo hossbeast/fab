@@ -40,7 +40,7 @@
 #include "gn.h"
 #include "enclose.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "xlinux.h"
 #include "macros.h"

@@ -119,3 +119,10 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 	install [ $dfab/fablw/op/fi/fi.so ]							[ $destdir/$fablwopdir ]
 	install [ $dfab/fablw/op/fg/fg.so ]							[ $destdir/$fablwopdir ]
 }
+
+[ @installman ] : [ @installman1 ]
+[ @installman1 ] : [ $dfab/man/fab.1 ~ j ]
+{
+	install -d 																			[ $destdir/$mandir/man1 ]
+	gzip -9c [ $dfab/man/fab.1 ] 									> [ $destdir/$mandir/man1/fab.1.gz ]
+}

@@ -34,7 +34,7 @@
 #include "lwutil.h"
 #include "traverse.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 #include "xlinux.h"
 #include "macros.h"

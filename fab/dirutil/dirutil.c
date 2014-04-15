@@ -23,7 +23,7 @@
 
 #include "dirutil.h"
 
-#include "log.h"
+#include "logs.h"
 #include "global.h"
 
 #include "xlinux.h"
