@@ -87,9 +87,9 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 		intmax_t Aval;
 		intmax_t Bval;
 
-		if(parseint(lstack_getstring(ls, 0, *(int*)A), SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Aval, 0))
+		if(parseint(lstack_getstring(ls, 0, *(int*)A), SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Aval, 0) == 0)
 		{
-			if(parseint(lstack_getstring(ls, 0, *(int*)B), SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Bval, 0))
+			if(parseint(lstack_getstring(ls, 0, *(int*)B), SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Bval, 0) == 0)
 			{
 				return Aval - Bval;
 			}
