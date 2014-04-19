@@ -60,3 +60,16 @@ $listwise				= [ $dlistwise/$name ~ j ]
 	install [ $listwise ]					[ $destdir/$bindir/$name ]
 	ln -vfs [ $name ]							[ $destdir/$bindir/$link ]
 }
+
+[ @installman ] : [ @installman1 ]
+[ @installman1 ] : [ $dlistwise/man/listwise.1 ~ j ]
+{
+	install -d 																					[ $destdir/$mandir/man1 ]
+
+	cat [ $dlistwise/man/listwise.1 ] \
+		| lw "s/---BUILDVERS---/<[ $VERSIONS ]>" \
+		| lw "s/---BUILDDATE---/<[ @^.time ~ datef/%Y-%m-%d ]>" \
+		| gzip -9c  																		> [ $destdir/$mandir/man1/listwise.1.gz ]
+
+	ln -fs listwise.1.gz																[ $destdir/$mandir/man1/lw.1.gz ]
+}

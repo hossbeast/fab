@@ -124,5 +124,9 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 [ @installman1 ] : [ $dfab/man/fab.1 ~ j ]
 {
 	install -d 																			[ $destdir/$mandir/man1 ]
-	gzip -9c [ $dfab/man/fab.1 ] 									> [ $destdir/$mandir/man1/fab.1.gz ]
+
+	cat [ $dfab/man/fab.1 ] \
+		| lw "s/---BUILDVERS---/<[ $VERSIONS ]>" \
+		| lw "s/---BUILDDATE---/<[ @^.time ~ datef/%Y-%m-%d ]>" \
+		| gzip -9c  																		> [ $destdir/$mandir/man1/fab.1.gz ]
 }

@@ -280,7 +280,7 @@ int API xapi_frame_leave()
 	xapi_frame_leave2(&etab, &code);
 
 	if(etab)
-		return (etab->id  << 16) | code;
+		return (etab->id << 16) | code;
 
 	return 0;
 }

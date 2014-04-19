@@ -154,83 +154,48 @@ if(help)
 {
 	printf(
 "\n"
-"usage : fab [[options] [logopts] [selectors]]*\n"
-"  --help|-h   : this message\n"
-"  --version   : version information\n"
-"  --logopts   : logging category listing\n"
-"  --operators : listwise operator listing (including fab-specific)\n"
+"usage : fab [ [ selection modifier ] | [ selector ] | [ option ] | [ logexpr ] | [ varexpr ] ] ...\n"
 "\n"
-"----------- [ selectors ] ----------------------------------------------------------------\n"
-"\n"
-" <node selector> is one of: \n"
-"  1.  text    : relative path match (see selector modifiers)\n"
-"  3. /text    : canonical path match\n"
-"  4. @text    : nofile match\n"
-"  5. [ list ] : list selection, available vars - $! (all nodes)\n"
-"   ex. [ $! ~ fg/p ] - select all PRIMARY nodes\n"
-"   ex. [ $! ~ fg/s ] - select all SECONDARY nodes\n"
+"        fab --help      : this message\n"
+"        fab --version   : version information\n"
+"        fab --logopts   : logging category listing\n"
+"        fab --operators : listwise operator listing (including fab-specific operators)\n"
 "\n"
 "----------- [ options ] ------------------------------------------------------------------\n"
 "\n"
-" selection modifiers (may be clustered)\n"
-"  (+/-)t              (default) add/remove following selection(s) to/from fabricate-list\n"
-"  (+/-)x                        add/remove following selection(s) to/from fabricate-exact-list\n"
-"  (+/-)n                        add/remove following selection(s) to/from fabricate-nofile-list\n"
-"  (+/-)d                        add/remove following selection(s) to/from discovery-list\n"
-"  (+/-)b                        add/remove following selection(s) to/from invalidate-list\n"
-"  (+/-)i                        add/remove following selection(s) to/from inspect-list\n"
-"  (+/-)q                        add/remove following selection(s) to/from query-list\n"
+" selection modifiers may be clustered\n"
+"  +|- t              (default)  apply selections to fabricate-list\n"
+"  (+/-)x                        apply selections to fabricate-exact-list\n"
+"  (+/-)n                        apply selections to fabricate-nofile-list\n"
+"  (+/-)d                        apply selections to discovery-list\n"
+"  (+/-)b                        apply selections to invalidate-list\n"
+"  (+/-)i                        apply selections to inspect-list\n"
+"  (+/-)q                        apply selections to query-list\n"
+"  (+/-)C              (default) resolve selectors against current working directory\n"
+"  (+/-)F                        resolve selectors against init-fabfile-dir\n"
 "\n"
-"       C              (default) following selectors resolve against cwd (current working directory)\n"
-"       F                        following selectors resolve against init-fabfile-dir\n"
-"\n"
-" execution modes\n"
-"  -p                            create buildplan only - do not execute buildplan\n"
-"\n"
-" incremental builds\n"
-"  -B                            invalidate all              equivalent to +b [ $! ]\n"
-"\n"
-" parallel builds\n"
-"  -j -1               (default) concurrency limit set to heuristic based on detected CPUs\n"
-"  -j 0                          concurrency limit is unbounded\n"
-"  -j <number>                   concurrency limit is <number>\n"
-"\n"
-" path generation\n"
-"  --paths-relative    (default) generate paths relative to init-fabfile-dir\n"
-"  --paths-absolute              generate absolute paths\n"
-"\n"
-" bakescript generation\n"
-"  -k </path/to/output>          create bakescript - do not execute buildplan\n"
-"  -K <variable name>            bakedvar (settable at runtime)\n"
-"\n"
+"  -p                            create buildplan, but do not execute it\n"
+"  -B                            invalidate all, equivalent to +b [ $! ]\n"
+"  -j <number>                   concurrency limit (0=unbounded, -1=based on detected CPUs)\n"
+"  -k <path>                     create bakescript from buildplan instead of executing it\n"
+"  -K <varname>                  varname is settable at bakescript execution time\n"
 #if DEVEL
 "  --bslic-standard    (default) bakescripts have the standard license\n"
 "  --bslic-fab                   bakescripts have the fab distribution license\n"
-"\n"
 #endif
-" logging\n"
-"  --gnid-relative-cwd (default) nodes are identified by path relative to cwd (current working directory)\n"
-"  --gnid-relative-fabfile-dir   nodes are identified by path relative to init-fabfile-dir\n"
-"  --gnid-absolute               nodes are identified by absolute path\n"
-"  --gnid-canon                  nodes are identified by canonical path\n"
+"  --gnid-relative-cwd (default) identify nodes in log messages by path relative to current working directory\n"
+"  --gnid-relative-fabfile-dir   identify nodes in log messages by path relative to init-fabfile-dir\n"
+"  --gnid-absolute               identify nodes in log messages by absolute path\n"
+"  --gnid-canon                  identify nodes in log messages by canonical path\n"
 #if DEVEL
-"\n"
 "  --logtrace-no       (default) do not include file/function/line in log messages\n"
 "  --logtrace                    include file/function/line in log messages\n"
-"\n"
 "  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
 "  --backtrace-full              produce a complete description of the callstack upon failure\n"
 #endif
-"\n"
-" fabfile processing\n"
-"  -f <path/to/fabfile>          path to initial fabfile\n"
-"  -I <path/to/directory>        directory for locating invocations\n"
-"  -v $var=[list]                scope-zero variable definition\n"
-"  -v $var+=[list]               scope-zero variable transform-addition\n"
-"  -v $var-=[list]               scope-zero variable transform-subtraction\n"
-"  -v $var~=generator            scope-zero variable transform-listwise\n"
-"\n"
-" handling cycles\n"
+"  -f <path>                     locate the initial fabfile at <path> rather than ./fabfile\n"
+"  -I <path>                     append <path> to the list of directories for invocation resolution\n"
+"  -v <varexpr>                  scope-zero variable definition\n"
 "  --cycles-warn       (default) warn when a cycle is detected (once per unique cycle)\n"
 "  --cycles-fail                 fail when a cycle is detected\n"
 "  --cycles-deal                 deal with cycles (by terminating the traversal)\n"
@@ -428,7 +393,7 @@ int args_parse()
 // e
 /* f */ , { 0	, required_argument	, 0			, 'f' }		// init-fabfile-path
 // g
-/* h */ , { 0	, no_argument				, 0			, 'h' }		// help
+/* h */
 // i - selection(s) apply to inspect-list */
 /* j */ , { 0	, required_argument	, 0			, 'j' }		// concurrency limit
 /* k */	, { 0	, required_argument	, 0			, 'k'	}		// bakescript output path
@@ -481,7 +446,7 @@ int args_parse()
 		"-"
 
 		// no-argument switches
-		"chpB"
+		"cpB"
 
 		// with-argument switches
 		"f:j:k:v:I:K:"
@@ -519,8 +484,10 @@ int args_parse()
 
 	int x;
 
+/*
 for(x = 0; x < g_argc; x++)
 	printf("%d '%s'\n", x, g_argv[x]);
+*/
 
 	opterr = 0;
 	while((x = getopt_long(g_argc, g_argv, switches, longopts, 0)) != -1)
@@ -593,10 +560,6 @@ printf("optopt=%c\n", optopt);
 			}
 
 			g_args.bakevars[g_args.bakevarsl++] = strdup(optarg);
-		}
-		else if(x == 'h')
-		{
-			help = 1;
 		}
 		else if(x == '?')
 		{

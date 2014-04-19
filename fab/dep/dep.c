@@ -182,7 +182,7 @@ static int dep_add_single(
 				first = 0;
 			}
 
-			uint64_t tag = L_DG | L_DGDEPS;
+			uint64_t tag = L_DG;
 			if(ffn->loc.ff->type == FFT_DDISC)
 			{
 				if((newnp && (newa || newb)) || (newrp && newr))
@@ -389,7 +389,7 @@ static int dep_add_multi(
 					first = 0;
 				}
 
-				uint64_t tag = L_DG | L_DGDEPS;
+				uint64_t tag = L_DG;
 				if(ffn->loc.ff->type == FFT_DDISC)
 				{
 					if((newnp && (newa[i] || newb)) || (newrp && newr))

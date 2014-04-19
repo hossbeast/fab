@@ -1,0 +1,173 @@
+'\"
+.\" Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
+.\"
+.\" This file is part of fab.
+.\" 
+.\" fab is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" fab is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH FAB 1 "---BUILDDATE---" "fab----BUILDVERS---" "Fab Manual"
+.
+.SH NAME
+listwise \- list processing utility
+.SH SYNOPSIS
+.B listwise
+.R [
+.RI [ option ]
+.R |
+.RI [ logexpr ]
+.R |
+.RI [ transform-string ]
+.R ] ...
+.PP
+.B listwise
+.B --help
+: options summary
+.br
+.B listwise
+.B --version
+: version information
+.br
+.B listwise
+.B --logopts
+: summary of logging options
+.br
+.B listwise
+.B --operators
+:
+.BR listwise
+operator listing
+.SH DESCRIPTION
+.B listwise
+takes a (possibly empty) input list and a 
+.BR liblistwise (7)
+.I transform-string
+as inputs.
+.PP
+.B listwise
+executes the specified transformation and outputs the resulting list.
+.PP
+By default, the input list is read from stdin, and the 
+.I transform-string
+is the concatenation of all command-line arguments that are not recognized as either \fIoptions\fP or \fIvarexprs\fP.
+.RS
+.SH OPTIONS
+.SS "General"
+.TP
+.BR \-a
+output entire list, not just selected entries
+.TP
+.BR \-k
+output entire stack, not just top list
+.TP
+.BR \-n
+number output rows 0 .. n
+.TP
+.BR \-N
+number output rows with their list index
+.TP
+.BR \-z
+separate output rows with null bytes instead of newlines
+.TP
+\fB\-i\fR \fIitem\fR
+append \fIitem\fP to the initial list
+.TP
+\fB\-i\fR \fIpath\fR
+read initial list items from file \fIpath\fP
+.TP
+\fB\-i\fR \fB-\fR
+read initial list items from stdin
+.TP
+.B \-0
+separate initial list items read from a file by null byte instead of by newline
+.TP
+\fB\-f\fR \fIpath\fR
+read transform-string from \fIpath\fP
+.TP
+\fB\-f\fR \fB-\fR
+.TQ
+\fB-\fP
+read transform-string from stdin
+.
+.SH "LOGGING"
+.SS "Options"
+.TP
+.BR \--backtrace-pithy " (default)"
+produce a summary of the callstack upon failure
+.TP
+.BR \--backtrace-full
+produce a complete description of the callstack upon failure
+.TP
+.BR \--logtrace-no " (default)"
+ omit trace from log messages
+.TP
+.BR \--logtrace
+include file/function/line in log messages
+.SS Logexpr
+Log expressions are used to control which log messages are enabled
+.TP
+ \fB+\fR\fIlogcat
+enable log messages tagged with the category \fIlogcat
+.TP
+ \fB-\fR\fIlogcat
+disable log messages tagged with the category \fIlogcat
+.SS Categories
+.TP
+.BR LOGGER
+logger - operation
+.TP
+.BR LWPARSE
+display the parsed transform
+.TP
+.BR LWEXEC
+step-by-step listwise execution
+.TP
+.BR LWOPINFO
+operator informational messages
+.TP
+.BR LWTOKEN
+transform-string parsing - token stream
+.TP
+.BR LWSTATE
+transform-string parsing - lexer states
+.TP
+.BR LWSANITY
+.BR liblistwise(7)
+santity checks
+.
+.SH EXIT STATUS
+An exit status of 0 means success.
+.PP
+An exit status > 127 means an error was encountered that is not specific to
+.BR listwise .
+.PP
+An exit status < 128 means that one of the following \fBlistwise\fP-specific errors was encountered.
+.TP
+.RB (1) BADFILE
+unable to process input file
+.TP
+.RB (2) BADARGS
+invalid command-line arguments
+.SH AUTHORS
+Todd Freed 
+.MT todd.freed@gmail.com
+.ME
+.SH "SEE ALSO"
+.BR fab(1)
+.BR liblistwise(7)
+.PP
+.URL "http://fabutil.org" "fabutil.org"

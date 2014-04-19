@@ -201,7 +201,7 @@ static int depblock_process(
 
 			if(newr)
 			{
-				logf(L_DG | L_DGDEPS | L_DSC | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
+				logf(L_DG | L_DSC | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
 					, "S"
 					, newa ? "x" : ""
 					, newb ? "x" : ""
