@@ -220,7 +220,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 			if(stmt->scope)
 			{
 				for(i = 1; i < stmt->scope->partsl; i++)
-					fatal(strstack_push, sstk, stmt->scope->parts[i]);
+					fatal(strstack_push, sstk, stmt->scope->parts[i]->text->s, stmt->scope->parts[i]->text->l);
 			}
 
 			// process the referenced fabfile

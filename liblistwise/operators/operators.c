@@ -174,7 +174,7 @@ coda;
 //
 
 typedef operator * opstar;
-opstar op_lookup(char* s, int l)
+opstar API op_lookup(char* s, int l)
 {
 	int op_compare(const void* __attribute__((unused)) K, const operator** B)
 	{

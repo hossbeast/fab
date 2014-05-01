@@ -154,13 +154,22 @@ extern struct g_args_t
 
 /// args_parse
 //
-// parses command-line options, populating g_args.
+// SUMMARY
+//  parses command-line options, populating g_args.
 //
-// Prints the usage statement and terminates the program if options are
-// invalid, for example required options are not present, or invalid
-// parameters are given to an option
+// REMARKS
+//  prints the usage statement and terminates the program if options are
+//  invalid, for example required options are not present, or invalid
+//  parameters are given to an option
 //
 int args_parse();
+
+/// args_summarize
+//
+// SUMMARY
+//  use logger to output a summary of params/args as received
+//
+int args_summarize();
 
 /// args_teardown
 //

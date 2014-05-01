@@ -25,6 +25,8 @@
 #include "listwise.h"
 #include "listwise/generator.h"
 
+#include "pstring.h"
+
 #include "yyutil.h"
 
 #define restrict __restrict
@@ -53,7 +55,7 @@
 	_FFN(FFN_VARLOCK				, 0x09	, x)	\
 	_FFN(FFN_VARLINK				, 0x0a	, x)	\
 	_FFN(FFN_LIST						, 0x0b	, x)	\
-	_FFN(FFN_GENERATOR			, 0x0c	, x)	\
+	_FFN(FFN_TRANSFORM			, 0x0c	, x)	\
 	_FFN(FFN_VARREF					, 0x0d	, x)	\
 	_FFN(FFN_LF							, 0x0e	, x)	\
 	_FFN(FFN_WORD						, 0x0f	, x)	\
@@ -85,37 +87,17 @@ typedef struct ff_node
 	char*				s;						// string value (cumulative)
 	int					l;						// length
 
-	generator * generator;		// FFN_GENERATOR
+	generator * generator;		// FFN_TRANSFORM
 	uint32_t		flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION, FFN_LIST
-
-	/*
-	** stringlists are freed in freenode
-	*/
-	union {
-		struct
-		{
-			char **		stringlists[1];
-			int				stringlistsl[1];
-		};
-
-		struct {													// FFN_NOFILE
-			char ** parts;
-			int			partsl;
-		};
-	};
 
 	/*
 	** strings are freed in freenode
 	*/
 	union {
-		char*	strings[1];
+		pstring * strings[1];
 
-		struct {													// FFN_WORD, FFN_NOFILE, FFN_GENERATOR
-			char*			text;
-		};
-
-		struct {													// FFN_VARREF
-			char*			name;
+		struct {													// FFN_WORD
+			pstring *			text;
 		};
 	};
 
@@ -126,8 +108,12 @@ typedef struct ff_node
 		struct ff_node*			nodes_owned[2];
 
 		struct {													// FFN_LIST, FFN_VARXFM
-			struct ff_node*			generator_node;
-			struct ff_node*			generator_list_node;
+			struct ff_node*			transform_node;
+			struct ff_node*			transform_list_node;
+		};
+
+		struct {													// FFN_VARREF
+			struct ff_node *		name;
 		};
 
 		struct {													// FFN_VARASSIGN, FFN_VARLOCK, FFN_VARLINK, FFN_DESIGNATE
@@ -191,6 +177,11 @@ typedef struct ff_node
 			struct ff_node**	vars;
 			int								varsl;
 		};
+
+		struct {
+			struct ff_node ** parts;		// FFN_NOFILE
+			int								partsl;
+		};
 	};
 
 	/*
@@ -201,7 +192,6 @@ typedef struct ff_node
 	};
 
 	// implementation
-	char*							e;
 	struct ff_node*		chain[1];		// chains for this node
 	struct ff_node*		next;				// next sibling in parents chain
 } ff_node;
@@ -210,12 +200,18 @@ typedef struct ff_node
 /// [[ api ]]
 ///
 
-/// ffn_mknode
+/// (XAPI) ffn_mknode
 //
-// free a ff_node with free semantics
+// SUMMARY
+//  create a new ff_node
 //
-ff_node* ffn_mknode(const void * const restrict loc, size_t locz, struct ff_file * const restrict ff, uint32_t type, ...)
-	__attribute__((nonnull(1, 3)));
+// PARAMETERS
+//  n    - new node returned here
+//  loc  - location
+//  type - node type
+//
+int ffn_mknode(ff_node ** const restrict n, const yyu_location * const restrict loc, uint32_t type, ...)
+	__attribute__((nonnull(1, 2)));
 
 /// ffn_addchain
 //
@@ -228,7 +224,7 @@ ff_node* ffn_addchain(ff_node * restrict a, ff_node * const restrict b)
 //
 // flatten, strmeasure, parse_generators
 //
-int ffn_postprocess(ff_node * const ffn, generator_parser * const gp)
+int ffn_postprocess(ff_node * const ffn, struct ff_file * const ff, generator_parser * const gp)
 	__attribute__((nonnull));
 
 /// ffn_free

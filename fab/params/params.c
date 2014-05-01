@@ -36,7 +36,7 @@ struct g_params_t g_params;
 // [[ public ]]
 //
 
-int params_setup()
+void params_setup()
 {
 	//
 	// parameters
@@ -47,7 +47,16 @@ int params_setup()
 	g_params.cwd = getcwd(0, 0);
 	g_params.cwdl = strlen(g_params.cwd);
 
-	return 0;
+	if((g_params.procs = sysconf(_SC_NPROCESSORS_ONLN)) == -1)
+	{
+		// unable to determine available CPU count
+		g_params.procs = 0;
+	}
+	else if(g_params.procs < 1)
+	{
+		// shenanigans
+		g_params.procs = 0;
+	}
 }
 
 void params_teardown()

@@ -47,24 +47,24 @@ extern struct g_params_t
 	char *							egid_name;
 	int									egid_namel;
 
+	long								procs;											// detected number of processors (0 means unknown)
+
 	path *							init_fabfile_path;					// path to initial fabfile
 } g_params;
 
-/// args_parse
+/// params_parse
 //
-// parses command-line options, populating g_args.
+// parses command-line options, populating g_params.
 //
 // Prints the usage statement and terminates the program if options are
 // invalid, for example required options are not present, or invalid
 // parameters are given to an option
 //
-// returns zero on failure (malloc failure, for example)
-//
-int params_setup();
+void params_setup();
 
-/// args_teardown
+/// params_teardown
 //
-// free g_args
+// free g_params
 //
 void params_teardown();
 

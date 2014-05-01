@@ -25,7 +25,7 @@
 
 #if DEVEL
 # define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_FULL
-# define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_FULL
+# define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
 
 #define MODE_TABLE_DEVEL(x)																																											\
 /* error reporting modes */																																											\
@@ -62,11 +62,11 @@ struct g_args_t
 
 #if DEVEL
 	int			mode_backtrace;		// backtrace reporting mode
-	int			mode_logtrace;		// backtrace reporting mode
+	int			mode_logtrace;		// logtrace mode
 #endif
 } g_args;
 
-int parse_args(pstring ** remnant)
+int args_parse(pstring ** remnant)
 	__attribute__((nonnull));
 
 void args_teardown();

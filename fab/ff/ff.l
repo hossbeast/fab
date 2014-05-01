@@ -102,7 +102,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <multilinecomment>[\n]																	{ LOCRESET; }
 
  /* characters with special meaning in both INITIAL and list */
-<INITIAL,list,multilinecomment>[\n]											{ LOCRESET; }
+<INITIAL,list>[\n]																			{ LOCRESET; }
 <INITIAL,list>[\t ]+																		{ LOCWRITE; }
 <INITIAL,list,command>[[]																{ PUSHSTATE(list); return LEX(yytext[0], 0); }
 <INITIAL,list>["]																				{ PUSHSTATE(quoteword); }
@@ -128,8 +128,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
  /* list-specific */
 <list>[]]																								{ POPSTATE; return LEX(yytext[0], 0); }
-<list>[,]																								{ return LEX(yytext[0], 0); }
-<list>[^ \\#"$@~\x00-\x1F\x7F-\xFF\],]+ 								{ return LEX(WORD, 0); }
+<list>[^ \\#"$@~\x00-\x1F\x7F-\xFF\]]+ 									{ return LEX(WORD, 0); }
 
 <blockcheck>[\n]																				{ LOCRESET; }
 <blockcheck>[\t ]+																			{ LOCWRITE; }
@@ -172,11 +171,11 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													PUSHSTATE(generatorws);
 																													yyless(0);
 																												}
-<generatorws>[^\x00-\x1F\x20\]]+												{ return LEX(GWORD, 0); }
+<generatorws>[^\x00-\x1F\x20\]]+												{ return LEX(WORD, 0); }
 <generatorws>[ \t\n\]]																	{ POPSTATE; yyless(0); }
-<quoteword>\\\\																					{ yytext++; yyleng--; return LEX(QWORD, 1); }
-<quoteword>\\["]																				{ yytext++; yyleng--; return LEX(QWORD, 1); }
-<quoteword>[^\\"\x00-\x1F\x7F-\xFF]+										{ return LEX(QWORD, 0); }
+<quoteword>\\\\																					{ yytext++; yyleng--; return LEX(WORD, 1); }
+<quoteword>\\["]																				{ yytext++; yyleng--; return LEX(WORD, 1); }
+<quoteword>[^\\"\x00-\x1F\x7F-\xFF]+										{ return LEX(WORD, 0); }
 <quoteword>["]																					{ POPSTATE; LOCWRITE; }
 
 <*>[\x00-\x1F\x7F-\xFF]																	{

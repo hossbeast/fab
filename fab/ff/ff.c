@@ -246,7 +246,6 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	}
 
 	pp.scanner = p->p;
-	pp.ff = ff;
 	pp.orig_base = b;
 	pp.orig_len = sz;
 
@@ -267,7 +266,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	{
 		ff->ffn = pp.ffn;
 
-		fatal(ffn_postprocess, ff->ffn, p->gp);
+		fatal(ffn_postprocess, ff->ffn, ff, p->gp);
 
 		if(ff->type == FFT_REGULAR)
 		{
@@ -287,6 +286,10 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 			// stat the file, populate [1] - now ready for hashblock_cmp
 			fatal(hashblock_stat, ff->path->abs, ff->hb, 0, 0);
 			ff->hb->vrshash[1] = FABVERSIONN;
+			ff_dump(ff);
+		}
+		else if(ff->type == FFT_VAREXPR)
+		{
 			ff_dump(ff);
 		}
 
@@ -605,6 +608,5 @@ void ff_dump(ff_file * const ff)
 
 	logf(L_FF | L_FFFILE			, "%20s :", "tree");
 	ffn_dump(ff->ffn);
-
 	logs(L_FF | L_FFFILE, "");
 }

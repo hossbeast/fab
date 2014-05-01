@@ -460,12 +460,9 @@ int var_root(map ** const map)
 	fatal(map_create, map, map_destructor);
 
 	// seed the map identifier mechanism
-	int lvl = 0;
-	int num = 0;
-	int cld = 0;
-	fatal(map_set, *map, MMS("?LVL"), MM(lvl), 0);
-	fatal(map_set, *map, MMS("?NUM"), MM(num), 0);
-	fatal(map_set, *map, MMS("?CLD"), MM(cld), 0);
+	fatal(map_set, *map, MMS("?LVL"), MM((int[]) { 0 }), 0);
+	fatal(map_set, *map, MMS("?NUM"), MM((int[]) { 0 }), 0);
+	fatal(map_set, *map, MMS("?CLD"), MM((int[]) { 0 }), 0);
 
 	finally : coda;
 }

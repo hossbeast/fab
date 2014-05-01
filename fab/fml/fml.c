@@ -55,26 +55,6 @@ union g_fmls_t		g_fmls = { { .size = sizeof(fml) } };
 
 static int dscv_attach(gn * t, fmleval * fmlv)
 {
-/*
-	int x;
-	for(x = 0; x < t->dscvsl; x++)
-	{
-		if(t->dscvs[x]->fml == fmlv->fml)
-		{
-			log(L_WARN | L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s already associated"
-				, ff_idstring(fmlv->fml->ffn->loc.ff)
-				, fmlv->fml->ffn->loc.f_lin + 1
-				, fmlv->fml->ffn->loc.f_col + 1
-				, fmlv->fml->ffn->loc.l_lin + 1
-				, fmlv->fml->ffn->loc.l_col + 1
-				, t->idstring
-			);
-
-			return 1;
-		}
-	}
-*/
-
 	if(t->dscvsl == t->dscvsa)
 	{
 		int ns = t->dscvsa ?: 2;
@@ -131,7 +111,7 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 		{
 			fmlv->target = t;
 
-			logf(L_DSC | L_FML | L_FMLTARG, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s"
+			logf(L_DSC | L_FML, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s"
 				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
 				, fml->ffn->loc.f_col + 1
@@ -148,7 +128,7 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 			fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->productsl);
 			fmlv->products[0] = t;
 
-			logf(L_FAB | L_FML | L_FMLTARG, "reg(%s)[%3d,%3d - %3d,%3d] -> %s"
+			logf(L_FAB | L_FML, "reg(%s)[%3d,%3d - %3d,%3d] -> %s"
 				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1
 				, fml->ffn->loc.f_col + 1
@@ -189,7 +169,7 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 
 		if(fmlv->flags & FFN_FABRICATION)
 		{
-			log_start(L_FAB | L_FML | L_FMLTARG);
+			log_start(L_FAB | L_FML);
 			logf(0, "reg(%s)[%3d,%3d - %3d,%3d] -> { "
 				, ff_idstring(fml->ffn->loc.ff)
 				, fml->ffn->loc.f_lin + 1

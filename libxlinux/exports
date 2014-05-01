@@ -30,6 +30,7 @@ xmalloc;
 xrealloc;
 ifree;
 xqsort_r;
+ixstrncat;
 ixstrcat;
 ixstrcatf;
 ixstrdup;

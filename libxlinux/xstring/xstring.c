@@ -22,6 +22,23 @@
 
 #include "internal.h"
 
+int API ixstrncat(char** s1, const char* s2, int s2len)
+{
+	char * o = *s1;
+	int s1len = 0;
+	if(*s1)
+		s1len = strlen(*s1);
+	s2len = s2len ?: strlen(s2);
+
+	fatal(xmalloc, s1, s1len + s2len + 1);
+	if(o)
+		memcpy(*s1, o, s1len);
+	free(o);
+	memcpy((*s1) + s1len, s2, s2len);
+
+	finally : coda;
+}
+
 int API ixstrcat(char** s1, const char* s2)
 {
 	char* o = *s1;

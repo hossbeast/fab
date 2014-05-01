@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <sys/types.h>
+#include <inttypes.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,26 +42,11 @@
 
 struct g_args_t g_args;
 
-struct optypes
-{
-	int _1;
-	int _2;
-	int _3;
-	int _4;
-	int _5;
-	int _6;
-	int _7;
-	int _8;
-	int _9;
-	int _a;
-	int _b;
-	int _c;
-	int _d;
-};
-
 //
 // [[ static ]]
 //
+
+static path * o_init_fabpath;
 
 static int selector_parse(char * const s, uint32_t * const lists, uint8_t * const base, int * const mode)
 {
@@ -124,7 +110,7 @@ static int selector_parse(char * const s, uint32_t * const lists, uint8_t * cons
 	finally : coda;
 }
 
-static void usage(int valid, int version, int help, int logopts, int operators, struct optypes * optypes, char * fmt, ...)
+static void usage(int valid, int version, int help, int logcats, int operators, uint64_t opmask)
 {
 	printf(
 "fab : parallel and incremental builds, integrated dependency discovery\n"
@@ -142,14 +128,6 @@ if(version)
 	);
 }
 
-if(fmt)
-{
-	va_list va;
-	va_start(va, fmt);
-	vprintf(fmt, va);
-	va_end(va);
-}
-
 if(help)
 {
 	printf(
@@ -158,7 +136,7 @@ if(help)
 "\n"
 "        fab --help      : this message\n"
 "        fab --version   : version information\n"
-"        fab --logopts   : logging category listing\n"
+"        fab --logcats   : logging category listing\n"
 "        fab --operators : listwise operator listing (including fab-specific operators)\n"
 "\n"
 "----------- [ options ] ------------------------------------------------------------------\n"
@@ -202,14 +180,14 @@ if(help)
 	);
 }
 
-if(logopts)
+if(logcats)
 {
 	printf(
 "\n"
-"----------- [ logopts ] ------------------------------------------------------------------\n"
+"----------- [ logexpr ] ------------------------------------------------------------------\n"
 "\n"
-" +<log name> to enable logging category\n"  
-" -<log name> to disable logging category\n"  
+" +<logcat> to enable logging category\n"  
+" -<logcat> to disable logging category\n"  
 "\n"
 );
 
@@ -220,50 +198,31 @@ if(logopts)
 
 if(operators)
 {
-	if(!help)
-		printf("\n");
-
-	printf(
-"\n"
-"----------------- [ operators ] ------------------------------------------------\n"
-"\n"
-" 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
-	);
-
-	uint64_t mask = 0;
-
-	if(optypes && optypes->_1)
-		mask |= 0x1ULL << (0x1 - 1);
-	if(optypes && optypes->_2)
-		mask |= 0x1ULL << (0x2 - 1);
-	if(optypes && optypes->_3)
-		mask |= 0x1ULL << (0x3 - 1);
-	if(optypes && optypes->_4)
-		mask |= 0x1ULL << (0x4 - 1);
-	if(optypes && optypes->_5)
-		mask |= 0x1ULL << (0x5 - 1);
-	if(optypes && optypes->_6)
-		mask |= 0x1ULL << (0x6 - 1);
-	if(optypes && optypes->_7)
-		mask |= 0x1ULL << (0x7 - 1);
-	if(optypes && optypes->_8)
-		mask |= 0x1ULL << (0x8 - 1);
-	if(optypes && optypes->_9)
-		mask |= 0x1ULL << (0x9 - 1);
-	if(optypes && optypes->_a)
-		mask |= 0x1ULL << (0xa - 1);
-	if(optypes && optypes->_b)
-		mask |= 0x1ULL << (0xb - 1);
-	if(optypes && optypes->_c)
-		mask |= 0x1ULL << (0xc - 1);
-	if(optypes && optypes->_d)
-		mask |= 0x1ULL << (0xd - 1);
-
 	int i = 0;
 	int x;
 	for(x = 0; x < g_ops_l; x++)
 	{
-		if((g_ops[x]->optype & mask) == mask)
+		if((g_ops[x]->optype & opmask) == opmask)
+			i++;
+	}
+
+	printf(
+"\n"
+"----------------- [ operators ] ---------------------------------------------------------\n"
+"\n"
+"options\n"
+" --o<N>          0 < N < d      only list operators having property <N>\n"
+" --o <opname>                   only list operators having the properties of operator <opname>\n"
+"\n"
+"%d operators matching 0x%"PRIx64"\n"
+" 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
+		, i
+		, opmask
+	);
+
+	for(x = 0; x < g_ops_l; x++)
+	{
+		if((g_ops[x]->optype & opmask) == opmask)
 		{
 			printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s"
 	/* effectual */
@@ -296,33 +255,31 @@ if(operators)
 		}
 	}
 
-	printf("%d operators\n", i);
-
 	printf(
-		" 1. SELECTION_STAGE\n"
-		" 2. SELECTION_ACTIVATE\n"
-		" 3. SELECTION_RESET\n"
-		" 4. WINDOWS_STAGE\n"
-		" 5. WINDOWS_ACTIVATE\n"
-		" 6. WINDOWS_RESET\n"
-		" 7. ARGS_CANHAVE\n"
-		" 8. EMPTYSTACK_YES\n"
-		" 9. STACKOP\n"
-		" A. MODIFIERS_CANHAVE\n"
-		" B. OPERATION_PUSHBEFORE\n"
-		" C. OPERATION_INPLACE\n"
-		" D. OPERATION_FILESYSTEM\n"
+" 1  2  3  4  5  6  7  8  9  A  B  C  D\n"
+"\n"
+"properties\n"
+" 1  SELECTION_STAGE\n"
+" 2  SELECTION_ACTIVATE\n"
+" 3  SELECTION_RESET\n"
+" 4  WINDOWS_STAGE\n"
+" 5  WINDOWS_ACTIVATE\n"
+" 6  WINDOWS_RESET\n"
+" 7  ARGS_CANHAVE\n"
+" 8  EMPTYSTACK_YES\n"
+" 9  STACKOP\n"
+" A  MODIFIERS_CANHAVE\n"
+" B  OPERATION_PUSHBEFORE\n"
+" C  OPERATION_INPLACE\n"
+" D  OPERATION_FILESYSTEM\n"
 	);
 }
 
-if(help || logopts || operators)
-{
-	printf(
+printf(
 "\n"
 "For more information visit http://fabutil.org\n"
 "\n"
-	);
-}
+);
 
 	exit(!valid);
 }
@@ -333,36 +290,32 @@ if(help || logopts || operators)
 
 int args_parse()
 {
-	char space[512];
-
-	path * fabpath = 0;
-
 	int help = 0;
 	int version = 0;
-	int logopts = 0;
+	int logcats = 0;
 	int operators = 0;
-
-	struct optypes optypes = {};
+	uint64_t opmask = 0;
 
 	struct option longopts[] = {
 /* informational */
 				  { "help"												, no_argument	, &help, 1 }
 				, { "version"											, no_argument	, &version, 1 }
-				, { "logopts"											, no_argument	, &logopts, 1 }
+				, { "logcats"											, no_argument	, &logcats, 1 }
 				, { "operators"										, no_argument	, &operators, 1 }
-				, { "o1"													, no_argument	, &optypes._1, 1 }
-				, { "o2"													, no_argument	, &optypes._2, 1 }
-				, { "o3"													, no_argument	, &optypes._3, 1 }
-				, { "o4"													, no_argument	, &optypes._4, 1 }
-				, { "o5"													, no_argument	, &optypes._5, 1 }
-				, { "o6"													, no_argument	, &optypes._6, 1 }
-				, { "o7"													, no_argument	, &optypes._7, 1 }
-				, { "o8"													, no_argument	, &optypes._8, 1 }
-				, { "o9"													, no_argument	, &optypes._9, 1 }
-				, { "oa"													, no_argument	, &optypes._a, 1 }
-				, { "ob"													, no_argument	, &optypes._b, 1 }
-				, { "oc"													, no_argument	, &optypes._c, 1 }
-				, { "od"													, no_argument	, &optypes._d, 1 }
+				, { "o"														, required_argument	, 0, 0 }
+				, { "o1"													, no_argument	, 0, 0 }
+				, { "o2"													, no_argument	, 0, 0 }
+				, { "o3"													, no_argument	, 0, 0 }
+				, { "o4"													, no_argument	, 0, 0 }
+				, { "o5"													, no_argument	, 0, 0 }
+				, { "o6"													, no_argument	, 0, 0 }
+				, { "o7"													, no_argument	, 0, 0 }
+				, { "o8"													, no_argument	, 0, 0 }
+				, { "o9"													, no_argument	, 0, 0 }
+				, { "oa"													, no_argument	, 0, 0 }
+				, { "ob"													, no_argument	, 0, 0 }
+				, { "oc"													, no_argument	, 0, 0 }
+				, { "od"													, no_argument	, 0, 0 }
 
 
 /* program longopts */
@@ -466,8 +419,8 @@ int args_parse()
 	g_args.mode_bslic				= DEFAULT_MODE_BSLIC;
 #endif
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
-	fatal(path_create_init, &fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
-	fatal(path_copy, &g_params.init_fabfile_path, fabpath);
+	fatal(path_create_init, &o_init_fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
+	fatal(path_copy, &g_params.init_fabfile_path, o_init_fabpath);
 
 	// default invokedirs - head of list
 	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
@@ -478,19 +431,12 @@ int args_parse()
 	uint8_t selector_base = SELECTOR_BASE_CWD;
 	int selector_mode = '+';
 
-	// initialize logger
-	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, L_INFO);
-	fatal(log_init_and_describe, L_INFO);
+	// disable getopt error messages
+	opterr = 0;
 
 	int x;
-
-/*
-for(x = 0; x < g_argc; x++)
-	printf("%d '%s'\n", x, g_argv[x]);
-*/
-
-	opterr = 0;
-	while((x = getopt_long(g_argc, g_argv, switches, longopts, 0)) != -1)
+	int longindex;
+	while((x = getopt_long(g_argc, g_argv, switches, longopts, &longindex)) != -1)
 	{
 /*
 printf("\n");
@@ -502,7 +448,20 @@ printf("optopt=%c\n", optopt);
 
 		if(x == 0)
 		{
-			// recognized longopts
+			if(strcmp(longopts[longindex].name, "o") == 0)
+			{
+				struct operator * op = 0;
+				if((op = op_lookup(optarg, strlen(optarg))))
+					opmask |= op->optype;
+
+				operators = 1;
+			}
+			else if(longopts[longindex].name[0] == 'o' && strlen(longopts[longindex].name) == 2)
+			{
+				int off = atoi(longopts[longindex].name + 1);
+				opmask |= (0x01ULL << (off - 1));
+				operators = 1;
+			}
 		}
 		else if(x == 'f')
 		{
@@ -584,20 +543,9 @@ printf("optopt=%c\n", optopt);
 		fatal(selector_parse, g_argv[optind], &selector_lists, &selector_base, &selector_mode);
 	}
 
-	// configure logger prefix and trace
-#if !DEVEL
-	uint64_t trace = 0;
-	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
-		log_config(L_TAG, L_LWOPINFO | L_LWTOKEN | L_LWSTATE | L_FFTOKEN | L_FFSTATE);
-	else
-		log_config(L_TAG, 0);
-#else
-	log_config(L_TAG, 0);
-#endif
-
-	if(help || version || logopts || operators)
+	if(help || version || logcats || operators)
 	{
-		usage(1, 1, help, logopts, operators, &optypes, 0);
+		usage(1, 1, help, logcats, operators, opmask);
 	}
 
 	// default invokedirs - tail of list
@@ -605,31 +553,35 @@ printf("optopt=%c\n", optopt);
 	fatal(ixstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_params.init_fabfile_path->abs_dir);
 
 	// CPU count heuristic
-	long procs = -1;
 	if(g_args.concurrency == -1)
 	{
-		if((procs = sysconf(_SC_NPROCESSORS_ONLN)) == -1)
+		if(g_params.procs)
 		{
-			// unable to determine available CPU count
-		}
-		else if(procs < 1)
-		{
-			// shenanigans
+			g_args.concurrency = (float)g_params.procs * 1.2f;
 		}
 		else
 		{
-			g_args.concurrency = (float)procs * 1.2f;
+			g_args.concurrency = 8;
 		}
 	}
+
+	finally : coda;
+}
+
+int args_summarize()
+{
+	char space[512];
+	int x;
 
 	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
 	// log execution parameters under PARAMS
-	logf(L_PARAMS	, "%11spid                    =%u"						, ""	, g_params.pid);
 	logf(L_PARAMS	, "%11ssid                    =%u"						, ""	, g_params.sid);
+	logf(L_PARAMS	, "%11spid                    =%u"						, ""	, g_params.pid);
 	logf(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_params.euid_name, g_params.euid, g_params.egid_name, g_params.egid);
 	logf(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_params.ruid_name, g_params.ruid, g_params.rgid_name, g_params.rgid);
 	logf(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_params.cwd);
+	logf(L_PARAMS	, "%11sprocessors             =%ld"						, ""	, g_params.procs);
 	logf(L_PARAMS	, "%11scachedir               =%s"						, ""	, XQUOTE(FABCACHEDIR));
 	logf(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));
 	logf(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));
@@ -637,10 +589,10 @@ printf("optopt=%c\n", optopt);
 	logf(L_PARAMS	, "%11sexpiration-policy      =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->can);
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->abs);
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_cwd);
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_params.init_fabfile_path, fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_fab);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_params.init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->can);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_params.init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->abs);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_params.init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_cwd);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_params.init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_fab);
 	logf(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan             =%s", g_args.mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args.mode_bplan));
 
 	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
@@ -662,14 +614,12 @@ printf("optopt=%c\n", optopt);
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args.mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args.mode_paths));
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycles            =%s", g_args.mode_cycles == DEFAULT_MODE_CYCLES ? " " : "*", ' ', MODE_STR(g_args.mode_cycles));
 
-	if(procs > 0)
-		snprintf(space, sizeof(space)  , "%d (heuristic)", g_args.concurrency);
-	else if(g_args.concurrency == 0)
+	if(g_args.concurrency == 0)
 		snprintf(space, sizeof(space)  , "%s", "unbounded");
 	else
 		snprintf(space, sizeof(space)  , "%d", g_args.concurrency);
 
-	logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", procs > 0 ? " " : "*", 'j', space);
+	logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", g_args.concurrency == (int)((float)g_params.procs * 1.2f) ? " " : "*", 'j', space);
 
 	for(x = 0; x < g_args.invokedirsl; x++)
 	{
@@ -691,11 +641,7 @@ printf("optopt=%c\n", optopt);
 
 	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
-exit(0);
-
-finally:
-	path_free(fabpath);
-coda;
+	finally : coda;
 }
 
 void args_teardown()
@@ -718,4 +664,6 @@ void args_teardown()
 	free(g_args.invokedirs);
 
 	free(g_args.bakescript_path);
+
+	path_free(o_init_fabpath);
 }

@@ -39,55 +39,11 @@
 #include "identity.h"
 #include "dirutil.h"
 
+#define restrict __restrict
+
 //
 // [[ static ]]
 //
-
-static void flatten(ff_node* n)
-{
-	if(n)
-	{
-		n->listl = 0;
-		ff_node* t = n->chain[0];
-		while(t)
-		{
-			flatten(t);
-
-			t = t->next;
-			n->listl++;
-		}
-
-		if(n->listl)
-			n->list = calloc(n->listl, sizeof(n->list[0]));
-
-		n->listl = 0;
-		t = n->chain[0];
-		while(t)
-		{
-			n->list[n->listl++] = t;
-			t = t->next;
-		}
-
-		int x;
-		for(x = 0; x < sizeof(n->nodes_owned) / sizeof(n->nodes_owned[0]); x++)
-			flatten(n->nodes_owned[x]);
-	}
-}
-
-static void strmeasure(ff_node* n)
-{
-	if(n)
-	{
-		n->l = n->e - n->s;
-
-		int x;
-		for(x = 0; x < n->listl; x++)
-			strmeasure(n->list[x]);
-
-		for(x = 0; x < sizeof(n->nodes_owned) / sizeof(n->nodes_owned[0]); x++)
-			strmeasure(n->nodes_owned[x]);
-	}
-}
 
 static int parse_generator(ff_node * n, generator_parser * gp)
 {
@@ -98,23 +54,54 @@ finally :
 coda;
 }
 
-static int parse_generators(ff_node* n, generator_parser * gp)
+static int postprocess(ff_node* n)
 {
 	if(n)
 	{
-		if(n->type == FFN_GENERATOR)
+		// convert chains to lists
+		n->listl = 0;
+		ff_node* t = n->chain[0];
+		while(t)
+		{
+			fatal(postprocess, t);
+
+			t = t->next;
+			n->listl++;
+		}
+
+		if(n->listl)
+			fatal(xmalloc, &n->list, sizeof(*n->list) * n->listl);
+
+		n->listl = 0;
+		t = n->chain[0];
+		while(t)
+		{
+			n->list[n->listl++] = t;
+			t = t->next;
+		}
+
+		// populate location
+		n->loc.ff = ff;
+
+		// calculate string lengths
+		n->l = n->e - n->s;
+
+		// parse generator strings
+		if(n->type == FFN_TRANSFORM)
 			fatal(parse_generator, n, gp);
 
-		int x;
-		for(x = 0; x < n->listl; x++)
+		// create text
+		if(n->type == FFN_NOFILE)
 		{
-			fatal(parse_generators, n->list[x], gp);
+			fatal(psprintw, &(*n)->text, "/..", 3);
+
+			for(x = 0; x < n->listl; x++)
+				fatal(pscatf, &(*n)->text, "/%s", n->list[x]->text->s);
 		}
 
+		int x;
 		for(x = 0; x < sizeof(n->nodes_owned) / sizeof(n->nodes_owned[0]); x++)
-		{
-			fatal(parse_generators, n->nodes_owned[x], gp);
-		}
+			fatal(postprocess, n->nodes_owned[x]);
 	}
 
 	finally : coda;
@@ -122,94 +109,103 @@ static int parse_generators(ff_node* n, generator_parser * gp)
 
 /// [[ api/public ]]
 
-ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const ff, uint32_t type, ...)
+int ffn_mknode(ff_node ** const restrict n, const yyu_location * const restrict loc, uint32_t type, ...)
 {
-	ff_node* n = calloc(1, sizeof(*n));
-	n->type = type;
-	memcpy(&n->loc, loc, locz);
-	n->loc.ff = ff;
+	// allocate new node
+	fatal(xmalloc, n, sizeof(**n));
+	(*n)->type = type;
 
+	// copy location
+	memcpy(&(*n)->loc, loc, sizeof((*n)->loc));
+
+	// set node value to be its source text
+	(*n)->s = (*n)->loc.s;
+	(*n)->l = (*n)->loc.l;
+
+	// pull nodetype-specific params off the stack
 	va_list va;
 	va_start(va, type);
-
-	n->s = va_arg(va, char*);
-	n->e = va_arg(va, char*);
-
 	if(type == FFN_STMTLIST)
 	{
-		n->chain[0]							= va_arg(va, ff_node*);	// statements
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// statements
 	}
-	else if(type == FFN_ONCEBLOCK	)
+	else if(type == FFN_ONCEBLOCK)
 	{
-		n->chain[0]							= va_arg(va, ff_node*);
+		(*n)->chain[0]							= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_DEPENDENCY)
 	{
-		n->needs								= va_arg(va, ff_node*);
-		n->feeds								= va_arg(va, ff_node*);
-		n->flags								= (uint32_t)va_arg(va, int);
+		(*n)->needs									= va_arg(va, ff_node*);
+		(*n)->feeds									= va_arg(va, ff_node*);
+		(*n)->flags									= (uint32_t)va_arg(va, int);
 	}
 	else if(type == FFN_INVOCATION)
 	{
-		n->module								= va_arg(va, ff_node*);
-		n->chain[0]							= va_arg(va, ff_node*);	// designations
-		n->scope								= va_arg(va, ff_node*);
-		n->flags								= (uint32_t)va_arg(va, int);
+		(*n)->module								= va_arg(va, ff_node*);
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// varsettings
+		(*n)->scope									= va_arg(va, ff_node*);
+		(*n)->flags									= (uint32_t)va_arg(va, int);
 	}
-	else if(type == FFN_WORD)
+	else if(type == FFN_VARREF)
 	{
-		n->text 								= va_arg(va, char*);
+		(*n)->name									= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_NOFILE)
 	{
-		n->text									= va_arg(va, char*);
-		n->parts								= va_arg(va, char**);
-		n->partsl								= va_arg(va, int);
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// parts
 	}
 	else if(type == FFN_FORMULA)
 	{
-		n->targets_0						= va_arg(va, ff_node*);
-		n->targets_1						= va_arg(va, ff_node*);
-		n->command							= va_arg(va, ff_node*);
-		n->flags								= (uint32_t)va_arg(va, int);
+		(*n)->targets_0							= va_arg(va, ff_node*);
+		(*n)->targets_1							= va_arg(va, ff_node*);
+		(*n)->command								= va_arg(va, ff_node*);
+		(*n)->flags									= (uint32_t)va_arg(va, int);
 	}
 	else if(type == FFN_VARASSIGN)
 	{
-		n->chain[0]							= va_arg(va, ff_node*);	// vars
-		n->definition						= va_arg(va, ff_node*);
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// vars
+		(*n)->definition						= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_VARXFM_ADD)
 	{
-		n->chain[0]							= va_arg(va, ff_node*);	// vars
-		n->definition						= va_arg(va, ff_node*);
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// vars
+		(*n)->definition						= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_VARXFM_SUB)
 	{
-		n->chain[0]							= va_arg(va, ff_node*);	// vars
-		n->definition						= va_arg(va, ff_node*);
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// vars
+		(*n)->definition						= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_VARXFM_LW)
 	{
-		n->chain[0]							= va_arg(va, ff_node*);	// vars
-		n->generator_node				= va_arg(va, ff_node*);
-		n->generator_list_node	= va_arg(va, ff_node*);
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// vars
+		(*n)->generator_node				= va_arg(va, ff_node*);
+		(*n)->generator_list_node		= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_VARLOCK)
 	{
-		n->chain[0]							= va_arg(va, ff_node*);	// vars
-		n->definition						= va_arg(va, ff_node*);
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// vars
+		(*n)->definition						= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_VARLINK)
 	{
-		n->chain[0]							= va_arg(va, ff_node*);	// vars
-		n->definition						= va_arg(va, ff_node*);
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// vars
+		(*n)->definition						= va_arg(va, ff_node*);
+	}
+	else if(type == FFN_TRANSFORM)
+	{
+		(*n)->definition						= va_arg(va, ff_node*);
 	}
 	else if(type == FFN_LIST)
 	{
-		n->chain[0]							= va_arg(va, ff_node*);	// elements
-		n->generator_node				= va_arg(va, ff_node*);
-		n->generator_list_node	= va_arg(va, ff_node*);
-		n->flags 								= (uint32_t)va_arg(va, int); 
+		(*n)->chain[0]							= va_arg(va, ff_node*);	// elements
+		(*n)->generator_node				= va_arg(va, ff_node*);
+		(*n)->generator_list_node		= va_arg(va, ff_node*);
+		(*n)->flags 								= (uint32_t)va_arg(va, int); 
+	}
+	else if(type == FFN_WORD)
+	{
+		fatal(psprintw, &(*n)->text, (*n)->loc.s, (*n)->loc.e - (*n)->loc.s);
 	}
 	else if(type == FFN_LF)
 	{
@@ -220,9 +216,9 @@ ff_node* ffn_mknode(const void * const loc, size_t locz, struct ff_file * const 
 		fprintf(stderr, "unknown type : %s\n", FFN_STRING(type));
 		exit(0);
 	}
-
 	va_end(va);
-	return n;
+
+	finally : coda;
 }
 
 ff_node* ffn_addchain(ff_node * a, ff_node * const b)
@@ -235,10 +231,12 @@ ff_node* ffn_addchain(ff_node * a, ff_node * const b)
 	return i;
 }
 
-int ffn_postprocess(ff_node * const ffn, generator_parser * const gp)
+int ffn_postprocess(ff_node * const ffn, struct ff_file * const ff, generator_parser * const gp)
 {
-	// convert chains to lists
-	flatten(ffn);
+	xproxy(postprocess, ffn, ff, gp);
+
+	// populate location
+	setff(ffn, ff);
 
 	// calculate string lengths
 	strmeasure(ffn);
@@ -254,15 +252,6 @@ void ffn_free(ff_node * const ffn)
 	if(ffn)
 	{
 		int x;
-		for(x = 0; x < sizeof(ffn->stringlists) / sizeof(ffn->stringlists[0]); x++)
-		{
-			int i;
-			for(i = 0; i < ffn->stringlistsl[x]; i++)
-				free(ffn->stringlists[x][i]);
-
-			free(ffn->stringlists[x]);
-		}
-
 		for(x = 0; x < sizeof(ffn->strings) / sizeof(ffn->strings[0]); x++)
 			free(ffn->strings[x]);
 
@@ -274,7 +263,7 @@ void ffn_free(ff_node * const ffn)
 
 		free(ffn->list);
 
-		if(ffn->type == FFN_GENERATOR)
+		if(ffn->type == FFN_TRANSFORM)
 			generator_free(ffn->generator);
 	}
 
@@ -490,11 +479,11 @@ void ffn_dump(ff_node * const root)
 					);
 				}
 			}
-			else if(ffn->type == FFN_GENERATOR)
+			else if(ffn->type == FFN_TRANSFORM)
 			{
 				logf(L_FF | L_FFTREE, "%*s  %12s : '%s'"
 					, lvl * 2, ""
-					, "generator-string", ffn->text
+					, "transform-string", ffn->text
 				);
 			}
 			else if(ffn->type == FFN_VARREF)

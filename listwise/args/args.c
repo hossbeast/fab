@@ -23,7 +23,7 @@
 
 #include "listwise.h"
 #include "listwise/operator.h"
-#include "listwise/ops.h"
+#include "listwise/operators.h"
 #include "listwise/generator.h"
 
 #include "xapi.h"
@@ -39,24 +39,7 @@
 
 struct g_args_t g_args;
 
-struct optypes
-{
-	int _1;
-	int _2;
-	int _3;
-	int _4;
-	int _5;
-	int _6;
-	int _7;
-	int _8;
-	int _9;
-	int _a;
-	int _b;
-	int _c;
-	int _d;
-};
-
-static void usage(int valid, int version, int help, int logopts, int operators, struct optypes * optypes)
+static void usage(int valid, int version, int help, int logcats, int operators, uint64_t opmask)
 {
 	printf(
 "listwise : list transformation utility\n"
@@ -77,11 +60,12 @@ if(help)
 {
 	printf(
 "\n"
-"usage : lw [[options] [logopts] [transform-string]]*\n"
-" --help|-h   : this message\n"
-" --version   : version information\n"
-" --logopts   : logging category listing\n"
-" --operators : listwise operator listing\n"
+"usage : lw [ [ option ] [ logexpr ] [ transform-string ] ] ...\n"
+"\n"
+"        lw --help|-h   : this message\n"
+"        lw --version   : version information\n"
+"        lw --logcats   : logging category listing\n"
+"        lw --operators : listwise operator listing\n"
 "\n"
 "----------------- [ options ] ------------------------------------------------------------\n"
 "\n"
@@ -98,24 +82,22 @@ if(help)
 "                                <path> of - means read from stdin\n"
 " -                              equal to -f -\n"
 #if DEVEL
-"\n"
 "  --logtrace-no       (default) do not include file/function/line in log messages\n"
 "  --logtrace                    include file/function/line in log messages\n"
-"\n"
 "  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
 "  --backtrace-full              produce a complete description of the callstack upon failure\n"
 #endif
 	);
 }
 
-if(logopts)
+if(logcats)
 {
 	printf(
 "\n"
-"----------------- [ logopts ] ------------------------------------------------------------\n"
+"----------------- [ logexpr  ] -----------------------------------------------------------\n"
 "\n"
-" +<log name> to enable logging category\n"  
-" -<log name> to disable logging category\n"  
+" +<logcat> to enable logging category\n"  
+" -<logcat> to disable logging category\n"  
 "\n"
 );
 
@@ -126,55 +108,31 @@ if(logopts)
 
 if(operators)
 {
-	printf(
-"\n"
-"----------------- [ listing options] ----------------------------------------------------\n"
-"\n"
-" --o1       type 1        restrict listing to those operators of matching type\n"
-" --o2       type 2\n"
-"  ...\n"
-" --od       type d\n"
-" --o                      restrict listing to those operators matching this operator\n"
-"\n"
-"----------------- [ operators ] ---------------------------------------------------------\n"
-"\n"
-" 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
-	);
-
-	uint64_t mask = 0;
-
-	if(optypes && optypes->_1)
-		mask |= 0x1ULL << (0x1 - 1);
-	if(optypes && optypes->_2)
-		mask |= 0x1ULL << (0x2 - 1);
-	if(optypes && optypes->_3)
-		mask |= 0x1ULL << (0x3 - 1);
-	if(optypes && optypes->_4)
-		mask |= 0x1ULL << (0x4 - 1);
-	if(optypes && optypes->_5)
-		mask |= 0x1ULL << (0x5 - 1);
-	if(optypes && optypes->_6)
-		mask |= 0x1ULL << (0x6 - 1);
-	if(optypes && optypes->_7)
-		mask |= 0x1ULL << (0x7 - 1);
-	if(optypes && optypes->_8)
-		mask |= 0x1ULL << (0x8 - 1);
-	if(optypes && optypes->_9)
-		mask |= 0x1ULL << (0x9 - 1);
-	if(optypes && optypes->_a)
-		mask |= 0x1ULL << (0xa - 1);
-	if(optypes && optypes->_b)
-		mask |= 0x1ULL << (0xb - 1);
-	if(optypes && optypes->_c)
-		mask |= 0x1ULL << (0xc - 1);
-	if(optypes && optypes->_d)
-		mask |= 0x1ULL << (0xd - 1);
-
 	int i = 0;
 	int x;
 	for(x = 0; x < g_ops_l; x++)
 	{
-		if((g_ops[x]->optype & mask) == mask)
+		if((g_ops[x]->optype & opmask) == opmask)
+			i++;
+	}
+
+	printf(
+"\n"
+"----------------- [ operators ] ---------------------------------------------------------\n"
+"\n"
+"options\n"
+" --o<N>          0 < N < d      only list operators having property <N>\n"
+" --o <opname>                   only list operators having the properties of operator <opname>\n"
+"\n"
+"%d operators matching 0x%"PRIx64"\n"
+" 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
+		, i
+		, opmask
+	);
+
+	for(x = 0; x < g_ops_l; x++)
+	{
+		if((g_ops[x]->optype & opmask) == opmask)
 		{
 			printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s"
 	/* effectual */
@@ -202,27 +160,26 @@ if(operators)
 				printf(" (%s)", g_ops[x]->mnemonic);
 			}
 			printf("\n");
-
-			i++;
 		}
 	}
 
-	printf("%d operators\n", i);
-
 	printf(
-		" 1. SELECTION_STAGE\n"
-		" 2. SELECTION_ACTIVATE\n"
-		" 3. SELECTION_RESET\n"
-		" 4. WINDOWS_STAGE\n"
-		" 5. WINDOWS_ACTIVATE\n"
-		" 6. WINDOWS_RESET\n"
-		" 7. ARGS_CANHAVE\n"
-		" 8. EMPTYSTACK_YES\n"
-		" 9. STACKOP\n"
-		" A. MODIFIERS_CANHAVE\n"
-		" B. OPERATION_PUSHBEFORE\n"
-		" C. OPERATION_INPLACE\n"
-		" D. OPERATION_FILESYSTEM\n"
+" 1  2  3  4  5  6  7  8  9  A  B  C  D\n"
+"\n"
+"properties\n"
+" 1  SELECTION_STAGE\n"
+" 2  SELECTION_ACTIVATE\n"
+" 3  SELECTION_RESET\n"
+" 4  WINDOWS_STAGE\n"
+" 5  WINDOWS_ACTIVATE\n"
+" 6  WINDOWS_RESET\n"
+" 7  ARGS_CANHAVE\n"
+" 8  EMPTYSTACK_YES\n"
+" 9  STACKOP\n"
+" A  MODIFIERS_CANHAVE\n"
+" B  OPERATION_PUSHBEFORE\n"
+" C  OPERATION_INPLACE\n"
+" D  OPERATION_FILESYSTEM\n"
 	);
 }
 
@@ -235,39 +192,39 @@ printf(
 	exit(!valid);
 }
 
-int parse_args(pstring ** remnant)
+int args_parse(pstring ** remnant)
 {
 	int help = 0;
 	int version = 0;
-	int	logopts = 0;
+	int	logcats = 0;
 	int operators = 0;
-
-	struct optypes optypes = {};
+	uint64_t opmask = 0;
 
 	struct option longopts[] = {
-		  { "help"												, no_argument	, &help, 1 } 
-		, { "version"											, no_argument	, &version, 1 } 
-		, { "logopts"											, no_argument	, &logopts, 1 } 
-		, { "operators"										, no_argument	, &operators, 1 } 
-		, { "o1"													, no_argument	, &optypes._1, 1 }
-		, { "o2"													, no_argument	, &optypes._2, 1 }
-		, { "o3"													, no_argument	, &optypes._3, 1 }
-		, { "o4"													, no_argument	, &optypes._4, 1 }
-		, { "o5"													, no_argument	, &optypes._5, 1 }
-		, { "o6"													, no_argument	, &optypes._6, 1 }
-		, { "o7"													, no_argument	, &optypes._7, 1 }
-		, { "o8"													, no_argument	, &optypes._8, 1 }
-		, { "o9"													, no_argument	, &optypes._9, 1 }
-		, { "oa"													, no_argument	, &optypes._a, 1 }
-		, { "ob"													, no_argument	, &optypes._b, 1 }
-		, { "oc"													, no_argument	, &optypes._c, 1 }
-		, { "od"													, no_argument	, &optypes._d, 1 }
+		  { "help"												, no_argument				, &help, 1 } 
+		, { "version"											, no_argument				, &version, 1 } 
+		, { "logcats"											, no_argument				, &logcats, 1 } 
+		, { "operators"										, no_argument				, &operators, 1 } 
+		, { "o"														, required_argument	, 0, 0 }
+		, { "o1"													, no_argument				, 0, 0 }
+		, { "o2"													, no_argument				, 0, 0 }
+		, { "o3"													, no_argument				, 0, 0 }
+		, { "o4"													, no_argument				, 0, 0 }
+		, { "o5"													, no_argument				, 0, 0 }
+		, { "o6"													, no_argument				, 0, 0 }
+		, { "o7"													, no_argument				, 0, 0 }
+		, { "o8"													, no_argument				, 0, 0 }
+		, { "o9"													, no_argument				, 0, 0 }
+		, { "oa"													, no_argument				, 0, 0 }
+		, { "ob"													, no_argument				, 0, 0 }
+		, { "oc"													, no_argument				, 0, 0 }
+		, { "od"													, no_argument				, 0, 0 }
 
 #if DEVEL
-		, { "backtrace-pithy"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
-		, { "backtrace-full"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
-		, { "logtrace-no"									, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
-		, { "logtrace"										, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
+		, { "backtrace-pithy"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
+		, { "backtrace-full"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
+		, { "logtrace-no"									, no_argument				, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
+		, { "logtrace"										, no_argument				, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
 #endif
 		, { }
 	};
@@ -277,7 +234,7 @@ int parse_args(pstring ** remnant)
 		"-"
 
 		// no-argument switches
-		"ahknz0N"
+		"aknz0N"
 
 		// with-argument switches
 		"f:l:i:"
@@ -291,13 +248,6 @@ int parse_args(pstring ** remnant)
 	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
 #endif
 
-	// initialize logger - prepare g_argc/g_argv
-#if DEVEL
-	fatal(log_init_and_describe, L_LOGGER);
-#else
-	fatal(log_init, 0);
-#endif
-
 	int x;
 	int indexptr;
 	opterr = 0;
@@ -305,8 +255,20 @@ int parse_args(pstring ** remnant)
 	{
 		if(x == 0)
 		{
-printf("longopts\n");
-			// longopts
+			if(strcmp(longopts[indexptr].name, "o") == 0)
+			{
+				struct operator * op = 0;
+				if((op = op_lookup(optarg, strlen(optarg))))
+					opmask |= op->optype;
+
+				operators = 1;
+			}
+			else if(longopts[indexptr].name[0] == 'o' && strlen(longopts[indexptr].name) == 2)
+			{
+				int off = atoi(longopts[indexptr].name + 1);
+				opmask |= (0x01ULL << (off - 1));
+				operators = 1;
+			}
 		}
 		else if(x == 'a')
 		{
@@ -355,10 +317,6 @@ printf("longopts\n");
 		{
 			g_args.numbering = 2;
 		}
-		else if(x == 'h')
-		{
-			help = 1;
-		}
 		else if(x == '?')
 		{
 			// unrecognized argv element
@@ -393,24 +351,9 @@ printf("longopts\n");
 		fatal(pscats, remnant, g_argv[optind]);
 	}
 
-	// configure logger prefix and trace
-	uint64_t prefix = L_LWOPINFO;
-	
-#if DEVEL
-	uint64_t trace = 0;
-	prefix |= L_LOGGER | L_LWTOKEN | L_LWSTATE;
-	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
-		trace = L_LWOPINFO | L_LWTOKEN | L_LWSTATE;
-
-	log_config(prefix, trace);
-#else
-	log_config(prefix);
-#endif
-
-
-	if(help || version || logopts || operators)
+	if(help || version || logcats || operators)
 	{
-		usage(1, 1, help, logopts, operators, &optypes);
+		usage(1, 1, help, logcats, operators, opmask);
 	}
 
 	finally : coda;

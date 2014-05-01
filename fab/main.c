@@ -129,9 +129,39 @@ int main(int argc, char** argv)
 	signal(SIGQUIT	, signal_handler);
 	signal(SIGTERM	, signal_handler);
 
+	// initialize logger
+	fatal(log_init);
+
 	// parse cmdline arguments
-	//  (args_parse also calls log_init with a default string)
 	fatal(args_parse);
+
+	// configure logger
+#if DEVEL
+	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
+	{
+		fatal(log_config_and_describe
+			, L_TAG																												// prefix
+			, L_LWOPINFO | L_LWTOKEN | L_LWSTATE | L_FFTOKEN | L_FFSTATE	// trace
+			, L_INFO																											// describe bits
+		);
+	}
+	else
+	{
+		fatal(log_config_and_describe
+			, L_TAG
+			, 0
+			, L_INFO
+		);
+	}
+#else
+	fatal(log_config, L_TAG);	// prefix
+#endif
+
+	// default logging categories, with lower precedence than cmdline logexprs
+	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, 1, L_INFO);
+
+	// summarize arguments as received
+	fatal(args_summarize);
 
 	// register object types with liblistwise
 	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
@@ -140,7 +170,7 @@ int main(int argc, char** argv)
 	// load additional fab-specific listwise operators
 	fatal(listwise_register_opdir, XQUOTE(FABLWOPDIR));
 
-#if DEBUG || DEVEL || SANITY
+#if DEVEL
 	// configure liblistwise logging
 	lw_configure_logging();
 #endif
@@ -205,6 +235,8 @@ int main(int argc, char** argv)
 		}
 	}
 
+fails(FAB_BADPLAN, "QUITTING NOW");
+
 	// use up one list and populate the # variable (relative directory path to the initial fabfile)
 	fatal(lw_reset, &stax, &staxa, staxp);
 	fatal(lstack_add, stax[staxp], g_params.init_fabfile_path->abs_dir, g_params.init_fabfile_path->abs_dirl);
@@ -245,7 +277,7 @@ int main(int argc, char** argv)
 		pn++;
 
 		if(g_args.selectors_arequery)
-			fatal(log_parse_and_describe, "+SELECT", 0, L_INFO);
+			fatal(log_parse_and_describe, "+SELECT", 0, 0, L_INFO);
 
 		// process selectors
 		for(x = 0; x < g_args.selectorsl; x++)
@@ -295,7 +327,7 @@ int main(int argc, char** argv)
 		// dependency discovery list
 		if(discoveriesl)
 		{
-			fatal(log_parse_and_describe, "+DSC", 0, L_INFO);
+			fatal(log_parse_and_describe, "+DSC", 0, 0, L_INFO);
 			fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &ts, &tsa, &tsw);
 		}
 		else
@@ -312,7 +344,7 @@ int main(int argc, char** argv)
 			if(inspectionsl)
 			{
 				// enable DGRAPH
-				fatal(log_parse_and_describe, "+DGRAPH", 0, L_INFO);
+				fatal(log_parse_and_describe, "+DGRAPH", 0, 0, L_INFO);
 
 				for(x = 0; x < inspectionsl; x++)
 					gn_dump((*inspections[x]));
@@ -382,7 +414,7 @@ int main(int argc, char** argv)
 						fatal(bp_eval, bp);
 
 						if(g_args.mode_bplan == MODE_BPLAN_GENERATE)
-							fatal(log_parse_and_describe, "+BPDUMP", 0, L_INFO);
+							fatal(log_parse_and_describe, "+BPDUMP", 0, 0, L_INFO);
 
 						// dump buildplan, pending logging
 						if(bp)
@@ -448,12 +480,12 @@ finally:
 
 	if(XAPI_UNWINDING)
 	{
-#if DEBUG
+#if DEVEL
 		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
 		{
 #endif
 			tracesz = xapi_trace_pithy(space, sizeof(space));
-#if DEBUG
+#if DEVEL
 		}
 		else
 		{

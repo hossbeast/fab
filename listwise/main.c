@@ -103,7 +103,7 @@ static int snarf(char * path, pstring ** mem)
 	else if(S_ISCHR(st.st_mode))
 	{
 		/*
-		** /dev/fd/0 is connected to a character device (/dev/pts/x) when nothing is piped to the processes stdin
+		** /dev/fd/0 is connected to a character device (/dev/pts/x) when nothing is piped to stdin of the process
 		*/
 	}
 	else
@@ -139,8 +139,33 @@ int main(int g_argc, char** g_argv)
 	generator* g = 0;						// generator
 	lwx * lx = 0;								// list stack
 
+	// initialize logger - prepare g_argc/g_argv
+	fatal(log_init);
+
 	// parse cmdline arguments
-	fatal(parse_args, &args_remnant);
+	fatal(args_parse, &args_remnant);
+
+	// configure logger
+#if DEVEL
+	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
+	{
+		fatal(log_config_and_describe
+			, L_LOGGER | L_LWTOKEN | L_LWSTATE | L_LWOPINFO		// prefix
+			, L_LWOPINFO | L_LWTOKEN | L_LWSTATE							// trace
+			, L_LOGGER																				// describe bits
+		);
+	}
+	else
+	{
+		fatal(log_config_and_describe
+			, L_LOGGER | L_LWTOKEN | L_LWSTATE | L_LWOPINFO
+			, 0
+			, L_LOGGER
+		);
+	}
+#else
+	fatal(log_config, L_LWOPINFO);		// prefix
+#endif
 
 	// setup liblistwise logging
 	listwise_logging_configure((struct listwise_logging[]) {{

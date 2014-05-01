@@ -20,6 +20,14 @@
 
 #define restrict __restrict
 
+/// xstrncat
+//
+// reallocates *s1, appends s2 onto *s1
+//
+// returns nonzero on malloc failure
+//
+int ixstrncat(char** s1, const char* s2, int s2len);
+
 /// xstrcat
 //
 // reallocates *s1, appends s2 onto *s1

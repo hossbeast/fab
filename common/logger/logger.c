@@ -65,6 +65,10 @@ int g_argvsl;
 // [[ static ]]
 //
 
+static char **	o_logexprs;
+static int			o_logexprs_a;
+static int			o_logexprs_l;
+
 static uint64_t o_space_bits;	// when a log is being constructed, effective bits
 static char * 	o_space;			// storage between logvprintf/flush calls
 static int			o_space_a;		// allocation
@@ -284,125 +288,208 @@ static void prep(const char * const func, const char * file, int line)
 }
 #endif
 
-static int logparse(char * args, int args_len, char * dst, size_t sz, size_t * z, int * cnt)
+/// parsetest
+//
+// SUMMARY
+//  returns a boolean value indicating whether or not the specified argument is a valid logexpr
+//
+static int parsetest(char * expr, int exprl, struct filter * f)
 {
-	args_len = args_len ?: strlen(args);
+	exprl = exprl ?: strlen(expr);
 
-	int x;
-	for(x = 0; x < args_len; x++)
+	if(exprl && (expr[0] == '+' || expr[0] == '-'))
 	{
-		if(args[x] == '+' || args[x] == '-')
+		char lhs = ' ';
+		int off = 1;
+
+		if(off < exprl)
 		{
-			char lhs = ' ';
-			int off = 1;
+			if(expr[off] == '(')
+				lhs = '(';
+			else if(expr[off] == '{')
+				lhs = '{';
+			else if(expr[off] == '[')
+				lhs = '[';
+			else if(expr[off] == '<')
+				lhs = '<';
 
-			if((x + off) < args_len)
+			if(lhs != ' ')
+				off++;
+
+			if(off < exprl)
 			{
-				if(args[x+off] == '(')
-					lhs = '(';
-				else if(args[x+off] == '{')
-					lhs = '{';
-				else if(args[x+off] == '[')
-					lhs = '[';
-				else if(args[x+off] == '<')
-					lhs = '<';
-
-				if(lhs != ' ')
-					off++;
-
-				if((x + off) < args_len)
+				int y;
+				for(y = off; y < exprl; y++)
 				{
-					int y;
-					for(y = off; (x+y) < args_len; y++)
+					if(lhs == ' ' && expr[y] == ' ')
+						break;
+					else if(lhs == '(' && expr[y] == ')')
+						break;
+					else if(lhs == '{' && expr[y] == '}')
+						break;
+					else if(lhs == '[' && expr[y] == ']')
+						break;
+					else if(lhs == '<' && expr[y] == '>')
+						break;
+				}
+
+				uint64_t tag = 0;
+				int k = 0;
+				while(k != y)
+				{
+					if(expr[off] == ',' || expr[off] == '|')
+						off++;
+
+					for(k = off; k < y; k++)
 					{
-						if(lhs == ' ' && args[x+y] == ' ')
-							break;
-						else if(lhs == '(' && args[x+y] == ')')
-							break;
-						else if(lhs == '{' && args[x+y] == '}')
-							break;
-						else if(lhs == '[' && args[x+y] == ']')
-							break;
-						else if(lhs == '<' && args[x+y] == '>')
+						if(expr[k] == ',' || expr[k] == '|')
 							break;
 					}
 
-					uint64_t tag = 0;
-
-					int k = 0;
-					while(k != y)
+					if(estrcmp(&expr[off], k-off, "TAG", 3, 0) == 0)
 					{
-						if(args[x+off] == ',' || args[x+off] == '|')
-							off++;
-
-						for(k = off; k < y; k++)
+						tag |= L_TAG;
+						off += 3;
+					}
+					else
+					{
+						int i;
+						for(i = 0; i < g_logs_l; i++)
 						{
-							if(args[x+k] == ',' || args[x+k] == '|')
+							if(estrcmp(&expr[off], k-off, g_logs[i].s, g_logs[i].l, 0) == 0)
 								break;
 						}
 
-						if(estrcmp(&args[x+off], k-off, "TAG", 3, 0) == 0)
+						if(i == g_logs_l)
 						{
-							// special case : TAG excludes liblistwise-specific tags
-//							tag |= L_TAG & ~(L_LWTOKEN | L_LWSTATE | L_LWPARSE | L_LWEXEC | L_LWSANITY);
-							tag |= L_TAG;
-							off += 3;
+							break; // nothing
 						}
 						else
 						{
-							int i;
-							for(i = 0; i < g_logs_l; i++)
-							{
-								if(estrcmp(&args[x+off], k-off, g_logs[i].s, g_logs[i].l, 0) == 0)
-									break;
-							}
-
-							if(i == g_logs_l)
-							{
-								break; // nothing
-							}
-							else
-							{
-								tag |= g_logs[i].v;
-								off += g_logs[i].l;
-							}
+							tag |= g_logs[i].v;
+							off += g_logs[i].l;
 						}
-					}
-
-					if(tag && (off == y))
-					{
-						if(o_filter_a == o_filter_l)
-						{
-							int ns = 3;
-							if(o_filter_a)
-								ns = o_filter_a * 2 + o_filter_a / 2;
-
-							fatal(xrealloc, &o_filter, sizeof(*o_filter), ns, o_filter_a);
-							o_filter_a = ns;
-						}
-
-						struct filter * f = &o_filter[o_filter_l++];
-
-						f->v = tag & L_TAG;
-						f->o = args[x];
-						f->m = lhs == ' ' ? '(' : lhs;
-
-						if(dst && z)
-							(*z) = describe(f, dst, sz);
-						else if(dst)
-							describe(f, dst, sz);
-						if(cnt)
-							(*cnt)++;
 					}
 				}
+
+				if(tag && (off == y))
+				{
+					if(f)
+					{
+						(*f) = (struct filter){
+							  .v = tag & L_TAG
+							, .o = expr[0]
+							, .m = lhs == ' ' ? '(' : lhs
+						};
+					}
+					return 1;
+				}
 			}
+		}
+	}
+
+	return 0;
+}
+
+static int logparse(char * expr, int expr_len, int prepend, char * dst, size_t sz, size_t * z)
+{
+	struct filter f;
+
+	if(parsetest(expr, expr_len, &f))
+	{
+		if(o_filter_a == o_filter_l)
+		{
+			int ns = o_filter_a ?: 3;
+			ns = ns * 2 + ns / 2;
+			fatal(xrealloc, &o_filter, sizeof(*o_filter), ns, o_filter_a);
+			o_filter_a = ns;
+		}
+
+		if(prepend)
+		{
+			memmove(
+				  &o_filter[1]
+				, &o_filter[0]
+				, o_filter_l * sizeof(o_filter[0])
+			);
+			memcpy(&o_filter[0], &f, sizeof(f));
+		}
+		else
+		{
+			memcpy(&o_filter[o_filter_l], &f, sizeof(f));
+		}
+		o_filter_l++;
+
+		if(dst && z)
+			(*z) = describe(&f, dst, sz);
+		else if(dst)
+			describe(&f, dst, sz);
+	}
+
+	finally : coda;
+}
+
+static int logconfig(TRACEARGS uint64_t prefix
+#if DEVEL
+	, uint64_t trace
+#endif
+	, uint64_t bits
+)
+{
+#if DEVEL
+	o_trace_bits = trace;
+#endif
+	o_prefix_bits = prefix;
+
+	// parse logexprs
+	int x;
+	for(x = 0; x < o_logexprs_l; x++)
+	{
+		if(bits)
+		{
+			char space[512];
+			size_t sz = 0;
+			fatal(logparse, o_logexprs[x], 0, 0, space, sizeof(space), &sz);
+
+			if(sz)
+			{
+				log_logf(TRACEPASS bits, "%.*s", sz, space);
+			}
+		}
+		else
+		{
+			fatal(logparse, o_logexprs[x], 0, 0, 0, 0, 0);
 		}
 	}
 
 	finally : coda;
 }
 
-static int loginit(TRACEARGS uint64_t bits)
+//
+// [[ public ]]
+//
+
+int log_parse(char * expr, int expr_len, int prepend)
+{
+	xproxy(logparse, expr, expr_len, prepend, 0, 0, 0);
+}
+
+int log_log_parse_and_describe(TRACEARGS char * expr, int expr_len, int prepend, uint64_t bits)
+{
+	char space[512];
+	size_t sz = 0;
+
+	fatal(logparse, expr, expr_len, prepend, space, sizeof(space), &sz);
+
+	if(sz)
+	{
+		log_logf(TRACEPASS bits, "%.*s", sz, space);
+	}
+
+	finally : coda;
+}
+
+int log_init()
 {
 	int			fd = -1;
 	int			argsa = 0;	// g_argvs allocated size
@@ -452,29 +539,20 @@ static int loginit(TRACEARGS uint64_t bits)
 		}
 	}
 
-	// parse elements of g_argv, splicing out recognized logger-options
+	// process g_argv, splicing out recognized logger-options
 	for(x = 0; x < g_argc; x++)
 	{
-		int cnt = 0;
-		if(bits)
+		if(parsetest(g_argv[x], 0, 0))
 		{
-			char space[128];
-			size_t sz = 0;
-			fatal(logparse, g_argv[x], 0, space, sizeof(space), &sz, &cnt);
-
-			if(sz)
+			if(o_logexprs_l == o_logexprs_a)
 			{
-				log_logf(TRACEPASS bits, "%.*s", sz, space);
+				int ns = o_logexprs_a ?: 10;
+				ns = ns * 2 + ns / 2;
+				fatal(xrealloc, &o_logexprs, sizeof(*o_logexprs), ns, o_logexprs_a);
+				o_logexprs_a = ns;
 			}
-		}
-		else
-		{
-			fatal(logparse, g_argv[x], 0, 0, 0, 0, &cnt);
-		}
 
-		if(cnt)
-		{
-			free(g_argv[x]);
+			o_logexprs[o_logexprs_l++] = g_argv[x];
 			g_argv[x] = 0;
 		}
 	}
@@ -498,52 +576,27 @@ finally:
 coda;
 }
 
-//
-// [[ public ]]
-//
-
-int log_parse(char * args, int args_len)
-{
-	xproxy(logparse, args, args_len, 0, 0, 0, 0);
-}
-
-int log_log_parse_and_describe(TRACEARGS char * args, int args_len, uint64_t bits)
-{
-	char space[256];
-	size_t sz = 0;
-
-	fatal(logparse, args, args_len, space, sizeof(space), &sz, 0);
-
-	if(sz)
-	{
-		log_logf(TRACEPASS bits, "%.*s", sz, space);
-	}
-
-	finally : coda;
-}
-
-int log_init()
-{
-	xproxy(loginit, NOTRACE 0);
-}
-
-int log_log_init_and_describe(TRACEARGS uint64_t bits)
-{
-	xproxy(loginit, TRACEPASS bits);
-}
-
 #if DEVEL
-void log_config(uint64_t prefix, uint64_t trace)
+int log_config(uint64_t prefix, uint64_t trace)
+{
+	xproxy(logconfig, NOTRACE prefix, trace, 0);
+}
+
+int log_log_config_and_describe(TRACEARGS uint64_t prefix, uint64_t trace, uint64_t bits)
+{
+	xproxy(logconfig, TRACEPASS prefix, trace, bits);
+}
 #else
-void log_config(uint64_t prefix)
-#endif
+int log_config(uint64_t prefix)
 {
-#if DEVEL
-	// save trace settings
-	o_trace_bits = trace;
-#endif
-	o_prefix_bits = prefix;
+	xproxy(logconfig, NOTRACE prefix, 0);
 }
+
+int log_log_config_and_describe(TRACEARGS uint64_t prefix, uint64_t bits)
+{
+	xproxy(logconfig, TRACEPASS prefix, bits);
+}
+#endif
 
 int log_would(const uint64_t e)
 {
@@ -691,4 +744,8 @@ void log_teardown()
 	for(x = 0; x < g_argc; x++)
 		free(g_argv[x]);
 	free(g_argv);
+
+	for(x = 0; x < o_logexprs_l; x++)
+		free(o_logexprs[x]);
+	free(o_logexprs);
 }

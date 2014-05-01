@@ -64,5 +64,5 @@ struct g_logs_t logs[] = {
 #endif
 };
 
-struct g_logs_t * o_logs = logs;
-int o_logs_l = sizeof(logs) / sizeof(logs[0]);
+struct g_logs_t * g_logs = logs;
+int g_logs_l = sizeof(logs) / sizeof(logs[0]);

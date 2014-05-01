@@ -48,7 +48,7 @@ extern struct g_logs_t {
 extern int g_logs_l;
 
 ///
-// logger-provided program args
+// logger-provided program args, populated during log_init
 //
 extern char ** g_argv;	// array of args as delimited by nulls
 extern int g_argc;			// count of g_argv
@@ -58,67 +58,57 @@ extern int g_argvsl;		// length of g_argvs
 /// (XAPI) log_init
 //
 // SUMMARY
-//  initialize logging and parse cmdline args
-//
-// PARAMETERS
-//  [func] - function name
-//  [file] - file name
-//  [line] - line number
-//  [bits] - bits to use when logging the description
+//  initialize logging and parse cmdline args to populate g_argv and related variables
 //
 int log_init();
-#if DEVEL
-int log_log_init_and_describe(const char * const restrict func, const char * const restrict file, int line, uint64_t bits)
-	__attribute__((nonnull));
-
-# define log_init_and_describe(...) log_log_init_and_describe(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-#else
-int log_log_init_and_describe(uint64_t bits);
-
-# define log_init_and_describe(...) log_log_init_and_describe(__VA_ARGS__)
-#endif
 
 /// log_config
 // 
 // SUMMARY
-//  configure logging options
+//  parse cmdline logger arguments gathered during log_init and configure logging options
 //
 // PARAMETERS
 //  [prefix] - matching logs will emit preceeding prefix
 //  [trace]  - matching logs will emit trailing trace
+//  [bits]   - bits to use when logging the description
 //
 #if DEVEL
-void log_config(uint64_t prefix, uint64_t trace);
+int log_config(uint64_t prefix, uint64_t trace);
+int log_log_config_and_describe(const char * const restrict func, const char * const restrict file, int line, uint64_t prefix, uint64_t trace, uint64_t bits)
+	__attribute__((nonnull(1, 2)));
+
+#define log_config_and_describe(...) log_log_config_and_describe(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 #else
-void log_config(uint64_t trace);
+int log_config(uint64_t prefix);
+int log_log_config_and_describe(uint64_t prefix, uint64_t bits);
+
+#define log_config_and_describe(...) log_log_config_and_describe(__VA_ARGS__)
 #endif
 
 // (XAPI) log_parse
 //
 // SUMMARY
-//  parse the logging directive to enable/disable tags
-//
-// REMARKS
-//  log_parse MAY be called BEFORE log_init (to give cmd-line switches precedence)
+//  parse the logexpr to enable/disable logging categories
 //
 // PARAMETERS
 //  [func]     - function name
 //  [file]     - file name
 //  [line]     - line number
-//  args       - directive text
-//  [args_len] - length of args, or 0 for strlen
+//  expr       - logexpr
+//  [expr_len] - length of expr, or 0 for strlen
+//  [before]   - prepend to the list of filters (append otherwise)
 //  [bits]     - bits to use when logging the description
 //
-int log_parse(char * args, int args_len)
+int log_parse(char * expr, int expr_len, int prepend)
 	__attribute__((nonnull(1)));
 
 #if DEVEL
-int log_log_parse_and_describe(const char * const restrict func, const char * const restrict file, int line, char * args, int args_len, uint64_t bits)
+int log_log_parse_and_describe(const char * const restrict func, const char * const restrict file, int line, char * expr, int expr_len, int prepend, uint64_t bits)
 	__attribute__((nonnull(1, 2, 4)));
 
 #define log_parse_and_describe(...) log_log_parse_and_describe(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 #else
-int log_log_parse_and_describe(char * args, int args_len, uint64_t bits)
+int log_log_parse_and_describe(char * expr, int expr_len, int prepend, uint64_t bits)
 	__attribute__((nonnull(1)));
 
 #define log_parse_and_describe(...) log_log_parse_and_describe(__VA_ARGS__)
