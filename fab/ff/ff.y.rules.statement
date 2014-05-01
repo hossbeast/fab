@@ -1,0 +1,14 @@
+ff
+	: statements
+	{
+		YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, $1);
+	}
+	;
+
+statements
+	: statements statement
+	{
+		$$ = ffn_addchain($1, $2);
+	}
+	| statement
+	;

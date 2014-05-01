@@ -32,7 +32,8 @@
 
 %define api.pure
 %error-verbose
-%name-prefix="ff_var_yy"
+%locations
+%name-prefix="ff_yy"
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
@@ -44,8 +45,34 @@
 	struct ff_node*			node;
 }
 
+/* terminals with a semantic value */
+%token <str> WORD		"WORD"				/* string token */
+%token <str> WS			"WS"					/* single tab/space */
+%token <str> LF			"LF"					/* single newline */
+%token <num> '$'									/* variable reference */
+%token <num> '@'									/* nofile reference */
+%token <num> '.'									/* nofile scoping */
+%token <num> ':'									/* dependency */
+%token <num> '*'									/* weak dependency */
+%token <num> '^'									/* bridge dependency */
+%token <num> '%'									/* dependency discovery */
+%token <num> '['									/* list start */
+%token <num> ']'									/* list end */
+%token <num> ','									/* list element separator */
+%token <num> '~'									/* list transformation via listwise */
+%token <num> '{'									/* formula start */
+%token <num> '}'									/* formula end */
+%token <num> '='									/* variable assignment */
+%token <num> '-'									/* variable link */
+%token <num> ';'									/* varref separator */
+%token <num> '+'									/* invocation */
+%token <num> '('									/* invocation context */
+%token <num> ')'									/* invocation context */
+
+%token <num> ONCE		"ONCE"				/* once */
+
 /* terminals */
-%right WORD
+%right LF ONCE WORD
 
 /* nonterminals */
 %type  <node> statement
@@ -64,18 +91,13 @@
 %type  <node> nofileparts
 %type  <node> generator
 
-/* sugar */
-%token END 0 "end of file"
-
 %destructor { ffn_free($$); } <node>
-%destructor { free($$.v); } <wordparts>
 
 %%
-
 ff
 	: statements
 	{
-		YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, $1->s, $1->e, $1);
+		YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, $1);
 	}
 	;
 
@@ -86,46 +108,6 @@ statements
 	}
 	| statement
 	;
-
-statement
-	: varassign
-	| varadd
-	| varsub
-	| varxfm
-	;
-
-varassign
-	: varrefs '=' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARASSIGN, $1->s, $3->e, $1, $3);
-	}
-	;
-
-varadd
-	: varrefs '+' '=' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARXFM_ADD, $1->s, $4->e, $1, $4);
-	}
-	;
-
-varsub
-	: varrefs '-' '=' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARXFM_SUB, $1->s, $4->e, $1, $4);
-	}
-	;
-
-varxfm
-	: varrefs '=' '~' generator
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARXFM_LW, $1->s, $4->e, $1, $4, (void*)0);
-	}
-	| varrefs '=' '~' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARXFM_LW, $1->s, $4->e, $1, (void*)0, $4);
-	}
-	;
-
 list
 	: '[' listparts ']'
 	{
@@ -168,84 +150,25 @@ listpart
 	| list
 	;
 
-varrefs
-	: varrefs varref
-	{
-		$$ = ffn_addchain($1, $2);
-	}
-	| varref
-	;
-
 varref
 	: '$' word %prec WORD
 	{
-		$$ = $2;
-		$$->type = FFN_VARREF;
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARREF, $2);
 	}
 	;
 
 generator
 	: word
 	{
-		$$ = $1;
-		$$->type = FFN_TRANSFORM;
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_TRANSFORM, $1);
 	}
 	;
 
 nofile
 	: '@' nofileparts
 	{
-		/* nofile is a shorthand for non-file-backed notation */
-
-		// parts
-		char ** l = 0;
-		int ll = 0;
-		int la = 0;
-
-		// text
-		char * v = 0;
-
-		// e
-		char * e = $2->e;
-
-		// add to text
-		YYU_FATAL(ixstrcatf, &v, "/..");
-
-		// add to parts
-		if(ll == la)
-		{
-			int ns = la ?: 3;
-			ns = ns * 2 + ns / 2;
-			YYU_FATAL(xrealloc, &l, sizeof(*l), ns, la);
-			la = ns;
-		}
-		YYU_FATAL(ixstrdup, &l[ll++], "..");
-
-		ff_node * n = $2;
-		while(n)
-		{
-			// add to text
-			YYU_FATAL(ixstrcatf, &v, "/%s", n->text);
-
-			// add to parts
-			if(ll == la)
-			{
-				int ns = la ?: 3;
-				ns = ns * 2 + ns / 2;
-				YYU_FATAL(xrealloc, &l, sizeof(*l), ns, la);
-				la = ns;
-			}
-			YYU_FATAL(ixstrdup, &l[ll++], n->text);
-
-			ff_node * nn = n->next;
-			n->next = 0;
-			ffn_free(n);
-			n = nn;
-		}
-
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_NOFILE, @1.s, e, v, l, ll);
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_NOFILE, $2);
 	}
-	;
 
 nofileparts
 	: nofileparts '.' word %prec WORD
@@ -259,10 +182,61 @@ word
 	: word WORD
 	{
 		$$ = $1;
-		YYU_FATAL(ixstrncat, &$$->text, @1.s, @1.e - @1.s);
+
+		/* contiguous words coalesce */
+		YYU_FATAL(pscatw, &$$->text, @2.s, @2.e - @2.s);
 	}
 	| WORD
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_WORD);
 	}
 	;
+
+
+statement
+	: varassign
+	| varadd
+	| varsub
+	| varxfm
+	;
+
+varassign
+	: varrefs '=' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARASSIGN, $1->s, $3->e, $1, $3);
+	}
+	;
+
+varadd
+	: varrefs '+' '=' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARXFM_ADD, $1->s, $4->e, $1, $4);
+	}
+	;
+
+varsub
+	: varrefs '-' '=' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARXFM_SUB, $1->s, $4->e, $1, $4);
+	}
+	;
+
+varxfm
+	: varrefs '=' '~' generator
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARXFM_LW, $1->s, $4->e, $1, $4, (void*)0);
+	}
+	| varrefs '=' '~' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARXFM_LW, $1->s, $4->e, $1, (void*)0, $4);
+	}
+	;
+
+varrefs
+	: varrefs varref
+	{
+		$$ = ffn_addchain($1, $2);
+	}
+	| varref
+	;
+

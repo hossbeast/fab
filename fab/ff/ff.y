@@ -104,7 +104,6 @@
 %destructor { ffn_free($$); } <node>
 
 %%
-
 ff
 	: statements
 	{
@@ -388,3 +387,5 @@ word
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_WORD);
 	}
 	;
+
+

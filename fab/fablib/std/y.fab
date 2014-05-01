@@ -61,16 +61,16 @@ $ydscpaths = [
 # paths to y files for fabrication
 $yfabpaths = [
 	$paths				# paths
-	$fabpaths			# paths, discovery only
+	$fabpaths			# paths, fabrication only
 
 	[
 		$dirs				# directories
-		$fabdirs		# directories, discovery only
+		$fabdirs		# directories, fabrication only
 	~ ls ]
 
 	[
 		$rdirs			# recursive directories
-		$rfabdirs		# recursive directories, discovery only
+		$rfabdirs		# recursive directories, fabrication only
 	~ lsr ]
 ~ xm/<y> ]
 
