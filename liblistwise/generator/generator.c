@@ -90,7 +90,7 @@ static int generator_lvalstr(int token, void * restrict lval, struct yyu_extra *
 
 static const char * generator_statename(int state)
 {
-	return generator_statenames[state];
+	return state >= 0 ? generator_statenames[state] : "";
 }
 
 static const char * generator_tokenname(int token)

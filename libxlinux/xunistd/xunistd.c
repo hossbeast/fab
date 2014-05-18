@@ -51,16 +51,22 @@ int API uxread(int fd, void * buf, size_t count, ssize_t * bytes)
 
 int API axread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
-	size_t actual;
-	if(((actual = read(fd, buf, count)) == -1) || actual != count)
+	ssize_t actual;
+	if((actual = read(fd, buf, count)) == -1)
 		fail(errno);
+
+	if(actual != count)
+		fail(XLINUX_LESS);
 
 finally:
 	if(bytes)
 		*bytes = actual;
 
-	XAPI_INFOF("expected", "%zu", count);
-	XAPI_INFOF("actual", "%zu", actual);
+	if(XAPI_ERRCODE == XLINUX_LESS)
+	{
+		XAPI_INFOF("expected", "%zu", count);
+		XAPI_INFOF("actual", "%zd", actual);
+	}
 coda;
 }
 

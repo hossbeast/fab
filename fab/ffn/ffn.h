@@ -72,6 +72,7 @@ enum {
 #define FFN_STRING(x) FFN_TABLE(x) "unknown"
 
 struct ff_file;
+struct fml;
 
 typedef struct ff_loc
 {
@@ -84,11 +85,14 @@ typedef struct ff_node
 {
 	uint32_t		type;					// node type
 	ff_loc			loc;					// node location (cumulative)
-	char*				s;						// string value (cumulative)
-	int					l;						// length
+//	char*			s;						// string value (cumulative)
+//	int				l;						// length
 
 	generator * generator;		// FFN_TRANSFORM
 	uint32_t		flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION, FFN_LIST
+
+	// not freed
+	struct fml *			fml;		// FFN_FORMULA
 
 	/*
 	** strings are freed in freenode
@@ -153,7 +157,7 @@ typedef struct ff_node
 	*/
 	union {
 		struct {
-			struct ff_node**	list;
+			struct ff_node**	list;			// FFN_TRANSFORM
 			int								listl;
 			int								lista;
 		};
@@ -182,13 +186,6 @@ typedef struct ff_node
 			struct ff_node ** parts;		// FFN_NOFILE
 			int								partsl;
 		};
-	};
-
-	/*
-	** not freed
-	*/
-	union {
-		void *			fml;						// FFN_FORMULA (struct fml*)
 	};
 
 	// implementation

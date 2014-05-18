@@ -99,15 +99,15 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 	{
 		if(list->elements[x]->type == FFN_WORD)
 		{
-			fatal(lstack_add, (*stax)[pn], list->elements[x]->text, strlen(list->elements[x]->text));
-		}
-		else if(list->elements[x]->type == FFN_NOFILE)
-		{
-			fatal(lstack_add, (*stax)[pn], list->elements[x]->text, strlen(list->elements[x]->text));
+			fatal(lstack_add, (*stax)[pn], list->elements[x]->text->s, list->elements[x]->text->l);
 		}
 		else if(list->elements[x]->type == FFN_LF)
 		{
 			fatal(lstack_add, (*stax)[pn], "\n", 1);
+		}
+		else if(list->elements[x]->type == FFN_NOFILE)
+		{
+			fatal(lstack_add, (*stax)[pn], list->elements[x]->text->s, list->elements[x]->text->l);
 		}
 		else if(list->elements[x]->type == FFN_VARREF)
 		{
@@ -115,21 +115,21 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 			if(rawmap)
 			{
 				lwx ** cc = 0;
-				if((cc = map_get(vmap, MMS(list->elements[x]->name))))
+				if((cc = map_get(vmap, list->elements[x]->name->text->s, list->elements[x]->name->text->l)))
 					vls = *cc;
 			}
 			else
 			{
-				fatal(var_access, vmap, list->elements[x]->name, stax, staxa, staxp, &vls);
+				fatal(var_access, vmap, list->elements[x]->name->text->s, stax, staxa, staxp, &vls);
 			}
 
 			if(vls)
 			{
 				// EXCEPTION for bakevars alone in a list with a generator
-				if(rawvars && map_get(rawvars, MMS(list->elements[x]->name)))
+				if(rawvars && map_get(rawvars, list->elements[x]->name->text->s, list->elements[x]->name->text->l))
 				{
 					// save the list-value
-					fatal(map_set, rawvars, MMS(list->elements[x]->name), MM(vls), 0);
+					fatal(map_set, rawvars, list->elements[x]->name->text->s, list->elements[x]->name->text->l, MM(vls), 0);
 
 					// render a reference to the variable by name
 					fatal(lstack_addf, (*stax)[pn], "$%s", list->elements[x]->name);
@@ -150,20 +150,23 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 	}
 
 	// apply interpolation context from the FFN_LIST node to the lstack* instance
+	lwx_setflags((*stax)[pn], INTERPOLATE_ADJOIN);
+/*
 	if(list->flags & FFN_WSSEP)
 		lwx_setflags((*stax)[pn], INTERPOLATE_ADJOIN);
 	else if(list->flags & FFN_COMMASEP)
 		lwx_setflags((*stax)[pn], INTERPOLATE_DELIM_WS);
+*/
 
-	if(list->generator_node)
+	if(list->transform_node)
 	{
-		fatal(lw_exec, list->generator_node->generator, &(*stax)[pn]);
+		fatal(lw_exec, list->transform_node->generator, &(*stax)[pn]);
 	}
-	else if(list->generator_list_node)
+	else if(list->transform_list_node)
 	{
 		int pr = (*staxp);
 		fatal(lw_reset, stax, staxa, pr);
-		fatal(list_resolve, list->generator_list_node, vmap, gp, stax, staxa, staxp, rawmap, 0);
+		fatal(list_resolve, list->transform_list_node, vmap, gp, stax, staxa, staxp, rawmap, 0);
 
 		pswfree(&gps);
 		fatal(render, (*stax)[pr], &gps);
@@ -190,9 +193,7 @@ coda;
 
 int list_render(lwx * const ls, pstring ** const ps)
 {
-	if(!*ps)
-		fatal(xmalloc, ps, sizeof(**ps));
-
+	fatal(psgrow, ps, 100);
 	(*ps)->l = 0;
 
 	fatal(render, ls, ps);
@@ -202,9 +203,7 @@ int list_render(lwx * const ls, pstring ** const ps)
 
 int list_renderto(lwx * const ls, pstring ** const ps)
 {
-	if(!*ps)
-		fatal(xmalloc, ps, sizeof(**ps));
-
+	fatal(psgrow, ps, 100);
 	fatal(render, ls, ps);
 
 	finally : coda;

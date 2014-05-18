@@ -187,7 +187,8 @@ size_t API xapi_trace_pithy(char * const dst, const size_t sz)
 
 	size_t zt = z;
 	int x;
-	for(x = callstack.l; x >= MAX(callstack.l - 5 /* heuristic */, 0); x--)
+//	for(x = callstack.l; x >= MAX(callstack.l - 5 /* heuristic */, 0); x--)
+	for(x = callstack.l; x >= 0; x--)
 	{
 		int y;
 		for(y = 0; y < callstack.v[x]->info.l; y++)

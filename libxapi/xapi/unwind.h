@@ -291,15 +291,20 @@ XAPI_LEAVE:													\
 // SUMMARY
 //  capture the error code from the current function
 //
+// PARAMETERS
+//  [e] - pointer to error table
+//  [c] - error code
+//  [r] - return value, that is (e->id << 16) | c
+//
 #define conclude(r)									\
 	goto XAPI_LEAVE;									\
 XAPI_LEAVE:													\
 	(*r) = xapi_frame_leave()
 
-#define conclude2(e, c)							\
+#define conclude3(e, c, r)					\
 	goto XAPI_LEAVE;									\
 XAPI_LEAVE:													\
-	xapi_frame_leave2(e, c)
+	xapi_frame_leave3(e, c, r)
 
 /*
 ** called after finally
@@ -337,6 +342,27 @@ XAPI_LEAVE:													\
 //  true if an error has been raised
 //
 #define XAPI_UNWINDING xapi_unwinding()
+
+/// XAPI_ERRTAB
+//
+// SUMMARY
+//  while unwinding, const pointer to the error table, and zero otherwise
+//
+#define XAPI_ERRTAB xapi_frame_errtab()
+
+/// XAPI_ERROR
+//
+// SUMMARY
+//  while unwinding, the error id, that is, errtab->id << 16 | errcode
+//
+#define XAPI_ERRVAL xapi_frame_errval()
+
+/// XAPI_ERRCODE
+//
+// SUMMARY
+//  while unwinding, the error code, and zero otherwise
+//
+#define XAPI_ERRCODE xapi_frame_errcode()
 
 /*
 ** called after finally iff XAPI_UNWINDING

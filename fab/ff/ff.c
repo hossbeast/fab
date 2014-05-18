@@ -70,7 +70,7 @@ static const char * ff_tokenname(int token)
 
 static const char * ff_statename(int state)
 {
-  return ff_statenames[state];
+  return state >= 0 ? ff_statenames[state] : "";
 }
 
 static int ff_inputstr(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
@@ -403,7 +403,7 @@ int ff_mkparser(ff_parser ** const p)
 
 int ff_reg_load(const ff_parser * const p, const path * const in_path, char * const nofile, const int nofilel, ff_file ** const ff)
 {
-	int			fd = 0;
+	int			fd = -1;
 	char *	b = 0;
 
 	if(!ff_files.by_canpath)
@@ -435,8 +435,10 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, char * co
 
 finally:
 	free(b);
-	if(fd > 0)
+	if(fd != -1)
 		close(fd);
+
+	XAPI_INFOS("path", in_path->abs);
 coda;
 }
 
@@ -597,7 +599,7 @@ void ff_dump(ff_file * const ff)
 			logf(L_FF | L_FFFILE		, "%20s : %d", "closure-vars", ff->closure_varsl);
 			for(x = 0; x < ff->closure_varsl; x++)
 			{
-				logf(L_FF | L_FFFILE	, "  %20s : %s", "", ff->closure_vars[x]->text);
+				logf(L_FF | L_FFFILE	, "  %20s : %s", "", ff->closure_vars[x]->name->text->s);
 			}
 		}
 		else if(ff->type == FFT_DDISC)

@@ -223,7 +223,7 @@ int API xapi_frame_depth()
 }
 #endif
 
-int API xapi_frame_leave2(const etable ** etab, int * code)
+void API xapi_frame_leave3(const etable ** etab, int * code, int * rval)
 {
 #if DEVEL
 	CS = &callstack;
@@ -231,9 +231,17 @@ int API xapi_frame_leave2(const etable ** etab, int * code)
 //printf("LEAVE :: [x=%2d][l=%2d] => ", callstack.x, callstack.l);
 
 //	if((rc = callstack.v[callstack.x]->code))
-	if(((*code) = callstack.v[callstack.l - 1]->code))
+//	if(((*code) = callstack.v[callstack.l - 1]->code))
+
+	const etable * E = 0;
+	int C = 0;
+	int R = 0;
+
+	if(callstack.v[callstack.l - 1]->code)
 	{
-		(*etab) = callstack.v[callstack.l - 1]->etab;
+		E = callstack.v[callstack.l - 1]->etab;
+		C = callstack.v[callstack.l - 1]->code;
+		R = (callstack.v[callstack.l - 1]->etab->id << 16) | callstack.v[callstack.l - 1]->code;
 
 		// unwinding is underway
 		if(--callstack.x == -1)
@@ -266,7 +274,9 @@ int API xapi_frame_leave2(const etable ** etab, int * code)
 		}
 	}
 
-	return !!(*etab);
+	if(etab) (*etab) = E;
+	if(code) (*code) = C;
+	if(rval) (*rval) = R;
 }
 
 int API xapi_frame_leave()
@@ -275,12 +285,50 @@ int API xapi_frame_leave()
 	CS = &callstack;
 #endif
 	
-	const etable * etab = 0;
-	int code;
-	xapi_frame_leave2(&etab, &code);
+	int rval;
+	xapi_frame_leave3(0, 0, &rval);
+	return rval;
+}
 
-	if(etab)
-		return (etab->id << 16) | code;
+typedef const etable * etabstar;
+etabstar API xapi_frame_errtab()
+{
+#if DEVEL
+	CS = &callstack;
+#endif
+
+	if(callstack.v[callstack.l - 1]->code)
+	{
+		return callstack.v[callstack.l - 1]->etab;
+	}
+
+	return 0;
+}
+
+int API xapi_frame_errcode()
+{
+#if DEVEL
+	CS = &callstack;
+#endif
+
+	if(callstack.v[callstack.l - 1]->code)
+	{
+		return callstack.v[callstack.l - 1]->code;
+	}
+
+	return 0;
+}
+
+int API xapi_frame_errval()
+{
+#if DEVEL
+	CS = &callstack;
+#endif
+
+	if(callstack.v[callstack.l - 1]->code)
+	{
+		return (callstack.v[callstack.l - 1]->etab->id << 16) | callstack.v[callstack.l - 1]->code;
+	}
 
 	return 0;
 }

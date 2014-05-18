@@ -414,7 +414,7 @@ int map_values(const map* const restrict m, void* const restrict t, int* const r
 	int x;
 	for(x = 0; x < m->l; x++)
 	{
-		if(m->tv[x] && m->tv[x]->l)
+		if(m->tk[x] && m->tk[x]->l)
 		{
 			(*(void***)t)[(*c)++] = m->tv[x]->p;
 		}

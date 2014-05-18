@@ -173,9 +173,7 @@ int lw_exec(generator * gen, lwx ** ls)
 	finally : coda;
 }
 
-void lw_configure_logging()
-{
-	listwise_logging_configure((struct listwise_logging[]) {{
+static struct listwise_logging * logging = (struct listwise_logging[]) {{
       .generator_token  = (uint64_t[]) { L_LWPARSE }
     , .generator_would  = listwise_would
     , .generator_log    = listwise_log
@@ -201,5 +199,9 @@ void lw_configure_logging()
     , .sanity_would     = listwise_would
     , .sanity_log       = listwise_log
 #endif
-  }});
+}};
+
+void lw_configure_logging()
+{
+	listwise_logging_configure(logging);
 }

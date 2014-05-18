@@ -93,10 +93,10 @@
 %type  <node> listparts
 %type  <node> listpart
 %type  <node> word
-%type  <node> lf
 %type  <node> nofile
 %type  <node> nofileparts
-%type  <node> generator
+%type  <node> transform
+%type  <node> transformparts
 %type  <node> varref
 %type  <node> varrefs
 %type  <node> onceblock

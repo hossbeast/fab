@@ -30,6 +30,21 @@
 	static int __attribute__((weakref, alias("ff_yyerror"))) ff_dsc_yyerror(); 
 }
 
+%define api.pure
+%error-verbose
+%locations
+%name-prefix="ff_dsc_yy"
+%parse-param { void* scanner }
+%parse-param { parse_param* parm }
+%lex-param { void* scanner }
+
+/* zero based lines and columns */
+%initial-action { memset(&@$, 0, sizeof(@$)); }
+
+%union {
+	struct ff_node*			node;
+}
+
 /* terminals with a semantic value */
 %token <str> WORD		"WORD"				/* string token */
 %token <str> WS			"WS"					/* single tab/space */
@@ -70,7 +85,8 @@
 %type  <node> varref
 %type  <node> nofile
 %type  <node> nofileparts
-%type  <node> generator
+%type  <node> transform
+%type  <node> transformparts
 
 %destructor { ffn_free($$); } <node>
 

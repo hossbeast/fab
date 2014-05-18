@@ -206,15 +206,15 @@ int main(int argc, char** argv)
 				{
 					if(stmt->type == FFN_VARASSIGN)
 					{
-						fatal(var_set, rmap, stmt->vars[y]->name, stax[pn], 1, 0, stmt);
+						fatal(var_set, rmap, stmt->vars[y]->name->text->s, stax[pn], 1, 0, stmt);
 					}
 					else if(stmt->type == FFN_VARXFM_ADD)
 					{
-						fatal(var_xfm_add, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
+						fatal(var_xfm_add, rmap, stmt->vars[y]->name->text->s, stax[pn], 1, stmt);
 					}
 					else if(stmt->type == FFN_VARXFM_SUB)
 					{
-						fatal(var_xfm_sub, rmap, stmt->vars[y]->name, stax[pn], 1, stmt);
+						fatal(var_xfm_sub, rmap, stmt->vars[y]->name->text->s, stax[pn], 1, stmt);
 					}
 				}
 			}
@@ -222,11 +222,11 @@ int main(int argc, char** argv)
 			{
 				for(y = 0; y < stmt->varsl; y++)
 				{
-					if(stmt->generator_node)
+					if(stmt->transform_node)
 					{
-						fatal(var_xfm_lw, rmap, stmt->vars[y]->name, stmt->generator_node->generator, stmt->generator_node->text, 1, stmt);
+						fatal(var_xfm_lw, rmap, stmt->vars[y]->name->text->s, stmt->transform_node->generator, stmt->transform_node->text->s, 1, stmt);
 					}
-					else if(stmt->generator_list_node)
+					else if(stmt->transform_list_node)
 					{
 
 					}
@@ -234,8 +234,6 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-
-fails(FAB_BADPLAN, "QUITTING NOW");
 
 	// use up one list and populate the # variable (relative directory path to the initial fabfile)
 	fatal(lw_reset, &stax, &staxa, staxp);

@@ -38,7 +38,7 @@ int enclose_vars(ff_node * const restrict root, ff_node *** restrict closure_var
 			if(ffn->type == FFN_VARREF)
 			{
 				// skip autovars
-				if((ffn->text->s[0] >= 'a' && ffn->text->s[0] <= 'z') || (ffn->text->s[0] >= 'A' && ffn->text->s[0] <= 'Z') || ffn->text->s[0] == '_')
+				if((ffn->name->text->s[0] >= 'a' && ffn->name->text->s[0] <= 'z') || (ffn->name->text->s[0] >= 'A' && ffn->name->text->s[0] <= 'Z') || ffn->name->text->s[0] == '_')
 				{
 					if((*closure_varsl) == (*closure_varsa))
 					{
@@ -70,7 +70,7 @@ int enclose_vars(ff_node * const restrict root, ff_node *** restrict closure_var
 	// sort
 	int cmp(const void * A, const void * B)
 	{
-		return strcmp((*(ff_node**)A)->text->s, (*(ff_node**)B)->text->s);
+		return strcmp((*(ff_node**)A)->name->text->s, (*(ff_node**)B)->name->text->s);
 	};
 	qsort(*closure_vars, (*closure_varsl), sizeof(*closure_vars), cmp);
 
@@ -81,7 +81,7 @@ int enclose_vars(ff_node * const restrict root, ff_node *** restrict closure_var
 		int i;
 		for(i = j - 1; i >= 0; i--)
 		{
-			if(strcmp((*closure_vars)[i]->text->s, (*closure_vars)[j]->text->s))
+			if(strcmp((*closure_vars)[i]->name->text->s, (*closure_vars)[j]->name->text->s))
 				break;
 		}
 

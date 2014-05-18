@@ -103,7 +103,7 @@ int API psprintw(pstring ** restrict p, char * const restrict s, size_t l)
 	fatal(psgrow, p, 100);
 	fatal(psgrow, p, l);
 	memcpy((*p)->s, s, l);
-	(*p)->s[(*p)->l] = 0;
+	(*p)->s[l] = 0;
 	(*p)->l = l;
 
 	finally : coda;

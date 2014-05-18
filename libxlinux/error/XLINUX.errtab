@@ -17,3 +17,4 @@
 
 1	DLERROR		dynamic loader error
 2 FTWERROR	filesystem traversal error
+3	LESS			less data available than was expected

@@ -33,7 +33,7 @@
 %define api.pure
 %error-verbose
 %locations
-%name-prefix="ff_yy"
+%name-prefix="ff_var_yy"
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
@@ -89,7 +89,8 @@
 %type  <node> varrefs
 %type  <node> nofile
 %type  <node> nofileparts
-%type  <node> generator
+%type  <node> transform
+%type  <node> transformparts
 
 %destructor { ffn_free($$); } <node>
 

@@ -47,7 +47,7 @@ $listwise				= [ $dlistwise/$name ~ j ]
 #
 [ $listwise ] : [ $dlistwise/main.o ~ j ]
 {
-	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [ $lflags ~ fi ]
+	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [ $lflags ~ fi ]
 }
 
 #

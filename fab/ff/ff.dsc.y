@@ -30,6 +30,21 @@
 	static int __attribute__((weakref, alias("ff_yyerror"))) ff_dsc_yyerror(); 
 }
 
+%define api.pure
+%error-verbose
+%locations
+%name-prefix="ff_dsc_yy"
+%parse-param { void* scanner }
+%parse-param { parse_param* parm }
+%lex-param { void* scanner }
+
+/* zero based lines and columns */
+%initial-action { memset(&@$, 0, sizeof(@$)); }
+
+%union {
+	struct ff_node*			node;
+}
+
 /* terminals with a semantic value */
 %token <str> WORD		"WORD"				/* string token */
 %token <str> WS			"WS"					/* single tab/space */
@@ -70,7 +85,8 @@
 %type  <node> varref
 %type  <node> nofile
 %type  <node> nofileparts
-%type  <node> generator
+%type  <node> transform
+%type  <node> transformparts
 
 %destructor { ffn_free($$); } <node>
 
@@ -127,11 +143,11 @@ list
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, (void*)0, (void*)0);
 	}
-	| '[' listparts '~' generator ']'
+	| '[' listparts '~' transform ']'
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, $2      , $4      , (void*)0);
 	}
-	| '[' '~' generator ']'
+	| '[' '~' transform ']'
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, $3, (void*)0);
 	}
@@ -167,11 +183,19 @@ varref
 	}
 	;
 
-generator
-	: word
+transform
+	: transformparts
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_TRANSFORM, $1);
 	}
+	;
+
+transformparts
+	: transformparts word %prec WORD
+	{
+		$$ = ffn_addchain($1, $2);
+	}
+	| word %prec WORD
 	;
 
 nofile
@@ -179,6 +203,7 @@ nofile
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_NOFILE, $2);
 	}
+	;
 
 nofileparts
 	: nofileparts '.' word %prec WORD
@@ -189,17 +214,12 @@ nofileparts
 	;
 
 word
-	: word WORD
-	{
-		$$ = $1;
-
-		/* contiguous words coalesce */
-		YYU_FATAL(pscatw, &$$->text, @2.s, @2.e - @2.s);
-	}
-	| WORD
+	: WORD
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_WORD);
 	}
+	| LF
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LF);
+	}
 	;
-
-

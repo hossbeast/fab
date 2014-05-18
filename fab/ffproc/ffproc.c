@@ -37,7 +37,7 @@
 
 #define restrict __restrict
 
-static int procfile(const ff_parser * const ffp, const path * const restrict inpath, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel);
+static int procfile(const ff_parser * const ffp, const path * const restrict inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel);
 
 static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, int star)
 {
@@ -76,7 +76,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 			fatal(list_resolve, stmt->definition, vmap, ffp->gp, stax, staxa, staxp, 0, 0);
 
 			for(y = 0; y < stmt->varsl; y++)
-				fatal(var_set, vmap, stmt->vars[y]->name, (*stax)[pn], 0, 1, stmt);
+				fatal(var_set, vmap, stmt->vars[y]->name->text->s, (*stax)[pn], 0, 1, stmt);
 		}
 		else if(stmt->type == FFN_INVOCATION)
 		{
@@ -180,34 +180,37 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 						{
 							if(set->definition->type == FFN_LIST)
 							{
+								// list assignment
 								int pn = (*staxp);
 								fatal(list_resolve, set->definition, vmap, ffp->gp, stax, staxa, staxp, 0, 0);
 
 								for(i = 0; i < set->varsl; i++)
-									fatal(var_set, cmap, set->vars[i]->name, (*stax)[pn], 1, 0, set);
+									fatal(var_set, cmap, set->vars[i]->name->text->s, (*stax)[pn], 1, 0, set);
 							}
 							else if(set->definition->type == FFN_VARREF)
 							{
-								fatal(var_alias, vmap, set->definition->name, cmap, set->vars[0]->name, set);
+								// cross-name alias
+								fatal(var_alias, vmap, set->definition->name->text->s, cmap, set->vars[0]->name->text->s, set);
 							}
 						}
 						else
 						{
+							// same-name alias
 							for(i = 0; i < set->varsl; i++)
-								fatal(var_alias, vmap, set->vars[i]->name, cmap, set->vars[i]->name, set);
+								fatal(var_alias, vmap, set->vars[i]->name->text->s, cmap, set->vars[i]->name->text->s, set);
 						}
 					}
 					else if(set->type == FFN_VARLINK)
 					{
 						if(set->definition)
 						{
-							fatal(var_link, vmap, set->vars[0]->name, cmap, set->definition->name, set);
+							fatal(var_link, vmap, set->vars[0]->name->text->s, cmap, set->definition->text->s, set);
 						}
 						else
 						{
 							for(i = 0; i < set->varsl; i++)
 							{
-								fatal(var_link, vmap, set->vars[i]->name, cmap, set->vars[i]->name, set);
+								fatal(var_link, vmap, set->vars[i]->name->text->s, cmap, set->vars[i]->name->text->s, set);
 							}
 						}
 					}
@@ -220,11 +223,11 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 			if(stmt->scope)
 			{
 				for(i = 1; i < stmt->scope->partsl; i++)
-					fatal(strstack_push, sstk, stmt->scope->parts[i]->text->s, stmt->scope->parts[i]->text->l);
+					fatal(strstack_push, sstk, stmt->scope->parts[i]->text->s);
 			}
 
 			// process the referenced fabfile
-			fatal(procfile, ffp, pth, sstk, nmap, stax, staxa, staxp, 0, nofile, nofilel);
+			fatal(procfile, ffp, pth, inv, sstk, nmap, stax, staxa, staxp, 0, nofile, nofilel);
 
 			// scope pop
 			if(stmt->scope)
@@ -245,7 +248,7 @@ finally:
 coda;
 }
 
-int procfile(const ff_parser * const ffp, const path * const inpath, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel)
+int procfile(const ff_parser * const ffp, const path * const inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel)
 {
 	ff_file * ff = 0;
 
@@ -254,7 +257,10 @@ int procfile(const ff_parser * const ffp, const path * const inpath, strstack * 
 		char * sstr = 0;
 		fatal(strstack_string, sstk, 0, "/", "/", &sstr);
 
-		logf(L_INVOKE, "%s @ %s", inpath->can, sstr);
+		if(seed)
+			logf(L_INVOKE, "%.*s : %s @ %s", seed->l, seed->s, inpath->can, sstr);
+		else
+			logf(L_INVOKE, "%s @ %s", inpath->can, sstr);
 	}
 
 	// parse
@@ -293,7 +299,7 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map 
 	fatal(strstack_create, &sstk);
 	fatal(strstack_push, sstk, "..");
 
-	fatal(procfile, ffp, inpath, sstk, vmap, stax, staxa, staxp, first, 0, 0);
+	fatal(procfile, ffp, inpath, 0, sstk, vmap, stax, staxa, staxp, first, 0, 0);
 
 finally :
 	strstack_free(sstk);

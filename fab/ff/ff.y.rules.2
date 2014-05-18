@@ -64,7 +64,7 @@ varsetting
 varlock
 	: varref '=' list
 	{
-		/* ls assignment */
+		/* list assignment */
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARLOCK, $1, $3);
 	}
 	| varref '=' varref
@@ -136,14 +136,14 @@ commandparts
 	;
 
 commandpart
-	: lf
-	| list
+	: list
 	| word %prec WORD
 	;
 
-lf
-	: LF
+varrefs
+	: varrefs varref
 	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LF);
+		$$ = ffn_addchain($1, $2);
 	}
+	| varref
 	;

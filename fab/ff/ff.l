@@ -70,8 +70,7 @@
 %option stack
 
 %x quoteword
-%x generatorws
-%x generator
+%x transform
 
 %x command
 %x commandchecklit
@@ -108,7 +107,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL,list>["]																				{ PUSHSTATE(quoteword); }
 <INITIAL,list>[$]																				{ PUSHSTATE(varref); return LEX(yytext[0], 0); }
 <INITIAL,list>[@]																				{	PUSHSTATE(nofile); return LEX(yytext[0], 0); }
-<INITIAL,list>[~]																				{ PUSHSTATE(generator); return LEX(yytext[0], 0); }
+<INITIAL,list>[~][\t ]*																	{ PUSHSTATE(transform); return LEX(yytext[0], 0); }
 
  /* characters with special meaning in INITIAL */
 <INITIAL>[+]																						{ return LEX(yytext[0], 0); }
@@ -154,25 +153,11 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <nofile>[.]																							{ return LEX(yytext[0], 0); }
 <nofile>[\x00-\xFF]																			{ POPSTATE; yyless(0); }
 
-<generator>[ \t]+																				{ LOCWRITE; }
-<generator>[\n]																					{ LOCRESET; }
-<generator>["]																					{
-																													POPSTATE;
-																													PUSHSTATE(quoteword);
-																													LOCWRITE;
-																												}
-<generator>[[]																					{
-																													POPSTATE;
-																													PUSHSTATE(list);
-																													return LEX(yytext[0], 0);
-																												}
-<generator>[^ \t\n"[]																		{
-																													POPSTATE;
-																													PUSHSTATE(generatorws);
-																													yyless(0);
-																												}
-<generatorws>[^\x00-\x1F\x20\]]+												{ return LEX(WORD, 0); }
-<generatorws>[ \t\n\]]																	{ POPSTATE; yyless(0); }
+<transform>[ \t]+																				{ return LEX(WORD, 0); }
+<transform>[\n]																					{ return LEX(LF, 0); }
+<transform>[]]																					{ POPSTATE; yyless(0); }
+<transform>[[]																					{	POPSTATE;	PUSHSTATE(list); return LEX(yytext[0], 0); }
+<transform>[^ \x00-\x1F\x7F-\xFF[\]]+										{ return LEX(WORD, 0); }
 <quoteword>\\\\																					{ yytext++; yyleng--; return LEX(WORD, 1); }
 <quoteword>\\["]																				{ yytext++; yyleng--; return LEX(WORD, 1); }
 <quoteword>[^\\"\x00-\x1F\x7F-\xFF]+										{ return LEX(WORD, 0); }

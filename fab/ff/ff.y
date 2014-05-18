@@ -93,10 +93,10 @@
 %type  <node> listparts
 %type  <node> listpart
 %type  <node> word
-%type  <node> lf
 %type  <node> nofile
 %type  <node> nofileparts
-%type  <node> generator
+%type  <node> transform
+%type  <node> transformparts
 %type  <node> varref
 %type  <node> varrefs
 %type  <node> onceblock
@@ -118,7 +118,121 @@ statements
 	}
 	| statement
 	;
+dependency
+	: list ':' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $3, FFN_SINGLE);
+	}
+	| list ':' '*' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $4, FFN_SINGLE | FFN_WEAK);
+	}
+	| list ':' '^' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $4, FFN_SINGLE | FFN_BRIDGE);
+	}
+	| list ':' ':' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $4, FFN_MULTI);
+	}
+	| list ':' ':' '*' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $5, FFN_MULTI | FFN_WEAK);
+	}
+	| list ':' ':' '^' list
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $5, FFN_MULTI | FFN_BRIDGE);
+	}
+	;
+list
+	: '[' listparts ']'
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, $2      , (void*)0, (void*)0);
+	}
+	| '[' ']'
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, (void*)0, (void*)0);
+	}
+	| '[' listparts '~' transform ']'
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, $2      , $4      , (void*)0);
+	}
+	| '[' '~' transform ']'
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, $3, (void*)0);
+	}
+	| '[' listparts '~' list ']'
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, $2      , (void*)0, $4);
+	}
+	| '[' '~' list ']'
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, (void*)0, $3);
+	}
+	;
 
+listparts
+	: listparts listpart
+	{
+		$$ = ffn_addchain($1, $2);
+	}
+	| listpart
+	;
+
+listpart
+	: varref
+	| word %prec WORD
+	| nofile
+	| list
+	;
+
+varref
+	: '$' word %prec WORD
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARREF, $2);
+	}
+	;
+
+transform
+	: transformparts
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_TRANSFORM, $1);
+	}
+	;
+
+transformparts
+	: transformparts word %prec WORD
+	{
+		$$ = ffn_addchain($1, $2);
+	}
+	| word %prec WORD
+	;
+
+nofile
+	: '@' nofileparts
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_NOFILE, $2);
+	}
+	;
+
+nofileparts
+	: nofileparts '.' word %prec WORD
+	{
+		$$ = ffn_addchain($1, $3);
+	}
+	| word %prec WORD
+	;
+
+word
+	: WORD
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_WORD);
+	}
+	| LF
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LF);
+	}
+	;
 statement
 	: varassign
 	| invocation
@@ -185,7 +299,7 @@ varsetting
 varlock
 	: varref '=' list
 	{
-		/* ls assignment */
+		/* list assignment */
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARLOCK, $1, $3);
 	}
 	| varref '=' varref
@@ -210,33 +324,6 @@ varlink
 	{
 		/* same-name link */
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARLINK, $2, (void*)0);
-	}
-	;
-
-dependency
-	: list ':' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $3, FFN_SINGLE);
-	}
-	| list ':' '*' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $4, FFN_SINGLE | FFN_WEAK);
-	}
-	| list ':' '^' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $4, FFN_SINGLE | FFN_BRIDGE);
-	}
-	| list ':' ':' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $4, FFN_MULTI);
-	}
-	| list ':' ':' '*' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $5, FFN_MULTI | FFN_WEAK);
-	}
-	| list ':' ':' '^' list
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_DEPENDENCY, $1, $5, FFN_MULTI | FFN_BRIDGE);
 	}
 	;
 
@@ -284,58 +371,8 @@ commandparts
 	;
 
 commandpart
-	: lf
-	| list
+	: list
 	| word %prec WORD
-	;
-
-lf
-	: LF
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LF);
-	}
-	;
-
-list
-	: '[' listparts ']'
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, $2      , (void*)0, (void*)0);
-	}
-	| '[' ']'
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, (void*)0, (void*)0);
-	}
-	| '[' listparts '~' generator ']'
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, $2      , $4      , (void*)0);
-	}
-	| '[' '~' generator ']'
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, $3, (void*)0);
-	}
-	| '[' listparts '~' list ']'
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, $2      , (void*)0, $4);
-	}
-	| '[' '~' list ']'
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, (void*)0, $3);
-	}
-	;
-
-listparts
-	: listparts listpart
-	{
-		$$ = ffn_addchain($1, $2);
-	}
-	| listpart
-	;
-
-listpart
-	: varref
-	| word %prec WORD
-	| nofile
-	| list
 	;
 
 varrefs
@@ -345,47 +382,3 @@ varrefs
 	}
 	| varref
 	;
-
-varref
-	: '$' word %prec WORD
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARREF, $2);
-	}
-	;
-
-generator
-	: word
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_TRANSFORM, $1);
-	}
-	;
-
-nofile
-	: '@' nofileparts
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_NOFILE, $2);
-	}
-
-nofileparts
-	: nofileparts '.' word %prec WORD
-	{
-		$$ = ffn_addchain($1, $3);
-	}
-	| word %prec WORD
-	;
-
-word
-	: word WORD
-	{
-		$$ = $1;
-
-		/* contiguous words coalesce */
-		YYU_FATAL(pscatw, &$$->text, @2.s, @2.e - @2.s);
-	}
-	| WORD
-	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_WORD);
-	}
-	;
-
-

@@ -49,8 +49,8 @@ $dcommon = [ $*/common ~ j ]
 	fab --bslic-fab -k [ $*/make64.sh ] @all
 	fab --bslic-fab -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 
-	fab --bslic-fab -v '$beta=["[" 1 "]"]'  -k [ $*/make64-beta.sh ] @all
-	fab --bslic-fab -v '$beta=["[" 1 "]"]'  -k [ $*/install64-beta.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
+	fab --bslic-fab -v '$debug=["[" 1 "]"]'  -k [ $*/make64-debug.sh ] @all
+	fab --bslic-fab -v '$debug=["[" 1 "]"]'  -k [ $*/install64-debug.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 
 	fab --bslic-fab -v '$devel=["[" 1 "]"]' -k [ $*/make64-devel.sh ] @all
 }

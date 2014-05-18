@@ -332,6 +332,7 @@ int args_parse()
 #if DEVEL
 				, { "backtrace-pithy"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
 				, { "backtrace-full"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
+				, { "backtrace"										, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
 				, { "logtrace-no"									, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
 				, { "logtrace"										, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
 				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic		, MODE_BSLIC_STD }

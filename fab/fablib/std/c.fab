@@ -53,12 +53,12 @@ $cdscpaths = [
 	[
 		$dirs				# directories
 		$dscdirs		# directories, discovery only
-	~ [ ls/xmf/< $sext > ~ j ] ]
+	~ [ ls xmf/$sext ~ j ] ]
 
 	[
 		$rdirs			# recursive directories
 		$rdscdirs		# recursive directories, discovery only
-	~ [ lsr/xmf/< $sext > ~ j ] ]
+	~ [ lsr xmf/$sext ~ j ] ]
 ]
 
 # paths to source files for fabrication
@@ -69,16 +69,16 @@ $cfabpaths = [
 	[
 		$dirs				# directories
 		$fabdirs		# directories, fabrication only
-	~ [ ls/xmf/< $sext > ~ j ] ]
+	~ [ ls xmf/$sext ~ j ] ]
 
 	[
 		$rdirs			# recursive directories
 		$rfabdirs		# recursive directories, fabrication only
-	~ [ lsr/xmf/< $sext > ~ j ] ]
+	~ [ lsr xmf/$sext ~ j ] ]
 ]
 
 # paths to object files
-$cobjpaths = [ $cfabpaths ~ [ xs/< $sext >/< $dext >/y ~ j ] ]
+$cobjpaths = [ $cfabpaths ~ [ xs/$sext/$dext y ~ j ] ]
 
 # discovery
 #
@@ -88,11 +88,11 @@ $cobjpaths = [ $cfabpaths ~ [ xs/< $sext >/< $dext >/y ~ j ] ]
 #
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ uu/fi ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/< $sext >/< $dext >/fi ~ j ] ] [ $dext ]
+	[ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx xs/$sext/$dext fi ~ j ] ] [ $dext ]
 }
 
 # fabrication and dependency
-[ $cobjpaths ~ dj/shift ] :: [ $< ~ [ rx/xs/< $dext >/< $sext > ~ j ] ]
+[ $cobjpaths ~ dj shift ] :: [ $< ~ [ rx xs/$dext/$sext ~ j ] ]
 {
-	[ $cc ] [ $cflags ~ uu/fi ] -c [ $@ ~ [ rx/ineed/xm/< $sext >/uu/fi ~ j ] ] -o [ $@ ]
+	[ $cc ] [ $cflags ~ uu fi ] -c [ $@ ~ [ rx ineed xm/$sext uu fi ~ j ] ] -o [ $@ ]
 }

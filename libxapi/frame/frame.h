@@ -58,17 +58,26 @@ int xapi_frame_enter_last();
 // RETURNS
 //  zero when no error has been raised; otherwise, the error id
 //
+// RETURNS
+//  the value for the function return ; zero when no error has been raised, otherwise, the
+//  error id, which is a composite of the error table id and the error code
+//
 int xapi_frame_leave();
 
-/// xapi_frame_leave2
+/// xapi_frame_leave3
 //
 // SUMMARY
-//  as for xapi_frame_leave, but returns a pointer to the error table and the error code
+//  get information about the exit status of this frame
 //
 // REMARKS
-//  the return value from xapi_frame_leave is a composite of the etab id and error code
+//  when no error has been raised, all parameters are set to zero
 //
-int xapi_frame_leave2(const etable ** etab, int * code);
+// PARAMETERS
+//  [e] - pointer to error table
+//  [c] - error code
+//  [r] - return value, that is (e->id << 16) | c
+//
+void xapi_frame_leave3(const etable ** etab, int * code, int * rval);
 
 /// xapi_unwinding
 //
@@ -76,6 +85,10 @@ int xapi_frame_leave2(const etable ** etab, int * code);
 //  true if an error has been raised
 //
 int xapi_unwinding();
+
+int xapi_frame_errcode();
+int xapi_frame_errval();
+const etable * xapi_frame_errtab();
 
 /// xapi_frame_finalize
 //

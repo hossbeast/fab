@@ -45,7 +45,7 @@
 }
 
 /* terminals */
-%right WORD
+%right LF WORD
 
 /* nonterminals */
 %type  <node> statement
@@ -57,7 +57,8 @@
 %type  <node> varref
 %type  <node> nofile
 %type  <node> nofileparts
-%type  <node> generator
+%type  <node> transform
+%type  <node> transformparts
 
 %destructor { ffn_free($$); } <node>
 

@@ -45,7 +45,7 @@
 }
 
 /* terminals */
-%right WORD
+%right LF WORD
 
 /* nonterminals */
 %type  <node> statement
@@ -57,7 +57,8 @@
 %type  <node> varref
 %type  <node> nofile
 %type  <node> nofileparts
-%type  <node> generator
+%type  <node> transform
+%type  <node> transformparts
 
 %destructor { ffn_free($$); } <node>
 
@@ -85,11 +86,11 @@ list
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, (void*)0, (void*)0);
 	}
-	| '[' listparts '~' generator ']'
+	| '[' listparts '~' transform ']'
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, $2      , $4      , (void*)0);
 	}
-	| '[' '~' generator ']'
+	| '[' '~' transform ']'
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LIST, (void*)0, $3, (void*)0);
 	}
@@ -125,11 +126,19 @@ varref
 	}
 	;
 
-generator
-	: word
+transform
+	: transformparts
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_TRANSFORM, $1);
 	}
+	;
+
+transformparts
+	: transformparts word %prec WORD
+	{
+		$$ = ffn_addchain($1, $2);
+	}
+	| word %prec WORD
 	;
 
 nofile
@@ -137,6 +146,7 @@ nofile
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_NOFILE, $2);
 	}
+	;
 
 nofileparts
 	: nofileparts '.' word %prec WORD
@@ -147,20 +157,15 @@ nofileparts
 	;
 
 word
-	: word WORD
-	{
-		$$ = $1;
-
-		/* contiguous words coalesce */
-		YYU_FATAL(pscatw, &$$->text, @2.s, @2.e - @2.s);
-	}
-	| WORD
+	: WORD
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_WORD);
 	}
+	| LF
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LF);
+	}
 	;
-
-
 statement
 	: list
 	;

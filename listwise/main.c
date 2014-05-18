@@ -128,6 +128,34 @@ finally:
 coda;
 }
 
+
+// setup liblistwise logging
+static struct listwise_logging * logging = (struct listwise_logging[]) {{
+		.generator_token	= (uint64_t[]) { L_LWPARSE }
+	, .generator_would	= listwise_would
+	, .generator_log		= listwise_log
+	, .lstack_token			= (uint64_t[]) { L_LWEXEC }
+	, .lstack_would			= listwise_would
+	, .lstack_log				= listwise_log
+	, .exec_token				= (uint64_t[]) { L_LWEXEC }
+	, .exec_would				= listwise_would
+	, .exec_log					= listwise_log
+	, .opinfo_token			= (uint64_t[]) { L_LWOPINFO }
+	, .opinfo_would			= listwise_would
+	, .opinfo_log				= listwise_log
+#if DEVEL
+	, .tokens_token			= (uint64_t[]) { L_LWTOKEN }
+	, .tokens_would			= listwise_would
+	, .tokens_log				= listwise_log
+	, .states_token			= (uint64_t[]) { L_LWSTATE }
+	, .states_would			= listwise_would
+	, .states_log				= listwise_log
+	, .sanity_token			= (uint64_t[]) { L_LWSANITY }
+	, .sanity_would			= listwise_would
+	, .sanity_log				= listwise_log
+#endif
+}};
+
 int main(int g_argc, char** g_argv)
 {
 	char space[4096];
@@ -168,31 +196,7 @@ int main(int g_argc, char** g_argv)
 #endif
 
 	// setup liblistwise logging
-	listwise_logging_configure((struct listwise_logging[]) {{
-		  .generator_token	= (uint64_t[]) { L_LWPARSE }
-		, .generator_would	= listwise_would
-		, .generator_log		= listwise_log
-		, .lstack_token			= (uint64_t[]) { L_LWEXEC }
-		, .lstack_would			= listwise_would
-		, .lstack_log				= listwise_log
-		, .exec_token				= (uint64_t[]) { L_LWEXEC }
-		, .exec_would				= listwise_would
-		, .exec_log					= listwise_log
-		, .opinfo_token			= (uint64_t[]) { L_LWOPINFO }
-		, .opinfo_would			= listwise_would
-		, .opinfo_log				= listwise_log
-#if DEVEL
-		, .tokens_token			= (uint64_t[]) { L_LWTOKEN }
-		, .tokens_would			= listwise_would
-		, .tokens_log				= listwise_log
-		, .states_token			= (uint64_t[]) { L_LWSTATE }
-		, .states_would			= listwise_would
-		, .states_log				= listwise_log
-		, .sanity_token			= (uint64_t[]) { L_LWSANITY }
-		, .sanity_would			= listwise_would
-		, .sanity_log				= listwise_log
-#endif
-	}});
+	listwise_logging_configure(logging);
 
 	if(g_args.generator_file)
 	{
