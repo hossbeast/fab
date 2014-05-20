@@ -316,7 +316,7 @@ XAPI_LEAVE:													\
 //  add info kvp to the current frame
 //
 // REMARKS
-//  this is a no-op when not unwinding
+//  this is a no-op when not unwinding, and the statements are not even evaluated
 //
 // VARIANTS
 //  infos - value string specified as a null-terminated string
@@ -328,12 +328,16 @@ XAPI_LEAVE:													\
 
 #define XAPI_INFOW(k, vstr, vlen)											\
 	do {																								\
-		xapi_frame_infow(k, 0, vstr, vlen);								\
+		if(xapi_unwinding()) {														\
+			xapi_frame_infow(k, 0, vstr, vlen);							\
+		}																									\
 	} while(0)
 
 #define XAPI_INFOF(k, vfmt, ...)											\
 	do {																								\
-		xapi_frame_infof(k, 0, vfmt, ##__VA_ARGS__);			\
+		if(xapi_unwinding()) {														\
+			xapi_frame_infof(k, 0, vfmt, ##__VA_ARGS__);		\
+		}																									\
 	} while(0)
 
 /// XAPI_UNWINDING

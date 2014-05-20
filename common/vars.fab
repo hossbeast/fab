@@ -68,16 +68,17 @@ $fabcachedir						= [ /var/cache/fab ]			# fab cache
 $fabtmpdir							= [ /var/tmp/fab ]				# fab tmp
 $fabipcdir							= [ /var/run/fab ]				# fab shm/ipc files
 $lwopdir								= [
-	[ $devel ~ [ j/s/0/< $dlibdir/listwise >/y ~ j ] ]					# lw operators - regular/debug build
-	[ $devel ~ [ s/1/< [ $dliblistwise/op ~ j/rp ] >/y ~ j ] ]	# lw operators - devel build
+	[ $devel ~ [ ?{ j s{0}{$dlibdir/listwise} y ~ fi ] ]							# lw operators - regular/debug build
+	[ $devel ~ [ ?{ s{1}{ [ $dliblistwise/op ~ j/rp ] } y ~ fi ] ]		# lw operators - devel build
+	[ $devel ~ [ ?{ s{1}{ [ $dliblistwise/op ~ j/rp ] } y ~ fi ] ]		# lw operators - devel build
 ]
 $fablwopdir							= [
-	[ $devel ~ [ j/s/0/< $dlibdir/fab/lib >/y ~ j ] ]						# fab-specific lw operators - regular/debug build
-	[ $devel ~ [ s/1/< [ $dfab/fablw/op ~ j/rp ] >/y ~ j ] ]		# fab-specific lw operators - devel build
+	[ $devel ~ [ ?{ j s{0}{$dlibdir/fab/lib} y ~ fi ] ]								# fab-specific lw operators - regular/debug build
+	[ $devel ~ [ ?{ s{1}{ [ $dfab/fablw/op ~ j/rp ] } y ~ fi ] ]			# fab-specific lw operators - devel build
 ]
 $fabinvokedir						= [
-	[ $devel ~ [ j/s/0/< $dlibdir/fab/listwise >/y ~ j ] ]			# fab-provided invocations - regular/debug build
-	[ $devel ~ [ s/1/< [ $dfab/fablib ~ j/rp ] >/y ~ j ] ]			# fab-provided invocations - devel build
+	[ $devel ~ [ ?{ j s{0}{$dlibdir/fab/listwise} y ~ fi ] ]					# fab-provided invocations - regular/debug build
+	[ $devel ~ [ ?{ s{1}{ [ $dfab/fablib ~ j/rp ] } y ~ fi ] ]				# fab-provided invocations - devel build
 ]
 
 # compilers and their flags
@@ -90,7 +91,7 @@ $bisonflags	= [ --warnings=error ]
 $cc					= [ gcc ]
 $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 		# include paths
-	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring [ $dcommon ~ lsr/c/-d ] ~ s/^/-I ]
+	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring [ $dcommon ~ lsr c -d ] ~ s/^/-I ]
 	[ -DXAPI_PROVIDE_BACKTRACE ]
 	[ $debug $devel ~ s/1/-O0/y ]				# compiler optimizations
 	[ $debug $devel ~ j/s/00/-O3/y ]
@@ -101,10 +102,10 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 ]
 
 $lflags			= [
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxapi ~ rp ] >/y ~ j ] ]
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibxlinux ~ rp ] >/y ~ j ] ]
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dlibpstring ~ rp ] >/y ~ j ] ]
-	[ $devel ~ [ "s/1/<-Wl,-rpath," [ $dliblistwise ~ rp ] >/y ~ j ] ]
+	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibxapi ~ j/rp ] } ~ j ] y ~ fi ] ]
+	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibxlinux ~ j/rp ] } ~ j ] y ~ fi ] ]
+	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibpstring ~ j/rp ] } ~ j ] y ~ fi ] ]
+	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dliblistwise ~ j/rp ] } ~ j ] y ~ fi ] ]
 ]
 
 # default library names

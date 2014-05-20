@@ -41,7 +41,7 @@ static int procfile(const ff_parser * const ffp, const path * const restrict inp
 
 static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, int star)
 {
-	int x;
+	int x = 0;
 	int y;
 	int i;
 	path * pth = 0;
@@ -245,6 +245,16 @@ finally:
 	psfree(inv);
 	path_free(pth);
 	map_free(cmap);
+
+/*
+	XAPI_INFOF("loc", "[%d,%d - %d,%d]"
+		, root->statements[x]->loc.f_lin + 1
+		, root->statements[x]->loc.f_col + 1
+		, root->statements[x]->loc.l_lin + 1
+		, root->statements[x]->loc.l_col + 1
+	);
+*/
+
 coda;
 }
 

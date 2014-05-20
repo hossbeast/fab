@@ -92,7 +92,7 @@ $cobjpaths = [ $cfabpaths ~ [ xs/$sext/$dext y ~ j ] ]
 }
 
 # fabrication and dependency
-[ $cobjpaths ~ dj shift ] :: [ $< ~ [ rx xs/$dext/$sext ~ j ] ]
+[ $cobjpaths ~ dj shift ] :: [ $< ~ [ rx [ sx/$dext/$sext ~ j ] ~ fi ] ]
 {
-	[ $cc ] [ $cflags ~ uu fi ] -c [ $@ ~ [ rx ineed xm/$sext uu fi ~ j ] ] -o [ $@ ]
+	[ $cc ] [ $cflags ~ uu fi ] -c [ $@ ~ [ rx ineed lx/$sext uu fi ~ j ] ] -o [ $@ ]
 }

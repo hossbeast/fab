@@ -127,7 +127,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
  /* list-specific */
 <list>[]]																								{ POPSTATE; return LEX(yytext[0], 0); }
-<list>[^ \\#"$@~\x00-\x1F\x7F-\xFF\]]+ 									{ return LEX(WORD, 0); }
+<list>[^ \\#"$@~\x00-\x1F\x7F-\xFF[\]]+ 								{ return LEX(WORD, 0); }
 
 <blockcheck>[\n]																				{ LOCRESET; }
 <blockcheck>[\t ]+																			{ LOCWRITE; }
@@ -177,3 +177,8 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													yyu_scanner_error(yylloc, yyextra, FAB_ILLBYTE, "unexpected character '%c'", yytext[0]);
 																													return 0; /* return end-of-input */
 																												}
+<<EOF>>                                                 {
+                                                          while(yyextra->states_n)
+                                                            POPSTATE;
+                                                          return 0; /* return end-of-input */
+                                                        }

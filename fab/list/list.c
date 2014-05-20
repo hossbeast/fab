@@ -184,6 +184,14 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 finally:
 	generator_free(g);
 	psfree(gps);
+
+	XAPI_INFOF("loc", "[%d,%d - %d,%d]"
+		, list->loc.f_lin + 1
+		, list->loc.f_col + 1
+		, list->loc.l_lin + 1
+		, list->loc.l_col + 1
+	);
+
 coda;
 }
 

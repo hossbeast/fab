@@ -368,3 +368,8 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													yyu_scanner_error(yylloc, yyextra, LW_ILLBYTE, "unexpected character '%1$c'(0x%1$02hhx)", yytext[0]);
 																													return 0;	/* return end-of-input */
 																												}
+<<EOF>>																									{
+																													while(yyextra->states_n)
+																														POPSTATE;
+																													return 0;	/* return end-of-input */
+																												}
