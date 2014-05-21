@@ -52,8 +52,13 @@ int API listwise_enumerate_objects(listwise_object *** list, int * list_len)
 
 int API listwise_lookup_object(uint8_t type, listwise_object ** obj)
 {
-	if(((*obj) = map_get(object_registry, MM(type))) == 0)
+	listwise_object ** rv = 0;
+	if((rv = map_get(object_registry, MM(type))) == 0)
+	{
 		fail(LW_NOOBJ);
+	}
+
+	(*obj) = (*rv);
 
 finally:
 	XAPI_INFOF("type", "%hhu", type);

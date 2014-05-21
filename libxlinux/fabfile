@@ -53,7 +53,7 @@ $lflags				= [ $libxapi, -shared, [ "-Wl,-soname," $soname ] ]
 	> echo "local: *; };"
 	  ) 1>[ $dlibxlinux/exports ]
 
-	[ $cc ] [ $cflags ~ ss/u/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/xm/<o>/ss/u/fi ] [ $lflags ] [ "-Wl,--version-script=" $dlibxlinux/exports]
+	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ] [ "-Wl,--version-script=" $dlibxlinux/exports]
 }
 
 ##

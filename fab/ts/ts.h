@@ -27,7 +27,17 @@
 #include "pstring.h"
 #include "map.h"
 
-struct fml;
+struct fml;			// fml.h
+struct ff_loc;	// ffn.h
+
+typedef struct fmlctx
+{
+	struct fml *			fml;		// the formula
+	map *							bag;		// bag of values evaluated at parse-time
+
+	struct ff_loc  ** locs;		// [0] is the top of the loc stack
+	int								locsl;
+} fmlctx;
 
 /// fmleval
 //
@@ -35,8 +45,7 @@ struct fml;
 //
 typedef struct fmleval
 {
-	struct fml *	fml;					// the formula
-	map * 				bag;					// bag of values, evaluated at parse-time
+	fmlctx * 			ctx;					// eval context
 	uint32_t			flags;
 
 	union

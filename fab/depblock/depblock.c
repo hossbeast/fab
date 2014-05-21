@@ -85,7 +85,7 @@ int depblock_read(depblock * const block)
 		fatal(xlseek, block->fd, 0, SEEK_SET, 0);
 		
 		// map the file
-		fatal(xmmap, 0, block->size, PROT_READ, MAP_PRIVATE, block->fd, 0, 0);
+		fatal(xmmap, 0, block->size, PROT_READ, MAP_PRIVATE, block->fd, 0, &block->addr);
 
 		// block is ready to process
 		block->block = block->addr;

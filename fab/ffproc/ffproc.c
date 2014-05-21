@@ -37,9 +37,16 @@
 
 #define restrict __restrict
 
-static int procfile(const ff_parser * const ffp, const path * const restrict inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel);
+typedef struct 
+{
+	struct ff_loc ** v;
+	int				l;
+	int				a;
+} locstack;
 
-static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, int star)
+static int procfile(const ff_parser * const ffp, const path * const restrict inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel, locstack * loc);
+
+static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, int star, locstack * loc)
 {
 	int x = 0;
 	int y;
@@ -56,7 +63,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 		{
 			if(ff->count == 1)
 			{
-				fatal(procblock, ff, stmt, ffp, sstk, vmap, stax, staxa, staxp, first, star);
+				fatal(procblock, ff, stmt, ffp, sstk, vmap, stax, staxa, staxp, first, star, loc);
 			}
 		}
 		else if(stmt->type == FFN_DEPENDENCY)
@@ -68,7 +75,20 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 		}
 		else if(stmt->type == FFN_FORMULA)
 		{
-			fatal(fml_attach, stmt, sstk, vmap, ffp->gp, stax, staxa, staxp);
+			int locl = loc->l;
+
+			// add this node to the location stack
+			if(loc->l == loc->a)
+			{
+				int ns = loc->a ?: 5;
+				ns = ns * 2 + ns / 2;
+				fatal(xrealloc, &loc->v, sizeof(*loc->v), ns, loc->a);
+				loc->a = ns;
+			}
+			loc->v[loc->l++] = &stmt->loc;
+
+			fatal(fml_attach, stmt, sstk, loc->v, loc->l, vmap, ffp->gp, stax, staxa, staxp);
+			loc->l = locl;
 		}
 		else if(stmt->type == FFN_VARASSIGN)
 		{
@@ -226,8 +246,21 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 					fatal(strstack_push, sstk, stmt->scope->parts[i]->text->s);
 			}
 
+			int locl = loc->l;
+
+			// add this node to the location stack
+			if(loc->l == loc->a)
+			{
+				int ns = loc->a ?: 5;
+				ns = ns * 2 + ns / 2;
+				fatal(xrealloc, &loc->v, sizeof(*loc->v), ns, loc->a);
+				loc->a = ns;
+			}
+			loc->v[loc->l++] = &stmt->loc;
+
 			// process the referenced fabfile
-			fatal(procfile, ffp, pth, inv, sstk, nmap, stax, staxa, staxp, 0, nofile, nofilel);
+			fatal(procfile, ffp, pth, inv, sstk, nmap, stax, staxa, staxp, 0, nofile, nofilel, loc);
+			loc->l = locl;
 
 			// scope pop
 			if(stmt->scope)
@@ -258,7 +291,7 @@ finally:
 coda;
 }
 
-int procfile(const ff_parser * const ffp, const path * const inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel)
+static int procfile(const ff_parser * const ffp, const path * const inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel, locstack * loc)
 {
 	ff_file * ff = 0;
 
@@ -290,7 +323,7 @@ int procfile(const ff_parser * const ffp, const path * const inpath, pstring * s
 	fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);
 
 	// process the fabfile tree, construct the graph
-	fatal(procblock, ff, ff->ffn, ffp, sstk, vmap, stax, staxa, staxp, first, star);
+	fatal(procblock, ff, ff->ffn, ffp, sstk, vmap, stax, staxa, staxp, first, star, loc);
 
 finally:
 	XAPI_INFOS("path", inpath->rel_cwd);
@@ -305,13 +338,17 @@ int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map 
 {
 	strstack * sstk = 0;
 
+	// location stack
+	locstack loc = {};
+
 	// create stack for scope resolution
 	fatal(strstack_create, &sstk);
 	fatal(strstack_push, sstk, "..");
 
-	fatal(procfile, ffp, inpath, 0, sstk, vmap, stax, staxa, staxp, first, 0, 0);
+	fatal(procfile, ffp, inpath, 0, sstk, vmap, stax, staxa, staxp, first, 0, 0, &loc);
 
 finally :
 	strstack_free(sstk);
+	free(loc.v);
 coda;
 }

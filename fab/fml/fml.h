@@ -32,21 +32,24 @@
 
 #define restrict __restrict
 
-struct fmleval;	// in ts.h
+struct fmlctx;			// in ts.h
+struct fmleval;			// in ts.h
 
 typedef struct fml
 {
 	ff_node *					ffn;					// ff_node for this formula
 
+	// a new ctx is created for the fml each time the ff_file in which it resides is invoked
+	//  i.e. { variable-set }
+	struct fmlctx ** 	ctxs;
+	int								ctxsa;
+	int								ctxsl;
+
+	// a new eval is created for the fml for each set of targets it can be invoked on behalf of
+	//  i.e. { variable-set, target-list }
 	struct fmleval **	evals;				// evaluation instances
 	int								evalsa;
 	int								evalsl;
-
-	// the number of bags associated with an fml is the number of different times that
-	// the ff_file it is in is invoked
-	map ** 						bags;
-	int								bagsa;
-	int								bagsl;
 
 	/*
 	** the var closure of an fml is a flat distinct list of all of the variables
@@ -76,7 +79,7 @@ extern union g_fmls_t
 // SUMMARY
 //  attach a formula to graph nodes
 //
-int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, generator_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, struct ff_loc ** const restrict loc, const int locl, map * const restrict vmap, generator_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 	__attribute__((nonnull));
 
 /// fml_render

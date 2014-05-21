@@ -26,7 +26,7 @@ $dcommon				= [ $*/../common ~ j ]
 $cflags					= [ $cflags -fno-builtin-log [ $dlistwise ~ lsr/c/-d/s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
-	[ -DBUILDSTAMP="\""`date`"\"" ~ j ]
+	[ ~ ?{ cons{-DBUILDSTAMP="`date`"} ]
 ]
 $lflags					= [ $lflags $libpstring $liblistwise $libxapi $libxlinux ]
 $name						= [ listwise ]
@@ -47,7 +47,7 @@ $listwise				= [ $dlistwise/$name ~ j ]
 #
 [ $listwise ] : [ $dlistwise/main.o ~ j ]
 {
-	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [ $lflags ~ fi ]
+	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags ~ fi ]
 }
 
 #

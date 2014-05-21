@@ -650,7 +650,8 @@ int log_log_start(TRACEARGS const uint64_t e)
 
 void log_finish()
 {
-	finish();
+	if(o_space_bits)
+		finish();
 }
 
 int log_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va)
@@ -659,7 +660,7 @@ int log_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va)
 	{
 		logvprintf(fmt, va);
 	}
-	else if(start(e))
+	else if(e && start(e))
 	{
 		// the message
 		logvprintf(fmt, va);
@@ -700,7 +701,7 @@ int log_logw(TRACEARGS const uint64_t e, const char * const src, size_t len)
 	{
 		logwrite(src, len, 1);
 	}
-	else if(start(e))
+	else if(e && start(e))
 	{
 		// the message
 		logwrite(src, len, 1);

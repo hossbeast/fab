@@ -17,7 +17,7 @@
 
 $VERSIONL				= [ 0 5 0 0 ]											# version list - major, minor, revision, build
 $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
-$VERSIONN				= [ $VERSIONL ~ j/s/^0//g ] 			# version number
+$VERSIONN				= [ $VERSIONL ~ j s/^0//g ] 			# version number
 
 #
 # debug :
@@ -93,12 +93,12 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 		# include paths
 	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring [ $dcommon ~ lsr c -d ] ~ s/^/-I ]
 	[ -DXAPI_PROVIDE_BACKTRACE ]
-	[ $debug $devel ~ s/1/-O0/y ]				# compiler optimizations
-	[ $debug $devel ~ j/s/00/-O3/y ]
-	[ $debug $devel ~ s/1/-g/y ]					# debug symbol generation
-	[ $debug $devel ~ s/1/-DDEVEL/y ]
-	[        $devel ~ s/1/-DXAPI_RUNTIME_CHECKS/y ]
-	[        $devel ~ s/1/-DSANITY/y ]
+	[ $debug $devel ~ s/1/-O0 y ]				# compiler optimizations
+	[ $debug $devel ~ j s/00/-O3 y ]
+	[ $debug $devel ~ s/1/-g y ]					# debug symbol generation
+	[ $debug $devel ~ s/1/-DDEVEL y ]
+	[        $devel ~ s/1/-DXAPI_RUNTIME_CHECKS y ]
+	[        $devel ~ s/1/-DSANITY y ]
 ]
 
 $lflags			= [

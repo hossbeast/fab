@@ -153,7 +153,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <nofile>[.]																							{ return LEX(yytext[0], 0); }
 <nofile>[\x00-\xFF]																			{ POPSTATE; yyless(0); }
 
-<transform>[ \t]+																				{ return LEX(WORD, 0); }
+<transform>[\t ]+																				{ return LEX(WORD, 0); }
 <transform>[\n]																					{ return LEX(LF, 0); }
 <transform>[]]																					{ POPSTATE; yyless(0); }
 <transform>[[]																					{	POPSTATE;	PUSHSTATE(list); return LEX(yytext[0], 0); }

@@ -579,9 +579,9 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lwx *** stax, int 
 
 			// render the formula
 			//  note that serialization in this loop is important, because fmlv's may share the same bag
-			fatal(map_set, (*ts)[i]->fmlv->bag, MMS("@"), MM((*stax)[staxp]), 0);
+			fatal(map_set, (*ts)[i]->fmlv->ctx->bag, MMS("@"), MM((*stax)[staxp]), 0);
 			fatal(fml_render, (*ts)[i], gp, stax, staxa, staxp + 1, 0, 1);
-			map_delete((*ts)[i]->fmlv->bag, MMS("@"));
+			map_delete((*ts)[i]->fmlv->ctx->bag, MMS("@"));
 
 			i++;
 		}

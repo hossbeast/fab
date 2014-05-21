@@ -67,7 +67,7 @@ static int dscv_attach(gn * t, fmleval * fmlv)
 	finally : coda;
 }
 
-static int fml_attach_singly(fml * const restrict fml, strstack * const restrict sstk, map * const restrict bag, lwx * const restrict ls)
+static int fml_attach_singly(fml * const restrict fml, strstack * const restrict sstk, fmlctx * const restrict ctx, lwx * const restrict ls)
 {
 	int y;
 
@@ -85,8 +85,7 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 		
 		fatal(xmalloc, &fml->evals[fml->evalsl++], sizeof(*fml->evals[0]));
 		fmleval * fmlv = fml->evals[fml->evalsl - 1];
-		fmlv->fml = fml;
-		fmlv->bag = bag;
+		fmlv->ctx = ctx;
 		fmlv->flags = fml->ffn->flags;
 
 		// get the target graph node
@@ -144,7 +143,7 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 	finally : coda;
 }
 
-static int fml_attach_multi(fml * const restrict fml, strstack * const restrict sstk, map * const restrict bag, lwx * const restrict ls)
+static int fml_attach_multi(fml * const restrict fml, strstack * const restrict sstk, fmlctx * const restrict ctx, lwx * const restrict ls)
 {
 	int x;
 	int y;
@@ -163,8 +162,7 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 		
 		fatal(xmalloc, &fml->evals[fml->evalsl++], sizeof(*fml->evals[0]));
 		fmleval * fmlv = fml->evals[fml->evalsl - 1];
-		fmlv->fml = fml;
-		fmlv->bag = bag;
+		fmlv->ctx = ctx;
 		fmlv->flags = fml->ffn->flags;
 
 		if(fmlv->flags & FFN_FABRICATION)
@@ -233,11 +231,13 @@ static void fml_free(fml * fml)
 		}
 		free(fml->evals);
 
-		for(x = 0; x < fml->bagsl; x++)
+		for(x = 0; x < fml->ctxsl; x++)
 		{
-			map_free(fml->bags[x]);
+			free(fml->ctxs[x]->locs);
+			map_free(fml->ctxs[x]->bag);
+			free(fml->ctxs[x]);
 		}
-		free(fml->bags);
+		free(fml->ctxs);
 
 		free(fml->closure_vars);
 	}
@@ -247,7 +247,7 @@ static void fml_free(fml * fml)
 //
 // public
 //
-int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map * const restrict vmap, generator_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, struct ff_loc ** const restrict loc, const int locl, map * const restrict vmap, generator_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 {
 	// create fml if necessary
 	fml * fml = ffn->fml;
@@ -261,6 +261,26 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 		fatal(enclose_vars, ffn, &fml->closure_vars, &fml->closure_varsa, &fml->closure_varsl);
 	}
 
+	// reallocate context list if necessary
+	if(fml->ctxsl == fml->ctxsa)
+	{
+		int ns = fml->ctxsa ?: 10;
+		ns = ns * 2 + ns / 2;
+		fatal(xrealloc, &fml->ctxs, sizeof(*fml->ctxs), ns, fml->ctxsa);
+		fml->ctxsa = ns;
+	}
+	
+	// create a new context
+	fatal(xmalloc, &fml->ctxs[fml->ctxsl], sizeof(*fml->ctxs[0]));
+	fatal(map_create, &fml->ctxs[fml->ctxsl]->bag, 0);
+	fatal(xmalloc, &fml->ctxs[fml->ctxsl]->locs, sizeof(*fml->ctxs[0]->locs) * locl);
+	memcpy(fml->ctxs[fml->ctxsl]->locs, loc, sizeof(*loc) * locl);
+	fml->ctxs[fml->ctxsl]->locsl = locl;
+	fml->ctxs[fml->ctxsl]->fml = fml;
+
+	fml->ctxsl++;
+
+/*
 	// create the bag
 	if(fml->bagsl == fml->bagsa)
 	{
@@ -271,21 +291,23 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	}
 
 	fatal(map_create, &fml->bags[fml->bagsl++], 0);
+*/
 
 	// populate the bag
+	map * bag = fml->ctxs[fml->ctxsl - 1]->bag;
 	lwx * ls = 0;
 	int x = 0;
 	for(x = 0; x < fml->closure_varsl; x++)
 	{
 		fatal(var_access, vmap, fml->closure_vars[x]->name->text->s, stax, staxa, staxp, &ls);
-		fatal(map_set, fml->bags[fml->bagsl - 1], fml->closure_vars[x]->name->text->s, fml->closure_vars[x]->name->text->l, MM(ls), 0);
+		fatal(map_set, bag, fml->closure_vars[x]->name->text->s, fml->closure_vars[x]->name->text->l, MM(ls), 0);
 	}
 
 	fatal(var_access, vmap, "#", stax, staxa, staxp, &ls);
-	fatal(map_set, fml->bags[fml->bagsl - 1], MMS("#"), MM(ls), 0);
+	fatal(map_set, bag, MMS("#"), MM(ls), 0);
 
 	fatal(var_access, vmap, "*", stax, staxa, staxp, &ls);
-	fatal(map_set, fml->bags[fml->bagsl - 1], MMS("*"), MM(ls), 0);
+	fatal(map_set, bag, MMS("*"), MM(ls), 0);
 
 	// resolve targets lists
 	fatal(lw_reset, stax, staxa, *staxp);
@@ -305,11 +327,11 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, map
 	// create fmlv(s) and attach graph nodes
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(fml_attach_singly, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[*staxp]);
+		fatal(fml_attach_singly, fml, sstk, fml->ctxs[fml->ctxsl - 1], (*stax)[*staxp]);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(fml_attach_multi, fml, sstk, fml->bags[fml->bagsl - 1], (*stax)[*staxp]);
+		fatal(fml_attach_multi, fml, sstk, fml->ctxs[fml->ctxsl - 1], (*stax)[*staxp]);
 	}
 
 	finally : coda;
@@ -319,13 +341,20 @@ int fml_render(ts * const restrict ts, generator_parser * const gp, lwx *** cons
 {
 	// resolve the command list
 	int pn = staxp;
-	fatal(list_resolve, ts->fmlv->fml->ffn->command, ts->fmlv->bag, gp, stax, staxa, &pn, 1, rawvars);
+	fatal(list_resolve, ts->fmlv->ctx->fml->ffn->command, ts->fmlv->ctx->bag, gp, stax, staxa, &pn, 1, rawvars);
 
 	// psprintf 1) allocates the pstring if necessary, and 2) sets the length
 	fatal(psprintf, &ts->cmd_txt, shebang ? "#!/bin/bash\n\n" : "");
 	fatal(list_renderto, (*stax)[staxp], &ts->cmd_txt);
 
-	finally : coda;
+char * gn_idstring(struct gn *);
+
+finally:
+	if(ts->fmlv->flags & FFN_DISCOVERY)
+		XAPI_INFOS("target", gn_idstring(ts->fmlv->target));
+	else
+		XAPI_INFOS("product[0]", gn_idstring(ts->fmlv->products[0]));
+coda;
 }
 
 int fml_exec(ts * const restrict ts, int num)

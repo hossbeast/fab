@@ -53,13 +53,19 @@ static int recurse_needs(gn * root, gn ** r, int * x, int useweak)
 			(*x)++;  // count mode
 		}
 
-		return 0;
+		finally : coda;
 	};
 
 	if(useweak)
-		return traverse_depth_bynodes_needsward_useweak_nobridge_usenofile(root, logic);
+	{
+		fatal(traverse_depth_bynodes_needsward_useweak_nobridge_usenofile, root, logic);
+	}
 	else
-		return traverse_depth_bynodes_needsward_noweak_nobridge_usenofile (root, logic);
+	{
+		fatal(traverse_depth_bynodes_needsward_noweak_nobridge_usenofile , root, logic);
+	}
+
+	finally : coda;
 }
 
 static int recurse_feeds(gn * root, gn ** r, int * x, int useweak)
@@ -75,13 +81,15 @@ static int recurse_feeds(gn * root, gn ** r, int * x, int useweak)
 			(*x)++;  // count mode
 		}
 
-		return 0;
+		finally : coda;
 	};
 
 	if(useweak)
-		return traverse_depth_bynodes_feedsward_useweak_nobridge_usenofile(root, logic);
+		fatal(traverse_depth_bynodes_feedsward_useweak_nobridge_usenofile, root, logic);
 	else
-		return traverse_depth_bynodes_feedsward_noweak_nobridge_usenofile (root, logic);
+		fatal(traverse_depth_bynodes_feedsward_noweak_nobridge_usenofile , root, logic);
+
+	finally : coda;
 }
 
 ///

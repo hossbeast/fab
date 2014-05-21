@@ -161,9 +161,9 @@ int bake_bp(
 			fatal(map_clone, lmap, bakemap);
 
 			// render the formula
-			fatal(map_set, (*ts)[y]->fmlv->bag, MMS("@"), MM((*stax)[staxp]), 0);
+			fatal(map_set, (*ts)[y]->fmlv->ctx->bag, MMS("@"), MM((*stax)[staxp]), 0);
 			fatal(fml_render, (*ts)[y], gp, stax, staxa, staxp + 1, lmap, 0);
-			map_delete((*ts)[y]->fmlv->bag, MMS("@"));
+			map_delete((*ts)[y]->fmlv->ctx->bag, MMS("@"));
 
 			// index occupied by this formula in the stage.stage in which this formula is executed
 			int index = y;

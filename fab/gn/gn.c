@@ -563,13 +563,26 @@ void gn_dump(gn * gn)
 			{
 				for(x = 0; x < gn->dscvsl; x++)
 				{
-					logf(L_DG | L_DGRAPH, "%18s : (%s)[%3d,%3d - %3d,%3d]", "dsc formula"
-						, ff_idstring(gn->dscvs[x]->fml->ffn->loc.ff)
-						, gn->dscvs[x]->fml->ffn->loc.f_lin + 1
-						, gn->dscvs[x]->fml->ffn->loc.f_col + 1
-						, gn->dscvs[x]->fml->ffn->loc.l_lin + 1
-						, gn->dscvs[x]->fml->ffn->loc.l_col + 1
+					int y = gn->dscvs[x]->ctx->locsl - 1;
+
+					logf(L_DG | L_DGRAPH, "%18s : [%3d,%3d - %3d,%3d] @ %s", "dsc formula"
+						, gn->dscvs[x]->ctx->locs[y]->f_lin + 1
+						, gn->dscvs[x]->ctx->locs[y]->f_col + 1
+						, gn->dscvs[x]->ctx->locs[y]->l_lin + 1
+						, gn->dscvs[x]->ctx->locs[y]->l_col + 1
+						, ff_idstring(gn->dscvs[x]->ctx->locs[y]->ff)
 					);
+
+					for(y--; y >= 0; y--)
+					{
+						logf(L_DG | L_DGRAPH, "%18s   [%3d,%3d - %3d,%3d] @ %s", ""
+							, gn->dscvs[x]->ctx->locs[y]->f_lin + 1
+							, gn->dscvs[x]->ctx->locs[y]->f_col + 1
+							, gn->dscvs[x]->ctx->locs[y]->l_lin + 1
+							, gn->dscvs[x]->ctx->locs[y]->l_col + 1
+							, ff_idstring(gn->dscvs[x]->ctx->locs[y]->ff)
+						);
+					}
 				}
 			}
 			else
@@ -597,13 +610,26 @@ void gn_dump(gn * gn)
 		{
 			if(gn->fabv)
 			{
-				logf(L_DG | L_DGRAPH, "%18s : (%s)[%3d,%3d - %3d,%3d]", "fab formula"
-					, ff_idstring(gn->fabv->fml->ffn->loc.ff)
-					, gn->fabv->fml->ffn->loc.f_lin + 1
-					, gn->fabv->fml->ffn->loc.f_col + 1
-					, gn->fabv->fml->ffn->loc.l_lin + 1
-					, gn->fabv->fml->ffn->loc.l_col + 1
+				int y = gn->fabv->ctx->locsl - 1;
+
+				logf(L_DG | L_DGRAPH, "%18s : [%3d,%3d - %3d,%3d] @ %s", "fab formula"
+					, gn->fabv->ctx->locs[y]->f_lin + 1
+					, gn->fabv->ctx->locs[y]->f_col + 1
+					, gn->fabv->ctx->locs[y]->l_lin + 1
+					, gn->fabv->ctx->locs[y]->l_col + 1
+					, ff_idstring(gn->fabv->ctx->locs[y]->ff)
 				);
+
+				for(y--; y >= 0; y--)
+				{
+					logf(L_DG | L_DGRAPH, "%18s   [%3d,%3d - %3d,%3d] @ %s", ""
+						, gn->fabv->ctx->locs[y]->f_lin + 1
+						, gn->fabv->ctx->locs[y]->f_col + 1
+						, gn->fabv->ctx->locs[y]->l_lin + 1
+						, gn->fabv->ctx->locs[y]->l_col + 1
+						, ff_idstring(gn->fabv->ctx->locs[y]->ff)
+					);
+				}
 
 				if(gn->fabv->productsl > 1)
 				{
@@ -840,21 +866,21 @@ int gn_finalize(int reconcile)
 
 				gn->force_invalid = 1;
 				int ok = 0;
-				fatal(xeuidaccess, gn->noforce_invalid_path, F_OK, &ok);
+				fatal(uxeuidaccess, gn->noforce_invalid_path, F_OK, &ok);
 				if(ok == 0)
 				{
 					gn->force_invalid = 0;
 				}
 
 				gn->force_ff = 1;
-				fatal(xeuidaccess, gn->noforce_ff_path, F_OK, &ok);
+				fatal(uxeuidaccess, gn->noforce_ff_path, F_OK, &ok);
 				if(ok == 0)
 				{
 					gn->force_ff = 0;
 				}
 
 				gn->force_needs = 1;
-				fatal(xeuidaccess, gn->noforce_needs_path, F_OK, &ok);
+				fatal(uxeuidaccess, gn->noforce_needs_path, F_OK, &ok);
 				if(ok == 0)
 				{
 					gn->force_needs = 0;
@@ -863,7 +889,7 @@ int gn_finalize(int reconcile)
 				if(gn->designate == GN_DESIGNATION_SECONDARY)
 				{
 					gn->force_noexists = 1;
-					fatal(xeuidaccess, gn->path->can, F_OK, &ok);
+					fatal(uxeuidaccess, gn->path->can, F_OK, &ok);
 					if(ok == 0)
 					{
 						gn->force_noexists = 0;

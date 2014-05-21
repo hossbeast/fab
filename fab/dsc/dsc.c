@@ -72,9 +72,9 @@ static int dsc_execwave(
 		fatal(lstack_obj_add, (*stax)[staxp], ts[x]->fmlv->target, LISTWISE_TYPE_GNLW);
 
 		// render the formula
-		fatal(map_set, ts[x]->fmlv->bag, MMS("@"), MM((*stax)[staxp]), 0);
+		fatal(map_set, ts[x]->fmlv->ctx->bag, MMS("@"), MM((*stax)[staxp]), 0);
 		fatal(fml_render, ts[x], gp, stax, staxa, staxp + 1, 0, 1);
-		map_delete(ts[x]->fmlv->bag, MMS("@"));
+		map_delete(ts[x]->fmlv->ctx->bag, MMS("@"));
 	}
 
 	// execute all formulas in parallel
