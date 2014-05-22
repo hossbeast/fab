@@ -15,7 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# c.fab
+# { .y.header, .y.rules.*, .y.footer } -> { .y }
+
+# tokens.fab
 #  provides fabrication formula for .tab.c -> { .tokens.c, .tokens.h }
 #  provides dependencies for { .tokens.c, .tokens.h } -> .tab.c
 #
