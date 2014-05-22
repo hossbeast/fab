@@ -514,8 +514,53 @@ int API lstack_xchg(lwx * const restrict lx)
 	return 1;
 }
 
-int API lstack_merge(lwx * const restrict lx, int to, int from)
+int API lstack_merge(lwx * const restrict lx, int a, int b)
 {
+	if(a < 0 || a >= lx->l)
+		fail(LW_NOLIST);
+
+	if(b < 0 || b >= lx->l)
+		fail(LW_NOLIST);
+
+	if(a == b)
+		fail(LW_ILLOP);
+
+	// number of entries to move
+	int al = lx->s[a].l;
+	int n = lx->s[b].l;
+
+	// ensure allocated space in dest list
+	fatal(allocate, lx, a, al + n - 1, -1);
+
+	// copy unused rows from dst list to temp space
+	typeof(lx->s[0].s[0]) * Ts = alloca(n * sizeof(*Ts));
+	typeof(lx->s[0].t[0]) * Tt = alloca(n * sizeof(*Tt));
+	memcpy(Ts, &lx->s[a].s[al], n * sizeof(*Ts));
+	memcpy(Tt, &lx->s[a].t[al], n * sizeof(*Tt));
+
+	// copy rows from src to dst, overwriting the rows just copied to temp
+	memcpy(&lx->s[a].s[al], &lx->s[b].s[0], n * sizeof(lx->s[0].s[0]));
+	memcpy(&lx->s[a].t[al], &lx->s[b].t[0], n * sizeof(lx->s[0].t[0]));
+
+	// copy rows from temp to src list
+	memcpy(&lx->s[b].s[0], Ts, n * sizeof(lx->s[0].s[0]));
+	memcpy(&lx->s[b].t[0], Tt, n * sizeof(lx->s[0].t[0]));
+
+	// shorten src list
+	lx->s[b].l = 0;
+
+	// extend dst list
+	lx->s[a].l += n;
+
+	// swap src list to the end of the stack
+	typeof(lx->s[0]) T = lx->s[b];
+	lx->s[b] = lx->s[lx->l - 1];
+	lx->s[lx->l - 1] = T;
+
+	// shorten stack
+	lx->l--;
+
+/*
 	fatal(ensure, lx, to, -1, -1);
 	int tox = lx->s[to].l;
 	fatal(ensure, lx, to, lx->s[to].l + lx->s[from].l - 1, -1);
@@ -539,8 +584,12 @@ int API lstack_merge(lwx * const restrict lx, int to, int from)
 	from++;
 
 	lx->l = from;
+*/
 
-	finally : coda;
+finally:
+	XAPI_INFOF("to", "%d", a);
+	XAPI_INFOF("from", "%d", b);
+coda;
 }
 
 int API lstack_allocate(lwx * const restrict lx, int x, int y, int z)
@@ -581,7 +630,7 @@ int API lstack_displace(lwx * const restrict lx, int x, int y, int l)
 {
 	// notice that this is a no-op when l == 0
 	// ensure there are sufficient unused entries beyond s[x].l
-	fatal(lstack_allocate, lx, x, lx->s[x].l + l - 1, -1);
+	fatal(allocate, lx, x, lx->s[x].l + l - 1, -1);
 
 	// copy l allocated entries from beyond s[x].l
 	typeof(lx->s[0].s[0]) * Ts = alloca(l * sizeof(lx->s[0].s[0]));

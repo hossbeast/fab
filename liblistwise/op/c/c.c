@@ -19,19 +19,21 @@
 
 /*
 
-c operator - coalesce lists on the stack
+c operator - coalesce lists on the stack into the top list
 
-NO ARGUMENTS
+ARGUMENTS
  1*. from - merge lists starting at this index, and counting down, into {to} list
             if negative, interpreted as offset from number of lists
               i.e. -1 refers to highest-numbered list index
             default : -1
- 2*. to   - default : 0
 
-OPERATION
+ARGUMENTS
+ [0] : N - merge lists from indexes [ 1, N ] inclusive into list 0
 
- 1. coalesce all lists onto the top list
- 2. clear the current selection
+default : 1, i.e. merge list[1] into list[0]
+
+negative N counts indexes starting from the highest-numbered list
+N = 0 means merge all lists
 
 */
 
@@ -62,17 +64,26 @@ int op_validate(operation* o)
 
 int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
-	int from = -1;
+	int N = 1;
 
 	if(o->argsl)
-		from = o->args[0]->i64;
+		N = o->args[0]->i64;
 
-	if(from < 0)
-		from = ls->l + from;
+	if(N == 0)
+		N = ls->l - 1;
+	else if(N < 0)
+		N = ls->l + N;
 
-	int x;
-	for(x = from; x >= 1; x--)
-		fatal(lstack_merge, ls, 0, x);
+	if(N < 0 || N >= ls->l)
+	{
+		lw_log_opinfo("c:N=%d is out-of-bounds %d", N, ls->l);
+	}
+	else
+	{
+		int x;
+		for(x = 0; x < N; x++)
+			fatal(lstack_merge, ls, 0, 1);
+	}
 
 	finally : coda;
 }

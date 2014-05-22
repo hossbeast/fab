@@ -44,10 +44,11 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "cons"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET | LWOP_ARGS_CANHAVE | LWOP_EMPTYSTACK_YES
+		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET | LWOP_ARGS_CANHAVE | LWOP_EMPTYSTACK_YES | LWOP_OPERATION_PUSHBEFORE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .desc					= "prepend items to the list"
+		, .desc					= "create new list from the specified items"
+		, .mnemonic			= "construct"
 	}
 	, {}
 };
@@ -64,6 +65,8 @@ static int op_validate(operation* o)
 
 static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
+	fatal(lstack_unshift, ls);
+
 	int x;
 	for(x = 0; x < o->argsl; x++)
 		fatal(lstack_add, ls, o->args[x]->s, o->args[x]->l);

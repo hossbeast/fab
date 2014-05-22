@@ -15,11 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	SYNTAX		generator string could not be parsed
-2	ILLBYTE		generator string contains illegal byte(s)
-3	ILLREF		generator contains illegal backreference
-4	ILLOP			generator contains unknown operator
-5	ARGSNUM		generator wrong number of arguments
-6	ARGSTYPE	generator argument of the wrong type
-7	ARGSDOM		generator argument out of expected range
-8 NOOBJ			unknown object type referenced
+1		SYNTAX		transform string could not be parsed
+2		ILLBYTE		transform string contains illegal byte(s)
+3		ILLREF		transform contains illegal backreference
+4		NXOP			transform contains unknown operator
+5		ARGSNUM		transform wrong number of arguments
+6		ARGSTYPE	transform argument of the wrong type
+7		ARGSDOM		transform argument out of expected range
+8		NOOBJ			unknown object type referenced
+9		NOLIST		lwx operation requested out-of-bounds list index
+10	NOROW			lwx operation requested out-of-bounds row index
+11	ILLOP			lwx operation cannot be completed

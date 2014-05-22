@@ -197,7 +197,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														while(yyextra->states_n)
 																															POPSTATE;
 																														LOCWRITE;
-																														yyu_scanner_error(yylloc, yyextra, LW_ILLOP, "unknown operator : %s", yytext);
+																														yyu_scanner_error(yylloc, yyextra, LW_NXOP, "unknown operator : %s", yytext);
 																														return 0;
 																													}
 																												}

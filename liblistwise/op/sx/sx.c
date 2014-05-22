@@ -83,7 +83,9 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmat
 	{
 		char * s;
 		int l;
-		fatal(lstack_getbytes, ls, 0, x, &s, &l);
+
+		// get string representation for the row, ensuring that we operate in tmp space
+		fatal(lstack_getstring, ls, 0, x, &s, &l);
 
 		// match starts here
 		char * at = 0;
@@ -148,10 +150,6 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmat
 
 		if(at)
 		{
-			// calling getstring ensures that s points to the temp space for this row
-			// if getbytes prevously returned the temp space, then this call resolves to a no-op
-			fatal(lstack_getstring, ls, 0, x, &s, &l);
-
 			fatal(lstack_writef, ls, 0, x, "%.*s%.*s", at - s, s, rxl, rxs);
 			fatal(lstack_selection_stage, ls, x);
 			fatal(lstack_window_stage, ls, x, at - s, rxl);

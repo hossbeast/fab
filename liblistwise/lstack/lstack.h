@@ -146,9 +146,9 @@ int lstack_xchg(lwx * const restrict lx)
 /// lstack_merge
 //
 // SUMMARY
-//  append the rows in list b to the end of list a
+//  merge list {src} into list {dst}, reducing the number of lists by 1
 //
-int lstack_merge(lwx * const restrict lx, int a, int b)
+int lstack_merge(lwx * const restrict lx, int dst, int src)
 	__attribute__((nonnull));
 
 /// allocate

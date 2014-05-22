@@ -56,7 +56,7 @@ $ydscpaths = [
 		$rdirs			# recursive directories
 		$rdscdirs		# recursive directories, discovery only
 	~ lsr ]
-~ xm/<y> ]
+~ lx/y ]
 
 # paths to y files for fabrication
 $yfabpaths = [
@@ -72,22 +72,22 @@ $yfabpaths = [
 		$rdirs			# recursive directories
 		$rfabdirs		# recursive directories, fabrication only
 	~ lsr ]
-~ xm/<y> ]
+~ lx/y ]
 
 # discovery
 [ $ydscpaths ] %
 {
-	    [ $bison ] [ $bisonflags ~ uu/fi ] -o /dev/stdout [ $@ ] [
-	] | [ $cc ] [ $cflags ~ uu/fi ] -MM -MP -MG -xc - [
-	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx/xs/<y>/<tab. $ext >/y/fi ~ j ] ] [ $ext ]
+	    [ $bison ] [ $bisonflags ~ uu fi ] -o /dev/stdout [ $@ ] [
+	] | [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
+	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx [ sx/y/tab.$ext ~ j ] y fi ] ] [ $ext ]
 }
 
 # $bison : y -> { tab.c, tab.h }
-[ $yfabpaths ~ xs/<y>/<tab.c>/y/v/d/cp/u/xs/<tab.c>/<tab.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<tab.c>/<y>/xs/<tab.h>/<y>/ss/u ]
+[ $yfabpaths ~ sx/y/tab.c y v d cp u sx/tab.c/tab.h z v dj/2 shift pop ] :: [ $< ~ rx sx/tab.c/y sx/tab.h/y ss u ]
 {
-	[ $bison ] [ $bisonflags ~ uu/fi ] -o [ $@ ~ h/1/1 ] -d	[ $@ ~ rx/ineed/xm/<y>/uu ]
+	[ $bison ] [ $bisonflags ~ uu fi ] -o [ $@ ~ w/1/1 ] -d	[ $@ ~ rx/ineed lx/y uu ]
 }
 
 # $cc : tab.c -> tab.o via std.c
-+[@std.c](-$cobjpaths; $cfabpaths = [ $yfabpaths ~ xs/<y>/<tab.c> ]; $cc $cflags; $cdscpaths)
++[@std.c](-$cobjpaths; $cfabpaths = [ $yfabpaths ~ sx/y/tab.c ]; $cc $cflags; $cdscpaths)
 $yobjpaths = [ $cobjpaths ]
