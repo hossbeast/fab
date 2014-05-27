@@ -81,7 +81,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			time_t T;
 			if(parseuint(space, SCNu32, 0, UINT32_MAX, 1, 10, &T, 0) == 0)
 			{
-				struct tm tm;
+				struct tm tm = {};
 				strftime(space2, sizeof(space2), fmt, localtime_r(&T, &tm));
 
 				// clear this string on the stack

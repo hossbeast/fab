@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include <listwise/operator.h>
+#include <listwise/lstack.h>
 
 #include "parseint.h"
 
@@ -57,9 +58,10 @@ int op_validate(operation* o)
 	return 0;
 }
 
+/*
 int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 {
-	int * mema = alloca((ls->sel.l ?: ls->s[0].l) * sizeof(mema[0]));
+	int * mema = calloc((ls->sel.l ?: ls->s[0].l), sizeof(mema[0]));
 	int * memb = 0;
 
 	int x;
@@ -79,7 +81,7 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 			mema[i++] = x;
 	}	
 
-	memb = alloca(i * sizeof(memb[0]));
+	memb = calloc(i, sizeof(memb[0]));
 	memcpy(memb, mema, i * sizeof(memb[0]));
 
 	int compar(const void * A, const void * B)
@@ -100,11 +102,70 @@ int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
 
 	qsort(mema, i, sizeof(mema[0]), compar);
 
-	typeof(ls->s[0].s[0]) * T = alloca(ls->s[0].l * sizeof(T[0]));
+	typeof(ls->s[0].s[0]) * T = calloc(ls->s[0].l, sizeof(T[0]));
 	memcpy(T, ls->s[0].s, ls->s[0].l * sizeof(T[0]));
 
 	for(x = 0; x < i; x++)
 		ls->s[0].s[memb[x]] = T[mema[x]];
+
+	free(T);
+	free(mema);
+	free(memb);
+	return 0;
+}
+*/
+
+int op_exec(operation* o, lstack* ls, int** ovec, int* ovec_len)
+{
+	size_t num = ls->sel.all ? ls->s[0].l : ls->sel.l;
+
+	// indexes to be sorted
+	int * mema = calloc(num, sizeof(*mema));
+
+	// copy of indexes
+	int * memb = calloc(num, sizeof(*memb));
+
+	// copies of entries to be swapped
+	typeof(ls->s[0].s[0]) * T = calloc(ls->s[0].l, sizeof(*T));
+	memcpy(T, ls->s[0].s, ls->s[0].l * sizeof(*T));
+
+	int i = 0;
+	int x;
+	LSTACK_ITERATE(ls, x, go)
+	if(go)
+	{
+		mema[i] = x;
+		memb[i] = x;
+		i++;
+	}
+	LSTACK_ITEREND;
+
+	int compar(const void * A, const void * B)
+	{
+		intmax_t Aval;
+		intmax_t Bval;
+
+		if(parseint(lstack_getstring(ls, 0, *(int*)A), SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Aval, 0) == 0)
+		{
+			if(parseint(lstack_getstring(ls, 0, *(int*)B), SCNdMAX, INTMAX_MIN, INTMAX_MAX, 0, 0xFF, &Bval, 0) == 0)
+			{
+				return Aval - Bval;
+			}
+		}
+
+		return 0;
+	}
+
+	qsort(mema, i, sizeof(*mema), compar);
+
+	for(x = 0; x < i; x++)
+	{
+		ls->s[0].s[memb[x]] = T[mema[x]];
+	}
+
+	free(mema);
+	free(memb);
+	free(T);
 
 	return 0;
 }
