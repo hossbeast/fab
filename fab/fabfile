@@ -23,21 +23,30 @@ $dcommon = [ $*/../common ~ j ]
 +[ $dcommon ] @common
 
 # variables
-$cflags					= [ $cflags	-fno-builtin-log [ $dfab ~ lsr/c/-d/s/^/-I ]
+$cflags					= [ $cflags	-fno-builtin-log [ $dfab ~ lsr c -d s/^/-I ]
+/*
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
 	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
 	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
 	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
-	[ -DBUILDSTAMP="\""`date`"\"" ~ j ]
+*/
+
+	[ ~ [ ?, [ cons,-DLFABVERSIONS="$VERSIONS" ~ j ] ~ fi ] ]
+	[ ~ [ ?, [ cons,-DLFABVERSIONN="$VERSIONN" ~ j ] ~ fi ] ]
+	[ ~ [ ?, [ cons,-DFABCACHEDIR="$fabcachedir" ~ j ] ~ fi ] ]
+	[ ~ [ ?, [ cons,-DFABTMPDIR="$fabtmpdir" ~ j ] ~ fi ] ]
+	[ ~ [ ?, [ cons,-DFABLWOPDIR="$fablwopdir" ~ j ] ~ fi ] ]
+	[ ~ [ ?, [ cons,-DFABINVOKEDIR="$fabinvokedir" ~ j ] ~ fi ] ]
+	[ ~ ?{ cons{-DBUILDSTAMP="`date`"} ]
 ]
 $lflags					= [ $lflags $libxapi $libxlinux $libpstring $liblistwise ]
 $fab						= [ $dfab/fab ~ j ]
 
 # standard files - standard compilation
-+[@std.c]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $paths = [ $dfab/main.c ~ j ]; $cc $cflags)
-+[@std.l]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $flex $flexflags)
++[@std.c]($gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc $cflags)
++[@std.l]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d v d m/fablw d ]; $cc $cflags $flex $flexflags)
 #+[@std.y]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 +[@std.bison.rules]($gendir = $dfab; $dirs = [ $dfab/ff ~ j ]; $cc $cflags $bison $bisonflags)
 
@@ -53,7 +62,7 @@ $fab						= [ $dfab/fab ~ j ]
 +[@std.xapi.errtab] ($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
 
 # operator so's
-$faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
+$faboplist = [ $dfab/fablw/op ~ j lsr sx/c/so y ]
 
 #
 # catchall node
@@ -69,20 +78,20 @@ $faboplist = [ $dfab/fablw/op ~ j/lsr/xs/<c>/<so>/y ]
 #
 [ $fab ] : [ $dfab/main.o ~ j ] 
 {
-	[ $cc ] [ $cflags -export-dynamic ~ uu/fi ] -o [ $@ ] [ $@ ~ rx/aneedw/rx/xm/<o>/uu/fi ] [ $lflags ~ fi ]
+	[ $cc ] [ $cflags -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags ~ fi ]
 }
 
 #
 # fab-specific operator so's - only link the immediate object. This so depends on fab for many symbols
 #
-[ $faboplist ~ dj/shift ] :: [ $< ~ rx/xs/<pic.o> ]
+[ $faboplist ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
 {
-	  [ $cc ] [ $cflags ~ uu/fi ] -o [ $@ ]	[ $@ ~ rx/ineed/fi ] [
-	] -shared [ "-Wl,-soname," [ $@ ~ rx/bn ] ]
+	  [ $cc ] [ $cflags ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] [
+	] -shared [ "-Wl,-soname," [ $@ ~ rx bn ] ]
 }
 
 # also a bridge dependency on the fab executable
-[ $dfab/fablw/op ~ j/lsr/xs/<c>/<pic.o>/y ] ::^ [ $fab ]
+[ $dfab/fablw/op ~ j lsr sx/c/pic.o y ] ::^ [ $fab ]
 
 #
 # tasks

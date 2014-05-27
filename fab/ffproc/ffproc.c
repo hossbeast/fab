@@ -189,6 +189,17 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 				map_xfree(&cmap);
 				fatal(var_clone, vmap, &cmap);
 
+				if(log_would(L_INVOKE))
+				{
+					char * sstr = 0;
+					fatal(strstack_string, sstk, 0, "/", "/", &sstr);
+
+					int * lvl = map_get(cmap, MMS("?LVL"));
+					int * num = map_get(cmap, MMS("?NUM"));
+
+					logf(L_INVOKE, "%.*s => %s @ %s @ %d:%d(", inv->l, inv->s, pth->can, sstr, *lvl, *num);
+				}
+
 				// apply additional var settings to context
 				for(y = 0; y < stmt->varsettingsl; y++)
 				{
@@ -236,7 +247,22 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 					}
 				}
 
+				logf(L_INVOKE, ")");
+
 				nmap = cmap;
+			}
+			else
+			{
+				if(log_would(L_INVOKE))
+				{
+					char * sstr = 0;
+					fatal(strstack_string, sstk, 0, "/", "/", &sstr);
+
+					int * lvl = map_get(nmap, MMS("?LVL"));
+					int * num = map_get(nmap, MMS("?NUM"));
+
+					logf(L_INVOKE, "%.*s => %s @ %s @ %d:%d", inv->l, inv->s, pth->can, sstr, *lvl, *num);
+				}
 			}
 
 			// apply scope for this invocation
@@ -294,6 +320,7 @@ coda;
 static int procfile(const ff_parser * const ffp, const path * const inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel, locstack * loc)
 {
 	ff_file * ff = 0;
+/*
 
 	if(log_would(L_INVOKE))
 	{
@@ -305,6 +332,7 @@ static int procfile(const ff_parser * const ffp, const path * const inpath, pstr
 		else
 			logf(L_INVOKE, "%s @ %s", inpath->can, sstr);
 	}
+*/
 
 	// parse
 	fatal(ff_reg_load, ffp, inpath, nofile, nofilel, &ff);

@@ -26,7 +26,7 @@ $dcommon			= [ $*/../common ~ j ]
 $libname 			= [ libpstring.so ]
 $soname				= [ $libname ~ j ]
 $libpstring		= [ $dlibpstring/libpstring.so ~ j ]		# path to the library .so
-$cflags				= [ $cflags -fPIC [ $dlibpstring ~ lsr/c/-d/s/^/-I ] ]
+$cflags				= [ $cflags -fPIC [ $dlibpstring ~ lsr c -d s/^/-I ] ]
 $lflags				= [ $libxapi, $libxlinux, -shared, [ "-Wl,-soname," $soname ] ]
 
 # source files
@@ -48,7 +48,7 @@ $lflags				= [ $libxapi, $libxlinux, -shared, [ "-Wl,-soname," $soname ] ]
 {
 	  (echo "{ global: "
 	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- [ $@ ~ rx/aneedw/xm/<c>/ss/u/fi ] )
+	  cat -- [ $@ ~ rx/aneedw lx/c ss u fi ] )
 	> echo "local: *; };"
 	  ) 1>[ $dlibpstring/exports ]
 

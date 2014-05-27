@@ -306,7 +306,7 @@ static int dep_add_multi(
 				void * Bp = 0;
 				int Bl = 0;
 				uint8_t Bt = 0;
-				fatal(lstack_readrow, (*stax)[pl], 0, j, &Bs, &Bl, &Bt, 0, 0, 0, 0);
+				fatal(lstack_readrow, (*stax)[pr], 0, j, &Bs, &Bl, &Bt, 0, 0, 0, 0);
 
 				if(Bt)
 					Bp = *(void**)Bs;

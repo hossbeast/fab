@@ -43,15 +43,15 @@ $lexhfabpaths = [
 		$rdirs			# recursive directories
 		$rfabdirs		# recursive directories, fabrication only
 	~ lsr ]
-~ xm/<l> ]
+~ lx/l ]
 
 # lex.h -> { .states.c, .states.h }
-[ $lexhfabpaths ~ xs/<l>/<states.c>/y/v/d/cp/u/xs/<states.c>/<states.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<states.c>/<lex.h>/xs/<states.h>/<lex.h>/ss/u ]
+[ $lexhfabpaths ~ sx/l/states.c y v d cp u sx/states.c/states.h z v dj/2 shift pop ] :: [ $< ~ rx sx/states.c/lex.h sx/states.h/lex.h ss u ]
 {
-	src=[ $@ ~ rx/ineed/uu ]
-	states_h=[ $@ ~ h/0/1 ]
-	states_c=[ $@ ~ h/1/1 ]
-	pfx=[ $@ ~ h/0/1/rx/bn/fn ]
+	src=[ $@ ~ rx/ineed uu ]
+	states_h=[ $@ ~ w/0/1 ]
+	states_c=[ $@ ~ w/1/1 ]
+	pfx=[ $@ ~ w/0/1 rx bn fn ]
 
 	> exec 1>${states_h}
 	> echo "#ifndef ${pfx}_STATES_H"
@@ -81,5 +81,5 @@ $lexhfabpaths = [
 }
 
 # cc : tokens.c -> tokens.o @ std.c
-+[@std.c](-$cobjpaths; $cfabpaths = [ $lexhfabpaths ~ xs/<l>/<states.c> ]; $cc $cflags)
++[@std.c](-$cobjpaths; $cfabpaths = [ $lexhfabpaths ~ sx/l/states.c ]; $cc $cflags)
 $lexhobjpaths = [ $cobjpaths ]

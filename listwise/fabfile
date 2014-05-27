@@ -23,7 +23,7 @@ $dcommon				= [ $*/../common ~ j ]
 +[ $dcommon ] @common
 
 # variables
-$cflags					= [ $cflags -fno-builtin-log [ $dlistwise ~ lsr/c/-d/s/^/-I ]
+$cflags					= [ $cflags -fno-builtin-log [ $dlistwise ~ lsr c -d s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ ~ ?{ cons{-DBUILDSTAMP="`date`"} ]

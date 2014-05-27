@@ -43,15 +43,15 @@ $tabcfabpaths = [
 		$rdirs			# recursive directories
 		$rfabdirs		# recursive directories, fabrication only
 	~ lsr ]
-~ xm/<y> ]
+~ lx/y ]
 
 # tab.c -> { .tokens.c, .tokens.h }
-[ $tabcfabpaths ~ xs/<y>/<tokens.c>/y/v/d/cp/u/xs/<tokens.c>/<tokens.h>/z/v/dj/2/shift/pop ] :: [ $< ~ rx/xs/<tokens.c>/<tab.c>/xs/<tokens.h>/<tab.c>/ss/u ]
+[ $tabcfabpaths ~ sx/y/tokens.c y v d cp u sx/tokens.c/tokens.h z v dj/2 shift pop ] :: [ $< ~ rx sx/tokens.c/tab.c sx/tokens.h/tab.c ss u ]
 {
-	src=[ $@ ~ rx/ineed/uu ]
-	tokens_h=[ $@ ~ h/0/1 ]
-	tokens_c=[ $@ ~ h/1/1 ]
-	pfx=[ $@ ~ h/0/1/rx/bn/fn ]
+	src=[ $@ ~ rx/ineed uu ]
+	tokens_h=[ $@ ~ w/0/1 ]
+	tokens_c=[ $@ ~ w/1/1 ]
+	pfx=[ $@ ~ w/0/1 rx bn fn ]
 
 	> exec 1>${tokens_h}
 	> echo "#ifndef ${pfx}_TOKENS_H"
@@ -83,5 +83,5 @@ $tabcfabpaths = [
 }
 
 # cc : tokens.c -> tokens.o @ std.c
-+[@std.c](-$cobjpaths; $cfabpaths = [ $tabcfabpaths ~ xs/<y>/<tokens.c> ]; $cc $cflags)
++[@std.c](-$cobjpaths; $cfabpaths = [ $tabcfabpaths ~ sx/y/tokens.c ]; $cc $cflags)
 $tabcobjpaths = [ $cobjpaths ]

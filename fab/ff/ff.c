@@ -450,6 +450,7 @@ int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const 
 
 finally:
 	path_free(pth);
+XAPI_INFOS("gn", gn_idstring(dscv_gn));
 coda;
 }
 

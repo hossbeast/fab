@@ -1,0 +1,75 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# @std.bison.rules
+#  provides fabrication :   { .y.header, .y.rules.*, .y.rules.footer } -> { .y }
+#  provides dependencies :  { .y } -> { .y.header, .y.rules.*, .y.rules.footer }
+#
+# var/closure
+#  cc
+#  cflags
+#  bison
+#  bisonflags
+#  gendir
+#  ext
+#
+#  dirs       - directories containing source files
+#  rdirs      - directories containing source files, recursive search
+#  paths      - paths to source files
+#
+#  fabdirs    - (as above, but for fabrication/dependency only)
+#  rfabdirs   - 
+#  fabpaths   - 
+
+# paths to source files
+$primarypaths = [
+	$paths				# paths
+	$fabpaths			# paths, fabrication only
+
+	[
+		$dirs				# directories
+		$fabdirs		# directories, fabrication only
+	~ ls ]
+
+	[
+		$rdirs			# recursive directories
+		$rfabdirs		# recursive directories, fabrication only
+	~ lsr ]
+~ [ lx/y.header o lx/y.footer o "m/.y.rules.[0-9]+$" ~ fi ] ]
+
+$secondarypaths = [ $primarypaths ~ [ "s/(.y.header)|(.y.rules.[0-9]+)|(.y.footer)$/.y" ss u ~ fi ] ]
+
+# discovery
+[ $primarypaths ~ lx/y.header ] %
+{
+      [ $bison ] [ $bisonflags ~ uu fi ] -o /dev/stdout <(cat [ $@ ] [
+	] [ $@ ~ rx sx/y.header/y.rules.1 ] [
+	] [ $@ ~ rx sx/y.header/y.rules.2 ] [
+	] [ $@ ~ rx sx/y.header/y.rules.3 ] [
+	] [ $@ ~ rx sx/y.header/y.footer ] [
+  ])| [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
+  ] | gcc-dep '[ $gendir ]' [ $@ ~ [ [ sx/y/tab.$ext ~ j ] y ~ fi ] ] [ $ext ]
+}
+
+# { .y.header, .y.rules.*, .y.rules.footer } -> { .y }
+[ $secondarypaths ~ dj shift ] :: [ $< ~ rx/cp/4/h/0/1/s/$/.header/z/v/h/1/1/s/$/.footer/z/v/h/2/1/s/$/.rules.1/z/v/h/3/1/s/$/.rules.2/z/v/h/4/1/s/$/.rules.3/z/v ]
+{
+	cat [ [ $@ ~ rx/ineed lx/header ] [ $@ ~ [ "rx/ineed m/.rules.[0-9+]$ ss" ~ fi ] ] [ $@ ~ rx/ineed lx/footer ] ~ fi ] > [ $@ ]
+}
+
+# $bison : .y -> { .tab.c, .tab.h } @ std.y
++[@std.y]($yfabpaths = $secondarypaths; $bison $bisonflags $cc $cflags)

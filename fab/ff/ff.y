@@ -105,19 +105,23 @@
 
 %%
 ff
-	: statements
+  : statements
+  {
+    YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, $1);
+  }
+	|
 	{
-		YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, $1);
+    YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, (void*)0);
 	}
-	;
+  ;
 
 statements
-	: statements statement
-	{
-		$$ = ffn_addchain($1, $2);
-	}
-	| statement
-	;
+  : statements statement
+  {
+    $$ = ffn_addchain($1, $2);
+  }
+  | statement
+  ;
 dependency
 	: list ':' list
 	{
@@ -259,11 +263,11 @@ varassign
 invocation
 	: '+' list
 	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_INVOCATION, $2, (void*)0, (void*)0, 0);
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_INVOCATION, $2, (void*)0, (void*)0, (void*)0);
 	}
 	| '+' list nofile
 	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_INVOCATION, $2, (void*)0, $3, 0);
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_INVOCATION, $2, (void*)0, $3, (void*)0);
 	}
 	| '+' list '(' ')'
 	{

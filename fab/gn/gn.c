@@ -612,7 +612,7 @@ void gn_dump(gn * gn)
 			{
 				int y = gn->fabv->ctx->locsl - 1;
 
-				logf(L_DG | L_DGRAPH, "%18s : [%3d,%3d - %3d,%3d] @ %s", "fab formula"
+				logf(L_DG | L_DGRAPH, "%18s : [%3d,%3d - %3d,%3d] @ %s", "fabrication formula"
 					, gn->fabv->ctx->locs[y]->f_lin + 1
 					, gn->fabv->ctx->locs[y]->f_col + 1
 					, gn->fabv->ctx->locs[y]->l_lin + 1
@@ -640,7 +640,7 @@ void gn_dump(gn * gn)
 			}
 			else
 			{
-				logf(L_WARN | L_DG | L_DGRAPH, "%18s : %s", "fab formula", "(no formula)");
+				logf(L_WARN | L_DG | L_DGRAPH, "%18s : %s", "fabrication formula", "(no formula)");
 			}
 		}
 

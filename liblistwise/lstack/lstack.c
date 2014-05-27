@@ -552,39 +552,13 @@ int API lstack_merge(lwx * const restrict lx, int a, int b)
 	// extend dst list
 	lx->s[a].l += n;
 
-	// swap src list to the end of the stack
+	// move remaining lists down and place the src list at the end of the stack
 	typeof(lx->s[0]) T = lx->s[b];
-	lx->s[b] = lx->s[lx->l - 1];
+	memmove(&lx->s[b], &lx->s[b + 1], (lx->l - b - 1) * sizeof(lx->s[0]));
 	lx->s[lx->l - 1] = T;
 
 	// shorten stack
 	lx->l--;
-
-/*
-	fatal(ensure, lx, to, -1, -1);
-	int tox = lx->s[to].l;
-	fatal(ensure, lx, to, lx->s[to].l + lx->s[from].l - 1, -1);
-
-	// copy rows
-	memcpy(
-		  lx->s[to].s + tox
-		, lx->s[from].s
-		, lx->s[from].l * sizeof(lx->s[0].s[0])
-	);
-
-	lx->s[from].a = 0;
-	lx->s[from].l = 0;
-
-	while(from < lx->l && lx->s[from].l == 0)
-		from++;
-	from--;
-
-	while(from >= 0 && lx->s[from].l == 0)
-		from--;
-	from++;
-
-	lx->l = from;
-*/
 
 finally:
 	XAPI_INFOF("to", "%d", a);

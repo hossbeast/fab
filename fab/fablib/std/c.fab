@@ -69,16 +69,16 @@ $cfabpaths = [
 	[
 		$dirs				# directories
 		$fabdirs		# directories, fabrication only
-	~ [ ls lxf/$sext ] ]
+	~ [ ls [ lxf/$sext ~ j ] ~ fi ] ]
 
 	[
 		$rdirs			# recursive directories
 		$rfabdirs		# recursive directories, fabrication only
-	~ [ lsr lxf/$sext ~ j ] ]
+	~ [ lsr [ lxf/$sext ~ j ] ~ fi ] ]
 ]
 
 # paths to object files
-$cobjpaths = [ $cfabpaths ~ [ sx/$sext/$dext y ~ j ] ]
+$cobjpaths = [ $cfabpaths ~ [ sx/$sext/$dext  ] ]
 
 # discovery
 #
@@ -92,7 +92,7 @@ $cobjpaths = [ $cfabpaths ~ [ sx/$sext/$dext y ~ j ] ]
 }
 
 # fabrication and dependency
-[ $cobjpaths ~ dj shift ] :: [ $< ~ [ rx [ sx/$dext/$sext ~ j ] ~ fi ] ]
+[ $cobjpaths ~ dj shift ] :: [ $< ~ [ sx/$dext/$sext ] ]
 {
-	[ $cc ] [ $cflags ~ uu fi ] -c [ $@ ~ [ rx ineed [ lx/$sext ~ j ] uu fi ~ fi ] ] -o [ $@ ]
+	[ $cc ] [ $cflags ~ uu fi ] -c [ $@ ~ [ rx/ineed [ lx/$sext ~ j ] uu fi ~ fi ] ] -o [ $@ ]
 }

@@ -172,7 +172,7 @@ static int dumplist(lwx * const ls)
 		{
 			char * zs = 0;
 			fatal(lstack_string, ls, 0, i, &zs);
-			logf(0, "[%hhu]%p (%.*s)"
+			logf(0, "[%hhu]%p (%s)"
 				, rt
 				, *(void**)rv
 				, zs
@@ -279,7 +279,7 @@ int var_set(map * restrict vmap, const char * restrict s, lwx * const restrict l
 		{
 			logf(0, "%10s(%d:%d:%s) = [ ", "set", KEYID(vmap, s));
 			fatal(dumplist, c->val.ls);
-			logs(0, " ] )");
+			logs(0, " ]");
 			LOG_SRC(src);
 			log_finish();
 		}
@@ -308,7 +308,7 @@ int var_xfm_add(map * restrict vmap, const char * restrict s, lwx * const restri
 		{
 			logf(0, "%10s(%d:%d:%s) = [ ", "xfm-add", KEYID(vmap, s));
 			fatal(dumplist, ls);
-			logs(0, " ] )");
+			logs(0, " ]");
 			LOG_SRC(src);
 			log_finish();
 		}
@@ -337,7 +337,7 @@ int var_xfm_sub(map * restrict vmap, const char * restrict s, lwx * const restri
 		{
 			logf(0, "%10s(%d:%d:%s) = [ ", "xfm-sub", KEYID(vmap, s));
 			fatal(dumplist, ls);
-			logs(0, " ] )");
+			logs(0, " ]");
 			LOG_SRC(src);
 			log_finish();
 		}

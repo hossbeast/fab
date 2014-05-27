@@ -48,13 +48,13 @@ $errtabpaths = [
 ~ lx/errtab ]
 
 # errtab -> { .errtab.c, .errtab.h }
-[ $errtabpaths ~ sx/errtab/errtab.c y v d cp u sx/errtab.c/errtab.h z v dj/2 shift pop ] :: [ $< ~ rx sx/errtab.c/errtab sx/errtab.h/errtab ss u ]
+[ $errtabpaths ~ sx/errtab/errtab.c y v d cp u sx/errtab.c/errtab.h z dj/2 shift pop ] :: [ $< ~ rx sx/errtab.c/errtab sx/errtab.h/errtab ss u ]
 {
 	hfl=[ $@ ~ lx/h ]
 	hin=[ $@ ~ lx/h rx bn ]
 	cfl=[ $@ ~ lx/c ]
-	pfx=[ $@ ~ h/0/1/rx/bn/fn ]
-	api=[ $apidata ~ s/1/APIDATA/y ]
+	pfx=[ $@ ~ w/0/1 rx bn fn ]
+	api=[ $apidata ~ s/1/APIDATA y ]
 
 	> exec >${hfl}
 	> echo "#ifndef _${pfx}_ERRTAB_H"
@@ -62,7 +62,7 @@ $errtabpaths = [
 	> echo "#include \"xapi.h\""
 	> echo "#define ETABLE_${pfx} \\"
 
-	cat [ $@ ~ rx/ineed/uu/fi ] | \
+	cat [ $@ ~ rx/ineed uu fi ] | \
 	> sed -e 's/^\([-0-9]\+\)[\t ]\+\([^\t ]\+\)\([\t ]\+\(.*\)\)\?/_E(\1, \2, "\4") \\/p; d'
 
 	> echo
@@ -73,11 +73,11 @@ $errtabpaths = [
 	> echo "};"
 
 	> echo -n "#define ERRMIN_${pfx} "
-	cat [ $@ ~ rx/ineed/uu/fi ] | \
+	cat [ $@ ~ rx/ineed uu fi ] | \
 	> perl -e '$min=0xFFFF;while(<>){ if(/^([^\t ]+)/ && int($1)) { $min = [$min,$1]->[$min > $1] } } print $min, "\n"'
 
 	> echo -n "#define ERRMAX_${pfx} "
-	cat [ $@ ~ rx/ineed/uu/fi ] | \
+	cat [ $@ ~ rx/ineed uu fi ] | \
 	> perl -e '$max=-0xFFFF;while(<>){ if(/^([^\t ]+)/ && int($1)) { $max = [$max,$1]->[$max < $1] } } print $max, "\n"'
 
 	> echo "extern etable * perrtab_${pfx};"
@@ -102,5 +102,5 @@ $errtabpaths = [
 # echo "#extern etable * perrtab;"
 
 # cc : errors.c -> errors.o @ std.c
-+[@std.c](-$cobjpaths; $cfabpaths = [ $errtabpaths ~ sx/errtab/errtab.c ]; $cc $cflags)
++[@std.c](-$cobjpaths; $cfabpaths = [ $errtabpaths ~ sx/errtab/errtab.c ]; $cc $cflags; $cdscpaths)
 $errorsobjpaths = [ $cobjpaths ]

@@ -96,19 +96,23 @@
 
 %%
 ff
-	: statements
+  : statements
+  {
+    YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, $1);
+  }
+	|
 	{
-		YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, $1);
+    YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, (void*)0);
 	}
-	;
+  ;
 
 statements
-	: statements statement
-	{
-		$$ = ffn_addchain($1, $2);
-	}
-	| statement
-	;
+  : statements statement
+  {
+    $$ = ffn_addchain($1, $2);
+  }
+  | statement
+  ;
 list
 	: '[' listparts ']'
 	{
