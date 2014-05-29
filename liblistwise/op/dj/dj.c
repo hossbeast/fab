@@ -55,7 +55,7 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "dj"
-		, .optype				= LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_OPERATION_PUSHBEFORE | LWOP_STACKOP
+		, .optype				= LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_OPERATION_PUSHBEFORE | LWOP_STACKOP | LWOP_WINDOWS_RESET
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "split list into a stack of lists"

@@ -41,7 +41,7 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "d"
-		, .optype				= LWOP_STACKOP
+		, .optype				= LWOP_STACKOP | LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET
 		, .op_exec			= op_exec
 		, .mnemonic			= "delete"
 		, .desc					= "extract rows into a new list"

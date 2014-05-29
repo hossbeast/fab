@@ -46,7 +46,7 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "cp"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE | LWOP_WINDOWS_RESET
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .desc					= "duplicate list entries"

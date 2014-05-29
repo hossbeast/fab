@@ -27,7 +27,7 @@ $libname 			= [ libpstring.so ]
 $soname				= [ $libname ~ j ]
 $libpstring		= [ $dlibpstring/libpstring.so ~ j ]		# path to the library .so
 $cflags				= [ $cflags -fPIC [ $dlibpstring ~ lsr c -d s/^/-I ] ]
-$lflags				= [ $libxapi, $libxlinux, -shared, [ "-Wl,-soname," $soname ] ]
+$lflags				= [ $libxapi $libxlinux -shared [ -Wl,-soname,$soname ~ j ] ]
 
 # source files
 +[@std.c]($gendir = $dlibpstring; $rdirs = $dlibpstring; $ext = [ pic.o ]; -$cobjpaths; $cc $cflags)
@@ -52,7 +52,7 @@ $lflags				= [ $libxapi, $libxlinux, -shared, [ "-Wl,-soname," $soname ] ]
 	> echo "local: *; };"
 	  ) 1>[ $dlibpstring/exports ]
 
-	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ] [ "-Wl,--version-script=" $dlibpstring/exports]
+	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ~ fi ] [ -Wl,--version-script=$dlibpstring/exports ]
 }
 
 ##

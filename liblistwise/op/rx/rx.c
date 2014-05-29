@@ -43,7 +43,7 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "rx"
-		, .optype				= LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE
+		, .optype				= LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE | LWOP_WINDOWS_RESET
 		, .op_exec			= op_exec
 		, .desc					= "replace object entries with their reflected properties"
 	}

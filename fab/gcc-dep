@@ -67,6 +67,12 @@ while(<STDIN>)
 			$line =~ s/\.tokens\.h/.tokens/;
 			push @W, $line;				# weak dependency on the object
 		}
+		elsif($line =~ /\.errtab\.h$/)
+		{
+			push @S, $line;				# strong dependency on the header
+			$line =~ s/\.errtab\.h/.errtab/;
+			push @W, $line;				# weak dependency on the object
+		}
 		else
 		{
 			push @S, $line;				# strong dependency on the header

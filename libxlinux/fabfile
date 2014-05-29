@@ -27,7 +27,7 @@ $libname 			= [ libxlinux.so ]
 $soname				= [ $libname ~ j ]
 $libxlinux		= [ $dlibxlinux/libxlinux.so ~ j ]		# path to the library .so
 $cflags				= [ -fPIC [ $dlibxlinux ~ lsr c -d s/^/-I ] $cflags ]
-$lflags				= [ $libxapi, -shared, [ "-Wl,-soname," $soname ] ]
+$lflags				= [ $libxapi -shared [ -Wl,-soname,$soname ~ j ] ]
 
 # source files
 +[@std.c]($gendir = $dlibxlinux; $rdirs = $dlibxlinux; $ext = [ pic.o ]; -$cobjpaths; $cc $cflags)
@@ -53,7 +53,7 @@ $lflags				= [ $libxapi, -shared, [ "-Wl,-soname," $soname ] ]
 	> echo "local: *; };"
 	  ) 1>[ $dlibxlinux/exports ]
 
-	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ] [ "-Wl,--version-script=" $dlibxlinux/exports]
+	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ~ fi ] [ -Wl,--version-script=$dlibxlinux/exports ]
 }
 
 ##

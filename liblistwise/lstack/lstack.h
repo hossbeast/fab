@@ -196,8 +196,11 @@ int lstack_ensure(lwx * const restrict lx, int x, int y, int z);
 //  4. place the original ax:ay at the end of ls->s[bx]
 //  5. ls->s[bx].l--
 //
+// NOTES
+//  an operator which calls lstack_move with ax == 0 should use LWOP_WINDOWS_RESET
+//
 // RETURNS
-//  lstack_move returns 0
+//  lstack_move returns 0, indicating success
 //
 int lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 	__attribute__((nonnull));
@@ -213,8 +216,11 @@ int lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 //  3. place the original x:y at the end of ls->s[x]
 //  4. ls->s[x].l--
 //
+// NOTES
+//  an operator which calls lstack_delete with x == 0 should use LWOP_WINDOWS_RESET
+//
 // RETURNS
-//  lstack_delete returns 1
+//  lstack_delete returns 0, indicating success
 //
 int lstack_delete(lwx * const restrict lx, int x, int y)
 	__attribute__((nonnull));
@@ -234,9 +240,10 @@ int lstack_delete(lwx * const restrict lx, int x, int y)
 //
 // NOTES
 //  no-op when l == 0
+//  an operator which calls lstack_displace with x == 0 should use LWOP_WINDOWS_RESET
 //
 // RETURNS
-//  1 on error
+//  0 on success
 //
 int lstack_displace(lwx * const restrict lx, int x, int y, int l)
 	__attribute__((nonnull));

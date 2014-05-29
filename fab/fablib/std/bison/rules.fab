@@ -16,8 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # @std.bison.rules
-#  provides fabrication :   { .y.header, .y.rules.*, .y.rules.footer } -> { .y }
-#  provides dependencies :  { .y } -> { .y.header, .y.rules.*, .y.rules.footer }
+#  provides fabrication :   { .y.header, .y.rules.[0-9] } -> { .y }
+#  provides dependencies :  { .y } -> { .y.header, .y.rules.[0-9] }
 #
 # var/closure
 #  cc
@@ -49,9 +49,9 @@ $primarypaths = [
 		$rdirs			# recursive directories
 		$rfabdirs		# recursive directories, fabrication only
 	~ lsr ]
-~ [ lx/y.header o lx/y.footer o "m/.y.rules.[0-9]+$" ~ fi ] ]
+~ [ lx/y.header o "m/.y.rules.[0-9]+$" ~ fi ] ]
 
-$secondarypaths = [ $primarypaths ~ [ "s/(.y.header)|(.y.rules.[0-9]+)|(.y.footer)$/.y" ss u ~ fi ] ]
+$secondarypaths = [ $primarypaths ~ [ "s/(.y.header)|(.y.rules.[0-9]+)$/.y" ss u ~ fi ] ]
 
 # discovery
 [ $primarypaths ~ lx/y.header ] %
@@ -60,15 +60,15 @@ $secondarypaths = [ $primarypaths ~ [ "s/(.y.header)|(.y.rules.[0-9]+)|(.y.foote
 	] [ $@ ~ rx sx/y.header/y.rules.1 ] [
 	] [ $@ ~ rx sx/y.header/y.rules.2 ] [
 	] [ $@ ~ rx sx/y.header/y.rules.3 ] [
-	] [ $@ ~ rx sx/y.header/y.footer ] [
+	] [ $@ ~ rx sx/y.header/y.rules.4 ] [
   ])| [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
   ] | gcc-dep '[ $gendir ]' [ $@ ~ [ [ sx/y/tab.$ext ~ j ] y ~ fi ] ] [ $ext ]
 }
 
-# { .y.header, .y.rules.*, .y.rules.footer } -> { .y }
-[ $secondarypaths ~ dj shift ] :: [ $< ~ rx/cp/4/h/0/1/s/$/.header/z/v/h/1/1/s/$/.footer/z/v/h/2/1/s/$/.rules.1/z/v/h/3/1/s/$/.rules.2/z/v/h/4/1/s/$/.rules.3/z/v ]
+# { .y.header, .y.rules.[0-9] } -> { .y }
+[ $secondarypaths ~ dj shift ] :: [ $< ~ rx cp/4 w/0/1 s/$/.header z w/1/1 s/$/.rules.1 z w/2/1 s/$/.rules.2 z w/3/1 s/$/.rules.3 z w/4/1 s/$/.rules.4 ]
 {
-	cat [ [ $@ ~ rx/ineed lx/header ] [ $@ ~ [ "rx/ineed m/.rules.[0-9+]$ ss" ~ fi ] ] [ $@ ~ rx/ineed lx/footer ] ~ fi ] > [ $@ ]
+	cat [ $@ ~ rx/ineed lx/header ] [ $@ ~ [ rx/ineed [ "m/.rules.[0-9+]$" ~ j ] ss ~ fi ] ] > [ $@ ]
 }
 
 # $bison : .y -> { .tab.c, .tab.h } @ std.y

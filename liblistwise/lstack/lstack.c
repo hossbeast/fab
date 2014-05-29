@@ -89,7 +89,7 @@ static int allocate(lwx * const restrict lx, int x, int y, int z)
 					// if this reallocation moves lx->win.s, any lx->win.s[-].{active,staged} that was
 					// nonzero will then be invalid
 					int k;
-					for(k = 0; k < lx->s[0].l; k++)
+					for(k = 0; k < lx->win.a; k++)
 					{
 						if(lx->win.s[k].active)
 							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_storage_index];
@@ -176,7 +176,7 @@ static int ensure(lwx * const restrict lx, int x, int y, int z)
 					// if this reallocation moves lx->win.s, any lx->win.s[-].{active,staged} that was
 					// nonzero will then be invalid
 					int k;
-					for(k = 0; k < lx->s[0].l; k++)
+					for(k = 0; k < lx->win.a; k++)
 					{
 						if(lx->win.s[k].active)
 							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_storage_index];
@@ -597,6 +597,14 @@ int API lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 	// adjust the length
 	lx->s[bx].l--;
 
+#if 0
+	if(ax == 0)
+	{
+		// if moving to an entry in the 0th list, unstage its window, if any
+		lx->win.s[ay].staged = 0;
+	}
+#endif
+
 	finally : coda;
 }
 
@@ -623,6 +631,16 @@ int API lstack_displace(lwx * const restrict lx, int x, int y, int l)
 
 	lx->s[x].l += l;
 
+#if 0
+	if(x == 0)
+	{
+		// if displacing entries in the 0th list, unstage their windows, if any
+		int i;
+		for(i = 0; i < l; i++)
+			lx->win.s[y + i].staged = 0;
+	}
+#endif
+
 	finally : coda;
 }
 
@@ -633,23 +651,21 @@ int API lstack_delete(lwx * const restrict lx, int x, int y)
 	typeof(lx->s[0].t[0]) Tt = lx->s[x].t[y];
 
 	// overwrite this entry
-	memmove(
-			&lx->s[x].s[y]
-		, &lx->s[x].s[y+1]
-		, (lx->s[x].l - y - 1) * sizeof(lx->s[0].s[0])
-	);
-
-	memmove(
-			&lx->s[x].t[y]
-		, &lx->s[x].t[y+1]
-		, (lx->s[x].l - y - 1) * sizeof(lx->s[0].t[0])
-	);
+	memmove(&lx->s[x].s[y], &lx->s[x].s[y+1], (lx->s[x].l - y - 1) * sizeof(lx->s[0].s[0]));
+	memmove(&lx->s[x].t[y], &lx->s[x].t[y+1], (lx->s[x].l - y - 1) * sizeof(lx->s[0].t[0]));
 
 	// overwrite the duplicated entry with the current entry
 	lx->s[x].s[lx->s[x].l - 1] = Ts;
 	lx->s[x].t[lx->s[x].l - 1] = Tt;
 
 	lx->s[x].l--;
+
+#if 0
+	if(x == 0)
+	{
+		// if deleting an entry in the 0th list, 
+	}
+#endif
 
 	finally : coda;
 }

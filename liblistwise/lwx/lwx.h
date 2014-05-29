@@ -71,10 +71,10 @@ struct lwx_t
 					int   	o;    	// offset
 					int   	l;    	// length
 				}       	*s;
-				
+
 				int     	l;    	// len - elements in s that are in use
 				int     	a;    	// alloc
-				
+
 				int     	zl;   	// sum(s[-].l)
 
 				uint64_t	lease;	// era in which this window is valid
@@ -88,7 +88,7 @@ struct lwx_t
 			int							staged_storage_index;		// index into storage that staged points to
 		} * s;
 
-		int a;		// alloc
+		int a;											// alloc
 
 		uint64_t		active_era;			// for aging active windows
 		uint64_t		staged_era;			// for aging staged windows

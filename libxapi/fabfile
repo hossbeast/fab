@@ -27,10 +27,10 @@ $libname 			= [ libxapi.so ]
 $soname				= [ $libname ~ j ]
 $libxapi  		= [ $dlibxapi/libxapi.so ~ j ]		# path to the library .so
 $cflags				= [ $cflags -fPIC -DXAPI_PROVIDE_BACKTRACE [ $dlibxapi ~ lsr c -d s/^/-I ] $incdirs ]
-$lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
+$lflags				= [ -shared [ "-Wl,-soname," $soname ~ j ] ]
 
 # source files
-+[@std.c]($gendir = $dlibxapi; $rdirs = $dlibxapi; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
++[@std.c]($gendir = $dlibxapi; $rdirs = $dlibxapi; $dext = [ pic.o ]; -$cfabpaths; $cc $cflags)
 
 ##
 ## dependencies
@@ -53,7 +53,7 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 }
 
 # compiled sys errtab
-+[@std.xapi.errtab]($gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $ext = [ pic.o ]; $cc $cflags)
++[@std.xapi.errtab]($gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $dext = [ pic.o ]; $cc $cflags)
 
 # link the library
 [ $libxapi ] : [ [ $cfabpaths ~ sx/c/pic.o ] [ $dlibxapi/error/SYS.errtab.pic.o ~ j ] [ $dlibxapi/error/XAPI.errtab.pic.o ~ j ] ]
@@ -65,7 +65,7 @@ $lflags				= [ -shared, [ "-Wl,-soname," $soname ] ]
 	> echo "local: *; };"
 	) 1>[ $dlibxapi/exports ]
 
-	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ] [ "-Wl,--version-script=" $dlibxapi/exports ]
+	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ~ fi ] [ "-Wl,--version-script=" $dlibxapi/exports ]
 }
 
 ##

@@ -106,12 +106,15 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 				lx->win.s[y].staged->a = ns;
 			}
 
-			// move down
-			memmove(
-					&lx->win.s[y].staged->s[i + 1]
-				, &lx->win.s[y].staged->s[i]
-				, (lx->win.s[y].staged->a - i - 1) * sizeof(lx->win.s[0].staged->s[0])
-			);
+			if(type == LEFT)
+			{
+				// make room at s[i]
+				memmove(
+						&lx->win.s[y].staged->s[i + 1]
+					, &lx->win.s[y].staged->s[i]
+					, (lx->win.s[y].staged->l - i) * sizeof(lx->win.s[0].staged->s[0])
+				);
+			}
 
 			lx->win.s[y].staged->s[i].o = off;
 			lx->win.s[y].staged->s[i].l = len;
