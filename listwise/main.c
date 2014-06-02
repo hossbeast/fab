@@ -261,7 +261,7 @@ int main(int g_argc, char** g_argv)
 
 	for(x = 0; x < g_args.init_listl; x++)
 	{
-		fatal(lstack_write, lx, 0, x, g_args.init_list[x], g_args.init_list_lens[x]);
+		fatal(lstack_writew, lx, 0, x, g_args.init_list[x], g_args.init_list_lens[x]);
 	}
 
 	if(g)

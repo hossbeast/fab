@@ -103,6 +103,7 @@ static int selector_parse(char * const s, uint32_t * const lists, uint8_t * cons
 				, .lists = (*lists)
 				, .base = (*base)
 				, .s = strdup(s)
+				, .sl = strlen(s)
 			};
 		}
 	}
@@ -139,10 +140,9 @@ if(help)
 "        fab --logcats   : logging category listing\n"
 "        fab --operators : listwise operator listing (including fab-specific operators)\n"
 "\n"
-"----------- [ options ] ------------------------------------------------------------------\n"
+"----------- [ selectors ] ----------------------------------------------------------------\n"
 "\n"
-" selection modifiers may be clustered\n"
-"  +|- t              (default)  apply selections to fabricate-list\n"
+"  (+/-)t              (default) apply selections to fabricate-list\n"
 "  (+/-)x                        apply selections to fabricate-exact-list\n"
 "  (+/-)n                        apply selections to fabricate-nofile-list\n"
 "  (+/-)d                        apply selections to discovery-list\n"
@@ -151,6 +151,8 @@ if(help)
 "  (+/-)q                        apply selections to query-list\n"
 "  (+/-)C              (default) resolve selectors against current working directory\n"
 "  (+/-)F                        resolve selectors against init-fabfile-dir\n"
+"\n"
+"----------- [ options ] ------------------------------------------------------------------\n"
 "\n"
 "  -p                            create buildplan, but do not execute it\n"
 "  -B                            invalidate all, equivalent to +b [ $! ]\n"

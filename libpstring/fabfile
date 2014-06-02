@@ -20,13 +20,16 @@ $dcommon			= [ $*/../common ~ j ]
 +[ $dcommon/vars.fab ]
 
 # source invocations
-+[ $dcommon ] @common
++[ $dcommon ]() @common
 
 # variables
 $libname 			= [ libpstring.so ]
 $soname				= [ $libname ~ j ]
 $libpstring		= [ $dlibpstring/libpstring.so ~ j ]		# path to the library .so
-$cflags				= [ $cflags -fPIC [ $dlibpstring ~ lsr c -d s/^/-I ] ]
+$cflags				= [ $cflags -fPIC [ $dlibpstring ~ lsr c -d s/^/-I ]
+	# include paths - mark as system to preclude dependency discovery from gcc
+	[ $dlibxapi $dlibxlinux $dliblistwise ~ s/^/-isystem ]
+]
 $lflags				= [ $libxapi $libxlinux -shared [ -Wl,-soname,$soname ~ j ] ]
 
 # source files

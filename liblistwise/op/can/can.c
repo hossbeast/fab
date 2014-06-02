@@ -72,49 +72,50 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 
 	char * base = 0;
 	int basel = 0;
-	uint32_t opts = 0;
+
+	uint32_t opts = CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM | CAN_FINL_SYM;
 
 	char * cwd = 0;
 	int cwdl = 0;
 
+	int opt = 0;	// whether a canonicalization option has been processed
+
 	int x;
 	for(x = 0; x < o->argsl; x++)
 	{
-		if(opts == 0)
+		if(opt == 0 && o->args[x]->itype == ITYPE_I64)
 		{
-			if(o->args[x]->itype == ITYPE_I64)
-			{
-				opts = o->args[x]->i64;
-			}
-			else
-			{
-				int i;
-				for(i = 0; i < o->args[x]->l; i++)
-				{
-					if(o->args[x]->s[i] == 'L') { }
-					else if(o->args[x]->s[i] == 'R') { }
-					else
-						break;
-				}
-
-				if(i == o->args[x]->l)
-				{
-					if(strchr(o->args[x]->s, 'L'))
-						opts = CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM;
-					else
-						opts = CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM;
-				}
-			}
+			opts = o->args[x]->i64;
+			opt = 1;
 		}
-
-		if(opts == 0)
+		else if(opt == 0 && o->args[x]->l == 1 && o->args[x]->s[0] == 'A')
+		{
+			// same as fab : abs (absolute path with most symlinks resolved)
+			opts = CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM;
+			opt = 1;
+		}
+		else if(opt == 0 && o->args[x]->l == 1 && o->args[x]->s[0] == 'R')
+		{
+			// same as fab : can (full canonicalization)
+			opts = CAN_REALPATH;
+			opt = 1;
+		}
+		else if(opt == 0 && o->args[x]->l == 1 && o->args[x]->s[0] == 'C')
+		{
+			opts = CAN_REALPATH;
+			opt = 1;
+		}
+		else
 		{
 			base = o->args[x]->s;
 			basel = o->args[x]->l;
 		}
 	}
 
-	if(base == 0)
+	if(opts == 0)
+		opts = CAN_REALPATH;
+
+	if((opts & (CAN_INIT_DOT | CAN_FORCE_DOT)) && base == 0)
 	{
 		fatal(xgetcwd, 0, 0, &cwd);
 		cwdl = strlen(cwd);
@@ -135,7 +136,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		fatal(canon, ss, ssl, base, basel, space, sizeof(space), &zl, opts);
 
 		// rewrite the row
-		fatal(lstack_write, lx, 0, x, space, zl);
+		fatal(lstack_writew, lx, 0, x, space, zl);
 	}
 	LSTACK_ITEREND
 

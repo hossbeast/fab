@@ -18,8 +18,6 @@
 #ifndef _LISTWISE_GENERATOR_H
 #define _LISTWISE_GENERATOR_H
 
-#include "listwise/operator.h"
-
 /// definitions are in operator.h
 struct arg;
 struct operation;

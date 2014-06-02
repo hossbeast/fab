@@ -78,7 +78,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 			int z = 0;
 
 			// text in the subject before the first windowed segment
-			fatal(lstack_append, lx, 0, x, zs, win->s[0].o);
+			fatal(lstack_catw, lx, 0, x, zs, win->s[0].o);
 			z += win->s[0].o;
 
 			int i;
@@ -87,15 +87,15 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 				// text following the last segment, and preceeding this segment
 				if(i)
 				{
-					fatal(lstack_append, lx, 0, x, zs + win->s[i - 1].o + win->s[i - 1].l, win->s[i].o - (win->s[i - 1].o + win->s[i - 1].l));
+					fatal(lstack_catw, lx, 0, x, zs + win->s[i - 1].o + win->s[i - 1].l, win->s[i].o - (win->s[i - 1].o + win->s[i - 1].l));
 					z += win->s[i].o - (win->s[i - 1].o + win->s[i - 1].l);
 				}
 
 				// write the windowed segment bracketed by color escapes
-				fatal(lstack_append, lx, 0, x, COLOR(RED));
+				fatal(lstack_catw, lx, 0, x, COLOR(RED));
 				z += CSIZE(RED);
-				fatal(lstack_append, lx, 0, x, zs + win->s[i].o, win->s[i].l);
-				fatal(lstack_append, lx, 0, x, COLOR(NONE));
+				fatal(lstack_catw, lx, 0, x, zs + win->s[i].o, win->s[i].l);
+				fatal(lstack_catw, lx, 0, x, COLOR(NONE));
 
 				fatal(lstack_window_stage, lx, x, z, win->s[i].l);
 
@@ -106,7 +106,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 			if(i)
 			{
 				i--;
-				fatal(lstack_append, lx, 0, x, zs + win->s[i].o + win->s[i].l, zsl - (win->s[i].o + win->s[i].l));
+				fatal(lstack_catw, lx, 0, x, zs + win->s[i].o + win->s[i].l, zsl - (win->s[i].o + win->s[i].l));
 			}
 
 			fatal(lstack_selection_stage, lx, x);

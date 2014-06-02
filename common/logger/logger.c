@@ -489,6 +489,13 @@ int log_log_parse_and_describe(TRACEARGS char * expr, int expr_len, int prepend,
 	finally : coda;
 }
 
+int log_parse_pop()
+{
+	o_filter_l--;
+
+	finally : coda;
+}
+
 int log_init()
 {
 	int			fd = -1;

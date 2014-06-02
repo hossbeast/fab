@@ -69,15 +69,15 @@ static int append(lwx * lx, int x, char * s, int l)
 		if(((i + 1) < l) && s[i] == '\\')
 		{
 			if(s[i + 1] == 'r')
-			  fatal(lstack_append, lx, 0, x, "\r", 1);
+			  fatal(lstack_catw, lx, 0, x, "\r", 1);
 			else if(s[i + 1] == 'n')
-			  fatal(lstack_append, lx, 0, x, "\n", 1);
+			  fatal(lstack_catw, lx, 0, x, "\n", 1);
 			else if(s[i + 1] == '0')
-			  fatal(lstack_append, lx, 0, x, "\0", 1);
+			  fatal(lstack_catw, lx, 0, x, "\0", 1);
 			else if(s[i + 1] == '\\')
-			  fatal(lstack_append, lx, 0, x, "\\", 1);
+			  fatal(lstack_catw, lx, 0, x, "\\", 1);
 			else if(s[i + 1] == 't')
-			  fatal(lstack_append, lx, 0, x, "\t", 1);
+			  fatal(lstack_catw, lx, 0, x, "\t", 1);
 			else if(s[i + 1] == 'x')
 			{
 			  if((i + 3) < l)
@@ -85,7 +85,7 @@ static int append(lwx * lx, int x, char * s, int l)
 			    int v;
 			    if(parseuint(s + i + 2, SCNx8, 0, 0xFF, 2, 2, &v, 0) == 0)
 			    {
-			      fatal(lstack_appendf, lx, 0, x, "%c", v);
+			      fatal(lstack_catf, lx, 0, x, "%c", v);
 			    }
 			
 			    i += 2;
@@ -96,7 +96,7 @@ static int append(lwx * lx, int x, char * s, int l)
 		}
 		else
 		{
-			fatal(lstack_append, lx, 0, x, s + i, 1);
+			fatal(lstack_catw, lx, 0, x, s + i, 1);
 		}
 	}
 
@@ -213,7 +213,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 						int b = (*ovec)[1 + (o->args[1]->refs.v[i].ref * 2) + 1];
 
 						if(a >= 0 && b >= 0)
-							fatal(lstack_append, lx, 0, x, ss + a, b - a);
+							fatal(lstack_catw, lx, 0, x, ss + a, b - a);
 					}
 				}
 

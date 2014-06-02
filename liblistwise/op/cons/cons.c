@@ -69,7 +69,7 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** uda
 
 	int x;
 	for(x = 0; x < o->argsl; x++)
-		fatal(lstack_add, ls, o->args[x]->s, o->args[x]->l);
+		fatal(lstack_addw, ls, o->args[x]->s, o->args[x]->l);
 
 	finally : coda;
 }

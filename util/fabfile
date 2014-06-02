@@ -15,16 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1		SYNTAX				fabfile could not be parsed
-2		ILLBYTE				fabfile contains illegal byte(s)
-3		BADTMP				unexpected file(s) in temp directory
-4		BADCACHE			unexpected file(s) in cache directory
-5		BADARGS				invalid command-line arguments
-6		UNSATISFIED		buildplan has unsatisfied dependencies
-7		FMLFAIL				formula failed to execute successfully
-8		DSCPARSE			dependency discovery results were not parsed
-9		NOINVOKE			invocation target could not be resolved
-10	BADPLAN				buildplan cannot be constructed
-11	EXESUID				fab executable does not have ug+s permissions
-12	CYCLE					dependency graph contains a cycle
-13	NOSELECT			selector matches nothing
+# definitions
+$dcommon = [ $*/../common ~ j ]
++[ $dcommon/vars.fab ]
+
+$gccdep		= [ $dutil/gcc-dep ~ j ]
+
+#
+# tasks
+#
+
+[ @install ] : [ $gccdep ]
+{
+	install [ $@ ]												[ $destdir/$bindir ]
+}

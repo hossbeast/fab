@@ -238,7 +238,35 @@ static int writestack_alt(lwx * const restrict lx, int x, int y, const void* con
 	// reset the window for this row
 	if(x == 0)
 	{
-//		lstack_window_deactivate(lx, y);
+		fatal(lstack_window_deactivate, lx, y);
+	}
+
+	finally : coda;
+}
+
+static int vwritestack_alt(lwx * const restrict lx, int x, int y, const void* const restrict fmt, va_list va)
+{
+	va_list va2;
+	va_copy(va2, va);
+
+	int l = vsnprintf(0, 0, fmt, va);
+	va_end(va);
+
+	fatal(allocate, lx, x, y, l);
+
+	vsprintf(lx->s[x].s[y].s, fmt, va2);
+	va_end(va2);
+
+	lx->s[x].s[y].l = l;
+	lx->s[x].s[y].type = 0;
+
+	// dirty the temp space for this row
+	lx->s[x].t[y].y = LWTMP_UNSET;
+
+	// reset the window for this row
+	if(x == 0)
+	{
+		fatal(lstack_window_deactivate, lx, y);
 	}
 
 	finally : coda;
@@ -273,7 +301,7 @@ static int writestack(lwx * const restrict lx, int x, int y, const void* const r
 	// reset the window for this row
 	if(x == 0)
 	{
-//		lstack_window_deactivate(lx, y);
+		fatal(lstack_window_deactivate, lx, y);
 	}
 
 	finally : coda;
@@ -301,7 +329,7 @@ static int vwritestack(lwx * const restrict lx, int x, int y, const char* const 
 	// reset the window for this row
 	if(x == 0)
 	{
-//		lstack_window_deactivate(lx, y);
+		fatal(lstack_window_deactivate, lx, y);
 	}
 
 	finally : coda;
@@ -326,7 +354,7 @@ int API lstack_clear(lwx * const restrict lx, int x, int y)
 	finally : coda;
 }
 
-int API lstack_append(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
+int API lstack_catw(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
 {
 	// ensure stack has enough lists, stack has enough strings, string has enough bytes
 	fatal(ensure, lx, x, y, -1);
@@ -348,7 +376,12 @@ int API lstack_append(lwx * const restrict lx, int x, int y, const char* const r
 	finally : coda;
 }
 
-int API lstack_appendf(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+int API lstack_cats(lwx * const restrict lx, int x, int y, const char* const restrict s)
+{
+	xproxy(lstack_catw, lx, x, y, s, strlen(s));
+}
+
+int API lstack_catf(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -379,12 +412,12 @@ int API lstack_appendf(lwx * const restrict lx, int x, int y, const char* const 
 	finally : coda;
 }
 
-int API lstack_write_alt(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
+int API lstack_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
 {
-	xproxy(writestack_alt, lx, x, y, s, l, 0);
+	xproxy(writestack, lx, x, y, s, strlen(s), 0);
 }
 
-int API lstack_write(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
+int API lstack_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
 {
 	xproxy(writestack, lx, x, y, s, l, 0);
 }
@@ -397,17 +430,12 @@ int API lstack_writef(lwx * const restrict lx, int x, int y, const char* const r
 	xproxy(vwritestack, lx, x, y, fmt, va);
 }
 
-int API lstack_obj_write_alt(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
+int API lstack_adds(lwx * const restrict lx, const char* const restrict s)
 {
-	xproxy(writestack_alt, lx, x, y, o, 0, type);
+	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, s, strlen(s), 0);
 }
 
-int API lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
-{
-	xproxy(writestack, lx, x, y, o, 0, type);
-}
-
-int API lstack_add(lwx * const restrict lx, const char* const restrict s, int l)
+int API lstack_addw(lwx * const restrict lx, const char* const restrict s, size_t l)
 {
 	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, s, l, 0);
 }
@@ -420,9 +448,37 @@ int API lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...
 	xproxy(vwritestack, lx, 0, lx->l ? lx->s[0].l : 0, fmt, va);
 }
 
+int API lstack_alt_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
+{
+	xproxy(writestack_alt, lx, x, y, s, strlen(s), 0);
+}
+
+int API lstack_alt_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
+{
+	xproxy(writestack_alt, lx, x, y, s, l, 0);
+}
+
+int API lstack_alt_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+
+	xproxy(vwritestack_alt, lx, x, y, fmt, va);
+}
+
+int API lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
+{
+	xproxy(writestack, lx, x, y, o, 0, type);
+}
+
 int API lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
 {
 	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, o, 0, type);
+}
+
+int API lstack_obj_alt_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
+{
+	xproxy(writestack_alt, lx, x, y, o, 0, type);
 }
 
 // shift removes the first list from the stack

@@ -41,6 +41,7 @@
 #define FFN_SUBCONTEXT	0x0040
 #define FFN_WSSEP				0x0080
 #define FFN_COMMASEP		0x0100
+#define FFN_SYSVAR			0x0200
 
 // FFN type table
 #define FFN_TABLE(x)										\
@@ -89,7 +90,7 @@ typedef struct ff_node
 //	int				l;						// length
 
 	generator * generator;		// FFN_TRANSFORM
-	uint32_t		flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION, FFN_LIST
+	uint32_t		flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION, FFN_LIST, FFN_VARREF
 
 	// not freed
 	struct fml *			fml;		// FFN_FORMULA

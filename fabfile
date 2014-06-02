@@ -27,9 +27,10 @@ $dcommon = [ $*/common ~ j ]
 +[ $dliblistwise ](-$liblistwise; $libxapi $libxlinux $libpstring)							@liblistwise
 +[ $dlistwise ](-$listwise;       $libxapi $libxlinux $libpstring $liblistwise)	@listwise
 +[ $dfab ](-$fab; -$faboplist;    $libxapi $libxlinux $libpstring $liblistwise)	@fab
++[ $dutil ]()																																		@util
 
 # default target - make everything
-[ @all ] 				: [ @libxapi.all @libxlinux.all @libpstring.all @liblistwise.all @listwise.all @fab.all ]
+[ @all ] 				: [ @libxapi.all @libxlinux.all @libpstring.all @liblistwise.all @listwise.all @fab.all @util.all ]
 
 # inter-module dependencies
 [ $libxlinux ]	 :^ [ $libxapi ]
@@ -40,17 +41,17 @@ $dcommon = [ $*/common ~ j ]
 [ $faboplist ]	 :^ [ $libxapi $libxlinux $libpstring $liblistwise ]
 
 # supertasks
-[ @install ]		: [ @libxapi.install @libxlinux.install @libpstring.install @liblistwise.install @listwise.install @fab.install ]
+[ @install ]		: [ @libxapi.install @libxlinux.install @libpstring.install @liblistwise.install @listwise.install @fab.install @util.install ]
 
 # create scripts
 [ @scripts ]
 {
 	exec 2>/dev/null
-	fab --bslic-fab -k [ $*/make64.sh ] @all
-	fab --bslic-fab -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
+	[ $^fab ] --bslic-fab -k [ $*/make64.sh ] @all
+	[ $^fab ] --bslic-fab -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 
-	fab --bslic-fab -v '$debug=["[" 1 "]"]'  -k [ $*/make64-debug.sh ] @all
-	fab --bslic-fab -v '$debug=["[" 1 "]"]'  -k [ $*/install64-debug.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
+	[ $^fab ] --bslic-fab -v '$debug=["[" 1 "]"]' -k [ $*/make64-debug.sh ] @all
+	[ $^fab ] --bslic-fab -v '$debug=["[" 1 "]"]' -k [ $*/install64-debug.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 
-	fab --bslic-fab -v '$devel=["[" 1 "]"]' -k [ $*/make64-devel.sh ] @all
+	[ $^fab ] --bslic-fab -v '$devel=["[" 1 "]"]' -k [ $*/make64-devel.sh ] @all
 }

@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include "internal.h"
+#include "PCRE.errtab.h"
 
 static etable * tab[3];
 

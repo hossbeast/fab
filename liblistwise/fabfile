@@ -20,26 +20,27 @@ $dcommon			= [ $*/../common ~ j ]
 +[ $dcommon/vars.fab ]
 
 # source invocations
-+[ $dcommon ] @common
++[ $dcommon ]() @common
 
 # variables
 $libname 			= [ liblistwise.so ]
 $soname				= [ $libname ~ j ]
 $liblistwise  = [ $dliblistwise/liblistwise.so ~ j ]		# path to the library .so
-$cflags				= [ $cflags -fPIC [ $dliblistwise ~ ls c -d s/^/-I ]
-	[ ~ [ ?, [ cons,-DLWOPDIR="$lwopdir" ~ j ] ~ fi ] ]
+$cflags				= [ $cflags -fPIC [ $dliblistwise ~ ls c -d s/^/-I ] [ -DLWOPDIR=$lwopdir ~ j ]
+	# include paths - mark as system to preclude dependency discovery from gcc
+	[ $dlibxapi $dlibxlinux $dlibpstring ~ s/^/-isystem ]
 ]
-$lflags				= [ -lpcre, -ldl, $libxapi, $libxlinux, $libpstring, -shared, [ "-Wl,-soname," $soname ] ]
+$lflags				= [ -lpcre -ldl $libxapi $libxlinux $libpstring -shared [ -Wl,-soname,$soname ~ j ] ]
 
 # source files
-+[@std.c]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$cfabpaths; $cc $cflags)
-+[@std.l]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$lfabpaths; $cc $cflags $flex $flexflags)
-+[@std.y]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
++[@std.c]($gendir = $dliblistwise; $rdirs = $dliblistwise; $dext = [ pic.o ]; -$cfabpaths; $cc $cflags)
++[@std.l]($gendir = $dliblistwise; $rdirs = $dliblistwise; $dext = [ pic.o ]; -$lfabpaths; $cc $cflags $flex $flexflags)
++[@std.y]($gendir = $dliblistwise; $rdirs = $dliblistwise; $dext = [ pic.o ]; -$yfabpaths; $cc $cflags $bison $bisonflags)
 
 # generated files
-+[@std.flex.states] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
-+[@std.bison.tokens]($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags)
-+[@std.xapi.errtab] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $ext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
++[@std.flex.states] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $dext = [ pic.o ]; $cc $cflags)
++[@std.bison.tokens]($gendir = $dliblistwise; $rdirs = $dliblistwise; $dext = [ pic.o ]; $cc $cflags)
++[@std.xapi.errtab] ($gendir = $dliblistwise; $rdirs = $dliblistwise; $dext = [ pic.o ]; $cc $cflags ; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
 
 # path to each operator so
 $oplist = [ $dliblistwise ~ ??, s,$,/op lsr m,op\.c v sxf,c,so y ]
@@ -52,7 +53,7 @@ $oplist = [ $dliblistwise ~ ??, s,$,/op lsr m,op\.c v sxf,c,so y ]
 [ @all ] : [ $liblistwise $oplist ]
 
 # library depends on .o for each c, l, and y
-[ $liblistwise ] : [ [ $cfabpaths ~ sx/c/pic.o y ?, m,/op/ v ] ]
+[ $liblistwise ] : [ $cfabpaths ~ ?, m,/op/ d sx,c,pic.o y ]
 [ $liblistwise ] : [ $lfabpaths ~ sx/l/lex.pic.o y ]
 [ $liblistwise ] : [ $yfabpaths ~ sx/y/tab.pic.o y ]
 
@@ -69,7 +70,7 @@ $oplist = [ $dliblistwise ~ ??, s,$,/op lsr m,op\.c v sxf,c,so y ]
 	> echo "local: *; };"
 	 ) 1>[ $dliblistwise/exports ]
 
-	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ] [ "-Wl,--version-script=" $dliblistwise/exports ]
+	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ~ fi ] [ -Wl,--version-script=$dliblistwise/exports ]
 }
 
 # link an operator so - which depends on its own .o

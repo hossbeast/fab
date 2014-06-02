@@ -146,6 +146,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <commandchecklit>[\x00-\xff]														{ POPSTATE; yyless(0); }
 <commandlit>[^\x00-\x08\x0a-\x1F\x7F-\xFF]+							{	POPSTATE;	return LEX(WORD, 0); }
 
+<varref>[\^]																						{ return LEX(yytext[0], 0); }
 <varref>[@*#<!]																					{ POPSTATE; return LEX(WORD, 0); }
 <varref>[a-zA-Z_][a-zA-Z0-9_]*													{ POPSTATE; return LEX(WORD, 0); }
 

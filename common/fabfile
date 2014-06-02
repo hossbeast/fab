@@ -15,6 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# c files
-+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; -$cfabpaths; $cc $cflags)
-+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
+once {
+
+	$dcommon = [ $* ]
+	+[ $dcommon/vars.fab ]
+
+	$cflags = [ $cflags 
+		# include paths - mark as system to preclude dependency discovery from gcc
+		[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-isystem ]
+	]
+
+	# c files
+	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc $cflags)
+	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $dext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
+}

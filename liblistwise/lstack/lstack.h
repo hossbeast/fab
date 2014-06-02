@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_LSTACK_H
 #define _LISTWISE_LSTACK_H
 
+#include <sys/types.h>
+
 #include "listwise.h"
 
 #define restrict __restrict
@@ -42,50 +44,114 @@
 int lstack_readrow(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl, uint8_t * const restrict rt, int obj, int win, int str, int * const restrict raw)
 	__attribute__((nonnull(1)));
 
-/// lstack_append
-//
-// append text to the entry at x:y
-//
-int lstack_append(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
-	__attribute__((nonnull));
-
-/// lstack_appendf
-//
-// append text to the entry at x:y using printf-style args
-//
-int lstack_appendf(lwx * const restrict lx, int x, int y, const char* const restrict s, ...)
-	__attribute__((nonnull));
-
 /// lstack_write
 //
-// write text to the entry at x:y
+// SUMMARY
+//  write text to the entry at x:y
 //
-int lstack_write(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
+// PARAMETERS
+//  lx    - lw context
+//  x     - list
+//  y     - row
+//  [s]   - pointer to string
+//  [l]   - string length
+//  [fmt] - format string
+//
+// VARIANTS
+//  writes - string specified as null-terminated string
+//  writew - string specified as pointer/length pair
+//  writef - string specified as printf-style arglist// PARAMETERS
+//
+int lstack_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
 	__attribute__((nonnull));
 
-int lstack_write_alt(lwx * const restrict lx, int x, int y, const char* const restrict s, int l)
+int lstack_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
 	__attribute__((nonnull));
 
-/// lstack_writef
+int lstack_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+	__attribute__((nonnull(1, 4)));
+
+/// lstack_alt_write
 //
-// write text to the entry at x:y using printf-style args
+// SUMMARY
+//  write text to the entry at x:y
 //
-int lstack_writef(lwx * const restrict lx, int x, int y, const char* const restrict s, ...)
+// PARAMETERS
+//  lx    - lw context
+//  x     - list
+//  y     - row
+//  [s]   - pointer to string
+//  [l]   - string length
+//  [fmt] - format string
+//
+// VARIANTS
+//  writes - string specified as null-terminated string
+//  writew - string specified as pointer/length pair
+//  writef - string specified as printf-style arglist// PARAMETERS
+//
+// REMARKS
+//  used in conjunction with lstack_displace
+//
+int lstack_alt_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
 	__attribute__((nonnull));
+
+int lstack_alt_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
+	__attribute__((nonnull));
+
+int lstack_alt_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+	__attribute__((nonnull(1, 4)));
+
+/// lstack_cat
+//
+// SUMMARY
+//  append text to the entry at x:y
+//
+// PARAMETERS
+//  lx    - lw context
+//  x     - list
+//  y     - row
+//  [s]   - pointer to string
+//  [l]   - string length
+//  [fmt] - format string
+//
+// VARIANTS
+//  cats - string specified as null-terminated string
+//  catw - string specified as pointer/length pair
+//  catf - string specified as printf-style arglist
+//
+int lstack_cats(lwx * const restrict lx, int x, int y, const char* const restrict s)
+	__attribute__((nonnull));
+
+int lstack_catw(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
+	__attribute__((nonnull));
+
+int lstack_catf(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+	__attribute__((nonnull(1, 4)));
 
 /// lstack_add
 //
-// write text to the next unused entry of list 0
+// SUMMARY
+//  write text to the next unused entry of list 0
 //
-int lstack_add(lwx * const restrict lx, const char* const restrict s, int l)
+// PARAMETERS
+//  lx    - lw context
+//  [s]   - pointer to string
+//  [l]   - string length
+//  [fmt] - format string
+//
+// VARIANTS
+//  writes - string specified as null-terminated string
+//  writew - string specified as pointer/length pair
+//  writef - string specified as printf-style arglist
+//
+int lstack_adds(lwx * const restrict lx, const char* const restrict s)
 	__attribute__((nonnull));
 
-/// lstack_addf
-//
-// write text to the next unused entry of list 0 using printf-style args
-//
-int lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
+int lstack_addw(lwx * const restrict lx, const char* const restrict s, size_t l)
 	__attribute__((nonnull));
+
+int lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
+	__attribute__((nonnull(1, 2)));
 
 ///
 /// STACKOPS API
@@ -151,7 +217,7 @@ int lstack_xchg(lwx * const restrict lx)
 int lstack_merge(lwx * const restrict lx, int dst, int src)
 	__attribute__((nonnull));
 
-/// allocate
+/// lstack_allocate
 //
 //
 //

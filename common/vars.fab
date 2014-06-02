@@ -30,7 +30,7 @@ $VERSIONN				= [ $VERSIONL ~ j s/^0//g ] 			# version number
 #   - SANITY logging categories and related options
 #  - disable ug+s check (to facilitate execution under valgrind)
 #
-$debug						= [ 0 ]
+$debug					= [ 0 ]
 
 #
 # devel : (debug, but nonportable)
@@ -49,6 +49,7 @@ $dliblistwise		= [ $dcommon/../liblistwise ~ j ]
 $dlibpstring		= [ $dcommon/../libpstring ~ j ]
 $dlistwise			= [ $dcommon/../listwise ~ j ]
 $dfab						= [ $dcommon/../fab ~ j ]
+$dutil					= [ $dcommon/../util ~ j ] 
 
 # install directories (these are suitable for ubuntu-64)
 $destdir				= [ ]															# root install directory - does not affect runtime directories
@@ -68,17 +69,16 @@ $fabcachedir						= [ /var/cache/fab ]			# fab cache
 $fabtmpdir							= [ /var/tmp/fab ]				# fab tmp
 $fabipcdir							= [ /var/run/fab ]				# fab shm/ipc files
 $lwopdir								= [
-	[ $devel ~ [ ?{ j s{0}{$dlibdir/listwise} y ~ fi ] ]							# lw operators - regular/debug build
-	[ $devel ~ [ ?{ s{1}{ [ $dliblistwise/op ~ j/rp ] } y ~ fi ] ]		# lw operators - devel build
-	[ $devel ~ [ ?{ s{1}{ [ $dliblistwise/op ~ j/rp ] } y ~ fi ] ]		# lw operators - devel build
+	[ $devel ~ [ ?{ [ s{0}{ [ $dlibdir/listwise ~ j rp ] } ~ j ] y ~ fi ] ]			# lw operators - regular/debug build
+	[ $devel ~ [ ?{ [ s{1}{ [ $dliblistwise/op  ~ j rp ] } ~ j ] y ~ fi ] ]			# lw operators - devel build
 ]
 $fablwopdir							= [
-	[ $devel ~ [ ?{ j s{0}{$dlibdir/fab/lib} y ~ fi ] ]								# fab-specific lw operators - regular/debug build
-	[ $devel ~ [ ?{ s{1}{ [ $dfab/fablw/op ~ j/rp ] } y ~ fi ] ]			# fab-specific lw operators - devel build
+	[ $devel ~ [ ?{ [ s{0}{ [ $dlibdir/fab/lib ~ j rp ] } ~ j ] y ~ fi ] ]			# fab-specific lw operators - regular/debug build
+	[ $devel ~ [ ?{ [ s{1}{ [ $dfab/fablw/op   ~ j rp ] } ~ j ] y ~ fi ] ]			# fab-specific lw operators - devel build
 ]
 $fabinvokedir						= [
-	[ $devel ~ [ ?{ j s{0}{$dlibdir/fab/listwise} y ~ fi ] ]					# fab-provided invocations - regular/debug build
-	[ $devel ~ [ ?{ s{1}{ [ $dfab/fablib ~ j/rp ] } y ~ fi ] ]				# fab-provided invocations - devel build
+	[ $devel ~ [ ?{ [ s{1}{ [ $dlibdir/fab/listwise ~ j rp ] } ~ j ] y ~ fi ] ]	# fab-provided invocations - regular/debug build
+	[ $devel ~ [ ?{ [ s{1}{ [ $dfab/fablib          ~ j rp ] } ~ j ] y ~ fi ] ]	# fab-provided invocations - devel build
 ]
 
 # compilers and their flags
@@ -89,11 +89,15 @@ $bison			= [ bison ]
 $bisonflags	= [ --warnings=error ]
 
 $cc					= [ gcc ]
-$cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
-		# include paths
-	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring [ $dcommon ~ lsr c -d ] ~ s/^/-I ]
-	[ -DXAPI_PROVIDE_BACKTRACE ]
-	[ $debug $devel ~ s/1/-O0 y ]				# compiler optimizations
+$cflags     = [
+	# universal compiler options
+	[ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE ]
+
+	# include paths
+	[ $dcommon ~ lsr c -d s/^/-I ]
+
+	# conditional
+	[ $debug $devel ~ s/1/-O0 y ]					# compiler optimizations
 	[ $debug $devel ~ j s/00/-O3 y ]
 	[ $debug $devel ~ s/1/-g y ]					# debug symbol generation
 	[ $debug $devel ~ s/1/-DDEVEL y ]
@@ -102,10 +106,10 @@ $cflags     = [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions
 ]
 
 $lflags			= [
-	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibxapi ~ j/rp ] } ~ j ] y ~ fi ] ]
-	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibxlinux ~ j/rp ] } ~ j ] y ~ fi ] ]
-	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibpstring ~ j/rp ] } ~ j ] y ~ fi ] ]
-	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dliblistwise ~ j/rp ] } ~ j ] y ~ fi ] ]
+	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibxapi ~ j rp ] } ~ j ] y ~ fi ] ]
+	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibxlinux ~ j rp ] } ~ j ] y ~ fi ] ]
+	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibpstring ~ j rp ] } ~ j ] y ~ fi ] ]
+	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dliblistwise ~ j rp ] } ~ j ] y ~ fi ] ]
 ]
 
 # default library names

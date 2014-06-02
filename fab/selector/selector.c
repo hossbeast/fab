@@ -142,7 +142,7 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 
 	if(l == 0)
 	{
-		logf(L_WARN, "selector : %s matches nothing", s->s);
+		failf(FAB_NOSELECT, "selector : %s matches nothing", s->s);
 	}
 
 	finally : coda;

@@ -72,7 +72,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 			for(i = 0; i < wl; i++)
 			{
 				// write the windowed segment
-				fatal(lstack_add, lx, zs + ws[i].o, ws[i].l);
+				fatal(lstack_addw, lx, zs + ws[i].o, ws[i].l);
 			}
 		}
 	}

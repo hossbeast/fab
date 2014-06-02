@@ -140,7 +140,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	memcpy(&ls->s[0].t[ls->s[0].l], Tt, sizeof(Tt));
 
 	// add new entry from the accumulator
-	fatal(lstack_add, ls, ns, nl);
+	fatal(lstack_addw, ls, ns, nl);
 
 	// selection
 	fatal(lstack_selection_stage, ls, ls->s[0].l - 1);

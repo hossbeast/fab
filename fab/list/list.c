@@ -99,44 +99,58 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 	{
 		if(list->elements[x]->type == FFN_WORD)
 		{
-			fatal(lstack_add, (*stax)[pn], list->elements[x]->text->s, list->elements[x]->text->l);
+			fatal(lstack_addw, (*stax)[pn], list->elements[x]->text->s, list->elements[x]->text->l);
 		}
 		else if(list->elements[x]->type == FFN_LF)
 		{
-			fatal(lstack_add, (*stax)[pn], "\n", 1);
+			fatal(lstack_addw, (*stax)[pn], "\n", 1);
 		}
 		else if(list->elements[x]->type == FFN_NOFILE)
 		{
-			fatal(lstack_add, (*stax)[pn], list->elements[x]->text->s, list->elements[x]->text->l);
+			fatal(lstack_addw, (*stax)[pn], list->elements[x]->text->s, list->elements[x]->text->l);
 		}
 		else if(list->elements[x]->type == FFN_VARREF)
 		{
-			lwx * vls = 0;
-			if(rawmap)
+			if(list->elements[x]->flags & FFN_SYSVAR)
 			{
-				lwx ** cc = 0;
-				if((cc = map_get(vmap, list->elements[x]->name->text->s, list->elements[x]->name->text->l)))
-					vls = *cc;
+				if(strcmp(list->elements[x]->name->text->s, "fab") == 0)
+				{
+					fatal(lstack_adds, (*stax)[pn], "/home/todd/fab/fab/fab");
+				}
+				else if(strcmp(list->elements[x]->name->text->s, "lw") == 0 || strcmp(list->elements[x]->name->text->s, "listwise"))
+				{
+					fatal(lstack_adds, (*stax)[pn], "/home/todd/fab/listwise/listwise");
+				}
 			}
 			else
 			{
-				fatal(var_access, vmap, list->elements[x]->name->text->s, stax, staxa, staxp, &vls);
-			}
-
-			if(vls)
-			{
-				// EXCEPTION for bakevars alone in a list with a generator
-				if(rawvars && map_get(rawvars, list->elements[x]->name->text->s, list->elements[x]->name->text->l))
+				lwx * vls = 0;
+				if(rawmap)
 				{
-					// save the list-value
-					fatal(map_set, rawvars, list->elements[x]->name->text->s, list->elements[x]->name->text->l, MM(vls), 0);
-
-					// render a reference to the variable by name
-					fatal(lstack_addf, (*stax)[pn], "$%s", list->elements[x]->name);
+					lwx ** cc = 0;
+					if((cc = map_get(vmap, list->elements[x]->name->text->s, list->elements[x]->name->text->l)))
+						vls = *cc;
 				}
 				else
 				{
-					fatal(lstack_obj_add, (*stax)[pn], vls, LISTWISE_TYPE_LIST);
+					fatal(var_access, vmap, list->elements[x]->name->text->s, stax, staxa, staxp, &vls);
+				}
+
+				if(vls)
+				{
+					// EXCEPTION for bakevars alone in a list with a generator
+					if(rawvars && map_get(rawvars, list->elements[x]->name->text->s, list->elements[x]->name->text->l))
+					{
+						// save the list-value
+						fatal(map_set, rawvars, list->elements[x]->name->text->s, list->elements[x]->name->text->l, MM(vls), 0);
+
+						// render a reference to the variable by name
+						fatal(lstack_addf, (*stax)[pn], "$%s", list->elements[x]->name);
+					}
+					else
+					{
+						fatal(lstack_obj_add, (*stax)[pn], vls, LISTWISE_TYPE_LIST);
+					}
 				}
 			}
 		}

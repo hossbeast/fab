@@ -24,7 +24,7 @@
 #include "listwise.h"
 #include "listwise/lstack.h"
 #include "listwise/LW.errtab.h"
-#include "listwise/PCRE.errtab.h"
+//#include "listwise/PCRE.errtab.h"
 #include "listwise/selection.h"
 #include "listwise/window.h"
 

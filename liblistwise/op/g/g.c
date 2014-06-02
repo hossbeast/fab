@@ -117,7 +117,7 @@ static int gobble(lwx* lx, char * path, char * fmt, char * flags, void ** udata)
 			}
 			else
 			{
-				fatal(lstack_add, lx, s, e - s);
+				fatal(lstack_addw, lx, s, e - s);
 			}
 
 			s = e + 1;

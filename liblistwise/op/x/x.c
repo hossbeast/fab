@@ -81,9 +81,9 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 				for(i = 0; i < win->l; i++)
 				{
 					if(i)
-						fatal(lstack_append, lx, 0, x, ds, dl);
+						fatal(lstack_catw, lx, 0, x, ds, dl);
 
-					fatal(lstack_append, lx, 0, x, zs + win->s[i].o, win->s[i].l);
+					fatal(lstack_catw, lx, 0, x, zs + win->s[i].o, win->s[i].l);
 				}
 			}
 			else
@@ -92,7 +92,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 				fatal(lstack_getbytes, lx, 0, x, &zs, &zsl);
 
 				// write new string using the window
-				fatal(lstack_write, lx, 0, x, zs, zsl);
+				fatal(lstack_writew, lx, 0, x, zs, zsl);
 
 				// record this index was hit
 				fatal(lstack_selection_stage, lx, x);

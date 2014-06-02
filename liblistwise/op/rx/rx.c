@@ -99,11 +99,11 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 			{
 				if(rtypes && rtypes[i])
 				{
-					fatal(lstack_obj_write_alt, ls, 0, x + i, r[i], rtypes[i]);
+					fatal(lstack_obj_alt_write, ls, 0, x + i, r[i], rtypes[i]);
 				}
 				else
 				{
-					fatal(lstack_write_alt, ls, 0, x + i, r[i], rls[i]);
+					fatal(lstack_alt_writew, ls, 0, x + i, r[i], rls[i]);
 				}
 
 				// reallocate last block, if necessary

@@ -73,12 +73,6 @@ int ffn_mknode(ff_node ** const restrict n, const yyu_location * const restrict 
 	// copy location
 	memcpy(&(*n)->loc, loc, sizeof((*n)->loc));
 
-/*
-	// set node value to be its source text
-	(*n)->s = (*n)->loc.s;
-	(*n)->l = (*n)->loc.l;
-*/
-
 	// pull nodetype-specific params off the stack
 	va_list va;
 	va_start(va, type);
@@ -106,6 +100,7 @@ int ffn_mknode(ff_node ** const restrict n, const yyu_location * const restrict 
 	else if(type == FFN_VARREF)
 	{
 		(*n)->name									= va_arg(va, ff_node*);
+		(*n)->flags									= (uint32_t)va_arg(va, int);
 	}
 	else if(type == FFN_NOFILE)
 	{
@@ -273,6 +268,7 @@ void ffn_xfree(ff_node ** const ffn)
 
 void ffn_dump(ff_node * const root)
 {
+#if DEVEL
 	void dump(ff_node * const ffn, int lvl)
 	{
 		int x;
@@ -485,6 +481,11 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_VARREF)
 			{
+				logf(L_FF | L_FFTREE, "%*s  %12s : %u"
+					, lvl * 2, ""
+					, "flags", ffn->flags
+				);
+
 				logf(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "name"
@@ -496,4 +497,5 @@ void ffn_dump(ff_node * const root)
 
 	if(log_would(L_FF | L_FFTREE))
 		dump(root, 0);
+#endif
 }

@@ -197,7 +197,15 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 					int * lvl = map_get(cmap, MMS("?LVL"));
 					int * num = map_get(cmap, MMS("?NUM"));
 
-					logf(L_INVOKE, "%.*s => %s @ %s @ %d:%d(", inv->l, inv->s, pth->can, sstr, *lvl, *num);
+					if(stmt->varsettingsl)
+					{
+						logf(L_INVOKE, "%.*s => %s @ %s @ %d:%d(", inv->l, inv->s, pth->can, sstr, *lvl, *num);
+						fatal(log_parse, "+VAR", 0, 0);
+					}
+					else
+					{
+						logf(L_INVOKE, "%.*s => %s @ %s @ %d:%d", inv->l, inv->s, pth->can, sstr, *lvl, *num);
+					}
 				}
 
 				// apply additional var settings to context
@@ -247,7 +255,14 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 					}
 				}
 
-				logf(L_INVOKE, ")");
+				if(stmt->varsettingsl)
+				{
+					if(log_would(L_INVOKE))
+					{
+						logf(L_INVOKE, ")");
+						fatal(log_parse_pop);
+					}
+				}
 
 				nmap = cmap;
 			}
@@ -268,7 +283,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 			// apply scope for this invocation
 			if(stmt->scope)
 			{
-				for(i = 1; i < stmt->scope->partsl; i++)
+				for(i = 0; i < stmt->scope->partsl; i++)
 					fatal(strstack_push, sstk, stmt->scope->parts[i]->text->s);
 			}
 
@@ -291,7 +306,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 			// scope pop
 			if(stmt->scope)
 			{
-				for(i = 1; i < stmt->scope->partsl; i++)
+				for(i = 0; i < stmt->scope->partsl; i++)
 					strstack_pop(sstk);
 			}
 
@@ -343,9 +358,9 @@ static int procfile(const ff_parser * const ffp, const path * const inpath, pstr
 	fatal(lw_reset, stax, staxa, (*staxp));
 
 	if(g_args.mode_paths == MODE_ABSOLUTE)
-		fatal(lstack_add, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
+		fatal(lstack_addw, (*stax)[(*staxp)], ff->path->abs_dir, ff->path->abs_dirl);
 	else if(g_args.mode_paths == MODE_RELATIVE_FABFILE_DIR)
-		fatal(lstack_add, (*stax)[(*staxp)], ff->path->rel_fab_dir, ff->path->rel_fab_dirl);
+		fatal(lstack_addw, (*stax)[(*staxp)], ff->path->rel_fab_dir, ff->path->rel_fab_dirl);
 
 	int star = (*staxp)++;
 	fatal(var_set, vmap, "*", (*stax)[star], 0, 1, 0);

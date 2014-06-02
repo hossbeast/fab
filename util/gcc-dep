@@ -31,6 +31,23 @@ if($ARGV[0])
 	$gen =~ s/\s+//;
 }
 
+# canonicalize
+pipe(RDIN,WRIN);
+pipe(RDOUT,WROUT);
+if(fork == 0)
+{
+	close WRIN;
+	close RDOUT;
+
+	open(STDIN, "<&=RDIN");
+	open(STDOUT, ">&WROUT");
+
+	my @args = qw|/home/todd/fab/listwise/listwise can|;
+	exec { $args[0] } @args
+}
+close RDIN;
+close WROUT;
+
 while(<STDIN>)
 {
 	if(/^[^:]+:$/)	# -MP lines, only
@@ -43,48 +60,49 @@ while(<STDIN>)
 			$line = $gen . "/" . $line;
 		}
 
-		if($line =~ /\.lex\.h$/)
-		{
-			push @S, $line;				# strong dependency on the header
-			$line =~ s/\.lex\.h/.lex/;
-			push @W, $line;				# weak dependency on the object
-		}
-		elsif($line =~ /\.tab\.h$/)
-		{
-			push @S, $line;				# strong dependency on the header
-			$line =~ s/\.tab\.h/.tab/;
-			push @W, $line;				# weak dependency on the object
-		}
-		elsif($line =~ /\.states\.h$/)
-		{
-			push @S, $line;				# strong dependency on the header
-			$line =~ s/\.states\.h/.states/;
-			push @W, $line;				# weak dependency on the object
-		}
-		elsif($line =~ /\.tokens\.h$/)
-		{
-			push @S, $line;				# strong dependency on the header
-			$line =~ s/\.tokens\.h/.tokens/;
-			push @W, $line;				# weak dependency on the object
-		}
-		elsif($line =~ /\.errtab\.h$/)
-		{
-			push @S, $line;				# strong dependency on the header
-			$line =~ s/\.errtab\.h/.errtab/;
-			push @W, $line;				# weak dependency on the object
-		}
-		else
-		{
-			push @S, $line;				# strong dependency on the header
+		print WRIN "$line\n"
+	}
+}
+close WRIN;
 
-			# corresponding .c file
-			if($line =~ s/\.h$/.c/)
+for my $line (map { chomp ; $_ } <RDOUT>)
+{
+	push @S, $line;				# strong dependency on the header
+
+	if($line =~ /\.lex\.h$/)
+	{
+		$line =~ s/\.lex\.h/.lex/;
+		push @W, $line;				# weak dependency on the object
+	}
+	elsif($line =~ /\.tab\.h$/)
+	{
+		$line =~ s/\.tab\.h/.tab/;
+		push @W, $line;				# weak dependency on the object
+	}
+	elsif($line =~ /\.states\.h$/)
+	{
+		$line =~ s/\.states\.h/.states/;
+		push @W, $line;				# weak dependency on the object
+	}
+	elsif($line =~ /\.tokens\.h$/)
+	{
+		$line =~ s/\.tokens\.h/.tokens/;
+		push @W, $line;				# weak dependency on the object
+	}
+	elsif($line =~ /\.errtab\.h$/)
+	{
+		$line =~ s/\.errtab\.h/.errtab/;
+		push @W, $line;				# weak dependency on the object
+	}
+	else
+	{
+		# corresponding .c file
+		if($line =~ s/\.h$/.c/)
+		{
+			if(-r $line)
 			{
-				if(-r $line)
-				{
-					$line =~ s/\.c$//;
-					push @W, $line;			# weak dependency on the object, if a corresponding c file exists
-				}
+				$line =~ s/\.c$//;
+				push @W, $line;			# weak dependency on the object, if a corresponding c file exists
 			}
 		}
 	}

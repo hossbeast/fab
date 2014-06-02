@@ -158,7 +158,11 @@ listpart
 varref
 	: '$' word %prec WORD
 	{
-		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARREF, $2);
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARREF, $2, (void*)0);
+	}
+	| '$' '^' word %prec WORD
+	{
+		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_VARREF, $3, FFN_SYSVAR);
 	}
 	;
 

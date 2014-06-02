@@ -68,12 +68,11 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		ifree(&ss);
 		if((ss = realpath(s, 0)))
 		{
-			fatal(lstack_write
+			fatal(lstack_writes
 				, ls
 				, 0
 				, x
 				, ss
-				, strlen(ss)
 			);
 			fatal(lstack_selection_stage, ls, x);
 		}

@@ -45,7 +45,7 @@
 
 // error tables
 #include "LW.errtab.h"
-#include "PCRE.errtab.h"
+//#include "PCRE.errtab.h"
 #undef perrtab
 #define perrtab perrtab_LW
 

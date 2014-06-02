@@ -83,11 +83,11 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		{
 			if(ls->s[0].s[x].type)
 			{
-				fatal(lstack_obj_write_alt, ls, 0, x+y, *(void**)ls->s[0].s[x].s, ls->s[0].s[x].type);
+				fatal(lstack_obj_alt_write, ls, 0, x+y, *(void**)ls->s[0].s[x].s, ls->s[0].s[x].type);
 			}
 			else
 			{
-				fatal(lstack_write_alt, ls, 0, x+y, ls->s[0].s[x].s, ls->s[0].s[x].l);
+				fatal(lstack_alt_writew, ls, 0, x+y, ls->s[0].s[x].s, ls->s[0].s[x].l);
 			}
 		}
 	}

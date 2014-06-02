@@ -65,18 +65,6 @@ int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 
 			fatal(xrealloc, i, sizeof(**i), ns, *ia);
 			*ia = ns;
-/*
-			if(wrealloc(i, sizeof(**i), ns, (*ia)) != 0)
-			{
-				int k;
-				for(k = 0; k < *ia; k++)
-					free((*i)->s);
-				free(*i);
-				return 1;
-			}
-*/
-
-			(*ia) = ns;
 		}
 
 		// swap an unused entry into position at
@@ -211,22 +199,26 @@ int canon(
 for(ix = 0; ix < il; ix++)
 {
 	if(i[ix].t == SLASH)
-		printf("[%d] SLASH\n", ix);
+		printf("[%d] SLASH", ix);
 	else if(i[ix].t == DOT)
-		printf("[%d] DOT\n", ix);
+		printf("[%d] DOT", ix);
 	else if(i[ix].t == DOTDOT)
-		printf("[%d] DOTDOT\n", ix);
+		printf("[%d] DOTDOT", ix);
 	else
-		printf("[%d] %.*s\n", ix, i[ix].l, i[ix].s);
-}
+		printf("[%d] %.*s", ix, i[ix].l, i[ix].s);
 
-printf("init=%d\n", init);
+	if(ix == init)
+		printf("   *");
+	printf("\n");
+}
 */
+
 	for(ix = 0; ix < il; ix++)
 	{
 		if(i[ix].t == SLASH)
 		{
-			if((*z) == 0)
+			// append leading slash, only
+			if((*z) == 0 && ix == 0)
 				(*z) += snprintf(dst + (*z), siz - (*z), "/");
 		}
 		else if(i[ix].t == DOT)
@@ -263,6 +255,8 @@ printf("init=%d\n", init);
 			}
 			else
 			{
+				// back up
+
 				if(*z)
 					(*z)--;
 				while((*z) && dst[(*z)] != '/')
@@ -271,7 +265,7 @@ printf("init=%d\n", init);
 		}
 		else
 		{
-			if(ix > init)
+			if(ix >= init)
 				init = -1;
 
 			int isfinal = 1;
@@ -336,7 +330,7 @@ printf("init=%d\n", init);
 			}
 			else if(errno != ENOENT && errno != EACCES && errno != ENOTDIR)
 			{
-				return 1;
+				tfail(perrtab_SYS, errno);
 			}
 		}
 	}

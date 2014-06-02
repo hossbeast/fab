@@ -20,13 +20,16 @@ $dcommon				= [ $*/../common ~ j ]
 +[ $dcommon/vars.fab ]
 
 # source invocations
-+[ $dcommon ] @common
++[ $dcommon ]() @common
 
 # variables
 $cflags					= [ $cflags -fno-builtin-log [ $dlistwise ~ lsr c -d s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ ~ ?{ cons{-DBUILDSTAMP="`date`"} ]
+
+	# include paths - mark as system to preclude dependency discovery from gcc
+	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-isystem ]
 ]
 $lflags					= [ $lflags $libpstring $liblistwise $libxapi $libxlinux ]
 $name						= [ listwise ]

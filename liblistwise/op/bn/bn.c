@@ -102,7 +102,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 						else
 						{
 							// rewrite the entry
-							fatal(lstack_write, ls, 0, x, s, e - s);
+							fatal(lstack_writew, ls, 0, x, s, e - s);
 						}
 
 						// record this index was hit

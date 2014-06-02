@@ -96,11 +96,11 @@ static int flatten(lwx * lso)
 
 				if(ist)
 				{
-					fatal(lstack_obj_write_alt, lso, 0, x + i, *(void**)isp, ist);
+					fatal(lstack_obj_alt_write, lso, 0, x + i, *(void**)isp, ist);
 				}
 				else
 				{
-					fatal(lstack_write_alt, lso, 0, x + i, isp, isl);
+					fatal(lstack_alt_writew, lso, 0, x + i, isp, isl);
 				}
 				i++;
 			}

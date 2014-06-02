@@ -102,7 +102,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		if(sz)
 		{
 			// rewrite the row
-			fatal(lstack_write, lx, 0, x, space, sz);
+			fatal(lstack_writew, lx, 0, x, space, sz);
 
 			// record this index
 			fatal(lstack_selection_stage, lx, x);

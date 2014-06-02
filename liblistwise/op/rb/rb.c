@@ -152,7 +152,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		fatal(rebase, ss, ssl, base, basel, space, sizeof(space), &zl);
 
 		// rewrite the row
-		fatal(lstack_write, lx, 0, x, space, zl);
+		fatal(lstack_writew, lx, 0, x, space, zl);
 	}
 	LSTACK_ITEREND
 

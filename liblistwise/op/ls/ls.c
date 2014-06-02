@@ -120,7 +120,7 @@ static int listing(lwx* ls, char * s, int recurse, void ** udata)
 	}
 	else
 	{
-		fatal(lstack_add, ls, s, strlen(s));
+		fatal(lstack_adds, ls, s);
 	}
 
 finally:

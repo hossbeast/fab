@@ -20,26 +20,22 @@ $dcommon = [ $*/../common ~ j ]
 +[ $dcommon/vars.fab ]
 
 # source invocations
-+[ $dcommon ] @common
++[ $dcommon ]() @common
 
 # variables
 $cflags					= [ $cflags	-fno-builtin-log [ $dfab ~ lsr c -d s/^/-I ]
-/*
+
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
 	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
 	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
 	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
-*/
 
-	[ ~ [ ?, [ cons,-DLFABVERSIONS="$VERSIONS" ~ j ] ~ fi ] ]
-	[ ~ [ ?, [ cons,-DLFABVERSIONN="$VERSIONN" ~ j ] ~ fi ] ]
-	[ ~ [ ?, [ cons,-DFABCACHEDIR="$fabcachedir" ~ j ] ~ fi ] ]
-	[ ~ [ ?, [ cons,-DFABTMPDIR="$fabtmpdir" ~ j ] ~ fi ] ]
-	[ ~ [ ?, [ cons,-DFABLWOPDIR="$fablwopdir" ~ j ] ~ fi ] ]
-	[ ~ [ ?, [ cons,-DFABINVOKEDIR="$fabinvokedir" ~ j ] ~ fi ] ]
 	[ ~ ?{ cons{-DBUILDSTAMP="`date`"} ]
+
+	# include paths - mark as system to preclude dependency discovery from gcc
+	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-isystem ]
 ]
 $lflags					= [ $lflags $libxapi $libxlinux $libpstring $liblistwise ]
 $fab						= [ $dfab/fab ~ j ]
@@ -47,14 +43,13 @@ $fab						= [ $dfab/fab ~ j ]
 # standard files - standard compilation
 +[@std.c]($gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc $cflags)
 +[@std.l]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d v d m/fablw d ]; $cc $cflags $flex $flexflags)
-#+[@std.y]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d/v/d/m/fablw/d ]; $cc $cflags $bison $bisonflags)
 +[@std.bison.rules]($gendir = $dfab; $dirs = [ $dfab/ff ~ j ]; $cc $cflags $bison $bisonflags)
 
 # standard files - fPIC compilation
 #  no discovery on these files, because they would then depend on *.pic.o files within fab which
 #  do not exist ; instead those link-time references are satisfied by the fab executable
 #
-+[@std.c]($gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $ext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
++[@std.c]($gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $dext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
 
 # generated files
 +[@std.flex.states] ($gendir = $dfab; $rdirs = $dfab; $cc $cflags)
@@ -91,7 +86,8 @@ $faboplist = [ $dfab/fablw/op ~ j lsr sx/c/so y ]
 }
 
 # also a bridge dependency on the fab executable
-[ $dfab/fablw/op ~ j lsr sx/c/pic.o y ] ::^ [ $fab ]
+#[ $dfab/fablw/op ~ j lsr sx/c/pic.o y ] ::^ [ $fab ]
+[ $faboplist ] ::^ [ $fab ]
 
 #
 # tasks
@@ -100,11 +96,10 @@ $faboplist = [ $dfab/fablw/op ~ j lsr sx/c/so y ]
 [ @install ] : [ @all ]
 {
 	chown fabsys:fabsys		[ $fab ]
-	chmod u+s 						[ $fab ]
-	chmod g+s 						[ $fab ]
+	chmod ug+s 						[ $fab ]
 	install -d																			[ $destdir/$bindir ]
 	install [ $fab ]																[ $destdir/$bindir ]
-	install [ $dfab/gcc-dep]												[ $destdir/$bindir ]
+	install [ $dfab/gcc-dep ]												[ $destdir/$bindir ]
 	install -d 																			[ $destdir/$fabcachedir ]
 	chown fabsys:fabsys															[ $destdir/$fabcachedir ]
 	install -d 																			[ $destdir/$fabtmpdir ]
@@ -122,7 +117,6 @@ $faboplist = [ $dfab/fablw/op ~ j lsr sx/c/so y ]
 	install [ $dfab/fablib/std/y.fab ]							[ $destdir/$fabinvokedir/std/y.fab ]
 	install [ $dfab/fablib/std/flex/states.fab ]		[ $destdir/$fabinvokedir/std/flex/states.fab ]
 	install [ $dfab/fablib/std/bison/tokens.fab ]		[ $destdir/$fabinvokedir/std/bison/tokens.fab ]
-  
 
 	rm -rf 																					[ $destdir/$fablwopdir ] 2>/dev/null
 	install -d																			[ $destdir/$fablwopdir ]
@@ -136,7 +130,7 @@ $faboplist = [ $dfab/fablw/op ~ j lsr sx/c/so y ]
 	install -d 																			[ $destdir/$mandir/man1 ]
 
 	cat [ $dfab/man/fab.1 ] \
-		| lw "s/---BUILDVERS---/<[ $VERSIONS ]>" \
-		| lw "s/---BUILDDATE---/<[ @^.time ~ datef/%Y-%m-%d ]>" \
-		| gzip -9c  																		> [ $destdir/$mandir/man1/fab.1.gz ]
+		| [ $^lw ] "s/---BUILDVERS---/<[ $VERSIONS ]>" \
+		| [ $^lw ] "s/---BUILDDATE---/<[ @^.time ~ datef/%Y-%m-%d ]>" \
+		| gzip -9c  															> [ $destdir/$mandir/man1/fab.1.gz ]
 }

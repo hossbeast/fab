@@ -78,7 +78,7 @@ int op_exec(operation* o, lwx * lx, int** ovec, int* ovec_len, void ** udata)
 			strftime(space, sizeof(space), fmt, localtime_r(&T, &tm));
 
 			// rewrite the row
-			fatal(lstack_write, lx, 0, x, space, strlen(space));
+			fatal(lstack_writes, lx, 0, x, space);
 
 			// add to staged selections
 			fatal(lstack_selection_stage, lx, x);
