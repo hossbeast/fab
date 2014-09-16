@@ -42,7 +42,7 @@ $fab						= [ $dfab/fab ~ j ]
 
 # standard files - standard compilation
 +[@std.c]($gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc $cflags)
-+[@std.l]($gendir = $dfab; $rdirs = [ $dfab ~ ls/-d v d m/fablw d ]; $cc $cflags $flex $flexflags)
++[@std.l]($gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $cflags $flex $flexflags)
 +[@std.bison.rules]($gendir = $dfab; $dirs = [ $dfab/ff ~ j ]; $cc $cflags $bison $bisonflags)
 
 # standard files - fPIC compilation

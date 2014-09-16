@@ -46,7 +46,7 @@ $tabcfabpaths = [
 ~ lx/y ]
 
 # tab.c -> { .tokens.c, .tokens.h }
-[ $tabcfabpaths ~ sx/y/tokens.c y v d cp u sx/tokens.c/tokens.h z v dj/2 shift pop ] :: [ $< ~ rx sx/tokens.c/tab.c sx/tokens.h/tab.c ss u ]
+[ $tabcfabpaths ~ sx/y/tokens.c y v d cp u sx/tokens.c/tokens.h z dj/2 shift pop ] :: [ $< ~ rx sx/tokens.c/tab.c sx/tokens.h/tab.c ss u ]
 {
 	src=[ $@ ~ rx/ineed uu ]
 	tokens_h=[ $@ ~ w/0/1 ]

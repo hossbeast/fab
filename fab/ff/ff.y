@@ -104,24 +104,6 @@
 %destructor { ffn_free($$); } <node>
 
 %%
-ff
-  : statements
-  {
-    YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, $1);
-  }
-	|
-	{
-    YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, (void*)0);
-	}
-  ;
-
-statements
-  : statements statement
-  {
-    $$ = ffn_addchain($1, $2);
-  }
-  | statement
-  ;
 dependency
 	: list ':' list
 	{
@@ -240,6 +222,20 @@ word
 	{
 		YYU_FATAL(ffn_mknode, &$$, &@$, FFN_LF);
 	}
+	;
+ff
+	: statements
+	{
+		YYU_FATAL(ffn_mknode, &parm->ffn, &@$, FFN_STMTLIST, $1);
+	}
+	;
+
+statements
+	: statements statement
+	{
+		$$ = ffn_addchain($1, $2);
+	}
+	| statement
 	;
 statement
 	: varassign

@@ -46,7 +46,7 @@ $lexhfabpaths = [
 ~ lx/l ]
 
 # lex.h -> { .states.c, .states.h }
-[ $lexhfabpaths ~ sx/l/states.c y v d cp u sx/states.c/states.h z v dj/2 shift pop ] :: [ $< ~ rx sx/states.c/lex.h sx/states.h/lex.h ss u ]
+[ $lexhfabpaths ~ sx/l/states.c y v d cp u sx/states.c/states.h z dj/2 shift pop ] :: [ $< ~ rx sx/states.c/lex.h sx/states.h/lex.h ss u ]
 {
 	src=[ $@ ~ rx/ineed uu ]
 	states_h=[ $@ ~ w/0/1 ]

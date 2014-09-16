@@ -83,7 +83,7 @@ $lfabpaths = [
 }
 
 # $flex : l -> { lex.c, lex.h }
-[ $lfabpaths ~ sx/l/lex.c y v d cp u sx/lex.c/lex.h z v dj/2 shift pop ] :: [ $< ~ rx sx/lex.c/l sx/lex.h/l ss u ]
+[ $lfabpaths ~ sx/l/lex.c y v d cp u sx/lex.c/lex.h z dj/2 shift pop ] :: [ $< ~ rx sx/lex.c/l sx/lex.h/l ss u ]
 {
 	  [ $flex ] [ $flexflags ~ uu fi ] -o [ $@ ~ w/1/1 ] [
 	] [ --header-file= [ $@ ~ w/0/1 ] ] [

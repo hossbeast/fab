@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xapi.h"
 #include "listwise/operator.h"
 
 #include "interpolate.h"

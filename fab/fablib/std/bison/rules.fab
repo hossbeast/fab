@@ -66,9 +66,9 @@ $secondarypaths = [ $primarypaths ~ [ "s/(.y.header)|(.y.rules.[0-9]+)$/.y" ss u
 }
 
 # { .y.header, .y.rules.[0-9] } -> { .y }
-[ $secondarypaths ~ dj shift ] :: [ $< ~ rx cp/4 w/0/1 s/$/.header z w/1/1 s/$/.rules.1 z w/2/1 s/$/.rules.2 z w/3/1 s/$/.rules.3 z w/4/1 s/$/.rules.4 ]
+[ $secondarypaths ~ dj shift ] :: [ $< ~ rx cp/4 w/0/1 s/$/.header z w/1/1 s/$/.rules.1 z w/2/1 s/$/.rules.2 z w/3/1 s/$/.rules.3 z w/4/1 s/$/.rules.4 z ]
 {
-	cat [ $@ ~ rx/ineed lx/header ] [ $@ ~ [ rx/ineed [ "m/.rules.[0-9+]$" ~ j ] ss ~ fi ] ] > [ $@ ]
+	cat [ $@ ~ rx/ineed lx/header ] [ [ $@ ~ [ rx/ineed [ "m/.rules.[0-9+]$" ~ j ] ss ~ fi ] ] ~ fi ] > [ $@ ]
 }
 
 # $bison : .y -> { .tab.c, .tab.h } @ std.y
