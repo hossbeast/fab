@@ -26,45 +26,6 @@
 
 #define restrict __restrict
 
-///
-/// static
-///
-
-typedef int (*fwriter)(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...);
-
-/// writes to a fixed size buffer
-static int zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
-{
-	if(sz - (*z))
-	{
-		va_list va;
-		va_start(va, fmt);
-		(*z) += MIN(sz, vsnprintf(dst + (*z), sz - (*z), fmt, va));
-		va_end(va);
-	}
-
-	finally : coda;
-}
-
-/// writes to a dynamically-resizing pstring
-static int pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
-{
-	size_t ol = 0;
-	if(*ps)
-		ol = (*ps)->l;
-
-	va_list va;
-	va_start(va, fmt);
-	fatal(psvcatf, ps, fmt, va);
-	va_end(va);
-
-	(*z) += (*ps)->l - ol;
-
-	finally : coda;
-}
-
-#define SAY(fmt, ...) fatal(writer, dst, sz, z, ps, fmt, ##__VA_ARGS__)
-
 static uint32_t __attribute__((unused)) arg_scanmode(arg * const arg)
 {
 	int brefs = 0;
@@ -223,6 +184,7 @@ static int generator_args_canon(arg ** const args, const int argsl, uint32_t sm,
 
 static int generator_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
 {
+	size_t oz = *z;
 	SAY("%s", oper->op->s);
 
 	// conditionally emit the delimiter
@@ -230,6 +192,11 @@ static int generator_operation_canon(operation * const oper, uint32_t sm, char *
 		SAY("%c", genscan_opening_char[sm]);
 
 	fatal(generator_args_canon, oper->args, oper->argsl, sm, dst + (*z), sz - (*z), z, ps, writer);
+
+	if((*z - oz) > 0)
+		SAY("%*s", 35 - (*z - oz), "");
+
+	fatal(listwise_lwop, oper->op->optype, dst, sz, z, ps, writer);
 
 	finally : coda;
 #if 0
@@ -348,6 +315,15 @@ static int generator_description(generator * const restrict g, char * const rest
 
 static int lstack_description(lwx * const lx, char * const dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
 {
+	SAY("sel staged lease %3d staged era %3d active lease %3d active era %3d active nil %d\n"
+		, lx->sel.staged ? lx->sel.staged->lease : 0
+		, lx->sel.staged_era
+		, lx->sel.active ? lx->sel.active->lease : 0
+		, lx->sel.active_era
+		, lx->sel.active ? lx->sel.active->nil : 0
+	);
+	SAY("win a=%3d s=%3d l=%3d\n", lx->win.active_era, lx->win.staged_era, 1);//lx->win.active->lease);
+
 	int x;
 	int y;
 	for(x = lx->l - 1; x >= 0; x--)
@@ -521,6 +497,37 @@ int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** rest
 	size_t lz = 0;
 	fatal(psclear, ps);
 	xproxy(generator_operation_canon, oper, sm, 0, 0, &lz, ps, pswrite);
+}
+
+/// writes to a fixed size buffer
+int zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+{
+	if(sz - (*z))
+	{
+		va_list va;
+		va_start(va, fmt);
+		(*z) += MIN(sz, vsnprintf(dst + (*z), sz - (*z), fmt, va));
+		va_end(va);
+	}
+
+	finally : coda;
+}
+
+/// writes to a dynamically-resizing pstring
+int pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+{
+	size_t ol = 0;
+	if(*ps)
+		ol = (*ps)->l;
+
+	va_list va;
+	va_start(va, fmt);
+	fatal(psvcatf, ps, fmt, va);
+	va_end(va);
+
+	(*z) += (*ps)->l - ol;
+
+	finally : coda;
 }
 
 ///

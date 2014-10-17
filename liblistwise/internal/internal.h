@@ -23,6 +23,7 @@
 // all externally-visible liblistwise apis
 #include "listwise.h"
 #include "describe.h"
+#include "describe.internal.h"
 #include "exec.h"
 #include "fs.h"
 #include "generator.h"
@@ -33,6 +34,7 @@
 #include "lwx.h"
 #include "object.h"
 #include "operator.h"
+#include "operator.internal.h"
 #include "operators.h"
 #include "re.h"
 #include "selection.h"

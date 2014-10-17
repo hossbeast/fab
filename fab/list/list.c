@@ -185,10 +185,13 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 		pswfree(&gps);
 		fatal(render, (*stax)[pr], &gps);
 
-		generator_xfree(&g);
-		fatal(generator_parse, &gp, gps->s, gps->l, &g);
+		if(gps)
+		{
+			generator_xfree(&g);
+			fatal(generator_parse, &gp, gps->s, gps->l, &g);
 
-		fatal(lw_exec, g, &(*stax)[pn]);
+			fatal(lw_exec, g, &(*stax)[pn]);
+		}
 	}
 	else
 	{
@@ -205,7 +208,6 @@ finally:
 		, list->loc.l_lin + 1
 		, list->loc.l_col + 1
 	);
-
 coda;
 }
 

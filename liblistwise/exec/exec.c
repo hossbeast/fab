@@ -92,9 +92,13 @@ static int exec_generator(
 	}
 #endif
 
+	int sel_staged = 0;
+	int win_staged = 0;
+
 	// execute operations
 	for(x = 0; x < g->opsl; x++)
 	{
+		// skip or operators
 		int isor = g->ops[x]->op == oop;
 		while(g->ops[x]->op == oop)
 		{
@@ -105,30 +109,36 @@ static int exec_generator(
 		if(!isor)
 		{
 			// possibly activate windows staged by the previous operator
-			if(x && ((g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE))
-			{
+			if(x && (g->ops[x-1]->op->optype & LWOPT_WINDOWS_ACTIVATE))
 				fatal(lstack_windows_activate, *lx);
-			}
 
 			// possibly activate selections staged by the previous operator
-			if(x && ((g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE))
-			{
+			if(x && (g->ops[x-1]->op->optype & LWOPT_SELECTION_ACTIVATE))
 				fatal(lstack_selection_activate, *lx);
-			}
 		}
 
+		// log this operation
 		if(lw_would_exec())
 		{
 			fatal(lstack_description_pswrite, *lx, &ps);
 			lw_log_exec("%.*s", (int)ps->l, ps->s);
 		}
 
-		if(g->ops[x]->op != yop && g->ops[x]->op != wyop && !isor)
+		// possibly age staged windows
+		if(g->ops[x]->op != yop && g->ops[x]->op != wyop && !isor && win_staged)
+		{
 			(*lx)->win.staged_era++;
+			win_staged = 0;
+		}
 
-		if(g->ops[x]->op != yop && g->ops[x]->op != syop && !isor)
+		// possibly age staged selections
+		if(g->ops[x]->op != yop && g->ops[x]->op != syop && !isor && sel_staged)
+		{
 			(*lx)->sel.staged_era++;
+			sel_staged = 0;
+		}
 
+		// log the current lstack
 		if(lw_would_exec())
 		{
 extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps);
@@ -138,14 +148,16 @@ extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring 
 			lw_log_exec(" >> [%2d] %.*s", x, (int)ps->l, ps->s);
 		}
 
-		if(g->ops[x]->op == yop || g->ops[x]->op == wyop)
-			fatal(lstack_windows_activate, *lx);
+		if(win_staged)
+			if(g->ops[x]->op == yop || g->ops[x]->op == wyop)
+				fatal(lstack_windows_activate, *lx);
 
-		if(g->ops[x]->op == yop || g->ops[x]->op == syop)
-			fatal(lstack_selection_activate, *lx);
+		if(sel_staged)
+			if(g->ops[x]->op == yop || g->ops[x]->op == syop)
+				fatal(lstack_selection_activate, *lx);
 
-		// execute the operator
-		if(((*lx)->l || (g->ops[x]->op->optype & LWOP_EMPTYSTACK_YES) == LWOP_EMPTYSTACK_YES) && g->ops[x]->op->op_exec)
+		// execute the operation
+		if((*lx)->l || (g->ops[x]->op->optype & LWOPT_EMPTYSTACK_YES))
 			fatal(g->ops[x]->op->op_exec, g->ops[x], *lx, &ovec, &ovec_len, udata);
 
 #if SANITY
@@ -153,32 +165,38 @@ extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring 
 			fatal(sanity, *lx, sb, udata);
 #endif
 
-		if((g->ops[x]->op->optype & LWOP_WINDOWS_RESET) == LWOP_WINDOWS_RESET)
+		// age active windows
+		if(g->ops[x]->op->optype & LWOPT_WINDOWS_RESET)
 			(*lx)->win.active_era++;
 
-		if((g->ops[x]->op->optype & LWOP_SELECTION_RESET) == LWOP_SELECTION_RESET)
+		// rember window staging
+		else if(g->ops[x]->op->optype & LWOPT_WINDOWS_STAGE)
+			win_staged = 1;
+
+		// age active selections
+		if(g->ops[x]->op->optype & LWOPT_SELECTION_RESET)
 			(*lx)->sel.active_era++;
+
+		// remeb(er selection staging
+		else if(g->ops[x]->op->optype & LWOPT_SELECTION_STAGE)
+			sel_staged = 1;
 	}
 
-	if(lw_would_exec())
-	{
-		// possibly activate windows staged by the previous operator
-		if(x && (g->ops[x-1]->op->optype & LWOP_WINDOWS_ACTIVATE) == LWOP_WINDOWS_ACTIVATE)
-		{
-			fatal(lstack_windows_activate, *lx);
-		}
-	}
+	// possibly activate windows staged by the previous operator
+	if(x && (g->ops[x-1]->op->optype & LWOPT_WINDOWS_ACTIVATE))
+		fatal(lstack_windows_activate, *lx);
 
 	// possibly activate selections staged by the previous operator
-	if(x && (g->ops[x-1]->op->optype & LWOP_SELECTION_ACTIVATE) == LWOP_SELECTION_ACTIVATE)
-	{
+	if(x && (g->ops[x-1]->op->optype & LWOPT_SELECTION_ACTIVATE))
 		fatal(lstack_selection_activate, *lx);
-	}
 
 	if(g->opsl && lw_would_exec())
 		fatal(lstack_description_log, *lx, &ps, udata);
 
+/*
+uncommenting this line means reset windows that are in effect at the end of the xsfm
 	(*lx)->win.active_era++;	// age active windows
+*/
 
 finally:
 	free(ovec);

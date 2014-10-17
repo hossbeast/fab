@@ -59,7 +59,7 @@ struct lwx_t
 	int     l;  // len - number of lists
 	int     a;  // alloc
 
-	// subset of string for each row - applies to top list only
+	// subset of string for each row - top list only
 	struct
 	{
 		struct
@@ -111,8 +111,8 @@ struct lwx_t
 		struct selection * active;
 		struct selection * staged;
 
-		uint64_t		active_era;			// for aging the active selection
-		uint64_t		staged_era;			// for aging the staged selection
+		uint64_t		active_era;			// for aging active selections
+		uint64_t		staged_era;			// for aging staged selections
 	} sel;
 
 	uint64_t  flags;		// available for application-use

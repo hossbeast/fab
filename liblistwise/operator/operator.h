@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "pstring.h"
+
 #include "listwise.h"
 #include "listwise/lstack.h"
 #include "listwise/LW.errtab.h"
@@ -59,34 +61,73 @@ struct operator;
 struct arg;
 
 //
-// operators are of one of these types
+// operator modifiers
 //
-enum
-{
+
 /* these actually have some effect on processing */
-	  LWOP_SELECTION_STAGE				= 0x0001			// stages selections (which may be activated with the y operator)
-	, LWOP_SELECTION_ACTIVATE			= 0x0002 | LWOP_SELECTION_STAGE			//  lw applies the y operator after this operator
-	, LWOP_SELECTION_RESET				= 0x0004			// lw resets the selection after executing the operator (apart from the staging mechanism)
-	, LWOP_WINDOWS_STAGE					= 0x0008			// stages windows (which may be ratified with the y operator)
-	, LWOP_WINDOWS_ACTIVATE				= 0x0010 | LWOP_WINDOWS_STAGE				//  lw applies the y operator after this operator
-	, LWOP_WINDOWS_RESET					= 0x0020			// lw resets all windows after executing this operator (apart from the staging mechanism)
-	, LWOP_ARGS_CANHAVE						= 0x0040			// can have arguments (verified before op_validate)
-	, LWOP_EMPTYSTACK_YES					= 0x0080			// operator is invoked even in the context of an empty stack
+#define LWOP_SELECTION_STAGE				LWOPT_SELECTION_STAGE						// stages selections (which may be activated with the y operator)
+#define LWOP_SELECTION_ACTIVATE			LWOPT_SELECTION_ACTIVATE		| LWOPT_SELECTION_STAGE			//  lw applies the sy operator after this operator
+#define LWOP_SELECTION_RESET				LWOPT_SELECTION_RESET						// lw resets the selection after executing the operator (apart from the staging mechanism)
+#define LWOP_WINDOWS_STAGE					LWOPT_WINDOWS_STAGE							// stages windows (which may be ratified with the y operator)
+#define LWOP_WINDOWS_ACTIVATE				LWOPT_WINDOWS_ACTIVATE			| LWOPT_WINDOWS_STAGE				//  lw applies the wy operator after this operator
+#define LWOP_WINDOWS_RESET					LWOPT_WINDOWS_RESET							// lw resets all windows after executing this operator (apart from the staging mechanism)
+#define LWOP_ARGS_CANHAVE						LWOPT_ARGS_CANHAVE								// can have arguments (verified before op_validate)
+#define LWOP_EMPTYSTACK_YES					LWOPT_EMPTYSTACK_YES							// operator is invoked even in the context of an empty stack
 
 /* there are informational */
-	, LWOP_STACKOP								= 0x0100 | LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET			// stack operation : manipulation of entire lists
-	, LWOP_MODIFIERS_CANHAVE			= 0x0200			// last argument is a modifiers string
-	, LWOP_OPERATION_PUSHBEFORE		= 0x0480 | LWOP_STACKOP																	// first operation is to push an empty list
-	, LWOP_OPERATION_INPLACE			= 0x0800			// modifies the contents of rows in the top list in-place
-	, LWOP_OPERATION_FILESYSTEM		= 0x1000			// operator reads from the filesystem
+#define LWOP_STACKOP								LWOPT_STACKOP								| LWOPT_SELECTION_RESET | LWOPT_WINDOWS_RESET		// stack operation : manipulation of entire lists
+#define LWOP_MODIFIERS_CANHAVE			LWOPT_MODIFIERS_CANHAVE					// last argument is a modifiers string
+#define LWOP_OPERATION_PUSHBEFORE		LWOPT_OPERATION_PUSHBEFORE	| LWOPT_STACKOP																	// first operation is to push an empty list
+#define LWOP_OPERATION_INPLACE			LWOPT_OPERATION_INPLACE					// modifies the contents of rows in the top list in-place
+#define LWOP_OPERATION_FILESYSTEM		LWOPT_OPERATION_FILESYSTEM				// operator reads from the filesystem
+
+/// listwise_lwop_write
+//
+// SUMMARY
+//  write a description of the specified optype to the specified buffer
+//
+xapi listwise_lwop_write(uint64_t optype, char * const restrict dst, const size_t sz, size_t * restrict z)
+	__attribute__((nonnull(2)));
+
+/// listwise_lwop_pswrite
+//
+// SUMMARY
+//  write a description of the specified optype to the specified pstring
+//
+xapi listwise_lwop_pswrite(uint64_t optype, pstring ** const restrict ps)
+	__attribute__((nonnull));
+
+/* the individual options are defined here */
+#define LWOPT_TABLE(x)													\
+	_LWOPT(SELECTION_STAGE				, 0x0001, x)		\
+	_LWOPT(SELECTION_ACTIVATE			, 0x0002, x)		\
+	_LWOPT(SELECTION_RESET				, 0x0004, x)		\
+	_LWOPT(WINDOWS_STAGE					, 0x0008, x)		\
+	_LWOPT(WINDOWS_ACTIVATE				, 0x0010, x)		\
+	_LWOPT(WINDOWS_RESET					, 0x0020, x)		\
+	_LWOPT(ARGS_CANHAVE						, 0x0040, x)		\
+	_LWOPT(EMPTYSTACK_YES					, 0x0080, x)		\
+	_LWOPT(STACKOP								, 0x0100, x)		\
+	_LWOPT(MODIFIERS_CANHAVE			, 0x0200, x)		\
+	_LWOPT(OPERATION_PUSHBEFORE		, 0x0480, x)		\
+	_LWOPT(OPERATION_INPLACE			, 0x0800, x)		\
+	_LWOPT(OPERATION_FILESYSTEM		, 0x1000, x)		\
+	
+enum {
+#define _LWOPT(a, b, x) LWOPT_ ## a = b,
+LWOPT_TABLE(0)
+#undef _LWOPT
 };
+
+#define _LWOPT(a, b, x) (x) == (b) ? #a :
+#define LWOPT_STR(x) LWOPT_TABLE(x) "LWOPT_UNKNWN"
 
 //
 // operator - each op exports one of these structs
 //
 typedef struct operator
 {
-	uint64_t	optype;		// OPTYPE_*
+	uint64_t	optype;		// bitwise combination of LWOP_*
 	char *		desc;			// operator description
 	char *		mnemonic;	// longform name
 

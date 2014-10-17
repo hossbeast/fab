@@ -74,7 +74,7 @@ const char * xapi_errstr(const int code);
 #elif XAPI_PROVIDE_ERRCODE
 # include "xapi/errcode.h"
 #else
-# error "either XAPI_PROVIDE_UNWIND or XAPI_PROVIDE_ERRCODE must be defined"
+# error "either XAPI_PROVIDE_BACKTRACE or XAPI_PROVIDE_ERRCODE must be defined"
 #endif
 
 #endif

@@ -136,21 +136,21 @@ if(operators)
 		{
 			printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s"
 	/* effectual */
-				, g_ops[x]->optype & LWOP_SELECTION_STAGE 			? 'x' : ' '
-				, g_ops[x]->optype & LWOP_SELECTION_ACTIVATE		? 'x' : ' '
-				, g_ops[x]->optype & LWOP_SELECTION_RESET				? 'x' : ' '
-				, g_ops[x]->optype & LWOP_WINDOWS_STAGE					? 'x' : ' '
-				, g_ops[x]->optype & LWOP_WINDOWS_ACTIVATE			? 'x' : ' '
-				, g_ops[x]->optype & LWOP_WINDOWS_RESET					? 'x' : ' '
-				, g_ops[x]->optype & LWOP_ARGS_CANHAVE					? 'x' : ' '
-				, g_ops[x]->optype & LWOP_EMPTYSTACK_YES				? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_SELECTION_STAGE 				? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_SELECTION_ACTIVATE			? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_SELECTION_RESET				? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_WINDOWS_STAGE					? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_WINDOWS_ACTIVATE				? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_WINDOWS_RESET					? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_ARGS_CANHAVE						? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_EMPTYSTACK_YES					? 'x' : ' '
 
 	/* informational */
-				, g_ops[x]->optype & LWOP_STACKOP								? 'x' : ' '
-				, g_ops[x]->optype & LWOP_MODIFIERS_CANHAVE			? 'x' : ' '
-				, g_ops[x]->optype & LWOP_OPERATION_PUSHBEFORE	? 'x' : ' '
-				, g_ops[x]->optype & LWOP_OPERATION_INPLACE			? 'x' : ' '
-				, g_ops[x]->optype & LWOP_OPERATION_FILESYSTEM	? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_STACKOP								? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_MODIFIERS_CANHAVE			? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_OPERATION_PUSHBEFORE		? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_OPERATION_INPLACE			? 'x' : ' '
+				, g_ops[x]->optype & LWOPT_OPERATION_FILESYSTEM		? 'x' : ' '
 				, g_ops[x]->s
 				, g_ops[x]->desc
 			);
