@@ -610,7 +610,7 @@ int bp_exec(bp * bp, map * vmap, generator_parser * const gp, lwx *** stax, int 
 		}
 
 		if(bad)
-			fail(FAB_FMLFAIL);
+			failf(FAB_FMLFAIL, "%d formula(s) failed", bad);
 	}
 
 finally:

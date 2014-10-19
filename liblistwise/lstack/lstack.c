@@ -664,6 +664,39 @@ int API lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 	finally : coda;
 }
 
+int API lstack_swap(lwx * const restrict lx, int ax, int ay, int bx, int by)
+{
+	if(ax == 0 && bx == 0)
+	{
+/*
+		int t = lx->order[ay];
+		lx->order[ay] = lx->order[by];
+		lx->order[by] = t;
+*/
+	}
+	else
+	{
+		// copy of ax:ay, which is about to be overwritten
+		typeof(lx->s[0].s[0]) Ts = lx->s[ax].s[ay];
+		lx->s[ax].s[ay] = lx->s[bx].s[by];
+		lx->s[bx].s[by] = Ts;
+
+		// dirty temp space for these rows
+		lx->s[ax].t[ay].y = 0;
+		lx->s[bx].t[by].y = 0;
+
+		if(ax == 0 || bx == 0)
+		{
+			lx->win.active_era++;
+			lx->win.staged_era++;
+			lx->sel.active_era++;
+			lx->sel.staged_era++;
+		}
+	}
+
+	finally : coda;
+}
+
 int API lstack_displace(lwx * const restrict lx, int x, int y, int l)
 {
 	// notice that this is a no-op when l == 0
@@ -719,7 +752,7 @@ int API lstack_delete(lwx * const restrict lx, int x, int y)
 #if 0
 	if(x == 0)
 	{
-		// if deleting an entry in the 0th list, 
+		// if deleting an entry in the 0th list
 	}
 #endif
 
@@ -842,15 +875,23 @@ int API lstack_swaptop(lwx * const restrict lx, int ay, int by)
 
 	lx->s[0].s[ay] = lx->s[0].s[by];
 	lx->s[0].t[ay] = lx->s[0].t[by];
+	
 	lx->win.s[ay]	= lx->win.s[by];
-	lx->win.s[ay].active = &lx->win.s[ay].storage[lx->win.s[ay].active_storage_index];
-	lx->win.s[ay].staged = &lx->win.s[ay].storage[lx->win.s[ay].staged_storage_index];
+	if(lx->win.s[ay].active && lx->win.s[ay].active->lease == lx->win.active_era)
+	{
+		lx->win.s[ay].active = &lx->win.s[ay].storage[lx->win.s[ay].active_storage_index];
+		lx->win.s[ay].staged = &lx->win.s[ay].storage[lx->win.s[ay].staged_storage_index];
+	}
 
 	lx->s[0].s[by] = Ts;
 	lx->s[0].t[by] = Tt;
+
 	lx->win.s[by]	= Tw;
-	lx->win.s[by].active = &lx->win.s[by].storage[lx->win.s[by].active_storage_index];
-	lx->win.s[by].staged = &lx->win.s[by].storage[lx->win.s[by].staged_storage_index];
+	if(lx->win.s[by].active && lx->win.s[by].active->lease == lx->win.active_era)
+	{
+		lx->win.s[by].active = &lx->win.s[by].storage[lx->win.s[by].active_storage_index];
+		lx->win.s[by].staged = &lx->win.s[by].storage[lx->win.s[by].staged_storage_index];
+	}
 
 	finally : coda;
 }

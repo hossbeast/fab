@@ -253,7 +253,7 @@ int lstack_ensure(lwx * const restrict lx, int x, int y, int z);
 /// lstack_move
 //
 // SUMMARY
-//  move the entry at bx:by to position ax:ay
+//  move the entry at bx:by to position ax:ay, discarding the entry at ax:ay
 //
 // DETAILS
 //  1. copy ax:ay
@@ -269,6 +269,29 @@ int lstack_ensure(lwx * const restrict lx, int x, int y, int z);
 //  lstack_move returns 0, indicating success
 //
 int lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
+	__attribute__((nonnull));
+
+/// lstack_swap
+//
+// SUMMARY
+//  swap the entries at ax:ay and bx:by
+//
+// RETURNS
+//  lstack_swap returns 0, indicating success
+//
+int lstack_swap(lwx * const restrict lx, int ax, int ay, int bx, int by)
+	__attribute__((nonnull));
+
+/// lstack_swaptop
+//
+// SUMMARY
+//  swap two entries in the top list
+//
+// PARAMETERS
+//  ay - list index of entry 1
+//  by - list index of entry 2
+//
+int lstack_swaptop(lwx * const restrict lx, int ay, int by)
 	__attribute__((nonnull));
 
 /// lstack_delete
@@ -312,18 +335,6 @@ int lstack_delete(lwx * const restrict lx, int x, int y)
 //  0 on success
 //
 int lstack_displace(lwx * const restrict lx, int x, int y, int l)
-	__attribute__((nonnull));
-
-/// lstack_swaptop
-//
-// SUMMARY
-//  swap two entries in the top list
-//
-// PARAMETERS
-//  ay - list index of entry 1
-//  by - list index of entry 2
-//
-int lstack_swaptop(lwx * const restrict lx, int ay, int by)
 	__attribute__((nonnull));
 
 /// lwx_getflags

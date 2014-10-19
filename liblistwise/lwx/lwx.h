@@ -59,6 +59,12 @@ struct lwx_t
 	int     l;  // len - number of lists
 	int     a;  // alloc
 
+/*
+	// access order - top list only
+	int * order;
+	int ordera;
+*/
+
 	// subset of string for each row - top list only
 	struct
 	{
@@ -100,7 +106,7 @@ struct lwx_t
 		struct selection
 		{
 			uint8_t *	s;			// bitvector
-			int				l;			// number of bits set in s
+			int				l;			// total bits set in s
 			int				sl;			// length of s
 			int				sa;			// allocated size of s
 

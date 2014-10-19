@@ -184,7 +184,6 @@ static int generator_args_canon(arg ** const args, const int argsl, uint32_t sm,
 
 static int generator_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
 {
-	size_t oz = *z;
 	SAY("%s", oper->op->s);
 
 	// conditionally emit the delimiter
@@ -192,11 +191,6 @@ static int generator_operation_canon(operation * const oper, uint32_t sm, char *
 		SAY("%c", genscan_opening_char[sm]);
 
 	fatal(generator_args_canon, oper->args, oper->argsl, sm, dst + (*z), sz - (*z), z, ps, writer);
-
-	if((*z - oz) > 0)
-		SAY("%*s", 35 - (*z - oz), "");
-
-	fatal(listwise_lwop, oper->op->optype, dst, sz, z, ps, writer);
 
 	finally : coda;
 #if 0
@@ -315,14 +309,25 @@ static int generator_description(generator * const restrict g, char * const rest
 
 static int lstack_description(lwx * const lx, char * const dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
 {
-	SAY("sel staged lease %3d staged era %3d active lease %3d active era %3d active nil %d\n"
-		, lx->sel.staged ? lx->sel.staged->lease : 0
-		, lx->sel.staged_era
+/*
+	SAY("sel active { lease(%3d) %s era(%3d) %s nil=%d } staged { lease(%3d) %s era(%3d) }\n"
 		, lx->sel.active ? lx->sel.active->lease : 0
+		, (lx->sel.active ? lx->sel.active->lease : 0) == lx->sel.active_era ? "= " : "!="
 		, lx->sel.active_era
+		, (lx->sel.active ? lx->sel.active->nil : 0) ? "but" : "and"
 		, lx->sel.active ? lx->sel.active->nil : 0
+		, lx->sel.staged ? lx->sel.staged->lease : 0
+		, (lx->sel.staged ? lx->sel.staged->lease : 0) == lx->sel.staged_era ? "= " : "!="
+		, lx->sel.staged_era
 	);
-	SAY("win a=%3d s=%3d l=%3d\n", lx->win.active_era, lx->win.staged_era, 1);//lx->win.active->lease);
+	SAY("win active { %*sera(%3d)%*s } staged { %*sera(%3d) }\n"
+		, 14, ""
+		, lx->win.staged_era
+		, 10, ""
+		, 14, ""
+		, lx->win.active_era
+	);
+*/
 
 	int x;
 	int y;
@@ -389,6 +394,7 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 			if(x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
 			{
 				SAY("\n");
+				size_t oz = *z;
 				SAY("%16s", " ");
 
 				int escaping = 0;
@@ -432,12 +438,18 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 							w++;
 					}
 				}
+
+				if((*z - oz) < 45)
+					SAY("%*s", 45 - (*z - oz), "");
+
+				SAY(" active { lease(%3d) }", lx->win.s[y].active->lease);
 			}
 
 			// indicate staged windows
 			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
 			{
 				SAY("\n");
+				size_t oz = *z;
 				SAY("%16s", " ");
 
 				int escaping = 0;
@@ -481,6 +493,11 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 							w++;
 					}
 				}
+
+				if((*z - oz) < 45)
+					SAY("%*s", 45 - (*z - oz), "");
+
+				SAY(" staged { lease(%3d) }", lx->win.s[y].staged->lease);
 			}
 		}
 	}
@@ -494,9 +511,8 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 
 int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps)
 {
-	size_t lz = 0;
 	fatal(psclear, ps);
-	xproxy(generator_operation_canon, oper, sm, 0, 0, &lz, ps, pswrite);
+	xproxy(generator_operation_canon, oper, sm, 0, 0, (size_t[]) { }, ps, pswrite);
 }
 
 /// writes to a fixed size buffer
