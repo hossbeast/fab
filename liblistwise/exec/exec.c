@@ -23,6 +23,8 @@
 
 #include "xlinux.h"
 
+#include "macros.h"
+
 #define restrict __restrict
 
 ///
@@ -39,6 +41,7 @@ static int exec_generator(
 )
 {
 	pstring * ps = 0;
+	pstring * ps1 = 0;
 
 	// ovec workspace
 	int* ovec = 0;
@@ -143,9 +146,11 @@ static int exec_generator(
 		{
 extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps);
 
-			lw_log_exec("");
 			fatal(operation_canon_pswrite, g->ops[x], 0, &ps);
-			lw_log_exec(" >> [%2d] %.*s", x, (int)ps->l, ps->s);
+			fatal(listwise_lwop_pswrite, g->ops[x]->op->optype, 1, &ps1);
+
+			lw_log_exec("");
+			lw_log_exec(" >> [%2d] %.*s%*s%.*s", x, (int)ps->l, ps->s, MAX(35 - ps->l, 0), "", (int)ps1->l, ps1->s);
 		}
 
 		if(win_staged)
@@ -158,7 +163,8 @@ extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring 
 
 		// execute the operation
 		if((*lx)->l || (g->ops[x]->op->optype & LWOPT_EMPTYSTACK_YES))
-			fatal(g->ops[x]->op->op_exec, g->ops[x], *lx, &ovec, &ovec_len, udata);
+			if(g->ops[x]->op->op_exec)
+				fatal(g->ops[x]->op->op_exec, g->ops[x], *lx, &ovec, &ovec_len, udata);
 
 #if SANITY
 		if(listwise_sanity)
@@ -170,15 +176,15 @@ extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring 
 			(*lx)->win.active_era++;
 
 		// rember window staging
-		else if(g->ops[x]->op->optype & LWOPT_WINDOWS_STAGE)
+		else if((g->ops[x]->op->optype & (LWOPT_WINDOWS_STAGE | LWOPT_WINDOWS_ACTIVATE)) == LWOPT_WINDOWS_STAGE)
 			win_staged = 1;
 
 		// age active selections
 		if(g->ops[x]->op->optype & LWOPT_SELECTION_RESET)
 			(*lx)->sel.active_era++;
 
-		// remeb(er selection staging
-		else if(g->ops[x]->op->optype & LWOPT_SELECTION_STAGE)
+		// remeber selection staging
+		else if((g->ops[x]->op->optype & (LWOPT_SELECTION_STAGE | LWOPT_SELECTION_ACTIVATE)) == LWOPT_SELECTION_STAGE)
 			sel_staged = 1;
 	}
 
@@ -201,6 +207,7 @@ uncommenting this line means reset windows that are in effect at the end of the 
 finally:
 	free(ovec);
 	psfree(ps);
+	psfree(ps1);
 #if SANITY
 	sanityblock_free(sb);
 #endif
