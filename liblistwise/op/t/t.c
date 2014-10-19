@@ -43,7 +43,7 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "t"
-		, .optype				= LWOP_OPERATION_PUSHBEFORE
+		, .optype				= LWOP_OPERATION_PUSHBEFORE | LWOP_SELECTION_RESET
 		, .op_exec			= op_exec
 		, .desc					= "tear windows into a new list"
 		, .mnemonic			= "tear"
