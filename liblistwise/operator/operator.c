@@ -27,7 +27,7 @@
 ///
 /// public
 ///
-int listwise_lwop(uint64_t optype, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
+int listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
 {
 	uint64_t t = 0x01;
 	int said = 0;
@@ -36,10 +36,13 @@ int listwise_lwop(uint64_t optype, char * const restrict dst, const size_t sz, s
 	{
 		if(optype & t)
 		{
-			if(said)
-				SAY("|");
-			SAY(LWOPT_STR(t));
-			said = 1;
+			if(t <= LWOP_EFFECTUAL || !effectual)
+			{
+				if(said)
+					SAY("|");
+				SAY(LWOPT_STR(t));
+				said = 1;
+			}
 		}
 
 		t <<= 1;
@@ -52,18 +55,18 @@ int listwise_lwop(uint64_t optype, char * const restrict dst, const size_t sz, s
 /// api
 ///
 
-xapi listwise_lwop_write(uint64_t optype, char * const restrict dst, const size_t sz, size_t * restrict z)
+xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * restrict z)
 {
 	size_t lz = 0;
 	if(!z)
 		z = &lz;
 
-	xproxy(listwise_lwop, optype, dst, sz, z, 0, zwrite);
+	xproxy(listwise_lwop, optype, effectual, dst, sz, z, 0, zwrite);
 }
 
-xapi listwise_lwop_pswrite(uint64_t optype, pstring ** const restrict ps)
+xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring ** const restrict ps)
 {
 	size_t lz = 0;
 	fatal(psclear, ps);
-	xproxy(listwise_lwop, optype, 0, 0, &lz, ps, pswrite);
+	xproxy(listwise_lwop, optype, effectual, 0, 0, &lz, ps, pswrite);
 }

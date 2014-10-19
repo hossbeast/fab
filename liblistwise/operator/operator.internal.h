@@ -20,8 +20,22 @@
 
 #define restrict __restrict
 
-int listwise_lwop(uint64_t optype, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
-	__attribute__((nonnull(6)));
+/// listwise_lwop
+//
+// SUMMARY
+//  write a description of the specified optype using the specified fwriter
+//
+// PARAMETERS
+//  optype    - 
+//  effectual - whether to include only effectual bits and ignore informational-only bits
+//  [dst]     - 
+//  [sz]      -
+//  [z]       - 
+//  [ps]      - 
+//  writer    - 
+//
+int listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
+	__attribute__((nonnull(7)));
 
 #undef restrict
 #endif

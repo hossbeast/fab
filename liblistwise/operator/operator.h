@@ -74,6 +74,8 @@ struct arg;
 #define LWOP_ARGS_CANHAVE						LWOPT_ARGS_CANHAVE								// can have arguments (verified before op_validate)
 #define LWOP_EMPTYSTACK_YES					LWOPT_EMPTYSTACK_YES							// operator is invoked even in the context of an empty stack
 
+#define LWOP_EFFECTUAL LWOP_EMPTYSTACK_YES
+
 /* there are informational */
 #define LWOP_STACKOP								LWOPT_STACKOP								| LWOPT_SELECTION_RESET | LWOPT_WINDOWS_RESET		// stack operation : manipulation of entire lists
 #define LWOP_MODIFIERS_CANHAVE			LWOPT_MODIFIERS_CANHAVE					// last argument is a modifiers string
@@ -86,15 +88,33 @@ struct arg;
 // SUMMARY
 //  write a description of the specified optype to the specified buffer
 //
-xapi listwise_lwop_write(uint64_t optype, char * const restrict dst, const size_t sz, size_t * restrict z)
-	__attribute__((nonnull(2)));
+// PARAMETERS
+//  optype    - 
+//  effectual - whether to include only effectual bits and ignore informational-only bits
+//  [dst]     - 
+//  [sz]      -
+//  [z]       - 
+//  [ps]      - 
+//  writer    - 
+//
+xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * restrict z)
+	__attribute__((nonnull(3)));
 
 /// listwise_lwop_pswrite
 //
 // SUMMARY
 //  write a description of the specified optype to the specified pstring
 //
-xapi listwise_lwop_pswrite(uint64_t optype, pstring ** const restrict ps)
+// PARAMETERS
+//  optype    - 
+//  effectual - whether to include only effectual bits and ignore informational-only bits
+//  [dst]     - 
+//  [sz]      -
+//  [z]       - 
+//  [ps]      - 
+//  writer    - 
+//
+xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring ** const restrict ps)
 	__attribute__((nonnull));
 
 /* the individual options are defined here */
@@ -109,7 +129,7 @@ xapi listwise_lwop_pswrite(uint64_t optype, pstring ** const restrict ps)
 	_LWOPT(EMPTYSTACK_YES					, 0x0080, x)		\
 	_LWOPT(STACKOP								, 0x0100, x)		\
 	_LWOPT(MODIFIERS_CANHAVE			, 0x0200, x)		\
-	_LWOPT(OPERATION_PUSHBEFORE		, 0x0480, x)		\
+	_LWOPT(OPERATION_PUSHBEFORE		, 0x0400, x)		\
 	_LWOPT(OPERATION_INPLACE			, 0x0800, x)		\
 	_LWOPT(OPERATION_FILESYSTEM		, 0x1000, x)		\
 	
