@@ -50,6 +50,8 @@ $dlibpstring		= [ $dcommon/../libpstring ~ j ]
 $dlistwise			= [ $dcommon/../listwise ~ j ]
 $dfab						= [ $dcommon/../fab ~ j ]
 $dutil					= [ $dcommon/../util ~ j ] 
+$dlibxunit			= [ $dcommon/../xunit/libxunit ~ j ]
+$dxunit					= [ $dcommon/../xunit/xunit ~ j ]
 
 # install directories (these are suitable for ubuntu-64)
 $destdir				= [ ]															# root install directory - does not affect runtime directories
@@ -110,6 +112,7 @@ $lflags			= [
 	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibxlinux ~ j rp ] } ~ j ] y ~ fi ] ]
 	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibpstring ~ j rp ] } ~ j ] y ~ fi ] ]
 	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dliblistwise ~ j rp ] } ~ j ] y ~ fi ] ]
+	[ $devel ~ [ ?{ [ s{1}{-Wl,-rpath, [ $dlibxunit ~ j rp ] } ~ j ] y ~ fi ] ]
 ]
 
 # default library names
@@ -117,3 +120,4 @@ $libxapi			= [ -lxapi ]
 $libxlinux		= [ -lxlinux ]
 $liblistwise	= [ -llistwise ]
 $libpstring		= [ -lpstring ]
+$libxunit			= [ -lxunit ]

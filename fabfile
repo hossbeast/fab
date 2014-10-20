@@ -27,6 +27,8 @@ $dcommon = [ $*/common ~ j ]
 +[ $dliblistwise ](-$liblistwise; $libxapi $libxlinux $libpstring)							@liblistwise
 +[ $dlistwise ](-$listwise;       $libxapi $libxlinux $libpstring $liblistwise)	@listwise
 +[ $dfab ](-$fab; -$faboplist;    $libxapi $libxlinux $libpstring $liblistwise)	@fab
++[ $dxunit ](-$xunit)																														@xunit
++[ $dlibxunit ](-$libxunit)																											@libxunit
 +[ $dutil ]()																																		@util
 
 # default target - make everything
@@ -39,6 +41,7 @@ $dcommon = [ $*/common ~ j ]
 [ $listwise ]		 :^ [ $libxapi $libxlinux $libpstring $liblistwise ]
 [ $fab ]				 :^ [ $libxapi $libxlinux $libpstring $liblistwise ]
 [ $faboplist ]	 :^ [ $libxapi $libxlinux $libpstring $liblistwise ]
+[ $xunit ]			 :^ [ $libxapi $libxlinux                          $libxunit ]
 
 # supertasks
 [ @install ]		: [ @libxapi.install @libxlinux.install @libpstring.install @liblistwise.install @listwise.install @fab.install @util.install ]
