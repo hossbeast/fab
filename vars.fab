@@ -1,0 +1,138 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+$VERSIONL				= [ 0 5 0 0 ]											# version list - major, minor, revision, build
+$VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
+$VERSIONN				= [ $VERSIONL ~ j s/^0//g ] 			# version number
+
+#
+# debug :
+#  - disable compiler optimizations
+#  - enable compiler debug symbol generation
+#  - include additional logging categories and cmdline options related to logging
+#   - the --backtrace* options
+#   - the --logtrace* options
+#   - the *TOKEN and *STATE logging catories
+#   - SANITY logging categories and related options
+#  - disable ug+s check (to facilitate execution under valgrind)
+#
+#$debug					= [ 0 ]
+
+#
+# devel : (debug + portable)
+#  - enable compilation options to use files from the source directories, including :
+#   - listwise operators
+#   - fab-listwise operators
+#   - fab-provided invocations
+#   - all libraries, via rpath
+#
+#$devel					= [ 0 ]
+
+# source directories
+$droot					= [ $* ]
+$dcommon				= [ $*/common ~ j ]
+$dlibxapi				= [ $*/libxapi ~ j ]
+$dlibxlinux			= [ $*/libxlinux ~ j ]
+$dlibpstring		= [ $*/libpstring ~ j ]
+$dliblistwise		= [ $*/listwise/liblistwise ~ j ]
+$dlibxunit			= [ $*/xunit/libxunit ~ j ]
+$dlistwise			= [ $*/listwise/listwise ~ j ]
+$dfab						= [ $*/fab ~ j ]
+$dutil					= [ $*/util ~ j ] 
+$dxunit					= [ $*/xunit/xunit ~ j ]
+
+# build artifacts
+$libxapi.final			= [ $dlibxapi/libxapi.final.so ~ j ]
+$libxapi.debug			= [ $dlibxapi/libxapi.debug.so ~ j ]
+$libxapi.devel			= [ $dlibxapi/libxapi.devel.so ~ j ]
+$libxlinux.final		= [ $dlibxlinux/libxlinux.final.so ~ j ]
+$libxlinux.debug		= [ $dlibxlinux/libxlinux.debug.so ~ j ]
+$libxlinux.devel		= [ $dlibxlinux/libxlinux.devel.so ~ j ]
+$liblistwise.final	= [ $dliblistwise/liblistwise.final.so ~ j ]
+$liblistwise.debug	= [ $dliblistwise/liblistwise.debug.so ~ j ]
+$liblistwise.devel	= [ $dliblistwise/liblistwise.devel.so ~ j ]
+$listwise.final			= [ $dlistwise/listwise.final ~ j ]
+$listwise.debug			= [ $dlistwise/listwise.debug ~ j ]
+$listwise.devel			= [ $dlistwise/listwise.devel ~ j ]
+$libpstring.final		= [ $dlibpstring/libpstring.final.so ~ j ]
+$libpstring.debug		= [ $dlibpstring/libpstring.debug.so ~ j ]
+$libpstring.devel		= [ $dlibpstring/libpstring.devel.so ~ j ]
+$libxunit.final			= [ $dlibxunit/libxunit.final.so ~ j ]
+$libxunit.debug			= [ $dlibxunit/libxunit.debug.so ~ j ]
+$libxunit.devel			= [ $dlibxunit/libxunit.devel.so ~ j ]
+$fab.final					= [ $dfab/fab.final ~ j ]
+$fab.debug					= [ $dfab/fab.debug ~ j ]
+$fab.devel					= [ $dfab/fab.devel ~ j ]
+$xunit.final				= [ $dxunit/xunit.final ~ j ]
+$xunit.debug				= [ $dxunit/xunit.debug ~ j ]
+$xunit.devel				= [ $dxunit/xunit.devel ~ j ]
+$gccdep.final				= [ $dutil/gcc-dep.final ~ j ]
+$gccdep.debug				= [ $dutil/gcc-dep.debug ~ j ]
+$gccdep.devel				= [ $dutil/gcc-dep.devel ~ j ]
+
+# install directories (these are suitable for ubuntu-64)
+$destdir				= [ ]															# root install directory - does not affect runtime directories
+$incdir					= [ /usr/include ]								# header files
+$bindir					= [ /usr/local/bin ]							# executables
+$libdir					= [ /usr/lib/x86_64-linux-gnu ]		# dynamically linked libraries
+$mandir					= [ /usr/share/man ]							# man files
+
+#
+# configurable runtime directories
+#  (that may be set at build-time)
+#
+
+# install-time values
+$dlibdir								= [ /usr/lib ]						# dloaded libraries
+$fabcachedir						= [ /var/cache/fab ]			# fab cache
+$fabtmpdir							= [ /var/tmp/fab ]				# fab tmp
+$fabipcdir							= [ /var/run/fab ]				# fab shm/ipc files
+$lwopdir								= [ $dlibdir/listwise ~ j ]
+$lwopdir.devel					= [ $dliblistwise/op ~ j ]
+$fablwopdir							= [ $dlibdir/fab/lib ~ j ]
+$fablwopdir.devel				= [ $dfab/fablw/op ~ j ]
+$fabinvokedir						= [ $dlibdir/fab/listwise ~ j ]
+$fabinvokedir.devel			= [ $dfab/fablib ~ j ]
+
+# compilers and their flags
+$flex				= [ flex ]
+$flexflags	= [ ]
+
+$bison			= [ bison ]
+$bisonflags	= [ --warnings=error ]
+
+$cc					= [ gcc ]
+$cflags     = [
+	# universal compiler options
+	[ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE ]
+
+	# include paths
+	[ $dcommon ~ lsr c -d s/^/-I ]
+]
+
+$cflags.final = [ $cflags -O3 ]
+$cflags.debug	= [ $cflags -O0 -g -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY ]
+$cflags.devel	= [ $cflags -O0 -g -DDEVEL -DXAPI_RUNTIME_CHECKS -DSANITY ]
+
+# devel is portable
+$lflags.devel		= [
+	[ -Wl,-rpath, $dlibxapi ~ j rp ]
+	[ -Wl,-rpath, $dlibxlinux ~ j rp ]
+	[ -Wl,-rpath, $dlibpstring ~ j rp ]
+	[ -Wl,-rpath, $dliblistwise ~ j rp ]
+	[ -Wl,-rpath, $dlibxunit ~ j rp ]
+]

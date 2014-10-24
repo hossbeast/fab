@@ -1,0 +1,32 @@
+WINDOW
+
+
+MAP/REDUCE/AGGREGATE - combine selected entries
+
+ (map) - create groups which will be reduced separately (grouped selection - otherwise the entire selection is reduced at once)
+
+reduce operators take an expression referring to window segments, then compute
+
+ xsum/sum/avg/min/max/cnt - 1 result row (per group)
+
+ e - printf expression - preserve rows, directives available for aggregates on the set
+
+LOCKING
+ k (lock) - associate elements in the top list with elements in following lists. Then movements (sorting) is mirrored into the sublist(s) on the joins
+
+** NAMING RATIONALE **
+
+when two operators perform similar functions, they share the same core name. The position of the differentiating characters characterizes
+their difference
+
+after : modified operation
+ l   - locate (strings)
+ lx  - locate (filename extension)
+ s   - substitution (by regex)
+ sx  - substitution (by filename extension)
+
+before : the same operation but applied to another area of liblistwise functionality
+ z  - reset selection
+ wz - reset window
+ v  - invert selection
+ wv - invert window
