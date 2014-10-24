@@ -90,6 +90,16 @@ int xapi_frame_errcode();
 int xapi_frame_errval();
 const etable * xapi_frame_errtab();
 
+/// xapi_frame_unwindto
+//
+// SUMMARY
+//  unwind to the specified frame, discarding any error
+//
+// PARAMETERS
+//  frame - frame to unwind to
+//
+void xapi_frame_unwindto(int frame);
+
 /// xapi_frame_finalize
 //
 // SUMMARY

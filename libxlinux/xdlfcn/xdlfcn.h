@@ -25,7 +25,16 @@
 // SUMMARY
 //  fatalize-able wrapper for dlopen
 //
-int xdlopen(const char * filename, int flag, void ** dl);
+int xdlopen(const char * filename, int flag, void ** dl)
+	__attribute__((nonnull));
+
+/// ixdlclose
+//
+// SUMMARY
+//  xapi-proxy for dlclose that sets *dl = 0
+//
+int ixdlclose(void ** dl)
+	__attribute__((nonnull));
 
 /// xdlsym
 //
@@ -33,5 +42,12 @@ int xdlopen(const char * filename, int flag, void ** dl);
 //  fatalize-able wrapper for dlsym
 //
 int xdlsym(void * dl, const char * sym, void ** psym);
+
+/// uxdlsym
+//
+// SUMMARY
+//  xapi-proxy for dlsym that does not fail when the symbol is not found
+//
+int uxdlsym(void * dl, const char * sym, void ** psym);
 
 #endif

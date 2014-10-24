@@ -16,8 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # definitions
-$dcommon = [ $*/common ~ j ]
-+[ $dcommon/vars.fab ]
++[ $*/vars.fab ]
 
 # source invocations
 +[ $dcommon ]()																																	@common
@@ -27,8 +26,8 @@ $dcommon = [ $*/common ~ j ]
 +[ $dliblistwise ](-$liblistwise; $libxapi $libxlinux $libpstring)							@liblistwise
 +[ $dlistwise ](-$listwise;       $libxapi $libxlinux $libpstring $liblistwise)	@listwise
 +[ $dfab ](-$fab; -$faboplist;    $libxapi $libxlinux $libpstring $liblistwise)	@fab
-+[ $dxunit ](-$xunit)																														@xunit
-+[ $dlibxunit ](-$libxunit)																											@libxunit
++[ $dxunit ](-$xunit;             $libxapi $libxlinux                          $libxunit)	@xunit
++[ $dlibxunit ](-$libxunit;       $libxapi)																			@libxunit
 +[ $dutil ]()																																		@util
 
 # default target - make everything

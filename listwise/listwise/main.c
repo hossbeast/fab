@@ -30,7 +30,6 @@
 
 #include "listwise.h"
 #include "listwise/operator.h"
-#include "listwise/ops.h"
 #include "listwise/generator.h"
 #include "listwise/object.h"
 #include "listwise/logging.h"
@@ -195,6 +194,9 @@ int main(int g_argc, char** g_argv)
 	fatal(log_config, L_LWOPINFO);		// prefix
 #endif
 
+	// listwise setup
+//	fatal(listwise_operators_setup);
+
 	// setup liblistwise logging
 	listwise_logging_configure(logging);
 
@@ -338,6 +340,8 @@ finally:
 	args_teardown();
 	psfree(temp);
 	psfree(args_remnant);
+
+//	listwise_operators_teardown();
 
 	if(XAPI_UNWINDING)
 	{

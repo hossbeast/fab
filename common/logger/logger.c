@@ -220,7 +220,7 @@ static int finish()
 	logwrite("\n", 1, 0);
 
 	// flush to stderr
-	int __attribute__((unused)) r = write(2, o_space, o_space_l);
+	int __attribute__((unused)) r = write(1, o_space, o_space_l);
 
 	o_space_bits = 0;
 
@@ -665,7 +665,8 @@ int log_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va)
 {
 	if(o_space_bits)
 	{
-		logvprintf(fmt, va);
+		if(log_would(o_space_bits))
+			logvprintf(fmt, va);
 	}
 	else if(e && start(e))
 	{
@@ -706,7 +707,8 @@ int log_logw(TRACEARGS const uint64_t e, const char * const src, size_t len)
 {
 	if(o_space_bits)
 	{
-		logwrite(src, len, 1);
+		if(log_would(o_space_bits))
+			logwrite(src, len, 1);
 	}
 	else if(e && start(e))
 	{

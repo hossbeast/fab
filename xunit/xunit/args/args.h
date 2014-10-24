@@ -52,9 +52,13 @@ struct g_args_t
 	int			mode_backtrace;		// backtrace reporting mode
 	int			mode_logtrace;		// logtrace mode
 #endif
+
+	long		procs;
+	int			concurrency;			// concurrently limiting factor
 } g_args;
 
 int args_parse();
+int args_summarize();
 void args_teardown();
 
 #endif

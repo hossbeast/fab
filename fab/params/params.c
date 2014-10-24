@@ -25,7 +25,6 @@
 
 #include "listwise.h"
 #include "listwise/operator.h"
-#include "listwise/ops.h"
 #include "listwise/generator.h"
 
 #include "params.h"

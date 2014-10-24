@@ -33,7 +33,7 @@
 %define api.pure
 %error-verbose
 %locations
-%name-prefix="ff_yy"
+%name-prefix "ff_yy"
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }

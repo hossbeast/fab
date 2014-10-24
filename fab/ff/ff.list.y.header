@@ -27,12 +27,16 @@
 	#include "xlinux.h"
 
 	static int __attribute__((weakref, alias("ff_yylex"))) ff_list_yylex(); 
-	static int __attribute__((weakref, alias("ff_yyerror"))) ff_list_yyerror(); 
+//	static int __attribute__((weakref, alias("ff_yyerror"))) ff_list_yyerror(); 
+	static void ff_list_yyerror(void* const loc, void* const scanner, void* const extra, const void * const err)
+	{
+		yyu_grammar_error(loc, scanner, extra, err);
+	}
 }
 
 %define api.pure
 %error-verbose
-%name-prefix="ff_list_yy"
+%name-prefix "ff_list_yy"
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }

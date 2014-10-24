@@ -26,7 +26,7 @@ void __attribute__((constructor)) init()
 	tab[0] = perrtab_SYS;
 	tab[0]->id = 0;
 
-	tab[1] = perrtab_SYS;
+	tab[1] = perrtab_XAPI;
 	tab[1]->id = 1;
 
 	tab[2] = perrtab_XLINUX;

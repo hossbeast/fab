@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+#include <string.h>
 #include <errno.h>
 
 #include "internal.h"
@@ -34,12 +36,37 @@ finally :
 coda;
 }
 
+int API ixdlclose(void ** dl)
+{
+	dlerror();
+	dlclose(*dl);
+	*dl = 0;
+	char * e = dlerror();
+	if(e)
+		fails(XLINUX_DLERROR, e);
+
+	finally : coda;
+}
+
 int API xdlsym(void * dl, const char * sym, void ** psym)
 {
 	dlerror();
 	(*psym) = dlsym(dl, sym);
 	char * e = dlerror();
 	if(e)
+		fails(XLINUX_DLERROR, e);
+
+finally :
+	XAPI_INFOF("sym", "%s", sym);
+coda;
+}
+
+int API uxdlsym(void * dl, const char * sym, void ** psym)
+{
+	dlerror();
+	(*psym) = dlsym(dl, sym);
+	char * e = dlerror();
+	if(e && strstr(e, "undefined symbol") == 0)
 		fails(XLINUX_DLERROR, e);
 
 finally :

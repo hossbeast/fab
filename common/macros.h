@@ -18,8 +18,6 @@
 #ifndef _MACROS_H
 #define _MACROS_H
 
-#include "listwise.h"
-
 #define MIN(a,b)            \
  ({ typeof (a) _a = (a);    \
      typeof (b) _b = (b);   \
@@ -48,6 +46,13 @@
 		_z = MIN(sz, snprintf(dst, sz, fmt, ##__VA_ARGS__));	\
 	}																												\
 	_z; 																										\
+})
+
+#define sentinel(x) ({																\
+	typeof((x)[0]) * p = (x);														\
+	while(memcmp(p, (char[sizeof(*p)]){}, sizeof(*p)))	\
+		p++;																							\
+	p - (x);																						\
 })
 
 #endif

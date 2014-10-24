@@ -7,13 +7,11 @@
 *.tokens.*
 *.states.*
 *.errtab.*
+exports
 /fab/fab
 /fab/make64.sh
 /fab/install64.sh
-/listwise/listwise
-/listwise/lw
-/liblistwise/exports
-/liblistwise/error/PCRE.errtab
-/xapi/libxapi/exports
-/libxlinux/exports
+/listwise/listwise/listwise
+/listwise/listwise/lw
+/listwise/liblistwise/error/PCRE.errtab
 /libxapi/error/SYS.errtab

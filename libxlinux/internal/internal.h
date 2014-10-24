@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _INTERNAL_H
-#define _INTERNAL_H
+#ifndef _XLINUX_INTERNAL_H
+#define _XLINUX_INTERNAL_H
 
 #include "xlinux.h"
 #include "xapi.h"

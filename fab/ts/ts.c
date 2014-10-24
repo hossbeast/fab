@@ -224,6 +224,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			}
 			logf(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
 			logf(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
+
 			if(log_would(lo | L_FML | L_FMLEXEC))
 			{
 				logf(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
@@ -232,6 +233,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				if(ts[x]->stdo_txt->l && ts[x]->stdo_txt->s[ts[x]->stdo_txt->l - 1] != '\n')
 					__r = write(2, "\n", 1);
 			}
+
 			if(log_would(lo | L_FML | L_FMLEXEC | e_stde))
 			{
 				logf(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);

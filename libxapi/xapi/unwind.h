@@ -56,23 +56,23 @@ when calling non-xapi code, you have a couple of options.
                     cannot be made to fit the return code model (like dlopen) - see #3 for this case
 		EXAMPLE : fatalize(perrtab_SYS, errno, setrlimit, ...);
 
-2) you can write a wrapper function that follows the zero-return-success nonzero-return-error
+2) you can write a non-xapi wrapper function that follows the zero-return-success nonzero-return-error
    model, and call that function with fatalize
 
 	 by convention, these wrapper functions are named "w<function>"
 
     ADVANTAGES/DISADVANTAGES - see above, also you must write the (small) wrapper
-		EXAMPLE : wstdlib/wmalloc
+		EXAMPLE : common/wstdlib/wmalloc
 
-3) you can write a proxy function that invokes that function, and calls fatality when an error
-   occurs. Any relevant message should be supplied to fatality, and info k/v/p provided in the
+3) you can write a proxy function that invokes that function, and calls fail on its behalf when an error
+   is returned. Any relevant message should be supplied to fail, and info k/v/p provided in the
    finally section of the proxy. You call the proxy with fatal.
 
    by convention, these proxy functions are named "x<function>"
 
     ADVANTAGES    - full information : code, message, k/v/p
     DISADVANTAGES - you must write the proxy
-		EXAMPLE : xdlfcn/xdlopen
+		EXAMPLE : libxlinux/xdlfcn/xdlopen
 
 */
 
@@ -150,7 +150,7 @@ when calling non-xapi code, you have a couple of options.
 		int ___x = xapi_frame_depth();																																									\
 		if(xapi_frame_enter(__builtin_frame_address(0)) != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)))		\
 		{																																																								\
-			tfail(perrtab_XAPI, 0);																																												\
+			fail(0);																																												\
 		}																																																								\
 		else if(___x == 0 && xapi_frame_depth() != 1)																																		\
 		{																																																								\
@@ -168,6 +168,57 @@ when calling non-xapi code, you have a couple of options.
 			fail(0);																																						\
 	} while(0)
 #endif
+
+#if XAPI_RUNTIME_CHECKS
+#define xapi_invoke(func, ...)																																												\
+	({	int ___x = xapi_frame_depth();																																									\
+			int ___r = 1;																																																		\
+			if(xapi_frame_enter(__builtin_frame_address(0)) != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)))		\
+			{																																																								\
+				___r = 1;																																																			\
+			}																																																								\
+			else if(___x == 0 && xapi_frame_depth() != 1)																																		\
+			{																																																								\
+				XAPI_FRAME_SET_MESSAGEW(perrtab_XAPI, XAPI_ILLFATAL, "function " #func " invoked with fatal", 0);							\
+			}																																																								\
+			else if(___x && ___x != xapi_frame_depth())																																			\
+			{																																																								\
+				XAPI_FRAME_SET_MESSAGEW(perrtab_XAPI, XAPI_ILLFATAL, "function " #func " invoked with fatal", 0);							\
+			}																																																								\
+			else																																																						\
+			{																																																								\
+				___r = 0;																																																			\
+			}																																																								\
+			___r;																																																						\
+	})
+#else
+#define xapi_invoke(func, ...)																																			\
+	({ xapi_frame_enter() != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)) })
+#endif
+
+#undef fatal
+#define fatal(func, ...)										\
+	do {																			\
+		if(xapi_invoke(func, ##__VA_ARGS__))		\
+		{																				\
+			fail(0);															\
+		}																				\
+	} while(0)
+
+/// invoke
+//
+// SUMMARY
+//  used in conjunction with xapi_frame_unwindto to invoke an xapi-enabled function
+//  and, when it returns an error, conditionally propagate the error or discard it
+//
+// PARAMETERS
+//  pframe - (returns) the current frame
+//
+#define invoke(pframe, func, ...)						\
+	({																				\
+		*(pframe) = xapi_frame_depth();					\
+		xapi_invoke(func, ##__VA_ARGS__);				\
+	})
 
 /// fatalize
 //
@@ -250,7 +301,7 @@ when calling non-xapi code, you have a couple of options.
 /// finally
 //
 // SUMMARY
-//  statements between finally and coda are executed even upon fail/leave
+//  statements between finally and coda are executed even upon fail
 //
 #if XAPI_RUNTIME_CHECKS
 #define finally																																		\

@@ -16,11 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # definitions
-$dcommon				= [ $*/../../common ~ j ]
-+[ $dcommon/vars.fab ]
-
-# source invocations
-+[ $dcommon ]() @common
++[ $*/../../vars.fab ]
 
 # variables
 $cflags					= [ $cflags -fno-builtin-log [ $dxunit ~ lsr c -d s/^/-I ]
@@ -31,12 +27,12 @@ $cflags					= [ $cflags -fno-builtin-log [ $dxunit ~ lsr c -d s/^/-I ]
 	# include paths - mark as system to preclude dependency discovery from gcc
 	[ $dlibxapi $dlibxlinux $dlibxunit ~ s/^/-isystem ]
 ]
-$lflags					= [ $lflags $libxunit $libxapi $libxlinux ]
-$name						= [ xunit ]
-$xunit					= [ $dxunit/$name ~ j ]
+$lflags					= [ $lflags $libxapi $libxlinux $libxunit -ldl ]
 
 # c files
-+[@std.c]($gendir = $dxunit; $rdirs = $dxunit; $cc $cflags)
++[@std.c]($gendir = $dxunit; $rdirs = $dxunit; $ext = [ ]; $cc; $cflags = $cflags.final)
++[@std.c]($gendir = $dxunit; $rdirs = $dxunit; $ext = [ ]; $cc; $cflags = $cflags.debug)
++[@std.c]($gendir = $dxunit; $rdirs = $dxunit; $ext = [ ]; $cc; $cflags = $cflags.devel)
 
 # errtab
 +[@std.xapi.errtab]($gendir = $dxunit; $rdirs = $dxunit; $cc $cflags)
@@ -49,15 +45,21 @@ $xunit					= [ $dxunit/$name ~ j ]
 #
 [ $xunit ] : [ $dxunit/main.o ~ j ]
 {
-	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags ~ fi ]
+	[ $cc ] [ $cflags -rdynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags ~ fi ]
 }
 
 #
 # tasks
 #
 
-[ @install ] : [ $xunit ]
+[ @install.debug ] : [ $xunit.debug ]
 {
 	install -d									[ $destdir/$bindir ]
-	install [ $xunit ]					[ $destdir/$bindir/$name ]
+	install [ $xunit.final ]		[ $destdir/$bindir/xunit ]
+}
+
+[ @install.final ] : [ $xunit.final ]
+{
+	install -d									[ $destdir/$bindir ]
+	install [ $xunit.debug ]		[ $destdir/$bindir/xunit ]
 }

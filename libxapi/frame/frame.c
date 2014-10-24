@@ -164,7 +164,6 @@ int API xapi_frame_enter()
 			callstack.v[callstack.l] = &callstack.frames.alt[0];
 			callstack.v[callstack.l]->finalized = 0;
 			callstack.v[callstack.l]->populated = 0;
-//			callstack.x++;
 			callstack.l++;
 		}
 
@@ -174,7 +173,6 @@ int API xapi_frame_enter()
 #if XAPI_RUNTIME_CHECKS
 	callstack.v[callstack.l]->calling_frame = calling_frame;
 #endif
-//		callstack.x++;
 		callstack.l++;
 
 //printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
@@ -194,7 +192,7 @@ int API xapi_frame_enter()
 		callstack.v[callstack.l]->code = 0;
 		callstack.v[callstack.l]->finalized = 0;
 		callstack.v[callstack.l]->populated = 0;
-//		callstack.x++;
+		callstack.v[callstack.l]->func = 0;
 		callstack.l++;
 	} while(callstack.l < 2);
 
@@ -270,7 +268,6 @@ void API xapi_frame_leave3(const etable ** etab, int * code, int * rval)
 		else
 		{
 //printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
-
 		}
 	}
 
@@ -346,6 +343,15 @@ void API xapi_frame_finalize()
 		callstack.v[callstack.x]->finalized = 1;
 	else
 		callstack.v[callstack.l - 1]->finalized = 1;
+}
+
+void API xapi_frame_unwindto(int frame)
+{
+	// x tracks the position when unwinding
+	callstack.x = -1;
+
+	// reset frame pointer to specified depth
+	callstack.l = frame;
 }
 
 int API xapi_frame_finalized()

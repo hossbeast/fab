@@ -200,6 +200,38 @@ int args_parse()
 	finally : coda;
 }
 
+int args_summarize()
+{
+	char space[512];
+	int x;
+
+	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
+
+	// log execution parameters under PARAMS
+	logf(L_PARAMS	, "%11sprocessors             =%ld"						, ""	, g_args.procs);
+
+#if DEVEL
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace          =%s", g_args.mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_logtrace));
+#endif
+
+	if(g_args.concurrency == 0)
+		snprintf(space, sizeof(space)  , "%s", "unbounded");
+	else
+		snprintf(space, sizeof(space)  , "%d", g_args.concurrency);
+
+	logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", g_args.concurrency == (int)((float)g_args.procs * 1.2f) ? " " : "*", 'j', space);
+
+	if(g_args.test_objectsl == 0)
+		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) test_object(s)         =", " ", ' ');
+	for(x = 0; x < g_args.test_objectsl; x++)
+		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) test_object(s)         =%s", "*", ' ', g_args.test_objects[x]);
+
+	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
+
+	finally : coda;
+}
+
 void args_teardown()
 {
 	int x;

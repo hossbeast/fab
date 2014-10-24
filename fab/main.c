@@ -163,6 +163,9 @@ int main(int argc, char** argv)
 	// summarize arguments as received
 	fatal(args_summarize);
 
+	// initialize listwise
+//	fatal(listwise_operators_setup);
+
 	// register object types with liblistwise
 	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
 	fatal(listwise_register_object, LISTWISE_TYPE_LIST, &listlw);
@@ -475,6 +478,8 @@ finally:
 	params_teardown();
 	traverse_teardown();
 	selector_teardown();
+
+//	listwise_operators_teardown();
 
 	if(XAPI_UNWINDING)
 	{
