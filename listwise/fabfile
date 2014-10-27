@@ -1,0 +1,100 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# definitions
++[ $*/../vars.fab ]
+
+# source invocations
++[ $dcommon ]() @common
+
+# variables
+$copts = [ -fno-builtin-log [ $dlistwise ~ lsr c -d s/^/-I ]
+	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
+	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
+
+	# include paths - mark as system to preclude dependency discovery from gcc
+	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-isystem ]
+]
+$cflags_final = [ $cflags_final $copts ]
+$cflags_debug = [ $cflags_debug $copts ]
+$cflags_devel = [ $cflags_devel $copts ]
+
+$rpath = [ 
+	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ ?{ s{^}{'-Wl,-rpath,$ORIGIN/} s{$}{'} ]
+]
+$lflags_final = [ $lflags_final $lopts $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
+$lflags_debug = [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
+$lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
+
+# c files
++[@std.c]($dext = [ final.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_devel)
+
+# errtab
++[@std.xapi.errtab]($dext = [ final.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_final)
++[@std.xapi.errtab]($dext = [ debug.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_debug)
++[@std.xapi.errtab]($dext = [ devel.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_devel)
+
+# tests
+[ @all ] : [ $listwise_final $listwise_debug $listwise_devel ]
+
+#
+# formulas
+#
+# [ $listwise_final ] :^ [ $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
+# [ $listwise_debug ] :^ [ $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
+# [ $listwise_devel ] :^ [ $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel ]
+
+[ $listwise_final ] : [ $dlistwise/main.final.o ~ j ]
+{
+	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_final ~ fi ]
+}
+
+[ $listwise_debug ] : [ $dlistwise/main.debug.o ~ j ]
+{
+	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_debug ~ fi ]
+}
+
+[ $listwise_devel ] : [ $dlistwise/main.devel.o ~ j ]
+{
+	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_devel ~ fi ]
+}
+
+#
+# tasks
+#
+
+[ @install_final ] : [ $listwise_final ]
+{
+	install -d										[ $destdir/$bindir ]
+	install [ $listwise_final ]		[ $destdir/$bindir/listwise ]
+	ln -vfs [ listwise ]					[ $destdir/$bindir/lw ]
+}
+
+[ @installman ] : [ @installman1 ]
+[ @installman1 ] : [ $dlistwise/man/listwise.1 ~ j ]
+{
+	install -d 																					[ $destdir/$mandir/man1 ]
+
+	cat [ $dlistwise/man/listwise.1 ] \
+		| lw "s/---BUILDVERS---/<[ $VERSIONS ]>" \
+		| lw "s/---BUILDDATE---/<[ @^.time ~ datef/%Y-%m-%d ]>" \
+		| gzip -9c  																		> [ $destdir/$mandir/man1/listwise.1.gz ]
+
+	ln -fs listwise.1.gz																[ $destdir/$mandir/man1/lw.1.gz ]
+}
