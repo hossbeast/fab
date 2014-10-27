@@ -20,8 +20,10 @@
 
 #include "xapi.h"
 #include "unwind.h"
-#include "callstack/callstack.h"
-#include "SYS.errtab.h"
+#include "trace.h"
+#include "callstack.h"
+#include "error/SYS.errtab.h"
+#include "xapi/XAPI.errtab.h"
 #undef perrtab
 #define perrtab perrtab_SYS
 

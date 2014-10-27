@@ -205,6 +205,11 @@ int API xapi_frame_enter()
 	return 0;
 }
 
+int API xapi_frame_depth()
+{
+	return callstack.l;
+}
+
 #if XAPI_RUNTIME_CHECKS
 typedef void * voidstar;
 voidstar API xapi_frame_caller()
@@ -213,11 +218,6 @@ voidstar API xapi_frame_caller()
 		return callstack.v[callstack.x]->calling_frame;
 	else
 		return callstack.v[callstack.l - 1]->calling_frame;
-}
-
-int API xapi_frame_depth()
-{
-	return callstack.l;
 }
 #endif
 

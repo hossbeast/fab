@@ -29,6 +29,9 @@
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
 
+// declarations of trace-description functions
+#include "xapi/trace.h"
+
 /*
 ** enable XAPI_RUNTIME_CHECKS to :
 **  [x] detect non-UNWIND-ing function invoked with fatal
@@ -193,7 +196,7 @@ when calling non-xapi code, you have a couple of options.
 	})
 #else
 #define xapi_invoke(func, ...)																																			\
-	({ xapi_frame_enter() != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)) })
+	({ xapi_frame_enter() != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)); })
 #endif
 
 #undef fatal
@@ -418,125 +421,6 @@ XAPI_LEAVE:													\
 //  while unwinding, the error code, and zero otherwise
 //
 #define XAPI_ERRCODE xapi_frame_errcode()
-
-/*
-** called after finally iff XAPI_UNWINDING
-*/
-
-/// xapi_frame_count
-//
-// SUMMARY
-//  returns the number of frames in the callstack
-//
-int xapi_frame_count();
-
-/// xapi_frame_error
-//
-// SUMMARY
-//  write a string with the error for the specified frame
-//  
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_error(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_frame_function
-//
-// SUMMARY
-//  write a string with the function for the specified frame
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_function(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_frame_location
-//
-// SUMMARY
-//  write a string with the file and line number for the specified frame
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_location(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_frame_info
-//
-// SUMMARY
-//  write a string with the info k/v pairs for the specified frame
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_infostring(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_frame_trace
-//
-// SUMMARY
-//  write a string with the error, function, info, and location for the specified frame
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_trace(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_trace_pithy
-//
-// SUMMARY
-//  write a string summarizing the entire callstack
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//
-size_t xapi_trace_pithy(char * const restrict dst, const size_t sz)
-	__attribute__((nonnull));
-
-/// xapi_trace_full
-//
-// SUMMARY
-//  write a string describing the entire callstack in full
-//
-// REMARKS
-//  will contain newlines for a multi-frame stack, but does not terminate with a newline
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//
-size_t xapi_trace_full(char * const restrict dst, const size_t sz)
-	__attribute__((nonnull));
-
-/// xapi_pithytrace
-//
-// SUMMARY
-//  call xapi_trace_pithy and write the output to stderr
-//
-void xapi_pithytrace();
-
-/// xapi_fulltrace
-/// xapi_backtrace
-//
-// SUMMARY
-//  call xapi_trace_full and write the output to stderr
-//
-void xapi_fulltrace();
-void xapi_backtrace();
 
 #undef restrict
 #endif

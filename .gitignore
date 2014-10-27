@@ -8,10 +8,10 @@
 *.states.*
 *.errtab.*
 exports
-/fab/fab
+*.final
+*.debug
+*.devel
 /fab/make64.sh
 /fab/install64.sh
-/listwise/listwise/listwise
-/listwise/listwise/lw
 /listwise/liblistwise/error/PCRE.errtab
 /libxapi/error/SYS.errtab

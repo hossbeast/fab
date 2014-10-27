@@ -64,7 +64,7 @@ struct frame
 	int finalized;		// whether execution has passed the XAPI_FINALLY label in this frame
 	int populated;		// whether this frame has already been populated (not necessarily set, but if it is set, then its true)
 
-#if DEVEL
+#if XAPI_RUNTIME_CHECKS
 	void * calling_frame;	// address of the calling stack frame
 #endif
 };

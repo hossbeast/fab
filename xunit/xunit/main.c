@@ -33,6 +33,9 @@ int main(int g_argc, char** g_argv)
 
 	void *		object = 0;
 
+	int total_pass = 0;
+	int total_fail = 0;
+
 	// link in libxunit
 	xunit_errcode(1234);
 
@@ -47,7 +50,7 @@ int main(int g_argc, char** g_argv)
 	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
 	{
 		fatal(log_config_and_describe
-			, L_LOGGER										// prefix
+			, L_TAG												// prefix
 			, 0														// trace
 			, L_LOGGER										// describe bits
 		);
@@ -55,13 +58,13 @@ int main(int g_argc, char** g_argv)
 	else
 	{
 		fatal(log_config_and_describe
-			, L_LOGGER
+			, L_TAG
 			, 0
 			, L_LOGGER
 		);
 	}
 #else
-	fatal(log_config, 0);//L_LWOPINFO);		// prefix
+	fatal(log_config, L_TAG);
 #endif
 
 	// default logging categories, with lower precedence than cmdline logexprs
@@ -69,9 +72,6 @@ int main(int g_argc, char** g_argv)
 
 	// summarize
 	fatal(args_summarize);
-
-	int total_pass = 0;
-	int total_fail = 0;
 
 	int x;
 	for(x = 0; x < g_args.test_objectsl; x++)
@@ -149,6 +149,7 @@ printf("test %p = { unit : %p, name : %p, entry : %p }\n"
 			if(xunit->teardown)
 				fatal(xunit->teardown, xunit);
 
+/*
 			uint64_t p = 0;
 			uint64_t f = 0;
 
@@ -159,6 +160,9 @@ printf("test %p = { unit : %p, name : %p, entry : %p }\n"
 
 			logf(L_XUNIT | p, " pass : %d", pass);
 			logf(L_XUNIT | f, " fail : %d", fail);
+*/
+
+			logf(L_XUNIT | (fail == 0 ? L_GREEN : L_RED), " pass : %d / %d or %%%5.2f", pass, (pass + fail), (double)pass / (double)(pass + fail));
 
 			total_pass += pass;
 			total_fail += fail;
@@ -170,13 +174,9 @@ printf("test %p = { unit : %p, name : %p, entry : %p }\n"
 		{
 			logf(L_XUNIT, " %s", g_args.test_objects[x]);
 		}
-
-#if XUNIT_DEBUG
-printf("close(%s)\n", g_args.test_objects[x]);
-#endif
-		fatal(ixdlclose, &object);
 	}
 
+/*
 	uint64_t p = 0;
 	uint64_t f = 0;
 
@@ -187,13 +187,16 @@ printf("close(%s)\n", g_args.test_objects[x]);
 
 	logf(L_XUNIT | p, "total pass : %d", total_pass);
 	logf(L_XUNIT | f, "total fail : %d", total_fail);
+*/
+
+	logf(L_XUNIT | (total_fail == 0 ? L_GREEN : L_RED), " total_pass : %d / %d or %%%5.2f", total_pass, (total_pass + total_fail), (double)total_pass / (double)(total_pass + total_fail));
 
 finally:
 	args_teardown();
 
 	if(XAPI_UNWINDING)
 	{
-#if DEVEL
+# if DEVEL
 		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
 		{
 #endif

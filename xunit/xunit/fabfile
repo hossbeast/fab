@@ -18,8 +18,10 @@
 # definitions
 +[ $*/../../vars.fab ]
 
++[ $dcommon]() @common
+
 # variables
-$cflags					= [ $cflags -fno-builtin-log [ $dxunit ~ lsr c -d s/^/-I ]
+$copts = [ -export-dynamic -fno-builtin-log [ $dxunit ~ lsr c -d s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ ~ ?{ cons{-DBUILDSTAMP="`date`"} ]
@@ -27,25 +29,43 @@ $cflags					= [ $cflags -fno-builtin-log [ $dxunit ~ lsr c -d s/^/-I ]
 	# include paths - mark as system to preclude dependency discovery from gcc
 	[ $dlibxapi $dlibxlinux $dlibxunit ~ s/^/-isystem ]
 ]
-$lflags					= [ $lflags $libxapi $libxlinux $libxunit -ldl ]
+$lopts = [ -ldl ]
+$rpath = [ 
+	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ ?{ s{^}{'-Wl,-rpath,$ORIGIN/} s{$}{'} ]
+]
+$lflags_final = [ $lflags_final $lopts $libxapi_final $libxlinux_final $libxunit_final ]
+$lflags_debug = [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libxunit_debug ]
+$lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libxunit_devel $rpath ]
 
 # c files
-+[@std.c]($gendir = $dxunit; $rdirs = $dxunit; $ext = [ ]; $cc; $cflags = $cflags.final)
-+[@std.c]($gendir = $dxunit; $rdirs = $dxunit; $ext = [ ]; $cc; $cflags = $cflags.debug)
-+[@std.c]($gendir = $dxunit; $rdirs = $dxunit; $ext = [ ]; $cc; $cflags = $cflags.devel)
++[@std.c]($dext = [ final.o ]; $gendir = $dxunit; $rdirs = $dxunit; $cc; $cflags = [ $cflags_final $copts ])
++[@std.c]($dext = [ debug.o ]; $gendir = $dxunit; $rdirs = $dxunit; $cc; $cflags = [ $cflags_debug $copts ])
++[@std.c]($dext = [ devel.o ]; $gendir = $dxunit; $rdirs = $dxunit; $cc; $cflags = [ $cflags_devel $copts ])
 
 # errtab
-+[@std.xapi.errtab]($gendir = $dxunit; $rdirs = $dxunit; $cc $cflags)
++[@std.xapi.errtab]($dext = [ final.o ]; $gendir = $dxunit; $rdirs = $dxunit; $cc; $cflags = [ $cflags_final $copts ])
++[@std.xapi.errtab]($dext = [ debug.o ]; $gendir = $dxunit; $rdirs = $dxunit; $cc; $cflags = [ $cflags_debug $copts ])
++[@std.xapi.errtab]($dext = [ devel.o ]; $gendir = $dxunit; $rdirs = $dxunit; $cc; $cflags = [ $cflags_devel $copts ])
 
 # catchall node
-[ @all ] : [ $xunit ]
+[ @all ] : [ $xunit_final $xunit_debug $xunit_devel ]
 
 #
 # formulas
 #
-[ $xunit ] : [ $dxunit/main.o ~ j ]
+[ $xunit_final ] : [ $dxunit/main.final.o ~ j ]
 {
-	[ $cc ] [ $cflags -rdynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags ~ fi ]
+	[ $cc ] [ $cflags_final $copts ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_final $lopts ~ fi ]
+}
+
+[ $xunit_debug ] : [ $dxunit/main.debug.o ~ j ]
+{
+	[ $cc ] [ $cflags_debug $copts ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_debug $lopts ~ fi ]
+}
+
+[ $xunit_devel ] : [ $dxunit/main.devel.o ~ j ]
+{
+	[ $cc ] [ $cflags_devel $copts ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_devel $lopts ~ fi ]
 }
 
 #

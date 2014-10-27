@@ -16,16 +16,19 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 once {
+	+[ $*/../vars.fab ]
 
-	$dcommon = [ $* ]
-	+[ $dcommon/vars.fab ]
-
-	$cflags = [ $cflags 
+	$copts = [
 		# include paths - mark as system to preclude dependency discovery from gcc
 		[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-isystem ]
 	]
 
 	# c files
-	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc $cflags)
-	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $dext = [ pic.o ]; $cflags = [ $cflags -fPIC ]; $cc)
+	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ final.o ]; $cflags = [ $cflags_final $copts ])
+	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ debug.o ]; $cflags = [ $cflags_debug $copts ])
+	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ devel.o ]; $cflags = [ $cflags_devel $copts ])
+
+	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ final.pic.o ]; $cflags = [ $cflags_final $copts -fPIC ])
+	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ debug.pic.o ]; $cflags = [ $cflags_debug $copts -fPIC ])
+	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ devel.pic.o ]; $cflags = [ $cflags_devel $copts -fPIC ])
 }

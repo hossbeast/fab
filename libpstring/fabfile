@@ -15,9 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# source directories
-$dcommon			= [ $*/../common ~ j ]
-+[ $dcommon/vars.fab ]
+# definitions
++[ $*/../vars.fab ]
 
 # source invocations
 +[ $dcommon ]() @common
@@ -25,37 +24,59 @@ $dcommon			= [ $*/../common ~ j ]
 # variables
 $libname 			= [ libpstring.so ]
 $soname				= [ $libname ~ j ]
-$libpstring		= [ $dlibpstring/libpstring.so ~ j ]		# path to the library .so
-$cflags				= [ $cflags -fPIC [ $dlibpstring ~ lsr c -d s/^/-I ]
+$copts				= [ -fPIC [ $dlibpstring ~ lsr c -d s/^/-I ]
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dlibxlinux $dliblistwise ~ s/^/-isystem ]
+	[ $dlibxapi $dlibxlinux ~ s/^/-isystem ]
 ]
-$lflags				= [ $libxapi $libxlinux -shared [ -Wl,-soname,$soname ~ j ] ]
+$cflags_final = [ $cflags_final $copts ]
+$cflags_debug = [ $cflags_debug $copts ]
+$cflags_devel = [ $cflags_devel $copts ]
+
+$lopts				= [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
+$lflags_final	= [ $libxapi_final $lopts $libxlinux_final [ -Wl,-soname,libpstring.so ~ j ] ]
+$lflags_debug	= [ $libxapi_debug $lopts $libxlinux_debug [ -Wl,-soname,libpstring.debug.so ~ j ] ]
+$lflags_devel	= [ $libxapi_devel $lopts $libxlinux_devel [ -Wl,-soname,libpstring.devel.so ~ j ] ]
 
 # source files
-+[@std.c]($gendir = $dlibpstring; $rdirs = $dlibpstring; $ext = [ pic.o ]; -$cobjpaths; $cc $cflags)
++[@std.c]($dext = [ final.pic.o ]; $gendir = $dlibpstring; $rdirs = $dlibpstring; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.pic.o ]; $gendir = $dlibpstring; $rdirs = $dlibpstring; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.pic.o ]; $gendir = $dlibpstring; $rdirs = $dlibpstring; $cc; $cflags = $cflags_devel)
 
 ##
 ## dependencies
 ##
 
 # default NOFILE target - build library and all operators
-[ @all ] : [ $libpstring ]
+[ @all ] : [ $libpstring_final $libpstring_debug $libpstring_devel ]
 
 ##
 ## formulas
 ##
 
-# link the library
-[ $libpstring ] : [ $cobjpaths ]
+# library exports
+[ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
 	  (echo "{ global: "
 	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- [ $@ ~ rx/aneedw lx/c ss u fi ] )
+	  cat -- [ $@ ~ rx/ineed fi ] )
 	> echo "local: *; };"
-	  ) 1>[ $dlibpstring/exports ]
+	  ) 1>[ $@ ]
+}
 
-	[ $cc ] [ $cflags ~ ss u fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags ~ fi ] [ -Wl,--version-script=$dlibpstring/exports ]
+# link the library
+[ $libpstring_final ] : [ $*/pstring/pstring.final.pic.o ~ j ]
+{
+	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_final ~ fi ]
+}
+
+[ $libpstring_debug ] : [ $*/pstring/pstring.debug.pic.o ~ j ]
+{
+	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_debug ~ fi ]
+}
+
+[ $libpstring_devel ] : [ $*/pstring/pstring.devel.pic.o ~ j ]
+{
+	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_devel ~ fi ]
 }
 
 ##

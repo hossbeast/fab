@@ -32,6 +32,7 @@
 struct etable;
 struct callstack;
 
+int xapi_frame_depth();
 /// xapi_frame_enter
 //
 // SUMMARY
@@ -43,7 +44,6 @@ struct callstack;
 #if XAPI_RUNTIME_CHECKS
 int xapi_frame_enter(void * calling_frame);
 void * xapi_frame_caller();
-int xapi_frame_depth();
 #else
 int xapi_frame_enter();
 #endif
