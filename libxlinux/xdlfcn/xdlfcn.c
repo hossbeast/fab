@@ -30,11 +30,7 @@ int API xdlopen(const char * filename, int flag, void ** dl)
 {
 	dlerror();
 	if(((*dl) = dlopen(filename, flag)) == 0)
-{
-char * err = dlerror();
-printf("dlopen(%s)=%s\n", filename, err);
-		fails(XLINUX_DLERROR, err);
-}
+		fails(XLINUX_DLERROR, dlerror());
 
 finally :
 	XAPI_INFOF("path", "%s", filename);

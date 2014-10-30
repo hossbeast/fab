@@ -85,7 +85,7 @@ $cfabpaths = [
  ~ [ $filter ] ]
 
 # paths to object files
-$cobjpaths = [ $cfabpaths ~ [ sx/$sext/$dext  ] ]
+$cobjpaths = [ $cfabpaths ~ [ sx/$sext/$dext ] ]
 
 # discovery
 #

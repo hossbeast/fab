@@ -43,68 +43,26 @@
 $sext = [ c ]
 
 # default object file extension
-$dext = [ xu.so ]
+$dext = [ pic.o ]
 
 # default object file extension for discovered dependencies
 $dscext = [ pic.o ]
 
+# default test lib extension
+$soext = [ xu.so ]
+
 # default filter for test files
 $filter = [ ?, l,/test.c ]
 
-# paths to source files for discovery
-$cdscpaths = [
-	[
-		$paths				# paths
-		$dscpaths			# paths, discovery only
+# cc : errors.c -> errors.o @ std.c
++[@std.c]($filter; -$cobjpaths)
 
-		[
-			$dirs				# directories
-			$dscdirs		# directories, discovery only
-		~ [ ls [ lxf/$sext ~ j ] ~ fi ] ]
+# compile test sos
+$tsopaths = [ $cobjpaths ~ [ sxf/$dext/$soext ~ j ] ]
 
-		[
-			$rdirs			# recursive directories
-			$rdscdirs		# recursive directories, discovery only
-		~ [ lsr [ lxf/$sext ~ j ] ~ fi ] ]
- ~ [ $dscfilter ] ]
-~ [ $filter ] ]
-
-# paths to source files for fabrication
-$cfabpaths = [
-	[
-		$paths				# paths
-		$fabpaths			# paths, fabrication only
-
-		[
-			$dirs				# directories
-			$fabdirs		# directories, fabrication only
-		~ [ ls [ lxf/$sext ~ j ] ~ fi ] ]
-
-		[
-			$rdirs			# recursive directories
-			$rfabdirs		# recursive directories, fabrication only
-		~ [ lsr [ lxf/$sext ~ j ] ~ fi ] ]
-	~ [ $fabfilter ] ]
- ~ [ $filter ] ]
-
-# paths to object files
-$cobjpaths = [ $cfabpaths ~ [ sx/$sext/$dext  ] ]
-
-# discovery
-#
-# -MM : ignore system headers
-# -MG : include generated files
-# -MP : produce phony list - which is what gcc-dep actually parses
-#
-[ $cdscpaths ] %
+[ $tsopaths ~ dj shift ] :: [ $< ~ [ rx [ sxf/$soext/$dext ~ j ] ~ fi ] ]
 {
-	[ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG [ $@ ] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx [ sx/$sext/$dext ~ j ] ~ fi ] ] [ $dscext ]
-}
-
-# fabrication and dependency
-[ $cobjpaths ~ dj shift ] :: [ $< ~ [ sx/$dext/$sext ] ]
-{
-	[ $cc ] [ $cflags ~ uu fi ] -shared [ $@ ~ [ rx/ineed [ lx/$sext ~ j ] uu fi ~ fi ] ] -o [ $@ ]
+  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ [ rx/aneedw [ lx/$dext ~ j ] fi ~ fi ] ]
 }
 
 # individual test tasks
@@ -114,6 +72,3 @@ $cobjpaths = [ $cfabpaths ~ [ sx/$sext/$dext  ] ]
 	[ $xunit ~ can ] [ $@ ~ can ]
 }
 */
-
-# return of test objects
-$tobjpaths = [ $cobjpaths ]

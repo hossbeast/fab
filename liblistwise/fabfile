@@ -23,13 +23,14 @@
 
 # variables
 $libname 			= [ liblistwise.so ]
-$copts				= [ -fPIC [ $dliblistwise ~ ls c -d s/^/-I ]
+$copts				= [ -fPIC
 	# include paths - mark as system to preclude dependency discovery from gcc
 	[ $dlibxapi $dlibxlinux $dlibpstring $dlibxunit ~ s/^/-isystem ]
 ]
 $cflags_final	= [ $cflags_final $copts [ -DLWOPDIR=$lwopdir ~ j ] [ -DLWOPEXT=$lwopext ~ j ] ]
 $cflags_debug	= [ $cflags_debug $copts [ -DLWOPDIR=$lwopdir ~ j ] [ -DLWOPEXT=$lwopext ~ j ] ]
 $cflags_devel	= [ $cflags_devel $copts [ -DLWOPDIR=$lwopdir_devel ~ j ] [ -DLWOPEXT=$lwopext_devel ~ j ] ]
+$copts_inc		= [ $dliblistwise ~ ls c -d s/^/-I ]
 
 $lopts				= [ -lpcre -ldl -shared [ -Wl,--version-script=$*/exports ~ j ] ]
 $lflags_final	= [ $lflags_final $lopts $libxapi_final $libxlinux_final $libpstring_final [ -Wl,-soname,liblistwise.so ~ j ] ]
@@ -37,26 +38,31 @@ $lflags_debug	= [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libpstri
 $lflags_devel	= [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstring_devel [ -Wl,-soname,liblistwise.devel.so ~ j ] ]
 
 # source files
-+[@std.c]($dext = [ final.pic.o ]; $gendir = $dliblistwise; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = $dliblistwise; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = $dliblistwise; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = $dliblistwise; $cc; $cflags = $cflags_devel)
-+[@std.l]($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$lfabpaths; $cc $flex $flexflags;   $cflags = $cflags_final)
-+[@std.l]($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$lfabpaths; $cc $flex $flexflags;   $cflags = $cflags_debug)
-+[@std.l]($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$lfabpaths; $cc $flex $flexflags;   $cflags = $cflags_devel)
-+[@std.y]($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$yfabpaths; $cc $bison $bisonflags; $cflags = $cflags_final)
-+[@std.y]($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$yfabpaths; $cc $bison $bisonflags; $cflags = $cflags_debug)
-+[@std.y]($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$yfabpaths; $cc $bison $bisonflags; $cflags = $cflags_devel)
++[@std.c]($dext = [ final.pic.o ]; $gendir = $dliblistwise; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise ~ ls m/op$ ]; $cc; $cflags = [ $cflags_final [ $dliblistwise ~ ls c -d s/^/-isystem ] ])
++[@std.c]($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise ~ ls m/op$ ]; $cc; $cflags = [ $cflags_debug [ $dliblistwise ~ ls c -d s/^/-isystem ] ])
++[@std.c]($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise ~ ls m/op$ ]; $cc; $cflags = [ $cflags_devel [ $dliblistwise ~ ls c -d s/^/-isystem ] ])
+
++[@std.c]($dext = [ final.pic.o ]; $gendir = $dliblistwise; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise ~ ls m/op$ v ]; $cc; $cflags = [ $cflags_final $copts_inc ])
++[@std.c]($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise ~ ls m/op$ v ]; $cc; $cflags = [ $cflags_debug $copts_inc ])
++[@std.c]($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise ~ ls m/op$ v ]; $cc; $cflags = [ $cflags_devel $copts_inc ])
+
++[@std.l]($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$lfabpaths; $cc $flex $flexflags;   $cflags = [ $cflags_final $copts_inc ])
++[@std.l]($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$lfabpaths; $cc $flex $flexflags;   $cflags = [ $cflags_debug $copts_inc ])
++[@std.l]($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$lfabpaths; $cc $flex $flexflags;   $cflags = [ $cflags_devel $copts_inc ])
++[@std.y]($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$yfabpaths; $cc $bison $bisonflags; $cflags = [ $cflags_final $copts_inc ])
++[@std.y]($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$yfabpaths; $cc $bison $bisonflags; $cflags = [ $cflags_debug $copts_inc ])
++[@std.y]($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; -$yfabpaths; $cc $bison $bisonflags; $cflags = [ $cflags_devel $copts_inc ])
 
 # generated files
-+[@std.flex.states] ($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = $cflags_final)
-+[@std.flex.states] ($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = $cflags_debug)
-+[@std.flex.states] ($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = $cflags_devel)
-+[@std.bison.tokens]($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = $cflags_final)
-+[@std.bison.tokens]($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = $cflags_debug)
-+[@std.bison.tokens]($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = $cflags_devel)
-+[@std.xapi.errtab] ($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = $cflags_final; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
-+[@std.xapi.errtab] ($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = $cflags_debug; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
-+[@std.xapi.errtab] ($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = $cflags_devel; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
++[@std.flex.states] ($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_final $copts_inc ])
++[@std.flex.states] ($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_debug $copts_inc ])
++[@std.flex.states] ($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_devel $copts_inc ])
++[@std.bison.tokens]($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_final $copts_inc ])
++[@std.bison.tokens]($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_debug $copts_inc ])
++[@std.bison.tokens]($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_devel $copts_inc ])
++[@std.xapi.errtab] ($dext = [ final.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_final $copts_inc ]; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
++[@std.xapi.errtab] ($dext = [ debug.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_debug $copts_inc ]; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
++[@std.xapi.errtab] ($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_devel $copts_inc ]; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
 
 # path to each operator so
 $oplist_final = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,final.so sy ]
@@ -69,27 +75,23 @@ $oplist_devel = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,devel.so sy 
 	$cc;
 	$dext = [ devel.pic.o ];
 	$dscext = [ devel.pic.o ];
-	$cflags = [ $cflags_devel [ $dlibxunit ~ s/^/-isystem ] ];
-	-$tobjpaths
+	$soext = [ devel.xu.so ];
+	$cflags = [ $cflags_devel [ $dlibxunit ~ s/^/-isystem ] [ $dliblistwise ~ ls c -d s/^/-isystem ] ];
+	-$tsopaths
 )
 
 $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 
-[ @foo ] : [ $dliblistwise/op/sort/test.devel.pic.o ~ j ]
-{
-	echo [ $@ ~ rx/aneedw fi ]
-}
-
 # run all tests
-[ @test ] : [ $liblistwise_devel $oplist_devel $tobjpaths ]
+[ @test ] : [ $liblistwise_devel $oplist_devel $listwise_test $tsopaths ]
 {
-	[ $xunit_devel ] +XUNIT,INPUT,OUTPUT [ $liblistwise_devel $listwise_test $tobjpaths ~ fi ] 1>&501 2>&502
+	[ $xunit_devel ] +XUNIT,INPUT,OUTPUT [ $liblistwise_devel $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
 }
 
 #	[ $xunit_devel ] +XUNIT,INPUT,OUTPUT [ $liblistwise_devel $listwise_test $tobjpaths ~ fi ] 1>&501 2>&502
 
 # test helper
-[ $listwise_test ] : [ [ $*/listwise_test/listwise_test.devel.pic.o ] $liblistwise_devel ]
+[ $listwise_test ] : [ [ $*/listwise_test/listwise_test.devel.pic.o ~ j ] $liblistwise_devel ]
 {
 	[ $cc ] [ $cflags_devel ~ uu fi ] -shared [ $@ ~ rx/aneedw lx/o uu fi ] -o [ $@ ]
 }
@@ -118,33 +120,33 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 # link the library
 [ $liblistwise_final ] : [ $*/exec/exec.final.pic.o ~ j ]
 {
-	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_final ~ fi ]
+	[ $cc ] [ $cflags_final $copts_inc ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_final ~ fi ]
 }
 
 [ $liblistwise_debug ] : [ $*/exec/exec.debug.pic.o ~ j ]
 {
-	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_debug ~ fi ]
+	[ $cc ] [ $cflags_debug $copts_inc ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_debug ~ fi ]
 }
 
 [ $liblistwise_devel ] : [ $*/exec/exec.devel.pic.o ~ j ]
 {
-	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_devel ~ fi ]
+	[ $cc ] [ $cflags_devel $copts_inc ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_devel ~ fi ]
 }
 
 # link an operator so - which depends on its own .o
 [ $oplist_final ~ dj shift ] :: [ $< ~ rx sxf/final.pic.o ]
 {
-	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/ineed fi ] [ $liblistwise_final ] -shared # [ "-Wl,-soname," [ $@ ~ rx bn fn ] .so ]
+	[ $cc ] [ $cflags_final $copts_inc ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $liblistwise_final ] -shared
 }
 
 [ $oplist_debug ~ dj shift ] :: [ $< ~ rx sxf/debug.pic.o ]
 {
-	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/ineed fi ] [ $liblistwise_debug ] -shared
+	[ $cc ] [ $cflags_debug $copts_inc ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $liblistwise_debug ] -shared
 }
 
 [ $oplist_devel ~ dj shift ] :: [ $< ~ rx sxf/devel.pic.o ]
 {
-	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/ineed fi ] [ $liblistwise_devel ] -shared
+	[ $cc ] [ $cflags_devel $copts_inc ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $liblistwise_devel ] -shared
 }
 
 # operators also depend on the library for linking

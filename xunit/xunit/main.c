@@ -162,7 +162,7 @@ printf("test %p = { unit : %p, name : %p, entry : %p }\n"
 			logf(L_XUNIT | f, " fail : %d", fail);
 */
 
-			logf(L_XUNIT | (fail == 0 ? L_GREEN : L_RED), " pass : %d / %d or %%%5.2f", pass, (pass + fail), (double)pass / (double)(pass + fail));
+			logf(L_XUNIT | (fail == 0 ? L_GREEN : L_RED), " %-9s : %d / %d or %%%5.2f", "pass", pass, (pass + fail), (double)pass / (double)(pass + fail));
 
 			total_pass += pass;
 			total_fail += fail;
@@ -189,7 +189,7 @@ printf("test %p = { unit : %p, name : %p, entry : %p }\n"
 	logf(L_XUNIT | f, "total fail : %d", total_fail);
 */
 
-	logf(L_XUNIT | (total_fail == 0 ? L_GREEN : L_RED), " total_pass : %d / %d or %%%5.2f", total_pass, (total_pass + total_fail), (double)total_pass / (double)(total_pass + total_fail));
+	logf(L_XUNIT | (total_fail == 0 ? L_GREEN : L_RED), "%-10s : %d / %d or %%%5.2f", "total pass", total_pass, (total_pass + total_fail), (double)total_pass / (double)(total_pass + total_fail));
 
 finally:
 	args_teardown();

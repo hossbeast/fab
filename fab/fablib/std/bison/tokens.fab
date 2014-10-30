@@ -83,5 +83,5 @@ $tabcfabpaths = [
 }
 
 # cc : tokens.c -> tokens.o @ std.c
-+[@std.c](-$cobjpaths; $cfabpaths = [ $tabcfabpaths ~ sx/y/tokens.c ]; $cc $cflags)
++[@std.c](-$cobjpaths; $cfabpaths = [ $tabcfabpaths ~ sx/y/tokens.c ]; $cdscpaths = [ ]; $cc $cflags)
 $tabcobjpaths = [ $cobjpaths ]

@@ -17,24 +17,19 @@
 
 #include "listwise_test.h"
 
-static int entry(const struct listwise_test* t)
-{
-	return listwise_test_entry(t);
-}
-
 xunit_unit xunit = {
 	.tests = (xunit_test*[]) {
-		  (listwise_test[]){{ .entry = entry
+		  (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
 				, .xsfm = "l/o"
 				, .final = (char*[]) { "ao", "ob", "od", 0 }
 		  }}
-		, (listwise_test[]){{ .entry = entry
+		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
 				, .xsfm = "l/o wy"
 				, .final = (char*[]) { "o", "o", "o", 0 }
 		  }}
-		, (listwise_test[]){{ .entry = entry
+		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
 				, .xsfm = "l/o wy uu"
 				, .final = (char*[]) { "o", 0 }

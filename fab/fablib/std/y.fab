@@ -79,7 +79,7 @@ $yfabpaths = [
 {
 	    [ $bison ] [ $bisonflags ~ uu fi ] -o /dev/stdout [ $@ ] [
 	] | [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
-	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx [ sx/y/tab.$ext ~ j ] y fi ] ] [ $ext ]
+	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx [ sx/y/tab.$ext ~ j ] y fi ~ fi ] ] [ $ext ]
 }
 
 # $bison : y -> { tab.c, tab.h }

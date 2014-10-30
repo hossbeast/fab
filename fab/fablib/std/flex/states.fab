@@ -81,5 +81,5 @@ $lexhfabpaths = [
 }
 
 # cc : tokens.c -> tokens.o @ std.c
-+[@std.c](-$cobjpaths; $cfabpaths = [ $lexhfabpaths ~ sx/l/states.c ]; $cc $cflags)
++[@std.c](-$cobjpaths; $cfabpaths = [ $lexhfabpaths ~ sx/l/states.c ]; $cdscpaths = [ ]; $cc $cflags)
 $lexhobjpaths = [ $cobjpaths ]

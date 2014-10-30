@@ -222,7 +222,7 @@ finally:
 coda;
 }
 
-int API __attribute__((constructor)) listwise_operators_setup()
+int __attribute__((constructor)) listwise_operators_setup()
 {
 	prologue;
 
@@ -231,7 +231,7 @@ int API __attribute__((constructor)) listwise_operators_setup()
 	finally : coda;
 }
 
-void API __attribute__((destructor)) listwise_operators_teardown()
+void __attribute__((destructor)) listwise_operators_teardown()
 {
 	int x;
 	for(x = 0; x < g_dls_l; x++)

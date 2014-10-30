@@ -175,7 +175,9 @@ int API xapi_frame_enter()
 #endif
 		callstack.l++;
 
-//printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
+#if XAPI_RUNTIME_CHECKS
+//printf("[x=%2d][l=%2d] %p\n", callstack.x, callstack.l, calling_frame);
+#endif
 		
 		// populate the alternate frame with an ENOMEM error
 		frame_set(perrtab_SYS, SYS_ENOMEM, 0, 0, "libxapi::malloc", 1);
@@ -200,7 +202,9 @@ int API xapi_frame_enter()
 	callstack.v[callstack.l - 1]->calling_frame = calling_frame;
 #endif
 
-//printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
+#if XAPI_RUNTIME_CHECKS
+//printf("[x=%2d][l=%2d] %p\n", callstack.x, callstack.l, calling_frame);
+#endif
 	callstack.r = 0;
 	return 0;
 }
@@ -253,7 +257,9 @@ void API xapi_frame_leave3(const etable ** etab, int * code, int * rval)
 		}
 		else
 		{
-//printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
+#if XAPI_RUNTIME_CHECKS
+//printf("[x=%2d][l=%2d] %p\n", callstack.x, callstack.l, callstack.v[callstack.l - 1]->calling_frame);
+#endif
 		}
 	}
 
@@ -267,7 +273,9 @@ void API xapi_frame_leave3(const etable ** etab, int * code, int * rval)
 		}
 		else
 		{
-//printf("[x=%2d][l=%2d]\n", callstack.x, callstack.l);
+#if XAPI_RUNTIME_CHECKS
+//printf("[x=%2d][l=%2d] %p\n", callstack.x, callstack.l, callstack.v[callstack.l - 1]->calling_frame);
+#endif
 		}
 	}
 

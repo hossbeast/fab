@@ -32,6 +32,11 @@ xunit_unit xunit = {
 				, .xsfm = "ss"
 				, .final = (char*[]) { "a", "b", "c", "d", 0 }
 			}} 
+		, (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "a", "c", "b", "d", 0 }
+				, .xsfm = "ss"
+				, .final = (char*[]) { "a", "b", "c", "d", 0 }
+			}} 
 //		TEST(("4", "3", "2", "1" ), "sn", ("1", "2", "3", "4"))
 		, 0
 	}
