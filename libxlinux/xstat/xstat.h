@@ -35,7 +35,7 @@ int xstat(const char * restrict path, struct stat * restrict buf, int * restrict
 /// uxstat
 //
 // SUMMARY
-//  proxy for stat which only fails when errno != ENOENT
+//  proxy for stat which only fails when errno != ENOENT and errno != ENOTDIR
 //  if stat fails but uxstat does not, buf is zeroed
 //
 int uxstat(const char * restrict path, struct stat * restrict buf, int * restrict r)

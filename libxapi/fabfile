@@ -26,7 +26,7 @@ $libname 			= [ libxapi.so ]
 $soname				= [ $libname ~ j ]
 $copts				= [ -fPIC [ $dlibxapi ~ lsr c -d s/^/-I ]
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-isystem ]
+	[ $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-I ]
 ]
 $cflags_final = [ $cflags_final $copts ]
 $cflags_debug = [ $cflags_debug $copts ]
@@ -38,16 +38,18 @@ $lflags_debug	= [ $lflags_debug $lopts [ "-Wl,-soname," libxapi.debug.so ~ j ] ]
 $lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
 
 # source files
-+[@std.c]($dext = [ final.pic.o ]; $gendir = $dlibxapi; $rdirs = $dlibxapi; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.pic.o ]; $gendir = $dlibxapi; $rdirs = $dlibxapi; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.pic.o ]; $gendir = $dlibxapi; $rdirs = $dlibxapi; $cc; $cflags = $cflags_devel)
++[@std.c]($dext = [ final.pic.o ]; $rdirs = $dlibxapi; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.pic.o ]; $rdirs = $dlibxapi; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.pic.o ]; $rdirs = $dlibxapi; $cc; $cflags = $cflags_devel)
 
 ##
 ## dependencies
 ##
 
 # tests
-[ @all ] : [ $libxapi_final $libxapi_debug $libxapi_devel ]
+[ @final ] : [ $libxapi_final ]
+[ @debug ] : [ $libxapi_debug ]
+[ @devel ] : [ $libxapi_devel ]
 
 ##
 ## formulas
@@ -79,17 +81,17 @@ $lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
 }
 
 # link the library
-[ $libxapi_final ] : [ $*/frame/frame.final.pic.o ~ j ]
+[ $libxapi_final ] : [ $* ~ lsr sx/c/final.pic.o sy ]
 {
 	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_final ~ fi ] 
 }
 
-[ $libxapi_debug ] : [ $*/frame/frame.debug.pic.o ~ j ]
+[ $libxapi_debug ] : [ $* ~ lsr sx/c/debug.pic.o sy ]
 {
 	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_debug ~ fi ]
 }
 
-[ $libxapi_devel ] : [ $*/frame/frame.devel.pic.o ~ j ]
+[ $libxapi_devel ] : [ $* ~ lsr sx/c/devel.pic.o sy ]
 {
 	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_devel ~ fi ]
 }

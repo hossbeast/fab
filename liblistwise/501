@@ -1,9 +1,0 @@
- XUNIT :  ../liblistwise/liblistwise.devel.so
- XUNIT : 0x19d3fc0 0x7fd490e7de68 ../liblistwise/op/sort/test.devel.pic.o[0]
-[1;31m XUNIT :  [XUNIT:FAIL] expected row : a, actual : 'b[0;0m
- XUNIT :  pass : 0
-[1;31m XUNIT :  fail : 1[0;0m
- XUNIT : 0x19d48c0 0x7fd4899e6a15 ../liblistwise/op/l/test.devel.pic.o[0]
-[1;31m[XAPI:NOFATAL] 
-  1 : at listwise_test_entry in listwise_test.c:83
-  0 : at main in main.c:130[0;0m

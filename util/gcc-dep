@@ -32,41 +32,56 @@ if($ARGV[0])
 }
 
 # canonicalize
-pipe(RDIN,WRIN);
-pipe(RDOUT,WROUT);
-if(fork == 0)
-{
-	close WRIN;
-	close RDOUT;
+#pipe(RDIN,WRIN);
+#pipe(RDOUT,WROUT);
+#if(fork == 0)
+#{
+#	close WRIN;
+#	close RDOUT;
+#
+#	open(STDIN, "<&=RDIN");
+#	open(STDOUT, ">&WROUT");
+#
+#	my @args = qw|/home/todd/fab/listwise/listwise can|;
+#	exec { $args[0] } @args
+#}
+#close RDIN;
+#close WROUT;
+#
+#while(<STDIN>)
+#{
+#	if(/^[^:]+:$/)	# -MP lines, only
+#	{
+#		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
+#
+#		# for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
+#		if(! -r $line && $gen)
+#		{
+#			$line = $gen . "/" . $line;
+#		}
+#
+#		print WRIN "$line\n"
+#	}
+#}
+#close WRIN;
 
-	open(STDIN, "<&=RDIN");
-	open(STDOUT, ">&WROUT");
-
-	my @args = qw|/home/todd/fab/listwise/listwise can|;
-	exec { $args[0] } @args
-}
-close RDIN;
-close WROUT;
-
-while(<STDIN>)
+#for my $line (map { chomp ; $_ } <RDOUT>)
+for (map { chomp ; $_ } <STDIN>)
 {
 	if(/^[^:]+:$/)	# -MP lines, only
 	{
 		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
-
+	
 		# for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
 		if(! -r $line && $gen)
 		{
 			$line = $gen . "/" . $line;
 		}
+	
+#		print WRIN "$line\n";
 
-		print WRIN "$line\n"
-	}
-}
-close WRIN;
+	$line = "${line}h";
 
-for my $line (map { chomp ; $_ } <RDOUT>)
-{
 	push @S, $line;				# strong dependency on the header
 
 	if($line =~ /\.lex\.h$/)
@@ -89,11 +104,11 @@ for my $line (map { chomp ; $_ } <RDOUT>)
 		$line =~ s/\.tokens\.h/.tokens/;
 		push @W, $line;				# weak dependency on the object
 	}
-	elsif($line =~ /\.errtab\.h$/)
-	{
-		$line =~ s/\.errtab\.h/.errtab/;
-		push @W, $line;				# weak dependency on the object
-	}
+#	elsif($line =~ /\.errtab\.h$/)
+#	{
+#		$line =~ s/\.errtab\.h/.errtab/;
+#		push @W, $line;				# weak dependency on the object
+#	}
 	else
 	{
 		# corresponding .c file
@@ -105,6 +120,7 @@ for my $line (map { chomp ; $_ } <RDOUT>)
 				push @W, $line;			# weak dependency on the object, if a corresponding c file exists
 			}
 		}
+	}
 	}
 }
 

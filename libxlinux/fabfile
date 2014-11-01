@@ -25,7 +25,7 @@
 $libname 			= [ libxlinux.so ]
 $copts				= [ -fPIC [ $dlibxlinux ~ lsr c -d s/^/-I ]
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dliblistwise $dlibpstring ~ s/^/-isystem ]
+	[ $dlibxapi $dliblistwise $dlibpstring ~ s/^/-I ]
 ]
 $cflags_final = [ $cflags_final $copts ]
 $cflags_debug = [ $cflags_debug $copts ]
@@ -37,9 +37,9 @@ $lflags_debug	= [ $libxapi_debug $lopts [ -Wl,-soname,libxlinux.debug.so ~ j ] ]
 $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
 
 # source files
-+[@std.c]($dext = [ final.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_devel)
++[@std.c]($dext = [ final.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_devel)
 +[@std.xapi.errtab]($dext = [ final.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_final)
 +[@std.xapi.errtab]($dext = [ debug.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_debug)
 +[@std.xapi.errtab]($dext = [ devel.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_devel)
@@ -49,7 +49,9 @@ $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
 ##
 
 # default NOFILE target - build library and all operators
-[ @all ] : [ $libxlinux_final $libxlinux_debug $libxlinux_devel ]
+[ @final ] : [ $libxlinux_final ]
+[ @debug ] : [ $libxlinux_debug ]
+[ @devel ] : [ $libxlinux_devel ]
 
 ##
 ## formulas
@@ -66,17 +68,17 @@ $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
 }
 
 # link the library
-[ $libxlinux_final ] : [ $*/xunistd/xunistd.final.pic.o ~ j ]
+[ $libxlinux_final ] : [ $* ~ lsr sx/c/final.pic.o sy ]
 {
 	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_final ~ fi ]
 }
 
-[ $libxlinux_debug ] : [ $*/xunistd/xunistd.debug.pic.o ~ j ]
+[ $libxlinux_debug ] : [ $* ~ lsr sx/c/debug.pic.o sy ]
 {
 	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_debug ~ fi ]
 }
 
-[ $libxlinux_devel ] : [ $*/xunistd/xunistd.devel.pic.o ~ j ]
+[ $libxlinux_devel ] : [ $* ~ lsr sx/c/devel.pic.o sy ]
 {
 	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_devel ~ fi ]
 }

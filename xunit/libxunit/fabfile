@@ -25,7 +25,7 @@
 $libname 			= [ libxunit.so ]
 $copts				= [ -fPIC [ $dlibxunit ~ lsr c -d s/^/-I ]
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi ~ s/^/-isystem ]
+	[ $dlibxapi ~ s/^/-I ]
 ]
 $cflags_final	= [ $cflags_final $copts ]
 $cflags_debug	= [ $cflags_debug $copts ]
@@ -49,7 +49,9 @@ $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxunit.devel.so ~ j ] ]
 ##
 
 # default NOFILE target - build library and all operators
-[ @all ] : [ $libxunit_final $libxunit_debug $libxunit_devel ]
+[ @final ] : [ $libxunit_final ]
+[ @debug ] : [ $libxunit_debug ]
+[ @devel ] : [ $libxunit_devel ]
 
 ##
 ## formulas

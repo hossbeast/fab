@@ -26,7 +26,7 @@ $libname 			= [ libpstring.so ]
 $soname				= [ $libname ~ j ]
 $copts				= [ -fPIC [ $dlibpstring ~ lsr c -d s/^/-I ]
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dlibxlinux ~ s/^/-isystem ]
+	[ $dlibxapi $dlibxlinux ~ s/^/-I ]
 ]
 $cflags_final = [ $cflags_final $copts ]
 $cflags_debug = [ $cflags_debug $copts ]
@@ -38,16 +38,18 @@ $lflags_debug	= [ $libxapi_debug $lopts $libxlinux_debug [ -Wl,-soname,libpstrin
 $lflags_devel	= [ $libxapi_devel $lopts $libxlinux_devel [ -Wl,-soname,libpstring.devel.so ~ j ] ]
 
 # source files
-+[@std.c]($dext = [ final.pic.o ]; $gendir = $dlibpstring; $rdirs = $dlibpstring; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.pic.o ]; $gendir = $dlibpstring; $rdirs = $dlibpstring; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.pic.o ]; $gendir = $dlibpstring; $rdirs = $dlibpstring; $cc; $cflags = $cflags_devel)
++[@std.c]($dext = [ final.pic.o ]; $rdirs = $dlibpstring; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.pic.o ]; $rdirs = $dlibpstring; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.pic.o ]; $rdirs = $dlibpstring; $cc; $cflags = $cflags_devel)
 
 ##
 ## dependencies
 ##
 
 # default NOFILE target - build library and all operators
-[ @all ] : [ $libpstring_final $libpstring_debug $libpstring_devel ]
+[ @final ] : [ $libpstring_final ]
+[ @debug ] : [ $libpstring_debug ]
+[ @devel ] : [ $libpstring_devel ]
 
 ##
 ## formulas

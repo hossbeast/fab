@@ -27,7 +27,7 @@ $copts = [ -export-dynamic -fno-builtin-log [ $dxunit ~ lsr c -d s/^/-I ]
 	[ ~ ?{ cons{-DBUILDSTAMP="`date`"} ]
 
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dlibxlinux $dlibxunit ~ s/^/-isystem ]
+	[ $dlibxapi $dlibxlinux $dlibxunit ~ s/^/-I ]
 ]
 $lopts = [ -ldl ]
 $rpath = [ 
@@ -48,7 +48,9 @@ $lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libxunit
 +[@std.xapi.errtab]($dext = [ devel.o ]; $gendir = $dxunit; $rdirs = $dxunit; $cc; $cflags = [ $cflags_devel $copts ])
 
 # catchall node
-[ @all ] : [ $xunit_final $xunit_debug $xunit_devel ]
+[ @final ] : [ $xunit_final ]
+[ @debug ] : [ $xunit_debug ]
+[ @devel ] : [ $xunit_devel ]
 
 #
 # formulas

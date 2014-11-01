@@ -30,7 +30,7 @@ $copts = [ -fno-builtin-log [ $dfab ~ lsr c -d s/^/-I ]
 	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
 
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-isystem ]
+	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-I ]
 ]
 
 $cflags_final = [ $cflags_final $copts [ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ] [ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ] ]
@@ -45,25 +45,29 @@ $lflags_debug = [ $lflags_debug $libxapi_debug $libxlinux_debug $libpstring_debu
 $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
 
 # standard files - standard compilation
-+[@std.c]($dext = [ final.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_devel)
++[@std.c]($dext = [ final.o ]; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.o ]; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.o ]; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_devel)
 
-+[@std.l]($dext = [ final.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $flex $flexflags; $cflags = [ $cflags_final $copts])
-+[@std.l]($dext = [ debug.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $flex $flexflags; $cflags = [ $cflags_debug $copts])
-+[@std.l]($dext = [ devel.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $flex $flexflags; $cflags = [ $cflags_devel $copts])
++[@std.l]($dext = [ final.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $flex $flexflags; $cflags = $cflags_final)
++[@std.l]($dext = [ debug.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $flex $flexflags; $cflags = $cflags_debug)
++[@std.l]($dext = [ devel.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $flex $flexflags; $cflags = $cflags_devel)
 
-+[@std.y]($dext = [ final.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $bison $bisonflags; $cflags = [ $cflags_final $copts])
-+[@std.y]($dext = [ debug.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $bison $bisonflags; $cflags = [ $cflags_debug $copts])
-+[@std.y]($dext = [ devel.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $bison $bisonflags; $cflags = [ $cflags_devel $copts])
++[@std.y]($dext = [ final.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $bison $bisonflags; $cflags = $cflags_final)
++[@std.y]($dext = [ debug.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $bison $bisonflags; $cflags = $cflags_debug)
++[@std.y]($dext = [ devel.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $bison $bisonflags; $cflags = $cflags_devel)
 
+#
 # standard files - fPIC compilation
 #  no discovery on these files, because they would then depend on *.pic.o files within fab which
 #  do not exist ; instead those link-time references are satisfied by the fab executable
 #
-+[@std.c]($dext = [ final.pic.o ]; $gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $cc; $cflags = [ $cflags_final $copts -fPIC ])
-+[@std.c]($dext = [ debug.pic.o ]; $gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $cc; $cflags = [ $cflags_debug $copts -fPIC ])
-+[@std.c]($dext = [ devel.pic.o ]; $gendir = $dfab; $rfabdirs = [ $dfab/fablw ~ j ]; $cc; $cflags = [ $cflags_devel $copts -fPIC ])
++[@std.c]($dext = [ final.pic.o ]; $rfabdirs = [ $dfab/fablw ~ j ]; $cc; $cflags = [ $cflags_final -fPIC ]; -$cobjpaths)
+[ $cobjpaths ] : [ $fab_final ]
++[@std.c]($dext = [ debug.pic.o ]; $rfabdirs = [ $dfab/fablw ~ j ]; $cc; $cflags = [ $cflags_debug -fPIC ]; -$cobjpaths)
+[ $cobjpaths ] : [ $fab_debug ]
++[@std.c]($dext = [ devel.pic.o ]; $rfabdirs = [ $dfab/fablw ~ j ]; $cc; $cflags = [ $cflags_devel -fPIC ]; -$cobjpaths)
+[ $cobjpaths ] : [ $fab_devel ]
 
 # generated files
 +[@std.flex.states] ($dext = [ final.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_final)
@@ -84,7 +88,9 @@ $faboplist_devel = [ $dfab/fablw/op ~ j lsr sx/c/devel.so y ]
 #
 # catchall node
 #
-[ @all ] : [ $fab_final $faboplist_final $fab_debug $faboplist_debug $fab_devel $faboplist_devel ]
+[ @final ] : [ $fab_final $faboplist_final ]
+[ @debug ] : [ $fab_debug $faboplist_debug ]
+[ @devel ] : [ $fab_devel $faboplist_devel ]
 
 #
 # executables

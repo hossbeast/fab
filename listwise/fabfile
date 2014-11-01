@@ -27,15 +27,13 @@ $copts = [ -fno-builtin-log [ $dlistwise ~ lsr c -d s/^/-I ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-isystem ]
+	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-I ]
 ]
 $cflags_final = [ $cflags_final $copts ]
 $cflags_debug = [ $cflags_debug $copts ]
 $cflags_devel = [ $cflags_devel $copts ]
 
 $rpath = [ 
-#	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ ?{ s{^}{'-Wl,-rpath,$ORIGIN/} s{$}{'} fi ]
-#	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~  ]
 	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 $lflags_final = [ $lflags_final $lopts $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
@@ -43,29 +41,24 @@ $lflags_debug = [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libpstri
 $lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
 
 # c files
-+[@std.c]($dext = [ final.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_devel)
++[@std.c]($dext = [ final.o ]; $rdirs = $dlistwise; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.o ]; $rdirs = $dlistwise; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.o ]; $rdirs = $dlistwise; $cc; $cflags = $cflags_devel)
 
 # errtab
-+[@std.xapi.errtab]($dext = [ final.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_final)
-+[@std.xapi.errtab]($dext = [ debug.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_debug)
-+[@std.xapi.errtab]($dext = [ devel.o ]; $gendir = $dlistwise; $rdirs = $dlistwise; $cc; $cflags = $cflags_devel)
++[@std.xapi.errtab]($dext = [ final.o ]; $rdirs = $dlistwise; $cc; $cflags = $cflags_final)
++[@std.xapi.errtab]($dext = [ debug.o ]; $rdirs = $dlistwise; $cc; $cflags = $cflags_debug)
++[@std.xapi.errtab]($dext = [ devel.o ]; $rdirs = $dlistwise; $cc; $cflags = $cflags_devel)
 
 # tests
-[ @all ] : [ $listwise_final $listwise_debug $listwise_devel ]
-
-[ @rpath ]
-{
-	echo [ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
-}
+[ @all ] : [ @final @debug @devel ]
+[ @final ] : [ $listwise_final ]
+[ @debug ] : [ $listwise_debug ]
+[ @devel ] : [ $listwise_devel ]
 
 #
 # formulas
 #
-# [ $listwise_final ] :^ [ $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
-# [ $listwise_debug ] :^ [ $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
-# [ $listwise_devel ] :^ [ $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel ]
 
 [ $listwise_final ] : [ $dlistwise/main.final.o ~ j ]
 {

@@ -26,5 +26,5 @@ $gccdep		= [ $dutil/gcc-dep ~ j ]
 
 [ @install ] : [ $gccdep ]
 {
-	install [ $@ ]												[ $destdir/$bindir ]
+	install [ $@ ] [ $destdir/$bindir ]
 }

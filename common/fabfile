@@ -20,15 +20,15 @@ once {
 
 	$copts = [
 		# include paths - mark as system to preclude dependency discovery from gcc
-		[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-isystem ]
+		[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-I ]
 	]
 
 	# c files
-	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ final.o ]; $cflags = [ $cflags_final $copts ])
-	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ debug.o ]; $cflags = [ $cflags_debug $copts ])
-	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ devel.o ]; $cflags = [ $cflags_devel $copts ])
+	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ final.o ]; $cflags = [ $cflags_final $copts ])
+	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ debug.o ]; $cflags = [ $cflags_debug $copts ])
+	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ devel.o ]; $cflags = [ $cflags_devel $copts ])
 
-	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ final.pic.o ]; $cflags = [ $cflags_final $copts -fPIC ])
-	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ debug.pic.o ]; $cflags = [ $cflags_debug $copts -fPIC ])
-	+[@std.c]($gendir = $dcommon; $rdirs = $dcommon; $cc; $dext = [ devel.pic.o ]; $cflags = [ $cflags_devel $copts -fPIC ])
+	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ final.pic.o ]; $cflags = [ $cflags_final $copts -fPIC ])
+	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ debug.pic.o ]; $cflags = [ $cflags_debug $copts -fPIC ])
+	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ devel.pic.o ]; $cflags = [ $cflags_devel $copts -fPIC ])
 }

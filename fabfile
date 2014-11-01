@@ -19,28 +19,21 @@
 +[ $*/vars.fab ]
 
 # source invocations
-+[ $dcommon ]()																																	@common
-+[ $dlibxapi ]()	@libxapi
-+[ $dlibxlinux ]()	@libxlinux
-+[ $dlibpstring ]()	@libpstring
++[ $dcommon ]()				@common
++[ $dlibxapi ]()			@libxapi
++[ $dlibxlinux ]()		@libxlinux
++[ $dlibpstring ]()		@libpstring
 +[ $dliblistwise ]()	@liblistwise
-+[ $dlistwise ]() @listwise
-+[ $dfab ]() @fab
-+[ $dxunit ]() @xunit
-+[ $dlibxunit ]()	@libxunit
-+[ $dutil ]()	@util
++[ $dlistwise ]() 		@listwise
++[ $dfab ]() 					@fab
++[ $dxunit ]() 				@xunit
++[ $dlibxunit ]()			@libxunit
++[ $dutil ]()					@util
 
 # default target - make everything
-[ @all ] 				: [ @libxapi.all @libxlinux.all @libpstring.all @liblistwise.all @listwise.all @fab.all @util.all ]
-
-# inter-module dependencies
-[ $libxlinux ]	 :^ [ $libxapi ]
-[ $libpstring ]  :^ [ $libxapi $libxlinux ]
-[ $liblistwise ] :^ [ $libxapi $libxlinux $libpstring ]
-[ $listwise ]		 :^ [ $libxapi $libxlinux $libpstring $liblistwise ]
-[ $fab ]				 :^ [ $libxapi $libxlinux $libpstring $liblistwise ]
-[ $faboplist ]	 :^ [ $libxapi $libxlinux $libpstring $liblistwise ]
-[ $xunit ]			 :^ [ $libxapi $libxlinux                          $libxunit ]
+[ @final ] : [ @libxapi.final @libxlinux.final @libpstring.final @liblistwise.final @listwise.final @fab.final @util.final ]
+[ @debug ] : [ @libxapi.debug @libxlinux.debug @libpstring.debug @liblistwise.debug @listwise.debug @fab.debug @util.debug ]
+[ @devel ] : [ @libxapi.devel @libxlinux.devel @libpstring.devel @liblistwise.devel @listwise.devel @fab.devel @util.devel ]
 
 # supertasks
 [ @install ]		: [ @libxapi.install @libxlinux.install @libpstring.install @liblistwise.install @listwise.install @fab.install @util.install ]

@@ -54,7 +54,7 @@ typedef struct
 
 		uint8_t	feedsl;
 		char		fbase[256];
-		char		feeds[128][256];
+		char		feeds[256][256];
 	} sets[16];
 } dep_relations;
 
