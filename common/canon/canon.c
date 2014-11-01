@@ -28,6 +28,7 @@
 #include "xlinux.h"
 
 #include "canon.h"
+#include "strutil.h"
 
 //
 // static
@@ -390,7 +391,7 @@ int rebase(
 		while((i + y) < basel && base[i + y] != '/')
 			y++;
 
-		if(y)
+		if(y && estrcmp(base + i, y - i, ".", 1, 0))
 		{
 			if(i != x)
 				(*z) += snprintf(dst + (*z), siz - (*z), "/");

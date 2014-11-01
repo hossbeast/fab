@@ -35,7 +35,7 @@
 // B    - second string
 // blen - length of B, or 0 if length of B == strlen(B)
 //
-int estrcmp(char* A, int alen, char* B, int blen, int case_insensitive);
+int estrcmp(const char* A, int alen, const char* B, int blen, int case_insensitive);
 
 /// estrstr
 //

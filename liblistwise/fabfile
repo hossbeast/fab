@@ -130,8 +130,12 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 
 [ $liblistwise_devel ] : [ $*/exec/exec.devel.pic.o ~ j ]
 {
-	[ $cc ] [ $cflags_devel $copts_inc ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_devel ~ fi ]
+	[ [ $cc ] [ $cflags_devel $copts_inc ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_devel ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
+
+[ $liblistwise_final ] :^ [ $libxapi_final $libxlinux_final $libpstring_final ]
+[ $liblistwise_debug ] :^ [ $libxapi_debug $libxlinux_debug $libpstring_debug ]
+[ $liblistwise_devel ] :^ [ $libxapi_devel $libxlinux_devel $libpstring_devel ]
 
 # link an operator so - which depends on its own .o
 [ $oplist_final ~ dj shift ] :: [ $< ~ rx sxf/final.pic.o ]

@@ -79,6 +79,10 @@ $lflags_devel	= [ $libxapi_devel $lopts $libxlinux_devel [ -Wl,-soname,libpstrin
 	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_devel ~ fi ]
 }
 
+[ $libpstring_final ] :^ [ $libxapi_final $libxlinux_final ]
+[ $libpstring_debug ] :^ [ $libxapi_debug $libxlinux_debug ]
+[ $libpstring_devel ] :^ [ $libxapi_devel $libxlinux_devel ]
+
 ##
 ## tasks
 ##

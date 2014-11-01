@@ -102,11 +102,11 @@ $fabcachedir						= [ /var/cache/fab ]			# fab cache
 $fabtmpdir							= [ /var/tmp/fab ]				# fab tmp
 $fabipcdir							= [ /var/run/fab ]				# fab shm/ipc files
 $lwopdir								= [ $dlibdir/listwise ~ j ]
-$lwopdir_devel					= [ $dliblistwise/op ~ j ]
+$lwopdir_devel					= [ $dliblistwise/op ~ j can ]
 $lwopext								= [ so ]
 $lwopext_devel					= [ devel.so ]
 $fablwopdir							= [ $dlibdir/fab/lib ~ j ]
-$fablwopdir_devel				= [ $dfab/fablw/op ~ j ]
+$fablwopdir_devel				= [ $dfab/fablw/op ~ j can ]
 $fabinvokedir						= [ $dlibdir/fab/listwise ~ j ]
 $fabinvokedir_devel			= [ $dfab/fablib ~ j ]
 

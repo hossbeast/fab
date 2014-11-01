@@ -57,7 +57,8 @@ struct listwise_logging
 	void * 									states_token;
 	listwise_logging_would	states_would;
 	listwise_logging_log		states_log;
-
+#endif
+#if SANITY
 	// listwise sanity checks
 	void * 									sanity_token;
 	listwise_logging_would	sanity_would;

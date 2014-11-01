@@ -24,7 +24,7 @@
 
 #include "wstdlib.h"
 
-int estrcmp(char* A, int alen, char* B, int blen, int case_insensitive)
+int estrcmp(const char* A, int alen, const char* B, int blen, int case_insensitive)
 {
 	if(!alen)
 		alen = strlen(A);

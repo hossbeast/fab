@@ -16,8 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # definitions
-$dcommon = [ $*/../common ~ j ]
-+[ $dcommon/vars.fab ]
++[ $*/../vars.fab ]
 
 $gccdep		= [ $dutil/gcc-dep ~ j ]
 

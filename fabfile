@@ -20,15 +20,15 @@
 
 # source invocations
 +[ $dcommon ]()																																	@common
-+[ $dlibxapi ](-$libxapi)																												@libxapi
-+[ $dlibxlinux ](-$libxlinux;     $libxapi)																			@libxlinux
-+[ $dlibpstring ](-$libpstring; 	$libxapi $libxlinux)													@libpstring
-+[ $dliblistwise ](-$liblistwise; $libxapi $libxlinux $libpstring)							@liblistwise
-+[ $dlistwise ](-$listwise;       $libxapi $libxlinux $libpstring $liblistwise)	@listwise
-+[ $dfab ](-$fab; -$faboplist;    $libxapi $libxlinux $libpstring $liblistwise)	@fab
-+[ $dxunit ](-$xunit;             $libxapi $libxlinux                          $libxunit)	@xunit
-+[ $dlibxunit ](-$libxunit;       $libxapi)																			@libxunit
-+[ $dutil ]()																																		@util
++[ $dlibxapi ]()	@libxapi
++[ $dlibxlinux ]()	@libxlinux
++[ $dlibpstring ]()	@libpstring
++[ $dliblistwise ]()	@liblistwise
++[ $dlistwise ]() @listwise
++[ $dfab ]() @fab
++[ $dxunit ]() @xunit
++[ $dlibxunit ]()	@libxunit
++[ $dutil ]()	@util
 
 # default target - make everything
 [ @all ] 				: [ @libxapi.all @libxlinux.all @libpstring.all @liblistwise.all @listwise.all @fab.all @util.all ]

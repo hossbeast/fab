@@ -63,6 +63,7 @@ operator op_desc[] = {
 
 static int append(lwx * lx, int x, char * s, int l)
 {
+/*
 	int i;
 	for(i = 0; i < l; i++)
 	{
@@ -99,6 +100,9 @@ static int append(lwx * lx, int x, char * s, int l)
 			fatal(lstack_catw, lx, 0, x, s + i, 1);
 		}
 	}
+*/
+
+	fatal(lstack_catw, lx, 0, x, s, l);
 
 	finally : coda;
 }
