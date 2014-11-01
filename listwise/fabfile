@@ -34,7 +34,9 @@ $cflags_debug = [ $cflags_debug $copts ]
 $cflags_devel = [ $cflags_devel $copts ]
 
 $rpath = [ 
-	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ ?{ s{^}{'-Wl,-rpath,$ORIGIN/} s{$}{'} ]
+#	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ ?{ s{^}{'-Wl,-rpath,$ORIGIN/} s{$}{'} fi ]
+#	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~  ]
+	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 $lflags_final = [ $lflags_final $lopts $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
 $lflags_debug = [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
@@ -52,6 +54,11 @@ $lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstri
 
 # tests
 [ @all ] : [ $listwise_final $listwise_debug $listwise_devel ]
+
+[ @rpath ]
+{
+	echo [ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+}
 
 #
 # formulas
@@ -74,6 +81,10 @@ $lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstri
 {
 	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_devel ~ fi ]
 }
+
+[ $listwise_final ] :^ [ $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
+[ $listwise_debug ] :^ [ $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
+[ $listwise_devel ] :^ [ $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel ]
 
 #
 # tasks

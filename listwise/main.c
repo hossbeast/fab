@@ -147,6 +147,8 @@ static struct listwise_logging * logging = (struct listwise_logging[]) {{
 	, .states_token			= (uint64_t[]) { L_LWSTATE }
 	, .states_would			= listwise_would
 	, .states_log				= listwise_log
+#endif
+#if SANITY
 	, .sanity_token			= (uint64_t[]) { L_LWSANITY }
 	, .sanity_would			= listwise_would
 	, .sanity_log				= listwise_log
@@ -243,6 +245,9 @@ int main(int g_argc, char** g_argv)
 		}
 		else if(g_args.inputs[x].kind == KIND_TRANSFORM_FILE)
 		{
+			if(transform && transform->l)
+				fatal(pscats, &transform, " ");
+			
 			fatal(snarf, g_args.inputs[x].s, &transform);
 		}
 		else if(g_args.inputs[x].kind == KIND_INPUT_FILE)
@@ -258,13 +263,21 @@ int main(int g_argc, char** g_argv)
 				while(s[1][dl] == '\n' && temp->l > ((s[1] - ((char*)temp->s)) + dl))
 					dl++;
 
-				if(dl > 2)
-					break;
-
 				if(s[1] - s[0])
-					fatal(pscatw, &transform, s[0], s[1] - s[0]);
+				{
+					if(s[0] != temp->s || (s[1] - s[0]) <= 2 || memcmp(s[0], "#!", 2))
+					{
+						if(transform && transform->l)
+							fatal(pscats, &transform, " ");
+
+						fatal(pscatw, &transform, s[0], s[1] - s[0]);
+					}
+				}
 
 				s[0] = s[1] + 1;
+
+				if(dl > 2)
+					break;
 			}
 
 			// read init-list-items
@@ -281,7 +294,12 @@ int main(int g_argc, char** g_argv)
 
 	// append transform-string from argv
 	if(args_remnant && args_remnant->l)
+	{
+		if(transform && transform->l)
+			fatal(pscats, &transform, " ");
+
 		fatal(pscatw, &transform, args_remnant->s, args_remnant->l);
+	}
 
 	if(transform)
 	{

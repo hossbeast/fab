@@ -29,6 +29,8 @@ struct g_logs_t logs[] = {
 #if DEVEL
 	, { .v = L_LWTOKEN	, .s = "LWTOKEN"	, .d = "generator parsing - token stream" }
 	, { .v = L_LWSTATE	, .s = "LWSTATE"	, .d = "generator parsing - lexer states" }
+#endif
+#if SANITY
 	, { .v = L_LWSANITY	, .s = "LWSANITY"	, .d = "liblistwise sanity checks" }
 #endif
 };

@@ -30,6 +30,8 @@
 #if DEVEL
 # define L_LWTOKEN			0x0000000000000010ULL		/* scanner token stream */
 # define L_LWSTATE			0x0000000000000020ULL		/* scanner state changes */
+#endif
+#if SANITY
 # define L_LWSANITY			0x0000000000000040ULL
 #endif
 

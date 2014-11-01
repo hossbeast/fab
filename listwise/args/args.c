@@ -205,7 +205,10 @@ int args_parse(pstring ** remnant)
 		  { "help"												, no_argument				, &help, 1 } 
 		, { "version"											, no_argument				, &version, 1 } 
 		, { "logcats"											, no_argument				, &logcats, 1 } 
+		, { "logs"												, no_argument				, &logcats, 1 } 
 		, { "operators"										, no_argument				, &operators, 1 } 
+		, { "oplist"											, no_argument				, &operators, 1 } 
+		, { "ops"													, no_argument				, &operators, 1 } 
 		, { "o"														, required_argument	, 0, 0 }
 		, { "o1"													, no_argument				, 0, 0 }
 		, { "o2"													, no_argument				, 0, 0 }
