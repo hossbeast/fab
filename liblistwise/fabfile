@@ -36,7 +36,7 @@ $cflags_devel	= [ $cflags_devel $copts [ -DLWOPDIR=$lwopdir_devel ~ j ] [ -DLWOP
 $lopts				= [ -lpcre -ldl -shared [ -Wl,--version-script=$*/exports ~ j ] ]
 $lflags_final	= [ $lflags_final $lopts $libxapi_final $libxlinux_final $libpstring_final [ -Wl,-soname,liblistwise.so ~ j ] ]
 $lflags_debug	= [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libpstring_debug [ -Wl,-soname,liblistwise.debug.so ~ j ] ]
-$lflags_devel	= [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstring_devel $libxunit_devel [ -Wl,-soname,liblistwise.devel.so ~ j ] ]
+$lflags_devel	= [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstring_devel [ -Wl,-soname,liblistwise.devel.so ~ j ] ]
 
 # source files
 +[@std.c]($dext = [ final.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise ~ ls m/op$ v ]; $cc; $cflags = [ $cflags_final ])
@@ -122,17 +122,17 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 }
 
 # link the library
-[ $liblistwise_final ] : [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/final.pic.o sy ]
+[ $liblistwise_final ] : [ [ $*/exports ~ j ] [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/final.pic.o sy ] ]
 {
 	[ [ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_final ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
 
-[ $liblistwise_debug ] : [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/debug.pic.o sy ]
+[ $liblistwise_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/debug.pic.o sy ] ]
 {
 	[ [ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_debug ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
 
-[ $liblistwise_devel ] : [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/devel.pic.o sy ]
+[ $liblistwise_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/devel.pic.o sy ] ]
 {
 	[ [ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_devel ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
