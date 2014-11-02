@@ -47,7 +47,7 @@ $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_deve
 # standard files - standard compilation
 +[@std.c]($dext = [ final.o ]; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_final)
 +[@std.c]($dext = [ debug.o ]; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.o ]; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_devel)
++[@std.c]($dext = [ devel.o ]; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_devel; $gccdep = [ $gccdep_devel ~ [ rb ~ $* ] ])
 
 +[@std.l]($dext = [ final.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $flex $flexflags; $cflags = $cflags_final)
 +[@std.l]($dext = [ debug.o ]; $gendir = $dfab; $rdirs = [ $dfab ~ ls -d v d m/fablw d ]; $cc $flex $flexflags; $cflags = $cflags_debug)

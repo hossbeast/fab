@@ -39,6 +39,8 @@
 #  fabpaths   - 
 #
 
+$gccdep = [ gcc-dep ]
+
 # default object file extension
 $dext = [ o ]
 
@@ -79,7 +81,7 @@ $yfabpaths = [
 {
 	    [ $bison ] [ $bisonflags ~ uu fi ] -o /dev/stdout [ $@ ] [
 	] | [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
-	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx [ sx/y/tab.$dext ~ j ] y fi ~ fi ] ] [ $dext ]
+	] | [ $gccdep ] '[ $gendir ]' [ $@ ~ [ rx [ sx/y/tab.$dext ~ j ] y fi ~ fi ] ] [ $dext ]
 }
 
 # $bison : y -> { tab.c, tab.h }
