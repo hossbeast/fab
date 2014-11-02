@@ -62,12 +62,12 @@ $lflags_devel	= [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstri
 +[@std.xapi.errtab] ($dext = [ devel.pic.o ]; $gendir = $dliblistwise; $rdirs = $dliblistwise; $cc; $cflags = [ $cflags_devel ]; $fabpaths = [ $dliblistwise/error/PCRE.errtab ~ j ]; $apidata = [1])
 
 # path to each operator so
-+[@std.c]($dext = [ final.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rfabdirs = [ $dliblistwise/op ~ j ]; $cc; $cflags = $cflags_final; -$cobjpaths)
-[ $cobjpaths ] : [ $liblistwise_final ]
-+[@std.c]($dext = [ debug.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rfabdirs = [ $dliblistwise/op ~ j ]; $cc; $cflags = $cflags_debug; -$cobjpaths)
-[ $cobjpaths ] : [ $liblistwise_debug ]
-+[@std.c]($dext = [ devel.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rfabdirs = [ $dliblistwise/op ~ j ]; $cc; $cflags = $cflags_devel; -$cobjpaths)
-[ $cobjpaths ] : [ $liblistwise_devel ]
++[@std.c]($dext = [ final.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise/op ~ j ]; $cc; $cflags = $cflags_final; -$cobjpaths)
+[ $cobjpaths ] :^ [ $liblistwise_final ]
++[@std.c]($dext = [ debug.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise/op ~ j ]; $cc; $cflags = $cflags_debug; -$cobjpaths)
+[ $cobjpaths ] :^ [ $liblistwise_debug ]
++[@std.c]($dext = [ devel.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise/op ~ j ]; $cc; $cflags = $cflags_devel; -$cobjpaths)
+[ $cobjpaths ] :^ [ $liblistwise_devel ]
 
 $oplist_final = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,final.so sy ]
 $oplist_debug = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,debug.so sy ]
@@ -91,8 +91,6 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 {
 	[ $xunit_devel ] +XUNIT,INPUT,OUTPUT [ $liblistwise_devel $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
 }
-
-#	[ $xunit_devel ] +XUNIT,INPUT,OUTPUT [ $liblistwise_devel $listwise_test $tobjpaths ~ fi ] 1>&501 2>&502
 
 # test helper
 [ $listwise_test ] : [ [ $*/listwise_test/listwise_test.devel.pic.o ~ j ] $liblistwise_devel ]
@@ -131,10 +129,10 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 
 [ $liblistwise_debug ] : [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/debug.pic.o sy ]
 {
-	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_debug ~ fi ]
+	[ [ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_debug ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
 
-[ $liblistwise_devel ] : [ $* ~ ls m/op$ v lsr sx/c/devel.pic.o sy ]
+[ $liblistwise_devel ] : [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/devel.pic.o sy ]
 {
 	[ [ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_devel ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
@@ -146,17 +144,17 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 # link an operator so - which depends on its own .o
 [ $oplist_final ~ dj shift ] :: [ $< ~ rx sxf/final.pic.o ]
 {
-	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $liblistwise_final ] -shared
+	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o l/common o l/op uu fi ] [ $liblistwise_final ] -shared
 }
 
 [ $oplist_debug ~ dj shift ] :: [ $< ~ rx sxf/debug.pic.o ]
 {
-	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $liblistwise_debug ] -shared
+	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o l/common o l/op uu fi ] [ $liblistwise_debug ] -shared
 }
 
 [ $oplist_devel ~ dj shift ] :: [ $< ~ rx sxf/devel.pic.o ]
 {
-	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $liblistwise_devel ] -shared
+	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o l/common o l/op uu fi ] [ $liblistwise_devel ] -shared
 }
 
 # operators also depend on the library for linking

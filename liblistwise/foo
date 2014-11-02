@@ -1,0 +1,37 @@
+#!/bin/bash
+
+for x in ../common/coll/coll.devel.pic.o \
+../common/map/map.devel.pic.o \
+error/LW.errtab.devel.pic.o \
+error/PCRE.errtab.devel.pic.o \
+re/re.devel.pic.o \
+object/object.devel.pic.o \
+../common/wstdlib/wstdlib.devel.pic.o \
+lwx/lwx.devel.pic.o \
+lstack/lstack.devel.pic.o \
+logging/logging.devel.pic.o \
+iterate/iterate.devel.pic.o \
+generator/generator.states.devel.pic.o \
+generator/genscan.devel.pic.o \
+describe/describe.devel.pic.o \
+sanity/sanity.devel.pic.o \
+exec/exec.devel.pic.o \
+error/error.devel.pic.o \
+../common/strutil/strutil.devel.pic.o \
+../common/canon/canon.devel.pic.o \
+../common/parseint/parseint.devel.pic.o \
+../common/color/color.devel.pic.o \
+fs/fs.devel.pic.o \
+selection/selection.devel.pic.o \
+operators/operators.devel.pic.o \
+operator/operator.devel.pic.o \
+../common/logger/logger.devel.pic.o \
+listwise_test/listwise_test.devel.pic.o \
+generator/generator.lex.devel.pic.o \
+../common/yyutil/yyutil.devel.pic.o \
+generator/generator.tab.devel.pic.o \
+generator/generator.tokens.devel.pic.o \
+generator/generator.devel.pic.o \
+window/window.devel.pic.o \
+tune/tune.devel.pic.o \
+ ; do echo $x ; readelf -as $x | grep XUNIT ; done
