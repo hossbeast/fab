@@ -40,7 +40,7 @@
 #
 
 # default object file extensions
-$ext = [ o ]
+$dext = [ o ]
 
 # paths to l files for discovery
 $ldscpaths = [
@@ -79,11 +79,11 @@ $lfabpaths = [
 {
 		  [ $flex ] [ $flexflags ~ uu fi ] -t [ $@ ] [
 	] | [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
-	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx [ sx/l/lex.$ext ~ j ] y fi ~ fi ] ] [ $ext ]
+	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx [ sx/l/lex.$dext ~ j ] y fi ~ fi ] ] [ $dext ]
 }
 
 # $flex : l -> { lex.c, lex.h }
-[ $lfabpaths ~ sx/l/lex.c y v d cp u sx/lex.c/lex.h z dj/2 shift pop ] :: [ $< ~ rx sx/lex.c/l sx/lex.h/l ss u ]
+[ $lfabpaths ~ sx/l/lex.c sy uu v d cp u sx/lex.c/lex.h z dj/2 shift pop ] :: [ $< ~ rx sx/lex.c/l sx/lex.h/l ss u ]
 {
 	  [ $flex ] [ $flexflags ~ uu fi ] -o [ $@ ~ w/1/1 ] [
 	] [ --header-file= [ $@ ~ w/0/1 ] ] [

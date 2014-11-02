@@ -72,6 +72,8 @@ for (map { chomp ; $_ } <STDIN>)
 	{
 		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
 	
+		$line = "${line}h";
+
 		# for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
 		if(! -r $line && $gen)
 		{
@@ -79,8 +81,6 @@ for (map { chomp ; $_ } <STDIN>)
 		}
 	
 #		print WRIN "$line\n";
-
-	$line = "${line}h";
 
 	push @S, $line;				# strong dependency on the header
 

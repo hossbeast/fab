@@ -68,17 +68,17 @@ $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
 }
 
 # link the library
-[ $libxlinux_final ] : [ $* ~ lsr sx/c/final.pic.o sy ]
+[ $libxlinux_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/final.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_final ~ fi ]
 }
 
-[ $libxlinux_debug ] : [ $* ~ lsr sx/c/debug.pic.o sy ]
+[ $libxlinux_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/debug.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_debug ~ fi ]
 }
 
-[ $libxlinux_devel ] : [ $* ~ lsr sx/c/devel.pic.o sy ]
+[ $libxlinux_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/devel.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_devel ~ fi ]
 }

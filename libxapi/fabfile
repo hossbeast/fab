@@ -70,7 +70,7 @@ $lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
 +[@std.xapi.errtab]($dext = [ devel.pic.o ]; $gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_devel)
 
 # library exports
-[ $dlibxapi/exports ~ j ] : [ $* ~ lsr lx/c ]
+[ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
 	  (echo "{ global: "
 	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
@@ -81,17 +81,17 @@ $lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
 }
 
 # link the library
-[ $libxapi_final ] : [ $* ~ lsr sx/c/final.pic.o sy ]
+[ $libxapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/final.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_final ~ fi ] 
 }
 
-[ $libxapi_debug ] : [ $* ~ lsr sx/c/debug.pic.o sy ]
+[ $libxapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/debug.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_debug ~ fi ]
 }
 
-[ $libxapi_devel ] : [ $* ~ lsr sx/c/devel.pic.o sy ]
+[ $libxapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/devel.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_devel ~ fi ]
 }

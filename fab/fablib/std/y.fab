@@ -17,8 +17,8 @@
 
 # @std.y
 #  provides discovery formula for .y files
-#  provides fabrication formula for .tab.c -> .tab.<ext>
-#  provides dependencies for tab.<ext> -> .y
+#  provides fabrication formula for .tab.c -> .tab.<dext>
+#  provides dependencies for tab.<dext> -> .y
 
 # var/closure
 #  cc
@@ -40,7 +40,7 @@
 #
 
 # default object file extension
-$ext = [ o ]
+$dext = [ o ]
 
 # paths to y files for discovery
 $ydscpaths = [
@@ -79,11 +79,11 @@ $yfabpaths = [
 {
 	    [ $bison ] [ $bisonflags ~ uu fi ] -o /dev/stdout [ $@ ] [
 	] | [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
-	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx [ sx/y/tab.$ext ~ j ] y fi ~ fi ] ] [ $ext ]
+	] | gcc-dep '[ $gendir ]' [ $@ ~ [ rx [ sx/y/tab.$dext ~ j ] y fi ~ fi ] ] [ $dext ]
 }
 
 # $bison : y -> { tab.c, tab.h }
-[ $yfabpaths ~ sx/y/tab.c y v d cp u sx/tab.c/tab.h z dj/2 shift pop ] :: [ $< ~ rx sx/tab.c/y sx/tab.h/y ss u ]
+[ $yfabpaths ~ sx/y/tab.c sy uu v d cp u sx/tab.c/tab.h z dj/2 shift pop ] :: [ $< ~ rx sx/tab.c/y sx/tab.h/y ss u ]
 {
 	[ $bison ] [ $bisonflags ~ uu fi ] -o [ $@ ~ w/1/1 ] -d	[ $@ ~ rx/ineed lx/y uu ]
 }

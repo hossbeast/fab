@@ -66,17 +66,17 @@ $lflags_devel	= [ $libxapi_devel $lopts $libxlinux_devel [ -Wl,-soname,libpstrin
 }
 
 # link the library
-[ $libpstring_final ] : [ $*/pstring/pstring.final.pic.o ~ j ]
+[ $libpstring_final ] : [ [ $*/exports ~ j ] [ $*/pstring/pstring.final.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_final ~ fi ]
 }
 
-[ $libpstring_debug ] : [ $*/pstring/pstring.debug.pic.o ~ j ]
+[ $libpstring_debug ] : [ [ $*/exports ~ j ] [ $*/pstring/pstring.debug.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_debug ~ fi ]
 }
 
-[ $libpstring_devel ] : [ $*/pstring/pstring.devel.pic.o ~ j ]
+[ $libpstring_devel ] : [ [ $*/exports ~ j ] [ $*/pstring/pstring.devel.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_devel ~ fi ]
 }

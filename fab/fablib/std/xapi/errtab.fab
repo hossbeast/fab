@@ -48,7 +48,7 @@ $errtabpaths = [
 ~ lx/errtab ]
 
 # errtab -> { .errtab.c, .errtab.h }
-[ $errtabpaths ~ sx/errtab/errtab.c y v d cp u sx/errtab.c/errtab.h z dj/2 shift pop ] :: [ $< ~ rx sx/errtab.c/errtab sx/errtab.h/errtab ss u ]
+[ $errtabpaths ~ sx/errtab/errtab.c sy uu v d cp u sx/errtab.c/errtab.h z dj/2 shift pop ] :: [ $< ~ rx sx/errtab.c/errtab sx/errtab.h/errtab ss u ]
 {
 	hfl=[ $@ ~ lx/h ]
 	hin=[ $@ ~ lx/h rx bn ]
