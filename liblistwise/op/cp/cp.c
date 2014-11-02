@@ -18,7 +18,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
+#include "listwise/object.h"
 
 #include "xlinux.h"
 

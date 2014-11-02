@@ -115,11 +115,27 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 			{
 				if(strcmp(list->elements[x]->name->text->s, "fab") == 0)
 				{
-					fatal(lstack_adds, (*stax)[pn], "/home/todd/fab/fab/fab");
+#if DEVEL
+					fatal(lstack_adds, (*stax)[pn], XQUOTE(BUILDROOT) "/fab/fab.devel");
+#else
+					fatal(lstack_adds, (*stax)[pn], "fab");
+#endif
 				}
-				else if(strcmp(list->elements[x]->name->text->s, "lw") == 0 || strcmp(list->elements[x]->name->text->s, "listwise"))
+				else if(strcmp(list->elements[x]->name->text->s, "lw") == 0 || strcmp(list->elements[x]->name->text->s, "listwise") == 0)
 				{
-					fatal(lstack_adds, (*stax)[pn], "/home/todd/fab/listwise/listwise");
+#if DEVEL
+					fatal(lstack_adds, (*stax)[pn], XQUOTE(BUILDROOT) "/listwise/listwise.devel");
+#else
+					fatal(lstack_adds, (*stax)[pn], "listwise");
+#endif
+				}
+				else if(strcmp(list->elements[x]->name->text->s, "gccdep") == 0)
+				{
+#if DEVEL
+					fatal(lstack_adds, (*stax)[pn], XQUOTE(BUILDROOT) "/util/gcc-dep");
+#else
+					fatal(lstack_adds, (*stax)[pn], "gcc-dep");
+#endif
 				}
 			}
 			else

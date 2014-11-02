@@ -19,7 +19,8 @@
 #include <string.h>
 #include <alloca.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
+#include "listwise/re.h"
 
 /*
 

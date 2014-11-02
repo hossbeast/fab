@@ -39,8 +39,6 @@
 #  fabpaths   - 
 #
 
-$gccdep = [ gcc-dep ]
-
 # default object file extensions
 $dext = [ o ]
 
@@ -81,7 +79,7 @@ $lfabpaths = [
 {
 		  [ $flex ] [ $flexflags ~ uu fi ] -t [ $@ ] [
 	] | [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
-	] | [ $gccdep ] '[ $gendir ]' [ $@ ~ [ rx [ sx/l/lex.$dext ~ j ] y fi ~ fi ] ] [ $dext ]
+	] | [ $^gccdep ] '[ $gendir ]' [ $@ ~ [ rx [ sx/l/lex.$dext ~ j ] y fi ~ fi ] ] [ $dext ]
 }
 
 # $flex : l -> { lex.c, lex.h }

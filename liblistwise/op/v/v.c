@@ -22,7 +22,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
 
 /*
 

@@ -39,8 +39,6 @@
 #  dext       - file extension for object files resulting from fabrication
 #  gendir    - parameter to gcc-dep, directory path for the location of generated files
 
-$gccdep = [ gcc-dep ]
-
 # default source file extension
 $sext = [ c ]
 
@@ -97,7 +95,7 @@ $cobjpaths = [ $cfabpaths ~ [ sx/$sext/$dext ] ]
 #
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG [ $@ ] | [ $gccdep ] '[ $gendir ]' [ $@ ~ [ rx [ sx/$sext/$dext ~ j ] ~ fi ] ] [ $dscext ]
+	[ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG [ $@ ] | [ $^gccdep ] '[ $gendir ]' [ $@ ~ [ rx [ sx/$sext/$dext ~ j ] ~ fi ] ] [ $dscext ]
 }
 
 # fabrication and dependency

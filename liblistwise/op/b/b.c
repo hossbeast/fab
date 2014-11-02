@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
 
 #include "macros.h"
 #include "xlinux.h"

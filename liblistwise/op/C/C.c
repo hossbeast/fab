@@ -23,7 +23,7 @@
 #include <dirent.h>
 #include <inttypes.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
 
 /*
 

@@ -38,6 +38,9 @@
 # supertasks
 [ @install ]		: [ @libxapi.install @libxlinux.install @libpstring.install @liblistwise.install @listwise.install @fab.install @util.install ]
 
+[ @test ] : [ @xunit.devel @libxunit.devel ]
+[ @test ] : [ @liblistwise.test ]
+
 # create scripts
 [ @scripts ]
 {

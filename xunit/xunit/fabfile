@@ -31,7 +31,7 @@ $copts = [ -export-dynamic -fno-builtin-log [ $dxunit ~ lsr c -d s/^/-I ]
 ]
 $lopts = [ -ldl ]
 $rpath = [ 
-	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ ?{ s{^}{'-Wl,-rpath,$ORIGIN/} s{$}{'} ]
+	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 $lflags_final = [ $lflags_final $lopts $libxapi_final $libxlinux_final $libxunit_final ]
 $lflags_debug = [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libxunit_debug ]

@@ -35,8 +35,6 @@
 #  rfabdirs   - 
 #  fabpaths   - 
 
-$gccdep = [ gcc-dep ]
-
 # paths to source files
 $primarypaths = [
 	$paths				# paths
@@ -64,7 +62,7 @@ $secondarypaths = [ $primarypaths ~ [ "s/(.y.header)|(.y.rules.[0-9]+)$/.y" ss u
 	] [ $@ ~ rx sx/y.header/y.rules.3 ] [
 	] [ $@ ~ rx sx/y.header/y.rules.4 ] [
   ])| [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
-  ] | [ $gccdep ] '[ $gendir ]' [ $@ ~ [ [ sx/y/tab.$ext ~ j ] y ~ fi ] ] [ $ext ]
+  ] | [ $^gccdep ] '[ $gendir ]' [ $@ ~ [ [ sx/y/tab.$ext ~ j ] y ~ fi ] ] [ $ext ]
 }
 
 # { .y.header, .y.rules.[0-9] } -> { .y }

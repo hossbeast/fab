@@ -27,7 +27,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
+#include "listwise/fs.h"
 
 #include "xlinux.h"
 

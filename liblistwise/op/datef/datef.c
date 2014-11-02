@@ -22,7 +22,7 @@
 #include <listwise.h>
 #include <listwise/operator.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
 
 #include "parseint.h"
 

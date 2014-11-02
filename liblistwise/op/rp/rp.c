@@ -22,7 +22,8 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
+#include "listwise/logging.h"
 
 #include "xlinux.h"
 

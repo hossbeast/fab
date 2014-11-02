@@ -21,7 +21,8 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 #include "xlinux.h"
 #include "parseint.h"

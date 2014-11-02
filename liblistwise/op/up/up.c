@@ -17,7 +17,8 @@
 
 #include <stdlib.h>
 
-#include "internal.h"
+#include "listwise/operator.h"
+#include "listwise/lwx.h"
 
 /*
 
