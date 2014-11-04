@@ -33,6 +33,8 @@ extern struct g_params_t
 	pid_t								sid;												// session-id
 	char *							cwd;												// cwd
 	int									cwdl;
+	char *							exedir;											// location of the fab executable when the program started
+	int									exedirl;
 
 	uid_t								ruid;												// real-user-id
 	char *							ruid_name;
@@ -60,7 +62,7 @@ extern struct g_params_t
 // invalid, for example required options are not present, or invalid
 // parameters are given to an option
 //
-void params_setup();
+int params_setup();
 
 /// params_teardown
 //

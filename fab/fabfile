@@ -143,13 +143,12 @@ $faboplist_devel = [ $dfab/fablw/op ~ j lsr sx/c/devel.so y ]
 # tasks
 #
 
-[ @install ] : [ @all ]
+[ @install.final ] : [ @final ]
 {
-	chown fabsys:fabsys		[ $fab ]
-	chmod ug+s 						[ $fab ]
+	chown fabsys:fabsys		[ $fab_final ]
+	chmod ug+s 						[ $fab_final ]
 	install -d																			[ $destdir/$bindir ]
-	install [ $fab ]																[ $destdir/$bindir ]
-	install [ $dfab/gcc-dep ]												[ $destdir/$bindir ]
+	install [ $fab_final ]													[ $destdir/$bindir/fab ]
 	install -d 																			[ $destdir/$fabcachedir ]
 	chown fabsys:fabsys															[ $destdir/$fabcachedir ]
 	install -d 																			[ $destdir/$fabtmpdir ]
@@ -170,8 +169,38 @@ $faboplist_devel = [ $dfab/fablw/op ~ j lsr sx/c/devel.so y ]
 
 	rm -rf 																					[ $destdir/$fablwopdir ] 2>/dev/null
 	install -d																			[ $destdir/$fablwopdir ]
-	install [ $dfab/fablw/op/fi/fi.so ]							[ $destdir/$fablwopdir ]
-	install [ $dfab/fablw/op/fg/fg.so ]							[ $destdir/$fablwopdir ]
+	install [ $dfab/fablw/op/fi/fi.final.so ]				[ $destdir/$fablwopdir ]
+	install [ $dfab/fablw/op/fg/fg.final.so ]				[ $destdir/$fablwopdir ]
+}
+
+[ @install.debug ] : [ @debug ]
+{
+	chown fabsys:fabsys		[ $fab_debug ]
+	chmod ug+s 						[ $fab_debug ]
+	install -d																			[ $destdir/$bindir ]
+	install [ $fab_debug ]													[ $destdir/$bindir/fab ]
+	install -d 																			[ $destdir/$fabcachedir ]
+	chown fabsys:fabsys															[ $destdir/$fabcachedir ]
+	install -d 																			[ $destdir/$fabtmpdir ]
+	chown fabsys:fabsys															[ $destdir/$fabtmpdir ]
+	install -d 																			[ $destdir/$fabipcdir ]
+	chown fabsys:fabsys															[ $destdir/$fabipcdir ]
+	install -d																			[ $destdir/$fabinvokedir/std ]
+	install -d																			[ $destdir/$fabinvokedir/std/c ]
+	install -d																			[ $destdir/$fabinvokedir/std/l ]
+	install -d																			[ $destdir/$fabinvokedir/std/y ]
+	install -d																			[ $destdir/$fabinvokedir/std/flex ]
+	install -d																			[ $destdir/$fabinvokedir/std/bison ]
+	install [ $dfab/fablib/std/c.fab ]							[ $destdir/$fabinvokedir/std/c.fab ]
+	install [ $dfab/fablib/std/l.fab ]							[ $destdir/$fabinvokedir/std/l.fab ]
+	install [ $dfab/fablib/std/y.fab ]							[ $destdir/$fabinvokedir/std/y.fab ]
+	install [ $dfab/fablib/std/flex/states.fab ]		[ $destdir/$fabinvokedir/std/flex/states.fab ]
+	install [ $dfab/fablib/std/bison/tokens.fab ]		[ $destdir/$fabinvokedir/std/bison/tokens.fab ]
+
+	rm -rf 																					[ $destdir/$fablwopdir ] 2>/dev/null
+	install -d																			[ $destdir/$fablwopdir ]
+	install [ $dfab/fablw/op/fi/fi.debug.so ]				[ $destdir/$fablwopdir ]
+	install [ $dfab/fablw/op/fg/fg.debug.so ]				[ $destdir/$fablwopdir ]
 }
 
 [ @installman ] : [ @installman1 ]

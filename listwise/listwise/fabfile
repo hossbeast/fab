@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # definitions
-+[ $*/../vars.fab ]
++[ $*/../../vars.fab ]
 
 # source invocations
 +[ $dcommon ]() @common
@@ -87,6 +87,13 @@ $lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstri
 {
 	install -d										[ $destdir/$bindir ]
 	install [ $listwise_final ]		[ $destdir/$bindir/listwise ]
+	ln -vfs [ listwise ]					[ $destdir/$bindir/lw ]
+}
+
+[ @install_debug ] : [ $listwise_debug ]
+{
+	install -d										[ $destdir/$bindir ]
+	install [ $listwise_debug ]		[ $destdir/$bindir/listwise ]
 	ln -vfs [ listwise ]					[ $destdir/$bindir/lw ]
 }
 

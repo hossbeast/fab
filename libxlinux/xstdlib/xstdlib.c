@@ -94,3 +94,17 @@ int API xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const vo
 
 	finally : coda;
 }
+
+int API xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
+{
+	ssize_t lr;
+	if(!r)
+		r = &lr;
+
+	if((*r = readlink(pathname, buf, bufsiz)) == -1)
+		fail(errno);
+
+finally:
+	XAPI_INFOS("path", pathname);
+coda;
+}

@@ -65,4 +65,12 @@ void ifree(void* target)
 int xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const void *, const void *, void *, int * r), void * arg)
 	__attribute__((nonnull(1, 4)));
 
+/// xreadlink
+//
+// SUMMARY
+//  proxy for readlink
+//
+int xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
+	__attribute__((nonnull(1, 2)));
+
 #endif

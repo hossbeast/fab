@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # definitions
-+[ $*/../vars.fab ]
++[ $*/../../vars.fab ]
 
 # source invocations
 +[ $dcommon ]() @common
@@ -174,14 +174,15 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 ## tasks
 ##
 
-[ @install ] : [ @all ]
+[ @install.final ] : [ @final ]
 {
 	install -d																				[ $destdir/$libdir ]
-	install [ $liblistwise ]													[ $destdir/$libdir/$libname ]
+	install [ $liblistwise_final ]										[ $destdir/$libdir/$libname ]
 
 	rm -rf																						[ $destdir/$lwopdir ] 2>/dev/null
 	install -d																				[ $destdir/$lwopdir ]
-	for x in [ $oplist ~ fi ]; do \
+
+	for x in [ $oplist_final ~ fi ]; do \
 		install $x																			[ $destdir/$lwopdir ]
 	done
 }

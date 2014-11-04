@@ -89,10 +89,16 @@ $lflags_devel	= [ $libxapi_devel $lopts $libxlinux_devel [ -Wl,-soname,libpstrin
 ## tasks
 ##
 
-[ @install ] : [ @all ]
+[ @install.final ] : [ @final ]
 {
 	install -d																					[ $destdir/$libdir ]
-	install [ $libpstring ]															[ $destdir/$libdir/$libname ]
+	install [ $libpstring_final ]												[ $destdir/$libdir/$libname ]
+}
+
+[ @install.debug ] : [ @debug ]
+{
+	install -d																					[ $destdir/$libdir ]
+	install [ $libpstring_debug ]												[ $destdir/$libdir/$libname ]
 }
 
 [ @installdevheaders ]

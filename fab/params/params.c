@@ -23,11 +23,14 @@
 #include <getopt.h>
 #include <stdarg.h>
 
-#include "listwise.h"
-#include "listwise/operator.h"
-#include "listwise/generator.h"
+#include "xapi.h"
+#include "xlinux.h"
 
+#include "logs.h"
+#include "global.h"
 #include "params.h"
+
+#include "canon.h"
 
 struct g_params_t g_params;
 
@@ -35,8 +38,11 @@ struct g_params_t g_params;
 // [[ public ]]
 //
 
-void params_setup()
+int params_setup()
 {
+	char space[512];
+	char dst[512];
+
 	//
 	// parameters
 	//
@@ -45,6 +51,18 @@ void params_setup()
 	g_params.sid = getsid(0);
 	g_params.cwd = getcwd(0, 0);
 	g_params.cwdl = strlen(g_params.cwd);
+
+	// canonical path to executing fab binary
+	ssize_t r = 0;
+	fatal(xreadlink, "/proc/self/exe", space, sizeof(space), &r);
+
+	r += snprintf(space + r, sizeof(space) - r, "/..");
+
+	fatal(canon, space, r, g_params.cwd, g_params.cwdl, dst, sizeof(dst), 0, CAN_REALPATH);
+	fatal(ixstrdup, &g_params.exedir, dst);
+
+	if((g_params.exedirl = strlen(g_params.exedir)) < 1)
+		fail(FAB_NXPARAMS);
 
 	if((g_params.procs = sysconf(_SC_NPROCESSORS_ONLN)) == -1)
 	{
@@ -56,11 +74,14 @@ void params_setup()
 		// shenanigans
 		g_params.procs = 0;
 	}
+
+	finally : coda;
 }
 
 void params_teardown()
 {
 	free(g_params.cwd);
+	free(g_params.exedir);
 
 	free(g_params.ruid_name);
 	free(g_params.euid_name);

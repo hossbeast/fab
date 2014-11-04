@@ -30,26 +30,26 @@
 +[ $dlibxunit ]()			@libxunit
 +[ $dutil ]()					@util
 
-# default target - make everything
+# default target - tests
+[ @test ] : [ @xunit.devel @libxunit.devel @liblistwise.test ]
+
+# build binaries
 [ @final ] : [ @libxapi.final @libxlinux.final @libpstring.final @liblistwise.final @listwise.final @fab.final @util.final ]
 [ @debug ] : [ @libxapi.debug @libxlinux.debug @libpstring.debug @liblistwise.debug @listwise.debug @fab.debug @util.debug ]
 [ @devel ] : [ @libxapi.devel @libxlinux.devel @libpstring.devel @liblistwise.devel @listwise.devel @fab.devel @util.devel ]
 
-# supertasks
-[ @install ]		: [ @libxapi.install @libxlinux.install @libpstring.install @liblistwise.install @listwise.install @fab.install @util.install ]
-
-[ @test ] : [ @xunit.devel @libxunit.devel ]
-[ @test ] : [ @liblistwise.test ]
+# install
+[ @install.final ] : [ @libxapi.install.final @libxlinux.install.final @libpstring.install.final @liblistwise.install.final @listwise.install.final @fab.install.final @util.install.final ]
+[ @install.debug ] : [ @libxapi.install.debug @libxlinux.install.debug @libpstring.install.debug @liblistwise.install.debug @listwise.install.debug @fab.install.debug @util.install.debug ]
 
 # create scripts
 [ @scripts ]
 {
-	exec 2>/dev/null
-	[ $^fab ] --bslic-fab -k [ $*/make64.sh ] @all
-	[ $^fab ] --bslic-fab -k [ $*/install64.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
+	[ $^fab ] --bslic-fab -k [ $*/make64.final.sh ] @final
+	[ $^fab ] --bslic-fab -k [ $*/install64.final.sh ] +n @install.final -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 
-	[ $^fab ] --bslic-fab -v '$debug=["[" 1 "]"]' -k [ $*/make64-debug.sh ] @all
-	[ $^fab ] --bslic-fab -v '$debug=["[" 1 "]"]' -k [ $*/install64-debug.sh ] +n @install -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
+	[ $^fab ] --bslic-fab -k [ $*/make64.debug.sh ] @debug
+	[ $^fab ] --bslic-fab -k [ $*/install64.debug.sh ] +n @install.debug -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabcachedir -K fabtmpdir -K fabinvokedir
 
-	[ $^fab ] --bslic-fab -v '$devel=["[" 1 "]"]' -k [ $*/make64-devel.sh ] @all
+	[ $^fab ] --bslic-fab -k [ $*/make64.devel.sh ] @devel
 }

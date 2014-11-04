@@ -584,6 +584,7 @@ int args_summarize()
 	logf(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_params.euid_name, g_params.euid, g_params.egid_name, g_params.egid);
 	logf(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_params.ruid_name, g_params.ruid, g_params.rgid_name, g_params.rgid);
 	logf(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_params.cwd);
+	logf(L_PARAMS	, "%11sexedir                 =%s"						, ""	, g_params.exedir);
 	logf(L_PARAMS	, "%11sprocessors             =%ld"						, ""	, g_params.procs);
 	logf(L_PARAMS	, "%11scachedir               =%s"						, ""	, XQUOTE(FABCACHEDIR));
 	logf(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));

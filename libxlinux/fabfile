@@ -91,10 +91,16 @@ $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
 ## tasks
 ##
 
-[ @install ] : [ @all ]
+[ @install.final ] : [ @final ]
 {
 	install -d																					[ $destdir/$libdir ]
-	install [ $libxlinux ]															[ $destdir/$libdir/$libname ]
+	install [ $libxlinux_final ]												[ $destdir/$libdir/$libname ]
+}
+
+[ @install.debug ] : [ @debug ]
+{
+	install -d																					[ $destdir/$libdir ]
+	install [ $libxlinux_debug ]												[ $destdir/$libdir/$libname ]
 }
 
 [ @installdevheaders ]

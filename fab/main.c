@@ -107,7 +107,7 @@ int main(int argc, char** argv)
 	error_setup();
 
 	// process parameter gathering
-	params_setup();
+	fatal(params_setup);
 
 	// get user identity of this process, assert user:group and permissions are set appropriately
 	fatal(identity_init);

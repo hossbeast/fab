@@ -28,3 +28,4 @@
 11	EXESUID				fab executable does not have ug+s permissions
 12	CYCLE					dependency graph contains a cycle
 13	NOSELECT			selector matches nothing
+14	NXPARAMS			unable to determine runtime parameters

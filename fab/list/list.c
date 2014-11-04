@@ -30,6 +30,7 @@
 #include "lwutil.h"
 
 #include "global.h"
+#include "params.h"
 #include "map.h"
 #include "xlinux.h"
 #include "macros.h"
@@ -116,7 +117,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 				if(strcmp(list->elements[x]->name->text->s, "fab") == 0)
 				{
 #if DEVEL
-					fatal(lstack_adds, (*stax)[pn], XQUOTE(BUILDROOT) "/fab/fab.devel");
+					fatal(lstack_addf, (*stax)[pn], "%s/fab.devel", g_params.exedir);
 #else
 					fatal(lstack_adds, (*stax)[pn], "fab");
 #endif
@@ -124,7 +125,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 				else if(strcmp(list->elements[x]->name->text->s, "lw") == 0 || strcmp(list->elements[x]->name->text->s, "listwise") == 0)
 				{
 #if DEVEL
-					fatal(lstack_adds, (*stax)[pn], XQUOTE(BUILDROOT) "/listwise/listwise.devel");
+					fatal(lstack_addf, (*stax)[pn], "%s/../listwise/listwise/listwise.devel", g_params.exedir);
 #else
 					fatal(lstack_adds, (*stax)[pn], "listwise");
 #endif
@@ -132,7 +133,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 				else if(strcmp(list->elements[x]->name->text->s, "gccdep") == 0)
 				{
 #if DEVEL
-					fatal(lstack_adds, (*stax)[pn], XQUOTE(BUILDROOT) "/util/gcc-dep");
+					fatal(lstack_addf, (*stax)[pn], "%s/../util/gcc-dep", g_params.exedir);
 #else
 					fatal(lstack_adds, (*stax)[pn], "gcc-dep");
 #endif
