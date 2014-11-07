@@ -23,7 +23,7 @@
 #include "internal.h"
 
 /* libpcre error table */
-#include "PCRE.errtab.h"
+#include "listwise/PCRE.errtab.h"
 
 #include "xlinux.h"
 #include "macros.h"

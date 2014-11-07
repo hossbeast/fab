@@ -2538,7 +2538,6 @@ listwise/liblistwise/liblistwise.final.so \
 common/coll/coll.final.pic.o \
 common/map/map.final.pic.o \
 listwise/liblistwise/error/LW.errtab.final.pic.o \
-listwise/liblistwise/error/PCRE.errtab.final.pic.o \
 listwise/liblistwise/re/re.final.pic.o \
 listwise/liblistwise/object/object.final.pic.o \
 common/wstdlib/wstdlib.final.pic.o \
@@ -2550,6 +2549,7 @@ listwise/liblistwise/generator/generator.states.final.pic.o \
 listwise/liblistwise/generator/genscan.final.pic.o \
 listwise/liblistwise/describe/describe.final.pic.o \
 listwise/liblistwise/exec/exec.final.pic.o \
+listwise/liblistwise/error/PCRE.errtab.final.pic.o \
 listwise/liblistwise/error/error.final.pic.o \
 common/strutil/strutil.final.pic.o \
 common/canon/canon.final.pic.o \

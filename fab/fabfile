@@ -169,8 +169,8 @@ $faboplist_devel = [ $dfab/fablw/op ~ j lsr sx/c/devel.so y ]
 
 	rm -rf 																					[ $destdir/$fablwopdir ] 2>/dev/null
 	install -d																			[ $destdir/$fablwopdir ]
-	install [ $dfab/fablw/op/fi/fi.final.so ]				[ $destdir/$fablwopdir ]
-	install [ $dfab/fablw/op/fg/fg.final.so ]				[ $destdir/$fablwopdir ]
+	install [ $dfab/fablw/op/fi/fi.final.so ]				[ $destdir/$fablwopdir/fi.so ]
+	install [ $dfab/fablw/op/fg/fg.final.so ]				[ $destdir/$fablwopdir/fg.so ]
 }
 
 [ @install.debug ] : [ @debug ]
@@ -199,8 +199,8 @@ $faboplist_devel = [ $dfab/fablw/op ~ j lsr sx/c/devel.so y ]
 
 	rm -rf 																					[ $destdir/$fablwopdir ] 2>/dev/null
 	install -d																			[ $destdir/$fablwopdir ]
-	install [ $dfab/fablw/op/fi/fi.debug.so ]				[ $destdir/$fablwopdir ]
-	install [ $dfab/fablw/op/fg/fg.debug.so ]				[ $destdir/$fablwopdir ]
+	install [ $dfab/fablw/op/fi/fi.debug.so ]				[ $destdir/$fablwopdir/fi.so ]
+	install [ $dfab/fablw/op/fg/fg.debug.so ]				[ $destdir/$fablwopdir/fg.so ]
 }
 
 [ @installman ] : [ @installman1 ]

@@ -162,7 +162,7 @@ static int resolve(ff_node * list, map* vmap, generator_parser * gp, lwx *** sta
 						fatal(map_set, rawvars, list->elements[x]->name->text->s, list->elements[x]->name->text->l, MM(vls), 0);
 
 						// render a reference to the variable by name
-						fatal(lstack_addf, (*stax)[pn], "$%s", list->elements[x]->name);
+						fatal(lstack_addf, (*stax)[pn], "$%s", list->elements[x]->name->text->s);
 					}
 					else
 					{

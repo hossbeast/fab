@@ -33,7 +33,7 @@ $cflags_devel = [ $cflags_devel $copts ]
 
 $lopts				= [ -ldl -shared  [ -Wl,--version-script=$*/exports ~ j ] ]
 $lflags_final	= [ $libxapi_final $lopts [ -Wl,-soname,libxlinux.so ~ j ] ]
-$lflags_debug	= [ $libxapi_debug $lopts [ -Wl,-soname,libxlinux.debug.so ~ j ] ]
+$lflags_debug	= [ $libxapi_debug $lopts [ -Wl,-soname,libxlinux.so ~ j ] ]
 $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
 
 # source files

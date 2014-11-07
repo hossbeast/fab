@@ -17,8 +17,8 @@
 
 #include <stdint.h>
 
-#include "internal.h"
-#include "PCRE.errtab.h"
+#include "listwise/internal.h"
+#include "listwise/PCRE.errtab.h"
 
 static etable * tab[3];
 

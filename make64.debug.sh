@@ -2431,7 +2431,7 @@ fml_4_0()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -o libxapi/libxapi.debug.so common/strutil/strutil.debug.pic.o common/wstdlib/wstdlib.debug.pic.o libxapi/callstack/callstack.debug.pic.o libxapi/error/SYS.errtab.debug.pic.o libxapi/error/XAPI.errtab.debug.pic.o libxapi/error/error.debug.pic.o libxapi/frame/frame.debug.pic.o libxapi/test.debug.pic.o libxapi/trace/trace.debug.pic.o -shared -Wl,--version-script=libxapi/exports -Wl,-soname,libxapi.debug.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -o libxapi/libxapi.debug.so common/strutil/strutil.debug.pic.o common/wstdlib/wstdlib.debug.pic.o libxapi/callstack/callstack.debug.pic.o libxapi/error/SYS.errtab.debug.pic.o libxapi/error/XAPI.errtab.debug.pic.o libxapi/error/error.debug.pic.o libxapi/frame/frame.debug.pic.o libxapi/test.debug.pic.o libxapi/trace/trace.debug.pic.o -shared -Wl,--version-script=libxapi/exports -Wl,-soname,libxapi.so
 
 
   X=$?
@@ -2448,7 +2448,7 @@ fml_5_0()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux -I./libxapi -I./listwise/liblistwise -I./libpstring -o libxlinux/libxlinux.debug.so libxlinux/error/XLINUX.errtab.debug.pic.o libxlinux/error/error.debug.pic.o libxlinux/xdirent/xdirent.debug.pic.o libxlinux/xdlfcn/xdlfcn.debug.pic.o libxlinux/xfcntl/xfcntl.debug.pic.o libxlinux/xftw/xftw.debug.pic.o libxlinux/xgrp/xgrp.debug.pic.o libxlinux/xmman/xmman.debug.pic.o libxlinux/xpwd/xpwd.debug.pic.o libxlinux/xstat/xstat.debug.pic.o libxlinux/xstdlib/xstdlib.debug.pic.o libxlinux/xstring/xstring.debug.pic.o libxlinux/xtime/xtime.debug.pic.o libxlinux/xunistd/xunistd.debug.pic.o ./libxapi/libxapi.debug.so -ldl -shared -Wl,--version-script=libxlinux/exports -Wl,-soname,libxlinux.debug.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux -I./libxapi -I./listwise/liblistwise -I./libpstring -o libxlinux/libxlinux.debug.so libxlinux/error/XLINUX.errtab.debug.pic.o libxlinux/error/error.debug.pic.o libxlinux/xdirent/xdirent.debug.pic.o libxlinux/xdlfcn/xdlfcn.debug.pic.o libxlinux/xfcntl/xfcntl.debug.pic.o libxlinux/xftw/xftw.debug.pic.o libxlinux/xgrp/xgrp.debug.pic.o libxlinux/xmman/xmman.debug.pic.o libxlinux/xpwd/xpwd.debug.pic.o libxlinux/xstat/xstat.debug.pic.o libxlinux/xstdlib/xstdlib.debug.pic.o libxlinux/xstring/xstring.debug.pic.o libxlinux/xtime/xtime.debug.pic.o libxlinux/xunistd/xunistd.debug.pic.o ./libxapi/libxapi.debug.so -ldl -shared -Wl,--version-script=libxlinux/exports -Wl,-soname,libxlinux.so
 
 
   X=$?
@@ -2465,7 +2465,7 @@ fml_6_0()
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libpstring/pstring -I./libpstring/internal -I./libpstring -I./libxapi -I./libxlinux -o libpstring/libpstring.debug.so libpstring/pstring/pstring.debug.pic.o ./libxapi/libxapi.debug.so -shared -Wl,--version-script=libpstring/exports ./libxlinux/libxlinux.debug.so -Wl,-soname,libpstring.debug.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libpstring/pstring -I./libpstring/internal -I./libpstring -I./libxapi -I./libxlinux -o libpstring/libpstring.debug.so libpstring/pstring/pstring.debug.pic.o ./libxapi/libxapi.debug.so -shared -Wl,--version-script=libpstring/exports ./libxlinux/libxlinux.debug.so -Wl,-soname,libpstring.so
 
 
   X=$?
@@ -2543,7 +2543,6 @@ listwise/liblistwise/liblistwise.debug.so \
 common/coll/coll.debug.pic.o \
 common/map/map.debug.pic.o \
 listwise/liblistwise/error/LW.errtab.debug.pic.o \
-listwise/liblistwise/error/PCRE.errtab.debug.pic.o \
 listwise/liblistwise/re/re.debug.pic.o \
 listwise/liblistwise/object/object.debug.pic.o \
 common/wstdlib/wstdlib.debug.pic.o \
@@ -2556,6 +2555,7 @@ listwise/liblistwise/generator/genscan.debug.pic.o \
 listwise/liblistwise/describe/describe.debug.pic.o \
 listwise/liblistwise/sanity/sanity.debug.pic.o \
 listwise/liblistwise/exec/exec.debug.pic.o \
+listwise/liblistwise/error/PCRE.errtab.debug.pic.o \
 listwise/liblistwise/error/error.debug.pic.o \
 common/strutil/strutil.debug.pic.o \
 common/canon/canon.debug.pic.o \
@@ -2579,7 +2579,7 @@ listwise/liblistwise/tune/tune.debug.pic.o \
 ./libxapi/libxapi.debug.so \
 ./libxlinux/libxlinux.debug.so \
 ./libpstring/libpstring.debug.so \
--Wl,-soname,liblistwise.debug.so
+-Wl,-soname,liblistwise.so
 
 
   X=$?
