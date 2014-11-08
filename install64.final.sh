@@ -58,10 +58,11 @@ fml_1_0()
   [[ $fabinvokedir ]] || local fabinvokedir='/usr/lib/fab/fablib'
   [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/listwise'
   
-	chown fabsys:fabsys		./fab/fab.final
-	chmod ug+s 						./fab/fab.final
 	install -d																			$destdir/$bindir
 	install ./fab/fab.final													$destdir/$bindir/fab
+	chown fabsys:fabsys															$destdir/$bindir/fab
+	chmod ug+s 																			$destdir/$bindir/fab
+
 	install -d 																			$destdir/$fabcachedir
 	chown fabsys:fabsys															$destdir/$fabcachedir
 	install -d 																			$destdir/$fabtmpdir
