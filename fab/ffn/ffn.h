@@ -223,7 +223,7 @@ ff_node* ffn_addchain(ff_node * restrict a, ff_node * const restrict b)
 // flatten, strmeasure, parse_generators
 //
 int ffn_postprocess(ff_node * const ffn, struct ff_file * const ff, generator_parser * const gp)
-	__attribute__((nonnull));
+	__attribute__((nonnull(2, 3)));
 
 /// ffn_free
 //
