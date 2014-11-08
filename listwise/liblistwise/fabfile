@@ -74,7 +74,7 @@ $oplist_debug = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,debug.so sy 
 $oplist_devel = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,devel.so sy ]
 
 # test sos
-+[@std.xunit.tests](
++[$dxunit/../fablib/xunit/tests.fab](
 	$rdirs = $dliblistwise;
 	$cc;
 	$dext = [ devel.pic.o ];
@@ -87,7 +87,7 @@ $oplist_devel = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,devel.so sy 
 $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 
 # run all tests
-[ @test ] : [ $liblistwise_devel $oplist_devel $listwise_test $tsopaths ]
+[ @test ] : [ $xunit_devel $liblistwise_devel $oplist_devel $listwise_test $tsopaths ]
 {
 	[ $xunit_devel ] +XUNIT,INPUT,OUTPUT [ $liblistwise_devel $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
 }
@@ -95,7 +95,7 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 # test helper
 [ $listwise_test ] : [ [ $*/listwise_test/listwise_test.devel.pic.o ~ j ] $liblistwise_devel ]
 {
-	[ $cc ] [ $cflags_devel ~ uu fi ] -shared [ $@ ~ rx/aneedw lx/o uu fi ] -o [ $@ ]
+	[ $cc ] [ $cflags_devel ~ uu fi ] -shared [ $*/listwise_test/listwise_test.devel.pic.o ~ j ] -o [ $@ ]
 }
 
 ##

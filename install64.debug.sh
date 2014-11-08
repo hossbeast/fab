@@ -55,8 +55,8 @@ fml_1_0()
   [[ $fabtmpdir ]] || local fabtmpdir='/var/tmp/fab'
   [[ $fabcachedir ]] || local fabcachedir='/var/cache/fab'
   [[ $destdir ]] || local destdir=''
-  [[ $fabinvokedir ]] || local fabinvokedir='/usr/lib/fab/listwise'
-  [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/lib'
+  [[ $fabinvokedir ]] || local fabinvokedir='/usr/lib/fab/fablib'
+  [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/listwise'
   
 	chown fabsys:fabsys		./fab/fab.debug
 	chmod ug+s 						./fab/fab.debug
@@ -68,17 +68,18 @@ fml_1_0()
 	chown fabsys:fabsys															$destdir/$fabtmpdir
 	install -d 																			$destdir//var/run/fab
 	chown fabsys:fabsys															$destdir//var/run/fab
+
+	rm -rf																					$destdir/$fabinvokedir
 	install -d																			$destdir/$fabinvokedir/std
-	install -d																			$destdir/$fabinvokedir/std/c
-	install -d																			$destdir/$fabinvokedir/std/l
-	install -d																			$destdir/$fabinvokedir/std/y
 	install -d																			$destdir/$fabinvokedir/std/flex
 	install -d																			$destdir/$fabinvokedir/std/bison
+	install -d																			$destdir/$fabinvokedir/std/xapi
 	install ./fab/fablib/std/c.fab							$destdir/$fabinvokedir/std/c.fab
 	install ./fab/fablib/std/l.fab							$destdir/$fabinvokedir/std/l.fab
 	install ./fab/fablib/std/y.fab							$destdir/$fabinvokedir/std/y.fab
 	install ./fab/fablib/std/flex/states.fab		$destdir/$fabinvokedir/std/flex/states.fab
 	install ./fab/fablib/std/bison/tokens.fab		$destdir/$fabinvokedir/std/bison/tokens.fab
+	install ./fab/fablib/std/xapi/errtab.fab		$destdir/$fabinvokedir/std/xapi/errtab.fab
 
 	rm -rf 																					$destdir/$fablwopdir 2>/dev/null
 	install -d																			$destdir/$fablwopdir

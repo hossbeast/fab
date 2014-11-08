@@ -76,6 +76,10 @@ static int render(lwx * const ls, pstring ** const ps)
 			{
 				fatal(pscatf, ps, "%.*s", A->path->rel_fabl, A->path->rel_fab);
 			}
+			else
+			{
+exit(0);
+			}
 		}
 		else
 		{

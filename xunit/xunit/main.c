@@ -68,7 +68,7 @@ int main(int g_argc, char** g_argv)
 #endif
 
 	// default logging categories, with lower precedence than cmdline logexprs
-	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|XUNIT", 0, 1, 0);//L_INFO);
+	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|XUNIT", 0, 1, L_INFO);
 
 	// summarize
 	fatal(args_summarize);

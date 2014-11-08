@@ -483,12 +483,12 @@ finally:
 
 	if(XAPI_UNWINDING)
 	{
-#if DEVEL
+#if DEBUG || DEVEL
 		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
 		{
 #endif
 			tracesz = xapi_trace_pithy(space, sizeof(space));
-#if DEVEL
+#if DEBUG || DEVEL
 		}
 		else
 		{

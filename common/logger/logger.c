@@ -168,9 +168,9 @@ static int start(const uint64_t e)
 {
 	if(log_would(e))
 	{
-#if DEVEL
-		o_space_l = 0;
 		o_space_w = 0;
+		o_space_l = 0;
+#if DEVEL
 		o_trace_func_l = 0;
 		o_trace_file_l = 0;
 #endif

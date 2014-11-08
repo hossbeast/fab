@@ -218,7 +218,7 @@ int API listwise_register_opdir(char * dir)
 	op_sort();
 
 finally:
-	XAPI_INFOF("dir", "'%s'", dir);
+	XAPI_INFOF("path", "%s", dir);
 coda;
 }
 

@@ -106,9 +106,9 @@ $lwopdir								= [ $dlibdir/listwise ~ j can ]
 $lwopdir_devel					= [ $dliblistwise/op ~ j can ]
 $lwopext								= [ so ]
 $lwopext_devel					= [ devel.so ]
-$fablwopdir							= [ $dlibdir/fab/lib ~ j can ]
+$fablwopdir							= [ $dlibdir/fab/listwise ~ j can ]
 $fablwopdir_devel				= [ $dfab/fablw/op ~ j can ]
-$fabinvokedir						= [ $dlibdir/fab/listwise ~ j can ]
+$fabinvokedir						= [ $dlibdir/fab/fablib ~ j can ]
 $fabinvokedir_devel			= [ $dfab/fablib ~ j can ]
 
 # compilers and their flags
@@ -133,10 +133,3 @@ $cflags     = [
 $cflags_final = [ $cflags -O3 ]
 $cflags_debug	= [ $cflags -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY ]
 $cflags_devel	= [ $cflags -O0 -g -ggdb3 -DDEVEL -DXAPI_RUNTIME_CHECKS -DSANITY [ -DBUILDROOT="\""$buildroot"\"" ~ j ] ]
-
-[ @foo ]
-{
-	echo [ $^gccdep ]
-	echo [ $^fab ]
-	echo [ $^lw ]
-}

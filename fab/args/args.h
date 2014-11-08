@@ -57,9 +57,11 @@ struct selector;
 #define DEFAULT_MODE_CYCLES				MODE_CYCLES_WARN
 #define DEFAULT_CONCURRENCY_LIMIT	-1
 
-#if DEVEL
+#if DEBUG || DEVEL
 # define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_PITHY
 # define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
+#endif
+#if DEVEL
 # define DEFAULT_MODE_BSLIC				MODE_BSLIC_STD
 #endif
 
@@ -83,13 +85,16 @@ struct selector;
 	_MODE(MODE_CYCLES_WARN								, 0x08	, x)		/* warn when a cycle is detected */											\
 	_MODE(MODE_CYCLES_FAIL								, 0x09	, x)		/* fail when a cycle is detected */											\
 	_MODE(MODE_CYCLES_DEAL								, 0x0a	, x)		/* deal when a cycle is detected (halt traversal) */
-#if DEVEL
-#define MODE_TABLE_DEVEL(x)																																											\
+#if DEBUG || DEVEL
+#define MODE_TABLE_DEBUG(x)																																											\
 /* error reporting modes */																																											\
 	_MODE(MODE_BACKTRACE_FULL							, 0x0b	, x)		/* report on immediate error condition only */					\
 	_MODE(MODE_BACKTRACE_PITHY	 					, 0x0c	, x)		/* unwind stack when reporting errors */								\
 	_MODE(MODE_LOGTRACE_NONE							, 0x0d	, x)		/* disable log trace */																	\
-	_MODE(MODE_LOGTRACE_FULL							, 0x0e	, x)		/* enable log trace */																	\
+	_MODE(MODE_LOGTRACE_FULL							, 0x0e	, x)		/* enable log trace */
+#endif
+#if DEVEL
+#define MODE_TABLE_DEVEL(x)																																											\
 /* bakescript license modes */																																									\
 	_MODE(MODE_BSLIC_STD									, 0x10	, x)		/* bakescripts have the standard license  */						\
 	_MODE(MODE_BSLIC_FAB									, 0x11	, x)		/* bakescripts have the fab license */
@@ -97,6 +102,9 @@ struct selector;
 
 enum {
 #define _MODE(a, b, c) a = b,
+#if DEBUG || DEVEL
+MODE_TABLE_DEBUG(0)
+#endif
 #if DEVEL
 MODE_TABLE_DEVEL(0)
 #endif
@@ -105,7 +113,9 @@ MODE_TABLE(0)
 };
 
 #define _MODE(a, b, c) (c) == b ? #a :
-#if DEVEL
+#if DEBUG && DEVEL
+# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "UNKNWN"
+#elif DEVEL
 # define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEVEL(x) "UNKNWN"
 #else
 # define MODE_STR(x) MODE_TABLE(x) "UNKNWN"
@@ -121,9 +131,11 @@ extern struct g_args_t
 	int									mode_gnid;									// gn identification mode
 	int									mode_cycles;								// cycle handling mode
 	int									mode_paths;									// path generation mode
-#if DEVEL
+#if DEBUG || DEVEL
 	int									mode_backtrace;							// backtrace reporting mode
 	int									mode_logtrace;							// log trace mode
+#endif
+#if DEVEL
 	int									mode_bslic;									// bakescript license mode
 #endif
 

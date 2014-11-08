@@ -121,8 +121,8 @@ if(version)
 	printf(" fab-" XQUOTE(FABVERSIONS)
 #if DEVEL
 	"+DEVEL"
-#elif BETA
-	"+BETA"
+#elif DEBUG
+	"+DEBUG"
 #endif
 		" @ " XQUOTE(BUILDSTAMP)
 		"\n"
@@ -167,7 +167,7 @@ if(help)
 "  --gnid-relative-fabfile-dir   identify nodes in log messages by path relative to init-fabfile-dir\n"
 "  --gnid-absolute               identify nodes in log messages by absolute path\n"
 "  --gnid-canon                  identify nodes in log messages by canonical path\n"
-#if DEVEL
+#if DEBUG || DEVEL
 "  --logtrace-no       (default) do not include file/function/line in log messages\n"
 "  --logtrace                    include file/function/line in log messages\n"
 "  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
@@ -334,12 +334,14 @@ int args_parse()
 				, { "gnid-absolute"								, no_argument	, &g_args.mode_gnid			, MODE_ABSOLUTE }
 				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid			, MODE_CANONICAL }
 
-#if DEVEL
+#if DEBUG || DEVEL
 				, { "backtrace-pithy"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
 				, { "backtrace-full"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
 				, { "backtrace"										, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
 				, { "logtrace-no"									, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
 				, { "logtrace"										, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
+#endif
+#if DEVEL
 				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic		, MODE_BSLIC_STD }
 				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic		, MODE_BSLIC_FAB }
 #endif
@@ -419,9 +421,11 @@ int args_parse()
 	g_args.mode_gnid				= DEFAULT_MODE_GNID;
 	g_args.mode_cycles			= DEFAULT_MODE_CYCLES;
 	g_args.mode_paths				= DEFAULT_MODE_PATHS;
-#if DEVEL
+#if DEBUG || DEVEL
 	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
 	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
+#endif
+#if DEVEL
 	g_args.mode_bslic				= DEFAULT_MODE_BSLIC;
 #endif
 	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
@@ -612,9 +616,11 @@ int args_summarize()
 			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
 	}
 
-#if DEVEL
+#if DEBUG || DEVEL
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace          =%s", g_args.mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_logtrace));
+#endif
+#if DEVEL
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
 #endif
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));
