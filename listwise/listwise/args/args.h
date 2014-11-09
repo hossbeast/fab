@@ -23,11 +23,11 @@
 
 #define restrict __restrict
 
-#if DEVEL
+#if DEBUG || DEVEL
 # define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_FULL
 # define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
 
-#define MODE_TABLE_DEVEL(x)																																											\
+#define MODE_TABLE_DEBUG(x)																																											\
 /* error reporting modes */																																											\
 	_MODE(MODE_BACKTRACE_FULL							, 0x0b	, x)		/* report on immediate error condition only */					\
 	_MODE(MODE_BACKTRACE_PITHY	 					, 0x0c	, x)		/* unwind stack when reporting errors */								\
@@ -37,12 +37,12 @@
 
 #define _MODE(a, b, c) a = b,
 enum {
-MODE_TABLE_DEVEL(0)
+MODE_TABLE_DEBUG(0)
 };
 #undef _MODE
 
 #define _MODE(a, b, c) (c) == b ? #a :
-# define MODE_STR(x) MODE_TABLE_DEVEL(x) "UNKNWN"
+# define MODE_STR(x) MODE_TABLE_DEBUG(x) "UNKNWN"
 #endif
 
 struct g_args_t
@@ -67,27 +67,7 @@ struct g_args_t
 	} *			inputs;
 	size_t	inputsl;
 
-/*
-	char *	linewise_init_list_files;		// -l
-	int			linewise_init_list_filesl;
-	char *	nullwise_init_list_files;
-	int			nullwise_init_list_filesl;
-	char **	linewise_transform_files;		// -t/-
-	int			linewise_transform_filesl;
-	char **	nullwise_transform_files;
-	int			nullwise_transform_filesl;
-	char **	linewise_input_files;				// -f/-
-	int			linewise_input_filesl;
-	char **	nullwise_input_files;
-	int			nullwise_input_filesl;
-
-	char **	init_list;									// -i 
-	int *		init_list_lens;
-	int			init_listl;
-	int			init_lista;
-*/
-
-#if DEVEL
+#if DEBUG || DEVEL
 	int			mode_backtrace;							// backtrace reporting mode
 	int			mode_logtrace;							// logtrace mode
 #endif

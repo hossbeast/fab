@@ -132,7 +132,7 @@ void listwise_log(void * token, void * udata, const char * func, const char * fi
 {
 	va_list va;
 	va_start(va, fmt);
-#if DEVEL
+#if DEBUG || DEVEL
 	log_vlogf(func, file, line, *(uint64_t*)token, fmt, va);
 #else
 	log_vlogf(*(uint64_t*)token, fmt, va);
@@ -186,7 +186,7 @@ static struct listwise_logging * logging = (struct listwise_logging[]) {{
     , .opinfo_token     = (uint64_t[]) { L_LWOPINFO }
     , .opinfo_would     = listwise_would
     , .opinfo_log       = listwise_log
-#if DEVEL
+#if DEBUG || DEVEL
     , .tokens_token     = (uint64_t[]) { L_LWTOKEN }
     , .tokens_would     = listwise_would
     , .tokens_log       = listwise_log

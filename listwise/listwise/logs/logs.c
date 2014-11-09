@@ -26,7 +26,7 @@ struct g_logs_t logs[] = {
 	  { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "display the parsed generator" }
 	, { .v = L_LWEXEC		, .s = "LWEXEC"		, .d = "step-by-step listwise execution" }
 	, { .v = L_LWOPINFO	, .s = "LWOPINFO"	, .d = "operator informational messages" }
-#if DEVEL
+#if DEBUG || DEVEL
 	, { .v = L_LWTOKEN	, .s = "LWTOKEN"	, .d = "generator parsing - token stream" }
 	, { .v = L_LWSTATE	, .s = "LWSTATE"	, .d = "generator parsing - lexer states" }
 #endif

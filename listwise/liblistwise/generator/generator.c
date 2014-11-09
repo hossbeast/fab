@@ -192,7 +192,7 @@ static int parse(generator_parser ** p, char* s, int l, char * name, int namel, 
 		, .statename			= generator_statename
 		, .inputstr				= generator_inputstr
 		, .lvalstr				= generator_lvalstr
-#if DEVEL
+#if DEBUG || DEVEL
 		, .udata					= udata
 		, .token_token		= listwise_logging_config ? listwise_logging_config->tokens_token : 0
 		, .token_would		= listwise_logging_config ? listwise_logging_config->tokens_would : 0

@@ -34,7 +34,7 @@
 #define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
 #define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
 
-#if DEVEL
+#if DEBUG || DEVEL
 #define TRACEARGS const char * const func, const char * const file, int line,
 #define TRACEPASS func, file, line,
 #define NOTRACE   0, 0, 0,
@@ -77,7 +77,7 @@ static int			o_space_w;		// visible characters
 
 static uint64_t	o_prefix_bits = ~0ULL;	// prefix decision bits
 
-#if DEVEL
+#if DEBUG || DEVEL
 static uint64_t	o_trace_bits  = 0ULL;		// trace decision bits
 
 static char *		o_trace_func;		// trace storage
@@ -170,7 +170,7 @@ static int start(const uint64_t e)
 	{
 		o_space_w = 0;
 		o_space_l = 0;
-#if DEVEL
+#if DEBUG || DEVEL
 		o_trace_func_l = 0;
 		o_trace_file_l = 0;
 #endif
@@ -206,7 +206,7 @@ static int finish()
 {
 	int w = 0;
 
-#if DEVEL
+#if DEBUG || DEVEL
 	// location trace for errors
 	if(o_space_bits & o_trace_bits)
 		w += logprintf(" in %s at %s:%d", o_trace_func, o_trace_file, o_trace_line);
@@ -257,7 +257,7 @@ static int describe(struct filter * f, char * dst, size_t sz)
 	return l;
 }
 
-#if DEVEL
+#if DEBUG || DEVEL
 static void prep(const char * const func, const char * file, int line)
 {
 	int funcl = strlen(func);
@@ -430,13 +430,13 @@ static int logparse(char * expr, int expr_len, int prepend, char * dst, size_t s
 }
 
 static int logconfig(TRACEARGS uint64_t prefix
-#if DEVEL
+#if DEBUG || DEVEL
 	, uint64_t trace
 #endif
 	, uint64_t bits
 )
 {
-#if DEVEL
+#if DEBUG || DEVEL
 	o_trace_bits = trace;
 #endif
 	o_prefix_bits = prefix;
@@ -583,7 +583,7 @@ finally:
 coda;
 }
 
-#if DEVEL
+#if DEBUG || DEVEL
 int log_config(uint64_t prefix, uint64_t trace)
 {
 	xproxy(logconfig, NOTRACE prefix, trace, 0);
@@ -644,7 +644,7 @@ int log_log_start(TRACEARGS const uint64_t e)
 {
 	if(start(e))
 	{
-#if DEVEL
+#if DEBUG || DEVEL
 		// store trace
 		prep(func, file, line);
 #endif
@@ -673,7 +673,7 @@ int log_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va)
 		// the message
 		logvprintf(fmt, va);
 
-#if DEVEL
+#if DEBUG || DEVEL
 		// store trace info
 		prep(func, file, line);
 #endif
@@ -715,7 +715,7 @@ int log_logw(TRACEARGS const uint64_t e, const char * const src, size_t len)
 		// the message
 		logwrite(src, len, 1);
 
-#if DEVEL
+#if DEBUG || DEVEL
 		// store trace info
 		prep(func, file, line);
 #endif
@@ -743,7 +743,7 @@ int logged_characters()
 void log_teardown()
 {
 	free(o_space);
-#if DEVEL
+#if DEBUG || DEVEL
 	free(o_trace_func);
 	free(o_trace_file);
 #endif

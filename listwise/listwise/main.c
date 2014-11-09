@@ -58,7 +58,7 @@ void listwise_log(void * token, void * udata, const char * func, const char * fi
 {
 	va_list va;
 	va_start(va, fmt);
-#if DEVEL
+#if DEBUG || DEVEL
 	log_vlogf(func, file, line, *(uint64_t*)token, fmt, va);
 #else
 	log_vlogf(*(uint64_t*)token, fmt, va);
@@ -140,7 +140,7 @@ static struct listwise_logging * logging = (struct listwise_logging[]) {{
 	, .opinfo_token			= (uint64_t[]) { L_LWOPINFO }
 	, .opinfo_would			= listwise_would
 	, .opinfo_log				= listwise_log
-#if DEVEL
+#if DEBUG || DEVEL
 	, .tokens_token			= (uint64_t[]) { L_LWTOKEN }
 	, .tokens_would			= listwise_would
 	, .tokens_log				= listwise_log
@@ -174,21 +174,33 @@ int main(int g_argc, char** g_argv)
 	fatal(args_parse, &args_remnant);
 
 	// configure logger
-#if DEVEL
+#if DEBUG || DEVEL
 	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
 	{
 		fatal(log_config_and_describe
-			, L_LOGGER | L_LWTOKEN | L_LWSTATE | L_LWOPINFO		// prefix
-			, L_LWOPINFO | L_LWTOKEN | L_LWSTATE							// trace
-			, L_LOGGER																				// describe bits
+			, L_LWTOKEN | L_LWSTATE | L_LWOPINFO		// prefix
+#if DEVEL
+			| L_LOGGER
+#endif
+			, L_LWOPINFO | L_LWTOKEN | L_LWSTATE		// trace
+			, 0																			// describe bits
+#if DEVEL
+			| L_LOGGER
+#endif
 		);
 	}
 	else
 	{
 		fatal(log_config_and_describe
-			, L_LOGGER | L_LWTOKEN | L_LWSTATE | L_LWOPINFO
+			, L_LWTOKEN | L_LWSTATE | L_LWOPINFO
+#if DEVEL
+			| L_LOGGER
+#endif
 			, 0
-			, L_LOGGER
+			, 0
+#if DEVEL
+			| L_LOGGER
+#endif
 		);
 	}
 #else
@@ -303,7 +315,7 @@ int main(int g_argc, char** g_argv)
 
 	if(transform)
 	{
-#if DEVEL
+#if DEBUG || DEVEL
 		fatal(generator_parse2, 0, transform->s, transform->l, &g, 0);
 #else
 		fatal(generator_parse, 0, transform->s, transform->l, &g);
@@ -389,12 +401,12 @@ finally:
 
 	if(XAPI_UNWINDING)
 	{
-#if DEVEL
+#if DEBUG || DEVEL
 		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
 		{
 #endif
 			tracesz = xapi_trace_pithy(space, sizeof(space));
-#if DEVEL
+#if DEBUG || DEVEL
 		}
 		else
 		{

@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 	fatal(args_parse);
 
 	// configure logger
-#if DEVEL
+#if DEBUG || DEVEL
 	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
 	{
 		fatal(log_config_and_describe
@@ -173,7 +173,7 @@ int main(int argc, char** argv)
 	// load additional fab-specific listwise operators
 	fatal(listwise_register_opdir, XQUOTE(FABLWOPDIR));
 
-#if DEVEL
+#if DEBUG || DEVEL
 	// configure liblistwise logging
 	lw_configure_logging();
 #endif

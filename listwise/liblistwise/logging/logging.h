@@ -47,7 +47,7 @@ struct listwise_logging
 	listwise_logging_would	opinfo_would;
 	listwise_logging_log		opinfo_log;
 
-#if DEVEL
+#if DEBUG || DEVEL
 	// generator parsing - tokens
 	void * 									tokens_token;
 	listwise_logging_would	tokens_would;
@@ -106,7 +106,7 @@ do {																																							\
 #define lw_would_lstack()   					LW_WOULD(lstack, udata)
 #define lw_would_opinfo() 						LW_WOULD(opinfo, udata)
 
-#if DEVEL
+#if DEBUG || DEVEL
 #define lw_log_tokens(fmt, ...)				LW_LOG(tokens			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 #define lw_log_states(fmt, ...)				LW_LOG(states			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 #define lw_log_sanity(fmt, ...)				LW_LOG(sanity			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)

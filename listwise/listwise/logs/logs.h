@@ -27,7 +27,7 @@
 #define L_LWEXEC				0x0000000000000004ULL		/* step-by-step LW exectution */
 #define L_LWOPINFO			0x0000000000000008ULL		/* operator informational messages */
 
-#if DEVEL
+#if DEBUG || DEVEL
 # define L_LWTOKEN			0x0000000000000010ULL		/* scanner token stream */
 # define L_LWSTATE			0x0000000000000020ULL		/* scanner state changes */
 #endif

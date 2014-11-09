@@ -25,7 +25,7 @@
 #define L_INFO          0x0000000000000004ULL
 #define L_ARGS 					0x0000000000000008ULL
 #define L_PARAMS				0x0000000000000010ULL
-#if DEVEL
+#if DEBUG || DEVEL
 # define L_FFTOKEN 			0x0000000000000020ULL
 # define L_FFSTATE 			0x0000000000000040ULL
 # define L_FFTREE				0x0000000000000080ULL
@@ -56,7 +56,7 @@
 #define L_LWPARSE				0x0000000200000000ULL	/* display the parsed generator */
 #define L_LWEXEC				0x0000000400000000ULL	/* step-by-step LW execution */
 #define L_LWOPINFO			0x0000000800000000ULL /* operator informational messages */
-#if DEVEL
+#if DEBUG || DEVEL
 # define L_LWTOKEN			0x0000001000000000ULL	/* scanner token stream */
 # define L_LWSTATE			0x0000002000000000ULL	/* scanner state changes */
 #endif

@@ -79,10 +79,11 @@ if(help)
 " -t <path>                      read transform-string from <path>\n"
 " -f <path>                      read transform-string and initial list items from <path>\n"
 "                                 <path> of - means stdin\n"
-" -                              equal to -f -\n"
 " -A                   (default) process subsequent -l, -t, and -f options line-wise\n"
 " -0                             process subsequent -l, -t, and -f options nullbyte-wise\n"
-#if DEVEL
+" -T                   (default) process subsequent arguments as transform-string\n"
+" -I                             process subsequent arguments as initial list items\n"
+#if DEBUG || DEVEL
 " --logtrace-no        (default) do not include file/function/line in log messages\n"
 " --logtrace                     include file/function/line in log messages\n"
 " --backtrace-pithy    (default) produce a summary of the callstack upon failure\n"
@@ -224,7 +225,7 @@ int args_parse(pstring ** remnant)
 		, { "oc"													, no_argument				, 0, 0 }
 		, { "od"													, no_argument				, 0, 0 }
 
-#if DEVEL
+#if DEBUG || DEVEL
 		, { "backtrace-pithy"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
 		, { "backtrace-full"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
 		, { "logtrace-no"									, no_argument				, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
@@ -238,7 +239,7 @@ int args_parse(pstring ** remnant)
 		"-"
 
 		// no-argument switches
-		"aknzA0N"
+		"aknzA0NIT"
 
 		// with-argument switches
 		"t:f:l:i:"
@@ -247,24 +248,16 @@ int args_parse(pstring ** remnant)
 	//
 	// args:defaults
 	//
-#if DEVEL
+#if DEBUG || DEVEL
 	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
 	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
 #endif
 
 	// process input files linewise
 	int linewise = 1;
+	int transform_string = 1;
 
 	// allocations
-/*
-	size_t linewise_init_list_filesa = 0;
-	size_t nullwise_init_list_filesa = 0;
-	size_t linewise_transform_filesa = 0;
-	size_t nullwise_transform_filesa = 0;
-	size_t linewise_input_filesa = 0;
-	size_t nullwise_input_filesa = 0;
-	size_t init_lista = 0;
-*/
 	size_t inputsa = 0;
 
 	int x;
@@ -313,66 +306,13 @@ int args_parse(pstring ** remnant)
 		{
 			linewise = 1;
 		}
-/*
-		else if(x == 't')
+		else if(x == 'I')
 		{
-			if(linewise)
-				fatal(listadd, &g_args.linewise_input_files, &g_args.linewise_input_filesl, &linewise_input_filesa, optarg);
-			else
-				fatal(listadd, &g_args.nullwise_input_files, &g_args.nullwise_input_filesl, &nullwise_input_filesa, optarg);
+			transform_string = 0;
 		}
-		else if(x == 'f')
+		else if(x == 'T')
 		{
-			if(linewise)
-				fatal(listadd, &g_args.linewise_transform_files, &g_args.linewise_transform_filesl, &linewise_transform_filesa, optarg);
-			else
-				fatal(listadd, &g_args.nullwise_transform_files, &g_args.nullwise_transform_filesl, &nullwise_transform_filesa, optarg);
-		}
-		else if(x == 'l')
-		{
-			if(linewise)
-				fatal(listadd, &g_args.linewise_init_list_files, &g_args.linewise_init_list_filesl, &linewise_init_list_filesa, optarg);
-			else
-				fatal(listadd, &g_args.nullwise_init_list_files, &g_args.nullwise_init_list_filesl, &nullwise_init_list_filesa, optarg);
-		}
-		else if(x == 'i')
-		{
-			if(g_args.init_listl == init_lista)
-			{
-				int ns = init_lista ?: 10;
-				ns = ns * 2 + ns / 2;
-
-				fatal(xrealloc, &g_args.init_list, sizeof(*g_args.init_list), ns, init_lista);
-				fatal(xrealloc, &g_args.init_list_lens, sizeof(*g_args.init_list_lens), ns, init_lista);
-				init_lista = ns;
-			}
-			fatal(ixstrdup, &g_args.init_list[g_args.init_listl], optarg);
-			g_args.init_list_lens[g_args.init_listl] = strlen(optarg);
-			g_args.init_listl++;
-		}
-*/
-		else if(x == 't' || x == 'f' || x == 'l' || x == 'i')
-		{
-			if(g_args.inputsl == inputsa)
-			{
-				int ns = inputsa ?: 10;
-				ns = ns * 2 + ns / 2;
-
-				fatal(xrealloc, &g_args.inputs, sizeof(*g_args.inputs), ns, inputsa);
-				inputsa = ns;
-			}
-			g_args.inputs[g_args.inputsl].linewise = linewise;
-			if(x == 'i')
-				g_args.inputs[g_args.inputsl].kind = KIND_INIT_LIST_ITEM;
-			else if(x == 'l')
-				g_args.inputs[g_args.inputsl].kind = KIND_INIT_LIST_FILE;
-			else if(x == 't')
-				g_args.inputs[g_args.inputsl].kind = KIND_TRANSFORM_FILE;
-			else if(x == 'f')
-				g_args.inputs[g_args.inputsl].kind = KIND_INPUT_FILE;
-
-			fatal(ixstrdup, &g_args.inputs[g_args.inputsl].s, optarg);
-			g_args.inputsl++;
+			transform_string = 1;
 		}
 		else if(x == 'N')
 		{
@@ -390,14 +330,34 @@ int args_parse(pstring ** remnant)
 				failf(LISTWISE_BADARGS, "unknown argument : %s", g_argv[optind-1]);
 			}
 		}
-		else if(strcmp(optarg, "-") == 0)
+		else if(x == 't' || x == 'f' || x == 'l' || x == 'i' || !transform_string)
 		{
-			// the argument "-"
-//			fatal(ixstrdup, &g_args.generator_file, optarg);
+			if(g_args.inputsl == inputsa)
+			{
+				int ns = inputsa ?: 10;
+				ns = ns * 2 + ns / 2;
+
+				fatal(xrealloc, &g_args.inputs, sizeof(*g_args.inputs), ns, inputsa);
+				inputsa = ns;
+			}
+			g_args.inputs[g_args.inputsl].linewise = linewise;
+
+			if(x == 'l')
+				g_args.inputs[g_args.inputsl].kind = KIND_INIT_LIST_FILE;
+			else if(x == 't')
+				g_args.inputs[g_args.inputsl].kind = KIND_TRANSFORM_FILE;
+			else if(x == 'f')
+				g_args.inputs[g_args.inputsl].kind = KIND_INPUT_FILE;
+			else
+				g_args.inputs[g_args.inputsl].kind = KIND_INIT_LIST_ITEM;
+
+			fatal(ixstrdup, &g_args.inputs[g_args.inputsl].s, optarg);
+			g_args.inputsl++;
 		}
+
+		// non-option argv elements
 		else
 		{
-			// non-option argv elements
 			if(*remnant)
 				fatal(pscats, remnant, " ");
 			fatal(pscats, remnant, optarg);
@@ -441,13 +401,4 @@ void args_teardown()
 		free(g_args.inputs[x].s);
 
 	free(g_args.inputs);
-/*
-	for(x = 0; x < g_args.init_listl; x++)
-		free(g_args.init_list[x]);
-
-	free(g_args.init_list);
-	free(g_args.init_list_lens);
-	free(g_args.generator_file);
-	free(g_args.init_file);
-*/
 }
