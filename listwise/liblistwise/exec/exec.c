@@ -68,13 +68,13 @@ static int exec_generator(
 	int x;
 	for(x = 0; x < initl; x++)
 	{
-		fatal(lstack_writew, *lx, 0, x, init[x], initls ? initls[x] : strlen(init[x]));
+		fatal(lstack_addw, *lx, init[x], initls ? initls[x] : strlen(init[x]));
 	}
 
 	// write initial generator args at top of list stack
 	for(x = 0; x < g->argsl; x++)
 	{
-		fatal(lstack_writew, *lx, 0, x + initl, g->args[x]->s, g->args[x]->l);
+		fatal(lstack_addw, *lx, g->args[x]->s, g->args[x]->l);
 	}
 
 	// the initial state of selection/windows is all
