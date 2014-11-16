@@ -89,7 +89,12 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 # run all tests
 [ @test ] : [ $xunit_devel $liblistwise_devel $oplist_devel $listwise_test $tsopaths ]
 {
-	[ $xunit_devel ] +XUNIT,INPUT,OUTPUT [ $liblistwise_devel $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
+	[ $xunit_devel ] [ $liblistwise_devel $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
+}
+
+[ @test.more ] : [ $xunit_devel $liblistwise_devel $oplist_devel $listwise_test $tsopaths ]
+{
+	[ $xunit_devel ] +XUNIT [ $liblistwise_devel $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
 }
 
 # test helper

@@ -32,6 +32,7 @@
 
 # default target - tests
 [ @test ] : [ @xunit.devel @libxunit.devel @liblistwise.test ]
+[ @test.more ] : [ @xunit.devel @libxunit.devel @liblistwise.test.more ]
 
 # build binaries
 [ @final ] : [ @libxapi.final @libxlinux.final @libpstring.final @liblistwise.final @listwise.final @fab.final @util.final ]

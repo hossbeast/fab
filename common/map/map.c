@@ -38,7 +38,7 @@ typedef struct
 	char		p[];		// payload
 } __attribute__((packed)) slot;
 
-struct map_t
+struct map
 {
 	size_t			l;				// table length, in elements (always a power of two)
 	uint32_t		lm;				// bitmask equal to table length - 1

@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -15,22 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGS_H
-#define _LOGS_H
+#ifndef _LISTWISE_WINDOW_INTERNAL_H
+#define _LISTWISE_WINDOW_INTERNAL_H
 
-#include "logger.h"
+#define restrict __restrict
 
-#if DEVEL
-# define L_LOGGER				0x0000000000000001ULL
-#endif
-#define L_ERROR					0x0000000000000002ULL
-#define L_WARN					0x0000000000000004ULL
-#define L_INFO					0x0000000000000008ULL
-#define L_ARGS					0x0000000000000010ULL
-#define L_PARAMS				0x0000000000000020ULL
-#define L_INSET					0x0000000000000040ULL
-#define L_OUTSET				0x0000000000000080ULL
-#define L_DLOAD					0x0000000000000100ULL
-#define L_XUNIT					0x0000000000000200ULL
+/// lstack_windows_activate
+//
+// SUMMARY
+//  activate staged windows (even if their lease has expired)
+//
+int lstack_windows_activate(lwx * const restrict lx)
+	__attribute__((nonnull));
 
+/// lstack_window_deactivate
+//
+// SUMMARY
+//  reset the active window for the specified row
+//
+int lstack_window_deactivate(lwx * const restrict lx, int y)
+	__attribute__((nonnull));
+
+#undef restrict
 #endif

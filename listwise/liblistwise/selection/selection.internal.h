@@ -15,25 +15,18 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <string.h>
-#include <alloca.h>
+#ifndef _LISTWISE_SELECTION_INTERNAL_H
+#define _LISTWISE_SELECTION_INTERNAL_H
 
-#include "listwise/operator.h"
+#define restrict __restrict
 
-/*
+/// lstack_selection_activate
+//
+// SUMMARY
+//  activate selections staged by the previous operation
+//
+int lstack_selection_activate(lwx * const restrict lx)
+	__attribute__((nonnull));
 
-wz operator - reset window
-
-NO ARGUMENTS
-
-*/
-
-operator op_desc[] = {
-	{
-		  .s						= "wz"
-		, .optype				= LWOP_WINDOWS_RESET
-		, .desc					= "reset windows - no windows"
-	}
-	, {}
-};
+#undef restrict
+#endif

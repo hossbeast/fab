@@ -31,7 +31,7 @@ int API listwise_test_entry(const listwise_test * test)
 	int i = 0;
 	int x;
 
-	log_start(L_INPUT);
+	log_start(L_XUNIT | L_INSET);
 	logs(0, "[ ");
 	for(x = 0; x < sentinel(test->init); x++)
 	{
@@ -44,7 +44,7 @@ int API listwise_test_entry(const listwise_test * test)
 
 	fatal(listwise_exec, test->xsfm, 0, test->init, 0, sentinel(test->init), &lx);
 
-	log_start(L_OUTPUT);
+	log_start(L_XUNIT | L_OUTSET);
 	logs(0, "[ ");
 
 	i = 0;

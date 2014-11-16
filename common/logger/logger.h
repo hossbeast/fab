@@ -147,7 +147,7 @@ int log_would(const uint64_t bits);
 //  if called after log_start, returns 1
 //  otherwise, returns log_would(bits)
 // 
-#if ! DEBUG || DEVEL
+#if ! (DEBUG || DEVEL)
 int log_vlogf(const uint64_t bits, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull(2)));
 int log_logf(const uint64_t bits, const char * const restrict fmt, ...)
@@ -193,7 +193,7 @@ int log_logw(const char * const restrict func, const char * const restrict file,
 // RETURNS
 //  log_would(bits)
 //
-#if ! DEBUG || DEVEL
+#if ! (DEBUG || DEVEL)
 int log_log_start(const uint64_t bits);
 # define log_start(bits) log_log_start(bits)
 #else

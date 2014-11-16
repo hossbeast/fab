@@ -68,7 +68,8 @@ int main(int g_argc, char** g_argv)
 #endif
 
 	// default logging categories, with lower precedence than cmdline logexprs
-	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|XUNIT", 0, 1, L_INFO);
+	fatal(log_parse_and_describe, "+ERROR|WARN|INFO", 0, 1, L_INFO);
+	fatal(log_parse_and_describe, "+{XUNIT}", 0, 1, L_INFO);
 
 	// summarize
 	fatal(args_summarize);
@@ -77,24 +78,33 @@ int main(int g_argc, char** g_argv)
 	for(x = 0; x < g_args.test_objectsl; x++)
 	{
 		// open the object
-#if XUNIT_DEBUG
-printf("open(%s)\n", g_args.test_objects[x]);
-#endif
 		fatal(xdlopen, g_args.test_objects[x], RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND, &object);
 
-		// execute tests contained
+		// load the test manifest
 		xunit_unit * xunit;
 		fatal(uxdlsym, object, "xunit", (void*)&xunit);
-#if XUNIT_DEBUG
-printf("xunit %p = { setup : %p, teardown : %p, tests : %p }\n"
-	, xunit
-	, xunit->setup
-	, xunit->teardown
-	, xunit->tests
-);
-#endif
+
 		if(xunit)
 		{
+			xunit_test ** test = xunit->tests;
+			while(*test)
+				test++;
+
+			logf(L_XUNIT | L_DLOAD, "%s -> xunit : { setup : %s, teardown : %s, tests : %zu }"
+				, g_args.test_objects[x]
+				, xunit->setup ? "true" : "false"
+				, xunit->teardown ? "true" : "false"
+				, test - xunit->tests
+			);
+		}
+		else
+		{
+			logf(L_XUNIT | L_DLOAD, "%s", g_args.test_objects[x]);
+		}
+
+		if(xunit)
+		{
+			// execute setup, if any
 			if(xunit->setup)
 				fatal(xunit->setup, xunit);
 
@@ -103,21 +113,13 @@ printf("xunit %p = { setup : %p, teardown : %p, tests : %p }\n"
 			int pass = 0;
 			int fail = 0;
 
+			// execute all tests
 			while(*test)
 			{
-#if XUNIT_DEBUG
-printf("test %p = { unit : %p, name : %p, entry : %p }\n"
-	, *test
-	, (*test)->unit
-	, (*test)->name
-	, (*test)->entry
-);
-#endif
-
 				if((*test)->name)
-					logf(L_XUNIT, "%p %p %s[%d] %s", object, (*test)->entry, g_args.test_objects[x], pass + fail, (*test)->name);
+					logf(L_XUNIT, "%s[%d] %s", g_args.test_objects[x], pass + fail, (*test)->name);
 				else
-					logf(L_XUNIT, "%p %p %s[%d]", object, (*test)->entry, g_args.test_objects[x], pass + fail);
+					logf(L_XUNIT, "%s[%d]", g_args.test_objects[x], pass + fail);
 
 				// convenience
 				(*test)->unit = xunit;
@@ -146,22 +148,11 @@ printf("test %p = { unit : %p, name : %p, entry : %p }\n"
 				test++;
 			}
 
+			// execute teardown, if any
 			if(xunit->teardown)
 				fatal(xunit->teardown, xunit);
 
-/*
-			uint64_t p = 0;
-			uint64_t f = 0;
-
-			if(fail == 0)
-				p |= L_GREEN;
-			else
-				f |= L_RED;		
-
-			logf(L_XUNIT | p, " pass : %d", pass);
-			logf(L_XUNIT | f, " fail : %d", fail);
-*/
-
+			// report for this module
 			logf(L_XUNIT | (fail == 0 ? L_GREEN : L_RED)
 				, " %9s : %3d / %3d or %%% 5.2f"
 				, "pass"
@@ -176,25 +167,9 @@ printf("test %p = { unit : %p, name : %p, entry : %p }\n"
 			if(xunit->teardown)
 				fatal(xunit->teardown, xunit);
 		}
-		else
-		{
-			logf(L_XUNIT, " %s", g_args.test_objects[x]);
-		}
 	}
 
-/*
-	uint64_t p = 0;
-	uint64_t f = 0;
-
-	if(total_fail == 0)
-		p |= L_GREEN;
-	else
-		f |= L_RED;		
-
-	logf(L_XUNIT | p, "total pass : %d", total_pass);
-	logf(L_XUNIT | f, "total fail : %d", total_fail);
-*/
-
+	// summary report
 	logf(L_XUNIT | (total_fail == 0 ? L_GREEN : L_RED)
 		, "%-10s : %3d / %3d or %%% 5.2f"
 		, "total pass"

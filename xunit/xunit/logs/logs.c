@@ -28,9 +28,10 @@ struct g_logs_t logs[] = {
 	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
 	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
 	, { .v = L_PARAMS		, .s = "PARAMS"		, .d = "program execution parameters" }
-	, { .v = L_XUNIT		, .s = "XUNIT"		, .d = "unit tests" }
-	, { .v = L_INPUT		, .s = "INPUT"		, .d = "unit test input set" }
-	, { .v = L_OUTPUT		, .s = "OUTPUT"		, .d = "unit test output set" }
+	, { .v = L_INSET		, .s = "INSET"		, .d = "unit test input set" }
+	, { .v = L_OUTSET		, .s = "OUTSET"		, .d = "unit test output set" }
+	, { .v = L_DLOAD		, .s = "DLOAD"		, .d = "dload details" }
+	, { .v = L_XUNIT		, .s = "XUNIT"		, .d = "unit test results" }
 };
 
 struct g_logs_t * g_logs = logs;

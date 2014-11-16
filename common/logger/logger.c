@@ -619,13 +619,13 @@ int log_would(const uint64_t e)
 		{
 			uint64_t rr = 0;
 			if(o_filter[x].m == '(')
-				rr = e & o_filter[x].v;
+				rr = e & o_filter[x].v & L_TAG;
 			if(o_filter[x].m == '{')
-				rr = ((e & o_filter[x].v) == e);
+				rr = ((e & o_filter[x].v & L_TAG) == (e & L_TAG));
 			if(o_filter[x].m == '[')
-				rr = ((e & o_filter[x].v) == o_filter[x].v);
+				rr = ((e & o_filter[x].v & L_TAG) == (o_filter[x].v & L_TAG));
 			if(o_filter[x].m == '<')
-				rr = (e == o_filter[x].v);
+				rr = ((e & L_TAG) == (o_filter[x].v & L_TAG));
 
 			if(rr)
 			{

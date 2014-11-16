@@ -23,8 +23,8 @@
 
 /// opaque map type declaration
 //
-struct map_t;
-typedef struct map_t map;
+struct map;
+typedef struct map map;
 
 /// map_create
 //
