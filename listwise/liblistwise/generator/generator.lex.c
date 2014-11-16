@@ -1563,7 +1563,7 @@ YY_RULE_SETUP
 																													yyless(0);
 																												}
 	YY_BREAK
-/* following ws, an alpha string must be an operator name */
+/* following ws, an alpha string must be an operator name or mnemonic */
 case 11:
 YY_RULE_SETUP
 #line 189 "listwise/liblistwise/generator/generator.l"

@@ -107,7 +107,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 						wasreset = 1;
 
 						// reset staged window, if any
-						fatal(lstack_window_unstage, lx, x);
+//						fatal(lstack_window_unstage, lx, x);
 
 						// record this index was hit
 						fatal(lstack_selection_stage, lx, x);

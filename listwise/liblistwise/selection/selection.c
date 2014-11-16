@@ -34,18 +34,18 @@ int API lstack_selection_stage(lwx * const restrict lx, int y)
 		if(lx->sel.staged == lx->sel.active)
 			lx->sel.staged = &lx->sel.storage[1];
 
-		lx->sel.staged->l = 0;
-		lx->sel.staged->sl = 0;
+		// force renewal
+		lx->sel.staged->lease = -1;
 	}
 
-	if(lx->sel.staged->lease != lx->sel.staged_era)
+	// renew lease
+	if(lx->sel.staged->lease != lx->sel.staged_era || lx->sel.staged->nil)
 	{
+		lx->sel.staged->lease = lx->sel.staged_era;
+		lx->sel.staged->nil = 0;
 		lx->sel.staged->l = 0;
 		lx->sel.staged->sl = 0;
 	}
-
-	lx->sel.staged->nil = 0;
-	lx->sel.staged->lease = lx->sel.staged_era;
 
 	// reallocate if necessary
 	if(lx->sel.staged->sa <= (y / 8))
@@ -67,13 +67,6 @@ int API lstack_selection_stage(lwx * const restrict lx, int y)
 		lx->sel.staged->l++;
 
 	lx->sel.staged->s[y/8] |= (0x01 << (y%8));
-
-	finally : coda;
-}
-
-int API lstack_selection_unstage(lwx * const restrict lx)
-{
-	lx->sel.staged = 0;
 
 	finally : coda;
 }
@@ -104,4 +97,24 @@ int API lstack_selection_reset(lwx * const restrict lx)
 	lx->sel.active_era++;
 
 	finally : coda;
+}
+
+int API lstack_selection_state(lwx * const restrict lx)
+{
+	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
+	{
+		return LWX_SELECTED_ALL;		// all rows are selected
+	}
+	else if(lx->sel.active->nil || lx->sel.active->l == 0)
+	{
+		return LWX_SELECTED_NONE;		// no rows selected
+	}
+	else if(lx->sel.active->l == lx->s[0].l)
+	{
+		return LWX_SELECTED_SOME;		// subset of rows are selected
+	}
+	else
+	{
+		return LWX_SELECTED_ALL;		// all rows are selected
+	}
 }

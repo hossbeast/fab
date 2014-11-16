@@ -389,7 +389,7 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 			}
 
 			// indicate active windows
-			if(x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
+			if(x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era && !lx->win.s[y].active->nil)
 			{
 				SAY("\n");
 				size_t oz = *z;

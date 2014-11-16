@@ -37,8 +37,8 @@
 */
 
 // listwise execution context - an opaque type
-struct lwx_t;
-typedef struct lwx_t lwx;
+struct lwx;
+typedef struct lwx lwx;
 
 // implementation for LSTACK_ITER* macros
 #include "listwise/iterate.h"

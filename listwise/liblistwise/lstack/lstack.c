@@ -776,7 +776,7 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 	}
 
 	// if there is a window in effect for this entry
-	if(win && x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
+	if(win && x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era && !lx->win.s[y].active->nil)
 	{
 		if(lx->s[x].t[y].y != LWTMP_WINDOW)
 		{

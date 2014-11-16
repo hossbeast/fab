@@ -57,9 +57,6 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 
 			if(wl)
 			{
-				// reset staged windows
-				fatal(lstack_window_unstage, lx, x);
-
 				// preceeding the first windowed segment
 				fatal(lstack_window_stage, lx, x, 0, ws[0].o);
 			}

@@ -18,41 +18,37 @@
 #ifndef _LISTWISE_WINDOW_H
 #define _LISTWISE_WINDOW_H
 
-#include "listwise.h"
+struct lwx_windows;		// lwx.h
 
 #define restrict __restrict
 
 /// lstack_window_stage
 //
 // SUMMARY
-//  add a segment to the staged window for the specified row
+//  add a segment to the staged window(s) for the specified row
 //
 int lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 	__attribute__((nonnull));
 
-/// lstack_window_deactivate
-//
-// SUMMARY
-//  reset the active window for the specified row
-//
-int lstack_window_deactivate(lwx * const restrict lx, int y)
-	__attribute__((nonnull));
+#define LWX_WINDOWED_ALL		0		/* all rows are selected */
+#define LWX_WINDOWED_NONE		1		/* no rows are selected */
+#define LWX_WINDOWED_SOME		2		/* 1+ rows are selected and 1+ rows are not */
 
-/// lstack_window_unstage
+/// lstack_windows_state
 //
 // SUMMARY
-//  reset the staged window for the specified row
+//  get a value indicating the state of the windows for the specified row
 //
-int lstack_window_unstage(lwx * const restrict lx, int y)
-	__attribute__((nonnull));
-
-/// lstack_windows_activate
+// PARAMETERS
+//  lx    - 
+//  y     - 
+//  [win] - 
 //
-// SUMMARY
-//  activate staged windows (even if their lease has expired)
+// RETURNS
+//  one of LWX_WINDOWED_*
 //
-int lstack_windows_activate(lwx * const restrict lx)
-	__attribute__((nonnull));
+int lstack_windows_state(lwx * const restrict lx, int y, struct lwx_windows ** win)
+	__attribute__((nonnull(1)));
 
 #undef restrict
 #endif

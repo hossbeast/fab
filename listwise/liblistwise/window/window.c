@@ -52,49 +52,59 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 		lx->win.s[y].staged->l = 0;
 	}
 	
-	if(lx->win.s[y].staged->lease != lx->win.staged_era)
-		lx->win.s[y].staged->l = 0;
-
-	lx->win.s[y].staged->lease = lx->win.staged_era;
-
-	int type = LEFT;
-
-	int i;
-	for(i = 0; i < lx->win.s[y].staged->l; i++)
+	// renew lease
+	if(lx->win.s[y].staged->lease != lx->win.staged_era || lx->win.s[y].staged->nil)
 	{
-		if(off == lx->win.s[y].staged->s[i].o && len == lx->win.s[y].staged->s[i].l)
-		{
-			type = SAME; // same segment
-			break;
-		}
-		else if((off + len) < lx->win.s[y].staged->s[i].o)
-		{
-			type = LEFT; // disjoint on the left
-			break;
-		}
-		else if(off > (lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l))
-		{
-			type = RIGHT; // disjoint on the right
-		}
-		else
-		{
-			type = INTER; // overlapping
-
-			int noff = MIN(lx->win.s[y].staged->s[i].o, off);
-			int nlen = MAX(lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l, off + len) - noff;
-
-			lx->win.s[y].staged->zl += (nlen - lx->win.s[y].staged->s[i].l);
-
-			lx->win.s[y].staged->s[i].o = noff;
-			lx->win.s[y].staged->s[i].l = nlen;
-
-			break;
-		}
+		lx->win.s[y].staged->lease = lx->win.staged_era;
+		lx->win.s[y].staged->nil = 0;
+		lx->win.s[y].staged->l = 0;
+		lx->win.s[y].staged->zl = 0;
 	}
 
-	if(type == LEFT || type == RIGHT)
+	if(off < 0 || len <= 0 || (off + len) > lx->s[0].s[y].l)
 	{
-		if(len)
+		// invalid window ; nil the window
+		lx->win.s[y].staged->nil = 1;
+		lx->win.s[y].staged->zl = 0;
+	}
+	else
+	{
+		int type = LEFT;
+
+		int i;
+		for(i = 0; i < lx->win.s[y].staged->l; i++)
+		{
+			if(off == lx->win.s[y].staged->s[i].o && len == lx->win.s[y].staged->s[i].l)
+			{
+				type = SAME; // same segment
+				break;
+			}
+			else if((off + len) < lx->win.s[y].staged->s[i].o)
+			{
+				type = LEFT; // disjoint on the left
+				break;
+			}
+			else if(off > (lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l))
+			{
+				type = RIGHT; // disjoint on the right
+			}
+			else
+			{
+				type = INTER; // overlapping
+
+				int noff = MIN(lx->win.s[y].staged->s[i].o, off);
+				int nlen = MAX(lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l, off + len) - noff;
+
+				lx->win.s[y].staged->zl += (nlen - lx->win.s[y].staged->s[i].l);
+
+				lx->win.s[y].staged->s[i].o = noff;
+				lx->win.s[y].staged->s[i].l = nlen;
+
+				break;
+			}
+		}
+
+		if(type == LEFT || type == RIGHT)
 		{
 			// reallocate if necessary
 			if(lx->win.s[y].staged->a == lx->win.s[y].staged->l)
@@ -130,12 +140,14 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 ** These api's ensure that the next active/staged window will be at the other index
 */
 
+/*
 int API lstack_window_unstage(lwx * const restrict lx, int y)
 {
 	lx->win.s[y].staged = 0;
 
 	finally : coda;
 }
+*/
 
 int API lstack_window_deactivate(lwx * const restrict lx, int y)
 {
@@ -153,22 +165,50 @@ int API lstack_windows_activate(lwx * const restrict lx)
 	LSTACK_ITERATE(lx, y, go)
 	if(go)
 	{
-		if(lx->win.s[y].staged)
+		if(lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
 		{
 			lx->win.s[y].active = lx->win.s[y].staged;
 			lx->win.s[y].active_storage_index = lx->win.s[y].staged_storage_index;
-
-			lx->win.s[y].staged = 0;
-
-			// renew lease
-			lx->win.s[y].active->lease = lx->win.active_era;
-
-			// reset temp
-			if(lx->s[0].t[y].y == LWTMP_WINDOW)
-				lx->s[0].t[y].y = LWTMP_UNSET;
 		}
+		else
+		{
+			lx->win.s[y].active = &lx->win.s[y].storage[0];
+			lx->win.s[y].active->nil = 1;
+		}
+
+		// renew lease
+		lx->win.s[y].active->lease = lx->win.active_era;
+
+		// reset staged
+		lx->win.s[y].staged = 0;
+
+		// reset temp
+		lx->s[0].t[y].y = LWTMP_UNSET;
 	}
 	LSTACK_ITEREND
 
 	finally : coda;
+}
+
+int API lstack_windows_state(lwx * const restrict lx, int y, struct lwx_windows ** win)
+{
+	if(win)
+		*win = lx->win.s[y].active;
+
+	if(lx->win.s[y].active == 0 || lx->win.s[y].active->lease != lx->win.active_era)
+	{
+		return LWX_WINDOWED_ALL;		// all sections are active
+	}
+	else if(lx->win.s[y].active->nil || lx->win.s[y].active->l == 0)
+	{
+		return LWX_WINDOWED_NONE;		// no sections are active
+	}
+	else if(lx->win.s[y].active->l == lx->s[0].l)
+	{
+		return LWX_WINDOWED_SOME;		// subset of sections are selected
+	}
+	else
+	{
+		return LWX_WINDOWED_ALL;		// all sections are active
+	}
 }

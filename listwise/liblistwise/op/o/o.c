@@ -44,7 +44,21 @@ OPERATION
 operator op_desc[] = {
 	{
 		  .s						= "o"
+		, .optype				= LWOP_SELECTION_AGGREGATE | LWOP_WINDOWS_AGGREGATE
 		, .mnemonic			= "or"
-		, .desc					= "OR : aggregate selections and windows across operators"
-	}, {}
+		, .desc					= "aggregate selection and windows across operators"
+	}
+	, {
+		  .s						= "so"
+		, .optype				= LWOP_SELECTION_AGGREGATE
+		, .mnemonic			= "selection-or"
+		, .desc					= "aggregate selection across operators"
+	}
+	, {
+		  .s						= "wo"
+		, .optype				= LWOP_WINDOWS_AGGREGATE
+		, .mnemonic			= "windows-or"
+		, .desc					= "aggregate windows across operators"
+	}
+	, {}
 };

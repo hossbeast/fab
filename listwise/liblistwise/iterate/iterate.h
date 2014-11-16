@@ -24,13 +24,13 @@
 
 #define restrict __restrict
 
-void lwx_iterate_loop(struct lwx_t * const restrict lx, const int x, const int y, const int sel, int * const restrict go)
+void lwx_iterate_loop(struct lwx * const restrict lx, const int x, const int y, const int sel, int * const restrict go)
   __attribute__((nonnull));
 
-int lwx_lists(struct lwx_t * const restrict lx)
+int lwx_lists(struct lwx * const restrict lx)
   __attribute__((nonnull));
   
-int lwx_rows(struct lwx_t * const restrict lx, const int x)
+int lwx_rows(struct lwx * const restrict lx, const int x)
   __attribute__((nonnull));
 
 #undef restrict

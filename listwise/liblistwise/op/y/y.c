@@ -25,9 +25,9 @@
 
 /*
 
-y operator  - activate staged selections and windows
-sy operator - activate staged selections
-wy operator - activate staged windows
+y  : activate staged selections and windows
+sy : activate staged selections
+wy : activate staged windows
 
 NO ARGUMENTS
 
@@ -41,17 +41,17 @@ OPERATION
 operator op_desc[] = {
 	{
 		  .s						= "y"
-		, .optype				= 0
-		, .desc					= "activate staged selections and windows"
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_ACTIVATE
+		, .desc					= "activate staged selection and windows"
 	}
 	, {
 		  .s						= "sy"
-		, .optype				= 0
-		, .desc					= "activate staged selections"
+		, .optype				= LWOP_SELECTION_ACTIVATE
+		, .desc					= "activate staged selection"
 	}
 	, {
 		  .s						= "wy"
-		, .optype				= 0
+		, .optype				= LWOP_WINDOWS_ACTIVATE
 		, .desc					= "activate staged windows"
 	}, {}
 };

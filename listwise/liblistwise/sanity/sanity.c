@@ -26,6 +26,7 @@
 
 #include "xlinux.h"
 #include "macros.h"
+#include "map.h"
 
 #define restrict __restrict
 
@@ -64,7 +65,7 @@ void sanityblock_free(sanityblock * const sb)
 	free(sb);
 }
 
-int sanity(struct lwx_t * const restrict ls, sanityblock * const restrict sb, void ** udata)
+int sanity(struct lwx * const restrict ls, sanityblock * const restrict sb, void ** udata)
 {
 	int R = 0;
 

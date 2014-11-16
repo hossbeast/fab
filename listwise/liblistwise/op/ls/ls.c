@@ -75,12 +75,14 @@ operator op_desc[] = {
 		  .s						= "ls"
 		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
 		, .op_exec			= op_exec_ls
+		, .mnemonic			= "directory-listing"
 		, .desc					= "create new list from directory listing(s)"
 	}
 	, {
 		  .s						= "lsr"
 		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
 		, .op_exec			= op_exec_lsr
+		, .mnemonic			= "directory-listing-recursive"
 		, .desc					= "create new list from recursive directory listing(s)"
 	}
 	, {}

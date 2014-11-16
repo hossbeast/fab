@@ -59,21 +59,19 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 	LSTACK_ITERATE_FWD(lx, 1, x, 1, go)
 	if(go)
 	{
-		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
+		struct lwx_windows * win;
+		if(lstack_windows_state(lx, x, &win) != LWX_WINDOWED_NONE)
 		{
-			typeof(lx->win.s[0].active->s[0]) * ws = lx->win.s[x].active->s;
-			int wl = lx->win.s[x].active->l;
-
 			// request that readrow return temp space, and not to resolve the active window
 			char * zs;
 			int    zsl;
 			fatal(lstack_readrow, lx, 1, x, &zs, &zsl, 0, 1, 0, 1, 0);
 
 			int i;
-			for(i = 0; i < wl; i++)
+			for(i = 0; i < win->l; i++)
 			{
 				// write the windowed segment
-				fatal(lstack_addw, lx, zs + ws[i].o, ws[i].l);
+				fatal(lstack_addw, lx, zs + win->s[i].o, win->s[i].l);
 			}
 		}
 	}

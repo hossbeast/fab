@@ -58,7 +58,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 			if(wl)
 			{
 				// reset staged windows
-				fatal(lstack_window_unstage, lx, x);
+//				fatal(lstack_window_unstage, lx, x);
 
 				// read the row
 				int ssl = 0;

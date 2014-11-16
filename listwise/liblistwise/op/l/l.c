@@ -17,7 +17,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <alloca.h>
 
 #include "listwise/operator.h"
 
@@ -86,15 +85,17 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 
 		if(s)
 		{
-			int off = 0;
 			do
 			{
 				fatal(lstack_window_stage, ls, x, s - ss, o->args[0]->l);
 
 				if(isglobal)
 				{
-					off += o->args[0]->l;
-					s = estrstr(s + off + 1, ssl - off - 1, o->args[0]->s, o->args[0]->l, isncase);
+					s += o->args[0]->l;
+					if((ssl - (s - ss)) > 0)
+						s = estrstr(s, ssl - (s - ss), o->args[0]->s, o->args[0]->l, isncase);
+					else
+						s = 0;
 				}
 				else
 				{

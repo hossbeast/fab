@@ -24,7 +24,7 @@
 //
 // contains the lstack - stack of lists of rows
 //
-struct lwx_t
+struct lwx
 {
 	struct // stack of lists
 	{
@@ -70,7 +70,7 @@ struct lwx_t
 	{
 		struct
 		{
-			struct window
+			struct lwx_windows
 			{
 				struct
 				{
@@ -83,15 +83,16 @@ struct lwx_t
 
 				int     	zl;   	// sum(s[-].l)
 
+				int				nil;		// whether this window represents an empty subset
 				uint64_t	lease;	// era in which this window is valid
 				int				mark;
 			} storage[2];
 
-			struct window * active;
-			int							active_storage_index;		// index into storage that active points to
+			struct lwx_windows *	active;
+			int										active_storage_index;		// index into storage that active points to
 
-			struct window * staged;
-			int							staged_storage_index;		// index into storage that staged points to
+			struct lwx_windows *	staged;
+			int										staged_storage_index;		// index into storage that staged points to
 		} * s;
 
 		int a;											// alloc
@@ -103,7 +104,7 @@ struct lwx_t
 	// subset of rows - top list only
 	struct
 	{
-		struct selection
+		struct lwx_selection
 		{
 			uint8_t *	s;			// bitvector
 			int				l;			// total bits set in s
@@ -114,8 +115,8 @@ struct lwx_t
 			uint64_t	lease;	// era in which this selection is valid
 		} storage[2];
 
-		struct selection * active;
-		struct selection * staged;
+		struct lwx_selection * active;
+		struct lwx_selection * staged;
 
 		uint64_t		active_era;			// for aging active selections
 		uint64_t		staged_era;			// for aging staged selections

@@ -18,8 +18,6 @@
 #ifndef _LISTWISE_SELECTION_H
 #define _LISTWISE_SELECTION_H
 
-#include "listwise.h"
-
 #define restrict __restrict
 
 /// lstack_selection_stage
@@ -30,28 +28,27 @@
 int lstack_selection_stage(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
-/// lstack_selection_unstage
-//
-// SUMMARY
-//  unstage staged selections
-//
-int lstack_selection_unstage(lwx * const restrict lx)
-	__attribute__((nonnull));
-
-/// lstack_selection_activate
-//
-// SUMMARY
-//  activate selections staged by the previous operation
-//
-int lstack_selection_activate(lwx * const restrict lx)
-	__attribute__((nonnull));
-
 /// lstack_selection_reset
 //
 // SUMMARY
 //  reset selection (select all)
 //
 int lstack_selection_reset(lwx * const restrict lx)
+	__attribute__((nonnull));
+
+#define LWX_SELECTED_ALL		0		/* all rows are selected */
+#define LWX_SELECTED_NONE		1		/* no rows are selected */
+#define LWX_SELECTED_SOME		2		/* 1+ rows are selected and 1+ rows are not */
+
+/// lstack_selection_state
+//
+// SUMMARY
+//  get a value indicating the state of the selection
+//
+// RETURNS
+//  one of LWX_SELECTED_*
+//
+int lstack_selection_state(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 #undef restrict

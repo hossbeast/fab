@@ -185,7 +185,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													yyless(0);
 																												}
 
- /* following ws, an alpha string must be an operator name */
+ /* following ws, an alpha string must be an operator name or mnemonic */
 <ws>[-a-zA-Z]+																					{
 																													typeof(*yylval->op) * op;
 																													if((op = op_lookup(yytext, yyleng)))

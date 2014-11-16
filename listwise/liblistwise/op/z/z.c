@@ -26,7 +26,9 @@
 
 /*
 
-z operator - select all
+z  : remove selection and windows
+sz : remove selection
+wz : remove windows
 
 NO ARGUMENTS
 
@@ -37,10 +39,23 @@ OPERATION
 */
 
 operator op_desc[] = {
-	{
+	  {
 		  .s						= "z"
+		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET
+		, .mnemonic			= "zero"
+		, .desc					= "remove selection and windows"
+	}
+	, {
+		  .s						= "sz"
 		, .optype				= LWOP_SELECTION_RESET
-		, .desc					= "reset selection - select all"
+		, .mnemonic			= "selection-zero"
+		, .desc					= "remove selection"
+	}
+	, {
+		  .s						= "wz"
+		, .optype				= LWOP_WINDOWS_RESET
+		, .mnemonic			= "windows-zero"
+		, .desc					= "remove windows"
 	}
 	, {}
 };

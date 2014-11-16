@@ -20,9 +20,9 @@
 xunit_unit xunit = {
 	.tests = (xunit_test*[]) {
 
-/* sy WINDOWS_STAGE | SELECTION_STAGE */
+/* sx : WINDOWS_STAGE | SELECTION_STAGE */
 
-			/* only modified rows are preserved */
+			/* sy : only modified rows are preserved */
 		  (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
 				, .xsfm = "sx/z sy"
@@ -33,7 +33,13 @@ xunit_unit xunit = {
 		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
 				, .xsfm = "sx/z y"
-				, .final = (char*[]) { "foo.z", "foo.a.z", "foo.a.b.z", 0 }
+				, .final = (char*[]) { "z", "z", "z", 0 }
+		  }}
+
+		, (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+				, .xsfm = "sx/z wy"
+				, .final = (char*[]) { "foo", "z", "z", "z", 0 }
 		  }}
 
 /* sy WINDOWS_ACTIVATE | SELECTION_STAGE */

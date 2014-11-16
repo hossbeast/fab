@@ -31,6 +31,8 @@
 #include "macros.h"
 
 operator **	APIDATA g_ops;
+operator ** APIDATA	g_ops_by_s;
+operator ** APIDATA g_ops_by_mnemonic;
 int									g_ops_a;
 int					APIDATA g_ops_l;
 
@@ -63,9 +65,10 @@ dprintf(501, " +%s :", path);
 
 	if(g_dls_a == g_dls_l)
 	{
-		int n = g_dls_a ? g_dls_a * 2 + g_dls_a / 2 : 10;
-		fatal(xrealloc, &g_dls, sizeof(*g_dls), n, g_dls_a);
-		g_dls_a = n;
+		size_t ns = g_dls_a ?: 10;
+		ns = ns * 2 + ns / 2;
+		fatal(xrealloc, &g_dls, sizeof(*g_dls), ns, g_dls_a);
+		g_dls_a = ns;
 	}
 
 	void * dl = 0;
@@ -87,6 +90,8 @@ dprintf(501, " +%s :", path);
 dprintf(501, " %s", op->s);
 #endif
 		op->sl = strlen(op->s);
+		if(op->mnemonic)
+			op->mnemonicl = strlen(op->mnemonic);
 		g_ops[g_ops_l++] = op++;
 	}
 
@@ -95,16 +100,6 @@ dprintf(501, "\n");
 #endif
 
 	finally : coda;
-}
-
-static void op_sort()
-{
-	int op_compare(const operator** A, const operator** B)
-	{
-		return strcmp((*A)->s, (*B)->s);
-	};
-
-	qsort(g_ops, g_ops_l, sizeof(g_ops[0]), (void*)op_compare);
 }
 
 static int read_opdir(char * s)
@@ -132,7 +127,6 @@ static int read_opdir(char * s)
 					snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
 					fatal(read_opdir, space);
 				}
-//			else if(strlen(entp->d_name) > 3 && strcmp(entp->d_name + strlen(entp->d_name) - 3, ".so") == 0)
 				else if(strlen(entp->d_name) > 2)
 				{
 					// locate the filename portion
@@ -186,7 +180,7 @@ coda;
 typedef operator * opstar;
 opstar API op_lookup(char* s, int l)
 {
-	int op_compare(const void* __attribute__((unused)) K, const operator** B)
+	int op_compare_by_s(const void* __attribute__((unused)) K, const operator** B)
 	{
 		int x;
 		for(x = 0; x < l && x < (*B)->sl; x++)
@@ -203,7 +197,29 @@ opstar API op_lookup(char* s, int l)
 		return 0;
 	};
 
-	operator** r = bsearch((void*)1, g_ops, g_ops_l, sizeof(g_ops[0]), (void*)op_compare);
+	operator** r = bsearch((void*)1, g_ops_by_s, g_ops_l, sizeof(g_ops[0]), (void*)op_compare_by_s);
+
+	if(r)
+		return *r;
+
+	int op_compare_by_mnemonic(const void* __attribute__((unused)) K, const operator** B)
+	{
+		int x;
+		for(x = 0; x < l && x < (*B)->mnemonicl; x++)
+		{
+			if(s[x] - (*B)->mnemonic[x])
+				return s[x] - (*B)->mnemonic[x];
+		}
+
+		if(l > (*B)->mnemonicl)
+			return 1;
+		if(l < (*B)->mnemonicl)
+			return -1;
+
+		return 0;
+	};
+
+	r = bsearch((void*)1, g_ops_by_mnemonic, g_ops_l, sizeof(g_ops[0]), (void*)op_compare_by_mnemonic);
 
 	if(r)
 		return *r;
@@ -213,9 +229,43 @@ opstar API op_lookup(char* s, int l)
 
 int API listwise_register_opdir(char * dir)
 {
+	// 
+	size_t old_len = g_ops_l;
+
+	// load operators from the specified directory
 	fatal(read_opdir, dir);
 
-	op_sort();
+	// assign to lookup lists
+	fatal(xrealloc, &g_ops_by_s, sizeof(*g_ops_by_s), g_ops_l, old_len);
+	fatal(xrealloc, &g_ops_by_mnemonic, sizeof(*g_ops_by_mnemonic), g_ops_l, old_len);
+
+	int x;
+	for(x = old_len; x < g_ops_l; x++)
+	{
+		g_ops_by_s[x] = g_ops[x];
+		g_ops_by_mnemonic[x] = g_ops[x];
+	}
+
+	// prepare lookup indexes
+	int op_compare_by_s(const operator** A, const operator** B)
+	{
+		return strcmp((*A)->s, (*B)->s);
+	};
+
+	int op_compare_by_mnemonic(const operator** A, const operator** B)
+	{
+		if((*A)->mnemonic && (*B)->mnemonic)
+			return strcmp((*A)->mnemonic, (*B)->mnemonic);
+		else if((*A)->mnemonic)
+			return 1;
+		else if((*B)->mnemonic)
+			return -1;
+
+		return 0;
+	};
+
+	qsort(g_ops_by_s, g_ops_l, sizeof(*g_ops_by_s), (void*)op_compare_by_s);
+	qsort(g_ops_by_mnemonic, g_ops_l, sizeof(*g_ops_by_mnemonic), (void*)op_compare_by_mnemonic);
 
 finally:
 	XAPI_INFOF("path", "%s", dir);
@@ -239,4 +289,6 @@ void __attribute__((destructor)) listwise_operators_teardown()
 
 	free(g_dls);
 	free(g_ops);
+	free(g_ops_by_s);
+	free(g_ops_by_mnemonic);
 }

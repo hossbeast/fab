@@ -23,10 +23,16 @@
 #include <dirent.h>
 
 #include "listwise/operator.h"
+#include "listwise/lwx.h"
+
+#include "macros.h"
+#include "xlinux.h"
 
 /*
 
-v operator - invert current selection
+v  : invert selection and windows
+sv : invert selection
+wv : invert windows
 
 NO ARGUMENTS
 
@@ -36,19 +42,36 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static int v_exec(operation*, lwx*, int**, int*, void**);
+static int sv_exec(operation*, lwx*, int**, int*, void**);
+static int wv_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
 		  .s						= "v"
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_ACTIVATE
+		, .op_exec			= v_exec
+		, .mnemonic			= "invert"
+		, .desc					= "invert selection and windows"
+	}
+	, {
+		  .s						= "sv"
 		, .optype				= LWOP_SELECTION_ACTIVATE
-		, .op_exec			= op_exec
+		, .op_exec			= sv_exec
+		, .mnemonic			= "selection-invert"
 		, .desc					= "invert selection"
+	}
+	, {
+		  .s						= "wv"
+		, .optype				= LWOP_WINDOWS_ACTIVATE
+		, .op_exec			= wv_exec
+		, .mnemonic			= "windows-invert"
+		, .desc					= "invert windows"
 	}
 	, {}
 };
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+int v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go);
@@ -57,6 +80,51 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		fatal(lstack_selection_stage, ls, x);
 	}
 	LSTACK_ITEREND;
+
+	finally : coda;
+}
+
+int sv_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+{
+	int x;
+	LSTACK_ITERATE(ls, x, go);
+	if(!go)
+	{
+		fatal(lstack_selection_stage, ls, x);
+	}
+	LSTACK_ITEREND;
+
+	finally : coda;
+}
+
+int wv_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+{
+	int x;
+	LSTACK_ITERATE(lx, x, go)
+	if(go)
+	{
+		lwx_windows * win;
+		if(lstack_windows_state(lx, x, &win) == SOME)
+		{
+			char * s = 0;
+			int sl = 0;
+			fatal(lstack_readrow, lx, 0, x, &s, &sl, 0, 1, 0, 0, 0);
+
+			// before the first windowed segment
+			fatal(lstack_window_stage, lx, x, 0, win->s[0].o);
+
+			int i;
+			for(i = 1; i < win->l; i++)
+			{
+				// region following the previous segment and preceeding the current segment
+				fatal(lstack_window_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, win->s[i].o - (win->s[i - 1].o + win->s[i - 1].l));
+			}
+
+			// following the last windowed segment
+			fatal(lstack_window_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, sl - (win->s[i - 1].o + win->s[i - 1].l));
+		}
+	}
+	LSTACK_ITEREND
 
 	finally : coda;
 }
