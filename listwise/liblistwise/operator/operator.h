@@ -76,6 +76,7 @@ struct arg;
 #define LWOP_ARGS_CANHAVE						LWOPT_ARGS_CANHAVE							// can have arguments (verified before op_validate)
 #define LWOP_EMPTYSTACK_YES					LWOPT_EMPTYSTACK_YES						// operator is invoked even in the context of an empty stack
 
+// bits <= LWOP_EFFECTUAL have an effect
 #define LWOP_EFFECTUAL LWOP_EMPTYSTACK_YES
 
 /* there are informational */
