@@ -35,7 +35,7 @@ $rpath = [
 ]
 $lflags_final = [ $lflags_final $lopts $libxapi_final $libxlinux_final $libxunit_final ]
 $lflags_debug = [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libxunit_debug ]
-$lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libxunit_devel $rpath ]
+$lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libxunit_devel $liblistwise_devel $libpstring_devel $rpath ]
 
 # c files
 +[@std.c]($dext = [ final.o ]; $gendir = $dxunit; $rdirs = $dxunit; $cc; $cflags = [ $cflags_final $copts ])

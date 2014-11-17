@@ -39,6 +39,10 @@ int main(int g_argc, char** g_argv)
 	// link in libxunit
 	xunit_errcode(1234);
 
+	// link in liblistwise - there are symbol binding problems when just dloading it
+extern int listwise_allocation_seed;
+	listwise_allocation_seed = 10;
+
 	// initialize logger - prepare g_argc/g_argv
 	fatal(log_init);
 
