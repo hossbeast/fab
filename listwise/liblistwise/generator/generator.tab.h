@@ -30,8 +30,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_GENERATOR_YY_GENERATOR_GENERATOR_TAB_H_INCLUDED
-# define YY_GENERATOR_YY_GENERATOR_GENERATOR_TAB_H_INCLUDED
+#ifndef YY_GENERATOR_YY_LISTWISE_LIBLISTWISE_GENERATOR_GENERATOR_TAB_H_INCLUDED
+# define YY_GENERATOR_YY_LISTWISE_LIBLISTWISE_GENERATOR_GENERATOR_TAB_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -62,7 +62,7 @@ extern int generator_yydebug;
 typedef union YYSTYPE
 {
 /* Line 2053 of yacc.c  */
-#line 43 "generator/generator.y"
+#line 43 "listwise/liblistwise/generator/generator.y"
 
 	generator *		generator;
 	operation **  operations;
@@ -76,7 +76,7 @@ typedef union YYSTYPE
 
 
 /* Line 2053 of yacc.c  */
-#line 80 "generator/generator.tab.h"
+#line 80 "listwise/liblistwise/generator/generator.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -111,4 +111,4 @@ int generator_yyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_GENERATOR_YY_GENERATOR_GENERATOR_TAB_H_INCLUDED  */
+#endif /* !YY_GENERATOR_YY_LISTWISE_LIBLISTWISE_GENERATOR_GENERATOR_TAB_H_INCLUDED  */

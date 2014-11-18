@@ -19,21 +19,28 @@
 
 xunit_unit xunit = {
 	.tests = (xunit_test*[]) {
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "l/o"
-				, .final = (char*[]) { "ao", "ob", "od", 0 }
+
+/* sv : SELECTION_ACTIVATE */
+		    (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+				, .xsfm = "l/. y sv"
+				, .final = (char*[]) { "foo", 0 }
 		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "l/o wy"
-				, .final = (char*[]) { "o", "o", "c", "o", 0 }
+
+/* wv : WINDOWS_ACTIVATE */
+		  , (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+				, .xsfm = "l/./g y wv"
+				, .final = (char*[]) { "fooa", "fooab", "fooabc", 0 }
 		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "l/o wy uu"
-				, .final = (char*[]) { "o", "c", 0 }
+
+/* v : WINDOWS_ACTIVATE | SELECTION_ACTIVATE */
+		  , (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+				, .xsfm = "l/. y v"
+				, .final = (char*[]) { "foo", 0 }
 		  }}
+
 		, 0
 	}
 };

@@ -61,7 +61,7 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 		lx->win.s[y].staged->zl = 0;
 	}
 
-	if(off < 0 || len <= 0 || (off + len) > lx->s[0].s[y].l)
+	if(off < 0 || len <= 0)
 	{
 		// invalid window ; nil the window
 		lx->win.s[y].staged->nil = 1;
@@ -140,15 +140,6 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 ** These api's ensure that the next active/staged window will be at the other index
 */
 
-/*
-int API lstack_window_unstage(lwx * const restrict lx, int y)
-{
-	lx->win.s[y].staged = 0;
-
-	finally : coda;
-}
-*/
-
 int API lstack_window_deactivate(lwx * const restrict lx, int y)
 {
 	if(lx->win.s[y].active)
@@ -203,12 +194,7 @@ int API lstack_windows_state(lwx * const restrict lx, int y, struct lwx_windows 
 	{
 		return LWX_WINDOWED_NONE;		// no sections are active
 	}
-	else if(lx->win.s[y].active->l == lx->s[0].l)
-	{
-		return LWX_WINDOWED_SOME;		// subset of sections are selected
-	}
-	else
-	{
-		return LWX_WINDOWED_ALL;		// all sections are active
-	}
+
+	// some nonempty subset of sections are selected ; could be all
+	return LWX_WINDOWED_SOME;
 }

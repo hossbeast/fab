@@ -22,24 +22,25 @@ xunit_unit xunit = {
 
 /* sx : WINDOWS_STAGE | SELECTION_STAGE */
 
-			/* sy : only modified rows are preserved */
+			/* sy : selections */
 		  (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
 				, .xsfm = "sx/z sy"
 				, .final = (char*[]) { "foo.z", "foo.a.z", "foo.a.b.z", 0 }
 		  }}
 
-			/* only modified rows are preserved */
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sx/z y"
-				, .final = (char*[]) { "z", "z", "z", 0 }
-		  }}
-
+			/* wy : windows */
 		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
 				, .xsfm = "sx/z wy"
 				, .final = (char*[]) { "foo", "z", "z", "z", 0 }
+		  }}
+
+			/* selections and windows */
+		, (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+				, .xsfm = "sx/z y"
+				, .final = (char*[]) { "z", "z", "z", 0 }
 		  }}
 
 /* sy WINDOWS_ACTIVATE | SELECTION_STAGE */

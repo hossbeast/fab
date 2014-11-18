@@ -66,13 +66,14 @@ struct arg;
 
 /* these actually have some effect on processing */
 #define LWOP_SELECTION_STAGE				LWOPT_SELECTION_STAGE						// stages selections (which may be activated with the y operator)
-#define LWOP_SELECTION_ACTIVATE			LWOPT_SELECTION_ACTIVATE		| LWOPT_SELECTION_STAGE			//  lw applies the sy operator after this operator
+#define LWOP_SELECTION_ACTIVATE			(LWOPT_SELECTION_STAGE	| LWOPT_SELECTION_ACTIVATE)			//  lw applies the sy operator after this operator
 #define LWOP_SELECTION_RESET				LWOPT_SELECTION_RESET						// lw resets the selection after executing the operator (apart from the staging mechanism)
 #define LWOP_SELECTION_AGGREGATE		LWOPT_SELECTION_AGGREGATE
 #define LWOP_WINDOWS_STAGE					LWOPT_WINDOWS_STAGE							// stages windows (which may be ratified with the y operator)
-#define LWOP_WINDOWS_ACTIVATE				LWOPT_WINDOWS_ACTIVATE			| LWOPT_WINDOWS_STAGE				//  lw applies the wy operator after this operator
+#define LWOP_WINDOWS_ACTIVATE				(LWOPT_WINDOWS_STAGE		| LWOPT_WINDOWS_ACTIVATE)				//  lw applies the wy operator after this operator
 #define LWOP_WINDOWS_RESET					LWOPT_WINDOWS_RESET							// lw resets all windows after executing this operator (apart from the staging mechanism)
 #define LWOP_WINDOWS_AGGREGATE			LWOPT_WINDOWS_AGGREGATE			
+#define LWOP_ACTIVATION_OVERRIDE		LWOPT_ACTIVATION_OVERRIDE
 #define LWOP_ARGS_CANHAVE						LWOPT_ARGS_CANHAVE							// can have arguments (verified before op_validate)
 #define LWOP_EMPTYSTACK_YES					LWOPT_EMPTYSTACK_YES						// operator is invoked even in the context of an empty stack
 
@@ -84,25 +85,26 @@ struct arg;
 #define LWOP_MODIFIERS_CANHAVE			LWOPT_MODIFIERS_CANHAVE					// last argument is a modifiers string
 #define LWOP_OPERATION_PUSHBEFORE		LWOPT_OPERATION_PUSHBEFORE	| LWOP_STACKOP																	// first operation is to push an empty list
 #define LWOP_OPERATION_INPLACE			LWOPT_OPERATION_INPLACE					// modifies the contents of rows in the top list in-place
-#define LWOP_OPERATION_FILESYSTEM		LWOPT_OPERATION_FILESYSTEM				// operator reads from the filesystem
+#define LWOP_OPERATION_FILESYSTEM		LWOPT_OPERATION_FILESYSTEM			// operator reads from the filesystem
 
 /* the individual options are defined here */
 #define LWOPT_TABLE(x)													\
-	_LWOPT(SELECTION_STAGE				, 0x0001, x)		\
-	_LWOPT(SELECTION_ACTIVATE			, 0x0002, x)		\
-	_LWOPT(SELECTION_RESET				, 0x0004, x)		\
-	_LWOPT(SELECTION_AGGREGATE		, 0x0008, x)		\
-	_LWOPT(WINDOWS_STAGE					, 0x0010, x)		\
-	_LWOPT(WINDOWS_ACTIVATE				, 0x0020, x)		\
-	_LWOPT(WINDOWS_RESET					, 0x0040, x)		\
-	_LWOPT(WINDOWS_AGGREGATE			, 0x0080, x)		\
-	_LWOPT(ARGS_CANHAVE						, 0x0100, x)		\
-	_LWOPT(EMPTYSTACK_YES					, 0x0200, x)		\
-	_LWOPT(STACKOP								, 0x0400, x)		\
-	_LWOPT(MODIFIERS_CANHAVE			, 0x0800, x)		\
-	_LWOPT(OPERATION_PUSHBEFORE		, 0x1000, x)		\
-	_LWOPT(OPERATION_INPLACE			, 0x2000, x)		\
-	_LWOPT(OPERATION_FILESYSTEM		, 0x4000, x)		\
+	_LWOPT(SELECTION_STAGE				, 0x0001	, x)	\
+	_LWOPT(SELECTION_ACTIVATE			, 0x0002	, x)	\
+	_LWOPT(SELECTION_RESET				, 0x0004	, x)	\
+	_LWOPT(SELECTION_AGGREGATE		, 0x0008	, x)	\
+	_LWOPT(WINDOWS_STAGE					, 0x0010	, x)	\
+	_LWOPT(WINDOWS_ACTIVATE				, 0x0020	, x)	\
+	_LWOPT(WINDOWS_RESET					, 0x0040	, x)	\
+	_LWOPT(WINDOWS_AGGREGATE			, 0x0080	, x)	\
+	_LWOPT(ACTIVATION_OVERRIDE		, 0x0100	, x)	\
+	_LWOPT(ARGS_CANHAVE						, 0x0200	, x)	\
+	_LWOPT(EMPTYSTACK_YES					, 0x0400	, x)	\
+	_LWOPT(STACKOP								, 0x0800	, x)	\
+	_LWOPT(MODIFIERS_CANHAVE			, 0x1000	, x)	\
+	_LWOPT(OPERATION_PUSHBEFORE		, 0x2000	, x)	\
+	_LWOPT(OPERATION_INPLACE			, 0x4000	, x)	\
+	_LWOPT(OPERATION_FILESYSTEM		, 0x8000	, x)
 	
 enum {
 #define _LWOPT(a, b, x) LWOPT_ ## a = b,

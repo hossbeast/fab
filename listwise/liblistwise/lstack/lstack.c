@@ -776,32 +776,39 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 	}
 
 	// if there is a window in effect for this entry
-	if(win && x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era && !lx->win.s[y].active->nil)
+	if(win && x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
 	{
 		if(lx->s[x].t[y].y != LWTMP_WINDOW)
 		{
-			if(lx->s[x].t[y].a <= lx->win.s[y].active->zl)
+			if(lx->win.s[y].active->nil)
 			{
-				fatal(xrealloc
-					, &lx->s[x].t[y].s
-					, sizeof(*lx->s[0].t[0].s)
-					, lx->win.s[y].active->zl + 1
-					, lx->s[x].t[y].a
-				);
-
-				lx->s[x].t[y].a = lx->win.s[y].active->zl + 1;
+				lx->s[x].t[y].l = 0;
 			}
-
-			size_t z = 0;
-			int i;
-			for(i = 0; i < lx->win.s[y].active->l; i++)
+			else
 			{
-				memcpy(lx->s[x].t[y].s + z, zs + lx->win.s[y].active->s[i].o, lx->win.s[y].active->s[i].l);
-				z += lx->win.s[y].active->s[i].l;
+				if(lx->s[x].t[y].a <= lx->win.s[y].active->zl)
+				{
+					fatal(xrealloc
+						, &lx->s[x].t[y].s
+						, sizeof(*lx->s[0].t[0].s)
+						, lx->win.s[y].active->zl + 1
+						, lx->s[x].t[y].a
+					);
+
+					lx->s[x].t[y].a = lx->win.s[y].active->zl + 1;
+				}
+
+				size_t z = 0;
+				int i;
+				for(i = 0; i < lx->win.s[y].active->l; i++)
+				{
+					memcpy(lx->s[x].t[y].s + z, zs + lx->win.s[y].active->s[i].o, lx->win.s[y].active->s[i].l);
+					z += lx->win.s[y].active->s[i].l;
+				}
+				lx->s[x].t[y].s[lx->win.s[y].active->zl] = 0;
+				lx->s[x].t[y].l = lx->win.s[y].active->zl;
+				lx->s[x].t[y].y = LWTMP_WINDOW;
 			}
-			lx->s[x].t[y].s[lx->win.s[y].active->zl] = 0;
-			lx->s[x].t[y].l = lx->win.s[y].active->zl;
-			lx->s[x].t[y].y = LWTMP_WINDOW;
 		}
 
 		zs = lx->s[x].t[y].s;

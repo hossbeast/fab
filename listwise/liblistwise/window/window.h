@@ -18,6 +18,7 @@
 #ifndef _LISTWISE_WINDOW_H
 #define _LISTWISE_WINDOW_H
 
+typedef struct lwx_windows lwx_windows;
 struct lwx_windows;		// lwx.h
 
 #define restrict __restrict
