@@ -759,12 +759,12 @@ int API lstack_delete(lwx * const restrict lx, int x, int y)
 	finally : coda;
 }
 
-int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * const rl, uint8_t * const rt, int obj, int win, int str, int * const _raw)
+int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * const rl, uint8_t * const rt, int obj, int win, int str, int * const raw)
 {
 	char * zs		= lx->s[x].s[y].s;
 	int zsl			= lx->s[x].s[y].l;
 	uint8_t zst	= lx->s[x].s[y].type;
-	int raw = 1;
+	int zraw = 1;
 
 	if(obj && lx->s[x].s[y].type)
 	{
@@ -772,7 +772,7 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 		fatal(listwise_lookup_object, lx->s[x].s[y].type, &o);
 
 		o->string(*(void**)lx->s[x].s[y].s, o->string_property, &zs, &zsl);
-		raw = 0;
+		zraw = 0;
 	}
 
 	// if there is a window in effect for this entry
@@ -780,24 +780,28 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 	{
 		if(lx->s[x].t[y].y != LWTMP_WINDOW)
 		{
+			size_t req = lx->win.s[y].active->zl;
+			if(lx->win.s[y].active->nil)
+				req = 0;
+
+			if(lx->s[x].t[y].a <= req)
+			{
+				fatal(xrealloc
+					, &lx->s[x].t[y].s
+					, sizeof(*lx->s[0].t[0].s)
+					, req + 1
+					, lx->s[x].t[y].a
+				);
+
+				lx->s[x].t[y].a = req + 1;
+			}
+
 			if(lx->win.s[y].active->nil)
 			{
 				lx->s[x].t[y].l = 0;
 			}
 			else
 			{
-				if(lx->s[x].t[y].a <= lx->win.s[y].active->zl)
-				{
-					fatal(xrealloc
-						, &lx->s[x].t[y].s
-						, sizeof(*lx->s[0].t[0].s)
-						, lx->win.s[y].active->zl + 1
-						, lx->s[x].t[y].a
-					);
-
-					lx->s[x].t[y].a = lx->win.s[y].active->zl + 1;
-				}
-
 				size_t z = 0;
 				int i;
 				for(i = 0; i < lx->win.s[y].active->l; i++)
@@ -813,7 +817,7 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 
 		zs = lx->s[x].t[y].s;
 		zsl = lx->s[x].t[y].l;
-		raw = 0;
+		zraw = 0;
 	}
 	else if(str)
 	{
@@ -839,7 +843,7 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 		
 		zs = lx->s[x].t[y].s;
 		zsl = lx->s[x].t[y].l;
-		raw = 0;
+		zraw = 0;
 	}
 
 	if(r)
@@ -848,8 +852,8 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 		*rl = zsl;
 	if(rt)
 		*rt = zst;
-	if(_raw)
-		*_raw = raw;
+	if(raw)
+		*raw = zraw;
 
 	finally : coda;
 }

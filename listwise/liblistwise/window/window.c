@@ -160,21 +160,16 @@ int API lstack_windows_activate(lwx * const restrict lx)
 		{
 			lx->win.s[y].active = lx->win.s[y].staged;
 			lx->win.s[y].active_storage_index = lx->win.s[y].staged_storage_index;
+
+			// renew lease
+			lx->win.s[y].active->lease = lx->win.active_era;
+
+			// reset staged
+			lx->win.s[y].staged = 0;
+
+			// reset temp
+			lx->s[0].t[y].y = LWTMP_UNSET;
 		}
-		else
-		{
-			lx->win.s[y].active = &lx->win.s[y].storage[0];
-			lx->win.s[y].active->nil = 1;
-		}
-
-		// renew lease
-		lx->win.s[y].active->lease = lx->win.active_era;
-
-		// reset staged
-		lx->win.s[y].staged = 0;
-
-		// reset temp
-		lx->s[0].t[y].y = LWTMP_UNSET;
 	}
 	LSTACK_ITEREND
 
