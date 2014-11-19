@@ -81,6 +81,10 @@ static int exec_generator(
 	{
 		fatal(generator_canon_pswrite, g, &ps);
 		lw_log_exec(" >>      %.*s", (int)ps->l, ps->s);
+
+		// log the lstack before beginning
+		fatal(lstack_description_pswrite, *lx, &ps);
+		lw_log_exec("%.*s", (int)ps->l, ps->s);
 	}
 
 #if SANITY
@@ -91,102 +95,98 @@ static int exec_generator(
 	}
 #endif
 
-	int sel_activate = 0;
-	int sel_aggregate = 0;
-	int win_activate = 0;
-	int win_aggregate = 0;
-
 	// execute operations
-	for(x = 0; x < g->opsl; x++)
+	int y;
+	for(x = 0; x < g->opsl; x = y)
 	{
-		// possibly override activation settings (y-ish operators)
-		if(g->ops[x]->op->optype & LWOPT_ACTIVATION_OVERRIDE)
+		int sel_activate = 0;
+		int win_activate = 0;
+
+		// locate an alternating sequence of OR operators
+		for(y = x; y < g->opsl; y++)
 		{
-			sel_activate = !!(g->ops[x]->op->optype & LWOPT_SELECTION_ACTIVATE);
-			win_activate = !!(g->ops[x]->op->optype & LWOPT_WINDOWS_ACTIVATE);
+			if(g->ops[y]->op->optype & LWOPT_SELECTION_ACTIVATE)
+				sel_activate = 1;
+
+			if(g->ops[y]->op->optype & LWOPT_WINDOWS_ACTIVATE)
+				win_activate = 1;
+
+			if((y - x) % 2)
+			{
+				if(!(g->ops[y]->op->optype & LWOPT_AGGREGATE))
+					break;
+			}
 		}
 
-		// possibly activate staged selection
-		if(!(g->ops[x]->op->optype & LWOPT_SELECTION_AGGREGATE) && !sel_aggregate)
+		// possibly terminating with a y operator
+		if(y < g->opsl && (g->ops[y]->op->optype & LWOPT_ACTIVATION_OVERRIDE))
 		{
-			if(sel_activate)
-				fatal(lstack_selection_activate, *lx);
-
-			sel_activate = 0;
-			(*lx)->sel.staged_era++;
+			// override activation settings
+			sel_activate = !!(g->ops[y]->op->optype & LWOPT_SELECTION_ACTIVATE);
+			win_activate = !!(g->ops[y]->op->optype & LWOPT_WINDOWS_ACTIVATE);
+			y++;
 		}
 
-		// possibly activate staged windows
-		if(!(g->ops[x]->op->optype & LWOPT_WINDOWS_AGGREGATE) && !win_aggregate)
+		int i;
+		for(i = x; i < y; i++)
 		{
-			if(win_activate)
-				fatal(lstack_windows_activate, *lx);
+			if(i != x)
+			{
+				// log the lstack
+				if(lw_would_exec())
+				{
+					fatal(lstack_description_pswrite, *lx, &ps);
+					lw_log_exec("%.*s", (int)ps->l, ps->s);
+				}
+			}
 
-			win_activate = 0;
-			(*lx)->win.staged_era++;
+			// log the operation
+			if(lw_would_exec())
+			{
+	extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps);
+
+				fatal(operation_canon_pswrite, g->ops[i], 0, &ps);
+				fatal(listwise_lwop_pswrite, g->ops[i]->op->optype, 1, &ps1);
+
+				lw_log_exec("");
+				lw_log_exec(" >> [%2d] %.*s%*s%.*s", i, (int)ps->l, ps->s, MAX(35 - ps->l, 0), "", (int)ps1->l, ps1->s);
+			}
+
+			// execute the operation
+			if((*lx)->l || (g->ops[i]->op->optype & LWOPT_EMPTYSTACK_YES))
+				if(g->ops[i]->op->op_exec)
+					fatal(g->ops[i]->op->op_exec, g->ops[i], *lx, &ovec, &ovec_len, udata);
+
+			// age active windows
+			if(g->ops[x]->op->optype & LWOPT_WINDOWS_RESET)
+				(*lx)->win.active_era++;
+
+			// age active selections
+			if(g->ops[x]->op->optype & LWOPT_SELECTION_RESET)
+				(*lx)->sel.active_era++;
+
+#if SANITY
+			if(listwise_sanity)
+				fatal(sanity, *lx, sb, udata);
+#endif
 		}
 
-		// log the current lstack
+		// staged selection
+		if(sel_activate)
+			fatal(lstack_selection_activate, *lx);
+		(*lx)->sel.staged_era++;
+
+		// staged windows
+		if(win_activate)
+			fatal(lstack_windows_activate, *lx);
+		(*lx)->win.staged_era++;
+
+		// log the lstack
 		if(lw_would_exec())
 		{
 			fatal(lstack_description_pswrite, *lx, &ps);
 			lw_log_exec("%.*s", (int)ps->l, ps->s);
 		}
-
-		// log this operation
-		if(lw_would_exec())
-		{
-extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps);
-
-			fatal(operation_canon_pswrite, g->ops[x], 0, &ps);
-			fatal(listwise_lwop_pswrite, g->ops[x]->op->optype, 1, &ps1);
-
-			lw_log_exec("");
-			lw_log_exec(" >> [%2d] %.*s%*s%.*s", x, (int)ps->l, ps->s, MAX(35 - ps->l, 0), "", (int)ps1->l, ps1->s);
-		}
-
-		// execute the operation
-		if((*lx)->l || (g->ops[x]->op->optype & LWOPT_EMPTYSTACK_YES))
-			if(g->ops[x]->op->op_exec)
-				fatal(g->ops[x]->op->op_exec, g->ops[x], *lx, &ovec, &ovec_len, udata);
-
-#if SANITY
-		if(listwise_sanity)
-			fatal(sanity, *lx, sb, udata);
-#endif
-
-		// age active windows
-		if(g->ops[x]->op->optype & LWOPT_WINDOWS_RESET)
-			(*lx)->win.active_era++;
-
-		// age active selections
-		if(g->ops[x]->op->optype & LWOPT_SELECTION_RESET)
-			(*lx)->sel.active_era++;
-
-		// save activation settings, IF it specifies both STAGES and ACTIVATE
-		//  y-ish operators specify only ACTIVATE
-		if((g->ops[x]->op->optype & (LWOPT_SELECTION_ACTIVATE | LWOPT_SELECTION_STAGE)) == (LWOPT_SELECTION_ACTIVATE | LWOPT_SELECTION_STAGE))
-			sel_activate = 1;
-		if((g->ops[x]->op->optype & (LWOPT_WINDOWS_ACTIVATE | LWOPT_WINDOWS_STAGE)) == (LWOPT_WINDOWS_ACTIVATE | LWOPT_WINDOWS_STAGE))
-			win_activate = 1;
-
-		// save aggregation settings
-		sel_aggregate = !!(g->ops[x]->op->optype & LWOPT_SELECTION_AGGREGATE);
-		win_aggregate = !!(g->ops[x]->op->optype & LWOPT_WINDOWS_AGGREGATE);
-	}
-
-	// possibly activate staged selection
-	if(sel_activate)
-		fatal(lstack_selection_activate, *lx);
-
-	// possibly activate staged windows
-	if(win_activate)
-		fatal(lstack_windows_activate, *lx);
-
-	if(g->opsl && lw_would_exec())
-	{
-		fatal(lstack_description_pswrite, *lx, &ps);
-		lw_log_exec("%.*s", (int)ps->l, ps->s);
 	}
 
 finally:

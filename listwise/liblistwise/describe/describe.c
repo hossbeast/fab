@@ -448,10 +448,12 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 					if((*z - oz) < 45)
 						SAY("%*s", 45 - (*z - oz), "");
 
-					SAY(" active { lease(%3d) %s era(%3d) }"
+					SAY(" active { lease(%3d) %s era(%3d) %s nil=%d }"
 						, lx->win.s[y].active->lease
 						, lx->win.s[y].active->lease == lx->win.active_era ? "= " : "!="
 						, lx->win.active_era
+						, (lx->win.s[y].active->lease == lx->win.active_era ? lx->win.s[y].active->nil : 0) ? "but" : "and"
+						, lx->win.s[y].active->nil
 					);
 				}
 			}

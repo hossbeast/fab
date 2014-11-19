@@ -79,6 +79,7 @@ int API lstack_selection_activate(lwx * const restrict lx)
 	}
 	else
 	{
+		// no selection made ; nil selection
 		lx->sel.active = &lx->sel.storage[0];
 		lx->sel.active->nil = 1;
 	}

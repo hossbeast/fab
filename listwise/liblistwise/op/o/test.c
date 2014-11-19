@@ -25,7 +25,7 @@ xunit_unit xunit = {
 
 		  (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
-				, .xsfm = "sx/x so s/z/a sy"
+				, .xsfm = "sx/x o s/z/a sy"
 				, .final = (char*[]) { "aoo", "foo.x", "foo.a.x", "foo.a.b.x", 0 }
 		  }}
 			/* o : works across multiple chained o operators */
