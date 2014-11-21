@@ -30,6 +30,12 @@ void API lwx_iterate_loop(lwx * const restrict lx, const int x, const int y, con
 			*go = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
 		}
 	}
+
+	if(*go)
+	{
+		if(lstack_windows_state(lx, y, 0) == LWX_WINDOWED_NONE)
+			*go = 0;
+	}
 }
 
 int API lwx_lists(lwx * const restrict lx)

@@ -412,35 +412,34 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 								w = 0;
 							}
 
-							int marked = 0;
-							if(w >= 0 && w < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[w].o)
+							if(escaping)
 							{
-								if((i - lx->win.s[y].active->s[w].o) < lx->win.s[y].active->s[w].l)
-								{
-									SAY("^");
-									marked = 1;
-								}
+								if(s[i] == 0x6d)
+									escaping = 0;
 							}
-
-							if(!marked)
+							else if(s[i] == 0x1b)
 							{
-								// between internal windows
-								if(escaping)
+								escaping = 1;
+							}
+							else
+							{
+								int marked = 0;
+								if(w >= 0 && w < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[w].o)
 								{
-									if(s[i] == 0x6d)
-										escaping = 0;
-								}
-								else if(s[i] == 0x1b)
-								{
-									escaping = 1;
-								}
-								else
-								{
-									SAY(" ");
+									if((i - lx->win.s[y].active->s[w].o) < lx->win.s[y].active->s[w].l)
+									{
+										SAY("^");
+										marked = 1;
+									}
 								}
 
-								if(w >= 0 && w < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[w].o)
-									w++;
+								if(!marked)
+								{
+									// between internal windows
+									SAY(" ");
+									if(w >= 0 && w < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[w].o)
+										w++;
+								}
 							}
 						}
 					}
@@ -475,35 +474,34 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 						w = 0;
 					}
 
-					int marked = 0;
-					if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
+					if(escaping)
 					{
-						if((i - lx->win.s[y].staged->s[w].o) < lx->win.s[y].staged->s[w].l)
-						{
-							SAY("+");
-							marked = 1;
-						}
+						if(s[i] == 0x6d)
+							escaping = 0;
 					}
-
-					if(!marked)
+					else if(s[i] == 0x1b)
 					{
-						// between internal windows
-						if(escaping)
+						escaping = 1;
+					}
+					else
+					{
+						int marked = 0;
+						if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
 						{
-							if(s[i] == 0x6d)
-								escaping = 0;
-						}
-						else if(s[i] == 0x1b)
-						{
-							escaping = 1;
-						}
-						else
-						{
-							SAY(" ");
+							if((i - lx->win.s[y].staged->s[w].o) < lx->win.s[y].staged->s[w].l)
+							{
+								SAY("+");
+								marked = 1;
+							}
 						}
 
-						if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
-							w++;
+						if(!marked)
+						{
+							// between internal windows
+							SAY(" ");
+							if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
+								w++;
+						}
 					}
 				}
 

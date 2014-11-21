@@ -43,6 +43,7 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE | LWOP_ARGS_CANHAVE
 		, .op_exec			= op_exec
 		, .desc					= "extract row window"
+		, .mnemonic			= "extract"
 	}
 	, {}
 };
@@ -62,16 +63,14 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
+		lwx_windows * win;
+		if(lstack_windows_state(lx, x, &win) != LWX_WINDOWED_NONE)
 		{
 			char * zs;
 			int    zsl;
 
 			if(ds)
 			{
-				// clearing/appending will reset the windows
-				typeof(*lx->win.s[0].active) * win = lx->win.s[x].active;
-
 				// the str parameter will cause readrow to return the temp space for the row
 				fatal(lstack_readrow, lx, 0, x, &zs, &zsl, 0, 1, 0, 1, 0);
 
@@ -94,10 +93,10 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 
 				// write new string using the window
 				fatal(lstack_writew, lx, 0, x, zs, zsl);
-
-				// record this index was hit
-				fatal(lstack_selection_stage, lx, x);
 			}
+
+			// record this index was hit
+			fatal(lstack_selection_stage, lx, x);
 		}
 	}
 	LSTACK_ITEREND

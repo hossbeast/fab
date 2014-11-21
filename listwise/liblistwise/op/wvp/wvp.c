@@ -37,9 +37,10 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "wvp"
-		, .optype				= LWOP_WINDOWS_ACTIVATE
+		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE
 		, .op_exec			= op_exec
-		, .desc					= "window preceeding"
+		, .desc					= "window section preceeding first windowed section"
+		, .mnemonic			= "window-preceeding"
 	}
 	, {}
 };
@@ -50,16 +51,12 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
+		lwx_windows * win;
+		if(lstack_windows_state(lx, x, &win) == LWX_WINDOWED_SOME)
 		{
-			typeof(lx->win.s[0].active->s[0]) * ws = lx->win.s[x].active->s;
-			int wl = lx->win.s[x].active->l;
-
-			if(wl)
-			{
-				// preceeding the first windowed segment
-				fatal(lstack_window_stage, lx, x, 0, ws[0].o);
-			}
+			// preceeding the first windowed segment
+			fatal(lstack_window_stage, lx, x, 0, win->s[0].o);
+			fatal(lstack_selection_stage, lx, x);
 		}
 	}
 	LSTACK_ITEREND

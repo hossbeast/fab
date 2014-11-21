@@ -48,7 +48,7 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "hl"
-		, .optype				= LWOP_OPERATION_INPLACE | LWOP_WINDOWS_ACTIVATE
+		, .optype				= LWOP_OPERATION_INPLACE | LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE
 		, .op_exec			= op_exec
 		, .mnemonic			= "highlight"
 		, .desc					= "highlight windows"
@@ -62,11 +62,9 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
+		lwx_windows * win;
+		if(lstack_windows_state(lx, x, &win) != LWX_WINDOWED_NONE)
 		{
-			// clearing/appending will reset the windows
-			typeof(*lx->win.s[0].active) * win = lx->win.s[x].active;
-
 			// request that readrow return temp space
 			char * zs;
 			int    zsl;
@@ -93,14 +91,26 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 				}
 
 				// write the windowed segment bracketed by color escapes
+#if 1
+				// in this branch, the window includes the color escapes
+				fatal(lstack_catw, lx, 0, x, COLOR(RED));
+				fatal(lstack_catw, lx, 0, x, zs + win->s[i].o, win->s[i].l);
+				fatal(lstack_catw, lx, 0, x, COLOR(NONE));
+
+				fatal(lstack_window_stage, lx, x, z, win->s[i].l + CSIZE(NONE) + CSIZE(RED));
+
+				z += win->s[i].l + CSIZE(NONE) + CSIZE(RED);
+#else
+				// in this branch, the window does NOT include the color escapes
 				fatal(lstack_catw, lx, 0, x, COLOR(RED));
 				z += CSIZE(RED);
 				fatal(lstack_catw, lx, 0, x, zs + win->s[i].o, win->s[i].l);
 				fatal(lstack_catw, lx, 0, x, COLOR(NONE));
-
+				
 				fatal(lstack_window_stage, lx, x, z, win->s[i].l);
-
+				
 				z += win->s[i].l + CSIZE(NONE);
+#endif
 			}
 
 			// text in the subject following the last windowed segment

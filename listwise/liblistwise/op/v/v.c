@@ -31,20 +31,14 @@
 
 /*
 
-v  : invert selection and windows
-sv : invert selection
+v  : invert selection
 wv : invert windows
 
 NO ARGUMENTS
 
-OPERATION
-
- 1. invert selectedness of each item
-
 */
 
 static int v_exec(operation*, lwx*, int**, int*, void**);
-static int sv_exec(operation*, lwx*, int**, int*, void**);
 static int wv_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
@@ -53,13 +47,9 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_ACTIVATE
 		, .op_exec			= v_exec
 		, .mnemonic			= "invert"
-		, .desc					= "invert selection and windows"
-	}
-	, {
-		  .s						= "sv"
-		, .optype				= LWOP_SELECTION_ACTIVATE
-		, .op_exec			= sv_exec
-		, .mnemonic			= "selection-invert"
+/*
+		, .aliases			= (char*[]) { "sv", "selection-invert", 0 }
+*/
 		, .desc					= "invert selection"
 	}
 	, {
@@ -73,19 +63,6 @@ operator op_desc[] = {
 };
 
 int v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
-{
-	int x;
-	LSTACK_ITERATE(ls, x, go);
-	if(!go)
-	{
-		fatal(lstack_selection_stage, ls, x);
-	}
-	LSTACK_ITEREND;
-
-	finally : coda;
-}
-
-int sv_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	int x;
 	LSTACK_ITERATE(ls, x, go);

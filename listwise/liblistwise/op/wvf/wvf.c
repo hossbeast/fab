@@ -37,9 +37,10 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "wvf"
-		, .optype				= LWOP_WINDOWS_ACTIVATE
+		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE
 		, .op_exec			= op_exec
-		, .desc					= "window following"
+		, .desc					= "window section following last windowed section"
+		, .mnemonic			= "window-following"
 	}
 	, {}
 };
@@ -50,23 +51,16 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
+		lwx_windows * win;
+		if(lstack_windows_state(lx, x, &win) == LWX_WINDOWED_SOME)
 		{
-			typeof(lx->win.s[0].active->s[0]) * ws = lx->win.s[x].active->s;
-			int wl = lx->win.s[x].active->l;
+			// read the row
+			int ssl = 0;
+			fatal(lstack_readrow, lx, 0, x, 0, &ssl, 0, 1, 0, 0, 0);
 
-			if(wl)
-			{
-				// reset staged windows
-//				fatal(lstack_window_unstage, lx, x);
-
-				// read the row
-				int ssl = 0;
-				fatal(lstack_readrow, lx, 0, x, 0, &ssl, 0, 1, 0, 0, 0);
-
-				// following the last windowed segment
-				fatal(lstack_window_stage, lx, x, ws[wl - 1].o + ws[wl - 1].l, ssl - (ws[wl - 1].o + ws[wl - 1].l));
-			}
+			// following the last windowed segment
+			fatal(lstack_window_stage, lx, x, win->s[win->l - 1].o + win->s[win->l - 1].l, ssl - (win->s[win->l - 1].o + win->s[win->l - 1].l));
+			fatal(lstack_selection_stage, lx, x);
 		}
 	}
 	LSTACK_ITEREND

@@ -20,23 +20,17 @@
 xunit_unit xunit = {
 	.tests = (xunit_test*[]) {
 
-/* s : SELECTION_ACTIVATE */
-		    (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/. y v"
-				, .final = (char*[]) { "foo", 0 }
-		  }}
+/* wvp : WINDOWS_ACTIVATE */
 
-/* wv : WINDOWS_ACTIVATE */
-		  , (listwise_test[]){{ .entry = listwise_test_entry
+			(listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y wv"
-				, .final = (char*[]) { "fooa", "fooab", "fooabc", 0 }
+				, .xsfm = "l/f y wvf"
+				, .final = (char*[]) { "oo", "oo.a", "oo.a.b", "oo.a.b.c", 0 }
 		  }}
-		  , (listwise_test[]){{ .entry = listwise_test_entry
+		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y wv sz"
-				, .final = (char*[]) { "foo", "fooa", "fooab", "fooabc", 0 }
+				, .xsfm = "l/o/g y wvf"
+				, .final = (char*[]) { ".a", ".a.b", ".a.b.c", 0 }
 		  }}
 		, 0
 	}
