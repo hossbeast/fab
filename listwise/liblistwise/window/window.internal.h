@@ -36,5 +36,21 @@ int lstack_windows_activate(lwx * const restrict lx)
 int lstack_window_deactivate(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
+/// lstack_windows_staged_state
+//
+// SUMMARY
+//  get a value indicating the state of the staged windows for the specified row
+//
+// PARAMETERS
+//  lx    - lwx instance
+//  y     - row index
+//  [win] - (returns) the staged windows for the specified row
+//
+// RETURNS
+//  one of LWX_WINDOWS_*
+//
+int lstack_windows_staged_state(lwx * const restrict lx, int y, struct lwx_windows ** win)
+	__attribute__((nonnull(1)));
+
 #undef restrict
 #endif

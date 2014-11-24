@@ -64,7 +64,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	if(go)
 	{
 		lwx_windows * win;
-		if(lstack_windows_state(lx, x, &win) != LWX_WINDOWED_NONE)
+		if(lstack_windows_state(lx, x, &win) != LWX_WINDOWS_NONE)
 		{
 			char * zs;
 			int    zsl;

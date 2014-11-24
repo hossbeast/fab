@@ -103,18 +103,18 @@ void lwx_xfree(lwx ** const restrict)
 ///
 
 // iterate the selected elements of the 0th list of the lstack
-#define LSTACK_ITERATE(lx, y, go) LSTACK_ITERATE_FWD(lx, 0, y, 1, go)
+#define LSTACK_ITERATE(lx, y, go) LSTACK_ITERATE_FWD(lx, 0, y, 1, 1, go)
 
 // iterate in reverse the selected elements of the 0th list of the lstack
-#define LSTACK_ITERREV(lx, y, go) LSTACK_ITERREV_REV(lx, 0, y, 1, go)
+#define LSTACK_ITERREV(lx, y, go) LSTACK_ITERREV_REV(lx, 0, y, 1, 1, go)
 
 // iterate elements of the xth list on the lstack
 //  iteration limited to selected elements when x == 0
-#define LSTACK_ITERATE_LIST(lx, x, y, go) LSTACK_ITERATE_FWD(lx, x, y, x == 0, go)
+#define LSTACK_ITERATE_LIST(lx, x, y, go) LSTACK_ITERATE_FWD(lx, x, y, x == 0, x == 0, go)
 
 // iterate in reverse elements of the xth list on the lstack
 //  iteration limited to selected elements when x == 0
-#define LSTACK_ITERREV_LIST(lx, x, y, go) LSTACK_ITERATE_REV(lx, x, y, x == 0, go)
+#define LSTACK_ITERREV_LIST(lx, x, y, go) LSTACK_ITERATE_REV(lx, x, y, x == 0, x == 0, go)
 
 // close an iterate block
 #define LSTACK_ITEREND }}

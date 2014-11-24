@@ -125,7 +125,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 						if(isdelim)
 							B += lx->win.s[x].active->s[((off + j) * 2) + 1].l;
 
-						fatal(lstack_window_stage, lx, x, A, B - A);
+						fatal(lstack_windows_stage, lx, x, A, B - A);
 					}
 				}
 

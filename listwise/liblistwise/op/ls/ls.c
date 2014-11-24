@@ -145,7 +145,7 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse
 	}
 	else
 	{
-		LSTACK_ITERATE_FWD(ls, 1, x, 1, go)
+		LSTACK_ITERATE_FWD(ls, 1, x, 1, 1, go)
 		if(go)
 		{
 			char * zs = 0;

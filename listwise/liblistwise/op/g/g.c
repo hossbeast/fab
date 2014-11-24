@@ -176,7 +176,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 
 	fatal(lstack_unshift, lx);
 
-	LSTACK_ITERATE_FWD(lx, 1, x, 1, go)
+	LSTACK_ITERATE_FWD(lx, 1, x, 1, 1, go)
 	if(go)
 	{
 		char * zs = 0;

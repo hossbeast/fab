@@ -313,8 +313,8 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 		, lx->sel.active ? lx->sel.active->lease : 0
 		, (lx->sel.active ? lx->sel.active->lease : 0) == lx->sel.active_era ? "= " : "!="
 		, lx->sel.active_era
-		, (lx->sel.active ? lx->sel.active->nil : 0) ? "but" : "and"
-		, lx->sel.active ? lx->sel.active->nil : 0
+		, (lx->sel.active ? lx->sel.active->state == LWX_SELECTION_NONE : 0) ? "but" : "and"
+		, lx->sel.active ? lx->sel.active->state == LWX_SELECTION_NONE : 0
 		, lx->sel.staged ? lx->sel.staged->lease : 0
 		, (lx->sel.staged ? lx->sel.staged->lease : 0) == lx->sel.staged_era ? "= " : "!="
 		, lx->sel.staged_era
@@ -349,7 +349,7 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 				if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
 				{
 					select = 0;
-					if(lx->sel.active->nil == 0 && lx->sel.active->sl > (y / 8))
+					if(lx->sel.active->state != LWX_SELECTION_NONE && lx->sel.active->sl > (y / 8))
 					{
 						select = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
 					}
@@ -394,17 +394,18 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 				lwx_windows * win;
 				int state = lstack_windows_state(lx, y, &win);
 
-				if(state != LWX_WINDOWED_ALL)
+				if(state != LWX_WINDOWS_ALL)
 				{
 					SAY("\n");
 					size_t oz = *z;
 					SAY("%16s", " ");
 
-					int escaping = 0;
-					int w = -1;
-					int i;
-					if(state != LWX_WINDOWED_NONE)
+					if(state != LWX_WINDOWS_NONE)
 					{
+						int escaping = 0;
+						int w = -1;
+						int i;
+
 						for(i = 0; i < sl; i++)
 						{
 							if(w == -1 && lx->win.s[y].active->s[0].o == i)
@@ -447,72 +448,97 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 					if((*z - oz) < 45)
 						SAY("%*s", 45 - (*z - oz), "");
 
-					SAY(" active { lease(%3d) %s era(%3d) %s nil=%d }"
+					SAY(" active { lease(%3d) %s era(%3d)"
 						, lx->win.s[y].active->lease
 						, lx->win.s[y].active->lease == lx->win.active_era ? "= " : "!="
 						, lx->win.active_era
-						, (lx->win.s[y].active->lease == lx->win.active_era ? lx->win.s[y].active->nil : 0) ? "but" : "and"
-						, lx->win.s[y].active->nil
 					);
+
+					if(lx->win.s[y].active->lease == lx->win.active_era)
+					{
+						SAY(" %s state=%s"
+							, lx->win.s[y].active->state == LWX_WINDOWS_SOME ? "and" : "but"
+							, LWX_WINDOWS_STR(lx->win.s[y].active->state)
+						);
+					}
+					SAY(" }");
 				}
 			}
 
 			// indicate staged windows
-			if(x == 0 && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era && !lx->win.s[y].staged->nil)
+			if(x == 0)// && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era && !lx->win.s[y].staged->state == LWX_WINDOWS_NONE)
 			{
-				SAY("\n");
-				size_t oz = *z;
-				SAY("%16s", " ");
-
-				int escaping = 0;
-				int w = -1;
-				int i;
-				for(i = 0; i < sl; i++)
+				if(lx->win.s[y].staged)
 				{
-					if(w == -1 && lx->win.s[y].staged->s[0].o == i)
-					{
-						w = 0;
-					}
+					SAY("\n");
+					size_t oz = *z;
+					SAY("%16s", " ");
 
-					if(escaping)
+					lwx_windows * win;
+					int state = lstack_windows_staged_state(lx, y, &win);
+
+					if(state != LWX_WINDOWS_NONE)
 					{
-						if(s[i] == 0x6d)
-							escaping = 0;
-					}
-					else if(s[i] == 0x1b)
-					{
-						escaping = 1;
-					}
-					else
-					{
-						int marked = 0;
-						if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
+						int escaping = 0;
+						int w = -1;
+						int i;
+						for(i = 0; i < sl; i++)
 						{
-							if((i - lx->win.s[y].staged->s[w].o) < lx->win.s[y].staged->s[w].l)
+							if(state == LWX_WINDOWS_SOME && w == -1 && lx->win.s[y].staged->s[0].o == i)
 							{
-								SAY("+");
-								marked = 1;
+								w = 0;
+							}
+
+							if(escaping)
+							{
+								if(s[i] == 0x6d)
+									escaping = 0;
+							}
+							else if(s[i] == 0x1b)
+							{
+								escaping = 1;
+							}
+							else if(state == LWX_WINDOWS_SOME)
+							{
+								int marked = 0;
+								if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
+								{
+									if((i - lx->win.s[y].staged->s[w].o) < lx->win.s[y].staged->s[w].l)
+									{
+										SAY("+");
+										marked = 1;
+									}
+								}
+
+								if(!marked)
+								{
+									// between internal windows
+									SAY(" ");
+									if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
+										w++;
+								}
 							}
 						}
-
-						if(!marked)
-						{
-							// between internal windows
-							SAY(" ");
-							if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
-								w++;
-						}
 					}
+
+					if((*z - oz) < 45)
+						SAY("%*s", 45 - (*z - oz), "");
+
+					SAY(" staged { lease(%3d) %s era(%3d)"
+						, lx->win.s[y].staged->lease
+						, lx->win.s[y].staged->lease == lx->win.staged_era ? "= " : "!="
+						, lx->win.staged_era
+					);
+
+					if(lx->win.s[y].staged->lease == lx->win.staged_era)
+					{
+						SAY(" %s state=%s"
+							, lx->win.s[y].staged->state == LWX_WINDOWS_SOME ? "and" : "but"
+							, LWX_WINDOWS_STR(lx->win.s[y].staged->state)
+						);
+					}
+					SAY(" }");
 				}
-
-				if((*z - oz) < 45)
-					SAY("%*s", 45 - (*z - oz), "");
-
-				SAY(" staged { lease(%3d) %s era(%3d) }"
-					, lx->win.s[y].staged->lease
-					, lx->win.s[y].staged->lease == lx->win.staged_era ? "= " : "!="
-					, lx->win.staged_era
-				);
 			}
 		}
 	}

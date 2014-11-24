@@ -24,7 +24,20 @@
 
 #define restrict __restrict
 
-void lwx_iterate_loop(struct lwx * const restrict lx, const int x, const int y, const int sel, int * const restrict go)
+/// lwx_iterate_loop
+//
+// SUMMARY
+//  determine whether to include row {x,y} in the iteration
+//
+// PARAMETERS
+//  lx  - lwx instance
+//  x   - list index
+//  y   - row index
+//  sel - whether to consult the selection
+//  win - whether to consult the windows
+//  go  - (returns) whether to include the row in the iteration
+//
+void lwx_iterate_loop(struct lwx * const restrict lx, const int x, const int y, const int sel, const int win, int * const restrict go)
   __attribute__((nonnull));
 
 int lwx_lists(struct lwx * const restrict lx)
@@ -35,17 +48,35 @@ int lwx_rows(struct lwx * const restrict lx, const int x)
 
 #undef restrict
 
-#define LSTACK_ITERATE_FWD(lx, x, y, sel, go) \
+/// LSTACK_ITERATE_FWD
+//
+// SUMMARY
+//  setup a loop for iterating the rows of a list in an lwx
+//
+// PARAMETERS
+//  lx   - lwx instance
+//  x    - list index
+//  y    - on each iteration, set to a value indicating the row index
+//  sel  - whether to consult the selection
+//  win  - whether to consult the windows
+//  go   - on each iteration, set to a boolean value indicating whether to include that row in the iteration
+//
+#define LSTACK_ITERATE_FWD(lx, x, y, sel, win, go) \
   LSTACK_ITERATE_HEADER(lx, x, y, go)         \
-  LSTACK_ITERATE_LOOP(lx, x, y, sel, go)
+  LSTACK_ITERATE_LOOP(lx, x, y, sel, win, go)
 
-#define LSTACK_ITERREV_REV(lx, x, y, sel, go) \
+/// LSTACK_ITERATE_REV
+//
+// SUMMARY
+//  see LSTACK_ITERATE_FWD : reverse order
+//
+#define LSTACK_ITERREV_REV(lx, x, y, sel, win, go) \
   LSTACK_ITERREV_HEADER(lx, x, y, go)         \
-  LSTACK_ITERATE_LOOP(lx, x, y, sel, go)
+  LSTACK_ITERATE_LOOP(lx, x, y, sel, win, go)
 
-#define LSTACK_ITERATE_LOOP(lx, __x, __y, __sel, go)    \
-  int go;                                               \
-  lwx_iterate_loop(lx, __x, __y, __sel, &go);
+#define LSTACK_ITERATE_LOOP(lx, __x, __y, __sel, __win, go)  \
+  int go;                                                    \
+  lwx_iterate_loop(lx, __x, __y, __sel, __win, &go);
 
 #define LSTACK_ITERATE_HEADER(lx, __x, __y, go)         \
   if(lwx_lists(lx) > __x)                               \

@@ -111,7 +111,7 @@ static int op_exec(operation* op, lwx* ls, int** ovec, int* ovec_len, int fullma
 
 					if(i < op->argsl)	// match
 					{
-						fatal(lstack_window_stage, ls, x, o - s, op->args[i]->l);
+						fatal(lstack_windows_stage, ls, x, o - s, op->args[i]->l);
 						fatal(lstack_selection_stage, ls, x);
 					}
 				}
@@ -133,7 +133,7 @@ static int op_exec(operation* op, lwx* ls, int** ovec, int* ovec_len, int fullma
 
 			if(i < op->argsl)
 			{
-				fatal(lstack_window_stage, ls, x, l - op->args[i]->l, op->args[i]->l);
+				fatal(lstack_windows_stage, ls, x, l - op->args[i]->l, op->args[i]->l);
 				fatal(lstack_selection_stage, ls, x);
 			}
 		}

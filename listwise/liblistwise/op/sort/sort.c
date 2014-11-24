@@ -165,7 +165,7 @@ coda;
 
 int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
 {
-	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
+	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->state == LWX_SELECTION_NONE)
 	{
 		// nothing selected
 	}
@@ -184,7 +184,7 @@ int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** uda
 
 int op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
 {
-	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil)
+	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->state == LWX_SELECTION_NONE)
 	{
 		// nothing selected
 	}

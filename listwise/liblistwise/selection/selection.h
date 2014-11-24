@@ -36,9 +36,9 @@ int lstack_selection_stage(lwx * const restrict lx, int y)
 int lstack_selection_reset(lwx * const restrict lx)
 	__attribute__((nonnull));
 
-#define LWX_SELECTED_ALL		0		/* all rows are selected */
-#define LWX_SELECTED_NONE		1		/* no rows are selected */
-#define LWX_SELECTED_SOME		2		/* 1+ rows are selected and 1+ rows are not */
+#define LWX_SELECTION_ALL			0		/* universe */
+#define LWX_SELECTION_NONE		1		/* empty-set */
+#define LWX_SELECTION_SOME		2		/* non-empty proper subset */
 
 /// lstack_selection_state
 //
@@ -46,7 +46,7 @@ int lstack_selection_reset(lwx * const restrict lx)
 //  get a value indicating the state of the selection
 //
 // RETURNS
-//  one of LWX_SELECTED_*
+//  one of LWX_SELECTION_*
 //
 int lstack_selection_state(lwx * const restrict lx)
 	__attribute__((nonnull));

@@ -60,7 +60,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	// indexes to be sorted
 	int * mema = 0;
 
-	if(!(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->nil))
+	if(!(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->state == LWX_SELECTION_NONE))
 	{
 		char * As = 0;
 		int    Asl = 0;

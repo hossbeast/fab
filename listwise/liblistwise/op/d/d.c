@@ -57,7 +57,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
 	{
 		size_t num;
-		if(lx->sel.active->nil)
+		if(lx->sel.active->state == LWX_SELECTION_NONE)
 			num = 0;
 		else
 			num = lx->sel.active->l;
@@ -69,7 +69,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		int x;
 		for(x = lx->s[1].l - 1; x >= 0; x--)
 		{
-			if(lx->sel.active->nil || (lx->sel.active->sl <= (x/8)) || (lx->sel.active->s[x/8] & (0x01 << (x%8))) == 0)
+			if(lx->sel.active->state == LWX_SELECTION_NONE || (lx->sel.active->sl <= (x/8)) || (lx->sel.active->s[x/8] & (0x01 << (x%8))) == 0)
 			{
 				fatal(lstack_move, lx, 0, lx->s[1].l - num - 1 - i, 1, x);
 			}

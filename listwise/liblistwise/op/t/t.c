@@ -56,11 +56,11 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 	fatal(lstack_unshift, lx);
 
 	int x;
-	LSTACK_ITERATE_FWD(lx, 1, x, 1, go)
+	LSTACK_ITERATE_FWD(lx, 1, x, 1, 1, go)
 	if(go)
 	{
 		struct lwx_windows * win;
-		if(lstack_windows_state(lx, x, &win) != LWX_WINDOWED_NONE)
+		if(lstack_windows_state(lx, x, &win) != LWX_WINDOWS_NONE)
 		{
 			// request that readrow return temp space, and not to resolve the active window
 			char * zs;

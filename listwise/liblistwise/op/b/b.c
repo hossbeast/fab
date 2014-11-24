@@ -101,7 +101,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 			if(off >= 0 && off < ssl && len > 0)
 			{
 				// append window segment
-				fatal(lstack_window_stage, lx, x, off, len);
+				fatal(lstack_windows_stage, lx, x, off, len);
 
 				// record this index was hit
 				fatal(lstack_selection_stage, lx, x);

@@ -82,8 +82,8 @@ struct lwx
 				int     	a;    	// alloc
 
 				int     	zl;   	// sum(s[-].l)
+				int				state;	// LWX_WINDOWS_* ; see window.h ; if ALL or NONE, s is ignored
 
-				int				nil;		// whether this window represents an empty subset
 				uint64_t	lease;	// era in which this window is valid
 				int				mark;
 			} storage[2];
@@ -111,7 +111,8 @@ struct lwx
 			int				sl;			// length of s
 			int				sa;			// allocated size of s
 
-			int				nil;		// whether this selection represents no items selected
+			int				state;	// LWX_SELECTION_* ; see selection.h ; if ALL or NONE, s is ignored
+
 			uint64_t	lease;	// era in which this selection is valid
 		} storage[2];
 

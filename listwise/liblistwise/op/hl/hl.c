@@ -63,7 +63,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 	if(go)
 	{
 		lwx_windows * win;
-		if(lstack_windows_state(lx, x, &win) != LWX_WINDOWED_NONE)
+		if(lstack_windows_state(lx, x, &win) != LWX_WINDOWS_NONE)
 		{
 			// request that readrow return temp space
 			char * zs;
@@ -97,7 +97,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 				fatal(lstack_catw, lx, 0, x, zs + win->s[i].o, win->s[i].l);
 				fatal(lstack_catw, lx, 0, x, COLOR(NONE));
 
-				fatal(lstack_window_stage, lx, x, z, win->s[i].l + CSIZE(NONE) + CSIZE(RED));
+				fatal(lstack_windows_stage, lx, x, z, win->s[i].l + CSIZE(NONE) + CSIZE(RED));
 
 				z += win->s[i].l + CSIZE(NONE) + CSIZE(RED);
 #else
@@ -107,7 +107,7 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** uda
 				fatal(lstack_catw, lx, 0, x, zs + win->s[i].o, win->s[i].l);
 				fatal(lstack_catw, lx, 0, x, COLOR(NONE));
 				
-				fatal(lstack_window_stage, lx, x, z, win->s[i].l);
+				fatal(lstack_windows_stage, lx, x, z, win->s[i].l);
 				
 				z += win->s[i].l + CSIZE(NONE);
 #endif

@@ -52,14 +52,14 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	if(go)
 	{
 		lwx_windows * win;
-		if(lstack_windows_state(lx, x, &win) == LWX_WINDOWED_SOME)
+		if(lstack_windows_state(lx, x, &win) == LWX_WINDOWS_SOME)
 		{
 			// read the row
 			int ssl = 0;
 			fatal(lstack_readrow, lx, 0, x, 0, &ssl, 0, 1, 0, 0, 0);
 
 			// following the last windowed segment
-			fatal(lstack_window_stage, lx, x, win->s[win->l - 1].o + win->s[win->l - 1].l, ssl - (win->s[win->l - 1].o + win->s[win->l - 1].l));
+			fatal(lstack_windows_stage, lx, x, win->s[win->l - 1].o + win->s[win->l - 1].l, ssl - (win->s[win->l - 1].o + win->s[win->l - 1].l));
 			fatal(lstack_selection_stage, lx, x);
 		}
 	}

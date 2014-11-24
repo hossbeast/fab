@@ -39,10 +39,10 @@ int API lstack_selection_stage(lwx * const restrict lx, int y)
 	}
 
 	// renew lease
-	if(lx->sel.staged->lease != lx->sel.staged_era || lx->sel.staged->nil)
+	if(lx->sel.staged->lease != lx->sel.staged_era || lx->sel.staged->state == LWX_SELECTION_NONE)
 	{
 		lx->sel.staged->lease = lx->sel.staged_era;
-		lx->sel.staged->nil = 0;
+		lx->sel.staged->state = 0;
 		lx->sel.staged->l = 0;
 		lx->sel.staged->sl = 0;
 	}
@@ -62,9 +62,12 @@ int API lstack_selection_stage(lwx * const restrict lx, int y)
 	// increase length
 	lx->sel.staged->sl = MAX(lx->sel.staged->sl, (y/8)+1);
 
-	// set this particular bit
+	// set this particular bit, track total bits
 	if((lx->sel.staged->s[y/8] & (0x01 << (y%8))) == 0)
-		lx->sel.staged->l++;
+	{
+		if(++lx->sel.staged->l == lx->s[0].l)
+			lx->sel.staged->state = LWX_SELECTION_ALL;
+	}
 
 	lx->sel.staged->s[y/8] |= (0x01 << (y%8));
 
@@ -81,7 +84,7 @@ int API lstack_selection_activate(lwx * const restrict lx)
 	{
 		// no selection made ; nil selection
 		lx->sel.active = &lx->sel.storage[0];
-		lx->sel.active->nil = 1;
+		lx->sel.active->state = LWX_SELECTION_NONE;
 	}
 
 	// renew lease
@@ -104,18 +107,8 @@ int API lstack_selection_state(lwx * const restrict lx)
 {
 	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
 	{
-		return LWX_SELECTED_ALL;		// all rows are selected
+		return LWX_SELECTION_ALL;		// all rows are selected
 	}
-	else if(lx->sel.active->nil || lx->sel.active->l == 0)
-	{
-		return LWX_SELECTED_NONE;		// no rows selected
-	}
-	else if(lx->sel.active->l == lx->s[0].l)
-	{
-		return LWX_SELECTED_SOME;		// subset of rows are selected
-	}
-	else
-	{
-		return LWX_SELECTED_ALL;		// all rows are selected
-	}
+
+	return lx->sel.active->state;
 }

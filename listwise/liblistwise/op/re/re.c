@@ -101,7 +101,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		{
 			do
 			{
-				fatal(lstack_window_stage, ls, x, (*ovec)[1], (*ovec)[2] - (*ovec)[1]);
+				fatal(lstack_windows_stage, ls, x, (*ovec)[1], (*ovec)[2] - (*ovec)[1]);
 
 				(*ovec)[0] = 0;
 				if(isglobal)

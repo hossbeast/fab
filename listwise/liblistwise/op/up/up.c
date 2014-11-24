@@ -54,7 +54,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	{
 		// everything selected ; no-op
 	}
-	else if(lx->sel.active->nil)
+	else if(lx->sel.active->state == LWX_SELECTION_NONE)
 	{
 		// nothing selected ; no-op
 	}

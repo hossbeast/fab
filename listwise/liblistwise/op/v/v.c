@@ -78,14 +78,14 @@ int v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 int wv_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
 	int x;
-	LSTACK_ITERATE(lx, x, go)
+	LSTACK_ITERATE_FWD(lx, 0, x, 1, 0, go)
 	if(go)
 	{
 		lwx_windows * win;
 		int state = lstack_windows_state(lx, x, &win);
-		if(state == LWX_WINDOWED_ALL)
+		if(state == LWX_WINDOWS_ALL)
 		{
-			fatal(lstack_window_stage, lx, x, 0, 0);	// nil
+			fatal(lstack_windows_stage_nil, lx, x);	// nil
 		}
 		else
 		{
@@ -93,24 +93,26 @@ int wv_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 			int sl = 0;
 			fatal(lstack_readrow, lx, 0, x, &s, &sl, 0, 1, 0, 0, 0);
 
-			if(state == LWX_WINDOWED_SOME)
+			if(state == LWX_WINDOWS_SOME)
 			{
 				// before the first windowed segment
-				fatal(lstack_window_stage, lx, x, 0, win->s[0].o);
+				if(win->s[0].o)
+					fatal(lstack_windows_stage, lx, x, 0, win->s[0].o);
 
 				int i;
 				for(i = 1; i < win->l; i++)
 				{
 					// region following the previous segment and preceeding the current segment
-					fatal(lstack_window_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, win->s[i].o - (win->s[i - 1].o + win->s[i - 1].l));
+					fatal(lstack_windows_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, win->s[i].o - (win->s[i - 1].o + win->s[i - 1].l));
 				}
 
 				// following the last windowed segment
-				fatal(lstack_window_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, sl - (win->s[i - 1].o + win->s[i - 1].l));
+				if(sl - (win->s[i - 1].o + win->s[i - 1].l))
+					fatal(lstack_windows_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, sl - (win->s[i - 1].o + win->s[i - 1].l));
 			}
-			else // state == LWX_WINDOWED_NONE
+			else // state == LWX_WINDOWS_NONE
 			{
-				fatal(lstack_window_stage, lx, x, 0, sl);
+				fatal(lstack_windows_stage, lx, x, 0, sl);
 			}
 		}
 	}

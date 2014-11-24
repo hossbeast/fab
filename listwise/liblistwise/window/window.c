@@ -30,8 +30,13 @@
 #define RIGHT 3
 #define INTER 4
 
-int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
+//
+// static
+//
+
+static int stage(lwx * const restrict lx, int y, int state, int off, int len)
 {
+	// get from storage
 	if(lx->win.s[y].staged == 0)
 	{
 		lx->win.s[y].staged = &lx->win.s[y].storage[0];
@@ -53,83 +58,163 @@ int API lstack_window_stage(lwx * const restrict lx, int y, int off, int len)
 	}
 	
 	// renew lease
-	if(lx->win.s[y].staged->lease != lx->win.staged_era || lx->win.s[y].staged->nil)
+	if(lx->win.s[y].staged->lease != lx->win.staged_era)// || lx->win.s[y].staged->nil)
 	{
 		lx->win.s[y].staged->lease = lx->win.staged_era;
-		lx->win.s[y].staged->nil = 0;
+		lx->win.s[y].staged->state = 0;
 		lx->win.s[y].staged->l = 0;
 		lx->win.s[y].staged->zl = 0;
 	}
 
-	if(off < 0 || len <= 0)
+	lx->win.s[y].staged->state = state;
+
+	if(state == LWX_WINDOWS_NONE)
 	{
-		// invalid window ; nil the window
-		lx->win.s[y].staged->nil = 1;
 		lx->win.s[y].staged->zl = 0;
 	}
 	else
 	{
-		int type = LEFT;
+		char * r;
+		int rl;
+		fatal(lstack_readrow, lx, 0, y, &r, &rl, 0, 1, 0, 0, 0);
 
-		int i;
-		for(i = 0; i < lx->win.s[y].staged->l; i++)
+		if(state == LWX_WINDOWS_ALL)
 		{
-			if(off == lx->win.s[y].staged->s[i].o && len == lx->win.s[y].staged->s[i].l)
+			lx->win.s[y].staged->zl = rl;
+		}
+		else
+		{
+			int type = LEFT;
+
+			int i;
+			for(i = 0; i < lx->win.s[y].staged->l; i++)
 			{
-				type = SAME; // same segment
-				break;
+				if(off == lx->win.s[y].staged->s[i].o && len == lx->win.s[y].staged->s[i].l)
+				{
+					type = SAME; // same segment
+					break;
+				}
+				else if((off + len) < lx->win.s[y].staged->s[i].o)
+				{
+					type = LEFT; // disjoint on the left
+					break;
+				}
+				else if(off > (lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l))
+				{
+					type = RIGHT; // disjoint on the right
+				}
+				else
+				{
+					type = INTER; // overlapping
+
+					int noff = MIN(lx->win.s[y].staged->s[i].o, off);
+					int nlen = MAX(lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l, off + len) - noff;
+
+					lx->win.s[y].staged->zl += (nlen - lx->win.s[y].staged->s[i].l);
+
+					lx->win.s[y].staged->s[i].o = noff;
+					lx->win.s[y].staged->s[i].l = nlen;
+
+					if(lx->win.s[y].staged->zl == rl)
+						lx->win.s[y].staged->state = LWX_WINDOWS_ALL;
+
+					break;
+				}
 			}
-			else if((off + len) < lx->win.s[y].staged->s[i].o)
+
+			if(type == LEFT || type == RIGHT)
 			{
-				type = LEFT; // disjoint on the left
-				break;
-			}
-			else if(off > (lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l))
-			{
-				type = RIGHT; // disjoint on the right
-			}
-			else
-			{
-				type = INTER; // overlapping
+				if((lx->win.s[y].staged->zl + len) == rl)
+				{
+					lx->win.s[y].staged->state = LWX_WINDOWS_ALL;
+					lx->win.s[y].staged->zl = rl;
+				}
+				else
+				{
+					// reallocate if necessary
+					if(lx->win.s[y].staged->a == lx->win.s[y].staged->l)
+					{
+						int ns = lx->win.s[y].staged->a ?: listwise_allocation_seed;
+						ns = ns * 2 + ns / 2;
 
-				int noff = MIN(lx->win.s[y].staged->s[i].o, off);
-				int nlen = MAX(lx->win.s[y].staged->s[i].o + lx->win.s[y].staged->s[i].l, off + len) - noff;
+						fatal(xrealloc, &lx->win.s[y].staged->s, sizeof(*lx->win.s[0].staged->s), ns, lx->win.s[y].staged->a);
+						lx->win.s[y].staged->a = ns;
+					}
 
-				lx->win.s[y].staged->zl += (nlen - lx->win.s[y].staged->s[i].l);
+					if(type == LEFT)
+					{
+						// make room at s[i]
+						memmove(
+								&lx->win.s[y].staged->s[i + 1]
+							, &lx->win.s[y].staged->s[i]
+							, (lx->win.s[y].staged->l - i) * sizeof(lx->win.s[0].staged->s[0])
+						);
+					}
 
-				lx->win.s[y].staged->s[i].o = noff;
-				lx->win.s[y].staged->s[i].l = nlen;
-
-				break;
+					lx->win.s[y].staged->s[i].o = off;
+					lx->win.s[y].staged->s[i].l = len;
+					lx->win.s[y].staged->l++;
+					lx->win.s[y].staged->zl += len;
+				}
 			}
 		}
+	}
 
-		if(type == LEFT || type == RIGHT)
+	finally : coda;
+}
+
+//
+// public
+//
+
+int lstack_windows_staged_state(lwx * const restrict lx, int y, struct lwx_windows ** win)
+{
+	if(win)
+		*win = lx->win.s[y].staged;
+
+	if(lx->win.s[y].staged == 0 || lx->win.s[y].staged->lease != lx->win.staged_era)
+		return LWX_WINDOWS_ALL;		// universe
+
+	return lx->win.s[y].staged->state;
+}
+
+//
+// api
+//
+
+int API lstack_windows_stage_all(lwx * const restrict lx, int y)
+{
+	xproxy(stage, lx, y, LWX_WINDOWS_ALL, 0, 0);
+}
+
+int API lstack_windows_stage_nil(lwx * const restrict lx, int y)
+{
+	xproxy(stage, lx, y, LWX_WINDOWS_NONE, 0, 0);
+}
+
+int API lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
+{
+	if(off < 0 || len <= 0)
+	{
+		fatal(stage, lx, y, LWX_WINDOWS_NONE, 0, 0);
+	}
+	else
+	{
+		char * r;
+		int rl;
+		fatal(lstack_readrow, lx, 0, y, &r, &rl, 0, 1, 0, 0, 0);
+
+		if((off + len) > rl)
 		{
-			// reallocate if necessary
-			if(lx->win.s[y].staged->a == lx->win.s[y].staged->l)
-			{
-				int ns = lx->win.s[y].staged->a ?: listwise_allocation_seed;
-				ns = ns * 2 + ns / 2;
-
-				fatal(xrealloc, &lx->win.s[y].staged->s, sizeof(*lx->win.s[0].staged->s), ns, lx->win.s[y].staged->a);
-				lx->win.s[y].staged->a = ns;
-			}
-
-			if(type == LEFT)
-			{
-				// make room at s[i]
-				memmove(
-						&lx->win.s[y].staged->s[i + 1]
-					, &lx->win.s[y].staged->s[i]
-					, (lx->win.s[y].staged->l - i) * sizeof(lx->win.s[0].staged->s[0])
-				);
-			}
-
-			lx->win.s[y].staged->s[i].o = off;
-			lx->win.s[y].staged->s[i].l = len;
-			lx->win.s[y].staged->l++;
-			lx->win.s[y].staged->zl += len;
+			fatal(stage, lx, y, LWX_WINDOWS_NONE, 0, 0);
+		}
+		else if(off == 0 && len == rl)
+		{
+			fatal(stage, lx, y, LWX_WINDOWS_ALL, 0, 0);
+		}
+		else
+		{
+			fatal(stage, lx, y, LWX_WINDOWS_SOME, off, len);
 		}
 	}
 
@@ -153,7 +238,7 @@ int API lstack_window_deactivate(lwx * const restrict lx, int y)
 int API lstack_windows_activate(lwx * const restrict lx)
 {
 	int y;
-	LSTACK_ITERATE(lx, y, go)
+	LSTACK_ITERATE_FWD(lx, 0, y, 1, 0, go)
 	if(go)
 	{
 		if(lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era)
@@ -182,14 +267,7 @@ int API lstack_windows_state(lwx * const restrict lx, int y, struct lwx_windows 
 		*win = lx->win.s[y].active;
 
 	if(lx->win.s[y].active == 0 || lx->win.s[y].active->lease != lx->win.active_era)
-	{
-		return LWX_WINDOWED_ALL;		// all sections are active
-	}
-	else if(lx->win.s[y].active->nil || lx->win.s[y].active->l == 0)
-	{
-		return LWX_WINDOWED_NONE;		// no sections are active
-	}
+		return LWX_WINDOWS_ALL;		// universe
 
-	// some nonempty subset of sections are selected ; could be all
-	return LWX_WINDOWED_SOME;
+	return lx->win.s[y].active->state;
 }

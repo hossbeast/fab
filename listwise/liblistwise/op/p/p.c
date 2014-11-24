@@ -56,7 +56,7 @@ operator op_desc[] = {
 
 int op_validate(operation* o)
 {
-	if(o->argsl != 1 && (o->argsl % 2) != 0)
+	if(o->argsl == 0 || (o->argsl != 1 && (o->argsl % 2) != 0))
 		failf(LW_ARGSNUM, "actual : %d", o->argsl);
 
 	int x;
@@ -75,7 +75,10 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
+		lwx_windows * win;
+		int state = lstack_windows_state(lx, x, &win);
+
+		if(state != LWX_WINDOWS_NONE)
 		{
 			char * ss = 0;
 			int ssl = 0;
@@ -94,20 +97,17 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 				int len = win_len;
 
 				if(win_off < 0)
-					off = (lx->win.s[x].active->l + win_off) + 1;
+					off = (win->l + win_off) + 1;
 				if(win_len == 0)
-					len = lx->win.s[x].active->l - off + 1;
+					len = win->l - off + 1;
 				else
-					len = MIN(len, (lx->win.s[x].active->l + 1) - off);
+					len = MIN(len, (win->l + 1) - off);
 
-				if(off >= 0 && off < (lx->win.s[x].active->l + 1) && len > 0)
+				if(off >= 0 && off < (win->l + 1) && len > 0)
 				{
 					if(!wasreset)
 					{
 						wasreset = 1;
-
-						// reset staged window, if any
-//						fatal(lstack_window_unstage, lx, x);
 
 						// record this index was hit
 						fatal(lstack_selection_stage, lx, x);
@@ -121,11 +121,11 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 					off--;
 
 					if(off > -1)
-						A = lx->win.s[x].active->s[off].o + lx->win.s[x].active->s[off].l;
+						A = win->s[off].o + win->s[off].l;
 
-					if(off + len < lx->win.s[x].active->l)
+					if(off + len < win->l)
 					{
-						B = lx->win.s[x].active->s[off + len].o;
+						B = win->s[off + len].o;
 					}
 					else
 					{
@@ -138,7 +138,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 						B = ssl;
 					}
 				
-					fatal(lstack_window_stage, lx, x, A, B - A);
+					fatal(lstack_windows_stage, lx, x, A, B - A);
 				}
 			}
 		}

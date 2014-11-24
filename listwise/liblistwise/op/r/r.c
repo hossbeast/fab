@@ -55,7 +55,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		for(x = 0; x < (lx->s[0].l / 2); x++)
 			fatal(lstack_swaptop, lx, x, lx->s[0].l - 1 - x);
 	}
-	else if(lx->sel.active->nil)
+	else if(lx->sel.active->state == LWX_SELECTION_NONE)
 	{
 		// no items selected ; no-op
 	}

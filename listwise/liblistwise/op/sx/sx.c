@@ -152,7 +152,7 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmat
 		{
 			fatal(lstack_writef, ls, 0, x, "%.*s%.*s", at - s, s, rxl, rxs);
 			fatal(lstack_selection_stage, ls, x);
-			fatal(lstack_window_stage, ls, x, at - s, rxl);
+			fatal(lstack_windows_stage, ls, x, at - s, rxl);
 		}
 	}
 	LSTACK_ITEREND

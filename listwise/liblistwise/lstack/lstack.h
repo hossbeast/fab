@@ -37,7 +37,7 @@
 //  [rl]  - return value - length
 //  [rt]  - return value - type
 //  [obj] - whether object references are resolved
-//  [win] - whether windowing is resolved
+//  [win] - whether windows is resolved
 //  [str] - whether the return value is required to be null-terminated and in tmp space
 //  [raw] - indicates whether the raw storage was returned (object entry not resolved, window not resolved, and str was not specified)
 //

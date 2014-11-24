@@ -766,6 +766,7 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 	uint8_t zst	= lx->s[x].s[y].type;
 	int zraw = 1;
 
+	// resolve the object if requested
 	if(obj && lx->s[x].s[y].type)
 	{
 		listwise_object * o = 0;
@@ -780,35 +781,50 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 	{
 		if(lx->s[x].t[y].y != LWTMP_WINDOW)
 		{
-			size_t req = lx->win.s[y].active->zl;
-			if(lx->win.s[y].active->nil)
-				req = 0;
-
-			if(lx->s[x].t[y].a <= req)
+			if(lx->s[x].t[y].a <= lx->win.s[y].active->zl)
 			{
 				fatal(xrealloc
 					, &lx->s[x].t[y].s
 					, sizeof(*lx->s[0].t[0].s)
-					, req + 1
+					, lx->win.s[y].active->zl + 1
 					, lx->s[x].t[y].a
 				);
 
-				lx->s[x].t[y].a = req + 1;
+				lx->s[x].t[y].a = lx->win.s[y].active->zl + 1;
 			}
 
-			if(lx->win.s[y].active->nil)
+			if(lx->win.s[y].active->state == LWX_WINDOWS_NONE)
 			{
 				lx->s[x].t[y].l = 0;
 			}
 			else
 			{
-				size_t z = 0;
-				int i;
-				for(i = 0; i < lx->win.s[y].active->l; i++)
+				// resolve the object if it has not yet been resolved
+				if(!obj && lx->s[x].s[y].type)
 				{
-					memcpy(lx->s[x].t[y].s + z, zs + lx->win.s[y].active->s[i].o, lx->win.s[y].active->s[i].l);
-					z += lx->win.s[y].active->s[i].l;
+					listwise_object * o = 0;
+					fatal(listwise_lookup_object, lx->s[x].s[y].type, &o);
+
+					o->string(*(void**)lx->s[x].s[y].s, o->string_property, &zs, &zsl);
+					zraw = 0;
 				}
+
+				// resolve the window to the temp space
+				if(lx->win.s[y].active->state == LWX_WINDOWS_ALL)
+				{
+					memcpy(lx->s[x].t[y].s, zs, zsl);
+				}
+				else
+				{
+					size_t z = 0;
+					int i;
+					for(i = 0; i < lx->win.s[y].active->l; i++)
+					{
+						memcpy(lx->s[x].t[y].s + z, zs + lx->win.s[y].active->s[i].o, lx->win.s[y].active->s[i].l);
+						z += lx->win.s[y].active->s[i].l;
+					}
+				}
+
 				lx->s[x].t[y].s[lx->win.s[y].active->zl] = 0;
 				lx->s[x].t[y].l = lx->win.s[y].active->zl;
 				lx->s[x].t[y].y = LWTMP_WINDOW;
