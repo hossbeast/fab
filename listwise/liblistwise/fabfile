@@ -80,11 +80,12 @@ $oplist_devel = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,devel.so sy 
 	$dext = [ devel.pic.o ];
 	$dscext = [ devel.pic.o ];
 	$soext = [ devel.xu.so ];
-	$cflags = [ $cflags_devel [ $dlibxunit ~ s/^/-I ] [ $dliblistwise ~ ls c -d s/^/-isystem ] ];
+	$cflags = [ $cflags_devel [ $dlibxunit ~ s/^/-I ] [ $dliblistwise ~ lsr c -d s/^/-isystem ] ];
 	-$tsopaths
 )
 
-$listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
+$dlistwise_test = [ $*/test/listwise_test ~ j ]
+$listwise_test = [ $dlistwise_test/listwise_test.devel.so ~ j ]
 
 # run all tests
 [ @test ] : [ $xunit_devel $liblistwise_devel $oplist_devel $listwise_test $tsopaths ]
@@ -98,9 +99,9 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 }
 
 # test helper
-[ $listwise_test ] : [ [ $*/listwise_test/listwise_test.devel.pic.o ~ j ] $liblistwise_devel ]
+[ $listwise_test ] : [ [ $dlistwise_test/listwise_test.devel.pic.o ~ j ] $liblistwise_devel ]
 {
-	[ $cc ] [ $cflags_devel ~ uu fi ] -shared [ $*/listwise_test/listwise_test.devel.pic.o ~ j ] -o [ $@ ]
+	[ $cc ] [ $cflags_devel ~ uu fi ] -shared [ $dlistwise_test/listwise_test.devel.pic.o ~ j ] -o [ $@ ]
 }
 
 ##
@@ -127,17 +128,17 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 }
 
 # link the library
-[ $liblistwise_final ] : [ [ $*/exports ~ j ] [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/final.pic.o sy ] ]
+[ $liblistwise_final ] : [ [ $*/exports ~ j ] [ $* ~ ls m/op$ o l/test v lsr sx/c/final.pic.o sy ] ]
 {
 	[ [ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_final ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
 
-[ $liblistwise_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/debug.pic.o sy ] ]
+[ $liblistwise_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls m/op$ o l/test v lsr sx/c/debug.pic.o sy ] ]
 {
 	[ [ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_debug ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
 
-[ $liblistwise_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls m/op$ o l/listwise_test v lsr sx/c/devel.pic.o sy ] ]
+[ $liblistwise_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls m/op$ o l/test v lsr sx/c/devel.pic.o sy ] ]
 {
 	[ [ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_devel ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
@@ -228,10 +229,8 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 	install listwise/liblistwise/op/vf/vf.final.so					[ $destdir/$lwopdir/vf.so ]
 	install listwise/liblistwise/op/vp/vp.final.so					[ $destdir/$lwopdir/vp.so ]
 	install listwise/liblistwise/op/w/w.final.so						[ $destdir/$lwopdir/w.so ]
-	install listwise/liblistwise/op/wv/wv.final.so					[ $destdir/$lwopdir/wv.so ]
 	install listwise/liblistwise/op/wvf/wvf.final.so				[ $destdir/$lwopdir/wvf.so ]
 	install listwise/liblistwise/op/wvp/wvp.final.so				[ $destdir/$lwopdir/wvp.so ]
-	install listwise/liblistwise/op/wz/wz.final.so					[ $destdir/$lwopdir/wz.so ]
 	install listwise/liblistwise/op/x/x.final.so						[ $destdir/$lwopdir/x.so ]
 	install listwise/liblistwise/op/xch/xch.final.so				[ $destdir/$lwopdir/xch.so ]
 	install listwise/liblistwise/op/y/y.final.so						[ $destdir/$lwopdir/y.so ]
@@ -287,10 +286,8 @@ $listwise_test = [ $*/listwise_test/listwise_test.devel.so ~ j ]
 	install listwise/liblistwise/op/vf/vf.debug.so					[ $destdir/$lwopdir/vf.so ]
 	install listwise/liblistwise/op/vp/vp.debug.so					[ $destdir/$lwopdir/vp.so ]
 	install listwise/liblistwise/op/w/w.debug.so						[ $destdir/$lwopdir/w.so ]
-	install listwise/liblistwise/op/wv/wv.debug.so					[ $destdir/$lwopdir/wv.so ]
 	install listwise/liblistwise/op/wvf/wvf.debug.so				[ $destdir/$lwopdir/wvf.so ]
 	install listwise/liblistwise/op/wvp/wvp.debug.so				[ $destdir/$lwopdir/wvp.so ]
-	install listwise/liblistwise/op/wz/wz.debug.so					[ $destdir/$lwopdir/wz.so ]
 	install listwise/liblistwise/op/x/x.debug.so						[ $destdir/$lwopdir/x.so ]
 	install listwise/liblistwise/op/xch/xch.debug.so				[ $destdir/$lwopdir/xch.so ]
 	install listwise/liblistwise/op/y/y.debug.so						[ $destdir/$lwopdir/y.so ]

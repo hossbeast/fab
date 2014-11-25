@@ -150,10 +150,8 @@ fml_1_1()
 	install listwise/liblistwise/op/vf/vf.final.so					$destdir/$lwopdir/vf.so
 	install listwise/liblistwise/op/vp/vp.final.so					$destdir/$lwopdir/vp.so
 	install listwise/liblistwise/op/w/w.final.so						$destdir/$lwopdir/w.so
-	install listwise/liblistwise/op/wv/wv.final.so					$destdir/$lwopdir/wv.so
 	install listwise/liblistwise/op/wvf/wvf.final.so				$destdir/$lwopdir/wvf.so
 	install listwise/liblistwise/op/wvp/wvp.final.so				$destdir/$lwopdir/wvp.so
-	install listwise/liblistwise/op/wz/wz.final.so					$destdir/$lwopdir/wz.so
 	install listwise/liblistwise/op/x/x.final.so						$destdir/$lwopdir/x.so
 	install listwise/liblistwise/op/xch/xch.final.so				$destdir/$lwopdir/xch.so
 	install listwise/liblistwise/op/y/y.final.so						$destdir/$lwopdir/y.so

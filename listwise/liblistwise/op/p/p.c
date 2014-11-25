@@ -26,13 +26,14 @@
 
 /*
 
-p operator - partition : window by fields
+p operator - partition : window by windows
 
 ARGUMENTS (1, or multiples of 2)
 	 1  - offset, in fields, to start of window
 		    if negative, interpreted as offset from the end of the string
-		    default : 0
+		    default : 0 - start of string
 	*2  - length, in fields, of window
+		    if negative, interpretted as offset from the end of the string
 		    default : 0 - entire string
 
 OPERATION
@@ -48,8 +49,8 @@ operator op_desc[] = {
 		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
-		, .mnemonic			= "fields"
-		, .desc					= "window by fields"
+		, .mnemonic			= "partition"
+		, .desc					= "window by windows"
 	}
 	, {}
 };
@@ -87,12 +88,14 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 			int i;
 			for(i = 0; i < o->argsl; i += 2)
 			{
+				// { win_off, win_len } : offset and length, in windows, as specified
 				int win_off = o->args[i]->i64;
 				int win_len = 0;
 
 				if(o->argsl > (i + 1))
 					win_len = o->args[i + 1]->i64;
 
+				// { off, len } : offset and length, in windows, after resolving negative values
 				int off = win_off;
 				int len = win_len;
 
@@ -100,10 +103,10 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 					off = (win->l + win_off) + 1;
 				if(win_len == 0)
 					len = win->l - off + 1;
-				else
-					len = MIN(len, (win->l + 1) - off);
+				else if(win_len < 0)
+					len = ((win->l + win_len) + 1) - off;
 
-				if(off >= 0 && off < (win->l + 1) && len > 0)
+				if(off >= 0 && off <= win->l && len > 0)
 				{
 					if(!wasreset)
 					{

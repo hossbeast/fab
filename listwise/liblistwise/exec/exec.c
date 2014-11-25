@@ -105,17 +105,17 @@ static int exec_generator(
 		// locate an alternating sequence of OR operators
 		for(y = x; y < g->opsl; y++)
 		{
+			if((y - x) && (y - x) % 2)
+			{
+				if(!(g->ops[y]->op->optype & LWOPT_AGGREGATE))
+					break;
+			}
+
 			if(g->ops[y]->op->optype & LWOPT_SELECTION_ACTIVATE)
 				sel_activate = 1;
 
 			if(g->ops[y]->op->optype & LWOPT_WINDOWS_ACTIVATE)
 				win_activate = 1;
-
-			if((y - x) % 2)
-			{
-				if(!(g->ops[y]->op->optype & LWOPT_AGGREGATE))
-					break;
-			}
 		}
 
 		// possibly terminating with a y operator

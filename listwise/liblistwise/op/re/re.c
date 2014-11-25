@@ -48,7 +48,7 @@ operator op_desc[] = {
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .mnemonic			= "regex"
-		, .desc					= "window by regex matches"
+		, .desc					= "window regex matches"
 	}
 	, {
 		  .s						= "m"
@@ -56,7 +56,7 @@ operator op_desc[] = {
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec
 		, .mnemonic			= "match"
-		, .desc					= "select by regex matches"
+		, .desc					= "select by regex"
 	}
 	, {}
 };

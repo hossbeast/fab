@@ -148,10 +148,8 @@ fml_1_1()
 	install listwise/liblistwise/op/vf/vf.debug.so					$destdir/$lwopdir/vf.so
 	install listwise/liblistwise/op/vp/vp.debug.so					$destdir/$lwopdir/vp.so
 	install listwise/liblistwise/op/w/w.debug.so						$destdir/$lwopdir/w.so
-	install listwise/liblistwise/op/wv/wv.debug.so					$destdir/$lwopdir/wv.so
 	install listwise/liblistwise/op/wvf/wvf.debug.so				$destdir/$lwopdir/wvf.so
 	install listwise/liblistwise/op/wvp/wvp.debug.so				$destdir/$lwopdir/wvp.so
-	install listwise/liblistwise/op/wz/wz.debug.so					$destdir/$lwopdir/wz.so
 	install listwise/liblistwise/op/x/x.debug.so						$destdir/$lwopdir/x.so
 	install listwise/liblistwise/op/xch/xch.debug.so				$destdir/$lwopdir/xch.so
 	install listwise/liblistwise/op/y/y.debug.so						$destdir/$lwopdir/y.so

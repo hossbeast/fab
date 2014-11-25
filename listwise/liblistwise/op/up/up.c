@@ -22,7 +22,7 @@
 
 /*
 
-up operator - move selected entries to the head of the list and reset the selection
+up operator - move selected rows to the head of the list and reset the selection
 
 NO ARGUMENTS
 
@@ -41,7 +41,7 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "up"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET | LWOP_SELECTION_STAGE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
 		, .op_exec			= op_exec
 		, .mnemonic			= "up"
 		, .desc					= "move rows to the top"

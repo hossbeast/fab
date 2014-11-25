@@ -26,7 +26,7 @@
 
 /*
 
-f operator - fields : window delimited fields
+f operator - fields : window fields delimited by pairs of windows
 
 ARGUMENTS (any number)
 
@@ -63,75 +63,72 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	LSTACK_ITERATE(lx, x, go)
 	if(go)
 	{
-		if(lx->win.s[x].active && lx->win.s[x].active->lease == lx->win.active_era)
+		lwx_windows * win;
+		lstack_windows_state(lx, x, &win);
+
+		// number of delimited fields
+		int pairs = win->l / 2;
+
+		// whether this row has been reset
+		int wasreset = 0;
+
+		int i = 0;
+		do
 		{
-			// number of delimited fields
-			int pairs = lx->win.s[x].active->l / 2;
+			int win_off = 0;
+			int win_len = 0;
 
-			// whether this row has been reset
-			int wasreset = 0;
-
-			int i = 0;
-			do
+			if(i == argsl)
 			{
-				int win_off = 0;
-				int win_len = 0;
+				// first and only iteration of this loop when this operation has no arguments
+			}
+			else
+			{
+				win_off = o->args[i]->i64;
+				win_len = 0;
 
-				if(i == argsl)
+				if(argsl > (i + 1))
+					win_len = o->args[i + 1]->i64;
+			}
+
+			int off = win_off;
+			int len = win_len;
+
+			if(win_off < 0)
+				off = (pairs + win_off);
+			if(win_len == 0)
+				len = pairs - off;
+			else if(win_len < 0)
+				len = ((pairs + win_len)) - off + 1;
+
+			if(off >= 0 && off <= pairs && len > 0)
+			{
+				if(!wasreset)
 				{
-					// first and only iteration of this loop when this operation has no arguments
-				}
-				else
-				{
-					win_off = o->args[i]->i64;
-					win_len = 0;
+					wasreset = 1;
 
-					if(argsl > (i + 1))
-						win_len = o->args[i + 1]->i64;
-				}
-
-				int off = win_off;
-				int len = win_len;
-
-				if(win_off < 0)
-					off = (pairs + win_off) + 1;
-				if(win_len == 0)
-					len = pairs - off + 1;
-				else
-					len = MIN(len, (pairs + 1) - off);
-
-				if(off >= 0 && off < (pairs + 1) && len > 0)
-				{
-					if(!wasreset)
-					{
-						wasreset = 1;
-
-						// reset staged window, if any
-//						fatal(lstack_window_unstage, lx, x);
-
-						// record this index was hit
-						fatal(lstack_selection_stage, lx, x);
-					}
-
-					// append delimited segment(s)
-					int j;
-					for(j = 0; j < len; j++)
-					{
-						int A = lx->win.s[x].active->s[((off + j) * 2) + 0].o;
-						if(!isdelim)
-							A += lx->win.s[x].active->s[((off + j) * 2) + 0].l;
-
-						int B = lx->win.s[x].active->s[((off + j) * 2) + 1].o;
-						if(isdelim)
-							B += lx->win.s[x].active->s[((off + j) * 2) + 1].l;
-
-						fatal(lstack_windows_stage, lx, x, A, B - A);
-					}
+					// record this index was hit
+					fatal(lstack_selection_stage, lx, x);
 				}
 
-				i += 2;
-			} while(i < argsl);
-		}
+				// append delimited segment(s)
+				int j;
+				for(j = 0; j < len; j++)
+				{
+					int A = win->s[((off + j) * 2) + 0].o;
+					if(!isdelim)
+						A += win->s[((off + j) * 2) + 0].l;
+
+					int B = win->s[((off + j) * 2) + 1].o;
+					if(isdelim)
+						B += win->s[((off + j) * 2) + 1].l;
+
+					fatal(lstack_windows_stage, lx, x, A, B - A);
+				}
+			}
+
+			i += 2;
+		} while(i < argsl);
 	}
 	LSTACK_ITEREND
 

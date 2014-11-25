@@ -52,7 +52,7 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_lx
-		, .mnemonic			= "locate extension"
+		, .mnemonic			= "locate-extension"
 		, .desc					= "select by filename extension"
 	}
 	, {
@@ -60,7 +60,7 @@ operator op_desc[] = {
 		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_STAGE | LWOP_ARGS_CANHAVE
 		, .op_validate	= op_validate
 		, .op_exec			= op_exec_lxf
-		, .mnemonic			= "locate extension full"
+		, .mnemonic			= "locate-extension-full"
 		, .desc					= "select by full filename extension"
 	}
 	, {}

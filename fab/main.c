@@ -135,6 +135,9 @@ int main(int argc, char** argv)
 	// parse cmdline arguments
 	fatal(args_parse);
 
+	// default logging categories, with lower precedence than cmdline logexprs
+	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, 1, L_INFO);
+
 	// configure logger
 #if DEBUG || DEVEL
 	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
@@ -156,9 +159,6 @@ int main(int argc, char** argv)
 #else
 	fatal(log_config, L_TAG);	// prefix
 #endif
-
-	// default logging categories, with lower precedence than cmdline logexprs
-	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, 1, L_INFO);
 
 	// summarize arguments as received
 	fatal(args_summarize);
