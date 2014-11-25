@@ -21,18 +21,18 @@
 	#include <stdint.h>
 	#include <string.h>
 
-	#include "generator.def.h"
+	#include "transform.def.h"
 
 	#include "xlinux.h"
 
-	// defined in generator.lex.o
-	int generator_yylex(void* yylvalp, void* yyllocp, void* scanner);
+	// defined in transform.lex.o
+	int transform_yylex(void* yylvalp, void* yyllocp, void* scanner);
 }
 
 %define api.pure
 %error-verbose
 %locations
-%name-prefix "generator_yy"
+%name-prefix "transform_yy"
 %parse-param { void* scanner }
 %parse-param { parse_param* parm }
 %lex-param { void* scanner }
@@ -41,7 +41,7 @@
 %initial-action { memset(&@$, 0, sizeof(@$)); }
 
 %union {
-	generator *		generator;
+	transform *		transform;
 	operation **  operations;
 	operation *		operation;
 	operator *		op;
@@ -65,7 +65,7 @@
 %token  <i64>		I64
 %token	<op>		OP
 
-%type   <generator> generator
+%type   <transform> transform
 %type   <operation> operation
 %type   <operations> operations
 %type   <args>  args
@@ -80,17 +80,17 @@
 %%
 
 utterance
-	: opsep generator
+	: opsep transform
 	{
 		parm->g = $2;
 	}
-	| generator
+	| transform
 	{
 		parm->g = $1;
 	}
 	;
 
-generator
+transform
 	: args opsep operations opsep_epsilon
 	{
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$));

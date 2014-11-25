@@ -23,7 +23,7 @@
 #include <stdint.h>
 
 #include "listwise.h"
-#include "listwise/generator.h"
+#include "listwise/transform.h"
 
 #include "coll.h"
 #include "hashblock.h"
@@ -124,7 +124,7 @@ typedef struct ff_parser_t ff_parser;
 struct ff_parser_t
 {
 	void *							p;
-	generator_parser *	gp;
+	transform_parser *	gp;
 };
 
 /// ff_mkparser

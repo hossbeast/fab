@@ -33,8 +33,8 @@
 /// static
 ///
 
-static int exec_generator(
-	  generator * const restrict g
+static int exec_transform(
+	  transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl
@@ -65,7 +65,7 @@ static int exec_generator(
 		fatal(lstack_addw, *lx, init[x], initls ? initls[x] : strlen(init[x]));
 	}
 
-	// write initial generator args at top of list stack
+	// write initial transform args at top of list stack
 	for(x = 0; x < g->argsl; x++)
 	{
 		fatal(lstack_addw, *lx, g->args[x]->s, g->args[x]->l);
@@ -79,7 +79,7 @@ static int exec_generator(
 
 	if(lw_would_exec())
 	{
-		fatal(generator_canon_pswrite, g, &ps);
+		fatal(transform_canon_pswrite, g, &ps);
 		lw_log_exec(" >>      %.*s", (int)ps->l, ps->s);
 
 		// log the lstack before beginning
@@ -203,19 +203,19 @@ coda;
 /// API
 ///
 
-int API listwise_exec_generator(
-	  generator * const restrict g
+int API listwise_exec_transform(
+	  transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl
 	, lwx ** restrict lx
 )
 {
-	xproxy(exec_generator, g, init, initls, initl, lx, 0);
+	xproxy(exec_transform, g, init, initls, initl, lx, 0);
 }
 
-int API listwise_exec_generator2(
-	  generator * const restrict g
+int API listwise_exec_transform2(
+	  transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl
@@ -223,7 +223,7 @@ int API listwise_exec_generator2(
 	, void * udata
 )
 {
-	xproxy(exec_generator, g, init, initls, initl, lx, udata);
+	xproxy(exec_transform, g, init, initls, initl, lx, udata);
 }
 
 int API listwise_exec(
@@ -235,13 +235,13 @@ int API listwise_exec(
   , lwx ** restrict lx
 )
 {
-	// generator
-	generator* g = 0;
+	// transform
+	transform* g = 0;
 
-	fatal(generator_parse, 0, s, l, &g);
-	fatal(exec_generator, g, init, initls, initl, lx, 0);
+	fatal(transform_parse, 0, s, l, &g);
+	fatal(exec_transform, g, init, initls, initl, lx, 0);
 
 finally:
-	generator_free(g);
+	transform_free(g);
 coda;
 }

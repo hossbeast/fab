@@ -19,7 +19,7 @@
 #define _LWUTIL_H
 
 #include "listwise.h"
-#include "listwise/generator.h"
+#include "listwise/transform.h"
 
 // listwise interface to list objects
 //  (this type is a placeholder - instances of this object are NOT ever passed into liblistwise)
@@ -67,7 +67,7 @@ int lw_flatten(lwx * restrict ls)
 // SUMMARY
 //  execute listwise
 //
-int lw_exec(generator * gen, lwx ** ls)
+int lw_exec(transform * gen, lwx ** ls)
 	__attribute__((nonnull));
 
 /// lw_configure_logging

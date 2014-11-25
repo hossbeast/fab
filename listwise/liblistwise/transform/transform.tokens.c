@@ -1,5 +1,5 @@
 #define YY_NULL 0
-char ** generator_tokennames = (char *[]) {
+char ** transform_tokennames = (char *[]) {
      [258] = "STR",
      [259] = "LF",
      [260] = "WS",
@@ -9,7 +9,7 @@ char ** generator_tokennames = (char *[]) {
      [264] = "I64",
      [265] = "OP",
 };
-int * generator_tokennumbers = (int []) {
+int * transform_tokennumbers = (int []) {
      258,
      259,
      260,
@@ -19,7 +19,7 @@ int * generator_tokennumbers = (int []) {
      264,
      265,
 };
-int generator_numtokens = sizeof((int []) {
+int transform_numtokens = sizeof((int []) {
      258,
      259,
      260,

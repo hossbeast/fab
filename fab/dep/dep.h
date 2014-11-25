@@ -50,7 +50,7 @@ int dep_process(
 	  ff_node * const restrict ffn
 	, strstack * const restrict sstk
 	, map * const restrict vmap
-	, generator_parser * const gp
+	, transform_parser * const gp
 	, lwx *** const restrict stax
 	, int * const restrict staxa
 	, int staxp

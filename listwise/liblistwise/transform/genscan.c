@@ -20,10 +20,10 @@
 
 #include "internal.h"
 
-#include "generator/genscan.h"
+#include "transform/genscan.h"
 #undef _GENSCAN
 
-#include "generator/generator.states.h"
+#include "transform/transform.states.h"
 
 uint32_t genscan_parse(char * s, int l)
 {
@@ -95,14 +95,14 @@ GENSCAN_TABLE_NOREFS(0)
 };
 
 int * genscan_startcondition_initial = (int[]){
-#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## e,
+#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = transform_ ## e,
 GENSCAN_TABLE_DOREFS(0)
 GENSCAN_TABLE_NOREFS(0)
 #undef _GENSCAN
 };
 
 int * genscan_startcondition_argscan = (int[]){
-#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = generator_ ## f,
+#define _GENSCAN(a, b, c, d, e, f, g) [ b ] = transform_ ## f,
 GENSCAN_TABLE_DOREFS(0)
 GENSCAN_TABLE_NOREFS(0)
 #undef _GENSCAN

@@ -19,7 +19,7 @@
 
 #include "listwise.h"
 #include "listwise/object.h"
-#include "listwise/generator.h"
+#include "listwise/transform.h"
 #include "listwise/logging.h"
 #include "listwise/lstack.h"
 #include "listwise/exec.h"
@@ -162,21 +162,21 @@ int lw_reset(lwx *** stax, int * staxa, int staxp)
 	finally : coda;
 }
 
-int lw_exec(generator * gen, lwx ** ls)
+int lw_exec(transform * gen, lwx ** ls)
 {
 	// flatten first
 	fatal(flatten, (*ls));
 
 	// execute
-	fatal(listwise_exec_generator, gen, 0, 0, 0, ls);
+	fatal(listwise_exec_transform, gen, 0, 0, 0, ls);
 
 	finally : coda;
 }
 
 static struct listwise_logging * logging = (struct listwise_logging[]) {{
-      .generator_token  = (uint64_t[]) { L_LWPARSE }
-    , .generator_would  = listwise_would
-    , .generator_log    = listwise_log
+      .transform_token  = (uint64_t[]) { L_LWPARSE }
+    , .transform_would  = listwise_would
+    , .transform_log    = listwise_log
     , .lstack_token     = (uint64_t[]) { L_LWEXEC }
     , .lstack_would     = listwise_would
     , .lstack_log       = listwise_log

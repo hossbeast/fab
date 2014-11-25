@@ -45,7 +45,7 @@
 // [[ static ]]
 //
 
-static int parse_generator(ff_node * n, generator_parser * gp)
+static int parse_transform(ff_node * n, transform_parser * gp)
 {
 	// render transform-string
 	int x;
@@ -55,7 +55,7 @@ static int parse_generator(ff_node * n, generator_parser * gp)
 		fatal(pscatw, &n->text, n->list[x]->text->s, n->list[x]->text->l);
 	}	
 
-	fatal(generator_parse, &gp, n->text->s, n->text->l, &n->generator);
+	fatal(transform_parse, &gp, n->text->s, n->text->l, &n->transform);
 
 finally :
 	XAPI_INFOF("location", "[%3d,%3d - %3d,%3d]", n->loc.f_lin + 1, n->loc.f_col + 1, n->loc.l_lin + 1, n->loc.l_col + 1);
@@ -183,7 +183,7 @@ ff_node* ffn_addchain(ff_node * a, ff_node * const b)
 	return i;
 }
 
-int ffn_postprocess(ff_node * const n, struct ff_file * const ff, generator_parser * const gp)
+int ffn_postprocess(ff_node * const n, struct ff_file * const ff, transform_parser * const gp)
 {
 	if(n)
 	{
@@ -215,9 +215,9 @@ int ffn_postprocess(ff_node * const n, struct ff_file * const ff, generator_pars
 		// calculate length
 		n->loc.l = n->loc.e - n->loc.s;
 
-		// parse generator strings
+		// parse transform strings
 		if(n->type == FFN_TRANSFORM)
-			fatal(parse_generator, n, gp);
+			fatal(parse_transform, n, gp);
 
 		// create text
 		if(n->type == FFN_NOFILE)
@@ -254,7 +254,7 @@ void ffn_free(ff_node * const ffn)
 		free(ffn->list);
 
 		if(ffn->type == FFN_TRANSFORM)
-			generator_free(ffn->generator);
+			transform_free(ffn->transform);
 	}
 
 	free(ffn);
@@ -407,13 +407,13 @@ void ffn_dump(ff_node * const root)
 
 				logf(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
-					, "generator"
+					, "transform"
 				);
 				dump(ffn->transform_node, lvl + 1);
 
 				logf(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
-					, "generator-list"
+					, "transform-list"
 				);
 			}
 			else if(ffn->type == FFN_LIST)
@@ -431,13 +431,13 @@ void ffn_dump(ff_node * const root)
 
 				logf(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
-					, "generator"
+					, "transform"
 				);
 				dump(ffn->transform_node, lvl + 1);
 
 				logf(L_FF | L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
-					, "generator-list"
+					, "transform-list"
 				);
 				dump(ffn->transform_list_node, lvl + 1);
 			}

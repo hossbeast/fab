@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -15,35 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _BAKE_H
-#define _BAKE_H
-
-#include "listwise.h"
-#include "listwise/transform.h"
-
-#include "bp.h"
+#ifndef _LISTWISE_TRANSFORM_INTERNAL_H
+#define _LISTWISE_TRANSFORM_INTERNAL_H
 
 #define restrict __restrict
 
-/// bake_bp
-//
-// render the buildplan to a bakescript
-//
-int bake_bp(
-	  const bp * const bp
-	, map * const restrict vmap
-	, transform_parser * const gp
-	, lwx *** const restrict stax
-	, int * const restrict staxa
-	, int staxp
-	, map * const restrict bakemap
-	, ts *** const restrict ts
-	, int * const restrict tsa
-	, const int * const restrict tsw
-	, const char * const restrict dst
-)
-	__attribute__((nonnull));
+int transform_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+	__attribute__((nonnull(1, 7)));
 
 #undef restrict
 #endif
-

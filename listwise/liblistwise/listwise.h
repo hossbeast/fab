@@ -30,7 +30,7 @@
 ** additional functionality
 **  listwise/exec.h      - additional listwise_exec* forms
 **  listwise/lstack.h    - lstack manipulation
-**  listwise/describe.h  - human-readable descriptions of lstacks and generators
+**  listwise/describe.h  - human-readable descriptions of lstacks and transforms
 **  listwise/tune.h      - tunable execution parameters
 **  listwise/logging.h   - logging hooks
 **  listwise/operators.h - enumerate and lookup loaded operators, register additional operators
@@ -48,10 +48,10 @@ typedef struct lwx lwx;
 /// listwise_exec
 //
 // SUMMARY
-//  parse the listwise generator string and execute it against the lw execution context
+//  parse the listwise transform string and execute it against the lw execution context
 //
 // PARAMETERS
-//  s        - generator string
+//  s        - transform string
 //  l        - s length, or 0 for strlen
 //  [init]   - rows to write to the stack before executing
 //  [initls] - lengths for rows in init, 0 for strlen

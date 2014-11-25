@@ -40,12 +40,12 @@ do {																																							\
 	}																																								\
 } while(0)
 
-#define lw_log_generator(fmt, ...)		LW_LOG(generator  , udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define lw_log_transform(fmt, ...)		LW_LOG(transform  , udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 #define lw_log_exec(fmt, ...)  				LW_LOG(exec  			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 #define lw_log_lstack(fmt, ...)  			LW_LOG(lstack  		, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 #define lw_log_opinfo(fmt, ...)				LW_LOG(opinfo			, udata, __FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
-#define lw_would_generator()					LW_WOULD(generator, udata)
+#define lw_would_transform()					LW_WOULD(transform, udata)
 #define lw_would_exec()   						LW_WOULD(exec, udata)
 #define lw_would_lstack()   					LW_WOULD(lstack, udata)
 #define lw_would_opinfo() 						LW_WOULD(opinfo, udata)

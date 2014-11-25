@@ -52,7 +52,7 @@ static int dep_add_single(
 	  ff_node * ffn
 	, strstack * const restrict sstk
 	, map * vmap
-	, generator_parser * const gp
+	, transform_parser * const gp
 	, lwx *** stax
 	, int * staxa
 	, int staxp
@@ -217,7 +217,7 @@ static int dep_add_multi(
 	  ff_node * ffn
 	, strstack * const restrict sstk
 	, map * vmap
-	, generator_parser * const gp
+	, transform_parser * const gp
 	, lwx *** stax
 	, int * staxa
 	, int staxp
@@ -428,7 +428,7 @@ int dep_process(
 	  ff_node * const ffn
 	, strstack * const sstk
 	, map * const vmap
-	, generator_parser * const gp
+	, transform_parser * const gp
 	, lwx *** const stax
 	, int * const staxa
 	, int staxp

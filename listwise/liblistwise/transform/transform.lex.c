@@ -1,6 +1,6 @@
-#line 2 "listwise/liblistwise/generator/generator.lex.c"
+#line 2 "listwise/liblistwise/transform/transform.lex.c"
 
-#line 4 "listwise/liblistwise/generator/generator.lex.c"
+#line 4 "listwise/liblistwise/transform/transform.lex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -153,7 +153,7 @@ typedef void* yyscan_t;
 #define YY_STATE_EOF(state) (YY_END_OF_BUFFER + state + 1)
 
 /* Special action meaning "start processing a new file". */
-#define YY_NEW_FILE generator_yyrestart(yyin ,yyscanner )
+#define YY_NEW_FILE transform_yyrestart(yyin ,yyscanner )
 
 #define YY_END_OF_BUFFER_CHAR 0
 
@@ -263,7 +263,7 @@ struct yy_buffer_state
 	 * possible backing-up.
 	 *
 	 * When we actually see the EOF, we change the status to "new"
-	 * (via generator_yyrestart()), so that the user can continue scanning by
+	 * (via transform_yyrestart()), so that the user can continue scanning by
 	 * just pointing yyin at a new input file.
 	 */
 #define YY_BUFFER_EOF_PENDING 2
@@ -286,36 +286,36 @@ struct yy_buffer_state
  */
 #define YY_CURRENT_BUFFER_LVALUE yyg->yy_buffer_stack[yyg->yy_buffer_stack_top]
 
-void generator_yyrestart (FILE *input_file ,yyscan_t yyscanner );
-void generator_yy_switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-YY_BUFFER_STATE generator_yy_create_buffer (FILE *file,int size ,yyscan_t yyscanner );
-void generator_yy_delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void generator_yy_flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void generator_yypush_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-void generator_yypop_buffer_state (yyscan_t yyscanner );
+void transform_yyrestart (FILE *input_file ,yyscan_t yyscanner );
+void transform_yy_switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+YY_BUFFER_STATE transform_yy_create_buffer (FILE *file,int size ,yyscan_t yyscanner );
+void transform_yy_delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void transform_yy_flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void transform_yypush_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+void transform_yypop_buffer_state (yyscan_t yyscanner );
 
-static void generator_yyensure_buffer_stack (yyscan_t yyscanner );
-static void generator_yy_load_buffer_state (yyscan_t yyscanner );
-static void generator_yy_init_buffer (YY_BUFFER_STATE b,FILE *file ,yyscan_t yyscanner );
+static void transform_yyensure_buffer_stack (yyscan_t yyscanner );
+static void transform_yy_load_buffer_state (yyscan_t yyscanner );
+static void transform_yy_init_buffer (YY_BUFFER_STATE b,FILE *file ,yyscan_t yyscanner );
 
-#define YY_FLUSH_BUFFER generator_yy_flush_buffer(YY_CURRENT_BUFFER ,yyscanner)
+#define YY_FLUSH_BUFFER transform_yy_flush_buffer(YY_CURRENT_BUFFER ,yyscanner)
 
-YY_BUFFER_STATE generator_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
-YY_BUFFER_STATE generator_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE generator_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
+YY_BUFFER_STATE transform_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
+YY_BUFFER_STATE transform_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
+YY_BUFFER_STATE transform_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
 
-void *generator_yyalloc (yy_size_t ,yyscan_t yyscanner );
-void *generator_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
-void generator_yyfree (void * ,yyscan_t yyscanner );
+void *transform_yyalloc (yy_size_t ,yyscan_t yyscanner );
+void *transform_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
+void transform_yyfree (void * ,yyscan_t yyscanner );
 
-#define yy_new_buffer generator_yy_create_buffer
+#define yy_new_buffer transform_yy_create_buffer
 
 #define yy_set_interactive(is_interactive) \
 	{ \
 	if ( ! YY_CURRENT_BUFFER ){ \
-        generator_yyensure_buffer_stack (yyscanner); \
+        transform_yyensure_buffer_stack (yyscanner); \
 		YY_CURRENT_BUFFER_LVALUE =    \
-            generator_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
+            transform_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
 	} \
 	YY_CURRENT_BUFFER_LVALUE->yy_is_interactive = is_interactive; \
 	}
@@ -323,16 +323,16 @@ void generator_yyfree (void * ,yyscan_t yyscanner );
 #define yy_set_bol(at_bol) \
 	{ \
 	if ( ! YY_CURRENT_BUFFER ){\
-        generator_yyensure_buffer_stack (yyscanner); \
+        transform_yyensure_buffer_stack (yyscanner); \
 		YY_CURRENT_BUFFER_LVALUE =    \
-            generator_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
+            transform_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
 	} \
 	YY_CURRENT_BUFFER_LVALUE->yy_at_bol = at_bol; \
 	}
 
 #define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
 
-#define generator_yywrap(n) 1
+#define transform_yywrap(n) 1
 #define YY_SKIP_YYWRAP
 
 typedef unsigned char YY_CHAR;
@@ -993,7 +993,7 @@ static yyconst flex_int16_t yy_chk[2014] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "listwise/liblistwise/generator/generator.l"
+#line 1 "listwise/liblistwise/transform/transform.l"
 /* Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -1010,14 +1010,14 @@ static yyconst flex_int16_t yy_chk[2014] =
    
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
-#line 19 "listwise/liblistwise/generator/generator.l"
+#line 19 "listwise/liblistwise/transform/transform.l"
 	#include <stdio.h>
 	#include <inttypes.h>
 
-	#include "generator/generator.def.h"
-	#include "generator/generator.tab.h"
-	#include "generator/generator.tokens.h"
-	#include "generator/genscan.h"
+	#include "transform/transform.def.h"
+	#include "transform/transform.tab.h"
+	#include "transform/transform.tokens.h"
+	#include "transform/genscan.h"
 
 	#include "macros.h"
 
@@ -1127,7 +1127,7 @@ static yyconst flex_int16_t yy_chk[2014] =
 
 
 /* bytes that cannot appear in the string being scanned */
-#line 1131 "listwise/liblistwise/generator/generator.lex.c"
+#line 1131 "listwise/liblistwise/transform/transform.lex.c"
 
 #define INITIAL 0
 #define ws 1
@@ -1212,46 +1212,46 @@ static int yy_init_globals (yyscan_t yyscanner );
     
     #    define yylloc yyg->yylloc_r
     
-int generator_yylex_init (yyscan_t* scanner);
+int transform_yylex_init (yyscan_t* scanner);
 
-int generator_yylex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
+int transform_yylex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int generator_yylex_destroy (yyscan_t yyscanner );
+int transform_yylex_destroy (yyscan_t yyscanner );
 
-int generator_yyget_debug (yyscan_t yyscanner );
+int transform_yyget_debug (yyscan_t yyscanner );
 
-void generator_yyset_debug (int debug_flag ,yyscan_t yyscanner );
+void transform_yyset_debug (int debug_flag ,yyscan_t yyscanner );
 
-YY_EXTRA_TYPE generator_yyget_extra (yyscan_t yyscanner );
+YY_EXTRA_TYPE transform_yyget_extra (yyscan_t yyscanner );
 
-void generator_yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
+void transform_yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
 
-FILE *generator_yyget_in (yyscan_t yyscanner );
+FILE *transform_yyget_in (yyscan_t yyscanner );
 
-void generator_yyset_in  (FILE * in_str ,yyscan_t yyscanner );
+void transform_yyset_in  (FILE * in_str ,yyscan_t yyscanner );
 
-FILE *generator_yyget_out (yyscan_t yyscanner );
+FILE *transform_yyget_out (yyscan_t yyscanner );
 
-void generator_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
+void transform_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
 
-int generator_yyget_leng (yyscan_t yyscanner );
+int transform_yyget_leng (yyscan_t yyscanner );
 
-char *generator_yyget_text (yyscan_t yyscanner );
+char *transform_yyget_text (yyscan_t yyscanner );
 
-int generator_yyget_lineno (yyscan_t yyscanner );
+int transform_yyget_lineno (yyscan_t yyscanner );
 
-void generator_yyset_lineno (int line_number ,yyscan_t yyscanner );
+void transform_yyset_lineno (int line_number ,yyscan_t yyscanner );
 
-YYSTYPE * generator_yyget_lval (yyscan_t yyscanner );
+YYSTYPE * transform_yyget_lval (yyscan_t yyscanner );
 
-void generator_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
+void transform_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
-       YYLTYPE *generator_yyget_lloc (yyscan_t yyscanner );
+       YYLTYPE *transform_yyget_lloc (yyscan_t yyscanner );
     
-        void generator_yyset_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
+        void transform_yyset_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
     
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -1259,9 +1259,9 @@ void generator_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int generator_yywrap (yyscan_t yyscanner );
+extern "C" int transform_yywrap (yyscan_t yyscanner );
 #else
-extern int generator_yywrap (yyscan_t yyscanner );
+extern int transform_yywrap (yyscan_t yyscanner );
 #endif
 #endif
 
@@ -1367,10 +1367,10 @@ static int input (yyscan_t yyscanner );
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
 
-extern int generator_yylex \
+extern int transform_yylex \
                (YYSTYPE * yylval_param,YYLTYPE * yylloc_param ,yyscan_t yyscanner);
 
-#define YY_DECL int generator_yylex \
+#define YY_DECL int transform_yylex \
                (YYSTYPE * yylval_param, YYLTYPE * yylloc_param , yyscan_t yyscanner)
 #endif /* !YY_DECL */
 
@@ -1398,11 +1398,11 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 148 "listwise/liblistwise/generator/generator.l"
+#line 148 "listwise/liblistwise/transform/transform.l"
 
 
  /* multiline comments are nestable */
-#line 1406 "listwise/liblistwise/generator/generator.lex.c"
+#line 1406 "listwise/liblistwise/transform/transform.lex.c"
 
     yylval = yylval_param;
 
@@ -1426,12 +1426,12 @@ YY_DECL
 			yyout = stdout;
 
 		if ( ! YY_CURRENT_BUFFER ) {
-			generator_yyensure_buffer_stack (yyscanner);
+			transform_yyensure_buffer_stack (yyscanner);
 			YY_CURRENT_BUFFER_LVALUE =
-				generator_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
+				transform_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
 		}
 
-		generator_yy_load_buffer_state(yyscanner );
+		transform_yy_load_buffer_state(yyscanner );
 		}
 
 	while ( 1 )		/* loops until end-of-file is reached */
@@ -1491,33 +1491,33 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 151 "listwise/liblistwise/generator/generator.l"
+#line 151 "listwise/liblistwise/transform/transform.l"
 { LOCWRITE; PUSHSTATE(multilinecomment); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 152 "listwise/liblistwise/generator/generator.l"
+#line 152 "listwise/liblistwise/transform/transform.l"
 { LOCWRITE; POPSTATE; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 153 "listwise/liblistwise/generator/generator.l"
+#line 153 "listwise/liblistwise/transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 154 "listwise/liblistwise/generator/generator.l"
+#line 154 "listwise/liblistwise/transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 155 "listwise/liblistwise/generator/generator.l"
+#line 155 "listwise/liblistwise/transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 156 "listwise/liblistwise/generator/generator.l"
+#line 156 "listwise/liblistwise/transform/transform.l"
 { LOCRESET; }
 	YY_BREAK
 /*
@@ -1529,17 +1529,17 @@ YY_RULE_SETUP
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 166 "listwise/liblistwise/generator/generator.l"
+#line 166 "listwise/liblistwise/transform/transform.l"
 { return LEX(LF, 0); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 167 "listwise/liblistwise/generator/generator.l"
+#line 167 "listwise/liblistwise/transform/transform.l"
 { return LEX(WS, 0); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 169 "listwise/liblistwise/generator/generator.l"
+#line 169 "listwise/liblistwise/transform/transform.l"
 {
 																													PUSHSTATE(ws);
 																													typeof(*yylval->op) * op;
@@ -1556,7 +1556,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 182 "listwise/liblistwise/generator/generator.l"
+#line 182 "listwise/liblistwise/transform/transform.l"
 {
 																													PUSHSTATE(ws);
 																													PUSHSTATE(genscan_startcondition_initial[yyextra->scanmode]);
@@ -1566,7 +1566,7 @@ YY_RULE_SETUP
 /* following ws, an alpha string must be an operator name or mnemonic */
 case 11:
 YY_RULE_SETUP
-#line 189 "listwise/liblistwise/generator/generator.l"
+#line 189 "listwise/liblistwise/transform/transform.l"
 {
 																													typeof(*yylval->op) * op;
 																													if((op = op_lookup(yytext, yyleng)))
@@ -1586,578 +1586,578 @@ YY_RULE_SETUP
 /* after processing a scanmode directive, revert to the INITIAL scanner */
 case 12:
 YY_RULE_SETUP
-#line 205 "listwise/liblistwise/generator/generator.l"
+#line 205 "listwise/liblistwise/transform/transform.l"
 { LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 206 "listwise/liblistwise/generator/generator.l"
+#line 206 "listwise/liblistwise/transform/transform.l"
 { LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); POPSTATE; }
 	YY_BREAK
 /* process anything else with the current scanmode */
 case 14:
 /* rule 14 can match eol */
 YY_RULE_SETUP
-#line 209 "listwise/liblistwise/generator/generator.l"
+#line 209 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(genscan_startcondition_initial[yyextra->scanmode]); yyless(0); }
 	YY_BREAK
 /* fabricate an empty-string STR token */
 case 15:
 /* rule 15 can match eol */
 YY_RULE_SETUP
-#line 212 "listwise/liblistwise/generator/generator.l"
+#line 212 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); return LEX(STR, 1); }
 	YY_BREAK
 /* slash-delimited scanner */
 case 16:
 YY_RULE_SETUP
-#line 215 "listwise/liblistwise/generator/generator.l"
+#line 215 "listwise/liblistwise/transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 216 "listwise/liblistwise/generator/generator.l"
+#line 216 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 18:
 /* rule 18 can match eol */
 YY_RULE_SETUP
-#line 217 "listwise/liblistwise/generator/generator.l"
+#line 217 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 218 "listwise/liblistwise/generator/generator.l"
+#line 218 "listwise/liblistwise/transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 220 "listwise/liblistwise/generator/generator.l"
+#line 220 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 21:
 /* rule 21 can match eol */
 YY_RULE_SETUP
-#line 222 "listwise/liblistwise/generator/generator.l"
+#line 222 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 223 "listwise/liblistwise/generator/generator.l"
+#line 223 "listwise/liblistwise/transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 224 "listwise/liblistwise/generator/generator.l"
+#line 224 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 225 "listwise/liblistwise/generator/generator.l"
+#line 225 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 226 "listwise/liblistwise/generator/generator.l"
+#line 226 "listwise/liblistwise/transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 227 "listwise/liblistwise/generator/generator.l"
+#line 227 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* comma-delimited scanner */
 case 27:
 YY_RULE_SETUP
-#line 230 "listwise/liblistwise/generator/generator.l"
+#line 230 "listwise/liblistwise/transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 231 "listwise/liblistwise/generator/generator.l"
+#line 231 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 29:
 /* rule 29 can match eol */
 YY_RULE_SETUP
-#line 232 "listwise/liblistwise/generator/generator.l"
+#line 232 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 233 "listwise/liblistwise/generator/generator.l"
+#line 233 "listwise/liblistwise/transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 235 "listwise/liblistwise/generator/generator.l"
+#line 235 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 32:
 /* rule 32 can match eol */
 YY_RULE_SETUP
-#line 237 "listwise/liblistwise/generator/generator.l"
+#line 237 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 238 "listwise/liblistwise/generator/generator.l"
+#line 238 "listwise/liblistwise/transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 239 "listwise/liblistwise/generator/generator.l"
+#line 239 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 240 "listwise/liblistwise/generator/generator.l"
+#line 240 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 241 "listwise/liblistwise/generator/generator.l"
+#line 241 "listwise/liblistwise/transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 242 "listwise/liblistwise/generator/generator.l"
+#line 242 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* dot-delimited scanner */
 case 38:
 YY_RULE_SETUP
-#line 245 "listwise/liblistwise/generator/generator.l"
+#line 245 "listwise/liblistwise/transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 246 "listwise/liblistwise/generator/generator.l"
+#line 246 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 40:
 /* rule 40 can match eol */
 YY_RULE_SETUP
-#line 247 "listwise/liblistwise/generator/generator.l"
+#line 247 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 248 "listwise/liblistwise/generator/generator.l"
+#line 248 "listwise/liblistwise/transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 250 "listwise/liblistwise/generator/generator.l"
+#line 250 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 43:
 /* rule 43 can match eol */
 YY_RULE_SETUP
-#line 252 "listwise/liblistwise/generator/generator.l"
+#line 252 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 253 "listwise/liblistwise/generator/generator.l"
+#line 253 "listwise/liblistwise/transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 254 "listwise/liblistwise/generator/generator.l"
+#line 254 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 255 "listwise/liblistwise/generator/generator.l"
+#line 255 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 256 "listwise/liblistwise/generator/generator.l"
+#line 256 "listwise/liblistwise/transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 257 "listwise/liblistwise/generator/generator.l"
+#line 257 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* colon-delimited scanner */
 case 49:
 YY_RULE_SETUP
-#line 260 "listwise/liblistwise/generator/generator.l"
+#line 260 "listwise/liblistwise/transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 261 "listwise/liblistwise/generator/generator.l"
+#line 261 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 51:
 /* rule 51 can match eol */
 YY_RULE_SETUP
-#line 262 "listwise/liblistwise/generator/generator.l"
+#line 262 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 263 "listwise/liblistwise/generator/generator.l"
+#line 263 "listwise/liblistwise/transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 265 "listwise/liblistwise/generator/generator.l"
+#line 265 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 54:
 /* rule 54 can match eol */
 YY_RULE_SETUP
-#line 267 "listwise/liblistwise/generator/generator.l"
+#line 267 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 268 "listwise/liblistwise/generator/generator.l"
+#line 268 "listwise/liblistwise/transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 269 "listwise/liblistwise/generator/generator.l"
+#line 269 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 270 "listwise/liblistwise/generator/generator.l"
+#line 270 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 271 "listwise/liblistwise/generator/generator.l"
+#line 271 "listwise/liblistwise/transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 272 "listwise/liblistwise/generator/generator.l"
+#line 272 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* semicolon-delimited scanner */
 case 60:
 YY_RULE_SETUP
-#line 275 "listwise/liblistwise/generator/generator.l"
+#line 275 "listwise/liblistwise/transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 276 "listwise/liblistwise/generator/generator.l"
+#line 276 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 62:
 /* rule 62 can match eol */
 YY_RULE_SETUP
-#line 277 "listwise/liblistwise/generator/generator.l"
+#line 277 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 278 "listwise/liblistwise/generator/generator.l"
+#line 278 "listwise/liblistwise/transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 280 "listwise/liblistwise/generator/generator.l"
+#line 280 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 65:
 /* rule 65 can match eol */
 YY_RULE_SETUP
-#line 282 "listwise/liblistwise/generator/generator.l"
+#line 282 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 283 "listwise/liblistwise/generator/generator.l"
+#line 283 "listwise/liblistwise/transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 284 "listwise/liblistwise/generator/generator.l"
+#line 284 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 285 "listwise/liblistwise/generator/generator.l"
+#line 285 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 286 "listwise/liblistwise/generator/generator.l"
+#line 286 "listwise/liblistwise/transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 287 "listwise/liblistwise/generator/generator.l"
+#line 287 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* braces-enclosed scanner */
 case 71:
 YY_RULE_SETUP
-#line 290 "listwise/liblistwise/generator/generator.l"
+#line 290 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 72:
 /* rule 72 can match eol */
 YY_RULE_SETUP
-#line 291 "listwise/liblistwise/generator/generator.l"
+#line 291 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 292 "listwise/liblistwise/generator/generator.l"
+#line 292 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(STR, 0); }
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 293 "listwise/liblistwise/generator/generator.l"
+#line 293 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; if(TOPSTATE == braces) { return LEX(yytext[0], 0); } else { return LEX(STR, 0); } }
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 295 "listwise/liblistwise/generator/generator.l"
+#line 295 "listwise/liblistwise/transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 76:
 /* rule 76 can match eol */
 YY_RULE_SETUP
-#line 297 "listwise/liblistwise/generator/generator.l"
+#line 297 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 299 "listwise/liblistwise/generator/generator.l"
+#line 299 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 300 "listwise/liblistwise/generator/generator.l"
+#line 300 "listwise/liblistwise/transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 301 "listwise/liblistwise/generator/generator.l"
+#line 301 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 302 "listwise/liblistwise/generator/generator.l"
+#line 302 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 303 "listwise/liblistwise/generator/generator.l"
+#line 303 "listwise/liblistwise/transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 82:
 /* rule 82 can match eol */
 YY_RULE_SETUP
-#line 304 "listwise/liblistwise/generator/generator.l"
+#line 304 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* brackets-enclosed scanner */
 case 83:
 YY_RULE_SETUP
-#line 307 "listwise/liblistwise/generator/generator.l"
+#line 307 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 84:
 /* rule 84 can match eol */
 YY_RULE_SETUP
-#line 308 "listwise/liblistwise/generator/generator.l"
+#line 308 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 309 "listwise/liblistwise/generator/generator.l"
+#line 309 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(STR, 0); }
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 310 "listwise/liblistwise/generator/generator.l"
+#line 310 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; if(TOPSTATE == brackets) { return LEX(yytext[0], 0); } else { return LEX(STR, 0); } }
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 312 "listwise/liblistwise/generator/generator.l"
+#line 312 "listwise/liblistwise/transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 88:
 /* rule 88 can match eol */
 YY_RULE_SETUP
-#line 314 "listwise/liblistwise/generator/generator.l"
+#line 314 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 316 "listwise/liblistwise/generator/generator.l"
+#line 316 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 317 "listwise/liblistwise/generator/generator.l"
+#line 317 "listwise/liblistwise/transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 318 "listwise/liblistwise/generator/generator.l"
+#line 318 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 319 "listwise/liblistwise/generator/generator.l"
+#line 319 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 320 "listwise/liblistwise/generator/generator.l"
+#line 320 "listwise/liblistwise/transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 94:
 /* rule 94 can match eol */
 YY_RULE_SETUP
-#line 321 "listwise/liblistwise/generator/generator.l"
+#line 321 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* parens-enclosed scanner */
 case 95:
 YY_RULE_SETUP
-#line 324 "listwise/liblistwise/generator/generator.l"
+#line 324 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 96:
 /* rule 96 can match eol */
 YY_RULE_SETUP
-#line 325 "listwise/liblistwise/generator/generator.l"
+#line 325 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 97:
 YY_RULE_SETUP
-#line 326 "listwise/liblistwise/generator/generator.l"
+#line 326 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(STR, 0); }
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-#line 327 "listwise/liblistwise/generator/generator.l"
+#line 327 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; if(TOPSTATE == parens) { return LEX(yytext[0], 0); } else { return LEX(STR, 0); } }
 	YY_BREAK
 case 99:
 YY_RULE_SETUP
-#line 329 "listwise/liblistwise/generator/generator.l"
+#line 329 "listwise/liblistwise/transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 100:
 /* rule 100 can match eol */
 YY_RULE_SETUP
-#line 331 "listwise/liblistwise/generator/generator.l"
+#line 331 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 101:
 YY_RULE_SETUP
-#line 333 "listwise/liblistwise/generator/generator.l"
+#line 333 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 102:
 YY_RULE_SETUP
-#line 334 "listwise/liblistwise/generator/generator.l"
+#line 334 "listwise/liblistwise/transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 103:
 YY_RULE_SETUP
-#line 335 "listwise/liblistwise/generator/generator.l"
+#line 335 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 104:
 YY_RULE_SETUP
-#line 336 "listwise/liblistwise/generator/generator.l"
+#line 336 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
-#line 337 "listwise/liblistwise/generator/generator.l"
+#line 337 "listwise/liblistwise/transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 106:
 /* rule 106 can match eol */
 YY_RULE_SETUP
-#line 338 "listwise/liblistwise/generator/generator.l"
+#line 338 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* angles-enclosed scanner */
 case 107:
 YY_RULE_SETUP
-#line 341 "listwise/liblistwise/generator/generator.l"
+#line 341 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 108:
 /* rule 108 can match eol */
 YY_RULE_SETUP
-#line 342 "listwise/liblistwise/generator/generator.l"
+#line 342 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 109:
 YY_RULE_SETUP
-#line 343 "listwise/liblistwise/generator/generator.l"
+#line 343 "listwise/liblistwise/transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(STR, 0); }
 	YY_BREAK
 case 110:
 YY_RULE_SETUP
-#line 344 "listwise/liblistwise/generator/generator.l"
+#line 344 "listwise/liblistwise/transform/transform.l"
 { POPSTATE; if(TOPSTATE == angles) { return LEX(yytext[0], 0); } else { return LEX(STR, 0); } }
 	YY_BREAK
 case 111:
 YY_RULE_SETUP
-#line 346 "listwise/liblistwise/generator/generator.l"
+#line 346 "listwise/liblistwise/transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 112:
 /* rule 112 can match eol */
 YY_RULE_SETUP
-#line 348 "listwise/liblistwise/generator/generator.l"
+#line 348 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 113:
 YY_RULE_SETUP
-#line 350 "listwise/liblistwise/generator/generator.l"
+#line 350 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 114:
 YY_RULE_SETUP
-#line 351 "listwise/liblistwise/generator/generator.l"
+#line 351 "listwise/liblistwise/transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 115:
 YY_RULE_SETUP
-#line 352 "listwise/liblistwise/generator/generator.l"
+#line 352 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 116:
 YY_RULE_SETUP
-#line 353 "listwise/liblistwise/generator/generator.l"
+#line 353 "listwise/liblistwise/transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 117:
 YY_RULE_SETUP
-#line 354 "listwise/liblistwise/generator/generator.l"
+#line 354 "listwise/liblistwise/transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 118:
 /* rule 118 can match eol */
 YY_RULE_SETUP
-#line 355 "listwise/liblistwise/generator/generator.l"
+#line 355 "listwise/liblistwise/transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 119:
 /* rule 119 can match eol */
 YY_RULE_SETUP
-#line 357 "listwise/liblistwise/generator/generator.l"
+#line 357 "listwise/liblistwise/transform/transform.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -2168,7 +2168,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 120:
 YY_RULE_SETUP
-#line 364 "listwise/liblistwise/generator/generator.l"
+#line 364 "listwise/liblistwise/transform/transform.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -2203,7 +2203,7 @@ case YY_STATE_EOF(parens_dorefs):
 case YY_STATE_EOF(angles):
 case YY_STATE_EOF(angles_norefs):
 case YY_STATE_EOF(angles_dorefs):
-#line 371 "listwise/liblistwise/generator/generator.l"
+#line 371 "listwise/liblistwise/transform/transform.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -2212,10 +2212,10 @@ case YY_STATE_EOF(angles_dorefs):
 	YY_BREAK
 case 121:
 YY_RULE_SETUP
-#line 376 "listwise/liblistwise/generator/generator.l"
+#line 376 "listwise/liblistwise/transform/transform.l"
 ECHO;
 	YY_BREAK
-#line 2219 "listwise/liblistwise/generator/generator.lex.c"
+#line 2219 "listwise/liblistwise/transform/transform.lex.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2231,7 +2231,7 @@ ECHO;
 			/* We're scanning a new file or input source.  It's
 			 * possible that this happened because the user
 			 * just pointed yyin at a new source and called
-			 * generator_yylex().  If so, then we have to assure
+			 * transform_yylex().  If so, then we have to assure
 			 * consistency between YY_CURRENT_BUFFER and our
 			 * globals.  Here is the right place to do so, because
 			 * this is the first action (other than possibly a
@@ -2291,7 +2291,7 @@ ECHO;
 				{
 				yyg->yy_did_buffer_switch_on_eof = 0;
 
-				if ( generator_yywrap(yyscanner ) )
+				if ( transform_yywrap(yyscanner ) )
 					{
 					/* Note: because we've taken care in
 					 * yy_get_next_buffer() to have set up
@@ -2344,7 +2344,7 @@ ECHO;
 			"fatal flex scanner internal error--no action found" );
 	} /* end of action switch */
 		} /* end of scanning one token */
-} /* end of generator_yylex */
+} /* end of transform_yylex */
 
 /* yy_get_next_buffer - try to read in a new buffer
  *
@@ -2423,7 +2423,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 				b->yy_ch_buf = (char *)
 					/* Include room in for 2 EOB chars. */
-					generator_yyrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2 ,yyscanner );
+					transform_yyrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2 ,yyscanner );
 				}
 			else
 				/* Can't grow it, we don't own it. */
@@ -2455,7 +2455,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		if ( number_to_move == YY_MORE_ADJ )
 			{
 			ret_val = EOB_ACT_END_OF_FILE;
-			generator_yyrestart(yyin  ,yyscanner);
+			transform_yyrestart(yyin  ,yyscanner);
 			}
 
 		else
@@ -2472,7 +2472,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	if ((yy_size_t) (yyg->yy_n_chars + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
 		/* Extend the array by 50%, plus the number we really need. */
 		yy_size_t new_size = yyg->yy_n_chars + number_to_move + (yyg->yy_n_chars >> 1);
-		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) generator_yyrealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size ,yyscanner );
+		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) transform_yyrealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size ,yyscanner );
 		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
 			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
 	}
@@ -2587,13 +2587,13 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 					 */
 
 					/* Reset buffer status. */
-					generator_yyrestart(yyin ,yyscanner);
+					transform_yyrestart(yyin ,yyscanner);
 
 					/*FALLTHROUGH*/
 
 				case EOB_ACT_END_OF_FILE:
 					{
-					if ( generator_yywrap(yyscanner ) )
+					if ( transform_yywrap(yyscanner ) )
 						return EOF;
 
 					if ( ! yyg->yy_did_buffer_switch_on_eof )
@@ -2625,34 +2625,34 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @note This function does not reset the start condition to @c INITIAL .
  */
-    void generator_yyrestart  (FILE * input_file , yyscan_t yyscanner)
+    void transform_yyrestart  (FILE * input_file , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	if ( ! YY_CURRENT_BUFFER ){
-        generator_yyensure_buffer_stack (yyscanner);
+        transform_yyensure_buffer_stack (yyscanner);
 		YY_CURRENT_BUFFER_LVALUE =
-            generator_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
+            transform_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
 	}
 
-	generator_yy_init_buffer(YY_CURRENT_BUFFER,input_file ,yyscanner);
-	generator_yy_load_buffer_state(yyscanner );
+	transform_yy_init_buffer(YY_CURRENT_BUFFER,input_file ,yyscanner);
+	transform_yy_load_buffer_state(yyscanner );
 }
 
 /** Switch to a different input buffer.
  * @param new_buffer The new input buffer.
  * @param yyscanner The scanner object.
  */
-    void generator_yy_switch_to_buffer  (YY_BUFFER_STATE  new_buffer , yyscan_t yyscanner)
+    void transform_yy_switch_to_buffer  (YY_BUFFER_STATE  new_buffer , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	/* TODO. We should be able to replace this entire function body
 	 * with
-	 *		generator_yypop_buffer_state();
-	 *		generator_yypush_buffer_state(new_buffer);
+	 *		transform_yypop_buffer_state();
+	 *		transform_yypush_buffer_state(new_buffer);
      */
-	generator_yyensure_buffer_stack (yyscanner);
+	transform_yyensure_buffer_stack (yyscanner);
 	if ( YY_CURRENT_BUFFER == new_buffer )
 		return;
 
@@ -2665,17 +2665,17 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		}
 
 	YY_CURRENT_BUFFER_LVALUE = new_buffer;
-	generator_yy_load_buffer_state(yyscanner );
+	transform_yy_load_buffer_state(yyscanner );
 
 	/* We don't actually know whether we did this switch during
-	 * EOF (generator_yywrap()) processing, but the only time this flag
-	 * is looked at is after generator_yywrap() is called, so it's safe
+	 * EOF (transform_yywrap()) processing, but the only time this flag
+	 * is looked at is after transform_yywrap() is called, so it's safe
 	 * to go ahead and always set it.
 	 */
 	yyg->yy_did_buffer_switch_on_eof = 1;
 }
 
-static void generator_yy_load_buffer_state  (yyscan_t yyscanner)
+static void transform_yy_load_buffer_state  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	yyg->yy_n_chars = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
@@ -2690,35 +2690,35 @@ static void generator_yy_load_buffer_state  (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @return the allocated buffer state.
  */
-    YY_BUFFER_STATE generator_yy_create_buffer  (FILE * file, int  size , yyscan_t yyscanner)
+    YY_BUFFER_STATE transform_yy_create_buffer  (FILE * file, int  size , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
     
-	b = (YY_BUFFER_STATE) generator_yyalloc(sizeof( struct yy_buffer_state ) ,yyscanner );
+	b = (YY_BUFFER_STATE) transform_yyalloc(sizeof( struct yy_buffer_state ) ,yyscanner );
 	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in generator_yy_create_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in transform_yy_create_buffer()" );
 
 	b->yy_buf_size = size;
 
 	/* yy_ch_buf has to be 2 characters longer than the size given because
 	 * we need to put in 2 end-of-buffer characters.
 	 */
-	b->yy_ch_buf = (char *) generator_yyalloc(b->yy_buf_size + 2 ,yyscanner );
+	b->yy_ch_buf = (char *) transform_yyalloc(b->yy_buf_size + 2 ,yyscanner );
 	if ( ! b->yy_ch_buf )
-		YY_FATAL_ERROR( "out of dynamic memory in generator_yy_create_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in transform_yy_create_buffer()" );
 
 	b->yy_is_our_buffer = 1;
 
-	generator_yy_init_buffer(b,file ,yyscanner);
+	transform_yy_init_buffer(b,file ,yyscanner);
 
 	return b;
 }
 
 /** Destroy the buffer.
- * @param b a buffer created with generator_yy_create_buffer()
+ * @param b a buffer created with transform_yy_create_buffer()
  * @param yyscanner The scanner object.
  */
-    void generator_yy_delete_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
+    void transform_yy_delete_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
@@ -2729,9 +2729,9 @@ static void generator_yy_load_buffer_state  (yyscan_t yyscanner)
 		YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE) 0;
 
 	if ( b->yy_is_our_buffer )
-		generator_yyfree((void *) b->yy_ch_buf ,yyscanner );
+		transform_yyfree((void *) b->yy_ch_buf ,yyscanner );
 
-	generator_yyfree((void *) b ,yyscanner );
+	transform_yyfree((void *) b ,yyscanner );
 }
 
 #ifndef __cplusplus
@@ -2740,21 +2740,21 @@ extern int isatty (int );
     
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
- * such as during a generator_yyrestart() or at EOF.
+ * such as during a transform_yyrestart() or at EOF.
  */
-    static void generator_yy_init_buffer  (YY_BUFFER_STATE  b, FILE * file , yyscan_t yyscanner)
+    static void transform_yy_init_buffer  (YY_BUFFER_STATE  b, FILE * file , yyscan_t yyscanner)
 
 {
 	int oerrno = errno;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-	generator_yy_flush_buffer(b ,yyscanner);
+	transform_yy_flush_buffer(b ,yyscanner);
 
 	b->yy_input_file = file;
 	b->yy_fill_buffer = 1;
 
-    /* If b is the current buffer, then generator_yy_init_buffer was _probably_
-     * called from generator_yyrestart() or through yy_get_next_buffer.
+    /* If b is the current buffer, then transform_yy_init_buffer was _probably_
+     * called from transform_yyrestart() or through yy_get_next_buffer.
      * In that case, we don't want to reset the lineno or column.
      */
     if (b != YY_CURRENT_BUFFER){
@@ -2771,7 +2771,7 @@ extern int isatty (int );
  * @param b the buffer state to be flushed, usually @c YY_CURRENT_BUFFER.
  * @param yyscanner The scanner object.
  */
-    void generator_yy_flush_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
+    void transform_yy_flush_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if ( ! b )
@@ -2792,7 +2792,7 @@ extern int isatty (int );
 	b->yy_buffer_status = YY_BUFFER_NEW;
 
 	if ( b == YY_CURRENT_BUFFER )
-		generator_yy_load_buffer_state(yyscanner );
+		transform_yy_load_buffer_state(yyscanner );
 }
 
 /** Pushes the new state onto the stack. The new state becomes
@@ -2801,15 +2801,15 @@ extern int isatty (int );
  *  @param new_buffer The new state.
  *  @param yyscanner The scanner object.
  */
-void generator_yypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
+void transform_yypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if (new_buffer == NULL)
 		return;
 
-	generator_yyensure_buffer_stack(yyscanner);
+	transform_yyensure_buffer_stack(yyscanner);
 
-	/* This block is copied from generator_yy_switch_to_buffer. */
+	/* This block is copied from transform_yy_switch_to_buffer. */
 	if ( YY_CURRENT_BUFFER )
 		{
 		/* Flush out information for old buffer. */
@@ -2823,8 +2823,8 @@ void generator_yypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscan
 		yyg->yy_buffer_stack_top++;
 	YY_CURRENT_BUFFER_LVALUE = new_buffer;
 
-	/* copied from generator_yy_switch_to_buffer. */
-	generator_yy_load_buffer_state(yyscanner );
+	/* copied from transform_yy_switch_to_buffer. */
+	transform_yy_load_buffer_state(yyscanner );
 	yyg->yy_did_buffer_switch_on_eof = 1;
 }
 
@@ -2832,19 +2832,19 @@ void generator_yypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscan
  *  The next element becomes the new top.
  *  @param yyscanner The scanner object.
  */
-void generator_yypop_buffer_state (yyscan_t yyscanner)
+void transform_yypop_buffer_state (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if (!YY_CURRENT_BUFFER)
 		return;
 
-	generator_yy_delete_buffer(YY_CURRENT_BUFFER ,yyscanner);
+	transform_yy_delete_buffer(YY_CURRENT_BUFFER ,yyscanner);
 	YY_CURRENT_BUFFER_LVALUE = NULL;
 	if (yyg->yy_buffer_stack_top > 0)
 		--yyg->yy_buffer_stack_top;
 
 	if (YY_CURRENT_BUFFER) {
-		generator_yy_load_buffer_state(yyscanner );
+		transform_yy_load_buffer_state(yyscanner );
 		yyg->yy_did_buffer_switch_on_eof = 1;
 	}
 }
@@ -2852,7 +2852,7 @@ void generator_yypop_buffer_state (yyscan_t yyscanner)
 /* Allocates the stack if it does not exist.
  *  Guarantees space for at least one push.
  */
-static void generator_yyensure_buffer_stack (yyscan_t yyscanner)
+static void transform_yyensure_buffer_stack (yyscan_t yyscanner)
 {
 	int num_to_alloc;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -2864,11 +2864,11 @@ static void generator_yyensure_buffer_stack (yyscan_t yyscanner)
 		 * immediate realloc on the next call.
          */
 		num_to_alloc = 1;
-		yyg->yy_buffer_stack = (struct yy_buffer_state**)generator_yyalloc
+		yyg->yy_buffer_stack = (struct yy_buffer_state**)transform_yyalloc
 								(num_to_alloc * sizeof(struct yy_buffer_state*)
 								, yyscanner);
 		if ( ! yyg->yy_buffer_stack )
-			YY_FATAL_ERROR( "out of dynamic memory in generator_yyensure_buffer_stack()" );
+			YY_FATAL_ERROR( "out of dynamic memory in transform_yyensure_buffer_stack()" );
 								  
 		memset(yyg->yy_buffer_stack, 0, num_to_alloc * sizeof(struct yy_buffer_state*));
 				
@@ -2883,12 +2883,12 @@ static void generator_yyensure_buffer_stack (yyscan_t yyscanner)
 		int grow_size = 8 /* arbitrary grow size */;
 
 		num_to_alloc = yyg->yy_buffer_stack_max + grow_size;
-		yyg->yy_buffer_stack = (struct yy_buffer_state**)generator_yyrealloc
+		yyg->yy_buffer_stack = (struct yy_buffer_state**)transform_yyrealloc
 								(yyg->yy_buffer_stack,
 								num_to_alloc * sizeof(struct yy_buffer_state*)
 								, yyscanner);
 		if ( ! yyg->yy_buffer_stack )
-			YY_FATAL_ERROR( "out of dynamic memory in generator_yyensure_buffer_stack()" );
+			YY_FATAL_ERROR( "out of dynamic memory in transform_yyensure_buffer_stack()" );
 
 		/* zero only the new slots.*/
 		memset(yyg->yy_buffer_stack + yyg->yy_buffer_stack_max, 0, grow_size * sizeof(struct yy_buffer_state*));
@@ -2902,7 +2902,7 @@ static void generator_yyensure_buffer_stack (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object. 
  */
-YY_BUFFER_STATE generator_yy_scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscanner)
+YY_BUFFER_STATE transform_yy_scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
     
@@ -2912,9 +2912,9 @@ YY_BUFFER_STATE generator_yy_scan_buffer  (char * base, yy_size_t  size , yyscan
 		/* They forgot to leave room for the EOB's. */
 		return 0;
 
-	b = (YY_BUFFER_STATE) generator_yyalloc(sizeof( struct yy_buffer_state ) ,yyscanner );
+	b = (YY_BUFFER_STATE) transform_yyalloc(sizeof( struct yy_buffer_state ) ,yyscanner );
 	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in generator_yy_scan_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in transform_yy_scan_buffer()" );
 
 	b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
 	b->yy_buf_pos = b->yy_ch_buf = base;
@@ -2926,33 +2926,33 @@ YY_BUFFER_STATE generator_yy_scan_buffer  (char * base, yy_size_t  size , yyscan
 	b->yy_fill_buffer = 0;
 	b->yy_buffer_status = YY_BUFFER_NEW;
 
-	generator_yy_switch_to_buffer(b ,yyscanner );
+	transform_yy_switch_to_buffer(b ,yyscanner );
 
 	return b;
 }
 
-/** Setup the input buffer state to scan a string. The next call to generator_yylex() will
+/** Setup the input buffer state to scan a string. The next call to transform_yylex() will
  * scan from a @e copy of @a str.
  * @param yystr a NUL-terminated string to scan
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object.
  * @note If you want to scan bytes that may contain NUL values, then use
- *       generator_yy_scan_bytes() instead.
+ *       transform_yy_scan_bytes() instead.
  */
-YY_BUFFER_STATE generator_yy_scan_string (yyconst char * yystr , yyscan_t yyscanner)
+YY_BUFFER_STATE transform_yy_scan_string (yyconst char * yystr , yyscan_t yyscanner)
 {
     
-	return generator_yy_scan_bytes(yystr,strlen(yystr) ,yyscanner);
+	return transform_yy_scan_bytes(yystr,strlen(yystr) ,yyscanner);
 }
 
-/** Setup the input buffer state to scan the given bytes. The next call to generator_yylex() will
+/** Setup the input buffer state to scan the given bytes. The next call to transform_yylex() will
  * scan from a @e copy of @a bytes.
  * @param yybytes the byte buffer to scan
  * @param _yybytes_len the number of bytes in the buffer pointed to by @a bytes.
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE generator_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len , yyscan_t yyscanner)
+YY_BUFFER_STATE transform_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
 	char *buf;
@@ -2961,18 +2961,18 @@ YY_BUFFER_STATE generator_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = _yybytes_len + 2;
-	buf = (char *) generator_yyalloc(n ,yyscanner );
+	buf = (char *) transform_yyalloc(n ,yyscanner );
 	if ( ! buf )
-		YY_FATAL_ERROR( "out of dynamic memory in generator_yy_scan_bytes()" );
+		YY_FATAL_ERROR( "out of dynamic memory in transform_yy_scan_bytes()" );
 
 	for ( i = 0; i < _yybytes_len; ++i )
 		buf[i] = yybytes[i];
 
 	buf[_yybytes_len] = buf[_yybytes_len+1] = YY_END_OF_BUFFER_CHAR;
 
-	b = generator_yy_scan_buffer(buf,n ,yyscanner);
+	b = transform_yy_scan_buffer(buf,n ,yyscanner);
 	if ( ! b )
-		YY_FATAL_ERROR( "bad buffer in generator_yy_scan_bytes()" );
+		YY_FATAL_ERROR( "bad buffer in transform_yy_scan_bytes()" );
 
 	/* It's okay to grow etc. this buffer, and we should throw it
 	 * away when we're done.
@@ -2993,10 +2993,10 @@ YY_BUFFER_STATE generator_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_
 		new_size = yyg->yy_start_stack_depth * sizeof( int );
 
 		if ( ! yyg->yy_start_stack )
-			yyg->yy_start_stack = (int *) generator_yyalloc(new_size ,yyscanner );
+			yyg->yy_start_stack = (int *) transform_yyalloc(new_size ,yyscanner );
 
 		else
-			yyg->yy_start_stack = (int *) generator_yyrealloc((void *) yyg->yy_start_stack,new_size ,yyscanner );
+			yyg->yy_start_stack = (int *) transform_yyrealloc((void *) yyg->yy_start_stack,new_size ,yyscanner );
 
 		if ( ! yyg->yy_start_stack )
 			YY_FATAL_ERROR( "out of memory expanding start-condition stack" );
@@ -3048,7 +3048,7 @@ static void yy_fatal_error (yyconst char* msg , yyscan_t yyscanner)
 /** Get the user-defined data for this scanner.
  * @param yyscanner The scanner object.
  */
-YY_EXTRA_TYPE generator_yyget_extra  (yyscan_t yyscanner)
+YY_EXTRA_TYPE transform_yyget_extra  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyextra;
@@ -3057,7 +3057,7 @@ YY_EXTRA_TYPE generator_yyget_extra  (yyscan_t yyscanner)
 /** Get the current line number.
  * @param yyscanner The scanner object.
  */
-int generator_yyget_lineno  (yyscan_t yyscanner)
+int transform_yyget_lineno  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     
@@ -3070,7 +3070,7 @@ int generator_yyget_lineno  (yyscan_t yyscanner)
 /** Get the current column number.
  * @param yyscanner The scanner object.
  */
-int generator_yyget_column  (yyscan_t yyscanner)
+int transform_yyget_column  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     
@@ -3083,7 +3083,7 @@ int generator_yyget_column  (yyscan_t yyscanner)
 /** Get the input stream.
  * @param yyscanner The scanner object.
  */
-FILE *generator_yyget_in  (yyscan_t yyscanner)
+FILE *transform_yyget_in  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyin;
@@ -3092,7 +3092,7 @@ FILE *generator_yyget_in  (yyscan_t yyscanner)
 /** Get the output stream.
  * @param yyscanner The scanner object.
  */
-FILE *generator_yyget_out  (yyscan_t yyscanner)
+FILE *transform_yyget_out  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyout;
@@ -3101,7 +3101,7 @@ FILE *generator_yyget_out  (yyscan_t yyscanner)
 /** Get the length of the current token.
  * @param yyscanner The scanner object.
  */
-int generator_yyget_leng  (yyscan_t yyscanner)
+int transform_yyget_leng  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyleng;
@@ -3111,7 +3111,7 @@ int generator_yyget_leng  (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  */
 
-char *generator_yyget_text  (yyscan_t yyscanner)
+char *transform_yyget_text  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yytext;
@@ -3121,7 +3121,7 @@ char *generator_yyget_text  (yyscan_t yyscanner)
  * @param user_defined The data to be associated with this scanner.
  * @param yyscanner The scanner object.
  */
-void generator_yyset_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
+void transform_yyset_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yyextra = user_defined ;
@@ -3131,13 +3131,13 @@ void generator_yyset_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
  * @param line_number
  * @param yyscanner The scanner object.
  */
-void generator_yyset_lineno (int  line_number , yyscan_t yyscanner)
+void transform_yyset_lineno (int  line_number , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
         /* lineno is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           yy_fatal_error( "generator_yyset_lineno called with no buffer" , yyscanner); 
+           yy_fatal_error( "transform_yyset_lineno called with no buffer" , yyscanner); 
     
     yylineno = line_number;
 }
@@ -3146,13 +3146,13 @@ void generator_yyset_lineno (int  line_number , yyscan_t yyscanner)
  * @param line_number
  * @param yyscanner The scanner object.
  */
-void generator_yyset_column (int  column_no , yyscan_t yyscanner)
+void transform_yyset_column (int  column_no , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
         /* column is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           yy_fatal_error( "generator_yyset_column called with no buffer" , yyscanner); 
+           yy_fatal_error( "transform_yyset_column called with no buffer" , yyscanner); 
     
     yycolumn = column_no;
 }
@@ -3161,27 +3161,27 @@ void generator_yyset_column (int  column_no , yyscan_t yyscanner)
  * input buffer.
  * @param in_str A readable stream.
  * @param yyscanner The scanner object.
- * @see generator_yy_switch_to_buffer
+ * @see transform_yy_switch_to_buffer
  */
-void generator_yyset_in (FILE *  in_str , yyscan_t yyscanner)
+void transform_yyset_in (FILE *  in_str , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yyin = in_str ;
 }
 
-void generator_yyset_out (FILE *  out_str , yyscan_t yyscanner)
+void transform_yyset_out (FILE *  out_str , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yyout = out_str ;
 }
 
-int generator_yyget_debug  (yyscan_t yyscanner)
+int transform_yyget_debug  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yy_flex_debug;
 }
 
-void generator_yyset_debug (int  bdebug , yyscan_t yyscanner)
+void transform_yyset_debug (int  bdebug , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yy_flex_debug = bdebug ;
@@ -3189,25 +3189,25 @@ void generator_yyset_debug (int  bdebug , yyscan_t yyscanner)
 
 /* Accessor methods for yylval and yylloc */
 
-YYSTYPE * generator_yyget_lval  (yyscan_t yyscanner)
+YYSTYPE * transform_yyget_lval  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yylval;
 }
 
-void generator_yyset_lval (YYSTYPE *  yylval_param , yyscan_t yyscanner)
+void transform_yyset_lval (YYSTYPE *  yylval_param , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yylval = yylval_param;
 }
 
-YYLTYPE *generator_yyget_lloc  (yyscan_t yyscanner)
+YYLTYPE *transform_yyget_lloc  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yylloc;
 }
     
-void generator_yyset_lloc (YYLTYPE *  yylloc_param , yyscan_t yyscanner)
+void transform_yyset_lloc (YYLTYPE *  yylloc_param , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yylloc = yylloc_param;
@@ -3215,12 +3215,12 @@ void generator_yyset_lloc (YYLTYPE *  yylloc_param , yyscan_t yyscanner)
     
 /* User-visible API */
 
-/* generator_yylex_init is special because it creates the scanner itself, so it is
+/* transform_yylex_init is special because it creates the scanner itself, so it is
  * the ONLY reentrant function that doesn't take the scanner as the last argument.
  * That's why we explicitly handle the declaration, instead of using our macros.
  */
 
-int generator_yylex_init(yyscan_t* ptr_yy_globals)
+int transform_yylex_init(yyscan_t* ptr_yy_globals)
 
 {
     if (ptr_yy_globals == NULL){
@@ -3228,7 +3228,7 @@ int generator_yylex_init(yyscan_t* ptr_yy_globals)
         return 1;
     }
 
-    *ptr_yy_globals = (yyscan_t) generator_yyalloc ( sizeof( struct yyguts_t ), NULL );
+    *ptr_yy_globals = (yyscan_t) transform_yyalloc ( sizeof( struct yyguts_t ), NULL );
 
     if (*ptr_yy_globals == NULL){
         errno = ENOMEM;
@@ -3241,27 +3241,27 @@ int generator_yylex_init(yyscan_t* ptr_yy_globals)
     return yy_init_globals ( *ptr_yy_globals );
 }
 
-/* generator_yylex_init_extra has the same functionality as generator_yylex_init, but follows the
+/* transform_yylex_init_extra has the same functionality as transform_yylex_init, but follows the
  * convention of taking the scanner as the last argument. Note however, that
  * this is a *pointer* to a scanner, as it will be allocated by this call (and
  * is the reason, too, why this function also must handle its own declaration).
- * The user defined value in the first argument will be available to generator_yyalloc in
+ * The user defined value in the first argument will be available to transform_yyalloc in
  * the yyextra field.
  */
 
-int generator_yylex_init_extra(YY_EXTRA_TYPE yy_user_defined,yyscan_t* ptr_yy_globals )
+int transform_yylex_init_extra(YY_EXTRA_TYPE yy_user_defined,yyscan_t* ptr_yy_globals )
 
 {
     struct yyguts_t dummy_yyguts;
 
-    generator_yyset_extra (yy_user_defined, &dummy_yyguts);
+    transform_yyset_extra (yy_user_defined, &dummy_yyguts);
 
     if (ptr_yy_globals == NULL){
         errno = EINVAL;
         return 1;
     }
 	
-    *ptr_yy_globals = (yyscan_t) generator_yyalloc ( sizeof( struct yyguts_t ), &dummy_yyguts );
+    *ptr_yy_globals = (yyscan_t) transform_yyalloc ( sizeof( struct yyguts_t ), &dummy_yyguts );
 	
     if (*ptr_yy_globals == NULL){
         errno = ENOMEM;
@@ -3272,7 +3272,7 @@ int generator_yylex_init_extra(YY_EXTRA_TYPE yy_user_defined,yyscan_t* ptr_yy_gl
     yy_init_globals. Leave at 0x00 for releases. */
     memset(*ptr_yy_globals,0x00,sizeof(struct yyguts_t));
     
-    generator_yyset_extra (yy_user_defined, *ptr_yy_globals);
+    transform_yyset_extra (yy_user_defined, *ptr_yy_globals);
     
     return yy_init_globals ( *ptr_yy_globals );
 }
@@ -3281,7 +3281,7 @@ static int yy_init_globals (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     /* Initialization is the same as for the non-reentrant scanner.
-     * This function is called from generator_yylex_destroy(), so don't allocate here.
+     * This function is called from transform_yylex_destroy(), so don't allocate here.
      */
 
     yyg->yy_buffer_stack = 0;
@@ -3305,37 +3305,37 @@ static int yy_init_globals (yyscan_t yyscanner)
 #endif
 
     /* For future reference: Set errno on error, since we are called by
-     * generator_yylex_init()
+     * transform_yylex_init()
      */
     return 0;
 }
 
-/* generator_yylex_destroy is for both reentrant and non-reentrant scanners. */
-int generator_yylex_destroy  (yyscan_t yyscanner)
+/* transform_yylex_destroy is for both reentrant and non-reentrant scanners. */
+int transform_yylex_destroy  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
     /* Pop the buffer stack, destroying each element. */
 	while(YY_CURRENT_BUFFER){
-		generator_yy_delete_buffer(YY_CURRENT_BUFFER ,yyscanner );
+		transform_yy_delete_buffer(YY_CURRENT_BUFFER ,yyscanner );
 		YY_CURRENT_BUFFER_LVALUE = NULL;
-		generator_yypop_buffer_state(yyscanner);
+		transform_yypop_buffer_state(yyscanner);
 	}
 
 	/* Destroy the stack itself. */
-	generator_yyfree(yyg->yy_buffer_stack ,yyscanner);
+	transform_yyfree(yyg->yy_buffer_stack ,yyscanner);
 	yyg->yy_buffer_stack = NULL;
 
     /* Destroy the start condition stack. */
-        generator_yyfree(yyg->yy_start_stack ,yyscanner );
+        transform_yyfree(yyg->yy_start_stack ,yyscanner );
         yyg->yy_start_stack = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
-     * generator_yylex() is called, initialization will occur. */
+     * transform_yylex() is called, initialization will occur. */
     yy_init_globals( yyscanner);
 
     /* Destroy the main struct (reentrant only). */
-    generator_yyfree ( yyscanner , yyscanner );
+    transform_yyfree ( yyscanner , yyscanner );
     yyscanner = NULL;
     return 0;
 }
@@ -3364,12 +3364,12 @@ static int yy_flex_strlen (yyconst char * s , yyscan_t yyscanner)
 }
 #endif
 
-void *generator_yyalloc (yy_size_t  size , yyscan_t yyscanner)
+void *transform_yyalloc (yy_size_t  size , yyscan_t yyscanner)
 {
 	return (void *) malloc( size );
 }
 
-void *generator_yyrealloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
+void *transform_yyrealloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
 {
 	/* The cast to (char *) in the following accommodates both
 	 * implementations that use char* generic pointers, and those
@@ -3381,11 +3381,11 @@ void *generator_yyrealloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
 	return (void *) realloc( (char *) ptr, size );
 }
 
-void generator_yyfree (void * ptr , yyscan_t yyscanner)
+void transform_yyfree (void * ptr , yyscan_t yyscanner)
 {
-	free( (char *) ptr );	/* see generator_yyrealloc() for (char *) cast */
+	free( (char *) ptr );	/* see transform_yyrealloc() for (char *) cast */
 }
 
 #define YYTABLES_NAME "yytables"
 
-#line 376 "listwise/liblistwise/generator/generator.l"
+#line 376 "listwise/liblistwise/transform/transform.l"

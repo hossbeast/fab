@@ -247,7 +247,7 @@ static void fml_free(fml * fml)
 //
 // public
 //
-int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, struct ff_loc ** const restrict loc, const int locl, map * const restrict vmap, generator_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, struct ff_loc ** const restrict loc, const int locl, map * const restrict vmap, transform_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
 {
 	// create fml if necessary
 	fml * fml = ffn->fml;
@@ -337,7 +337,7 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, str
 	finally : coda;
 }
 
-int fml_render(ts * const restrict ts, generator_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int staxp, map * const restrict rawvars, int shebang)
+int fml_render(ts * const restrict ts, transform_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int staxp, map * const restrict rawvars, int shebang)
 {
 	// resolve the command list
 	int pn = staxp;

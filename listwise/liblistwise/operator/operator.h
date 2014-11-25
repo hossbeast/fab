@@ -51,7 +51,7 @@
 **  listwise/iterate.h   - iterating lstack contents
 **  listwise/object.h    - manipulating object entries
 **  listwise/ops.h       - enumerating and looking up listwise operators
-**  listwise/generator.h - manipulating generators
+**  listwise/transform.h - manipulating transforms
 **  listwise/fs.h        - filesystem apis
 **  listwise/log.h       - logging functions
 */

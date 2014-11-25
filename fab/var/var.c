@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "listwise.h"
-#include "listwise/generator.h"
+#include "listwise/transform.h"
 #include "listwise/lstack.h"
 
 #include "var.h"
@@ -81,8 +81,8 @@ typedef struct
 		lwx *		add;	// XFM_ADD			( not owned here - all lstacks owned by main )
 		lwx *		sub;	// XFM_SUB			( not owned here - all lstacks owned by main )
 
-		struct {					// XFM_LW				( not owned here - all generators owned by FFN_NODEs )
-			generator * gen;
+		struct {					// XFM_LW				( not owned here - all transforms owned by FFN_NODEs )
+			transform * gen;
 			char *			tex;
 		};
 	};
@@ -355,7 +355,7 @@ int var_xfm_sub(map * restrict vmap, const char * restrict s, lwx * const restri
 	finally : coda;
 }
 
-int var_xfm_lw(map * restrict vmap, const char * restrict s, generator * const restrict gen, char * const restrict tex, int inherit, const struct ff_node * const restrict src)
+int var_xfm_lw(map * restrict vmap, const char * restrict s, transform * const restrict gen, char * const restrict tex, int inherit, const struct ff_node * const restrict src)
 {
 	vardef * c = 0;
 	fatal(xfm_add, vmap, s, XFM_LW, gen, tex, inherit, src, &c);

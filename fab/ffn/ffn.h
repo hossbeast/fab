@@ -23,7 +23,7 @@
 #include <stdint.h>
 
 #include "listwise.h"
-#include "listwise/generator.h"
+#include "listwise/transform.h"
 
 #include "pstring.h"
 
@@ -89,7 +89,7 @@ typedef struct ff_node
 //	char*			s;						// string value (cumulative)
 //	int				l;						// length
 
-	generator * generator;		// FFN_TRANSFORM
+	transform * transform;		// FFN_TRANSFORM
 	uint32_t		flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION, FFN_LIST, FFN_VARREF
 
 	// not freed
@@ -220,9 +220,9 @@ ff_node* ffn_addchain(ff_node * restrict a, ff_node * const restrict b)
 
 /// ffn_free
 //
-// flatten, strmeasure, parse_generators
+// flatten, strmeasure, parse_transforms
 //
-int ffn_postprocess(ff_node * const ffn, struct ff_file * const ff, generator_parser * const gp)
+int ffn_postprocess(ff_node * const ffn, struct ff_file * const ff, transform_parser * const gp)
 	__attribute__((nonnull(2, 3)));
 
 /// ffn_free

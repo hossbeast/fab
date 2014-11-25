@@ -25,7 +25,7 @@
 #include "describe.h"
 #include "exec.h"
 #include "fs.h"
-#include "generator.h"
+#include "transform.h"
 #include "genscan.h"
 #include "iterate.h"
 #include "logging.h"
@@ -53,6 +53,7 @@
 #include "sanity.internal.h"
 #include "object.internal.h"
 #include "selection.internal.h"
+#include "transform.internal.h"
 
 // error tables
 #include "LW.errtab.h"

@@ -301,7 +301,7 @@ $listwise_test = [ $dlistwise_test/listwise_test.devel.so ~ j ]
 
 	install -d																				[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise/fs.h ]						[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/generator.h ]		[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/transform.h ]		[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise/internal.h ]			[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise/iterate.h ]			[ $destdir/$incdir/listwise ]
 	install [ $dliblistwise/listwise/lwx.h ]					[ $destdir/$incdir/listwise ]

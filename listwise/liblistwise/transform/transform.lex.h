@@ -1,10 +1,10 @@
-#ifndef generator_yyHEADER_H
-#define generator_yyHEADER_H 1
-#define generator_yyIN_HEADER 1
+#ifndef transform_yyHEADER_H
+#define transform_yyHEADER_H 1
+#define transform_yyIN_HEADER 1
 
-#line 6 "listwise/liblistwise/generator/generator.lex.h"
+#line 6 "listwise/liblistwise/transform/transform.lex.h"
 
-#line 8 "listwise/liblistwise/generator/generator.lex.h"
+#line 8 "listwise/liblistwise/transform/transform.lex.h"
 
 #define  YY_INT_ALIGNED short int
 
@@ -204,23 +204,23 @@ struct yy_buffer_state
 	};
 #endif /* !YY_STRUCT_YY_BUFFER_STATE */
 
-void generator_yyrestart (FILE *input_file ,yyscan_t yyscanner );
-void generator_yy_switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-YY_BUFFER_STATE generator_yy_create_buffer (FILE *file,int size ,yyscan_t yyscanner );
-void generator_yy_delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void generator_yy_flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void generator_yypush_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-void generator_yypop_buffer_state (yyscan_t yyscanner );
+void transform_yyrestart (FILE *input_file ,yyscan_t yyscanner );
+void transform_yy_switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+YY_BUFFER_STATE transform_yy_create_buffer (FILE *file,int size ,yyscan_t yyscanner );
+void transform_yy_delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void transform_yy_flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void transform_yypush_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+void transform_yypop_buffer_state (yyscan_t yyscanner );
 
-YY_BUFFER_STATE generator_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
-YY_BUFFER_STATE generator_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE generator_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
+YY_BUFFER_STATE transform_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
+YY_BUFFER_STATE transform_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
+YY_BUFFER_STATE transform_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
 
-void *generator_yyalloc (yy_size_t ,yyscan_t yyscanner );
-void *generator_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
-void generator_yyfree (void * ,yyscan_t yyscanner );
+void *transform_yyalloc (yy_size_t ,yyscan_t yyscanner );
+void *transform_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
+void transform_yyfree (void * ,yyscan_t yyscanner );
 
-#define generator_yywrap(n) 1
+#define transform_yywrap(n) 1
 #define YY_SKIP_YYWRAP
 
 #define yytext_ptr yytext_r
@@ -265,46 +265,46 @@ void generator_yyfree (void * ,yyscan_t yyscanner );
 
 #define YY_EXTRA_TYPE parse_param*
 
-int generator_yylex_init (yyscan_t* scanner);
+int transform_yylex_init (yyscan_t* scanner);
 
-int generator_yylex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
+int transform_yylex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int generator_yylex_destroy (yyscan_t yyscanner );
+int transform_yylex_destroy (yyscan_t yyscanner );
 
-int generator_yyget_debug (yyscan_t yyscanner );
+int transform_yyget_debug (yyscan_t yyscanner );
 
-void generator_yyset_debug (int debug_flag ,yyscan_t yyscanner );
+void transform_yyset_debug (int debug_flag ,yyscan_t yyscanner );
 
-YY_EXTRA_TYPE generator_yyget_extra (yyscan_t yyscanner );
+YY_EXTRA_TYPE transform_yyget_extra (yyscan_t yyscanner );
 
-void generator_yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
+void transform_yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
 
-FILE *generator_yyget_in (yyscan_t yyscanner );
+FILE *transform_yyget_in (yyscan_t yyscanner );
 
-void generator_yyset_in  (FILE * in_str ,yyscan_t yyscanner );
+void transform_yyset_in  (FILE * in_str ,yyscan_t yyscanner );
 
-FILE *generator_yyget_out (yyscan_t yyscanner );
+FILE *transform_yyget_out (yyscan_t yyscanner );
 
-void generator_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
+void transform_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
 
-int generator_yyget_leng (yyscan_t yyscanner );
+int transform_yyget_leng (yyscan_t yyscanner );
 
-char *generator_yyget_text (yyscan_t yyscanner );
+char *transform_yyget_text (yyscan_t yyscanner );
 
-int generator_yyget_lineno (yyscan_t yyscanner );
+int transform_yyget_lineno (yyscan_t yyscanner );
 
-void generator_yyset_lineno (int line_number ,yyscan_t yyscanner );
+void transform_yyset_lineno (int line_number ,yyscan_t yyscanner );
 
-YYSTYPE * generator_yyget_lval (yyscan_t yyscanner );
+YYSTYPE * transform_yyget_lval (yyscan_t yyscanner );
 
-void generator_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
+void transform_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
-       YYLTYPE *generator_yyget_lloc (yyscan_t yyscanner );
+       YYLTYPE *transform_yyget_lloc (yyscan_t yyscanner );
     
-        void generator_yyset_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
+        void transform_yyset_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
     
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -312,9 +312,9 @@ void generator_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int generator_yywrap (yyscan_t yyscanner );
+extern "C" int transform_yywrap (yyscan_t yyscanner );
 #else
-extern int generator_yywrap (yyscan_t yyscanner );
+extern int transform_yywrap (yyscan_t yyscanner );
 #endif
 #endif
 
@@ -351,10 +351,10 @@ static int yy_flex_strlen (yyconst char * ,yyscan_t yyscanner);
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
 
-extern int generator_yylex \
+extern int transform_yylex \
                (YYSTYPE * yylval_param,YYLTYPE * yylloc_param ,yyscan_t yyscanner);
 
-#define YY_DECL int generator_yylex \
+#define YY_DECL int transform_yylex \
                (YYSTYPE * yylval_param, YYLTYPE * yylloc_param , yyscan_t yyscanner)
 #endif /* !YY_DECL */
 
@@ -372,8 +372,8 @@ extern int generator_yylex \
 #undef YY_DECL
 #endif
 
-#line 376 "listwise/liblistwise/generator/generator.l"
+#line 376 "listwise/liblistwise/transform/transform.l"
 
-#line 378 "listwise/liblistwise/generator/generator.lex.h"
-#undef generator_yyIN_HEADER
-#endif /* generator_yyHEADER_H */
+#line 378 "listwise/liblistwise/transform/transform.lex.h"
+#undef transform_yyIN_HEADER
+#endif /* transform_yyHEADER_H */

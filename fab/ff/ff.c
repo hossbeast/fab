@@ -396,7 +396,7 @@ int ff_mkparser(ff_parser ** const p)
 {
 	fatal(xmalloc, p, sizeof(**p));
 	tfatalize(perrtab_SYS, ENOMEM, ff_yylex_init, &(*p)->p);
-	fatal(generator_mkparser, &(*p)->gp);
+	fatal(transform_mkparser, &(*p)->gp);
 
 	finally : coda;
 }
@@ -481,7 +481,7 @@ void ff_freeparser(ff_parser* const p)
 	if(p)
 	{
 		ff_yylex_destroy(p->p);
-		generator_parser_free(p->gp);
+		transform_parser_free(p->gp);
 	}
 
 	free(p);

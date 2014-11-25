@@ -32,7 +32,7 @@
 //
 // PARAMETERS
 //  vmap    - map for resolving var references
-//  gp      - generator parser
+//  gp      - transform parser
 //  stax    - listwise stax
 //  staxa   - listwise stax
 //  staxp   - listwise stax
@@ -42,7 +42,7 @@
 //
 int dsc_exec_entire(
 	  map * restrict vmap
-	, generator_parser * const restrict
+	, transform_parser * const restrict
 	, lwx *** restrict stax
 	, int * restrict staxa
 	, int staxp
@@ -61,7 +61,7 @@ int dsc_exec_entire(
 //  list    - graph nodes
 //  listl   - len of gn
 //  vmap    - map for resolving var references
-//  gp      - generator parser
+//  gp      - transform parser
 //  stax    - listwise stax
 //  staxa   - listwise stax
 //  staxp   - listwise stax
@@ -73,7 +73,7 @@ int dsc_exec_specific(
 	  gn *** const restrict list
 	, int listl
 	, map * restrict vmap
-	, generator_parser * const restrict
+	, transform_parser * const restrict
 	, lwx *** restrict stax
 	, int * restrict staxa
 	, int staxp

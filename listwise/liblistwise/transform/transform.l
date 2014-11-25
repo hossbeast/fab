@@ -19,10 +19,10 @@
 	#include <stdio.h>
 	#include <inttypes.h>
 
-	#include "generator/generator.def.h"
-	#include "generator/generator.tab.h"
-	#include "generator/generator.tokens.h"
-	#include "generator/genscan.h"
+	#include "transform/transform.def.h"
+	#include "transform/transform.tab.h"
+	#include "transform/transform.tokens.h"
+	#include "transform/genscan.h"
 
 	#include "macros.h"
 
@@ -123,7 +123,7 @@
 %option noinput nounput noyywrap noyy_top_state
 %option reentrant
 %option bison-bridge bison-locations
-%option prefix="generator_yy"
+%option prefix="transform_yy"
 %option extra-type="parse_param*"
 %option stack
 

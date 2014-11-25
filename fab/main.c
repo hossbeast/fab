@@ -227,7 +227,7 @@ int main(int argc, char** argv)
 				{
 					if(stmt->transform_node)
 					{
-						fatal(var_xfm_lw, rmap, stmt->vars[y]->name->text->s, stmt->transform_node->generator, stmt->transform_node->text->s, 1, stmt);
+						fatal(var_xfm_lw, rmap, stmt->vars[y]->name->text->s, stmt->transform_node->transform, stmt->transform_node->text->s, 1, stmt);
 					}
 					else if(stmt->transform_list_node)
 					{

@@ -30,7 +30,7 @@
 
 #include "listwise.h"
 #include "listwise/operator.h"
-#include "listwise/generator.h"
+#include "listwise/transform.h"
 #include "listwise/object.h"
 #include "listwise/logging.h"
 #include "listwise/describe.h"
@@ -128,9 +128,9 @@ coda;
 
 // setup liblistwise logging
 static struct listwise_logging * logging = (struct listwise_logging[]) {{
-		.generator_token	= (uint64_t[]) { L_LWPARSE }
-	, .generator_would	= listwise_would
-	, .generator_log		= listwise_log
+		.transform_token	= (uint64_t[]) { L_LWPARSE }
+	, .transform_would	= listwise_would
+	, .transform_log		= listwise_log
 	, .lstack_token			= (uint64_t[]) { L_LWEXEC }
 	, .lstack_would			= listwise_would
 	, .lstack_log				= listwise_log
@@ -162,9 +162,9 @@ int main(int g_argc, char** g_argv)
 
 	pstring * args_remnant = 0;	// concatenated unprocessed arguments
 	pstring * temp = 0;
-	pstring *	transform = 0;
+	pstring *	trans = 0;
 
-	generator* g = 0;						// generator
+	transform* g = 0;						// transform
 	lwx * lx = 0;								// list stack
 
 	// initialize logger - prepare g_argc/g_argv
@@ -257,10 +257,10 @@ int main(int g_argc, char** g_argv)
 		}
 		else if(g_args.inputs[x].kind == KIND_TRANSFORM_FILE)
 		{
-			if(transform && transform->l)
-				fatal(pscats, &transform, " ");
+			if(trans && trans->l)
+				fatal(pscats, &trans, " ");
 			
-			fatal(snarf, g_args.inputs[x].s, &transform);
+			fatal(snarf, g_args.inputs[x].s, &trans);
 		}
 		else if(g_args.inputs[x].kind == KIND_INPUT_FILE)
 		{
@@ -279,10 +279,10 @@ int main(int g_argc, char** g_argv)
 				{
 					if(s[0] != temp->s || (s[1] - s[0]) <= 2 || memcmp(s[0], "#!", 2))
 					{
-						if(transform && transform->l)
-							fatal(pscats, &transform, " ");
+						if(trans && trans->l)
+							fatal(pscats, &trans, " ");
 
-						fatal(pscatw, &transform, s[0], s[1] - s[0]);
+						fatal(pscatw, &trans, s[0], s[1] - s[0]);
 					}
 				}
 
@@ -307,25 +307,25 @@ int main(int g_argc, char** g_argv)
 	// append transform-string from argv
 	if(args_remnant && args_remnant->l)
 	{
-		if(transform && transform->l)
-			fatal(pscats, &transform, " ");
+		if(trans && trans->l)
+			fatal(pscats, &trans, " ");
 
-		fatal(pscatw, &transform, args_remnant->s, args_remnant->l);
+		fatal(pscatw, &trans, args_remnant->s, args_remnant->l);
 	}
 
-	if(transform)
+	if(trans)
 	{
 #if DEBUG || DEVEL
-		fatal(generator_parse2, 0, transform->s, transform->l, &g, 0);
+		fatal(transform_parse2, 0, trans->s, trans->l, &g, 0);
 #else
-		fatal(generator_parse, 0, transform->s, transform->l, &g);
+		fatal(transform_parse, 0, trans->s, trans->l, &g);
 #endif
 	}
 
 	// execute
 	if(g)
 	{
-		fatal(listwise_exec_generator2, g, 0, 0, 0, &lx, 0);
+		fatal(listwise_exec_transform2, g, 0, 0, 0, &lx, 0);
 	}
 
 	// OUTPUT
@@ -393,10 +393,10 @@ int main(int g_argc, char** g_argv)
 
 finally:
 	lwx_free(lx);
-	generator_free(g);
+	transform_free(g);
 	args_teardown();
 	psfree(temp);
-	psfree(transform);
+	psfree(trans);
 	psfree(args_remnant);
 
 	if(XAPI_UNWINDING)

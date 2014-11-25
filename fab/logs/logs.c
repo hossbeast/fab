@@ -55,9 +55,9 @@ struct g_logs_t logs[] = {
 #if DEVEL
 	, { .v = L_LWEXEC		, .s = "LWEXEC"		, .d = "liblistwise - execution" }
 	, { .v = L_LWOPINFO	, .s = "LWOPINFO"	, .d = "liblistwise - operator info messages" }
-	, { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "liblistwise - generator parsing" }
-	, { .v = L_LWTOKEN	, .s = "LWTOKEN"	, .d = "liblistwise - generator parsing - token stream" }
-	, { .v = L_LWSTATE	, .s = "LWSTATE"	, .d = "liblistwise - generator parsing - lexer states" }
+	, { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "liblistwise - transform parsing" }
+	, { .v = L_LWTOKEN	, .s = "LWTOKEN"	, .d = "liblistwise - transform parsing - token stream" }
+	, { .v = L_LWSTATE	, .s = "LWSTATE"	, .d = "liblistwise - transform parsing - lexer states" }
 #endif
 #if SANITY
 	, { .v = L_LWSANITY	, .s = "LWSANITY"	, .d = "liblistwise - sanity checks" }

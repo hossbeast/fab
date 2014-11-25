@@ -24,7 +24,7 @@
 #include "listwise.h"
 #include "listwise/operator.h"
 #include "listwise/operators.h"
-#include "listwise/generator.h"
+#include "listwise/transform.h"
 
 #include "xapi.h"
 #include "LISTWISE.errtab.h"

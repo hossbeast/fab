@@ -40,7 +40,7 @@
 int bake_bp(
 	  const bp * const bp
 	, map * const vmap
-	, generator_parser * const gp
+	, transform_parser * const gp
 	, lwx *** const stax
 	, int * const staxa
 	, int staxp

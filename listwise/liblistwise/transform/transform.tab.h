@@ -30,14 +30,14 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_GENERATOR_YY_LISTWISE_LIBLISTWISE_GENERATOR_GENERATOR_TAB_H_INCLUDED
-# define YY_GENERATOR_YY_LISTWISE_LIBLISTWISE_GENERATOR_GENERATOR_TAB_H_INCLUDED
+#ifndef YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
+# define YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
 #endif
 #if YYDEBUG
-extern int generator_yydebug;
+extern int transform_yydebug;
 #endif
 
 /* Tokens.  */
@@ -62,9 +62,9 @@ extern int generator_yydebug;
 typedef union YYSTYPE
 {
 /* Line 2053 of yacc.c  */
-#line 43 "listwise/liblistwise/generator/generator.y"
+#line 43 "listwise/liblistwise/transform/transform.y"
 
-	generator *		generator;
+	transform *		transform;
 	operation **  operations;
 	operation *		operation;
 	operator *		op;
@@ -76,7 +76,7 @@ typedef union YYSTYPE
 
 
 /* Line 2053 of yacc.c  */
-#line 80 "listwise/liblistwise/generator/generator.tab.h"
+#line 80 "listwise/liblistwise/transform/transform.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -99,16 +99,16 @@ typedef struct YYLTYPE
 
 #ifdef YYPARSE_PARAM
 #if defined __STDC__ || defined __cplusplus
-int generator_yyparse (void *YYPARSE_PARAM);
+int transform_yyparse (void *YYPARSE_PARAM);
 #else
-int generator_yyparse ();
+int transform_yyparse ();
 #endif
 #else /* ! YYPARSE_PARAM */
 #if defined __STDC__ || defined __cplusplus
-int generator_yyparse (void* scanner, parse_param* parm);
+int transform_yyparse (void* scanner, parse_param* parm);
 #else
-int generator_yyparse ();
+int transform_yyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_GENERATOR_YY_LISTWISE_LIBLISTWISE_GENERATOR_GENERATOR_TAB_H_INCLUDED  */
+#endif /* !YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED  */

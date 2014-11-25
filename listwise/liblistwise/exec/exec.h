@@ -18,15 +18,18 @@
 #ifndef _LISTWISE_EXEC_H
 #define _LISTWISE_EXEC_H
 
+struct lwx;
+struct transform;
+
 #define restrict __restrict
 
-/// listwise_exec_generator
+/// listwise_exec_transform
 //
 // SUMMARY
-//  execute the listwise generator against the lw execution context
+//  execute the listwise transform against the lw execution context
 //
 // PARAMETERS
-//  g        - generator
+//  g        - transform
 //  [init]   - initial items to write at top of list stack
 //  [initls] - lenghts of items in init, 0 for strlen
 //  initl    - number of items in init
@@ -37,21 +40,21 @@
 //  if *lx is null, a new lw context is created and returned
 //  otherwise, an existing lw context is reused
 //
-int listwise_exec_generator(
-	  generator * const restrict g
+int listwise_exec_transform(
+	  struct transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl
-	, lwx ** restrict lx
+	, struct lwx ** restrict lx
 )
 	__attribute__((nonnull(1, 5)));
 
-int listwise_exec_generator2(
-	  generator * const restrict g
+int listwise_exec_transform2(
+	  struct transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
 	, const int initl
-	, lwx ** restrict lx
+	, struct lwx ** restrict lx
 	, void * udata
 )
 	__attribute__((nonnull(1, 5)));

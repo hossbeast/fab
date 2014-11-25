@@ -90,15 +90,15 @@ int var_xfm_sub(map * restrict vmap, const char * restrict s, lwx * const restri
 // PARAMETERS
 //  vmap    - variable map
 //  s       - target variable
-//  gen     - generator
-//  tex     - generator string
+//  gen     - transform
+//  tex     - transform string
 //  inherit - whether to create an inherited xfm
 //  [src]   - FFN_VAR* node (for logging)
 //
 // RETURNS
 //  nonzero on success
 //
-int var_xfm_lw(map * restrict vmap, const char * restrict s, generator * const restrict xfm, char * const restrict tex, int inherit, const struct ff_node * const restrict src)
+int var_xfm_lw(map * restrict vmap, const char * restrict s, transform * const restrict xfm, char * const restrict tex, int inherit, const struct ff_node * const restrict src)
 	__attribute__((nonnull(1,2,3,4)));
 
 /// var_alias

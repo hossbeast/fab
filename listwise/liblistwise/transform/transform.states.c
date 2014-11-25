@@ -1,4 +1,4 @@
-char ** generator_statenames = (char *[]) {
+char ** transform_statenames = (char *[]) {
 [0] = "INITIAL",
 [1] = "ws",
 [2] = "multilinecomment",
@@ -26,7 +26,7 @@ char ** generator_statenames = (char *[]) {
 [24] = "angles_norefs",
 [25] = "angles_dorefs",
 };
-int * generator_statenumbers = (int []) {
+int * transform_statenumbers = (int []) {
 0,
 1,
 2,
@@ -54,7 +54,7 @@ int * generator_statenumbers = (int []) {
 24,
 25,
 };
-int generator_numstates = sizeof((int []) {
+int transform_numstates = sizeof((int []) {
 0,
 1,
 2,

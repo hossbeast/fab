@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _GENERATOR_DEF_H
-#define _GENERATOR_DEF_H
+#ifndef _LISTWISE_TRANSFORM_DEF_H
+#define _LISTWISE_TRANSFORM_DEF_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -30,7 +30,7 @@ typedef struct
 	/* yyu-defined xtra fields */
 	yyu_extra;
 
-	generator * 		g;						// parsing results
+	transform * 		g;						// parsing results
 
 	char						temp[256];		// temp space
 	char *					name;					// input name
@@ -44,10 +44,10 @@ typedef struct
 	int							argsa;
 } parse_param;
 
-// defined in generator.tab.o
-int generator_yyparse(void*, parse_param*);
+// defined in transform.tab.o
+int transform_yyparse(void*, parse_param*);
 
-/// generator_yyerror
+/// transform_yyerror
 //
 // SUMMARY
 //  1. flag the parse as failed by (setting pp->r = 0)
@@ -57,7 +57,7 @@ int generator_yyparse(void*, parse_param*);
 // DETAILS
 //  called from tab.o and lex.o
 //
-static void generator_yyerror(void* loc, void* scanner, parse_param* pp, char const* err)
+static void transform_yyerror(void* loc, void* scanner, parse_param* pp, char const* err)
 	__attribute__((weakref("yyu_grammar_error")));
 
 #endif
