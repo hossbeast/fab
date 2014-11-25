@@ -63,5 +63,12 @@ xunit_unit xunit = {
 				, .xsfm = "l/\"/g y f/-2/-1 y"
 				, .final = (char*[]) { "alphabeta", "betagamma", "deltaepsilon", 0 }
 		  }}
+
+		// other
+		, (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "foo" }
+				, .xsfm = "l/a/g wy f"
+				, .final = (char*[]) { "foo", 0 }
+		  }}
 	}
 };
