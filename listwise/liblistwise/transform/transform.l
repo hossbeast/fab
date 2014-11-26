@@ -147,6 +147,9 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 %%
 
+ /* single-line comments */
+<INITIAL,ws>[#][^\x00-\x08\x0A-\x1F\x7F-\xFF]*					{ LOCWRITE; }
+
  /* multiline comments are nestable */
 <INITIAL,ws,multilinecomment>[/][*]											{ LOCWRITE; PUSHSTATE(multilinecomment); }
 <multilinecomment>[*][/]																{ LOCWRITE; POPSTATE; }
@@ -161,7 +164,6 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
  ** processing a scanmode directive
  **
  */
- 
 
 <INITIAL,ws>[\n]																				{ return LEX(LF, 0); }
 <INITIAL,ws>[\t ]+																			{ return LEX(WS, 0); }
