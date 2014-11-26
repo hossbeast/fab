@@ -42,18 +42,20 @@ extern struct g_logs_t {
 	char *			d;	// description
 } * g_logs;
 
-/// 
+// 
 // application-provided logs
 //
 extern int g_logs_l;
 
-///
+//
 // logger-provided program args, populated during log_init
 //
-extern char ** g_argv;	// array of args as delimited by nulls
-extern int g_argc;			// count of g_argv
-extern char * g_argvs;	// single string, nulls replaced with spaces
-extern int g_argvsl;		// length of g_argvs
+extern char ** g_argv;				// array of args as delimited by nulls
+extern int g_argc;						// count of g_argv
+extern char * g_argvs;				// single string, nulls replaced with spaces
+extern int g_argvsl;					// length of g_argvs
+extern char * g_binary;				// executable. pointer into argv
+extern char * g_interpreting;	// interpreter script, if executing as an interpreter. pointer into g_argv
 
 /// (XAPI) log_init
 //

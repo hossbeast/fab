@@ -22,6 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/auxv.h>
 
 #include "xlinux.h"
 #include "xapi.h"
@@ -60,6 +61,8 @@ char ** g_argv;
 int g_argc;
 char * g_argvs;
 int g_argvsl;
+char * g_binary;
+char * g_interpreting;
 
 //
 // [[ static ]]
@@ -506,20 +509,89 @@ int log_init()
 	fatal(xopen, "/proc/self/cmdline", O_RDONLY, &fd);
 
 	// read into g_argvs - single string containing entire cmdline
+	int binaryx = -1;
+	int interpx = -1;
+	char * execfn = 0;
+	int i = 0;
+	int nulls = 0;
 	do
 	{
-		int newa = argsa ?: 10;
+		size_t newa = argsa ?: 10;
 		newa += newa * 2 + newa / 2;
 		fatal(xrealloc, &g_argvs, sizeof(*g_argvs), newa, argsa);
 		argsa = newa;
-	} while((g_argvsl += (read(fd, &g_argvs[g_argvsl], argsa - g_argvsl))) == argsa);
+		ssize_t r = read(fd, &g_argvs[g_argvsl], argsa - g_argvsl);
+
+#if __linux__
+		/*
+		* on linux, an interpreter script is executed with the optional-arg passed as a
+		* single string. break it up on spaces, so argument parsing will see separate args
+		*  see : http://man7.org/linux/man-pages/man2/execve.2.html
+		*
+		* getauxval is probably not available on all unices
+		*/
+		if(nulls < 3)
+		{
+			for(; r > 0; r--)
+			{
+				if(g_argvs[g_argvsl] == 0)
+				{
+					// the binary is the first argument
+					if(binaryx == -1)
+					{
+						binaryx = i;
+						execfn = (char*)(intptr_t)getauxval(AT_EXECFN);
+					}
+
+					// when interpreting, AT_EXECFN is the interpreter script
+					else if(interpx == -1 && execfn && strcmp(&g_argvs[i], execfn) == 0)
+					{
+						interpx = i;
+					}
+
+					i = g_argvsl + 1;
+					nulls++;
+				}
+
+				// process the optional-arg in a linux-specific way
+				else if(g_argvs[g_argvsl] == 0x20 && binaryx != -1 && strcmp(&g_argvs[binaryx], execfn))
+				{
+					g_argvs[g_argvsl] = 0;
+				}
+
+				g_argvsl++;
+			}
+		}
+		else
+		{
+			g_argvsl += r;
+		}
+#else
+		g_argvsl += r;
+#endif
+	} while(g_argvsl == argsa);
 
 	g_argvsl--;
 
+int x;
+#if 0
+for(x = 0; x < g_argvsl; x++)
+{
+	printf("[%02d] 0x%02hhx", x, g_argvs[x]);
+	if(g_argvs[x] > 0x20 && g_argvs[x] < 0x7f)
+		printf(" %c", g_argvs[x]);
+	printf("\n");
+}
+#endif
+
+#if 0
+printf("argvs : %s\n", g_argvs);
+printf("inter : %d\n", interpreter);
+#endif
+
 	// 1. replace nulls with spaces in g_argvs
 	// 2. construct g_argv, array of arguments
-	int x;
-	int i = 0;
+	i = 0;
 	for(x = 0; x <= g_argvsl; x++)
 	{
 		if(g_argvs[x] == 0)
@@ -529,7 +601,7 @@ int log_init()
 			{
 				if(g_argc == argva)
 				{
-					int newa = argva ?: 10;
+					size_t newa = argva ?: 10;
 					newa += newa * 2 + newa / 2;
 					fatal(xrealloc, &g_argv, sizeof(*g_argv), newa, argva);
 					argva = newa;
@@ -537,6 +609,12 @@ int log_init()
 
 				fatal(xmalloc, &g_argv[g_argc], len + 1);
 				memcpy(g_argv[g_argc], &g_argvs[i], len);
+
+				if(binaryx == i)
+					g_binary = g_argv[g_argc];
+				else if(interpx == i)
+					g_interpreting = g_argv[g_argc];
+
 				g_argc++;
 				i = x + 1;
 			}
@@ -577,6 +655,18 @@ int log_init()
 			g_argc--;
 		}
 	}
+
+#if 0
+for(x = 0; x < g_argc; x++)
+{
+	printf("[%2d] %s", x, g_argv[x]);
+	if(g_binary == g_argv[x])
+		printf(" * binary");
+	else if(g_interpreting == g_argv[x])
+		printf(" * interpreting");
+	printf("\n");
+}
+#endif
 
 finally:
 	fatal(ixclose, &fd);
