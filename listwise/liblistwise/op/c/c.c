@@ -76,11 +76,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	else if(N < 0)
 		N = ls->l + N;
 
-	if(N < 0 || N >= ls->l)
-	{
-		lw_log_opinfo("c:N=%d is out-of-bounds %d", N, ls->l);
-	}
-	else
+	if(!(N < 0 || N >= ls->l))
 	{
 		int x;
 		for(x = 0; x < N; x++)

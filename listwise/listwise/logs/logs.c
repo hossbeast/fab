@@ -20,18 +20,18 @@
 // logtag definitions
 struct g_logs_t logs[] = {
 #if DEVEL
-	  { .v = L_LOGGER		, .s = "LOGGER"		, .d = "logger - operation" }
+	  { .v = L_LOGGER		, .s = "LOGGER"		, .d = "logger operation" }
 	,
 #endif
-	  { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "display the parsed transform" }
-	, { .v = L_LWEXEC		, .s = "LWEXEC"		, .d = "step-by-step listwise execution" }
-	, { .v = L_LWOPINFO	, .s = "LWOPINFO"	, .d = "operator informational messages" }
+	  { .v = L_PARSE		, .s = "PARSE"		, .d = "display the parsed transform" }
+	, { .v = L_EXEC			, .s = "EXEC"			, .d = "step-by-step listwise execution" }
+	, { .v = L_OPINFO		, .s = "OPINFO"		, .d = "operator informational messages" }
 #if DEBUG || DEVEL
-	, { .v = L_LWTOKEN	, .s = "LWTOKEN"	, .d = "transform parsing - token stream" }
-	, { .v = L_LWSTATE	, .s = "LWSTATE"	, .d = "transform parsing - lexer states" }
+	, { .v = L_TOKENS		, .s = "TOKENS"		, .d = "transform parsing - token stream" }
+	, { .v = L_STATES		, .s = "STATES"		, .d = "transform parsing - lexer states" }
 #endif
 #if SANITY
-	, { .v = L_LWSANITY	, .s = "LWSANITY"	, .d = "liblistwise sanity checks" }
+	, { .v = L_SANITY		, .s = "SANITY"		, .d = "liblistwise sanity checks" }
 #endif
 };
 

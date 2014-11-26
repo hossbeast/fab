@@ -74,8 +74,9 @@ void listwise_log(void * token, void * udata, const char * func, const char * fi
 // PARAMETERS
 //  path - path to file to load
 //  mem  - append contents here
+//  bang - true if this file is an interpreter script
 //
-static int snarf(char * path, pstring ** mem)
+static int snarf(char * path, int bang, pstring ** mem)
 {
 	int fd = -1;
 	struct stat st;
@@ -95,7 +96,27 @@ static int snarf(char * path, pstring ** mem)
 			fatal(uxread, fd, blk, sizeof(blk) / sizeof(*blk), &r);
 
 			if(r > 0)
+			{
+				// discard the first line of an interpreter script
+				if(bang && r > 2 && memcmp(blk, "#!", 2) == 0)
+				{
+					int x;
+					for(x = 2; x < r; x++)
+					{
+						if(blk[x] == '\n')
+							break;
+					}
+
+					if(x < r)
+					{
+						fatal(pscatw, mem, &blk[x + 1], r - x - 1);
+						bang = 0;
+						continue;
+					}
+				}
+
 				fatal(pscatw, mem, blk, r);
+			}
 		}
 	}
 	else if(S_ISCHR(st.st_mode))
@@ -128,39 +149,38 @@ coda;
 
 // setup liblistwise logging
 static struct listwise_logging * logging = (struct listwise_logging[]) {{
-		.transform_token	= (uint64_t[]) { L_LWPARSE }
+		.transform_token	= (uint64_t[]) { L_PARSE }
 	, .transform_would	= listwise_would
 	, .transform_log		= listwise_log
-	, .lstack_token			= (uint64_t[]) { L_LWEXEC }
+	, .lstack_token			= (uint64_t[]) { L_EXEC }
 	, .lstack_would			= listwise_would
 	, .lstack_log				= listwise_log
-	, .exec_token				= (uint64_t[]) { L_LWEXEC }
+	, .exec_token				= (uint64_t[]) { L_EXEC }
 	, .exec_would				= listwise_would
 	, .exec_log					= listwise_log
-	, .opinfo_token			= (uint64_t[]) { L_LWOPINFO }
+	, .opinfo_token			= (uint64_t[]) { L_OPINFO }
 	, .opinfo_would			= listwise_would
 	, .opinfo_log				= listwise_log
 #if DEBUG || DEVEL
-	, .tokens_token			= (uint64_t[]) { L_LWTOKEN }
+	, .tokens_token			= (uint64_t[]) { L_TOKENS }
 	, .tokens_would			= listwise_would
 	, .tokens_log				= listwise_log
-	, .states_token			= (uint64_t[]) { L_LWSTATE }
+	, .states_token			= (uint64_t[]) { L_STATES }
 	, .states_would			= listwise_would
 	, .states_log				= listwise_log
 #endif
 #if SANITY
-	, .sanity_token			= (uint64_t[]) { L_LWSANITY }
+	, .sanity_token			= (uint64_t[]) { L_SANITY }
 	, .sanity_would			= listwise_would
 	, .sanity_log				= listwise_log
 #endif
 }};
 
-int main(int g_argc, char** g_argv)
+int main(int argc, char ** argv)
 {
 	char space[4096];
 	size_t tracesz = 0;
 
-	pstring * args_remnant = 0;	// concatenated unprocessed arguments
 	pstring * temp = 0;
 	pstring *	trans = 0;
 
@@ -171,19 +191,19 @@ int main(int g_argc, char** g_argv)
 	fatal(log_init);
 
 	// parse cmdline arguments
-	fatal(args_parse, &args_remnant);
+	fatal(args_parse);
 
 	// configure logger
 #if DEBUG || DEVEL
 	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
 	{
 		fatal(log_config_and_describe
-			, L_LWTOKEN | L_LWSTATE | L_LWOPINFO		// prefix
+			, L_TOKENS | L_STATES | L_OPINFO		// prefix
 #if DEVEL
 			| L_LOGGER
 #endif
-			, L_LWOPINFO | L_LWTOKEN | L_LWSTATE		// trace
-			, 0																			// describe bits
+			, L_OPINFO | L_TOKENS | L_STATES		// trace
+			, 0																// describe bits
 #if DEVEL
 			| L_LOGGER
 #endif
@@ -192,7 +212,7 @@ int main(int g_argc, char** g_argv)
 	else
 	{
 		fatal(log_config_and_describe
-			, L_LWTOKEN | L_LWSTATE | L_LWOPINFO
+			, L_TOKENS | L_STATES | L_OPINFO
 #if DEVEL
 			| L_LOGGER
 #endif
@@ -204,7 +224,7 @@ int main(int g_argc, char** g_argv)
 		);
 	}
 #else
-	fatal(log_config, L_LWOPINFO);		// prefix
+	fatal(log_config, L_OPINFO);		// prefix
 #endif
 
 	// setup liblistwise logging
@@ -213,11 +233,11 @@ int main(int g_argc, char** g_argv)
 	// allocate lstack
 	fatal(lwx_alloc, &lx);
 
-	// read transform-string from stdin
+	// read transform-expr from stdin
 	if(g_args.stdin_init_list_items)
 	{
 		fatal(psclear, &temp);
-		fatal(snarf, "-", &temp);
+		fatal(snarf, "-", 0, &temp);
 
 		char delim = g_args.stdin_linewise ? '\n' : 0;
 
@@ -231,18 +251,18 @@ int main(int g_argc, char** g_argv)
 		}
 	}
 
-	// read transform-string and init-items
+	// read transform-expr and init-items
 	int x;
 	for(x = 0; x < g_args.inputsl; x++)
 	{
-		if(g_args.inputs[x].kind == KIND_INIT_LIST_ITEM)
+		if(g_args.inputs[x].type == INPUT_TYPE_INIT_LIST_ITEM)
 		{
 			fatal(lstack_adds, lx, g_args.inputs[x].s);
 		}
-		else if(g_args.inputs[x].kind == KIND_INIT_LIST_FILE)
+		else if(g_args.inputs[x].type == INPUT_TYPE_INIT_LIST_FILE)
 		{
 			fatal(psclear, &temp);
-			fatal(snarf, g_args.inputs[x].s, &temp);
+			fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, &temp);
 
 			char delim = g_args.inputs[x].linewise ? '\n' : 0;
 
@@ -255,19 +275,26 @@ int main(int g_argc, char** g_argv)
 				s[0] = s[1] + 1;
 			}
 		}
-		else if(g_args.inputs[x].kind == KIND_TRANSFORM_FILE)
+		else if(g_args.inputs[x].type == INPUT_TYPE_TRANSFORM_ITEM)
+		{
+			if(trans && trans->l)
+				fatal(pscats, &trans, " ");
+
+			fatal(pscats, &trans, g_args.inputs[x].s);
+		}
+		else if(g_args.inputs[x].type == INPUT_TYPE_TRANSFORM_FILE)
 		{
 			if(trans && trans->l)
 				fatal(pscats, &trans, " ");
 			
-			fatal(snarf, g_args.inputs[x].s, &trans);
+			fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, &trans);
 		}
-		else if(g_args.inputs[x].kind == KIND_INPUT_FILE)
+		else if(g_args.inputs[x].type == INPUT_TYPE_HYBRID_FILE)
 		{
 			fatal(psclear, &temp);
-			fatal(snarf, g_args.inputs[x].s, &temp);
+			fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, &temp);
 
-			// read transform-string until 3 consecutive newlines
+			// read transform-expr until 3 consecutive newlines
 			char * s[2] = { temp->s, 0 };
 			while((s[1] = memchr(s[0], '\n', temp->l - (s[0] - ((char*)temp->s)))))
 			{
@@ -304,15 +331,6 @@ int main(int g_argc, char** g_argv)
 		}
 	}
 
-	// append transform-string from argv
-	if(args_remnant && args_remnant->l)
-	{
-		if(trans && trans->l)
-			fatal(pscats, &trans, " ");
-
-		fatal(pscatw, &trans, args_remnant->s, args_remnant->l);
-	}
-
 	if(trans)
 	{
 #if DEBUG || DEVEL
@@ -335,15 +353,14 @@ int main(int g_argc, char** g_argv)
 	{
 		if(y)
 		{
-			if(g_args.out_null)
+			if(g_args.mode_separator == MODE_OUTPUT_SEPARATOR_NULL)
 				printf("%c", 0);
-			else
+			else // MODE_OUTPUT_SEPARATOR_NEWLINE
 				printf("\n");
 
 			i = 0;
 		}
 
-		int x;
 		LSTACK_ITERATE_LIST(lx, y, x, go)
 		{
 			if(go)
@@ -352,13 +369,13 @@ int main(int g_argc, char** g_argv)
 				space[0] = 0;
 
 				// numbering
-				if(g_args.numbering)
+				if(g_args.mode_numbering != MODE_OUTPUT_NUMBERING_NONE)
 				{
 					int j = i++;
-					if(g_args.numbering == 2)
+					if(g_args.mode_numbering == MODE_OUTPUT_NUMBERING_INDEX)
 						j = x;
 
-					if(g_args.out_stack)
+					if(g_args.mode_output == MODE_OUTPUT_STACK)
 						spacel = snprintf(space, sizeof(space), "%3d %3d ", y, j);
 					else
 						spacel = snprintf(space, sizeof(space), "%3d ", j);
@@ -371,9 +388,9 @@ int main(int g_argc, char** g_argv)
 
 				// delimiter
 				char delim[1];
-				if(g_args.out_null)
-					delim[0] = '\0';
-				else
+				if(g_args.mode_separator == MODE_OUTPUT_SEPARATOR_NULL)
+					delim[0] = 0;
+				else // MODE_OUTPUT_SEPARATOR_NEWLINE
 					delim[0] = '\n';
 
 				int __attribute__((unused)) rr = writev(1
@@ -387,7 +404,7 @@ int main(int g_argc, char** g_argv)
 		}
 		LSTACK_ITEREND
 
-		if(!g_args.out_stack)
+		if(g_args.mode_output != MODE_OUTPUT_STACK)
 			break;
 	}
 
@@ -397,7 +414,6 @@ finally:
 	args_teardown();
 	psfree(temp);
 	psfree(trans);
-	psfree(args_remnant);
 
 	if(XAPI_UNWINDING)
 	{

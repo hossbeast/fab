@@ -97,7 +97,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		fatal(lstack_getstring, lx, 0, x, &ss, &ssl);
 
 		// resolve the stat format
-		size_t sz;
+		size_t sz = 0;
 		fatal(fs_statfmt, ss, ssl, fmt, flags, space, sizeof(space), &sz, udata);
 
 		if(sz)

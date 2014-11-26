@@ -99,7 +99,7 @@ int API fs_statfmt(
 
 	if(r)
 	{
-		lw_log_opinfo("%s(%.*s)=[%d][%s]\n", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
+		lw_log_opinfo("%s(%.*s)=[%d][%s]", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
 	}
 	else
 	{

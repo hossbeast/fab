@@ -1,0 +1,42 @@
+#!/usr/local/bin/listwise +OPINFO +l +1 -T
+
+# Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+# 
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+#
+# demo listwise-script, an alternative to 'ls'
+#
+#  +OPINFO : enable informational messages from operators (ex. no such file or directory)
+#  +l : subsequent non-options are init-list items (the default is transform-expr)
+#  +1 : subsequent non-options have rank 1 (they go after rank 0, the default)
+#  -T : read this file as a transform-expr (must be the last argument)
+#
+
+# select directories
+-d
+
+# push new list with their combined listing
+ls
+
+# coalesce with the first list
+c
+
+# replace entries with listing of their filesystem properties using the default format and canonicalized path
+stat/F
+
+# select entries for which stat succeeded
+y
