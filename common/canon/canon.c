@@ -105,7 +105,7 @@ int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 			while(e[0] && e[0] != '/')
 				e++;
 
-			(*i)[at].s = strdup(&in[x]);
+			fatal(ixstrdup, &(*i)[at].s, &in[x]);
 			(*i)[at].l = e - &in[x];
 			x += (*i)[at].l;
 		}
@@ -340,8 +340,8 @@ for(ix = 0; ix < il; ix++)
 
 finally:
 	for(x = 0; x < ia; x++)
-		free(i[x].s);
-	free(i);
+		xfree(i[x].s);
+	xfree(i);
 coda;
 }
 

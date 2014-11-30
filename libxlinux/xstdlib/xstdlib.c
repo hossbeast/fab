@@ -24,8 +24,14 @@
 
 int API xmalloc(void* target, size_t size)
 {
-	if(((*(void**)target) = calloc(size, 1)) == 0)
+	if(policy)
+	{
+		fatal(policy->malloc, policy, target, size);
+	}
+	else if(((*(void**)target) = calloc(size, 1)) == 0)
+	{
 		fail(errno);
+	}
 	
 finally :
 	XAPI_INFOF("size", "%zu", size);
@@ -34,19 +40,26 @@ coda;
 
 int API xrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
-	void** t = ((void**)target);
-	*t = realloc(*t, es * ec);
-
-	if(es * ec)
+	if(policy)
 	{
-		if(*t)
+		fatal(policy->realloc, policy, target, es, ec, oec);
+	}
+	else
+	{
+		void** t = ((void**)target);
+		*t = realloc(*t, es * ec);
+
+		if(es * ec)
 		{
-			if(((ssize_t)ec - (ssize_t)oec) > 0)
-				memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
-		}
-		else
-		{
-			fail(errno);
+			if(*t)
+			{
+				if(((ssize_t)ec - (ssize_t)oec) > 0)
+					memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
+			}
+			else
+			{
+				fail(errno);
+			}
 		}
 	}
 
@@ -57,10 +70,31 @@ coda;
 
 void API ifree(void* target)
 {
-	void** t = (void**)target;
+	if(policy)
+	{
+		if(policy->ifree)
+			policy->ifree(policy, target);
+	}
+	else
+	{
+		void** t = (void**)target;
 
-	free(*t);
-	*t = 0;
+		free(*t);
+		*t = 0;
+	}
+}
+
+void API xfree(void* target)
+{
+	if(policy)
+	{
+		if(policy->free)
+			policy->free(policy, target);
+	}
+	else
+	{
+		free(target);
+	}
 }
 
 int API xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const void *, const void *, void *, int * r), void * arg)

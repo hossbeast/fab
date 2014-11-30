@@ -60,7 +60,7 @@
 
 /* "%code top" blocks.  */
 /* Line 349 of yacc.c  */
-#line 18 "listwise/liblistwise/transform/transform.y"
+#line 18 "transform/transform.y"
 
 	#include <stdio.h>
 	#include <stdlib.h>
@@ -76,7 +76,7 @@
 
 
 /* Line 349 of yacc.c  */
-#line 80 "listwise/liblistwise/transform/transform.tab.c"
+#line 80 "transform/transform.tab.c"
 
 /* Substitute the variable and function names.  */
 #define yyparse         transform_yyparse
@@ -91,7 +91,7 @@
 /* Copy the first part of user declarations.  */
 
 /* Line 371 of yacc.c  */
-#line 95 "listwise/liblistwise/transform/transform.tab.c"
+#line 95 "transform/transform.tab.c"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -111,8 +111,8 @@
 
 /* In a future release of Bison, this section will be replaced
    by #include "transform.tab.h".  */
-#ifndef YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
-# define YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
+#ifndef YY_TRANSFORM_YY_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
+# define YY_TRANSFORM_YY_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -143,7 +143,7 @@ extern int transform_yydebug;
 typedef union YYSTYPE
 {
 /* Line 387 of yacc.c  */
-#line 43 "listwise/liblistwise/transform/transform.y"
+#line 43 "transform/transform.y"
 
 	transform *		transform;
 	operation **  operations;
@@ -157,7 +157,7 @@ typedef union YYSTYPE
 
 
 /* Line 387 of yacc.c  */
-#line 161 "listwise/liblistwise/transform/transform.tab.c"
+#line 161 "transform/transform.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -192,12 +192,12 @@ int transform_yyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED  */
+#endif /* !YY_TRANSFORM_YY_TRANSFORM_TRANSFORM_TAB_H_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 201 "listwise/liblistwise/transform/transform.tab.c"
+#line 201 "transform/transform.tab.c"
 
 #ifdef short
 # undef short
@@ -1397,10 +1397,10 @@ YYLTYPE yylloc = yyloc_default;
 
 /* User initialization code.  */
 /* Line 1570 of yacc.c  */
-#line 41 "listwise/liblistwise/transform/transform.y"
+#line 41 "transform/transform.y"
 { memset(&yylloc, 0, sizeof(yylloc)); }
 /* Line 1570 of yacc.c  */
-#line 1404 "listwise/liblistwise/transform/transform.tab.c"
+#line 1404 "transform/transform.tab.c"
   yylsp[0] = yylloc;
   goto yysetstate;
 
@@ -1588,7 +1588,7 @@ yyreduce:
     {
         case 2:
 /* Line 1787 of yacc.c  */
-#line 84 "listwise/liblistwise/transform/transform.y"
+#line 84 "transform/transform.y"
     {
 		parm->g = (yyvsp[(2) - (2)].transform);
 	}
@@ -1596,7 +1596,7 @@ yyreduce:
 
   case 3:
 /* Line 1787 of yacc.c  */
-#line 88 "listwise/liblistwise/transform/transform.y"
+#line 88 "transform/transform.y"
     {
 		parm->g = (yyvsp[(1) - (1)].transform);
 	}
@@ -1604,7 +1604,7 @@ yyreduce:
 
   case 4:
 /* Line 1787 of yacc.c  */
-#line 95 "listwise/liblistwise/transform/transform.y"
+#line 95 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.transform), sizeof(*(yyval.transform)));
 		(yyval.transform)->args = (yyvsp[(1) - (4)].args);
@@ -1624,7 +1624,7 @@ yyreduce:
 
   case 5:
 /* Line 1787 of yacc.c  */
-#line 111 "listwise/liblistwise/transform/transform.y"
+#line 111 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.transform), sizeof(*(yyval.transform)));
 		(yyval.transform)->args = (yyvsp[(1) - (2)].args);
@@ -1634,7 +1634,7 @@ yyreduce:
 
   case 6:
 /* Line 1787 of yacc.c  */
-#line 117 "listwise/liblistwise/transform/transform.y"
+#line 117 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.transform), sizeof(*(yyval.transform)));
 		(yyval.transform)->ops = (yyvsp[(1) - (2)].operations);
@@ -1644,7 +1644,7 @@ yyreduce:
 
   case 7:
 /* Line 1787 of yacc.c  */
-#line 126 "listwise/liblistwise/transform/transform.y"
+#line 126 "transform/transform.y"
     {
 		(yyval.operations) = (yyvsp[(1) - (3)].operations);
 		if(parm->opsa == parm->opsl)
@@ -1661,7 +1661,7 @@ yyreduce:
 
   case 8:
 /* Line 1787 of yacc.c  */
-#line 139 "listwise/liblistwise/transform/transform.y"
+#line 139 "transform/transform.y"
     {
 		(yyval.operations) = (yyvsp[(1) - (2)].operations);
 		if(parm->opsa == parm->opsl)
@@ -1678,7 +1678,7 @@ yyreduce:
 
   case 9:
 /* Line 1787 of yacc.c  */
-#line 152 "listwise/liblistwise/transform/transform.y"
+#line 152 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.operations), sizeof(*(yyval.operations)) * 2);
 		parm->opsa = 1;
@@ -1689,7 +1689,7 @@ yyreduce:
 
   case 16:
 /* Line 1787 of yacc.c  */
-#line 174 "listwise/liblistwise/transform/transform.y"
+#line 174 "transform/transform.y"
     {
 		(yyval.operation) = (yyvsp[(1) - (4)].operation);
 		(yyval.operation)->args = (yyvsp[(3) - (4)].args);
@@ -1699,7 +1699,7 @@ yyreduce:
 
   case 17:
 /* Line 1787 of yacc.c  */
-#line 180 "listwise/liblistwise/transform/transform.y"
+#line 180 "transform/transform.y"
     {
 		(yyval.operation) = (yyvsp[(1) - (3)].operation);
 		(yyval.operation)->args = (yyvsp[(3) - (3)].args);
@@ -1709,7 +1709,7 @@ yyreduce:
 
   case 18:
 /* Line 1787 of yacc.c  */
-#line 186 "listwise/liblistwise/transform/transform.y"
+#line 186 "transform/transform.y"
     {
 		(yyval.operation) = (yyvsp[(1) - (2)].operation);
 		(yyval.operation)->args = (yyvsp[(2) - (2)].args);
@@ -1719,7 +1719,7 @@ yyreduce:
 
   case 19:
 /* Line 1787 of yacc.c  */
-#line 192 "listwise/liblistwise/transform/transform.y"
+#line 192 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.operation), sizeof(*(yyval.operation)));
 		(yyval.operation)->op = (yyvsp[(1) - (1)].op);
@@ -1728,7 +1728,7 @@ yyreduce:
 
   case 22:
 /* Line 1787 of yacc.c  */
-#line 205 "listwise/liblistwise/transform/transform.y"
+#line 205 "transform/transform.y"
     {
 		(yyval.args) = (yyvsp[(1) - (3)].args);
 		if(parm->argsa == parm->argsl)
@@ -1744,7 +1744,7 @@ yyreduce:
 
   case 23:
 /* Line 1787 of yacc.c  */
-#line 217 "listwise/liblistwise/transform/transform.y"
+#line 217 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.args), sizeof(*(yyval.args)) * 2);
 		parm->argsl = 0;
@@ -1755,7 +1755,7 @@ yyreduce:
 
   case 29:
 /* Line 1787 of yacc.c  */
-#line 235 "listwise/liblistwise/transform/transform.y"
+#line 235 "transform/transform.y"
     {
 		(yyval.args) = (yyvsp[(1) - (4)].args);
 		if(parm->argsa == parm->argsl)
@@ -1771,7 +1771,7 @@ yyreduce:
 
   case 30:
 /* Line 1787 of yacc.c  */
-#line 247 "listwise/liblistwise/transform/transform.y"
+#line 247 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.args), sizeof(*(yyval.args)) * 2);
 		parm->argsl = 0;
@@ -1782,7 +1782,7 @@ yyreduce:
 
   case 39:
 /* Line 1787 of yacc.c  */
-#line 271 "listwise/liblistwise/transform/transform.y"
+#line 271 "transform/transform.y"
     {
 		(yyval.arg) = (yyvsp[(1) - (2)].arg);
 
@@ -1824,7 +1824,7 @@ yyreduce:
 
   case 40:
 /* Line 1787 of yacc.c  */
-#line 309 "listwise/liblistwise/transform/transform.y"
+#line 309 "transform/transform.y"
     {
 		(yyval.arg) = (yyvsp[(1) - (2)].arg);
 
@@ -1850,7 +1850,7 @@ yyreduce:
 
   case 41:
 /* Line 1787 of yacc.c  */
-#line 331 "listwise/liblistwise/transform/transform.y"
+#line 331 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
@@ -1865,7 +1865,7 @@ yyreduce:
 
   case 43:
 /* Line 1787 of yacc.c  */
-#line 346 "listwise/liblistwise/transform/transform.y"
+#line 346 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
@@ -1877,7 +1877,7 @@ yyreduce:
 
   case 44:
 /* Line 1787 of yacc.c  */
-#line 354 "listwise/liblistwise/transform/transform.y"
+#line 354 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
@@ -1889,7 +1889,7 @@ yyreduce:
 
   case 45:
 /* Line 1787 of yacc.c  */
-#line 362 "listwise/liblistwise/transform/transform.y"
+#line 362 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
@@ -1901,7 +1901,7 @@ yyreduce:
 
   case 46:
 /* Line 1787 of yacc.c  */
-#line 370 "listwise/liblistwise/transform/transform.y"
+#line 370 "transform/transform.y"
     {
 		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
@@ -1924,7 +1924,7 @@ yyreduce:
 
 
 /* Line 1787 of yacc.c  */
-#line 1928 "listwise/liblistwise/transform/transform.tab.c"
+#line 1928 "transform/transform.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires

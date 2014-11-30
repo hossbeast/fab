@@ -24,23 +24,27 @@
 #include <getopt.h>
 #include <stdarg.h>
 
+#include "xlinux.h"
+
 #include "listwise.h"
 #include "listwise/operator.h"
 #include "listwise/operators.h"
 #include "listwise/transform.h"
 
 #include "args.h"
+#include "FAB.errtab.h"
 
 #include "logs.h"
-#include "global.h"
-#include "xlinux.h"
-#include "unitstring.h"
-#include "canon.h"
-#include "macros.h"
 #include "selector.h"
 #include "params.h"
 
-struct g_args_t g_args;
+#include "unitstring.h"
+#include "canon.h"
+#include "macros.h"
+
+#include "memblk.h"
+
+struct g_args_t * g_args;
 
 //
 // [[ static ]]
@@ -87,18 +91,18 @@ static int selector_parse(char * const s, uint32_t * const lists, uint8_t * cons
 		}
 		else
 		{
-			if(g_args.selectorsl == g_args.selectorsa)
+			if(g_args->selectorsl == g_args->selectorsa)
 			{
-				int newa = g_args.selectorsa ?: 3;
+				int newa = g_args->selectorsa ?: 3;
 				newa = newa * 2 + newa / 2;
-				fatal(xrealloc, &g_args.selectors, sizeof(g_args.selectors[0]), newa, g_args.selectorsa);
-				g_args.selectorsa = newa;
+				fatal(xrealloc, &g_args->selectors, sizeof(g_args->selectors[0]), newa, g_args->selectorsa);
+				g_args->selectorsa = newa;
 			}
 
 			if((*lists) & SELECTOR_QUERY)
-				g_args.selectors_arequery = 1;
+				g_args->selectors_arequery = 1;
 
-			g_args.selectors[g_args.selectorsl++] = (selector){
+			g_args->selectors[g_args->selectorsl++] = (selector){
 					.mode = (*mode)
 				, .lists = (*lists)
 				, .base = (*base)
@@ -290,13 +294,15 @@ printf(
 // [[ public ]]
 //
 
-int args_parse()
+int args_parse(memblk * mb)
 {
 	int help = 0;
 	int version = 0;
 	int logcats = 0;
 	int operators = 0;
 	uint64_t opmask = 0;
+
+	fatal(xmalloc, &g_args, sizeof(*g_args));
 
 	struct option longopts[] = {
 /* informational */
@@ -324,26 +330,26 @@ int args_parse()
 
 
 /* program longopts */
-				, { "cycles-warn"									, no_argument	, &g_args.mode_cycles		, MODE_CYCLES_WARN }
-				, { "cycles-fail"									, no_argument	, &g_args.mode_cycles		, MODE_CYCLES_FAIL }
-				, { "cycles-deal"									, no_argument	, &g_args.mode_cycles		, MODE_CYCLES_DEAL }
-				, { "paths-relative"							, no_argument	, &g_args.mode_paths		, MODE_RELATIVE_FABFILE_DIR }
-				, { "paths-absolute"							, no_argument	, &g_args.mode_paths		, MODE_ABSOLUTE }
-				, { "gnid-relative-cwd"						, no_argument	, &g_args.mode_gnid			, MODE_RELATIVE_CWD }
-				, { "gnid-relative-fabfile-dir"		, no_argument	, &g_args.mode_gnid			, MODE_RELATIVE_FABFILE_DIR }
-				, { "gnid-absolute"								, no_argument	, &g_args.mode_gnid			, MODE_ABSOLUTE }
-				, { "gnid-canon"									, no_argument	, &g_args.mode_gnid			, MODE_CANONICAL }
+				, { "cycles-warn"									, no_argument	, &g_args->mode_cycles		, MODE_CYCLES_WARN }
+				, { "cycles-fail"									, no_argument	, &g_args->mode_cycles		, MODE_CYCLES_FAIL }
+				, { "cycles-deal"									, no_argument	, &g_args->mode_cycles		, MODE_CYCLES_DEAL }
+				, { "paths-relative"							, no_argument	, &g_args->mode_paths			, MODE_RELATIVE_FABFILE_DIR }
+				, { "paths-absolute"							, no_argument	, &g_args->mode_paths			, MODE_ABSOLUTE }
+				, { "gnid-relative-cwd"						, no_argument	, &g_args->mode_gnid			, MODE_RELATIVE_CWD }
+				, { "gnid-relative-fabfile-dir"		, no_argument	, &g_args->mode_gnid			, MODE_RELATIVE_FABFILE_DIR }
+				, { "gnid-absolute"								, no_argument	, &g_args->mode_gnid			, MODE_ABSOLUTE }
+				, { "gnid-canon"									, no_argument	, &g_args->mode_gnid			, MODE_CANONICAL }
 
 #if DEBUG || DEVEL
-				, { "backtrace-pithy"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
-				, { "backtrace-full"							, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
-				, { "backtrace"										, no_argument	, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
-				, { "logtrace-no"									, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
-				, { "logtrace"										, no_argument	, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
+				, { "backtrace-pithy"							, no_argument	, &g_args->mode_backtrace	, MODE_BACKTRACE_PITHY }
+				, { "backtrace-full"							, no_argument	, &g_args->mode_backtrace	, MODE_BACKTRACE_FULL }
+				, { "backtrace"										, no_argument	, &g_args->mode_backtrace	, MODE_BACKTRACE_FULL }
+				, { "logtrace-no"									, no_argument	, &g_args->mode_logtrace	, MODE_LOGTRACE_NONE }
+				, { "logtrace"										, no_argument	, &g_args->mode_logtrace	, MODE_LOGTRACE_FULL }
 #endif
 #if DEVEL
-				, { "bslic-standard"							, no_argument	, &g_args.mode_bslic		, MODE_BSLIC_STD }
-				, { "bslic-fab"										, no_argument	, &g_args.mode_bslic		, MODE_BSLIC_FAB }
+				, { "bslic-standard"							, no_argument	, &g_args->mode_bslic		, MODE_BSLIC_STD }
+				, { "bslic-fab"										, no_argument	, &g_args->mode_bslic		, MODE_BSLIC_FAB }
 #endif
 
 /* program switches */
@@ -416,25 +422,25 @@ int args_parse()
 	//
 	// args:defaults
 	//
-	g_args.concurrency			= DEFAULT_CONCURRENCY_LIMIT;
-	g_args.mode_bplan				= DEFAULT_MODE_BPLAN;
-	g_args.mode_gnid				= DEFAULT_MODE_GNID;
-	g_args.mode_cycles			= DEFAULT_MODE_CYCLES;
-	g_args.mode_paths				= DEFAULT_MODE_PATHS;
+	g_args->concurrency			= DEFAULT_CONCURRENCY_LIMIT;
+	g_args->mode_bplan			= DEFAULT_MODE_BPLAN;
+	g_args->mode_gnid				= DEFAULT_MODE_GNID;
+	g_args->mode_cycles			= DEFAULT_MODE_CYCLES;
+	g_args->mode_paths			= DEFAULT_MODE_PATHS;
 #if DEBUG || DEVEL
-	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
-	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
+	g_args->mode_backtrace	= DEFAULT_MODE_BACKTRACE;
+	g_args->mode_logtrace		= DEFAULT_MODE_LOGTRACE;
 #endif
 #if DEVEL
-	g_args.mode_bslic				= DEFAULT_MODE_BSLIC;
+	g_args->mode_bslic			= DEFAULT_MODE_BSLIC;
 #endif
-	g_args.invalidationsz	= DEFAULT_INVALIDATE_ALL;
+	g_args->invalidationsz	= DEFAULT_INVALIDATE_ALL;
 	fatal(path_create_init, &o_init_fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
-	fatal(path_copy, &g_params.init_fabfile_path, o_init_fabpath);
+	fatal(path_copy, &g_args->init_fabfile_path, o_init_fabpath);
 
 	// default invokedirs - head of list
-	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-	fatal(ixstrdup, &g_args.invokedirs[g_args.invokedirsl++], XQUOTE(FABINVOKEDIR));
+	fatal(xrealloc, &g_args->invokedirs, sizeof(g_args->invokedirs[0]), g_args->invokedirsl + 1, g_args->invokedirsl);
+	fatal(ixstrdup, &g_args->invokedirs[g_args->invokedirsl++], XQUOTE(FABINVOKEDIR));
 
 	// selectors apply to the following list(s)
 	uint32_t selector_lists = SELECTOR_FABRICATE;
@@ -475,60 +481,60 @@ printf("optopt=%c\n", optopt);
 		}
 		else if(x == 'f')
 		{
-			path_xfree(&g_params.init_fabfile_path);
-			fatal(path_create_init, &g_params.init_fabfile_path, g_params.cwd, "%s", optarg);
+			path_xfree(&g_args->init_fabfile_path);
+			fatal(path_create_init, &g_args->init_fabfile_path, g_params.cwd, "%s", optarg);
 		}
 		else if(x == 'j')
 		{
 			int n = 0;
-			if(sscanf(optarg, "%d%n", &g_args.concurrency, &n) != 1 || n < -1)
+			if(sscanf(optarg, "%d%n", &g_args->concurrency, &n) != 1 || n < -1)
 			{
 				failf(FAB_BADARGS, "badly formed option for -j : '%s'", optarg);
 			}
 		}
 		else if(x == 'k')
 		{
-			g_args.mode_bplan = MODE_BPLAN_BAKE;
-			ifree(&g_args.bakescript_path);
-			g_args.bakescript_path = strdup(optarg);
+			g_args->mode_bplan = MODE_BPLAN_BAKE;
+			ifree(&g_args->bakescript_path);
+			g_args->bakescript_path = strdup(optarg);
 		}
 		else if(x == 'p')
 		{
-			g_args.mode_bplan = MODE_BPLAN_GENERATE;
+			g_args->mode_bplan = MODE_BPLAN_GENERATE;
 		}
 		else if(x == 'v')
 		{
-			if(g_args.rootvarsl == g_args.rootvarsa)
+			if(g_args->rootvarsl == g_args->rootvarsa)
 			{
-				int newa = g_args.rootvarsa ?: 3;
+				int newa = g_args->rootvarsa ?: 3;
 				newa = newa * 2 + newa / 2;
-				fatal(xrealloc, &g_args.rootvars, sizeof(g_args.rootvars[0]), newa, g_args.rootvarsa);
-				g_args.rootvarsa = newa;
+				fatal(xrealloc, &g_args->rootvars, sizeof(g_args->rootvars[0]), newa, g_args->rootvarsa);
+				g_args->rootvarsa = newa;
 			}
 
-			fatal(ixsprintf, &g_args.rootvars[g_args.rootvarsl], "%s%c", optarg, 0);
-			g_args.rootvarsl++;
+			fatal(ixsprintf, &g_args->rootvars[g_args->rootvarsl], "%s%c", optarg, 0);
+			g_args->rootvarsl++;
 		}
 		else if(x == 'B')
 		{
-			g_args.invalidationsz = 1;
+			g_args->invalidationsz = 1;
 		}
 		else if(x == 'I')
 		{
-			fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-			fatal(ixstrdup, &g_args.invokedirs[g_args.invokedirsl++], optarg);
+			fatal(xrealloc, &g_args->invokedirs, sizeof(g_args->invokedirs[0]), g_args->invokedirsl + 1, g_args->invokedirsl);
+			fatal(ixstrdup, &g_args->invokedirs[g_args->invokedirsl++], optarg);
 		}
 		else if(x == 'K')
 		{
-			if(g_args.bakevarsl == g_args.bakevarsa)
+			if(g_args->bakevarsl == g_args->bakevarsa)
 			{
-				int newa = g_args.bakevarsa ?: 3;
+				int newa = g_args->bakevarsa ?: 3;
 				newa = newa * 2 + newa / 2;
-				fatal(xrealloc, &g_args.bakevars, sizeof(g_args.bakevars[0]), newa, g_args.bakevarsa);
-				g_args.bakevarsa = newa;
+				fatal(xrealloc, &g_args->bakevars, sizeof(g_args->bakevars[0]), newa, g_args->bakevarsa);
+				g_args->bakevarsa = newa;
 			}
 
-			g_args.bakevars[g_args.bakevarsl++] = strdup(optarg);
+			g_args->bakevars[g_args->bakevarsl++] = strdup(optarg);
 		}
 		else if(x == '?')
 		{
@@ -559,19 +565,19 @@ printf("optopt=%c\n", optopt);
 	}
 
 	// default invokedirs - tail of list
-	fatal(xrealloc, &g_args.invokedirs, sizeof(g_args.invokedirs[0]), g_args.invokedirsl + 1, g_args.invokedirsl);
-	fatal(ixstrdup, &g_args.invokedirs[g_args.invokedirsl++], g_params.init_fabfile_path->abs_dir);
+	fatal(xrealloc, &g_args->invokedirs, sizeof(g_args->invokedirs[0]), g_args->invokedirsl + 1, g_args->invokedirsl);
+	fatal(ixstrdup, &g_args->invokedirs[g_args->invokedirsl++], g_args->init_fabfile_path->abs_dir);
 
 	// CPU count heuristic
-	if(g_args.concurrency == -1)
+	if(g_args->concurrency == -1)
 	{
 		if(g_params.procs)
 		{
-			g_args.concurrency = (float)g_params.procs * 1.2f;
+			g_args->concurrency = (float)g_params.procs * 1.2f;
 		}
 		else
 		{
-			g_args.concurrency = 8;
+			g_args->concurrency = 8;
 		}
 	}
 
@@ -595,88 +601,115 @@ int args_summarize()
 	logf(L_PARAMS	, "%11sprocessors             =%ld"						, ""	, g_params.procs);
 	logf(L_PARAMS	, "%11scachedir               =%s"						, ""	, XQUOTE(FABCACHEDIR));
 	logf(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));
+	logf(L_PARAMS	, "%11sipcdir                 =%s"						, ""	,	XQUOTE(FABIPCDIR));
 	logf(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));
 	logf(L_PARAMS	, "%11sinvokedir              =%s"						, ""	,	XQUOTE(FABINVOKEDIR));
 	logf(L_PARAMS	, "%11sexpiration-policy      =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_params.init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->can);
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_params.init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->abs);
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_params.init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_cwd);
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_params.init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_params.init_fabfile_path->rel_fab);
-	logf(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan             =%s", g_args.mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args.mode_bplan));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_args->init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->can);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_args->init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->abs);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_args->init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->rel_cwd);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_args->init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->rel_fab);
+	logf(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan             =%s", g_args->mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args->mode_bplan));
 
-	if(g_args.mode_bplan == MODE_BPLAN_BAKE)
+	if(g_args->mode_bplan == MODE_BPLAN_BAKE)
 	{
-		logf(L_ARGS | L_PARAMS				, " %s (  %c  ) bakescript-path        =%s", "*", 'k', g_args.bakescript_path);
+		logf(L_ARGS | L_PARAMS				, " %s (  %c  ) bakescript-path        =%s", "*", 'k', g_args->bakescript_path);
 
-		if(g_args.bakevarsl == 0)
+		if(g_args->bakevarsl == 0)
 			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =", " ", 'K');
-		for(x = 0; x < g_args.bakevarsl; x++)
-			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args.bakevars[x]);
+		for(x = 0; x < g_args->bakevarsl; x++)
+			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args->bakevars[x]);
 	}
 
 #if DEBUG || DEVEL
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace          =%s", g_args.mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_logtrace));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args->mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args->mode_backtrace));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace          =%s", g_args->mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args->mode_logtrace));
 #endif
 #if DEVEL
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args.mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args.mode_bslic));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-bslic             =%s", g_args->mode_bslic == DEFAULT_MODE_BSLIC ? " " : "*", ' ', MODE_STR(g_args->mode_bslic));
 #endif
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args.mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args.mode_gnid));
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args.mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args.mode_paths));
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycles            =%s", g_args.mode_cycles == DEFAULT_MODE_CYCLES ? " " : "*", ' ', MODE_STR(g_args.mode_cycles));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-gnid              =%s", g_args->mode_gnid == DEFAULT_MODE_GNID ? " " : "*", ' ', MODE_STR(g_args->mode_gnid));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-paths             =%s", g_args->mode_paths == DEFAULT_MODE_PATHS ? " " : "*", ' ', MODE_STR(g_args->mode_paths));
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-cycles            =%s", g_args->mode_cycles == DEFAULT_MODE_CYCLES ? " " : "*", ' ', MODE_STR(g_args->mode_cycles));
 
-	if(g_args.concurrency == 0)
+	if(g_args->concurrency == 0)
 		snprintf(space, sizeof(space)  , "%s", "unbounded");
 	else
-		snprintf(space, sizeof(space)  , "%d", g_args.concurrency);
+		snprintf(space, sizeof(space)  , "%d", g_args->concurrency);
 
-	logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", g_args.concurrency == (int)((float)g_params.procs * 1.2f) ? " " : "*", 'j', space);
+	logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", g_args->concurrency == (int)((float)g_params.procs * 1.2f) ? " " : "*", 'j', space);
 
-	for(x = 0; x < g_args.invokedirsl; x++)
+	for(x = 0; x < g_args->invokedirsl; x++)
 	{
-		int star = x && x != (g_args.invokedirsl - 1);
-		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) invokedirs(s)          =%s", star ? "*" : " ", 'I', g_args.invokedirs[x]);
+		int star = x && x != (g_args->invokedirsl - 1);
+		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) invokedirs(s)          =%s", star ? "*" : " ", 'I', g_args->invokedirs[x]);
 	}
 
-	if(g_args.rootvarsl == 0)
+	if(g_args->rootvarsl == 0)
 		logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)         =", " ", ' ');
-	for(x = 0; x < g_args.rootvarsl; x++)
-		logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)         =%s", "*", 'v', g_args.rootvars[x]);
+	for(x = 0; x < g_args->rootvarsl; x++)
+		logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)         =%s", "*", 'v', g_args->rootvars[x]);
 
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidate-all         =%s", g_args.invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args.invalidationsz ? "yes" : "no");
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidate-all         =%s", g_args->invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args->invalidationsz ? "yes" : "no");
 
-	if(g_args.selectorsl == 0)
+	if(g_args->selectorsl == 0)
 		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)            =", " ", ' ');
-	for(x = 0; x < g_args.selectorsl; x++)
-		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)            =%s", "*", ' ', selector_string(&g_args.selectors[x], space, sizeof(space)));
+	for(x = 0; x < g_args->selectorsl; x++)
+		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) selector(s)            =%s", "*", ' ', selector_string(&g_args->selectors[x], space, sizeof(space)));
 
 	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
 	finally : coda;
 }
 
-void args_teardown()
+void args_freeze(char * const p)
 {
+	FREEZE(p, g_args->bakescript_path);
+
 	int x;
-	for(x = 0; x < g_args.selectorsl; x++)
-		free(g_args.selectors[x].s);
-	free(g_args.selectors);
+	for(x = 0; x < g_args->rootvarsl; x++)
+		FREEZE(p, g_args->rootvars[x]);
+	FREEZE(p, g_args->rootvars);
 
-	for(x = 0; x < g_args.rootvarsl; x++)
-		free(g_args.rootvars[x]);
-	free(g_args.rootvars);
+	for(x = 0; x < g_args->bakevarsl; x++)
+		FREEZE(p, g_args->bakevars[x]);
+	FREEZE(p, g_args->bakevars);
 
-	for(x = 0; x < g_args.bakevarsl; x++)
-		free(g_args.bakevars[x]);
-	free(g_args.bakevars);
+	for(x = 0; x < g_args->invokedirsl; x++)
+		FREEZE(p, g_args->invokedirs[x]);
+	FREEZE(p, g_args->invokedirs);
 
-	for(x = 0; x < g_args.invokedirsl; x++)
-		free(g_args.invokedirs[x]);
-	free(g_args.invokedirs);
+	for(x = 0; x < g_args->selectorsl; x++)
+		selector_freeze(p, &g_args->selectors[x]);
+	FREEZE(p, g_args->selectors);
 
-	free(g_args.bakescript_path);
+	path_freeze(p, g_args->init_fabfile_path);
+	FREEZE(p, g_args->init_fabfile_path);
+}
 
-	path_free(o_init_fabpath);
+void args_thaw(char * const p)
+{
+	THAW(p, g_args->bakescript_path);
+
+	THAW(p, g_args->rootvars);
+	int x;
+	for(x = 0; x < g_args->rootvarsl; x++)
+		THAW(p, g_args->rootvars[x]);
+
+	THAW(p, g_args->bakevars);
+	for(x = 0; x < g_args->bakevarsl; x++)
+		THAW(p, g_args->bakevars[x]);
+
+	THAW(p, g_args->invokedirs);
+	for(x = 0; x < g_args->invokedirsl; x++)
+		THAW(p, g_args->invokedirs[x]);
+
+	THAW(p, g_args->selectors);
+	for(x = 0; x < g_args->selectorsl; x++)
+		selector_thaw(p, &g_args->selectors[x]);
+
+	THAW(p, g_args->init_fabfile_path);
+	path_thaw(p, g_args->init_fabfile_path);
 }

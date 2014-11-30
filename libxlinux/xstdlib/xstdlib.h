@@ -49,6 +49,13 @@ int xmalloc(void* target, size_t size)
 int xrealloc(void* target, size_t es, size_t ec, size_t oec)
 	__attribute__((nonnull));
 
+/// xfree
+//
+// SUMMARY
+//  xproxy for free
+//
+void xfree(void* target);
+
 /// ifree
 //
 // SUMMARY

@@ -19,13 +19,14 @@
 2		ILLBYTE				fabfile contains illegal byte(s)
 3		BADTMP				unexpected file(s) in temp directory
 4		BADCACHE			unexpected file(s) in cache directory
-5		BADARGS				invalid command-line arguments
-6		UNSATISFIED		buildplan has unsatisfied dependencies
-7		FMLFAIL				formula failed to execute successfully
-8		DSCPARSE			dependency discovery results were not parsed
-9		NOINVOKE			invocation target could not be resolved
-10	BADPLAN				buildplan cannot be constructed
-11	EXESUID				fab executable does not have ug+s permissions
-12	CYCLE					dependency graph contains a cycle
-13	NOSELECT			selector matches nothing
-14	NXPARAMS			unable to determine runtime parameters
+5		BADIPC				unexpected file(s) in ipc directory
+6		BADARGS				invalid command-line arguments
+7		UNSATISFIED		buildplan has unsatisfied dependencies
+8		FMLFAIL				formula failed to execute successfully
+9		DSCPARSE			dependency discovery results were not parsed
+10	NOINVOKE			invocation target could not be resolved
+11	BADPLAN				buildplan cannot be constructed
+12	EXESUID				fab executable does not have ug+s permissions
+13	CYCLE					dependency graph contains a cycle
+14	NOSELECT			selector matches nothing
+15	NXPARAMS			unable to determine runtime parameters

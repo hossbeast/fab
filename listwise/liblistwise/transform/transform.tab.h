@@ -30,8 +30,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
-# define YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
+#ifndef YY_TRANSFORM_YY_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
+# define YY_TRANSFORM_YY_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -62,7 +62,7 @@ extern int transform_yydebug;
 typedef union YYSTYPE
 {
 /* Line 2053 of yacc.c  */
-#line 43 "listwise/liblistwise/transform/transform.y"
+#line 43 "transform/transform.y"
 
 	transform *		transform;
 	operation **  operations;
@@ -76,7 +76,7 @@ typedef union YYSTYPE
 
 
 /* Line 2053 of yacc.c  */
-#line 80 "listwise/liblistwise/transform/transform.tab.h"
+#line 80 "transform/transform.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -111,4 +111,4 @@ int transform_yyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED  */
+#endif /* !YY_TRANSFORM_YY_TRANSFORM_TRANSFORM_TAB_H_INCLUDED  */

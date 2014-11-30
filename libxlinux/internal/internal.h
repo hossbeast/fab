@@ -18,14 +18,44 @@
 #ifndef _XLINUX_INTERNAL_H
 #define _XLINUX_INTERNAL_H
 
+//
+// api
+//
 #include "xlinux.h"
+#include "error.h"
+#include "xdirent.h"
+#include "xdlfcn.h"
+#include "xfcntl.h"
+#include "xftw.h"
+#include "xgrp.h"
+#include "xmman.h"
+#include "xpwd.h"
+#include "xstat.h"
+#include "xstdlib.h"
+#include "xstring.h"
+#include "xtime.h"
+#include "xunistd.h"
+#include "xsignal.h"
+#include "mempolicy.h"
+
+// error tables
+#include "XLINUX.errtab.h"
+
+//
+// internal
+//
+#include "mempolicy.internal.h"
+
+//
+// library-wide declarations
+//
 #include "xapi.h"
+
+#undef perrtab
+#define perrtab perrtab_SYS
 
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
-#include "XLINUX.errtab.h"
-#undef perrtab
-#define perrtab perrtab_SYS
-
 #endif
+

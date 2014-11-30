@@ -112,7 +112,7 @@ static int read_opdir(char * s)
 
 	space[strlen(space)] = '/';
 
-	struct dirent ent;
+	struct dirent ent = {};
 	struct dirent * entp = 0;
 	while(1)
 	{
@@ -130,7 +130,8 @@ static int read_opdir(char * s)
 				else if(strlen(entp->d_name) > 2)
 				{
 					// locate the filename portion
-					char * f = entp->d_name + strlen(entp->d_name) - 1;
+					size_t nl = strlen(entp->d_name);
+					char * f = entp->d_name + nl;
 					while(f != entp->d_name && *f != '/')
 						f--;
 
@@ -138,7 +139,7 @@ static int read_opdir(char * s)
 						f++;
 
 					// locate the extension portion
-					while(*f != '.')
+					while(((f - entp->d_name) < nl) && *f != '.')
 						f++;
 
 					if(*f == '.')

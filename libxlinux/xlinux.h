@@ -30,5 +30,6 @@
 #include "xlinux/xstring.h"
 #include "xlinux/xtime.h"
 #include "xlinux/xunistd.h"
+#include "xlinux/xsignal.h"
 
 #endif

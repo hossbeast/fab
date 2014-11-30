@@ -28,4 +28,5 @@ a<function>
 e<function> (extended)
  performs the same operation as the underlying function on another data type
 
-o<function>
+s<function>
+ takes a memory policy

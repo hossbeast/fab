@@ -15,12 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ARGS_H
-#define _ARGS_H
+#ifndef _FAB_ARGS_H
+#define _FAB_ARGS_H
 
 #include <sys/types.h>
 
-struct selector;
+struct memblk;			// common/memblk.h
+struct selector;		// selector.h
+struct path;				// path.h
+
+#define ARGS_MAX_SIZE		16384
 
 /*
 ** PER-GN : delete if newest file is older than <policy>  (pertains to a given gn)
@@ -162,7 +166,11 @@ extern struct g_args_t
 	int									invalidationsz;							// invalidate all nodes (-B)
 	int									invalidationsz_primary;			// invalidate all primary nodes (-Bp)
 	int									invalidationsz_secondary;		// invalidate all secondary nodes (-Bs)
-} g_args;
+
+	struct path *				init_fabfile_path;					// path to initial fabfile
+} * g_args;
+
+#define restrict __restrict
 
 /// args_parse
 //
@@ -174,7 +182,8 @@ extern struct g_args_t
 //  invalid, for example required options are not present, or invalid
 //  parameters are given to an option
 //
-int args_parse();
+int args_parse(struct memblk * mb)
+	__attribute__((nonnull));
 
 /// args_summarize
 //
@@ -189,4 +198,11 @@ int args_summarize();
 //
 void args_teardown();
 
+void args_freeze(char * const restrict p)
+	__attribute__((nonnull));
+
+void args_thaw(char * const restrict p)
+	__attribute__((nonnull));
+
+#undef restrict
 #endif

@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGS_H
-#define _LOGS_H
+#ifndef _FAB_LOGS_H
+#define _FAB_LOGS_H
 
 #include "logger.h"
 
