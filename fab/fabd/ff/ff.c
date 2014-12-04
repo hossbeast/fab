@@ -416,7 +416,7 @@ int ff_reg_load(const ff_parser * const p, const path * const in_path, char * co
 		struct stat statbuf;
 		fatal(xfstat, fd, &statbuf);
 		fatal(xmalloc, &b, statbuf.st_size + 2);
-		fatal(axread, fd, b, statbuf.st_size, 0);
+		fatal(axread, fd, b, statbuf.st_size);
 
 		// parse the file
 		fatal(parse, p, b, statbuf.st_size, in_path, 0, 0, 0, ff, nofile, nofilel);

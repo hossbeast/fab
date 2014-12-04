@@ -22,21 +22,34 @@
 +[ $dcommon ]() @common
 
 # variables
-$copts = [ -fno-builtin-log [ $dfabd [ $dfabd/../error ~ j ] [ $dfabd/../args  ~ j ] ~ lsr c -d s/^/-I ]
-
+$sdirs = [ $dfabd [ $dfabd/../common ~ j ] ~ lsr c -d ]
+$copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
-	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
-	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
-	[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
 
 	# include paths
 	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-I ]
 ]
 
-$cflags_final = [ $cflags_final $copts [ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ] [ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ] ]
-$cflags_debug = [ $cflags_debug $copts [ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ] [ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ] ]
-$cflags_devel = [ $cflags_devel $copts [ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ] [ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ] ]
+$params = [
+	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
+	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
+	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
+	[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
+]
+
+$params_devel = [
+	[ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
+	[ -DFABCACHEDIR="\""$fabcachedir_devel"\"" ~ j ]
+	[ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
+	[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
+]
+
+$cflags_final = [ $cflags_final $copts $params ]
+$cflags_debug = [ $cflags_debug $copts $params ]
+$cflags_devel = [ $cflags_devel $copts $params_devel ]
 
 $rpath = [ 
 	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
@@ -46,28 +59,28 @@ $lflags_debug = [ $lflags_debug $libxapi_debug $libxlinux_debug $libpstring_debu
 $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
 
 # standard files - standard compilation
-+[@std.c]($dext = [ final.o ]; $rdirs = $dfabd; $paths = [ $dfabd/main.c ~ j ]; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.o ]; $rdirs = $dfabd; $paths = [ $dfabd/main.c ~ j ]; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.o ]; $rdirs = $dfabd; $paths = [ $dfabd/main.c ~ j ]; $cc; $cflags = $cflags_devel; $gccdep = $gccdep_devel)
++[@std.c]($dext = [ final.o ]; $dirs = $sdirs; $paths = [ $dfabd/main.c ~ j ]; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.o ]; $dirs = $sdirs; $paths = [ $dfabd/main.c ~ j ]; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.o ]; $dirs = $sdirs; $paths = [ $dfabd/main.c ~ j ]; $cc; $cflags = $cflags_devel; $gccdep = $gccdep_devel)
 
-+[@std.l]($dext = [ final.o ]; $gendir = $dfabd; $rdirs = $dfab; $cc $flex $flexflags; $cflags = $cflags_final)
-+[@std.l]($dext = [ debug.o ]; $gendir = $dfabd; $rdirs = $dfab; $cc $flex $flexflags; $cflags = $cflags_debug)
-+[@std.l]($dext = [ devel.o ]; $gendir = $dfabd; $rdirs = $dfab; $cc $flex $flexflags; $cflags = $cflags_devel)
++[@std.l]($dext = [ final.o ]; $dirs = $sdirs; $cc $flex $flexflags; $cflags = $cflags_final)
++[@std.l]($dext = [ debug.o ]; $dirs = $sdirs; $cc $flex $flexflags; $cflags = $cflags_debug)
++[@std.l]($dext = [ devel.o ]; $dirs = $sdirs; $cc $flex $flexflags; $cflags = $cflags_devel)
 
-+[@std.y]($dext = [ final.o ]; $gendir = $dfabd; $rdirs = $dfab; $cc $bison $bisonflags; $cflags = $cflags_final)
-+[@std.y]($dext = [ debug.o ]; $gendir = $dfabd; $rdirs = $dfab; $cc $bison $bisonflags; $cflags = $cflags_debug)
-+[@std.y]($dext = [ devel.o ]; $gendir = $dfabd; $rdirs = $dfab; $cc $bison $bisonflags; $cflags = $cflags_devel)
++[@std.y]($dext = [ final.o ]; $dirs = $sdirs; $cc $bison $bisonflags; $cflags = $cflags_final)
++[@std.y]($dext = [ debug.o ]; $dirs = $sdirs; $cc $bison $bisonflags; $cflags = $cflags_debug)
++[@std.y]($dext = [ devel.o ]; $dirs = $sdirs; $cc $bison $bisonflags; $cflags = $cflags_devel)
 
 # generated files
-+[@std.flex.states] ($dext = [ final.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_final)
-+[@std.flex.states] ($dext = [ debug.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_debug)
-+[@std.flex.states] ($dext = [ devel.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_devel)
-+[@std.bison.tokens]($dext = [ final.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_final)
-+[@std.bison.tokens]($dext = [ debug.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_debug)
-+[@std.bison.tokens]($dext = [ devel.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_devel)
-+[@std.xapi.errtab] ($dext = [ final.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_final)
-+[@std.xapi.errtab] ($dext = [ debug.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_debug)
-+[@std.xapi.errtab] ($dext = [ devel.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_devel)
++[@std.flex.states] ($dext = [ final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_final)
++[@std.flex.states] ($dext = [ debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_debug)
++[@std.flex.states] ($dext = [ devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_devel)
++[@std.bison.tokens]($dext = [ final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_final)
++[@std.bison.tokens]($dext = [ debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_debug)
++[@std.bison.tokens]($dext = [ devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_devel)
++[@std.xapi.errtab] ($dext = [ final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_final)
++[@std.xapi.errtab] ($dext = [ debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_debug)
++[@std.xapi.errtab] ($dext = [ devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_devel)
 
 #
 # catchall node

@@ -25,34 +25,10 @@
 
 // fab common modules
 #include "args.h"
+#include "params.h"
 #include "logs.h"
 #include "error.h"
-
-// fab modules
-#include "bake.h"
-#include "bp.h"
-#include "dep.h"
-#include "depblock.h"
-#include "dirutil.h"
-#include "dsc.h"
-#include "enclose.h"
-#include "ff.h"
-#include "ffn.h"
-#include "ffproc.h"
-#include "fml.h"
-#include "gn.h"
-#include "gnlw.h"
-#include "hashblock.h"
 #include "identity.h"
-#include "list.h"
-#include "lwutil.h"
-#include "params.h"
-#include "path.h"
-#include "selector.h"
-#include "strstack.h"
-#include "tmp.h"
-#include "traverse.h"
-#include "ts.h"
-#include "var.h"
+#include "dirutil.h"
 
 #endif

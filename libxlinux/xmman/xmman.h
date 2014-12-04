@@ -36,5 +36,16 @@ int xmmap(void * restrict addr, size_t length, int prot, int flags, int fd, off_
 //
 int xmunmap(void * addr, size_t length);
 
+/// ixmunmap
+//
+// SUMMARY
+//  idempotent proxy for munmap
+//
+// PARAMETERS
+//  [addr] - if not zero, munmap *addr
+//  length - size of mapping
+//
+int ixmunmap(void * addr, size_t length);
+
 #undef restrict
 #endif

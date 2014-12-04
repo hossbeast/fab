@@ -21,9 +21,12 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "xapi.h"
 #include "xlinux.h"
 
-#include "global.h"
+#include "path.h"
+#include "args.h"
+#include "params.h"
 
 #include "cksum.h"
 #include "canon.h"

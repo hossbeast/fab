@@ -23,27 +23,6 @@ static map * o_invalidationsmap;
 static map * o_discoveriesmap;
 static map * o_inspectionsmap;
 
-char * selector_string(const selector * const s, char * const dst, const size_t z)
-{
-	int l = 0;
-	l += snprintf(dst + l, z - l, "{ %c", s->mode);
-
-	uint32_t x = 1;
-	while(x)
-	{
-		if(s->lists & x)
-		{
-			if(l > 3)
-				l += snprintf(dst + l, z - l, "|");
-			l += snprintf(dst + l, z - l, "%s", SELECTOR_STR(x));
-		}
-		x <<= 1;
-	}
-
-	l += snprintf(dst + l, z - l, ",%s : %s }", SELECTOR_BASE_STR(s->base), s->s);
-	return dst;
-}
-
 int selector_process(selector * const s, int id, const ff_parser * const ffp, map * const tmap, lwx *** stax, int * staxa, int staxp)
 {
 	int select(selector * s, gn * g)
@@ -190,14 +169,4 @@ void selector_teardown()
 	map_xfree(&o_invalidationsmap);
 	map_xfree(&o_discoveriesmap);
 	map_xfree(&o_inspectionsmap);
-}
-
-void selector_freeze(char * const restrict p, selector * restrict s)
-{
-	FREEZE(p, s->s);
-}
-
-void selector_thaw(char * const restrict p, selector * restrict s)
-{
-	THAW(p, s->s);
 }

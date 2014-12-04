@@ -24,37 +24,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "listwise.h"
-#include "listwise/object.h"
-#include "listwise/lstack.h"
-#include "listwise/operators.h"
-
 #include "xlinux.h"
 #include "xlinux/mempolicy.h"
 
-#include "args.h"
-#include "params.h"
-#include "ff.h"
-#include "gn.h"
-#include "gnlw.h"
-#include "fml.h"
-#include "bp.h"
-#include "map.h"
-#include "var.h"
-#include "list.h"
-#include "dsc.h"
-#include "dep.h"
-#include "tmp.h"
-#include "identity.h"
-#include "bake.h"
-#include "ffproc.h"
-#include "traverse.h"
-#include "lwutil.h"
-#include "selector.h"
-#include "error.h"
-
-#include "logs.h"
 #include "global.h"
+
 #include "macros.h"
 #include "memblk.h"
 
@@ -62,19 +36,21 @@
 static int o_signum;
 static void signal_handler(int signum)
 {
-	exit(0);
 	if(!o_signum)
-	{
 		o_signum = signum;
-	}
+
+	printf("fab[%u] rcv %d\n", getpid(), signum);
 }
 
 int main(int argc, char** argv)
 {
 	char space[2048];
+	char space2[2048];
 
 	int mode_backtrace = DEFAULT_MODE_BACKTRACE;
 	int fd = -1;
+	int lockfd = -1;
+	uint32_t canhash;
 
 #if 0
 	ff_parser *					ffp = 0;				// fabfile parser
@@ -111,6 +87,12 @@ int main(int argc, char** argv)
 	int x;
 	size_t tracesz = 0;
 
+	// initialize error tables
+	error_setup();
+
+	// process parameter gathering
+	fatal(params_setup);
+
 	// get user identity of this process, assert user:group and permissions are set appropriately
 	fatal(identity_init);
 	
@@ -130,12 +112,7 @@ int main(int argc, char** argv)
 	signal(SIGINT		, signal_handler);	// terminate gracefully
 	signal(SIGQUIT	, signal_handler);
 	signal(SIGTERM	, signal_handler);
-
-	// initialize error tables
-	error_setup();
-
-	// initialize logger
-	fatal(log_init);
+	signal(SIGHUP		, signal_handler);
 
 	// allocate memblock to store the args
 	fatal(memblk_mk, &mb, ARGS_MAX_SIZE);
@@ -148,21 +125,60 @@ int main(int argc, char** argv)
 	mempolicy_release(memblk_getpolicy(mb));
 
 	mode_backtrace = g_args->mode_backtrace;
+	canhash = g_args->init_fabfile_path->can_hash;
 
 /*
 /FABIPCDIR/<hash>/fabfile				<-- init fabfile path, symlink
 /FABIPCDIR/<hash>/args					<-- args, binary
 /FABIPCDIR/<hash>/fab/pid				<-- fab pid, ascii
+/FABIPCDIR/<hash>/fab/lock			<-- fab lockfile
 /FABIPCDIR/<hash>/fabd/pid			<-- fabd pid, ascii
+/FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile
 */
 
 	// fabsys identity
 	fatal(identity_assume_fabsys);
 
-	// locate existing fabd
-	size_t z = snprintf(space, sizeof(space), "%s/%u", XQUOTE(FABIPCDIR), g_args->init_fabfile_path->can_hash);
-	snprintf(space + z, sizeof(space) - z, "/fabd/pid");
+	// ipc-dir stem
+	size_t z = snprintf(space, sizeof(space), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
 
+	// fab directory
+	snprintf(space + z, sizeof(space) - z, "/fab");
+	fatal(mkdirp, space, S_IRWXU | S_IRWXG);
+
+	// canonical fabfile symlink
+	snprintf(space + z, sizeof(space) - z, "/fabfile");
+	fatal(uxsymlink, g_args->init_fabfile_path->can, space);
+
+	// fab-lock file
+	snprintf(space + z, sizeof(space) - z, "/fab/lock");
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &lockfd);
+	fatal(xflock, lockfd, LOCK_EX | LOCK_NB);
+
+	// fab-pid file
+	snprintf(space + z, sizeof(space) - z, "/fab/pid");
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+	fatal(axwrite, fd, &g_params.pid, sizeof(g_params.pid));
+	fatal(ixclose, &fd);
+
+	// fabd directory
+	snprintf(space + z, sizeof(space) - z, "/fabd");
+	fatal(mkdirp, space, S_IRWXU | S_IRWXG);
+
+	// open args file for writing
+	snprintf(space + z, sizeof(space) - z, "/args");
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+
+	// set the filesize
+	fatal(xftruncate, fd, mb->l);
+
+	// write the args : g_args unusable beyond this point
+	args_freeze(mb->s);
+	fatal(axwrite, fd, mb->s, mb->l);
+	fatal(ixclose, &fd);
+
+	// fabd-pid file
+	snprintf(space + z, sizeof(space) - z, "/fabd/pid");
 	fatal(gxopen, space, O_RDONLY, &fd);
 	
 	int r = -1;
@@ -170,93 +186,84 @@ int main(int argc, char** argv)
 	if(fd != -1)
 	{
 		// read the pid
-		fatal(axread, fd, &fabd_pid, sizeof(fabd_pid), 0);
+		fatal(axread, fd, &fabd_pid, sizeof(fabd_pid));
 
 		if(fabd_pid <= 0)
-			fails(FAB_BADIPC, "expected pid > 0, actual : %ld", (long)fabd_pid);
+			failf(FAB_BADIPC, "expected pid > 0, actual : %ld", (long)fabd_pid);
 
 		// existence check
 		fatal(uxkill, fabd_pid, 0, &r);
 	}
 
-	if(r)
+	if(r == 0 && g_args->invalidationsz)
 	{
-		// fabd not running
-		fatal(ixclose, &fd);
-
-		// re-open the pid file
-		fatal(gxopen, space, O_RDONLY, &fd);
-		
-		// read the pid
-		fatal(axread, fd, &fabd_pid, sizeof(fabd_pid), 0);
-
-		if(fabd_pid <= 0)
-			fails(FAB_BADIPC, "expected pid > 0, actual : %ld", (long)fabd_pid);
-
-		// existence check
-		fatal(uxkill, fabd_pid, 0, &r);
+		fatal(xkill, fabd_pid, 15);
+		while(r == 0)
+		{
+			sleep(1);
+			fatal(uxkill, fabd_pid, 0, &r);
+		}
 	}
 
 	if(r)
 	{
-		fails(FAB_BADIPC, "unable to talk to fabd");
-	}
+		// fabd is not running ; start it now
+		fatal(xfork, &fabd_pid);
 
-	// fabd is running ; create args file
-	fatal(ixclose, &fd);
+		if(fabd_pid == 0)
+		{
+			g_params.pid = getpid();
 
-	// open for writing
-	fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+			// fab-pid file
+			snprintf(space + z, sizeof(space) - z, "/fabd/pid");
+			fatal(ixclose, &fd);
+			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+			fatal(axwrite, fd, &g_params.pid, sizeof(g_params.pid));
+			fatal(ixclose, &fd);
 
-	// set the filesize
-	fatal(xftruncate, fd, mb->l);
+			// freedom
+			fatal(xsetpgid, 0, 0);
 
-	// map the file writeable
-	void * addr;
-	fatal(xmmap, 0, mb->l, PROT_WRITE, MAP_SHARED, fd, 0, &addr);
+			fatal(ixclose, &fd);
+			fatal(ixclose, &lockfd);
 
-	// copy the args in
-	args_freeze(mb->s);
-	memcpy(addr, mb->s, mb->l);
-	
-	// close and unmap
-	fatal(xmunmap, addr, mb->l);
-	fatal(ixclose, &fd);
-	
-	// reassume user identity
-	fatal(identity_assume_user);
+			// fabd-lock file
+			snprintf(space + z, sizeof(space) - z, "/fabd/lock");
+			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &lockfd);
+			fatal(xflock, lockfd, LOCK_EX | LOCK_NB);
 
-#if 0
-	// default logging categories, with lower precedence than cmdline logexprs
-	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, 1, L_INFO);
+			// files done : reassume user identity
+			fatal(identity_assume_user);
 
-	// configure logger
-#if DEBUG || DEVEL
-	if(g_args->mode_logtrace == MODE_LOGTRACE_FULL)
-	{
-		fatal(log_config_and_describe
-			, L_TAG																												// prefix
-			, L_LWOPINFO | L_LWTOKEN | L_LWSTATE | L_FFTOKEN | L_FFSTATE	// trace
-			, L_INFO																											// describe bits
-		);
+			// fabd args
+			z = snprintf(space, sizeof(space), "%u", canhash);
+
+#if DEVEL
+			snprintf(space2, sizeof(space2), "%s/../fabd/fabd.devel", g_params.exedir);
+printf("EXEC %s %s %s\n", space2, space, "+PARAMS");
+			execl(space2, space2, space, "+PARAMS", (void*)0);
+#else
+			execlp("fabd", "fabd", space, (void*)0);
+#endif
+
+			tfail(perrtab_SYS, errno);
+		}
 	}
 	else
 	{
-		fatal(log_config_and_describe
-			, L_TAG
-			, 0
-			, L_INFO
-		);
-	}
-#else
-	fatal(log_config, L_TAG);	// prefix
-#endif
+		// files done : reassume user identity
+		fatal(identity_assume_user);
 
-	// summarize arguments as received
-	fatal(args_summarize);
-#endif
+		// awaken
+		fatal(xkill, fabd_pid, 1);
+	}
+	
+	// wait to hear back from fabd
+	pause();
 
 #if 0
+	// summarize arguments as received
+	fatal(args_summarize);
 
 	// register object types with liblistwise
 	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
@@ -580,6 +587,7 @@ finally:
 #endif
 
 	fatal(ixclose, &fd);
+	fatal(ixclose, &lockfd);
 
 	if(XAPI_UNWINDING)
 	{

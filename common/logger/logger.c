@@ -222,7 +222,7 @@ static int finish()
 
 	logwrite("\n", 1, 0);
 
-	// flush to stderr
+	// flush to stdout
 	int __attribute__((unused)) r = write(1, o_space, o_space_l);
 
 	o_space_bits = 0;
@@ -584,11 +584,6 @@ for(x = 0; x < g_argvsl; x++)
 }
 #endif
 
-#if 0
-printf("argvs : %s\n", g_argvs);
-printf("inter : %d\n", interpreter);
-#endif
-
 	// 1. replace nulls with spaces in g_argvs
 	// 2. construct g_argv, array of arguments
 	i = 0;
@@ -666,6 +661,8 @@ for(x = 0; x < g_argc; x++)
 		printf(" * interpreting");
 	printf("\n");
 }
+for(x = 0; x < o_logexprs_l; x++)
+	printf("[%2d] %s\n", x, o_logexprs[x]);
 #endif
 
 finally:

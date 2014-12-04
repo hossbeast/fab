@@ -22,21 +22,8 @@
 // api
 //
 #include "xlinux.h"
-#include "error.h"
-#include "xdirent.h"
-#include "xdlfcn.h"
-#include "xfcntl.h"
-#include "xftw.h"
-#include "xgrp.h"
-#include "xmman.h"
-#include "xpwd.h"
-#include "xstat.h"
-#include "xstdlib.h"
-#include "xstring.h"
-#include "xtime.h"
-#include "xunistd.h"
-#include "xsignal.h"
 #include "mempolicy.h"
+#include "error.h"
 
 // error tables
 #include "XLINUX.errtab.h"

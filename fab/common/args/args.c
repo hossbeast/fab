@@ -35,7 +35,6 @@
 #include "FAB.errtab.h"
 
 #include "logs.h"
-#include "selector.h"
 #include "params.h"
 
 #include "unitstring.h"
@@ -44,13 +43,34 @@
 
 #include "memblk.h"
 
+#define restrict __restrict
+
 struct g_args_t * g_args;
 
 //
 // [[ static ]]
 //
 
-static path * o_init_fabpath;
+static char * selector_string(const selector * const restrict s, char * const restrict dst, const size_t z)
+{
+	int l = 0;
+	l += snprintf(dst + l, z - l, "{ %c", s->mode);
+
+	uint32_t x = 1;
+	while(x)
+	{
+		if(s->lists & x)
+		{
+			if(l > 3)
+				l += snprintf(dst + l, z - l, "|");
+			l += snprintf(dst + l, z - l, "%s", SELECTOR_STR(x));
+		}
+		x <<= 1;
+	}
+
+	l += snprintf(dst + l, z - l, ",%s : %s }", SELECTOR_BASE_STR(s->base), s->s);
+	return dst;
+}
 
 static int selector_parse(char * const s, uint32_t * const lists, uint8_t * const base, int * const mode)
 {
@@ -113,6 +133,16 @@ static int selector_parse(char * const s, uint32_t * const lists, uint8_t * cons
 	}
 
 	finally : coda;
+}
+
+void selector_freeze(char * const restrict p, selector * restrict s)
+{
+	FREEZE(p, s->s);
+}
+
+void selector_thaw(char * const restrict p, selector * restrict s)
+{
+	THAW(p, s->s);
 }
 
 static void usage(int valid, int version, int help, int logcats, int operators, uint64_t opmask)
@@ -435,8 +465,7 @@ int args_parse(memblk * mb)
 	g_args->mode_bslic			= DEFAULT_MODE_BSLIC;
 #endif
 	g_args->invalidationsz	= DEFAULT_INVALIDATE_ALL;
-	fatal(path_create_init, &o_init_fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
-	fatal(path_copy, &g_args->init_fabfile_path, o_init_fabpath);
+	fatal(path_create_init, &g_args->init_fabfile_path, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
 
 	// default invokedirs - head of list
 	fatal(xrealloc, &g_args->invokedirs, sizeof(g_args->invokedirs[0]), g_args->invokedirsl + 1, g_args->invokedirsl);
@@ -586,8 +615,12 @@ printf("optopt=%c\n", optopt);
 
 int args_summarize()
 {
+	path * init_fabpath = 0;
+
 	char space[512];
 	int x;
+
+	fatal(path_create_init, &init_fabpath, g_params.cwd, "%s", DEFAULT_INIT_FABFILE);
 
 	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
@@ -607,10 +640,10 @@ int args_summarize()
 	logf(L_PARAMS	, "%11sexpiration-policy      =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_args->init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->can);
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_args->init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->abs);
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_args->init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->rel_cwd);
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_args->init_fabfile_path, o_init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->rel_fab);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->can);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->abs);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->rel_cwd);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->rel_fab);
 	logf(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan             =%s", g_args->mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args->mode_bplan));
 
 	if(g_args->mode_bplan == MODE_BPLAN_BAKE)
@@ -661,7 +694,9 @@ int args_summarize()
 
 	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
-	finally : coda;
+finally:
+	path_free(init_fabpath);
+coda;
 }
 
 void args_freeze(char * const p)

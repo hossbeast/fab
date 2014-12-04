@@ -49,7 +49,7 @@ int API uxread(int fd, void * buf, size_t count, ssize_t * bytes)
 	finally : coda;
 }
 
-int API axread(int fd, void * buf, size_t count, ssize_t * bytes)
+int API axread(int fd, void * buf, size_t count)
 {
 	ssize_t actual;
 	if((actual = read(fd, buf, count)) == -1)
@@ -59,9 +59,6 @@ int API axread(int fd, void * buf, size_t count, ssize_t * bytes)
 		fail(XLINUX_LESS);
 
 finally:
-	if(bytes)
-		*bytes = actual;
-
 	if(XAPI_ERRCODE == XLINUX_LESS)
 	{
 		XAPI_INFOF("expected", "%zu", count);
@@ -79,6 +76,24 @@ int API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 		fail(errno);
 
 	finally : coda;
+}
+
+int API axwrite(int fd, const void * buf, size_t count)
+{
+	ssize_t actual;
+	if((actual = write(fd, buf, count)) == -1)
+		fail(errno);
+
+	if(actual != count)
+		fail(XLINUX_LESS);
+
+finally:
+	if(XAPI_ERRCODE == XLINUX_LESS)
+	{
+		XAPI_INFOF("expected", "%zu", count);
+		XAPI_INFOF("actual", "%zd", actual);
+	}
+coda;
 }
 
 int API xgetcwd(char * buf, size_t size, char ** res)
@@ -277,4 +292,11 @@ int API xrmdir(const char * pathname)
 finally:
 	XAPI_INFOS("pathname", pathname);
 coda;
+}
+
+int API xsetpgid(pid_t pid, pid_t pgid)
+{
+	fatalize(errno, setpgid, pid, pgid);
+
+	finally : coda;
 }

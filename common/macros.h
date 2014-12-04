@@ -55,7 +55,14 @@
 	p - (x);																						\
 })
 
-#define FREEZE(p, v) (v) = (void*)(intptr_t)(((char*)(v)) - (p))
-#define THAW(p, v) (v) = (typeof(v))((p) + (size_t)(intptr_t)(v));
+#define FREEZE(p, v) do { 													\
+	if(v)																							\
+		(v) = (void*)(intptr_t)(((char*)(v)) - (p));		\
+} while(0)
+
+#define THAW(p, v) do {															\
+	if(v)																							\
+		(v) = (typeof(v))((p) + (size_t)(intptr_t)(v));	\
+} while(0)
 
 #endif

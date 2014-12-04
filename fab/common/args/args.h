@@ -18,6 +18,7 @@
 #ifndef _FAB_ARGS_H
 #define _FAB_ARGS_H
 
+#include <stdint.h>
 #include <sys/types.h>
 
 struct memblk;			// common/memblk.h
@@ -52,6 +53,46 @@ struct path;				// path.h
 ** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stdo						stdout from cmd
 ** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stde						stderr from cmd
 */
+
+#define SELECTOR_TABLE(x)																												\
+	_SELECTOR(SELECTOR_FABRICATE		, 0x01	, x)	/* fabricate */									\
+	_SELECTOR(SELECTOR_FABRICATEX		, 0x02	, x)	/* fabricate-exact */						\
+	_SELECTOR(SELECTOR_FABRICATEN		, 0x04	, x)	/* fabricate-nofile */					\
+	_SELECTOR(SELECTOR_INVALIDATE		, 0x08	, x)	/* invalidate */								\
+	_SELECTOR(SELECTOR_DISCOVERY		, 0x10	, x)	/* discovery */									\
+	_SELECTOR(SELECTOR_INSPECT			, 0x20	, x)	/* inspect */										\
+	_SELECTOR(SELECTOR_QUERY				, 0x40	, x)	/* query */											\
+
+enum {
+#define _SELECTOR(a, b, c) a = b,
+SELECTOR_TABLE(0)
+#undef _SELECTOR
+};
+
+#define _SELECTOR(a, b, c) (c) == b ? #a :
+#define SELECTOR_STR(x) SELECTOR_TABLE(x) "unknown"
+
+#define SELECTOR_BASE_TABLE(x)																																		\
+	_SELECTOR_BASE(SELECTOR_BASE_FABFILE_DIR	, 0x01	, x)	/* resolve against init-fabfile-dir */	\
+	_SELECTOR_BASE(SELECTOR_BASE_CWD					, 0x02	, x)	/* resolve against cwd */								\
+
+enum {
+#define _SELECTOR_BASE(a, b, c) a = b,
+SELECTOR_BASE_TABLE(0)
+#undef _SELECTOR_BASE
+};
+
+#define _SELECTOR_BASE(a, b, c) (c) == b ? #a :
+#define SELECTOR_BASE_STR(x) SELECTOR_BASE_TABLE(x) "unknown"
+
+// node selectors
+typedef struct selector {
+	char * 			s;					// selector text
+	int					sl;					// selector text length
+	char				mode;				// '-' : remove, '+' : append
+	uint8_t			base;				// base for path resolution
+	uint32_t		lists;			// list(s) affected
+} selector;
 
 #define DEFAULT_INIT_FABFILE 			"./fabfile"
 #define DEFAULT_INVALIDATE_ALL		0

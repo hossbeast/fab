@@ -15,19 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <signal.h>
+
 #include "internal.h"
 
-int xkill(pid_t pid, int sig)
+xapi API xkill(pid_t pid, int sig)
 {
 	fatalize(errno, kill, pid, sig);
 
-	finally : coda;
+finally:
+	XAPI_INFOF("pid", "%lu", (unsigned long)pid);
+	XAPI_INFOF("sig", "%d", sig);
+coda;
 }
 
-int uxkill(pid_t pid, int sig, int * r)
+xapi API uxkill(pid_t pid, int sig, int * r)
 {
-	fatalize(errno, kill, pid, sig);
-
 	if(r && ((*r) = kill(pid, sig)) == -1 && errno != ESRCH)
 	{
 		fail(errno);

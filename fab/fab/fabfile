@@ -23,22 +23,35 @@
 
 # variables
 #	[ $dfab/../args ~j ] [ $dfab/../error ~j ] [ $dfab/../logs ~j ]
-$sdirs = [ $dfab [ args error logs ~ [ ?, s,^,$dfab/../ ] ] ~ lsr c -d ]
-$copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
+$sdirs = [ $dfab [ $dfab/../common ~ j ] ~ lsr c -d ]
 
+$copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
+
+	# include paths - mark as system to preclude dependency discovery from gcc
+	[ $dlibxapi $dlibxlinux $dlibpstring $dliblistwise ~ s/^/-I ]
+]
+
+$params = [
+	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
 	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
 	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
 	[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
-
-	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-I ]
 ]
 
-$cflags_final = [ $cflags_final $copts [ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ] [ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ] ]
-$cflags_debug = [ $cflags_debug $copts [ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ] [ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ] ]
-$cflags_devel = [ $cflags_devel $copts [ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ] [ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ] ]
+$params_devel = [
+	[ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
+	[ -DFABCACHEDIR="\""$fabcachedir_devel"\"" ~ j ]
+	[ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
+	[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
+]
+
+$cflags_final = [ $cflags_final $copts $params ]
+$cflags_debug = [ $cflags_debug $copts $params ]
+$cflags_devel = [ $cflags_devel $copts $params_devel ]
 
 $rpath = [ 
 	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
@@ -79,9 +92,9 @@ $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_deve
 +[@std.bison.tokens]($dext = [ final.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_final)
 +[@std.bison.tokens]($dext = [ debug.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_debug)
 +[@std.bison.tokens]($dext = [ devel.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_devel)
-+[@std.xapi.errtab] ($dext = [ final.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_final)
-+[@std.xapi.errtab] ($dext = [ debug.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_debug)
-+[@std.xapi.errtab] ($dext = [ devel.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_devel)
++[@std.xapi.errtab] ($dext = [ final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_final)
++[@std.xapi.errtab] ($dext = [ debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_debug)
++[@std.xapi.errtab] ($dext = [ devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_devel)
 
 # operator so's
 $faboplist_final = [ $dfab/fablw/op ~ j lsr sx/c/final.so y ]

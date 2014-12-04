@@ -122,4 +122,6 @@ $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
 	install [ $dlibxlinux/xlinux/xtime.h ]							[ $destdir/$incdir/xlinux/ ]
 	install [ $dlibxlinux/xlinux/xunistd.h ]						[ $destdir/$incdir/xlinux/ ]
 	install [ $dlibxlinux/xlinux/xsignal.h ]						[ $destdir/$incdir/xlinux/ ]
+	install [ $dlibxlinux/xlinux/xfile.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $dlibxlinux/xlinux/xprctl.h ]							[ $destdir/$incdir/xlinux/ ]
 }

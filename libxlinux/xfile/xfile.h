@@ -15,38 +15,18 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <errno.h>
+#ifndef _XLINUX_XFILE_H
+#define _XLINUX_XFILE_H
 
-#include "internal.h"
+/// xflock
+//
+// SUMMARY
+//  proxy for flock
+//
+// PARAMETERS
+//  fd        - pid
+//  operation - signal
+//
+int xflock(pid_t pid, int sig);
 
-#include "xmman.h"
-
-int API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
-{
-	if(r && (*r = mmap(addr, length, prot, flags, fd, offset)) == MAP_FAILED)
-		fail(errno);
-
-	else if(!r && mmap(addr, length, prot, flags, fd, offset) == MAP_FAILED)
-		fail(errno);
-	
-finally:
-	XAPI_INFOF("length", "%zu", length);
-coda;
-}
-
-int API xmunmap(void * addr, size_t length)
-{
-	fatalize(errno, munmap, addr, length);
-
-	finally : coda;
-}
-
-int API ixmunmap(void * addr, size_t length)
-{
-	if(*(void**)addr)
-		fatalize(errno, munmap, *(void**)addr, length);
-
-	*(void**)addr = 0;
-
-	finally : coda;
-}
+#endif

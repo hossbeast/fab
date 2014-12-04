@@ -15,38 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <errno.h>
+#ifndef _XLINUX_XPRCTL_H
+#define _XLINUX_XPRCTL_H
 
-#include "internal.h"
+/// xprctl
+//
+// SUMMARY
+//  proxy for prctl
+//
+// PARAMETERS
+//
+int xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5);
 
-#include "xmman.h"
-
-int API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
-{
-	if(r && (*r = mmap(addr, length, prot, flags, fd, offset)) == MAP_FAILED)
-		fail(errno);
-
-	else if(!r && mmap(addr, length, prot, flags, fd, offset) == MAP_FAILED)
-		fail(errno);
-	
-finally:
-	XAPI_INFOF("length", "%zu", length);
-coda;
-}
-
-int API xmunmap(void * addr, size_t length)
-{
-	fatalize(errno, munmap, addr, length);
-
-	finally : coda;
-}
-
-int API ixmunmap(void * addr, size_t length)
-{
-	if(*(void**)addr)
-		fatalize(errno, munmap, *(void**)addr, length);
-
-	*(void**)addr = 0;
-
-	finally : coda;
-}
+#endif

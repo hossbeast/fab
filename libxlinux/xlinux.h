@@ -21,15 +21,17 @@
 #include "xlinux/xdirent.h"
 #include "xlinux/xdlfcn.h"
 #include "xlinux/xfcntl.h"
+#include "xlinux/xfile.h"
 #include "xlinux/xftw.h"
 #include "xlinux/xgrp.h"
 #include "xlinux/xmman.h"
+#include "xlinux/xprctl.h"
 #include "xlinux/xpwd.h"
+#include "xlinux/xsignal.h"
 #include "xlinux/xstat.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 #include "xlinux/xtime.h"
 #include "xlinux/xunistd.h"
-#include "xlinux/xsignal.h"
 
 #endif

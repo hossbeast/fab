@@ -30,6 +30,7 @@
 #include "global.h"
 
 #include "parseint.h"
+#include "macros.h"
 
 // signal handling
 static int o_signum;
@@ -37,11 +38,18 @@ static void signal_handler(int signum)
 {
 	if(!o_signum)
 		o_signum = signum;
+
+	printf("fabd[%u] rcv %d\n", getpid(), signum);
 }
 
 int main(int argc, char** argv)
 {
 	char space[2048];
+	char space2[2048];
+
+	int fd = -1;
+	int argsfd = -1;
+	pid_t fab_pid = 0;
 
 	int x;
 	size_t tracesz = 0;
@@ -49,7 +57,6 @@ int main(int argc, char** argv)
 	// initialize error tables
 	error_setup();
 
-#if 0
 	// process parameter gathering
 	fatal(params_setup);
 
@@ -58,7 +65,6 @@ int main(int argc, char** argv)
 
 	// assume identity of the executing user
 	fatal(identity_assume_user);
-#endif
 
 	// unblock all signals
 	sigset_t all;
@@ -73,20 +79,100 @@ int main(int argc, char** argv)
 	signal(SIGINT		, signal_handler);	// terminate gracefully
 	signal(SIGQUIT	, signal_handler);
 	signal(SIGTERM	, signal_handler);
+	signal(SIGHUP		, signal_handler);
+
+	// stdin is not needed
+	close(0);
+	fatal(xopen, "/dev/null", O_RDONLY, 0);
+
+	// initialize logger
+	fatal(log_init);
 
 	// get ipc dir
-	uint32_t ipc = 0;
-	if(argc < 2 || parseuint(argv[1], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &ipc, 0) != 0)
+	uint32_t canhash;
+	if(argc < 2 || parseuint(argv[1], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
 		fail(FAB_BADARGS);
 
+	// ipc-dir stem
+	size_t z = snprintf(space, sizeof(space), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
+
+	snprintf(space2, sizeof(space2), "%s/args", space);
+
+	// open args file
+	fatal(xopen, space2, O_RDWR, &argsfd);
+
+	struct stat stb;
 	while(o_signum != SIGINT && o_signum != SIGQUIT && o_signum != SIGTERM)
 	{
-		
+		// read fab/pid
+		snprintf(space + z, sizeof(space) - z, "/fab/pid");
+		fatal(ixclose, &fd);
+		fatal(gxopen, space, O_RDONLY, &fd);
+		fatal(axread, fd, &fab_pid, sizeof(fab_pid));
 
+		// existence check
+		fatal(xkill, fab_pid, 0);
+
+		// reopen file descriptors
+		fatal(xclose, 1);
+		snprintf(space2, sizeof(space2), "/proc/%ld/fd/1", (long)fab_pid);
+		fatal(xopen, space2, O_RDWR, 0);
+
+		fatal(xclose, 2);
+		snprintf(space2, sizeof(space2), "/proc/%ld/fd/2", (long)fab_pid);
+		fatal(xopen, space2, O_RDWR, 0);
+		
+		// release previous args mapping
+		fatal(ixmunmap, &g_args, stb.st_size);
+
+		// map the file
+		fatal(xfstat, argsfd, &stb);
+		fatal(xmmap, 0, stb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, argsfd, 0, (void*)&g_args);
+
+		// unpack the args
+		args_thaw((void*)g_args);
+
+#if 1
+	// re-configure logger
+#if DEBUG || DEVEL
+	if(g_args->mode_logtrace == MODE_LOGTRACE_FULL)
+	{
+		fatal(log_config_and_describe
+			, L_TAG																												// prefix
+			, L_LWOPINFO | L_LWTOKEN | L_LWSTATE | L_FFTOKEN | L_FFSTATE	// trace
+			, L_INFO																											// describe bits
+		);
+	}
+	else
+	{
+		fatal(log_config_and_describe
+			, L_TAG
+			, 0
+			, L_INFO
+		);
+	}
+#else
+	fatal(log_config, L_TAG);	// prefix
+#endif
+#endif
+
+		// log args summary
+		fatal(args_summarize);
+
+		// task complete : notify fab
+		fatal(xkill, fab_pid, 1);
+
+		// wait for next command
+		o_signum = 0;
 		pause();
 	}
 
 finally:
+
+	fatal(ixmunmap, &g_args, stb.st_size);
+	fatal(ixclose, &argsfd);
+	fatal(ixclose, &fd);
+
 	if(XAPI_UNWINDING)
 	{
 #if 0
@@ -111,5 +197,8 @@ finally:
 	{
 		logs(L_INFO, "exiting with status : 0");
 	}
+
+	if(fab_pid)
+		kill(fab_pid, 1);
 coda;
 }

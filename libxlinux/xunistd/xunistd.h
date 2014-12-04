@@ -53,10 +53,9 @@ int uxread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
 //  proxy for read that also fails when count != actual
 //
 // PARAMETERS
-//  [bytes] - returns the number of bytes read
 //
-int axread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
-	__attribute__((nonnull(2)));
+int axread(int fd, void * restrict buf, size_t count)
+	__attribute__((nonnull));
 
 /// xwrite
 //
@@ -66,7 +65,18 @@ int axread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
 // PARAMETERS
 //  [bytes] - returns the number of bytes written
 //
-int xwrite(int fd, const void * buf, size_t count, ssize_t * bytes);
+int xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
+	__attribute__((nonnull(2)));
+
+/// axwrite
+//
+// SUMMARY
+//  proxy for write that also fails when count != actual
+//
+// PARAMETERS
+//
+int axwrite(int fd, const void * buf, size_t count)
+	__attribute__((nonnull));
 
 /// xgetcwd
 //
@@ -238,6 +248,13 @@ int xftruncate(int fd, off_t length);
 //
 int xrmdir(const char * restrict pathname)
 	__attribute__((nonnull));
+
+/// xsetpgid
+//
+// SUMMARY
+//  proxy for setpgid
+//
+int xsetpgid(pid_t pid, pid_t pgid);
 
 #undef restrict
 #endif
