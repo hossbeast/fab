@@ -25,7 +25,7 @@
 $libname 			= [ libxlinux.so ]
 $copts				= [ -fPIC [ $dlibxlinux ~ lsr c -d s/^/-I ]
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dliblistwise $dlibpstring ~ s/^/-I ]
+	[ $dlibxapi $dliblistwise ~ s/^/-I ]
 ]
 $cflags_final = [ $cflags_final $copts ]
 $cflags_debug = [ $cflags_debug $copts ]

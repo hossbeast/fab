@@ -1,0 +1,109 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# definitions
++[ $*/../../vars.fab ]
+
+# source invocations
++[ $dcommon ]() @common
+
+# variables
+$sdirs = [ $dfabw [ $dfabw/../common ~ j ] ~ lsr c -d ]
+$copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
+	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
+	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
+
+	# include paths
+	[ $dlibxapi $dlibxlinux ~ s/^/-I ]
+]
+
+$params = [
+	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
+	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
+	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
+	[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
+]
+
+$params_devel = [
+	[ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
+	[ -DFABCACHEDIR="\""$fabcachedir_devel"\"" ~ j ]
+	[ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
+	[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
+]
+
+$cflags_final = [ $cflags_final $copts $params ]
+$cflags_debug = [ $cflags_debug $copts $params ]
+$cflags_devel = [ $cflags_devel $copts $params_devel ]
+
+$rpath = [ 
+	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+]
+$lflags_final = [ $lflags_final $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
+$lflags_debug = [ $lflags_debug $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
+$lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
+
+# standard files - standard compilation
++[@std.c]($dext = [ final.o ]; $dirs = $sdirs; $paths = [ $dfabw/main.c ~ j ]; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.o ]; $dirs = $sdirs; $paths = [ $dfabw/main.c ~ j ]; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.o ]; $dirs = $sdirs; $paths = [ $dfabw/main.c ~ j ]; $cc; $cflags = $cflags_devel; $gccdep = $gccdep_devel)
+
+#
+# catchall node
+#
+[ @final ] : [ $fabw_final ]
+[ @debug ] : [ $fabw_debug ]
+[ @devel ] : [ $fabw_devel ]
+
+#
+# executables
+#
+[ $fabw_final ] :^ [ $libxapi_final $libxlinux_final ]
+[ $fabw_debug ] :^ [ $libxapi_debug $libxlinux_debug ]
+[ $fabw_devel ] :^ [ $libxapi_devel $libxlinux_devel ]
+
+[ $fabw_final ] : [ $dfabw/main.final.o ~ j ] 
+{
+	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_final ~ fi ]
+}
+
+[ $fabw_debug ] : [ $dfabw/main.debug.o ~ j ] 
+{
+	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_debug ~ fi ]
+}
+
+[ $fabw_devel ] : [ $dfabw/main.devel.o ~ j ] 
+{
+	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_devel ~ fi ]
+}
+
+#
+# tasks
+#
+
+[ @install.final ] : [ @final ]
+{
+	install -d																			[ $destdir/$bindir ]
+	install [ $fabw_final ]													[ $destdir/$bindir/fabw ]
+}
+
+[ @install.debug ] : [ @debug ]
+{
+	install -d																			[ $destdir/$bindir ]
+	install [ $fabw_debug ]													[ $destdir/$bindir/fabw ]
+}

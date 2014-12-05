@@ -57,20 +57,21 @@ static int				o_filter_l;
 struct g_logs_t * g_logs;
 int g_logs_l;
 
-char ** g_argv;
-int g_argc;
-char * g_argvs;
-int g_argvsl;
-char * g_binary;
-char * g_interpreting;
+char **			g_argv;
+int					g_argc;
+char *			g_argvs;
+int					g_argvsl;
+char *			g_binary;
+char *			g_interpreting;
+char **			g_logv;
+static int	g_logva;
+int					g_logc;
+char *			g_logvs;
+int					g_logvsl;
 
 //
 // [[ static ]]
 //
-
-static char **	o_logexprs;
-static int			o_logexprs_a;
-static int			o_logexprs_l;
 
 static uint64_t o_space_bits;	// when a log is being constructed, effective bits
 static char * 	o_space;			// storage between logvprintf/flush calls
@@ -446,13 +447,13 @@ static int logconfig(TRACEARGS uint64_t prefix
 
 	// parse logexprs
 	int x;
-	for(x = 0; x < o_logexprs_l; x++)
+	for(x = 0; x < g_logc; x++)
 	{
 		if(bits)
 		{
 			char space[512];
 			size_t sz = 0;
-			fatal(logparse, o_logexprs[x], 0, 0, space, sizeof(space), &sz);
+			fatal(logparse, g_logv[x], 0, 0, space, sizeof(space), &sz);
 
 			if(sz)
 			{
@@ -461,7 +462,7 @@ static int logconfig(TRACEARGS uint64_t prefix
 		}
 		else
 		{
-			fatal(logparse, o_logexprs[x], 0, 0, 0, 0, 0);
+			fatal(logparse, g_logv[x], 0, 0, 0, 0, 0);
 		}
 	}
 
@@ -495,6 +496,13 @@ int log_log_parse_and_describe(TRACEARGS char * expr, int expr_len, int prepend,
 int log_parse_pop()
 {
 	o_filter_l--;
+
+	finally : coda;
+}
+
+int log_parse_clear()
+{
+	o_filter_l = 0;
 
 	finally : coda;
 }
@@ -624,15 +632,15 @@ for(x = 0; x < g_argvsl; x++)
 	{
 		if(parsetest(g_argv[x], 0, 0))
 		{
-			if(o_logexprs_l == o_logexprs_a)
+			if(g_logc == g_logva)
 			{
-				int ns = o_logexprs_a ?: 10;
+				int ns = g_logva ?: 10;
 				ns = ns * 2 + ns / 2;
-				fatal(xrealloc, &o_logexprs, sizeof(*o_logexprs), ns, o_logexprs_a);
-				o_logexprs_a = ns;
+				fatal(xrealloc, &g_logv, sizeof(*g_logv), ns, g_logva);
+				g_logva = ns;
 			}
 
-			o_logexprs[o_logexprs_l++] = g_argv[x];
+			g_logv[g_logc++] = g_argv[x];
 			g_argv[x] = 0;
 		}
 	}
@@ -651,7 +659,26 @@ for(x = 0; x < g_argvsl; x++)
 		}
 	}
 
-#if 0
+	// construct g_argvs
+	g_logvsl = 0;
+	for(x = 0; x < g_logc; x++)
+	{
+		if(x)
+			g_logvsl++;
+		g_logvsl += strlen(g_logv[x]);
+	}
+
+	fatal(xmalloc, &g_logvs, g_logvsl + 1);
+
+	for(x = 0; x < g_logc; x++)
+	{
+		if(x)
+			strcat(g_logvs, " ");
+		strcat(g_logvs, g_logv[x]);
+	}
+
+#if 1
+printf("args : %s\n", g_argvs);
 for(x = 0; x < g_argc; x++)
 {
 	printf("[%2d] %s", x, g_argv[x]);
@@ -661,8 +688,10 @@ for(x = 0; x < g_argc; x++)
 		printf(" * interpreting");
 	printf("\n");
 }
-for(x = 0; x < o_logexprs_l; x++)
-	printf("[%2d] %s\n", x, o_logexprs[x]);
+
+printf("logs : %s\n", g_logvs);
+for(x = 0; x < g_logc; x++)
+	printf("[%2d] %s\n", x, g_logv[x]);
 #endif
 
 finally:
@@ -842,7 +871,7 @@ void log_teardown()
 		free(g_argv[x]);
 	free(g_argv);
 
-	for(x = 0; x < o_logexprs_l; x++)
-		free(o_logexprs[x]);
-	free(o_logexprs);
+	for(x = 0; x < g_logc; x++)
+		free(g_logv[x]);
+	free(g_logv);
 }

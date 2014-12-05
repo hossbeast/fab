@@ -50,12 +50,17 @@ extern int g_logs_l;
 //
 // logger-provided program args, populated during log_init
 //
-extern char ** g_argv;				// array of args as delimited by nulls
-extern int g_argc;						// count of g_argv
-extern char * g_argvs;				// single string, nulls replaced with spaces
-extern int g_argvsl;					// length of g_argvs
-extern char * g_binary;				// executable. pointer into argv
-extern char * g_interpreting;	// interpreter script, if executing as an interpreter. pointer into g_argv
+extern char **	g_argv;					// array of args as delimited by nulls
+extern int			g_argc;					// count of g_argv
+extern char *		g_argvs;				// single string, nulls replaced with spaces
+extern int			g_argvsl;				// length of g_argvs
+extern char *		g_binary;				// executable. pointer into argv
+extern char *		g_interpreting;	// interpreter script, if executing as an interpreter. pointer into g_argv
+extern char **	g_logv;					// array of logexprs
+extern int			g_logc;					// count of g_logv
+extern char *		g_logvs;				// single string of logexprs
+extern int			g_logvsl;				// length of g_logvs
+
 
 /// (XAPI) log_init
 //
@@ -119,9 +124,16 @@ int log_log_parse_and_describe(char * expr, int expr_len, int prepend, uint64_t 
 /// (XAPI) log_parse_pop
 //
 // SUMMARY
-//  remove the most recently added logging filter
+//  remove the most recently parsed logexpr
 //
 int log_parse_pop();
+
+/// (XAPI) log_parse_clear
+//
+// SUMMARY
+//  remove all logexprs
+//
+int log_parse_clear();
 
 /// log_would
 //

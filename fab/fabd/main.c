@@ -48,11 +48,19 @@ int main(int argc, char** argv)
 	char space2[2048];
 
 	int fd = -1;
-	int argsfd = -1;
 	pid_t fab_pid = 0;
+
+	int argsfd = -1;
+	struct stat argsb = {};
+
+	int logsfd = -1;
+	struct stat logsb = {};
+	char * logvs = 0;
+	size_t logvsl = 0;
 
 	int x;
 	size_t tracesz = 0;
+
 
 	// initialize error tables
 	error_setup();
@@ -88,52 +96,7 @@ int main(int argc, char** argv)
 	// initialize logger
 	fatal(log_init);
 
-	// get ipc dir
-	uint32_t canhash;
-	if(argc < 2 || parseuint(argv[1], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
-		fail(FAB_BADARGS);
-
-	// ipc-dir stem
-	size_t z = snprintf(space, sizeof(space), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
-
-	snprintf(space2, sizeof(space2), "%s/args", space);
-
-	// open args file
-	fatal(xopen, space2, O_RDWR, &argsfd);
-
-	struct stat stb;
-	while(o_signum != SIGINT && o_signum != SIGQUIT && o_signum != SIGTERM)
-	{
-		// read fab/pid
-		snprintf(space + z, sizeof(space) - z, "/fab/pid");
-		fatal(ixclose, &fd);
-		fatal(gxopen, space, O_RDONLY, &fd);
-		fatal(axread, fd, &fab_pid, sizeof(fab_pid));
-
-		// existence check
-		fatal(xkill, fab_pid, 0);
-
-		// reopen file descriptors
-		fatal(xclose, 1);
-		snprintf(space2, sizeof(space2), "/proc/%ld/fd/1", (long)fab_pid);
-		fatal(xopen, space2, O_RDWR, 0);
-
-		fatal(xclose, 2);
-		snprintf(space2, sizeof(space2), "/proc/%ld/fd/2", (long)fab_pid);
-		fatal(xopen, space2, O_RDWR, 0);
-		
-		// release previous args mapping
-		fatal(ixmunmap, &g_args, stb.st_size);
-
-		// map the file
-		fatal(xfstat, argsfd, &stb);
-		fatal(xmmap, 0, stb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, argsfd, 0, (void*)&g_args);
-
-		// unpack the args
-		args_thaw((void*)g_args);
-
-#if 1
-	// re-configure logger
+#if 0
 #if DEBUG || DEVEL
 	if(g_args->mode_logtrace == MODE_LOGTRACE_FULL)
 	{
@@ -156,9 +119,70 @@ int main(int argc, char** argv)
 #endif
 #endif
 
+	// get ipc dir
+	uint32_t canhash;
+	if(argc < 2 || parseuint(argv[1], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
+		fail(FAB_BADARGS);
+
+	// ipc-dir stem
+	size_t z = snprintf(space, sizeof(space), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
+
+	// open args file
+	snprintf(space2, sizeof(space2), "%s/args", space);
+	fatal(xopen, space2, O_RDWR, &argsfd);
+
+	// open logs file
+	snprintf(space2, sizeof(space2), "%s/logs", space);
+	fatal(xopen, space2, O_RDWR, &logsfd);
+
+	while(o_signum != SIGINT && o_signum != SIGQUIT && o_signum != SIGTERM)
+	{
+		// read fab/pid
+		snprintf(space + z, sizeof(space) - z, "/fab/pid");
+		fatal(ixclose, &fd);
+		fatal(gxopen, space, O_RDONLY, &fd);
+		fatal(axread, fd, &fab_pid, sizeof(fab_pid));
+
+		// existence check
+		fatal(xkill, fab_pid, 0);
+
+		// reopen file descriptors
+		fatal(xclose, 1);
+		snprintf(space2, sizeof(space2), "/proc/%ld/fd/1", (long)fab_pid);
+		fatal(xopen, space2, O_RDWR, 0);
+
+		fatal(xclose, 2);
+		snprintf(space2, sizeof(space2), "/proc/%ld/fd/2", (long)fab_pid);
+		fatal(xopen, space2, O_RDWR, 0);
+		
+		// release previous args mapping
+		fatal(ixmunmap, &g_args, argsb.st_size);
+
+		// map the file
+		fatal(xfstat, argsfd, &argsb);
+		fatal(xmmap, 0, argsb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, argsfd, 0, (void*)&g_args);
+
+		// unpack the args
+		args_thaw((void*)g_args);
+
+		// release previous logs mapping
+		fatal(ixmunmap, &logvs, logsb.st_size);
+
+		// map the file
+		fatal(xfstat, logsfd, &logsb);
+		if((logvsl = logsb.st_size))
+		{
+			fatal(xmmap, 0, logsb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, logsfd, 0, (void*)&logvs);
+		}
+
+		// re-configure logger
+		fatal(log_parse_clear);
+		fatal(log_parse_and_describe, logvs, logvsl, 0, 0);
+
 		// log args summary
 		fatal(args_summarize);
 
+printf("kill %ld\n", (long)fab_pid);
 		// task complete : notify fab
 		fatal(xkill, fab_pid, 1);
 
@@ -169,8 +193,9 @@ int main(int argc, char** argv)
 
 finally:
 
-	fatal(ixmunmap, &g_args, stb.st_size);
+	fatal(ixmunmap, &g_args, argsb.st_size);
 	fatal(ixclose, &argsfd);
+	fatal(ixclose, &logsfd);
 	fatal(ixclose, &fd);
 
 	if(XAPI_UNWINDING)
@@ -197,8 +222,5 @@ finally:
 	{
 		logs(L_INFO, "exiting with status : 0");
 	}
-
-	if(fab_pid)
-		kill(fab_pid, 1);
 coda;
 }

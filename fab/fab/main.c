@@ -34,12 +34,15 @@
 
 // signal handling
 static int o_signum;
-static void signal_handler(int signum)
+static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
 	if(!o_signum)
 		o_signum = signum;
 
-	printf("fab[%u] rcv %d\n", getpid(), signum);
+	printf("fab[%u] %d { pid : %ld", getpid(), signum, (long)info->si_pid);
+	if(signum == SIGCHLD)
+		printf(", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
+	printf(" }\n");
 }
 
 int main(int argc, char** argv)
@@ -109,10 +112,18 @@ int main(int argc, char** argv)
 		signal(x, SIG_DFL);
 
 	// handle these signals by terminating gracefully.
-	signal(SIGINT		, signal_handler);	// terminate gracefully
-	signal(SIGQUIT	, signal_handler);
-	signal(SIGTERM	, signal_handler);
-	signal(SIGHUP		, signal_handler);
+	struct sigaction action = {
+		  .sa_sigaction = signal_handler
+		, .sa_flags = SA_SIGINFO
+	};
+	sigaction(SIGINT		, &action, 0);	// terminate gracefully
+	sigaction(SIGQUIT	, &action, 0);
+	sigaction(SIGTERM	, &action, 0);
+	sigaction(SIGHUP		, &action, 0);
+	sigaction(SIGCHLD	, &action, 0);
+
+	// initalize logger
+	fatal(log_init);
 
 	// allocate memblock to store the args
 	fatal(memblk_mk, &mb, ARGS_MAX_SIZE);
@@ -130,9 +141,10 @@ int main(int argc, char** argv)
 /*
 /FABIPCDIR/<hash>/fabfile				<-- init fabfile path, symlink
 /FABIPCDIR/<hash>/args					<-- args, binary
+/FABIPCDIR/<hash>/logs					<-- logs, ascii
 /FABIPCDIR/<hash>/fab/pid				<-- fab pid, ascii
 /FABIPCDIR/<hash>/fab/lock			<-- fab lockfile
-/FABIPCDIR/<hash>/fabd/pid			<-- fabd pid, ascii
+/FABIPCDIR/<hash>/fabd/pgid			<-- fabd pid, ascii
 /FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile
 */
 
@@ -177,6 +189,17 @@ int main(int argc, char** argv)
 	fatal(axwrite, fd, mb->s, mb->l);
 	fatal(ixclose, &fd);
 
+	// open logs file for writing
+	snprintf(space + z, sizeof(space) - z, "/logs");
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+
+	// set the filesize
+	fatal(xftruncate, fd, g_logvsl);
+
+	// write the logs : g_logs unusable beyond this point
+	fatal(axwrite, fd, g_logvs, g_logvsl);
+	fatal(ixclose, &fd);
+
 	// fabd-pid file
 	snprintf(space + z, sizeof(space) - z, "/fabd/pid");
 	fatal(gxopen, space, O_RDONLY, &fd);
@@ -214,18 +237,17 @@ int main(int argc, char** argv)
 		{
 			g_params.pid = getpid();
 
-			// fab-pid file
-			snprintf(space + z, sizeof(space) - z, "/fabd/pid");
 			fatal(ixclose, &fd);
+			fatal(ixclose, &lockfd);
+
+			// fab-pid file
+			snprintf(space + z, sizeof(space) - z, "/fabd/pgid");
 			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
 			fatal(axwrite, fd, &g_params.pid, sizeof(g_params.pid));
 			fatal(ixclose, &fd);
 
 			// freedom
 			fatal(xsetpgid, 0, 0);
-
-			fatal(ixclose, &fd);
-			fatal(ixclose, &lockfd);
 
 			// fabd-lock file
 			snprintf(space + z, sizeof(space) - z, "/fabd/lock");
@@ -239,11 +261,11 @@ int main(int argc, char** argv)
 			z = snprintf(space, sizeof(space), "%u", canhash);
 
 #if DEVEL
-			snprintf(space2, sizeof(space2), "%s/../fabd/fabd.devel", g_params.exedir);
-printf("EXEC %s %s %s\n", space2, space, "+PARAMS");
-			execl(space2, space2, space, "+PARAMS", (void*)0);
+			snprintf(space2, sizeof(space2), "%s/../fabw/fabw.devel", g_params.exedir);
+printf("EXEC %s %s %s\n", space2, space);
+			execl(space2, space2, space, (void*)0);
 #else
-			execlp("fabd", "fabd", space, (void*)0);
+			execlp("fabw", "fabw", space, (void*)0);
 #endif
 
 			tfail(perrtab_SYS, errno);
