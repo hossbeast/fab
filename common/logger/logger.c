@@ -299,94 +299,97 @@ static void prep(const char * const func, const char * file, int line)
 //
 static int parsetest(char * expr, int exprl, struct filter * f)
 {
-	exprl = exprl ?: strlen(expr);
-
-	if(exprl && (expr[0] == '+' || expr[0] == '-'))
+	if(expr)
 	{
-		char lhs = ' ';
-		int off = 1;
+		exprl = exprl ?: strlen(expr);
 
-		if(off < exprl)
+		if(exprl && (expr[0] == '+' || expr[0] == '-'))
 		{
-			if(expr[off] == '(')
-				lhs = '(';
-			else if(expr[off] == '{')
-				lhs = '{';
-			else if(expr[off] == '[')
-				lhs = '[';
-			else if(expr[off] == '<')
-				lhs = '<';
-
-			if(lhs != ' ')
-				off++;
+			char lhs = ' ';
+			int off = 1;
 
 			if(off < exprl)
 			{
-				int y;
-				for(y = off; y < exprl; y++)
-				{
-					if(lhs == ' ' && expr[y] == ' ')
-						break;
-					else if(lhs == '(' && expr[y] == ')')
-						break;
-					else if(lhs == '{' && expr[y] == '}')
-						break;
-					else if(lhs == '[' && expr[y] == ']')
-						break;
-					else if(lhs == '<' && expr[y] == '>')
-						break;
-				}
+				if(expr[off] == '(')
+					lhs = '(';
+				else if(expr[off] == '{')
+					lhs = '{';
+				else if(expr[off] == '[')
+					lhs = '[';
+				else if(expr[off] == '<')
+					lhs = '<';
 
-				uint64_t tag = 0;
-				int k = 0;
-				while(k != y)
-				{
-					if(expr[off] == ',' || expr[off] == '|')
-						off++;
+				if(lhs != ' ')
+					off++;
 
-					for(k = off; k < y; k++)
+				if(off < exprl)
+				{
+					int y;
+					for(y = off; y < exprl; y++)
 					{
-						if(expr[k] == ',' || expr[k] == '|')
+						if(lhs == ' ' && expr[y] == ' ')
+							break;
+						else if(lhs == '(' && expr[y] == ')')
+							break;
+						else if(lhs == '{' && expr[y] == '}')
+							break;
+						else if(lhs == '[' && expr[y] == ']')
+							break;
+						else if(lhs == '<' && expr[y] == '>')
 							break;
 					}
 
-					if(estrcmp(&expr[off], k-off, "TAG", 3, 0) == 0)
+					uint64_t tag = 0;
+					int k = 0;
+					while(k != y)
 					{
-						tag |= L_TAG;
-						off += 3;
-					}
-					else
-					{
-						int i;
-						for(i = 0; i < g_logs_l; i++)
+						if(expr[off] == ',' || expr[off] == '|')
+							off++;
+
+						for(k = off; k < y; k++)
 						{
-							if(estrcmp(&expr[off], k-off, g_logs[i].s, g_logs[i].l, 0) == 0)
+							if(expr[k] == ',' || expr[k] == '|')
 								break;
 						}
 
-						if(i == g_logs_l)
+						if(estrcmp(&expr[off], k-off, "TAG", 3, 0) == 0)
 						{
-							break; // nothing
+							tag |= L_TAG;
+							off += 3;
 						}
 						else
 						{
-							tag |= g_logs[i].v;
-							off += g_logs[i].l;
+							int i;
+							for(i = 0; i < g_logs_l; i++)
+							{
+								if(estrcmp(&expr[off], k-off, g_logs[i].s, g_logs[i].l, 0) == 0)
+									break;
+							}
+
+							if(i == g_logs_l)
+							{
+								break; // nothing
+							}
+							else
+							{
+								tag |= g_logs[i].v;
+								off += g_logs[i].l;
+							}
 						}
 					}
-				}
 
-				if(tag && (off == y))
-				{
-					if(f)
+					if(tag && (off == y))
 					{
-						(*f) = (struct filter){
-							  .v = tag & L_TAG
-							, .o = expr[0]
-							, .m = lhs == ' ' ? '(' : lhs
-						};
+						if(f)
+						{
+							(*f) = (struct filter){
+									.v = tag & L_TAG
+								, .o = expr[0]
+								, .m = lhs == ' ' ? '(' : lhs
+							};
+						}
+						return 1;
 					}
-					return 1;
 				}
 			}
 		}
@@ -677,7 +680,7 @@ for(x = 0; x < g_argvsl; x++)
 		strcat(g_logvs, g_logv[x]);
 	}
 
-#if 1
+#if 0
 printf("args : %s\n", g_argvs);
 for(x = 0; x < g_argc; x++)
 {

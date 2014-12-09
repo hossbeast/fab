@@ -24,7 +24,7 @@ xapi API xkill(pid_t pid, int sig)
 	fatalize(errno, kill, pid, sig);
 
 finally:
-	XAPI_INFOF("pid", "%lu", (unsigned long)pid);
+	XAPI_INFOF("pid", "%ld", (long)pid);
 	XAPI_INFOF("sig", "%d", sig);
 coda;
 }
@@ -41,4 +41,22 @@ xapi API uxkill(pid_t pid, int sig, int * r)
 	}
 
 	finally : coda;
+}
+
+xapi API xsignal(int signum, sighandler_t handler)
+{
+	fatalize(errno, signal, signum, handler);
+
+finally:
+	XAPI_INFOF("sig", "%d", signum);
+coda;
+}
+
+xapi API xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
+{
+	fatalize(errno, sigaction, signum, act, oldact);
+
+finally:
+	XAPI_INFOF("sig", "%d", signum);
+coda;
 }

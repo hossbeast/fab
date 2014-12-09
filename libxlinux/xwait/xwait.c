@@ -15,25 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XLINUX_H
-#define _XLINUX_H
+#include <sys/wait.h>
 
-#include "xlinux/xdirent.h"
-#include "xlinux/xdlfcn.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xfile.h"
-#include "xlinux/xftw.h"
-#include "xlinux/xgrp.h"
-#include "xlinux/xmman.h"
-#include "xlinux/xprctl.h"
-#include "xlinux/xpwd.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xstat.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xtime.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xuio.h"
-#include "xlinux/xwait.h"
+#include "internal.h"
 
-#endif
+int API xwait(int * status)
+{
+	if(wait(status) == -1)
+		fail(errno);
+
+	finally : coda;
+}
+
+int API xwaitpid(pid_t pid, int * status, int options)
+{
+	if(waitpid(pid, status, options) == -1)
+		fail(errno);
+
+	finally : coda;
+}

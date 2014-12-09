@@ -33,16 +33,49 @@
 #include "memblk.h"
 
 // signal handling
-static int o_signum;
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
-	if(!o_signum)
-		o_signum = signum;
-
 	printf("fab[%u] %d { pid : %ld", getpid(), signum, (long)info->si_pid);
 	if(signum == SIGCHLD)
 		printf(", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
 	printf(" }\n");
+}
+
+static int fabdcred_throw(uid_t actual_uid, gid_t actual_gid)
+{
+	char space[256];
+	char space2[256];
+	char space3[256];
+
+	struct passwd pwd;
+	struct passwd * ppwd;
+	fatal(uxgetpwuid_r, actual_uid, &pwd, space, sizeof(space), &ppwd);
+
+	struct group grp;
+	struct group * pgrp;
+	fatal(uxgetgrgid_r, actual_gid, &grp, space2, sizeof(space2), &pgrp);
+
+	fail(FAB_FABDCRED);
+
+finally:
+	if(XAPI_ERRCODE == FAB_FABDCRED)
+	{
+		snprintf(space3, sizeof(space3), "%.*s/%d:%.*s/%d"
+			, g_params.ruid_namel, g_params.ruid_name, g_params.ruid
+			, g_params.rgid_namel, g_params.rgid_name, g_params.rgid
+		);
+		XAPI_INFOS("expected", space3);
+
+		if(ppwd && pgrp)
+			snprintf(space3, sizeof(space3), "%s/%d:%s/%d", ppwd->pw_name, actual_uid, pgrp->gr_name, actual_gid);
+		else if(ppwd)
+			snprintf(space3, sizeof(space3), "%s/%d:%d", ppwd->pw_name, actual_uid, actual_gid);
+		else if(pgrp)
+			snprintf(space3, sizeof(space3), "%d:%s/%d", actual_uid, pgrp->gr_name, actual_gid);
+
+		XAPI_INFOS("actual", space3);
+	}
+coda;
 }
 
 int main(int argc, char** argv)
@@ -54,38 +87,11 @@ int main(int argc, char** argv)
 	int fd = -1;
 	int lockfd = -1;
 	uint32_t canhash;
-
-#if 0
-	ff_parser *					ffp = 0;				// fabfile parser
-	bp *								bp = 0;					// buildplan 
-	map * 							rmap = 0;				// root-level map
-	map *								vmap = 0;				// init-level map
-	map * 							bakemap = 0;		// bakedvars map
-	gn *								first = 0;			// first dependency mentioned
-	lwx **							stax = 0;				// listwise stacks
-	int									staxa = 0;
-	int 								staxp = 0;
-	ts **								ts = 0;
-	int									tsa = 0;
-	int									tsw = 0;
-
-	/* node selector produced lists */
-	map *								smap = 0;							// selector map (must have lifetime >= lifetime of the selector lists)
-	gn ***							fabrications = 0;
-	int									fabricationsl = 0;
-	gn ***							fabricationxs = 0;
-	int									fabricationxsl = 0;
-	gn ***							fabricationns = 0;
-	int									fabricationnsl = 0;
-	gn ***							invalidations = 0;
-	int									invalidationsl = 0;
-	gn ***							discoveries = 0;
-	int									discoveriesl = 0;
-	gn ***							inspections = 0;
-	int									inspectionsl = 0;
-#endif
+	int r = -1;
 
 	memblk * mb = 0;
+
+printf("fab[%ld]\n", (long)getpid());
 
 	int x;
 	size_t tracesz = 0;
@@ -107,20 +113,18 @@ int main(int argc, char** argv)
 	sigfillset(&all);
 	sigprocmask(SIG_UNBLOCK, &all, 0);
 
-	// ignore most signals
-	for(x = 0; x < NSIG; x++)
-		signal(x, SIG_DFL);
-
-	// handle these signals by terminating gracefully.
+	// handle all signals
 	struct sigaction action = {
 		  .sa_sigaction = signal_handler
 		, .sa_flags = SA_SIGINFO
 	};
-	sigaction(SIGINT		, &action, 0);	// terminate gracefully
-	sigaction(SIGQUIT	, &action, 0);
-	sigaction(SIGTERM	, &action, 0);
-	sigaction(SIGHUP		, &action, 0);
-	sigaction(SIGCHLD	, &action, 0);
+	for(x = 1; x < SIGUNUSED; x++)
+	{
+		if(x != SIGKILL && x != SIGSTOP && x != SIGSEGV)
+			fatal(xsigaction, x, &action, 0);
+	}
+	for(x = SIGRTMIN; x <= SIGRTMAX; x++)
+		fatal(xsigaction, x, &action, 0);
 
 	// initalize logger
 	fatal(log_init);
@@ -144,8 +148,11 @@ int main(int argc, char** argv)
 /FABIPCDIR/<hash>/logs					<-- logs, ascii
 /FABIPCDIR/<hash>/fab/pid				<-- fab pid, ascii
 /FABIPCDIR/<hash>/fab/lock			<-- fab lockfile
-/FABIPCDIR/<hash>/fabd/pgid			<-- fabd pid, ascii
+/FABIPCDIR/<hash>/fabd/pgid			<-- fabd pgid, ascii
 /FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile
+/FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile
+/FABIPCDIR/<hash>/fabd/cred			<-- fabd ruid/rgid
+/FABIPCDIR/<hash>/fabd/exit			<-- fabd exit status
 */
 
 	// fabsys identity
@@ -200,69 +207,106 @@ int main(int argc, char** argv)
 	fatal(axwrite, fd, g_logvs, g_logvsl);
 	fatal(ixclose, &fd);
 
-	// fabd-pid file
-	snprintf(space + z, sizeof(space) - z, "/fabd/pid");
-	fatal(gxopen, space, O_RDONLY, &fd);
-	
-	int r = -1;
-	pid_t fabd_pid;
-	if(fd != -1)
+	// fabd-pgid file
+	pid_t fabd_pgid;
+	snprintf(space + z, sizeof(space) - z, "/fabd/pgid");
+
+	// terminate extant fabd process, if any
+	if(g_args->invalidationsz)
 	{
-		// read the pid
-		fatal(axread, fd, &fabd_pid, sizeof(fabd_pid));
+		// fabd-pgid file
+		fatal(gxopen, space, O_RDONLY, &fd);
 
-		if(fabd_pid <= 0)
-			failf(FAB_BADIPC, "expected pid > 0, actual : %ld", (long)fabd_pid);
+		if(fd != -1)
+		{
+			// read and validate the pgid
+			fatal(axread, fd, &fabd_pgid, sizeof(fabd_pgid));
 
-		// existence check
-		fatal(uxkill, fabd_pid, 0, &r);
+			if(fabd_pgid <= 0)
+				failf(FAB_BADIPC, "expected pgid > 0, actual : %ld", (long)fabd_pgid);
+
+			// kill signal
+			fatal(xkill, -fabd_pgid, 15);
+
+			// wait for it to terminate ; signal from fabw will interrupt sleep
+			r = 0;
+			while(r == 0)
+			{
+				sleep(1);
+				fatal(uxkill, -fabd_pgid, 0, &r);
+			}
+		}
 	}
 
-	if(r == 0 && g_args->invalidationsz)
+	fatal(ixclose, &fd);
+	fatal(gxopen, space, O_RDONLY, &fd);
+
+	r = -1;
+	if(fd != -1)
 	{
-		fatal(xkill, fabd_pid, 15);
-		while(r == 0)
+		// read and validate the pgid
+		fatal(axread, fd, &fabd_pgid, sizeof(fabd_pgid));
+
+		if(fabd_pgid <= 0)
+			failf(FAB_BADIPC, "expected pgid > 0, actual : %ld", (long)fabd_pgid);
+
+		// existence check
+		fatal(uxkill, -fabd_pgid, 0, &r);
+
+		if(r == 0)
 		{
-			sleep(1);
-			fatal(uxkill, fabd_pid, 0, &r);
+			// open and read fabd-cred file
+			snprintf(space + z, sizeof(space) - z, "/fabd/cred");
+			fatal(ixclose, &fd);
+			fatal(xopen, space, O_RDONLY, &fd);
+			typeof(g_params.ruid) fabd_ruid;
+			typeof(g_params.rgid) fabd_rgid;
+			fatal(axreadv, fd, (struct iovec[]) {{ .iov_base = &fabd_ruid, .iov_len = sizeof(fabd_ruid) }, { .iov_base = &fabd_rgid, .iov_len = sizeof(fabd_rgid) }}, 2);
+
+			// assert credentials equality
+			if(fabd_ruid != g_params.ruid || fabd_rgid != g_params.rgid)
+				fatal(fabdcred_throw, fabd_ruid, fabd_rgid);
 		}
 	}
 
 	if(r)
 	{
-		// fabd is not running ; start it now
-		fatal(xfork, &fabd_pid);
+		// fabd is not running
+		snprintf(space + z, sizeof(space) - z, "/fabd/exit");
+		fatal(uxunlink, space, 0);
 
-		if(fabd_pid == 0)
+		fatal(xfork, &fabd_pgid);
+		if(fabd_pgid == 0)
 		{
-			g_params.pid = getpid();
-
-			fatal(ixclose, &fd);
-			fatal(ixclose, &lockfd);
-
-			// fab-pid file
+			// fabd-pgid file
 			snprintf(space + z, sizeof(space) - z, "/fabd/pgid");
-			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
-			fatal(axwrite, fd, &g_params.pid, sizeof(g_params.pid));
 			fatal(ixclose, &fd);
-
-			// freedom
-			fatal(xsetpgid, 0, 0);
+			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+			fatal(axwrite, fd, (pid_t[]) { getpid() }, sizeof(pid_t));
+			fatal(ixclose, &fd);
 
 			// fabd-lock file
 			snprintf(space + z, sizeof(space) - z, "/fabd/lock");
 			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &lockfd);
 			fatal(xflock, lockfd, LOCK_EX | LOCK_NB);
 
+			// fabd-cred file
+			snprintf(space + z, sizeof(space) - z, "/fabd/cred");
+			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+			fatal(axwritev, fd, (struct iovec[]) {{ .iov_base = &g_params.ruid, .iov_len = sizeof(g_params.ruid) }, { .iov_base = &g_params.rgid, .iov_len = sizeof(g_params.rgid) }}, 2);
+			fatal(ixclose, &fd);
+
 			// files done : reassume user identity
 			fatal(identity_assume_user);
+
+			// new process group
+			fatal(xsetpgid, 0, 0);
 
 			// fabd args
 			z = snprintf(space, sizeof(space), "%u", canhash);
 
 #if DEVEL
 			snprintf(space2, sizeof(space2), "%s/../fabw/fabw.devel", g_params.exedir);
-printf("EXEC %s %s %s\n", space2, space);
 			execl(space2, space2, space, (void*)0);
 #else
 			execlp("fabw", "fabw", space, (void*)0);
@@ -277,11 +321,29 @@ printf("EXEC %s %s %s\n", space2, space);
 		fatal(identity_assume_user);
 
 		// awaken
-		fatal(xkill, fabd_pid, 1);
+		fatal(xkill, -fabd_pgid, 1);
 	}
 	
 	// wait to hear back from fabd
 	pause();
+
+	fatal(uxkill, -fabd_pgid, 0, &r);
+	if(r == 0)
+	{
+		printf("fabd[%ld] still running : %d\n", (long)fabd_pgid, r);
+	}
+	else
+	{
+		// fabd-exit file
+		snprintf(space + z, sizeof(space) - z, "/fabd/exit");
+		fatal(ixclose, &fd);
+		fatal(gxopen, space, O_RDONLY, &fd);
+		int fabd_exit;
+		fatal(axread, fd, &fabd_exit, sizeof(fabd_exit));
+
+		printf("fabd status : %d\n", WEXITSTATUS(fabd_exit));
+		printf("fabd signal : %d\n", WTERMSIG(fabd_exit));
+	}
 
 #if 0
 	// summarize arguments as received
@@ -572,42 +634,6 @@ printf("EXEC %s %s %s\n", space2, space);
 #endif
 
 finally:
-
-#if 0
-	ff_freeparser(ffp);
-	bp_free(bp);
-	map_free(rmap);
-	map_free(vmap);
-	map_free(smap);
-	map_free(bakemap);
-
-	for(x = 0; x < staxa; x++)
-	{
-		if(stax[x])
-			free(lwx_getptr(stax[x]));
-		lwx_free(stax[x]);
-	}
-	free(stax);
-
-	for(x = 0; x < tsa; x++)
-		ts_free(ts[x]);
-	free(ts);
-
-	free(fabrications);
-	free(fabricationxs);
-	free(fabricationns);
-	free(invalidations);
-	free(discoveries);
-	free(inspections);
-
-	gn_teardown();
-	fml_teardown();
-	ff_teardown();
-	params_teardown();
-	traverse_teardown();
-	selector_teardown();
-#endif
-
 	fatal(ixclose, &fd);
 	fatal(ixclose, &lockfd);
 

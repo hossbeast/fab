@@ -28,6 +28,23 @@
 #include "params.h"
 #include "identity.h"
 
+#include "ff.h"
+#include "ff.parse.h"
+#include "bp.h"
+#include "traverse.h"
+#include "dirutil.h"
+#include "enclose.h"
+#include "gn.h"
+#include "gnlw.h"
+#include "lwutil.h"
+#include "tmp.h"
+#include "var.h"
+#include "list.h"
+#include "ffproc.h"
+#include "selector.h"
+#include "dsc.h"
+#include "bake.h"
+
 #include "logger.h"
 
 #endif

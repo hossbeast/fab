@@ -29,7 +29,7 @@ int API uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, 
 	}
 	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
 	{
-		// name not found
+		*result = 0;	// uid not found
 	}
 	else
 	{

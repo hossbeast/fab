@@ -90,7 +90,11 @@ xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 
 xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
 {
-	xproxy(memblk_alloc, mb, p, es * ec);
+	void * old = *(void**)p;
+	fatal(memblk_alloc, mb, p, es * ec);
+	memcpy(*(void**)p, old, es * oec);
+
+	finally : coda;
 }
 
 void memblk_free(memblk * mb)

@@ -20,8 +20,6 @@
 
 #include <sys/types.h>
 
-#include "path.h"
-
 extern struct g_params_t
 {
 //

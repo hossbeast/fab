@@ -15,25 +15,41 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XLINUX_H
-#define _XLINUX_H
+#ifndef _XLINUX_XUIO_H
+#define _XLINUX_XUIO_H
 
-#include "xlinux/xdirent.h"
-#include "xlinux/xdlfcn.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xfile.h"
-#include "xlinux/xftw.h"
-#include "xlinux/xgrp.h"
-#include "xlinux/xmman.h"
-#include "xlinux/xprctl.h"
-#include "xlinux/xpwd.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xstat.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xtime.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xuio.h"
-#include "xlinux/xwait.h"
+#include <sys/uio.h>
+
+/// xreadv
+//
+// SUMMARY
+//  xapi proxy for readv
+//
+int xreadv(int fd, const struct iovec * iov, int iovcnt)
+	__attribute__((nonnull(2)));
+
+/// axreadv
+//
+// SUMMARY
+//  xapi proxy for readv that also fails when count != actual
+//
+int axreadv(int fd, const struct iovec * iov, int iovcnt)
+	__attribute__((nonnull(2)));
+
+/// xwritev
+//
+// SUMMARY
+//  xapi proxy for writev
+//
+int xwritev(int fd, const struct iovec * iov, int iovcnt)
+	__attribute__((nonnull(2)));
+
+/// axwritev
+//
+// SUMMARY
+//  xapi proxy for writev that also fails when actual != count
+//
+int axwritev(int fd, const struct iovec * iov, int iovcnt)
+	__attribute__((nonnull(2)));
 
 #endif

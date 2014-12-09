@@ -19,6 +19,7 @@
 #define _XLINUX_XSIGNAL_H
 
 #include <sys/types.h>
+#include <signal.h>
 
 /// xkill
 //
@@ -42,5 +43,20 @@ int xkill(pid_t pid, int sig);
 //  [r] - (returns) the return value from kill
 //
 int uxkill(pid_t pid, int sig, int * r);
+
+/// xsignal
+//
+// SUMMARY
+//  xapi proxy for signal
+//
+int xsignal(int signum, sighandler_t handler);
+
+/// xsigaction
+//
+// SUMMARY
+//  xapi proxy for sigaction
+//
+int xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
+	__attribute__((nonnull(2)));
 
 #endif

@@ -29,7 +29,7 @@ int API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, s
 	}
 	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
 	{
-		// name not found
+		*result = 0;	// gid not found
 	}
 	else
 	{

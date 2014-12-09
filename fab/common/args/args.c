@@ -36,6 +36,7 @@
 
 #include "logs.h"
 #include "params.h"
+#include "path.h"
 
 #include "unitstring.h"
 #include "canon.h"
@@ -51,7 +52,7 @@ struct g_args_t * g_args;
 // [[ static ]]
 //
 
-static char * selector_string(const selector * const restrict s, char * const restrict dst, const size_t z)
+char * selector_string(const selector * const restrict s, char * const restrict dst, const size_t z)
 {
 	int l = 0;
 	l += snprintf(dst + l, z - l, "{ %c", s->mode);
@@ -122,13 +123,15 @@ static int selector_parse(char * const s, uint32_t * const lists, uint8_t * cons
 			if((*lists) & SELECTOR_QUERY)
 				g_args->selectors_arequery = 1;
 
-			g_args->selectors[g_args->selectorsl++] = (selector){
+			g_args->selectors[g_args->selectorsl] = (selector){
 					.mode = (*mode)
 				, .lists = (*lists)
 				, .base = (*base)
-				, .s = strdup(s)
 				, .sl = strlen(s)
 			};
+
+			fatal(ixstrdup, &g_args->selectors[g_args->selectorsl].s, s);
+			g_args->selectorsl++;
 		}
 	}
 
@@ -510,7 +513,7 @@ printf("optopt=%c\n", optopt);
 		}
 		else if(x == 'f')
 		{
-			path_xfree(&g_args->init_fabfile_path);
+//			path_xfree(&g_args->init_fabfile_path);
 			fatal(path_create_init, &g_args->init_fabfile_path, g_params.cwd, "%s", optarg);
 		}
 		else if(x == 'j')
@@ -525,7 +528,7 @@ printf("optopt=%c\n", optopt);
 		{
 			g_args->mode_bplan = MODE_BPLAN_BAKE;
 			ifree(&g_args->bakescript_path);
-			g_args->bakescript_path = strdup(optarg);
+			fatal(ixstrdup, &g_args->bakescript_path, optarg);
 		}
 		else if(x == 'p')
 		{
@@ -563,7 +566,7 @@ printf("optopt=%c\n", optopt);
 				g_args->bakevarsa = newa;
 			}
 
-			g_args->bakevars[g_args->bakevarsl++] = strdup(optarg);
+			fatal(ixstrdup, &g_args->bakevars[g_args->bakevarsl++], optarg);
 		}
 		else if(x == '?')
 		{

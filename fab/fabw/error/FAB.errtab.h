@@ -2,12 +2,12 @@
 #define _FAB_ERRTAB_H
 #include "xapi.h"
 #define ETABLE_FAB \
-_E(1, BADARGS, "invalid command-line arguments") \
-_E(2, BADIPC, "unexpected file(s) in ipc directory") \
-_E(3, SYNTAX, "fabfile could not be parsed") \
-_E(4, ILLBYTE, "fabfile contains illegal byte(s)") \
-_E(5, BADTMP, "unexpected file(s) in temp directory") \
-_E(6, BADCACHE, "unexpected file(s) in cache directory") \
+_E(1, SYNTAX, "fabfile could not be parsed") \
+_E(2, ILLBYTE, "fabfile contains illegal byte(s)") \
+_E(3, BADTMP, "unexpected file(s) in temp directory") \
+_E(4, BADCACHE, "unexpected file(s) in cache directory") \
+_E(5, BADIPC, "unexpected file(s) in ipc directory") \
+_E(6, BADARGS, "invalid command-line arguments") \
 _E(7, UNSATISFIED, "buildplan has unsatisfied dependencies") \
 _E(8, FMLFAIL, "formula failed to execute successfully") \
 _E(9, DSCPARSE, "dependency discovery results were not parsed") \

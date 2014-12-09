@@ -256,5 +256,27 @@ int xrmdir(const char * restrict pathname)
 //
 int xsetpgid(pid_t pid, pid_t pgid);
 
+/// xexecv
+//
+// SUMMARY
+//  xapi proxy for execv
+//
+int xexecv(const char * path, char * const argv[])
+	__attribute__((nonnull(1)));
+
+/// xchdir
+//
+// SUMMARY
+//  xapi proxy for chdir
+//
+int xchdir(const char * path);
+
+/// xfchdir
+//
+// SUMMARY
+//  xapi proxy for fchdir
+//
+int xfchdir(int fd);
+
 #undef restrict
 #endif

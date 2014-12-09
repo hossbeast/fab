@@ -4,14 +4,11 @@
 #include "listwise.h"
 #include "listwise/lstack.h"
 
-#include "selector.h"
+#include "global.h"
 
-#include "gn.h"
 #include "params.h"
-#include "list.h"
 
 #include "logs.h"
-#include "global.h"
 #include "macros.h"
 
 #define restrict __restrict

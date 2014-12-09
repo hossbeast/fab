@@ -290,7 +290,7 @@ int API xrmdir(const char * pathname)
 	fatalize(errno, rmdir, pathname);
 
 finally:
-	XAPI_INFOS("pathname", pathname);
+	XAPI_INFOS("path", pathname);
 coda;
 }
 
@@ -299,4 +299,31 @@ int API xsetpgid(pid_t pid, pid_t pgid)
 	fatalize(errno, setpgid, pid, pgid);
 
 	finally : coda;
+}
+
+int API xexecv(const char * path, char * const argv[])
+{
+	fatalize(errno, execv, path, argv);
+
+finally:
+	XAPI_INFOS("path", path);
+coda;
+}
+
+int API xchdir(const char * path)
+{
+	fatalize(errno, chdir, path);
+
+finally:
+	XAPI_INFOF("path", "%s", path);
+coda;
+}
+
+int API xfchdir(int fd)
+{
+	fatalize(errno, fchdir, fd);
+
+finally:
+	XAPI_INFOF("fd", "%d", fd);
+coda;
 }

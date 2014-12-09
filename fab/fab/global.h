@@ -30,5 +30,6 @@
 #include "error.h"
 #include "identity.h"
 #include "dirutil.h"
+#include "path.h"
 
 #endif

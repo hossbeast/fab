@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "xlinux.h"
 
@@ -33,9 +34,12 @@
 #include "macros.h"
 
 // signal handling
-static void signal_handler(int signum)
+static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
-	printf("fabw[%u] rcv %d\n", getpid(), signum);
+	printf("fabw[%u] %d { pid : %ld", getpid(), signum, (long)info->si_pid);
+	if(signum == SIGCHLD)
+		printf(", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
+	printf(" }\n");
 }
 
 int main(int argc, char** argv)
@@ -47,27 +51,42 @@ int main(int argc, char** argv)
 	pid_t fab_pid = -1;
 	pid_t fabd_pid = -1;
 
-	// process parameter gathering
-	fatal(params_setup);
+printf("fabw[%lu]\n", (long)getpid());
 
 	// unblock all signals
 	sigset_t all;
 	sigfillset(&all);
 	sigprocmask(SIG_UNBLOCK, &all, 0);
 
-	// ignore most signals
-	for(x = 0; x < NSIG; x++)
-		signal(x, SIG_DFL);
+	// ignore most signals, handle a few
+	struct sigaction action = {
+		  .sa_sigaction = signal_handler
+		, .sa_flags = SA_SIGINFO
+	};
 
-	// handle these signals by terminating gracefully.
-	signal(SIGINT		, signal_handler);	// terminate gracefully
-	signal(SIGQUIT	, signal_handler);
-	signal(SIGTERM	, signal_handler);
-	signal(SIGCHLD	, signal_handler);
+	int x;
+	for(x = 1; x < SIGUNUSED; x++)
+	{
+		if(x == SIGKILL || x == SIGSTOP || x == SIGSEGV) { }
+		else if(x == SIGINT || x == SIGQUIT || x == SIGTERM || x == SIGCHLD)
+			fatal(xsigaction, SIGINT, &action, 0);
+		else
+			fatal(xsignal, x, SIG_IGN);
+	}
+	for(x = SIGRTMIN; x <= SIGRTMAX; x++)
+		fatal(xsignal, x, SIG_IGN);
 
-	// stdin is not needed
-	close(0);
+	// std file descriptors
+#if 0
+	for(x = 0; x < 64; x++)
+		close(x);
 	fatal(xopen, "/dev/null", O_RDONLY, 0);
+	fatal(xopen, "/dev/null", O_WRONLY, 0);
+	fatal(xopen, "/dev/null", O_WRONLY, 0);
+#endif
+
+	// process parameter gathering
+	fatal(params_setup);
 
 	// get ipc dir
 	uint32_t canhash;
@@ -82,15 +101,30 @@ int main(int argc, char** argv)
 	if(fabd_pid == 0)
 	{
 #if DEVEL
-		snprintf(space, sizeof(space), "%s/../fabw/fabw.devel", g_params.exedir);
-		execv(space, argv, argc);
+		snprintf(space, sizeof(space), "%s/../fabd/fabd.devel", g_params.exedir);
+		char * w;
+		while((w = strstr(argv[0], "fabw")))
+			w[3] = 'd';
+		execv(space, argv);
 #else
-		execvp("fabw", argv, argc);
+		execvp("fabd", argv, argc);
 #endif
+
+		tfail(perrtab_SYS, errno);
 	}
 
 	// wait for fabd to die
-	pause();
+	int status;
+	fatal(xwaitpid, fabd_pid, &status, 0);
+
+printf("status : %d\n", WEXITSTATUS(status));
+printf("signal : %d\n", WTERMSIG(status));
+
+	// fab-exit file
+	snprintf(stem + z, sizeof(stem) - z, "/fabd/exit");
+	fatal(xopen_mode, stem, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+	fatal(axwrite, fd, &status, sizeof(status));
+	fatal(ixclose, &fd);
 
 	// read fab/pid
 	snprintf(stem + z, sizeof(stem) - z, "/fab/pid");
@@ -102,12 +136,16 @@ finally:
 
 	if(XAPI_UNWINDING)
 	{
-		tracesz = xapi_trace_full(space, sizeof(space));
+		size_t tracesz = xapi_trace_full(space, sizeof(space));
 		logw(L_RED, space, tracesz);
 	}
 
 	// notify fab
 	if(fab_pid != -1)
 		kill(fab_pid, 15);
+
+	// kill fabd, if any
+	if(fabd_pid != -1)
+		kill(fabd_pid, 9);
 coda;
 }
