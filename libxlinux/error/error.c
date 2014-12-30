@@ -25,13 +25,13 @@ static etable * tab[3];
 void __attribute__((constructor)) init()
 {
 	tab[0] = perrtab_SYS;
-	tab[0]->id = 0;
+	tab[0]->id = 1;
 
 	tab[1] = perrtab_XAPI;
-	tab[1]->id = 1;
+	tab[1]->id = 2;
 
 	tab[2] = perrtab_XLINUX;
-	tab[2]->id = 2;
+	tab[2]->id = 3;
 }
 
 const char * xlinux_errname(const int code)
@@ -39,7 +39,7 @@ const char * xlinux_errname(const int code)
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 2)
+	if(rt < 1 || rt > 3)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].name;
@@ -50,7 +50,7 @@ const char * xlinux_errdesc(const int code)
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 2)
+	if(rt < 1 || rt > 3)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].desc;
@@ -61,7 +61,7 @@ const char * xlinux_errstr(const int code)
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 2)
+	if(rt < 1 || rt > 3)
 		return 0;
 
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].str;
@@ -71,7 +71,7 @@ const etable * xlinux_errtab(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 
-	if(rt < 0 || rt > 2)
+	if(rt < 1 || rt > 3)
 		return 0;
 
 	return tab[rt];
@@ -82,7 +82,7 @@ int xlinux_errcode(const int code)
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
 
-	if(rt < 0 || rt > 2)
+	if(rt < 1 || rt > 3)
 		return 0;
 
 	return rc + (tab[rt]->min * -1);

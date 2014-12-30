@@ -19,6 +19,8 @@
 #include <dlfcn.h>
 
 #include "xapi.h"
+#include "xapi/callstack.h"
+
 #include "xlinux/xdlfcn.h"
 #include "xunit.h"
 #include "xunit/error.h"
@@ -140,7 +142,7 @@ extern int listwise_allocation_seed;
 					logf(L_XUNIT | L_RED, " %.*s", (int)z, space);
 
 					// discard the error frame(s)
-					xapi_frame_unwindto(frame);
+					xapi_callstack_unwindto(frame);
 					
 					fail++;
 				}

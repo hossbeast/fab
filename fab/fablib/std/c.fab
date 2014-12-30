@@ -57,12 +57,12 @@ $cdscpaths = [
 		[
 			$dirs				# directories
 			$dscdirs		# directories, discovery only
-		~ [ ls [ lxf/$sext ~ j ] ~ fi ] ]
+		~ [ ls [ lx/$sext ~ j ] ~ fi ] ]
 
 		[
 			$rdirs			# recursive directories
 			$rdscdirs		# recursive directories, discovery only
-		~ [ lsr [ lxf/$sext ~ j ] ~ fi ] ]
+		~ [ lsr [ lx/$sext ~ j ] ~ fi ] ]
  ~ [ $dscfilter ] ]
 ~ [ $filter ] ]
 
@@ -75,12 +75,12 @@ $cfabpaths = [
 		[
 			$dirs				# directories
 			$fabdirs		# directories, fabrication only
-		~ [ ls [ lxf/$sext ~ j ] ~ fi ] ]
+		~ [ ls [ lx/$sext ~ j ] ~ fi ] ]
 
 		[
 			$rdirs			# recursive directories
 			$rfabdirs		# recursive directories, fabrication only
-		~ [ lsr [ lxf/$sext ~ j ] ~ fi ] ]
+		~ [ lsr [ lx/$sext ~ j ] ~ fi ] ]
 	~ [ $fabfilter ] ]
  ~ [ $filter ] ]
 

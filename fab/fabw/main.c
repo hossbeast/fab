@@ -36,10 +36,18 @@
 // signal handling
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
-	printf("fabw[%u] %d { pid : %ld", getpid(), signum, (long)info->si_pid);
+	char space[2048];
+	char * dst = space;
+	size_t sz = sizeof(space);
+	size_t z = 0;
+
+	z += znprintf(dst + z, sz - z, "fabd[%u] received %d { from pid : %ld", getpid(), signum, (long)info->si_pid);
+
 	if(signum == SIGCHLD)
-		printf(", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
-	printf(" }\n");
+		z += znprintf(dst + z, sz - z, ", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
+
+	z += znprintf(dst + z, sz - z, " }\n");
+	write(1, space, z);
 }
 
 int main(int argc, char** argv)
@@ -51,7 +59,8 @@ int main(int argc, char** argv)
 	pid_t fab_pid = -1;
 	pid_t fabd_pid = -1;
 
-printf("fabw[%lu]\n", (long)getpid());
+	size_t z = snprintf(space, sizeof(space), "fabw[%lu] started\n", (long)getpid());
+	write(1, space, z);
 
 	// unblock all signals
 	sigset_t all;
@@ -74,16 +83,28 @@ printf("fabw[%lu]\n", (long)getpid());
 			fatal(xsignal, x, SIG_IGN);
 	}
 	for(x = SIGRTMIN; x <= SIGRTMAX; x++)
+  {
+#if DEBUG || DEVEL
+    if((x - SIGRTMIN) == 30)
+    {
+      // internal valgrind signal
+      continue;
+    }
+#endif
+
 		fatal(xsignal, x, SIG_IGN);
+	}
 
 	// std file descriptors
 #if 0
+	for(x = 3; x < 64; x++)
+#else
 	for(x = 0; x < 64; x++)
+#endif
 		close(x);
 	fatal(xopen, "/dev/null", O_RDONLY, 0);
 	fatal(xopen, "/dev/null", O_WRONLY, 0);
 	fatal(xopen, "/dev/null", O_WRONLY, 0);
-#endif
 
 	// process parameter gathering
 	fatal(params_setup);
@@ -94,7 +115,7 @@ printf("fabw[%lu]\n", (long)getpid());
 		fail(FAB_BADARGS);
 
 	// ipc-dir stem
-	size_t z = snprintf(stem, sizeof(stem), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
+	z = snprintf(stem, sizeof(stem), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
 
 	// fork fabd
 	fatal(xfork, &fabd_pid);
@@ -117,10 +138,7 @@ printf("fabw[%lu]\n", (long)getpid());
 	int status;
 	fatal(xwaitpid, fabd_pid, &status, 0);
 
-printf("status : %d\n", WEXITSTATUS(status));
-printf("signal : %d\n", WTERMSIG(status));
-
-	// fab-exit file
+	// fabd-exit file
 	snprintf(stem + z, sizeof(stem) - z, "/fabd/exit");
 	fatal(xopen_mode, stem, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
 	fatal(axwrite, fd, &status, sizeof(status));

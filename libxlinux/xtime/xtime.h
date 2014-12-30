@@ -27,4 +27,12 @@
 //
 int xlocaltime_r(const time_t * timep, struct tm * result);
 
+/// clock_gettime
+//
+// SUMMARY
+//  xapi proxy for clock_gettime
+//
+int xclock_gettime(clockid_t clk_id, struct timespec * tp)
+	__attribute__((nonnull));
+
 #endif

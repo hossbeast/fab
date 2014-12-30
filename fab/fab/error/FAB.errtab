@@ -31,3 +31,4 @@
 14	NOSELECT			selector matches nothing
 15	NXPARAMS			unable to determine runtime parameters
 16	FABDCRED			prior execution had different ruid/rgid; re-run with -B
+17	FABDFAIL			fabd terminated abnormally

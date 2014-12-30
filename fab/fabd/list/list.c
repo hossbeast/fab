@@ -78,7 +78,6 @@ static int render(lwx * const ls, pstring ** const ps)
 			}
 			else
 			{
-exit(0);
 			}
 		}
 		else

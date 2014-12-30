@@ -1,0 +1,72 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# definitions
++[ $*/../vars.fab ]
+
+# source invocations
++[ $dfab ]()			@fab
++[ $dfabw ]()			@fabw
++[ $dfabd ]()			@fabd
+
+#
+# tasks
+#
+
+[ @installation ]
+{
+	install -d																					[ $destdir/$bindir ]
+	install [ $gccdep_final ] 													[ $destdir/$bindir ]
+
+	install -d 																					[ $destdir/$fabcachedir ]
+	chown fabsys:fabsys																	[ $destdir/$fabcachedir ]
+	install -d 																					[ $destdir/$fabtmpdir ]
+	chown fabsys:fabsys																	[ $destdir/$fabtmpdir ]
+	install -d 																					[ $destdir/$fabipcdir ]
+	chown fabsys:fabsys																	[ $destdir/$fabipcdir ]
+
+	rm -rf																							[ $destdir/$fabinvokedir ] 2>/dev/null
+	install -d																					[ $destdir/$fabinvokedir/std ]
+	install -d																					[ $destdir/$fabinvokedir/std/flex ]
+	install -d																					[ $destdir/$fabinvokedir/std/bison ]
+	install -d																					[ $destdir/$fabinvokedir/std/xapi ]
+	install [ $dfabcore/fablib/std/c.fab ]							[ $destdir/$fabinvokedir/std/c.fab ]
+	install [ $dfabcore/fablib/std/l.fab ]							[ $destdir/$fabinvokedir/std/l.fab ]
+	install [ $dfabcore/fablib/std/y.fab ]							[ $destdir/$fabinvokedir/std/y.fab ]
+	install [ $dfabcore/fablib/std/flex/states.fab ]		[ $destdir/$fabinvokedir/std/flex/states.fab ]
+	install [ $dfabcore/fablib/std/bison/tokens.fab ]		[ $destdir/$fabinvokedir/std/bison/tokens.fab ]
+	install [ $dfabcore/fablib/std/xapi/errtab.fab ]		[ $destdir/$fabinvokedir/std/xapi/errtab.fab ]
+
+	rm -rf 																							[ $destdir/$fablwopdir ] 2>/dev/null
+	install -d																					[ $destdir/$fablwopdir ]
+	install [ $dfab/fablw/op/fi/fi.final.so ]						[ $destdir/$fablwopdir/fi.so ]
+	install [ $dfab/fablw/op/fg/fg.final.so ]						[ $destdir/$fablwopdir/fg.so ]
+}
+
+[ @install.final ] : [ @installation @fab.install.final @fabw.install.final @fabd.install.final ]
+[ @install.debug ] : [ @installation @fab.install.debug @fabw.install.debug @fabd.install.debug ]
+
+[ @installman ] : [ @installman1 ]
+[ @installman1 ] : [ $dfabcore/man/fab.1 ~ j ]
+{
+	install -d 																		[ $destdir/$mandir/man1 ]
+
+	cat [ $dfab/man/fab.1 ] \
+		| [ $^lw ] "s/---BUILDVERS---/<[ $VERSIONS ]>" \
+		| [ $^lw ] "s/---BUILDDATE---/<[ @^.time ~ datef/%Y-%m-%d ]>" \
+		| gzip -9c  															> [ $destdir/$mandir/man1/fab.1.gz ]
+}

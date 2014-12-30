@@ -211,8 +211,8 @@ when calling non-xapi code, you have a couple of options.
 /// invoke
 //
 // SUMMARY
-//  used in conjunction with xapi_frame_unwindto to invoke an xapi-enabled function
-//  and, when it returns an error, conditionally propagate the error or discard it
+//  used in conjunction with xapi_callstack_unwindto to invoke an xapi-enabled function
+//  and, when it returns an error, conditionally propagate or discard that error
 //
 // PARAMETERS
 //  pframe - (returns) the current frame

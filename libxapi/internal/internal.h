@@ -18,12 +18,24 @@
 #ifndef _XAPI_INTERNAL_H
 #define _XAPI_INTERNAL_H
 
+//
+// api
+//
 #include "xapi.h"
 #include "unwind.h"
 #include "trace.h"
 #include "callstack.h"
+#include "error/error.h"
 #include "error/SYS.errtab.h"
 #include "xapi/XAPI.errtab.h"
+
+//
+// internal
+//
+#include "trace/trace.internal.h"
+#include "callstack/callstack.internal.h"
+#include "error/error.internal.h"
+
 #undef perrtab
 #define perrtab perrtab_SYS
 

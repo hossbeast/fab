@@ -166,7 +166,6 @@ int ffn_mknode(ff_node ** const restrict n, const yyu_location * const restrict 
 	else
 	{
 		fprintf(stderr, "unknown type : %s\n", FFN_STRING(type));
-		exit(0);
 	}
 	va_end(va);
 

@@ -1,10 +1,13 @@
-#if 0
+#if 1
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
 
 #include "xapi.h"
+#include "xapi/callstack.h"
+
+#include "memblk.h"
 
 #define perrtab perrtab_SYS
 
@@ -85,6 +88,8 @@ finally :
 coda;
 }
 
+char space[4096 << 2];
+
 int foo()
 {
 	fatal(alpha, 125);
@@ -101,13 +106,26 @@ if(XAPI_UNWINDING)
 
 	printf("pithytrace: \n");
 		xapi_pithytrace();
+
+	memblk * mb = xapi_callstack_freeze();
+	memblk_copyto(mb, space, sizeof(space));
+	xapi_callstack_unfreeze();
 }
 coda;
 }
 
 int main()
 {
+	char tmp[4096];
+
 	printf("FOO INVOKE\n"); foo(); printf("FOO LEAVE\n");
+
+struct callstack * cs = xapi_callstack_thaw(space);
+size_t z = xapi_callstack_trace_full(cs, tmp, sizeof(tmp));
+printf(">>>\n%.*s\n<<<\n", (int)z, tmp);
+
 	printf("FOO INVOKE\n"); foo(); printf("FOO LEAVE\n");
+
+	return 0;
 }
 #endif

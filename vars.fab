@@ -44,6 +44,7 @@ $VERSIONN				= [ $VERSIONL ~ j s/^0//g ] 			# version number
 
 # source directories
 $droot					= [ $* ]
+$dfabcore				= [ $*/fab ~ j ]
 $dfab						= [ $*/fab/fab ~ j ]
 $dfabd					= [ $*/fab/fabd ~ j ]
 $dfabw					= [ $*/fab/fabw ~ j ]
@@ -88,7 +89,7 @@ $fabw_devel					= [ $dfabw/fabw.devel ~ j ]
 $xunit_final				= [ $dxunit/xunit.final ~ j ]
 $xunit_debug				= [ $dxunit/xunit.debug ~ j ]
 $xunit_devel				= [ $dxunit/xunit.devel ~ j ]
-$gccdep_final				= [ $dutil/gcc-dep.final ~ j ]
+$gccdep_final				= [ $dutil/gcc-dep ~ j ]
 $gccdep_debug				= [ $dutil/gcc-dep ~ j ]
 $gccdep_devel				= [ $dutil/gcc-dep ~ j ]
 
@@ -118,9 +119,9 @@ $lwopdir_devel					= [ $dliblistwise/op ~ j can ]
 $lwopext								= [ so ]
 $lwopext_devel					= [ devel.so ]
 $fablwopdir							= [ $dlibdir/fab/listwise ~ j can ]
-$fablwopdir_devel				= [ $dfab/fablw/op ~ j can ]
+$fablwopdir_devel				= [ $dfabcore/fablw/op ~ j can ]
 $fabinvokedir						= [ $dlibdir/fab/fablib ~ j can ]
-$fabinvokedir_devel			= [ $dfab/fablib ~ j can ]
+$fabinvokedir_devel			= [ $dfabcore/fablib ~ j can ]
 
 # compilers and their flags
 $flex				= [ flex ]

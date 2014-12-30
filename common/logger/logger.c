@@ -172,13 +172,13 @@ static int start(const uint64_t e)
 {
 	if(log_would(e))
 	{
+		o_space_bits = e;
 		o_space_w = 0;
 		o_space_l = 0;
 #if DEBUG || DEVEL
 		o_trace_func_l = 0;
 		o_trace_file_l = 0;
 #endif
-		o_space_bits = e;
 
 		// colorization
 		if((e & L_COLOR_VALUE) && COLORHEX(e))
@@ -227,7 +227,6 @@ static int finish()
 	int __attribute__((unused)) r = write(1, o_space, o_space_l);
 
 	o_space_bits = 0;
-
 	return w;
 }
 
@@ -297,16 +296,25 @@ static void prep(const char * const func, const char * file, int line)
 // SUMMARY
 //  returns a boolean value indicating whether or not the specified argument is a valid logexpr
 //
+// RETURNS
+//  number of characters parsed
+//
 static int parsetest(char * expr, int exprl, struct filter * f)
 {
 	if(expr)
 	{
 		exprl = exprl ?: strlen(expr);
 
-		if(exprl && (expr[0] == '+' || expr[0] == '-'))
+		// skip leading whitespace
+		int off = 0;
+		while(exprl > off && (expr[off] == ' ' || expr[off] == '\t'))
+			off++;
+
+		if(exprl > off && (expr[off] == '+' || expr[off] == '-'))
 		{
+			char o = expr[off];
 			char lhs = ' ';
-			int off = 1;
+			off++;
 
 			if(off < exprl)
 			{
@@ -384,11 +392,12 @@ static int parsetest(char * expr, int exprl, struct filter * f)
 						{
 							(*f) = (struct filter){
 									.v = tag & L_TAG
-								, .o = expr[0]
+								, .o = o
 								, .m = lhs == ' ' ? '(' : lhs
 							};
 						}
-						return 1;
+
+						return off;
 					}
 				}
 			}
@@ -398,15 +407,20 @@ static int parsetest(char * expr, int exprl, struct filter * f)
 	return 0;
 }
 
-static int logparse(char * expr, int expr_len, int prepend, char * dst, size_t sz, size_t * z)
+static int logparse(TRACEARGS char * expr, int exprl, int prepend, uint64_t bits)
 {
+	char space[512];
+
 	struct filter f;
 
-	if(parsetest(expr, expr_len, &f))
+	exprl = exprl ?: strlen(expr);
+
+	int off;
+	while((off = parsetest(expr, exprl, &f)))
 	{
 		if(o_filter_a == o_filter_l)
 		{
-			int ns = o_filter_a ?: 3;
+			size_t ns = o_filter_a ?: 3;
 			ns = ns * 2 + ns / 2;
 			fatal(xrealloc, &o_filter, sizeof(*o_filter), ns, o_filter_a);
 			o_filter_a = ns;
@@ -415,7 +429,7 @@ static int logparse(char * expr, int expr_len, int prepend, char * dst, size_t s
 		if(prepend)
 		{
 			memmove(
-				  &o_filter[1]
+					&o_filter[1]
 				, &o_filter[0]
 				, o_filter_l * sizeof(o_filter[0])
 			);
@@ -427,10 +441,17 @@ static int logparse(char * expr, int expr_len, int prepend, char * dst, size_t s
 		}
 		o_filter_l++;
 
-		if(dst && z)
-			(*z) = describe(&f, dst, sz);
-		else if(dst)
-			describe(&f, dst, sz);
+		if(bits)
+		{
+			size_t sz = describe(&f, space, sizeof(space));
+			if(sz)
+			{
+				log_logf(TRACEPASS bits, "%.*s", sz, space);
+			}
+		}
+
+		expr += off;
+		exprl -= off;
 	}
 
 	finally : coda;
@@ -452,21 +473,7 @@ static int logconfig(TRACEARGS uint64_t prefix
 	int x;
 	for(x = 0; x < g_logc; x++)
 	{
-		if(bits)
-		{
-			char space[512];
-			size_t sz = 0;
-			fatal(logparse, g_logv[x], 0, 0, space, sizeof(space), &sz);
-
-			if(sz)
-			{
-				log_logf(TRACEPASS bits, "%.*s", sz, space);
-			}
-		}
-		else
-		{
-			fatal(logparse, g_logv[x], 0, 0, 0, 0, 0);
-		}
+		fatal(logparse, TRACEPASS g_logv[x], 0, 0, bits);
 	}
 
 	finally : coda;
@@ -478,22 +485,12 @@ static int logconfig(TRACEARGS uint64_t prefix
 
 int log_parse(char * expr, int expr_len, int prepend)
 {
-	xproxy(logparse, expr, expr_len, prepend, 0, 0, 0);
+	xproxy(logparse, 0, 0, 0, expr, expr_len, prepend, 0);
 }
 
 int log_log_parse_and_describe(TRACEARGS char * expr, int expr_len, int prepend, uint64_t bits)
 {
-	char space[512];
-	size_t sz = 0;
-
-	fatal(logparse, expr, expr_len, prepend, space, sizeof(space), &sz);
-
-	if(sz)
-	{
-		log_logf(TRACEPASS bits, "%.*s", sz, space);
-	}
-
-	finally : coda;
+	xproxy(logparse, TRACEPASS expr, expr_len, prepend, bits);
 }
 
 int log_parse_pop()
@@ -776,18 +773,20 @@ int log_log_start(TRACEARGS const uint64_t e)
 
 void log_finish()
 {
-	if(o_space_bits)
+	if(log_would(o_space_bits))
 		finish();
+
+	o_space_bits = 0;
 }
 
-int log_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va)
+void log_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va)
 {
 	if(o_space_bits)
 	{
 		if(log_would(o_space_bits))
 			logvprintf(fmt, va);
 	}
-	else if(e && start(e))
+	else if(start(e))
 	{
 		// the message
 		logvprintf(fmt, va);
@@ -799,37 +798,29 @@ int log_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va)
 
 		finish();
 	}
-	else
-	{
-		return 0;
-	}
-
-	return 1;
 }
 
-int log_logf(TRACEARGS const uint64_t e, const char * const fmt, ...)
+void log_logf(TRACEARGS const uint64_t e, const char * const fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	int r = log_vlogf(TRACEPASS e, fmt, va);
+	log_vlogf(TRACEPASS e, fmt, va);
 	va_end(va);
-
-	return r;
 }
 
-int log_logs(TRACEARGS const uint64_t e, const char * const s)
+void log_logs(TRACEARGS const uint64_t e, const char * const s)
 {
-	return log_logw(TRACEPASS e, s, strlen(s));
+	log_logw(TRACEPASS e, s, strlen(s));
 }
 
-int log_logw(TRACEARGS const uint64_t e, const char * const src, size_t len)
+void log_logw(TRACEARGS const uint64_t e, const char * const src, size_t len)
 {
 	if(o_space_bits)
 	{
 		if(log_would(o_space_bits))
 			logwrite(src, len, 1);
 	}
-	else if(e && start(e))
+	else if(start(e))
 	{
 		// the message
 		logwrite(src, len, 1);
@@ -841,12 +832,6 @@ int log_logw(TRACEARGS const uint64_t e, const char * const src, size_t len)
 
 		finish();
 	}
-	else
-	{
-		return 0;
-	}
-
-	return 1;
 }
 
 int logged_bytes()

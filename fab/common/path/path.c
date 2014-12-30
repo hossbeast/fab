@@ -31,6 +31,8 @@
 #include "cksum.h"
 #include "canon.h"
 #include "macros.h"
+#include "memblk.h"
+#include "memblk.def.h"
 
 #define restrict __restrict
 
@@ -275,16 +277,16 @@ int path_copy(path ** const B, const path * const A)
 	finally : coda;
 }
 
-void path_freeze(char * const restrict p, path * restrict pth)
+void path_freeze(memblk * const restrict mb, path * restrict pth)
 {
 	int x;
 	for(x = 0; x < sizeof(pth->strings) / sizeof(pth->strings[0]); x++)
-		FREEZE(p, pth->strings[x]);
+		memblk_freeze(mb, &pth->strings[x]);
 }
 
-void path_thaw(char * const restrict p, path * restrict pth)
+void path_thaw(char * const restrict mb, path * restrict pth)
 {
 	int x;
 	for(x = 0; x < sizeof(pth->strings) / sizeof(pth->strings[0]); x++)
-		THAW(p, pth->strings[x]);
+		memblk_thaw(mb, &pth->strings[x]);
 }

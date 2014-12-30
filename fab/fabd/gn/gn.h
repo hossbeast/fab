@@ -24,13 +24,12 @@
 #include <unistd.h>
 #include <time.h>
 
-#include "hashblock.h"
-#include "depblock.h"
-
 #include "coll.h"
-#include "map.h"
-#include "strstack.h"
-#include "path.h"
+
+struct strstack;
+struct map;
+struct path;
+struct hashblock;
 
 #define restrict __restrict
 
@@ -46,39 +45,39 @@
 ** SECONDARY - [x][x][x]
 ** GENERATED - [ ][x][x]
 ** TASK      - [x][x][ ]
-** NOFILE    - [x][ ][ ]
+** GROUP     - [x][ ][ ]
 **
 */
 
 //
-// gn designation table
+// gn type table
 //
-#define GN_DESIGNATION_TABLE(x)																											\
-	_GN_DESIGNATION(GN_DESIGNATION_TASK								, 0x01	, "TASK(t)"				, x)	\
-	_GN_DESIGNATION(GN_DESIGNATION_GENERATED					, 0x03	, "GENERATED(g)"	, x)	\
-	_GN_DESIGNATION(GN_DESIGNATION_GROUP							, 0x04	, "GROUP(n)"			, x)	\
-	_GN_DESIGNATION(GN_DESIGNATION_PRIMARY						, 0x05	, "PRIMARY(p)"		, x)	\
-	_GN_DESIGNATION(GN_DESIGNATION_SECONDARY					, 0x02	, "SECONDARY(s)"	, x)
+#define GN_TYPE_HASNEED	0x01
+#define GN_TYPE_CANFAB	0x02
+#define GN_TYPE_HASFILE	0x04
+
+#define GN_TYPE_TABLE(x)																																																\
+	_GN_TYPE(PRIMARY						, (0x01 << 8) |                                    GN_TYPE_HASFILE, "PRIMARY(p)"		, x)	\
+	_GN_TYPE(SECONDARY					, (0x02 << 8) | GN_TYPE_HASNEED | GN_TYPE_CANFAB | GN_TYPE_HASFILE, "SECONDARY(s)"	, x)	\
+	_GN_TYPE(GENERATED					, (0x03 << 8) |                   GN_TYPE_CANFAB | GN_TYPE_HASFILE, "GENERATED(g)"	, x)	\
+	_GN_TYPE(TASK								, (0x04 << 8) | GN_TYPE_HASNEED | GN_TYPE_CANFAB                  , "TASK(t)"				, x)	\
+	_GN_TYPE(GROUP							, (0x05 << 8) | GN_TYPE_HASNEED                                   , "GROUP(n)"			, x)
 
 enum {
-#define _GN_DESIGNATION(a, b, c, d) a = b,
-GN_DESIGNATION_TABLE(0)
-#undef _GN_DESIGNATION
+#define _GN_TYPE(a, b, c, d) GN_TYPE_ # a = b,
+GN_TYPE_TABLE(0)
+#undef _GN_TYPE
 };
 
-#define _GN_DESIGNATION(a, b, c, d) (d) == b ? c :
-#define GN_DESIGNATION_STR(gn) GN_DESIGNATION_TABLE(gn) "unknown"
-
-#define GN_FLAGS_HASNEED			0x01
-#define GN_FLAGS_CANFAB				0x02
-#define GN_FLAGS_NOFILE				0x04
+#define _GN_TYPE(a, b, c, d) (d) == b ? c :
+#define GN_TYPE_STR(gn) GN_TYPE_TABLE(gn) "unknown"
 
 //
 // gn relation type table
 //
-#define GNR_TYPE_TABLE(x)																																						\
-	_GNRT(GN_RELATION_REGULAR			, 0x01	, x)		/* relation having arisen from parsing a fabfile */	\
-	_GNRT(GN_RELATION_CACHED			, 0x02	, x)		/* relation recovered from cached ddisc results  */	\
+#define GNR_TYPE_TABLE(x)																																												\
+	_GNRT(GN_RELATION_REGULAR			, 0x01	, x)		/* relation from an FFN_DEPENDENCY node in a regular fabfile */	\
+	_GNRT(GN_RELATION_DISCOVERED	, 0x02	, x)		/* relation from an FFN_DEPENDENCY node in a dscv fabfile */
 
 enum {
 #define _GNRT(a, b, c) a = b,
@@ -89,16 +88,23 @@ GNR_TYPE_TABLE(0)
 #define _GNRT(a, b, c) (c) == b ? #a : 
 #define GNRT_STR(x) GNR_TYPE_TABLE(x) "unknown"
 
-#define GN_IS_INVALID(x) (																																											\
-	   (x)->designate == GN_DESIGNATION_TASK				/* always invalid */																					\
-	|| (x)->designate == GN_DESIGNATION_GENERATED		/* always invalid */																					\
-	|| (x)->designate == GN_DESIGNATION_GROUP				/* doesnt make sense */																				\
-	|| (x)->force_invalid														/* has been invalidated */																		\
-	|| (x)->force_ff																/* has been invalidated due to associated FF invalidation	*/	\
-	|| (x)->force_needs															/* has been invalidated due to dependency gn invalidation	*/	\
-	|| (x)->force_noexists													/* is invalid because backing file is missing */							\
-	|| (x)->force_changed														/* is invalid because backing file has changed */							\
-)
+//
+// gn invalidation table (in descending order)
+//
+#define GN_INVALIDATION_TABLE(x)																																	\
+	_GN_INVALIDATION(NXFILE				, 0x01	, x)			/* no such file */															\
+	_GN_INVALIDATION(CHANGED			, 0x02	, x)			/* backing file has changed (primary) */				\
+	_GN_INVALIDATION(SOURCES			, 0x04	, x)			/* sources invalidated (non-primary) */					\
+	_GN_INVALIDATION(USER					, 0x08	, x)			/* invalidated by the user */
+
+enum {
+#define _GN_INVALIDATION(a, b, c) GN_INVALIDATION_ # a = b,
+GN_INVALIDATION_TABLE(0)
+#undef _GN_INVALIDATION
+};
+
+#define _GN_INVALIDATION(a, b, c) (c) & b ? #a :
+#define GN_INVALIDATION_STR(x) GN_INVALIDATION_TABLE(x) "UNKNWN"
 
 struct ff_file;
 struct ff_node;
@@ -109,16 +115,8 @@ typedef struct
 {
 	uint32_t					type;		// one of GN_RELATION_*
 
-	union
-	{
-		struct {									// GN_RELATION_REGULAR
-			struct ff_node *	ffn;			// FFN_DEPENDENCY node which gave rise to this relation
-		};
-
-		struct {									// GN_RELATION_CACHED
-			struct gn *				dscv_gn;	// node whose discovery contained this relation
-		};
-	};
+	struct ff_node *	ffn;		// FFN_DEPENDENCY node which gave rise to this relation
+	struct gn *				dscvgn;	// node whose discovery results contained this relation (if any)
 
 	struct gn *				A;			// A needs B
 	struct gn *				B;			// B feeds A
@@ -128,67 +126,27 @@ typedef struct
 
 typedef struct gn
 {
-	uint8_t						flags;
-	uint8_t						designate;
+	uint16_t					type;						// GN_TYPE_*
 
-	path *						path;
+	struct path *			path;
 	char *						idstring;				// identifier string, subject to execution parameters
 	int								idstringl;
 
-	char *						designation;
-	int								designationl;
-
-	/*
-	** the ff closure of an gn is all of the ff_files which might affect this node if they change
-	** (FFT_REGULAR only)
-	*/
-	struct ff_file **	closure_ffs;
-	int								closure_ffsl;
-	int								closure_ffsa;
-
-	char *						cache_dir;											// canonical path to the cachedir for this node
-	char *						ineed_skipweak_dir;
-	char *						ifeed_skipweak_dir;
-
-	char *						noforce_invalid_path;						// canonical path to the noforce_invalid file
-	char *						noforce_needs_path;							// canonical path to the noforce_needs file
-	char *						noforce_ff_path;								// canonical path to the noforce_ff file
-
-	int								force_invalid;									// whether action is forced because this node has been invalidated
-	int								force_ff;												// whether action is forced because an associated FF_REG was invalidated
-	int								force_needs;										// whether action is forced because an antecedent node was invalidated
-	int								force_noexists;									// whether action is forced because the backing file does not exist
-	int								force_changed;									// whether action is forced because the backing file has changed
-
-	/* apply to THIS run only */
-	int								reloaded;												// whether this node has been reloaded
-	int								updated;												// whether this node has been updated
+	// PRIMARY, SECONDARY, GENERATED
+	struct hashblock *hb;
+	uint16_t					invalid;				// whether (and how) this node is invalidated : GN_INVALIDATION_*
 
 	//
 	// PRIMARY
 	//
 	struct
 	{
-		// change-tracking for the backing file
-		hashblock *				primary_hb;
-
 		// formula eval contexts for dependency discovery
 		//  ** a PRIMARY node has 0-n fmleval's for discovery
 		struct fmleval **	dscvs;
 		int								dscvsl;
 		int								dscvsa;
-
-		// depblock for dependency discovery
-		struct depblock *	dscv_block;
 	};
-
-	//
-	// SECONDARY
-	//
-
-	//
-	// SECONDARY, GENERATED, TASK
-	//
 
 	// formula evaluation context which fabricates this node
 	//  ** a node has 0 or 1 fmleval's for fabrication
@@ -205,7 +163,7 @@ typedef struct gn
 			int						z;
 			relation **		e;
 
-			map *					by_B;	// lookup by canonical path of the node at the other end of the relation
+			struct map *					by_B;	// lookup by canonical path of the node at the other end of the relation
 		};
 	} needs;
 
@@ -220,7 +178,7 @@ typedef struct gn
 			int						z;
 			relation **		e;
 
-			map *					by_A;	// indexed by canonical path of the node at the other end of the relation
+			struct map *					by_A;	// indexed by canonical path of the node at the other end of the relation
 		};
 	} feeds;
 
@@ -231,13 +189,11 @@ typedef struct gn
 	// traversal tracking
 	int									guard;
 	int									travel;
+	int									mark;
 
 	// buildplan eval tracking
-//	char								changed;
 	char								rebuild;
 	char								poison;
-//	char								invalid;
-//	char								weak_invalid;
 } gn;
 
 extern union gn_nodes_t
@@ -252,8 +208,8 @@ extern union gn_nodes_t
 
 		gn ** e;						// elements
 
-		map *	by_path;			// indexed by canonical path
-		map *	by_pathhash;	// indexed by canonical path hash
+		struct map *	by_path;			// indexed by canonical path
+		struct map *	by_pathhash;	// indexed by canonical path hash
 	};
 } gn_nodes;
 
@@ -296,7 +252,7 @@ int gn_lookup(const char * const restrict s, int sl, const char * const restrict
 // RETURNS
 //  returns 0 on failure (memory, io) and 1 otherwise
 //
-int gn_add(const char * const restrict base, strstack * const restrict sstk, char * const restrict A, int Al, gn ** r, int * const restrict newa)
+int gn_add(const char * const restrict base, struct strstack * const restrict sstk, char * const restrict A, int Al, gn ** r, int * const restrict newa)
 	__attribute__((nonnull(1, 3)));
 
 /// gn_edge_add
@@ -331,7 +287,7 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 //
 int gn_edge_add(
 	  char * const restrict base
-	, strstack * const restrict sstk
+	, struct strstack * const restrict sstk
 	, void ** const restrict A, int Al, int At
 	, void ** const restrict B, int Bl, int Bt
 	, struct ff_node * const restrict ffn
@@ -350,50 +306,18 @@ int gn_edge_add(
 //
 void gn_dump(gn *);
 
-/// gn_reconcile_dsc
-//
-// SUMMARY
-//  reconcile noforce files with the fact that discovery was successfully completed for a node
-//
-// PARAMETERS
-//  gn - node for which discovery was successfully completed
-//
-int gn_reconcile_dsc(gn * const restrict)
-	__attribute__((nonnull));
-
-/// gn_reconcile_fab
-//
-// SUMMARY
-//  reconcile noforce files with the fact that fabrication was successfully completed for a node
-//
-// PARAMETERS
-//  gn - node for which fabrication was successfully completed
-//  ws - workspace (required)
-//
-int gn_reconcile_fab(gn * const gn, map * const ws)
-	__attribute__((nonnull));
-
-/// gn_designation
-//
-// only available after gn_finalize
-//
-// return GN_DESIGNATION_STR(gn->designation)
-//
-char * gn_designation(gn * gn)
-	__attribute__((nonnull));
-
 /// gn_process_invalidations
 //
 // SUMMARY
 //  apply invalidations
 //
-int gn_process_invalidations(gn *** const restrict invalidations, int invalidationsl)
+int gn_process_invalidations(gn *** const restrict invalidations, int invalidationsl, int * const restrict primary_invalidated)
 	__attribute__((nonnull));
 
 /// gn_init
 //
 // SUMMARY
-//  initialize gn module
+//  initialize the gn module
 //
 int gn_init();
 
@@ -403,39 +327,26 @@ int gn_init();
 //
 int gn_finalize();
 
-int gn_reconcile();
-
 /// gn_teardown
 //
 // free the dependency graph
 //
 void gn_teardown();
 
-/// gn_enclose_ff
-//
-// SUMMARY
-//  mark an gn as being affected by an ff_file by appending ff to its closure_ffs list
-//
-// PARAMETERS
-//  newa - *newa incremented by 1 if ff_file was added to gn->affected_ff_file
-//
-int gn_enclose_ff(gn * const restrict gn, struct ff_file * const restrict ff, int * const restrict newa)
-	__attribute__((nonnull));
-
-/// gn_invalid_reason
+/// gn_invalid_reasons_render
 //
 // SUMMARY
 //  writes a string describing the validity of the node
 //
 // PARAMETERS
-//  s  - dest
-//  sz - size of dest
-//  gn - node
+//  gn  - node
+//  dst - dest
+//  sz  - size of dst
 //
 // RETURNS
-//  returns s
+//  number of bytes written, not including the terminating null byte
 //
-char * gn_invalid_reason(char * restrict s, const size_t sz, gn * const restrict gn)
+size_t gn_invalid_reasons_render(gn * const restrict gn, char * restrict dst, const size_t sz)
 	__attribute__((nonnull));
 
 #undef restrict

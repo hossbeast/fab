@@ -60,7 +60,6 @@ static int dep_add_single(
 	, gn ** first
 	, int * newnp
 	, int * newrp
-	, depblock * const block
 )
 {
 	int i;
@@ -148,24 +147,10 @@ static int dep_add_single(
 					, &newb
 					, &newr
 				);
-
-				// update affected lists
-				fatal(ff_regular_enclose_gn, ffn->loc.ff, Ap);
-				fatal(ff_regular_enclose_gn, ffn->loc.ff, Bp);
 			}
 
 			// if A was a string, gn_edge_add has just made it a gn*
 			At = 1;
-
-			if(block && block->block)
-			{
-				// attempt to add the relation to the block
-				if(depblock_addrelation(block, ((gn*)Ap)->path, ((gn*)Bp)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) != 0)
-				{
-					logf(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
-					ifree(&block->block);
-				}
-			}
 
 			if(newnp)
 			{
@@ -225,7 +210,6 @@ static int dep_add_multi(
 	, gn ** first
 	, int * newnp
 	, int * newrp
-	, depblock * const block
 )
 {
 	// newa tracks whether the left-hand-side of a dependency references a newly-created node
@@ -355,24 +339,10 @@ static int dep_add_multi(
 						, &newb
 						, &newr
 					);
-
-					// update affected lists
-					fatal(ff_regular_enclose_gn, ffn->loc.ff, Ap);
-					fatal(ff_regular_enclose_gn, ffn->loc.ff, Bp);
 				}
 
 				// if A was a string, gn_edge_add has just made it a gn*
 				At = 1;
-
-				if(block && block->block)
-				{
-					// attempt to add the relation to the block
-					if(depblock_addrelation(block, ((gn*)Ap)->path, ((gn*)Bp)->path, ffn->flags & FFN_WEAK, ffn->flags & FFN_BRIDGE) != 0)
-					{
-						logf(L_WARN, "unable to cache discovery %s", ff_idstring(ffn->loc.ff));
-						ifree(&block->block);
-					}
-				}
 
 				if(newnp)
 				{
@@ -435,7 +405,6 @@ int dep_process(
 	, gn ** const first
 	, int * const newn
 	, int * const newr
-	, depblock * const block
 )
 {
 	// resolve the left-hand side
@@ -444,11 +413,11 @@ int dep_process(
 
 	if(ffn->flags & FFN_SINGLE)
 	{
-		fatal(dep_add_single, ffn, sstk, vmap, gp, stax, staxa, pn + 1, pn, first, newn, newr, block);
+		fatal(dep_add_single, ffn, sstk, vmap, gp, stax, staxa, pn + 1, pn, first, newn, newr);
 	}
 	else if(ffn->flags & FFN_MULTI)
 	{
-		fatal(dep_add_multi, ffn, sstk, vmap, gp, stax, staxa, pn + 1, pn, first, newn, newr, block);
+		fatal(dep_add_multi, ffn, sstk, vmap, gp, stax, staxa, pn + 1, pn, first, newn, newr);
 	}
 
 	finally : coda;

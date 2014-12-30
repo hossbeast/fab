@@ -25,7 +25,7 @@ struct pstring;		// pstring.h
 /// definitions are in operator.h
 struct arg;
 struct operation;
-typedef struct transform_parser_t transform_parser;
+typedef struct transform_parser transform_parser;
 
 typedef struct transform
 {

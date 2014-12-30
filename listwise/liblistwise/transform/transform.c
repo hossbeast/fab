@@ -33,7 +33,7 @@
 
 #define restrict __restrict
 
-struct transform_parser_t
+struct transform_parser
 {
 	void * p;		// scanner
 };

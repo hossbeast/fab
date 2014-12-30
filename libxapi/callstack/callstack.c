@@ -21,51 +21,157 @@
 
 #include "internal.h"
 
-void xfree(void * v)
+#include "memblk.def.h"
+
+#define restrict __restrict
+
+//
+// static
+//
+static void frame_freeze(memblk * const restrict mb, struct frame * f)
 {
-	free(*(void**)v);
-	*(void**)v = 0;
+	/*
+	** etab is statically allocated and must be handled specially
+	*/
+	f->etab = (void*)(intptr_t)f->etab->id;
+	memblk_freeze(mb, &f->file);
+	memblk_freeze(mb, &f->func);
+	memblk_freeze(mb, &f->msg);
+
+	int x;
+	for(x = 0; x < f->info.l; x++)
+	{
+		memblk_freeze(mb, &f->info.v[x].ks);
+		memblk_freeze(mb, &f->info.v[x].vs);
+	}
+	memblk_freeze(mb, &f->info.v);
 }
 
+static void frame_unfreeze(memblk * const restrict mb, struct frame * f)
+{
+	f->etab = xapi_errtab_byid((intptr_t)f->etab);
+	memblk_unfreeze(mb, &f->file);
+	memblk_unfreeze(mb, &f->func);
+	memblk_unfreeze(mb, &f->msg);
+
+	memblk_unfreeze(mb, &f->info.v);
+
+	int x;
+	for(x = 0; x < f->info.l; x++)
+	{
+		memblk_unfreeze(mb, &f->info.v[x].ks);
+		memblk_unfreeze(mb, &f->info.v[x].vs);
+	}
+}
+
+static void frame_thaw(char * const restrict mb, struct frame * f)
+{
+	f->etab = xapi_errtab_byid((intptr_t)f->etab);
+	memblk_thaw(mb, &f->file);
+	memblk_thaw(mb, &f->func);
+	memblk_thaw(mb, &f->msg);
+
+	memblk_thaw(mb, &f->info.v);
+
+	int x;
+	for(x = 0; x < f->info.l; x++)
+	{
+		memblk_thaw(mb, &f->info.v[x].ks);
+		memblk_thaw(mb, &f->info.v[x].vs);
+	}
+}
+
+//
+// public
+//
 void callstack_free()
 {
-	if(callstack.v)
+	int x;
+	for(x = 0; x < callstack_mb.blocksl; x++)
 	{
-		int x;
-		for(x = 0; x < callstack.a; x++)
-		{
-			struct frame * A = callstack.frames.stor[x];
+		free(callstack_mb.blocks[x].s);
+		memset(&callstack_mb.blocks[x], 0, sizeof(callstack_mb.blocks[0]));
+	}
+	free(callstack_mb.blocks);
+	memset(&callstack_mb, 0, sizeof(callstack_mb));
 
-			xfree(&A->msg);
+	callstack = 0;
 
-			int y;
-			for(y = 0; y < A->info.a; y++)
-			{
-				xfree(&A->info.v[y].ks);
-				A->info.v[y].ka = 0;
-				A->info.v[y].kl = 0;
+#if DEVEL
+	CS = callstack;
+#endif
+}
 
-				xfree(&A->info.v[y].vs);
-				A->info.v[y].va = 0;
-				A->info.v[y].vl = 0;
-			}
-			xfree(&A->info.v);
-			A->info.a = 0;
-			A->info.l = 0;
+//
+// api
+//
+API void xapi_callstack_unwindto(int frame)
+{
+	// x tracks the position when unwinding
+	callstack->x = -1;
 
-			xfree(&A);
-		}
+	// reset frame pointer to specified depth
+	callstack->l = frame;
+}
 
-		xfree(&callstack.frames.stor);
-		callstack.a = 0;
+API memblk * xapi_callstack_freeze()
+{
+	memblk * const mb = &callstack_mb;
+
+	int x;
+	for(x = 0; x < callstack->l; x++)
+	{
+		frame_freeze(mb, callstack->frames.stor[x]);
+		memblk_freeze(mb, &callstack->frames.stor[x]);
+		memblk_freeze(mb, &callstack->v[x]);
 	}
 
-	if(callstack.v == callstack.frames.alt_list)
-		callstack.v = 0;
-	else
-		xfree(&callstack.v);
+	memblk_freeze(mb, &callstack->frames.stor);
+	memblk_freeze(mb, &callstack->v);
 
-	callstack.a = 0;
-	callstack.l = 0;
-	callstack.x = 0;
+	return mb;
+}
+
+API void xapi_callstack_unfreeze()
+{
+	memblk * const mb = &callstack_mb;
+	struct callstack * const cs = callstack;
+
+	memblk_unfreeze(mb, &cs->v);
+	memblk_unfreeze(mb, &cs->frames.stor);
+
+	int x;
+	for(x = 0; x < cs->l; x++)
+	{
+		memblk_unfreeze(mb, &cs->v[x]);
+		memblk_unfreeze(mb, &cs->frames.stor[x]);
+		frame_unfreeze(mb, cs->frames.stor[x]);
+	}
+}
+
+API struct callstack * xapi_callstack_thaw(char * const restrict mb)
+{
+	struct callstack * cs = (void*)mb;
+	memblk_thaw(mb, &cs->v);
+	memblk_thaw(mb, &cs->frames.stor);
+
+	int x;
+	for(x = 0; x < cs->l; x++)
+	{
+		memblk_thaw(mb, &cs->v[x]);
+		memblk_thaw(mb, &cs->frames.stor[x]);
+		frame_thaw(mb, cs->frames.stor[x]);
+	}
+
+	return cs;
+}
+
+API size_t xapi_callstack_trace_pithy(struct callstack * const restrict cs, char * const restrict dst, const size_t sz)
+{
+	return callstack_trace_pithy(cs, dst, sz);
+}
+
+API size_t xapi_callstack_trace_full(struct callstack * const restrict cs, char * const restrict dst, const size_t sz)
+{
+	return callstack_trace_full(cs, dst, sz);
 }

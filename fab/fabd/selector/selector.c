@@ -19,6 +19,7 @@ static map * o_fabricationnsmap;
 static map * o_invalidationsmap;
 static map * o_discoveriesmap;
 static map * o_inspectionsmap;
+static map * o_queriesmap;
 
 int selector_process(selector * const s, int id, const ff_parser * const ffp, map * const tmap, lwx *** stax, int * staxa, int staxp)
 {
@@ -38,6 +39,8 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 				fatal(map_set, o_discoveriesmap, MM(g), 0, 0, 0);
 			if(s->lists & SELECTOR_INSPECT)
 				fatal(map_set, o_inspectionsmap, MM(g), 0, 0, 0);
+			if(s->lists & SELECTOR_QUERY)
+				fatal(map_set, o_queriesmap, MM(g), 0, 0, 0);
 		}
 		else if(s->mode == '-')
 		{
@@ -53,6 +56,8 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 				map_delete(o_discoveriesmap, MM(g));
 			if(s->lists & SELECTOR_INSPECT)
 				map_delete(o_inspectionsmap, MM(g));
+			if(s->lists & SELECTOR_QUERY)
+				map_delete(o_queriesmap, MM(g));
 		}
 
 		finally : coda;
@@ -135,6 +140,7 @@ int selector_init()
 	fatal(map_create, &o_invalidationsmap, 0);
 	fatal(map_create, &o_discoveriesmap, 0);
 	fatal(map_create, &o_inspectionsmap, 0);
+	fatal(map_create, &o_queriesmap, 0);
 
 	finally : coda;
 }
@@ -146,6 +152,7 @@ int selector_finalize(
 	, gn **** invalidations, int * invalidationsl
 	, gn **** discoveries, int * discoveriesl
 	, gn **** inspections, int * inspectionsl
+	, gn **** queries , int * queriesl
 )
 {
 	fatal(map_keys, o_fabricationsmap, fabrications, fabricationsl);
@@ -154,6 +161,7 @@ int selector_finalize(
 	fatal(map_keys, o_invalidationsmap, invalidations, invalidationsl);
 	fatal(map_keys, o_discoveriesmap, discoveries, discoveriesl);
 	fatal(map_keys, o_inspectionsmap, inspections, inspectionsl);
+	fatal(map_keys, o_queriesmap, queries, queriesl);
 
 	finally : coda;
 }
@@ -166,4 +174,5 @@ void selector_teardown()
 	map_xfree(&o_invalidationsmap);
 	map_xfree(&o_discoveriesmap);
 	map_xfree(&o_inspectionsmap);
+	map_xfree(&o_queriesmap);
 }

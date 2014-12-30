@@ -25,28 +25,7 @@ struct memblk;			// common/memblk.h
 struct selector;		// selector.h
 struct path;				// path.h
 
-#define ARGS_MAX_SIZE		16384
-
 /*
-** PER-GN : delete if newest file is older than <policy>  (pertains to a given gn)
-** -------------------------------------------------------------------------------------------------------------------------------
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/stat						stat hash			// rewritten after successfully
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/content					content hash	// processing a detected change to
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/vrs							version hash	// the underlying source file
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/dscv						cached ddisc
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/PRIMARY/afeed_secondary_skipweak/<gn-id>	link to 'gn/<gn-id>' for a SECONDARY gn
-**
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/SECONDARY/fab/noforce_ff							// require fabrication of this secondary node due to ff change
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/SECONDARY/fab/noforce_gn							// require fabrication of this secondary node due to primary file change
-** /var/cache/fab/INIT/<ff-id>/gn/<gn-id>/SECONDARY/aneed_primary_skipweak/<gn-id>		link to 'gn/<gn-id>' for a PRIMARY gn
-**
-** PER-FF : delete if newest file is older than <policy>  (pertains to a given fabfile)
-** -------------------------------------------------------------------------------------------------------------------------------
-** /var/cache/fab/INIT/<ff-id>/ff/<ff-id>/REGULAR/stat						     	stat hash			// rewritten after successfully
-** /var/cache/fab/INIT/<ff-id>/ff/<ff-id>/REGULAR/content					    	content hash	// processing a detected change to
-** /var/cache/fab/INIT/<ff-id>/ff/<ff-id>/REGULAR/vrs							    	version hash	// the regular fabfile
-** /var/cache/fab/INIT/<ff-id>/ff/<ff-id>/REGULAR/closure_gns/<gn-id>		link to 'gn/<gn-id>' for an enclosed gn
-**
 ** PER-PID : delete if pid is not presently executing     (pertains to a given fab process)
 ** -------------------------------------------------------------------------------------------------------------------------------
 ** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/cmd							cmd text
@@ -61,7 +40,7 @@ struct path;				// path.h
 	_SELECTOR(SELECTOR_INVALIDATE		, 0x08	, x)	/* invalidate */								\
 	_SELECTOR(SELECTOR_DISCOVERY		, 0x10	, x)	/* discovery */									\
 	_SELECTOR(SELECTOR_INSPECT			, 0x20	, x)	/* inspect */										\
-	_SELECTOR(SELECTOR_QUERY				, 0x40	, x)	/* query */											\
+	_SELECTOR(SELECTOR_QUERY				, 0x40	, x)	/* query */
 
 enum {
 #define _SELECTOR(a, b, c) a = b,
@@ -158,7 +137,7 @@ MODE_TABLE(0)
 };
 
 #define _MODE(a, b, c) (c) == b ? #a :
-#if DEBUG && DEVEL
+#if DEBUG || DEVEL
 # define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "UNKNWN"
 #elif DEVEL
 # define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEVEL(x) "UNKNWN"
@@ -223,8 +202,7 @@ extern struct g_args_t
 //  invalid, for example required options are not present, or invalid
 //  parameters are given to an option
 //
-int args_parse(struct memblk * mb)
-	__attribute__((nonnull));
+int args_parse();
 
 /// args_summarize
 //
@@ -239,7 +217,12 @@ int args_summarize();
 //
 void args_teardown();
 
-void args_freeze(char * const restrict p)
+/// args_freeze
+//
+// SUMMARY
+//  
+//
+void args_freeze(struct memblk * const restrict mb)
 	__attribute__((nonnull));
 
 void args_thaw(char * const restrict p)

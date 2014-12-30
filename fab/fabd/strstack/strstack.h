@@ -22,8 +22,8 @@
 
 /// opaque strstack type declaration
 //
-struct strstack_t;
-typedef struct strstack_t strstack;
+struct strstack;
+typedef struct strstack strstack;
 
 /// strstack_create
 //

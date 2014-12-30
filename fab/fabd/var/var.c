@@ -457,7 +457,14 @@ int var_link(map * const restrict smap, const char * const restrict ss, map * co
 
 int var_root(map ** const map)
 {
-	fatal(map_create, map, map_destructor);
+	if(*map)
+	{
+		map_clear(*map);
+	}
+	else
+	{
+		fatal(map_create, map, map_destructor);
+	}
 
 	// seed the map identifier mechanism
 	fatal(map_set, *map, MMS("?LVL"), MM((int[]) { 0 }), 0);

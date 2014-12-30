@@ -18,6 +18,7 @@ _E(13, CYCLE, "dependency graph contains a cycle") \
 _E(14, NOSELECT, "selector matches nothing") \
 _E(15, NXPARAMS, "unable to determine runtime parameters") \
 _E(16, FABDCRED, "prior execution had different ruid/rgid; re-run with -B") \
+_E(17, FABDFAIL, "fabd terminated abnormally") \
 
 enum {
 #define _E(a, b, c) FAB_ ## b = a,
@@ -25,6 +26,6 @@ ETABLE_FAB
 #undef _E
 };
 #define ERRMIN_FAB 1
-#define ERRMAX_FAB 16
+#define ERRMAX_FAB 17
 extern etable * perrtab_FAB;
 #endif

@@ -47,9 +47,11 @@ void mempolicy_engage(mempolicy * plc)
 /// mempolicy_engage
 //
 // SUMMARY
-//  unhook
+//  cause xlinux memory allocation functions on this thread to resume the default behavior
 //
-void mempolicy_release(mempolicy * plc)
-	__attribute__((nonnull));
+// RETURNS
+//  returns the previously active mempolicy, if any
+//
+mempolicy * mempolicy_release();
 
 #endif

@@ -15,23 +15,18 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# definitions
-+[ $*/../vars.fab ]
+#ifndef _XAPI_TRACE_INTERNAL_H
+#define _XAPI_TRACE_INTERNAL_H
 
-$gccdep		= [ $dutil/gcc-dep ~ j ]
+struct callstack;
 
-#
-# tasks
-#
+#define restrict __restrict
 
-[ @install.final ] : [ $gccdep_final ]
-{
-	install -d										[ $destdir/$bindir ]
-	install [ $gccdep_final ] 					[ $destdir/$bindir ]
-}
+size_t callstack_trace_pithy(struct callstack * const restrict cs, char * const dst, const size_t sz)
+	__attribute__((nonnull));
 
-[ @install.debug ] : [ $gccdep_debug ]
-{
-	install -d										[ $destdir/$bindir ]
-	install [ $gccdep_debug ] 					[ $destdir/$bindir ]
-}
+size_t callstack_trace_full(struct callstack * const restrict cs, char * const dst, const size_t sz)
+	__attribute__((nonnull));
+
+#undef restrict
+#endif

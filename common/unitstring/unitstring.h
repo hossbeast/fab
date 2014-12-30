@@ -15,8 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _QUANTIFIER_H
-#define _QUANTIFIER_H
+#ifndef _UNITSTRING_H
+#define _UNITSTRING_H
+
+struct timespec;
+
+#define restrict __restrict
 
 /// durationstring
 //
@@ -50,5 +54,22 @@ char* durationstring_r(int base, char* s, int l);
 char* bytestring(int base);
 char* bytestring_r(int base, char* s, int l);
 
-#endif
+/// elapsed_string_timespec
+//
+// SUMMARY
+//  write a string describing the elapsed duration from start to end followed by a null byte
+//
+// PARAMETERS
+//  start - start of duration
+//  end   - end of duration
+//  dst   - (returns) duration string
+//  sz    - size of *dst
+//
+// RETURNS
+//  number of bytes written, not including the terminating null byte
+//
+size_t elapsed_string_timespec(const struct timespec * const restrict start, const struct timespec * const restrict end, char * const restrict dst, size_t sz)
+	__attribute__((nonnull));
 
+#undef restrict
+#endif

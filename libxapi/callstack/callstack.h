@@ -18,109 +18,67 @@
 #ifndef _XAPI_CALLSTACK_H
 #define _XAPI_CALLSTACK_H
 
-#include <stdint.h>
+struct memblk;			// memblk.h
+struct callstack;
 
-/*
-** callstack definition ; libxapi-visibility
-**
-** the callstack represents execution from the first UNWIND-ing call to the site of the first error
-** errors that take place beyond the first (which must necessarily begin after the XAPI_FINALLY label
-** in the failing function) are not tracked. normally, the first error should trigger cleanup/unwinding
-** but there are certain cleanup functions which can fail (close is the best example)
-*/
+#define restrict __restrict
 
-struct frame
-{
-	int type;		// 0=regular, 1=frame_static
-
-	const struct etable *	etab;		// error table
-	int16_t								code;		// error code
-
-	const char * 		file;
-	int							line;
-	const char * 		func;
-
-	char *		msg;		// error message
-	int				msga;
-	int				msgl;
-
-	struct
-	{
-		struct frame_info
-		{
-			char *	ks;		// key
-			int			ka;
-			int			kl;
-
-			char *	vs;		// value
-			int			va;
-			int			vl;
-		} * v;
-
-		int a;
-		int l;
-	} info;
-
-	int finalized;		// whether execution has passed the XAPI_FINALLY label in this frame
-	int populated;		// whether this frame has already been populated (not necessarily set, but if it is set, then its true)
-
-#if XAPI_RUNTIME_CHECKS
-	void * calling_frame;	// address of the calling stack frame
-#endif
-};
-
-/*
-** there are 3 statically allocated frames:
-**  - the base frame
-**  - 2 frames for out of memory reporting if libxapi cannot allocate more frames
-*/ 
-struct frame_static
-{
-	struct frame;
-
-	char buf_msg[64];
-	struct frame_info buf_info[3];
-	char buf_info_ks[3][64];
-	char buf_info_vs[3][64];
-};
-
-/// callstack
+/// xapi_callstack_unwindto
 //
 // SUMMARY
-//  tracks the call stack
+//  unwind to the specified frame, discarding any error
 //
-struct callstack
-{
-	struct
-	{
-		// dynamically allocated frames
-		struct frame ** 		stor;
+// PARAMETERS
+//  frame - frame to unwind to
+//
+void xapi_callstack_unwindto(int frame);
 
-		// statically allocated frames
-		struct frame_static	alt[2];
-
-		struct frame *			alt_list[2];
-	} frames;
-
-	// stack frame list
-	struct frame ** v;
-	int							a;
-
-	int l;	// 1-based count of stack frames (depth)
-	int x;	// while unwinding, 0-based index of current stack frame; otherwise, undefined
-
-	int r;	// return value from the last xapi_frame_set call
-};
-
-// per-thread callstacks
-extern __thread struct callstack callstack;
-
-/// xapi_callstack_free
+/// xapi_callstack_freeze
 //
 // SUMMARY
-//  free the callstack for this thread with free semantics
+//  freeze the callstack for the current thread
 //
-void callstack_free();
+// RETURNS
+//  containing memblk
+//
+struct memblk * xapi_callstack_freeze();
+
+/// xapi_callstack_unfreeze
+//
+// SUMMARY
+//  reverse the effects of xapi_callstack_freeze
+//
+// RETURNS
+//  containing memblk
+//
+void xapi_callstack_unfreeze();
+
+/// xapi_callstack_thaw
+//
+// SUMMARY
+//  recover a callstack frozen with xapi_callstack_freeze
+//
+// RETURNS
+//  callstack instance (pointer-equivalent with mb)
+//
+struct callstack * xapi_callstack_thaw(char * const restrict mb)
+	__attribute__((nonnull));
+
+/* trace */
+
+/// xapi_callstack_trace_pithy
+//
+// see xapi_trace_pithy
+//
+size_t xapi_callstack_trace_pithy(struct callstack * const restrict cs, char * const restrict dst, const size_t sz)
+	__attribute__((nonnull));
+
+/// xapi_callstack_trace_full
+//
+// see xapi_trace_full
+//
+size_t xapi_callstack_trace_full(struct callstack * const restrict cs, char * const restrict dst, const size_t sz)
+	__attribute__((nonnull));
 
 #undef restrict
 #endif

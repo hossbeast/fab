@@ -22,7 +22,7 @@
 #include "global.h"
 #include "xlinux.h"
 
-struct strstack_t
+struct strstack
 {
 	struct
 	{

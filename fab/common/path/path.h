@@ -20,6 +20,8 @@
 
 #include <stdint.h>
 
+struct memblk;			// memblk.h
+
 #define restrict __restrict
 
 typedef struct path
@@ -128,10 +130,10 @@ void path_xfree(path ** const restrict)
 int path_copy(path ** const restrict dst, const path * const restrict src)
 	__attribute__((nonnull));
 
-void path_freeze(char * const restrict p, path * restrict pth)
+void path_freeze(struct memblk * const restrict mb, path * restrict pth)
 	__attribute__((nonnull));
 
-void path_thaw(char * const restrict p, path * restrict pth)
+void path_thaw(char * const restrict mb, path * restrict pth)
 	__attribute__((nonnull));
 
 #undef restrict

@@ -55,6 +55,29 @@ union ff_files_t ff_files = { { .size = sizeof(ff_file) } };
 // [[ static ]]
 //
 
+static void ff_freefile(ff_file * ff)
+{
+	if(ff)
+	{
+		free(ff->nofile);
+
+		if(ff->type == FFT_DDISC)
+		{
+			// no-op
+		}
+		if(ff->type == FFT_REGULAR)
+		{
+			hashblock_free(ff->hb);
+		}
+
+		path_free(ff->path);
+		free(ff->idstring);
+		ffn_free(ff->ffn);
+	}
+
+	free(ff);
+}
+
 static const char * ff_tokenname(int token)
 {
   return ff_tokennames[token];
@@ -179,20 +202,26 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	if((state = ff_yy_scan_bytes(b, sz, p->p)) == 0)
 		tfail(perrtab_SYS, ENOMEM);
 
-	// all ff_files are tracked in ff_files
-	fatal(coll_doubly_add, &ff_files.c, 0, &ff);
+	// regular ff_files are tracked in ff_files
+	if(dscv_gn == 0 && var_id == 0 && list_id == 0)
+	{
+		fatal(coll_doubly_add, &ff_files.c, 0, &ff);
+	}
+	else
+	{
+		fatal(xmalloc, &ff, sizeof(*ff));
+	}
 
 	// create copy of the path
 	fatal(path_copy, &ff->path, in_path);
 
 	ff->type = type;
-
 	if(dscv_gn)
 	{
 		ff->dscv_gn = dscv_gn;
 
 		// idstring
-		fatal(ixsprintf, &ff->idstring, "DSC:%s", gn_idstring(ff->dscv_gn));
+		fatal(ixsprintf, &ff->idstring, "%s", gn_idstring(ff->dscv_gn));
 	}
 	else if(var_id)
 	{
@@ -228,13 +257,6 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		{
 			ff->idstring = strdup(ff->path->rel_fab);
 		}
-
-		// closure dir
-		fatal(ixsprintf, &ff->closure_gns_dir
-			, XQUOTE(FABCACHEDIR) "/INIT/%u/ff/%u/REGULAR/closure_gns"
-			, g_args->init_fabfile_path->can_hash
-			, ff->path->can_hash
-		);
 	}
 
 	pp.scanner = p->p;
@@ -262,22 +284,9 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 
 		if(ff->type == FFT_REGULAR)
 		{
-			// create VARREF closure
-			fatal(enclose_vars, ff->ffn, &ff->closure_vars, &ff->closure_varsa, &ff->closure_varsl);
-
 			// create hashblock
-			fatal(hashblock_create, &ff->hb
-				, XQUOTE(FABCACHEDIR) "/INIT/%u/ff/%u/REGULAR"
-				, g_args->init_fabfile_path->can_hash
-				, ff->path->can_hash
-			);
+			fatal(hashblock_create, &ff->hb);
 
-			// load previous hashblock into [0]
-			fatal(hashblock_read, ff->hb);
-
-			// stat the file, populate [1] - now ready for hashblock_cmp
-			fatal(hashblock_stat, ff->path->abs, ff->hb, 0, 0);
-			ff->hb->vrshash[1] = FABVERSIONN;
 			ff_dump(ff);
 		}
 		else if(ff->type == FFT_VAREXPR)
@@ -286,6 +295,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		}
 
 		(*rff) = ff;
+		ff = 0;
 	}
 
 finally :
@@ -293,92 +303,10 @@ finally :
 	ff_yy_delete_buffer(state, p->p);
 	yyu_extra_destroy(&pp);
 
+	ff_freefile(ff);
+
 if(type != FFT_REGULAR)
 	XAPI_INFOS("type", FFT_STRING(type));
-coda;
-}
-
-static int regular_rewrite(ff_file * ff)
-{
-	char tmpa[512];
-	char tmpb[512];
-
-	DIR * dh = 0;
-
-	fatal(identity_assume_fabsys);
-
-	// sort the affected gn list by canonical path hash
-	int cmp(const void * _A, const void * _B)
-	{
-		uint32_t A = (*(struct gn **)_A)->path->can_hash;
-		uint32_t B = (*(struct gn **)_B)->path->can_hash;
-
-		if(A > B) return 1;
-		else if(B > A) return -1;
-
-		return 0;
-	};
-	qsort(ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), cmp);
-
-	// ensure closure directory exists
-	fatal(mkdirp, ff->closure_gns_dir, S_IRWXU | S_IRWXG | S_IRWXO);
-
-	// create links to all nodes that are connected to this regular fabfile
-	int x;
-	for(x = 0; x < ff->closure_gnsl; x++)
-	{
-		// symlink to the gn
-		snprintf(tmpa, sizeof(tmpa), XQUOTE(FABCACHEDIR) "/INIT/%u/gn/%u", g_args->init_fabfile_path->can_hash, ff->closure_gns[x]->path->can_hash);
-		snprintf(tmpb, sizeof(tmpb), "%s/%u", ff->closure_gns_dir, ff->closure_gns[x]->path->can_hash);
-
-		fatal(uxsymlink, tmpa, tmpb);
-	}
-
-	fatal(xopendir, ff->closure_gns_dir, &dh);
-
-	struct dirent ent;
-	struct dirent * entp = 0;
-	while(1)
-	{
-		fatal(xreaddir_r, dh, &ent, &entp);
-
-		if(!entp)
-			break;
-
-		if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
-		{
-			// get the canhash for this gn
-			uint32_t canhash = 0;
-			if(parseuint(entp->d_name, SCNu32, 1, 0xFFFFFFFF, 1, UINT8_MAX, &canhash, 0) != 0)
-				failf(FAB_BADCACHE, "unexpected file %s/%s", ff->closure_gns_dir, entp->d_name);
-
-			// delete
-			snprintf(tmpa, sizeof(tmpa), "%s/%u/PRIMARY/dscv", ff->closure_gns_dir, canhash);
-			fatal(uxunlink, tmpa, 0);
-
-			snprintf(tmpa, sizeof(tmpa), "%s/%u/SECONDARY/fab/noforce_ff", ff->closure_gns_dir, canhash);
-			fatal(uxunlink, tmpa, 0);
-
-			// If it is no longer in the closure, also delete the symlink
-			int kcmp(const void * K, const void * A)
-			{
-				return *(uint32_t*)K - (*(struct gn **)A)->path->can_hash;
-			};
-
-			if(bsearch(&canhash, ff->closure_gns, ff->closure_gnsl, sizeof(*ff->closure_gns), kcmp) == 0)
-			{
-				snprintf(tmpa, sizeof(tmpa), "%s/%u", ff->closure_gns_dir, canhash);
-				fatal(xunlink, tmpa, 0);
-			}
-		}
-	}
-
-	// rewrite the hashblock (reverts to user identity)
-	fatal(hashblock_write, ff->hb);
-
-finally:
-	if(dh)
-		closedir(dh);
 coda;
 }
 
@@ -490,33 +418,6 @@ char * ff_idstring(ff_file * const ff)
 	return ff->idstring;
 }
 
-static void ff_freefile(ff_file * ff)
-{
-	if(ff)
-	{
-		free(ff->nofile);
-
-		if(ff->type == FFT_DDISC)
-		{
-			// no-op
-		}
-		if(ff->type == FFT_REGULAR)
-		{
-			hashblock_free(ff->hb);
-
-			free(ff->closure_gns_dir);
-			free(ff->closure_gns);
-			free(ff->closure_vars);
-		}
-
-		path_free(ff->path);
-		free(ff->idstring);
-		ffn_free(ff->ffn);
-	}
-
-	free(ff);
-}
-
 void ff_teardown()
 {
 	int x;
@@ -529,47 +430,8 @@ void ff_teardown()
 	map_free(ff_files.by_canpath);
 }
 
-int ff_regular_reconcile()
-{
-	int x;
-	for(x = 0; x < ff_files.l; x++)
-	{
-		if(ff_files.e[x]->type == FFT_REGULAR)
-		{
-			if(hashblock_cmp(ff_files.e[x]->hb))
-			{
-				fatal(regular_rewrite, ff_files.e[x]);
-			}
-		}
-	}
-
-	finally : coda;
-}
-
-int ff_regular_enclose_gn(struct ff_file * const ff, gn * const gn)
-{
-	int newa = 0;
-	fatal(gn_enclose_ff, gn, ff, &newa);
-
-	if(newa)
-	{
-		if(ff->closure_gnsl >= ff->closure_gnsa)
-		{
-			int ns = ff->closure_gnsa ?: 10;
-			ns = ns * 2 + ns / 2;
-			fatal(xrealloc, &ff->closure_gns, sizeof(*ff->closure_gns), ns, ff->closure_gnsa);
-			ff->closure_gnsa = ns;
-		}
-
-		ff->closure_gns[ff->closure_gnsl++] = gn;
-	}
-
-	finally : coda;	
-}
-
 void ff_dump(ff_file * const ff)
 {
-	int x;
 	if(log_would(L_FF | L_FFFILE))
 	{
 		logf(L_FF | L_FFFILE			, "%20s : %s", "idstring"						, ff->idstring);
@@ -581,21 +443,7 @@ void ff_dump(ff_file * const ff)
 		logf(L_FF | L_FFFILE			, "%20s : %s", "rel-cwd-path"				, ff->path->rel_cwd);
 		logf(L_FF | L_FFFILE			, "%20s : %s", "rel-fab-path"				, ff->path->rel_fab);
 		logf(L_FF | L_FFFILE			, "%20s : %s", "rel-nofile-path"		, ff->path->rel_nofile);
-		if(ff->type == FFT_REGULAR)
-		{
-			logf(L_FF | L_FFFILE		, "%20s : %d", "closure-gns", ff->closure_gnsl);
-			for(x = 0; x < ff->closure_gnsl; x++)
-			{
-				logf(L_FF | L_FFFILE , "  %20s : %s", "", ff->closure_gns[x]->idstring);
-			}
-
-			logf(L_FF | L_FFFILE		, "%20s : %d", "closure-vars", ff->closure_varsl);
-			for(x = 0; x < ff->closure_varsl; x++)
-			{
-				logf(L_FF | L_FFFILE	, "  %20s : %s", "", ff->closure_vars[x]->name->text->s);
-			}
-		}
-		else if(ff->type == FFT_DDISC)
+		if(ff->type == FFT_DDISC)
 		{
 			logf(L_FF | L_FFFILE		, "%20s : %s", "dscv-gn", ff->dscv_gn);
 		}

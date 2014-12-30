@@ -103,9 +103,6 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 			, 0
 		);
 
-		// update affected lists
-		fatal(ff_regular_enclose_gn, fml->ffn->loc.ff, t);
-
 		if(fmlv->flags & FFN_DISCOVERY)
 		{
 			fmlv->target = t;
@@ -165,22 +162,11 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 		fmlv->ctx = ctx;
 		fmlv->flags = fml->ffn->flags;
 
-		if(fmlv->flags & FFN_FABRICATION)
-		{
-			log_start(L_FAB | L_FML);
-			logf(0, "reg(%s)[%3d,%3d - %3d,%3d] -> { "
-				, ff_idstring(fml->ffn->loc.ff)
-				, fml->ffn->loc.f_lin + 1
-				, fml->ffn->loc.f_col + 1
-				, fml->ffn->loc.l_lin + 1
-				, fml->ffn->loc.l_col + 1
-			);
-		}
-
 		// get the target graph nodes
 		fmlv->productsl = lwx_rows(ls, x);
 		fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->productsl);
 
+		// attach
 		for(y = 0; y < fmlv->productsl; y++)
 		{
 			char * rv;
@@ -198,20 +184,36 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 
 			// update affected lists
 			fmlv->products[y] = t;
-			fatal(ff_regular_enclose_gn, fml->ffn->loc.ff, t);
-
-			if(y)
-				logf(0, ", %s", t->idstring);
-			else
-				logf(0, "%s", t->idstring);
 
 			if(fmlv->flags & FFN_FABRICATION)
-			{
 				t->fabv = fmlv;
+		}
+
+		// logging
+		if(fmlv->flags & FFN_FABRICATION)
+		{
+			if(log_start(L_FAB | L_FML))
+			{
+				logf(0, "reg(%s)[%3d,%3d - %3d,%3d] -> { "
+					, ff_idstring(fml->ffn->loc.ff)
+					, fml->ffn->loc.f_lin + 1
+					, fml->ffn->loc.f_col + 1
+					, fml->ffn->loc.l_lin + 1
+					, fml->ffn->loc.l_col + 1
+				);
+
+				for(y = 0; y < fmlv->productsl; y++)
+				{
+					if(y)
+						logf(0, ", %s", fmlv->products[y]->idstring);
+					else
+						logf(0, "%s", fmlv->products[y]->idstring);
+				}
+
+				logs(0, " }");
+				log_finish();
 			}
 		}
-		logs(0, " }");
-		log_finish();
 	}
 
 	finally : coda;

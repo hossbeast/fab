@@ -79,23 +79,6 @@ typedef struct ff_file
 			int								hb_reload;
 
 			int								count;		// number of times processed
-
-			/*
-			** the gn closure of an ff_file is all the gns possibly affected if this file changes
-			** (dependencies, formulas, dscv formulas, etc)
-			*/
-			char *						closure_gns_dir;
-			struct gn ** 			closure_gns;
-			int								closure_gnsl;
-			int								closure_gnsa;
-
-			/*
-			** the var closure of an ff_file is all of the variables whose values affect the meaning
-			** of the ff_file (FFN_VARREF nodes)
-			*/
-			struct ff_node **	closure_vars;
-			int								closure_varsl;
-			int								closure_varsa;
 		};
 	};
 } ff_file;
@@ -259,30 +242,11 @@ char * ff_idstring(ff_file * const restrict ff)
 int ff_regular_reload(ff_file * const restrict ff)
 	__attribute__((nonnull));
 
-/// ff_regular_reconcile
-//
-// for all REGULAR ff_files
-//  - 
-//
-//  - write the current hashblock
-//
-int ff_regular_reconcile();
-
 /// ff_teardown
 //
 // free ff_files
 //
 void ff_teardown();
-
-/// ff_regular_enclose_gn
-//
-// SUMMARY
-//  mark a regular ff_file as affecting a gn by appending gn to its closure_gns list
-//
-// PARAMETERS
-//
-int ff_regular_enclose_gn(ff_file * const restrict ff, struct gn * const restrict gn)
-	__attribute__((nonnull));
 
 /// ff_dump
 //

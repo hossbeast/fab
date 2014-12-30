@@ -15,19 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
+#ifndef _GN_INTERNAL_H
+#define _GN_INTERNAL_H
 
-// memory policy
-__thread mempolicy * policy;
+struct gn;
 
-void API mempolicy_engage(mempolicy * plc)
-{
-	policy = plc;
-}
+/// gn_idstring
+//
+// returns gn->idstring
+//
+char * gn_idstring(struct gn * gn)
+	__attribute__((nonnull));
 
-API mempolicy * mempolicy_release(mempolicy * plc)
-{
-	mempolicy * r = policy;
-	policy = 0;
-	return r;
-}
+/// gn_typestring
+//
+// returns GN_TYPE_STR(gn->type) (after gn_finalize)
+//
+char * gn_typestring(struct gn * gn)
+	__attribute__((nonnull));
+
+#endif

@@ -69,7 +69,7 @@ $lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
 	  (echo "{ global: "
-	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
+	> perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=)/) { print "$1;\n" }' <(\
 	  cat -- [ $@ ~ rx/ineedw fi ] )
 	  echo "callstack;"
 	> echo "local: *; };"

@@ -41,8 +41,8 @@
 #include "unitstring.h"
 #include "canon.h"
 #include "macros.h"
-
 #include "memblk.h"
+#include "memblk.def.h"
 
 #define restrict __restrict
 
@@ -138,14 +138,14 @@ static int selector_parse(char * const s, uint32_t * const lists, uint8_t * cons
 	finally : coda;
 }
 
-void selector_freeze(char * const restrict p, selector * restrict s)
+void selector_freeze(memblk * const restrict mb, selector * restrict s)
 {
-	FREEZE(p, s->s);
+	memblk_freeze(mb, &s->s);
 }
 
-void selector_thaw(char * const restrict p, selector * restrict s)
+void selector_thaw(char * const restrict mb, selector * restrict s)
 {
-	THAW(p, s->s);
+	memblk_thaw(mb, &s->s);
 }
 
 static void usage(int valid, int version, int help, int logcats, int operators, uint64_t opmask)
@@ -327,7 +327,7 @@ printf(
 // [[ public ]]
 //
 
-int args_parse(memblk * mb)
+int args_parse()
 {
 	int help = 0;
 	int version = 0;
@@ -340,7 +340,10 @@ int args_parse(memblk * mb)
 	struct option longopts[] = {
 /* informational */
 				  { "help"												, no_argument	, &help, 1 }
+				, { "args"												, no_argument	, &help, 1 }
+				, { "params"											, no_argument	, &help, 1 }
 				, { "version"											, no_argument	, &version, 1 }
+				, { "vrs"													, no_argument	, &version, 1 }
 				, { "logcats"											, no_argument	, &logcats, 1 }
 				, { "logs"												, no_argument	, &logcats, 1 }
 				, { "operators"										, no_argument	, &operators, 1 }
@@ -702,52 +705,52 @@ finally:
 coda;
 }
 
-void args_freeze(char * const p)
+void args_freeze(memblk * const restrict mb)
 {
-	FREEZE(p, g_args->bakescript_path);
+	memblk_freeze(mb, &g_args->bakescript_path);
 
 	int x;
 	for(x = 0; x < g_args->rootvarsl; x++)
-		FREEZE(p, g_args->rootvars[x]);
-	FREEZE(p, g_args->rootvars);
+		memblk_freeze(mb, &g_args->rootvars[x]);
+	memblk_freeze(mb, &g_args->rootvars);
 
 	for(x = 0; x < g_args->bakevarsl; x++)
-		FREEZE(p, g_args->bakevars[x]);
-	FREEZE(p, g_args->bakevars);
+		memblk_freeze(mb, &g_args->bakevars[x]);
+	memblk_freeze(mb, &g_args->bakevars);
 
 	for(x = 0; x < g_args->invokedirsl; x++)
-		FREEZE(p, g_args->invokedirs[x]);
-	FREEZE(p, g_args->invokedirs);
+		memblk_freeze(mb, &g_args->invokedirs[x]);
+	memblk_freeze(mb, &g_args->invokedirs);
 
 	for(x = 0; x < g_args->selectorsl; x++)
-		selector_freeze(p, &g_args->selectors[x]);
-	FREEZE(p, g_args->selectors);
+		selector_freeze(mb, &g_args->selectors[x]);
+	memblk_freeze(mb, &g_args->selectors);
 
-	path_freeze(p, g_args->init_fabfile_path);
-	FREEZE(p, g_args->init_fabfile_path);
+	path_freeze(mb, g_args->init_fabfile_path);
+	memblk_freeze(mb, &g_args->init_fabfile_path);
 }
 
-void args_thaw(char * const p)
+void args_thaw(char * const mb)
 {
-	THAW(p, g_args->bakescript_path);
+	memblk_thaw(mb, &g_args->bakescript_path);
 
-	THAW(p, g_args->rootvars);
+	memblk_thaw(mb, &g_args->rootvars);
 	int x;
 	for(x = 0; x < g_args->rootvarsl; x++)
-		THAW(p, g_args->rootvars[x]);
+		memblk_thaw(mb, &g_args->rootvars[x]);
 
-	THAW(p, g_args->bakevars);
+	memblk_thaw(mb, &g_args->bakevars);
 	for(x = 0; x < g_args->bakevarsl; x++)
-		THAW(p, g_args->bakevars[x]);
+		memblk_thaw(mb, &g_args->bakevars[x]);
 
-	THAW(p, g_args->invokedirs);
+	memblk_thaw(mb, &g_args->invokedirs);
 	for(x = 0; x < g_args->invokedirsl; x++)
-		THAW(p, g_args->invokedirs[x]);
+		memblk_thaw(mb, &g_args->invokedirs[x]);
 
-	THAW(p, g_args->selectors);
+	memblk_thaw(mb, &g_args->selectors);
 	for(x = 0; x < g_args->selectorsl; x++)
-		selector_thaw(p, &g_args->selectors[x]);
+		selector_thaw(mb, &g_args->selectors[x]);
 
-	THAW(p, g_args->init_fabfile_path);
-	path_thaw(p, g_args->init_fabfile_path);
+	memblk_thaw(mb, &g_args->init_fabfile_path);
+	path_thaw(mb, g_args->init_fabfile_path);
 }

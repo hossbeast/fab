@@ -88,11 +88,8 @@ static int dsc_execwave(
 		// PRIMARY node for this discovery group
 		gn * dscvgn = ts[x]->fmlv->target;
 
-		// allocate dependency block for this node
-		fatal(depblock_allocate, dscvgn->dscv_block);
-
 		// process all dscvs for the node
-		int reconcile = 1;
+		int wasgood = 1;
 		for(; x < tsl && ts[x]->fmlv->target == dscvgn; x++)
 		{
 			if(ts[x]->pid && ts[x]->r_status == 0 && ts[x]->r_signal == 0 && ts[x]->stde_txt->l == 0)
@@ -116,24 +113,22 @@ static int dsc_execwave(
 					{
 						if(dff->ffn->statements[k]->type == FFN_DEPENDENCY)
 						{
-							fatal(dep_process, dff->ffn->statements[k], 0, vmap, gp, stax, staxa, staxp, 0, newn, newr, dscvgn->dscv_block);
+							fatal(dep_process, dff->ffn->statements[k], 0, vmap, gp, stax, staxa, staxp, 0, newn, newr);
 						}
 					}
 				}
 				else
 				{
-					reconcile = 0;
+					wasgood = 0;
 				}
 			}
 			else
 			{
-				reconcile = 0;
+				wasgood = 0;
 			}
 		}
 
-		if(reconcile)
-			fatal(gn_reconcile_dsc, dscvgn);
-		else
+		if(!wasgood)
 			bad++;
 
 		// advance to the next group
@@ -144,98 +139,6 @@ static int dsc_execwave(
 		fail(FAB_DSCPARSE);
 
 	finally : coda;
-}
-
-static int depblock_process(
-	  const depblock * const restrict db
-	, gn * const restrict dscvgn
-	, int * const restrict newnp
-	, int * const restrict newrp
-)
-{
-	int i;
-	int k;
-	for(i = 0; i < db->block->setsl; i++)
-	{
-		gn * A = 0;
-
-		int newa = 0;
-		fatal(gn_add
-			, db->block->sets[i].nbase
-			, 0
-			, db->block->sets[i].needs
-			, 0
-			, &A
-			, &newa
-		);
-
-		if(newnp)
-			(*newnp) += newa;
-
-		for(k = 0; k < db->block->sets[i].feedsl; k++)
-		{
-			void * B = db->block->sets[i].feeds[k];
-
-			int newa = 0;
-			int newb = 0;
-			int newr = 0;
-
-			fatal(gn_edge_add
-				, db->block->sets[i].fbase
-				, 0
-				, (void*)&A, 0, 1
-				, &B, 0, 0
-				, 0
-				, dscvgn
-				, db->block->sets[i].weak
-				, db->block->sets[i].bridge
-				, 0
-				, &newb
-				, &newr
-			);
-
-			if(newnp)
-				(*newnp) += newb;
-			if(newrp)
-				(*newrp) += newr;
-
-			if(newr)
-			{
-				logf(L_DG | L_DSC | L_DSCNEW, "[%1s][%1s][%1s][%1s](DSC:%s)[%6s%s%6s] %s -> %s"
-					, "S"
-					, newa ? "x" : ""
-					, newb ? "x" : ""
-					, newr ? "x" : ""
-					, dscvgn->idstring
-					, "", "cache", ""
-					, ((gn*)A)->idstring
-					, ((gn*)B)->idstring
-				);
-			}
-		}
-	}
-
-	finally : coda;
-}
-
-static int count_dscv(int use_invalid)
-{
-	int c = 0;
-	int x;
-	for(x = 0; x < gn_nodes.l; x++)
-	{
-		int y;
-		for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
-		{
-			if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 0 || (use_invalid && GN_IS_INVALID(gn_nodes.e[x])))
-			{
-				c++;
-				gn_nodes.e[x]->dscvs[y]->dscv_mark = 1;
-			}
-		}
-	}
-
-	return c;
 }
 
 //
@@ -280,107 +183,57 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * con
 
 int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
-	gn ** cache = 0;
-	int		cachel = 0;
-	int		cachea = 0;
-
-	int		dscvl = 0;
-	int		tsl = 0;
+	static int dsc_instance;
 
 	int x;
-	int i;
 	int y;
+	
+	// increases monotonically with each dsc_exec
+	dsc_instance++;
 
-	// count not-yet-executed discovery fmleval contexts
-	dscvl = count_dscv(1);
-
-	for(i = 0; dscvl; i++)
+	int i = 0;
+	while(1)
 	{
-		// ensure enough cache space as if all nodes have cached discovery
-		if(dscvl > cachea)
-		{
-			fatal(xrealloc, &cache, sizeof(*cache), dscvl, 0);
-			cachea = dscvl;
-		}
-
 		// assign each threadspace a discovery formula evaluation context
-		tsl = 0;
-		cachel = 0;
+		int tsl = 0;
+		int n = 0;
 		for(x = 0; x < gn_nodes.l; x++)
 		{
-			if(gn_nodes.e[x]->designate == GN_DESIGNATION_PRIMARY)
+			if(gn_nodes.e[x]->designate == GN_DESIGNATION_PRIMARY && gn_nodes.e[x]->mark != dsc_instance)
 			{
-				for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
-				{
-					if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 1)
-					{
-						if(gn_nodes.e[x]->dscv_block->block == 0)
-						{
-							if(gn_nodes.e[x]->primary_hb->stathash[1] == 0)
-							{
-								logf(L_ERROR, "%-9s file %s not found", "PRIMARY", gn_nodes.e[x]->idstring);
-								break;
-							}
-						}
-					}
-				}
- 
-				if(y == gn_nodes.e[x]->dscvsl)
+				gn_nodes.e[x]->mark = dsc_instance;
+
+				// changed
+				else if(hashblock_cmp(gn_nodes.e[x]->hb))
 				{
 					for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
 					{
-						if(gn_nodes.e[x]->dscvs[y]->dscv_mark == 1)
-						{
-							if(gn_nodes.e[x]->dscv_block->block)
-							{
-								cache[cachel++] = gn_nodes.e[x];
+						fatal(ts_ensure, ts, tsa, tsl + 1);
+						ts_reset((*ts)[tsl]);
 
-								// dscv results were loaded from cache so all of the dscvs for this node are skipped
-								int k;
-								for(k = 0; k < gn_nodes.e[x]->dscvsl; k++)
-								{
-									gn_nodes.e[x]->dscvs[k]->dscv_mark = 2;
-								}
-
-								break;
-							}
-							else
-							{
-								fatal(ts_ensure, ts, tsa, tsl + 1);
-								ts_reset((*ts)[tsl]);
-
-								(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
-								gn_nodes.e[x]->dscvs[y]->dscv_mark = 2;
-							}
-						}
+						(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
+					}
+					if(gn_nodes.e[x]->dscvsl)
+					{
+						n++;
 					}
 				}
 			}
 		}
 
-		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d executes %3d cached %3d", i, tsl, cachel);
+		if(!n)
+			break;
+
+		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d for %3d nodes", i, n);
 
 		int newn = 0;
 		int newr = 0;
 		fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, i);
 
-		// process cached results
-		for(x = 0; x < cachel; x++)
-		{
-			logf(L_DSC | L_DSCEXEC, "(cache) %-9s %s", gn_designation(cache[x]), cache[x]->idstring);
-
-			fatal(depblock_process, cache[x]->dscv_block, cache[x], &newn, &newr);
-			fatal(depblock_close, cache[x]->dscv_block);
-		}
-
 		// sum discovered objects
-		logf(L_DSC | L_DSCEXEC, "DISCOVERY %3d : %3d nodes and %3d edges", i, newn, newr);
-
-		// recount - new nodes may need discovered
-		dscvl = count_dscv(0);
+		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d add %3d nodes and %3d edges", i, newn, newr);
+		i++;
 	}
 
-finally:
-	free(cache);
-coda;
+	finally : coda;
 }

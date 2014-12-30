@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _TRAVERSE_H
-#define _TRAVERSE_H
+#ifndef FAB_TRAVERSE_H
+#define FAB_TRAVERSE_H
 
 #define restrict __restrict
 

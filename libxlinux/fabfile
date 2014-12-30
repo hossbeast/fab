@@ -61,7 +61,7 @@ $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
 	  (echo "{ global: "
-	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
+	> perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=)/) { print "$1;\n" }' <(\
 	  cat -- [ $@ ~ rx/ineed fi ] )
 	> echo "local: *; };"
 	  ) 1>[ $@ ]

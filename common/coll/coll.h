@@ -60,7 +60,7 @@
 /// free(g_clients.e);
 ///
 
-typedef struct
+typedef struct coll_singly
 {
 	int 	len;			// initialized elements in e
 	int 	alloc;		// allocated size of e (in elements)
@@ -68,7 +68,7 @@ typedef struct
 	char*	e;				// singly-allocated list of collection elements
 } coll_singly;
 
-typedef struct
+typedef struct coll_doubly
 {
 	int 	len;			// initialized elements in e
 	int 	alloc;		// allocated size of e (in elements)
@@ -85,4 +85,3 @@ int coll_doubly_add(coll_doubly* c, void* el, void* ret);
 void coll_doubly_free(coll_doubly* c);
 
 #endif
-

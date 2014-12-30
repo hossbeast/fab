@@ -19,45 +19,104 @@
 #ifndef _MEMBLK_H
 #define _MEMBLK_H
 
-#include "xapi.h"
-
 struct mempolicy;		// xlinux/mempolicy.h
 
+struct memblk;
+typedef struct memblk memblk;
+
+typedef int xapi;
 #define restrict __restrict
 
 //
 // api
 //
 
-typedef struct memblk 
-{
-	char *	s;
-	size_t	l;
-	size_t	a;
+/// memblk_mk
+//
+// SUMMARY
+//  create an memblk
+//
+xapi memblk_mk(memblk ** mb)
+	__attribute__((nonnull));
 
-	#ifndef MEMBLK_INTERNALS
-	# define MEMBLK_INTERNALS
-	#endif
-	MEMBLK_INTERNALS
-} memblk;
-
-xapi memblk_mk(memblk ** mb, size_t sz);
-
+/// memblk_alloc
+//
+// SUMMARY
+//  request an allocation
+//
 xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 	__attribute__((nonnull));
 
+/// memblk_realloc
+//
+// SUMMARY
+//  request a reallocation
+//
 xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
 	__attribute__((nonnull));
 
+/// memblk_free
+//
+// SUMMARY
+//  free an memblk with free semantics
+//
 void memblk_free(memblk * mb);
 
+/// memblk_xfree
+//
+// SUMMARY
+//  free an memblk with xfree semantics
+//
 void memblk_xfree(memblk ** mb)
 	__attribute__((nonnull));
 
+/// mempolicy 
+//
+// SUMMARY
+//  get the mempolicy associated with this memblk
+//
 struct mempolicy * memblk_getpolicy(memblk * mb);
 
-// freeze
-// thaw
+/// memblk_size
+//
+// SUMMARY
+//  get the size of the memblk
+//
+size_t memblk_size(memblk * const restrict mb)
+	__attribute__((nonnull));
+
+/// memblk_writeto
+//
+// SUMMARY
+//  consolidate the memblk and write it to a file descriptor with a single writev
+//
+// ERRORS
+//  as for writev, plus LINUX_LESS : actual bytes != expected bytes
+//
+xapi memblk_writeto(memblk * const restrict mb, const int fd)
+	__attribute__((nonnull));
+
+/// memblk_bwriteto
+//
+// SUMMARY
+//  consolidate the memblk and write it to a file descriptor with a single writev
+//
+// ERRORS
+//  as for writev, plus LINUX_LESS : actual bytes != expected bytes
+//
+// REMARKS
+//  this is a non-xapi function
+//
+int memblk_bwriteto(memblk * const restrict mb, const int fd)
+	__attribute__((nonnull));
+
+/// memblk_copyto
+//
+// SUMMARY
+//  consolidate the memblk
+//
+void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
+	__attribute__((nonnull));
 
 #undef restrict
 #endif

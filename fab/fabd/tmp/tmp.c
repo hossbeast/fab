@@ -34,25 +34,6 @@
 #include "macros.h"
 #include "args.h"
 
-/// minmodify
-//
-// get the minimum modify time of all files and directories in the specified directory
-//
-// *minmod should have been initialized to the modify time of the directory itself
-//
-// symbolic links are not followed
-//
-static int minmodify(const char* dirpath, time_t * minmod)
-{
-	int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
-	{
-		(*minmod) = MIN((*minmod), sb->st_mtime);
-		return FTW_CONTINUE;
-	};
-
-	return nftw(dirpath, fn, 32, FTW_PHYS);
-}
-
 //
 // public
 //
@@ -97,35 +78,6 @@ int tmp_setup()
 	// ensure directories for my own pid exist
 	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/fml", g_params.pid);
 	fatal(mkdirp, space, S_IRWXU | S_IRWXG | S_IRWXO);
-
-	//
-	// CACHEDIR/INIT
-	//
-	fatal(mkdirp, XQUOTE(FABCACHEDIR) "/INIT", S_IRWXU | S_IRWXG | S_IRWXO); 
-	{
-		int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
-		{
-			if(typeflag != FTW_D)
-				fails(FAB_BADCACHE, "not a directory");
-
-			// get the min modify time of everything in the directory
-			time_t minmod = sb->st_mtime;
-			minmodify(fpath, &minmod);
-
-			// minimum modify time older than expiration
-			if((time(0) - minmod) > EXPIRATION_POLICY)
-			{
-				fatal(rmdir_recursive, fpath, 1, FAB_BADCACHE);
-			}
-
-		finally:
-			XAPI_INFOF("path", "%s", fpath);
-		coda;
-		};
-
-		fatal(xnftw_nth, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL, 3);
-		fatal(xnftw_nth, XQUOTE(FABCACHEDIR) "/INIT", fn, 32, FTW_ACTIONRETVAL, 1);
-	}
 
 	// resume user identity
 	fatal(identity_assume_user);

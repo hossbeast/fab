@@ -27,3 +27,10 @@ int API xlocaltime_r(const time_t * timep, struct tm * result)
 
 	finally : coda;
 }
+
+int API xclock_gettime(clockid_t clk_id, struct timespec * tp)
+{
+	fatalize(errno, clock_gettime, clk_id, tp);
+
+	finally : coda;
+}

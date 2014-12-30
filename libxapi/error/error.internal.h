@@ -15,19 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
+#ifndef _XAPI_ERROR_INTERNAL_H
+#define _XAPI_ERROR_INTERNAL_H
 
-// memory policy
-__thread mempolicy * policy;
+const struct etable * xapi_errtab_byid(const int id);
 
-void API mempolicy_engage(mempolicy * plc)
-{
-	policy = plc;
-}
-
-API mempolicy * mempolicy_release(mempolicy * plc)
-{
-	mempolicy * r = policy;
-	policy = 0;
-	return r;
-}
+#endif

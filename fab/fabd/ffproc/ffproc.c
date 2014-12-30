@@ -68,7 +68,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 		}
 		else if(stmt->type == FFN_DEPENDENCY)
 		{
-			fatal(dep_process, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp), first, 0, 0, 0);
+			fatal(dep_process, stmt, sstk, vmap, ffp->gp, stax, staxa, (*staxp), first, 0, 0);
 
 			if(first && *first)
 				first = 0;

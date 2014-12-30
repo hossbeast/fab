@@ -379,7 +379,7 @@ int bp_eval(bp * const bp)
 			// source files
 			gn * gn = bp->stages[x].primary[y];
 
-			if(gn->primary_hb->stathash[1] == 0)		// file does not exist
+			if(gn->hb->stathash[1] == 0)		// file does not exist
 			{
 				// PRIMARY file - not found
 				logf(L_ERROR, "[%2d,%3d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
@@ -390,9 +390,9 @@ int bp_eval(bp * const bp)
 					gn->feeds.e[i]->A->poison = 1;
 			}
 
-			logf(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s |"
+			logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s |"
 				, x, c++
-				, "PRIMARY"
+				, gn_designation(bp->stages[0].primary[0])
 				, gn->idstring
 			);
 		}
@@ -427,7 +427,7 @@ int bp_eval(bp * const bp)
 
 					if(!gn->poison)
 					{
-						logf(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s"
+						logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s"
 							, x, c++
 							, gn_designation(gn)
 							, gn->idstring
@@ -445,12 +445,13 @@ int bp_eval(bp * const bp)
 				{
 					gn * gn = bp->stages[x].evals[y]->products[k];
 
-					logf(L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
+					gn_invalid_reason_render(space, sizeof(space), gn);
+					logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
 						, x, c++
 						, gn_designation(gn)
 						, gn->idstring
 						, "REBUILD"
-						, gn_invalid_reason(space, sizeof(space), gn)
+						, space
 					);
 				}
 			}
@@ -477,7 +478,7 @@ int bp_eval(bp * const bp)
 
 			if(gn->rebuild)
 			{
-				logf(L_ERROR | L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
+				logf(L_ERROR | L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
 					, x, c++
 					, gn_designation(gn)
 					, gn->idstring
@@ -487,7 +488,7 @@ int bp_eval(bp * const bp)
 			}
 			else
 			{
-				logf(L_WARN | L_BP | L_BPEVAL, "[%2d,%3d] %9s %-65s | %-7s (%s)"
+				logf(L_WARN | L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
 					, x, c++
 					, gn_designation(gn)
 					, gn->idstring
@@ -498,8 +499,9 @@ int bp_eval(bp * const bp)
 		}
 	}
 
+printf("POISON %d\n", poison);
 	if(poison)
-		fails(FAB_UNSATISFIED, "buildplan cannot be executed");
+		fail(FAB_UNSATISFIED);
 
 	// consolidate stages
 	for(x = bp->stages_l - 1; x >= 0; x--)
@@ -601,11 +603,6 @@ int bp_exec(bp * bp, map * vmap, transform_parser * const gp, lwx *** stax, int 
 			//  std_txt  - wrote nothing to stderr
 			if((*ts)[y]->pid && (*ts)[y]->r_status == 0 && (*ts)[y]->r_signal == 0 && (*ts)[y]->stde_txt->l == 0)
 			{
-				int q;
-				for(q = 0; q < (*ts)[y]->fmlv->productsl; q++)
-				{
-					fatal(gn_reconcile_fab, (*ts)[y]->fmlv->products[q], ws);
-				}
 			}
 		}
 
@@ -625,10 +622,12 @@ void bp_dump(bp * bp)
 	
 	int tot = 0;
 	for(x = 0; x < bp->stages_l; x++)
-	{
 		tot += bp->stages[x].evals_l;
-	}
 
+	if(bp->stages_l == 0)
+	{
+		logf(L_BP | L_BPDUMP, "NO STAGES");
+	}
 	for(x = 0; x < bp->stages_l; x++)
 	{
 		logf(L_BP | L_BPDUMP, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
