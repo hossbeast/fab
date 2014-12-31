@@ -175,13 +175,16 @@ static int resolve(ff_node * list, map* vmap, generator_parser * const gp, lstac
 		pstring_xfree(&gps);
 		fatal(render, (*stax)[pr], &gps);
 
-		generator_xfree(&g);
-		if(generator_parse(gp, gps->s, gps->l, &g) != 0)
+		if(gps)
 		{
-			fail("failed to parse '%.*s'", gps->l, gps->s);
-		}
+			generator_xfree(&g);
+			if(generator_parse(gp, gps->s, gps->l, &g) != 0)
+			{
+				fail("failed to parse '%.*s'", gps->l, gps->s);
+			}
 
-		fatal(lw_exec, g, gps->s, &(*stax)[pn]);
+			fatal(lw_exec, g, gps->s, &(*stax)[pn]);
+		}
 	}
 	else
 	{
