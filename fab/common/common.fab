@@ -1,0 +1,60 @@
+/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+once {
+	+[ $*/../../vars.fab ]
+
+	# variables
+	$sdirs = [ [ $dfabcore/common ~ j ] ~ lsr c -d ]
+	$copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
+		[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
+		[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
+
+		# include paths
+		[ $dlibxapi $dlibxlinux $dliblistwise ~ s/^/-I ]
+	]
+
+	$params = [
+		[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
+		[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
+		[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
+		[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
+		[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
+	]
+
+	$params_devel = [
+		[ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
+		[ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
+		[ -DFABCACHEDIR="\""$fabcachedir_devel"\"" ~ j ]
+		[ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
+		[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
+	]
+
+	$cflags_final = [ $cflags_final $copts $params ]
+	$cflags_debug = [ $cflags_debug $copts $params ]
+	$cflags_devel = [ $cflags_devel $copts $params_devel ]
+
+	# standard files - standard nopic compilation
+	+[@std.c]($dirs = $sdirs; $cc; $dext = [ final.o ]; $cflags = $cflags_final)
+	+[@std.c]($dirs = $sdirs; $cc; $dext = [ debug.o ]; $cflags = $cflags_debug)
+	+[@std.c]($dirs = $sdirs; $cc; $dext = [ devel.o ]; $cflags = $cflags_devel; $gccdep = $gccdep_devel)
+
+	# generated
+	+[@std.xapi.errtab]($dext = [ final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_final)
+	+[@std.xapi.errtab]($dext = [ debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_debug)
+	+[@std.xapi.errtab]($dext = [ devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_devel)
+}

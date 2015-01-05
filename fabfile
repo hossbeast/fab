@@ -29,11 +29,8 @@
 +[ $dlibxunit ]()			@libxunit
 +[ $dfabcore ]() 			@fabcore
 
-# default target - tests
-[ @test ] : [ @xunit.devel @libxunit.devel @liblistwise.test ]
-[ @test.more ] : [ @xunit.devel @libxunit.devel @liblistwise.test.more ]
-
-# build binaries
+# build artifacts
+[ @all ] : [ @final @debug @devel ]
 [ @final ] : [ @libxapi.final @libxlinux.final @libpstring.final @liblistwise.final @listwise.final @fabcore.final ]
 [ @debug ] : [ @libxapi.debug @libxlinux.debug @libpstring.debug @liblistwise.debug @listwise.debug @fabcore.debug ]
 [ @devel ] : [ @libxapi.devel @libxlinux.devel @libpstring.devel @liblistwise.devel @listwise.devel @fabcore.devel ]
@@ -41,6 +38,10 @@
 # install
 [ @install.final ] : [ @libxapi.install.final @libxlinux.install.final @libpstring.install.final @liblistwise.install.final @listwise.install.final @fabcore.install.final ]
 [ @install.debug ] : [ @libxapi.install.debug @libxlinux.install.debug @libpstring.install.debug @liblistwise.install.debug @listwise.install.debug @fabcore.install.debug ]
+
+# default target - tests
+[ @test ] : [ @xunit.devel @libxunit.devel @liblistwise.test ]
+[ @test.more ] : [ @xunit.devel @libxunit.devel @liblistwise.test.more ]
 
 # create scripts
 [ @scripts ]

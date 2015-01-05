@@ -42,9 +42,6 @@
 
 #define restrict __restrict
 
-// defined in gn.c
-char * gn_idstring(struct gn * const);
-
 //
 // data
 //
@@ -221,7 +218,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		ff->dscv_gn = dscv_gn;
 
 		// idstring
-		fatal(ixsprintf, &ff->idstring, "%s", gn_idstring(ff->dscv_gn));
+		fatal(ixsprintf, &ff->idstring, "%s", ff->dscv_gn->idstring);
 	}
 	else if(var_id)
 	{
@@ -370,7 +367,7 @@ int ff_dsc_parse(const ff_parser * const p, char* b, int sz, const char * const 
 
 finally:
 	path_free(pth);
-XAPI_INFOS("gn", gn_idstring(dscv_gn));
+XAPI_INFOS("gn", dscv_gn->idstring);
 coda;
 }
 

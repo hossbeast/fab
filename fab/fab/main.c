@@ -45,7 +45,7 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 		z += znprintf(dst + z, sz - z, ", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
 
 	z += znprintf(dst + z, sz - z, " }\n");
-	write(1, space, z);
+	int __attribute__((unused)) r = write(1, space, z);
 }
 
 static int fabdcred_throw(uid_t actual_uid, gid_t actual_gid)
@@ -88,9 +88,13 @@ coda;
 int main(int argc, char** argv)
 {
 	char space[2048];
+#if DEVEL
 	char space2[2048];
+#endif
 
+#if DEBUG || DEVEL
 	int mode_backtrace = DEFAULT_MODE_BACKTRACE;
+#endif
 	int fd = -1;
 	int lockfd = -1;
 	uint32_t canhash;
@@ -103,9 +107,6 @@ printf("fab[%ld]\n", (long)getpid());
 
 	int x;
 	size_t tracesz = 0;
-
-	// initialize error tables
-	error_setup();
 
 	// process parameter gathering
 	fatal(params_setup);
@@ -155,7 +156,9 @@ printf("fab[%ld]\n", (long)getpid());
 	mempolicy_release(memblk_getpolicy(mb));
 
 	// save a few options that pertain to this process
+#if DEBUG || DEVEL
 	mode_backtrace = g_args->mode_backtrace;
+#endif
 	canhash = g_args->init_fabfile_path->can_hash;
 
 /*
@@ -377,17 +380,11 @@ finally:
 	if(XAPI_UNWINDING)
 	{
 #if DEBUG || DEVEL
-		if(mode_backtrace == MODE_BACKTRACE_PITHY)
-		{
+		if(mode_backtrace == MODE_BACKTRACE_FULL)
+			tracesz = xapi_trace_full(space, sizeof(space));
+		else
 #endif
 			tracesz = xapi_trace_pithy(space, sizeof(space));
-#if DEBUG || DEVEL
-		}
-		else
-		{
-			tracesz = xapi_trace_full(space, sizeof(space));
-		}
-#endif
 
 		logw(L_RED, space, tracesz);
 	}

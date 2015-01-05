@@ -26,11 +26,11 @@ xapi API xreadv(int fd, const struct iovec * iov, int iovcnt)
 
 xapi API axreadv(int fd, const struct iovec * iov, int iovcnt)
 {
+	ssize_t expected = 0;
 	ssize_t actual;
 	if((actual = readv(fd, iov, iovcnt)) == -1)
 		fail(errno);
 
-	ssize_t expected = 0;
 	int x;
 	for(x = 0; x < iovcnt; x++)
 		expected += iov[x].iov_len;
@@ -54,11 +54,11 @@ xapi API xwritev(int fd, const struct iovec * iov, int iovcnt)
 
 xapi API axwritev(int fd, const struct iovec * iov, int iovcnt)
 {
+	ssize_t expected = 0;
 	ssize_t actual;
 	if((actual = writev(fd, iov, iovcnt)) == -1)
 		fail(errno);
 
-	ssize_t expected = 0;
 	int x;
 	for(x = 0; x < iovcnt; x++)
 		expected += iov[x].iov_len;

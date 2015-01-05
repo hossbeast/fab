@@ -158,7 +158,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		fatal(lstack_getbytes, lx, 0, x, &s, &l);
 
 		// lx->s[0].s[x].s - the string to check and modify
-		fatal(re_exec, &o->args[0]->re, s, l, 0, ovec, ovec_len);
+		fatal(re_execute, &o->args[0]->re, s, l, 0, ovec, ovec_len);
 
 		if((*ovec)[0] > 0)
 		{
@@ -239,7 +239,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 
 				if(isglobal)
 				{
-					fatal(re_exec, &o->args[0]->re, ss, ssl, loff, ovec, ovec_len);
+					fatal(re_execute, &o->args[0]->re, ss, ssl, loff, ovec, ovec_len);
 				}
 			} while(isglobal && (*ovec)[0] > 0);
 

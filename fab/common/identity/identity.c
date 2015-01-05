@@ -22,13 +22,14 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "xlinux.h"
+#include "xapi.h"
+
 #include "identity.h"
+#include "FAB.errtab.h"
 
 #include "args.h"
 #include "params.h"
-#include "logs.h"
-#include "global.h"
-#include "xlinux.h"
 
 int identity_init()
 {

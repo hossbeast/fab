@@ -26,9 +26,8 @@
 #include "xapi.h"
 #include "xlinux.h"
 
-#include "logs.h"
-#include "global.h"
 #include "params.h"
+#include "FAB.errtab.h"
 
 #include "canon.h"
 

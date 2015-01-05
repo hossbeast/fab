@@ -227,7 +227,6 @@ static int dep_add_multi(
 		fatal(lw_reset, stax, staxa, pli);
 
 		// populate the "<" variable (left-hand side)
-//		newal = (*stax)[pl]->s[x].l;
 		newal = lwx_rows((*stax)[pl], x);
 		if(newaa < newal)
 		{

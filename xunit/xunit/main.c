@@ -41,9 +41,13 @@ int main(int g_argc, char** g_argv)
 	// link in libxunit
 	xunit_errcode(1234);
 
+#if 0
 	// link in liblistwise - there are symbol binding problems when just dloading it
 extern int listwise_allocation_seed;
 	listwise_allocation_seed = 10;
+#endif
+
+//	fatal(xdlopen, "/home/todd/fab/listwise/liblistwise/liblistwise.devel.so", RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND, &object);
 
 	// initialize logger - prepare g_argc/g_argv
 	fatal(log_init);
@@ -52,7 +56,7 @@ extern int listwise_allocation_seed;
 	fatal(args_parse);
 
 	// configure logger
-#if DEVEL
+#if DEVEL || DEBUG
 	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
 	{
 		fatal(log_config_and_describe
@@ -189,12 +193,12 @@ finally:
 
 	if(XAPI_UNWINDING)
 	{
-# if DEVEL
+# if DEVEL || DEBUG
 		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
 		{
 #endif
 			tracesz = xapi_trace_pithy(space, sizeof(space));
-#if DEVEL
+#if DEBUG || DEVEL
 		}
 		else
 		{

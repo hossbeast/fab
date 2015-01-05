@@ -128,7 +128,12 @@ static int dsc_execwave(
 			}
 		}
 
-		if(!wasgood)
+		if(wasgood)
+		{
+			// discovery succesful
+			dscvgn->invalid &= ~GN_INVALIDATION_DISCOVERY;
+		}
+		else
 			bad++;
 
 		// advance to the next group
@@ -154,7 +159,7 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * con
 	// assign each threadspace a discovery formula evaluation context
 	for(x = 0; x < listl; x++)
 	{
-		if((*list[x])->designate == GN_DESIGNATION_PRIMARY)
+		if((*list[x])->type == GN_TYPE_PRIMARY)
 		{
 			for(y = 0; y < (*list[x])->dscvsl; y++)
 			{
@@ -199,13 +204,25 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int *
 		int n = 0;
 		for(x = 0; x < gn_nodes.l; x++)
 		{
-			if(gn_nodes.e[x]->designate == GN_DESIGNATION_PRIMARY && gn_nodes.e[x]->mark != dsc_instance)
+			if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY && gn_nodes.e[x]->mark != dsc_instance)
 			{
 				gn_nodes.e[x]->mark = dsc_instance;
 
-				// changed
+				fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
+				if(gn_nodes.e[x]->hb->stathash[1] == 0)
+				{
+					gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
+				}
 				else if(hashblock_cmp(gn_nodes.e[x]->hb))
 				{
+					gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+				}
+
+				// require discovery
+				if(GN_IS_INVALID(gn_nodes.e[x]) && gn_nodes.e[x]->dscvsl)
+				{
+					gn_nodes.e[x]->invalid |= GN_INVALIDATION_DISCOVERY;
+
 					for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
 					{
 						fatal(ts_ensure, ts, tsa, tsl + 1);
@@ -213,10 +230,8 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int *
 
 						(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
 					}
-					if(gn_nodes.e[x]->dscvsl)
-					{
-						n++;
-					}
+
+					n++;
 				}
 			}
 		}
@@ -224,14 +239,14 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int *
 		if(!n)
 			break;
 
-		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d for %3d nodes", i, n);
+		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d for   %3d nodes", i, n);
 
 		int newn = 0;
 		int newr = 0;
 		fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, i);
 
 		// sum discovered objects
-		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d add %3d nodes and %3d edges", i, newn, newr);
+		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d found %3d nodes and %3d edges", i, newn, newr);
 		i++;
 	}
 

@@ -86,8 +86,6 @@ typedef struct ff_node
 {
 	uint32_t		type;					// node type
 	ff_loc			loc;					// node location (cumulative)
-//	char*			s;						// string value (cumulative)
-//	int				l;						// length
 
 	transform * transform;		// FFN_TRANSFORM
 	uint32_t		flags;				// FFN_DEPENDENCY, FFN_FORMULA, FFN_INVOCATION, FFN_LIST, FFN_VARREF

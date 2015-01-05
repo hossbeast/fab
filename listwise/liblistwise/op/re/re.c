@@ -95,7 +95,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		int ssl;
 		fatal(lstack_getbytes, ls, 0, x, &ss, &ssl);
 
-		fatal(re_exec, &o->args[0]->re, ss, ssl, 0, ovec, ovec_len);
+		fatal(re_execute, &o->args[0]->re, ss, ssl, 0, ovec, ovec_len);
 
 		if((*ovec)[0] > 0)
 		{
@@ -106,7 +106,7 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 				(*ovec)[0] = 0;
 				if(isglobal)
 				{
-					fatal(re_exec, &o->args[0]->re, ss, ssl, (*ovec)[2], ovec, ovec_len);
+					fatal(re_execute, &o->args[0]->re, ss, ssl, (*ovec)[2], ovec, ovec_len);
 				}
 			} while((*ovec)[0] > 0);
 

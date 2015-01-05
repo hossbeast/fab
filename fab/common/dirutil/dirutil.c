@@ -23,10 +23,8 @@
 
 #include "dirutil.h"
 
-#include "logs.h"
-#include "global.h"
-
 #include "xlinux.h"
+#include "xapi.h"
 
 int rmdir_recursive(const char * const dirpath, int rmself, int errcode)
 {

@@ -22,7 +22,6 @@
 #undef perrtab
 #define perrtab perrtab_FAB
 
-#include "error.h"
 #include "logs.h"
 #include "args.h"
 #include "params.h"

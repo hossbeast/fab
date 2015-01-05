@@ -379,7 +379,7 @@ int bp_eval(bp * const bp)
 			// source files
 			gn * gn = bp->stages[x].primary[y];
 
-			if(gn->hb->stathash[1] == 0)		// file does not exist
+			if(gn->invalid & GN_INVALIDATION_NXFILE)		// no such file
 			{
 				// PRIMARY file - not found
 				logf(L_ERROR, "[%2d,%3d] %-9s file %s not found", x, y, "PRIMARY", gn->idstring);
@@ -392,7 +392,7 @@ int bp_eval(bp * const bp)
 
 			logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s |"
 				, x, c++
-				, gn_designation(bp->stages[0].primary[0])
+				, GN_TYPE_STR(bp->stages[0].primary[0]->type)
 				, gn->idstring
 			);
 		}
@@ -429,7 +429,7 @@ int bp_eval(bp * const bp)
 					{
 						logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s"
 							, x, c++
-							, gn_designation(gn)
+							, GN_TYPE_STR(gn->type)
 							, gn->idstring
 							, "SKIP"
 						);
@@ -445,10 +445,10 @@ int bp_eval(bp * const bp)
 				{
 					gn * gn = bp->stages[x].evals[y]->products[k];
 
-					gn_invalid_reason_render(space, sizeof(space), gn);
+					gn_invalid_reasons_write(gn, space, sizeof(space));
 					logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
 						, x, c++
-						, gn_designation(gn)
+						, GN_TYPE_STR(gn->type)
 						, gn->idstring
 						, "REBUILD"
 						, space
@@ -480,7 +480,7 @@ int bp_eval(bp * const bp)
 			{
 				logf(L_ERROR | L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
 					, x, c++
-					, gn_designation(gn)
+					, GN_TYPE_STR(gn->type)
 					, gn->idstring
 					, ""
 					, "no formula"
@@ -490,7 +490,7 @@ int bp_eval(bp * const bp)
 			{
 				logf(L_WARN | L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
 					, x, c++
-					, gn_designation(gn)
+					, GN_TYPE_STR(gn->type)
 					, gn->idstring
 					, ""
 					, "no formula"
@@ -499,7 +499,6 @@ int bp_eval(bp * const bp)
 		}
 	}
 
-printf("POISON %d\n", poison);
 	if(poison)
 		fail(FAB_UNSATISFIED);
 
@@ -603,6 +602,15 @@ int bp_exec(bp * bp, map * vmap, transform_parser * const gp, lwx *** stax, int 
 			//  std_txt  - wrote nothing to stderr
 			if((*ts)[y]->pid && (*ts)[y]->r_status == 0 && (*ts)[y]->r_signal == 0 && (*ts)[y]->stde_txt->l == 0)
 			{
+				int q;
+				for(q = 0; q < (*ts)[y]->fmlv->productsl; q++)
+				{
+					// up-to-date
+					(*ts)[y]->fmlv->products[q]->invalid = 0;
+
+					// reload hashblock
+					fatal(hashblock_stat, (*ts)[y]->fmlv->products[q]->path->can, (*ts)[y]->fmlv->products[q]->hb);
+				}
 			}
 		}
 
@@ -640,7 +648,7 @@ void bp_dump(bp * bp)
 				if(i)
 				{
 					logf(L_BP | L_BPDUMP, "         %-9s %s"
-						, gn_designation(bp->stages[x].evals[y]->products[i])
+						, GN_TYPE_STR(bp->stages[x].evals[y]->products[i]->type)
 						, bp->stages[x].evals[y]->products[i]->idstring
 					);
 				}
@@ -649,7 +657,7 @@ void bp_dump(bp * bp)
 					logf(L_BP | L_BPDUMP, "[%2d,%3d] %-9s %s"
 						, x
 						, y
-						, gn_designation(bp->stages[x].evals[y]->products[i])
+						, GN_TYPE_STR(bp->stages[x].evals[y]->products[i]->type)
 						, bp->stages[x].evals[y]->products[i]->idstring
 					);
 				}

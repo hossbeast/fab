@@ -46,10 +46,24 @@
 #include "memblk.h"
 #include "unitstring.h"
 
+#define SAYS(s) do {								\
+	fatal(axwrite, 1, s, strlen(s));	\
+} while(0)
+
 #define SAYF(fmt, ...) do {											\
 	fatal(psprintf, &ptmp, fmt, ##__VA_ARGS__);		\
 	fatal(axwrite, 1, ptmp->s, ptmp->l);					\
-} while(0);
+} while(0)
+
+#define CENTER(w, fmt, ...) ({																		\
+	int act = snprintf(0, 0, fmt, ##__VA_ARGS__);										\
+	snprintf(space, sizeof(space), "%*s"fmt"%*s"										\
+		, (MAX(w - act, 0) / 2) + ((MAX(w - act, 0) % 2) ? 1 : 0), ""	\
+		, ##__VA_ARGS__																								\
+		, (MAX(w - act, 0) / 2), ""																		\
+	);																															\
+	space;																													\
+})
 
 // errors to report and continue, otherwise exit
 int fab_swallow[] = {
@@ -117,12 +131,15 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 		}
 		z += znprintf(dst + z, sz - z, " }\n");
 	}
-	write(1, space, z);
+
+	int __attribute__((unused)) r = write(1, space, z);
 }
 
 static int loop()
 {
 	int x;
+
+	char space[256];
 
 	// reset some stuff
 	fabricationsl = 0;
@@ -133,30 +150,8 @@ static int loop()
 	inspectionsl = 0;
 	queriesl = 0;
 
-	// stat primary backing files
-	for(x = 0; x < gn_nodes.l; x++)
-	{
-		if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY)
-		{
-			fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
-
-			if(gn_nodes.e[x]->hb->stathash[1] == 0)
-			{
-				if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY)
-					logf(L_ERROR, "%s file not found : %s", GN_TYPE_STR(GN_TYPE_PRIMARY), gn_nodes.e[x]->idstring);
-
-				gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
-			}
-			else if(hashblock_cmp(gn_nodes.e[x]->hb))
-			{
-				gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
-			}
-		}
-	}
-
 	// comprehensive dependency discovery
 	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tspc, &tsa, &tsw);
-	fatal(gn_finalize);
 
 	// stat non-primary backing files
 	for(x = 0; x < gn_nodes.l; x++)
@@ -165,19 +160,20 @@ static int loop()
 		{
 			fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
 
-			if(gn_nodes.e[x]->hb->stathash[1] == 0)
-			{
-				gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
-			}
-			else if(hashblock_cmp(gn_nodes.e[x]->hb))
+			if(hashblock_cmp(gn_nodes.e[x]->hb))
 			{
 				gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+			}
+
+			// require fabrication
+			if(GN_IS_INVALID(gn_nodes.e[x]))
+			{
+				gn_nodes.e[x]->invalid |= GN_INVALIDATION_FABRICATE;
 			}
 		}
 	}
 
 	// process selectors
-	int primary_invalidated = 0;
 	if(g_args->selectorsl)
 	{
 		fatal(selector_init);
@@ -233,35 +229,42 @@ static int loop()
 			for(x = 0; x < inspectionsl; x++)
 				logf(L_LISTS, "inspection(s)      =%s", (*inspections[x])->idstring);
 		}
-
-		// process invalidations
-		if(invalidationsl)
-			fatal(gn_process_invalidations, invalidations, invalidationsl, &primary_invalidated);
 	}
 
-	// specific dependency discovery
-	if(discoveriesl)
+	if(invalidationsl)
 	{
-		fatal(log_parse_and_describe, "+DSC", 0, 0, L_INFO);
-		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &tspc, &tsa, &tsw);
+		int repeat_discovery = 0;
+		fatal(gn_process_invalidations, invalidations, invalidationsl, &repeat_discovery);
+
+		if(repeat_discovery)
+		{
+			// repeat dependency discovery if any primary nodes that have dscvs were invalidated
+			fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tspc, &tsa, &tsw);
+		}
 	}
 
-	// propagate invalidations that were applied on this iteration
+	// propagate invalidations and clear changes from this iteration
 	int visit(gn * gn, int d)
 	{
-		gn->invalid |= GN_INVALIDATION_SOURCES;
+		if(d)
+			gn->invalid |= GN_INVALIDATION_SOURCES;
 
 		finally : coda;
 	};
 	for(x = 0; x < gn_nodes.l; x++)
 	{
-		if(gn_nodes.e[x]->type & GN_TYPE_HASFILE && hashblock_cmp(gn_nodes.e[x]->hb))
-			fatal(traverse_depth_bynodes_feedsward_noweak_usebridge_usenofile, gn_nodes.e[x], visit);
+		if((gn_nodes.e[x]->type & GN_TYPE_HASFILE) && (gn_nodes.e[x]->invalid & (GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER)))
+		{
+			// do not cross the nofile boundary
+			fatal(traverse_depth_bynodes_feedsward_noweak_usebridge_nonofile, gn_nodes.e[x], visit);
+
+			gn_nodes.e[x]->invalid &= ~(GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER);
+		}
 	}
 
 	if(g_args->selectors_arequery)
 	{
-		SAYF(" %-40s|%-13s|%11s|%9s\n", "id", "type", "out-of-date", "dscvs-fml");
+		SAYF(" %-40s | %-13s | %-11s | %-11s | %s\n", "id", "type", "degree", "invalidated", "reason");
 		for(x = 0; x < queriesl; x++)
 		{
 			// id
@@ -274,32 +277,36 @@ static int loop()
 				SAYF(" %-40s", (*queries[x])->idstring);
 			}
 
-			// type, out-of-date
-			SAYF("|%13s|%-11s"
-				, GN_DESIGNATION_STR((*queries[x])->designate)
-				, GN_IS_INVALID((*queries[x])) ? "    [x]" : ""
-			);
+			// type
+			SAYF(" | %-13s", GN_TYPE_STR((*queries[x])->type));
 
-			// dscvs-fml
-			if((*queries[x])->designate == GN_DESIGNATION_PRIMARY && (*queries[x])->dscvsl)
+			// degree
+			SAYF(" | %11s", CENTER(11, "%-d/%d", (*queries[x])->needs.l, (*queries[x])->feeds.l));
+
+			// invalid
+			SAYF(" | %-11s", CENTER(11, "%s", (*queries[x])->invalid ? "x" : ""));
+
+			// reason
+			SAYS(" | ");
+			if((*queries[x])->type & GN_TYPE_HASFILE)
 			{
-				SAYF("|%9d"
-					, (*queries[x])->dscvsl
-				);
+				gn_invalid_reasons_write((*queries[x]), space, sizeof(space));
+				SAYS(space);
 			}
-			else
-			{
-				SAYF("|%9s", "");
-			}
-			SAYF(" 0x%08x 0x%08x", (*queries[x])->hb->stathash[0], (*queries[x])->hb->stathash[1]);
 			SAYF("\n");
 		}
 		SAYF(" %d nodes\n", queriesl);
 	}
 
+	if(g_args->selectors_arediscovery)
+	{
+		fatal(log_parse_and_describe, "+DSC", 0, 0, L_INFO);
+		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &tspc, &tsa, &tsw);
+		fatal(log_parse_pop);
+	}
+
 	if(g_args->selectors_areinspections)
 	{
-		// enable DGRAPH
 		fatal(log_parse_and_describe, "+DGRAPH", 0, 0, L_INFO);
 
 		for(x = 0; x < inspectionsl; x++)
@@ -308,15 +315,8 @@ static int loop()
 		fatal(log_parse_pop);
 	}
 
-	if(g_args->selectors_arequery == 0 && g_args->selectors_areinspections == 0)
+	if(g_args->selectors_arequery == 0 && g_args->selectors_areinspections == 0 && g_args->selectors_arediscovery == 0)
 	{
-		if(primary_invalidated)
-		{
-			// dependency discovery on invalidated primary nodes
-			fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tspc, &tsa, &tsw);
-			fatal(gn_finalize);
-		}
-
 		//
 		// construct a buildplan - use the first node if none was specified
 		//
@@ -348,7 +348,7 @@ static int loop()
 			else
 				B = *fabricationns[b - fabricationsl - fabricationxsl];
 
-			if((A->designate == GN_DESIGNATION_TASK) ^ (B->designate == GN_DESIGNATION_TASK))
+			if((A->type == GN_TYPE_TASK) ^ (B->type == GN_TYPE_TASK))
 				fails(FAB_BADPLAN, "cannot mix task and non-task targets");
 		}
 
@@ -466,9 +466,6 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	fatal(xprctl, PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0);
 #endif
 
-	// initialize error tables
-	error_setup();
-
 	// process parameter gathering
 	fatal(params_setup);
 
@@ -491,7 +488,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 #endif
 
 	// default logger configuration
-	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, 0, L_INFO);
+	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO|DSCEXEC", 0, 0, L_INFO);
 
 	// other initializations
 	fatal(tmp_setup);
@@ -683,7 +680,6 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				fatal(ffproc, ffp, g_args->init_fabfile_path, vmap, &stax, &staxa, &staxp, &first);
 
 				// compute node types
-				fatal(gn_finalize);
 				initialized = 1;
 
 				// load file hashes
@@ -733,12 +729,12 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				}
 
 				// log the backtrace
+#if DEBUG || DEVEL
 				int mode = DEFAULT_MODE_BACKTRACE;
 
-	#if DEBUG || DEVEL
 				if(g_args)
 					mode = g_args->mode_backtrace;
-	#endif
+#endif
 
 				/*
 				** populate the base frame
@@ -746,10 +742,12 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				XAPI_FRAME_SET(perrtab, 0);
 				*/
 
-				if(mode == MODE_BACKTRACE_PITHY)
-					tracesz = xapi_trace_pithy(space, sizeof(space));
-				else
+#if DEBUG || DEVEL
+				if(mode == MODE_BACKTRACE_FULL)
 					tracesz = xapi_trace_full(space, sizeof(space));
+				else
+#endif
+					tracesz = xapi_trace_pithy(space, sizeof(space));
 
 				logw(L_RED, space, tracesz);
 
@@ -765,7 +763,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 			z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
 			logf(L_INFO, "elapsed : %.*s", (int)z, space);
-			logf(L_INFO, "usage : lwx(%d)", staxa);
+			logf(L_INFO, "usage : lwx(%d), gn(%d), ts(%d)", staxa, gn_nodes.a, tsa);
 
 			// timer reset
 			memset(&time_start, 0, sizeof(time_start));
@@ -783,7 +781,6 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 finally:
 
-#if 1
 	ff_freeparser(ffp);
 	bp_free(plan);
 	map_free(rmap);
@@ -817,7 +814,6 @@ finally:
 	params_teardown();
 	traverse_teardown();
 	selector_teardown();
-#endif
 
 	fatal(ixmunmap, &g_args, argsb.st_size);
 	fatal(ixclose, &argsfd);
@@ -828,17 +824,17 @@ finally:
 
 	if(XAPI_UNWINDING)
 	{
+#if DEBUG || DEVEL
 		int mode = DEFAULT_MODE_BACKTRACE;
 
-		#if DEBUG || DEVEL
 		if(g_args)
-			mode = g_args->mode_backtrace == MODE_BACKTRACE_PITHY;
-		#endif
+			mode = g_args->mode_backtrace;
 
-		if(mode == MODE_BACKTRACE_PITHY)
-			tracesz = xapi_trace_pithy(space, sizeof(space));
-		else
+		if(mode == MODE_BACKTRACE_FULL)
 			tracesz = xapi_trace_full(space, sizeof(space));
+		else
+#endif
+			tracesz = xapi_trace_pithy(space, sizeof(space));
 
 		logw(L_RED, space, tracesz);
 	}

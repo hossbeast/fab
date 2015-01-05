@@ -23,6 +23,86 @@
 +[ $dfabw ]()			@fabw
 +[ $dfabd ]()			@fabd
 
+# variables
+#	[ $dfab/../args ~j ] [ $dfab/../error ~j ] [ $dfab/../logs ~j ]
+$sdirs = [ $dfabd [ $dfabcore/common ~ j ] ~ lsr c -d ]
+
+$copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
+	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
+	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
+
+	# include paths - mark as system to preclude dependency discovery from gcc
+	[ $dlibxapi $dlibxlinux $dlibpstring $dliblistwise ~ s/^/-I ]
+]
+
+$params = [
+	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
+	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
+	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
+	[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
+]
+
+$params_devel = [
+	[ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
+	[ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
+	[ -DFABCACHEDIR="\""$fabcachedir_devel"\"" ~ j ]
+	[ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
+	[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
+]
+
+$cflags_final = [ $cflags_final $copts $params ]
+$cflags_debug = [ $cflags_debug $copts $params ]
+$cflags_devel = [ $cflags_devel $copts $params_devel ]
+
+# operator so's
+$faboplist_final = [ $dfabcore/fablw/op ~ j lsr sx/c/final.so y ]
+$faboplist_debug = [ $dfabcore/fablw/op ~ j lsr sx/c/debug.so y ]
+$faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
+
+#
+# catchall node
+#
+[ @all ] : [ @final @debug @devel ]
+[ @final ] : [ @fab.final @fabw.final @fabd.final $faboplist_final ]
+[ @debug ] : [ @fab.debug @fabw.debug @fabd.debug $faboplist_debug ]
+[ @devel ] : [ @fab.devel @fabw.devel @fabd.devel $faboplist_devel ]
+
+#
+# standard files - fPIC compilation
+#  no discovery on these files, because they would then depend on *.pic.o files within fab which
+#  do not exist ; instead those link-time references are satisfied by the fabd executable
+#
++[@std.c]($dext = [ final.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_final -fPIC ]; -$cobjpaths)
+[ $cobjpaths ] : [ $fabd_final ]
++[@std.c]($dext = [ debug.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_debug -fPIC ]; -$cobjpaths)
+[ $cobjpaths ] : [ $fabd_debug ]
++[@std.c]($dext = [ devel.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_devel -fPIC ]; -$cobjpaths)
+[ $cobjpaths ] : [ $fabd_devel ]
+
+#
+# fab-specific operator so's - only link the immediate object. This so depends on fab for many symbols
+#
+[ $faboplist_final ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
+{
+	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
+}
+
+[ $faboplist_debug ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
+{
+	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
+}
+
+[ $faboplist_devel ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
+{
+	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
+}
+
+# also a bridge dependency on the fabd executable
+[ $faboplist_final ] ::^ [ $fabd_final ]
+[ $faboplist_debug ] ::^ [ $fabd_debug ]
+[ $faboplist_devel ] ::^ [ $fabd_devel ]
+
 #
 # tasks
 #
@@ -53,8 +133,8 @@
 
 	rm -rf 																							[ $destdir/$fablwopdir ] 2>/dev/null
 	install -d																					[ $destdir/$fablwopdir ]
-	install [ $dfab/fablw/op/fi/fi.final.so ]						[ $destdir/$fablwopdir/fi.so ]
-	install [ $dfab/fablw/op/fg/fg.final.so ]						[ $destdir/$fablwopdir/fg.so ]
+	install [ $dfabcore/fablw/op/fi/fi.final.so ]				[ $destdir/$fablwopdir/fi.so ]
+	install [ $dfabcore/fablw/op/fg/fg.final.so ]				[ $destdir/$fablwopdir/fg.so ]
 }
 
 [ @install.final ] : [ @installation @fab.install.final @fabw.install.final @fabd.install.final ]
@@ -65,7 +145,7 @@
 {
 	install -d 																		[ $destdir/$mandir/man1 ]
 
-	cat [ $dfab/man/fab.1 ] \
+	cat [ $dfabcore/man/fab.1 ] \
 		| [ $^lw ] "s/---BUILDVERS---/<[ $VERSIONS ]>" \
 		| [ $^lw ] "s/---BUILDDATE---/<[ @^.time ~ datef/%Y-%m-%d ]>" \
 		| gzip -9c  															> [ $destdir/$mandir/man1/fab.1.gz ]

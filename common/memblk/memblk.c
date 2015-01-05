@@ -124,7 +124,8 @@ xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t e
 {
 	void * old = *(void**)p;
 	fatal(memblk_alloc, mb, p, es * ec);
-	memcpy(*(void**)p, old, es * oec);
+	if(old)
+		memcpy(*(void**)p, old, es * oec);
 
 	finally : coda;
 }

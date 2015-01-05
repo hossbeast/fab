@@ -68,7 +68,7 @@ finally:
 coda;
 }
 
-int API re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len)
+int API re_execute(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len)
 {
 	if((*ovec_len) < ((MIN(re->c_caps, 1) * 3) + 1))
 	{

@@ -132,7 +132,9 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 				, fml->ffn->loc.l_col + 1
 				, t->idstring
 			);
+
 			t->fabv = fmlv;
+			fatal(gn_finalize, t);
 		}
 	}
 	LSTACK_ITEREND;
@@ -186,7 +188,10 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 			fmlv->products[y] = t;
 
 			if(fmlv->flags & FFN_FABRICATION)
+			{
 				t->fabv = fmlv;
+				fatal(gn_finalize, t);
+			}
 		}
 
 		// logging
@@ -349,13 +354,11 @@ int fml_render(ts * const restrict ts, transform_parser * const gp, lwx *** cons
 	fatal(psprintf, &ts->cmd_txt, shebang ? "#!/bin/bash\n\n" : "");
 	fatal(list_renderto, (*stax)[staxp], &ts->cmd_txt);
 
-char * gn_idstring(struct gn *);
-
 finally:
 	if(ts->fmlv->flags & FFN_DISCOVERY)
-		XAPI_INFOS("target", gn_idstring(ts->fmlv->target));
+		XAPI_INFOS("target", ts->fmlv->target->idstring);
 	else
-		XAPI_INFOS("product[0]", gn_idstring(ts->fmlv->products[0]));
+		XAPI_INFOS("product[0]", ts->fmlv->products[0]->idstring);
 coda;
 }
 
@@ -420,7 +423,6 @@ int fml_exec(ts * const restrict ts, int num)
 
 		// exec doesnt return
 		execl(ts->cmd_path->s, ts->cmd_path->s, (void*)0);
-
 		fail(0);
 	}
 

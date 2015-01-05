@@ -31,13 +31,11 @@ __thread struct memblk callstack_mb;
 
 #define restrict __restrict
 
-static int wrealloc(void * p, size_t es, size_t ec, size_t oec)
+static int wmalloc(void * p, size_t sz)
 {
-#define MEMBLOCK_SMALL			0x1000	/* 1k : first THRESHOLD blocks */
+#define MEMBLOCK_SMALL			0x1000 /* 1k : first THRESHOLD blocks */
 #define MEMBLOCK_THRESHOLD	0x4			
-#define MEMBLOCK_LARGE			0x8000	/* 8k : additional blocks */
-
-	size_t sz = es * ec;
+#define MEMBLOCK_LARGE			0x8000 /* 8k : additional blocks */
 
 	// request is too large to satisfy
 	if(sz > MEMBLOCK_LARGE)
@@ -75,6 +73,17 @@ static int wrealloc(void * p, size_t es, size_t ec, size_t oec)
 
 	*(void**)p = mb->blocks[mb->blocksl - 1].s + mb->blocks[mb->blocksl - 1].l;
 	mb->blocks[mb->blocksl - 1].l += sz;
+
+	return 0;
+}
+
+static int wrealloc(void * p, size_t es, size_t ec, size_t oec)
+{
+	void * old = *(void**)p;
+	if(wmalloc(p, es * ec))
+		return 1;
+	if(old)
+		memcpy(*(void**)p, old, es * oec);
 
 	return 0;
 }
@@ -181,7 +190,7 @@ int API xapi_frame_enter()
 		**  it WILL fail if MEMBLOCK_LARGE < sizeof(callstack)
 		**  it could of course also fail if there is actually insufficient memory
 		*/
-		wrealloc(&callstack, sizeof(*callstack), 1, 0);
+		wmalloc(&callstack, sizeof(*callstack));
 	}
 #if DEVEL
 	CS = callstack;

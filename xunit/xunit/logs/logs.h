@@ -20,7 +20,7 @@
 
 #include "logger.h"
 
-#if DEVEL
+#if DEBUG || DEVEL
 # define L_LOGGER				0x0000000000000001ULL
 #endif
 #define L_ERROR					0x0000000000000002ULL

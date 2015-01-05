@@ -122,6 +122,10 @@ static int selector_parse(char * const s, uint32_t * const lists, uint8_t * cons
 
 			if((*lists) & SELECTOR_QUERY)
 				g_args->selectors_arequery = 1;
+			else if((*lists) & SELECTOR_INSPECT)
+				g_args->selectors_areinspections = 1;
+			else if((*lists) & SELECTOR_DISCOVERY)
+				g_args->selectors_arediscovery = 1;
 
 			g_args->selectors[g_args->selectorsl] = (selector){
 					.mode = (*mode)

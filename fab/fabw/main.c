@@ -47,7 +47,7 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 		z += znprintf(dst + z, sz - z, ", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
 
 	z += znprintf(dst + z, sz - z, " }\n");
-	write(1, space, z);
+	int __attribute__((unused)) r = write(1, space, z);
 }
 
 int main(int argc, char** argv)
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 	pid_t fabd_pid = -1;
 
 	size_t z = snprintf(space, sizeof(space), "fabw[%lu] started\n", (long)getpid());
-	write(1, space, z);
+	int __attribute__((unused)) r = write(1, space, z);
 
 	// unblock all signals
 	sigset_t all;
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 			w[3] = 'd';
 		execv(space, argv);
 #else
-		execvp("fabd", argv, argc);
+		execvp("fabd", argv);
 #endif
 
 		tfail(perrtab_SYS, errno);

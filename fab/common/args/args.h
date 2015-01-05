@@ -137,8 +137,10 @@ MODE_TABLE(0)
 };
 
 #define _MODE(a, b, c) (c) == b ? #a :
-#if DEBUG || DEVEL
+#if DEBUG && DEVEL
 # define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "UNKNWN"
+#elif DEBUG
+# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) "UNKNWN"
 #elif DEVEL
 # define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEVEL(x) "UNKNWN"
 #else
@@ -182,6 +184,8 @@ extern struct g_args_t
 	int									selectorsa;
 	int									selectorsl;
 	int									selectors_arequery;					// whether any selectors target the QUERY list
+	int									selectors_areinspections;		// whether any selectors target the INSPECT list
+	int									selectors_arediscovery;			// whether any selectors target the DISCOVERY list
 
 	int									invalidationsz;							// invalidate all nodes (-B)
 	int									invalidationsz_primary;			// invalidate all primary nodes (-Bp)

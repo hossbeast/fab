@@ -186,7 +186,7 @@ static int enter(
 
 				if(next->travel != t)
 				{
-					if(nofile || ((n->flags & GN_FLAGS_NOFILE) ^ (next->flags & GN_FLAGS_NOFILE)) == 0)
+					if(nofile || ((n->type & GN_TYPE_HASFILE) ^ (next->type & GN_TYPE_HASFILE)) == 0)
 					{
 						int e = enter(
 							  next

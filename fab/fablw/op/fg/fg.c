@@ -71,15 +71,15 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	{
 		set = 0;
 		if(strstr(o->args[0]->s, "p"))
-			set |= (0x01 << GN_DESIGNATION_PRIMARY);
+			set |= (GN_TYPE_PRIMARY & GN_TYPE_BITSPACE);
 		if(strstr(o->args[0]->s, "s"))
-			set |= (0x01 << GN_DESIGNATION_SECONDARY);
+			set |= (GN_TYPE_SECONDARY & GN_TYPE_BITSPACE);
 		if(strstr(o->args[0]->s, "g"))
-			set |= (0x01 << GN_DESIGNATION_GENERATED);
+			set |= (GN_TYPE_GENERATED & GN_TYPE_BITSPACE);
 		if(strstr(o->args[0]->s, "t"))
-			set |= (0x01 << GN_DESIGNATION_TASK);
+			set |= (GN_TYPE_TASK & GN_TYPE_BITSPACE);
 		if(strstr(o->args[0]->s, "n"))
-			set |= (0x01 << GN_DESIGNATION_GROUP);
+			set |= (GN_TYPE_GROUP & GN_TYPE_BITSPACE);
 	}
 
 	int x;
@@ -99,7 +99,7 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 
 		if(g)
 		{
-			if(set & (0x01 << g->designate))
+			if(g->type & set)
 				fatal(lstack_selection_stage, lx, x);
 		}
 	}

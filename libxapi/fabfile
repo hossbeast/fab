@@ -43,6 +43,7 @@ $lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
 ##
 
 # tests
+[ @all ] : [ @final @debug @devel ]
 [ @final ] : [ $libxapi_final ]
 [ @debug ] : [ $libxapi_debug ]
 [ @devel ] : [ $libxapi_devel ]

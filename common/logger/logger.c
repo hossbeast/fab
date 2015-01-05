@@ -485,7 +485,7 @@ static int logconfig(TRACEARGS uint64_t prefix
 
 int log_parse(char * expr, int expr_len, int prepend)
 {
-	xproxy(logparse, 0, 0, 0, expr, expr_len, prepend, 0);
+	xproxy(logparse, NOTRACE expr, expr_len, prepend, 0);
 }
 
 int log_log_parse_and_describe(TRACEARGS char * expr, int expr_len, int prepend, uint64_t bits)

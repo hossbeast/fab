@@ -234,6 +234,8 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		fatal(map_set, gn_nodes.by_path, (*gna)->path->can, (*gna)->path->canl, gna, sizeof(*gna), 0);
 		fatal(map_set, gn_nodes.by_pathhash, MM((*gna)->path->can_hash), gna, sizeof(*gna), 0);
 
+		fatal(gn_finalize, *gna);
+
 		if(new)
 			(*new)++;
 	}
@@ -260,6 +262,7 @@ int gn_edge_add(
 
 	int _newa = 0;
 	int _newb = 0;
+	int _newr = 0;
 
 	if(At)
 		gna = *(gn**)A;
@@ -273,7 +276,7 @@ int gn_edge_add(
 
 	if(gna == gnb)
 	{
-		// as syntactic sugar, silently ignore dependencies of a node on itself
+		// as syntactic sugar, silently ignore dependencies of a node upon itself
 	}
 	else
 	{
@@ -287,7 +290,6 @@ int gn_edge_add(
 			failf(FAB_BADPLAN, "file-backed node %s may not depend on non-file-backed node %s", gna->path->abs, gnb->path->abs);
 
 		relation * rel = 0;
-
 		if(!gna->needs.by_B)
 			fatal(map_create, &gna->needs.by_B, 0);
 		
@@ -320,18 +322,26 @@ int gn_edge_add(
 				rel->dscvgn = dscv_gn;
 			}
 
-			if(newr)
-				(*newr)++;
+			_newr++;
 		}
 	}
 
 	*A = gna;
 	*B = gnb;
 
+	if(_newr)
+	{
+		fatal(gn_finalize, *A);
+		fatal(gn_finalize, *B);
+	}
+
+	if(newr)
+		(*newr) += _newr;
+
 	finally : coda;
 }
 
-size_t gn_invalid_reasons_render(gn * const gn, char * dst, const size_t sz)
+size_t gn_invalid_reasons_write(gn * const gn, char * dst, const size_t sz)
 {
 	size_t z = 0;
 
@@ -340,11 +350,15 @@ size_t gn_invalid_reasons_render(gn * const gn, char * dst, const size_t sz)
 		if(gn->invalid & GN_INVALIDATION_NXFILE)
 			z += znprintf(dst + z, sz - z, "file-not-found");
 		if(gn->invalid & GN_INVALIDATION_CHANGED)
-			z += znprintf(dst + z, sz - z, "%sfile-changed", z ? "," : "");
+			z += znprintf(dst + z, sz - z, "%sfile-changed", z ? ", " : "");
 		if(gn->invalid & GN_INVALIDATION_SOURCES)
-			z += znprintf(dst + z, sz - z, "%ssources-invalid", z ? "," : "");
+			z += znprintf(dst + z, sz - z, "%ssources-invalid", z ? ", " : "");
 		if(gn->invalid & GN_INVALIDATION_USER)
-			z += znprintf(dst + z, sz - z, "%suser-invalidated", z ? "," : "");
+			z += znprintf(dst + z, sz - z, "%suser-invalidated", z ? ", " : "");
+		if(gn->invalid & GN_INVALIDATION_DISCOVERY)
+			z += znprintf(dst + z, sz - z, "%sdiscovery", z ? ", " : "");
+		if(gn->invalid & GN_INVALIDATION_FABRICATE)
+			z += znprintf(dst + z, sz - z, "%sfabricate", z ? ", " : "");
 	}
 	else
 	{
@@ -378,8 +392,8 @@ void gn_dump(gn * gn)
 
 		if(gn->type == GN_TYPE_PRIMARY || gn->type == GN_TYPE_SECONDARY)
 		{
-			gn_invalid_reason_render(space, sizeof(space), gn);
-			logf(L_DG | L_DGRAPH, "%18s : %s - %s", "state", GN_IS_INVALID(gn) ? "invalid" : "valid", space);
+			gn_invalid_reasons_write(gn, space, sizeof(space));
+			logf(L_DG | L_DGRAPH, "%18s : %s", "state", space);
 		}
 
 		if(gn->type == GN_TYPE_PRIMARY)
@@ -431,7 +445,7 @@ void gn_dump(gn * gn)
 			}
 		}
 
-		if(gn->flags & GN_FLAGS_CANFAB)
+		if(gn->type & GN_TYPE_CANFAB)
 		{
 			if(gn->fabv)
 			{
@@ -469,10 +483,7 @@ void gn_dump(gn * gn)
 			}
 		}
 
-		logf(L_DG | L_DGRAPH, "%18s : %d", "height", gn->height);
-		logf(L_DG | L_DGRAPH, "%18s : %d", "stage", gn->stage);
-
-		logf(L_DG | L_DGRAPH, "%18s : %d", "needs", gn->needs.l);
+		logf(L_DG | L_DGRAPH, "%18s : %d needs", "in-degree", gn->needs.l);
 		for(x = 0; x < gn->needs.l; x++)
 		{
 			if(gn->needs.e[x]->type == GN_RELATION_REGULAR)
@@ -499,7 +510,7 @@ void gn_dump(gn * gn)
 			}
 		}
 
-		logf(L_DG | L_DGRAPH, "%18s : %d", "feeds", gn->feeds.l);
+		logf(L_DG | L_DGRAPH, "%18s : %d feeds", "out-degree", gn->feeds.l);
 		for(x = 0; x < gn->feeds.l; x++)
 		{
 			if(gn->feeds.e[x]->type == GN_RELATION_REGULAR)
@@ -538,41 +549,35 @@ int gn_init()
 	finally : coda;
 }
 
-int gn_finalize()
+int gn_finalize(gn * const restrict gn)
 {
-	int x;
-	for(x = 0; x < gn_nodes.l; x++)
+	// recompute type
+	if(gn->fabv)
 	{
-		gn * const gn = gn_nodes.e[x];
-
-		// recompute type
-		if(gn->fabv)
-		{
-			if(gn->path->is_nofile)
-				gn->type = GN_TYPE_TASK;
-			else if(gn->needs.l)
-				gn->type = GN_TYPE_SECONDARY;
-			else
-				gn->type = GN_TYPE_GENERATED;
-		}
-		else if(gn->path->is_nofile)
-		{
-			gn->type = GN_TYPE_GROUP;
-		}
+		if(gn->path->is_nofile)
+			gn->type = GN_TYPE_TASK;
 		else if(gn->needs.l)
-		{
 			gn->type = GN_TYPE_SECONDARY;
-		}
 		else
-		{
-			gn->type = GN_TYPE_PRIMARY;
-		}
+			gn->type = GN_TYPE_GENERATED;
+	}
+	else if(gn->path->is_nofile)
+	{
+		gn->type = GN_TYPE_GROUP;
+	}
+	else if(gn->needs.l)
+	{
+		gn->type = GN_TYPE_SECONDARY;
+	}
+	else
+	{
+		gn->type = GN_TYPE_PRIMARY;
 	}
 
 	finally : coda;
 }
 
-int gn_process_invalidations(gn *** const invalidations, int invalidationsl, int * const restrict primary_invalidated)
+int gn_process_invalidations(gn *** const invalidations, int invalidationsl, int * const restrict repeat_discovery)
 {
 	int x;
 
@@ -588,11 +593,9 @@ int gn_process_invalidations(gn *** const invalidations, int invalidationsl, int
 		else
 			gn = (*invalidations[x]);
 		
-		if(gn->type == GN_TYPE_PRIMARY || gn->type == GN_TYPE_SECONDARY)
-		{
-			hashblock_reset(gn->hb);
-			*primary_invalidated = 1;
-		}
+		gn->invalid |= GN_INVALIDATION_USER;
+		if(gn->type == GN_TYPE_PRIMARY && gn->dscvsl)
+			*repeat_discovery = 1;
 	}
 
 	finally : coda;
@@ -607,14 +610,4 @@ void gn_teardown()
 	free(gn_nodes.e);
 	map_free(gn_nodes.by_path);
 	map_free(gn_nodes.by_pathhash);
-}
-
-char* gn_idstring(gn * const gn)
-{
-	return gn->idstring;
-}
-
-char * gn_typestring(gn * const gn)
-{
-	return GN_TYPE_STR(gn->type);
 }

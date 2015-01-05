@@ -73,6 +73,12 @@ $oplist_final = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,final.so sy 
 $oplist_debug = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,debug.so sy ]
 $oplist_devel = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,devel.so sy ]
 
+# build library and all operators
+[ @all ] : [ @final @debug @devel ]
+[ @final ] : [ $liblistwise_final $oplist_final ]
+[ @debug ] : [ $liblistwise_debug $oplist_debug ]
+[ @devel ] : [ $liblistwise_devel $oplist_devel ]
+
 # test sos
 +[$dxunit/../fablib/xunit/tests.fab](
 	$rdirs = $dliblistwise;
@@ -88,30 +94,21 @@ $dlistwise_test = [ $*/test/listwise_test ~ j ]
 $listwise_test = [ $dlistwise_test/listwise_test.devel.so ~ j ]
 
 # run all tests
-[ @test ] : [ $xunit_devel $liblistwise_devel $oplist_devel $listwise_test $tsopaths ]
+[ @test ] : [ $xunit_devel $oplist_devel $listwise_test $tsopaths ]
 {
-	[ $xunit_devel ] [ $liblistwise_devel $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
+	[ $xunit_devel ] [ $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
 }
 
-[ @test.more ] : [ $xunit_devel $liblistwise_devel $oplist_devel $listwise_test $tsopaths ]
+[ @test.more ] : [ $xunit_devel  $oplist_devel $listwise_test $tsopaths ]
 {
-	[ $xunit_devel ] +XUNIT [ $liblistwise_devel $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
+	[ $xunit_devel ] +XUNIT [ $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
 }
 
 # test helper
 [ $listwise_test ] : [ [ $dlistwise_test/listwise_test.devel.pic.o ~ j ] $liblistwise_devel ]
 {
-	[ $cc ] [ $cflags_devel ~ uu fi ] -shared [ $dlistwise_test/listwise_test.devel.pic.o ~ j ] -o [ $@ ]
+	[ $cc ] [ $cflags_devel ~ uu fi ] [ $dlistwise_test/listwise_test.devel.pic.o ~ j ] [ $liblistwise_devel ] -shared -o [ $@ ]
 }
-
-##
-## dependencies
-##
-
-# build library and all operators
-[ @final ] : [ $liblistwise_final $oplist_final ]
-[ @debug ] : [ $liblistwise_debug $oplist_debug ]
-[ @devel ] : [ $liblistwise_devel $oplist_devel ]
 
 ##
 ## formulas
@@ -182,11 +179,11 @@ $listwise_test = [ $dlistwise_test/listwise_test.devel.so ~ j ]
 
 [ @install.final ] : [ @final ]
 {
-	install -d																				[ $destdir/$libdir ]
-	install [ $liblistwise_final ]										[ $destdir/$libdir/$libname ]
+	install -d																							[ $destdir/$libdir ]
+	install [ $liblistwise_final ]													[ $destdir/$libdir/$libname ]
 
-	rm -rf																						[ $destdir/$lwopdir ] 2>/dev/null
-	install -d																				[ $destdir/$lwopdir ]
+	rm -rf																									[ $destdir/$lwopdir ] 2>/dev/null
+	install -d																							[ $destdir/$lwopdir ]
 
 	install listwise/liblistwise/op/-X/-X.final.so					[ $destdir/$lwopdir/-X.so ]
 	install listwise/liblistwise/op/C/C.final.so						[ $destdir/$lwopdir/C.so ]
@@ -239,11 +236,11 @@ $listwise_test = [ $dlistwise_test/listwise_test.devel.so ~ j ]
 
 [ @install.debug ] : [ @debug ]
 {
-	install -d																				[ $destdir/$libdir ]
-	install [ $liblistwise_debug ]										[ $destdir/$libdir/$libname ]
+	install -d																							[ $destdir/$libdir ]
+	install [ $liblistwise_debug ]													[ $destdir/$libdir/$libname ]
 
-	rm -rf																						[ $destdir/$lwopdir ] 2>/dev/null
-	install -d																				[ $destdir/$lwopdir ]
+	rm -rf																									[ $destdir/$lwopdir ] 2>/dev/null
+	install -d																							[ $destdir/$lwopdir ]
 
 	install listwise/liblistwise/op/-X/-X.debug.so					[ $destdir/$lwopdir/-X.so ]
 	install listwise/liblistwise/op/C/C.debug.so						[ $destdir/$lwopdir/C.so ]
@@ -296,17 +293,17 @@ $listwise_test = [ $dlistwise_test/listwise_test.devel.so ~ j ]
 
 [ @installdevheaders ] 
 {
-	install -d																				[ $destdir/$incdir ]
-	install [ $dliblistwise/listwise.h	]							[ $destdir/$incdir/listwise.h ]
+	install -d																							[ $destdir/$incdir ]
+	install [ $dliblistwise/listwise.h	]										[ $destdir/$incdir/listwise.h ]
 
-	install -d																				[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/fs.h ]						[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/transform.h ]		[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/internal.h ]			[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/iterate.h ]			[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/lwx.h ]					[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/object.h ]				[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/operator.h ]			[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/ops.h ]					[ $destdir/$incdir/listwise ]
-	install [ $dliblistwise/listwise/re.h ]						[ $destdir/$incdir/listwise ]
+	install -d																							[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/fs.h ]									[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/transform.h ]					[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/internal.h ]						[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/iterate.h ]						[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/lwx.h ]								[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/object.h ]							[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/operator.h ]						[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/ops.h ]								[ $destdir/$incdir/listwise ]
+	install [ $dliblistwise/listwise/re.h ]									[ $destdir/$incdir/listwise ]
 }

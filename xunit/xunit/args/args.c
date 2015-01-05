@@ -44,8 +44,8 @@ if(version)
 	printf(" fab-" XQUOTE(FABVERSIONS)
 #if DEVEL
 	"+DEVEL"
-#elif BETA
-	"+BETA"
+#elif DEBUG
+	"+DEBUG"
 #endif
 		" @ " XQUOTE(BUILDSTAMP)
 		"\n"
@@ -64,7 +64,7 @@ if(help)
 "----------------- [ options ] ------------------------------------------------------------\n"
 "\n"
 " -a                             placeholder\n"
-#if DEVEL
+#if DEBUG || DEVEL
 "  --logtrace-no       (default) do not include file/function/line in log messages\n"
 "  --logtrace                    include file/function/line in log messages\n"
 "  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
@@ -126,7 +126,7 @@ int args_parse()
 		, { "version"											, no_argument				, &version, 1 } 
 		, { "logcats"											, no_argument				, &logcats, 1 } 
 
-#if DEVEL
+#if DEBUG || DEVEL
 		, { "backtrace-pithy"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
 		, { "backtrace-full"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
 		, { "logtrace-no"									, no_argument				, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
@@ -149,7 +149,7 @@ int args_parse()
 	//
 	// args:defaults
 	//
-#if DEVEL
+#if DEBUG || DEVEL
 	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
 	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
 #endif
@@ -210,7 +210,7 @@ int args_summarize()
 	// log execution parameters under PARAMS
 	logf(L_PARAMS	, "%11sprocessors             =%ld"						, ""	, g_args.procs);
 
-#if DEVEL
+#if DEBUG || DEVEL
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace          =%s", g_args.mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_logtrace));
 #endif

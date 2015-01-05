@@ -20,17 +20,16 @@
 
 # source invocations
 +[ $dcommon ]() @common
++[ $dfabcore/common/common.fab ~ j ]() @fabcommon
 
 # variables
-#	[ $dfab/../args ~j ] [ $dfab/../error ~j ] [ $dfab/../logs ~j ]
-$sdirs = [ $dfab [ $dfab/../common ~ j ] ~ lsr c -d ]
-
+$sdirs = [ $dfab ~ lsr c -d ]
 $copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dlibxlinux $dlibpstring $dliblistwise ~ s/^/-I ]
+	[ [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux $dlibpstring ~ s/^/-I ]
 ]
 
 $params = [
@@ -60,53 +59,17 @@ $lflags_final = [ $lflags_final $libxapi_final $libxlinux_final $libpstring_fina
 $lflags_debug = [ $lflags_debug $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
 $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
 
-# standard files - standard compilation
-+[@std.c]($dext = [ final.o ]; $dirs = [ $sdirs ~ l/fablw v ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.o ]; $dirs = [ $sdirs ~ l/fablw v ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.o ]; $dirs = [ $sdirs ~ l/fablw v ]; $paths = [ $dfab/main.c ~ j ]; $cc; $cflags = $cflags_devel; $gccdep = $gccdep_devel)
-
-+[@std.l]($dext = [ final.o ]; $gendir = $dfab; $dirs = [ $sdirs ~ l/fablw v ]; $cc $flex $flexflags; $cflags = $cflags_final)
-+[@std.l]($dext = [ debug.o ]; $gendir = $dfab; $dirs = [ $sdirs ~ l/fablw v ]; $cc $flex $flexflags; $cflags = $cflags_debug)
-+[@std.l]($dext = [ devel.o ]; $gendir = $dfab; $dirs = [ $sdirs ~ l/fablw v ]; $cc $flex $flexflags; $cflags = $cflags_devel)
-
-+[@std.y]($dext = [ final.o ]; $gendir = $dfab; $dirs = [ $sdirs ~ l/fablw v ]; $cc $bison $bisonflags; $cflags = $cflags_final)
-+[@std.y]($dext = [ debug.o ]; $gendir = $dfab; $dirs = [ $sdirs ~ l/fablw v ]; $cc $bison $bisonflags; $cflags = $cflags_debug)
-+[@std.y]($dext = [ devel.o ]; $gendir = $dfab; $dirs = [ $sdirs ~ l/fablw v ]; $cc $bison $bisonflags; $cflags = $cflags_devel)
-
-#
-# standard files - fPIC compilation
-#  no discovery on these files, because they would then depend on *.pic.o files within fab which
-#  do not exist ; instead those link-time references are satisfied by the fab executable
-#
-+[@std.c]($dext = [ final.pic.o ]; $rfabdirs = [ $dfab/fablw ~ j ]; $cc; $cflags = [ $cflags_final -fPIC ]; -$cobjpaths)
-[ $cobjpaths ] : [ $fab_final ]
-+[@std.c]($dext = [ debug.pic.o ]; $rfabdirs = [ $dfab/fablw ~ j ]; $cc; $cflags = [ $cflags_debug -fPIC ]; -$cobjpaths)
-[ $cobjpaths ] : [ $fab_debug ]
-+[@std.c]($dext = [ devel.pic.o ]; $rfabdirs = [ $dfab/fablw ~ j ]; $cc; $cflags = [ $cflags_devel -fPIC ]; -$cobjpaths)
-[ $cobjpaths ] : [ $fab_devel ]
-
-# generated files
-+[@std.flex.states] ($dext = [ final.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_final)
-+[@std.flex.states] ($dext = [ debug.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_debug)
-+[@std.flex.states] ($dext = [ devel.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_devel)
-+[@std.bison.tokens]($dext = [ final.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_final)
-+[@std.bison.tokens]($dext = [ debug.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_debug)
-+[@std.bison.tokens]($dext = [ devel.o ]; $gendir = $dfab; $rdirs = $dfab; $cc; $cflags = $cflags_devel)
-+[@std.xapi.errtab] ($dext = [ final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_final)
-+[@std.xapi.errtab] ($dext = [ debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_debug)
-+[@std.xapi.errtab] ($dext = [ devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_devel)
-
-# operator so's
-$faboplist_final = [ $dfab/fablw/op ~ j lsr sx/c/final.so y ]
-$faboplist_debug = [ $dfab/fablw/op ~ j lsr sx/c/debug.so y ]
-$faboplist_devel = [ $dfab/fablw/op ~ j lsr sx/c/devel.so y ]
+# standard files - standard nopic compilation
++[@std.c]($dext = [ final.o ]; $rdirs = $sdirs; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.o ]; $rdirs = $sdirs; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.o ]; $rdirs = $sdirs; $cc; $cflags = $cflags_devel; $gccdep = $gccdep_devel)
 
 #
 # catchall node
 #
-[ @final ] : [ $fab_final $faboplist_final ]
-[ @debug ] : [ $fab_debug $faboplist_debug ]
-[ @devel ] : [ $fab_devel $faboplist_devel ]
+[ @final ] : [ $fab_final ]
+[ @debug ] : [ $fab_debug ]
+[ @devel ] : [ $fab_devel ]
 
 #
 # executables
@@ -132,30 +95,6 @@ $faboplist_devel = [ $dfab/fablw/op ~ j lsr sx/c/devel.so y ]
 }
 
 #
-# fab-specific operator so's - only link the immediate object. This so depends on fab for many symbols
-#
-[ $faboplist_final ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
-{
-	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
-}
-
-[ $faboplist_debug ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
-{
-	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
-}
-
-[ $faboplist_devel ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
-{
-	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
-}
-
-# also a bridge dependency on the fab executable
-#[ $dfab/fablw/op ~ j lsr sx/c/pic.o y ] ::^ [ $fab ]
-[ $faboplist_final ] ::^ [ $fab_final ]
-[ $faboplist_debug ] ::^ [ $fab_debug ]
-[ $faboplist_devel ] ::^ [ $fab_devel ]
-
-#
 # tasks
 #
 
@@ -172,5 +111,3 @@ $faboplist_devel = [ $dfab/fablw/op ~ j lsr sx/c/devel.so y ]
 	install -d																			[ $destdir/$bindir ]
 	install [ $fab_debug ]													[ $destdir/$bindir/fab ]
 }
-
-

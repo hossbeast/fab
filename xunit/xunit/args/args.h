@@ -21,7 +21,7 @@
 
 #define restrict __restrict
 
-#if DEVEL
+#if DEBUG || DEVEL
 # define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_FULL
 # define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
 
@@ -48,7 +48,7 @@ struct g_args_t
 	char **	test_objects;
 	int			test_objectsl;
 
-#if DEVEL
+#if DEBUG || DEVEL
 	int			mode_backtrace;		// backtrace reporting mode
 	int			mode_logtrace;		// logtrace mode
 #endif

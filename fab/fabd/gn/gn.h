@@ -38,7 +38,7 @@ struct hashblock;
 **
 ** 1. HASNEED - has any dependencies
 ** 2. CANFAB  - can be fabricated by some formula
-** 3. !NOFILE - has a backing file
+** 3. HASFILE - has a backing file
 **
 **              1  2  3
 ** PRIMARY   - [ ][ ][x]
@@ -56,20 +56,27 @@ struct hashblock;
 #define GN_TYPE_CANFAB	0x02
 #define GN_TYPE_HASFILE	0x04
 
-#define GN_TYPE_TABLE(x)																																																\
-	_GN_TYPE(PRIMARY						, (0x01 << 8) |                                    GN_TYPE_HASFILE, "PRIMARY(p)"		, x)	\
-	_GN_TYPE(SECONDARY					, (0x02 << 8) | GN_TYPE_HASNEED | GN_TYPE_CANFAB | GN_TYPE_HASFILE, "SECONDARY(s)"	, x)	\
-	_GN_TYPE(GENERATED					, (0x03 << 8) |                   GN_TYPE_CANFAB | GN_TYPE_HASFILE, "GENERATED(g)"	, x)	\
-	_GN_TYPE(TASK								, (0x04 << 8) | GN_TYPE_HASNEED | GN_TYPE_CANFAB                  , "TASK(t)"				, x)	\
-	_GN_TYPE(GROUP							, (0x05 << 8) | GN_TYPE_HASNEED                                   , "GROUP(n)"			, x)
+#define GN_TYPE_PRIMARY_BIT		(0x01 << 8)
+#define GN_TYPE_SECONDARY_BIT	(0x02 << 8)
+#define GN_TYPE_GENERATED_BIT	(0x04 << 8)
+#define GN_TYPE_TASK_BIT			(0x08 << 8)
+#define GN_TYPE_GROUP_BIT			(0x10 << 8)
+#define GN_TYPE_BITSPACE			(0xFF << 8)
+
+#define GN_TYPE_TABLE(x)																																																					\
+	_GN_TYPE(PRIMARY						, GN_TYPE_PRIMARY_BIT		|                                    GN_TYPE_HASFILE, "PRIMARY(p)"		, x)	\
+	_GN_TYPE(SECONDARY					, GN_TYPE_SECONDARY_BIT	| GN_TYPE_HASNEED | GN_TYPE_CANFAB | GN_TYPE_HASFILE, "SECONDARY(s)"	, x)	\
+	_GN_TYPE(GENERATED					, GN_TYPE_GENERATED_BIT	|                   GN_TYPE_CANFAB | GN_TYPE_HASFILE, "GENERATED(g)"	, x)	\
+	_GN_TYPE(TASK								, GN_TYPE_TASK_BIT			| GN_TYPE_HASNEED | GN_TYPE_CANFAB                  , "TASK(t)"				, x)	\
+	_GN_TYPE(GROUP							, GN_TYPE_GROUP_BIT			| GN_TYPE_HASNEED                                   , "GROUP(n)"			, x)
 
 enum {
-#define _GN_TYPE(a, b, c, d) GN_TYPE_ # a = b,
+#define _GN_TYPE(a, b, c, d) GN_TYPE_ ## a = (b),
 GN_TYPE_TABLE(0)
 #undef _GN_TYPE
 };
 
-#define _GN_TYPE(a, b, c, d) (d) == b ? c :
+#define _GN_TYPE(a, b, c, d) (d) == (b) ? c :
 #define GN_TYPE_STR(gn) GN_TYPE_TABLE(gn) "unknown"
 
 //
@@ -93,18 +100,24 @@ GNR_TYPE_TABLE(0)
 //
 #define GN_INVALIDATION_TABLE(x)																																	\
 	_GN_INVALIDATION(NXFILE				, 0x01	, x)			/* no such file */															\
-	_GN_INVALIDATION(CHANGED			, 0x02	, x)			/* backing file has changed (primary) */				\
+	_GN_INVALIDATION(CHANGED			, 0x02	, x)			/* backing file has changed */									\
 	_GN_INVALIDATION(SOURCES			, 0x04	, x)			/* sources invalidated (non-primary) */					\
-	_GN_INVALIDATION(USER					, 0x08	, x)			/* invalidated by the user */
+	_GN_INVALIDATION(USER					, 0x08	, x)			/* invalidated by the user */										\
+	_GN_INVALIDATION(DISCOVERY		, 0x10	, x)			/* dependency discovery needed (primary) */			\
+	_GN_INVALIDATION(FABRICATE		, 0x20	, x)			/* fabrication needed (primary) */							\
+
 
 enum {
-#define _GN_INVALIDATION(a, b, c) GN_INVALIDATION_ # a = b,
+#define _GN_INVALIDATION(a, b, c) GN_INVALIDATION_ ## a = b,
 GN_INVALIDATION_TABLE(0)
 #undef _GN_INVALIDATION
 };
 
 #define _GN_INVALIDATION(a, b, c) (c) & b ? #a :
 #define GN_INVALIDATION_STR(x) GN_INVALIDATION_TABLE(x) "UNKNWN"
+
+// always use this instead of inspecting the invalid member to check node status
+#define GN_IS_INVALID(x) (((x)->type & GN_TYPE_HASFILE) ? (x)->invalid : 1)
 
 struct ff_file;
 struct ff_node;
@@ -323,9 +336,10 @@ int gn_init();
 
 /// gn_finalize
 //
-// gn fully loaded; populate flags and designation
+// recompute node type
 //
-int gn_finalize();
+int gn_finalize(gn * const restrict gn)
+	__attribute__((nonnull));
 
 /// gn_teardown
 //
@@ -333,7 +347,7 @@ int gn_finalize();
 //
 void gn_teardown();
 
-/// gn_invalid_reasons_render
+/// gn_invalid_reasons_write
 //
 // SUMMARY
 //  writes a string describing the validity of the node
@@ -346,7 +360,7 @@ void gn_teardown();
 // RETURNS
 //  number of bytes written, not including the terminating null byte
 //
-size_t gn_invalid_reasons_render(gn * const restrict gn, char * restrict dst, const size_t sz)
+size_t gn_invalid_reasons_write(gn * const restrict gn, char * restrict dst, const size_t sz)
 	__attribute__((nonnull));
 
 #undef restrict

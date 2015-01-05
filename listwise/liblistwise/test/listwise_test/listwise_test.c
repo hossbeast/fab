@@ -31,22 +31,47 @@ int API listwise_test_entry(const listwise_test * test)
 	int i = 0;
 	int x;
 
-	log_start(L_XUNIT | L_INSET);
-	logs(0, "[ ");
-	for(x = 0; x < sentinel(test->init); x++)
+	// log in the inset
+	if(log_start(L_XUNIT | L_INSET))
 	{
-		if(x)
-			logs(0, ", ");
-		logs(0, test->init[x]);
+		logs(0, "[ ");
+		for(x = 0; x < sentinel(test->init); x++)
+		{
+			if(x)
+				logs(0, ", ");
+			logs(0, test->init[x]);
+		}
+		logf(0, " ~ %s ]", test->xsfm);
+		log_finish();
 	}
-	logf(0, " ~ %s ]", test->xsfm);
-	log_finish();
 
 	fatal(listwise_exec, test->xsfm, 0, test->init, 0, sentinel(test->init), &lx);
 
-	log_start(L_XUNIT | L_OUTSET);
-	logs(0, "[ ");
+	// log the outset
+	if(log_start(L_XUNIT | L_OUTSET))
+	{
+		logs(0, "[ ");
 
+		i = 0;
+		x = 0;
+		LSTACK_ITERATE(lx, x, go)
+		if(go)
+		{
+			char * s;
+			fatal(lstack_string, lx, 0, x, &s);
+
+			if(i)
+				logs(0, ", ");
+			logs(0, s);
+			i++;
+		}
+		LSTACK_ITEREND
+
+		logs(0, " ]");
+		log_finish();
+	}
+
+	// compare
 	i = 0;
 	x = 0;
 	LSTACK_ITERATE(lx, x, go)
@@ -55,15 +80,10 @@ int API listwise_test_entry(const listwise_test * test)
 		char * s;
 		fatal(lstack_string, lx, 0, x, &s);
 
-		if(i)
-			logs(0, ", ");
-		logs(0, s);
-
 		if(i < sentinel(test->final))
 		{
 			if(strcmp(test->final[i], s))
 			{
-				log_finish();
 				failf(XUNIT_FAIL, "expected row : %s, actual : %s", test->final[i], s);
 			}
 		}
@@ -71,9 +91,6 @@ int API listwise_test_entry(const listwise_test * test)
 		i++;
 	}
 	LSTACK_ITEREND
-
-	logs(0, " ]");
-	log_finish();
 
 	if(i != sentinel(test->final))
 	{

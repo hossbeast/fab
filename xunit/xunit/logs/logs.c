@@ -19,7 +19,7 @@
 
 // logtag definitions
 struct g_logs_t logs[] = {
-#if DEVEL
+#if DEBUG || DEVEL
 	  { .v = L_LOGGER		, .s = "LOGGER"		, .d = "logger - operation" }
 	,
 #endif

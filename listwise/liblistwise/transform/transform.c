@@ -609,7 +609,9 @@ int API transform_canon_pswrite(transform * const restrict g, pstring ** restric
 {
 	size_t lz = 0;
 	fatal(psclear, ps);
-	xproxy(transform_canon, g, 0, 0, &lz, ps, pswrite);
+	fatal(transform_canon, g, 0, 0, &lz, ps, pswrite);
+
+	finally : coda;
 }
 
 int API transform_canon_dump(transform * const restrict g, pstring ** restrict ps)
@@ -660,7 +662,9 @@ int API transform_description_pswrite(transform * const restrict g, pstring ** r
 {
 	size_t lz = 0;
 	fatal(psclear, ps);
-	xproxy(transform_description, g, 0, 0, &lz, ps, pswrite);
+	fatal(transform_description, g, 0, 0, &lz, ps, pswrite);
+
+	finally : coda;
 }
 
 int API transform_description_dump(transform * const restrict g, pstring ** restrict ps)

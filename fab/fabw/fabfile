@@ -20,15 +20,16 @@
 
 # source invocations
 +[ $dcommon ]() @common
++[ $dfabcore/common/common.fab ~ j ]() @fabcommon
 
 # variables
-$sdirs = [ $dfabw [ $dfabw/../common ~ j ] ~ lsr c -d ]
+$sdirs = [ $dfabw  ~ lsr c -d ]
 $copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
 	# include paths
-	[ $dlibxapi $dlibxlinux ~ s/^/-I ]
+	[ [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux ~ s/^/-I ]
 ]
 
 $params = [
@@ -59,13 +60,14 @@ $lflags_debug = [ $lflags_debug $libxapi_debug $libxlinux_debug $libpstring_debu
 $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
 
 # standard files - standard compilation
-+[@std.c]($dext = [ final.o ]; $dirs = $sdirs; $paths = [ $dfabw/main.c ~ j ]; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.o ]; $dirs = $sdirs; $paths = [ $dfabw/main.c ~ j ]; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.o ]; $dirs = $sdirs; $paths = [ $dfabw/main.c ~ j ]; $cc; $cflags = $cflags_devel; $gccdep = $gccdep_devel)
++[@std.c]($dext = [ final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_final)
++[@std.c]($dext = [ debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_debug)
++[@std.c]($dext = [ devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_devel; $gccdep = $gccdep_devel)
 
 #
 # catchall node
 #
+[ @all ] : [ @final @debug @devel ]
 [ @final ] : [ $fabw_final ]
 [ @debug ] : [ $fabw_debug ]
 [ @devel ] : [ $fabw_devel ]
@@ -73,9 +75,9 @@ $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_deve
 #
 # executables
 #
-[ $fabw_final ] :^ [ $libxapi_final $libxlinux_final ]
-[ $fabw_debug ] :^ [ $libxapi_debug $libxlinux_debug ]
-[ $fabw_devel ] :^ [ $libxapi_devel $libxlinux_devel ]
+[ $fabw_final ] :^ [ $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
+[ $fabw_debug ] :^ [ $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
+[ $fabw_devel ] :^ [ $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel ]
 
 [ $fabw_final ] : [ $dfabw/main.final.o ~ j ] 
 {

@@ -49,6 +49,7 @@ $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
 ##
 
 # default NOFILE target - build library and all operators
+[ @all ] : [ @final @debug @devel ]
 [ @final ] : [ $libxlinux_final ]
 [ @debug ] : [ $libxlinux_debug ]
 [ @devel ] : [ $libxlinux_devel ]

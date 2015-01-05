@@ -39,7 +39,7 @@
 //
 int re_compile(char* s, struct re* re, char* mod);
 
-/// re_exec
+/// re_execute
 //
 // execute an regex against a string
 //
@@ -58,7 +58,7 @@ int re_compile(char* s, struct re* re, char* mod);
 //    int l;
 //    int* ovec;
 //    int ovec_len;
-//		if(re_exec(re, s, l, 0, &ovec, &ovec_len) == 0)
+//		if(re_execute(re, s, l, 0, &ovec, &ovec_len) == 0)
 //		{
 //			/* failure */
 //		}
@@ -82,7 +82,10 @@ int re_compile(char* s, struct re* re, char* mod);
 //			/* no match */
 //		}
 //
-int re_exec(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len);
+// REMARKS
+//  libc exports a function named re_exec
+//
+int re_execute(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len);
 
 #undef restrict
 #endif

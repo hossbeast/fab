@@ -29,9 +29,6 @@
 
 #include "global.h"
 
-char * gn_designation(struct gn * const);
-char * gn_idstring(struct gn * const);
-
 void ts_reset(ts * ts)
 {
 	ts->fmlv			= 0;
@@ -178,7 +175,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				{
 					if(log_start(hi | e))
 					{
-						logf(0, "[%2d,%3d] %-9s %s", waveno, ts[x]->y, gn_designation(t), gn_idstring(t));
+						logf(0, "[%2d,%3d] %-9s %s", waveno, ts[x]->y, GN_TYPE_STR(t->type), t->idstring);
 						if(e_stat)
 						{
 							logf(0, "%*s%d", 100 - logged_characters(), "", ts[x]->r_status);
@@ -200,7 +197,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				}
 				else
 				{
-					logf(hi | e, "         %-9s %s", gn_designation(t), gn_idstring(t));
+					logf(hi | e, "         %-9s %s", GN_TYPE_STR(t->type), t->idstring);
 				}
 
 				if(ts[x]->fmlv->flags & FFN_FABRICATION)
