@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -198,11 +198,11 @@ if(help)
 " -p                            create buildplan, but do not execute it\n"
 " -B                            invalidate all, equivalent to +b [ $! ]\n"
 " -j <number>                   concurrency limit (0=unbounded, -1=based on detected CPUs)\n"
-" -k <path>                     create bakescript from buildplan instead of executing it\n"
-" -K <varname>                  varname is settable at bakescript execution time\n"
+" -k <path>                     create buildscript from buildplan instead of executing it\n"
+" -K <varname>                  varname is settable at buildscript execution time\n"
 #if DEVEL
-" --bslic-standard    (default) bakescripts have the standard license\n"
-" --bslic-fab                   bakescripts have the fab distribution license\n"
+" --bslic-standard    (default) buildscripts have the standard license\n"
+" --bslic-fab                   buildscripts have the fab distribution license\n"
 #endif
 " --gnid-relative-cwd (default) identify nodes in log messages by path relative to current working directory\n"
 " --gnid-relative-fabfile-dir   identify nodes in log messages by path relative to init-fabfile-dir\n"
@@ -403,7 +403,7 @@ int args_parse()
 /* h */
 // i - selection(s) apply to inspect-list */
 /* j */ , { 0	, required_argument	, 0			, 'j' }		// concurrency limit
-/* k */	, { 0	, required_argument	, 0			, 'k'	}		// bakescript output path
+/* k */	, { 0	, required_argument	, 0			, 'k'	}		// buildscript output path
 // l 
 // m
 // n - selection(s) apply to fabricate-nofile-list */
@@ -429,7 +429,7 @@ int args_parse()
 // H
 /* I */	, { 0	, required_argument	, 0			, 'I' }		// directory to search for invocations
 // J
-/* K */ , { 0	, required_argument	, 0			, 'K' }		// baked variables
+/* K */ , { 0	, required_argument	, 0			, 'K' }		// bs-runtime variables
 // L
 // M
 // N
@@ -533,9 +533,9 @@ printf("optopt=%c\n", optopt);
 		}
 		else if(x == 'k')
 		{
-			g_args->mode_bplan = MODE_BPLAN_BAKE;
-			ifree(&g_args->bakescript_path);
-			fatal(ixstrdup, &g_args->bakescript_path, optarg);
+			g_args->mode_bplan = MODE_BPLAN_BUILDSCRIPT;
+			ifree(&g_args->buildscript_path);
+			fatal(ixstrdup, &g_args->buildscript_path, optarg);
 		}
 		else if(x == 'p')
 		{
@@ -565,15 +565,15 @@ printf("optopt=%c\n", optopt);
 		}
 		else if(x == 'K')
 		{
-			if(g_args->bakevarsl == g_args->bakevarsa)
+			if(g_args->bs_runtime_varsl == g_args->bs_runtime_varsa)
 			{
-				int newa = g_args->bakevarsa ?: 3;
+				int newa = g_args->bs_runtime_varsa ?: 3;
 				newa = newa * 2 + newa / 2;
-				fatal(xrealloc, &g_args->bakevars, sizeof(g_args->bakevars[0]), newa, g_args->bakevarsa);
-				g_args->bakevarsa = newa;
+				fatal(xrealloc, &g_args->bs_runtime_vars, sizeof(g_args->bs_runtime_vars[0]), newa, g_args->bs_runtime_varsa);
+				g_args->bs_runtime_varsa = newa;
 			}
 
-			fatal(ixstrdup, &g_args->bakevars[g_args->bakevarsl++], optarg);
+			fatal(ixstrdup, &g_args->bs_runtime_vars[g_args->bs_runtime_varsl++], optarg);
 		}
 		else if(x == '?')
 		{
@@ -656,14 +656,14 @@ int args_summarize()
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->rel_fab);
 	logf(L_ARGS | L_PARAMS				, " %s (%5s) mode-bplan             =%s", g_args->mode_bplan == DEFAULT_MODE_BPLAN ? " " : "*", "k/p", MODE_STR(g_args->mode_bplan));
 
-	if(g_args->mode_bplan == MODE_BPLAN_BAKE)
+	if(g_args->mode_bplan == MODE_BPLAN_BUILDSCRIPT)
 	{
-		logf(L_ARGS | L_PARAMS				, " %s (  %c  ) bakescript-path        =%s", "*", 'k', g_args->bakescript_path);
+		logf(L_ARGS | L_PARAMS				, " %s (  %c  ) buildscript-path       =%s", "*", 'k', g_args->buildscript_path);
 
-		if(g_args->bakevarsl == 0)
-			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =", " ", 'K');
-		for(x = 0; x < g_args->bakevarsl; x++)
-			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bakevar(s)             =%s", "*", 'K', g_args->bakevars[x]);
+		if(g_args->bs_runtime_varsl == 0)
+			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bs-runtime-var(s)      =", " ", 'K');
+		for(x = 0; x < g_args->bs_runtime_varsl; x++)
+			logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) bs-runtime-var(s)      =%s", "*", 'K', g_args->bs_runtime_vars[x]);
 	}
 
 #if DEBUG || DEVEL
@@ -711,16 +711,16 @@ coda;
 
 void args_freeze(memblk * const restrict mb)
 {
-	memblk_freeze(mb, &g_args->bakescript_path);
+	memblk_freeze(mb, &g_args->buildscript_path);
 
 	int x;
 	for(x = 0; x < g_args->rootvarsl; x++)
 		memblk_freeze(mb, &g_args->rootvars[x]);
 	memblk_freeze(mb, &g_args->rootvars);
 
-	for(x = 0; x < g_args->bakevarsl; x++)
-		memblk_freeze(mb, &g_args->bakevars[x]);
-	memblk_freeze(mb, &g_args->bakevars);
+	for(x = 0; x < g_args->bs_runtime_varsl; x++)
+		memblk_freeze(mb, &g_args->bs_runtime_vars[x]);
+	memblk_freeze(mb, &g_args->bs_runtime_vars);
 
 	for(x = 0; x < g_args->invokedirsl; x++)
 		memblk_freeze(mb, &g_args->invokedirs[x]);
@@ -736,16 +736,16 @@ void args_freeze(memblk * const restrict mb)
 
 void args_thaw(char * const mb)
 {
-	memblk_thaw(mb, &g_args->bakescript_path);
+	memblk_thaw(mb, &g_args->buildscript_path);
 
 	memblk_thaw(mb, &g_args->rootvars);
 	int x;
 	for(x = 0; x < g_args->rootvarsl; x++)
 		memblk_thaw(mb, &g_args->rootvars[x]);
 
-	memblk_thaw(mb, &g_args->bakevars);
-	for(x = 0; x < g_args->bakevarsl; x++)
-		memblk_thaw(mb, &g_args->bakevars[x]);
+	memblk_thaw(mb, &g_args->bs_runtime_vars);
+	for(x = 0; x < g_args->bs_runtime_varsl; x++)
+		memblk_thaw(mb, &g_args->bs_runtime_vars[x]);
 
 	memblk_thaw(mb, &g_args->invokedirs);
 	for(x = 0; x < g_args->invokedirsl; x++)

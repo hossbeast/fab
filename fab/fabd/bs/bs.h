@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _BAKE_H
-#define _BAKE_H
+#ifndef _BS_H
+#define _BS_H
 
 #include "listwise.h"
 #include "listwise/transform.h"
@@ -25,11 +25,15 @@
 
 #define restrict __restrict
 
-/// bake_bp
+/// buildscript_mk
 //
-// render the buildplan to a bakescript
+// SUMMARY
+//  create a buildscript from the buildplan
 //
-int bake_bp(
+// PARAMETERS
+//  dst - write the buildscript to this path
+//
+int buildscript_mk(
 	  const bp * const bp
 	, map * const restrict vmap
 	, transform_parser * const gp

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
+# Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 #
 # This file is part of fab.
 #
@@ -24,8 +24,116 @@ if [[ $1 != "timed" ]]; then
 fi
 
 # formulas and names for stage 0
-NAMES[0]='@listwise.install.final'
+NAMES[0]='@fabcore.installation'
 fml_0_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  [[ $bindir ]] || local bindir='/usr/local/bin'
+  [[ $fabtmpdir ]] || local fabtmpdir='/var/tmp/fab'
+  [[ $fabcachedir ]] || local fabcachedir='/var/cache/fab'
+  [[ $destdir ]] || local destdir=''
+  [[ $fabinvokedir ]] || local fabinvokedir='/usr/lib/fab/fablib'
+  [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/listwise'
+  
+	install -d																					$destdir/$bindir
+	install ./fab/util/gcc-dep 													$destdir/$bindir
+
+	install -d 																					$destdir/$fabcachedir
+	chown fabsys:fabsys																	$destdir/$fabcachedir
+	install -d 																					$destdir/$fabtmpdir
+	chown fabsys:fabsys																	$destdir/$fabtmpdir
+	install -d 																					$destdir//var/run/fab
+	chown fabsys:fabsys																	$destdir//var/run/fab
+
+	rm -rf																							$destdir/$fabinvokedir 2>/dev/null
+	install -d																					$destdir/$fabinvokedir/std
+	install -d																					$destdir/$fabinvokedir/std/flex
+	install -d																					$destdir/$fabinvokedir/std/bison
+	install -d																					$destdir/$fabinvokedir/std/xapi
+	install ./fab/fablib/std/c.fab							$destdir/$fabinvokedir/std/c.fab
+	install ./fab/fablib/std/l.fab							$destdir/$fabinvokedir/std/l.fab
+	install ./fab/fablib/std/y.fab							$destdir/$fabinvokedir/std/y.fab
+	install ./fab/fablib/std/flex/states.fab		$destdir/$fabinvokedir/std/flex/states.fab
+	install ./fab/fablib/std/bison/tokens.fab		$destdir/$fabinvokedir/std/bison/tokens.fab
+	install ./fab/fablib/std/xapi/errtab.fab		$destdir/$fabinvokedir/std/xapi/errtab.fab
+
+	rm -rf 																							$destdir/$fablwopdir 2>/dev/null
+	install -d																					$destdir/$fablwopdir
+	install ./fab/fablw/op/fi/fi.final.so				$destdir/$fablwopdir/fi.so
+	install ./fab/fablw/op/fg/fg.final.so				$destdir/$fablwopdir/fg.so
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 1
+NAMES[1]='@libxapi.install.final'
+fml_1_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																$destdir/$libdir
+	install ./libxapi/libxapi.final.so								$destdir/$libdir/libxapi.so
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 2
+NAMES[2]='@libxlinux.install.final'
+fml_2_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																					$destdir/$libdir
+	install ./libxlinux/libxlinux.final.so												$destdir/$libdir/libxlinux.so
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 3
+NAMES[3]='@libpstring.install.final'
+fml_3_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																					$destdir/$libdir
+	install ./libpstring/libpstring.final.so												$destdir/$libdir/libpstring.so
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 4
+NAMES[4]='@listwise.install.final'
+fml_4_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -44,48 +152,20 @@ fml_0_0()
 }
 
 
-# formulas and names for stage 1
-NAMES[1]='@fab.install.final'
-fml_1_0()
+# formulas and names for stage 5
+NAMES[5]='@fabcore.fab.install.final'
+fml_5_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   [[ $bindir ]] || local bindir='/usr/local/bin'
-  [[ $fabtmpdir ]] || local fabtmpdir='/var/tmp/fab'
-  [[ $fabcachedir ]] || local fabcachedir='/var/cache/fab'
   [[ $destdir ]] || local destdir=''
-  [[ $fabinvokedir ]] || local fabinvokedir='/usr/lib/fab/fablib'
-  [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/listwise'
   
 	install -d																			$destdir/$bindir
-	install ./fab/fab.final													$destdir/$bindir/fab
+	install ./fab/fab/fab.final													$destdir/$bindir/fab
 	chown fabsys:fabsys															$destdir/$bindir/fab
 	chmod ug+s 																			$destdir/$bindir/fab
-
-	install -d 																			$destdir/$fabcachedir
-	chown fabsys:fabsys															$destdir/$fabcachedir
-	install -d 																			$destdir/$fabtmpdir
-	chown fabsys:fabsys															$destdir/$fabtmpdir
-	install -d 																			$destdir//var/run/fab
-	chown fabsys:fabsys															$destdir//var/run/fab
-
-	rm -rf																					$destdir/$fabinvokedir
-	install -d																			$destdir/$fabinvokedir/std
-	install -d																			$destdir/$fabinvokedir/std/flex
-	install -d																			$destdir/$fabinvokedir/std/bison
-	install -d																			$destdir/$fabinvokedir/std/xapi
-	install ./fab/fablib/std/c.fab							$destdir/$fabinvokedir/std/c.fab
-	install ./fab/fablib/std/l.fab							$destdir/$fabinvokedir/std/l.fab
-	install ./fab/fablib/std/y.fab							$destdir/$fabinvokedir/std/y.fab
-	install ./fab/fablib/std/flex/states.fab		$destdir/$fabinvokedir/std/flex/states.fab
-	install ./fab/fablib/std/bison/tokens.fab		$destdir/$fabinvokedir/std/bison/tokens.fab
-	install ./fab/fablib/std/xapi/errtab.fab		$destdir/$fabinvokedir/std/xapi/errtab.fab
-
-	rm -rf 																					$destdir/$fablwopdir 2>/dev/null
-	install -d																			$destdir/$fablwopdir
-	install ./fab/fablw/op/fi/fi.final.so				$destdir/$fablwopdir/fi.so
-	install ./fab/fablw/op/fg/fg.final.so				$destdir/$fablwopdir/fg.so
 
 
   X=$?
@@ -93,21 +173,59 @@ fml_1_0()
   exit $X
 }
 
-NAMES[2]='@liblistwise.install.final'
-fml_1_1()
+NAMES[6]='@fabcore.fabd.install.final'
+fml_5_1()
 {
   exec 1>/dev/null
   exec 2>&101
+
+  [[ $bindir ]] || local bindir='/usr/local/bin'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																			$destdir/$bindir
+	install ./fab/fabd/fabd.final													$destdir/$bindir/fabd
+
+
+  X=$?
+  echo 1 1>&99
+  exit $X
+}
+
+NAMES[7]='@fabcore.fabw.install.final'
+fml_5_2()
+{
+  exec 1>/dev/null
+  exec 2>&102
+
+  [[ $bindir ]] || local bindir='/usr/local/bin'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																			$destdir/$bindir
+	install ./fab/fabw/fabw.final													$destdir/$bindir/fabw
+
+
+  X=$?
+  echo 2 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 6
+NAMES[8]='@liblistwise.install.final'
+fml_6_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
 
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
   [[ $lwopdir ]] || local lwopdir='/usr/lib/listwise'
   
-	install -d																				$destdir/$libdir
-	install ./listwise/liblistwise/liblistwise.final.so										$destdir/$libdir/liblistwise.so
+	install -d																							$destdir/$libdir
+	install ./listwise/liblistwise/liblistwise.final.so													$destdir/$libdir/liblistwise.so
 
-	rm -rf																						$destdir/$lwopdir 2>/dev/null
-	install -d																				$destdir/$lwopdir
+	rm -rf																									$destdir/$lwopdir 2>/dev/null
+	install -d																							$destdir/$lwopdir
 
 	install listwise/liblistwise/op/-X/-X.final.so					$destdir/$lwopdir/-X.so
 	install listwise/liblistwise/op/C/C.final.so						$destdir/$lwopdir/C.so
@@ -159,61 +277,7 @@ fml_1_1()
 
 
   X=$?
-  echo 1 1>&99
-  exit $X
-}
-
-NAMES[3]='@libpstring.install.final'
-fml_1_2()
-{
-  exec 1>/dev/null
-  exec 2>&102
-
-  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
-  [[ $destdir ]] || local destdir=''
-  
-	install -d																					$destdir/$libdir
-	install ./libpstring/libpstring.final.so												$destdir/$libdir/libpstring.so
-
-
-  X=$?
-  echo 2 1>&99
-  exit $X
-}
-
-NAMES[4]='@libxapi.install.final'
-fml_1_3()
-{
-  exec 1>/dev/null
-  exec 2>&103
-
-  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
-  [[ $destdir ]] || local destdir=''
-  
-	install -d																$destdir/$libdir
-	install ./libxapi/libxapi.final.so								$destdir/$libdir/libxapi.so
-
-
-  X=$?
-  echo 3 1>&99
-  exit $X
-}
-
-NAMES[5]='@libxlinux.install.final'
-fml_1_4()
-{
-  exec 1>/dev/null
-  exec 2>&104
-
-  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
-  [[ $destdir ]] || local destdir=''
-  
-	install -d																					$destdir/$libdir
-	install ./libxlinux/libxlinux.final.so												$destdir/$libdir/libxlinux.so
-
-
-  X=$?
-  echo 4 1>&99
+  echo 0 1>&99
   exit $X
 }
 
@@ -257,18 +321,14 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=5))
+  ((SKP+=1))
 else
   # launch stage 1.0
   exec 100>$tmp ; rm -f $tmp ; fml_1_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_1 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_2 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_3 & PIDS[3]=$!
-  exec 104>$tmp ; rm -f $tmp ; fml_1_4 & PIDS[4]=$!
 
   # harvest stage 1.0
   C=0
-  while [[ $C != 5 ]]; do
+  while [[ $C != 1 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -279,6 +339,133 @@ else
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
     printf '[%3d,%3d] X=%d %s\n' 1 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 2.0
+  exec 100>$tmp ; rm -f $tmp ; fml_2_0 & PIDS[0]=$!
+
+  # harvest stage 2.0
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((2+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 2 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 3.0
+  exec 100>$tmp ; rm -f $tmp ; fml_3_0 & PIDS[0]=$!
+
+  # harvest stage 3.0
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((3+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 3 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 4.0
+  exec 100>$tmp ; rm -f $tmp ; fml_4_0 & PIDS[0]=$!
+
+  # harvest stage 4.0
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((4+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=3))
+else
+  # launch stage 5.0
+  exec 100>$tmp ; rm -f $tmp ; fml_5_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_5_1 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_5_2 & PIDS[2]=$!
+
+  # harvest stage 5.0
+  C=0
+  while [[ $C != 3 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((5+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 5 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 6.0
+  exec 100>$tmp ; rm -f $tmp ; fml_6_0 & PIDS[0]=$!
+
+  # harvest stage 6.0
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((8+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 6 $((idx+0)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done

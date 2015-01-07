@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -98,7 +98,7 @@ typedef struct selector {
 #define MODE_TABLE(x)																																														\
 /* execution modes */																																														\
 	_MODE(MODE_BPLAN_GENERATE							, 0x01	, x)		/* (only) generate the buildplan */											\
-	_MODE(MODE_BPLAN_BAKE									, 0x02	, x)		/* bake the buildplan */																\
+	_MODE(MODE_BPLAN_BUILDSCRIPT					, 0x02	, x)		/* create a buildscript from the buildplan */						\
 	_MODE(MODE_BPLAN_EXEC									, 0x03	, x)		/* execute the buildplan */															\
 /* path handling modes */																																												\
 	_MODE(MODE_RELATIVE_FABFILE_DIR				, 0x04	, x)		/* path relative to initial fabfile dir */							\
@@ -119,9 +119,9 @@ typedef struct selector {
 #endif
 #if DEVEL
 #define MODE_TABLE_DEVEL(x)																																											\
-/* bakescript license modes */																																									\
-	_MODE(MODE_BSLIC_STD									, 0x10	, x)		/* bakescripts have the standard license  */						\
-	_MODE(MODE_BSLIC_FAB									, 0x11	, x)		/* bakescripts have the fab license */
+/* buildscript license modes */																																									\
+	_MODE(MODE_BSLIC_STD									, 0x10	, x)		/* buildscripts have the standard license  */						\
+	_MODE(MODE_BSLIC_FAB									, 0x11	, x)		/* buildscripts have the fab license */
 #endif
 
 enum {
@@ -162,20 +162,20 @@ extern struct g_args_t
 	int									mode_logtrace;							// log trace mode
 #endif
 #if DEVEL
-	int									mode_bslic;									// bakescript license mode
+	int									mode_bslic;									// buildscript license mode
 #endif
 
 	int									concurrency;								// concurrently limiting factor
 
-	char *							bakescript_path;						// path to bakescript
+	char *							buildscript_path;						// path to buildscript
 
 	char **							rootvars;										// root scope variable expressions
 	int									rootvarsl;
 	int									rootvarsa;
 
-	char **							bakevars;										// baked variables
-	int									bakevarsl;
-	int									bakevarsa;
+	char **							bs_runtime_vars;						// buildscript variables that are settable at runtime
+	int									bs_runtime_varsl;
+	int									bs_runtime_varsa;
 
 	char **							invokedirs;									// root directories for locating invocations
 	int									invokedirsl;

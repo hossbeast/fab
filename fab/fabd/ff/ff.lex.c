@@ -602,7 +602,7 @@ static yyconst flex_int16_t yy_chk[576] =
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 #line 1 "fab/fabd/ff/ff.l"
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    

@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -134,6 +134,27 @@ static void add(size_t * z, char * const resolved, size_t sz, char * fmt, ...)
 // public
 //
 
+/*
+invocations
+
+ gn.c     : (  7) CAN_INIT_DOT | CAN_NEXT_DOT | CAN_FORCE_DOT
+ gn.c     : (255) CAN_REALPATH
+ path.c   : (255) CAN_REALPATH
+ path.c   : ( 15) CAN_INIT_DOT | CAN_NEXT_DOT | CAN_FORCE_DOT | CAN_NEXT_SYM
+ params.c : (255) CAN_REALPATH
+ op/rb.c  : ( 15) CAN_INIT_DOT | CAN_NEXT_DOT | CAN_FORCE_DOT | CAN_NEXT_SYM
+
+optimization
+
+ lstat can be expensive, especially on clients with network-mounted file systems. the lstat/readlink
+ calls are only necessary to implement the *_SYM options, which are strictly only necessary for
+ display of paths to the user. using them, or not, could be a configurable option (probably per-filesystem)
+
+ further, the compression ratio of calls to canon -> calls to canon with unique arguments is large. when
+ compiling fab itself, this value is greater than 4 and less than 7. thus, there is a possibility of
+ time savings here by memoization
+*/
+
 int canon(
 	  const char * path
 	, int pathl
@@ -148,6 +169,8 @@ int canon(
 	int x;
 	opts = opts ?: CAN_REALPATH;
 	pathl = pathl ?: strlen(path);
+
+//printf("%3u %s %s\n", opts, path, base);
 
 	if(base)
 	{
@@ -257,7 +280,6 @@ for(ix = 0; ix < il; ix++)
 			else
 			{
 				// back up
-
 				if(*z)
 					(*z)--;
 				while((*z) && dst[(*z)] != '/')
@@ -301,7 +323,6 @@ for(ix = 0; ix < il; ix++)
 					snprintf(space2, sizeof(space2), "%.*s/%s", (int)oldz, dst, space);
 
 					int r = lstat(space2, &stb[1]);
-
 					if(r || stb[0].st_dev == stb[1].st_dev)
 					{
 						// dangling links, and fulfilled links which do not cross mount points
@@ -337,6 +358,14 @@ for(ix = 0; ix < il; ix++)
 	}
 
 	dst[(*z)] = 0;
+
+#if 0
+printf("\n");
+printf("%7s : %s\n", "path", path);
+printf("%7s : %s\n", "base", base);
+printf("%7s : %u\n", "opts", opts);
+printf("%7s : %s\n", "final", dst);
+#endif
 
 finally:
 	for(x = 0; x < ia; x++)

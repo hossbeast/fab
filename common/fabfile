@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -24,11 +24,33 @@ once {
 	]
 
 	# c files
-	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ final.o ]; $cflags = [ $cflags_final $copts ])
-	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ debug.o ]; $cflags = [ $cflags_debug $copts ])
-	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ devel.o ]; $cflags = [ $cflags_devel $copts ])
+	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ final.o ]; $cflags = [ $cflags_final $copts ])
+	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ debug.o ]; $cflags = [ $cflags_debug $copts ])
+	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ devel.o ]; $cflags = [ $cflags_devel $copts ])
 
-	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ final.pic.o ]; $cflags = [ $cflags_final $copts -fPIC ])
-	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ debug.pic.o ]; $cflags = [ $cflags_debug $copts -fPIC ])
-	+[@std.c]($rdirs = $dcommon; $cc; $dext = [ devel.pic.o ]; $cflags = [ $cflags_devel $copts -fPIC ])
+	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ final.pic.o ]; $cflags = [ $cflags_final $copts -fPIC ])
+	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ debug.pic.o ]; $cflags = [ $cflags_debug $copts -fPIC ])
+	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ devel.pic.o ]; $cflags = [ $cflags_devel $copts -fPIC ])
+
+	# test sos
+	+[$dxunit/../fablib/xunit/tests.fab](
+		$rdirs = $dcommon;
+		$cc;
+		$dext = [ devel.pic.o ];
+		$dscext = [ devel.pic.o ];
+		$soext = [ devel.xu.so ];
+		$cflags = [ $cflags_devel [ [ $dlibxunit $dlibxapi ] ~ s/^/-I ] -fPIC ];
+		-$tsopaths
+	)
+
+	# run all tests
+	[ @test ] : [ $xunit_devel $tsopaths ]
+	{
+		[ $xunit_devel ] [ $tsopaths ~ fi ] 1>&501 2>&502
+	}
+
+	[ @test.more ] : [ $xunit_devel $tsopaths ]
+	{
+		[ $xunit_devel ] +XUNIT [ $tsopaths ~ fi ] 1>&501 2>&502
+	}
 }

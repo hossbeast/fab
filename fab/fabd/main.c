@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -359,20 +359,20 @@ static int loop()
 
 		if(plan)
 		{
-			if(g_args->mode_bplan == MODE_BPLAN_BAKE)
+			if(g_args->mode_bplan == MODE_BPLAN_BUILDSCRIPT)
 			{
-				// prepare bakevars map
+				// prepare bs_runtime_vars map
 				fatal(map_create, &bakemap, 0);
 
-				for(x = 0; x < g_args->bakevarsl; x++)
-					fatal(map_set, bakemap, MMS(g_args->bakevars[x]), 0, 0, 0);
+				for(x = 0; x < g_args->bs_runtime_varsl; x++)
+					fatal(map_set, bakemap, MMS(g_args->bs_runtime_vars[x]), 0, 0, 0);
 
 				// dump buildplan, pending logging
 				if(plan)
 					bp_dump(plan);
 
-				// create bakescript
-				fatal(bake_bp, plan, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tspc, &tsa, &tsw, g_args->bakescript_path);
+				// create buildscript
+				fatal(buildscript_mk, plan, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tspc, &tsa, &tsw, g_args->buildscript_path);
 			}
 			else
 			{

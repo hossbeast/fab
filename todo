@@ -1,5 +1,18 @@
-listwise cumulative windows
-listwise resolve lstack vs lwx
-listwise resolve write vs alt_write
-listwise ordered access
-listwise generator -> transform
+* v0.5.0
+ review fab cmdline interface, options, logs
+ fix callstack dump in fabd/main.c so the 0th frame (null) does not show
+ fab/lw man pages
+ update copyright
+
+* finished
+ verify buildscripts
+ lstat analysis in canon
+ canon/test.c
+
+* docket
+ listwise resolve lstack vs lwx
+ listwise resolve write vs alt_write
+ listwise ordered access
+ listwise generator -> transform
+
+ per-filesystem options (canon, hashblock stat vs content)

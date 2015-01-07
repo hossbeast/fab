@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -27,6 +27,8 @@
 #include "params.h"
 #include "identity.h"
 
+#include "fml.h"
+#include "ts.h"
 #include "ff.h"
 #include "ff.parse.h"
 #include "bp.h"
@@ -42,7 +44,7 @@
 #include "ffproc.h"
 #include "selector.h"
 #include "dsc.h"
-#include "bake.h"
+#include "bs.h"
 
 #include "logger.h"
 

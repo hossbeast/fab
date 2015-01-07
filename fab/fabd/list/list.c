@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -120,7 +120,7 @@ static int resolve(ff_node * list, map* vmap, transform_parser * gp, lwx *** sta
 				if(strcmp(list->elements[x]->name->text->s, "fab") == 0)
 				{
 #if DEVEL
-					fatal(lstack_addf, (*stax)[pn], "%s/fab.devel", g_params.exedir);
+					fatal(lstack_addf, (*stax)[pn], "%s/../fab/fab.devel", g_params.exedir);
 #else
 					fatal(lstack_adds, (*stax)[pn], "fab");
 #endif

@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
    
@@ -23,21 +23,12 @@
 
 #include "xlinux.h"
 
-#include "bake.h"
-#include "fml.h"
-#include "ts.h"
-#include "gn.h"
-#include "gnlw.h"
-#include "var.h"
-#include "args.h"
-#include "list.h"
-#include "lwutil.h"
-#include "logs.h"
 #include "global.h"
+
 #include "macros.h"
 #include "map.h"
 
-int bake_bp(
+int buildscript_mk(
 	  const bp * const bp
 	, map * const vmap
 	, transform_parser * const gp
@@ -78,7 +69,7 @@ int bake_bp(
 	// ensure I have enough threadspace
 	fatal(ts_ensure, ts, tsa, tsl);
 
-	// open the bakescript
+	// open the buildscript
 	fatal(xopen_mode, dst, O_CREAT | O_TRUNC | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &fd);
 
 	dprintf(fd, "#!/bin/bash\n");
@@ -89,7 +80,7 @@ int bake_bp(
 		dprintf(fd,
 /* this is for producing the bakescripts distributed with the fab source code itself */
 "\n"
-"# Copyright (c) 2012-2014 Todd Freed <todd.freed@gmail.com>\n"
+"# Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>\n"
 "#\n"
 "# This file is part of fab.\n"
 "#\n"
@@ -111,13 +102,13 @@ int bake_bp(
 	else
 	{
 #endif
-/* include licensing exception in bakescript output */
+/* include licensing exception in buildscript output */
 	dprintf(fd,
 "\n"
-"# A build script made by fab " XQUOTE(FABVERSIONS) "\n"
+"# A build script made by fab-" XQUOTE(FABVERSIONS) "\n"
 "#  fab is free software released under the GNU General Public License.\n"
 "#\n"
-"#  As a special exception, build scripts made by fab " XQUOTE(FABVERSIONS) " (including this\n"
+"#  As a special exception, build scripts made by fab-" XQUOTE(FABVERSIONS) " (including this\n"
 "#  build script) are excluded from the license covering fab itself, even\n"
 "#  if substantial portions of the fab source code are copied verbatim into\n"
 "#  the build script. You may create a larger work that contains part or all\n"
@@ -187,7 +178,7 @@ int bake_bp(
 
 			dprintf(fd, "'\n");
 
-			// append this formula to the bakescript
+			// append this formula to the buildscript
 			dprintf(fd
 				, "fml_%d_%d()\n"						// x, y
 				  "{\n"
@@ -296,6 +287,8 @@ int bake_bp(
 	dprintf(fd, "printf '%%15s %%d\\n' skipped $SKP\n");
 	dprintf(fd, "# no failures=0, and 1 otherwise\n");
 	dprintf(fd, "exit $((!(DIE==0)))\n");
+
+	logf(L_INFO, "wrote %s", dst);
 
 finally:
 	close(fd);
