@@ -362,11 +362,40 @@ finally:
 coda;
 }
 
+int fml_write(ts * const restrict ts, pid_t pid, int stage, int num)
+{
+	//
+	// create pid-fml-dir
+	//
+	//  note : all but the last component of this dir were created in tmp_setup
+	//  note : the directory itself cannot already exist, because num is process-unique
+	//
+	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d", pid, stage, num);
+	fatal(mkdirp, ts->stdo_path->s, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	// create tmp file for the cmd
+	fatal(psprintf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", pid, stage, num);
+	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &ts->cmd_fd);
+
+	// write the cmd to the tmp file
+	fatal(xwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l, 0);
+	fatal(xclose, ts->cmd_fd);
+
+#if 0
+	// create tmp file to capture stdout
+	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/out", pid, stage, num);
+	fatal(xopen_mode, ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &ts->stdo_fd);
+
+	// create tmp file to capture stderr
+	fatal(psprintf, &ts->stde_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", pid, stage, num);
+	fatal(xopen_mode, ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &ts->stde_fd);
+#endif
+
+	finally : coda;
+}
+
 int fml_exec(ts * const restrict ts, int num)
 {
-	// assume fabsys identity
-	fatal(identity_assume_fabsys);
-
 	//
 	// create pid-fml-dir
 	//
@@ -376,12 +405,9 @@ int fml_exec(ts * const restrict ts, int num)
 	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/fml/%d", g_params.pid, num);
 	fatal(mkdirp, ts->stdo_path->s, S_IRWXU | S_IRWXG | S_IRWXO);
 
-	// the directories are fabsys:fabsys, but the files are user:user
-	fatal(identity_assume_user);
-
 	// create tmp file for the cmd
 	fatal(psprintf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/fml/%d/cmd", g_params.pid, num);
-	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG, &ts->cmd_fd);
+	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &ts->cmd_fd);
 
 	// write the cmd to the tmp file
 	fatal(xwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l, 0);
@@ -389,11 +415,11 @@ int fml_exec(ts * const restrict ts, int num)
 
 	// create tmp file to capture stdout, remain-through-exec
 	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/fml/%d/out", g_params.pid, num);
-	fatal(xopen_mode, ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &ts->stdo_fd);
+	fatal(xopen_mode, ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &ts->stdo_fd);
 
 	// create tmp file to capture stderr, remain-through-exec
 	fatal(psprintf, &ts->stde_path, XQUOTE(FABTMPDIR) "/pid/%d/fml/%d/err", g_params.pid, num);
-	fatal(xopen_mode, ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &ts->stde_fd);
+	fatal(xopen_mode, ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &ts->stde_fd);
 
 	// fork off the child
 	ts->pid = 0;
@@ -408,7 +434,7 @@ int fml_exec(ts * const restrict ts, int num)
 		// save stdout
 		fatal(xdup2, 1, 501);
 
-		// redirect stdout
+		// redirect stdout (dup2 calls close(1))
 		fatal(xdup2, ts->stdo_fd, 1);
 
 		// save stderr

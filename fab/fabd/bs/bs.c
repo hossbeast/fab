@@ -30,6 +30,7 @@
 
 int buildscript_mk(
 	  const bp * const bp
+	, const char * const argvs
 	, map * const vmap
 	, transform_parser * const gp
 	, lwx *** const stax
@@ -118,6 +119,9 @@ int buildscript_mk(
 #if DEVEL
 	}
 #endif
+
+	dprintf(fd, "# fab %s\n", argvs);
+	dprintf(fd, "\n");
 
 	dprintf(fd, "# re-exec under time\n");
 	dprintf(fd, "if [[ $1 != \"timed\" ]]; then\n");

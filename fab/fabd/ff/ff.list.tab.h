@@ -30,8 +30,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_FF_LIST_YY_FAB_FABD_FF_FF_LIST_TAB_H_INCLUDED
-# define YY_FF_LIST_YY_FAB_FABD_FF_FF_LIST_TAB_H_INCLUDED
+#ifndef YY_FF_LIST_YY_FABD_FF_FF_LIST_TAB_H_INCLUDED
+# define YY_FF_LIST_YY_FABD_FF_FF_LIST_TAB_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -56,13 +56,13 @@ extern int ff_list_yydebug;
 typedef union YYSTYPE
 {
 /* Line 2053 of yacc.c  */
-#line 47 "fab/fabd/ff/ff.list.y"
+#line 47 "fabd/ff/ff.list.y"
 
 	struct ff_node*			node;
 
 
 /* Line 2053 of yacc.c  */
-#line 66 "fab/fabd/ff/ff.list.tab.h"
+#line 66 "fabd/ff/ff.list.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -97,4 +97,4 @@ int ff_list_yyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_FF_LIST_YY_FAB_FABD_FF_FF_LIST_TAB_H_INCLUDED  */
+#endif /* !YY_FF_LIST_YY_FABD_FF_FF_LIST_TAB_H_INCLUDED  */

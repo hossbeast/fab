@@ -436,4 +436,3 @@ finally:
 	log_teardown();
 coda;
 }
-

@@ -50,6 +50,7 @@ int tmp_setup()
 	//
 	fatal(mkdirp, XQUOTE(FABTMPDIR) "/pid", S_IRWXU | S_IRWXG | S_IRWXO); 
 
+	// cleanup the tmp dir
 	int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
 	{
 		if(typeflag != FTW_D)

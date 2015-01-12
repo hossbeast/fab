@@ -47,7 +47,6 @@ int params_setup()
 	//
 	g_params.pid = getpid();
 	g_params.ppid = getppid();
-	g_params.sid = getsid(0);
 	g_params.cwd = getcwd(0, 0);
 	g_params.cwdl = strlen(g_params.cwd);
 

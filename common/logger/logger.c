@@ -659,7 +659,6 @@ for(x = 0; x < g_argvsl; x++)
 		}
 	}
 
-	// construct g_argvs
 	g_logvsl = 0;
 	for(x = 0; x < g_logc; x++)
 	{

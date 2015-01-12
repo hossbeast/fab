@@ -93,8 +93,6 @@ typedef struct selector {
 # define DEFAULT_MODE_SANITY			MODE_SANITY_DISABLE
 #endif
 
-#define EXPIRATION_POLICY					(60 * 60 * 24 * 7)		/* 7 days */
-
 #define MODE_TABLE(x)																																														\
 /* execution modes */																																														\
 	_MODE(MODE_BPLAN_GENERATE							, 0x01	, x)		/* (only) generate the buildplan */											\
@@ -152,6 +150,7 @@ extern struct g_args_t
 //
 // arguments
 //
+	char *							argvs;											// copy of logger::g_argvs
 
 	int									mode_bplan;									// buildplan mode
 	int									mode_gnid;									// gn identification mode

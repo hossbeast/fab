@@ -90,6 +90,17 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, str
 int fml_render(ts * const restrict ts, transform_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int staxp, map * const restrict rawvars, int shebang)
 	__attribute__((nonnull(1, 2, 3, 4)));
 
+/// fml_write
+//
+// execute the formula
+//
+// parameters
+//     ts - threadspace
+//    num - unique-per-pid number for this execution
+//
+int fml_write(ts * const restrict, pid_t pid, int stage, int num)
+	__attribute__((nonnull));
+
 /// fml_exec
 //
 // execute the formula

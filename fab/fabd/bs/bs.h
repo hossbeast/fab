@@ -35,6 +35,7 @@
 //
 int buildscript_mk(
 	  const bp * const bp
+	, const char * const restrict argvs
 	, map * const restrict vmap
 	, transform_parser * const gp
 	, lwx *** const restrict stax
@@ -50,4 +51,3 @@ int buildscript_mk(
 
 #undef restrict
 #endif
-

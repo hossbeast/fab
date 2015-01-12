@@ -2,12 +2,15 @@
  review fab cmdline interface, options, logs
  fix callstack dump in fabd/main.c so the 0th frame (null) does not show
  fab/lw man pages
- update copyright
+ recognize varexprs vs logexprs
+ faba(gent) process per user?
+ listwise sanity checks
 
 * finished
  verify buildscripts
  lstat analysis in canon
  canon/test.c
+ update copyright
 
 * docket
  listwise resolve lstack vs lwx

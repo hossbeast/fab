@@ -95,11 +95,12 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 	if(!bad)
 		bad = &local_bad;
 
-	(*bad) = 0;
+	*bad = 0;
 
 	// execute all formulas in parallel processes
-	for(j = 0; (*bad) == 0 && j < n; j += step)
+	for(j = 0; !*bad && j < n; j += step)
 	{
+		// launch all of the commands
 		for(x = j; x < (j + step) && x < n; x++)
 			fatal(fml_exec, ts[x], ((*waveid) * 1000) + x);
 

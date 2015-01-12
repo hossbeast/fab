@@ -620,6 +620,17 @@ printf("optopt=%c\n", optopt);
 		}
 	}
 
+	// save args string, minus path to executable
+	char * b = g_argvs;
+	while(b[0] == ' ')
+		b++;
+	while(b[0] != ' ' && b[0])
+		b++;
+	while(b[0] == ' ')
+		b++;
+
+	fatal(ixstrdup, &g_args->argvs, b);
+
 	finally : coda;
 }
 
@@ -635,7 +646,6 @@ int args_summarize()
 	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
 	// log execution parameters under PARAMS
-	logf(L_PARAMS	, "%11ssid                    =%u"						, ""	, g_params.sid);
 	logf(L_PARAMS	, "%11spid                    =%u"						, ""	, g_params.pid);
 	logf(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_params.euid_name, g_params.euid, g_params.egid_name, g_params.egid);
 	logf(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_params.ruid_name, g_params.ruid, g_params.rgid_name, g_params.rgid);
@@ -647,7 +657,6 @@ int args_summarize()
 	logf(L_PARAMS	, "%11sipcdir                 =%s"						, ""	,	XQUOTE(FABIPCDIR));
 	logf(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));
 	logf(L_PARAMS	, "%11sinvokedir              =%s"						, ""	,	XQUOTE(FABINVOKEDIR));
-	logf(L_PARAMS	, "%11sexpiration-policy      =%s"						, ""	, durationstring(EXPIRATION_POLICY));
 
 	// log cmdline args under ARGS
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->can);
@@ -711,6 +720,7 @@ coda;
 
 void args_freeze(memblk * const restrict mb)
 {
+	memblk_freeze(mb, &g_args->argvs);
 	memblk_freeze(mb, &g_args->buildscript_path);
 
 	int x;
@@ -736,6 +746,7 @@ void args_freeze(memblk * const restrict mb)
 
 void args_thaw(char * const mb)
 {
+	memblk_thaw(mb, &g_args->argvs);
 	memblk_thaw(mb, &g_args->buildscript_path);
 
 	memblk_thaw(mb, &g_args->rootvars);

@@ -26,9 +26,10 @@ extern struct g_params_t
 // execution parameters
 //
 
+	pid_t								fab_pid;										// pid of the fab process
+	pid_t								fabd_pid;										// pid of the fabd process
 	pid_t								pid;												// pid of this process
 	pid_t								ppid;												// pid of parent process
-	pid_t								sid;												// session-id
 	char *							cwd;												// cwd
 	int									cwdl;
 	char *							exedir;											// location of the fab executable when the program started

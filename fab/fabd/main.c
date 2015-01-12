@@ -86,8 +86,9 @@ static gn *								first = 0;			// first dependency mentioned
 static lwx **							stax = 0;				// listwise stacks
 static int								staxa = 0;
 static int 								staxp = 0;
-static ts **							tspc = 0;
+static ts **							tsp = 0;
 static int								tsa = 0;
+static int								tsl = 0;
 static int								tsw = 0;
 
 /* node selector produced lists */
@@ -138,6 +139,7 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 static int loop()
 {
 	int x;
+	int y;
 
 	char space[256];
 
@@ -151,7 +153,7 @@ static int loop()
 	queriesl = 0;
 
 	// comprehensive dependency discovery
-	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tspc, &tsa, &tsw);
+	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
 
 	// stat non-primary backing files
 	for(x = 0; x < gn_nodes.l; x++)
@@ -239,7 +241,7 @@ static int loop()
 		if(repeat_discovery)
 		{
 			// repeat dependency discovery if any primary nodes that have dscvs were invalidated
-			fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tspc, &tsa, &tsw);
+			fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
 		}
 	}
 
@@ -301,7 +303,7 @@ static int loop()
 	if(g_args->selectors_arediscovery)
 	{
 		fatal(log_parse_and_describe, "+DSC", 0, 0, L_INFO);
-		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &tspc, &tsa, &tsw);
+		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
 		fatal(log_parse_pop);
 	}
 
@@ -372,7 +374,7 @@ static int loop()
 					bp_dump(plan);
 
 				// create buildscript
-				fatal(buildscript_mk, plan, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tspc, &tsa, &tsw, g_args->buildscript_path);
+				fatal(buildscript_mk, plan, g_args->argvs, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tsp, &tsa, &tsw, g_args->buildscript_path);
 			}
 			else
 			{
@@ -391,7 +393,39 @@ static int loop()
 					if(plan && plan->stages_l)
 					{
 						// execute the build plan, one stage at a time
-						fatal(bp_exec, plan, vmap, ffp->gp, &stax, &staxa, staxp, &tspc, &tsa, &tsw);
+						fatal(bp_prepare, plan, ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
+
+						// work required ; notify fab
+						fatal(uxkill, g_params.fab_pid, 41, 0);
+
+						// await response
+						o_signum = 0;
+						pause();
+
+						if(o_signum == 41)
+						{
+							// plan was executed successfully ; update nodes for all products
+							for(x = 0; x < tsl; x++)
+							{
+								for(y = 0; y < tsp[x]->fmlv->productsl; y++)
+								{
+									// mark as up-to-date
+									tsp[x]->fmlv->products[y]->invalid = 0;
+
+									// reload hashblock
+									fatal(hashblock_stat, tsp[x]->fmlv->products[y]->path->can, tsp[x]->fmlv->products[y]->hb);
+								}
+							}
+						}
+						else if(o_signum == 42)
+						{
+							// plan failed ; harvest the results
+							fatal(bp_harvest, plan);
+						}
+						else
+						{
+							fail(FAB_BADIPC);
+						}
 					}
 				}
 			}
@@ -409,7 +443,6 @@ int main(int argc, char** argv)
 	char space[2048];
 
 	int fd = -1;
-	pid_t fab_pid = 0;
 
 	int argsfd = -1;
 	struct stat argsb = {};
@@ -442,7 +475,9 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	for(x = 1; x < SIGUNUSED; x++)
 	{
 		if(x != SIGKILL && x != SIGSTOP && x != SIGSEGV)
+		{
 			fatal(xsigaction, x, &action, 0);
+		}
 	}
 	for(x = SIGRTMIN; x <= SIGRTMAX; x++)
 	{
@@ -471,6 +506,9 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 	// get user identity of this process, assert user:group and permissions are set appropriately
 	fatal(identity_init);
+
+	// fabd maintains the fabsys identity
+	fatal(identity_assume_fabsys);
 
 	// initialize logger
 	fatal(log_init);
@@ -512,9 +550,6 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 		// start measuring
 		fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
 
-		// assume fabsys identity for manipulating ipc files
-		fatal(identity_assume_fabsys);
-
 		// read fab/pid
 		snprintf(space, sizeof(space), "%s/fab/pid", stem);
 		fatal(ixclose, &fd);
@@ -527,10 +562,10 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 		}
 		else
 		{
-			fatal(axread, fd, &fab_pid, sizeof(fab_pid));
+			fatal(axread, fd, &g_params.fab_pid, sizeof(g_params.fab_pid));
 
 			// existence check - is anyone listening?
-			fatal(uxkill, fab_pid, 0, &r);
+			fatal(uxkill, g_params.fab_pid, 0, &r);
 		}
 
 #define REQUIRE_LISTENER 1
@@ -541,7 +576,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 		if(0)
 #endif
 		{
-			SAYF("fab[%lu] not listening\n", (long)fab_pid);
+			SAYF("fab[%lu] not listening\n", (long)g_params.fab_pid);
 			exit(0);
 		}
 		else
@@ -549,11 +584,11 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 #if REQUIRE_LISTENER
 			// reopen file descriptors
 			fatal(xclose, 1);
-			snprintf(space, sizeof(space), "/proc/%ld/fd/1", (long)fab_pid);
+			snprintf(space, sizeof(space), "/proc/%ld/fd/1", (long)g_params.fab_pid);
 			fatal(xopen, space, O_RDWR, 0);
 
 			fatal(xclose, 2);
-			snprintf(space, sizeof(space), "/proc/%ld/fd/2", (long)fab_pid);
+			snprintf(space, sizeof(space), "/proc/%ld/fd/2", (long)g_params.fab_pid);
 			fatal(xopen, space, O_RDWR, 0);
 #endif
 
@@ -595,6 +630,8 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				fatal(log_config, ~0, ~0);
 			else
 				fatal(log_config, ~0, 0);
+#else
+			fatal(log_config, ~0);
 #endif
 
 			// default tags - do not describe, that as done previously
@@ -609,7 +646,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 #if REQUIRE_LISTENER
 			// chdir
-			snprintf(space, sizeof(space), "/proc/%ld/cwd", (long)fab_pid);
+			snprintf(space, sizeof(space), "/proc/%ld/cwd", (long)g_params.fab_pid);
 			fatal(xchdir, space);
 #endif
 
@@ -759,11 +796,11 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
 
 			// task complete : notify fab
-			fatal(uxkill, fab_pid, 1, 0);
+			fatal(uxkill, g_params.fab_pid, 40, 0);
 
 			z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
 			logf(L_INFO, "elapsed : %.*s", (int)z, space);
-			logf(L_INFO, "usage : lwx(%d), gn(%d), ts(%d)", staxa, gn_nodes.a, tsa);
+			logf(L_INFO, "usage : mem(%d), lwx(%d), gn(%d), ts(%d)", 0, staxa, gn_nodes.a, tsa);
 
 			// timer reset
 			memset(&time_start, 0, sizeof(time_start));
@@ -797,8 +834,8 @@ finally:
 	free(stax);
 
 	for(x = 0; x < tsa; x++)
-		ts_free(tspc[x]);
-	free(tspc);
+		ts_free(tsp[x]);
+	free(tsp);
 
 	free(fabrications);
 	free(fabricationxs);

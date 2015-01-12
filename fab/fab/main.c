@@ -1,5 +1,6 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
+
    This file is part of fab.
    
    fab is free software: you can redistribute it and/or modify
@@ -23,22 +24,30 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "xlinux.h"
 #include "xlinux/mempolicy.h"
+
+#include "pstring.h"
 
 #include "global.h"
 
 #include "macros.h"
 #include "memblk.h"
+#include "parseint.h"
 
 // signal handling
+static int o_signum;
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
 	char space[2048];
 	char * dst = space;
 	size_t sz = sizeof(space);
 	size_t z = 0;
+
+	if(!o_signum)
+		o_signum = signum;
 
 	z += znprintf(dst + z, sz - z, "fab[%u] received %d { from pid : %ld", getpid(), signum, (long)info->si_pid);
 	if(signum == SIGCHLD)
@@ -48,40 +57,218 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 	int __attribute__((unused)) r = write(1, space, z);
 }
 
-static int fabdcred_throw(uid_t actual_uid, gid_t actual_gid)
+static int bp_exec(int * good)
 {
-	char space[256];
-	char space2[256];
-	char space3[256];
+	pstring * tmp = 0;
+	int stdo_fd = -1;
+	int stde_fd = -1;
+	int exit_fd = -1;
 
-	struct passwd pwd;
-	struct passwd * ppwd;
-	fatal(uxgetpwuid_r, actual_uid, &pwd, space, sizeof(space), &ppwd);
+	struct
+	{
+		int			num;			// stage number
+		struct
+		{
+			pid_t		pid;
+			int			num;		
+			char *	cmd;		// cmd
+			char *	stdo;		// out
+			char *	stde;		// err
+			char *	exit;		// exit
+		} * 		cmds;
+		size_t	cmdsl;
+		size_t	cmdsa;
+	} * stages = 0;
+	size_t stagesl = 0;
+	size_t stagesa = 0;
+	size_t cmdstot = 0;
 
-	struct group grp;
-	struct group * pgrp;
-	fatal(uxgetgrgid_r, actual_gid, &grp, space2, sizeof(space2), &pgrp);
+	int x;
+	int y;
 
-	fail(FAB_FABDCRED);
+	// directory containing the buildplan
+	fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.pid);
+
+	int fn(const char * fpath, const struct stat * sb, int typeflat, struct FTW * ftwbuf)
+	{
+		if(ftwbuf->level == 1 || ftwbuf->level == 2)
+		{
+			int num;
+			if(parseint(fpath + ftwbuf->base, SCNd32, 0, INT32_MAX, 1, 10, &num, 0))
+				failf(FAB_BADTMP, "expected: int32, actual: %s", fpath + ftwbuf->base);
+
+			if(ftwbuf->level == 1)
+			{
+				if(stagesl == stagesa)
+				{
+					size_t ns = stagesa ?: 3;
+					ns = ns * 2 + ns / 2;
+					fatal(xrealloc, &stages, sizeof(*stages), ns, stagesa);
+					stagesa = ns;
+				}
+
+				stages[stagesl].num = num;
+				stagesl++;
+			}
+			else if(ftwbuf->level == 2)
+			{
+				if(stages[stagesl - 1].cmdsl == stages[stagesl - 1].cmdsa)
+				{
+					size_t ns = stages[stagesl - 1].cmdsa ?: 10;
+					ns = ns * 2 + ns / 2;
+					fatal(xrealloc, &stages[stagesl - 1].cmds, sizeof(*stages[0].cmds), ns, stages[stagesl - 1].cmdsa);
+					stages[stagesl - 1].cmdsa = ns;
+				}
+
+				typeof(stages[0].cmds[0]) * T = &stages[stagesl - 1].cmds[stages[stagesl - 1].cmdsl];
+				T->num = num;
+				stages[stagesl - 1].cmdsl++;
+				cmdstot++;
+			}
+		}
+	finally : 
+		XAPI_INFOS("path", fpath);
+	coda;
+	};
+
+	// traverse the buildpath directory structure
+	fatal(xnftw, tmp->s, fn, 32, 0);
+
+	// sort the stages ascending
+	int compar(const void * _A, const void * _B)
+	{
+		const typeof(*stages) * A = _A;
+		const typeof(*stages) * B = _B;
+
+		return A->num - B->num;
+	};
+	qsort(stages, stagesl, sizeof(*stages), compar);
+
+	// execute stages
+	for(x = 0; x < stagesl; x++)
+	{
+		logf(L_BP | L_BPINFO, "STAGE %d of %d executing %d of %d", x, stagesl, stages[x].cmdsl, cmdstot);
+
+		int step = stages[x].cmdsl;
+		if(g_args->concurrency > 0)
+			step = g_args->concurrency;
+
+		// execute the whole stage, but honor the concurrency parameter
+		int j;
+		for(j = 0; j < stages[x].cmdsl; j += step)
+		{
+			int cmdsl = step;
+			if((j + step) > stages[x].cmdsl)
+				cmdsl = stages[x].cmdsl - j;
+
+			int i;
+			for(i = j; i < (j + cmdsl); i++)
+			{
+				fatal(ixsprintf, &stages[x].cmds[i].cmd, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", g_params.pid, x, i);
+				fatal(ixsprintf, &stages[x].cmds[i].stdo, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stdo", g_params.pid, x, i);
+				fatal(ixsprintf, &stages[x].cmds[i].stde, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stde", g_params.pid, x, i);
+				fatal(ixsprintf, &stages[x].cmds[i].exit, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.pid, x, i);
+
+				// open files for stdout/stderr
+				fatal(ixclose, &stdo_fd);
+				fatal(xopen_mode, stages[x].cmds[i].stdo, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stdo_fd);
+				fatal(ixclose, &stde_fd);
+				fatal(xopen_mode, stages[x].cmds[i].stde, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stde_fd);
+
+				// fork off the child
+				fatal(xfork, &stages[x].cmds[i].pid);
+				if(stages[x].cmds[i].pid == 0)
+				{
+					// reopen stdin
+					fatal(xclose, 0);
+					fatal(xopen, "/dev/null", O_RDONLY, 0);
+
+					// save stdout
+					fatal(xdup2, 1, 501);
+
+					// redirect stdout (dup2 calls close(1))
+					fatal(xdup2, stdo_fd, 1);
+
+					// save stderr
+					fatal(xdup2, 2, 502);
+
+					// redirect stderr
+					fatal(xdup2, stde_fd, 2);
+
+					// exec doesnt return
+					execl(stages[x].cmds[i].cmd, stages[x].cmds[i].cmd, (void*)0);
+					fail(0);
+				}
+			}
+
+			// wait for each of them to complete
+			int good = 0;
+			int fail = 0;
+			pid_t pid = 0;
+			int r = 0;
+			while((pid = wait(&r)) != -1)
+			{
+				for(i = j; i < (j + step) && i < stages[x].cmdsl; i++)
+				{
+					if(stages[x].cmds[i].pid == pid)
+						break;
+				}
+
+				// save the exit status
+				fatal(ixclose, &exit_fd);
+				fatal(xopen_mode, stages[x].cmds[i].exit, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &exit_fd);
+				fatal(axwrite, exit_fd, &r, sizeof(r));
+
+				// not a clean exit
+				if((WIFEXITED(r) && WEXITSTATUS(r)) || WIFSIGNALED(r))
+				{
+					fail++;
+				}
+				else
+				{
+					// wrote to stderr
+					off_t fsiz;
+					fatal(xlseek, stde_fd, 0, SEEK_END, &fsiz);
+					if(fsiz)
+					{
+						fail++;
+					}
+					else
+					{
+						good++;
+					}
+				}
+
+				if((good + fail) == cmdsl)
+					break;
+			}
+
+			if(fail)
+				failf(FAB_FMLFAIL, "%d formula(s) failed", fail);
+		}
+	}
+
+	*good = 1;
 
 finally:
-	if(XAPI_ERRCODE == FAB_FABDCRED)
+	psfree(tmp);
+
+	for(x = 0; x < stagesl; x++)
 	{
-		snprintf(space3, sizeof(space3), "%.*s/%d:%.*s/%d"
-			, g_params.ruid_namel, g_params.ruid_name, g_params.ruid
-			, g_params.rgid_namel, g_params.rgid_name, g_params.rgid
-		);
-		XAPI_INFOS("expected", space3);
-
-		if(ppwd && pgrp)
-			snprintf(space3, sizeof(space3), "%s/%d:%s/%d", ppwd->pw_name, actual_uid, pgrp->gr_name, actual_gid);
-		else if(ppwd)
-			snprintf(space3, sizeof(space3), "%s/%d:%d", ppwd->pw_name, actual_uid, actual_gid);
-		else if(pgrp)
-			snprintf(space3, sizeof(space3), "%d:%s/%d", actual_uid, pgrp->gr_name, actual_gid);
-
-		XAPI_INFOS("actual", space3);
+		for(y = 0; y < stages[x].cmdsl; y++)
+		{
+			free(stages[x].cmds[y].cmd);
+			free(stages[x].cmds[y].stdo);
+			free(stages[x].cmds[y].stde);
+			free(stages[x].cmds[y].exit);
+		}
+		free(stages[x].cmds);
 	}
+	free(stages);
+
+	fatal(ixclose, &stdo_fd);
+	fatal(ixclose, &stde_fd);
+	fatal(ixclose, &exit_fd);
 coda;
 }
 
@@ -161,6 +348,15 @@ printf("fab[%ld]\n", (long)getpid());
 #endif
 	canhash = g_args->init_fabfile_path->can_hash;
 
+#if DEBUG || DEVEL
+	if(g_args->mode_logtrace == MODE_LOGTRACE_FULL)
+		fatal(log_config, ~0, ~0);
+	else
+		fatal(log_config, ~0, 0);
+#else
+	fatal(log_config, ~0);
+#endif
+
 /*
 /FABIPCDIR/<hash>/fabfile				<-- init fabfile path, symlink
 /FABIPCDIR/<hash>/args					<-- args, binary
@@ -169,7 +365,6 @@ printf("fab[%ld]\n", (long)getpid());
 /FABIPCDIR/<hash>/fab/lock			<-- fab lockfile, empty
 /FABIPCDIR/<hash>/fabd/pgid			<-- fabd pgid, ascii
 /FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile, empty
-/FABIPCDIR/<hash>/fabd/cred			<-- fabd ruid/rgid, binary
 /FABIPCDIR/<hash>/fabd/exit			<-- fabd exit status, binary
 */
 
@@ -272,21 +467,6 @@ printf("fab[%ld]\n", (long)getpid());
 
 		// existence check
 		fatal(uxkill, -fabd_pgid, 0, &r);
-
-		if(r == 0)
-		{
-			// open and read fabd-cred file
-			snprintf(space + z, sizeof(space) - z, "/fabd/cred");
-			fatal(ixclose, &fd);
-			fatal(xopen, space, O_RDONLY, &fd);
-			typeof(g_params.ruid) fabd_ruid;
-			typeof(g_params.rgid) fabd_rgid;
-			fatal(axreadv, fd, (struct iovec[]) {{ .iov_base = &fabd_ruid, .iov_len = sizeof(fabd_ruid) }, { .iov_base = &fabd_rgid, .iov_len = sizeof(fabd_rgid) }}, 2);
-
-			// assert credentials equality
-			if(fabd_ruid != g_params.ruid || fabd_rgid != g_params.rgid)
-				fatal(fabdcred_throw, fabd_ruid, fabd_rgid);
-		}
 	}
 
 	// ensure fresh results
@@ -310,12 +490,6 @@ printf("fab[%ld]\n", (long)getpid());
 			snprintf(space + z, sizeof(space) - z, "/fabd/lock");
 			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &lockfd);
 			fatal(xflock, lockfd, LOCK_EX | LOCK_NB);
-
-			// fabd-cred file
-			snprintf(space + z, sizeof(space) - z, "/fabd/cred");
-			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
-			fatal(axwritev, fd, (struct iovec[]) {{ .iov_base = &g_params.ruid, .iov_len = sizeof(g_params.ruid) }, { .iov_base = &g_params.rgid, .iov_len = sizeof(g_params.rgid) }}, 2);
-			fatal(ixclose, &fd);
 
 			// files done : reassume user identity
 			fatal(identity_assume_user);
@@ -344,6 +518,18 @@ printf("fab[%ld]\n", (long)getpid());
 	
 	// wait to hear back from fabd
 	pause();
+	if(o_signum == 41)
+	{
+		// execute the buildplan
+		int good = 0;
+		fatal(bp_exec, &good);
+
+		// notify fabd
+		if(good)
+			fatal(uxkill, -fabd_pgid, 41, &r);
+		else
+			fatal(uxkill, -fabd_pgid, 42, &r);
+	}
 
 	// check fabd-exit file
 	snprintf(space + z, sizeof(space) - z, "/fabd/exit");
@@ -397,6 +583,3 @@ finally:
 	memblk_free(mb);
 coda;
 }
-
-
-

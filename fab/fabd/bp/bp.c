@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "pstring.h"
 #include "listwise.h"
 
 #include "bp.h"
@@ -536,91 +537,85 @@ int bp_eval(bp * const bp)
 	finally : coda;
 }
 
-int bp_exec(bp * bp, map * vmap, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
+int bp_prepare(bp * bp, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsl, int * tsa)
 {
-	int tsl				= 0;		// thread count
-	int tot				= 0;		// total targets
-	int y;
+	int tsz = 0;		// thread count
 	int x;
-	int i;
-	int k;
+	int y;
 
-	map * ws = 0;
-
-	fatal(map_create, &ws, 0);
-
-	// determine how many threads are needed
+	// determine how many threads are needed ; it is the max stage size
 	for(x = 0; x < bp->stages_l; x++)
-	{
-		tsl = MAX(tsl, bp->stages[x].evals_l);
-		tot += bp->stages[x].evals_l;
-	}
+		tsz = MAX(tsz, bp->stages[x].evals_l);
 
 	// ensure I have enough threadspace
-	fatal(ts_ensure, ts, tsa, tsl);
+	fatal(ts_ensure, ts, tsa, tsz);
 
-	// execute stages
+	// prepare stages
 	for(x = 0; x < bp->stages_l; x++)
 	{
-		i = 0;
-		logf(L_BP | L_BPINFO, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
-
 		// render formulas for each eval context on this stage
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
-			(*ts)[i]->fmlv = bp->stages[x].evals[y];
-			(*ts)[i]->y = y;
+			(*ts)[(*tsl)]->fmlv = bp->stages[x].evals[y];
+			(*ts)[(*tsl)]->y = y;
 
 			// prepare lstack(s) for variables resident in this context
 			fatal(lw_reset, stax, staxa, staxp);
 
 			// $@ is a list of expected products of this eval context
-			for(k = 0; k < (*ts)[i]->fmlv->productsl; k++)
-				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[i]->fmlv->products[k], LISTWISE_TYPE_GNLW);
+			int k;
+			for(k = 0; k < (*ts)[(*tsl)]->fmlv->productsl; k++)
+				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[(*tsl)]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
 			// render the formula
 			//  note that serialization in this loop is important, because fmlv's may share the same bag
-			fatal(map_set, (*ts)[i]->fmlv->ctx->bag, MMS("@"), MM((*stax)[staxp]), 0);
-			fatal(fml_render, (*ts)[i], gp, stax, staxa, staxp + 1, 0, 1);
-			map_delete((*ts)[i]->fmlv->ctx->bag, MMS("@"));
+			fatal(map_set, (*ts)[(*tsl)]->fmlv->ctx->bag, MMS("@"), MM((*stax)[staxp]), 0);
+			fatal(fml_render, (*ts)[(*tsl)], gp, stax, staxa, staxp + 1, 0, 1);
+			map_delete((*ts)[(*tsl)]->fmlv->ctx->bag, MMS("@"));
 
-			i++;
+			// write to temp file
+			fatal(fml_write, (*ts)[y], g_params.fab_pid, x, y);
+			(*tsl)++;
 		}
-
-		// execute all formulas in parallel processes - res is true if all formulas
-		// executed successfully
-		int bad = 0;
-		fatal(ts_execwave, *ts, i, tsw, x, L_BP | L_BPEXEC, L_FAB, &bad);
-
-		// harvest the results
-		for(y = 0; y < i; y++)
-		{
-			// SUCCESS if
-			//  pid      - it was executed
-			//  r_status - exit status of 0
-			//  r_signal - not killed by a signal
-			//  std_txt  - wrote nothing to stderr
-			if((*ts)[y]->pid && (*ts)[y]->r_status == 0 && (*ts)[y]->r_signal == 0 && (*ts)[y]->stde_txt->l == 0)
-			{
-				int q;
-				for(q = 0; q < (*ts)[y]->fmlv->productsl; q++)
-				{
-					// up-to-date
-					(*ts)[y]->fmlv->products[q]->invalid = 0;
-
-					// reload hashblock
-					fatal(hashblock_stat, (*ts)[y]->fmlv->products[q]->path->can, (*ts)[y]->fmlv->products[q]->hb);
-				}
-			}
-		}
-
-		if(bad)
-			failf(FAB_FMLFAIL, "%d formula(s) failed", bad);
 	}
 
-finally:
-	map_free(ws);
-coda;
+	finally : coda;
+}
+
+int bp_harvest(bp * bp)
+{
+#if 0
+	// harvest the results
+	int y = 0;
+	int i = 0;
+	for(y = 0; y < i; y++)
+	{
+		// SUCCESS if
+		//  pid      - it was executed
+		//  r_status - exit status of 0
+		//  r_signal - not killed by a signal
+		//  std_txt  - wrote nothing to stderr
+		if(ts[y]->pid && ts[y]->r_status == 0 && ts[y]->r_signal == 0 && ts[y]->stde_txt->l == 0)
+		{
+			int q;
+			for(q = 0; q < ts[y]->fmlv->productsl; q++)
+			{
+				// up-to-date
+				ts[y]->fmlv->products[q]->invalid = 0;
+
+				// reload hashblock
+				fatal(hashblock_stat, ts[y]->fmlv->products[q]->path->can, ts[y]->fmlv->products[q]->hb);
+			}
+		}
+	}
+#endif
+
+#if 0
+	if(bad)
+		failf(FAB_FMLFAIL, "%d formula(s) failed", bad);
+#endif
+
+	finally : coda;
 }
 
 void bp_dump(bp * bp)
@@ -695,4 +690,3 @@ void bp_xfree(bp ** const restrict bp)
 	bp_free(*bp);
 	*bp = 0;
 }
-
