@@ -27,27 +27,31 @@
 #include <sys/wait.h>
 
 #include "xlinux.h"
+#include "pstring.h"
 
 #include "global.h"
 
 #include "parseint.h"
 #include "macros.h"
+#include "say.h"
 
 // signal handling
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
+# if 0
 	char space[2048];
 	char * dst = space;
 	size_t sz = sizeof(space);
 	size_t z = 0;
 
-	z += znprintf(dst + z, sz - z, "fabd[%u] received %d { from pid : %ld", getpid(), signum, (long)info->si_pid);
+	z += znprintf(dst + z, sz - z, "fabw[%u] received %d { from pid : %ld", getpid(), signum, (long)info->si_pid);
 
 	if(signum == SIGCHLD)
 		z += znprintf(dst + z, sz - z, ", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
 
 	z += znprintf(dst + z, sz - z, " }\n");
 	int __attribute__((unused)) r = write(1, space, z);
+#endif
 }
 
 int main(int argc, char** argv)
@@ -58,9 +62,13 @@ int main(int argc, char** argv)
 	int fd = -1;
 	pid_t fab_pid = -1;
 	pid_t fabd_pid = -1;
+	size_t z;
 
-	size_t z = snprintf(space, sizeof(space), "fabw[%lu] started\n", (long)getpid());
-	int __attribute__((unused)) r = write(1, space, z);
+	pstring * ptmp = 0;
+
+#if 0
+	SAYF("fabw[%lu] started\n", (long)getpid());
+#endif
 
 	// unblock all signals
 	sigset_t all;
@@ -78,7 +86,7 @@ int main(int argc, char** argv)
 	{
 		if(x == SIGKILL || x == SIGSTOP || x == SIGSEGV) { }
 		else if(x == SIGINT || x == SIGQUIT || x == SIGTERM || x == SIGCHLD)
-			fatal(xsigaction, SIGINT, &action, 0);
+			fatal(xsigaction, x, &action, 0);
 		else
 			fatal(xsignal, x, SIG_IGN);
 	}
@@ -92,6 +100,7 @@ int main(int argc, char** argv)
     }
 #endif
 
+		// all of the fab ipc signals are in this range ; they are silently ignored by fabw
 		fatal(xsignal, x, SIG_IGN);
 	}
 
@@ -146,11 +155,12 @@ int main(int argc, char** argv)
 
 	// read fab/pid
 	snprintf(stem + z, sizeof(stem) - z, "/fab/pid");
-	fatal(gxopen, stem, O_RDONLY, &fd);
+	fatal(xopen, stem, O_RDONLY, &fd);
 	fatal(axread, fd, &fab_pid, sizeof(fab_pid));
 	
 finally:
 	fatal(ixclose, &fd);
+	psfree(ptmp);
 
 	if(XAPI_UNWINDING)
 	{

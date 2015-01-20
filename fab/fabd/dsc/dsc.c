@@ -175,13 +175,13 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * con
 		}
 	}
 
-	logf(L_DSC | L_DSCINFO, "DISCOVERY --- executes %3d cached ---", tsl);
+	logf(L_DSC | L_DSCINFO, "discovery --- executes %3d cached ---", tsl);
 
 	int newn = 0;
 	int newr = 0;
 	fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
 
-	logf(L_DSC | L_DSCEXEC, "DISCOVERY --- : %3d nodes and %3d edges", newn, newr);
+	logf(L_DSC | L_DSCEXEC, "discovery --- : %3d nodes and %3d edges", newn, newr);
 
 	finally : coda;
 }
@@ -239,14 +239,14 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int *
 		if(!n)
 			break;
 
-		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d for   %3d nodes", i, n);
+		logf(L_DSC | L_DSCINFO, "discovery %2d for %3d nodes", i, n);
 
 		int newn = 0;
 		int newr = 0;
 		fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, i);
 
 		// sum discovered objects
-		logf(L_DSC | L_DSCINFO, "DISCOVERY %3d found %3d nodes and %3d edges", i, newn, newr);
+		logf(L_DSC | L_DSCEXEC, "discovery %2d for %3d nodes found %3d nodes and %3d edges", i, n, newn, newr);
 		i++;
 	}
 

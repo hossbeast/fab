@@ -153,7 +153,7 @@ when calling non-xapi code, you have a couple of options.
 		int ___x = xapi_frame_depth();																																									\
 		if(xapi_frame_enter(__builtin_frame_address(0)) != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)))		\
 		{																																																								\
-			fail(0);																																												\
+			fail(0);																																																			\
 		}																																																								\
 		else if(___x == 0 && xapi_frame_depth() != 1)																																		\
 		{																																																								\

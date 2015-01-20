@@ -20,11 +20,15 @@
 
 #include "internal.h"
 
-#include "xstat.h"
+#include "Xstat.h"
 
-int API xstat(const char * path, struct stat * buf, int * r)
+int API xstat(const char * path, struct stat * buf)
 {
+#if 0
 	if((r && ((*r) = stat(path, buf)) != 0) || (!r && stat(path, buf) != 0))
+		fail(errno);
+#endif
+	if(stat(path, buf) != 0)
 		fail(errno);
 	
 finally:

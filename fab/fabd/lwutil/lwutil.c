@@ -174,6 +174,7 @@ int lw_exec(transform * gen, lwx ** ls)
 }
 
 static struct listwise_logging * logging = (struct listwise_logging[]) {{
+#if DEBUG || DEVEL
       .transform_token  = (uint64_t[]) { L_LWPARSE }
     , .transform_would  = listwise_would
     , .transform_log    = listwise_log
@@ -186,7 +187,6 @@ static struct listwise_logging * logging = (struct listwise_logging[]) {{
     , .opinfo_token     = (uint64_t[]) { L_LWOPINFO }
     , .opinfo_would     = listwise_would
     , .opinfo_log       = listwise_log
-#if DEBUG || DEVEL
     , .tokens_token     = (uint64_t[]) { L_LWTOKEN }
     , .tokens_would     = listwise_would
     , .tokens_log       = listwise_log

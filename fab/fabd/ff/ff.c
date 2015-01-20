@@ -429,6 +429,7 @@ void ff_teardown()
 
 void ff_dump(ff_file * const ff)
 {
+#if DEBUG || DEVEL
 	if(log_would(L_FF | L_FFFILE))
 	{
 		logf(L_FF | L_FFFILE			, "%20s : %s", "idstring"						, ff->idstring);
@@ -449,4 +450,5 @@ void ff_dump(ff_file * const ff)
 	logf(L_FF | L_FFFILE			, "%20s :", "tree");
 	ffn_dump(ff->ffn);
 	logs(L_FF | L_FFFILE, "");
+#endif
 }

@@ -41,28 +41,34 @@
 static int o_signum;
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
+	if(!o_signum)
+		o_signum = signum;
+
+#if 0
 	char space[2048];
 	char * dst = space;
 	size_t sz = sizeof(space);
 	size_t z = 0;
 
-	if(!o_signum)
-		o_signum = signum;
+	if(signum != SIGCHLD)
+	{
+		z += znprintf(dst + z, sz - z, "fab[%u] received %d { from pid : %ld", getpid(), signum, (long)info->si_pid);
+		if(signum == SIGCHLD)
+			z += znprintf(dst + z, sz - z, ", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
 
-	z += znprintf(dst + z, sz - z, "fab[%u] received %d { from pid : %ld", getpid(), signum, (long)info->si_pid);
-	if(signum == SIGCHLD)
-		z += znprintf(dst + z, sz - z, ", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
-
-	z += znprintf(dst + z, sz - z, " }\n");
+		z += znprintf(dst + z, sz - z, " }\n");
+	}
 	int __attribute__((unused)) r = write(1, space, z);
+#endif
 }
 
 static int bp_exec(int * good)
 {
 	pstring * tmp = 0;
-	int stdo_fd = -1;
-	int stde_fd = -1;
-	int exit_fd = -1;
+
+	pstring * stdo = 0;
+	pstring * stde = 0;
+	int fd = -1;
 
 	struct
 	{
@@ -71,10 +77,11 @@ static int bp_exec(int * good)
 		{
 			pid_t		pid;
 			int			num;		
-			char *	cmd;		// cmd
-			char *	stdo;		// out
-			char *	stde;		// err
-			char *	exit;		// exit
+			int			stdo_fd;
+			int			stde_fd;
+			char **	prod_type;
+			char ** prod_id;
+			size_t	prodl;
 		} * 		cmds;
 		size_t	cmdsl;
 		size_t	cmdsa;
@@ -85,6 +92,9 @@ static int bp_exec(int * good)
 
 	int x;
 	int y;
+	int i;
+
+	struct stat stb;
 
 	// directory containing the buildplan
 	fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.pid);
@@ -122,6 +132,8 @@ static int bp_exec(int * good)
 
 				typeof(stages[0].cmds[0]) * T = &stages[stagesl - 1].cmds[stages[stagesl - 1].cmdsl];
 				T->num = num;
+				T->stdo_fd = -1;
+				T->stde_fd = -1;
 				stages[stagesl - 1].cmdsl++;
 				cmdstot++;
 			}
@@ -131,7 +143,7 @@ static int bp_exec(int * good)
 	coda;
 	};
 
-	// traverse the buildpath directory structure
+	// traverse the buildplan directory structure
 	fatal(xnftw, tmp->s, fn, 32, 0);
 
 	// sort the stages ascending
@@ -144,10 +156,50 @@ static int bp_exec(int * good)
 	};
 	qsort(stages, stagesl, sizeof(*stages), compar);
 
+	// load the build products
+	for(x = 0; x < stagesl; x++)
+	{
+		for(i = 0; i < stages[x].cmdsl; i++)
+		{
+			fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/prod", g_params.pid, x, i);
+			fatal(xopen, tmp->s, O_RDONLY, &fd);
+
+			// get the filesize
+			fatal(xfstat, fd, &stb);	
+
+			// read the whole file
+			fatal(psgrow, &tmp, stb.st_size);
+			fatal(axread, fd, tmp->s, stb.st_size);
+
+			// fields are delimited by null bytes and come in pairs
+			int a = -1;
+			int b = -1;
+			while((a < stb.st_size) && (b < stb.st_size))
+			{
+				b = a + 1 + strlen(tmp->s + a + 1);
+				
+				if(b < stb.st_size)
+				{
+					fatal(xrealloc, &stages[x].cmds[i].prod_type, sizeof(*stages[x].cmds[0].prod_type), stages[x].cmds[i].prodl + 1, stages[x].cmds[i].prodl);
+					fatal(ixstrdup, &stages[x].cmds[i].prod_type[stages[x].cmds[i].prodl], tmp->s + a + 1);
+
+					fatal(xrealloc, &stages[x].cmds[i].prod_id, sizeof(*stages[x].cmds[0].prod_id), stages[x].cmds[i].prodl + 1, stages[x].cmds[i].prodl);
+					fatal(ixstrdup, &stages[x].cmds[i].prod_id[stages[x].cmds[i].prodl], tmp->s + b + 1);
+
+					stages[x].cmds[i].prodl++;
+
+					a = b + 1 + strlen(tmp->s + b + 1);
+				}
+			}
+		}
+	}
+
+	logf(L_BP | L_BPEXEC, "buildplan @ " XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.pid);
+
 	// execute stages
 	for(x = 0; x < stagesl; x++)
 	{
-		logf(L_BP | L_BPINFO, "STAGE %d of %d executing %d of %d", x, stagesl, stages[x].cmdsl, cmdstot);
+		logf(L_BP | L_BPINFO, "stage %2d of %2d executing %3d of %3d", x, stagesl, stages[x].cmdsl, cmdstot);
 
 		int step = stages[x].cmdsl;
 		if(g_args->concurrency > 0)
@@ -161,19 +213,20 @@ static int bp_exec(int * good)
 			if((j + step) > stages[x].cmdsl)
 				cmdsl = stages[x].cmdsl - j;
 
-			int i;
 			for(i = j; i < (j + cmdsl); i++)
 			{
-				fatal(ixsprintf, &stages[x].cmds[i].cmd, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", g_params.pid, x, i);
-				fatal(ixsprintf, &stages[x].cmds[i].stdo, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stdo", g_params.pid, x, i);
-				fatal(ixsprintf, &stages[x].cmds[i].stde, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stde", g_params.pid, x, i);
-				fatal(ixsprintf, &stages[x].cmds[i].exit, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.pid, x, i);
+				// open file for stdout
+				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stdo", g_params.pid, x, i);
+				fatal(ixclose, &stages[x].cmds[i].stdo_fd);
+				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stages[x].cmds[i].stdo_fd);
 
-				// open files for stdout/stderr
-				fatal(ixclose, &stdo_fd);
-				fatal(xopen_mode, stages[x].cmds[i].stdo, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stdo_fd);
-				fatal(ixclose, &stde_fd);
-				fatal(xopen_mode, stages[x].cmds[i].stde, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stde_fd);
+				// open file for stderr
+				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stde", g_params.pid, x, i);
+				fatal(ixclose, &stages[x].cmds[i].stde_fd);
+				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stages[x].cmds[i].stde_fd);
+
+				// path to the command
+				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", g_params.pid, x, i);
 
 				// fork off the child
 				fatal(xfork, &stages[x].cmds[i].pid);
@@ -183,25 +236,21 @@ static int bp_exec(int * good)
 					fatal(xclose, 0);
 					fatal(xopen, "/dev/null", O_RDONLY, 0);
 
-					// save stdout
+					// save stdout @ 501, then redirect to the file (dup2 calls close)
 					fatal(xdup2, 1, 501);
+					fatal(xdup2, stages[x].cmds[i].stdo_fd, 1);
 
-					// redirect stdout (dup2 calls close(1))
-					fatal(xdup2, stdo_fd, 1);
-
-					// save stderr
+					// save stderr @ 502, then redirect to the file (dup2 calls close)
 					fatal(xdup2, 2, 502);
-
-					// redirect stderr
-					fatal(xdup2, stde_fd, 2);
+					fatal(xdup2, stages[x].cmds[i].stde_fd, 2);
 
 					// exec doesnt return
-					execl(stages[x].cmds[i].cmd, stages[x].cmds[i].cmd, (void*)0);
+					execl(tmp->s, tmp->s, (void*)0);
 					fail(0);
 				}
 			}
 
-			// wait for each of them to complete
+			// harvest children 
 			int good = 0;
 			int fail = 0;
 			pid_t pid = 0;
@@ -215,23 +264,25 @@ static int bp_exec(int * good)
 				}
 
 				// save the exit status
-				fatal(ixclose, &exit_fd);
-				fatal(xopen_mode, stages[x].cmds[i].exit, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &exit_fd);
-				fatal(axwrite, exit_fd, &r, sizeof(r));
+				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.pid, x, i);
+				fatal(ixclose, &fd);
+				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+				fatal(axwrite, fd, &r, sizeof(r));
 
 				// not a clean exit
+				int bad = 0;
 				if((WIFEXITED(r) && WEXITSTATUS(r)) || WIFSIGNALED(r))
 				{
-					fail++;
+					bad = 1;
 				}
 				else
 				{
 					// wrote to stderr
 					off_t fsiz;
-					fatal(xlseek, stde_fd, 0, SEEK_END, &fsiz);
+					fatal(xlseek, stages[x].cmds[i].stde_fd, 0, SEEK_END, &fsiz);
 					if(fsiz)
 					{
-						fail++;
+						bad = 1;
 					}
 					else
 					{
@@ -239,36 +290,127 @@ static int bp_exec(int * good)
 					}
 				}
 
+				uint64_t tag = L_BP | L_BPEXEC;
+				if(bad)
+					tag |= L_ERROR;
+
+				if(log_would(tag))
+				{
+					for(y = 0; y < stages[x].cmds[i].prodl; y++)
+					{
+						if(y == 0)
+						{
+							log_start(tag);
+							logf(0, "[%2d,%3d] %s %s", x, i, stages[x].cmds[i].prod_type[y], stages[x].cmds[i].prod_id[y]);
+
+							if(WIFEXITED(r) && WEXITSTATUS(r))
+								logf(0, ", exit status : %d", x, i, stages[x].cmds[i].prod_type[y], stages[x].cmds[i].prod_id[y], WEXITSTATUS(r));
+							else if(WIFSIGNALED(r))
+								logf(0, ", signal : %d", x, i, stages[x].cmds[i].prod_type[y], stages[x].cmds[i].prod_id[y], WTERMSIG(r));
+
+							if((WIFEXITED(r) && WEXITSTATUS(r)) || WIFSIGNALED(r))
+								logf(0, ", details @ " XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d", g_params.pid, x, i);
+
+							log_finish();
+						}
+						else
+						{
+							logf(tag, "%*s %s %s", 8, "", stages[x].cmds[i].prod_type[y], stages[x].cmds[i].prod_id[y]);
+						}
+					}
+				}
+
+				if(bad)
+				{
+#if 0
+					// snarf command
+					fatal(ixclose, &fd);
+					fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", g_params.pid, x, i);
+					fatal(xopen, tmp->s, O_RDONLY, &fd);
+					fatal(xfstat, fd, &stb);
+					fatal(psgrow, &tmp, stb.st_size);
+					fatal(axread, fd, tmp->s, stb.st_size);
+
+					fatal(axwrite, 1, tmp->s, stb.st_size);
+
+					// snarf stdout
+					fatal(xfstat, stages[x].cmds[i].stdo_fd, &stb);
+					fatal(psgrow, &tmp, stb.st_size);
+					fatal(xlseek, stages[x].cmds[i].stdo_fd, 0, SEEK_SET, 0);
+					fatal(axread, stages[x].cmds[i].stdo_fd, tmp->s, stb.st_size);
+
+					fatal(axwrite, 1, tmp->s, stb.st_size);
+#endif
+
+					// snarf stderr
+					fatal(xfstat, stages[x].cmds[i].stde_fd, &stb);
+					size_t lim = 100;
+					size_t act = MIN(stb.st_size, lim);
+
+					fatal(psgrow, &tmp, stb.st_size);
+					fatal(xlseek, stages[x].cmds[i].stde_fd, 0, SEEK_SET, 0);
+					fatal(axread, stages[x].cmds[i].stde_fd, tmp->s, act);
+					
+					// chomp trailing whitespace
+					size_t end = act - 1;
+					while(end >= 0 && (tmp->s[end] == ' ' || tmp->s[end] == '\t' || tmp->s[end] == '\r' || tmp->s[end] == '\n'))
+						end--;
+
+					fatal(axwrite, 1, tmp->s, end);
+					fatal(axwrite, 1, "\n", 1);
+
+					if(stb.st_size > act)
+					{
+						fatal(psprintf, &tmp, " ... %d more\n", stb.st_size - end);
+						fatal(axwrite, 1, tmp->s, tmp->l);
+					}
+				}
+
+				if(bad)
+					fail++;
 				if((good + fail) == cmdsl)
 					break;
 			}
 
 			if(fail)
-				failf(FAB_FMLFAIL, "%d formula(s) failed", fail);
+				break;
+
+			// close all the files for that wave
+			for(i = j; i < (j + cmdsl); i++)
+			{
+				fatal(ixclose, &stages[x].cmds[i].stdo_fd);
+				fatal(ixclose, &stages[x].cmds[i].stde_fd);
+			}
 		}
+
+		if(j < stages[x].cmdsl)
+			break;
 	}
 
-	*good = 1;
+	if(x == stagesl)
+		*good = 1;
 
 finally:
-	psfree(tmp);
+
+	fatal(xclose, fd);
 
 	for(x = 0; x < stagesl; x++)
 	{
 		for(y = 0; y < stages[x].cmdsl; y++)
 		{
-			free(stages[x].cmds[y].cmd);
-			free(stages[x].cmds[y].stdo);
-			free(stages[x].cmds[y].stde);
-			free(stages[x].cmds[y].exit);
+			fatal(ixclose, &stages[x].cmds[y].stdo_fd);
+			fatal(ixclose, &stages[x].cmds[y].stde_fd);
+
+			free(stages[x].cmds[y].prod_type);
+			free(stages[x].cmds[y].prod_id);
 		}
 		free(stages[x].cmds);
 	}
 	free(stages);
 
-	fatal(ixclose, &stdo_fd);
-	fatal(ixclose, &stde_fd);
-	fatal(ixclose, &exit_fd);
+	psfree(tmp);
+	psfree(stdo);
+	psfree(stde);
 coda;
 }
 
@@ -290,7 +432,9 @@ int main(int argc, char** argv)
 
 	memblk * mb = 0;
 
-printf("fab[%ld]\n", (long)getpid());
+#if 0
+printf("fab[%ld] started\n", (long)getpid());
+#endif
 
 	int x;
 	size_t tracesz = 0;
@@ -356,6 +500,9 @@ printf("fab[%ld]\n", (long)getpid());
 #else
 	fatal(log_config, ~0);
 #endif
+
+	// default logger configuration
+	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0, L_INFO);
 
 /*
 /FABIPCDIR/<hash>/fabfile				<-- init fabfile path, symlink
@@ -430,7 +577,7 @@ printf("fab[%ld]\n", (long)getpid());
 	if(g_args->invalidationsz)
 	{
 		// fabd-pgid file
-		fatal(gxopen, space, O_RDONLY, &fd);
+		fatal(uxopen, space, O_RDONLY, &fd);
 
 		if(fd != -1)
 		{
@@ -454,7 +601,7 @@ printf("fab[%ld]\n", (long)getpid());
 	}
 
 	fatal(ixclose, &fd);
-	fatal(gxopen, space, O_RDONLY, &fd);
+	fatal(uxopen, space, O_RDONLY, &fd);
 
 	r = -1;
 	if(fd != -1)
@@ -513,12 +660,13 @@ printf("fab[%ld]\n", (long)getpid());
 	else
 	{
 		// awaken
-		fatal(xkill, -fabd_pgid, 1);
+		fatal(xkill, -fabd_pgid, FABSIG_START);
 	}
 	
 	// wait to hear back from fabd
+	o_signum = 0;
 	pause();
-	if(o_signum == 41)
+	if(o_signum == FABSIG_BPSTART)
 	{
 		// execute the buildplan
 		int good = 0;
@@ -526,20 +674,34 @@ printf("fab[%ld]\n", (long)getpid());
 
 		// notify fabd
 		if(good)
-			fatal(uxkill, -fabd_pgid, 41, &r);
+			fatal(uxkill, -fabd_pgid, FABSIG_BPGOOD, &r);
 		else
-			fatal(uxkill, -fabd_pgid, 42, &r);
+			fatal(uxkill, -fabd_pgid, FABSIG_BPBAD, &r);
+
+		o_signum = 0;
+		pause();
 	}
+
+#if 0
+	if(o_signum == FABSIG_DONE)
+	{
+		// no buildplan
+	}
+	else
+	{
+		fail(FAB_BADIPC);
+	}
+#endif
 
 	// check fabd-exit file
 	snprintf(space + z, sizeof(space) - z, "/fabd/exit");
 	fatal(ixclose, &fd);
-	fatal(gxopen, space, O_RDONLY, &fd);
+	fatal(uxopen, space, O_RDONLY, &fd);
 
-	if(fd == 0)
+	if(fd != -1)
 	{
 		fatal(axread, fd, &fabd_exit, sizeof(fabd_exit));
-		if(WTERMSIG(fabd_exit))
+		if((WIFEXITED(fabd_exit) && WTERMSIG(fabd_exit)) || WIFSIGNALED(fabd_exit))
 		{
 			fail(FAB_FABDFAIL);
 		}
@@ -558,8 +720,11 @@ finally:
 	{
 		if(fabd_exit)
 		{
-			XAPI_INFOF("status", "%d", WEXITSTATUS(fabd_exit));
-			XAPI_INFOF("signal", "%d", WTERMSIG(fabd_exit));
+			if(WIFEXITED(fabd_exit))
+				XAPI_INFOF("status", "%d", WEXITSTATUS(fabd_exit));
+
+			if(WIFSIGNALED(fabd_exit))
+				XAPI_INFOF("signal", "%d", WTERMSIG(fabd_exit));
 		}
 	}
 
@@ -573,10 +738,6 @@ finally:
 			tracesz = xapi_trace_pithy(space, sizeof(space));
 
 		logw(L_RED, space, tracesz);
-	}
-	else
-	{
-		logs(L_INFO, "exiting with status : 0");
 	}
 
 	log_teardown();

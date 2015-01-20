@@ -36,10 +36,10 @@ xapi API axreadv(int fd, const struct iovec * iov, int iovcnt)
 		expected += iov[x].iov_len;
 
 	if(actual != expected)
-		fail(XLINUX_LESS);
+		tfail(perrtab_XLINUX, XLINUX_LESS);
 
 finally:
-	if(XAPI_ERRCODE == XLINUX_LESS)
+	if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
 	{
 		XAPI_INFOF("expected", "%zd", expected);
 		XAPI_INFOF("actual", "%zd", actual);
@@ -64,10 +64,10 @@ xapi API axwritev(int fd, const struct iovec * iov, int iovcnt)
 		expected += iov[x].iov_len;
 
 	if(actual != expected)
-		fail(XLINUX_LESS);
+		tfail(perrtab_XLINUX, XLINUX_LESS);
 
 finally:
-	if(XAPI_ERRCODE == XLINUX_LESS)
+	if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
 	{
 		XAPI_INFOF("expected", "%zd", expected);
 		XAPI_INFOF("actual", "%zd", actual);

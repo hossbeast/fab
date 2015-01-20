@@ -124,12 +124,10 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 		}
 	}
 
-#if 0
 	if(l == 0)
 	{
 		failf(FAB_NOSELECT, "selector : %s matches nothing", s->s);
 	}
-#endif
 
 	finally : coda;
 }

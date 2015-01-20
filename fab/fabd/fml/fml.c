@@ -364,6 +364,9 @@ coda;
 
 int fml_write(ts * const restrict ts, pid_t pid, int stage, int num)
 {
+	pstring * tmp = 0;
+	int fd = -1;
+
 	//
 	// create pid-fml-dir
 	//
@@ -376,22 +379,29 @@ int fml_write(ts * const restrict ts, pid_t pid, int stage, int num)
 	// create tmp file for the cmd
 	fatal(psprintf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", pid, stage, num);
 	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &ts->cmd_fd);
-
-	// write the cmd to the tmp file
-	fatal(xwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l, 0);
+	fatal(axwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l);
 	fatal(xclose, ts->cmd_fd);
 
-#if 0
-	// create tmp file to capture stdout
-	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/out", pid, stage, num);
-	fatal(xopen_mode, ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &ts->stdo_fd);
-
-	// create tmp file to capture stderr
-	fatal(psprintf, &ts->stde_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", pid, stage, num);
-	fatal(xopen_mode, ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &ts->stde_fd);
-#endif
-
-	finally : coda;
+	// write the type and id of each product of the fmlv to the prod file
+	fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/prod", pid, stage, num);
+	fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &fd);
+	int x;
+	for(x = 0; x < ts->fmlv->productsl; x++)
+	{
+		fatal(axwritev, fd, (struct iovec[]){
+					{ .iov_base = GN_TYPE_STR(ts->fmlv->products[x]->type), .iov_len = strlen(GN_TYPE_STR(ts->fmlv->products[x]->type)) }
+				, { .iov_base = "\0", .iov_len = 1 }
+				, { .iov_base = ts->fmlv->products[x]->idstring, .iov_len = ts->fmlv->products[x]->idstringl }
+				, { .iov_base = "\0", .iov_len = 1 }
+			}
+			, 4
+		);
+	}
+	
+finally:
+	psfree(tmp);
+	fatal(ixclose, &fd);
+coda;
 }
 
 int fml_exec(ts * const restrict ts, int num)

@@ -543,9 +543,9 @@ int bp_prepare(bp * bp, transform_parser * const gp, lwx *** stax, int * staxa, 
 	int x;
 	int y;
 
-	// determine how many threads are needed ; it is the max stage size
+	// allocate enough ts for every eval in the buildplan
 	for(x = 0; x < bp->stages_l; x++)
-		tsz = MAX(tsz, bp->stages[x].evals_l);
+		tsz += bp->stages[x].evals_l;
 
 	// ensure I have enough threadspace
 	fatal(ts_ensure, ts, tsa, tsz);
@@ -574,7 +574,7 @@ int bp_prepare(bp * bp, transform_parser * const gp, lwx *** stax, int * staxa, 
 			map_delete((*ts)[(*tsl)]->fmlv->ctx->bag, MMS("@"));
 
 			// write to temp file
-			fatal(fml_write, (*ts)[y], g_params.fab_pid, x, y);
+			fatal(fml_write, (*ts)[*tsl], g_params.fab_pid, x, y);
 			(*tsl)++;
 		}
 	}
@@ -584,38 +584,50 @@ int bp_prepare(bp * bp, transform_parser * const gp, lwx *** stax, int * staxa, 
 
 int bp_harvest(bp * bp)
 {
-#if 0
-	// harvest the results
-	int y = 0;
-	int i = 0;
-	for(y = 0; y < i; y++)
-	{
-		// SUCCESS if
-		//  pid      - it was executed
-		//  r_status - exit status of 0
-		//  r_signal - not killed by a signal
-		//  std_txt  - wrote nothing to stderr
-		if(ts[y]->pid && ts[y]->r_status == 0 && ts[y]->r_signal == 0 && ts[y]->stde_txt->l == 0)
-		{
-			int q;
-			for(q = 0; q < ts[y]->fmlv->productsl; q++)
-			{
-				// up-to-date
-				ts[y]->fmlv->products[q]->invalid = 0;
+	pstring * tmp = 0;
+	int fd = -1;
+	struct stat stb;
 
-				// reload hashblock
-				fatal(hashblock_stat, ts[y]->fmlv->products[q]->path->can, ts[y]->fmlv->products[q]->hb);
+	int x;
+	int y;
+	for(x = 0; x < bp->stages_l; x++)
+	{
+		for(y = 0; y < bp->stages[x].evals_l; y++)
+		{
+			// verify the exit status was saved and that it is zero
+			int r;
+			fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.fab_pid, x, y);
+			fatal(ixclose, &fd);
+			fatal(uxopen, tmp->s, O_RDONLY, &fd);
+			if(fd != -1)
+			{
+				fatal(axread, fd, (void*)&r, sizeof(r));
+				if(r == 0)
+				{
+					// verify that stderr was saved and contains nothing
+					fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stde", g_params.fab_pid, x, y);
+					fatal(uxstat, tmp->s, &stb, &r);
+					if(r == 0 && stb.st_size == 0)
+					{
+						int q;
+						for(q = 0; q < bp->stages[x].evals[y]->productsl; q++)
+						{
+							// up-to-date
+							bp->stages[x].evals[y]->products[q]->invalid = 0;
+
+							// reload hashblock
+							fatal(hashblock_stat, bp->stages[x].evals[y]->products[q]->path->can, bp->stages[x].evals[y]->products[q]->hb);
+						}
+					}
+				}
 			}
 		}
 	}
-#endif
 
-#if 0
-	if(bad)
-		failf(FAB_FMLFAIL, "%d formula(s) failed", bad);
-#endif
-
-	finally : coda;
+finally:
+	psfree(tmp);
+	fatal(ixclose, &fd);
+coda;
 }
 
 void bp_dump(bp * bp)

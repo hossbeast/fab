@@ -45,28 +45,10 @@
 #include "map.h"
 #include "memblk.h"
 #include "unitstring.h"
-
-#define SAYS(s) do {								\
-	fatal(axwrite, 1, s, strlen(s));	\
-} while(0)
-
-#define SAYF(fmt, ...) do {											\
-	fatal(psprintf, &ptmp, fmt, ##__VA_ARGS__);		\
-	fatal(axwrite, 1, ptmp->s, ptmp->l);					\
-} while(0)
-
-#define CENTER(w, fmt, ...) ({																		\
-	int act = snprintf(0, 0, fmt, ##__VA_ARGS__);										\
-	snprintf(space, sizeof(space), "%*s"fmt"%*s"										\
-		, (MAX(w - act, 0) / 2) + ((MAX(w - act, 0) % 2) ? 1 : 0), ""	\
-		, ##__VA_ARGS__																								\
-		, (MAX(w - act, 0) / 2), ""																		\
-	);																															\
-	space;																													\
-})
+#include "say.h"
 
 // errors to report and continue, otherwise exit
-int fab_swallow[] = {
+static int fab_swallow[] = {
 	  [ FAB_SYNTAX ] = 1
 	, [ FAB_ILLBYTE ] = 1
 	, [ FAB_UNSATISFIED ] = 1
@@ -114,13 +96,14 @@ static pstring * 					ptmp;
 static int o_signum;
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
+	if(!o_signum)
+		o_signum = signum;
+
+#if 0
 	char space[2048];
 	char * dst = space;
 	size_t sz = sizeof(space);
 	size_t z = 0;
-
-	if(!o_signum)
-		o_signum = signum;
 
 	if(signum != SIGCHLD)
 	{
@@ -134,6 +117,7 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 	}
 
 	int __attribute__((unused)) r = write(1, space, z);
+#endif
 }
 
 static int loop()
@@ -144,6 +128,7 @@ static int loop()
 	char space[256];
 
 	// reset some stuff
+	tsl = 0;
 	fabricationsl = 0;
 	fabricationxsl = 0;
 	fabricationnsl = 0;
@@ -266,6 +251,16 @@ static int loop()
 
 	if(g_args->selectors_arequery)
 	{
+#define CENTER(w, fmt, ...) ({																		\
+	int act = snprintf(0, 0, fmt, ##__VA_ARGS__);										\
+	snprintf(space, sizeof(space), "%*s"fmt"%*s"										\
+		, (MAX(w - act, 0) / 2) + ((MAX(w - act, 0) % 2) ? 1 : 0), ""	\
+		, ##__VA_ARGS__																								\
+		, (MAX(w - act, 0) / 2), ""																		\
+	);																															\
+	space;																													\
+})
+
 		SAYF(" %-40s | %-13s | %-11s | %-11s | %s\n", "id", "type", "degree", "invalidated", "reason");
 		for(x = 0; x < queriesl; x++)
 		{
@@ -396,13 +391,13 @@ static int loop()
 						fatal(bp_prepare, plan, ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
 
 						// work required ; notify fab
-						fatal(uxkill, g_params.fab_pid, 41, 0);
+						fatal(uxkill, g_params.fab_pid, FABSIG_BPSTART, 0);
 
 						// await response
 						o_signum = 0;
 						pause();
 
-						if(o_signum == 41)
+						if(o_signum == FABSIG_BPGOOD)
 						{
 							// plan was executed successfully ; update nodes for all products
 							for(x = 0; x < tsl; x++)
@@ -416,8 +411,18 @@ static int loop()
 									fatal(hashblock_stat, tsp[x]->fmlv->products[y]->path->can, tsp[x]->fmlv->products[y]->hb);
 								}
 							}
+
+#if 0
+							logs(L_BPINFO, "updated");
+							for(x = 0; x < fabricationsl; x++)
+								logf(L_BPINFO, " %s", (*fabrications[x])->idstring);
+							for(x = 0; x < fabricationxsl; x++)
+								logf(L_BPINFO, " %s", (*fabricationxs[x])->idstring);
+							for(x = 0; x < fabricationnsl; x++)
+								logf(L_BPINFO, " %s", (*fabricationns[x])->idstring);
+#endif
 						}
-						else if(o_signum == 42)
+						else if(o_signum == FABSIG_BPBAD)
 						{
 							// plan failed ; harvest the results
 							fatal(bp_harvest, plan);
@@ -460,7 +465,9 @@ int main(int argc, char** argv)
 	struct timespec time_start = {};
 	struct timespec time_end = {};
 
+#if 0
 SAYF("fabd[%ld] started\n", (long)getpid());
+#endif
 
 	// unblock all signals
 	sigset_t all;
@@ -525,8 +532,8 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	lw_configure_logging();
 #endif
 
-	// default logger configuration
-	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPEXEC|DSCINFO|DSCEXEC", 0, 0, L_INFO);
+	// default logger configuration (should match the other invocation of log_parse
+	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0, L_INFO);
 
 	// other initializations
 	fatal(tmp_setup);
@@ -553,7 +560,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 		// read fab/pid
 		snprintf(space, sizeof(space), "%s/fab/pid", stem);
 		fatal(ixclose, &fd);
-		fatal(gxopen, space, O_RDONLY, &fd);
+		fatal(uxopen, space, O_RDONLY, &fd);
 
 		r = -1;
 		if(fd == -1)
@@ -635,7 +642,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 #endif
 
 			// default tags - do not describe, that as done previously
-			fatal(log_parse, "+ERROR|WARN|INFO|BPEXEC|DSCINFO", 0, 0);
+			fatal(log_parse, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0);
 
 			// user-specified
 			if(logvsl)
@@ -725,6 +732,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			}
 			else
 			{
+				x = 0;
 				if(g_args->rootvarsl == 0)
 				{
 					// check for fabfile changes
@@ -775,9 +783,8 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 				/*
 				** populate the base frame
-				**
-				XAPI_FRAME_SET(perrtab, 0);
 				*/
+				XAPI_FRAME_SET(perrtab, 0);
 
 #if DEBUG || DEVEL
 				if(mode == MODE_BACKTRACE_FULL)
@@ -795,12 +802,29 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			// stop measuring
 			fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
 
-			// task complete : notify fab
-			fatal(uxkill, g_params.fab_pid, 40, 0);
-
 			z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
 			logf(L_INFO, "elapsed : %.*s", (int)z, space);
-			logf(L_INFO, "usage : mem(%d), lwx(%d), gn(%d), ts(%d)", 0, staxa, gn_nodes.a, tsa);
+
+#if DEBUG || DEVEL
+			if(log_would(L_USAGE))
+			{
+				// check memory usage
+				snprintf(space, sizeof(space), "/proc/self/statm");
+				fatal(ixclose, &fd);
+				fatal(uxopen, space, O_RDONLY, &fd);
+
+				long pgz = 0;
+				if(fd != -1)
+				{
+					fatal(xread, fd, space, sizeof(space), 0);
+					sscanf(space, "%*d %ld", &pgz);
+				}
+				logf(L_USAGE, "usage : mem(%s), lwx(%d), gn(%d), ts(%d)", bytestring(pgz * g_params.pagesize), staxa, gn_nodes.a, tsa);
+			}
+#endif
+
+			// task complete : notify fab
+			fatal(uxkill, g_params.fab_pid, FABSIG_DONE, 0);
 
 			// timer reset
 			memset(&time_start, 0, sizeof(time_start));

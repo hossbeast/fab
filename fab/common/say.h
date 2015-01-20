@@ -15,39 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XFCNTL_H
-#define _XFCNTL_H
+#ifndef _FAB_SAY_H
+#define _FAB_SAY_H
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+/*
 
-/// xopen
-//
-// SUMMARY
-//  proxy for open
-//
-int xopen(const char * path, int flags, int * const fd);
+these macros provide a convenient way of writing to stdout
 
-/// uxopen
-//
-// SUMMARY
-//  proxy for open that only fails when errno != ENOENT
-//
-int uxopen(const char * path, int flags, int * const fd);
+ptmp must be in scope
 
-/// xopen_mode
-//
-// SUMMARY
-//  proxy for open
-//
-int xopen_mode(const char * path, int flags, mode_t mode, int * const fd);
+*/
 
-/// xopen_mode
-//
-// SUMMARY
-//  proxy for open that only fails when errno != ENOENT
-//
-int uxopen_mode(const char * path, int flags, mode_t mode, int * const fd);
+#define SAYW(s, l) do {							\
+	fatal(axwrite, 1, s, l);					\
+} while(0)
+
+#define SAYS(s) SAYW(s, strlen(s))
+
+#define SAYF(fmt, ...) do {											\
+	fatal(psprintf, &ptmp, fmt, ##__VA_ARGS__);		\
+	fatal(axwrite, 1, ptmp->s, ptmp->l);					\
+} while(0)
 
 #endif

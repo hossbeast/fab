@@ -34,7 +34,7 @@ finally:
 coda;
 }
 
-int API gxopen(const char * path, int flags, int * const fd)
+int API uxopen(const char * path, int flags, int * const fd)
 {
 	if((*fd = open(path, flags)) == -1)
 	{
@@ -62,7 +62,7 @@ finally:
 coda;
 }
 
-int API gxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
+int API uxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 {
 	if((*fd = open(path, flags, mode)) == -1)
 	{

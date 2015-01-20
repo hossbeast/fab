@@ -112,6 +112,8 @@ API void xapi_callstack_unwindto(int frame)
 
 	// reset frame pointer to specified depth
 	callstack->l = frame;
+
+	callstack->v[callstack->l - 1]->code = 0;
 }
 
 API memblk * xapi_callstack_freeze()

@@ -73,6 +73,9 @@ int params_setup()
 		g_params.procs = 0;
 	}
 
+	// page size
+	g_params.pagesize = sysconf(_SC_PAGESIZE);
+
 	finally : coda;
 }
 

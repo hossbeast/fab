@@ -102,9 +102,9 @@ char* durationstring_r(int base, char* s, int l)
 	int components[5] = { 0 };
 
 	decompose(base, config, sizeof(config) / sizeof(config[0]), components);
-	int c = reconstruct(config, sizeof(config) / sizeof(config[0]), components, s, l);
+	/* int c = */ reconstruct(config, sizeof(config) / sizeof(config[0]), components, s, l);
 
-	sprintf(s + c, " or %us", base);
+//	sprintf(s + c, " or %us", base);
 
 	return s;
 }
@@ -121,17 +121,17 @@ char* bytestring_r(int base, char* s, int l)
 {
 	dec_config config[] = {
       { .name = "byte(s)" }
-    , { .name = "kbyte(s)",	.quant = 1 << 10 }
-    , { .name = "meg(s)",		.quant = 1 << 10 }
-    , { .name = "gig(s)",		.quant = 1 << 10 }
+    , { .name = "KB",	.quant = 1 << 10 }
+    , { .name = "MB",		.quant = 1 << 10 }
+    , { .name = "GB",		.quant = 1 << 10 }
   };
 
 	int components[4] = { 0 };
 
 	decompose(base, config, sizeof(config) / sizeof(config[0]), components);
-	int c = reconstruct(config, sizeof(config) / sizeof(config[0]), components, s, l);
+	/* int c =*/ reconstruct(config, sizeof(config) / sizeof(config[0]), components, s, l);
 
-	sprintf(s + c, " or %ub", base);
+//	sprintf(s + c, " or %ub", base);
 
 	return s;
 }

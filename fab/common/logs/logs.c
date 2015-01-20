@@ -24,7 +24,8 @@ struct g_logs_t logs[] = {
 	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
 	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
 	, { .v = L_PARAMS		, .s = "PARAMS"		, .d = "program execution parameters" }
-#if DEVEL
+#if DEBUG || DEVEL
+	, { .v = L_USAGE		, .s = "USAGE"		, .d = "fabd resource usage" }
 	, { .v = L_FFTOKEN	, .s = "FFTOKEN"	, .d = "fabfile parsing - token stream" }
 	, { .v = L_FFSTATE	, .s = "FFSTATE"	, .d = "fabfile parsing - lexer states" }
 	, { .v = L_FFTREE		, .s = "FFTREE"		, .d = "fabfile parsing - parsed tree" }
@@ -52,7 +53,7 @@ struct g_logs_t logs[] = {
 	, { .v = L_SELECT		, .s = "SELECT"		, .d = "node selectors" }
 	, { .v = L_LISTS		, .s = "LISTS"		, .d = "node lists" }
 	, { .v = L_INVALID	, .s = "INVALID"	, .d = "node invalidation" }
-#if DEVEL
+#if DEBUG || DEVEL
 	, { .v = L_LWEXEC		, .s = "LWEXEC"		, .d = "liblistwise - execution" }
 	, { .v = L_LWOPINFO	, .s = "LWOPINFO"	, .d = "liblistwise - operator info messages" }
 	, { .v = L_LWPARSE	, .s = "LWPARSE"	, .d = "liblistwise - transform parsing" }

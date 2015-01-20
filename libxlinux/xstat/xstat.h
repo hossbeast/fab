@@ -29,7 +29,7 @@
 // SUMMARY
 //  proxy for stat
 //
-int xstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
+int xstat(const char * restrict path, struct stat * restrict buf)
 	__attribute__((nonnull(1, 2)));
 
 /// uxstat
