@@ -308,7 +308,7 @@ static int bp_exec(int * good)
 							else if(WIFSIGNALED(r))
 								logf(0, ", signal : %d", x, i, stages[x].cmds[i].prod_type[y], stages[x].cmds[i].prod_id[y], WTERMSIG(r));
 
-							if((WIFEXITED(r) && WEXITSTATUS(r)) || WIFSIGNALED(r))
+							if(bad)
 								logf(0, ", details @ " XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d", g_params.pid, x, i);
 
 							log_finish();
@@ -355,6 +355,7 @@ static int bp_exec(int * good)
 					size_t end = act - 1;
 					while(end >= 0 && (tmp->s[end] == ' ' || tmp->s[end] == '\t' || tmp->s[end] == '\r' || tmp->s[end] == '\n'))
 						end--;
+					end++;
 
 					fatal(axwrite, 1, tmp->s, end);
 					fatal(axwrite, 1, "\n", 1);
@@ -711,6 +712,13 @@ printf("fab[%ld] started\n", (long)getpid());
 		// in this case, fabd should still be running
 		fatal(xkill, -fabd_pgid, 0);
 	}
+
+	// touch stamp file
+	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
+	fatal(ixclose, &fd);
+	fatal(uxopen_mode, space, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+	if(fd != -1)
+		fatal(xfutimens, fd, 0);
 
 finally:
 	fatal(ixclose, &fd);

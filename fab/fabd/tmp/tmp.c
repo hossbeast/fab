@@ -26,7 +26,6 @@
 
 #include "tmp.h"
 #include "params.h"
-#include "identity.h"
 
 #include "logs.h"
 #include "global.h"
@@ -34,16 +33,21 @@
 #include "macros.h"
 #include "args.h"
 
+/*
+** time after which fabd will delete unknown entries in the tmp directory
+** directories for related processes are (also) deleted on another schedule
+*/
+#define EXPIRATION_POLICY (60 * 60 * 24) 		// 24 hours
+
 //
 // public
 //
 
-int tmp_setup()
+int tmp_cleanup(pid_t * dels, size_t delsl)
 {
 	char space[512];
 
-	// temporarily assume fabsys identity
-	fatal(identity_assume_fabsys);
+	time_t now = time(0);
 
 	//
 	// TMPDIR/pid
@@ -63,10 +67,35 @@ int tmp_setup()
 			fails(FAB_BADTMP, "not numeric"); // dirname consists of something other than <pid>
 		}
 
-		// pid is myself, or it is unkillable
-		if(pid == g_params.pid || kill(pid, 0))
+		// not presently executing
+		if(kill(pid, 0))
 		{
-			fatal(rmdir_recursive, fpath, 1, FAB_BADTMP);
+			int r = 1;
+			int x;
+			for(x = 0; x < delsl; x++)
+			{
+				if(pid == dels[x])
+					break;
+			}
+
+			if(x == delsl)	// not in dels
+			{
+				// check stamp file
+				snprintf(space, sizeof(space), "%s/%s", fpath, "stamp");
+
+				struct stat stb;
+				fatal(uxstat, space, &stb, &r);
+
+				// directory does not contain a stamp file, or the stamp file is older than the expiration policy
+				if(r == 0 && ((now - stb.st_atim.tv_sec) > EXPIRATION_POLICY))
+					r = 1;
+			}
+
+			// directory is for del, does not contain a stamp file, or the stamp file is older than the expiration policy
+			if(r)
+			{
+				fatal(rmdir_recursive, fpath, 1, FAB_BADTMP);
+			}
 		}
 
 	finally :
@@ -75,13 +104,6 @@ int tmp_setup()
 	};
 
 	fatal(xnftw_nth, XQUOTE(FABTMPDIR) "/pid", fn, 32, 0, 1);
-
-	// ensure directories for my own pid exist
-	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/fml", g_params.pid);
-	fatal(mkdirp, space, S_IRWXU | S_IRWXG | S_IRWXO);
-
-	// resume user identity
-	fatal(identity_assume_user);
 
 	finally : coda;
 }

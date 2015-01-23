@@ -18,7 +18,14 @@
 #ifndef _TMP_H
 #define _TMP_H
 
-int tmp_setup();
+/// tmp_cleanup
+//
+// SUMMARY
+//  delete directory entries in the tmp dir that have expired
+//
+// PARAMETERS
+//  pid - delete directory for this pid even if it has not yet expired
+//
+int tmp_cleanup(pid_t * dels, size_t delsl);
 
 #endif
-

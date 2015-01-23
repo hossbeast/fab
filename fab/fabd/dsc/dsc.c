@@ -153,6 +153,7 @@ static int dsc_execwave(
 int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
 	int tsl = 0;
+	int n = 0;
 	int x;
 	int y;
 
@@ -168,86 +169,73 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * con
 
 				(*ts)[tsl++]->fmlv = (*list[x])->dscvs[y];
 			}
-		}
-		else
-		{
-			// warn
+			n++;
 		}
 	}
 
-	logf(L_DSC | L_DSCINFO, "discovery --- executes %3d cached ---", tsl);
+	logf(L_DSC | L_DSCEXEC, "discovery @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
+	logf(L_DSC | L_DSCINFO, "discovery -- for %3d nodes", n);
 
 	int newn = 0;
 	int newr = 0;
 	fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
 
-	logf(L_DSC | L_DSCEXEC, "discovery --- : %3d nodes and %3d edges", newn, newr);
+	logf(L_DSC | L_DSCEXEC, "discovery -- for %3d nodes found %3d nodes and %3d edges", n, newn, newr);
 
 	finally : coda;
 }
 
 int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
-	static int dsc_instance;
-
 	int x;
 	int y;
 	
-	// increases monotonically with each dsc_exec
-	dsc_instance++;
-
-	int i = 0;
-	while(1)
+	// assign each threadspace a discovery formula evaluation context
+	int tsl = 0;
+	int n = 0;
+	for(x = 0; x < gn_nodes.l; x++)
 	{
-		// assign each threadspace a discovery formula evaluation context
-		int tsl = 0;
-		int n = 0;
-		for(x = 0; x < gn_nodes.l; x++)
+		if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY)
 		{
-			if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY && gn_nodes.e[x]->mark != dsc_instance)
+			fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
+			if(gn_nodes.e[x]->hb->stathash[1] == 0)
 			{
-				gn_nodes.e[x]->mark = dsc_instance;
+				gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
+			}
+			else if(hashblock_cmp(gn_nodes.e[x]->hb))
+			{
+				gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+			}
 
-				fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
-				if(gn_nodes.e[x]->hb->stathash[1] == 0)
+			// require discovery
+			if(GN_IS_INVALID(gn_nodes.e[x]) && gn_nodes.e[x]->dscvsl)
+			{
+				gn_nodes.e[x]->invalid |= GN_INVALIDATION_DISCOVERY;
+
+				for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
 				{
-					gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
+					fatal(ts_ensure, ts, tsa, tsl + 1);
+					ts_reset((*ts)[tsl]);
+
+					(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
 				}
-				else if(hashblock_cmp(gn_nodes.e[x]->hb))
-				{
-					gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
-				}
 
-				// require discovery
-				if(GN_IS_INVALID(gn_nodes.e[x]) && gn_nodes.e[x]->dscvsl)
-				{
-					gn_nodes.e[x]->invalid |= GN_INVALIDATION_DISCOVERY;
-
-					for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
-					{
-						fatal(ts_ensure, ts, tsa, tsl + 1);
-						ts_reset((*ts)[tsl]);
-
-						(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
-					}
-
-					n++;
-				}
+				n++;
 			}
 		}
+	}
 
-		if(!n)
-			break;
-
-		logf(L_DSC | L_DSCINFO, "discovery %2d for %3d nodes", i, n);
+	if(n)
+	{
+		logf(L_DSC | L_DSCEXEC, "discovery @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
+		logf(L_DSC | L_DSCINFO, "discovery %2d for %3d nodes", 0, n);
 
 		int newn = 0;
 		int newr = 0;
-		fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, i);
+		fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
 
 		// sum discovered objects
-		logf(L_DSC | L_DSCEXEC, "discovery %2d for %3d nodes found %3d nodes and %3d edges", i, n, newn, newr);
-		i++;
+		logf(L_DSC | L_DSCEXEC, "discovery %2d for %3d nodes found %3d nodes and %3d edges", 0, n, newn, newr);
 	}
 
 	finally : coda;

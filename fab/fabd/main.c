@@ -57,6 +57,7 @@ static int fab_swallow[] = {
 	, [ FAB_BADPLAN ] = 1
 	, [ FAB_CYCLE ] = 1
 	, [ FAB_NOSELECT ] = 1
+	, [ FAB_DSCPARSE ] = 1
 };
 
 static ff_parser *				ffp = 0;				// fabfile parser
@@ -91,6 +92,7 @@ static gn ***							queries = 0;
 static int								queriesl = 0;
 
 static pstring * 					ptmp;
+static pid_t							fab_pids[3];
 
 // signal handling
 static int o_signum;
@@ -225,6 +227,7 @@ static int loop()
 
 		if(repeat_discovery)
 		{
+SAYS("repeat discovery due to invalidations\n");
 			// repeat dependency discovery if any primary nodes that have dscvs were invalidated
 			fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
 		}
@@ -536,7 +539,6 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0, L_INFO);
 
 	// other initializations
-	fatal(tmp_setup);
 	fatal(gn_init);
 	fatal(traverse_init);
 	fatal(ff_mkparser, &ffp);
@@ -831,6 +833,13 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			memset(&time_end, 0, sizeof(time_end));
 		}
 
+		// cleanup tmp dir, including specifically the last fab pid we are tracking
+		fatal(tmp_cleanup, &fab_pids[sizeof(fab_pids) / sizeof(fab_pids[0]) - 1], 1);
+
+		// cycle fab pids
+		memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
+		fab_pids[0] = g_params.fab_pid;
+
 #if REQUIRE_LISTENER
 		// wait for next command
 		o_signum = 0;
@@ -840,8 +849,21 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 #endif
 	}
 
-finally:
+	// touch stamp file
+	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
+	fatal(ixclose, &fd);
+	fatal(uxopen_mode, space, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+	if(fd != -1)
+	  fatal(xfutimens, fd, 0);
 
+	// cycle in my own pid
+	memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
+	fab_pids[0] = g_params.pid;
+
+	// cleanup tmp dir, including specifically all of the fab pids we are tracking and my own pid
+	fatal(tmp_cleanup, fab_pids, sizeof(fab_pids) / sizeof(fab_pids[0]));
+
+finally:
 	ff_freeparser(ffp);
 	bp_free(plan);
 	map_free(rmap);

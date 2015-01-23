@@ -28,6 +28,7 @@
 #include "pstring.h"
 
 #include "global.h"
+#include "macros.h"
 
 void ts_reset(ts * ts)
 {
@@ -102,7 +103,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 	{
 		// launch all of the commands
 		for(x = j; x < (j + step) && x < n; x++)
-			fatal(fml_exec, ts[x], ((*waveid) * 1000) + x);
+			fatal(fml_exec, ts[x], x);// ((*waveid) * 1000) + x);
 
 		// wait for each of them to complete
 		pid_t pid = 0;
@@ -163,6 +164,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 			if(e)
 				(*bad)++;
 
+			// build products
 			int k = 0;
 			while(1)
 			{
@@ -176,29 +178,25 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				{
 					if(log_start(hi | e))
 					{
-						logf(0, "[%2d,%3d] %-9s %s", waveno, ts[x]->y, GN_TYPE_STR(t->type), t->idstring);
+						logf(0, "[%2d,%3d] %s %s", waveno, ts[x]->y, GN_TYPE_STR(t->type), t->idstring);
 						if(e_stat)
 						{
-							logf(0, "%*s%d", 100 - logged_characters(), "", ts[x]->r_status);
+							logf(0, ", exit status : %d",  ts[x]->r_status);
 						}
 						else if(e_sign)
 						{
-							logf(0, "%*ss=%d", 98 - logged_characters(), "", ts[x]->r_signal);
+							logf(0, ", signal : %d",  ts[x]->r_signal);
 						}
-						else if(e_stde)
-						{
-							logf(0, "%*se=%d", 98 - logged_characters(), "", ts[x]->stde_txt->l);
-						}
-						else
-						{
-							logf(0, "%*s0", 100 - logged_characters(), "");
-						}
+
+						if(e)
+							logf(0, ", details @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d", g_params.pid, ts[x]->y);
+
 						log_finish();
 					}
 				}
 				else
 				{
-					logf(hi | e, "         %-9s %s", GN_TYPE_STR(t->type), t->idstring);
+					logf(hi | e, "         %s %s", GN_TYPE_STR(t->type), t->idstring);
 				}
 
 				if(ts[x]->fmlv->flags & FFN_FABRICATION)
@@ -212,33 +210,29 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				}
 			}
 
-			if(log_would(lo | L_FML | L_FMLEXEC))
+			// cat stdout unless there was an error
+			if(!e && log_would(lo))
 			{
-				logf(lo | L_FML | L_FMLEXEC 													, "%15s : (%d) @ %s"	, "cmd"				, ts[x]->cmd_txt->l, ts[x]->cmd_path->s);
-				__r = write(2, ts[x]->cmd_txt->s, ts[x]->cmd_txt->l);
+				// chomp trailing whitespace
+				size_t end = ts[x]->stdo_txt->l - 1;
+				while(end >= 0 && (ts[x]->stdo_txt->s[end] == ' ' || ts[x]->stdo_txt->s[end] == '\t' || ts[x]->stdo_txt->s[end] == '\r' || ts[x]->stdo_txt->s[end] == '\n'))
+					end--;
+				end++;
 
-				if(ts[x]->cmd_txt->l && ts[x]->cmd_txt->s[ts[x]->cmd_txt->l - 1] != '\n')
-					__r = write(2, "\n", 1);
-			}
-			logf(lo | L_FML | L_FMLEXEC | e_stat										, "%15s : %d"			, "exit status"		, ts[x]->r_status);
-			logf(lo | L_FML | L_FMLEXEC | e_sign										, "%15s : %d"			, "exit signal"		, ts[x]->r_signal);
-
-			if(log_would(lo | L_FML | L_FMLEXEC))
-			{
-				logf(lo | L_FML | L_FMLEXEC													, "%15s : (%d) @ %s"	, "stdout"		, ts[x]->stdo_txt->l, ts[x]->stdo_path->s);
-				__r = write(2, ts[x]->stdo_txt->s, ts[x]->stdo_txt->l);
-
-				if(ts[x]->stdo_txt->l && ts[x]->stdo_txt->s[ts[x]->stdo_txt->l - 1] != '\n')
-					__r = write(2, "\n", 1);
+				fatal(axwrite, 1, ts[x]->stdo_txt->s, end);
+				fatal(axwrite, 1, "\n", 1);
 			}
 
-			if(log_would(lo | L_FML | L_FMLEXEC | e_stde))
+			if(e_stde)
 			{
-				logf(lo | L_FML | L_FMLEXEC | e_stde									, "%15s : (%d) @ %s"	, "stderr"		, ts[x]->stde_txt->l, ts[x]->stde_path->s);
-				__r = write(2, ts[x]->stde_txt->s, ts[x]->stde_txt->l);
+				// chomp trailing whitespace
+				size_t end = ts[x]->stde_txt->l - 1;
+				while(end >= 0 && (ts[x]->stde_txt->s[end] == ' ' || ts[x]->stde_txt->s[end] == '\t' || ts[x]->stde_txt->s[end] == '\r' || ts[x]->stde_txt->s[end] == '\n'))
+					end--;
+				end++;
 
-				if(ts[x]->stde_txt->l && ts[x]->stde_txt->s[ts[x]->stde_txt->l - 1] != '\n')
-					__r = write(2, "\n", 1);
+				fatal(axwrite, 1, ts[x]->stde_txt->s, end);
+				fatal(axwrite, 1, "\n", 1);
 			}
 		}
 	}
