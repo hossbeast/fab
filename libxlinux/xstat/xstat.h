@@ -80,8 +80,21 @@ int uxfstat(int fd, struct stat * restrict buf)
 // SUMMARY
 //  proxy for futimens
 //
-int xfutimens(int fd, const struct timespec times[2])
-	__attribute__((nonnull));
+int xfutimens(int fd, const struct timespec times[2]);
+
+/// xutimensat
+//
+// SUMMARY
+//  proxy for utimensat
+//
+int xutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags);
+
+/// xutimensat
+//
+// SUMMARY
+//  proxy for utimensat that only fails when errno != ENOENT
+//
+int uxutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags, int * restrict r);
 
 /// xmkdir
 //

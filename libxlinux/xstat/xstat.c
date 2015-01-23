@@ -20,7 +20,9 @@
 
 #include "internal.h"
 
-#include "Xstat.h"
+#include "xstat.h"
+
+#define restrict __restrict
 
 int API xstat(const char * path, struct stat * buf)
 {
@@ -104,6 +106,26 @@ int API xfutimens(int fd, const struct timespec times[2])
 	fatalize(errno, futimens, fd, times);
 
 	finally : coda;
+}
+
+int API xutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags)
+{
+	fatalize(errno, utimensat, dirfd, pathname, times, flags);
+
+	finally : coda;
+}
+
+int API uxutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags, int * restrict r)
+{
+	if((r && ((*r) = utimensat(dirfd, pathname, times, flags)) != 0) || (!r && utimensat(dirfd, pathname, times, flags) != 0))
+	{
+		if(errno != ENOENT)
+			fail(errno);
+	}
+
+finally:
+	XAPI_INFOF("path", "%s", pathname);
+coda;
 }
 
 int API xmkdir(const char * pathname, mode_t mode)
