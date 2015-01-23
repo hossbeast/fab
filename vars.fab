@@ -107,13 +107,13 @@ $mandir					= [ /usr/share/man ]							# man files
 
 # install-time values
 $buildroot						 	= [ $* ~ can ]
-$dlibdir								= [ /usr/lib ]						# dloaded libraries
-$fabcachedir						= [ /var/cache/fab ]			# fab cache
-$fabcachedir_devel			= [ $*/devel/$fabcachedir ~ j can ]			# fab cache
-$fabtmpdir							= [ /var/tmp/fab ]				# fab tmp
-$fabtmpdir_devel				= [ $*/devel/$fabtmpdir ~ j can ]				# fab tmp
+$dlibdir								= [ /usr/lib ]										# dloaded libraries
+$fabcachedir						= [ /var/cache/fab ]							# fab cache
+$fabcachedir_devel			= [ /tmp/$fabcachedir ~ j can ]		# fab cache
+$fabtmpdir							= [ /var/tmp/fab ]								# fab tmp
+$fabtmpdir_devel				= [ /tmp/$fabtmpdir ~ j can ]			# fab tmp
 $fabipcdir							= [ /var/run/fab ]
-$fabipcdir_devel				= [ $*/devel/$fabipcdir ~ j can ]				# fab shm/ipc files
+$fabipcdir_devel				= [ /tmp/$fabipcdir ~ j can ]			# fab shm/ipc files
 $lwopdir								= [ $dlibdir/listwise ~ j can ]
 $lwopdir_devel					= [ $dliblistwise/op ~ j can ]
 $lwopext								= [ so ]
