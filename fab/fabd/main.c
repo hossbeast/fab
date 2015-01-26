@@ -47,6 +47,9 @@
 #include "unitstring.h"
 #include "say.h"
 
+#define DEBUG_IPC 0
+#define REQUIRE_LISTENER 1
+
 // errors to report and continue, otherwise exit
 static int fab_swallow[] = {
 	  [ FAB_SYNTAX ] = 1
@@ -101,7 +104,7 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 	if(!o_signum)
 		o_signum = signum;
 
-#if 0
+#if DEBUG_IPC
 	char space[2048];
 	char * dst = space;
 	size_t sz = sizeof(space);
@@ -227,7 +230,6 @@ static int loop()
 
 		if(repeat_discovery)
 		{
-SAYS("repeat discovery due to invalidations\n");
 			// repeat dependency discovery if any primary nodes that have dscvs were invalidated
 			fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
 		}
@@ -414,16 +416,6 @@ SAYS("repeat discovery due to invalidations\n");
 									fatal(hashblock_stat, tsp[x]->fmlv->products[y]->path->can, tsp[x]->fmlv->products[y]->hb);
 								}
 							}
-
-#if 0
-							logs(L_BPINFO, "updated");
-							for(x = 0; x < fabricationsl; x++)
-								logf(L_BPINFO, " %s", (*fabrications[x])->idstring);
-							for(x = 0; x < fabricationxsl; x++)
-								logf(L_BPINFO, " %s", (*fabricationxs[x])->idstring);
-							for(x = 0; x < fabricationnsl; x++)
-								logf(L_BPINFO, " %s", (*fabricationns[x])->idstring);
-#endif
 						}
 						else if(o_signum == FABSIG_BPBAD)
 						{
@@ -468,7 +460,7 @@ int main(int argc, char** argv)
 	struct timespec time_start = {};
 	struct timespec time_end = {};
 
-#if 0
+#if DEBUG_IPC
 SAYF("fabd[%ld] started\n", (long)getpid());
 #endif
 
@@ -562,22 +554,13 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 		// read fab/pid
 		snprintf(space, sizeof(space), "%s/fab/pid", stem);
 		fatal(ixclose, &fd);
-		fatal(uxopen, space, O_RDONLY, &fd);
+		fatal(xopen, space, O_RDONLY, &fd);
 
+		fatal(axread, fd, &g_params.fab_pid, sizeof(g_params.fab_pid));
+
+		// existence check - is anyone listening?
 		r = -1;
-		if(fd == -1)
-		{
-			logf(L_RED, "failed to open %s", space);
-		}
-		else
-		{
-			fatal(axread, fd, &g_params.fab_pid, sizeof(g_params.fab_pid));
-
-			// existence check - is anyone listening?
-			fatal(uxkill, g_params.fab_pid, 0, &r);
-		}
-
-#define REQUIRE_LISTENER 1
+		fatal(uxkill, g_params.fab_pid, 0, &r);
 
 #if REQUIRE_LISTENER
 		if(r)
@@ -586,19 +569,22 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 #endif
 		{
 			SAYF("fab[%lu] not listening\n", (long)g_params.fab_pid);
-			exit(0);
 		}
 		else
 		{
 #if REQUIRE_LISTENER
-			// reopen file descriptors
-			fatal(xclose, 1);
-			snprintf(space, sizeof(space), "/proc/%ld/fd/1", (long)g_params.fab_pid);
-			fatal(xopen, space, O_RDWR, 0);
+			fatal(ixclose, &fd);
 
-			fatal(xclose, 2);
+			// reopen standard file descriptors
+			snprintf(space, sizeof(space), "/proc/%ld/fd/1", (long)g_params.fab_pid);
+			fatal(xopen, space, O_RDWR, &fd);
+			fatal(xdup2, fd, 1);
+			fd = -1;
+
 			snprintf(space, sizeof(space), "/proc/%ld/fd/2", (long)g_params.fab_pid);
-			fatal(xopen, space, O_RDWR, 0);
+			fatal(xopen, space, O_RDWR, &fd);
+			fatal(xdup2, fd, 2);
+			fd = -1;
 #endif
 
 			// open args file
@@ -643,7 +629,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			fatal(log_config, ~0);
 #endif
 
-			// default tags - do not describe, that as done previously
+			// default tags - do not describe, that was done previously
 			fatal(log_parse, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0);
 
 			// user-specified

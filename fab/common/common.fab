@@ -31,7 +31,6 @@ once {
 	$params = [
 		[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
 		[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
-		[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
 		[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
 		[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
 	]
@@ -39,7 +38,6 @@ once {
 	$params_devel = [
 		[ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
 		[ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
-		[ -DFABCACHEDIR="\""$fabcachedir_devel"\"" ~ j ]
 		[ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
 		[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
 	]

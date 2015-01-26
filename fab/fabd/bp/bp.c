@@ -391,10 +391,13 @@ int bp_eval(bp * const bp)
 					gn->feeds.e[i]->A->poison = 1;
 			}
 
-			logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s |"
+			gn_invalid_reasons_write(gn, space, sizeof(space));
+			logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %7s (%s)"
 				, x, c++
 				, GN_TYPE_STR(bp->stages[0].primary[0]->type)
 				, gn->idstring
+				, ""
+				, space
 			);
 		}
 

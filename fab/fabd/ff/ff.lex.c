@@ -1,6 +1,6 @@
-#line 2 "fabd/ff/ff.lex.c"
+#line 2 "fab/fabd/ff/ff.lex.c"
 
-#line 4 "fabd/ff/ff.lex.c"
+#line 4 "fab/fabd/ff/ff.lex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -601,7 +601,7 @@ static yyconst flex_int16_t yy_chk[576] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "fabd/ff/ff.l"
+#line 1 "fab/fabd/ff/ff.l"
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -618,7 +618,7 @@ static yyconst flex_int16_t yy_chk[576] =
    
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
-#line 19 "fabd/ff/ff.l"
+#line 19 "fab/fabd/ff/ff.l"
 	#include <stdio.h>
 
 	#include "global.h"
@@ -675,7 +675,7 @@ static yyconst flex_int16_t yy_chk[576] =
 
 
 /* bytes that cannot appear in the input */
-#line 679 "fabd/ff/ff.lex.c"
+#line 679 "fab/fabd/ff/ff.lex.c"
 
 #define INITIAL 0
 #define quoteword 1
@@ -931,11 +931,11 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 90 "fabd/ff/ff.l"
+#line 90 "fab/fabd/ff/ff.l"
 
 
  /* single-line comments */
-#line 939 "fabd/ff/ff.lex.c"
+#line 939 "fab/fabd/ff/ff.lex.c"
 
     yylval = yylval_param;
 
@@ -1024,202 +1024,202 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 93 "fabd/ff/ff.l"
+#line 93 "fab/fabd/ff/ff.l"
 { LOCWRITE; }
 	YY_BREAK
 /* multiline comments are nestable */
 case 2:
 YY_RULE_SETUP
-#line 96 "fabd/ff/ff.l"
+#line 96 "fab/fabd/ff/ff.l"
 { LOCWRITE; PUSHSTATE(multilinecomment); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 97 "fabd/ff/ff.l"
+#line 97 "fab/fabd/ff/ff.l"
 { LOCWRITE; POPSTATE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 98 "fabd/ff/ff.l"
+#line 98 "fab/fabd/ff/ff.l"
 { LOCWRITE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 99 "fabd/ff/ff.l"
+#line 99 "fab/fabd/ff/ff.l"
 { LOCWRITE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 100 "fabd/ff/ff.l"
+#line 100 "fab/fabd/ff/ff.l"
 { LOCWRITE; }
 	YY_BREAK
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 101 "fabd/ff/ff.l"
+#line 101 "fab/fabd/ff/ff.l"
 { LOCRESET; }
 	YY_BREAK
 /* characters with special meaning in both INITIAL and list */
 case 8:
 /* rule 8 can match eol */
 YY_RULE_SETUP
-#line 104 "fabd/ff/ff.l"
+#line 104 "fab/fabd/ff/ff.l"
 { LOCRESET; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 105 "fabd/ff/ff.l"
+#line 105 "fab/fabd/ff/ff.l"
 { LOCWRITE; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 106 "fabd/ff/ff.l"
+#line 106 "fab/fabd/ff/ff.l"
 { PUSHSTATE(list); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 107 "fabd/ff/ff.l"
+#line 107 "fab/fabd/ff/ff.l"
 { PUSHSTATE(quoteword); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 108 "fabd/ff/ff.l"
+#line 108 "fab/fabd/ff/ff.l"
 { PUSHSTATE(varref); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 109 "fabd/ff/ff.l"
+#line 109 "fab/fabd/ff/ff.l"
 {	PUSHSTATE(nofile); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 110 "fabd/ff/ff.l"
+#line 110 "fab/fabd/ff/ff.l"
 { PUSHSTATE(transform); return LEX(yytext[0], 0); }
 	YY_BREAK
 /* characters with special meaning in INITIAL */
 case 15:
 YY_RULE_SETUP
-#line 113 "fabd/ff/ff.l"
+#line 113 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 114 "fabd/ff/ff.l"
+#line 114 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 115 "fabd/ff/ff.l"
+#line 115 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 116 "fabd/ff/ff.l"
+#line 116 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 117 "fabd/ff/ff.l"
+#line 117 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 118 "fabd/ff/ff.l"
+#line 118 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 119 "fabd/ff/ff.l"
+#line 119 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 120 "fabd/ff/ff.l"
+#line 120 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 121 "fabd/ff/ff.l"
+#line 121 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 122 "fabd/ff/ff.l"
+#line 122 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 123 "fabd/ff/ff.l"
+#line 123 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 124 "fabd/ff/ff.l"
+#line 124 "fab/fabd/ff/ff.l"
 { PUSHSTATE(command); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 125 "fabd/ff/ff.l"
+#line 125 "fab/fabd/ff/ff.l"
 { PUSHSTATE(blockcheck); return LEX(ONCE, 0); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 126 "fabd/ff/ff.l"
+#line 126 "fab/fabd/ff/ff.l"
 {	return LEX(WORD, 0); }
 	YY_BREAK
 /* list-specific */
 case 29:
 YY_RULE_SETUP
-#line 129 "fabd/ff/ff.l"
+#line 129 "fab/fabd/ff/ff.l"
 { POPSTATE; return LEX(yytext[0], 0); }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 130 "fabd/ff/ff.l"
+#line 130 "fab/fabd/ff/ff.l"
 { return LEX(WORD, 0); }
 	YY_BREAK
 case 31:
 /* rule 31 can match eol */
 YY_RULE_SETUP
-#line 132 "fabd/ff/ff.l"
+#line 132 "fab/fabd/ff/ff.l"
 { LOCRESET; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 133 "fabd/ff/ff.l"
+#line 133 "fab/fabd/ff/ff.l"
 { LOCWRITE; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 134 "fabd/ff/ff.l"
+#line 134 "fab/fabd/ff/ff.l"
 {	POPSTATE; return LEX(yytext[0], 0); }
 	YY_BREAK
 case 34:
 /* rule 34 can match eol */
 YY_RULE_SETUP
-#line 135 "fabd/ff/ff.l"
+#line 135 "fab/fabd/ff/ff.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 /* command */
 case 35:
 /* rule 35 can match eol */
 YY_RULE_SETUP
-#line 138 "fabd/ff/ff.l"
+#line 138 "fab/fabd/ff/ff.l"
 { PUSHSTATE(commandchecklit); return LEX(LF, 0); }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 139 "fabd/ff/ff.l"
+#line 139 "fab/fabd/ff/ff.l"
 {	POPSTATE; return LEX(yytext[0], 0); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 140 "fabd/ff/ff.l"
+#line 140 "fab/fabd/ff/ff.l"
 { return LEX(WORD, 0); }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 141 "fabd/ff/ff.l"
+#line 141 "fab/fabd/ff/ff.l"
 {
 																													POPSTATE;
 																													PUSHSTATE(commandlit);
@@ -1229,95 +1229,95 @@ YY_RULE_SETUP
 case 39:
 /* rule 39 can match eol */
 YY_RULE_SETUP
-#line 146 "fabd/ff/ff.l"
+#line 146 "fab/fabd/ff/ff.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 147 "fabd/ff/ff.l"
+#line 147 "fab/fabd/ff/ff.l"
 {	POPSTATE;	return LEX(WORD, 0); }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 149 "fabd/ff/ff.l"
+#line 149 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 150 "fabd/ff/ff.l"
+#line 150 "fab/fabd/ff/ff.l"
 { POPSTATE; return LEX(WORD, 0); }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 151 "fabd/ff/ff.l"
+#line 151 "fab/fabd/ff/ff.l"
 { POPSTATE; return LEX(WORD, 0); }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 153 "fabd/ff/ff.l"
+#line 153 "fab/fabd/ff/ff.l"
 { return LEX(WORD, 0); }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 154 "fabd/ff/ff.l"
+#line 154 "fab/fabd/ff/ff.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 46:
 /* rule 46 can match eol */
 YY_RULE_SETUP
-#line 155 "fabd/ff/ff.l"
+#line 155 "fab/fabd/ff/ff.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 157 "fabd/ff/ff.l"
+#line 157 "fab/fabd/ff/ff.l"
 { return LEX(WORD, 0); }
 	YY_BREAK
 case 48:
 /* rule 48 can match eol */
 YY_RULE_SETUP
-#line 158 "fabd/ff/ff.l"
+#line 158 "fab/fabd/ff/ff.l"
 { return LEX(LF, 0); }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 159 "fabd/ff/ff.l"
+#line 159 "fab/fabd/ff/ff.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 160 "fabd/ff/ff.l"
+#line 160 "fab/fabd/ff/ff.l"
 {	POPSTATE;	PUSHSTATE(list); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 161 "fabd/ff/ff.l"
+#line 161 "fab/fabd/ff/ff.l"
 { return LEX(WORD, 0); }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 162 "fabd/ff/ff.l"
+#line 162 "fab/fabd/ff/ff.l"
 { yytext++; yyleng--; return LEX(WORD, 1); }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 163 "fabd/ff/ff.l"
+#line 163 "fab/fabd/ff/ff.l"
 { yytext++; yyleng--; return LEX(WORD, 1); }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 164 "fabd/ff/ff.l"
+#line 164 "fab/fabd/ff/ff.l"
 { return LEX(WORD, 0); }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 165 "fabd/ff/ff.l"
+#line 165 "fab/fabd/ff/ff.l"
 { POPSTATE; LOCWRITE; }
 	YY_BREAK
 case 56:
 /* rule 56 can match eol */
 YY_RULE_SETUP
-#line 167 "fabd/ff/ff.l"
+#line 167 "fab/fabd/ff/ff.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -1328,7 +1328,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 174 "fabd/ff/ff.l"
+#line 174 "fab/fabd/ff/ff.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -1348,7 +1348,7 @@ case YY_STATE_EOF(list):
 case YY_STATE_EOF(varref):
 case YY_STATE_EOF(nofile):
 case YY_STATE_EOF(multilinecomment):
-#line 181 "fabd/ff/ff.l"
+#line 181 "fab/fabd/ff/ff.l"
 {
                                                           while(yyextra->states_n)
                                                             POPSTATE;
@@ -1357,10 +1357,10 @@ case YY_STATE_EOF(multilinecomment):
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 186 "fabd/ff/ff.l"
+#line 186 "fab/fabd/ff/ff.l"
 ECHO;
 	YY_BREAK
-#line 1364 "fabd/ff/ff.lex.c"
+#line 1364 "fab/fabd/ff/ff.lex.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2533,4 +2533,4 @@ void ff_yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 186 "fabd/ff/ff.l"
+#line 186 "fab/fabd/ff/ff.l"

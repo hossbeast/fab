@@ -46,6 +46,8 @@
 
 #define restrict __restrict
 
+memblk * foomb;
+
 struct g_args_t * g_args;
 
 //
@@ -155,7 +157,7 @@ void selector_thaw(char * const restrict mb, selector * restrict s)
 static void usage(int valid, int version, int help, int logcats, int operators, uint64_t opmask)
 {
 	printf(
-"fab : parallel and incremental builds, integrated dependency discovery\n"
+"fab : build optimally\n"
 );
 if(version)
 {
@@ -652,7 +654,6 @@ int args_summarize()
 	logf(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_params.cwd);
 	logf(L_PARAMS	, "%11sexedir                 =%s"						, ""	, g_params.exedir);
 	logf(L_PARAMS	, "%11sprocessors             =%ld"						, ""	, g_params.procs);
-	logf(L_PARAMS	, "%11scachedir               =%s"						, ""	, XQUOTE(FABCACHEDIR));
 	logf(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));
 	logf(L_PARAMS	, "%11sipcdir                 =%s"						, ""	,	XQUOTE(FABIPCDIR));
 	logf(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));

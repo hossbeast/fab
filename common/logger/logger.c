@@ -509,9 +509,12 @@ int log_parse_clear()
 
 int log_init()
 {
-	int			fd = -1;
-	int			argsa = 0;	// g_argvs allocated size
-	int			argva = 0;
+	int	fd = -1;
+	int	argsa = 0;	// g_argvs allocated size
+	int	argva = 0;
+	int x;
+	int y;
+	int i;
 
 	// snarf the cmdline
 	fatal(xopen, "/proc/self/cmdline", O_RDONLY, &fd);
@@ -520,68 +523,55 @@ int log_init()
 	int binaryx = -1;
 	int interpx = -1;
 	char * execfn = 0;
-	int i = 0;
-	int nulls = 0;
 	do
 	{
-		size_t newa = argsa ?: 10;
+		size_t newa = argsa ?: 100;
 		newa += newa * 2 + newa / 2;
 		fatal(xrealloc, &g_argvs, sizeof(*g_argvs), newa, argsa);
 		argsa = newa;
-		ssize_t r = read(fd, &g_argvs[g_argvsl], argsa - g_argvsl);
-
-#if __linux__
-		/*
-		* on linux, an interpreter script is executed with the optional-arg passed as a
-		* single string. break it up on spaces, so argument parsing will see separate args
-		*  see : http://man7.org/linux/man-pages/man2/execve.2.html
-		*
-		* getauxval is probably not available on all unices
-		*/
-		if(nulls < 3)
-		{
-			for(; r > 0; r--)
-			{
-				if(g_argvs[g_argvsl] == 0)
-				{
-					// the binary is the first argument
-					if(binaryx == -1)
-					{
-						binaryx = i;
-						execfn = (char*)(intptr_t)getauxval(AT_EXECFN);
-					}
-
-					// when interpreting, AT_EXECFN is the interpreter script
-					else if(interpx == -1 && execfn && strcmp(&g_argvs[i], execfn) == 0)
-					{
-						interpx = i;
-					}
-
-					i = g_argvsl + 1;
-					nulls++;
-				}
-
-				// process the optional-arg in a linux-specific way
-				else if(g_argvs[g_argvsl] == 0x20 && binaryx != -1 && strcmp(&g_argvs[binaryx], execfn))
-				{
-					g_argvs[g_argvsl] = 0;
-				}
-
-				g_argvsl++;
-			}
-		}
-		else
-		{
-			g_argvsl += r;
-		}
-#else
-		g_argvsl += r;
-#endif
+		g_argvsl += read(fd, &g_argvs[g_argvsl], argsa - g_argvsl);
 	} while(g_argvsl == argsa);
-
 	g_argvsl--;
 
-int x;
+	// locate binary and interpreter, if any
+	for(x = -1; x < g_argvsl; x = y)
+	{
+		for(y = x + 1; y < g_argvsl; y++)
+		{
+			if(g_argvs[y] == 0)
+				break;
+		}
+
+		// the binary is the first argument
+		if(binaryx == -1)
+		{
+			binaryx = x + 1;
+			execfn = (char*)(intptr_t)getauxval(AT_EXECFN);
+		}
+
+		// when interpreting, AT_EXECFN is the interpreter script
+		else if(interpx == -1 && execfn && strcmp(&g_argvs[x + 1], execfn) == 0)
+		{
+			interpx = x + 1;
+		}
+	}
+
+#if __linux__
+	/*
+	* on linux, an interpreter script is executed with the optional-arg passed as a
+	* single string. break it up on spaces, so argument parsing will see separate args
+	*  see : http://man7.org/linux/man-pages/man2/execve.2.html
+	*
+	* getauxval is probably not available on all unices
+	*/
+	for(x = binaryx + strlen(&g_argvs[binaryx]) + 1; x < (interpx - 1); x++)
+	{
+		// process the optional-arg in a linux-specific way
+		if(g_argvs[x] == 0x20)
+			g_argvs[x] = 0;
+	}
+#endif
+
 #if 0
 for(x = 0; x < g_argvsl; x++)
 {

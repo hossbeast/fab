@@ -108,8 +108,6 @@ $mandir					= [ /usr/share/man ]							# man files
 # install-time values
 $buildroot						 	= [ $* ~ can ]
 $dlibdir								= [ /usr/lib ]										# dloaded libraries
-$fabcachedir						= [ /var/cache/fab ]							# fab cache
-$fabcachedir_devel			= [ /tmp/$fabcachedir ~ j can ]		# fab cache
 $fabtmpdir							= [ /var/tmp/fab ]								# fab tmp
 $fabtmpdir_devel				= [ /tmp/$fabtmpdir ~ j can ]			# fab tmp
 $fabipcdir							= [ /var/run/fab ]

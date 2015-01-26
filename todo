@@ -2,11 +2,12 @@
  review fab cmdline interface, options, logs
  fab/lw man pages
  verify install
- standardize dsc_exec vs bp_exec error messages
  deal with REQUIRE_LISTENER
- sometimes discovery seems to execute twice with the same results
+ deal with identity
 
 * finished
+ standardize dsc_exec vs bp_exec error messages
+ sometimes discovery seems to execute twice with the same results
  verify buildscripts
  lstat analysis in canon
  canon/test.c

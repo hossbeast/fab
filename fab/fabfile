@@ -38,7 +38,6 @@ $copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 $params = [
 	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
 	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
-	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
 	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
 	[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
 ]
@@ -46,7 +45,6 @@ $params = [
 $params_devel = [
 	[ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
 	[ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
-	[ -DFABCACHEDIR="\""$fabcachedir_devel"\"" ~ j ]
 	[ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
 	[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
 ]
@@ -112,12 +110,10 @@ $faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
 	install -d																					[ $destdir/$bindir ]
 	install [ $gccdep_final ] 													[ $destdir/$bindir ]
 
-	install -d 																					[ $destdir/$fabcachedir ]
-	chown fabsys:fabsys																	[ $destdir/$fabcachedir ]
+	rm -rf																							[ $destdir/$fabtmpdir ] 2>/dev/null
 	install -d 																					[ $destdir/$fabtmpdir ]
-	chown fabsys:fabsys																	[ $destdir/$fabtmpdir ]
+	rm -rf																							[ $destdir/$fabipcdir ] 2>/dev/null
 	install -d 																					[ $destdir/$fabipcdir ]
-	chown fabsys:fabsys																	[ $destdir/$fabipcdir ]
 
 	rm -rf																							[ $destdir/$fabinvokedir ] 2>/dev/null
 	install -d																					[ $destdir/$fabinvokedir/std ]
@@ -138,7 +134,18 @@ $faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
 }
 
 [ @install.final ] : [ @installation @fab.install.final @fabw.install.final @fabd.install.final ]
+{
+	chown fabsys:fabsys																	[ $destdir/$fabtmpdir ]
+	chmod 777																						[ $destdir/$fabtmpdir ]
+	chown fabsys:fabsys																	[ $destdir/$fabipcdir ]
+	chmod 777																						[ $destdir/$fabipcdir ]
+}
+
 [ @install.debug ] : [ @installation @fab.install.debug @fabw.install.debug @fabd.install.debug ]
+{
+	chmod 777																						[ $destdir/$fabtmpdir ]
+	chmod 777																						[ $destdir/$fabipcdir ]
+}
 
 [ @installman ] : [ @installman1 ]
 [ @installman1 ] : [ $dfabcore/man/fab.1 ~ j ]

@@ -37,6 +37,8 @@
 #include "memblk.h"
 #include "parseint.h"
 
+#define DEBUG_IPC 0
+
 // signal handling
 static int o_signum;
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
@@ -44,7 +46,7 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 	if(!o_signum)
 		o_signum = signum;
 
-#if 0
+#if DEBUG_IPC
 	char space[2048];
 	char * dst = space;
 	size_t sz = sizeof(space);
@@ -433,7 +435,7 @@ int main(int argc, char** argv)
 
 	memblk * mb = 0;
 
-#if 0
+#if DEBUG_IPC
 printf("fab[%ld] started\n", (long)getpid());
 #endif
 
@@ -639,9 +641,6 @@ printf("fab[%ld] started\n", (long)getpid());
 			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &lockfd);
 			fatal(xflock, lockfd, LOCK_EX | LOCK_NB);
 
-			// files done : reassume user identity
-			fatal(identity_assume_user);
-
 			// new process group
 			fatal(xsetpgid, 0, 0);
 
@@ -663,6 +662,9 @@ printf("fab[%ld] started\n", (long)getpid());
 		// awaken
 		fatal(xkill, -fabd_pgid, FABSIG_START);
 	}
+
+	// files done : reassume user identity
+	fatal(identity_assume_user);
 	
 	// wait to hear back from fabd
 	o_signum = 0;
@@ -694,6 +696,9 @@ printf("fab[%ld] started\n", (long)getpid());
 	}
 #endif
 
+	// files done : reassume user identity
+	fatal(identity_assume_fabsys);
+
 	// check fabd-exit file
 	snprintf(space + z, sizeof(space) - z, "/fabd/exit");
 	fatal(ixclose, &fd);
@@ -719,6 +724,8 @@ printf("fab[%ld] started\n", (long)getpid());
 	fatal(uxopen_mode, space, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
 	if(fd != -1)
 		fatal(xfutimens, fd, 0);
+
+	fatal(identity_assume_user);
 
 finally:
 	fatal(ixclose, &fd);

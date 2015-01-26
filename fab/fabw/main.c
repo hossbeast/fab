@@ -31,14 +31,18 @@
 
 #include "global.h"
 
+#include "identity.h"
+
 #include "parseint.h"
 #include "macros.h"
 #include "say.h"
 
+#define DEBUG_IPC 0
+
 // signal handling
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
-# if 0
+#if DEBUG_IPC
 	char space[2048];
 	char * dst = space;
 	size_t sz = sizeof(space);
@@ -66,7 +70,7 @@ int main(int argc, char** argv)
 
 	pstring * ptmp = 0;
 
-#if 0
+#if DEBUG_IPC
 	SAYF("fabw[%lu] started\n", (long)getpid());
 #endif
 
@@ -105,18 +109,26 @@ int main(int argc, char** argv)
 	}
 
 	// std file descriptors
-#if 0
+#if DEBUG_IPC
 	for(x = 3; x < 64; x++)
 #else
 	for(x = 0; x < 64; x++)
 #endif
+	{
 		close(x);
+	}
 	fatal(xopen, "/dev/null", O_RDONLY, 0);
 	fatal(xopen, "/dev/null", O_WRONLY, 0);
 	fatal(xopen, "/dev/null", O_WRONLY, 0);
 
 	// process parameter gathering
 	fatal(params_setup);
+
+	// get user identity of this process, assert user:group and permissions are set appropriately
+	fatal(identity_init);
+
+	// get fabsys identity
+	fatal(identity_assume_fabsys);
 
 	// get ipc dir
 	uint32_t canhash;
@@ -130,11 +142,13 @@ int main(int argc, char** argv)
 	fatal(xfork, &fabd_pid);
 	if(fabd_pid == 0)
 	{
-#if DEVEL
-		snprintf(space, sizeof(space), "%s/../fabd/fabd.devel", g_params.exedir);
+		// tell fabd its name
 		char * w;
 		while((w = strstr(argv[0], "fabw")))
 			w[3] = 'd';
+
+#if DEVEL
+		snprintf(space, sizeof(space), "%s/../fabd/fabd.devel", g_params.exedir);
 		execv(space, argv);
 #else
 		execvp("fabd", argv);

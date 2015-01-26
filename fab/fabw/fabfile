@@ -35,7 +35,6 @@ $copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 $params = [
 	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
 	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
-	[ -DFABCACHEDIR="\""$fabcachedir"\"" ~ j ]
 	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
 	[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
 ]
@@ -43,7 +42,6 @@ $params = [
 $params_devel = [
 	[ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
 	[ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
-	[ -DFABCACHEDIR="\""$fabcachedir_devel"\"" ~ j ]
 	[ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
 	[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
 ]
@@ -102,10 +100,13 @@ $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_deve
 {
 	install -d																			[ $destdir/$bindir ]
 	install [ $fabw_final ]													[ $destdir/$bindir/fabw ]
+	chown fabsys:fabsys															[ $destdir/$bindir/fabw ]
+	chmod ug+s 																			[ $destdir/$bindir/fabw ]
 }
 
 [ @install.debug ] : [ @debug ]
 {
 	install -d																			[ $destdir/$bindir ]
+	rm																							[ $destdir/$bindir/fabw ]
 	install [ $fabw_debug ]													[ $destdir/$bindir/fabw ]
 }
