@@ -70,11 +70,73 @@ fml_0_0()
   exit $X
 }
 
-NAMES[1]='@listwise.install.final'
-fml_0_1()
+
+# formulas and names for stage 1
+NAMES[1]='@libxapi.install.final'
+fml_1_0()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&100
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																$destdir/$libdir
+	install ./libxapi/libxapi.final.so								$destdir/$libdir/libxapi.so
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 2
+NAMES[2]='@libxlinux.install.final'
+fml_2_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																					$destdir/$libdir
+	install ./libxlinux/libxlinux.final.so												$destdir/$libdir/libxlinux.so
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 3
+NAMES[3]='@libpstring.install.final'
+fml_3_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d																					$destdir/$libdir
+	install ./libpstring/libpstring.final.so												$destdir/$libdir/libpstring.so
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 4
+NAMES[4]='@listwise.install.final'
+fml_4_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
 
   [[ $bindir ]] || local bindir='/usr/local/bin'
   [[ $destdir ]] || local destdir=''
@@ -85,14 +147,14 @@ fml_0_1()
 
 
   X=$?
-  echo 1 1>&99
+  echo 0 1>&99
   exit $X
 }
 
 
-# formulas and names for stage 1
-NAMES[2]='@fabcore.fab.install.final'
-fml_1_0()
+# formulas and names for stage 5
+NAMES[5]='@fabcore.fab.install.final'
+fml_5_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -111,8 +173,8 @@ fml_1_0()
   exit $X
 }
 
-NAMES[3]='@fabcore.fabd.install.final'
-fml_1_1()
+NAMES[6]='@fabcore.fabd.install.final'
+fml_5_1()
 {
   exec 1>/dev/null
   exec 2>&101
@@ -131,8 +193,8 @@ fml_1_1()
   exit $X
 }
 
-NAMES[4]='@fabcore.fabw.install.final'
-fml_1_2()
+NAMES[7]='@fabcore.fabw.install.final'
+fml_5_2()
 {
   exec 1>/dev/null
   exec 2>&102
@@ -151,11 +213,34 @@ fml_1_2()
   exit $X
 }
 
-NAMES[5]='@liblistwise.install.final'
-fml_1_3()
+
+# formulas and names for stage 6
+NAMES[8]='@fabcore.install.final'
+fml_6_0()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&100
+
+  [[ $fabtmpdir ]] || local fabtmpdir='/var/tmp/fab'
+  [[ $fabipcdir ]] || local fabipcdir='/var/run/fab'
+  [[ $destdir ]] || local destdir=''
+  
+	chown fabsys:fabsys																	$destdir/$fabtmpdir
+	chmod 777																						$destdir/$fabtmpdir
+	chown fabsys:fabsys																	$destdir/$fabipcdir
+	chmod 777																						$destdir/$fabipcdir
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+NAMES[9]='@liblistwise.install.final'
+fml_6_1()
+{
+  exec 1>/dev/null
+  exec 2>&101
 
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
@@ -217,84 +302,7 @@ fml_1_3()
 
 
   X=$?
-  echo 3 1>&99
-  exit $X
-}
-
-NAMES[6]='@libpstring.install.final'
-fml_1_4()
-{
-  exec 1>/dev/null
-  exec 2>&104
-
-  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
-  [[ $destdir ]] || local destdir=''
-  
-	install -d																					$destdir/$libdir
-	install ./libpstring/libpstring.final.so												$destdir/$libdir/libpstring.so
-
-
-  X=$?
-  echo 4 1>&99
-  exit $X
-}
-
-NAMES[7]='@libxapi.install.final'
-fml_1_5()
-{
-  exec 1>/dev/null
-  exec 2>&105
-
-  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
-  [[ $destdir ]] || local destdir=''
-  
-	install -d																$destdir/$libdir
-	install ./libxapi/libxapi.final.so								$destdir/$libdir/libxapi.so
-
-
-  X=$?
-  echo 5 1>&99
-  exit $X
-}
-
-NAMES[8]='@libxlinux.install.final'
-fml_1_6()
-{
-  exec 1>/dev/null
-  exec 2>&106
-
-  [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
-  [[ $destdir ]] || local destdir=''
-  
-	install -d																					$destdir/$libdir
-	install ./libxlinux/libxlinux.final.so												$destdir/$libdir/libxlinux.so
-
-
-  X=$?
-  echo 6 1>&99
-  exit $X
-}
-
-
-# formulas and names for stage 2
-NAMES[9]='@fabcore.install.final'
-fml_2_0()
-{
-  exec 1>/dev/null
-  exec 2>&100
-
-  [[ $fabtmpdir ]] || local fabtmpdir='/var/tmp/fab'
-  [[ $fabipcdir ]] || local fabipcdir='/var/run/fab'
-  [[ $destdir ]] || local destdir=''
-  
-	chown fabsys:fabsys																	$destdir/$fabtmpdir
-	chmod 771																						$destdir/$fabtmpdir
-	chown fabsys:fabsys																	$destdir/$fabipcdir
-	chmod 771																						$destdir/$fabipcdir
-
-
-  X=$?
-  echo 0 1>&99
+  echo 1 1>&99
   exit $X
 }
 
@@ -313,15 +321,14 @@ SKP=0
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=2))
+  ((SKP+=1))
 else
   # launch stage 0.0
   exec 100>$tmp ; rm -f $tmp ; fml_0_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_0_1 & PIDS[1]=$!
 
   # harvest stage 0.0
   C=0
-  while [[ $C != 2 ]]; do
+  while [[ $C != 1 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -339,26 +346,20 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=7))
+  ((SKP+=1))
 else
   # launch stage 1.0
   exec 100>$tmp ; rm -f $tmp ; fml_1_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_1_1 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_1_2 & PIDS[2]=$!
-  exec 103>$tmp ; rm -f $tmp ; fml_1_3 & PIDS[3]=$!
-  exec 104>$tmp ; rm -f $tmp ; fml_1_4 & PIDS[4]=$!
-  exec 105>$tmp ; rm -f $tmp ; fml_1_5 & PIDS[5]=$!
-  exec 106>$tmp ; rm -f $tmp ; fml_1_6 & PIDS[6]=$!
 
   # harvest stage 1.0
   C=0
-  while [[ $C != 7 ]]; do
+  while [[ $C != 1 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((2+$idx))
+    I=$((1+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -383,11 +384,114 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((9+$idx))
+    I=$((2+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
     printf '[%3d,%3d] X=%d %s\n' 2 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 3.0
+  exec 100>$tmp ; rm -f $tmp ; fml_3_0 & PIDS[0]=$!
+
+  # harvest stage 3.0
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((3+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 3 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 4.0
+  exec 100>$tmp ; rm -f $tmp ; fml_4_0 & PIDS[0]=$!
+
+  # harvest stage 4.0
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((4+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 4 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=3))
+else
+  # launch stage 5.0
+  exec 100>$tmp ; rm -f $tmp ; fml_5_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_5_1 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_5_2 & PIDS[2]=$!
+
+  # harvest stage 5.0
+  C=0
+  while [[ $C != 3 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((5+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 5 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=2))
+else
+  # launch stage 6.0
+  exec 100>$tmp ; rm -f $tmp ; fml_6_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_6_1 & PIDS[1]=$!
+
+  # harvest stage 6.0
+  C=0
+  while [[ $C != 2 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((8+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 6 $((idx+0)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done

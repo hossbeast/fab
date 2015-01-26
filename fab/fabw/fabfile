@@ -29,7 +29,7 @@ $copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
 	# include paths
-	[ [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux ~ s/^/-I ]
+	[ [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux $dlibpstring ~ s/^/-I ]
 ]
 
 $params = [
