@@ -25,7 +25,7 @@ once {
 		[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
 		# include paths
-		[ $dlibxapi $dlibxlinux $dliblistwise ~ s/^/-I ]
+		[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-I ]
 	]
 
 	$params = [
