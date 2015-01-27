@@ -31,7 +31,8 @@ $cflags_final = [ $cflags_final $copts ]
 $cflags_debug = [ $cflags_debug $copts ]
 $cflags_devel = [ $cflags_devel $copts ]
 
-$lopts				= [ -ldl -shared  [ -Wl,--version-script=$*/exports ~ j ] ]
+# -lrt required for glibc < 2.17 as per man clock_gettime
+$lopts				= [ -ldl -lrt -shared  [ -Wl,--version-script=$*/exports ~ j ] ]
 $lflags_final	= [ $libxapi_final $lopts [ -Wl,-soname,libxlinux.so ~ j ] ]
 $lflags_debug	= [ $libxapi_debug $lopts [ -Wl,-soname,libxlinux.so ~ j ] ]
 $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxlinux.devel.so ~ j ] ]
