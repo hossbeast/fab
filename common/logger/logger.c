@@ -22,7 +22,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#if __linux__
+#include <linux/auxvec.h>
+#endif
+
+/*
+exposes getauxval, but requires glibc 2.16. ubuntu 12.10 has glibc 2.15.
 #include <sys/auxv.h>
+*/
 
 #include "xlinux.h"
 #include "xapi.h"
@@ -512,6 +519,11 @@ int log_init()
 	int	fd = -1;
 	int	argsa = 0;	// g_argvs allocated size
 	int	argva = 0;
+#if __linux__
+	char * auxv = 0;
+	size_t auxvl = 0;
+	size_t auxva = 0;
+#endif
 	int x;
 	int y;
 	int i;
@@ -546,7 +558,37 @@ int log_init()
 		if(binaryx == -1)
 		{
 			binaryx = x + 1;
+#if __linux__
+			/*
+			requires glibc 2.16. ubuntu 12.10 has glibc 2.15.
 			execfn = (char*)(intptr_t)getauxval(AT_EXECFN);
+			*/
+
+			fatal(ixclose, &fd);
+			fatal(xopen, "/proc/self/auxv", O_RDONLY, &fd);
+			do
+			{
+				size_t newa = auxva ?: 100;
+				newa += newa * 2 + newa / 2;
+				fatal(xrealloc, &auxv, sizeof(*auxv), newa, auxva);
+				auxva = newa;
+				auxvl += read(fd, &auxv[auxvl], auxva - auxvl);
+			} while(auxvl == auxva);
+			auxvl--;
+
+			unsigned long * auxvec = (void*)auxv;
+			while(*auxvec)
+			{
+				unsigned long key = auxvec[0];
+				unsigned long val = auxvec[1];
+				if(key == AT_EXECFN)
+				{
+					execfn = (char*)(uintptr_t)val;
+					break;
+				}
+				auxvec += 2;
+			}
+#endif
 		}
 
 		// when interpreting, AT_EXECFN is the interpreter script
