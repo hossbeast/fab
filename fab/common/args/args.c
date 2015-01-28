@@ -348,6 +348,8 @@ int args_parse()
 				  { "help"												, no_argument	, &help, 1 }
 				, { "args"												, no_argument	, &help, 1 }
 				, { "params"											, no_argument	, &help, 1 }
+				, { "options"											, no_argument	, &help, 1 }
+				, { "opts"												, no_argument	, &help, 1 }
 				, { "version"											, no_argument	, &version, 1 }
 				, { "vrs"													, no_argument	, &version, 1 }
 				, { "logcats"											, no_argument	, &logcats, 1 }
@@ -649,8 +651,6 @@ int args_summarize()
 
 	// log execution parameters under PARAMS
 	logf(L_PARAMS	, "%11spid                    =%u"						, ""	, g_params.pid);
-	logf(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_params.euid_name, g_params.euid, g_params.egid_name, g_params.egid);
-	logf(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_params.ruid_name, g_params.ruid, g_params.rgid_name, g_params.rgid);
 	logf(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_params.cwd);
 	logf(L_PARAMS	, "%11sexedir                 =%s"						, ""	, g_params.exedir);
 	logf(L_PARAMS	, "%11sprocessors             =%ld"						, ""	, g_params.procs);

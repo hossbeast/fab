@@ -47,8 +47,8 @@
 #include "unitstring.h"
 #include "say.h"
 
+// write log messages about process creation and signals received
 #define DEBUG_IPC 0
-#define REQUIRE_LISTENER 1
 
 // errors to report and continue, otherwise exit
 static int fab_swallow[] = {
@@ -424,7 +424,7 @@ static int loop()
 						}
 						else
 						{
-							fail(FAB_BADIPC);
+							failf(FAB_BADIPC, "expected signal %d or %d, actual %d", FABSIG_BPGOOD, FABSIG_BPBAD, o_signum);
 						}
 					}
 				}
@@ -459,6 +459,12 @@ int main(int argc, char** argv)
 
 	struct timespec time_start = {};
 	struct timespec time_end = {};
+
+	// fabd is normally invoked with a single argument
+	int nodaemon = 0;
+	if(argc > 2)
+		if(strcmp(argv[2], "--nodaemon") == 0)
+			nodaemon = 1;
 
 #if DEBUG_IPC
 SAYF("fabd[%ld] started\n", (long)getpid());
@@ -506,11 +512,8 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	// process parameter gathering
 	fatal(params_setup);
 
-	// get user identity of this process, assert user:group and permissions are set appropriately
-	fatal(identity_init);
-
-	// fabd maintains the fabsys identity
-	fatal(identity_assume_fabsys);
+	// allow creation of world-rw files
+	umask(0);
 
 	// initialize logger
 	fatal(log_init);
@@ -562,30 +565,27 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 		r = -1;
 		fatal(uxkill, g_params.fab_pid, 0, &r);
 
-#if REQUIRE_LISTENER
-		if(r)
-#else
-		if(0)
-#endif
+		if(!nodaemon && r)
 		{
-			SAYF("fab[%lu] not listening\n", (long)g_params.fab_pid);
+			failf(FAB_BADIPC, "fab[%lu] not listening", (long)g_params.fab_pid);
 		}
 		else
 		{
-#if REQUIRE_LISTENER
-			fatal(ixclose, &fd);
+			if(!nodaemon)
+			{
+				fatal(ixclose, &fd);
 
-			// reopen standard file descriptors
-			snprintf(space, sizeof(space), "/proc/%ld/fd/1", (long)g_params.fab_pid);
-			fatal(xopen, space, O_RDWR, &fd);
-			fatal(xdup2, fd, 1);
-			fd = -1;
+				// reopen standard file descriptors
+				snprintf(space, sizeof(space), "/proc/%ld/fd/1", (long)g_params.fab_pid);
+				fatal(xopen, space, O_RDWR, &fd);
+				fatal(xdup2, fd, 1);
+				fd = -1;
 
-			snprintf(space, sizeof(space), "/proc/%ld/fd/2", (long)g_params.fab_pid);
-			fatal(xopen, space, O_RDWR, &fd);
-			fatal(xdup2, fd, 2);
-			fd = -1;
-#endif
+				snprintf(space, sizeof(space), "/proc/%ld/fd/2", (long)g_params.fab_pid);
+				fatal(xopen, space, O_RDWR, &fd);
+				fatal(xdup2, fd, 2);
+				fd = -1;
+			}
 
 			// open args file
 			snprintf(space, sizeof(space), "%s/args", stem);
@@ -639,11 +639,12 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			// log args summary
 			fatal(args_summarize);
 
-#if REQUIRE_LISTENER
 			// chdir
-			snprintf(space, sizeof(space), "/proc/%ld/cwd", (long)g_params.fab_pid);
-			fatal(xchdir, space);
-#endif
+			if(!nodaemon)
+			{
+				snprintf(space, sizeof(space), "/proc/%ld/cwd", (long)g_params.fab_pid);
+				fatal(xchdir, space);
+			}
 
 			// parse the fabfiles only on the first run
 			static int initialized;
@@ -734,7 +735,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 				if(x < ff_files.l)
 				{
-					// fabfile changes : exec new fabd instance
+					// fabfile changes : exec a new fabd instance
 					execvp(argv[0], argv);
 				}
 			}
@@ -826,13 +827,12 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 		memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
 		fab_pids[0] = g_params.fab_pid;
 
-#if REQUIRE_LISTENER
+		if(nodaemon)
+			break;
+
 		// wait for next command
 		o_signum = 0;
 		pause();
-#else
-		break;
-#endif
 	}
 
 	// touch stamp file

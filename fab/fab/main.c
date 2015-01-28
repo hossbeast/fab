@@ -445,8 +445,8 @@ printf("fab[%ld] started\n", (long)getpid());
 	// process parameter gathering
 	fatal(params_setup);
 
-	// get user identity of this process, assert user:group and permissions are set appropriately
-	fatal(identity_init);
+	// ability to create world-rw files
+	umask(0);
 
 	// unblock all signals
 	sigset_t all;
@@ -517,9 +517,6 @@ printf("fab[%ld] started\n", (long)getpid());
 /FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile, empty
 /FABIPCDIR/<hash>/fabd/exit			<-- fabd exit status, binary
 */
-
-	// assume fabsys identity
-	fatal(identity_assume_fabsys);
 
 	// ipc-dir stem
 	size_t z = snprintf(space, sizeof(space), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
@@ -663,9 +660,6 @@ printf("fab[%ld] started\n", (long)getpid());
 		fatal(xkill, -fabd_pgid, FABSIG_START);
 	}
 
-	// files done : reassume user identity
-	fatal(identity_assume_user);
-	
 	// wait to hear back from fabd
 	o_signum = 0;
 	pause();
@@ -696,9 +690,6 @@ printf("fab[%ld] started\n", (long)getpid());
 	}
 #endif
 
-	// files done : reassume user identity
-	fatal(identity_assume_fabsys);
-
 	// check fabd-exit file
 	snprintf(space + z, sizeof(space) - z, "/fabd/exit");
 	fatal(ixclose, &fd);
@@ -724,8 +715,6 @@ printf("fab[%ld] started\n", (long)getpid());
 	fatal(uxopen_mode, space, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
 	if(fd != -1)
 		fatal(xfutimens, fd, 0);
-
-	fatal(identity_assume_user);
 
 finally:
 	fatal(ixclose, &fd);

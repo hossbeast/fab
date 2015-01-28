@@ -83,9 +83,4 @@ void params_teardown()
 {
 	free(g_params.cwd);
 	free(g_params.exedir);
-
-	free(g_params.ruid_name);
-	free(g_params.euid_name);
-	free(g_params.rgid_name);
-	free(g_params.egid_name);
 }

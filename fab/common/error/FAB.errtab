@@ -26,9 +26,7 @@
 9		DSCPARSE			dependency discovery results were not parsed
 10	NOINVOKE			invocation target could not be resolved
 11	BADPLAN				buildplan cannot be constructed
-12	EXESUID				fab executable does not have ug+s permissions
-13	CYCLE					dependency graph contains a cycle
-14	NOSELECT			selector matches nothing
-15	NXPARAMS			unable to determine runtime parameters
-16	FABDCRED			prior execution had different ruid/rgid; re-run with -B
-17	FABDFAIL			fabd terminated abnormally
+12	CYCLE					dependency graph contains a cycle
+13	NOSELECT			selector matches nothing
+14	NXPARAMS			unable to determine runtime parameters
+15	FABDFAIL			fabd terminated abnormally

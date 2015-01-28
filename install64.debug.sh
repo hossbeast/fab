@@ -44,8 +44,10 @@ fml_0_0()
 
 	rm -rf																							$destdir/$fabtmpdir 2>/dev/null
 	install -d 																					$destdir/$fabtmpdir
+	chmod 777																						$destdir/$fabtmpdir
 	rm -rf																							$destdir/$fabipcdir 2>/dev/null
 	install -d 																					$destdir/$fabipcdir
+	chmod 777																						$destdir/$fabipcdir
 
 	rm -rf																							$destdir/$fabinvokedir 2>/dev/null
 	install -d																					$destdir/$fabinvokedir/std
@@ -212,30 +214,11 @@ fml_5_2()
 
 
 # formulas and names for stage 6
-NAMES[8]='@fabcore.install.debug'
+NAMES[8]='@liblistwise.install.debug'
 fml_6_0()
 {
   exec 1>/dev/null
   exec 2>&100
-
-  [[ $fabtmpdir ]] || local fabtmpdir='/var/tmp/fab'
-  [[ $fabipcdir ]] || local fabipcdir='/var/run/fab'
-  [[ $destdir ]] || local destdir=''
-  
-	chmod 777																						$destdir/$fabtmpdir
-	chmod 777																						$destdir/$fabipcdir
-
-
-  X=$?
-  echo 0 1>&99
-  exit $X
-}
-
-NAMES[9]='@liblistwise.install.debug'
-fml_6_1()
-{
-  exec 1>/dev/null
-  exec 2>&101
 
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
@@ -297,7 +280,7 @@ fml_6_1()
 
 
   X=$?
-  echo 1 1>&99
+  echo 0 1>&99
   exit $X
 }
 
@@ -468,15 +451,14 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=2))
+  ((SKP+=1))
 else
   # launch stage 6.0
   exec 100>$tmp ; rm -f $tmp ; fml_6_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_6_1 & PIDS[1]=$!
 
   # harvest stage 6.0
   C=0
-  while [[ $C != 2 ]]; do
+  while [[ $C != 1 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?

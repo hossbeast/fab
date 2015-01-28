@@ -27,7 +27,6 @@
 #include "args.h"
 #include "params.h"
 #include "logs.h"
-#include "identity.h"
 #include "dirutil.h"
 #include "path.h"
 

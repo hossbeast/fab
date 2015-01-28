@@ -25,7 +25,6 @@
 #include "logs.h"
 #include "args.h"
 #include "params.h"
-#include "identity.h"
 
 #include "fml.h"
 #include "ts.h"

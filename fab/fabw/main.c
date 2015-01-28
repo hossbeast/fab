@@ -31,8 +31,6 @@
 
 #include "global.h"
 
-#include "identity.h"
-
 #include "parseint.h"
 #include "macros.h"
 #include "say.h"
@@ -123,12 +121,6 @@ int main(int argc, char** argv)
 
 	// process parameter gathering
 	fatal(params_setup);
-
-	// get user identity of this process, assert user:group and permissions are set appropriately
-	fatal(identity_init);
-
-	// get fabsys identity
-	fatal(identity_assume_fabsys);
 
 	// get ipc dir
 	uint32_t canhash;

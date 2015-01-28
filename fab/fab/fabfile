@@ -99,9 +99,8 @@ $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_deve
 [ @install.final ] : [ @final ]
 {
 	install -d																			[ $destdir/$bindir ]
+	rm																							[ $destdir/$bindir/fab ]
 	install [ $fab_final ]													[ $destdir/$bindir/fab ]
-	chown fabsys:fabsys															[ $destdir/$bindir/fab ]
-	chmod ug+s 																			[ $destdir/$bindir/fab ]
 }
 
 [ @install.debug ] : [ @debug ]

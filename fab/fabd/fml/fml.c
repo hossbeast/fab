@@ -30,7 +30,6 @@
 #include "ff/ff.tokens.h"
 #include "list.h"
 #include "lwutil.h"
-#include "identity.h"
 #include "enclose.h"
 #include "var.h"
 #include "logs.h"
@@ -451,10 +450,6 @@ int fml_exec(ts * const restrict ts, int num)
 
 		// redirect stderr
 		fatal(xdup2, ts->stde_fd, 2);
-
-		// irretrievably drop fabsys:fabsys identity
-		fatal(xsetresuid, g_params.ruid, g_params.ruid, g_params.ruid);
-		fatal(xsetresgid, g_params.rgid, g_params.rgid, g_params.rgid);
 
 		// exec doesnt return
 		execl(ts->cmd_path->s, ts->cmd_path->s, (void*)0);

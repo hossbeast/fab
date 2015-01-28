@@ -1,9 +1,6 @@
 * v0.5.0
  review fab cmdline interface, options, logs
  fab/lw man pages
- verify install
- deal with REQUIRE_LISTENER
- deal with identity
 
 * finished
  standardize dsc_exec vs bp_exec error messages
@@ -16,6 +13,9 @@
  make fab/fabw/fabd use SAY to write to stdout
  make usage report debug/devel only
  fix callstack dump in fabd/main.c so the 0th frame (null) does not show
+ deal with identity
+ deal with REQUIRE_LISTENER
+ verify install
 
 * docket
  listwise resolve lstack vs lwx

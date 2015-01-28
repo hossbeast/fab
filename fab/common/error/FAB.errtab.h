@@ -13,12 +13,10 @@ _E(8, FMLFAIL, "formula failed to execute successfully") \
 _E(9, DSCPARSE, "dependency discovery results were not parsed") \
 _E(10, NOINVOKE, "invocation target could not be resolved") \
 _E(11, BADPLAN, "buildplan cannot be constructed") \
-_E(12, EXESUID, "fab executable does not have ug+s permissions") \
-_E(13, CYCLE, "dependency graph contains a cycle") \
-_E(14, NOSELECT, "selector matches nothing") \
-_E(15, NXPARAMS, "unable to determine runtime parameters") \
-_E(16, FABDCRED, "prior execution had different ruid/rgid; re-run with -B") \
-_E(17, FABDFAIL, "fabd terminated abnormally") \
+_E(12, CYCLE, "dependency graph contains a cycle") \
+_E(13, NOSELECT, "selector matches nothing") \
+_E(14, NXPARAMS, "unable to determine runtime parameters") \
+_E(15, FABDFAIL, "fabd terminated abnormally") \
 
 enum {
 #define _E(a, b, c) FAB_ ## b = a,
@@ -26,6 +24,6 @@ ETABLE_FAB
 #undef _E
 };
 #define ERRMIN_FAB 1
-#define ERRMAX_FAB 17
+#define ERRMAX_FAB 15
 extern etable * perrtab_FAB;
 #endif

@@ -28,7 +28,6 @@
 
 #include "logs.h"
 #include "global.h"
-#include "identity.h"
 #include "args.h"
 
 #include "args.h"

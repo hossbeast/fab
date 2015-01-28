@@ -36,7 +36,6 @@
 #include "macros.h"
 #include "args.h"
 #include "cksum.h"
-#include "identity.h"
 #include "dirutil.h"
 
 #define restrict __restrict
