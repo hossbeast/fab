@@ -248,7 +248,7 @@ static int loop()
 		if((gn_nodes.e[x]->type & GN_TYPE_HASFILE) && (gn_nodes.e[x]->invalid & (GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER)))
 		{
 			// do not cross the nofile boundary
-			fatal(traverse_depth_bynodes_feedsward_noweak_usebridge_nonofile, gn_nodes.e[x], visit);
+			fatal(traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile, gn_nodes.e[x], visit);
 
 			gn_nodes.e[x]->invalid &= ~(GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER);
 		}
