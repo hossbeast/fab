@@ -19,9 +19,32 @@
 
 # create the buildscripts
 ./fab/fab/fab.devel --bslic-fab -k make64.final.sh @final
-./fab/fab/fab.devel --bslic-fab -k install64.final.sh +n @install.final -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabtmpdir -K fabipcdir -K fabinvokedir
+./fab/fab/fab.devel --bslic-fab -k install64.final.sh +n @install.final \
+	-K destdir	\
+	-K incdir \
+	-K bindir \
+	-K mandir \
+	-K libdir \
+	-K dlibdir \
+	-K lwopdir \
+	-K fablwopdir \
+	-K fabtmpdir \
+	-K fabipcdir \
+	-K fabinvokedir
 
 ./fab/fab/fab.devel --bslic-fab -k make64.debug.sh @debug
-./fab/fab/fab.devel --bslic-fab -k install64.debug.sh +n @install.debug -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabtmpdir -K fabipcdir -K fabinvokedir
+./fab/fab/fab.devel --bslic-fab -k install64.debug.sh +n @install.debug \
+	-K destdir	\
+	-K incdir \
+	-K bindir \
+	-K mandir \
+	-K libdir \
+	-K dlibdir \
+	-K lwopdir \
+	-K fablwopdir \
+	-K fabtmpdir \
+	-K fabipcdir \
+	-K fabinvokedir
 
+./fab/fab/fab.devel --bslic-fab -k installman.sh +n @installman
 ./fab/fab/fab.devel --bslic-fab -k make64.devel.sh @devel

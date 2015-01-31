@@ -38,7 +38,8 @@
 # install
 [ @install.final ] : [ @libxapi.install.final @libxlinux.install.final @libpstring.install.final @liblistwise.install.final @listwise.install.final @fabcore.install.final ]
 [ @install.debug ] : [ @libxapi.install.debug @libxlinux.install.debug @libpstring.install.debug @liblistwise.install.debug @listwise.install.debug @fabcore.install.debug ]
+[ @install.man ] : [ @fabcore.install.man @listwise.install.man ]
 
-# default target - tests
+# unit tests
 [ @test ] : [ @xunit.devel @libxunit.devel @liblistwise.test @common.test ]
 [ @test.more ] : [ @xunit.devel @libxunit.devel @liblistwise.test.more @common.test.more ]

@@ -142,6 +142,9 @@ static int loop()
 	inspectionsl = 0;
 	queriesl = 0;
 
+	// track start time
+	g_params.starttime = time(0);
+
 	// comprehensive dependency discovery
 	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
 

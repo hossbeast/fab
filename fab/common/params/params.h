@@ -34,6 +34,7 @@ extern struct g_params_t
 	int							cwdl;
 	char *					exedir;											// location of the fab executable when the program started
 	int							exedirl;
+	time_t					starttime;									// time last action of fabd began
 
 	long						procs;											// detected number of processors (0 means unknown)
 	long						pagesize;										// page size

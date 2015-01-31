@@ -97,8 +97,8 @@ $lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstri
 	ln -vfs [ listwise ]					[ $destdir/$bindir/lw ]
 }
 
-[ @installman ] : [ @installman1 ]
-[ @installman1 ] : [ $dlistwise/man/listwise.1 ~ j ]
+[ @install.man ] : [ @install.man1 ]
+[ @install.man1 ] : [ $dlistwise/man/listwise.1 ~ j ]
 {
 	install -d 																					[ $destdir/$mandir/man1 ]
 

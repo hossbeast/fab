@@ -141,6 +141,10 @@ static int resolve(ff_node * list, map* vmap, transform_parser * gp, lwx *** sta
 					fatal(lstack_adds, (*stax)[pn], "gcc-dep");
 #endif
 				}
+				else if(strcmp(list->elements[x]->name->text->s, "starttime") == 0)
+				{
+					fatal(lstack_addf, (*stax)[pn], "%u", (uint32_t)g_params.starttime);
+				}
 			}
 			else
 			{
