@@ -222,7 +222,7 @@ finally:
 	transform_free(g);
 	psfree(gps);
 
-	XAPI_INFOF("loc", "[%d,%d - %d,%d]"
+	XAPI_INFOF("location", "[%d,%d - %d,%d]"
 		, list->loc.f_lin + 1
 		, list->loc.f_col + 1
 		, list->loc.l_lin + 1

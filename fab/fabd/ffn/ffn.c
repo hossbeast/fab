@@ -57,7 +57,7 @@ static int parse_transform(ff_node * n, transform_parser * gp)
 	fatal(transform_parse, &gp, n->text->s, n->text->l, &n->transform);
 
 finally :
-	XAPI_INFOF("location", "[%3d,%3d - %3d,%3d]", n->loc.f_lin + 1, n->loc.f_col + 1, n->loc.l_lin + 1, n->loc.l_col + 1);
+	XAPI_INFOF("location", "[%d,%d - %d,%d]", n->loc.f_lin + 1, n->loc.f_col + 1, n->loc.l_lin + 1, n->loc.l_col + 1);
 coda;
 }
 

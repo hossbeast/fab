@@ -136,7 +136,7 @@ finally :
 	{
 		if(pp->scanerr || pp->gramerr)
 		{
-			XAPI_INFOF("loc", "[%d,%d - %d,%d]"
+			XAPI_INFOF("location", "[%d,%d - %d,%d]"
 				, pp->error_loc.f_lin + 1
 				, pp->error_loc.f_col + 1
 				, pp->error_loc.l_lin + 1

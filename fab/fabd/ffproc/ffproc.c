@@ -55,9 +55,10 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 	map * cmap = 0;
 	pstring * inv = 0;
 
+	ff_node* stmt = 0;
 	for(x = 0; x < root->statementsl; x++)
 	{
-		ff_node* stmt = root->statements[x];
+		stmt = root->statements[x];
 
 		if(stmt->type == FFN_ONCEBLOCK)
 		{
@@ -320,34 +321,21 @@ finally:
 	path_free(pth);
 	map_free(cmap);
 
-/*
-	XAPI_INFOF("loc", "[%d,%d - %d,%d]"
-		, root->statements[x]->loc.f_lin + 1
-		, root->statements[x]->loc.f_col + 1
-		, root->statements[x]->loc.l_lin + 1
-		, root->statements[x]->loc.l_col + 1
-	);
-*/
-
+	if(XAPI_ERRTAB == perrtab_FAB && XAPI_ERRCODE == FAB_NOINVOKE)
+	{
+		XAPI_INFOF("location", "[%d,%d - %d,%d]"
+			, stmt->loc.f_lin + 1
+			, stmt->loc.f_col + 1
+			, stmt->loc.l_lin + 1
+			, stmt->loc.l_col + 1
+		);
+	}
 coda;
 }
 
 static int procfile(const ff_parser * const ffp, const path * const inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel, locstack * loc)
 {
 	ff_file * ff = 0;
-/*
-
-	if(log_would(L_INVOKE))
-	{
-		char * sstr = 0;
-		fatal(strstack_string, sstk, 0, "/", "/", &sstr);
-
-		if(seed)
-			logf(L_INVOKE, "%.*s : %s @ %s", seed->l, seed->s, inpath->can, sstr);
-		else
-			logf(L_INVOKE, "%s @ %s", inpath->can, sstr);
-	}
-*/
 
 	// parse
 	fatal(ff_reg_load, ffp, inpath, nofile, nofilel, &ff);

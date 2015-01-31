@@ -919,7 +919,7 @@ finally:
 	if((time_start.tv_sec || time_start.tv_nsec) && (time_end.tv_sec == 0 && time_end.tv_nsec == 0))
 	{
 		// stop measuring
-		fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
+		clock_gettime(CLOCK_MONOTONIC_RAW, &time_end);
 
 		z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
 		logf(L_INFO, "elapsed : %.*s", (int)z, space);
