@@ -79,7 +79,7 @@ int ts_ensure(ts *** ts, int * tsa, int tsl)
 	finally : coda;
 }
 
-int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo, int * bad)
+int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, int * bad)
 {
 	int x;
 	int j;
@@ -103,7 +103,7 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 	{
 		// launch all of the commands
 		for(x = j; x < (j + step) && x < n; x++)
-			fatal(fml_exec, ts[x], x);// ((*waveid) * 1000) + x);
+			fatal(fml_exec, ts[x], x);
 
 		// wait for each of them to complete
 		pid_t pid = 0;
@@ -208,19 +208,6 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t
 				{
 					break;
 				}
-			}
-
-			// cat stdout unless there was an error
-			if(!e && log_would(lo))
-			{
-				// chomp trailing whitespace
-				size_t end = ts[x]->stdo_txt->l - 1;
-				while(end >= 0 && (ts[x]->stdo_txt->s[end] == ' ' || ts[x]->stdo_txt->s[end] == '\t' || ts[x]->stdo_txt->s[end] == '\r' || ts[x]->stdo_txt->s[end] == '\n'))
-					end--;
-				end++;
-
-				fatal(axwrite, 1, ts[x]->stdo_txt->s, end);
-				fatal(axwrite, 1, "\n", 1);
 			}
 
 			if(e_stde)

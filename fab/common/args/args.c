@@ -176,31 +176,32 @@ if(help)
 {
 	printf(
 "\n"
-"usage : fab [ [ selection modifier ] | [ selector ] | [ option ] | [ logexpr ] | [ varexpr ] ] ...\n"
+"usage : fab [ [ <modifier> ] [ <selector> ] [ <option> ] [ <logexpr> ] ] ...\n"
 "\n"
-"        fab --help      : this message\n"
-"        fab --version   : version information\n"
-"        fab --logcats   : logging category listing\n"
-"        fab --operators : listwise operator listing (including fab-specific operators)\n"
+" --help     this message\n"
+" --version  version information\n"
+" --logs     logexpr listing\n"
+" --ops      listwise operator listing (including fab-specific operators)\n"
 "\n"
-"----------- [ selectors ] ----------------------------------------------------------------\n"
+"----------- [ modifier ] -----------------------------------------------------------------\n"
 "\n"
-" (+/-)t              (default) apply selections to fabricate-list\n"
-" (+/-)x                        apply selections to fabricate-exact-list\n"
-" (+/-)n                        apply selections to fabricate-nofile-list\n"
-" (+/-)d                        apply selections to discovery-list\n"
-" (+/-)b                        apply selections to invalidate-list\n"
-" (+/-)i                        apply selections to inspect-list\n"
-" (+/-)q                        apply selections to query-list\n"
-" (+/-)C              (default) resolve selectors against current working directory\n"
-" (+/-)F                        resolve selectors against init-fabfile-dir\n"
+" +t|-t               (default) apply selectors to fabricate-list\n"
+" +x|-x                         apply selectors to fabricate-exact-list\n"
+" +n|-n                         apply selectors to fabricate-nofile-list\n"
+" +d|-d                         apply selectors to discovery-list\n"
+" +b|-b                         apply selectors to invalidate-list\n"
+" +i|-i                         apply selectors to inspect-list\n"
+" +q|-q                         apply selectors to query-list\n"
+"\n"
+" +C|-C               (default) resolve selectors against current working directory\n"
+" +F|-F                         resolve selectors against init-fabfile-dir\n"
 "\n"
 "----------- [ options ] ------------------------------------------------------------------\n"
 "\n"
-" -p                            create buildplan, but do not execute it\n"
-" -B                            invalidate all, equivalent to +b [ $! ]\n"
+" -p                            create buildplan only, implies +BPDUMP\n"
+" -B                            kill fabd instance, if any. consider +b [ $! ]\n"
 " -j <number>                   concurrency limit (0=unbounded, -1=based on detected CPUs)\n"
-" -k <path>                     create buildscript from buildplan instead of executing it\n"
+" -k <path>                     create buildscript at <path>\n"
 " -K <varname>                  varname is settable at buildscript execution time\n"
 #if DEVEL
 " --bslic-standard    (default) buildscripts have the standard license\n"
@@ -213,8 +214,8 @@ if(help)
 #if DEBUG || DEVEL
 " --logtrace-no       (default) do not include file/function/line in log messages\n"
 " --logtrace                    include file/function/line in log messages\n"
-" --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
-" --backtrace-full              produce a complete description of the callstack upon failure\n"
+" --backtrace-pithy   (default) produce a summary of the callstack on error\n"
+" --backtrace-full              produce a complete description of the callstack on error\n"
 #endif
 " -f <path>                     locate the initial fabfile at <path> rather than ./fabfile\n"
 " -I <path>                     append <path> to the list of directories for invocation resolution\n"
@@ -231,8 +232,8 @@ if(logcats)
 "\n"
 "----------- [ logexpr ] ------------------------------------------------------------------\n"
 "\n"
-" +<logcat> to enable logging category\n"  
-" -<logcat> to disable logging category\n"  
+" +<logcat> to enable logging category (use TAG for all)\n"
+" -<logcat> to disable logging category (use TAG for all)\n"
 "\n"
 );
 
@@ -352,12 +353,20 @@ int args_parse()
 				, { "opts"												, no_argument	, &help, 1 }
 				, { "version"											, no_argument	, &version, 1 }
 				, { "vrs"													, no_argument	, &version, 1 }
-				, { "logcats"											, no_argument	, &logcats, 1 }
+				, { "vers"												, no_argument	, &version, 1 }
+				, { "log"													, no_argument	, &logcats, 1 }
 				, { "logs"												, no_argument	, &logcats, 1 }
-				, { "operators"										, no_argument	, &operators, 1 }
-				, { "oplist"											, no_argument	, &operators, 1 }
+				, { "logcat"											, no_argument	, &logcats, 1 }
+				, { "logcats"											, no_argument	, &logcats, 1 }
+				, { "logexpr"											, no_argument	, &logcats, 1 }
+				, { "logexprs"										, no_argument	, &logcats, 1 }
 				, { "ops"													, no_argument	, &operators, 1 }
+				, { "oplist"											, no_argument	, &operators, 1 }
+				, { "oplists"											, no_argument	, &operators, 1 }
+				, { "operator"										, no_argument	, &operators, 1 }
+				, { "operators"										, no_argument	, &operators, 1 }
 				, { "o"														, required_argument	, 0, 0 }
+				, { "op"													, required_argument	, 0, 0 }
 				, { "o1"													, no_argument	, 0, 0 }
 				, { "o2"													, no_argument	, 0, 0 }
 				, { "o3"													, no_argument	, 0, 0 }
@@ -371,7 +380,6 @@ int args_parse()
 				, { "ob"													, no_argument	, 0, 0 }
 				, { "oc"													, no_argument	, 0, 0 }
 				, { "od"													, no_argument	, 0, 0 }
-
 
 /* program longopts */
 				, { "cycles-warn"									, no_argument	, &g_args->mode_cycles		, MODE_CYCLES_WARN }
@@ -392,8 +400,8 @@ int args_parse()
 				, { "logtrace"										, no_argument	, &g_args->mode_logtrace	, MODE_LOGTRACE_FULL }
 #endif
 #if DEVEL
-				, { "bslic-standard"							, no_argument	, &g_args->mode_bslic		, MODE_BSLIC_STD }
-				, { "bslic-fab"										, no_argument	, &g_args->mode_bslic		, MODE_BSLIC_FAB }
+				, { "bslic-standard"							, no_argument	, &g_args->mode_bslic			, MODE_BSLIC_STD }
+				, { "bslic-fab"										, no_argument	, &g_args->mode_bslic			, MODE_BSLIC_FAB }
 #endif
 
 /* program switches */
@@ -507,7 +515,7 @@ printf("optopt=%c\n", optopt);
 
 		if(x == 0)
 		{
-			if(strcmp(longopts[longindex].name, "o") == 0)
+			if(strcmp(longopts[longindex].name, "o") == 0 || strcmp(longopts[longindex].name, "op") == 0)
 			{
 				struct operator * op = 0;
 				if((op = op_lookup(optarg, strlen(optarg))))

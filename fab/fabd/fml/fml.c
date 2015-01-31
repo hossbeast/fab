@@ -105,16 +105,6 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 		if(fmlv->flags & FFN_DISCOVERY)
 		{
 			fmlv->target = t;
-
-			logf(L_DSC | L_FML, "dsc(%s)[%3d,%3d - %3d,%3d] -> %s"
-				, ff_idstring(fml->ffn->loc.ff)
-				, fml->ffn->loc.f_lin + 1
-				, fml->ffn->loc.f_col + 1
-				, fml->ffn->loc.l_lin + 1
-				, fml->ffn->loc.l_col + 1
-				, t->idstring
-			);
-
 			fatal(dscv_attach, t, fmlv);
 		}
 		else if(fmlv->flags & FFN_FABRICATION)
@@ -122,15 +112,6 @@ static int fml_attach_singly(fml * const restrict fml, strstack * const restrict
 			fmlv->productsl = 1;
 			fatal(xmalloc, &fmlv->products, sizeof(fmlv->products[0]) * fmlv->productsl);
 			fmlv->products[0] = t;
-
-			logf(L_FAB | L_FML, "reg(%s)[%3d,%3d - %3d,%3d] -> %s"
-				, ff_idstring(fml->ffn->loc.ff)
-				, fml->ffn->loc.f_lin + 1
-				, fml->ffn->loc.f_col + 1
-				, fml->ffn->loc.l_lin + 1
-				, fml->ffn->loc.l_col + 1
-				, t->idstring
-			);
 
 			t->fabv = fmlv;
 			fatal(gn_finalize, t);
@@ -190,32 +171,6 @@ static int fml_attach_multi(fml * const restrict fml, strstack * const restrict 
 			{
 				t->fabv = fmlv;
 				fatal(gn_finalize, t);
-			}
-		}
-
-		// logging
-		if(fmlv->flags & FFN_FABRICATION)
-		{
-			if(log_start(L_FAB | L_FML))
-			{
-				logf(0, "reg(%s)[%3d,%3d - %3d,%3d] -> { "
-					, ff_idstring(fml->ffn->loc.ff)
-					, fml->ffn->loc.f_lin + 1
-					, fml->ffn->loc.f_col + 1
-					, fml->ffn->loc.l_lin + 1
-					, fml->ffn->loc.l_col + 1
-				);
-
-				for(y = 0; y < fmlv->productsl; y++)
-				{
-					if(y)
-						logf(0, ", %s", fmlv->products[y]->idstring);
-					else
-						logf(0, "%s", fmlv->products[y]->idstring);
-				}
-
-				logs(0, " }");
-				log_finish();
 			}
 		}
 	}

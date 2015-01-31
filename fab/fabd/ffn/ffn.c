@@ -272,7 +272,7 @@ void ffn_dump(ff_node * const root)
 		int x;
 		if(ffn)
 		{
-			logf(L_FF | L_FFTREE, "%*s%-25s%*s @ [%3d,%3d - %3d,%3d]"
+			logf(L_FFTREE, "%*s%-25s%*s @ [%3d,%3d - %3d,%3d]"
 				, lvl * 2, ""
 				, FFN_STRING(ffn->type)
 				, 70 - MIN(((lvl * 2) + 20), 70)
@@ -285,7 +285,7 @@ void ffn_dump(ff_node * const root)
 
 			if(ffn->type == FFN_STMTLIST)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %d"
+				logf(L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "statements", ffn->statementsl
 				);
@@ -294,7 +294,7 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_ONCEBLOCK)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %d"
+				logf(L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "statements", ffn->statementsl
 				);
@@ -303,23 +303,23 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_DEPENDENCY)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %s"
+				logf(L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
 					, "type"
 					, ffn->flags & FFN_WEAK ? "weak" : ffn->flags & FFN_BRIDGE ? "bridge" : "strong"
 				);
-				logf(L_FF | L_FFTREE, "%*s  %12s : %s"
+				logf(L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
 					, "cardinality"
 					, ffn->flags & FFN_MULTI ? "multi" : "single"
 				);
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "needs"
 				);
 				dump(ffn->needs, lvl + 1);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "feeds"
 				);
@@ -327,23 +327,23 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_FORMULA)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %s"
+				logf(L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
 					, "type"
 					, ffn->flags & FFN_DISCOVERY ? "discovery" : "fabrication"
 				);
-				logf(L_FF | L_FFTREE, "%*s  %12s : %s"
+				logf(L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
 					, "cardinality"	, ffn->flags & FFN_SINGLE ? "single " : ffn->flags & FFN_MULTI ? "multi" : "UNKNOWN"
 				);
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "targets"
 				);
 				dump(ffn->targets_0, lvl + 1);
 				dump(ffn->targets_1, lvl + 1);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "command"
 				);
@@ -351,23 +351,23 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_INVOCATION)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %s"
+				logf(L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
 					, "subcontext", ffn->flags & FFN_SUBCONTEXT ? "yes" : "no"
 				);
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "module"
 				);
 				dump(ffn->module, lvl + 1);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "scope"	
 				);
 				dump(ffn->scope, lvl + 1);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s : %d"
+				logf(L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "varsettings"
 					, ffn->varsettingsl
@@ -381,14 +381,14 @@ void ffn_dump(ff_node * const root)
 			         || ffn->type == FFN_VARXFM_ADD
 			         || ffn->type == FFN_VARXFM_SUB)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %d"
+				logf(L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "vars", ffn->varsl
 				);
 				for(x = 0; x < ffn->varsl; x++)
 					dump(ffn->vars[x], lvl + 1);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "definition"
 				);
@@ -396,44 +396,44 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_VARXFM_LW)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %d"
+				logf(L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "vars", ffn->varsl
 				);
 				for(x = 0; x < ffn->varsl; x++)
 					dump(ffn->vars[x], lvl + 1);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "transform"
 				);
 				dump(ffn->transform_node, lvl + 1);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "transform-list"
 				);
 			}
 			else if(ffn->type == FFN_LIST)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %u"
+				logf(L_FFTREE, "%*s  %12s : %u"
 					, lvl * 2, ""
 					, "flags", ffn->flags
 				);
-				logf(L_FF | L_FFTREE, "%*s  %12s : %d"
+				logf(L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "elements", ffn->elementsl
 				);
 				for(x = 0; x < ffn->elementsl; x++)
 					dump(ffn->elements[x], lvl + 1);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "transform"
 				);
 				dump(ffn->transform_node, lvl + 1);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "transform-list"
 				);
@@ -441,24 +441,24 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_WORD)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : '%.*s'"
+				logf(L_FFTREE, "%*s  %12s : '%.*s'"
 					, lvl * 2, ""
 					, "text", ffn->text->l, ffn->text->s
 				);
 			}
 			else if(ffn->type == FFN_NOFILE)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : '%.*s'"
+				logf(L_FFTREE, "%*s  %12s : '%.*s'"
 					, lvl * 2, ""
 					, "text", ffn->text->l, ffn->text->s
 				);
-				logf(L_FF | L_FFTREE, "%*s  %12s : %d"
+				logf(L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "parts", ffn->partsl
 				);
 				for(x = 0; x < ffn->partsl; x++)
 				{
-					logf(L_FF | L_FFTREE, "%*s  %12s : %s"
+					logf(L_FFTREE, "%*s  %12s : %s"
 						, lvl * 2, ""
 						, "part", ffn->parts[x]->text->s
 					);
@@ -466,11 +466,11 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_TRANSFORM)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %s"
+				logf(L_FFTREE, "%*s  %12s : %s"
 					, lvl * 2, ""
 					, "transform-string", ffn->text->s
 				);
-				logf(L_FF | L_FFTREE, "%*s  %12s : %d"
+				logf(L_FFTREE, "%*s  %12s : %d"
 					, lvl * 2, ""
 					, "transform-list", ffn->listl
 				);
@@ -479,12 +479,12 @@ void ffn_dump(ff_node * const root)
 			}
 			else if(ffn->type == FFN_VARREF)
 			{
-				logf(L_FF | L_FFTREE, "%*s  %12s : %u"
+				logf(L_FFTREE, "%*s  %12s : %u"
 					, lvl * 2, ""
 					, "flags", ffn->flags
 				);
 
-				logf(L_FF | L_FFTREE, "%*s  %12s :"
+				logf(L_FFTREE, "%*s  %12s :"
 					, lvl * 2, ""
 					, "name"
 				);
@@ -493,7 +493,7 @@ void ffn_dump(ff_node * const root)
 		}
 	};
 
-	if(log_would(L_FF | L_FFTREE))
+	if(log_would(L_FFTREE))
 		dump(root, 0);
 #endif
 }

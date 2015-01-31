@@ -166,30 +166,6 @@ static int dep_add_single(
 				*first = Ap;
 				first = 0;
 			}
-
-			uint64_t tag = L_DG;
-			if(ffn->loc.ff->type == FFT_DDISC)
-			{
-				if((newnp && (newa || newb)) || (newrp && newr))
-					tag |= L_DSCNEW;
-			}
-
-			if(newr)
-			{
-				logf(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
-					, "S"
-					, newa ? "x" : ""
-					, newb ? "x" : ""
-					, newr ? "x" : ""
-					, ff_idstring(ffn->loc.ff)
-					, ffn->loc.f_lin + 1
-					, ffn->loc.f_col + 1
-					, ffn->loc.l_lin + 1
-					, ffn->loc.l_col + 1
-					, ((gn*)Ap)->idstring
-					, ((gn*)Bp)->idstring
-				);
-			}
 		}
 		LSTACK_ITEREND;
 	}
@@ -356,30 +332,6 @@ static int dep_add_multi(
 				{
 					*first = Ap;
 					first = 0;
-				}
-
-				uint64_t tag = L_DG;
-				if(ffn->loc.ff->type == FFT_DDISC)
-				{
-					if((newnp && (newa[i] || newb)) || (newrp && newr))
-						tag |= L_DSCNEW;
-				}
-
-				if(newr)
-				{
-					logf(tag, "[%1s][%1s][%1s][%1s](%s)[%3d,%3d - %3d,%3d] %s -> %s"
-						, "M"
-						, newa[i] ? "x" : ""
-						, newb ? "x" : ""
-						, newr ? "x" : ""
-						, ff_idstring(ffn->loc.ff)
-						, ffn->loc.f_lin + 1
-						, ffn->loc.f_col + 1
-						, ffn->loc.l_lin + 1
-						, ffn->loc.l_col + 1
-						, ((gn*)Ap)->idstring
-						, ((gn*)Bp)->idstring
-					);
 				}
 			}
 			LSTACK_ITEREND;

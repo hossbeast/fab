@@ -16,6 +16,7 @@
  deal with identity
  deal with REQUIRE_LISTENER
  verify install
+ rename stdo/stde out/err
 
 * docket
  listwise resolve lstack vs lwx

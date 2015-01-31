@@ -392,7 +392,7 @@ int bp_eval(bp * const bp)
 			}
 
 			gn_invalid_reasons_write(gn, space, sizeof(space));
-			logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %7s (%s)"
+			logf(L_BPEVAL, "[%2d,%3d] %12s %-65s | %7s (%s)"
 				, x, c++
 				, GN_TYPE_STR(bp->stages[0].primary[0]->type)
 				, gn->idstring
@@ -431,7 +431,7 @@ int bp_eval(bp * const bp)
 
 					if(!gn->poison)
 					{
-						logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s"
+						logf(L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s"
 							, x, c++
 							, GN_TYPE_STR(gn->type)
 							, gn->idstring
@@ -450,7 +450,7 @@ int bp_eval(bp * const bp)
 					gn * gn = bp->stages[x].evals[y]->products[k];
 
 					gn_invalid_reasons_write(gn, space, sizeof(space));
-					logf(L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
+					logf(L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
 						, x, c++
 						, GN_TYPE_STR(gn->type)
 						, gn->idstring
@@ -482,7 +482,7 @@ int bp_eval(bp * const bp)
 
 			if(gn->rebuild)
 			{
-				logf(L_ERROR | L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
+				logf(L_ERROR | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
 					, x, c++
 					, GN_TYPE_STR(gn->type)
 					, gn->idstring
@@ -492,7 +492,7 @@ int bp_eval(bp * const bp)
 			}
 			else
 			{
-				logf(L_WARN | L_BP | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
+				logf(L_WARN | L_BPEVAL, "[%2d,%3d] %12s %-65s | %-7s (%s)"
 					, x, c++
 					, GN_TYPE_STR(gn->type)
 					, gn->idstring
@@ -608,7 +608,7 @@ int bp_harvest(bp * bp)
 				if(r == 0)
 				{
 					// verify that stderr was saved and contains nothing
-					fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stde", g_params.fab_pid, x, y);
+					fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", g_params.fab_pid, x, y);
 					fatal(uxstat, tmp->s, &stb, &r);
 					if(r == 0 && stb.st_size == 0)
 					{
@@ -644,11 +644,11 @@ void bp_dump(bp * bp)
 
 	if(bp->stages_l == 0)
 	{
-		logf(L_BP | L_BPDUMP, "NO STAGES");
+		logf(L_BPDUMP, "NO STAGES");
 	}
 	for(x = 0; x < bp->stages_l; x++)
 	{
-		logf(L_BP | L_BPDUMP, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
+		logf(L_BPDUMP, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
 
 		for(y = 0; y < bp->stages[x].evals_l; y++)
 		{
@@ -657,14 +657,14 @@ void bp_dump(bp * bp)
 			{
 				if(i)
 				{
-					logf(L_BP | L_BPDUMP, "         %-9s %s"
+					logf(L_BPDUMP, "         %-9s %s"
 						, GN_TYPE_STR(bp->stages[x].evals[y]->products[i]->type)
 						, bp->stages[x].evals[y]->products[i]->idstring
 					);
 				}
 				else
 				{
-					logf(L_BP | L_BPDUMP, "[%2d,%3d] %-9s %s"
+					logf(L_BPDUMP, "[%2d,%3d] %-9s %s"
 						, x
 						, y
 						, GN_TYPE_STR(bp->stages[x].evals[y]->products[i]->type)

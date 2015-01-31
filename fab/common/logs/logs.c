@@ -19,7 +19,7 @@
 
 // logtag definitions
 struct g_logs_t logs[] = {
-	  { .v = L_ERROR		, .s = "ERROR"		, .d = "errors leading to shutdown" }
+	  { .v = L_ERROR		, .s = "ERROR"		, .d = "fatal errors" }
 	, { .v = L_WARN			, .s = "WARN"			, .d = "nonfatal warnings" }
 	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
 	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
@@ -30,29 +30,21 @@ struct g_logs_t logs[] = {
 	, { .v = L_FFSTATE	, .s = "FFSTATE"	, .d = "fabfile parsing - lexer states" }
 	, { .v = L_FFTREE		, .s = "FFTREE"		, .d = "fabfile parsing - parsed tree" }
 	, { .v = L_FFFILE		, .s = "FFFILE"		, .d = "fabfile parsing - parsed file" }
-	, { .v = L_FF				, .s = "FF"				, .d = "fabfile parsing" }
 #endif
 	, { .v = L_BPINFO		, .s = "BPINFO"		, .d = "buildplan - flow" }
 	, { .v = L_BPEXEC		, .s = "BPEXEC"		, .d = "buildplan - execution" }
 	, { .v = L_BPEVAL		, .s = "BPEVAL"		, .d = "buildplan - pruning/evaluating" }
 	, { .v = L_BPDUMP		, .s = "BPDUMP"		, .d = "buildplan - dump the final buildplan" }
-	, { .v = L_BP				, .s = "BP"				, .d = "buildplan" }
-	, { .v = L_FMLEXEC	, .s = "FMLEXEC"	, .d = "formulas - execution results/details" }
-	, { .v = L_FML			, .s = "FML"			, .d = "formulas" }
-	, { .v = L_FAB			, .s = "FAB"			, .d = "fabrication formulas" }
 	, { .v = L_DSCINFO	, .s = "DSCINFO"	, .d = "dependency discovery - flow" }
 	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - execution" }
-	, { .v = L_DSCNEW		, .s = "DSCNEW"		, .d = "dependency discovery - new nodes/edges" }
-	, { .v = L_DSC			, .s = "DSC"			, .d = "dependency discovery" }
-	, { .v = L_DGRAPH		, .s = "DGRAPH"		, .d = "dependency graph - dump/details" }
-	, { .v = L_DG				, .s = "DG"				, .d = "dependency graph" }
+	, { .v = L_NODE			, .s = "NODE"			, .d = "dependency graph node details (+i)" }
+	, { .v = L_INVALID	, .s = "INVALID"	, .d = "dependency graph node invalidations" }
 	, { .v = L_VARAUTO	, .s = "VARAUTO"	, .d = "variable definitions - automatic" }
 	, { .v = L_VARUSER	, .s = "VARUSER"	, .d = "variable definitions - user-defined" }
 	, { .v = L_VAR			, .s = "VAR"			, .d = "variable definitions" }
 	, { .v = L_INVOKE		, .s = "INVOKE"		, .d = "fabfile invocations" }
-	, { .v = L_SELECT		, .s = "SELECT"		, .d = "node selectors" }
+	, { .v = L_SELECT		, .s = "SELECT"		, .d = "selector execution" }
 	, { .v = L_LISTS		, .s = "LISTS"		, .d = "node lists" }
-	, { .v = L_INVALID	, .s = "INVALID"	, .d = "node invalidation" }
 #if DEBUG || DEVEL
 	, { .v = L_LWEXEC		, .s = "LWEXEC"		, .d = "liblistwise - execution" }
 	, { .v = L_LWOPINFO	, .s = "LWOPINFO"	, .d = "liblistwise - operator info messages" }

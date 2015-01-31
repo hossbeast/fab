@@ -373,27 +373,27 @@ void gn_dump(gn * gn)
 	int x;
 	char space[128];
 
-	if(log_would(L_DG | L_DGRAPH))
+	if(log_would(L_NODE))
 	{
 		// path properties
-		logf(L_DG | L_DGRAPH, "%18s : %s", "idstring"				, gn->idstring);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "type"						, GN_TYPE_STR(gn->type));
-		logf(L_DG | L_DGRAPH, "%18s : %s", "can-path"				, gn->path->can);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "in-path"				, gn->path->in_path);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "in-base"				, gn->path->in_base);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "abs-path"				, gn->path->abs);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "rel-fab-path"		, gn->path->rel_fab);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "rel-cwd-path"		, gn->path->rel_cwd);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "rel-nofile-path", gn->path->rel_nofile);
-		logf(L_DG | L_DGRAPH, "%18s : %u", "canhash"				, gn->path->can_hash);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "name"						, gn->path->name);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "ext"						, gn->path->ext);
-		logf(L_DG | L_DGRAPH, "%18s : %s", "ext_last"				, gn->path->ext_last);
+		logf(L_NODE, "%18s : %s", "idstring"				, gn->idstring);
+		logf(L_NODE, "%18s : %s", "type"						, GN_TYPE_STR(gn->type));
+		logf(L_NODE, "%18s : %s", "can-path"				, gn->path->can);
+		logf(L_NODE, "%18s : %s", "in-path"				, gn->path->in_path);
+		logf(L_NODE, "%18s : %s", "in-base"				, gn->path->in_base);
+		logf(L_NODE, "%18s : %s", "abs-path"				, gn->path->abs);
+		logf(L_NODE, "%18s : %s", "rel-fab-path"		, gn->path->rel_fab);
+		logf(L_NODE, "%18s : %s", "rel-cwd-path"		, gn->path->rel_cwd);
+		logf(L_NODE, "%18s : %s", "rel-nofile-path", gn->path->rel_nofile);
+		logf(L_NODE, "%18s : %u", "canhash"				, gn->path->can_hash);
+		logf(L_NODE, "%18s : %s", "name"						, gn->path->name);
+		logf(L_NODE, "%18s : %s", "ext"						, gn->path->ext);
+		logf(L_NODE, "%18s : %s", "ext_last"				, gn->path->ext_last);
 
 		if(gn->type == GN_TYPE_PRIMARY || gn->type == GN_TYPE_SECONDARY)
 		{
 			gn_invalid_reasons_write(gn, space, sizeof(space));
-			logf(L_DG | L_DGRAPH, "%18s : %s", "state", space);
+			logf(L_NODE, "%18s : %s", "state", space);
 		}
 
 		if(gn->type == GN_TYPE_PRIMARY)
@@ -404,7 +404,7 @@ void gn_dump(gn * gn)
 				{
 					int y = gn->dscvs[x]->ctx->locsl - 1;
 
-					logf(L_DG | L_DGRAPH, "%18s : [%3d,%3d - %3d,%3d] @ %s", "dsc formula"
+					logf(L_NODE, "%18s : [%3d,%3d - %3d,%3d] @ %s", "dsc formula"
 						, gn->dscvs[x]->ctx->locs[y]->f_lin + 1
 						, gn->dscvs[x]->ctx->locs[y]->f_col + 1
 						, gn->dscvs[x]->ctx->locs[y]->l_lin + 1
@@ -414,7 +414,7 @@ void gn_dump(gn * gn)
 
 					for(y--; y >= 0; y--)
 					{
-						logf(L_DG | L_DGRAPH, "%18s   [%3d,%3d - %3d,%3d] @ %s", ""
+						logf(L_NODE, "%18s   [%3d,%3d - %3d,%3d] @ %s", ""
 							, gn->dscvs[x]->ctx->locs[y]->f_lin + 1
 							, gn->dscvs[x]->ctx->locs[y]->f_col + 1
 							, gn->dscvs[x]->ctx->locs[y]->l_lin + 1
@@ -426,22 +426,22 @@ void gn_dump(gn * gn)
 			}
 			else
 			{
-				logf(L_DG | L_DGRAPH, "%18s : none", "dsc formula");
+				logf(L_NODE, "%18s : none", "dsc formula");
 			}
 
-			logf(L_DG | L_DGRAPH, "%18s : %d", "size", (int)gn->hb->size);
+			logf(L_NODE, "%18s : %d", "size", (int)gn->hb->size);
 			if(gn->hb->mtime)
 			{
 				struct tm ltm;
 				localtime_r(&gn->hb->mtime, &ltm);
 				strftime(space, sizeof(space), "%a %b %d %Y %H:%M:%S", &ltm);
 
-				logf(L_DG | L_DGRAPH, "%18s : %s", "mtime-abs", space);
-				logf(L_DG | L_DGRAPH, "%18s : %s", "mtime-del", durationstring(time(0) - gn->hb->mtime));
+				logf(L_NODE, "%18s : %s", "mtime-abs", space);
+				logf(L_NODE, "%18s : %s", "mtime-del", durationstring(time(0) - gn->hb->mtime));
 			}
 			else
 			{
-				logf(L_DG | L_DGRAPH, "%18s : %s", "mtime", "");
+				logf(L_NODE, "%18s : %s", "mtime", "");
 			}
 		}
 
@@ -451,7 +451,7 @@ void gn_dump(gn * gn)
 			{
 				int y = gn->fabv->ctx->locsl - 1;
 
-				logf(L_DG | L_DGRAPH, "%18s : [%3d,%3d - %3d,%3d] @ %s", "fab formula"
+				logf(L_NODE, "%18s : [%3d,%3d - %3d,%3d] @ %s", "fab formula"
 					, gn->fabv->ctx->locs[y]->f_lin + 1
 					, gn->fabv->ctx->locs[y]->f_col + 1
 					, gn->fabv->ctx->locs[y]->l_lin + 1
@@ -461,7 +461,7 @@ void gn_dump(gn * gn)
 
 				for(y--; y >= 0; y--)
 				{
-					logf(L_DG | L_DGRAPH, "%18s   [%3d,%3d - %3d,%3d] @ %s", ""
+					logf(L_NODE, "%18s   [%3d,%3d - %3d,%3d] @ %s", ""
 						, gn->fabv->ctx->locs[y]->f_lin + 1
 						, gn->fabv->ctx->locs[y]->f_col + 1
 						, gn->fabv->ctx->locs[y]->l_lin + 1
@@ -474,21 +474,21 @@ void gn_dump(gn * gn)
 				{
 					int x;
 					for(x = 0; x < gn->fabv->productsl; x++)
-						logf(L_DG | L_DGRAPH, "%18s --> %s", "", gn->fabv->products[x]->idstring);
+						logf(L_NODE, "%18s --> %s", "", gn->fabv->products[x]->idstring);
 				}
 			}
 			else
 			{
-				logf(L_WARN | L_DG | L_DGRAPH, "%18s : %s", "fab formula", "(no formula)");
+				logf(L_WARN | L_NODE, "%18s : %s", "fab formula", "(no formula)");
 			}
 		}
 
-		logf(L_DG | L_DGRAPH, "%18s : %d needs", "in-degree", gn->needs.l);
+		logf(L_NODE, "%18s : %d needs", "in-degree", gn->needs.l);
 		for(x = 0; x < gn->needs.l; x++)
 		{
 			if(gn->needs.e[x]->type == GN_RELATION_REGULAR)
 			{
-				logf(L_DG | L_DGRAPH, "%16s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
+				logf(L_NODE, "%16s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
 					, ""
 					, gn->needs.e[x]->weak ? "*" : gn->needs.e[x]->bridge ? "^" : " "
 					, gn->needs.e[x]->B->idstring
@@ -501,7 +501,7 @@ void gn_dump(gn * gn)
 			}
 			else if(gn->needs.e[x]->type == GN_RELATION_DISCOVERED)
 			{
-				logf(L_DG | L_DGRAPH, "%16s %s --> %-40s"
+				logf(L_NODE, "%16s %s --> %-40s"
 					, ""
 					, gn->needs.e[x]->weak ? "*" : gn->needs.e[x]->bridge ? "^" : " "
 					, gn->needs.e[x]->B->idstring
@@ -510,12 +510,12 @@ void gn_dump(gn * gn)
 			}
 		}
 
-		logf(L_DG | L_DGRAPH, "%18s : %d feeds", "out-degree", gn->feeds.l);
+		logf(L_NODE, "%18s : %d feeds", "out-degree", gn->feeds.l);
 		for(x = 0; x < gn->feeds.l; x++)
 		{
 			if(gn->feeds.e[x]->type == GN_RELATION_REGULAR)
 			{
-				logf(L_DG | L_DGRAPH, "%16s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
+				logf(L_NODE, "%16s %s --> %-40s @ (%s)[%3d,%3d - %3d,%3d]"
 					, ""
 					, gn->feeds.e[x]->weak ? "*" : gn->feeds.e[x]->bridge ? "^" : " "
 					, gn->feeds.e[x]->A->idstring
@@ -528,7 +528,7 @@ void gn_dump(gn * gn)
 			}
 			else if(gn->feeds.e[x]->type == GN_RELATION_DISCOVERED)
 			{
-				logf(L_DG | L_DGRAPH, "%16s %s --> %-40s"
+				logf(L_NODE, "%16s %s --> %-40s"
 					, ""
 					, gn->feeds.e[x]->weak ? "*" : gn->feeds.e[x]->bridge ? "^" : " "
 					, gn->feeds.e[x]->A->idstring
@@ -537,7 +537,7 @@ void gn_dump(gn * gn)
 			}
 		}
 
-		logs(L_DG | L_DGRAPH, "");
+		logs(L_NODE, "");
 	}
 }
 
@@ -593,6 +593,9 @@ int gn_process_invalidations(gn *** const invalidations, int invalidationsl, int
 		else
 			gn = (*invalidations[x]);
 		
+		if(!gn->invalid)
+			logf(L_INVALID, "%s", gn->idstring);
+
 		gn->invalid |= GN_INVALIDATION_USER;
 		if(gn->type == GN_TYPE_PRIMARY && gn->dscvsl)
 			*repeat_discovery = 1;

@@ -430,25 +430,25 @@ void ff_teardown()
 void ff_dump(ff_file * const ff)
 {
 #if DEBUG || DEVEL
-	if(log_would(L_FF | L_FFFILE))
+	if(log_would(L_FFFILE))
 	{
-		logf(L_FF | L_FFFILE			, "%20s : %s", "idstring"						, ff->idstring);
-		logf(L_FF | L_FFFILE			, "%20s : %s", "type"								, FFT_STRING(ff->type));
-		logf(L_FF | L_FFFILE			, "%20s : %s", "can-path"						, ff->path->can);
-		logf(L_FF | L_FFFILE			, "%20s : %s", "in-path"						, ff->path->in_path);
-		logf(L_FF | L_FFFILE			, "%20s : %s", "in-base"						, ff->path->in_base);
-		logf(L_FF | L_FFFILE			, "%20s : %s", "abs-path"						, ff->path->abs);
-		logf(L_FF | L_FFFILE			, "%20s : %s", "rel-cwd-path"				, ff->path->rel_cwd);
-		logf(L_FF | L_FFFILE			, "%20s : %s", "rel-fab-path"				, ff->path->rel_fab);
-		logf(L_FF | L_FFFILE			, "%20s : %s", "rel-nofile-path"		, ff->path->rel_nofile);
+		logf(L_FFFILE			, "%20s : %s", "idstring"						, ff->idstring);
+		logf(L_FFFILE			, "%20s : %s", "type"								, FFT_STRING(ff->type));
+		logf(L_FFFILE			, "%20s : %s", "can-path"						, ff->path->can);
+		logf(L_FFFILE			, "%20s : %s", "in-path"						, ff->path->in_path);
+		logf(L_FFFILE			, "%20s : %s", "in-base"						, ff->path->in_base);
+		logf(L_FFFILE			, "%20s : %s", "abs-path"						, ff->path->abs);
+		logf(L_FFFILE			, "%20s : %s", "rel-cwd-path"				, ff->path->rel_cwd);
+		logf(L_FFFILE			, "%20s : %s", "rel-fab-path"				, ff->path->rel_fab);
+		logf(L_FFFILE			, "%20s : %s", "rel-nofile-path"		, ff->path->rel_nofile);
 		if(ff->type == FFT_DDISC)
 		{
-			logf(L_FF | L_FFFILE		, "%20s : %s", "dscv-gn", ff->dscv_gn);
+			logf(L_FFFILE		, "%20s : %s", "dscv-gn", ff->dscv_gn);
 		}
 	}
 
-	logf(L_FF | L_FFFILE			, "%20s :", "tree");
+	logf(L_FFFILE			, "%20s :", "tree");
 	ffn_dump(ff->ffn);
-	logs(L_FF | L_FFFILE, "");
+	logs(L_FFFILE, "");
 #endif
 }

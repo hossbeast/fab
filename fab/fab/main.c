@@ -196,12 +196,12 @@ static int bp_exec(int * good)
 		}
 	}
 
-	logf(L_BP | L_BPEXEC, "buildplan @ " XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.pid);
+	logf(L_BPEXEC, "buildplan @ " XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.pid);
 
 	// execute stages
 	for(x = 0; x < stagesl; x++)
 	{
-		logf(L_BP | L_BPINFO, "stage %2d of %2d executing %3d of %3d", x, stagesl, stages[x].cmdsl, cmdstot);
+		logf(L_BPINFO, "stage %2d of %2d executing %3d of %3d", x, stagesl, stages[x].cmdsl, cmdstot);
 
 		int step = stages[x].cmdsl;
 		if(g_args->concurrency > 0)
@@ -218,12 +218,12 @@ static int bp_exec(int * good)
 			for(i = j; i < (j + cmdsl); i++)
 			{
 				// open file for stdout
-				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stdo", g_params.pid, x, i);
+				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/out", g_params.pid, x, i);
 				fatal(ixclose, &stages[x].cmds[i].stdo_fd);
 				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stages[x].cmds[i].stdo_fd);
 
 				// open file for stderr
-				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/stde", g_params.pid, x, i);
+				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", g_params.pid, x, i);
 				fatal(ixclose, &stages[x].cmds[i].stde_fd);
 				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stages[x].cmds[i].stde_fd);
 
@@ -292,7 +292,7 @@ static int bp_exec(int * good)
 					}
 				}
 
-				uint64_t tag = L_BP | L_BPEXEC;
+				uint64_t tag = L_BPEXEC;
 				if(bad)
 					tag |= L_ERROR;
 
@@ -324,29 +324,9 @@ static int bp_exec(int * good)
 
 				if(bad)
 				{
-#if 0
-					// snarf command
-					fatal(ixclose, &fd);
-					fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", g_params.pid, x, i);
-					fatal(xopen, tmp->s, O_RDONLY, &fd);
-					fatal(xfstat, fd, &stb);
-					fatal(psgrow, &tmp, stb.st_size);
-					fatal(axread, fd, tmp->s, stb.st_size);
-
-					fatal(axwrite, 1, tmp->s, stb.st_size);
-
-					// snarf stdout
-					fatal(xfstat, stages[x].cmds[i].stdo_fd, &stb);
-					fatal(psgrow, &tmp, stb.st_size);
-					fatal(xlseek, stages[x].cmds[i].stdo_fd, 0, SEEK_SET, 0);
-					fatal(axread, stages[x].cmds[i].stdo_fd, tmp->s, stb.st_size);
-
-					fatal(axwrite, 1, tmp->s, stb.st_size);
-#endif
-
 					// snarf stderr
 					fatal(xfstat, stages[x].cmds[i].stde_fd, &stb);
-					size_t lim = 100;
+					size_t lim = 500;
 					size_t act = MIN(stb.st_size, lim);
 
 					fatal(psgrow, &tmp, stb.st_size);

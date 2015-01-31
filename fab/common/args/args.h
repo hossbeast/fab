@@ -29,8 +29,8 @@ struct path;				// path.h
 ** PER-PID : delete if pid is not presently executing     (pertains to a given fab process)
 ** -------------------------------------------------------------------------------------------------------------------------------
 ** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/cmd							cmd text
-** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stdo						stdout from cmd
-** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/stde						stderr from cmd
+** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/out							stdout from cmd
+** /var/tmp/fab/pid/<pid>/fml/<fmlvnum>/err							stderr from cmd
 */
 
 #define SELECTOR_TABLE(x)																												\

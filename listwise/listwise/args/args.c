@@ -101,8 +101,8 @@ printf(
 "\n"
 " --logtrace-no      (default) do not include file/function/line in log messages\n"
 " --logtrace                   include file/function/line in log messages\n"
-" --backtrace-pithy  (default) produce a summary of the callstack upon failure\n"
-" --backtrace-full             produce a complete description of the callstack upon failure\n"
+" --backtrace-pithy  (default) produce a summary of the callstack on error\n"
+" --backtrace-full             produce a complete description of the callstack on error\n"
 #endif
 );
 }
@@ -113,8 +113,8 @@ printf(
 "\n"
 "----------------- [ logexpr  ] -----------------------------------------------------------\n"
 "\n"
-" +<logcat> to enable logging category\n"  
-" -<logcat> to disable logging category\n"  
+" +<logcat> to enable logging category (use TAG for all)\n"
+" -<logcat> to disable logging category (use TAG for all)\n"
 "\n"
 );
 
@@ -243,19 +243,25 @@ int args_parse()
 	uint64_t opmask = 0;
 
 	struct option longopts[] = {
-		  { "help"												, no_argument				, &help, 1 } 
-		, { "version"											, no_argument				, &version, 1 } 
-		, { "log"													, no_argument				, &logs, 1 } 
-		, { "logs"												, no_argument				, &logs, 1 } 
-		, { "logcat"											, no_argument				, &logs, 1 } 
-		, { "logcats"											, no_argument				, &logs, 1 } 
-		, { "logexpr"											, no_argument				, &logs, 1 } 
-		, { "logexprs"										, no_argument				, &logs, 1 } 
-		, { "ops"													, no_argument				, &ops, 1 } 
-		, { "oplist"											, no_argument				, &ops, 1 } 
-		, { "oplists"											, no_argument				, &ops, 1 } 
-		, { "operator"										, no_argument				, &ops, 1 } 
-		, { "operators"										, no_argument				, &ops, 1 } 
+		  { "help"												, no_argument				, &help, 1 }
+		, { "args"												, no_argument				, &help, 1 }
+		, { "params"											, no_argument				, &help, 1 }
+		, { "options"											, no_argument				, &help, 1 }
+		, { "opts"												, no_argument				, &help, 1 }
+		, { "version"											, no_argument				, &version, 1 }
+		, { "vers"												, no_argument				, &version, 1 }
+		, { "vrs"													, no_argument				, &version, 1 }
+		, { "log"													, no_argument				, &logs, 1 }
+		, { "logs"												, no_argument				, &logs, 1 }
+		, { "logcat"											, no_argument				, &logs, 1 }
+		, { "logcats"											, no_argument				, &logs, 1 }
+		, { "logexpr"											, no_argument				, &logs, 1 }
+		, { "logexprs"										, no_argument				, &logs, 1 }
+		, { "ops"													, no_argument				, &ops, 1 }
+		, { "oplist"											, no_argument				, &ops, 1 }
+		, { "oplists"											, no_argument				, &ops, 1 }
+		, { "operator"										, no_argument				, &ops, 1 }
+		, { "operators"										, no_argument				, &ops, 1 }
 		, { "o"														, required_argument	, 0, 0 }
 		, { "op"													, required_argument	, 0, 0 }
 		, { "o1"													, no_argument				, 0, 0 }

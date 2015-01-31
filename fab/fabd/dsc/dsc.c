@@ -78,7 +78,7 @@ static int dsc_execwave(
 	}
 
 	// execute all formulas in parallel
-	fatal(ts_execwave, ts, tsl, tsw, i, L_DSC | L_DSCEXEC, L_DSC, 0);
+	fatal(ts_execwave, ts, tsl, tsw, i, L_DSCEXEC, 0);
 
 	// harvest the results - for a single PRIMARY node, all of its associated dscv
 	// evals will have executed in the same wave, AND they will be contiguous in ts
@@ -173,14 +173,14 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * con
 		}
 	}
 
-	logf(L_DSC | L_DSCEXEC, "discovery @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
-	logf(L_DSC | L_DSCINFO, "discovery -- for %3d nodes", n);
+	logf(L_DSCEXEC, "discovery @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
+	logf(L_DSCINFO, "discovery -- for %3d nodes", n);
 
 	int newn = 0;
 	int newr = 0;
 	fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
 
-	logf(L_DSC | L_DSCEXEC, "discovery -- for %3d nodes found %3d nodes and %3d edges", n, newn, newr);
+	logf(L_DSCEXEC, "discovery -- for %3d nodes found %3d nodes and %3d edges", n, newn, newr);
 
 	finally : coda;
 }
@@ -200,10 +200,16 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int *
 			fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
 			if(gn_nodes.e[x]->hb->stathash[1] == 0)
 			{
+				if(!gn_nodes.e[x]->invalid)
+					logf(L_INVALID, "%s", gn_nodes.e[x]->idstring);
+
 				gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
 			}
 			else if(hashblock_cmp(gn_nodes.e[x]->hb))
 			{
+				if(!gn_nodes.e[x]->invalid)
+					logf(L_INVALID, "%s", gn_nodes.e[x]->idstring);
+
 				gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
 			}
 
@@ -227,15 +233,15 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int *
 
 	if(n)
 	{
-		logf(L_DSC | L_DSCEXEC, "discovery @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
-		logf(L_DSC | L_DSCINFO, "discovery %2d for %3d nodes", 0, n);
+		logf(L_DSCEXEC, "discovery @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
+		logf(L_DSCINFO, "discovery %2d for %3d nodes", 0, n);
 
 		int newn = 0;
 		int newr = 0;
 		fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
 
 		// sum discovered objects
-		logf(L_DSC | L_DSCEXEC, "discovery %2d for %3d nodes found %3d nodes and %3d edges", 0, n, newn, newr);
+		logf(L_DSCEXEC, "discovery %2d for %3d nodes found %3d nodes and %3d edges", 0, n, newn, newr);
 	}
 
 	finally : coda;

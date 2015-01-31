@@ -154,6 +154,9 @@ static int loop()
 
 			if(hashblock_cmp(gn_nodes.e[x]->hb))
 			{
+				if(!gn_nodes.e[x]->invalid)
+					logf(L_INVALID, "%s", gn_nodes.e[x]->idstring);
+
 				gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
 			}
 
@@ -239,7 +242,12 @@ static int loop()
 	int visit(gn * gn, int d)
 	{
 		if(d)
+		{
+			if(!gn->invalid)
+				logf(L_INVALID, "%s", gn->idstring);
+
 			gn->invalid |= GN_INVALIDATION_SOURCES;
+		}
 
 		finally : coda;
 	};
@@ -530,7 +538,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	lw_configure_logging();
 #endif
 
-	// default logger configuration (should match the other invocation of log_parse
+	// default logger configuration (should match the other invocation of log_parse)
 	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0, L_INFO);
 
 	// other initializations

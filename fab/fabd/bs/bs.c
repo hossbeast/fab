@@ -134,7 +134,7 @@ int buildscript_mk(
 	i = 0;
 	for(x = 0; x < bp->stages_l; x++)
 	{
-		logf(L_BP | L_BPINFO, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
+		logf(L_BPINFO, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
 
 		if(x)
 			dprintf(fd, "\n");

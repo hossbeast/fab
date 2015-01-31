@@ -128,7 +128,7 @@ void ts_reset(ts * ts)
 // RETURNS
 //  nonzero on success - (some) formulas may have failed, check *bad
 //
-int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, uint64_t lo, int * bad)
+int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, int * bad)
 	__attribute__((nonnull(1, 3)));
 
 /// ts_free
