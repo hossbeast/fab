@@ -122,7 +122,9 @@ int API xclose(int fd)
 {
 	fatalize(errno, close, fd);
 
-	finally : coda;
+finally:
+	XAPI_INFOF("fd", "%d", fd);
+coda;
 }
 
 int API ixclose(int * fd)
@@ -133,7 +135,9 @@ int API ixclose(int * fd)
 		*fd = -1;
 	}
 
-	finally : coda;
+finally:
+	XAPI_INFOF("fd", "%d", *fd);
+coda;
 }
 
 int API xsymlink(const char * target, const char * linkpath)

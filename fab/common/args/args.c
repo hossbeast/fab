@@ -46,8 +46,6 @@
 
 #define restrict __restrict
 
-memblk * foomb;
-
 struct g_args_t * g_args;
 
 //
@@ -505,14 +503,6 @@ int args_parse()
 	int longindex;
 	while((x = getopt_long(g_argc, g_argv, switches, longopts, &longindex)) != -1)
 	{
-/*
-printf("\n");
-printf("x=%d %c\n", x, x);
-printf("optarg=%s\n", optarg);
-printf("optind=%d\n", optind);
-printf("optopt=%c\n", optopt);
-*/
-
 		if(x == 0)
 		{
 			if(strcmp(longopts[longindex].name, "o") == 0 || strcmp(longopts[longindex].name, "op") == 0)
@@ -532,7 +522,6 @@ printf("optopt=%c\n", optopt);
 		}
 		else if(x == 'f')
 		{
-//			path_xfree(&g_args->init_fabfile_path);
 			fatal(path_create_init, &g_args->init_fabfile_path, g_params.cwd, "%s", optarg);
 		}
 		else if(x == 'j')

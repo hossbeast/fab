@@ -24,7 +24,6 @@
 +[ $dfabd ]()			@fabd
 
 # variables
-#	[ $dfab/../args ~j ] [ $dfab/../error ~j ] [ $dfab/../logs ~j ]
 $sdirs = [ $dfabd [ $dfabcore/common ~ j ] ~ lsr c -d ]
 
 $copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
@@ -137,20 +136,20 @@ $faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
 
 [ @install.final ] : [ @installation @fab.install.final @fabw.install.final @fabd.install.final ]
 [ @install.debug ] : [ @installation @fab.install.debug @fabw.install.debug @fabd.install.debug ]
-
 [ @install.man ] : [ @install.man1 ]
-[ @install.man1 ] : [ $dfabcore/man/fab.1 ~ j ]
+
+# build the man gz
+[ $dfabcore/man/fab.1.gz ~ j ] : [ $dfabcore/man/fab.1 ~ j ]
 {
 	cat [ $dfabcore/man/fab.1 ] | grep BUILDVERS [
 		] | sed -e 's/---BUILDVERS---/[ $VERSIONS ]/' [
-	] | sed -e 's/---BUILDDATE---/[ $^starttime ~ datef/%Y-%m-%d ]/'
+	] | sed -e 's/---BUILDDATE---/[ $^starttime ~ datef/%Y-%m-%d ]/' [
+	] | gzip -9c > [ $@ ]
 }
 
-/*
+# install the man gz
+[ @install.man1 ] : [ $dfabcore/man/fab.1.gz ~ j ]
+{
 	install -d 																		[ $destdir/$mandir/man1 ]
-
-	cat [ $dfabcore/man/fab.1 ] \
-		| [ $^lw ] "s/---BUILDVERS---/<[ $VERSIONS ]>" \
-		| [ $^lw ] "s/---BUILDDATE---/<[ @^.time ~ datef/%Y-%m-%d ]>" \
-		| gzip -9c  															> [ $destdir/$mandir/man1/fab.1.gz ]
-*/
+	install [ $dfabcore/man/fab.1.gz ]						[ $destdir/$mandir/man1/fab.1.gz ]
+}

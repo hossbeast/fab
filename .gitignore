@@ -11,3 +11,4 @@ exports
 *.final
 *.debug
 *.devel
+*.1.gz

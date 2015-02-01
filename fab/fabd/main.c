@@ -48,7 +48,9 @@
 #include "say.h"
 
 // write log messages about process creation and signals received
-#define DEBUG_IPC 0
+#ifndef DEBUG_IPC
+# define DEBUG_IPC 0
+#endif
 
 // errors to report and continue, otherwise exit
 static int fab_swallow[] = {
@@ -448,7 +450,7 @@ finally:
 coda;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char** argv, char ** envp)
 {
 	char stem[2048];
 	char space[2048];
@@ -526,8 +528,17 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	// allow creation of world-rw files
 	umask(0);
 
+	unsigned long * auxv = 0;
+#if __linux__
+	// locate auxiliary vector
+	while(*envp)
+		envp++;
+	envp++;
+	auxv = (void*)envp;
+#endif
+
 	// initialize logger
-	fatal(log_init);
+	fatal(log_init, auxv);
 
 	// register object types with liblistwise
 	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);

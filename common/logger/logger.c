@@ -38,6 +38,8 @@ exposes getauxval, but requires glibc 2.16. ubuntu 12.10 has glibc 2.15.
 #include "macros.h"
 #include "strutil.h"
 
+#define restrict __restrict
+
 #define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 60])
 #define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
 #define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
@@ -514,7 +516,7 @@ int log_parse_clear()
 	finally : coda;
 }
 
-int log_init()
+int log_init(const unsigned long * restrict auxvec)
 {
 	int	fd = -1;
 	int	argsa = 0;	// g_argvs allocated size
@@ -559,24 +561,28 @@ int log_init()
 		{
 			binaryx = x + 1;
 #if __linux__
-			/*
-			requires glibc 2.16. ubuntu 12.10 has glibc 2.15.
-			execfn = (char*)(intptr_t)getauxval(AT_EXECFN);
-			*/
-
-			fatal(ixclose, &fd);
-			fatal(xopen, "/proc/self/auxv", O_RDONLY, &fd);
-			do
+			if(auxvec == 0)
 			{
-				size_t newa = auxva ?: 100;
-				newa += newa * 2 + newa / 2;
-				fatal(xrealloc, &auxv, sizeof(*auxv), newa, auxva);
-				auxva = newa;
-				auxvl += read(fd, &auxv[auxvl], auxva - auxvl);
-			} while(auxvl == auxva);
-			auxvl--;
+				/*
+				requires glibc 2.16. ubuntu 12.10 has glibc 2.15.
+				execfn = (char*)(intptr_t)getauxval(AT_EXECFN);
+				*/
 
-			unsigned long * auxvec = (void*)auxv;
+				fatal(ixclose, &fd);
+				fatal(xopen, "/proc/self/auxv", O_RDONLY, &fd);
+				do
+				{
+					size_t newa = auxva ?: 100;
+					newa += newa * 2 + newa / 2;
+					fatal(xrealloc, &auxv, sizeof(*auxv), newa, auxva);
+					auxva = newa;
+					auxvl += read(fd, &auxv[auxvl], auxva - auxvl);
+				} while(auxvl == auxva);
+				auxvl--;
+
+				auxvec = (void*)auxv;
+			}
+
 			while(*auxvec)
 			{
 				unsigned long key = auxvec[0];

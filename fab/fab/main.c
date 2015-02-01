@@ -37,7 +37,9 @@
 #include "memblk.h"
 #include "parseint.h"
 
-#define DEBUG_IPC 0
+#ifndef DEBUG_IPC
+# define DEBUG_IPC 0
+#endif
 
 // signal handling
 static int o_signum;
@@ -67,9 +69,6 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 static int bp_exec(int * good)
 {
 	pstring * tmp = 0;
-
-	pstring * stdo = 0;
-	pstring * stde = 0;
 	int fd = -1;
 
 	struct
@@ -79,6 +78,7 @@ static int bp_exec(int * good)
 		{
 			pid_t		pid;
 			int			num;		
+			int			cmd_fd;
 			int			stdo_fd;
 			int			stde_fd;
 			char **	prod_type;
@@ -134,6 +134,7 @@ static int bp_exec(int * good)
 
 				typeof(stages[0].cmds[0]) * T = &stages[stagesl - 1].cmds[stages[stagesl - 1].cmdsl];
 				T->num = num;
+				T->cmd_fd = -1;
 				T->stdo_fd = -1;
 				T->stde_fd = -1;
 				stages[stagesl - 1].cmdsl++;
@@ -230,6 +231,13 @@ static int bp_exec(int * good)
 				// path to the command
 				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", g_params.pid, x, i);
 
+				// open the file if we will later need to examine it
+				if(log_would(L_BPCMD))
+				{
+					fatal(ixclose, &stages[x].cmds[i].cmd_fd);
+					fatal(xopen, tmp->s, O_RDONLY | O_CLOEXEC, &stages[x].cmds[i].cmd_fd);
+				}
+
 				// fork off the child
 				fatal(xfork, &stages[x].cmds[i].pid);
 				if(stages[x].cmds[i].pid == 0)
@@ -322,6 +330,24 @@ static int bp_exec(int * good)
 					}
 				}
 
+				if(log_would(L_BPCMD))
+				{
+					// snarf cmd
+					fatal(xfstat, stages[x].cmds[i].cmd_fd, &stb);
+					fatal(psgrow, &tmp, stb.st_size);
+					fatal(xlseek, stages[x].cmds[i].cmd_fd, 0, SEEK_SET, 0);
+					fatal(axread, stages[x].cmds[i].cmd_fd, tmp->s, stb.st_size);
+				
+					// chomp trailing whitespace
+					size_t end = stb.st_size - 1;
+					while(end >= 0 && (tmp->s[end] == ' ' || tmp->s[end] == '\t' || tmp->s[end] == '\r' || tmp->s[end] == '\n'))
+						end--;
+					end++;
+
+					fatal(axwrite, 1, tmp->s, end);
+					fatal(axwrite, 1, "\n", 1);
+				}
+
 				if(bad)
 				{
 					// snarf stderr
@@ -329,7 +355,7 @@ static int bp_exec(int * good)
 					size_t lim = 500;
 					size_t act = MIN(stb.st_size, lim);
 
-					fatal(psgrow, &tmp, stb.st_size);
+					fatal(psgrow, &tmp, act);
 					fatal(xlseek, stages[x].cmds[i].stde_fd, 0, SEEK_SET, 0);
 					fatal(axread, stages[x].cmds[i].stde_fd, tmp->s, act);
 					
@@ -381,6 +407,7 @@ finally:
 	{
 		for(y = 0; y < stages[x].cmdsl; y++)
 		{
+			fatal(ixclose, &stages[x].cmds[y].cmd_fd);
 			fatal(ixclose, &stages[x].cmds[y].stdo_fd);
 			fatal(ixclose, &stages[x].cmds[y].stde_fd);
 
@@ -392,12 +419,10 @@ finally:
 	free(stages);
 
 	psfree(tmp);
-	psfree(stdo);
-	psfree(stde);
 coda;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char** argv, char ** envp)
 {
 	char space[2048];
 #if DEVEL
@@ -456,8 +481,17 @@ printf("fab[%ld] started\n", (long)getpid());
 		fatal(xsigaction, x, &action, 0);
 	}
 
+	unsigned long * auxv = 0;
+#if __linux__
+	// locate auxiliary vector
+	while(*envp)
+		envp++;
+	envp++;
+	auxv = (void*)envp;
+#endif
+
 	// initalize logger
-	fatal(log_init);
+	fatal(log_init, auxv);
 
 	// allocate memblock to store the args
 	fatal(memblk_mk, &mb);

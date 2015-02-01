@@ -67,7 +67,10 @@ extern int			g_logvsl;				// length of g_logvs
 // SUMMARY
 //  initialize logging and parse cmdline args to populate g_argv and related variables
 //
-int log_init();
+// PARAMETERS
+//  [auxv] - pointer to the start of the auxiliary vector
+//
+int log_init(const unsigned long * restrict auxv);
 
 /// log_config
 // 

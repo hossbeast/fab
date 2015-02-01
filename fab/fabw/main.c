@@ -35,7 +35,9 @@
 #include "macros.h"
 #include "say.h"
 
-#define DEBUG_IPC 0
+#ifndef DEBUG_IPC
+# define DEBUG_IPC 0
+#endif
 
 // signal handling
 static void signal_handler(int signum, siginfo_t * info, void * ctx)

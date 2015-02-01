@@ -176,7 +176,7 @@ static struct listwise_logging * logging = (struct listwise_logging[]) {{
 #endif
 }};
 
-int main(int argc, char ** argv)
+int main(int argc, char ** argv, char ** envp)
 {
 	char space[4096];
 	size_t tracesz = 0;
@@ -187,8 +187,17 @@ int main(int argc, char ** argv)
 	transform* g = 0;						// transform
 	lwx * lx = 0;								// list stack
 
+	unsigned long * auxv = 0;
+#if __linux__
+	// locate auxiliary vector
+	while(*envp)
+		envp++;
+	envp++;
+	auxv = (void*)envp;
+#endif
+
 	// initialize logger - prepare g_argc/g_argv
-	fatal(log_init);
+	fatal(log_init, auxv);
 
 	// parse cmdline arguments
 	fatal(args_parse);
