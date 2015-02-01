@@ -195,7 +195,7 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int *
 	int n = 0;
 	for(x = 0; x < gn_nodes.l; x++)
 	{
-		if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY && gn_nodes.e[x]->dscvsl)
+		if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY)
 		{
 			fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
 			if(gn_nodes.e[x]->hb->stathash[1] == 0)
