@@ -144,7 +144,9 @@ int API xsymlink(const char * target, const char * linkpath)
 {
 	fatalize(errno, symlink, target, linkpath);
 
-	finally : coda;
+finally:
+	XAPI_INFOF("path", "%s", linkpath);
+coda;
 }
 
 int API uxsymlink(const char * target, const char * linkpath)
@@ -163,7 +165,9 @@ int API xunlink(const char * pathname, int * r)
 	else if(!r && unlink(pathname) != 0)
 		fail(errno);
 
-	finally : coda;
+finally:
+	XAPI_INFOF("path", "%s", pathname);
+coda;
 }
 
 int API uxunlink(const char * pathname, int * r)
@@ -174,7 +178,9 @@ int API uxunlink(const char * pathname, int * r)
 	else if(!r && unlink(pathname) != 0 && errno != ENOENT)
 		fail(errno);
 
-	finally : coda;
+finally:
+	XAPI_INFOF("path", "%s", pathname);
+coda;
 }
 
 int API xfork(pid_t * r)

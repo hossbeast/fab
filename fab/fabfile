@@ -139,10 +139,11 @@ $faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
 [ @install.man ] : [ @install.man1 ]
 
 # build the man gz
+[ @man ] : [ $dfabcore/man/fab.1.gz ~ j ]
 [ $dfabcore/man/fab.1.gz ~ j ] : [ $dfabcore/man/fab.1 ~ j ]
 {
-	cat [ $dfabcore/man/fab.1 ] | grep BUILDVERS [
-		] | sed -e 's/---BUILDVERS---/[ $VERSIONS ]/' [
+	cat [ $dfabcore/man/fab.1 ] [
+	] | sed -e 's/---BUILDVERS---/[ $VERSIONS ]/' [
 	] | sed -e 's/---BUILDDATE---/[ $^starttime ~ datef/%Y-%m-%d ]/' [
 	] | gzip -9c > [ $@ ]
 }

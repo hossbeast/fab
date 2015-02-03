@@ -26,6 +26,19 @@ extern struct g_params_t
 	// non-configurable execution parameters
 	//
 
+	uid_t           ruid;                       // real-user-id
+	char *          ruid_name;
+	int             ruid_namel;
+	uid_t           euid;                       // effective-user-id   (fabsys in the final build)
+	char *          euid_name;
+	int             euid_namel;
+	gid_t           rgid;                       // real-group-id
+	char *          rgid_name;
+	int             rgid_namel;
+	gid_t           egid;                       // effective-group-id  (fabsys in the final build)
+	char *          egid_name;
+	int             egid_namel;
+
 	pid_t						fab_pid;										// pid of the fab process
 	pid_t						fabd_pid;										// pid of the fabd process
 	pid_t						pid;												// pid of this process
@@ -95,5 +108,41 @@ void params_teardown();
 //  buildplan was not successfully executed to completion
 //
 #define FABSIG_BPBAD FABSIG_BASE + 5
+
+/// FABIPC_DATA
+//
+// LOCATION
+//  {FABIPCDIR,FABTCMPDIR}/*   files which need not be executable
+//
+// DESCRIPTION
+//  ugo+rw   world read/write
+//
+// RATIONALE
+//
+#define FABIPC_DATA	0666
+
+/// FABIPC_CODE
+//
+// LOCATION
+//  {FABIPCDIR,FABTCMPDIR}/*    files which need to be executable
+//
+// DESCRIPTION
+//  ugo+rwx   world read/write/exec
+//
+// RATIONALE
+//  
+#define FABIPC_CODE	0777
+
+/// FABIPC_DIR
+//
+// LOCATION
+//  {FABIPCDIR,FABTCMPDIR}/*    directories
+//
+// DESCRIPTION
+//  ugo+rwx   world read/write/exec
+//
+// RATIONALE
+//  
+#define FABIPC_DIR	0777
 
 #endif

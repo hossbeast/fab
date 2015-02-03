@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>.
 
-# create the buildscripts
+# final buildscripts
 ./fab/fab/fab.devel --bslic-fab -k make64.final.sh @final
 ./fab/fab/fab.devel --bslic-fab -k install64.final.sh +n @install.final \
 	-K destdir	\
@@ -32,6 +32,7 @@
 	-K fabipcdir \
 	-K fabinvokedir
 
+# debug buildscripts
 ./fab/fab/fab.devel --bslic-fab -k make64.debug.sh @debug
 ./fab/fab/fab.devel --bslic-fab -k install64.debug.sh +n @install.debug \
 	-K destdir	\
@@ -46,5 +47,20 @@
 	-K fabipcdir \
 	-K fabinvokedir
 
-./fab/fab/fab.devel --bslic-fab -k installman.sh +n @installman
+# man buildscripts
+./fab/fab/fab.devel --bslic-fab -k makeman.sh @man
+./fab/fab/fab.devel --bslic-fab -k install.man.sh +n @install.man \
+	-K destdir	\
+	-K incdir \
+	-K bindir \
+	-K mandir \
+	-K libdir \
+	-K dlibdir \
+	-K lwopdir \
+	-K fablwopdir \
+	-K fabtmpdir \
+	-K fabipcdir \
+	-K fabinvokedir
+
+# devel buildscripts
 ./fab/fab/fab.devel --bslic-fab -k make64.devel.sh @devel

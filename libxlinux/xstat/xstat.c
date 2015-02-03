@@ -97,7 +97,7 @@ int API uxfstat(int fd, struct stat * buf)
 	}
 	
 finally:
-	XAPI_INFOF("fd", "%s", fd);
+	XAPI_INFOF("fd", "%d", fd);
 coda;
 }
 
@@ -144,5 +144,14 @@ int API uxmkdir(const char * pathname, mode_t mode)
 
 finally:
 	XAPI_INFOS("path", pathname);
+coda;
+}
+
+int API xfchmod(int fd, mode_t mode)
+{
+	fatalize(errno, fchmod, fd, mode);
+
+finally:
+	XAPI_INFOF("fd", "%d", fd);
 coda;
 }

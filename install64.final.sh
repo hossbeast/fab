@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>.
 
-# fab --bslic-fab -k install64.final.sh +n @install.final -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabtmpdir -K fabipcdir -K fabinvokedir
+# fab --bslic-fab -k install64.final.sh +n @install.final -K destdir -K incdir -K bindir -K mandir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabtmpdir -K fabipcdir -K fabinvokedir
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then
@@ -167,6 +167,8 @@ fml_5_0()
 	install -d																			$destdir/$bindir
 	rm																							$destdir/$bindir/fab
 	install ./fab/fab/fab.final													$destdir/$bindir/fab
+	chown fabsys:fabsys															$destdir/$bindir/fab
+	chmod ug+s																			$destdir/$bindir/fab
 
 
   X=$?
@@ -186,6 +188,8 @@ fml_5_1()
 	install -d																			$destdir/$bindir
 	rm																							$destdir/$bindir/fabd
 	install ./fab/fabd/fabd.final													$destdir/$bindir/fabd
+	chown fabsys:fabsys															$destdir/$bindir/fabd
+	chmod ug+s																			$destdir/$bindir/fabd
 
 
   X=$?
@@ -205,6 +209,8 @@ fml_5_2()
 	install -d																			$destdir/$bindir
 	rm																							$destdir/$bindir/fabw
 	install ./fab/fabw/fabw.final													$destdir/$bindir/fabw
+	chown fabsys:fabsys															$destdir/$bindir/fabw
+	chmod ug+s																			$destdir/$bindir/fabw
 
 
   X=$?

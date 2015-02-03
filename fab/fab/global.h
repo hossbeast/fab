@@ -29,5 +29,6 @@
 #include "logs.h"
 #include "dirutil.h"
 #include "path.h"
+#include "identity.h"
 
 #endif

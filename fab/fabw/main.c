@@ -157,7 +157,7 @@ int main(int argc, char** argv)
 
 	// fabd-exit file
 	snprintf(stem + z, sizeof(stem) - z, "/fabd/exit");
-	fatal(xopen_mode, stem, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+	fatal(xopen_mode, stem, O_CREAT | O_WRONLY, FABIPC_DATA, &fd);
 	fatal(axwrite, fd, &status, sizeof(status));
 	fatal(ixclose, &fd);
 

@@ -322,19 +322,19 @@ int fml_write(ts * const restrict ts, pid_t pid, int stage, int num)
 	int fd = -1;
 
 	fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d", pid, stage, num);
-	fatal(mkdirp, tmp->s, S_IRWXU | S_IRWXG | S_IRWXO);
+	fatal(mkdirp, tmp->s, FABIPC_DIR);
 
 	// create tmp file for the cmd
 	fatal(psprintf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", pid, stage, num);
 	fatal(uxunlink, ts->cmd_path->s, 0);
-	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &ts->cmd_fd);
+	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_CODE, &ts->cmd_fd);
 	fatal(axwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l);
 	fatal(xclose, ts->cmd_fd);
 
 	// write the type and id of each product of the fmlv to the prod file
 	fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/prod", pid, stage, num);
 	fatal(uxunlink, tmp->s, 0);
-	fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &fd);
+	fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
 	int x;
 	for(x = 0; x < ts->fmlv->productsl; x++)
 	{
@@ -363,12 +363,12 @@ int fml_exec(ts * const restrict ts, int num)
 	//  note : the directory itself cannot already exist, because num is process-unique
 	//
 	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d", g_params.pid, num);
-	fatal(mkdirp, ts->stdo_path->s, S_IRWXU | S_IRWXG | S_IRWXO);
+	fatal(mkdirp, ts->stdo_path->s, FABIPC_DIR);
 
 	// create tmp file for the cmd
 	fatal(psprintf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d/cmd", g_params.pid, num);
 	fatal(uxunlink, ts->cmd_path->s, 0);
-	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &ts->cmd_fd);
+	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_CODE, &ts->cmd_fd);
 
 	// write the cmd to the tmp file
 	fatal(xwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l, 0);
@@ -377,12 +377,12 @@ int fml_exec(ts * const restrict ts, int num)
 	// create tmp file to capture stdout
 	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d/out", g_params.pid, num);
 	fatal(uxunlink, ts->stdo_path->s, 0);
-	fatal(xopen_mode, ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &ts->stdo_fd);
+	fatal(xopen_mode, ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, FABIPC_DATA, &ts->stdo_fd);
 
 	// create tmp file to capture stderr
 	fatal(psprintf, &ts->stde_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d/err", g_params.pid, num);
 	fatal(uxunlink, ts->stde_path->s, 0);
-	fatal(xopen_mode, ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &ts->stde_fd);
+	fatal(xopen_mode, ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, FABIPC_DATA, &ts->stde_fd);
 
 	// fork off the child
 	ts->pid = 0;

@@ -315,7 +315,7 @@ int gn_edge_add(
 
 /// gn_dump
 //
-// log under L_DGRAPH properties of the gn
+// log under L_NODE properties of the gn
 //
 void gn_dump(gn *);
 

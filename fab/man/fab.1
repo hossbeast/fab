@@ -27,50 +27,45 @@ fab \- build optimally
 .SH SYNOPSIS
 .B fab
 .R [
-.RI [ "selection modifier" ]
+.I "modifier"
 .R |
-.RI [ "selector" ]
+.I "selector"
 .R |
-.RI [ option ]
+.I option
 .R |
-.RI [ logexpr ]
+.I logexpr
 .R |
-.RI [ varexpr ]
+.I varexpr
 .R ] ...
 .PP
-.B fab
-.B --help
+.B fab --help
 : options summary
 .br
-.B fab
-.B --version
+.B fab --version
 : version information
 .br
-.B fab
-.B --logopts
+.B fab --logs
 : summary of logging options
 .br
-.B fab
-.B --operators
-:
-.BR listwise(1)
-operator listing, including
-.B fab
--specific operators
+.B fab --ops
+: \fBlistwise(1)\fR operator listing, including \fBfab\fR-specific operators
 .SH DESCRIPTION
 .B fab
-is a program that is used to manage compilation of a project, where source files are transformed into build artifacts by executing a series of commands.
+is used to manage compilation of a project, where source files are transformed into build artifacts by executing a series of commands.
 .PP
 The project is represented by a dependency graph in which each node represents either a source file or a secondary file. There are also nodes that are not backed by any file, so-called nofile nodes, that represent build tasks
 .RB "(ex. " "@install" )
 or groups of nodes
 .RB "(ex. " "@all" )
 .PP
-Given a set of target nodes, a subgraph is assembled including that includes the target(s) and their eventual dependencies. This graph is pruned of nodes that do not require updating. Finally, a buildplan is created that will bring the target(s) up-to-date.
+Parsing the project files and constructing the dependency graph is expensive.
+.B fabd
+is a caching daemon that runs in the background per project, to maintain those structures in memory. Incremental builds are fast.
 .PP
-The user influences buildplan creation via node selections.
+.B fab
+features integrated dependency discovery to ease the burden of specifying dependencies between project components.
 .PP
-The default behavior is to select the default node into the fabricate-set.
+The build is shaped by selecting nodes into node-sets on the command line. Each node-set has a specific function, see below.
 .SH SELECTIONS
 .SS "SELECTORS"
 .PP
@@ -111,7 +106,7 @@ add nodes to the buildplan along with their eventual dependencies without traver
 .TP
 \fB+b\fR|\fB-b\fR invalidate-set 
 invalidate nodes
-.SS "SPECIAL NODE-SETS"
+.SS "NON-BUILD NODE-SETS"
 If any of the following node-sets is nonempty, the associated actions are performed instead of buildplan creation/execution
 .TP
 \fB+d\fR|\fB-d\fR discovery-set 
@@ -132,7 +127,7 @@ create buildplan only - do not execute buildplan. Implies \fB+BPDUMP\fP.
 .SS "Incremental Builds"
 .TP
 .BR \-B
-invalidate all (equivalent to +b [ $! ])
+first restart \fB+fabd\fP. Consider using +b [ $! ] instead.
 .
 .SS "Parallel Builds"
 .TP
@@ -150,21 +145,13 @@ no limit
 .R limit to
 .I number
 .
-.SS "Bakescripts"
+.SS "Buildscripts"
 .TP
 \fB\-k\fR \fIpath\fR
-do not execute buildplan - instead create a bakescript from it, and write it to \fIpath\fP
+do not execute buildplan - instead create a buildscript from it, and write it to \fIpath\fP
 .TP
 \fB-K\fR \fIvarname\fR
-\fIvarname\fP will be settable at bakescript execution time
-.TP
-.BR \--bslic-standard " (default)"
-bakescripts are generated with the standard license
-.TP
-.BR \--bslic-fab
-bakescripts are generated with the
-.B fab
-distribution license
+\fIvarname\fP will be settable at buildscript execution time
 .SS "Fabfile Processing"
 .TP
 \fB-f\fR \fIpath\fR
@@ -173,7 +160,8 @@ locate the initial fabfile at \fIpath\fR rather than ./fabfile
 \fB-I\fR \fIpath\fR
 append \fIpath\fP to the list of directories used when resolving invocations
 .SS "Variables"
-The portion of the option following \fB-v\fP is referred to as the varexpr
+The portion of the option following \fB-v\fP is referred to as the
+.I varexpr
 .TP
 \fB-v $\fIvar\fB=[ \fIlist \fR[ \fB~ \fItransform-string \fR ] \fB]
 apply the specified list to the definition of \fIvar\fP at scope-zero
@@ -183,6 +171,7 @@ apply the specified list addition to the definition of \fIvar\fP at scope-zero
 .TP
 \fB-v $\fIvar\fB~=\fItransform-string\fP
 apply the transformation specified by \fItransform-string\fP to the definition of \fIvar\fP at scope-zero
+Because fabfiles are only parsed when \fB+fabd\fP starts, you may need to also say -B
 .SS "Handling Cycles"
 .TP
 .BR \--cycles-warn " (default)"
@@ -194,18 +183,6 @@ fail when a cycle is detected
 .BR \--cycles-deal
 deal with cycles by terminating the traversal (not recommended)
 .SS "Logging"
-.TP
-.BR \--backtrace-pithy " (default)"
-produce a summary of the callstack upon failure
-.TP
-.BR \--backtrace-full
-produce a complete description of the callstack upon failure
-.TP
-.BR \--logtrace-no " (default)"
- omit trace from log messages
-.TP
-.BR \--logtrace
-include file/function/line in log messages
 .TP
 .BR \--gnid-relative-cwd " (default)"
 identify nodes in log messages by path relative to the current working directory
@@ -219,7 +196,8 @@ identify nodes in log messages by absolute path
 .BR \--gnid-canon
 identify nodes in log messages by canonical path
 .
-.SH LOGOPTS
+.SH LOGEXPR
+Log expressions control which log messages are enabled
 .TP
  \fB+\fR\fIlogcat
 enable log messages tagged with the category \fIlogcat
@@ -229,7 +207,7 @@ disable log messages tagged with the category \fIlogcat
 .SS Categories
 .TP
 .BR ERROR
-errors leading to shutdown
+fatal errors
 .TP
 .BR WARN
 nonfatal warnings
@@ -243,21 +221,6 @@ program arguments
 .BR PARAMS
 program execution parameters
 .TP
-.BR FFTOKEN
-fabfile parsing - token stream
-.TP
-.BR FFSTATE
-fabfile parsing - lexer states
-.TP
-.BR FFTREE
-fabfile parsing - parsed tree
-.TP
-.BR FFFILE
-fabfile parsing - parsed file
-.TP
-.BR FF
-fabfile parsing
-.TP
 .BR BPINFO
 buildplan - flow
 .TP
@@ -268,19 +231,10 @@ buildplan - execution
 buildplan - pruning/evaluating
 .TP
 .BR BPDUMP
-buildplan - dump the final buildplan
+buildplan - log final buildplan
 .TP
-.BR BP
-buildplan
-.TP
-.BR FMLEXEC
-formulas - execution results/details
-.TP
-.BR FML
-formulas
-.TP
-.BR FAB
-fabrication formulas
+.BR BPCMD
+buildplan - log commands
 .TP
 .BR DSCINFO
 dependency discovery - flow
@@ -288,17 +242,11 @@ dependency discovery - flow
 .BR DSCEXEC
 dependency discovery - execution
 .TP
-.BR DSCNEW
-dependency discovery - new nodes/edges
+.BR NODE
+dependency graph node details (+i)
 .TP
-.BR DSC
-dependency discovery
-.TP
-.BR DGRAPH
-dependency graph - dump/details
-.TP
-.BR DG
-dependency graph
+.BR INVALID
+dependency graph node invalidations
 .TP
 .BR VARAUTO
 variable definitions - automatic
@@ -317,27 +265,6 @@ node selectors
 .TP
 .BR LISTS
 node lists
-.TP
-.BR INVALID
-node invalidation
-.TP
-.BR LWEXEC
-liblistwise - execution
-.TP
-.BR LWOPINFO
-liblistwise - operator info messages
-.TP
-.BR LWPARSE
-liblistwise - transform parsing
-.TP
-.BR LWTOKEN
-liblistwise - transform parsing - token stream
-.TP
-.BR LWSTATE
-liblistwise - transform parsing - lexer states
-.TP
-.BR LWSANITY
-liblistwise - sanity checks
 .
 .SH EXIT STATUS
 An exit status of 0 means success.
@@ -347,47 +274,49 @@ An exit status > 127 means an error was encountered that is not specific to
 .PP
 An exit status < 128 means that one of the following \fBfab\fP-specific error was encountered.
 .TP
-.RB (1) SYNTAX
-fabfile is grammatically incorrect
-.TP
-.RB (2) ILLBYTE
-fabfile contains unrecognized byte sequence
-.TP
-.RB (3) BADTMP
-unexpected file(s) in temp directory
-.TP
-.RB (4) BADCACHE
-unexpected file(s) in cache directory
-.TP
-.RB (5) BADARGS
+.RB (1) BADARGS
 invalid command-line arguments
 .TP
-.RB (6) UNSATISFIED
+.RB (2) BADIPC
+ipc failure
+.TP
+.RB (3) SYNTAX
+fabfile is grammatically incorrect
+.TP
+.RB (4) ILLBYTE
+fabfile contains unrecognized byte sequence
+.TP
+.RB (5) UNSATISFIED
 buildplan has unsatisfied dependencies
 .TP
-.RB (7) FMLFAIL
+.RB (6) FMLFAIL
 formula failed to execute successfully
 .TP
-.RB (8) DSCPARSE
+.RB (7) DSCPARSE
 dependency discovery results were not parsed
 .TP
-.RB (9) NOINVOKE
+.RB (8) NOINVOKE
 target of fabfile invocation could not be resolved
 .TP
-.RB (10) BADPLAN
+.RB (9) BADPLAN
 buildplan cannot be constructed
 .TP
-.RB (11) EXESUID
-fab executable does not have ug+s permissions
-.TP
-.RB (12) CYCLE
+.RB (10) CYCLE
 dependency graph contains a cycle
+.TP
+.RB (11) NOSELECT
+selector matches nothing
+.TP
+.RB (12) NXPARAMS
+unable to determine runtime parameters
+.TP
+.RB (13) FABDFAIL
+fabd terminated abnormally
 .SH AUTHORS
 Todd Freed 
 .MT todd.freed@gmail.com
 .ME
 .SH "SEE ALSO"
 .BR listwise(1)
-.BR liblistwise(7)
 .PP
 .URL "http://fabutil.org" "fabutil.org"

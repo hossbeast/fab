@@ -597,8 +597,16 @@ int gn_process_invalidations(gn *** const invalidations, int invalidationsl, int
 			logf(L_INVALID, "%s", gn->idstring);
 
 		gn->invalid |= GN_INVALIDATION_USER;
-		if(gn->type == GN_TYPE_PRIMARY && gn->dscvsl)
+
+		if(GN_IS_INVALID(gn) && gn->dscvsl)
+		{
+			gn->invalid |= GN_INVALIDATION_DISCOVERY;
 			*repeat_discovery = 1;
+		}
+		else if(GN_IS_INVALID(gn) && gn->type != GN_TYPE_PRIMARY)
+		{
+			gn->invalid |= GN_INVALIDATION_FABRICATE;
+		}
 	}
 
 	finally : coda;

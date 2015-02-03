@@ -15,38 +15,32 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FABD_GLOBAL_H
-#define _FABD_GLOBAL_H
+#ifndef _IDENTITY_H
+#define _IDENTITY_H
 
-#include "FAB.errtab.h"
-#undef perrtab
-#define perrtab perrtab_FAB
+/// identity_init
+//
+// populates the identity fields of g_params and asserts that this
+// executable has the correct ownership and permissions
+//
+int identity_init();
 
-#include "logs.h"
-#include "args.h"
-#include "params.h"
-#include "identity.h"
+/* 
+** working off of the assumption that seteuid/setegid are negligible
+** performance-wise, a pair of these calls should bracket every code block that needs to access
+** fabsys:fabsys files, within the same function
+*/
 
-#include "fml.h"
-#include "ts.h"
-#include "ff.h"
-#include "ff.parse.h"
-#include "bp.h"
-#include "traverse.h"
-#include "dirutil.h"
-#include "enclose.h"
-#include "gn.h"
-#include "gnlw.h"
-#include "lwutil.h"
-#include "tmp.h"
-#include "var.h"
-#include "list.h"
-#include "ffproc.h"
-#include "selector.h"
-#include "dsc.h"
-#include "bs.h"
+/// identity_assume_user
+//
+// assume ruid identity, i.e. the user who executed the program
+//
+int identity_assume_user();
 
-#include "logger.h"
+/// identity_assume_fabsys
+//
+// assume euid identity, i.e. fabsys:fabsys
+//
+int identity_assume_fabsys();
 
 #endif
-

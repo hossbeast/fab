@@ -27,11 +27,11 @@ listwise \- list processing utility
 .SH SYNOPSIS
 .B listwise
 .R [
-.RI [ option ]
+.I option
 .R |
-.RI [ logexpr ]
+.I logexpr
 .R |
-.RI [ transform-string ]
+.I transform-string
 .R ] ...
 .PP
 .B listwise
@@ -43,13 +43,13 @@ listwise \- list processing utility
 : version information
 .br
 .B listwise
-.B --logopts
+.B --logs
 : summary of logging options
 .br
 .B listwise
-.B --operators
+.B --ops
 :
-.BR listwise
+.BR listwise(1)
 operator listing
 .SH DESCRIPTION
 .B listwise
@@ -103,22 +103,8 @@ read transform-string from \fIpath\fP
 \fB-\fP
 read transform-string from stdin
 .
-.SH "LOGGING"
-.SS "Options"
-.TP
-.BR \--backtrace-pithy " (default)"
-produce a summary of the callstack upon failure
-.TP
-.BR \--backtrace-full
-produce a complete description of the callstack upon failure
-.TP
-.BR \--logtrace-no " (default)"
- omit trace from log messages
-.TP
-.BR \--logtrace
-include file/function/line in log messages
-.SS Logexpr
-Log expressions are used to control which log messages are enabled
+.SH "LOGEXPR"
+Log expressions control which log messages are enabled
 .TP
  \fB+\fR\fIlogcat
 enable log messages tagged with the category \fIlogcat
@@ -146,7 +132,7 @@ transform-string parsing - token stream
 transform-string parsing - lexer states
 .TP
 .BR LWSANITY
-.BR liblistwise(7)
+.BR listwise(3)
 santity checks
 .
 .SH EXIT STATUS
@@ -168,6 +154,6 @@ Todd Freed
 .ME
 .SH "SEE ALSO"
 .BR fab(1)
-.BR liblistwise(7)
+.BR listwise(3)
 .PP
 .URL "http://fabutil.org" "fabutil.org"

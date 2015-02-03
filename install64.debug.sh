@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>.
 
-# fab --bslic-fab -k install64.debug.sh +n @install.debug -K destdir -K incdir -K bindir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabtmpdir -K fabipcdir -K fabinvokedir
+# fab --bslic-fab -k install64.debug.sh +n @install.debug -K destdir -K incdir -K bindir -K mandir -K libdir -K dlibdir -K lwopdir -K fablwopdir -K fabtmpdir -K fabipcdir -K fabinvokedir
 
 # re-exec under time
 if [[ $1 != "timed" ]]; then

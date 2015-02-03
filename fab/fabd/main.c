@@ -315,14 +315,14 @@ static int loop()
 
 	if(g_args->selectors_arediscovery)
 	{
-		fatal(log_parse_and_describe, "+DSC", 0, 0, L_INFO);
+		fatal(log_parse_and_describe, "+DSCEXEC", 0, 0, L_INFO);
 		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
 		fatal(log_parse_pop);
 	}
 
 	if(g_args->selectors_areinspections)
 	{
-		fatal(log_parse_and_describe, "+DGRAPH", 0, 0, L_INFO);
+		fatal(log_parse_and_describe, "+NODE", 0, 0, L_INFO);
 
 		for(x = 0; x < inspectionsl; x++)
 			gn_dump((*inspections[x]));
@@ -525,6 +525,12 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	// process parameter gathering
 	fatal(params_setup);
 
+	// get user identity of this process, assert user:group and permissions are set appropriately
+	fatal(identity_init);
+	
+	// get fabsys identity
+	fatal(identity_assume_fabsys);
+
 	// allow creation of world-rw files
 	umask(0);
 
@@ -598,12 +604,12 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				fatal(ixclose, &fd);
 
 				// reopen standard file descriptors
-				snprintf(space, sizeof(space), "/proc/%ld/fd/1", (long)g_params.fab_pid);
+				snprintf(space, sizeof(space), "%s/fab/out", stem);//, (long)g_params.fab_pid);
 				fatal(xopen, space, O_RDWR, &fd);
 				fatal(xdup2, fd, 1);
 				fd = -1;
 
-				snprintf(space, sizeof(space), "/proc/%ld/fd/2", (long)g_params.fab_pid);
+				snprintf(space, sizeof(space), "%s/fab/err", stem);//, (long)g_params.fab_pid);
 				fatal(xopen, space, O_RDWR, &fd);
 				fatal(xdup2, fd, 2);
 				fd = -1;
@@ -664,7 +670,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			// chdir
 			if(!nodaemon)
 			{
-				snprintf(space, sizeof(space), "/proc/%ld/cwd", (long)g_params.fab_pid);
+				snprintf(space, sizeof(space), "%s/fab/cwd", stem);
 				fatal(xchdir, space);
 			}
 
@@ -860,7 +866,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	// touch stamp file
 	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
 	fatal(ixclose, &fd);
-	fatal(uxopen_mode, space, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+	fatal(uxopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
 	if(fd != -1)
 	  fatal(xfutimens, fd, 0);
 

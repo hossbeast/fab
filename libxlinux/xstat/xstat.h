@@ -112,5 +112,12 @@ int xmkdir(const char * restrict pathname, mode_t mode)
 int uxmkdir(const char * restrict pathname, mode_t mode)
 	__attribute__((nonnull));
 
+/// xfchmod
+//
+// SUMMARY
+//  proxy for fchmod
+//
+int xfchmod(int fd, mode_t mode);
+
 #undef restrict
 #endif

@@ -3,20 +3,20 @@
 #include "xapi.h"
 #define ETABLE_FAB \
 _E(1, BADARGS, "invalid command-line arguments") \
-_E(2, BADIPC, "unexpected file(s) in ipc directory") \
-_E(3, SYNTAX, "fabfile could not be parsed") \
-_E(4, ILLBYTE, "fabfile contains illegal byte(s)") \
-_E(5, BADTMP, "unexpected file(s) in temp directory") \
-_E(6, BADCACHE, "unexpected file(s) in cache directory") \
-_E(7, UNSATISFIED, "buildplan has unsatisfied dependencies") \
-_E(8, FMLFAIL, "formula failed to execute successfully") \
-_E(9, DSCPARSE, "dependency discovery results were not parsed") \
-_E(10, NOINVOKE, "invocation target could not be resolved") \
-_E(11, BADPLAN, "buildplan cannot be constructed") \
-_E(12, CYCLE, "dependency graph contains a cycle") \
-_E(13, NOSELECT, "selector matches nothing") \
-_E(14, NXPARAMS, "unable to determine runtime parameters") \
-_E(15, FABDFAIL, "fabd terminated abnormally") \
+_E(2, BADTMP, "unexpected file(s) in tmp directory") \
+_E(3, BADIPC, "ipc failure") \
+_E(4, SYNTAX, "fabfile could not be parsed") \
+_E(5, ILLBYTE, "fabfile contains illegal byte(s)") \
+_E(6, UNSATISFIED, "buildplan has unsatisfied dependencies") \
+_E(7, FMLFAIL, "formula failed to execute successfully") \
+_E(8, DSCPARSE, "dependency discovery results were not parsed") \
+_E(9, NOINVOKE, "invocation target could not be resolved") \
+_E(10, BADPLAN, "buildplan cannot be constructed") \
+_E(11, CYCLE, "dependency graph contains a cycle") \
+_E(12, NOSELECT, "selector matches nothing") \
+_E(13, NXPARAMS, "unable to determine runtime parameters") \
+_E(14, FABDFAIL, "fabd terminated abnormally") \
+_E(15, FABPERMS, "fab binar(ies) do not have proper permissions") \
 
 enum {
 #define _E(a, b, c) FAB_ ## b = a,

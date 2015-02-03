@@ -101,6 +101,8 @@ $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_deve
 	install -d																			[ $destdir/$bindir ]
 	rm																							[ $destdir/$bindir/fabw ]
 	install [ $fabw_final ]													[ $destdir/$bindir/fabw ]
+	chown fabsys:fabsys															[ $destdir/$bindir/fabw ]
+	chmod ug+s																			[ $destdir/$bindir/fabw ]
 }
 
 [ @install.debug ] : [ @debug ]

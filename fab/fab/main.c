@@ -1,6 +1,5 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
-
    This file is part of fab.
    
    fab is free software: you can redistribute it and/or modify
@@ -28,6 +27,7 @@
 
 #include "xlinux.h"
 #include "xlinux/mempolicy.h"
+#include "xapi/SYS.errtab.h"
 
 #include "pstring.h"
 
@@ -221,12 +221,12 @@ static int bp_exec(int * good)
 				// open file for stdout
 				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/out", g_params.pid, x, i);
 				fatal(ixclose, &stages[x].cmds[i].stdo_fd);
-				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stages[x].cmds[i].stdo_fd);
+				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, FABIPC_DATA, &stages[x].cmds[i].stdo_fd);
 
 				// open file for stderr
 				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", g_params.pid, x, i);
 				fatal(ixclose, &stages[x].cmds[i].stde_fd);
-				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &stages[x].cmds[i].stde_fd);
+				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, FABIPC_DATA, &stages[x].cmds[i].stde_fd);
 
 				// path to the command
 				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", g_params.pid, x, i);
@@ -276,7 +276,7 @@ static int bp_exec(int * good)
 				// save the exit status
 				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.pid, x, i);
 				fatal(ixclose, &fd);
-				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+				fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
 				fatal(axwrite, fd, &r, sizeof(r));
 
 				// not a clean exit
@@ -422,12 +422,28 @@ finally:
 coda;
 }
 
+static int xfabdkill(pid_t pid, int sig)
+{
+	fatal(identity_assume_fabsys);
+	fatal(xkill, pid, sig);
+	fatal(identity_assume_user);
+
+	finally : coda;
+}
+
+static int uxfabdkill(pid_t pid, int sig, int * r)
+{
+	fatal(identity_assume_fabsys);
+	fatal(uxkill, pid, sig, r);
+	fatal(identity_assume_user);
+
+	finally : coda;
+}
+
 int main(int argc, char** argv, char ** envp)
 {
 	char space[2048];
-#if DEVEL
 	char space2[2048];
-#endif
 
 #if DEBUG || DEVEL
 	int mode_backtrace = DEFAULT_MODE_BACKTRACE;
@@ -449,6 +465,12 @@ printf("fab[%ld] started\n", (long)getpid());
 
 	// process parameter gathering
 	fatal(params_setup);
+
+	// get user identity of this process, assert user:group and permissions are set appropriately
+	fatal(identity_init);
+	
+	// get user identity
+	fatal(identity_assume_user);
 
 	// ability to create world-rw files
 	umask(0);
@@ -522,14 +544,17 @@ printf("fab[%ld] started\n", (long)getpid());
 	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0, L_INFO);
 
 /*
-/FABIPCDIR/<hash>/fabfile				<-- init fabfile path, symlink
-/FABIPCDIR/<hash>/args					<-- args, binary
-/FABIPCDIR/<hash>/logs					<-- logs, ascii
-/FABIPCDIR/<hash>/fab/pid				<-- fab pid, ascii
-/FABIPCDIR/<hash>/fab/lock			<-- fab lockfile, empty
-/FABIPCDIR/<hash>/fabd/pgid			<-- fabd pgid, ascii
-/FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile, empty
-/FABIPCDIR/<hash>/fabd/exit			<-- fabd exit status, binary
+     /FABIPCDIR/<hash>/fabfile				<-- init fabfile path, symlink
+0666 /FABIPCDIR/<hash>/args						<-- args, binary
+0666 /FABIPCDIR/<hash>/logs						<-- logs, ascii
+0666 /FABIPCDIR/<hash>/fab/pid				<-- fab pid, ascii
+0666 /FABIPCDIR/<hash>/fab/lock				<-- fab lockfile, empty
+     /FABIPCDIR/<hash>/fab/out				<-- fab stdout, symlink
+     /FABIPCDIR/<hash>/fab/err				<-- fab stderr, symlink
+     /FABIPCDIR/<hash>/fab/cwd				<-- fab cwd, symlink
+0666 /FABIPCDIR/<hash>/fabd/pgid			<-- fabd pgid, ascii
+0666 /FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile, empty
+0666 /FABIPCDIR/<hash>/fabd/exit			<-- fabd exit status, binary
 */
 
 	// ipc-dir stem
@@ -537,30 +562,59 @@ printf("fab[%ld] started\n", (long)getpid());
 
 	// fab directory
 	snprintf(space + z, sizeof(space) - z, "/fab");
-	fatal(mkdirp, space, S_IRWXU | S_IRWXG);
+	fatal(mkdirp, space, FABIPC_DIR);
+
+	// fab-lock file
+	snprintf(space + z, sizeof(space) - z, "/fab/lock");
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, FABIPC_DATA, &lockfd);
+	fatal(xflock, lockfd, LOCK_EX | LOCK_NB);
 
 	// canonical fabfile symlink
 	snprintf(space + z, sizeof(space) - z, "/fabfile");
 	fatal(uxsymlink, g_args->init_fabfile_path->can, space);
 
-	// fab-lock file
-	snprintf(space + z, sizeof(space) - z, "/fab/lock");
-	fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &lockfd);
-	fatal(xflock, lockfd, LOCK_EX | LOCK_NB);
+	// fab-cwd symlink
+	snprintf(space + z, sizeof(space) - z, "/fab/cwd");
+	fatal(uxunlink, space, 0);
+	fatal(xsymlink, g_params.cwd, space);
+
+	// fab-out symlink
+	snprintf(space2, sizeof(space2), "/proc/%ld/fd/1", (long)g_params.pid);
+	ssize_t ss = 0;
+	fatal(xreadlink, space2, space2, sizeof(space2), &ss);
+	if(ss >= sizeof(space2))
+		ss = sizeof(space2) - 1;
+	if(ss >= 0)
+		space2[ss] = 0;
+	snprintf(space + z, sizeof(space) - z, "/fab/out");
+	fatal(uxunlink, space, 0);
+	fatal(xsymlink, space2, space);
+
+	// fab-err symlink
+	snprintf(space2, sizeof(space2), "/proc/%ld/fd/2", (long)g_params.pid);
+	ss = 0;
+	fatal(xreadlink, space2, space2, sizeof(space2), &ss);
+	if(ss >= sizeof(space2))
+		ss = sizeof(space2) - 1;
+	if(ss >= 0)
+		space2[ss] = 0;
+	snprintf(space + z, sizeof(space) - z, "/fab/err");
+	fatal(uxunlink, space, 0);
+	fatal(xsymlink, space2, space);
 
 	// fab-pid file
 	snprintf(space + z, sizeof(space) - z, "/fab/pid");
-	fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, FABIPC_DATA, &fd);
 	fatal(axwrite, fd, &g_params.pid, sizeof(g_params.pid));
 	fatal(ixclose, &fd);
 
 	// fabd directory
 	snprintf(space + z, sizeof(space) - z, "/fabd");
-	fatal(mkdirp, space, S_IRWXU | S_IRWXG);
+	fatal(mkdirp, space, FABIPC_DIR);
 
 	// open args file for writing
 	snprintf(space + z, sizeof(space) - z, "/args");
-	fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, FABIPC_DATA);
 
 	// set the filesize
 	fatal(xftruncate, fd, memblk_size(mb));
@@ -574,7 +628,7 @@ printf("fab[%ld] started\n", (long)getpid());
 
 	// open logs file for writing
 	snprintf(space + z, sizeof(space) - z, "/logs");
-	fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, FABIPC_DATA, &fd);
 
 	// set the filesize
 	fatal(xftruncate, fd, g_logvsl);
@@ -582,6 +636,10 @@ printf("fab[%ld] started\n", (long)getpid());
 	// write the logs : g_logs unusable beyond this point
 	fatal(axwrite, fd, g_logvs, g_logvsl);
 	fatal(ixclose, &fd);
+
+	// ensure fabd can write to my stdout
+	fatal(xfchmod, 1, 0777);
+	fatal(xfchmod, 2, 0777);
 
 	// fabd-pgid file
 	pid_t fabd_pgid;
@@ -603,17 +661,18 @@ printf("fab[%ld] started\n", (long)getpid());
 
 			// kill signal
 			r = 0;
-			fatal(uxkill, -fabd_pgid, 15, &r);
+			fatal(uxfabdkill, -fabd_pgid, 15, &r);
 
 			// wait for it to terminate ; signal from fabw will interrupt sleep
 			while(r == 0)
 			{
 				sleep(1);
-				fatal(uxkill, -fabd_pgid, 0, &r);
+				fatal(uxfabdkill, -fabd_pgid, 0, &r);
 			}
 		}
 	}
 
+	// fabd-pgid file
 	fatal(ixclose, &fd);
 	fatal(uxopen, space, O_RDONLY, &fd);
 
@@ -627,7 +686,9 @@ printf("fab[%ld] started\n", (long)getpid());
 			failf(FAB_BADIPC, "expected pgid > 0, actual : %ld", (long)fabd_pgid);
 
 		// existence check
-		fatal(uxkill, -fabd_pgid, 0, &r);
+		fatal(identity_assume_fabsys);
+		fatal(uxfabdkill, -fabd_pgid, 0, &r);
+		fatal(identity_assume_user);
 	}
 
 	// ensure fresh results
@@ -643,13 +704,13 @@ printf("fab[%ld] started\n", (long)getpid());
 			// fabd-pgid file
 			snprintf(space + z, sizeof(space) - z, "/fabd/pgid");
 			fatal(ixclose, &fd);
-			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &fd);
+			fatal(xopen_mode, space, O_CREAT | O_WRONLY, FABIPC_DATA, &fd);
 			fatal(axwrite, fd, (pid_t[]) { getpid() }, sizeof(pid_t));
 			fatal(ixclose, &fd);
 
 			// fabd-lock file
 			snprintf(space + z, sizeof(space) - z, "/fabd/lock");
-			fatal(xopen_mode, space, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, &lockfd);
+			fatal(xopen_mode, space, O_CREAT | O_WRONLY, FABIPC_DATA, &lockfd);
 			fatal(xflock, lockfd, LOCK_EX | LOCK_NB);
 
 			// new process group
@@ -671,7 +732,7 @@ printf("fab[%ld] started\n", (long)getpid());
 	else
 	{
 		// awaken
-		fatal(xkill, -fabd_pgid, FABSIG_START);
+		fatal(xfabdkill, -fabd_pgid, FABSIG_START);
 	}
 
 	// wait to hear back from fabd
@@ -685,9 +746,9 @@ printf("fab[%ld] started\n", (long)getpid());
 
 		// notify fabd
 		if(good)
-			fatal(uxkill, -fabd_pgid, FABSIG_BPGOOD, &r);
+			fatal(uxfabdkill, -fabd_pgid, FABSIG_BPGOOD, &r);
 		else
-			fatal(uxkill, -fabd_pgid, FABSIG_BPBAD, &r);
+			fatal(uxfabdkill, -fabd_pgid, FABSIG_BPBAD, &r);
 
 		o_signum = 0;
 		pause();
@@ -720,13 +781,13 @@ printf("fab[%ld] started\n", (long)getpid());
 	else
 	{
 		// in this case, fabd should still be running
-		fatal(xkill, -fabd_pgid, 0);
+		fatal(xfabdkill, -fabd_pgid, 0);
 	}
 
 	// touch stamp file
 	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
 	fatal(ixclose, &fd);
-	fatal(uxopen_mode, space, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, &fd);
+	fatal(uxopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
 	if(fd != -1)
 		fatal(xfutimens, fd, 0);
 
@@ -757,6 +818,11 @@ finally:
 
 		logw(L_RED, space, tracesz);
 	}
+
+if(XAPI_ERRTAB == perrtab_SYS && XAPI_ERRCODE == SYS_EPERM)
+{
+	sleep(10000);
+}
 
 	log_teardown();
 	memblk_free(mb);
