@@ -127,6 +127,65 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 #endif
 }
 
+/// hashfiles
+//
+// SUMMARY
+//  load hashes for backing files
+//
+static int hashfiles(int iteration)
+{
+	int x;
+
+	// stat backing files
+	for(x = 0; x < gn_nodes.l; x++)
+	{
+		if(gn_nodes.e[x]->mark != iteration)
+		{
+			if(gn_nodes.e[x]->type & GN_TYPE_HASFILE)
+			{
+				// load hash
+				fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
+
+				if(gn_nodes.e[x]->hb->stathash[1] == 0)
+				{
+					if(!gn_nodes.e[x]->invalid)
+						logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_NXFILE), gn_nodes.e[x]->idstring);
+
+					// missing file
+					gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
+				}
+				else if(hashblock_cmp(gn_nodes.e[x]->hb))
+				{
+					if(!gn_nodes.e[x]->invalid)
+						logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_CHANGED), gn_nodes.e[x]->idstring);
+
+					// changed file
+					gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+				}
+
+				// convert to actions
+				if(GN_IS_INVALID(gn_nodes.e[x]))
+				{
+					if(gn_nodes.e[x]->dscvsl)
+					{
+						// require discovery
+						gn_nodes.e[x]->invalid |= GN_INVALIDATION_DISCOVERY;
+					}
+					else if(gn_nodes.e[x]->type != GN_TYPE_PRIMARY)
+					{
+						// require fabrication
+						gn_nodes.e[x]->invalid |= GN_INVALIDATION_FABRICATE;
+					}
+				}
+			}
+
+			gn_nodes.e[x]->mark = iteration;
+		}
+	}
+
+	finally : coda;
+}
+
 static int loop()
 {
 	int x;
@@ -147,31 +206,17 @@ static int loop()
 	// track start time
 	g_params.starttime = time(0);
 
+	static int iteration;
+	iteration++;
+
+	// load hashes for backing files : set up actions
+	fatal(hashfiles, iteration);
+
 	// comprehensive dependency discovery
 	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
 
-	// stat non-primary backing files
-	for(x = 0; x < gn_nodes.l; x++)
-	{
-		if((gn_nodes.e[x]->type & GN_TYPE_HASFILE) && (gn_nodes.e[x]->type != GN_TYPE_PRIMARY))
-		{
-			fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
-
-			if(hashblock_cmp(gn_nodes.e[x]->hb))
-			{
-				if(!gn_nodes.e[x]->invalid)
-					logf(L_INVALID, "%s", gn_nodes.e[x]->idstring);
-
-				gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
-			}
-
-			// require fabrication
-			if(GN_IS_INVALID(gn_nodes.e[x]))
-			{
-				gn_nodes.e[x]->invalid |= GN_INVALIDATION_FABRICATE;
-			}
-		}
-	}
+	// load hashes for newly found backing files (header files)
+	fatal(hashfiles, iteration);
 
 	// process selectors
 	if(g_args->selectorsl)
@@ -249,7 +294,7 @@ static int loop()
 		if(d)
 		{
 			if(!gn->invalid)
-				logf(L_INVALID, "%s", gn->idstring);
+				logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_SOURCES), gn->idstring);
 
 			gn->invalid |= GN_INVALIDATION_SOURCES;
 		}
@@ -258,7 +303,7 @@ static int loop()
 	};
 	for(x = 0; x < gn_nodes.l; x++)
 	{
-		if((gn_nodes.e[x]->type & GN_TYPE_HASFILE) && (gn_nodes.e[x]->invalid & (GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER)))
+		if(gn_nodes.e[x]->invalid & (GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER))
 		{
 			// do not cross the nofile boundary
 			fatal(traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile, gn_nodes.e[x], visit);

@@ -594,18 +594,21 @@ int gn_process_invalidations(gn *** const invalidations, int invalidationsl, int
 			gn = (*invalidations[x]);
 		
 		if(!gn->invalid)
-			logf(L_INVALID, "%s", gn->idstring);
+			logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_USER), gn->idstring);
 
 		gn->invalid |= GN_INVALIDATION_USER;
 
-		if(GN_IS_INVALID(gn) && gn->dscvsl)
+		if(GN_IS_INVALID(gn))
 		{
-			gn->invalid |= GN_INVALIDATION_DISCOVERY;
-			*repeat_discovery = 1;
-		}
-		else if(GN_IS_INVALID(gn) && gn->type != GN_TYPE_PRIMARY)
-		{
-			gn->invalid |= GN_INVALIDATION_FABRICATE;
+			if(gn->dscvsl)
+			{
+				gn->invalid |= GN_INVALIDATION_DISCOVERY;
+				*repeat_discovery = 1;
+			}
+			else if(gn->type != GN_TYPE_PRIMARY)
+			{
+				gn->invalid |= GN_INVALIDATION_FABRICATE;
+			}
 		}
 	}
 

@@ -614,7 +614,7 @@ printf("fab[%ld] started\n", (long)getpid());
 
 	// open args file for writing
 	snprintf(space + z, sizeof(space) - z, "/args");
-	fatal(xopen_mode, space, O_CREAT | O_WRONLY, FABIPC_DATA);
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, FABIPC_DATA, &fd);
 
 	// set the filesize
 	fatal(xftruncate, fd, memblk_size(mb));

@@ -195,39 +195,17 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int *
 	int n = 0;
 	for(x = 0; x < gn_nodes.l; x++)
 	{
-		if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY)
+		if(gn_nodes.e[x]->invalid & GN_INVALIDATION_DISCOVERY)
 		{
-			fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
-			if(gn_nodes.e[x]->hb->stathash[1] == 0)
+			for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
 			{
-				if(!gn_nodes.e[x]->invalid)
-					logf(L_INVALID, "%s", gn_nodes.e[x]->idstring);
+				fatal(ts_ensure, ts, tsa, tsl + 1);
+				ts_reset((*ts)[tsl]);
 
-				gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
-			}
-			else if(hashblock_cmp(gn_nodes.e[x]->hb))
-			{
-				if(!gn_nodes.e[x]->invalid)
-					logf(L_INVALID, "%s", gn_nodes.e[x]->idstring);
-
-				gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+				(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
 			}
 
-			// require discovery
-			if(GN_IS_INVALID(gn_nodes.e[x]) && gn_nodes.e[x]->dscvsl)
-			{
-				gn_nodes.e[x]->invalid |= GN_INVALIDATION_DISCOVERY;
-
-				for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
-				{
-					fatal(ts_ensure, ts, tsa, tsl + 1);
-					ts_reset((*ts)[tsl]);
-
-					(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
-				}
-
-				n++;
-			}
+			n++;
 		}
 	}
 
