@@ -35,9 +35,11 @@ struct g_logs_t logs[] = {
 	, { .v = L_BPEXEC		, .s = "BPEXEC"		, .d = "buildplan - execution" }
 	, { .v = L_BPEVAL		, .s = "BPEVAL"		, .d = "buildplan - pruning/evaluating" }
 	, { .v = L_BPDUMP		, .s = "BPDUMP"		, .d = "buildplan - log final buildplan" }
-	, { .v = L_BPCMD		, .s = "BPCMD"		, .d = "buildplan - log commands" }
+	, { .v = L_BPCMD		, .s = "BPCMD"		, .d = "buildplan - commands" }
 	, { .v = L_DSCINFO	, .s = "DSCINFO"	, .d = "dependency discovery - flow" }
 	, { .v = L_DSCEXEC	, .s = "DSCEXEC"	, .d = "dependency discovery - execution" }
+	, { .v = L_DSCCMD		, .s = "DSCCMD"		, .d = "dependency discovery - commands" }
+	, { .v = L_DSCRES		, .s = "DSCRES"		, .d = "dependency discovery - results" }
 	, { .v = L_NODE			, .s = "NODE"			, .d = "dependency graph node details (+i)" }
 	, { .v = L_INVALID	, .s = "INVALID"	, .d = "dependency graph node invalidations" }
 	, { .v = L_VARAUTO	, .s = "VARAUTO"	, .d = "variable definitions - automatic" }

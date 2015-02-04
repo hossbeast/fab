@@ -360,7 +360,7 @@ static int loop()
 
 	if(g_args->selectors_arediscovery)
 	{
-		fatal(log_parse_and_describe, "+DSCEXEC", 0, 0, L_INFO);
+		fatal(log_parse_and_describe, "+DSCRES", 0, 0, L_INFO);
 		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
 		fatal(log_parse_pop);
 	}

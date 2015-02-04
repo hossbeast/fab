@@ -121,29 +121,23 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, int * ba
 			else if(WIFSIGNALED(r))
 				ts[x]->r_signal = WTERMSIG(r);
 
-			// snarf stderr
-			if(1)
-			{
-				off_t sz = lseek(ts[x]->stde_fd, 0, SEEK_END);
-				lseek(ts[x]->stde_fd, 0, SEEK_SET);
-				fatal(psgrow, &ts[x]->stde_txt, sz + 2);
-				__r = read(ts[x]->stde_fd, ts[x]->stde_txt->s, sz);
-				ts[x]->stde_txt->s[sz+0] = 0;
-				ts[x]->stde_txt->s[sz+1] = 0;
-				ts[x]->stde_txt->l = sz;
-			}
+			// snarf stdout (discovery results)
+			off_t sz = lseek(ts[x]->stdo_fd, 0, SEEK_END);
+			lseek(ts[x]->stdo_fd, 0, SEEK_SET);
+			fatal(psgrow, &ts[x]->stdo_txt, sz + 2);
+			__r = read(ts[x]->stdo_fd, ts[x]->stdo_txt->s, sz);
+			ts[x]->stdo_txt->s[sz+0] = 0;
+			ts[x]->stdo_txt->s[sz+1] = 0;
+			ts[x]->stdo_txt->l = sz;
 
-			// snarf stdout
-			if(1)
-			{
-				off_t sz = lseek(ts[x]->stdo_fd, 0, SEEK_END);
-				lseek(ts[x]->stdo_fd, 0, SEEK_SET);
-				fatal(psgrow, &ts[x]->stdo_txt, sz + 2);
-				__r = read(ts[x]->stdo_fd, ts[x]->stdo_txt->s, sz);
-				ts[x]->stdo_txt->s[sz+0] = 0;
-				ts[x]->stdo_txt->s[sz+1] = 0;
-				ts[x]->stdo_txt->l = sz;
-			}
+			// snarf stderr
+			sz = lseek(ts[x]->stde_fd, 0, SEEK_END);
+			lseek(ts[x]->stde_fd, 0, SEEK_SET);
+			fatal(psgrow, &ts[x]->stde_txt, sz + 2);
+			__r = read(ts[x]->stde_fd, ts[x]->stde_txt->s, sz);
+			ts[x]->stde_txt->s[sz+0] = 0;
+			ts[x]->stde_txt->s[sz+1] = 0;
+			ts[x]->stde_txt->l = sz;
 
 			close(ts[x]->stde_fd);
 			close(ts[x]->stdo_fd);
@@ -208,6 +202,30 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, int * ba
 				{
 					break;
 				}
+			}
+
+			if(log_would(L_DSCCMD))
+			{
+				// cmd : chomp trailing whitespace
+				size_t end = ts[x]->cmd_txt->l - 1;
+				while(end >= 0 && (ts[x]->cmd_txt->s[end] == ' ' || ts[x]->cmd_txt->s[end] == '\t' || ts[x]->cmd_txt->s[end] == '\r' || ts[x]->cmd_txt->s[end] == '\n'))
+					end--;
+				end++;
+
+				fatal(axwrite, 1, ts[x]->cmd_txt->s, end);
+				fatal(axwrite, 1, "\n", 1);
+			}
+
+			if(log_would(L_DSCRES))
+			{
+				// stdout : chomp trailing whitespace
+				size_t end = ts[x]->stdo_txt->l - 1;
+				while(end >= 0 && (ts[x]->stdo_txt->s[end] == ' ' || ts[x]->stdo_txt->s[end] == '\t' || ts[x]->stdo_txt->s[end] == '\r' || ts[x]->stdo_txt->s[end] == '\n'))
+					end--;
+				end++;
+
+				fatal(axwrite, 1, ts[x]->stdo_txt->s, end);
+				fatal(axwrite, 1, "\n", 1);
 			}
 
 			if(e_stde)

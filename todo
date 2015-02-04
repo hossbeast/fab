@@ -1,8 +1,6 @@
 * v0.5.0
  review fab cmdline interface, options, logs
  fab/lw man pages
- correct exit status when bp fails
- +d should show results
 
 * finished
  standardize dsc_exec vs bp_exec error messages
@@ -19,6 +17,8 @@
  deal with REQUIRE_LISTENER
  verify install
  rename stdo/stde out/err
+ correct exit status when bp fails
+ +d should show results
 
 * docket
  listwise resolve lstack vs lwx
