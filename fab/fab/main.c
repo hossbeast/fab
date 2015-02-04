@@ -66,7 +66,7 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 #endif
 }
 
-static int bp_exec(int * good)
+static int bp_exec(int * success)
 {
 	pstring * tmp = 0;
 	int fd = -1;
@@ -254,6 +254,10 @@ static int bp_exec(int * good)
 					fatal(xdup2, 2, 502);
 					fatal(xdup2, stages[x].cmds[i].stde_fd, 2);
 
+					// irretrievably drop fabsys:fabsys identity
+					fatal(xsetresuid, g_params.ruid, g_params.ruid, g_params.ruid);
+					fatal(xsetresgid, g_params.rgid, g_params.rgid, g_params.rgid);
+
 					// exec doesnt return
 					execl(tmp->s, tmp->s, (void*)0);
 					fail(0);
@@ -397,7 +401,7 @@ static int bp_exec(int * good)
 	}
 
 	if(x == stagesl)
-		*good = 1;
+		*success = 1;
 
 finally:
 
@@ -752,18 +756,18 @@ printf("fab[%ld] started\n", (long)getpid());
 
 		o_signum = 0;
 		pause();
-	}
 
-#if 0
-	if(o_signum == FABSIG_DONE)
-	{
-		// no buildplan
+		// touch stamp file to refresh the expiration on the bp directory
+		snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
+		fatal(ixclose, &fd);
+		fatal(uxopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
+		if(fd != -1)
+			fatal(xfutimens, fd, 0);
+
+		// some command failed
+		if(!good)
+			fail(FAB_CMDFAIL);
 	}
-	else
-	{
-		fail(FAB_BADIPC);
-	}
-#endif
 
 	// check fabd-exit file
 	snprintf(space + z, sizeof(space) - z, "/fabd/exit");
@@ -783,13 +787,6 @@ printf("fab[%ld] started\n", (long)getpid());
 		// in this case, fabd should still be running
 		fatal(xfabdkill, -fabd_pgid, 0);
 	}
-
-	// touch stamp file
-	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
-	fatal(ixclose, &fd);
-	fatal(uxopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
-	if(fd != -1)
-		fatal(xfutimens, fd, 0);
 
 finally:
 	fatal(ixclose, &fd);
@@ -818,11 +815,6 @@ finally:
 
 		logw(L_RED, space, tracesz);
 	}
-
-if(XAPI_ERRTAB == perrtab_SYS && XAPI_ERRCODE == SYS_EPERM)
-{
-	sleep(10000);
-}
 
 	log_teardown();
 	memblk_free(mb);

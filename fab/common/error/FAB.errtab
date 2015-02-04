@@ -21,7 +21,7 @@
 4		SYNTAX				fabfile could not be parsed
 5		ILLBYTE				fabfile contains illegal byte(s)
 6		UNSATISFIED		buildplan has unsatisfied dependencies
-7		FMLFAIL				formula failed to execute successfully
+7		CMDFAIL				command failed to execute successfully
 8		DSCPARSE			dependency discovery results were not parsed
 9		NOINVOKE			invocation target could not be resolved
 10	BADPLAN				buildplan cannot be constructed
