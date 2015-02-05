@@ -170,8 +170,6 @@ int canon(
 	opts = opts ?: CAN_REALPATH;
 	pathl = pathl ?: strlen(path);
 
-//printf("%3u %s %s\n", opts, path, base);
-
 	if(base)
 	{
 		basel = basel ?: strlen(base);
@@ -216,33 +214,37 @@ int canon(
 
 	int init = il;
 	fatal(breakup, &i, &ia, &il, il, "%.*s", pathl, path);
-
 	dst[0] = 0;
 
-/*
-for(ix = 0; ix < il; ix++)
+#if 0
+printf("\n");
+for(x = 0; x < il; x++)
 {
-	if(i[ix].t == SLASH)
-		printf("[%d] SLASH", ix);
-	else if(i[ix].t == DOT)
-		printf("[%d] DOT", ix);
-	else if(i[ix].t == DOTDOT)
-		printf("[%d] DOTDOT", ix);
+	printf("[%d]", x);
+	if(x == ix)
+		printf(">");
 	else
-		printf("[%d] %.*s", ix, i[ix].l, i[ix].s);
+		printf(" ");
+	
+	if(i[x].t == SLASH)
+		printf("[%d] SLASH", x);
+	else if(i[x].t == DOT)
+		printf("[%d] DOT", x);
+	else if(i[x].t == DOTDOT)
+		printf("[%d] DOTDOT", x);
+	else
+		printf("[%d] %.*s", x, i[x].l, i[x].s);
 
-	if(ix == init)
-		printf("   *");
 	printf("\n");
+	printf("%.*s\n", (int)(*z), dst);
 }
-*/
-
+#endif
 	for(ix = 0; ix < il; ix++)
 	{
+
 		if(i[ix].t == SLASH)
 		{
-			// append leading slash, only
-			if((*z) == 0 && ix == 0)
+			if((*z) == 0)
 				(*z) += snprintf(dst + (*z), siz - (*z), "/");
 		}
 		else if(i[ix].t == DOT)
@@ -314,24 +316,31 @@ for(ix = 0; ix < il; ix++)
 			{
 				if(S_ISLNK(stb[0].st_mode))
 				{
+					// space contains the link target
 					char space[512];
 
 					int j = readlink(dst, space, sizeof(space));
 					space[j] = 0;
 
+					// space2 contains the resolved path
 					char space2[512];
 					snprintf(space2, sizeof(space2), "%.*s/%s", (int)oldz, dst, space);
 
+					// stat the resolved path
 					int r = lstat(space2, &stb[1]);
 					if(r || stb[0].st_dev == stb[1].st_dev)
 					{
 						// dangling links, and fulfilled links which do not cross mount points
 						if((isfinal && (opts & CAN_FINL_SYM)) || (!isfinal && (opts & CAN_NEXT_SYM)))
 						{
+							// breakup the link target and append to item list
 							fatal(breakup, &i, &ia, &il, ix + 1, "%.*s", j, space);
 
+							// if the link target is an absolute path, resume writing at z=0
 							if(space[0] == '/')
 								(*z) = 0;
+
+							// otherwise, resume writing at the location where the link was encountered
 							else
 								(*z) = oldz;
 						}
