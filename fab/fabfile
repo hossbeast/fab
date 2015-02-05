@@ -130,12 +130,19 @@ $faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
 
 	rm -rf 																							[ $destdir/$fablwopdir ] 2>/dev/null
 	install -d																					[ $destdir/$fablwopdir ]
+}
+
+[ @install.final ] : [ @installation @fab.install.final @fabw.install.final @fabd.install.final ]
+{
 	install [ $dfabcore/fablw/op/fi/fi.final.so ]				[ $destdir/$fablwopdir/fi.so ]
 	install [ $dfabcore/fablw/op/fg/fg.final.so ]				[ $destdir/$fablwopdir/fg.so ]
 }
 
-[ @install.final ] : [ @installation @fab.install.final @fabw.install.final @fabd.install.final ]
 [ @install.debug ] : [ @installation @fab.install.debug @fabw.install.debug @fabd.install.debug ]
+{
+	install [ $dfabcore/fablw/op/fi/fi.debug.so ]				[ $destdir/$fablwopdir/fi.so ]
+	install [ $dfabcore/fablw/op/fg/fg.debug.so ]				[ $destdir/$fablwopdir/fg.so ]
+}
 [ @install.man ] : [ @install.man1 ]
 
 # build the man gz

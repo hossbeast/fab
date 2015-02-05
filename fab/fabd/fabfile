@@ -53,9 +53,11 @@ $cflags_devel = [ $cflags_devel $copts $params_devel ]
 $rpath = [ 
 	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
-$lflags_final = [ $lflags_final $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
-$lflags_debug = [ $lflags_debug $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
-$lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
+# -lrt required for glibc < 2.17 as per man clock_gettime
+$lopts				= [ -lrt ]
+$lflags_final = [ $lflags_final $lopts $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
+$lflags_debug = [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
+$lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
 
 # standard files - standard compilation
 +[@std.c]($dext = [ final.o ]; $dirs = $sdirs; $paths = [ $dfabd/main.c ~ j ]; $cc; $cflags = $cflags_final)
@@ -116,7 +118,7 @@ $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_deve
 [ @install.final ] : [ @final ]
 {
 	install -d																			[ $destdir/$bindir ]
-	rm																							[ $destdir/$bindir/fabd ]
+	rm																							[ $destdir/$bindir/fabd ] 2>/dev/null
 	install [ $fabd_final ]													[ $destdir/$bindir/fabd ]
 	chown fabsys:fabsys															[ $destdir/$bindir/fabd ]
 	chmod ug+s																			[ $destdir/$bindir/fabd ]
@@ -125,6 +127,6 @@ $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_deve
 [ @install.debug ] : [ @debug ]
 {
 	install -d																			[ $destdir/$bindir ]
-	rm																							[ $destdir/$bindir/fabd ]
+	rm																							[ $destdir/$bindir/fabd ] 2>/dev/null
 	install [ $fabd_debug ]													[ $destdir/$bindir/fabd ]
 }

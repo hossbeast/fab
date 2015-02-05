@@ -648,13 +648,15 @@ int args_summarize()
 
 	// log execution parameters under PARAMS
 	logf(L_PARAMS	, "%11spid                    =%u"						, ""	, g_params.pid);
+	logf(L_PARAMS	, "%11seid                    =%s/%d:%s/%d"		, ""	, g_params.euid_name, g_params.euid, g_params.egid_name, g_params.egid);
+	logf(L_PARAMS	, "%11srid                    =%s/%d:%s/%d"		, ""	, g_params.ruid_name, g_params.ruid, g_params.rgid_name, g_params.rgid);
 	logf(L_PARAMS	, "%11scwd                    =%s"						, ""	, g_params.cwd);
 	logf(L_PARAMS	, "%11sexedir                 =%s"						, ""	, g_params.exedir);
 	logf(L_PARAMS	, "%11sprocessors             =%ld"						, ""	, g_params.procs);
-	logf(L_PARAMS	, "%11stmpdir                 =%s"						, ""	,	XQUOTE(FABTMPDIR));
-	logf(L_PARAMS	, "%11sipcdir                 =%s"						, ""	,	XQUOTE(FABIPCDIR));
-	logf(L_PARAMS	, "%11slwopdir                =%s"						, ""	,	XQUOTE(FABLWOPDIR));
-	logf(L_PARAMS	, "%11sinvokedir              =%s"						, ""	,	XQUOTE(FABINVOKEDIR));
+	logf(L_PARAMS	, "%11stmpdir                 =%s"						, ""	, XQUOTE(FABTMPDIR));
+	logf(L_PARAMS	, "%11sipcdir                 =%s"						, ""	, XQUOTE(FABIPCDIR));
+	logf(L_PARAMS	, "%11slwopdir                =%s"						, ""	, XQUOTE(FABLWOPDIR));
+	logf(L_PARAMS	, "%11sinvokedir              =%s"						, ""	, XQUOTE(FABINVOKEDIR));
 
 	// log cmdline args under ARGS
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->can);

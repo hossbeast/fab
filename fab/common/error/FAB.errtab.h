@@ -3,7 +3,7 @@
 #include "xapi.h"
 #define ETABLE_FAB \
 _E(1, BADARGS, "invalid command-line arguments") \
-_E(2, BADTMP, "unexpected file(s) in tmp directory") \
+_E(2, BADTMP, "unexpected file(s) in fab tmp directory") \
 _E(3, BADIPC, "ipc failure") \
 _E(4, SYNTAX, "fabfile could not be parsed") \
 _E(5, ILLBYTE, "fabfile contains illegal byte(s)") \

@@ -45,12 +45,12 @@ int main(int g_argc, char** g_argv)
 	// link in liblistwise - there are symbol binding problems when just dloading it
 extern int listwise_allocation_seed;
 	listwise_allocation_seed = 10;
-#endif
 
 //	fatal(xdlopen, "/home/todd/fab/listwise/liblistwise/liblistwise.devel.so", RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND, &object);
+#endif
 
 	// initialize logger - prepare g_argc/g_argv
-	fatal(log_init);
+	fatal(log_init, 0);
 
 	// parse cmdline arguments
 	fatal(args_parse);
