@@ -53,9 +53,11 @@ $cflags_devel = [ $cflags_devel $copts $params_devel ]
 $rpath = [ 
 	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
-$lflags_final = [ $lflags_final $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
-$lflags_debug = [ $lflags_debug $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
-$lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
+# -lrt required for glibc < 2.17 as per man clock_gettime
+$lopts				= [ -lrt ]
+$lflags_final = [ $lflags_final $lopts $libxapi_final $libxlinux_final $libpstring_final $liblistwise_final ]
+$lflags_debug = [ $lflags_debug $lopts $libxapi_debug $libxlinux_debug $libpstring_debug $liblistwise_debug ]
+$lflags_devel = [ $lflags_devel $lopts $libxapi_devel $libxlinux_devel $libpstring_devel $liblistwise_devel $rpath ]
 
 # standard files - standard nopic compilation
 +[@std.c]($dext = [ final.o ]; $rdirs = $sdirs; $cc; $cflags = $cflags_final)

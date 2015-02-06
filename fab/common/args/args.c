@@ -46,6 +46,9 @@
 
 #define restrict __restrict
 
+#undef perrtab
+#define perrtab perrtab_FAB
+
 struct g_args_t * g_args;
 
 //

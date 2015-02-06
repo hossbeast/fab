@@ -63,8 +63,6 @@ fml_0_0()
 
 	rm -rf 																							$destdir/$fablwopdir 2>/dev/null
 	install -d																					$destdir/$fablwopdir
-	install ./fab/fablw/op/fi/fi.final.so				$destdir/$fablwopdir/fi.so
-	install ./fab/fablw/op/fg/fg.final.so				$destdir/$fablwopdir/fg.so
 
 
   X=$?
@@ -165,7 +163,7 @@ fml_5_0()
   [[ $destdir ]] || local destdir=''
   
 	install -d																			$destdir/$bindir
-	rm																							$destdir/$bindir/fab
+	rm																							$destdir/$bindir/fab 2>/dev/null
 	install ./fab/fab/fab.debug													$destdir/$bindir/fab
 
 
@@ -184,7 +182,7 @@ fml_5_1()
   [[ $destdir ]] || local destdir=''
   
 	install -d																			$destdir/$bindir
-	rm																							$destdir/$bindir/fabd
+	rm																							$destdir/$bindir/fabd 2>/dev/null
 	install ./fab/fabd/fabd.debug													$destdir/$bindir/fabd
 
 
@@ -203,7 +201,7 @@ fml_5_2()
   [[ $destdir ]] || local destdir=''
   
 	install -d																			$destdir/$bindir
-	rm																							$destdir/$bindir/fabw
+	rm																							$destdir/$bindir/fabw 2>/dev/null
 	install ./fab/fabw/fabw.debug													$destdir/$bindir/fabw
 
 
@@ -214,11 +212,29 @@ fml_5_2()
 
 
 # formulas and names for stage 6
-NAMES[8]='@liblistwise.install.debug'
+NAMES[8]='@fabcore.install.debug'
 fml_6_0()
 {
   exec 1>/dev/null
   exec 2>&100
+
+  [[ $destdir ]] || local destdir=''
+  [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/listwise'
+  
+	install ./fab/fablw/op/fi/fi.debug.so				$destdir/$fablwopdir/fi.so
+	install ./fab/fablw/op/fg/fg.debug.so				$destdir/$fablwopdir/fg.so
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+NAMES[9]='@liblistwise.install.debug'
+fml_6_1()
+{
+  exec 1>/dev/null
+  exec 2>&101
 
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
@@ -280,7 +296,7 @@ fml_6_0()
 
 
   X=$?
-  echo 0 1>&99
+  echo 1 1>&99
   exit $X
 }
 
@@ -451,14 +467,15 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
+  ((SKP+=2))
 else
   # launch stage 6.0
   exec 100>$tmp ; rm -f $tmp ; fml_6_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_6_1 & PIDS[1]=$!
 
   # harvest stage 6.0
   C=0
-  while [[ $C != 1 ]]; do
+  while [[ $C != 2 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?

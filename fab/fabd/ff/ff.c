@@ -154,6 +154,8 @@ coda;
 
 static int parse(const ff_parser * const p, char* b, int sz, const path * const in_path, struct gn * dscv_gn, const int * const var_id, const int * const list_id, ff_file ** const rff, char * const nofile, const int nofilel)
 {
+	ff_file * ff = 0;
+
 #if DEVEL
 	int logwould(void * token, void * udata)
 	{
@@ -185,7 +187,6 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 #endif
 	};
 
-	ff_file * ff = 0;
 	uint32_t type = FFT_REGULAR;
 	if(dscv_gn)
 		type = FFT_DDISC;
@@ -199,15 +200,8 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	if((state = ff_yy_scan_bytes(b, sz, p->p)) == 0)
 		tfail(perrtab_SYS, ENOMEM);
 
-	// regular ff_files are tracked in ff_files
-	if(dscv_gn == 0 && var_id == 0 && list_id == 0)
-	{
-		fatal(coll_doubly_add, &ff_files.c, 0, &ff);
-	}
-	else
-	{
-		fatal(xmalloc, &ff, sizeof(*ff));
-	}
+	// allocate
+	fatal(xmalloc, &ff, sizeof(*ff));
 
 	// create copy of the path
 	fatal(path_copy, &ff->path, in_path);
@@ -290,6 +284,10 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 		{
 			ff_dump(ff);
 		}
+
+		// regular ff_files are tracked in ff_files
+		if(dscv_gn == 0 && var_id == 0 && list_id == 0)
+			fatal(coll_doubly_add, &ff_files.c, &ff, 0);
 
 		(*rff) = ff;
 		ff = 0;

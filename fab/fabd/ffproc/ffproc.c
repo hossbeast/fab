@@ -244,7 +244,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 					{
 						if(set->definition)
 						{
-							fatal(var_link, vmap, set->vars[0]->name->text->s, cmap, set->definition->text->s, set);
+							fatal(var_link, vmap, set->vars[0]->name->text->s, cmap, set->definition->name->text->s, set);
 						}
 						else
 						{
