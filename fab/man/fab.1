@@ -48,7 +48,7 @@ fab \- build optimally
 : summary of logging options
 .br
 .B fab --ops
-: \fBlistwise(1)\fR operator listing, including \fBfab\fR-specific operators
+: \fBlistwise(3)\fR operator listing, including \fBfab\fR-specific operators
 .SH DESCRIPTION
 .B fab
 is used to manage compilation of a project, where source files are transformed into build artifacts by executing a series of commands.
@@ -127,7 +127,7 @@ create buildplan only - do not execute buildplan. Implies \fB+BPDUMP\fP.
 .SS "Incremental Builds"
 .TP
 .BR \-B
-first restart \fB+fabd\fP. Consider using +b [ $! ] instead.
+first restart \fBfabd\fP. Consider using +b [ $! ] instead.
 .
 .SS "Parallel Builds"
 .TP
@@ -160,8 +160,7 @@ locate the initial fabfile at \fIpath\fR rather than ./fabfile
 \fB-I\fR \fIpath\fR
 append \fIpath\fP to the list of directories used when resolving invocations
 .SS "Variables"
-The portion of the option following \fB-v\fP is referred to as the
-.I varexpr
+The portion of the option following \fB-v\fP is referred to as the \fIvarexpr\fP. Implies -B.
 .TP
 \fB-v $\fIvar\fB=[ \fIlist \fR[ \fB~ \fItransform-string \fR ] \fB]
 apply the specified list to the definition of \fIvar\fP at scope-zero
@@ -170,8 +169,7 @@ apply the specified list to the definition of \fIvar\fP at scope-zero
 apply the specified list addition to the definition of \fIvar\fP at scope-zero
 .TP
 \fB-v $\fIvar\fB~=\fItransform-string\fP
-apply the transformation specified by \fItransform-string\fP to the definition of \fIvar\fP at scope-zero
-Because fabfiles are only parsed when \fB+fabd\fP starts, you may need to also say -B
+apply \fItransform-string\fP to the definition of \fIvar\fP at scope-zero
 .SS "Handling Cycles"
 .TP
 .BR \--cycles-warn " (default)"
@@ -234,13 +232,19 @@ buildplan - pruning/evaluating
 buildplan - log final buildplan
 .TP
 .BR BPCMD
-buildplan - log commands
+buildplan - commands
 .TP
 .BR DSCINFO
 dependency discovery - flow
 .TP
 .BR DSCEXEC
 dependency discovery - execution
+.TP
+.BR DSCCMD
+dependency discovery - commands
+.TP
+.BR DSCRES
+dependency discovery - results
 .TP
 .BR NODE
 dependency graph node details (+i)
@@ -277,46 +281,53 @@ An exit status < 128 means that one of the following \fBfab\fP-specific error wa
 .RB (1) BADARGS
 invalid command-line arguments
 .TP
-.RB (2) BADIPC
+.RB (2) BADTMP
+unexpected file(s) in fab tmp directory
+.TP
+.RB (3) BADIPC
 ipc failure
 .TP
-.RB (3) SYNTAX
-fabfile is grammatically incorrect
+.RB (4) SYNTAX
+fabfile could not be parsed
 .TP
-.RB (4) ILLBYTE
-fabfile contains unrecognized byte sequence
+.RB (5) ILLBYTE
+fabfile contains illegal byte(s)
 .TP
-.RB (5) UNSATISFIED
+.RB (6) UNSATISFIED
 buildplan has unsatisfied dependencies
 .TP
-.RB (6) FMLFAIL
-formula failed to execute successfully
+.RB (7) CMDFAIL
+command failed to execute successfully
 .TP
-.RB (7) DSCPARSE
+.RB (8) DSCPARSE
 dependency discovery results were not parsed
 .TP
-.RB (8) NOINVOKE
-target of fabfile invocation could not be resolved
+.RB (9) NOINVOKE
+invocation target could not be resolved
 .TP
-.RB (9) BADPLAN
+.RB (10) BADPLAN
 buildplan cannot be constructed
 .TP
-.RB (10) CYCLE
+.RB (11) CYCLE
 dependency graph contains a cycle
 .TP
-.RB (11) NOSELECT
+.RB (12) NOSELECT
 selector matches nothing
 .TP
-.RB (12) NXPARAMS
+.RB (13) NXPARAMS
 unable to determine runtime parameters
 .TP
-.RB (13) FABDFAIL
+.RB (14) FABDFAIL
 fabd terminated abnormally
+.TP
+.RB (15) FABPERMS
+fab binar(ies) do not have proper permissions
 .SH AUTHORS
 Todd Freed 
 .MT todd.freed@gmail.com
 .ME
 .SH "SEE ALSO"
 .BR listwise(1)
+.BR listwise(3)
 .PP
 .URL "http://fabutil.org" "fabutil.org"
