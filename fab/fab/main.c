@@ -36,6 +36,7 @@
 #include "macros.h"
 #include "memblk.h"
 #include "parseint.h"
+#include "unitstring.h"
 
 #ifndef DEBUG_IPC
 # define DEBUG_IPC 0
@@ -460,6 +461,11 @@ int main(int argc, char** argv, char ** envp)
 
 	memblk * mb = 0;
 
+	struct timespec time_start = {};
+	struct timespec time_end = {};
+
+	fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
+
 #if DEBUG_IPC
 printf("fab[%ld] started\n", (long)getpid());
 #endif
@@ -816,7 +822,13 @@ finally:
 		logw(L_RED, space, tracesz);
 	}
 
-	log_teardown();
+	// stop the clock
+	clock_gettime(CLOCK_MONOTONIC_RAW, &time_end);
+
+	z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
+	logf(L_INFO, "elapsed : %.*s", (int)z, space);
+
 	memblk_free(mb);
+	log_teardown();
 coda;
 }

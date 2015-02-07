@@ -1,6 +1,4 @@
 * v0.5.0
- review fab cmdline interface, options, logs
- fab/lw man pages
 
 * finished
  standardize dsc_exec vs bp_exec error messages
@@ -19,6 +17,10 @@
  rename stdo/stde out/err
  correct exit status when bp fails
  +d should show results
+ rebuild makescripts (-lrt)
+ fab/lw man pages
+ final usage in fab, per-section usage in fabd
+ review fab cmdline interface, options, logs
 
 * docket
  listwise resolve lstack vs lwx
@@ -29,3 +31,5 @@
 
  per-filesystem options (canon, hashblock stat vs content)
  configurable options (fabrc, override cmdline)
+
+** profiling

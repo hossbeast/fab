@@ -24,8 +24,9 @@ struct g_logs_t logs[] = {
 	, { .v = L_INFO			, .s = "INFO"			, .d = "program flow" }
 	, { .v = L_ARGS			, .s = "ARGS"			, .d = "program arguments" }
 	, { .v = L_PARAMS		, .s = "PARAMS"		, .d = "program execution parameters" }
-#if DEBUG || DEVEL
 	, { .v = L_USAGE		, .s = "USAGE"		, .d = "fabd resource usage" }
+	, { .v = L_TIME			, .s = "TIME"			, .d = "timing breakdown" }
+#if DEBUG || DEVEL
 	, { .v = L_FFTOKEN	, .s = "FFTOKEN"	, .d = "fabfile parsing - token stream" }
 	, { .v = L_FFSTATE	, .s = "FFSTATE"	, .d = "fabfile parsing - lexer states" }
 	, { .v = L_FFTREE		, .s = "FFTREE"		, .d = "fabfile parsing - parsed tree" }

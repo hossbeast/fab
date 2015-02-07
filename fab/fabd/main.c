@@ -166,7 +166,7 @@ static int hashfiles(int iteration)
 				// convert to actions
 				if(GN_IS_INVALID(gn_nodes.e[x]))
 				{
-					if(gn_nodes.e[x]->dscvsl)
+					if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY && gn_nodes.e[x]->dscvsl)
 					{
 						// require discovery
 						gn_nodes.e[x]->invalid |= GN_INVALIDATION_DISCOVERY;
@@ -297,6 +297,12 @@ static int loop()
 				logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_SOURCES), gn->idstring);
 
 			gn->invalid |= GN_INVALIDATION_SOURCES;
+
+			if(gn->type != GN_TYPE_PRIMARY)
+			{
+				// require fabrication
+				gn->invalid |= GN_INVALIDATION_FABRICATE;
+			}
 		}
 
 		finally : coda;
@@ -510,13 +516,13 @@ int main(int argc, char** argv, char ** envp)
 	char * logvs = 0;
 	size_t logvsl = 0;
 
+	struct timespec time_start;
+	struct timespec time_end;
+
 	int r;
 	int x;
 	int y;
 	size_t tracesz = 0;
-
-	struct timespec time_start = {};
-	struct timespec time_end = {};
 
 	// fabd is normally invoked with a single argument
 	int nodaemon = 0;
@@ -620,13 +626,10 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 		fail(FAB_BADARGS);
 
 	// ipc-dir stem
-	size_t z = snprintf(stem, sizeof(stem), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
+	snprintf(stem, sizeof(stem), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
 
 	while(o_signum != SIGINT && o_signum != SIGQUIT && o_signum != SIGTERM)
 	{
-		// start measuring
-		fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
-
 		// read fab/pid
 		snprintf(space, sizeof(space), "%s/fab/pid", stem);
 		fatal(ixclose, &fd);
@@ -649,12 +652,12 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				fatal(ixclose, &fd);
 
 				// reopen standard file descriptors
-				snprintf(space, sizeof(space), "%s/fab/out", stem);//, (long)g_params.fab_pid);
+				snprintf(space, sizeof(space), "%s/fab/out", stem);
 				fatal(xopen, space, O_RDWR, &fd);
 				fatal(xdup2, fd, 1);
 				fd = -1;
 
-				snprintf(space, sizeof(space), "%s/fab/err", stem);//, (long)g_params.fab_pid);
+				snprintf(space, sizeof(space), "%s/fab/err", stem);
 				fatal(xopen, space, O_RDWR, &fd);
 				fatal(xdup2, fd, 2);
 				fd = -1;
@@ -723,6 +726,11 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			static int initialized;
 			if(initialized == 0)
 			{
+				logf(L_INFO, "loading build description");
+
+				// start measuring
+				fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
+
 				// parse variable expression text from cmdline (the -v option)
 				for(x = 0; x < g_args->rootvarsl; x++)
 				{
@@ -791,6 +799,15 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				// load file hashes
 				for(x = 0; x < ff_files.l; x++)
 					fatal(hashblock_stat, ff_files.e[x]->path->abs, ff_files.e[x]->hb);
+
+				if(log_would(L_TIME))
+				{
+					// stop the clock
+					fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
+					
+					size_t z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
+					logf(L_TIME, "elapsed : %.*s", (int)z, space);
+				}
 			}
 			else
 			{
@@ -861,13 +878,6 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				xapi_callstack_unwindto(frame);
 			}
 
-			// stop measuring
-			fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
-
-			z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
-			logf(L_INFO, "elapsed : %.*s", (int)z, space);
-
-#if DEBUG || DEVEL
 			if(log_would(L_USAGE))
 			{
 				// check memory usage
@@ -883,14 +893,9 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				}
 				logf(L_USAGE, "usage : mem(%s), lwx(%d), gn(%d), ts(%d)", bytestring(pgz * g_params.pagesize), staxa, gn_nodes.a, tsa);
 			}
-#endif
 
 			// task complete : notify fab
 			fatal(uxkill, g_params.fab_pid, FABSIG_DONE, 0);
-
-			// timer reset
-			memset(&time_start, 0, sizeof(time_start));
-			memset(&time_end, 0, sizeof(time_end));
 		}
 
 		// cleanup tmp dir, including specifically the last fab pid we are tracking
@@ -981,13 +986,6 @@ finally:
 		logw(L_RED, space, tracesz);
 	}
 
-	if((time_start.tv_sec || time_start.tv_nsec) && (time_end.tv_sec == 0 && time_end.tv_nsec == 0))
-	{
-		// stop measuring
-		clock_gettime(CLOCK_MONOTONIC_RAW, &time_end);
-
-		z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
-		logf(L_INFO, "elapsed : %.*s", (int)z, space);
-	}
+	log_teardown();
 coda;
 }

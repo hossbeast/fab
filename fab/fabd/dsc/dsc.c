@@ -39,6 +39,7 @@
 #include "xlinux.h"
 #include "macros.h"
 #include "map.h"
+#include "unitstring.h"
 
 #define restrict __restrict
 
@@ -152,11 +153,18 @@ static int dsc_execwave(
 
 int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
+	struct timespec	time_start;
+	struct timespec	time_end;
+	char space[64];
+
 	int tsl = 0;
 	int n = 0;
 	int x;
 	int y;
 
+	// start measuring
+	fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
+	
 	// assign each threadspace a discovery formula evaluation context
 	for(x = 0; x < listl; x++)
 	{
@@ -182,13 +190,28 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * con
 
 	logf(L_DSCEXEC, "discovery -- for %3d nodes found %3d nodes and %3d edges", n, newn, newr);
 
+	if(log_would(L_TIME))
+	{
+		fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
+
+		size_t z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
+		logf(L_TIME, "elapsed : %.*s", (int)z, space);
+	}
+
 	finally : coda;
 }
 
 int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
 {
+	struct timespec	time_start;
+	struct timespec	time_end;
+	char space[64];
+
 	int x;
 	int y;
+
+	// start measuring
+	fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
 	
 	// assign each threadspace a discovery formula evaluation context
 	int tsl = 0;
@@ -220,6 +243,14 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int *
 
 		// sum discovered objects
 		logf(L_DSCEXEC, "discovery %2d for %3d nodes found %3d nodes and %3d edges", 0, n, newn, newr);
+
+		if(log_would(L_TIME))
+		{
+			fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
+
+			size_t z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
+			logf(L_TIME, "elapsed : %.*s", (int)z, space);
+		}
 	}
 
 	finally : coda;
