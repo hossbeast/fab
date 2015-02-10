@@ -36,9 +36,17 @@
 [ @devel ] : [ @libxapi.devel @libxlinux.devel @libpstring.devel @liblistwise.devel @listwise.devel @fabcore.devel ]
 [ @man ] : [ @fabcore.man @listwise.man ]
 
-# install
-[ @install.final ] : [ @libxapi.install.final @libxlinux.install.final @libpstring.install.final @liblistwise.install.final @listwise.install.final @fabcore.install.final ]
-[ @install.debug ] : [ @libxapi.install.debug @libxlinux.install.debug @libpstring.install.debug @liblistwise.install.debug @listwise.install.debug @fabcore.install.debug ]
+# install libraries
+[ @install.base.final ] : [ @libxapi.install.final @libxlinux.install.final @libpstring.install.final @liblistwise.install.final @listwise.install.final ]
+[ @install.base.debug ] : [ @libxapi.install.debug @libxlinux.install.debug @libpstring.install.debug @liblistwise.install.debug @listwise.install.debug ]
+
+# install local and dist
+[ @install.local.final ] : [ @install.base.final @fabcore.install.local.final ]
+[ @install.local.debug ] : [ @install.base.debug  @fabcore.install.local.debug ]
+[ @install.dist.final ] : [ @install.base.final @fabcore.install.dist.final ]
+[ @install.dist.debug ] : [ @install.base.debug  @fabcore.install.dist.debug ]
+
+# doc
 [ @install.man ] : [ @fabcore.install.man @listwise.install.man ]
 
 # unit tests

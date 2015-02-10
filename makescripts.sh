@@ -19,7 +19,20 @@
 
 # final buildscripts
 ./fab/fab/fab.devel --bslic-fab -k make64.final.sh @final
-./fab/fab/fab.devel --bslic-fab -k install64.final.sh +n @install.final \
+./fab/fab/fab.devel --bslic-fab -k install64.local.final.sh +n @install.local.final \
+	-K destdir	\
+	-K incdir \
+	-K bindir \
+	-K mandir \
+	-K libdir \
+	-K dlibdir \
+	-K lwopdir \
+	-K fablwopdir \
+	-K fabtmpdir \
+	-K fabipcdir \
+	-K fabinvokedir
+
+./fab/fab/fab.devel --bslic-fab -k install64.dist.final.sh +n @install.dist.final \
 	-K destdir	\
 	-K incdir \
 	-K bindir \
@@ -34,7 +47,20 @@
 
 # debug buildscripts
 ./fab/fab/fab.devel --bslic-fab -k make64.debug.sh @debug
-./fab/fab/fab.devel --bslic-fab -k install64.debug.sh +n @install.debug \
+./fab/fab/fab.devel --bslic-fab -k install64.local.debug.sh +n @install.local.debug \
+	-K destdir	\
+	-K incdir \
+	-K bindir \
+	-K mandir \
+	-K libdir \
+	-K dlibdir \
+	-K lwopdir \
+	-K fablwopdir \
+	-K fabtmpdir \
+	-K fabipcdir \
+	-K fabinvokedir
+
+./fab/fab/fab.devel --bslic-fab -k install64.dist.debug.sh +n @install.dist.debug \
 	-K destdir	\
 	-K incdir \
 	-K bindir \

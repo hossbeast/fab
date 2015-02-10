@@ -96,18 +96,26 @@ $lflags_devel = [ $lflags_devel $libxapi_devel $libxlinux_devel $libpstring_deve
 # tasks
 #
 
-[ @install.final ] : [ @final ]
+[ @install.base.final ] : [ @final ]
 {
 	install -d																			[ $destdir/$bindir ]
 	rm																							[ $destdir/$bindir/fabw ] 2>/dev/null
 	install [ $fabw_final ]													[ $destdir/$bindir/fabw ]
+}
+
+[ @install.dist.final ] : [ @install.base.final ]
+[ @install.local.final ] : [ @install.base.final ]
+{
 	chown fabsys:fabsys															[ $destdir/$bindir/fabw ]
 	chmod ug+s																			[ $destdir/$bindir/fabw ]
 }
 
-[ @install.debug ] : [ @debug ]
+[ @install.base.debug ] : [ @debug ]
 {
 	install -d																			[ $destdir/$bindir ]
 	rm																							[ $destdir/$bindir/fabw ] 2>/dev/null
 	install [ $fabw_debug ]													[ $destdir/$bindir/fabw ]
 }
+
+[ @install.dist.debug ] : [ @install.base.debug ]
+[ @install.local.debug ] : [ @install.base.debug ]
