@@ -617,6 +617,9 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	fatal(traverse_init);
 	fatal(ff_mkparser, &ffp);
 
+	// track start time
+	g_params.starttime = time(0);
+
 	// create the rootmap
 	fatal(var_root, &rmap);
 
