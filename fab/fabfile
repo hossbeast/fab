@@ -104,17 +104,15 @@ $faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
 # tasks
 #
 
-[ @installation ]
+[ @install.base ]
 {
 	install -d																					[ $destdir/$bindir ]
 	install [ $gccdep_final ] 													[ $destdir/$bindir ]
 
 	rm -rf																							[ $destdir/$fabtmpdir ] 2>/dev/null
 	install -d 																					[ $destdir/$fabtmpdir ]
-	chmod 777																						[ $destdir/$fabtmpdir ]
 	rm -rf																							[ $destdir/$fabipcdir ] 2>/dev/null
 	install -d 																					[ $destdir/$fabipcdir ]
-	chmod 777																						[ $destdir/$fabipcdir ]
 
 	rm -rf																							[ $destdir/$fabinvokedir ] 2>/dev/null
 	install -d																					[ $destdir/$fabinvokedir/std ]
@@ -132,17 +130,29 @@ $faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
 	install -d																					[ $destdir/$fablwopdir ]
 }
 
-[ @install.final ] : [ @installation @fab.install.final @fabw.install.final @fabd.install.final ]
+[ @install.local ] : [ @install.base ]
+{
+	chmod 777																						[ $destdir/$fabtmpdir ]
+	chmod 777																						[ $destdir/$fabipcdir ]
+}
+
+[ @install.final ] : [ @install.base ]
 {
 	install [ $dfabcore/fablw/op/fi/fi.final.so ]				[ $destdir/$fablwopdir/fi.so ]
 	install [ $dfabcore/fablw/op/fg/fg.final.so ]				[ $destdir/$fablwopdir/fg.so ]
 }
+[ @install.local.final ] : [ @install.final @install.local @fab.install.local.final @fabw.install.local.final @fabd.install.local.final ]
+[ @install.dist.final ] : [ @install.final @fab.install.dist.final @fabw.install.dist.final @fabd.install.dist.final ]
 
-[ @install.debug ] : [ @installation @fab.install.debug @fabw.install.debug @fabd.install.debug ]
+[ @install.debug ] : [ @install.base ]
 {
 	install [ $dfabcore/fablw/op/fi/fi.debug.so ]				[ $destdir/$fablwopdir/fi.so ]
 	install [ $dfabcore/fablw/op/fg/fg.debug.so ]				[ $destdir/$fablwopdir/fg.so ]
 }
+
+[ @install.local.debug ] : [ @install.debug @install.local @fab.install.local.debug @fabw.install.local.debug @fabd.install.local.debug ]
+[ @install.dist.debug ] : [ @install.debug @fab.install.dist.debug @fabw.install.dist.debug @fabd.install.dist.debug ]
+
 [ @install.man ] : [ @install.man1 ]
 
 # build the man gz

@@ -31,47 +31,14 @@ if($ARGV[0])
 	$gen =~ s/\s+//;
 }
 
-# canonicalize
-#pipe(RDIN,WRIN);
-#pipe(RDOUT,WROUT);
-#if(fork == 0)
-#{
-#	close WRIN;
-#	close RDOUT;
-#
-#	open(STDIN, "<&=RDIN");
-#	open(STDOUT, ">&WROUT");
-#
-#	my @args = qw|/home/todd/fab/listwise/listwise can|;
-#	exec { $args[0] } @args
-#}
-#close RDIN;
-#close WROUT;
-#
-#while(<STDIN>)
-#{
-#	if(/^[^:]+:$/)	# -MP lines, only
-#	{
-#		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
-#
-#		# for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
-#		if(! -r $line && $gen)
-#		{
-#			$line = $gen . "/" . $line;
-#		}
-#
-#		print WRIN "$line\n"
-#	}
-#}
-#close WRIN;
-
 #for my $line (map { chomp ; $_ } <RDOUT>)
 for (map { chomp ; $_ } <STDIN>)
 {
 	if(/^[^:]+:$/)	# -MP lines, only
 	{
+		push @S, substr $_, 0, -1;		# strong dependency on the header
+		
 		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
-	
 		$line = "${line}h";
 
 		# for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
@@ -79,48 +46,39 @@ for (map { chomp ; $_ } <STDIN>)
 		{
 			$line = $gen . "/" . $line;
 		}
-	
-#		print WRIN "$line\n";
 
-	push @S, $line;				# strong dependency on the header
-
-	if($line =~ /\.lex\.h$/)
-	{
-		$line =~ s/\.lex\.h/.lex/;
-		push @W, $line;				# weak dependency on the object
-	}
-	elsif($line =~ /\.tab\.h$/)
-	{
-		$line =~ s/\.tab\.h/.tab/;
-		push @W, $line;				# weak dependency on the object
-	}
-	elsif($line =~ /\.states\.h$/)
-	{
-		$line =~ s/\.states\.h/.states/;
-		push @W, $line;				# weak dependency on the object
-	}
-	elsif($line =~ /\.tokens\.h$/)
-	{
-		$line =~ s/\.tokens\.h/.tokens/;
-		push @W, $line;				# weak dependency on the object
-	}
-#	elsif($line =~ /\.errtab\.h$/)
-#	{
-#		$line =~ s/\.errtab\.h/.errtab/;
-#		push @W, $line;				# weak dependency on the object
-#	}
-	else
-	{
-		# corresponding .c file
-		if($line =~ s/\.h$/.c/)
+		if($line =~ /\.lex\.h$/)
 		{
-			if(-r $line)
+			$line =~ s/\.lex\.h/.lex/;
+			push @W, $line;				# weak dependency on the object
+		}
+		elsif($line =~ /\.tab\.h$/)
+		{
+			$line =~ s/\.tab\.h/.tab/;
+			push @W, $line;				# weak dependency on the object
+		}
+		elsif($line =~ /\.states\.h$/)
+		{
+			$line =~ s/\.states\.h/.states/;
+			push @W, $line;				# weak dependency on the object
+		}
+		elsif($line =~ /\.tokens\.h$/)
+		{
+			$line =~ s/\.tokens\.h/.tokens/;
+			push @W, $line;				# weak dependency on the object
+		}
+		else
+		{
+			# corresponding .c file
+			if($line =~ s/\.h$/.c/)
 			{
-				$line =~ s/\.c$//;
-				push @W, $line;			# weak dependency on the object, if a corresponding c file exists
+				if(-r $line)
+				{
+					$line =~ s/\.c$//;
+					push @W, $line;			# weak dependency on the object, if a corresponding c file exists
+				}
 			}
 		}
-	}
 	}
 }
 
