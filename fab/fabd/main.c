@@ -46,6 +46,7 @@
 #include "memblk.h"
 #include "unitstring.h"
 #include "say.h"
+#include "cksum.h"
 
 // write log messages about process creation and signals received
 #ifndef DEBUG_IPC
@@ -98,6 +99,8 @@ static int								queriesl = 0;
 
 static pstring * 					ptmp;
 static pid_t							fab_pids[3];
+
+static uint64_t						varshash[2];
 
 // signal handling
 static int o_signum;
@@ -725,6 +728,12 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				fatal(xchdir, space);
 			}
 
+			// compute varshash from -v options given on the cmdline
+			varshash[0] = varshash[1];
+			varshash[1] = 0;
+			for(x = 0; x < g_args->rootvarsl; x++)
+				varshash[1] += cksum(g_args->rootvars[x], strlen(g_args->rootvars[x]));
+
 			// parse the fabfiles only on the first run
 			static int initialized;
 			if(initialized == 0)
@@ -815,7 +824,8 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			else
 			{
 				x = 0;
-				if(g_args->rootvarsl == 0)
+				// no varexpr changes
+				if(varshash[0] == varshash[1])
 				{
 					// check for fabfile changes
 					for(x = 0; x < ff_files.l; x++)
