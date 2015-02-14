@@ -189,7 +189,7 @@ static int hashfiles(int iteration)
 	finally : coda;
 }
 
-static int loop()
+static int loop(char * stem)
 {
 	int x;
 	int y;
@@ -440,8 +440,8 @@ static int loop()
 				if(plan)
 					bp_dump(plan);
 
-				// create buildscript
-				fatal(buildscript_mk, plan, g_args->argvs, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tsp, &tsa, &tsw, g_args->buildscript_path);
+				// write buildscript to the IPC dir
+				fatal(buildscript_mk, plan, g_args->argvs, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tsp, &tsa, &tsw, stem);
 			}
 			else
 			{
@@ -845,7 +845,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 			// handle this request
 			int frame;
-			if(invoke(&frame, loop))
+			if(invoke(&frame, loop, stem))
 			{
 				// propagate errors other than those specifically being trapped
 				if(XAPI_ERRTAB == perrtab_FAB && fab_swallow[XAPI_ERRCODE])
