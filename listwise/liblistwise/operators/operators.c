@@ -279,7 +279,12 @@ int __attribute__((constructor)) listwise_operators_setup()
 
 	fatal(listwise_register_opdir, XQUOTE(LWOPDIR));	/* /usr/lib/listwise */
 
-	finally : coda;
+finally:
+	if(XAPI_UNWINDING)
+	{
+		xapi_backtrace();
+	}
+coda;
 }
 
 void __attribute__((destructor)) listwise_operators_teardown()
