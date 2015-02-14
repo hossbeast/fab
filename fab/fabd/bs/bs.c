@@ -40,9 +40,11 @@ int buildscript_mk(
 	, ts *** const ts
 	, int * const tsa
 	, const int * const tsw
-	, const char * const dst
+	, const char * const stem
 )
 {
+	char space[2048];
+
 	int fd				= 0;
 	int tsl				= 0;		// thread count
 	int tot				= 0;		// total targets
@@ -70,8 +72,9 @@ int buildscript_mk(
 	// ensure I have enough threadspace
 	fatal(ts_ensure, ts, tsa, tsl);
 
-	// open the buildscript
-	fatal(xopen_mode, dst, O_CREAT | O_TRUNC | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO, &fd);
+	// write the buildscript to the ipc dir
+	snprintf(space, sizeof(space), "%s/bs", stem);
+	fatal(xopen_mode, space, O_CREAT | O_TRUNC | O_WRONLY, FABIPC_DATA, &fd);
 
 	dprintf(fd, "#!/bin/bash\n");
 
@@ -291,8 +294,6 @@ int buildscript_mk(
 	dprintf(fd, "printf '%%15s %%d\\n' skipped $SKP\n");
 	dprintf(fd, "# no failures=0, and 1 otherwise\n");
 	dprintf(fd, "exit $((!(DIE==0)))\n");
-
-	logf(L_INFO, "wrote %s", dst);
 
 finally:
 	close(fd);

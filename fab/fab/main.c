@@ -449,6 +449,10 @@ int main(int argc, char** argv, char ** envp)
 {
 	char space[2048];
 	char space2[2048];
+	pstring * tmp = 0;
+	struct stat stb;
+
+	char * buildscript_path = 0;
 
 #if DEBUG || DEVEL
 	int mode_backtrace = DEFAULT_MODE_BACKTRACE;
@@ -540,6 +544,7 @@ printf("fab[%ld] started\n", (long)getpid());
 	mode_backtrace = g_args->mode_backtrace;
 #endif
 	canhash = g_args->init_fabfile_path->can_hash;
+	fatal(ixstrdup, &buildscript_path, g_args->buildscript_path);
 
 #if DEBUG || DEVEL
 	if(g_args->mode_logtrace == MODE_LOGTRACE_FULL)
@@ -629,7 +634,7 @@ printf("fab[%ld] started\n", (long)getpid());
 	// set the filesize
 	fatal(xftruncate, fd, memblk_size(mb));
 
-	// g_args unusable beyond this point
+	// g_args is unusable beyond this point
 	args_freeze(mb);
 
 	// write the block to the file
@@ -643,7 +648,7 @@ printf("fab[%ld] started\n", (long)getpid());
 	// set the filesize
 	fatal(xftruncate, fd, g_logvsl);
 
-	// write the logs : g_logs unusable beyond this point
+	// write the logs : g_logs is unusable beyond this point
 	fatal(axwrite, fd, g_logvs, g_logvsl);
 	fatal(ixclose, &fd);
 
@@ -794,9 +799,35 @@ printf("fab[%ld] started\n", (long)getpid());
 		fatal(xfabdkill, -fabd_pgid, 0);
 	}
 
+	// rewrite the buildscript, if any
+	if(buildscript_path)
+	{
+		// open buildscript from the ipc-dir
+		snprintf(space + z, sizeof(space) - z, "/bs");
+		fatal(ixclose, &fd);
+		fatal(xopen, space, O_RDONLY, &fd);
+
+		// get the filesize
+		fatal(xfstat, fd, &stb);
+
+		// read the whole file
+		fatal(psgrow, &tmp, stb.st_size);
+		fatal(axread, fd, tmp->s, stb.st_size);
+
+		// open the dest path
+		fatal(ixclose, &fd);
+		fatal(xopen_mode, buildscript_path, O_CREAT | O_TRUNC | O_WRONLY, 0755, &fd);		// u+rwx go+rx
+
+		// rewrite
+		fatal(axwrite, fd, tmp->s, stb.st_size);
+		logf(L_INFO, "wrote %s", buildscript_path);
+	}
+
 finally:
 	fatal(ixclose, &fd);
 	fatal(ixclose, &lockfd);
+	free(buildscript_path);
+	psfree(tmp);
 
 	if(XAPI_ERRCODE == FAB_FABDFAIL)
 	{
