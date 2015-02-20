@@ -194,6 +194,8 @@ static int loop(char * stem)
 	int x;
 	int y;
 
+	int fd = -1;
+
 	char space[256];
 
 	// reset some stuff
@@ -459,39 +461,66 @@ static int loop(char * stem)
 				{
 					if(plan && plan->stages_l)
 					{
-						// execute the build plan, one stage at a time
-						fatal(bp_prepare, plan, ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
+						// create tmp directory for the build
+						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
+						fatal(mkdirp, ptmp->s, FABIPC_DIR);
+						
+						// create file with the number of stages
+						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/stages", g_params.fab_pid);
+						fatal(uxunlink, ptmp->s, 0);
+						fatal(ixclose, &fd);
+						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
+						fatal(axwrite, fd, &plan->stages_l, sizeof(plan->stages_l));
+						
+						// create file with the number of commands
+						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/commands", g_params.fab_pid);
+						fatal(uxunlink, ptmp->s, 0);
+						fatal(ixclose, &fd);
+						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
+						int cmdsl = 0;
+						for(x = 0; x < plan->stages_l; x++)
+							cmdsl += plan->stages[x].evals_l;
+						fatal(axwrite, fd, &cmdsl, sizeof(cmdsl));
 
-						// work required ; notify fab
-						fatal(uxkill, g_params.fab_pid, FABSIG_BPSTART, 0);
-
-						// await response
-						o_signum = 0;
-						pause();
-
-						if(o_signum == FABSIG_BPGOOD)
+						// prepare and execute the build plan, one stage at a time
+						int i;
+						for(i = 0; i < plan->stages_l; i++)
 						{
-							// plan was executed successfully ; update nodes for all products
-							for(x = 0; x < tsl; x++)
-							{
-								for(y = 0; y < tsp[x]->fmlv->productsl; y++)
-								{
-									// mark as up-to-date
-									tsp[x]->fmlv->products[y]->invalid = 0;
+							tsl = 0;
+							fatal(bp_prepare_stage, plan, i, ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
 
-									// reload hashblock
-									fatal(hashblock_stat, tsp[x]->fmlv->products[y]->path->can, tsp[x]->fmlv->products[y]->hb);
+							// work required ; notify fab
+							fatal(uxkill, g_params.fab_pid, FABSIG_BPSTART, 0);
+
+							// await response
+							o_signum = 0;
+							pause();
+
+							if(o_signum == FABSIG_BPGOOD)
+							{
+								// plan was executed successfully ; update nodes for all products
+								for(x = 0; x < tsl; x++)
+								{
+									for(y = 0; y < tsp[x]->fmlv->productsl; y++)
+									{
+										// mark as up-to-date
+										tsp[x]->fmlv->products[y]->invalid = 0;
+
+										// reload hashblock
+										fatal(hashblock_stat, tsp[x]->fmlv->products[y]->path->can, tsp[x]->fmlv->products[y]->hb);
+									}
 								}
 							}
-						}
-						else if(o_signum == FABSIG_BPBAD)
-						{
-							// plan failed ; harvest the results
-							fatal(bp_harvest, plan);
-						}
-						else
-						{
-							failf(FAB_BADIPC, "expected signal %d or %d, actual %d", FABSIG_BPGOOD, FABSIG_BPBAD, o_signum);
+							else if(o_signum == FABSIG_BPBAD)
+							{
+								// failure ; harvest the results
+								fatal(bp_harvest_stage, plan, i);
+								break;
+							}
+							else
+							{
+								failf(FAB_BADIPC, "expected signal %d or %d, actual %d", FABSIG_BPGOOD, FABSIG_BPBAD, o_signum);
+							}
 						}
 					}
 				}
@@ -501,6 +530,7 @@ static int loop(char * stem)
 
 finally:
 	bp_xfree(&plan);
+	fatal(ixclose, &fd);
 coda;
 }
 

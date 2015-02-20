@@ -540,87 +540,75 @@ int bp_eval(bp * const bp)
 	finally : coda;
 }
 
-int bp_prepare(bp * bp, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsl, int * tsa)
+int bp_prepare_stage(bp * bp, int stage, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsl, int * tsa)
 {
-	int tsz = 0;		// thread count
-	int x;
+	int x = stage;
 	int y;
 
-	// allocate enough ts for every eval in the buildplan
-	for(x = 0; x < bp->stages_l; x++)
-		tsz += bp->stages[x].evals_l;
-
 	// ensure I have enough threadspace
-	fatal(ts_ensure, ts, tsa, tsz);
+	fatal(ts_ensure, ts, tsa, bp->stages[x].evals_l);
 
-	// prepare stages
-	for(x = 0; x < bp->stages_l; x++)
+	// render formulas for each eval context on this stage
+	for(y = 0; y < bp->stages[x].evals_l; y++)
 	{
-		// render formulas for each eval context on this stage
-		for(y = 0; y < bp->stages[x].evals_l; y++)
-		{
-			(*ts)[(*tsl)]->fmlv = bp->stages[x].evals[y];
-			(*ts)[(*tsl)]->y = y;
+		(*ts)[(*tsl)]->fmlv = bp->stages[x].evals[y];
+		(*ts)[(*tsl)]->y = y;
 
-			// prepare lstack(s) for variables resident in this context
-			fatal(lw_reset, stax, staxa, staxp);
+		// prepare lstack(s) for variables resident in this context
+		fatal(lw_reset, stax, staxa, staxp);
 
-			// $@ is a list of expected products of this eval context
-			int k;
-			for(k = 0; k < (*ts)[(*tsl)]->fmlv->productsl; k++)
-				fatal(lstack_obj_add, (*stax)[staxp], (*ts)[(*tsl)]->fmlv->products[k], LISTWISE_TYPE_GNLW);
+		// $@ is a list of expected products of this eval context
+		int k;
+		for(k = 0; k < (*ts)[(*tsl)]->fmlv->productsl; k++)
+			fatal(lstack_obj_add, (*stax)[staxp], (*ts)[(*tsl)]->fmlv->products[k], LISTWISE_TYPE_GNLW);
 
-			// render the formula
-			//  note that serialization in this loop is important, because fmlv's may share the same bag
-			fatal(map_set, (*ts)[(*tsl)]->fmlv->ctx->bag, MMS("@"), MM((*stax)[staxp]), 0);
-			fatal(fml_render, (*ts)[(*tsl)], gp, stax, staxa, staxp + 1, 0, 1);
-			map_delete((*ts)[(*tsl)]->fmlv->ctx->bag, MMS("@"));
+		// render the formula
+		//  note that serialization in this loop is important, because fmlv's may share the same bag
+		fatal(map_set, (*ts)[(*tsl)]->fmlv->ctx->bag, MMS("@"), MM((*stax)[staxp]), 0);
+		fatal(fml_render, (*ts)[(*tsl)], gp, stax, staxa, staxp + 1, 0, 1);
+		map_delete((*ts)[(*tsl)]->fmlv->ctx->bag, MMS("@"));
 
-			// write to temp file
-			fatal(fml_write, (*ts)[*tsl], g_params.fab_pid, x, y);
-			(*tsl)++;
-		}
+		// write to temp file
+		fatal(fml_write, (*ts)[*tsl], g_params.fab_pid, x, y);
+		(*tsl)++;
 	}
 
 	finally : coda;
 }
 
-int bp_harvest(bp * bp)
+int bp_harvest_stage(bp * bp, int stage)
 {
 	pstring * tmp = 0;
 	int fd = -1;
 	struct stat stb;
 
-	int x;
+	int x = stage;
 	int y;
-	for(x = 0; x < bp->stages_l; x++)
+	for(y = 0; y < bp->stages[x].evals_l; y++)
 	{
-		for(y = 0; y < bp->stages[x].evals_l; y++)
+		// verify the exit status was saved and that it is zero
+		int r;
+		fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.fab_pid, x, y);
+		fatal(ixclose, &fd);
+		fatal(uxopen, tmp->s, O_RDONLY, &fd);
+		if(fd != -1)
 		{
-			// verify the exit status was saved and that it is zero
-			int r;
-			fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.fab_pid, x, y);
-			fatal(ixclose, &fd);
-			fatal(uxopen, tmp->s, O_RDONLY, &fd);
-			if(fd != -1)
+			fatal(axread, fd, (void*)&r, sizeof(r));
+			if(r == 0)
 			{
-				fatal(axread, fd, (void*)&r, sizeof(r));
-				if(r == 0)
+				// verify that stderr was saved and contains nothing
+				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", g_params.fab_pid, x, y);
+				fatal(uxstat, tmp->s, &stb, &r);
+				if(r == 0 && stb.st_size == 0)
 				{
-					// verify that stderr was saved and contains nothing
-					fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", g_params.fab_pid, x, y);
-					fatal(uxstat, tmp->s, &stb, &r);
-					if(r == 0 && stb.st_size == 0)
+					int q;
+					for(q = 0; q < bp->stages[x].evals[y]->productsl; q++)
 					{
-						int q;
-						for(q = 0; q < bp->stages[x].evals[y]->productsl; q++)
-						{
-							// up-to-date
-							bp->stages[x].evals[y]->products[q]->invalid = 0;
+						// up-to-date
+						bp->stages[x].evals[y]->products[q]->invalid = 0;
 
-							// reload hashblock
-							fatal(hashblock_stat, bp->stages[x].evals[y]->products[q]->path->can, bp->stages[x].evals[y]->products[q]->hb);
-						}
+						// reload hashblock
+						fatal(hashblock_stat, bp->stages[x].evals[y]->products[q]->path->can, bp->stages[x].evals[y]->products[q]->hb);
 					}
 				}
 			}
