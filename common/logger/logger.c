@@ -63,9 +63,6 @@ static struct filter
 static int				o_filter_a;
 static int				o_filter_l;
 
-struct g_logs_t * g_logs;
-int g_logs_l;
-
 char **			g_argv;
 int					g_argc;
 char *			g_argvs;

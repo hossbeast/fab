@@ -35,6 +35,9 @@
 
 #define L_TAG           0x0000FFFFFFFFFFFFULL // D range
 
+//
+// g_logs and g_logs_l are defined in the applications logs.c
+//
 extern struct g_logs_t {
 	uint64_t		v;	// tag definition
 	char *			s;	// name
