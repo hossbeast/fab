@@ -1,4 +1,5 @@
 * v0.5.0
+ must stat primary files that do not have discovery
 
 * finished
  standardize dsc_exec vs bp_exec error messages
@@ -21,6 +22,8 @@
  fab/lw man pages
  final usage in fab, per-section usage in fabd
  review fab cmdline interface, options, logs
+ FABIPC after having a failed command
+ create symlink to pid bp dir in hashdir
 
 * docket
  listwise resolve lstack vs lwx
