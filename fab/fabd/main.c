@@ -157,13 +157,18 @@ static int hashfiles(int iteration)
 					// missing file
 					gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
 				}
-				else if(hashblock_cmp(gn_nodes.e[x]->hb))
+				else
 				{
-					if(!gn_nodes.e[x]->invalid)
-						logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_CHANGED), gn_nodes.e[x]->idstring);
+					gn_nodes.e[x]->invalid &= ~GN_INVALIDATION_NXFILE;
 
-					// changed file
-					gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+					if(hashblock_cmp(gn_nodes.e[x]->hb))
+					{
+						if(!gn_nodes.e[x]->invalid)
+							logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_CHANGED), gn_nodes.e[x]->idstring);
+
+						// changed file
+						gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+					}
 				}
 
 				// convert to actions
@@ -319,7 +324,7 @@ static int loop(char * stem)
 			// do not cross the nofile boundary
 			fatal(traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile, gn_nodes.e[x], visit);
 
-			gn_nodes.e[x]->invalid &= ~(GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER);
+			gn_nodes.e[x]->invalid &= ~(GN_INVALIDATION_CHANGED | GN_INVALIDATION_USER);
 		}
 	}
 

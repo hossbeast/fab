@@ -68,6 +68,7 @@ static int reset(gn * r, int exact, int nofile)
 	{
 		gn->height = -1;
 		gn->stage = -1;
+		gn->poison = 0;
 
 		finally : coda;
 	};
