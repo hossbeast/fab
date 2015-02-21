@@ -196,7 +196,7 @@ static int loop(char * stem)
 
 	int fd = -1;
 
-	char space[256];
+	char space[2048];
 
 	// reset some stuff
 	tsl = 0;
@@ -465,6 +465,11 @@ static int loop(char * stem)
 						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
 						fatal(mkdirp, ptmp->s, FABIPC_DIR);
 						
+						// create symlink to the bp in hashdir
+						snprintf(space, sizeof(space), "%s/bp", stem);
+						fatal(uxunlink, space, 0);
+						fatal(xsymlink, ptmp->s, space);
+
 						// create file with the number of stages
 						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/stages", g_params.fab_pid);
 						fatal(uxunlink, ptmp->s, 0);

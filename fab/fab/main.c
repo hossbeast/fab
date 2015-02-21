@@ -518,6 +518,7 @@ printf("fab[%ld] started\n", (long)getpid());
      /FABIPCDIR/<hash>/fabfile				<-- init fabfile path, symlink
 0666 /FABIPCDIR/<hash>/args						<-- args, binary
 0666 /FABIPCDIR/<hash>/logs						<-- logs, ascii
+     /FABIPCDIR/<hash>/bp             <-- bp dir, symlink
 0666 /FABIPCDIR/<hash>/fab/pid				<-- fab pid, ascii
 0666 /FABIPCDIR/<hash>/fab/lock				<-- fab lockfile, empty
      /FABIPCDIR/<hash>/fab/out				<-- fab stdout, symlink
@@ -529,7 +530,7 @@ printf("fab[%ld] started\n", (long)getpid());
 */
 
 	// ipc-dir stem
-	size_t z = snprintf(space, sizeof(space), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
+	size_t z = snprintf(space, sizeof(space), "%s/%u", XQUOTE(FABIPCDIR), canhash);
 
 	// fab directory
 	snprintf(space + z, sizeof(space) - z, "/fab");
@@ -728,8 +729,8 @@ printf("fab[%ld] started\n", (long)getpid());
 			fatal(ixclose, &fd);
 			fatal(xopen, space, O_RDONLY, &fd);
 			fatal(axread, fd, &commandsl, fd);
-			
-			logf(L_BPEXEC, "buildplan @ " XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.pid);
+
+			logf(L_BPEXEC, "buildplan @ %s/%u/bp", XQUOTE(FABIPCDIR), canhash);
 		}
 
 		// execute the buildplan stage
