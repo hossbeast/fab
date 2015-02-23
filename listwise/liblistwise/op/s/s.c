@@ -65,45 +65,6 @@ operator op_desc[] = {
 
 static int append(lwx * lx, int x, char * s, int l)
 {
-/*
-	int i;
-	for(i = 0; i < l; i++)
-	{
-		if(((i + 1) < l) && s[i] == '\\')
-		{
-			if(s[i + 1] == 'r')
-			  fatal(lstack_catw, lx, 0, x, "\r", 1);
-			else if(s[i + 1] == 'n')
-			  fatal(lstack_catw, lx, 0, x, "\n", 1);
-			else if(s[i + 1] == '0')
-			  fatal(lstack_catw, lx, 0, x, "\0", 1);
-			else if(s[i + 1] == '\\')
-			  fatal(lstack_catw, lx, 0, x, "\\", 1);
-			else if(s[i + 1] == 't')
-			  fatal(lstack_catw, lx, 0, x, "\t", 1);
-			else if(s[i + 1] == 'x')
-			{
-			  if((i + 3) < l)
-			  {
-			    int v;
-			    if(parseuint(s + i + 2, SCNx8, 0, 0xFF, 2, 2, &v, 0) == 0)
-			    {
-			      fatal(lstack_catf, lx, 0, x, "%c", v);
-			    }
-			
-			    i += 2;
-			  }
-			}
-
-			i++;
-		}
-		else
-		{
-			fatal(lstack_catw, lx, 0, x, s + i, 1);
-		}
-	}
-*/
-
 	fatal(lstack_catw, lx, 0, x, s, l);
 
 	finally : coda;
