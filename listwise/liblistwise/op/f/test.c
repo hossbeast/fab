@@ -67,8 +67,8 @@ xunit_unit xunit = {
 		// other
 		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo" }
-				, .xsfm = "l/a/g wy f"
-				, .final = (char*[]) { "foo", 0 }
+				, .xsfm = "l/o/g wy f"
+				, .final = (char*[]) { 0 }
 		  }}
 	}
 };

@@ -1,4 +1,3 @@
-
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -32,6 +31,11 @@ xunit_unit xunit = {
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
 				, .xsfm = "l/./g y wvp"
 				, .final = (char*[]) { "foo", "foo", "foo", 0 }
+		  }}
+		, (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "a", "aa", "aaa", "aaaa", 0 }
+				, .xsfm = "l/a y wvp"
+				, .final = (char*[]) { 0 }
 		  }}
 		, 0
 	}

@@ -77,9 +77,8 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	if(go)
 	{
 		lwx_windows * win;
-		int state = lstack_windows_state(lx, x, &win);
-
-		if(state != LWX_WINDOWS_NONE)
+		int state;
+		if((state = lstack_windows_state(lx, x, &win)) == LWX_WINDOWS_SOME)
 		{
 			char * ss = 0;
 			int ssl = 0;

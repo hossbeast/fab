@@ -16,24 +16,15 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
-#include <alloca.h>
-#include <sys/types.h>
-#include <errno.h>
 #include <string.h>
-#include <dirent.h>
+#include <alloca.h>
 
 #include "listwise/operator.h"
 #include "listwise/lwx.h"
 
 /*
 
-vf operator - select following
-
-NO ARGUMENTS
-
-OPERATION
-
- 1. select items following last selected item
+ln operator - line numbers : insert <num> at the beginning of each entry
 
 */
 
@@ -41,42 +32,28 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
-		  .s						= "vf"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
+		  .s						= "ln"
+		, .optype				= LWOP_SELECTION_RESET | LWOP_OPERATION_INPLACE
 		, .op_exec			= op_exec
-		, .desc					= "select following"
+		, .mnemonic			= "line numbers"
+		, .desc					= "prepend line number to selected entries"
 	}
 	, {}
 };
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
-	if(ls->l)
+	int x;
+	LSTACK_ITERATE(lx, x, go)
+	if(go)
 	{
-		int i = -1;
-
-		int x;
-		LSTACK_ITERATE(ls, x, go);
-		if(go)
-		{
-			i = x;
-		}
-		LSTACK_ITEREND;
-
-		if(i > -1)
-		{
-			if(ls->l > 0)
-			{
-				for(x = 0; x < ls->s[0].l; x++)
-				{
-					if(x > i)
-					{
-						fatal(lstack_selection_stage, ls, x);
-					}
-				}
-			}
-		}
+		char * ss;
+		int ssl;
+		fatal(lstack_getstring, lx, 0, x, &ss, &ssl);
+		fatal(lstack_writef, lx, 0, x, "%d ", x);
+		fatal(lstack_catw, lx, 0, x, ss, ssl);
 	}
+	LSTACK_ITEREND
 
 	finally : coda;
 }
