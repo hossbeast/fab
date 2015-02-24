@@ -1,5 +1,5 @@
-* v0.5.0
- must stat primary files that do not have discovery
+* v0.5
+ cmd listing should use hashdir not pid dir
 
 * finished
  standardize dsc_exec vs bp_exec error messages
@@ -24,6 +24,11 @@
  review fab cmdline interface, options, logs
  FABIPC after having a failed command
  create symlink to pid bp dir in hashdir
+ must stat primary files that do not have discovery
+ segfault in hl and t
+ ln operator
+ lw specify an output file (separate from error output) (logger now writes to stderr)
+ lw --o<[A-F]> does not work
 
 * docket
  listwise resolve lstack vs lwx
