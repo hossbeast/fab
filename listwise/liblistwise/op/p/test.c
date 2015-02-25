@@ -45,7 +45,7 @@ xunit_unit xunit = {
 		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
 				, .xsfm = "l/./g y p/-3"
-				, .final = (char*[]) { ".", "foo.a.b", "a.b.c", 0 }
+				, .final = (char*[]) { "foo.a.b", "a.b.c", 0 }
 		  }}
 		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
@@ -72,7 +72,7 @@ xunit_unit xunit = {
 		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
 				, .xsfm = "l/./g y p/-3/-2"
-				, .final = (char*[]) { ".", "foo", "a", 0 }
+				, .final = (char*[]) { "foo", "a", 0 }
 		  }}
 
 		// arguments come in pairs

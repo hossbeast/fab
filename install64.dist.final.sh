@@ -293,6 +293,7 @@ fml_7_0()
 	install listwise/liblistwise/op/xch/xch.final.so				$destdir/$lwopdir/xch.so
 	install listwise/liblistwise/op/y/y.final.so						$destdir/$lwopdir/y.so
 	install listwise/liblistwise/op/z/z.final.so						$destdir/$lwopdir/z.so
+	install listwise/liblistwise/op/ln/ln.final.so					$destdir/$lwopdir/ln.so
 
 
   X=$?

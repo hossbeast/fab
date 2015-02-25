@@ -312,6 +312,7 @@ fml_7_0()
 	install listwise/liblistwise/op/xch/xch.debug.so				$destdir/$lwopdir/xch.so
 	install listwise/liblistwise/op/y/y.debug.so						$destdir/$lwopdir/y.so
 	install listwise/liblistwise/op/z/z.debug.so						$destdir/$lwopdir/z.so
+	install listwise/liblistwise/op/ln/ln.debug.so					$destdir/$lwopdir/ln.so
 
 
   X=$?

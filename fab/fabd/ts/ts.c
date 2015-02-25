@@ -183,7 +183,9 @@ int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, int * ba
 						}
 
 						if(e)
-							logf(0, ", details @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d", g_params.pid, ts[x]->y);
+						{
+							logf(0, ", details @ %s/dsc/%d", g_params.ipcstem, ts[x]->y);
+						}
 
 						log_finish();
 					}

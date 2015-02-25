@@ -19,6 +19,7 @@
 #define _PARAMS_H
 
 #include <sys/types.h>
+#include <stdint.h>
 
 extern struct g_params_t
 {
@@ -47,10 +48,12 @@ extern struct g_params_t
 	int							cwdl;
 	char *					exedir;											// location of the fab executable when the program started
 	int							exedirl;
-	time_t					starttime;									// time last action of fabd began
-
 	long						procs;											// detected number of processors (0 means unknown)
 	long						pagesize;										// page size
+
+	time_t					starttime;									// time last action of fabd began
+	uint32_t				canhash;										// for ipc dir
+	char						ipcstem[2048];							// ipc dir
 } g_params;
 
 /// params_parse
