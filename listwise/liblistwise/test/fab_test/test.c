@@ -73,7 +73,6 @@ xunit_unit xunit = {
 	  .setup = setup
 	, .tests = (xunit_test*[]) {
 		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { 0 }
 				, .xsfm = "?{ cons{?, l,/test.c v}"
 				, .final = (char*[]) { "?, l,/test.c v", 0 }
 		  }}
