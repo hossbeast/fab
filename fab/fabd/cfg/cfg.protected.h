@@ -15,39 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FABD_GLOBAL_H
-#define _FABD_GLOBAL_H
+#ifndef _CFG_PROTECTED_H
+#define _CFG_PROTECTED_H
 
-#include "FAB.errtab.h"
-#undef perrtab
-#define perrtab perrtab_FAB
+#define restrict __restrict
 
-#include "logs.h"
-#include "args.h"
-#include "params.h"
-#include "identity.h"
+struct cfg_file;		// cfg.h
+struct filesystem;	// filesystem.h
 
-#include "fml.h"
-#include "ts.h"
-#include "ff.h"
-#include "bp.h"
-#include "traverse.h"
-#include "dirutil.h"
-#include "enclose.h"
-#include "gn.h"
-#include "gnlw.h"
-#include "lwutil.h"
-#include "tmp.h"
-#include "var.h"
-#include "list.h"
-#include "ffproc.h"
-#include "selector.h"
-#include "dsc.h"
-#include "bs.h"
-#include "cfg.h"
-#include "filesystem.h"
+int cfg_file_mk(struct filesystem * const restrict fs, struct cfg_file ** const restrict cfg)
+	__attribute__((nonnull(2)));
 
-#include "logger.h"
-
+#undef restrict
 #endif
-

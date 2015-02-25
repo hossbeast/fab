@@ -126,6 +126,20 @@ int pscats(pstring ** restrict p, char * const restrict s)
 int pscatw(pstring ** restrict p, char * const restrict s, size_t l)
 	__attribute__((nonnull));
 
+/// psmkw
+//
+// SUMMARY
+//  concatenate { s, s + l } to an existing pstring, or to a newly created pstring
+//
+// PARAMETERS
+//  [e] - existing
+//  s   - source bytes
+//  l   - length of s (0 : no-op)
+//  [p] - (returns) pstring
+//
+int psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring ** restrict p)
+	__attribute__((nonnull(2)));
+
 /// psgrow
 //
 // SUMMARY

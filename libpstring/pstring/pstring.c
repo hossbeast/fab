@@ -153,6 +153,45 @@ int API pscatw(pstring ** restrict p, char * const restrict s, size_t l)
 	finally : coda;
 }
 
+int API psvmkf(pstring * restrict e, pstring ** restrict p, char * const restrict fmt, va_list va)
+{
+	pstring * lp;
+	if(!p)
+		p = &lp;
+	*p = e;
+
+	fatal(psvcatf, p, fmt, va);
+
+	finally : coda;
+}
+
+int API psmkf(pstring * restrict e, pstring ** restrict p, char * const restrict fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	fatal(psvmkf, e, p, fmt, va);
+	va_end(va);
+
+	finally : coda;
+}
+
+int API psmks(pstring * restrict e, char * const restrict s, pstring ** restrict p)
+{
+	xproxy(psmkw, e, s, strlen(s), p);
+}
+
+int API psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring ** restrict p)
+{
+	pstring * lp;
+	if(!p)
+		p = &lp;
+	*p = e;
+
+	fatal(pscatw, p, s, l);
+
+	finally : coda;
+}
+
 void API psfree(pstring * p)
 {
 	free(p);

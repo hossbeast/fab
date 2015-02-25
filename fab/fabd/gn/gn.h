@@ -139,15 +139,16 @@ typedef struct
 
 typedef struct gn
 {
-	uint16_t					type;						// GN_TYPE_*
+	uint16_t						type;						// GN_TYPE_*
 
-	struct path *			path;
-	char *						idstring;				// identifier string, subject to execution parameters
-	int								idstringl;
+	struct path *				path;
+	struct filesystem *	fs;							// filesystem the canonical path resides on
+	char *							idstring;				// identifier string, subject to execution parameters
+	int									idstringl;
 
 	// PRIMARY, SECONDARY, GENERATED
-	struct hashblock *hb;
-	uint16_t					invalid;				// whether (and how) this node is invalidated : GN_INVALIDATION_*
+	struct hashblock *	hb;
+	uint16_t						invalid;				// whether (and how) this node is invalidated : GN_INVALIDATION_*
 
 	//
 	// PRIMARY
