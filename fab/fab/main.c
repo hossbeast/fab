@@ -288,7 +288,9 @@ static int bp_exec_stage(int stagesl, int commandsl, int stagex, int * success)
 							logf(0, ", signal : %d", x, i, stage.cmds[i].prod_type[y], stage.cmds[i].prod_id[y], WTERMSIG(r));
 
 						if(bad)
-							logf(0, ", details @ " XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d", g_params.pid, x, i);
+						{
+							logf(0, ", details @ %s/bp/%d/%d", g_params.ipcstem, x, i);
+						}
 
 						log_finish();
 					}
@@ -414,7 +416,6 @@ int main(int argc, char** argv, char ** envp)
 #endif
 	int fd = -1;
 	int lockfd = -1;
-	uint32_t canhash;
 	int r = -1;
 	int fabd_exit = 0;
 
@@ -498,7 +499,7 @@ printf("fab[%ld] started\n", (long)getpid());
 #if DEBUG || DEVEL
 	mode_backtrace = g_args->mode_backtrace;
 #endif
-	canhash = g_args->init_fabfile_path->can_hash;
+	g_params.canhash = g_args->init_fabfile_path->can_hash;
 	if(g_args->buildscript_path)
 		fatal(ixstrdup, &buildscript_path, g_args->buildscript_path);
 
@@ -530,7 +531,8 @@ printf("fab[%ld] started\n", (long)getpid());
 */
 
 	// ipc-dir stem
-	size_t z = snprintf(space, sizeof(space), "%s/%u", XQUOTE(FABIPCDIR), canhash);
+	snprintf(g_params.ipcstem, sizeof(g_params.ipcstem), "%s/%u", XQUOTE(FABIPCDIR), g_params.canhash);
+	size_t z = snprintf(space, sizeof(space), "%s", g_params.ipcstem);
 
 	// fab directory
 	snprintf(space + z, sizeof(space) - z, "/fab");
@@ -689,7 +691,7 @@ printf("fab[%ld] started\n", (long)getpid());
 			fatal(xsetpgid, 0, 0);
 
 			// fabd args
-			z = snprintf(space, sizeof(space), "%u", canhash);
+			z = snprintf(space, sizeof(space), "%u", g_params.canhash);
 
 #if DEVEL
 			snprintf(space2, sizeof(space2), "%s/../fabw/fabw.devel", g_params.exedir);
@@ -730,7 +732,7 @@ printf("fab[%ld] started\n", (long)getpid());
 			fatal(xopen, space, O_RDONLY, &fd);
 			fatal(axread, fd, &commandsl, fd);
 
-			logf(L_BPEXEC, "buildplan @ %s/%u/bp", XQUOTE(FABIPCDIR), canhash);
+			logf(L_BPEXEC, "buildplan @ %s/%u/bp", XQUOTE(FABIPCDIR), g_params.canhash);
 		}
 
 		// execute the buildplan stage

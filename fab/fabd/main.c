@@ -194,7 +194,7 @@ static int hashfiles(int iteration)
 	finally : coda;
 }
 
-static int loop(char * stem)
+static int loop()
 {
 	int x;
 	int y;
@@ -448,7 +448,7 @@ static int loop(char * stem)
 					bp_dump(plan);
 
 				// write buildscript to the IPC dir
-				fatal(buildscript_mk, plan, g_args->argvs, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tsp, &tsa, &tsw, stem);
+				fatal(buildscript_mk, plan, g_args->argvs, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tsp, &tsa, &tsw, g_params.ipcstem);
 			}
 			else
 			{
@@ -471,7 +471,7 @@ static int loop(char * stem)
 						fatal(mkdirp, ptmp->s, FABIPC_DIR);
 						
 						// create symlink to the bp in hashdir
-						snprintf(space, sizeof(space), "%s/bp", stem);
+						snprintf(space, sizeof(space), "%s/bp", g_params.ipcstem);
 						fatal(uxunlink, space, 0);
 						fatal(xsymlink, ptmp->s, space);
 
@@ -546,8 +546,8 @@ coda;
 
 int main(int argc, char** argv, char ** envp)
 {
-	char stem[2048];
 	char space[2048];
+	char space2[2048];
 
 	int fd = -1;
 
@@ -667,17 +667,22 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	fatal(var_root, &rmap);
 
 	// get ipc dir
-	uint32_t canhash;
-	if(argc < 2 || parseuint(argv[1], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
+	if(argc < 2 || parseuint(argv[1], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &g_params.canhash, 0) != 0)
 		fail(FAB_BADARGS);
 
 	// ipc-dir stem
-	snprintf(stem, sizeof(stem), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
+	snprintf(g_params.ipcstem, sizeof(g_params.ipcstem), "%s/%u", XQUOTE(FABIPCDIR), g_params.canhash);
+
+	// create symlink for dsc in hashdir
+	snprintf(space, sizeof(space), "%s/dsc", g_params.ipcstem);
+	snprintf(space2, sizeof(space2), XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
+	fatal(uxunlink, space, 0);
+	fatal(xsymlink, space2, space);
 
 	while(o_signum != SIGINT && o_signum != SIGQUIT && o_signum != SIGTERM)
 	{
 		// read fab/pid
-		snprintf(space, sizeof(space), "%s/fab/pid", stem);
+		snprintf(space, sizeof(space), "%s/fab/pid", g_params.ipcstem);
 		fatal(ixclose, &fd);
 		fatal(xopen, space, O_RDONLY, &fd);
 
@@ -698,19 +703,19 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				fatal(ixclose, &fd);
 
 				// reopen standard file descriptors
-				snprintf(space, sizeof(space), "%s/fab/out", stem);
+				snprintf(space, sizeof(space), "%s/fab/out", g_params.ipcstem);
 				fatal(xopen, space, O_RDWR, &fd);
 				fatal(xdup2, fd, 1);
 				fd = -1;
 
-				snprintf(space, sizeof(space), "%s/fab/err", stem);
+				snprintf(space, sizeof(space), "%s/fab/err", g_params.ipcstem);
 				fatal(xopen, space, O_RDWR, &fd);
 				fatal(xdup2, fd, 2);
 				fd = -1;
 			}
 
 			// open args file
-			snprintf(space, sizeof(space), "%s/args", stem);
+			snprintf(space, sizeof(space), "%s/args", g_params.ipcstem);
 			fatal(ixclose, &argsfd);
 			fatal(xopen, space, O_RDWR, &argsfd);
 			
@@ -725,7 +730,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			args_thaw((void*)g_args);
 
 			// open logs file
-			snprintf(space, sizeof(space), "%s/logs", stem);
+			snprintf(space, sizeof(space), "%s/logs", g_params.ipcstem);
 			fatal(ixclose, &logsfd);
 			fatal(xopen, space, O_RDWR, &logsfd);
 
@@ -764,7 +769,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			// chdir
 			if(!nodaemon)
 			{
-				snprintf(space, sizeof(space), "%s/fab/cwd", stem);
+				snprintf(space, sizeof(space), "%s/fab/cwd", g_params.ipcstem);
 				fatal(xchdir, space);
 			}
 
@@ -885,7 +890,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 			// handle this request
 			int frame;
-			if(invoke(&frame, loop, stem))
+			if(invoke(&frame, loop))
 			{
 				// propagate errors other than those specifically being trapped
 				if(XAPI_ERRTAB == perrtab_FAB && fab_swallow[XAPI_ERRCODE])
