@@ -64,6 +64,16 @@ $tabcfabpaths = [
 	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
 	>  | sed -ne "s/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/${pfx}_\1 = \2,/p"
 	> echo "};"	
+	> echo -n "#define ${pfx}_MINTOKEN "
+	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+	>  | sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2/p' \
+	>  | sort -n \
+	>  | head -n 1
+	> echo -n "#define ${pfx}_MAXTOKEN "
+	> sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+	>  | sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2/p' \
+	>  | sort -nr \
+	>  | head -n 1
 	> echo "#endif"
 
 	> exec 1>${tokens_c}
