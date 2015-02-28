@@ -892,8 +892,11 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			int frame;
 			if(invoke(&frame, loop))
 			{
+				// capture the error code
+				int code = XAPI_ERRCODE;
+
 				// propagate errors other than those specifically being trapped
-				if(XAPI_ERRTAB == perrtab_FAB && fab_swallow[XAPI_ERRCODE])
+				if(XAPI_ERRTAB == perrtab_FAB && fab_swallow[code])
 				{
 
 				}
@@ -925,15 +928,26 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 #if DEBUG || DEVEL
 				if(mode == MODE_BACKTRACE_FULL)
+				{
 					tracesz = xapi_trace_full(space, sizeof(space));
+				}
 				else
 #endif
+				{
 					tracesz = xapi_trace_pithy(space, sizeof(space));
+				}
 
+				// log the error
 				logw(L_RED, space, tracesz);
 
 				// pop the error frames
 				xapi_callstack_unwindto(frame);
+
+				// write the error to ipcdir
+				snprintf(space, sizeof(space), "%s/fabd/error", g_params.ipcstem);
+				fatal(ixclose, &fd);
+				fatal(xopen_mode, space, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
+				fatal(axwrite, fd, &code, sizeof(code));
 			}
 
 			if(log_would(L_USAGE))

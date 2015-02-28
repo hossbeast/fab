@@ -1,5 +1,4 @@
 * v0.5
- 0 exit status when dependency discovery fails
 
 * finished
  standardize dsc_exec vs bp_exec error messages
@@ -30,6 +29,7 @@
  lw specify an output file (separate from error output) (logger now writes to stderr)
  lw --o<[A-F]> does not work
  cmd listing should use hashdir not pid dir
+ propagate exit status when dependency discovery fails
 
 * docket
  listwise resolve lstack vs lwx
