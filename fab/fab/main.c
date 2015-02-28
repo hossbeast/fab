@@ -418,6 +418,7 @@ int main(int argc, char** argv, char ** envp)
 	int lockfd = -1;
 	int r = -1;
 	int fabd_exit = 0;
+	int fabd_error = 0;
 
 	memblk * mb = 0;
 
@@ -528,6 +529,7 @@ printf("fab[%ld] started\n", (long)getpid());
 0666 /FABIPCDIR/<hash>/fabd/pgid			<-- fabd pgid, ascii
 0666 /FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile, empty
 0666 /FABIPCDIR/<hash>/fabd/exit			<-- fabd exit status, binary
+0666 /FABIPCDIR/<hash>/fabd/error			<-- fabd last error, binary
 */
 
 	// ipc-dir stem
@@ -669,6 +671,9 @@ printf("fab[%ld] started\n", (long)getpid());
 	snprintf(space + z, sizeof(space) - z, "/fabd/exit");
 	fatal(uxunlink, space, 0);
 
+	snprintf(space + z, sizeof(space) - z, "/fabd/error");
+	fatal(uxunlink, space, 0);
+
 	if(r)
 	{
 		// fabd is not running
@@ -775,8 +780,25 @@ printf("fab[%ld] started\n", (long)getpid());
 	}
 	else
 	{
-		// in this case, fabd should still be running
-		fatal(xfabdkill, -fabd_pgid, 0);
+		// check fab-error file
+		snprintf(space + z, sizeof(space) - z, "/fabd/error");
+		fatal(ixclose, &fd);
+		fatal(uxopen, space, O_RDONLY, &fd);
+
+		if(fd != -1)
+		{
+			// propagate
+			fatal(axread, fd, &fabd_error, sizeof(fabd_error));
+			if(fabd_error)
+			{
+				fail(fabd_error);
+			}
+		}
+		else
+		{
+			// in this case, fabd should still be running
+			fatal(xfabdkill, -fabd_pgid, 0);
+		}
 	}
 
 	// rewrite the buildscript, if any
@@ -821,7 +843,12 @@ finally:
 		}
 	}
 
-	if(XAPI_UNWINDING)
+	/*
+	** when failing due to an error propagated from fabd (fabd_error), do not log the
+	** stacktrace, because fabd will have already done that. Do use it for the exit
+	** status though
+	*/
+	if(XAPI_UNWINDING && !fabd_error)
 	{
 #if DEBUG || DEVEL
 		if(mode_backtrace == MODE_BACKTRACE_FULL)
