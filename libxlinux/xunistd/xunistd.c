@@ -51,12 +51,18 @@ int API uxread(int fd, void * buf, size_t count, ssize_t * bytes)
 
 int API axread(int fd, void * buf, size_t count)
 {
-	ssize_t actual;
-	if((actual = read(fd, buf, count)) == -1)
-		fail(errno);
+	size_t actual = 0;
+	while(count - actual)
+	{
+		ssize_t cur = read(fd, ((char*)buf) + actual, count - actual);
 
-	if(actual != count)
-		tfail(perrtab_XLINUX, XLINUX_LESS);
+		if(cur == 0)
+			tfail(perrtab_XLINUX, XLINUX_LESS);
+		if(cur == -1)
+			fail(errno);
+
+		actual += cur;
+	}
 
 finally:
 	if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
@@ -80,12 +86,18 @@ int API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 
 int API axwrite(int fd, const void * buf, size_t count)
 {
-	ssize_t actual;
-	if((actual = write(fd, buf, count)) == -1)
-		fail(errno);
+	size_t actual = 0;
+	while(count - actual)
+	{
+		ssize_t cur = write(fd, ((char*)buf) + actual, count - actual);
 
-	if(actual != count)
-		tfail(perrtab_XLINUX, XLINUX_LESS);
+		if(cur == 0)
+			tfail(perrtab_XLINUX, XLINUX_LESS);
+		if(cur == -1)
+			fail(errno);
+
+		actual += cur;
+	}
 
 finally:
 	if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
