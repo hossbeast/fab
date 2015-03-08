@@ -301,10 +301,16 @@ static int loop()
 	// propagate invalidations and clear changes from this iteration
 	int visit(gn * gn, int d)
 	{
-		if(d)
+		if(d == 0)
+		{
+			// this will include the node itself and nodes with a weak dependency on it
+		}
+		else
 		{
 			if(!gn->invalid)
+			{
 				logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_SOURCES), gn->idstring);
+			}
 
 			gn->invalid |= GN_INVALIDATION_SOURCES;
 
