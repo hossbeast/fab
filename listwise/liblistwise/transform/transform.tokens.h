@@ -14,4 +14,6 @@ enum transform_tokennames {
      transform_I64 = 264,
      transform_OP = 265,
 };
+#define transform_MINTOKEN      258
+#define transform_MAXTOKEN      265
 #endif

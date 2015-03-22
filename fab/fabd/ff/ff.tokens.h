@@ -10,4 +10,6 @@ enum ff_tokennames {
      ff_LF = 260,
      ff_ONCE = 261,
 };
+#define ff_MINTOKEN      258
+#define ff_MAXTOKEN      261
 #endif
