@@ -448,8 +448,10 @@ printf("fab[%ld] started\n", (long)getpid());
 
 	// unblock all signals
 	sigset_t all;
+	sigset_t none;
 	sigfillset(&all);
-	sigprocmask(SIG_UNBLOCK, &all, 0);
+	sigemptyset(&none);
+	fatal(xsigprocmask, SIG_SETMASK, &none, 0);
 
 	// handle all signals
 	struct sigaction action = {
@@ -674,6 +676,9 @@ printf("fab[%ld] started\n", (long)getpid());
 	snprintf(space + z, sizeof(space) - z, "/fabd/error");
 	fatal(uxunlink, space, 0);
 
+	// block signals
+	fatal(xsigprocmask, SIG_SETMASK, &all, 0);
+
 	if(r)
 	{
 		// fabd is not running
@@ -710,7 +715,7 @@ printf("fab[%ld] started\n", (long)getpid());
 	}
 	else
 	{
-		// awaken
+		// awaken fabd
 		fatal(xfabdkill, -fabd_pgid, FABSIG_START);
 	}
 
@@ -719,8 +724,11 @@ printf("fab[%ld] started\n", (long)getpid());
 	int commandsl;
 	for(x = 0; 1; x++)
 	{
+		// await response signal from fabd
 		o_signum = 0;
-		pause();
+		sigsuspend(&none);
+		fatal(xsigprocmask, SIG_SETMASK, &none, 0);
+		
 		if(o_signum != FABSIG_BPSTART)
 			break;
 
@@ -746,13 +754,21 @@ printf("fab[%ld] started\n", (long)getpid());
 
 		// notify fabd
 		if(good)
+		{
+			// block signals
+			fatal(xsigprocmask, SIG_BLOCK, &all, 0);
+
+			// awaken fabd
 			fatal(uxfabdkill, -fabd_pgid, FABSIG_BPGOOD, &r);
+		}
 		else
+		{
+			// awaken fabd
 			fatal(uxfabdkill, -fabd_pgid, FABSIG_BPBAD, &r);
 
-		// some command failed
-		if(!good)
+			// some command failed
 			fail(FAB_CMDFAIL);
+		}
 	}
 
 	if(x)

@@ -103,6 +103,8 @@ static pid_t							fab_pids[3];
 static uint64_t						varshash[2];
 
 // signal handling
+static sigset_t none;
+static sigset_t all;
 static int o_signum;
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
@@ -505,12 +507,16 @@ static int loop()
 							tsl = 0;
 							fatal(bp_prepare_stage, plan, i, ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
 
+							// block signals
+							fatal(xsigprocmask, SIG_SETMASK, &all, 0);
+
 							// work required ; notify fab
 							fatal(uxkill, g_params.fab_pid, FABSIG_BPSTART, 0);
 
 							// await response
 							o_signum = 0;
-							pause();
+							sigsuspend(&none);
+							fatal(xsigprocmask, SIG_SETMASK, &none, 0);
 
 							if(o_signum == FABSIG_BPGOOD)
 							{
@@ -584,9 +590,9 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 #endif
 
 	// unblock all signals
-	sigset_t all;
 	sigfillset(&all);
-	sigprocmask(SIG_UNBLOCK, &all, 0);
+	sigemptyset(&none);
+	fatal(xsigprocmask, SIG_SETMASK, &none, 0);
 
 	// handle all signals
 	struct sigaction action = {
