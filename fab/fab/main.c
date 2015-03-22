@@ -134,6 +134,7 @@ static int bp_exec_stage(int stagesl, int commandsl, int stagex, int * success)
 	for(i = 0; i < stage.cmdsl; i++)
 	{
 		fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/prod", g_params.pid, stagex, i);
+		fatal(ixclose, &fd);
 		fatal(xopen, tmp->s, O_RDONLY, &fd);
 
 		// get the filesize
