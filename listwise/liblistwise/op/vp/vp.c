@@ -42,7 +42,7 @@ static int op_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "vp"
-		, .optype				= LWOP_SELECTION_ACTIVATE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
 		, .op_exec			= op_exec
 		, .desc					= "select preceeding"
 	}

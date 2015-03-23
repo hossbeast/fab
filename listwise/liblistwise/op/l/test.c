@@ -27,12 +27,12 @@ xunit_unit xunit = {
 		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
 				, .xsfm = "l/o wy"
-				, .final = (char*[]) { "o", "o", "c", "o", 0 }
+				, .final = (char*[]) { "o", "o", "o", 0 }
 		  }}
 		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
 				, .xsfm = "l/o wy uu"
-				, .final = (char*[]) { "o", "c", 0 }
+				, .final = (char*[]) { "o", 0 }
 		  }}
 		, 0
 	}

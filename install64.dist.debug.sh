@@ -79,8 +79,8 @@ fml_1_0()
   [[ $destdir ]] || local destdir=''
   [[ $fablwopdir ]] || local fablwopdir='/usr/lib/fab/listwise'
   
-	install ./fab/fablw/op/fi/fi.debug.so				$destdir/$fablwopdir/fi.so
-	install ./fab/fablw/op/fg/fg.debug.so				$destdir/$fablwopdir/fg.so
+	install ./fab/fablw/op/fi/fi.xapi.debug.so	$destdir/$fablwopdir/fi.so
+	install ./fab/fablw/op/fg/fg.xapi.debug.so	$destdir/$fablwopdir/fg.so
 
 
   X=$?
@@ -90,7 +90,7 @@ fml_1_0()
 
 
 # formulas and names for stage 2
-NAMES[2]='@libxapi.install.debug'
+NAMES[2]='@libxapi.install.debug.xapi'
 fml_2_0()
 {
   exec 1>/dev/null
@@ -100,7 +100,7 @@ fml_2_0()
   [[ $destdir ]] || local destdir=''
   
 	install -d																$destdir/$libdir
-	install ./libxapi/libxapi.debug.so								$destdir/$libdir/libxapi.so
+	install ./libxapi/libxapi-xapi.debug.so						$destdir/$libdir/libxapi-xapi.so
 
 
   X=$?
@@ -110,7 +110,7 @@ fml_2_0()
 
 
 # formulas and names for stage 3
-NAMES[3]='@libxlinux.install.debug'
+NAMES[3]='@libxlinux.install.debug.xapi'
 fml_3_0()
 {
   exec 1>/dev/null
@@ -119,8 +119,8 @@ fml_3_0()
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
   
-	install -d																					$destdir/$libdir
-	install ./libxlinux/libxlinux.debug.so												$destdir/$libdir/libxlinux.so
+	install -d																			$destdir/$libdir
+	install ./libxlinux/libxlinux-xapi.debug.so								$destdir/$libdir/libxlinux-xapi.so
 
 
   X=$?
@@ -130,7 +130,7 @@ fml_3_0()
 
 
 # formulas and names for stage 4
-NAMES[4]='@libpstring.install.debug'
+NAMES[4]='@libpstring.install.debug.xapi'
 fml_4_0()
 {
   exec 1>/dev/null
@@ -139,8 +139,8 @@ fml_4_0()
   [[ $libdir ]] || local libdir='/usr/lib/x86_64-linux-gnu'
   [[ $destdir ]] || local destdir=''
   
-	install -d																					$destdir/$libdir
-	install ./libpstring/libpstring.debug.so												$destdir/$libdir/libpstring.so
+	install -d																			$destdir/$libdir
+	install ./libpstring/libpstring-xapi.debug.so							$destdir/$libdir/libpstring-xapi.so
 
 
   X=$?
@@ -150,29 +150,8 @@ fml_4_0()
 
 
 # formulas and names for stage 5
-NAMES[5]='@listwise.install.debug'
+NAMES[5]='@fabcore.fab.install.base.debug'
 fml_5_0()
-{
-  exec 1>/dev/null
-  exec 2>&100
-
-  [[ $bindir ]] || local bindir='/usr/local/bin'
-  [[ $destdir ]] || local destdir=''
-  
-	install -d										$destdir/$bindir
-	install ./listwise/listwise/listwise.debug		$destdir/$bindir/listwise
-	ln -vfs listwise					$destdir/$bindir/lw
-
-
-  X=$?
-  echo 0 1>&99
-  exit $X
-}
-
-
-# formulas and names for stage 6
-NAMES[6]='@fabcore.fab.install.base.debug'
-fml_6_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -190,8 +169,8 @@ fml_6_0()
   exit $X
 }
 
-NAMES[7]='@fabcore.fabd.install.base.debug'
-fml_6_1()
+NAMES[6]='@fabcore.fabd.install.base.debug'
+fml_5_1()
 {
   exec 1>/dev/null
   exec 2>&101
@@ -209,8 +188,8 @@ fml_6_1()
   exit $X
 }
 
-NAMES[8]='@fabcore.fabw.install.base.debug'
-fml_6_2()
+NAMES[7]='@fabcore.fabw.install.base.debug'
+fml_5_2()
 {
   exec 1>/dev/null
   exec 2>&102
@@ -229,9 +208,9 @@ fml_6_2()
 }
 
 
-# formulas and names for stage 7
-NAMES[9]='@liblistwise.install.debug'
-fml_7_0()
+# formulas and names for stage 6
+NAMES[8]='@liblistwise.install.debug.xapi'
+fml_6_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -240,59 +219,60 @@ fml_7_0()
   [[ $destdir ]] || local destdir=''
   [[ $lwopdir ]] || local lwopdir='/usr/lib/listwise'
   
-	install -d																							$destdir/$libdir
-	install ./listwise/liblistwise/liblistwise.debug.so													$destdir/$libdir/liblistwise.so
+	install -d																									$destdir/$libdir
+	install ./listwise/liblistwise/liblistwise-xapi.debug.so													$destdir/$libdir/liblistwise-xapi.so
 
-	rm -rf																									$destdir/$lwopdir 2>/dev/null
-	install -d																							$destdir/$lwopdir
+	rm -rf																											$destdir/$lwopdir 2>/dev/null
+	install -d																									$destdir/$lwopdir
 
-	install listwise/liblistwise/op/-X/-X.debug.so					$destdir/$lwopdir/-X.so
-	install listwise/liblistwise/op/C/C.debug.so						$destdir/$lwopdir/C.so
-	install listwise/liblistwise/op/b/b.debug.so						$destdir/$lwopdir/b.so
-	install listwise/liblistwise/op/bn/bn.debug.so					$destdir/$lwopdir/bn.so
-	install listwise/liblistwise/op/c/c.debug.so						$destdir/$lwopdir/c.so
-	install listwise/liblistwise/op/can/can.debug.so				$destdir/$lwopdir/can.so
-	install listwise/liblistwise/op/cons/cons.debug.so			$destdir/$lwopdir/cons.so
-	install listwise/liblistwise/op/cp/cp.debug.so					$destdir/$lwopdir/cp.so
-	install listwise/liblistwise/op/d/d.debug.so						$destdir/$lwopdir/d.so
-	install listwise/liblistwise/op/datef/datef.debug.so		$destdir/$lwopdir/datef.so
-	install listwise/liblistwise/op/dj/dj.debug.so					$destdir/$lwopdir/dj.so
-	install listwise/liblistwise/op/dn/dn.debug.so					$destdir/$lwopdir/dn.so
-	install listwise/liblistwise/op/f/f.debug.so						$destdir/$lwopdir/f.so
-	install listwise/liblistwise/op/fn/fn.debug.so					$destdir/$lwopdir/fn.so
-	install listwise/liblistwise/op/g/g.debug.so						$destdir/$lwopdir/g.so
-	install listwise/liblistwise/op/hl/hl.debug.so					$destdir/$lwopdir/hl.so
-	install listwise/liblistwise/op/j/j.debug.so						$destdir/$lwopdir/j.so
-	install listwise/liblistwise/op/l/l.debug.so						$destdir/$lwopdir/l.so
-	install listwise/liblistwise/op/ls/ls.debug.so					$destdir/$lwopdir/ls.so
-	install listwise/liblistwise/op/lx/lx.debug.so					$destdir/$lwopdir/lx.so
-	install listwise/liblistwise/op/o/o.debug.so						$destdir/$lwopdir/o.so
-	install listwise/liblistwise/op/p/p.debug.so						$destdir/$lwopdir/p.so
-	install listwise/liblistwise/op/pop/pop.debug.so				$destdir/$lwopdir/pop.so
-	install listwise/liblistwise/op/r/r.debug.so						$destdir/$lwopdir/r.so
-	install listwise/liblistwise/op/rb/rb.debug.so					$destdir/$lwopdir/rb.so
-	install listwise/liblistwise/op/re/re.debug.so					$destdir/$lwopdir/re.so
-	install listwise/liblistwise/op/rp/rp.debug.so					$destdir/$lwopdir/rp.so
-	install listwise/liblistwise/op/rx/rx.debug.so					$destdir/$lwopdir/rx.so
-	install listwise/liblistwise/op/s/s.debug.so						$destdir/$lwopdir/s.so
-	install listwise/liblistwise/op/shift/shift.debug.so		$destdir/$lwopdir/shift.so
-	install listwise/liblistwise/op/sort/sort.debug.so			$destdir/$lwopdir/sort.so
-	install listwise/liblistwise/op/stat/stat.debug.so			$destdir/$lwopdir/stat.so
-	install listwise/liblistwise/op/sx/sx.debug.so					$destdir/$lwopdir/sx.so
-	install listwise/liblistwise/op/t/t.debug.so						$destdir/$lwopdir/t.so
-	install listwise/liblistwise/op/u/u.debug.so						$destdir/$lwopdir/u.so
-	install listwise/liblistwise/op/up/up.debug.so					$destdir/$lwopdir/up.so
-	install listwise/liblistwise/op/uu/uu.debug.so					$destdir/$lwopdir/uu.so
-	install listwise/liblistwise/op/v/v.debug.so						$destdir/$lwopdir/v.so
-	install listwise/liblistwise/op/vf/vf.debug.so					$destdir/$lwopdir/vf.so
-	install listwise/liblistwise/op/vp/vp.debug.so					$destdir/$lwopdir/vp.so
-	install listwise/liblistwise/op/w/w.debug.so						$destdir/$lwopdir/w.so
-	install listwise/liblistwise/op/wvf/wvf.debug.so				$destdir/$lwopdir/wvf.so
-	install listwise/liblistwise/op/wvp/wvp.debug.so				$destdir/$lwopdir/wvp.so
-	install listwise/liblistwise/op/x/x.debug.so						$destdir/$lwopdir/x.so
-	install listwise/liblistwise/op/xch/xch.debug.so				$destdir/$lwopdir/xch.so
-	install listwise/liblistwise/op/y/y.debug.so						$destdir/$lwopdir/y.so
-	install listwise/liblistwise/op/z/z.debug.so						$destdir/$lwopdir/z.so
+	install listwise/liblistwise/op/-X/-X.xapi.debug.so					$destdir/$lwopdir/-X-xapi.so
+	install listwise/liblistwise/op/C/C.xapi.debug.so						$destdir/$lwopdir/C-xapi.so
+	install listwise/liblistwise/op/b/b.xapi.debug.so						$destdir/$lwopdir/b-xapi.so
+	install listwise/liblistwise/op/bn/bn.xapi.debug.so					$destdir/$lwopdir/bn-xapi.so
+	install listwise/liblistwise/op/c/c.xapi.debug.so						$destdir/$lwopdir/c-xapi.so
+	install listwise/liblistwise/op/can/can.xapi.debug.so				$destdir/$lwopdir/can-xapi.so
+	install listwise/liblistwise/op/cons/cons.xapi.debug.so			$destdir/$lwopdir/cons-xapi.so
+	install listwise/liblistwise/op/cp/cp.xapi.debug.so					$destdir/$lwopdir/cp-xapi.so
+	install listwise/liblistwise/op/d/d.xapi.debug.so						$destdir/$lwopdir/d-xapi.so
+	install listwise/liblistwise/op/datef/datef.xapi.debug.so		$destdir/$lwopdir/datef-xapi.so
+	install listwise/liblistwise/op/dj/dj.xapi.debug.so					$destdir/$lwopdir/dj-xapi.so
+	install listwise/liblistwise/op/dn/dn.xapi.debug.so					$destdir/$lwopdir/dn-xapi.so
+	install listwise/liblistwise/op/f/f.xapi.debug.so						$destdir/$lwopdir/f-xapi.so
+	install listwise/liblistwise/op/fn/fn.xapi.debug.so					$destdir/$lwopdir/fn-xapi.so
+	install listwise/liblistwise/op/g/g.xapi.debug.so						$destdir/$lwopdir/g-xapi.so
+	install listwise/liblistwise/op/hl/hl.xapi.debug.so					$destdir/$lwopdir/hl-xapi.so
+	install listwise/liblistwise/op/j/j.xapi.debug.so						$destdir/$lwopdir/j-xapi.so
+	install listwise/liblistwise/op/l/l.xapi.debug.so						$destdir/$lwopdir/l-xapi.so
+	install listwise/liblistwise/op/ls/ls.xapi.debug.so					$destdir/$lwopdir/ls-xapi.so
+	install listwise/liblistwise/op/lx/lx.xapi.debug.so					$destdir/$lwopdir/lx-xapi.so
+	install listwise/liblistwise/op/o/o.xapi.debug.so						$destdir/$lwopdir/o-xapi.so
+	install listwise/liblistwise/op/p/p.xapi.debug.so						$destdir/$lwopdir/p-xapi.so
+	install listwise/liblistwise/op/pop/pop.xapi.debug.so				$destdir/$lwopdir/pop-xapi.so
+	install listwise/liblistwise/op/r/r.xapi.debug.so						$destdir/$lwopdir/r-xapi.so
+	install listwise/liblistwise/op/rb/rb.xapi.debug.so					$destdir/$lwopdir/rb-xapi.so
+	install listwise/liblistwise/op/re/re.xapi.debug.so					$destdir/$lwopdir/re-xapi.so
+	install listwise/liblistwise/op/rp/rp.xapi.debug.so					$destdir/$lwopdir/rp-xapi.so
+	install listwise/liblistwise/op/rx/rx.xapi.debug.so					$destdir/$lwopdir/rx-xapi.so
+	install listwise/liblistwise/op/s/s.xapi.debug.so						$destdir/$lwopdir/s-xapi.so
+	install listwise/liblistwise/op/shift/shift.xapi.debug.so		$destdir/$lwopdir/shift-xapi.so
+	install listwise/liblistwise/op/sort/sort.xapi.debug.so			$destdir/$lwopdir/sort-xapi.so
+	install listwise/liblistwise/op/stat/stat.xapi.debug.so			$destdir/$lwopdir/stat-xapi.so
+	install listwise/liblistwise/op/sx/sx.xapi.debug.so					$destdir/$lwopdir/sx-xapi.so
+	install listwise/liblistwise/op/t/t.xapi.debug.so						$destdir/$lwopdir/t-xapi.so
+	install listwise/liblistwise/op/u/u.xapi.debug.so						$destdir/$lwopdir/u-xapi.so
+	install listwise/liblistwise/op/up/up.xapi.debug.so					$destdir/$lwopdir/up-xapi.so
+	install listwise/liblistwise/op/uu/uu.xapi.debug.so					$destdir/$lwopdir/uu-xapi.so
+	install listwise/liblistwise/op/v/v.xapi.debug.so						$destdir/$lwopdir/v-xapi.so
+	install listwise/liblistwise/op/vf/vf.xapi.debug.so					$destdir/$lwopdir/vf-xapi.so
+	install listwise/liblistwise/op/vp/vp.xapi.debug.so					$destdir/$lwopdir/vp-xapi.so
+	install listwise/liblistwise/op/w/w.xapi.debug.so						$destdir/$lwopdir/w-xapi.so
+	install listwise/liblistwise/op/wvf/wvf.xapi.debug.so				$destdir/$lwopdir/wvf-xapi.so
+	install listwise/liblistwise/op/wvp/wvp.xapi.debug.so				$destdir/$lwopdir/wvp-xapi.so
+	install listwise/liblistwise/op/x/x.xapi.debug.so						$destdir/$lwopdir/x-xapi.so
+	install listwise/liblistwise/op/xch/xch.xapi.debug.so				$destdir/$lwopdir/xch-xapi.so
+	install listwise/liblistwise/op/y/y.xapi.debug.so						$destdir/$lwopdir/y-xapi.so
+	install listwise/liblistwise/op/z/z.xapi.debug.so						$destdir/$lwopdir/z-xapi.so
+	install listwise/liblistwise/op/ln/ln.xapi.debug.so					$destdir/$lwopdir/ln-xapi.so
 
 
   X=$?
@@ -440,14 +420,16 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
+  ((SKP+=3))
 else
   # launch stage 5.0
   exec 100>$tmp ; rm -f $tmp ; fml_5_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_5_1 & PIDS[1]=$!
+  exec 102>$tmp ; rm -f $tmp ; fml_5_2 & PIDS[2]=$!
 
   # harvest stage 5.0
   C=0
-  while [[ $C != 1 ]]; do
+  while [[ $C != 3 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -465,39 +447,12 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=3))
+  ((SKP+=1))
 else
   # launch stage 6.0
   exec 100>$tmp ; rm -f $tmp ; fml_6_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_6_1 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_6_2 & PIDS[2]=$!
 
   # harvest stage 6.0
-  C=0
-  while [[ $C != 3 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((6+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 6 $((idx+0)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
-else
-  # launch stage 7.0
-  exec 100>$tmp ; rm -f $tmp ; fml_7_0 & PIDS[0]=$!
-
-  # harvest stage 7.0
   C=0
   while [[ $C != 1 ]]; do
     read -u 99 idx
@@ -505,11 +460,11 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((9+$idx))
+    I=$((8+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 7 $((idx+0)) $X "$N"
+    printf '[%3d,%3d] X=%d %s\n' 6 $((idx+0)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done

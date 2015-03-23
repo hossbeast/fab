@@ -258,11 +258,11 @@ if(operators)
 "----------------- [ operators ] ---------------------------------------------------------\n"
 "\n"
 "options\n"
-" --o<N>          0 < N < d      only list operators having property <N>\n"
+" --o<N>          0 < N < f      only list operators having property <N>\n"
 " --o <opname>                   only list operators having the properties of operator <opname>\n"
 "\n"
 "%d operators matching 0x%"PRIx64"\n"
-" 1  2  3  4  5  6  7  8  9  A  B  C  D  name     description\n"
+" 1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  name     description\n"
 		, i
 		, opmask
 	);
@@ -271,23 +271,25 @@ if(operators)
 	{
 		if((g_ops[x]->optype & opmask) == opmask)
 		{
-			printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s"
-	/* effectual */
-				, g_ops[x]->optype & LWOPT_SELECTION_STAGE				? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_SELECTION_ACTIVATE			? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_SELECTION_RESET				? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_WINDOWS_STAGE					? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_WINDOWS_ACTIVATE				? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_WINDOWS_RESET					? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_ARGS_CANHAVE						? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_EMPTYSTACK_YES					? 'x' : ' '
+			printf("[%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c][%c] %6s - %s"
+/* effectual */
+				, g_ops[x]->optype & (0x01ULL << 0x00)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x01)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x02)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x03)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x04)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x05)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x06)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x07)		? 'x' : ' '
 
-	/* informational */
-				, g_ops[x]->optype & LWOPT_STACKOP								? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_MODIFIERS_CANHAVE			? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_OPERATION_PUSHBEFORE		? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_OPERATION_INPLACE			? 'x' : ' '
-				, g_ops[x]->optype & LWOPT_OPERATION_FILESYSTEM		? 'x' : ' '
+/* informational */
+				, g_ops[x]->optype & (0x01ULL << 0x08) 		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x09) 		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x0a)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x0b) 		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x0c)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x0d)		? 'x' : ' '
+				, g_ops[x]->optype & (0x01ULL << 0x0e)		? 'x' : ' '
 				, g_ops[x]->s
 				, g_ops[x]->desc
 			);
@@ -297,13 +299,12 @@ if(operators)
 				printf(" (%s)", g_ops[x]->mnemonic);
 			}
 			printf("\n");
-
-			i++;
 		}
 	}
 
+// from LWOPT_TABLE in liblistwise/operator/operator.h
 	printf(
-" 1  2  3  4  5  6  7  8  9  A  B  C  D\n"
+" 1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n"
 "\n"
 "properties\n"
 " 1  SELECTION_STAGE\n"
@@ -312,13 +313,15 @@ if(operators)
 " 4  WINDOWS_STAGE\n"
 " 5  WINDOWS_ACTIVATE\n"
 " 6  WINDOWS_RESET\n"
-" 7  ARGS_CANHAVE\n"
-" 8  EMPTYSTACK_YES\n"
-" 9  STACKOP\n"
-" A  MODIFIERS_CANHAVE\n"
-" B  OPERATION_PUSHBEFORE\n"
-" C  OPERATION_INPLACE\n"
-" D  OPERATION_FILESYSTEM\n"
+" 7  AGGREGATE\n"
+" 8  ACTIVATION_OVERRIDE\n"
+" 9  ARGS_CANHAVE\n"
+" A  EMPTYSTACK_YES\n"
+" B  STACKOP\n"
+" C  MODIFIERS_CANHAVE\n"
+" D  OPERATION_PUSHBEFORE\n"
+" E  OPERATION_INPLACE\n"
+" F  OPERATION_FILESYSTEM\n"
 	);
 }
 
@@ -378,9 +381,17 @@ int args_parse()
 				, { "o8"													, no_argument	, 0, 0 }
 				, { "o9"													, no_argument	, 0, 0 }
 				, { "oa"													, no_argument	, 0, 0 }
+				, { "oA"													, no_argument	, 0, 0 }
 				, { "ob"													, no_argument	, 0, 0 }
+				, { "oB"													, no_argument	, 0, 0 }
 				, { "oc"													, no_argument	, 0, 0 }
+				, { "oC"													, no_argument	, 0, 0 }
 				, { "od"													, no_argument	, 0, 0 }
+				, { "oD"													, no_argument	, 0, 0 }
+				, { "oe"													, no_argument	, 0, 0 }
+				, { "oE"													, no_argument	, 0, 0 }
+				, { "of"													, no_argument	, 0, 0 }
+				, { "oF"													, no_argument	, 0, 0 }
 
 /* program longopts */
 				, { "cycles-warn"									, no_argument	, &g_args->mode_cycles		, MODE_CYCLES_WARN }
@@ -518,9 +529,20 @@ int args_parse()
 			}
 			else if(longopts[longindex].name[0] == 'o' && strlen(longopts[longindex].name) == 2)
 			{
-				int off = atoi(longopts[longindex].name + 1);
-				opmask |= (0x01ULL << (off - 1));
-				operators = 1;
+				int off = 0;
+				int c = longopts[longindex].name[1];
+				if((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+				{
+					if(c >= '0' && c <= '9')
+						off = c - '0';
+					else if(c >= 'a' && c <= 'f')
+						off = 10 + (c - 'a');
+					else if(c >= 'A' && c <= 'F')
+						off = 10 + (c - 'A');
+
+					opmask |= (0x01ULL << (off - 1));
+					operators = 1;
+				}
 			}
 		}
 		else if(x == 'f')

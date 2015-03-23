@@ -60,3 +60,10 @@ finally:
 	XAPI_INFOF("sig", "%d", signum);
 coda;
 }
+
+xapi API xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
+{
+	fatalize(errno, sigprocmask, how, set, oldset);
+
+	finally : coda;
+}

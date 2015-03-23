@@ -57,7 +57,7 @@ int lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
 int lstack_windows_stage_all(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
-/// lstack_windows_stage_none
+/// lstack_windows_stage_nil
 //
 // SUMMARY
 //  set the staged windows to the empty-set

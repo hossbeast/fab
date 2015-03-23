@@ -27,16 +27,20 @@ typedef struct memblk memblk;
 typedef int xapi;
 #define restrict __restrict
 
-//
-// api
-//
-
 /// memblk_mk
 //
 // SUMMARY
 //  create an memblk
 //
 xapi memblk_mk(memblk ** mb)
+	__attribute__((nonnull));
+
+/// memblk_mk_mapped
+//
+// SUMMARY
+//  create an memblk whose allocations are backed by mmapped pages
+//
+xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
 	__attribute__((nonnull));
 
 /// memblk_alloc

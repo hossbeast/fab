@@ -32,7 +32,7 @@ typedef struct memblk
 #ifndef MEMBLK_INTERNALS
 # define MEMBLK_INTERNALS
 #endif
-	MEMBLK_INTERNALS
+	MEMBLK_INTERNALS;
 } memblk;
 
 #define restrict __restrict

@@ -20,23 +20,13 @@
 xunit_unit xunit = {
 	.tests = (xunit_test*[]) {
 
-/* wvp : WINDOWS_ACTIVATE */
+/* s : SELECTION_STAGE | WINDOWS_STAGE | MODIFIERS_CANHAVE | ARGS_CANHAVE | OPERATION_INPLACE */
 
-			(listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/. y wvp"
-				, .final = (char*[]) { "foo", "foo", "foo", 0 }
+		// remove part of the row, select/leave the remainder
+		  (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "1-DFOO", 0 }
+				, .xsfm = "s/^1// sy"
+				, .final = (char*[]) { "-DFOO", 0 }
 		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y wvp"
-				, .final = (char*[]) { "foo", "foo", "foo", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "a", "aa", "aaa", "aaaa", 0 }
-				, .xsfm = "l/a y wvp"
-				, .final = (char*[]) { 0 }
-		  }}
-		, 0
 	}
 };

@@ -109,17 +109,17 @@ int main(int argc, char** argv)
 	}
 
 	// std file descriptors
-#if DEBUG_IPC
-	for(x = 3; x < 64; x++)
-#else
-	for(x = 0; x < 64; x++)
-#endif
-	{
+#if !DEBUG_IPC
+	for(x = 0; x < 3; x++)
 		close(x);
-	}
+
 	fatal(xopen, "/dev/null", O_RDONLY, 0);
 	fatal(xopen, "/dev/null", O_WRONLY, 0);
 	fatal(xopen, "/dev/null", O_WRONLY, 0);
+#endif
+
+	for(x = 3; x < 64; x++)
+		close(x);
 
 	// process parameter gathering
 	fatal(params_setup);

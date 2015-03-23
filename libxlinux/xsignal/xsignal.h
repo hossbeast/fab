@@ -59,4 +59,11 @@ int xsignal(int signum, sighandler_t handler);
 int xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
 	__attribute__((nonnull(2)));
 
+/// xsigprocmask
+//
+// SUMMARY
+//  xapi proxy for sigprocmask
+//
+int xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
+
 #endif

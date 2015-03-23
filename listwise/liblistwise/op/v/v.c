@@ -44,12 +44,9 @@ static int wv_exec(operation*, lwx*, int**, int*, void**);
 operator op_desc[] = {
 	{
 		  .s						= "v"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_ACTIVATE
+		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
 		, .op_exec			= v_exec
 		, .mnemonic			= "invert"
-/*
-		, .aliases			= (char*[]) { "sv", "selection-invert", 0 }
-*/
 		, .desc					= "invert selection"
 	}
 	, {
@@ -85,7 +82,7 @@ int wv_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		int state = lstack_windows_state(lx, x, &win);
 		if(state == LWX_WINDOWS_ALL)
 		{
-			fatal(lstack_windows_stage_nil, lx, x);	// nil
+			fatal(lstack_windows_stage_nil, lx, x);
 		}
 		else
 		{

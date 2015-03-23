@@ -104,12 +104,12 @@ void bp_dump(bp *)
 //
 int bp_exec();
 
-/// bp_prepare
+/// bp_prepare_stage
 //
 // SUMMARY
 //  prepare the buildplan for execution by writing all of the formulas to a set of temp files
 //
-int bp_prepare(bp * bp, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsl, int * tsa)
+int bp_prepare_stage(bp * bp, int stage, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsl, int * tsa)
 	__attribute__((nonnull));
 
 /// bp_harvest
@@ -117,7 +117,7 @@ int bp_prepare(bp * bp, transform_parser * const gp, lwx *** stax, int * staxa, 
 // SUMMARY
 //  
 //
-int bp_harvest(bp * const restrict bp)
+int bp_harvest_stage(bp * const restrict bp, int stage)
 	__attribute__((nonnull));
 
 /// bp_free

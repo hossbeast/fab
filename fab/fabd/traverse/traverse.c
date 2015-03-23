@@ -32,7 +32,7 @@
 
 #define restrict __restrict
 
-// map from (uint32) hash of detected cycle -> (int) number of times that particular cycle was encountered
+// map from hash of detected cycle -> (int) number of times that particular cycle was encountered
 static map * o_cycles;
 
 /// raise_cycle
@@ -40,16 +40,20 @@ static map * o_cycles;
 // SUMMARY
 //  handle the fact that a cycle was detected in the dependency graph
 //
+// REMARKS
+//  weak arcs do not participate in cycles
+//
 // PARAMETERS
 //  stack   - stack of nodes comprising the cycle in reverse traversal order
-//            i.e. [0] is the last node visited, [n] is the first
+//            i.e. [1] is the last node visited, [n] is the first
+//            also the incident node is stored at [0]
 //  num     - number of elements in stack
 //
 // RETURNS
 //  1 - success; program execution may continue
 //  0 - failure; program execution must cease
 //
-static int raise_cycle(gn * (* const stack)[64], int stackl)
+static int raise_cycle(gn * (* const stack)[64], int stackl, int * proceed)
 {
 	void logcycle()
 	{
@@ -68,6 +72,7 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 		log_finish();
 	};
 
+	(*proceed) = 1;
 	if(g_args->mode_cycles == MODE_CYCLES_FAIL || g_args->mode_cycles == MODE_CYCLES_WARN)
 	{
 		// skip the beginning of the traversal, to the start of the cycle
@@ -75,36 +80,42 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 		{
 			if(log_start(L_ERROR))
 			{
-				logf(L_ERROR, "detected cycle(%d) : ", stackl);
+				logf(L_ERROR, "detected cycle(%d) : ", stackl - 1);
 				logcycle();
 			}
-			return 0;
+			(*proceed) = 0;
 		}
 		else if(g_args->mode_cycles == MODE_CYCLES_WARN)
 		{
-			// hash this cycle
-			uint32_t cyc = cksum((*stack), stackl * sizeof(*(*stack)));
+			/*
+			** hash this cycle using an order-invariant hash
+			** the cost of collisions is low : cycles are reported on more than once
+			*/
+			uint64_t cyc = 0;
+			int x;
+			for(x = 1; x < stackl; x++)
+				cyc += (uint64_t)(uintptr_t)(*stack)[x];
 
 			// get or set the hash into the map
 			int * c = 0;
 			if((c = map_get(o_cycles, MM(cyc))) == 0)
 			{
 				int cc = 0;
-				map_set(o_cycles, MM(cyc), MM(cc), &c);
+				fatal(map_set, o_cycles, MM(cyc), MM(cc), &c);
 			}
 
 			if((*c)++ == 0)
 			{
 				if(log_start(L_WARN))
 				{
-					logf(L_WARN, "detected cycle(%d) : ", stackl);
+					logf(L_WARN, "%lu detected cycle(%d) : ", cyc, stackl - 1);
 					logcycle();
 				}
 			}
 		}
 	}
 
-	return 1;
+	finally : coda;
 }
 
 /// enter
@@ -114,6 +125,7 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 //
 // PARAMETERS
 //  n           - node
+//  isweak			- whether this node was reached via a weak relation
 //  rel_off     - offset to collection of relations
 //  rel_mem_off - offset to relation member
 //  d           - depth
@@ -128,12 +140,14 @@ static int raise_cycle(gn * (* const stack)[64], int stackl)
 //  t           - traversal id
 //
 // RETURNS
-//  1 - callback failure, or fatal cycle
+//  2 - failure down the stack (user callback or map_set)
+//  1 - fatal cycle
 //  0 - success
 // -1 - cycle detection (internal)
 //
 static int enter(
 	  gn * const restrict n
+	, const int isweak
 	, const size_t rel_off
 	, const size_t rel_mem_off
 	, int (* const logic)(struct gn *, int)
@@ -148,11 +162,19 @@ static int enter(
 	, const int t
 )
 {
-	if(n->guard)	// cycle
+	if(n->guard)	// cycle detected
 	{
+		// always include the incident node
 		(*num) = 0;
 		if((*num) < sizeof((*stack)) / sizeof((*stack)[0]))
 			(*stack)[(*num)++] = n;
+
+		// add each node not reached via a weak dependency
+		if(!isweak)
+		{
+			if((*num) < sizeof((*stack)) / sizeof((*stack)[0]))
+				(*stack)[(*num)++] = n;
+		}
 
 		return -1;
 	}
@@ -172,8 +194,14 @@ static int enter(
 			return 2;
 	}
 
-	n->travel = t;	// descend
-	n->guard = 1;
+	// each node may be travelled at most twice, once where it is not being invoked upon
+	// and once where it is being invoked upon
+	if(invoke)
+		n->travel0 = t;
+	else
+		n->travel1 = t;
+
+	n->guard = 1;	// descend
 
 	int x;
 	for(x = 0; x < rels->l; x++)
@@ -184,12 +212,17 @@ static int enter(
 			{
 				gn * next = *(gn**)(((char*)rels->e[x]) + rel_mem_off);
 
-				if(next->travel != t)
+				if(nofile || ((n->type & GN_TYPE_HASFILE) ^ (next->type & GN_TYPE_HASFILE)) == 0)
 				{
-					if(nofile || ((n->type & GN_TYPE_HASFILE) ^ (next->type & GN_TYPE_HASFILE)) == 0)
+					// ninvoke : whether the next node is to be invoked upon
+					int ninvoke = weak == 2 && rels->e[x]->weak ? 0 : 1;
+
+					// check the travel guard
+					if((ninvoke && next->travel0 != t) || (!ninvoke && next->travel1 != t))
 					{
 						int e = enter(
-							  next
+								next
+							, rels->e[x]->weak
 							, rel_off
 							, rel_mem_off
 							, logic
@@ -197,36 +230,59 @@ static int enter(
 							, bridge
 							, nofile
 							, before
-							, weak == 2 && rels->e[x]->weak ? 0 : 1
-							, d + 1
+							, ninvoke
+							, d + (rels->e[x]->weak ? 0 : 1)		// depth only increases for a non-weak arc
 							, stack
 							, num
 							, t
 						);
 						if(e == -1)
 						{
-							if((*num) < sizeof((*stack)) / sizeof((*stack)[0]))
-								(*stack)[(*num)++] = n;
+							if(!isweak)
+							{
+								if((*num) < sizeof((*stack)) / sizeof((*stack)[0]))
+									(*stack)[(*num)++] = n;
+							}
 
 							if((*stack)[0] == n)
 							{
-								if(raise_cycle(stack, (*num)) == 0)
+								int proceed = 1;
+
+								// raise the cycle if there is at least one non-incident participating node
+								if((*num) > 2)
+								{
+									if(g_args->mode_cycles == MODE_CYCLES_FAIL || g_args->mode_cycles == MODE_CYCLES_WARN)
+									{
+										prologue;
+										fatal(raise_cycle, stack, (*num), &proceed);
+
+										int R = 0;
+										finally : conclude(&R);
+
+										if(R)
+										{
+											n->guard = 0;
+											return 2;		// return other error
+										}
+									}
+								}
+
+								if(proceed == 0)
 								{
 									n->guard = 0;
-									return 1;
+									return 1;			// return fatal cycle
 								}
 							}
 							else
 							{
-								// continue unwinding
 								n->guard = 0;
-								return -1;
+								return -1;			// continue unwinding
 							}
 						}
 						else if(e)
 						{
 							n->guard = 0;
-							return 1;
+							return e;					// propagate
 						}
 					}
 				}
@@ -274,6 +330,7 @@ static int traverse(
 
 	int r = enter(
 	  	n
+		, 0							// isweak
 		, rel_off
 		, rel_mem_off
 		, logic
@@ -281,8 +338,8 @@ static int traverse(
 		, bridge
 		, nofile
 		, before
-		, 1
-		, 0
+		, 1							// invoke
+		, 0							// depth
 		, &stack
 		, &num
 		, ++o_t

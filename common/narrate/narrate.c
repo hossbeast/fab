@@ -15,28 +15,37 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "listwise_test.h"
+#include <stdio.h>
 
-xunit_unit xunit = {
-	.tests = (xunit_test*[]) {
+#include "pstring.h"
 
-/* wvp : WINDOWS_ACTIVATE */
+#include "say.h"
 
-			(listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/. y wvp"
-				, .final = (char*[]) { "foo", "foo", "foo", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y wvp"
-				, .final = (char*[]) { "foo", "foo", "foo", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "a", "aa", "aaa", "aaaa", 0 }
-				, .xsfm = "l/a y wvp"
-				, .final = (char*[]) { 0 }
-		  }}
-		, 0
+int render(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+{
+	if(sz - (*z))
+	{
+		va_list va;
+		va_start(va, fmt);
+		(*z) += MIN(sz, vsnprintf(dst + (*z), sz - (*z), fmt, va));
+		va_end(va);
 	}
-};
+
+	finally : coda;
+}
+
+int psrender(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+{
+	size_t ol = 0;
+	if(*ps)
+		ol = (*ps)->l;
+
+	va_list va;
+	va_start(va, fmt);
+	fatal(psvcatf, ps, fmt, va);
+	va_end(va);
+
+	(*z) += (*ps)->l - ol;
+
+	finally : coda;
+}

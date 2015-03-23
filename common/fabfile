@@ -18,39 +18,52 @@
 once {
 	+[ $*/../vars.fab ]
 
-	$copts = [
+	$cflags = [
 		# include paths - mark as system to preclude dependency discovery from gcc
 		[ $dlibxapi $dlibxlinux $dliblistwise $dlibpstring ~ s/^/-I ]
 	]
 
-	# c files
-	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ final.o ]; $cflags = [ $cflags_final $copts ])
-	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ debug.o ]; $cflags = [ $cflags_debug $copts ])
-	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ devel.o ]; $cflags = [ $cflags_devel $copts ])
+	$cflags_eapi_final = [ $cflags_eapi_final $cflags ]
+	$cflags_eapi_debug = [ $cflags_eapi_debug $cflags ]
+	$cflags_eapi_devel = [ $cflags_eapi_devel $cflags ]
+	$cflags_xapi_final = [ $cflags_xapi_final $cflags ]
+	$cflags_xapi_debug = [ $cflags_xapi_debug $cflags ]
+	$cflags_xapi_devel = [ $cflags_xapi_devel $cflags ]
 
-	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ final.pic.o ]; $cflags = [ $cflags_final $copts -fPIC ])
-	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ debug.pic.o ]; $cflags = [ $cflags_debug $copts -fPIC ])
-	+[@std.c]($rdirs = $dcommon; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ devel.pic.o ]; $cflags = [ $cflags_devel $copts -fPIC ])
+	# c files
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ eapi.final.o ]; $cflags = $cflags_eapi_final)
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ eapi.debug.o ]; $cflags = $cflags_eapi_debug)
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ eapi.devel.o ]; $cflags = $cflags_eapi_devel)
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ xapi.final.o ]; $cflags = $cflags_xapi_final)
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ xapi.debug.o ]; $cflags = $cflags_xapi_debug)
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ xapi.devel.o ]; $cflags = $cflags_xapi_devel)
+
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ eapi.final.pic.o ]; $cflags = [ $cflags_eapi_final -fPIC ])
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ eapi.debug.pic.o ]; $cflags = [ $cflags_eapi_debug -fPIC ])
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ eapi.devel.pic.o ]; $cflags = [ $cflags_eapi_devel -fPIC ])
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ xapi.final.pic.o ]; $cflags = [ $cflags_xapi_final -fPIC ])
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ xapi.debug.pic.o ]; $cflags = [ $cflags_xapi_debug -fPIC ])
+	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ xapi.devel.pic.o ]; $cflags = [ $cflags_xapi_devel -fPIC ])
 
 	# test sos
 	+[$dxunit/../fablib/xunit/tests.fab](
-		$rdirs = $dcommon;
+		$rdirs = $*;
 		$cc;
-		$dext = [ devel.pic.o ];
-		$dscext = [ devel.pic.o ];
-		$soext = [ devel.xu.so ];
-		$cflags = [ $cflags_devel [ [ $dlibxunit $dlibxapi ] ~ s/^/-I ] -fPIC ];
+		$dext = [ xapi.devel.pic.o ];
+		$dscext = [ xapi.devel.pic.o ];
+		$soext = [ xapi.devel.xu.so ];
+		$cflags = [ $cflags_xapi_devel [ [ $dlibxunit $dlibxapi ] ~ s/^/-I ] -fPIC ];
 		-$tsopaths
 	)
 
 	# run all tests
-	[ @test ] : [ $xunit_devel $tsopaths ]
+	[ @test ] : [ $xunit_xapi_devel $tsopaths ]
 	{
-		[ $xunit_devel ] [ $tsopaths ~ fi ] 1>&501 2>&502
+		[ $xunit_xapi_devel ] [ $tsopaths ~ fi ] 1>&501 2>&502
 	}
 
-	[ @test.more ] : [ $xunit_devel $tsopaths ]
+	[ @test.more ] : [ $xunit_xapi_devel $tsopaths ]
 	{
-		[ $xunit_devel ] +XUNIT [ $tsopaths ~ fi ] 1>&501 2>&502
+		[ $xunit_xapi_devel ] +XUNIT [ $tsopaths ~ fi ] 1>&501 2>&502
 	}
 }

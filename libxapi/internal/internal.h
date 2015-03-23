@@ -22,19 +22,26 @@
 // api
 //
 #include "xapi.h"
-#include "unwind.h"
-#include "trace.h"
-#include "callstack.h"
 #include "error/error.h"
 #include "error/SYS.errtab.h"
 #include "xapi/XAPI.errtab.h"
 
+#if XAPI_PROVIDE_BACKTRACE
+#include "unwind.h"
+#include "trace/trace.h"
+#include "callstack/callstack.h"
+#include "frame/frame.h"
+#endif
+
 //
 // internal
 //
+#include "error/error.internal.h"
+
+#if XAPI_PROVIDE_BACKTRACE
 #include "trace/trace.internal.h"
 #include "callstack/callstack.internal.h"
-#include "error/error.internal.h"
+#endif
 
 #undef perrtab
 #define perrtab perrtab_SYS

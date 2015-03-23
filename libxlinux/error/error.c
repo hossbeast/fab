@@ -20,10 +20,17 @@
 #include "internal.h"
 #include "xapi/XAPI.errtab.h"
 
-static etable * tab[3];
+static etable * tab[
+#if XAPI_PROVIDE_BACKTRACE
+3
+#else
+1
+#endif
+];
 
 void __attribute__((constructor)) init()
 {
+#if XAPI_PROVIE_BACKTRACE
 	tab[0] = perrtab_SYS;
 	tab[0]->id = 1;
 
@@ -32,6 +39,10 @@ void __attribute__((constructor)) init()
 
 	tab[2] = perrtab_XLINUX;
 	tab[2]->id = 3;
+#else
+	tab[0] = perrtab_XLINUX;
+	tab[0]->id = 1;
+#endif
 }
 
 const char * xlinux_errname(const int code)

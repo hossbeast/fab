@@ -30,21 +30,33 @@
 +[ $dfabcore ]() 			@fabcore
 
 # build artifacts
-[ @all ] : [ @final @debug @devel ]
-[ @final ] : [ @libxapi.final @libxlinux.final @libpstring.final @liblistwise.final @listwise.final @fabcore.final ]
-[ @debug ] : [ @libxapi.debug @libxlinux.debug @libpstring.debug @liblistwise.debug @listwise.debug @fabcore.debug ]
-[ @devel ] : [ @libxapi.devel @libxlinux.devel @libpstring.devel @liblistwise.devel @listwise.devel @fabcore.devel ]
+[ @all ] : [ @all.xapi ]
+[ @final ] : [ @final.xapi ]
+[ @debug ] : [ @debug.xapi ]
+[ @devel ] : [ @devel.xapi ]
 [ @man ] : [ @fabcore.man @listwise.man ]
 
+[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @final.xapi ] : [ @libxapi.final.xapi @libxlinux.final.xapi @libpstring.final.xapi @liblistwise.final.xapi @listwise.final.xapi @fabcore.final.xapi ]
+[ @debug.xapi ] : [ @libxapi.debug.xapi @libxlinux.debug.xapi @libpstring.debug.xapi @liblistwise.debug.xapi @listwise.debug.xapi @fabcore.debug.xapi ]
+[ @devel.xapi ] : [ @libxapi.devel.xapi @libxlinux.devel.xapi @libpstring.devel.xapi @liblistwise.devel.xapi @listwise.devel.xapi @fabcore.devel.xapi ]
+
 # install libraries
-[ @install.base.final ] : [ @libxapi.install.final @libxlinux.install.final @libpstring.install.final @liblistwise.install.final @listwise.install.final ]
-[ @install.base.debug ] : [ @libxapi.install.debug @libxlinux.install.debug @libpstring.install.debug @liblistwise.install.debug @listwise.install.debug ]
+[ @install.base.final ] : [ @install.base.final.xapi ]
+[ @install.base.debug ] : [ @install.base.debug.xapi ]
+[ @install.base.final.xapi ] : [ @libxapi.install.final.xapi @libxlinux.install.final.xapi @libpstring.install.final.xapi @liblistwise.install.final.xapi @listwise.install.final.xapi ]
+[ @install.base.debug.xapi ] : [ @libxapi.install.debug.xapi @libxlinux.install.debug.xapi @libpstring.install.debug.xapi @liblistwise.install.debug.xapi @listwise.install.debug.xapi ]
 
 # install local and dist
-[ @install.local.final ] : [ @install.base.final @fabcore.install.local.final ]
-[ @install.local.debug ] : [ @install.base.debug  @fabcore.install.local.debug ]
-[ @install.dist.final ] : [ @install.base.final @fabcore.install.dist.final ]
-[ @install.dist.debug ] : [ @install.base.debug  @fabcore.install.dist.debug ]
+[ @install.local.final ] : [ @install.local.final.xapi ]
+[ @install.local.debug ] : [ @install.local.debug.xapi ]
+[ @install.dist.final ] : [ @install.dist.final.xapi ]
+[ @install.dist.debug ] : [ @install.dist.debug.xapi ]
+
+[ @install.local.final.xapi ] : [ @install.base.final.xapi @fabcore.install.local.final ]
+[ @install.local.debug.xapi ] : [ @install.base.debug.xapi  @fabcore.install.local.debug ]
+[ @install.dist.final.xapi ] : [ @install.base.final.xapi @fabcore.install.dist.final ]
+[ @install.dist.debug.xapi ] : [ @install.base.debug.xapi  @fabcore.install.dist.debug ]
 
 # doc
 [ @install.man ] : [ @fabcore.install.man @listwise.install.man ]

@@ -103,6 +103,8 @@ static pid_t							fab_pids[3];
 static uint64_t						varshash[2];
 
 // signal handling
+static sigset_t none;
+static sigset_t all;
 static int o_signum;
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
@@ -157,13 +159,18 @@ static int hashfiles(int iteration)
 					// missing file
 					gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
 				}
-				else if(hashblock_cmp(gn_nodes.e[x]->hb))
+				else
 				{
-					if(!gn_nodes.e[x]->invalid)
-						logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_CHANGED), gn_nodes.e[x]->idstring);
+					gn_nodes.e[x]->invalid &= ~GN_INVALIDATION_NXFILE;
 
-					// changed file
-					gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+					if(hashblock_cmp(gn_nodes.e[x]->hb))
+					{
+						if(!gn_nodes.e[x]->invalid)
+							logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_CHANGED), gn_nodes.e[x]->idstring);
+
+						// changed file
+						gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+					}
 				}
 
 				// convert to actions
@@ -189,12 +196,14 @@ static int hashfiles(int iteration)
 	finally : coda;
 }
 
-static int loop(char * stem)
+static int loop()
 {
 	int x;
 	int y;
 
-	char space[256];
+	int fd = -1;
+
+	char space[2048];
 
 	// reset some stuff
 	tsl = 0;
@@ -294,10 +303,16 @@ static int loop(char * stem)
 	// propagate invalidations and clear changes from this iteration
 	int visit(gn * gn, int d)
 	{
-		if(d)
+		if(d == 0)
+		{
+			// this will include the node itself and nodes with a weak dependency on it
+		}
+		else
 		{
 			if(!gn->invalid)
+			{
 				logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_SOURCES), gn->idstring);
+			}
 
 			gn->invalid |= GN_INVALIDATION_SOURCES;
 
@@ -317,7 +332,7 @@ static int loop(char * stem)
 			// do not cross the nofile boundary
 			fatal(traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile, gn_nodes.e[x], visit);
 
-			gn_nodes.e[x]->invalid &= ~(GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER);
+			gn_nodes.e[x]->invalid &= ~(GN_INVALIDATION_CHANGED | GN_INVALIDATION_USER);
 		}
 	}
 
@@ -441,7 +456,7 @@ static int loop(char * stem)
 					bp_dump(plan);
 
 				// write buildscript to the IPC dir
-				fatal(buildscript_mk, plan, g_args->argvs, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tsp, &tsa, &tsw, stem);
+				fatal(buildscript_mk, plan, g_args->argvs, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tsp, &tsa, &tsw, g_params.ipcstem);
 			}
 			else
 			{
@@ -459,39 +474,75 @@ static int loop(char * stem)
 				{
 					if(plan && plan->stages_l)
 					{
-						// execute the build plan, one stage at a time
-						fatal(bp_prepare, plan, ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
+						// create tmp directory for the build
+						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
+						fatal(mkdirp, ptmp->s, FABIPC_DIR);
+						
+						// create symlink to the bp in hashdir
+						snprintf(space, sizeof(space), "%s/bp", g_params.ipcstem);
+						fatal(uxunlink, space, 0);
+						fatal(xsymlink, ptmp->s, space);
 
-						// work required ; notify fab
-						fatal(uxkill, g_params.fab_pid, FABSIG_BPSTART, 0);
+						// create file with the number of stages
+						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/stages", g_params.fab_pid);
+						fatal(uxunlink, ptmp->s, 0);
+						fatal(ixclose, &fd);
+						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
+						fatal(axwrite, fd, &plan->stages_l, sizeof(plan->stages_l));
+						
+						// create file with the number of commands
+						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/commands", g_params.fab_pid);
+						fatal(uxunlink, ptmp->s, 0);
+						fatal(ixclose, &fd);
+						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
+						int cmdsl = 0;
+						for(x = 0; x < plan->stages_l; x++)
+							cmdsl += plan->stages[x].evals_l;
+						fatal(axwrite, fd, &cmdsl, sizeof(cmdsl));
 
-						// await response
-						o_signum = 0;
-						pause();
-
-						if(o_signum == FABSIG_BPGOOD)
+						// prepare and execute the build plan, one stage at a time
+						int i;
+						for(i = 0; i < plan->stages_l; i++)
 						{
-							// plan was executed successfully ; update nodes for all products
-							for(x = 0; x < tsl; x++)
-							{
-								for(y = 0; y < tsp[x]->fmlv->productsl; y++)
-								{
-									// mark as up-to-date
-									tsp[x]->fmlv->products[y]->invalid = 0;
+							tsl = 0;
+							fatal(bp_prepare_stage, plan, i, ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
 
-									// reload hashblock
-									fatal(hashblock_stat, tsp[x]->fmlv->products[y]->path->can, tsp[x]->fmlv->products[y]->hb);
+							// block signals
+							fatal(xsigprocmask, SIG_SETMASK, &all, 0);
+
+							// work required ; notify fab
+							fatal(uxkill, g_params.fab_pid, FABSIG_BPSTART, 0);
+
+							// await response
+							o_signum = 0;
+							sigsuspend(&none);
+							fatal(xsigprocmask, SIG_SETMASK, &none, 0);
+
+							if(o_signum == FABSIG_BPGOOD)
+							{
+								// plan was executed successfully ; update nodes for all products
+								for(x = 0; x < tsl; x++)
+								{
+									for(y = 0; y < tsp[x]->fmlv->productsl; y++)
+									{
+										// mark as up-to-date
+										tsp[x]->fmlv->products[y]->invalid = 0;
+
+										// reload hashblock
+										fatal(hashblock_stat, tsp[x]->fmlv->products[y]->path->can, tsp[x]->fmlv->products[y]->hb);
+									}
 								}
 							}
-						}
-						else if(o_signum == FABSIG_BPBAD)
-						{
-							// plan failed ; harvest the results
-							fatal(bp_harvest, plan);
-						}
-						else
-						{
-							failf(FAB_BADIPC, "expected signal %d or %d, actual %d", FABSIG_BPGOOD, FABSIG_BPBAD, o_signum);
+							else if(o_signum == FABSIG_BPBAD)
+							{
+								// failure ; harvest the results
+								fatal(bp_harvest_stage, plan, i);
+								break;
+							}
+							else
+							{
+								failf(FAB_BADIPC, "expected signal %d or %d, actual %d", FABSIG_BPGOOD, FABSIG_BPBAD, o_signum);
+							}
 						}
 					}
 				}
@@ -501,13 +552,14 @@ static int loop(char * stem)
 
 finally:
 	bp_xfree(&plan);
+	fatal(ixclose, &fd);
 coda;
 }
 
 int main(int argc, char** argv, char ** envp)
 {
-	char stem[2048];
 	char space[2048];
+	char space2[2048];
 
 	int fd = -1;
 
@@ -538,9 +590,9 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 #endif
 
 	// unblock all signals
-	sigset_t all;
 	sigfillset(&all);
-	sigprocmask(SIG_UNBLOCK, &all, 0);
+	sigemptyset(&none);
+	fatal(xsigprocmask, SIG_SETMASK, &none, 0);
 
 	// handle all signals
 	struct sigaction action = {
@@ -627,17 +679,22 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	fatal(var_root, &rmap);
 
 	// get ipc dir
-	uint32_t canhash;
-	if(argc < 2 || parseuint(argv[1], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
+	if(argc < 2 || parseuint(argv[1], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &g_params.canhash, 0) != 0)
 		fail(FAB_BADARGS);
 
 	// ipc-dir stem
-	snprintf(stem, sizeof(stem), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
+	snprintf(g_params.ipcstem, sizeof(g_params.ipcstem), "%s/%u", XQUOTE(FABIPCDIR), g_params.canhash);
+
+	// create symlink for dsc in hashdir
+	snprintf(space, sizeof(space), "%s/dsc", g_params.ipcstem);
+	snprintf(space2, sizeof(space2), XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
+	fatal(uxunlink, space, 0);
+	fatal(xsymlink, space2, space);
 
 	while(o_signum != SIGINT && o_signum != SIGQUIT && o_signum != SIGTERM)
 	{
 		// read fab/pid
-		snprintf(space, sizeof(space), "%s/fab/pid", stem);
+		snprintf(space, sizeof(space), "%s/fab/pid", g_params.ipcstem);
 		fatal(ixclose, &fd);
 		fatal(xopen, space, O_RDONLY, &fd);
 
@@ -658,19 +715,19 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				fatal(ixclose, &fd);
 
 				// reopen standard file descriptors
-				snprintf(space, sizeof(space), "%s/fab/out", stem);
+				snprintf(space, sizeof(space), "%s/fab/out", g_params.ipcstem);
 				fatal(xopen, space, O_RDWR, &fd);
 				fatal(xdup2, fd, 1);
 				fd = -1;
 
-				snprintf(space, sizeof(space), "%s/fab/err", stem);
+				snprintf(space, sizeof(space), "%s/fab/err", g_params.ipcstem);
 				fatal(xopen, space, O_RDWR, &fd);
 				fatal(xdup2, fd, 2);
 				fd = -1;
 			}
 
 			// open args file
-			snprintf(space, sizeof(space), "%s/args", stem);
+			snprintf(space, sizeof(space), "%s/args", g_params.ipcstem);
 			fatal(ixclose, &argsfd);
 			fatal(xopen, space, O_RDWR, &argsfd);
 			
@@ -685,7 +742,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			args_thaw((void*)g_args);
 
 			// open logs file
-			snprintf(space, sizeof(space), "%s/logs", stem);
+			snprintf(space, sizeof(space), "%s/logs", g_params.ipcstem);
 			fatal(ixclose, &logsfd);
 			fatal(xopen, space, O_RDWR, &logsfd);
 
@@ -724,7 +781,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			// chdir
 			if(!nodaemon)
 			{
-				snprintf(space, sizeof(space), "%s/fab/cwd", stem);
+				snprintf(space, sizeof(space), "%s/fab/cwd", g_params.ipcstem);
 				fatal(xchdir, space);
 			}
 
@@ -845,10 +902,13 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 			// handle this request
 			int frame;
-			if(invoke(&frame, loop, stem))
+			if(invoke(&frame, loop))
 			{
+				// capture the error code
+				int code = XAPI_ERRCODE;
+
 				// propagate errors other than those specifically being trapped
-				if(XAPI_ERRTAB == perrtab_FAB && fab_swallow[XAPI_ERRCODE])
+				if(XAPI_ERRTAB == perrtab_FAB && fab_swallow[code])
 				{
 
 				}
@@ -880,15 +940,26 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 #if DEBUG || DEVEL
 				if(mode == MODE_BACKTRACE_FULL)
+				{
 					tracesz = xapi_trace_full(space, sizeof(space));
+				}
 				else
 #endif
+				{
 					tracesz = xapi_trace_pithy(space, sizeof(space));
+				}
 
+				// log the error
 				logw(L_RED, space, tracesz);
 
 				// pop the error frames
 				xapi_callstack_unwindto(frame);
+
+				// write the error to ipcdir
+				snprintf(space, sizeof(space), "%s/fabd/error", g_params.ipcstem);
+				fatal(ixclose, &fd);
+				fatal(xopen_mode, space, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
+				fatal(axwrite, fd, &code, sizeof(code));
 			}
 
 			if(log_would(L_USAGE))

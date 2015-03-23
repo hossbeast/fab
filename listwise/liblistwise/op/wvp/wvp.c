@@ -52,7 +52,8 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	if(go)
 	{
 		lwx_windows * win;
-		if(lstack_windows_state(lx, x, &win) == LWX_WINDOWS_SOME)
+		int state;
+		if((state = lstack_windows_state(lx, x, &win)) == LWX_WINDOWS_SOME)
 		{
 			// preceeding the first windowed segment
 			fatal(lstack_windows_stage, lx, x, 0, win->s[0].o);

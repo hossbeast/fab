@@ -202,7 +202,8 @@ typedef struct gn
 
 	// traversal tracking
 	int									guard;
-	int									travel;
+	int									travel0;
+	int									travel1;
 	int									mark;
 
 	// buildplan eval tracking

@@ -63,9 +63,6 @@ static struct filter
 static int				o_filter_a;
 static int				o_filter_l;
 
-struct g_logs_t * g_logs;
-int g_logs_l;
-
 char **			g_argv;
 int					g_argc;
 char *			g_argvs;
@@ -233,7 +230,7 @@ static int finish()
 	logwrite("\n", 1, 0);
 
 	// flush to stdout
-	int __attribute__((unused)) r = write(1, o_space, o_space_l);
+	int __attribute__((unused)) r = write(2, o_space, o_space_l);
 
 	o_space_bits = 0;
 	return w;
