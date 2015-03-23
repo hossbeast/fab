@@ -24,13 +24,20 @@
 #include "xlinux.h"
 #include "xlinux/mempolicy.h"
 
-struct memblk_policy
+struct memblk_internals
 {
-	mempolicy;
-	struct memblk * mb;
+	struct memblk_policy
+	{
+		mempolicy;
+		struct memblk * mb;
+	} policy;
+
+	int mapped;
+	int prot;
+	int flags;
 };
 
-#define MEMBLK_INTERNALS struct memblk_policy policy;
+#define MEMBLK_INTERNALS struct memblk_internals
 #include "memblk.h"
 #include "memblk.def.h"
 
@@ -57,21 +64,21 @@ static xapi policy_realloc(mempolicy * restrict plc, void * restrict p, size_t e
 //
 // api
 //
-mempolicy * memblk_getpolicy(memblk * mb)
-{
-	if(mb->policy.mb == 0)
-	{
-		mb->policy.malloc = policy_malloc;
-		mb->policy.realloc = policy_realloc;
-		mb->policy.mb = mb;
-	}
-
-	return &mb->policy;
-}
 
 xapi memblk_mk(memblk ** mb)
 {
 	fatal(xmalloc, mb, sizeof(**mb));
+
+	finally : coda;
+}
+
+xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
+{
+	fatal(xmalloc, mb, sizeof(**mb));
+
+	(*mb)->mapped = 1;
+	(*mb)->prot = prot;
+	(*mb)->flags = flags;
 
 	finally : coda;
 }
@@ -102,7 +109,15 @@ xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 		else
 			mb->blocks[mb->blocksl].a = MEMBLOCK_LARGE;
 
-		fatal(xmalloc, &mb->blocks[mb->blocksl].s, sizeof(*mb->blocks[0].s) * mb->blocks[mb->blocksl].a);
+		// allocate the block
+		if(mb->mapped)
+		{
+			fatal(xmmap, 0, mb->blocks[mb->blocksl].a, mb->prot, mb->flags, 0, 0, (void*)&mb->blocks[mb->blocksl].s);
+		}
+		else
+		{
+			fatal(xmalloc, &mb->blocks[mb->blocksl].s, sizeof(*mb->blocks[0].s) * mb->blocks[mb->blocksl].a);
+		}
 
 		// cumulative offset
 		if(mb->blocksl)
@@ -136,7 +151,16 @@ void memblk_free(memblk * mb)
 	{
 		int x;
 		for(x = 0; x < mb->blocksl; x++)
-			free(mb->blocks[x].s);
+		{
+			if(mb->mapped)
+			{
+				munmap(mb->blocks[x].s, mb->blocks[x].a);
+			}
+			else
+			{
+				free(mb->blocks[x].s);
+			}
+		}
 
 		free(mb->blocks);
 	}
@@ -147,6 +171,18 @@ void memblk_xfree(memblk ** mb)
 {
 	memblk_free(*mb);
 	*mb = 0;
+}
+
+mempolicy * memblk_getpolicy(memblk * mb)
+{
+	if(mb->policy.mb == 0)
+	{
+		mb->policy.malloc = policy_malloc;
+		mb->policy.realloc = policy_realloc;
+		mb->policy.mb = mb;
+	}
+
+	return &mb->policy;
 }
 
 xapi memblk_writeto(memblk * const restrict mb, const int fd)
