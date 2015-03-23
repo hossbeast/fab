@@ -371,7 +371,7 @@ int fml_exec(ts * const restrict ts, int num)
 	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_CODE, &ts->cmd_fd);
 
 	// write the cmd to the tmp file
-	fatal(xwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l, 0);
+	fatal(axwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l);
 	fatal(xclose, ts->cmd_fd);
 
 	// create tmp file to capture stdout

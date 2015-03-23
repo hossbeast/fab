@@ -49,6 +49,10 @@
 #include "args.h"
 #include "logs.h"
 
+#if XAPI_PROVIDE_ERRCODE
+__thread int __xapi_r;
+#endif
+
 int listwise_would(void * token, void * udata)
 {
 	return log_would(*(uint64_t*)token);
@@ -179,7 +183,6 @@ static struct listwise_logging * logging = (struct listwise_logging[]) {{
 int main(int argc, char ** argv, char ** envp)
 {
 	char space[4096];
-	size_t tracesz = 0;
 
 	pstring * temp = 0;
 	pstring *	trans = 0;
@@ -424,8 +427,11 @@ finally:
 	psfree(temp);
 	psfree(trans);
 
+#if XAPI_PROVIDE_BACKTRACE
 	if(XAPI_UNWINDING)
 	{
+		size_t tracesz = 0;
+
 #if DEBUG || DEVEL
 		if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
 		{
@@ -441,6 +447,7 @@ finally:
 
 		logw(L_RED, space, tracesz);
 	}
+#endif
 
 	log_teardown();
 coda;

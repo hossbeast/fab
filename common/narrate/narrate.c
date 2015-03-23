@@ -15,38 +15,37 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_INTERNAL_H
-#define _XAPI_INTERNAL_H
+#include <stdio.h>
 
-//
-// api
-//
-#include "xapi.h"
-#include "error/error.h"
-#include "error/SYS.errtab.h"
-#include "xapi/XAPI.errtab.h"
+#include "pstring.h"
 
-#if XAPI_PROVIDE_BACKTRACE
-#include "unwind.h"
-#include "trace/trace.h"
-#include "callstack/callstack.h"
-#include "frame/frame.h"
-#endif
+#include "say.h"
 
-//
-// internal
-//
-#include "error/error.internal.h"
+int render(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+{
+	if(sz - (*z))
+	{
+		va_list va;
+		va_start(va, fmt);
+		(*z) += MIN(sz, vsnprintf(dst + (*z), sz - (*z), fmt, va));
+		va_end(va);
+	}
 
-#if XAPI_PROVIDE_BACKTRACE
-#include "trace/trace.internal.h"
-#include "callstack/callstack.internal.h"
-#endif
+	finally : coda;
+}
 
-#undef perrtab
-#define perrtab perrtab_SYS
+int psrender(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+{
+	size_t ol = 0;
+	if(*ps)
+		ol = (*ps)->l;
 
-#define API __attribute__((visibility("protected")))
-#define APIDATA
+	va_list va;
+	va_start(va, fmt);
+	fatal(psvcatf, ps, fmt, va);
+	va_end(va);
 
-#endif
+	(*z) += (*ps)->l - ol;
+
+	finally : coda;
+}

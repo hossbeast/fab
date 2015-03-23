@@ -36,7 +36,7 @@ i (idempotent)
 u (union)
  fails only in some subset of failure cases of the underlying function as specified
 
-a
+a (also)
  fails in some superset of failure cases of the underlying function as specified
 
 e (extended)

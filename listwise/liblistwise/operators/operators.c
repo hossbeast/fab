@@ -138,7 +138,7 @@ static int read_opdir(char * s)
 					if(*f == '/')
 						f++;
 
-					// locate the extension portion
+					// locate the (full) extension portion
 					while(((f - entp->d_name) < nl) && *f != '.')
 						f++;
 
@@ -156,7 +156,7 @@ static int read_opdir(char * s)
 					else
 					{
 #if DEBUG_LWOP_LOAD
-dprintf(501, " -%s : %s cmp %s\n", entp->d_name, f, QUOTE(LWOPEXT));
+dprintf(501, " -%s : %s cmp %s\n", entp->d_name, f, XQUOTE(LWOPEXT));
 #endif
 					}
 				}
@@ -282,7 +282,11 @@ int __attribute__((constructor)) listwise_operators_setup()
 finally:
 	if(XAPI_UNWINDING)
 	{
+#if XAPI_PROVIDE_BACKTRACE
 		xapi_backtrace();
+#else
+	dprintf(1, "liblistwise : failed to load operators\n");
+#endif
 	}
 coda;
 }

@@ -20,7 +20,7 @@ once {
 
 	# variables
 	$sdirs = [ [ $dfabcore/common ~ j ] ~ lsr c -d ]
-	$copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
+	$cflags = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 		[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 		[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
@@ -42,17 +42,26 @@ once {
 		[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
 	]
 
-	$cflags_final = [ $cflags_final $copts $params ]
-	$cflags_debug = [ $cflags_debug $copts $params ]
-	$cflags_devel = [ $cflags_devel $copts $params_devel ]
+	$cflags_eapi_final = [ $cflags_eapi_final $cflags $params ]
+	$cflags_eapi_debug = [ $cflags_eapi_debug $cflags $params ]
+	$cflags_eapi_devel = [ $cflags_eapi_devel $cflags $params_devel ]
+	$cflags_xapi_final = [ $cflags_xapi_final $cflags $params ]
+	$cflags_xapi_debug = [ $cflags_xapi_debug $cflags $params ]
+	$cflags_xapi_devel = [ $cflags_xapi_devel $cflags $params_devel ]
 
 	# standard files - standard nopic compilation
-	+[@std.c]($dirs = $sdirs; $cc; $dext = [ final.o ]; $cflags = $cflags_final)
-	+[@std.c]($dirs = $sdirs; $cc; $dext = [ debug.o ]; $cflags = $cflags_debug)
-	+[@std.c]($dirs = $sdirs; $cc; $dext = [ devel.o ]; $cflags = $cflags_devel; $gccdep = $gccdep_devel)
+	+[@std.c]($dirs = $sdirs; $cc; $dext = [ eapi.final.o ]; $cflags = $cflags_eapi_final)
+	+[@std.c]($dirs = $sdirs; $cc; $dext = [ eapi.debug.o ]; $cflags = $cflags_eapi_debug)
+	+[@std.c]($dirs = $sdirs; $cc; $dext = [ eapi.devel.o ]; $cflags = $cflags_eapi_devel)
+	+[@std.c]($dirs = $sdirs; $cc; $dext = [ xapi.final.o ]; $cflags = $cflags_xapi_final)
+	+[@std.c]($dirs = $sdirs; $cc; $dext = [ xapi.debug.o ]; $cflags = $cflags_xapi_debug)
+	+[@std.c]($dirs = $sdirs; $cc; $dext = [ xapi.devel.o ]; $cflags = $cflags_xapi_devel)
 
 	# generated
-	+[@std.xapi.errtab]($dext = [ final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_final)
-	+[@std.xapi.errtab]($dext = [ debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_debug)
-	+[@std.xapi.errtab]($dext = [ devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_devel)
+	+[@std.xapi.errtab]($dext = [ eapi.final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_eapi_final)
+	+[@std.xapi.errtab]($dext = [ eapi.debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_eapi_debug)
+	+[@std.xapi.errtab]($dext = [ eapi.devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_eapi_devel)
+	+[@std.xapi.errtab]($dext = [ xapi.final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_xapi_final)
+	+[@std.xapi.errtab]($dext = [ xapi.debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_xapi_debug)
+	+[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_xapi_devel)
 }

@@ -39,7 +39,6 @@
 */
 typedef int xapi;
 
-#if XAPI_PROVIDE_BACKTRACE
 // error table struct
 typedef struct etable
 {
@@ -64,10 +63,9 @@ extern etable * perrtab_SYS;
 /// xapi_errstr
 //
 // SUMMARY
-//  returns a static string associated with an error code returned from a libxapi
+//  returns a static string associated with an error code returned from a libxapi call
 //
 const char * xapi_errstr(const int code);
-#endif
 
 #if XAPI_PROVIDE_BACKTRACE
 # include "xapi/unwind.h"

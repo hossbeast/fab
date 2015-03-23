@@ -26,7 +26,7 @@
 # variables
 $sdirs = [ $dfabd [ $dfabcore/common ~ j ] ~ lsr c -d ]
 
-$copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
+$cflags = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
@@ -48,57 +48,61 @@ $params_devel = [
 	[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
 ]
 
-$cflags_final = [ $cflags_final $copts $params ]
-$cflags_debug = [ $cflags_debug $copts $params ]
-$cflags_devel = [ $cflags_devel $copts $params_devel ]
+$cflags_xapi_final = [ $cflags_xapi_final $cflags $params ]
+$cflags_xapi_debug = [ $cflags_xapi_debug $cflags $params ]
+$cflags_xapi_devel = [ $cflags_xapi_devel $cflags $params_devel ]
 
 # operator so's
-$faboplist_final = [ $dfabcore/fablw/op ~ j lsr sx/c/final.so y ]
-$faboplist_debug = [ $dfabcore/fablw/op ~ j lsr sx/c/debug.so y ]
-$faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
+$faboplist_xapi_final = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.final.so sy ]
+$faboplist_xapi_debug = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.debug.so sy ]
+$faboplist_xapi_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 
 #
 # catchall node
 #
-[ @all ] : [ @final @debug @devel ]
-[ @final ] : [ @fab.final @fabw.final @fabd.final $faboplist_final ]
-[ @debug ] : [ @fab.debug @fabw.debug @fabd.debug $faboplist_debug ]
-[ @devel ] : [ @fab.devel @fabw.devel @fabd.devel $faboplist_devel ]
+[ @all ] : [ @all.xapi ]
+[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @final ] : [ @final.xapi ]
+[ @final.xapi ] : [ @fab.final @fabw.final @fabd.final $faboplist_xapi_final ]
+[ @debug ] : [ @debug.xapi ]
+[ @debug.xapi ] : [ @fab.debug @fabw.debug @fabd.debug $faboplist_xapi_debug ]
+[ @devel ] : [ @devel.xapi ]
+[ @devel.xapi ] : [ @fab.devel @fabw.devel @fabd.devel $faboplist_xapi_devel ]
 
 #
 # standard files - fPIC compilation
 #  no discovery on these files, because they would then depend on *.pic.o files within fab which
 #  do not exist ; instead those link-time references are satisfied by the fabd executable
 #
-+[@std.c]($dext = [ final.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_final -fPIC ]; -$cobjpaths)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_xapi_final -fPIC ]; -$cobjpaths)
 [ $cobjpaths ] : [ $fabd_final ]
-+[@std.c]($dext = [ debug.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_debug -fPIC ]; -$cobjpaths)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_xapi_debug -fPIC ]; -$cobjpaths)
 [ $cobjpaths ] : [ $fabd_debug ]
-+[@std.c]($dext = [ devel.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_devel -fPIC ]; -$cobjpaths)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_xapi_devel -fPIC ]; -$cobjpaths)
 [ $cobjpaths ] : [ $fabd_devel ]
 
 #
 # fab-specific operator so's - only link the immediate object. This so depends on fab for many symbols
 #
-[ $faboplist_final ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
+[ $faboplist_xapi_final ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
 {
-	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
+	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
 }
 
-[ $faboplist_debug ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
+[ $faboplist_xapi_debug ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
 {
-	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
+	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
 }
 
-[ $faboplist_devel ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
+[ $faboplist_xapi_devel ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
 {
-	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
+	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
 }
 
 # also a bridge dependency on the fabd executable
-[ $faboplist_final ] ::^ [ $fabd_final ]
-[ $faboplist_debug ] ::^ [ $fabd_debug ]
-[ $faboplist_devel ] ::^ [ $fabd_devel ]
+[ $faboplist_xapi_final ] ::^ [ $fabd_final ]
+[ $faboplist_xapi_debug ] ::^ [ $fabd_debug ]
+[ $faboplist_xapi_devel ] ::^ [ $fabd_devel ]
 
 #
 # tasks
@@ -138,16 +142,16 @@ $faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
 
 [ @install.final ] : [ @install.base ]
 {
-	install [ $dfabcore/fablw/op/fi/fi.final.so ]				[ $destdir/$fablwopdir/fi.so ]
-	install [ $dfabcore/fablw/op/fg/fg.final.so ]				[ $destdir/$fablwopdir/fg.so ]
+	install [ $dfabcore/fablw/op/fi/fi.xapi.final.so ]	[ $destdir/$fablwopdir/fi.so ]
+	install [ $dfabcore/fablw/op/fg/fg.xapi.final.so ]	[ $destdir/$fablwopdir/fg.so ]
 }
-[ @install.local.final ] : [ @install.final @install.local @fab.install.local.final @fabw.install.local.final @fabd.install.local.final ]
-[ @install.dist.final ] : [ @install.final @fab.install.dist.final @fabw.install.dist.final @fabd.install.dist.final ]
+[ @install.local.final] : [ @install.final @install.local @fab.install.local.final @fabw.install.local.final @fabd.install.local.final ]
+[ @install.dist.final] : [ @install.final @fab.install.dist.final @fabw.install.dist.final @fabd.install.dist.final ]
 
 [ @install.debug ] : [ @install.base ]
 {
-	install [ $dfabcore/fablw/op/fi/fi.debug.so ]				[ $destdir/$fablwopdir/fi.so ]
-	install [ $dfabcore/fablw/op/fg/fg.debug.so ]				[ $destdir/$fablwopdir/fg.so ]
+	install [ $dfabcore/fablw/op/fi/fi.xapi.debug.so ]	[ $destdir/$fablwopdir/fi.so ]
+	install [ $dfabcore/fablw/op/fg/fg.xapi.debug.so ]	[ $destdir/$fablwopdir/fg.so ]
 }
 
 [ @install.local.debug ] : [ @install.debug @install.local @fab.install.local.debug @fabw.install.local.debug @fabd.install.local.debug ]

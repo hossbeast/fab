@@ -45,14 +45,14 @@ sed -e 's/#define \(PCRE_ERROR_[A-Z_]\+\) \+(\([-0-9]\+\)).*/\2\t\1/p; d' <\
 
 
 # formulas and names for stage 1
-NAMES[1]='common/cksum/cksum.debug.o'
+NAMES[1]='common/canon/canon.xapi.debug.o'
 fml_1_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/cksum/cksum.c -o common/cksum/cksum.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/canon/canon.c -o common/canon/canon.xapi.debug.o
 
 
   X=$?
@@ -60,14 +60,14 @@ fml_1_0()
   exit $X
 }
 
-NAMES[2]='common/color/color.debug.pic.o'
+NAMES[2]='common/canon/canon.xapi.debug.pic.o'
 fml_1_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/color/color.c -o common/color/color.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/canon/canon.c -o common/canon/canon.xapi.debug.pic.o
 
 
   X=$?
@@ -75,14 +75,14 @@ fml_1_1()
   exit $X
 }
 
-NAMES[3]='common/memblk/memblk.def.debug.o'
+NAMES[3]='common/cksum/cksum.xapi.debug.o'
 fml_1_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/memblk/memblk.def.c -o common/memblk/memblk.def.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/cksum/cksum.c -o common/cksum/cksum.xapi.debug.o
 
 
   X=$?
@@ -90,14 +90,14 @@ fml_1_2()
   exit $X
 }
 
-NAMES[4]='common/memblk/memblk.def.debug.pic.o'
+NAMES[4]='common/coll/coll.xapi.debug.o'
 fml_1_3()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/memblk/memblk.def.c -o common/memblk/memblk.def.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/coll/coll.c -o common/coll/coll.xapi.debug.o
 
 
   X=$?
@@ -105,14 +105,14 @@ fml_1_3()
   exit $X
 }
 
-NAMES[5]='common/parseint/parseint.debug.o'
+NAMES[5]='common/coll/coll.xapi.debug.pic.o'
 fml_1_4()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/parseint/parseint.c -o common/parseint/parseint.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/coll/coll.c -o common/coll/coll.xapi.debug.pic.o
 
 
   X=$?
@@ -120,14 +120,14 @@ fml_1_4()
   exit $X
 }
 
-NAMES[6]='common/parseint/parseint.debug.pic.o'
+NAMES[6]='common/color/color.xapi.debug.pic.o'
 fml_1_5()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/parseint/parseint.c -o common/parseint/parseint.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/color/color.c -o common/color/color.xapi.debug.pic.o
 
 
   X=$?
@@ -135,14 +135,14 @@ fml_1_5()
   exit $X
 }
 
-NAMES[7]='common/strutil/strutil.debug.o'
+NAMES[7]='common/logger/logger.xapi.debug.o'
 fml_1_6()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/strutil/strutil.c -o common/strutil/strutil.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/logger/logger.c -o common/logger/logger.xapi.debug.o
 
 
   X=$?
@@ -150,14 +150,14 @@ fml_1_6()
   exit $X
 }
 
-NAMES[8]='common/strutil/strutil.debug.pic.o'
+NAMES[8]='common/map/map.xapi.debug.o'
 fml_1_7()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/strutil/strutil.c -o common/strutil/strutil.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/map/map.c -o common/map/map.xapi.debug.o
 
 
   X=$?
@@ -165,14 +165,14 @@ fml_1_7()
   exit $X
 }
 
-NAMES[9]='common/unitstring/unitstring.debug.o'
+NAMES[9]='common/map/map.xapi.debug.pic.o'
 fml_1_8()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/unitstring/unitstring.c -o common/unitstring/unitstring.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/map/map.c -o common/map/map.xapi.debug.pic.o
 
 
   X=$?
@@ -180,14 +180,14 @@ fml_1_8()
   exit $X
 }
 
-NAMES[10]='common/wstdlib/wstdlib.debug.o'
+NAMES[10]='common/memblk/memblk.def.xapi.debug.o'
 fml_1_9()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/wstdlib/wstdlib.c -o common/wstdlib/wstdlib.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/memblk/memblk.def.c -o common/memblk/memblk.def.xapi.debug.o
 
 
   X=$?
@@ -195,14 +195,14 @@ fml_1_9()
   exit $X
 }
 
-NAMES[11]='common/wstdlib/wstdlib.debug.pic.o'
+NAMES[11]='common/memblk/memblk.def.xapi.debug.pic.o'
 fml_1_10()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/wstdlib/wstdlib.c -o common/wstdlib/wstdlib.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/memblk/memblk.def.c -o common/memblk/memblk.def.xapi.debug.pic.o
 
 
   X=$?
@@ -210,11 +210,161 @@ fml_1_10()
   exit $X
 }
 
-NAMES[12]='{fab/common/error/FAB.errtab.h, fab/common/error/FAB.errtab.c}'
+NAMES[12]='common/parseint/parseint.xapi.debug.o'
 fml_1_11()
 {
   exec 1>/dev/null
   exec 2>&111
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/parseint/parseint.c -o common/parseint/parseint.xapi.debug.o
+
+
+  X=$?
+  echo 11 1>&99
+  exit $X
+}
+
+NAMES[13]='common/parseint/parseint.xapi.debug.pic.o'
+fml_1_12()
+{
+  exec 1>/dev/null
+  exec 2>&112
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/parseint/parseint.c -o common/parseint/parseint.xapi.debug.pic.o
+
+
+  X=$?
+  echo 12 1>&99
+  exit $X
+}
+
+NAMES[14]='common/strutil/strutil.xapi.debug.o'
+fml_1_13()
+{
+  exec 1>/dev/null
+  exec 2>&113
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/strutil/strutil.c -o common/strutil/strutil.xapi.debug.o
+
+
+  X=$?
+  echo 13 1>&99
+  exit $X
+}
+
+NAMES[15]='common/strutil/strutil.xapi.debug.pic.o'
+fml_1_14()
+{
+  exec 1>/dev/null
+  exec 2>&114
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/strutil/strutil.c -o common/strutil/strutil.xapi.debug.pic.o
+
+
+  X=$?
+  echo 14 1>&99
+  exit $X
+}
+
+NAMES[16]='common/unitstring/unitstring.xapi.debug.o'
+fml_1_15()
+{
+  exec 1>/dev/null
+  exec 2>&115
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/unitstring/unitstring.c -o common/unitstring/unitstring.xapi.debug.o
+
+
+  X=$?
+  echo 15 1>&99
+  exit $X
+}
+
+NAMES[17]='common/wstdlib/wstdlib.xapi.debug.o'
+fml_1_16()
+{
+  exec 1>/dev/null
+  exec 2>&116
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/wstdlib/wstdlib.c -o common/wstdlib/wstdlib.xapi.debug.o
+
+
+  X=$?
+  echo 16 1>&99
+  exit $X
+}
+
+NAMES[18]='common/wstdlib/wstdlib.xapi.debug.pic.o'
+fml_1_17()
+{
+  exec 1>/dev/null
+  exec 2>&117
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/wstdlib/wstdlib.c -o common/wstdlib/wstdlib.xapi.debug.pic.o
+
+
+  X=$?
+  echo 17 1>&99
+  exit $X
+}
+
+NAMES[19]='common/yyutil/yyutil.xapi.debug.o'
+fml_1_18()
+{
+  exec 1>/dev/null
+  exec 2>&118
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/yyutil/yyutil.c -o common/yyutil/yyutil.xapi.debug.o
+
+
+  X=$?
+  echo 18 1>&99
+  exit $X
+}
+
+NAMES[20]='common/yyutil/yyutil.xapi.debug.pic.o'
+fml_1_19()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/yyutil/yyutil.c -o common/yyutil/yyutil.xapi.debug.pic.o
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+NAMES[21]='fab/common/dirutil/dirutil.xapi.debug.o'
+fml_1_20()
+{
+  exec 1>/dev/null
+  exec 2>&101
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/dirutil/dirutil.c -o fab/common/dirutil/dirutil.xapi.debug.o
+
+
+  X=$?
+  echo 1 1>&99
+  exit $X
+}
+
+NAMES[22]='{fab/common/error/FAB.errtab.h, fab/common/error/FAB.errtab.c}'
+fml_1_21()
+{
+  exec 1>/dev/null
+  exec 2>&102
 
   
 	hfl=fab/common/error/FAB.errtab.h
@@ -266,90 +416,105 @@ echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
 
 
   X=$?
-  echo 11 1>&99
+  echo 2 1>&99
   exit $X
 }
 
-NAMES[13]='{fab/fabd/ff/ff.dsc.tab.h, fab/fabd/ff/ff.dsc.tab.c}'
-fml_1_12()
+NAMES[23]='fab/common/logs/logs.xapi.debug.o'
+fml_1_22()
 {
   exec 1>/dev/null
-  exec 2>&112
+  exec 2>&103
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/logs/logs.c -o fab/common/logs/logs.xapi.debug.o
+
+
+  X=$?
+  echo 3 1>&99
+  exit $X
+}
+
+NAMES[24]='{fab/fabd/ff/ff.dsc.tab.h, fab/fabd/ff/ff.dsc.tab.c}'
+fml_1_23()
+{
+  exec 1>/dev/null
+  exec 2>&104
 
   
 	bison --warnings=error -o fab/fabd/ff/ff.dsc.tab.c -d	fab/fabd/ff/ff.dsc.y
 
 
   X=$?
-  echo 12 1>&99
+  echo 4 1>&99
   exit $X
 }
 
-NAMES[14]='{fab/fabd/ff/ff.lex.h, fab/fabd/ff/ff.lex.c}'
-fml_1_13()
+NAMES[25]='{fab/fabd/ff/ff.lex.h, fab/fabd/ff/ff.lex.c}'
+fml_1_24()
 {
   exec 1>/dev/null
-  exec 2>&113
+  exec 2>&105
 
   
 	  flex  -o fab/fabd/ff/ff.lex.c  --header-file=fab/fabd/ff/ff.lex.h  fab/fabd/ff/ff.l
 
 
   X=$?
-  echo 13 1>&99
+  echo 5 1>&99
   exit $X
 }
 
-NAMES[15]='{fab/fabd/ff/ff.list.tab.h, fab/fabd/ff/ff.list.tab.c}'
-fml_1_14()
+NAMES[26]='{fab/fabd/ff/ff.list.tab.h, fab/fabd/ff/ff.list.tab.c}'
+fml_1_25()
 {
   exec 1>/dev/null
-  exec 2>&114
+  exec 2>&106
 
   
 	bison --warnings=error -o fab/fabd/ff/ff.list.tab.c -d	fab/fabd/ff/ff.list.y
 
 
   X=$?
-  echo 14 1>&99
+  echo 6 1>&99
   exit $X
 }
 
-NAMES[16]='{fab/fabd/ff/ff.tab.h, fab/fabd/ff/ff.tab.c}'
-fml_1_15()
+NAMES[27]='{fab/fabd/ff/ff.tab.h, fab/fabd/ff/ff.tab.c}'
+fml_1_26()
 {
   exec 1>/dev/null
-  exec 2>&115
+  exec 2>&107
 
   
 	bison --warnings=error -o fab/fabd/ff/ff.tab.c -d	fab/fabd/ff/ff.y
 
 
   X=$?
-  echo 15 1>&99
+  echo 7 1>&99
   exit $X
 }
 
-NAMES[17]='{fab/fabd/ff/ff.var.tab.h, fab/fabd/ff/ff.var.tab.c}'
-fml_1_16()
+NAMES[28]='{fab/fabd/ff/ff.var.tab.h, fab/fabd/ff/ff.var.tab.c}'
+fml_1_27()
 {
   exec 1>/dev/null
-  exec 2>&116
+  exec 2>&108
 
   
 	bison --warnings=error -o fab/fabd/ff/ff.var.tab.c -d	fab/fabd/ff/ff.var.y
 
 
   X=$?
-  echo 16 1>&99
+  echo 8 1>&99
   exit $X
 }
 
-NAMES[18]='libpstring/exports'
-fml_1_17()
+NAMES[29]='libpstring/exports'
+fml_1_28()
 {
   exec 1>/dev/null
-  exec 2>&117
+  exec 2>&109
 
   
 	  (echo "{ global: "
@@ -360,15 +525,30 @@ echo "local: *; };"
 
 
   X=$?
-  echo 17 1>&99
+  echo 9 1>&99
   exit $X
 }
 
-NAMES[19]='libxapi/error/SYS.errtab'
-fml_1_18()
+NAMES[30]='libpstring/pstring/pstring.xapi.debug.pic.o'
+fml_1_29()
 {
   exec 1>/dev/null
-  exec 2>&118
+  exec 2>&110
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libpstring/pstring -I./libpstring/write -I./libpstring/internal -I./libpstring -I./libxapi -I./libxlinux -c libpstring/pstring/pstring.c -o libpstring/pstring/pstring.xapi.debug.pic.o
+
+
+  X=$?
+  echo 10 1>&99
+  exit $X
+}
+
+NAMES[31]='libxapi/error/SYS.errtab'
+fml_1_30()
+{
+  exec 1>/dev/null
+  exec 2>&111
 
   
 	exec > libxapi/error/SYS.errtab
@@ -378,15 +558,15 @@ sed -e 's/#define\s\+\(E[A-Z]\+\)\s\+\([0-9]\+\)\s\+\/\*\s*\(.*\)\s\+\*\//\2\t\1
 
 
   X=$?
-  echo 18 1>&99
+  echo 11 1>&99
   exit $X
 }
 
-NAMES[20]='{libxapi/error/XAPI.errtab.h, libxapi/error/XAPI.errtab.c}'
-fml_1_19()
+NAMES[32]='{libxapi/error/XAPI.errtab.h, libxapi/error/XAPI.errtab.c}'
+fml_1_31()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&112
 
   
 	hfl=libxapi/error/XAPI.errtab.h
@@ -438,15 +618,15 @@ echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
 
 
   X=$?
-  echo 0 1>&99
+  echo 12 1>&99
   exit $X
 }
 
-NAMES[21]='{libxlinux/error/XLINUX.errtab.h, libxlinux/error/XLINUX.errtab.c}'
-fml_1_20()
+NAMES[33]='{libxlinux/error/XLINUX.errtab.h, libxlinux/error/XLINUX.errtab.c}'
+fml_1_32()
 {
   exec 1>/dev/null
-  exec 2>&101
+  exec 2>&113
 
   
 	hfl=libxlinux/error/XLINUX.errtab.h
@@ -498,15 +678,15 @@ echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
 
 
   X=$?
-  echo 1 1>&99
+  echo 13 1>&99
   exit $X
 }
 
-NAMES[22]='{listwise/liblistwise/error/LW.errtab.h, listwise/liblistwise/error/LW.errtab.c}'
-fml_1_21()
+NAMES[34]='{listwise/liblistwise/error/LW.errtab.h, listwise/liblistwise/error/LW.errtab.c}'
+fml_1_33()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&114
 
   
 	hfl=listwise/liblistwise/error/LW.errtab.h
@@ -558,15 +738,15 @@ echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
 
 
   X=$?
-  echo 2 1>&99
+  echo 14 1>&99
   exit $X
 }
 
-NAMES[23]='{listwise/liblistwise/error/PCRE.errtab.h, listwise/liblistwise/error/PCRE.errtab.c}'
-fml_1_22()
+NAMES[35]='{listwise/liblistwise/error/PCRE.errtab.h, listwise/liblistwise/error/PCRE.errtab.c}'
+fml_1_34()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&115
 
   
 	hfl=listwise/liblistwise/error/PCRE.errtab.h
@@ -618,45 +798,45 @@ echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
 
 
   X=$?
-  echo 3 1>&99
+  echo 15 1>&99
   exit $X
 }
 
-NAMES[24]='{listwise/liblistwise/transform/transform.lex.h, listwise/liblistwise/transform/transform.lex.c}'
-fml_1_23()
+NAMES[36]='{listwise/liblistwise/transform/transform.lex.h, listwise/liblistwise/transform/transform.lex.c}'
+fml_1_35()
 {
   exec 1>/dev/null
-  exec 2>&104
+  exec 2>&116
 
   
 	  flex  -o listwise/liblistwise/transform/transform.lex.c  --header-file=listwise/liblistwise/transform/transform.lex.h  listwise/liblistwise/transform/transform.l
 
 
   X=$?
-  echo 4 1>&99
+  echo 16 1>&99
   exit $X
 }
 
-NAMES[25]='{listwise/liblistwise/transform/transform.tab.h, listwise/liblistwise/transform/transform.tab.c}'
-fml_1_24()
+NAMES[37]='{listwise/liblistwise/transform/transform.tab.h, listwise/liblistwise/transform/transform.tab.c}'
+fml_1_36()
 {
   exec 1>/dev/null
-  exec 2>&105
+  exec 2>&117
 
   
 	bison --warnings=error -o listwise/liblistwise/transform/transform.tab.c -d	listwise/liblistwise/transform/transform.y
 
 
   X=$?
-  echo 5 1>&99
+  echo 17 1>&99
   exit $X
 }
 
-NAMES[26]='{listwise/listwise/error/LISTWISE.errtab.h, listwise/listwise/error/LISTWISE.errtab.c}'
-fml_1_25()
+NAMES[38]='{listwise/listwise/error/LISTWISE.errtab.h, listwise/listwise/error/LISTWISE.errtab.c}'
+fml_1_37()
 {
   exec 1>/dev/null
-  exec 2>&106
+  exec 2>&118
 
   
 	hfl=listwise/listwise/error/LISTWISE.errtab.h
@@ -708,20 +888,18 @@ echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
 
 
   X=$?
-  echo 6 1>&99
+  echo 18 1>&99
   exit $X
 }
 
-
-# formulas and names for stage 2
-NAMES[27]='common/canon/canon.debug.o'
-fml_2_0()
+NAMES[39]='listwise/listwise/logs/logs.xapi.debug.o'
+fml_1_38()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/canon/canon.c -o common/canon/canon.debug.o
+	gcc -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -Ilistwise/listwise/error -Ilistwise/listwise/logs -Ilistwise/listwise/man -Ilistwise/listwise/args -Ilistwise/listwise -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -c listwise/listwise/logs/logs.c -o listwise/listwise/logs/logs.xapi.debug.o
 
 
   X=$?
@@ -729,14 +907,31 @@ fml_2_0()
   exit $X
 }
 
-NAMES[28]='common/canon/canon.debug.pic.o'
+
+# formulas and names for stage 2
+NAMES[40]='fab/common/error/FAB.errtab.xapi.debug.o'
+fml_2_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/error/FAB.errtab.c -o fab/common/error/FAB.errtab.xapi.debug.o
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+NAMES[41]='fab/common/params/params.xapi.debug.o'
 fml_2_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/canon/canon.c -o common/canon/canon.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/params/params.c -o fab/common/params/params.xapi.debug.o
 
 
   X=$?
@@ -744,14 +939,14 @@ fml_2_1()
   exit $X
 }
 
-NAMES[29]='common/coll/coll.debug.o'
+NAMES[42]='fab/fabd/ff/ff.dsc.tab.xapi.debug.o'
 fml_2_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/coll/coll.c -o common/coll/coll.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.dsc.tab.c -o fab/fabd/ff/ff.dsc.tab.xapi.debug.o
 
 
   X=$?
@@ -759,14 +954,14 @@ fml_2_2()
   exit $X
 }
 
-NAMES[30]='common/coll/coll.debug.pic.o'
+NAMES[43]='fab/fabd/ff/ff.list.tab.xapi.debug.o'
 fml_2_3()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/coll/coll.c -o common/coll/coll.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.list.tab.c -o fab/fabd/ff/ff.list.tab.xapi.debug.o
 
 
   X=$?
@@ -774,176 +969,11 @@ fml_2_3()
   exit $X
 }
 
-NAMES[31]='common/logger/logger.debug.o'
+NAMES[44]='{fab/fabd/ff/ff.states.h, fab/fabd/ff/ff.states.c}'
 fml_2_4()
 {
   exec 1>/dev/null
   exec 2>&104
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/logger/logger.c -o common/logger/logger.debug.o
-
-
-  X=$?
-  echo 4 1>&99
-  exit $X
-}
-
-NAMES[32]='common/map/map.debug.o'
-fml_2_5()
-{
-  exec 1>/dev/null
-  exec 2>&105
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/map/map.c -o common/map/map.debug.o
-
-
-  X=$?
-  echo 5 1>&99
-  exit $X
-}
-
-NAMES[33]='common/map/map.debug.pic.o'
-fml_2_6()
-{
-  exec 1>/dev/null
-  exec 2>&106
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/map/map.c -o common/map/map.debug.pic.o
-
-
-  X=$?
-  echo 6 1>&99
-  exit $X
-}
-
-NAMES[34]='common/yyutil/yyutil.debug.o'
-fml_2_7()
-{
-  exec 1>/dev/null
-  exec 2>&107
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/yyutil/yyutil.c -o common/yyutil/yyutil.debug.o
-
-
-  X=$?
-  echo 7 1>&99
-  exit $X
-}
-
-NAMES[35]='common/yyutil/yyutil.debug.pic.o'
-fml_2_8()
-{
-  exec 1>/dev/null
-  exec 2>&108
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/yyutil/yyutil.c -o common/yyutil/yyutil.debug.pic.o
-
-
-  X=$?
-  echo 8 1>&99
-  exit $X
-}
-
-NAMES[36]='fab/common/dirutil/dirutil.debug.o'
-fml_2_9()
-{
-  exec 1>/dev/null
-  exec 2>&109
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/dirutil/dirutil.c -o fab/common/dirutil/dirutil.debug.o
-
-
-  X=$?
-  echo 9 1>&99
-  exit $X
-}
-
-NAMES[37]='fab/common/error/FAB.errtab.debug.o'
-fml_2_10()
-{
-  exec 1>/dev/null
-  exec 2>&110
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/error/FAB.errtab.c -o fab/common/error/FAB.errtab.debug.o
-
-
-  X=$?
-  echo 10 1>&99
-  exit $X
-}
-
-NAMES[38]='fab/common/logs/logs.debug.o'
-fml_2_11()
-{
-  exec 1>/dev/null
-  exec 2>&111
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/logs/logs.c -o fab/common/logs/logs.debug.o
-
-
-  X=$?
-  echo 11 1>&99
-  exit $X
-}
-
-NAMES[39]='fab/common/params/params.debug.o'
-fml_2_12()
-{
-  exec 1>/dev/null
-  exec 2>&112
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/params/params.c -o fab/common/params/params.debug.o
-
-
-  X=$?
-  echo 12 1>&99
-  exit $X
-}
-
-NAMES[40]='fab/fabd/ff/ff.dsc.tab.debug.o'
-fml_2_13()
-{
-  exec 1>/dev/null
-  exec 2>&113
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.dsc.tab.c -o fab/fabd/ff/ff.dsc.tab.debug.o
-
-
-  X=$?
-  echo 13 1>&99
-  exit $X
-}
-
-NAMES[41]='fab/fabd/ff/ff.list.tab.debug.o'
-fml_2_14()
-{
-  exec 1>/dev/null
-  exec 2>&114
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.list.tab.c -o fab/fabd/ff/ff.list.tab.debug.o
-
-
-  X=$?
-  echo 14 1>&99
-  exit $X
-}
-
-NAMES[42]='{fab/fabd/ff/ff.states.h, fab/fabd/ff/ff.states.c}'
-fml_2_15()
-{
-  exec 1>/dev/null
-  exec 2>&115
 
   
 	src=fab/fabd/ff/ff.lex.h
@@ -979,30 +1009,30 @@ echo "}) / sizeof(int);"
 
 
   X=$?
-  echo 15 1>&99
+  echo 4 1>&99
   exit $X
 }
 
-NAMES[43]='fab/fabd/ff/ff.tab.debug.o'
-fml_2_16()
+NAMES[45]='fab/fabd/ff/ff.tab.xapi.debug.o'
+fml_2_5()
 {
   exec 1>/dev/null
-  exec 2>&116
+  exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.tab.c -o fab/fabd/ff/ff.tab.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.tab.c -o fab/fabd/ff/ff.tab.xapi.debug.o
 
 
   X=$?
-  echo 16 1>&99
+  echo 5 1>&99
   exit $X
 }
 
-NAMES[44]='{fab/fabd/ff/ff.tokens.h, fab/fabd/ff/ff.tokens.c}'
-fml_2_17()
+NAMES[46]='{fab/fabd/ff/ff.tokens.h, fab/fabd/ff/ff.tokens.c}'
+fml_2_6()
 {
   exec 1>/dev/null
-  exec 2>&117
+  exec 2>&106
 
   
 	src=fab/fabd/ff/ff.tab.c
@@ -1021,6 +1051,16 @@ echo "enum ${pfx}_tokennames {"
 sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
 | sed -ne "s/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/${pfx}_\1 = \2,/p"
 echo "};"	
+echo -n "#define ${pfx}_MINTOKEN "
+sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+| sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2/p' \
+| sort -n \
+| head -n 1
+echo -n "#define ${pfx}_MAXTOKEN "
+sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+| sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2/p' \
+| sort -nr \
+| head -n 1
 echo "#endif"
 
 exec 1>${tokens_c}
@@ -1040,60 +1080,45 @@ echo "}) / sizeof(int);"
 
 
   X=$?
-  echo 17 1>&99
+  echo 6 1>&99
   exit $X
 }
 
-NAMES[45]='fab/fabd/ff/ff.var.tab.debug.o'
-fml_2_18()
+NAMES[47]='fab/fabd/ff/ff.var.tab.xapi.debug.o'
+fml_2_7()
 {
   exec 1>/dev/null
-  exec 2>&118
+  exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.var.tab.c -o fab/fabd/ff/ff.var.tab.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.var.tab.c -o fab/fabd/ff/ff.var.tab.xapi.debug.o
 
 
   X=$?
-  echo 18 1>&99
+  echo 7 1>&99
   exit $X
 }
 
-NAMES[46]='fab/fabw/main.debug.o'
-fml_2_19()
+NAMES[48]='fab/fabw/main.xapi.debug.o'
+fml_2_8()
 {
   exec 1>/dev/null
-  exec 2>&100
+  exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabw -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabw/main.c -o fab/fabw/main.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/fabw -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabw/main.c -o fab/fabw/main.xapi.debug.o
 
 
   X=$?
-  echo 0 1>&99
+  echo 8 1>&99
   exit $X
 }
 
-NAMES[47]='libpstring/pstring/pstring.debug.pic.o'
-fml_2_20()
+NAMES[49]='{libxapi/error/SYS.errtab.h, libxapi/error/SYS.errtab.c}'
+fml_2_9()
 {
   exec 1>/dev/null
-  exec 2>&101
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libpstring/pstring -I./libpstring/write -I./libpstring/internal -I./libpstring -I./libxapi -I./libxlinux -c libpstring/pstring/pstring.c -o libpstring/pstring/pstring.debug.pic.o
-
-
-  X=$?
-  echo 1 1>&99
-  exit $X
-}
-
-NAMES[48]='{libxapi/error/SYS.errtab.h, libxapi/error/SYS.errtab.c}'
-fml_2_21()
-{
-  exec 1>/dev/null
-  exec 2>&102
+  exec 2>&109
 
   
 	hfl=libxapi/error/SYS.errtab.h
@@ -1145,60 +1170,60 @@ echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
 
 
   X=$?
-  echo 2 1>&99
+  echo 9 1>&99
   exit $X
 }
 
-NAMES[49]='libxapi/error/XAPI.errtab.debug.pic.o'
-fml_2_22()
+NAMES[50]='libxapi/error/XAPI.errtab.xapi.debug.pic.o'
+fml_2_10()
 {
   exec 1>/dev/null
-  exec 2>&103
+  exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/error/XAPI.errtab.c -o libxapi/error/XAPI.errtab.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/error/XAPI.errtab.c -o libxapi/error/XAPI.errtab.xapi.debug.pic.o
 
 
   X=$?
-  echo 3 1>&99
+  echo 10 1>&99
   exit $X
 }
 
-NAMES[50]='libxlinux/error/XLINUX.errtab.debug.pic.o'
-fml_2_23()
+NAMES[51]='libxlinux/error/XLINUX.errtab.xapi.debug.pic.o'
+fml_2_11()
 {
   exec 1>/dev/null
-  exec 2>&104
+  exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/error/XLINUX.errtab.c -o libxlinux/error/XLINUX.errtab.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/error/XLINUX.errtab.c -o libxlinux/error/XLINUX.errtab.xapi.debug.pic.o
 
 
   X=$?
-  echo 4 1>&99
+  echo 11 1>&99
   exit $X
 }
 
-NAMES[51]='libxlinux/error/error.debug.pic.o'
-fml_2_24()
+NAMES[52]='libxlinux/error/error.xapi.debug.pic.o'
+fml_2_12()
 {
   exec 1>/dev/null
-  exec 2>&105
+  exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/error/error.c -o libxlinux/error/error.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/error/error.c -o libxlinux/error/error.xapi.debug.pic.o
 
 
   X=$?
-  echo 5 1>&99
+  echo 12 1>&99
   exit $X
 }
 
-NAMES[52]='libxlinux/exports'
-fml_2_25()
+NAMES[53]='libxlinux/exports'
+fml_2_13()
 {
   exec 1>/dev/null
-  exec 2>&106
+  exec 2>&113
 
   
 	  (echo "{ global: "
@@ -1209,123 +1234,18 @@ echo "local: *; };"
 
 
   X=$?
-  echo 6 1>&99
-  exit $X
-}
-
-NAMES[53]='libxlinux/mempolicy/mempolicy.debug.pic.o'
-fml_2_26()
-{
-  exec 1>/dev/null
-  exec 2>&107
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/mempolicy/mempolicy.c -o libxlinux/mempolicy/mempolicy.debug.pic.o
-
-
-  X=$?
-  echo 7 1>&99
-  exit $X
-}
-
-NAMES[54]='libxlinux/xdirent/xdirent.debug.pic.o'
-fml_2_27()
-{
-  exec 1>/dev/null
-  exec 2>&108
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xdirent/xdirent.c -o libxlinux/xdirent/xdirent.debug.pic.o
-
-
-  X=$?
-  echo 8 1>&99
-  exit $X
-}
-
-NAMES[55]='libxlinux/xdlfcn/xdlfcn.debug.pic.o'
-fml_2_28()
-{
-  exec 1>/dev/null
-  exec 2>&109
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xdlfcn/xdlfcn.c -o libxlinux/xdlfcn/xdlfcn.debug.pic.o
-
-
-  X=$?
-  echo 9 1>&99
-  exit $X
-}
-
-NAMES[56]='libxlinux/xfcntl/xfcntl.debug.pic.o'
-fml_2_29()
-{
-  exec 1>/dev/null
-  exec 2>&110
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xfcntl/xfcntl.c -o libxlinux/xfcntl/xfcntl.debug.pic.o
-
-
-  X=$?
-  echo 10 1>&99
-  exit $X
-}
-
-NAMES[57]='libxlinux/xfile/xfile.debug.pic.o'
-fml_2_30()
-{
-  exec 1>/dev/null
-  exec 2>&111
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xfile/xfile.c -o libxlinux/xfile/xfile.debug.pic.o
-
-
-  X=$?
-  echo 11 1>&99
-  exit $X
-}
-
-NAMES[58]='libxlinux/xftw/xftw.debug.pic.o'
-fml_2_31()
-{
-  exec 1>/dev/null
-  exec 2>&112
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xftw/xftw.c -o libxlinux/xftw/xftw.debug.pic.o
-
-
-  X=$?
-  echo 12 1>&99
-  exit $X
-}
-
-NAMES[59]='libxlinux/xgrp/xgrp.debug.pic.o'
-fml_2_32()
-{
-  exec 1>/dev/null
-  exec 2>&113
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xgrp/xgrp.c -o libxlinux/xgrp/xgrp.debug.pic.o
-
-
-  X=$?
   echo 13 1>&99
   exit $X
 }
 
-NAMES[60]='libxlinux/xmman/xmman.debug.pic.o'
-fml_2_33()
+NAMES[54]='libxlinux/mempolicy/mempolicy.xapi.debug.pic.o'
+fml_2_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xmman/xmman.c -o libxlinux/xmman/xmman.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/mempolicy/mempolicy.c -o libxlinux/mempolicy/mempolicy.xapi.debug.pic.o
 
 
   X=$?
@@ -1333,14 +1253,14 @@ fml_2_33()
   exit $X
 }
 
-NAMES[61]='libxlinux/xprctl/xprctl.debug.pic.o'
-fml_2_34()
+NAMES[55]='libxlinux/xdirent/xdirent.xapi.debug.pic.o'
+fml_2_15()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xprctl/xprctl.c -o libxlinux/xprctl/xprctl.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xdirent/xdirent.c -o libxlinux/xdirent/xdirent.xapi.debug.pic.o
 
 
   X=$?
@@ -1348,14 +1268,14 @@ fml_2_34()
   exit $X
 }
 
-NAMES[62]='libxlinux/xpwd/xpwd.debug.pic.o'
-fml_2_35()
+NAMES[56]='libxlinux/xdlfcn/xdlfcn.xapi.debug.pic.o'
+fml_2_16()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xpwd/xpwd.c -o libxlinux/xpwd/xpwd.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xdlfcn/xdlfcn.c -o libxlinux/xdlfcn/xdlfcn.xapi.debug.pic.o
 
 
   X=$?
@@ -1363,14 +1283,14 @@ fml_2_35()
   exit $X
 }
 
-NAMES[63]='libxlinux/xsignal/xsignal.debug.pic.o'
-fml_2_36()
+NAMES[57]='libxlinux/xfcntl/xfcntl.xapi.debug.pic.o'
+fml_2_17()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xsignal/xsignal.c -o libxlinux/xsignal/xsignal.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xfcntl/xfcntl.c -o libxlinux/xfcntl/xfcntl.xapi.debug.pic.o
 
 
   X=$?
@@ -1378,14 +1298,14 @@ fml_2_36()
   exit $X
 }
 
-NAMES[64]='libxlinux/xstat/xstat.debug.pic.o'
-fml_2_37()
+NAMES[58]='libxlinux/xfile/xfile.xapi.debug.pic.o'
+fml_2_18()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xstat/xstat.c -o libxlinux/xstat/xstat.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xfile/xfile.c -o libxlinux/xfile/xfile.xapi.debug.pic.o
 
 
   X=$?
@@ -1393,14 +1313,14 @@ fml_2_37()
   exit $X
 }
 
-NAMES[65]='libxlinux/xstdlib/xstdlib.debug.pic.o'
-fml_2_38()
+NAMES[59]='libxlinux/xftw/xftw.xapi.debug.pic.o'
+fml_2_19()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xstdlib/xstdlib.c -o libxlinux/xstdlib/xstdlib.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xftw/xftw.c -o libxlinux/xftw/xftw.xapi.debug.pic.o
 
 
   X=$?
@@ -1408,14 +1328,14 @@ fml_2_38()
   exit $X
 }
 
-NAMES[66]='libxlinux/xstring/xstring.debug.pic.o'
-fml_2_39()
+NAMES[60]='libxlinux/xgrp/xgrp.xapi.debug.pic.o'
+fml_2_20()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xstring/xstring.c -o libxlinux/xstring/xstring.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xgrp/xgrp.c -o libxlinux/xgrp/xgrp.xapi.debug.pic.o
 
 
   X=$?
@@ -1423,14 +1343,14 @@ fml_2_39()
   exit $X
 }
 
-NAMES[67]='libxlinux/xtime/xtime.debug.pic.o'
-fml_2_40()
+NAMES[61]='libxlinux/xmman/xmman.xapi.debug.pic.o'
+fml_2_21()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xtime/xtime.c -o libxlinux/xtime/xtime.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xmman/xmman.c -o libxlinux/xmman/xmman.xapi.debug.pic.o
 
 
   X=$?
@@ -1438,14 +1358,14 @@ fml_2_40()
   exit $X
 }
 
-NAMES[68]='libxlinux/xuio/xuio.debug.pic.o'
-fml_2_41()
+NAMES[62]='libxlinux/xprctl/xprctl.xapi.debug.pic.o'
+fml_2_22()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xuio/xuio.c -o libxlinux/xuio/xuio.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xprctl/xprctl.c -o libxlinux/xprctl/xprctl.xapi.debug.pic.o
 
 
   X=$?
@@ -1453,14 +1373,14 @@ fml_2_41()
   exit $X
 }
 
-NAMES[69]='libxlinux/xunistd/xunistd.debug.pic.o'
-fml_2_42()
+NAMES[63]='libxlinux/xpwd/xpwd.xapi.debug.pic.o'
+fml_2_23()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xunistd/xunistd.c -o libxlinux/xunistd/xunistd.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xpwd/xpwd.c -o libxlinux/xpwd/xpwd.xapi.debug.pic.o
 
 
   X=$?
@@ -1468,14 +1388,14 @@ fml_2_42()
   exit $X
 }
 
-NAMES[70]='libxlinux/xwait/xwait.debug.pic.o'
-fml_2_43()
+NAMES[64]='libxlinux/xsignal/xsignal.xapi.debug.pic.o'
+fml_2_24()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -c libxlinux/xwait/xwait.c -o libxlinux/xwait/xwait.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xsignal/xsignal.c -o libxlinux/xsignal/xsignal.xapi.debug.pic.o
 
 
   X=$?
@@ -1483,14 +1403,14 @@ fml_2_43()
   exit $X
 }
 
-NAMES[71]='listwise/liblistwise/error/LW.errtab.debug.pic.o'
-fml_2_44()
+NAMES[65]='libxlinux/xstat/xstat.xapi.debug.pic.o'
+fml_2_25()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/error/LW.errtab.c -o listwise/liblistwise/error/LW.errtab.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xstat/xstat.c -o libxlinux/xstat/xstat.xapi.debug.pic.o
 
 
   X=$?
@@ -1498,14 +1418,14 @@ fml_2_44()
   exit $X
 }
 
-NAMES[72]='listwise/liblistwise/error/PCRE.errtab.debug.pic.o'
-fml_2_45()
+NAMES[66]='libxlinux/xstdlib/xstdlib.xapi.debug.pic.o'
+fml_2_26()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/error/PCRE.errtab.c -o listwise/liblistwise/error/PCRE.errtab.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xstdlib/xstdlib.c -o libxlinux/xstdlib/xstdlib.xapi.debug.pic.o
 
 
   X=$?
@@ -1513,14 +1433,14 @@ fml_2_45()
   exit $X
 }
 
-NAMES[73]='listwise/liblistwise/iterate/iterate.debug.pic.o'
-fml_2_46()
+NAMES[67]='libxlinux/xstring/xstring.xapi.debug.pic.o'
+fml_2_27()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/iterate/iterate.c -o listwise/liblistwise/iterate/iterate.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xstring/xstring.c -o libxlinux/xstring/xstring.xapi.debug.pic.o
 
 
   X=$?
@@ -1528,14 +1448,14 @@ fml_2_46()
   exit $X
 }
 
-NAMES[74]='listwise/liblistwise/logging/logging.debug.pic.o'
-fml_2_47()
+NAMES[68]='libxlinux/xtime/xtime.xapi.debug.pic.o'
+fml_2_28()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/logging/logging.c -o listwise/liblistwise/logging/logging.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xtime/xtime.c -o libxlinux/xtime/xtime.xapi.debug.pic.o
 
 
   X=$?
@@ -1543,14 +1463,14 @@ fml_2_47()
   exit $X
 }
 
-NAMES[75]='listwise/liblistwise/lstack/lstack.debug.pic.o'
-fml_2_48()
+NAMES[69]='libxlinux/xuio/xuio.xapi.debug.pic.o'
+fml_2_29()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/lstack/lstack.c -o listwise/liblistwise/lstack/lstack.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xuio/xuio.c -o libxlinux/xuio/xuio.xapi.debug.pic.o
 
 
   X=$?
@@ -1558,14 +1478,14 @@ fml_2_48()
   exit $X
 }
 
-NAMES[76]='listwise/liblistwise/lwx/lwx.debug.pic.o'
-fml_2_49()
+NAMES[70]='libxlinux/xunistd/xunistd.xapi.debug.pic.o'
+fml_2_30()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/lwx/lwx.c -o listwise/liblistwise/lwx/lwx.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xunistd/xunistd.c -o libxlinux/xunistd/xunistd.xapi.debug.pic.o
 
 
   X=$?
@@ -1573,14 +1493,14 @@ fml_2_49()
   exit $X
 }
 
-NAMES[77]='listwise/liblistwise/object/object.debug.pic.o'
-fml_2_50()
+NAMES[71]='libxlinux/xwait/xwait.xapi.debug.pic.o'
+fml_2_31()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/object/object.c -o listwise/liblistwise/object/object.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -c libxlinux/xwait/xwait.c -o libxlinux/xwait/xwait.xapi.debug.pic.o
 
 
   X=$?
@@ -1588,14 +1508,14 @@ fml_2_50()
   exit $X
 }
 
-NAMES[78]='listwise/liblistwise/re/re.debug.pic.o'
-fml_2_51()
+NAMES[72]='listwise/liblistwise/error/LW.errtab.xapi.debug.pic.o'
+fml_2_32()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/re/re.c -o listwise/liblistwise/re/re.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/error/LW.errtab.c -o listwise/liblistwise/error/LW.errtab.xapi.debug.pic.o
 
 
   X=$?
@@ -1603,11 +1523,116 @@ fml_2_51()
   exit $X
 }
 
-NAMES[79]='{listwise/liblistwise/transform/transform.states.h, listwise/liblistwise/transform/transform.states.c}'
-fml_2_52()
+NAMES[73]='listwise/liblistwise/error/PCRE.errtab.xapi.debug.pic.o'
+fml_2_33()
 {
   exec 1>/dev/null
   exec 2>&114
+
+  
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/error/PCRE.errtab.c -o listwise/liblistwise/error/PCRE.errtab.xapi.debug.pic.o
+
+
+  X=$?
+  echo 14 1>&99
+  exit $X
+}
+
+NAMES[74]='listwise/liblistwise/iterate/iterate.xapi.debug.pic.o'
+fml_2_34()
+{
+  exec 1>/dev/null
+  exec 2>&115
+
+  
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/iterate/iterate.c -o listwise/liblistwise/iterate/iterate.xapi.debug.pic.o
+
+
+  X=$?
+  echo 15 1>&99
+  exit $X
+}
+
+NAMES[75]='listwise/liblistwise/logging/logging.xapi.debug.pic.o'
+fml_2_35()
+{
+  exec 1>/dev/null
+  exec 2>&116
+
+  
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/logging/logging.c -o listwise/liblistwise/logging/logging.xapi.debug.pic.o
+
+
+  X=$?
+  echo 16 1>&99
+  exit $X
+}
+
+NAMES[76]='listwise/liblistwise/lstack/lstack.xapi.debug.pic.o'
+fml_2_36()
+{
+  exec 1>/dev/null
+  exec 2>&117
+
+  
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/lstack/lstack.c -o listwise/liblistwise/lstack/lstack.xapi.debug.pic.o
+
+
+  X=$?
+  echo 17 1>&99
+  exit $X
+}
+
+NAMES[77]='listwise/liblistwise/lwx/lwx.xapi.debug.pic.o'
+fml_2_37()
+{
+  exec 1>/dev/null
+  exec 2>&118
+
+  
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/lwx/lwx.c -o listwise/liblistwise/lwx/lwx.xapi.debug.pic.o
+
+
+  X=$?
+  echo 18 1>&99
+  exit $X
+}
+
+NAMES[78]='listwise/liblistwise/object/object.xapi.debug.pic.o'
+fml_2_38()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/object/object.c -o listwise/liblistwise/object/object.xapi.debug.pic.o
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+NAMES[79]='listwise/liblistwise/re/re.xapi.debug.pic.o'
+fml_2_39()
+{
+  exec 1>/dev/null
+  exec 2>&101
+
+  
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/re/re.c -o listwise/liblistwise/re/re.xapi.debug.pic.o
+
+
+  X=$?
+  echo 1 1>&99
+  exit $X
+}
+
+NAMES[80]='{listwise/liblistwise/transform/transform.states.h, listwise/liblistwise/transform/transform.states.c}'
+fml_2_40()
+{
+  exec 1>/dev/null
+  exec 2>&102
 
   
 	src=listwise/liblistwise/transform/transform.lex.h
@@ -1643,15 +1668,15 @@ echo "}) / sizeof(int);"
 
 
   X=$?
-  echo 14 1>&99
+  echo 2 1>&99
   exit $X
 }
 
-NAMES[80]='{listwise/liblistwise/transform/transform.tokens.h, listwise/liblistwise/transform/transform.tokens.c}'
-fml_2_53()
+NAMES[81]='{listwise/liblistwise/transform/transform.tokens.h, listwise/liblistwise/transform/transform.tokens.c}'
+fml_2_41()
 {
   exec 1>/dev/null
-  exec 2>&115
+  exec 2>&103
 
   
 	src=listwise/liblistwise/transform/transform.tab.c
@@ -1670,6 +1695,16 @@ echo "enum ${pfx}_tokennames {"
 sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
 | sed -ne "s/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/${pfx}_\1 = \2,/p"
 echo "};"	
+echo -n "#define ${pfx}_MINTOKEN "
+sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+| sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2/p' \
+| sort -n \
+| head -n 1
+echo -n "#define ${pfx}_MAXTOKEN "
+sed -ne '/enum[ \t]\+yytokentype/,/};/ p' < ${src} \
+| sed -ne 's/\([^ \t]\+\)[ \t]\+=[ \t]\+\([^ \t,]\+\),\?/\2/p' \
+| sort -nr \
+| head -n 1
 echo "#endif"
 
 exec 1>${tokens_c}
@@ -1689,140 +1724,18 @@ echo "}) / sizeof(int);"
 
 
   X=$?
-  echo 15 1>&99
-  exit $X
-}
-
-NAMES[81]='listwise/listwise/args/args.debug.o'
-fml_2_54()
-{
-  exec 1>/dev/null
-  exec 2>&116
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./listwise/listwise/error -I./listwise/listwise/logs -I./listwise/listwise/man -I./listwise/listwise/args -I./listwise/listwise -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c listwise/listwise/args/args.c -o listwise/listwise/args/args.debug.o
-
-
-  X=$?
-  echo 16 1>&99
-  exit $X
-}
-
-NAMES[82]='listwise/listwise/error/LISTWISE.errtab.debug.o'
-fml_2_55()
-{
-  exec 1>/dev/null
-  exec 2>&117
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./listwise/listwise/error -I./listwise/listwise/logs -I./listwise/listwise/man -I./listwise/listwise/args -I./listwise/listwise -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c listwise/listwise/error/LISTWISE.errtab.c -o listwise/listwise/error/LISTWISE.errtab.debug.o
-
-
-  X=$?
-  echo 17 1>&99
-  exit $X
-}
-
-NAMES[83]='listwise/listwise/logs/logs.debug.o'
-fml_2_56()
-{
-  exec 1>/dev/null
-  exec 2>&118
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./listwise/listwise/error -I./listwise/listwise/logs -I./listwise/listwise/man -I./listwise/listwise/args -I./listwise/listwise -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c listwise/listwise/logs/logs.c -o listwise/listwise/logs/logs.debug.o
-
-
-  X=$?
-  echo 18 1>&99
-  exit $X
-}
-
-NAMES[84]='listwise/listwise/main.debug.o'
-fml_2_57()
-{
-  exec 1>/dev/null
-  exec 2>&100
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./listwise/listwise/error -I./listwise/listwise/logs -I./listwise/listwise/man -I./listwise/listwise/args -I./listwise/listwise -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c listwise/listwise/main.c -o listwise/listwise/main.debug.o
-
-
-  X=$?
-  echo 0 1>&99
-  exit $X
-}
-
-
-# formulas and names for stage 3
-NAMES[85]='common/memblk/memblk.debug.o'
-fml_3_0()
-{
-  exec 1>/dev/null
-  exec 2>&100
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/memblk/memblk.c -o common/memblk/memblk.debug.o
-
-
-  X=$?
-  echo 0 1>&99
-  exit $X
-}
-
-NAMES[86]='common/memblk/memblk.debug.pic.o'
-fml_3_1()
-{
-  exec 1>/dev/null
-  exec 2>&101
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -fPIC -c common/memblk/memblk.c -o common/memblk/memblk.debug.pic.o
-
-
-  X=$?
-  echo 1 1>&99
-  exit $X
-}
-
-NAMES[87]='fab/common/args/args.debug.o'
-fml_3_2()
-{
-  exec 1>/dev/null
-  exec 2>&102
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/args/args.c -o fab/common/args/args.debug.o
-
-
-  X=$?
-  echo 2 1>&99
-  exit $X
-}
-
-NAMES[88]='fab/common/identity/identity.debug.o'
-fml_3_3()
-{
-  exec 1>/dev/null
-  exec 2>&103
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/identity/identity.c -o fab/common/identity/identity.debug.o
-
-
-  X=$?
   echo 3 1>&99
   exit $X
 }
 
-NAMES[89]='fab/common/path/path.debug.o'
-fml_3_4()
+NAMES[82]='listwise/listwise/args/args.xapi.debug.o'
+fml_2_42()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/path/path.c -o fab/common/path/path.debug.o
+	gcc -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -Ilistwise/listwise/error -Ilistwise/listwise/logs -Ilistwise/listwise/man -Ilistwise/listwise/args -Ilistwise/listwise -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -c listwise/listwise/args/args.c -o listwise/listwise/args/args.xapi.debug.o
 
 
   X=$?
@@ -1830,14 +1743,14 @@ fml_3_4()
   exit $X
 }
 
-NAMES[90]='fab/fab/main.debug.o'
-fml_3_5()
+NAMES[83]='listwise/listwise/error/LISTWISE.errtab.xapi.debug.o'
+fml_2_43()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fab -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fab/main.c -o fab/fab/main.debug.o
+	gcc -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -Ilistwise/listwise/error -Ilistwise/listwise/logs -Ilistwise/listwise/man -Ilistwise/listwise/args -Ilistwise/listwise -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -c listwise/listwise/error/LISTWISE.errtab.c -o listwise/listwise/error/LISTWISE.errtab.xapi.debug.o
 
 
   X=$?
@@ -1845,14 +1758,14 @@ fml_3_5()
   exit $X
 }
 
-NAMES[91]='fab/fabd/bp/bp.debug.o'
-fml_3_6()
+NAMES[84]='listwise/listwise/main.xapi.debug.o'
+fml_2_44()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/bp/bp.c -o fab/fabd/bp/bp.debug.o
+	gcc -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -Ilistwise/listwise/error -Ilistwise/listwise/logs -Ilistwise/listwise/man -Ilistwise/listwise/args -Ilistwise/listwise -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -c listwise/listwise/main.c -o listwise/listwise/main.xapi.debug.o
 
 
   X=$?
@@ -1860,14 +1773,121 @@ fml_3_6()
   exit $X
 }
 
-NAMES[92]='fab/fabd/bs/bs.debug.o'
+
+# formulas and names for stage 3
+NAMES[85]='common/memblk/memblk.xapi.debug.o'
+fml_3_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -c common/memblk/memblk.c -o common/memblk/memblk.xapi.debug.o
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+NAMES[86]='fab/common/args/args.xapi.debug.o'
+fml_3_1()
+{
+  exec 1>/dev/null
+  exec 2>&101
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/args/args.c -o fab/common/args/args.xapi.debug.o
+
+
+  X=$?
+  echo 1 1>&99
+  exit $X
+}
+
+NAMES[87]='fab/common/identity/identity.xapi.debug.o'
+fml_3_2()
+{
+  exec 1>/dev/null
+  exec 2>&102
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/identity/identity.c -o fab/common/identity/identity.xapi.debug.o
+
+
+  X=$?
+  echo 2 1>&99
+  exit $X
+}
+
+NAMES[88]='fab/common/path/path.xapi.debug.o'
+fml_3_3()
+{
+  exec 1>/dev/null
+  exec 2>&103
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/common/path/path.c -o fab/common/path/path.xapi.debug.o
+
+
+  X=$?
+  echo 3 1>&99
+  exit $X
+}
+
+NAMES[89]='fab/fab/main.xapi.debug.o'
+fml_3_4()
+{
+  exec 1>/dev/null
+  exec 2>&104
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fab -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fab/main.c -o fab/fab/main.xapi.debug.o
+
+
+  X=$?
+  echo 4 1>&99
+  exit $X
+}
+
+NAMES[90]='fab/fabd/bp/bp.xapi.debug.o'
+fml_3_5()
+{
+  exec 1>/dev/null
+  exec 2>&105
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/bp/bp.c -o fab/fabd/bp/bp.xapi.debug.o
+
+
+  X=$?
+  echo 5 1>&99
+  exit $X
+}
+
+NAMES[91]='fab/fabd/bs/bs.xapi.debug.o'
+fml_3_6()
+{
+  exec 1>/dev/null
+  exec 2>&106
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/bs/bs.c -o fab/fabd/bs/bs.xapi.debug.o
+
+
+  X=$?
+  echo 6 1>&99
+  exit $X
+}
+
+NAMES[92]='fab/fabd/dep/dep.xapi.debug.o'
 fml_3_7()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/bs/bs.c -o fab/fabd/bs/bs.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/dep/dep.c -o fab/fabd/dep/dep.xapi.debug.o
 
 
   X=$?
@@ -1875,14 +1895,14 @@ fml_3_7()
   exit $X
 }
 
-NAMES[93]='fab/fabd/dep/dep.debug.o'
+NAMES[93]='fab/fabd/dsc/dsc.xapi.debug.o'
 fml_3_8()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/dep/dep.c -o fab/fabd/dep/dep.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/dsc/dsc.c -o fab/fabd/dsc/dsc.xapi.debug.o
 
 
   X=$?
@@ -1890,14 +1910,14 @@ fml_3_8()
   exit $X
 }
 
-NAMES[94]='fab/fabd/dsc/dsc.debug.o'
+NAMES[94]='fab/fabd/enclose/enclose.xapi.debug.o'
 fml_3_9()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/dsc/dsc.c -o fab/fabd/dsc/dsc.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/enclose/enclose.c -o fab/fabd/enclose/enclose.xapi.debug.o
 
 
   X=$?
@@ -1905,14 +1925,14 @@ fml_3_9()
   exit $X
 }
 
-NAMES[95]='fab/fabd/enclose/enclose.debug.o'
+NAMES[95]='fab/fabd/ff/ff.lex.xapi.debug.o'
 fml_3_10()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/enclose/enclose.c -o fab/fabd/enclose/enclose.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.lex.c -o fab/fabd/ff/ff.lex.xapi.debug.o
 
 
   X=$?
@@ -1920,14 +1940,14 @@ fml_3_10()
   exit $X
 }
 
-NAMES[96]='fab/fabd/ff/ff.debug.o'
+NAMES[96]='fab/fabd/ff/ff.states.xapi.debug.o'
 fml_3_11()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.c -o fab/fabd/ff/ff.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.states.c -o fab/fabd/ff/ff.states.xapi.debug.o
 
 
   X=$?
@@ -1935,14 +1955,14 @@ fml_3_11()
   exit $X
 }
 
-NAMES[97]='fab/fabd/ff/ff.lex.debug.o'
+NAMES[97]='fab/fabd/ff/ff.tokens.xapi.debug.o'
 fml_3_12()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.lex.c -o fab/fabd/ff/ff.lex.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.tokens.c -o fab/fabd/ff/ff.tokens.xapi.debug.o
 
 
   X=$?
@@ -1950,14 +1970,14 @@ fml_3_12()
   exit $X
 }
 
-NAMES[98]='fab/fabd/ff/ff.states.debug.o'
+NAMES[98]='fab/fabd/ff/ff.xapi.debug.o'
 fml_3_13()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.states.c -o fab/fabd/ff/ff.states.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.c -o fab/fabd/ff/ff.xapi.debug.o
 
 
   X=$?
@@ -1965,14 +1985,14 @@ fml_3_13()
   exit $X
 }
 
-NAMES[99]='fab/fabd/ff/ff.tokens.debug.o'
+NAMES[99]='fab/fabd/ffn/ffn.xapi.debug.o'
 fml_3_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ff/ff.tokens.c -o fab/fabd/ff/ff.tokens.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ffn/ffn.c -o fab/fabd/ffn/ffn.xapi.debug.o
 
 
   X=$?
@@ -1980,14 +2000,14 @@ fml_3_14()
   exit $X
 }
 
-NAMES[100]='fab/fabd/ffn/ffn.debug.o'
+NAMES[100]='fab/fabd/ffproc/ffproc.xapi.debug.o'
 fml_3_15()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ffn/ffn.c -o fab/fabd/ffn/ffn.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ffproc/ffproc.c -o fab/fabd/ffproc/ffproc.xapi.debug.o
 
 
   X=$?
@@ -1995,14 +2015,14 @@ fml_3_15()
   exit $X
 }
 
-NAMES[101]='fab/fabd/ffproc/ffproc.debug.o'
+NAMES[101]='fab/fabd/fml/fml.xapi.debug.o'
 fml_3_16()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ffproc/ffproc.c -o fab/fabd/ffproc/ffproc.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/fml/fml.c -o fab/fabd/fml/fml.xapi.debug.o
 
 
   X=$?
@@ -2010,14 +2030,14 @@ fml_3_16()
   exit $X
 }
 
-NAMES[102]='fab/fabd/fml/fml.debug.o'
+NAMES[102]='fab/fabd/gn/gn.xapi.debug.o'
 fml_3_17()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/fml/fml.c -o fab/fabd/fml/fml.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/gn/gn.c -o fab/fabd/gn/gn.xapi.debug.o
 
 
   X=$?
@@ -2025,14 +2045,14 @@ fml_3_17()
   exit $X
 }
 
-NAMES[103]='fab/fabd/gn/gn.debug.o'
+NAMES[103]='fab/fabd/gn/gnlw.xapi.debug.o'
 fml_3_18()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/gn/gn.c -o fab/fabd/gn/gn.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/gn/gnlw.c -o fab/fabd/gn/gnlw.xapi.debug.o
 
 
   X=$?
@@ -2040,14 +2060,14 @@ fml_3_18()
   exit $X
 }
 
-NAMES[104]='fab/fabd/gn/gnlw.debug.o'
+NAMES[104]='fab/fabd/hashblock/hashblock.xapi.debug.o'
 fml_3_19()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/gn/gnlw.c -o fab/fabd/gn/gnlw.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/hashblock/hashblock.c -o fab/fabd/hashblock/hashblock.xapi.debug.o
 
 
   X=$?
@@ -2055,14 +2075,14 @@ fml_3_19()
   exit $X
 }
 
-NAMES[105]='fab/fabd/hashblock/hashblock.debug.o'
+NAMES[105]='fab/fabd/list/list.xapi.debug.o'
 fml_3_20()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/hashblock/hashblock.c -o fab/fabd/hashblock/hashblock.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/list/list.c -o fab/fabd/list/list.xapi.debug.o
 
 
   X=$?
@@ -2070,14 +2090,14 @@ fml_3_20()
   exit $X
 }
 
-NAMES[106]='fab/fabd/list/list.debug.o'
+NAMES[106]='fab/fabd/lwutil/lwutil.xapi.debug.o'
 fml_3_21()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/list/list.c -o fab/fabd/list/list.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/lwutil/lwutil.c -o fab/fabd/lwutil/lwutil.xapi.debug.o
 
 
   X=$?
@@ -2085,14 +2105,14 @@ fml_3_21()
   exit $X
 }
 
-NAMES[107]='fab/fabd/lwutil/lwutil.debug.o'
+NAMES[107]='fab/fabd/main.xapi.debug.o'
 fml_3_22()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/lwutil/lwutil.c -o fab/fabd/lwutil/lwutil.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/main.c -o fab/fabd/main.xapi.debug.o
 
 
   X=$?
@@ -2100,14 +2120,14 @@ fml_3_22()
   exit $X
 }
 
-NAMES[108]='fab/fabd/main.debug.o'
+NAMES[108]='fab/fabd/selector/selector.xapi.debug.o'
 fml_3_23()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/main.c -o fab/fabd/main.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/selector/selector.c -o fab/fabd/selector/selector.xapi.debug.o
 
 
   X=$?
@@ -2115,14 +2135,14 @@ fml_3_23()
   exit $X
 }
 
-NAMES[109]='fab/fabd/selector/selector.debug.o'
+NAMES[109]='fab/fabd/strstack/strstack.xapi.debug.o'
 fml_3_24()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/selector/selector.c -o fab/fabd/selector/selector.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/strstack/strstack.c -o fab/fabd/strstack/strstack.xapi.debug.o
 
 
   X=$?
@@ -2130,14 +2150,14 @@ fml_3_24()
   exit $X
 }
 
-NAMES[110]='fab/fabd/strstack/strstack.debug.o'
+NAMES[110]='fab/fabd/tmp/tmp.xapi.debug.o'
 fml_3_25()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/strstack/strstack.c -o fab/fabd/strstack/strstack.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/tmp/tmp.c -o fab/fabd/tmp/tmp.xapi.debug.o
 
 
   X=$?
@@ -2145,14 +2165,14 @@ fml_3_25()
   exit $X
 }
 
-NAMES[111]='fab/fabd/tmp/tmp.debug.o'
+NAMES[111]='fab/fabd/traverse/traverse.xapi.debug.o'
 fml_3_26()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/tmp/tmp.c -o fab/fabd/tmp/tmp.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/traverse/traverse.c -o fab/fabd/traverse/traverse.xapi.debug.o
 
 
   X=$?
@@ -2160,14 +2180,14 @@ fml_3_26()
   exit $X
 }
 
-NAMES[112]='fab/fabd/traverse/traverse.debug.o'
+NAMES[112]='fab/fabd/ts/ts.xapi.debug.o'
 fml_3_27()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/traverse/traverse.c -o fab/fabd/traverse/traverse.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ts/ts.c -o fab/fabd/ts/ts.xapi.debug.o
 
 
   X=$?
@@ -2175,14 +2195,14 @@ fml_3_27()
   exit $X
 }
 
-NAMES[113]='fab/fabd/ts/ts.debug.o'
+NAMES[113]='fab/fabd/var/var.xapi.debug.o'
 fml_3_28()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/ts/ts.c -o fab/fabd/ts/ts.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/var/var.c -o fab/fabd/var/var.xapi.debug.o
 
 
   X=$?
@@ -2190,14 +2210,14 @@ fml_3_28()
   exit $X
 }
 
-NAMES[114]='fab/fabd/var/var.debug.o'
+NAMES[114]='libxapi/callstack/callstack.xapi.debug.pic.o'
 fml_3_29()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -c fab/fabd/var/var.c -o fab/fabd/var/var.debug.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/callstack/callstack.c -o libxapi/callstack/callstack.xapi.debug.pic.o
 
 
   X=$?
@@ -2205,14 +2225,14 @@ fml_3_29()
   exit $X
 }
 
-NAMES[115]='libxapi/callstack/callstack.debug.pic.o'
+NAMES[115]='libxapi/error/SYS.errtab.xapi.debug.pic.o'
 fml_3_30()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/callstack/callstack.c -o libxapi/callstack/callstack.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/error/SYS.errtab.c -o libxapi/error/SYS.errtab.xapi.debug.pic.o
 
 
   X=$?
@@ -2220,14 +2240,14 @@ fml_3_30()
   exit $X
 }
 
-NAMES[116]='libxapi/error/SYS.errtab.debug.pic.o'
+NAMES[116]='libxapi/error/error.xapi.debug.pic.o'
 fml_3_31()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/error/SYS.errtab.c -o libxapi/error/SYS.errtab.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/error/error.c -o libxapi/error/error.xapi.debug.pic.o
 
 
   X=$?
@@ -2235,26 +2255,11 @@ fml_3_31()
   exit $X
 }
 
-NAMES[117]='libxapi/error/error.debug.pic.o'
+NAMES[117]='libxapi/exports'
 fml_3_32()
 {
   exec 1>/dev/null
   exec 2>&113
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/error/error.c -o libxapi/error/error.debug.pic.o
-
-
-  X=$?
-  echo 13 1>&99
-  exit $X
-}
-
-NAMES[118]='libxapi/exports'
-fml_3_33()
-{
-  exec 1>/dev/null
-  exec 2>&114
 
   
 	  (echo "{ global: "
@@ -2266,18 +2271,33 @@ echo "local: *; };"
 
 
   X=$?
+  echo 13 1>&99
+  exit $X
+}
+
+NAMES[118]='libxapi/frame/frame.xapi.debug.pic.o'
+fml_3_33()
+{
+  exec 1>/dev/null
+  exec 2>&114
+
+  
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/frame/frame.c -o libxapi/frame/frame.xapi.debug.pic.o
+
+
+  X=$?
   echo 14 1>&99
   exit $X
 }
 
-NAMES[119]='libxapi/frame/frame.debug.pic.o'
+NAMES[119]='libxapi/trace/trace.xapi.debug.pic.o'
 fml_3_34()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/frame/frame.c -o libxapi/frame/frame.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/trace/trace.c -o libxapi/trace/trace.xapi.debug.pic.o
 
 
   X=$?
@@ -2285,14 +2305,14 @@ fml_3_34()
   exit $X
 }
 
-NAMES[120]='libxapi/test.debug.pic.o'
+NAMES[120]='listwise/liblistwise/describe/describe.xapi.debug.pic.o'
 fml_3_35()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/test.c -o libxapi/test.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/describe/describe.c -o listwise/liblistwise/describe/describe.xapi.debug.pic.o
 
 
   X=$?
@@ -2300,14 +2320,14 @@ fml_3_35()
   exit $X
 }
 
-NAMES[121]='libxapi/trace/trace.debug.pic.o'
+NAMES[121]='listwise/liblistwise/error/error.xapi.debug.pic.o'
 fml_3_36()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -c libxapi/trace/trace.c -o libxapi/trace/trace.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/error/error.c -o listwise/liblistwise/error/error.xapi.debug.pic.o
 
 
   X=$?
@@ -2315,14 +2335,14 @@ fml_3_36()
   exit $X
 }
 
-NAMES[122]='listwise/liblistwise/describe/describe.debug.pic.o'
+NAMES[122]='listwise/liblistwise/exec/exec.xapi.debug.pic.o'
 fml_3_37()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/describe/describe.c -o listwise/liblistwise/describe/describe.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/exec/exec.c -o listwise/liblistwise/exec/exec.xapi.debug.pic.o
 
 
   X=$?
@@ -2330,14 +2350,18 @@ fml_3_37()
   exit $X
 }
 
-NAMES[123]='listwise/liblistwise/error/error.debug.pic.o'
+NAMES[123]='listwise/liblistwise/exports'
 fml_3_38()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/error/error.c -o listwise/liblistwise/error/error.debug.pic.o
+	  (echo "{ global: "
+sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
+	  cat -- listwise/liblistwise/exec/exec.c listwise/liblistwise/logging/logging.c listwise/liblistwise/error/LW.errtab.c listwise/liblistwise/error/PCRE.errtab.c listwise/liblistwise/error/error.c listwise/liblistwise/iterate/iterate.c listwise/liblistwise/object/object.c listwise/liblistwise/op/z/test.c listwise/liblistwise/op/z/z.c listwise/liblistwise/op/o/o.c listwise/liblistwise/op/o/test.c listwise/liblistwise/op/vf/vf.c listwise/liblistwise/op/wvp/wvp.c listwise/liblistwise/op/wvp/test.c listwise/liblistwise/op/sort/sort.c listwise/liblistwise/op/sort/test.c listwise/liblistwise/op/w/w.c listwise/liblistwise/op/shift/shift.c listwise/liblistwise/op/dj/dj.c listwise/liblistwise/op/uu/uu.c listwise/liblistwise/op/uu/test.c listwise/liblistwise/op/u/test.c listwise/liblistwise/op/u/u.c listwise/liblistwise/op/bn/bn.c listwise/liblistwise/op/re/re.c listwise/liblistwise/op/rp/rp.c listwise/liblistwise/op/f/f.c listwise/liblistwise/op/f/test.c listwise/liblistwise/op/ls/ls.c listwise/liblistwise/op/lx/lx.c listwise/liblistwise/op/lx/test.c listwise/liblistwise/op/hl/hl.c listwise/liblistwise/op/rb/rb.c listwise/liblistwise/op/j/j.c listwise/liblistwise/op/-X/-X.c listwise/liblistwise/op/up/up.c listwise/liblistwise/op/cp/cp.c listwise/liblistwise/op/p/p.c listwise/liblistwise/op/p/test.c listwise/liblistwise/op/c/c.c listwise/liblistwise/op/r/r.c listwise/liblistwise/op/ln/ln.c listwise/liblistwise/op/xch/xch.c listwise/liblistwise/op/t/t.c listwise/liblistwise/op/s/s.c listwise/liblistwise/op/s/test.c listwise/liblistwise/op/cons/cons.c listwise/liblistwise/op/wvf/wvf.c listwise/liblistwise/op/wvf/test.c listwise/liblistwise/op/dn/dn.c listwise/liblistwise/op/stat/stat.c listwise/liblistwise/op/g/g.c listwise/liblistwise/op/d/d.c listwise/liblistwise/op/vp/vp.c listwise/liblistwise/op/can/can.c listwise/liblistwise/op/datef/datef.c listwise/liblistwise/op/x/x.c listwise/liblistwise/op/b/b.c listwise/liblistwise/op/C/C.c listwise/liblistwise/op/rx/rx.c listwise/liblistwise/op/y/y.c listwise/liblistwise/op/y/test.c listwise/liblistwise/op/fn/fn.c listwise/liblistwise/op/pop/pop.c listwise/liblistwise/op/sx/sx.c listwise/liblistwise/op/sx/test.c listwise/liblistwise/op/l/l.c listwise/liblistwise/op/l/test.c listwise/liblistwise/op/v/test.c listwise/liblistwise/op/v/v.c listwise/liblistwise/describe/describe.c listwise/liblistwise/test/fab_test/test.c listwise/liblistwise/test/listwise_test/listwise_test.c listwise/liblistwise/lwx/lwx.c listwise/liblistwise/re/re.c listwise/liblistwise/lstack/lstack.c listwise/liblistwise/fs/fs.c listwise/liblistwise/selection/selection.c listwise/liblistwise/operators/operators.c listwise/liblistwise/operator/operator.c listwise/liblistwise/sanity/sanity.c listwise/liblistwise/window/window.c listwise/liblistwise/transform/transform.tab.c listwise/liblistwise/transform/transform.c listwise/liblistwise/transform/transform.states.c listwise/liblistwise/transform/transform.tokens.c listwise/liblistwise/transform/transform.lex.c listwise/liblistwise/transform/genscan.c listwise/liblistwise/tune/tune.c )
+echo "local: *; };"
+	 ) 1>listwise/liblistwise/exports
 
 
   X=$?
@@ -2345,14 +2369,14 @@ fml_3_38()
   exit $X
 }
 
-NAMES[124]='listwise/liblistwise/exec/exec.debug.pic.o'
+NAMES[124]='listwise/liblistwise/fs/fs.xapi.debug.pic.o'
 fml_3_39()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/exec/exec.c -o listwise/liblistwise/exec/exec.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/fs/fs.c -o listwise/liblistwise/fs/fs.xapi.debug.pic.o
 
 
   X=$?
@@ -2360,18 +2384,14 @@ fml_3_39()
   exit $X
 }
 
-NAMES[125]='listwise/liblistwise/exports'
+NAMES[125]='listwise/liblistwise/operator/operator.xapi.debug.pic.o'
 fml_3_40()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	  (echo "{ global: "
-sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
-	  cat -- listwise/liblistwise/exec/exec.c listwise/liblistwise/logging/logging.c listwise/liblistwise/error/LW.errtab.c listwise/liblistwise/error/PCRE.errtab.c listwise/liblistwise/error/error.c listwise/liblistwise/iterate/iterate.c listwise/liblistwise/object/object.c listwise/liblistwise/op/z/test.c listwise/liblistwise/op/z/z.c listwise/liblistwise/op/o/o.c listwise/liblistwise/op/o/test.c listwise/liblistwise/op/vf/vf.c listwise/liblistwise/op/wvp/wvp.c listwise/liblistwise/op/wvp/test.c listwise/liblistwise/op/sort/sort.c listwise/liblistwise/op/sort/test.c listwise/liblistwise/op/w/w.c listwise/liblistwise/op/shift/shift.c listwise/liblistwise/op/dj/dj.c listwise/liblistwise/op/uu/uu.c listwise/liblistwise/op/uu/test.c listwise/liblistwise/op/u/test.c listwise/liblistwise/op/u/u.c listwise/liblistwise/op/bn/bn.c listwise/liblistwise/op/re/re.c listwise/liblistwise/op/rp/rp.c listwise/liblistwise/op/f/f.c listwise/liblistwise/op/f/test.c listwise/liblistwise/op/ls/ls.c listwise/liblistwise/op/lx/lx.c listwise/liblistwise/op/lx/test.c listwise/liblistwise/op/hl/hl.c listwise/liblistwise/op/rb/rb.c listwise/liblistwise/op/j/j.c listwise/liblistwise/op/-X/-X.c listwise/liblistwise/op/up/up.c listwise/liblistwise/op/cp/cp.c listwise/liblistwise/op/p/p.c listwise/liblistwise/op/p/test.c listwise/liblistwise/op/c/c.c listwise/liblistwise/op/r/r.c listwise/liblistwise/op/ln/ln.c listwise/liblistwise/op/xch/xch.c listwise/liblistwise/op/t/t.c listwise/liblistwise/op/s/s.c listwise/liblistwise/op/cons/cons.c listwise/liblistwise/op/wvf/wvf.c listwise/liblistwise/op/wvf/test.c listwise/liblistwise/op/dn/dn.c listwise/liblistwise/op/stat/stat.c listwise/liblistwise/op/g/g.c listwise/liblistwise/op/d/d.c listwise/liblistwise/op/vp/vp.c listwise/liblistwise/op/can/can.c listwise/liblistwise/op/datef/datef.c listwise/liblistwise/op/x/x.c listwise/liblistwise/op/b/b.c listwise/liblistwise/op/C/C.c listwise/liblistwise/op/rx/rx.c listwise/liblistwise/op/y/y.c listwise/liblistwise/op/y/test.c listwise/liblistwise/op/fn/fn.c listwise/liblistwise/op/pop/pop.c listwise/liblistwise/op/sx/sx.c listwise/liblistwise/op/sx/test.c listwise/liblistwise/op/l/l.c listwise/liblistwise/op/l/test.c listwise/liblistwise/op/v/test.c listwise/liblistwise/op/v/v.c listwise/liblistwise/describe/describe.c listwise/liblistwise/test/fab_test/test.c listwise/liblistwise/test/listwise_test/listwise_test.c listwise/liblistwise/lwx/lwx.c listwise/liblistwise/re/re.c listwise/liblistwise/lstack/lstack.c listwise/liblistwise/fs/fs.c listwise/liblistwise/selection/selection.c listwise/liblistwise/operators/operators.c listwise/liblistwise/operator/operator.c listwise/liblistwise/sanity/sanity.c listwise/liblistwise/window/window.c listwise/liblistwise/transform/transform.tab.c listwise/liblistwise/transform/transform.c listwise/liblistwise/transform/transform.states.c listwise/liblistwise/transform/transform.tokens.c listwise/liblistwise/transform/transform.lex.c listwise/liblistwise/transform/genscan.c listwise/liblistwise/tune/tune.c )
-echo "local: *; };"
-	 ) 1>listwise/liblistwise/exports
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/operator/operator.c -o listwise/liblistwise/operator/operator.xapi.debug.pic.o
 
 
   X=$?
@@ -2379,14 +2399,14 @@ echo "local: *; };"
   exit $X
 }
 
-NAMES[126]='listwise/liblistwise/fs/fs.debug.pic.o'
+NAMES[126]='listwise/liblistwise/operators/operators.xapi.debug.pic.o'
 fml_3_41()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/fs/fs.c -o listwise/liblistwise/fs/fs.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/operators/operators.c -o listwise/liblistwise/operators/operators.xapi.debug.pic.o
 
 
   X=$?
@@ -2394,14 +2414,14 @@ fml_3_41()
   exit $X
 }
 
-NAMES[127]='listwise/liblistwise/operator/operator.debug.pic.o'
+NAMES[127]='listwise/liblistwise/sanity/sanity.xapi.debug.pic.o'
 fml_3_42()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/operator/operator.c -o listwise/liblistwise/operator/operator.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/sanity/sanity.c -o listwise/liblistwise/sanity/sanity.xapi.debug.pic.o
 
 
   X=$?
@@ -2409,14 +2429,14 @@ fml_3_42()
   exit $X
 }
 
-NAMES[128]='listwise/liblistwise/operators/operators.debug.pic.o'
+NAMES[128]='listwise/liblistwise/selection/selection.xapi.debug.pic.o'
 fml_3_43()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/operators/operators.c -o listwise/liblistwise/operators/operators.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/selection/selection.c -o listwise/liblistwise/selection/selection.xapi.debug.pic.o
 
 
   X=$?
@@ -2424,14 +2444,14 @@ fml_3_43()
   exit $X
 }
 
-NAMES[129]='listwise/liblistwise/sanity/sanity.debug.pic.o'
+NAMES[129]='listwise/liblistwise/transform/genscan.xapi.debug.pic.o'
 fml_3_44()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/sanity/sanity.c -o listwise/liblistwise/sanity/sanity.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/genscan.c -o listwise/liblistwise/transform/genscan.xapi.debug.pic.o
 
 
   X=$?
@@ -2439,14 +2459,14 @@ fml_3_44()
   exit $X
 }
 
-NAMES[130]='listwise/liblistwise/selection/selection.debug.pic.o'
+NAMES[130]='listwise/liblistwise/transform/transform.lex.xapi.debug.pic.o'
 fml_3_45()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/selection/selection.c -o listwise/liblistwise/selection/selection.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.lex.c -o listwise/liblistwise/transform/transform.lex.xapi.debug.pic.o
 
 
   X=$?
@@ -2454,14 +2474,14 @@ fml_3_45()
   exit $X
 }
 
-NAMES[131]='listwise/liblistwise/transform/genscan.debug.pic.o'
+NAMES[131]='listwise/liblistwise/transform/transform.states.xapi.debug.pic.o'
 fml_3_46()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/genscan.c -o listwise/liblistwise/transform/genscan.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.states.c -o listwise/liblistwise/transform/transform.states.xapi.debug.pic.o
 
 
   X=$?
@@ -2469,14 +2489,14 @@ fml_3_46()
   exit $X
 }
 
-NAMES[132]='listwise/liblistwise/transform/transform.debug.pic.o'
+NAMES[132]='listwise/liblistwise/transform/transform.tab.xapi.debug.pic.o'
 fml_3_47()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.c -o listwise/liblistwise/transform/transform.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.tab.c -o listwise/liblistwise/transform/transform.tab.xapi.debug.pic.o
 
 
   X=$?
@@ -2484,14 +2504,14 @@ fml_3_47()
   exit $X
 }
 
-NAMES[133]='listwise/liblistwise/transform/transform.lex.debug.pic.o'
+NAMES[133]='listwise/liblistwise/transform/transform.tokens.xapi.debug.pic.o'
 fml_3_48()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.lex.c -o listwise/liblistwise/transform/transform.lex.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.tokens.c -o listwise/liblistwise/transform/transform.tokens.xapi.debug.pic.o
 
 
   X=$?
@@ -2499,14 +2519,14 @@ fml_3_48()
   exit $X
 }
 
-NAMES[134]='listwise/liblistwise/transform/transform.states.debug.pic.o'
+NAMES[134]='listwise/liblistwise/transform/transform.xapi.debug.pic.o'
 fml_3_49()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.states.c -o listwise/liblistwise/transform/transform.states.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.c -o listwise/liblistwise/transform/transform.xapi.debug.pic.o
 
 
   X=$?
@@ -2514,14 +2534,14 @@ fml_3_49()
   exit $X
 }
 
-NAMES[135]='listwise/liblistwise/transform/transform.tab.debug.pic.o'
+NAMES[135]='listwise/liblistwise/tune/tune.xapi.debug.pic.o'
 fml_3_50()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.tab.c -o listwise/liblistwise/transform/transform.tab.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/tune/tune.c -o listwise/liblistwise/tune/tune.xapi.debug.pic.o
 
 
   X=$?
@@ -2529,14 +2549,14 @@ fml_3_50()
   exit $X
 }
 
-NAMES[136]='listwise/liblistwise/transform/transform.tokens.debug.pic.o'
+NAMES[136]='listwise/liblistwise/window/window.xapi.debug.pic.o'
 fml_3_51()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/transform/transform.tokens.c -o listwise/liblistwise/transform/transform.tokens.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/window/window.c -o listwise/liblistwise/window/window.xapi.debug.pic.o
 
 
   X=$?
@@ -2544,46 +2564,16 @@ fml_3_51()
   exit $X
 }
 
-NAMES[137]='listwise/liblistwise/tune/tune.debug.pic.o'
-fml_3_52()
-{
-  exec 1>/dev/null
-  exec 2>&114
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/tune/tune.c -o listwise/liblistwise/tune/tune.debug.pic.o
-
-
-  X=$?
-  echo 14 1>&99
-  exit $X
-}
-
-NAMES[138]='listwise/liblistwise/window/window.debug.pic.o'
-fml_3_53()
-{
-  exec 1>/dev/null
-  exec 2>&115
-
-  
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/window/window.c -o listwise/liblistwise/window/window.debug.pic.o
-
-
-  X=$?
-  echo 15 1>&99
-  exit $X
-}
-
 
 # formulas and names for stage 4
-NAMES[139]='libxapi/libxapi.debug.so'
+NAMES[137]='libxapi/libxapi-xapi.debug.so'
 fml_4_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -o libxapi/libxapi.debug.so common/memblk/memblk.debug.pic.o common/memblk/memblk.def.debug.pic.o common/strutil/strutil.debug.pic.o common/wstdlib/wstdlib.debug.pic.o libxapi/callstack/callstack.debug.pic.o libxapi/error/SYS.errtab.debug.pic.o libxapi/error/XAPI.errtab.debug.pic.o libxapi/error/error.debug.pic.o libxapi/frame/frame.debug.pic.o libxapi/test.debug.pic.o libxapi/trace/trace.debug.pic.o -shared -Wl,--version-script=libxapi/exports -Wl,-soname,libxapi.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxapi/error -I./libxapi/trace -I./libxapi/callstack -I./libxapi/internal -I./libxapi/xapi -I./libxapi/frame -I./libxapi -o libxapi/libxapi-xapi.debug.so common/memblk/memblk.def.xapi.debug.pic.o common/strutil/strutil.xapi.debug.pic.o common/wstdlib/wstdlib.xapi.debug.pic.o libxapi/callstack/callstack.xapi.debug.pic.o libxapi/error/SYS.errtab.xapi.debug.pic.o libxapi/error/XAPI.errtab.xapi.debug.pic.o libxapi/error/error.xapi.debug.pic.o libxapi/frame/frame.xapi.debug.pic.o libxapi/trace/trace.xapi.debug.pic.o -shared -Wl,--version-script=libxapi/exports -Wl,-soname,libxapi-xapi.so
 
 
   X=$?
@@ -2593,14 +2583,14 @@ fml_4_0()
 
 
 # formulas and names for stage 5
-NAMES[140]='libxlinux/libxlinux.debug.so'
+NAMES[138]='libxlinux/libxlinux-xapi.debug.so'
 fml_5_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -I./listwise/liblistwise -o libxlinux/libxlinux.debug.so libxlinux/error/XLINUX.errtab.debug.pic.o libxlinux/error/error.debug.pic.o libxlinux/mempolicy/mempolicy.debug.pic.o libxlinux/xdirent/xdirent.debug.pic.o libxlinux/xdlfcn/xdlfcn.debug.pic.o libxlinux/xfcntl/xfcntl.debug.pic.o libxlinux/xfile/xfile.debug.pic.o libxlinux/xftw/xftw.debug.pic.o libxlinux/xgrp/xgrp.debug.pic.o libxlinux/xmman/xmman.debug.pic.o libxlinux/xprctl/xprctl.debug.pic.o libxlinux/xpwd/xpwd.debug.pic.o libxlinux/xsignal/xsignal.debug.pic.o libxlinux/xstat/xstat.debug.pic.o libxlinux/xstdlib/xstdlib.debug.pic.o libxlinux/xstring/xstring.debug.pic.o libxlinux/xtime/xtime.debug.pic.o libxlinux/xuio/xuio.debug.pic.o libxlinux/xunistd/xunistd.debug.pic.o libxlinux/xwait/xwait.debug.pic.o ./libxapi/libxapi.debug.so -ldl -lrt -shared -Wl,--version-script=libxlinux/exports -Wl,-soname,libxlinux.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libxlinux/xgrp -I./libxlinux/error -I./libxlinux/xuio -I./libxlinux/xstat -I./libxlinux/xunistd -I./libxlinux/xfile -I./libxlinux/xpwd -I./libxlinux/xmman -I./libxlinux/xdirent -I./libxlinux/internal -I./libxlinux/xfcntl -I./libxlinux/xftw -I./libxlinux/xwait -I./libxlinux/xstdlib -I./libxlinux/xdlfcn -I./libxlinux/xprctl -I./libxlinux/mempolicy -I./libxlinux/xstring -I./libxlinux/xlinux -I./libxlinux/xtime -I./libxlinux/xsignal -I./libxlinux -I./libxapi -o libxlinux/libxlinux-xapi.debug.so libxlinux/error/XLINUX.errtab.xapi.debug.pic.o libxlinux/error/error.xapi.debug.pic.o libxlinux/mempolicy/mempolicy.xapi.debug.pic.o libxlinux/xdirent/xdirent.xapi.debug.pic.o libxlinux/xdlfcn/xdlfcn.xapi.debug.pic.o libxlinux/xfcntl/xfcntl.xapi.debug.pic.o libxlinux/xfile/xfile.xapi.debug.pic.o libxlinux/xftw/xftw.xapi.debug.pic.o libxlinux/xgrp/xgrp.xapi.debug.pic.o libxlinux/xmman/xmman.xapi.debug.pic.o libxlinux/xprctl/xprctl.xapi.debug.pic.o libxlinux/xpwd/xpwd.xapi.debug.pic.o libxlinux/xsignal/xsignal.xapi.debug.pic.o libxlinux/xstat/xstat.xapi.debug.pic.o libxlinux/xstdlib/xstdlib.xapi.debug.pic.o libxlinux/xstring/xstring.xapi.debug.pic.o libxlinux/xtime/xtime.xapi.debug.pic.o libxlinux/xuio/xuio.xapi.debug.pic.o libxlinux/xunistd/xunistd.xapi.debug.pic.o libxlinux/xwait/xwait.xapi.debug.pic.o -ldl -lrt -shared -Wl,--version-script=libxlinux/exports ./libxapi/libxapi-xapi.debug.so -Wl,-soname,libxlinux-xapi.so
 
 
   X=$?
@@ -2610,14 +2600,14 @@ fml_5_0()
 
 
 # formulas and names for stage 6
-NAMES[141]='libpstring/libpstring.debug.so'
+NAMES[139]='libpstring/libpstring-xapi.debug.so'
 fml_6_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libpstring/pstring -I./libpstring/write -I./libpstring/internal -I./libpstring -I./libxapi -I./libxlinux -o libpstring/libpstring.debug.so libpstring/pstring/pstring.debug.pic.o ./libxapi/libxapi.debug.so -shared -Wl,--version-script=libpstring/exports ./libxlinux/libxlinux.debug.so -Wl,-soname,libpstring.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -fPIC -I./libpstring/pstring -I./libpstring/write -I./libpstring/internal -I./libpstring -I./libxapi -I./libxlinux -o libpstring/libpstring-xapi.debug.so libpstring/pstring/pstring.xapi.debug.pic.o -shared -Wl,--version-script=libpstring/exports ./libxapi/libxapi-xapi.debug.so ./libxlinux/libxlinux-xapi.debug.so -Wl,-soname,libpstring-xapi.so
 
 
   X=$?
@@ -2627,7 +2617,7 @@ fml_6_0()
 
 
 # formulas and names for stage 7
-NAMES[142]='listwise/liblistwise/liblistwise.debug.so'
+NAMES[140]='listwise/liblistwise/liblistwise-xapi.debug.so'
 fml_7_0()
 {
   exec 1>/dev/null
@@ -2635,38 +2625,7 @@ fml_7_0()
 
   
 	gcc \
--m64 \
--Wall \
--Werror \
--D_GNU_SOURCE \
--fplan9-extensions \
--DXAPI_PROVIDE_BACKTRACE \
--I./common/unitstring \
--I./common/coll \
--I./common/wstdlib \
--I./common/parseint \
--I./common/memblk \
--I./common/logger \
--I./common/map \
--I./common/canon \
--I./common/yyutil \
--I./common/cksum \
--I./common/strutil \
--I./common/color \
--I./common/wstring \
--I./common \
--DBUILDSTAMP="`date`" \
--O0 \
--g \
--ggdb3 \
--DDEBUG \
--DXAPI_RUNTIME_CHECKS \
--DSANITY \
 -fPIC \
--I./libxapi \
--I./libxlinux \
--I./libpstring \
--I./xunit/libxunit \
 -I./listwise/liblistwise/exec \
 -I./listwise/liblistwise/logging \
 -I./listwise/liblistwise/error \
@@ -2689,50 +2648,86 @@ fml_7_0()
 -I./listwise/liblistwise/transform \
 -I./listwise/liblistwise/tune \
 -I./listwise/liblistwise \
+-I./libxapi \
+-I./libxlinux \
+-I./libpstring \
+-I./xunit/libxunit \
+-m64 \
+-Wall \
+-Werror \
+-D_GNU_SOURCE \
+-fplan9-extensions \
+-fno-builtin-log \
+-I./common/unitstring \
+-I./common/coll \
+-I./common/wstdlib \
+-I./common/narrate \
+-I./common/parseint \
+-I./common/memblk \
+-I./common/logger \
+-I./common/map \
+-I./common/canon \
+-I./common/yyutil \
+-I./common/cksum \
+-I./common/strutil \
+-I./common/color \
+-I./common/wstring \
+-I./common \
+-DBUILDSTAMP='Sun \
+Mar \
+22 \
+2015 \
+15:59:59' \
+-DXAPI_PROVIDE_BACKTRACE \
+-O0 \
+-ggdb3 \
+-DDEBUG \
+-DXAPI_RUNTIME_SANITY_CHECKS \
+-DSANITY \
 -DLWOPDIR=/usr/lib/listwise \
 -DLWOPEXT=so \
 -o \
-listwise/liblistwise/liblistwise.debug.so \
-listwise/liblistwise/error/LW.errtab.debug.pic.o \
-listwise/liblistwise/re/re.debug.pic.o \
-common/coll/coll.debug.pic.o \
-common/map/map.debug.pic.o \
-listwise/liblistwise/object/object.debug.pic.o \
-common/wstdlib/wstdlib.debug.pic.o \
-listwise/liblistwise/lwx/lwx.debug.pic.o \
-listwise/liblistwise/lstack/lstack.debug.pic.o \
-listwise/liblistwise/logging/logging.debug.pic.o \
-listwise/liblistwise/iterate/iterate.debug.pic.o \
-listwise/liblistwise/transform/transform.states.debug.pic.o \
-listwise/liblistwise/transform/genscan.debug.pic.o \
-listwise/liblistwise/describe/describe.debug.pic.o \
-listwise/liblistwise/sanity/sanity.debug.pic.o \
-listwise/liblistwise/exec/exec.debug.pic.o \
-listwise/liblistwise/error/PCRE.errtab.debug.pic.o \
-listwise/liblistwise/error/error.debug.pic.o \
-common/strutil/strutil.debug.pic.o \
-common/canon/canon.debug.pic.o \
-common/parseint/parseint.debug.pic.o \
-common/color/color.debug.pic.o \
-listwise/liblistwise/fs/fs.debug.pic.o \
-listwise/liblistwise/selection/selection.debug.pic.o \
-listwise/liblistwise/operators/operators.debug.pic.o \
-listwise/liblistwise/operator/operator.debug.pic.o \
-listwise/liblistwise/window/window.debug.pic.o \
-common/yyutil/yyutil.debug.pic.o \
-listwise/liblistwise/transform/transform.tab.debug.pic.o \
-listwise/liblistwise/transform/transform.tokens.debug.pic.o \
-listwise/liblistwise/transform/transform.lex.debug.pic.o \
-listwise/liblistwise/transform/transform.debug.pic.o \
-listwise/liblistwise/tune/tune.debug.pic.o \
+listwise/liblistwise/liblistwise-xapi.debug.so \
+listwise/liblistwise/error/LW.errtab.xapi.debug.pic.o \
+listwise/liblistwise/re/re.xapi.debug.pic.o \
+common/coll/coll.xapi.debug.pic.o \
+common/map/map.xapi.debug.pic.o \
+listwise/liblistwise/object/object.xapi.debug.pic.o \
+common/wstdlib/wstdlib.xapi.debug.pic.o \
+listwise/liblistwise/lwx/lwx.xapi.debug.pic.o \
+listwise/liblistwise/lstack/lstack.xapi.debug.pic.o \
+listwise/liblistwise/logging/logging.xapi.debug.pic.o \
+listwise/liblistwise/iterate/iterate.xapi.debug.pic.o \
+listwise/liblistwise/transform/transform.states.xapi.debug.pic.o \
+listwise/liblistwise/transform/genscan.xapi.debug.pic.o \
+listwise/liblistwise/describe/describe.xapi.debug.pic.o \
+listwise/liblistwise/sanity/sanity.xapi.debug.pic.o \
+listwise/liblistwise/exec/exec.xapi.debug.pic.o \
+listwise/liblistwise/error/PCRE.errtab.xapi.debug.pic.o \
+listwise/liblistwise/error/error.xapi.debug.pic.o \
+common/strutil/strutil.xapi.debug.pic.o \
+common/canon/canon.xapi.debug.pic.o \
+common/parseint/parseint.xapi.debug.pic.o \
+common/color/color.xapi.debug.pic.o \
+listwise/liblistwise/fs/fs.xapi.debug.pic.o \
+listwise/liblistwise/selection/selection.xapi.debug.pic.o \
+listwise/liblistwise/operators/operators.xapi.debug.pic.o \
+listwise/liblistwise/operator/operator.xapi.debug.pic.o \
+listwise/liblistwise/window/window.xapi.debug.pic.o \
+common/yyutil/yyutil.xapi.debug.pic.o \
+listwise/liblistwise/transform/transform.tab.xapi.debug.pic.o \
+listwise/liblistwise/transform/transform.tokens.xapi.debug.pic.o \
+listwise/liblistwise/transform/transform.lex.xapi.debug.pic.o \
+listwise/liblistwise/transform/transform.xapi.debug.pic.o \
+listwise/liblistwise/tune/tune.xapi.debug.pic.o \
 -lpcre \
 -ldl \
 -shared \
 -Wl,--version-script=listwise/liblistwise/exports \
-./libxapi/libxapi.debug.so \
-./libxlinux/libxlinux.debug.so \
-./libpstring/libpstring.debug.so \
--Wl,-soname,liblistwise.so
+./libxapi/libxapi-xapi.debug.so \
+./libxlinux/libxlinux-xapi.debug.so \
+./libpstring/libpstring-xapi.debug.so \
+-Wl,-soname,liblistwise-xapi.so
 
 
   X=$?
@@ -2742,14 +2737,14 @@ listwise/liblistwise/tune/tune.debug.pic.o \
 
 
 # formulas and names for stage 8
-NAMES[143]='fab/fab/fab.debug'
+NAMES[141]='fab/fab/fab.debug'
 fml_8_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fab -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -export-dynamic -o fab/fab/fab.debug fab/common/error/FAB.errtab.debug.o common/wstdlib/wstdlib.debug.o common/strutil/strutil.debug.o common/logger/logger.debug.o fab/common/logs/logs.debug.o common/canon/canon.debug.o fab/common/params/params.debug.o common/cksum/cksum.debug.o common/memblk/memblk.def.debug.o common/memblk/memblk.debug.o fab/common/path/path.debug.o common/unitstring/unitstring.debug.o fab/common/args/args.debug.o fab/common/dirutil/dirutil.debug.o fab/common/identity/identity.debug.o common/parseint/parseint.debug.o fab/fab/main.debug.o -lrt ./libxapi/libxapi.debug.so ./libxlinux/libxlinux.debug.so ./libpstring/libpstring.debug.so ./listwise/liblistwise/liblistwise.debug.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fab -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -export-dynamic -o fab/fab/fab.debug fab/common/error/FAB.errtab.xapi.debug.o common/wstdlib/wstdlib.xapi.debug.o common/strutil/strutil.xapi.debug.o common/logger/logger.xapi.debug.o fab/common/logs/logs.xapi.debug.o common/canon/canon.xapi.debug.o fab/common/params/params.xapi.debug.o common/cksum/cksum.xapi.debug.o common/memblk/memblk.def.xapi.debug.o common/memblk/memblk.xapi.debug.o fab/common/path/path.xapi.debug.o common/unitstring/unitstring.xapi.debug.o fab/common/args/args.xapi.debug.o fab/common/dirutil/dirutil.xapi.debug.o fab/common/identity/identity.xapi.debug.o common/parseint/parseint.xapi.debug.o fab/fab/main.xapi.debug.o -lrt ./libxapi/libxapi-xapi.debug.so ./libxlinux/libxlinux-xapi.debug.so ./libpstring/libpstring-xapi.debug.so ./listwise/liblistwise/liblistwise-xapi.debug.so
 
 
   X=$?
@@ -2757,14 +2752,14 @@ fml_8_0()
   exit $X
 }
 
-NAMES[144]='fab/fabd/fabd.debug'
+NAMES[142]='fab/fabd/fabd.debug'
 fml_8_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -export-dynamic -o fab/fabd/fabd.debug fab/common/error/FAB.errtab.debug.o common/wstdlib/wstdlib.debug.o common/strutil/strutil.debug.o common/logger/logger.debug.o fab/common/logs/logs.debug.o common/canon/canon.debug.o fab/common/params/params.debug.o common/cksum/cksum.debug.o common/memblk/memblk.def.debug.o common/memblk/memblk.debug.o fab/common/path/path.debug.o common/unitstring/unitstring.debug.o fab/common/args/args.debug.o fab/common/identity/identity.debug.o common/yyutil/yyutil.debug.o fab/fabd/ff/ff.tokens.debug.o common/coll/coll.debug.o common/map/map.debug.o fab/common/dirutil/dirutil.debug.o fab/fabd/bs/bs.debug.o fab/fabd/dsc/dsc.debug.o fab/fabd/selector/selector.debug.o fab/fabd/dep/dep.debug.o fab/fabd/ffproc/ffproc.debug.o fab/fabd/list/list.debug.o fab/fabd/var/var.debug.o fab/fabd/tmp/tmp.debug.o fab/fabd/lwutil/lwutil.debug.o fab/fabd/gn/gnlw.debug.o fab/fabd/enclose/enclose.debug.o fab/fabd/traverse/traverse.debug.o common/parseint/parseint.debug.o fab/fabd/gn/gn.debug.o fab/fabd/bp/bp.debug.o fab/fabd/strstack/strstack.debug.o fab/fabd/hashblock/hashblock.debug.o fab/fabd/ff/ff.tab.debug.o fab/fabd/ff/ff.dsc.tab.debug.o fab/fabd/ff/ff.var.tab.debug.o fab/fabd/ff/ff.list.tab.debug.o fab/fabd/ff/ff.lex.debug.o fab/fabd/ff/ff.states.debug.o fab/fabd/ff/ff.debug.o fab/fabd/ts/ts.debug.o fab/fabd/ffn/ffn.debug.o fab/fabd/fml/fml.debug.o fab/fabd/main.debug.o -lrt ./libxapi/libxapi.debug.so ./libxlinux/libxlinux.debug.so ./libpstring/libpstring.debug.so ./listwise/liblistwise/liblistwise.debug.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/fabd -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -export-dynamic -o fab/fabd/fabd.debug fab/common/error/FAB.errtab.xapi.debug.o common/wstdlib/wstdlib.xapi.debug.o common/strutil/strutil.xapi.debug.o common/logger/logger.xapi.debug.o fab/common/logs/logs.xapi.debug.o common/canon/canon.xapi.debug.o fab/common/params/params.xapi.debug.o common/cksum/cksum.xapi.debug.o common/memblk/memblk.def.xapi.debug.o common/memblk/memblk.xapi.debug.o fab/common/path/path.xapi.debug.o common/unitstring/unitstring.xapi.debug.o fab/common/args/args.xapi.debug.o fab/common/identity/identity.xapi.debug.o common/yyutil/yyutil.xapi.debug.o fab/fabd/ff/ff.tokens.xapi.debug.o common/coll/coll.xapi.debug.o common/map/map.xapi.debug.o fab/common/dirutil/dirutil.xapi.debug.o fab/fabd/bs/bs.xapi.debug.o fab/fabd/dsc/dsc.xapi.debug.o fab/fabd/selector/selector.xapi.debug.o fab/fabd/dep/dep.xapi.debug.o fab/fabd/ffproc/ffproc.xapi.debug.o fab/fabd/list/list.xapi.debug.o fab/fabd/var/var.xapi.debug.o fab/fabd/tmp/tmp.xapi.debug.o fab/fabd/lwutil/lwutil.xapi.debug.o fab/fabd/gn/gnlw.xapi.debug.o fab/fabd/enclose/enclose.xapi.debug.o fab/fabd/traverse/traverse.xapi.debug.o common/parseint/parseint.xapi.debug.o fab/fabd/gn/gn.xapi.debug.o fab/fabd/bp/bp.xapi.debug.o fab/fabd/strstack/strstack.xapi.debug.o fab/fabd/hashblock/hashblock.xapi.debug.o fab/fabd/ff/ff.tab.xapi.debug.o fab/fabd/ff/ff.dsc.tab.xapi.debug.o fab/fabd/ff/ff.var.tab.xapi.debug.o fab/fabd/ff/ff.list.tab.xapi.debug.o fab/fabd/ff/ff.lex.xapi.debug.o fab/fabd/ff/ff.states.xapi.debug.o fab/fabd/ff/ff.xapi.debug.o fab/fabd/ts/ts.xapi.debug.o fab/fabd/ffn/ffn.xapi.debug.o fab/fabd/fml/fml.xapi.debug.o fab/fabd/main.xapi.debug.o -lrt ./libxapi/libxapi-xapi.debug.so ./libxlinux/libxlinux-xapi.debug.so ./libpstring/libpstring-xapi.debug.so ./listwise/liblistwise/liblistwise-xapi.debug.so
 
 
   X=$?
@@ -2772,14 +2767,14 @@ fml_8_1()
   exit $X
 }
 
-NAMES[145]='fab/fabw/fabw.debug'
+NAMES[143]='fab/fabw/fabw.debug'
 fml_8_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabw -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -o fab/fabw/fabw.debug fab/common/error/FAB.errtab.debug.o common/wstdlib/wstdlib.debug.o common/strutil/strutil.debug.o common/logger/logger.debug.o fab/common/logs/logs.debug.o common/canon/canon.debug.o fab/common/params/params.debug.o common/parseint/parseint.debug.o fab/fabw/main.debug.o ./libxapi/libxapi.debug.so ./libxlinux/libxlinux.debug.so ./libpstring/libpstring.debug.so ./listwise/liblistwise/liblistwise.debug.so
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./fab/fabw -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/common -I./libxapi -I./libxlinux -I./libpstring -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -o fab/fabw/fabw.debug fab/common/error/FAB.errtab.xapi.debug.o common/wstdlib/wstdlib.xapi.debug.o common/strutil/strutil.xapi.debug.o common/logger/logger.xapi.debug.o fab/common/logs/logs.xapi.debug.o common/canon/canon.xapi.debug.o fab/common/params/params.xapi.debug.o common/parseint/parseint.xapi.debug.o fab/fabw/main.xapi.debug.o ./libxapi/libxapi-xapi.debug.so ./libxlinux/libxlinux-xapi.debug.so ./libpstring/libpstring-xapi.debug.so ./listwise/liblistwise/liblistwise-xapi.debug.so
 
 
   X=$?
@@ -2787,14 +2782,14 @@ fml_8_2()
   exit $X
 }
 
-NAMES[146]='listwise/liblistwise/op/-X/-X.debug.pic.o'
+NAMES[144]='listwise/liblistwise/op/-X/-X.xapi.debug.pic.o'
 fml_8_3()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/-X/-X.c -o listwise/liblistwise/op/-X/-X.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/-X/-X.c -o listwise/liblistwise/op/-X/-X.xapi.debug.pic.o
 
 
   X=$?
@@ -2802,14 +2797,14 @@ fml_8_3()
   exit $X
 }
 
-NAMES[147]='listwise/liblistwise/op/C/C.debug.pic.o'
+NAMES[145]='listwise/liblistwise/op/C/C.xapi.debug.pic.o'
 fml_8_4()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/C/C.c -o listwise/liblistwise/op/C/C.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/C/C.c -o listwise/liblistwise/op/C/C.xapi.debug.pic.o
 
 
   X=$?
@@ -2817,14 +2812,14 @@ fml_8_4()
   exit $X
 }
 
-NAMES[148]='listwise/liblistwise/op/b/b.debug.pic.o'
+NAMES[146]='listwise/liblistwise/op/b/b.xapi.debug.pic.o'
 fml_8_5()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/b/b.c -o listwise/liblistwise/op/b/b.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/b/b.c -o listwise/liblistwise/op/b/b.xapi.debug.pic.o
 
 
   X=$?
@@ -2832,14 +2827,14 @@ fml_8_5()
   exit $X
 }
 
-NAMES[149]='listwise/liblistwise/op/bn/bn.debug.pic.o'
+NAMES[147]='listwise/liblistwise/op/bn/bn.xapi.debug.pic.o'
 fml_8_6()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/bn/bn.c -o listwise/liblistwise/op/bn/bn.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/bn/bn.c -o listwise/liblistwise/op/bn/bn.xapi.debug.pic.o
 
 
   X=$?
@@ -2847,14 +2842,14 @@ fml_8_6()
   exit $X
 }
 
-NAMES[150]='listwise/liblistwise/op/c/c.debug.pic.o'
+NAMES[148]='listwise/liblistwise/op/c/c.xapi.debug.pic.o'
 fml_8_7()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/c/c.c -o listwise/liblistwise/op/c/c.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/c/c.c -o listwise/liblistwise/op/c/c.xapi.debug.pic.o
 
 
   X=$?
@@ -2862,14 +2857,14 @@ fml_8_7()
   exit $X
 }
 
-NAMES[151]='listwise/liblistwise/op/can/can.debug.pic.o'
+NAMES[149]='listwise/liblistwise/op/can/can.xapi.debug.pic.o'
 fml_8_8()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/can/can.c -o listwise/liblistwise/op/can/can.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/can/can.c -o listwise/liblistwise/op/can/can.xapi.debug.pic.o
 
 
   X=$?
@@ -2877,14 +2872,14 @@ fml_8_8()
   exit $X
 }
 
-NAMES[152]='listwise/liblistwise/op/cons/cons.debug.pic.o'
+NAMES[150]='listwise/liblistwise/op/cons/cons.xapi.debug.pic.o'
 fml_8_9()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/cons/cons.c -o listwise/liblistwise/op/cons/cons.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/cons/cons.c -o listwise/liblistwise/op/cons/cons.xapi.debug.pic.o
 
 
   X=$?
@@ -2892,14 +2887,14 @@ fml_8_9()
   exit $X
 }
 
-NAMES[153]='listwise/liblistwise/op/cp/cp.debug.pic.o'
+NAMES[151]='listwise/liblistwise/op/cp/cp.xapi.debug.pic.o'
 fml_8_10()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/cp/cp.c -o listwise/liblistwise/op/cp/cp.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/cp/cp.c -o listwise/liblistwise/op/cp/cp.xapi.debug.pic.o
 
 
   X=$?
@@ -2907,14 +2902,14 @@ fml_8_10()
   exit $X
 }
 
-NAMES[154]='listwise/liblistwise/op/d/d.debug.pic.o'
+NAMES[152]='listwise/liblistwise/op/d/d.xapi.debug.pic.o'
 fml_8_11()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/d/d.c -o listwise/liblistwise/op/d/d.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/d/d.c -o listwise/liblistwise/op/d/d.xapi.debug.pic.o
 
 
   X=$?
@@ -2922,14 +2917,14 @@ fml_8_11()
   exit $X
 }
 
-NAMES[155]='listwise/liblistwise/op/datef/datef.debug.pic.o'
+NAMES[153]='listwise/liblistwise/op/datef/datef.xapi.debug.pic.o'
 fml_8_12()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/datef/datef.c -o listwise/liblistwise/op/datef/datef.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/datef/datef.c -o listwise/liblistwise/op/datef/datef.xapi.debug.pic.o
 
 
   X=$?
@@ -2937,14 +2932,14 @@ fml_8_12()
   exit $X
 }
 
-NAMES[156]='listwise/liblistwise/op/dj/dj.debug.pic.o'
+NAMES[154]='listwise/liblistwise/op/dj/dj.xapi.debug.pic.o'
 fml_8_13()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/dj/dj.c -o listwise/liblistwise/op/dj/dj.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/dj/dj.c -o listwise/liblistwise/op/dj/dj.xapi.debug.pic.o
 
 
   X=$?
@@ -2952,14 +2947,14 @@ fml_8_13()
   exit $X
 }
 
-NAMES[157]='listwise/liblistwise/op/dn/dn.debug.pic.o'
+NAMES[155]='listwise/liblistwise/op/dn/dn.xapi.debug.pic.o'
 fml_8_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/dn/dn.c -o listwise/liblistwise/op/dn/dn.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/dn/dn.c -o listwise/liblistwise/op/dn/dn.xapi.debug.pic.o
 
 
   X=$?
@@ -2967,14 +2962,14 @@ fml_8_14()
   exit $X
 }
 
-NAMES[158]='listwise/liblistwise/op/f/f.debug.pic.o'
+NAMES[156]='listwise/liblistwise/op/f/f.xapi.debug.pic.o'
 fml_8_15()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/f/f.c -o listwise/liblistwise/op/f/f.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/f/f.c -o listwise/liblistwise/op/f/f.xapi.debug.pic.o
 
 
   X=$?
@@ -2982,14 +2977,14 @@ fml_8_15()
   exit $X
 }
 
-NAMES[159]='listwise/liblistwise/op/fn/fn.debug.pic.o'
+NAMES[157]='listwise/liblistwise/op/fn/fn.xapi.debug.pic.o'
 fml_8_16()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/fn/fn.c -o listwise/liblistwise/op/fn/fn.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/fn/fn.c -o listwise/liblistwise/op/fn/fn.xapi.debug.pic.o
 
 
   X=$?
@@ -2997,14 +2992,14 @@ fml_8_16()
   exit $X
 }
 
-NAMES[160]='listwise/liblistwise/op/g/g.debug.pic.o'
+NAMES[158]='listwise/liblistwise/op/g/g.xapi.debug.pic.o'
 fml_8_17()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/g/g.c -o listwise/liblistwise/op/g/g.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/g/g.c -o listwise/liblistwise/op/g/g.xapi.debug.pic.o
 
 
   X=$?
@@ -3012,14 +3007,14 @@ fml_8_17()
   exit $X
 }
 
-NAMES[161]='listwise/liblistwise/op/hl/hl.debug.pic.o'
+NAMES[159]='listwise/liblistwise/op/hl/hl.xapi.debug.pic.o'
 fml_8_18()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/hl/hl.c -o listwise/liblistwise/op/hl/hl.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/hl/hl.c -o listwise/liblistwise/op/hl/hl.xapi.debug.pic.o
 
 
   X=$?
@@ -3027,14 +3022,14 @@ fml_8_18()
   exit $X
 }
 
-NAMES[162]='listwise/liblistwise/op/j/j.debug.pic.o'
+NAMES[160]='listwise/liblistwise/op/j/j.xapi.debug.pic.o'
 fml_8_19()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/j/j.c -o listwise/liblistwise/op/j/j.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/j/j.c -o listwise/liblistwise/op/j/j.xapi.debug.pic.o
 
 
   X=$?
@@ -3042,14 +3037,14 @@ fml_8_19()
   exit $X
 }
 
-NAMES[163]='listwise/liblistwise/op/l/l.debug.pic.o'
+NAMES[161]='listwise/liblistwise/op/l/l.xapi.debug.pic.o'
 fml_8_20()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/l/l.c -o listwise/liblistwise/op/l/l.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/l/l.c -o listwise/liblistwise/op/l/l.xapi.debug.pic.o
 
 
   X=$?
@@ -3057,14 +3052,14 @@ fml_8_20()
   exit $X
 }
 
-NAMES[164]='listwise/liblistwise/op/ln/ln.debug.pic.o'
+NAMES[162]='listwise/liblistwise/op/ln/ln.xapi.debug.pic.o'
 fml_8_21()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/ln/ln.c -o listwise/liblistwise/op/ln/ln.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/ln/ln.c -o listwise/liblistwise/op/ln/ln.xapi.debug.pic.o
 
 
   X=$?
@@ -3072,14 +3067,14 @@ fml_8_21()
   exit $X
 }
 
-NAMES[165]='listwise/liblistwise/op/ls/ls.debug.pic.o'
+NAMES[163]='listwise/liblistwise/op/ls/ls.xapi.debug.pic.o'
 fml_8_22()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/ls/ls.c -o listwise/liblistwise/op/ls/ls.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/ls/ls.c -o listwise/liblistwise/op/ls/ls.xapi.debug.pic.o
 
 
   X=$?
@@ -3087,14 +3082,14 @@ fml_8_22()
   exit $X
 }
 
-NAMES[166]='listwise/liblistwise/op/lx/lx.debug.pic.o'
+NAMES[164]='listwise/liblistwise/op/lx/lx.xapi.debug.pic.o'
 fml_8_23()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/lx/lx.c -o listwise/liblistwise/op/lx/lx.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/lx/lx.c -o listwise/liblistwise/op/lx/lx.xapi.debug.pic.o
 
 
   X=$?
@@ -3102,14 +3097,14 @@ fml_8_23()
   exit $X
 }
 
-NAMES[167]='listwise/liblistwise/op/o/o.debug.pic.o'
+NAMES[165]='listwise/liblistwise/op/o/o.xapi.debug.pic.o'
 fml_8_24()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/o/o.c -o listwise/liblistwise/op/o/o.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/o/o.c -o listwise/liblistwise/op/o/o.xapi.debug.pic.o
 
 
   X=$?
@@ -3117,14 +3112,14 @@ fml_8_24()
   exit $X
 }
 
-NAMES[168]='listwise/liblistwise/op/p/p.debug.pic.o'
+NAMES[166]='listwise/liblistwise/op/p/p.xapi.debug.pic.o'
 fml_8_25()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/p/p.c -o listwise/liblistwise/op/p/p.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/p/p.c -o listwise/liblistwise/op/p/p.xapi.debug.pic.o
 
 
   X=$?
@@ -3132,14 +3127,14 @@ fml_8_25()
   exit $X
 }
 
-NAMES[169]='listwise/liblistwise/op/pop/pop.debug.pic.o'
+NAMES[167]='listwise/liblistwise/op/pop/pop.xapi.debug.pic.o'
 fml_8_26()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/pop/pop.c -o listwise/liblistwise/op/pop/pop.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/pop/pop.c -o listwise/liblistwise/op/pop/pop.xapi.debug.pic.o
 
 
   X=$?
@@ -3147,14 +3142,14 @@ fml_8_26()
   exit $X
 }
 
-NAMES[170]='listwise/liblistwise/op/r/r.debug.pic.o'
+NAMES[168]='listwise/liblistwise/op/r/r.xapi.debug.pic.o'
 fml_8_27()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/r/r.c -o listwise/liblistwise/op/r/r.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/r/r.c -o listwise/liblistwise/op/r/r.xapi.debug.pic.o
 
 
   X=$?
@@ -3162,14 +3157,14 @@ fml_8_27()
   exit $X
 }
 
-NAMES[171]='listwise/liblistwise/op/rb/rb.debug.pic.o'
+NAMES[169]='listwise/liblistwise/op/rb/rb.xapi.debug.pic.o'
 fml_8_28()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/rb/rb.c -o listwise/liblistwise/op/rb/rb.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/rb/rb.c -o listwise/liblistwise/op/rb/rb.xapi.debug.pic.o
 
 
   X=$?
@@ -3177,14 +3172,14 @@ fml_8_28()
   exit $X
 }
 
-NAMES[172]='listwise/liblistwise/op/re/re.debug.pic.o'
+NAMES[170]='listwise/liblistwise/op/re/re.xapi.debug.pic.o'
 fml_8_29()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/re/re.c -o listwise/liblistwise/op/re/re.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/re/re.c -o listwise/liblistwise/op/re/re.xapi.debug.pic.o
 
 
   X=$?
@@ -3192,14 +3187,14 @@ fml_8_29()
   exit $X
 }
 
-NAMES[173]='listwise/liblistwise/op/rp/rp.debug.pic.o'
+NAMES[171]='listwise/liblistwise/op/rp/rp.xapi.debug.pic.o'
 fml_8_30()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/rp/rp.c -o listwise/liblistwise/op/rp/rp.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/rp/rp.c -o listwise/liblistwise/op/rp/rp.xapi.debug.pic.o
 
 
   X=$?
@@ -3207,14 +3202,14 @@ fml_8_30()
   exit $X
 }
 
-NAMES[174]='listwise/liblistwise/op/rx/rx.debug.pic.o'
+NAMES[172]='listwise/liblistwise/op/rx/rx.xapi.debug.pic.o'
 fml_8_31()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/rx/rx.c -o listwise/liblistwise/op/rx/rx.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/rx/rx.c -o listwise/liblistwise/op/rx/rx.xapi.debug.pic.o
 
 
   X=$?
@@ -3222,14 +3217,14 @@ fml_8_31()
   exit $X
 }
 
-NAMES[175]='listwise/liblistwise/op/s/s.debug.pic.o'
+NAMES[173]='listwise/liblistwise/op/s/s.xapi.debug.pic.o'
 fml_8_32()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/s/s.c -o listwise/liblistwise/op/s/s.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/s/s.c -o listwise/liblistwise/op/s/s.xapi.debug.pic.o
 
 
   X=$?
@@ -3237,14 +3232,14 @@ fml_8_32()
   exit $X
 }
 
-NAMES[176]='listwise/liblistwise/op/shift/shift.debug.pic.o'
+NAMES[174]='listwise/liblistwise/op/shift/shift.xapi.debug.pic.o'
 fml_8_33()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/shift/shift.c -o listwise/liblistwise/op/shift/shift.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/shift/shift.c -o listwise/liblistwise/op/shift/shift.xapi.debug.pic.o
 
 
   X=$?
@@ -3252,14 +3247,14 @@ fml_8_33()
   exit $X
 }
 
-NAMES[177]='listwise/liblistwise/op/sort/sort.debug.pic.o'
+NAMES[175]='listwise/liblistwise/op/sort/sort.xapi.debug.pic.o'
 fml_8_34()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/sort/sort.c -o listwise/liblistwise/op/sort/sort.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/sort/sort.c -o listwise/liblistwise/op/sort/sort.xapi.debug.pic.o
 
 
   X=$?
@@ -3267,14 +3262,14 @@ fml_8_34()
   exit $X
 }
 
-NAMES[178]='listwise/liblistwise/op/stat/stat.debug.pic.o'
+NAMES[176]='listwise/liblistwise/op/stat/stat.xapi.debug.pic.o'
 fml_8_35()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/stat/stat.c -o listwise/liblistwise/op/stat/stat.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/stat/stat.c -o listwise/liblistwise/op/stat/stat.xapi.debug.pic.o
 
 
   X=$?
@@ -3282,14 +3277,14 @@ fml_8_35()
   exit $X
 }
 
-NAMES[179]='listwise/liblistwise/op/sx/sx.debug.pic.o'
+NAMES[177]='listwise/liblistwise/op/sx/sx.xapi.debug.pic.o'
 fml_8_36()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/sx/sx.c -o listwise/liblistwise/op/sx/sx.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/sx/sx.c -o listwise/liblistwise/op/sx/sx.xapi.debug.pic.o
 
 
   X=$?
@@ -3297,14 +3292,14 @@ fml_8_36()
   exit $X
 }
 
-NAMES[180]='listwise/liblistwise/op/t/t.debug.pic.o'
+NAMES[178]='listwise/liblistwise/op/t/t.xapi.debug.pic.o'
 fml_8_37()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/t/t.c -o listwise/liblistwise/op/t/t.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/t/t.c -o listwise/liblistwise/op/t/t.xapi.debug.pic.o
 
 
   X=$?
@@ -3312,14 +3307,14 @@ fml_8_37()
   exit $X
 }
 
-NAMES[181]='listwise/liblistwise/op/u/u.debug.pic.o'
+NAMES[179]='listwise/liblistwise/op/u/u.xapi.debug.pic.o'
 fml_8_38()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/u/u.c -o listwise/liblistwise/op/u/u.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/u/u.c -o listwise/liblistwise/op/u/u.xapi.debug.pic.o
 
 
   X=$?
@@ -3327,14 +3322,14 @@ fml_8_38()
   exit $X
 }
 
-NAMES[182]='listwise/liblistwise/op/up/up.debug.pic.o'
+NAMES[180]='listwise/liblistwise/op/up/up.xapi.debug.pic.o'
 fml_8_39()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/up/up.c -o listwise/liblistwise/op/up/up.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/up/up.c -o listwise/liblistwise/op/up/up.xapi.debug.pic.o
 
 
   X=$?
@@ -3342,14 +3337,14 @@ fml_8_39()
   exit $X
 }
 
-NAMES[183]='listwise/liblistwise/op/uu/uu.debug.pic.o'
+NAMES[181]='listwise/liblistwise/op/uu/uu.xapi.debug.pic.o'
 fml_8_40()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/uu/uu.c -o listwise/liblistwise/op/uu/uu.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/uu/uu.c -o listwise/liblistwise/op/uu/uu.xapi.debug.pic.o
 
 
   X=$?
@@ -3357,14 +3352,14 @@ fml_8_40()
   exit $X
 }
 
-NAMES[184]='listwise/liblistwise/op/v/v.debug.pic.o'
+NAMES[182]='listwise/liblistwise/op/v/v.xapi.debug.pic.o'
 fml_8_41()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/v/v.c -o listwise/liblistwise/op/v/v.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/v/v.c -o listwise/liblistwise/op/v/v.xapi.debug.pic.o
 
 
   X=$?
@@ -3372,14 +3367,14 @@ fml_8_41()
   exit $X
 }
 
-NAMES[185]='listwise/liblistwise/op/vf/vf.debug.pic.o'
+NAMES[183]='listwise/liblistwise/op/vf/vf.xapi.debug.pic.o'
 fml_8_42()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/vf/vf.c -o listwise/liblistwise/op/vf/vf.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/vf/vf.c -o listwise/liblistwise/op/vf/vf.xapi.debug.pic.o
 
 
   X=$?
@@ -3387,14 +3382,14 @@ fml_8_42()
   exit $X
 }
 
-NAMES[186]='listwise/liblistwise/op/vp/vp.debug.pic.o'
+NAMES[184]='listwise/liblistwise/op/vp/vp.xapi.debug.pic.o'
 fml_8_43()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/vp/vp.c -o listwise/liblistwise/op/vp/vp.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/vp/vp.c -o listwise/liblistwise/op/vp/vp.xapi.debug.pic.o
 
 
   X=$?
@@ -3402,14 +3397,14 @@ fml_8_43()
   exit $X
 }
 
-NAMES[187]='listwise/liblistwise/op/w/w.debug.pic.o'
+NAMES[185]='listwise/liblistwise/op/w/w.xapi.debug.pic.o'
 fml_8_44()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/w/w.c -o listwise/liblistwise/op/w/w.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/w/w.c -o listwise/liblistwise/op/w/w.xapi.debug.pic.o
 
 
   X=$?
@@ -3417,14 +3412,14 @@ fml_8_44()
   exit $X
 }
 
-NAMES[188]='listwise/liblistwise/op/wvf/wvf.debug.pic.o'
+NAMES[186]='listwise/liblistwise/op/wvf/wvf.xapi.debug.pic.o'
 fml_8_45()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/wvf/wvf.c -o listwise/liblistwise/op/wvf/wvf.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/wvf/wvf.c -o listwise/liblistwise/op/wvf/wvf.xapi.debug.pic.o
 
 
   X=$?
@@ -3432,14 +3427,14 @@ fml_8_45()
   exit $X
 }
 
-NAMES[189]='listwise/liblistwise/op/wvp/wvp.debug.pic.o'
+NAMES[187]='listwise/liblistwise/op/wvp/wvp.xapi.debug.pic.o'
 fml_8_46()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/wvp/wvp.c -o listwise/liblistwise/op/wvp/wvp.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/wvp/wvp.c -o listwise/liblistwise/op/wvp/wvp.xapi.debug.pic.o
 
 
   X=$?
@@ -3447,14 +3442,14 @@ fml_8_46()
   exit $X
 }
 
-NAMES[190]='listwise/liblistwise/op/x/x.debug.pic.o'
+NAMES[188]='listwise/liblistwise/op/x/x.xapi.debug.pic.o'
 fml_8_47()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/x/x.c -o listwise/liblistwise/op/x/x.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/x/x.c -o listwise/liblistwise/op/x/x.xapi.debug.pic.o
 
 
   X=$?
@@ -3462,14 +3457,14 @@ fml_8_47()
   exit $X
 }
 
-NAMES[191]='listwise/liblistwise/op/xch/xch.debug.pic.o'
+NAMES[189]='listwise/liblistwise/op/xch/xch.xapi.debug.pic.o'
 fml_8_48()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/xch/xch.c -o listwise/liblistwise/op/xch/xch.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/xch/xch.c -o listwise/liblistwise/op/xch/xch.xapi.debug.pic.o
 
 
   X=$?
@@ -3477,14 +3472,14 @@ fml_8_48()
   exit $X
 }
 
-NAMES[192]='listwise/liblistwise/op/y/y.debug.pic.o'
+NAMES[190]='listwise/liblistwise/op/y/y.xapi.debug.pic.o'
 fml_8_49()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/y/y.c -o listwise/liblistwise/op/y/y.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/y/y.c -o listwise/liblistwise/op/y/y.xapi.debug.pic.o
 
 
   X=$?
@@ -3492,14 +3487,14 @@ fml_8_49()
   exit $X
 }
 
-NAMES[193]='listwise/liblistwise/op/z/z.debug.pic.o'
+NAMES[191]='listwise/liblistwise/op/z/z.xapi.debug.pic.o'
 fml_8_50()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/z/z.c -o listwise/liblistwise/op/z/z.debug.pic.o
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -c listwise/liblistwise/op/z/z.c -o listwise/liblistwise/op/z/z.xapi.debug.pic.o
 
 
   X=$?
@@ -3507,14 +3502,67 @@ fml_8_50()
   exit $X
 }
 
-NAMES[194]='listwise/listwise/listwise.debug'
+NAMES[192]='listwise/listwise/listwise.xapi.debug'
 fml_8_51()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./listwise/listwise/error -I./listwise/listwise/logs -I./listwise/listwise/man -I./listwise/listwise/args -I./listwise/listwise -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./listwise/liblistwise -I./libpstring -o listwise/listwise/listwise.debug listwise/listwise/error/LISTWISE.errtab.debug.o common/wstdlib/wstdlib.debug.o common/strutil/strutil.debug.o common/logger/logger.debug.o listwise/listwise/logs/logs.debug.o common/parseint/parseint.debug.o listwise/listwise/args/args.debug.o listwise/listwise/main.debug.o ./libxapi/libxapi.debug.so ./libxlinux/libxlinux.debug.so ./libpstring/libpstring.debug.so ./listwise/liblistwise/liblistwise.debug.so
+	gcc \
+-DFABVERSIONS=v0.6.0.0 \
+-DFABVERSIONN=600 \
+-Ilistwise/listwise/error \
+-Ilistwise/listwise/logs \
+-Ilistwise/listwise/man \
+-Ilistwise/listwise/args \
+-Ilistwise/listwise \
+-I./libxapi \
+-I./libxlinux \
+-I./listwise/liblistwise \
+-I./libpstring \
+-m64 \
+-Wall \
+-Werror \
+-D_GNU_SOURCE \
+-fplan9-extensions \
+-fno-builtin-log \
+-I./common/unitstring \
+-I./common/coll \
+-I./common/wstdlib \
+-I./common/narrate \
+-I./common/parseint \
+-I./common/memblk \
+-I./common/logger \
+-I./common/map \
+-I./common/canon \
+-I./common/yyutil \
+-I./common/cksum \
+-I./common/strutil \
+-I./common/color \
+-I./common/wstring \
+-I./common \
+-DBUILDSTAMP='Sun Mar 22 2015 15:59:59' \
+-DXAPI_PROVIDE_BACKTRACE \
+-O0 \
+-ggdb3 \
+-DDEBUG \
+-DXAPI_RUNTIME_SANITY_CHECKS \
+-DSANITY \
+-o \
+listwise/listwise/listwise.xapi.debug \
+listwise/listwise/error/LISTWISE.errtab.xapi.debug.o \
+common/wstdlib/wstdlib.xapi.debug.o \
+common/strutil/strutil.xapi.debug.o \
+common/logger/logger.xapi.debug.o \
+listwise/listwise/logs/logs.xapi.debug.o \
+common/parseint/parseint.xapi.debug.o \
+listwise/listwise/args/args.xapi.debug.o \
+listwise/listwise/main.xapi.debug.o \
+./libxlinux/libxlinux-xapi.debug.so \
+./libpstring/libpstring-xapi.debug.so \
+./listwise/liblistwise/liblistwise-xapi.debug.so \
+./libxapi/libxapi-xapi.debug.so
 
 
   X=$?
@@ -3524,14 +3572,14 @@ fml_8_51()
 
 
 # formulas and names for stage 9
-NAMES[195]='fab/fablw/op/fg/fg.debug.pic.o'
+NAMES[193]='fab/fablw/op/fg/fg.xapi.debug.pic.o'
 fml_9_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/fabd -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./libpstring -I./listwise/liblistwise -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -fPIC -c fab/fablw/op/fg/fg.c -o fab/fablw/op/fg/fg.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/fabd -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./libpstring -I./listwise/liblistwise -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -fPIC -c fab/fablw/op/fg/fg.c -o fab/fablw/op/fg/fg.xapi.debug.pic.o
 
 
   X=$?
@@ -3539,14 +3587,14 @@ fml_9_0()
   exit $X
 }
 
-NAMES[196]='fab/fablw/op/fi/fi.debug.pic.o'
+NAMES[194]='fab/fablw/op/fi/fi.xapi.debug.pic.o'
 fml_9_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/fabd -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./libpstring -I./listwise/liblistwise -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -fPIC -c fab/fablw/op/fi/fi.c -o fab/fablw/op/fi/fi.debug.pic.o
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/fabd -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./libpstring -I./listwise/liblistwise -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -fPIC -c fab/fablw/op/fi/fi.c -o fab/fablw/op/fi/fi.xapi.debug.pic.o
 
 
   X=$?
@@ -3554,14 +3602,14 @@ fml_9_1()
   exit $X
 }
 
-NAMES[197]='listwise/liblistwise/op/-X/-X.debug.so'
+NAMES[195]='listwise/liblistwise/op/-X/-X.xapi.debug.so'
 fml_9_2()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/-X/-X.debug.so listwise/liblistwise/op/-X/-X.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/-X/-X.xapi.debug.so listwise/liblistwise/op/-X/-X.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3569,14 +3617,14 @@ fml_9_2()
   exit $X
 }
 
-NAMES[198]='listwise/liblistwise/op/C/C.debug.so'
+NAMES[196]='listwise/liblistwise/op/C/C.xapi.debug.so'
 fml_9_3()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/C/C.debug.so listwise/liblistwise/op/C/C.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/C/C.xapi.debug.so listwise/liblistwise/op/C/C.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3584,14 +3632,14 @@ fml_9_3()
   exit $X
 }
 
-NAMES[199]='listwise/liblistwise/op/b/b.debug.so'
+NAMES[197]='listwise/liblistwise/op/b/b.xapi.debug.so'
 fml_9_4()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/b/b.debug.so listwise/liblistwise/op/b/b.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/b/b.xapi.debug.so listwise/liblistwise/op/b/b.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3599,14 +3647,14 @@ fml_9_4()
   exit $X
 }
 
-NAMES[200]='listwise/liblistwise/op/bn/bn.debug.so'
+NAMES[198]='listwise/liblistwise/op/bn/bn.xapi.debug.so'
 fml_9_5()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/bn/bn.debug.so listwise/liblistwise/op/bn/bn.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/bn/bn.xapi.debug.so listwise/liblistwise/op/bn/bn.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3614,14 +3662,14 @@ fml_9_5()
   exit $X
 }
 
-NAMES[201]='listwise/liblistwise/op/c/c.debug.so'
+NAMES[199]='listwise/liblistwise/op/c/c.xapi.debug.so'
 fml_9_6()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/c/c.debug.so listwise/liblistwise/op/c/c.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/c/c.xapi.debug.so listwise/liblistwise/op/c/c.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3629,14 +3677,14 @@ fml_9_6()
   exit $X
 }
 
-NAMES[202]='listwise/liblistwise/op/can/can.debug.so'
+NAMES[200]='listwise/liblistwise/op/can/can.xapi.debug.so'
 fml_9_7()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/can/can.debug.so common/wstdlib/wstdlib.debug.pic.o common/strutil/strutil.debug.pic.o common/canon/canon.debug.pic.o listwise/liblistwise/op/can/can.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/can/can.xapi.debug.so common/wstdlib/wstdlib.xapi.debug.pic.o common/strutil/strutil.xapi.debug.pic.o common/canon/canon.xapi.debug.pic.o listwise/liblistwise/op/can/can.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3644,14 +3692,14 @@ fml_9_7()
   exit $X
 }
 
-NAMES[203]='listwise/liblistwise/op/cons/cons.debug.so'
+NAMES[201]='listwise/liblistwise/op/cons/cons.xapi.debug.so'
 fml_9_8()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/cons/cons.debug.so common/parseint/parseint.debug.pic.o listwise/liblistwise/op/cons/cons.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/cons/cons.xapi.debug.so common/parseint/parseint.xapi.debug.pic.o listwise/liblistwise/op/cons/cons.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3659,14 +3707,14 @@ fml_9_8()
   exit $X
 }
 
-NAMES[204]='listwise/liblistwise/op/cp/cp.debug.so'
+NAMES[202]='listwise/liblistwise/op/cp/cp.xapi.debug.so'
 fml_9_9()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/cp/cp.debug.so listwise/liblistwise/op/cp/cp.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/cp/cp.xapi.debug.so listwise/liblistwise/op/cp/cp.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3674,14 +3722,14 @@ fml_9_9()
   exit $X
 }
 
-NAMES[205]='listwise/liblistwise/op/d/d.debug.so'
+NAMES[203]='listwise/liblistwise/op/d/d.xapi.debug.so'
 fml_9_10()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/d/d.debug.so listwise/liblistwise/op/d/d.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/d/d.xapi.debug.so listwise/liblistwise/op/d/d.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3689,14 +3737,14 @@ fml_9_10()
   exit $X
 }
 
-NAMES[206]='listwise/liblistwise/op/datef/datef.debug.so'
+NAMES[204]='listwise/liblistwise/op/datef/datef.xapi.debug.so'
 fml_9_11()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/datef/datef.debug.so common/parseint/parseint.debug.pic.o listwise/liblistwise/op/datef/datef.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/datef/datef.xapi.debug.so common/parseint/parseint.xapi.debug.pic.o listwise/liblistwise/op/datef/datef.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3704,14 +3752,14 @@ fml_9_11()
   exit $X
 }
 
-NAMES[207]='listwise/liblistwise/op/dj/dj.debug.so'
+NAMES[205]='listwise/liblistwise/op/dj/dj.xapi.debug.so'
 fml_9_12()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/dj/dj.debug.so listwise/liblistwise/op/dj/dj.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/dj/dj.xapi.debug.so listwise/liblistwise/op/dj/dj.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3719,14 +3767,14 @@ fml_9_12()
   exit $X
 }
 
-NAMES[208]='listwise/liblistwise/op/dn/dn.debug.so'
+NAMES[206]='listwise/liblistwise/op/dn/dn.xapi.debug.so'
 fml_9_13()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/dn/dn.debug.so listwise/liblistwise/op/dn/dn.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/dn/dn.xapi.debug.so listwise/liblistwise/op/dn/dn.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3734,14 +3782,14 @@ fml_9_13()
   exit $X
 }
 
-NAMES[209]='listwise/liblistwise/op/f/f.debug.so'
+NAMES[207]='listwise/liblistwise/op/f/f.xapi.debug.so'
 fml_9_14()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/f/f.debug.so listwise/liblistwise/op/f/f.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/f/f.xapi.debug.so listwise/liblistwise/op/f/f.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3749,14 +3797,14 @@ fml_9_14()
   exit $X
 }
 
-NAMES[210]='listwise/liblistwise/op/fn/fn.debug.so'
+NAMES[208]='listwise/liblistwise/op/fn/fn.xapi.debug.so'
 fml_9_15()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/fn/fn.debug.so listwise/liblistwise/op/fn/fn.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/fn/fn.xapi.debug.so listwise/liblistwise/op/fn/fn.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3764,14 +3812,14 @@ fml_9_15()
   exit $X
 }
 
-NAMES[211]='listwise/liblistwise/op/g/g.debug.so'
+NAMES[209]='listwise/liblistwise/op/g/g.xapi.debug.so'
 fml_9_16()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/g/g.debug.so listwise/liblistwise/op/g/g.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/g/g.xapi.debug.so listwise/liblistwise/op/g/g.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3779,14 +3827,14 @@ fml_9_16()
   exit $X
 }
 
-NAMES[212]='listwise/liblistwise/op/hl/hl.debug.so'
+NAMES[210]='listwise/liblistwise/op/hl/hl.xapi.debug.so'
 fml_9_17()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/hl/hl.debug.so common/color/color.debug.pic.o listwise/liblistwise/op/hl/hl.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/hl/hl.xapi.debug.so common/color/color.xapi.debug.pic.o listwise/liblistwise/op/hl/hl.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3794,14 +3842,14 @@ fml_9_17()
   exit $X
 }
 
-NAMES[213]='listwise/liblistwise/op/j/j.debug.so'
+NAMES[211]='listwise/liblistwise/op/j/j.xapi.debug.so'
 fml_9_18()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/j/j.debug.so listwise/liblistwise/op/j/j.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/j/j.xapi.debug.so listwise/liblistwise/op/j/j.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3809,14 +3857,14 @@ fml_9_18()
   exit $X
 }
 
-NAMES[214]='listwise/liblistwise/op/l/l.debug.so'
+NAMES[212]='listwise/liblistwise/op/l/l.xapi.debug.so'
 fml_9_19()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/l/l.debug.so common/wstdlib/wstdlib.debug.pic.o common/strutil/strutil.debug.pic.o listwise/liblistwise/op/l/l.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/l/l.xapi.debug.so common/wstdlib/wstdlib.xapi.debug.pic.o common/strutil/strutil.xapi.debug.pic.o listwise/liblistwise/op/l/l.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3824,14 +3872,14 @@ fml_9_19()
   exit $X
 }
 
-NAMES[215]='listwise/liblistwise/op/ln/ln.debug.so'
+NAMES[213]='listwise/liblistwise/op/ln/ln.xapi.debug.so'
 fml_9_20()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/ln/ln.debug.so listwise/liblistwise/op/ln/ln.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/ln/ln.xapi.debug.so listwise/liblistwise/op/ln/ln.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3839,14 +3887,14 @@ fml_9_20()
   exit $X
 }
 
-NAMES[216]='listwise/liblistwise/op/ls/ls.debug.so'
+NAMES[214]='listwise/liblistwise/op/ls/ls.xapi.debug.so'
 fml_9_21()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/ls/ls.debug.so common/parseint/parseint.debug.pic.o listwise/liblistwise/op/ls/ls.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/ls/ls.xapi.debug.so common/parseint/parseint.xapi.debug.pic.o listwise/liblistwise/op/ls/ls.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3854,14 +3902,14 @@ fml_9_21()
   exit $X
 }
 
-NAMES[217]='listwise/liblistwise/op/lx/lx.debug.so'
+NAMES[215]='listwise/liblistwise/op/lx/lx.xapi.debug.so'
 fml_9_22()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/lx/lx.debug.so listwise/liblistwise/op/lx/lx.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/lx/lx.xapi.debug.so listwise/liblistwise/op/lx/lx.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3869,14 +3917,14 @@ fml_9_22()
   exit $X
 }
 
-NAMES[218]='listwise/liblistwise/op/o/o.debug.so'
+NAMES[216]='listwise/liblistwise/op/o/o.xapi.debug.so'
 fml_9_23()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/o/o.debug.so listwise/liblistwise/op/o/o.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/o/o.xapi.debug.so listwise/liblistwise/op/o/o.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3884,14 +3932,14 @@ fml_9_23()
   exit $X
 }
 
-NAMES[219]='listwise/liblistwise/op/p/p.debug.so'
+NAMES[217]='listwise/liblistwise/op/p/p.xapi.debug.so'
 fml_9_24()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/p/p.debug.so listwise/liblistwise/op/p/p.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/p/p.xapi.debug.so listwise/liblistwise/op/p/p.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3899,14 +3947,14 @@ fml_9_24()
   exit $X
 }
 
-NAMES[220]='listwise/liblistwise/op/pop/pop.debug.so'
+NAMES[218]='listwise/liblistwise/op/pop/pop.xapi.debug.so'
 fml_9_25()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/pop/pop.debug.so listwise/liblistwise/op/pop/pop.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/pop/pop.xapi.debug.so listwise/liblistwise/op/pop/pop.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3914,14 +3962,14 @@ fml_9_25()
   exit $X
 }
 
-NAMES[221]='listwise/liblistwise/op/r/r.debug.so'
+NAMES[219]='listwise/liblistwise/op/r/r.xapi.debug.so'
 fml_9_26()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/r/r.debug.so listwise/liblistwise/op/r/r.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/r/r.xapi.debug.so listwise/liblistwise/op/r/r.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3929,14 +3977,14 @@ fml_9_26()
   exit $X
 }
 
-NAMES[222]='listwise/liblistwise/op/rb/rb.debug.so'
+NAMES[220]='listwise/liblistwise/op/rb/rb.xapi.debug.so'
 fml_9_27()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/rb/rb.debug.so common/wstdlib/wstdlib.debug.pic.o common/strutil/strutil.debug.pic.o common/canon/canon.debug.pic.o listwise/liblistwise/op/rb/rb.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/rb/rb.xapi.debug.so common/wstdlib/wstdlib.xapi.debug.pic.o common/strutil/strutil.xapi.debug.pic.o common/canon/canon.xapi.debug.pic.o listwise/liblistwise/op/rb/rb.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3944,14 +3992,14 @@ fml_9_27()
   exit $X
 }
 
-NAMES[223]='listwise/liblistwise/op/re/re.debug.so'
+NAMES[221]='listwise/liblistwise/op/re/re.xapi.debug.so'
 fml_9_28()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/re/re.debug.so listwise/liblistwise/op/re/re.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/re/re.xapi.debug.so listwise/liblistwise/op/re/re.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3959,14 +4007,14 @@ fml_9_28()
   exit $X
 }
 
-NAMES[224]='listwise/liblistwise/op/rp/rp.debug.so'
+NAMES[222]='listwise/liblistwise/op/rp/rp.xapi.debug.so'
 fml_9_29()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/rp/rp.debug.so listwise/liblistwise/op/rp/rp.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/rp/rp.xapi.debug.so listwise/liblistwise/op/rp/rp.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3974,14 +4022,14 @@ fml_9_29()
   exit $X
 }
 
-NAMES[225]='listwise/liblistwise/op/rx/rx.debug.so'
+NAMES[223]='listwise/liblistwise/op/rx/rx.xapi.debug.so'
 fml_9_30()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/rx/rx.debug.so listwise/liblistwise/op/rx/rx.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/rx/rx.xapi.debug.so listwise/liblistwise/op/rx/rx.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -3989,14 +4037,14 @@ fml_9_30()
   exit $X
 }
 
-NAMES[226]='listwise/liblistwise/op/s/s.debug.so'
+NAMES[224]='listwise/liblistwise/op/s/s.xapi.debug.so'
 fml_9_31()
 {
   exec 1>/dev/null
   exec 2>&112
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/s/s.debug.so common/parseint/parseint.debug.pic.o listwise/liblistwise/op/s/s.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/s/s.xapi.debug.so common/parseint/parseint.xapi.debug.pic.o listwise/liblistwise/op/s/s.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4004,14 +4052,14 @@ fml_9_31()
   exit $X
 }
 
-NAMES[227]='listwise/liblistwise/op/shift/shift.debug.so'
+NAMES[225]='listwise/liblistwise/op/shift/shift.xapi.debug.so'
 fml_9_32()
 {
   exec 1>/dev/null
   exec 2>&113
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/shift/shift.debug.so listwise/liblistwise/op/shift/shift.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/shift/shift.xapi.debug.so listwise/liblistwise/op/shift/shift.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4019,14 +4067,14 @@ fml_9_32()
   exit $X
 }
 
-NAMES[228]='listwise/liblistwise/op/sort/sort.debug.so'
+NAMES[226]='listwise/liblistwise/op/sort/sort.xapi.debug.so'
 fml_9_33()
 {
   exec 1>/dev/null
   exec 2>&114
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/sort/sort.debug.so common/parseint/parseint.debug.pic.o common/wstdlib/wstdlib.debug.pic.o common/strutil/strutil.debug.pic.o listwise/liblistwise/op/sort/sort.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/sort/sort.xapi.debug.so common/parseint/parseint.xapi.debug.pic.o common/wstdlib/wstdlib.xapi.debug.pic.o common/strutil/strutil.xapi.debug.pic.o listwise/liblistwise/op/sort/sort.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4034,14 +4082,14 @@ fml_9_33()
   exit $X
 }
 
-NAMES[229]='listwise/liblistwise/op/stat/stat.debug.so'
+NAMES[227]='listwise/liblistwise/op/stat/stat.xapi.debug.so'
 fml_9_34()
 {
   exec 1>/dev/null
   exec 2>&115
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/stat/stat.debug.so listwise/liblistwise/op/stat/stat.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/stat/stat.xapi.debug.so listwise/liblistwise/op/stat/stat.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4049,14 +4097,14 @@ fml_9_34()
   exit $X
 }
 
-NAMES[230]='listwise/liblistwise/op/sx/sx.debug.so'
+NAMES[228]='listwise/liblistwise/op/sx/sx.xapi.debug.so'
 fml_9_35()
 {
   exec 1>/dev/null
   exec 2>&116
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/sx/sx.debug.so listwise/liblistwise/op/sx/sx.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/sx/sx.xapi.debug.so listwise/liblistwise/op/sx/sx.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4064,14 +4112,14 @@ fml_9_35()
   exit $X
 }
 
-NAMES[231]='listwise/liblistwise/op/t/t.debug.so'
+NAMES[229]='listwise/liblistwise/op/t/t.xapi.debug.so'
 fml_9_36()
 {
   exec 1>/dev/null
   exec 2>&117
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/t/t.debug.so listwise/liblistwise/op/t/t.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/t/t.xapi.debug.so listwise/liblistwise/op/t/t.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4079,14 +4127,14 @@ fml_9_36()
   exit $X
 }
 
-NAMES[232]='listwise/liblistwise/op/u/u.debug.so'
+NAMES[230]='listwise/liblistwise/op/u/u.xapi.debug.so'
 fml_9_37()
 {
   exec 1>/dev/null
   exec 2>&118
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/u/u.debug.so common/parseint/parseint.debug.pic.o common/wstdlib/wstdlib.debug.pic.o common/strutil/strutil.debug.pic.o listwise/liblistwise/op/u/u.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/u/u.xapi.debug.so common/parseint/parseint.xapi.debug.pic.o common/wstdlib/wstdlib.xapi.debug.pic.o common/strutil/strutil.xapi.debug.pic.o listwise/liblistwise/op/u/u.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4094,14 +4142,14 @@ fml_9_37()
   exit $X
 }
 
-NAMES[233]='listwise/liblistwise/op/up/up.debug.so'
+NAMES[231]='listwise/liblistwise/op/up/up.xapi.debug.so'
 fml_9_38()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/up/up.debug.so listwise/liblistwise/op/up/up.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/up/up.xapi.debug.so listwise/liblistwise/op/up/up.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4109,14 +4157,14 @@ fml_9_38()
   exit $X
 }
 
-NAMES[234]='listwise/liblistwise/op/uu/uu.debug.so'
+NAMES[232]='listwise/liblistwise/op/uu/uu.xapi.debug.so'
 fml_9_39()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/uu/uu.debug.so common/parseint/parseint.debug.pic.o common/wstdlib/wstdlib.debug.pic.o common/strutil/strutil.debug.pic.o listwise/liblistwise/op/uu/uu.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/uu/uu.xapi.debug.so common/parseint/parseint.xapi.debug.pic.o common/wstdlib/wstdlib.xapi.debug.pic.o common/strutil/strutil.xapi.debug.pic.o listwise/liblistwise/op/uu/uu.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4124,14 +4172,14 @@ fml_9_39()
   exit $X
 }
 
-NAMES[235]='listwise/liblistwise/op/v/v.debug.so'
+NAMES[233]='listwise/liblistwise/op/v/v.xapi.debug.so'
 fml_9_40()
 {
   exec 1>/dev/null
   exec 2>&102
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/v/v.debug.so listwise/liblistwise/op/v/v.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/v/v.xapi.debug.so listwise/liblistwise/op/v/v.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4139,14 +4187,14 @@ fml_9_40()
   exit $X
 }
 
-NAMES[236]='listwise/liblistwise/op/vf/vf.debug.so'
+NAMES[234]='listwise/liblistwise/op/vf/vf.xapi.debug.so'
 fml_9_41()
 {
   exec 1>/dev/null
   exec 2>&103
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/vf/vf.debug.so listwise/liblistwise/op/vf/vf.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/vf/vf.xapi.debug.so listwise/liblistwise/op/vf/vf.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4154,14 +4202,14 @@ fml_9_41()
   exit $X
 }
 
-NAMES[237]='listwise/liblistwise/op/vp/vp.debug.so'
+NAMES[235]='listwise/liblistwise/op/vp/vp.xapi.debug.so'
 fml_9_42()
 {
   exec 1>/dev/null
   exec 2>&104
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/vp/vp.debug.so listwise/liblistwise/op/vp/vp.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/vp/vp.xapi.debug.so listwise/liblistwise/op/vp/vp.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4169,14 +4217,14 @@ fml_9_42()
   exit $X
 }
 
-NAMES[238]='listwise/liblistwise/op/w/w.debug.so'
+NAMES[236]='listwise/liblistwise/op/w/w.xapi.debug.so'
 fml_9_43()
 {
   exec 1>/dev/null
   exec 2>&105
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/w/w.debug.so listwise/liblistwise/op/w/w.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/w/w.xapi.debug.so listwise/liblistwise/op/w/w.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4184,14 +4232,14 @@ fml_9_43()
   exit $X
 }
 
-NAMES[239]='listwise/liblistwise/op/wvf/wvf.debug.so'
+NAMES[237]='listwise/liblistwise/op/wvf/wvf.xapi.debug.so'
 fml_9_44()
 {
   exec 1>/dev/null
   exec 2>&106
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/wvf/wvf.debug.so listwise/liblistwise/op/wvf/wvf.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/wvf/wvf.xapi.debug.so listwise/liblistwise/op/wvf/wvf.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4199,14 +4247,14 @@ fml_9_44()
   exit $X
 }
 
-NAMES[240]='listwise/liblistwise/op/wvp/wvp.debug.so'
+NAMES[238]='listwise/liblistwise/op/wvp/wvp.xapi.debug.so'
 fml_9_45()
 {
   exec 1>/dev/null
   exec 2>&107
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/wvp/wvp.debug.so listwise/liblistwise/op/wvp/wvp.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/wvp/wvp.xapi.debug.so listwise/liblistwise/op/wvp/wvp.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4214,14 +4262,14 @@ fml_9_45()
   exit $X
 }
 
-NAMES[241]='listwise/liblistwise/op/x/x.debug.so'
+NAMES[239]='listwise/liblistwise/op/x/x.xapi.debug.so'
 fml_9_46()
 {
   exec 1>/dev/null
   exec 2>&108
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/x/x.debug.so listwise/liblistwise/op/x/x.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/x/x.xapi.debug.so listwise/liblistwise/op/x/x.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4229,14 +4277,14 @@ fml_9_46()
   exit $X
 }
 
-NAMES[242]='listwise/liblistwise/op/xch/xch.debug.so'
+NAMES[240]='listwise/liblistwise/op/xch/xch.xapi.debug.so'
 fml_9_47()
 {
   exec 1>/dev/null
   exec 2>&109
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/xch/xch.debug.so listwise/liblistwise/op/xch/xch.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/xch/xch.xapi.debug.so listwise/liblistwise/op/xch/xch.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4244,14 +4292,14 @@ fml_9_47()
   exit $X
 }
 
-NAMES[243]='listwise/liblistwise/op/y/y.debug.so'
+NAMES[241]='listwise/liblistwise/op/y/y.xapi.debug.so'
 fml_9_48()
 {
   exec 1>/dev/null
   exec 2>&110
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/y/y.debug.so listwise/liblistwise/op/y/y.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/y/y.xapi.debug.so listwise/liblistwise/op/y/y.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4259,14 +4307,14 @@ fml_9_48()
   exit $X
 }
 
-NAMES[244]='listwise/liblistwise/op/z/z.debug.so'
+NAMES[242]='listwise/liblistwise/op/z/z.xapi.debug.so'
 fml_9_49()
 {
   exec 1>/dev/null
   exec 2>&111
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fPIC -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/z/z.debug.so listwise/liblistwise/op/z/z.debug.pic.o ./listwise/liblistwise/liblistwise.debug.so -shared
+	gcc -fPIC -I./listwise/liblistwise/exec -I./listwise/liblistwise/logging -I./listwise/liblistwise/error -I./listwise/liblistwise/iterate -I./listwise/liblistwise/object -I./listwise/liblistwise/op -I./listwise/liblistwise/describe -I./listwise/liblistwise/test -I./listwise/liblistwise/lwx -I./listwise/liblistwise/re -I./listwise/liblistwise/internal -I./listwise/liblistwise/lstack -I./listwise/liblistwise/listwise -I./listwise/liblistwise/fs -I./listwise/liblistwise/selection -I./listwise/liblistwise/operators -I./listwise/liblistwise/operator -I./listwise/liblistwise/sanity -I./listwise/liblistwise/window -I./listwise/liblistwise/transform -I./listwise/liblistwise/tune -I./listwise/liblistwise -I./libxapi -I./libxlinux -I./libpstring -I./xunit/libxunit -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -DLWOPDIR=/usr/lib/listwise -DLWOPEXT=so -o listwise/liblistwise/op/z/z.xapi.debug.so listwise/liblistwise/op/z/z.xapi.debug.pic.o ./listwise/liblistwise/liblistwise-xapi.debug.so -shared
 
 
   X=$?
@@ -4276,14 +4324,14 @@ fml_9_49()
 
 
 # formulas and names for stage 10
-NAMES[245]='fab/fablw/op/fg/fg.debug.so'
+NAMES[243]='fab/fablw/op/fg/fg.xapi.debug.so'
 fml_10_0()
 {
   exec 1>/dev/null
   exec 2>&100
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/fabd -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./libpstring -I./listwise/liblistwise -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -o fab/fablw/op/fg/fg.debug.so	fab/fablw/op/fg/fg.debug.pic.o -shared
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/fabd -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./libpstring -I./listwise/liblistwise -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -o fab/fablw/op/fg/fg.xapi.debug.so	fab/fablw/op/fg/fg.xapi.debug.pic.o -shared
 
 
   X=$?
@@ -4291,14 +4339,14 @@ fml_10_0()
   exit $X
 }
 
-NAMES[246]='fab/fablw/op/fi/fi.debug.so'
+NAMES[244]='fab/fablw/op/fi/fi.xapi.debug.so'
 fml_10_1()
 {
   exec 1>/dev/null
   exec 2>&101
 
   
-	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP="`date`" -O0 -g -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY -fno-builtin-log -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/fabd -I./fab/common -DFABVERSIONS=v0.5.1.0 -DFABVERSIONN=510 -I./libxapi -I./libxlinux -I./libpstring -I./listwise/liblistwise -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -o fab/fablw/op/fi/fi.debug.so	fab/fablw/op/fi/fi.debug.pic.o -shared
+	gcc -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -I./common/unitstring -I./common/coll -I./common/wstdlib -I./common/narrate -I./common/parseint -I./common/memblk -I./common/logger -I./common/map -I./common/canon -I./common/yyutil -I./common/cksum -I./common/strutil -I./common/color -I./common/wstring -I./common -DBUILDSTAMP='Sun Mar 22 2015 15:59:59' -DXAPI_PROVIDE_BACKTRACE -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY -I./fab/fabd/list -I./fab/fabd/bp -I./fab/fabd/dep -I./fab/fabd/ff -I./fab/fabd/ts -I./fab/fabd/filesystem -I./fab/fabd/tmp -I./fab/fabd/strstack -I./fab/fabd/ffproc -I./fab/fabd/lwutil -I./fab/fabd/gn -I./fab/fabd/dsc -I./fab/fabd/hashblock -I./fab/fabd/fml -I./fab/fabd/selector -I./fab/fabd/enclose -I./fab/fabd/cfg -I./fab/fabd/ffn -I./fab/fabd/traverse -I./fab/fabd/bs -I./fab/fabd/var -I./fab/common/error -I./fab/common/logs -I./fab/common/path -I./fab/common/dirutil -I./fab/common/args -I./fab/common/identity -I./fab/common/params -I./fab/fabd -I./fab/common -DFABVERSIONS=v0.6.0.0 -DFABVERSIONN=600 -I./libxapi -I./libxlinux -I./libpstring -I./listwise/liblistwise -DFABLWOPDIR=/usr/lib/fab/listwise -DFABINVOKEDIR=/usr/lib/fab/fablib -DFABTMPDIR=/var/tmp/fab -DFABIPCDIR=/var/run/fab -o fab/fablw/op/fi/fi.xapi.debug.so	fab/fablw/op/fi/fi.xapi.debug.pic.o -shared
 
 
   X=$?
@@ -4389,7 +4437,7 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=7))
+  ((SKP+=19))
 else
   # launch stage 1.1
   exec 100>$tmp ; rm -f $tmp ; fml_1_19 & PIDS[0]=$!
@@ -4399,10 +4447,22 @@ else
   exec 104>$tmp ; rm -f $tmp ; fml_1_23 & PIDS[4]=$!
   exec 105>$tmp ; rm -f $tmp ; fml_1_24 & PIDS[5]=$!
   exec 106>$tmp ; rm -f $tmp ; fml_1_25 & PIDS[6]=$!
+  exec 107>$tmp ; rm -f $tmp ; fml_1_26 & PIDS[7]=$!
+  exec 108>$tmp ; rm -f $tmp ; fml_1_27 & PIDS[8]=$!
+  exec 109>$tmp ; rm -f $tmp ; fml_1_28 & PIDS[9]=$!
+  exec 110>$tmp ; rm -f $tmp ; fml_1_29 & PIDS[10]=$!
+  exec 111>$tmp ; rm -f $tmp ; fml_1_30 & PIDS[11]=$!
+  exec 112>$tmp ; rm -f $tmp ; fml_1_31 & PIDS[12]=$!
+  exec 113>$tmp ; rm -f $tmp ; fml_1_32 & PIDS[13]=$!
+  exec 114>$tmp ; rm -f $tmp ; fml_1_33 & PIDS[14]=$!
+  exec 115>$tmp ; rm -f $tmp ; fml_1_34 & PIDS[15]=$!
+  exec 116>$tmp ; rm -f $tmp ; fml_1_35 & PIDS[16]=$!
+  exec 117>$tmp ; rm -f $tmp ; fml_1_36 & PIDS[17]=$!
+  exec 118>$tmp ; rm -f $tmp ; fml_1_37 & PIDS[18]=$!
 
   # harvest stage 1.1
   C=0
-  while [[ $C != 7 ]]; do
+  while [[ $C != 19 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -4413,6 +4473,31 @@ else
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
     printf '[%3d,%3d] X=%d %s\n' 1 $((idx+19)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 1.2
+  exec 100>$tmp ; rm -f $tmp ; fml_1_38 & PIDS[0]=$!
+
+  # harvest stage 1.2
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((39+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 1 $((idx+38)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
@@ -4451,7 +4536,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((27+$idx))
+    I=$((40+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4494,7 +4579,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((46+$idx))
+    I=$((59+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4506,7 +4591,7 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=19))
+  ((SKP+=7))
 else
   # launch stage 2.2
   exec 100>$tmp ; rm -f $tmp ; fml_2_38 & PIDS[0]=$!
@@ -4516,57 +4601,20 @@ else
   exec 104>$tmp ; rm -f $tmp ; fml_2_42 & PIDS[4]=$!
   exec 105>$tmp ; rm -f $tmp ; fml_2_43 & PIDS[5]=$!
   exec 106>$tmp ; rm -f $tmp ; fml_2_44 & PIDS[6]=$!
-  exec 107>$tmp ; rm -f $tmp ; fml_2_45 & PIDS[7]=$!
-  exec 108>$tmp ; rm -f $tmp ; fml_2_46 & PIDS[8]=$!
-  exec 109>$tmp ; rm -f $tmp ; fml_2_47 & PIDS[9]=$!
-  exec 110>$tmp ; rm -f $tmp ; fml_2_48 & PIDS[10]=$!
-  exec 111>$tmp ; rm -f $tmp ; fml_2_49 & PIDS[11]=$!
-  exec 112>$tmp ; rm -f $tmp ; fml_2_50 & PIDS[12]=$!
-  exec 113>$tmp ; rm -f $tmp ; fml_2_51 & PIDS[13]=$!
-  exec 114>$tmp ; rm -f $tmp ; fml_2_52 & PIDS[14]=$!
-  exec 115>$tmp ; rm -f $tmp ; fml_2_53 & PIDS[15]=$!
-  exec 116>$tmp ; rm -f $tmp ; fml_2_54 & PIDS[16]=$!
-  exec 117>$tmp ; rm -f $tmp ; fml_2_55 & PIDS[17]=$!
-  exec 118>$tmp ; rm -f $tmp ; fml_2_56 & PIDS[18]=$!
 
   # harvest stage 2.2
   C=0
-  while [[ $C != 19 ]]; do
+  while [[ $C != 7 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((65+$idx))
+    I=$((78+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
     printf '[%3d,%3d] X=%d %s\n' 2 $((idx+38)) $X "$N"
-    cat /proc/$$/fd/$((100+idx))
-    ((C++))
-  done
-fi
-
-# early termination 
-if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
-else
-  # launch stage 2.3
-  exec 100>$tmp ; rm -f $tmp ; fml_2_57 & PIDS[0]=$!
-
-  # harvest stage 2.3
-  C=0
-  while [[ $C != 1 ]]; do
-    read -u 99 idx
-    wait ${PIDS[$idx]}
-    EXITS[$idx]=$?
-    P=${PIDS[$idx]}
-    X=${EXITS[$idx]}
-    I=$((84+$idx))
-    N=${NAMES[$I]}
-    [[ $X -eq 0 ]] && ((WIN++))
-    [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 2 $((idx+57)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
@@ -4660,7 +4708,7 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=16))
+  ((SKP+=14))
 else
   # launch stage 3.2
   exec 100>$tmp ; rm -f $tmp ; fml_3_38 & PIDS[0]=$!
@@ -4677,12 +4725,10 @@ else
   exec 111>$tmp ; rm -f $tmp ; fml_3_49 & PIDS[11]=$!
   exec 112>$tmp ; rm -f $tmp ; fml_3_50 & PIDS[12]=$!
   exec 113>$tmp ; rm -f $tmp ; fml_3_51 & PIDS[13]=$!
-  exec 114>$tmp ; rm -f $tmp ; fml_3_52 & PIDS[14]=$!
-  exec 115>$tmp ; rm -f $tmp ; fml_3_53 & PIDS[15]=$!
 
   # harvest stage 3.2
   C=0
-  while [[ $C != 16 ]]; do
+  while [[ $C != 14 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -4713,7 +4759,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((139+$idx))
+    I=$((137+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4738,7 +4784,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((140+$idx))
+    I=$((138+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4763,7 +4809,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((141+$idx))
+    I=$((139+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4788,7 +4834,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((142+$idx))
+    I=$((140+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4831,7 +4877,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((143+$idx))
+    I=$((141+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4874,7 +4920,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((162+$idx))
+    I=$((160+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4912,7 +4958,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((181+$idx))
+    I=$((179+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4955,7 +5001,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((195+$idx))
+    I=$((193+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -4998,7 +5044,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((214+$idx))
+    I=$((212+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -5034,7 +5080,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((233+$idx))
+    I=$((231+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
@@ -5060,7 +5106,7 @@ else
     EXITS[$idx]=$?
     P=${PIDS[$idx]}
     X=${EXITS[$idx]}
-    I=$((245+$idx))
+    I=$((243+$idx))
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))

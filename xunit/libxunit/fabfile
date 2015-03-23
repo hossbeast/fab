@@ -22,37 +22,42 @@
 +[ $dcommon ]() @common
 
 # variables
-$libname 			= [ libxunit.so ]
+$basename			= [ xunit ]
+$libname_xapi = [ lib $basename .so ~ j ]
 $copts				= [ -fPIC [ $dlibxunit ~ lsr c -d s/^/-I ]
-	# include paths - mark as system to preclude dependency discovery from gcc
+	# include paths
 	[ $dlibxapi ~ s/^/-I ]
 ]
-$cflags_final	= [ $cflags_final $copts ]
-$cflags_debug	= [ $cflags_debug $copts ]
-$cflags_devel	= [ $cflags_devel $copts ]
+$cflags_xapi_final	= [ $cflags_xapi_final $copts ]
+$cflags_xapi_debug	= [ $cflags_xapi_debug $copts ]
+$cflags_xapi_devel	= [ $cflags_xapi_devel $copts ]
 
-$lopts				= [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
-$lflags_final	= [ $libxapi_final $lopts [ -Wl,-soname,libxunit.so ~ j ] ]
-$lflags_debug	= [ $libxapi_debug $lopts [ -Wl,-soname,libxunit.so ~ j ] ]
-$lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxunit.devel.so ~ j ] ]
+$lopts							= [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
+$lflags_xapi_final	= [ $libxapi_xapi_final $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
+$lflags_xapi_debug	= [ $libxapi_xapi_debug $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
+$lflags_xapi_devel	= [ $libxapi_xapi_devel $lopts [ -Wl,-soname,libxunit-xapi-devel.so ~ j ] ]
 
 # source files
-+[@std.c]($dext = [ final.pic.o ]; $gendir = $dlibxunit; $rdirs = $dlibxunit; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.pic.o ]; $gendir = $dlibxunit; $rdirs = $dlibxunit; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.pic.o ]; $gendir = $dlibxunit; $rdirs = $dlibxunit; $cc; $cflags = $cflags_devel)
-+[@std.xapi.errtab]($dext = [ final.pic.o ]; $gendir = $dlibxunit; $rdirs = $dlibxunit; $apidata = [1]; $cc; $cflags = $cflags_final)
-+[@std.xapi.errtab]($dext = [ debug.pic.o ]; $gendir = $dlibxunit; $rdirs = $dlibxunit; $apidata = [1]; $cc; $cflags = $cflags_debug)
-+[@std.xapi.errtab]($dext = [ devel.pic.o ]; $gendir = $dlibxunit; $rdirs = $dlibxunit; $apidata = [1]; $cc; $cflags = $cflags_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibxunit; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibxunit; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibxunit; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibxunit; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibxunit; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibxunit; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
 
 ##
 ## dependencies
 ##
 
 # default NOFILE target - build library and all operators
-[ @all ] : [ @final @debug @devel ]
-[ @final ] : [ $libxunit_final ]
-[ @debug ] : [ $libxunit_debug ]
-[ @devel ] : [ $libxunit_devel ]
+[ @all ] : [ @all.xapi ]
+[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @final ] : [ @final.xapi ]
+[ @final.xapi ] : [ $libxunit_xapi_final ]
+[ @debug ] : [ @debug.xapi ]
+[ @debug.xapi ] : [ $libxunit_xapi_debug ]
+[ @devel ] : [ @devel.xapi ]
+[ @devel.xapi ] : [ $libxunit_xapi_devel ]
 
 ##
 ## formulas
@@ -69,33 +74,33 @@ $lflags_devel	= [ $libxapi_devel $lopts [ -Wl,-soname,libxunit.devel.so ~ j ] ]
 }
 
 # link the library
-[ $libxunit_final ] : [ [ $*/exports ~ j ] [ $*/error/error.final.pic.o ~ j ] ]
+[ $libxunit_xapi_final ] : [ [ $*/exports ~ j ] [ $*/error/error.xapi.final.pic.o ~ j ] ]
 {
-	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_final ~ fi ] 
+	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ] 
 }
 
-[ $libxunit_debug ] : [ [ $*/exports ~ j ] [ $*/error/error.debug.pic.o ~ j ] ]
+[ $libxunit_xapi_debug ] : [ [ $*/exports ~ j ] [ $*/error/error.xapi.debug.pic.o ~ j ] ]
 {
-	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_debug ~ fi ] 
+	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ] 
 }
 
-[ $libxunit_devel ] : [ [ $*/exports ~ j ] [ $*/error/error.devel.pic.o ~ j ] ]
+[ $libxunit_xapi_devel ] : [ [ $*/exports ~ j ] [ $*/error/error.xapi.devel.pic.o ~ j ] ]
 {
-	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_devel ~ fi ] 
+	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ] 
 }
 
-[ $libxunit_final ] :^ [ $libxapi_final ]
-[ $libxunit_debug ] :^ [ $libxapi_debug ]
-[ $libxunit_devel ] :^ [ $libxapi_devel ]
+[ $libxunit_xapi_final ] :^ [ $libxapi_xapi_final ]
+[ $libxunit_xapi_debug ] :^ [ $libxapi_xapi_debug ]
+[ $libxunit_xapi_devel ] :^ [ $libxapi_xapi_devel ]
 
 ##
 ## tasks
 ##
 
-[ @install ] : [ @all ]
+[ @install.final.xapi ] : [ @final.xapi ]
 {
 	install -d															[ $destdir/$libdir ]
-	install [ $libxunit ]										[ $destdir/$libdir/$libname ]
+	install [ $libxunit ]										[ $destdir/$libdir/$libname_xapi ]
 }
 
 [ @installdevheaders ]

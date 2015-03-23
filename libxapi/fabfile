@@ -22,31 +22,51 @@
 +[ $dcommon ]() @common
 
 # variables
-$libname 			= [ libxapi.so ]
-$copts				= [ -fPIC [ $dlibxapi ~ lsr c -d s/^/-I ] ]
-$cflags_final = [ $cflags_final $copts ]
-$cflags_debug = [ $cflags_debug $copts ]
-$cflags_devel = [ $cflags_devel $copts ]
+$basename						= [ xapi ]
+$libname_eapi				= [ lib $basename .so ~ j ]
+$libname_xapi				= [ lib $basename -xapi .so ~ j ]
 
-$lopts				= [ -shared [ "-Wl,--version-script=" $*/exports  ~ j ] ]
-$lflags_final	= [ $lflags_final $lopts [ "-Wl,-soname," libxapi.so ~ j ] ]
-$lflags_debug	= [ $lflags_debug $lopts [ "-Wl,-soname," libxapi.so ~ j ] ]
-$lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
+$cflags							= [ -fPIC [ $dlibxapi ~ lsr c -d s/^/-I ] ]
+$cflags_eapi_final	= [ $cflags_eapi_final $cflags ]
+$cflags_eapi_debug	= [ $cflags_eapi_debug $cflags ]
+$cflags_eapi_devel	= [ $cflags_eapi_devel $cflags ]
+$cflags_xapi_final	= [ $cflags_xapi_final $cflags ]
+$cflags_xapi_debug	= [ $cflags_xapi_debug $cflags ]
+$cflags_xapi_devel	= [ $cflags_xapi_devel $cflags ]
+
+$lflags							= [ -shared [ "-Wl,--version-script=" $*/exports  ~ j ] ]
+$lflags_eapi_final	= [ $lflags_eapi_final $lflags [ "-Wl,-soname," libxapi.so ~ j ] ]
+$lflags_eapi_debug	= [ $lflags_eapi_debug $lflags [ "-Wl,-soname," libxapi.so ~ j ] ]
+$lflags_eapi_devel	= [ $lflags_eapi_devel $lflags [ "-Wl,-soname," libxapi-devel.so ~ j ] ]
+$lflags_xapi_final	= [ $lflags_xapi_final $lflags [ "-Wl,-soname," libxapi-xapi.so ~ j ] ]
+$lflags_xapi_debug	= [ $lflags_xapi_debug $lflags [ "-Wl,-soname," libxapi-xapi.so ~ j ] ]
+$lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-devel.so ~ j ] ]
 
 # source files
-+[@std.c]($dext = [ final.pic.o ]; $gendir = $dlibxapi; $rdirs = $dlibxapi; $cc; $cflags = $cflags_final)
-+[@std.c]($dext = [ debug.pic.o ]; $gendir = $dlibxapi; $rdirs = $dlibxapi; $cc; $cflags = $cflags_debug)
-+[@std.c]($dext = [ devel.pic.o ]; $gendir = $dlibxapi; $rdirs = $dlibxapi; $cc; $cflags = $cflags_devel)
++[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = $dlibxapi; $cc; $cflags = $cflags_eapi_final)
++[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = $dlibxapi; $cc; $cflags = $cflags_eapi_debug)
++[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = $dlibxapi; $cc; $cflags = $cflags_eapi_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibxapi; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibxapi; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibxapi; $cc; $cflags = $cflags_xapi_devel)
 
 ##
 ## dependencies
 ##
 
 # tests
-[ @all ] : [ @final @debug @devel ]
-[ @final ] : [ $libxapi_final ]
-[ @debug ] : [ $libxapi_debug ]
-[ @devel ] : [ $libxapi_devel ]
+[ @all ] : [ @all.eapi @all.xapi ]
+[ @final ] : [ @final.eapi @final.xapi ]
+[ @debug ] : [ @debug.eapi @debug.xapi ]
+[ @devel ] : [ @devel.eapi @devel.xapi ]
+[ @all.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
+[ @final.eapi ] : [ $libxapi_eapi_final ]
+[ @debug.eapi ] : [ $libxapi_eapi_debug ]
+[ @devel.eapi ] : [ $libxapi_eapi_devel ]
+[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @final.xapi ] : [ $libxapi_xapi_final ]
+[ @debug.xapi ] : [ $libxapi_xapi_debug ]
+[ @devel.xapi ] : [ $libxapi_xapi_devel ]
 
 ##
 ## formulas
@@ -62,9 +82,12 @@ $lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
 }
 
 # compiled sys errtab
-+[@std.xapi.errtab]($dext = [ final.pic.o ]; $gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_final)
-+[@std.xapi.errtab]($dext = [ debug.pic.o ]; $gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_debug)
-+[@std.xapi.errtab]($dext = [ devel.pic.o ]; $gendir = $dlibxapi; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_devel)
++[@std.xapi.errtab]($dext = [ eapi.final.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_eapi_final)
++[@std.xapi.errtab]($dext = [ eapi.debug.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_eapi_debug)
++[@std.xapi.errtab]($dext = [ eapi.devel.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_eapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_devel)
 
 # library exports
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
@@ -78,35 +101,62 @@ $lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
 }
 
 # link the library
-[ $libxapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/final.pic.o sy ] ]
+[ $libxapi_eapi_final ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/eapi.final.pic.o y ] ]
 {
-	[ $cc ] [ $cflags_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_final ~ fi ] 
+	[ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ] 
 }
 
-[ $libxapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/debug.pic.o sy ] ]
+[ $libxapi_eapi_debug ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/eapi.debug.pic.o y ] ]
 {
-	[ $cc ] [ $cflags_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_debug ~ fi ]
+	[ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
 }
 
-[ $libxapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/devel.pic.o sy ] ]
+[ $libxapi_eapi_devel ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/eapi.devel.pic.o y ] ]
 {
-	[ $cc ] [ $cflags_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_devel ~ fi ]
+	[ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
+}
+
+[ $libxapi_xapi_final ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/xapi.final.pic.o y ] ]
+{
+	[ [ $cc ] [ $cflags_xapi_final ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_final ~ fi ]
+}
+
+[ $libxapi_xapi_debug ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/xapi.debug.pic.o y ] ]
+{
+	[ [ $cc ] [ $cflags_xapi_debug ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_debug ~ fi ]
+}
+
+[ $libxapi_xapi_devel ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/xapi.devel.pic.o y ] ]
+{
+	[ [ $cc ] [ $cflags_xapi_devel ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_devel ~ fi ]
 }
 
 ##
 ## tasks
 ##
 
-[ @install.final ] : [ @final ]
+[ @install.final.eapi ] : [ @final.eapi ]
 {
 	install -d																[ $destdir/$libdir ]
-	install [ $libxapi_final ]								[ $destdir/$libdir/$libname ]
+	install [ $libxapi_eapi_final ]						[ $destdir/$libdir/$libname_eapi ]
 }
 
-[ @install.debug ] : [ @debug ]
+[ @install.debug.eapi ] : [ @debug.eapi ]
 {
 	install -d																[ $destdir/$libdir ]
-	install [ $libxapi_debug ]								[ $destdir/$libdir/$libname ]
+	install [ $libxapi_eapi_debug ]						[ $destdir/$libdir/$libname_eapi ]
+}
+
+[ @install.final.xapi ] : [ @final.xapi ]
+{
+	install -d																[ $destdir/$libdir ]
+	install [ $libxapi_xapi_final ]						[ $destdir/$libdir/$libname_xapi ]
+}
+
+[ @install.debug.xapi ] : [ @debug.xapi ]
+{
+	install -d																[ $destdir/$libdir ]
+	install [ $libxapi_xapi_debug ]						[ $destdir/$libdir/$libname_xapi ]
 }
 
 [ @installdevheaders ]
@@ -116,4 +166,7 @@ $lflags_devel	= [ $lflags_devel $lopts [ "-Wl,-soname," libxapi.devel.so ~ j ] ]
 
 	install -d																[ $destdir/$incdir/xapi ]
 	install [ $dlibxapi/xapi/frame.h ]				[ $destdir/$incdir/xapi ]
+	install [ $dlibxapi/xapi/unwind.h ]				[ $destdir/$incdir/xapi ]
+	install [ $dlibxapi/xapi/errcode.h ]			[ $destdir/$incdir/xapi ]
+	install [ $dlibxapi/xapi/XAPI.errtab.h ]	[ $destdir/$incdir/xapi ]
 }

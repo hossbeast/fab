@@ -147,6 +147,7 @@ when calling non-xapi code, you have a couple of options.
 // SUMMARY
 //  invoke an UNWIND-ing function and fail the current frame if that function fails
 //
+#if 0
 #if XAPI_RUNTIME_CHECKS
 #define fatal(func, ...)																																														\
 	do {																																																							\
@@ -170,6 +171,7 @@ when calling non-xapi code, you have a couple of options.
 		if(xapi_frame_enter() != -1 && (xapi_frame_enter_last() == 1 || func(__VA_ARGS__)))		\
 			fail(0);																																						\
 	} while(0)
+#endif
 #endif
 
 #if XAPI_RUNTIME_CHECKS

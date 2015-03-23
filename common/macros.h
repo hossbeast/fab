@@ -55,4 +55,29 @@
 	p - (x);																						\
 })
 
+/// NARGS
+//
+// evaluates to the quantity of arguments passed to it
+//
+#define NARGS(...) ((sizeof((int[]){0, ##__VA_ARGS__}) / sizeof(int)) - 1)
+
+/// LSIGX / MSIGX
+//
+// SUMMARY
+//  access the nth byte in ascending(LSIGX) or descending(MSIGX) order of significance
+//
+// PARAMETERS
+//  x - size of the value
+//  n - byte to access
+//
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+# define LSIGX(l, x) (x)
+# define MSIGX(l, x) ((l) - (x) - 1)
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+# define LSIGX(l, x) ((l) - (x) - 1)
+# define MSIGX(l, x) (l)
+#else
+# error unable to determine endianness
+#endif
+
 #endif
