@@ -20,10 +20,9 @@
 
 	#include "global.h"
 
-	#include "ff.parse.h"
-	#include "ffn.h"
-	#include "ff/ff.tab.h"
-	#include "ff/ff.tokens.h"
+	#include "cfg.parse.h"
+	#include "cfg/cfg.tab.h"
+	#include "cfg/cfg.tokens.h"
 
 	#include "logs.h"
 	#include "macros.h"
@@ -38,9 +37,24 @@
 	// 
 	// PARAMETERS
 	//  token - token to parse
-	//  ldel  - offset at which the location for this token begins 
 	//
-	#define LEX(token, ldel)			\
+	#define LEX(token)						\
+		lexify(											\
+			  token										\
+			, yylval									\
+			, yylloc									\
+			, yyextra									\
+			, yytext									\
+			, yyleng									\
+			, 0												\
+			, 0												\
+			, __FUNCTION__						\
+			, __FILE__								\
+			, __LINE__								\
+			, 0												\
+		)
+
+	#define LEXV(token, ldel)			\
 		lexify(											\
 			  token										\
 			, yylval									\
@@ -55,6 +69,8 @@
 			, __LINE__								\
 			, 0												\
 		)
+
+
 
 	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, const char * func, const char * file, int line, void * const v)
 	{
@@ -102,13 +118,15 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 (?:filesystem)																					{ return LEX(FILESYSTEM); }
 (?:invalidation-method)																	{ return LEX(INVALIDATION_METHOD); }
-(?:PATH)																								{ return LEX(PATH); }
+(?:path)																								{ return LEX(PATH); }
 (?:stat)																								{ return LEX(STAT); }
 (?:content)																							{ return LEX(CONTENT); }
-(?:inotify)																							{ return LEX(INOTIFY); }
+(?:notify)																							{ return LEX(NOTIFY); }
+(?:always)																							{ return LEX(ALWAYS); }
+(?:never)																								{ return LEX(NEVER); }
 
  /* characters with special meaning in both INITIAL and list */
-[\n]																										{ LOCRESET; }
+[\n]																										{ LOCRESET; return LEX(yytext[0]); }
 [\t ]+																									{ LOCWRITE; }
 ["]																											{ PUSHSTATE(quoted); return LEX(yytext[0]); }
 
@@ -116,13 +134,13 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 [:]																											{ return LEX(yytext[0]); }
 [}]																											{ return LEX(yytext[0]); }
 [{]																											{ return LEX(yytext[0]); }
-[^\n\t ":}{\x00-\x1F\x7F-\xFF]+													{	return LEX(WORD, 0); }
+[^\n\t ":}{\x00-\x1F\x7F-\xFF]+													{	return LEX(WORD); }
 
 <quoted>["]																							{ POPSTATE; return LEX(yytext[0]); }
-<quoted>\\[abtnvfrs0]																		{ return LEXV(CREF, 1, 0); }
-<quoted>\\x[0-9a-fA-F]{2}																{ return LEXV(HREF, 2, 0); }
-<quoted>\\x\{[0-9a-fA-F]{1,2}\}													{ return LEXV(HREF, 3, 0); }
-<quoted>[^\n"\x00-\x1F\x7F-\xFF]+												{ return LEX(WORD, 0); }
+<quoted>\\[abtnvfrs0]																		{ return LEXV(CREF, 1); }
+<quoted>\\x[0-9a-fA-F]{2}																{ return LEXV(HREF, 2); }
+<quoted>\\x\{[0-9a-fA-F]{1,2}\}													{ return LEXV(HREF, 3); }
+<quoted>[^\n"\x00-\x1F\x7F-\xFF]+												{ return LEX(WORD); }
 
 <*>[\x00-\x1F\x7F-\xFF]																	{
 																													while(yyextra->states_n)

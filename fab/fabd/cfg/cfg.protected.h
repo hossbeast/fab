@@ -23,8 +23,18 @@
 struct cfg_file;		// cfg.h
 struct filesystem;	// filesystem.h
 
-int cfg_file_mk(struct filesystem * const restrict fs, struct cfg_file ** const restrict cfg)
-	__attribute__((nonnull(2)));
+/// cfg_file_mk
+//
+// SUMMARY
+//  create or append to an cfg_file instance
+//
+// PARAMETERS
+//  [e] - existing cfg_file to append to
+//  fs  - filesystem declaration to append
+//  cfg - (returns) cfg_file instance
+//
+int cfg_file_mk(struct cfg_file * const restrict e, struct filesystem * const restrict fs, struct cfg_file ** const restrict cfg)
+	__attribute__((nonnull(2, 3)));
 
 #undef restrict
 #endif

@@ -30,8 +30,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_CFG_YY_CFG_CFG_TAB_H_INCLUDED
-# define YY_CFG_YY_CFG_CFG_TAB_H_INCLUDED
+#ifndef YY_CFG_YY_FAB_FABD_CFG_CFG_TAB_H_INCLUDED
+# define YY_CFG_YY_FAB_FABD_CFG_CFG_TAB_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -51,9 +51,11 @@ extern int cfg_yydebug;
      INVALIDATION_METHOD = 260,
      STAT = 261,
      CONTENT = 262,
-     INOTIFY = 263,
-     LF = 264,
-     WORD = 265
+     NOTIFY = 263,
+     ALWAYS = 264,
+     NEVER = 265,
+     LF = 266,
+     WORD = 267
    };
 #endif
 
@@ -62,7 +64,7 @@ extern int cfg_yydebug;
 typedef union YYSTYPE
 {
 /* Line 2053 of yacc.c  */
-#line 42 "cfg/cfg.y"
+#line 42 "fab/fabd/cfg/cfg.y"
 
 	struct cfg_file *	cfg;
 	struct filesystem *	fs;
@@ -70,7 +72,7 @@ typedef union YYSTYPE
 
 
 /* Line 2053 of yacc.c  */
-#line 74 "cfg/cfg.tab.h"
+#line 76 "fab/fabd/cfg/cfg.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -105,4 +107,4 @@ int cfg_yyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_CFG_YY_CFG_CFG_TAB_H_INCLUDED  */
+#endif /* !YY_CFG_YY_FAB_FABD_CFG_CFG_TAB_H_INCLUDED  */

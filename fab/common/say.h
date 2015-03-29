@@ -33,7 +33,7 @@ ptmp must be in scope
 #define SAYS(s) SAYW(s, strlen(s))
 
 #define SAYF(fmt, ...) do {											\
-	fatal(psprintf, &ptmp, fmt, ##__VA_ARGS__);		\
+	fatal(psloadf, &ptmp, fmt, ##__VA_ARGS__);		\
 	fatal(axwrite, 1, ptmp->s, ptmp->l);					\
 } while(0)
 

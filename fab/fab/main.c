@@ -97,7 +97,7 @@ static int bp_exec_stage(int stagesl, int commandsl, int stagex, int * success)
 	struct stat stb;
 
 	// directory containing the buildplan stage
-	fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d", g_params.pid, stagex);
+	fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d", g_params.pid, stagex);
 
 	int fn(const char * fpath, const struct stat * sb, int typeflat, struct FTW * ftwbuf)
 	{
@@ -133,7 +133,7 @@ static int bp_exec_stage(int stagesl, int commandsl, int stagex, int * success)
 	// load the build products for the stage
 	for(i = 0; i < stage.cmdsl; i++)
 	{
-		fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/prod", g_params.pid, stagex, i);
+		fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/prod", g_params.pid, stagex, i);
 		fatal(ixclose, &fd);
 		fatal(xopen, tmp->s, O_RDONLY, &fd);
 
@@ -185,17 +185,17 @@ static int bp_exec_stage(int stagesl, int commandsl, int stagex, int * success)
 		for(i = j; i < (j + cmdsl); i++)
 		{
 			// open file for stdout
-			fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/out", g_params.pid, x, i);
+			fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/out", g_params.pid, x, i);
 			fatal(ixclose, &stage.cmds[i].stdo_fd);
 			fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, FABIPC_DATA, &stage.cmds[i].stdo_fd);
 
 			// open file for stderr
-			fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", g_params.pid, x, i);
+			fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", g_params.pid, x, i);
 			fatal(ixclose, &stage.cmds[i].stde_fd);
 			fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, FABIPC_DATA, &stage.cmds[i].stde_fd);
 
 			// path to the command
-			fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", g_params.pid, x, i);
+			fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", g_params.pid, x, i);
 
 			// open the file if we will later need to examine it
 			if(log_would(L_BPCMD))
@@ -244,7 +244,7 @@ static int bp_exec_stage(int stagesl, int commandsl, int stagex, int * success)
 			}
 
 			// save the exit status
-			fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.pid, x, i);
+			fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.pid, x, i);
 			fatal(ixclose, &fd);
 			fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
 			fatal(axwrite, fd, &r, sizeof(r));
@@ -342,7 +342,7 @@ static int bp_exec_stage(int stagesl, int commandsl, int stagex, int * success)
 
 				if(stb.st_size > act)
 				{
-					fatal(psprintf, &tmp, " ... %d more\n", stb.st_size - end);
+					fatal(psloadf, &tmp, " ... %d more\n", stb.st_size - end);
 					fatal(axwrite, 1, tmp->s, tmp->l);
 				}
 			}

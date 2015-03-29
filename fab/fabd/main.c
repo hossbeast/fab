@@ -475,7 +475,7 @@ static int loop()
 					if(plan && plan->stages_l)
 					{
 						// create tmp directory for the build
-						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
+						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
 						fatal(mkdirp, ptmp->s, FABIPC_DIR);
 						
 						// create symlink to the bp in hashdir
@@ -484,14 +484,14 @@ static int loop()
 						fatal(xsymlink, ptmp->s, space);
 
 						// create file with the number of stages
-						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/stages", g_params.fab_pid);
+						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/stages", g_params.fab_pid);
 						fatal(uxunlink, ptmp->s, 0);
 						fatal(ixclose, &fd);
 						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
 						fatal(axwrite, fd, &plan->stages_l, sizeof(plan->stages_l));
 						
 						// create file with the number of commands
-						fatal(psprintf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/commands", g_params.fab_pid);
+						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/commands", g_params.fab_pid);
 						fatal(uxunlink, ptmp->s, 0);
 						fatal(ixclose, &fd);
 						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);

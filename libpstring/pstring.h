@@ -25,7 +25,7 @@
 
 ///
 /// pstring - string storage plus allocation and length for reuse
-///  invariant : s + l == 0
+///  invariant : *(s + l) == 0
 ///
 typedef struct pstring
 {
@@ -33,112 +33,6 @@ typedef struct pstring
 	size_t		l;
 	char			s[];
 } pstring;
-
-/// psvprintf
-//
-// SUMMARY
-//  vsprintf for pstring - set its contents
-//
-// PARAMETERS
-//  p - pstring
-//
-int psvprintf(pstring ** restrict p, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
-
-/// psprintf
-//
-// SUMMARY
-//  sprintf for pstring - set its contents
-//
-// PARAMETERS
-//  p - pstring
-//
-int psprintf(pstring ** restrict p, const char * const restrict fmt, ...)
-	__attribute__((nonnull(1, 2)));
-
-/// psprints
-//
-// SUMMARY
-//  copy { s, s + strlen(s) } to the contents of the pstring
-//
-// PARAMETERS
-//  p - pstring
-//
-int psprints(pstring ** restrict p, char * const restrict s)
-	__attribute__((nonnull));
-
-/// psprint
-//
-// SUMMARY
-//  copy { s, s + l } to the contents of the pstring
-//
-// PARAMETERS
-//  p - pstring
-//  s - source bytes
-//  l - length of s (0 : no-op)
-//
-int psprintw(pstring ** restrict p, char * const restrict s, size_t l)
-	__attribute__((nonnull));
-
-/// psvcatf
-//
-// SUMMARY
-//  vsprintf for pstring - concatenate to its contents
-//
-// PARAMETERS
-//  p - pstring
-//
-int psvcatf(pstring ** restrict p, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
-
-/// pscatf
-//
-// SUMMARY
-//  sprintf for pstring - concatenate to its contents
-//
-// PARAMETERS
-//  p - pstring
-//
-int pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
-	__attribute__((nonnull(1, 2)));
-
-/// pscats
-//
-// SUMMARY
-//  concatenate { s, s + strlen(s) } to the contents of the pstring
-//
-// PARAMETERS
-//  p - pstring
-//
-int pscats(pstring ** restrict p, char * const restrict s)
-	__attribute__((nonnull));
-
-/// pscatw
-//
-// SUMMARY
-//  concatenate { s, s + l } to the contents of the pstring
-//
-// PARAMETERS
-//  p - pstring
-//  s - source bytes
-//  l - length of s (0 : no-op)
-//
-int pscatw(pstring ** restrict p, char * const restrict s, size_t l)
-	__attribute__((nonnull));
-
-/// psmkw
-//
-// SUMMARY
-//  concatenate { s, s + l } to an existing pstring, or to a newly created pstring
-//
-// PARAMETERS
-//  [e] - existing
-//  s   - source bytes
-//  l   - length of s (0 : no-op)
-//  [p] - (returns) pstring
-//
-int psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring ** restrict p)
-	__attribute__((nonnull(2)));
 
 /// psgrow
 //
@@ -182,6 +76,85 @@ void psfree(pstring *);
 //
 void pswfree(pstring **)
 	__attribute__((nonnull));
+
+/// psload
+//
+// SUMMARY
+//  set the value of a pstring
+//
+// PARAMETERS
+//  p   - pass/return pstring instance
+//  fmt - printf-style format string
+//  va  - va_args
+//  s   - pointer to string
+//  l   - length of string (0 : no-op)
+//  c   - single byte
+//
+// VARIANTS
+//  psvloadf : load formatted output from va_list
+//  psloadf : load formatted output from varargs
+//  psloads : load a string
+//  psloadw : load a buffer
+//  psloadc : load a byte
+//
+
+int psvloadf(pstring ** restrict p, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull));
+
+int psloadf(pstring ** restrict p, const char * const restrict fmt, ...)
+	__attribute__((nonnull(1, 2)));
+
+int psloads(pstring ** restrict p, char * const restrict s)
+	__attribute__((nonnull));
+
+int psloadw(pstring ** restrict p, char * const restrict s, size_t l)
+	__attribute__((nonnull));
+
+int psloadc(pstring ** restrict p, int c)
+	__attribute__((nonnull));
+
+/// pscat
+//
+// SUMMARY
+//  see psload, except pscat appends instead of overwriting
+//
+int psvcatf(pstring ** restrict p, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull));
+
+int pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
+	__attribute__((nonnull(1, 2)));
+
+int pscats(pstring ** restrict p, char * const restrict s)
+	__attribute__((nonnull));
+
+int pscatw(pstring ** restrict p, char * const restrict s, size_t l)
+	__attribute__((nonnull));
+
+int pscatc(pstring ** restrict p, int c)
+	__attribute__((nonnull));
+
+/// psmkw
+//
+// SUMMARY
+//  see pscat, except psmk accepts an extra parameter, e
+//
+// PARAMETERS
+//  [e] - existing instance
+//
+int psvmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull(2,3)));
+
+int psmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, ...)
+	__attribute__((nonnull(2,3)));
+
+int psmks(pstring * restrict e, char * const restrict s, pstring ** restrict p)
+	__attribute__((nonnull(2,3)));
+
+int psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring ** restrict p)
+	__attribute__((nonnull(2,4)));
+
+int psmkc(pstring * restrict e, int c, pstring ** restrict p)
+	__attribute__((nonnull(3)));
 
 #undef restrict
 #endif

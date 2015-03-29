@@ -5,9 +5,11 @@ char ** cfg_tokennames = (char *[]) {
      [260] = "INVALIDATION_METHOD",
      [261] = "STAT",
      [262] = "CONTENT",
-     [263] = "INOTIFY",
-     [264] = "LF",
-     [265] = "WORD",
+     [263] = "NOTIFY",
+     [264] = "ALWAYS",
+     [265] = "NEVER",
+     [266] = "LF",
+     [267] = "WORD",
 };
 int * cfg_tokennumbers = (int []) {
      258,
@@ -18,6 +20,8 @@ int * cfg_tokennumbers = (int []) {
      263,
      264,
      265,
+     266,
+     267,
 };
 int cfg_numtokens = sizeof((int []) {
      258,
@@ -28,4 +32,6 @@ int cfg_numtokens = sizeof((int []) {
      263,
      264,
      265,
+     266,
+     267,
 }) / sizeof(int);

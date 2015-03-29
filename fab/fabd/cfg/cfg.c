@@ -243,6 +243,20 @@ finally :
 coda;
 }
 
+//
+// protected
+//
+int cfg_file_mk(struct cfg_file * const restrict e, struct filesystem * const restrict fs, struct cfg_file ** const restrict cfg)
+{
+	*cfg = e;
+
+	if(!*cfg)
+		fatal(xmalloc, cfg, sizeof(**cfg));
+
+	finally : coda;
+}
+
+
 /// [[ api/public ]]
 
 int cfg_mkparser(cfg_parser ** const p)

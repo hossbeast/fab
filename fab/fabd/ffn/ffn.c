@@ -156,11 +156,11 @@ int ffn_mknode(ff_node ** const restrict n, const yyu_location * const restrict 
 	}
 	else if(type == FFN_WORD)
 	{
-		fatal(psprintw, &(*n)->text, (*n)->loc.s, (*n)->loc.e - (*n)->loc.s);
+		fatal(psloadw, &(*n)->text, (*n)->loc.s, (*n)->loc.e - (*n)->loc.s);
 	}
 	else if(type == FFN_LF)
 	{
-		fatal(psprintw, &(*n)->text, (*n)->loc.s, (*n)->loc.e - (*n)->loc.s);
+		fatal(psloadw, &(*n)->text, (*n)->loc.s, (*n)->loc.e - (*n)->loc.s);
 	}
 	else
 	{
@@ -220,7 +220,7 @@ int ffn_postprocess(ff_node * const n, struct ff_file * const ff, transform_pars
 		// create text
 		if(n->type == FFN_NOFILE)
 		{
-			fatal(psprintw, &n->text, "/..", 3);
+			fatal(psloadw, &n->text, "/..", 3);
 
 			int x;
 			for(x = 0; x < n->listl; x++)

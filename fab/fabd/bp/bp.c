@@ -589,7 +589,7 @@ int bp_harvest_stage(bp * bp, int stage)
 	{
 		// verify the exit status was saved and that it is zero
 		int r;
-		fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.fab_pid, x, y);
+		fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/exit", g_params.fab_pid, x, y);
 		fatal(ixclose, &fd);
 		fatal(uxopen, tmp->s, O_RDONLY, &fd);
 		if(fd != -1)
@@ -598,7 +598,7 @@ int bp_harvest_stage(bp * bp, int stage)
 			if(r == 0)
 			{
 				// verify that stderr was saved and contains nothing
-				fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", g_params.fab_pid, x, y);
+				fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/err", g_params.fab_pid, x, y);
 				fatal(uxstat, tmp->s, &stb, &r);
 				if(r == 0 && stb.st_size == 0)
 				{

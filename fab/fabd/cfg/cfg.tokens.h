@@ -10,8 +10,12 @@ enum cfg_tokennames {
      cfg_INVALIDATION_METHOD = 260,
      cfg_STAT = 261,
      cfg_CONTENT = 262,
-     cfg_INOTIFY = 263,
-     cfg_LF = 264,
-     cfg_WORD = 265,
+     cfg_NOTIFY = 263,
+     cfg_ALWAYS = 264,
+     cfg_NEVER = 265,
+     cfg_LF = 266,
+     cfg_WORD = 267,
 };
+#define cfg_MINTOKEN      258
+#define cfg_MAXTOKEN      267
 #endif

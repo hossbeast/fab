@@ -54,12 +54,12 @@
 /* terminals */
 %token FILESYSTEM
 %token PATH
-%token INVALIDATION_METHOD STAT CONTENT INOTIFY
+%token INVALIDATION_METHOD STAT CONTENT NOTIFY ALWAYS NEVER
 %token LF WORD
 
 /* nonterminals */
 %type <cfg>					declarations
-%type <cfg> 				declaration
+%type <filesystem> 	declaration
 %type <filesystem>	properties propertylist property
 %type <string>			string unquoted-string quoted-string strparts strpart
 %type <uint64_t>  	invalidation_method
@@ -81,9 +81,12 @@ utterance
 declarations
 	: declarations separator declaration
 	{
-		YYU_FATAL(cfg_file_mk, $1, &$$);
+		YYU_FATAL(cfg_file_mk, $1, $3, &$$);
 	}
 	| declaration
+	{
+		YYU_FATAL(cfg_file_mk, 0, $1, &$$);
+	}
 	;
 
 declaration
@@ -144,9 +147,17 @@ invalidation_method
 	{
 		$$ = FILESYSTEM_INVALIDATION_METHOD_CONTENT;
 	}
-	| INOTIFY
+	| NOTIFY
 	{
 		$$ = FILESYSTEM_INVALIDATION_METHOD_INOTIFY;
+	}
+	| ALWAYS
+	{
+		$$ = FILESYSTEM_INVALIDATION_METHOD_ALWAYS;
+	}
+	| NEVER
+	{
+		$$ = FILESYSTEM_INVALIDATION_METHOD_NEVER;
 	}
 	;
 
@@ -178,5 +189,13 @@ strpart
 	: WORD
 	{
 		YYU_FATAL(psmkw, 0, @1.s, @1.l, &$$);
+	}
+	| CREF
+	{
+
+	}
+	| HREF
+	{
+		
 	}
 	;

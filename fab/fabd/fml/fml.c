@@ -304,8 +304,8 @@ int fml_render(ts * const restrict ts, transform_parser * const gp, lwx *** cons
 	int pn = staxp;
 	fatal(list_resolve, ts->fmlv->ctx->fml->ffn->command, ts->fmlv->ctx->bag, gp, stax, staxa, &pn, 1, rawvars);
 
-	// psprintf 1) allocates the pstring if necessary, and 2) sets the length
-	fatal(psprintf, &ts->cmd_txt, shebang ? "#!/bin/bash\n\n" : "");
+	// psloadf 1) allocates the pstring if necessary, and 2) sets the length
+	fatal(psloadf, &ts->cmd_txt, shebang ? "#!/bin/bash\n\n" : "");
 	fatal(list_renderto, (*stax)[staxp], &ts->cmd_txt);
 
 finally:
@@ -321,18 +321,18 @@ int fml_write(ts * const restrict ts, pid_t pid, int stage, int num)
 	pstring * tmp = 0;
 	int fd = -1;
 
-	fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d", pid, stage, num);
+	fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d", pid, stage, num);
 	fatal(mkdirp, tmp->s, FABIPC_DIR);
 
 	// create tmp file for the cmd
-	fatal(psprintf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", pid, stage, num);
+	fatal(psloadf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/cmd", pid, stage, num);
 	fatal(uxunlink, ts->cmd_path->s, 0);
 	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_CODE, &ts->cmd_fd);
 	fatal(axwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l);
 	fatal(xclose, ts->cmd_fd);
 
 	// write the type and id of each product of the fmlv to the prod file
-	fatal(psprintf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/prod", pid, stage, num);
+	fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/prod", pid, stage, num);
 	fatal(uxunlink, tmp->s, 0);
 	fatal(xopen_mode, tmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
 	int x;
@@ -362,11 +362,11 @@ int fml_exec(ts * const restrict ts, int num)
 	//  note : all but the last component of this dir were created in tmp_setup
 	//  note : the directory itself cannot already exist, because num is process-unique
 	//
-	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d", g_params.pid, num);
+	fatal(psloadf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d", g_params.pid, num);
 	fatal(mkdirp, ts->stdo_path->s, FABIPC_DIR);
 
 	// create tmp file for the cmd
-	fatal(psprintf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d/cmd", g_params.pid, num);
+	fatal(psloadf, &ts->cmd_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d/cmd", g_params.pid, num);
 	fatal(uxunlink, ts->cmd_path->s, 0);
 	fatal(xopen_mode, ts->cmd_path->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_CODE, &ts->cmd_fd);
 
@@ -375,12 +375,12 @@ int fml_exec(ts * const restrict ts, int num)
 	fatal(xclose, ts->cmd_fd);
 
 	// create tmp file to capture stdout
-	fatal(psprintf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d/out", g_params.pid, num);
+	fatal(psloadf, &ts->stdo_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d/out", g_params.pid, num);
 	fatal(uxunlink, ts->stdo_path->s, 0);
 	fatal(xopen_mode, ts->stdo_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, FABIPC_DATA, &ts->stdo_fd);
 
 	// create tmp file to capture stderr
-	fatal(psprintf, &ts->stde_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d/err", g_params.pid, num);
+	fatal(psloadf, &ts->stde_path, XQUOTE(FABTMPDIR) "/pid/%d/dsc/%d/err", g_params.pid, num);
 	fatal(uxunlink, ts->stde_path->s, 0);
 	fatal(xopen_mode, ts->stde_path->s, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, FABIPC_DATA, &ts->stde_fd);
 

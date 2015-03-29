@@ -20,10 +20,12 @@
 
 #define restrict __restrict
 
-#define FILESYSTEM_INVALIDATION_METHOD_TABLE(x)																			\
-	_FILESYSTEM_INVALIDATION_METHOD(STAT		, 0x00	, x)	/* stat hash (default) */		\
-	_FILESYSTEM_INVALIDATION_METHOD(CONTENT	, 0x01	, x)	/* content hash */					\
-	_FILESYSTEM_INVALIDATION_METHOD(INOTIFY	, 0x02	, x)	/* inotify monitoring */
+#define FILESYSTEM_INVALIDATION_METHOD_TABLE(x)																								\
+	_FILESYSTEM_INVALIDATION_METHOD(STAT		, 0x00	, x)	/* stat hash (default) */							\
+	_FILESYSTEM_INVALIDATION_METHOD(CONTENT	, 0x01	, x)	/* content hash */										\
+	_FILESYSTEM_INVALIDATION_METHOD(NOTIFY	, 0x02	, x)	/* filesystem event subscription */		\
+	_FILESYSTEM_INVALIDATION_METHOD(ALWAYS	, 0x03	, x)	/* always considered invalid */				\
+	_FILESYSTEM_INVALIDATION_METHOD(NEVER		, 0x04	, x)	/* never considered invalid */
 	
 enum
 {
