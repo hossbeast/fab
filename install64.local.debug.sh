@@ -169,8 +169,29 @@ fml_4_0()
 
 
 # formulas and names for stage 5
-NAMES[6]='@fabcore.fab.install.base.debug'
+NAMES[6]='@listwise.install.debug'
 fml_5_0()
+{
+  exec 1>/dev/null
+  exec 2>&100
+
+  [[ $bindir ]] || local bindir='/usr/local/bin'
+  [[ $destdir ]] || local destdir=''
+  
+	install -d												$destdir/$bindir
+	install ./listwise/listwise/listwise.xapi.debug	$destdir/$bindir/listwise
+	ln -vfs listwise							$destdir/$bindir/lw
+
+
+  X=$?
+  echo 0 1>&99
+  exit $X
+}
+
+
+# formulas and names for stage 6
+NAMES[7]='@fabcore.fab.install.base.debug'
+fml_6_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -188,8 +209,8 @@ fml_5_0()
   exit $X
 }
 
-NAMES[7]='@fabcore.fabd.install.base.debug'
-fml_5_1()
+NAMES[8]='@fabcore.fabd.install.base.debug'
+fml_6_1()
 {
   exec 1>/dev/null
   exec 2>&101
@@ -207,11 +228,11 @@ fml_5_1()
   exit $X
 }
 
-NAMES[8]='@fabcore.fabw.install.base.debug'
-fml_5_2()
+NAMES[9]='@fabcore.fabw.install.base.debug'
+fml_6_2()
 {
   exec 1>/dev/null
-  exec 2>&102
+  exec 2>&100
 
   [[ $bindir ]] || local bindir='/usr/local/bin'
   [[ $destdir ]] || local destdir=''
@@ -222,14 +243,14 @@ fml_5_2()
 
 
   X=$?
-  echo 2 1>&99
+  echo 0 1>&99
   exit $X
 }
 
 
-# formulas and names for stage 6
-NAMES[9]='@liblistwise.install.debug.xapi'
-fml_6_0()
+# formulas and names for stage 7
+NAMES[10]='@liblistwise.install.debug.xapi'
+fml_7_0()
 {
   exec 1>/dev/null
   exec 2>&100
@@ -440,16 +461,14 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=3))
+  ((SKP+=1))
 else
   # launch stage 5.0
   exec 100>$tmp ; rm -f $tmp ; fml_5_0 & PIDS[0]=$!
-  exec 101>$tmp ; rm -f $tmp ; fml_5_1 & PIDS[1]=$!
-  exec 102>$tmp ; rm -f $tmp ; fml_5_2 & PIDS[2]=$!
 
   # harvest stage 5.0
   C=0
-  while [[ $C != 3 ]]; do
+  while [[ $C != 1 ]]; do
     read -u 99 idx
     wait ${PIDS[$idx]}
     EXITS[$idx]=$?
@@ -467,12 +486,38 @@ fi
 
 # early termination 
 if [[ $DIE -ne 0 ]]; then
-  ((SKP+=1))
+  ((SKP+=2))
 else
   # launch stage 6.0
   exec 100>$tmp ; rm -f $tmp ; fml_6_0 & PIDS[0]=$!
+  exec 101>$tmp ; rm -f $tmp ; fml_6_1 & PIDS[1]=$!
 
   # harvest stage 6.0
+  C=0
+  while [[ $C != 2 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((7+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 6 $((idx+0)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 6.1
+  exec 100>$tmp ; rm -f $tmp ; fml_6_2 & PIDS[0]=$!
+
+  # harvest stage 6.1
   C=0
   while [[ $C != 1 ]]; do
     read -u 99 idx
@@ -484,7 +529,32 @@ else
     N=${NAMES[$I]}
     [[ $X -eq 0 ]] && ((WIN++))
     [[ $X -ne 0 ]] && ((DIE++))
-    printf '[%3d,%3d] X=%d %s\n' 6 $((idx+0)) $X "$N"
+    printf '[%3d,%3d] X=%d %s\n' 6 $((idx+2)) $X "$N"
+    cat /proc/$$/fd/$((100+idx))
+    ((C++))
+  done
+fi
+
+# early termination 
+if [[ $DIE -ne 0 ]]; then
+  ((SKP+=1))
+else
+  # launch stage 7.0
+  exec 100>$tmp ; rm -f $tmp ; fml_7_0 & PIDS[0]=$!
+
+  # harvest stage 7.0
+  C=0
+  while [[ $C != 1 ]]; do
+    read -u 99 idx
+    wait ${PIDS[$idx]}
+    EXITS[$idx]=$?
+    P=${PIDS[$idx]}
+    X=${EXITS[$idx]}
+    I=$((10+$idx))
+    N=${NAMES[$I]}
+    [[ $X -eq 0 ]] && ((WIN++))
+    [[ $X -ne 0 ]] && ((DIE++))
+    printf '[%3d,%3d] X=%d %s\n' 7 $((idx+0)) $X "$N"
     cat /proc/$$/fd/$((100+idx))
     ((C++))
   done
