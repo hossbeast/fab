@@ -54,5 +54,21 @@ void filesystem_free(filesystem * const restrict fs);
 void filesystem_xfree(filesystem ** const restrict fs)
 	__attribute__((nonnull));
 
+/// filesystem_mk
+//
+// SUMMARY
+//  create/update a filesystem
+//
+// PARAMETERS
+//  [e]     - existing filesystem to update
+//  [path]  - set the path
+//  [attrs] - set the attrs
+//  [fs]    - (returns) the filesystem
+//
+int filesystem_mk(filesystem * const restrict e, char * const restrict path, uint64_t attrs, filesystem ** const restrict fs);
+
+int filesystem_setup();
+void filesystem_teardown();
+
 #undef restrict
 #endif

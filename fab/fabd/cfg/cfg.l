@@ -122,8 +122,8 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 (?:stat)																								{ return LEX(STAT); }
 (?:content)																							{ return LEX(CONTENT); }
 (?:notify)																							{ return LEX(NOTIFY); }
-(?:always)																							{ return LEX(ALWAYS); }
-(?:never)																								{ return LEX(NEVER); }
+(?:valid)																								{ return LEX(VALID); }
+(?:invalid)																							{ return LEX(INVALID); }
 
  /* characters with special meaning in both INITIAL and list */
 [\n]																										{ LOCRESET; return LEX(yytext[0]); }

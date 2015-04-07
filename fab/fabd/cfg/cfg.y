@@ -42,7 +42,9 @@
 %union {
 	struct cfg_file *	cfg;
 	struct filesystem *	fs;
-	struct pstring * string;
+	struct pstring * str;
+	int chr;
+	uint64_t u64;
 }
 
 /* tokens */
@@ -54,17 +56,16 @@
 /* terminals */
 %token FILESYSTEM
 %token PATH
-%token INVALIDATION_METHOD STAT CONTENT NOTIFY ALWAYS NEVER
+%token INVALIDATION_METHOD STAT CONTENT NOTIFY VALID INVALID
 %token LF WORD
+%token <chr> HREF CREF
 
 /* nonterminals */
-%type <cfg>					declarations
-%type <filesystem> 	declaration
-%type <filesystem>	properties propertylist property
-%type <string>			string unquoted-string quoted-string strparts strpart
-%type <uint64_t>  	invalidation_method
-
-%destructor { ffn_free($$); } <node>
+%type <cfg>		declarations
+%type <fs>		declaration
+%type <fs>		properties propertylist property
+%type <str>		string unquoted-string quoted-string strparts strpart
+%type <u64>		invalidation_method
 
 %%
 utterance
@@ -124,6 +125,9 @@ properties
 
 propertylist
 	: propertylist separator property
+	{
+		
+	}
 	| property
 	;
 
@@ -151,13 +155,13 @@ invalidation_method
 	{
 		$$ = FILESYSTEM_INVALIDATION_METHOD_INOTIFY;
 	}
-	| ALWAYS
+	| VALID
 	{
-		$$ = FILESYSTEM_INVALIDATION_METHOD_ALWAYS;
+		$$ = FILESYSTEM_INVALIDATION_METHOD_VALID;
 	}
-	| NEVER
+	| INVALID
 	{
-		$$ = FILESYSTEM_INVALIDATION_METHOD_NEVER;
+		$$ = FILESYSTEM_INVALIDATION_METHOD_INVALID;
 	}
 	;
 
@@ -192,10 +196,10 @@ strpart
 	}
 	| CREF
 	{
-
+		YYU_FATAL(psmkc, 0, $1, &$$);
 	}
 	| HREF
 	{
-		
+		YYU_FATAL(psmkc, 0, $1, &$$);
 	}
 	;

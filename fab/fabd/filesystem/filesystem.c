@@ -19,13 +19,15 @@
 
 #include "global.h"
 
+#include "path.h"
+
 #define restrict __restrict
 
 void filesystem_free(filesystem * const restrict fs)
 {
 	if(fs)
 	{
-		free(fs->path);
+		path_free(fs->path);
 	}
 
 	free(fs);
@@ -35,4 +37,28 @@ void filesystem_xfree(filesystem ** const restrict fs)
 {
 	filesystem_free(*fs);
 	*fs = 0;
+}
+
+int filesystem_mk(filesystem * const restrict e, char * const restrict path, uint64_t attrs, filesystem ** const restrict fs)
+{
+	filesystem * lfs = 0;
+
+	if(!fs)
+		fs = &lfs;
+
+	*fs = e;
+	if(!*fs)
+		fatal(xmalloc, fs, sizeof(**fs));
+
+	if(path)
+	{
+		fatal(path_create, &(*fs)->path, g_args->init_fabfile_path->abs_dir, "%s", path);
+	}
+
+	if(attrs)
+	{
+		(*fs)->attrs = attrs;
+	}
+
+	finally : coda;
 }
