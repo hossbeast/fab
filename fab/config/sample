@@ -1,0 +1,12 @@
+# filesystem declaration identifies a subset of the filesystem and attaches
+# attributes to it
+
+filesystem {
+	path : /
+	invalidation : notify		# stat, content, notify, valid, invalid
+}
+
+filesystem {
+	path : /mnt/remote
+	invalidation : stat
+}
