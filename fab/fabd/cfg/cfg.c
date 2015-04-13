@@ -27,6 +27,7 @@
 #include "xlinux.h"
 
 #include "global.h"
+#include "cfg/cfg.parse.h"
 #include "cfg/cfg.tab.h"
 #include "cfg/cfg.lex.h"
 #include "cfg/cfg.tokens.h"
@@ -62,11 +63,11 @@ static union
 
 	struct
 	{
-		size_t		l;					// length
-		size_t		a;					// allocated
-		size_t		z;					// el size
+		size_t		l;				// length
+		size_t		a;				// allocated
+		size_t		z;				// el size
 
-		cfg_file **	e;		// elements
+		cfg_file **	e;			// elements
 
 		map *			by_canpath;
 	};
@@ -98,19 +99,6 @@ static const char * cfg_tokenname(int token)
 static const char * cfg_statename(int state)
 {
   return state >= 0 ? cfg_statenames[state] : "";
-}
-
-static int cfg_inputstr(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
-{
-  parse_param * pp = (parse_param*)xtra;
-	
-	if(pp->ff)
-	{
-		*buf = pp->ff->idstring;
-		*bufl = strlen(*buf);
-	}
-	
-	return 0;
 }
 
 static int cfg_lvalstr(int token, void * restrict lval, struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
@@ -167,10 +155,8 @@ finally :
 coda;
 }
 
-static int parse(const cfg_parser * const p, char* b, int sz, const char * const path, cfg_file ** const rcfg)
+static int parse(const cfg_parser * const p, char* b, int sz, const char * const path, cfg_file ** const cfg)
 {
-	cfg_file * cfg = 0;
-
 #if DEVEL
 	int logwould(void * token, void * udata)
 	{
@@ -189,7 +175,6 @@ static int parse(const cfg_parser * const p, char* b, int sz, const char * const
 	parse_param pp = {
 		  .tokname			= cfg_tokenname
 		, .statename		= cfg_statename
-		, .inputstr			= cfg_inputstr
 		, .lvalstr			= cfg_lvalstr
 
 #if DEVEL
@@ -207,12 +192,6 @@ static int parse(const cfg_parser * const p, char* b, int sz, const char * const
 	if((state = cfg_yy_scan_bytes(b, sz, p->p)) == 0)
 		tfail(perrtab_SYS, ENOMEM);
 
-	// allocate
-	fatal(xmalloc, &cfg, sizeof(*cfg));
-
-	// create copy of the path
-	fatal(ixstrdup, &cfg->path, path);
-
 	pp.scanner = p->p;
 	pp.orig_base = b;
 	pp.orig_len = sz;
@@ -223,15 +202,20 @@ static int parse(const cfg_parser * const p, char* b, int sz, const char * const
 	// invoke the appropriate parser, raise errors as needed
 	fatal(reduce, cfg_yyparse, &pp);
 
-	if(cfg)
+	if(pp.cfg)
 	{
-		cfg->ffn = pp.ffn;
+		// create copy of the path
+		fatal(ixstrdup, &pp.cfg->canpath, path);
+
+		// return the cfg
+		if(cfg)
+			*cfg = pp.cfg;
 
 		// cfg_files are tracked in cfg_files
-		fatal(coll_doubly_add, &cfg_files.c, &cfg, 0);
+		fatal(coll_doubly_add, &cfg_files.c, &pp.cfg, 0);
 
-		(*rff) = cfg;
-		cfg = 0;
+		// ownership transfer
+		pp.cfg = 0;
 	}
 
 finally :
@@ -239,23 +223,34 @@ finally :
 	cfg_yy_delete_buffer(state, p->p);
 	yyu_extra_destroy(&pp);
 
-	cfg_freefile(cfg);
+	cfg_freefile(pp.cfg);
 coda;
 }
 
 //
 // protected
 //
-int cfg_file_mk(struct cfg_file * const restrict e, struct filesystem * const restrict fs, struct cfg_file ** const restrict cfg)
+int cfg_mk_fs(struct cfg_file * const restrict e, struct filesystem * const restrict fs, struct cfg_file ** const restrict cfg)
 {
+	// get or create cfg_file instance
 	*cfg = e;
 
 	if(!*cfg)
 		fatal(xmalloc, cfg, sizeof(**cfg));
 
+	// append filesystem declaration
+	if((*cfg)->fsa == (*cfg)->fsl)
+	{
+		size_t ns = (*cfg)->fsa ?: 3;
+		ns = ns * 2 + ns / 2;
+		fatal(xrealloc, &(*cfg)->fs, sizeof(*(*cfg)->fs), ns, (*cfg)->fsa);
+		(*cfg)->fsa = ns;
+	}
+
+	(*cfg)->fs[(*cfg)->fsl++] = fs;
+
 	finally : coda;
 }
-
 
 /// [[ api/public ]]
 
@@ -263,12 +258,11 @@ int cfg_mkparser(cfg_parser ** const p)
 {
 	fatal(xmalloc, p, sizeof(**p));
 	tfatalize(perrtab_SYS, ENOMEM, cfg_yylex_init, &(*p)->p);
-	fatal(transform_mkparser, &(*p)->gp);
 
 	finally : coda;
 }
 
-int cfg_load(const cfg_parser * const p, const char * const path, cfg_file ** const cfg)
+int cfg_load(const cfg_parser * const restrict p, const char * const restrict path, cfg_file ** restrict cfg)
 {
 	int fd = -1;
 	char * b = 0;
@@ -276,9 +270,6 @@ int cfg_load(const cfg_parser * const p, const char * const path, cfg_file ** co
 
 	if(cfg == 0)
 		cfg = &lcfg;
-
-	if(!cfg_files.by_canpath)
-		fatal(map_create, &cfg_files.by_canpath, 0);
 
 	cfg_file ** c = 0;
 	if((c = map_get(cfg_files.by_canpath, MMS(path))))
@@ -328,6 +319,13 @@ void cfg_xfreeparser(cfg_parser ** const p)
 	*p = 0;
 }
 
+int cfg_setup()
+{
+	fatal(map_create, &cfg_files.by_canpath, 0);
+
+	finally : coda;
+}
+
 void cfg_teardown()
 {
 	int x;
@@ -335,4 +333,5 @@ void cfg_teardown()
 		cfg_freefile(cfg_files.e[x]);
 
 	free(cfg_files.e);
+	map_free(cfg_files.by_canpath);
 }

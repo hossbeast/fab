@@ -17,6 +17,8 @@
 
 #include <stdlib.h>
 
+#include "xlinux.h"
+
 #include "global.h"
 
 #include "path.h"
@@ -39,7 +41,7 @@ void filesystem_xfree(filesystem ** const restrict fs)
 	*fs = 0;
 }
 
-int filesystem_mk(filesystem * const restrict e, char * const restrict path, uint64_t attrs, filesystem ** const restrict fs)
+int filesystem_mk(filesystem * const restrict e, char * const restrict path, uint64_t attrs, filesystem ** restrict fs)
 {
 	filesystem * lfs = 0;
 

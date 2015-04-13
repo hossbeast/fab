@@ -18,38 +18,42 @@
 #ifndef _FILESYSTEM_H
 #define _FILESYSTEM_H
 
-#define restrict __restrict
+struct path;				// path.h
 
-#define FILESYSTEM_INVALIDATION_METHOD_TABLE(x)																								\
-	_FILESYSTEM_INVALIDATION_METHOD(STAT		, 0x00	, x)	/* stat hash (default) */							\
-	_FILESYSTEM_INVALIDATION_METHOD(CONTENT	, 0x01	, x)	/* content hash */										\
-	_FILESYSTEM_INVALIDATION_METHOD(NOTIFY	, 0x02	, x)	/* filesystem event subscription */		\
-	_FILESYSTEM_INVALIDATION_METHOD(ALWAYS	, 0x03	, x)	/* always considered invalid */				\
-	_FILESYSTEM_INVALIDATION_METHOD(NEVER		, 0x04	, x)	/* never considered invalid */
+#define FILESYSTEM_INVALIDATION_TABLE(x)																								\
+	_FILESYSTEM_INVALIDATION(STAT			, 0x00	, x)	/* stat hash (default) */							\
+	_FILESYSTEM_INVALIDATION(CONTENT	, 0x01	, x)	/* content hash */										\
+	_FILESYSTEM_INVALIDATION(NOTIFY		, 0x02	, x)	/* filesystem event subscription */		\
+	_FILESYSTEM_INVALIDATION(ALWAYS		, 0x03	, x)	/* always considered invalid */				\
+	_FILESYSTEM_INVALIDATION(NEVER		, 0x04	, x)	/* never considered invalid */
 	
 enum
 {
-#define _FILESYSTEM_INVALIDATION_METHOD(a, b, c) FILESYSTEM_INVALIDATION_METHOD_ ## a = b,
-FILESYSTEM_INVALIDATION_METHOD_TABLE(0)
-#undef _FILESYSTEM_INVALIDATION_METHOD
+#define _FILESYSTEM_INVALIDATION(a, b, c) FILESYSTEM_INVALIDATION_ ## a = b,
+FILESYSTEM_INVALIDATION_TABLE(0)
+#undef _FILESYSTEM_INVALIDATION
 };
 
 // filesystem
 typedef struct filesystem
 {
-	char *		path;		// path to the root of the filesystem
-	uint32_t	attrs;	// attributes
+	struct path *		path;		// path to the root of the filesystem
+	uint32_t				attrs;	// attributes
 } filesystem;
+
+#define restrict __restrict
 
 /// filesystem_free
 //
-// free a filesystem with free semantics
+// SUMMARY
+//  free a filesystem with free semantics
 //
 void filesystem_free(filesystem * const restrict fs);
 
 /// filesystem_xfree
 //
-// free an filesystem with xfree semantics
+// SUMMARY
+//  free an filesystem with xfree semantics
 //
 void filesystem_xfree(filesystem ** const restrict fs)
 	__attribute__((nonnull));
@@ -65,9 +69,20 @@ void filesystem_xfree(filesystem ** const restrict fs)
 //  [attrs] - set the attrs
 //  [fs]    - (returns) the filesystem
 //
-int filesystem_mk(filesystem * const restrict e, char * const restrict path, uint64_t attrs, filesystem ** const restrict fs);
+int filesystem_mk(filesystem * const restrict e, char * const restrict path, uint64_t attrs, filesystem ** restrict fs);
 
+/// filesystem_setup
+//
+// SUMMARY
+//  setup
+//
 int filesystem_setup();
+
+/// filesystem_teardown
+//
+// SUMMARY
+//  teardown
+//
 void filesystem_teardown();
 
 #undef restrict

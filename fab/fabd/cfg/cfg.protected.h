@@ -23,7 +23,7 @@
 struct cfg_file;		// cfg.h
 struct filesystem;	// filesystem.h
 
-/// cfg_file_mk
+/// cfg_mk_fs
 //
 // SUMMARY
 //  create or append to an cfg_file instance
@@ -33,7 +33,7 @@ struct filesystem;	// filesystem.h
 //  fs  - filesystem declaration to append
 //  cfg - (returns) cfg_file instance
 //
-int cfg_file_mk(struct cfg_file * const restrict e, struct filesystem * const restrict fs, struct cfg_file ** const restrict cfg)
+int cfg_mk_fs(struct cfg_file * const restrict e, struct filesystem * const restrict fs, struct cfg_file ** const restrict cfg)
 	__attribute__((nonnull(2, 3)));
 
 #undef restrict

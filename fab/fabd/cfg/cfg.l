@@ -70,9 +70,7 @@
 			, 0												\
 		)
 
-
-
-	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, const char * func, const char * file, int line, void * const v)
+	static int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, const char * func, const char * file, int line, void * const v)
 	{
 		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, ldel, token == LF, func, file, line);
 	}
@@ -81,7 +79,7 @@
 %option noinput nounput noyywrap noyy_top_state
 %option reentrant
 %option bison-bridge bison-locations
-%option prefix="ff_yy"
+%option prefix="cfg_yy"
 %option extra-type="parse_param*"
 %option stack
 
@@ -117,13 +115,13 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 <multilinecomment>[\n]																	{ LOCRESET; }
 
 (?:filesystem)																					{ return LEX(FILESYSTEM); }
-(?:invalidation-method)																	{ return LEX(INVALIDATION_METHOD); }
+(?:invalidation)																				{ return LEX(INVALIDATION); }
 (?:path)																								{ return LEX(PATH); }
 (?:stat)																								{ return LEX(STAT); }
 (?:content)																							{ return LEX(CONTENT); }
 (?:notify)																							{ return LEX(NOTIFY); }
-(?:valid)																								{ return LEX(VALID); }
-(?:invalid)																							{ return LEX(INVALID); }
+(?:always)																							{ return LEX(ALWAYS); }
+(?:never)																								{ return LEX(NEVER); }
 
  /* characters with special meaning in both INITIAL and list */
 [\n]																										{ LOCRESET; return LEX(yytext[0]); }

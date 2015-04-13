@@ -45,6 +45,12 @@
 	struct pstring * str;
 	int chr;
 	uint64_t u64;
+
+	struct
+	{
+		pstring * path;
+		uint64_t	invalidation;
+	} fsprop;
 }
 
 /* tokens */
@@ -56,16 +62,17 @@
 /* terminals */
 %token FILESYSTEM
 %token PATH
-%token INVALIDATION_METHOD STAT CONTENT NOTIFY VALID INVALID
+%token INVALIDATION STAT CONTENT NOTIFY ALWAYS NEVER
 %token LF WORD
 %token <chr> HREF CREF
 
 /* nonterminals */
 %type <cfg>		declarations
 %type <fs>		declaration
-%type <fs>		properties propertylist property
+%type <fs>		properties propertylist
+%type <fsprop>	property
 %type <str>		string unquoted-string quoted-string strparts strpart
-%type <u64>		invalidation_method
+%type <u64>		invalidation
 
 %%
 utterance
@@ -82,18 +89,18 @@ utterance
 declarations
 	: declarations separator declaration
 	{
-		YYU_FATAL(cfg_file_mk, $1, $3, &$$);
+		YYU_FATAL(cfg_mk_fs, $1, $3, &$$);
 	}
 	| declaration
 	{
-		YYU_FATAL(cfg_file_mk, 0, $1, &$$);
+		YYU_FATAL(cfg_mk_fs, 0, $1, &$$);
 	}
 	;
 
 declaration
 	: FILESYSTEM '{' properties '}'
 	{
-		YYU_FATAL(filesystem_mk, $3, &$$);
+		$$ = $3;
 	}
 	;
 
@@ -126,42 +133,45 @@ properties
 propertylist
 	: propertylist separator property
 	{
-		
+		YYU_FATAL(filesystem_mk, $1, $3.path->s, $3.invalidation, &$$);
 	}
 	| property
+	{
+		YYU_FATAL(filesystem_mk, 0, $1.path->s, $1.invalidation, &$$);
+	}
 	;
 
 property
 	: PATH ':' string
 	{
-		YYU_FATAL(filesystem_mk_path, $3, &$$);
+		$$ = (typeof($$)){ .path = $3 };
 	}
-	| INVALIDATION_METHOD ':' invalidation_method
+	| INVALIDATION ':' invalidation
 	{
-		YYU_FATAL(filesystem_mk_method, $3, &$$);
+		$$ = (typeof($$)){ .invalidation = $3 };
 	}
 	;
 
-invalidation_method
+invalidation
 	: STAT
 	{
-		$$ = FILESYSTEM_INVALIDATION_METHOD_STAT;
+		$$ = FILESYSTEM_INVALIDATION_STAT;
 	}
 	| CONTENT
 	{
-		$$ = FILESYSTEM_INVALIDATION_METHOD_CONTENT;
+		$$ = FILESYSTEM_INVALIDATION_CONTENT;
 	}
 	| NOTIFY
 	{
-		$$ = FILESYSTEM_INVALIDATION_METHOD_INOTIFY;
+		$$ = FILESYSTEM_INVALIDATION_NOTIFY;
 	}
-	| VALID
+	| ALWAYS
 	{
-		$$ = FILESYSTEM_INVALIDATION_METHOD_VALID;
+		$$ = FILESYSTEM_INVALIDATION_ALWAYS;
 	}
-	| INVALID
+	| NEVER
 	{
-		$$ = FILESYSTEM_INVALIDATION_METHOD_INVALID;
+		$$ = FILESYSTEM_INVALIDATION_NEVER;
 	}
 	;
 

@@ -42,23 +42,24 @@ int cfg_mkparser(cfg_parser ** const restrict p)
 //
 // PARAMETERS
 //  p      - parser returned from mkparser
-//  path   - path to cfg file
-//  cfg     - results go here
+//  path   - canonical path to cfg file
+//  [cfg]  - (returns) cfg file
 //
 // RETURNS
 //  nonzer on error - otherwise *cfg is nonzero
 //
 int cfg_load(
 	  const cfg_parser * const restrict p
-	, const path * const restrict path
+	, const char * const restrict path
+	, cfg_file ** restrict cfg
 )
-	__attribute__((nonnull));
+	__attribute__((nonnull(1,2)));
 
 /// cfg_freeparser
 //
 // free a cfg parser returned from mkparser with free semantics
 //
-void cfg_freeparser(cfg_parser* const restrict);
+void cfg_freeparser(cfg_parser * const restrict);
 
 /// cfg_xfreeparser
 //
@@ -67,9 +68,17 @@ void cfg_freeparser(cfg_parser* const restrict);
 void cfg_xfreeparser(cfg_parser ** const restrict)
 	__attribute__((nonnull));
 
+/// cfg_setup
+//
+// SUMMARY
+//  initialize
+//
+int cfg_setup();
+
 /// cfg_teardown
 //
-// free cfg_files
+// SUMMARY
+//  free cfg_files
 //
 void cfg_teardown();
 
