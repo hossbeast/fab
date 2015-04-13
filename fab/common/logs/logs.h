@@ -32,6 +32,8 @@
 # define L_FFSTATE 			0x0000000000000100ULL
 # define L_FFTREE				0x0000000000000200ULL
 # define L_FFFILE				0x0000000000000400ULL
+# define L_CFGTOKEN 		0x0000000080000000ULL
+# define L_CFGSTATE 		0x0000000100000000ULL
 #endif
 #define L_INVALID				0x0000000000000800ULL
 #define L_BPINFO				0x0000000000001000ULL
@@ -51,14 +53,14 @@
 #define L_SELECT				0x0000000020000000ULL
 #define L_LISTS					0x0000000040000000ULL
 #if DEBUG || DEVEL
-# define L_LWEXEC				0x0000000100000000ULL	/* step-by-step LW execution */
-# define L_LWOPINFO			0x0000000200000000ULL /* operator informational messages */
-# define L_LWPARSE			0x0000000400000000ULL	/* display the parsed transform */
-# define L_LWTOKEN			0x0000000800000000ULL	/* scanner token stream */
-# define L_LWSTATE			0x0000001000000000ULL	/* scanner state changes */
+# define L_LWEXEC				0x0000000200000000ULL	/* step-by-step LW execution */
+# define L_LWOPINFO			0x0000000400000000ULL /* operator informational messages */
+# define L_LWPARSE			0x0000000800000000ULL	/* display the parsed transform */
+# define L_LWTOKEN			0x0000001000000000ULL	/* scanner token stream */
+# define L_LWSTATE			0x0000002000000000ULL	/* scanner state changes */
 #endif
 #if SANITY
-# define L_LWSANITY			0x0000002000000000ULL
+# define L_LWSANITY			0x0000004000000000ULL
 #endif
 
 #endif

@@ -31,6 +31,8 @@ struct g_logs_t logs[] = {
 	, { .v = L_FFSTATE	, .s = "FFSTATE"	, .d = "fabfile parsing - lexer states" }
 	, { .v = L_FFTREE		, .s = "FFTREE"		, .d = "fabfile parsing - parsed tree" }
 	, { .v = L_FFFILE		, .s = "FFFILE"		, .d = "fabfile parsing - parsed file" }
+	, { .v = L_CFGTOKEN	, .s = "CFGTOKEN"	, .d = "cfgfile parsing - token stream" }
+	, { .v = L_CFGSTATE	, .s = "CFGSTATE"	, .d = "cfgfile parsing - lexer states" }
 #endif
 	, { .v = L_BPINFO		, .s = "BPINFO"		, .d = "buildplan - flow" }
 	, { .v = L_BPEXEC		, .s = "BPEXEC"		, .d = "buildplan - execution" }
