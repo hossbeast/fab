@@ -106,7 +106,7 @@
 113	EHOSTUNREACH	No route to host
 114	EALREADY	Operation already in progress
 115	EINPROGRESS	Operation now in progress
-116	ESTALE	Stale NFS file handle
+116	ESTALE	Stale file handle
 117	EUCLEAN	Structure needs cleaning
 118	ENOTNAM	Not a XENIX named type file
 119	ENAVAIL	No XENIX semaphores available

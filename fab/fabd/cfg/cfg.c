@@ -48,31 +48,6 @@ struct cfg_parser
 	void * p;
 };
 
-typedef struct cfg_file
-{
-	char *					canpath;	// canonical path to the cfg file
-
-	filesystem **		fs;				// filesystem declarations
-	size_t					fsl;			// length
-	size_t					fsa;			// allocated size
-} cfg_file;
-
-static union
-{
-	coll_doubly c;
-
-	struct
-	{
-		size_t		l;				// length
-		size_t		a;				// allocated
-		size_t		z;				// el size
-
-		cfg_file **	e;			// elements
-
-		map *			by_canpath;
-	};
-} cfg_files;
-
 //
 // [[ static ]]
 //
@@ -81,10 +56,6 @@ static void cfg_freefile(cfg_file * cfg)
 {
 	if(cfg)
 	{
-		int x;
-		for(x = 0; x < cfg->fsl; x++)
-			filesystem_free(cfg->fs[x]);
-
 		free(cfg->fs);
 	}
 
@@ -319,7 +290,7 @@ void cfg_xfreeparser(cfg_parser ** const p)
 	*p = 0;
 }
 
-int cfg_setup()
+int cfg_init()
 {
 	fatal(map_create, &cfg_files.by_canpath, 0);
 
@@ -334,4 +305,9 @@ void cfg_teardown()
 
 	free(cfg_files.e);
 	map_free(cfg_files.by_canpath);
+}
+
+int cfg_finalize()
+{
+
 }

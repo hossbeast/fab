@@ -68,12 +68,12 @@ void cfg_freeparser(cfg_parser * const restrict);
 void cfg_xfreeparser(cfg_parser ** const restrict)
 	__attribute__((nonnull));
 
-/// cfg_setup
+/// cfg_init
 //
 // SUMMARY
 //  initialize
 //
-int cfg_setup();
+int cfg_init();
 
 /// cfg_teardown
 //
@@ -81,6 +81,13 @@ int cfg_setup();
 //  free cfg_files
 //
 void cfg_teardown();
+
+/// cfg_finalize
+//
+// SUMMARY
+//  invoked after cfg files are parsed to prepare lookup structures
+//
+int cfg_finalize();
 
 #undef restrict
 #endif

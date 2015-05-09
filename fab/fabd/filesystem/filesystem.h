@@ -43,33 +43,17 @@ typedef struct filesystem
 
 #define restrict __restrict
 
-/// filesystem_free
+/// filesystem_lookup
 //
 // SUMMARY
-//  free a filesystem with free semantics
-//
-void filesystem_free(filesystem * const restrict fs);
-
-/// filesystem_xfree
-//
-// SUMMARY
-//  free an filesystem with xfree semantics
-//
-void filesystem_xfree(filesystem ** const restrict fs)
-	__attribute__((nonnull));
-
-/// filesystem_mk
-//
-// SUMMARY
-//  create/update a filesystem
+//  get the filesystem configuration, if any, at the specified path
 //
 // PARAMETERS
-//  [e]     - existing filesystem to update
-//  [path]  - set the path
-//  [attrs] - set the attrs
-//  [fs]    - (returns) the filesystem
+//  path - path to search at
+//  fs   - (returns) filesystem configuration
 //
-int filesystem_mk(filesystem * const restrict e, char * const restrict path, uint64_t attrs, filesystem ** restrict fs);
+int filesystem_lookup(char * const restrict path, filesystem ** const restrict fs)
+	__attribute__((nonnull));
 
 /// filesystem_setup
 //

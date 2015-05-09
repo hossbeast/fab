@@ -659,7 +659,7 @@ static yyconst flex_int16_t yy_chk[576] =
 			, 0												\
 		)
 
-	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, const char * func, const char * file, int line, void * const v)
+	static int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, const char * func, const char * file, int line, void * const v)
 	{
 		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, ldel, token == LF, func, file, line);
 	}

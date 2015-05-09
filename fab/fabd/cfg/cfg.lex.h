@@ -1,6 +1,6 @@
-#ifndef ff_yyHEADER_H
-#define ff_yyHEADER_H 1
-#define ff_yyIN_HEADER 1
+#ifndef cfg_yyHEADER_H
+#define cfg_yyHEADER_H 1
+#define cfg_yyIN_HEADER 1
 
 #line 6 "fab/fabd/cfg/cfg.lex.h"
 
@@ -204,23 +204,23 @@ struct yy_buffer_state
 	};
 #endif /* !YY_STRUCT_YY_BUFFER_STATE */
 
-void ff_yyrestart (FILE *input_file ,yyscan_t yyscanner );
-void ff_yy_switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-YY_BUFFER_STATE ff_yy_create_buffer (FILE *file,int size ,yyscan_t yyscanner );
-void ff_yy_delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void ff_yy_flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void ff_yypush_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-void ff_yypop_buffer_state (yyscan_t yyscanner );
+void cfg_yyrestart (FILE *input_file ,yyscan_t yyscanner );
+void cfg_yy_switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfg_yy_create_buffer (FILE *file,int size ,yyscan_t yyscanner );
+void cfg_yy_delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void cfg_yy_flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void cfg_yypush_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+void cfg_yypop_buffer_state (yyscan_t yyscanner );
 
-YY_BUFFER_STATE ff_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
-YY_BUFFER_STATE ff_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE ff_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfg_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfg_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfg_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
 
-void *ff_yyalloc (yy_size_t ,yyscan_t yyscanner );
-void *ff_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
-void ff_yyfree (void * ,yyscan_t yyscanner );
+void *cfg_yyalloc (yy_size_t ,yyscan_t yyscanner );
+void *cfg_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
+void cfg_yyfree (void * ,yyscan_t yyscanner );
 
-#define ff_yywrap(n) 1
+#define cfg_yywrap(n) 1
 #define YY_SKIP_YYWRAP
 
 #define yytext_ptr yytext_r
@@ -250,46 +250,46 @@ void ff_yyfree (void * ,yyscan_t yyscanner );
 
 #define YY_EXTRA_TYPE parse_param*
 
-int ff_yylex_init (yyscan_t* scanner);
+int cfg_yylex_init (yyscan_t* scanner);
 
-int ff_yylex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
+int cfg_yylex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int ff_yylex_destroy (yyscan_t yyscanner );
+int cfg_yylex_destroy (yyscan_t yyscanner );
 
-int ff_yyget_debug (yyscan_t yyscanner );
+int cfg_yyget_debug (yyscan_t yyscanner );
 
-void ff_yyset_debug (int debug_flag ,yyscan_t yyscanner );
+void cfg_yyset_debug (int debug_flag ,yyscan_t yyscanner );
 
-YY_EXTRA_TYPE ff_yyget_extra (yyscan_t yyscanner );
+YY_EXTRA_TYPE cfg_yyget_extra (yyscan_t yyscanner );
 
-void ff_yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
+void cfg_yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
 
-FILE *ff_yyget_in (yyscan_t yyscanner );
+FILE *cfg_yyget_in (yyscan_t yyscanner );
 
-void ff_yyset_in  (FILE * in_str ,yyscan_t yyscanner );
+void cfg_yyset_in  (FILE * in_str ,yyscan_t yyscanner );
 
-FILE *ff_yyget_out (yyscan_t yyscanner );
+FILE *cfg_yyget_out (yyscan_t yyscanner );
 
-void ff_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
+void cfg_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
 
-int ff_yyget_leng (yyscan_t yyscanner );
+int cfg_yyget_leng (yyscan_t yyscanner );
 
-char *ff_yyget_text (yyscan_t yyscanner );
+char *cfg_yyget_text (yyscan_t yyscanner );
 
-int ff_yyget_lineno (yyscan_t yyscanner );
+int cfg_yyget_lineno (yyscan_t yyscanner );
 
-void ff_yyset_lineno (int line_number ,yyscan_t yyscanner );
+void cfg_yyset_lineno (int line_number ,yyscan_t yyscanner );
 
-YYSTYPE * ff_yyget_lval (yyscan_t yyscanner );
+YYSTYPE * cfg_yyget_lval (yyscan_t yyscanner );
 
-void ff_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
+void cfg_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
-       YYLTYPE *ff_yyget_lloc (yyscan_t yyscanner );
+       YYLTYPE *cfg_yyget_lloc (yyscan_t yyscanner );
     
-        void ff_yyset_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
+        void cfg_yyset_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
     
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -297,9 +297,9 @@ void ff_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int ff_yywrap (yyscan_t yyscanner );
+extern "C" int cfg_yywrap (yyscan_t yyscanner );
 #else
-extern int ff_yywrap (yyscan_t yyscanner );
+extern int cfg_yywrap (yyscan_t yyscanner );
 #endif
 #endif
 
@@ -336,10 +336,10 @@ static int yy_flex_strlen (yyconst char * ,yyscan_t yyscanner);
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
 
-extern int ff_yylex \
+extern int cfg_yylex \
                (YYSTYPE * yylval_param,YYLTYPE * yylloc_param ,yyscan_t yyscanner);
 
-#define YY_DECL int ff_yylex \
+#define YY_DECL int cfg_yylex \
                (YYSTYPE * yylval_param, YYLTYPE * yylloc_param , yyscan_t yyscanner)
 #endif /* !YY_DECL */
 
@@ -357,8 +357,8 @@ extern int ff_yylex \
 #undef YY_DECL
 #endif
 
-#line 164 "fab/fabd/cfg/cfg.l"
+#line 162 "fab/fabd/cfg/cfg.l"
 
 #line 363 "fab/fabd/cfg/cfg.lex.h"
-#undef ff_yyIN_HEADER
-#endif /* ff_yyHEADER_H */
+#undef cfg_yyIN_HEADER
+#endif /* cfg_yyHEADER_H */

@@ -110,7 +110,7 @@ _E(112, EHOSTDOWN, "Host is down") \
 _E(113, EHOSTUNREACH, "No route to host") \
 _E(114, EALREADY, "Operation already in progress") \
 _E(115, EINPROGRESS, "Operation now in progress") \
-_E(116, ESTALE, "Stale NFS file handle") \
+_E(116, ESTALE, "Stale file handle") \
 _E(117, EUCLEAN, "Structure needs cleaning") \
 _E(118, ENOTNAM, "Not a XENIX named type file") \
 _E(119, ENAVAIL, "No XENIX semaphores available") \

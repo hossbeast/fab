@@ -20,8 +20,33 @@
 
 #define restrict __restrict
 
-struct cfg_file;		// cfg.h
 struct filesystem;	// filesystem.h
+struct map;					// map.h
+
+typedef struct cfg_file
+{
+	char *					canpath;	// canonical path to the cfg file
+
+	filesystem **		fs;				// filesystem declarations
+	size_t					fsl;			// length
+	size_t					fsa;			// allocated size
+} cfg_file;
+
+static union
+{
+	coll_doubly c;
+
+	struct
+	{
+		size_t		l;				// length
+		size_t		a;				// allocated
+		size_t		z;				// el size
+
+		cfg_file ** e;			// elements
+
+		struct map * by_canpath;
+	};
+} cfg_files;
 
 /// cfg_mk_fs
 //

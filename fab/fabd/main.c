@@ -671,6 +671,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	fatal(gn_init);
 	fatal(traverse_init);
 	fatal(ff_mkparser, &ffp);
+	fatal(cfg_init);
 
 	// track start time
 	g_params.starttime = time(0);
@@ -881,6 +882,8 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			else
 			{
 				x = 0;
+				y = 0;
+
 				// no varexpr changes
 				if(varshash[0] == varshash[1])
 				{
@@ -891,11 +894,25 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 						if(hashblock_cmp(ff_files.e[x]->hb))
 							break;
 					}
+
+					if(x == ff_files.l)
+					{
+						// check for cfg file changes
+						for(y = 0; y < cfg_files.l; y++)
+						{
+							fatal(hashblock_stat, cfg_files.e[y]->path->abs, cfg_files.e[y]->hb);
+							if(hashblock_cmp(cfg_files.e[y]->hb))
+								break;
+						}
+					}
 				}
 
-				if(x < ff_files.l)
+				if(x < ff_files.l || y < cfg_files.l)
 				{
-					// fabfile changes : exec a new fabd instance
+					// exec fabd, because of changes to:
+					//  fabfile
+					//  cfg file
+					//  varexpr
 					execvp(argv[0], argv);
 				}
 			}
@@ -1045,6 +1062,7 @@ finally:
 	params_teardown();
 	traverse_teardown();
 	selector_teardown();
+	cfg_teardown();
 
 	fatal(ixmunmap, &g_args, argsb.st_size);
 	fatal(ixclose, &argsfd);
