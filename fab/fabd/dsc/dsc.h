@@ -44,11 +44,11 @@ int dsc_exec_entire(
 	  map * restrict vmap
 	, transform_parser * const restrict
 	, lwx *** restrict stax
-	, int * restrict staxa
-	, int staxp
+	, size_t * restrict staxa
+	, size_t staxp
 	, ts *** restrict ts
-	, int * restrict tsa
-	, int * restrict tsw
+	, size_t * restrict tsa
+	, size_t * restrict tsw
 )
 	__attribute__((nonnull(1, 2, 3, 4, 6, 7, 8)));
 
@@ -71,15 +71,15 @@ int dsc_exec_entire(
 //
 int dsc_exec_specific(
 	  gn *** const restrict list
-	, int listl
+	, size_t listl
 	, map * restrict vmap
 	, transform_parser * const restrict
 	, lwx *** restrict stax
-	, int * restrict staxa
-	, int staxp
+	, size_t * restrict staxa
+	, size_t staxp
 	, ts *** restrict ts
-	, int * restrict tsa
-	, int * restrict tsw
+	, size_t * restrict tsa
+	, size_t * restrict tsw
 )
 	__attribute__((nonnull(1, 3, 4, 5, 6, 8, 9, 10)));
 

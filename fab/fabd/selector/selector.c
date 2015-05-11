@@ -21,7 +21,7 @@ static map * o_discoveriesmap;
 static map * o_inspectionsmap;
 static map * o_queriesmap;
 
-int selector_process(selector * const s, int id, const ff_parser * const ffp, map * const tmap, lwx *** stax, int * staxa, int staxp)
+int selector_process(selector * const s, int id, const ff_parser * const ffp, map * const tmap, lwx *** stax, size_t * staxa, size_t staxp)
 {
 	int select(selector * s, gn * g)
 	{
@@ -146,13 +146,13 @@ int selector_init()
 }
 
 int selector_finalize(
-	  gn **** fabrications, int * fabricationsl
-	, gn **** fabricationxs, int * fabricationxsl
-	, gn **** fabricationns, int * fabricationnsl
-	, gn **** invalidations, int * invalidationsl
-	, gn **** discoveries, int * discoveriesl
-	, gn **** inspections, int * inspectionsl
-	, gn **** queries , int * queriesl
+	  gn **** fabrications, size_t * fabricationsl
+	, gn **** fabricationxs, size_t * fabricationxsl
+	, gn **** fabricationns, size_t * fabricationnsl
+	, gn **** invalidations, size_t * invalidationsl
+	, gn **** discoveries, size_t * discoveriesl
+	, gn **** inspections, size_t * inspectionsl
+	, gn **** queries , size_t * queriesl
 )
 {
 	fatal(map_keys, o_fabricationsmap, fabrications, fabricationsl);

@@ -38,5 +38,20 @@ struct filesystem;	// filesystem.h
 //
 int filesystem_mk(struct filesystem * const restrict e, char * const restrict path, uint64_t attrs, struct filesystem ** restrict fs);
 
+/// filesystem_free
+//
+// SUMMARY
+//  free a filesystem with free semantics
+//
+void filesystem_free(filesystem * const restrict fs);
+
+/// filesystem_xfree
+//
+// SUMMARY
+//  free an filesystem with xfree semantics
+//
+void filesystem_xfree(filesystem ** const restrict fs)
+	__attribute__((nonnull));
+
 #undef restrict
 #endif

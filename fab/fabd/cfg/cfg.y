@@ -23,6 +23,7 @@
 
 	#include "cfg.parse.h"
 	#include "cfg.protected.h"
+	#include "filesystem.protected.h"
 
 	// defined in cfg.lex.o
 	int cfg_yylex(void* yylvalp, void* yylloc, void* scanner);
@@ -71,7 +72,7 @@
 %type <fs>		declaration
 %type <fs>		properties propertylist
 %type <fsprop>	property
-%type <str>		string unquoted-string quoted-string strparts strpart
+%type <str>		string unquoted_string quoted_string strparts strpart
 %type <u64>		invalidation
 
 %%
@@ -176,15 +177,15 @@ invalidation
 	;
 
 string
-	: unquoted-string
-	| quoted-string
+	: unquoted_string
+	| quoted_string
 	;
 
-unquoted-string
+unquoted_string
 	: strpart
 	;
 
-quoted-string
+quoted_string
 	: '"' strparts '"'
 	{
 		$$ = $2;

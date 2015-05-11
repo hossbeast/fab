@@ -51,13 +51,13 @@ static int dsc_execwave(
 	  map * vmap
 	, transform_parser * const  restrict gp
 	, lwx *** restrict stax
-	, int * restrict staxa
-	, int staxp
+	, size_t * restrict staxa
+	, size_t staxp
 	, ts ** restrict ts
-	, int tsl
-	, int * restrict tsw
-	, int * restrict newn
-	, int * restrict newr
+	, size_t tsl
+	, size_t * restrict tsw
+	, size_t * restrict newn
+	, size_t * restrict newr
 	, int i
 )
 {
@@ -151,7 +151,7 @@ static int dsc_execwave(
 // public
 //
 
-int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
+int dsc_exec_specific(gn *** list, size_t listl, map * vmap, transform_parser * const gp, lwx *** stax, size_t * staxa, size_t staxp, ts *** ts, size_t * tsa, size_t * tsw)
 {
 	struct timespec	time_start;
 	struct timespec	time_end;
@@ -201,7 +201,7 @@ int dsc_exec_specific(gn *** list, int listl, map * vmap, transform_parser * con
 	finally : coda;
 }
 
-int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsa, int * tsw)
+int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, size_t * staxa, size_t staxp, ts *** ts, size_t * tsa, size_t * tsw)
 {
 	struct timespec	time_start;
 	struct timespec	time_end;

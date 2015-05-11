@@ -52,7 +52,7 @@ int lw_ensure(lwx *** stax, int * staxa, int staxp)
 //  staxa - listwise stax
 //  staxp - offset to next free stax
 //
-int lw_reset(lwx *** stax, int * staxa, int staxp)
+int lw_reset(lwx *** stax, size_t * staxa, size_t staxp)
 	__attribute__((nonnull));
 
 /// lw_flatten

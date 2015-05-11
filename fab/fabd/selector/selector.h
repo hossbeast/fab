@@ -23,9 +23,8 @@
 
 #include "listwise.h"
 
-#include "ff.h"
-#include "map.h"
-struct gn;
+struct map;					// map.h
+struct gn;					// gn.h
 
 #define restrict __restrict
 
@@ -35,9 +34,23 @@ typedef struct selector selector;
 /// selector_process
 //
 // SUMMARY
+//  execute the selector to populate the node lists
 //
-int selector_process(selector * const restrict s, const int id, const ff_parser * const restrict ffp, map * const restrict tmap, lwx *** restrict stax, int * restrict staxa, int staxp);
+int selector_process(
+	  selector * const restrict s
+	, const int id
+	, const struct ff_parser * const restrict ffp
+	, struct map * const restrict tmap
+	, lwx *** restrict stax
+	, size_t * restrict staxa
+	, size_t staxp
+);
 
+/// selector_string
+//
+// SUMMARY
+//  write description of the selector to the specified buffer
+//
 char * selector_string(const selector * const restrict s, char * const restrict dst, const size_t z);
 
 /// selector_finalize
@@ -46,13 +59,13 @@ char * selector_string(const selector * const restrict s, char * const restrict 
 //  finalize selectors, obtain result lists
 //
 int selector_finalize(
-	  struct gn **** restrict fabrications, int * restrict fabricationsl
-	, struct gn **** restrict fabricationxs, int * restrict fabricationxsl
-	, struct gn **** restrict fabricationns, int * restrict fabricationnsl
-	, struct gn **** restrict invalidations, int * restrict invalidationsl
-	, struct gn **** restrict discoveries, int * restrict discoveriesl
-	, struct gn **** restrict inspections, int * restrict inspectionsl
-	, struct gn **** restrict queries, int * restrict queriesl
+	  struct gn **** restrict fabrications, size_t * restrict fabricationsl
+	, struct gn **** restrict fabricationxs, size_t * restrict fabricationxsl
+	, struct gn **** restrict fabricationns, size_t * restrict fabricationnsl
+	, struct gn **** restrict invalidations, size_t * restrict invalidationsl
+	, struct gn **** restrict discoveries, size_t * restrict discoveriesl
+	, struct gn **** restrict inspections, size_t * restrict inspectionsl
+	, struct gn **** restrict queries, size_t * restrict queriesl
 )
 	__attribute__((nonnull));
 

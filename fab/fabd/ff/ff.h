@@ -76,8 +76,6 @@ typedef struct ff_file
 		struct
 		{
 			hashblock *				hb;
-			int								hb_reload;
-
 			int								count;		// number of times processed
 		};
 	};
@@ -100,15 +98,12 @@ extern union ff_files_t
 	};
 } ff_files;
 
-// ff parser; opaque type
-struct ff_parser_t;
-typedef struct ff_parser_t ff_parser;
-
-struct ff_parser_t
+// ff parser
+typedef struct ff_parser
 {
 	void *							p;
 	transform_parser *	gp;
-};
+} ff_parser;
 
 /// ff_mkparser
 //

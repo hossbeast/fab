@@ -67,7 +67,7 @@ typedef struct fmleval
 } fmleval;
 
 // thread workspace
-typedef struct 
+typedef struct ts
 {
 	ff_parser *				ffp;					// ff parser
 	ff_node *					ffn;					// ff node

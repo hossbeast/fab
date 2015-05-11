@@ -53,54 +53,7 @@
 # define DEBUG_IPC 0
 #endif
 
-// errors to report and continue, otherwise exit
-static int fab_swallow[] = {
-	  [ FAB_SYNTAX ] = 1
-	, [ FAB_ILLBYTE ] = 1
-	, [ FAB_UNSATISFIED ] = 1
-	, [ FAB_CMDFAIL ] = 1
-	, [ FAB_NOINVOKE ] = 1
-	, [ FAB_BADPLAN ] = 1
-	, [ FAB_CYCLE ] = 1
-	, [ FAB_NOSELECT ] = 1
-	, [ FAB_DSCPARSE ] = 1
-};
-
-static ff_parser *				ffp = 0;				// fabfile parser
-static bp *								plan = 0;				// buildplan 
-static map * 							rmap = 0;				// root-level map
-static map *							vmap = 0;				// init-level map
-static map * 							bakemap = 0;		// bakedvars map
-static gn *								first = 0;			// first dependency mentioned
-static lwx **							stax = 0;				// listwise stacks
-static int								staxa = 0;
-static int 								staxp = 0;
-static ts **							tsp = 0;
-static int								tsa = 0;
-static int								tsl = 0;
-static int								tsw = 0;
-
-/* node selector produced lists */
-static map *							smap = 0;							// selector map (must have lifetime >= lifetime of the selector lists)
-static gn ***							fabrications = 0;
-static int								fabricationsl = 0;
-static gn ***							fabricationxs = 0;
-static int								fabricationxsl = 0;
-static gn ***							fabricationns = 0;
-static int								fabricationnsl = 0;
-static gn ***							invalidations = 0;
-static int								invalidationsl = 0;
-static gn ***							discoveries = 0;
-static int								discoveriesl = 0;
-static gn ***							inspections = 0;
-static int								inspectionsl = 0;
-static gn ***							queries = 0;
-static int								queriesl = 0;
-
-static pstring * 					ptmp;
-static pid_t							fab_pids[3];
-
-static uint64_t						varshash[2];
+static int initialized;
 
 // signal handling
 static sigset_t none;
@@ -132,434 +85,15 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 #endif
 }
 
-/// hashfiles
-//
-// SUMMARY
-//  load hashes for backing files
-//
-static int hashfiles(int iteration)
-{
-	int x;
-
-	// stat backing files
-	for(x = 0; x < gn_nodes.l; x++)
-	{
-		if(gn_nodes.e[x]->mark != iteration)
-		{
-			if(gn_nodes.e[x]->type & GN_TYPE_HASFILE)
-			{
-				// load hash
-				fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
-
-				if(gn_nodes.e[x]->hb->stathash[1] == 0)
-				{
-					if(!gn_nodes.e[x]->invalid)
-						logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_NXFILE), gn_nodes.e[x]->idstring);
-
-					// missing file
-					gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
-				}
-				else
-				{
-					gn_nodes.e[x]->invalid &= ~GN_INVALIDATION_NXFILE;
-
-					if(hashblock_cmp(gn_nodes.e[x]->hb))
-					{
-						if(!gn_nodes.e[x]->invalid)
-							logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_CHANGED), gn_nodes.e[x]->idstring);
-
-						// changed file
-						gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
-					}
-				}
-
-				// convert to actions
-				if(GN_IS_INVALID(gn_nodes.e[x]))
-				{
-					if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY && gn_nodes.e[x]->dscvsl)
-					{
-						// require discovery
-						gn_nodes.e[x]->invalid |= GN_INVALIDATION_DISCOVERY;
-					}
-					else if(gn_nodes.e[x]->type != GN_TYPE_PRIMARY)
-					{
-						// require fabrication
-						gn_nodes.e[x]->invalid |= GN_INVALIDATION_FABRICATE;
-					}
-				}
-			}
-
-			gn_nodes.e[x]->mark = iteration;
-		}
-	}
-
-	finally : coda;
-}
-
-static int loop()
-{
-	int x;
-	int y;
-
-	int fd = -1;
-
-	char space[2048];
-
-	// reset some stuff
-	tsl = 0;
-	fabricationsl = 0;
-	fabricationxsl = 0;
-	fabricationnsl = 0;
-	invalidationsl = 0;
-	discoveriesl = 0;
-	inspectionsl = 0;
-	queriesl = 0;
-
-	// track start time
-	g_params.starttime = time(0);
-
-	static int iteration;
-	iteration++;
-
-	// load hashes for backing files : set up actions
-	fatal(hashfiles, iteration);
-
-	// comprehensive dependency discovery
-	fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
-
-	// load hashes for newly found backing files (header files)
-	fatal(hashfiles, iteration);
-
-	// process selectors
-	if(g_args->selectorsl)
-	{
-		fatal(selector_init);
-
-		int pn = staxp;
-
-		// create $!
-		fatal(lw_reset, &stax, &staxa, pn);
-		for(x = 0; x < gn_nodes.l; x++)
-			fatal(lstack_obj_add, stax[pn], gn_nodes.e[x], LISTWISE_TYPE_GNLW);
-
-		// map for processing selectors
-		fatal(map_create, &smap, 0);
-		fatal(map_set, smap, MMS("!"), MM(stax[pn]), 0);
-		pn++;
-
-		// process selectors
-		for(x = 0; x < g_args->selectorsl; x++)
-			fatal(selector_process, &g_args->selectors[x], x, ffp, smap, &stax, &staxa, pn);
-
-		fatal(selector_finalize
-			, &fabrications, &fabricationsl
-			, &fabricationxs, &fabricationxsl
-			, &fabricationns, &fabricationnsl
-			, &invalidations, &invalidationsl
-			, &discoveries, &discoveriesl
-			, &inspections, &inspectionsl
-			, &queries, &queriesl
-		);
-
-		if(log_would(L_LISTS))
-		{
-			if(fabricationsl + fabricationxsl + fabricationnsl + invalidationsl + discoveriesl + inspectionsl == 0)
-			{
-				logf(L_LISTS, "empty");
-			}
-			
-			for(x = 0; x < fabricationsl; x++)
-				logf(L_LISTS, "fabrication(s)     =%s", (*fabrications[x])->idstring);
-
-			for(x = 0; x < fabricationxsl; x++)
-				logf(L_LISTS, "fabricationx(s)    =%s", (*fabricationxs[x])->idstring);
-
-			for(x = 0; x < fabricationnsl; x++)
-				logf(L_LISTS, "fabricationn(s)    =%s", (*fabricationns[x])->idstring);
-
-			for(x = 0; x < invalidationsl; x++)
-				logf(L_LISTS, "invalidation(s)    =%s", (*invalidations[x])->idstring);
-
-			for(x = 0; x < discoveriesl; x++)
-				logf(L_LISTS, "discover(y)(ies)   =%s", (*discoveries[x])->idstring);
-
-			for(x = 0; x < inspectionsl; x++)
-				logf(L_LISTS, "inspection(s)      =%s", (*inspections[x])->idstring);
-		}
-	}
-
-	if(invalidationsl)
-	{
-		int repeat_discovery = 0;
-		fatal(gn_process_invalidations, invalidations, invalidationsl, &repeat_discovery);
-
-		if(repeat_discovery)
-		{
-			// repeat dependency discovery if any primary nodes that have dscvs were invalidated
-			fatal(dsc_exec_entire, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
-		}
-	}
-
-	// propagate invalidations and clear changes from this iteration
-	int visit(gn * gn, int d)
-	{
-		if(d == 0)
-		{
-			// this will include the node itself and nodes with a weak dependency on it
-		}
-		else
-		{
-			if(!gn->invalid)
-			{
-				logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_SOURCES), gn->idstring);
-			}
-
-			gn->invalid |= GN_INVALIDATION_SOURCES;
-
-			if(gn->type != GN_TYPE_PRIMARY)
-			{
-				// require fabrication
-				gn->invalid |= GN_INVALIDATION_FABRICATE;
-			}
-		}
-
-		finally : coda;
-	};
-	for(x = 0; x < gn_nodes.l; x++)
-	{
-		if(gn_nodes.e[x]->invalid & (GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER))
-		{
-			// do not cross the nofile boundary
-			fatal(traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile, gn_nodes.e[x], visit);
-
-			gn_nodes.e[x]->invalid &= ~(GN_INVALIDATION_CHANGED | GN_INVALIDATION_USER);
-		}
-	}
-
-	if(g_args->selectors_arequery)
-	{
-#define CENTER(w, fmt, ...) ({																		\
-	int act = snprintf(0, 0, fmt, ##__VA_ARGS__);										\
-	snprintf(space, sizeof(space), "%*s"fmt"%*s"										\
-		, (MAX(w - act, 0) / 2) + ((MAX(w - act, 0) % 2) ? 1 : 0), ""	\
-		, ##__VA_ARGS__																								\
-		, (MAX(w - act, 0) / 2), ""																		\
-	);																															\
-	space;																													\
-})
-
-		SAYF(" %-40s | %-13s | %-11s | %-11s | %s\n", "id", "type", "degree", "invalidated", "reason");
-		for(x = 0; x < queriesl; x++)
-		{
-			// id
-			if((*queries[x])->idstringl > 40)
-			{
-				SAYF(" .. %-37s", (*queries[x])->idstring + ((*queries[x])->idstringl - 37));
-			}
-			else
-			{
-				SAYF(" %-40s", (*queries[x])->idstring);
-			}
-
-			// type
-			SAYF(" | %-13s", GN_TYPE_STR((*queries[x])->type));
-
-			// degree
-			SAYF(" | %11s", CENTER(11, "%-d/%d", (*queries[x])->needs.l, (*queries[x])->feeds.l));
-
-			// invalid
-			SAYF(" | %-11s", CENTER(11, "%s", (*queries[x])->invalid ? "x" : ""));
-
-			// reason
-			SAYS(" | ");
-			if((*queries[x])->type & GN_TYPE_HASFILE)
-			{
-				gn_invalid_reasons_write((*queries[x]), space, sizeof(space));
-				SAYS(space);
-			}
-			SAYF("\n");
-		}
-		SAYF(" %d nodes\n", queriesl);
-	}
-
-	if(g_args->selectors_arediscovery)
-	{
-		fatal(log_parse_and_describe, "+DSCRES", 0, 0, L_INFO);
-		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ffp->gp, &stax, &staxa, staxp, &tsp, &tsa, &tsw);
-		fatal(log_parse_pop);
-	}
-
-	if(g_args->selectors_areinspections)
-	{
-		fatal(log_parse_and_describe, "+NODE", 0, 0, L_INFO);
-
-		for(x = 0; x < inspectionsl; x++)
-			gn_dump((*inspections[x]));
-
-		fatal(log_parse_pop);
-	}
-
-	if(g_args->selectors_arequery == 0 && g_args->selectors_areinspections == 0 && g_args->selectors_arediscovery == 0)
-	{
-		//
-		// construct a buildplan - use the first node if none was specified
-		//
-		if(fabricationsl + fabricationxsl + fabricationnsl == 0 && first)
-		{
-			fatal(xrealloc, &fabrications, sizeof(*fabrications), 1, 0);
-			fabrications[fabricationsl++] = &first;
-		}
-
-		// mixing task and non-task as buildplan targets does not make sense
-		for(x = 1; x < fabricationsl + fabricationxsl + fabricationnsl; x++)
-		{
-			int a = x - 1;
-			int b = x;
-			gn * A = 0;
-			gn * B = 0;
-
-			if(a < fabricationsl)
-				A = *fabrications[a];
-			else if(a < (fabricationsl + fabricationxsl))
-				A = *fabricationxs[a - fabricationsl];
-			else
-				A = *fabricationns[a - fabricationsl - fabricationxsl];
-
-			if(b < fabricationsl)
-				B = *fabrications[b];
-			else if(b < (fabricationsl + fabricationxsl))
-				B = *fabricationxs[b - fabricationsl];
-			else
-				B = *fabricationns[b - fabricationsl - fabricationxsl];
-
-			if((A->type == GN_TYPE_TASK) ^ (B->type == GN_TYPE_TASK))
-				fails(FAB_BADPLAN, "cannot mix task and non-task targets");
-		}
-
-		fatal(bp_create, fabrications, fabricationsl, fabricationxs, fabricationxsl, fabricationns, fabricationnsl, &plan);
-
-		// selector lists not referenced again past this point
-		map_xfree(&smap);
-
-		if(plan)
-		{
-			if(g_args->mode_bplan == MODE_BPLAN_BUILDSCRIPT)
-			{
-				// prepare bs_runtime_vars map
-				fatal(map_create, &bakemap, 0);
-
-				for(x = 0; x < g_args->bs_runtime_varsl; x++)
-					fatal(map_set, bakemap, MMS(g_args->bs_runtime_vars[x]), 0, 0, 0);
-
-				// dump buildplan, pending logging
-				if(plan)
-					bp_dump(plan);
-
-				// write buildscript to the IPC dir
-				fatal(buildscript_mk, plan, g_args->argvs, vmap, ffp->gp, &stax, &staxa, staxp, bakemap, &tsp, &tsa, &tsw, g_params.ipcstem);
-			}
-			else
-			{
-				// incremental build - prune the buildplan
-				fatal(bp_eval, plan);
-
-				if(g_args->mode_bplan == MODE_BPLAN_GENERATE)
-					fatal(log_parse_and_describe, "+BPDUMP", 0, 0, L_INFO);
-
-				// dump buildplan, pending logging
-				if(plan)
-					bp_dump(plan);
-
-				if(g_args->mode_bplan == MODE_BPLAN_EXEC)
-				{
-					if(plan && plan->stages_l)
-					{
-						// create tmp directory for the build
-						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
-						fatal(mkdirp, ptmp->s, FABIPC_DIR);
-						
-						// create symlink to the bp in hashdir
-						snprintf(space, sizeof(space), "%s/bp", g_params.ipcstem);
-						fatal(uxunlink, space, 0);
-						fatal(xsymlink, ptmp->s, space);
-
-						// create file with the number of stages
-						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/stages", g_params.fab_pid);
-						fatal(uxunlink, ptmp->s, 0);
-						fatal(ixclose, &fd);
-						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
-						fatal(axwrite, fd, &plan->stages_l, sizeof(plan->stages_l));
-						
-						// create file with the number of commands
-						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/commands", g_params.fab_pid);
-						fatal(uxunlink, ptmp->s, 0);
-						fatal(ixclose, &fd);
-						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
-						int cmdsl = 0;
-						for(x = 0; x < plan->stages_l; x++)
-							cmdsl += plan->stages[x].evals_l;
-						fatal(axwrite, fd, &cmdsl, sizeof(cmdsl));
-
-						// prepare and execute the build plan, one stage at a time
-						int i;
-						for(i = 0; i < plan->stages_l; i++)
-						{
-							tsl = 0;
-							fatal(bp_prepare_stage, plan, i, ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
-
-							// block signals
-							fatal(xsigprocmask, SIG_SETMASK, &all, 0);
-
-							// work required ; notify fab
-							fatal(uxkill, g_params.fab_pid, FABSIG_BPSTART, 0);
-
-							// await response
-							o_signum = 0;
-							sigsuspend(&none);
-							fatal(xsigprocmask, SIG_SETMASK, &none, 0);
-
-							if(o_signum == FABSIG_BPGOOD)
-							{
-								// plan was executed successfully ; update nodes for all products
-								for(x = 0; x < tsl; x++)
-								{
-									for(y = 0; y < tsp[x]->fmlv->productsl; y++)
-									{
-										// mark as up-to-date
-										tsp[x]->fmlv->products[y]->invalid = 0;
-
-										// reload hashblock
-										fatal(hashblock_stat, tsp[x]->fmlv->products[y]->path->can, tsp[x]->fmlv->products[y]->hb);
-									}
-								}
-							}
-							else if(o_signum == FABSIG_BPBAD)
-							{
-								// failure ; harvest the results
-								fatal(bp_harvest_stage, plan, i);
-								break;
-							}
-							else
-							{
-								failf(FAB_BADIPC, "expected signal %d or %d, actual %d", FABSIG_BPGOOD, FABSIG_BPBAD, o_signum);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-finally:
-	bp_xfree(&plan);
-	fatal(ixclose, &fd);
-coda;
-}
 
 int main(int argc, char** argv, char ** envp)
 {
 	char space[2048];
 	char space2[2048];
+
+	map * rmap = 0;					// root-level map
+	map *	vmap = 0;					// init-level map
+	gn *	first = 0;				// first dependency mentioned
 
 	int fd = -1;
 
@@ -793,8 +327,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 				varshash[1] += cksum(g_args->rootvars[x], strlen(g_args->rootvars[x]));
 
 			// parse the fabfiles only on the first run
-			static int initialized;
-			if(initialized == 0)
+			if(!initialized)
 			{
 				logf(L_INFO, "loading build description");
 
@@ -919,7 +452,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 			// handle this request
 			int frame;
-			if(invoke(&frame, loop))
+			if(invoke(&frame, handler))
 			{
 				// capture the error code
 				int code = XAPI_ERRCODE;
@@ -1030,31 +563,8 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 
 finally:
 	ff_freeparser(ffp);
-	bp_free(plan);
 	map_free(rmap);
 	map_free(vmap);
-	map_free(smap);
-	map_free(bakemap);
-
-	for(x = 0; x < staxa; x++)
-	{
-		if(stax[x])
-			free(lwx_getptr(stax[x]));
-		lwx_free(stax[x]);
-	}
-	free(stax);
-
-	for(x = 0; x < tsa; x++)
-		ts_free(tsp[x]);
-	free(tsp);
-
-	free(fabrications);
-	free(fabricationxs);
-	free(fabricationns);
-	free(invalidations);
-	free(discoveries);
-	free(inspections);
-	free(queries);
 
 	gn_teardown();
 	fml_teardown();
@@ -1069,7 +579,6 @@ finally:
 	fatal(ixclose, &logsfd);
 	fatal(ixclose, &fd);
 
-	psfree(ptmp);
 
 	if(XAPI_UNWINDING)
 	{

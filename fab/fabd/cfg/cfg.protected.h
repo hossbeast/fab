@@ -22,17 +22,23 @@
 
 struct filesystem;	// filesystem.h
 struct map;					// map.h
+struct path;				// path.h
+struct hashblock;		// hashblock.h
 
 typedef struct cfg_file
 {
-	char *					canpath;	// canonical path to the cfg file
+	struct path *					canpath;	// path to cfg file
+	struct hashblock *		hb;				// hashblock
 
-	filesystem **		fs;				// filesystem declarations
-	size_t					fsl;			// length
-	size_t					fsa;			// allocated size
+	/* filesystem declarations in the cfg file ; only present during cfg file parsing
+	** after which filesystems are consolidated in the filesystem module 
+	*/
+	struct filesystem **	fs;				// filesystem declarations in the cfg file
+	size_t								fsl;			// length
+	size_t								fsa;			// allocated size
 } cfg_file;
 
-static union
+extern union cfg_files
 {
 	coll_doubly c;
 

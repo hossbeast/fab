@@ -154,7 +154,7 @@ int lw_ensure(lwx *** stax, int * staxa, int staxp)
 	xproxy(ensure, stax, staxa, staxp);
 }
 
-int lw_reset(lwx *** stax, int * staxa, int staxp)
+int lw_reset(lwx *** stax, size_t * staxa, size_t staxp)
 {
 	fatal(ensure, stax, staxa, staxp);
 	fatal(lwx_reset, (*stax)[staxp]);

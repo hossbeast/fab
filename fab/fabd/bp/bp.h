@@ -43,7 +43,7 @@ typedef struct bp_stage
 } bp_stage;
 
 // build plan
-typedef struct
+typedef struct bp
 {
 	bp_stage	* stages;
 	int					stages_l;

@@ -60,7 +60,7 @@ int filesystem_lookup(char * const restrict path, filesystem ** const restrict f
 // SUMMARY
 //  setup
 //
-int filesystem_setup();
+int filesystem_init();
 
 /// filesystem_teardown
 //

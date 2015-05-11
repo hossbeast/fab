@@ -29,11 +29,10 @@
 // private
 //
 
-/// filesystem_free
 //
-// SUMMARY
-//  free a filesystem with free semantics
+// protected
 //
+
 void filesystem_free(filesystem * const restrict fs)
 {
 	if(fs)
@@ -44,20 +43,12 @@ void filesystem_free(filesystem * const restrict fs)
 	free(fs);
 }
 
-/// filesystem_xfree
-//
-// SUMMARY
-//  free an filesystem with xfree semantics
-//
 void filesystem_xfree(filesystem ** const restrict fs)
 {
 	filesystem_free(*fs);
 	*fs = 0;
 }
 
-//
-// protected
-//
 
 int filesystem_mk(filesystem * const restrict e, char * const restrict path, uint64_t attrs, filesystem ** restrict fs)
 {
@@ -89,12 +80,12 @@ int filesystem_mk(filesystem * const restrict e, char * const restrict path, uin
 
 int filesystem_lookup(char * const restrict path, filesystem ** const restrict fs)
 {
-
+	finally : coda;
 }
 
-int filesystem_setup()
+int filesystem_init()
 {
-
+	finally : coda;
 }
 
 void filesystem_teardown()

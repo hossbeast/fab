@@ -56,6 +56,9 @@ static void cfg_freefile(cfg_file * cfg)
 {
 	if(cfg)
 	{
+		for(x = 0; x < cfg->fsl; x++)
+			filesystem_free(cfg->fs[x]);
+
 		free(cfg->fs);
 	}
 
@@ -309,5 +312,5 @@ void cfg_teardown()
 
 int cfg_finalize()
 {
-
+	finally : coda;
 }

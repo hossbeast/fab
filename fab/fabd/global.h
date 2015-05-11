@@ -46,6 +46,10 @@
 #include "bs.h"
 #include "cfg.h"
 #include "filesystem.h"
+#include "handler.h"
+
+#include "cfg.protected.h"
+#include "filesystem.protected.h"
 
 #include "logger.h"
 
