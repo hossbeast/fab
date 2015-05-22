@@ -1,0 +1,174 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# definitions
++[ $*/../vars.fab ]
+
+# source invocations
++[ $dcommon ]() @common
+
+# variables
+$basename			= [ narrate ]
+$libname_eapi	= [ lib $basename .so ~ j ]
+$libname_xapi	= [ lib $basename -xapi .so ~ j ]
+$copts				= [ -fPIC [ $dlibnarrate ~ lsr c -d s/^/-I ]
+	# include paths - mark as system to preclude dependency discovery from gcc
+	[ $dlibxapi $dlibxlinux $dlibpstring ~ s/^/-I ]
+]
+
+# cflags variants
+$cflags_eapi_final = [ $cflags_eapi_final $copts ]
+$cflags_eapi_debug = [ $cflags_eapi_debug $copts ]
+$cflags_eapi_devel = [ $cflags_eapi_devel $copts ]
+$cflags_xapi_final = [ $cflags_xapi_final $copts ]
+$cflags_xapi_debug = [ $cflags_xapi_debug $copts ]
+$cflags_xapi_devel = [ $cflags_xapi_devel $copts ]
+$cflags_xapi_xunit = [ $cflags_xapi_xunit $copts ]
+
+$lopts							= [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
+$lflags_eapi_final	= [ $lopts $libxapi_eapi_final $libxlinux_eapi_final [ -Wl,-soname,libnarrate.so ~ j ] ]
+$lflags_eapi_debug	= [ $lopts $libxapi_eapi_debug $libxlinux_eapi_debug [ -Wl,-soname,libnarrate.so ~ j ] ]
+$lflags_eapi_devel	= [ $lopts $libxapi_eapi_devel $libxlinux_eapi_devel [ -Wl,-soname,libnarrate-devel.so ~ j ] ]
+$lflags_xapi_final	= [ $lopts $libxapi_xapi_final $libxlinux_xapi_final [ -Wl,-soname,libnarrate-xapi.so ~ j ] ]
+$lflags_xapi_debug	= [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug [ -Wl,-soname,libnarrate-xapi.so ~ j ] ]
+$lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-soname,libnarrate-xapi-devel.so ~ j ] ]
+
+# source files, filter out tests
++[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = $dlibnarrate; $cc; $cflags = $cflags_eapi_final; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
++[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = $dlibnarrate; $cc; $cflags = $cflags_eapi_debug; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
++[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = $dlibnarrate; $cc; $cflags = $cflags_eapi_devel; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibnarrate; $cc; $cflags = $cflags_xapi_final; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibnarrate; $cc; $cflags = $cflags_xapi_debug; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibnarrate; $cc; $cflags = $cflags_xapi_devel; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
+
+# source files and test files
++[@std.c]($dext = [ xapi.xunit.pic.o ]; $rdirs = $dlibnarrate; $cc; $cflags = $cflags_xapi_xunit)
+
+
+##
+## dependencies
+##
+
+# default NOFILE target - build everything
+[ @all ] : [ @all.eapi @all.xapi ]
+[ @all.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
+[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @final ] : [ @final.eapi @final.xapi ]
+[ @final.eapi ] : [ $libnarrate_eapi_final ]
+[ @final.xapi ] : [ $libnarrate_xapi_final ]
+[ @debug ] : [ @debug.eapi @debug.xapi ]
+[ @debug.eapi ] : [ $libnarrate_eapi_debug ]
+[ @debug.xapi ] : [ $libnarrate_xapi_debug ]
+[ @devel ] : [ @devel.eapi @devel.xapi ]
+[ @devel.eapi ] : [ $libnarrate_eapi_devel ]
+[ @devel.xapi ] : [ $libnarrate_xapi_devel ]
+
+# xunit tests
++[$dxunit/../fablib/xunit/tests.fab]($rdirs = $*; $cc; $cflags; $xunit = $xunit_xapi_devel; -$xunit_sos)
+
+# xunit test dependencies
+[ $xunit_sos ] : [ $libpstring_xapi_devel ]
+
+##
+## formulas
+##
+
+# library exports
+[ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
+{
+	  (echo "{ global: "
+	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
+	  cat -- [ $@ ~ rx/ineed fi ] )
+	> echo "local: *; };"
+	  ) 1>[ $@ ]
+}
+
+# link the library
+[ $libnarrate_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/eapi.final.pic.o sy ] ]
+{
+	[ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
+}
+
+[ $libnarrate_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/eapi.debug.pic.o sy ] ]
+{
+	[ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
+}
+
+[ $libnarrate_eapi_devel ] : [ [ $*/exports ~ j ]  [ $* ~ lsr l/test.c v sx/c/eapi.devel.pic.o sy ] ]
+{
+	[ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
+}
+
+[ $libnarrate_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/xapi.final.pic.o sy ] ]
+{
+	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
+}
+
+[ $libnarrate_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/xapi.debug.pic.o sy ] ]
+{
+	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
+}
+
+[ $libnarrate_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/xapi.devel.pic.o sy ] ]
+{
+	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
+}
+
+[ $libnarrate_eapi_final ] :^ [ $libxapi_eapi_final $libxlinux_eapi_final ]
+[ $libnarrate_eapi_debug ] :^ [ $libxapi_eapi_debug $libxlinux_eapi_debug ]
+[ $libnarrate_eapi_devel ] :^ [ $libxapi_eapi_devel $libxlinux_eapi_devel ]
+[ $libnarrate_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final ]
+[ $libnarrate_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug ]
+[ $libnarrate_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel ]
+
+##
+## tasks
+##
+
+[ @install.final.eapi ] : [ @final.eapi ]
+{
+	install -d																			[ $destdir/$libdir ]
+	install [ $libnarrate_eapi_final ]							[ $destdir/$libdir/$libname_eapi ]
+}
+
+[ @install.debug.eapi ] : [ @debug.eapi ]
+{
+	install -d																			[ $destdir/$libdir ]
+	install [ $libnarrate_eapi_debug ]							[ $destdir/$libdir/$libname_eapi ]
+}
+
+[ @install.final.xapi ] : [ @final.xapi ]
+{
+	install -d																			[ $destdir/$libdir ]
+	install [ $libnarrate_xapi_final ]							[ $destdir/$libdir/$libname_xapi ]
+}
+
+[ @install.debug.xapi ] : [ @debug.xapi ]
+{
+	install -d																			[ $destdir/$libdir ]
+	install [ $libnarrate_xapi_debug ]							[ $destdir/$libdir/$libname_xapi ]
+}
+
+[ @installdevheaders ]
+{
+	install -d																			[ $destdir/$incdir ]
+	install [ $dlibnarrate/narrate.h	]							[ $destdir/$incdir/ ]
+
+	install -d 																			[ $destdir/$incdir/narrate ]
+	install [ $dlibnarrate/narrate/narrator.h]			[ $destdir/$incdir/narrate/ ]
+	install [ $dlibnarrate/narrate/say.h]						[ $destdir/$incdir/narrate/ ]
+}

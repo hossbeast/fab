@@ -145,7 +145,8 @@ int selector_init()
 	finally : coda;
 }
 
-int selector_finalize(
+int selector_finalize(handler_context * const restrict ctx)
+#if 0
 	  gn **** fabrications, size_t * fabricationsl
 	, gn **** fabricationxs, size_t * fabricationxsl
 	, gn **** fabricationns, size_t * fabricationnsl
@@ -154,14 +155,15 @@ int selector_finalize(
 	, gn **** inspections, size_t * inspectionsl
 	, gn **** queries , size_t * queriesl
 )
+#endif
 {
-	fatal(map_keys, o_fabricationsmap, fabrications, fabricationsl);
-	fatal(map_keys, o_fabricationxsmap, fabricationxs, fabricationxsl);
-	fatal(map_keys, o_fabricationnsmap, fabricationns, fabricationnsl);
-	fatal(map_keys, o_invalidationsmap, invalidations, invalidationsl);
-	fatal(map_keys, o_discoveriesmap, discoveries, discoveriesl);
-	fatal(map_keys, o_inspectionsmap, inspections, inspectionsl);
-	fatal(map_keys, o_queriesmap, queries, queriesl);
+	fatal(map_keys, o_fabricationsmap , ctx->fabrications , ctx->fabricationsl );
+	fatal(map_keys, o_fabricationxsmap, ctx->fabricationxs, ctx->fabricationxsl);
+	fatal(map_keys, o_fabricationnsmap, ctx->fabricationns, ctx->fabricationnsl);
+	fatal(map_keys, o_invalidationsmap, ctx->invalidations, ctx->invalidationsl);
+	fatal(map_keys, o_discoveriesmap  , ctx->discoveries  , ctx->discoveriesl  );
+	fatal(map_keys, o_inspectionsmap  , ctx->inspections  , ctx->inspectionsl  );
+	fatal(map_keys, o_queriesmap      , ctx->queries      , ctx->queriesl      );
 
 	finally : coda;
 }

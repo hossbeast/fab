@@ -15,26 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XLINUX_H
-#define _XLINUX_H
+#ifndef _NARRATE_FILE_H
+#define _NARRATE_FILE_H
 
-#include "xlinux/xdirent.h"
-#include "xlinux/xdlfcn.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xfile.h"
-#include "xlinux/xftw.h"
-#include "xlinux/xgrp.h"
-#include "xlinux/xmman.h"
-#include "xlinux/xprctl.h"
-#include "xlinux/xpwd.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xstat.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xtime.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xuio.h"
-#include "xlinux/xwait.h"
-#include "xlinux/xstdio.h"
+#define restrict __restrict
 
+/// file
+//
+// SUMMARY
+//  write to a file descriptor
+//
+// PARAMETERS
+//  fd - file descriptor to write to
+//
+
+int file_vsayf(int fd, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull));
+
+int file_says(int fd, char * const restrict s)
+	__attribute__((nonnull));
+
+int file_sayw(int fd, char * const restrict b, size_t l)
+	__attribute__((nonnull));
+
+int file_sayc(int fd, int c)
+	__attribute__((nonnull));
+
+#undef restrict
 #endif

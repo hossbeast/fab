@@ -15,26 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XLINUX_H
-#define _XLINUX_H
+#ifndef _XSTDIO_H
+#define _XSTDIO_H
 
-#include "xlinux/xdirent.h"
-#include "xlinux/xdlfcn.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xfile.h"
-#include "xlinux/xftw.h"
-#include "xlinux/xgrp.h"
-#include "xlinux/xmman.h"
-#include "xlinux/xprctl.h"
-#include "xlinux/xpwd.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xstat.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xtime.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xuio.h"
-#include "xlinux/xwait.h"
-#include "xlinux/xstdio.h"
+#include <stdarg.h>
 
+#define restrict __restrict
+
+/// xvdprintf
+//
+// SUMMARY
+//  proxy for vdprintf
+//
+// PARAMETERS
+// 	as for vdprintf
+//
+int xvdprintf(int fd, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull(2)));
+
+#undef restrict 
 #endif

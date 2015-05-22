@@ -178,4 +178,5 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 	install [ $dlibxlinux/xlinux/xsignal.h ]						[ $destdir/$incdir/xlinux/ ]
 	install [ $dlibxlinux/xlinux/xfile.h ]							[ $destdir/$incdir/xlinux/ ]
 	install [ $dlibxlinux/xlinux/xprctl.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $dlibxlinux/xlinux/xstdio.h ]							[ $destdir/$incdir/xlinux/ ]
 }

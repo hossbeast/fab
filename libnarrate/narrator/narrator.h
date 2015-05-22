@@ -15,26 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XLINUX_H
-#define _XLINUX_H
+#ifndef _NARRATE_NARRATOR_H
+#define _NARRATE_NARRATOR_H
 
-#include "xlinux/xdirent.h"
-#include "xlinux/xdlfcn.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xfile.h"
-#include "xlinux/xftw.h"
-#include "xlinux/xgrp.h"
-#include "xlinux/xmman.h"
-#include "xlinux/xprctl.h"
-#include "xlinux/xpwd.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xstat.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xtime.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xuio.h"
-#include "xlinux/xwait.h"
-#include "xlinux/xstdio.h"
+#include <sys/types.h>
+
+struct pstring;						// pstring.h
+
+typedef struct narrator
+{
+	struct pstring * ps;		// write to pstring
+	char * bb;							// write to fixed-size buffer
+	size_t bz;							// buffer size
+	int fd;									// write to file descriptor
+} narrator;
+
+/// narrator
+//
+// SUMMARY
+//  this is the global narration context
+//
+narrator * _narrator;
 
 #endif

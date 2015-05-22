@@ -187,11 +187,6 @@ void handler_context_xfree(handler_context ** const restrict ctx)
 	*ctx = 0;
 }
 
-/// handler
-//
-// SUMMARY
-//  handles a request
-//
 int handler(handler_context * const restrict ctx, struct map * const restrict vmap, struct gn * const restrict first)
 {
 	int x;
@@ -243,35 +238,35 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 
 		if(log_would(L_LISTS))
 		{
-			if(fabricationsl + fabricationxsl + fabricationnsl + invalidationsl + discoveriesl + inspectionsl == 0)
+			if(ctx->fabricationsl + ctx->fabricationxsl + ctx->fabricationnsl + ctx->invalidationsl + ctx->discoveriesl + ctx->inspectionsl == 0)
 			{
 				logf(L_LISTS, "empty");
 			}
 			
-			for(x = 0; x < fabricationsl; x++)
-				logf(L_LISTS, "fabrication(s)     =%s", (*fabrications[x])->idstring);
+			for(x = 0; x < ctx->fabricationsl; x++)
+				logf(L_LISTS, "ctx->fabrication(s)     =%s", (*ctx->fabrications[x])->idstring);
 
-			for(x = 0; x < fabricationxsl; x++)
-				logf(L_LISTS, "fabricationx(s)    =%s", (*fabricationxs[x])->idstring);
+			for(x = 0; x < ctx->fabricationxsl; x++)
+				logf(L_LISTS, "ctx->fabricationx(s)    =%s", (*ctx->fabricationxs[x])->idstring);
 
-			for(x = 0; x < fabricationnsl; x++)
-				logf(L_LISTS, "fabricationn(s)    =%s", (*fabricationns[x])->idstring);
+			for(x = 0; x < ctx->fabricationnsl; x++)
+				logf(L_LISTS, "ctx->fabricationn(s)    =%s", (*ctx->fabricationns[x])->idstring);
 
-			for(x = 0; x < invalidationsl; x++)
-				logf(L_LISTS, "invalidation(s)    =%s", (*invalidations[x])->idstring);
+			for(x = 0; x < ctx->invalidationsl; x++)
+				logf(L_LISTS, "ctx->invalidation(s)    =%s", (*ctx->invalidations[x])->idstring);
 
-			for(x = 0; x < discoveriesl; x++)
-				logf(L_LISTS, "discover(y)(ies)   =%s", (*discoveries[x])->idstring);
+			for(x = 0; x < ctx->discoveriesl; x++)
+				logf(L_LISTS, "discover(y)(ies)   =%s", (*ctx->discoveries[x])->idstring);
 
-			for(x = 0; x < inspectionsl; x++)
-				logf(L_LISTS, "inspection(s)      =%s", (*inspections[x])->idstring);
+			for(x = 0; x < ctx->inspectionsl; x++)
+				logf(L_LISTS, "inspection(s)      =%s", (*ctx->inspections[x])->idstring);
 		}
 	}
 
-	if(invalidationsl)
+	if(ctx->invalidationsl)
 	{
 		int repeat_discovery = 0;
-		fatal(gn_process_invalidations, invalidations, invalidationsl, &repeat_discovery);
+		fatal(gn_process_invalidations, ctx->invalidations, ctx->invalidationsl, &repeat_discovery);
 
 		if(repeat_discovery)
 		{
@@ -365,7 +360,7 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 	if(g_args->selectors_arediscovery)
 	{
 		fatal(log_parse_and_describe, "+DSCRES", 0, 0, L_INFO);
-		fatal(dsc_exec_specific, discoveries, discoveriesl, vmap, ctx->ffp->gp, &ctx->stax, &ctx->staxa, ctx->staxp, &ctx->tsp, &ctx->tsa, &ctx->tsw);
+		fatal(dsc_exec_specific, ctx->discoveries, ctx->discoveriesl, vmap, ctx->ffp->gp, &ctx->stax, &ctx->staxa, ctx->staxp, &ctx->tsp, &ctx->tsa, &ctx->tsw);
 		fatal(log_parse_pop);
 	}
 
@@ -373,8 +368,8 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 	{
 		fatal(log_parse_and_describe, "+NODE", 0, 0, L_INFO);
 
-		for(x = 0; x < inspectionsl; x++)
-			gn_dump((*inspections[x]));
+		for(x = 0; x < ctx->inspectionsl; x++)
+			gn_dump((*ctx->inspections[x]));
 
 		fatal(log_parse_pop);
 	}
@@ -384,41 +379,41 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 		//
 		// construct a buildplan - use the first node if none was specified
 		//
-		if(fabricationsl + fabricationxsl + fabricationnsl == 0 && first)
+		if(ctx->fabricationsl + ctx->fabricationxsl + ctx->fabricationnsl == 0 && first)
 		{
-			fatal(xrealloc, &fabrications, sizeof(*fabrications), 1, 0);
-			fabrications[fabricationsl++] = &first;
+			fatal(xrealloc, &ctx->fabrications, sizeof(*ctx->fabrications), 1, 0);
+			ctx->fabrications[ctx->fabricationsl++] = &first;
 		}
 
 		// mixing task and non-task as buildplan targets does not make sense
-		for(x = 1; x < fabricationsl + fabricationxsl + fabricationnsl; x++)
+		for(x = 1; x < ctx->fabricationsl + ctx->fabricationxsl + ctx->fabricationnsl; x++)
 		{
 			int a = x - 1;
 			int b = x;
 			gn * A = 0;
 			gn * B = 0;
 
-			if(a < fabricationsl)
-				A = *fabrications[a];
-			else if(a < (fabricationsl + fabricationxsl))
-				A = *fabricationxs[a - fabricationsl];
+			if(a < ctx->fabricationsl)
+				A = *ctx->fabrications[a];
+			else if(a < (ctx->fabricationsl + ctx->fabricationxsl))
+				A = *ctx->fabricationxs[a - ctx->fabricationsl];
 			else
-				A = *fabricationns[a - fabricationsl - fabricationxsl];
+				A = *ctx->fabricationns[a - ctx->fabricationsl - ctx->fabricationxsl];
 
-			if(b < fabricationsl)
-				B = *fabrications[b];
-			else if(b < (fabricationsl + fabricationxsl))
-				B = *fabricationxs[b - fabricationsl];
+			if(b < ctx->fabricationsl)
+				B = *ctx->fabrications[b];
+			else if(b < (ctx->fabricationsl + ctx->fabricationxsl))
+				B = *ctx->fabricationxs[b - ctx->fabricationsl];
 			else
-				B = *fabricationns[b - fabricationsl - fabricationxsl];
+				B = *ctx->fabricationns[b - ctx->fabricationsl - ctx->fabricationxsl];
 
 			if((A->type == GN_TYPE_TASK) ^ (B->type == GN_TYPE_TASK))
 				fails(FAB_BADPLAN, "cannot mix task and non-task targets");
 		}
 
-		fatal(bp_create, fabrications, fabricationsl, fabricationxs, fabricationxsl, fabricationns, fabricationnsl, &plan);
+		fatal(bp_create, ctx->fabrications, ctx->fabricationsl, ctx->fabricationxs, ctx->fabricationxsl, ctx->fabricationns, ctx->fabricationnsl, &ctx->plan);
 
-		if(plan)
+		if(ctx->plan)
 		{
 			if(g_args->mode_bplan == MODE_BPLAN_BUILDSCRIPT)
 			{
@@ -429,8 +424,8 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 					fatal(map_set, bakemap, MMS(g_args->bs_runtime_vars[x]), 0, 0, 0);
 
 				// dump buildplan, pending logging
-				if(plan)
-					bp_dump(plan);
+				if(ctx->plan)
+					bp_dump(ctx->plan);
 
 				// write buildscript to the IPC dir
 				fatal(buildscript_mk
@@ -451,18 +446,18 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 			else
 			{
 				// incremental build - prune the buildplan
-				fatal(bp_eval, plan);
+				fatal(bp_eval, ctx->plan);
 
 				if(g_args->mode_bplan == MODE_BPLAN_GENERATE)
 					fatal(log_parse_and_describe, "+BPDUMP", 0, 0, L_INFO);
 
 				// dump buildplan, pending logging
-				if(plan)
-					bp_dump(plan);
+				if(ctx->plan)
+					bp_dump(ctx->plan);
 
 				if(g_args->mode_bplan == MODE_BPLAN_EXEC)
 				{
-					if(plan && plan->stages_l)
+					if(ctx->plan && ctx->plan->stages_l)
 					{
 						// create tmp directory for the build
 						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
@@ -478,7 +473,7 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 						fatal(uxunlink, ptmp->s, 0);
 						fatal(ixclose, &fd);
 						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
-						fatal(axwrite, fd, &plan->stages_l, sizeof(plan->stages_l));
+						fatal(axwrite, fd, &ctx->plan->stages_l, sizeof(ctx->plan->stages_l));
 						
 						// create file with the number of commands
 						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/commands", g_params.fab_pid);
@@ -486,16 +481,16 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 						fatal(ixclose, &fd);
 						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
 						int cmdsl = 0;
-						for(x = 0; x < plan->stages_l; x++)
-							cmdsl += plan->stages[x].evals_l;
+						for(x = 0; x < ctx->plan->stages_l; x++)
+							cmdsl += ctx->plan->stages[x].evals_l;
 						fatal(axwrite, fd, &cmdsl, sizeof(cmdsl));
 
 						// prepare and execute the build plan, one stage at a time
 						int i;
-						for(i = 0; i < plan->stages_l; i++)
+						for(i = 0; i < ctx->plan->stages_l; i++)
 						{
 							tsl = 0;
-							fatal(bp_prepare_stage, plan, i, ctx->ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
+							fatal(bp_prepare_stage, ctx->plan, i, ctx->ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
 
 							// block signals
 							fatal(xsigprocmask, SIG_SETMASK, &all, 0);
@@ -526,7 +521,7 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 							else if(o_signum == FABSIG_BPBAD)
 							{
 								// failure ; harvest the results
-								fatal(bp_harvest_stage, plan, i);
+								fatal(bp_harvest_stage, ctx->plan, i);
 								break;
 							}
 							else
@@ -541,7 +536,7 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 	}
 
 finally:
-	bp_xfree(&plan);
+	bp_xfree(&ctx->plan);
 	fatal(ixclose, &fd);
 coda;
 }

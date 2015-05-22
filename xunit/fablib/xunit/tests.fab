@@ -15,60 +15,62 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# @std.xunit.tests.fab
-#  provides discovery formula for .c files
-#  provides fabrication formula for .c -> .o
-#  provides dependencies for .o -> .c
+# @fab.xunit
+#  locates unit directories in $dunits
+#  fabricates xunit sos per unit
+#  provides @test task to execute all xunit tests
 #
 # var/closure
-#  cc
-#  cflags
+#  cc         - compiler for xunit sos
+#  cflags     - compiler flags for xunit sos
 #
 #  dirs       - directories containing .c files
 #  rdirs      - directories containing .c files, recursive search
-#  paths      - paths to .c files
+#  filter     - filter for unit directories
 #
-#  dscdirs   - (as above, but for discovery only)
-#  rdscdirs  - 
-#  dscpaths  - 
-#
-#  fabdirs   - (as above, but for fabrication/dependency only)
-#  rfabdirs  - 
-#  fabpaths  - 
-#
-#  dext       - file extension for object files resulting from fabrication
-#  gendir    - parameter to gcc-dep, directory path for the location of generated files
+#  dunits     - unit directories
+#  xunit_sos  - xunit sos
 
-# default source file extension
-$sext = [ c ]
+# filter for unit directories
+$filter = [ ]
 
-# default object file extension
-$dext = [ pic.o ]
+# unit directories
+$dunits = [
+	[
+    $dirs							# directories
+    [ $rdirs ~ lsr ]	# recursive directories
+    ~ [ $filter ]
+	]
 
-# default object file extension for discovered dependencies
-$dscext = [ pic.o ]
+ # those directories that contain an eponymous c file and a test.c
+ ~ ?, -d s,$,/test.c -f dn s,\x5b^/\x5d+$,\0/\0.c -f dn 
+]
 
-# default test lib extension
-$soext = [ xu.so ]
+$xunit_sos = [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 
-# default filter for test files
-$filter = [ ?, l,/test.c ]
-
-# cc : errors.c -> errors.o @ std.c
-+[@std.c]($filter; -$cobjpaths)
-
-# compile test sos
-$tsopaths = [ $cobjpaths ~ [ sxf/$dext/$soext ~ j ] ]
-
-[ $tsopaths ~ dj shift ] :: [ $< ~ [ rx [ sxf/$soext/$dext ~ j ] ~ fi ] ]
+# test sos compiled for xunit ; the unit so includes the source and test object files and their dependencies
+[ $xunit_sos ~ dj shift ]
+	:: [[ $< ~ ?, dn s,\x5b^/\x5d+$,\0/\0.xapi.xunit.pic.o ]
+			[ $< ~ ?, dn s,\x5b^/\x5d+$,\0/test.xapi.xunit.pic.o ]]
 {
-  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ [ rx/aneedw [ lx/$dext ~ j ] fi ~ fi ] ]
+	[ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [
+	] [ [ $@ ~ rx/aneedw lx/o fi ] ~ s/$/\x20\x5c\x0a ]
 }
 
+#
 # individual test tasks
-/*
-[ $cobjpaths ~ ?{ s{^}{/../tests/} dj shift ] :: [ $< ~ ?{ s{^/../tests/}{ } ]
+#  its not really possible to write this with the current fabfile syntax because you go
+#  from dunits -> @test.<name> but on the RHS you cant recover the original entry from dunits
+# [ $dunits ~ ?, s,$,\x5b^/\x5d+$,/../test/\0 ] ::
+#
+
+# run all tests
+[ @test ] : [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 {
-	[ $xunit ~ can ] [ $@ ~ can ]
+	[ $xunit ] [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
 }
-*/
+
+[ @test.more ] : [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
+{
+	[ $xunit ] +XUNIT [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
+}

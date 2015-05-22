@@ -15,26 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XLINUX_H
-#define _XLINUX_H
+#include <stdio.h>
 
-#include "xlinux/xdirent.h"
-#include "xlinux/xdlfcn.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xfile.h"
-#include "xlinux/xftw.h"
-#include "xlinux/xgrp.h"
-#include "xlinux/xmman.h"
-#include "xlinux/xprctl.h"
-#include "xlinux/xpwd.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xstat.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xtime.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xuio.h"
-#include "xlinux/xwait.h"
-#include "xlinux/xstdio.h"
+#include "xapi.h"
+#include "xlinux.h"
+#include "pstring.h"
 
-#endif
+#include "internal.h"
+
+#define restrict __restrict
+
+//
+// public
+//
+
+int fixed_vsayf(char * const restrict dst, size_t sz, const char * const restrict fmt, va_list va)
+{
+	return 0;
+}
+
+int fixed_sayw(char * const restrict dst, size_t sz, char * const restrict b, size_t l)
+{
+	return 0;
+}

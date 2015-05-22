@@ -23,8 +23,9 @@
 
 #include "listwise.h"
 
-struct map;					// map.h
-struct gn;					// gn.h
+struct map;								// map.h
+struct gn;								// gn.h
+struct handler_context;		// handler.h
 
 #define restrict __restrict
 
@@ -58,7 +59,8 @@ char * selector_string(const selector * const restrict s, char * const restrict 
 // SUMMARY
 //  finalize selectors, obtain result lists
 //
-int selector_finalize(
+int selector_finalize(struct handler_context * ctx)
+#if 0
 	  struct gn **** restrict fabrications, size_t * restrict fabricationsl
 	, struct gn **** restrict fabricationxs, size_t * restrict fabricationxsl
 	, struct gn **** restrict fabricationns, size_t * restrict fabricationnsl
@@ -67,6 +69,7 @@ int selector_finalize(
 	, struct gn **** restrict inspections, size_t * restrict inspectionsl
 	, struct gn **** restrict queries, size_t * restrict queriesl
 )
+#endif
 	__attribute__((nonnull));
 
 /// selector_init

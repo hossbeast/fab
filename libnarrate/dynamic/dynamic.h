@@ -15,38 +15,32 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATE_H
-#define _NARRATE_H
+#ifndef _NARRATE_DYNAMIC_H
+#define _NARRATE_DYNAMIC_H
 
-#include <sys/types.h>
+#include <stdarg.h>
 
-struct pstring;			// pstring.h
+struct pstring;				// pstring.h
 
 #define restrict __restrict
 
-typedef struct
-{
-	int (*sayf)(char * const restrict dst, const size_t sz, struct pstring ** restrict ps, size_t * restrict z, const char * const restrict fmt, ...);
-	int (*sayw)(char * const restrict dst, const size_t sz, struct pstring ** restrict ps, size_t * restrict z, const char * const restrict buf, size_t bufl);
-} narrator;
-
-/// narrate_fixed
+/// dynamic
 //
 // SUMMARY
-//  write to a fixed size buffer
+//  write to a dynamically resizing buffer
 //
-narrator * narrate_fixed;
+// PARAMETERS
+//  ps - pointer to pstr instance to write to
+//
 
-/// narrate_dynamic
-//
-// SUMMARY
-//  write to a dynamically-resizing buffer
-//
-narrator * narrate_dynamic;
+int dynamic_vsayf(struct pstring ** restrict ps, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull));
 
-#define SAYF(fmt, ...) fatal(writer, dst, sz, z, ps, fmt, ##__VA_ARGS__)
-#define SAYS(s) SAYW(s, strlen(s))
-#define SAYW(s, l) fatal(writer, dst, sz, ps, z, s, l)
+int dynamic_sayw(struct pstring ** restrict ps, char * const restrict b, size_t l)
+	__attribute__((nonnull));
+
+int dynamic_sayc(struct pstring ** restrict ps, int c)
+	__attribute__((nonnull));
 
 #undef restrict
 #endif
