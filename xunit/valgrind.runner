@@ -1,0 +1,66 @@
+#!/bin/bash
+
+#
+# PROGRAM
+#  valgrind.runner
+#
+# SUMMARY
+#  valgrind.runner executes a program under valgrind and parses its output to
+#  determine whether any issues were detected
+#
+
+# location of valgrind binary
+valgrind=valgrind
+
+# valgrind switches
+valgrind_options="${valgrind_options} --track-origins=yes"
+valgrind_options="${valgrind_options} --leak-check=full"
+valgrind_options="${valgrind_options} --show-reachable=yes"
+
+# get temp file for valgrind output
+valgrind_out=$(mktemp -u)
+
+# run the specified program under valgrind
+#  direct valgrind logging to the temp file
+#  use bash here-doc to pass a default suppressions file
+$valgrind $valgrind_options --suppressions=/dev/fd/601 --log-fd=600 $@ 600>$valgrind_out 601<<-DEFAULT_SUPPRESSIONS
+{
+   libdl does not free dlerror text
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dlerror_run
+   ...
+}
+DEFAULT_SUPPRESSIONS
+
+# gather execution results
+valgrind_status=$?
+valgrind_errors=$(cat $valgrind_out | grep 'ERROR SUMMARY' | grep -o '[0-9]\+ errors' | cut -d' ' -f 1-1 | head -n 1)
+valgrind_leaks=$( cat $valgrind_out | grep 'LEAK SUMMARY' -A 4 | grep -o 'bytes in [^ ]\+' | cut -d' ' -f 3-3 | sort -r -n | head -n 1)
+
+# unlink the file the existing vg.out link points to if any
+(rm $(readlink vg.out)) 2>/dev/null
+
+# assert
+if [[ $valgrind_status -ne 0 || $valgrind_errors -ne 0 || $valgrind_leaks -ne 0 ]]; then
+  # link in valgrind results, clobbering any existing link
+  ln -fs $valgrind_out vg.out
+
+  # report
+  echo
+  echo " ========================================="
+  echo "   VALGRIND DETECTED ERRORS (see vg.out)"
+  echo " ========================================="
+  echo "     command : $@"
+  echo "      status : $valgrind_status"
+  echo "      errors : $valgrind_errors"
+  echo "      leaks  : $valgrind_leaks"
+  echo
+  exit 1
+else
+  # cleanup results link
+  rm vg.out 2>/dev/null
+fi
+
+exit 0

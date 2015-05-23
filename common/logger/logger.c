@@ -730,6 +730,10 @@ for(x = 0; x < g_logc; x++)
 
 finally:
 	fatal(ixclose, &fd);
+
+#if __linux__
+	free(auxv);
+#endif
 coda;
 }
 
@@ -896,4 +900,6 @@ void log_teardown()
 	for(x = 0; x < g_logc; x++)
 		free(g_logv[x]);
 	free(g_logv);
+
+	free(g_logvs);
 }
