@@ -28,49 +28,52 @@
 
 int API xdlopen(const char * filename, int flag, void ** dl)
 {
-	dlerror();
-	if(((*dl) = dlopen(filename, flag)) == 0)
-		fails(XLINUX_DLERROR, dlerror());
+  dlerror();
+  if(((*dl) = dlopen(filename, flag)) == 0)
+    fails(XLINUX_DLERROR, dlerror());
 
 finally :
-	XAPI_INFOF("path", "%s", filename);
+  XAPI_INFOF("path", "%s", filename);
 coda;
 }
 
 int API ixdlclose(void ** dl)
 {
-	dlerror();
-	dlclose(*dl);
-	*dl = 0;
-	char * e = dlerror();
-	if(e)
-		fails(XLINUX_DLERROR, e);
+	if(*dl)
+	{
+		dlerror();
+		dlclose(*dl);
+		*dl = 0;
+		char * e = dlerror();
+		if(e)
+			fails(XLINUX_DLERROR, e);
+	}
 
-	finally : coda;
+  finally : coda;
 }
 
 int API xdlsym(void * dl, const char * sym, void ** psym)
 {
-	dlerror();
-	(*psym) = dlsym(dl, sym);
-	char * e = dlerror();
-	if(e)
-		fails(XLINUX_DLERROR, e);
+  dlerror();
+  (*psym) = dlsym(dl, sym);
+  char * e = dlerror();
+  if(e)
+    fails(XLINUX_DLERROR, e);
 
 finally :
-	XAPI_INFOF("sym", "%s", sym);
+  XAPI_INFOF("sym", "%s", sym);
 coda;
 }
 
 int API uxdlsym(void * dl, const char * sym, void ** psym)
 {
-	dlerror();
-	(*psym) = dlsym(dl, sym);
-	char * e = dlerror();
-	if(e && strstr(e, "undefined symbol") == 0)
-		fails(XLINUX_DLERROR, e);
+  dlerror();
+  (*psym) = dlsym(dl, sym);
+  char * e = dlerror();
+  if(e && strstr(e, "undefined symbol") == 0)
+    fails(XLINUX_DLERROR, e);
 
 finally :
-	XAPI_INFOF("sym", "%s", sym);
+  XAPI_INFOF("sym", "%s", sym);
 coda;
 }

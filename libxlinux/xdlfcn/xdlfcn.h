@@ -31,7 +31,7 @@ int xdlopen(const char * filename, int flag, void ** dl)
 /// ixdlclose
 //
 // SUMMARY
-//  xapi-proxy for dlclose that sets *dl = 0
+//  idempotent xapi-proxy for dlclose that sets *dl = 0
 //
 int ixdlclose(void ** dl)
 	__attribute__((nonnull));
