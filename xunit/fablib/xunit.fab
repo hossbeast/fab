@@ -54,7 +54,7 @@ $xunit_sos = [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 			[ $< ~ ?, dn s,\x5b^/\x5d+$,\0/test.xapi.xunit.pic.o ]]
 {
 	[ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [
-	] [ [ $@ ~ rx/aneedw lx/o fi ] ~ s/$/\x20\x5c\x0a ]
+	] [ [ $@ ~ rx/aneedw lx/o fi ] ~ s/^/\x20\x5c\x0a ]
 }
 
 #

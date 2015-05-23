@@ -52,17 +52,6 @@ void map_free(map* const restrict map);
 void map_xfree(map** const restrict map)
 	__attribute__((nonnull));
 
-/// MM - helper macro
-//
-// many map api's require an item and its length (get, set, delete)
-//
-// when the items size is known at compile time, MM makes it simpler to pass
-//
-#ifndef MAP_NO_HELPERS
-#define MM(x) (void*)&(x), sizeof(x)
-#define MMS(x) (x), strlen(x)
-#endif
-
 /// map_set
 //
 // set key/value pair on the map

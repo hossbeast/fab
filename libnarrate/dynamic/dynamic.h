@@ -39,8 +39,5 @@ int dynamic_vsayf(struct pstring ** restrict ps, const char * const restrict fmt
 int dynamic_sayw(struct pstring ** restrict ps, char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
-int dynamic_sayc(struct pstring ** restrict ps, int c)
-	__attribute__((nonnull));
-
 #undef restrict
 #endif

@@ -31,23 +31,43 @@
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
 
-/// znprintf
+/// znload
 //
-// summary
-//  allows the following idiom without buffer overflow (which snprintf would permit)
+// SUMMARY
+//  like snprintf but except the following idiom will not overflow
 //
-// z += znprintf(dst + z, sz - z, fmt, ...)
-// z += znprintf(dst + z, sz - z, fmt, ...)
+// z += znloadf(dst + z, sz - z, fmt, ...)
+// z += znloadf(dst + z, sz - z, fmt, ...)
 //
-#define znprintf(dst, sz, fmt, ...) ({										\
-	size_t _z = 0;																					\
+#define znloadf(dst, sz, fmt, ...) ({											\
+	size_t __z = 0;																					\
 	if(sz)																									\
 	{																												\
-		_z = MIN(sz, snprintf(dst, sz, fmt, ##__VA_ARGS__));	\
+		__z = MIN(sz, snprintf(dst, sz, fmt, ##__VA_ARGS__));	\
 	}																												\
-	_z; 																										\
+	__z; 																										\
 })
 
+#define znvloadf(dst, sz, fmt, va) ({				\
+	size_t __z = 0;														\
+	if(sz)																		\
+	{																					\
+		__z = vsnprintf(dst, sz, fmt, va);			\
+	}																					\
+	__z;																			\
+})
+
+#define znloadw(dst, sz, b, bz) ({					\
+	size_t __z = MIN(sz, bz);									\
+	memcpy(dst, b, __z);											\
+	__z;																			\
+})
+
+/// sentinel
+//
+// SUMMARY
+//  counts the number of elements in an array terminated by a zeroed-entry
+//
 #define sentinel(x) ({																\
 	typeof((x)[0]) * p = (x);														\
 	while(memcmp(p, (char[sizeof(*p)]){}, sizeof(*p)))	\
@@ -57,7 +77,8 @@
 
 /// NARGS
 //
-// evaluates to the quantity of arguments passed to it
+// SUMMARY
+//  evaluates to the quantity of arguments passed to it
 //
 #define NARGS(...) ((sizeof((int[]){0, ##__VA_ARGS__}) / sizeof(int)) - 1)
 
@@ -78,6 +99,17 @@
 # define MSIGX(l, x) (l)
 #else
 # error unable to determine endianness
+#endif
+
+/// MM - helper macro
+//
+// many map api's require an item and its length (get, set, delete)
+//
+// when the items size is known at compile time, MM makes it simpler to pass
+//
+#ifndef MAP_NO_HELPERS
+#define MM(x) (void*)&(x), sizeof(x)
+#define MMS(x) (x), strlen(x)
 #endif
 
 #endif

@@ -18,10 +18,10 @@
 #include <stdio.h>
 
 #include "xapi.h"
-#include "xlinux.h"
-#include "pstring.h"
 
 #include "internal.h"
+
+#include "macros.h"
 
 #define restrict __restrict
 
@@ -31,10 +31,14 @@
 
 int fixed_vsayf(char * const restrict dst, size_t sz, const char * const restrict fmt, va_list va)
 {
-	return 0;
+	znvloadf(dst, sz, fmt, va);
+
+	finally : coda;
 }
 
 int fixed_sayw(char * const restrict dst, size_t sz, char * const restrict b, size_t l)
 {
-	return 0;
+	znloadw(dst, sz, b, l);
+
+	finally : coda;
 }

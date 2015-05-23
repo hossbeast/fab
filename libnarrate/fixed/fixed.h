@@ -34,13 +34,7 @@
 int fixed_vsayf(char * const restrict dst, size_t sz, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-int fixed_says(char * const restrict dst, size_t sz, char * const restrict s)
-	__attribute__((nonnull));
-
 int fixed_sayw(char * const restrict dst, size_t sz, char * const restrict b, size_t l)
-	__attribute__((nonnull));
-
-int fixed_sayc(char * const restrict dst, size_t sz, int c)
 	__attribute__((nonnull));
 
 #undef restrict

@@ -32,13 +32,7 @@
 int file_vsayf(int fd, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-int file_says(int fd, char * const restrict s)
-	__attribute__((nonnull));
-
 int file_sayw(int fd, char * const restrict b, size_t l)
-	__attribute__((nonnull));
-
-int file_sayc(int fd, int c)
 	__attribute__((nonnull));
 
 #undef restrict

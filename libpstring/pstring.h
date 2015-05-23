@@ -23,10 +23,12 @@
 
 #define restrict __restrict
 
-///
-/// pstring - string storage plus allocation and length for reuse
-///  invariant : *(s + l) == 0
-///
+/// pstring
+//
+// SUMMARY
+//  string storage plus allocation and length for reuse
+//  invariant : *(s + l) == 0
+//
 typedef struct pstring
 {
 	size_t		a;
