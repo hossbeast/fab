@@ -79,7 +79,7 @@ extern union g_fmls_t
 // SUMMARY
 //  attach a formula to graph nodes
 //
-int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, struct ff_loc ** const restrict loc, const int locl, map * const restrict vmap, transform_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, struct ff_loc ** const restrict loc, const int locl, map * const restrict vmap, transform_parser * const gp, lwx *** const restrict stax, size_t * const restrict staxa, size_t * const restrict staxp)
 	__attribute__((nonnull));
 
 /// fml_render
@@ -87,7 +87,7 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, str
 // SUMMARY
 //  ts->fmlv has been set; reset ts->cmd_txt and render the cmd for that evaluation to ts->cmd_txt, including an initial SHE-BANG directive
 //
-int fml_render(ts * const restrict ts, transform_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int staxp, map * const restrict rawvars, int shebang)
+int fml_render(ts * const restrict ts, transform_parser * const gp, lwx *** const restrict stax, size_t * const restrict staxa, size_t staxp, map * const restrict rawvars, int shebang)
 	__attribute__((nonnull(1, 2, 3, 4)));
 
 /// fml_write

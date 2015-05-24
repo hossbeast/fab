@@ -34,11 +34,11 @@ int buildscript_mk(
 	, map * const vmap
 	, transform_parser * const gp
 	, lwx *** const stax
-	, int * const staxa
-	, int staxp
+	, size_t * const staxa
+	, size_t staxp
 	, map * const bakemap
 	, ts *** const ts
-	, int * const tsa
+	, size_t * const tsa
 	, const int * const tsw
 	, const char * const stem
 )
@@ -46,7 +46,7 @@ int buildscript_mk(
 	char space[2048];
 
 	int fd				= 0;
-	int tsl				= 0;		// thread count
+	size_t tsl		= 0;		// thread count
 	int tot				= 0;		// total targets
 	int y;
 	int x;

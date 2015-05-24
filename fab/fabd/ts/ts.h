@@ -100,7 +100,7 @@ typedef struct ts
 //  ensure that at least n threadspaces are allocated
 //  then call ts_reset on the first n threadspaces
 //
-int ts_ensure(ts *** ts, int * tsa, int n)
+int ts_ensure(ts *** ts, size_t * tsa, size_t n)
 	__attribute__((nonnull));
 
 /// ts_reset
@@ -128,7 +128,7 @@ void ts_reset(ts * ts)
 // RETURNS
 //  nonzero on success - (some) formulas may have failed, check *bad
 //
-int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, int * bad)
+int ts_execwave(ts ** ts, int n, size_t * waveid, int waveno, uint64_t hi, int * bad)
 	__attribute__((nonnull(1, 3)));
 
 /// ts_free

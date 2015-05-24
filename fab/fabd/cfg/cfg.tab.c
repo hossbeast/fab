@@ -66,7 +66,7 @@
 /* "%code top" blocks.  */
 
 /* Line 171 of yacc.c  */
-#line 18 "fab/fabd/cfg/cfg.y"
+#line 18 "cfg/cfg.y"
 
 	#include <stdlib.h>
 	#include <string.h>
@@ -83,7 +83,7 @@
 
 
 /* Line 171 of yacc.c  */
-#line 87 "fab/fabd/cfg/cfg.tab.c"
+#line 87 "cfg/cfg.tab.c"
 /* Substitute the variable and function names.  */
 #define yyparse         cfg_yyparse
 #define yylex           cfg_yylex
@@ -98,7 +98,7 @@
 
 
 /* Line 189 of yacc.c  */
-#line 102 "fab/fabd/cfg/cfg.tab.c"
+#line 102 "cfg/cfg.tab.c"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -147,7 +147,7 @@ typedef union YYSTYPE
 {
 
 /* Line 214 of yacc.c  */
-#line 43 "fab/fabd/cfg/cfg.y"
+#line 43 "cfg/cfg.y"
 
 	struct cfg_file *	cfg;
 	struct filesystem *	fs;
@@ -164,7 +164,7 @@ typedef union YYSTYPE
 
 
 /* Line 214 of yacc.c  */
-#line 168 "fab/fabd/cfg/cfg.tab.c"
+#line 168 "cfg/cfg.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -189,7 +189,7 @@ typedef struct YYLTYPE
 
 
 /* Line 264 of yacc.c  */
-#line 193 "fab/fabd/cfg/cfg.tab.c"
+#line 193 "cfg/cfg.tab.c"
 
 #ifdef short
 # undef short
@@ -1281,11 +1281,11 @@ YYLTYPE yylloc;
 /* User initialization code.  */
 
 /* Line 1242 of yacc.c  */
-#line 41 "fab/fabd/cfg/cfg.y"
+#line 41 "cfg/cfg.y"
 { memset(&yylloc, 0, sizeof(yylloc)); }
 
 /* Line 1242 of yacc.c  */
-#line 1289 "fab/fabd/cfg/cfg.tab.c"
+#line 1289 "cfg/cfg.tab.c"
   yylsp[0] = yylloc;
 
   goto yysetstate;
@@ -1473,7 +1473,7 @@ yyreduce:
         case 2:
 
 /* Line 1455 of yacc.c  */
-#line 81 "fab/fabd/cfg/cfg.y"
+#line 81 "cfg/cfg.y"
     {
 		parm->cfg = (yyvsp[(1) - (2)].cfg);
 	;}
@@ -1482,7 +1482,7 @@ yyreduce:
   case 3:
 
 /* Line 1455 of yacc.c  */
-#line 85 "fab/fabd/cfg/cfg.y"
+#line 85 "cfg/cfg.y"
     {
 		parm->cfg = (yyvsp[(1) - (1)].cfg);
 	;}
@@ -1491,7 +1491,7 @@ yyreduce:
   case 4:
 
 /* Line 1455 of yacc.c  */
-#line 92 "fab/fabd/cfg/cfg.y"
+#line 92 "cfg/cfg.y"
     {
 		YYU_FATAL(cfg_mk_fs, (yyvsp[(1) - (3)].cfg), (yyvsp[(3) - (3)].fs), &(yyval.cfg));
 	;}
@@ -1500,7 +1500,7 @@ yyreduce:
   case 5:
 
 /* Line 1455 of yacc.c  */
-#line 96 "fab/fabd/cfg/cfg.y"
+#line 96 "cfg/cfg.y"
     {
 		YYU_FATAL(cfg_mk_fs, 0, (yyvsp[(1) - (1)].fs), &(yyval.cfg));
 	;}
@@ -1509,7 +1509,7 @@ yyreduce:
   case 6:
 
 /* Line 1455 of yacc.c  */
-#line 103 "fab/fabd/cfg/cfg.y"
+#line 103 "cfg/cfg.y"
     {
 		(yyval.fs) = (yyvsp[(3) - (4)].fs);
 	;}
@@ -1518,7 +1518,7 @@ yyreduce:
   case 11:
 
 /* Line 1455 of yacc.c  */
-#line 120 "fab/fabd/cfg/cfg.y"
+#line 120 "cfg/cfg.y"
     {
 		(yyval.fs) = (yyvsp[(2) - (3)].fs);
 	;}
@@ -1527,7 +1527,7 @@ yyreduce:
   case 12:
 
 /* Line 1455 of yacc.c  */
-#line 124 "fab/fabd/cfg/cfg.y"
+#line 124 "cfg/cfg.y"
     {
 		(yyval.fs) = (yyvsp[(2) - (2)].fs);
 	;}
@@ -1536,7 +1536,7 @@ yyreduce:
   case 13:
 
 /* Line 1455 of yacc.c  */
-#line 128 "fab/fabd/cfg/cfg.y"
+#line 128 "cfg/cfg.y"
     {
 		(yyval.fs) = (yyvsp[(1) - (2)].fs);
 	;}
@@ -1545,7 +1545,7 @@ yyreduce:
   case 15:
 
 /* Line 1455 of yacc.c  */
-#line 136 "fab/fabd/cfg/cfg.y"
+#line 136 "cfg/cfg.y"
     {
 		YYU_FATAL(filesystem_mk, (yyvsp[(1) - (3)].fs), (yyvsp[(3) - (3)].fsprop).path->s, (yyvsp[(3) - (3)].fsprop).invalidation, &(yyval.fs));
 	;}
@@ -1554,7 +1554,7 @@ yyreduce:
   case 16:
 
 /* Line 1455 of yacc.c  */
-#line 140 "fab/fabd/cfg/cfg.y"
+#line 140 "cfg/cfg.y"
     {
 		YYU_FATAL(filesystem_mk, 0, (yyvsp[(1) - (1)].fsprop).path->s, (yyvsp[(1) - (1)].fsprop).invalidation, &(yyval.fs));
 	;}
@@ -1563,7 +1563,7 @@ yyreduce:
   case 17:
 
 /* Line 1455 of yacc.c  */
-#line 147 "fab/fabd/cfg/cfg.y"
+#line 147 "cfg/cfg.y"
     {
 		(yyval.fsprop) = (typeof((yyval.fsprop))){ .path = (yyvsp[(3) - (3)].str) };
 	;}
@@ -1572,7 +1572,7 @@ yyreduce:
   case 18:
 
 /* Line 1455 of yacc.c  */
-#line 151 "fab/fabd/cfg/cfg.y"
+#line 151 "cfg/cfg.y"
     {
 		(yyval.fsprop) = (typeof((yyval.fsprop))){ .invalidation = (yyvsp[(3) - (3)].u64) };
 	;}
@@ -1581,7 +1581,7 @@ yyreduce:
   case 19:
 
 /* Line 1455 of yacc.c  */
-#line 158 "fab/fabd/cfg/cfg.y"
+#line 158 "cfg/cfg.y"
     {
 		(yyval.u64) = FILESYSTEM_INVALIDATION_STAT;
 	;}
@@ -1590,7 +1590,7 @@ yyreduce:
   case 20:
 
 /* Line 1455 of yacc.c  */
-#line 162 "fab/fabd/cfg/cfg.y"
+#line 162 "cfg/cfg.y"
     {
 		(yyval.u64) = FILESYSTEM_INVALIDATION_CONTENT;
 	;}
@@ -1599,7 +1599,7 @@ yyreduce:
   case 21:
 
 /* Line 1455 of yacc.c  */
-#line 166 "fab/fabd/cfg/cfg.y"
+#line 166 "cfg/cfg.y"
     {
 		(yyval.u64) = FILESYSTEM_INVALIDATION_NOTIFY;
 	;}
@@ -1608,7 +1608,7 @@ yyreduce:
   case 22:
 
 /* Line 1455 of yacc.c  */
-#line 170 "fab/fabd/cfg/cfg.y"
+#line 170 "cfg/cfg.y"
     {
 		(yyval.u64) = FILESYSTEM_INVALIDATION_ALWAYS;
 	;}
@@ -1617,7 +1617,7 @@ yyreduce:
   case 23:
 
 /* Line 1455 of yacc.c  */
-#line 174 "fab/fabd/cfg/cfg.y"
+#line 174 "cfg/cfg.y"
     {
 		(yyval.u64) = FILESYSTEM_INVALIDATION_NEVER;
 	;}
@@ -1626,7 +1626,7 @@ yyreduce:
   case 27:
 
 /* Line 1455 of yacc.c  */
-#line 190 "fab/fabd/cfg/cfg.y"
+#line 190 "cfg/cfg.y"
     {
 		(yyval.str) = (yyvsp[(2) - (3)].str);
 	;}
@@ -1635,7 +1635,7 @@ yyreduce:
   case 28:
 
 /* Line 1455 of yacc.c  */
-#line 197 "fab/fabd/cfg/cfg.y"
+#line 197 "cfg/cfg.y"
     {
 		YYU_FATAL(psmkw, (yyvsp[(1) - (2)].str), (yylsp[(2) - (2)]).s, (yylsp[(2) - (2)]).l, &(yyval.str));
 	;}
@@ -1644,7 +1644,7 @@ yyreduce:
   case 30:
 
 /* Line 1455 of yacc.c  */
-#line 205 "fab/fabd/cfg/cfg.y"
+#line 205 "cfg/cfg.y"
     {
 		YYU_FATAL(psmkw, 0, (yylsp[(1) - (1)]).s, (yylsp[(1) - (1)]).l, &(yyval.str));
 	;}
@@ -1653,7 +1653,7 @@ yyreduce:
   case 31:
 
 /* Line 1455 of yacc.c  */
-#line 209 "fab/fabd/cfg/cfg.y"
+#line 209 "cfg/cfg.y"
     {
 		YYU_FATAL(psmkc, 0, (yyvsp[(1) - (1)].chr), &(yyval.str));
 	;}
@@ -1662,7 +1662,7 @@ yyreduce:
   case 32:
 
 /* Line 1455 of yacc.c  */
-#line 213 "fab/fabd/cfg/cfg.y"
+#line 213 "cfg/cfg.y"
     {
 		YYU_FATAL(psmkc, 0, (yyvsp[(1) - (1)].chr), &(yyval.str));
 	;}
@@ -1671,7 +1671,7 @@ yyreduce:
 
 
 /* Line 1455 of yacc.c  */
-#line 1675 "fab/fabd/cfg/cfg.tab.c"
+#line 1675 "cfg/cfg.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);

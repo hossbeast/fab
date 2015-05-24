@@ -19,9 +19,9 @@
 
 #include "listwise.h"
 #include "listwise/lstack.h"
+#include "xlinux.h"
 
-#include "ffproc.h"
-
+#include "global.h"
 #include "fml.h"
 #include "list.h"
 #include "lwutil.h"
@@ -30,10 +30,10 @@
 #include "args.h"
 #include "params.h"
 #include "logs.h"
-
-#include "global.h"
+#include "ffproc.h"
 #include "path.h"
-#include "xlinux.h"
+
+#include "macros.h"
 
 #define restrict __restrict
 
@@ -44,9 +44,9 @@ typedef struct
 	int				a;
 } locstack;
 
-static int procfile(const ff_parser * const ffp, const path * const restrict inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel, locstack * loc);
+static int procfile(const ff_parser * const ffp, const path * const restrict inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, size_t * const staxa, size_t * const staxp, gn ** first, char * nofile, int nofilel, locstack * loc);
 
-static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, int star, locstack * loc)
+static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, strstack * const sstk, map * const vmap, lwx *** const stax, size_t * const staxa, size_t * const staxp, gn ** first, int star, locstack * loc)
 {
 	int x = 0;
 	int y;
@@ -101,7 +101,7 @@ static int procblock(ff_file * ff, ff_node* root, const ff_parser * const ffp, s
 		}
 		else if(stmt->type == FFN_INVOCATION)
 		{
-			int pn = (*staxp);
+			size_t pn = (*staxp);
 			fatal(list_resolve, stmt->module, vmap, ffp->gp, stax, staxa, &pn, 0, 0);
 			fatal(list_render, (*stax)[(*staxp)], &inv);
 
@@ -333,7 +333,7 @@ finally:
 coda;
 }
 
-static int procfile(const ff_parser * const ffp, const path * const inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first, char * nofile, int nofilel, locstack * loc)
+static int procfile(const ff_parser * const ffp, const path * const inpath, pstring * seed, strstack * const sstk, map * const vmap, lwx *** const stax, size_t * const staxa, size_t * const staxp, gn ** first, char * nofile, int nofilel, locstack * loc)
 {
 	ff_file * ff = 0;
 
@@ -365,7 +365,7 @@ coda;
 /// public
 ///
 
-int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map * const vmap, lwx *** const stax, int * const staxa, int * const staxp, gn ** first)
+int ffproc(const ff_parser * const ffp, const path * const restrict inpath, map * const vmap, lwx *** const stax, size_t * const staxa, size_t * const staxp, gn ** first)
 {
 	strstack * sstk = 0;
 

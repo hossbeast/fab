@@ -50,5 +50,6 @@ once {
 	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.xunit.pic.o ]; $cflags = [ $cflags_xapi_xunit -fPIC ])
 
 	# xunit tests
-	+[$dxunit/../fablib/xunit.fab]($base = $*; $cc; $cflags; $xunit = $xunit_xapi_devel)
+#	+[$dxunit/../fablib/xunit.fab]($base = $*; $cc; $cflags; $xunit = $xunit_xapi_devel)
+  +[$xunit_tests]($rdirs = $*)
 }

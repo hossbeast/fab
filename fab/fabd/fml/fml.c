@@ -208,7 +208,7 @@ static void fml_free(fml * fml)
 //
 // public
 //
-int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, struct ff_loc ** const restrict loc, const int locl, map * const restrict vmap, transform_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp)
+int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, struct ff_loc ** const restrict loc, const int locl, map * const restrict vmap, transform_parser * const gp, lwx *** const restrict stax, size_t * const restrict staxa, size_t * const restrict staxp)
 {
 	// create fml if necessary
 	fml * fml = ffn->fml;
@@ -275,13 +275,13 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, str
 
 	if(ffn->targets_0)
 	{
-		int pn = *staxp;
+		size_t pn = *staxp;
 		fatal(list_resolvetoflat, ffn->targets_0, vmap, gp, stax, staxa, &pn, 0, 0);
 	}
 
 	if(ffn->targets_1)
 	{
-		int pn = *staxp;
+		size_t pn = *staxp;
 		fatal(list_resolvetoflat, ffn->targets_1, vmap, gp, stax, staxa, &pn, 0, 0);
 	}
 
@@ -298,10 +298,10 @@ int fml_attach(ff_node * const restrict ffn, strstack * const restrict sstk, str
 	finally : coda;
 }
 
-int fml_render(ts * const restrict ts, transform_parser * const gp, lwx *** const restrict stax, int * const restrict staxa, int staxp, map * const restrict rawvars, int shebang)
+int fml_render(ts * const restrict ts, transform_parser * const gp, lwx *** const restrict stax, size_t * const restrict staxa, size_t staxp, map * const restrict rawvars, int shebang)
 {
 	// resolve the command list
-	int pn = staxp;
+	size_t pn = staxp;
 	fatal(list_resolve, ts->fmlv->ctx->fml->ffn->command, ts->fmlv->ctx->bag, gp, stax, staxa, &pn, 1, rawvars);
 
 	// psloadf 1) allocates the pstring if necessary, and 2) sets the length

@@ -90,7 +90,7 @@ static int render(lwx * const ls, pstring ** const ps)
 	finally : coda;
 }
 
-static int resolve(ff_node * list, map* vmap, transform_parser * gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+static int resolve(ff_node * list, map* vmap, transform_parser * gp, lwx *** stax, size_t * staxa, size_t * staxp, int rawmap, map * rawvars)
 {
 	// resolved lstack goes here
 	int pn = (*staxp)++;
@@ -257,7 +257,7 @@ int list_renderto(lwx * const ls, pstring ** const ps)
 	finally : coda;
 }
 
-int list_resolveto(ff_node * list, map* vmap, transform_parser* const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+int list_resolveto(ff_node * list, map* vmap, transform_parser* const gp, lwx *** stax, size_t * staxa, size_t * staxp, int rawmap, map * rawvars)
 {
 	fatal(lw_ensure, stax, staxa, (*staxp));
 	fatal(resolve, list, vmap, gp, stax, staxa, staxp, rawmap, rawvars);
@@ -265,7 +265,7 @@ int list_resolveto(ff_node * list, map* vmap, transform_parser* const gp, lwx **
 	finally : coda;
 }
 
-int list_resolve(ff_node * list, map* vmap, transform_parser* const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+int list_resolve(ff_node * list, map* vmap, transform_parser* const gp, lwx *** stax, size_t * staxa, size_t * staxp, int rawmap, map * rawvars)
 {
 	fatal(lw_reset, stax, staxa, (*staxp));
 	fatal(resolve, list, vmap, gp, stax, staxa, staxp, rawmap, rawvars);
@@ -273,7 +273,7 @@ int list_resolve(ff_node * list, map* vmap, transform_parser* const gp, lwx *** 
 	finally : coda;
 }
 
-int list_resolveflat(ff_node * list, map* vmap, transform_parser* const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+int list_resolveflat(ff_node * list, map* vmap, transform_parser* const gp, lwx *** stax, size_t * staxa, size_t * staxp, int rawmap, map * rawvars)
 {
 	int pn = *staxp;
 	fatal(lw_reset, stax, staxa, pn);
@@ -283,7 +283,7 @@ int list_resolveflat(ff_node * list, map* vmap, transform_parser* const gp, lwx 
 	finally : coda;
 }
 
-int list_resolvetoflat(ff_node * list, map* vmap, transform_parser* const gp, lwx *** stax, int * staxa, int * staxp, int rawmap, map * rawvars)
+int list_resolvetoflat(ff_node * list, map* vmap, transform_parser* const gp, lwx *** stax, size_t * staxa, size_t * staxp, int rawmap, map * rawvars)
 {
 	int pn = *staxp;
 	fatal(lw_ensure, stax, staxa, pn);

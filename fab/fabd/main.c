@@ -30,6 +30,7 @@
 #include "xapi/callstack.h"
 
 #include "xlinux.h"
+#include "narrate.h"
 
 #include "listwise.h"
 #include "listwise/object.h"
@@ -45,7 +46,6 @@
 #include "map.h"
 #include "memblk.h"
 #include "unitstring.h"
-#include "say.h"
 #include "cksum.h"
 
 // write log messages about process creation and signals received
@@ -120,7 +120,7 @@ int main(int argc, char** argv, char ** envp)
 			nodaemon = 1;
 
 #if DEBUG_IPC
-SAYF("fabd[%ld] started\n", (long)getpid());
+  sayf("fabd[%ld] started\n", (long)getpid());
 #endif
 
 	// unblock all signals

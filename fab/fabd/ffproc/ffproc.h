@@ -48,8 +48,8 @@ int ffproc(
 	, const path * const restrict inpath
   , map * const restrict vmap
   , lwx *** const restrict stax
-  , int * const restrict staxa
-  , int * const restrict staxp
+  , size_t * const restrict staxa
+  , size_t * const restrict staxp
   , gn ** restrict first
 ) __attribute__((nonnull(1,2,3,4,5)));
 

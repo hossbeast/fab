@@ -47,20 +47,22 @@ if [[ $valgrind_status -ne 0 || $valgrind_errors -ne 0 || $valgrind_leaks -ne 0 
   # link in valgrind results, clobbering any existing link
   ln -fs $valgrind_out vg.out
 
-  # report
-  echo
-  echo " ========================================="
-  echo "   VALGRIND DETECTED ERRORS (see vg.out)"
-  echo " ========================================="
-  echo "     command : $@"
-  echo "      status : $valgrind_status"
-  echo "      errors : $valgrind_errors"
-  echo "      leaks  : $valgrind_leaks"
-  echo
-  exit 1
+  if [[ $valgrind_errors -ne 0 || $valgrind_leaks -ne 0 ]]; then
+    # report
+    echo
+    echo " ========================================="
+    echo "   VALGRIND DETECTED ERRORS (see vg.out)"
+    echo " ========================================="
+    echo "     command : $@"
+    echo "      status : $valgrind_status"
+    echo "      errors : $valgrind_errors"
+    echo "      leaks  : $valgrind_leaks"
+    echo
+    exit 1
+  fi
 else
   # cleanup results link
   rm vg.out 2>/dev/null
 fi
 
-exit 0
+exit $valgrind_status

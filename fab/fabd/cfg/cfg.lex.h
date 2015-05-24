@@ -2,9 +2,9 @@
 #define cfg_yyHEADER_H 1
 #define cfg_yyIN_HEADER 1
 
-#line 6 "fab/fabd/cfg/cfg.lex.h"
+#line 6 "cfg/cfg.lex.h"
 
-#line 8 "fab/fabd/cfg/cfg.lex.h"
+#line 8 "cfg/cfg.lex.h"
 
 #define  YY_INT_ALIGNED short int
 
@@ -348,8 +348,8 @@ extern int cfg_yylex \
 #undef YY_DECL
 #endif
 
-#line 162 "fab/fabd/cfg/cfg.l"
+#line 162 "cfg/cfg.l"
 
-#line 354 "fab/fabd/cfg/cfg.lex.h"
+#line 354 "cfg/cfg.lex.h"
 #undef cfg_yyIN_HEADER
 #endif /* cfg_yyHEADER_H */

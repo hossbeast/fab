@@ -1,6 +1,6 @@
-#line 2 "fab/fabd/cfg/cfg.lex.c"
+#line 2 "cfg/cfg.lex.c"
 
-#line 4 "fab/fabd/cfg/cfg.lex.c"
+#line 4 "cfg/cfg.lex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -541,7 +541,7 @@ static yyconst flex_int16_t yy_chk[346] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "fab/fabd/cfg/cfg.l"
+#line 1 "cfg/cfg.l"
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -558,7 +558,7 @@ static yyconst flex_int16_t yy_chk[346] =
    
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
-#line 19 "fab/fabd/cfg/cfg.l"
+#line 19 "cfg/cfg.l"
 	#include <stdio.h>
 
 	#include "global.h"
@@ -629,7 +629,7 @@ static yyconst flex_int16_t yy_chk[346] =
 
 
 /* bytes that cannot appear in the input */
-#line 633 "fab/fabd/cfg/cfg.lex.c"
+#line 633 "cfg/cfg.lex.c"
 
 #define INITIAL 0
 #define quoted 1
@@ -884,11 +884,11 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 104 "fab/fabd/cfg/cfg.l"
+#line 104 "cfg/cfg.l"
 
 
  /* single-line comments */
-#line 892 "fab/fabd/cfg/cfg.lex.c"
+#line 892 "cfg/cfg.lex.c"
 
     yylval = yylval_param;
 
@@ -977,148 +977,148 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 107 "fab/fabd/cfg/cfg.l"
+#line 107 "cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 /* multiline comments are nestable */
 case 2:
 YY_RULE_SETUP
-#line 110 "fab/fabd/cfg/cfg.l"
+#line 110 "cfg/cfg.l"
 { LOCWRITE; PUSHSTATE(multilinecomment); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 111 "fab/fabd/cfg/cfg.l"
+#line 111 "cfg/cfg.l"
 { LOCWRITE; POPSTATE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 112 "fab/fabd/cfg/cfg.l"
+#line 112 "cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 113 "fab/fabd/cfg/cfg.l"
+#line 113 "cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 114 "fab/fabd/cfg/cfg.l"
+#line 114 "cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 115 "fab/fabd/cfg/cfg.l"
+#line 115 "cfg/cfg.l"
 { LOCRESET; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 117 "fab/fabd/cfg/cfg.l"
+#line 117 "cfg/cfg.l"
 { return LEX(FILESYSTEM); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 118 "fab/fabd/cfg/cfg.l"
+#line 118 "cfg/cfg.l"
 { return LEX(INVALIDATION); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 119 "fab/fabd/cfg/cfg.l"
+#line 119 "cfg/cfg.l"
 { return LEX(PATH); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 120 "fab/fabd/cfg/cfg.l"
+#line 120 "cfg/cfg.l"
 { return LEX(STAT); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 121 "fab/fabd/cfg/cfg.l"
+#line 121 "cfg/cfg.l"
 { return LEX(CONTENT); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 122 "fab/fabd/cfg/cfg.l"
+#line 122 "cfg/cfg.l"
 { return LEX(NOTIFY); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 123 "fab/fabd/cfg/cfg.l"
+#line 123 "cfg/cfg.l"
 { return LEX(ALWAYS); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 124 "fab/fabd/cfg/cfg.l"
+#line 124 "cfg/cfg.l"
 { return LEX(NEVER); }
 	YY_BREAK
 /* characters with special meaning in both INITIAL and list */
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 127 "fab/fabd/cfg/cfg.l"
+#line 127 "cfg/cfg.l"
 { LOCRESET; return LEX(yytext[0]); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 128 "fab/fabd/cfg/cfg.l"
+#line 128 "cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 129 "fab/fabd/cfg/cfg.l"
+#line 129 "cfg/cfg.l"
 { PUSHSTATE(quoted); return LEX(yytext[0]); }
 	YY_BREAK
 /* characters with special meaning in INITIAL */
 case 19:
 YY_RULE_SETUP
-#line 132 "fab/fabd/cfg/cfg.l"
+#line 132 "cfg/cfg.l"
 { return LEX(yytext[0]); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 133 "fab/fabd/cfg/cfg.l"
+#line 133 "cfg/cfg.l"
 { return LEX(yytext[0]); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 134 "fab/fabd/cfg/cfg.l"
+#line 134 "cfg/cfg.l"
 { return LEX(yytext[0]); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 135 "fab/fabd/cfg/cfg.l"
+#line 135 "cfg/cfg.l"
 {	return LEX(WORD); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 137 "fab/fabd/cfg/cfg.l"
+#line 137 "cfg/cfg.l"
 { POPSTATE; return LEX(yytext[0]); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 138 "fab/fabd/cfg/cfg.l"
+#line 138 "cfg/cfg.l"
 { return LEXV(CREF, 1); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 139 "fab/fabd/cfg/cfg.l"
+#line 139 "cfg/cfg.l"
 { return LEXV(HREF, 2); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 140 "fab/fabd/cfg/cfg.l"
+#line 140 "cfg/cfg.l"
 { return LEXV(HREF, 3); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 141 "fab/fabd/cfg/cfg.l"
+#line 141 "cfg/cfg.l"
 { return LEX(WORD); }
 	YY_BREAK
 case 28:
 /* rule 28 can match eol */
 YY_RULE_SETUP
-#line 143 "fab/fabd/cfg/cfg.l"
+#line 143 "cfg/cfg.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -1129,7 +1129,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 150 "fab/fabd/cfg/cfg.l"
+#line 150 "cfg/cfg.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -1149,7 +1149,7 @@ case YY_STATE_EOF(list):
 case YY_STATE_EOF(varref):
 case YY_STATE_EOF(nofile):
 case YY_STATE_EOF(multilinecomment):
-#line 157 "fab/fabd/cfg/cfg.l"
+#line 157 "cfg/cfg.l"
 {
                                                           while(yyextra->states_n)
                                                             POPSTATE;
@@ -1158,10 +1158,10 @@ case YY_STATE_EOF(multilinecomment):
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 162 "fab/fabd/cfg/cfg.l"
+#line 162 "cfg/cfg.l"
 ECHO;
 	YY_BREAK
-#line 1165 "fab/fabd/cfg/cfg.lex.c"
+#line 1165 "cfg/cfg.lex.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2331,4 +2331,4 @@ void cfg_yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 162 "fab/fabd/cfg/cfg.l"
+#line 162 "cfg/cfg.l"

@@ -39,11 +39,11 @@ int buildscript_mk(
 	, map * const restrict vmap
 	, transform_parser * const gp
 	, lwx *** const restrict stax
-	, int * const restrict staxa
-	, int staxp
+	, size_t * const restrict staxa
+	, size_t staxp
 	, map * const restrict bakemap
 	, ts *** const restrict ts
-	, int * const restrict tsa
+	, size_t * const restrict tsa
 	, const int * const restrict tsw
 	, const char * const restrict dst
 )

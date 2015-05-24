@@ -57,7 +57,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 43 "listwise/liblistwise/transform/transform.y"
+#line 43 "transform/transform.y"
 
 	transform *		transform;
 	operation **  operations;
@@ -72,7 +72,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 76 "listwise/liblistwise/transform/transform.tab.h"
+#line 76 "transform/transform.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

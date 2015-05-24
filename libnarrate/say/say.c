@@ -56,7 +56,7 @@ int narrate_vsayf(narrator * const restrict n, const char * const restrict fmt, 
 	if(n->ps)
 		fatal(dynamic_vsayf, &n->ps, fmt, va);
 	else if(n->bb)
-		fatal(fixed_vsayf, n->bb, n->bz, fmt, va);
+		fatal(fixed_vsayf, n->bb, n->bsz, &n->bz, fmt, va);
 	else if(n->fd)
 		fatal(file_vsayf, n->fd, fmt, va);
 
@@ -68,7 +68,7 @@ int API narrate_sayw(narrator * const restrict n, char * const restrict b, size_
 	if(n->ps)
 		fatal(dynamic_sayw, &n->ps, b, l);
 	else if(n->bb)
-		fatal(fixed_sayw, n->bb, n->bz, b, l);
+		fatal(fixed_sayw, n->bb, n->bsz, &n->bz, b, l);
 	else if(n->fd)
 		fatal(file_sayw, n->fd, b, l);
 

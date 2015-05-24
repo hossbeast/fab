@@ -124,7 +124,7 @@ $oplist_xapi_devel = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,xapi.de
 [ $cobjpaths ] :^ [ $liblistwise_xapi_devel ]
 
 # test sos
-+[$dxunit/../fablib/xunit/tests.fab](
++[$xunit_tests](
 	$rdirs = $dliblistwise;
 	$cc;
 	$dext = [ xapi.devel.pic.o ];

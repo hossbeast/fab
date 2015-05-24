@@ -20,14 +20,15 @@
 
 #include <sys/types.h>
 
-struct pstring;						// pstring.h
+struct pstring;           // pstring.h
 
 typedef struct narrator
 {
-	struct pstring * ps;		// write to pstring
-	char * bb;							// write to fixed-size buffer
-	size_t bz;							// buffer size
-	int fd;									// write to file descriptor
+  struct pstring * ps;    // write to pstring
+  char * bb;              // write to fixed-size buffer
+  size_t bsz;             // buffer size
+  size_t bz;              // buffer offset
+  int fd;                 // write to file descriptor
 } narrator;
 
 /// narrator

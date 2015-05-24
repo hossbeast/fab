@@ -348,21 +348,21 @@ size_t gn_invalid_reasons_write(gn * const gn, char * dst, const size_t sz)
 	if(gn->invalid)
 	{
 		if(gn->invalid & GN_INVALIDATION_NXFILE)
-			z += znprintf(dst + z, sz - z, "file-not-found");
+			z += znloadf(dst + z, sz - z, "file-not-found");
 		if(gn->invalid & GN_INVALIDATION_CHANGED)
-			z += znprintf(dst + z, sz - z, "%sfile-changed", z ? ", " : "");
+			z += znloadf(dst + z, sz - z, "%sfile-changed", z ? ", " : "");
 		if(gn->invalid & GN_INVALIDATION_SOURCES)
-			z += znprintf(dst + z, sz - z, "%ssources-invalid", z ? ", " : "");
+			z += znloadf(dst + z, sz - z, "%ssources-invalid", z ? ", " : "");
 		if(gn->invalid & GN_INVALIDATION_USER)
-			z += znprintf(dst + z, sz - z, "%suser-invalidated", z ? ", " : "");
+			z += znloadf(dst + z, sz - z, "%suser-invalidated", z ? ", " : "");
 		if(gn->invalid & GN_INVALIDATION_DISCOVERY)
-			z += znprintf(dst + z, sz - z, "%sdiscovery", z ? ", " : "");
+			z += znloadf(dst + z, sz - z, "%sdiscovery", z ? ", " : "");
 		if(gn->invalid & GN_INVALIDATION_FABRICATE)
-			z += znprintf(dst + z, sz - z, "%sfabricate", z ? ", " : "");
+			z += znloadf(dst + z, sz - z, "%sfabricate", z ? ", " : "");
 	}
 	else
 	{
-		z += znprintf(dst + z, sz - z, "up-to-date");
+		z += znloadf(dst + z, sz - z, "up-to-date");
 	}
 
 	return z;

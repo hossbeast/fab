@@ -53,14 +53,14 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 48 "fab/fabd/ff/ff.var.y"
+#line 48 "ff/ff.var.y"
 
 	struct ff_node*			node;
 
 
 
 /* Line 1676 of yacc.c  */
-#line 64 "fab/fabd/ff/ff.var.tab.h"
+#line 64 "ff/ff.var.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

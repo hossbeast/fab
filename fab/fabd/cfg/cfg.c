@@ -56,6 +56,7 @@ static void cfg_freefile(cfg_file * cfg)
 {
 	if(cfg)
 	{
+    int x;
 		for(x = 0; x < cfg->fsl; x++)
 			filesystem_free(cfg->fs[x]);
 
@@ -179,7 +180,7 @@ static int parse(const cfg_parser * const p, char* b, int sz, const char * const
 	if(pp.cfg)
 	{
 		// create copy of the path
-		fatal(ixstrdup, &pp.cfg->canpath, path);
+//		fatal(ixstrdup, &pp.cfg->canpath, path);
 
 		// return the cfg
 		if(cfg)

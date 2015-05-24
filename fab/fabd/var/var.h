@@ -161,7 +161,7 @@ int var_clone(map * const restrict amap, map ** const restrict bmap)
 // RETURNS
 //  the definition, or listwise_identity if the variable is not defined, or has an empty definition stack
 //
-int var_access(const map * const restrict vmap, const char * restrict s, lwx *** const restrict stax, int * const restrict staxa, int * const restrict staxp, lwx ** const restrict ls)
+int var_access(const map * const restrict vmap, const char * restrict s, lwx *** const restrict stax, size_t * const restrict staxa, size_t * const restrict staxp, lwx ** const restrict ls)
 	__attribute__((nonnull));
 
 #undef restrict

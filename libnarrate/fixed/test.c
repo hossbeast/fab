@@ -18,10 +18,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "pstring.h"
-
 #include "internal.h"
-#include "dynamic.h"
+#include "fixed.h"
 
 #include "macros.h"
 
@@ -31,7 +29,7 @@ struct narrate_test;
 
 typedef struct narrate_test
 {
-	xunit_test;
+  xunit_test;
 } narrate_test;
 
 #define restrict __restrict
@@ -40,15 +38,15 @@ typedef struct narrate_test
 // static
 //
 
-static int call_vsayf(struct pstring ** restrict ps, const char * const restrict fmt, ...)
+static int call_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, ...)
 {
-	va_list va;
-	va_start(va, fmt);
+  va_list va;
+  va_start(va, fmt);
 
-	fatal(dynamic_vsayf, ps, fmt, va);
+  fatal(fixed_vsayf, dst, sz, szo, fmt, va);
 
 finally:
-	va_end(va);
+  va_end(va);
 coda;
 }
 
@@ -56,69 +54,86 @@ coda;
 // tests
 //
 
-// simple test designed to exercise dynamic writer functionality
-static int test_small_entry(const narrate_test * test)
+// does not fill the entire buffer
+static int entry_small(const narrate_test * test)
 {
-	pstring * ps = 0;
+  char buf[16];
+  size_t sz = sizeof(buf);
+  size_t szo = 0;
 
-	// test input 
-	char * input = "small";
+  // test input 
+  char * input = "small";
 
-	// narrate
-	fatal(dynamic_sayw, &ps, MMS("sma"));
-	fatal(call_vsayf, &ps, "%s", "ll");
+  // narrate
+  fatal(fixed_sayw, buf, sz, &szo, MMS("sma"));
+  fatal(call_vsayf, buf, sz, &szo, "%s", "ll");
 
-	// verify
-	if(ps == 0)
-		failf(XUNIT_FAIL, "expected allocated, actual not allocated");
+  // verify
+  if(szo >= sz)
+    failf(XUNIT_FAIL, "expected in-range (0, %zu], actual : %zu", sz, szo);
 
-	if(ps->l != strlen(input))
-		failf(XUNIT_FAIL, "expected size : %d, actual size : %d", strlen(input), ps->l);
+  if(szo != strlen(input))
+    failf(XUNIT_FAIL, "expected written : %d, actual written : %d", strlen(input), szo);
 
-	if(memcmp(ps->s, input, strlen(input)))
-		failf(XUNIT_FAIL, "expected value : %s, actual value : %s", input, ps->s);
+  if(memcmp(buf, input, strlen(input)))
+    failf(XUNIT_FAIL, "expected value : %s, actual value : %s", input, buf);
 
-finally:
-	psfree(ps);
-coda;
+  finally : coda;
 }
 
-// exercise dynamic writer functionality across reallocations
-static int test_large_entry(const narrate_test * test)
+// fills the buffer exactly
+static int entry_boundary(const narrate_test * test)
 {
-	pstring * ps = 0;
+  char buf[6];
+  size_t sz = sizeof(buf);
+  size_t szo = 0;
 
-	// test input part
-#define VECTOR "abcdefghijklmnopqrstuvwxyz012345"	// 32 bytes
+  // test input 
+  char * input = "small";
 
-	// test input
-	char * input = VECTOR VECTOR VECTOR VECTOR;
+  // narrate
+  fatal(fixed_sayw, buf, sz, &szo, MMS("sma"));
+  fatal(call_vsayf, buf, sz, &szo, "%s", "ll");
 
-	// narrate
-	fatal(dynamic_sayw, &ps, MMS(VECTOR));
-	fatal(call_vsayf, &ps, "%s", VECTOR);
-	fatal(dynamic_sayw, &ps, MMS(VECTOR));
-	fatal(call_vsayf, &ps, "%s", VECTOR);
+  // verify
+  if(szo >= sz)
+    failf(XUNIT_FAIL, "expected in-range (0, %zu], actual : %zu", sz, szo);
 
-	// verify
-	if(ps == 0)
-		failf(XUNIT_FAIL, "expected allocated, actual not allocated");
+  if(szo != strlen(input))
+    failf(XUNIT_FAIL, "expected value : %s, actual value : %.*s", input, (int)szo, buf);
 
-	if(ps->l != strlen(input))
-		failf(XUNIT_FAIL, "expected size : %d, actual size : %d", strlen(input), ps->l);
+  if(memcmp(buf, input, strlen(input)))
+    failf(XUNIT_FAIL, "expected value : %s, actual value : %.*s", input, (int)szo, buf);
 
-	if(memcmp(ps->s, input, strlen(input)))
-		failf(XUNIT_FAIL, "expected value : %s, actual value : %s", input, ps->s);
+  finally : coda;
+}
 
-finally:
-	psfree(ps);
-coda;
+// overflows the specified buffer
+static int entry_overflow(const narrate_test * test)
+{
+  char buf[128];
+  size_t sz = sizeof(buf);
+  size_t szo = 0;
+
+  // narrate
+  int x;
+  for(x = 0; x < 10; x++)
+  {
+    fatal(fixed_sayw, buf, sz, &szo, MMS("abcdefghijklmnopqrstuvwxyz0123456789"));
+    fatal(call_vsayf, buf, sz, &szo, "%s", "ll");
+  }
+
+  // verify
+  if(szo != (sz - 1))
+    failf(XUNIT_FAIL, "expected written %zu, actual : %zu", sz, szo);
+
+  finally : coda;
 }
 
 /* tests */
-
 xunit_unit xunit = { tests : (xunit_test*[]) {
-		  (narrate_test[]) {{ .entry = test_small_entry }}
-		, (narrate_test[]) {{ .entry = test_large_entry }}
-	}
+      (narrate_test[]) {{ .entry = entry_small }}
+    , (narrate_test[]) {{ .entry = entry_boundary }}
+    , (narrate_test[]) {{ .entry = entry_overflow }}
+  }
 };

@@ -184,8 +184,8 @@ int dsc_exec_specific(gn *** list, size_t listl, map * vmap, transform_parser * 
 	logf(L_DSCEXEC, "discovery @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
 	logf(L_DSCINFO, "discovery -- for %3d nodes", n);
 
-	int newn = 0;
-	int newr = 0;
+	size_t newn = 0;
+	size_t newr = 0;
 	fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
 
 	logf(L_DSCEXEC, "discovery -- for %3d nodes found %3d nodes and %3d edges", n, newn, newr);
@@ -237,8 +237,8 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, size_
 		logf(L_DSCEXEC, "discovery @ " XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
 		logf(L_DSCINFO, "discovery %2d for %3d nodes", 0, n);
 
-		int newn = 0;
-		int newr = 0;
+		size_t newn = 0;
+		size_t newr = 0;
 		fatal(dsc_execwave, vmap, gp, stax, staxa, staxp, *ts, tsl, tsw, &newn, &newr, 0);
 
 		// sum discovered objects

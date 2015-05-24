@@ -66,7 +66,7 @@
 /* "%code top" blocks.  */
 
 /* Line 171 of yacc.c  */
-#line 18 "fab/fabd/ff/ff.list.y"
+#line 18 "ff/ff.list.y"
 
 	#include <stdio.h>
 	#include <stdint.h>
@@ -88,7 +88,7 @@
 
 
 /* Line 171 of yacc.c  */
-#line 92 "fab/fabd/ff/ff.list.tab.c"
+#line 92 "ff/ff.list.tab.c"
 /* Substitute the variable and function names.  */
 #define yyparse         ff_list_yyparse
 #define yylex           ff_list_yylex
@@ -103,7 +103,7 @@
 
 
 /* Line 189 of yacc.c  */
-#line 107 "fab/fabd/ff/ff.list.tab.c"
+#line 107 "ff/ff.list.tab.c"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -142,14 +142,14 @@ typedef union YYSTYPE
 {
 
 /* Line 214 of yacc.c  */
-#line 47 "fab/fabd/ff/ff.list.y"
+#line 47 "ff/ff.list.y"
 
 	struct ff_node*			node;
 
 
 
 /* Line 214 of yacc.c  */
-#line 153 "fab/fabd/ff/ff.list.tab.c"
+#line 153 "ff/ff.list.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -174,7 +174,7 @@ typedef struct YYLTYPE
 
 
 /* Line 264 of yacc.c  */
-#line 178 "fab/fabd/ff/ff.list.tab.c"
+#line 178 "ff/ff.list.tab.c"
 
 #ifdef short
 # undef short
@@ -1114,101 +1114,101 @@ yydestruct (yymsg, yytype, yyvaluep, yylocationp, scanner, parm)
       case 14: /* "statements" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1122 "fab/fabd/ff/ff.list.tab.c"
+#line 1122 "ff/ff.list.tab.c"
 	break;
       case 15: /* "list" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1131 "fab/fabd/ff/ff.list.tab.c"
+#line 1131 "ff/ff.list.tab.c"
 	break;
       case 16: /* "listparts" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1140 "fab/fabd/ff/ff.list.tab.c"
+#line 1140 "ff/ff.list.tab.c"
 	break;
       case 17: /* "listpart" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1149 "fab/fabd/ff/ff.list.tab.c"
+#line 1149 "ff/ff.list.tab.c"
 	break;
       case 18: /* "varref" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1158 "fab/fabd/ff/ff.list.tab.c"
+#line 1158 "ff/ff.list.tab.c"
 	break;
       case 19: /* "transform" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1167 "fab/fabd/ff/ff.list.tab.c"
+#line 1167 "ff/ff.list.tab.c"
 	break;
       case 20: /* "transformparts" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1176 "fab/fabd/ff/ff.list.tab.c"
+#line 1176 "ff/ff.list.tab.c"
 	break;
       case 21: /* "nofile" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1185 "fab/fabd/ff/ff.list.tab.c"
+#line 1185 "ff/ff.list.tab.c"
 	break;
       case 22: /* "nofileparts" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1194 "fab/fabd/ff/ff.list.tab.c"
+#line 1194 "ff/ff.list.tab.c"
 	break;
       case 23: /* "word" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1203 "fab/fabd/ff/ff.list.tab.c"
+#line 1203 "ff/ff.list.tab.c"
 	break;
       case 24: /* "statement" */
 
 /* Line 1000 of yacc.c  */
-#line 67 "fab/fabd/ff/ff.list.y"
+#line 67 "ff/ff.list.y"
 	{ ffn_free((yyvaluep->node)); };
 
 /* Line 1000 of yacc.c  */
-#line 1212 "fab/fabd/ff/ff.list.tab.c"
+#line 1212 "ff/ff.list.tab.c"
 	break;
 
       default:
@@ -1358,11 +1358,11 @@ YYLTYPE yylloc;
 /* User initialization code.  */
 
 /* Line 1242 of yacc.c  */
-#line 45 "fab/fabd/ff/ff.list.y"
+#line 45 "ff/ff.list.y"
 { memset(&yylloc, 0, sizeof(yylloc)); }
 
 /* Line 1242 of yacc.c  */
-#line 1366 "fab/fabd/ff/ff.list.tab.c"
+#line 1366 "ff/ff.list.tab.c"
   yylsp[0] = yylloc;
 
   goto yysetstate;
@@ -1550,7 +1550,7 @@ yyreduce:
         case 2:
 
 /* Line 1455 of yacc.c  */
-#line 72 "fab/fabd/ff/ff.list.y"
+#line 72 "ff/ff.list.y"
     {
     YYU_FATAL(ffn_mknode, &parm->ffn, &(yyloc), FFN_STMTLIST, (yyvsp[(1) - (1)].node));
   ;}
@@ -1559,7 +1559,7 @@ yyreduce:
   case 3:
 
 /* Line 1455 of yacc.c  */
-#line 76 "fab/fabd/ff/ff.list.y"
+#line 76 "ff/ff.list.y"
     {
     YYU_FATAL(ffn_mknode, &parm->ffn, &(yyloc), FFN_STMTLIST, (void*)0);
 	;}
@@ -1568,7 +1568,7 @@ yyreduce:
   case 4:
 
 /* Line 1455 of yacc.c  */
-#line 83 "fab/fabd/ff/ff.list.y"
+#line 83 "ff/ff.list.y"
     {
     (yyval.node) = ffn_addchain((yyvsp[(1) - (2)].node), (yyvsp[(2) - (2)].node));
   ;}
@@ -1577,7 +1577,7 @@ yyreduce:
   case 6:
 
 /* Line 1455 of yacc.c  */
-#line 90 "fab/fabd/ff/ff.list.y"
+#line 90 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_LIST, (yyvsp[(2) - (3)].node)      , (void*)0, (void*)0);
 	;}
@@ -1586,7 +1586,7 @@ yyreduce:
   case 7:
 
 /* Line 1455 of yacc.c  */
-#line 94 "fab/fabd/ff/ff.list.y"
+#line 94 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_LIST, (void*)0, (void*)0, (void*)0);
 	;}
@@ -1595,7 +1595,7 @@ yyreduce:
   case 8:
 
 /* Line 1455 of yacc.c  */
-#line 98 "fab/fabd/ff/ff.list.y"
+#line 98 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_LIST, (yyvsp[(2) - (5)].node)      , (yyvsp[(4) - (5)].node)      , (void*)0);
 	;}
@@ -1604,7 +1604,7 @@ yyreduce:
   case 9:
 
 /* Line 1455 of yacc.c  */
-#line 102 "fab/fabd/ff/ff.list.y"
+#line 102 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_LIST, (void*)0, (yyvsp[(3) - (4)].node), (void*)0);
 	;}
@@ -1613,7 +1613,7 @@ yyreduce:
   case 10:
 
 /* Line 1455 of yacc.c  */
-#line 106 "fab/fabd/ff/ff.list.y"
+#line 106 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_LIST, (yyvsp[(2) - (5)].node)      , (void*)0, (yyvsp[(4) - (5)].node));
 	;}
@@ -1622,7 +1622,7 @@ yyreduce:
   case 11:
 
 /* Line 1455 of yacc.c  */
-#line 110 "fab/fabd/ff/ff.list.y"
+#line 110 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_LIST, (void*)0, (void*)0, (yyvsp[(3) - (4)].node));
 	;}
@@ -1631,7 +1631,7 @@ yyreduce:
   case 12:
 
 /* Line 1455 of yacc.c  */
-#line 117 "fab/fabd/ff/ff.list.y"
+#line 117 "ff/ff.list.y"
     {
 		(yyval.node) = ffn_addchain((yyvsp[(1) - (2)].node), (yyvsp[(2) - (2)].node));
 	;}
@@ -1640,7 +1640,7 @@ yyreduce:
   case 18:
 
 /* Line 1455 of yacc.c  */
-#line 132 "fab/fabd/ff/ff.list.y"
+#line 132 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_VARREF, (yyvsp[(2) - (2)].node), (void*)0);
 	;}
@@ -1649,7 +1649,7 @@ yyreduce:
   case 19:
 
 /* Line 1455 of yacc.c  */
-#line 136 "fab/fabd/ff/ff.list.y"
+#line 136 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_VARREF, (yyvsp[(3) - (3)].node), FFN_SYSVAR);
 	;}
@@ -1658,7 +1658,7 @@ yyreduce:
   case 20:
 
 /* Line 1455 of yacc.c  */
-#line 143 "fab/fabd/ff/ff.list.y"
+#line 143 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_TRANSFORM, (yyvsp[(1) - (1)].node));
 	;}
@@ -1667,7 +1667,7 @@ yyreduce:
   case 21:
 
 /* Line 1455 of yacc.c  */
-#line 150 "fab/fabd/ff/ff.list.y"
+#line 150 "ff/ff.list.y"
     {
 		(yyval.node) = ffn_addchain((yyvsp[(1) - (2)].node), (yyvsp[(2) - (2)].node));
 	;}
@@ -1676,7 +1676,7 @@ yyreduce:
   case 23:
 
 /* Line 1455 of yacc.c  */
-#line 158 "fab/fabd/ff/ff.list.y"
+#line 158 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_NOFILE, (yyvsp[(2) - (2)].node));
 	;}
@@ -1685,7 +1685,7 @@ yyreduce:
   case 24:
 
 /* Line 1455 of yacc.c  */
-#line 165 "fab/fabd/ff/ff.list.y"
+#line 165 "ff/ff.list.y"
     {
 		(yyval.node) = ffn_addchain((yyvsp[(1) - (3)].node), (yyvsp[(3) - (3)].node));
 	;}
@@ -1694,7 +1694,7 @@ yyreduce:
   case 26:
 
 /* Line 1455 of yacc.c  */
-#line 173 "fab/fabd/ff/ff.list.y"
+#line 173 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_WORD);
 	;}
@@ -1703,7 +1703,7 @@ yyreduce:
   case 27:
 
 /* Line 1455 of yacc.c  */
-#line 177 "fab/fabd/ff/ff.list.y"
+#line 177 "ff/ff.list.y"
     {
 		YYU_FATAL(ffn_mknode, &(yyval.node), &(yyloc), FFN_LF);
 	;}
@@ -1712,7 +1712,7 @@ yyreduce:
 
 
 /* Line 1455 of yacc.c  */
-#line 1716 "fab/fabd/ff/ff.list.tab.c"
+#line 1716 "ff/ff.list.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);

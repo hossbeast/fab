@@ -26,15 +26,15 @@
 // PARAMETERS
 //  dst - buffer to write to
 //  sz  - size of dst
-//  [z] - incremented by the number of bytes written, excluding the terminating null byte
+//  szo - offset at which to write, and incremented by number of bytes written
 //
 
 #define restrict __restrict
 
-int fixed_vsayf(char * const restrict dst, size_t sz, const char * const restrict fmt, va_list va)
+int fixed_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-int fixed_sayw(char * const restrict dst, size_t sz, char * const restrict b, size_t l)
+int fixed_sayw(char * const restrict dst, size_t sz, size_t * const restrict szo, char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
 #undef restrict

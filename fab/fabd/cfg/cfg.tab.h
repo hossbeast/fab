@@ -61,7 +61,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 43 "fab/fabd/cfg/cfg.y"
+#line 43 "cfg/cfg.y"
 
 	struct cfg_file *	cfg;
 	struct filesystem *	fs;
@@ -78,7 +78,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 82 "fab/fabd/cfg/cfg.tab.h"
+#line 82 "cfg/cfg.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

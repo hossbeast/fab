@@ -49,11 +49,11 @@ int dep_process(
 	, struct map * const restrict vmap
 	, struct transform_parser * const gp
 	, struct lwx *** const restrict stax
-	, int * const restrict staxa
-	, int staxp
+	, size_t * const restrict staxa
+	, size_t staxp
 	, struct gn ** const restrict first
-	, int * const restrict newn
-	, int * const restrict newr
+	, size_t * const restrict newn
+	, size_t * const restrict newr
 )
 	__attribute__((nonnull(1,3,4,5,6)));
 

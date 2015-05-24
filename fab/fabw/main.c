@@ -28,12 +28,12 @@
 
 #include "xlinux.h"
 #include "pstring.h"
+#include "narrate.h"
 
 #include "global.h"
 
 #include "parseint.h"
 #include "macros.h"
-#include "say.h"
 
 #ifndef DEBUG_IPC
 # define DEBUG_IPC 0
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 	pstring * ptmp = 0;
 
 #if DEBUG_IPC
-	SAYF("fabw[%lu] started\n", (long)getpid());
+	sayf("fabw[%lu] started\n", (long)getpid());
 #endif
 
 	// unblock all signals

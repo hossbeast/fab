@@ -54,12 +54,12 @@ static int dep_add_single(
 	, map * vmap
 	, transform_parser * const gp
 	, lwx *** stax
-	, int * staxa
-	, int staxp
+	, size_t * staxa
+	, size_t staxp
 	, int pl
 	, gn ** first
-	, int * newnp
-	, int * newrp
+	, size_t * newnp
+	, size_t * newrp
 )
 {
 	int i;
@@ -180,12 +180,12 @@ static int dep_add_multi(
 	, map * vmap
 	, transform_parser * const gp
 	, lwx *** stax
-	, int * staxa
-	, int staxp
+	, size_t * staxa
+	, size_t staxp
 	, int pl
 	, gn ** first
-	, int * newnp
-	, int * newrp
+	, size_t * newnp
+	, size_t * newrp
 )
 {
 	// newa tracks whether the left-hand-side of a dependency references a newly-created node
@@ -242,7 +242,7 @@ static int dep_add_multi(
 
 		// resolve the right-hand side in the context of $<
 		fatal(var_set, vmap, "<", (*stax)[pli], 0, 1, 0);
-		int pn = pr;
+		size_t pn = pr;
 		fatal(list_resolveflat, ffn->feeds, vmap, gp, stax, staxa, &pn, 0, 0);
 
 		for(i = 0; i < lwx_rows((*stax)[pl], x); i++)
@@ -351,15 +351,15 @@ int dep_process(
 	, map * const vmap
 	, transform_parser * const gp
 	, lwx *** const stax
-	, int * const staxa
-	, int staxp
+	, size_t * const staxa
+	, size_t staxp
 	, gn ** const first
-	, int * const newn
-	, int * const newr
+	, size_t * const newn
+	, size_t * const newr
 )
 {
 	// resolve the left-hand side
-	int pn = staxp;
+	size_t pn = staxp;
 	fatal(list_resolveflat, ffn->needs, vmap, gp, stax, staxa, &staxp, 0, 0);
 
 	if(ffn->flags & FFN_SINGLE)

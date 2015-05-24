@@ -19,18 +19,17 @@
 #include <string.h>
 
 #include "xlinux.h"
+#include "narrate.h"
 
 #include "listwise.h"
 #include "listwise/lstack.h"
 
 #include "global.h"
-
 #include "parseint.h"
 #include "macros.h"
 #include "map.h"
 #include "memblk.h"
 #include "unitstring.h"
-#include "say.h"
 #include "cksum.h"
 
 #define restrict __restrict
@@ -323,38 +322,38 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 	space;																													\
 })
 
-		SAYF(" %-40s | %-13s | %-11s | %-11s | %s\n", "id", "type", "degree", "invalidated", "reason");
+		sayf(" %-40s | %-13s | %-11s | %-11s | %s\n", "id", "type", "degree", "invalidated", "reason");
 		for(x = 0; x < queriesl; x++)
 		{
 			// id
 			if((*queries[x])->idstringl > 40)
 			{
-				SAYF(" .. %-37s", (*queries[x])->idstring + ((*queries[x])->idstringl - 37));
+				sayf(" .. %-37s", (*queries[x])->idstring + ((*queries[x])->idstringl - 37));
 			}
 			else
 			{
-				SAYF(" %-40s", (*queries[x])->idstring);
+				sayf(" %-40s", (*queries[x])->idstring);
 			}
 
 			// type
-			SAYF(" | %-13s", GN_TYPE_STR((*queries[x])->type));
+			sayf(" | %-13s", GN_TYPE_STR((*queries[x])->type));
 
 			// degree
-			SAYF(" | %11s", CENTER(11, "%-d/%d", (*queries[x])->needs.l, (*queries[x])->feeds.l));
+			sayf(" | %11s", CENTER(11, "%-d/%d", (*queries[x])->needs.l, (*queries[x])->feeds.l));
 
 			// invalid
-			SAYF(" | %-11s", CENTER(11, "%s", (*queries[x])->invalid ? "x" : ""));
+			sayf(" | %-11s", CENTER(11, "%s", (*queries[x])->invalid ? "x" : ""));
 
 			// reason
-			SAYS(" | ");
+			says(" | ");
 			if((*queries[x])->type & GN_TYPE_HASFILE)
 			{
 				gn_invalid_reasons_write((*queries[x]), space, sizeof(space));
-				SAYS(space);
+				says(space);
 			}
-			SAYF("\n");
+			sayf("\n");
 		}
-		SAYF(" %d nodes\n", queriesl);
+		sayf(" %d nodes\n", queriesl);
 	}
 
 	if(g_args->selectors_arediscovery)

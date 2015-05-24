@@ -29,16 +29,16 @@
 // public
 //
 
-int fixed_vsayf(char * const restrict dst, size_t sz, const char * const restrict fmt, va_list va)
+int fixed_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, va_list va)
 {
-	znvloadf(dst, sz, fmt, va);
+  *szo += znvloadf(dst + *szo, sz - *szo, fmt, va);
 
-	finally : coda;
+  finally : coda;
 }
 
-int fixed_sayw(char * const restrict dst, size_t sz, char * const restrict b, size_t l)
+int fixed_sayw(char * const restrict dst, size_t sz, size_t * const restrict szo, char * const restrict b, size_t l)
 {
-	znloadw(dst, sz, b, l);
+  *szo += znloadw(dst + *szo, sz - *szo, b, l);
 
-	finally : coda;
+  finally : coda;
 }

@@ -86,7 +86,7 @@ int list_renderto(lwx * const restrict ls, pstring ** const restrict ps)
 //  staxp - offset to next free stax
 //  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolve(ff_node * restrict list, map * restrict vmap, transform_parser * const restrict gp, lwx *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
+int list_resolve(ff_node * restrict list, map * restrict vmap, transform_parser * const restrict gp, lwx *** restrict stax, size_t * restrict staxa, size_t * restrict staxp, int rawmap, map * rawvars)
 	__attribute__((nonnull(1, 2, 3, 4, 5, 6)));
 
 /// list_resolveto
@@ -103,7 +103,7 @@ int list_resolve(ff_node * restrict list, map * restrict vmap, transform_parser 
 //  staxp - offset to next free stax
 //  raw   - if true, interpret VARREF's as having a raw value (tue for FFN_FORMULA) instead of a container
 //
-int list_resolveto(ff_node * restrict list, map * restrict vmap, transform_parser * const restrict gp, lwx *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
+int list_resolveto(ff_node * restrict list, map * restrict vmap, transform_parser * const restrict gp, lwx *** restrict stax, size_t * restrict staxa, size_t * restrict staxp, int rawmap, map * rawvars)
 	__attribute__((nonnull(1, 2, 3, 4, 5, 6)));
 
 /// list_resolveflat
@@ -111,7 +111,7 @@ int list_resolveto(ff_node * restrict list, map * restrict vmap, transform_parse
 // list_resolve
 // list_flatten
 //
-int list_resolveflat(ff_node * restrict list, map * restrict vmap, transform_parser * const restrict gp, lwx *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
+int list_resolveflat(ff_node * restrict list, map * restrict vmap, transform_parser * const restrict gp, lwx *** restrict stax, size_t * restrict staxa, size_t * restrict staxp, int rawmap, map * rawvars)
 	__attribute__((nonnull(1, 2, 3, 4, 5, 6)));
 
 /// list_resolvetoflat
@@ -119,7 +119,7 @@ int list_resolveflat(ff_node * restrict list, map * restrict vmap, transform_par
 // list_resolveto
 // list_flatten
 //
-int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, transform_parser * const restrict gp, lwx *** restrict stax, int * restrict staxa, int * restrict staxp, int rawmap, map * rawvars)
+int list_resolvetoflat(ff_node * restrict list, map * restrict vmap, transform_parser * const restrict gp, lwx *** restrict stax, size_t * restrict staxa, size_t * restrict staxp, int rawmap, map * rawvars)
 	__attribute__((nonnull(1, 2, 3, 4, 5, 6)));
 
 #undef restrict

@@ -78,7 +78,7 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-s
 [ @devel.xapi ] : [ $libnarrate_xapi_devel ]
 
 # xunit tests
-+[$dxunit/../fablib/xunit.fab]($rdirs = $*; $cc; $cflags; $xunit = $xunit_xapi_devel; -$xunit_sos)
++[$xunit_tests]($rdirs = $*; -$xunit_sos)
 
 # xunit test dependencies
 [ $xunit_sos ] : [ $libpstring_xapi_devel ]

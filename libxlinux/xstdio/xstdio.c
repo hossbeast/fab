@@ -23,7 +23,7 @@
 
 #define restrict __restrict
 
-int xvdprintf(int fd, const char * const restrict fmt, va_list va)
+int API xvdprintf(int fd, const char * const restrict fmt, va_list va)
 {
 	fatalize(errno, vdprintf, fd, fmt, va);
 

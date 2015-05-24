@@ -109,7 +109,7 @@ int bp_exec();
 // SUMMARY
 //  prepare the buildplan for execution by writing all of the formulas to a set of temp files
 //
-int bp_prepare_stage(bp * bp, int stage, transform_parser * const gp, lwx *** stax, int * staxa, int staxp, ts *** ts, int * tsl, int * tsa)
+int bp_prepare_stage(bp * bp, int stage, transform_parser * const gp, lwx *** stax, size_t * staxa, size_t staxp, ts *** ts, size_t * tsl, size_t * tsa)
 	__attribute__((nonnull));
 
 /// bp_harvest

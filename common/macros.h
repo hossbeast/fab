@@ -39,28 +39,29 @@
 // z += znloadf(dst + z, sz - z, fmt, ...)
 // z += znloadf(dst + z, sz - z, fmt, ...)
 //
-#define znloadf(dst, sz, fmt, ...) ({											\
-	size_t __z = 0;																					\
-	if(sz)																									\
-	{																												\
-		__z = MIN(sz, snprintf(dst, sz, fmt, ##__VA_ARGS__));	\
-	}																												\
-	__z; 																										\
+#define znloadf(dst, sz, fmt, ...) ({                         \
+  size_t __z = 0;                                             \
+  if(sz)                                                      \
+  {                                                           \
+    __z = MIN(sz - 1, snprintf(dst, sz, fmt, ##__VA_ARGS__)); \
+  }                                                           \
+  __z;                                                        \
 })
 
-#define znvloadf(dst, sz, fmt, va) ({				\
-	size_t __z = 0;														\
-	if(sz)																		\
-	{																					\
-		__z = vsnprintf(dst, sz, fmt, va);			\
-	}																					\
-	__z;																			\
+#define znvloadf(dst, sz, fmt, va) ({                 \
+  size_t __z = 0;                                     \
+  if(sz)                                              \
+  {                                                   \
+    __z = MIN(sz - 1, vsnprintf(dst, sz, fmt, va));   \
+  }                                                   \
+  __z;                                                \
 })
 
-#define znloadw(dst, sz, b, bz) ({					\
-	size_t __z = MIN(sz, bz);									\
-	memcpy(dst, b, __z);											\
-	__z;																			\
+#define znloadw(dst, sz, b, bz) ({            \
+  size_t __z = MIN(sz - 1, bz);               \
+  memcpy(dst, b, __z);                        \
+  ((char*)dst)[__z] = 0;                      \
+  __z;                                        \
 })
 
 /// sentinel
@@ -68,11 +69,11 @@
 // SUMMARY
 //  counts the number of elements in an array terminated by a zeroed-entry
 //
-#define sentinel(x) ({																\
-	typeof((x)[0]) * p = (x);														\
-	while(memcmp(p, (char[sizeof(*p)]){}, sizeof(*p)))	\
-		p++;																							\
-	p - (x);																						\
+#define sentinel(x) ({                                \
+  typeof((x)[0]) * p = (x);                           \
+  while(memcmp(p, (char[sizeof(*p)]){}, sizeof(*p)))  \
+    p++;                                              \
+  p - (x);                                            \
 })
 
 /// NARGS

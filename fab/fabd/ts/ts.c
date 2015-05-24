@@ -57,7 +57,7 @@ void ts_reset(ts * ts)
 		ts->stde_txt->l		= 0;
 }
 
-int ts_ensure(ts *** ts, int * tsa, int tsl)
+int ts_ensure(ts *** ts, size_t * tsa, size_t tsl)
 {
 	int x;
 
@@ -79,7 +79,7 @@ int ts_ensure(ts *** ts, int * tsa, int tsl)
 	finally : coda;
 }
 
-int ts_execwave(ts ** ts, int n, int * waveid, int waveno, uint64_t hi, int * bad)
+int ts_execwave(ts ** ts, int n, size_t * waveid, int waveno, uint64_t hi, int * bad)
 {
 	int x;
 	int j;
