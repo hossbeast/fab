@@ -70,11 +70,13 @@ int op_exec(operation* o, lwx * lx, int** ovec, int* ovec_len, void ** udata)
 		fatal(lstack_getstring, lx, 0, x, &ss, &ssl);
 
 		// parse as time_t
-		time_t T;
-		if(parseuint(ss, SCNu32, 0, UINT32_MAX, 1, 10, &T, 0) == 0)
+    uint32_t u32 = 0;
+		if(parseuint(ss, SCNu32, 0, UINT32_MAX, 1, 10, &u32, 0) == 0)
 		{
+      time_t T = (time_t)u32;
+
 			// format to string
-			struct tm tm;
+			struct tm tm = {};
 			strftime(space, sizeof(space), fmt, localtime_r(&T, &tm));
 
 			// rewrite the row

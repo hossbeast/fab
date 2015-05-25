@@ -27,6 +27,7 @@
 #include "args.h"
 
 #include "xlinux.h"
+#include "macros.h"
 #include "map.h"
 #include "cksum.h"
 

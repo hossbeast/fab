@@ -21,44 +21,43 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-struct map;					// map.h
-struct gn;					// gn.h
-struct ff_parser;		// ff.h
-struct ts;					// ts.h
+struct map;         // map.h
+struct gn;          // gn.h
+struct ff_parser;   // ff.h
+struct ts;          // ts.h
 
 #define restrict __restrict
 
 typedef struct handler_context
 {
-	struct pstring *			ptmp;							// temp space
-	pid_t									fab_pids[3];			// most recent fab pids
+  struct pstring *      tmp;              // reusable temp space
 
-	struct gn ***					fabrications;			// node lists
-	size_t								fabricationsl;
-	struct gn ***					fabricationxs;
-	size_t								fabricationxsl;
-	struct gn ***					fabricationns;
-	size_t								fabricationnsl;
-	struct gn ***					invalidations;
-	size_t								invalidationsl;
-	struct gn ***					discoveries;
-	size_t								discoveriesl;
-	struct gn ***					inspections;
-	size_t								inspectionsl;
-	struct gn ***					queries;
-	size_t								queriesl;
+  struct gn **          fabrications;     // node lists
+  size_t                fabricationsl;
+  struct gn **          fabricationxs;
+  size_t                fabricationxsl;
+  struct gn **          fabricationns;
+  size_t                fabricationnsl;
+  struct gn **          invalidations;
+  size_t                invalidationsl;
+  struct gn **          discoveries;
+  size_t                discoveriesl;
+  struct gn **          inspections;
+  size_t                inspectionsl;
+  struct gn **          queries;
+  size_t                queriesl;
 
-	struct bp *						plan;							// buildplan
-	struct map *					smap;							// selector map (must have lifetime >= lifetime of the selector lists)
-	struct lwx **					stax;							// listwise stacks
-	size_t								staxa;
-	size_t								staxp;
-	struct ts **					tsp;							// threadspaces
-	size_t								tsa;
-	size_t								tsl;
-	size_t								tsw;
-	struct map *					bakemap;
-	struct ff_parser *		ffp;							// fabfile parser
+  struct bp *           plan;             // buildplan
+  struct map *          smap;             // selector map (must have lifetime >= lifetime of the selector lists)
+  struct lwx **         stax;             // listwise stacks
+  size_t                staxa;
+  size_t                staxp;
+  struct ts **          tsp;              // threadspaces
+  size_t                tsa;
+  size_t                tsl;
+  size_t                tsw;
+  struct map *          bakemap;
+  struct ff_parser *    ffp;              // fabfile parser
 } handler_context;
 
 /// handler
@@ -72,7 +71,7 @@ typedef struct handler_context
 //  first - first dependency from fabfiles
 //
 int handler(handler_context * const restrict ctx, struct map * const restrict vmap, struct gn * const restrict first)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// handler_context_mk
 //
@@ -82,7 +81,7 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 //  ctx - (returns) handler context instance
 //
 int handler_context_mk(handler_context ** const restrict ctx)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// handler_context_reset
 //
@@ -90,7 +89,7 @@ int handler_context_mk(handler_context ** const restrict ctx)
 //  reset an handler_context instance
 //
 void handler_context_reset(handler_context * const restrict ctx)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// handler_context_free
 //
@@ -105,6 +104,6 @@ void handler_context_free(handler_context * ctx);
 //  free an handler_context instance with xfree semantics
 //
 void handler_context_xfree(handler_context ** const restrict ctx)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #endif

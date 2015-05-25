@@ -49,14 +49,14 @@ struct map
 	void (*destructor)(void*, void*);
 };
 
-static uint32_t hashkey(const map* const restrict m, const char* const restrict k, const int kl)
+static uint32_t hashkey(const map* const restrict m, const char* const restrict k, const size_t kl)
 {
 /*
  * this hashing algorithm taken from the jenkins hash function
  *   http://en.wikipedia.org/wiki/Jenkins_hash_function
  */
 
-	uint32_t jenkins(const map* const restrict m, const char* const k, const int kl)
+	uint32_t jenkins(const map* const restrict m, const char* const k, const size_t kl)
 	{
 		int x;
 		uint32_t h = 0;
@@ -85,7 +85,7 @@ static uint32_t hashkey(const map* const restrict m, const char* const restrict 
 //  1  : not found, and a deleted slot is in the probe sequence (i)
 //  -1 : not found
 //
-static int lookup(const map* const restrict m, const char* const restrict k, const int kl, uint32_t* const restrict i)
+static int lookup(const map* const restrict m, const char* const restrict k, const size_t kl, uint32_t* const restrict i)
 {
 	*i = hashkey(m, k, kl);
 
@@ -153,7 +153,7 @@ int map_create(map** const restrict m, void (*destructor)(void*, void*))
 	finally : coda;
 }
 
-int map_set(map* const restrict m, const void* const restrict k, int kl, const void* const restrict v, int vl, void * restrict rv)
+int map_set(map* const restrict m, const void* const restrict k, size_t kl, const void* const restrict v, size_t vl, void * restrict rv)
 {
 	slot** ks = 0;
 	slot** vs = 0;
@@ -325,14 +325,24 @@ finally:
 coda;
 }
 
-void* map_get(const map* const restrict m, const void* const restrict k, int kl)
+void * map_getx(const map* const restrict m, const void* const restrict k, size_t kl, uint32_t o)
 {
 	// perform lookup
 	uint32_t i = 0;
 	if(lookup(m, k, kl, &i) == 0)
-		return m->tv[i]->p;
+  {
+    if(o & MAP_DEREF)
+      return *(void**)m->tv[i]->p;
+     else
+      return m->tv[i]->p;
+  }
 
 	return 0;
+}
+
+void * map_get (const map* const restrict m, const void* const restrict k, size_t kl)
+{
+  return map_getx(m, k, kl, 0);
 }
 
 int map_count(const map* const restrict m)
@@ -364,7 +374,7 @@ void map_clear(map* const restrict m)
 	m->kc = 0;
 }
 
-int map_delete(map* const restrict m, const void* const restrict k, int kl)
+int map_delete(map* const restrict m, const void* const restrict k, size_t kl)
 {
 	uint32_t i = 0;
 	if(lookup(m, k, kl, &i) == 0)
@@ -389,38 +399,55 @@ int map_delete(map* const restrict m, const void* const restrict k, int kl)
 	return 1;
 }
 
-int map_keys(const map* const restrict m, void* const restrict t, int* const restrict c)
+int map_keysx(const map* const restrict m, void * const restrict l, size_t * const restrict z, uint32_t o)
 {
-	fatal(xmalloc, t, m->kc * sizeof(void*));
-	*c = 0;
+	fatal(xmalloc, l, m->kc * sizeof(void*));
+	*z = 0;
 
 	int x;
 	for(x = 0; x < m->l; x++)
 	{
 		if(m->tk[x] && m->tk[x]->l)
 		{
-			(*(void***)t)[(*c)++] = m->tk[x]->p;
+      if(o & MAP_DEREF)
+  			(*(void***)l)[(*z)++] = *(void**)m->tk[x]->p;
+      else
+  			(*(void***)l)[(*z)++] = m->tk[x]->p;
 		}
 	}
 
 	finally : coda;
 }
 
-int map_values(const map* const restrict m, void* const restrict t, int* const restrict c)
+int map_keys (const map* const restrict m, void * const restrict l, size_t * const restrict z)
 {
-	fatal(xmalloc, t, m->kc * sizeof(void*));
-	*c = 0;
+  xproxy(map_keysx, m, l, z, 0);
+}
+
+
+int map_valuesx(const map* const restrict m, void* const restrict l, size_t * const restrict z, uint32_t o)
+{
+	fatal(xmalloc, l, m->kc * sizeof(void*));
+	*z = 0;
 
 	int x;
 	for(x = 0; x < m->l; x++)
 	{
 		if(m->tk[x] && m->tk[x]->l)
 		{
-			(*(void***)t)[(*c)++] = m->tv[x]->p;
+      if(o & MAP_DEREF)
+  			(*(void***)l)[(*z)++] = *(void**)m->tv[x]->p;
+      else
+  			(*(void***)l)[(*z)++] = m->tv[x]->p;
 		}
 	}
 
 	finally : coda;
+}
+
+int map_values (const map* const restrict m, void* const restrict l, size_t * const restrict z)
+{
+   xproxy(map_valuesx, m, l, z, 0);
 }
 
 int map_clone(map* const restrict dst, const map * const restrict src)

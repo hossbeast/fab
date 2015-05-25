@@ -27,6 +27,7 @@
 
 #include "macros.h"
 #include "map.h"
+#include "macros.h"
 
 int buildscript_mk(
 	  const bp * const bp
@@ -39,7 +40,7 @@ int buildscript_mk(
 	, map * const bakemap
 	, ts *** const ts
 	, size_t * const tsa
-	, const int * const tsw
+	, const size_t * const tsw
 	, const char * const stem
 )
 {
@@ -54,7 +55,7 @@ int buildscript_mk(
 	int k;
 
 	char ** keys	= 0;
-	int keysl			= 0;
+	size_t keysl			= 0;
 	map * lmap		= 0;
 	pstring * ps	= 0;
 

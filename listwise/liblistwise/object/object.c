@@ -45,7 +45,7 @@ int API listwise_register_object(uint8_t type, listwise_object * def)
 	finally : coda;
 }
 
-int API listwise_enumerate_objects(listwise_object *** list, int * list_len)
+int API listwise_enumerate_objects(listwise_object *** list, size_t * list_len)
 {
 	xproxy(map_values, object_registry, list, list_len);
 }

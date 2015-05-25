@@ -66,4 +66,13 @@ int xsigaction(int signum, const struct sigaction * act, struct sigaction * olda
 //
 int xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
 
+/// uxsigsuspend
+//
+// SUMMARY
+//  xapi proxy for sigsuspend that only fails when errno != EINTR
+//  (it is kind of the whole point ...)
+//
+int uxsigsuspend(const sigset_t * mask)
+	__attribute__((nonnull));
+
 #endif

@@ -1,21 +1,19 @@
+/* A Bison parser, made by GNU Bison 3.0.2.  */
 
-/* A Bison parser, made by GNU Bison 2.4.1.  */
+/* Bison interface for Yacc-like parsers in C
 
-/* Skeleton interface for Bison's Yacc-like parsers in C
-   
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
-   
+   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -28,36 +26,42 @@
    special exception, which will cause the skeleton and the resulting
    Bison output files to be licensed under the GNU General Public
    License without this special exception.
-   
+
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-
-/* Tokens.  */
-#ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     STR = 258,
-     LF = 259,
-     WS = 260,
-     BREF = 261,
-     CREF = 262,
-     HREF = 263,
-     I64 = 264,
-     OP = 265
-   };
+#ifndef YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
+# define YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED
+/* Debug traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int transform_yydebug;
 #endif
 
+/* Token type.  */
+#ifndef YYTOKENTYPE
+# define YYTOKENTYPE
+  enum yytokentype
+  {
+    STR = 258,
+    LF = 259,
+    WS = 260,
+    BREF = 261,
+    CREF = 262,
+    HREF = 263,
+    I64 = 264,
+    OP = 265
+  };
+#endif
 
-
+/* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE
+typedef union YYSTYPE YYSTYPE;
+union YYSTYPE
 {
-
-/* Line 1676 of yacc.c  */
-#line 43 "transform/transform.y"
+#line 43 "listwise/liblistwise/transform/transform.y" /* yacc.c:1909  */
 
 	transform *		transform;
 	operation **  operations;
@@ -69,30 +73,28 @@ typedef union YYSTYPE
 	int						ref;
 	int64_t				i64;
 
-
-
-/* Line 1676 of yacc.c  */
-#line 76 "transform/transform.tab.h"
-} YYSTYPE;
+#line 77 "listwise/liblistwise/transform/transform.tab.h" /* yacc.c:1909  */
+};
 # define YYSTYPE_IS_TRIVIAL 1
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
-
-
+/* Location type.  */
 #if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
-typedef struct YYLTYPE
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
 {
   int first_line;
   int first_column;
   int last_line;
   int last_column;
-} YYLTYPE;
-# define yyltype YYLTYPE /* obsolescent; will be withdrawn */
+};
 # define YYLTYPE_IS_DECLARED 1
 # define YYLTYPE_IS_TRIVIAL 1
 #endif
 
 
 
+int transform_yyparse (void* scanner, parse_param* parm);
+
+#endif /* !YY_TRANSFORM_YY_LISTWISE_LIBLISTWISE_TRANSFORM_TRANSFORM_TAB_H_INCLUDED  */

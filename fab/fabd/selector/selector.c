@@ -21,48 +21,56 @@ static map * o_discoveriesmap;
 static map * o_inspectionsmap;
 static map * o_queriesmap;
 
+//
+// static
+//
+
+static int select_exec(selector * s, gn * g)
+{
+  if(s->mode == '+')
+  {
+    if(s->lists & SELECTOR_FABRICATE)
+      fatal(map_set, o_fabricationsmap, MM(g), 0, 0, 0);
+    if(s->lists & SELECTOR_FABRICATEX)
+      fatal(map_set, o_fabricationxsmap, MM(g), 0, 0, 0);
+    if(s->lists & SELECTOR_FABRICATEN)
+      fatal(map_set, o_fabricationnsmap, MM(g), 0, 0, 0);
+    if(s->lists & SELECTOR_INVALIDATE)
+      fatal(map_set, o_invalidationsmap, MM(g), 0, 0, 0);
+    if(s->lists & SELECTOR_DISCOVERY)
+      fatal(map_set, o_discoveriesmap, MM(g), 0, 0, 0);
+    if(s->lists & SELECTOR_INSPECT)
+      fatal(map_set, o_inspectionsmap, MM(g), 0, 0, 0);
+    if(s->lists & SELECTOR_QUERY)
+      fatal(map_set, o_queriesmap, MM(g), 0, 0, 0);
+  }
+  else if(s->mode == '-')
+  {
+    if(s->lists & SELECTOR_FABRICATE)
+      map_delete(o_fabricationsmap, MM(g));
+    if(s->lists & SELECTOR_FABRICATEX)
+      map_delete(o_fabricationxsmap, MM(g));
+    if(s->lists & SELECTOR_FABRICATEN)
+      map_delete(o_fabricationnsmap, MM(g));
+    if(s->lists & SELECTOR_INVALIDATE)
+      map_delete(o_invalidationsmap, MM(g));
+    if(s->lists & SELECTOR_DISCOVERY)
+      map_delete(o_discoveriesmap, MM(g));
+    if(s->lists & SELECTOR_INSPECT)
+      map_delete(o_inspectionsmap, MM(g));
+    if(s->lists & SELECTOR_QUERY)
+      map_delete(o_queriesmap, MM(g));
+  }
+
+  finally : coda;
+};
+
+//
+// public
+//
+
 int selector_process(selector * const s, int id, const ff_parser * const ffp, map * const tmap, lwx *** stax, size_t * staxa, size_t staxp)
 {
-	int select(selector * s, gn * g)
-	{
-		if(s->mode == '+')
-		{
-			if(s->lists & SELECTOR_FABRICATE)
-				fatal(map_set, o_fabricationsmap, MM(g), 0, 0, 0);
-			if(s->lists & SELECTOR_FABRICATEX)
-				fatal(map_set, o_fabricationxsmap, MM(g), 0, 0, 0);
-			if(s->lists & SELECTOR_FABRICATEN)
-				fatal(map_set, o_fabricationnsmap, MM(g), 0, 0, 0);
-			if(s->lists & SELECTOR_INVALIDATE)
-				fatal(map_set, o_invalidationsmap, MM(g), 0, 0, 0);
-			if(s->lists & SELECTOR_DISCOVERY)
-				fatal(map_set, o_discoveriesmap, MM(g), 0, 0, 0);
-			if(s->lists & SELECTOR_INSPECT)
-				fatal(map_set, o_inspectionsmap, MM(g), 0, 0, 0);
-			if(s->lists & SELECTOR_QUERY)
-				fatal(map_set, o_queriesmap, MM(g), 0, 0, 0);
-		}
-		else if(s->mode == '-')
-		{
-			if(s->lists & SELECTOR_FABRICATE)
-				map_delete(o_fabricationsmap, MM(g));
-			if(s->lists & SELECTOR_FABRICATEX)
-				map_delete(o_fabricationxsmap, MM(g));
-			if(s->lists & SELECTOR_FABRICATEN)
-				map_delete(o_fabricationnsmap, MM(g));
-			if(s->lists & SELECTOR_INVALIDATE)
-				map_delete(o_invalidationsmap, MM(g));
-			if(s->lists & SELECTOR_DISCOVERY)
-				map_delete(o_discoveriesmap, MM(g));
-			if(s->lists & SELECTOR_INSPECT)
-				map_delete(o_inspectionsmap, MM(g));
-			if(s->lists & SELECTOR_QUERY)
-				map_delete(o_queriesmap, MM(g));
-		}
-
-		finally : coda;
-	};
-
 	char space[128];
 
 	logf(L_SELECT, "%s", selector_string(s, space, sizeof(space)));
@@ -102,7 +110,7 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 			if(g)
 			{
 				logf(L_SELECT, " > %s", g->idstring);
-				fatal(select, s, g);
+				fatal(select_exec, s, g);
 				l++;
 			}
 		}
@@ -119,7 +127,7 @@ int selector_process(selector * const s, int id, const ff_parser * const ffp, ma
 		if(g)
 		{
 			logf(L_SELECT, " > %s", g->idstring);
-			fatal(select, s, g);
+			fatal(select_exec, s, g);
 			l++;
 		}
 	}
@@ -146,24 +154,14 @@ int selector_init()
 }
 
 int selector_finalize(handler_context * const restrict ctx)
-#if 0
-	  gn **** fabrications, size_t * fabricationsl
-	, gn **** fabricationxs, size_t * fabricationxsl
-	, gn **** fabricationns, size_t * fabricationnsl
-	, gn **** invalidations, size_t * invalidationsl
-	, gn **** discoveries, size_t * discoveriesl
-	, gn **** inspections, size_t * inspectionsl
-	, gn **** queries , size_t * queriesl
-)
-#endif
 {
-	fatal(map_keys, o_fabricationsmap , ctx->fabrications , ctx->fabricationsl );
-	fatal(map_keys, o_fabricationxsmap, ctx->fabricationxs, ctx->fabricationxsl);
-	fatal(map_keys, o_fabricationnsmap, ctx->fabricationns, ctx->fabricationnsl);
-	fatal(map_keys, o_invalidationsmap, ctx->invalidations, ctx->invalidationsl);
-	fatal(map_keys, o_discoveriesmap  , ctx->discoveries  , ctx->discoveriesl  );
-	fatal(map_keys, o_inspectionsmap  , ctx->inspections  , ctx->inspectionsl  );
-	fatal(map_keys, o_queriesmap      , ctx->queries      , ctx->queriesl      );
+	fatal(map_keysx, o_fabricationsmap , &ctx->fabrications , &ctx->fabricationsl , MAP_DEREF);
+	fatal(map_keysx, o_fabricationxsmap, &ctx->fabricationxs, &ctx->fabricationxsl, MAP_DEREF);
+	fatal(map_keysx, o_fabricationnsmap, &ctx->fabricationns, &ctx->fabricationnsl, MAP_DEREF);
+	fatal(map_keysx, o_invalidationsmap, &ctx->invalidations, &ctx->invalidationsl, MAP_DEREF);
+	fatal(map_keysx, o_discoveriesmap  , &ctx->discoveries  , &ctx->discoveriesl  , MAP_DEREF);
+	fatal(map_keysx, o_inspectionsmap  , &ctx->inspections  , &ctx->inspectionsl  , MAP_DEREF);
+	fatal(map_keysx, o_queriesmap      , &ctx->queries      , &ctx->queriesl      , MAP_DEREF);
 
 	finally : coda;
 }

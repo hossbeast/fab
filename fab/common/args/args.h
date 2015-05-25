@@ -168,10 +168,6 @@ extern struct g_args_t
 
 	char *							buildscript_path;						// path to buildscript
 
-	char **							rootvars;										// root scope variable expressions
-	int									rootvarsl;
-	int									rootvarsa;
-
 	char **							bs_runtime_vars;						// buildscript variables that are settable at runtime
 	int									bs_runtime_varsl;
 	int									bs_runtime_varsa;

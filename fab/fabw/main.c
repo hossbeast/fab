@@ -34,29 +34,11 @@
 
 #include "parseint.h"
 #include "macros.h"
+#include "sigbank.h"
 
 #ifndef DEBUG_IPC
 # define DEBUG_IPC 0
 #endif
-
-// signal handling
-static void signal_handler(int signum, siginfo_t * info, void * ctx)
-{
-#if DEBUG_IPC
-	char space[2048];
-	char * dst = space;
-	size_t sz = sizeof(space);
-	size_t z = 0;
-
-	z += znprintf(dst + z, sz - z, "fabw[%u] received %d { from pid : %ld", getpid(), signum, (long)info->si_pid);
-
-	if(signum == SIGCHLD)
-		z += znprintf(dst + z, sz - z, ", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
-
-	z += znprintf(dst + z, sz - z, " }\n");
-	int __attribute__((unused)) r = write(1, space, z);
-#endif
-}
 
 int main(int argc, char** argv)
 {
@@ -68,45 +50,14 @@ int main(int argc, char** argv)
 	pid_t fabd_pid = -1;
 	size_t z;
 
-	pstring * ptmp = 0;
+  int x;
 
+  // initialize signal handling
+  fatal(sigbank_init
 #if DEBUG_IPC
-	sayf("fabw[%lu] started\n", (long)getpid());
+    , "fabw", getpid()
 #endif
-
-	// unblock all signals
-	sigset_t all;
-	sigfillset(&all);
-	sigprocmask(SIG_UNBLOCK, &all, 0);
-
-	// ignore most signals, handle a few
-	struct sigaction action = {
-		  .sa_sigaction = signal_handler
-		, .sa_flags = SA_SIGINFO
-	};
-
-	int x;
-	for(x = 1; x < SIGUNUSED; x++)
-	{
-		if(x == SIGKILL || x == SIGSTOP || x == SIGSEGV) { }
-		else if(x == SIGINT || x == SIGQUIT || x == SIGTERM || x == SIGCHLD)
-			fatal(xsigaction, x, &action, 0);
-		else
-			fatal(xsignal, x, SIG_IGN);
-	}
-	for(x = SIGRTMIN; x <= SIGRTMAX; x++)
-  {
-#if DEBUG || DEVEL
-    if((x - SIGRTMIN) == 30)
-    {
-      // internal valgrind signal
-      continue;
-    }
-#endif
-
-		// all of the fab ipc signals are in this range ; they are silently ignored by fabw
-		fatal(xsignal, x, SIG_IGN);
-	}
+  );
 
 	// std file descriptors
 #if !DEBUG_IPC
@@ -151,7 +102,7 @@ int main(int argc, char** argv)
 		tfail(perrtab_SYS, errno);
 	}
 
-	// wait for fabd to die
+  // suspend execution pending fabd status change
 	int status;
 	fatal(xwaitpid, fabd_pid, &status, 0);
 
@@ -168,7 +119,10 @@ int main(int argc, char** argv)
 	
 finally:
 	fatal(ixclose, &fd);
-	psfree(ptmp);
+
+#if DEBUG || DEVEL
+  XAPI_INFOF("pid", "%ld", (long)getpid());
+#endif
 
 	if(XAPI_UNWINDING)
 	{

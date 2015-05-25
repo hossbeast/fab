@@ -34,7 +34,7 @@
 /// static
 ///
 
-static int ensure(lwx *** stax, int * staxa, int staxp)
+static int ensure(lwx *** stax, size_t * staxa, size_t staxp)
 {
 	// ensure enough lstacks are allocated
 	if((*staxa) <= staxp)
@@ -149,7 +149,7 @@ int lw_flatten(lwx * ls)
 	xproxy(flatten, ls);
 }
 
-int lw_ensure(lwx *** stax, int * staxa, int staxp)
+int lw_ensure(lwx *** stax, size_t * staxa, size_t staxp)
 {
 	xproxy(ensure, stax, staxa, staxp);
 }

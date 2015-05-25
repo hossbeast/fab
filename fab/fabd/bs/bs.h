@@ -44,7 +44,7 @@ int buildscript_mk(
 	, map * const restrict bakemap
 	, ts *** const restrict ts
 	, size_t * const restrict tsa
-	, const int * const restrict tsw
+	, const size_t * const restrict tsw
 	, const char * const restrict dst
 )
 	__attribute__((nonnull));

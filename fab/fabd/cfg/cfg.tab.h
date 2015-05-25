@@ -1,21 +1,19 @@
+/* A Bison parser, made by GNU Bison 3.0.2.  */
 
-/* A Bison parser, made by GNU Bison 2.4.1.  */
+/* Bison interface for Yacc-like parsers in C
 
-/* Skeleton interface for Bison's Yacc-like parsers in C
-   
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
-   
+   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -28,40 +26,46 @@
    special exception, which will cause the skeleton and the resulting
    Bison output files to be licensed under the GNU General Public
    License without this special exception.
-   
+
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-
-/* Tokens.  */
-#ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     FILESYSTEM = 258,
-     PATH = 259,
-     INVALIDATION = 260,
-     STAT = 261,
-     CONTENT = 262,
-     NOTIFY = 263,
-     ALWAYS = 264,
-     NEVER = 265,
-     LF = 266,
-     WORD = 267,
-     HREF = 268,
-     CREF = 269
-   };
+#ifndef YY_CFG_YY_FAB_FABD_CFG_CFG_TAB_H_INCLUDED
+# define YY_CFG_YY_FAB_FABD_CFG_CFG_TAB_H_INCLUDED
+/* Debug traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int cfg_yydebug;
 #endif
 
+/* Token type.  */
+#ifndef YYTOKENTYPE
+# define YYTOKENTYPE
+  enum yytokentype
+  {
+    FILESYSTEM = 258,
+    PATH = 259,
+    INVALIDATION = 260,
+    STAT = 261,
+    CONTENT = 262,
+    NOTIFY = 263,
+    ALWAYS = 264,
+    NEVER = 265,
+    LF = 266,
+    WORD = 267,
+    HREF = 268,
+    CREF = 269
+  };
+#endif
 
-
+/* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE
+typedef union YYSTYPE YYSTYPE;
+union YYSTYPE
 {
-
-/* Line 1676 of yacc.c  */
-#line 43 "cfg/cfg.y"
+#line 43 "fab/fabd/cfg/cfg.y" /* yacc.c:1909  */
 
 	struct cfg_file *	cfg;
 	struct filesystem *	fs;
@@ -75,30 +79,28 @@ typedef union YYSTYPE
 		uint64_t	invalidation;
 	} fsprop;
 
-
-
-/* Line 1676 of yacc.c  */
-#line 82 "cfg/cfg.tab.h"
-} YYSTYPE;
+#line 83 "fab/fabd/cfg/cfg.tab.h" /* yacc.c:1909  */
+};
 # define YYSTYPE_IS_TRIVIAL 1
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
-
-
+/* Location type.  */
 #if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
-typedef struct YYLTYPE
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
 {
   int first_line;
   int first_column;
   int last_line;
   int last_column;
-} YYLTYPE;
-# define yyltype YYLTYPE /* obsolescent; will be withdrawn */
+};
 # define YYLTYPE_IS_DECLARED 1
 # define YYLTYPE_IS_TRIVIAL 1
 #endif
 
 
 
+int cfg_yyparse (void* scanner, parse_param* parm);
+
+#endif /* !YY_CFG_YY_FAB_FABD_CFG_CFG_TAB_H_INCLUDED  */

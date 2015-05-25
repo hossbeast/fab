@@ -66,11 +66,11 @@ typedef struct bp
 //  0 in the case of failure, and 1 otherwise
 //
 int bp_create(
-	  gn *** const restrict fabrications
+	  gn ** const restrict fabrications
 	, int fabricationsl
-	, gn *** const restrict fabricationxs
+	, gn ** const restrict fabricationxs
 	, int fabricationxsl
-	, gn *** const restrict fabricationns
+	, gn ** const restrict fabricationns
 	, int fabricationnsl
 	, bp ** const restrict bp
 )

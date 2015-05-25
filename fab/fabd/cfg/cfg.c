@@ -43,6 +43,8 @@
 // data
 //
 
+union cfg_files cfg_files;
+
 struct cfg_parser
 {
 	void * p;

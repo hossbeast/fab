@@ -39,7 +39,7 @@ listwise_object listlw;
 //  staxa - listwise stax
 //  staxp - offset to next free stax
 //
-int lw_ensure(lwx *** stax, int * staxa, int staxp)
+int lw_ensure(lwx *** stax, size_t * staxa, size_t staxp)
 	__attribute__((nonnull));
 
 /// lw_reset

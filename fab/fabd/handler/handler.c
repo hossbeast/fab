@@ -31,25 +31,22 @@
 #include "memblk.h"
 #include "unitstring.h"
 #include "cksum.h"
+#include "sigbank.h"
 
 #define restrict __restrict
-
-// errors to report and continue, otherwise exit
-static int fab_swallow[] = {
-	  [ FAB_SYNTAX ] = 1
-	, [ FAB_ILLBYTE ] = 1
-	, [ FAB_UNSATISFIED ] = 1
-	, [ FAB_CMDFAIL ] = 1
-	, [ FAB_NOINVOKE ] = 1
-	, [ FAB_BADPLAN ] = 1
-	, [ FAB_CYCLE ] = 1
-	, [ FAB_NOSELECT ] = 1
-	, [ FAB_DSCPARSE ] = 1
-};
 
 //
 // static
 //
+
+static sigset_t o_all;
+static sigset_t o_none;
+
+static void __attribute__((constructor)) setup()
+{
+	sigfillset(&o_all);
+	sigemptyset(&o_none);
+}
 
 /// hashfiles
 //
@@ -126,6 +123,8 @@ int handler_context_mk(handler_context ** const restrict ctx)
 	fatal(map_create, &(*ctx)->bakemap, 0);
 	fatal(map_create, &(*ctx)->smap, 0);
 
+  ff_mkparser(&(*ctx)->ffp);
+
 	finally : coda;
 }
 
@@ -157,7 +156,7 @@ void handler_context_free(handler_context * ctx)
 		free(ctx->inspections);
 		free(ctx->queries);
 
-		psfree(ctx->ptmp);
+		psfree(ctx->tmp);
 		map_free(ctx->smap);
 		bp_free(ctx->plan);
 
@@ -175,6 +174,7 @@ void handler_context_free(handler_context * ctx)
 		free(ctx->tsp);
 
 		map_free(ctx->bakemap);
+    ff_freeparser(ctx->ffp);
 	}
 
 	free(ctx);
@@ -243,22 +243,22 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 			}
 			
 			for(x = 0; x < ctx->fabricationsl; x++)
-				logf(L_LISTS, "ctx->fabrication(s)     =%s", (*ctx->fabrications[x])->idstring);
+				logf(L_LISTS, "ctx->fabrication(s)     =%s", ctx->fabrications[x]->idstring);
 
 			for(x = 0; x < ctx->fabricationxsl; x++)
-				logf(L_LISTS, "ctx->fabricationx(s)    =%s", (*ctx->fabricationxs[x])->idstring);
+				logf(L_LISTS, "ctx->fabricationx(s)    =%s", ctx->fabricationxs[x]->idstring);
 
 			for(x = 0; x < ctx->fabricationnsl; x++)
-				logf(L_LISTS, "ctx->fabricationn(s)    =%s", (*ctx->fabricationns[x])->idstring);
+				logf(L_LISTS, "ctx->fabricationn(s)    =%s", ctx->fabricationns[x]->idstring);
 
 			for(x = 0; x < ctx->invalidationsl; x++)
-				logf(L_LISTS, "ctx->invalidation(s)    =%s", (*ctx->invalidations[x])->idstring);
+				logf(L_LISTS, "ctx->invalidation(s)    =%s", ctx->invalidations[x]->idstring);
 
 			for(x = 0; x < ctx->discoveriesl; x++)
-				logf(L_LISTS, "discover(y)(ies)   =%s", (*ctx->discoveries[x])->idstring);
+				logf(L_LISTS, "discover(y)(ies)   =%s", ctx->discoveries[x]->idstring);
 
 			for(x = 0; x < ctx->inspectionsl; x++)
-				logf(L_LISTS, "inspection(s)      =%s", (*ctx->inspections[x])->idstring);
+				logf(L_LISTS, "inspection(s)      =%s", ctx->inspections[x]->idstring);
 		}
 	}
 
@@ -323,37 +323,37 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 })
 
 		sayf(" %-40s | %-13s | %-11s | %-11s | %s\n", "id", "type", "degree", "invalidated", "reason");
-		for(x = 0; x < queriesl; x++)
+		for(x = 0; x < ctx->queriesl; x++)
 		{
-			// id
-			if((*queries[x])->idstringl > 40)
+			// i
+			if(ctx->queries[x]->idstringl > 40)
 			{
-				sayf(" .. %-37s", (*queries[x])->idstring + ((*queries[x])->idstringl - 37));
+				sayf(" .. %-37s", ctx->queries[x]->idstring + (ctx->queries[x]->idstringl - 37));
 			}
 			else
 			{
-				sayf(" %-40s", (*queries[x])->idstring);
+				sayf(" %-40s", ctx->queries[x]->idstring);
 			}
 
 			// type
-			sayf(" | %-13s", GN_TYPE_STR((*queries[x])->type));
+			sayf(" | %-13s", GN_TYPE_STR(ctx->queries[x]->type));
 
 			// degree
-			sayf(" | %11s", CENTER(11, "%-d/%d", (*queries[x])->needs.l, (*queries[x])->feeds.l));
+			sayf(" | %11s", CENTER(11, "%-d/%d", ctx->queries[x]->needs.l, ctx->queries[x]->feeds.l));
 
 			// invalid
-			sayf(" | %-11s", CENTER(11, "%s", (*queries[x])->invalid ? "x" : ""));
+			sayf(" | %-11s", CENTER(11, "%s", ctx->queries[x]->invalid ? "x" : ""));
 
 			// reason
 			says(" | ");
-			if((*queries[x])->type & GN_TYPE_HASFILE)
+			if(ctx->queries[x]->type & GN_TYPE_HASFILE)
 			{
-				gn_invalid_reasons_write((*queries[x]), space, sizeof(space));
+				gn_invalid_reasons_write(ctx->queries[x], space, sizeof(space));
 				says(space);
 			}
 			sayf("\n");
 		}
-		sayf(" %d nodes\n", queriesl);
+		sayf(" %d nodes\n", ctx->queriesl);
 	}
 
 	if(g_args->selectors_arediscovery)
@@ -368,7 +368,7 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 		fatal(log_parse_and_describe, "+NODE", 0, 0, L_INFO);
 
 		for(x = 0; x < ctx->inspectionsl; x++)
-			gn_dump((*ctx->inspections[x]));
+			gn_dump(ctx->inspections[x]);
 
 		fatal(log_parse_pop);
 	}
@@ -380,8 +380,8 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 		//
 		if(ctx->fabricationsl + ctx->fabricationxsl + ctx->fabricationnsl == 0 && first)
 		{
-			fatal(xrealloc, &ctx->fabrications, sizeof(*ctx->fabrications), 1, 0);
-			ctx->fabrications[ctx->fabricationsl++] = &first;
+			fatal(xrealloc, &ctx->fabrications, sizeof(ctx->fabrications), 1, 0);
+			ctx->fabrications[ctx->fabricationsl++] = first;
 		}
 
 		// mixing task and non-task as buildplan targets does not make sense
@@ -393,18 +393,18 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 			gn * B = 0;
 
 			if(a < ctx->fabricationsl)
-				A = *ctx->fabrications[a];
+				A = ctx->fabrications[a];
 			else if(a < (ctx->fabricationsl + ctx->fabricationxsl))
-				A = *ctx->fabricationxs[a - ctx->fabricationsl];
+				A = ctx->fabricationxs[a - ctx->fabricationsl];
 			else
-				A = *ctx->fabricationns[a - ctx->fabricationsl - ctx->fabricationxsl];
+				A = ctx->fabricationns[a - ctx->fabricationsl - ctx->fabricationxsl];
 
 			if(b < ctx->fabricationsl)
-				B = *ctx->fabrications[b];
+				B = ctx->fabrications[b];
 			else if(b < (ctx->fabricationsl + ctx->fabricationxsl))
-				B = *ctx->fabricationxs[b - ctx->fabricationsl];
+				B = ctx->fabricationxs[b - ctx->fabricationsl];
 			else
-				B = *ctx->fabricationns[b - ctx->fabricationsl - ctx->fabricationxsl];
+				B = ctx->fabricationns[b - ctx->fabricationsl - ctx->fabricationxsl];
 
 			if((A->type == GN_TYPE_TASK) ^ (B->type == GN_TYPE_TASK))
 				fails(FAB_BADPLAN, "cannot mix task and non-task targets");
@@ -416,11 +416,8 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 		{
 			if(g_args->mode_bplan == MODE_BPLAN_BUILDSCRIPT)
 			{
-				// prepare bs_runtime_vars map
-				fatal(map_create, &bakemap, 0);
-
 				for(x = 0; x < g_args->bs_runtime_varsl; x++)
-					fatal(map_set, bakemap, MMS(g_args->bs_runtime_vars[x]), 0, 0, 0);
+					fatal(map_set, ctx->bakemap, MMS(g_args->bs_runtime_vars[x]), 0, 0, 0);
 
 				// dump buildplan, pending logging
 				if(ctx->plan)
@@ -459,26 +456,26 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 					if(ctx->plan && ctx->plan->stages_l)
 					{
 						// create tmp directory for the build
-						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
-						fatal(mkdirp, ptmp->s, FABIPC_DIR);
+						fatal(psloadf, &ctx->tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
+						fatal(mkdirp, ctx->tmp->s, FABIPC_DIR);
 						
 						// create symlink to the bp in hashdir
 						snprintf(space, sizeof(space), "%s/bp", g_params.ipcstem);
 						fatal(uxunlink, space, 0);
-						fatal(xsymlink, ptmp->s, space);
+						fatal(xsymlink, ctx->tmp->s, space);
 
 						// create file with the number of stages
-						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/stages", g_params.fab_pid);
-						fatal(uxunlink, ptmp->s, 0);
+						fatal(psloadf, &ctx->tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/stages", g_params.fab_pid);
+						fatal(uxunlink, ctx->tmp->s, 0);
 						fatal(ixclose, &fd);
-						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
+						fatal(xopen_mode, ctx->tmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
 						fatal(axwrite, fd, &ctx->plan->stages_l, sizeof(ctx->plan->stages_l));
 						
 						// create file with the number of commands
-						fatal(psloadf, &ptmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/commands", g_params.fab_pid);
-						fatal(uxunlink, ptmp->s, 0);
+						fatal(psloadf, &ctx->tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/commands", g_params.fab_pid);
+						fatal(uxunlink, ctx->tmp->s, 0);
 						fatal(ixclose, &fd);
-						fatal(xopen_mode, ptmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
+						fatal(xopen_mode, ctx->tmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
 						int cmdsl = 0;
 						for(x = 0; x < ctx->plan->stages_l; x++)
 							cmdsl += ctx->plan->stages[x].evals_l;
@@ -488,36 +485,31 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 						int i;
 						for(i = 0; i < ctx->plan->stages_l; i++)
 						{
-							tsl = 0;
-							fatal(bp_prepare_stage, ctx->plan, i, ctx->ffp->gp, &stax, &staxa, staxp, &tsp, &tsl, &tsa);
-
-							// block signals
-							fatal(xsigprocmask, SIG_SETMASK, &all, 0);
+							fatal(bp_prepare_stage, ctx->plan, i, ctx->ffp->gp, &ctx->stax, &ctx->staxa, ctx->staxp, &ctx->tsp, &ctx->tsl, &ctx->tsa);
 
 							// work required ; notify fab
 							fatal(uxkill, g_params.fab_pid, FABSIG_BPSTART, 0);
 
-							// await response
-							o_signum = 0;
-							sigsuspend(&none);
-							fatal(xsigprocmask, SIG_SETMASK, &none, 0);
+              // suspend execution, receive signal
+              int sig;
+              fatal(sigreceive, &sig);
 
-							if(o_signum == FABSIG_BPGOOD)
+							if(sig == FABSIG_BPGOOD)
 							{
 								// plan was executed successfully ; update nodes for all products
-								for(x = 0; x < tsl; x++)
+								for(x = 0; x < ctx->tsl; x++)
 								{
-									for(y = 0; y < tsp[x]->fmlv->productsl; y++)
+									for(y = 0; y < ctx->tsp[x]->fmlv->productsl; y++)
 									{
 										// mark as up-to-date
-										tsp[x]->fmlv->products[y]->invalid = 0;
+										ctx->tsp[x]->fmlv->products[y]->invalid = 0;
 
 										// reload hashblock
-										fatal(hashblock_stat, tsp[x]->fmlv->products[y]->path->can, tsp[x]->fmlv->products[y]->hb);
+										fatal(hashblock_stat, ctx->tsp[x]->fmlv->products[y]->path->can, ctx->tsp[x]->fmlv->products[y]->hb);
 									}
 								}
 							}
-							else if(o_signum == FABSIG_BPBAD)
+							else if(sig == FABSIG_BPBAD)
 							{
 								// failure ; harvest the results
 								fatal(bp_harvest_stage, ctx->plan, i);
@@ -525,7 +517,7 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 							}
 							else
 							{
-								failf(FAB_BADIPC, "expected signal %d or %d, actual %d", FABSIG_BPGOOD, FABSIG_BPBAD, o_signum);
+								failf(FAB_BADIPC, "expected signal in { %d, %d }, actual %d", FABSIG_BPGOOD, FABSIG_BPBAD, sig);
 							}
 						}
 					}

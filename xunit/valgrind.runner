@@ -23,14 +23,24 @@ valgrind_out=$(mktemp -u)
 # run the specified program under valgrind
 #  direct valgrind logging to the temp file
 #  use bash here-doc to pass a default suppressions file
-$valgrind $valgrind_options --suppressions=/dev/fd/601 --log-fd=600 $@ 600>$valgrind_out 601<<-DEFAULT_SUPPRESSIONS
+$valgrind --gen-suppressions=all $valgrind_options --suppressions=/dev/fd/601 --log-fd=600 $@ 600>$valgrind_out 601<<-DEFAULT_SUPPRESSIONS
 {
-   libdl does not free dlerror text
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:calloc
-   fun:_dlerror_run
-   ...
+  dlerror leaks
+  Memcheck:Leak
+  match-leak-kinds: reachable
+  fun:*alloc
+  ...
+  fun:_dlerror_run
+  ...
+}
+{
+  dlopen leaks
+  Memcheck:Leak
+  match-leak-kinds: reachable
+  fun:*alloc
+  ...
+  fun:_dl_open
+  ...
 }
 DEFAULT_SUPPRESSIONS
 

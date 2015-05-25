@@ -27,7 +27,7 @@ $libname_eapi = [ lib $basename .so ~ j ]
 $libname_xapi = [ lib $basename -xapi .so ~ j ]
 $cflags				= [ -fPIC
 	# include paths
-	[ [ $dliblistwise ~ ls c -d ] $dlibxapi $dlibxlinux $dlibpstring $dlibxunit ~ s/^/-I ]
+	[ [ [ $dliblistwise ~ ls c ] [ $dliblistwise/test ~ j ls ] ~ -d ] $dlibxapi $dlibxlinux $dlibpstring $dlibxunit ~ s/^/-I ]
 ]
 
 # cflags variants
@@ -37,6 +37,7 @@ $cflags_eapi_devel = [ $cflags $cflags_eapi_devel [ -DLWOPDIR=$lwopdir_devel ~ j
 $cflags_xapi_final = [ $cflags $cflags_xapi_final [ -DLWOPDIR=$lwopdir ~ j ] [ -DLWOPEXT=$lwopext ~ j ] ]
 $cflags_xapi_debug = [ $cflags $cflags_xapi_debug [ -DLWOPDIR=$lwopdir ~ j ] [ -DLWOPEXT=$lwopext ~ j ] ]
 $cflags_xapi_devel = [ $cflags $cflags_xapi_devel [ -DLWOPDIR=$lwopdir_devel ~ j ] [ -DLWOPEXT=xapi.devel.so ~ j ] ]
+$cflags_xapi_xunit = [ $cflags $cflags_xapi_xunit ]
 
 # lflags variants
 $lflags						 = [ -lpcre -ldl -shared [ -Wl,--version-script=$*/exports ~ j ] ]
@@ -67,6 +68,9 @@ $lflags_xapi_devel = [ $lflags $lflags_devel $libxapi_xapi_devel $libxlinux_xapi
 +[@std.y]($dext = [ xapi.final.pic.o ]; $rdirs = $dliblistwise; $cc $bison $bisonflags; $cflags = $cflags_xapi_final)
 +[@std.y]($dext = [ xapi.debug.pic.o ]; $rdirs = $dliblistwise; $cc $bison $bisonflags; $cflags = $cflags_xapi_debug)
 +[@std.y]($dext = [ xapi.devel.pic.o ]; $rdirs = $dliblistwise; $cc $bison $bisonflags; $cflags = $cflags_xapi_devel)
+
+# source and test files
++[@std.c]($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_xunit)
 
 # generated files
 +[@std.flex.states] ($dext = [ eapi.final.pic.o ]; $rdirs = $dliblistwise; $cc; $cflags = $cflags_eapi_final)
@@ -123,36 +127,46 @@ $oplist_xapi_devel = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,xapi.de
 +[@std.c]($dext = [ xapi.devel.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise/op ~ j ]; $cc; $cflags = $cflags_xapi_devel; -$cobjpaths)
 [ $cobjpaths ] :^ [ $liblistwise_xapi_devel ]
 
-# test sos
-+[$xunit_tests](
-	$rdirs = $dliblistwise;
-	$cc;
-	$dext = [ xapi.devel.pic.o ];
-	$dscext = [ xapi.devel.pic.o ];
-	$soext = [ devel.xu.so ];
-	$cflags = [ $cflags_xapi_devel [ $dlibxunit ~ s/^/-I ] [ $dliblistwise ~ lsr c -d s/^/-isystem ] ];
-	-$tsopaths
-)
-
 $dlistwise_test = [ $*/test/listwise_test ~ j ]
-$listwise_test = [ $dlistwise_test/listwise_test.xapi.devel.so ~ j ]
-
-# run all tests
-[ @test ] : [ $xunit_xapi_devel $oplist_xapi_devel $listwise_test $tsopaths ]
-{
-	[ $xunit_xapi_devel ] [ $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
-}
-
-[ @test.more ] : [ $xunit_xapi_devel  $oplist_xapi_devel $listwise_test $tsopaths ]
-{
-	[ $xunit_xapi_devel ] +XUNIT [ $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
-}
+$listwise_test = [ $dlistwise_test/listwise_test.xapi.xunit.so ~ j ]
 
 # test helper
-[ $listwise_test ] : [ [ $dlistwise_test/listwise_test.xapi.devel.pic.o ~ j ] $liblistwise_xapi_devel ]
+[ $listwise_test ] : [ $dlistwise_test/listwise_test.xapi.xunit.pic.o ~ j ]
 {
-	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] [ $dlistwise_test/listwise_test.xapi.devel.pic.o ~ j ] [ $liblistwise_xapi_devel ] -shared -o [ $@ ]
+	[ $cc ] [ $cflags_xapi_xunit ~ uu fi ] [ $dlistwise_test/listwise_test.xapi.xunit.pic.o ~ j ] [ $liblistwise_xapi_devel ] -shared -o [ $@ ]
 }
+
+[ $listwise_test ] :^ [ $liblistwise_xapi_devel ]
+
+# xunit tests
++[$xunit_tests]($rdirs = $*; -$xunit_sos)
+
+[ $xunit_sos ] : [ $listwise_test ]
+
+# test sos
+#+[$xunit_tests](
+#	$rdirs = $dliblistwise;
+#	$cc;
+#	$dext = [ xapi.devel.pic.o ];
+#	$dscext = [ xapi.devel.pic.o ];
+#	$soext = [ devel.xu.so ];
+#	$cflags = [ $cflags_xapi_devel [ $dlibxunit ~ s/^/-I ] [ $dliblistwise ~ lsr c -d s/^/-isystem ] ];
+#	-$tsopaths
+#)
+#
+#$dlistwise_test = [ $*/test/listwise_test ~ j ]
+#$listwise_test = [ $dlistwise_test/listwise_test.xapi.devel.so ~ j ]
+#
+## run all tests
+#[ @test ] : [ $xunit_xapi_devel $oplist_xapi_devel $listwise_test $tsopaths ]
+#{
+#	[ $xunit_xapi_devel ] [ $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
+#}
+#
+#[ @test.more ] : [ $xunit_xapi_devel  $oplist_xapi_devel $listwise_test $tsopaths ]
+#{
+#	[ $xunit_xapi_devel ] +XUNIT [ $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
+#}
 
 ##
 ## formulas

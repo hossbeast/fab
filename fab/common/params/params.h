@@ -82,35 +82,41 @@ void params_teardown();
 // fab -> fabd
 //  new command is ready to be executed
 //
-#define FABSIG_START FABSIG_BASE + 1
+#define FABSIG_START FABSIG_BASE + 0
 
 /// FABSIG_DONE
 //
 // fabd -> fab
 //  the command is complete
 //
-#define FABSIG_DONE FABSIG_BASE + 2
+#define FABSIG_DONE FABSIG_BASE + 1
 
 /// FABSIG_BPSTART
 //
 // fabd -> fab
 //  buildplan is ready to be executed
 //
-#define FABSIG_BPSTART FABSIG_BASE + 3
+#define FABSIG_BPSTART FABSIG_BASE + 2
 
 /// FABSIG_BPGOOD
 //
 // fab -> fabd 
 //  buildplan was executed successfully
 //
-#define FABSIG_BPGOOD FABSIG_BASE + 4
+#define FABSIG_BPGOOD FABSIG_BASE + 3
 
 /// FABSIG_BPBAD
 //
 // fab -> fabd
 //  buildplan was not successfully executed to completion
 //
-#define FABSIG_BPBAD FABSIG_BASE + 5
+#define FABSIG_BPBAD FABSIG_BASE + 4
+
+/// FABSIG_SIZE
+//
+// number of fab ipc signals, used for enumerating
+//
+#define FABSIG_SIZE 5
 
 /// FABIPC_DATA
 //

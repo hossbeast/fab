@@ -73,8 +73,8 @@ dprintf(501, " +%s :", path);
 
 	void * dl = 0;
 	fatal(xdlopen, path, RTLD_NOW | RTLD_GLOBAL, &dl);
-	fatal(xdlsym, dl, "op_desc", (void*)&op);
 	g_dls[g_dls_l++] = dl;
+	fatal(xdlsym, dl, "op_desc", (void*)&op);
 
 	while(op->desc)
 	{

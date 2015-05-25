@@ -67,3 +67,20 @@ xapi API xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
 
 	finally : coda;
 }
+
+xapi API uxsigsuspend(const sigset_t * mask)
+{
+  if(sigsuspend(mask))
+  {
+    if(errno == EINTR)
+    {
+      /* the whole reason to use this function ... */
+    }
+    else
+    {
+      fail(errno);
+    }
+  }
+
+  finally : coda;
+}

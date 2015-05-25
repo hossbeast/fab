@@ -151,7 +151,7 @@ static int dsc_execwave(
 // public
 //
 
-int dsc_exec_specific(gn *** list, size_t listl, map * vmap, transform_parser * const gp, lwx *** stax, size_t * staxa, size_t staxp, ts *** ts, size_t * tsa, size_t * tsw)
+int dsc_exec_specific(gn ** list, size_t listl, map * vmap, transform_parser * const gp, lwx *** stax, size_t * staxa, size_t staxp, ts *** ts, size_t * tsa, size_t * tsw)
 {
 	struct timespec	time_start;
 	struct timespec	time_end;
@@ -168,14 +168,14 @@ int dsc_exec_specific(gn *** list, size_t listl, map * vmap, transform_parser * 
 	// assign each threadspace a discovery formula evaluation context
 	for(x = 0; x < listl; x++)
 	{
-		if((*list[x])->type == GN_TYPE_PRIMARY)
+		if(list[x]->type == GN_TYPE_PRIMARY)
 		{
-			for(y = 0; y < (*list[x])->dscvsl; y++)
+			for(y = 0; y < list[x]->dscvsl; y++)
 			{
 				fatal(ts_ensure, ts, tsa, tsl + 1);
 				ts_reset((*ts)[tsl]);
 
-				(*ts)[tsl++]->fmlv = (*list[x])->dscvs[y];
+				(*ts)[tsl++]->fmlv = list[x]->dscvs[y];
 			}
 			n++;
 		}

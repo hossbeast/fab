@@ -171,7 +171,7 @@ $cflags_xapi  = [ -DXAPI_PROVIDE_BACKTRACE ]
 
 $cflags_final = [ -O3 ]
 $cflags_debug = [ -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY ]
-$cflags_devel = [ -O0 -ggdb3 -DDEVEL -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY [ -DBUILDROOT="\""$buildroot"\"" ~ j ] ]
+$cflags_devel = [ -O0 -ggdb3 -DDEVEL -DXAPI_RUNTIME_SANITY_CHECKS -DSANITY [ -DBUILDROOT="\""$buildroot"\"" ~ j ] -DDEBUG_IPC ]
 $cflags_xunit = [ -O0 -ggdb3 -DXUNIT [ $dlibxunit ~ s/^/-I ] ]
 
 # cflags variants

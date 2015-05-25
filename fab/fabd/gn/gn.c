@@ -577,7 +577,7 @@ int gn_finalize(gn * const restrict gn)
 	finally : coda;
 }
 
-int gn_process_invalidations(gn *** const invalidations, int invalidationsl, int * const restrict repeat_discovery)
+int gn_process_invalidations(gn ** const invalidations, int invalidationsl, int * const restrict repeat_discovery)
 {
 	int x;
 
@@ -591,7 +591,7 @@ int gn_process_invalidations(gn *** const invalidations, int invalidationsl, int
 		if(g_args->invalidationsz)
 			gn = gn_nodes.e[x];
 		else
-			gn = (*invalidations[x]);
+			gn = invalidations[x];
 		
 		if(!gn->invalid)
 			logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_USER), gn->idstring);

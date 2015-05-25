@@ -326,7 +326,7 @@ void gn_dump(gn *);
 // SUMMARY
 //  apply invalidations
 //
-int gn_process_invalidations(gn *** const restrict invalidations, int invalidationsl, int * const restrict primary_invalidated)
+int gn_process_invalidations(gn ** const restrict invalidations, int invalidationsl, int * const restrict primary_invalidated)
 	__attribute__((nonnull));
 
 /// gn_init

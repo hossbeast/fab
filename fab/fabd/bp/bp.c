@@ -157,11 +157,11 @@ static int visit(gn * r, int k, gn *** lvs, int * l, int * a, int exact, int nof
 //
 
 int bp_create(
-	  gn *** const restrict fabrications
+	  gn ** const restrict fabrications
 	, int fabricationsl
-	, gn *** const restrict fabricationxs
+	, gn ** const restrict fabricationxs
 	, int fabricationxsl
-	, gn *** const restrict fabricationns
+	, gn ** const restrict fabricationns
 	, int fabricationnsl
 	, bp ** const restrict bp
 )
@@ -173,13 +173,13 @@ int bp_create(
 	// reset all depths/heights to -1
 	int x;
 	for(x = 0; x < fabricationsl; x++)
-		fatal(reset, *fabrications[x], 0, 1);
+		fatal(reset, fabrications[x], 0, 1);
 
 	for(x = 0; x < fabricationxsl; x++)
-		fatal(reset, *fabricationxs[x], 1, 0);
+		fatal(reset, fabricationxs[x], 1, 0);
 
 	for(x = 0; x < fabricationnsl; x++)
-		fatal(reset, *fabricationns[x], 0, 0);
+		fatal(reset, fabricationns[x], 0, 0);
 
 	// calculate node heights and max height
 	int maxheight = -1;
@@ -189,18 +189,18 @@ int bp_create(
 		int nowchange = 0;
 		if(x < fabricationsl)
 		{
-			fatal(heights, *fabrications[x], 0, 1, &nowchange);
-			maxheight = MAX(maxheight, (*fabrications[x])->height);
+			fatal(heights, fabrications[x], 0, 1, &nowchange);
+			maxheight = MAX(maxheight, fabrications[x]->height);
 		}
 		else if(x < (fabricationsl + fabricationxsl))
 		{
-			fatal(heights, *fabricationxs[x - fabricationsl], 1, 0, &nowchange);
-			maxheight = MAX(maxheight, (*fabricationxs[x - fabricationsl])->height);
+			fatal(heights, fabricationxs[x - fabricationsl], 1, 0, &nowchange);
+			maxheight = MAX(maxheight, fabricationxs[x - fabricationsl]->height);
 		}
 		else
 		{
-			fatal(heights, *fabricationns[x - fabricationsl - fabricationxsl], 0, 0, &nowchange);
-			maxheight = MAX(maxheight, (*fabricationns[x - fabricationsl - fabricationxsl])->height);
+			fatal(heights, fabricationns[x - fabricationsl - fabricationxsl], 0, 0, &nowchange);
+			maxheight = MAX(maxheight, fabricationns[x - fabricationsl - fabricationxsl]->height);
 		}
 
 		if(change && nowchange)
@@ -228,13 +228,13 @@ int bp_create(
 			// get list of nodes for this stage - k+1 is stage number
 			lvsl = 0;
 			for(x = 0; x < fabricationsl; x++)
-				fatal(visit, *fabrications[x], k+1, &lvs, &lvsl, &lvsa, 0, 1);
+				fatal(visit, fabrications[x], k+1, &lvs, &lvsl, &lvsa, 0, 1);
 
 			for(x = 0; x < fabricationxsl; x++)
-				fatal(visit, *fabricationxs[x], k+1, &lvs, &lvsl, &lvsa, 1, 0);
+				fatal(visit, fabricationxs[x], k+1, &lvs, &lvsl, &lvsa, 1, 0);
 
 			for(x = 0; x < fabricationnsl; x++)
-				fatal(visit, *fabricationns[x], k+1, &lvs, &lvsl, &lvsa, 0, 0);
+				fatal(visit, fabricationns[x], k+1, &lvs, &lvsl, &lvsa, 0, 0);
 
 			// ptr to the stage we will add to
 			bp_stage * bps = &(*bp)->stages[k];

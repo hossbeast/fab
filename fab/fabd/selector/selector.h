@@ -60,16 +60,6 @@ char * selector_string(const selector * const restrict s, char * const restrict 
 //  finalize selectors, obtain result lists
 //
 int selector_finalize(struct handler_context * ctx)
-#if 0
-	  struct gn **** restrict fabrications, size_t * restrict fabricationsl
-	, struct gn **** restrict fabricationxs, size_t * restrict fabricationxsl
-	, struct gn **** restrict fabricationns, size_t * restrict fabricationnsl
-	, struct gn **** restrict invalidations, size_t * restrict invalidationsl
-	, struct gn **** restrict discoveries, size_t * restrict discoveriesl
-	, struct gn **** restrict inspections, size_t * restrict inspectionsl
-	, struct gn **** restrict queries, size_t * restrict queriesl
-)
-#endif
 	__attribute__((nonnull));
 
 /// selector_init

@@ -83,6 +83,17 @@
 //
 #define NARGS(...) ((sizeof((int[]){0, ##__VA_ARGS__}) / sizeof(int)) - 1)
 
+/// MM - helper macro
+//
+// many map api's require an item and its length (get, set, delete)
+//
+// when the items size is known at compile time, MM makes it simpler to pass
+//
+#ifndef MAP_NO_HELPERS
+# define MM(x) (void*)&(x), sizeof(x)
+# define MMS(x) (x), strlen(x)
+#endif
+
 /// LSIGX / MSIGX
 //
 // SUMMARY
@@ -100,17 +111,6 @@
 # define MSIGX(l, x) (l)
 #else
 # error unable to determine endianness
-#endif
-
-/// MM - helper macro
-//
-// many map api's require an item and its length (get, set, delete)
-//
-// when the items size is known at compile time, MM makes it simpler to pass
-//
-#ifndef MAP_NO_HELPERS
-#define MM(x) (void*)&(x), sizeof(x)
-#define MMS(x) (x), strlen(x)
 #endif
 
 #endif

@@ -47,44 +47,29 @@
 #include "memblk.h"
 #include "unitstring.h"
 #include "cksum.h"
+#include "sigbank.h"
 
 // write log messages about process creation and signals received
 #ifndef DEBUG_IPC
 # define DEBUG_IPC 0
 #endif
 
+// errors to report and continue, otherwise exit
+static int fab_swallow[] = {
+	  [ FAB_SYNTAX ] = 1
+	, [ FAB_ILLBYTE ] = 1
+	, [ FAB_UNSATISFIED ] = 1
+	, [ FAB_CMDFAIL ] = 1
+	, [ FAB_NOINVOKE ] = 1
+	, [ FAB_BADPLAN ] = 1
+	, [ FAB_CYCLE ] = 1
+	, [ FAB_NOSELECT ] = 1
+	, [ FAB_DSCPARSE ] = 1
+};
+
+static pid_t fab_pids[3];      // most recent fab pids
+
 static int initialized;
-
-// signal handling
-static sigset_t none;
-static sigset_t all;
-static int o_signum;
-static void signal_handler(int signum, siginfo_t * info, void * ctx)
-{
-	if(!o_signum)
-		o_signum = signum;
-
-#if DEBUG_IPC
-	char space[2048];
-	char * dst = space;
-	size_t sz = sizeof(space);
-	size_t z = 0;
-
-	if(signum != SIGCHLD)
-	{
-		z += znprintf(dst + z, sz - z, "fabd[%u] received %d { from pid : %ld", getpid(), signum, (long)info->si_pid);
-
-		if(signum == SIGCHLD)
-		{
-			z += znprintf(dst + z, sz - z, ", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
-		}
-		z += znprintf(dst + z, sz - z, " }\n");
-	}
-
-	int __attribute__((unused)) r = write(1, space, z);
-#endif
-}
-
 
 int main(int argc, char** argv, char ** envp)
 {
@@ -113,45 +98,20 @@ int main(int argc, char** argv, char ** envp)
 	int y;
 	size_t tracesz = 0;
 
+  handler_context * ctx = 0;
+
 	// fabd is normally invoked with a single argument
 	int nodaemon = 0;
 	if(argc > 2)
 		if(strcmp(argv[2], "--nodaemon") == 0)
 			nodaemon = 1;
 
+  // initialize signal handling
+  fatal(sigbank_init
 #if DEBUG_IPC
-  sayf("fabd[%ld] started\n", (long)getpid());
+    , "fabd", getpid()
 #endif
-
-	// unblock all signals
-	sigfillset(&all);
-	sigemptyset(&none);
-	fatal(xsigprocmask, SIG_SETMASK, &none, 0);
-
-	// handle all signals
-	struct sigaction action = {
-		  .sa_sigaction = signal_handler
-		, .sa_flags = SA_SIGINFO
-	};
-	for(x = 1; x < SIGUNUSED; x++)
-	{
-		if(x != SIGKILL && x != SIGSTOP && x != SIGSEGV)
-		{
-			fatal(xsigaction, x, &action, 0);
-		}
-	}
-	for(x = SIGRTMIN; x <= SIGRTMAX; x++)
-	{
-#if DEBUG || DEVEL
-    if((x - SIGRTMIN) == 30)
-    {
-      // internal valgrind signal
-      continue;
-    }
-#endif
-
-    fatal(xsigaction, x, &action, 0);
-	}
+  );
 
 	// standard file descriptors
 	close(0);
@@ -202,9 +162,9 @@ int main(int argc, char** argv, char ** envp)
 	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0, L_INFO);
 
 	// other initializations
+  fatal(handler_context_mk, &ctx);
 	fatal(gn_init);
 	fatal(traverse_init);
-	fatal(ff_mkparser, &ffp);
 	fatal(cfg_init);
 
 	// track start time
@@ -226,7 +186,8 @@ int main(int argc, char** argv, char ** envp)
 	fatal(uxunlink, space, 0);
 	fatal(xsymlink, space2, space);
 
-	while(o_signum != SIGINT && o_signum != SIGQUIT && o_signum != SIGTERM)
+  int sig = g_signum;
+	while(sig != SIGINT && sig != SIGQUIT && sig != SIGTERM)
 	{
 		// read fab/pid
 		snprintf(space, sizeof(space), "%s/fab/pid", g_params.ipcstem);
@@ -320,12 +281,6 @@ int main(int argc, char** argv, char ** envp)
 				fatal(xchdir, space);
 			}
 
-			// compute varshash from -v options given on the cmdline
-			varshash[0] = varshash[1];
-			varshash[1] = 0;
-			for(x = 0; x < g_args->rootvarsl; x++)
-				varshash[1] += cksum(g_args->rootvars[x], strlen(g_args->rootvars[x]));
-
 			// parse the fabfiles only on the first run
 			if(!initialized)
 			{
@@ -338,7 +293,7 @@ int main(int argc, char** argv, char ** envp)
 				for(x = 0; x < g_args->rootvarsl; x++)
 				{
 					ff_file * vff = 0;
-					fatal(ff_var_parse, ffp, g_args->rootvars[x], strlen(g_args->rootvars[x]), x, &vff);
+					fatal(ff_var_parse, ctx->ffp, g_args->rootvars[x], strlen(g_args->rootvars[x]), x, &vff);
 
 					// process variable expressions
 					int k;
@@ -348,23 +303,23 @@ int main(int argc, char** argv, char ** envp)
 
 						if(stmt->type == FFN_VARASSIGN || stmt->type == FFN_VARXFM_ADD || stmt->type == FFN_VARXFM_SUB)
 						{
-							int pn = staxp;
-							fatal(list_resolve, stmt->definition, rmap, ffp->gp, &stax, &staxa, &staxp, 0, 0);
-							staxp++;
+							size_t pn = ctx->staxp;
+							fatal(list_resolve, stmt->definition, rmap, ctx->ffp->gp, &ctx->stax, &ctx->staxa, &ctx->staxp, 0, 0);
+							ctx->staxp++;
 
 							for(y = 0; y < stmt->varsl; y++)
 							{
 								if(stmt->type == FFN_VARASSIGN)
 								{
-									fatal(var_set, rmap, stmt->vars[y]->name->text->s, stax[pn], 1, 0, stmt);
+									fatal(var_set, rmap, stmt->vars[y]->name->text->s, ctx->stax[pn], 1, 0, stmt);
 								}
 								else if(stmt->type == FFN_VARXFM_ADD)
 								{
-									fatal(var_xfm_add, rmap, stmt->vars[y]->name->text->s, stax[pn], 1, stmt);
+									fatal(var_xfm_add, rmap, stmt->vars[y]->name->text->s, ctx->stax[pn], 1, stmt);
 								}
 								else if(stmt->type == FFN_VARXFM_SUB)
 								{
-									fatal(var_xfm_sub, rmap, stmt->vars[y]->name->text->s, stax[pn], 1, stmt);
+									fatal(var_xfm_sub, rmap, stmt->vars[y]->name->text->s, ctx->stax[pn], 1, stmt);
 								}
 							}
 						}
@@ -386,15 +341,15 @@ int main(int argc, char** argv, char ** envp)
 				}
 
 				// use up one list and populate the # variable (relative directory path to the initial fabfile)
-				fatal(lw_reset, &stax, &staxa, staxp);
-				fatal(lstack_addw, stax[staxp], g_args->init_fabfile_path->abs_dir, g_args->init_fabfile_path->abs_dirl);
-				fatal(var_set, rmap, "#", stax[staxp++], 1, 0, 0);
+				fatal(lw_reset, &ctx->stax, &ctx->staxa, ctx->staxp);
+				fatal(lstack_addw, ctx->stax[ctx->staxp], g_args->init_fabfile_path->abs_dir, g_args->init_fabfile_path->abs_dirl);
+				fatal(var_set, rmap, "#", ctx->stax[ctx->staxp++], 1, 0, 0);
 
 				// vmap for the initial fabfile is the first (and only) direct descendant of rootmap
 				fatal(var_clone, rmap, &vmap);
 
 				// parse, starting with the initial fabfile, construct the graph
-				fatal(ffproc, ffp, g_args->init_fabfile_path, vmap, &stax, &staxa, &staxp, &first);
+				fatal(ffproc, ctx->ffp, g_args->init_fabfile_path, vmap, &ctx->stax, &ctx->staxa, &ctx->staxp, &first);
 
 				// compute node types
 				initialized = 1;
@@ -417,28 +372,24 @@ int main(int argc, char** argv, char ** envp)
 				x = 0;
 				y = 0;
 
-				// no varexpr changes
-				if(varshash[0] == varshash[1])
-				{
-					// check for fabfile changes
-					for(x = 0; x < ff_files.l; x++)
-					{
-						fatal(hashblock_stat, ff_files.e[x]->path->abs, ff_files.e[x]->hb);
-						if(hashblock_cmp(ff_files.e[x]->hb))
-							break;
-					}
+        // check for fabfile changes
+        for(x = 0; x < ff_files.l; x++)
+        {
+          fatal(hashblock_stat, ff_files.e[x]->path->abs, ff_files.e[x]->hb);
+          if(hashblock_cmp(ff_files.e[x]->hb))
+            break;
+        }
 
-					if(x == ff_files.l)
-					{
-						// check for cfg file changes
-						for(y = 0; y < cfg_files.l; y++)
-						{
-							fatal(hashblock_stat, cfg_files.e[y]->path->abs, cfg_files.e[y]->hb);
-							if(hashblock_cmp(cfg_files.e[y]->hb))
-								break;
-						}
-					}
-				}
+        if(x == ff_files.l)
+        {
+          // check for cfg file changes
+          for(y = 0; y < cfg_files.l; y++)
+          {
+            fatal(hashblock_stat, cfg_files.e[y]->path->abs, cfg_files.e[y]->hb);
+            if(hashblock_cmp(cfg_files.e[y]->hb))
+              break;
+          }
+        }
 
 				if(x < ff_files.l || y < cfg_files.l)
 				{
@@ -452,7 +403,7 @@ int main(int argc, char** argv, char ** envp)
 
 			// handle this request
 			int frame;
-			if(invoke(&frame, handler))
+			if(invoke(&frame, handler, ctx, vmap, first))
 			{
 				// capture the error code
 				int code = XAPI_ERRCODE;
@@ -525,7 +476,7 @@ int main(int argc, char** argv, char ** envp)
 					fatal(xread, fd, space, sizeof(space), 0);
 					sscanf(space, "%*d %ld", &pgz);
 				}
-				logf(L_USAGE, "usage : mem(%s), lwx(%d), gn(%d), ts(%d)", bytestring(pgz * g_params.pagesize), staxa, gn_nodes.a, tsa);
+				logf(L_USAGE, "usage : mem(%s), lwx(%d), gn(%d), ts(%d)", bytestring(pgz * g_params.pagesize), ctx->staxa, gn_nodes.a, ctx->tsa);
 			}
 
 			// task complete : notify fab
@@ -542,9 +493,8 @@ int main(int argc, char** argv, char ** envp)
 		if(nodaemon)
 			break;
 
-		// wait for next command
-		o_signum = 0;
-		pause();
+    // receive a signal
+    fatal(sigreceive, &sig);
 	}
 
 	// touch stamp file
@@ -562,7 +512,6 @@ int main(int argc, char** argv, char ** envp)
 	fatal(tmp_cleanup, fab_pids, sizeof(fab_pids) / sizeof(fab_pids[0]));
 
 finally:
-	ff_freeparser(ffp);
 	map_free(rmap);
 	map_free(vmap);
 
@@ -579,6 +528,11 @@ finally:
 	fatal(ixclose, &logsfd);
 	fatal(ixclose, &fd);
 
+  handler_context_free(ctx);
+
+#if DEBUG || DEVEL
+  XAPI_INFOF("pid", "%ld", (long)getpid());
+#endif
 
 	if(XAPI_UNWINDING)
 	{

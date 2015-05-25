@@ -16,15 +16,18 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef _MAP_H
+#define _MAP_H
 
 #include <stdint.h>
 
 #define restrict __restrict
 
-/// opaque map type declaration
-//
+// opaque map type declaration
 struct map;
 typedef struct map map;
+
+// keys / values are dereferenced before being returned (map_get, map_keys, map_values)
+#define MAP_DEREF   1
 
 /// map_create
 //
@@ -66,27 +69,33 @@ void map_xfree(map** const restrict map)
 //
 // returns zero on success
 //
-int map_set(map* const restrict map, const void* const restrict key, int key_len, const void* const restrict value, int value_len, void * restrict rv)
+int map_set(map* const restrict map, const void* const restrict key, size_t key_len, const void* const restrict value, size_t value_len, void * restrict rv)
 	__attribute__((nonnull(1, 2)));
 
 /// map_get
 //
-// given a key, returns pointer to associated value, or 0 if not found
+// SUMMARY
+//  given a key, returns pointer to associated value, or 0 if not found
 //
-// parameters
-//  map				-
-//	key				- pointer to key
-//	key_len		- length of key
+// PARAMETERS
+//  map			- map instance
+//	key			- pointer to key
+//	key_len	- length of key
+//  [opts]  - bitwise combination of MAP_*
 //
-// example
+// EXAMPLE
 //	int k = 15;
 //	int* v = 0;
 //	if((v = map_get(map, MM(k))) == 0)
 //		/* key is not set */
 //
-// returns pointer to the stored value, or 0 if not found
+// SUMMARY
+//  returns pointer to the stored value, or 0 if not found
 //
-void* map_get(const map* const restrict map, const void* const restrict key, int key_len)
+void * map_getx(const map * const restrict m, const void * const restrict key, size_t keyl, uint32_t opts)
+	__attribute__((nonnull));
+
+void * map_get (const map * const restrict m, const void * const restrict key, size_t keyl)
 	__attribute__((nonnull));
 
 /// map_clear
@@ -104,31 +113,47 @@ void map_clear(map* const restrict map)
 //
 // returns 1 if the key was found, 0 otherwise
 //
-int map_delete(map* const restrict map, const void* const restrict key, int key_len)
+int map_delete(map* const restrict map, const void* const restrict key, size_t key_len)
+	__attribute__((nonnull));
+//
+/// map_values
+//
+// SUMMARY
+//  returns a list of values in the map
+//
+// PARAMETERS
+//  m      - map instance
+//  list   - (returns) list, to be freed by the caller
+//  listl  - (returns) size of list
+//  [opts] - bitwise combination of MAP_*
+//
+// RETURNS
+//  xapi semantics
+//
+int map_keysx(const map * const restrict m, void * const restrict list, size_t * const restrict listl, uint32_t opts)
 	__attribute__((nonnull));
 
-/// map_keys
-//
-// allocates *target and points *target[0...n] at each of the keys presently set in the map
-// and populates *count.
-//
-// *target is free()'d by the caller
-//
-// returns nonzero on success
-//
-int map_keys(const map* const restrict map, void* const restrict target, int* const restrict count)
+int map_keys (const map * const restrict m, void * const restrict list, size_t * const restrict listl)
 	__attribute__((nonnull));
 
 /// map_values
 //
-// allocates *target and points *target[0...n] at each of the values presently associated into
-// the map and populates *count
+// SUMMARY
+//  returns a list of values in the map
 //
-// *target is free()'d by the caller
+// PARAMETERS
+//  m      - map instance
+//  list   - (returns) list, to be freed by the caller
+//  listl  - (returns) size of list
+//  [opts] - bitwise combination of MAP_*
 //
-// returns nonzero on success
+// RETURNS
+//  xapi semantics
 //
-int map_values(const map* const restrict map, void* const restrict target, int* const restrict count)
+int map_valuesx(const map * const restrict m, void * const restrict list, size_t * const restrict listl, uint32_t opts)
+	__attribute__((nonnull));
+
+int map_values (const map * const restrict m, void * const restrict list, size_t * const restrict listl)
 	__attribute__((nonnull));
 
 /// map_clone

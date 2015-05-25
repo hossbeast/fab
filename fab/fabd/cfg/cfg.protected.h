@@ -27,7 +27,7 @@ struct hashblock;		// hashblock.h
 
 typedef struct cfg_file
 {
-	struct path *					canpath;	// path to cfg file
+	struct path *					path;	    // path to cfg file
 	struct hashblock *		hb;				// hashblock
 
 	/* filesystem declarations in the cfg file ; only present during cfg file parsing

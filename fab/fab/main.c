@@ -37,35 +37,11 @@
 #include "memblk.h"
 #include "parseint.h"
 #include "unitstring.h"
+#include "sigbank.h"
 
 #ifndef DEBUG_IPC
 # define DEBUG_IPC 0
 #endif
-
-// signal handling
-static int o_signum;
-static void signal_handler(int signum, siginfo_t * info, void * ctx)
-{
-	if(!o_signum)
-		o_signum = signum;
-
-#if DEBUG_IPC
-	char space[2048];
-	char * dst = space;
-	size_t sz = sizeof(space);
-	size_t z = 0;
-
-	if(signum != SIGCHLD)
-	{
-		z += znprintf(dst + z, sz - z, "fab[%u] received %d { from pid : %ld", getpid(), signum, (long)info->si_pid);
-		if(signum == SIGCHLD)
-			z += znprintf(dst + z, sz - z, ", exit : %d, signal : %d", WEXITSTATUS(info->si_status), WIFSIGNALED(info->si_status) ? WSTOPSIG(info->si_status) : 0);
-
-		z += znprintf(dst + z, sz - z, " }\n");
-	}
-	int __attribute__((unused)) r = write(1, space, z);
-#endif
-}
 
 static int bp_exec_stage(int stagesl, int commandsl, int stagex, int * success)
 {
@@ -428,10 +404,6 @@ int main(int argc, char** argv, char ** envp)
 
 	fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
 
-#if DEBUG_IPC
-printf("fab[%ld] started\n", (long)getpid());
-#endif
-
 	int x;
 	size_t tracesz = 0;
 
@@ -447,35 +419,11 @@ printf("fab[%ld] started\n", (long)getpid());
 	// ability to create world-rw files
 	umask(0);
 
-	// unblock all signals
-	sigset_t all;
-	sigset_t none;
-	sigfillset(&all);
-	sigemptyset(&none);
-	fatal(xsigprocmask, SIG_SETMASK, &none, 0);
-
-	// handle all signals
-	struct sigaction action = {
-		  .sa_sigaction = signal_handler
-		, .sa_flags = SA_SIGINFO
-	};
-	for(x = 1; x < SIGUNUSED; x++)
-	{
-		if(x != SIGKILL && x != SIGSTOP && x != SIGSEGV)
-			fatal(xsigaction, x, &action, 0);
-	}
-	for(x = SIGRTMIN; x <= SIGRTMAX; x++)
-	{
-#if DEBUG || DEVEL
-		if((x - SIGRTMIN) == 30)
-		{
-			// internal valgrind signal
-			continue;
-		}
+  fatal(sigbank_init
+#if DEBUG_IPC
+    , "fab",  getpid()
 #endif
-
-		fatal(xsigaction, x, &action, 0);
-	}
+  );
 
 	unsigned long * auxv = 0;
 #if __linux__
@@ -677,9 +625,6 @@ printf("fab[%ld] started\n", (long)getpid());
 	snprintf(space + z, sizeof(space) - z, "/fabd/error");
 	fatal(uxunlink, space, 0);
 
-	// block signals
-	fatal(xsigprocmask, SIG_SETMASK, &all, 0);
-
 	if(r)
 	{
 		// fabd is not running
@@ -725,12 +670,10 @@ printf("fab[%ld] started\n", (long)getpid());
 	int commandsl;
 	for(x = 0; 1; x++)
 	{
-		// await response signal from fabd
-		o_signum = 0;
-		sigsuspend(&none);
-		fatal(xsigprocmask, SIG_SETMASK, &none, 0);
-		
-		if(o_signum != FABSIG_BPSTART)
+    int sig;
+    fatal(sigreceive, &sig);
+
+		if(sig != FABSIG_BPSTART)
 			break;
 
 		if(x == 0)
@@ -756,9 +699,6 @@ printf("fab[%ld] started\n", (long)getpid());
 		// notify fabd
 		if(good)
 		{
-			// block signals
-			fatal(xsigprocmask, SIG_BLOCK, &all, 0);
-
 			// awaken fabd
 			fatal(uxfabdkill, -fabd_pgid, FABSIG_BPGOOD, &r);
 		}
@@ -860,6 +800,10 @@ finally:
 		}
 	}
 
+#if DEBUG || DEVEL
+  XAPI_INFOF("pid", "%ld", (long)getpid());
+#endif
+
 	/*
 	** when failing due to an error propagated from fabd (fabd_error), do not log the
 	** stacktrace, because fabd will have already done that. Do use it for the exit
@@ -883,6 +827,8 @@ finally:
 	z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
 	logf(L_INFO, "elapsed : %.*s", (int)z, space);
 
+  params_teardown();
+  sigbank_teardown();
 	memblk_free(mb);
 	log_teardown();
 coda;

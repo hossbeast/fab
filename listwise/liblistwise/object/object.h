@@ -19,6 +19,7 @@
 #define _LISTWISE_OBJECT_H
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #include "listwise.h"
 
@@ -148,7 +149,7 @@ int listwise_register_object(uint8_t type, listwise_object * def);
 //
 // *list is deallocated by the caller
 //
-int listwise_enumerate_objects(listwise_object *** list, int * list_len);
+int listwise_enumerate_objects(listwise_object *** list, size_t * list_len);
 
 /// listwise_lookup_object
 //

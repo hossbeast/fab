@@ -70,7 +70,7 @@ int dsc_exec_entire(
 //  tsw     - tsw  v
 //
 int dsc_exec_specific(
-	  gn *** const restrict list
+	  gn ** const restrict list
 	, size_t listl
 	, map * restrict vmap
 	, transform_parser * const restrict

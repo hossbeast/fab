@@ -220,7 +220,6 @@ if(help)
 #endif
 " -f <path>                     locate the initial fabfile at <path> rather than ./fabfile\n"
 " -I <path>                     append <path> to the list of directories for invocation resolution\n"
-" -v <varexpr>                  scope-zero variable definition\n"
 " --cycles-warn       (default) warn when a cycle is detected (once per unique cycle)\n"
 " --cycles-fail                 fail when a cycle is detected\n"
 " --cycles-deal                 deal with cycles (by terminating the traversal)\n"
@@ -567,19 +566,6 @@ int args_parse()
 		{
 			g_args->mode_bplan = MODE_BPLAN_GENERATE;
 		}
-		else if(x == 'v')
-		{
-			if(g_args->rootvarsl == g_args->rootvarsa)
-			{
-				int newa = g_args->rootvarsa ?: 3;
-				newa = newa * 2 + newa / 2;
-				fatal(xrealloc, &g_args->rootvars, sizeof(g_args->rootvars[0]), newa, g_args->rootvarsa);
-				g_args->rootvarsa = newa;
-			}
-
-			fatal(ixsprintf, &g_args->rootvars[g_args->rootvarsl], "%s%c", optarg, 0);
-			g_args->rootvarsl++;
-		}
 		else if(x == 'B')
 		{
 			g_args->invalidationsz = 1;
@@ -685,6 +671,7 @@ int args_summarize()
 
 	// log cmdline args under ARGS
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-can       =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->can);
+	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-hash      =%u", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->can_hash);
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-abs       =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->abs);
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-cwd   =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->rel_cwd);
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) init-fabfile-rel-fab   =%s", path_cmp(g_args->init_fabfile_path, init_fabpath) ? "*" : " ", 'f', g_args->init_fabfile_path->rel_fab);
@@ -724,11 +711,6 @@ int args_summarize()
 		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) invokedirs(s)          =%s", star ? "*" : " ", 'I', g_args->invokedirs[x]);
 	}
 
-	if(g_args->rootvarsl == 0)
-		logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)         =", " ", ' ');
-	for(x = 0; x < g_args->rootvarsl; x++)
-		logf(L_ARGS | L_PARAMS 		, " %s (  %c  ) scope-0-var(s)         =%s", "*", 'v', g_args->rootvars[x]);
-
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) invalidate-all         =%s", g_args->invalidationsz == DEFAULT_INVALIDATE_ALL ? " " : "*", 'B', g_args->invalidationsz ? "yes" : "no");
 
 	if(g_args->selectorsl == 0)
@@ -749,9 +731,6 @@ void args_freeze(memblk * const restrict mb)
 	memblk_freeze(mb, &g_args->buildscript_path);
 
 	int x;
-	for(x = 0; x < g_args->rootvarsl; x++)
-		memblk_freeze(mb, &g_args->rootvars[x]);
-	memblk_freeze(mb, &g_args->rootvars);
 
 	for(x = 0; x < g_args->bs_runtime_varsl; x++)
 		memblk_freeze(mb, &g_args->bs_runtime_vars[x]);
@@ -773,11 +752,6 @@ void args_thaw(char * const mb)
 {
 	memblk_thaw(mb, &g_args->argvs);
 	memblk_thaw(mb, &g_args->buildscript_path);
-
-	memblk_thaw(mb, &g_args->rootvars);
-	int x;
-	for(x = 0; x < g_args->rootvarsl; x++)
-		memblk_thaw(mb, &g_args->rootvars[x]);
 
 	memblk_thaw(mb, &g_args->bs_runtime_vars);
 	for(x = 0; x < g_args->bs_runtime_varsl; x++)
