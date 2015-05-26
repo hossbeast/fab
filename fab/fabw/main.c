@@ -28,7 +28,6 @@
 
 #include "xlinux.h"
 #include "pstring.h"
-#include "narrate.h"
 
 #include "global.h"
 

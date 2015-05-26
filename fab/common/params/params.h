@@ -41,7 +41,8 @@ extern struct g_params_t
 	int             egid_namel;
 
 	pid_t						fab_pid;										// pid of the fab process
-	pid_t						fabd_pid;										// pid of the fabd process
+	pid_t						faba_pgid;									// pgid of the faba process
+	pid_t						fabd_pgid;									// pgid of the fabd process
 	pid_t						pid;												// pid of this process
 	pid_t						ppid;												// pid of parent process
 	char *					cwd;												// cwd
@@ -111,6 +112,10 @@ void params_teardown();
 //  buildplan was not successfully executed to completion
 //
 #define FABSIG_BPBAD FABSIG_BASE + 4
+
+#define FABSIG_DSCSTART FABSIG_BASE + 5
+#define FABSIG_DSCGOOD FABSIG_BASE + 6
+#define FABSIG_DSCBAD FABSIG_BASE + 7
 
 /// FABSIG_SIZE
 //

@@ -21,6 +21,7 @@
 # source invocations
 +[ $dfab ]()			@fab
 +[ $dfabw ]()			@fabw
++[ $dfaba ]()			@faba
 +[ $dfabd ]()			@fabd
 
 # variables
@@ -63,11 +64,11 @@ $faboplist_xapi_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 [ @all ] : [ @all.xapi ]
 [ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final ] : [ @final.xapi ]
-[ @final.xapi ] : [ @fab.final @fabw.final @fabd.final $faboplist_xapi_final ]
+[ @final.xapi ] : [ @fab.final @fabw.final @faba.final @fabd.final $faboplist_xapi_final ]
 [ @debug ] : [ @debug.xapi ]
-[ @debug.xapi ] : [ @fab.debug @fabw.debug @fabd.debug $faboplist_xapi_debug ]
+[ @debug.xapi ] : [ @fab.debug @fabw.debug @faba.debug @fabd.debug $faboplist_xapi_debug ]
 [ @devel ] : [ @devel.xapi ]
-[ @devel.xapi ] : [ @fab.devel @fabw.devel @fabd.devel $faboplist_xapi_devel ]
+[ @devel.xapi ] : [ @fab.devel @fabw.devel @faba.devel @fabd.devel $faboplist_xapi_devel ]
 
 #
 # standard files - fPIC compilation
@@ -147,8 +148,8 @@ $faboplist_xapi_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 	install [ $dfabcore/fablw/op/fi/fi.xapi.final.so ]	[ $destdir/$fablwopdir/fi.so ]
 	install [ $dfabcore/fablw/op/fg/fg.xapi.final.so ]	[ $destdir/$fablwopdir/fg.so ]
 }
-[ @install.local.final] : [ @install.final @install.local @fab.install.local.final @fabw.install.local.final @fabd.install.local.final ]
-[ @install.dist.final] : [ @install.final @fab.install.dist.final @fabw.install.dist.final @fabd.install.dist.final ]
+[ @install.local.final] : [ @install.final @install.local @fab.install.local.final @fabw.install.local.final @faba.install.local.final @fabd.install.local.final ]
+[ @install.dist.final] : [ @install.final @fab.install.dist.final @fabw.install.dist.final @faba.install.dist.final @fabd.install.dist.final ]
 
 [ @install.debug ] : [ @install.base ]
 {
@@ -156,8 +157,8 @@ $faboplist_xapi_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 	install [ $dfabcore/fablw/op/fg/fg.xapi.debug.so ]	[ $destdir/$fablwopdir/fg.so ]
 }
 
-[ @install.local.debug ] : [ @install.debug @install.local @fab.install.local.debug @fabw.install.local.debug @fabd.install.local.debug ]
-[ @install.dist.debug ] : [ @install.debug @fab.install.dist.debug @fabw.install.dist.debug @fabd.install.dist.debug ]
+[ @install.local.debug ] : [ @install.debug @install.local @fab.install.local.debug @fabw.install.local.debug @faba.install.local.debug @fabd.install.local.debug ]
+[ @install.dist.debug ] : [ @install.debug @fab.install.dist.debug @fabw.install.dist.debug @faba.install.dist.debug @fabd.install.dist.debug ]
 
 [ @install.man ] : [ @install.man1 ]
 

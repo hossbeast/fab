@@ -19,6 +19,8 @@
 #ifndef _MEMBLK_H
 #define _MEMBLK_H
 
+#include <sys/types.h>
+
 struct mempolicy;		// xlinux/mempolicy.h
 
 struct memblk;

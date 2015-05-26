@@ -43,6 +43,10 @@
 # define DEBUG_IPC 0
 #endif
 
+//
+// static
+//
+
 static int bp_exec_stage(int stagesl, int commandsl, int stagex, int * success)
 {
 	pstring * tmp = 0;
@@ -379,6 +383,10 @@ static int uxfabdkill(pid_t pid, int sig, int * r)
 	finally : coda;
 }
 
+//
+// public
+//
+
 int main(int argc, char** argv, char ** envp)
 {
 	char space[2048];
@@ -466,22 +474,6 @@ int main(int argc, char** argv, char ** envp)
 
 	// default logger configuration
 	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0, L_INFO);
-
-/*
-     /FABIPCDIR/<hash>/fabfile				<-- init fabfile path, symlink
-0666 /FABIPCDIR/<hash>/args						<-- args, binary
-0666 /FABIPCDIR/<hash>/logs						<-- logs, ascii
-     /FABIPCDIR/<hash>/bp             <-- bp dir, symlink
-0666 /FABIPCDIR/<hash>/fab/pid				<-- fab pid, ascii
-0666 /FABIPCDIR/<hash>/fab/lock				<-- fab lockfile, empty
-     /FABIPCDIR/<hash>/fab/out				<-- fab stdout, symlink
-     /FABIPCDIR/<hash>/fab/err				<-- fab stderr, symlink
-     /FABIPCDIR/<hash>/fab/cwd				<-- fab cwd, symlink
-0666 /FABIPCDIR/<hash>/fabd/pgid			<-- fabd pgid, ascii
-0666 /FABIPCDIR/<hash>/fabd/lock			<-- fabd lockfile, empty
-0666 /FABIPCDIR/<hash>/fabd/exit			<-- fabd exit status, binary
-0666 /FABIPCDIR/<hash>/fabd/error			<-- fabd last error, binary
-*/
 
 	// ipc-dir stem
 	snprintf(g_params.ipcstem, sizeof(g_params.ipcstem), "%s/%u", XQUOTE(FABIPCDIR), g_params.canhash);

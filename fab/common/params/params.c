@@ -50,18 +50,17 @@ int params_setup()
 	g_params.cwd = getcwd(0, 0);
 	g_params.cwdl = strlen(g_params.cwd);
 
-	// canonical path to executing fab binary
+	// exedir is the canonical path to directory containing the executing binary
 	ssize_t r = 0;
 	fatal(xreadlink, "/proc/self/exe", space, sizeof(space), &r);
-
 	r += snprintf(space + r, sizeof(space) - r, "/..");
 
 	fatal(canon, space, r, g_params.cwd, g_params.cwdl, dst, sizeof(dst), 0, CAN_REALPATH);
 	fatal(ixstrdup, &g_params.exedir, dst);
-
 	if((g_params.exedirl = strlen(g_params.exedir)) < 1)
 		fail(FAB_NXPARAMS);
 
+  // get available processors
 	if((g_params.procs = sysconf(_SC_NPROCESSORS_ONLN)) == -1)
 	{
 		// unable to determine available CPU count

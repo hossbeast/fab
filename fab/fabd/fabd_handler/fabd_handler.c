@@ -39,15 +39,6 @@
 // static
 //
 
-static sigset_t o_all;
-static sigset_t o_none;
-
-static void __attribute__((constructor)) setup()
-{
-	sigfillset(&o_all);
-	sigemptyset(&o_none);
-}
-
 /// hashfiles
 //
 // SUMMARY
@@ -116,7 +107,7 @@ static int hashfiles(int iteration)
 // public
 //
 
-int handler_context_mk(handler_context ** const restrict ctx)
+int fabd_handler_context_mk(fabd_handler_context ** const restrict ctx)
 {
 	fatal(xmalloc, ctx, sizeof(**ctx));
 
@@ -128,7 +119,7 @@ int handler_context_mk(handler_context ** const restrict ctx)
 	finally : coda;
 }
 
-void handler_context_reset(handler_context * ctx)
+void fabd_handler_context_reset(fabd_handler_context * ctx)
 {
 	// per-request reset
 	ctx->tsl = 0;
@@ -144,7 +135,7 @@ void handler_context_reset(handler_context * ctx)
 	map_clear(ctx->smap);
 }
 
-void handler_context_free(handler_context * ctx)
+void fabd_handler_context_free(fabd_handler_context * ctx)
 {
 	if(ctx)
 	{
@@ -180,13 +171,13 @@ void handler_context_free(handler_context * ctx)
 	free(ctx);
 }
 
-void handler_context_xfree(handler_context ** const restrict ctx)
+void fabd_handler_context_xfree(fabd_handler_context ** const restrict ctx)
 {
-	handler_context_free(*ctx);
+	fabd_handler_context_free(*ctx);
 	*ctx = 0;
 }
 
-int handler(handler_context * const restrict ctx, struct map * const restrict vmap, struct gn * const restrict first)
+int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struct map * const restrict vmap, struct gn * const restrict first)
 {
 	int x;
 	int y;
@@ -195,7 +186,7 @@ int handler(handler_context * const restrict ctx, struct map * const restrict vm
 
 	char space[2048];
 
-	handler_context_reset(ctx);
+	fabd_handler_context_reset(ctx);
 
 	// track start time
 	g_params.starttime = time(0);

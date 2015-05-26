@@ -48,6 +48,7 @@ $dfabcore				= [ $*/fab ~ j ]
 $dfab						= [ $*/fab/fab ~ j ]
 $dfabd					= [ $*/fab/fabd ~ j ]
 $dfabw					= [ $*/fab/fabw ~ j ]
+$dfaba					= [ $*/fab/faba ~ j ]
 $dutil					= [ $*/fab/util ~ j ] 
 $dcommon				= [ $*/common ~ j ]
 $dlibxapi				= [ $*/libxapi ~ j ]
@@ -108,6 +109,9 @@ $fabd_devel							= [ $dfabd/fabd.devel ~ j ]
 $fabw_final							= [ $dfabw/fabw.final ~ j ]
 $fabw_debug							= [ $dfabw/fabw.debug ~ j ]
 $fabw_devel							= [ $dfabw/fabw.devel ~ j ]
+$faba_final							= [ $dfaba/faba.final ~ j ]
+$faba_debug							= [ $dfaba/faba.debug ~ j ]
+$faba_devel							= [ $dfaba/faba.devel ~ j ]
 $xunit_xapi_final				= [ $dxunit/xunit.final ~ j ]
 $xunit_xapi_debug				= [ $dxunit/xunit.debug ~ j ]
 $xunit_xapi_devel				= [ $dxunit/xunit.devel ~ j ]
@@ -182,3 +186,9 @@ $cflags_xapi_final = [ $cflags $cflags_xapi $cflags_final ]
 $cflags_xapi_debug = [ $cflags $cflags_xapi $cflags_debug ]
 $cflags_xapi_devel = [ $cflags $cflags_xapi $cflags_devel ]
 $cflags_xapi_xunit = [ $cflags $cflags_xapi $cflags_xunit ]
+
+# filesystem declarations
+#filesystem {
+#  path : /
+#  invalidate : stat / content / notify / always / never
+#}

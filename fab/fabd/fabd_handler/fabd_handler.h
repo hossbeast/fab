@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _HANDLER_H
-#define _HANDLER_H
+#ifndef _FABD_HANDLER_H
+#define _FABD_HANDLER_H
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -28,7 +28,7 @@ struct ts;          // ts.h
 
 #define restrict __restrict
 
-typedef struct handler_context
+typedef struct fabd_handler_context
 {
   struct pstring *      tmp;              // reusable temp space
 
@@ -58,52 +58,52 @@ typedef struct handler_context
   size_t                tsw;
   struct map *          bakemap;
   struct ff_parser *    ffp;              // fabfile parser
-} handler_context;
+} fabd_handler_context;
 
-/// handler
+/// fabd_handler_context_mk
+//
+// SUMMARY
+//
+// PARAMETERS
+//  ctx - (returns) fabd_handler context instance
+//
+int fabd_handler_context_mk(fabd_handler_context ** const restrict ctx)
+  __attribute__((nonnull));
+
+/// fabd_handler_context_reset
+//
+// SUMMARY
+//  reset an fabd_handler_context instance
+//
+void fabd_handler_context_reset(fabd_handler_context * const restrict ctx)
+  __attribute__((nonnull));
+
+/// fabd_handler_context_free
+//
+// SUMMARY
+//  free an fabd_handler_context instance with free semantics
+//
+void fabd_handler_context_free(fabd_handler_context * ctx);
+
+/// fabd_handler_context_xfree
+//
+// SUMMARY
+//  free an fabd_handler_context instance with xfree semantics
+//
+void fabd_handler_context_xfree(fabd_handler_context ** const restrict ctx)
+  __attribute__((nonnull));
+
+/// fabd_handler_handle_request
 //
 // SUMMARY
 //  handles a request
 //
 // PARAMETERS
-//  ctx   - handler context instance
+//  ctx   - fabd_handler context instance
 //  vmap  - init-level var map
 //  first - first dependency from fabfiles
 //
-int handler(handler_context * const restrict ctx, struct map * const restrict vmap, struct gn * const restrict first)
-  __attribute__((nonnull));
-
-/// handler_context_mk
-//
-// SUMMARY
-//
-// PARAMETERS
-//  ctx - (returns) handler context instance
-//
-int handler_context_mk(handler_context ** const restrict ctx)
-  __attribute__((nonnull));
-
-/// handler_context_reset
-//
-// SUMMARY
-//  reset an handler_context instance
-//
-void handler_context_reset(handler_context * const restrict ctx)
-  __attribute__((nonnull));
-
-/// handler_context_free
-//
-// SUMMARY
-//  free an handler_context instance with free semantics
-//
-void handler_context_free(handler_context * ctx);
-
-/// handler_context_xfree
-//
-// SUMMARY
-//  free an handler_context instance with xfree semantics
-//
-void handler_context_xfree(handler_context ** const restrict ctx)
+int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struct map * const restrict vmap, struct gn * const restrict first)
   __attribute__((nonnull));
 
 #endif

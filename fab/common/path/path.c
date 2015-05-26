@@ -25,7 +25,7 @@
 #include "xlinux.h"
 
 #include "path.h"
-#include "args.h"
+#include "args.def.h"
 #include "params.h"
 
 #include "cksum.h"

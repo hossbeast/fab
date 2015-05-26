@@ -26,8 +26,7 @@
 //  proxy for ftw
 //
 // CALLBACK
-//  xnftw uses an internal callback which is passed to nftw. the callback specified for xnftw is invoked by that callback, and is expected
-//  to follow the xapi calling convention
+//  xnftw uses an internal callback which is passed to nftw. That callback fatal-invokes the xnftw callback
 //
 int xnftw(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags);
 

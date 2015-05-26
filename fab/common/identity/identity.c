@@ -28,7 +28,7 @@
 #include "identity.h"
 #include "FAB.errtab.h"
 
-#include "args.h"
+#include "args.def.h"
 #include "params.h"
 
 int identity_init()

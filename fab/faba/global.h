@@ -15,46 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FABD_GLOBAL_H
-#define _FABD_GLOBAL_H
+#ifndef _FABA_GLOBAL_H
+#define _FABA_GLOBAL_H
 
 #include "FAB.errtab.h"
 #undef perrtab
 #define perrtab perrtab_FAB
 
 #include "logs.h"
-#include "args.h"
 #include "params.h"
-
-#if 1
-#include "identity.h"
-
-#include "fml.h"
-#include "ts.h"
-#include "ff.h"
-#include "bp.h"
-#include "traverse.h"
-#include "dirutil.h"
-#include "enclose.h"
-#include "gn.h"
-#include "gnlw.h"
-#include "lwutil.h"
-#include "tmp.h"
-#include "var.h"
-#include "list.h"
-#include "ffproc.h"
-#include "selector.h"
-#include "dsc.h"
-#include "bs.h"
-#include "cfg.h"
-#include "filesystem.h"
-#include "handler.h"
-
-#include "cfg.protected.h"
-#include "filesystem.protected.h"
-#endif
 
 #include "logger.h"
 
 #endif
-

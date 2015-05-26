@@ -23,13 +23,13 @@
 +[ $dfabcore/common/common.fab ~ j ]() @fabcommon
 
 # variables
-$sdirs = [ $dfabw  ~ lsr c -d ]
+$sdirs = [ $dfaba  ~ lsr c -d ]
 $cflags = [
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
 	# include paths
-	[ $sdirs [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux $dlibpstring ~ s/^/-I ]
+	[ $sdirs [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux $dlibpstring $dlibnarrate ~ s/^/-I ]
 ]
 
 $params = [
@@ -51,11 +51,11 @@ $cflags_xapi_debug = [ $cflags_xapi_debug $cflags $params ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $cflags $params_devel ]
 
 $rpath = [ 
-	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dlibnarrate ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
-$lflags_xapi_final = [ $lflags_xapi_final $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final ]
-$lflags_xapi_debug = [ $lflags_xapi_debug $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug ]
-$lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $rpath ]
+$lflags_xapi_final = [ $lflags_xapi_final $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $libnarrate_xapi_final ]
+$lflags_xapi_debug = [ $lflags_xapi_debug $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $libnarrate_xapi_debug ]
+$lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $libnarrate_xapi_devel $rpath ]
 
 # standard files - standard compilation
 +[@std.c]($dext = [ xapi.final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_xapi_final)
@@ -66,28 +66,28 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_de
 # catchall node
 #
 [ @all ] : [ @final @debug @devel ]
-[ @final ] : [ $fabw_final ]
-[ @debug ] : [ $fabw_debug ]
-[ @devel ] : [ $fabw_devel ]
+[ @final ] : [ $faba_final ]
+[ @debug ] : [ $faba_debug ]
+[ @devel ] : [ $faba_devel ]
 
 #
 # executables
 #
-[ $fabw_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final ]
-[ $fabw_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug ]
-[ $fabw_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel ]
+[ $faba_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $libnarrate_xapi_final ]
+[ $faba_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $libnarrate_xapi_debug ]
+[ $faba_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $libnarrate_xapi_devel ]
 
-[ $fabw_final ] : [ $dfabw/main.xapi.final.o ~ j ] 
+[ $faba_final ] : [ $dfaba/main.xapi.final.o ~ j ] 
 {
 	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $fabw_debug ] : [ $dfabw/main.xapi.debug.o ~ j ] 
+[ $faba_debug ] : [ $dfaba/main.xapi.debug.o ~ j ] 
 {
 	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $fabw_devel ] : [ $dfabw/main.xapi.devel.o ~ j ] 
+[ $faba_devel ] : [ $dfaba/main.xapi.devel.o ~ j ] 
 {
 	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
 }
@@ -99,22 +99,21 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_de
 [ @install.base.final ] : [ @final ]
 {
 	install -d																			[ $destdir/$bindir ]
-	rm																							[ $destdir/$bindir/fabw ] 2>/dev/null
-	install [ $fabw_final ]													[ $destdir/$bindir/fabw ]
+	rm																							[ $destdir/$bindir/faba ] 2>/dev/null
+	install [ $faba_final ]													[ $destdir/$bindir/faba ]
 }
 
 [ @install.dist.final ] : [ @install.base.final ]
 [ @install.local.final ] : [ @install.base.final ]
 {
-	chown fabsys:fabsys															[ $destdir/$bindir/fabw ]
-	chmod ug+s																			[ $destdir/$bindir/fabw ]
+	chown fabsys:fabsys															[ $destdir/$bindir/faba ]
+	chmod ug+s																			[ $destdir/$bindir/faba ]
 }
-
 [ @install.base.debug ] : [ @debug ]
 {
 	install -d																			[ $destdir/$bindir ]
-	rm																							[ $destdir/$bindir/fabw ] 2>/dev/null
-	install [ $fabw_debug ]													[ $destdir/$bindir/fabw ]
+	rm																							[ $destdir/$bindir/faba ] 2>/dev/null
+	install [ $faba_debug ]													[ $destdir/$bindir/faba ]
 }
 
 [ @install.dist.debug ] : [ @install.base.debug ]
