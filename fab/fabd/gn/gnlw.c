@@ -18,13 +18,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "gnlw.h"
-#include "traverse.h"
+#include "xapi.h"
+#include "xlinux.h"
 
 #include "global.h"
-
+#include "gnlw.h"
 #include "args.h"
-#include "xlinux.h"
+#include "traverse.h"
+#include "path.h"
 
 static int lw_string(void * o, char* prop, char ** s, int * l);
 static int lw_reflect(void * o, char* property, void *** r, uint8_t ** rtypes, int ** rls, int * rl);

@@ -23,8 +23,6 @@
 #define perrtab perrtab_FAB
 
 #include "logs.h"
-#include "params.h"
-
 #include "logger.h"
 
 #endif

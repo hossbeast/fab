@@ -24,8 +24,14 @@
 #include "xlinux.h"
 
 #include "global.h"
+#include "params.h"
+#include "args.h"
+#include "bs.h"
+#include "bp.h"
+#include "lwutil.h"
+#include "gnlw.h"
+#include "list.h"
 
-#include "macros.h"
 #include "map.h"
 #include "macros.h"
 

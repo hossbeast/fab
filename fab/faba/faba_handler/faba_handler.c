@@ -18,14 +18,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include "xapi.h"
 #include "xlinux.h"
+#include "pstring.h"
 
 #include "global.h"
 #include "faba_handler.h"
 #include "executor.h"
 #include "identity.h"
+#include "args.def.h"
 
 #include "sigbank.h"
 #include "macros.h"
@@ -36,15 +39,6 @@
 // static
 //
 
-static int uxfabdkill(int sig, int * r)
-{
-	fatal(identity_assume_fabsys);
-	fatal(uxkill, g_params.fabd_pgid, sig, r);
-	fatal(identity_assume_user);
-
-	finally : coda;
-}
-
 //
 // public
 //
@@ -52,6 +46,8 @@ static int uxfabdkill(int sig, int * r)
 int faba_handler_handle_request(executor_context * const restrict ctx)
 {
   char space[2048];
+  struct stat stb;
+  pstring * tmp = 0;
 
 	int x;
 	int fd = -1;
@@ -89,14 +85,17 @@ int faba_handler_handle_request(executor_context * const restrict ctx)
         fatal(xfutimens, fd, 0);
     }
 
+    // assume fabsys identity for signal exchange
+    fatal(identity_assume_fabsys);
+
 		// notify fabd
 		if(good)
 		{
-			fatal(uxfabdkill, FABSIG_BPGOOD, 0);
+			fatal(uxkill, -g_params.fabd_pgid, FABSIG_BPGOOD, 0);
 		}
 		else
 		{
-			fatal(uxfabdkill, FABSIG_BPBAD, 0);
+			fatal(uxkill, -g_params.fabd_pgid, FABSIG_BPBAD, 0);
 
 			// some command failed
 			fail(FAB_CMDFAIL);
@@ -105,11 +104,44 @@ int faba_handler_handle_request(executor_context * const restrict ctx)
     // wait for next stage to be prepared
     int sig;
     fatal(sigreceive, &sig);
-		if(sig != FABSIG_BPSTART)
-			break;
+
+    // resume user identity
+    fatal(identity_assume_user);
+
+		if(sig == FABSIG_BPSTART)
+      continue;
+    else if(sig == FABSIG_DONE)
+      break;
+    else
+      failf(FAB_BADIPC, "expected signal in { %d, %d } actual %d", FABSIG_BPSTART, FABSIG_DONE, sig);
+	}
+
+	// rewrite the buildscript for a bs build
+	if(g_args->buildscript_path)
+	{
+		// open buildscript from the ipc-dir
+    snprintf(space, sizeof(space), "%s/bs", g_params.ipcstem);
+		fatal(ixclose, &fd);
+		fatal(xopen, space, O_RDONLY, &fd);
+
+		// get the filesize
+		fatal(xfstat, fd, &stb);
+
+		// read the whole file
+		fatal(psgrow, &tmp, stb.st_size);
+		fatal(axread, fd, tmp->s, stb.st_size);
+
+		// open the dest path
+		fatal(ixclose, &fd);
+		fatal(xopen_mode, g_args->buildscript_path, O_CREAT | O_TRUNC | O_WRONLY, 0755, &fd);		// u+rwx go+rx
+
+		// rewrite
+		fatal(axwrite, fd, tmp->s, stb.st_size);
+		logf(L_INFO, "wrote %s", g_args->buildscript_path);
 	}
 
 finally:
 	fatal(ixclose, &fd);
+  psfree(tmp);
 coda;
 }

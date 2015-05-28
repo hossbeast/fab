@@ -18,6 +18,8 @@
 #ifndef _CFG_PROTECTED_H
 #define _CFG_PROTECTED_H
 
+#include "coll.h"
+
 #define restrict __restrict
 
 struct filesystem;	// filesystem.h

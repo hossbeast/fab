@@ -17,10 +17,12 @@
 
 #include <stdlib.h>
 
+#include "xapi.h"
 #include "xlinux.h"
 
 #include "global.h"
-
+#include "filesystem.h"
+#include "args.h"
 #include "path.h"
 
 #define restrict __restrict

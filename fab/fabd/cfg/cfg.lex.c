@@ -1,6 +1,6 @@
-#line 2 "fab/fabd/cfg/cfg.lex.c"
+#line 2 "fabd/cfg/cfg.lex.c"
 
-#line 4 "fab/fabd/cfg/cfg.lex.c"
+#line 4 "fabd/cfg/cfg.lex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -9,7 +9,7 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 36
+#define YY_FLEX_SUBMINOR_VERSION 35
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -159,7 +159,15 @@ typedef void* yyscan_t;
 
 /* Size of default input buffer. */
 #ifndef YY_BUF_SIZE
+#ifdef __ia64__
+/* On IA-64, the buffer size is 16k, not 8k.
+ * Moreover, YY_BUF_SIZE is 2*YY_READ_BUF_SIZE in the general case.
+ * Ditto for the __ia64__ case accordingly.
+ */
+#define YY_BUF_SIZE 32768
+#else
 #define YY_BUF_SIZE 16384
+#endif /* __ia64__ */
 #endif
 
 /* The state buf must be large enough to hold one state per character in the main buffer.
@@ -169,11 +177,6 @@ typedef void* yyscan_t;
 #ifndef YY_TYPEDEF_YY_BUFFER_STATE
 #define YY_TYPEDEF_YY_BUFFER_STATE
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
-#endif
-
-#ifndef YY_TYPEDEF_YY_SIZE_T
-#define YY_TYPEDEF_YY_SIZE_T
-typedef size_t yy_size_t;
 #endif
 
 #define EOB_ACT_CONTINUE_SCAN 0
@@ -198,6 +201,11 @@ typedef size_t yy_size_t;
 
 #define unput(c) yyunput( c, yyg->yytext_ptr , yyscanner )
 
+#ifndef YY_TYPEDEF_YY_SIZE_T
+#define YY_TYPEDEF_YY_SIZE_T
+typedef size_t yy_size_t;
+#endif
+
 #ifndef YY_STRUCT_YY_BUFFER_STATE
 #define YY_STRUCT_YY_BUFFER_STATE
 struct yy_buffer_state
@@ -215,7 +223,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	yy_size_t yy_n_chars;
+	int yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -294,7 +302,7 @@ static void cfg_yy_init_buffer (YY_BUFFER_STATE b,FILE *file ,yyscan_t yyscanner
 
 YY_BUFFER_STATE cfg_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
 YY_BUFFER_STATE cfg_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE cfg_yy_scan_bytes (yyconst char *bytes,yy_size_t len ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfg_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
 
 void *cfg_yyalloc (yy_size_t ,yyscan_t yyscanner );
 void *cfg_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
@@ -324,7 +332,7 @@ void cfg_yyfree (void * ,yyscan_t yyscanner );
 
 #define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
 
-#define cfg_yywrap(yyscanner) 1
+#define cfg_yywrap(n) 1
 #define YY_SKIP_YYWRAP
 
 typedef unsigned char YY_CHAR;
@@ -541,7 +549,7 @@ static yyconst flex_int16_t yy_chk[346] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "fab/fabd/cfg/cfg.l"
+#line 1 "fabd/cfg/cfg.l"
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -558,7 +566,7 @@ static yyconst flex_int16_t yy_chk[346] =
    
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
-#line 19 "fab/fabd/cfg/cfg.l"
+#line 19 "fabd/cfg/cfg.l"
 	#include <stdio.h>
 
 	#include "global.h"
@@ -629,7 +637,7 @@ static yyconst flex_int16_t yy_chk[346] =
 
 
 /* bytes that cannot appear in the input */
-#line 633 "fab/fabd/cfg/cfg.lex.c"
+#line 641 "fabd/cfg/cfg.lex.c"
 
 #define INITIAL 0
 #define quoted 1
@@ -666,8 +674,8 @@ struct yyguts_t
     size_t yy_buffer_stack_max; /**< capacity of stack. */
     YY_BUFFER_STATE * yy_buffer_stack; /**< Stack as an array. */
     char yy_hold_char;
-    yy_size_t yy_n_chars;
-    yy_size_t yyleng_r;
+    int yy_n_chars;
+    int yyleng_r;
     char *yy_c_buf_p;
     int yy_init;
     int yy_start;
@@ -724,17 +732,13 @@ FILE *cfg_yyget_out (yyscan_t yyscanner );
 
 void cfg_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
 
-yy_size_t cfg_yyget_leng (yyscan_t yyscanner );
+int cfg_yyget_leng (yyscan_t yyscanner );
 
 char *cfg_yyget_text (yyscan_t yyscanner );
 
 int cfg_yyget_lineno (yyscan_t yyscanner );
 
 void cfg_yyset_lineno (int line_number ,yyscan_t yyscanner );
-
-int cfg_yyget_column  (yyscan_t yyscanner );
-
-void cfg_yyset_column (int column_no ,yyscan_t yyscanner );
 
 YYSTYPE * cfg_yyget_lval (yyscan_t yyscanner );
 
@@ -780,7 +784,12 @@ static int input (yyscan_t yyscanner );
     
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
+#ifdef __ia64__
+/* On IA-64, the buffer size is 16k, not 8k */
+#define YY_READ_BUF_SIZE 16384
+#else
 #define YY_READ_BUF_SIZE 8192
+#endif /* __ia64__ */
 #endif
 
 /* Copy whatever the last rule matched to the standard output. */
@@ -884,11 +893,11 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 104 "fab/fabd/cfg/cfg.l"
+#line 104 "fabd/cfg/cfg.l"
 
 
  /* single-line comments */
-#line 892 "fab/fabd/cfg/cfg.lex.c"
+#line 901 "fabd/cfg/cfg.lex.c"
 
     yylval = yylval_param;
 
@@ -977,148 +986,148 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 107 "fab/fabd/cfg/cfg.l"
+#line 107 "fabd/cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 /* multiline comments are nestable */
 case 2:
 YY_RULE_SETUP
-#line 110 "fab/fabd/cfg/cfg.l"
+#line 110 "fabd/cfg/cfg.l"
 { LOCWRITE; PUSHSTATE(multilinecomment); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 111 "fab/fabd/cfg/cfg.l"
+#line 111 "fabd/cfg/cfg.l"
 { LOCWRITE; POPSTATE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 112 "fab/fabd/cfg/cfg.l"
+#line 112 "fabd/cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 113 "fab/fabd/cfg/cfg.l"
+#line 113 "fabd/cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 114 "fab/fabd/cfg/cfg.l"
+#line 114 "fabd/cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 115 "fab/fabd/cfg/cfg.l"
+#line 115 "fabd/cfg/cfg.l"
 { LOCRESET; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 117 "fab/fabd/cfg/cfg.l"
+#line 117 "fabd/cfg/cfg.l"
 { return LEX(FILESYSTEM); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 118 "fab/fabd/cfg/cfg.l"
+#line 118 "fabd/cfg/cfg.l"
 { return LEX(INVALIDATION); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 119 "fab/fabd/cfg/cfg.l"
+#line 119 "fabd/cfg/cfg.l"
 { return LEX(PATH); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 120 "fab/fabd/cfg/cfg.l"
+#line 120 "fabd/cfg/cfg.l"
 { return LEX(STAT); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 121 "fab/fabd/cfg/cfg.l"
+#line 121 "fabd/cfg/cfg.l"
 { return LEX(CONTENT); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 122 "fab/fabd/cfg/cfg.l"
+#line 122 "fabd/cfg/cfg.l"
 { return LEX(NOTIFY); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 123 "fab/fabd/cfg/cfg.l"
+#line 123 "fabd/cfg/cfg.l"
 { return LEX(ALWAYS); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 124 "fab/fabd/cfg/cfg.l"
+#line 124 "fabd/cfg/cfg.l"
 { return LEX(NEVER); }
 	YY_BREAK
 /* characters with special meaning in both INITIAL and list */
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 127 "fab/fabd/cfg/cfg.l"
+#line 127 "fabd/cfg/cfg.l"
 { LOCRESET; return LEX(yytext[0]); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 128 "fab/fabd/cfg/cfg.l"
+#line 128 "fabd/cfg/cfg.l"
 { LOCWRITE; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 129 "fab/fabd/cfg/cfg.l"
+#line 129 "fabd/cfg/cfg.l"
 { PUSHSTATE(quoted); return LEX(yytext[0]); }
 	YY_BREAK
 /* characters with special meaning in INITIAL */
 case 19:
 YY_RULE_SETUP
-#line 132 "fab/fabd/cfg/cfg.l"
+#line 132 "fabd/cfg/cfg.l"
 { return LEX(yytext[0]); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 133 "fab/fabd/cfg/cfg.l"
+#line 133 "fabd/cfg/cfg.l"
 { return LEX(yytext[0]); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 134 "fab/fabd/cfg/cfg.l"
+#line 134 "fabd/cfg/cfg.l"
 { return LEX(yytext[0]); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 135 "fab/fabd/cfg/cfg.l"
+#line 135 "fabd/cfg/cfg.l"
 {	return LEX(WORD); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 137 "fab/fabd/cfg/cfg.l"
+#line 137 "fabd/cfg/cfg.l"
 { POPSTATE; return LEX(yytext[0]); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 138 "fab/fabd/cfg/cfg.l"
+#line 138 "fabd/cfg/cfg.l"
 { return LEXV(CREF, 1); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 139 "fab/fabd/cfg/cfg.l"
+#line 139 "fabd/cfg/cfg.l"
 { return LEXV(HREF, 2); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 140 "fab/fabd/cfg/cfg.l"
+#line 140 "fabd/cfg/cfg.l"
 { return LEXV(HREF, 3); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 141 "fab/fabd/cfg/cfg.l"
+#line 141 "fabd/cfg/cfg.l"
 { return LEX(WORD); }
 	YY_BREAK
 case 28:
 /* rule 28 can match eol */
 YY_RULE_SETUP
-#line 143 "fab/fabd/cfg/cfg.l"
+#line 143 "fabd/cfg/cfg.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -1129,7 +1138,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 150 "fab/fabd/cfg/cfg.l"
+#line 150 "fabd/cfg/cfg.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -1149,7 +1158,7 @@ case YY_STATE_EOF(list):
 case YY_STATE_EOF(varref):
 case YY_STATE_EOF(nofile):
 case YY_STATE_EOF(multilinecomment):
-#line 157 "fab/fabd/cfg/cfg.l"
+#line 157 "fabd/cfg/cfg.l"
 {
                                                           while(yyextra->states_n)
                                                             POPSTATE;
@@ -1158,10 +1167,10 @@ case YY_STATE_EOF(multilinecomment):
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 162 "fab/fabd/cfg/cfg.l"
+#line 162 "fabd/cfg/cfg.l"
 ECHO;
 	YY_BREAK
-#line 1165 "fab/fabd/cfg/cfg.lex.c"
+#line 1174 "fabd/cfg/cfg.lex.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1346,21 +1355,21 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 	else
 		{
-			yy_size_t num_to_read =
+			int num_to_read =
 			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
 		while ( num_to_read <= 0 )
 			{ /* Not enough room in the buffer - grow it. */
 
 			/* just a shorter name for the current buffer */
-			YY_BUFFER_STATE b = YY_CURRENT_BUFFER_LVALUE;
+			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
 
 			int yy_c_buf_p_offset =
 				(int) (yyg->yy_c_buf_p - b->yy_ch_buf);
 
 			if ( b->yy_is_our_buffer )
 				{
-				yy_size_t new_size = b->yy_buf_size * 2;
+				int new_size = b->yy_buf_size * 2;
 
 				if ( new_size <= 0 )
 					b->yy_buf_size += b->yy_buf_size / 8;
@@ -1391,7 +1400,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 		/* Read in more data. */
 		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
-			yyg->yy_n_chars, num_to_read );
+			yyg->yy_n_chars, (size_t) num_to_read );
 
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = yyg->yy_n_chars;
 		}
@@ -1488,7 +1497,6 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 	yy_is_jam = (yy_current_state == 117);
 
-	(void)yyg;
 	return yy_is_jam ? 0 : yy_current_state;
 }
 
@@ -1517,7 +1525,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 		else
 			{ /* need more input */
-			yy_size_t offset = yyg->yy_c_buf_p - yyg->yytext_ptr;
+			int offset = yyg->yy_c_buf_p - yyg->yytext_ptr;
 			++yyg->yy_c_buf_p;
 
 			switch ( yy_get_next_buffer( yyscanner ) )
@@ -1681,6 +1689,10 @@ static void cfg_yy_load_buffer_state  (yyscan_t yyscanner)
 	cfg_yyfree((void *) b ,yyscanner );
 }
 
+#ifndef __cplusplus
+extern int isatty (int );
+#endif /* __cplusplus */
+    
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
  * such as during a cfg_yyrestart() or at EOF.
@@ -1797,7 +1809,7 @@ void cfg_yypop_buffer_state (yyscan_t yyscanner)
  */
 static void cfg_yyensure_buffer_stack (yyscan_t yyscanner)
 {
-	yy_size_t num_to_alloc;
+	int num_to_alloc;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	if (!yyg->yy_buffer_stack) {
@@ -1895,7 +1907,7 @@ YY_BUFFER_STATE cfg_yy_scan_string (yyconst char * yystr , yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE cfg_yy_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len , yyscan_t yyscanner)
+YY_BUFFER_STATE cfg_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
 	char *buf;
@@ -2044,7 +2056,7 @@ FILE *cfg_yyget_out  (yyscan_t yyscanner)
 /** Get the length of the current token.
  * @param yyscanner The scanner object.
  */
-yy_size_t cfg_yyget_leng  (yyscan_t yyscanner)
+int cfg_yyget_leng  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyleng;
@@ -2080,7 +2092,7 @@ void cfg_yyset_lineno (int  line_number , yyscan_t yyscanner)
 
         /* lineno is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           YY_FATAL_ERROR( "cfg_yyset_lineno called with no buffer" );
+           yy_fatal_error( "cfg_yyset_lineno called with no buffer" , yyscanner); 
     
     yylineno = line_number;
 }
@@ -2095,7 +2107,7 @@ void cfg_yyset_column (int  column_no , yyscan_t yyscanner)
 
         /* column is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           YY_FATAL_ERROR( "cfg_yyset_column called with no buffer" );
+           yy_fatal_error( "cfg_yyset_column called with no buffer" , yyscanner); 
     
     yycolumn = column_no;
 }
@@ -2331,4 +2343,4 @@ void cfg_yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 162 "fab/fabd/cfg/cfg.l"
+#line 162 "fabd/cfg/cfg.l"

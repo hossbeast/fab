@@ -27,6 +27,8 @@
 #include "xlinux.h"
 
 #include "global.h"
+#include "ff.h"
+#include "args.h"
 #include "ff/ff.parse.h"
 #include "ff/ff.tab.h"
 #include "ff/ff.dsc.tab.h"
@@ -35,6 +37,8 @@
 #include "ff/ff.lex.h"
 #include "ff/ff.tokens.h"
 #include "ff/ff.states.h"
+#include "ffn.h"
+#include "gn.h"
 
 #include "macros.h"
 #include "cksum.h"

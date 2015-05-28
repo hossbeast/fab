@@ -29,4 +29,5 @@
 12	NOSELECT			selector matches nothing
 13	NXPARAMS			unable to determine runtime parameters
 14	FABDFAIL			fabd terminated abnormally
-15	FABPERMS			fab binar(ies) do not have proper permissions
+15	FABAFAIL			faba terminated abnormally
+16	FABPERMS			fab binar(ies) do not have proper ownership/permissions

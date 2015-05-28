@@ -20,6 +20,7 @@
 
 #include "listwise.h"
 #include "listwise/transform.h"
+#include "listwise/object.h"
 
 // listwise interface to list objects
 //  (this type is a placeholder - instances of this object are NOT ever passed into liblistwise)

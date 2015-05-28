@@ -27,9 +27,14 @@
 #include "xlinux.h"
 
 #include "global.h"
+#include "gn.h"
+#include "args.h"
+#include "fml.h"
+#include "ff.h"
+#include "strstack.h"
+#include "canon.h"
 
 #include "unitstring.h"
-#include "canon.h"
 #include "map.h"
 #include "cksum.h"
 #include "parseint.h"

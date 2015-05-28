@@ -113,10 +113,6 @@ void params_teardown();
 //
 #define FABSIG_BPBAD FABSIG_BASE + 4
 
-#define FABSIG_DSCSTART FABSIG_BASE + 5
-#define FABSIG_DSCGOOD FABSIG_BASE + 6
-#define FABSIG_DSCBAD FABSIG_BASE + 7
-
 /// FABSIG_SIZE
 //
 // number of fab ipc signals, used for enumerating

@@ -18,9 +18,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "xapi.h"
 #include "pstring.h"
 #include "listwise.h"
+#include "xlinux.h"
 
+#include "global.h"
+#include "params.h"
 #include "bp.h"
 #include "ts.h"
 #include "fml.h"
@@ -29,13 +33,10 @@
 #include "args.h"
 #include "var.h"
 #include "traverse.h"
-
-#include "logs.h"
-#include "global.h"
-#include "xlinux.h"
-#include "macros.h"
 #include "list.h"
 #include "lwutil.h"
+
+#include "macros.h"
 #include "map.h"
 
 //

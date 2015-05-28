@@ -37,6 +37,13 @@
 // public
 //
 
+int executor_context_mk(executor_context ** const restrict ctx)
+{
+  fatal(xmalloc, ctx, sizeof(**ctx));
+
+  finally : coda;
+}
+
 int executor_context_recycle(executor_context * ctx)
 {
   int x;
@@ -84,7 +91,7 @@ int executor_context_dispose(executor_context * ctx)
   finally : coda;
 }
 
-int executor_stage_exec(executor_context * const restrict ctx, int stagesl, int commandsl, int stagex, int * const restrict success)
+int executor_execute_stage(executor_context * const restrict ctx, int stagesl, int commandsl, int stagex, int * const restrict success)
 {
   int fd = -1;
   int i;

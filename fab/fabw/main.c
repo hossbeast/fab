@@ -30,6 +30,7 @@
 #include "pstring.h"
 
 #include "global.h"
+#include "params.h"
 
 #include "parseint.h"
 #include "macros.h"
@@ -41,13 +42,11 @@
 
 int main(int argc, char** argv)
 {
-	char stem[2048];
 	char space[2048];
 
 	int fd = -1;
 	pid_t fab_pid = -1;
-	pid_t fabd_pid = -1;
-	size_t z;
+	pid_t child_pid = -1;
 
   int x;
 
@@ -71,70 +70,82 @@ int main(int argc, char** argv)
 	for(x = 3; x < 64; x++)
 		close(x);
 
-	// process parameter gathering
-	fatal(params_setup);
+  // module setup
+  fatal(params_setup);
 
-	// get ipc dir
+	// required first argument : program name
+  if(argc < 2)
+    fail(FAB_BADARGS);
+  char * child = argv[1];
+
+  // whitelist possible children
+  if(strcmp(child, "fabd") && strcmp(child, "faba"))
+    fail(FAB_BADARGS);
+
+  // required second argument : ipc hash
 	uint32_t canhash;
-	if(argc < 2 || parseuint(argv[1], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
+	if(argc < 3 || parseuint(argv[2], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
 		fail(FAB_BADARGS);
 
 	// ipc-dir stem
-	z = snprintf(stem, sizeof(stem), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
+	snprintf(g_params.ipcdir, sizeof(g_params.ipcdir), "/%s/%u", XQUOTE(FABIPCDIR), canhash);
 
-	// fork fabd
-	fatal(xfork, &fabd_pid);
-	if(fabd_pid == 0)
+	// fork child
+	fatal(xfork, &child_pid);
+	if(child_pid == 0)
 	{
-		// tell fabd its name
+    // give the child its name
 		char * w;
 		while((w = strstr(argv[0], "fabw")))
-			w[3] = 'd';
+			w[3] = child[3];
 
 #if DEVEL
-		snprintf(space, sizeof(space), "%s/../fabd/fabd.devel", g_params.exedir);
+		snprintf(space, sizeof(space), "%s/../%s/%s.devel", g_params.exedir, child, child);
 		execv(space, argv);
 #else
-		execvp("fabd", argv);
+		execvp(child, argv);
 #endif
 
 		tfail(perrtab_SYS, errno);
 	}
 
-  // suspend execution pending fabd status change
+  // suspend execution pending child status change
 	int status;
-	fatal(xwaitpid, fabd_pid, &status, 0);
+	fatal(xwaitpid, child_pid, &status, 0);
 
-	// fabd-exit file
-	snprintf(stem + z, sizeof(stem) - z, "/fabd/exit");
-	fatal(xopen_mode, stem, O_CREAT | O_WRONLY, FABIPC_DATA, &fd);
+	// record child exit status
+  snprintf(space, sizeof(space), "%s/%s/exit", g_params.ipcdir, child);
+	fatal(xopen_mode, space, O_CREAT | O_WRONLY, FABIPC_DATA, &fd);
 	fatal(axwrite, fd, &status, sizeof(status));
 	fatal(ixclose, &fd);
 
-	// read fab/pid
-	snprintf(stem + z, sizeof(stem) - z, "/fab/pid");
-	fatal(xopen, stem, O_RDONLY, &fd);
+	// read fab/pid in order to report
+	snprintf(space, sizeof(space), "%s/fab/pid", g_params.ipcdir);
+	fatal(xopen, space, O_RDONLY, &fd);
 	fatal(axread, fd, &fab_pid, sizeof(fab_pid));
 	
 finally:
+  // cleanup
 	fatal(ixclose, &fd);
 
+  // module teardown
+  params_teardown();
+
 #if DEBUG || DEVEL
+  XAPI_INFOF("name", "fabw/%s", child);
   XAPI_INFOF("pid", "%ld", (long)getpid());
-#endif
 
 	if(XAPI_UNWINDING)
 	{
 		size_t tracesz = xapi_trace_full(space, sizeof(space));
 		logw(L_RED, space, tracesz);
 	}
+#endif
 
 	// notify fab
-	if(fab_pid != -1)
-		kill(fab_pid, 15);
+  kill(fab_pid, FABSIG_DONE);
 
-	// kill fabd, if any
-	if(fabd_pid != -1)
-		kill(fabd_pid, 9);
+	// kill child, if any
+  kill(child_pid, 9);
 coda;
 }

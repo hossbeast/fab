@@ -27,15 +27,20 @@
 #include "xlinux.h"
 
 #include "global.h"
+#include "cfg.h"
+#include "cfg.protected.h"
 #include "cfg/cfg.parse.h"
 #include "cfg/cfg.tab.h"
 #include "cfg/cfg.lex.h"
 #include "cfg/cfg.tokens.h"
 #include "cfg/cfg.states.h"
+#include "filesystem.h"
+#include "filesystem.protected.h"
 
 #include "macros.h"
 #include "cksum.h"
 #include "parseint.h"
+#include "map.h"
 
 #define restrict __restrict
 

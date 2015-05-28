@@ -43,14 +43,14 @@ int filesystem_mk(struct filesystem * const restrict e, char * const restrict pa
 // SUMMARY
 //  free a filesystem with free semantics
 //
-void filesystem_free(filesystem * const restrict fs);
+void filesystem_free(struct filesystem * const restrict fs);
 
 /// filesystem_xfree
 //
 // SUMMARY
 //  free an filesystem with xfree semantics
 //
-void filesystem_xfree(filesystem ** const restrict fs)
+void filesystem_xfree(struct filesystem ** const restrict fs)
 	__attribute__((nonnull));
 
 #undef restrict

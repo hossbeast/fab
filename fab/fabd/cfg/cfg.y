@@ -19,10 +19,13 @@
 	#include <stdlib.h>
 	#include <string.h>
 
+  #include "pstring.h"
+
 	#include "global.h"
 
 	#include "cfg.parse.h"
 	#include "cfg.protected.h"
+  #include "filesystem.h"
 	#include "filesystem.protected.h"
 
 	// defined in cfg.lex.o
@@ -49,7 +52,7 @@
 
 	struct
 	{
-		pstring * path;
+		struct pstring * path;
 		uint64_t	invalidation;
 	} fsprop;
 }

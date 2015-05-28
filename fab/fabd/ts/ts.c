@@ -19,15 +19,17 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "ts.h"
-#include "fml.h"
-#include "args.h"
-#include "logs.h"
-
+#include "xapi.h"
 #include "xlinux.h"
 #include "pstring.h"
 
 #include "global.h"
+#include "ts.h"
+#include "args.h"
+#include "params.h"
+#include "fml.h"
+#include "gn.h"
+
 #include "macros.h"
 
 void ts_reset(ts * ts)

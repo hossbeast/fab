@@ -18,8 +18,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "xlinux.h"
 #include "listwise.h"
+#include "listwise/transform.h"
 
+#include "global.h"
+#include "params.h"
+#include "dsc.h"
 #include "bp.h"
 #include "ts.h"
 #include "fml.h"
@@ -34,9 +39,6 @@
 #include "lwutil.h"
 #include "traverse.h"
 
-#include "logs.h"
-#include "global.h"
-#include "xlinux.h"
 #include "macros.h"
 #include "map.h"
 #include "unitstring.h"

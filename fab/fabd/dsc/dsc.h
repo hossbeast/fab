@@ -18,10 +18,11 @@
 #ifndef _DSC_H
 #define _DSC_H
 
-#include "listwise.h"
-
-#include "gn.h"
-#include "map.h"
+struct ts;                 // ts.h
+struct transform_parser;
+struct lwx;
+struct map;
+struct gn;
 
 #define restrict __restrict
 
@@ -41,12 +42,12 @@
 //  tsw     - tsw  v
 //
 int dsc_exec_entire(
-	  map * restrict vmap
-	, transform_parser * const restrict
-	, lwx *** restrict stax
+	  struct map * restrict vmap
+	, struct transform_parser * const restrict
+	, struct lwx *** restrict stax
 	, size_t * restrict staxa
 	, size_t staxp
-	, ts *** restrict ts
+	, struct ts *** restrict ts
 	, size_t * restrict tsa
 	, size_t * restrict tsw
 )
@@ -70,14 +71,14 @@ int dsc_exec_entire(
 //  tsw     - tsw  v
 //
 int dsc_exec_specific(
-	  gn ** const restrict list
+	  struct gn ** const restrict list
 	, size_t listl
-	, map * restrict vmap
-	, transform_parser * const restrict
-	, lwx *** restrict stax
+	, struct map * restrict vmap
+	, struct transform_parser * const restrict
+	, struct lwx *** restrict stax
 	, size_t * restrict staxa
 	, size_t staxp
-	, ts *** restrict ts
+	, struct ts *** restrict ts
 	, size_t * restrict tsa
 	, size_t * restrict tsw
 )

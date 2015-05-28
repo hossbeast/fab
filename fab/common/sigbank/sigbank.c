@@ -98,7 +98,7 @@ int sigbank_init(
   for(x = FABSIG_BASE; x < (FABSIG_BASE + FABSIG_SIZE); x++)
     sigaddset(&o_default_set, x);
 
-  // the set of signals used for receipt is the empty set
+  // the set of blocked signals used for receipt is the empty set
   sigemptyset(&o_receive_set);
 
   // establish the default signal mask

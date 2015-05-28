@@ -2,31 +2,45 @@
 
 For a project, the fab system consists of four processes, viz.
 
- - fab : parses command-line arguments and marshals for faba/fabd
- - fabd : daemon that maintains all state pertaining to the project
- - fabw : daemon that watches fabd/faba to ensure continuity if it crashes
+ - fab : parses command-line arguments and marshals them for faba/fabd
+ - fabd : daemon that maintains all state pertaining to the project and carries out most logic
+ - fabw : daemon that watches fabd/faba to ensure continuity in the case of crashes
  - faba : daemon that runs with user credentials to carry out filesystem tasks
 
 This document describes the ipc that takes place among this set of processes
 
-First, fabw and fabd run with fabsys:fabsys credentials, while fab and faba run
-with user credentials. This is primarily to facilitate signal exchange among
-these processes. Consider that successive pairs of user credentials do not
-necessarily have permission to signal one another (root, todd)
-
-All of these programs require fabsys:fabsys ownership and ug+s permissions so
-that they can assume the fabsys:fabsys identity as required for signal exchange
-
 ## process hierarchy
-user:user      fab
-fabsys:fabsys  fabw
-fabsys:fabsys  |-- fabd
-user:user      fabw
-user:user      |-- faba
+ user:user      fab
+ fabsys:fabsys  fabw
+ fabsys:fabsys  |-- fabd
+ user:user      fabw
+ user:user      |-- faba
+
+## signal exchange
+
+Quoting from man 2 kill :
+
+  For a process to have permission to send a signal it must either be
+  privileged (under Linux: have the CAP_KILL capability), or the real
+  or effective user ID of the sending process must equal the real or
+  saved set-user-ID of the target process. 
+
+Example process credentials for fab
+
+                faba      fabd
+  real       >> todd      root   <<
+  effective  >> todd      fabsys
+  saved         fabsys    fabsys <<
+
+In order to facilitate signal exchange, these programs require fabsys:fabsys ownership
+and ug+s permissions. fabd runs with fabsys credentials at all times, thus it is always
+eligible to receive signals. fab and faba temporarily assume fabsys credentials before
+sending a signal to fabd, and while awaiting the response signal
 
 ## signal flow
 FABSIG_START    : fab -> fabd    new command
-FABSIG_DONE     : fabd -> fab    command complete
+FABSIG_DONE     : fabd -> faba   command complete
+FABSIG_DONE     : faba -> fab    command complete
 
 FABSIG_BPSTART  : fabd -> faba   buildplan stage ready to be executed
 FABSIG_BPGOOD   : faba -> fabd   buildplan stage executed to completion

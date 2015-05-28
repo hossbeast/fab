@@ -21,13 +21,15 @@
 #include "listwise.h"
 #include "listwise/lstack.h"
 
-#include "args.h"
-#include "args.def.h"
-#include "params.h"
+#include "global.h"
 #include "selector.h"
-#include "selector.def.h"
+#include "args.h"
+#include "params.h"
+#include "gn.h"
+#include "ff.h"
+#include "list.h"
+#include "fabd_handler.h"
 
-#include "logs.h"
 #include "macros.h"
 #include "map.h"
 
@@ -173,7 +175,7 @@ int selector_init()
 	finally : coda;
 }
 
-int selector_finalize(handler_context * const restrict ctx)
+int selector_finalize(fabd_handler_context * const restrict ctx)
 {
 	fatal(map_keysx, o_fabricationsmap , &ctx->fabrications , &ctx->fabricationsl , MAP_DEREF);
 	fatal(map_keysx, o_fabricationxsmap, &ctx->fabricationxs, &ctx->fabricationxsl, MAP_DEREF);

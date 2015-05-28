@@ -23,7 +23,8 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-struct selector;          // args.def.h
+#include "args.def.h"     // selector
+
 struct memblk;            // memblk.def.h
 
 #define restrict __restrict

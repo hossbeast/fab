@@ -16,7 +16,8 @@ _E(11, CYCLE, "dependency graph contains a cycle") \
 _E(12, NOSELECT, "selector matches nothing") \
 _E(13, NXPARAMS, "unable to determine runtime parameters") \
 _E(14, FABDFAIL, "fabd terminated abnormally") \
-_E(15, FABPERMS, "fab binar(ies) do not have proper permissions") \
+_E(15, FABAFAIL, "faba terminated abnormally") \
+_E(16, FABPERMS, "fab binar(ies) do not have proper ownership/permissions") \
 
 enum {
 #define _E(a, b, c) FAB_ ## b = a,
@@ -24,6 +25,6 @@ ETABLE_FAB
 #undef _E
 };
 #define ERRMIN_FAB 1
-#define ERRMAX_FAB 15
+#define ERRMAX_FAB 16
 extern etable * perrtab_FAB;
 #endif

@@ -40,6 +40,22 @@
 #include "listwise/PCRE.errtab.h"
 
 #include "global.h"
+#include "params.h"
+#include "args.h"
+#include "gn.h"
+#include "fabd_handler.h"
+#include "identity.h"
+#include "gnlw.h"
+#include "lwutil.h"
+#include "traverse.h"
+#include "var.h"
+#include "path.h"
+#include "ffproc.h"
+#include "cfg.h"
+#include "cfg.protected.h"
+#include "fml.h"
+#include "tmp.h"
+#include "selector.h"
 
 #include "parseint.h"
 #include "macros.h"
@@ -97,7 +113,7 @@ int main(int argc, char** argv, char ** envp)
 	int y;
 	size_t tracesz = 0;
 
-  handler_context * ctx = 0;
+  fabd_handler_context * ctx = 0;
 
 	// fabd is normally invoked with a single argument
 	int nodaemon = 0;
@@ -161,7 +177,7 @@ int main(int argc, char** argv, char ** envp)
 	fatal(log_parse_and_describe, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0, L_INFO);
 
 	// other initializations
-  fatal(handler_context_mk, &ctx);
+  fatal(fabd_handler_context_mk, &ctx);
 	fatal(gn_init);
 	fatal(traverse_init);
 
@@ -349,7 +365,7 @@ int main(int argc, char** argv, char ** envp)
 
 			// handle this request
 			int frame;
-			if(invoke(&frame, handler, ctx, vmap, first))
+			if(invoke(&frame, fabd_handler_handle_request, ctx, vmap, first))
 			{
 				// capture the error code
 				int code = XAPI_ERRCODE;
@@ -461,7 +477,7 @@ finally:
   // cleanup
 	map_free(rmap);
 	map_free(vmap);
-  handler_context_free(ctx);
+  fabd_handler_context_free(ctx);
 	fatal(ixmunmap, &g_args, argsb.st_size);
 	fatal(ixclose, &argsfd);
 	fatal(ixclose, &logsfd);

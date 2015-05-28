@@ -2,9 +2,9 @@
 #define ff_yyHEADER_H 1
 #define ff_yyIN_HEADER 1
 
-#line 6 "fab/fabd/ff/ff.lex.h"
+#line 6 "fabd/ff/ff.lex.h"
 
-#line 8 "fab/fabd/ff/ff.lex.h"
+#line 8 "fabd/ff/ff.lex.h"
 
 #define  YY_INT_ALIGNED short int
 
@@ -13,7 +13,7 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 36
+#define YY_FLEX_SUBMINOR_VERSION 35
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -132,7 +132,15 @@ typedef void* yyscan_t;
 
 /* Size of default input buffer. */
 #ifndef YY_BUF_SIZE
+#ifdef __ia64__
+/* On IA-64, the buffer size is 16k, not 8k.
+ * Moreover, YY_BUF_SIZE is 2*YY_READ_BUF_SIZE in the general case.
+ * Ditto for the __ia64__ case accordingly.
+ */
+#define YY_BUF_SIZE 32768
+#else
 #define YY_BUF_SIZE 16384
+#endif /* __ia64__ */
 #endif
 
 #ifndef YY_TYPEDEF_YY_BUFFER_STATE
@@ -162,7 +170,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	yy_size_t yy_n_chars;
+	int yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -206,13 +214,13 @@ void ff_yypop_buffer_state (yyscan_t yyscanner );
 
 YY_BUFFER_STATE ff_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
 YY_BUFFER_STATE ff_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE ff_yy_scan_bytes (yyconst char *bytes,yy_size_t len ,yyscan_t yyscanner );
+YY_BUFFER_STATE ff_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
 
 void *ff_yyalloc (yy_size_t ,yyscan_t yyscanner );
 void *ff_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
 void ff_yyfree (void * ,yyscan_t yyscanner );
 
-#define ff_yywrap(yyscanner) 1
+#define ff_yywrap(n) 1
 #define YY_SKIP_YYWRAP
 
 #define yytext_ptr yytext_r
@@ -267,17 +275,13 @@ FILE *ff_yyget_out (yyscan_t yyscanner );
 
 void ff_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
 
-yy_size_t ff_yyget_leng (yyscan_t yyscanner );
+int ff_yyget_leng (yyscan_t yyscanner );
 
 char *ff_yyget_text (yyscan_t yyscanner );
 
 int ff_yyget_lineno (yyscan_t yyscanner );
 
 void ff_yyset_lineno (int line_number ,yyscan_t yyscanner );
-
-int ff_yyget_column  (yyscan_t yyscanner );
-
-void ff_yyset_column (int column_no ,yyscan_t yyscanner );
 
 YYSTYPE * ff_yyget_lval (yyscan_t yyscanner );
 
@@ -313,7 +317,12 @@ static int yy_flex_strlen (yyconst char * ,yyscan_t yyscanner);
 
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
+#ifdef __ia64__
+/* On IA-64, the buffer size is 16k, not 8k */
+#define YY_READ_BUF_SIZE 16384
+#else
 #define YY_READ_BUF_SIZE 8192
+#endif /* __ia64__ */
 #endif
 
 /* Number of entries by which start-condition stack grows. */
@@ -348,8 +357,8 @@ extern int ff_yylex \
 #undef YY_DECL
 #endif
 
-#line 186 "fab/fabd/ff/ff.l"
+#line 186 "fabd/ff/ff.l"
 
-#line 354 "fab/fabd/ff/ff.lex.h"
+#line 363 "fabd/ff/ff.lex.h"
 #undef ff_yyIN_HEADER
 #endif /* ff_yyHEADER_H */
