@@ -1,4 +1,3 @@
-
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -26,7 +25,6 @@ struct mempolicy;		// xlinux/mempolicy.h
 struct memblk;
 typedef struct memblk memblk;
 
-typedef int xapi;
 #define restrict __restrict
 
 /// memblk_mk
@@ -34,7 +32,7 @@ typedef int xapi;
 // SUMMARY
 //  create an memblk
 //
-xapi memblk_mk(memblk ** mb)
+int memblk_mk(memblk ** mb)
 	__attribute__((nonnull));
 
 /// memblk_mk_mapped
@@ -42,7 +40,7 @@ xapi memblk_mk(memblk ** mb)
 // SUMMARY
 //  create an memblk whose allocations are backed by mmapped pages
 //
-xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
+int memblk_mk_mapped(memblk ** mb, int prot, int flags)
 	__attribute__((nonnull));
 
 /// memblk_alloc
@@ -50,7 +48,7 @@ xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
 // SUMMARY
 //  request an allocation
 //
-xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
+int memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 	__attribute__((nonnull));
 
 /// memblk_realloc
@@ -58,7 +56,7 @@ xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 // SUMMARY
 //  request a reallocation
 //
-xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
+int memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
 	__attribute__((nonnull));
 
 /// memblk_free
@@ -99,7 +97,7 @@ size_t memblk_size(memblk * const restrict mb)
 // ERRORS
 //  as for writev, plus LINUX_LESS : actual bytes != expected bytes
 //
-xapi memblk_writeto(memblk * const restrict mb, const int fd)
+int memblk_writeto(memblk * const restrict mb, const int fd)
 	__attribute__((nonnull));
 
 /// memblk_bwriteto

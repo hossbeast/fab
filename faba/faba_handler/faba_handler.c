@@ -85,42 +85,29 @@ int faba_handler_handle_request(executor_context * const restrict ctx)
         fatal(xfutimens, fd, 0);
     }
 
-    // assume fabsys identity for signal exchange
-    fatal(identity_assume_fabsys);
-
 		// notify fabd
 		if(good)
 		{
-			fatal(uxkill, -g_params.fabd_pgid, FABSIG_BPGOOD, 0);
+      int sig;
+      fatal(sigexchange, -g_params.fabd_pgid, FABSIG_BPGOOD, (int[]) { FABSIG_BPSTART, FABSIG_DONE, 0 }, &sig);
+
+      if(sig == FABSIG_DONE)
+        break;
 		}
 		else
 		{
-			fatal(uxkill, -g_params.fabd_pgid, FABSIG_BPBAD, 0);
+			fatal(xkill, -g_params.fabd_pgid, FABSIG_BPBAD);
 
 			// some command failed
 			fail(FAB_CMDFAIL);
 		}
-
-    // wait for next stage to be prepared
-    int sig;
-    fatal(sigreceive, &sig);
-
-    // resume user identity
-    fatal(identity_assume_user);
-
-		if(sig == FABSIG_BPSTART)
-      continue;
-    else if(sig == FABSIG_DONE)
-      break;
-    else
-      failf(FAB_BADIPC, "expected signal in { %d, %d } actual %d", FABSIG_BPSTART, FABSIG_DONE, sig);
-	}
+  }
 
 	// rewrite the buildscript for a bs build
 	if(g_args->buildscript_path)
 	{
 		// open buildscript from the ipc-dir
-    snprintf(space, sizeof(space), "%s/bs", g_params.ipcstem);
+    snprintf(space, sizeof(space), "%s/bs", g_params.ipcdir);
 		fatal(ixclose, &fd);
 		fatal(xopen, space, O_RDONLY, &fd);
 

@@ -48,8 +48,6 @@ int main(int argc, char** argv)
 	pid_t fab_pid = -1;
 	pid_t child_pid = -1;
 
-  int x;
-
   // initialize signal handling
   fatal(sigbank_init
 #if DEBUG_IPC
@@ -59,6 +57,7 @@ int main(int argc, char** argv)
 
 	// std file descriptors
 #if !DEBUG_IPC
+  int x;
 	for(x = 0; x < 3; x++)
 		close(x);
 
@@ -67,8 +66,10 @@ int main(int argc, char** argv)
 	fatal(xopen, "/dev/null", O_WRONLY, 0);
 #endif
 
+#if 0
 	for(x = 3; x < 64; x++)
 		close(x);
+#endif
 
   // module setup
   fatal(params_setup);
@@ -98,6 +99,10 @@ int main(int argc, char** argv)
 		char * w;
 		while((w = strstr(argv[0], "fabw")))
 			w[3] = child[3];
+
+    // remove second argument
+    argv[1] = argv[2];
+    argv[2] = 0;
 
 #if DEVEL
 		snprintf(space, sizeof(space), "%s/../%s/%s.devel", g_params.exedir, child, child);
@@ -143,9 +148,11 @@ finally:
 #endif
 
 	// notify fab
-  kill(fab_pid, FABSIG_DONE);
+  if(fab_pid != -1)
+    kill(fab_pid, FABSIG_DONE);
 
 	// kill child, if any
-  kill(child_pid, 9);
+  if(child_pid != -1)
+    kill(child_pid, 9);
 coda;
 }

@@ -32,11 +32,11 @@
 // declare a function-scope narration
 //
 
-//  narrate to a fixed size buffer discarding overflow
+//  narrate to a dynamically-resizing buffer
 #define narrationp(ps) narrator * _narrator = (typeof(*_narrator)[]){{ .ps = ps }}
 
-//  narrate to a dynamically-resizing buffer
-#define narrationw(bb, bz) narrator * _narrator = (typeof(*_narrator)[]){{ .bb = bb, .bz = bz }}
+//  narrate to a fixed size buffer discarding overflow
+#define narrationw(buf, siz) narrator * _narrator = (typeof(*_narrator)[]){{ .bb = buf, .bsz = siz }}
 
 // narrate to a file descriptor
 #define narrationd(fd) narrator * _narrator = (typeof(*_narrator)[]){{ .fd = fd }}

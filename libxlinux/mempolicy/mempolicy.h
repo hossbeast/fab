@@ -36,22 +36,47 @@ typedef struct mempolicy
 	void (*free)(struct mempolicy * plc, void * target);
 } mempolicy;
 
-/// mempolicy_engage
-//
-// SUMMARY
-//  cause xlinux memory allocation functions on this thread to be handled by the specified policy
-//
-void mempolicy_engage(mempolicy * plc)
-	__attribute__((nonnull));
+#define restrict __restrict
 
-/// mempolicy_engage
+/// mempolicy_push
 //
 // SUMMARY
-//  cause xlinux memory allocation functions on this thread to resume the default behavior
+//  cause xlinux memory allocations on this thread to be handled by the specified policy
+//
+// PARAMETERS
+//  [plc] - policy, no-op if null
+//  [mpc] - incremented when the push succeeds
+//
+// ERRORS
+//  MPOLICY - operation would exceed policy stack max size
+//
+int mempolicy_push(mempolicy * plc, int * const restrict mpc);
+
+/// mempolicy_pop
+//
+// SUMMARY
+//  pop a single mempolicy from the stack
+//
+// PARAMETERS
+//  [mpc] - decremented
 //
 // RETURNS
 //  returns the previously active mempolicy, if any
 //
-mempolicy * mempolicy_release();
+mempolicy * mempolicy_pop(int * const restrict mpc);
 
+/// mempolicy_unwind
+//
+// SUMMARY
+//  pop *mpc policies from the stack
+//
+// PARAMETERS
+//  [mpc] - zeroed
+//
+// RETURNS
+//  returns the previously active mempolicy, if any
+//
+mempolicy * mempolicy_unwind(int * const restrict mpc);
+
+#undef restrict
 #endif

@@ -40,6 +40,8 @@
 #include "traverse.h"
 #include "bs.h"
 #include "dirutil.h"
+#include "graph.h"
+#include "executor.h"
 
 #include "path.h"
 #include "sigbank.h"
@@ -67,54 +69,54 @@ static int hashfiles(int iteration)
 	int x;
 
 	// stat backing files
-	for(x = 0; x < gn_nodes.l; x++)
+	for(x = 0; x < graph.l; x++)
 	{
-		if(gn_nodes.e[x]->mark != iteration)
+		if(graph.e[x]->mark != iteration)
 		{
-			if(gn_nodes.e[x]->type & GN_TYPE_HASFILE)
+			if(graph.e[x]->type & GN_TYPE_HASFILE)
 			{
 				// load hash
-				fatal(hashblock_stat, gn_nodes.e[x]->path->can, gn_nodes.e[x]->hb);
+				fatal(hashblock_stat, graph.e[x]->path->can, graph.e[x]->hb);
 
-				if(gn_nodes.e[x]->hb->stathash[1] == 0)
+				if(graph.e[x]->hb->stathash[1] == 0)
 				{
-					if(!gn_nodes.e[x]->invalid)
-						logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_NXFILE), gn_nodes.e[x]->idstring);
+					if(!graph.e[x]->invalid)
+						logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_NXFILE), graph.e[x]->idstring);
 
 					// missing file
-					gn_nodes.e[x]->invalid |= GN_INVALIDATION_NXFILE;
+					graph.e[x]->invalid |= GN_INVALIDATION_NXFILE;
 				}
 				else
 				{
-					gn_nodes.e[x]->invalid &= ~GN_INVALIDATION_NXFILE;
+					graph.e[x]->invalid &= ~GN_INVALIDATION_NXFILE;
 
-					if(hashblock_cmp(gn_nodes.e[x]->hb))
+					if(hashblock_cmp(graph.e[x]->hb))
 					{
-						if(!gn_nodes.e[x]->invalid)
-							logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_CHANGED), gn_nodes.e[x]->idstring);
+						if(!graph.e[x]->invalid)
+							logf(L_INVALID, "%10s %s", GN_INVALIDATION_STR(GN_INVALIDATION_CHANGED), graph.e[x]->idstring);
 
 						// changed file
-						gn_nodes.e[x]->invalid |= GN_INVALIDATION_CHANGED;
+						graph.e[x]->invalid |= GN_INVALIDATION_CHANGED;
 					}
 				}
 
 				// convert to actions
-				if(GN_IS_INVALID(gn_nodes.e[x]))
+				if(GN_IS_INVALID(graph.e[x]))
 				{
-					if(gn_nodes.e[x]->type == GN_TYPE_PRIMARY && gn_nodes.e[x]->dscvsl)
+					if(graph.e[x]->type == GN_TYPE_PRIMARY && graph.e[x]->dscvsl)
 					{
 						// require discovery
-						gn_nodes.e[x]->invalid |= GN_INVALIDATION_DISCOVERY;
+						graph.e[x]->invalid |= GN_INVALIDATION_DISCOVERY;
 					}
-					else if(gn_nodes.e[x]->type != GN_TYPE_PRIMARY)
+					else if(graph.e[x]->type != GN_TYPE_PRIMARY)
 					{
 						// require fabrication
-						gn_nodes.e[x]->invalid |= GN_INVALIDATION_FABRICATE;
+						graph.e[x]->invalid |= GN_INVALIDATION_FABRICATE;
 					}
 				}
 			}
 
-			gn_nodes.e[x]->mark = iteration;
+			graph.e[x]->mark = iteration;
 		}
 	}
 
@@ -230,8 +232,8 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 
 		// create $!
 		fatal(lw_reset, &ctx->stax, &ctx->staxa, pn);
-		for(x = 0; x < gn_nodes.l; x++)
-			fatal(lstack_obj_add, ctx->stax[pn], gn_nodes.e[x], LISTWISE_TYPE_GNLW);
+		for(x = 0; x < graph.l; x++)
+			fatal(lstack_obj_add, ctx->stax[pn], graph.e[x], LISTWISE_TYPE_GNLW);
 
 		// map for processing selectors
 		fatal(map_set, ctx->smap, MMS("!"), MM(ctx->stax[pn]), 0);
@@ -308,14 +310,14 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 
 		finally : coda;
 	};
-	for(x = 0; x < gn_nodes.l; x++)
+	for(x = 0; x < graph.l; x++)
 	{
-		if(gn_nodes.e[x]->invalid & (GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER))
+		if(graph.e[x]->invalid & (GN_INVALIDATION_CHANGED | GN_INVALIDATION_NXFILE | GN_INVALIDATION_USER))
 		{
 			// do not cross the nofile boundary
-			fatal(traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile, gn_nodes.e[x], visit);
+			fatal(traverse_depth_bynodes_feedsward_skipweak_usebridge_nonofile, graph.e[x], visit);
 
-			gn_nodes.e[x]->invalid &= ~(GN_INVALIDATION_CHANGED | GN_INVALIDATION_USER);
+			graph.e[x]->invalid &= ~(GN_INVALIDATION_CHANGED | GN_INVALIDATION_USER);
 		}
 	}
 
@@ -445,7 +447,7 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 					, &ctx->tsp
 					, &ctx->tsa
 					, &ctx->tsw
-					, g_params.ipcstem
+					, g_params.ipcdir
 				);
 			}
 			else
@@ -468,11 +470,12 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 						fatal(psloadf, &ctx->tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
 						fatal(mkdirp, ctx->tmp->s, FABIPC_DIR);
 						
-						// create symlink to the bp in hashdir
-						snprintf(space, sizeof(space), "%s/bp", g_params.ipcstem);
+						// create symlink to the bp in ipcdir
+						snprintf(space, sizeof(space), "%s/bp", g_params.ipcdir);
 						fatal(uxunlink, space, 0);
 						fatal(xsymlink, ctx->tmp->s, space);
 
+#if 0
 						// create file with the number of stages
 						fatal(psloadf, &ctx->tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/stages", g_params.fab_pid);
 						fatal(uxunlink, ctx->tmp->s, 0);
@@ -489,6 +492,8 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 						for(x = 0; x < ctx->plan->stages_l; x++)
 							cmdsl += ctx->plan->stages[x].evals_l;
 						fatal(axwrite, fd, &cmdsl, sizeof(cmdsl));
+#endif
+            logf(L_BPEXEC, "buildplan @ %s/bp", g_params.ipcdir);
 
 						// prepare and execute the build plan, one stage at a time
 						int i;
@@ -496,14 +501,10 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 						{
 							fatal(bp_prepare_stage, ctx->plan, i, ctx->ffp->gp, &ctx->stax, &ctx->staxa, ctx->staxp, &ctx->tsp, &ctx->tsl, &ctx->tsa);
 
-							// work required ; notify fab
-							fatal(uxkill, g_params.fab_pid, FABSIG_BPSTART, 0);
+              // execute the stage
+							logf(L_BPINFO, "stage %2d of %2d executing %3d of %3d", stagex, stagesl, ctx->cmdsl, commandsl);
 
-              // suspend execution, receive signal
-              int sig;
-              fatal(sigreceive, &sig);
-
-							if(sig == FABSIG_BPGOOD)
+							if(1)//sig == FABSIG_BPGOOD)
 							{
 								// plan was executed successfully ; update nodes for all products
 								for(x = 0; x < ctx->tsl; x++)
@@ -518,15 +519,11 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 									}
 								}
 							}
-							else if(sig == FABSIG_BPBAD)
+							else if(0)//sig == FABSIG_BPBAD)
 							{
 								// failure ; harvest the results
 								fatal(bp_harvest_stage, ctx->plan, i);
 								break;
-							}
-							else
-							{
-								failf(FAB_BADIPC, "expected signal in { %d, %d }, actual %d", FABSIG_BPGOOD, FABSIG_BPBAD, sig);
 							}
 						}
 					}

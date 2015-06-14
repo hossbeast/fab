@@ -17,7 +17,6 @@
 
 #include <string.h>
 #include <unistd.h>
-#include <alloca.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -25,6 +24,7 @@
 #include <dirent.h>
 
 #include "xlinux.h"
+#include "xlinux/mempolicy.h"
 
 #include "global.h"
 #include "gn.h"
@@ -33,6 +33,7 @@
 #include "ff.h"
 #include "strstack.h"
 #include "canon.h"
+#include "graph.h"
 
 #include "unitstring.h"
 #include "map.h"
@@ -46,15 +47,10 @@
 char * ff_idstring(struct ff_file * const);
 
 //
-// data
-//
-
-union gn_nodes_t gn_nodes = { { .size = sizeof(gn) } };
-
-//
 // static
 //
 
+#if 0
 static void freenode(gn * const gn)
 {
 	if(gn)
@@ -79,6 +75,7 @@ static void freenode(gn * const gn)
 
 	free(gn);
 }
+#endif
 
 /// lookup
 //
@@ -123,7 +120,7 @@ static int lookup(const char * const base, strstack * const sstk, const char * c
 	}
 
 	gn ** R = 0;
-	if((R = map_get(gn_nodes.by_path, canp, canpl)))
+	if((R = map_get(graph.by_path, canp, canpl)))
 		(*r) = *R;
 
 	finally : coda;
@@ -159,7 +156,7 @@ int gn_lookup(const char * const s, int sl, const char * const base, int basel, 
 	}
 
 	gn ** R = 0;
-	if((R = map_get(gn_nodes.by_path, can, strlen(can))))
+	if((R = map_get(graph.by_path, can, strlen(can))))
 		*r = *R;
 
 	finally : coda;
@@ -167,26 +164,33 @@ int gn_lookup(const char * const s, int sl, const char * const base, int basel, 
 
 int gn_add(const char * const restrict base, strstack * const restrict sstk, char * const restrict A, int Al, gn ** gna, int * const restrict new)
 {
+  int mpc = 0;
+
 	fatal(lookup, base, sstk, A, Al, gna);
 
 	if((*gna) == 0)
 	{
-		fatal(coll_doubly_add, &gn_nodes.c, 0, gna);
+    // redirect graph allocations
+    fatal(mempolicy_push, graph_mempolicy, &mpc);
+		fatal(coll_doubly_add, &graph.c, 0, gna);
+		fatal(hashblock_create, &(*gna)->hb);
+    fatal(mempolicy_pop, &mpc);
 
 		Al = Al ?: strlen(A);
-
-		// populate gna
-		fatal(hashblock_create, &(*gna)->hb);
 
 		if(Al > 4 && memcmp(A, "/../", 4) == 0 && sstk)
 		{
 			char * sstr;
 			fatal(strstack_string, sstk, 0, "/", "/", &sstr);
+      fatal(mempolicy_push, graph_mempolicy, &mpc);
 			fatal(path_create, &(*gna)->path, "/..", "%s/%.*s", sstr, Al - 4, A + 4);
+      fatal(mempolicy_pop, &mpc);
 		}
 		else
 		{
+      fatal(mempolicy_push, graph_mempolicy, &mpc);
 			fatal(path_create, &(*gna)->path, base, "%.*s", Al, A);
+      fatal(mempolicy_pop, &mpc);
 		}
 
 		(*gna)->needs.z		= sizeof((*gna)->needs.e[0]);
@@ -197,6 +201,7 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 		{
 			char * sstr;
 			fatal(strstack_string, sstk, 1, "", ".", &sstr);
+      fatal(mempolicy_push, graph_mempolicy, &mpc);
 			fatal(ixsprintf, &(*gna)->idstring, "@%s", sstr);
 
 			int x;
@@ -217,27 +222,35 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 					}
 				}
 			}
+      fatal(mempolicy_pop, &mpc);
 		}
-		else if(g_args->mode_gnid == MODE_CANONICAL)
-		{
-			(*gna)->idstring = strdup((*gna)->path->can);
-		}
-		else if(g_args->mode_gnid == MODE_ABSOLUTE)
-		{
-			(*gna)->idstring = strdup((*gna)->path->abs);
-		}
-		else if(g_args->mode_gnid == MODE_RELATIVE_CWD)
-		{
-			(*gna)->idstring = strdup((*gna)->path->rel_cwd);
-		}
-		else if(g_args->mode_gnid == MODE_RELATIVE_FABFILE_DIR)
-		{
-			(*gna)->idstring = strdup((*gna)->path->rel_fab);
-		}
+    else
+    {
+      fatal(mempolicy_push, graph_mempolicy, &mpc);
+      if(g_args->mode_gnid == MODE_CANONICAL)
+      {
+        fatal(ixstrdup, &(*gna)->idstring, (*gna)->path->can);
+      }
+      else if(g_args->mode_gnid == MODE_ABSOLUTE)
+      {
+        fatal(ixstrdup, &(*gna)->idstring, (*gna)->path->abs);
+      }
+      else if(g_args->mode_gnid == MODE_RELATIVE_CWD)
+      {
+        fatal(ixstrdup, &(*gna)->idstring, (*gna)->path->rel_cwd);
+      }
+      else if(g_args->mode_gnid == MODE_RELATIVE_FABFILE_DIR)
+      {
+        fatal(ixstrdup, &(*gna)->idstring, (*gna)->path->rel_fab);
+      }
+      fatal(mempolicy_pop, &mpc);
+    }
 		(*gna)->idstringl = strlen((*gna)->idstring);
 
-		fatal(map_set, gn_nodes.by_path, (*gna)->path->can, (*gna)->path->canl, gna, sizeof(*gna), 0);
-		fatal(map_set, gn_nodes.by_pathhash, MM((*gna)->path->can_hash), gna, sizeof(*gna), 0);
+    fatal(mempolicy_push, graph_mempolicy, &mpc);
+		fatal(map_set, graph.by_path, (*gna)->path->can, (*gna)->path->canl, gna, sizeof(*gna), 0);
+		fatal(map_set, graph.by_pathhash, MM((*gna)->path->can_hash), gna, sizeof(*gna), 0);
+    fatal(mempolicy_pop, &mpc);
 
 		fatal(gn_finalize, *gna);
 
@@ -245,7 +258,9 @@ int gn_add(const char * const restrict base, strstack * const restrict sstk, cha
 			(*new)++;
 	}
 
-	finally : coda;
+finally:
+  mempolicy_unwind(&mpc);
+coda;
 }
 
 int gn_edge_add(
@@ -269,6 +284,8 @@ int gn_edge_add(
 	int _newb = 0;
 	int _newr = 0;
 
+  int mpc = 0;
+
 	if(At)
 		gna = *(gn**)A;
 	else
@@ -279,9 +296,12 @@ int gn_edge_add(
 	else
 		fatal(gn_add, base, sstk, *(char**)B, Bl, &gnb, &_newb);
 
+  // redirect graph allocations
+  fatal(mempolicy_push, graph_mempolicy, &mpc);
+
 	if(gna == gnb)
 	{
-		// as syntactic sugar, silently ignore dependencies of a node upon itself
+		// silently ignore dependencies of a node upon itself
 	}
 	else
 	{
@@ -343,7 +363,9 @@ int gn_edge_add(
 	if(newr)
 		(*newr) += _newr;
 
-	finally : coda;
+finally:
+  mempolicy_unwind(&mpc);
+coda;
 }
 
 size_t gn_invalid_reasons_write(gn * const gn, char * dst, const size_t sz)
@@ -546,14 +568,6 @@ void gn_dump(gn * gn)
 	}
 }
 
-int gn_init()
-{
-	fatal(map_create, &gn_nodes.by_path, 0);
-	fatal(map_create, &gn_nodes.by_pathhash, 0);
-
-	finally : coda;
-}
-
 int gn_finalize(gn * const restrict gn)
 {
 	// recompute type
@@ -588,13 +602,13 @@ int gn_process_invalidations(gn ** const invalidations, int invalidationsl, int 
 
 	int c = invalidationsl;
 	if(g_args->invalidationsz)
-		c = gn_nodes.l;
+		c = graph.l;
 
 	for(x = 0; x < c; x++)
 	{
 		gn * gn = 0;
 		if(g_args->invalidationsz)
-			gn = gn_nodes.e[x];
+			gn = graph.e[x];
 		else
 			gn = invalidations[x];
 		
@@ -620,13 +634,12 @@ int gn_process_invalidations(gn ** const invalidations, int invalidationsl, int 
 	finally : coda;
 }
 
+int gn_init()
+{
+  finally : coda;
+}
+
 void gn_teardown()
 {
-	int x;
-	for(x = 0; x < gn_nodes.l; x++)
-		freenode(gn_nodes.e[x]);
 
-	free(gn_nodes.e);
-	map_free(gn_nodes.by_path);
-	map_free(gn_nodes.by_pathhash);
 }

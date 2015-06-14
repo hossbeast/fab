@@ -16,7 +16,6 @@ _E(11, CYCLE, "dependency graph contains a cycle") \
 _E(12, NOSELECT, "selector matches nothing") \
 _E(13, NXPARAMS, "unable to determine runtime parameters") \
 _E(14, FABDFAIL, "fabd terminated abnormally") \
-_E(15, FABAFAIL, "faba terminated abnormally") \
 _E(16, FABPERMS, "fab binar(ies) do not have proper ownership/permissions") \
 
 enum {

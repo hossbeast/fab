@@ -15,7 +15,52 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 DLERROR   dynamic loader error
-2 FTWERROR  filesystem traversal error
-3 LESS      less data available than was expected
-4 MPOLICY   mempolicy limit exceeded
+#include "xlinux.h"
+#include "xlinux/mempolicy.h"
+
+#include "global.h"
+#include "graph.h"
+#include "gn.h"
+#include "map.h"
+
+#include "memblk.h"
+
+memblk * graph_memblk;
+mempolicy * graph_mempolicy;
+union graph graph = { { size : sizeof(gn) } };
+
+//
+// public
+//
+
+void graph_freeze()
+{
+
+}
+
+void graph_thaw()
+{
+
+}
+
+int graph_setup()
+{
+  int mpc = 0;
+
+  fatal(memblk_mk, &graph_memblk);
+  graph_mempolicy = memblk_getpolicy(graph_memblk);
+
+  fatal(mempolicy_push, graph_mempolicy, &mpc);
+  
+	fatal(map_create, &graph.by_path, 0);
+	fatal(map_create, &graph.by_pathhash, 0);
+
+finally:
+  mempolicy_unwind(&mpc);
+coda;
+}
+
+void graph_teardown()
+{
+  memblk_free(graph_memblk);
+}

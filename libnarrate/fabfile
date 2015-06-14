@@ -40,12 +40,12 @@ $cflags_xapi_devel = [ $cflags_xapi_devel $copts ]
 $cflags_xapi_xunit = [ $cflags_xapi_xunit $copts ]
 
 $lopts							= [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
-$lflags_eapi_final	= [ $lopts $libxapi_eapi_final $libxlinux_eapi_final [ -Wl,-soname,libnarrate.so ~ j ] ]
-$lflags_eapi_debug	= [ $lopts $libxapi_eapi_debug $libxlinux_eapi_debug [ -Wl,-soname,libnarrate.so ~ j ] ]
-$lflags_eapi_devel	= [ $lopts $libxapi_eapi_devel $libxlinux_eapi_devel [ -Wl,-soname,libnarrate-devel.so ~ j ] ]
-$lflags_xapi_final	= [ $lopts $libxapi_xapi_final $libxlinux_xapi_final [ -Wl,-soname,libnarrate-xapi.so ~ j ] ]
-$lflags_xapi_debug	= [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug [ -Wl,-soname,libnarrate-xapi.so ~ j ] ]
-$lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-soname,libnarrate-xapi-devel.so ~ j ] ]
+$lflags_eapi_final	= [ $lopts $libxapi_eapi_final $libxlinux_eapi_final $libpstring_eapi_final [ -Wl,-soname,libnarrate.so ~ j ] ]
+$lflags_eapi_debug	= [ $lopts $libxapi_eapi_debug $libxlinux_eapi_debug $libpstring_eapi_debug [ -Wl,-soname,libnarrate.so ~ j ] ]
+$lflags_eapi_devel	= [ $lopts $libxapi_eapi_devel $libxlinux_eapi_devel $libpstring_eapi_devel [ -Wl,-soname,libnarrate-devel.so ~ j ] ]
+$lflags_xapi_final	= [ $lopts $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final [ -Wl,-soname,libnarrate-xapi.so ~ j ] ]
+$lflags_xapi_debug	= [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug [ -Wl,-soname,libnarrate-xapi.so ~ j ] ]
+$lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel [ -Wl,-soname,libnarrate-xapi-devel.so ~ j ] ]
 
 # source files, filter out tests
 +[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = $dlibnarrate; $cc; $cflags = $cflags_eapi_final; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
@@ -128,12 +128,12 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-s
 	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
 }
 
-[ $libnarrate_eapi_final ] :^ [ $libxapi_eapi_final $libxlinux_eapi_final ]
-[ $libnarrate_eapi_debug ] :^ [ $libxapi_eapi_debug $libxlinux_eapi_debug ]
-[ $libnarrate_eapi_devel ] :^ [ $libxapi_eapi_devel $libxlinux_eapi_devel ]
-[ $libnarrate_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final ]
-[ $libnarrate_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug ]
-[ $libnarrate_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel ]
+[ $libnarrate_eapi_final ] :^ [ $libxapi_eapi_final $libxlinux_eapi_final $libpstring_eapi_final ]
+[ $libnarrate_eapi_debug ] :^ [ $libxapi_eapi_debug $libxlinux_eapi_debug $libpstring_eapi_debug ]
+[ $libnarrate_eapi_devel ] :^ [ $libxapi_eapi_devel $libxlinux_eapi_devel $libpstring_eapi_devel ]
+[ $libnarrate_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final ]
+[ $libnarrate_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug ]
+[ $libnarrate_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel ]
 
 ##
 ## tasks

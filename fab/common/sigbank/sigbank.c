@@ -21,11 +21,14 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include "xlinux.h"
 #include "xapi.h"
+#include "xlinux.h"
+#include "narrate.h"
 
 #include "sigbank.h"
+#include "identity.h"
 #include "params.h"
+#include "FAB.errtab.h"
 
 #include "macros.h"
 
@@ -35,6 +38,7 @@
 // public
 //
 volatile int g_signum;
+volatile pid_t g_sigpid;
 
 //
 // static
@@ -51,6 +55,7 @@ static char * o_name;
 static void signal_handler(int signum, siginfo_t * info, void * ctx)
 {
   g_signum = signum;
+  g_sigpid = info->si_pid;
 
 #if DEBUG_IPC
 	char space[2048];
@@ -139,17 +144,97 @@ void sigbank_teardown()
 #endif
 }
 
-int sigreceive(int * const restrict sig)
+int sigreceive(int * restrict expsig, int exppid, int * restrict actsig, pid_t * restrict actpid)
 {
+  char space[256];
+  int signum = 0;
+  pid_t sigpid = 0;
+
+  int lresponse = 0;
+  if(!actsig)
+    actsig = &lresponse;
+
   // suspend execution pending receipt of a signal in the receive set
   fatal(uxsigsuspend, &o_receive_set);
 
   // re-establish default signal mask
 	fatal(xsigprocmask, SIG_SETMASK, &o_default_set, 0);
 
-  // return received signal
-  *sig = g_signum;
-  g_signum = 0;
+  // determine whether the signal received is one of those that is blocked by default
+  if(sigismember(&o_default_set, g_signum))
+  {
+    // return the received signal
+    signum = g_signum;
+    g_signum = 0;
+    if(actsig)
+      *actsig = signum;
+
+    sigpid = g_sigpid;
+    g_sigpid = 0;
+    if(actpid)
+      *actpid = sigpid;
+
+    // determine whether actual signal is in expected list
+    int * e = expsig;
+    while(e && *e)
+    {
+      if(*actsig == *e)
+        break;
+
+      e++;
+    }
+
+    // actual signal not in expected list
+    if((e && !*e) || (exppid && (exppid != g_sigpid)))
+      fail(FAB_BADIPC);
+  }
+  else
+  {
+    // the main loop should check for unblocked signals directly in g_signum
+  }
+
+finally:
+  if(XAPI_ERRTAB == perrtab_FAB && XAPI_ERRCODE == FAB_BADIPC)
+  {
+    // list of expected signals
+    if(expsig)
+    {
+      narrationw(space, sizeof(space));
+      space[0] = 0;
+
+      int * e = expsig;
+      while(e && *e)
+      {
+        sayf("%d", *e);
+        e++;
+        if(*e)
+          says(", ");
+      }
+
+      XAPI_INFOF("expected signal", "{%s}", space);
+    }
+    XAPI_INFOF("actual signal", "%d", signum);
+
+    if(exppid)
+      XAPI_INFOF("expected pid", "%lu", (long)exppid);
+    XAPI_INFOF("actual pid", "%lu", (long)sigpid);
+  }
+coda;
+}
+ 
+int sigexchange(pid_t pid, int sig, int * restrict expsig, int exppid, int * restrict actsig, pid_t * restrict actpid)
+{
+  // assume fabsys identity
+  fatal(identity_assume_fabsys);
+
+  // send signal
+  fatal(xkill, pid, sig);
+
+  // suspend, receive signal
+  fatal(sigreceive, expsig, exppid, actsig, actpid);
+
+  // reassume user identity
+  fatal(identity_assume_user);
 
   finally : coda;
 }

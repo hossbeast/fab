@@ -41,7 +41,6 @@ extern struct g_params_t
 	int             egid_namel;
 
 	pid_t						fab_pid;										// pid of the fab process
-	pid_t						faba_pgid;									// pgid of the faba process
 	pid_t						fabd_pgid;									// pgid of the fabd process
 	pid_t						pid;												// pid of this process
 	pid_t						ppid;												// pid of parent process
@@ -54,7 +53,7 @@ extern struct g_params_t
 
 	time_t					starttime;									// time last action of fabd began
 	uint32_t				canhash;										// for ipc dir
-	char						ipcstem[2048];							// ipc dir
+	char						ipcdir[2048];							  // ipc dir
 } g_params;
 
 /// params_parse
@@ -78,46 +77,53 @@ void params_teardown();
 //
 #define FABSIG_BASE 40
 
+/// FABSIG_READY
+//
+// fabd -> fab
+//  ready to accept commands
+//
+#define FABSIG_READY FABSIG_BASE + 0
+
 /// FABSIG_START
 //
-// fab -> fabd
+// fab  -> fabd
 //  new command is ready to be executed
 //
-#define FABSIG_START FABSIG_BASE + 0
+#define FABSIG_START FABSIG_BASE + 1
 
 /// FABSIG_DONE
 //
 // fabd -> fab
 //  the command is complete
 //
-#define FABSIG_DONE FABSIG_BASE + 1
+#define FABSIG_DONE FABSIG_BASE + 2
 
 /// FABSIG_BPSTART
 //
-// fabd -> fab
-//  buildplan is ready to be executed
+// fabd -> faba
+//  buildplan stage is ready to be executed
 //
-#define FABSIG_BPSTART FABSIG_BASE + 2
+#define FABSIG_BPSTART FABSIG_BASE + 3
 
 /// FABSIG_BPGOOD
 //
-// fab -> fabd 
+// faba -> fabd 
 //  buildplan was executed successfully
 //
-#define FABSIG_BPGOOD FABSIG_BASE + 3
+#define FABSIG_BPGOOD FABSIG_BASE + 4
 
 /// FABSIG_BPBAD
 //
-// fab -> fabd
+// faba -> fabd
 //  buildplan was not successfully executed to completion
 //
-#define FABSIG_BPBAD FABSIG_BASE + 4
+#define FABSIG_BPBAD FABSIG_BASE + 5
 
 /// FABSIG_SIZE
 //
 // number of fab ipc signals, used for enumerating
 //
-#define FABSIG_SIZE 5
+#define FABSIG_SIZE 6
 
 /// FABIPC_DATA
 //

@@ -21,44 +21,49 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-struct pstring;     // pstring.h
-
 #define restrict __restrict
 
-typedef struct executor_context
+// opaque context
+struct executor_context;
+typedef struct executor_context executor_context;
+
+// logging profile
+typedef struct executor_logging
 {
-  struct pstring *      tmp;      // reusable temp space
+  uint64_t cmd_cat;         // category for logging commands as they are executed
+  uint64_t exec_cat;        // category for EXEC logging
+  void (*log_exec)(         // callback for EXEC logging
+      struct executor_logging * const restrict logging
+    , int num         // command number
+    , int bad         // whether executor thinks the command succeeded
+    , int r           // return value from wait
+  );
+} executor_logging;
 
-  int			num;			// stage number
-  struct
-  {
-    pid_t		pid;
-    int			num;		
-    int			cmd_fd;
-    int			stdo_fd;
-    int			stde_fd;
-    struct pstring ** prod_type;  // product types
-    struct pstring ** prod_id;    // product ids
-    size_t	prodl;                // number of products - occupied
-    size_t  proda;                // number of products - allocated
-  } * 		cmds;
-  size_t	cmdsl;
-  size_t	cmdsa;
-} executor_context;
-
-/// executor_execute_stage
+/// executor_execute
 //
 // SUMMARY
-//  execute a stage in a buildplan
+//  execute a set of commands in parallel
 //
 // PARAMETERS
-//  ctx       - executor context instance
-//  stagesl   - total number of stages in plan
-//  commandsl - total number of commands in plan
-//  success   - (returns) whether the stage executed to completion
+//  ctx        - executor context instance
+//  subdir     - subdirectory of ipcdir containing the commands
+//  cmdsl      - number of commands
+//  [logging]  - logging profile
+//  [success]  - (returns) whether all commands completed successfully
 //
-int executor_execute_stage(executor_context * const restrict ctx, int stagesl, int commandsl, int stagex, int * const restrict success)
-  __attribute__((nonnull));
+// REMARKS
+//  the commands have previously been written to a numbered set of files
+//  in ipcdir/{subdir}
+//
+int executor_execute(
+  /*  1 */    executor_context * const restrict ctx
+  /*  2 */  , const char * const restrict subdir
+  /*  3 */  , const int cmdsl
+  /*  4 */  , const executor_logging * const restrict logging
+  /*  5 */  , int * const restrict success
+)
+  __attribute__((nonnull(1, 2)));
 
 /// executor_context_mk
 //

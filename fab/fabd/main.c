@@ -56,6 +56,7 @@
 #include "fml.h"
 #include "tmp.h"
 #include "selector.h"
+#include "graph.h"
 
 #include "parseint.h"
 #include "macros.h"
@@ -179,6 +180,7 @@ int main(int argc, char** argv, char ** envp)
 	// other initializations
   fatal(fabd_handler_context_mk, &ctx);
 	fatal(gn_init);
+  fatal(graph_setup);
 	fatal(traverse_init);
 
 	// track start time
@@ -192,258 +194,264 @@ int main(int argc, char** argv, char ** envp)
 		fail(FAB_BADARGS);
 
 	// ipc-dir stem
-	snprintf(g_params.ipcstem, sizeof(g_params.ipcstem), "%s/%u", XQUOTE(FABIPCDIR), g_params.canhash);
+	snprintf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/%u", XQUOTE(FABIPCDIR), g_params.canhash);
 
 	// create symlink for dsc in hashdir
-	snprintf(space, sizeof(space), "%s/dsc", g_params.ipcstem);
+	snprintf(space, sizeof(space), "%s/dsc", g_params.ipcdir);
 	snprintf(space2, sizeof(space2), XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
 	fatal(uxunlink, space, 0);
 	fatal(xsymlink, space2, space);
 
-  int sig = g_signum;
-	while(sig != SIGINT && sig != SIGQUIT && sig != SIGTERM)
+	// load fab/pid
+	snprintf(space, sizeof(space), "%s/fab/pid", g_params.ipcdir);
+	fatal(xopen, space, O_RDONLY, &fd);
+	fatal(axread, fd, &g_params.fab_pid, sizeof(g_params.fab_pid));
+  fatal(ixclose, &fd);
+
+  // signal to fab that I am ready to receive a command
+  if(!nodaemon)
+    fatal(xkill, g_params.fab_pid, FABSIG_READY);
+
+	while(g_signum != SIGINT && g_signum != SIGQUIT && g_signum != SIGTERM)
 	{
-		// read fab/pid
-		snprintf(space, sizeof(space), "%s/fab/pid", g_params.ipcstem);
-		fatal(ixclose, &fd);
-		fatal(xopen, space, O_RDONLY, &fd);
+    // receive a signal from fab
+    if(!nodaemon)
+      fatal(sigreceive, (int[]){ FABSIG_START, 0 }, g_params.fab_pid, 0, 0);
 
-		fatal(axread, fd, &g_params.fab_pid, sizeof(g_params.fab_pid));
+    // read fab/pid
+    snprintf(space, sizeof(space), "%s/fab/pid", g_params.ipcdir);
+    fatal(ixclose, &fd);
+    fatal(xopen, space, O_RDONLY, &fd);
+    fatal(axread, fd, &g_params.fab_pid, sizeof(g_params.fab_pid));
 
-		// existence check - is anyone listening?
-		r = -1;
-		fatal(uxkill, g_params.fab_pid, 0, &r);
+    // before proceeding check whether fab is running
+    if(!nodaemon)
+      fatal(xkill, g_params.fab_pid, 0);
 
-		if(!nodaemon && r)
-		{
-			failf(FAB_BADIPC, "fab[%lu] not listening", (long)g_params.fab_pid);
-		}
-		else
-		{
-			if(!nodaemon)
-			{
-				fatal(ixclose, &fd);
+    // reopen standard file descriptors
+    if(!nodaemon)
+    {
+      fatal(ixclose, &fd);
 
-				// reopen standard file descriptors
-				snprintf(space, sizeof(space), "%s/fab/out", g_params.ipcstem);
-				fatal(xopen, space, O_RDWR, &fd);
-				fatal(xdup2, fd, 1);
-				fd = -1;
+      snprintf(space, sizeof(space), "%s/fab/out", g_params.ipcdir);
+      fatal(xopen, space, O_RDWR, &fd);
+      fatal(xdup2, fd, 1);
+      fd = -1;
 
-				snprintf(space, sizeof(space), "%s/fab/err", g_params.ipcstem);
-				fatal(xopen, space, O_RDWR, &fd);
-				fatal(xdup2, fd, 2);
-				fd = -1;
-			}
+      snprintf(space, sizeof(space), "%s/fab/err", g_params.ipcdir);
+      fatal(xopen, space, O_RDWR, &fd);
+      fatal(xdup2, fd, 2);
+      fd = -1;
+    }
 
-			// open args file
-			snprintf(space, sizeof(space), "%s/args", g_params.ipcstem);
-			fatal(ixclose, &argsfd);
-			fatal(xopen, space, O_RDWR, &argsfd);
-			
-			// release previous args mapping
-			fatal(ixmunmap, &g_args, argsb.st_size);
+    // open args file
+    snprintf(space, sizeof(space), "%s/args", g_params.ipcdir);
+    fatal(ixclose, &argsfd);
+    fatal(xopen, space, O_RDWR, &argsfd);
+    
+    // release previous args mapping
+    fatal(ixmunmap, &g_args, argsb.st_size);
 
-			// map the file
-			fatal(xfstat, argsfd, &argsb);
-			fatal(xmmap, 0, argsb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, argsfd, 0, (void*)&g_args);
+    // map the file
+    fatal(xfstat, argsfd, &argsb);
+    fatal(xmmap, 0, argsb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, argsfd, 0, (void*)&g_args);
 
-			// unpack the args
-			args_thaw((void*)g_args);
+    // unpack the args
+    args_thaw((void*)g_args);
 
-			// open logs file
-			snprintf(space, sizeof(space), "%s/logs", g_params.ipcstem);
-			fatal(ixclose, &logsfd);
-			fatal(xopen, space, O_RDWR, &logsfd);
+    // open logs file
+    snprintf(space, sizeof(space), "%s/logs", g_params.ipcdir);
+    fatal(ixclose, &logsfd);
+    fatal(xopen, space, O_RDWR, &logsfd);
 
-			// release previous logs mapping
-			fatal(ixmunmap, &logvs, logsb.st_size);
+    // release previous logs mapping
+    fatal(ixmunmap, &logvs, logsb.st_size);
 
-			// map the file
-			fatal(xfstat, logsfd, &logsb);
-			if((logvsl = logsb.st_size))
-			{
-				fatal(xmmap, 0, logsb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, logsfd, 0, (void*)&logvs);
-			}
+    // map the file
+    fatal(xfstat, logsfd, &logsb);
+    if((logvsl = logsb.st_size))
+    {
+      fatal(xmmap, 0, logsb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, logsfd, 0, (void*)&logvs);
+    }
 
-			// re-configure logger
-			fatal(log_parse_clear);
+    // re-configure logger
+    fatal(log_parse_clear);
 
 #if DEBUG || DEVEL
-			if(g_args->mode_logtrace == MODE_LOGTRACE_FULL)
-				fatal(log_config, ~0, ~0);
-			else
-				fatal(log_config, ~0, 0);
+    if(g_args->mode_logtrace == MODE_LOGTRACE_FULL)
+      fatal(log_config, ~0, ~0);
+    else
+      fatal(log_config, ~0, 0);
 #else
-			fatal(log_config, ~0);
+    fatal(log_config, ~0);
 #endif
 
-			// default tags - do not describe, that was done previously
-			fatal(log_parse, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0);
+    // default tags - do not describe, that was done previously
+    fatal(log_parse, "+ERROR|WARN|INFO|BPINFO|DSCINFO", 0, 0);
 
-			// user-specified
-			if(logvsl)
-				fatal(log_parse_and_describe, logvs, logvsl, 0, L_INFO);
+    // user-specified
+    if(logvsl)
+      fatal(log_parse_and_describe, logvs, logvsl, 0, L_INFO);
 
-			// log args summary
-			fatal(args_summarize);
+    // log args summary
+    fatal(args_summarize);
 
-			// chdir
-			if(!nodaemon)
-			{
-				snprintf(space, sizeof(space), "%s/fab/cwd", g_params.ipcstem);
-				fatal(xchdir, space);
-			}
+    // chdir
+    if(!nodaemon)
+    {
+      snprintf(space, sizeof(space), "%s/fab/cwd", g_params.ipcdir);
+      fatal(xchdir, space);
+    }
 
-			// parse the fabfiles only on the first run
-			if(!initialized)
-			{
-				logf(L_INFO, "loading build description");
+    // parse the fabfiles only on the first run
+    if(!initialized)
+    {
+      logf(L_INFO, "loading build description");
 
-				// start measuring
-				fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
+      // start measuring
+      fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
 
-				// use up one list and populate the # variable (relative directory path to the initial fabfile)
-				fatal(lw_reset, &ctx->stax, &ctx->staxa, ctx->staxp);
-				fatal(lstack_addw, ctx->stax[ctx->staxp], g_args->init_fabfile_path->abs_dir, g_args->init_fabfile_path->abs_dirl);
-				fatal(var_set, rmap, "#", ctx->stax[ctx->staxp++], 1, 0, 0);
+      // use up one list and populate the # variable (relative directory path to the initial fabfile)
+      fatal(lw_reset, &ctx->stax, &ctx->staxa, ctx->staxp);
+      fatal(lstack_addw, ctx->stax[ctx->staxp], g_args->init_fabfile_path->abs_dir, g_args->init_fabfile_path->abs_dirl);
+      fatal(var_set, rmap, "#", ctx->stax[ctx->staxp++], 1, 0, 0);
 
-				// vmap for the initial fabfile is the first (and only) direct descendant of rootmap
-				fatal(var_clone, rmap, &vmap);
+      // vmap for the initial fabfile is the first (and only) direct descendant of rootmap
+      fatal(var_clone, rmap, &vmap);
 
-				// parse, starting with the initial fabfile, construct the graph
-				fatal(ffproc, ctx->ffp, g_args->init_fabfile_path, vmap, &ctx->stax, &ctx->staxa, &ctx->staxp, &first);
+      // parse, starting with the initial fabfile, construct the graph
+      fatal(ffproc, ctx->ffp, g_args->init_fabfile_path, vmap, &ctx->stax, &ctx->staxa, &ctx->staxp, &first);
 
-				// compute node types
-				initialized = 1;
+      // compute node types
+      initialized = 1;
 
-				// load file hashes
-				for(x = 0; x < ff_files.l; x++)
-					fatal(hashblock_stat, ff_files.e[x]->path->abs, ff_files.e[x]->hb);
+      // load file hashes
+      for(x = 0; x < ff_files.l; x++)
+        fatal(hashblock_stat, ff_files.e[x]->path->abs, ff_files.e[x]->hb);
 
-				if(log_would(L_TIME))
-				{
-					// stop the clock
-					fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
-					
-					size_t z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
-					logf(L_TIME, "elapsed : %.*s", (int)z, space);
-				}
-			}
-			else
-			{
-				x = 0;
-				y = 0;
+      if(log_would(L_TIME))
+      {
+        // stop the clock
+        fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
+        
+        size_t z = elapsed_string_timespec(&time_start, &time_end, space, sizeof(space));
+        logf(L_TIME, "elapsed : %.*s", (int)z, space);
+      }
+    }
+    else
+    {
+      x = 0;
+      y = 0;
 
-        // check for fabfile changes
-        for(x = 0; x < ff_files.l; x++)
+      // check for fabfile changes
+      for(x = 0; x < ff_files.l; x++)
+      {
+        fatal(hashblock_stat, ff_files.e[x]->path->abs, ff_files.e[x]->hb);
+        if(hashblock_cmp(ff_files.e[x]->hb))
+          break;
+      }
+
+      if(x == ff_files.l)
+      {
+        // check for cfg file changes
+        for(y = 0; y < cfg_files.l; y++)
         {
-          fatal(hashblock_stat, ff_files.e[x]->path->abs, ff_files.e[x]->hb);
-          if(hashblock_cmp(ff_files.e[x]->hb))
+          fatal(hashblock_stat, cfg_files.e[y]->path->abs, cfg_files.e[y]->hb);
+          if(hashblock_cmp(cfg_files.e[y]->hb))
             break;
         }
+      }
 
-        if(x == ff_files.l)
-        {
-          // check for cfg file changes
-          for(y = 0; y < cfg_files.l; y++)
-          {
-            fatal(hashblock_stat, cfg_files.e[y]->path->abs, cfg_files.e[y]->hb);
-            if(hashblock_cmp(cfg_files.e[y]->hb))
-              break;
-          }
-        }
+      if(x < ff_files.l || y < cfg_files.l)
+      {
+        // exec fabd, because of changes to:
+        //  fabfile, or
+        //  cfg file
+        execvp(argv[0], argv);
+      }
+    }
 
-				if(x < ff_files.l || y < cfg_files.l)
-				{
-					// exec fabd, because of changes to:
-					//  fabfile, or
-					//  cfg file
-					execvp(argv[0], argv);
-				}
-			}
+    // handle this request
+    int frame;
+    if(invoke(&frame, fabd_handler_handle_request, ctx, vmap, first))
+    {
+      // capture the error code
+      int code = XAPI_ERRCODE;
 
-			// handle this request
-			int frame;
-			if(invoke(&frame, fabd_handler_handle_request, ctx, vmap, first))
-			{
-				// capture the error code
-				int code = XAPI_ERRCODE;
+      // propagate errors other than those specifically being trapped
+      if(XAPI_ERRTAB == perrtab_FAB && fab_swallow[code])
+      {
 
-				// propagate errors other than those specifically being trapped
-				if(XAPI_ERRTAB == perrtab_FAB && fab_swallow[code])
-				{
+      }
+      else if(XAPI_ERRTAB == perrtab_LW)
+      {
 
-				}
-				else if(XAPI_ERRTAB == perrtab_LW)
-				{
+      }
+      else if(XAPI_ERRTAB == perrtab_PCRE)
+      {
+        
+      }
+      else
+      {
+        fail(0);
+      }
 
-				}
-				else if(XAPI_ERRTAB == perrtab_PCRE)
-				{
-					
-				}
-				else
-				{
-					fail(0);
-				}
-
-				// log the backtrace
+      // log the backtrace
 #if DEBUG || DEVEL
-				int mode = DEFAULT_MODE_BACKTRACE;
+      int mode = DEFAULT_MODE_BACKTRACE;
 
-				if(g_args)
-					mode = g_args->mode_backtrace;
+      if(g_args)
+        mode = g_args->mode_backtrace;
 #endif
 
-				/*
-				** populate the base frame
-				*/
-				XAPI_FRAME_SET(perrtab, 0);
+      /*
+      ** populate the base frame
+      */
+      XAPI_FRAME_SET(perrtab, 0);
 
 #if DEBUG || DEVEL
-				if(mode == MODE_BACKTRACE_FULL)
-				{
-					tracesz = xapi_trace_full(space, sizeof(space));
-				}
-				else
+      if(mode == MODE_BACKTRACE_FULL)
+      {
+        tracesz = xapi_trace_full(space, sizeof(space));
+      }
+      else
 #endif
-				{
-					tracesz = xapi_trace_pithy(space, sizeof(space));
-				}
+      {
+        tracesz = xapi_trace_pithy(space, sizeof(space));
+      }
 
-				// log the error
-				logw(L_RED, space, tracesz);
+      // log the error
+      logw(L_RED, space, tracesz);
 
-				// pop the error frames
-				xapi_callstack_unwindto(frame);
+      // pop the error frames
+      xapi_callstack_unwindto(frame);
 
-				// write the error to ipcdir
-				snprintf(space, sizeof(space), "%s/fabd/error", g_params.ipcstem);
-				fatal(ixclose, &fd);
-				fatal(xopen_mode, space, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
-				fatal(axwrite, fd, &code, sizeof(code));
-			}
+      // write the error to ipcdir
+      snprintf(space, sizeof(space), "%s/fabd/error", g_params.ipcdir);
+      fatal(ixclose, &fd);
+      fatal(xopen_mode, space, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
+      fatal(axwrite, fd, &code, sizeof(code));
+    }
 
-			if(log_would(L_USAGE))
-			{
-				// check memory usage
-				snprintf(space, sizeof(space), "/proc/self/statm");
-				fatal(ixclose, &fd);
-				fatal(uxopen, space, O_RDONLY, &fd);
+    if(log_would(L_USAGE))
+    {
+      // check memory usage
+      snprintf(space, sizeof(space), "/proc/self/statm");
+      fatal(ixclose, &fd);
+      fatal(uxopen, space, O_RDONLY, &fd);
 
-				long pgz = 0;
-				if(fd != -1)
-				{
-					fatal(xread, fd, space, sizeof(space), 0);
-					sscanf(space, "%*d %ld", &pgz);
-				}
-				logf(L_USAGE, "usage : mem(%s), lwx(%d), gn(%d), ts(%d)", bytestring(pgz * g_params.pagesize), ctx->staxa, gn_nodes.a, ctx->tsa);
-			}
+      long pgz = 0;
+      if(fd != -1)
+      {
+        fatal(xread, fd, space, sizeof(space), 0);
+        sscanf(space, "%*d %ld", &pgz);
+      }
+      logf(L_USAGE, "usage : mem(%s), lwx(%d), gn(%d), ts(%d)", bytestring(pgz * g_params.pagesize), ctx->staxa, graph.a, ctx->tsa);
+    }
 
-			// task complete : notify fab
-			fatal(uxkill, g_params.fab_pid, FABSIG_DONE, 0);
-		}
+      // task complete : notify fab
+      fatal(xkill, g_params.fab_pid, FABSIG_DONE);
+    }
 
 		// cleanup tmp dir, including specifically the last fab pid we are tracking
 		fatal(tmp_cleanup, &fab_pids[sizeof(fab_pids) / sizeof(fab_pids[0]) - 1], 1);
@@ -454,9 +462,6 @@ int main(int argc, char** argv, char ** envp)
 
 		if(nodaemon)
 			break;
-
-    // receive a signal
-    fatal(sigreceive, &sig);
 	}
 
 	// touch stamp file
@@ -485,6 +490,7 @@ finally:
 
   // module teardown
 	gn_teardown();
+  graph_teardown();
 	fml_teardown();
 	ff_teardown();
 	params_teardown();
@@ -493,6 +499,7 @@ finally:
 
   // error trace
 #if DEBUG || DEVEL
+  XAPI_INFOS("name", "fabd");
   XAPI_INFOF("pid", "%ld", (long)getpid());
 #endif
 

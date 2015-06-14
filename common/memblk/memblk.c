@@ -86,7 +86,7 @@ xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
 xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 {
 	// save the active policy, but the memblk itself should use the default mm
-	mempolicy * mm = mempolicy_release();
+	mempolicy * mm = mempolicy_pop(0);
 
 	// request is too large to satisfy
 	if(sz > MEMBLOCK_LARGE)
@@ -131,7 +131,9 @@ xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 
 finally:
 	// restore the active mm if any
-	mempolicy_engage(mm);
+  // although this is/must be invoked with fatal because it is a xapi function
+  // it cannot in fact fail ; the allocation is guaranteed due to the previous pop
+	fatal(mempolicy_push, mm, 0);
 coda;
 }
 

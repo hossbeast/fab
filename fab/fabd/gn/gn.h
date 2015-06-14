@@ -211,23 +211,6 @@ typedef struct gn
 	char								poison;
 } gn;
 
-extern union gn_nodes_t
-{
-	coll_doubly c;
-
-	struct
-	{
-		int		l;						// length
-		int		a;						// allocated
-		int		z;						// element size
-
-		gn ** e;						// elements
-
-		struct map *	by_path;			// indexed by canonical path
-		struct map *	by_pathhash;	// indexed by canonical path hash
-	};
-} gn_nodes;
-
 /// gn_lookup
 //
 // SUMMARY

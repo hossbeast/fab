@@ -35,7 +35,7 @@ Example process credentials for fab
 In order to facilitate signal exchange, these programs require fabsys:fabsys ownership
 and ug+s permissions. fabd runs with fabsys credentials at all times, thus it is always
 eligible to receive signals. fab and faba temporarily assume fabsys credentials before
-sending a signal to fabd, and while awaiting the response signal
+sending a signal to fabd, and maintain them while awaiting the response signal
 
 ## signal flow
 FABSIG_START    : fab -> fabd    new command

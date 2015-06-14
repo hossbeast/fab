@@ -38,6 +38,7 @@
 #include "list.h"
 #include "lwutil.h"
 #include "traverse.h"
+#include "graph.h"
 
 #include "macros.h"
 #include "map.h"
@@ -218,16 +219,16 @@ int dsc_exec_entire(map * vmap, transform_parser * const gp, lwx *** stax, size_
 	// assign each threadspace a discovery formula evaluation context
 	int tsl = 0;
 	int n = 0;
-	for(x = 0; x < gn_nodes.l; x++)
+	for(x = 0; x < graph.l; x++)
 	{
-		if(gn_nodes.e[x]->invalid & GN_INVALIDATION_DISCOVERY)
+		if(graph.e[x]->invalid & GN_INVALIDATION_DISCOVERY)
 		{
-			for(y = 0; y < gn_nodes.e[x]->dscvsl; y++)
+			for(y = 0; y < graph.e[x]->dscvsl; y++)
 			{
 				fatal(ts_ensure, ts, tsa, tsl + 1);
 				ts_reset((*ts)[tsl]);
 
-				(*ts)[tsl++]->fmlv = gn_nodes.e[x]->dscvs[y];
+				(*ts)[tsl++]->fmlv = graph.e[x]->dscvs[y];
 			}
 
 			n++;

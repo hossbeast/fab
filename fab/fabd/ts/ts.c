@@ -186,7 +186,7 @@ int ts_execwave(ts ** ts, int n, size_t * waveid, int waveno, uint64_t hi, int *
 
 						if(e)
 						{
-							logf(0, ", details @ %s/dsc/%d", g_params.ipcstem, ts[x]->y);
+							logf(0, ", details @ %s/dsc/%d", g_params.ipcdir, ts[x]->y);
 						}
 
 						log_finish();

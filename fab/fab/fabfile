@@ -29,7 +29,7 @@ $copts = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
 	# include paths - mark as system to preclude dependency discovery from gcc
-	[ [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux $dlibpstring ~ s/^/-I ]
+	[ [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux $dlibpstring $dlibnarrate ~ s/^/-I ]
 ]
 
 $params = [
@@ -51,13 +51,13 @@ $cflags_xapi_debug = [ $cflags_xapi_debug $copts $params ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $copts $params_devel ]
 
 $rpath = [ 
-	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dlibnarrate $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 # -lrt required for glibc < 2.17 as per man clock_gettime
 $lopts						 = [ -lrt ]
-$lflags_xapi_final = [ $lflags_xapi_final $lopts $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $liblistwise_xapi_final ]
-$lflags_xapi_debug = [ $lflags_xapi_debug $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $liblistwise_xapi_debug ]
-$lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $liblistwise_xapi_devel $rpath ]
+$lflags_xapi_final = [ $lflags_xapi_final $lopts $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $libnarrate_xapi_final $liblistwise_xapi_final ]
+$lflags_xapi_debug = [ $lflags_xapi_debug $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $libnarrate_xapi_debug $liblistwise_xapi_debug ]
+$lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $libnarrate_xapi_devel $liblistwise_xapi_devel $rpath ]
 
 # standard files - standard nopic compilation
 +[@std.c]($dext = [ xapi.final.o ]; $rdirs = $sdirs; $cc; $cflags = $cflags_xapi_final)
@@ -75,9 +75,9 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 # executables
 #  -export-dynamic enables dloaded code (in particular, the fab-specific operator so's) to bind to symbols in the executable.
 #
-[ $fab_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $liblistwise_xapi_final ]
-[ $fab_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $liblistwise_xapi_debug ]
-[ $fab_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $liblistwise_xapi_devel ]
+[ $fab_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $libnarrate_xapi_final $liblistwise_xapi_final ]
+[ $fab_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $libnarrate_xapi_debug $liblistwise_xapi_debug ]
+[ $fab_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $libnarrate_xapi_devel $liblistwise_xapi_devel ]
 
 [ $fab_final ] : [ $dfab/main.xapi.final.o ~ j ] 
 {

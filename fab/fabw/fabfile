@@ -29,7 +29,7 @@ $cflags = [
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
 	# include paths
-	[ $sdirs [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux $dlibpstring ~ s/^/-I ]
+	[ $sdirs [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux $dlibpstring $dlibnarrate ~ s/^/-I ]
 ]
 
 $params = [
@@ -51,11 +51,11 @@ $cflags_xapi_debug = [ $cflags_xapi_debug $cflags $params ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $cflags $params_devel ]
 
 $rpath = [ 
-	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dlibnarrate ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
-$lflags_xapi_final = [ $lflags_xapi_final $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final ]
-$lflags_xapi_debug = [ $lflags_xapi_debug $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug ]
-$lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $rpath ]
+$lflags_xapi_final = [ $lflags_xapi_final $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $libnarrate_xapi_final ]
+$lflags_xapi_debug = [ $lflags_xapi_debug $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $libnarrate_xapi_debug ]
+$lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $libnarrate_xapi_devel $rpath ]
 
 # standard files - standard compilation
 +[@std.c]($dext = [ xapi.final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_xapi_final)
@@ -73,9 +73,9 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_de
 #
 # executables
 #
-[ $fabw_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final ]
-[ $fabw_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug ]
-[ $fabw_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel ]
+[ $fabw_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $libnarrate_xapi_final ]
+[ $fabw_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $libnarrate_xapi_debug ]
+[ $fabw_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $libnarrate_xapi_devel ]
 
 [ $fabw_final ] : [ $dfabw/main.xapi.final.o ~ j ] 
 {

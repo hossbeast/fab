@@ -20,19 +20,22 @@
 
 /*
 
- sigbank enables a signal handling pattern where application-level signals are handled
- at specified signal-exchange points and system-level signals are always unblocked
+ sigbank enables a signal handling pattern where application signals are handled
+ at specified signal-exchange points and system signals are always unblocked
 
- this allows for blocking system calls to be interrupted by the receipt of system-level
+ this allows for blocking system calls to be interrupted by the receipt of system
  signals, while maintaining well-defined semantics for two processes to exchange
- application-level signals
+ application signals
+
+ the applicaton signals are defined in params.h
 
 */
 
 #define restrict __restrict
 
-// the signal handler is a single-instruction assignment to this variable
+// the signal handler writes to these variables and nothing more
 extern volatile int g_signum;
+extern volatile pid_t g_sigpid;
 
 /// sigbank_init
 //
@@ -63,20 +66,45 @@ void sigbank_teardown();
 /// sigreceive
 //
 // SUMMARY
-//  suspends execution pending receipt of some signal, then returns the received signal
+//  suspends execution pending receipt of some signal. If the signal received is an application signal
+//  then the signal and pid of the sender are returned if those parameters are not null
 //
 // PARAMETERS
-//  sig  - (returns) the signal received
+//  [expsig] - sentinel-terminated list of expected application signals
+//  [exppid] - expected pid of application signal sender
+//  [actsig] - (returns) received application signal
+//  [actpid] - (returns) pid of sender of application signal
 //
 // REMARKS
-//  this api is used to receive application-level signals ; system-level signals can be
+//  this api is used to receive application signals ; system signals can be
 //  recived at any time and should be received via g_signum directly
 //
 // RETURNS
 //  xapi semantics
 //
-int sigreceive(int * const restrict sig)
-	__attribute__((nonnull));
+int sigreceive(int * restrict expsig, int exppid, int * restrict actsig, pid_t * restrict actpid);
+
+/// sigexchange
+//
+// SUMMARY
+//  call xkill with the specified parameters then suspend exuection pending signal receipt
+//  optionally validate the received signal, optionally return the received signal and pid of sender
+//
+// PARAMETERS
+//  pid      - see xkill
+//  sig      - see xkill
+//  [expsig] - sentinel-terminated list of expected application signals
+//  [exppid] - expected pid of application signal sender
+//  [actsig] - (returns) received application signal
+//  [actpid] - (returns) pid of sender of application signal
+//
+// REMARKS
+//  used to initiate signal-exchange (thus, only by fab and faba, never by fabd)
+//
+// RETURNS
+//  xapi semantics
+//
+int sigexchange(pid_t pid, int sig, int * restrict expsig, int exppid, int * restrict actsig, pid_t * restrict actpid);
 
 #undef restrict
 #endif

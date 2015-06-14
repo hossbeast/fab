@@ -17,17 +17,74 @@
 
 #include "internal.h"
 
-// memory policy
+// arbitrary max policies
+#define MAX_POLICIES 8
+
+// active policy
 __thread mempolicy * policy;
 
-void API mempolicy_engage(mempolicy * plc)
+// policy stack
+__thread mempolicy ** policies;
+__thread size_t policiesl;
+__thread size_t policiesa;
+
+#define restrict __restrict
+
+API int mempolicy_push(mempolicy * plc, int * const restrict mpc)
 {
-	policy = plc;
+  if(plc)
+  {
+    if(policiesl == policiesa)
+    {
+      if(policiesl == MAX_POLICIES)
+        fail(XLINUX_MPOLICY);
+
+      size_t ns = policiesa ?: 2;
+      ns = ns * 2 + ns / 2;
+      fatal(xrealloc, &policies, sizeof(**policies), ns, policiesa);
+      policiesa = ns;
+    }
+
+    policies[policiesl++] = plc;
+    policy = policies[policiesl - 1];
+    if(mpc)
+      (*mpc)++;
+  }
+
+  finally : coda;
 }
 
-API mempolicy * mempolicy_release(mempolicy * plc)
+API mempolicy * mempolicy_pop(int * const restrict mpc)
 {
-	mempolicy * r = policy;
-	policy = 0;
-	return r;
+  mempolicy * r = 0;
+  if(policiesl)
+  {
+    r = policies[policiesl - 1];
+
+    policiesl -= 1;
+    if(mpc)
+      (*mpc)--;
+  }
+
+  if(policiesl)
+    policy = policies[policiesl - 1];
+  else
+    policy = 0;
+
+  return r;
+}
+
+API mempolicy * mempolicy_unwind(int * const restrict mpc)
+{
+  mempolicy * r = 0;
+  if(policiesl)
+    r = policies[policiesl - 1];
+
+  policiesl = 0;
+  if(mpc)
+    (*mpc) = 0;
+
+  policy = 0;
+
+  return r;
 }
