@@ -23,7 +23,7 @@
 #include "internal.h"
 
 #include "dynamic/dynamic.h"
-#include "fixed/fixed.h"
+#include "fixed/fixed.internal.h"
 #include "file/file.h"
 
 #define restrict __restrict

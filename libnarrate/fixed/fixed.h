@@ -18,24 +18,37 @@
 #ifndef _NARRATE_FIXED_H
 #define _NARRATE_FIXED_H
 
-/// fixed
+#define fvsayf(fmt, lst) narrate_fvsayf(_narrator, fmt, lst)
+#define fsayf(fmt, ...)  narrate_fsayf (_narrator, fmt, ##__VA_ARGS__) 
+#define fsays(s)         narrate_fsayw (_narrator, s)
+#define fsayw(b, l)      narrate_fsayw (_narrator, b, l)               
+#define fsayc(s, c)      narrate_fsayc (_narrator, c)                  
+
+struct narrator;          // narrator.h
+
+/// narrate_vsay
 //
 // SUMMARY
-//  write to a fixed size buffer, discarding overflow
+//  fixed-narration-specific say interface that returns void and is therefore
+//  suitable for use within a finally block
 //
-// PARAMETERS
-//  dst - buffer to write to
-//  sz  - size of dst
-//  szo - offset at which to write, and incremented by number of bytes written
+// REMARKS
+//  see say.h
 //
 
 #define restrict __restrict
 
-int fixed_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+void narrate_fvsayf(struct narrator * const restrict n, const char * const restrict fmt, va_list va)
+  __attribute__((nonnull));
 
-int fixed_sayw(char * const restrict dst, size_t sz, size_t * const restrict szo, char * const restrict b, size_t l)
-	__attribute__((nonnull));
+void narrate_fsayf(struct narrator * const restrict n, const char * const restrict fmt, ...)
+  __attribute__((nonnull(1, 2)));
+
+void narrate_fsayw(struct narrator * const restrict n, char * const restrict b, size_t l)
+  __attribute__((nonnull));
+
+void narrate_fsayc(struct narrator * const restrict n, int c)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif
