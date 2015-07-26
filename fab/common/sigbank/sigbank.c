@@ -24,6 +24,7 @@
 #include "xapi.h"
 #include "xlinux.h"
 #include "narrate.h"
+#include "narrate/fixed.h"
 
 #include "sigbank.h"
 #include "identity.h"
@@ -186,7 +187,7 @@ int sigreceive(int * restrict expsig, int exppid, int * restrict actsig, pid_t *
 
     // actual signal not in expected list
     if((e && !*e) || (exppid && (exppid != g_sigpid)))
-      fail(FAB_BADIPC);
+      tfail(perrtab_FAB, FAB_BADIPC);
   }
   else
   {
@@ -205,11 +206,12 @@ finally:
       int * e = expsig;
       while(e && *e)
       {
-        sayf("%d", *e);
+        fsayf("%d", *e);
         e++;
         if(*e)
           says(", ");
       }
+
 
       XAPI_INFOF("expected signal", "{%s}", space);
     }

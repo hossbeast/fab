@@ -43,9 +43,19 @@
 // static
 //
 
+typedef struct bp_stage bp_stage;
+
 #define restrict __restrict
 
-static void bp_freestage(bp_stage * const restrict bps);
+static void bp_freestage(bp_stage * const restrict bps)
+{
+	if(bps)
+	{
+		free(bps->primary);
+		free(bps->evals);
+		free(bps->nofmls);
+	}
+}
 
 static int gn_cmp(const void * _A, const void * _B)
 {
@@ -221,7 +231,7 @@ int bp_create(
 		// allocate a new stage
 		fatal(xmalloc, bp, sizeof(**bp));
 		fatal(xmalloc, &(*bp)->stages, sizeof((*bp)->stages[0]) * maxheight);
-		(*bp)->stages_l = maxheight;
+		(*bp)->stagesl = maxheight;
 
 		int k;
 		for(k = 0; k < maxheight; k++)
@@ -279,15 +289,15 @@ int bp_create(
 							for(i = 0; i < lvs[y]->fabv->productsl; i++)
 								lvs[y]->fabv->products[i]->stage = k+1;
 
-							for(i = 0; i < bps->evals_l; i++)
+							for(i = 0; i < bps->evalsl; i++)
 							{
 								if(bps->evals[i] == lvs[y]->fabv)
 									break;
 							}
 
 							// add this eval context to the stage
-							if(i == bps->evals_l)
-								bps->evals[bps->evals_l++] = lvs[y]->fabv;
+							if(i == bps->evalsl)
+								bps->evals[bps->evalsl++] = lvs[y]->fabv;
 						}
 					}
 					else if(lvs[y]->path->canl >= 4 && memcmp(lvs[y]->path->can, "/../", 4) == 0)
@@ -303,13 +313,13 @@ int bp_create(
 						//  2 - in order to report additional errors before failing out
 						//
 						logf(L_WARN, "SECONDARY has no formula - %s", lvs[y]->idstring);
-						bps->nofmls[bps->nofmls_l++] = lvs[y];
+						bps->nofmls[bps->nofmlsl++] = lvs[y];
 						lvs[y]->stage = k+1;
 					}
 					else
 					{
 						// this is a source file
-						bps->primary[bps->primary_l++] = lvs[y];
+						bps->primary[bps->primaryl++] = lvs[y];
 						lvs[y]->stage = k+1;
 					}
 				}
@@ -317,44 +327,48 @@ int bp_create(
 		}
 
 		// splice out empty stages
-		for(x = (*bp)->stages_l - 1; x >= 0; x--)
+		for(x = (*bp)->stagesl - 1; x >= 0; x--)
 		{
-			if(((*bp)->stages[x].primary_l + (*bp)->stages[x].evals_l + (*bp)->stages[x].nofmls_l) == 0)
+			if(((*bp)->stages[x].primaryl + (*bp)->stages[x].evalsl + (*bp)->stages[x].nofmlsl) == 0)
 			{
 				bp_freestage(&(*bp)->stages[x]);
 
 				memmove(
 						&(*bp)->stages[x]
 					, &(*bp)->stages[x + 1]
-					, ((*bp)->stages_l - x - 1) * sizeof((*bp)->stages[0])
+					, ((*bp)->stagesl - x - 1) * sizeof((*bp)->stages[0])
 				);
 
-				(*bp)->stages_l--;
+				(*bp)->stagesl--;
 			}
 		}
 
 		// internally sort lists in each stage by name of their first product
-		for(x = 0; x < (*bp)->stages_l; x++)
+		for(x = 0; x < (*bp)->stagesl; x++)
 		{
 			qsort(
 					(*bp)->stages[x].evals
-				, (*bp)->stages[x].evals_l
+				, (*bp)->stages[x].evalsl
 				, sizeof((*bp)->stages[0].evals[0])
 				, fmleval_cmp
 			);
 			qsort(
 					(*bp)->stages[x].nofmls
-				, (*bp)->stages[x].nofmls_l
+				, (*bp)->stages[x].nofmlsl
 				, sizeof((*bp)->stages[0].nofmls[0])
 				, gn_cmp
 			);
 			qsort(
 					(*bp)->stages[x].primary
-				, (*bp)->stages[x].primary_l
+				, (*bp)->stages[x].primaryl
 				, sizeof((*bp)->stages[0].primary[0])
 				, gn_cmp
 			);
 		}
+
+    // calculate aggregates
+    for(x = 0; x < (*bp)->stagesl; x++)
+      (*bp)->evalsl += (*bp)->stages[x].evalsl;
 	}
 
 finally:
@@ -374,10 +388,10 @@ int bp_eval(bp * const bp)
 	// begin with the assumption of a good build
 	int poison = 0;
 
-	for(x = 0; x < bp->stages_l; x++)
+	for(x = 0; x < bp->stagesl; x++)
 	{
 		int c = 0;
-		for(y = 0; y < bp->stages[x].primary_l; y++)
+		for(y = 0; y < bp->stages[x].primaryl; y++)
 		{
 			// source files
 			gn * gn = bp->stages[x].primary[y];
@@ -403,7 +417,7 @@ int bp_eval(bp * const bp)
 			);
 		}
 
-		for(y = 0; y < bp->stages[x].evals_l; y++)
+		for(y = 0; y < bp->stages[x].evalsl; y++)
 		{
 			// whether NONE of the products of this eval context require rebuilding
 			int keep = 0;
@@ -463,7 +477,7 @@ int bp_eval(bp * const bp)
 			}
 		}
 
-		for(y = 0; y < bp->stages[x].nofmls_l; y++)
+		for(y = 0; y < bp->stages[x].nofmlsl; y++)
 		{
 			// SECONDARY files which have no formula
 			gn * gn = bp->stages[x].nofmls[y];
@@ -509,35 +523,40 @@ int bp_eval(bp * const bp)
 		fail(FAB_UNSATISFIED);
 
 	// consolidate stages
-	for(x = bp->stages_l - 1; x >= 0; x--)
+	for(x = bp->stagesl - 1; x >= 0; x--)
 	{
-		for(y = bp->stages[x].evals_l - 1; y >= 0; y--)
+		for(y = bp->stages[x].evalsl - 1; y >= 0; y--)
 		{
 			if(bp->stages[x].evals[y] == 0)
 			{
 				memmove(
 						&bp->stages[x].evals[y]
 					, &bp->stages[x].evals[y + 1]
-					, (bp->stages[x].evals_l - y - 1) * sizeof(bp->stages[0].evals[0])
+					, (bp->stages[x].evalsl - y - 1) * sizeof(bp->stages[0].evals[0])
 				);
 
-				bp->stages[x].evals_l--;
+				bp->stages[x].evalsl--;
 			}
 		}
 
-		if(bp->stages[x].evals_l == 0)
+		if(bp->stages[x].evalsl == 0)
 		{
 			bp_freestage(&bp->stages[x]);
 
 			memmove(
 					&bp->stages[x]
 				, &bp->stages[x + 1]
-				, (bp->stages_l - x - 1) * sizeof(bp->stages[0])
+				, (bp->stagesl - x - 1) * sizeof(bp->stages[0])
 			);
 
-			bp->stages_l--;
+			bp->stagesl--;
 		}
 	}
+
+  // calculate aggregates
+  bp->evalsl = 0;
+  for(x = 0; x < bp->stagesl; x++)
+    bp->evalsl += bp->stages[x].evalsl;
 
 	finally : coda;
 }
@@ -548,10 +567,10 @@ int bp_prepare_stage(bp * bp, int stage, transform_parser * const gp, lwx *** st
 	int y;
 
 	// ensure I have enough threadspace
-	fatal(ts_ensure, ts, tsa, bp->stages[x].evals_l);
+	fatal(ts_ensure, ts, tsa, bp->stages[x].evalsl);
 
 	// render formulas for each eval context on this stage
-	for(y = 0; y < bp->stages[x].evals_l; y++)
+	for(y = 0; y < bp->stages[x].evalsl; y++)
 	{
 		(*ts)[(*tsl)]->fmlv = bp->stages[x].evals[y];
 		(*ts)[(*tsl)]->y = y;
@@ -586,7 +605,7 @@ int bp_harvest_stage(bp * bp, int stage)
 
 	int x = stage;
 	int y;
-	for(y = 0; y < bp->stages[x].evals_l; y++)
+	for(y = 0; y < bp->stages[x].evalsl; y++)
 	{
 		// verify the exit status was saved and that it is zero
 		int r;
@@ -629,18 +648,18 @@ void bp_dump(bp * bp)
 	int y;
 	
 	int tot = 0;
-	for(x = 0; x < bp->stages_l; x++)
-		tot += bp->stages[x].evals_l;
+	for(x = 0; x < bp->stagesl; x++)
+		tot += bp->stages[x].evalsl;
 
-	if(bp->stages_l == 0)
+	if(bp->stagesl == 0)
 	{
 		logf(L_BPDUMP, "NO STAGES");
 	}
-	for(x = 0; x < bp->stages_l; x++)
+	for(x = 0; x < bp->stagesl; x++)
 	{
-		logf(L_BPDUMP, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
+		logf(L_BPDUMP, "STAGE %d of %d executes %d of %d", x, bp->stagesl - 1, bp->stages[x].evalsl, tot);
 
-		for(y = 0; y < bp->stages[x].evals_l; y++)
+		for(y = 0; y < bp->stages[x].evalsl; y++)
 		{
 			int i;
 			for(i = 0; i < bp->stages[x].evals[y]->productsl; i++)
@@ -666,22 +685,12 @@ void bp_dump(bp * bp)
 	}
 }
 
-void bp_freestage(bp_stage * const restrict bps)
-{
-	if(bps)
-	{
-		free(bps->primary);
-		free(bps->evals);
-		free(bps->nofmls);
-	}
-}
-
 void bp_free(bp * const restrict bp)
 {
 	if(bp)
 	{
 		int x;
-		for(x = 0; x < bp->stages_l; x++)
+		for(x = 0; x < bp->stagesl; x++)
 			bp_freestage(&bp->stages[x]);
 
 		free(bp->stages);

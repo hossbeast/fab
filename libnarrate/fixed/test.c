@@ -19,7 +19,7 @@
 #include <string.h>
 
 #include "internal.h"
-#include "fixed.h"
+#include "fixed/fixed.internal.h"
 
 #include "macros.h"
 

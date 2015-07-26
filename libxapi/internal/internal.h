@@ -18,35 +18,15 @@
 #ifndef _XAPI_INTERNAL_H
 #define _XAPI_INTERNAL_H
 
-//
-// api
-//
+// public header file
 #include "xapi.h"
-#include "error/error.h"
-#include "error/SYS.errtab.h"
-#include "xapi/XAPI.errtab.h"
 
-#if XAPI_PROVIDE_BACKTRACE
-#include "unwind.h"
-#include "trace/trace.h"
-#include "callstack/callstack.h"
-#include "frame/frame.h"
-#endif
-
-//
-// internal
-//
-#include "error/error.internal.h"
-
-#if XAPI_PROVIDE_BACKTRACE
-#include "trace/trace.internal.h"
-#include "callstack/callstack.internal.h"
-#endif
-
-#undef perrtab
-#define perrtab perrtab_SYS
-
+// visibility declaration macros
 #define API __attribute__((visibility("protected")))
 #define APIDATA
+
+// default error table
+#undef perrtab
+#define perrtab perrtab_SYS
 
 #endif

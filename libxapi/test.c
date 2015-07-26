@@ -1,14 +1,31 @@
-#if 0
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
 
 #include "xapi.h"
-#include "xapi/callstack.h"
 
-#include "memblk.h"
+int alpha()
+{
+  enter;
 
+  printf("in alpha\n");
+
+  finally : coda;
+}
+
+int main()
+{
+  enter;
+
+printf("fatal calling alpha\n");
+  fatal(alpha);
+printf("returned from alpha\n");
+
+  finally : coda;
+}
+
+#if 0
 #define perrtab perrtab_SYS
 
 int xclose(int fd)

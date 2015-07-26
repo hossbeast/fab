@@ -26,6 +26,7 @@
 
 #include "global.h"
 #include "executor.h"
+#include "executor.def.h"
 #include "args.def.h"
 #include "params.h"
 #include "bp.h"
@@ -34,28 +35,6 @@
 #include "macros.h"
 
 #define restrict __restrict
-
-typedef struct executor_context
-{
-  struct pstring *      tmp;      // reusable temp space
-
-  struct
-  {
-    pid_t   pid;                  // pid of child
-    int     num;                  // command number
-    int     cmd_fd;               // file descriptors
-    int     stdo_fd;
-    int     stde_fd;
-#if 0
-    struct pstring ** prod_type;  // product types
-    struct pstring ** prod_id;    // product ids
-    size_t  prodl;                // number of products - occupied
-    size_t  proda;                // number of products - allocated
-#endif
-  } *     cmds;
-  size_t  cmdsl;
-  size_t  cmdsa;
-} executor_context;
 
 //
 // public
@@ -119,9 +98,9 @@ int executor_context_dispose(executor_context * ctx)
 
 int executor_execute(
     executor_context * const restrict ctx
+	, const executor_logging * const restrict logging
   , const char * const restrict subdir
   , const int cmdsl
-	, const executor_logging * const restrict logging
   , int * const restrict success
 )
 {
@@ -242,38 +221,9 @@ int executor_execute(
       if(bad)
         tag |= L_ERROR;
 
+      // invoke EXEC logging callback
       if(logging && log_would(tag))
-      {
-				logging->log_exec(logging, i, bad, r);
-
-/*
-        int y;
-        for(y = 0; y < ctx->cmds[i].prodl; y++)
-        {
-          if(y == 0)
-          {
-            log_start(tag);
-            logf(0, "[%2d,%3d] %s %s", stagex, i, ctx->cmds[i].prod_type[y], ctx->cmds[i].prod_id[y]);
-
-            if(WIFEXITED(r) && WEXITSTATUS(r))
-              logf(0, ", exit status : %d", stagex, i, ctx->cmds[i].prod_type[y], ctx->cmds[i].prod_id[y], WEXITSTATUS(r));
-            else if(WIFSIGNALED(r))
-              logf(0, ", signal : %d", stagex, i, ctx->cmds[i].prod_type[y], ctx->cmds[i].prod_id[y], WTERMSIG(r));
-
-            if(bad)
-            {
-              logf(0, ", details @ %s/bp/%d/%d", g_params.ipcdir, stagex, i);
-            }
-
-            log_finish();
-          }
-          else
-          {
-            logf(tag, "%*s %s %s", 8, "", ctx->cmds[i].prod_type[y], ctx->cmds[i].prod_id[y]);
-          }
-        }
-*/
-      }
+				logging->log_exec(ctx, logging, subdir, i, bad, r);
 
       if(logging && log_would(logging->cmd_cat))	// L_BPCMD
       {

@@ -30,25 +30,23 @@
 #define restrict __restrict
 
 struct etable;
-struct callstack;
+struct calltree;
 
-int xapi_frame_depth();
-/// xapi_frame_enter
+#if XAPI_RUNTIME_CHECKS
+/// xapi_frame_ enter/leave/caller/depth
 //
 // SUMMARY
-//  push a frame onto the callstack
+//  implementation of ILLFATAL and NOFATAL checks
 //
-// RETURNS
-//  zero on success
+// REMARKS
+//  with RUNTIME_CHECKS enabled, fatal/leave are instrumented to call these functions to
+//  track the addresses of the fatal callstack and raise an error when there is disagreement
+//  with the underlying callstack
 //
-#if XAPI_RUNTIME_CHECKS
 int xapi_frame_enter(void * calling_frame);
 void * xapi_frame_caller();
-#else
-int xapi_frame_enter();
+int xapi_frame_depth();
 #endif
-
-int xapi_frame_enter_last();
 
 /// xapi_frame_leave
 //
@@ -89,20 +87,6 @@ int xapi_unwinding();
 int xapi_frame_errcode();
 int xapi_frame_errval();
 const etable * xapi_frame_errtab();
-
-/// xapi_frame_finalize
-//
-// SUMMARY
-//  record that execution has passed the XAPI_FINALLY label in the current frame
-//
-void xapi_frame_finalize();
-
-/// xapi_frame_finalized
-//
-// SUMMARY
-//  true if execution has passed the XAPI_FINALLY label in current frame
-//
-int xapi_frame_finalized();
 
 /// xapi_frame_set
 //

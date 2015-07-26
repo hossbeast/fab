@@ -91,6 +91,8 @@ static int launch_if_not_running(int fablockfd, char * const restrict child, pid
   // launch child if it is not running
 	if(r)
 	{
+    fatal(identity_assume_fabsys);
+
 		fatal(xfork, &pgid);
 		if(pgid == 0)
 		{
@@ -129,6 +131,7 @@ static int launch_if_not_running(int fablockfd, char * const restrict child, pid
 
     // await ready signal from the child
     fatal(sigreceive, (int[]) { FABSIG_READY, 0 }, 0, 0, 0);
+    fatal(identity_assume_user);
 	}
 
   // return pgid
@@ -387,13 +390,19 @@ int main(int argc, char** argv, char ** envp)
   // kill existing fabd when -B
 	if(g_args->invalidationsz)
   {
-    fatal(sigexchange, -g_params.fabd_pgid, 15, (int[]) { 15, 0 }, 0, 0, 0);
+    fatal(sigexchange, -g_params.fabd_pgid, 15, (int[]) { FABSIG_DONE, 0 }, 0, 0, 0);
   }
 
   // otherwise if credentials have changed cause fabd to save the graph to shm and exit
   else if(/* changed credentials */ 0)
   {
-    fatal(sigexchange, -g_params.fabd_pgid, FABSIG_START, (int[]) { FABSIG_DONE, 0 }, 0, 0, 0);
+    // prepare to recycle
+    fatal(sigexchange, -g_params.fabd_pgid, 15, (int[]) { FABSIG_DONE, 0 }, 0, 0, 0);
+
+    // attach to shm
+
+    // terminate
+    fatal(sigexchange, -g_params.fabd_pgid, 15, (int[]) { FABSIG_DONE, 0 }, 0, 0, 0);
   }
 
   // start fabd if its not running
@@ -414,6 +423,7 @@ finally:
 #if DEBUG || DEVEL
   XAPI_INFOS("name", "fab");
   XAPI_INFOF("pid", "%ld", (long)getpid());
+  XAPI_INFOF("hash", "%u", g_params.canhash);
 #endif
 
 	// when failing due to an error propagated from fabd (fabd_error), do not log the

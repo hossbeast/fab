@@ -31,6 +31,8 @@
 #include "lwutil.h"
 #include "gnlw.h"
 #include "list.h"
+#include "ts.h"
+#include "fml.h"
 
 #include "map.h"
 #include "macros.h"
@@ -70,10 +72,10 @@ int buildscript_mk(
 	fatal(map_keys, bakemap, &keys, &keysl);
 
 	// determine how many threads are needed
-	for(x = 0; x < bp->stages_l; x++)
+	for(x = 0; x < bp->stagesl; x++)
 	{
-		tsl = MAX(tsl, bp->stages[x].evals_l);
-		tot += bp->stages[x].evals_l;
+		tsl = MAX(tsl, bp->stages[x].evalsl);
+		tot += bp->stages[x].evalsl;
 	}
 
 	// ensure I have enough threadspace
@@ -142,16 +144,16 @@ int buildscript_mk(
 
 	// render all formulas
 	i = 0;
-	for(x = 0; x < bp->stages_l; x++)
+	for(x = 0; x < bp->stagesl; x++)
 	{
-		logf(L_BPINFO, "STAGE %d of %d executes %d of %d", x, bp->stages_l - 1, bp->stages[x].evals_l, tot);
+		logf(L_BPINFO, "STAGE %d of %d executes %d of %d", x, bp->stagesl - 1, bp->stages[x].evalsl, tot);
 
 		if(x)
 			dprintf(fd, "\n");
 		dprintf(fd, "# formulas and names for stage %d\n", x);
 
 		// render formulas for each eval context on this stage
-		for(y = 0; y < bp->stages[x].evals_l; y++)
+		for(y = 0; y < bp->stages[x].evalsl; y++)
 		{
 			(*ts)[y]->fmlv = bp->stages[x].evals[y];
 			(*ts)[y]->y = y;
@@ -243,26 +245,26 @@ int buildscript_mk(
 
 	// emit code to execute all the stages
 	i = 0;
-	for(x = 0; x < bp->stages_l; x++)
+	for(x = 0; x < bp->stagesl; x++)
 	{
-		if(bp->stages[x].evals_l)
+		if(bp->stages[x].evalsl)
 		{
-			int step = bp->stages[x].evals_l;
+			int step = bp->stages[x].evalsl;
 			if(g_args->concurrency > 0)
 				step = g_args->concurrency;
 
 			int j;
-			for(j = 0; j < bp->stages[x].evals_l; j += step)
+			for(j = 0; j < bp->stages[x].evalsl; j += step)
 			{
 				dprintf(fd, "# early termination \n");
 				dprintf(fd, "if [[ $DIE -ne 0 ]]; then\n");
-				dprintf(fd, "  ((SKP+=%d))\n", MIN(j + step, bp->stages[x].evals_l) - j);
+				dprintf(fd, "  ((SKP+=%d))\n", MIN(j + step, bp->stages[x].evalsl) - j);
 				dprintf(fd, "else\n");
 
 				// execute fmls in this stage concurrently
 				dprintf(fd, "  # launch stage %d.%d\n", x, j/step);
 
-				for(y = j; y < (j + step) && y < bp->stages[x].evals_l; y++)
+				for(y = j; y < (j + step) && y < bp->stages[x].evalsl; y++)
 					dprintf(fd
 						, "  exec %d>$tmp ; rm -f $tmp ; fml_%d_%d & PIDS[%d]=$!\n"
 						, 100+y-j
@@ -274,7 +276,7 @@ int buildscript_mk(
 				dprintf(fd, "\n");
 				dprintf(fd, "  # harvest stage %d.%d\n", x, j/step);
 				dprintf(fd, "  C=0\n");
-				dprintf(fd, "  while [[ $C != %d ]]; do\n", MIN(j + step, bp->stages[x].evals_l) - j);
+				dprintf(fd, "  while [[ $C != %d ]]; do\n", MIN(j + step, bp->stages[x].evalsl) - j);
 				dprintf(fd, "    read -u 99 idx\n");
 				dprintf(fd, "    wait ${PIDS[$idx]}\n");
 				dprintf(fd, "    EXITS[$idx]=$?\n");
@@ -293,7 +295,7 @@ int buildscript_mk(
 			}
 		}
 
-		i += bp->stages[x].evals_l;
+		i += bp->stages[x].evalsl;
 	}
 	
 	dprintf(fd, "printf '%%15s %%d\\n' succeeded $WIN\n");

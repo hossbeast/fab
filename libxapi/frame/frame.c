@@ -25,370 +25,90 @@
 #include "memblk.def.h"
 #include "macros.h"
 
-// per-thread callstack storage
-__thread struct callstack * callstack;
-__thread struct memblk callstack_mb;
-
 #define restrict __restrict
 
-static int wmalloc(void * p, size_t sz)
+static void frame_set(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func, int alt)
 {
-#define MEMBLOCK_SMALL			0x1000 /* 1k : first THRESHOLD blocks */
-#define MEMBLOCK_THRESHOLD	0x4			
-#define MEMBLOCK_LARGE			0x8000 /* 8k : additional blocks */
+  if(calltree->exe->frames.l == calltree->exe->frames.a)
+  {
+    size_t ns = calltree->exe->frames.a;
+    ns = ns * 2 + ns / 2;
+    wrealloc(&calltree->exe->frames.v, sizeof(*calltree->exe->frames.v), ns, calltree->exe->frames.a);
+    calltree->exe->frames.a = ns;
+  }
 
-	// request is too large to satisfy
-	if(sz > MEMBLOCK_LARGE)
-		return 1;
+	struct frame * f = calltree->exe->frames.v[calltree->exe->frames.l];
 
-	struct memblk * mb = &callstack_mb;
+  f->etab = etab;
+  f->code = code ?: etab->max + 1;	// no code given
+  f->line = line;
+  f->msgl = 0;
+  f->info.l= 0;
 
-	/* current block is full */
-	if(mb->blocksl == 0 || ((mb->blocks[mb->blocksl - 1].l + sz) > mb->blocks[mb->blocksl - 1].a))
-	{
-		/* reallocate the block container */
-		if(mb->blocksl == mb->blocksa)
-		{
-			size_t ns = mb->blocksa ?: 3;
-			ns = ns * 2 + ns / 2;
-			if((mb->blocks = calloc(sizeof(*mb->blocks) * ns, 1)) == 0)
-				return 1;
-			mb->blocksa = ns;
-		}
+  size_t funcl = strlen(func);
+  size_t filel = 0;
+  if(file)
+    filel = strlen(file);
 
-		if((mb->blocksl < MEMBLOCK_THRESHOLD) && (sz <= MEMBLOCK_SMALL))
-			mb->blocks[mb->blocksl].a = MEMBLOCK_SMALL;
-		else
-			mb->blocks[mb->blocksl].a = MEMBLOCK_LARGE;
-
-		if((mb->blocks[mb->blocksl].s = calloc(sizeof(*mb->blocks[0].s) * mb->blocks[mb->blocksl].a, 1)) == 0)
-			return 1;
-
-		// cumulative offset
-		if(mb->blocksl)
-			mb->blocks[mb->blocksl].o = mb->blocks[mb->blocksl - 1].o + mb->blocks[mb->blocksl - 1].l;
-
-		mb->blocksl++;
-	}
-
-	*(void**)p = mb->blocks[mb->blocksl - 1].s + mb->blocks[mb->blocksl - 1].l;
-	mb->blocks[mb->blocksl - 1].l += sz;
-
-	return 0;
-}
-
-static int wrealloc(void * p, size_t es, size_t ec, size_t oec)
-{
-	void * old = *(void**)p;
-	if(wmalloc(p, es * ec))
-		return 1;
-	if(old)
-		memcpy(*(void**)p, old, es * oec);
-
-	return 0;
-}
-
-static int scatw(char ** dst, size_t * dstl, size_t * dsta, size_t seed, const char * s, size_t l)
-{
-	if(l >= (*dsta))
-	{
-		size_t ns = (*dsta) ?: seed;
-		while(ns <= l)
-			ns = ns * 2 + ns / 2;
-		if(wrealloc(dst, 1, ns, *dsta))
-			return 1;
-		(*dsta) = ns;
-	}
-
-	(*dstl) = l;
-	memcpy(*dst, s, l);
-	(*dst)[l] = 0;
-
-	return 0;
-}
-
-static int frame_set(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func, int alt)
-{
-	//
-	// first frame_set initiates unwinding ; initialize x
-	//
-	if(callstack->x == -1)
-	{
-		callstack->x = callstack->l - 1;
-	}
-
-	struct frame * f = callstack->v[callstack->x];
-
-	if(f->funcl)
-	{
-		//
-		// no-op if this frame has already been populated
-		//
-		
-		f->populated = 1;
-	}
-	else
-	{
-		f->etab = etab;
-		f->code = code ?: etab->max + 1;	// no code given
-		f->line = line;
-		f->msgl = 0;
-		f->info.l= 0;
-
-		size_t funcl = strlen(func);
-		size_t filel = 0;
-		if(file)
-			filel = strlen(file);
-
-		if(f->type)
-		{
-			struct frame_static * fs = (struct frame_static*)f;
-
-			fs->filel = MIN(sizeof(fs->buf_file) - 1, filel);
-			memcpy(fs->buf_file, file, fs->filel);
-			fs->buf_file[fs->filel] = 0;
-			fs->file = fs->buf_file;
-
-			fs->funcl = MIN(sizeof(fs->buf_func) - 1, funcl);
-			memcpy(fs->buf_func, func, fs->funcl);
-			fs->buf_func[fs->funcl] = 0;
-			fs->func = fs->buf_func;
-		}
-		else
-		{
-			if(scatw(&f->file, &f->filel, &f->filea, 10, file, filel))
-				return 1;
-
-			if(scatw(&f->func, &f->funcl, &f->funca, 10, func, funcl))
-				return 1;
-		}
-	}
-
-	// whether to jump
-	return !f->finalized;
+  scatw(&f->file, &f->filel, &f->filea, 10, file, filel);
+  scatw(&f->func, &f->funcl, &f->funca, 10, func, funcl);
 }
 
 #undef restrict
 
 ///
-/// callstack manipulation
+/// calltree manipulation
 ///
-int API xapi_frame_enter_last()
-{
-	return callstack->r;
-}
 
 #if XAPI_RUNTIME_CHECKS
 int API xapi_frame_enter(void * calling_frame)
-#else
-int API xapi_frame_enter()
-#endif
 {
-	if(callstack == 0)
-	{
-		/* if this allocation fails, the program will segfault
-		**  it WILL fail if MEMBLOCK_LARGE < sizeof(callstack)
-		**  it could of course also fail if there is actually insufficient memory
-		*/
-		wmalloc(&callstack, sizeof(*callstack));
-	}
-#if DEVEL
-	CS = callstack;
-#endif
+  if(calltree_frames.a <= calltree_frames.l)
+  {
+    size_t ns = calltree_frames.a;
+    while(ns <= calltree_frames.l)
+      ns = ns * 2 + ns / 2;
+    if((calltree_frames.v = realloc(calltree_frames.v, sizeof(*calltree_frames.v) * ns)) == 0)
+    {
+      write(2, "failed to allocate");
+    }
+    calltree_frames.a = ns;
+  }
 
-	if(callstack->v && callstack->v[callstack->l - 1]->code)
-	{
-		// unwinding is underway ; no new frame
-		callstack->r = -1;
-		return -1;
-	}
-
-	// first push
-	if(callstack->x == 0 && callstack->l == 0)
-		callstack->x = -1;
-
-//printf("ENTER :: [x=%2d][l=%2d] => ", callstack->x, callstack->l);
-
-	// ensure frame allocation
-	int ns = callstack->a;
-	if(callstack->l == callstack->a)
-	{
-		ns = callstack->a ?: 10;
-		ns = ns * 2 + ns / 2;
-
-		/*
-		** the frame list is allocated with 2 extra slots ; one for the base frame (at the beginning) and one
-		** for the alt frame (at the end)
-		*/
-		if(wrealloc(&callstack->v, sizeof(*callstack->v), ns + 2, callstack->a) == 0)
-		{
-			if(wrealloc(&callstack->frames.stor, sizeof(*callstack->frames.stor), ns, callstack->a) == 0)
-			{
-				int x;
-				for(x = callstack->a; x < ns; x++)
-				{
-					if(wrealloc(&callstack->frames.stor[x], sizeof(*callstack->frames.stor[0]), 1, 0))
-						break;
-				}
-
-				callstack->a = x;
-			}
-		}
-	}
-
-	if(callstack->a != ns)
-	{
-		// if the frame list has not yet been allocated, use the static frame list
-		if(callstack->v == 0)
-			callstack->v = callstack->frames.alt_list;
-
-		if(callstack->l == 0)	// base frame
-		{
-			callstack->v[callstack->l] = &callstack->frames.alt[0];
-			callstack->v[callstack->l]->finalized = 0;
-			callstack->v[callstack->l]->populated = 0;
-			callstack->l++;
-		}
-
-		callstack->v[callstack->l] = &callstack->frames.alt[1];
-		callstack->v[callstack->l]->finalized = 0;
-		callstack->v[callstack->l]->populated = 0;
-#if XAPI_RUNTIME_CHECKS
-	callstack->v[callstack->l]->calling_frame = calling_frame;
-#endif
-		callstack->l++;
-
-#if XAPI_RUNTIME_CHECKS
-//printf("[x=%2d][l=%2d] %p\n", callstack->x, callstack->l, calling_frame);
-#endif
-		
-		// populate the alternate frame with an ENOMEM error
-		frame_set(perrtab_SYS, SYS_ENOMEM, 0, 0, "libxapi::malloc", 1);
-		xapi_frame_leave();
-
-		callstack->r = 1;
-		return 1;
-	}
-
-	// push a frame for the base frame on the first push
-	do
-	{
-		callstack->v[callstack->l] = callstack->frames.stor[callstack->l];
-		callstack->v[callstack->l]->code = 0;
-		callstack->v[callstack->l]->finalized = 0;
-		callstack->v[callstack->l]->populated = 0;
-		callstack->v[callstack->l]->filel = 0;
-		callstack->v[callstack->l]->funcl = 0;
-		callstack->l++;
-	} while(callstack->l < 2);
-
-#if XAPI_RUNTIME_CHECKS
-	callstack->v[callstack->l - 1]->calling_frame = calling_frame;
-#endif
-
-#if XAPI_RUNTIME_CHECKS
-//printf("[x=%2d][l=%2d] %p\n", callstack->x, callstack->l, calling_frame);
-#endif
-	callstack->r = 0;
-	return 0;
-}
-
-int API xapi_frame_depth()
-{
-	return callstack ? callstack->l : 0;
-}
-
-#if XAPI_RUNTIME_CHECKS
-typedef void * voidstar;
-voidstar API xapi_frame_caller()
-{
-	if(callstack->v[callstack->l - 1]->code)
-		return callstack->v[callstack->x]->calling_frame;
-	else
-		return callstack->v[callstack->l - 1]->calling_frame;
-}
-#endif
-
-void API xapi_frame_leave3(const etable ** etab, int * code, int * rval)
-{
-#if DEVEL
-	CS = callstack;
-#endif
-//printf("LEAVE :: [x=%2d][l=%2d] => ", callstack->x, callstack->l);
-
-//	if((rc = callstack->v[callstack->x]->code))
-//	if(((*code) = callstack->v[callstack->l - 1]->code))
-
-	const etable * E = 0;
-	int C = 0;
-	int R = 0;
-
-	if(callstack->v[callstack->l - 1]->code)
-	{
-		E = callstack->v[callstack->l - 1]->etab;
-		C = callstack->v[callstack->l - 1]->code;
-		R = (callstack->v[callstack->l - 1]->etab->id << 16) | callstack->v[callstack->l - 1]->code;
-
-		// unwinding is underway
-		if(--callstack->x == -1)
-		{
-//printf("[x=%2d][l=%2d] CALLSTACK_FREE\n", callstack->x, callstack->l);
-
-			/*
-			** x goes to -1 when a function exits that was not itself called with UNWIND-ing, e.g. main
-			*/
-			callstack_free();
-		}
-		else
-		{
-#if XAPI_RUNTIME_CHECKS
-//printf("[x=%2d][l=%2d] %p\n", callstack->x, callstack->l, callstack->v[callstack->l - 1]->calling_frame);
-#endif
-		}
-	}
-
-	// discard the frame
-	else
-	{
-		if(--callstack->l == 0)
-		{
-//printf("[x=%2d][l=%2d] CALLSTACK_FREE\n", callstack->x, callstack->l);
-			callstack_free();
-		}
-		else
-		{
-#if XAPI_RUNTIME_CHECKS
-//printf("[x=%2d][l=%2d] %p\n", callstack->x, callstack->l, callstack->v[callstack->l - 1]->calling_frame);
-#endif
-		}
-	}
-
-	if(etab) (*etab) = E;
-	if(code) (*code) = C;
-	if(rval) (*rval) = R;
+  calltree_frames->v[calltree->frames.l++] = calling_frame;
 }
 
 int API xapi_frame_leave()
 {
-#if DEVEL
-	CS = callstack;
+#if XAPI_RUNTIME_CHECKS
+  calltree_frames.l--;   // discard the frame
 #endif
-	
-	int rval;
-	xapi_frame_leave3(0, 0, &rval);
-	return rval;
+
+  int r = 0;
+  xapi_frame_leave3(0, 0, &r);
+  return r;
 }
+
+API void * xapi_frame_caller()
+{
+  void * f = 0;
+  if(calltree_frames.l)
+    f = calltree_frames.v[calltree_frames.l - 1];
+
+  return f;
+}
+#endif
 
 typedef const etable * etabstar;
 etabstar API xapi_frame_errtab()
 {
 #if DEVEL
-	CS = callstack;
+	CT = calltree;
 #endif
 
-	if(callstack->v[callstack->l - 1]->code)
+	if(calltree->v[calltree->l - 1]->code)
 	{
-		return callstack->v[callstack->l - 1]->etab;
+		return calltree->v[calltree->l - 1]->etab;
 	}
 
 	return 0;
@@ -397,12 +117,12 @@ etabstar API xapi_frame_errtab()
 int API xapi_frame_errcode()
 {
 #if DEVEL
-	CS = callstack;
+	CT = calltree;
 #endif
 
-	if(callstack->v[callstack->l - 1]->code)
+	if(calltree->v[calltree->l - 1]->code)
 	{
-		return callstack->v[callstack->l - 1]->code;
+		return calltree->v[calltree->l - 1]->code;
 	}
 
 	return 0;
@@ -411,48 +131,24 @@ int API xapi_frame_errcode()
 int API xapi_frame_errval()
 {
 #if DEVEL
-	CS = callstack;
+	CT = calltree;
 #endif
 
-	if(callstack->v[callstack->l - 1]->code)
+	if(calltree->v[calltree->l - 1]->code)
 	{
-		return (callstack->v[callstack->l - 1]->etab->id << 16) | callstack->v[callstack->l - 1]->code;
+		return (calltree->v[calltree->l - 1]->etab->id << 16) | calltree->v[calltree->l - 1]->code;
 	}
 
 	return 0;
 }
 
-void API xapi_frame_finalize()
-{
-#if DEVEL
-	CS = callstack;
-#endif
-
-	if(callstack->v[callstack->l - 1]->code)
-		callstack->v[callstack->x]->finalized = 1;
-	else
-		callstack->v[callstack->l - 1]->finalized = 1;
-}
-
-int API xapi_frame_finalized()
-{
-#if DEVEL
-	CS = callstack;
-#endif
-
-	if(callstack->v[callstack->l - 1]->code)
-		return callstack->v[callstack->x]->finalized;
-	else
-		return callstack->v[callstack->l - 1]->finalized;
-}
-
 int API xapi_unwinding()
 {
 #if DEVEL
-	CS = callstack;
+	CT = calltree;
 #endif
 
-	return callstack->v[callstack->l - 1]->code;
+  return calltree;
 }
 
 int API xapi_frame_set(const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func)
@@ -463,14 +159,15 @@ int API xapi_frame_set(const etable * const etab, const int16_t code, const char
 int API xapi_frame_set_messagew(const etable * const etab, const int16_t code, const char * const msg, int msgl, const char * const file, const int line, const char * const func)
 {
 #if DEVEL
-	CS = callstack;
+	CT = calltree;
 #endif
 
 	int r = frame_set(etab, code, file, line, func, 0);
 
 	msgl = msgl ?: msg ? strlen(msg) : 0;
 
-	struct frame * f = callstack->v[callstack->x];
+	struct frame * f = calltree->v[calltree->x];
+  struct frame * f = calltree->exe->
 
 	//
 	// no-op if either:
@@ -517,12 +214,12 @@ int API xapi_frame_set_messagew(const etable * const etab, const int16_t code, c
 int API xapi_frame_set_messagef(const etable * const etab, const int16_t code, const char * const fmt, const char * const file, const int line, const char * const func, ...)
 {
 #if DEVEL
-	CS = callstack;
+	CT = calltree;
 #endif
 
 	int r = frame_set(etab, code, file, line, func, 0);
 
-	struct frame * f = callstack->v[callstack->x];
+	struct frame * f = calltree->v[calltree->x];
 
 	//
 	// no-op if either:
@@ -575,20 +272,20 @@ int API xapi_frame_set_messagef(const etable * const etab, const int16_t code, c
 void API xapi_frame_infow(const char * const k, int kl, const char * const v, int vl)
 {
 #if DEVEL
-	CS = callstack;
+	CT = calltree;
 #endif
 
 	//
 	// no-op if not unwinding
 	//
-	if(callstack->v[callstack->l - 1]->code)
+	if(calltree->v[calltree->l - 1]->code)
 	{
 		if(k)
 			kl = kl ?: strlen(k);
 		if(v)
 			vl = vl ?: strlen(v);
 
-		struct frame * f = callstack->v[callstack->x];
+		struct frame * f = calltree->v[calltree->x];
 
 		//
 		// no-op if either:
@@ -684,17 +381,17 @@ void API xapi_frame_infow(const char * const k, int kl, const char * const v, in
 void API xapi_frame_infof(const char * const k, int kl, const char * const vfmt, ...)
 {
 #if DEVEL
-	CS = callstack;
+	CT = calltree;
 #endif
 
 	//
 	// no-op if not unwinding
 	//
-	if(callstack->v[callstack->l - 1]->code)
+	if(calltree->v[calltree->l - 1]->code)
 	{
 		kl = kl ?: strlen(k);
 
-		struct frame * f = callstack->v[callstack->x];
+		struct frame * f = calltree->v[calltree->x];
 
 		// measure the value
 		va_list va;
@@ -749,7 +446,6 @@ void API xapi_frame_infof(const char * const k, int kl, const char * const vfmt,
 
 				if(f->info.l < f->info.a)
 				{
-
 					// ensure allocation for the key
 					if(kl >= f->info.v[f->info.l].ka)
 					{
@@ -793,3 +489,221 @@ void API xapi_frame_infof(const char * const k, int kl, const char * const vfmt,
 		va_end(va);
 	}
 }
+
+#if 0
+#if XAPI_RUNTIME_CHECKS
+int API xapi_frame_enter(void * calling_frame)
+#else
+int API xapi_frame_enter()
+#endif
+{
+  size_t ns;
+  size_t es;
+
+	if(calltree == 0)
+	{
+		/* if this allocation fails, the program will segfault
+		**  it WILL fail if MEMBLOCK_LARGE < sizeof(calltree)
+		**  it could of course also fail if there is actually insufficient memory
+		*/
+		if(wmalloc(&calltree, sizeof(*calltree)))
+    {
+      write(2, "libxapi failed to allocate calltree");
+    }
+#if DEVEL
+	CT = calltree;
+#endif
+
+    xapi_calltree_allocate(1);
+
+    calltree->exe = &calltree->stacks.v[0];
+	}
+
+  if(calltree->exe->code)
+  {
+    calltree->exe = &calltree->stacks.v[calltree->stacks.l++]
+  }
+
+  else if(calltree->l == calltree->scheduled_allocation)
+  {
+    // calculate the new frame lead
+    calltree->frame_lead = xapi_frame_lead + (calltree->l * xapi_frame_lead_factor);
+
+    // new frame allocation
+    xapi_calltree_allocate(calltree->frames.a + calltree->frame_lead + 1);    
+
+    // schedule the next allocation
+    calltree->scheduled_allocation = calltree->frames.a - calltree->frame_lead;
+  }
+
+#if 0
+	if(calltree->v && calltree->v[calltree->l - 1]->code)
+	{
+		// unwinding is underway ; no new frame
+		return calltree->r = -1;
+	}
+
+	// first push
+	if(calltree->x == calltree->l == 0)
+		calltree->x = -1;
+
+//printf("ENTER :: [x=%2d][l=%2d] => ", calltree->x, calltree->l);
+
+	// ensure frame allocation
+	int ns = calltree->a;
+	if(calltree->l == calltree->a)
+	{
+		ns = calltree->a ?: 10;
+		ns = ns * 2 + ns / 2;
+
+		/*
+		** the frame list is allocated with 2 extra slots ; one for the base frame (at the beginning) and one
+		** for the alt frame (at the end)
+		*/
+		if(wrealloc(&calltree->v, sizeof(*calltree->v), ns + 2, calltree->a) == 0)
+		{
+			if(wrealloc(&calltree->frames.stor, sizeof(*calltree->frames.stor), ns, calltree->a) == 0)
+			{
+				int x;
+				for(x = calltree->a; x < ns; x++)
+				{
+					if(wrealloc(&calltree->frames.stor[x], sizeof(*calltree->frames.stor[0]), 1, 0))
+						break;
+				}
+
+				calltree->a = x;
+			}
+		}
+	}
+
+	if(calltree->a != ns)
+	{
+		// if the frame list has not yet been allocated, use the static frame list
+		if(calltree->v == 0)
+			calltree->v = calltree->frames.alt_list;
+
+		if(calltree->l == 0)	// base frame
+		{
+			calltree->v[calltree->l] = &calltree->frames.alt[0];
+			calltree->v[calltree->l]->finalized = 0;
+			calltree->v[calltree->l]->populated = 0;
+			calltree->l++;
+		}
+
+		calltree->v[calltree->l] = &calltree->frames.alt[1];
+		calltree->v[calltree->l]->finalized = 0;
+		calltree->v[calltree->l]->populated = 0;
+#if XAPI_RUNTIME_CHECKS
+    calltree->v[calltree->l]->calling_frame = calling_frame;
+#endif
+		calltree->l++;
+
+#if XAPI_RUNTIME_CHECKS
+//printf("[x=%2d][l=%2d] %p\n", calltree->x, calltree->l, calling_frame);
+#endif
+		
+		// populate the alternate frame with an ENOMEM error
+		frame_set(perrtab_SYS, SYS_ENOMEM, 0, 0, "libxapi::malloc", 1);
+		xapi_frame_leave();
+
+		return calltree->r = 1;
+	}
+
+	// push a frame for the base frame on the first push
+	do
+	{
+		calltree->v[calltree->l] = calltree->frames.stor[calltree->l];
+		calltree->v[calltree->l]->code = 0;
+		calltree->v[calltree->l]->finalized = 0;
+		calltree->v[calltree->l]->populated = 0;
+		calltree->v[calltree->l]->filel = 0;
+		calltree->v[calltree->l]->funcl = 0;
+		calltree->l++;
+	} while(calltree->l < 2);
+
+#endif
+
+  calltree->exe->l++;
+
+#if XAPI_RUNTIME_CHECKS
+	calltree->v[calltree->l - 1]->calling_frame = calling_frame;
+#endif
+
+#if XAPI_RUNTIME_CHECKS
+//printf("[x=%2d][l=%2d] %p\n", calltree->x, calltree->l, calling_frame);
+#endif
+	return calltree->r = 0;
+}
+#endif
+
+#if 0
+void API xapi_frame_leave3(const etable ** etab, int * code, int * rval)
+{
+#if DEVEL
+	CT = calltree;
+#endif
+//printf("LEAVE :: [x=%2d][l=%2d] => ", calltree->x, calltree->l);
+
+//	if((rc = calltree->v[calltree->x]->code))
+//	if(((*code) = calltree->v[calltree->l - 1]->code))
+
+	const etable * E = 0;
+	int C = 0;
+	int R = 0;
+
+	if(calltree->v[calltree->l - 1]->code)
+	{
+		E = calltree->v[calltree->l - 1]->etab;
+		C = calltree->v[calltree->l - 1]->code;
+		R = (calltree->v[calltree->l - 1]->etab->id << 16) | calltree->v[calltree->l - 1]->code;
+
+		// unwinding is underway
+		if(--calltree->x == -1)
+		{
+//printf("[x=%2d][l=%2d] CALLSTACK_FREE\n", calltree->x, calltree->l);
+
+			/*
+			** x goes to -1 when a function exits that was not itself called with UNWIND-ing, e.g. main
+			*/
+			callstack_free();
+		}
+		else
+		{
+#if XAPI_RUNTIME_CHECKS
+//printf("[x=%2d][l=%2d] %p\n", calltree->x, calltree->l, calltree->v[calltree->l - 1]->calling_frame);
+#endif
+		}
+	}
+
+	// discard the frame
+	else
+	{
+		if(--calltree->l == 0)
+		{
+//printf("[x=%2d][l=%2d] CALLSTACK_FREE\n", calltree->x, calltree->l);
+			callstack_free();
+		}
+		else
+		{
+#if XAPI_RUNTIME_CHECKS
+//printf("[x=%2d][l=%2d] %p\n", calltree->x, calltree->l, calltree->v[calltree->l - 1]->calling_frame);
+#endif
+		}
+	}
+
+	if(etab) (*etab) = E;
+	if(code) (*code) = C;
+	if(rval) (*rval) = R;
+}
+
+int API xapi_frame_leave()
+{
+#if DEVEL
+	CT = calltree;
+#endif
+	
+	int rval;
+	xapi_frame_leave3(0, 0, &rval);
+	return rval;
+}
+#endif

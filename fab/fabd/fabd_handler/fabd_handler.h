@@ -21,16 +21,20 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-struct map;         // map.h
-struct gn;          // gn.h
-struct ff_parser;   // ff.h
-struct ts;          // ts.h
+#include "executor.def.h"
+
+struct map;               // map.h
+struct gn;                // gn.h
+struct ff_parser;         // ff.h
+struct ts;                // ts.h
 
 #define restrict __restrict
 
 typedef struct fabd_handler_context
 {
-  struct pstring *      tmp;              // reusable temp space
+  executor_context;
+
+  int stage;    // stage index
 
   struct gn **          fabrications;     // node lists
   size_t                fabricationsl;

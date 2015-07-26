@@ -18,36 +18,32 @@
 #ifndef _BP_H
 #define _BP_H
 
-#include "listwise.h"
-#include "listwise/transform.h"
-
-#include "gn.h"
-#include "fml.h"
-#include "ts.h"
-
-#include "map.h"
-
-#define restrict __restrict
-
-// actions to be performed in a single build stage
-typedef struct bp_stage
-{
-	fmleval **	evals;				// evaluations to be carried out which result in 1 or more
-	int					evals_l;			//  SECONDARY/GENERATED files
-
-	gn **				nofmls;				// placeholders for SECONDARY nodes which are needed but which have no fml
-	int					nofmls_l;			//  i.e. these are errors being aggregated
-
-	gn **				primary;			// source files
-	int					primary_l;
-} bp_stage;
+struct lwx;               // listwise.h
+struct gn;                // gn.h
+struct fmleval;           // ts.h
+struct ts;                // ts.h
+struct transform_parser;  // listwise/transform.h
 
 // build plan
 typedef struct bp
 {
-	bp_stage	* stages;
-	int					stages_l;
+  // actions to be performed in a single build stage
+  struct bp_stage
+  {
+    struct fmleval ** evals;				// evaluations to be carried out which result in 1 or more
+    int					      evalsl;		  	//  SECONDARY/GENERATED files
+
+    struct gn **	    nofmls;				// placeholders for SECONDARY nodes which are needed but which have no fml
+    int					      nofmlsl;			//  i.e. these are errors being aggregated
+
+    struct gn **	    primary;			// source files
+    int					      primaryl;
+  } *   stages;
+	int		stagesl;
+  int   evalsl;       // sum stages[-].evalsl
 } bp;
+
+#define restrict __restrict
 
 /// bp_create
 //
@@ -66,11 +62,11 @@ typedef struct bp
 //  0 in the case of failure, and 1 otherwise
 //
 int bp_create(
-	  gn ** const restrict fabrications
+	  struct gn ** const restrict fabrications
 	, int fabricationsl
-	, gn ** const restrict fabricationxs
+	, struct gn ** const restrict fabricationxs
 	, int fabricationxsl
-	, gn ** const restrict fabricationns
+	, struct gn ** const restrict fabricationns
 	, int fabricationnsl
 	, bp ** const restrict bp
 )
@@ -109,7 +105,17 @@ int bp_exec();
 // SUMMARY
 //  prepare the buildplan for execution by writing all of the formulas to a set of temp files
 //
-int bp_prepare_stage(bp * bp, int stage, transform_parser * const gp, lwx *** stax, size_t * staxa, size_t staxp, ts *** ts, size_t * tsl, size_t * tsa)
+int bp_prepare_stage(
+  /*  1 */   bp * bp
+  /*  2 */ , int stage
+  /*  3 */ , struct transform_parser * const gp
+  /*  4 */ , struct lwx *** stax
+  /*  5 */ , size_t * staxa
+  /*  6 */ , size_t staxp
+  /*  7 */ , struct ts *** ts
+  /*  8 */ , size_t * tsl
+  /*  9 */ , size_t * tsa
+)
 	__attribute__((nonnull));
 
 /// bp_harvest

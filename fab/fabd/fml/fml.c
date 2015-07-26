@@ -319,7 +319,7 @@ coda;
 int fml_write(ts * const restrict ts, pid_t pid, int stage, int num)
 {
 	pstring * tmp = 0;
-	int fd = -1;
+//	int fd = -1;
 
 	fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d", pid, stage, num);
 	fatal(mkdirp, tmp->s, FABIPC_DIR);
@@ -331,6 +331,7 @@ int fml_write(ts * const restrict ts, pid_t pid, int stage, int num)
 	fatal(axwrite, ts->cmd_fd, ts->cmd_txt->s, ts->cmd_txt->l);
 	fatal(xclose, ts->cmd_fd);
 
+#if 0
 	// write the type and id of each product of the fmlv to the prod file
 	fatal(psloadf, &tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/%d/%d/prod", pid, stage, num);
 	fatal(uxunlink, tmp->s, 0);
@@ -347,10 +348,11 @@ int fml_write(ts * const restrict ts, pid_t pid, int stage, int num)
 			, 4
 		);
 	}
+#endif
 	
 finally:
 	psfree(tmp);
-	fatal(ixclose, &fd);
+//	fatal(ixclose, &fd);
 coda;
 }
 

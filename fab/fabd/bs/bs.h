@@ -18,10 +18,11 @@
 #ifndef _BS_H
 #define _BS_H
 
-#include "listwise.h"
-#include "listwise/transform.h"
-
-#include "bp.h"
+struct bp;                  // bp.h
+struct map;                 // map.h
+struct transform_parser;    // listwise/transform.h
+struct lwx;                 // listwise.h
+struct ts;                  // ts.h
 
 #define restrict __restrict
 
@@ -34,15 +35,15 @@
 //  dst - write the buildscript to this path
 //
 int buildscript_mk(
-	  const bp * const bp
+	  const struct bp * const bp
 	, const char * const restrict argvs
-	, map * const restrict vmap
-	, transform_parser * const gp
-	, lwx *** const restrict stax
+	, struct map * const restrict vmap
+	, struct transform_parser * const gp
+	, struct lwx *** const restrict stax
 	, size_t * const restrict staxa
 	, size_t staxp
-	, map * const restrict bakemap
-	, ts *** const restrict ts
+	, struct map * const restrict bakemap
+	, struct ts *** const restrict ts
 	, size_t * const restrict tsa
 	, const size_t * const restrict tsw
 	, const char * const restrict dst

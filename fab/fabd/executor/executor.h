@@ -21,23 +21,35 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+#ifndef EXECUTOR_CONTEXT
+#define EXECUTOR_CONTEXT struct executor_context
+#endif
+
 #define restrict __restrict
 
 // opaque context
 struct executor_context;
-typedef struct executor_context executor_context;
 
 // logging profile
 typedef struct executor_logging
 {
-  uint64_t cmd_cat;         // category for logging commands as they are executed
+  uint64_t cmd_cat;         // category for CMD logging
   uint64_t exec_cat;        // category for EXEC logging
-  void (*log_exec)(         // callback for EXEC logging
-      struct executor_logging * const restrict logging
-    , int num         // command number
-    , int bad         // whether executor thinks the command succeeded
-    , int r           // return value from wait
-  );
+
+  /// log_exec
+  //
+  // SUMMARY
+  //  callback for EXEC logging, invoked once per command upon completion if log_would
+  //
+  void (*log_exec)(
+    /*  1 */    struct executor_context * const restrict ctx
+    /*  2 */  , const struct executor_logging * const restrict logging
+    /*  3 */  , const char * const restrict subdir
+    /*  4 */  , int num         // command index
+    /*  5 */  , int bad         // whether executor thinks the command succeeded (includes writing to stderr)
+    /*  6 */  , int r           // return value from wait
+  )
+  __attribute__((nonnull));
 } executor_logging;
 
 /// executor_execute
@@ -47,9 +59,9 @@ typedef struct executor_logging
 //
 // PARAMETERS
 //  ctx        - executor context instance
+//  [logging]  - logging profile
 //  subdir     - subdirectory of ipcdir containing the commands
 //  cmdsl      - number of commands
-//  [logging]  - logging profile
 //  [success]  - (returns) whether all commands completed successfully
 //
 // REMARKS
@@ -57,13 +69,13 @@ typedef struct executor_logging
 //  in ipcdir/{subdir}
 //
 int executor_execute(
-  /*  1 */    executor_context * const restrict ctx
-  /*  2 */  , const char * const restrict subdir
-  /*  3 */  , const int cmdsl
-  /*  4 */  , const executor_logging * const restrict logging
+  /*  1 */    struct executor_context * const restrict ctx
+  /*  2 */  , const executor_logging * const restrict logging
+  /*  3 */  , const char * const restrict subdir
+  /*  4 */  , const int cmdsl
   /*  5 */  , int * const restrict success
 )
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 3)));
 
 /// executor_context_mk
 //
@@ -72,7 +84,7 @@ int executor_execute(
 // PARAMETERS
 //  ctx - (returns) executor context instance
 //
-int executor_context_mk(executor_context ** const restrict ctx)
+int executor_context_mk(struct executor_context ** const restrict ctx)
   __attribute__((nonnull));
 
 /// executor_context_recycle
@@ -83,7 +95,7 @@ int executor_context_mk(executor_context ** const restrict ctx)
 // RETURNS
 //  xapi semantics
 //
-int executor_context_recycle(executor_context * const restrict ctx)
+int executor_context_recycle(struct executor_context * const restrict ctx)
   __attribute__((nonnull));
 
 /// executor_context_dispose
@@ -94,6 +106,6 @@ int executor_context_recycle(executor_context * const restrict ctx)
 // RETURNS
 //  xapi semantics
 //
-int executor_context_dispose(executor_context * ctx);
+int executor_context_dispose(struct executor_context * restrict ctx);
 
 #endif

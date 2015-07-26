@@ -101,32 +101,32 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 }
 
 # link the library
-[ $libxapi_eapi_final ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/eapi.final.pic.o y ] ]
+[ $libxapi_eapi_final ] : [ [ $*/exports ~ j ] [ $*/calltree ~ j ls sx/c/eapi.final.pic.o y ] ]
 {
 	[ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ] 
 }
 
-[ $libxapi_eapi_debug ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/eapi.debug.pic.o y ] ]
+[ $libxapi_eapi_debug ] : [ [ $*/exports ~ j ] [ $*/calltree ~ j ls sx/c/eapi.debug.pic.o y ] ]
 {
 	[ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
 }
 
-[ $libxapi_eapi_devel ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/eapi.devel.pic.o y ] ]
+[ $libxapi_eapi_devel ] : [ [ $*/exports ~ j ] [ $*/calltree ~ j ls sx/c/eapi.devel.pic.o y ] ]
 {
 	[ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
 }
 
-[ $libxapi_xapi_final ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/xapi.final.pic.o y ] ]
+[ $libxapi_xapi_final ] : [ [ $*/exports ~ j ] [ $*/calltree ~ j ls sx/c/xapi.final.pic.o y ] ]
 {
 	[ [ $cc ] [ $cflags_xapi_final ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_final ~ fi ]
 }
 
-[ $libxapi_xapi_debug ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/xapi.debug.pic.o y ] ]
+[ $libxapi_xapi_debug ] : [ [ $*/exports ~ j ] [ $*/calltree ~ j ls sx/c/xapi.debug.pic.o y ] ]
 {
 	[ [ $cc ] [ $cflags_xapi_debug ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_debug ~ fi ]
 }
 
-[ $libxapi_xapi_devel ] : [ [ $*/exports ~ j ] [ $*/error ~ j ls sx/c/xapi.devel.pic.o y ] ]
+[ $libxapi_xapi_devel ] : [ [ $*/exports ~ j ] [ $*/calltree ~ j ls sx/c/xapi.devel.pic.o y ] ]
 {
 	[ [ $cc ] [ $cflags_xapi_devel ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_devel ~ fi ]
 }

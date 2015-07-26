@@ -41,7 +41,9 @@
 #include "bs.h"
 #include "dirutil.h"
 #include "graph.h"
+#define EXECUTOR_CONTEXT fabd_handler_context
 #include "executor.h"
+#include "ts.h"
 
 #include "path.h"
 #include "sigbank.h"
@@ -121,6 +123,54 @@ static int hashfiles(int iteration)
 	}
 
 	finally : coda;
+}
+
+static void bp_log_exec(
+    struct fabd_handler_context * const restrict ctx
+  , const struct executor_logging * const restrict logging
+  , const char * const restrict subdir
+  , int num
+  , int bad
+  , int r
+)
+{
+  uint64_t tag = L_BPCMD;
+  if(bad)
+    tag |= L_ERROR;
+
+  int x = ctx->stage; // stage index
+  int y = num;        // command index
+  int z;              // product index
+  for(z = 0; z < ctx->plan->stages[x].evals[y]->productsl; z++)
+  {
+    if(z == 0)
+    {
+      log_start(tag);
+      logf(0, "[%2d,%3d] %s %s", x, y
+        , GN_TYPE_STR(ctx->plan->stages[x].evals[y]->products[z]->type)
+        , ctx->plan->stages[x].evals[y]->products[z]->idstring
+      );
+
+      if(WIFEXITED(r) && WEXITSTATUS(r))
+        logf(0, ", exit status : %d", WEXITSTATUS(r));
+      else if(WIFSIGNALED(r))
+        logf(0, ", signal : %d", WTERMSIG(r));
+
+      if(bad)
+      {
+        logf(0, ", details @ %s/%s/%d", g_params.ipcdir, subdir, y);
+      }
+
+      log_finish();
+    }
+    else
+    {
+      logf(tag, "%*s %s %s", 8, ""
+        , GN_TYPE_STR(ctx->plan->stages[x].evals[y]->products[z]->type)
+        , ctx->plan->stages[x].evals[y]->products[z]->idstring
+      );
+    }
+  }
 }
 
 //
@@ -464,7 +514,7 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 
 				if(g_args->mode_bplan == MODE_BPLAN_EXEC)
 				{
-					if(ctx->plan && ctx->plan->stages_l)
+					if(ctx->plan && ctx->plan->stagesl)
 					{
 						// create tmp directory for the build
 						fatal(psloadf, &ctx->tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp", g_params.fab_pid);
@@ -481,7 +531,7 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 						fatal(uxunlink, ctx->tmp->s, 0);
 						fatal(ixclose, &fd);
 						fatal(xopen_mode, ctx->tmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
-						fatal(axwrite, fd, &ctx->plan->stages_l, sizeof(ctx->plan->stages_l));
+						fatal(axwrite, fd, &ctx->plan->stagesl, sizeof(ctx->plan->stagesl));
 						
 						// create file with the number of commands
 						fatal(psloadf, &ctx->tmp, XQUOTE(FABTMPDIR) "/pid/%d/bp/commands", g_params.fab_pid);
@@ -489,7 +539,7 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 						fatal(ixclose, &fd);
 						fatal(xopen_mode, ctx->tmp->s, O_CREAT | O_EXCL | O_WRONLY, FABIPC_DATA, &fd);
 						int cmdsl = 0;
-						for(x = 0; x < ctx->plan->stages_l; x++)
+						for(x = 0; x < ctx->plan->stagesl; x++)
 							cmdsl += ctx->plan->stages[x].evals_l;
 						fatal(axwrite, fd, &cmdsl, sizeof(cmdsl));
 #endif
@@ -497,14 +547,31 @@ int fabd_handler_handle_request(fabd_handler_context * const restrict ctx, struc
 
 						// prepare and execute the build plan, one stage at a time
 						int i;
-						for(i = 0; i < ctx->plan->stages_l; i++)
+						for(i = 0; i < ctx->plan->stagesl; i++)
 						{
+              // write the commands for the stage to the directory
 							fatal(bp_prepare_stage, ctx->plan, i, ctx->ffp->gp, &ctx->stax, &ctx->staxa, ctx->staxp, &ctx->tsp, &ctx->tsl, &ctx->tsa);
 
-              // execute the stage
-							logf(L_BPINFO, "stage %2d of %2d executing %3d of %3d", stagex, stagesl, ctx->cmdsl, commandsl);
+							logf(L_BPINFO, "stage %2d of %2d executing %3d of %3d"
+                , i
+                , ctx->plan->stagesl
+                , ctx->plan->stages[i].evalsl
+                , ctx->plan->evalsl
+              );
 
-							if(1)//sig == FABSIG_BPGOOD)
+              // execute the stage
+              int success;
+              ctx->stage = i;
+              fatal(executor_execute
+                , ctx
+                , (executor_logging[]) {{ cmd_cat : L_BPCMD, exec_cat : L_BPEXEC, log_exec : (void*)bp_log_exec }}
+                , "bp/%d"
+                , ctx->plan->stages[i].evalsl
+                , &success
+              );
+
+							//if(sig == FABSIG_BPGOOD)
+							if(success)
 							{
 								// plan was executed successfully ; update nodes for all products
 								for(x = 0; x < ctx->tsl; x++)

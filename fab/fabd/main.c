@@ -109,7 +109,6 @@ int main(int argc, char** argv, char ** envp)
 	struct timespec time_start;
 	struct timespec time_end;
 
-	int r;
 	int x;
 	int y;
 	size_t tracesz = 0;
@@ -144,7 +143,7 @@ int main(int argc, char** argv, char ** envp)
 	// get user identity of this process, assert user:group and permissions are set appropriately
 	fatal(identity_init);
 	
-	// get fabsys identity
+	// fabd default identity : fabsys
 	fatal(identity_assume_fabsys);
 
 	// allow creation of world-rw files
@@ -208,7 +207,7 @@ int main(int argc, char** argv, char ** envp)
 	fatal(axread, fd, &g_params.fab_pid, sizeof(g_params.fab_pid));
   fatal(ixclose, &fd);
 
-  // signal to fab that I am ready to receive a command
+  // signal to fab that startup is complete
   if(!nodaemon)
     fatal(xkill, g_params.fab_pid, FABSIG_READY);
 
@@ -224,7 +223,7 @@ int main(int argc, char** argv, char ** envp)
     fatal(xopen, space, O_RDONLY, &fd);
     fatal(axread, fd, &g_params.fab_pid, sizeof(g_params.fab_pid));
 
-    // before proceeding check whether fab is running
+    // assert that fab is running
     if(!nodaemon)
       fatal(xkill, g_params.fab_pid, 0);
 
@@ -449,9 +448,8 @@ int main(int argc, char** argv, char ** envp)
       logf(L_USAGE, "usage : mem(%s), lwx(%d), gn(%d), ts(%d)", bytestring(pgz * g_params.pagesize), ctx->staxa, graph.a, ctx->tsa);
     }
 
-      // task complete : notify fab
-      fatal(xkill, g_params.fab_pid, FABSIG_DONE);
-    }
+    // task complete : notify fab
+    fatal(xkill, g_params.fab_pid, FABSIG_DONE);
 
 		// cleanup tmp dir, including specifically the last fab pid we are tracking
 		fatal(tmp_cleanup, &fab_pids[sizeof(fab_pids) / sizeof(fab_pids[0]) - 1], 1);

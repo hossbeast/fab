@@ -47,6 +47,7 @@ int main(int argc, char** argv)
 	int fd = -1;
 	pid_t fab_pid = -1;
 	pid_t child_pid = -1;
+	uint32_t canhash = 0;
 
   // initialize signal handling
   fatal(sigbank_init
@@ -84,7 +85,6 @@ int main(int argc, char** argv)
     fail(FAB_BADARGS);
 
   // required second argument : ipc hash
-	uint32_t canhash;
 	if(argc < 3 || parseuint(argv[2], SCNu32, 1, UINT32_MAX, 1, UINT8_MAX, &canhash, 0) != 0)
 		fail(FAB_BADARGS);
 
@@ -139,6 +139,7 @@ finally:
 #if DEBUG || DEVEL
   XAPI_INFOF("name", "fabw/%s", child);
   XAPI_INFOF("pid", "%ld", (long)getpid());
+  XAPI_INFOF("hash", "%u", canhash);
 
 	if(XAPI_UNWINDING)
 	{
