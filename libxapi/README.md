@@ -1,50 +1,94 @@
-libxapi
-===
+# libxapi
 
 libxapi is a light-weight exception handling library for C.
 
-First, you specify a table of error codes that your component can encounter.
-Then, throughout your code, use the fatal macro to invoke other xapi-enabled functions
+xapi is a calling convention in which the return value of a function is reserved to communicate
+the success or failure of the function.
 
- int foo() {
-   char * str = 0;
-   fatal(xmalloc, &str, 100);    // call another xapi-enabled function
+An application using libxapi will generally follow the xapi convention everywhere
 
-   fail(EBAD);    // raise an exception
+## Usage
 
- finally:
-   free(str);     // cleanup
- coda;
- }
+First, specify a table of error codes that your component can encounter.
 
-When a top-level xapi function is called, and an exception is raised during its
-execution, one of two things will happen.
+    # APP.errtab
+    1 FOO  the foo has failed
+    2 BAR  the bar is broken
+
+Use the fail macro to raise an exception, and use the fatal macro to invoke other
+xapi-enabled functions
+
+    int foo() {
+      enter;         // first line in any xapi-enabled function
+
+      char * str = 0;
+      fatal(xmalloc, &str, 100);    // call another xapi-enabled function
+    
+      fail(EBAD);    // raise an exception
+    
+    finally:         // xapi-enabled functions end with finally/coda
+      free(str);     // cleanup
+    coda;
+    }
+
+## How it works
+
+When an exception is raised, the callstack will unwind and, from the perspective of
+the top-level xapi-enabled function, one of two things will happen
+
+### XAPI_ERRCODE
 
 If you compile with -DXAPI_ERRCODE, the function returns an int that encodes the error
 table and code for the exception, which you can use to get more information.
 
- int res = foo();
- if((res = foo())) {
-   char * name = libfoo_errname(res);  // ENOMEM
-   char * desc = libfoo_errdesc(res);  // not enough space
-   char * str  = libfoo_errstr(res);   // ENOMEM : not enough space
- }
+    void main() {
+      int res = foo();                      // foo is a xapi-enabled function
+      if((res = foo())) {
+        char * name = libfoo_errname(res);  // "ENOMEM"
+        char * desc = libfoo_errdesc(res);  // "not enough space"
+        char * str  = libfoo_errstr(res);   // "ENOMEM : not enough space"
+      }
+    }
+
+It is not necessary to link with libxapi.so when compiling with -DXAPI_ERRCODE
+
+### XAPI_UNWIND
 
 If you compile with -DXAPI_UNWIND, the top-level xapi function can produce a backtrace
 
- finally:
-  if(XAPI_UNWINDING)
-    xapi_backtrace();    // print a backtrace to stderr
- coda;
+    int foo() {
+      enter;
 
-There is no overhead because libxapi does no allocation or counting until an exception
-is raised. This does mean that, in the case of an actual ENOMEM, constructing the calltree
-will fail, so it is recommended to pre-allocate the calltree
+      finally:
+       if(XAPI_UNWINDING)
+         xapi_backtrace();    // print a backtrace to stderr
+      coda;
+    }
+
+libxapi does no allocation or counting until an exception is raised. This mean that
+in the case of an actual ENOMEM, constructing the calltree will fail, so it is
+recommended to pre-allocate memory to libxapi, viz.
+
+ #include "xapi/mm.h"
 
  int main() {
-   xapi_preallocate(100);
+   xapi_allocate(100);
    ...
    finally : coda;
  }
 
-The libxlinux library provides xapi wrappers for most linux calls (open, read, write, etc)
+## Features
+
+* For various backtrace options, see xapi/trace.h
+* To catch an exception during unwinding, inspect it, and conditionall discard it, see xapi_calltree_unwind
+* To serialize/deserialize a calltree, see xapi_calltree_freeze / memblk.h
+
+## Implementation Details
+
+The body of a xapi function consists of two parts, the main body and the finally block. The fail
+macro may be used in either block. The only difference is that, if fail is invoked in the
+finally block, the remainder of the finally block will be skipped, and the function will return
+
+## Notes
+
+libxlinux is a library that provides xapi wrappers for most linux calls (open, read, write, etc)

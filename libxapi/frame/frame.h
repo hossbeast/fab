@@ -75,7 +75,7 @@ int xapi_frame_leave();
 //  [c] - error code
 //  [r] - return value, that is (e->id << 16) | c
 //
-void xapi_frame_leave3(const etable ** etab, int * code, int * rval);
+void xapi_frame_leave3(const etable ** restrict etab, int * const restrict code, int * const restrict rval);
 
 /// xapi_unwinding
 //
@@ -110,13 +110,13 @@ const etable * xapi_frame_errtab();
 // RETURNS
 //  a value indicating whether to jump to the finally label for the current frame
 //
-int xapi_frame_set(const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
+void xapi_frame_set(const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
 	__attribute__((nonnull(5)));
 
-int xapi_frame_set_messagew(const struct etable * const restrict etab, const int16_t code, const char * const restrict msg, int msgl, const char * const restrict file, const int line, const char * const restrict func)
+void xapi_frame_set_messagew(const struct etable * const restrict etab, const int16_t code, const char * const restrict msg, int msgl, const char * const restrict file, const int line, const char * const restrict func)
 	__attribute__((nonnull(7)));
 
-int xapi_frame_set_messagef(const struct etable * const restrict etab, const int16_t code, const char * const restrict fmt, const char * const restrict file, const int line, const char * const restrict func, ...)
+void xapi_frame_set_messagef(const struct etable * const restrict etab, const int16_t code, const char * const restrict fmt, const char * const restrict file, const int line, const char * const restrict func, ...)
 	__attribute__((nonnull(6)));
 
 // call xapi_frame_set with current file name, line number, and function name

@@ -22,8 +22,6 @@
 
 #include "strutil.h"
 
-#include "wstdlib.h"
-
 int estrcmp(const char* A, int alen, const char* B, int blen, int case_insensitive)
 {
 	if(!alen)

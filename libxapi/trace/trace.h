@@ -18,110 +18,13 @@
 #ifndef _XAPI_TRACE_H
 #define _XAPI_TRACE_H
 
+struct calltree;
+
 #define restrict __restrict
 
 /*
 ** called after finally iff XAPI_UNWINDING
 */
-
-/// xapi_frame_count
-//
-// SUMMARY
-//  returns the number of frames in the callstack
-//
-int xapi_frame_count();
-
-/// xapi_frame_error
-//
-// SUMMARY
-//  write a string with the error for the specified frame
-//  
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_error(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_frame_function
-//
-// SUMMARY
-//  write a string with the function for the specified frame
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_function(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_frame_location
-//
-// SUMMARY
-//  write a string with the file and line number for the specified frame
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_location(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_frame_info
-//
-// SUMMARY
-//  write a string with the info k/v pairs for the specified frame
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_infostring(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_frame_trace
-//
-// SUMMARY
-//  write a string with the error, function, info, and location for the specified frame
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//  x    - frame index
-//
-size_t xapi_frame_trace(char * const restrict dst, const size_t sz, int x)
-	__attribute__((nonnull));
-
-/// xapi_trace_pithy
-//
-// SUMMARY
-//  write a string summarizing the entire callstack
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//
-size_t xapi_trace_pithy(char * const restrict dst, const size_t sz)
-	__attribute__((nonnull));
-
-/// xapi_trace_full
-//
-// SUMMARY
-//  write a string describing the entire callstack in full
-//
-// REMARKS
-//  will contain newlines for a multi-frame stack, but does not terminate with a newline
-//
-// PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
-//
-size_t xapi_trace_full(char * const restrict dst, const size_t sz)
-	__attribute__((nonnull));
 
 /// xapi_pithytrace
 //
@@ -138,6 +41,47 @@ void xapi_pithytrace();
 //
 void xapi_fulltrace();
 void xapi_backtrace();
+
+/// xapi_trace_pithy
+//
+// SUMMARY
+//  write a string summarizing the entire calltree
+//
+// PARAMETERS
+//  dst  - buffer to write to
+//  sz   - max bytes to write, including null byte
+//
+size_t xapi_trace_pithy(char * const restrict dst, const size_t sz)
+	__attribute__((nonnull));
+
+/// xapi_trace_full
+//
+// SUMMARY
+//  write a string describing the entire calltree in full
+//
+// REMARKS
+//  will contain newlines for a multi-frame calltree, but does not terminate with a newline
+//
+// PARAMETERS
+//  dst  - buffer to write to
+//  sz   - max bytes to write, including null byte
+//
+size_t xapi_trace_full(char * const restrict dst, const size_t sz)
+	__attribute__((nonnull));
+
+/// xapi_trace_calltree_pithy
+//
+// SEE xapi_trace_pithy
+//
+size_t xapi_trace_calltree_pithy(struct calltree * const restrict cs, char * const restrict dst, const size_t sz)
+  __attribute__((nonnull));
+
+/// xapi_trace_calltree_full
+//
+// SEE xapi_trace_full
+//
+size_t xapi_trace_calltree_full(struct calltree * const restrict cs, char * const restrict dst, const size_t sz)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

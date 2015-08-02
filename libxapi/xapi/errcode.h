@@ -18,7 +18,14 @@
 #ifndef _XAPI_ERRCODE_H
 #define _XAPI_ERRCODE_H
 
-extern int __thread __xapi_r;
+/// enter
+//
+// SUMMARY
+//  must be the first line of any xapi function
+//
+#define enter           \
+  int __xapi_f1 = 0;    \
+  int __xapi_r = 0
 
 /*
 ** called at the site of an error
@@ -39,7 +46,7 @@ extern int __thread __xapi_r;
 #define tfail(perrtab, code)							\
 	do {																		\
 		__xapi_r = code;											\
-		goto XAPI_FINALLY;										\
+		goto XAPI_FINALIZE;										\
 	} while(0)
 
 #define tfails(perrtab, code, msg)				tfail(perrtab, code)
@@ -65,7 +72,7 @@ extern int __thread __xapi_r;
 	do {																				\
 		if(func(__VA_ARGS__) != 0)								\
 		{																					\
-			goto XAPI_FINALLY;											\
+			goto XAPI_FINALIZE;											\
 		}																					\
 	} while(0)
 
@@ -117,8 +124,15 @@ extern int __thread __xapi_r;
 // SUMMARY
 //  statements between finally and coda are executed even upon fail/leave
 //
-#define finally				\
-goto XAPI_FINALLY;		\
+#define finally				  \
+  goto XAPI_FINALIZE;   \
+XAPI_FINALIZE:          \
+  if(__xapi_f1)         \
+  {                     \
+    goto XAPI_LEAVE;    \
+  }                     \
+  __xapi_f1 = 1;        \
+  goto XAPI_FINALLY;		\
 XAPI_FINALLY
 
 /// coda
@@ -126,7 +140,10 @@ XAPI_FINALLY
 // SUMMARY
 //  return from the current function
 //
-#define coda return __xapi_r
+#define coda            \
+  goto XAPI_LEAVE;      \
+XAPI_LEAVE:             \
+  return __xapi_r
 
 /*
 ** called after finally
@@ -163,6 +180,5 @@ XAPI_FINALLY
 //  while unwinding, the error code, and zero otherwise
 //
 #define XAPI_ERRCODE __xapi_r
-
 
 #endif

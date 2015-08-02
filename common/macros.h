@@ -18,6 +18,8 @@
 #ifndef _MACROS_H
 #define _MACROS_H
 
+#include <string.h>
+
 #define MIN(a,b)            \
  ({ typeof (a) _a = (a);    \
      typeof (b) _b = (b);   \
@@ -34,9 +36,8 @@
 /// znload
 //
 // SUMMARY
-//  like snprintf but except the following idiom will not overflow
+//  like snprintf except the following idiom will not overflow
 //
-// z += znloadf(dst + z, sz - z, fmt, ...)
 // z += znloadf(dst + z, sz - z, fmt, ...)
 //
 #define znloadf(dst, sz, fmt, ...) ({                         \
@@ -63,6 +64,8 @@
   ((char*)dst)[__z] = 0;                      \
   __z;                                        \
 })
+
+#define znloads(dst, sz, s) znloadw(dst, sz, s, strlen(s)) 
 
 /// sentinel
 //

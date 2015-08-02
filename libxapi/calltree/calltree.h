@@ -31,7 +31,7 @@ struct calltree;
 // PARAMETERS
 //  frame - frame to unwind to
 //
-void xapi_calltree_unwindto(int frame);
+void xapi_calltree_unwind();
 
 /// xapi_calltree_freeze
 //
@@ -62,22 +62,6 @@ void xapi_calltree_unfreeze();
 //  calltree instance (pointer-equivalent with mb)
 //
 struct calltree * xapi_calltree_thaw(char * const restrict mb)
-	__attribute__((nonnull));
-
-/* calltree trace functions */
-
-/// xapi_calltree_trace_pithy
-//
-// see xapi_trace_pithy
-//
-size_t xapi_calltree_trace_pithy(struct calltree * const restrict cs, char * const restrict dst, const size_t sz)
-	__attribute__((nonnull));
-
-/// xapi_calltree_trace_full
-//
-// see xapi_trace_full
-//
-size_t xapi_calltree_trace_full(struct calltree * const restrict cs, char * const restrict dst, const size_t sz)
 	__attribute__((nonnull));
 
 #undef restrict

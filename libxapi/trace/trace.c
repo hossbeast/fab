@@ -19,6 +19,11 @@
 #include <string.h>
 
 #include "internal.h"
+#include "trace.internal.h"
+#include "frame.internal.h"
+#include "info.h"
+#include "stack.h"
+#include "calltree.internal.h"
 
 #include "macros.h"
 #include "strutil.h"
@@ -29,12 +34,51 @@
 // static
 //
 
-#define SAY(...) do {																\
-		if(sz - z)																			\
-			z += snprintf(dst + z, sz - z, __VA_ARGS__);	\
-	} while(0)
+#define SAY(...) z += znloadf(dst + z, sz - z, __VA_ARGS__)
 
-static size_t frame_function(char * const dst, const size_t sz, struct frame * f)
+static size_t stack_error(char * const dst, const size_t sz, stack * s)
+{
+	size_t z = 0;
+
+	if(s->etab && s->code && s->msg)
+	{
+		SAY("[%s:%s] %.*s"
+			, s->etab->tag
+			, s->code > s->etab->max ? "UNKNWN" : s->etab->v[s->code + (s->etab->min * -1)].name
+			, (int)s->msgl, s->msg 
+		);
+	}
+	else if(s->etab && s->code)
+	{
+		SAY("[%s:%s] %s"
+			, s->etab->tag
+			, s->code > s->etab->max ? "UNKNWN" : s->etab->v[s->code + (s->etab->min * -1)].name
+			, s->code > s->etab->max ? "unspecified error" : s->etab->v[s->code + (s->etab->min * -1)].desc
+		);
+	}
+	else if(s->etab && s->msg)
+	{
+		SAY("[%s] %.*s"
+			, s->etab->tag
+			, (int)s->msgl, s->msg 
+		);
+	}
+	else if(s->code && s->msg)
+	{
+		SAY("[%d] %.*s"
+			, s->code
+			, (int)s->msgl, s->msg 
+		);
+	}
+	else if(s->code)
+	{
+		SAY("[%d]", s->code);
+	}
+
+	return z;
+}
+
+static size_t frame_function(char * const dst, const size_t sz, frame * f)
 {
 	size_t z = 0;
 	SAY("%s", f->func);
@@ -42,70 +86,28 @@ static size_t frame_function(char * const dst, const size_t sz, struct frame * f
 	return z;
 }
 
-static size_t frame_error(char * const dst, const size_t sz, struct frame * f)
-{
-	size_t z = 0;
-
-	if(f->etab && f->code && f->msg)
-	{
-		SAY("[%s:%s] %.*s"
-			, f->etab->tag
-			, f->code > f->etab->max ? "UNKNWN" : f->etab->v[f->code + (f->etab->min * -1)].name
-			, f->msgl, f->msg 
-		);
-	}
-	else if(f->etab && f->code)
-	{
-		SAY("[%s:%s] %s"
-			, f->etab->tag
-			, f->code > f->etab->max ? "UNKNWN" : f->etab->v[f->code + (f->etab->min * -1)].name
-			, f->code > f->etab->max ? "unspecified error" : f->etab->v[f->code + (f->etab->min * -1)].desc
-		);
-	}
-	else if(f->etab && f->msg)
-	{
-		SAY("[%s] %.*s"
-			, f->etab->tag
-			, f->msgl, f->msg 
-		);
-	}
-	else if(f->code && f->msg)
-	{
-		SAY("[%d] %.*s"
-			, f->code
-			, f->msgl, f->msg 
-		);
-	}
-	else if(f->code)
-	{
-		SAY("[%d]", f->code);
-	}
-
-	return z;
-}
-
-static size_t frame_info(char * const dst, const size_t sz, struct frame * f)
+static size_t frame_info(char * const dst, const size_t sz, frame * f)
 {
 	size_t z = 0;
 
 	int y;
-	for(y = 0; y < f->info.l; y++)
+	for(y = 0; y < f->infos.l; y++)
 	{
 		if(y)
 			SAY(", ");
 
 		SAY("%.*s=%.*s"
-			, f->info.v[y].kl
-			, f->info.v[y].ks
-			, f->info.v[y].vl
-			, f->info.v[y].vs
+			, (int)f->infos.v[y].kl
+			, f->infos.v[y].ks
+			, (int)f->infos.v[y].vl
+			, f->infos.v[y].vs
 		);
 	}
 
 	return z;
 }
 
-static size_t frame_location(char * const dst, const size_t sz, struct frame * f)
+static size_t frame_location(char * const dst, const size_t sz, frame * f)
 {
 	size_t z = 0;
 
@@ -121,7 +123,7 @@ static size_t frame_location(char * const dst, const size_t sz, struct frame * f
 	return z;
 }
 
-static size_t frame_trace(char * const dst, const size_t sz, struct frame * f, int loc, int at)
+static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc, int at)
 {
 	size_t z = 0;
 
@@ -129,7 +131,7 @@ static size_t frame_trace(char * const dst, const size_t sz, struct frame * f, i
 		SAY("at ");
 
 	z += frame_function(dst + z, sz - z, f);
-	if(f->info.l)
+	if(f->infos.l)
 	{
 		SAY("(");
 		z += frame_info(dst + z, sz - z, f);
@@ -145,49 +147,66 @@ static size_t frame_trace(char * const dst, const size_t sz, struct frame * f, i
 	return z;
 }
 
-//
-// public
-//
-size_t callstack_trace_pithy(struct callstack * const restrict cs, char * const dst, const size_t sz)
+static size_t stack_trace(char * const dst, const size_t sz, stack * s)
 {
 	size_t z = 0;
 
-	z += frame_error(dst + z, sz - z, cs->v[cs->l - 1]);
+	z += stack_error(dst + z, sz - z, s);
+	SAY("\n");
 
-	struct frame_info * nfo = 0;
+	int x;
+	for(x = s->frames.l - 1; x >= 0; x--)
+	{
+		if(x != s->frames.l - 1)
+			SAY("\n");
+
+		SAY(" %2d : ", x);
+		z += frame_trace(dst + z, sz - z, &s->frames.v[x], 1, 1);
+	}
+
+	return z;
+}
+
+static size_t calltree_trace_pithy(calltree * const restrict ct, char * const dst, const size_t sz)
+{
+	size_t z = 0;
+
+	z += stack_error(dst + z, sz - z, ct->exe);
+
+	info * nfo = 0;
 
 	size_t zt = z;
 	int x;
-//	for(x = cs->l; x >= MAX(cs->l - 5 /* heuristic */, 0); x--)
-	for(x = cs->l - 1; x >= 0; x--)
+//	for(x = ct->exe->frames.l; x >= MAX(ct->exe->frames.l - 5 /* heuristic */, 0); x--)
+	for(x = ct->exe->frames.l - 1; x >= 0; x--)
 	{
 		int y;
-		for(y = 0; y < cs->v[x]->info.l; y++)
+		for(y = 0; y < ct->exe->frames.v[x].infos.l; y++)
 		{
 			// determine whether an info by this name has already been used
 			int xx;
-			for(xx = x + 1; xx < cs->l; xx++)
+			for(xx = x + 1; xx < ct->exe->frames.l; xx++)
 			{
 				int yy;
-				for(yy = 0; yy < cs->v[xx]->info.l; yy++)
+				for(yy = 0; yy < ct->exe->frames.v[xx].infos.l; yy++)
 				{
 					if(estrcmp(
-							cs->v[x]->info.v[y].ks
-						, cs->v[x]->info.v[y].kl
-						, cs->v[xx]->info.v[yy].ks
-						, cs->v[xx]->info.v[yy].kl
+							ct->exe->frames.v[x].infos.v[y].ks
+						, ct->exe->frames.v[x].infos.v[y].kl
+						, ct->exe->frames.v[xx].infos.v[yy].ks
+						, ct->exe->frames.v[xx].infos.v[yy].kl
 						, 0) == 0)
 					{
 						break;
 					}
 				}
-				if(yy < cs->v[xx]->info.l)
+				if(yy < ct->exe->frames.v[xx].infos.l)
 				{
 					break;
 				}
 			}
 
-			if(xx == cs->l)
+			if(xx == ct->exe->frames.l)
 			{
 				if(nfo)
 				{
@@ -197,13 +216,13 @@ size_t callstack_trace_pithy(struct callstack * const restrict cs, char * const 
 						SAY(", ");
 
 					SAY("%.*s=%.*s"
-						, nfo->kl
+						, (int)nfo->kl
 						, nfo->ks
-						, nfo->vl
+						, (int)nfo->vl
 						, nfo->vs
 					);
 				}
-				nfo = &cs->v[x]->info.v[y];
+				nfo = &ct->exe->frames.v[x].infos.v[y];
 			}
 		}
 	}
@@ -216,9 +235,9 @@ size_t callstack_trace_pithy(struct callstack * const restrict cs, char * const 
 			SAY(" and ");
 
 		SAY("%.*s=%.*s"
-			, nfo->kl
+			, (int)nfo->kl
 			, nfo->ks
-			, nfo->vl
+			, (int)nfo->vl
 			, nfo->vs
 		);
 	}
@@ -226,71 +245,36 @@ size_t callstack_trace_pithy(struct callstack * const restrict cs, char * const 
 	return z;
 }
 
-size_t callstack_trace_full(struct callstack * const restrict cs, char * const dst, const size_t sz)
+static size_t calltree_trace_full(calltree * const restrict ct, char * const dst, const size_t sz)
 {
-	size_t z = 0;
-
-	z += frame_error(dst + z, sz - z, cs->v[cs->l - 1]);
-	SAY("\n");
-
-	int x;
-	for(x = cs->l - 1; x >= 0; x--)
-	{
-		if(x != cs->l - 1)
-			SAY("\n");
-
-		SAY(" %2d : ", x);
-		z += frame_trace(dst + z, sz - z, cs->v[x], 1, 1);
-	}
-
-	return z;
+  return stack_trace(dst, sz, ct->exe);
 }
 
 //
 // API
 //
 
-int API xapi_frame_count()
+API size_t xapi_trace_calltree_pithy(calltree * const restrict cs, char * const restrict dst, const size_t sz)
 {
-	return callstack->l;
+  return calltree_trace_pithy(cs, dst, sz);
 }
 
-size_t API xapi_frame_error(char * const dst, const size_t sz, int x)
+API size_t xapi_trace_calltree_full(calltree * const restrict cs, char * const restrict dst, const size_t sz)
 {
-	return frame_error(dst, sz, callstack->v[x]);
+	return calltree_trace_full(cs, dst, sz);
 }
 
-size_t API xapi_frame_function(char * const dst, const size_t sz, int x)
+API size_t xapi_trace_pithy(char * const dst, const size_t sz)
 {
-	return frame_function(dst, sz, callstack->v[x]);
+	return calltree_trace_pithy(g_calltree, dst, sz);
 }
 
-size_t API xapi_frame_location(char * const dst, const size_t sz, int x)
+API size_t xapi_trace_full(char * const dst, const size_t sz)
 {
-	return frame_location(dst, sz, callstack->v[x]);
+	return calltree_trace_full(g_calltree, dst, sz);
 }
 
-size_t API xapi_frame_infostring(char * const dst, const size_t sz, int x)
-{
-	return frame_info(dst, sz, callstack->v[x]);
-}
-
-size_t API xapi_frame_trace(char * const dst, const size_t sz, int x)
-{
-	return frame_trace(dst, sz, callstack->v[x], 1, 1);
-}
-
-size_t API xapi_trace_pithy(char * const dst, const size_t sz)
-{
-	return callstack_trace_pithy(callstack, dst, sz);
-}
-
-size_t API xapi_trace_full(char * const dst, const size_t sz)
-{
-	return callstack_trace_full(callstack, dst, sz);
-}
-
-void API xapi_pithytrace()
+API void xapi_pithytrace()
 {
 	char space[512];
 
@@ -298,7 +282,7 @@ void API xapi_pithytrace()
 	dprintf(2, "%.*s\n", (int)z, space);
 }
 
-void API xapi_fulltrace()
+API void xapi_fulltrace()
 {
 	char space[512];
 
@@ -306,7 +290,7 @@ void API xapi_fulltrace()
 	dprintf(2, "%.*s\n", (int)z, space);
 }
 
-void API xapi_backtrace()
+API void xapi_backtrace()
 {
 	char space[512];
 

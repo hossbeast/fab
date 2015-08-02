@@ -32,9 +32,6 @@
 // declarations of trace-description functions
 #include "xapi/trace.h"
 
-// declaration of per-thread calltrees
-extern __thread struct calltree * calltree;
-
 /*
 ** enable XAPI_RUNTIME_CHECKS to :
 **  [x] detect non-UNWIND-ing function invoked with fatal
@@ -82,6 +79,14 @@ when calling non-xapi code, you have a couple of options.
 
 */
 
+/// enter
+//
+// SUMMARY
+//  must be the first line of any xapi function
+//
+#define enter           \
+  int __xapi_f1 = 0
+
 /*
 ** called at the site of an error
 */
@@ -106,6 +111,7 @@ when calling non-xapi code, you have a couple of options.
 //
 #define tfail(etab, code)                               \
   do {                                                  \
+printf("tfail @ %s:%d\n", __FILE__, __LINE__);  \
     /* populate the current stack frame */              \
     XAPI_FRAME_SET(etab, code);                         \
     /* jump to the finally label */                     \
@@ -116,18 +122,19 @@ when calling non-xapi code, you have a couple of options.
 
 #define tfailw(etab, code, msg, msgl)                       \
   do {                                                      \
+printf("tfailw @ %s:%d\n", __FILE__, __LINE__);  \
     /* populate the current stack frame */                  \
-    XAPI_FRAME_SET_MESSAGEW(etab, code, msg, msgl)          \
+    XAPI_FRAME_SET_MESSAGEW(etab, code, msg, msgl);         \
     /* jump to the finally label */                         \
     goto XAPI_FINALIZE;                                     \
   } while(0)
 
-#define tfailf(etab, code, fmt, ...)                        \
-  do {                                                      \
-    /* populate the current stack frame */                  \
-    XAPI_FRAME_SET_MESSAGEF(etab, code, fmt, ##__VA_ARGS__) \
-    /* jump to the finally label */                         \
-    goto XAPI_FINALIZE;                                     \
+#define tfailf(etab, code, fmt, ...)                         \
+  do {                                                       \
+    /* populate the current stack frame */                   \
+    XAPI_FRAME_SET_MESSAGEF(etab, code, fmt, ##__VA_ARGS__); \
+    /* jump to the finally label */                          \
+    goto XAPI_FINALIZE;                                      \
   } while(0)
 
 #define fail(code)             tfail (perrtab, code)
@@ -153,6 +160,7 @@ when calling non-xapi code, you have a couple of options.
       int __r = func(__VA_ARGS__);                                                                              \
       if(__r == 0 && __x != xapi_frame_depth())                                                                 \
       {                                                                                                         \
+printf("__x : %d, __r : %d, __d : %d\n", __x, __r, xapi_frame_depth()); \
         __r = 1;                                                                                                \
         XAPI_FRAME_SET_MESSAGEW(perrtab_XAPI, XAPI_ILLFATAL, "function " #func " invoked with fatal", 0);       \
       }                                                                                                         \
@@ -261,14 +269,6 @@ when calling non-xapi code, you have a couple of options.
   } while(0)
 #endif
 
-/// enter
-//
-// SUMMARY
-//  must be the first line of any xapi function
-//
-#define enter           \
-  int __xapi_f1 = 0;
-
 /// finally
 //
 // SUMMARY
@@ -308,7 +308,11 @@ XAPI_FINALLY
 #define coda                          \
   goto XAPI_LEAVE;                    \
 XAPI_LEAVE:                           \
-  return xapi_frame_leave()
+do {  \
+  int rr = xapi_frame_leave(); \
+ printf("returning %d\n", rr);  \
+  return rr;  \
+} while(0)
 
 /// conclude
 //
@@ -367,7 +371,7 @@ XAPI_LEAVE:                         \
 /// XAPI_UNWINDING
 //
 // SUMMARY
-//  true if an error has been raised
+//  true after fatal has been called on this thread and before xapi_unwind
 //
 #define XAPI_UNWINDING xapi_unwinding()
 
