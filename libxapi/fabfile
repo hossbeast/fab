@@ -131,24 +131,47 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 +[@std.c]($dext = [ xapi.devel.nopic.o ]; $dirs = [ $*/test ~ j ]; $cc; $cflags = $cflags_xapi_devel)
 +[@std.c]($dext = [ eapi.devel.nopic.o ]; $dirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
 
-[ $*/test/test.unwind ~ j ] : [ [ $*/test/test.xapi.devel.nopic.o ~ j ] $libxapi_xapi_devel ]
+[ $*/test ~ j ls sx/c/unwind sy dj shift ] :: [ $< ~ sx/unwind/xapi.devel.nopic.o ]
 {
-	[ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ fi ] [ $@ ~ rx/ineed fi ] [ $dlibxapi ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] 
+	[ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ fi ] [ $@ ~ rx/ineed fi ] [ $libxapi_xapi_devel ] [ $dlibxapi ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] 
 }
 
-[ $*/test/test.errcode ~ j ] : [ $*/test/test.eapi.devel.nopic.o ~ j ]
+[ $*/test ~ j ls sx/c/errcode sy dj shift ] :: [ $< ~ sx/errcode/eapi.devel.nopic.o ]
 {
-	[ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ fi ] [ $@ ~ rx/ineed fi ]
+	[ $cc ] -o [ $@ ] [ $cflags_eapi_devel ~ fi ] [ $@ ~ rx/ineed fi ]
 }
 
 [ @test ] : [ @test.unwind @test.errcode ]
-
-[ @test.unwind ] : [ $*/test/test.unwind ~ j ]
+[ @test.unwind ] : [ $*/test ~ j ls sx/c/unwind sy ]
 {
-  [ $@ ~ rx/ineed ]
+  set -e
+  [ $@ ~ rx/ineed fi/; ]
 }
 
-[ @test.errcode ] : [ $*/test/test.errcode ~ j ]
+[ @test.errcode ] : [ $*/test ~ j ls sx/c/errcode sy ]
 {
-  [ $@ ~ rx/ineed ]
+  set -e
+  [ $@ ~ rx/ineed fi/; ]
 }
+
+#[ $*/test/test.unwind ~ j ] : [ [ $*/test/test.xapi.devel.nopic.o ~ j ] $libxapi_xapi_devel ]
+#{
+#	[ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ fi ] [ $@ ~ rx/ineed fi ] [ $dlibxapi ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] 
+#}
+#
+#[ $*/test/test.errcode ~ j ] : [ $*/test/test.eapi.devel.nopic.o ~ j ]
+#{
+#	[ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ fi ] [ $@ ~ rx/ineed fi ]
+#}
+#
+#[ @test ] : [ @test.unwind @test.errcode ]
+#
+#[ @test.unwind ] : [ $*/test/test.unwind ~ j ]
+#{
+#  [ $@ ~ rx/ineed ]
+#}
+#
+#[ @test.errcode ] : [ $*/test/test.errcode ~ j ]
+#{
+#  [ $@ ~ rx/ineed ]
+#}
