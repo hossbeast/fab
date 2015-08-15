@@ -35,36 +35,6 @@ calltree, frames closest to the site of the error are recorded first
 
 */
 
-struct calltree;  // has a stack
-struct stack;     // has a set of frames and an error
-struct frame;     // has a set of stacks
-struct info;
-
-#if DEVEL
-/*
-** set to the calltree for the executing thread on every api call
-** makes it easy to access the calltree from gdb
-*/
-struct calltree * CT;
-#endif
-
-/// calltree
-//
-// SUMMARY
-//  its a call tree
-//
-typedef struct calltree
-{
-  // the current execution stack
-  struct stack *  exe;
-
-  // the root execution stack
-  struct stack *  root;
-} calltree;
-
-// per-thread calltrees
-extern __thread calltree * g_calltree;
-
 /// xapi_calltree_free
 //
 // SUMMARY

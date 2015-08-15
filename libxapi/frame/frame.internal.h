@@ -43,17 +43,17 @@ typedef struct frame
 		size_t        a;
 	} infos;
 
-  struct stack *  exe;    // child stack
+  struct stack *  child;    // child stack
 } frame;
 
 #if XAPI_RUNTIME_CHECKS
 // per-thread stack of frame addresses
-extern __thread struct calltree_frames
+extern __thread struct frame_addresses
 {
   void **   v;
   size_t    l;
   size_t    a;
-} g_calltree_frames;
+} g_frame_addresses;
 #endif
 
 #define restrict __restrict 
@@ -78,6 +78,13 @@ void frame_unfreeze(struct memblk * const restrict mb, frame * f)
 //
 void frame_thaw(char * const restrict mb, frame * f)
   __attribute__((nonnull));
+
+/// frame_teardown
+//
+// SUMMARY
+//  release memory
+//
+void frame_teardown();
 
 #undef restrict
 #endif

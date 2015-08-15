@@ -86,12 +86,26 @@ failed:
 // public
 //
 
+void mm_teardown()
+{
+	struct memblk * mb = &mm_mb;
+
+  int x;
+  for(x = 0; x < mb->blocksl; x++)
+  {
+    free(mb->blocks[x].s);
+  }
+
+  free(mb->blocks);
+}
+
 void wmalloc(void * restrict p, size_t sz)
 {
   allocate(sz);
 
 	struct memblk * mb = &mm_mb;
 
+  // allocate from the block
 	*(void**)p = mb->blocks[mb->blocksl - 1].s + mb->blocks[mb->blocksl - 1].l;
 	mb->blocks[mb->blocksl - 1].l += sz;
 }
@@ -104,21 +118,21 @@ void wrealloc(void * restrict p, size_t es, size_t ec, size_t oec)
 		memcpy(*(void**)p, old, es * oec);
 }
 
-void assure(void * restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, size_t l)
+void assure(void * restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, size_t z, size_t l)
 {
 	if(l > (*dsta))
 	{
 		size_t ns = (*dsta) ?: 10;
 		while(ns <= l)
 			ns = ns * 2 + ns / 2;
-		wrealloc(dst, 1, ns, *dsta);
+		wrealloc(dst, 1, ns * z, *dsta);
 		(*dsta) = ns;
 	}
 }
 
 void sloadw(char ** const restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, const char * const restrict s, size_t l)
 {
-  assure(dst, dstl, dsta, l + 1);
+  assure(dst, dstl, dsta, 1, l + 1);
 
 	(*dstl) = l;
 	memcpy(*dst, s, l);
@@ -133,7 +147,7 @@ void svloadf(char ** const restrict dst, size_t * const restrict dstl, size_t * 
   size_t l = vsnprintf(0, 0, fmt, va2);
   va_end(va2);
 
-  assure(dst, dstl, dsta, l + 1);
+  assure(dst, dstl, dsta, 1, l + 1);
 
   (*dstl) = l;
   vsprintf(*dst, fmt, va);

@@ -21,58 +21,48 @@
 #include <stdint.h>
 
 /*
-** xapi is an interface for propagating detailed and specific error information. It is a
-** calling convention and these header(s) provides macros to facilitate its application
-**
-** xapi-enabled code is compiled in one of two modes specifying what is available when an error occurs:
-**  1. UNWIND   - a complete backtrace
-**  2. ERRCODE  - a nonzero error code
-**
-** for UNWIND-ing mode, the complete backtrace is accessible via the xapi_frame_* functions. there are
-** also functions for producing a terse and complete error string from the backtrace information
-**
-** non UNWIND-ing code (even non-xapi-code) that calls UNWIND-ing code simply receives an error code
-*/
 
-/*
-** having functions return xapi is a convenient way of indicating that they obey this calling convention
+xapi is a calling convention in which the return value of a function communicates
+its success or failure. These header(s) provide macros that facilitate the application
+of the calling convention.
+
+To use this library, you must specify an error propagation mode by defining one
+of the following macros:
+
+XAPI_MODE_STACKTRACE
+XAPI_MODE_ERRORCODE
+
+STACKTRACE mode implies a runtime link against libxapi.so, ERRCODE mode does not
+
 */
-typedef int xapi;
 
 // error table struct
 typedef struct etable
 {
-	// indexed by lower int16 of the error code + (min * -1)
-	struct
-	{
-		char * name;		// i.e. ENOMEM
-		char * desc;		// i.e. Not enough space
-		char * str;			// i.e. ENOMEM : Not enough space
-	} * v;
+  // indexed by lower int16 of the error code + (min * -1)
+  struct
+  {
+    char * name;    // e.g. ENOMEM
+    char * desc;    // e.g. Not enough space
+    char * str;     // e.g. ENOMEM : Not enough space
+  } * v;
 
-	char *  tag;			// i.e. "PCRE", "SYS", "FAB", "LW"
-	int16_t id;				// upper 2 bytes of the error code, nonzero
-	int16_t	min;			// min err
-	int16_t max;			// max err
+  char *  tag;      // e.g. "PCRE", "SYS", "FAB", "LW"
+  int16_t id;       // upper 2 bytes of the error code, nonzero
+  int16_t min;      // min err
+  int16_t max;      // max err
 } etable;
 
 // an error table for system errors is provided by libxapi
-extern etable * perrtab_SYS;
-#define perrtab perrtab_SYS
+#include "xapi/SYS.errtab.h"
 
-/// xapi_errstr
-//
-// SUMMARY
-//  returns a static string associated with an error code returned from a libxapi call
-//
-const char * xapi_errstr(const int code);
-
-#if XAPI_PROVIDE_BACKTRACE
-# include "xapi/unwind.h"
-#elif XAPI_PROVIDE_ERRCODE
-# include "xapi/errcode.h"
+// pull in the appropriate implementation
+#if XAPI_MODE_STACKTRACE
+# include "xapi/stacktrace.h"
+#elif XAPI_MODE_ERRORCODE
+# include "xapi/errorcode.h"
 #else
-# error "either XAPI_PROVIDE_BACKTRACE or XAPI_PROVIDE_ERRCODE must be defined"
+# error "neither XAPI_MODE_STACKTRACE nor XAPI_MODE_ERRORCODE is defined"
 #endif
 
 #endif

@@ -18,6 +18,16 @@
 #ifndef _MEMBLK_H
 #define _MEMBLK_H
 
+/*
+
+MODULE
+ memblk
+
+SUMMARY
+ logically, a memblk is a contiguous region of memory
+
+*/
+
 #include <sys/types.h>
 
 struct mempolicy;		// xlinux/mempolicy.h
@@ -81,14 +91,6 @@ void memblk_xfree(memblk ** mb)
 //
 struct mempolicy * memblk_getpolicy(memblk * mb);
 
-/// memblk_size
-//
-// SUMMARY
-//  get the size of the memblk
-//
-size_t memblk_size(memblk * const restrict mb)
-	__attribute__((nonnull));
-
 /// memblk_writeto
 //
 // SUMMARY
@@ -112,14 +114,6 @@ int memblk_writeto(memblk * const restrict mb, const int fd)
 //  this is a non-xapi function
 //
 int memblk_bwriteto(memblk * const restrict mb, const int fd)
-	__attribute__((nonnull));
-
-/// memblk_copyto
-//
-// SUMMARY
-//  consolidate the memblk
-//
-void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
 	__attribute__((nonnull));
 
 #undef restrict

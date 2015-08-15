@@ -1,11 +1,9 @@
 # libxapi
 
-libxapi is a light-weight exception handling library for C.
+xapi is a calling convention in which the return value of a function communicates
+its success or failure.
 
-xapi is a calling convention in which the return value of a function is reserved to communicate
-the success or failure of the function.
-
-An application using libxapi will generally follow the xapi convention everywhere
+libxapi is an exception handling library for xapi code.
 
 ## Usage
 
@@ -42,11 +40,11 @@ If you compile with -DXAPI_ERRCODE, the function returns an int that encodes the
 table and code for the exception, which you can use to get more information.
 
     void main() {
-      int res = foo();                      // foo is a xapi-enabled function
+      int res = foo();                    // foo is a xapi-enabled function
       if((res = foo())) {
-        char * name = libfoo_errname(res);  // "ENOMEM"
-        char * desc = libfoo_errdesc(res);  // "not enough space"
-        char * str  = libfoo_errstr(res);   // "ENOMEM : not enough space"
+        char * name = xapi_errname(res);  // "ENOMEM"
+        char * desc = xapi_errdesc(res);  // "not enough space"
+        char * str  = xapi_errstr(res);   // "ENOMEM : not enough space"
       }
     }
 
@@ -80,7 +78,7 @@ recommended to pre-allocate memory to libxapi, viz.
 ## Features
 
 * For various backtrace options, see xapi/trace.h
-* To catch an exception during unwinding, inspect it, and conditionall discard it, see xapi_calltree_unwind
+* To catch an exception during unwinding, inspect it, and conditionally discard it, see xapi_calltree_unwind
 * To serialize/deserialize a calltree, see xapi_calltree_freeze / memblk.h
 
 ## Implementation Details

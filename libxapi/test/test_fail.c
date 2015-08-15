@@ -15,14 +15,51 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_TUNE_INTERNAL_H
-#define _XAPI_TUNE_INTERNAL_H
+#include "test.h"
 
-// default tune settings - see tune.h
+/*
 
-#define XAPI_DANGLE_FACTOR_DEFAULT   20
-#define XAPI_STACKS_FACTOR_DEFAULT   0.2f
-#define XAPI_INFOS_FACTOR_DEFAULT    5.0f
-#define XAPI_STRINGS_FACTOR_DEFAULT  128
+SUMMARY
+ fail, unwind, ensure the error code and table are propagated correctly
 
-#endif
+*/
+
+int bravo()
+{
+  enter;
+
+  fail(SYS_ERESTART);
+
+  finally : coda;
+}
+
+int alpha()
+{
+  enter;
+
+	fatal(bravo);
+
+  finally : coda;
+}
+
+int foo()
+{
+  enter;
+
+	fatal(alpha);
+
+  finally : coda;
+}
+
+int main()
+{
+  // invoke the function, collect its exit status
+  int exit = foo();
+
+  // assertions
+  assert_etab(perrtab_SYS);
+  assert_code(SYS_ERESTART);
+
+  // victory
+  succeed;
+}

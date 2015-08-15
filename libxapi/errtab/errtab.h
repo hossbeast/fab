@@ -15,54 +15,52 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_CALLTREE_H
-#define _XAPI_CALLTREE_H
+#ifndef _XAPI_ERRTAB_INTERNAL_H
+#define _XAPI_ERRTAB_INTERNAL_H
 
-struct memblk;			// memblk.h
-struct stack;
+extern etable **  tab;
+extern size_t     tabl;
 
 #define restrict __restrict
 
-/// xapi_calltree_unwindto
+/// xapi_errtab_byid
 //
 // SUMMARY
-//  unwind to the specified frame, discarding any error
+//  lookup an error table by id
+//
+const struct etable * xapi_errtab_byid(const int id);
+
+/// xapi_errtab_register
+//
+// SUMMARY
+//  register an error table for xapi/error apis
+//  the error table is assigned an id and etab->id is written to
 //
 // PARAMETERS
-//  frame - frame to unwind to
+//  etab - error table
 //
-void xapi_calltree_unwind();
+// NOTES
+//  not threadsafe
+//
+int xapi_errtab_register(struct etable * const restrict etab)
+  __attribute__((nonnull));
 
-/// xapi_calltree_freeze
+/// xapi_errtab_tag
 //
 // SUMMARY
-//  freeze the calltree for the current thread
+//  get the tag for an etab
 //
-// RETURNS
-//  containing memblk
+// PARAMETERS
+//  [etab] - error table
 //
-struct memblk * xapi_calltree_freeze();
+char * xapi_errtab_tag(const etable * const restrict etab);
 
-/// xapi_calltree_unfreeze
+/// errtab_teardown
 //
 // SUMMARY
-//  reverse the effects of xapi_calltree_freeze
+//  release memory
 //
-// RETURNS
-//  containing memblk
-//
-void xapi_calltree_unfreeze();
-
-/// xapi_calltree_thaw
-//
-// SUMMARY
-//  recover a calltree frozen with xapi_calltree_freeze
-//
-// RETURNS
-//  calltree instance (pointer-equivalent with mb)
-//
-struct stack * xapi_calltree_thaw(char * const restrict mb)
-	__attribute__((nonnull));
+void errtab_teardown();
 
 #undef restrict
 #endif

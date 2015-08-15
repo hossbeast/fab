@@ -36,7 +36,7 @@ void __attribute__((constructor)) init()
 }
 
 typedef char * charstar;
-const charstar API API xunit_errname(const int code)
+API const char * xunit_errname(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
@@ -47,7 +47,7 @@ const charstar API API xunit_errname(const int code)
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].name;
 }
 
-const charstar API xunit_errdesc(const int code)
+API const char * xunit_errdesc(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
@@ -58,7 +58,7 @@ const charstar API xunit_errdesc(const int code)
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].desc;
 }
 
-const charstar API xunit_errstr(const int code)
+API const char * xunit_errstr(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index
@@ -69,8 +69,7 @@ const charstar API xunit_errstr(const int code)
 	return tab[rt]->v[rc + (tab[rt]->min * -1)].str;
 }
 
-typedef etable * etabstar;
-const etabstar API xunit_errtab(const int code)
+API const etable * xunit_errtab(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 
@@ -80,7 +79,7 @@ const etabstar API xunit_errtab(const int code)
 	return tab[rt];
 }
 
-int API xunit_errcode(const int code)
+API int xunit_errcode(const int code)
 {
 	int16_t rt = code >> 16;			// table index
 	int16_t rc = code & 0xFFFF;		// code index

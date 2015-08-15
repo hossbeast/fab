@@ -21,9 +21,7 @@
 #include <string.h>
 
 #include "internal.h"
-
-#include "memblk.def.h"
-#include "macros.h"
+#include "tune.internal.h"
 
 APIDATA float xapi_dangle_factor  = XAPI_DANGLE_FACTOR_DEFAULT;
 APIDATA float xapi_stacks_factor  = XAPI_STACKS_FACTOR_DEFAULT;

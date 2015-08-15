@@ -18,6 +18,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "memblk.def.h"
 
@@ -83,4 +84,22 @@ printf("%p -> %zu\n", *p, (size_t)(intptr_t)(mb + (size_t)(intptr_t)*p));
 #endif
 		*p = mb + (size_t)(intptr_t)*p;
 	}
+}
+
+void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
+{
+	int x;
+	for(x = 0; x < mb->blocksl; x++)
+		memcpy(dst + mb->blocks[x].o, mb->blocks[x].s, mb->blocks[x].l);
+}
+
+size_t memblk_size(memblk * const restrict mb)
+{
+	size_t r = 0;
+
+	int x;
+	for(x = 0; x < mb->blocksl; x++)
+		r += mb->blocks[x].l;
+
+	return r;
 }

@@ -22,11 +22,17 @@
 
 #include "internal.h"
 #include "stack.h"
-#include "error.internal.h"
+#include "error.h"
 #include "frame.internal.h"
+#include "mm.internal.h"
+#include "errtab.h"
 
 #include "macros.h"
 #include "memblk.def.h"
+
+// per-thread stack storage
+__thread stack * APIDATA g_stack;
+__thread struct stacks stacks;
 
 #define restrict __restrict
 
@@ -34,7 +40,28 @@
 // public
 //
 
-void stack_freeze(memblk * const restrict mb, struct stack * s)
+void stack_push()
+{
+  // save the currently unwinding stack
+  stack * current = g_stack;
+
+  // allocate a new stack
+  assure(&stacks.v, &stacks.l, &stacks.a, sizeof(*stacks.v), stacks.l + 1);
+
+  // make the new stack a child of the current stack
+  g_stack = &stacks.v[stacks.l++];
+
+#if DEVEL
+	S = g_stack;
+#endif
+
+  memset(g_stack, 0, sizeof(*g_stack));
+  g_stack->parent = current;
+  if(current)
+    current->frames.v[current->frames.l - 1].child = g_stack;
+}
+
+void stack_freeze(memblk * const restrict mb, stack * s)
 {
 	/*
 	** etab is statically allocated and must be handled specially
@@ -49,7 +76,7 @@ void stack_freeze(memblk * const restrict mb, struct stack * s)
   memblk_freeze(mb, &s->frames.v);
 }
 
-void stack_unfreeze(memblk * const restrict mb, struct stack * s)
+void stack_unfreeze(memblk * const restrict mb, stack * s)
 {
 	s->etab = xapi_errtab_byid((intptr_t)s->etab);
 	memblk_unfreeze(mb, &s->msg);
@@ -61,7 +88,7 @@ void stack_unfreeze(memblk * const restrict mb, struct stack * s)
 		frame_unfreeze(mb, &s->frames.v[x]);
 }
 
-void stack_thaw(char * const restrict mb, struct stack * s)
+void stack_thaw(char * const restrict mb, stack * s)
 {
 	s->etab = xapi_errtab_byid((intptr_t)s->etab);
 	memblk_thaw(mb, &s->msg);

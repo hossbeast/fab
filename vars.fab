@@ -166,8 +166,8 @@ $cflags				= [
 ]
 
 # cflags options
-$cflags_eapi  = [ -DXAPI_PROVIDE_ERRCODE ]
-$cflags_xapi  = [ -DXAPI_PROVIDE_BACKTRACE ]
+$cflags_eapi  = [ -DXAPI_MODE_ERRORCODE ]
+$cflags_xapi  = [ -DXAPI_MODE_STACKTRACE ]
 
 $cflags_final = [ -O3 ]
 $cflags_debug = [ -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY ]

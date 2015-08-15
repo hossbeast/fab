@@ -18,6 +18,17 @@
 #ifndef _MEMBLK_DEF_H
 #define _MEMBLK_DEF_H
 
+/*
+
+MODULE
+ memblk.def
+
+SUMMARY
+ memblk definition and functions for working with memblks at a low level
+ no dependency on libxapi
+
+*/
+
 typedef struct memblk 
 {
 	struct {
@@ -72,6 +83,24 @@ void memblk_unfreeze(memblk * const restrict mb, void * restrict p)
 //
 void memblk_thaw(char * const restrict mb, void * restrict p)
 	__attribute__((nonnull));
+
+
+/// memblk_copyto
+//
+// SUMMARY
+//  consolidate the memblk
+//
+void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
+	__attribute__((nonnull));
+
+/// memblk_size
+//
+// SUMMARY
+//  get the size of the memblk
+//
+size_t memblk_size(memblk * const restrict mb)
+	__attribute__((nonnull));
+
 
 #undef restrict
 #endif

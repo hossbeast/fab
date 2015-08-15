@@ -15,14 +15,57 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_TUNE_INTERNAL_H
-#define _XAPI_TUNE_INTERNAL_H
+#include "test.h"
 
-// default tune settings - see tune.h
+/*
 
-#define XAPI_DANGLE_FACTOR_DEFAULT   20
-#define XAPI_STACKS_FACTOR_DEFAULT   0.2f
-#define XAPI_INFOS_FACTOR_DEFAULT    5.0f
-#define XAPI_STRINGS_FACTOR_DEFAULT  128
+SUMMARY
+ call multiple top-level xapi functions in series without errors being thrown
 
-#endif
+*/
+
+int beta_count;
+int beta()
+{
+  enter;
+
+  beta_count++;
+
+  finally : coda;
+}
+
+int alpha()
+{
+  enter;
+
+	fatal(beta);
+
+  finally : coda;
+}
+
+int foo()
+{
+  enter;
+
+	fatal(alpha);
+
+  finally : coda;
+}
+
+int main()
+{
+  int expected = 3;
+  int x;
+  for(x = 0; x < expected; x++)
+  {
+    int exit = foo();
+    assert_code(0);
+  }
+
+  assert(beta_count == expected
+    , "expected beta-count : %d, actual beta-count : %d"
+    , expected, beta_count
+  );
+
+  succeed;
+}

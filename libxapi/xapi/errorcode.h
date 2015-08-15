@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_ERRCODE_H
-#define _XAPI_ERRCODE_H
+#ifndef _XAPI_ERRORCODE_H
+#define _XAPI_ERRORCODE_H
 
 /// enter
 //
@@ -25,7 +25,7 @@
 //
 #define enter           \
   int __xapi_f1 = 0;    \
-  int __xapi_r = 0
+  uint32_t __xapi_r = 0
 
 /*
 ** called at the site of an error
@@ -45,7 +45,9 @@
 
 #define tfail(perrtab, code)							\
 	do {																		\
-		__xapi_r = code;											\
+		__xapi_r = code & 0xFFFF;							\
+    if(perrtab)                           \
+      __xapi_r |= (perrtab->id << 16);    \
 		goto XAPI_FINALIZE;										\
 	} while(0)
 
@@ -67,10 +69,9 @@
 // SUMMARY
 //  invoke another function and fail the current frame if that function fails
 //
-
 #define fatal(func, ...)											\
 	do {																				\
-		if(func(__VA_ARGS__) != 0)								\
+		if((__xapi_r = func(__VA_ARGS__)) != 0)		\
 		{																					\
 			goto XAPI_FINALIZE;											\
 		}																					\
@@ -108,7 +109,7 @@
 	fatal(func, ##__VA_ARGS__);		\
 	finally : coda
 
-#define prologue																			\
+#define prologue								\
 	__label__ XAPI_FINALLY;
 
 #define conclude(r) *(r) = __xapi_r
@@ -125,7 +126,6 @@
 //  statements between finally and coda are executed even upon fail/leave
 //
 #define finally				  \
-  goto XAPI_FINALIZE;   \
 XAPI_FINALIZE:          \
   if(__xapi_f1)         \
   {                     \
@@ -160,11 +160,7 @@ XAPI_LEAVE:             \
 //
 #define XAPI_UNWINDING __xapi_r
 
-/// XAPI_ERRTAB
-//
-// SUMMARY
-//  while unwinding, const pointer to the error table, and zero otherwise
-//
+// does not apply to MODE_ERRORCODE
 #define XAPI_ERRTAB 0
 
 /// XAPI_ERROR
@@ -172,13 +168,13 @@ XAPI_LEAVE:             \
 // SUMMARY
 //  while unwinding, the error id, that is, errtab->id << 16 | errcode
 //
-#define XAPI_ERRVAL 0
+#define XAPI_ERRVAL __xapi_r
 
 /// XAPI_ERRCODE
 //
 // SUMMARY
 //  while unwinding, the error code, and zero otherwise
 //
-#define XAPI_ERRCODE __xapi_r
+#define XAPI_ERRCODE (__xapi_r & 0xFFFF)
 
 #endif

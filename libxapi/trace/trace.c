@@ -123,9 +123,13 @@ static size_t frame_location(char * const dst, const size_t sz, frame * f)
 	return z;
 }
 
-static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc, int at)
+static size_t stack_trace(char * const dst, const size_t sz, stack * s, int level);
+
+static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc, int at, int level)
 {
 	size_t z = 0;
+
+ // SAY("%*s", level * 2, "");
 
 	if(at)
 		SAY("at ");
@@ -144,69 +148,77 @@ static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc,
 		z += frame_location(dst + z, sz - z, f);
 	}
 
+  if(f->child)
+  {
+    SAY("(%zu)\n", f->child->frames.l);
+    z += stack_trace(dst + z, sz - z, f->child, level + 1);
+  }
+
 	return z;
 }
 
-static size_t stack_trace(char * const dst, const size_t sz, stack * s)
+static size_t stack_trace(char * const dst, const size_t sz, stack * s, int level)
 {
 	size_t z = 0;
 
+  SAY("%*s", level * 2, "");
 	z += stack_error(dst + z, sz - z, s);
 	SAY("\n");
 
 	int x;
-	for(x = s->frames.l - 1; x >= 0; x--)
+  for(x = 0; x < s->frames.l; x++)
 	{
-		if(x != s->frames.l - 1)
+		if(x)
 			SAY("\n");
 
-		SAY(" %2d : ", x);
-		z += frame_trace(dst + z, sz - z, &s->frames.v[x], 1, 1);
+    SAY("%*s", level * 2, "");
+		SAY(" %2d : ", (int)s->frames.l - x - 1);
+		z += frame_trace(dst + z, sz - z, &s->frames.v[x], 1, 1, level);
 	}
 
 	return z;
 }
 
-static size_t calltree_trace_pithy(calltree * const restrict ct, char * const dst, const size_t sz)
+static size_t calltree_trace_pithy(stack * const restrict ct, char * const dst, const size_t sz)
 {
 	size_t z = 0;
 
-	z += stack_error(dst + z, sz - z, ct->exe);
+	z += stack_error(dst + z, sz - z, ct);
 
 	info * nfo = 0;
 
 	size_t zt = z;
 	int x;
-//	for(x = ct->exe->frames.l; x >= MAX(ct->exe->frames.l - 5 /* heuristic */, 0); x--)
-	for(x = ct->exe->frames.l - 1; x >= 0; x--)
+//	for(x = ct->frames.l; x >= MAX(ct->frames.l - 5 /* heuristic */, 0); x--)
+  for(x = 0; x < ct->frames.l; x++)
 	{
 		int y;
-		for(y = 0; y < ct->exe->frames.v[x].infos.l; y++)
+		for(y = 0; y < ct->frames.v[x].infos.l; y++)
 		{
 			// determine whether an info by this name has already been used
 			int xx;
-			for(xx = x + 1; xx < ct->exe->frames.l; xx++)
+			for(xx = x + 1; xx < ct->frames.l; xx++)
 			{
 				int yy;
-				for(yy = 0; yy < ct->exe->frames.v[xx].infos.l; yy++)
+				for(yy = 0; yy < ct->frames.v[xx].infos.l; yy++)
 				{
 					if(estrcmp(
-							ct->exe->frames.v[x].infos.v[y].ks
-						, ct->exe->frames.v[x].infos.v[y].kl
-						, ct->exe->frames.v[xx].infos.v[yy].ks
-						, ct->exe->frames.v[xx].infos.v[yy].kl
+							ct->frames.v[x].infos.v[y].ks
+						, ct->frames.v[x].infos.v[y].kl
+						, ct->frames.v[xx].infos.v[yy].ks
+						, ct->frames.v[xx].infos.v[yy].kl
 						, 0) == 0)
 					{
 						break;
 					}
 				}
-				if(yy < ct->exe->frames.v[xx].infos.l)
+				if(yy < ct->frames.v[xx].infos.l)
 				{
 					break;
 				}
 			}
 
-			if(xx == ct->exe->frames.l)
+			if(xx == ct->frames.l)
 			{
 				if(nfo)
 				{
@@ -222,7 +234,7 @@ static size_t calltree_trace_pithy(calltree * const restrict ct, char * const ds
 						, nfo->vs
 					);
 				}
-				nfo = &ct->exe->frames.v[x].infos.v[y];
+				nfo = &ct->frames.v[x].infos.v[y];
 			}
 		}
 	}
@@ -245,33 +257,33 @@ static size_t calltree_trace_pithy(calltree * const restrict ct, char * const ds
 	return z;
 }
 
-static size_t calltree_trace_full(calltree * const restrict ct, char * const dst, const size_t sz)
+static size_t calltree_trace_full(stack * const restrict ct, char * const dst, const size_t sz)
 {
-  return stack_trace(dst, sz, ct->exe);
+  return stack_trace(dst, sz, ct, 0);
 }
 
 //
 // API
 //
 
-API size_t xapi_trace_calltree_pithy(calltree * const restrict cs, char * const restrict dst, const size_t sz)
+API size_t xapi_trace_calltree_pithy(stack * const restrict cs, char * const restrict dst, const size_t sz)
 {
   return calltree_trace_pithy(cs, dst, sz);
 }
 
-API size_t xapi_trace_calltree_full(calltree * const restrict cs, char * const restrict dst, const size_t sz)
+API size_t xapi_trace_calltree_full(stack * const restrict cs, char * const restrict dst, const size_t sz)
 {
 	return calltree_trace_full(cs, dst, sz);
 }
 
 API size_t xapi_trace_pithy(char * const dst, const size_t sz)
 {
-	return calltree_trace_pithy(g_calltree, dst, sz);
+	return calltree_trace_pithy(g_stack, dst, sz);
 }
 
 API size_t xapi_trace_full(char * const dst, const size_t sz)
 {
-	return calltree_trace_full(g_calltree, dst, sz);
+	return calltree_trace_full(g_stack, dst, sz);
 }
 
 API void xapi_pithytrace()

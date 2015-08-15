@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stddef.h>
 
+#include "xapi.h"
 #include "xapi/SYS.errtab.h"
 
 #include "xlinux.h"
@@ -41,6 +42,7 @@ struct memblk_internals
 #include "memblk.h"
 #include "memblk.def.h"
 
+// optimization parameters
 #define MEMBLOCK_SMALL			0x4000	/* 16k : first THRESHOLD blocks */
 #define MEMBLOCK_THRESHOLD	0x4			
 #define MEMBLOCK_LARGE			0x10000	/* 1m : additional blocks */
@@ -51,12 +53,12 @@ struct memblk_internals
 // static
 //
 
-static xapi policy_malloc(mempolicy * restrict plc, void * restrict p, size_t sz)
+static int policy_malloc(mempolicy * restrict plc, void * restrict p, size_t sz)
 {
 	xproxy(memblk_alloc, ((struct memblk_policy *)plc)->mb, p, sz);
 }
 
-static xapi policy_realloc(mempolicy * restrict plc, void * restrict p, size_t es, size_t ec, size_t oec)
+static int policy_realloc(mempolicy * restrict plc, void * restrict p, size_t es, size_t ec, size_t oec)
 {
 	xproxy(memblk_realloc, ((struct memblk_policy *)plc)->mb, p, es, ec, oec);
 }
@@ -65,14 +67,14 @@ static xapi policy_realloc(mempolicy * restrict plc, void * restrict p, size_t e
 // api
 //
 
-xapi memblk_mk(memblk ** mb)
+int memblk_mk(memblk ** mb)
 {
 	fatal(xmalloc, mb, sizeof(**mb));
 
 	finally : coda;
 }
 
-xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
+int memblk_mk_mapped(memblk ** mb, int prot, int flags)
 {
 	fatal(xmalloc, mb, sizeof(**mb));
 
@@ -83,7 +85,7 @@ xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
 	finally : coda;
 }
 
-xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
+int memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 {
 	// save the active policy, but the memblk itself should use the default mm
 	mempolicy * mm = mempolicy_pop(0);
@@ -137,7 +139,7 @@ finally:
 coda;
 }
 
-xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
+int memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
 {
 	void * old = *(void**)p;
 	fatal(memblk_alloc, mb, p, es * ec);
@@ -187,7 +189,7 @@ mempolicy * memblk_getpolicy(memblk * mb)
 	return &mb->policy;
 }
 
-xapi memblk_writeto(memblk * const restrict mb, const int fd)
+int memblk_writeto(memblk * const restrict mb, const int fd)
 {
 	struct iovec * iov = 0;
 	fatal(xmalloc, &iov, sizeof(*iov) * mb->blocksl);
@@ -238,22 +240,4 @@ int memblk_bwriteto(memblk * const restrict mb, const int fd)
 
 	free(iov);
 	return 0;
-}
-
-void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
-{
-	int x;
-	for(x = 0; x < mb->blocksl; x++)
-		memcpy(dst + mb->blocks[x].o, mb->blocks[x].s, mb->blocks[x].l);
-}
-
-size_t memblk_size(memblk * const restrict mb)
-{
-	size_t r = 0;
-
-	int x;
-	for(x = 0; x < mb->blocksl; x++)
-		r += mb->blocks[x].l;
-
-	return r;
 }

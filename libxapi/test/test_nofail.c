@@ -15,9 +15,44 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_ERROR_INTERNAL_H
-#define _XAPI_ERROR_INTERNAL_H
+#include "test.h"
 
-const struct etable * xapi_errtab_byid(const int id);
+/*
 
-#endif
+SUMMARY
+ simple test in which no error is thrown
+
+*/
+
+int bravo()
+{
+  enter;
+
+  finally : coda;
+}
+
+int alpha()
+{
+  enter;
+
+	fatal(bravo);
+
+  finally : coda;
+}
+
+int foo()
+{
+  enter;
+
+	fatal(alpha);
+
+  finally : coda;
+}
+
+int main()
+{
+  int exit = foo();
+  assert_code(0);
+
+  succeed;
+}

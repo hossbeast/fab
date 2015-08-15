@@ -49,7 +49,36 @@ typedef struct stack
   struct stack *  parent;   // parent execution stack
 } stack;
 
+// per-thread stack storage
+extern __thread struct stacks
+{
+  stack *   v;
+  size_t    l;
+  size_t    a;
+} stacks;
+
+// per-thread execution stack
+extern __thread stack * g_stack;
+
+#if DEVEL
+/*
+** set to the calltree for the executing thread on every api call
+** makes it easy to access the calltree from gdb
+*/
+stack * S;
+#endif
+
 #define restrict __restrict
+
+/// stack_setup
+//
+// SUMMARY
+//  called during unwinding to setup the stack
+//
+// PARAMETERS
+//  new_stack - whether to 
+//
+void stack_push();
 
 /// stack_freeze
 //

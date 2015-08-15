@@ -20,14 +20,12 @@
 
 #include <sys/types.h>
 
-#include "xapi.h"
-
 typedef struct mempolicy
 {
-	xapi (*malloc)(struct mempolicy * plc, void * target, size_t size)
+	int (*malloc)(struct mempolicy * plc, void * target, size_t size)
 		__attribute__((nonnull));
 
-	xapi (*realloc)(struct mempolicy * plc, void * target, size_t es, size_t ec, size_t oec)
+	int (*realloc)(struct mempolicy * plc, void * target, size_t es, size_t ec, size_t oec)
 		__attribute__((nonnull));
 	
 	void (*ifree)(struct mempolicy * plc, void * target)

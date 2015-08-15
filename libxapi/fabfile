@@ -73,7 +73,7 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
 	  (echo "{ global: "
-	> perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=)/) { print "$1;\n" }' <(\
+	> perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=|;)/) { print "$1;\n" }' <(\
 	  cat -- [ $@ ~ rx/ineedw fi ] )
 	  echo "callstack;"
 	> echo "local: *; };"
@@ -81,17 +81,17 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 }
 
 # link the library
-[ $libxapi_xapi_final ] : [ [ $*/exports ~ j ] [ [ [ $*/frame ~ j ] [ $*/error ~ j ] ] ~ ls sx/c/xapi.final.pic.o y ] ]
+[ $libxapi_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.final.pic.o y ] ]
 {
 	[ [ $cc ] [ $cflags_xapi_final ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_final ~ fi ]
 }
 
-[ $libxapi_xapi_debug ] : [ [ $*/exports ~ j ] [ [ [ $*/frame ~ j ] [ $*/error ~ j ] ] ~ ls sx/c/xapi.debug.pic.o y ] ]
+[ $libxapi_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.debug.pic.o y ] ]
 {
 	[ [ $cc ] [ $cflags_xapi_debug ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_debug ~ fi ]
 }
 
-[ $libxapi_xapi_devel ] : [ [ $*/exports ~ j ] [ [ [ $*/frame ~ j ] [ $*/error ~ j ] ] ~ ls sx/c/xapi.devel.pic.o y ] ]
+[ $libxapi_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.devel.pic.o y ] ]
 {
 	[ [ $cc ] [ $cflags_xapi_devel ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_devel ~ fi ]
 }
@@ -126,52 +126,32 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 
 #
 # tests
+#  for rationale see test/README.md
 #
 
-+[@std.c]($dext = [ xapi.devel.nopic.o ]; $dirs = [ $*/test ~ j ]; $cc; $cflags = $cflags_xapi_devel)
-+[@std.c]($dext = [ eapi.devel.nopic.o ]; $dirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
++[@std.c]($dext = [ xapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ eapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
 
-[ $*/test ~ j ls sx/c/unwind sy dj shift ] :: [ $< ~ sx/unwind/xapi.devel.nopic.o ]
+[ $*/test ~ j lsr sx/c/stacktrace sy dj shift ] ::^ [ $libxapi_xapi_devel ]
+[ $*/test ~ j lsr sx/c/stacktrace sy dj shift ] :: [ $< ~ sx/stacktrace/xapi.devel.o ]
 {
-	[ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ fi ] [ $@ ~ rx/ineed fi ] [ $libxapi_xapi_devel ] [ $dlibxapi ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] 
+	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel ] [ $dlibxapi ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
-[ $*/test ~ j ls sx/c/errcode sy dj shift ] :: [ $< ~ sx/errcode/eapi.devel.nopic.o ]
+[ $*/test ~ j lsr sx/c/errorcode sy dj shift ] :: [ $< ~ sx/errorcode/eapi.devel.o ]
 {
-	[ $cc ] -o [ $@ ] [ $cflags_eapi_devel ~ fi ] [ $@ ~ rx/ineed fi ]
+	[ [ $cc ] -o [ $@ ] [ $cflags_eapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] ~ fi ]
 }
 
-[ @test ] : [ @test.unwind @test.errcode ]
-[ @test.unwind ] : [ $*/test ~ j ls sx/c/unwind sy ]
-{
-  set -e
-  [ $@ ~ rx/ineed fi/; ]
-}
-
-[ @test.errcode ] : [ $*/test ~ j ls sx/c/errcode sy ]
+[ @test ] : [ @test.stacktrace @test.errorcode ]
+[ @test.stacktrace ] : [ $*/test ~ j lsr sx/c/stacktrace sy ]
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
 }
 
-#[ $*/test/test.unwind ~ j ] : [ [ $*/test/test.xapi.devel.nopic.o ~ j ] $libxapi_xapi_devel ]
-#{
-#	[ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ fi ] [ $@ ~ rx/ineed fi ] [ $dlibxapi ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] 
-#}
-#
-#[ $*/test/test.errcode ~ j ] : [ $*/test/test.eapi.devel.nopic.o ~ j ]
-#{
-#	[ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ fi ] [ $@ ~ rx/ineed fi ]
-#}
-#
-#[ @test ] : [ @test.unwind @test.errcode ]
-#
-#[ @test.unwind ] : [ $*/test/test.unwind ~ j ]
-#{
-#  [ $@ ~ rx/ineed ]
-#}
-#
-#[ @test.errcode ] : [ $*/test/test.errcode ~ j ]
-#{
-#  [ $@ ~ rx/ineed ]
-#}
+[ @test.errorcode ] : [ $*/test ~ j lsr sx/c/errorcode sy ]
+{
+  set -e
+  [ $@ ~ rx/ineed fi/; ]
+}

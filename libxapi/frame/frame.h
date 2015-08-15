@@ -30,10 +30,10 @@
 #define restrict __restrict
 
 struct etable;
-struct calltree;
+struct stack;
 
 #if XAPI_RUNTIME_CHECKS
-/// xapi_frame_ enter/leave/caller/depth
+/// xapi_frame_*_frame_address
 //
 // SUMMARY
 //  implementation of ILLFATAL and NOFATAL checks
@@ -43,10 +43,19 @@ struct calltree;
 //  track the addresses of the fatal callstack and raise an error when there is disagreement
 //  with the underlying callstack
 //
-int xapi_frame_enter(void * calling_frame);
-void * xapi_frame_caller();
-int xapi_frame_depth();
+extern __thread void * xapi_calling_frame_address;
+extern __thread void * xapi_caller_frame_address;
+void xapi_record_frame(void * calling_frame);
 #endif
+
+extern __thread int xapi_sentinel;
+
+///  xapi_frame_enter
+//
+// SUMMARY
+//  push a frame onto the callstack
+//
+void xapi_frame_enter();
 
 /// xapi_frame_leave
 //
@@ -60,7 +69,7 @@ int xapi_frame_depth();
 //  the value for the function return ; zero when no error has been raised, otherwise, the
 //  error id, which is a composite of the error table id and the error code
 //
-int xapi_frame_leave();
+int xapi_frame_leave(int sentinel);
 
 /// xapi_frame_leave3
 //
@@ -75,7 +84,7 @@ int xapi_frame_leave();
 //  [c] - error code
 //  [r] - return value, that is (e->id << 16) | c
 //
-void xapi_frame_leave3(const etable ** restrict etab, int * const restrict code, int * const restrict rval);
+void xapi_frame_leave3(int sentinel, const etable ** restrict etab, int * const restrict code, int * const restrict rval);
 
 /// xapi_unwinding
 //
@@ -91,11 +100,12 @@ const etable * xapi_frame_errtab();
 /// xapi_frame_set
 //
 // SUMMARY
-//  set properties for the top frame
+//  set properties for the top frame during unwinding
 //
 // PARAMETERS
+//  [s]    - saved pointer to stack
 //  etab   - errtab table
-//  code   - error code
+//  [code] - error code (nonzero when raising a new error)
 //  [msg]  - message
 //  [msgl] - message length (0 for strlen)
 //  [fmt]  - format string
@@ -110,26 +120,26 @@ const etable * xapi_frame_errtab();
 // RETURNS
 //  a value indicating whether to jump to the finally label for the current frame
 //
-void xapi_frame_set(const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
-	__attribute__((nonnull(5)));
+struct stack * xapi_frame_set(struct stack * s, const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
+	__attribute__((nonnull(2, 6)));
 
-void xapi_frame_set_messagew(const struct etable * const restrict etab, const int16_t code, const char * const restrict msg, int msgl, const char * const restrict file, const int line, const char * const restrict func)
-	__attribute__((nonnull(7)));
+struct stack * xapi_frame_set_messagew(struct stack * s, const struct etable * const restrict etab, const int16_t code, const char * const restrict msg, int msgl, const char * const restrict file, const int line, const char * const restrict func)
+	__attribute__((nonnull(2, 8)));
 
-void xapi_frame_set_messagef(const struct etable * const restrict etab, const int16_t code, const char * const restrict fmt, const char * const restrict file, const int line, const char * const restrict func, ...)
-	__attribute__((nonnull(6)));
+struct stack * xapi_frame_set_messagef(struct stack * s, const struct etable * const restrict etab, const int16_t code, const char * const restrict fmt, const char * const restrict file, const int line, const char * const restrict func, ...)
+	__attribute__((nonnull(2, 7)));
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET(etab, code)	\
-	xapi_frame_set(etab, code, __FILE__, __LINE__, __FUNCTION__)
+	__xapi_s = xapi_frame_set(__xapi_s, etab, code, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET_MESSAGEW(etab, code, msg, msgl)	\
-	xapi_frame_set_messagew(etab, code, msg, msgl, __FILE__, __LINE__, __FUNCTION__)
+	__xapi_s = xapi_frame_set_messagew(__xapi_s, etab, code, msg, msgl, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET_MESSAGEF(etab, code, fmt, ...)	\
-	xapi_frame_set_messagef(etab, code, fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+	__xapi_s = xapi_frame_set_messagef(__xapi_s, etab, code, fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 /// xapi_frame_info
 //

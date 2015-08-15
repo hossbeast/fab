@@ -15,22 +15,33 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_UNWIND_H
-#define _XAPI_UNWIND_H
+#ifndef _XAPI_STACKTRACE_H
+#define _XAPI_STACKTRACE_H
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <errno.h>
+
+// the system error table is the default
+#define perrtab perrtab_SYS
 
 /*
 ** declared by the application
 **  perrtab - pointer to etable
 */
 
-#include <sys/types.h>
-#include <errno.h>
-
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
 
 // declarations of trace-description functions
 #include "xapi/trace.h"
+
+/// xapi_teardown
+//
+// SUMMARY
+//  release memory
+//
+void xapi_teardown();
 
 /*
 ** enable XAPI_RUNTIME_CHECKS to :
@@ -84,8 +95,26 @@ when calling non-xapi code, you have a couple of options.
 // SUMMARY
 //  must be the first line of any xapi function
 //
-#define enter           \
-  int __xapi_f1 = 0
+#if XAPI_RUNTIME_CHECKS
+#define enter                           \
+/*printf("enter %d\n", __LINE__);*/ \
+  int __xapi_f1 = 0;                    \
+  void * __xapi_s = 0;                  \
+  int __xapi_sentinel = !xapi_sentinel; \
+  xapi_sentinel = 1;                    \
+  xapi_record_frame(xapi_calling_frame_address);  \
+  if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
+  {                                     \
+printf("NOFATAL\n");  \
+    tfail(perrtab_XAPI, XAPI_NOFATAL);  \
+  }
+#else
+#define enter                           \
+  int __xapi_f1 = 0;                    \
+  void * __xapi_s = 0;                  \
+  int __xapi_sentinel = !xapi_sentinel;  \
+  xapi_sentinel = 1
+#endif
 
 /*
 ** called at the site of an error
@@ -111,7 +140,7 @@ when calling non-xapi code, you have a couple of options.
 //
 #define tfail(etab, code)                               \
   do {                                                  \
-printf("tfail @ %s:%d\n", __FILE__, __LINE__);  \
+/*printf("tfail @ %s:%d\n", __FILE__, __LINE__);*/   \
     /* populate the current stack frame */              \
     XAPI_FRAME_SET(etab, code);                         \
     /* jump to the finally label */                     \
@@ -122,7 +151,7 @@ printf("tfail @ %s:%d\n", __FILE__, __LINE__);  \
 
 #define tfailw(etab, code, msg, msgl)                       \
   do {                                                      \
-printf("tfailw @ %s:%d\n", __FILE__, __LINE__);  \
+/* printf("tfail @ %s:%d\n", __FILE__, __LINE__);*/   \
     /* populate the current stack frame */                  \
     XAPI_FRAME_SET_MESSAGEW(etab, code, msg, msgl);         \
     /* jump to the finally label */                         \
@@ -131,6 +160,7 @@ printf("tfailw @ %s:%d\n", __FILE__, __LINE__);  \
 
 #define tfailf(etab, code, fmt, ...)                         \
   do {                                                       \
+/* printf("tfail @ %s:%d\n", __FILE__, __LINE__);*/   \
     /* populate the current stack frame */                   \
     XAPI_FRAME_SET_MESSAGEF(etab, code, fmt, ##__VA_ARGS__); \
     /* jump to the finally label */                          \
@@ -155,16 +185,18 @@ printf("tfailw @ %s:%d\n", __FILE__, __LINE__);  \
 //  fatal can appear in a finally block ; while unwinding, the fatal is a no-op
 //
 #if XAPI_RUNTIME_CHECKS
-#define xapi_invoke(func, ...)                                                                                  \
-  ({  int __x = xapi_frame_enter(__builtin_frame_address(0));                                                   \
-      int __r = func(__VA_ARGS__);                                                                              \
-      if(__r == 0 && __x != xapi_frame_depth())                                                                 \
-      {                                                                                                         \
-printf("__x : %d, __r : %d, __d : %d\n", __x, __r, xapi_frame_depth()); \
-        __r = 1;                                                                                                \
-        XAPI_FRAME_SET_MESSAGEW(perrtab_XAPI, XAPI_ILLFATAL, "function " #func " invoked with fatal", 0);       \
-      }                                                                                                         \
-      __r;                                                                                                      \
+#define xapi_invoke(func, ...)                                                                              \
+  ({                                                                                                        \
+      xapi_calling_frame_address = __builtin_frame_address(0);                                              \
+/* printf("INVOKE   __x : %d\n", __x); */ \
+      int __r = func(__VA_ARGS__);                                                                          \
+      if(xapi_caller_frame_address != __builtin_frame_address(0))                                             \
+      {                                                                                                     \
+printf("ILLFATAL __r : %d, calling : %p, caller : %p\n", __r, __builtin_frame_address(0), xapi_caller_frame_address); \
+        __r = 1;                                                                                            \
+        XAPI_FRAME_SET_MESSAGEW(perrtab_XAPI, XAPI_ILLFATAL, "function " #func " invoked with fatal", 0);   \
+      }                                                                                                     \
+      __r;                                                                                                  \
   })
 #else
 #define xapi_invoke(func, ...)              \
@@ -274,21 +306,6 @@ printf("__x : %d, __r : %d, __d : %d\n", __x, __r, xapi_frame_depth()); \
 // SUMMARY
 //  statements between finally and coda are executed even upon fail
 //
-#if XAPI_RUNTIME_CHECKS
-#define finally                         \
-XAPI_FINALIZE:                          \
-  if(__xapi_f1)                         \
-  {                                     \
-    goto XAPI_LEAVE;                    \
-  }                                     \
-  __xapi_f1 = 1;                        \
-  if(xapi_frame_caller() && (__builtin_frame_address(1) != xapi_frame_caller()))  \
-  {                                     \
-    tfail(perrtab_XAPI, XAPI_NOFATAL);  \
-  }                                     \
-  goto XAPI_FINALLY;                    \
-XAPI_FINALLY
-#else
 #define finally                         \
 XAPI_FINALIZE:                          \
   if(__xapi_f1)                         \
@@ -298,20 +315,19 @@ XAPI_FINALIZE:                          \
   __xapi_f1 = 1;                        \
   goto XAPI_FINALLY;                    \
 XAPI_FINALLY
-#endif
 
 /// coda
 //
 // SUMMARY
 //  return from the current function
 //
-#define coda                          \
-  goto XAPI_LEAVE;                    \
-XAPI_LEAVE:                           \
-do {  \
-  int rr = xapi_frame_leave(); \
- printf("returning %d\n", rr);  \
-  return rr;  \
+#define coda                            \
+  goto XAPI_LEAVE;                      \
+XAPI_LEAVE:                             \
+do {                                    \
+  int rr = xapi_frame_leave(__xapi_sentinel);          \
+/*printf("leave %d\n", __LINE__);*/ \
+  return rr;                            \
 } while(0)
 
 /// conclude
@@ -327,12 +343,12 @@ do {  \
 #define conclude(r)                 \
   goto XAPI_LEAVE;                  \
 XAPI_LEAVE:                         \
-  (*r) = xapi_frame_leave()
+  (*r) = xapi_frame_leave(__xapi_sentinel)
 
 #define conclude3(e, c, r)          \
   goto XAPI_LEAVE;                  \
 XAPI_LEAVE:                         \
-  xapi_frame_leave3(e, c, r)
+  xapi_frame_leave3(__xapi_sentinel, e, c, r)
 
 /*
 ** called after finally

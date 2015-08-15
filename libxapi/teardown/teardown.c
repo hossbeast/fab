@@ -15,48 +15,18 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
-#include "xapi.h"
+#include "internal.h"
+#include "mm.internal.h"
+#include "errtab.h"
+#include "frame.internal.h"
 
-/*
+//
+// api
+//
 
-basic.c
-
-SUMMARY
- most basic test of xapi
-
-*/
-
-int bravo(int num)
+API void xapi_teardown()
 {
-  enter;
-
-  finally : coda;
-}
-
-int alpha(int num)
-{
-  enter;
-
-	fatal(bravo, num);
-
-  finally : coda;
-}
-
-int foo()
-{
-  enter;
-
-	fatal(alpha, 125);
-
-  finally : coda;
-}
-
-int main()
-{
-  enter;
-
-  fatal(foo);
-
-  finally : coda;
+  mm_teardown();
+  errtab_teardown();
+  frame_teardown();
 }

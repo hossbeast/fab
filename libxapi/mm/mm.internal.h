@@ -28,13 +28,20 @@ extern __thread struct memblk mm_mb;
 
 #define restrict __restrict
 
+/// mm_teardown
+//
+// SUMMARY
+//  release memory
+//
+void mm_teardown();
+
 void wmalloc(void * restrict p, size_t sz)
   __attribute__((nonnull));
 
 void wrealloc(void * restrict p, size_t es, size_t ec, size_t oec)
   __attribute__((nonnull));
 
-void assure(void * restrict p, size_t * const restrict dstl, size_t * const restrict dsta, size_t l)
+void assure(void * restrict p, size_t * const restrict dstl, size_t * const restrict dsta, size_t z, size_t l)
   __attribute__((nonnull));
 
 void sloadw(char ** const restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, const char * const restrict s, size_t l)

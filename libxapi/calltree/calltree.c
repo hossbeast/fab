@@ -32,9 +32,6 @@
 #include "macros.h"
 #include "memblk.def.h"
 
-// per-thread calltree storage
-__thread calltree * g_calltree;
-
 #define restrict __restrict
 
 //
@@ -44,16 +41,16 @@ __thread calltree * g_calltree;
 #if 0
 void calltree_free()
 {
-	int x;
-	for(x = 0; x < calltree_mb.blocksl; x++)
-	{
-		free(calltree_mb.blocks[x].s);
-		memset(&calltree_mb.blocks[x], 0, sizeof(calltree_mb.blocks[0]));
-	}
-	free(calltree_mb.blocks);
-	memset(&calltree_mb, 0, sizeof(calltree_mb));
+  int x;
+  for(x = 0; x < calltree_mb.blocksl; x++)
+  {
+    free(calltree_mb.blocks[x].s);
+    memset(&calltree_mb.blocks[x], 0, sizeof(calltree_mb.blocks[0]));
+  }
+  free(calltree_mb.blocks);
+  memset(&calltree_mb, 0, sizeof(calltree_mb));
 
-	calltree = 0;
+  calltree = 0;
 }
 #endif
 
@@ -62,45 +59,34 @@ void calltree_free()
 //
 API void xapi_calltree_unwind()
 {
-  g_calltree = 0;
+  g_stack = 0;
 
 #if XAPI_RUNTIME_CHECKS
-  g_calltree_frames.l = 0;
+  g_frame_addresses.l = 0;
 #endif
 }
 
 API memblk * xapi_calltree_freeze()
 {
-	memblk * const mb = &mm_mb;
-  calltree * const cs = g_calltree;
+  memblk * const mb = &mm_mb;
 
-  // freze the root stack ; the exe stack is in its hierarchy
-  stack_freeze(mb, cs->root);
-
-  memblk_freeze(mb, &cs->exe);
-  memblk_freeze(mb, &cs->root);
+  // freze the root stack
+  stack_freeze(mb, g_stack);
 
   return mb;
 }
 
 API void xapi_calltree_unfreeze()
 {
-	memblk * const mb = &mm_mb;
-	calltree * const cs = g_calltree;
+  memblk * const mb = &mm_mb;
 
-  memblk_unfreeze(mb, &cs->exe);
-  memblk_unfreeze(mb, &cs->root);
-
-  stack_unfreeze(mb, cs->root);
+  stack_unfreeze(mb, g_stack);
 }
 
-API calltree * xapi_calltree_thaw(char * const restrict mb)
+API stack * xapi_calltree_thaw(char * const restrict mb)
 {
-	calltree * cs = (void*)mb;
-  memblk_thaw(mb, &cs->exe);
-  memblk_thaw(mb, &cs->root);
+  g_stack = (void*)mb;
+  stack_thaw(mb, g_stack);
 
-  stack_thaw(mb, cs->root);
-
-  return cs;
+  return g_stack;
 }
