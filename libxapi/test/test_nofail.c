@@ -24,7 +24,7 @@ SUMMARY
 
 */
 
-int bravo()
+int beta()
 {
   enter;
 
@@ -35,7 +35,7 @@ int alpha()
 {
   enter;
 
-	fatal(bravo);
+	fatal(beta);
 
   finally : coda;
 }

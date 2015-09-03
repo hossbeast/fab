@@ -5,7 +5,7 @@ etable errtab_XAPI = {
  , .min = ERRMIN_XAPI
  , .max = ERRMAX_XAPI
  , .v =  (typeof(((etable*)0)->v[0])[]) {
-#define _E(a, b, c) [ a + (ERRMIN_XAPI * -1) ] = { .name = #b, .desc = c, .str = #b ":" c },
+#define _E(a, b, c) [ a + (ERRMIN_XAPI * -1) ] = { .name = #b, .desc = c },
 ETABLE_XAPI
 #undef _E
 }};

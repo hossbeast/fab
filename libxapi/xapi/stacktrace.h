@@ -96,23 +96,23 @@ when calling non-xapi code, you have a couple of options.
 //  must be the first line of any xapi function
 //
 #if XAPI_RUNTIME_CHECKS
-#define enter                           \
-/*printf("enter %d\n", __LINE__);*/ \
-  int __xapi_f1 = 0;                    \
-  void * __xapi_s = 0;                  \
-  int __xapi_sentinel = !xapi_sentinel; \
-  xapi_sentinel = 1;                    \
+#define enter                             \
+printf("enter %d\n", __LINE__);       \
+  int __xapi_f1 = 0;                      \
+  void * __xapi_s = 0;                    \
+  int __xapi_sentinel = !xapi_sentinel;   \
+  xapi_sentinel = 1;                      \
   xapi_record_frame(xapi_calling_frame_address);  \
   if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
-  {                                     \
-printf("NOFATAL\n");  \
-    tfail(perrtab_XAPI, XAPI_NOFATAL);  \
+  {                                       \
+printf("NOFATAL\n");                      \
+    tfail(perrtab_XAPI, XAPI_NOFATAL);    \
   }
 #else
-#define enter                           \
-  int __xapi_f1 = 0;                    \
-  void * __xapi_s = 0;                  \
-  int __xapi_sentinel = !xapi_sentinel;  \
+#define enter                             \
+  int __xapi_f1 = 0;                      \
+  void * __xapi_s = 0;                    \
+  int __xapi_sentinel = !xapi_sentinel;   \
   xapi_sentinel = 1
 #endif
 
@@ -188,11 +188,11 @@ printf("NOFATAL\n");  \
 #define xapi_invoke(func, ...)                                                                              \
   ({                                                                                                        \
       xapi_calling_frame_address = __builtin_frame_address(0);                                              \
-/* printf("INVOKE   __x : %d\n", __x); */ \
+/* printf("INVOKE   __x : %d\n", __x); */                                                                   \
       int __r = func(__VA_ARGS__);                                                                          \
-      if(xapi_caller_frame_address != __builtin_frame_address(0))                                             \
+      if(xapi_caller_frame_address != __builtin_frame_address(0))                                           \
       {                                                                                                     \
-printf("ILLFATAL __r : %d, calling : %p, caller : %p\n", __r, __builtin_frame_address(0), xapi_caller_frame_address); \
+/* printf("ILLFATAL __r : %d, calling : %p, caller : %p\n", __r, __builtin_frame_address(0), xapi_caller_frame_address); */ \
         __r = 1;                                                                                            \
         XAPI_FRAME_SET_MESSAGEW(perrtab_XAPI, XAPI_ILLFATAL, "function " #func " invoked with fatal", 0);   \
       }                                                                                                     \
@@ -306,14 +306,15 @@ printf("ILLFATAL __r : %d, calling : %p, caller : %p\n", __r, __builtin_frame_ad
 // SUMMARY
 //  statements between finally and coda are executed even upon fail
 //
-#define finally                         \
-XAPI_FINALIZE:                          \
-  if(__xapi_f1)                         \
-  {                                     \
-    goto XAPI_LEAVE;                    \
-  }                                     \
-  __xapi_f1 = 1;                        \
-  goto XAPI_FINALLY;                    \
+#define finally                 \
+  goto XAPI_FINALIZE;           \
+XAPI_FINALIZE:                  \
+  if(__xapi_f1)                 \
+  {                             \
+    goto XAPI_LEAVE;            \
+  }                             \
+  __xapi_f1 = 1;                \
+  goto XAPI_FINALLY;            \
 XAPI_FINALLY
 
 /// coda

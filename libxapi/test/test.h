@@ -58,7 +58,40 @@
 #if XAPI_MODE_ERRORCODE
 #define assert_code(ecode)                                                                \
   do {                                                                                    \
-    int code = exit;                                                                      \
+    int code = exit & 0xFFFF;                                                             \
+    if(code != ecode)                                                                     \
+    {                                                                                     \
+      dprintf(2, "[" __FILE__ "] expected code : %d, actual code : %d, result : fail\n"   \
+        , ecode                                                                           \
+        , code                                                                            \
+      );                                                                                  \
+      return 1;                                                                           \
+    }                                                                                     \
+  } while(0)
+#endif
+
+#if XAPI_MODE_STACKTRACE
+#define assert_exit(etab, ecode)                                                          \
+  do {                                                                                    \
+    const struct etable * tab = xapi_errtab(exit);                                        \
+    if(tab != etab || xapi_errcode(exit) != ecode)                                        \
+    {                                                                                     \
+      dprintf(2, "[" __FILE__ "] expected etab : %s, code : %s(%d), actual etab : %s, code : %s(%d), result : fail\n" \
+        , xapi_errtab_tag(etab)                                                           \
+        , #ecode                                                                          \
+        , ecode                                                                           \
+        , xapi_errtab_tag(tab)                                                            \
+        , xapi_errname(exit)                                                              \
+        , xapi_errcode(exit)                                                              \
+      );                                                                                  \
+      return 1;                                                                           \
+    }                                                                                     \
+  } while(0)
+#endif
+#if XAPI_MODE_ERRORCODE
+#define assert_exit(etab, ecode)                                                          \
+  do {                                                                                    \
+    int code = exit & 0xFFFF;                                                             \
     if(code != ecode)                                                                     \
     {                                                                                     \
       dprintf(2, "[" __FILE__ "] expected code : %d, actual code : %d, result : fail\n"   \

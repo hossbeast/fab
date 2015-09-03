@@ -25,7 +25,7 @@
 //
 #define enter           \
   int __xapi_f1 = 0;    \
-  uint32_t __xapi_r = 0
+  uint32_t __xapi_r = 0;
 
 /*
 ** called at the site of an error
@@ -43,17 +43,17 @@
 //  [msgl]  - discarded
 //  [fmt]   - discarded
 
-#define tfail(perrtab, code)							\
-	do {																		\
-		__xapi_r = code & 0xFFFF;							\
-    if(perrtab)                           \
-      __xapi_r |= (perrtab->id << 16);    \
-		goto XAPI_FINALIZE;										\
-	} while(0)
+#define tfail(perrtab, code)                        \
+  do {                                              \
+    __xapi_r = code & 0xFFFF;                       \
+    if(perrtab)                                     \
+      __xapi_r |= (((etable *)perrtab)->id << 16);  \
+    goto XAPI_FINALIZE;                             \
+  } while(0)
 
-#define tfails(perrtab, code, msg)				tfail(perrtab, code)
-#define tfailw(perrtab, code, msg, msgl)	tfail(perrtab, code)
-#define tfailf(perrtab, code, fmt, ...)		tfail(perrtab, code)
+#define tfails(perrtab, code, msg)        tfail(perrtab, code)
+#define tfailw(perrtab, code, msg, msgl)  tfail(perrtab, code)
+#define tfailf(perrtab, code, fmt, ...)   tfail(perrtab, code)
 
 #define fail(code)             tfail (0, code)
 #define fails(code, msg)       tfails(0, code, msg)
@@ -69,33 +69,33 @@
 // SUMMARY
 //  invoke another function and fail the current frame if that function fails
 //
-#define fatal(func, ...)											\
-	do {																				\
-		if((__xapi_r = func(__VA_ARGS__)) != 0)		\
-		{																					\
-			goto XAPI_FINALIZE;											\
-		}																					\
-	} while(0)
+#define fatal(func, ...)                      \
+  do {                                        \
+    if((__xapi_r = func(__VA_ARGS__)) != 0)   \
+    {                                         \
+      goto XAPI_FINALIZE;                     \
+    }                                         \
+  } while(0)
 
 /// fatalize
 //
 // SUMMARY
 //  invoke a non-xapi-enabled function and if it fails, fail the current frame with its error code
 //
-#define tfatalize(perrtab, code, func, ...)		\
-	do {																				\
-		if(func(__VA_ARGS__) != 0)								\
-			tfail(perrtab, code);										\
-	} while(0)
+#define tfatalize(perrtab, code, func, ...)   \
+  do {                                        \
+    if(func(__VA_ARGS__) != 0)                \
+      tfail(perrtab, code);                   \
+  } while(0)
 
-#define tfatalizes(perrtab, code, msg, func, ...)					\
-	tfatalizew(perrtab, code, msg, 0, func, ##__VA_ARGS__)
+#define tfatalizes(perrtab, code, msg, func, ...)         \
+  tfatalizew(perrtab, code, msg, 0, func, ##__VA_ARGS__)
 
-#define tfatalizew(perrtab, code, msg, msgl, func, ...)		\
-	do {																										\
-		if(func(__VA_ARGS__))																	\
-			tfailw(perrtab, code, msg, msgl);										\
-	} while(0)
+#define tfatalizew(perrtab, code, msg, msgl, func, ...)   \
+  do {                                                    \
+    if(func(__VA_ARGS__))                                 \
+      tfailw(perrtab, code, msg, msgl);                   \
+  } while(0)
 
 #define fatalize(code, func, ...)  tfatalize (perrtab, code, func, ##__VA_ARGS__)
 #define fatalizes(code, func, ...) tfatalizes(perrtab, code, func, ##__VA_ARGS__)
@@ -105,14 +105,12 @@
 //
 // 1-liner
 //
-#define xproxy(func, ...)				\
-	fatal(func, ##__VA_ARGS__);		\
-	finally : coda
+#define xproxy(func, ...)       \
+  fatal(func, ##__VA_ARGS__);   \
+  finally : coda
 
-#define prologue								\
-	__label__ XAPI_FINALLY;
-
-#define conclude(r) *(r) = __xapi_r
+#define prologue                \
+  __label__ XAPI_FINALLY;
 
 /// invoke
 //
@@ -125,14 +123,15 @@
 // SUMMARY
 //  statements between finally and coda are executed even upon fail/leave
 //
-#define finally				  \
+#define finally         \
+  goto XAPI_FINALIZE;   \
 XAPI_FINALIZE:          \
   if(__xapi_f1)         \
   {                     \
     goto XAPI_LEAVE;    \
   }                     \
   __xapi_f1 = 1;        \
-  goto XAPI_FINALLY;		\
+  goto XAPI_FINALLY;    \
 XAPI_FINALLY
 
 /// coda
@@ -144,6 +143,12 @@ XAPI_FINALLY
   goto XAPI_LEAVE;      \
 XAPI_LEAVE:             \
   return __xapi_r
+
+
+#define conclude(r)     \
+  goto XAPI_LEAVE;      \
+XAPI_LEAVE:             \
+  *(r) = __xapi_r
 
 /*
 ** called after finally

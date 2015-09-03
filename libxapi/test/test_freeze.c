@@ -52,14 +52,18 @@ int foo()
 {
   enter;
 
+#if XAPI_MODE_STACKTRACE
   memblk * mb;
+#endif
 
 	fatal(alpha, 125);
 
 finally:
+#if XAPI_MODE_STACKTRACE
   mb = xapi_calltree_freeze();
   memblk_copyto(mb, space, sizeof(space));
   xapi_calltree_unfreeze();
+#endif
 coda;
 }
 
@@ -69,9 +73,11 @@ int main()
   assert_etab(perrtab_SYS);
   assert_code(SYS_ERESTART);
 
+#if XAPI_MODE_STACKTRACE
   struct stack * cs = xapi_calltree_thaw(space);
   size_t z = xapi_trace_calltree_full(cs, space2, sizeof(space2));
   printf("reconstituted trace\n%.*s\n", (int)z, space2);
+#endif
 
   succeed;
 }
