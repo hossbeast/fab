@@ -46,6 +46,7 @@ struct stack;
 extern __thread void * xapi_calling_frame_address;
 extern __thread void * xapi_caller_frame_address;
 void xapi_record_frame(void * calling_frame);
+extern __thread int xapi_raised_exit;
 #endif
 
 extern __thread int xapi_sentinel;

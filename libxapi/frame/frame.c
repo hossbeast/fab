@@ -38,12 +38,14 @@
 __thread struct frame_addresses g_frame_addresses;
 __thread void * APIDATA xapi_calling_frame_address;
 __thread void * APIDATA xapi_caller_frame_address;
+__thread const etable * APIDATA xapi_stack_raised_etab;
+__thread int APIDATA xapi_stack_raised_code;
 #endif
 
 // per-thread sentinels
 __thread int APIDATA xapi_sentinel;
 
-static stack * frame_set(stack * s, const struct etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
+static stack * frame_set(stack * s, const etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
 {
   // allocate a new stack when throwing a new error
   if(code)
@@ -91,6 +93,14 @@ static stack * frame_set(stack * s, const struct etable * const restrict etab, c
 	S = g_stack;
 #endif
   }
+
+#if XAPI_RUNTIME_CHECKS
+  if(etab == perrtab_XAPI && code == XAPI_NOFATAL)
+  {
+    xapi_stack_raised_etab = etab;
+    xapi_stack_raised_code = XAPI_NOFATAL;
+  }
+#endif
 
   // return the stack that this frame belongs to
   return g_stack;
@@ -202,9 +212,18 @@ API void xapi_frame_leave3(int sentinel, const etable ** restrict etab, int * co
   {
     E = g_stack->etab;
     C = g_stack->code;
-    if(E)
-      R = (E->id << 16) | C;
   }
+
+#if XAPI_RUNTIME_CHECKS
+  if(xapi_stack_raised_etab)
+  {
+    E = xapi_stack_raised_etab;
+    C = xapi_stack_raised_code;
+  }
+#endif
+
+  if(E || C)
+    R = (E->id << 16) | C;
 
   if(sentinel)
   {
@@ -214,6 +233,8 @@ API void xapi_frame_leave3(int sentinel, const etable ** restrict etab, int * co
     g_frame_addresses.l = 0;
     xapi_calling_frame_address = 0;
     xapi_caller_frame_address = 0;
+    xapi_stack_raised_etab = 0;
+    xapi_stack_raised_code = 0;
 #endif
   }
 
