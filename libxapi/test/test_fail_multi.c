@@ -39,7 +39,7 @@ int alpha(int num)
 {
   enter;
 
-	fatal(beta, num);
+  fatal(beta, num);
 
   finally : coda;
 }
@@ -48,7 +48,7 @@ int foo()
 {
   enter;
 
-	fatal(alpha, 125);
+  fatal(alpha, 125);
 
   finally : coda;
 }

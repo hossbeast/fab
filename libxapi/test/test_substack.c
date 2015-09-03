@@ -41,7 +41,7 @@ int beta()
   enter;
 
   beta_count++;
-	fatal(delta);
+  fatal(delta);
 
   finally : coda;
 }
@@ -51,11 +51,11 @@ int alpha()
 {
   enter;
 
-	fatal(beta);
+  fatal(beta);
 
 finally :
   // delta should fail, and alpha should terminate
-	fatal(delta);
+  fatal(delta);
 
   // this line should not be hit
   alpha_dead_count = 1;

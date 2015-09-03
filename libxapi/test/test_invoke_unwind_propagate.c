@@ -15,12 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <unistd.h>
 #include "test.h"
 
 /*
 
 SUMMARY
- fail, unwind, ensure the error code and table are propagated correctly
+ call fail in a finally block during unwinding
 
 */
 
@@ -37,28 +38,28 @@ int alpha()
 {
   enter;
 
-  fatal(beta);
+	fatal(beta);
 
-  finally : coda;
-}
-
-int foo()
-{
-  enter;
-
-  fatal(alpha);
-
-  finally : coda;
+	finally : coda;
 }
 
 int main()
 {
-  // invoke the function, collect its exit status
-  int exit = foo();
+/*
+	int expected = 3;
+	int x;
+	for(x = 0; x < expected; x++)
+	{
+		if(invoke(alpha))
+		{
+			assert_exit(perrtab_XAPI, SYS_ERESTART);
 
-  // assertions
-  assert_etab(perrtab_SYS);
-  assert_code(SYS_ERESTART);
+			xapi_backtrace();
+
+			xapi_callstack_unwind();
+		}
+	}
+*/
 
   // victory
   succeed;

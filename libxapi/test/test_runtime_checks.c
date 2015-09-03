@@ -50,7 +50,7 @@ int foo_illfatal()
 {
   enter;
 
-	fatal(alpha_notxapi);
+  fatal(alpha_notxapi);
 
   finally : coda;
 }

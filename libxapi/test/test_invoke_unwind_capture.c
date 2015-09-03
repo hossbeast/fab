@@ -15,14 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <unistd.h>
 #include "test.h"
+#include "xapi/calltree.h"
 
 /*
 
 SUMMARY
- fail, unwind, ensure the error code and table are propagated correctly
+ call fail in a finally block during unwinding
 
 */
+
+int delta()
+{
+  enter;
+
+  fail(SYS_ENOMEM);
+
+  finally : coda;
+}
 
 int beta()
 {
@@ -33,32 +44,39 @@ int beta()
   finally : coda;
 }
 
+static int alpha_dead_count;
 int alpha()
 {
   enter;
 
-  fatal(beta);
+  int exit;
+  if((exit = invoke(beta)))
+  {
+    assert_exit(perrtab_SYS, SYS_ERESTART);
 
-  finally : coda;
-}
+//    xapi_backtrace();
 
-int foo()
-{
-  enter;
+    xapi_calltree_unwind();
+  }
 
-  fatal(alpha);
+  fatal(delta);
 
-  finally : coda;
+  alpha_dead_count++;
+
+	finally : coda;
 }
 
 int main()
 {
-  // invoke the function, collect its exit status
-  int exit = foo();
+  int exit = alpha();
 
-  // assertions
-  assert_etab(perrtab_SYS);
-  assert_code(SYS_ERESTART);
+  assert_exit(perrtab_SYS, SYS_ENOMEM);
+
+  // dead area should have been skipped
+  assert(alpha_dead_count == 0
+    , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
+    , alpha_dead_count
+  );
 
   // victory
   succeed;

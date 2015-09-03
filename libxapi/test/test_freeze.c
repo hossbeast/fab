@@ -40,7 +40,7 @@ int alpha(int num)
 {
   enter;
 
-	fatal(beta, num);
+  fatal(beta, num);
 
   finally : coda;
 }
@@ -56,7 +56,7 @@ int foo()
   memblk * mb;
 #endif
 
-	fatal(alpha, 125);
+  fatal(alpha, 125);
 
 finally:
 #if XAPI_MODE_STACKTRACE

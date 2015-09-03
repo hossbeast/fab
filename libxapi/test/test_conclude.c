@@ -35,7 +35,7 @@ int alpha()
 {
   enter;
 
-	fatal(beta);
+  fatal(beta);
 
   finally : coda;
 }
@@ -45,7 +45,7 @@ int foo()
 {
   enter;
 
-	fatal(alpha);
+  fatal(alpha);
 
   finally : conclude(&r);
   return r;

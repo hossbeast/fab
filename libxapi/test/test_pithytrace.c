@@ -45,7 +45,7 @@ int beta()
   enter;
 
   beta_count++;
-	fatal(delta, __LINE__);
+  fatal(delta, __LINE__);
 
 finally:
   // delta should fail, and beta should terminate
@@ -65,7 +65,7 @@ int alpha()
   size_t z;
 #endif
 
-	fatal(beta);
+  fatal(beta);
 
 finally:
 #if XAPI_MODE_STACKTRACE
