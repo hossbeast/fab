@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-$VERSIONL				= [ 0 5 2 0 ]											# version list - major, minor, revision, build
+$VERSIONL				= [ 0 5 3 0 ]											# version list - major, minor, revision, build
 $VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
 $VERSIONN				= [ $VERSIONL ~ j s/^0//g ] 			# version number
 

@@ -134,6 +134,8 @@ $faboplist_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/devel.so y ]
 {
 	chmod 777																						[ $destdir/$fabtmpdir ]
 	chmod 777																						[ $destdir/$fabipcdir ]
+	chown fabsys:fabsys																	[ $destdir/$fabtmpdir ]
+	chown fabsys:fabsys																	[ $destdir/$fabipcdir ]
 }
 
 [ @install.final ] : [ @install.base ]

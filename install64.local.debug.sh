@@ -100,6 +100,8 @@ fml_1_1()
   
 	chmod 777																						$destdir/$fabtmpdir
 	chmod 777																						$destdir/$fabipcdir
+	chown fabsys:fabsys																	$destdir/$fabtmpdir
+	chown fabsys:fabsys																	$destdir/$fabipcdir
 
 
   X=$?

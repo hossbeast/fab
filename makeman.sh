@@ -35,7 +35,7 @@ fml_1_0()
   exec 2>&100
 
   
-	cat ./fab/man/fab.1  | sed -e 's/---BUILDVERS---/v0.5.2.0/'  | sed -e 's/---BUILDDATE---/2015-03-21/'  | gzip -9c > fab/man/fab.1.gz
+	cat ./fab/man/fab.1  | sed -e 's/---BUILDVERS---/v0.5.3.0/'  | sed -e 's/---BUILDDATE---/2015-09-04/'  | gzip -9c > fab/man/fab.1.gz
 
 
   X=$?
@@ -50,7 +50,7 @@ fml_1_1()
   exec 2>&101
 
   
-	cat ./listwise/listwise/man/listwise.1  | sed -e 's/---BUILDVERS---/v0.5.2.0/'  | sed -e 's/---BUILDDATE---/2015-03-21/'  | gzip -9c > listwise/listwise/man/listwise.1.gz
+	cat ./listwise/listwise/man/listwise.1  | sed -e 's/---BUILDVERS---/v0.5.3.0/'  | sed -e 's/---BUILDDATE---/2015-09-04/'  | gzip -9c > listwise/listwise/man/listwise.1.gz
 
 
   X=$?
