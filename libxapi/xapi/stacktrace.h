@@ -176,14 +176,6 @@ printf("NOFATAL\n");                      \
 ** called elsewhere in the stack
 */
 
-/// fatal
-//
-// SUMMARY
-//  invoke an UNWIND-ing function and fail the current frame if that function fails
-//
-// REMARKS
-//  fatal can appear in a finally block ; while unwinding, the fatal is a no-op
-//
 #if XAPI_RUNTIME_CHECKS
 #define xapi_invoke(func, ...)                                                                              \
   ({                                                                                                        \
@@ -203,6 +195,22 @@ printf("NOFATAL\n");                      \
   ({ func(__VA_ARGS__); })
 #endif
 
+/// invoke
+//
+// SUMMARY
+//  used in conjunction with xapi_callstack_unwindto to invoke an xapi-enabled function
+//  and, when it returns an error, conditionally propagate or discard that error
+//
+#define invoke(func, ...) xapi_invoke(func, ##__VA_ARGS__)
+
+/// fatal
+//
+// SUMMARY
+//  invoke an UNWIND-ing function and fail the current frame if that function fails
+//
+// REMARKS
+//  fatal can appear in a finally block ; while unwinding, the fatal is a no-op
+//
 #undef fatal
 #define fatal(func, ...)                    \
   do {                                      \
@@ -211,17 +219,6 @@ printf("NOFATAL\n");                      \
       fail(0);                              \
     }                                       \
   } while(0)
-
-/// invoke
-//
-// SUMMARY
-//  used in conjunction with xapi_callstack_unwindto to invoke an xapi-enabled function
-//  and, when it returns an error, conditionally propagate or discard that error
-//
-// PARAMETERS
-//  pframe - (returns) the current frame index
-//
-#define invoke(func, ...) xapi_invoke(func, ##__VA_ARGS__)
 
 /// fatalize
 //

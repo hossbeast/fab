@@ -22,7 +22,7 @@
 /*
 
 SUMMARY
- call fail in a finally block during unwinding
+ use invoke/unwind to capture, inspect, and discard an error
 
 */
 
@@ -49,14 +49,24 @@ int alpha()
 {
   enter;
 
+#if XAPI_MODE_STACKTRACE
+  char space[4096];
+  size_t z;
+#endif
+
   int exit;
   if((exit = invoke(beta)))
   {
     assert_exit(perrtab_SYS, SYS_ERESTART);
 
-//    xapi_backtrace();
+#if XAPI_MODE_STACKTRACE
+    z = xapi_trace_full(space, sizeof(space));
+    write(1, space, z);
+    write(1, "\n", 1);
 
+    // disard
     xapi_calltree_unwind();
+#endif
   }
 
   fatal(delta);
@@ -68,15 +78,19 @@ int alpha()
 
 int main()
 {
-  int exit = alpha();
+  int x;
+  for(x = 0; x < 3; x++)
+  {
+    int exit = alpha();
 
-  assert_exit(perrtab_SYS, SYS_ENOMEM);
+    assert_exit(perrtab_SYS, SYS_ENOMEM);
 
-  // dead area should have been skipped
-  assert(alpha_dead_count == 0
-    , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
-    , alpha_dead_count
-  );
+    // dead area should have been skipped
+    assert(alpha_dead_count == 0
+      , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
+      , alpha_dead_count
+    );
+  }
 
   // victory
   succeed;

@@ -21,7 +21,7 @@
 /*
 
 SUMMARY
- call fail in a finally block during unwinding
+ use invoke/unwind to capture, inspect, and propagate an error
 
 */
 
@@ -38,29 +38,34 @@ int alpha()
 {
   enter;
 
-	fatal(beta);
+#if XAPI_MODE_STACKTRACE
+  char space[4096];
+  size_t z;
+#endif
+
+  int exit;
+  if((exit = invoke(beta)))
+  {
+    assert_exit(perrtab_SYS, SYS_ERESTART);
+
+#if XAPI_MODE_STACKTRACE
+    z = xapi_trace_full(space, sizeof(space));
+    write(1, space, z);
+    write(1, "\n", 1);
+#endif
+
+    // propagate
+    fail(exit);
+  }
 
 	finally : coda;
 }
 
 int main()
 {
-/*
-	int expected = 3;
-	int x;
-	for(x = 0; x < expected; x++)
-	{
-		if(invoke(alpha))
-		{
-			assert_exit(perrtab_XAPI, SYS_ERESTART);
+  int exit = alpha();
 
-			xapi_backtrace();
+  assert_exit(perrtab_SYS, SYS_ERESTART);
 
-			xapi_callstack_unwind();
-		}
-	}
-*/
-
-  // victory
   succeed;
 }

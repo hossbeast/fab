@@ -20,7 +20,7 @@
 /*
 
 SUMMARY
- fail, unwind, ensure the error code and table are propagated correctly
+ test calling a top-level xapi function directly and capturing its exit status
 
 */
 
@@ -57,8 +57,7 @@ int main()
   int exit = foo();
 
   // assertions
-  assert_etab(perrtab_SYS);
-  assert_code(SYS_ERESTART);
+  assert_exit(perrtab_SYS, SYS_ERESTART);
 
   // victory
   succeed;

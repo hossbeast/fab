@@ -59,7 +59,7 @@ int main()
   for(x = 0; x < expected; x++)
   {
     int exit = foo();
-    assert_code(0);
+    assert_exit(0, 0);
   }
 
   assert(beta_count == expected

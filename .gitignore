@@ -12,3 +12,5 @@ exports
 *.debug
 *.devel
 *.1.gz
+*.errorcode
+*.stacktrace

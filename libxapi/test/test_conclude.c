@@ -20,7 +20,7 @@
 /*
 
 SUMMARY
- simple test in which no error is thrown
+  exercise the conclude macro
 
 */
 
@@ -55,7 +55,6 @@ int main()
 {
   int exit = foo();
   assert_code(0);
-  assert(exit == 0, "expected result : %d, actual result : %d", exit, 0);
 
   succeed;
 }

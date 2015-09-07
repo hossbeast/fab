@@ -60,8 +60,7 @@ int main()
   for(x = 0; x < expected; x++)
   {
     int exit = foo();
-    assert_etab(perrtab_SYS);
-    assert_code(SYS_ERESTART);
+    assert_exit(perrtab_SYS, SYS_ERESTART);
   }
 
   assert(beta_count == expected

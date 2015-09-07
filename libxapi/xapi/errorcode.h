@@ -45,7 +45,7 @@
 
 #define tfail(perrtab, code)                        \
   do {                                              \
-    __xapi_r = code & 0xFFFF;                       \
+    __xapi_r = (code) & 0xFFFF;                     \
     if(perrtab)                                     \
       __xapi_r |= (((etable *)perrtab)->id << 16);  \
     goto XAPI_FINALIZE;                             \
@@ -64,17 +64,27 @@
 ** called elsewhere in the stack
 */
 
+#define xapi_invoke(func, ...)  \
+  ({ func(__VA_ARGS__); })
+
+/// invoke
+//
+// SUMMARY
+//  invoke an xapi-enabled function and return its exit status
+//
+#define invoke(func, ...) xapi_invoke(func, ##__VA_ARGS__)
+
 /// fatal
 //
 // SUMMARY
 //  invoke another function and fail the current frame if that function fails
 //
-#define fatal(func, ...)                      \
-  do {                                        \
-    if((__xapi_r = func(__VA_ARGS__)) != 0)   \
-    {                                         \
-      goto XAPI_FINALIZE;                     \
-    }                                         \
+#define fatal(func, ...)                              \
+  do {                                                \
+    if((__xapi_r = invoke(func, ##__VA_ARGS__)) != 0) \
+    {                                                 \
+      goto XAPI_FINALIZE;                             \
+    }                                                 \
   } while(0)
 
 /// fatalize

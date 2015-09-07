@@ -20,7 +20,7 @@
 /*
 
 SUMMARY
- call fail in a finally block during unwinding
+ fatal call a function while unwinding that also fails
 
 */
 
@@ -66,8 +66,7 @@ int main()
 {
   // alpha should fail
   int exit = alpha();
-  assert_etab(perrtab_SYS);
-  assert_code(SYS_ERESTART);
+  assert_exit(perrtab_SYS, SYS_ERESTART);
 
   // alpha dead area should have been skipped
   assert(alpha_dead_count == 0
