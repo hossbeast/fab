@@ -116,11 +116,9 @@
 // 1-liner
 //
 #define xproxy(func, ...)       \
+  enter;                        \
   fatal(func, ##__VA_ARGS__);   \
   finally : coda
-
-#define prologue                \
-  __label__ XAPI_FINALLY;
 
 /// invoke
 //

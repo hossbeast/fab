@@ -25,7 +25,7 @@ SUMMARY
 */
 
 int delta_count;
-int delta()
+xapi delta()
 {
   enter;
 
@@ -36,7 +36,7 @@ int delta()
 }
 
 int beta_count;
-int beta()
+xapi beta()
 {
   enter;
 
@@ -47,7 +47,7 @@ int beta()
 }
 
 int alpha_dead_count;
-int alpha()
+xapi alpha()
 {
   enter;
 

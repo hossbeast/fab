@@ -24,14 +24,14 @@ SUMMARY
 
 */
 
-int beta()
+xapi beta()
 {
   enter;
 
   finally : coda;
 }
 
-int alpha()
+xapi alpha()
 {
   enter;
 
@@ -40,7 +40,7 @@ int alpha()
   finally : coda;
 }
 
-int foo()
+xapi foo()
 {
   enter;
 

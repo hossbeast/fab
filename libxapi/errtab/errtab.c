@@ -61,7 +61,7 @@ void errtab_teardown()
 // api
 //
 
-API int xapi_errtab_register(etable * const etab)
+API xapi xapi_errtab_register(etable * const etab)
 {
   enter;
 

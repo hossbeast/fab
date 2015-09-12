@@ -32,9 +32,12 @@ of the following macros:
 XAPI_MODE_STACKTRACE
 XAPI_MODE_ERRORCODE
 
-STACKTRACE mode implies a runtime link against libxapi.so, ERRCODE mode does not
+STACKTRACE implies a runtime link against libxapi.so, ERRCODE does not
 
 */
+
+// return type for xapi functions
+typedef uint32_t xapi;
 
 // error table struct
 typedef struct etable

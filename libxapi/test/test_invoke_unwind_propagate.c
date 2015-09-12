@@ -25,7 +25,7 @@ SUMMARY
 
 */
 
-int beta()
+xapi beta()
 {
   enter;
 
@@ -34,7 +34,7 @@ int beta()
   finally : coda;
 }
 
-int alpha()
+xapi alpha()
 {
   enter;
 

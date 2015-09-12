@@ -25,7 +25,7 @@ SUMMARY
 */
 
 int beta_count;
-int beta()
+xapi beta()
 {
   enter;
 
@@ -34,7 +34,7 @@ int beta()
   finally : coda;
 }
 
-int alpha()
+xapi alpha()
 {
   enter;
 
@@ -43,7 +43,7 @@ int alpha()
   finally : coda;
 }
 
-int foo()
+xapi foo()
 {
   enter;
 

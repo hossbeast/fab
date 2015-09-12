@@ -42,7 +42,7 @@ const struct etable * xapi_errtab_byid(const int id);
 // NOTES
 //  not threadsafe
 //
-int xapi_errtab_register(struct etable * const restrict etab)
+xapi xapi_errtab_register(struct etable * const restrict etab)
   __attribute__((nonnull));
 
 /// xapi_errtab_tag

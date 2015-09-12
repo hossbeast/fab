@@ -95,6 +95,11 @@ when calling non-xapi code, you have a couple of options.
 // SUMMARY
 //  must be the first line of any xapi function
 //
+// DETAILS
+//  __xapi_f1       - tracking whether the finalize label has been hit
+//  __xapi_s        - used by frame_set to restore the stack pointer
+//  __xapi_sentinel - used by xapi_frame_leave to cleanup when the top-level function exits
+//
 #if XAPI_RUNTIME_CHECKS
 #define enter                             \
 printf("enter %d\n", __LINE__);       \
@@ -266,37 +271,9 @@ printf("NOFATAL\n");                      \
 // enables writing 1-liner wrappers around UNWIND-ing functions
 //
 #define xproxy(func, ...)       \
+  enter;                        \
   fatal(func, ##__VA_ARGS__);   \
   finally : coda
-
-/// prologue
-//
-// to be called at the beginning of an UNWIND-ing function which was not itself called with fatal
-//  examples : xqsort_r, xnftw
-//
-#if XAPI_RUNTIME_CHECKS
-#define prologue                                      \
-  __label__ XAPI_FINALLY;                             \
-  __label__ XAPI_FINALIZE;                            \
-  __label__ XAPI_LEAVE;                               \
-  do {                                                \
-    if(xapi_frame_enter(__builtin_frame_address(1)))  \
-    {                                                 \
-      tfail(perrtab_XAPI, 0);                         \
-    }                                                 \
-  } while(0)
-#else
-#define prologue                \
-  __label__ XAPI_FINALLY;       \
-  __label__ XAPI_FINALIZE;      \
-  __label__ XAPI_LEAVE;         \
-  do {                          \
-    if(xapi_frame_enter())      \
-    {                           \
-      fail(0);                  \
-    }                           \
-  } while(0)
-#endif
 
 /// finally
 //

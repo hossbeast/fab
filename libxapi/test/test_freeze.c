@@ -27,7 +27,7 @@ SUMMARY
 
 */
 
-int beta(int num)
+xapi beta(int num)
 {
   enter;
 
@@ -36,7 +36,7 @@ int beta(int num)
   finally : coda;
 }
 
-int alpha(int num)
+xapi alpha(int num)
 {
   enter;
 
@@ -48,7 +48,7 @@ int alpha(int num)
 char space[4096 << 2];
 char space2[4096];
 
-int foo()
+xapi foo()
 {
   enter;
 

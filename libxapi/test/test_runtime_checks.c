@@ -25,14 +25,14 @@ SUMMARY
 
 */
 
-int gamma_xapi()
+xapi gamma_xapi()
 {
   enter;
 
   finally : coda;
 }
 
-int beta_xapi()
+xapi beta_xapi()
 {
   enter;
 
@@ -46,7 +46,7 @@ int alpha_notxapi()
   return 1;
 }
 
-int foo_illfatal()
+xapi foo_illfatal()
 {
   enter;
 
@@ -55,7 +55,7 @@ int foo_illfatal()
   finally : coda;
 }
 
-int foo_nofatal()
+xapi foo_nofatal()
 {
   enter;
 

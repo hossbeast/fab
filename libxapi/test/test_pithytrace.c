@@ -26,7 +26,7 @@ SUMMARY
 */
 
 int delta_count;
-int delta(int num)
+xapi delta(int num)
 {
   enter;
 
@@ -40,7 +40,7 @@ coda;
 
 int beta_count;
 int beta_dead_count;
-int beta()
+xapi beta()
 {
   enter;
 
@@ -56,7 +56,7 @@ finally:
 coda;
 }
 
-int alpha()
+xapi alpha()
 {
   enter;
 

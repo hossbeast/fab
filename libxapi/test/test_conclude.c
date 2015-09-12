@@ -24,14 +24,14 @@ SUMMARY
 
 */
 
-int beta()
+xapi beta()
 {
   enter;
 
   finally : coda;
 }
 
-int alpha()
+xapi alpha()
 {
   enter;
 
