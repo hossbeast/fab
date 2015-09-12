@@ -91,7 +91,7 @@ $errtabpaths = [
 	> echo " , .min = ERRMIN_${pfx}"
 	> echo " , .max = ERRMAX_${pfx}"
 	> echo " , .v =  (typeof(((etable*)0)->v[0])[]) {"
-	> echo "#define _E(a, b, c) [ a + (ERRMIN_${pfx} * -1) ] = { .name = #b, .desc = c },"
+	> echo "#define _E(a, b, c) [ a + (ERRMIN_${pfx} * -1) ] = { .name = #b, .desc = c, .str = #b \" : \" c },"
 	> echo "ETABLE_${pfx}"
 	> echo "#undef _E"
 	> echo "}};"
