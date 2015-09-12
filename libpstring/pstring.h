@@ -21,6 +21,8 @@
 #include <stdarg.h>
 #include <sys/types.h>
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// pstring
@@ -44,7 +46,7 @@ typedef struct pstring
 // PARAMETERS
 //  p - pstring
 //
-int psgrow(pstring ** restrict p, size_t l)
+xapi psgrow(pstring ** restrict p, size_t l)
 	__attribute__((nonnull));
 
 /// psclear
@@ -55,7 +57,7 @@ int psgrow(pstring ** restrict p, size_t l)
 // PARAMETERS
 //  p - pstring
 //
-int psclear(pstring ** restrict p)
+xapi psclear(pstring ** restrict p)
 	__attribute__((nonnull));
 
 /// psfree
@@ -100,19 +102,19 @@ void pswfree(pstring **)
 //  psloadc : load a byte
 //
 
-int psvloadf(pstring ** restrict p, const char * const restrict fmt, va_list va)
+xapi psvloadf(pstring ** restrict p, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-int psloadf(pstring ** restrict p, const char * const restrict fmt, ...)
+xapi psloadf(pstring ** restrict p, const char * const restrict fmt, ...)
 	__attribute__((nonnull(1, 2)));
 
-int psloads(pstring ** restrict p, char * const restrict s)
+xapi psloads(pstring ** restrict p, char * const restrict s)
 	__attribute__((nonnull));
 
-int psloadw(pstring ** restrict p, char * const restrict s, size_t l)
+xapi psloadw(pstring ** restrict p, char * const restrict s, size_t l)
 	__attribute__((nonnull));
 
-int psloadc(pstring ** restrict p, int c)
+xapi psloadc(pstring ** restrict p, int c)
 	__attribute__((nonnull));
 
 /// pscat
@@ -120,19 +122,19 @@ int psloadc(pstring ** restrict p, int c)
 // SUMMARY
 //  see psload, except pscat appends instead of overwriting
 //
-int psvcatf(pstring ** restrict p, const char * const restrict fmt, va_list va)
+xapi psvcatf(pstring ** restrict p, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-int pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
+xapi pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
 	__attribute__((nonnull(1, 2)));
 
-int pscats(pstring ** restrict p, char * const restrict s)
+xapi pscats(pstring ** restrict p, char * const restrict s)
 	__attribute__((nonnull));
 
-int pscatw(pstring ** restrict p, char * const restrict s, size_t l)
+xapi pscatw(pstring ** restrict p, char * const restrict s, size_t l)
 	__attribute__((nonnull));
 
-int pscatc(pstring ** restrict p, int c)
+xapi pscatc(pstring ** restrict p, int c)
 	__attribute__((nonnull));
 
 /// psmkw
@@ -143,19 +145,19 @@ int pscatc(pstring ** restrict p, int c)
 // PARAMETERS
 //  [e] - existing instance
 //
-int psvmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, va_list va)
+xapi psvmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull(2,3)));
 
-int psmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, ...)
+xapi psmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, ...)
 	__attribute__((nonnull(2,3)));
 
-int psmks(pstring * restrict e, char * const restrict s, pstring ** restrict p)
+xapi psmks(pstring * restrict e, char * const restrict s, pstring ** restrict p)
 	__attribute__((nonnull(2,3)));
 
-int psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring ** restrict p)
+xapi psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring ** restrict p)
 	__attribute__((nonnull(2,4)));
 
-int psmkc(pstring * restrict e, int c, pstring ** restrict p)
+xapi psmkc(pstring * restrict e, int c, pstring ** restrict p)
 	__attribute__((nonnull(3)));
 
 #undef restrict

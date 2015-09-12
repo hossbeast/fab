@@ -31,8 +31,10 @@
 // api
 //
 
-int API psgrow(pstring ** p, size_t l)
+API xapi psgrow(pstring ** p, size_t l)
 {
+  enter;
+
 	if(!*p || l >= (*p)->a)
 	{
 		size_t oec = 0;
@@ -54,8 +56,10 @@ int API psgrow(pstring ** p, size_t l)
 	finally : coda;
 }
 
-int API psclear(pstring ** restrict p)
+API xapi psclear(pstring ** restrict p)
 {
+  enter;
+
 	fatal(psgrow, p, 64);
 
 	(*p)->l = 0;
@@ -63,12 +67,12 @@ int API psclear(pstring ** restrict p)
 	finally : coda;
 }
 
-void API psfree(pstring * p)
+API void psfree(pstring * p)
 {
 	free(p);
 }
 
-void API pswfree(pstring ** p)
+API void pswfree(pstring ** p)
 {
 	psfree(*p);
 	*p = 0;
@@ -76,8 +80,10 @@ void API pswfree(pstring ** p)
 
 // load
 
-int API psvloadf(pstring ** restrict p, const char * const restrict fmt, va_list va)
+API xapi psvloadf(pstring ** restrict p, const char * const restrict fmt, va_list va)
 {
+  enter;
+
 	fatal(psgrow, p, 64);
 
 	va_list va2;
@@ -96,8 +102,10 @@ int API psvloadf(pstring ** restrict p, const char * const restrict fmt, va_list
 	finally : coda;
 }
 
-int API psloadf(pstring ** restrict p, const char * const restrict fmt, ...)
+API xapi psloadf(pstring ** restrict p, const char * const restrict fmt, ...)
 {
+  enter;
+
 	va_list va;
 	va_start(va, fmt);
 	fatal(psvloadf, p, fmt, va);
@@ -106,13 +114,15 @@ int API psloadf(pstring ** restrict p, const char * const restrict fmt, ...)
 	finally : coda;
 }
 
-int API psloads(pstring ** restrict p, char * const restrict s)
+API xapi psloads(pstring ** restrict p, char * const restrict s)
 {
 	xproxy(psloadw, p, s, strlen(s));
 }
 
-int API psloadw(pstring ** restrict p, char * const restrict s, size_t l)
+API xapi psloadw(pstring ** restrict p, char * const restrict s, size_t l)
 {
+  enter;
+
 	fatal(psgrow, p, 64);
 	fatal(psgrow, p, l);
 	memcpy((*p)->s, s, l);
@@ -122,8 +132,10 @@ int API psloadw(pstring ** restrict p, char * const restrict s, size_t l)
 	finally : coda;
 }
 
-int API psloadc(pstring ** restrict p, int c)
+API xapi psloadc(pstring ** restrict p, int c)
 {
+  enter;
+
 	fatal(psgrow, p, 64);
 	(*p)->s[0] = c;
 	(*p)->s[1] = 0;
@@ -134,8 +146,10 @@ int API psloadc(pstring ** restrict p, int c)
 
 // cat
 
-int API psvcatf(pstring ** restrict p, const char * const restrict fmt, va_list va)
+API xapi psvcatf(pstring ** restrict p, const char * const restrict fmt, va_list va)
 {
+  enter;
+
 	fatal(psgrow, p, 64);
 
 	va_list va2;
@@ -153,8 +167,10 @@ int API psvcatf(pstring ** restrict p, const char * const restrict fmt, va_list 
 	finally : coda;
 }
 
-int API pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
+API xapi pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
 {
+  enter;
+
 	va_list va;
 	va_start(va, fmt);
 	fatal(psvcatf, p, fmt, va);
@@ -163,13 +179,15 @@ int API pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
 	finally : coda;
 }
 
-int API pscats(pstring ** restrict p, char * const restrict s)
+API xapi pscats(pstring ** restrict p, char * const restrict s)
 {
 	xproxy(pscatw, p, s, strlen(s));
 }
 
-int API pscatw(pstring ** restrict p, char * const restrict s, size_t l)
+API xapi pscatw(pstring ** restrict p, char * const restrict s, size_t l)
 {
+  enter;
+
 	fatal(psgrow, p, 64);
 	fatal(psgrow, p, (*p)->l + l + 1);
 	memcpy((*p)->s + (*p)->l, s, l);
@@ -179,8 +197,10 @@ int API pscatw(pstring ** restrict p, char * const restrict s, size_t l)
 	finally : coda;
 }
 
-int API pscatc(pstring ** restrict p, int c)
+API xapi pscatc(pstring ** restrict p, int c)
 {
+  enter;
+
 	fatal(psgrow, p, 64);
 	fatal(psgrow, p, (*p)->l + 1 + 1);
 	(*p)->s[(*p)->l] = c;
@@ -192,8 +212,10 @@ int API pscatc(pstring ** restrict p, int c)
 
 // mk
 
-int API psvmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, va_list va)
+API xapi psvmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, va_list va)
 {
+  enter;
+
 	pstring * lp;
 	if(!p)
 		p = &lp;
@@ -204,8 +226,10 @@ int API psvmkf(pstring * restrict e, pstring ** restrict p, const char * const r
 	finally : coda;
 }
 
-int API psmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, ...)
+API xapi psmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, ...)
 {
+  enter;
+
 	va_list va;
 	va_start(va, fmt);
 	fatal(psvmkf, e, p, fmt, va);
@@ -214,13 +238,15 @@ int API psmkf(pstring * restrict e, pstring ** restrict p, const char * const re
 	finally : coda;
 }
 
-int API psmks(pstring * restrict e, char * const restrict s, pstring ** restrict p)
+API xapi psmks(pstring * restrict e, char * const restrict s, pstring ** restrict p)
 {
 	xproxy(psmkw, e, s, strlen(s), p);
 }
 
-int API psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring ** restrict p)
+API xapi psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring ** restrict p)
 {
+  enter;
+
 	pstring * lp;
 	if(!p)
 		p = &lp;
@@ -231,8 +257,10 @@ int API psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring *
 	finally : coda;
 }
 
-int API psmkc(pstring * restrict e, int c, pstring ** restrict p)
+API xapi psmkc(pstring * restrict e, int c, pstring ** restrict p)
 {
+  enter;
+
 	pstring * lp;
 	if(!p)
 		p = &lp;
