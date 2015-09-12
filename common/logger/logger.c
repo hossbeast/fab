@@ -413,8 +413,10 @@ static int parsetest(char * expr, int exprl, struct filter * f)
 	return 0;
 }
 
-static int logparse(TRACEARGS char * expr, int exprl, int prepend, uint64_t bits)
+static xapi logparse(TRACEARGS char * expr, int exprl, int prepend, uint64_t bits)
 {
+  enter;
+
 	char space[512];
 
 	struct filter f;
@@ -463,13 +465,15 @@ static int logparse(TRACEARGS char * expr, int exprl, int prepend, uint64_t bits
 	finally : coda;
 }
 
-static int logconfig(TRACEARGS uint64_t prefix
+static xapi logconfig(TRACEARGS uint64_t prefix
 #if DEBUG || DEVEL
 	, uint64_t trace
 #endif
 	, uint64_t bits
 )
 {
+  enter;
+
 #if DEBUG || DEVEL
 	o_trace_bits = trace;
 #endif
@@ -489,32 +493,38 @@ static int logconfig(TRACEARGS uint64_t prefix
 // [[ public ]]
 //
 
-int log_parse(char * expr, int expr_len, int prepend)
+xapi log_parse(char * expr, int expr_len, int prepend)
 {
 	xproxy(logparse, NOTRACE expr, expr_len, prepend, 0);
 }
 
-int log_log_parse_and_describe(TRACEARGS char * expr, int expr_len, int prepend, uint64_t bits)
+xapi log_log_parse_and_describe(TRACEARGS char * expr, int expr_len, int prepend, uint64_t bits)
 {
 	xproxy(logparse, TRACEPASS expr, expr_len, prepend, bits);
 }
 
-int log_parse_pop()
+xapi log_parse_pop()
 {
+  enter;
+
 	o_filter_l--;
 
 	finally : coda;
 }
 
-int log_parse_clear()
+xapi log_parse_clear()
 {
+  enter;
+
 	o_filter_l = 0;
 
 	finally : coda;
 }
 
-int log_init(const unsigned long * restrict auxvec)
+xapi log_init(const unsigned long * restrict auxvec)
 {
+  enter;
+
 	int	fd = -1;
 	int	argsa = 0;	// g_argvs allocated size
 	int	argva = 0;
@@ -738,22 +748,22 @@ coda;
 }
 
 #if DEBUG || DEVEL
-int log_config(uint64_t prefix, uint64_t trace)
+xapi log_config(uint64_t prefix, uint64_t trace)
 {
 	xproxy(logconfig, NOTRACE prefix, trace, 0);
 }
 
-int log_log_config_and_describe(TRACEARGS uint64_t prefix, uint64_t trace, uint64_t bits)
+xapi log_log_config_and_describe(TRACEARGS uint64_t prefix, uint64_t trace, uint64_t bits)
 {
 	xproxy(logconfig, TRACEPASS prefix, trace, bits);
 }
 #else
-int log_config(uint64_t prefix)
+xapi log_config(uint64_t prefix)
 {
 	xproxy(logconfig, NOTRACE prefix, 0);
 }
 
-int log_log_config_and_describe(TRACEARGS uint64_t prefix, uint64_t bits)
+xapi log_log_config_and_describe(TRACEARGS uint64_t prefix, uint64_t bits)
 {
 	xproxy(logconfig, TRACEPASS prefix, bits);
 }

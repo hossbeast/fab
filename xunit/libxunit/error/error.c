@@ -35,7 +35,6 @@ void __attribute__((constructor)) init()
 	tab[2]->id = 3;
 }
 
-typedef char * charstar;
 API const char * xunit_errname(const int code)
 {
 	int16_t rt = code >> 16;			// table index

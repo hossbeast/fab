@@ -19,7 +19,7 @@
 #include <dlfcn.h>
 
 #include "xapi.h"
-#include "xapi/callstack.h"
+#include "xapi/calltree.h"
 
 #include "xlinux.h"
 #include "xunit.h"
@@ -30,6 +30,8 @@
 
 int main(int g_argc, char** g_argv)
 {
+  enter;
+
   char space[4096];
   size_t tracesz = 0;
 
@@ -140,8 +142,7 @@ extern int listwise_allocation_seed;
         // convenience
         (*test)->unit = xunit;
 
-        int frame;
-        if(invoke(&frame, (*test)->entry, (*test)))
+        if(invoke((*test)->entry, (*test)))
         {
           // propagate non-unit-testing errors
           if(XAPI_ERRTAB != perrtab_XUNIT || XAPI_ERRCODE != XUNIT_FAIL)
@@ -152,7 +153,7 @@ extern int listwise_allocation_seed;
           logf(L_XUNIT | L_RED, " %.*s", (int)z, space);
 
           // discard the error frame(s)
-          xapi_callstack_unwindto(frame);
+          xapi_calltree_unwind();
           
           fail++;
         }

@@ -98,8 +98,10 @@ printf(
 	exit(!valid);
 }
 
-static int addtest(char * test, int * test_objectsa)
+static xapi addtest(char * test, int * test_objectsa)
 {
+  enter;
+
 	if(g_args.test_objectsl == *test_objectsa)
 	{
 		int ns = *test_objectsa ?: 10;
@@ -114,8 +116,10 @@ static int addtest(char * test, int * test_objectsa)
 	finally : coda;
 }
 
-int args_parse()
+xapi args_parse()
 {
+  enter;
+
 	int help = 0;
 	int version = 0;
 	int	logcats = 0;
@@ -200,8 +204,10 @@ int args_parse()
 	finally : coda;
 }
 
-int args_summarize()
+xapi args_summarize()
 {
+  enter;
+
 	char space[512];
 	int x;
 

@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 // C
@@ -73,7 +75,7 @@ extern int			g_logvsl;				// length of g_logvs
 // PARAMETERS
 //  [auxv] - pointer to the start of the auxiliary vector
 //
-int log_init(const unsigned long * restrict auxv);
+xapi log_init(const unsigned long * restrict auxv);
 
 /// log_config
 // 
@@ -86,14 +88,14 @@ int log_init(const unsigned long * restrict auxv);
 //  [bits]   - bits to use when logging the description
 //
 #if DEBUG || DEVEL
-int log_config(uint64_t prefix, uint64_t trace);
-int log_log_config_and_describe(const char * const restrict func, const char * const restrict file, int line, uint64_t prefix, uint64_t trace, uint64_t bits)
+xapi log_config(uint64_t prefix, uint64_t trace);
+xapi log_log_config_and_describe(const char * const restrict func, const char * const restrict file, int line, uint64_t prefix, uint64_t trace, uint64_t bits)
 	__attribute__((nonnull(1, 2)));
 
 #define log_config_and_describe(...) log_log_config_and_describe(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 #else
-int log_config(uint64_t prefix);
-int log_log_config_and_describe(uint64_t prefix, uint64_t bits);
+xapi log_config(uint64_t prefix);
+xapi log_log_config_and_describe(uint64_t prefix, uint64_t bits);
 
 #define log_config_and_describe(...) log_log_config_and_describe(__VA_ARGS__)
 #endif
@@ -112,16 +114,16 @@ int log_log_config_and_describe(uint64_t prefix, uint64_t bits);
 //  [before]   - prepend to the list of filters (append otherwise)
 //  [bits]     - bits to use when logging the description
 //
-int log_parse(char * expr, int expr_len, int prepend)
+xapi log_parse(char * expr, int expr_len, int prepend)
 	__attribute__((nonnull(1)));
 
 #if DEBUG || DEVEL
-int log_log_parse_and_describe(const char * const restrict func, const char * const restrict file, int line, char * expr, int expr_len, int prepend, uint64_t bits)
+xapi log_log_parse_and_describe(const char * const restrict func, const char * const restrict file, int line, char * expr, int expr_len, int prepend, uint64_t bits)
 	__attribute__((nonnull(1, 2, 4)));
 
 #define log_parse_and_describe(...) log_log_parse_and_describe(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 #else
-int log_log_parse_and_describe(char * expr, int expr_len, int prepend, uint64_t bits)
+xapi log_log_parse_and_describe(char * expr, int expr_len, int prepend, uint64_t bits)
 	__attribute__((nonnull(1)));
 
 #define log_parse_and_describe(...) log_log_parse_and_describe(__VA_ARGS__)
@@ -132,14 +134,14 @@ int log_log_parse_and_describe(char * expr, int expr_len, int prepend, uint64_t 
 // SUMMARY
 //  remove the most recently parsed logexpr
 //
-int log_parse_pop();
+xapi log_parse_pop();
 
 /// (XAPI) log_parse_clear
 //
 // SUMMARY
 //  remove all logexprs
 //
-int log_parse_clear();
+xapi log_parse_clear();
 
 /// log_would
 //

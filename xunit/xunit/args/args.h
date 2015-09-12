@@ -19,6 +19,8 @@
 #ifndef _ARGS_H
 #define _ARGS_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 #if DEBUG || DEVEL
@@ -57,8 +59,8 @@ struct g_args_t
 	int			concurrency;			// concurrently limiting factor
 } g_args;
 
-int args_parse();
-int args_summarize();
+xapi args_parse();
+xapi args_summarize();
 void args_teardown();
 
 #endif
