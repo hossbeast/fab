@@ -40,7 +40,7 @@ typedef struct narrate_test
 // static
 //
 
-static int call_vsayf(struct pstring ** restrict ps, const char * const restrict fmt, ...)
+static xapi call_vsayf(struct pstring ** restrict ps, const char * const restrict fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -57,8 +57,10 @@ coda;
 //
 
 // simple test designed to exercise dynamic writer functionality
-static int test_small_entry(const narrate_test * test)
+static xapi test_small_entry(const narrate_test * test)
 {
+  enter;
+
 	pstring * ps = 0;
 
 	// test input 
@@ -84,8 +86,10 @@ coda;
 }
 
 // exercise dynamic writer functionality across reallocations
-static int test_large_entry(const narrate_test * test)
+static xapi test_large_entry(const narrate_test * test)
 {
+  enter;
+
 	pstring * ps = 0;
 
 	// test input part

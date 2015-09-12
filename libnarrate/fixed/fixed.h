@@ -18,6 +18,8 @@
 #ifndef _NARRATE_FIXED_H
 #define _NARRATE_FIXED_H
 
+#include "xapi.h"
+
 #define fvsayf(fmt, lst) narrate_fvsayf(_narrator, fmt, lst)
 #define fsayf(fmt, ...)  narrate_fsayf (_narrator, fmt, ##__VA_ARGS__) 
 #define fsays(s)         narrate_fsayw (_narrator, s)

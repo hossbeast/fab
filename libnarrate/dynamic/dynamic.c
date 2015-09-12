@@ -29,12 +29,12 @@
 // public
 //
 
-int dynamic_vsayf(pstring ** ps, const char * const restrict fmt, va_list va)
+xapi dynamic_vsayf(pstring ** ps, const char * const restrict fmt, va_list va)
 {
 	xproxy(psvcatf, ps, fmt, va);
 }
 
-int dynamic_sayw(pstring ** ps, char * const restrict b, size_t l)
+xapi dynamic_sayw(pstring ** ps, char * const restrict b, size_t l)
 {
 	xproxy(pscatw, ps, b, l);
 }

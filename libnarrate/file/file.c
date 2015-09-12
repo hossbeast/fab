@@ -28,12 +28,12 @@
 // public
 //
 
-int file_vsayf(int fd, const char * const restrict fmt, va_list va)
+xapi file_vsayf(int fd, const char * const restrict fmt, va_list va)
 {
-	xproxy(xvdprintf, fd, fmt, va);
+ 	xproxy(xvdprintf, fd, fmt, va);
 }
 
-int file_sayw(int fd, char * const restrict b, size_t l)
+xapi file_sayw(int fd, char * const restrict b, size_t l)
 {
 	xproxy(axwrite, fd, b, l);
 }

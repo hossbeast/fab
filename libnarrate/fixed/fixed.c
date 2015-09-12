@@ -31,15 +31,19 @@
 // public
 //
 
-int fixed_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, va_list va)
+xapi fixed_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, va_list va)
 {
+  enter;
+
   *szo += znvloadf(dst + *szo, sz - *szo, fmt, va);
 
   finally : coda;
 }
 
-int fixed_sayw(char * const restrict dst, size_t sz, size_t * const restrict szo, char * const restrict b, size_t l)
+xapi fixed_sayw(char * const restrict dst, size_t sz, size_t * const restrict szo, char * const restrict b, size_t l)
 {
+  enter;
+
   *szo += znloadw(dst + *szo, sz - *szo, b, l);
 
   finally : coda;

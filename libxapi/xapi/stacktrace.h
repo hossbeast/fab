@@ -104,7 +104,7 @@ when calling non-xapi code, you have a couple of options.
 #define enter                             \
 printf("enter %d\n", __LINE__);       \
   int __xapi_f1 = 0;                      \
-  void * __xapi_s = 0;                    \
+  void * __attribute__((unused)) __xapi_s = 0;                    \
   int __xapi_sentinel = !xapi_sentinel;   \
   xapi_sentinel = 1;                      \
   xapi_record_frame(xapi_calling_frame_address);  \
@@ -116,7 +116,7 @@ printf("NOFATAL\n");                      \
 #else
 #define enter                             \
   int __xapi_f1 = 0;                      \
-  void * __xapi_s = 0;                    \
+  void * __attribute__((unused)) __xapi_s = 0;                    \
   int __xapi_sentinel = !xapi_sentinel;   \
   xapi_sentinel = 1
 #endif
@@ -296,14 +296,10 @@ XAPI_FINALLY
 // SUMMARY
 //  return from the current function
 //
-#define coda                            \
-  goto XAPI_LEAVE;                      \
-XAPI_LEAVE:                             \
-do {                                    \
-  int rr = xapi_frame_leave(__xapi_sentinel);          \
-/*printf("leave %d\n", __LINE__);*/ \
-  return rr;                            \
-} while(0)
+#define coda                              \
+  goto XAPI_LEAVE;                        \
+XAPI_LEAVE:                               \
+return xapi_frame_leave(__xapi_sentinel)
 
 /// conclude
 //

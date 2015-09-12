@@ -38,8 +38,10 @@ typedef struct narrate_test
 // static
 //
 
-static int call_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, ...)
+static xapi call_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, ...)
 {
+  enter;
+
   va_list va;
   va_start(va, fmt);
 
@@ -55,8 +57,10 @@ coda;
 //
 
 // does not fill the entire buffer
-static int entry_small(const narrate_test * test)
+static xapi entry_small(const narrate_test * test)
 {
+  enter;
+
   char buf[16];
   size_t sz = sizeof(buf);
   size_t szo = 0;
@@ -82,8 +86,10 @@ static int entry_small(const narrate_test * test)
 }
 
 // fills the buffer exactly
-static int entry_boundary(const narrate_test * test)
+static xapi entry_boundary(const narrate_test * test)
 {
+  enter;
+
   char buf[6];
   size_t sz = sizeof(buf);
   size_t szo = 0;
@@ -109,8 +115,10 @@ static int entry_boundary(const narrate_test * test)
 }
 
 // overflows the specified buffer
-static int entry_overflow(const narrate_test * test)
+static xapi entry_overflow(const narrate_test * test)
 {
+  enter;
+
   char buf[128];
   size_t sz = sizeof(buf);
   size_t szo = 0;

@@ -32,8 +32,10 @@
 // public
 //
 
-int API narrate_sayf(narrator * n, const char * const restrict fmt, ...)
+API xapi narrate_sayf(narrator * n, const char * const restrict fmt, ...)
 {
+  enter;
+
 	va_list va;
 	va_start(va, fmt);
 
@@ -44,15 +46,17 @@ finally:
 coda;
 }
 
-int narrate_sayc(narrator * const restrict n, int c)
+xapi narrate_sayc(narrator * const restrict n, int c)
 {
 	xproxy(narrate_sayw, n, (char*)&c, 1);
 }
 
 // route to appropriate implementation
 
-int narrate_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+xapi narrate_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
 {
+  enter;
+
 	if(n->ps)
 		fatal(dynamic_vsayf, &n->ps, fmt, va);
 	else if(n->bb)
@@ -63,8 +67,10 @@ int narrate_vsayf(narrator * const restrict n, const char * const restrict fmt, 
 	finally : coda;
 }
 
-int API narrate_sayw(narrator * const restrict n, char * const restrict b, size_t l)
+API xapi narrate_sayw(narrator * const restrict n, char * const restrict b, size_t l)
 {
+  enter;
+
 	if(n->ps)
 		fatal(dynamic_sayw, &n->ps, b, l);
 	else if(n->bb)

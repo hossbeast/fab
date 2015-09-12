@@ -20,6 +20,8 @@
 
 #include <stdarg.h>
 
+#include "xapi.h"
+
 struct pstring;				// pstring.h
 
 #define restrict __restrict
@@ -33,10 +35,10 @@ struct pstring;				// pstring.h
 //  ps - pointer to pstr instance to write to
 //
 
-int dynamic_vsayf(struct pstring ** restrict ps, const char * const restrict fmt, va_list va)
+xapi dynamic_vsayf(struct pstring ** restrict ps, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-int dynamic_sayw(struct pstring ** restrict ps, char * const restrict b, size_t l)
+xapi dynamic_sayw(struct pstring ** restrict ps, char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
 #undef restrict

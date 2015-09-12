@@ -18,6 +18,8 @@
 #ifndef _NARRATE_FIXED_INTERNAL_H
 #define _NARRATE_FIXED_INTERNAL_H
 
+#include "xapi.h"
+
 /// fixed
 //
 // SUMMARY
@@ -31,10 +33,10 @@
 
 #define restrict __restrict
 
-int fixed_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, va_list va)
+xapi fixed_vsayf(char * const restrict dst, size_t sz, size_t * const restrict szo, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-int fixed_sayw(char * const restrict dst, size_t sz, size_t * const restrict szo, char * const restrict b, size_t l)
+xapi fixed_sayw(char * const restrict dst, size_t sz, size_t * const restrict szo, char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
 #undef restrict

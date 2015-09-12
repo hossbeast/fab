@@ -4,15 +4,19 @@
 #include "narrate.h"
 #include "narrate/fixed.h"
 
-int foo()
+xapi foo()
 {
+  enter;
+
   tfail(perrtab_SYS, ENXIO);
 
   finally : coda;
 }
 
-int main()
+xapi main()
 {
+  enter;
+
   char space[64] = { [0] = 0 };
   fatal(foo);
 
