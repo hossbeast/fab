@@ -18,6 +18,8 @@
 #ifndef _XSTRING_H
 #define _XSTRING_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// xstrncat
@@ -26,7 +28,7 @@
 //
 // returns nonzero on malloc failure
 //
-int ixstrncat(char** s1, const char* s2, int s2len);
+xapi ixstrncat(char** s1, const char* s2, int s2len);
 
 /// xstrcat
 //
@@ -34,7 +36,7 @@ int ixstrncat(char** s1, const char* s2, int s2len);
 //
 // returns nonzero on malloc failure
 //
-int ixstrcat(char** s1, const char* s2);
+xapi ixstrcat(char** s1, const char* s2);
 
 /// xstrcatf
 //
@@ -42,7 +44,7 @@ int ixstrcat(char** s1, const char* s2);
 //
 // returns nonzero on malloc failure
 //
-int ixstrcatf(char** s, char* fmt, ...);
+xapi ixstrcatf(char** s, char* fmt, ...);
 
 /// xstrdup
 //
@@ -50,7 +52,7 @@ int ixstrcatf(char** s, char* fmt, ...);
 //
 // returns nonzero on malloc failure
 //
-int ixstrdup(char** s1, const char* s2);
+xapi ixstrdup(char** s1, const char* s2);
 
 /// xstrndup
 //
@@ -58,7 +60,7 @@ int ixstrdup(char** s1, const char* s2);
 //
 // returns nonzero on malloc failure
 //
-int ixstrndup(char** s1, const char* s2, const size_t l);
+xapi ixstrndup(char** s1, const char* s2, const size_t l);
 
 /// ixsprintf
 //
@@ -66,7 +68,7 @@ int ixstrndup(char** s1, const char* s2, const size_t l);
 // - allocate(*s)
 // - sprintf(fmt, ...) -> *s
 //
-int ixsprintf(char** s, char* fmt, ...);
+xapi ixsprintf(char** s, char* fmt, ...);
 
 #undef restrict
 #endif

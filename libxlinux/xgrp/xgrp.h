@@ -21,6 +21,8 @@
 #include <sys/types.h>
 #include <grp.h>
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// uxgetgrgid_r
@@ -28,14 +30,14 @@
 // SUMMARY
 //  proxy for getgrgid_r that only fails when errno != { ENOENT, ESRCH, EBAD, EPERM }
 //
-int uxgetgrgid_r(gid_t uid, struct group * grp, char * buf, size_t buflen, struct group ** result);
+xapi uxgetgrgid_r(gid_t uid, struct group * grp, char * buf, size_t buflen, struct group ** result);
 
 /// xgetgrgid
 //
 // SUMMARY
 //  proxy for getgrgid
 //
-int xgetgrgid(gid_t gid, struct group ** const restrict grp)
+xapi xgetgrgid(gid_t gid, struct group ** const restrict grp)
 	__attribute__((nonnull));
 
 #undef restrict

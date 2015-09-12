@@ -20,12 +20,14 @@
 
 #include <sys/uio.h>
 
+#include "xapi.h"
+
 /// xreadv
 //
 // SUMMARY
 //  xapi proxy for readv
 //
-int xreadv(int fd, const struct iovec * iov, int iovcnt)
+xapi xreadv(int fd, const struct iovec * iov, int iovcnt)
 	__attribute__((nonnull(2)));
 
 /// axreadv
@@ -33,7 +35,7 @@ int xreadv(int fd, const struct iovec * iov, int iovcnt)
 // SUMMARY
 //  xapi proxy for readv that also fails when count != actual
 //
-int axreadv(int fd, const struct iovec * iov, int iovcnt)
+xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
 	__attribute__((nonnull(2)));
 
 /// xwritev
@@ -41,7 +43,7 @@ int axreadv(int fd, const struct iovec * iov, int iovcnt)
 // SUMMARY
 //  xapi proxy for writev
 //
-int xwritev(int fd, const struct iovec * iov, int iovcnt)
+xapi xwritev(int fd, const struct iovec * iov, int iovcnt)
 	__attribute__((nonnull(2)));
 
 /// axwritev
@@ -49,7 +51,7 @@ int xwritev(int fd, const struct iovec * iov, int iovcnt)
 // SUMMARY
 //  xapi proxy for writev that also fails when actual != count
 //
-int axwritev(int fd, const struct iovec * iov, int iovcnt)
+xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
 	__attribute__((nonnull(2)));
 
 #endif

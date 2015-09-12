@@ -20,19 +20,21 @@
 
 #include <time.h>
 
+#include "xapi.h"
+
 /// xlocaltime_r
 //
 // SUMMARY
 //  proxy for localtime_r
 //
-int xlocaltime_r(const time_t * timep, struct tm * result);
+xapi xlocaltime_r(const time_t * timep, struct tm * result);
 
 /// clock_gettime
 //
 // SUMMARY
 //  xapi proxy for clock_gettime
 //
-int xclock_gettime(clockid_t clk_id, struct timespec * tp)
+xapi xclock_gettime(clockid_t clk_id, struct timespec * tp)
 	__attribute__((nonnull));
 
 #endif

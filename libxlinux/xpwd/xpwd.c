@@ -21,8 +21,10 @@
 
 #include "xpwd.h"
 
-int API uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
+API xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
 {
+  enter;
+
 	if(getpwuid_r(uid, pwd, buf, buflen, result) == 0)
 	{
 		// possibly found, check *result
@@ -41,8 +43,10 @@ finally :
 coda;
 }
 
-int API xgetpwuid(uid_t uid, struct passwd ** const pwd)
+API xapi xgetpwuid(uid_t uid, struct passwd ** const pwd)
 {
+  enter;
+
 	errno = 0;
 	if(((*pwd) = getpwuid(uid)) == 0)
 		fail(errno);

@@ -22,8 +22,10 @@
 
 #include "xstdlib.h"
 
-int API xmalloc(void* target, size_t size)
+API xapi xmalloc(void* target, size_t size)
 {
+  enter;
+
 	if(policy)
 	{
 		fatal(policy->malloc, policy, target, size);
@@ -38,8 +40,10 @@ finally :
 coda;
 }
 
-int API xrealloc(void* target, size_t es, size_t ec, size_t oec)
+API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
+  enter;
+
 	if(policy)
 	{
 		fatal(policy->realloc, policy, target, es, ec, oec);
@@ -97,13 +101,15 @@ void API xfree(void* target)
 	}
 }
 
-int API xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const void *, const void *, void *, int * r), void * arg)
+API xapi xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const void *, const void *, void *, int * r), void * arg)
 {
+  enter;
+
 	int hasfailed = 0;
 
 	int compar(const void * A, const void * B, void * T)
 	{
-		prologue;
+		enter;
 
 		int r = 0;
 		if(!hasfailed)
@@ -129,8 +135,10 @@ int API xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const vo
 	finally : coda;
 }
 
-int API xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
+API xapi xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
 {
+  enter;
+
 	ssize_t lr;
 	if(!r)
 		r = &lr;

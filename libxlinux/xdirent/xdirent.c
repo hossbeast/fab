@@ -17,8 +17,10 @@
 
 #include "internal.h"
 
-int API xopendir(const char * name, DIR ** dd)
+API xapi xopendir(const char * name, DIR ** dd)
 {
+  enter;
+
 	if(((*dd) = opendir(name)) == 0)
 		fail(errno);
 
@@ -27,8 +29,10 @@ finally:
 coda;
 }
 
-int API uxopendir(const char * name, DIR ** dd)
+API xapi uxopendir(const char * name, DIR ** dd)
 {
+  enter;
+
 	if(((*dd) = opendir(name)) == 0 && errno != ENOENT)
 		fail(errno);
 
@@ -37,8 +41,10 @@ finally:
 coda;
 }
 
-int API xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
+API xapi xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
 {
+  enter;
+
 	int r;
 	if((r = readdir_r(dirp, entry, result)))
 		fail(r);

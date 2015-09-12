@@ -20,16 +20,20 @@
 #include "internal.h"
 #include "xtime.h"
 
-int API xlocaltime_r(const time_t * timep, struct tm * result)
+API xapi xlocaltime_r(const time_t * timep, struct tm * result)
 {
+  enter;
+
 	if(localtime_r(timep, result) == 0)
 		fail(errno);
 
 	finally : coda;
 }
 
-int API xclock_gettime(clockid_t clk_id, struct timespec * tp)
+API xapi xclock_gettime(clockid_t clk_id, struct timespec * tp)
 {
+  enter;
+
 	fatalize(errno, clock_gettime, clk_id, tp);
 
 	finally : coda;

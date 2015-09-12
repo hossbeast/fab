@@ -22,32 +22,34 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "xapi.h"
+
 /// xopen
 //
 // SUMMARY
 //  proxy for open
 //
-int xopen(const char * path, int flags, int * const fd);
+xapi xopen(const char * path, int flags, int * const fd);
 
 /// uxopen
 //
 // SUMMARY
 //  proxy for open that only fails when errno != ENOENT
 //
-int uxopen(const char * path, int flags, int * const fd);
+xapi uxopen(const char * path, int flags, int * const fd);
 
 /// xopen_mode
 //
 // SUMMARY
 //  proxy for open
 //
-int xopen_mode(const char * path, int flags, mode_t mode, int * const fd);
+xapi xopen_mode(const char * path, int flags, mode_t mode, int * const fd);
 
 /// xopen_mode
 //
 // SUMMARY
 //  proxy for open that only fails when errno != ENOENT
 //
-int uxopen_mode(const char * path, int flags, mode_t mode, int * const fd);
+xapi uxopen_mode(const char * path, int flags, mode_t mode, int * const fd);
 
 #endif

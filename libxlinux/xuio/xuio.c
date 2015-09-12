@@ -19,13 +19,15 @@
 
 #include "internal.h"
 
-xapi API xreadv(int fd, const struct iovec * iov, int iovcnt)
+API xapi xreadv(int fd, const struct iovec * iov, int iovcnt)
 {
 	xproxy(readv, fd, iov, iovcnt);
 }
 
-xapi API axreadv(int fd, const struct iovec * iov, int iovcnt)
+API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
 {
+  enter;
+
 	ssize_t expected = 0;
 	ssize_t actual;
 	if((actual = readv(fd, iov, iovcnt)) == -1)
@@ -47,13 +49,15 @@ finally:
 coda;
 }
 
-xapi API xwritev(int fd, const struct iovec * iov, int iovcnt)
+API xapi xwritev(int fd, const struct iovec * iov, int iovcnt)
 {
 	xproxy(writev, fd, iov, iovcnt);
 }
 
-xapi API axwritev(int fd, const struct iovec * iov, int iovcnt)
+API xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
 {
+  enter;
+
 	ssize_t expected = 0;
 	ssize_t actual;
 	if((actual = writev(fd, iov, iovcnt)) == -1)

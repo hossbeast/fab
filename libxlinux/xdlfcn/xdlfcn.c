@@ -26,8 +26,10 @@
 #undef perrtab
 #define perrtab perrtab_XLINUX
 
-int API xdlopen(const char * filename, int flag, void ** dl)
+API xapi xdlopen(const char * filename, int flag, void ** dl)
 {
+  enter;
+
   dlerror();
   if(((*dl) = dlopen(filename, flag)) == 0)
     fails(XLINUX_DLERROR, dlerror());
@@ -37,8 +39,10 @@ finally :
 coda;
 }
 
-int API ixdlclose(void ** dl)
+API xapi ixdlclose(void ** dl)
 {
+  enter;
+
 	if(*dl)
 	{
 		dlerror();
@@ -52,8 +56,10 @@ int API ixdlclose(void ** dl)
   finally : coda;
 }
 
-int API xdlsym(void * dl, const char * sym, void ** psym)
+API xapi xdlsym(void * dl, const char * sym, void ** psym)
 {
+  enter;
+
   dlerror();
   (*psym) = dlsym(dl, sym);
   char * e = dlerror();
@@ -65,8 +71,10 @@ finally :
 coda;
 }
 
-int API uxdlsym(void * dl, const char * sym, void ** psym)
+API xapi uxdlsym(void * dl, const char * sym, void ** psym)
 {
+  enter;
+
   dlerror();
   (*psym) = dlsym(dl, sym);
   char * e = dlerror();

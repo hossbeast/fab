@@ -22,8 +22,10 @@
 
 #include "internal.h"
 
-int API ixstrncat(char** s1, const char* s2, int s2len)
+API xapi ixstrncat(char** s1, const char* s2, int s2len)
 {
+  enter;
+
 	char * o = *s1;
 	int s1len = 0;
 	if(*s1)
@@ -39,8 +41,10 @@ int API ixstrncat(char** s1, const char* s2, int s2len)
 	finally : coda;
 }
 
-int API ixstrcat(char** s1, const char* s2)
+API xapi ixstrcat(char** s1, const char* s2)
 {
+  enter;
+
 	char* o = *s1;
 	int s1len = 0;
 	if(o)
@@ -59,8 +63,10 @@ int API ixstrcat(char** s1, const char* s2)
 	finally : coda;
 }
 
-int API ixstrcatf(char** s, char* fmt, ...)
+API xapi ixstrcatf(char** s, char* fmt, ...)
 {
+  enter;
+
 	va_list va;
 
 	va_start(va, fmt);
@@ -83,13 +89,15 @@ int API ixstrcatf(char** s, char* fmt, ...)
 	finally : coda;
 }
 
-int API ixstrdup(char** s1, const char* s2)
+API xapi ixstrdup(char** s1, const char* s2)
 {
 	xproxy(ixstrndup, s1, s2, strlen(s2));
 }
 
-int API ixstrndup(char** s1, const char* s2, const size_t l)
+API xapi ixstrndup(char** s1, const char* s2, const size_t l)
 {
+  enter;
+
 	int s1len = 0 ;
 	int s2len = l ?: strlen(s2);
 	if(*s1)
@@ -110,8 +118,10 @@ int API ixstrndup(char** s1, const char* s2, const size_t l)
 	finally : coda;
 }
 
-int API ixsprintf(char** s, char* fmt, ...)
+API xapi ixsprintf(char** s, char* fmt, ...)
 {
+  enter;
+
 	va_list va;
 	va_start(va, fmt);
 	int req = vsnprintf(0, 0, fmt, va);

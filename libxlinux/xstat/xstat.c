@@ -24,8 +24,10 @@
 
 #define restrict __restrict
 
-int API xstat(const char * path, struct stat * buf)
+API xapi xstat(const char * path, struct stat * buf)
 {
+  enter;
+
 #if 0
 	if((r && ((*r) = stat(path, buf)) != 0) || (!r && stat(path, buf) != 0))
 		fail(errno);
@@ -38,8 +40,10 @@ finally:
 coda;
 }
 
-int API uxstat(const char * path, struct stat * buf, int * r)
+API xapi uxstat(const char * path, struct stat * buf, int * r)
 {
+  enter;
+
 	if((r && ((*r) = stat(path, buf)) != 0) || (!r && stat(path, buf) != 0))
 	{
 		if(errno != ENOENT && errno != ENOTDIR)
@@ -53,8 +57,10 @@ finally:
 coda;
 }
 
-int API xlstat(const char * path, struct stat * buf, int * r)
+API xapi xlstat(const char * path, struct stat * buf, int * r)
 {
+  enter;
+
 	if((r && ((*r) = lstat(path, buf)) != 0) || (!r && lstat(path, buf) != 0))
 		fail(errno);
 	
@@ -63,8 +69,10 @@ finally:
 coda;
 }
 
-int API uxlstat(const char * path, struct stat * buf, int * r)
+API xapi uxlstat(const char * path, struct stat * buf, int * r)
 {
+  enter;
+
 	if((r && ((*r) = lstat(path, buf)) != 0) || (!r && lstat(path, buf) != 0))
 	{
 		if(errno != ENOENT)
@@ -78,16 +86,20 @@ finally:
 coda;
 }
 
-int API xfstat(int fd, struct stat * buf)
+API xapi xfstat(int fd, struct stat * buf)
 {
+  enter;
+
 	if(fstat(fd, buf) != 0)
 		fail(errno);
 	
 	finally : coda;
 }
 
-int API uxfstat(int fd, struct stat * buf)
+API xapi uxfstat(int fd, struct stat * buf)
 {
+  enter;
+
 	if(fstat(fd, buf) != 0)
 	{
 		if(errno != ENOENT)
@@ -101,22 +113,28 @@ finally:
 coda;
 }
 
-int API xfutimens(int fd, const struct timespec times[2])
+API xapi xfutimens(int fd, const struct timespec times[2])
 {
+  enter;
+
 	fatalize(errno, futimens, fd, times);
 
 	finally : coda;
 }
 
-int API xutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags)
+API xapi xutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags)
 {
+  enter;
+
 	fatalize(errno, utimensat, dirfd, pathname, times, flags);
 
 	finally : coda;
 }
 
-int API uxutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags, int * restrict r)
+API xapi uxutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags, int * restrict r)
 {
+  enter;
+
 	if((r && ((*r) = utimensat(dirfd, pathname, times, flags)) != 0) || (!r && utimensat(dirfd, pathname, times, flags) != 0))
 	{
 		if(errno != ENOENT)
@@ -128,8 +146,10 @@ finally:
 coda;
 }
 
-int API xmkdir(const char * pathname, mode_t mode)
+API xapi xmkdir(const char * pathname, mode_t mode)
 {
+  enter;
+
 	fatalize(errno, mkdir, pathname, mode);
 
 finally:
@@ -137,8 +157,10 @@ finally:
 coda;
 }
 
-int API uxmkdir(const char * pathname, mode_t mode)
+API xapi uxmkdir(const char * pathname, mode_t mode)
 {
+  enter;
+
 	if(mkdir(pathname, mode) != 0 && errno != EEXIST)
 		fail(errno);
 
@@ -147,8 +169,10 @@ finally:
 coda;
 }
 
-int API xfchmod(int fd, mode_t mode)
+API xapi xfchmod(int fd, mode_t mode)
 {
+  enter;
+
 	fatalize(errno, fchmod, fd, mode);
 
 finally:

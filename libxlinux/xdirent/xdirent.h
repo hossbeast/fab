@@ -22,25 +22,27 @@
 #include <dirent.h>
 #include <errno.h>
 
+#include "xapi.h"
+
 /// xopendir
 //
 // SUMMARY
 //  proxy for opendir
 //
-int xopendir(const char * name, DIR ** dd);
+xapi xopendir(const char * name, DIR ** dd);
 
 /// uxopendir
 //
 // SUMMARY
 //  proxy for opendir that fails only when errno != ENOENT
 //
-int uxopendir(const char * name, DIR ** dd);
+xapi uxopendir(const char * name, DIR ** dd);
 
 /// xreaddir_r
 //
 // SUMMARY
 //  proxy for readdir_r
 //
-int xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result);
+xapi xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result);
 
 #endif

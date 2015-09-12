@@ -30,8 +30,10 @@ __thread size_t policiesa;
 
 #define restrict __restrict
 
-API int mempolicy_push(mempolicy * plc, int * const restrict mpc)
+API xapi mempolicy_push(mempolicy * plc, int * const restrict mpc)
 {
+  enter;
+
   if(plc)
   {
     if(policiesl == policiesa)

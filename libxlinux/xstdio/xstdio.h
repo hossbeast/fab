@@ -20,6 +20,8 @@
 
 #include <stdarg.h>
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// xvdprintf
@@ -30,7 +32,7 @@
 // PARAMETERS
 // 	as for vdprintf
 //
-int xvdprintf(int fd, const char * const restrict fmt, va_list va)
+xapi xvdprintf(int fd, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull(2)));
 
 #undef restrict 

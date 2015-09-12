@@ -23,8 +23,10 @@
 
 #include <stdio.h>
 
-int API xread(int fd, void * buf, size_t count, ssize_t * bytes)
+API xapi xread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
+  enter;
+
 	if(bytes && ((*bytes) = read(fd, buf, count)) == -1)
 		fail(errno);
 
@@ -34,8 +36,10 @@ int API xread(int fd, void * buf, size_t count, ssize_t * bytes)
 	finally : coda;
 }
 
-int API uxread(int fd, void * buf, size_t count, ssize_t * bytes)
+API xapi uxread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
+  enter;
+
 	if(bytes && ((*bytes) = read(fd, buf, count)) == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
 	{
 		fail(errno);
@@ -49,8 +53,10 @@ int API uxread(int fd, void * buf, size_t count, ssize_t * bytes)
 	finally : coda;
 }
 
-int API axread(int fd, void * buf, size_t count)
+API xapi axread(int fd, void * buf, size_t count)
 {
+  enter;
+
 	size_t actual = 0;
 	while(count - actual)
 	{
@@ -73,8 +79,10 @@ finally:
 coda;
 }
 
-int API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
+API xapi xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 {
+  enter;
+
 	if(bytes && (*bytes = write(fd, buf, count)) == -1)
 		fail(errno);
 
@@ -84,8 +92,10 @@ int API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 	finally : coda;
 }
 
-int API axwrite(int fd, const void * buf, size_t count)
+API xapi axwrite(int fd, const void * buf, size_t count)
 {
+  enter;
+
 	size_t actual = 0;
 	while(count - actual)
 	{
@@ -108,8 +118,10 @@ finally:
 coda;
 }
 
-int API xgetcwd(char * buf, size_t size, char ** res)
+API xapi xgetcwd(char * buf, size_t size, char ** res)
 {
+  enter;
+
 	if(res && (((*res) = getcwd(buf, size)) == 0))
 		fail(errno);
 
@@ -119,8 +131,10 @@ int API xgetcwd(char * buf, size_t size, char ** res)
 	finally : coda;
 }
 
-int API xlseek(int fd, off_t offset, int whence, off_t * res)
+API xapi xlseek(int fd, off_t offset, int whence, off_t * res)
 {
+  enter;
+
 	if(res && ((*res) = lseek(fd, offset, whence)) == (off_t)-1)
 		fail(errno);
 
@@ -130,8 +144,10 @@ int API xlseek(int fd, off_t offset, int whence, off_t * res)
 	finally : coda;
 }
 
-int API xclose(int fd)
+API xapi xclose(int fd)
 {
+  enter;
+
 	fatalize(errno, close, fd);
 
 finally:
@@ -139,8 +155,10 @@ finally:
 coda;
 }
 
-int API ixclose(int * fd)
+API xapi ixclose(int * fd)
 {
+  enter;
+
 	if(*fd != -1)
 	{
 		fatalize(errno, close, *fd);
@@ -152,8 +170,10 @@ finally:
 coda;
 }
 
-int API xsymlink(const char * target, const char * linkpath)
+API xapi xsymlink(const char * target, const char * linkpath)
 {
+  enter;
+
 	fatalize(errno, symlink, target, linkpath);
 
 finally:
@@ -161,16 +181,20 @@ finally:
 coda;
 }
 
-int API uxsymlink(const char * target, const char * linkpath)
+API xapi uxsymlink(const char * target, const char * linkpath)
 {
+  enter;
+
 	if(symlink(target, linkpath) != 0 && errno != EEXIST)
 		fail(errno);
 
 	finally : coda;
 }
 
-int API xunlink(const char * pathname, int * r)
+API xapi xunlink(const char * pathname, int * r)
 {
+  enter;
+
 	if(r && ((*r) = unlink(pathname)) != 0)
 		fail(errno);
 
@@ -182,8 +206,10 @@ finally:
 coda;
 }
 
-int API uxunlink(const char * pathname, int * r)
+API xapi uxunlink(const char * pathname, int * r)
 {
+  enter;
+
 	if(r && ((*r) = unlink(pathname)) != 0 && errno != ENOENT)
 		fail(errno);
 
@@ -195,8 +221,10 @@ finally:
 coda;
 }
 
-int API xfork(pid_t * r)
+API xapi xfork(pid_t * r)
 {
+  enter;
+
 	if(r && (((*r) = fork()) == -1))
 		fail(errno);
 	
@@ -206,52 +234,66 @@ int API xfork(pid_t * r)
 	finally : coda;
 }
 
-int API xdup(int oldfd)
+API xapi xdup(int oldfd)
 {
+  enter;
+
 	if(dup(oldfd) == -1)
 		fail(errno);
 
 	finally : coda;
 }
 
-int API xdup2(int oldfd, int newfd)
+API xapi xdup2(int oldfd, int newfd)
 {
+  enter;
+
 	if(dup2(oldfd, newfd) == -1)
 		fail(errno);
 
 	finally : coda;
 }
 
-int API xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
+API xapi xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
 {
+  enter;
+
 	fatalize(errno, getresuid, ruid, euid, suid);
 
 	finally : coda;
 }
 
-int API xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
+API xapi xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
 {
+  enter;
+
 	fatalize(errno, getresgid, rgid, egid, sgid);
 
 	finally : coda;
 }
 
-int API xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
+API xapi xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
+  enter;
+
 	fatalize(errno, setresuid, ruid, euid, suid);
 
 	finally : coda;
 }
 
-int API xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
+API xapi xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
 {
+  enter;
+
 	fatalize(errno, setresgid, rgid, egid, sgid);
 
 	finally : coda;
 }
 
-int API xeuidaccess(const char * pathname, int mode, int * const r)
+API xapi xeuidaccess(const char * pathname, int mode, int * const r)
 {
+  enter;
+
 	if((r && ((*r) = euidaccess(pathname, mode)) == -1) || (!r && euidaccess(pathname, mode) == -1))
 		fail(errno);
 
@@ -260,8 +302,10 @@ finally:
 coda;
 }	
 
-int API uxeuidaccess(const char * pathname, int mode, int * const r)
+API xapi uxeuidaccess(const char * pathname, int mode, int * const r)
 {
+  enter;
+
 	if(r && ((*r) = euidaccess(pathname, mode)) == -1 && errno != EACCES && errno != ENOENT && errno != ENOTDIR)
 		fail(errno);
 		
@@ -273,8 +317,10 @@ finally:
 coda;
 }	
 
-int API xseteuid(uid_t euid)
+API xapi xseteuid(uid_t euid)
 {
+  enter;
+
 	fatalize(errno, seteuid, euid);
 
 finally:
@@ -282,8 +328,10 @@ finally:
 coda;
 }
 
-int API xsetegid(gid_t egid)
+API xapi xsetegid(gid_t egid)
 {
+  enter;
+
 	fatalize(errno, setegid, egid);
 
 finally:
@@ -291,8 +339,10 @@ finally:
 coda;
 }
 
-int API xtruncate(const char * path, off_t length)
+API xapi xtruncate(const char * path, off_t length)
 {
+  enter;
+
 	fatalize(errno, truncate, path, length);
 
 finally :
@@ -300,15 +350,19 @@ finally :
 coda;
 }
 
-int API xftruncate(int fd, off_t length)
+API xapi xftruncate(int fd, off_t length)
 {
+  enter;
+
 	fatalize(errno, ftruncate, fd, length);
 
 	finally : coda;
 }
 
-int API xrmdir(const char * pathname)
+API xapi xrmdir(const char * pathname)
 {
+  enter;
+
 	fatalize(errno, rmdir, pathname);
 
 finally:
@@ -316,15 +370,19 @@ finally:
 coda;
 }
 
-int API xsetpgid(pid_t pid, pid_t pgid)
+API xapi xsetpgid(pid_t pid, pid_t pgid)
 {
+  enter;
+
 	fatalize(errno, setpgid, pid, pgid);
 
 	finally : coda;
 }
 
-int API xexecv(const char * path, char * const argv[])
+API xapi xexecv(const char * path, char * const argv[])
 {
+  enter;
+
 	fatalize(errno, execv, path, argv);
 
 finally:
@@ -332,8 +390,10 @@ finally:
 coda;
 }
 
-int API xchdir(const char * path)
+API xapi xchdir(const char * path)
 {
+  enter;
+
 	fatalize(errno, chdir, path);
 
 finally:
@@ -341,8 +401,10 @@ finally:
 coda;
 }
 
-int API xfchdir(int fd)
+API xapi xfchdir(int fd)
 {
+  enter;
+
 	fatalize(errno, fchdir, fd);
 
 finally:

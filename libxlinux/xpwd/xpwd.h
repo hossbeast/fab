@@ -21,6 +21,8 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// uxgetpwuid_r
@@ -28,14 +30,14 @@
 // SUMMARY
 //  proxy for getpwuid_r that only fails when errno != { ENOENT, ESRCH, EBAD, EPERM }
 //
-int uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result);
+xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result);
 
 /// xgetpwuid
 //
 // SUMMARY
 //  proxy for getpwuid
 //
-int xgetpwuid(uid_t uid, struct passwd ** const restrict pwd)
+xapi xgetpwuid(uid_t uid, struct passwd ** const restrict pwd)
 	__attribute__((nonnull));
 
 #undef restrict

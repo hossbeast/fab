@@ -21,8 +21,10 @@
 
 #include "xfcntl.h"
 
-int API xopen(const char * path, int flags, int * const fd)
+API xapi xopen(const char * path, int flags, int * const fd)
 {
+  enter;
+
 	if(fd && (*fd = open(path, flags)) == -1)
 		fail(errno);
 
@@ -34,8 +36,10 @@ finally:
 coda;
 }
 
-int API uxopen(const char * path, int flags, int * const fd)
+API xapi uxopen(const char * path, int flags, int * const fd)
 {
+  enter;
+
 	if((*fd = open(path, flags)) == -1)
 	{
 		if(errno != ENOENT)
@@ -49,8 +53,10 @@ finally:
 coda;
 }
 
-int API xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
+API xapi xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 {
+  enter;
+
 	if(fd && (*fd = open(path, flags, mode)) == -1)
 		fail(errno);
 
@@ -62,8 +68,10 @@ finally:
 coda;
 }
 
-int API uxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
+API xapi uxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 {
+  enter;
+
 	if((*fd = open(path, flags, mode)) == -1)
 	{
 		if(errno != ENOENT)

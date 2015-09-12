@@ -18,6 +18,8 @@
 #ifndef _XLINUX_XPRCTL_H
 #define _XLINUX_XPRCTL_H
 
+#include "xapi.h"
+
 /// xprctl
 //
 // SUMMARY
@@ -25,6 +27,6 @@
 //
 // PARAMETERS
 //
-int xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5);
+xapi xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5);
 
 #endif

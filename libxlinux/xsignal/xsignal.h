@@ -21,6 +21,8 @@
 #include <sys/types.h>
 #include <signal.h>
 
+#include "xapi.h"
+
 /// xkill
 //
 // SUMMARY
@@ -30,7 +32,7 @@
 //  pid - pid
 //  sig - signal
 //
-int xkill(pid_t pid, int sig);
+xapi xkill(pid_t pid, int sig);
 
 /// uxkill
 //
@@ -42,21 +44,21 @@ int xkill(pid_t pid, int sig);
 //  sig - signal
 //  [r] - (returns) the return value from kill
 //
-int uxkill(pid_t pid, int sig, int * r);
+xapi uxkill(pid_t pid, int sig, int * r);
 
 /// xsignal
 //
 // SUMMARY
 //  xapi proxy for signal
 //
-int xsignal(int signum, sighandler_t handler);
+xapi xsignal(int signum, sighandler_t handler);
 
 /// xsigaction
 //
 // SUMMARY
 //  xapi proxy for sigaction
 //
-int xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
+xapi xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
 	__attribute__((nonnull(2)));
 
 /// xsigprocmask
@@ -64,7 +66,7 @@ int xsigaction(int signum, const struct sigaction * act, struct sigaction * olda
 // SUMMARY
 //  xapi proxy for sigprocmask
 //
-int xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
+xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
 
 /// uxsigsuspend
 //
@@ -72,7 +74,7 @@ int xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
 //  xapi proxy for sigsuspend that only fails when errno != EINTR
 //  (it is kind of the whole point ...)
 //
-int uxsigsuspend(const sigset_t * mask)
+xapi uxsigsuspend(const sigset_t * mask)
 	__attribute__((nonnull));
 
 #endif

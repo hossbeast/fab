@@ -21,8 +21,10 @@
 
 #include "xmman.h"
 
-int API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
+API xapi xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
 {
+  enter;
+
 	if(r && (*r = mmap(addr, length, prot, flags, fd, offset)) == MAP_FAILED)
 		fail(errno);
 
@@ -34,15 +36,19 @@ finally:
 coda;
 }
 
-int API xmunmap(void * addr, size_t length)
+API xapi xmunmap(void * addr, size_t length)
 {
+  enter;
+
 	fatalize(errno, munmap, addr, length);
 
 	finally : coda;
 }
 
-int API ixmunmap(void * addr, size_t length)
+API xapi ixmunmap(void * addr, size_t length)
 {
+  enter;
+
 	if(*(void**)addr)
 		fatalize(errno, munmap, *(void**)addr, length);
 

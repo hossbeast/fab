@@ -18,6 +18,8 @@
 #ifndef _XWAIT_H
 #define _XWAIT_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// xwait
@@ -25,7 +27,7 @@
 // SUMMARY
 //  xapi proxy for wait
 //
-int xwait(int * status)
+xapi xwait(int * status)
 	__attribute__((nonnull));
 
 /// xwaitpid
@@ -33,7 +35,7 @@ int xwait(int * status)
 // SUMMARY
 //  xapi proxy for waitpid
 //
-int xwaitpid(pid_t pid, int * status, int options)
+xapi xwaitpid(pid_t pid, int * status, int options)
 	__attribute__((nonnull(2)));
 
 #undef restrict

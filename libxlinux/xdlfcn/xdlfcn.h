@@ -20,12 +20,14 @@
 
 #include <dlfcn.h>
 
+#include "xapi.h"
+
 /// xdlopen
 //
 // SUMMARY
 //  fatalize-able wrapper for dlopen
 //
-int xdlopen(const char * filename, int flag, void ** dl)
+xapi xdlopen(const char * filename, int flag, void ** dl)
 	__attribute__((nonnull));
 
 /// ixdlclose
@@ -33,7 +35,7 @@ int xdlopen(const char * filename, int flag, void ** dl)
 // SUMMARY
 //  idempotent xapi-proxy for dlclose that sets *dl = 0
 //
-int ixdlclose(void ** dl)
+xapi ixdlclose(void ** dl)
 	__attribute__((nonnull));
 
 /// xdlsym
@@ -41,13 +43,13 @@ int ixdlclose(void ** dl)
 // SUMMARY
 //  fatalize-able wrapper for dlsym
 //
-int xdlsym(void * dl, const char * sym, void ** psym);
+xapi xdlsym(void * dl, const char * sym, void ** psym);
 
 /// uxdlsym
 //
 // SUMMARY
 //  xapi-proxy for dlsym that does not fail when the symbol is not found
 //
-int uxdlsym(void * dl, const char * sym, void ** psym);
+xapi uxdlsym(void * dl, const char * sym, void ** psym);
 
 #endif

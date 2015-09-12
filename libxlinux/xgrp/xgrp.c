@@ -21,8 +21,10 @@
 
 #include "xgrp.h"
 
-int API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
+API xapi uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
 {
+  enter;
+
 	if(getgrgid_r(gid, grp, buf, buflen, result) == 0)
 	{
 		// possibly found, check *result
@@ -41,8 +43,10 @@ finally :
 coda;
 }
 
-int API xgetgrgid(gid_t gid, struct group ** const grp)
+API xapi xgetgrgid(gid_t gid, struct group ** const grp)
 {
+  enter;
+
 	errno = 0;
 	if(((*grp) = getgrgid(gid)) == 0)
 		fail(errno);

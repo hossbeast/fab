@@ -20,6 +20,8 @@
 
 #include <ftw.h>
 
+#include "xapi.h"
+
 /// xftw
 //
 // SUMMARY
@@ -28,7 +30,7 @@
 // CALLBACK
 //  xnftw uses an internal callback which is passed to nftw. That callback fatal-invokes the xnftw callback
 //
-int xnftw(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags);
+xapi xnftw(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags);
 
 /// xnftw_nth
 //
@@ -38,6 +40,6 @@ int xnftw(const char * dirpath, int (*fn)(const char * fpath, const struct stat 
 // CALLBACK
 //  as for xnftw
 //
-int xnftw_nth(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags, int level);
+xapi xnftw_nth(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags, int level);
 
 #endif

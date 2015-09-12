@@ -19,8 +19,10 @@
 
 #include "internal.h"
 
-xapi API xkill(pid_t pid, int sig)
+API xapi xkill(pid_t pid, int sig)
 {
+  enter;
+
 	fatalize(errno, kill, pid, sig);
 
 finally:
@@ -29,8 +31,10 @@ finally:
 coda;
 }
 
-xapi API uxkill(pid_t pid, int sig, int * r)
+API xapi uxkill(pid_t pid, int sig, int * r)
 {
+  enter;
+
 	if(r && ((*r) = kill(pid, sig)) == -1 && errno != ESRCH)
 	{
 		fail(errno);
@@ -43,8 +47,10 @@ xapi API uxkill(pid_t pid, int sig, int * r)
 	finally : coda;
 }
 
-xapi API xsignal(int signum, sighandler_t handler)
+API xapi xsignal(int signum, sighandler_t handler)
 {
+  enter;
+
 	fatalize(errno, signal, signum, handler);
 
 finally:
@@ -52,8 +58,10 @@ finally:
 coda;
 }
 
-xapi API xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
+API xapi xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
 {
+  enter;
+
 	fatalize(errno, sigaction, signum, act, oldact);
 
 finally:
@@ -61,15 +69,19 @@ finally:
 coda;
 }
 
-xapi API xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
+API xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
 {
+  enter;
+
 	fatalize(errno, sigprocmask, how, set, oldset);
 
 	finally : coda;
 }
 
-xapi API uxsigsuspend(const sigset_t * mask)
+API xapi uxsigsuspend(const sigset_t * mask)
 {
+  enter;
+
   if(sigsuspend(mask))
   {
     if(errno == EINTR)

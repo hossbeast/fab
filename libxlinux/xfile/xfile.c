@@ -19,8 +19,10 @@
 
 #include "internal.h"
 
-xapi API xflock(int fd, int operation)
+API xapi xflock(int fd, int operation)
 {
+  enter;
+
 	fatalize(errno, flock, fd, operation);
 
 	finally : coda;

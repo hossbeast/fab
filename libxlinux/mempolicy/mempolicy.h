@@ -20,6 +20,8 @@
 
 #include <sys/types.h>
 
+#include "xapi.h"
+
 typedef struct mempolicy
 {
 	int (*malloc)(struct mempolicy * plc, void * target, size_t size)
@@ -48,7 +50,7 @@ typedef struct mempolicy
 // ERRORS
 //  MPOLICY - operation would exceed policy stack max size
 //
-int mempolicy_push(mempolicy * plc, int * const restrict mpc);
+xapi mempolicy_push(mempolicy * plc, int * const restrict mpc);
 
 /// mempolicy_pop
 //

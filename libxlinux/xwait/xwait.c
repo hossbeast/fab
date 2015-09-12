@@ -19,16 +19,20 @@
 
 #include "internal.h"
 
-int API xwait(int * status)
+API xapi xwait(int * status)
 {
+  enter;
+
 	if(wait(status) == -1)
 		fail(errno);
 
 	finally : coda;
 }
 
-int API xwaitpid(pid_t pid, int * status, int options)
+API xapi xwaitpid(pid_t pid, int * status, int options)
 {
+  enter;
+
 	if(waitpid(pid, status, options) == -1)
 		fail(errno);
 
