@@ -1,35 +1,14 @@
-* v0.5
+* v0.6
+ xapi
+  tune?
+  use libnarrate everywhere
+  use xapi/enter everywhere
+  use libxapi/error everywhere (remove custom error tables)
+  cleanup libxapi commented out code
+  libxapi unit test for prologue
+  libxapi xproxy unit tests
 
 * finished
- standardize dsc_exec vs bp_exec error messages
- sometimes discovery seems to execute twice with the same results
- verify buildscripts
- lstat analysis in canon
- canon/test.c
- update copyright
- standardize signals
- make fab/fabw/fabd use SAY to write to stdout
- make usage report debug/devel only
- fix callstack dump in fabd/main.c so the 0th frame (null) does not show
- deal with identity
- deal with REQUIRE_LISTENER
- verify install
- rename stdo/stde out/err
- correct exit status when bp fails
- +d should show results
- rebuild makescripts (-lrt)
- fab/lw man pages
- final usage in fab, per-section usage in fabd
- review fab cmdline interface, options, logs
- FABIPC after having a failed command
- create symlink to pid bp dir in hashdir
- must stat primary files that do not have discovery
- segfault in hl and t
- ln operator
- lw specify an output file (separate from error output) (logger now writes to stderr)
- lw --o<[A-F]> does not work
- cmd listing should use hashdir not pid dir
- propagate exit status when dependency discovery fails
 
 * docket
  listwise resolve lstack vs lwx
@@ -40,5 +19,8 @@
 
  per-filesystem options (canon, hashblock stat vs content)
  configurable options (fabrc, override cmdline)
+
+ makescripts.sh should not use ./fab/fab.devel, because then you cant make changes that break the current version
+  it should build with either 1) system fab, or 2) a configurable directory
 
 ** profiling
