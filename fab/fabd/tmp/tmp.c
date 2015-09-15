@@ -33,6 +33,8 @@
 #include "macros.h"
 #include "args.h"
 
+#define restrict __restrict
+
 /*
 ** time after which fabd will delete unknown entries in the tmp directory
 ** directories for related processes are (also) deleted on another schedule
@@ -43,7 +45,12 @@
 // public
 //
 
-int tmp_cleanup(pid_t * dels, size_t delsl)
+int tmp_cleanup(
+	  const pid_t * const restrict not_expired
+	, size_t not_expiredl
+	, const pid_t * const restrict consider_expired
+	, size_t consider_expiredl
+)
 {
 	char space[512];
 
@@ -72,29 +79,50 @@ int tmp_cleanup(pid_t * dels, size_t delsl)
 		{
 			int r = 1;
 			int x;
-			for(x = 0; x < delsl; x++)
+
+			for(x = 0; x < not_expiredl; x++)
 			{
-				if(pid == dels[x])
+				if(pid == not_expired[x])
 					break;
 			}
 
-			if(x == delsl)	// not in dels
+			// pid is not expired
+			if(x < not_expiredl)
+				r = 0;
+			else
 			{
-				// check stamp file
-				snprintf(space, sizeof(space), "%s/%s", fpath, "stamp");
-
-				struct stat stb;
-				fatal(uxstat, space, &stb, &r);
-
-				// directory does not contain a stamp file, or the stamp file is older than the expiration policy
-				if(r == 0 && ((now - stb.st_atim.tv_sec) > EXPIRATION_POLICY))
-					r = 1;
-			}
-
-			// directory is for del, does not contain a stamp file, or the stamp file is older than the expiration policy
-			if(r)
-			{
-				fatal(rmdir_recursive, fpath, 1, FAB_BADTMP);
+				for(x = 0; x < consider_expiredl; x++)
+				{
+					if(pid == consider_expired[x])
+						break;
+				}
+				
+				// not in consider_expired
+				if(x == consider_expiredl)
+				{
+					// check stamp file
+					snprintf(space, sizeof(space), "%s/%s", fpath, "stamp");
+					
+					struct stat stb;
+					fatal(uxstat, space, &stb, &r);
+					
+					// directory does not contain a stamp file, or the stamp file is older than the expiration policy
+					if(r)
+						r = 1;
+					
+					// the access time of the stamp file is older than the expiration policy
+					else if((now - stb.st_atim.tv_sec) > EXPIRATION_POLICY)
+						r = 1;
+				}
+				
+				// the process is not executing, and the directory
+				//     is in consider_expired
+				//  or does not contain a stamp file
+				//  or the stamp file is older than the expiration policy
+				if(r)
+				{
+					fatal(rmdir_recursive, fpath, 1, FAB_BADTMP);
+				}
 			}
 		}
 

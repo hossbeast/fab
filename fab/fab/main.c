@@ -423,6 +423,9 @@ int main(int argc, char** argv, char ** envp)
 
 	memblk * mb = 0;
 
+	// whether to update the stamp file for this pid
+	int touch_stamp = 0;
+
 	struct timespec time_start = {};
 	struct timespec time_end = {};
 
@@ -772,16 +775,6 @@ printf("fab[%ld] started\n", (long)getpid());
 		}
 	}
 
-	if(x)
-	{
-		// touch stamp file to refresh the expiration on the bp directory
-		snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
-		fatal(ixclose, &fd);
-		fatal(uxopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
-		if(fd != -1)
-			fatal(xfutimens, fd, 0);
-	}
-
 	// check fabd-exit file
 	snprintf(space + z, sizeof(space) - z, "/fabd/exit");
 	fatal(ixclose, &fd);
@@ -843,6 +836,15 @@ printf("fab[%ld] started\n", (long)getpid());
 	}
 
 finally:
+	if(touch_stamp)
+	{
+		// touch stamp file to refresh the expiration on the bp directory
+		snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
+		fatal(ixclose, &fd);
+		fatal(xopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
+		fatal(xfutimens, fd, 0);
+	}
+
 	fatal(ixclose, &fd);
 	fatal(ixclose, &lockfd);
 	free(buildscript_path);

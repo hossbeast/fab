@@ -98,9 +98,10 @@ static gn ***							queries = 0;
 static int								queriesl = 0;
 
 static pstring * 					ptmp;
-static pid_t							fab_pids[3];
-
 static uint64_t						varshash[2];
+
+// tracks the most recent fab pids
+static pid_t							fab_pids[3];
 
 // signal handling
 static sigset_t none;
@@ -982,12 +983,12 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 			fatal(uxkill, g_params.fab_pid, FABSIG_DONE, 0);
 		}
 
-		// cleanup tmp dir, including specifically the last fab pid we are tracking
-		fatal(tmp_cleanup, &fab_pids[sizeof(fab_pids) / sizeof(fab_pids[0]) - 1], 1);
-
-		// cycle fab pids
+		// cycle fab pid list and unshift this fab pid
 		memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
 		fab_pids[0] = g_params.fab_pid;
+
+		// cleanup tmp dir, specifically excluding the most recent fab pid and including the next most recent
+		fatal(tmp_cleanup, &fab_pids[0], 1, &fab_pids[1], (sizeof(fab_pids) / sizeof(fab_pids[0])) - 1);
 
 		if(nodaemon)
 			break;
@@ -1000,16 +1001,15 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 	// touch stamp file
 	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
 	fatal(ixclose, &fd);
-	fatal(uxopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
-	if(fd != -1)
-	  fatal(xfutimens, fd, 0);
+	fatal(xopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
+  fatal(xfutimens, fd, 0);
 
 	// cycle in my own pid
 	memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
 	fab_pids[0] = g_params.pid;
 
-	// cleanup tmp dir, including specifically all of the fab pids we are tracking and my own pid
-	fatal(tmp_cleanup, fab_pids, sizeof(fab_pids) / sizeof(fab_pids[0]));
+	// cleanup tmp dir, including specifically the N most recent fab pids and my own pid
+	fatal(tmp_cleanup, 0, 0, fab_pids, sizeof(fab_pids) / sizeof(fab_pids[0]));
 
 finally:
 	ff_freeparser(ffp);

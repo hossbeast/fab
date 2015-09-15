@@ -18,14 +18,25 @@
 #ifndef _TMP_H
 #define _TMP_H
 
+#define restrict __restrict
+
 /// tmp_cleanup
 //
 // SUMMARY
-//  delete directory entries in the tmp dir that have expired
+//  delete directories in the tmp dir that have expired
 //
 // PARAMETERS
-//  pid - delete directory for this pid even if it has not yet expired
+//  not_expired       - consider directories for these pids to be not expired
+//  not_expiredl      - length of not_expired
+//  consider_expired  - consider directories for these pids to be expired
+//  consider_expiredl - length of consider_expired
 //
-int tmp_cleanup(pid_t * dels, size_t delsl);
+int tmp_cleanup(
+	  const pid_t * const restrict not_expired
+	, size_t not_expiredl
+	, const pid_t * const restrict consider_expired
+	, size_t consider_expiredl
+);
 
+#undef restrict
 #endif
