@@ -18,6 +18,22 @@
 #ifndef _XLINUX_H
 #define _XLINUX_H
 
+#include "xapi.h"
+
+/// xlinux_setup
+//
+// SUMMARY
+//  initialize the library (idempotent)
+//
+xapi xlinux_setup();
+
+/// xlinux_teardown
+//
+// SUMMARY
+//  free resources used by the library
+//
+void xlinux_teardown();
+
 #include "xlinux/xdirent.h"
 #include "xlinux/xdlfcn.h"
 #include "xlinux/xfcntl.h"

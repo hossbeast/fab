@@ -23,7 +23,6 @@
 //
 #include "xlinux.h"
 #include "mempolicy.h"
-#include "error.h"
 
 // error tables
 #include "XLINUX.errtab.h"
