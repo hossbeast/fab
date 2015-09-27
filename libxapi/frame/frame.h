@@ -132,15 +132,15 @@ struct stack * xapi_frame_set_messagef(struct stack * s, const struct etable * c
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET(etab, code)	\
-	__xapi_s = xapi_frame_set(__xapi_s, etab, code, __FILE__, __LINE__, __FUNCTION__)
+	__xapi_sp = xapi_frame_set(__xapi_sp, etab, code, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET_MESSAGEW(etab, code, msg, msgl)	\
-	__xapi_s = xapi_frame_set_messagew(__xapi_s, etab, code, msg, msgl, __FILE__, __LINE__, __FUNCTION__)
+	__xapi_sp = xapi_frame_set_messagew(__xapi_sp, etab, code, msg, msgl, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with current file name, line number, and function name
 #define XAPI_FRAME_SET_MESSAGEF(etab, code, fmt, ...)	\
-	__xapi_s = xapi_frame_set_messagef(__xapi_s, etab, code, fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+	__xapi_sp = xapi_frame_set_messagef(__xapi_sp, etab, code, fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 /// xapi_frame_info
 //

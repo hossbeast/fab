@@ -44,13 +44,13 @@ integer that encodes the error table (in the high bits) and error code (in the l
 
 It is not necessary to link with libxapi.so when compiling with -DXAPI_ERRCODE
 
-### XAPI_UNWIND
+### XAPI_STACKTRACE
 
-If you compile with -DXAPI_UNWIND, the top-level xapi function still returns an
+If you compile with -DXAPI_STACKTRACE, the top-level xapi function still returns an
 unsigned integer that encodes the error table and code. libxapi provides functions
 for getting more information from the exit value.
 
- the top-level xapi function can produce a backtrace
+while unwinding, xapi functions can produce a backtrace
 
     xapi foo()
     {
@@ -86,7 +86,7 @@ recommended to pre-allocate memory to libxapi, viz.
 
 ## Features
 
-* For various backtrace options, see xapi/trace.h
+* For rendering backtraces, see xapi/trace.h
 * To catch an error during unwinding, inspect it, and conditionally discard it, see xapi_calltree_unwind
 * To serialize/deserialize a calltree, see xapi_calltree_freeze / memblk.h
 
@@ -116,13 +116,3 @@ The following is a list of the reserved words.
 * invoke
 * conclude
 * xproxy
-
-../calltree/calltree.h
-../error/error.h
-../errtab/errtab.h
-../frame/frame.h
-../mm/mm.h
-../error/SYS.errtab.h
-../trace/trace.h
-../tune/tune.h
-../error/XAPI.errtab.h

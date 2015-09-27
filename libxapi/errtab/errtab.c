@@ -19,8 +19,10 @@
 #include <stdint.h>
 
 #include "internal.h"
-#include "errtab.h"
+#include "errtab.internal.h"
+#include "error.h"
 #include "error/XAPI.errtab.h"
+#include "error/SYS.errtab.h"
 
 etable **         tab;
 size_t            tabl;
@@ -95,4 +97,68 @@ API char * xapi_errtab_tag(const etable * const restrict etab)
     return etab->tag;
 
   return 0;
+}
+
+API const etable * xapi_errtab_byid(const xapi_etable_id id)
+{
+	if(id < 1 || id > tabl)
+    return 0;
+
+	return tab[id - 1];
+}
+
+//
+// exit value api
+//
+
+API const char * xapi_errtab_errname(const xapi exit, const etable * const restrict etab)
+{
+	xapi_code rc = exit & 0xFFFF;		// error code
+
+  if(etab == 0)
+    return 0;
+
+  if(rc < etab->min || rc > etab->max)
+    return 0;
+
+	return etab->v[rc + (etab->min * -1)].name;
+}
+
+API const char * xapi_errtab_errdesc(const xapi exit, const etable * const restrict etab)
+{
+	xapi_code rc = exit & 0xFFFF;		// error code
+
+  if(etab == 0)
+    return 0;
+
+  if(rc < etab->min || rc > etab->max)
+    return 0;
+
+	return etab->v[rc + (etab->min * -1)].desc;
+}
+
+API const char * xapi_errtab_errstr(const xapi exit, const etable * const restrict etab)
+{
+	xapi_code rc = exit & 0xFFFF;		// error code
+
+  if(etab == 0)
+    return 0;
+
+  if(rc < etab->min || rc > etab->max)
+    return 0;
+
+	return etab->v[rc + (etab->min * -1)].str;
+}
+
+API xapi_code xapi_errtab_errcode(const xapi exit, const etable * const restrict etab)
+{
+	xapi_code rc = exit & 0xFFFF;		// error code
+
+  if(etab == 0)
+    return 0;
+
+  if(rc < etab->min || rc > etab->max)
+    return 0;
+
+	return rc;
 }

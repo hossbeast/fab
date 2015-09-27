@@ -18,7 +18,7 @@
 #ifndef _XAPI_ERROR_H
 #define _XAPI_ERROR_H
 
-struct etable;
+#include "xapi.h"
 
 #define restrict __restrict
 
@@ -27,35 +27,50 @@ struct etable;
 // SUMMARY
 //  get the error name from an exit value, e.g. "ENOMEM"
 //
-const char * xapi_errname(const int exit);
+// PARAMETERS
+//  exit - exit value
+//
+const char * xapi_errname(const xapi exit);
 
 /// xapi_errtab_errdesc
 //
 // SUMMARY
 //  get the error description string from an exit value, e.g. "out of memory"
 //
-const char * xapi_errdesc(const int exit);
+// PARAMETERS
+//  exit - exit value
+//
+const char * xapi_errdesc(const xapi exit);
 
 /// xapi_errtab_errstr
 //
 // SUMMARY
 //  get the error string from an exit value, e.g. "ENOMEM : out of memory"
 //
-const char * xapi_errstr(const int exit);
+// PARAMETERS
+//  exit - exit value
+//
+const char * xapi_errstr(const xapi exit);
 
 /// xapi_errtab_errtab
 //
 // SUMMARY
 //  get the error table from an exit value, e.g. perrtab_SYS
 //
-const struct etable * xapi_errtab(const int exit);
+// PARAMETERS
+//  exit - exit value
+//
+const struct etable * xapi_errtab(const xapi exit);
 
 /// xapi_errtab_errcode
 //
 // SUMMARY
-//  get the error code from an exit value, e.e. SYS_ENOMEM
+//  get the error code from an exit value, e.g. SYS_ENOMEM
 //
-int xapi_errcode(const int exit);
+// PARAMETERS
+//  exit - exit value
+//
+int xapi_errcode(const xapi exit);
 
 #undef restrict
 #endif

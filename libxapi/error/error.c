@@ -20,82 +20,58 @@
 
 #include "internal.h"
 #include "error.h"
-#include "errtab.h"
+#include "errtab.internal.h"
 
 //
 // api
 //
 
-API const char * xapi_errname(const int exit)
+API const char * xapi_errname(const xapi exit)
 {
-	int16_t rt = exit >> 16;			// table id
-	int16_t rc = exit & 0xFFFF;		// error code
+	xapi_code rt = exit >> 16;			// table id
 
   if(rt < 1 || rt > tabl)
     return 0;
 
-  if(rc < tab[rt - 1]->min || rc > tab[rt - 1]->max)
-    return 0;
-
-	return tab[rt - 1]->v[rc + (tab[rt - 1]->min * -1)].name;
+  return xapi_errtab_errname(exit, tab[rt - 1]);
 }
 
-API const char * xapi_errdesc(const int exit)
+API const char * xapi_errdesc(const xapi exit)
 {
-	int16_t rt = exit >> 16;			// table id
-	int16_t rc = exit & 0xFFFF;		// error code
+	xapi_code rt = exit >> 16;			// table id
 
   if(rt < 1 || rt > tabl)
     return 0;
 
-  if(rc < tab[rt - 1]->min || rc > tab[rt - 1]->max)
-    return 0;
-
-	return tab[rt - 1]->v[rc + (tab[rt - 1]->min * -1)].desc;
+  return xapi_errtab_errdesc(exit, tab[rt - 1]);
 }
 
-API const char * xapi_errstr(const int exit)
+API const char * xapi_errstr(const xapi exit)
 {
-	int16_t rt = exit >> 16;			// table id
-	int16_t rc = exit & 0xFFFF;		// error code
+	xapi_code rt = exit >> 16;			// table id
 
   if(rt < 1 || rt > tabl)
     return 0;
 
-  if(rc < tab[rt - 1]->min || rc > tab[rt - 1]->max)
-    return 0;
-
-	return tab[rt - 1]->v[rc + (tab[rt - 1]->min * -1)].str;
+  return xapi_errtab_errstr(exit, tab[rt - 1]);
 }
 
-API const etable * xapi_errtab(const int exit)
+API const etable * xapi_errtab(const xapi exit)
 {
-	int16_t rt = exit >> 16;			// table index
+	xapi_code rt = exit >> 16;			// table id
 
 	if(rt < 1 || rt > tabl)
 		return 0;
 
-	return tab[rt - 1];
+  return tab[rt - 1];
 }
 
-API int xapi_errcode(const int exit)
+API int xapi_errcode(const xapi exit)
 {
-	int16_t rt = exit >> 16;			// table id
-	int16_t rc = exit & 0xFFFF;		// error code
+	xapi_code rt = exit >> 16;			// table id
 
   if(rt < 1 || rt > tabl)
     return 0;
 
-  if(rc < tab[rt - 1]->min || rc > tab[rt - 1]->max)
-    return 0;
-
-	return rc;
-}
-
-API const etable * xapi_errtab_byid(const int id)
-{
-	if(id < 1 || id > tabl)
-    return 0;
-
-	return tab[id - 1];
+  return xapi_errtab_errcode(exit, tab[rt - 1]);
 }

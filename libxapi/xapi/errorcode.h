@@ -23,9 +23,10 @@
 // SUMMARY
 //  must be the first line of any xapi function
 //
-#define enter           \
-  int __xapi_f1 = 0;    \
-  uint32_t __xapi_r = 0;
+#define enter                                         \
+  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;  \
+  int __xapi_f1 = 0;                                  \
+  xapi __xapi_r = 0;
 
 /*
 ** called at the site of an error

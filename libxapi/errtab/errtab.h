@@ -15,20 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_ERRTAB_INTERNAL_H
-#define _XAPI_ERRTAB_INTERNAL_H
+#ifndef _XAPI_ERRTAB_CODE_H
+#define _XAPI_ERRTAB_CODE_H
 
-extern etable **  tab;
-extern size_t     tabl;
+#include "xapi.h"
 
 #define restrict __restrict
-
-/// xapi_errtab_byid
-//
-// SUMMARY
-//  lookup an error table by id
-//
-const struct etable * xapi_errtab_byid(const int id);
 
 /// xapi_errtab_register
 //
@@ -42,8 +34,7 @@ const struct etable * xapi_errtab_byid(const int id);
 // NOTES
 //  not threadsafe
 //
-xapi xapi_errtab_register(struct etable * const restrict etab)
-  __attribute__((nonnull));
+xapi xapi_errtab_register(struct etable * const restrict etab);
 
 /// xapi_errtab_tag
 //
@@ -55,12 +46,56 @@ xapi xapi_errtab_register(struct etable * const restrict etab)
 //
 char * xapi_errtab_tag(const etable * const restrict etab);
 
-/// errtab_teardown
+/// xapi_errtab_byid
 //
 // SUMMARY
-//  release memory
+//  lookup an error table by id
 //
-void errtab_teardown();
+const struct etable * xapi_errtab_byid(const xapi_etable_id id);
+
+/// xapi_errtab_errname
+//
+// SUMMARY
+//  get the error name from an exit value and etable, e.g. "ENOMEM"
+//
+// PARAMETERS
+//  exit   - exit value
+//  [etab] - etable
+//
+const char * xapi_errtab_errname(const xapi exit, const etable * const restrict etab);
+
+/// xapi_errtab_errdesc
+//
+// SUMMARY
+//  get the error description string from an exit value and etable, e.g. "out of memory"
+//
+// PARAMETERS
+//  exit   - exit value
+//  [etab] - etable
+//
+const char * xapi_errtab_errdesc(const xapi exit, const etable * const restrict etab);
+
+/// xapi_errtab_errstr
+//
+// SUMMARY
+//  get the error string from an exit value and etable, e.g. "ENOMEM : out of memory"
+//
+// PARAMETERS
+//  exit   - exit value
+//  [etab] - etable
+//
+const char * xapi_errtab_errstr(const xapi exit, const etable * const restrict etab);
+
+/// xapi_errtab_errcode
+//
+// SUMMARY
+//  get the error code from an exit value and etable, e.g. SYS_ENOMEM
+//
+// PARAMETERS
+//  exit   - exit value
+//  [etab] - etable
+//
+xapi_code xapi_errtab_errcode(const xapi exit, const etable * const restrict etab);
 
 #undef restrict
 #endif

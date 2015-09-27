@@ -15,18 +15,36 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
-#include "mm.internal.h"
-#include "errtab.internal.h"
-#include "frame.internal.h"
+#include "test.h"
 
-//
-// api
-//
+/*
 
-API void xapi_teardown()
+SUMMARY
+ fatal call a function while unwinding that also fails
+
+*/
+
+xapi beta()
 {
-  mm_teardown();
-  errtab_teardown();
-  frame_teardown();
+  enter;
+
+  finally : coda;
+}
+
+xapi alpha()
+{
+  enter;
+
+  fatal(beta);
+
+  finally : coda;
+}
+
+int main()
+{
+  // alpha should fail
+  int exit = alpha();
+  assert_exit(0, 0);
+
+  succeed;
 }

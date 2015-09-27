@@ -15,18 +15,19 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
-#include "mm.internal.h"
-#include "errtab.internal.h"
-#include "frame.internal.h"
+#ifndef _XAPI_ERRTAB_INTERNAL_H
+#define _XAPI_ERRTAB_INTERNAL_H
 
-//
-// api
-//
+#include "errtab.h"
 
-API void xapi_teardown()
-{
-  mm_teardown();
-  errtab_teardown();
-  frame_teardown();
-}
+extern etable **  tab;
+extern size_t     tabl;
+
+/// errtab_teardown
+//
+// SUMMARY
+//  release memory
+//
+void errtab_teardown();
+
+#endif

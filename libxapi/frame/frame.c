@@ -35,15 +35,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-__thread struct frame_addresses g_frame_addresses;
-__thread void * APIDATA xapi_calling_frame_address;
-__thread void * APIDATA xapi_caller_frame_address;
-__thread const etable * APIDATA xapi_stack_raised_etab;
-__thread int APIDATA xapi_stack_raised_code;
+__thread         struct frame_addresses g_frame_addresses;
+__thread APIDATA void * xapi_calling_frame_address;
+__thread APIDATA void * xapi_caller_frame_address;
+__thread APIDATA const etable * xapi_stack_raised_etab;
+__thread APIDATA int xapi_stack_raised_code;
 #endif
 
 // per-thread sentinels
-__thread int APIDATA xapi_sentinel;
+__thread APIDATA int xapi_sentinel;
 
 static stack * frame_set(stack * s, const etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
 {

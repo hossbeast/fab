@@ -96,28 +96,28 @@ when calling non-xapi code, you have a couple of options.
 //  must be the first line of any xapi function
 //
 // DETAILS
-//  __xapi_f1       - tracking whether the finalize label has been hit
-//  __xapi_s        - used by frame_set to restore the stack pointer
+//  __xapi_f1       - tracks whether the finalize label has been hit
+//  __xapi_sp       - used by frame_set to restore the stack pointer
 //  __xapi_sentinel - used by xapi_frame_leave to cleanup when the top-level function exits
 //
 #if XAPI_RUNTIME_CHECKS
-#define enter                             \
-printf("enter %d\n", __LINE__);       \
-  int __xapi_f1 = 0;                      \
-  void * __attribute__((unused)) __xapi_s = 0;                    \
-  int __xapi_sentinel = !xapi_sentinel;   \
-  xapi_sentinel = 1;                      \
-  xapi_record_frame(xapi_calling_frame_address);  \
+#define enter                                         \
+  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;  \
+  int __xapi_f1 = 0;                                  \
+  void * __attribute__((unused)) __xapi_sp = 0;       \
+  int __xapi_sentinel = !xapi_sentinel;               \
+  xapi_sentinel = 1;                                  \
+  xapi_record_frame(xapi_calling_frame_address);      \
   if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
-  {                                       \
-printf("NOFATAL\n");                      \
-    tfail(perrtab_XAPI, XAPI_NOFATAL);    \
+  {                                                   \
+    tfail(perrtab_XAPI, XAPI_NOFATAL);                \
   }
 #else
-#define enter                             \
-  int __xapi_f1 = 0;                      \
-  void * __attribute__((unused)) __xapi_s = 0;                    \
-  int __xapi_sentinel = !xapi_sentinel;   \
+#define enter                                         \
+  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;  \
+  int __xapi_f1 = 0;                                  \
+  void * __attribute__((unused)) __xapi_sp = 0;       \
+  int __xapi_sentinel = !xapi_sentinel;               \
   xapi_sentinel = 1
 #endif
 
@@ -182,18 +182,23 @@ printf("NOFATAL\n");                      \
 */
 
 #if XAPI_RUNTIME_CHECKS
-#define xapi_invoke(func, ...)                                                                              \
-  ({                                                                                                        \
-      xapi_calling_frame_address = __builtin_frame_address(0);                                              \
-/* printf("INVOKE   __x : %d\n", __x); */                                                                   \
-      int __r = func(__VA_ARGS__);                                                                          \
-      if(xapi_caller_frame_address != __builtin_frame_address(0))                                           \
-      {                                                                                                     \
-/* printf("ILLFATAL __r : %d, calling : %p, caller : %p\n", __r, __builtin_frame_address(0), xapi_caller_frame_address); */ \
-        __r = 1;                                                                                            \
-        XAPI_FRAME_SET_MESSAGEW(perrtab_XAPI, XAPI_ILLFATAL, "function " #func " invoked with fatal", 0);   \
-      }                                                                                                     \
-      __r;                                                                                                  \
+#define xapi_invoke(func, ...)                                                                      \
+  ({                                                                                                \
+      /* record the calling frame */                                                                \
+      void * calling_frame_address = __builtin_frame_address(0);                                    \
+      xapi_calling_frame_address = calling_frame_address;                                           \
+      /* the target function fixes calling_frame to caller_frame in enter */                        \
+      int __r = func(__VA_ARGS__);                                                                  \
+      if(xapi_caller_frame_address != calling_frame_address)                                        \
+      {                                                                                             \
+        __r = XAPI_ILLFATAL;                                                                        \
+        XAPI_FRAME_SET_MESSAGEF(perrtab_XAPI, XAPI_ILLFATAL                                         \
+          , #func " invoked with fatal, expected caller : %p, actual caller : %p"                   \
+          , calling_frame_address                                                                   \
+          , xapi_caller_frame_address                                                               \
+        );                                                                                          \
+      }                                                                                             \
+      __r;                                                                                          \
   })
 #else
 #define xapi_invoke(func, ...)              \

@@ -32,12 +32,16 @@ of the following macros:
 XAPI_MODE_STACKTRACE
 XAPI_MODE_ERRORCODE
 
-STACKTRACE implies a runtime link against libxapi.so, ERRCODE does not
+STACKTRACE requires a runtime link against libxapi.so, ERRCODE does not
 
 */
 
-// return type for xapi functions
+// return type for xapi functions, called its exit value
 typedef uint32_t xapi;
+
+// types for components of xapi exit value
+typedef uint16_t xapi_code;
+typedef uint16_t xapi_etable_id;
 
 // error table struct
 typedef struct etable
@@ -50,10 +54,10 @@ typedef struct etable
     char * str;     // e.g. ENOMEM : Not enough space
   } * v;
 
-  char *  tag;      // e.g. "PCRE", "SYS", "FAB", "LW"
-  int16_t id;       // upper 2 bytes of the error code, nonzero
-  int16_t min;      // min err
-  int16_t max;      // max err
+  char *    tag;    // e.g. "PCRE", "SYS", "FAB", "LW"
+  xapi_code id;     // upper 2 bytes of the error code, nonzero
+  xapi_code min;    // min err
+  xapi_code max;    // max err
 } etable;
 
 // an error table for system errors is provided by libxapi
