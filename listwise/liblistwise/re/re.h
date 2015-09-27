@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "xapi.h"
+
 #include "listwise/operator.h"
 
 #define restrict __restrict
@@ -37,7 +39,7 @@
 //  re  - regex op arg
 //  mod - modifier string arg, if any
 //
-int re_compile(char* s, struct re* re, char* mod);
+xapi re_compile(char* s, struct re* re, char* mod);
 
 /// re_execute
 //
@@ -85,7 +87,7 @@ int re_compile(char* s, struct re* re, char* mod);
 // REMARKS
 //  libc exports a function named re_exec
 //
-int re_execute(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len);
+xapi re_execute(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len);
 
 #undef restrict
 #endif

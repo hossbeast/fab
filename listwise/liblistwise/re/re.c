@@ -28,8 +28,10 @@
 #include "xlinux.h"
 #include "macros.h"
 
-int API re_compile(char* s, struct re* re, char* mod)
+API xapi re_compile(char* s, struct re* re, char* mod)
 {
+	enter;
+
 	int reopts = 0;
 	if(mod && strchr(mod, 'i'))
 		reopts |= PCRE_CASELESS;
@@ -68,8 +70,10 @@ finally:
 coda;
 }
 
-int API re_execute(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len)
+API xapi re_execute(struct re* re, char* s, int l, int o, int** ovec, int* ovec_len)
 {
+	enter;
+
 	if((*ovec_len) < ((MIN(re->c_caps, 1) * 3) + 1))
 	{
 		fatal(xrealloc, ovec, sizeof((*ovec)[0]), (MIN(re->c_caps, 1) * 3) + 10, *ovec_len);

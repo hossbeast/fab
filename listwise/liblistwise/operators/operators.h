@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_OPERATORS_H
 #define _LISTWISE_OPERATORS_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 struct operator;
@@ -28,7 +30,7 @@ struct operator;
 //  register an application-specific directory as containing compiled operator .so's
 //  in addition to the default locations liblistwise loads these from
 //
-int listwise_register_opdir(char * const restrict dir)
+xapi listwise_register_opdir(char * const restrict dir)
 	__attribute__((nonnull));
 
 // available operators - dloaded at init time

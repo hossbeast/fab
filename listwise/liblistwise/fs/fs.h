@@ -21,6 +21,8 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// fs_statfmt
@@ -38,7 +40,7 @@
 //
 // REMARKS
 //
-int fs_statfmt(
+xapi fs_statfmt(
 	  const char * const restrict s
 	, int sl
 	, const char * restrict fmt

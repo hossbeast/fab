@@ -39,7 +39,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -51,8 +51,10 @@ operator op_desc[] = {
 	}, {}
 };
 
-static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
 	fatal(lstack_unshift, lx);
 
 	int x;

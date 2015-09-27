@@ -98,8 +98,10 @@ static const char * transform_tokenname(int token)
 	return transform_tokennames[token];
 }
 
-static int operation_validate(operation * op)
+static xapi operation_validate(operation * op)
 {
+  enter;
+
 	if((op->op->optype & LWOP_ARGS_CANHAVE) == 0)
 	{
 		if(op->argsl)
@@ -118,8 +120,10 @@ finally :
 coda;
 }
 
-static int reduce(parse_param * pp)
+static xapi reduce(parse_param * pp)
 {
+  enter;
+
 	int r;
 	if((r = transform_yyparse(pp->scanner, pp)) || pp->scanerr)
 	{
@@ -169,8 +173,10 @@ finally :
 coda;
 }
 
-static int parse(transform_parser ** p, char* s, int l, char * name, int namel, transform** g, void * udata)
+static xapi parse(transform_parser ** p, char* s, int l, char * name, int namel, transform** g, void * udata)
 {
+  enter;
+
 	// local parser
 	transform_parser * lp = 0;
 
@@ -246,8 +252,10 @@ coda;
 /// static : describe
 ///
 
-static int transform_arg_canon(arg * const arg, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+static xapi transform_arg_canon(arg * const arg, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
 {
+  enter;
+
 	// track backreferences
 	int k = 0;
 
@@ -303,8 +311,10 @@ static int transform_arg_canon(arg * const arg, uint32_t sm, char * const dst, c
 	finally : coda;
 }
 
-static int transform_args_canon(arg ** const args, const int argsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+static xapi transform_args_canon(arg ** const args, const int argsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
 {
+  enter;
+
 	int x;
 	for(x = 0; x < argsl; x++)
 	{
@@ -325,34 +335,12 @@ static int transform_args_canon(arg ** const args, const int argsl, uint32_t sm,
 	}
 
 	finally : coda;
-#if 0
-	size_t z = 0;
-
-	int x;
-	for(x = 0; x < argsl; x++)
-	{
-		// emit the opener
-		if(GS_ENCLOSED(sm))
-			z += znprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
-		else if(x)
-			z += znprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
-
-		// emit the argument string
-		z += transform_arg_canon_write(dst + z, sz - z, args[x], sm);
-
-		// emit the closer
-		if(GS_ENCLOSED(sm))
-			z += znprintf(dst + z, sz - z, "%c", genscan_closing_char[sm]);
-		else if(x == (argsl - 1) && args[x]->l == 0)
-			z += znprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
-	}
-
-	return z;
-#endif
 }
 
-static int transform_operations_canon(operation ** const ops, int opsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+static xapi transform_operations_canon(operation ** const ops, int opsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
 {
+  enter;
+
 	int x;
 	for(x = 0; x < opsl; x++)
 	{
@@ -363,24 +351,12 @@ static int transform_operations_canon(operation ** const ops, int opsl, uint32_t
 	}
 
 	finally : coda;
-#if 0
-	size_t z = 0;
-	
-	int x;
-	for(x = 0; x < opsl; x++)
-	{
-		if(x)
-			z += znprintf(dst + z, sz - z, " ");
-
-		z += transform_operation_canon_write(dst + z, sz - z, ops[x], sm);
-	}
-
-	return z;
-#endif
 }
 
-static int transform_canon(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+static xapi transform_canon(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
 {
+  enter;
+
 	uint32_t sm = GENSCAN_SLASH_DOREFS;
 
 	fatal(transform_args_canon, g->args, g->argsl, sm, dst + (*z), sz - (*z), z, ps, writer);
@@ -391,24 +367,12 @@ static int transform_canon(transform * const restrict g, char * const restrict d
 	fatal(transform_operations_canon, g->ops, g->opsl, sm, dst + (*z), sz - (*z), z, ps, writer);
 
 	finally : coda;
-#if 0
-static size_t transform_canon_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
-{
-	uint32_t sm = GENSCAN_SLASH_DOREFS;
-
-	size_t z = 0;
-	z += transform_args_canon_write(dst + z, sz - z, g->args, g->argsl, sm);
-
-	if(z)
-		z += znprintf(dst + z, sz - z, " ");
-
-	return z + transform_operations_canon_write(dst + z, sz - z, g->ops, g->opsl, sm);
-}
-#endif
 }
 
-static int transform_description(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
+static xapi transform_description(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
 {
+  enter;
+
 	// expanded transform description
 	SAY("transform @ %p {\n", g);
 	SAY("  initial list\n");
@@ -454,8 +418,10 @@ static int transform_description(transform * const restrict g, char * const rest
 /// public : describe
 ///
 
-int transform_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+xapi transform_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
 {
+  enter;
+
 	SAY("%s", oper->op->s);
 
 	// conditionally emit the delimiter
@@ -465,27 +431,16 @@ int transform_operation_canon(operation * const oper, uint32_t sm, char * const 
 	fatal(transform_args_canon, oper->args, oper->argsl, sm, dst + (*z), sz - (*z), z, ps, writer);
 
 	finally : coda;
-#if 0
-static size_t transform_operation_canon_write(char * const dst, const size_t sz, operation * const oper, uint32_t sm)
-{
-	size_t z = 0;
-	z += znprintf(dst + z, sz - z, "%s", oper->op->s);
-
-	// emit the delimiter
-	if(oper->argsl)
-		z += znprintf(dst + z, sz - z, "%c", genscan_opening_char[sm]);
-
-	return z + transform_args_canon_write(dst + z, sz - z, oper->args, oper->argsl, sm);
-}
-#endif
 }
 
 ///
 /// api
 ///
 
-int API transform_mkparser(transform_parser ** p)
+API xapi transform_mkparser(transform_parser ** p)
 {
+	enter;
+
 	fatal(xmalloc, p, sizeof(**p));
 
 	if(transform_yylex_init(&(*p)->p) != 0)
@@ -494,7 +449,7 @@ int API transform_mkparser(transform_parser ** p)
 	finally : coda;
 }
 
-void API transform_parser_free(transform_parser * p)
+API void transform_parser_free(transform_parser * p)
 {
 	if(p)
 	{
@@ -504,13 +459,13 @@ void API transform_parser_free(transform_parser * p)
 	free(p);
 }
 
-void API transform_parser_xfree(transform_parser ** p)
+API void transform_parser_xfree(transform_parser ** p)
 {
 	transform_parser_free(*p);
 	*p = 0;
 }
 
-void API transform_free(transform* g)
+API void transform_free(transform* g)
 {
 	if(g)
 	{
@@ -558,35 +513,43 @@ void API transform_free(transform* g)
 	free(g);
 }
 
-void API transform_xfree(transform** g)
+API void transform_xfree(transform** g)
 {
 	transform_free(*g);
 	*g = 0;
 }
 
-int API transform_parse(transform_parser ** p, char* s, int l, transform** g)
+API xapi transform_parse(transform_parser ** p, char* s, int l, transform** g)
 {
+	enter;
+
 	fatal(parse, p, s, l, 0, 0, g, 0);
 
 	finally : coda;
 }
 
-int API transform_parse2(transform_parser ** p, char* s, int l, transform** g, void * udata)
+API xapi transform_parse2(transform_parser ** p, char* s, int l, transform** g, void * udata)
 {
+	enter;
+
 	fatal(parse, p, s, l, 0, 0, g, udata);
 
 	finally : coda;
 }
 
-int API transform_parse_named(transform_parser ** p, char* s, int l, char * name, int namel, transform** g)
+API xapi transform_parse_named(transform_parser ** p, char* s, int l, char * name, int namel, transform** g)
 {
+	enter;
+
 	fatal(parse, p, s, l, name, namel, g, 0);
 
 	finally : coda;
 }
 
-int API transform_parse_named2(transform_parser ** p, char* s, int l, char * name, int namel, transform** g, void * udata)
+API xapi transform_parse_named2(transform_parser ** p, char* s, int l, char * name, int namel, transform** g, void * udata)
 {
+	enter;
+
 	fatal(parse, p, s, l, name, namel, g, udata);
 
 	finally : coda;
@@ -596,17 +559,23 @@ int API transform_parse_named2(transform_parser ** p, char* s, int l, char * nam
 /// api : describe
 ///
 
-int API transform_canon_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
+API xapi transform_canon_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
 {
+  enter;
+
 	size_t lz = 0;
 	if(!z)
 		z = &lz;
 
-	xproxy(transform_canon, g, dst, sz, z, 0, zwrite);
+	fatal(transform_canon, g, dst, sz, z, 0, zwrite);
+
+  finally : coda;
 }
 
-int API transform_canon_pswrite(transform * const restrict g, pstring ** restrict ps)
+API xapi transform_canon_pswrite(transform * const restrict g, pstring ** restrict ps)
 {
+	enter;
+
 	size_t lz = 0;
 	fatal(psclear, ps);
 	fatal(transform_canon, g, 0, 0, &lz, ps, pswrite);
@@ -614,8 +583,10 @@ int API transform_canon_pswrite(transform * const restrict g, pstring ** restric
 	finally : coda;
 }
 
-int API transform_canon_dump(transform * const restrict g, pstring ** restrict ps)
+API xapi transform_canon_dump(transform * const restrict g, pstring ** restrict ps)
 {
+	enter;
+
 	pstring * lps = 0;
 	if(!ps)
 		ps = &lps;
@@ -630,8 +601,10 @@ finally:
 coda;
 }
 
-int API transform_canon_log(transform * const restrict g, pstring ** restrict ps, void * restrict udata)
+API xapi transform_canon_log(transform * const restrict g, pstring ** restrict ps, void * restrict udata)
 {
+	enter;
+
 	pstring * lps = 0;
 	if(!ps)
 		ps = &lps;
@@ -649,17 +622,23 @@ finally:
 coda;
 }
 
-int API transform_description_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
+API xapi transform_description_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
 {
+  enter;
+
 	size_t lz = 0;
 	if(!z)
 		z = &lz;
 
-	xproxy(transform_description, g, dst, sz, z, 0, zwrite);
+	fatal(transform_description, g, dst, sz, z, 0, zwrite);
+
+  finally : coda;
 }
 
-int API transform_description_pswrite(transform * const restrict g, pstring ** restrict ps)
+API xapi transform_description_pswrite(transform * const restrict g, pstring ** restrict ps)
 {
+	enter;
+
 	size_t lz = 0;
 	fatal(psclear, ps);
 	fatal(transform_description, g, 0, 0, &lz, ps, pswrite);
@@ -667,8 +646,10 @@ int API transform_description_pswrite(transform * const restrict g, pstring ** r
 	finally : coda;
 }
 
-int API transform_description_dump(transform * const restrict g, pstring ** restrict ps)
+API xapi transform_description_dump(transform * const restrict g, pstring ** restrict ps)
 {
+	enter;
+
 	pstring * lps = 0;
 	if(!ps)
 		ps = &lps;
@@ -683,8 +664,10 @@ finally:
 coda;
 }
 
-int API transform_description_log(transform * const restrict g, pstring ** restrict ps, void * restrict udata)
+API xapi transform_description_log(transform * const restrict g, pstring ** restrict ps, void * restrict udata)
 {
+	enter;
+
 	pstring * lps = 0;
 
 	if(lw_would_transform())

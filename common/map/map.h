@@ -19,6 +19,7 @@
 #define _MAP_H
 
 #include <stdint.h>
+#include "xapi.h"
 
 #define restrict __restrict
 
@@ -39,7 +40,7 @@ typedef struct map map;
 //
 // returns nonzero on success
 //
-int map_create(map** const restrict m, void (*destructor)(void*, void*))
+xapi map_create(map** const restrict m, void (*destructor)(void*, void*))
 	__attribute__((nonnull(1)));
 
 /// map_free
@@ -69,7 +70,7 @@ void map_xfree(map** const restrict map)
 //
 // returns zero on success
 //
-int map_set(map* const restrict map, const void* const restrict key, size_t key_len, const void* const restrict value, size_t value_len, void * restrict rv)
+xapi map_set(map* const restrict map, const void* const restrict key, size_t key_len, const void* const restrict value, size_t value_len, void * restrict rv)
 	__attribute__((nonnull(1, 2)));
 
 /// map_get
@@ -130,10 +131,10 @@ int map_delete(map* const restrict map, const void* const restrict key, size_t k
 // RETURNS
 //  xapi semantics
 //
-int map_keysx(const map * const restrict m, void * const restrict list, size_t * const restrict listl, uint32_t opts)
+xapi map_keysx(const map * const restrict m, void * const restrict list, size_t * const restrict listl, uint32_t opts)
 	__attribute__((nonnull));
 
-int map_keys (const map * const restrict m, void * const restrict list, size_t * const restrict listl)
+xapi map_keys (const map * const restrict m, void * const restrict list, size_t * const restrict listl)
 	__attribute__((nonnull));
 
 /// map_values
@@ -150,17 +151,17 @@ int map_keys (const map * const restrict m, void * const restrict list, size_t *
 // RETURNS
 //  xapi semantics
 //
-int map_valuesx(const map * const restrict m, void * const restrict list, size_t * const restrict listl, uint32_t opts)
+xapi map_valuesx(const map * const restrict m, void * const restrict list, size_t * const restrict listl, uint32_t opts)
 	__attribute__((nonnull));
 
-int map_values (const map * const restrict m, void * const restrict list, size_t * const restrict listl)
+xapi map_values (const map * const restrict m, void * const restrict list, size_t * const restrict listl)
 	__attribute__((nonnull));
 
 /// map_clone
 //
 // copy all keys and values from src to dst
 //
-int map_clone(map* const restrict dst, const map * const restrict src)
+xapi map_clone(map* const restrict dst, const map * const restrict src)
 	__attribute__((nonnull));
 
 #undef restrict

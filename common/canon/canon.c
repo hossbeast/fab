@@ -47,8 +47,10 @@ typedef struct
 	int						f;	// force
 } item;
 
-int breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
+xapi breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 {
+  enter;
+
 	char in[512];
 
 	va_list va;
@@ -155,7 +157,7 @@ optimization
  time savings here by memoization
 */
 
-int canon(
+xapi canon(
 	  const char * path
 	, int pathl
 	, const char * const base
@@ -166,6 +168,8 @@ int canon(
 	, uint32_t opts
 )
 {
+  enter;
+
 	int x;
 	opts = opts ?: CAN_REALPATH;
 	pathl = pathl ?: strlen(path);
@@ -383,7 +387,7 @@ finally:
 coda;
 }
 
-int rebase(
+xapi rebase(
 	  const char * const path
 	, int pathl
 	, const char * const base
@@ -393,6 +397,8 @@ int rebase(
 	, size_t * z
 )
 {
+  enter;
+
 	pathl = pathl ?: strlen(path);
 	basel = basel ?: strlen(base);
 

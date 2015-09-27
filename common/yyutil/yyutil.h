@@ -162,7 +162,7 @@ do																					\
 //
 #define YYU_FATAL(x, ...)							\
 do {																	\
-	prologue;														\
+	enter;														  \
 	fatal(x, ##__VA_ARGS__);						\
 	int R;															\
 	finally : conclude(&R);							\

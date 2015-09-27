@@ -127,8 +127,10 @@ static int lookup(const map* const restrict m, const char* const restrict k, con
 
 //// [[ API ]] /////
 
-int map_create(map** const restrict m, void (*destructor)(void*, void*))
+xapi map_create(map** const restrict m, void (*destructor)(void*, void*))
 {
+  enter;
+
   fatal(xmalloc, m, sizeof(*m[0]));
 
   // compute initial table size for 100 keys @ given saturation
@@ -153,8 +155,10 @@ int map_create(map** const restrict m, void (*destructor)(void*, void*))
   finally : coda;
 }
 
-int map_set(map* const restrict m, const void* const restrict k, size_t kl, const void* const restrict v, size_t vl, void * restrict rv)
+xapi map_set(map* const restrict m, const void* const restrict k, size_t kl, const void* const restrict v, size_t vl, void * restrict rv)
 {
+  enter;
+
   slot** ks = 0;
   slot** vs = 0;
   slot** uk = 0;
@@ -402,8 +406,10 @@ int map_delete(map* const restrict m, const void* const restrict k, size_t kl)
   return 1;
 }
 
-int map_keysx(const map* const restrict m, void * const restrict l, size_t * const restrict z, uint32_t o)
+xapi map_keysx(const map* const restrict m, void * const restrict l, size_t * const restrict z, uint32_t o)
 {
+  enter;
+
   fatal(xmalloc, l, m->kc * sizeof(void*));
   *z = 0;
 
@@ -425,14 +431,16 @@ int map_keysx(const map* const restrict m, void * const restrict l, size_t * con
   finally : coda;
 }
 
-int map_keys (const map* const restrict m, void * const restrict l, size_t * const restrict z)
+xapi map_keys (const map* const restrict m, void * const restrict l, size_t * const restrict z)
 {
   xproxy(map_keysx, m, l, z, 0);
 }
 
 
-int map_valuesx(const map* const restrict m, void* const restrict l, size_t * const restrict z, uint32_t o)
+xapi map_valuesx(const map* const restrict m, void* const restrict l, size_t * const restrict z, uint32_t o)
 {
+  enter;
+
   fatal(xmalloc, l, m->kc * sizeof(void*));
   *z = 0;
 
@@ -454,13 +462,15 @@ int map_valuesx(const map* const restrict m, void* const restrict l, size_t * co
   finally : coda;
 }
 
-int map_values (const map* const restrict m, void* const restrict l, size_t * const restrict z)
+xapi map_values (const map* const restrict m, void* const restrict l, size_t * const restrict z)
 {
    xproxy(map_valuesx, m, l, z, 0);
 }
 
-int map_clone(map* const restrict dst, const map * const restrict src)
+xapi map_clone(map* const restrict dst, const map * const restrict src)
 {
+  enter;
+
   int x;
   map_clear(dst);
 

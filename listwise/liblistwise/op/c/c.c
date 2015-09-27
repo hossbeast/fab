@@ -39,8 +39,8 @@ N = 0 means merge all lists
 
 */
 
-static int op_validate(operation* o);
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_validate(operation* o);
+static xapi op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -53,8 +53,10 @@ operator op_desc[] = {
 	}, {}
 };
 
-int op_validate(operation* o)
+xapi op_validate(operation* o)
 {
+  enter;
+
 	if(o->argsl)
 	{
 		if(o->args[0]->itype != ITYPE_I64)
@@ -64,8 +66,10 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
 	int N = 1;
 
 	if(o->argsl)

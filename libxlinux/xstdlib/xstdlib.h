@@ -71,7 +71,7 @@ void ifree(void* target)
 // SUMMARY
 //  proxy for qsort_r which invokes the sorting function with fatal
 //
-xapi xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const void *, const void *, void *, int * r), void * arg)
+xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void *, const void *, void *, int * r), void * arg)
 	__attribute__((nonnull(1, 4)));
 
 /// xreadlink

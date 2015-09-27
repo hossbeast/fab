@@ -31,13 +31,11 @@
 #define restrict __restrict
 
 #if SANITY
-int API listwise_sanity = 0;
+int APIDATA listwise_sanity = 0;
 
-int sanityblock_create(sanityblock ** const sb)
+xapi sanityblock_create(sanityblock ** const sb)
 {
-	fatal(xmalloc, sb, sizeof(**sb));
-
-	finally : coda;
+	xproxy(xmalloc, sb, sizeof(**sb));
 }
 
 void sanityblock_reset(sanityblock * const sb)
@@ -65,8 +63,10 @@ void sanityblock_free(sanityblock * const sb)
 	free(sb);
 }
 
-int sanity(struct lwx * const restrict ls, sanityblock * const restrict sb, void ** udata)
+xapi sanity(struct lwx * const restrict ls, sanityblock * const restrict sb, void ** udata)
 {
+  enter;
+
 	int R = 0;
 
 #define err(fmt, ...) lw_log_sanity(fmt, ##__VA_ARGS__); R++

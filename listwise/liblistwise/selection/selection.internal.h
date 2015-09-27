@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_SELECTION_INTERNAL_H
 #define _LISTWISE_SELECTION_INTERNAL_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// lstack_selection_activate
@@ -25,7 +27,7 @@
 // SUMMARY
 //  activate selections staged by the previous operation
 //
-int lstack_selection_activate(lwx * const restrict lx)
+xapi lstack_selection_activate(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 #undef restrict

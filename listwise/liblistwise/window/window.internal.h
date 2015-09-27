@@ -25,7 +25,7 @@
 // SUMMARY
 //  activate staged windows (even if their lease has expired)
 //
-int lstack_windows_activate(lwx * const restrict lx)
+xapi lstack_windows_activate(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_window_deactivate
@@ -33,7 +33,7 @@ int lstack_windows_activate(lwx * const restrict lx)
 // SUMMARY
 //  reset the active window for the specified row
 //
-int lstack_window_deactivate(lwx * const restrict lx, int y)
+xapi lstack_window_deactivate(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_windows_staged_state

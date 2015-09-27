@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_OPERATOR_INTERNAL_H
 #define _LISTWISE_OPERATOR_INTERNAL_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// listwise_lwop
@@ -34,7 +36,7 @@
 //  [ps]      - 
 //  writer    - 
 //
-int listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
+xapi listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
 	__attribute__((nonnull(7)));
 
 #undef restrict

@@ -18,9 +18,11 @@
 #ifndef _LISTWISE_TRANSFORM_INTERNAL_H
 #define _LISTWISE_TRANSFORM_INTERNAL_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
-int transform_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+xapi transform_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
 	__attribute__((nonnull(1, 7)));
 
 #undef restrict

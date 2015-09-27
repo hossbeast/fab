@@ -45,8 +45,8 @@ OPERATION
 
 */
 
-static int op_exec_ss(operation*, lwx*, int**, int*, void **);
-static int op_exec_sn(operation*, lwx*, int**, int*, void **);
+static xapi op_exec_ss(operation*, lwx*, int**, int*, void **);
+static xapi op_exec_sn(operation*, lwx*, int**, int*, void **);
 
 operator op_desc[] = {
 	{
@@ -68,8 +68,10 @@ operator op_desc[] = {
 #define STRING_NCASE	2
 #define NUMERIC				3
 
-static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode, void ** udata)
+static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode, void ** udata)
 {
+  enter;
+
 	int * mema = 0;
 	int * memb = 0;
 
@@ -95,8 +97,10 @@ static int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode, v
 	}
 	LSTACK_ITEREND;
 
-	int compar(const void * A, const void * B, void * T, int * r)
+	xapi compar(const void * A, const void * B, void * T, int * r)
 	{
+    enter;
+
 		char *	As = 0;
 		int			Asl = 0;
 		char *	Bs = 0;
@@ -163,8 +167,10 @@ finally:
 coda;
 }
 
-int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
+xapi op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
 {
+  enter;
+
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->state == LWX_SELECTION_NONE)
 	{
 		// nothing selected
@@ -182,8 +188,10 @@ int op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** uda
 	finally : coda;
 }
 
-int op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
+xapi op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
 {
+  enter;
+
 	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->state == LWX_SELECTION_NONE)
 	{
 		// nothing selected

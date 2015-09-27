@@ -30,6 +30,8 @@
 #
 #  dunits     - unit directories
 #  xunit_sos  - xunit sos
+#
+#  util_objects - object files to be loaded before test files and their dependencies
 
 # definitions
 +[ $*/../vars.fab ]
@@ -70,10 +72,10 @@ $xunit_sos = [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 # run all tests
 [ @test ] : [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 {
-	[ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
+	[ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $util_objects ] [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
 }
 
 [ @test.verbose ] : [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 {
-	[ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] +XUNIT [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
+	[ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] +XUNIT [ $util_objects ] [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
 }

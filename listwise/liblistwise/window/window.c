@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xapi.h"
+
 #include "internal.h"
 
 #include "xlinux.h"
@@ -34,8 +36,10 @@
 // static
 //
 
-static int stage(lwx * const restrict lx, int y, int state, int off, int len)
+static xapi stage(lwx * const restrict lx, int y, int state, int off, int len)
 {
+  enter;
+
 	// get from storage
 	if(lx->win.s[y].staged == 0)
 	{
@@ -182,18 +186,20 @@ int lstack_windows_staged_state(lwx * const restrict lx, int y, struct lwx_windo
 // api
 //
 
-int API lstack_windows_stage_all(lwx * const restrict lx, int y)
+API xapi lstack_windows_stage_all(lwx * const restrict lx, int y)
 {
 	xproxy(stage, lx, y, LWX_WINDOWS_ALL, 0, 0);
 }
 
-int API lstack_windows_stage_nil(lwx * const restrict lx, int y)
+API xapi lstack_windows_stage_nil(lwx * const restrict lx, int y)
 {
 	xproxy(stage, lx, y, LWX_WINDOWS_NONE, 0, 0);
 }
 
-int API lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
+API xapi lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
 {
+	enter;
+
 	if(off < 0 || len <= 0)
 	{
 		fatal(stage, lx, y, LWX_WINDOWS_NONE, 0, 0);
@@ -225,8 +231,10 @@ int API lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
 ** These api's ensure that the next active/staged window will be at the other index
 */
 
-int API lstack_window_deactivate(lwx * const restrict lx, int y)
+API xapi lstack_window_deactivate(lwx * const restrict lx, int y)
 {
+	enter;
+
 	if(lx->win.s[y].active)
 		lx->win.s[y].active->mark = 1;
 
@@ -235,8 +243,10 @@ int API lstack_window_deactivate(lwx * const restrict lx, int y)
 	finally : coda;
 }
 
-int API lstack_windows_activate(lwx * const restrict lx)
+API xapi lstack_windows_activate(lwx * const restrict lx)
 {
+	enter;
+
 	int y;
 	LSTACK_ITERATE_FWD(lx, 0, y, 1, 0, go)
 	if(go)
@@ -268,7 +278,7 @@ int API lstack_windows_activate(lwx * const restrict lx)
 	finally : coda;
 }
 
-int API lstack_windows_state(lwx * const restrict lx, int y, struct lwx_windows ** win)
+API int lstack_windows_state(lwx * const restrict lx, int y, struct lwx_windows ** win)
 {
 	if(win)
 		*win = lx->win.s[y].active;

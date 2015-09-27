@@ -54,7 +54,7 @@ xapi xlstat(const char * restrict path, struct stat * restrict buf, int * restri
 /// uxlstat
 //
 // SUMMARY
-//  proxy for lstat which only fails when errno != ENOENT
+//  proxy for lstat which only fails when errno != ENOENT and errno != ENOTDIR
 //  if lstat fails but uxlstat does not, buf is zeroed
 //
 xapi uxlstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
@@ -71,7 +71,7 @@ xapi xfstat(int fd, struct stat * restrict buf)
 /// uxfstat
 //
 // SUMMARY
-//  proxy for stat which only fails when errno != ENOENT
+//  proxy for stat which only fails when errno != ENOENT and errno != ENOTDIR
 //  if stat fails and errno == ENOENT, buf is zeroed
 //
 xapi uxfstat(int fd, struct stat * restrict buf)

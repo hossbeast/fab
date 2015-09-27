@@ -22,7 +22,7 @@
 
 static etable * tab[3];
 
-void __attribute__((constructor)) init()
+void error_setup()
 {
 	tab[0] = perrtab_SYS;
 	tab[0]->id = 0;

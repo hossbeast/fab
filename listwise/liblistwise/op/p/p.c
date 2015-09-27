@@ -40,8 +40,8 @@ OPERATION
 
 */
 
-static int op_validate(operation*);
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_validate(operation*);
+static xapi op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -55,8 +55,10 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_validate(operation* o)
+xapi op_validate(operation* o)
 {
+  enter;
+
 	if(o->argsl == 0 || (o->argsl != 1 && (o->argsl % 2) != 0))
 		failf(LW_ARGSNUM, "actual : %d", o->argsl);
 
@@ -70,8 +72,10 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
 	int x;
 	LSTACK_ITERATE(lx, x, go)
 	if(go)

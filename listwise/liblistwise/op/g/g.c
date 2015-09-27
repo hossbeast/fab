@@ -53,7 +53,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -66,8 +66,10 @@ operator op_desc[] = {
 	, {}
 };
 
-static int gobble(lwx* lx, char * path, char * fmt, char * flags, void ** udata)
+static xapi gobble(lwx* lx, char * path, char * fmt, char * flags, void ** udata)
 {
+  enter;
+
 	char space[256];
 	size_t sz = 0;
 
@@ -136,8 +138,10 @@ XAPI_INFOF("size", "%d", size);
 coda;
 }
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
 	// format and flags
 	char * fmt = 0;
 	char * flags = 0;

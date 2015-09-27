@@ -42,8 +42,10 @@
 //  y  - string index
 //  z  - character index
 //
-static int allocate(lwx * const restrict lx, int x, int y, int z)
+static xapi allocate(lwx * const restrict lx, int x, int y, int z)
 {
+  enter;
+
 	if(x >= 0)
 	{
 		if(lx->a <= x)
@@ -124,8 +126,10 @@ static int allocate(lwx * const restrict lx, int x, int y, int z)
 	finally : coda;
 }
 
-static int ensure(lwx * const restrict lx, int x, int y, int z)
+static xapi ensure(lwx * const restrict lx, int x, int y, int z)
 {
+  enter;
+
 	if(x >= 0)
 	{
 		// ensure stack has enough lists
@@ -209,8 +213,10 @@ static int ensure(lwx * const restrict lx, int x, int y, int z)
 	finally : coda;
 }
 
-static int writestack_alt(lwx * const restrict lx, int x, int y, const void* const restrict s, int l, uint8_t type)
+static xapi writestack_alt(lwx * const restrict lx, int x, int y, const void* const restrict s, int l, uint8_t type)
 {
+  enter;
+
 	if(type)
 	{
 		// ensure stack has enough lists, list has enough strings, string has enough bytes
@@ -244,8 +250,10 @@ static int writestack_alt(lwx * const restrict lx, int x, int y, const void* con
 	finally : coda;
 }
 
-static int vwritestack_alt(lwx * const restrict lx, int x, int y, const void* const restrict fmt, va_list va)
+static xapi vwritestack_alt(lwx * const restrict lx, int x, int y, const void* const restrict fmt, va_list va)
 {
+  enter;
+
 	va_list va2;
 	va_copy(va2, va);
 
@@ -272,8 +280,10 @@ static int vwritestack_alt(lwx * const restrict lx, int x, int y, const void* co
 	finally : coda;
 }
 
-static int writestack(lwx * const restrict lx, int x, int y, const void* const restrict s, int l, uint8_t type)
+static xapi writestack(lwx * const restrict lx, int x, int y, const void* const restrict s, int l, uint8_t type)
 {
+  enter;
+
 	if(type)
 	{
 		// ensure stack has enough lists, list has enough strings, string has enough bytes
@@ -307,8 +317,10 @@ static int writestack(lwx * const restrict lx, int x, int y, const void* const r
 	finally : coda;
 }
 
-static int vwritestack(lwx * const restrict lx, int x, int y, const char* const restrict fmt, va_list va)
+static xapi vwritestack(lwx * const restrict lx, int x, int y, const char* const restrict fmt, va_list va)
 {
+  enter;
+
 	va_list va2;
 	va_copy(va2, va);
 
@@ -339,8 +351,10 @@ static int vwritestack(lwx * const restrict lx, int x, int y, const char* const 
 // API
 //
 
-int API lstack_clear(lwx * const restrict lx, int x, int y)
+API xapi lstack_clear(lwx * const restrict lx, int x, int y)
 {
+	enter;
+
 	lx->s[x].s[y].l = 0;
 	lx->s[x].s[y].type = 0;
 
@@ -354,8 +368,10 @@ int API lstack_clear(lwx * const restrict lx, int x, int y)
 	finally : coda;
 }
 
-int API lstack_catw(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
+API xapi lstack_catw(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
 {
+	enter;
+
 	// ensure stack has enough lists, stack has enough strings, string has enough bytes
 	fatal(ensure, lx, x, y, -1);
 	fatal(ensure, lx, x, y, lx->s[x].s[y].l + l);
@@ -376,13 +392,15 @@ int API lstack_catw(lwx * const restrict lx, int x, int y, const char* const res
 	finally : coda;
 }
 
-int API lstack_cats(lwx * const restrict lx, int x, int y, const char* const restrict s)
+API xapi lstack_cats(lwx * const restrict lx, int x, int y, const char* const restrict s)
 {
 	xproxy(lstack_catw, lx, x, y, s, strlen(s));
 }
 
-int API lstack_catf(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+API xapi lstack_catf(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
 {
+	enter;
+
 	va_list va;
 	va_start(va, fmt);
 
@@ -412,78 +430,92 @@ int API lstack_catf(lwx * const restrict lx, int x, int y, const char* const res
 	finally : coda;
 }
 
-int API lstack_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
+API xapi lstack_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
 {
 	xproxy(writestack, lx, x, y, s, strlen(s), 0);
 }
 
-int API lstack_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
+API xapi lstack_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
 {
 	xproxy(writestack, lx, x, y, s, l, 0);
 }
 
-int API lstack_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+API xapi lstack_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
 {
+  enter;
+
 	va_list va;
 	va_start(va, fmt);
 
-	xproxy(vwritestack, lx, x, y, fmt, va);
+  fatal(vwritestack, lx, x, y, fmt, va);
+
+  finally : coda;
 }
 
-int API lstack_adds(lwx * const restrict lx, const char* const restrict s)
+API xapi lstack_adds(lwx * const restrict lx, const char* const restrict s)
 {
 	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, s, strlen(s), 0);
 }
 
-int API lstack_addw(lwx * const restrict lx, const char* const restrict s, size_t l)
+API xapi lstack_addw(lwx * const restrict lx, const char* const restrict s, size_t l)
 {
 	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, s, l, 0);
 }
 
-int API lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
+API xapi lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
 {
+  enter;
+
 	va_list va;
 	va_start(va, fmt);
 
-	xproxy(vwritestack, lx, 0, lx->l ? lx->s[0].l : 0, fmt, va);
+	fatal(vwritestack, lx, 0, lx->l ? lx->s[0].l : 0, fmt, va);
+
+  finally : coda;
 }
 
-int API lstack_alt_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
+API xapi lstack_alt_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
 {
 	xproxy(writestack_alt, lx, x, y, s, strlen(s), 0);
 }
 
-int API lstack_alt_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
+API xapi lstack_alt_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
 {
 	xproxy(writestack_alt, lx, x, y, s, l, 0);
 }
 
-int API lstack_alt_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+API xapi lstack_alt_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
 {
+  enter;
+
 	va_list va;
 	va_start(va, fmt);
 
-	xproxy(vwritestack_alt, lx, x, y, fmt, va);
+	fatal(vwritestack_alt, lx, x, y, fmt, va);
+
+  finally : coda;
 }
 
-int API lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
+API xapi lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 {
 	xproxy(writestack, lx, x, y, o, 0, type);
 }
 
-int API lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
+API xapi lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
 {
 	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, o, 0, type);
 }
 
-int API lstack_obj_alt_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
+API xapi lstack_obj_alt_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 {
 	xproxy(writestack_alt, lx, x, y, o, 0, type);
 }
 
 // shift removes the first list from the stack
-int API lstack_shift(lwx * const restrict lx)
+API xapi lstack_shift(lwx * const restrict lx)
 {
+	enter;
+
 	if(lx->l)
 	{
 		typeof(lx->s[0]) T = lx->s[0];
@@ -501,8 +533,10 @@ int API lstack_shift(lwx * const restrict lx)
 }
 
 // pop removes the last list from the stack
-int API lstack_pop(lwx * const restrict lx)
+API xapi lstack_pop(lwx * const restrict lx)
 {
+	enter;
+
 	if(lx->l)
 		lx->l--;
 
@@ -510,8 +544,10 @@ int API lstack_pop(lwx * const restrict lx)
 }
 
 // unshift allocates a new list at index 0
-int API lstack_unshift(lwx * const restrict lx)
+API xapi lstack_unshift(lwx * const restrict lx)
 {
+	enter;
+
 	// allocate new list, if necessary
 	if(lx->l == lx->a)
 	{
@@ -540,8 +576,10 @@ int API lstack_unshift(lwx * const restrict lx)
 }
 
 // push allocates a new list at the end
-int API lstack_push(lwx * const restrict lx)
+API xapi lstack_push(lwx * const restrict lx)
 {
+	enter;
+
 	// allocate new list, if necessary
 	if(lx->l == lx->a)
 	{
@@ -555,23 +593,10 @@ int API lstack_push(lwx * const restrict lx)
 	finally : coda;
 }
 
-int API lstack_cycle(lwx * const restrict lx)
+API xapi lstack_merge(lwx * const restrict lx, int a, int b)
 {
-	return 1;
-}
+  enter;
 
-int API lstack_recycle(lwx * const restrict lx)
-{
-	return 1;
-}
-
-int API lstack_xchg(lwx * const restrict lx)
-{
-	return 1;
-}
-
-int API lstack_merge(lwx * const restrict lx, int a, int b)
-{
 	if(a < 0 || a >= lx->l)
 		fail(LW_NOLIST);
 
@@ -622,18 +647,20 @@ finally:
 coda;
 }
 
-int API lstack_allocate(lwx * const restrict lx, int x, int y, int z)
+API xapi lstack_allocate(lwx * const restrict lx, int x, int y, int z)
 {
 	xproxy(allocate, lx, x, y, z);
 }
 
-int API lstack_ensure(lwx * const restrict lx, int x, int y, int z)
+API xapi lstack_ensure(lwx * const restrict lx, int x, int y, int z)
 {
 	xproxy(ensure, lx, x, y, z);
 }
 
-int API lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
+API xapi lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 {
+	enter;
+
 	// copy of ax:ay, which is about to be overwritten
 	typeof(lx->s[0].s[0]) Ts = lx->s[ax].s[ay];
 	typeof(lx->s[0].t[0]) Tt = lx->s[ax].t[ay];
@@ -664,8 +691,10 @@ int API lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 	finally : coda;
 }
 
-int API lstack_swap(lwx * const restrict lx, int ax, int ay, int bx, int by)
+API xapi lstack_swap(lwx * const restrict lx, int ax, int ay, int bx, int by)
 {
+	enter;
+
 	if(ax == 0 && bx == 0)
 	{
 /*
@@ -697,8 +726,10 @@ int API lstack_swap(lwx * const restrict lx, int ax, int ay, int bx, int by)
 	finally : coda;
 }
 
-int API lstack_displace(lwx * const restrict lx, int x, int y, int l)
+API xapi lstack_displace(lwx * const restrict lx, int x, int y, int l)
 {
+	enter;
+
 	// notice that this is a no-op when l == 0
 	// ensure there are sufficient unused entries beyond s[x].l
 	fatal(allocate, lx, x, lx->s[x].l + l - 1, -1);
@@ -733,8 +764,10 @@ int API lstack_displace(lwx * const restrict lx, int x, int y, int l)
 	finally : coda;
 }
 
-int API lstack_delete(lwx * const restrict lx, int x, int y)
+API xapi lstack_delete(lwx * const restrict lx, int x, int y)
 {
+	enter;
+
 	// copy of this entry
 	typeof(lx->s[0].s[0]) Ts = lx->s[x].s[y];
 	typeof(lx->s[0].t[0]) Tt = lx->s[x].t[y];
@@ -759,8 +792,10 @@ int API lstack_delete(lwx * const restrict lx, int x, int y)
 	finally : coda;
 }
 
-int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * const rl, uint8_t * const rt, int obj, int win, int str, int * const raw)
+API xapi lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * const rl, uint8_t * const rt, int obj, int win, int str, int * const raw)
 {
+	enter;
+
 	char * zs		= lx->s[x].s[y].s;
 	int zsl			= lx->s[x].s[y].l;
 	uint8_t zst	= lx->s[x].s[y].type;
@@ -874,28 +909,30 @@ int API lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * cons
 	finally : coda;
 }
 
-int API lstack_getobject(lwx * const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
+API xapi lstack_getobject(lwx * const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
 {
 	xproxy(lstack_readrow, lx, x, y, r, 0, rt, 0, 0, 0, 0);
 }
 
-int API lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
+API xapi lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
 {
 	xproxy(lstack_readrow, lx, x, y, r, rl, 0, 1, 1, 0, 0);
 }
 
-int API lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
+API xapi lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
 {
 	xproxy(lstack_readrow, lx, x, y, r, rl, 0, 1, 1, 1, 0);
 }
 
-int API lstack_string(lwx * const restrict lx, int x, int y, char ** r)
+API xapi lstack_string(lwx * const restrict lx, int x, int y, char ** r)
 {
 	xproxy(lstack_readrow, lx, x, y, r, 0, 0, 1, 1, 1, 0);
 }
 
-int API lstack_swaptop(lwx * const restrict lx, int ay, int by)
+API xapi lstack_swaptop(lwx * const restrict lx, int ay, int by)
 {
+	enter;
+
 	typeof(lx->s[0].s[0]) Ts = lx->s[0].s[ay];
 	typeof(lx->s[0].t[0]) Tt = lx->s[0].t[ay];
 	typeof(lx->win.s[0])  Tw = lx->win.s[ay];

@@ -33,7 +33,7 @@
 /// static
 ///
 
-static int exec_transform(
+static xapi exec_transform(
 	  transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
@@ -42,6 +42,8 @@ static int exec_transform(
 	, void * udata
 )
 {
+  enter;
+
 	pstring * ps = 0;
 	pstring * ps1 = 0;
 
@@ -203,7 +205,7 @@ coda;
 /// API
 ///
 
-int API listwise_exec_transform(
+API xapi listwise_exec_transform(
 	  transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
@@ -214,7 +216,7 @@ int API listwise_exec_transform(
 	xproxy(exec_transform, g, init, initls, initl, lx, 0);
 }
 
-int API listwise_exec_transform2(
+API xapi listwise_exec_transform2(
 	  transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
@@ -226,7 +228,7 @@ int API listwise_exec_transform2(
 	xproxy(exec_transform, g, init, initls, initl, lx, udata);
 }
 
-int API listwise_exec(
+API xapi listwise_exec(
     char * const restrict s
   , int l
   , char ** const restrict init
@@ -235,6 +237,8 @@ int API listwise_exec(
   , lwx ** restrict lx
 )
 {
+  enter;
+
 	// transform
 	transform* g = 0;
 

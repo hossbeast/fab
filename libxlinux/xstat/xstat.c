@@ -28,10 +28,6 @@ API xapi xstat(const char * path, struct stat * buf)
 {
   enter;
 
-#if 0
-	if((r && ((*r) = stat(path, buf)) != 0) || (!r && stat(path, buf) != 0))
-		fail(errno);
-#endif
 	if(stat(path, buf) != 0)
 		fail(errno);
 	
@@ -75,7 +71,7 @@ API xapi uxlstat(const char * path, struct stat * buf, int * r)
 
 	if((r && ((*r) = lstat(path, buf)) != 0) || (!r && lstat(path, buf) != 0))
 	{
-		if(errno != ENOENT)
+		if(errno != ENOENT && errno != ENOTDIR)
 			fail(errno);
 
 		memset(buf, 0, sizeof(*buf));
@@ -102,7 +98,7 @@ API xapi uxfstat(int fd, struct stat * buf)
 
 	if(fstat(fd, buf) != 0)
 	{
-		if(errno != ENOENT)
+		if(errno != ENOENT && errno != ENOTDIR)
 			fail(errno);
 
 		memset(buf, 0, sizeof(*buf));

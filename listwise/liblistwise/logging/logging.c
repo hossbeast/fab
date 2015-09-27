@@ -19,7 +19,7 @@
 
 struct listwise_logging * APIDATA listwise_logging_config;
 
-void API listwise_logging_configure(struct listwise_logging * logging)
+API void listwise_logging_configure(struct listwise_logging * logging)
 {
 	listwise_logging_config = logging;
 }

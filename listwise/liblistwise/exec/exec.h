@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_EXEC_H
 #define _LISTWISE_EXEC_H
 
+#include "xapi.h"
+
 struct lwx;
 struct transform;
 
@@ -40,7 +42,7 @@ struct transform;
 //  if *lx is null, a new lw context is created and returned
 //  otherwise, an existing lw context is reused
 //
-int listwise_exec_transform(
+xapi listwise_exec_transform(
 	  struct transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls
@@ -49,7 +51,7 @@ int listwise_exec_transform(
 )
 	__attribute__((nonnull(1, 5)));
 
-int listwise_exec_transform2(
+xapi listwise_exec_transform2(
 	  struct transform * const restrict g
 	, char ** const restrict init
 	, int * const restrict initls

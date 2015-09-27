@@ -24,15 +24,23 @@
 
 lwx * APIDATA listwise_identity = 0;
 
-static void __attribute__((constructor)) identity_init()
+//
+// public
+//
+
+xapi lwx_setup()
 {
-	wmalloc(&listwise_identity, sizeof(*listwise_identity));
-	wmalloc(&listwise_identity->s, sizeof(listwise_identity->s[0]) * 1);
+  enter;
+
+	fatal(xmalloc, &listwise_identity, sizeof(*listwise_identity));
+	fatal(xmalloc, &listwise_identity->s, sizeof(listwise_identity->s[0]) * 1);
 	listwise_identity->l = 1;
 	listwise_identity->a = 1;
+
+  finally : coda;
 }
 
-void __attribute__((destructor)) identity_teardown()
+void lwx_teardown()
 {
 	if(listwise_identity)
 		free(listwise_identity->s);
@@ -43,8 +51,10 @@ void __attribute__((destructor)) identity_teardown()
 /// API
 ///
 
-int API lwx_alloc(lwx ** const lx)
+API xapi lwx_alloc(lwx ** const lx)
 {
+	enter;
+
 	fatal(xmalloc, lx, sizeof(**lx));
 
 	finally : coda;
@@ -71,7 +81,7 @@ voidstar API lwx_setptr(lwx * const lx, void * const g)
 	return ((lx->ptr = g));
 }
 
-void API lwx_free(lwx * lx)
+API void lwx_free(lwx * lx)
 {
 	if(lx && lx != listwise_identity)
 	{
@@ -103,14 +113,16 @@ void API lwx_free(lwx * lx)
 	}
 }
 
-void API lwx_xfree(lwx ** lx)
+API void lwx_xfree(lwx ** lx)
 {
 	lwx_free(*lx);
 	*lx = 0;
 }
 
-int API lwx_reset(lwx * lx)
+API xapi lwx_reset(lwx * lx)
 {
+	enter;
+
 	int x;
 	for(x = 0; x < lx->l; x++)
 	{

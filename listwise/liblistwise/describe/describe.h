@@ -18,6 +18,7 @@
 #ifndef _LISTWISE_DESCRIBE_H
 #define _LISTWISE_DESCRIBE_H
 
+#include "xapi.h"
 #include "pstring.h"
 
 #define restrict __restrict
@@ -33,7 +34,7 @@
 //  sz  - size of the buffer
 //  [z] - incremented by the amount written to dst
 //
-int lstack_description_write(lwx * const restrict lx, char * const restrict dst, const size_t sz, size_t * restrict z)
+xapi lstack_description_write(lwx * const restrict lx, char * const restrict dst, const size_t sz, size_t * restrict z)
 	__attribute__((nonnull(1, 2)));
 
 /// lstack_description_pswrite
@@ -45,7 +46,7 @@ int lstack_description_write(lwx * const restrict lx, char * const restrict dst,
 //  lx  - lstack instance
 //  ps  - pstring to write to
 //
-int lstack_description_pswrite(lwx * const restrict lx, pstring ** const restrict ps)
+xapi lstack_description_pswrite(lwx * const restrict lx, pstring ** const restrict ps)
 	__attribute__((nonnull(1, 2)));
 
 /// lstack_dump
@@ -57,7 +58,7 @@ int lstack_description_pswrite(lwx * const restrict lx, pstring ** const restric
 //  lx   - lstack instance
 //  [ps] - pstring to write to
 //
-int lstack_description_dump(lwx * const restrict, pstring ** restrict ps)
+xapi lstack_description_dump(lwx * const restrict, pstring ** restrict ps)
 	__attribute__((nonnull));
 
 /// lstack_description_log
@@ -70,7 +71,7 @@ int lstack_description_dump(lwx * const restrict, pstring ** restrict ps)
 //  [ps]    - pstring to write to
 //  [udata] - passthrough
 //
-int lstack_description_log(lwx * const restrict, pstring ** restrict ps, void * restrict udata)
+xapi lstack_description_log(lwx * const restrict, pstring ** restrict ps, void * restrict udata)
 	__attribute__((nonnull));
 
 #undef restrict

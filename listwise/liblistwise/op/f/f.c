@@ -36,7 +36,7 @@ ARGUMENTS (any number)
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -49,8 +49,10 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
 	int argsl = o->argsl;
 	if(argsl && o->args[argsl - 1]->itype != ITYPE_I64)
 		argsl--;

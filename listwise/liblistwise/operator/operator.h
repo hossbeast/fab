@@ -21,12 +21,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "xapi.h"
+
 #include "pstring.h"
 
 #include "listwise.h"
 #include "listwise/lstack.h"
 #include "listwise/LW.errtab.h"
-//#include "listwise/PCRE.errtab.h"
 #include "listwise/selection.h"
 #include "listwise/window.h"
 
@@ -162,7 +163,7 @@ typedef struct operator
 	// SUMMARY
 	//  validate the operation
 	//
-	int 		(*op_validate)(struct operation*);
+	xapi 		(*op_validate)(struct operation*);
 
 	/// op_exec
 	//
@@ -176,7 +177,7 @@ typedef struct operator
 	//  ovec_len -
 	//  udata    - (see listwise/log.h)
 	//
-	int 		(*op_exec)(struct operation*, lwx*, int**, int*, void**);
+	xapi 		(*op_exec)(struct operation*, lwx*, int**, int*, void**);
 
 	char		s[6];			// name ; required
 	int			sl;				// name length

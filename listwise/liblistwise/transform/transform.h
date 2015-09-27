@@ -20,6 +20,8 @@
 
 #include <sys/types.h>
 
+#include "xapi.h"
+
 struct pstring;		// pstring.h
 
 /// definitions are in operator.h
@@ -46,9 +48,9 @@ typedef struct transform
 //
 // returns a transform parser
 //
-int transform_mkparser(transform_parser ** p);
+xapi transform_mkparser(transform_parser ** p);
 
-/// (XAPI) transform_parse
+/// transform_parse
 //
 // parse a transform string
 //
@@ -60,15 +62,15 @@ int transform_mkparser(transform_parser ** p);
 //   r     - receives parsed transform
 //  [name] - also specify a name for this input (that is only used in informational and error messages)
 //
-int transform_parse(transform_parser ** p, char* s, int l, transform** r);
-int transform_parse2(transform_parser ** p, char* s, int l, transform** r, void * udata);
+xapi transform_parse(transform_parser ** p, char* s, int l, transform** r);
+xapi transform_parse2(transform_parser ** p, char* s, int l, transform** r, void * udata);
 
 /// transform_parse_named
 //
 // see transform_parse
 //
-int transform_parse_named(transform_parser ** p, char* s, int l, char * name, int namel, transform** r);
-int transform_parse_named2(transform_parser ** p, char* s, int l, char * name, int namel, transform** r, void * udata);
+xapi transform_parse_named(transform_parser ** p, char* s, int l, char * name, int namel, transform** r);
+xapi transform_parse_named2(transform_parser ** p, char* s, int l, char * name, int namel, transform** r, void * udata);
 
 /// transform_freeparser 
 //
@@ -102,7 +104,7 @@ void transform_xfree(transform**);
 // RETURNS
 //  the number of bytes written
 //
-int transform_canon_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
+xapi transform_canon_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
 	__attribute__((nonnull(1, 2)));
 
 /// transform_canon_pswrite
@@ -114,7 +116,7 @@ int transform_canon_write(transform * const restrict g, char * const restrict ds
 //  g  - transform
 //  ps - pstring to write to
 //
-int transform_canon_pswrite(transform * const restrict g, struct pstring ** restrict ps)
+xapi transform_canon_pswrite(transform * const restrict g, struct pstring ** restrict ps)
 	__attribute__((nonnull));
 
 /// transform_canon_dump
@@ -126,7 +128,7 @@ int transform_canon_pswrite(transform * const restrict g, struct pstring ** rest
 //  g    - transform
 //  [ps] - pstring to write to
 //
-int transform_canon_dump(transform * const restrict g, struct pstring ** restrict ps)
+xapi transform_canon_dump(transform * const restrict g, struct pstring ** restrict ps)
 	__attribute__((nonnull));
 
 /// transform_canon_log
@@ -139,7 +141,7 @@ int transform_canon_dump(transform * const restrict g, struct pstring ** restric
 //  [ps]    - pstring to write to
 //  [udata] - passthrough
 //
-int transform_canon_log(transform * const restrict g, struct pstring ** restrict ps, void * restrict udata)
+xapi transform_canon_log(transform * const restrict g, struct pstring ** restrict ps, void * restrict udata)
 	__attribute__((nonnull(1)));
 
 /// transform_description_write
@@ -156,7 +158,7 @@ int transform_canon_log(transform * const restrict g, struct pstring ** restrict
 // RETURNS
 //  the number of bytes written
 //
-int transform_description_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
+xapi transform_description_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
 	__attribute__((nonnull(1, 2)));
 
 /// transform_description_pswrite
@@ -168,7 +170,7 @@ int transform_description_write(transform * const restrict g, char * const restr
 //  g  - transform
 //  ps - pstring to write to
 //
-int transform_description_pswrite(transform * const restrict g, struct pstring ** restrict ps)
+xapi transform_description_pswrite(transform * const restrict g, struct pstring ** restrict ps)
 	__attribute__((nonnull));
 
 /// transform_description_dump
@@ -180,7 +182,7 @@ int transform_description_pswrite(transform * const restrict g, struct pstring *
 //  g    - transform
 //  [ps] - pstring to write to
 //
-int transform_description_dump(transform * const restrict g, struct pstring ** restrict ps)
+xapi transform_description_dump(transform * const restrict g, struct pstring ** restrict ps)
 	__attribute__((nonnull));
 
 /// transform_description_log
@@ -193,7 +195,7 @@ int transform_description_dump(transform * const restrict g, struct pstring ** r
 //  [ps]    - pstring to write to
 //  [udata] - passthrough
 //
-int transform_description_log(transform * const restrict g, struct pstring ** restrict ps, void * restrict udata)
+xapi transform_description_log(transform * const restrict g, struct pstring ** restrict ps, void * restrict udata)
 	__attribute__((nonnull(1)));
 
 #undef restrict

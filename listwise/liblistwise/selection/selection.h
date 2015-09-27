@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_SELECTION_H
 #define _LISTWISE_SELECTION_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 /// lstack_selection_stage
@@ -25,7 +27,7 @@
 // SUMMARY
 //  stage the selection 0:y
 //
-int lstack_selection_stage(lwx * const restrict lx, int y)
+xapi lstack_selection_stage(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_selection_reset
@@ -33,7 +35,7 @@ int lstack_selection_stage(lwx * const restrict lx, int y)
 // SUMMARY
 //  reset selection (select all)
 //
-int lstack_selection_reset(lwx * const restrict lx)
+xapi lstack_selection_reset(lwx * const restrict lx)
 	__attribute__((nonnull));
 
 #define LWX_SELECTION_ALL			0		/* universe */

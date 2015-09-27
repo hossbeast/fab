@@ -86,11 +86,17 @@ recommended to pre-allocate memory to libxapi, viz.
 
 ## Features
 
-* For rendering backtraces, see xapi/trace.h
-* To catch an error during unwinding, inspect it, and conditionally discard it, see xapi_calltree_unwind
-* To serialize/deserialize a calltree, see xapi_calltree_freeze / memblk.h
-
-* calltree.h
+* xapi/trace.h
+  * for rendering backtraces
+* xapi/calltree.h
+  * To catch an error during unwinding, inspect it, and conditionally discard it, see xapi_calltree_unwind
+* xapi/memblk.h
+  * serialize/deserialize a calltree
+* xapi/error.h
+  * getting strings from exit values
+* xapi/errtab.h
+  * registering etables for exit value resolution
+  * getting strings from exit values, in the context of an etable
 
 ## Implementation Details
 

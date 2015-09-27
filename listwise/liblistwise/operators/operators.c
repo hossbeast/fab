@@ -46,8 +46,10 @@ int			g_dls_l;
 
 #define DEBUG_LWOP_LOAD 0
 
-static int op_load(char* path)
+static xapi op_load(char* path)
 {
+  enter;
+
 	operator* op = 0;
 
 #if DEBUG_LWOP_LOAD
@@ -102,8 +104,10 @@ dprintf(501, "\n");
 	finally : coda;
 }
 
-static int read_opdir(char * s)
+static xapi read_opdir(char * s)
 {
+  enter;
+
 	char space[256];
 	snprintf(space, sizeof(space) - 1, "%s", s);
 
@@ -175,11 +179,44 @@ coda;
 }
 
 //
+// public
+//
+
+xapi operators_setup()
+{
+	enter;
+
+	fatal(listwise_register_opdir, XQUOTE(LWOPDIR));	/* /usr/lib/listwise */
+
+finally:
+	if(XAPI_UNWINDING)
+	{
+#if XAPI_PROVIDE_BACKTRACE
+		xapi_backtrace();
+#else
+	dprintf(1, "liblistwise : failed to load operators\n");
+#endif
+	}
+coda;
+}
+
+void operators_teardown()
+{
+	int x;
+	for(x = 0; x < g_dls_l; x++)
+		dlclose(g_dls[x]);
+
+	free(g_dls);
+	free(g_ops);
+	free(g_ops_by_s);
+	free(g_ops_by_mnemonic);
+}
+
+//
 // API
 //
 
-typedef operator * opstar;
-opstar API op_lookup(char* s, int l)
+API operator * op_lookup(char* s, int l)
 {
 	int op_compare_by_s(const void* __attribute__((unused)) K, const operator** B)
 	{
@@ -228,8 +265,10 @@ opstar API op_lookup(char* s, int l)
 	return 0;
 }
 
-int API listwise_register_opdir(char * dir)
+API xapi listwise_register_opdir(char * dir)
 {
+	enter;
+
 	// 
 	size_t old_len = g_ops_l;
 
@@ -271,34 +310,4 @@ int API listwise_register_opdir(char * dir)
 finally:
 	XAPI_INFOF("path", "%s", dir);
 coda;
-}
-
-int __attribute__((constructor)) listwise_operators_setup()
-{
-	prologue;
-
-	fatal(listwise_register_opdir, XQUOTE(LWOPDIR));	/* /usr/lib/listwise */
-
-finally:
-	if(XAPI_UNWINDING)
-	{
-#if XAPI_PROVIDE_BACKTRACE
-		xapi_backtrace();
-#else
-	dprintf(1, "liblistwise : failed to load operators\n");
-#endif
-	}
-coda;
-}
-
-void __attribute__((destructor)) listwise_operators_teardown()
-{
-	int x;
-	for(x = 0; x < g_dls_l; x++)
-		dlclose(g_dls[x]);
-
-	free(g_dls);
-	free(g_ops);
-	free(g_ops_by_s);
-	free(g_ops_by_mnemonic);
 }

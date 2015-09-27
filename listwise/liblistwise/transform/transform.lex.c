@@ -1,6 +1,6 @@
-#line 2 "listwise/liblistwise/transform/transform.lex.c"
+#line 2 "transform/transform.lex.c"
 
-#line 4 "listwise/liblistwise/transform/transform.lex.c"
+#line 4 "transform/transform.lex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -9,7 +9,7 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 35
+#define YY_FLEX_SUBMINOR_VERSION 36
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -159,15 +159,7 @@ typedef void* yyscan_t;
 
 /* Size of default input buffer. */
 #ifndef YY_BUF_SIZE
-#ifdef __ia64__
-/* On IA-64, the buffer size is 16k, not 8k.
- * Moreover, YY_BUF_SIZE is 2*YY_READ_BUF_SIZE in the general case.
- * Ditto for the __ia64__ case accordingly.
- */
-#define YY_BUF_SIZE 32768
-#else
 #define YY_BUF_SIZE 16384
-#endif /* __ia64__ */
 #endif
 
 /* The state buf must be large enough to hold one state per character in the main buffer.
@@ -177,6 +169,11 @@ typedef void* yyscan_t;
 #ifndef YY_TYPEDEF_YY_BUFFER_STATE
 #define YY_TYPEDEF_YY_BUFFER_STATE
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
+#endif
+
+#ifndef YY_TYPEDEF_YY_SIZE_T
+#define YY_TYPEDEF_YY_SIZE_T
+typedef size_t yy_size_t;
 #endif
 
 #define EOB_ACT_CONTINUE_SCAN 0
@@ -201,11 +198,6 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
 
 #define unput(c) yyunput( c, yyg->yytext_ptr , yyscanner )
 
-#ifndef YY_TYPEDEF_YY_SIZE_T
-#define YY_TYPEDEF_YY_SIZE_T
-typedef size_t yy_size_t;
-#endif
-
 #ifndef YY_STRUCT_YY_BUFFER_STATE
 #define YY_STRUCT_YY_BUFFER_STATE
 struct yy_buffer_state
@@ -223,7 +215,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	int yy_n_chars;
+	yy_size_t yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -302,7 +294,7 @@ static void transform_yy_init_buffer (YY_BUFFER_STATE b,FILE *file ,yyscan_t yys
 
 YY_BUFFER_STATE transform_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
 YY_BUFFER_STATE transform_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE transform_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
+YY_BUFFER_STATE transform_yy_scan_bytes (yyconst char *bytes,yy_size_t len ,yyscan_t yyscanner );
 
 void *transform_yyalloc (yy_size_t ,yyscan_t yyscanner );
 void *transform_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
@@ -332,7 +324,7 @@ void transform_yyfree (void * ,yyscan_t yyscanner );
 
 #define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
 
-#define transform_yywrap(n) 1
+#define transform_yywrap(yyscanner) 1
 #define YY_SKIP_YYWRAP
 
 typedef unsigned char YY_CHAR;
@@ -1026,7 +1018,7 @@ static yyconst flex_int16_t yy_chk[2160] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "listwise/liblistwise/transform/transform.l"
+#line 1 "transform/transform.l"
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -1043,7 +1035,7 @@ static yyconst flex_int16_t yy_chk[2160] =
    
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
-#line 19 "listwise/liblistwise/transform/transform.l"
+#line 19 "transform/transform.l"
 	#include <stdio.h>
 	#include <inttypes.h>
 
@@ -1160,7 +1152,7 @@ static yyconst flex_int16_t yy_chk[2160] =
 
 
 /* bytes that cannot appear in the string being scanned */
-#line 1164 "listwise/liblistwise/transform/transform.lex.c"
+#line 1156 "transform/transform.lex.c"
 
 #define INITIAL 0
 #define ws 1
@@ -1212,8 +1204,8 @@ struct yyguts_t
     size_t yy_buffer_stack_max; /**< capacity of stack. */
     YY_BUFFER_STATE * yy_buffer_stack; /**< Stack as an array. */
     char yy_hold_char;
-    int yy_n_chars;
-    int yyleng_r;
+    yy_size_t yy_n_chars;
+    yy_size_t yyleng_r;
     char *yy_c_buf_p;
     int yy_init;
     int yy_start;
@@ -1270,13 +1262,17 @@ FILE *transform_yyget_out (yyscan_t yyscanner );
 
 void transform_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
 
-int transform_yyget_leng (yyscan_t yyscanner );
+yy_size_t transform_yyget_leng (yyscan_t yyscanner );
 
 char *transform_yyget_text (yyscan_t yyscanner );
 
 int transform_yyget_lineno (yyscan_t yyscanner );
 
 void transform_yyset_lineno (int line_number ,yyscan_t yyscanner );
+
+int transform_yyget_column  (yyscan_t yyscanner );
+
+void transform_yyset_column (int column_no ,yyscan_t yyscanner );
 
 YYSTYPE * transform_yyget_lval (yyscan_t yyscanner );
 
@@ -1322,12 +1318,7 @@ static int input (yyscan_t yyscanner );
     
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
-#ifdef __ia64__
-/* On IA-64, the buffer size is 16k, not 8k */
-#define YY_READ_BUF_SIZE 16384
-#else
 #define YY_READ_BUF_SIZE 8192
-#endif /* __ia64__ */
 #endif
 
 /* Copy whatever the last rule matched to the standard output. */
@@ -1431,11 +1422,11 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 148 "listwise/liblistwise/transform/transform.l"
+#line 148 "transform/transform.l"
 
 
  /* single-line comments */
-#line 1439 "listwise/liblistwise/transform/transform.lex.c"
+#line 1430 "transform/transform.lex.c"
 
     yylval = yylval_param;
 
@@ -1524,39 +1515,39 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 151 "listwise/liblistwise/transform/transform.l"
+#line 151 "transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 /* multiline comments are nestable */
 case 2:
 YY_RULE_SETUP
-#line 154 "listwise/liblistwise/transform/transform.l"
+#line 154 "transform/transform.l"
 { LOCWRITE; PUSHSTATE(multilinecomment); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 155 "listwise/liblistwise/transform/transform.l"
+#line 155 "transform/transform.l"
 { LOCWRITE; POPSTATE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 156 "listwise/liblistwise/transform/transform.l"
+#line 156 "transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 157 "listwise/liblistwise/transform/transform.l"
+#line 157 "transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 158 "listwise/liblistwise/transform/transform.l"
+#line 158 "transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 159 "listwise/liblistwise/transform/transform.l"
+#line 159 "transform/transform.l"
 { LOCRESET; }
 	YY_BREAK
 /*
@@ -1568,17 +1559,17 @@ YY_RULE_SETUP
 case 8:
 /* rule 8 can match eol */
 YY_RULE_SETUP
-#line 168 "listwise/liblistwise/transform/transform.l"
+#line 168 "transform/transform.l"
 { return LEX(LF, 0); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 169 "listwise/liblistwise/transform/transform.l"
+#line 169 "transform/transform.l"
 { return LEX(WS, 0); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 171 "listwise/liblistwise/transform/transform.l"
+#line 171 "transform/transform.l"
 {
 																													PUSHSTATE(ws);
 																													typeof(*yylval->op) * op;
@@ -1595,7 +1586,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 184 "listwise/liblistwise/transform/transform.l"
+#line 184 "transform/transform.l"
 {
 																													PUSHSTATE(ws);
 																													PUSHSTATE(genscan_startcondition_initial[yyextra->scanmode]);
@@ -1605,7 +1596,7 @@ YY_RULE_SETUP
 /* following ws, an alpha string must be an operator name or mnemonic */
 case 12:
 YY_RULE_SETUP
-#line 191 "listwise/liblistwise/transform/transform.l"
+#line 191 "transform/transform.l"
 {
 																													typeof(*yylval->op) * op;
 																													if((op = op_lookup(yytext, yyleng)))
@@ -1625,578 +1616,578 @@ YY_RULE_SETUP
 /* after processing a scanmode directive, revert to the INITIAL scanner */
 case 13:
 YY_RULE_SETUP
-#line 207 "listwise/liblistwise/transform/transform.l"
+#line 207 "transform/transform.l"
 { LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 208 "listwise/liblistwise/transform/transform.l"
+#line 208 "transform/transform.l"
 { LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); POPSTATE; }
 	YY_BREAK
 /* process anything else with the current scanmode */
 case 15:
 /* rule 15 can match eol */
 YY_RULE_SETUP
-#line 211 "listwise/liblistwise/transform/transform.l"
+#line 211 "transform/transform.l"
 { PUSHSTATE(genscan_startcondition_initial[yyextra->scanmode]); yyless(0); }
 	YY_BREAK
 /* fabricate an empty-string STR token */
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 214 "listwise/liblistwise/transform/transform.l"
+#line 214 "transform/transform.l"
 { POPSTATE; yyless(0); return LEX(STR, 1); }
 	YY_BREAK
 /* slash-delimited scanner */
 case 17:
 YY_RULE_SETUP
-#line 217 "listwise/liblistwise/transform/transform.l"
+#line 217 "transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 218 "listwise/liblistwise/transform/transform.l"
+#line 218 "transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 19:
 /* rule 19 can match eol */
 YY_RULE_SETUP
-#line 219 "listwise/liblistwise/transform/transform.l"
+#line 219 "transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 220 "listwise/liblistwise/transform/transform.l"
+#line 220 "transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 222 "listwise/liblistwise/transform/transform.l"
+#line 222 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 22:
 /* rule 22 can match eol */
 YY_RULE_SETUP
-#line 224 "listwise/liblistwise/transform/transform.l"
+#line 224 "transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 225 "listwise/liblistwise/transform/transform.l"
+#line 225 "transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 226 "listwise/liblistwise/transform/transform.l"
+#line 226 "transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 227 "listwise/liblistwise/transform/transform.l"
+#line 227 "transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 228 "listwise/liblistwise/transform/transform.l"
+#line 228 "transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 229 "listwise/liblistwise/transform/transform.l"
+#line 229 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* comma-delimited scanner */
 case 28:
 YY_RULE_SETUP
-#line 232 "listwise/liblistwise/transform/transform.l"
+#line 232 "transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 233 "listwise/liblistwise/transform/transform.l"
+#line 233 "transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 30:
 /* rule 30 can match eol */
 YY_RULE_SETUP
-#line 234 "listwise/liblistwise/transform/transform.l"
+#line 234 "transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 235 "listwise/liblistwise/transform/transform.l"
+#line 235 "transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 237 "listwise/liblistwise/transform/transform.l"
+#line 237 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 33:
 /* rule 33 can match eol */
 YY_RULE_SETUP
-#line 239 "listwise/liblistwise/transform/transform.l"
+#line 239 "transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 240 "listwise/liblistwise/transform/transform.l"
+#line 240 "transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 241 "listwise/liblistwise/transform/transform.l"
+#line 241 "transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 242 "listwise/liblistwise/transform/transform.l"
+#line 242 "transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 243 "listwise/liblistwise/transform/transform.l"
+#line 243 "transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 244 "listwise/liblistwise/transform/transform.l"
+#line 244 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* dot-delimited scanner */
 case 39:
 YY_RULE_SETUP
-#line 247 "listwise/liblistwise/transform/transform.l"
+#line 247 "transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 248 "listwise/liblistwise/transform/transform.l"
+#line 248 "transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 41:
 /* rule 41 can match eol */
 YY_RULE_SETUP
-#line 249 "listwise/liblistwise/transform/transform.l"
+#line 249 "transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 250 "listwise/liblistwise/transform/transform.l"
+#line 250 "transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 252 "listwise/liblistwise/transform/transform.l"
+#line 252 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 44:
 /* rule 44 can match eol */
 YY_RULE_SETUP
-#line 254 "listwise/liblistwise/transform/transform.l"
+#line 254 "transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 255 "listwise/liblistwise/transform/transform.l"
+#line 255 "transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 256 "listwise/liblistwise/transform/transform.l"
+#line 256 "transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 257 "listwise/liblistwise/transform/transform.l"
+#line 257 "transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 258 "listwise/liblistwise/transform/transform.l"
+#line 258 "transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 259 "listwise/liblistwise/transform/transform.l"
+#line 259 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* colon-delimited scanner */
 case 50:
 YY_RULE_SETUP
-#line 262 "listwise/liblistwise/transform/transform.l"
+#line 262 "transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 263 "listwise/liblistwise/transform/transform.l"
+#line 263 "transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 52:
 /* rule 52 can match eol */
 YY_RULE_SETUP
-#line 264 "listwise/liblistwise/transform/transform.l"
+#line 264 "transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 265 "listwise/liblistwise/transform/transform.l"
+#line 265 "transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 267 "listwise/liblistwise/transform/transform.l"
+#line 267 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 55:
 /* rule 55 can match eol */
 YY_RULE_SETUP
-#line 269 "listwise/liblistwise/transform/transform.l"
+#line 269 "transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 270 "listwise/liblistwise/transform/transform.l"
+#line 270 "transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 271 "listwise/liblistwise/transform/transform.l"
+#line 271 "transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 272 "listwise/liblistwise/transform/transform.l"
+#line 272 "transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 273 "listwise/liblistwise/transform/transform.l"
+#line 273 "transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 274 "listwise/liblistwise/transform/transform.l"
+#line 274 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* semicolon-delimited scanner */
 case 61:
 YY_RULE_SETUP
-#line 277 "listwise/liblistwise/transform/transform.l"
+#line 277 "transform/transform.l"
 { return LEX(yytext[0], 0); }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 278 "listwise/liblistwise/transform/transform.l"
+#line 278 "transform/transform.l"
 { PUSHSTATE(emptyarg); yyless(1); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 63:
 /* rule 63 can match eol */
 YY_RULE_SETUP
-#line 279 "listwise/liblistwise/transform/transform.l"
+#line 279 "transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 280 "listwise/liblistwise/transform/transform.l"
+#line 280 "transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 282 "listwise/liblistwise/transform/transform.l"
+#line 282 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 66:
 /* rule 66 can match eol */
 YY_RULE_SETUP
-#line 284 "listwise/liblistwise/transform/transform.l"
+#line 284 "transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 285 "listwise/liblistwise/transform/transform.l"
+#line 285 "transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 286 "listwise/liblistwise/transform/transform.l"
+#line 286 "transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 287 "listwise/liblistwise/transform/transform.l"
+#line 287 "transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 288 "listwise/liblistwise/transform/transform.l"
+#line 288 "transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 289 "listwise/liblistwise/transform/transform.l"
+#line 289 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* braces-enclosed scanner */
 case 72:
 YY_RULE_SETUP
-#line 292 "listwise/liblistwise/transform/transform.l"
+#line 292 "transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 73:
 /* rule 73 can match eol */
 YY_RULE_SETUP
-#line 293 "listwise/liblistwise/transform/transform.l"
+#line 293 "transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 294 "listwise/liblistwise/transform/transform.l"
+#line 294 "transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(STR, 0); }
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 295 "listwise/liblistwise/transform/transform.l"
+#line 295 "transform/transform.l"
 { POPSTATE; if(TOPSTATE == braces) { return LEX(yytext[0], 0); } else { return LEX(STR, 0); } }
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 297 "listwise/liblistwise/transform/transform.l"
+#line 297 "transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 77:
 /* rule 77 can match eol */
 YY_RULE_SETUP
-#line 299 "listwise/liblistwise/transform/transform.l"
+#line 299 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 301 "listwise/liblistwise/transform/transform.l"
+#line 301 "transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 302 "listwise/liblistwise/transform/transform.l"
+#line 302 "transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 303 "listwise/liblistwise/transform/transform.l"
+#line 303 "transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 304 "listwise/liblistwise/transform/transform.l"
+#line 304 "transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 305 "listwise/liblistwise/transform/transform.l"
+#line 305 "transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 83:
 /* rule 83 can match eol */
 YY_RULE_SETUP
-#line 306 "listwise/liblistwise/transform/transform.l"
+#line 306 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* brackets-enclosed scanner */
 case 84:
 YY_RULE_SETUP
-#line 309 "listwise/liblistwise/transform/transform.l"
+#line 309 "transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 85:
 /* rule 85 can match eol */
 YY_RULE_SETUP
-#line 310 "listwise/liblistwise/transform/transform.l"
+#line 310 "transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 311 "listwise/liblistwise/transform/transform.l"
+#line 311 "transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(STR, 0); }
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 312 "listwise/liblistwise/transform/transform.l"
+#line 312 "transform/transform.l"
 { POPSTATE; if(TOPSTATE == brackets) { return LEX(yytext[0], 0); } else { return LEX(STR, 0); } }
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 314 "listwise/liblistwise/transform/transform.l"
+#line 314 "transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 89:
 /* rule 89 can match eol */
 YY_RULE_SETUP
-#line 316 "listwise/liblistwise/transform/transform.l"
+#line 316 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 318 "listwise/liblistwise/transform/transform.l"
+#line 318 "transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 319 "listwise/liblistwise/transform/transform.l"
+#line 319 "transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 320 "listwise/liblistwise/transform/transform.l"
+#line 320 "transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 321 "listwise/liblistwise/transform/transform.l"
+#line 321 "transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 322 "listwise/liblistwise/transform/transform.l"
+#line 322 "transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 95:
 /* rule 95 can match eol */
 YY_RULE_SETUP
-#line 323 "listwise/liblistwise/transform/transform.l"
+#line 323 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* parens-enclosed scanner */
 case 96:
 YY_RULE_SETUP
-#line 326 "listwise/liblistwise/transform/transform.l"
+#line 326 "transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 97:
 /* rule 97 can match eol */
 YY_RULE_SETUP
-#line 327 "listwise/liblistwise/transform/transform.l"
+#line 327 "transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-#line 328 "listwise/liblistwise/transform/transform.l"
+#line 328 "transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(STR, 0); }
 	YY_BREAK
 case 99:
 YY_RULE_SETUP
-#line 329 "listwise/liblistwise/transform/transform.l"
+#line 329 "transform/transform.l"
 { POPSTATE; if(TOPSTATE == parens) { return LEX(yytext[0], 0); } else { return LEX(STR, 0); } }
 	YY_BREAK
 case 100:
 YY_RULE_SETUP
-#line 331 "listwise/liblistwise/transform/transform.l"
+#line 331 "transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 101:
 /* rule 101 can match eol */
 YY_RULE_SETUP
-#line 333 "listwise/liblistwise/transform/transform.l"
+#line 333 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 102:
 YY_RULE_SETUP
-#line 335 "listwise/liblistwise/transform/transform.l"
+#line 335 "transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 103:
 YY_RULE_SETUP
-#line 336 "listwise/liblistwise/transform/transform.l"
+#line 336 "transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 104:
 YY_RULE_SETUP
-#line 337 "listwise/liblistwise/transform/transform.l"
+#line 337 "transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
-#line 338 "listwise/liblistwise/transform/transform.l"
+#line 338 "transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 106:
 YY_RULE_SETUP
-#line 339 "listwise/liblistwise/transform/transform.l"
+#line 339 "transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 107:
 /* rule 107 can match eol */
 YY_RULE_SETUP
-#line 340 "listwise/liblistwise/transform/transform.l"
+#line 340 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 /* angles-enclosed scanner */
 case 108:
 YY_RULE_SETUP
-#line 343 "listwise/liblistwise/transform/transform.l"
+#line 343 "transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(yytext[0], 0); }
 	YY_BREAK
 case 109:
 /* rule 109 can match eol */
 YY_RULE_SETUP
-#line 344 "listwise/liblistwise/transform/transform.l"
+#line 344 "transform/transform.l"
 { POPSTATE; yyless(0); }
 	YY_BREAK
 case 110:
 YY_RULE_SETUP
-#line 345 "listwise/liblistwise/transform/transform.l"
+#line 345 "transform/transform.l"
 { PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); return LEX(STR, 0); }
 	YY_BREAK
 case 111:
 YY_RULE_SETUP
-#line 346 "listwise/liblistwise/transform/transform.l"
+#line 346 "transform/transform.l"
 { POPSTATE; if(TOPSTATE == angles) { return LEX(yytext[0], 0); } else { return LEX(STR, 0); } }
 	YY_BREAK
 case 112:
 YY_RULE_SETUP
-#line 348 "listwise/liblistwise/transform/transform.l"
+#line 348 "transform/transform.l"
 { return LEXV(I64, 0, 0); }
 	YY_BREAK
 case 113:
 /* rule 113 can match eol */
 YY_RULE_SETUP
-#line 350 "listwise/liblistwise/transform/transform.l"
+#line 350 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 114:
 YY_RULE_SETUP
-#line 352 "listwise/liblistwise/transform/transform.l"
+#line 352 "transform/transform.l"
 { return LEX(STR, 1); }
 	YY_BREAK
 case 115:
 YY_RULE_SETUP
-#line 353 "listwise/liblistwise/transform/transform.l"
+#line 353 "transform/transform.l"
 { return LEXV(CREF, 1, 0); }
 	YY_BREAK
 case 116:
 YY_RULE_SETUP
-#line 354 "listwise/liblistwise/transform/transform.l"
+#line 354 "transform/transform.l"
 { return LEXV(HREF, 2, 0); }
 	YY_BREAK
 case 117:
 YY_RULE_SETUP
-#line 355 "listwise/liblistwise/transform/transform.l"
+#line 355 "transform/transform.l"
 { return LEXV(HREF, 3, 0); }
 	YY_BREAK
 case 118:
 YY_RULE_SETUP
-#line 356 "listwise/liblistwise/transform/transform.l"
+#line 356 "transform/transform.l"
 { return LEXV(BREF, 1, 0); }
 	YY_BREAK
 case 119:
 /* rule 119 can match eol */
 YY_RULE_SETUP
-#line 357 "listwise/liblistwise/transform/transform.l"
+#line 357 "transform/transform.l"
 { return LEX(STR, 0); }
 	YY_BREAK
 case 120:
 /* rule 120 can match eol */
 YY_RULE_SETUP
-#line 359 "listwise/liblistwise/transform/transform.l"
+#line 359 "transform/transform.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -2207,7 +2198,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 121:
 YY_RULE_SETUP
-#line 366 "listwise/liblistwise/transform/transform.l"
+#line 366 "transform/transform.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -2242,7 +2233,7 @@ case YY_STATE_EOF(parens_dorefs):
 case YY_STATE_EOF(angles):
 case YY_STATE_EOF(angles_norefs):
 case YY_STATE_EOF(angles_dorefs):
-#line 373 "listwise/liblistwise/transform/transform.l"
+#line 373 "transform/transform.l"
 {
 																													while(yyextra->states_n)
 																														POPSTATE;
@@ -2251,10 +2242,10 @@ case YY_STATE_EOF(angles_dorefs):
 	YY_BREAK
 case 122:
 YY_RULE_SETUP
-#line 378 "listwise/liblistwise/transform/transform.l"
+#line 378 "transform/transform.l"
 ECHO;
 	YY_BREAK
-#line 2258 "listwise/liblistwise/transform/transform.lex.c"
+#line 2249 "transform/transform.lex.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2439,21 +2430,21 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 	else
 		{
-			int num_to_read =
+			yy_size_t num_to_read =
 			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
 		while ( num_to_read <= 0 )
 			{ /* Not enough room in the buffer - grow it. */
 
 			/* just a shorter name for the current buffer */
-			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
+			YY_BUFFER_STATE b = YY_CURRENT_BUFFER_LVALUE;
 
 			int yy_c_buf_p_offset =
 				(int) (yyg->yy_c_buf_p - b->yy_ch_buf);
 
 			if ( b->yy_is_our_buffer )
 				{
-				int new_size = b->yy_buf_size * 2;
+				yy_size_t new_size = b->yy_buf_size * 2;
 
 				if ( new_size <= 0 )
 					b->yy_buf_size += b->yy_buf_size / 8;
@@ -2484,7 +2475,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 		/* Read in more data. */
 		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
-			yyg->yy_n_chars, (size_t) num_to_read );
+			yyg->yy_n_chars, num_to_read );
 
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = yyg->yy_n_chars;
 		}
@@ -2581,6 +2572,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 	yy_is_jam = (yy_current_state == 334);
 
+	(void)yyg;
 	return yy_is_jam ? 0 : yy_current_state;
 }
 
@@ -2609,7 +2601,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 		else
 			{ /* need more input */
-			int offset = yyg->yy_c_buf_p - yyg->yytext_ptr;
+			yy_size_t offset = yyg->yy_c_buf_p - yyg->yytext_ptr;
 			++yyg->yy_c_buf_p;
 
 			switch ( yy_get_next_buffer( yyscanner ) )
@@ -2773,10 +2765,6 @@ static void transform_yy_load_buffer_state  (yyscan_t yyscanner)
 	transform_yyfree((void *) b ,yyscanner );
 }
 
-#ifndef __cplusplus
-extern int isatty (int );
-#endif /* __cplusplus */
-    
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
  * such as during a transform_yyrestart() or at EOF.
@@ -2893,7 +2881,7 @@ void transform_yypop_buffer_state (yyscan_t yyscanner)
  */
 static void transform_yyensure_buffer_stack (yyscan_t yyscanner)
 {
-	int num_to_alloc;
+	yy_size_t num_to_alloc;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	if (!yyg->yy_buffer_stack) {
@@ -2991,7 +2979,7 @@ YY_BUFFER_STATE transform_yy_scan_string (yyconst char * yystr , yyscan_t yyscan
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE transform_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len , yyscan_t yyscanner)
+YY_BUFFER_STATE transform_yy_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
 	char *buf;
@@ -3140,7 +3128,7 @@ FILE *transform_yyget_out  (yyscan_t yyscanner)
 /** Get the length of the current token.
  * @param yyscanner The scanner object.
  */
-int transform_yyget_leng  (yyscan_t yyscanner)
+yy_size_t transform_yyget_leng  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyleng;
@@ -3176,7 +3164,7 @@ void transform_yyset_lineno (int  line_number , yyscan_t yyscanner)
 
         /* lineno is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           yy_fatal_error( "transform_yyset_lineno called with no buffer" , yyscanner); 
+           YY_FATAL_ERROR( "transform_yyset_lineno called with no buffer" );
     
     yylineno = line_number;
 }
@@ -3191,7 +3179,7 @@ void transform_yyset_column (int  column_no , yyscan_t yyscanner)
 
         /* column is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           yy_fatal_error( "transform_yyset_column called with no buffer" , yyscanner); 
+           YY_FATAL_ERROR( "transform_yyset_column called with no buffer" );
     
     yycolumn = column_no;
 }
@@ -3427,4 +3415,4 @@ void transform_yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 378 "listwise/liblistwise/transform/transform.l"
+#line 378 "transform/transform.l"

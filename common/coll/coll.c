@@ -24,8 +24,10 @@
 
 #include "coll.h"
 
-int coll_doubly_add(coll_doubly* c, void* el, void* ret)
+xapi coll_doubly_add(coll_doubly* c, void* el, void* ret)
 {
+  enter;
+
 	if(c->len == c->alloc)
 	{
 		int ns = c->alloc ?: 10;

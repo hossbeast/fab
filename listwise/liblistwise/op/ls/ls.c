@@ -67,8 +67,8 @@ OPERATION
 
 */
 
-static int op_exec_ls(operation*, lwx*, int**, int*, void**);
-static int op_exec_lsr(operation*, lwx*, int**, int*, void**);
+static xapi op_exec_ls(operation*, lwx*, int**, int*, void**);
+static xapi op_exec_lsr(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -88,8 +88,10 @@ operator op_desc[] = {
 	, {}
 };
 
-static int listing(lwx* ls, char * s, int recurse, void ** udata)
+static xapi listing(lwx* ls, char * s, int recurse, void ** udata)
 {
+  enter;
+
 	DIR * dd = 0;
 	if((dd = opendir(s)))
 	{
@@ -133,8 +135,10 @@ finally:
 coda;
 }
 
-static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse, void ** udata)
+static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse, void ** udata)
 {
+  enter;
+
 	int x;
 	fatal(lstack_unshift, ls);
 
@@ -158,12 +162,12 @@ static int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse
 	finally : coda;
 }
 
-int op_exec_ls(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_ls(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	xproxy(op_exec, o, ls, ovec, ovec_len, 0, udata);
 }
 
-int op_exec_lsr(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_lsr(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	xproxy(op_exec, o, ls, ovec, ovec_len, 1, udata);
 }

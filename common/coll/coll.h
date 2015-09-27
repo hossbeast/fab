@@ -18,6 +18,8 @@
 #ifndef _COLL_H
 #define _COLL_H
 
+#include "xapi.h"
+
 ///
 /// LIGHTWEIGHT collection, implemented either as a doubly-allocated list
 /// or singly-allocated list,  suitable for use with idx.h.
@@ -76,11 +78,11 @@ typedef struct coll_doubly
 	char*	e;				// doubly-allocated list of collection elements
 } coll_doubly;
 
-int coll_singly_add(coll_singly* c, void* el, void* ret);
+xapi coll_singly_add(coll_singly* c, void* el, void* ret);
 
 void coll_singly_free(coll_singly* c);
 
-int coll_doubly_add(coll_doubly* c, void* el, void* ret);
+xapi coll_doubly_add(coll_doubly* c, void* el, void* ret);
 
 void coll_doubly_free(coll_doubly* c);
 

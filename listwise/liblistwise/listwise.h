@@ -19,6 +19,7 @@
 #define _LISTWISE_H
 
 #include <stdint.h>
+#include "xapi.h"
 
 /*
 ** liblistwise API
@@ -45,6 +46,20 @@ typedef struct lwx lwx;
 
 #define restrict __restrict
 
+/// listwise_setup
+//
+// SUMMARY
+//  initialize the library
+//
+xapi listwise_setup();
+
+/// listwise_teardown
+//
+// SUMMARY
+//  free resources used by the library
+//
+void listwise_teardown();
+
 /// listwise_exec
 //
 // SUMMARY
@@ -65,7 +80,7 @@ typedef struct lwx lwx;
 //  if *lx is null, a new lw context is created and returned
 //  otherwise, an existing lw context is reused
 //
-int listwise_exec(
+xapi listwise_exec(
     char * const restrict s
   , int l
   , char ** const restrict init
@@ -80,7 +95,7 @@ int listwise_exec(
 // SUMMARY
 //  allocate an lw context
 //
-int lwx_alloc(lwx ** const restrict)
+xapi lwx_alloc(lwx ** const restrict)
   __attribute__((nonnull));
 
 /// lwx_free
@@ -128,7 +143,7 @@ void lwx_xfree(lwx ** const restrict)
 /// lstack_getbytes
 //
 // SUMMARY
-//  get pointer/length of string representation for the specified row
+//  get a pointer/length for the string representation of the specified row
 //
 // PARAMETERS
 //  lx - lw context
@@ -143,7 +158,7 @@ void lwx_xfree(lwx ** const restrict)
 // REMARKS
 //  use lstack_getstring when a string (or tmp space) is required
 //
-int lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
+xapi lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
   __attribute__((nonnull));
 
 /// lstack_getstring
@@ -164,7 +179,7 @@ int lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restric
 // REMARKS
 //  getstring is guaranteed to return a string that is 1) null-terminated, and 2) in tmp space
 //
-int lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
+xapi lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
   __attribute__((nonnull));
 
 /// lstack_string
@@ -180,7 +195,7 @@ int lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restri
 // RETURNS
 //  0 on success
 //
-int lstack_string(lwx * const restrict lx, int x, int y, char ** restrict r)
+xapi lstack_string(lwx * const restrict lx, int x, int y, char ** restrict r)
   __attribute__((nonnull));
 
 /// lwx_reset 
@@ -191,7 +206,7 @@ int lstack_string(lwx * const restrict lx, int x, int y, char ** restrict r)
 // REMARKS
 //  no-op with zero-valued parameter
 //
-int lwx_reset(lwx * const restrict)
+xapi lwx_reset(lwx * const restrict lx)
   __attribute__((nonnull));
 
 /// listwise_identity 

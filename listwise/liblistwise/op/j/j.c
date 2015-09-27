@@ -19,6 +19,8 @@
 #include <string.h>
 #include <alloca.h>
 
+#include "xlinux.h"
+
 #include "listwise/operator.h"
 #include "listwise/lwx.h"
 
@@ -37,7 +39,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -50,8 +52,13 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
+	typeof(*ls->s[0].s) * Ts = 0;
+	typeof(*ls->s[0].t) * Tt = 0;
+
 	// delimiter string
 	char * ds = 0;
 	int dl = 0;
@@ -77,8 +84,8 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	LSTACK_ITEREND;
 
 	// deleted entries stored here
-	typeof(ls->s[0].s[0]) Ts[cnt];
-	typeof(ls->s[0].t[0]) Tt[cnt];
+  fatal(xmalloc, &Ts, sizeof(*Ts) * cnt);
+  fatal(xmalloc, &Tt, sizeof(*Tt) * cnt);
 
 	int i = 0;
 	LSTACK_ITERREV(ls, x, go);
@@ -137,8 +144,8 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	ls->s[0].l -= i;
 
 	// place deleted entries at the end to be reused/freed by the library
-	memcpy(&ls->s[0].s[ls->s[0].l], Ts, sizeof(Ts));
-	memcpy(&ls->s[0].t[ls->s[0].l], Tt, sizeof(Tt));
+	memcpy(&ls->s[0].s[ls->s[0].l], Ts, sizeof(ls->s[0].s[0]));
+	memcpy(&ls->s[0].t[ls->s[0].l], Tt, sizeof(ls->s[0].t[0]));
 
 	// add new entry from the accumulator
 	fatal(lstack_addw, ls, ns, nl);
@@ -146,5 +153,8 @@ int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	// selection
 	fatal(lstack_selection_stage, ls, ls->s[0].l - 1);
 
-	finally : coda;
+	finally:
+    free(Ts);
+    free(Tt);
+  coda;
 }

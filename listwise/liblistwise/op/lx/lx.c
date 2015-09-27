@@ -42,9 +42,9 @@ lxf - exactly as the lx operator, except fullmatch mode is the default operation
 
 */
 
-static int op_validate(operation* o);
-static int op_exec_lx(operation*, lwx*, int**, int*, void**);
-static int op_exec_lxf(operation*, lwx*, int**, int*, void**);
+static xapi op_validate(operation* o);
+static xapi op_exec_lx(operation*, lwx*, int**, int*, void**);
+static xapi op_exec_lxf(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -66,16 +66,20 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_validate(operation* o)
+xapi op_validate(operation* o)
 {
+  enter;
+
 	if(o->argsl < 1)
 		failf(LW_ARGSNUM, "expected : N > 0, actual : %d", o->argsl);
 
 	finally : coda;
 }
 
-static int op_exec(operation* op, lwx* ls, int** ovec, int* ovec_len, int fullmatch, void** udata)
+static xapi op_exec(operation* op, lwx* ls, int** ovec, int* ovec_len, int fullmatch, void** udata)
 {
+  enter;
+
 	int x;
 	LSTACK_ITERATE(ls, x, go)
 	if(go)
@@ -143,12 +147,12 @@ static int op_exec(operation* op, lwx* ls, int** ovec, int* ovec_len, int fullma
 	finally : coda;
 }
 
-static int op_exec_lx(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+static xapi op_exec_lx(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	xproxy(op_exec, o, ls, ovec, ovec_len, 0, udata);
 }
 
-static int op_exec_lxf(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+static xapi op_exec_lxf(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
 	xproxy(op_exec, o, ls, ovec, ovec_len, 1, udata);
 }

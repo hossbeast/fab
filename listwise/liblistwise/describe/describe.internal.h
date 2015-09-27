@@ -18,16 +18,18 @@
 #ifndef _LISTWISE_DESCRIBE_INTERNAL_H
 #define _LISTWISE_DESCRIBE_INTERNAL_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
-typedef int (*fwriter)(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...);
+typedef xapi (*fwriter)(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...);
 
 /// writes to a fixed size buffer
-int zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+xapi zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
 	__attribute__((nonnull(1, 3, 5)));
 
 /// writes to a dynamically-resizing pstring
-int pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+xapi pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
 	__attribute__((nonnull(1, 4, 5)));
 
 #define SAY(fmt, ...) fatal(writer, dst, sz, z, ps, fmt, ##__VA_ARGS__)

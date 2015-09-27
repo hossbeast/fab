@@ -68,7 +68,7 @@ int tmp_cleanup(pid_t * dels, size_t delsl)
 		}
 
 		// not presently executing
-		if(kill(pid, 0))
+		if(kill(pid, 0) == 0)
 		{
 			int r = 1;
 			int x;

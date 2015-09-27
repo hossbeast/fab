@@ -22,8 +22,11 @@
 #include "coll.h"
 #include "map.h"
 
+//
+// public
+//
 
-static void __attribute__((destructor)) teardown()
+void object_teardown()
 {
 	map_free(object_registry);
 }
@@ -32,8 +35,10 @@ static void __attribute__((destructor)) teardown()
 /// [[ LSTACK API (for objects) ]]
 ///
 
-int API listwise_register_object(uint8_t type, listwise_object * def)
+API xapi listwise_register_object(uint8_t type, listwise_object * def)
 {
+	enter;
+
 	def->type = type;
 
 	if(object_registry == 0)
@@ -45,13 +50,15 @@ int API listwise_register_object(uint8_t type, listwise_object * def)
 	finally : coda;
 }
 
-int API listwise_enumerate_objects(listwise_object *** list, size_t * list_len)
+API xapi listwise_enumerate_objects(listwise_object *** list, size_t * list_len)
 {
 	xproxy(map_values, object_registry, list, list_len);
 }
 
-int API listwise_lookup_object(uint8_t type, listwise_object ** obj)
+API xapi listwise_lookup_object(uint8_t type, listwise_object ** obj)
 {
+	enter;
+
 	listwise_object ** rv = 0;
 	if((rv = map_get(object_registry, MM(type))) == 0)
 	{

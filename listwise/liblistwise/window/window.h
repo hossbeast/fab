@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_WINDOWS_H
 #define _LISTWISE_WINDOWS_H
 
+#include "xapi.h"
+
 #include "macros.h"
 
 // forward declaration
@@ -46,7 +48,7 @@ LWX_WINDOWS_TABLE(0)
 // SUMMARY
 //  add a segment to the staged window(s) for the specified row
 //
-int lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
+xapi lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
 	__attribute__((nonnull));
 
 /// lstack_windows_stage_all
@@ -54,7 +56,7 @@ int lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
 // SUMMARY
 //  set the staged windows to the universe-set
 //
-int lstack_windows_stage_all(lwx * const restrict lx, int y)
+xapi lstack_windows_stage_all(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_windows_stage_nil
@@ -62,7 +64,7 @@ int lstack_windows_stage_all(lwx * const restrict lx, int y)
 // SUMMARY
 //  set the staged windows to the empty-set
 //
-int lstack_windows_stage_nil(lwx * const restrict lx, int y)
+xapi lstack_windows_stage_nil(lwx * const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_windows_state

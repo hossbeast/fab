@@ -25,5 +25,6 @@ const char * listwise_errdesc(const int code);
 const char * listwise_errstr(const int code);
 const etable * listwise_errtab(const int code);
 int listwise_errcode(const int code);
+xapi error_setup();
 
 #endif

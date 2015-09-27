@@ -113,7 +113,7 @@ $oplist_xapi_devel = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,xapi.de
 [ @devel.eapi ] : [ $liblistwise_eapi_devel $oplist_eapi_devel ]
 [ @devel.xapi ] : [ $liblistwise_xapi_devel $oplist_xapi_devel ]
 
-# build operators
+# builtin liblistwise operators
 +[@std.c]($dext = [ eapi.final.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise/op ~ j ]; $cc; $cflags = $cflags_eapi_final; -$cobjpaths)
 [ $cobjpaths ] :^ [ $liblistwise_eapi_final ]
 +[@std.c]($dext = [ eapi.debug.pic.o ]; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $rdirs = [ $dliblistwise/op ~ j ]; $cc; $cflags = $cflags_eapi_debug; -$cobjpaths)
@@ -128,45 +128,20 @@ $oplist_xapi_devel = [ $dliblistwise ~ ??, s,$,/op lsr l,/test.c v sxf,c,xapi.de
 [ $cobjpaths ] :^ [ $liblistwise_xapi_devel ]
 
 $dlistwise_test = [ $*/test/listwise_test ~ j ]
-$listwise_test = [ $dlistwise_test/listwise_test.xapi.xunit.so ~ j ]
+$listwise_test_entry = [ $dlistwise_test/listwise_test_entry.xapi.xunit.so ~ j ]
 
-# test helper
-[ $listwise_test ] : [ $dlistwise_test/listwise_test.xapi.xunit.pic.o ~ j ]
+# listwise_test_entry contains the implementation of test_entry for listwise_test that liblistwise xunit tests use
+[ $listwise_test_entry ] : [ $dlistwise_test/listwise_test_entry.xapi.xunit.pic.o ~ j ]
 {
-	[ $cc ] [ $cflags_xapi_xunit ~ uu fi ] [ $dlistwise_test/listwise_test.xapi.xunit.pic.o ~ j ] [ $liblistwise_xapi_devel ] -shared -o [ $@ ]
+	[ $cc ] [ $cflags_xapi_xunit ~ uu fi ] [ $dlistwise_test/listwise_test_entry.xapi.xunit.pic.o ~ j ] [ $liblistwise_xapi_devel ] -shared -o [ $@ ]
 }
 
-[ $listwise_test ] :^ [ $liblistwise_xapi_devel ]
+# listwise_test_entry makes liblistwise calls to format test output
+[ $listwise_test_entry ] :^ [ $liblistwise_xapi_devel ]
 
 # xunit tests
-+[$xunit_tests]($rdirs = $*; -$xunit_sos)
-
-[ $xunit_sos ] : [ $listwise_test ]
-
-# test sos
-#+[$xunit_tests](
-#	$rdirs = $dliblistwise;
-#	$cc;
-#	$dext = [ xapi.devel.pic.o ];
-#	$dscext = [ xapi.devel.pic.o ];
-#	$soext = [ devel.xu.so ];
-#	$cflags = [ $cflags_xapi_devel [ $dlibxunit ~ s/^/-I ] [ $dliblistwise ~ lsr c -d s/^/-isystem ] ];
-#	-$tsopaths
-#)
-#
-#$dlistwise_test = [ $*/test/listwise_test ~ j ]
-#$listwise_test = [ $dlistwise_test/listwise_test.xapi.devel.so ~ j ]
-#
-## run all tests
-#[ @test ] : [ $xunit_xapi_devel $oplist_xapi_devel $listwise_test $tsopaths ]
-#{
-#	[ $xunit_xapi_devel ] [ $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
-#}
-#
-#[ @test.more ] : [ $xunit_xapi_devel  $oplist_xapi_devel $listwise_test $tsopaths ]
-#{
-#	[ $xunit_xapi_devel ] +XUNIT [ $listwise_test $tsopaths ~ fi ] 1>&501 2>&502
-#}
++[$xunit_tests]($rdirs = $*; $util_objects = $listwise_test_entry; -$xunit_sos)
+[ $xunit_sos ] :^ [ $listwise_test_entry ]
 
 ##
 ## formulas
@@ -176,7 +151,7 @@ $listwise_test = [ $dlistwise_test/listwise_test.xapi.xunit.so ~ j ]
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
 	  (echo "{ global: "
-	> sed 's/.*API\(DATA\)\?[[:space:]]\+\([a-zA-Z][0-9a-zA-Z_]*\).*/\2;/p; d' <(\
+	> perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=)/) { print "$1;\n" }' <(\
 	  cat -- [ $@ ~ rx/ineed fi ] )
 	> echo "local: *; };"
 	 ) 1>[ $@ ]

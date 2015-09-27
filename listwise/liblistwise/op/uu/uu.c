@@ -43,7 +43,7 @@ OPERATION
 
 */
 
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -55,8 +55,10 @@ operator op_desc[] = {
 	, {}
 };
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
+	enter;
+
 	// indexes to be sorted
 	int * mema = 0;
 
@@ -79,8 +81,10 @@ int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 		}
 		LSTACK_ITEREND;
 
-		int compar(const void * A, const void * B, void * T, int * r)
+		xapi compar(const void * A, const void * B, void * T, int * r)
 		{
+      enter;
+
 			fatal(lstack_getbytes, lx, 0, *(int*)A, &As, &Asl);
 			fatal(lstack_getbytes, lx, 0, *(int*)B, &Bs, &Bsl);
 

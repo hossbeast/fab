@@ -50,8 +50,8 @@ n+1 ..) contents of the stack beyond list 0 when we started
 
 */
 
-static int op_validate(operation* o);
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_validate(operation* o);
+static xapi op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -64,16 +64,20 @@ operator op_desc[] = {
 	}, {}
 };
 
-int op_validate(operation* o)
+xapi op_validate(operation* o)
 {
+  enter;
+
 	if(o->argsl >= 1 && o->args[0]->itype != ITYPE_I64)
 		fails(LW_ARGSTYPE, "should be i64");
 
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
 	int N = 1;
 	if(o->argsl)
 		N = o->args[0]->i64;

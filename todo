@@ -7,6 +7,10 @@
   cleanup libxapi commented out code
   libxapi unit test for prologue
   libxapi xproxy unit tests
+  liblistwise deconstruct internal.h to improve dependency clarity
+  global retab to spaces
+ listwise
+  generic object operators hard to understand - create fab-specific object operators
 
 * finished
 

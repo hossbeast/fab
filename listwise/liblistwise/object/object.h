@@ -141,7 +141,7 @@ typedef struct listwise_object
 // RETURNS
 //  0 on error (memory, io)
 //
-int listwise_register_object(uint8_t type, listwise_object * def);
+xapi listwise_register_object(uint8_t type, listwise_object * def);
 
 /// listwise_enumerate_objects
 //
@@ -149,13 +149,13 @@ int listwise_register_object(uint8_t type, listwise_object * def);
 //
 // *list is deallocated by the caller
 //
-int listwise_enumerate_objects(listwise_object *** list, size_t * list_len);
+xapi listwise_enumerate_objects(listwise_object *** list, size_t * list_len);
 
 /// listwise_lookup_object
 //
 // lookup the object definition associated with the specified type
 //
-int listwise_lookup_object(uint8_t type, listwise_object ** obj);
+xapi listwise_lookup_object(uint8_t type, listwise_object ** obj);
 
 ///
 /// [[ LSTACK API (for objects) ]]
@@ -173,7 +173,7 @@ int listwise_lookup_object(uint8_t type, listwise_object ** obj);
 //  o     - pointer object
 //  type  - object type
 //
-int lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
+xapi lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
 /// lstack_obj_alt_write
@@ -191,7 +191,7 @@ int lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const re
 // REMARKS
 //  used in conjunction with lstack_displace
 //
-int lstack_obj_alt_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
+xapi lstack_obj_alt_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
 /// lstack_add
@@ -204,7 +204,7 @@ int lstack_obj_alt_write(lwx * const restrict lx, int x, int y, const void* cons
 //  o     - pointer object
 //  type  - object type
 //
-int lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
+xapi lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
 /// lstack_getobject
@@ -225,7 +225,7 @@ int lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_
 // REMARKS
 //  getobject will return 0 in rt for a non-object entry. getobject does not use tmp space
 //
-int lstack_getobject(lwx * const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
+xapi lstack_getobject(lwx * const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
   __attribute__((nonnull));
 
 #endif

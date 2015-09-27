@@ -52,7 +52,7 @@ static size_t snwrite(char * const restrict dst, const size_t siz, const char * 
 	return z;
 }
 
-int API fs_statfmt(
+API xapi fs_statfmt(
 	  const char * const restrict s
 	, int sl
 	, const char * restrict fmt
@@ -63,6 +63,8 @@ int API fs_statfmt(
 	, void ** udata
 )
 {
+  enter;
+
 	// workspace
 	char space[256];
 	char space2[256];

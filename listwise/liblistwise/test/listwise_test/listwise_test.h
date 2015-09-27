@@ -18,11 +18,13 @@
 #ifndef _LISTWISE_TEST_H
 #define _LISTWISE_TEST_H
 
+#include "xapi.h"
+
 struct listwise_test;
 #define TEST_TYPE struct listwise_test
 #include "xunit.h"
 
-int listwise_test_entry(const struct listwise_test*)
+xapi listwise_test_entry(const struct listwise_test*)
 	__attribute__((nonnull));
 
 typedef struct listwise_test

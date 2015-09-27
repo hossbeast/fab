@@ -77,8 +77,10 @@ static uint32_t __attribute__((unused)) arg_scanmode(arg * const arg)
 	return sm;
 }
 
-static int lstack_description(lwx * const lx, char * const dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
+static xapi lstack_description(lwx * const lx, char * const dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
 {
+  enter;
+
 	SAY("sel active { lease(%3d) %s era(%3d) %s nil=%d } staged { lease(%3d) %s era(%3d) }\n"
 		, lx->sel.active ? lx->sel.active->lease : 0
 		, (lx->sel.active ? lx->sel.active->lease : 0) == lx->sel.active_era ? "= " : "!="
@@ -320,15 +322,21 @@ static int lstack_description(lwx * const lx, char * const dst, const size_t sz,
 /// public
 ///
 
-int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps)
+xapi operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps)
 {
+  enter;
+
 	fatal(psclear, ps);
-	xproxy(transform_operation_canon, oper, sm, 0, 0, (size_t[]) { }, ps, pswrite);
+	fatal(transform_operation_canon, oper, sm, 0, 0, (size_t[]) { }, ps, pswrite);
+
+  finally : coda;
 }
 
 /// writes to a fixed size buffer
-int zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+xapi zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
 {
+  enter;
+
 	if(sz - (*z))
 	{
 		va_list va;
@@ -341,8 +349,10 @@ int zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstr
 }
 
 /// writes to a dynamically-resizing pstring
-int pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+xapi pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
 {
+  enter;
+
 	size_t ol = 0;
 	if(*ps)
 		ol = (*ps)->l;
@@ -361,24 +371,34 @@ int pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pst
 /// API
 ///
 
-xapi API lstack_description_write(lwx * const restrict lx, char * const restrict dst, const size_t sz, size_t * restrict z)
+API xapi lstack_description_write(lwx * const restrict lx, char * const restrict dst, const size_t sz, size_t * restrict z)
 {
+  enter;
+
 	size_t lz = 0;
 	if(!z)
 		z = &lz;
 
-	xproxy(lstack_description, lx, dst, sz, z, 0, zwrite);
+	fatal(lstack_description, lx, dst, sz, z, 0, zwrite);
+
+  finally : coda;
 }
 
-xapi API lstack_description_pswrite(lwx * const restrict lx, pstring ** restrict ps)
+API xapi lstack_description_pswrite(lwx * const restrict lx, pstring ** restrict ps)
 {
+  enter;
+
 	size_t z = 0;
 	fatal(psclear, ps);
-	xproxy(lstack_description, lx, 0, 0, &z, ps, pswrite);
+	fatal(lstack_description, lx, 0, 0, &z, ps, pswrite);
+
+  finally : coda;
 }
 
-xapi API lstack_description_dump(lwx * const restrict lx, pstring ** restrict ps)
+API xapi lstack_description_dump(lwx * const restrict lx, pstring ** restrict ps)
 {
+  enter;
+
 	pstring * lps = 0;
 	if(!ps)
 		ps = &lps;
@@ -393,8 +413,10 @@ finally:
 coda;
 }
 
-xapi API lstack_description_log(lwx * const restrict lx, pstring ** restrict ps, void * restrict udata)
+API xapi lstack_description_log(lwx * const restrict lx, pstring ** restrict ps, void * restrict udata)
 {
+  enter;
+
 	pstring * lps = 0;
 
 	if(lw_would_lstack())

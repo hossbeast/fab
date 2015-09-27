@@ -25,8 +25,14 @@
 
 #define restrict __restrict
 
-int API lstack_selection_stage(lwx * const restrict lx, int y)
+//
+// api
+//
+
+API xapi lstack_selection_stage(lwx * const restrict lx, int y)
 {
+	enter;
+
 	if(lx->sel.staged == 0)
 	{
 		lx->sel.staged = &lx->sel.storage[0];
@@ -74,8 +80,33 @@ int API lstack_selection_stage(lwx * const restrict lx, int y)
 	finally : coda;
 }
 
-int API lstack_selection_activate(lwx * const restrict lx)
+API xapi lstack_selection_reset(lwx * const restrict lx)
 {
+	enter;
+
+	lx->sel.active_era++;
+
+	finally : coda;
+}
+
+API int lstack_selection_state(lwx * const restrict lx)
+{
+	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
+	{
+		return LWX_SELECTION_ALL;		// all rows are selected
+	}
+
+	return lx->sel.active->state;
+}
+
+//
+// public
+//
+
+xapi lstack_selection_activate(lwx * const restrict lx)
+{
+	enter;
+
 	if(lx->sel.staged && lx->sel.staged->lease == lx->sel.staged_era)
 	{
 		lx->sel.active = lx->sel.staged;
@@ -94,21 +125,4 @@ int API lstack_selection_activate(lwx * const restrict lx)
 	lx->sel.staged = 0;
 
 	finally : coda;
-}
-
-int API lstack_selection_reset(lwx * const restrict lx)
-{
-	lx->sel.active_era++;
-
-	finally : coda;
-}
-
-int API lstack_selection_state(lwx * const restrict lx)
-{
-	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
-	{
-		return LWX_SELECTION_ALL;		// all rows are selected
-	}
-
-	return lx->sel.active->state;
 }

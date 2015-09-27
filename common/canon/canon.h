@@ -19,6 +19,7 @@
 #define _CANON_H
 
 #include <stdint.h>
+#include "xapi.h"
 
 #define restrict __restrict
 
@@ -54,7 +55,7 @@
 // RETURNS
 //  0 on ENOMEM, 1 otherwise
 //
-int canon(
+xapi canon(
 	  const char * restrict path
 	, int pathl
 	, const char * const restrict base
@@ -79,7 +80,7 @@ int canon(
 //  siz       - max bytes to write to dst
 //  [z]       - returns the number of bytes written
 //
-int rebase(
+xapi rebase(
 	  const char * const restrict path
 	, int pathl
 	, const char * const restrict base

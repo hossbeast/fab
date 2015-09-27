@@ -49,11 +49,13 @@
 //
 #include "describe.internal.h"
 #include "operator.internal.h"
+#include "operators.internal.h"
 #include "window.internal.h"
 #include "sanity.internal.h"
 #include "object.internal.h"
 #include "selection.internal.h"
 #include "transform.internal.h"
+#include "lwx.internal.h"
 
 // error tables
 #include "LW.errtab.h"

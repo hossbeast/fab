@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_SANITY_INTERNAL_H
 #define _LISTWISE_SANITY_INTERNAL_H
 
+#include "xapi.h"
+
 #define restrict __restrict
 
 #if SANITY
@@ -40,7 +42,7 @@ typedef struct
 	int																	s_stringsa;
 } sanityblock;
 
-int sanityblock_create(sanityblock ** const restrict sb)
+xapi sanityblock_create(sanityblock ** const restrict sb)
 	__attribute__((nonnull));
 
 void sanityblock_free(sanityblock * const restrict sb)
@@ -49,7 +51,7 @@ void sanityblock_free(sanityblock * const restrict sb)
 void sanityblock_reset(sanityblock * const restrict sb)
 	__attribute__((nonnull));
 
-int sanity(struct lwx * const restrict lx, sanityblock * const restrict sb, void ** udata)
+xapi sanity(struct lwx * const restrict lx, sanityblock * const restrict sb, void ** udata)
 	__attribute__((nonnull));
 #endif
 

@@ -27,8 +27,10 @@
 ///
 /// public
 ///
-int listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
+xapi listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
 {
+  enter;
+
 	uint64_t t = 0x01;
 	int said = 0;
 
@@ -57,16 +59,24 @@ int listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, con
 
 xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * restrict z)
 {
+  enter;
+
 	size_t lz = 0;
 	if(!z)
 		z = &lz;
 
-	xproxy(listwise_lwop, optype, effectual, dst, sz, z, 0, zwrite);
+	fatal(listwise_lwop, optype, effectual, dst, sz, z, 0, zwrite);
+
+  finally : coda;
 }
 
 xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring ** const restrict ps)
 {
+  enter;
+
 	size_t lz = 0;
 	fatal(psclear, ps);
-	xproxy(listwise_lwop, optype, effectual, 0, 0, &lz, ps, pswrite);
+	fatal(listwise_lwop, optype, effectual, 0, 0, &lz, ps, pswrite);
+
+  finally : coda;
 }

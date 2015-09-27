@@ -101,7 +101,7 @@ void API xfree(void* target)
 	}
 }
 
-API xapi xqsort_r(void * base, size_t nmemb, size_t size, int (*xcompar)(const void *, const void *, void *, int * r), void * arg)
+API xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void *, const void *, void *, int * r), void * arg)
 {
   enter;
 

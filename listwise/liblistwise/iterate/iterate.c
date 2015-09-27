@@ -19,7 +19,7 @@
 
 #define restrict __restrict
 
-void API lwx_iterate_loop(lwx * const restrict lx, const int x, const int y, const int sel, const int win, int * const restrict go)
+API void lwx_iterate_loop(lwx * const restrict lx, const int x, const int y, const int sel, const int win, int * const restrict go)
 {
 	*go = 1;
 	if(sel && lx->sel.active && lx->sel.active->lease == lx->sel.active_era)

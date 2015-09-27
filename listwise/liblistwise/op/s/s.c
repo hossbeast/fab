@@ -49,8 +49,8 @@ REMARKS
 
 */
 
-static int op_validate(operation* o);
-static int op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_validate(operation* o);
+static xapi op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -63,15 +63,19 @@ operator op_desc[] = {
 	}, {}
 };
 
-static int append(lwx * lx, int x, char * s, int l)
+static xapi append(lwx * lx, int x, char * s, int l)
 {
+  enter;
+
 	fatal(lstack_catw, lx, 0, x, s, l);
 
 	finally : coda;
 }
 
-int op_validate(operation* o)
+xapi op_validate(operation* o)
 {
+  enter;
+
 	if(o->argsl == 2 || o->argsl == 3)
 	{
 		if(o->args[0]->l == 0)
@@ -102,8 +106,10 @@ int op_validate(operation* o)
 	finally : coda;
 }
 
-int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
 	char * ss = 0;
 	int ssl = 0;
 	int ssa = 0;

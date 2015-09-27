@@ -23,4 +23,6 @@ struct map;	// map.h
 // collection of registered object types with lookup index by type id
 struct map * object_registry;
 
+void object_teardown();
+
 #endif

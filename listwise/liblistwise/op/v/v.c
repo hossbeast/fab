@@ -38,8 +38,8 @@ NO ARGUMENTS
 
 */
 
-static int v_exec(operation*, lwx*, int**, int*, void**);
-static int wv_exec(operation*, lwx*, int**, int*, void**);
+static xapi v_exec(operation*, lwx*, int**, int*, void**);
+static xapi wv_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
 	{
@@ -59,8 +59,10 @@ operator op_desc[] = {
 	, {}
 };
 
-int v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
 	int x;
 	LSTACK_ITERATE(ls, x, go);
 	if(!go)
@@ -72,8 +74,10 @@ int v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	finally : coda;
 }
 
-int wv_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi wv_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
+  enter;
+
 	int x;
 	LSTACK_ITERATE_FWD(lx, 0, x, 1, 0, go)
 	if(go)
