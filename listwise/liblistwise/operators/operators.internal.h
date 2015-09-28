@@ -15,16 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_ERROR_H
-#define _LISTWISE_ERROR_H
+#ifndef _LISTWISE_OPERATORS_INTERNAL_H
+#define _LISTWISE_OPERATORS_INTERNAL_H
 
 #include "xapi.h"
 
-const char * listwise_errname(const int code);
-const char * listwise_errdesc(const int code);
-const char * listwise_errstr(const int code);
-const etable * listwise_errtab(const int code);
-int listwise_errcode(const int code);
-xapi error_setup();
+/// operators_setup
+//
+// SUMMARY
+//  initialize the component
+//
+xapi operators_setup();
+
+/// operators_teardown
+//
+// SUMMARY
+//  free resources used by the component
+//
+void operators_teardown();
 
 #endif
