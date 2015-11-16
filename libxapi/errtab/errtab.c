@@ -70,6 +70,7 @@ API xapi xapi_errtab_register(etable * const etab)
   if(tab == tab_stat)
   {
     tab = 0;
+    tabl = 0;
     fatal(xapi_errtab_register, perrtab_XAPI); 
     fatal(xapi_errtab_register, perrtab_SYS); 
   }

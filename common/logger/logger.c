@@ -45,7 +45,7 @@ exposes getauxval, but requires glibc 2.16. ubuntu 12.10 has glibc 2.15.
 #define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
 
 #if DEBUG || DEVEL
-#define TRACEARGS const char * const func, const char * const file, int line,
+#define TRACEARGS const char * const restrict func, const char * const restrict file, int line,
 #define TRACEPASS func, file, line,
 #define NOTRACE   0, 0, 0,
 #else

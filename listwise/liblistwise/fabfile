@@ -131,9 +131,10 @@ $dlistwise_test = [ $*/test/listwise_test ~ j ]
 $listwise_test_entry = [ $dlistwise_test/listwise_test_entry.xapi.xunit.so ~ j ]
 
 # listwise_test_entry contains the implementation of test_entry for listwise_test that liblistwise xunit tests use
+# xunit does not export symbols, so listwise_test_entry must contain its dependencies, like logger
 [ $listwise_test_entry ] : [ $dlistwise_test/listwise_test_entry.xapi.xunit.pic.o ~ j ]
 {
-	[ $cc ] [ $cflags_xapi_xunit ~ uu fi ] [ $dlistwise_test/listwise_test_entry.xapi.xunit.pic.o ~ j ] [ $liblistwise_xapi_devel ] -shared -o [ $@ ]
+	[ [ $cc ] [ $cflags_xapi_xunit ~ uu fi ] -shared -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $liblistwise_xapi_devel ~ fi ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ]
 }
 
 # listwise_test_entry makes liblistwise calls to format test output

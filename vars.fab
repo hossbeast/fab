@@ -174,7 +174,7 @@ $cflags_debug = [ -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY ]
 $cflags_devel = [ -O0 -ggdb3 -DDEVEL -DXAPI_RUNTIME_CHECKS -DSANITY [ -DBUILDROOT="\""$buildroot"\"" ~ j ] -DDEBUG_IPC ]
 
 # some xunit code runs with devel code, so runtime_checks must match
-$cflags_xunit = [ -O0 -ggdb3 -DXUNIT -DXAPI_RUNTIME_CHECKS [ $dlibxunit ~ s/^/-I ] ]
+$cflags_xunit = [ -O0 -ggdb3 -DDEVEL -DXUNIT -DXAPI_RUNTIME_CHECKS [ $dlibxunit ~ s/^/-I ] ]
 
 # cflags variants
 $cflags_eapi_final = [ $cflags $cflags_eapi $cflags_final ]

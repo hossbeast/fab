@@ -21,7 +21,7 @@
 +[ $dcommon]() @common
 
 # variables
-$cflags = [ -export-dynamic
+$cflags = [
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 	[ [ $dxunit ~ lsr c -d ] $dlibxapi $dlibxlinux $dlibxunit ~ s/^/-I ]
