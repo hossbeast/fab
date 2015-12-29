@@ -15,4 +15,20 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1		TOOMANY		number of unique categories registered exceeded the limit
+#ifndef _LOGGER_CATEGORY_INTERNAL_H
+#define _LOGGER_CATEGORY_INTERNAL_H
+
+#include "category.h"
+
+/// category_max_name_length
+//
+// SUMMARY
+//  length of the longest category name
+//  written in logger_category_resolve
+//
+extern int category_max_name_length;
+
+#define LOGGER_COLOR_DEF(a, b, x) (x) == b ? "L_" #a : 
+#define LOGGER_COLOR_STR(x) LOGGER_COLOR_TABLE(x) "UNKNOWN"
+
+#endif

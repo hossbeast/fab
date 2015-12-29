@@ -15,18 +15,19 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_INTERNAL_H
-#define _XAPI_INTERNAL_H
+#ifndef _LOGGER_INTERNAL_H
+#define _LOGGER_INTERNAL_H
 
 // public header file
-#include "xapi.h"
+#include "logger.h"
 
 // visibility declaration macros
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
 // default error table
+#include "LOGGER.errtab.h"
 #undef perrtab
-#define perrtab perrtab_SYS
+#define perrtab perrtab_LOGGER
 
 #endif

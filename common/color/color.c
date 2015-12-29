@@ -19,17 +19,21 @@
 
 #define APIDATA 
 
+// byte color sequences
 char (* APIDATA g_colors_7)[7] = (char[][7]){
 #define COLORDEF(x) { 0x1b, 0x5b, 0x31, 0x3b, 0x33, x, 0x6d }
 	  COLORDEF(0x31)	// RED
 	, COLORDEF(0x32)	// GREEN
 	, COLORDEF(0x33)	// YELLOW
 	, COLORDEF(0x34)	// BLUE
-	, COLORDEF(0x35)	// THIRTFIVE
+	, COLORDEF(0x35)
 	, COLORDEF(0x36)	// CYAN
 #undef COLORDEF
 };
 
+// six-byte color sequences
 char (* APIDATA g_colors_6)[6] = (char[][6]){
-	  { 0x1b, 0x5b, 0x30, 0x3b, 0x30, 0x6d }
+#define COLORDEF(x) { 0x1b, 0x5b, 0x30, 0x3b, x, 0x6d }
+    COLORDEF(0x30)  // NONE
+#undef COLORDEF
 };

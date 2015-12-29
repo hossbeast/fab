@@ -27,39 +27,8 @@ extern char (*g_colors_6)[6];
 #define GREEN				CSEVEN(1)
 #define YELLOW			CSEVEN(2)
 #define BLUE				CSEVEN(3)
-#define THIRTFIVE		CSEVEN(4)
 #define CYAN				CSEVEN(5)
 #define NONE				CSIX(0)
 
 #define COLOR(x) x, sizeof(x)
 #define CSIZE(x) sizeof(x)
-
-#if 0
-#define COLOR_TABLE							\
-	_COLOR(RED, g_colors_7[0])		\
-
-#define _COLOR(a, b) static char ** a = &b;
-COLOR_TABLE
-#undef _COLOR
-
-#define _COLOR(a, b) static size_t a ## SIZE = sizeof(b);
-COLOR_TABLE
-#undef _COLOR
-
-#define COLOR(a) a, sizeof(a)
-#define RED					COLOR(COLOR_RED)
-#define GREEN				COLOR(COLOR_GREEN)
-#define YELLOW			COLOR(COLOR_YELLOW)
-#define BLUE				COLOR(COLOR_BLUE)
-#define THIRTFIVE		COLOR(COLOR_THIRTYFIVE)
-#define CYAN				COLOR(COLOR_CYAN)
-#define NONE				COLOR(COLOR_NONE)
-
-#define RED_SIZE				sizeof(COLOR_RED)
-#define GREEN_SIZE			sizeof(COLOR_GREEN)
-#define YELLOW_SIZE			sizeof(COLOR_YELLOW)
-#define BLUE_SIZE				sizeof(COLOR_BLUE)
-#define THIRTFIVE_SIZE	sizeof(COLOR_THIRTYFIVE)
-#define CYAN_SIZE				sizeof(COLOR_CYAN)
-#define NONE_SIZE				sizeof(COLOR_NONE)
-#endif

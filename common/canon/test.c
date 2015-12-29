@@ -8,7 +8,7 @@ struct canon_test;
 #define TEST_TYPE struct canon_test
 #include "xunit.h"
 
-int canon_test_entry(const struct canon_test*)
+xapi canon_test_entry(const struct canon_test*)
 	__attribute__((nonnull));
 
 typedef struct canon_test
@@ -20,8 +20,10 @@ typedef struct canon_test
 	char *		final;
 } canon_test;
 
-int canon_test_entry(const canon_test * test)
+xapi canon_test_entry(const canon_test * test)
 {
+  enter;
+
 	char space[512];
 
 	// log the inset

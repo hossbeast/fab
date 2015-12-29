@@ -34,7 +34,7 @@ typedef struct narrator
 /// narrator
 //
 // SUMMARY
-//  this is the global narration context
+//  global narration context, writes to stdout
 //
 narrator * _narrator;
 

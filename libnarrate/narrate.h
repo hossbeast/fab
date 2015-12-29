@@ -18,14 +18,12 @@
 #ifndef _NARRATE_H
 #define _NARRATE_H
 
-#include <sys/types.h>
 #include <string.h>
-#include <stdarg.h>
 
 // narrator definition, global narration context
 #include "narrate/narrator.h"
 
-// narrator_say declarations
+// narrate_say declarations
 #include "narrate/say.h"
 
 //
@@ -36,7 +34,10 @@
 #define narrationp(ps) narrator * _narrator = (typeof(*_narrator)[]){{ .ps = ps }}
 
 //  narrate to a fixed size buffer discarding overflow
-#define narrationw(buf, siz) narrator * _narrator = (typeof(*_narrator)[]){{ .bb = buf, .bsz = siz }}
+#define narrationw(buf, siz) narrator * _narrator = ({   \
+  if(siz > 0) { buf[0] = 0; };                                  \
+  (typeof(*_narrator)[]){{ .bb = buf, .bsz = siz }};     \
+})
 
 // narrate to a file descriptor
 #define narrationd(fd) narrator * _narrator = (typeof(*_narrator)[]){{ .fd = fd }}

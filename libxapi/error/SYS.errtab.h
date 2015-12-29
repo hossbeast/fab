@@ -38,7 +38,7 @@ _E(34, ERANGE, "Math result not representable") \
 _E(35, EDEADLK, "Resource deadlock would occur") \
 _E(36, ENAMETOOLONG, "File name too long") \
 _E(37, ENOLCK, "No record locks available") \
-_E(38, ENOSYS, "Function not implemented") \
+_E(38, ENOSYS, "Invalid system call number") \
 _E(39, ENOTEMPTY, "Directory not empty") \
 _E(40, ELOOP, "Too many symbolic links encountered") \
 _E(42, ENOMSG, "No message of desired type") \

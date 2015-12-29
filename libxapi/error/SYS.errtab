@@ -34,7 +34,7 @@
 35	EDEADLK	Resource deadlock would occur
 36	ENAMETOOLONG	File name too long
 37	ENOLCK	No record locks available
-38	ENOSYS	Function not implemented
+38	ENOSYS	Invalid system call number
 39	ENOTEMPTY	Directory not empty
 40	ELOOP	Too many symbolic links encountered
 42	ENOMSG	No message of desired type

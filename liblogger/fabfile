@@ -53,6 +53,13 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libpstr
 +[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_xapi_final; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
 +[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_xapi_debug; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
 +[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_xapi_devel; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
++[@std.xapi.errtab]($dext = [ eapi.final.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_eapi_final)
++[@std.xapi.errtab]($dext = [ eapi.debug.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_eapi_debug)
++[@std.xapi.errtab]($dext = [ eapi.devel.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_eapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
+
 
 # source files and test files
 +[@std.c]($dext = [ xapi.xunit.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_xapi_xunit)

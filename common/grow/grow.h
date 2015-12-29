@@ -15,4 +15,32 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1		TOOMANY		number of unique categories registered exceeded the limit
+#ifndef _GROW_H
+#define _GROW_H
+
+#include "xapi.h"
+
+#define restrict __restrict
+
+/// grow
+//
+// SUMMARY
+//
+// PARAMETERS
+//  target - 
+//  es     - element size
+//  len    - additional space in elements
+//  ec     - element count
+//  ac     - allocated count
+//
+xapi grow(void * target, size_t es, size_t len, size_t * const restrict ec, size_t * const restrict ac);
+
+/// grow2
+//
+// SUMMARY
+//  grow with the ability to specify the seed
+//
+xapi grow2(void * target, size_t es, size_t len, size_t * const restrict ec, size_t * const restrict ac, size_t seed);
+
+#undef restrict
+#endif

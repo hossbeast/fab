@@ -49,6 +49,11 @@
   __z;                                                        \
 })
 
+/// znvloadf
+//
+// SUMMARY
+//  like znloadf, except takes format string and va_list
+//
 #define znvloadf(dst, sz, fmt, va) ({                 \
   size_t __z = 0;                                     \
   if(sz)                                              \
@@ -58,6 +63,17 @@
   __z;                                                \
 })
 
+/// znloadw
+//
+// SUMMARY
+//   like znloadf, except takes a pointer / length pair
+//
+// PARAMETERS
+//  dst - buffer to write to
+//  sz  - size of dst
+//  b   - pointer to bytes to write
+//  bz  - number of bytes to write
+//
 #define znloadw(dst, sz, b, bz) ({            \
   size_t __z = MIN(sz - 1, bz);               \
   memcpy(dst, b, __z);                        \
@@ -65,6 +81,11 @@
   __z;                                        \
 })
 
+/// znloads
+//
+// SUMMARY
+//  like znloadf, except takes a pointer to string
+//
 #define znloads(dst, sz, s) znloadw(dst, sz, s, strlen(s)) 
 
 /// sentinel

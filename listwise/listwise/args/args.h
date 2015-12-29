@@ -65,7 +65,7 @@ MODE_TABLE_DEBUG(0)
 #if DEBUG || DEVEL
 # define MODE_STR(x) MODE_TABLE_DEBUG(x) "UNKNWN"
 #else
-# define MODE_STR(x) "UNKNWN"
+# define MODE_STR(x) MODE_TABLE(x) "UNKNWN"
 #endif
 
 #define INPUT_TYPE_TABLE(x)														\

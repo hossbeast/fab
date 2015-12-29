@@ -15,4 +15,41 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1		TOOMANY		number of unique categories registered exceeded the limit
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "xapi.h"
+#include "xlinux.h"
+
+#include "grow.h"
+
+#define SEED 10
+#define restrict __restrict
+
+xapi grow(void * target, size_t es, size_t len, size_t * const restrict ec, size_t * const restrict ac)
+{
+  xproxy(grow2, target, es, len, ec, ac, SEED);
+}
+
+xapi grow2(void * target, size_t es, size_t len, size_t * const restrict ec, size_t * const restrict ac, size_t seed)
+{
+  enter;
+
+  void ** p = (void**)target;
+
+	if(!*p || (*ec) + len >= *ac)
+	{
+		int nc = *ac ?: seed;
+
+		while(nc <= *ec)
+			nc = nc * 2 + nc / 2;
+
+		fatal(xrealloc, p, es, nc, *ac);
+    *ac = nc;
+	}
+
+  *ec += len;
+
+	finally : coda;
+}
