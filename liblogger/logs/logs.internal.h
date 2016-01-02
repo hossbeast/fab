@@ -15,17 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGER_CATEGORY_INTERNAL_H
-#define _LOGGER_CATEGORY_INTERNAL_H
+#ifndef _LOGGER_LOGS_INTERNAL_H
+#define _LOGGER_LOGS_INTERNAL_H
 
-#include "category.h"
+extern logger_category * logs;
 
-/// category_max_name_length
-//
-// SUMMARY
-//  length of the longest category name
-//  written in logger_category_resolve
-//
-extern int category_max_name_length;
+#define L_LOGGER logs[0].bits
 
 #endif

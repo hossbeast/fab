@@ -15,17 +15,20 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGER_CATEGORY_INTERNAL_H
-#define _LOGGER_CATEGORY_INTERNAL_H
+#ifndef _LOGGER_LOG_INTERNAL_H
+#define _LOGGER_LOG_INTERNAL_H
 
-#include "category.h"
+#define COLOR_OPT     UINT64_C(0x000d000000000000)
+#define COLOR_SET_OPT UINT64_C(0x0001000000000000)
 
-/// category_max_name_length
-//
-// SUMMARY
-//  length of the longest category name
-//  written in logger_category_resolve
-//
-extern int category_max_name_length;
+#define PREFIX_OPT    UINT64_C(0x8000000000000000)
+#define TRACE_OPT     UINT64_C(0xe000000000000000)
+#define DISCOVERY_OPT UINT64_C(0xe000000000000000)
+
+// get the name of a color from its constant
+#define LOGGER_COLOR_DEF(a, b, x) (x) == b ? "L_" #a : 
+#define LOGGER_COLOR_NAME(x) LOGGER_COLOR_TABLE(x) "UNKNOWN"
+
+// get the name 
 
 #endif

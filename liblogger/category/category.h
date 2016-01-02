@@ -20,8 +20,10 @@
 
 #include <stdint.h>
 
-#define LOGGER_ATTR_TABLE(x)                                                                          \
-  LOGGER_ATTR_DEF(0x1 , COLOR_SET , x)  /* apply the color option in the bits of this definition */   \
+#define LOGGER_ATTR_TABLE(x)                                                                              \
+  LOGGER_ATTR_DEF(0x01  , COLOR_SET   , x)  /* apply the color option in the bits of this definition */   \
+  LOGGER_ATTR_DEF(0x02  , HEADER_SET  , x)  /* */ \
+  LOGGER_ATTR_DEF(0x02  , TRACE_SET   , x)  /* */ \
 
 enum {
 #define LOGGER_ATTR_DEF(a, b, x) LOGGER_ATTR_ ## b = a,

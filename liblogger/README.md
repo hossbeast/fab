@@ -1,14 +1,35 @@
 # liblogger
 
-An application using liblogger issues logging requests that are tagged with one
-or more categories. Some requests are ignored, and some result in the emission
-of log messages. This behavior is governed by one or more filters.  The
-application provides a default set of filters, which can be overridden with
-command-line parameters. The filters can be changed dynamically at runtime.
+An application using liblogger configures a set of output streams, each of
+which is equipped with a set of filters. Components of the application issue
+logging requests that are tagged with one or more categories. The filters for a
+stream determine, based on its categories, which log messages are output to
+that stream. The application provides a default set of streams and filters,
+which can be overridden with command-line parameters, and reconfigured
+dynamically at runtime.
 
-Before issuing a logging request, a component in the application first calls
-logger_register to obtains category ids for the logging categories it will use.
-Components which register a category with a given name receive the same id.
+# logging requests
+
+Before issuing a logging request, an application component calls
+logger_register to obtains ids for the categories it will use. Any component
+that registers a category with a given name receives the same id.
+
+# logging options
+
+Log messages have associated options. For example, the log message may be
+colored red, or have a timestamp. For any given log message, the value of these
+settings is derived according to the following rules.
+
+For each option, in increasing order of precedence:
+
+- the category
+- the log site
+- the stream
+
+When a log message belongs to multiple categories, the category setting for a
+given option comes from the category with the highest precedence where that
+option is set. Categories with a lower id (i.e. that are listed first in
+logs.c) have higher precedence.
 
 # rationale
 

@@ -135,18 +135,18 @@ finally:
 coda;
 }
 
-/// bits_say
+/// bits_options_say
 //
 // SUMMARY
 //  write a description of the options in bits to the narrator
 //
-xapi bits_say(uint64_t bits, narrator * _narrator)
+xapi bits_options_say(uint64_t bits, narrator * _narrator)
 {
   enter;
 
   if(bits & BITS_COLOR_OPT)
   {
-    says(LOGGER_COLOR_STR(bits & BITS_COLOR_OPT));
+    says(LOGGER_COLOR_NAME(bits & BITS_COLOR_OPT));
   }
 
   finally : coda;
@@ -256,7 +256,7 @@ xapi logger_register_resolve()
     narrationw(space, sizeof(space));
 
     sayf("%*s : 0x%016lx ", category_name_max_length, resolved.v[x]->name, resolved.v[x]->bits);
-    fatal(bits_say, resolved.v[x]->bits, _narrator);
+    fatal(bits_options_say, resolved.v[x]->bits, _narrator);
     printf("%s\n", space);
 
     x = y - 1;

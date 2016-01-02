@@ -15,17 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGER_CATEGORY_INTERNAL_H
-#define _LOGGER_CATEGORY_INTERNAL_H
+#include "internal.h"
+#include "logs.internal.h"
 
-#include "category.h"
-
-/// category_max_name_length
-//
-// SUMMARY
-//  length of the longest category name
-//  written in logger_category_resolve
-//
-extern int category_max_name_length;
-
-#endif
+logger_category * logs = (logger_category []) {
+    { name : "LOGGER", description : "logger configuration changes" }
+};

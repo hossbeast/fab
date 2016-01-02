@@ -42,7 +42,7 @@ xapi log_log_config_and_describe(uint64_t prefix, uint64_t bits);
 #define log_config_and_describe(...) log_log_config_and_describe(__VA_ARGS__)
 #endif
 
-/// (XAPI) log_parse
+/// log_parse
 //
 // SUMMARY
 //  parse the logexpr to enable/disable logging categories
@@ -71,14 +71,14 @@ xapi log_log_parse_and_describe(char * expr, int expr_len, int prepend, uint64_t
 #define log_parse_and_describe(...) log_log_parse_and_describe(__VA_ARGS__)
 #endif
 
-/// (XAPI) log_parse_pop
+/// log_parse_pop
 //
 // SUMMARY
 //  remove the most recently parsed logexpr
 //
 xapi log_parse_pop();
 
-/// (XAPI) log_parse_clear
+/// log_parse_clear
 //
 // SUMMARY
 //  remove all logexprs

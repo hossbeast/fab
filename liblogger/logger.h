@@ -25,7 +25,7 @@
 #include "xapi.h"
 
 /*
- * liblogger-provided program arguments, populated during logger_init
+ * liblogger-provided program arguments, populated during logger_setup
  */
 extern char **	g_argv;					// array of args as delimited by nulls
 extern int			g_argc;					// count of g_argv
@@ -39,24 +39,40 @@ extern char *		g_logvs;				// single string of logexprs
 extern int			g_logvsl;				// length of g_logvs
 
 /*
- * colorization constants that can be passed via log bits
+ * options that can be applied to a log message
  */
-#define LOGGER_COLOR_TABLE(x)                          \
-  LOGGER_COLOR_DEF(RED    , 0x0001000000000000  , x)   \
-  LOGGER_COLOR_DEF(GREEN  , 0x0002000000000000  , x)   \
-  LOGGER_COLOR_DEF(YELLOW , 0x0003000000000000  , x)   \
-  LOGGER_COLOR_DEF(CYAN   , 0x0004000000000000  , x)   \
-  LOGGER_COLOR_DEF(BLUE   , 0x0005000000000000  , x)
+#define LOGGER_BITS_TABLE(x)                                \
+  LOGGER_BITS_DEF(CLEAR         , 0x0001000000000000  , x)  \
+  LOGGER_BITS_DEF(RED           , 0x0011000000000000  , x)  \
+  LOGGER_BITS_DEF(GREEN         , 0x0021000000000000  , x)  \
+  LOGGER_BITS_DEF(YELLOW        , 0x0031000000000000  , x)  \
+  LOGGER_BITS_DEF(CYAN          , 0x0041000000000000  , x)  \
+  LOGGER_BITS_DEF(BLUE          , 0x0051000000000000  , x)  \
+  LOGGER_BITS_DEF(PREFIX        , 0x0010000000000000  , x)  \
+  LOGGER_BITS_DEF(PREFIX_OFF    , 0x0030000000000000  , x)  \
+  LOGGER_BITS_DEF(TRACE_OFF     , 0x0040000000000000  , x)  \
+  LOGGER_BITS_DEF(TRACE         , 0x00b0000000000000  , x)  \
+  LOGGER_BITS_DEF(DISCOVERY_OFF , 0x0000000000000000  , x)  \
+  LOGGER_BITS_DEF(DISCOVERY     , 0x0040000000000000  , x)  \
 
 enum {
-#define LOGGER_COLOR_DEF(a, b, x) L_ ## a = b,
-LOGGER_COLOR_TABLE(0)
-#undef LOGGER_COLOR_DEF
+#define LOGGER_BITS_DEF(a, b, x) L_ ## a = UINT64_C(b),
+LOGGER_BITS_TABLE(0)
+#undef LOGGER_BITS_DEF
 };
+
+LOGGER_PREFIX_ENABLE
+LOGGER_PREFIX_DISABLE
+
+LOGGER_TRACE_ENABLE
+LOGGER_TRACE_DISABLE
+
+LOGGER_DISCOVERY_ENABLE
+LOGGER_DISCOVERY_DISABLE
 
 #define restrict __restrict
 
-/// logger_init
+/// logger_setup
 //
 // SUMMARY
 //  parse cmdline args, populate g_argv and related variables, call logger_register_resolve
@@ -87,29 +103,36 @@ void logger_teardown();
 //  bits is the bitwise combination of 1) logger category ids, and 2) colorization constants
 //
 // PARAMETERS
-//  [func] - function name
-//  [file] - file name
-//  [line] - line number
-//  bits   - log bits
-//  [fmt]  - format string
-//  [src]  - source bytes
-//  [len]  - count of bytes from src (0 != strlen)
-//  [s]    - string to write
+//  [func]  - function name
+//  [file]  - file name
+//  [line]  - line number
+//  [attrs] - bitwise combination of L_* options and modifiers
+//  ids     - bitwise combination of category ids
+//  [fmt]   - format string
+//  [src]   - source bytes
+//  [len]   - count of bytes from src (0 != strlen)
+//  [s]     - string to write
 //
 #if ! (DEBUG || DEVEL)
-xapi logger_vlogf(const uint64_t bits, const char * const restrict fmt, va_list va)
+xapi logger_vlogf(const uint32_t attrs, const uint64_t ids, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull(2)));
-xapi logger_logf(const uint64_t bits, const char * const restrict fmt, ...)
+xapi logger_logf (const uint32_t attrs, const uint64_t ids, const char * const restrict fmt, ...)
 	__attribute__((nonnull(2)));
-xapi logger_logs(const uint64_t bits, const char * const restrict s)
+xapi logger_logs (const uint32_t attrs, const uint64_t ids, const char * const restrict s)
 	__attribute__((nonnull));
-xapi logger_logw(const uint64_t bits, const char * const restrict src, size_t len)
+xapi logger_logw (const uint32_t attrs, const uint64_t ids, const char * const restrict src, size_t len)
 	__attribute__((nonnull));
 
-# define vlogf(...) logger_vlogf(__VA_ARGS__)
-# define  logf(...) logger_logf(__VA_ARGS__)
-# define  logs(...) logger_logs(__VA_ARGS__)
-# define  logw(...) logger_logw(__VA_ARGS__)
+# define vlogf(...) logger_vlogf(0, __VA_ARGS__)
+# define  logf(...) logger_logf(0, __VA_ARGS__)
+# define  logs(...) logger_logs(0, __VA_ARGS__)
+# define  logw(...) logger_logw(0, __VA_ARGS__)
+
+# define vxlogf(...) logger_vlogf(__VA_ARGS__)
+# define  xlogf(...) logger_logf(__VA_ARGS__)
+# define  xlogs(...) logger_logs(__VA_ARGS__)
+# define  xlogw(...) logger_logw(__VA_ARGS__)
+
 #else
 xapi logger_vlogf(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull(1,2,5)));
