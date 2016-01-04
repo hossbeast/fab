@@ -165,5 +165,23 @@ xapi map_values (const map * const restrict m, void * const restrict list, size_
 xapi map_clone(map* const restrict dst, const map * const restrict src)
 	__attribute__((nonnull));
 
+size_t map_size(const map * const restrict m)
+  __attribute__((nonnull));
+
+size_t map_slots(const map * const restrict m)
+  __attribute__((nonnull));
+
+void * map_keyat(const map * const restrict m, int x)
+  __attribute__((nonnull));
+
+void * map_keyatx(const map * const restrict m, int x, uint32_t o)
+  __attribute__((nonnull));
+
+void * map_valueat(const map * const restrict m, int x)
+  __attribute__((nonnull));
+
+void * map_valueatx(const map * const restrict m, int x, uint32_t o)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

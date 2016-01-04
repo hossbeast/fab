@@ -29,10 +29,17 @@ int main()
     , {}
   };
 
+  logger_category * logs_c = (logger_category[]) {
+      { name : "QUX" }
+    , { name : "ERROR" }
+    , {}
+  };
+
   fatal(logger_category_setup);
 
   fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
   fatal(logger_category_register, logs_b, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_c, __FILE__ " : " XQUOTE(__LINE__));
   fatal(logger_category_resolve);
 
 finally:

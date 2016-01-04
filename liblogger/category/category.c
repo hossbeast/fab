@@ -47,10 +47,7 @@ static uint64_t used_category_ids_mask;
 
 // registered categories, in decreasing order of precedence
 static list * registered;
-static map * registered_byname;
-
 static list * registering;
-static map * registering_byname;
 
 //static list * resolved;
 
@@ -145,10 +142,7 @@ xapi logger_category_setup()
   enter;
 
   fatal(list_create, &registered, sizeof(logger_category *), 0, LIST_DEREF);
-  fatal(map_create, &registered_byname, 0);
-
   fatal(list_create, &registering, sizeof(logger_category *), 0, LIST_DEREF);
-  fatal(map_create, &registering_byname, 0);
 
   finally : coda;
 }
@@ -165,99 +159,74 @@ API xapi logger_category_register(logger_category * logs, char * const restrict 
 {
   enter;
 
-  list_clear(registering);
-  map_clear(registering_byname);
+printf("registering\n");
 
-  // index of the first element in A and B in the trailing window
-  struct window { int A; int Ax ; int B; int Bx ; } window = {};
+  map * history = 0;
+  map * current = 0;
+  list_clear(registering);
+
+  fatal(map_create, &history, 0);
+  fatal(map_create, &current, 0);
 
   int Ax = 0;  // index of the element under consideration in A
   int Bx = 0;
   while(Ax < list_size(registered) || logs[Bx].name)
   {
-    int A = 0;  // take from A
-    int B = 0;  // take from B
+    logger_category * AB[2] = {};
 
-    if(Ax == list_size(registered))
-    {
-      B = 1;
-    }
-    else if(!logs[Bx].name)
-    {
-      A = 1;
-    }
-    else if(strcmp(list_get(registered, Ax)->name, logs[Bx].name))
-    {
-      A = 2;
-    }
-    else // same name
-    {
-      A = 3;
-      B = 3;
-    }
+    if(Ax < list_size(registered))
+      AB[0] = list_get(registered, Ax);
+    Ax++;
 
-if(Ax < list_size(registered))
-  printf("A [%2d,%2d) %6s : %d", Ax, Ax, list_get(registered, Ax)->name, A);
-else
-  printf("A [%2s,%2s) %6s : %d", "-", "-", "-", A);
+    if(logs[Bx].name)
+      AB[1] = &logs[Bx];
+    Bx++;
 
-printf("   ");
-if(logs[Bx].name)
-  printf("B [%d,%d) %6s : %d", Bx, Bx, logs[Bx].name, B);
-else
-  printf("B [%2s,%2s) %6s : %d", "-", "-", "-", B);
-printf("\n");
-
-    logger_category * this = A ? list_get(registered, Ax) : &logs[Bx];
-    struct window * loc;
-    if((loc = map_get(registering_byname, MMS(this->name))))
+    int i;
+    for(i = 0; i < sizeof(AB) / sizeof(AB[0]); i++)
     {
-      if((loc->A && loc->Ax < window.Ax) || (loc->B && loc->Bx < window.Bx))
+      logger_category * this = AB[i];
+      if(!this)
+        continue;
+
+printf("register %p %s\n", this, this->name);
+
+      fatal(list_append, registering, &this);
+
+      if(map_get(current, MMS(this->name)))
       {
-        failf(LOGGER_ILLORDER, "already registered %s", this->name);
+        if(map_size(current) == 1)
+        {
+          fatal(map_set, history, MMS(this->name), 0, 0, 0);
+        }
+        else
+        {
+          int x;
+          for(x = 0; x < map_slots(current); x++)
+          {
+            char * name = map_keyat(current, x);
+            if(name)
+            {
+              if(map_get(history, MMS(name)))
+              {
+                failf(LOGGER_ILLORDER, "already registered %s", name);
+              }
+            }
+          }
+        }
+
+        map_clear(current);
       }
-    }
-
-    window.A = A;
-    window.B = B;
-    fatal(map_set, registering_byname, MMS(this->name), &window, sizeof(window), 0);
-
-    if(A)
-    {
-      // proceed to the next name-group
-      do
+      else
       {
-        this = list_get(registered, Ax);
-        fatal(list_append, registering, &this);
-        Ax++;
-      } while(Ax < list_size(registered) && strcmp(list_get(registered, Ax - 1)->name, list_get(registered, Ax)->name) == 0);
-
-      if(A == 1 || A == 3)
-        window.Ax = Ax;
-    }
-
-    if(B)
-    {
-      // proceed to the next name-group
-      do
-      {
-        this = &logs[Bx];
-        fatal(list_append, registering, &this);
-        Bx++;
-      } while(logs[Bx].name && strcmp(logs[Bx - 1].name, logs[Bx].name) == 0);
-
-      if(B == 1 || B == 3)
-        window.Bx = Bx;
+        fatal(map_set, current, MMS(this->name), 0, 0, 0);
+      }
     }
   }
 
   void * T = registered;
   registered = registering;
   registering = T;
-
-  T = registered_byname;
-  registered_byname = registering_byname;
-  registering_byname = T;
 
   printf("registered categories\n");
   int x;
@@ -274,6 +243,8 @@ printf("\n");
   }
 
 finally:
+  map_free(history);
+  map_free(current);
 coda;
 }
 

@@ -352,7 +352,7 @@ void * map_get (const map* const restrict m, const void* const restrict k, size_
   return map_getx(m, k, kl, 0);
 }
 
-int map_count(const map* const restrict m)
+size_t map_size(const map * const restrict m)
 {
   return m->kc;
 }
@@ -363,7 +363,7 @@ void map_clear(map* const restrict m)
   int x;
   for(x = 0; x < m->l; x++)
   {
-    if(m->tk[x] && m->tk[x]->l)
+    if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     {
       if(m->destructor)
       {
@@ -416,7 +416,7 @@ xapi map_keysx(const map* const restrict m, void * const restrict l, size_t * co
   int x;
   for(x = 0; x < m->l; x++)
   {
-    if(m->tk[x] && m->tk[x]->l)
+    if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     {
       if(o & MAP_DEREF)
       {
@@ -436,7 +436,6 @@ xapi map_keys (const map* const restrict m, void * const restrict l, size_t * co
   xproxy(map_keysx, m, l, z, 0);
 }
 
-
 xapi map_valuesx(const map* const restrict m, void* const restrict l, size_t * const restrict z, uint32_t o)
 {
   enter;
@@ -447,7 +446,7 @@ xapi map_valuesx(const map* const restrict m, void* const restrict l, size_t * c
   int x;
   for(x = 0; x < m->l; x++)
   {
-    if(m->tk[x] && m->tk[x]->l)
+    if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     {
       if(o & MAP_DEREF)
       {
@@ -467,12 +466,11 @@ xapi map_values (const map* const restrict m, void* const restrict l, size_t * c
    xproxy(map_valuesx, m, l, z, 0);
 }
 
-xapi map_clone(map* const restrict dst, const map * const restrict src)
+xapi map_copyto(map* const restrict dst, const map * const restrict src)
 {
   enter;
 
   int x;
-  map_clear(dst);
 
   // the dst map must have precisely the same size in order for the probe sequences to work 
   if(dst->l != src->l)
@@ -561,6 +559,16 @@ xapi map_clone(map* const restrict dst, const map * const restrict src)
   finally : coda;
 }
 
+xapi map_clone(map* const restrict dst, const map * const restrict src)
+{
+  enter;
+
+  map_clear(dst);
+  fatal(map_copyto, dst, src);
+
+  finally : coda;
+}
+
 void map_free(map* const restrict m)
 {
   if(m)   // free-like semantics
@@ -568,7 +576,7 @@ void map_free(map* const restrict m)
     int x;
     for(x = 0; x < m->l; x++)
     {
-      if(m->tk[x] && m->tk[x]->l)
+      if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
       {
         if(m->destructor)
           m->destructor(m->tk[x]->p, m->tv[x]->p);
@@ -589,4 +597,45 @@ void map_xfree(map** const restrict m)
 {
   map_free(*m);
   *m = 0;
+}
+
+size_t map_slots(const map * const restrict m)
+{
+  return m->l;
+}
+
+void * map_keyatx(const map * const restrict m, int x, uint32_t o)
+{
+  if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
+  {
+    if(o & MAP_DEREF)
+      return *(void**)m->tk[x]->p;
+    else
+      return m->tk[x]->p;
+  }
+
+  return 0;
+}
+
+void * map_keyat(const map * const restrict m, int x)
+{
+  return map_keyatx(m, x, 0);
+}
+
+void * map_valueatx(const map * const restrict m, int x, uint32_t o)
+{
+  if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
+  {
+    if(o & MAP_DEREF)
+      return *(void**)m->tv[x]->p;
+    else
+      return m->tv[x]->p;
+  }
+
+  return 0;
+}
+
+void * map_valueat(const map * const restrict m, int x)
+{
+  return map_valueatx(m, x, 0);
 }
