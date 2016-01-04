@@ -5,6 +5,9 @@
 #include "logger.h"
 #include "category.h"
 
+#define QUOTE(x) #x
+#define XQUOTE(x) QUOTE(x)
+
 int main()
 {
   enter;
@@ -17,21 +20,20 @@ int main()
   };
 
   logger_category * logs_b = (logger_category[]) {
-      { name : "ERROR", .bits = L_GREEN }
-    , { name : "INFO" }
-    , { name : "WARN" }
-    , { name : "WARN" }
+      { name : "ERROR", .attr = L_GREEN }
     , { name : "FOO" }
     , { name : "BAR" }
+    , { name : "WARN" }
+    , { name : "INFO" }
     , { name : "BAZ" }
     , {}
   };
 
-  fatal(logger_register, logs_a);
-  fatal(logger_register_resolve);
+  fatal(logger_category_setup);
 
-  fatal(logger_register, logs_b);
-  fatal(logger_register_resolve);
+  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_b, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_resolve);
 
 finally:
   if(XAPI_UNWINDING)

@@ -39,36 +39,27 @@ extern char *		g_logvs;				// single string of logexprs
 extern int			g_logvsl;				// length of g_logvs
 
 /*
- * options that can be applied to a log message
+ * options and modifiers that can be applied to a log message
  */
-#define LOGGER_BITS_TABLE(x)                                \
-  LOGGER_BITS_DEF(CLEAR         , 0x0001000000000000  , x)  \
-  LOGGER_BITS_DEF(RED           , 0x0011000000000000  , x)  \
-  LOGGER_BITS_DEF(GREEN         , 0x0021000000000000  , x)  \
-  LOGGER_BITS_DEF(YELLOW        , 0x0031000000000000  , x)  \
-  LOGGER_BITS_DEF(CYAN          , 0x0041000000000000  , x)  \
-  LOGGER_BITS_DEF(BLUE          , 0x0051000000000000  , x)  \
-  LOGGER_BITS_DEF(PREFIX        , 0x0010000000000000  , x)  \
-  LOGGER_BITS_DEF(PREFIX_OFF    , 0x0030000000000000  , x)  \
-  LOGGER_BITS_DEF(TRACE_OFF     , 0x0040000000000000  , x)  \
-  LOGGER_BITS_DEF(TRACE         , 0x00b0000000000000  , x)  \
-  LOGGER_BITS_DEF(DISCOVERY_OFF , 0x0000000000000000  , x)  \
-  LOGGER_BITS_DEF(DISCOVERY     , 0x0040000000000000  , x)  \
+#define LOGGER_ATTR_TABLE(x, y)                                                             \
+  LOGGER_ATTR_DEF(CLEAR         , 0x00000001 , x , y)  /* (default) not colorized */        \
+  LOGGER_ATTR_DEF(RED           , 0x00000002 , x , y)  /* terminal colorization : red */    \
+  LOGGER_ATTR_DEF(GREEN         , 0x00000003 , x , y)  /* terminal colorization : green */  \
+  LOGGER_ATTR_DEF(YELLOW        , 0x00000004 , x , y)  /* terminal colorization : yellow */ \
+  LOGGER_ATTR_DEF(CYAN          , 0x00000005 , x , y)  /* terminal colorization : cyan */   \
+  LOGGER_ATTR_DEF(BLUE          , 0x00000006 , x , y)  /* terminal colorization : blue */   \
+  LOGGER_ATTR_DEF(PREFIX        , 0x00000040 , x , y)  /* (default) includes the prefix */  \
+  LOGGER_ATTR_DEF(PREFIX_OFF    , 0x00000080 , x , y)                                       \
+  LOGGER_ATTR_DEF(TRACE_OFF     , 0x00000010 , x , y)  /* (default) */                      \
+  LOGGER_ATTR_DEF(TRACE         , 0x00000020 , x , y)  /* includes trace info */            \
+  LOGGER_ATTR_DEF(DISCOVERY_OFF , 0x00000100 , x , y)  /* (default) */                      \
+  LOGGER_ATTR_DEF(DISCOVERY     , 0x00000200 , x , y)  /* includes discovery info */
 
 enum {
-#define LOGGER_BITS_DEF(a, b, x) L_ ## a = UINT64_C(b),
-LOGGER_BITS_TABLE(0)
-#undef LOGGER_BITS_DEF
+#define LOGGER_ATTR_DEF(a, b, x, y) L_ ## a = UINT32_C(b),
+LOGGER_ATTR_TABLE(0, 0)
+#undef LOGGER_ATTR_DEF
 };
-
-LOGGER_PREFIX_ENABLE
-LOGGER_PREFIX_DISABLE
-
-LOGGER_TRACE_ENABLE
-LOGGER_TRACE_DISABLE
-
-LOGGER_DISCOVERY_ENABLE
-LOGGER_DISCOVERY_DISABLE
 
 #define restrict __restrict
 
@@ -97,57 +88,44 @@ void logger_teardown();
 /// log
 //
 // SUMMARY
-//  issue a logging request
-//
-// REMARKS
-//  bits is the bitwise combination of 1) logger category ids, and 2) colorization constants
+//  issue a logging request with fatal
 //
 // PARAMETERS
-//  [func]  - function name
-//  [file]  - file name
-//  [line]  - line number
-//  [attrs] - bitwise combination of L_* options and modifiers
 //  ids     - bitwise combination of category ids
+//  [attrs] - bitwise combination of L_* options and modifiers
+//
+// VARIANT PARAMETERS
 //  [fmt]   - format string
 //  [src]   - source bytes
 //  [len]   - count of bytes from src (0 != strlen)
 //  [s]     - string to write
+//  [c]     - character to write
 //
-#if ! (DEBUG || DEVEL)
-xapi logger_vlogf(const uint32_t attrs, const uint64_t ids, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull(2)));
-xapi logger_logf (const uint32_t attrs, const uint64_t ids, const char * const restrict fmt, ...)
-	__attribute__((nonnull(2)));
-xapi logger_logs (const uint32_t attrs, const uint64_t ids, const char * const restrict s)
+// REMARKS
+//  under DEBUG / DEVEL, these extra parameters are passed to enable L_TRACE
+//  [func]  - function name
+//  [file]  - file name
+//  [line]  - line number
+//
+xapi logger_logvf(const uint64_t ids, const uint32_t attrs, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull(3)));
+xapi logger_logf (const uint64_t ids, const uint32_t attrs, const char * const restrict fmt, ...)
+	__attribute__((nonnull(3)));
+xapi logger_logs (const uint64_t ids, const uint32_t attrs, const char * const restrict s)
 	__attribute__((nonnull));
-xapi logger_logw (const uint32_t attrs, const uint64_t ids, const char * const restrict src, size_t len)
+xapi logger_logw (const uint64_t ids, const uint32_t attrs, const char * const restrict src, size_t len)
 	__attribute__((nonnull));
-
-# define vlogf(...) logger_vlogf(0, __VA_ARGS__)
-# define  logf(...) logger_logf(0, __VA_ARGS__)
-# define  logs(...) logger_logs(0, __VA_ARGS__)
-# define  logw(...) logger_logw(0, __VA_ARGS__)
-
-# define vxlogf(...) logger_vlogf(__VA_ARGS__)
-# define  xlogf(...) logger_logf(__VA_ARGS__)
-# define  xlogs(...) logger_logs(__VA_ARGS__)
-# define  xlogw(...) logger_logw(__VA_ARGS__)
-
-#else
-xapi logger_vlogf(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull(1,2,5)));
-xapi logger_logf(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict fmt, ...)
-	__attribute__((nonnull(1,2,5)));
-xapi logger_logs(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict s)
-	__attribute__((nonnull));
-xapi logger_logw(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits, const char * const restrict src, size_t len)
+xapi logger_logc (const uint64_t ids, const uint32_t attrs, const char c)
 	__attribute__((nonnull));
 
-# define vlogf(...) logger_vlogf(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-# define  logf(...) logger_logf(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-# define  logs(...) logger_logs(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-# define  logw(...) logger_logw(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-#endif
+#define  logvf(ids, ...) fatal(logger_logvf , ids , 0 , __VA_ARGS__)
+#define   logf(ids, ...) fatal(logger_logf  , ids , 0 , __VA_ARGS__)
+#define   logs(ids, ...) fatal(logger_logs  , ids , 0 , __VA_ARGS__)
+#define   logw(ids, ...) fatal(logger_logw  , ids , 0 , __VA_ARGS__)
+#define xlogvf(...) fatal(logger_logvf , __VA_ARGS__)
+#define  xlogf(...) fatal(logger_logf  , __VA_ARGS__)
+#define  xlogs(...) fatal(logger_logs  , __VA_ARGS__)
+#define  xlogw(...) fatal(logger_logw  , __VA_ARGS__)
 
 /// log_start
 //
@@ -157,20 +135,13 @@ xapi logger_logw(const char * const restrict func, const char * const restrict f
 //  each log_start call is accompanied by a log_finish call
 //
 // PARAMETERS
-//  [func] - function name
-//  [file] - file name
-//  [line] - line number
-//  bits   - log bits
-//  fmt    - format string
+//  ids     - bitwise combination of category ids
+//  [attrs] - bitwise combination of L_* options and modifiers
 //
-#if ! (DEBUG || DEVEL)
-xapi logger_log_start(const uint64_t bits);
-# define log_start(bits) logger_log_start(bits)
-#else
-xapi logger_log_start(const char * const restrict func, const char * const restrict file, int line, const uint64_t bits)
-	__attribute__((nonnull(2)));
-# define log_start(bits) logger_log_start(__FUNCTION__, __FILE__, __LINE__, bits)
-#endif
+xapi logger_log_start(const uint64_t ids, const uint32_t attrs);
+
+#define  log_start(ids) fatal(logger_log_start, ids, 0)
+#define log_xstart(...) fatal(logger_log_start, __VA_ARGS__)
 
 /// log_finish
 //
@@ -178,15 +149,15 @@ xapi logger_log_start(const char * const restrict func, const char * const restr
 //  complete the log that was started with log_start
 //
 xapi logger_log_finish();
-#define log_finish() logger_log_finish()
+#define log_finish() fatal(logger_log_finish)
 
 /// log_would
 //
 // SUMMARY
-//  true if logs would print with the specified bits
+//  true if a log with the specified ids would write to any stream
 //
-int logger_log_would(const uint64_t bits);
-#define log_would(bits) logger_log_would(bits)
+int logger_log_would(const uint64_t ids);
+#define log_would(ids) logger_log_would(ids)
 
 /// log_bytes
 //

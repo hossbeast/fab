@@ -117,7 +117,7 @@ i _name_  (idempotent)
   completion, sets the value pointed to to the identity value for that resource
   type
 
-v _name_ f
+_name_ vf
 * takes format string and va_list
 
 _name_ f

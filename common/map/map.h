@@ -18,6 +18,7 @@
 #ifndef _MAP_H
 #define _MAP_H
 
+#include <sys/types.h>
 #include <stdint.h>
 #include "xapi.h"
 

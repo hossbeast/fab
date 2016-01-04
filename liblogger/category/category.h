@@ -20,17 +20,6 @@
 
 #include <stdint.h>
 
-#define LOGGER_ATTR_TABLE(x)                                                                              \
-  LOGGER_ATTR_DEF(0x01  , COLOR_SET   , x)  /* apply the color option in the bits of this definition */   \
-  LOGGER_ATTR_DEF(0x02  , HEADER_SET  , x)  /* */ \
-  LOGGER_ATTR_DEF(0x02  , TRACE_SET   , x)  /* */ \
-
-enum {
-#define LOGGER_ATTR_DEF(a, b, x) LOGGER_ATTR_ ## b = a,
-LOGGER_ATTR_TABLE(0)
-#undef LOGGER_ATTR_DEF
-};
-
 /// logger_category
 //
 // SUMMARY
@@ -54,13 +43,13 @@ typedef struct logger_category
   char * description;     // e.g. informational messages
 
   // options and modifiers
-  uint32_t attr;          // e.g. LOGGER_ATTR_COLOR_SET
+  uint32_t attr;          // e.g. L_RED | L_TRACE
 
-  // components may specify options in bits outside the id range ; these options
-  // are reconciled by liblogger according to precedence ; all definitions having
-  // the same name are assigned the same bits by liblogger
-  uint64_t bits;
+  // all definitions having the same name are assigned the same bits by liblogger
+  uint64_t id;
 } logger_category;
+
+#define restrict __restrict
 
 /// logger_category_register
 //
@@ -69,10 +58,12 @@ typedef struct logger_category
 //  logger_category_resolve call
 //
 // PARAMETERS
-//  logs - sentinel-terminated list of categories used by the component
+//  logs       - sentinel-terminated list of categories used by the component
+//  [identity] - name of application component, used in error message when
+//               category definitions are found to be in conflict
 //
-xapi logger_category_register(logger_category * logs)
-  __attribute__((nonnull));
+xapi logger_category_register(logger_category * logs, char * const restrict identity)
+  __attribute__((nonnull(1)));
 
 /// logger_category_resolve
 //
@@ -82,4 +73,5 @@ xapi logger_category_register(logger_category * logs)
 //
 xapi logger_category_resolve();
 
+#undef restrict
 #endif

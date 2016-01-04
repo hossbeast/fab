@@ -22,9 +22,9 @@ settings is derived according to the following rules.
 
 For each option, in increasing order of precedence:
 
-- the category
-- the log site
-- the stream
+1. the category
+2. the log site
+3. the stream
 
 When a log message belongs to multiple categories, the category setting for a
 given option comes from the category with the highest precedence where that

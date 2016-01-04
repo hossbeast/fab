@@ -16,3 +16,4 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 1		TOOMANY		number of unique categories registered exceeded the limit
+2   ILLORDER  incompatible ordering of category definitions

@@ -18,27 +18,69 @@
 #ifndef _LIST_H
 #define _LIST_H
 
+#include <sys/types.h>
+#include <stdint.h>
+
+#include "xapi.h"
+
 #include "list.h"
 
-/*
+struct list;
+typedef struct list list;
 
-example usage
+#ifndef LIST_ELEMENT_TYPE
+# define LIST_ELEMENT_TYPE void*
+#endif
 
-union { list c; struct { int * v; size_t l; }; } ints = {{ .es = sizeof(int) }};
-
-ints.v[0];
-
-*/
-
-typedef struct list
-{
-  void *  list_v;    // vector
-  size_t  list_l;    // length in elements
-  size_t  list_es;   // element size
-  size_t  list_a;    // allocated size in elements
-} list;
+#define LIST_DEREF  1
 
 #define restrict __restrict
+
+/// list_create
+//
+// create an empty list
+//
+// parameters
+//  list			   - created list goes here
+//  esz          - element size
+//  [destructor] - invoked with key/value just before freeing their associated storage
+//  [attr]       - bitwise combination of LIST_* options and modifiers
+//
+// returns nonzero on success
+//
+xapi list_create(list ** const restrict list, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE), uint32_t attr)
+	__attribute__((nonnull(1)));
+
+/// list_free
+//
+// SUMMARY
+//  free a list with free semantics
+//
+void list_free(list * const restrict list);
+
+/// list_xfree
+//
+// SUMMARY
+//  free a list with xfree semantics
+//
+void list_xfree(list ** const restrict list)
+	__attribute__((nonnull));
+
+/// list_size
+//
+// SUMMARY
+//  get the number of elements in the list
+//
+size_t list_size(list * const restrict list)
+  __attribute__((nonnull));
+
+/// list_get
+//
+// SUMMARY
+//  retrieve an element from the list by index
+//
+LIST_ELEMENT_TYPE list_get(list * const restrict list, int x)
+  __attribute__((nonnull));
 
 /// list_append
 //

@@ -17,7 +17,6 @@
 
 #include <string.h>
 
-#include "xapi.h"
 #include "xlinux.h"
 
 #include "list.h"
@@ -26,33 +25,106 @@
 
 #define restrict __restrict
 
-xapi list_append(list * const restrict s, void * const restrict el)
+struct list
+{
+  char *  v;      // storage
+  size_t  l;      // number of elements
+  size_t  a;      // allocated size in elements
+
+  size_t  esz;    // element size
+  uint32_t attr;  // options and modifiers
+
+  void (*destructor)(void *);
+};
+
+#define ELEMENT(x) ({                             \
+  void * el;                                      \
+  if(list->attr & LIST_DEREF)                     \
+    el = *(char**)(list->v + (list->esz * (x)));  \
+  else                                            \
+    el = list->v + (list->esz * (x));             \
+  el;                                             \
+})
+
+//
+// public
+//
+
+xapi list_create(list** const restrict list, size_t esz, void (*destructor)(void *), uint32_t attr)
 {
   enter;
 
-  fatal(grow, &s->list_v, s->list_es, 1, &s->list_l, &s->list_a);
-  memcpy(((char*)s->list_v) + ((s->list_l - 1) * s->list_es), el, s->list_es);
+  fatal(xmalloc, list, sizeof(**list));
+
+  (*list)->esz = esz;
+  (*list)->destructor = destructor;
+  (*list)->attr = attr;
 
   finally : coda;
 }
 
-xapi list_append_range(list * const restrict s, void * const restrict el, size_t len)
+void list_free(list * const restrict list)
+{
+  if(list)
+  {
+    list_clear(list);
+    free(list->v);
+  }
+}
+
+void list_xfree(list ** const restrict list)
+{
+  list_free(*list);
+  *list = 0;
+}
+
+size_t list_size(list * const restrict list)
+{
+  return list->l;
+}
+
+void list_clear(list * const restrict list)
+{
+  if(list->destructor)
+  {
+    int x;
+    for(x = 0; x < list->l; x++)
+    {
+      list->destructor(ELEMENT(x));
+    }
+  }
+
+  list->l = 0;
+}
+
+void * list_get(list * const restrict list, int x)
+{
+  return ELEMENT(x);
+}
+
+xapi list_append(list * const restrict list, void * const restrict el)
 {
   enter;
 
-  size_t list_l = s->list_l;
-  fatal(grow, &s->list_v, s->list_es, len, &s->list_l, &s->list_a);
-  memcpy(((char*)s->list_v) + (list_l * s->list_es), el, s->list_es * len);
+  size_t l = list->l;
+  fatal(grow, &list->v, list->esz, 1, &list->l, &list->a);
+  memcpy(list->v + (list->esz * l), el, list->esz);
 
   finally : coda;
 }
 
-xapi list_grow(list * const restrict s, size_t len)
+xapi list_append_range(list * const restrict list, void * const restrict el, size_t len)
 {
-  xproxy(grow, &s->list_v, s->list_es, len, &s->list_l, &s->list_a);
+  enter;
+
+  size_t l = list->l;
+  fatal(grow, &list->v, list->esz, len, &list->l, &list->a);
+  memcpy(list->v + (list->esz * l), el, list->esz * len);
+
+  finally : coda;
 }
 
-void list_clear(list * const restrict s)
+xapi list_grow(list * const restrict list, size_t len)
 {
-  s->list_l = 0;
+  xproxy(grow, &list->v, list->esz, len, &list->l, &list->a);
 }
