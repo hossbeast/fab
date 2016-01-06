@@ -22,8 +22,10 @@
 #include <sys/types.h>
 #include <errno.h>
 
+#if 1
 // the system error table is the default
 #define perrtab perrtab_SYS
+#endif
 
 /*
 ** declared by the application
@@ -387,6 +389,17 @@ XAPI_LEAVE:                         \
 //  while unwinding, the error code, and zero otherwise
 //
 #define XAPI_ERRCODE xapi_frame_errcode()
+
+/// XAPI_THROWING
+//
+// SUMMARY
+//  true while unwinding due to throwing the specified error
+//
+// PARAMETERS
+//  errtab  - pointer to error table
+//  errcode - error code
+//
+#define XAPI_THROWING(c) (XAPI_UNWINDING && XAPI_ERRTAB == (perrtab) && XAPI_ERRCODE == (c))
 
 #undef restrict
 #endif

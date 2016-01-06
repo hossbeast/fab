@@ -165,6 +165,9 @@ xapi map_values (const map * const restrict m, void * const restrict list, size_
 xapi map_clone(map* const restrict dst, const map * const restrict src)
 	__attribute__((nonnull));
 
+xapi map_copyto(map* const restrict dst, const map * const restrict src)
+	__attribute__((nonnull));
+
 size_t map_size(const map * const restrict m)
   __attribute__((nonnull));
 

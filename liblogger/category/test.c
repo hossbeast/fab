@@ -13,12 +13,24 @@ int main()
   enter;
 
   logger_category * logs_a = (logger_category[]) {
-      { name : "ERROR" }
-    , { name : "WARN" }
+      { name : "FOO" }
     , { name : "INFO" }
+    , { name : "INFO" }
+    , { name : "ERROR" }
     , {}
   };
 
+  logger_category * logs_b = (logger_category[]) {
+      { name : "A" }
+    , { name : "B" }
+    , { name : "INFO" }
+    , { name : "FOO" }
+    , { name : "BAR" }
+    , { name : "BAZ" }
+    , {}
+  };
+
+/*
   logger_category * logs_b = (logger_category[]) {
       { name : "ERROR", .attr = L_GREEN }
     , { name : "FOO" }
@@ -34,12 +46,13 @@ int main()
     , { name : "ERROR" }
     , {}
   };
+*/
 
   fatal(logger_category_setup);
 
   fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
   fatal(logger_category_register, logs_b, __FILE__ " : " XQUOTE(__LINE__));
-  fatal(logger_category_register, logs_c, __FILE__ " : " XQUOTE(__LINE__));
+  //fatal(logger_category_register, logs_c, __FILE__ " : " XQUOTE(__LINE__));
   fatal(logger_category_resolve);
 
 finally:
