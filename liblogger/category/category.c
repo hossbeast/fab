@@ -209,98 +209,82 @@ API xapi logger_category_register(logger_category * logs, char * const restrict 
 
 printf("registering\n");
 
-  map * Aprev = 0;
-  map * Acurr = 0;
-  map * Bprev = 0;
-  map * Bcurr = 0;
+  map * common = 0;
+  int * ax = 0;
+  int * bx = 0;
+
   list_clear(registering);
 
-  fatal(map_create, &Aprev, 0);
-  fatal(map_create, &Acurr, 0);
-  fatal(map_create, &Bprev, 0);
-  fatal(map_create, &Bcurr, 0);
+  fatal(map_create, &common, 0);
 
-  char * Alast = 0;
-  char * Blast = 0;
+  typedef struct {
+    int Ax;
+    int Bx;
+  } location;
 
-  int Ax = 0;  // index of the element under consideration in A
-  int Bx = 0;
-  while(Ax < list_size(registered) || logs[Bx].name)
+  int x = 0;
+  int y = 0;
+  while(x < list_size(registered) || logs[y].name)
   {
-    if(Ax < list_size(registered))
+    if(x < list_size(registered))
     {
-      logger_category * this = list_get(registered, Ax++);
-printf("register A %s\n", this->name);
+      logger_category * this = list_get(registered, x);
+      location * loc = 0;
+      if(!(loc = map_get(common, MMS(this->name))))
+      {
+        fatal(map_set, common, MMS(this->name), 0, sizeof(location), &loc);
+        loc->Bx = -1;
+      }
+      loc->Ax = x;
+
+      x++;
 
       fatal(list_append, registering, &this);
-
-      if(Alast && strcmp(this->name, Alast) == 0)
-      {
-        // already in current
-      }
-      else if(map_get(Acurr, MMS(this->name)))
-      {
-        failf(LOGGER_ILLORDER, "collision with this/current : %s", this->name);
-      }
-      else if(map_get(Aprev, MMS(this->name)))
-      {
-        failf(LOGGER_ILLORDER, "collision with this/prev : %s", this->name);
-      }
-      else if(map_get(Bprev, MMS(this->name)))
-      {
-        failf(LOGGER_ILLORDER, "collision with that/prev: %s", this->name);
-      }
-      else if(map_get(Bcurr, MMS(this->name)))
-      {
-printf("collision with that/current : %s\n", this->name);
-        fatal(map_copyto, Aprev, Acurr);
-        map_clear(Acurr);
-        fatal(map_copyto, Bprev, Bcurr);
-        map_clear(Bcurr);
-      }
-      else
-      {
-        fatal(map_set, Acurr, MMS(this->name), 0, 0, 0);
-        Alast = this->name;
-      }
     }
 
-    if(logs[Bx].name)
+    if(logs[y].name)
     {
-      logger_category * this = &logs[Bx++];
-printf("register B %s\n", this->name);
+      logger_category * this = &logs[y];
+      location * loc = 0;
+      if(!(loc = map_get(common, MMS(this->name))))
+      {
+        fatal(map_set, common, MMS(this->name), 0, sizeof(location), &loc);
+        loc->Ax = -1;
+      }
+      loc->Bx = y;
+
+      y++;
 
       fatal(list_append, registering, &this);
+    }
+  }
 
-      if(Blast && strcmp(this->name, Blast) == 0)
+  fatal(xmalloc, &ax, sizeof(*ax) * map_size(common));
+  fatal(xmalloc, &bx, sizeof(*ax) * map_size(common));
+  int c = 0;
+  for(x = 0; x < map_slots(common); x++)
+  {
+    location * loc = 0;
+    if((loc = map_valueat(common, x)))
+    {
+      if(loc->Ax >= 0 && loc->Bx >= 0)
       {
-        // already in current
+        ax[c] = loc->Ax;
+        bx[c] = loc->Bx;
+        c++;
       }
-      else if(map_get(Bcurr, MMS(this->name)))
-      {
-        failf(LOGGER_ILLORDER, "collision with this/current : %s", this->name);
-      }
-      else if(map_get(Bprev, MMS(this->name)))
-      {
-        failf(LOGGER_ILLORDER, "collision with this/prev : %s", this->name);
-      }
-      else if(map_get(Aprev, MMS(this->name)))
-      {
-        failf(LOGGER_ILLORDER, "collision with that/prev: %s", this->name);
-      }
-      else if(map_get(Acurr, MMS(this->name)))
-      {
-printf("collision with that/current : %s\n", this->name);
-        fatal(map_copyto, Bprev, Bcurr);
-        map_clear(Bcurr);
-        fatal(map_copyto, Aprev, Acurr);
-        map_clear(Acurr);
-      }
-      else
-      {
-        fatal(map_set, Bcurr, MMS(this->name), 0, 0, 0);
-        Blast = this->name;
-      }
+    }
+  }
+
+  int compar(const void * A, const void * B) { return *(int*)A - *(int*)B; };
+  qsort(ax, c, sizeof(*ax), compar);
+  qsort(bx, c, sizeof(*bx), compar);
+
+  for(x = 0; x < c; x++)
+  {
+    if(strcmp(list_get(registered, ax[x])->name, logs[bx[x]].name))
+    {
+      failf(LOGGER_ILLORDER, "category %s registered with opposite ordering relative to %s", list_get(registered, ax[x])->name, logs[bx[x]].name);
     }
   }
 
@@ -309,7 +293,6 @@ printf("collision with that/current : %s\n", this->name);
   registering = T;
 
   printf("registered categories\n");
-  int x;
   for(x = 0; x < list_size(registered); x++)
   {
     logger_category * this = list_get(registered, x); 
@@ -328,10 +311,6 @@ finally:
     XAPI_INFOF("identity", "%s", identity);
   }
 
-  map_free(Acurr);
-  map_free(Aprev);
-  map_free(Bprev);
-  map_free(Bcurr);
 coda;
 }
 

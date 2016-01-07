@@ -14,7 +14,7 @@ int main()
 
   logger_category * logs_a = (logger_category[]) {
       { name : "FOO" }
-    , { name : "INFO" }
+    , { name : "QUX" }
     , { name : "INFO" }
     , { name : "ERROR" }
     , {}
@@ -23,10 +23,10 @@ int main()
   logger_category * logs_b = (logger_category[]) {
       { name : "A" }
     , { name : "B" }
-    , { name : "INFO" }
     , { name : "FOO" }
     , { name : "BAR" }
     , { name : "BAZ" }
+    , { name : "INFO" }
     , {}
   };
 
