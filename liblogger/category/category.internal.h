@@ -18,6 +18,10 @@
 #ifndef _LOGGER_CATEGORY_INTERNAL_H
 #define _LOGGER_CATEGORY_INTERNAL_H
 
+#include <stdint.h>
+
+#include "xapi.h"
+
 #include "category.h"
 
 /// category_max_name_length
@@ -27,5 +31,30 @@
 //  written in logger_category_resolve
 //
 extern int category_max_name_length;
+
+/// category_setup
+//
+// SUMMARY
+//
+//
+xapi category_setup();
+
+/// category_teardown
+//
+// SUMMARY
+//  
+//
+void category_teardown();
+
+/// category_attr_say
+//
+// SUMMARY
+//
+// PARAMETERS
+//  attr     - 
+//  narrator - 
+//
+xapi category_attr_say(uint32_t attr, narrator * _narrator)
+  __attribute__((nonnull));
 
 #endif

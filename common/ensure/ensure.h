@@ -15,21 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef _ENSURE_H
+#define _ENSURE_H
+
 #include "xapi.h"
-#include "xlinux.h"
 
-#include "grow.h"
-#include "ensure.h"
-
-#define SEED 10
 #define restrict __restrict
 
-xapi grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac)
-{
-  xproxy(ensure, target, es, ec + len, ac);
-}
+/// ensure
+//
+// SUMMARY
+//
+// PARAMETERS
+//  target - 
+//  es     - element size
+//  len    - required number of elements
+//  ac     - pointer to allocated size in elements
+//
+xapi ensure(void * target, size_t es, size_t len, size_t * const restrict ac);
 
-xapi grow2(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac, size_t seed)
-{
-  xproxy(ensure2, target, es, ec + len, ac, seed);
-}
+/// ensure2
+//
+// SUMMARY
+//  ensure with the ability to specify the seed
+//
+xapi ensure2(void * target, size_t es, size_t len, size_t * const restrict ac, size_t seed);
+
+#undef restrict
+#endif

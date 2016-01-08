@@ -23,36 +23,35 @@ int main()
   logger_category * logs_b = (logger_category[]) {
       { name : "A" }
     , { name : "B" }
-    , { name : "FOO" }
+    , { name : "FOO", .attr = L_RED }
     , { name : "BAR" }
-    , { name : "BAZ" }
+    , { name : "A" }
     , { name : "INFO" }
-    , {}
-  };
-
-/*
-  logger_category * logs_b = (logger_category[]) {
-      { name : "ERROR", .attr = L_GREEN }
-    , { name : "FOO" }
-    , { name : "BAR" }
-    , { name : "WARN" }
-    , { name : "INFO" }
-    , { name : "BAZ" }
     , {}
   };
 
   logger_category * logs_c = (logger_category[]) {
+      { name : "FOO" }
+    , { name : "BAR" }
+    , { name : "WARN" }
+    , { name : "BAZ" }
+    , { name : "INFO" }
+    , { name : "ERROR", .attr = L_GREEN }
+    , {}
+  };
+
+  logger_category * logs_d = (logger_category[]) {
       { name : "QUX" }
     , { name : "ERROR" }
     , {}
   };
-*/
 
-  fatal(logger_category_setup);
+  fatal(category_setup);
 
   fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
   fatal(logger_category_register, logs_b, __FILE__ " : " XQUOTE(__LINE__));
-  //fatal(logger_category_register, logs_c, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_c, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_d, __FILE__ " : " XQUOTE(__LINE__));
   fatal(logger_category_resolve);
 
 finally:

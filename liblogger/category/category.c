@@ -45,47 +45,11 @@ int category_name_max_length;
 // mask of all category ids which have already been used
 static uint64_t used_category_ids_mask;
 
-// registered categories, in decreasing order of precedence
+// categories that have been registered but not yet resolved
 static list * registered;
-static list * registering;
 
-//static list * resolved;
-
-#define COMPARE_BYNAME 1
-#define COMPARE_BYID   2
-#define COMPARE_BYRANK 4
-
-/// category_compare
-//
-// SUMMARY
-//  sort categories
-//
-// PARAMETERS
-//  keys - bitwise mask of COMPARE_* constants
-// 
-static int category_compare(const void * _A, const void * _B, void * _options)
-{
-  logger_category * A = (void*)_A;
-  logger_category * B = (void*)_B;
-  uint32_t options = (uint32_t)(uintptr_t)_options;
-
-  int r = 0;
-  if(r == 0 && (options & COMPARE_BYNAME))
-    r = strcmp(A->name, B->name);
-
-  if(r == 0 && (options & COMPARE_BYID))
-  {
-    if(A->id > B->id)
-      r = 1;
-    else if(A->id < B->id)
-      r = -1;
-  }
-
-  if(r == 0 && (options & COMPARE_BYRANK))
-    r = A->rank - B->rank;
-
-  return r;
-}
+// active categories, in decreasing order of precedence
+static list * categories;
 
 /// next_category_id
 //
@@ -108,6 +72,26 @@ static uint64_t next_category_id(uint64_t * const restrict bit)
 finally:
   XAPI_INFOF("max", "%d", MAX_CATEGORIES);
 coda;
+}
+
+//
+// public
+//
+
+xapi category_setup()
+{
+  enter;
+
+  fatal(list_create, &registered, sizeof(logger_category *), 0, LIST_DEREF);
+  fatal(list_create, &categories, sizeof(logger_category *), 0, LIST_DEREF);
+
+  finally : coda;
+}
+
+void category_teardown()
+{
+  list_free(registered);
+  list_free(categories);
 }
 
 /// category_attr_say
@@ -135,86 +119,21 @@ xapi category_attr_say(uint32_t attr, narrator * _narrator)
 }
 
 //
-// public
-//
-xapi logger_category_setup()
-{
-  enter;
-
-  fatal(list_create, &registered, sizeof(logger_category *), 0, LIST_DEREF);
-  fatal(list_create, &registering, sizeof(logger_category *), 0, LIST_DEREF);
-
-  finally : coda;
-}
-
-void logger_category_teardown()
-{
-}
-
-//
 // api
 //
-
-/*
-static xapi current_flush(map * const restrict current, map * const restrict previous, char * const restrict last)
-{
-  enter;
-
-  int x;
-  for(x = 0; x < map_slots(current); x++)
-  {
-    char * name = map_keyat(current, x);
-    if(name)
-    {
-      if(map_get(previous, MMS(name)))
-      {
-
-printf("last\n");
-printf(" %s\n", last);
-int i;
-printf("previous\n");
-for(i = 0; i < map_slots(previous); i++)
-{
-  char * e;
-  if((e = map_keyat(previous, i)))
-    printf(" %s\n", e);
-}
-
-printf("current\n");
-for(i = 0; i < map_slots(current); i++)
-{
-  char * e;
-  if((e = map_keyat(current, i)))
-    printf(" %s\n", e);
-}
-
-        failf(LOGGER_ILLORDER, "category %s registered with opposite ordering relative to %s", name, last);
-      }
-      else
-      {
-        fatal(map_set, previous, MMS(name), 0, 0, 0);
-      }
-    }
-  }
-
-  map_clear(current);
-
-  finally : coda;
-}
-*/
 
 API xapi logger_category_register(logger_category * logs, char * const restrict identity)
 {
   enter;
 
-printf("registering\n");
-
+  list * registering = 0;
   map * common = 0;
   int * ax = 0;
   int * bx = 0;
 
-  list_clear(registering);
+  fatal(list_create, &registering, sizeof(logger_category *), 0, LIST_DEREF);
 
+  // build a map of elements in common between the two lists
   fatal(map_create, &common, 0);
 
   typedef struct {
@@ -229,38 +148,31 @@ printf("registering\n");
     if(x < list_size(registered))
     {
       logger_category * this = list_get(registered, x);
-      location * loc = 0;
+      location * loc;
       if(!(loc = map_get(common, MMS(this->name))))
       {
         fatal(map_set, common, MMS(this->name), 0, sizeof(location), &loc);
         loc->Bx = -1;
       }
-      loc->Ax = x;
-
-      x++;
-
-      fatal(list_append, registering, &this);
+      loc->Ax = x++;
     }
 
     if(logs[y].name)
     {
       logger_category * this = &logs[y];
-      location * loc = 0;
+      location * loc;
       if(!(loc = map_get(common, MMS(this->name))))
       {
         fatal(map_set, common, MMS(this->name), 0, sizeof(location), &loc);
         loc->Ax = -1;
       }
-      loc->Bx = y;
-
-      y++;
-
-      fatal(list_append, registering, &this);
+      loc->Bx = y++;
     }
   }
 
   fatal(xmalloc, &ax, sizeof(*ax) * map_size(common));
   fatal(xmalloc, &bx, sizeof(*ax) * map_size(common));
+
   int c = 0;
   for(x = 0; x < map_slots(common); x++)
   {
@@ -276,10 +188,12 @@ printf("registering\n");
     }
   }
 
+  // sort the per-list indices
   int compar(const void * A, const void * B) { return *(int*)A - *(int*)B; };
   qsort(ax, c, sizeof(*ax), compar);
   qsort(bx, c, sizeof(*bx), compar);
 
+  // a conflict exists if any two common elements appear in opposite order
   for(x = 0; x < c; x++)
   {
     if(strcmp(list_get(registered, ax[x])->name, logs[bx[x]].name))
@@ -288,22 +202,47 @@ printf("registering\n");
     }
   }
 
+  // write the registered list with the guarantee that common elements appear
+  // in the same order
+  x = 0;
+  y = 0;
+  int cx = 0;
+  while(x < list_size(registered) || logs[y].name)
+  {
+    if(cx < c && (x == ax[cx] && y == bx[cx]))
+    {
+      logger_category * this = list_get(registered, x++);
+      fatal(list_append, registering, &this);
+
+      this = &logs[y++];
+      fatal(list_append, registering, &this);
+      cx++;
+    }
+
+    if((cx == c || x < ax[cx]) && x < list_size(registered))
+    {
+      logger_category * this = list_get(registered, x++);
+      fatal(list_append, registering, &this);
+    }
+    if((cx == c || y < bx[cx]) && logs[y].name)
+    {
+      logger_category * this = &logs[y++];
+      fatal(list_append, registering, &this);
+    }
+  }
+
   void * T = registered;
   registered = registering;
   registering = T;
 
+#if 0
   printf("registered categories\n");
   for(x = 0; x < list_size(registered); x++)
   {
     logger_category * this = list_get(registered, x); 
-
-    char space[64];
-    narrationw(space, sizeof(space));
-
-    sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length + 7, this->name, this->id, this->attr);
-    fatal(category_attr_say, this->attr, _narrator);
-    printf("%s\n", space);
+    printf("%*s\n", category_name_max_length, this->name);
   }
+#endif
 
 finally:
   if(XAPI_THROWING(LOGGER_ILLORDER))
@@ -311,6 +250,10 @@ finally:
     XAPI_INFOF("identity", "%s", identity);
   }
 
+  list_free(registering);
+  map_free(common);
+  free(ax);
+  free(bx);
 coda;
 }
 
@@ -331,7 +274,7 @@ xapi logger_category_resolve()
     int y;
     for(y = x + 1; y < list_size(registered); y++)
     {
-      if(category_compare(first, list_get(registered, y), (void*)COMPARE_BYNAME))
+      if(strcmp(list_get(registered, x)->name, list_get(registered, y)->name))
         break;
 
       id |= list_get(registered, y)->id;
@@ -396,22 +339,23 @@ xapi logger_category_resolve()
     x = y - 1;
   }
 
-#if 0
-  printf("category definitions\n");
-  for(x = 0; x < resolved.l; x++)
+#if 1
+  printf("logging categories\n");
+  for(x = 0; x < list_size(registered); x++)
   {
     // find the bounds of the name-group
-    for(y = x + 1; y < resolved.l; y++)
+    int y;
+    for(y = x + 1; y < list_size(registered); y++)
     {
-      if(category_compare(&resolved.v[x], &resolved.v[y], (void*)COMPARE_BYNAME))
+      if(strcmp(list_get(registered, x)->name, list_get(registered, y)->name))
         break;
     }
 
     char space[64];
     narrationw(space, sizeof(space));
 
-    sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, resolved.v[x]->name, resolved.v[x]->id, resolved.v[x]->attr);
-    fatal(category_attr_say, resolved.v[x]->attr, _narrator);
+    sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, list_get(registered, x)->name, list_get(registered, x)->id, list_get(registered, x)->attr);
+    fatal(category_attr_say, list_get(registered, x)->attr, _narrator);
     printf("%s\n", space);
 
     x = y - 1;
@@ -420,51 +364,3 @@ xapi logger_category_resolve()
 
   finally : coda;
 }
-
-#if 0
-// registered but not yet resolved
-static union {
-  list;
-
-  struct {
-    logger_category **  v;
-    size_t              l;
-  };
-} unresolved = {{ list_es : sizeof(logger_category *) }};
-
-// registration identities
-static union {
-  list;
-
-  struct {
-    pstring ** v;
-    size_t     l;
-  };
-} identities = {{ list_es : sizeof(char*) }};
-
-// resolved categories, sorted by name, rank
-static union {
-  list;
-
-  struct {
-    logger_category **  v;
-    size_t              l;
-  };
-} resolved = {{ list_es : sizeof(logger_category *) }};
-
-
-API xapi logger_category_register(logger_category * logs, char * const restrict identity)
-{
-  enter;
-
-  pstring * ps = 0;
-  fatal(psloads, &ps, identity);
-  fatal(list_append, &unresolved, &logs);
-  fatal(list_append, &identities, &ps);
-  ps = 0;
-
-finally:
-  psfree(ps);
-coda;
-}
-#endif

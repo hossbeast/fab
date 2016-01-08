@@ -32,7 +32,7 @@ typedef struct list list;
 # define LIST_ELEMENT_TYPE void*
 #endif
 
-#define LIST_DEREF  1
+#define LIST_DEREF  0x01
 
 #define restrict __restrict
 
@@ -42,7 +42,7 @@ typedef struct list list;
 //
 // parameters
 //  list			   - created list goes here
-//  esz          - element size
+//  esz          - element size > 0
 //  [destructor] - invoked with key/value just before freeing their associated storage
 //  [attr]       - bitwise combination of LIST_* options and modifiers
 //
@@ -90,7 +90,8 @@ LIST_ELEMENT_TYPE list_get(list * const restrict list, int x)
 //  s  - list
 //  el - pointer to element to append
 //
-xapi list_append(list * const restrict s, void * const restrict el);
+xapi list_append(list * const restrict s, void * const restrict el)
+  __attribute__((nonnull));
 
 /// list_append_range
 //
@@ -101,7 +102,22 @@ xapi list_append(list * const restrict s, void * const restrict el);
 //  el  - pointer to first element to append
 //  len - number of elements
 //
-xapi list_append_range(list * const restrict s, void * const restrict el, size_t len);
+xapi list_append_range(list * const restrict s, void * const restrict el, size_t len)
+  __attribute__((nonnull));
+
+/// list_insert
+//
+// SUMMARY
+//  insert an element into the list at the specified index. when index ==
+//  list_size, decays to list_append
+//
+// PARAMETERS
+//  s     - list
+//  index - 0 <= index <= list_size(s)
+//  el    - pointer to element to insert
+//
+xapi list_insert(list * const restrict s, size_t index, void * const restrict el)
+  __attribute__((nonnull));
 
 /// list_grow
 //
@@ -109,14 +125,28 @@ xapi list_append_range(list * const restrict s, void * const restrict el, size_t
 // 
 // PARAMETERS
 //
-xapi list_grow(list * const restrict s, size_t len);
+xapi list_grow(list * const restrict s, size_t len)
+  __attribute__((nonnull));
+
+/// list_ensure
+//
+// SUMMARY
+// 
+// PARAMETERS
+//
+xapi list_ensure(list * const restrict s, size_t len)
+  __attribute__((nonnull));
 
 /// list_clear
 //
 // SUMMARY
 //  reset the number of elements in the list - the allocation remains intact
 //
-void list_clear(list * const restrict s);
+void list_clear(list * const restrict s)
+  __attribute__((nonnull));
+
+void list_sort(list * const restrict s, int (*compar)(const void *, const void *, void *), void * arg)
+  __attribute__((nonnull(1, 2)));
 
 #undef restrict
 #endif

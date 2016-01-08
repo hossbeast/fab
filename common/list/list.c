@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "xlinux.h"
@@ -22,6 +23,7 @@
 #include "list.h"
 
 #include "grow.h"
+#include "ensure.h"
 
 #define restrict __restrict
 
@@ -106,9 +108,9 @@ xapi list_append(list * const restrict list, void * const restrict el)
 {
   enter;
 
-  size_t l = list->l;
-  fatal(grow, &list->v, list->esz, 1, &list->l, &list->a);
-  memcpy(list->v + (list->esz * l), el, list->esz);
+  fatal(grow, &list->v, list->esz, 1, list->l, &list->a);
+  memcpy(list->v + (list->esz * list->l), el, list->esz);
+  list->l++;
 
   finally : coda;
 }
@@ -117,14 +119,42 @@ xapi list_append_range(list * const restrict list, void * const restrict el, siz
 {
   enter;
 
-  size_t l = list->l;
-  fatal(grow, &list->v, list->esz, len, &list->l, &list->a);
-  memcpy(list->v + (list->esz * l), el, list->esz * len);
+  fatal(grow, &list->v, list->esz, len, list->l, &list->a);
+  memcpy(list->v + (list->esz * list->l), el, list->esz * len);
+  list->l += len;
 
   finally : coda;
 }
 
 xapi list_grow(list * const restrict list, size_t len)
 {
-  xproxy(grow, &list->v, list->esz, len, &list->l, &list->a);
+  xproxy(grow, &list->v, list->esz, len, list->l, &list->a);
+}
+
+xapi list_ensure(list * const restrict list, size_t len)
+{
+  xproxy(ensure, &list->v, list->esz, len, &list->a);
+}
+
+xapi list_insert(list * const restrict list, size_t index, void * const restrict el)
+{
+  enter;
+
+  fatal(ensure, &list->v, list->esz, index + 1, &list->a);
+
+  memmove(
+      list->v + ((index + 1) * list->esz)
+    , list->v + (index * list->esz)
+    , (list->l - index) * list->esz
+  );
+
+  memcpy(list->v + (list->esz * index), el, list->esz);
+  list->l++;
+
+  finally : coda;
+}
+
+void list_sort(list * const restrict list, int (*compar)(const void *, const void *, void *), void * arg)
+{
+  qsort_r(list->v, list->l, list->esz, compar, arg);
 }

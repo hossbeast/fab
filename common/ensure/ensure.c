@@ -18,18 +18,32 @@
 #include "xapi.h"
 #include "xlinux.h"
 
-#include "grow.h"
 #include "ensure.h"
 
 #define SEED 10
 #define restrict __restrict
 
-xapi grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac)
+xapi ensure(void * target, size_t es, size_t len, size_t * const restrict ac)
 {
-  xproxy(ensure, target, es, ec + len, ac);
+  xproxy(ensure2, target, es, len, ac, SEED);
 }
 
-xapi grow2(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac, size_t seed)
+xapi ensure2(void * target, size_t es, size_t len, size_t * const restrict ac, size_t seed)
 {
-  xproxy(ensure2, target, es, ec + len, ac, seed);
+  enter;
+
+  void ** p = (void**)target;
+
+	if(!*p || len >= *ac)
+	{
+		size_t nc = *ac ?: seed;
+
+		while(nc <= *ac)
+			nc = nc * 2 + nc / 2;
+
+		fatal(xrealloc, p, es, nc, *ac);
+    *ac = nc;
+	}
+
+	finally : coda;
 }

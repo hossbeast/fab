@@ -30,17 +30,17 @@
 //  target - 
 //  es     - element size
 //  len    - additional space in elements
-//  ec     - element count
-//  ac     - allocated count
+//  ec     - used size in elements
+//  ac     - pointer to allocated size in elements
 //
-xapi grow(void * target, size_t es, size_t len, size_t * const restrict ec, size_t * const restrict ac);
+xapi grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac);
 
 /// grow2
 //
 // SUMMARY
 //  grow with the ability to specify the seed
 //
-xapi grow2(void * target, size_t es, size_t len, size_t * const restrict ec, size_t * const restrict ac, size_t seed);
+xapi grow2(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac, size_t seed);
 
 #undef restrict
 #endif
