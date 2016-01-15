@@ -30,7 +30,7 @@ xapi beta(int num)
   enter;
 
   beta_count++;
-  fail(SYS_ERESTART);
+  fail(XAPI_ILLFATAL);
 
   finally : coda;
 }
@@ -60,7 +60,7 @@ int main()
   for(x = 0; x < expected; x++)
   {
     int exit = foo();
-    assert_exit(perrtab_SYS, SYS_ERESTART);
+    assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
   }
 
   assert(beta_count == expected

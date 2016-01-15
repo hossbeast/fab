@@ -39,6 +39,9 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 +[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $dlibxapi ~ ls -d v d l/test v ]; $cc; $cflags = $cflags_xapi_final)
 +[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $dlibxapi ~ ls -d v d l/test v ]; $cc; $cflags = $cflags_xapi_debug)
 +[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $dlibxapi ~ ls -d v d l/test v ]; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
 
 ##
 ## dependencies
@@ -54,20 +57,6 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 ##
 ## formulas
 ##
-
-# the SYS errtab is generated from available system header files
-[ $dlibxapi/error/SYS.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
-{
-	exec > [ $@ ]
-
-	cat /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h  | \
-	> sed -e 's/#define\s\+\(E[A-Z]\+\)\s\+\([0-9]\+\)\s\+\/\*\s*\(.*\)\s\+\*\//\2\t\1\t\3/p; d'
-}
-
-# compiled sys errtab
-+[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_final)
-+[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxapi/error/SYS.errtab ~ j ] [ $dlibxapi/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_devel)
 
 # library exports
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]

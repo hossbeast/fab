@@ -21,14 +21,14 @@
 #include "internal.h"
 #include "errtab.internal.h"
 #include "error.h"
-#include "error/XAPI.errtab.h"
-#include "error/SYS.errtab.h"
+#include "errtab/XAPI.errtab.h"
+#include "mm/mm.internal.h"
 
 etable **         tab;
 size_t            tabl;
 static size_t     taba;
 
-static etable *   tab_stat[2];
+static etable *   tab_stat[1];
 
 #define restrict __restrict
 
@@ -38,14 +38,11 @@ static etable *   tab_stat[2];
 
 static void __attribute__((constructor)) init()
 {
-  tab_stat[0] = perrtab_SYS;
+  tab_stat[0] = perrtab_XAPI;
   tab_stat[0]->id = 1;
 
-  tab_stat[1] = perrtab_XAPI;
-  tab_stat[1]->id = 2;
-
   tab = tab_stat;
-  tabl = 2;
+  tabl = 1;
 }
 
 
@@ -67,27 +64,31 @@ API xapi xapi_errtab_register(etable * const etab)
 {
   enter;
 
+  etable * reg[2];
+  size_t regl = 0;
+
   if(tab == tab_stat)
   {
     tab = 0;
     tabl = 0;
-    fatal(xapi_errtab_register, perrtab_XAPI); 
-    fatal(xapi_errtab_register, perrtab_SYS); 
+    reg[regl++] = perrtab_XAPI;
   }
+  reg[regl++] = etab;
 
-  if(tabl == taba)
+  int x;
+  for(x = 0; x < regl; x++)
   {
-    size_t ns = taba ?: 3;
-    ns = ns * 2 + ns / 2;
-    if((tab = realloc(tab, ns * sizeof(*tab))) == 0)
+    if(tabl == taba)
     {
-      fail(SYS_ENOMEM);
+      size_t ns = taba ?: 3;
+      ns = ns * 2 + ns / 2;
+      wrealloc(&tab, sizeof(*tab), ns, taba);
+      taba = ns;
     }
-    taba = ns;
-  }
 
-  tab[tabl++] = etab;
-  etab->id = tabl;
+    tab[tabl++] = reg[x];
+    reg[x]->id = tabl;
+  }
 
   finally : coda;
 }

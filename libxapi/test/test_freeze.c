@@ -31,7 +31,7 @@ xapi beta(int num)
 {
   enter;
 
-  fail(SYS_ERESTART);
+  fail(XAPI_ILLFATAL);
 
   finally : coda;
 }
@@ -70,7 +70,7 @@ coda;
 int main()
 {
   int exit = foo();
-  assert_exit(perrtab_SYS, SYS_ERESTART);
+  assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
 
 #if XAPI_MODE_STACKTRACE
   struct stack * cs = xapi_calltree_thaw(space);

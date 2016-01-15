@@ -20,7 +20,19 @@
 #include "xapi.h"
 #include "xapi/error.h"
 #include "xapi/errtab.h"
+#include "xapi/XAPI.errtab.h"
+
+#undef perrtab
+#define perrtab perrtab_XAPI
+
 #define MMS(a) a, strlen(a)
+
+/*
+
+In the xapi tests, all assertions are made in main, which is not itself a
+xapi-enabled function
+
+*/
 
 #if XAPI_MODE_STACKTRACE
 #define assert_etab(etab)                                                                 \

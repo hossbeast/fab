@@ -60,9 +60,6 @@ typedef struct etable
   xapi_code max;    // max err
 } etable;
 
-// an error table for system errors is provided by libxapi
-#include "xapi/SYS.errtab.h"
-
 // pull in the appropriate implementation
 #if XAPI_MODE_STACKTRACE
 # include "xapi/stacktrace.h"

@@ -27,6 +27,6 @@
 
 // default error table
 #undef perrtab
-#define perrtab perrtab_SYS
+#define perrtab perrtab_XAPI
 
 #endif

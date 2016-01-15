@@ -1,1 +1,1 @@
-../error/XAPI.errtab.h
+../errtab/XAPI.errtab.h

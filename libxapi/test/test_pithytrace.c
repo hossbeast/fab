@@ -31,7 +31,7 @@ xapi delta(int num)
   enter;
 
   delta_count++;
-  fail(SYS_ERESTART);
+  fail(XAPI_ILLFATAL);
 
 finally:
   XAPI_INFOF("num", "%d", num);
@@ -80,7 +80,7 @@ int main()
 {
   // alpha should fail
   int exit = alpha();
-  assert_exit(perrtab_SYS, SYS_ERESTART);
+  assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
 
   // dead area should have been skipped
   assert(beta_dead_count == 0

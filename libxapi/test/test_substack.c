@@ -30,7 +30,7 @@ xapi delta()
   enter;
 
   delta_count++;
-  fail(SYS_ERESTART);
+  fail(XAPI_ILLFATAL);
 
   finally : coda;
 }
@@ -66,7 +66,7 @@ int main()
 {
   // alpha should fail
   int exit = alpha();
-  assert_exit(perrtab_SYS, SYS_ERESTART);
+  assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
 
   // alpha dead area should have been skipped
   assert(alpha_dead_count == 0

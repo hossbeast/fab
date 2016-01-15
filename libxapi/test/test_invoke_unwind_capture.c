@@ -30,7 +30,7 @@ xapi delta()
 {
   enter;
 
-  fail(SYS_ENOMEM);
+  fail(XAPI_NOFATAL);
 
   finally : coda;
 }
@@ -39,7 +39,7 @@ xapi beta()
 {
   enter;
 
-  fail(SYS_ERESTART);
+  fail(XAPI_ILLFATAL);
 
   finally : coda;
 }
@@ -57,7 +57,7 @@ xapi alpha()
   int exit;
   if((exit = invoke(beta)))
   {
-    assert_exit(perrtab_SYS, SYS_ERESTART);
+    assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
 
 #if XAPI_MODE_STACKTRACE
     z = xapi_trace_full(space, sizeof(space));
@@ -83,7 +83,7 @@ int main()
   {
     int exit = alpha();
 
-    assert_exit(perrtab_SYS, SYS_ENOMEM);
+    assert_exit(perrtab_XAPI, XAPI_NOFATAL);
 
     // dead area should have been skipped
     assert(alpha_dead_count == 0

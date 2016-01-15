@@ -22,11 +22,6 @@
 #include <sys/types.h>
 #include <errno.h>
 
-#if 1
-// the system error table is the default
-#define perrtab perrtab_SYS
-#endif
-
 /*
 ** declared by the application
 **  perrtab - pointer to etable
