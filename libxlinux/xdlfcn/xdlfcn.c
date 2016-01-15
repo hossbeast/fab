@@ -20,8 +20,9 @@
 #include <errno.h>
 
 #include "internal.h"
-
-#include "xdlfcn.h"
+#include "xdlfcn/xdlfcn.h"
+#include "errtab/SYS.errtab.h"
+#include "errtab/XLINUX.errtab.h"
 
 #undef perrtab
 #define perrtab perrtab_XLINUX

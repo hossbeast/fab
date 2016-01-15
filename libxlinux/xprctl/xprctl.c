@@ -18,6 +18,8 @@
 #include <sys/prctl.h>
 
 #include "internal.h"
+#include "xprctl/xprctl.h"
+#include "errtab/SYS.errtab.h"
 
 API xapi xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
 {

@@ -18,6 +18,8 @@
 #include <signal.h>
 
 #include "internal.h"
+#include "xsignal/xsignal.h"
+#include "errtab/SYS.errtab.h"
 
 API xapi xkill(pid_t pid, int sig)
 {

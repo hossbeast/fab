@@ -18,7 +18,8 @@
 #include <errno.h>
 
 #include "internal.h"
-#include "xtime.h"
+#include "xtime/xtime.h"
+#include "errtab/SYS.errtab.h"
 
 API xapi xlocaltime_r(const time_t * timep, struct tm * result)
 {

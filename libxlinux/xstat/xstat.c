@@ -19,8 +19,8 @@
 #include <errno.h>
 
 #include "internal.h"
-
-#include "xstat.h"
+#include "xstat/xstat.h"
+#include "errtab/SYS.errtab.h"
 
 #define restrict __restrict
 

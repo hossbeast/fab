@@ -20,6 +20,8 @@
 #include <errno.h>
 
 #include "internal.h"
+#include "xstdio/xstdio.h"
+#include "errtab/SYS.errtab.h"
 
 #define restrict __restrict
 

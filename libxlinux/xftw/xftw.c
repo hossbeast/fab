@@ -18,8 +18,8 @@
 #include <errno.h>
 
 #include "internal.h"
-
-#include "xftw.h"
+#include "xftw/xftw.h"
+#include "errtab/XLINUX.errtab.h"
 
 #undef perrtab
 #define perrtab perrtab_XLINUX

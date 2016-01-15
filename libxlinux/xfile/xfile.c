@@ -18,6 +18,8 @@
 #include <sys/file.h>
 
 #include "internal.h"
+#include "xfile/xfile.h"
+#include "errtab/SYS.errtab.h"
 
 API xapi xflock(int fd, int operation)
 {

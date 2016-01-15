@@ -18,6 +18,8 @@
 #include "xapi/errtab.h"
 
 #include "internal.h"
+#include "errtab/SYS.errtab.h"
+#include "errtab/XLINUX.errtab.h"
 
 //
 // api

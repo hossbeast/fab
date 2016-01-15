@@ -18,6 +18,8 @@
 #include <sys/wait.h>
 
 #include "internal.h"
+#include "xwait/xwait.h"
+#include "errtab/SYS.errtab.h"
 
 API xapi xwait(int * status)
 {

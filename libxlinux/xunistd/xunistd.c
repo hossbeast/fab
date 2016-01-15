@@ -16,12 +16,12 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <errno.h>
+#include <stdio.h>
 
 #include "internal.h"
-
-#include "xunistd.h"
-
-#include <stdio.h>
+#include "xunistd/xunistd.h"
+#include "errtab/SYS.errtab.h"
+#include "errtab/XLINUX.errtab.h"
 
 API xapi xread(int fd, void * buf, size_t count, ssize_t * bytes)
 {

@@ -16,6 +16,9 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "internal.h"
+#include "mempolicy/mempolicy.internal.h"
+#include "errtab/SYS.errtab.h"
+#include "errtab/XLINUX.errtab.h"
 
 // arbitrary max policies
 #define MAX_POLICIES 8

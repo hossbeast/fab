@@ -19,8 +19,9 @@
 #include <string.h>
 
 #include "internal.h"
-
-#include "xstdlib.h"
+#include "xstdlib/xstdlib.h"
+#include "errtab/SYS.errtab.h"
+#include "mempolicy/mempolicy.internal.h"
 
 API xapi xmalloc(void* target, size_t size)
 {

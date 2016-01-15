@@ -18,6 +18,8 @@
 #ifndef _XLINUX_MEMPOLICY_INTERNAL_H
 #define _XLINUX_MEMPOLICY_INTERNAL_H
 
+#include "mempolicy/mempolicy.h"
+
 struct mempolicy;
 
 extern __thread struct mempolicy * policy;

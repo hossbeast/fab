@@ -18,8 +18,8 @@
 #include <errno.h>
 
 #include "internal.h"
-
-#include "xpwd.h"
+#include "xpwd/xpwd.h"
+#include "errtab/SYS.errtab.h"
 
 API xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
 {

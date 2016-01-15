@@ -22,21 +22,8 @@
 // api
 //
 #include "xlinux.h"
-#include "mempolicy.h"
 
-// error tables
-#include "XLINUX.errtab.h"
-
-//
-// internal
-//
-#include "mempolicy.internal.h"
-
-//
-// library-wide declarations
-//
-#include "xapi.h"
-
+// facilitates fatalize(errno ... idiom
 #undef perrtab
 #define perrtab perrtab_SYS
 

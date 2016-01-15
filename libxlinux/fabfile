@@ -37,9 +37,9 @@ $cflags_xapi_devel = [ $cflags_xapi_devel $copts ]
 
 # -lrt required for glibc < 2.17 as per man clock_gettime
 $lflags						 = [ -ldl -lrt -shared  [ -Wl,--version-script=$*/exports ~ j ] ]
-$lflags_eapi_final = [ $lflags $libxapi_eapi_final [ -Wl,-soname,libxlinux.so ~ j ] ]
-$lflags_eapi_debug = [ $lflags $libxapi_eapi_debug [ -Wl,-soname,libxlinux.so ~ j ] ]
-$lflags_eapi_devel = [ $lflags $libxapi_eapi_devel [ -Wl,-soname,libxlinux-devel.so ~ j ] ]
+$lflags_eapi_final = [ $lflags [ -Wl,-soname,libxlinux.so ~ j ] ]
+$lflags_eapi_debug = [ $lflags [ -Wl,-soname,libxlinux.so ~ j ] ]
+$lflags_eapi_devel = [ $lflags [ -Wl,-soname,libxlinux-devel.so ~ j ] ]
 $lflags_xapi_final = [ $lflags $libxapi_xapi_final [ -Wl,-soname,libxlinux-xapi.so ~ j ] ]
 $lflags_xapi_debug = [ $lflags $libxapi_xapi_debug [ -Wl,-soname,libxlinux-xapi.so ~ j ] ]
 $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-devel.so ~ j ] ]
@@ -51,12 +51,12 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 +[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_xapi_final)
 +[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_xapi_debug)
 +[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_xapi_devel)
-+[@std.xapi.errtab]($dext = [ eapi.final.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_eapi_final)
-+[@std.xapi.errtab]($dext = [ eapi.debug.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_eapi_debug)
-+[@std.xapi.errtab]($dext = [ eapi.devel.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_eapi_devel)
-+[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
-+[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $gendir = $dlibxlinux; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ eapi.final.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_eapi_final)
++[@std.xapi.errtab]($dext = [ eapi.debug.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_eapi_debug)
++[@std.xapi.errtab]($dext = [ eapi.devel.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_eapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
 
 ##
 ## dependencies
@@ -80,6 +80,20 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 ## formulas
 ##
 
+# the SYS errtab is generated from available system header files
+[ $dlibxlinux/errtab/SYS.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
+{
+	exec > [ $@ ]
+
+	cat /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h  | \
+	> sed -e 's/#define\s\+\(E[A-Z]\+\)\s\+\([0-9]\+\)\s\+\/\*\s*\(.*\)\s\+\*\//\2\t\1\t\3/p; d'
+}
+
+# compiled sys errtab
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxlinux/errtab/SYS.errtab ~ j ] [ $dlibxlinux/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxlinux/errtab/SYS.errtab ~ j ] [ $dlibxlinux/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxlinux/errtab/SYS.errtab ~ j ] [ $dlibxlinux/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_devel)
+
 # library exports
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
@@ -91,40 +105,40 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 }
 
 # link the library
-[ $libxlinux_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.final.pic.o sy ] ]
+[ $libxlinux_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.final.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.eapi.final.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
 }
 
-[ $libxlinux_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.debug.pic.o sy ] ]
+[ $libxlinux_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.debug.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.eapi.debug.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
 }
 
-[ $libxlinux_eapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.devel.pic.o sy ] ]
+[ $libxlinux_eapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.devel.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.eapi.devel.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
 }
 
-[ $libxlinux_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.final.pic.o sy ] ]
+[ $libxlinux_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.final.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.xapi.final.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $libxlinux_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.debug.pic.o sy ] ]
+[ $libxlinux_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.debug.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.xapi.debug.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $libxlinux_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.devel.pic.o sy ] ]
+[ $libxlinux_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.devel.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.xapi.devel.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
 }
 
 # inter-module dependencies
-[ $libxlinux_eapi_final ] :^ [ $libxapi_eapi_final ]
-[ $libxlinux_eapi_debug ] :^ [ $libxapi_eapi_debug ]
-[ $libxlinux_eapi_devel ] :^ [ $libxapi_eapi_devel ]
+[ $libxlinux_eapi_final ] :^ [ ]
+[ $libxlinux_eapi_debug ] :^ [ ]
+[ $libxlinux_eapi_devel ] :^ [ ]
 [ $libxlinux_xapi_final ] :^ [ $libxapi_xapi_final ]
 [ $libxlinux_xapi_debug ] :^ [ $libxapi_xapi_debug ]
 [ $libxlinux_xapi_devel ] :^ [ $libxapi_xapi_devel ]

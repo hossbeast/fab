@@ -18,8 +18,8 @@
 #include <errno.h>
 
 #include "internal.h"
-
-#include "xmman.h"
+#include "xmman/xmman.h"
+#include "errtab/SYS.errtab.h"
 
 API xapi xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
 {

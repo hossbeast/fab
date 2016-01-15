@@ -18,8 +18,8 @@
 #include <errno.h>
 
 #include "internal.h"
-
-#include "xgrp.h"
+#include "xgrp/xgrp.h"
+#include "errtab/SYS.errtab.h"
 
 API xapi uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
 {

@@ -16,6 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "internal.h"
+#include "xdirent/xdirent.h"
+#include "errtab/SYS.errtab.h"
 
 API xapi xopendir(const char * name, DIR ** dd)
 {
