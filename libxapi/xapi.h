@@ -60,6 +60,14 @@ typedef struct etable
   xapi_code max;    // max err
 } etable;
 
+/*
+** declared by the application
+**  perrtab - pointer to etable
+*/
+#ifndef perrtab
+#define perrtab ((void*)0)
+#endif
+
 // pull in the appropriate implementation
 #if XAPI_MODE_STACKTRACE
 # include "xapi/stacktrace.h"

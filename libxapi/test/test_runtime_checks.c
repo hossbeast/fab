@@ -21,7 +21,7 @@
 /*
 
 SUMMARY
- verify that runtime checks catch ILLFATAL/NOFATAL errors
+ verify that runtime checks catch ILLFATAL/NOFATAL/ILLFAIL errors
 
 */
 
@@ -64,6 +64,26 @@ xapi foo_nofatal()
   finally : coda;
 }
 
+#if XAPI_MODE_STACKTRACE && XAPI_RUNTIME_CHECKS
+xapi foo_illfail_noetab()
+{
+  enter;
+
+  tfail(0, XAPI_ILLFATAL);
+
+  finally : coda;
+}
+
+xapi foo_illfail_nocode()
+{
+  enter;
+
+  tfail(perrtab_XAPI, 0);
+
+  finally : coda;
+}
+#endif
+
 int main()
 {
 #if XAPI_MODE_STACKTRACE && XAPI_RUNTIME_CHECKS
@@ -74,6 +94,12 @@ int main()
   // verify ILLFATAL
   exit = foo_illfatal();
   assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
+
+  exit = foo_illfail_noetab();
+  assert_exit(perrtab_XAPI, XAPI_ILLFAIL);
+
+  exit = foo_illfail_nocode();
+  assert_exit(perrtab_XAPI, XAPI_ILLFAIL);
 #endif
 
   // victory

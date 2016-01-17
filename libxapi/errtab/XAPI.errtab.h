@@ -4,7 +4,7 @@
 #define ETABLE_XAPI \
 _E(1, ILLFATAL, "non xapi-enabled function invoked with fatal") \
 _E(2, NOFATAL, "xapi-enabled function invoked without fatal") \
-_E(3, NOMEM, "out of memory") \
+_E(3, ILLFAIL, "fail invoked without a code or table     ") \
 
 enum {
 #define _E(a, b, c) XAPI_ ## b = a,

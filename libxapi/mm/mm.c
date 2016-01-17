@@ -79,7 +79,7 @@ static void allocate(size_t sz)
 
 	return;
 failed:
-  _r = write(2, MMS("libxapi failure to allocate while unwinding ; consider calling xapi_preallocate\n"));
+  _r = write(2, MMS("libxapi failure to allocate while unwinding ; consider calling xapi_allocate\n"));
 }
 
 //

@@ -26,6 +26,8 @@
 #define perrtab perrtab_XAPI
 
 #define MMS(a) a, strlen(a)
+#define QUOTE(x) #x
+#define XQUOTE(x) QUOTE(x)
 
 /*
 
@@ -40,7 +42,8 @@ xapi-enabled function
     const struct etable * tab = xapi_errtab(exit);                                        \
     if(tab != etab)                                                                       \
     {                                                                                     \
-      dprintf(2, "[" __FILE__ "] expected etab : %s, actual etab : %s, result : fail\n"   \
+      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
+          "expected etab : %s, actual etab : %s, result : fail\n"                         \
         , xapi_errtab_tag(etab)                                                           \
         , xapi_errtab_tag(tab)                                                            \
       );                                                                                  \
@@ -57,7 +60,8 @@ xapi-enabled function
   do {                                                                                    \
     if(xapi_errcode(exit) != ecode)                                                       \
     {                                                                                     \
-      dprintf(2, "[" __FILE__ "] expected code : %s(%d), actual code : %s(%d), result : fail\n"   \
+      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
+          "expected code : %s(%d), actual code : %s(%d), result : fail\n"                 \
         , #ecode                                                                          \
         , ecode                                                                           \
         , xapi_errname(exit)                                                              \
@@ -73,7 +77,8 @@ xapi-enabled function
     int code = exit & 0xFFFF;                                                             \
     if(code != ecode)                                                                     \
     {                                                                                     \
-      dprintf(2, "[" __FILE__ "] expected code : %d, actual code : %d, result : fail\n"   \
+      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
+          "expected code : %d, actual code : %d, result : fail\n"                         \
         , ecode                                                                           \
         , code                                                                            \
       );                                                                                  \
@@ -88,7 +93,8 @@ xapi-enabled function
     const struct etable * tab = xapi_errtab(exit);                                        \
     if(tab != etab || xapi_errcode(exit) != ecode)                                        \
     {                                                                                     \
-      dprintf(2, "[" __FILE__ "] expected etab : %s, code : %s(%d), actual etab : %s, code : %s(%d), result : fail\n" \
+      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
+          "expected etab : %s, code : %s(%d), actual etab : %s, code : %s(%d), result : fail\n" \
         , xapi_errtab_tag(etab)                                                           \
         , #ecode                                                                          \
         , ecode                                                                           \
@@ -106,7 +112,8 @@ xapi-enabled function
     int code = exit & 0xFFFF;                                                             \
     if(code != ecode)                                                                     \
     {                                                                                     \
-      dprintf(2, "[" __FILE__ "] expected code : %d, actual code : %d, result : fail\n"   \
+      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
+          "expected code : %d, actual code : %d, result : fail\n"                         \
         , ecode                                                                           \
         , code                                                                            \
       );                                                                                  \
@@ -119,7 +126,10 @@ xapi-enabled function
   do {                                                                                    \
     if(!(bool))                                                                           \
     {                                                                                     \
-      dprintf(2, "[" __FILE__ "] " fmt ", result : fail\n", ##__VA_ARGS__);               \
+      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
+          fmt ", result : fail\n"                                                         \
+        , ##__VA_ARGS__                                                                   \
+      );                                                                                  \
       return 1;                                                                           \
     }                                                                                     \
   } while(0)
@@ -127,11 +137,11 @@ xapi-enabled function
 #if XAPI_MODE_STACKTRACE
 #define succeed                                   \
   xapi_teardown();                                \
-  dprintf(1, "[" __FILE__ "] result : pass\n");   \
+  dprintf(1, "[" __FILE__ ":" XQUOTE(__LINE__) "] result : pass\n");   \
   return 0
 #endif
 #if XAPI_MODE_ERRORCODE
 #define succeed                                   \
-  dprintf(1, "[" __FILE__ "] result : pass\n");   \
+  dprintf(1, "[" __FILE__ ":" XQUOTE(__LINE__) "] result : pass\n");   \
   return 0
 #endif

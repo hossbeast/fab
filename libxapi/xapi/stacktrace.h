@@ -22,11 +22,6 @@
 #include <sys/types.h>
 #include <errno.h>
 
-/*
-** declared by the application
-**  perrtab - pointer to etable
-*/
-
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
 
@@ -142,7 +137,6 @@ when calling non-xapi code, you have a couple of options.
 //
 #define tfail(etab, code)                               \
   do {                                                  \
-/*printf("tfail @ %s:%d\n", __FILE__, __LINE__);*/   \
     /* populate the current stack frame */              \
     XAPI_FRAME_SET(etab, code);                         \
     /* jump to the finally label */                     \
@@ -153,7 +147,6 @@ when calling non-xapi code, you have a couple of options.
 
 #define tfailw(etab, code, msg, msgl)                       \
   do {                                                      \
-/* printf("tfail @ %s:%d\n", __FILE__, __LINE__);*/   \
     /* populate the current stack frame */                  \
     XAPI_FRAME_SET_MESSAGEW(etab, code, msg, msgl);         \
     /* jump to the finally label */                         \
@@ -162,7 +155,6 @@ when calling non-xapi code, you have a couple of options.
 
 #define tfailf(etab, code, fmt, ...)                         \
   do {                                                       \
-/* printf("tfail @ %s:%d\n", __FILE__, __LINE__);*/   \
     /* populate the current stack frame */                   \
     XAPI_FRAME_SET_MESSAGEF(etab, code, fmt, ##__VA_ARGS__); \
     /* jump to the finally label */                          \
@@ -185,10 +177,11 @@ when calling non-xapi code, you have a couple of options.
       void * calling_frame_address = __builtin_frame_address(0);                                    \
       xapi_calling_frame_address = calling_frame_address;                                           \
       /* the target function fixes calling_frame to caller_frame in enter */                        \
-      int __r = func(__VA_ARGS__);                                                                  \
+      xapi __r = func(__VA_ARGS__);                                                                 \
       if(xapi_caller_frame_address != calling_frame_address)                                        \
       {                                                                                             \
-        __r = XAPI_ILLFATAL;                                                                        \
+        __r = (perrtab_XAPI->id << 16) | XAPI_ILLFATAL;                                             \
+        __r = XAPI_ILLFATAL;  \
         XAPI_FRAME_SET_MESSAGEF(perrtab_XAPI, XAPI_ILLFATAL                                         \
           , #func " invoked with fatal, expected caller : %p, actual caller : %p"                   \
           , calling_frame_address                                                                   \
@@ -198,7 +191,7 @@ when calling non-xapi code, you have a couple of options.
       __r;                                                                                          \
   })
 #else
-#define xapi_invoke(func, ...)              \
+#define xapi_invoke(func, ...) \
   ({ func(__VA_ARGS__); })
 #endif
 
@@ -223,7 +216,7 @@ when calling non-xapi code, you have a couple of options.
   do {                                      \
     if(xapi_invoke(func, ##__VA_ARGS__))    \
     {                                       \
-      fail(0);                              \
+      tfail(0, 0);                          \
     }                                       \
   } while(0)
 

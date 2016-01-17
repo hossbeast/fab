@@ -64,7 +64,7 @@ while unwinding, xapi functions can produce a backtrace
 
     int main()
     {
-      int res = foo();                    // foo is a xapi-enabled function
+      xapi res = foo();                   // foo is a xapi-enabled function
       if(res)) {
         char * name = xapi_errname(res);  // "ENOMEM"
         char * desc = xapi_errdesc(res);  // "not enough space"

@@ -18,13 +18,15 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "internal.h"
 #include "frame.internal.h"
 #include "calltree.internal.h"
-#include "stack.h"
 #include "mm.internal.h"
+#include "stack.h"
 #include "info.h"
+#include "errtab/XAPI.errtab.h"
 
 #include "memblk.def.h"
 #include "macros.h"
@@ -45,8 +47,17 @@ __thread APIDATA int xapi_stack_raised_code;
 // per-thread sentinels
 __thread APIDATA int xapi_sentinel;
 
-static stack * frame_set(stack * s, const etable * const restrict etab, const int16_t code, const char * const restrict file, const int line, const char * const restrict func)
+static stack * frame_set(stack * s, const etable * restrict etab, xapi_code code, const char * const restrict file, const int line, const char * const restrict func)
 {
+#if XAPI_RUNTIME_CHECKS
+  // code/table are required for the base frame
+  if((code == 0) ^ (etab == 0))
+  {
+    etab = perrtab_XAPI;
+    code = XAPI_ILLFAIL;
+  }
+#endif
+
   // allocate a new stack when throwing a new error
   if(code)
     stack_push();
@@ -54,13 +65,14 @@ static stack * frame_set(stack * s, const etable * const restrict etab, const in
   // save site-of-error information on the stack
   if(g_stack->frames.l == 0)
   {
-    if(code == 0)
-    {
-      // fail(0)
 #if XAPI_RUNTIME_CHECKS
-  dprintf(2, "FATAL : error raised without code\n");
-#endif
+    // code/table are required for the base frame
+    if(!code)
+    {
+      etab = perrtab_XAPI;
+      code = XAPI_ILLFAIL;
     }
+#endif
 
     g_stack->etab = etab;
     g_stack->code = code;
@@ -88,7 +100,6 @@ static stack * frame_set(stack * s, const etable * const restrict etab, const in
   if(s)
   {
     g_stack = s;
-
 #if DEVEL
 	S = g_stack;
 #endif
@@ -98,7 +109,7 @@ static stack * frame_set(stack * s, const etable * const restrict etab, const in
   if(etab == perrtab_XAPI && code == XAPI_NOFATAL)
   {
     xapi_stack_raised_etab = etab;
-    xapi_stack_raised_code = XAPI_NOFATAL;
+    xapi_stack_raised_code = code;
   }
 #endif
 
@@ -190,14 +201,14 @@ API void xapi_record_frame(void * calling_frame)
 }
 #endif
 
-API int xapi_frame_leave(int sentinel)
+API xapi xapi_frame_leave(int sentinel)
 {
-  int r = 0;
+  xapi r = 0;
   xapi_frame_leave3(sentinel, 0, 0, &r);
   return r;
 }
 
-API void xapi_frame_leave3(int sentinel, const etable ** restrict etab, int * const restrict code, int * const restrict rval)
+API void xapi_frame_leave3(int sentinel, const etable ** restrict etab, xapi_code * const restrict code, xapi * const restrict rval)
 {
 #if XAPI_RUNTIME_CHECKS
   if(g_frame_addresses.l)   // pop the frame
@@ -205,8 +216,8 @@ API void xapi_frame_leave3(int sentinel, const etable ** restrict etab, int * co
 #endif
 
   const etable * E = 0;
-  int C = 0;
-  int R = 0;
+  xapi_code C = 0;
+  xapi R = 0;
 
   if(g_stack)
   {
@@ -228,6 +239,10 @@ API void xapi_frame_leave3(int sentinel, const etable ** restrict etab, int * co
   if(sentinel)
   {
     g_stack = 0;
+#if DEVEL
+  S = g_stack;
+#endif
+
     xapi_sentinel = 0;
 #if XAPI_RUNTIME_CHECKS
     g_frame_addresses.l = 0;
@@ -248,12 +263,12 @@ API int xapi_unwinding()
   return !!g_stack;
 }
 
-API int xapi_frame_errcode()
+API xapi_code xapi_frame_errcode()
 {
 	return g_stack->code;
 }
 
-API int xapi_frame_errval()
+API xapi xapi_frame_errval()
 {
   return (g_stack->etab->id << 16) | g_stack->code;
 }
@@ -263,28 +278,35 @@ API const etable * xapi_frame_errtab()
 	return g_stack->etab;
 }
 
-API stack * xapi_frame_set(stack * s, const etable * const etab, const int16_t code, const char * const file, const int line, const char * const func)
+API stack * xapi_frame_set(stack * s, const etable * const etab, const xapi_code code, const char * const file, const int line, const char * const func)
 {
 	return frame_set(s, etab, code, file, line, func);
 }
 
-API stack * xapi_frame_set_messagew(stack * s, const etable * const etab, const int16_t code, const char * const msg, int msgl, const char * const file, const int line, const char * const func)
+API stack * xapi_frame_set_messagew(stack * s, const etable * const etab, const xapi_code code, const char * const msg, int msgl, const char * const file, const int line, const char * const func)
 {
 	s = frame_set(s, etab, code, file, line, func);
 	msgl = msgl ?: msg ? strlen(msg) : 0;
 
-  // save the msg when setting the base frame for the stack
+  // save the msg when setting the base frame
 	if(s->frames.l == 1)
+  {
+//  if(s->etab == perrtab_XAPI && s->code == XAPI_ILLFAIL)
+//   {
+// printf("DONT LOAD\n");
+//   } else {
     sloadw(&s->msg, &s->msgl, &s->msga, msg, msgl);
+//}
+  }
 
   return s;
 }
 
-API stack * xapi_frame_set_messagef(stack * s, const etable * const etab, const int16_t code, const char * const fmt, const char * const file, const int line, const char * const func, ...)
+API stack * xapi_frame_set_messagef(stack * s, const etable * const etab, const xapi_code code, const char * const fmt, const char * const file, const int line, const char * const func, ...)
 {
 	s = frame_set(s, etab, code, file, line, func);
 
-  // save the msg when setting the base frame for the stack
+  // save the msg when setting the base frame
 	if(s->frames.l == 1)
   {
     va_list va;

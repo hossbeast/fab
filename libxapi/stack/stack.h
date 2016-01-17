@@ -33,7 +33,7 @@ struct memblk;
 typedef struct stack
 {
 	const struct etable *	etab;		// error table
-	int16_t								code;		// error code
+	xapi_code             code;		// error code
 
 	char *	msg;	  	            // error message
   size_t  msgl;

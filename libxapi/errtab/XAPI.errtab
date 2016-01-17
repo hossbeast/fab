@@ -17,4 +17,4 @@
 
 1	ILLFATAL	non xapi-enabled function invoked with fatal
 2	NOFATAL		xapi-enabled function invoked without fatal
-3 NOMEM     out of memory
+3 ILLFAIL   fail invoked without a code or table     
