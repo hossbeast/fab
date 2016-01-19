@@ -18,13 +18,9 @@
 #ifndef _XUNIT_INTERNAL_H
 #define _XUNIT_INTERNAL_H
 
-#include "xapi.h"
+#include "xunit.h"
 
 #define API __attribute__((visibility("protected")))
 #define APIDATA
-
-#include "XUNIT.errtab.h"
-#undef perrtab
-#define perrtab perrtab_SYS
 
 #endif

@@ -74,17 +74,17 @@ $lflags_xapi_devel	= [ $libxapi_xapi_devel $lopts [ -Wl,-soname,libxunit-xapi-de
 }
 
 # link the library
-[ $libxunit_xapi_final ] : [ [ $*/exports ~ j ] [ $*/error/error.xapi.final.pic.o ~ j ] ]
+[ $libxunit_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sxf/c/xapi.final.pic.o y ] ]
 {
 	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ] 
 }
 
-[ $libxunit_xapi_debug ] : [ [ $*/exports ~ j ] [ $*/error/error.xapi.debug.pic.o ~ j ] ]
+[ $libxunit_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sxf/c/xapi.debug.pic.o y ] ]
 {
 	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ] 
 }
 
-[ $libxunit_xapi_devel ] : [ [ $*/exports ~ j ] [ $*/error/error.xapi.devel.pic.o ~ j ] ]
+[ $libxunit_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sxf/c/xapi.devel.pic.o y ] ]
 {
 	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ] 
 }

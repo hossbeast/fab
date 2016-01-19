@@ -20,6 +20,21 @@
 
 #include "xapi.h"
 
+/// xapi_setup
+//
+// SUMMARY
+//  call during setup to initialize libxunit, including to register libxunit
+//  error tables
+//
+xapi xunit_setup();
+
+/// xapi_teardown
+//
+// SUMMARY
+//  cleanup - call during shutdown
+//
+void xapi_teardown();
+
 #ifndef TEST_TYPE
 # define TEST_TYPE struct xunit_test
 #endif

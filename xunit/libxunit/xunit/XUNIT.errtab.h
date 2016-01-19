@@ -1,1 +1,1 @@
-../error/XUNIT.errtab.h
+../errtab/XUNIT.errtab.h

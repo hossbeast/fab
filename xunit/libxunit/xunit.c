@@ -15,15 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XUNIT_ERROR_H
-#define _XUNIT_ERROR_H
-
 #include "xapi.h"
+#include "xapi/errtab.h"
 
-const char * xunit_errname(const int code);
-const char * xunit_errdesc(const int code);
-const char * xunit_errstr(const int code);
-const etable * xunit_errtab(const int code);
-int xunit_errcode(const int code);
+#include "internal.h"
+#include "errtab/XUNIT.errtab.h"
 
-#endif
+//
+// api
+//
+
+API xapi xunit_setup()
+{
+  enter;
+
+  fatal(xapi_errtab_register, perrtab_XUNIT);
+
+  finally : coda;
+}
+
+API void xunit_teardown()
+{
+}
