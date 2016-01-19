@@ -70,7 +70,7 @@ coda;
 int main()
 {
   int exit = foo();
-  assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
 
 #if XAPI_MODE_STACKTRACE
   struct stack * cs = xapi_calltree_thaw(space);

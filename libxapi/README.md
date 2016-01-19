@@ -92,7 +92,7 @@ recommended to pre-allocate memory to libxapi, viz.
   * To catch an error during unwinding, inspect it, and conditionally discard it, see xapi_calltree_unwind
 * xapi/memblk.h
   * serialize/deserialize a calltree
-* xapi/error.h
+* xapi/exit.h
   * getting strings from exit values
 * xapi/errtab.h
   * registering etables for exit value resolution

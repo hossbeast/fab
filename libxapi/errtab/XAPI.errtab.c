@@ -1,7 +1,7 @@
 #include "XAPI.errtab.h"
 #define APIDATA
 etable errtab_XAPI = {
-   .tag = "XAPI"
+   .name = "XAPI"
  , .min = ERRMIN_XAPI
  , .max = ERRMAX_XAPI
  , .v =  (typeof(((etable*)0)->v[0])[]) {

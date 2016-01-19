@@ -20,7 +20,6 @@
 
 #include "internal.h"
 #include "errtab.internal.h"
-#include "error.h"
 #include "errtab/XAPI.errtab.h"
 #include "mm/mm.internal.h"
 
@@ -93,12 +92,14 @@ API xapi xapi_errtab_register(etable * const etab)
   finally : coda;
 }
 
-API char * xapi_errtab_tag(const etable * const restrict etab)
+API char * xapi_errtab_name(const etable * const restrict etab)
 {
-  if(etab)
-    return etab->tag;
+  return etab->name;
+}
 
-  return 0;
+API xapi_etable_id xapi_errtab_id(const etable * const restrict etab)
+{
+  return etab->id;
 }
 
 API const etable * xapi_errtab_byid(const xapi_etable_id id)
@@ -113,54 +114,42 @@ API const etable * xapi_errtab_byid(const xapi_etable_id id)
 // exit value api
 //
 
-API const char * xapi_errtab_errname(const xapi exit, const etable * const restrict etab)
+API const char * xapi_errtab_errname(const etable * const restrict etab, const xapi exit)
 {
-	xapi_code rc = exit & 0xFFFF;		// error code
+	xapi_code code = exit & 0xFFFF;		// error code
 
-  if(etab == 0)
+  if(code < etab->min || code > etab->max)
     return 0;
 
-  if(rc < etab->min || rc > etab->max)
-    return 0;
-
-	return etab->v[rc + (etab->min * -1)].name;
+	return etab->v[code + (etab->min * -1)].name;
 }
 
-API const char * xapi_errtab_errdesc(const xapi exit, const etable * const restrict etab)
+API const char * xapi_errtab_errdesc(const etable * const restrict etab, const xapi exit)
 {
-	xapi_code rc = exit & 0xFFFF;		// error code
+	xapi_code code = exit & 0xFFFF;		// error code
 
-  if(etab == 0)
+  if(code < etab->min || code > etab->max)
     return 0;
 
-  if(rc < etab->min || rc > etab->max)
-    return 0;
-
-	return etab->v[rc + (etab->min * -1)].desc;
+	return etab->v[code + (etab->min * -1)].desc;
 }
 
-API const char * xapi_errtab_errstr(const xapi exit, const etable * const restrict etab)
+API const char * xapi_errtab_errstr(const etable * const restrict etab, const xapi exit)
 {
-	xapi_code rc = exit & 0xFFFF;		// error code
+	xapi_code code = exit & 0xFFFF;		// error code
 
-  if(etab == 0)
+  if(code < etab->min || code > etab->max)
     return 0;
 
-  if(rc < etab->min || rc > etab->max)
-    return 0;
-
-	return etab->v[rc + (etab->min * -1)].str;
+	return etab->v[code + (etab->min * -1)].str;
 }
 
-API xapi_code xapi_errtab_errcode(const xapi exit, const etable * const restrict etab)
+API xapi_code xapi_errtab_errcode(const etable * const restrict etab, const xapi exit)
 {
-	xapi_code rc = exit & 0xFFFF;		// error code
+	xapi_code code = exit & 0xFFFF;		// error code
 
-  if(etab == 0)
+  if(code < etab->min || code > etab->max)
     return 0;
 
-  if(rc < etab->min || rc > etab->max)
-    return 0;
-
-	return rc;
+	return code;
 }

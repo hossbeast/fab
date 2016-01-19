@@ -60,7 +60,7 @@ int main()
   for(x = 0; x < expected; x++)
   {
     int exit = foo();
-    assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
+    assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
   }
 
   assert(beta_count == expected

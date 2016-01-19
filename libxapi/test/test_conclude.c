@@ -54,7 +54,7 @@ int foo()
 int main()
 {
   int exit = foo();
-  assert_code(0);
+  assert_code(exit, 0);
 
   succeed;
 }

@@ -89,17 +89,17 @@ int main()
 #if XAPI_MODE_STACKTRACE && XAPI_RUNTIME_CHECKS
   // verify NOFATAL
   int exit = foo_nofatal();
-  assert_exit(perrtab_XAPI, XAPI_NOFATAL);
+  assert_exit(exit, perrtab_XAPI, XAPI_NOFATAL);
 
   // verify ILLFATAL
   exit = foo_illfatal();
-  assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
 
   exit = foo_illfail_noetab();
-  assert_exit(perrtab_XAPI, XAPI_ILLFAIL);
+  assert_exit(exit, perrtab_XAPI, XAPI_ILLFAIL);
 
   exit = foo_illfail_nocode();
-  assert_exit(perrtab_XAPI, XAPI_ILLFAIL);
+  assert_exit(exit, perrtab_XAPI, XAPI_ILLFAIL);
 #endif
 
   // victory

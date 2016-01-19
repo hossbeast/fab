@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "xapi.h"
-#include "xapi/error.h"
+#include "xapi/exit.h"
 #include "xapi/errtab.h"
 #include "xapi/XAPI.errtab.h"
 
@@ -36,112 +36,80 @@ xapi-enabled function
 
 */
 
-#if XAPI_MODE_STACKTRACE
-#define assert_etab(etab)                                                                 \
-  do {                                                                                    \
-    const struct etable * tab = xapi_errtab(exit);                                        \
-    if(tab != etab)                                                                       \
-    {                                                                                     \
-      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
-          "expected etab : %s, actual etab : %s, result : fail\n"                         \
-        , xapi_errtab_tag(etab)                                                           \
-        , xapi_errtab_tag(tab)                                                            \
-      );                                                                                  \
-      return 1;                                                                           \
-    }                                                                                     \
+#define assert(bool, fmt, ...)                             \
+  do {                                                     \
+    if(!(bool))                                            \
+    {                                                      \
+      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "    \
+          fmt ", result : fail\n"                          \
+        , ##__VA_ARGS__                                    \
+      );                                                   \
+      return 1;                                            \
+    }                                                      \
   } while(0)
+
+#if XAPI_MODE_STACKTRACE
+#define assert_etab(exit, etab)                       \
+  assert(                                             \
+      xapi_exit_errtab(exit) == etab                  \
+    , "expected etab : %s, actual etab : %s"          \
+  )
 #endif
 #if XAPI_MODE_ERRORCODE
 #define assert_etab(etab)
 #endif
 
 #if XAPI_MODE_STACKTRACE
-#define assert_code(ecode)                                                                \
-  do {                                                                                    \
-    if(xapi_errcode(exit) != ecode)                                                       \
-    {                                                                                     \
-      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
-          "expected code : %s(%d), actual code : %s(%d), result : fail\n"                 \
-        , #ecode                                                                          \
-        , ecode                                                                           \
-        , xapi_errname(exit)                                                              \
-        , xapi_errcode(exit)                                                              \
-      );                                                                                  \
-      return 1;                                                                           \
-    }                                                                                     \
-  } while(0)
+#define assert_code(exit, ecode)                              \
+  assert(                                                     \
+      xapi_exit_errcode(exit) == ecode                        \
+    , "expected code : %s(%d), actual code : %s(%d)"          \
+    , #ecode                                                  \
+    , ecode                                                   \
+    , xapi_exit_errname(exit)                                 \
+    , xapi_exit_errcode(exit)                                 \
+  )
 #endif
 #if XAPI_MODE_ERRORCODE
-#define assert_code(ecode)                                                                \
-  do {                                                                                    \
-    int code = exit & 0xFFFF;                                                             \
-    if(code != ecode)                                                                     \
-    {                                                                                     \
-      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
-          "expected code : %d, actual code : %d, result : fail\n"                         \
-        , ecode                                                                           \
-        , code                                                                            \
-      );                                                                                  \
-      return 1;                                                                           \
-    }                                                                                     \
-  } while(0)
+#define assert_code(exit, ecode)                      \
+  assert(                                             \
+      ((exit) & 0xFFFF) == ecode                      \
+    , "expected code : %d, actual code : %d"          \
+    , ecode                                           \
+    , (exit) & 0xFFFF                                 \
+  )
 #endif
 
 #if XAPI_MODE_STACKTRACE
-#define assert_exit(etab, ecode)                                                          \
-  do {                                                                                    \
-    const struct etable * tab = xapi_errtab(exit);                                        \
-    if(tab != etab || xapi_errcode(exit) != ecode)                                        \
-    {                                                                                     \
-      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
-          "expected etab : %s, code : %s(%d), actual etab : %s, code : %s(%d), result : fail\n" \
-        , xapi_errtab_tag(etab)                                                           \
-        , #ecode                                                                          \
-        , ecode                                                                           \
-        , xapi_errtab_tag(tab)                                                            \
-        , xapi_errname(exit)                                                              \
-        , xapi_errcode(exit)                                                              \
-      );                                                                                  \
-      return 1;                                                                           \
-    }                                                                                     \
-  } while(0)
+#define assert_exit(exit, etab, ecode)                                            \
+  assert(                                                                         \
+      xapi_exit_errtab(exit) == etab && xapi_exit_errcode(exit) == ecode          \
+    , "expected exit : %s/%s(%d), actual exit : %s/%s(%d)"                        \
+    , ({ char * s = 0; if(etab) { s = xapi_errtab_name(etab ?: (void*)1); } s; }) \
+    , #ecode                                                                      \
+    , ecode                                                                       \
+    , xapi_exit_errtab_name(exit)                                                 \
+    , xapi_exit_errname(exit)                                                     \
+    , xapi_exit_errcode(exit)                                                     \
+  )
 #endif
 #if XAPI_MODE_ERRORCODE
-#define assert_exit(etab, ecode)                                                          \
-  do {                                                                                    \
-    int code = exit & 0xFFFF;                                                             \
-    if(code != ecode)                                                                     \
-    {                                                                                     \
-      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
-          "expected code : %d, actual code : %d, result : fail\n"                         \
-        , ecode                                                                           \
-        , code                                                                            \
-      );                                                                                  \
-      return 1;                                                                           \
-    }                                                                                     \
-  } while(0)
+#define assert_exit(exit, etab, ecode)          \
+  assert_code(exit, ecode)
 #endif
-
-#define assert(bool, fmt, ...)                                                            \
-  do {                                                                                    \
-    if(!(bool))                                                                           \
-    {                                                                                     \
-      dprintf(2, "[" __FILE__ ":" XQUOTE(__LINE__) "] "                                   \
-          fmt ", result : fail\n"                                                         \
-        , ##__VA_ARGS__                                                                   \
-      );                                                                                  \
-      return 1;                                                                           \
-    }                                                                                     \
-  } while(0)
 
 #if XAPI_MODE_STACKTRACE
-#define succeed                                   \
-  xapi_teardown();                                \
-  dprintf(1, "[" __FILE__ ":" XQUOTE(__LINE__) "] result : pass\n");   \
-  return 0
+#define succeed                                                         \
+  do {                                                                  \
+    xapi_teardown();                                                    \
+    dprintf(1, "[" __FILE__ ":" XQUOTE(__LINE__) "] result : pass\n");  \
+    return 0;                                                           \
+  } while(0)
 #endif
 #if XAPI_MODE_ERRORCODE
-#define succeed                                   \
-  dprintf(1, "[" __FILE__ ":" XQUOTE(__LINE__) "] result : pass\n");   \
-  return 0
+#define succeed                                                         \
+  do {                                                                  \
+    dprintf(1, "[" __FILE__ ":" XQUOTE(__LINE__) "] result : pass\n");  \
+    return 0;                                                           \
+  } while(0)
 #endif

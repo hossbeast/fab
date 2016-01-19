@@ -46,18 +46,18 @@ typedef uint16_t xapi_etable_id;
 // error table struct
 typedef struct etable
 {
-  // indexed by lower int16 of the error code + (min * -1)
+  // indexed by lower uint16 of the error code + (min * -1)
   struct
   {
-    char * name;    // e.g. ENOMEM
-    char * desc;    // e.g. Not enough space
-    char * str;     // e.g. ENOMEM : Not enough space
+    char * name;         // e.g. ENOMEM
+    char * desc;         // e.g. Not enough space
+    char * str;          // e.g. ENOMEM : Not enough space
   } * v;
 
-  char *    tag;    // e.g. "PCRE", "SYS", "FAB", "LW"
-  xapi_code id;     // upper 2 bytes of the error code, nonzero
-  xapi_code min;    // min err
-  xapi_code max;    // max err
+  char *          name;  // e.g. "PCRE", "SYS", "FAB", "LW"
+  xapi_etable_id  id;    // upper uint16 of an exit value, nonzero
+  xapi_code       min;   // min err
+  xapi_code       max;   // max err
 } etable;
 
 /*

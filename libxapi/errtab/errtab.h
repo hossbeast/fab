@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_ERRTAB_CODE_H
-#define _XAPI_ERRTAB_CODE_H
+#ifndef _XAPI_ERRTAB_NOTGENERATED_H
+#define _XAPI_ERRTAB_NOTGENERATED_H
 
 #include "xapi.h"
 
@@ -34,24 +34,42 @@
 // NOTES
 //  not threadsafe
 //
-xapi xapi_errtab_register(struct etable * const restrict etab);
-
-/// xapi_errtab_tag
-//
-// SUMMARY
-//  get the tag for an etab
-//
-// PARAMETERS
-//  [etab] - error table
-//
-char * xapi_errtab_tag(const etable * const restrict etab);
+xapi xapi_errtab_register(etable * const restrict etab)
+  __attribute__((nonnull));
 
 /// xapi_errtab_byid
 //
 // SUMMARY
 //  lookup an error table by id
 //
-const struct etable * xapi_errtab_byid(const xapi_etable_id id);
+const etable * xapi_errtab_byid(const xapi_etable_id id)
+  __attribute__((nonnull));
+
+/// xapi_errtab_name
+//
+// SUMMARY
+//  get the name for an etab
+//
+// PARAMETERS
+//  [etab] - error table
+//
+const char * xapi_errtab_name(const etable * const restrict etab)
+  __attribute__((nonnull));
+
+/// xapi_errtab_name
+//
+// SUMMARY
+//  get the id for an etab
+//
+// PARAMETERS
+//  [etab] - error table
+//
+xapi_etable_id xapi_errtab_id(const etable * const restrict etab)
+  __attribute__((nonnull));
+
+//
+// exit value api
+//
 
 /// xapi_errtab_errname
 //
@@ -59,21 +77,23 @@ const struct etable * xapi_errtab_byid(const xapi_etable_id id);
 //  get the error name from an exit value and etable, e.g. "ENOMEM"
 //
 // PARAMETERS
-//  exit   - exit value
 //  [etab] - etable
+//  exit   - exit value
 //
-const char * xapi_errtab_errname(const xapi exit, const etable * const restrict etab);
+const char * xapi_errtab_errname(const etable * const restrict etab, const xapi exit)
+  __attribute__((nonnull));
 
 /// xapi_errtab_errdesc
 //
 // SUMMARY
-//  get the error description string from an exit value and etable, e.g. "out of memory"
+//  get the error description from an exit value and etable, e.g. "out of memory"
 //
 // PARAMETERS
-//  exit   - exit value
 //  [etab] - etable
+//  exit   - exit value
 //
-const char * xapi_errtab_errdesc(const xapi exit, const etable * const restrict etab);
+const char * xapi_errtab_errdesc(const etable * const restrict etab, const xapi exit)
+  __attribute__((nonnull));
 
 /// xapi_errtab_errstr
 //
@@ -81,10 +101,11 @@ const char * xapi_errtab_errdesc(const xapi exit, const etable * const restrict 
 //  get the error string from an exit value and etable, e.g. "ENOMEM : out of memory"
 //
 // PARAMETERS
-//  exit   - exit value
 //  [etab] - etable
+//  exit   - exit value
 //
-const char * xapi_errtab_errstr(const xapi exit, const etable * const restrict etab);
+const char * xapi_errtab_errstr(const etable * const restrict etab, const xapi exit)
+  __attribute__((nonnull));
 
 /// xapi_errtab_errcode
 //
@@ -92,10 +113,11 @@ const char * xapi_errtab_errstr(const xapi exit, const etable * const restrict e
 //  get the error code from an exit value and etable, e.g. SYS_ENOMEM
 //
 // PARAMETERS
-//  exit   - exit value
 //  [etab] - etable
+//  exit   - exit value
 //
-xapi_code xapi_errtab_errcode(const xapi exit, const etable * const restrict etab);
+xapi_code xapi_errtab_errcode(const etable * const restrict etab, const xapi exit)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

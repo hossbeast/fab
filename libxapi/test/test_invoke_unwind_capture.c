@@ -57,7 +57,7 @@ xapi alpha()
   int exit;
   if((exit = invoke(beta)))
   {
-    assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
+    assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
 
 #if XAPI_MODE_STACKTRACE
     z = xapi_trace_full(space, sizeof(space));
@@ -83,7 +83,7 @@ int main()
   {
     int exit = alpha();
 
-    assert_exit(perrtab_XAPI, XAPI_NOFATAL);
+    assert_exit(exit, perrtab_XAPI, XAPI_NOFATAL);
 
     // dead area should have been skipped
     assert(alpha_dead_count == 0

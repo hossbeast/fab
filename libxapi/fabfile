@@ -133,14 +133,32 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 }
 
 [ @test ] : [ @test.stacktrace @test.errorcode ]
+[ @test.verbose ] : [ @test.stacktrace.verbose @test.errorcode.verbose ]
+
 [ @test.stacktrace ] : [ $*/test ~ j lsr sx/c/stacktrace sy ]
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
 }
 
+[ @test.stacktrace.verbose ] : [ $*/test ~ j lsr sx/c/stacktrace sy ]
+{
+  set -e
+  (
+    [ $@ ~ rx/ineed fi/; ]
+  ) | tee /dev/fd/501
+}
+
 [ @test.errorcode ] : [ $*/test ~ j lsr sx/c/errorcode sy ]
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
+}
+
+[ @test.errorcode.verbose ] : [ $*/test ~ j lsr sx/c/errorcode sy ]
+{
+  set -e
+  (
+    [ $@ ~ rx/ineed fi/; ]
+  ) | tee /dev/fd/501
 }

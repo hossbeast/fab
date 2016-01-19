@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "internal.h"
+#include "errtab/XAPI.errtab.h"
 #include "trace.internal.h"
 #include "frame.internal.h"
 #include "info.h"
@@ -40,10 +41,24 @@ static size_t stack_error(char * const dst, const size_t sz, stack * s)
 {
 	size_t z = 0;
 
-	if(s->etab && s->code && s->msg)
+  if(0)
+  {
+
+  }
+#if XAPI_RUNTIME_CHECKS
+  else if(s->etab == perrtab_XAPI && s->code == XAPI_ILLFAIL)
+  {
+		SAY("[%s:%s] %s"
+			, s->etab->name
+			, s->code > s->etab->max ? "UNKNWN" : s->etab->v[s->code + (s->etab->min * -1)].name
+			, s->code > s->etab->max ? "unspecified error" : s->etab->v[s->code + (s->etab->min * -1)].desc
+		);
+  }
+#endif
+	else if(s->etab && s->code && s->msg)
 	{
 		SAY("[%s:%s] %.*s"
-			, s->etab->tag
+			, s->etab->name
 			, s->code > s->etab->max ? "UNKNWN" : s->etab->v[s->code + (s->etab->min * -1)].name
 			, (int)s->msgl, s->msg 
 		);
@@ -51,7 +66,7 @@ static size_t stack_error(char * const dst, const size_t sz, stack * s)
 	else if(s->etab && s->code)
 	{
 		SAY("[%s:%s] %s"
-			, s->etab->tag
+			, s->etab->name
 			, s->code > s->etab->max ? "UNKNWN" : s->etab->v[s->code + (s->etab->min * -1)].name
 			, s->code > s->etab->max ? "unspecified error" : s->etab->v[s->code + (s->etab->min * -1)].desc
 		);
@@ -59,7 +74,7 @@ static size_t stack_error(char * const dst, const size_t sz, stack * s)
 	else if(s->etab && s->msg)
 	{
 		SAY("[%s] %.*s"
-			, s->etab->tag
+			, s->etab->name
 			, (int)s->msgl, s->msg 
 		);
 	}

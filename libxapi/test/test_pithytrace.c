@@ -80,7 +80,7 @@ int main()
 {
   // alpha should fail
   int exit = alpha();
-  assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
 
   // dead area should have been skipped
   assert(beta_dead_count == 0

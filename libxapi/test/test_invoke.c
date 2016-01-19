@@ -57,7 +57,7 @@ int main()
   int exit = foo();
 
   // assertions
-  assert_exit(perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
 
   // victory
   succeed;
