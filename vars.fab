@@ -61,9 +61,6 @@ $dxunit					= [ $*/xunit/xunit ~ j ]
 $dliblogger     = [ $*/liblogger ~ j ]
 
 # build artifacts
-$libxapi_eapi_final			= [ $dlibxapi/libxapi.final.so ~ j ]
-$libxapi_eapi_debug			= [ $dlibxapi/libxapi.debug.so ~ j ]
-$libxapi_eapi_devel			= [ $dlibxapi/libxapi-devel.so ~ j ]
 $libxapi_xapi_final			= [ $dlibxapi/libxapi-xapi.final.so ~ j ]
 $libxapi_xapi_debug			= [ $dlibxapi/libxapi-xapi.debug.so ~ j ]
 $libxapi_xapi_devel			= [ $dlibxapi/libxapi-xapi-devel.so ~ j ]
