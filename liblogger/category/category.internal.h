@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include "xapi.h"
+#include "narrate.h"
 
 #include "category.h"
 

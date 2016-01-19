@@ -15,34 +15,4 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/errtab.h"
-#include "xlinux.h"
-
-#include "internal.h"
-#include "logger/LOGGER.errtab.h"
-
-#define restrict __restrict
-
-//
-// api
-//
-
-API xapi logger_setup()
-{
-  enter;
-
-  static int setup;
-  if(!setup)
-  {
-    fatal(xapi_errtab_register, perrtab_LOGGER);
-
-    setup = 1;
-  }
-
-  finally : coda;
-}
-
-API void logger_teardown()
-{
-}
+1		FAIL		failed assertion

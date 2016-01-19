@@ -1,7 +1,7 @@
 #include "LOGGER.errtab.h"
 #define APIDATA
 etable errtab_LOGGER = {
-   .tag = "LOGGER"
+   .name = "LOGGER"
  , .min = ERRMIN_LOGGER
  , .max = ERRMAX_LOGGER
  , .v =  (typeof(((etable*)0)->v[0])[]) {

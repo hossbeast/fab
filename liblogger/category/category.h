@@ -55,23 +55,29 @@ typedef struct logger_category
 //
 // SUMMARY
 //  provide a list of categories to be resolved by the next
-//  logger_category_resolve call
+//  logger_category_activate call
 //
 // PARAMETERS
 //  logs       - sentinel-terminated list of categories used by the component
-//  [identity] - name of application component, used in error message when
-//               category definitions are found to be in conflict
+//  [identity] - name of application component, for error messages
+//
+// THROWS
+//  ILLORDER - incompatible ordering between the previously-registered categories and logs
 //
 xapi logger_category_register(logger_category * logs, char * const restrict identity)
   __attribute__((nonnull(1)));
 
-/// logger_category_resolve
+/// logger_category_activate
 //
 // SUMMARY
 //  assign the bits member to all categories which have been registered since
-//  the last logger_category_resolve call
+//  the last logger_category_activate call
 //
-xapi logger_category_resolve();
+// THROWS
+//  ILLORDER - incompatible ordering between the previously-activated categories and the newly-activating categories
+//  TOOMANY  - too many unique-by-name categories
+//
+xapi logger_category_activate();
 
 #undef restrict
 #endif

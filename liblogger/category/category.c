@@ -23,8 +23,9 @@
 #include "pstring.h"
 
 #include "internal.h"
-#include "category.internal.h"
-#include "log.internal.h"
+#include "errtab/LOGGER.errtab.h"
+#include "category/category.internal.h"
+#include "log/log.internal.h"
 
 #define LIST_ELEMENT_TYPE logger_category*
 #include "list.h"
@@ -42,35 +43,238 @@ int category_name_max_length;
 // static
 //
 
-// mask of all category ids which have already been used
-static uint64_t used_category_ids_mask;
-
-// categories that have been registered but not yet resolved
+// categories that have been registered but not yet activated
 static list * registered;
 
-// active categories, in decreasing order of precedence
-static list * categories;
+// working space for category_list_merge
+static list * registering;
 
-/// next_category_id
+// activated categories, in decreasing order of precedence
+static list * activated;
+
+/// attr_combine
 //
 // SUMMARY
-//  retrieve the next unused category id bit
+//  combine two sets of attributes
 //
 // PARAMETERS
-//  bit - (returns) next unused bit
+//  A - low precedence
+//  B - high precedence
+//  
+// RETURNS
+//  attribute set A overwritten with all options affirmatively set by B
 //
-static uint64_t next_category_id(uint64_t * const restrict bit)
+static uint32_t attr_combine(uint32_t A, uint32_t B)
+{
+  if(B & COLOR_OPT)
+  {
+    A &= ~COLOR_OPT;
+    A |= (B & COLOR_OPT);
+  }
+
+  if(B & PREFIX_OPT)
+  {
+    A &= ~PREFIX_OPT;
+    A |= (B & PREFIX_OPT);
+  }
+
+  if(B & TRACE_OPT)
+  {
+    A &= ~TRACE_OPT;
+    A |= (B & TRACE_OPT);
+  }
+
+  if(B & DISCOVERY_OPT)
+  {
+    A &= ~DISCOVERY_OPT;
+    A |= (B & DISCOVERY_OPT);
+  }
+
+  return A;
+}
+
+/// category_list_merge
+//
+// SUMMARY
+//  merge two lists of categories in such a way that preserves the ordering of
+//  each element relative to other elements in its source list
+//
+// PARAMETERS
+//  A - source list
+//  B - source list
+//  C - dest list
+//
+// THROWS
+//  ILLORDER - relative ordering of all elements cannot be maintained
+//
+static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A, list * const restrict B, list *  const restrict C)
 {
   enter;
 
-  if(~used_category_ids_mask == 0)
-    fail(LOGGER_TOOMANY);
+  /// location
+  //
+  // tracks two sequences of elements with the same name that are common to both lists
+  //
+  typedef struct {
+    int ax;     // index of the first element in A
+    int axl;    // number of elements in A
+    int bx;     // index of the first element in B
+    int bxl;    // number of elements in B
+  } location;
 
-  (*bit) = ~used_category_ids_mask & -~used_category_ids_mask;
-  used_category_ids_mask |= (*bit);
+  map * common = 0;
+  location ** ax = 0;
+  location ** bx = 0;
+
+  // build a map of element sequences common between the two lists
+  fatal(map_create, &common, 0);
+
+  int x = 0;
+  int y = 0;
+  while(x < list_size(A) || y < list_size(B))
+  {
+    if(x < list_size(A))
+    {
+      logger_category * a = list_get(A, x);
+      location * loc;
+      if((loc = map_get(common, MMS(a->name))))
+      {
+        if(loc->ax != -1 && (loc->ax + loc->axl) != x)
+        {
+          failf(LOGGER_ILLORDER, "category %s repeated non-consecutively", a->name);
+        }
+      }
+      else
+      {
+        fatal(map_set, common, MMS(a->name), 0, sizeof(location), &loc);
+        loc->ax = -1;
+        loc->bx = -1;
+      }
+
+      if(loc->ax == -1)
+        loc->ax = x;
+      loc->axl++;
+      x++;
+    }
+
+    if(y < list_size(B))
+    {
+      logger_category * b = list_get(B, y);
+      location * loc;
+      if((loc = map_get(common, MMS(b->name))))
+      {
+        if(loc->bx != -1 && (loc->bx + loc->bxl) != y)
+        {
+          failf(LOGGER_ILLORDER, "category %s repeated non-consecutively", b->name);
+        }
+      }
+      else
+      {
+        fatal(map_set, common, MMS(b->name), 0, sizeof(location), &loc);
+        loc->ax = -1;
+        loc->bx = -1;
+      }
+      if(loc->bx == -1)
+        loc->bx = y;
+      loc->bxl++;
+      y++;
+    }
+  }
+
+  // create a copy of the common sequence locations for each list
+  fatal(xmalloc, &ax, sizeof(*ax) * map_size(common));
+  fatal(xmalloc, &bx, sizeof(*bx) * map_size(common));
+
+  int c = 0;
+  for(x = 0; x < map_slots(common); x++)
+  {
+    location * loc = 0;
+    if((loc = map_valueat(common, x)))
+    {
+      if(loc->ax >= 0 && loc->bx >= 0)
+      {
+        ax[c] = loc;
+        bx[c] = loc;
+        c++;
+      }
+    }
+  }
+
+  // sort the per-list sequence lists
+  int compar(const void * _A, const void * _B, void * arg)
+  {
+    location * A = *(location **)_A;
+    location * B = *(location **)_B;
+
+    if(arg)
+      return A->ax - B->ax;
+    else
+      return A->bx - B->bx;
+  };
+  qsort_r(ax, c, sizeof(*ax), compar, (void*)1);
+  qsort_r(bx, c, sizeof(*bx), compar, (void*)0);
+
+  // walk the lists, write to C, and verify that the common elements appear in the same order
+  list_clear(C);
+
+  x = 0;
+  y = 0;
+  int cx = 0;
+  while(x < list_size(A) || y < list_size(B))
+  {
+    logger_category * a = 0;
+    if(x < list_size(A))
+      a = list_get(A, x);
+
+    logger_category * b = 0;
+    if(y < list_size(B))
+      b = list_get(B, y);
+
+    if(cx < c && x == ax[cx]->ax && y == bx[cx]->bx)
+    {
+      // common elements must appear in the same order
+      if(strcmp(a->name, b->name))
+      {
+        failf(LOGGER_ILLORDER, "category %s given with opposite ordering relative to %s", a->name, b->name);
+      }
+
+      // take all elements from both sequences
+      int i;
+      for(i = 0; i < ax[cx]->axl; i++)
+      {
+        a = list_get(A, x);
+        fatal(list_append, C, &a);
+        x++;
+      }
+      for(i = 0; i < bx[cx]->bxl; i++)
+      {
+        b = list_get(B, y);
+        fatal(list_append, C, &b);
+        y++;
+      }
+
+      cx++;
+    }
+    else
+    {
+      if((cx == c || x < ax[cx]->ax) && a)
+      {
+        fatal(list_append, C, &a);
+        x++;
+      }
+
+      if((cx == c || y < bx[cx]->bx) && b)
+      {
+        fatal(list_append, C, &b);
+        y++;
+      }
+    }
+  }
 
 finally:
-  XAPI_INFOF("max", "%d", MAX_CATEGORIES);
+  map_free(common);
+  free(ax);
+  free(bx);
 coda;
 }
 
@@ -83,15 +287,17 @@ xapi category_setup()
   enter;
 
   fatal(list_create, &registered, sizeof(logger_category *), 0, LIST_DEREF);
-  fatal(list_create, &categories, sizeof(logger_category *), 0, LIST_DEREF);
+  fatal(list_create, &registering, sizeof(logger_category *), 0, LIST_DEREF);
+  fatal(list_create, &activated, sizeof(logger_category *), 0, LIST_DEREF);
 
   finally : coda;
 }
 
 void category_teardown()
 {
-  list_free(registered);
-  list_free(categories);
+  list_xfree(&registered);
+  list_xfree(&registering);
+  list_xfree(&activated);
 }
 
 /// category_attr_say
@@ -126,117 +332,31 @@ API xapi logger_category_register(logger_category * logs, char * const restrict 
 {
   enter;
 
-  list * registering = 0;
-  map * common = 0;
-  int * ax = 0;
-  int * bx = 0;
+  if(!registered)
+    fatal(list_create, &registered, sizeof(logger_category *), 0, LIST_DEREF);
 
-  fatal(list_create, &registering, sizeof(logger_category *), 0, LIST_DEREF);
+  if(!registering)
+    fatal(list_create, &registering, sizeof(logger_category *), 0, LIST_DEREF);
 
-  // build a map of elements in common between the two lists
-  fatal(map_create, &common, 0);
-
-  typedef struct {
-    int Ax;
-    int Bx;
-  } location;
-
-  int x = 0;
-  int y = 0;
-  while(x < list_size(registered) || logs[y].name)
+  list * tmp = 0;
+  fatal(list_create, &tmp, sizeof(logger_category *), 0, LIST_DEREF);
+  while(logs->name)
   {
-    if(x < list_size(registered))
-    {
-      logger_category * this = list_get(registered, x);
-      location * loc;
-      if(!(loc = map_get(common, MMS(this->name))))
-      {
-        fatal(map_set, common, MMS(this->name), 0, sizeof(location), &loc);
-        loc->Bx = -1;
-      }
-      loc->Ax = x++;
-    }
-
-    if(logs[y].name)
-    {
-      logger_category * this = &logs[y];
-      location * loc;
-      if(!(loc = map_get(common, MMS(this->name))))
-      {
-        fatal(map_set, common, MMS(this->name), 0, sizeof(location), &loc);
-        loc->Ax = -1;
-      }
-      loc->Bx = y++;
-    }
+    fatal(list_append, tmp, &logs);
+    logs++;
   }
 
-  fatal(xmalloc, &ax, sizeof(*ax) * map_size(common));
-  fatal(xmalloc, &bx, sizeof(*ax) * map_size(common));
+  // merge the registered list with the new list
+  fatal(category_list_merge, registered, tmp, registering);
 
-  int c = 0;
-  for(x = 0; x < map_slots(common); x++)
-  {
-    location * loc = 0;
-    if((loc = map_valueat(common, x)))
-    {
-      if(loc->Ax >= 0 && loc->Bx >= 0)
-      {
-        ax[c] = loc->Ax;
-        bx[c] = loc->Bx;
-        c++;
-      }
-    }
-  }
-
-  // sort the per-list indices
-  int compar(const void * A, const void * B) { return *(int*)A - *(int*)B; };
-  qsort(ax, c, sizeof(*ax), compar);
-  qsort(bx, c, sizeof(*bx), compar);
-
-  // a conflict exists if any two common elements appear in opposite order
-  for(x = 0; x < c; x++)
-  {
-    if(strcmp(list_get(registered, ax[x])->name, logs[bx[x]].name))
-    {
-      failf(LOGGER_ILLORDER, "category %s registered with opposite ordering relative to %s", list_get(registered, ax[x])->name, logs[bx[x]].name);
-    }
-  }
-
-  // write the registered list with the guarantee that common elements appear
-  // in the same order
-  x = 0;
-  y = 0;
-  int cx = 0;
-  while(x < list_size(registered) || logs[y].name)
-  {
-    if(cx < c && (x == ax[cx] && y == bx[cx]))
-    {
-      logger_category * this = list_get(registered, x++);
-      fatal(list_append, registering, &this);
-
-      this = &logs[y++];
-      fatal(list_append, registering, &this);
-      cx++;
-    }
-
-    if((cx == c || x < ax[cx]) && x < list_size(registered))
-    {
-      logger_category * this = list_get(registered, x++);
-      fatal(list_append, registering, &this);
-    }
-    if((cx == c || y < bx[cx]) && logs[y].name)
-    {
-      logger_category * this = &logs[y++];
-      fatal(list_append, registering, &this);
-    }
-  }
-
+  // swap registering and registered
   void * T = registered;
   registered = registering;
   registering = T;
 
 #if 0
   printf("registered categories\n");
+  int x;
   for(x = 0; x < list_size(registered); x++)
   {
     logger_category * this = list_get(registered, x); 
@@ -250,117 +370,109 @@ finally:
     XAPI_INFOF("identity", "%s", identity);
   }
 
-  list_free(registering);
-  map_free(common);
-  free(ax);
-  free(bx);
+  list_free(tmp);
 coda;
 }
 
-xapi logger_category_resolve()
+xapi logger_category_activate()
 {
   enter;
 
-  int x;
-  for(x = 0; x < list_size(registered); x++)
-  {
-    logger_category * first = list_get(registered, x); 
+  category_name_max_length = 0;
 
+  // mask of category ids that have been assigned
+  uint64_t used_category_ids_mask = 0;
+
+  list * activating = 0;
+  fatal(list_create, &activating, sizeof(logger_category *), 0, LIST_DEREF);
+
+  // merge the activated list with the registered list
+  fatal(category_list_merge, activated, registered, activating);
+
+  int x;
+  for(x = 0; x < list_size(activating); x++)
+  {
     // whether any category in the name-group has no id assigned
-    uint64_t id = first->id;
-    int anyzero = !first->id;
+    int anyzero = !list_get(activating, x)->id;
 
     // find the bounds of the name-group
     int y;
-    for(y = x + 1; y < list_size(registered); y++)
+    for(y = x + 1; y < list_size(activating); y++)
     {
-      if(strcmp(list_get(registered, x)->name, list_get(registered, y)->name))
+      if(strcmp(list_get(activating, x)->name, list_get(activating, y)->name))
         break;
 
-      id |= list_get(registered, y)->id;
-      anyzero |= !list_get(registered, y)->id;
+      anyzero |= !list_get(activating, y)->id;
     }
 
-    // recalculate attributes if any member was newly added to the name-group
+    // assign the id as the next unused bit from the mask
+    if(~used_category_ids_mask == 0)
+      fail(LOGGER_TOOMANY);
+
+    uint64_t id = ~used_category_ids_mask & -~used_category_ids_mask;
+    used_category_ids_mask |= id;
+
+    // assign the id to all members of the name-group
+    int i;
+    for(i = x; i < y; i++)
+      list_get(activating, i)->id = id;
+
+    size_t namel = strlen(list_get(activating, x)->name);
+    category_name_max_length = MAX(category_name_max_length, namel);
+
+    // recalculate name-group attributes if any member was newly added
     if(anyzero)
     {
-      size_t namel = strlen(first->name);
-
-      // assign the next unused bit
-      if(!id)
-      {
-        fatal(next_category_id, &id);
-        category_name_max_length = MAX(category_name_max_length, namel);
-      }
-
       uint32_t attr = 0;
-
-      int i;
       for(i = x; i < y; i++)
-      {
-        logger_category * this = list_get(registered, i);
-
-        if(this->attr & COLOR_OPT)
-        {
-          attr &= ~COLOR_OPT;
-          attr |= (this->attr & COLOR_OPT);
-        }
-
-        if(this->attr & PREFIX_OPT)
-        {
-          attr &= ~PREFIX_OPT;
-          attr |= (this->attr & PREFIX_OPT);
-        }
-
-        if(this->attr & TRACE_OPT)
-        {
-          attr &= ~TRACE_OPT;
-          attr |= (this->attr & TRACE_OPT);
-        }
-
-        if(this->attr & DISCOVERY_OPT)
-        {
-          attr &= ~DISCOVERY_OPT;
-          attr |= (this->attr & DISCOVERY_OPT);
-        }
-
-        this->namel = namel;
-      }
+        attr = attr_combine(attr, list_get(activating, i)->attr);
 
       for(i = x; i < y; i++)
       {
-        logger_category * this = list_get(registered, i);
-
-        this->id = id;
-        this->attr = attr;
+        list_get(activating, i)->namel = namel;
+        list_get(activating, i)->attr = attr;
       }
     }
 
     x = y - 1;
   }
 
+  // swap activating and activated
+  void * T = activated;
+  activated = activating;
+  activating = T;
+
 #if 1
   printf("logging categories\n");
-  for(x = 0; x < list_size(registered); x++)
+  for(x = 0; x < list_size(activated); x++)
   {
     // find the bounds of the name-group
     int y;
-    for(y = x + 1; y < list_size(registered); y++)
+    for(y = x + 1; y < list_size(activated); y++)
     {
-      if(strcmp(list_get(registered, x)->name, list_get(registered, y)->name))
+      if(strcmp(list_get(activated, x)->name, list_get(activated, y)->name))
         break;
     }
 
     char space[64];
     narrationw(space, sizeof(space));
-
-    sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, list_get(registered, x)->name, list_get(registered, x)->id, list_get(registered, x)->attr);
-    fatal(category_attr_say, list_get(registered, x)->attr, _narrator);
+    sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, list_get(activated, x)->name, list_get(activated, x)->id, list_get(activated, x)->attr);
+    fatal(category_attr_say, list_get(activated, x)->attr, _narrator);
     printf("%s\n", space);
 
     x = y - 1;
   }
 #endif
 
-  finally : coda;
+  list_xfree(&registered);
+  list_xfree(&registering);
+
+finally:
+  if(XAPI_THROWING(LOGGER_TOOMANY))
+  {
+    XAPI_INFOF("max", "%d", MAX_CATEGORIES);
+  }
+
+  list_free(activating);
+coda;
 }

@@ -15,5 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1		TOOMANY		number of unique categories exceeds the limit
-2   ILLORDER  incompatible ordering of category definitions
+#include "xapi.h"
+#include "xapi/errtab.h"
+
+#include "test_util.h"
+
+#define restrict __restrict
+
+const char * errtab_name(const etable * const restrict etab)
+{
+  if(etab == 0)
+    return 0;
+
+  return xapi_errtab_name(etab);
+}
+
+const char * errtab_errname(const etable * const restrict etab, const xapi exit)
+{
+  if(etab == 0)
+    return 0;
+
+  return xapi_errtab_errname(etab, exit);
+}
