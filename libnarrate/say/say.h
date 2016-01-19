@@ -18,6 +18,7 @@
 #ifndef _NARRATE_SAY_H
 #define _NARRATE_SAY_H
 
+#include <stdarg.h>
 #include <sys/types.h>
 
 #include "xapi.h"

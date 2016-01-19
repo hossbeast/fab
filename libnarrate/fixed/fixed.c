@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "xapi.h"
 
