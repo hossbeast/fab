@@ -67,7 +67,7 @@ xapi assert_ascending(logger_category * logsp)
   finally : coda;
 }
 
-xapi test_category_list_merge_1()
+xapi test_category_list_merge_success()
 {
   enter;
 
@@ -87,7 +87,7 @@ xapi test_category_list_merge_1()
   finally : coda;
 }
 
-xapi test_category_list_merge_2()
+xapi test_category_list_merge_success_two()
 {
   enter;
 
@@ -117,7 +117,7 @@ xapi test_category_list_merge_2()
   finally : coda;
 }
 
-xapi test_category_list_merge_3()
+xapi test_category_list_merge_success_two_activate()
 {
   enter;
 
@@ -148,7 +148,7 @@ xapi test_category_list_merge_3()
   finally : coda;
 }
 
-xapi test_category_list_merge_4()
+xapi test_category_list_merge_success_nonunique()
 {
   enter;
 
@@ -170,7 +170,85 @@ xapi test_category_list_merge_4()
   finally : coda;
 }
 
-xapi test_category_list_merge_10()
+xapi test_category_list_merge_success_max()
+{
+  enter;
+
+  logger_category * logs_a = (logger_category[]) {
+      { name : "A00" }
+    , { name : "A01" }
+    , { name : "A02" }
+    , { name : "A03" }
+    , { name : "A04" }
+    , { name : "A05" }
+    , { name : "A06" }
+    , { name : "A07" }
+    , { name : "A08" }
+    , { name : "A09" }
+    , { name : "A10" }
+    , { name : "A11" }
+    , { name : "A12" }
+    , { name : "A13" }
+    , { name : "A14" }
+    , { name : "A15" }
+    , { name : "A16" }
+    , { name : "A17" }
+    , { name : "A18" }
+    , { name : "A19" }
+    , { name : "A20" }
+    , { name : "A21" }
+    , { name : "A22" }
+    , { name : "A23" }
+    , { name : "A24" }
+    , { name : "A25" }
+    , { name : "A26" }
+    , { name : "A27" }
+    , { name : "A28" }
+    , { name : "A29" }
+    , { name : "A30" }
+    , { name : "A31" }
+    , { name : "A32" }
+    , { name : "A33" }
+    , { name : "A34" }
+    , { name : "A35" }
+    , { name : "A36" }
+    , { name : "A37" }
+    , { name : "A38" }
+    , { name : "A39" }
+    , { name : "A40" }
+    , { name : "A41" }
+    , { name : "A42" }
+    , { name : "A43" }
+    , { name : "A44" }
+    , { name : "A45" }
+    , { name : "A46" }
+    , { name : "A47" }
+    , { name : "A48" }
+    , { name : "A49" }
+    , { name : "A50" }
+    , { name : "A51" }
+    , { name : "A52" }
+    , { name : "A53" }
+    , { name : "A54" }
+    , { name : "A55" }
+    , { name : "A56" }
+    , { name : "A57" }
+    , { name : "A58" }
+    , { name : "A59" }
+    , { name : "A60" }
+    , { name : "A61" }
+    , { name : "A62" }
+    , { name : "A63" }
+    , {}
+  };
+
+  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_activate);
+
+  finally : coda;
+}
+
+xapi test_category_list_merge_failure_order()
 {
   enter;
 
@@ -193,6 +271,102 @@ xapi test_category_list_merge_10()
   finally : coda;
 }
 
+xapi test_category_list_merge_failure_order_single()
+{
+  enter;
+
+  logger_category * logs_a = (logger_category[]) {
+      { name : "A" }
+    , { name : "B" }
+    , { name : "A" }
+    , {}
+  };
+
+  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_activate);
+
+  finally : coda;
+}
+
+xapi test_category_list_merge_failure_toomany()
+{
+  enter;
+
+  logger_category * logs_a = (logger_category[]) {
+      { name : "A00" }
+    , { name : "A01" }
+    , { name : "A02" }
+    , { name : "A03" }
+    , { name : "A04" }
+    , { name : "A05" }
+    , { name : "A06" }
+    , { name : "A07" }
+    , { name : "A08" }
+    , { name : "A09" }
+    , { name : "A10" }
+    , { name : "A11" }
+    , { name : "A12" }
+    , { name : "A13" }
+    , { name : "A14" }
+    , { name : "A15" }
+    , { name : "A16" }
+    , { name : "A17" }
+    , { name : "A18" }
+    , { name : "A19" }
+    , { name : "A20" }
+    , { name : "A21" }
+    , { name : "A22" }
+    , { name : "A23" }
+    , { name : "A24" }
+    , { name : "A25" }
+    , { name : "A26" }
+    , { name : "A27" }
+    , { name : "A28" }
+    , { name : "A29" }
+    , { name : "A30" }
+    , { name : "A31" }
+    , { name : "A32" }
+    , { name : "A33" }
+    , { name : "A34" }
+    , { name : "A35" }
+    , { name : "A36" }
+    , { name : "A37" }
+    , { name : "A38" }
+    , { name : "A39" }
+    , { name : "A40" }
+    , { name : "A41" }
+    , { name : "A42" }
+    , { name : "A43" }
+    , { name : "A44" }
+    , { name : "A45" }
+    , { name : "A46" }
+    , { name : "A47" }
+    , { name : "A48" }
+    , { name : "A49" }
+    , { name : "A50" }
+    , { name : "A51" }
+    , { name : "A52" }
+    , { name : "A53" }
+    , { name : "A54" }
+    , { name : "A55" }
+    , { name : "A56" }
+    , { name : "A57" }
+    , { name : "A58" }
+    , { name : "A59" }
+    , { name : "A60" }
+    , { name : "A61" }
+    , { name : "A62" }
+    , { name : "A63" }
+    , { name : "A64" }
+    , {}
+  };
+
+  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_activate);
+
+  finally : coda;
+}
+
 int main()
 {
   enter;
@@ -205,12 +379,15 @@ int main()
     xapi (*entry)();
     int expected;
   } tests[] = {
-      { entry : test_category_list_merge_1 }
-    , { entry : test_category_list_merge_2 }
-    , { entry : test_category_list_merge_3 }
-    , { entry : test_category_list_merge_4 }
+      { entry : test_category_list_merge_success }
+    , { entry : test_category_list_merge_success_two }
+    , { entry : test_category_list_merge_success_two_activate }
+    , { entry : test_category_list_merge_success_nonunique }
+    , { entry : test_category_list_merge_success_max }
 
-    , { entry : test_category_list_merge_10, expected : LOGGER_ILLORDER }
+    , { entry : test_category_list_merge_failure_order, expected : LOGGER_ILLORDER }
+    , { entry : test_category_list_merge_failure_order_single, expected : LOGGER_ILLORDER }
+    , { entry : test_category_list_merge_failure_toomany, expected : LOGGER_TOOMANY }
   };
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
