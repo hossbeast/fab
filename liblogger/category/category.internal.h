@@ -21,7 +21,6 @@
 #include <stdint.h>
 
 #include "xapi.h"
-#include "narrate.h"
 
 #include "category.h"
 
@@ -47,15 +46,29 @@ xapi category_setup();
 //
 void category_teardown();
 
-/// category_attr_say
+/// category_byname
 //
 // SUMMARY
+//  lookup an active category by name
 //
 // PARAMETERS
-//  attr     - 
-//  narrator - 
+//  name     - name of the category to lookup
+//  namel    - name length or 0 for strlen
+//  category - (returns) category definition
 //
-xapi category_attr_say(uint32_t attr, narrator * _narrator)
+xapi category_byname(const char * const restrict name, size_t namel, logger_category ** const restrict category)
+  __attribute__((nonnull));
+
+/// category_byid
+//
+// SUMMARY
+//  lookup an active category by id
+//
+// PARAMETERS
+//  id       - id
+//  category - (returns) category definition
+//
+xapi category_byid(uint64_t id, logger_category ** const restrict category)
   __attribute__((nonnull));
 
 #endif

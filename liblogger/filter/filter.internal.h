@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -15,7 +16,36 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGER_LOG_INTERNAL_H
-#define _LOGGER_LOG_INTERNAL_H
+#ifndef _LOGGER_FILTER_INTERNAL_H
+#define _LOGGER_FILTER_INTERNAL_H
+
+#include "xapi.h"
+
+#include "filter.h"
+
+struct filter;
+struct narrator;
+
+/// filter_setup
+//
+// SUMMARY
+//  initialize
+//
+xapi filter_setup();
+
+/// filter_teardown
+//
+// SUMMARY
+//  cleanup
+//
+void filter_teardown();
+
+/// filter_say
+//
+// SUMMARY
+//  
+//
+xapi filter_say(struct filter * filterp, struct narrator * _narrator)
+  __attribute__((nonnull));
 
 #endif

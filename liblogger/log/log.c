@@ -22,13 +22,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#if __linux__
-#include <linux/auxvec.h>
-/*
-exposes getauxval, but requires glibc 2.16. ubuntu 12.10 has glibc 2.15.
-#include <sys/auxv.h>
-*/
-#endif
 
 #include "xapi.h"
 #include "xlinux.h"
@@ -46,26 +39,6 @@ exposes getauxval, but requires glibc 2.16. ubuntu 12.10 has glibc 2.15.
 #define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 60])
 #define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
 #define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
-
-// these macros facilitate passing site info about a log call and are not enabled for a default build
-#if DEBUG || DEVEL
-#define TRACEARGS const char * const restrict func, const char * const restrict file, int line,
-#define TRACEPASS func, file, line,
-#define NOTRACE   0, 0, 0,
-#else
-#define TRACEARGS
-#define TRACEPASS
-#define NOTRACE
-#endif
-
-static struct filter
-{
-	uint64_t	v;		// tag
-	char			m;		// mode, (, [, {, or <
-	char			o;		// operation, + or -
-} * 							o_filter;
-static int				o_filter_a;
-static int				o_filter_l;
 
 //
 // [[ static ]]
@@ -99,7 +72,6 @@ static unsigned char o_colors[] = {
 ** w specifies whether this segment comprises "visible chars", or not
 */
 
-/*
 static int logwrite(const char * s, size_t l, int w)
 {
 	if((o_space_l + l) >= o_space_a)
@@ -148,7 +120,6 @@ static int logprintf(const char * fmt, ...)
 
 	return w;
 }
-*/
 
 /// start
 //
@@ -246,7 +217,7 @@ static xapi trace_store(const char * const func, const char * file, int line)
 // api
 //
 
-xapi logger_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va)
+xapi logger_vlogf(const uint64_t e, const char * const fmt, va_list va)
 {
   enter;
 
@@ -271,20 +242,20 @@ xapi logger_vlogf(TRACEARGS const uint64_t e, const char * const fmt, va_list va
   finally : coda;
 }
 
-xapi logger_logf(TRACEARGS const uint64_t e, const char * const fmt, ...)
+xapi logger_logf(const uint64_t e, const char * const fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	log_vlogf(TRACEPASS e, fmt, va);
+	log_vlogf(e, fmt, va);
 	va_end(va);
 }
 
-xapi logger_logs(TRACEARGS const uint64_t e, const char * const s)
+xapi logger_logs(const uint64_t e, const char * const s)
 {
-	log_logw(TRACEPASS e, s, strlen(s));
+	log_logw(e, s, strlen(s));
 }
 
-xapi logger_logw(TRACEARGS const uint64_t e, const char * const src, size_t len)
+xapi logger_logw(const uint64_t e, const char * const src, size_t len)
 {
   enter;
 
@@ -305,6 +276,36 @@ xapi logger_logw(TRACEARGS const uint64_t e, const char * const src, size_t len)
 
 		fatal(finish);
 	}
+
+  finally : coda;
+}
+
+xapi logger_log_start(const uint64_t e)
+{
+  enter;
+
+  int w;
+  fatal(start, e, &w);
+
+#if DEBUG || DEVEL
+  if(w)
+	{
+		// store trace
+		fatal(trace_store, func, file, line);
+	}
+#endif
+
+  finally : coda;
+}
+
+xapi logger_log_finish()
+{
+  enter;
+
+	if(log_would(o_space_bits))
+		fatal(finish);
+
+	o_space_bits = 0;
 
   finally : coda;
 }
@@ -342,36 +343,6 @@ int logger_log_would(const uint64_t e)
 	}
 
 	return r;
-}
-
-xapi logger_log_start(TRACEARGS const uint64_t e)
-{
-  enter;
-
-  int w;
-  fatal(start, e, &w);
-
-#if DEBUG || DEVEL
-  if(w)
-	{
-		// store trace
-		fatal(trace_store, func, file, line);
-	}
-#endif
-
-  finally : coda;
-}
-
-xapi logger_log_finish()
-{
-  enter;
-
-	if(log_would(o_space_bits))
-		fatal(finish);
-
-	o_space_bits = 0;
-
-  finally : coda;
 }
 
 int logger_log_bytes()

@@ -104,26 +104,50 @@ void * list_get(list * const restrict list, int x)
   return ELEMENT(x);
 }
 
-xapi list_append(list * const restrict list, void * const restrict el)
+void * list_shift(list * const restrict list)
 {
-  enter;
-
-  fatal(grow, &list->v, list->esz, 1, list->l, &list->a);
-  memcpy(list->v + (list->esz * list->l), el, list->esz);
-  list->l++;
-
-  finally : coda;
+  void * e = 0;
+  if(list->l > 0)
+  {
+    e = ELEMENT(list->l - 1);
+    if(list->destructor)
+      list->destructor(e);
+    list->l--;
+  }
+  return e;
 }
 
-xapi list_append_range(list * const restrict list, void * const restrict el, size_t len)
+void * list_pop(list * const restrict list)
 {
-  enter;
+  void * e = 0;
+  if(list->l > 0)
+  {
+    e = ELEMENT(list->l - 1);
+    if(list->destructor)
+      list->destructor(e);
+    list->l--;
+  }
+  return e;
+}
 
-  fatal(grow, &list->v, list->esz, len, list->l, &list->a);
-  memcpy(list->v + (list->esz * list->l), el, list->esz * len);
-  list->l += len;
+xapi list_push(list * const restrict list, void * const restrict el)
+{
+  xproxy(list_insert_range, list, list->l, el, 1);
+}
 
-  finally : coda;
+xapi list_push_range(list * const restrict list, void * const restrict el, size_t len)
+{
+  xproxy(list_insert_range, list, list->l, el, len);
+}
+
+xapi list_unshift(list * const restrict list, void * const restrict el)
+{
+  xproxy(list_insert_range, list, 0, el, 1);
+}
+
+xapi list_unshift_range(list * const restrict list, void * const restrict el, size_t len)
+{
+  xproxy(list_insert_range, list, 0, el, len);
 }
 
 xapi list_grow(list * const restrict list, size_t len)
@@ -138,23 +162,55 @@ xapi list_ensure(list * const restrict list, size_t len)
 
 xapi list_insert(list * const restrict list, size_t index, void * const restrict el)
 {
+  xproxy(list_insert_range, list, index, el, 1);
+}
+
+xapi list_insert_range(list * const restrict list, size_t index, void * const restrict el, size_t len)
+{
   enter;
 
-  fatal(ensure, &list->v, list->esz, index + 1, &list->a);
+  fatal(ensure, &list->v, list->esz, list->l + len, &list->a);
 
   memmove(
-      list->v + ((index + 1) * list->esz)
+      list->v + ((index + len) * list->esz)
     , list->v + (index * list->esz)
-    , (list->l - index) * list->esz
+    , (list->l - index + len) * list->esz
   );
 
-  memcpy(list->v + (list->esz * index), el, list->esz);
-  list->l++;
+  memcpy(list->v + (list->esz * index), el, list->esz * len);
+  list->l += len;
 
   finally : coda;
 }
 
-void list_sort(list * const restrict list, int (*compar)(const void *, const void *, void *), void * arg)
+void list_sort(list * const restrict listp, int (*compar)(const void *, const void *, void *), void * arg)
 {
-  qsort_r(list->v, list->l, list->esz, compar, arg);
+  if(listp->attr & LIST_DEREF)
+  {
+    int lcompar(const void * A, const void * B, void * arg)
+    {
+      return compar(*(const void **)A, *(const void**)B, arg);
+    };
+
+    qsort_r(listp->v, listp->l, listp->esz, lcompar, arg);
+  }
+  else
+  {
+    qsort_r(listp->v, listp->l, listp->esz, compar, arg);
+  }
+}
+
+xapi list_sublist(list * const restrict listp, size_t index, size_t len, list ** const restrict rv)
+{
+  enter;
+
+  if(!*rv)
+    fatal(list_create, rv, listp->esz, listp->destructor, listp->attr);
+  list_clear(*rv);
+
+  fatal(list_ensure, *rv, len);
+  memcpy((*rv)->v, listp->v + (listp->esz * index), listp->esz * len);
+  (*rv)->l = len;
+
+  finally : coda;
 }

@@ -34,26 +34,24 @@ const char * errtab_errname(const etable * const restrict etab, const xapi exit)
 
 #undef restrict
 
-#define assert(bool, etab, code, fmt, ...)      \
-  do                                            \
-  {                                             \
-    if(!(bool))                                 \
-    {                                           \
-      tfailf(                                   \
-          etab                                  \
-        , code                                  \
-        , fmt ", result : fail"                 \
-        , ##__VA_ARGS__                         \
-      );                                        \
-    }                                           \
+#define assert(bool, fmt, ...)            \
+  do                                      \
+  {                                       \
+    if(!(bool))                           \
+    {                                     \
+      tfailf(                             \
+          perrtab_TEST                    \
+        , TEST_FAIL                       \
+        , fmt ", result : fail"           \
+        , ##__VA_ARGS__                   \
+      );                                  \
+    }                                     \
   } while(0)
 
 #define assert_exit(exit, etab, ecode)                                        \
   assert(                                                                     \
          (ecode | xapi_exit_errcode(exit)) == 0                               \
       || (xapi_exit_errtab(exit) == etab && xapi_exit_errcode(exit) == ecode) \
-    , perrtab_TEST                                                            \
-    , TEST_FAIL                                                               \
     , "expected : %s/%s(%d), actual : %s/%s(%d)"                              \
     , errtab_name(etab)                                                       \
     , errtab_errname(etab, ecode)                                             \

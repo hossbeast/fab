@@ -10,6 +10,7 @@
 #include "category.internal.h"
 #include "errtab/LOGGER.errtab.h"
 #include "errtab/TEST.errtab.h"
+#include "attr.internal.h"
 
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
@@ -47,15 +48,17 @@ xapi assert_ascending(logger_category * logsp)
       if(strcmp(logs[0]->name, logs[1]->name) == 0)
       {
         assert(logs[1]->id == logs[0]->id
-          , perrtab_TEST, TEST_FAIL
-          , "expected a, actual b"
+          , "expected id : %"PRIu64", actual id : %"PRIu64
+          , logs[0]->id
+          , logs[1]->id
         );
       }
       else
       {
         assert(logs[1]->id > logs[0]->id
-          , perrtab_TEST, TEST_FAIL
-          , "expected a, actual b"
+          , "expected id > %"PRIu64", actual id : %"PRIu64
+          , logs[0]->id
+          , logs[1]->id
         );
       }
     }
@@ -367,6 +370,32 @@ xapi test_category_list_merge_failure_toomany()
   finally : coda;
 }
 
+xapi test_category_list_merge_attr_rank()
+{
+  enter;
+
+  logger_category * logs_a = (logger_category[]) {
+      { name : "A" , attr : L_RED }
+    , { name : "A" , attr : L_BLUE , rank : 10 }
+    , { name : "B" , attr : L_RED | L_TRACE, rank : 10 }
+    , { name : "B" , attr : L_BLUE }
+    , {}
+  };
+
+  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_activate);
+
+  fatal(assert_ascending, logs_a);
+  assert((logs_a[0].attr & COLOR_OPT) == L_BLUE, "expected : %s, actual : %s", COLOR_VALUE(L_BLUE), COLOR_VALUE(logs_a[0].attr));
+  assert((logs_a[1].attr & COLOR_OPT) == L_BLUE, "expected : %s, actual : %s", COLOR_VALUE(L_BLUE), COLOR_VALUE(logs_a[1].attr));
+  assert((logs_a[2].attr & COLOR_OPT) == L_RED, "expected : %s, actual : %s", COLOR_VALUE(L_RED), COLOR_VALUE(logs_a[2].attr));
+  assert((logs_a[2].attr & TRACE_OPT) == L_TRACE, "expected : %s, actual : %s", TRACE_VALUE(L_TRACE), TRACE_VALUE(logs_a[2].attr));
+  assert((logs_a[3].attr & COLOR_OPT) == L_RED, "expected : %s, actual : %s", COLOR_VALUE(L_RED), COLOR_VALUE(logs_a[3].attr));
+  assert((logs_a[3].attr & TRACE_OPT) == L_TRACE, "expected : %s, actual : %s", TRACE_VALUE(L_TRACE), TRACE_VALUE(logs_a[3].attr));
+
+  finally : coda;
+}
+
 int main()
 {
   enter;
@@ -388,6 +417,8 @@ int main()
     , { entry : test_category_list_merge_failure_order, expected : LOGGER_ILLORDER }
     , { entry : test_category_list_merge_failure_order_single, expected : LOGGER_ILLORDER }
     , { entry : test_category_list_merge_failure_toomany, expected : LOGGER_TOOMANY }
+
+    , { entry : test_category_list_merge_attr_rank }
   };
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)

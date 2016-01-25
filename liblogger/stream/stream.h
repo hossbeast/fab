@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGER_LOG_INTERNAL_H
-#define _LOGGER_LOG_INTERNAL_H
+#ifndef _LOGGER_STREAM_H
+#define _LOGGER_STREAM_H
 
 #endif

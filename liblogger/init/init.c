@@ -79,26 +79,6 @@ int					g_logvsl;
 // [[ static ]]
 //
 
-static uint64_t o_space_bits;	// when a log is being constructed, effective bits
-static char * 	o_space;			// storage between logvprintf/flush calls
-static int			o_space_a;		// allocation
-static int			o_space_l;		// bytes
-static int			o_space_w;		// visible characters
-
-static uint64_t	o_prefix_bits = ~0ULL;	// prefix decision bits
-
-#if DEBUG || DEVEL
-static uint64_t	o_trace_bits  = 0ULL;		// trace decision bits
-
-static char *		o_trace_func;		// trace storage
-static int			o_trace_func_a;
-static int			o_trace_func_l;
-static char * 	o_trace_file;
-static int			o_trace_file_a;
-static int			o_trace_file_l;
-static int			o_trace_line;
-#endif
-
 static int o_name_len;	// max prefix name length
 
 static unsigned char o_colors[] = {

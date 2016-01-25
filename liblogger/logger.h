@@ -19,7 +19,7 @@
 #define _LOGGER_H
 
 #include <stdarg.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <sys/types.h>
 
 #include "xapi.h"
@@ -42,7 +42,7 @@ extern int			g_logvsl;				// length of g_logvs
  * options and modifiers that can be applied to a log message
  */
 #define LOGGER_ATTR_TABLE(x, y)                                                             \
-  LOGGER_ATTR_DEF(CLEAR         , 0x00000001 , x , y)  /* (default) not colorized */        \
+  LOGGER_ATTR_DEF(NOCOLOR       , 0x00000001 , x , y)  /* (default) not colorized */        \
   LOGGER_ATTR_DEF(RED           , 0x00000002 , x , y)  /* terminal colorization : red */    \
   LOGGER_ATTR_DEF(GREEN         , 0x00000003 , x , y)  /* terminal colorization : green */  \
   LOGGER_ATTR_DEF(YELLOW        , 0x00000004 , x , y)  /* terminal colorization : yellow */ \
@@ -60,6 +60,10 @@ enum {
 LOGGER_ATTR_TABLE(0, 0)
 #undef LOGGER_ATTR_DEF
 };
+
+
+// all categories
+#define L_ALL UINT64_C(0xFFFFFFFFFFFFFFFF)
 
 #define restrict __restrict
 
@@ -98,8 +102,8 @@ void logger_teardown();
 //  [fmt]   - format string
 //  [src]   - source bytes
 //  [len]   - count of bytes from src (0 != strlen)
-//  [s]     - string to write
-//  [c]     - character to write
+//  [s]     - string
+//  [c]     - character
 //
 // REMARKS
 //  under DEBUG / DEVEL, these extra parameters are passed to enable L_TRACE

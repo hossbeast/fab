@@ -26,6 +26,7 @@
 #include "errtab/LOGGER.errtab.h"
 #include "category/category.internal.h"
 #include "log/log.internal.h"
+#include "attr/attr.internal.h"
 
 #define LIST_ELEMENT_TYPE logger_category*
 #include "list.h"
@@ -52,46 +53,8 @@ static list * registering;
 // activated categories, in decreasing order of precedence
 static list * activated;
 
-/// attr_combine
-//
-// SUMMARY
-//  combine two sets of attributes
-//
-// PARAMETERS
-//  A - low precedence
-//  B - high precedence
-//  
-// RETURNS
-//  attribute set A overwritten with all options affirmatively set by B
-//
-static uint32_t attr_combine(uint32_t A, uint32_t B)
-{
-  if(B & COLOR_OPT)
-  {
-    A &= ~COLOR_OPT;
-    A |= (B & COLOR_OPT);
-  }
-
-  if(B & PREFIX_OPT)
-  {
-    A &= ~PREFIX_OPT;
-    A |= (B & PREFIX_OPT);
-  }
-
-  if(B & TRACE_OPT)
-  {
-    A &= ~TRACE_OPT;
-    A |= (B & TRACE_OPT);
-  }
-
-  if(B & DISCOVERY_OPT)
-  {
-    A &= ~DISCOVERY_OPT;
-    A |= (B & DISCOVERY_OPT);
-  }
-
-  return A;
-}
+static map * activated_byname;
+static map * activated_byid;
 
 /// category_list_merge
 //
@@ -243,13 +206,13 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
       for(i = 0; i < ax[cx]->axl; i++)
       {
         a = list_get(A, x);
-        fatal(list_append, C, &a);
+        fatal(list_push, C, &a);
         x++;
       }
       for(i = 0; i < bx[cx]->bxl; i++)
       {
         b = list_get(B, y);
-        fatal(list_append, C, &b);
+        fatal(list_push, C, &b);
         y++;
       }
 
@@ -259,13 +222,13 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
     {
       if((cx == c || x < ax[cx]->ax) && a)
       {
-        fatal(list_append, C, &a);
+        fatal(list_push, C, &a);
         x++;
       }
 
       if((cx == c || y < bx[cx]->bx) && b)
       {
-        fatal(list_append, C, &b);
+        fatal(list_push, C, &b);
         y++;
       }
     }
@@ -289,6 +252,8 @@ xapi category_setup()
   fatal(list_create, &registered, sizeof(logger_category *), 0, LIST_DEREF);
   fatal(list_create, &registering, sizeof(logger_category *), 0, LIST_DEREF);
   fatal(list_create, &activated, sizeof(logger_category *), 0, LIST_DEREF);
+  fatal(map_create, &activated_byname, 0);
+  fatal(map_create, &activated_byid, 0);
 
   finally : coda;
 }
@@ -298,30 +263,8 @@ void category_teardown()
   list_xfree(&registered);
   list_xfree(&registering);
   list_xfree(&activated);
-}
-
-/// category_attr_say
-//
-// SUMMARY
-//  write a description of attr to the narrator
-//
-xapi category_attr_say(uint32_t attr, narrator * _narrator)
-{
-  enter;
-
-  if(attr & COLOR_OPT)
-    says(LOGGER_COLOR_VALUE(attr));
-
-  if(attr & PREFIX_OPT)
-    says(LOGGER_PREFIX_VALUE(attr));
-
-  if(attr & TRACE_OPT)
-    says(LOGGER_TRACE_VALUE(attr));
-
-  if(attr & DISCOVERY_OPT)
-    says(LOGGER_DISCOVERY_VALUE(attr));
-
-  finally : coda;
+  map_xfree(&activated_byname);
+  map_xfree(&activated_byid);
 }
 
 //
@@ -342,7 +285,7 @@ API xapi logger_category_register(logger_category * logs, char * const restrict 
   fatal(list_create, &tmp, sizeof(logger_category *), 0, LIST_DEREF);
   while(logs->name)
   {
-    fatal(list_append, tmp, &logs);
+    fatal(list_push, tmp, &logs);
     logs++;
   }
 
@@ -384,7 +327,13 @@ xapi logger_category_activate()
   uint64_t used_category_ids_mask = 0;
 
   list * activating = 0;
+  map * activating_byname = 0;
+  map * activating_byid = 0;
+  list * sublist = 0;
+
   fatal(list_create, &activating, sizeof(logger_category *), 0, LIST_DEREF);
+  fatal(map_create, &activating_byname, 0);
+  fatal(map_create, &activating_byid, 0);
 
   // merge the activated list with the registered list
   fatal(category_list_merge, activated, registered, activating);
@@ -417,22 +366,41 @@ xapi logger_category_activate()
     for(i = x; i < y; i++)
       list_get(activating, i)->id = id;
 
-    size_t namel = strlen(list_get(activating, x)->name);
+    logger_category * category = list_get(activating, x);
+    char * name = category->name;
+    size_t namel = strlen(name);
     category_name_max_length = MAX(category_name_max_length, namel);
 
     // recalculate name-group attributes if any member was newly added
     if(anyzero)
     {
-      uint32_t attr = 0;
-      for(i = x; i < y; i++)
-        attr = attr_combine(attr, list_get(activating, i)->attr);
+      // in rank order
+      fatal(list_sublist, activating, x, y - x, &sublist);
 
-      for(i = x; i < y; i++)
+      int compar(const void * _A, const void * _B, void * arg)
       {
-        list_get(activating, i)->namel = namel;
-        list_get(activating, i)->attr = attr;
+        logger_category * A = (logger_category *)_A;
+        logger_category * B = (logger_category *)_B;
+
+printf("%d <=> %d : %d\n", A->rank, B->rank, A->rank - B->rank);
+        return A->rank - B->rank;
+      }
+      list_sort(sublist, compar, 0);
+
+      uint32_t attr = 0;
+      for(i = 0; i < list_size(sublist); i++)
+        attr = attr_combine(attr, list_get(sublist, i)->attr);
+
+      for(i = 0; i < list_size(sublist); i++)
+      {
+        list_get(sublist, i)->namel = namel;
+        list_get(sublist, i)->attr = attr;
       }
     }
+
+    // assign to lookup map
+    fatal(map_set, activating_byname, name, namel, MM(category), 0);
+    fatal(map_set, activating_byid, MM(id), MM(category), 0);
 
     x = y - 1;
   }
@@ -441,6 +409,14 @@ xapi logger_category_activate()
   void * T = activated;
   activated = activating;
   activating = T;
+
+  T = activated_byname;
+  activated_byname = activating_byname;
+  activating_byname = T;
+
+  T = activated_byid;
+  activated_byid = activating_byid;
+  activating_byid = T;
 
 #if 1
   printf("logging categories\n");
@@ -457,7 +433,7 @@ xapi logger_category_activate()
     char space[64];
     narrationw(space, sizeof(space));
     sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, list_get(activated, x)->name, list_get(activated, x)->id, list_get(activated, x)->attr);
-    fatal(category_attr_say, list_get(activated, x)->attr, _narrator);
+    fatal(attr_say, list_get(activated, x)->attr, _narrator);
     printf("%s\n", space);
 
     x = y - 1;
@@ -474,5 +450,27 @@ finally:
   }
 
   list_free(activating);
+  map_free(activating_byname);
+  map_free(activating_byid);
+  list_free(sublist);
 coda;
+}
+
+xapi category_byname(const char * const restrict name, size_t namel, logger_category ** const restrict category)
+{
+  enter;
+
+  namel = namel ?: strlen(name);
+  (*category) = map_get(activated_byname, name, namel);
+
+  finally : coda;
+}
+
+xapi category_byid(uint64_t id, logger_category ** const restrict category)
+{
+  enter;
+
+  (*category) = map_get(activated_byid, MM(id));
+
+  finally : coda;
 }
