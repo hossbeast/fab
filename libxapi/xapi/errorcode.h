@@ -26,7 +26,7 @@
 #define enter                                         \
   __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;  \
   int __xapi_f1 = 0;                                  \
-  xapi __xapi_r = 0;
+  xapi __xapi_r[2] = { }
 
 /*
 ** called at the site of an error
@@ -44,12 +44,12 @@
 //  [msgl]  - discarded
 //  [fmt]   - discarded
 
-#define tfail(perrtab, code)                        \
-  do {                                              \
-    __xapi_r = (code) & 0xFFFF;                     \
-    if(perrtab)                                     \
-      __xapi_r |= (((etable *)perrtab)->id << 16);  \
-    goto XAPI_FINALIZE;                             \
+#define tfail(perrtab, code)                          \
+  do {                                                \
+    __xapi_r[0] = (code) & 0xFFFF;                    \
+    if(perrtab)                                       \
+      __xapi_r[0] |= (((etable *)perrtab)->id << 16); \
+    goto XAPI_FINALIZE;                               \
   } while(0)
 
 #define tfails(perrtab, code, msg)        tfail(perrtab, code)
@@ -80,12 +80,12 @@
 // SUMMARY
 //  invoke another function and fail the current frame if that function fails
 //
-#define fatal(func, ...)                              \
-  do {                                                \
-    if((__xapi_r = invoke(func, ##__VA_ARGS__)) != 0) \
-    {                                                 \
-      goto XAPI_FINALIZE;                             \
-    }                                                 \
+#define fatal(func, ...)                                  \
+  do {                                                    \
+    if((__xapi_r[0] = invoke(func, ##__VA_ARGS__)) != 0)  \
+    {                                                     \
+      goto XAPI_FINALIZE;                                 \
+    }                                                     \
   } while(0)
 
 /// fatalize
@@ -132,15 +132,16 @@
 // SUMMARY
 //  statements between finally and coda are executed even upon fail/leave
 //
-#define finally         \
-  goto XAPI_FINALIZE;   \
-XAPI_FINALIZE:          \
-  if(__xapi_f1)         \
-  {                     \
-    goto XAPI_LEAVE;    \
-  }                     \
-  __xapi_f1 = 1;        \
-  goto XAPI_FINALLY;    \
+#define finally                 \
+  goto XAPI_FINALIZE;           \
+XAPI_FINALIZE:                  \
+  if(__xapi_f1)                 \
+  {                             \
+    goto XAPI_LEAVE;            \
+  }                             \
+  __xapi_r[1] = __xapi_r[0];    \
+  __xapi_f1 = 1;                \
+  goto XAPI_FINALLY;            \
 XAPI_FINALLY
 
 /// coda
@@ -151,13 +152,13 @@ XAPI_FINALLY
 #define coda            \
   goto XAPI_LEAVE;      \
 XAPI_LEAVE:             \
-  return __xapi_r
+  return XAPI_ERRVAL
 
 
 #define conclude(r)     \
   goto XAPI_LEAVE;      \
 XAPI_LEAVE:             \
-  *(r) = __xapi_r
+  *(r) = XAPI_ERRVAL
 
 /*
 ** called after finally
@@ -172,7 +173,7 @@ XAPI_LEAVE:             \
 // SUMMARY
 //  true if an error has been raised
 //
-#define XAPI_UNWINDING __xapi_r
+#define XAPI_UNWINDING (__xapi_r[0] || __xapi_r[1])
 
 // does not apply to MODE_ERRORCODE
 #define XAPI_ERRTAB 0
@@ -182,13 +183,13 @@ XAPI_LEAVE:             \
 // SUMMARY
 //  while unwinding, the error id, that is, errtab->id << 16 | errcode
 //
-#define XAPI_ERRVAL __xapi_r
+#define XAPI_ERRVAL (__xapi_r[0] ?: __xapi_r[1])
 
 /// XAPI_ERRCODE
 //
 // SUMMARY
 //  while unwinding, the error code, and zero otherwise
 //
-#define XAPI_ERRCODE (__xapi_r & 0xFFFF)
+#define XAPI_ERRCODE (XAPI_ERRVAL & 0xFFFF)
 
 #endif

@@ -49,6 +49,11 @@ __thread APIDATA int xapi_sentinel;
 
 static stack * frame_set(stack * s, const etable * restrict etab, xapi_code code, const char * const restrict file, const int line, const char * const restrict func)
 {
+if(etab)
+  printf("frame_set %s:%d\n", etab->name, code);
+else
+  printf("frame_set %p:%d\n", etab, code);
+
 #if XAPI_RUNTIME_CHECKS
   // code/table are required for the base frame
   if((code == 0) ^ (etab == 0))
@@ -61,6 +66,14 @@ static stack * frame_set(stack * s, const etable * restrict etab, xapi_code code
   // allocate a new stack when throwing a new error
   if(code)
     stack_push();
+
+#if XAPI_RUNTIME_CHECKS
+  else if(!g_stack)
+  {
+    etab == perrtab_XAPI;
+    code = XAPI_ILLFAIL;
+  }
+#endif
 
   // save site-of-error information on the stack
   if(g_stack->frames.l == 0)
@@ -201,14 +214,14 @@ API void xapi_record_frame(void * calling_frame)
 }
 #endif
 
-API xapi xapi_frame_leave(int sentinel)
+API xapi xapi_frame_leave(int topframe)
 {
   xapi r = 0;
-  xapi_frame_leave3(sentinel, 0, 0, &r);
+  xapi_frame_leave3(topframe, 0, 0, &r);
   return r;
 }
 
-API void xapi_frame_leave3(int sentinel, const etable ** restrict etab, xapi_code * const restrict code, xapi * const restrict rval)
+API void xapi_frame_leave3(int topframe, const etable ** restrict etab, xapi_code * const restrict code, xapi * const restrict rval)
 {
 #if XAPI_RUNTIME_CHECKS
   if(g_frame_addresses.l)   // pop the frame
@@ -236,7 +249,7 @@ API void xapi_frame_leave3(int sentinel, const etable ** restrict etab, xapi_cod
   if(E || C)
     R = (E->id << 16) | C;
 
-  if(sentinel)
+  if(topframe)
   {
     g_stack = 0;
 #if DEVEL
@@ -288,16 +301,7 @@ API stack * xapi_frame_set_messagew(stack * s, const etable * const etab, const 
 	s = frame_set(s, etab, code, file, line, func);
 	msgl = msgl ?: msg ? strlen(msg) : 0;
 
-  // save the msg when setting the base frame
-	if(s->frames.l == 1)
-  {
-//  if(s->etab == perrtab_XAPI && s->code == XAPI_ILLFAIL)
-//   {
-// printf("DONT LOAD\n");
-//   } else {
-    sloadw(&s->msg, &s->msgl, &s->msga, msg, msgl);
-//}
-  }
+  sloadw(&s->msg, &s->msgl, &s->msga, msg, msgl);
 
   return s;
 }
@@ -307,66 +311,69 @@ API stack * xapi_frame_set_messagef(stack * s, const etable * const etab, const 
 	s = frame_set(s, etab, code, file, line, func);
 
   // save the msg when setting the base frame
-	if(s->frames.l == 1)
-  {
-    va_list va;
-    va_start(va, func);
-    svloadf(&s->msg, &s->msgl, &s->msga, fmt, va);
-    va_end(va);
-  }
+  va_list va;
+  va_start(va, func);
+  svloadf(&s->msg, &s->msgl, &s->msga, fmt, va);
+  va_end(va);
 
   return s;
 }
 
 API void xapi_frame_infow(const char * const k, int kl, const char * const v, int vl)
 {
-  if(k)
-    kl = kl ?: strlen(k);
-  if(v)
-    vl = vl ?: strlen(v);
-
-  if(k && kl && v && vl)
+  if(g_stack)
   {
-    frame * f = &g_stack->frames.v[g_stack->frames.l - 1];
+    if(k)
+      kl = kl ?: strlen(k);
+    if(v)
+      vl = vl ?: strlen(v);
 
-    // ensure allocation for the info list
-    assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
-    info * i = &f->infos.v[f->infos.l++];
-    memset(i, 0, sizeof(*i));
+    if(k && kl && v && vl)
+    {
+      frame * f = &g_stack->frames.v[g_stack->frames.l - 1];
 
-    // save the strings
-    sloadw(&i->ks, &i->kl, &i->ka, k, kl);
-    sloadw(&i->vs, &i->vl, &i->va, v, vl);
+      // ensure allocation for the info list
+      assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
+      info * i = &f->infos.v[f->infos.l++];
+      memset(i, 0, sizeof(*i));
+
+      // save the strings
+      sloadw(&i->ks, &i->kl, &i->ka, k, kl);
+      sloadw(&i->vs, &i->vl, &i->va, v, vl);
+    }
   }
 }
 
 API void xapi_frame_infof(const char * const k, int kl, const char * const vfmt, ...)
 {
-  if(k)
-    kl = kl ?: strlen(k);
-
-  // measure
-  va_list va;
-  va_start(va, vfmt);
-
-  va_list va2;
-  va_copy(va2, va);
-  size_t vl = vsnprintf(0, 0, vfmt, va2);
-  va_end(va2);
-
-  if(k && kl && vl)
+  if(g_stack)
   {
-    frame * f = &g_stack->frames.v[g_stack->frames.l - 1];
+    if(k)
+      kl = kl ?: strlen(k);
 
-    // ensure allocation for the info list
-    assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
-    info * i = &f->infos.v[f->infos.l++];
-    memset(i, 0, sizeof(*i));
+    // measure
+    va_list va;
+    va_start(va, vfmt);
 
-    // save the strings
-    sloadw(&i->ks, &i->kl, &i->ka, k, kl);
-    svloadf(&i->vs, &i->vl, &i->va, vfmt, va);
+    va_list va2;
+    va_copy(va2, va);
+    size_t vl = vsnprintf(0, 0, vfmt, va2);
+    va_end(va2);
+
+    if(k && kl && vl)
+    {
+      frame * f = &g_stack->frames.v[g_stack->frames.l - 1];
+
+      // ensure allocation for the info list
+      assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
+      info * i = &f->infos.v[f->infos.l++];
+      memset(i, 0, sizeof(*i));
+
+      // save the strings
+      sloadw(&i->ks, &i->kl, &i->ka, k, kl);
+      svloadf(&i->vs, &i->vl, &i->va, vfmt, va);
+    }
+
+    va_end(va);
   }
-
-  va_end(va);
 }

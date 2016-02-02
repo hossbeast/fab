@@ -28,13 +28,6 @@
 // declarations of trace-description functions
 #include "xapi/trace.h"
 
-/// xapi_teardown
-//
-// SUMMARY
-//  release memory
-//
-void xapi_teardown();
-
 /*
 ** enable XAPI_RUNTIME_CHECKS to :
 **  [x] detect non-UNWIND-ing function invoked with fatal
@@ -181,7 +174,7 @@ when calling non-xapi code, you have a couple of options.
       if(xapi_caller_frame_address != calling_frame_address)                                        \
       {                                                                                             \
         __r = (perrtab_XAPI->id << 16) | XAPI_ILLFATAL;                                             \
-        __r = XAPI_ILLFATAL;  \
+        __r = XAPI_ILLFATAL;                                                                        \
         XAPI_FRAME_SET_MESSAGEF(perrtab_XAPI, XAPI_ILLFATAL                                         \
           , #func " invoked with fatal, expected caller : %p, actual caller : %p"                   \
           , calling_frame_address                                                                   \
@@ -326,29 +319,21 @@ XAPI_LEAVE:                         \
 //  add info kvp to the current frame
 //
 // REMARKS
-//  this is a no-op when not unwinding, and the statements are not even evaluated
+//  this is a no-op when not unwinding
 //
 // VARIANTS
 //  infos - value string specified as a null-terminated string
 //  infow - value string specified as a pointer/length pair
 //  infof - value string specified in prinft-style
 //
-#define XAPI_INFOS(k, vstr)                           \
+#define XAPI_INFOS(k, vstr)                      \
   XAPI_INFOW(k, vstr, 0)
 
-#define XAPI_INFOW(k, vstr, vlen)                     \
-  do {                                                \
-    if(xapi_unwinding()) {                            \
-      xapi_frame_infow(k, 0, vstr, vlen);             \
-    }                                                 \
-  } while(0)
+#define XAPI_INFOW(k, vstr, vlen)                \
+  xapi_frame_infow(k, 0, vstr, vlen)
 
-#define XAPI_INFOF(k, vfmt, ...)                      \
-  do {                                                \
-    if(xapi_unwinding()) {                            \
-      xapi_frame_infof(k, 0, vfmt, ##__VA_ARGS__);    \
-    }                                                 \
-  } while(0)
+#define XAPI_INFOF(k, vfmt, ...)                 \
+  xapi_frame_infof(k, 0, vfmt, ##__VA_ARGS__)
 
 /// XAPI_UNWINDING
 //

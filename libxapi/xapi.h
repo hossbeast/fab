@@ -77,4 +77,11 @@ typedef struct etable
 # error "neither XAPI_MODE_STACKTRACE nor XAPI_MODE_ERRORCODE is defined"
 #endif
 
+/// xapi_teardown
+//
+// SUMMARY
+//  release memory
+//
+void xapi_teardown();
+
 #endif

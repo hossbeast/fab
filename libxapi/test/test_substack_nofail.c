@@ -15,12 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <unistd.h>
 #include "test.h"
+#include "xapi/trace.h"
 
 /*
 
 SUMMARY
- fatal call a function while unwinding that also fails
+ fatal call a function while unwinding which does not fail
 
 */
 
@@ -41,37 +43,57 @@ xapi beta()
   enter;
 
   beta_count++;
-  fatal(delta);
 
   finally : coda;
 }
 
-int alpha_dead_count;
+int alpha_finally_count;
 xapi alpha()
 {
   enter;
 
-  fatal(beta);
-
-finally :
-  // delta should fail, and alpha should terminate
+  // delta fails
   fatal(delta);
 
-  // this line should not be hit
-  alpha_dead_count = 1;
+finally :
+  // beta does not fail
+  fatal(beta);
+
+  // this line should be executed
+  alpha_finally_count = 1;
+coda;
+}
+
+xapi zeta()
+{
+  enter;
+
+#if XAPI_MODE_STACKTRACE
+  char space[4096];
+  size_t z;
+#endif
+
+  fatal(alpha);
+
+finally:
+#if XAPI_MODE_STACKTRACE
+  z = xapi_trace_full(space, sizeof(space));
+  write(1, space, z);
+  write(1, "\n", 1);
+#endif
 coda;
 }
 
 int main()
 {
-  // alpha should fail
-  int exit = alpha();
+  // zeta fails
+  int exit = zeta();
   assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
 
   // alpha dead area should have been skipped
-  assert(alpha_dead_count == 0
-    , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
-    , alpha_dead_count
+  assert(alpha_finally_count == 1
+    , "expected alpha-finally-count : 1, actual alpha-finally-count : %d"
+    , alpha_finally_count
   );
 
   // beta should have been run once
@@ -81,8 +103,8 @@ int main()
   );
 
   // delta should have been run twice
-  assert(delta_count == 2
-    , "expected delta-count : 2, actual delta-count : %d"
+  assert(delta_count == 1
+    , "expected delta-count : 1, actual delta-count : %d"
     , delta_count
   );
 

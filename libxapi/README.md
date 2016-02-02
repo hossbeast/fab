@@ -72,7 +72,7 @@ while unwinding, xapi functions can produce a backtrace
       }
     }
 
-libxapi does no allocation or counting until an error is raised. This mean that
+libxapi does no allocation or counting until an error is raised. This means that
 in the case of an actual ENOMEM, constructing the calltree will fail, so it is
 recommended to pre-allocate memory to libxapi, viz.
 
@@ -103,9 +103,13 @@ recommended to pre-allocate memory to libxapi, viz.
 A xapi function consists of two sections, the body and the finally block. fail/finally may be used
 in either block. The only difference is that, if fail is invoked in the finally block, the remainder
 of the finally block is skipped, and the function returns. This is consistent with the way exception
-handling works in other implementations, such as C# and Java. However, with xapi, the original
-error is not discarded. Instead, the stack for the new error is rooted in the frame whose finally
-block was executing when it was raised.
+handling works in other implementations, such as C# and Java.
+
+With most other implementations, the original error and stack trace are discarded. libxapi preserves
+the original error. In stacktrace mode, the stack for the new error is rooted in the frame whose
+finally block was executing when it was raised.
+
+In errorcode mode, the exit value from the function encodes the latter error, if any.
 
 ## Notes
 

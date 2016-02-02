@@ -92,7 +92,7 @@ API xapi xapi_errtab_register(etable * const etab)
   finally : coda;
 }
 
-API char * xapi_errtab_name(const etable * const restrict etab)
+API const char * xapi_errtab_name(const etable * const restrict etab)
 {
   return etab->name;
 }
