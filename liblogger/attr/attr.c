@@ -56,6 +56,9 @@ xapi attr_say(uint32_t attr, narrator * const restrict _narrator)
 {
   enter;
 
+  size_t mark;
+  fatal(narrator_mark, _narrator, &mark);
+
   if(attr & COLOR_OPT)
     says(COLOR_VALUE(attr));
 

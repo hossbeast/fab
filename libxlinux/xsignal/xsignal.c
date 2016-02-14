@@ -49,17 +49,6 @@ API xapi uxkill(pid_t pid, int sig, int * r)
 	finally : coda;
 }
 
-API xapi xsignal(int signum, sighandler_t handler)
-{
-  enter;
-
-	fatalize(errno, signal, signum, handler);
-
-finally:
-	XAPI_INFOF("sig", "%d", signum);
-coda;
-}
-
 API xapi xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
 {
   enter;

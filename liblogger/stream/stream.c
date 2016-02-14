@@ -36,6 +36,9 @@
 //
 typedef struct stream
 {
+  // unique identifier for the stream
+  char *            id;
+
   // determines which log messages are emitted to the stream
   struct filter *   filter;
 
@@ -61,7 +64,7 @@ xapi stream_setup()
 {
   enter;
 
-  fatal(list_create, &active, sizeof(stream), 0, 0);
+  fatal(list_create, &active, sizeof(stream), 0, LIST_PRIMARY);
 
   finally : coda;
 }
@@ -69,4 +72,23 @@ xapi stream_setup()
 void stream_teardown()
 {
   list_xfree(&active);
+}
+
+//
+// api
+//
+
+API xapi logger_stream_register(const logger_stream * const restrict streams)
+{
+  enter;
+
+  while(streams->id)
+  {
+    stream * streamp = 0;
+    fatal(list_push, active, &streamp);
+
+    streams++;
+  }
+
+  finally : coda;
 }

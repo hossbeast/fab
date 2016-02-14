@@ -31,9 +31,16 @@ extern __thread struct memblk mm_mb;
 /// mm_teardown
 //
 // SUMMARY
-//  release memory
+//  release memory across all threads
 //
 void mm_teardown();
+
+/// mm_reset
+//
+// SUMMARY
+//  clear counts on this thread ; allocations remain intact
+//
+void mm_reset();
 
 void wmalloc(void * restrict p, size_t sz)
   __attribute__((nonnull));
@@ -44,11 +51,32 @@ void wrealloc(void * restrict p, size_t es, size_t ec, size_t oec)
 void assure(void * restrict p, size_t * const restrict dstl, size_t * const restrict dsta, size_t z, size_t l)
   __attribute__((nonnull));
 
-void sloadw(char ** const restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, const char * const restrict s, size_t l)
+/// sloadw
+//
+// SUMMARY
+//  allocate storage for and copy a string, specified as a pointer/length pair
+//
+// PARAMETERS
+//  dst  - (returns) string
+//  dstl - (returns) string length
+//  s    - string to copy from
+//  [l]  - length of s, or 0 for strlen
+//
+void sloadw(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict s, size_t l)
   __attribute__((nonnull));
 
-void svloadf(char ** const restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, const char * const restrict fmt, va_list va)
+/// sloadf
+//
+// SUMMARY
+//  allocate storage for and copy a string, specified in printf style
+//
+// PARAMETERS
+//  dst  - (returns) string
+//  dstl - (returns) string length
+//
+void svloadf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
+
 
 #undef restrict
 #endif

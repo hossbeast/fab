@@ -15,14 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
-
-#include "xapi.h"
-#include "xlinux.h"
-#include "pstring.h"
-
 #include "internal.h"
-#include "dynamic.internal.h"
+#include "error.internal.h"
+#include "errtab.internal.h"
+
+#include "memblk.def.h"
 
 #define restrict __restrict
 
@@ -30,21 +27,23 @@
 // public
 //
 
-xapi dynamic_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+void error_freeze(memblk * const restrict mb, error * restrict e)
 {
-	xproxy(psvcatf, &n->ps, fmt, va);
+	/*
+	** etab is allocated outside of the memblk and must be handled specially
+	*/
+  e->etab = (void*)(intptr_t)e->etab->id;
+  memblk_freeze(mb, &e->msg);
 }
 
-xapi dynamic_sayw(narrator * const restrict n, char * const restrict b, size_t l)
+void error_unfreeze(memblk * const restrict mb, error * restrict e)
 {
-	xproxy(pscatw, &n->ps, b, l);
+  e->etab = xapi_errtab_byid((intptr_t)e->etab);
+  memblk_unfreeze(mb, &e->msg);
 }
 
-xapi dynamic_mark(narrator * const restrict n, size_t * const restrict mark)
+void error_thaw(char * const restrict mb, error * restrict e)
 {
-  enter;
-
-  (*mark) = n->ps->l;
-
-  finally : coda;
+  e->etab = xapi_errtab_byid((intptr_t)e->etab);
+  memblk_thaw(mb, &e->msg);
 }

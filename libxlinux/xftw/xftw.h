@@ -19,6 +19,7 @@
 #define _XFTW_H
 
 #include <ftw.h>
+struct FTW;
 
 #include "xapi.h"
 

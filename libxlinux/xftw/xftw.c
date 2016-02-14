@@ -46,7 +46,7 @@ API xapi xnftw(const char *dirpath, int (*xfn) (const char *fpath, const struct 
   // depth-first
 	if(nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
 	{
-		fail(0);	// user callback raised an error
+		fail(0);	// propagate error raised by callback
 	}
 	/*
 	else

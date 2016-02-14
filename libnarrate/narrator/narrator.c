@@ -16,6 +16,27 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "internal.h"
+#include "dynamic/dynamic.internal.h"
+#include "file/file.internal.h"
+#include "fixed/fixed.internal.h"
 
 // global narration context
 narrator * _narrator = (typeof(*_narrator)[]){{ .fd = 1 }};
+
+//
+// api
+//
+API xapi narrate_mark(narrator * const restrict n, size_t * const restrict mark)
+{
+  enter;
+
+  // route to implementation
+	if(n->ps)
+		fatal(dynamic_mark, n, mark);
+	else if(n->bb)
+		fatal(fixed_mark, n, mark);
+	else if(n->fd)
+    fatal(file_mark, n, mark);
+
+  finally : coda;
+}

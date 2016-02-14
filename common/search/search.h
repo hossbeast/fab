@@ -31,7 +31,7 @@ see http://man7.org/linux/man-pages/man3/bsearch.3.html
 /// search_r
 //
 // SUMMARY
-//  like bsearch, except that it always returns a pointer to the last element
+//  like bsearch, except that it also returns a pointer to the last element
 //  considered, and can therefore be used as the basis for an insertion sort
 //
 // PARAMETERS

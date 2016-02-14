@@ -90,6 +90,10 @@ void mm_teardown()
 {
 	struct memblk * mb = &mm_mb;
 
+//
+// how to teardown all threads?
+//
+
   int x;
   for(x = 0; x < mb->blocksl; x++)
   {
@@ -97,6 +101,13 @@ void mm_teardown()
   }
 
   free(mb->blocks);
+}
+
+void mm_reset()
+{
+	struct memblk * mb = &mm_mb;
+
+  mb->blocksl = 0;
 }
 
 void wmalloc(void * restrict p, size_t sz)
@@ -130,16 +141,16 @@ void assure(void * restrict dst, size_t * const restrict dstl, size_t * const re
 	}
 }
 
-void sloadw(char ** const restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, const char * const restrict s, size_t l)
+void sloadw(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict s, size_t l)
 {
-  assure(dst, dstl, dsta, 1, l + 1);
+  wmalloc(dst, l + 1);
 
 	(*dstl) = l;
 	memcpy(*dst, s, l);
 	(*dst)[l] = 0;
 }
 
-void svloadf(char ** const restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, const char * const restrict fmt, va_list va)
+void svloadf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict fmt, va_list va)
 {
   // measure
   va_list va2;
@@ -147,8 +158,10 @@ void svloadf(char ** const restrict dst, size_t * const restrict dstl, size_t * 
   size_t l = vsnprintf(0, 0, fmt, va2);
   va_end(va2);
 
-  assure(dst, dstl, dsta, 1, l + 1);
+  // allocate
+  wmalloc(dst, l + 1);
 
+  // copy
   (*dstl) = l;
   vsprintf(*dst, fmt, va);
 }

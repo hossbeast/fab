@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 #include "xapi.h"
+#include "xlinux/SYS.errtab.h"
 #include "narrate.h"
-#include "narrate/fixed.h"
 
 xapi foo()
 {
@@ -13,25 +13,49 @@ xapi foo()
   finally : coda;
 }
 
-xapi main()
+xapi delta()
 {
   enter;
 
   char space[64] = { [0] = 0 };
+  narrationw(space, sizeof(space));
+
+  sayf("%d", 40);
+  sayf(" %d", 41);
+  sayf(" %d", 42);
+  sayf(" %d", 43);
+  sayf(" %d", 44);
+  printf("A%sB\n", space);
+
+  finally : coda;
+}
+
+xapi alpha()
+{
+  enter;
+
   fatal(foo);
+
+finally:
+  fatal(delta);
+coda;
+}
+
+xapi zeta()
+{
+  enter;
+
+  fatal(alpha);
 
 finally:
   if(XAPI_UNWINDING)
   {
-    narrationw(space, sizeof(space));
-    fsayf("%d", 40);
-    fsayf(" %d", 41);
-    fsayf(" %d", 42);
-    fsayf(" %d", 43);
-    fsayf(" %d", 44);
-    printf("A%sB\n", space);
-
     xapi_backtrace();
   }
 coda;
+}
+
+int main()
+{
+  zeta();
 }

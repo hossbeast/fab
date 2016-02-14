@@ -1,0 +1,1 @@
+../errtab/NARRATE.errtab.h

@@ -19,6 +19,7 @@
 #define _NARRATE_NARRATOR_H
 
 #include <sys/types.h>
+#include "xapi.h"
 
 struct pstring;           // pstring.h
 
@@ -37,5 +38,16 @@ typedef struct narrator
 //  global narration context, writes to stdout
 //
 narrator * _narrator;
+
+/// narrate_mark
+//
+// SUMMARY
+//  get a mark indicating position in the output
+//
+// RETURNS
+//  nonnegative position, if the narration supports marks, -1 otherwise
+//
+xapi narrate_mark(narrator * const restrict n, size_t * const restrict mark)
+  __attribute__((nonnull));
 
 #endif

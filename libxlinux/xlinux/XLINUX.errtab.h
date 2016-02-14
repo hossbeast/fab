@@ -1,1 +1,1 @@
-../error/XLINUX.errtab.h
+../errtab/XLINUX.errtab.h

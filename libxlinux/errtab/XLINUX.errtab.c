@@ -1,7 +1,7 @@
 #include "XLINUX.errtab.h"
 #define APIDATA
 etable errtab_XLINUX = {
-   .tag = "XLINUX"
+   .name = "XLINUX"
  , .min = ERRMIN_XLINUX
  , .max = ERRMAX_XLINUX
  , .v =  (typeof(((etable*)0)->v[0])[]) {

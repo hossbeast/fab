@@ -82,17 +82,18 @@ when calling non-xapi code, you have a couple of options.
 //
 // DETAILS
 //  __xapi_f1       - tracks whether the finalize label has been hit
-//  __xapi_sp       - used by frame_set to restore the stack pointer
-//  __xapi_sentinel - used by xapi_frame_leave to cleanup when the top-level function exits
+//  __xapi_topframe - used by xapi_frame_leave to cleanup when the top-level function exits
+//  __xapi_frame_index - index of the frame recorded when this function failed
 //
 #if XAPI_RUNTIME_CHECKS
-#define enter                                         \
-  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;  \
-  int __xapi_f1 = 0;                                  \
-  void * __attribute__((unused)) __xapi_sp = 0;       \
-  int __xapi_sentinel = !xapi_sentinel;               \
-  xapi_sentinel = 1;                                  \
-  xapi_record_frame(xapi_calling_frame_address);      \
+#define enter                                           \
+  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;    \
+  int __xapi_f1 = 0;                                    \
+  int __xapi_topframe = !xapi_sentinel;                 \
+  xapi_sentinel = 1;                                    \
+  xapi_frame_index __xapi_frame_index[2] = { -1, -1 };  \
+  __xapi_frame_index[0] = xapi_top_frame_index;         \
+  xapi_record_frame(xapi_calling_frame_address);        \
   if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
   {                                                   \
     tfail(perrtab_XAPI, XAPI_NOFATAL);                \
@@ -101,9 +102,10 @@ when calling non-xapi code, you have a couple of options.
 #define enter                                         \
   __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;  \
   int __xapi_f1 = 0;                                  \
-  void * __attribute__((unused)) __xapi_sp = 0;       \
-  int __xapi_sentinel = !xapi_sentinel;               \
-  xapi_sentinel = 1
+  int __xapi_topframe = !xapi_sentinel;               \
+  xapi_sentinel = 1;                                  \
+  xapi_frame_index __xapi_frame_index[2] = { -1, -1 };\
+  __xapi_frame_index[0] = xapi_top_frame_index
 #endif
 
 /*
@@ -207,7 +209,8 @@ when calling non-xapi code, you have a couple of options.
 #undef fatal
 #define fatal(func, ...)                    \
   do {                                      \
-    if(xapi_invoke(func, ##__VA_ARGS__))    \
+    xapi_invoke(func, ##__VA_ARGS__);       \
+    if(xapi_top_frame_index != __xapi_frame_index[0])    \
     {                                       \
       tfail(0, 0);                          \
     }                                       \
@@ -275,6 +278,8 @@ XAPI_FINALIZE:                  \
   {                             \
     goto XAPI_LEAVE;            \
   }                             \
+  __xapi_frame_index[0] = xapi_top_frame_index; \
+  __xapi_frame_index[1] = xapi_top_frame_index; \
   __xapi_f1 = 1;                \
   goto XAPI_FINALLY;            \
 XAPI_FINALLY
@@ -287,27 +292,32 @@ XAPI_FINALLY
 #define coda                              \
   goto XAPI_LEAVE;                        \
 XAPI_LEAVE:                               \
-return xapi_frame_leave(__xapi_sentinel)
+  return xapi_frame_leave(__xapi_topframe)
 
 /// conclude
 //
 // SUMMARY
-//  capture the error code from the current function
+//  capture the return value for the current function
 //
 // PARAMETERS
-//  [e] - pointer to error table
-//  [c] - error code
-//  [r] - return value, that is (e->id << 16) | c
+//  [r] - pointer to int, receives the return value
 //
 #define conclude(r)                 \
   goto XAPI_LEAVE;                  \
 XAPI_LEAVE:                         \
-  (*r) = xapi_frame_leave(__xapi_sentinel)
+  (*r) = xapi_frame_leave(__xapi_topframe)
 
-#define conclude3(e, c, r)          \
-  goto XAPI_LEAVE;                  \
-XAPI_LEAVE:                         \
-  xapi_frame_leave3(__xapi_sentinel, e, c, r)
+// call xapi_frame_set with current file name, line number, and function name
+#define XAPI_FRAME_SET(etab, code)	\
+	xapi_frame_set(etab, code, __xapi_frame_index[1], __FILE__, __LINE__, __FUNCTION__)
+
+// call xapi_frame_set with current file name, line number, and function name
+#define XAPI_FRAME_SET_MESSAGEW(etab, code, msg, msgl)	\
+	xapi_frame_set_messagew(etab, code, __xapi_frame_index[1], msg, msgl, __FILE__, __LINE__, __FUNCTION__)
+
+// call xapi_frame_set with current file name, line number, and function name
+#define XAPI_FRAME_SET_MESSAGEF(etab, code, fmt, ...)	\
+	xapi_frame_set_messagef(etab, code, __xapi_frame_index[1], fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 /*
 ** called after finally

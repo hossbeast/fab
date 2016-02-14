@@ -50,6 +50,6 @@
 #define sayf(fmt, ...)   fatal(narrate_sayf , _narrator, fmt, ##__VA_ARGS__)
 #define says(s)          fatal(narrate_sayw , _narrator, s, strlen(s))
 #define sayw(b, l)       fatal(narrate_sayw , _narrator, b, l)
-#define sayc(s, c)       fatal(narrate_sayc , _narrator, c)
+#define sayc(c)          fatal(narrate_sayc , _narrator, c)
 
 #endif

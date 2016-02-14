@@ -22,8 +22,9 @@
 
 #include "internal.h"
 #include "calltree.internal.h"
+#include "errtab.internal.h"
 #include "mm.internal.h"
-#include "stack.h"
+#include "frame.internal.h"
 
 #if XAPI_RUNTIME_CHECKS
 # include "frame.internal.h"
@@ -32,37 +33,111 @@
 #include "macros.h"
 #include "memblk.def.h"
 
+__thread calltree * g_calltree;
+__thread calltree * g_calltree_stor;
+
 #define restrict __restrict
+
+//
+// static
+//
+
+void calltree_freeze(struct memblk * const restrict mb, calltree * restrict ct)
+{
+	/*
+	** etab is allocated outside of the memblk and must be handled specially
+	*/
+  if(ct->exit_table)
+  	ct->exit_table = (void*)(intptr_t)ct->exit_table->id;
+
+	int x;
+	for(x = 0; x < ct->frames.l; x++)
+		frame_freeze(mb, &ct->frames.v[x]);
+  memblk_freeze(mb, &ct->frames.v);
+}
+
+/// calltree_unfreeze
+//
+//
+//
+void calltree_unfreeze(struct memblk * const restrict mb, calltree * restrict ct)
+{
+  if(ct->exit_table)
+  	ct->exit_table = xapi_errtab_byid((intptr_t)ct->exit_table);
+
+	memblk_unfreeze(mb, &ct->frames.v);
+	int x;
+	for(x = 0; x < ct->frames.l; x++)
+		frame_unfreeze(mb, &ct->frames.v[x]);
+}
+
+/// calltree_thaw
+//
+//
+//
+void __attribute__((nonnull)) calltree_thaw(char * const restrict mb, calltree * restrict ct)
+{
+  if(ct->exit_table)
+    ct->exit_table = xapi_errtab_byid((intptr_t)ct->exit_table);
+
+	memblk_thaw(mb, &ct->frames.v);
+	int x;
+	for(x = 0; x < ct->frames.l; x++)
+		frame_thaw(mb, &ct->frames.v[x]);
+}
 
 //
 // public
 //
 
-#if 0
-void calltree_free()
+frame * calltree_frame_push()
 {
-  int x;
-  for(x = 0; x < calltree_mb.blocksl; x++)
-  {
-    free(calltree_mb.blocks[x].s);
-    memset(&calltree_mb.blocks[x], 0, sizeof(calltree_mb.blocks[0]));
-  }
-  free(calltree_mb.blocks);
-  memset(&calltree_mb, 0, sizeof(calltree_mb));
+  if(g_calltree_stor == 0)
+    wmalloc(&g_calltree_stor, sizeof(*g_calltree_stor));
 
-  calltree = 0;
-}
+  if(g_calltree == 0)
+  {
+    g_calltree = g_calltree_stor;
+#if DEVEL
+    S = g_calltree;
 #endif
+    memset(g_calltree, 0, sizeof(*g_calltree));
+  }
+
+  if(g_calltree->frames.l == INT_FAST32_MAX)
+  {
+    // too many frames
+  }
+
+  assure(&g_calltree->frames.v, &g_calltree->frames.l, &g_calltree->frames.a, sizeof(*g_calltree->frames.v), g_calltree->frames.l + 1);
+  xapi_top_frame_index = g_calltree->frames.l;
+	frame * f = &g_calltree->frames.v[g_calltree->frames.l++];
+  memset(f, 0, sizeof(*f));
+  return f;
+}
 
 //
 // api
 //
+
 API void xapi_calltree_unwind()
 {
-  g_stack = 0;
+  mm_reset();
+
+  g_calltree = 0;
+#if DEVEL
+  S = g_calltree;
+#endif
+
+  xapi_sentinel = 0;
+  xapi_top_frame_index = -1;
 
 #if XAPI_RUNTIME_CHECKS
   g_frame_addresses.l = 0;
+  xapi_calling_frame_address = 0;
+  xapi_caller_frame_address = 0;
+  xapi_stack_raised_etab = 0;
+  xapi_stack_raised_code = 0;
 #endif
 }
 
@@ -70,8 +145,8 @@ API memblk * xapi_calltree_freeze()
 {
   memblk * const mb = &mm_mb;
 
-  // freze the root stack
-  stack_freeze(mb, g_stack);
+  // freze the root calltree
+  calltree_freeze(mb, g_calltree);
 
   return mb;
 }
@@ -80,13 +155,13 @@ API void xapi_calltree_unfreeze()
 {
   memblk * const mb = &mm_mb;
 
-  stack_unfreeze(mb, g_stack);
+  calltree_unfreeze(mb, g_calltree);
 }
 
-API stack * xapi_calltree_thaw(char * const restrict mb)
+API calltree * xapi_calltree_thaw(char * const restrict mb)
 {
-  g_stack = (void*)mb;
-  stack_thaw(mb, g_stack);
+  g_calltree = (void*)mb;
+  calltree_thaw(mb, g_calltree);
 
-  return g_stack;
+  return g_calltree;
 }

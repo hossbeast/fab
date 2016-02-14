@@ -73,8 +73,8 @@ int main()
   assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
 
 #if XAPI_MODE_STACKTRACE
-  struct stack * cs = xapi_calltree_thaw(space);
-  size_t z = xapi_trace_calltree_full(cs, space2, sizeof(space2));
+  struct calltree * ct = xapi_calltree_thaw(space);
+  size_t z = xapi_trace_calltree_full(ct, space2, sizeof(space2));
   printf("reconstituted trace\n%.*s\n", (int)z, space2);
 #endif
 

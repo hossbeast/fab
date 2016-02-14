@@ -15,33 +15,38 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATE_FIXED_INTERNAL_H
-#define _NARRATE_FIXED_INTERNAL_H
+#ifndef _SORT_H
+#define _SORT_H
 
 #include <sys/types.h>
-#include "xapi.h"
 
-/// fixed
-//
-// SUMMARY
-//  write to a fixed size buffer, discarding overflow
-//
-// PARAMETERS
-//  dst - buffer to write to
-//  sz  - size of dst
-//  szo - offset at which to write, and incremented by number of bytes written
-//
+/*
+All of these functions are based on qsort, see :
+
+see http://man7.org/linux/man-pages/man3/qsort.3.html
+*/
 
 #define restrict __restrict
 
-xapi fixed_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
-
-xapi fixed_sayw(narrator * const restrict n, char * const restrict b, size_t l)
-	__attribute__((nonnull));
-
-xapi fixed_mark(narrator * const restrict n, size_t * const restrict mark)
-  __attribute__((nonnull));
+/// sort_r
+//
+// SUMMARY
+//  like qsort_r
+//
+// PARAMETERS
+//  key    - identifies the element to be found
+//  base   - pointer to the first element in the array
+//  nmemb  - number of elements in the array
+//  size   - size of elements in the array
+//  compar - invoked to compare key to an array member
+//  [arg]  - passed through to compar
+//  [el]   - (returns) pointer to the last element considered
+//
+// RETURNS
+//  boolean value indicating whether or not a matching element was found
+//
+void sort_r(void * restrict base, size_t nmemb, size_t size, int (*compar)(const void *, const void *, void *), void * arg)
+  __attribute__((nonnull(1, 4)));
 
 #undef restrict
 #endif

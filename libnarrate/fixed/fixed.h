@@ -20,11 +20,13 @@
 
 #include "xapi.h"
 
+#if 0
 #define fvsayf(fmt, lst) narrate_fvsayf(_narrator, fmt, lst)
 #define fsayf(fmt, ...)  narrate_fsayf (_narrator, fmt, ##__VA_ARGS__) 
 #define fsays(s)         narrate_fsayw (_narrator, s)
 #define fsayw(b, l)      narrate_fsayw (_narrator, b, l)               
-#define fsayc(s, c)      narrate_fsayc (_narrator, c)                  
+#define fsayc(c)         narrate_fsayc (_narrator, c)                  
+#endif
 
 struct narrator;          // narrator.h
 

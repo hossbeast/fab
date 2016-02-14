@@ -18,24 +18,4 @@
 #ifndef _NARRATE_FILE_H
 #define _NARRATE_FILE_H
 
-#include "xapi.h"
-
-#define restrict __restrict
-
-/// file
-//
-// SUMMARY
-//  write to a file descriptor
-//
-// PARAMETERS
-//  fd - file descriptor to write to
-//
-
-xapi file_vsayf(int fd, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
-
-xapi file_sayw(int fd, char * const restrict b, size_t l)
-	__attribute__((nonnull));
-
-#undef restrict
 #endif

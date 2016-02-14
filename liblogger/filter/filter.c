@@ -345,6 +345,11 @@ static void filter_xfree(filter ** filter)
 }
 #endif
 
+static void filter_destructor(filter * const restrict filterp)
+{
+  free(filterp);
+}
+
 //
 // [[ public ]]
 //
@@ -353,7 +358,7 @@ xapi filter_setup()
 {
   enter;
 
-  fatal(list_create, &active, sizeof(filter), 0, 0);
+  fatal(list_create, &active, 0, filter_destructor, LIST_SECONDARY);
 
   finally : coda;
 }
@@ -398,22 +403,28 @@ API xapi logger_filter_push(const char * const restrict expr, size_t exprl)
 {
   enter;
 
-  filter filter;
-  fatal(filter_parse, expr, exprl, &filter);
-  fatal(list_push, active, &filter);
+  filter * filterp = 0;
+  fatal(filter_parse, expr, exprl, &filterp);
+  fatal(list_push, active, &filterp);
+  filterp = 0;
   
-  finally : coda;
+finally:
+  filter_free(filterp);
+coda;
 }
 
 API xapi logger_filter_unshift(const char * const restrict expr, size_t exprl)
 {
   enter;
 
-  filter filter;
-  fatal(filter_parse, expr, exprl, &filter);
-  fatal(list_unshift, active, &filter);
+  filter * filterp;
+  fatal(filter_parse, expr, exprl, &filterp);
+  fatal(list_unshift, active, &filterp);
+  filterp = 0;
   
-  finally : coda;
+finally:
+  filter_free(filterp);
+coda;
 }
 
 API xapi logger_filter_pop()

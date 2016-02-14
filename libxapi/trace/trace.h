@@ -18,7 +18,7 @@
 #ifndef _XAPI_TRACE_H
 #define _XAPI_TRACE_H
 
-struct stack;
+struct calltree;
 
 #define restrict __restrict
 
@@ -73,14 +73,14 @@ size_t xapi_trace_full(char * const restrict dst, const size_t sz)
 //
 // SEE xapi_trace_pithy
 //
-size_t xapi_trace_calltree_pithy(struct stack * const restrict cs, char * const restrict dst, const size_t sz)
+size_t xapi_trace_calltree_pithy(struct calltree * const restrict cs, char * const restrict dst, const size_t sz)
   __attribute__((nonnull));
 
 /// xapi_trace_calltree_full
 //
 // SEE xapi_trace_full
 //
-size_t xapi_trace_calltree_full(struct stack * const restrict cs, char * const restrict dst, const size_t sz)
+size_t xapi_trace_calltree_full(struct calltree * const restrict cs, char * const restrict dst, const size_t sz)
   __attribute__((nonnull));
 
 #undef restrict

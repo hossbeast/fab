@@ -15,36 +15,35 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
+#ifndef _NARRATE_DYNAMIC_INTERNAL_H
+#define _NARRATE_DYNAMIC_INTERNAL_H
+
+#include <sys/types.h>
+#include <stdarg.h>
 
 #include "xapi.h"
-#include "xlinux.h"
-#include "pstring.h"
 
-#include "internal.h"
-#include "dynamic.internal.h"
+struct pstring;				// pstring.h
 
 #define restrict __restrict
 
+/// dynamic
 //
-// public
+// SUMMARY
+//  write to a dynamically resizing buffer
+//
+// PARAMETERS
+//  ps - pointer to pstr instance to write to
 //
 
 xapi dynamic_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
-{
-	xproxy(psvcatf, &n->ps, fmt, va);
-}
+	__attribute__((nonnull));
 
 xapi dynamic_sayw(narrator * const restrict n, char * const restrict b, size_t l)
-{
-	xproxy(pscatw, &n->ps, b, l);
-}
+	__attribute__((nonnull));
 
 xapi dynamic_mark(narrator * const restrict n, size_t * const restrict mark)
-{
-  enter;
+  __attribute__((nonnull));
 
-  (*mark) = n->ps->l;
-
-  finally : coda;
-}
+#undef restrict
+#endif

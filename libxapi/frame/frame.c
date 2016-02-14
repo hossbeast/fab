@@ -24,9 +24,9 @@
 #include "frame.internal.h"
 #include "calltree.internal.h"
 #include "mm.internal.h"
-#include "stack.h"
-#include "info.h"
+#include "info.internal.h"
 #include "errtab/XAPI.errtab.h"
+#include "error.internal.h"
 
 #include "memblk.def.h"
 #include "macros.h"
@@ -46,16 +46,19 @@ __thread APIDATA int xapi_stack_raised_code;
 
 // per-thread sentinels
 __thread APIDATA int xapi_sentinel;
+__thread APIDATA xapi_frame_index xapi_top_frame_index = -1;
 
-static stack * frame_set(stack * s, const etable * restrict etab, xapi_code code, const char * const restrict file, const int line, const char * const restrict func)
+static frame * frame_set(
+    const etable * restrict etab
+  , xapi_code code
+  , const xapi_frame_index parent_index
+  , const char * const restrict file
+  , const int line
+  , const char * const restrict func
+)
 {
-if(etab)
-  printf("frame_set %s:%d\n", etab->name, code);
-else
-  printf("frame_set %p:%d\n", etab, code);
-
 #if XAPI_RUNTIME_CHECKS
-  // code/table are required for the base frame
+  // code and table are specified together
   if((code == 0) ^ (etab == 0))
   {
     etab = perrtab_XAPI;
@@ -63,41 +66,20 @@ else
   }
 #endif
 
-  // allocate a new stack when throwing a new error
-  if(code)
-    stack_push();
+  // allocate a frame in the calltree
+  frame * f = calltree_frame_push();
 
 #if XAPI_RUNTIME_CHECKS
-  else if(!g_stack)
+  // code and table are required for the base frame
+  if(g_calltree->frames.l == 1 && !code)
   {
-    etab == perrtab_XAPI;
+    etab = perrtab_XAPI;
     code = XAPI_ILLFAIL;
   }
 #endif
 
-  // save site-of-error information on the stack
-  if(g_stack->frames.l == 0)
-  {
-#if XAPI_RUNTIME_CHECKS
-    // code/table are required for the base frame
-    if(!code)
-    {
-      etab = perrtab_XAPI;
-      code = XAPI_ILLFAIL;
-    }
-#endif
-
-    g_stack->etab = etab;
-    g_stack->code = code;
-    g_stack->msgl = 0;
-  }
-
-  // allocate a new frame
-  assure(&g_stack->frames.v, &g_stack->frames.l, &g_stack->frames.a, sizeof(*g_stack->frames.v), g_stack->frames.l + 1);
-	frame * f = &g_stack->frames.v[g_stack->frames.l++];
-  memset(f, 0, sizeof(*f));
-
   // save frame info
+  f->parent_index = parent_index;
   f->line = line;
   f->infos.l = 0;
 
@@ -106,16 +88,22 @@ else
   if(file)
     filel = strlen(file);
 
-  sloadw(&f->file, &f->filel, &f->filea, file, filel);
-  sloadw(&f->func, &f->funcl, &f->funca, func, funcl);
+  sloadw(&f->file, &f->filel, file, filel);
+  sloadw(&f->func, &f->funcl, func, funcl);
 
-  // restore the stack for this frame
-  if(s)
+  if(code)
   {
-    g_stack = s;
-#if DEVEL
-	S = g_stack;
-#endif
+    wmalloc(&f->error, sizeof(*f->error));
+    f->error->etab = etab;
+    f->error->code = code;
+    f->error->msgl = 0;
+
+    if(g_calltree->frames.l == 1)
+    {
+      g_calltree->exit_code = code;
+      g_calltree->exit_table = etab;
+      g_calltree->exit_value = (etab->id << 16) | code;
+    }
   }
 
 #if XAPI_RUNTIME_CHECKS
@@ -126,8 +114,7 @@ else
   }
 #endif
 
-  // return the stack that this frame belongs to
-  return g_stack;
+  return f;
 }
 
 //
@@ -141,23 +128,25 @@ void frame_teardown()
 #endif
 }
 
-void frame_freeze(memblk * const restrict mb, frame * f)
+void frame_freeze(memblk * const restrict mb, frame * restrict f)
 {
-	memblk_freeze(mb, &f->file);
-	memblk_freeze(mb, &f->func);
+  if(f->error)
+    error_freeze(mb, f->error);
+  memblk_freeze(mb, &f->error);
+  memblk_freeze(mb, &f->file);
+  memblk_freeze(mb, &f->func);
 
-	int x;
-	for(x = 0; x < f->infos.l; x++)
-		info_freeze(mb, &f->infos.v[x]);
-	memblk_freeze(mb, &f->infos.v);
-
-  if(f->child)
-  	stack_freeze(mb, f->child);
-	memblk_freeze(mb, &f->child);
+  int x;
+  for(x = 0; x < f->infos.l; x++)
+    info_freeze(mb, &f->infos.v[x]);
+  memblk_freeze(mb, &f->infos.v);
 }
 
-void frame_unfreeze(memblk * const restrict mb, frame * f)
+void frame_unfreeze(memblk * const restrict mb, frame * restrict f)
 {
+  memblk_unfreeze(mb, &f->error);
+  if(f->error)
+    error_unfreeze(mb, f->error);
 	memblk_unfreeze(mb, &f->file);
 	memblk_unfreeze(mb, &f->func);
 
@@ -165,14 +154,13 @@ void frame_unfreeze(memblk * const restrict mb, frame * f)
 	int x;
 	for(x = 0; x < f->infos.l; x++)
 		info_unfreeze(mb, &f->infos.v[x]);
-
-  memblk_unfreeze(mb, &f->child);
-  if(f->child)
-    stack_unfreeze(mb, f->child);
 }
 
-void frame_thaw(char * const restrict mb, frame * f)
+void frame_thaw(char * const restrict mb, frame * restrict f)
 {
+  memblk_thaw(mb, &f->error);
+  if(f->error)
+    error_thaw(mb, f->error);
 	memblk_thaw(mb, &f->file);
 	memblk_thaw(mb, &f->func);
 
@@ -180,15 +168,11 @@ void frame_thaw(char * const restrict mb, frame * f)
 	int x;
 	for(x = 0; x < f->infos.l; x++)
 		info_thaw(mb, &f->infos.v[x]);
-
-	memblk_thaw(mb, &f->child);
-  if(f->child)
-    stack_thaw(mb, f->child);
 }
 
-///
-/// calltree manipulation
-///
+//
+// api
+//
 
 #if XAPI_RUNTIME_CHECKS
 API void xapi_record_frame(void * calling_frame)
@@ -216,112 +200,91 @@ API void xapi_record_frame(void * calling_frame)
 
 API xapi xapi_frame_leave(int topframe)
 {
-  xapi r = 0;
-  xapi_frame_leave3(topframe, 0, 0, &r);
-  return r;
-}
-
-API void xapi_frame_leave3(int topframe, const etable ** restrict etab, xapi_code * const restrict code, xapi * const restrict rval)
-{
 #if XAPI_RUNTIME_CHECKS
   if(g_frame_addresses.l)   // pop the frame
     xapi_caller_frame_address = g_frame_addresses.v[--g_frame_addresses.l];
 #endif
 
-  const etable * E = 0;
-  xapi_code C = 0;
-  xapi R = 0;
-
-  if(g_stack)
-  {
-    E = g_stack->etab;
-    C = g_stack->code;
-  }
-
-#if XAPI_RUNTIME_CHECKS
-  if(xapi_stack_raised_etab)
-  {
-    E = xapi_stack_raised_etab;
-    C = xapi_stack_raised_code;
-  }
-#endif
-
-  if(E || C)
-    R = (E->id << 16) | C;
+  xapi exit = 0;
+  if(g_calltree)
+    exit = g_calltree->exit_value;
 
   if(topframe)
-  {
-    g_stack = 0;
-#if DEVEL
-  S = g_stack;
-#endif
+    xapi_calltree_unwind();
 
-    xapi_sentinel = 0;
-#if XAPI_RUNTIME_CHECKS
-    g_frame_addresses.l = 0;
-    xapi_calling_frame_address = 0;
-    xapi_caller_frame_address = 0;
-    xapi_stack_raised_etab = 0;
-    xapi_stack_raised_code = 0;
-#endif
-  }
-
-	if(etab) (*etab) = E;
-	if(code) (*code) = C;
-	if(rval) (*rval) = R;
+  return exit;
 }
 
 API int xapi_unwinding()
 {
-  return !!g_stack;
+  return !!g_calltree;
 }
 
 API xapi_code xapi_frame_errcode()
 {
-	return g_stack->code;
+  return g_calltree->exit_code;
 }
 
 API xapi xapi_frame_errval()
 {
-  return (g_stack->etab->id << 16) | g_stack->code;
+  return g_calltree->exit_value;
 }
 
 API const etable * xapi_frame_errtab()
 {
-	return g_stack->etab;
+	return g_calltree->exit_table;
 }
 
-API stack * xapi_frame_set(stack * s, const etable * const etab, const xapi_code code, const char * const file, const int line, const char * const func)
+API void xapi_frame_set(
+    const etable * const etab
+  , const xapi_code code
+  , const xapi_frame_index parent_index
+  , const char * const file
+  , const int line
+  , const char * const func
+)
 {
-	return frame_set(s, etab, code, file, line, func);
+	frame_set(etab, code, parent_index, file, line, func);
 }
 
-API stack * xapi_frame_set_messagew(stack * s, const etable * const etab, const xapi_code code, const char * const msg, int msgl, const char * const file, const int line, const char * const func)
+API void xapi_frame_set_messagew(
+    const etable * const restrict etab
+  , const xapi_code code
+  , const xapi_frame_index parent_index
+  , const char * const restrict msg
+  , const int msgl
+  , const char * const restrict file
+  , const int line
+  , const char * const restrict func
+)
 {
-	s = frame_set(s, etab, code, file, line, func);
-	msgl = msgl ?: msg ? strlen(msg) : 0;
-
-  sloadw(&s->msg, &s->msgl, &s->msga, msg, msgl);
-
-  return s;
+	frame * f = frame_set(etab, code, parent_index, file, line, func);
+  sloadw(&f->error->msg, &f->error->msgl, msg, msgl);
 }
 
-API stack * xapi_frame_set_messagef(stack * s, const etable * const etab, const xapi_code code, const char * const fmt, const char * const file, const int line, const char * const func, ...)
+API void xapi_frame_set_messagef(
+    const etable * const restrict etab
+  , const xapi_code code
+  , const xapi_frame_index parent_index
+  , const char * const restrict fmt
+  , const char * const restrict file
+  , const int line
+  , const char * const restrict func
+  , ...
+)
 {
-	s = frame_set(s, etab, code, file, line, func);
+	frame * f = frame_set(etab, code, parent_index, file, line, func);
 
   // save the msg when setting the base frame
   va_list va;
   va_start(va, func);
-  svloadf(&s->msg, &s->msgl, &s->msga, fmt, va);
+  svloadf(&f->error->msg, &f->error->msgl, fmt, va);
   va_end(va);
-
-  return s;
 }
 
 API void xapi_frame_infow(const char * const k, int kl, const char * const v, int vl)
 {
-  if(g_stack)
+  if(g_calltree)
   {
     if(k)
       kl = kl ?: strlen(k);
@@ -330,7 +293,7 @@ API void xapi_frame_infow(const char * const k, int kl, const char * const v, in
 
     if(k && kl && v && vl)
     {
-      frame * f = &g_stack->frames.v[g_stack->frames.l - 1];
+      frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
 
       // ensure allocation for the info list
       assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
@@ -338,15 +301,15 @@ API void xapi_frame_infow(const char * const k, int kl, const char * const v, in
       memset(i, 0, sizeof(*i));
 
       // save the strings
-      sloadw(&i->ks, &i->kl, &i->ka, k, kl);
-      sloadw(&i->vs, &i->vl, &i->va, v, vl);
+      sloadw(&i->ks, &i->kl, k, kl);
+      sloadw(&i->vs, &i->vl, v, vl);
     }
   }
 }
 
 API void xapi_frame_infof(const char * const k, int kl, const char * const vfmt, ...)
 {
-  if(g_stack)
+  if(g_calltree)
   {
     if(k)
       kl = kl ?: strlen(k);
@@ -362,7 +325,7 @@ API void xapi_frame_infof(const char * const k, int kl, const char * const vfmt,
 
     if(k && kl && vl)
     {
-      frame * f = &g_stack->frames.v[g_stack->frames.l - 1];
+      frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
 
       // ensure allocation for the info list
       assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
@@ -370,8 +333,8 @@ API void xapi_frame_infof(const char * const k, int kl, const char * const vfmt,
       memset(i, 0, sizeof(*i));
 
       // save the strings
-      sloadw(&i->ks, &i->kl, &i->ka, k, kl);
-      svloadf(&i->vs, &i->vl, &i->va, vfmt, va);
+      sloadw(&i->ks, &i->kl, k, kl);
+      svloadf(&i->vs, &i->vl, vfmt, va);
     }
 
     va_end(va);

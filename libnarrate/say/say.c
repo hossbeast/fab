@@ -22,9 +22,9 @@
 
 #include "internal.h"
 
-#include "dynamic/dynamic.h"
+#include "dynamic/dynamic.internal.h"
 #include "fixed/fixed.internal.h"
-#include "file/file.h"
+#include "file/file.internal.h"
 
 #define restrict __restrict
 
@@ -58,11 +58,11 @@ xapi narrate_vsayf(narrator * const restrict n, const char * const restrict fmt,
   enter;
 
 	if(n->ps)
-		fatal(dynamic_vsayf, &n->ps, fmt, va);
+		fatal(dynamic_vsayf, n, fmt, va);
 	else if(n->bb)
-		fatal(fixed_vsayf, n->bb, n->bsz, &n->bz, fmt, va);
+		fatal(fixed_vsayf, n, fmt, va);
 	else if(n->fd)
-		fatal(file_vsayf, n->fd, fmt, va);
+		fatal(file_vsayf, n, fmt, va);
 
 	finally : coda;
 }
@@ -72,11 +72,11 @@ API xapi narrate_sayw(narrator * const restrict n, char * const restrict b, size
   enter;
 
 	if(n->ps)
-		fatal(dynamic_sayw, &n->ps, b, l);
+		fatal(dynamic_sayw, n, b, l);
 	else if(n->bb)
-		fatal(fixed_sayw, n->bb, n->bsz, &n->bz, b, l);
+		fatal(fixed_sayw, n, b, l);
 	else if(n->fd)
-		fatal(file_sayw, n->fd, b, l);
+		fatal(file_sayw, n, b, l);
 
 	finally : coda;
 }

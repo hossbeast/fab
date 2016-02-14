@@ -36,10 +36,10 @@ STACKTRACE requires a runtime link against libxapi.so, ERRCODE does not
 
 */
 
+// types for components of xapi exit value
+
 // return type for xapi functions, called its exit value
 typedef uint32_t xapi;
-
-// types for components of xapi exit value
 typedef uint16_t xapi_code;
 typedef uint16_t xapi_etable_id;
 

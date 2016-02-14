@@ -46,13 +46,6 @@ xapi xkill(pid_t pid, int sig);
 //
 xapi uxkill(pid_t pid, int sig, int * r);
 
-/// xsignal
-//
-// SUMMARY
-//  xapi proxy for signal
-//
-xapi xsignal(int signum, sighandler_t handler);
-
 /// xsigaction
 //
 // SUMMARY

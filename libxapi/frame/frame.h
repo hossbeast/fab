@@ -21,16 +21,21 @@
 #include <stdint.h>
 
 /*
-** application-visible frame manipulation functions used in XAPI_UNWIND mode
+** application-visible frame manipulation functions used in XAPI_STACKTRACE mode
 **
 ** none of these functions are called directly by application code; they are accessed
-** through the macros provided in xapi/unwind.h
+** through the macros provided in xapi/stacktrace.h
 */
 
 #define restrict __restrict
 
 struct etable;
 struct stack;
+
+typedef int_fast32_t xapi_frame_index;
+
+extern __thread xapi_frame_index xapi_top_frame_index;
+extern __thread int xapi_sentinel;
 
 #if XAPI_RUNTIME_CHECKS
 /// xapi_frame_*_frame_address
@@ -49,15 +54,6 @@ void xapi_record_frame(void * calling_frame);
 extern __thread int xapi_raised_exit;
 #endif
 
-extern __thread int xapi_sentinel;
-
-///  xapi_frame_enter
-//
-// SUMMARY
-//  push a frame onto the callstack
-//
-void xapi_frame_enter();
-
 /// xapi_frame_leave
 //
 // SUMMARY
@@ -70,22 +66,7 @@ void xapi_frame_enter();
 //  the value for the function return ; zero when no error has been raised, otherwise, the
 //  error id, which is a composite of the error table id and the error code
 //
-xapi xapi_frame_leave(int sentinel);
-
-/// xapi_frame_leave3
-//
-// SUMMARY
-//  get information about the exit status of this frame
-//
-// REMARKS
-//  when no error has been raised, all parameters are set to zero
-//
-// PARAMETERS
-//  [e] - pointer to error table
-//  [c] - error code
-//  [r] - return value, that is (e->id << 16) | c
-//
-void xapi_frame_leave3(int sentinel, const etable ** restrict etab, xapi_code * const restrict code, xapi * const restrict rval);
+xapi xapi_frame_leave(int topframe);
 
 /// xapi_unwinding
 //
@@ -118,29 +99,36 @@ const etable * xapi_frame_errtab();
 //  messagew - message is specified as pointer/length pair
 //  messagef - message is specified in printf/style
 //
-// RETURNS
-//  a value indicating whether to jump to the finally label for the current frame
-//
-struct stack * xapi_frame_set(struct stack * s, const struct etable * const restrict etab, const xapi_code code, const char * const restrict file, const int line, const char * const restrict func)
-	__attribute__((nonnull(6)));
+void xapi_frame_set(
+    const struct etable * const restrict etab
+  , const xapi_code code
+  , const xapi_frame_index parent_index
+  , const char * const restrict file
+  , const int line
+  , const char * const restrict func
+);
 
-struct stack * xapi_frame_set_messagew(struct stack * s, const struct etable * const restrict etab, const xapi_code code, const char * const restrict msg, int msgl, const char * const restrict file, const int line, const char * const restrict func)
-	__attribute__((nonnull(8)));
+void xapi_frame_set_messagew(
+    const struct etable * const restrict etab
+  , const xapi_code code
+  , const xapi_frame_index parent_index
+  , const char * const restrict msg
+  , int msgl
+  , const char * const restrict file
+  , const int line
+  , const char * const restrict func
+);
 
-struct stack * xapi_frame_set_messagef(struct stack * s, const struct etable * const restrict etab, const xapi_code code, const char * const restrict fmt, const char * const restrict file, const int line, const char * const restrict func, ...)
-	__attribute__((nonnull(7)));
-
-// call xapi_frame_set with current file name, line number, and function name
-#define XAPI_FRAME_SET(etab, code)	\
-	__xapi_sp = xapi_frame_set(__xapi_sp, etab, code, __FILE__, __LINE__, __FUNCTION__)
-
-// call xapi_frame_set with current file name, line number, and function name
-#define XAPI_FRAME_SET_MESSAGEW(etab, code, msg, msgl)	\
-	__xapi_sp = xapi_frame_set_messagew(__xapi_sp, etab, code, msg, msgl, __FILE__, __LINE__, __FUNCTION__)
-
-// call xapi_frame_set with current file name, line number, and function name
-#define XAPI_FRAME_SET_MESSAGEF(etab, code, fmt, ...)	\
-	__xapi_sp = xapi_frame_set_messagef(__xapi_sp, etab, code, fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+void xapi_frame_set_messagef(
+    const struct etable * const restrict etab
+  , const xapi_code code
+  , const xapi_frame_index parent_index
+  , const char * const restrict fmt
+  , const char * const restrict file
+  , const int line
+  , const char * const restrict func
+  , ...
+);
 
 /// xapi_frame_info
 //

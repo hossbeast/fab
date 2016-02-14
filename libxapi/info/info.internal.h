@@ -15,36 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
+#ifndef _XAPI_INFO_INTERNAL_H
+#define _XAPI_INFO_INTERNAL_H
 
-#include "xapi.h"
-#include "xlinux.h"
-#include "pstring.h"
+#include "info.h"
 
-#include "internal.h"
-#include "dynamic.internal.h"
-
-#define restrict __restrict
-
-//
-// public
-//
-
-xapi dynamic_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
-{
-	xproxy(psvcatf, &n->ps, fmt, va);
-}
-
-xapi dynamic_sayw(narrator * const restrict n, char * const restrict b, size_t l)
-{
-	xproxy(pscatw, &n->ps, b, l);
-}
-
-xapi dynamic_mark(narrator * const restrict n, size_t * const restrict mark)
-{
-  enter;
-
-  (*mark) = n->ps->l;
-
-  finally : coda;
-}
+#endif

@@ -1,7 +1,7 @@
 #include "SYS.errtab.h"
 #define APIDATA
 etable errtab_SYS = {
-   .tag = "SYS"
+   .name = "SYS"
  , .min = ERRMIN_SYS
  , .max = ERRMAX_SYS
  , .v =  (typeof(((etable*)0)->v[0])[]) {

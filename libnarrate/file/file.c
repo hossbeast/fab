@@ -21,6 +21,7 @@
 #include "xlinux.h"
 
 #include "internal.h"
+#include "file/file.internal.h"
 
 #define restrict __restrict
 
@@ -28,12 +29,21 @@
 // public
 //
 
-xapi file_vsayf(int fd, const char * const restrict fmt, va_list va)
+xapi file_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
 {
- 	xproxy(xvdprintf, fd, fmt, va);
+ 	xproxy(xvdprintf, n->fd, fmt, va);
 }
 
-xapi file_sayw(int fd, char * const restrict b, size_t l)
+xapi file_sayw(narrator * const restrict n, char * const restrict b, size_t l)
 {
-	xproxy(axwrite, fd, b, l);
+	xproxy(axwrite, n->fd, b, l);
+}
+
+xapi file_mark(narrator * const restrict n, size_t * const restrict mark)
+{
+  enter;
+
+  
+
+  finally : coda;
 }

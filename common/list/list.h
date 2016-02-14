@@ -32,24 +32,87 @@ typedef struct list list;
 # define LIST_ELEMENT_TYPE void*
 #endif
 
+#if 0
 #define LIST_DEREF  0x01
+#endif
+
+#define LIST_PRIMARY    0x01    /* primary storage of the objects in the list */
+#define LIST_SECONDARY  0x02    /* not the primary storage of the objects in the list */
+
+/*
+
+#2 - primary storage - the objects themselves
+
+  #define LIST_ELEMENT_TYPE foo*
+  list_create(&listp, sizeof(foo), foo_destructor, LIST_PRIMARY)
+
+  USAGE
+   foo_t * foop = 0;
+   list_push(listp, &foop);
+   foop->bar = "baz";
+
+   foo_t * foops[2];
+   list_push_range(listp, foops, 2);
+   foops[0]->bar = "baz";
+   foops[1]->bar = "qux";
+
+   foo_t * foop = list_pop(listp)
+   foop = list_get(listp, 0)
+
+#1 - secondary storage - pointers to objects stored elsewhere
+
+  #define LIST_ELEMENT_TYPE foo*
+  list_create(&list, 0, 0, LIST_SECONDARY)
+
+  USAGE
+   foo * list_of_foop[3];
+   list_push(listp, &list_of_foop[0]);
+   list_insert_range(listp, 0, list_of_foop, 3);
+
+   foo * foop = list_pop(listp);
+   foop = list_get(listp, 0)
+
+*/
 
 #define restrict __restrict
 
 /// list_create
 //
-// create an empty list
+// SUMMARY
+//  create an empty list
 //
-// parameters
+// PARAMETERS
 //  list			   - created list goes here
-//  esz          - element size > 0
+//  [esz]        - element size > 0
 //  [destructor] - invoked with key/value just before freeing their associated storage
 //  [attr]       - bitwise combination of LIST_* options and modifiers
 //
-// returns nonzero on success
+// REMARKS
+//  either attr == LIST_PRIMARY and esz != 0 OR attr == LIST_SECONDARY and esz == 0
+//
+// RETURNS
+//  returns nonzero on success
 //
 xapi list_create(list ** const restrict list, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE), uint32_t attr)
 	__attribute__((nonnull(1)));
+
+/// list_grow
+//
+// SUMMARY
+// 
+// PARAMETERS
+//
+xapi list_grow(list * const restrict list, size_t len)
+  __attribute__((nonnull));
+
+/// list_ensure
+//
+// SUMMARY
+// 
+// PARAMETERS
+//
+xapi list_ensure(list * const restrict list, size_t len)
+  __attribute__((nonnull));
 
 /// list_free
 //
@@ -87,6 +150,10 @@ LIST_ELEMENT_TYPE list_get(list * const restrict list, int x)
 // SUMMARY
 //  remove the first element of the list
 //
+// REMARKS
+//  depending on the type, do not use list_shift with LIST_PRIMARY because the
+//  destructor will have been invoked on the item before list_shift returns
+//
 LIST_ELEMENT_TYPE list_shift(list * const restrict list)
   __attribute__((nonnull));
 
@@ -94,6 +161,10 @@ LIST_ELEMENT_TYPE list_shift(list * const restrict list)
 //
 // SUMMARY
 //  remove the last element of the list
+//
+// REMARKS
+//  depending on the type, do not use list_pop with LIST_PRIMARY because the
+//  destructor will have been invoked on the item before list_pop returns
 //
 LIST_ELEMENT_TYPE list_pop(list * const restrict list)
   __attribute__((nonnull));
@@ -140,6 +211,9 @@ xapi list_unshift(list * const restrict list, void * const restrict el)
 // SUMMARY
 //  add items to the beginning of the list
 //
+// REMARKS
+//  the order of the items is not reversed
+//
 // PARAMETERS
 //  s   - list
 //  el  - pointer to first element to append
@@ -169,28 +243,10 @@ xapi list_insert(list * const restrict list, size_t index, void * const restrict
 // PARAMETERS
 //  s     - list
 //  index - 0 <= index <= list_size(s)
-//  el    - pointer to element to insert
-//  len   - number of elements
+//  el    - pointer to the first element to insert
+//  len   - number of elements to insert
 //
 xapi list_insert_range(list * const restrict list, size_t index, void * const restrict el, size_t len)
-  __attribute__((nonnull));
-
-/// list_grow
-//
-// SUMMARY
-// 
-// PARAMETERS
-//
-xapi list_grow(list * const restrict list, size_t len)
-  __attribute__((nonnull));
-
-/// list_ensure
-//
-// SUMMARY
-// 
-// PARAMETERS
-//
-xapi list_ensure(list * const restrict list, size_t len)
   __attribute__((nonnull));
 
 /// list_clear

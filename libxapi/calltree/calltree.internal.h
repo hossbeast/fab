@@ -18,6 +18,7 @@
 #ifndef _XAPI_CALLTREE_INTERNAL_H
 #define _XAPI_CALLTREE_INTERNAL_H
 
+#include <sys/types.h>
 #include <stdint.h>
 
 #include "calltree.h"
@@ -35,12 +36,53 @@ calltree, frames closest to the site of the error are recorded first
 
 */
 
+struct frame; // has location information and a set of infos
+
+/// calltree
+//
+// SUMMARY
+//  a single thread of execution
+//
+typedef struct calltree
+{
+  // error on the top frame, placed here as a convenience
+  xapi        exit_value;
+  xapi_code   exit_code;
+  const struct etable * exit_table;
+
+  struct
+  {
+    struct frame *  v;      // frames in the calltree
+    size_t          l;      // the max number of frames is INT_MAX
+    size_t          a;
+  } frames;
+} calltree;
+
+// per-thread execution tree
+extern __thread calltree * g_calltree;
+
+#if DEVEL
+/*
+** set to g_calltree for the executing thread on every api call
+** makes it easy to access the calltree from gdb
+*/
+calltree * S;
+#endif
+
+#define restrict __restrict
+
 /// xapi_calltree_free
 //
 // SUMMARY
 //  free the calltree for this thread with free semantics
 //
 void calltree_free();
+
+/// calltree_frame_push
+//
+//
+//
+struct frame * calltree_frame_push();
 
 #undef restrict
 #endif

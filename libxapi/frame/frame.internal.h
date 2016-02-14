@@ -28,22 +28,24 @@ struct memblk;
 
 typedef struct frame
 {
+  xapi_frame_index parent_index;
+
+  struct error *  error;  // (optional) error
+
 	char * 					file;		// file name
   size_t          filel;
-  size_t          filea;
+
 	char * 					func;		// function name
   size_t          funcl;
-  size_t          funca;
+
 	int							line;   // line number
 
 	struct                  // infos for the frame
 	{
 		struct info * v;
 		size_t        l;
-		size_t        a;
+    size_t        a;
 	} infos;
-
-  struct stack *  child;    // child stack
 } frame;
 
 #if XAPI_RUNTIME_CHECKS
@@ -54,6 +56,12 @@ extern __thread struct frame_addresses
   size_t    l;
   size_t    a;
 } g_frame_addresses;
+
+extern __thread struct frame_addresses g_frame_addresses;
+extern __thread void * xapi_calling_frame_address;
+extern __thread void * xapi_caller_frame_address;
+extern __thread const etable * xapi_stack_raised_etab;
+extern __thread int xapi_stack_raised_code;
 #endif
 
 #define restrict __restrict 
@@ -62,21 +70,21 @@ extern __thread struct frame_addresses
 //
 //
 //
-void frame_freeze(struct memblk * const restrict mb, frame * f)
+void frame_freeze(struct memblk * const restrict mb, frame * restrict f)
   __attribute__((nonnull));
 
 /// frame_unfreeze
 //
 //
 //
-void frame_unfreeze(struct memblk * const restrict mb, frame * f)
+void frame_unfreeze(struct memblk * const restrict mb, frame * restrict f)
   __attribute__((nonnull));
 
 /// frame_thaw
 //
 //
 //
-void frame_thaw(char * const restrict mb, frame * f)
+void frame_thaw(char * const restrict mb, frame * restrict f)
   __attribute__((nonnull));
 
 /// frame_teardown

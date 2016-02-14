@@ -17,27 +17,28 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "internal.h"
 #include "errtab/XAPI.errtab.h"
 #include "trace.internal.h"
 #include "frame.internal.h"
-#include "info.h"
-#include "stack.h"
+#include "info.internal.h"
 #include "calltree.internal.h"
+#include "error.internal.h"
 
 #include "macros.h"
 #include "strutil.h"
 
 #define restrict __restrict
 
+#define SAY(...) z += znloadf(dst + z, sz - z, __VA_ARGS__)
+
 //
 // static
 //
 
-#define SAY(...) z += znloadf(dst + z, sz - z, __VA_ARGS__)
-
-static size_t stack_error(char * const dst, const size_t sz, stack * s)
+static size_t error_trace(char * const dst, const size_t sz, const error * const restrict e)
 {
 	size_t z = 0;
 
@@ -46,48 +47,48 @@ static size_t stack_error(char * const dst, const size_t sz, stack * s)
 
   }
 #if XAPI_RUNTIME_CHECKS
-  else if(s->etab == perrtab_XAPI && s->code == XAPI_ILLFAIL)
+  else if(e->etab == perrtab_XAPI && e->code == XAPI_ILLFAIL)
   {
 		SAY("[%s:%s] %s"
-			, s->etab->name
-			, s->code > s->etab->max ? "UNKNWN" : s->etab->v[s->code + (s->etab->min * -1)].name
-			, s->code > s->etab->max ? "unspecified error" : s->etab->v[s->code + (s->etab->min * -1)].desc
+			, e->etab->name
+			, e->code > e->etab->max ? "UNKNWN" : e->etab->v[e->code + (e->etab->min * -1)].name
+			, e->code > e->etab->max ? "unspecified error" : e->etab->v[e->code + (e->etab->min * -1)].desc
 		);
   }
 #endif
-	else if(s->etab && s->code && s->msg)
+	else if(e->etab && e->code && e->msg)
 	{
 		SAY("[%s:%s] %.*s"
-			, s->etab->name
-			, s->code > s->etab->max ? "UNKNWN" : s->etab->v[s->code + (s->etab->min * -1)].name
-			, (int)s->msgl, s->msg 
+			, e->etab->name
+			, e->code > e->etab->max ? "UNKNWN" : e->etab->v[e->code + (e->etab->min * -1)].name
+			, (int)e->msgl, e->msg 
 		);
 	}
-	else if(s->etab && s->code)
+	else if(e->etab && e->code)
 	{
 		SAY("[%s:%s] %s"
-			, s->etab->name
-			, s->code > s->etab->max ? "UNKNWN" : s->etab->v[s->code + (s->etab->min * -1)].name
-			, s->code > s->etab->max ? "unspecified error" : s->etab->v[s->code + (s->etab->min * -1)].desc
+			, e->etab->name
+			, e->code > e->etab->max ? "UNKNWN" : e->etab->v[e->code + (e->etab->min * -1)].name
+			, e->code > e->etab->max ? "unspecified error" : e->etab->v[e->code + (e->etab->min * -1)].desc
 		);
 	}
-	else if(s->etab && s->msg)
+	else if(e->etab && e->msg)
 	{
 		SAY("[%s] %.*s"
-			, s->etab->name
-			, (int)s->msgl, s->msg 
+			, e->etab->name
+			, (int)e->msgl, e->msg 
 		);
 	}
-	else if(s->code && s->msg)
+	else if(e->code && e->msg)
 	{
 		SAY("[%d] %.*s"
-			, s->code
-			, (int)s->msgl, s->msg 
+			, e->code
+			, (int)e->msgl, e->msg 
 		);
 	}
-	else if(s->code)
+	else if(e->code)
 	{
-		SAY("[%d]", s->code);
+		SAY("[%d]", e->code);
 	}
 
 	return z;
@@ -138,16 +139,12 @@ static size_t frame_location(char * const dst, const size_t sz, frame * f)
 	return z;
 }
 
-static size_t stack_trace(char * const dst, const size_t sz, stack * s, int level);
-
-static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc, int at, int level)
+static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc, int in, int level)
 {
 	size_t z = 0;
 
- // SAY("%*s", level * 2, "");
-
-	if(at)
-		SAY("at ");
+	if(in)
+		SAY("in ");
 
 	z += frame_function(dst + z, sz - z, f);
 	if(f->infos.l)
@@ -159,46 +156,78 @@ static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc,
 
 	if(loc && f->file)
 	{
-		SAY(" in ");
+		SAY(" at ");
 		z += frame_location(dst + z, sz - z, f);
 	}
 
-  if(f->child)
+	return z;
+}
+
+static size_t trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int x, int y, int level);
+
+static size_t trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int x, int y, int level)
+{
+	size_t z = 0;
+
+  SAY("%*s", level * 2, "");
+	z += error_trace(dst + z, sz - z, ct->frames.v[x].error);
+	SAY("\n");
+
+  // first parent index which is less than the current index
+  int i;
+  int j;
+  for(i = y; i > x; i--)
   {
-    SAY("(%zu)\n", f->child->frames.l);
-    z += stack_trace(dst + z, sz - z, f->child, level + 1);
+    if(ct->frames.v[i].parent_index > x)
+    {
+printf("@%d\n", i);
+      j = ct->frames.v[i].parent_index;
+      break;
+    }
+  }
+
+  if(i == x)
+    j = y;
+
+printf("[x:%d, j:%d, y:%d, i:%d] %d\n", x, j, y, i, level);
+
+  for(; x <= j; x++)
+  {
+    SAY("%*s", level * 2, "");
+    SAY(" %2d : ", y - x);
+    z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
+
+    if((x + 1) <= j)
+      SAY("\n");
+  }
+
+  if(j != y)
+  {
+    SAY("\n");
+    z += trace_frames(dst + z, sz - z, ct, j + 1, i, level + 1);
+
+    for(x = i + 1; x <= y; x++)
+    {
+      SAY("\n");
+      SAY("%*s", level * 2, "");
+      SAY(" %2d : ", y - x);
+      z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
+    }
   }
 
 	return z;
 }
 
-static size_t stack_trace(char * const dst, const size_t sz, stack * s, int level)
+static size_t calltree_trace(char * const dst, const size_t sz, calltree * const restrict ct)
 {
-	size_t z = 0;
-
-  SAY("%*s", level * 2, "");
-	z += stack_error(dst + z, sz - z, s);
-	SAY("\n");
-
-	int x;
-  for(x = 0; x < s->frames.l; x++)
-	{
-		if(x)
-			SAY("\n");
-
-    SAY("%*s", level * 2, "");
-		SAY(" %2d : ", (int)s->frames.l - x - 1);
-		z += frame_trace(dst + z, sz - z, &s->frames.v[x], 1, 1, level);
-	}
-
-	return z;
+  return trace_frames(dst, sz, ct, 0, ct->frames.l - 1, 0);
 }
 
-static size_t calltree_trace_pithy(stack * const restrict ct, char * const dst, const size_t sz)
+static size_t calltree_trace_pithy(calltree * const restrict ct, char * const dst, const size_t sz)
 {
 	size_t z = 0;
 
-	z += stack_error(dst + z, sz - z, ct);
+	z += error_trace(dst + z, sz - z, ct->frames.v[0].error);
 
 	info * nfo = 0;
 
@@ -272,33 +301,33 @@ static size_t calltree_trace_pithy(stack * const restrict ct, char * const dst, 
 	return z;
 }
 
-static size_t calltree_trace_full(stack * const restrict ct, char * const dst, const size_t sz)
+static size_t calltree_trace_full(calltree * const restrict ct, char * const dst, const size_t sz)
 {
-  return stack_trace(dst, sz, ct, 0);
+  return calltree_trace(dst, sz, ct);
 }
 
 //
 // API
 //
 
-API size_t xapi_trace_calltree_pithy(stack * const restrict cs, char * const restrict dst, const size_t sz)
+API size_t xapi_trace_calltree_pithy(calltree * const restrict ct, char * const restrict dst, const size_t sz)
 {
-  return calltree_trace_pithy(cs, dst, sz);
+  return calltree_trace_pithy(ct, dst, sz);
 }
 
-API size_t xapi_trace_calltree_full(stack * const restrict cs, char * const restrict dst, const size_t sz)
+API size_t xapi_trace_calltree_full(calltree * const restrict ct, char * const restrict dst, const size_t sz)
 {
-	return calltree_trace_full(cs, dst, sz);
+	return calltree_trace_full(ct, dst, sz);
 }
 
 API size_t xapi_trace_pithy(char * const dst, const size_t sz)
 {
-	return calltree_trace_pithy(g_stack, dst, sz);
+	return calltree_trace_pithy(g_calltree, dst, sz);
 }
 
 API size_t xapi_trace_full(char * const dst, const size_t sz)
 {
-	return calltree_trace_full(g_stack, dst, sz);
+	return calltree_trace_full(g_calltree, dst, sz);
 }
 
 API void xapi_pithytrace()

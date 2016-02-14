@@ -29,163 +29,194 @@
 
 struct list
 {
-  char *  v;      // storage
-  size_t  l;      // number of elements
-  size_t  a;      // allocated size in elements
+  char *   v;     // storage
+  size_t   l;     // number of elements
+  size_t   a;     // allocated size in elements
 
-  size_t  esz;    // element size
+  size_t   esz;   // element size
   uint32_t attr;  // options and modifiers
 
   void (*destructor)(void *);
 };
 
-#define ELEMENT(x) ({                             \
-  void * el;                                      \
-  if(list->attr & LIST_DEREF)                     \
-    el = *(char**)(list->v + (list->esz * (x)));  \
-  else                                            \
-    el = list->v + (list->esz * (x));             \
-  el;                                             \
+#define ELEMENT(listp, x) ({                            \
+  void * el;                                            \
+  if(listp->attr & LIST_PRIMARY)                        \
+  {                                                     \
+    el = listp->v + (x * SLOT_SIZE(listp));             \
+  }                                                     \
+  else                                                  \
+  {                                                     \
+    el = *(char**)(listp->v + (x * SLOT_SIZE(listp)));  \
+  }                                                     \
+  el;                                                   \
+})
+
+#define SLOT_SIZE(listp) ({         \
+  size_t slotz = sizeof(void*);     \
+  if(listp->attr == LIST_PRIMARY)   \
+    slotz = listp->esz;             \
+  slotz;                            \
 })
 
 //
 // public
 //
 
-xapi list_create(list** const restrict list, size_t esz, void (*destructor)(void *), uint32_t attr)
+xapi list_create(list** const restrict listp, size_t esz, void (*destructor)(void *), uint32_t attr)
 {
   enter;
 
-  fatal(xmalloc, list, sizeof(**list));
+  // apply defaults
+  if((attr != LIST_PRIMARY) && (attr != LIST_SECONDARY))
+  {
+    attr = LIST_PRIMARY;
+  }
 
-  (*list)->esz = esz;
-  (*list)->destructor = destructor;
-  (*list)->attr = attr;
+  fatal(xmalloc, listp, sizeof(**listp));
+
+  (*listp)->esz = esz;
+  (*listp)->destructor = destructor;
+  (*listp)->attr = attr;
 
   finally : coda;
 }
 
-void list_free(list * const restrict list)
+void list_free(list * const restrict listp)
 {
-  if(list)
+  if(listp)
   {
-    list_clear(list);
-    free(list->v);
+    list_clear(listp);
+    free(listp->v);
   }
+  free(listp);
 }
 
-void list_xfree(list ** const restrict list)
+void list_xfree(list ** const restrict listp)
 {
-  list_free(*list);
-  *list = 0;
+  list_free(*listp);
+  *listp = 0;
 }
 
-size_t list_size(list * const restrict list)
+size_t list_size(list * const restrict listp)
 {
-  return list->l;
+  return listp->l;
 }
 
-void list_clear(list * const restrict list)
+void list_clear(list * const restrict listp)
 {
-  if(list->destructor)
+  if(listp->destructor)
   {
     int x;
-    for(x = 0; x < list->l; x++)
+    for(x = 0; x < listp->l; x++)
     {
-      list->destructor(ELEMENT(x));
+      listp->destructor(ELEMENT(listp, x));
     }
   }
 
-  list->l = 0;
+  listp->l = 0;
 }
 
-void * list_get(list * const restrict list, int x)
+void * list_get(list * const restrict listp, int x)
 {
-  return ELEMENT(x);
+  return ELEMENT(listp, x);
 }
 
-void * list_shift(list * const restrict list)
+void * list_shift(list * const restrict listp)
 {
   void * e = 0;
-  if(list->l > 0)
+  if(listp->l > 0)
   {
-    e = ELEMENT(list->l - 1);
-    if(list->destructor)
-      list->destructor(e);
-    list->l--;
+    e = ELEMENT(listp, listp->l - 1);
+    if(listp->destructor)
+      listp->destructor(e);
+    listp->l--;
   }
   return e;
 }
 
-void * list_pop(list * const restrict list)
+void * list_pop(list * const restrict listp)
 {
   void * e = 0;
-  if(list->l > 0)
+  if(listp->l > 0)
   {
-    e = ELEMENT(list->l - 1);
-    if(list->destructor)
-      list->destructor(e);
-    list->l--;
+    e = ELEMENT(listp, listp->l - 1);
+    if(listp->destructor)
+      listp->destructor(e);
+    listp->l--;
   }
   return e;
 }
 
-xapi list_push(list * const restrict list, void * const restrict el)
+xapi list_push(list * const restrict listp, void * const restrict el)
 {
-  xproxy(list_insert_range, list, list->l, el, 1);
+  xproxy(list_insert_range, listp, listp->l, el, 1);
 }
 
-xapi list_push_range(list * const restrict list, void * const restrict el, size_t len)
+xapi list_push_range(list * const restrict listp, void * const restrict el, size_t len)
 {
-  xproxy(list_insert_range, list, list->l, el, len);
+  xproxy(list_insert_range, listp, listp->l, el, len);
 }
 
-xapi list_unshift(list * const restrict list, void * const restrict el)
+xapi list_unshift(list * const restrict listp, void * const restrict el)
 {
-  xproxy(list_insert_range, list, 0, el, 1);
+  xproxy(list_insert_range, listp, 0, el, 1);
 }
 
-xapi list_unshift_range(list * const restrict list, void * const restrict el, size_t len)
+xapi list_unshift_range(list * const restrict listp, void * const restrict el, size_t len)
 {
-  xproxy(list_insert_range, list, 0, el, len);
+  xproxy(list_insert_range, listp, 0, el, len);
 }
 
-xapi list_grow(list * const restrict list, size_t len)
+xapi list_grow(list * const restrict listp, size_t len)
 {
-  xproxy(grow, &list->v, list->esz, len, list->l, &list->a);
+  xproxy(grow, &listp->v, listp->esz, len, listp->l, &listp->a);
 }
 
-xapi list_ensure(list * const restrict list, size_t len)
+xapi list_ensure(list * const restrict listp, size_t len)
 {
-  xproxy(ensure, &list->v, list->esz, len, &list->a);
+  xproxy(ensure, &listp->v, listp->esz, len, &listp->a);
 }
 
-xapi list_insert(list * const restrict list, size_t index, void * const restrict el)
+xapi list_insert(list * const restrict listp, size_t index, void * const restrict el)
 {
-  xproxy(list_insert_range, list, index, el, 1);
+  xproxy(list_insert_range, listp, index, el, 1);
 }
 
-xapi list_insert_range(list * const restrict list, size_t index, void * const restrict el, size_t len)
+xapi list_insert_range(list * const restrict listp, size_t index, void * const restrict el, size_t len)
 {
   enter;
 
-  fatal(ensure, &list->v, list->esz, list->l + len, &list->a);
+  fatal(ensure, &listp->v, SLOT_SIZE(listp), listp->l + len, &listp->a);
 
   memmove(
-      list->v + ((index + len) * list->esz)
-    , list->v + (index * list->esz)
-    , (list->l - index + len) * list->esz
+      listp->v + ((index + len) * SLOT_SIZE(listp))
+    , listp->v + (index * SLOT_SIZE(listp))
+    , (listp->l - index + len) * SLOT_SIZE(listp)
   );
 
-  memcpy(list->v + (list->esz * index), el, list->esz * len);
-  list->l += len;
+  if(listp->attr == LIST_PRIMARY)
+  {
+    size_t x;
+    for(x = 0; x < len; x++)
+      ((void **)el)[x] = listp->v + (SLOT_SIZE(listp) * (index + x));
+  }
+  else
+  {
+    memcpy(
+        listp->v + (index * SLOT_SIZE(listp))
+      , el
+      , len * SLOT_SIZE(listp)
+    );
+  }
+  listp->l += len;
 
   finally : coda;
 }
 
 void list_sort(list * const restrict listp, int (*compar)(const void *, const void *, void *), void * arg)
 {
-  if(listp->attr & LIST_DEREF)
+  if(listp->attr & LIST_PRIMARY)
   {
     int lcompar(const void * A, const void * B, void * arg)
     {
@@ -209,7 +240,7 @@ xapi list_sublist(list * const restrict listp, size_t index, size_t len, list **
   list_clear(*rv);
 
   fatal(list_ensure, *rv, len);
-  memcpy((*rv)->v, listp->v + (listp->esz * index), listp->esz * len);
+  memcpy((*rv)->v, listp->v + (index * SLOT_SIZE(listp)) , len * SLOT_SIZE(listp));
   (*rv)->l = len;
 
   finally : coda;

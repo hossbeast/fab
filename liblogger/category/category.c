@@ -249,9 +249,9 @@ xapi category_setup()
 {
   enter;
 
-  fatal(list_create, &registered, sizeof(logger_category *), 0, LIST_DEREF);
-  fatal(list_create, &registering, sizeof(logger_category *), 0, LIST_DEREF);
-  fatal(list_create, &activated, sizeof(logger_category *), 0, LIST_DEREF);
+  fatal(list_create, &registered, 0, 0, LIST_SECONDARY);
+  fatal(list_create, &registering, 0, 0, LIST_SECONDARY);
+  fatal(list_create, &activated, 0, 0, LIST_SECONDARY);
   fatal(map_create, &activated_byname, 0);
   fatal(map_create, &activated_byid, 0);
 
@@ -276,13 +276,13 @@ API xapi logger_category_register(logger_category * logs, char * const restrict 
   enter;
 
   if(!registered)
-    fatal(list_create, &registered, sizeof(logger_category *), 0, LIST_DEREF);
+    fatal(list_create, &registered, 0, 0, LIST_SECONDARY);
 
   if(!registering)
-    fatal(list_create, &registering, sizeof(logger_category *), 0, LIST_DEREF);
+    fatal(list_create, &registering, 0, 0, LIST_SECONDARY);
 
   list * tmp = 0;
-  fatal(list_create, &tmp, sizeof(logger_category *), 0, LIST_DEREF);
+  fatal(list_create, &tmp, 0, 0, LIST_SECONDARY);
   while(logs->name)
   {
     fatal(list_push, tmp, &logs);
@@ -331,7 +331,7 @@ xapi logger_category_activate()
   map * activating_byid = 0;
   list * sublist = 0;
 
-  fatal(list_create, &activating, sizeof(logger_category *), 0, LIST_DEREF);
+  fatal(list_create, &activating, 0, 0, LIST_SECONDARY);
   fatal(map_create, &activating_byname, 0);
   fatal(map_create, &activating_byid, 0);
 
