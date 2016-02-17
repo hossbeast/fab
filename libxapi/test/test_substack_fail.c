@@ -81,7 +81,9 @@ xapi epsilon()
   epsilon_count++;
   fatal(qux);
 
-  finally : coda;
+finally:
+  fatal(qux);
+coda;
 }
 
 int beta_count;
@@ -164,28 +166,3 @@ int main()
 
   succeed;
 }
-
-/*
-
-  5 : -1 in delta at test_substack_fail.c:35
-  4 : -1 in beta at test_substack_fail.c:57
-  3 : -1 in alpha at test_substack_fail.c:68
-   2 : -1 in epsilon at test_substack_fail.c:46
-   1 : 3  in alpha at test_substack_fail.c:72
-  0 : -1 in zeta at test_substack_fail.c:88
-
-
-  0  9 : -1 in ababab at test_substack_fail.c:33
-  1  8 : -1 in baz at test_substack_fail.c:42
-  2  7 : -1 in bar at test_substack_fail.c:51
-  3  6 : -1 in delta at test_substack_fail.c:62
-  4  5 : -1 in beta at test_substack_fail.c:93
-  5  4 : -1 in alpha at test_substack_fail.c:104
-   6  3 : -1 in qux at test_substack_fail.c:71
-   7  2 : -1 in epsilon at test_substack_fail.c:82
-   8  1 : 5 in alpha at test_substack_fail.c:108
-  9  0 : -1 in zeta at test_substack_fail.c:124
-
-
-
-*/

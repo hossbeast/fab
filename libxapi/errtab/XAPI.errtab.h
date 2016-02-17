@@ -5,6 +5,7 @@
 _E(1, ILLFATAL, "non xapi-enabled function invoked with fatal") \
 _E(2, NOFATAL, "xapi-enabled function invoked without fatal") \
 _E(3, ILLFAIL, "fail invoked without a code or table     ") \
+_E(4, NOMEM, "Out of memory (not calltree related)") \
 
 enum {
 #define _E(a, b, c) XAPI_ ## b = a,
@@ -12,6 +13,6 @@ ETABLE_XAPI
 #undef _E
 };
 #define ERRMIN_XAPI 1
-#define ERRMAX_XAPI 3
+#define ERRMAX_XAPI 4
 extern etable * perrtab_XAPI;
 #endif

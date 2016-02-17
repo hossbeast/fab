@@ -81,7 +81,8 @@ API xapi xapi_errtab_register(etable * const etab)
     {
       size_t ns = taba ?: 3;
       ns = ns * 2 + ns / 2;
-      wrealloc(&tab, sizeof(*tab), ns, taba);
+      if((tab = realloc(tab, sizeof(*tab) * ns)) == 0)
+        fail(XAPI_NOMEM);
       taba = ns;
     }
 

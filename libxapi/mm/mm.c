@@ -136,7 +136,7 @@ void assure(void * restrict dst, size_t * const restrict dstl, size_t * const re
 		size_t ns = (*dsta) ?: 10;
 		while(ns <= l)
 			ns = ns * 2 + ns / 2;
-		wrealloc(dst, 1, ns * z, *dsta);
+		wrealloc(dst, z, ns, *dsta);
 		(*dsta) = ns;
 	}
 }

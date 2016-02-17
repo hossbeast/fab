@@ -167,6 +167,13 @@ static size_t trace_frames(char * const dst, const size_t sz, calltree * const r
 
 static size_t trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int x, int y, int level)
 {
+// k : iterator variable
+// x : start index
+// y : end index
+// i : 
+// j : 
+
+  int k;
 	size_t z = 0;
 
   SAY("%*s", level * 2, "");
@@ -175,26 +182,26 @@ static size_t trace_frames(char * const dst, const size_t sz, calltree * const r
 
   // first parent index which is less than the current index
   int i;
-  int j;
+  int j = y;
   for(i = y; i > x; i--)
+  for(k = y; k > x; k--)
   {
-    if(ct->frames.v[i].parent_index > x)
+    if(ct->frames.v[k].parent_index > x)
     {
-printf("@%d\n", i);
-      j = ct->frames.v[i].parent_index;
+printf("@%d\n", k);
+      j = ct->frames.v[k].parent_index;
       break;
     }
   }
 
-  if(i == x)
-    j = y;
-
-printf("[x:%d, j:%d, y:%d, i:%d] %d\n", x, j, y, i, level);
+  i = k;
+  int rank = (j - x + 1) + (y - i);
+printf("[x:%d, j:%d, y:%d, i:%d] %d # %d\n", x, j, y, i, level, rank);
 
   for(; x <= j; x++)
   {
     SAY("%*s", level * 2, "");
-    SAY(" %2d : ", y - x);
+    SAY(" %2d/%d : ", j - x + (y - i), rank);
     z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
 
     if((x + 1) <= j)
@@ -210,7 +217,7 @@ printf("[x:%d, j:%d, y:%d, i:%d] %d\n", x, j, y, i, level);
     {
       SAY("\n");
       SAY("%*s", level * 2, "");
-      SAY(" %2d : ", y - x);
+      SAY(" %2d/%d : ", y - x, rank);
       z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
     }
   }
@@ -220,6 +227,34 @@ printf("[x:%d, j:%d, y:%d, i:%d] %d\n", x, j, y, i, level);
 
 static size_t calltree_trace(char * const dst, const size_t sz, calltree * const restrict ct)
 {
+/*
+  printf("{ \"exit_value\" : %u, \"exit_code\" : %u, \"exit_table\" : %p\n"
+    , ct->exit_value
+    , ct->exit_code
+    , ct->exit_table
+  );
+
+  printf(", frames : [");
+
+  int x;
+  for(x = 0; x < ct->frames.l; x++)
+  {
+    frame * f = &ct->frames.v[x];
+
+    if(x)
+      printf(",");
+    printf("{");
+    printf("  \"%s\" : %ld\n", "parent_index", f->parent_index);
+    printf(", \"%s\" : %p\n", "error", f->error);
+    printf(", \"%s\" : \"%.*s\"\n", "file", (int)f->filel, f->file);
+    printf(", \"%s\" : \"%.*s\"\n", "func", (int)f->funcl, f->func);
+    printf(", \"%s\" : %d\n", "line", f->line);
+    printf("}\n");
+  }
+
+  printf("]}\n");
+*/
+
   return trace_frames(dst, sz, ct, 0, ct->frames.l - 1, 0);
 }
 
