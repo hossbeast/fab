@@ -377,12 +377,8 @@ xapi logger_category_activate()
       // in rank order
       fatal(list_sublist, activating, x, y - x, &sublist);
 
-      int compar(const void * _A, const void * _B, void * arg)
+      int compar(const logger_category * A, const logger_category * B, void * arg)
       {
-        logger_category * A = (logger_category *)_A;
-        logger_category * B = (logger_category *)_B;
-
-printf("%d <=> %d : %d\n", A->rank, B->rank, A->rank - B->rank);
         return A->rank - B->rank;
       }
       list_sort(sublist, compar, 0);

@@ -425,18 +425,15 @@ int main()
   {
     fatal(test_setup);
 
-    int exit;
+    xapi exit;
     if((exit = invoke(tests[x].entry)))
     {
-      // some unexpected error
+      // propagate unexpected errors
       if(xapi_exit_errtab(exit) != perrtab_LOGGER)
         tfail(0, 0);
 
       // print the stacktrace to stdout
-      char space[512];
-      xapi_trace_full(space, sizeof(space));
-      printf("%s\n", space);
-
+      xapi_backtrace_to(1);
       xapi_calltree_unwind();
     }
 

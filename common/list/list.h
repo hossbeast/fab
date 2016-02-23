@@ -32,10 +32,6 @@ typedef struct list list;
 # define LIST_ELEMENT_TYPE void*
 #endif
 
-#if 0
-#define LIST_DEREF  0x01
-#endif
-
 #define LIST_PRIMARY    0x01    /* primary storage of the objects in the list */
 #define LIST_SECONDARY  0x02    /* not the primary storage of the objects in the list */
 
@@ -262,7 +258,7 @@ void list_clear(list * const restrict list)
 // SUMMARY
 //  sort the list
 //
-void list_sort(list * const restrict list, int (*compar)(const void *, const void *, void *), void * arg)
+void list_sort(list * const restrict list, int (*compar)(const LIST_ELEMENT_TYPE, const LIST_ELEMENT_TYPE, void *), void * arg)
   __attribute__((nonnull(1, 2)));
 
 /// list_sublist

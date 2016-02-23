@@ -170,12 +170,12 @@ xapi list_unshift_range(list * const restrict listp, void * const restrict el, s
 
 xapi list_grow(list * const restrict listp, size_t len)
 {
-  xproxy(grow, &listp->v, listp->esz, len, listp->l, &listp->a);
+  xproxy(grow, &listp->v, SLOT_SIZE(listp), len, listp->l, &listp->a);
 }
 
 xapi list_ensure(list * const restrict listp, size_t len)
 {
-  xproxy(ensure, &listp->v, listp->esz, len, &listp->a);
+  xproxy(ensure, &listp->v, SLOT_SIZE(listp), len, &listp->a);
 }
 
 xapi list_insert(list * const restrict listp, size_t index, void * const restrict el)
@@ -218,16 +218,16 @@ void list_sort(list * const restrict listp, int (*compar)(const void *, const vo
 {
   if(listp->attr & LIST_PRIMARY)
   {
+    qsort_r(listp->v, listp->l, listp->esz, compar, arg);
+  }
+  else
+  {
     int lcompar(const void * A, const void * B, void * arg)
     {
       return compar(*(const void **)A, *(const void**)B, arg);
     };
 
-    qsort_r(listp->v, listp->l, listp->esz, lcompar, arg);
-  }
-  else
-  {
-    qsort_r(listp->v, listp->l, listp->esz, compar, arg);
+    qsort_r(listp->v, listp->l, SLOT_SIZE(listp), lcompar, arg);
   }
 }
 
