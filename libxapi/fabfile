@@ -120,8 +120,10 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 
 +[@std.c]($dext = [ xapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = $cflags_xapi_devel)
 +[@std.c]($dext = [ eapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
++[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $rdirs = $dlibxapi; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ eapi.devel.o ]; $rdirs = $dlibxapi; $apidata = [1]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
 
-[ $*/test ~ j lsr sx/c/stacktrace sy dj shift ] ::^ [ $libxapi_xapi_devel ]
+[ $*/test ~ j lsr sx/c/stacktrace sy dj shift ] ::^ [ $libxapi_xapi_devel [ $*/errtab/TEST.errtab.xapi.devel.o ~ j ] ]
 [ $*/test ~ j lsr sx/c/stacktrace sy dj shift ] :: [ $< ~ sx/stacktrace/xapi.devel.o ]
 {
 	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel ] [ $dlibxapi ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
