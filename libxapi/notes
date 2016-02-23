@@ -1,4 +1,0 @@
-xapi : uint32_t -> int (boolean, stack is failing)
-enter : record frame index
-finally : record frame index
-fatal : fail if frame index has changed

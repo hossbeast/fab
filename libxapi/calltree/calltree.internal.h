@@ -27,12 +27,7 @@
 
 calltree definition ; libxapi-visibility
 
-The calltree tracks program execution from the first UNWIND-ing call
-
-All allocations are tracked in the calltree, and take place before entering a call frame.
-Heuristic measures are employed to allocate enough resources before the first error
-takes place. In the event that insufficient frames were allocated to record the entire
-calltree, frames closest to the site of the error are recorded first
+The calltree tracks program execution from the first xapi-enabled call
 
 */
 
@@ -80,7 +75,8 @@ void calltree_free();
 
 /// calltree_frame_push
 //
-//
+// SUMMARY
+//  during unwinding, allocate a frame on the calltree
 //
 struct frame * calltree_frame_push();
 

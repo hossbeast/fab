@@ -225,7 +225,7 @@ when calling non-xapi code, you have a couple of options.
 /// fatal
 //
 // SUMMARY
-//  invoke an UNWIND-ing function and fail the current frame if that function fails
+//  invoke a xapi function and fail the current frame if that function fails
 //
 // REMARKS
 //  fatal can appear in a finally block ; while unwinding, the fatal is a no-op
@@ -243,10 +243,8 @@ when calling non-xapi code, you have a couple of options.
 /// fatalize
 //
 // SUMMARY
-//  invoke a non-UNWIND-ing function and if it fails, capture its error code and possibly
-//  message and fail the current frame using that code/msg and the prevailing error table
-//
-//  fatalize should not be used in a finally block
+//  invoke a non-xapi function which follows the nonzero-return-error pattern and, if it fails,
+//  capture its error code and fail the current frame using that code and the prevailing error table
 //
 // REMARKS
 //  fatalize is typically used in a small wrapper for some underlying function. A new frame is not
@@ -283,7 +281,7 @@ when calling non-xapi code, you have a couple of options.
 
 /// xproxy
 //
-// enables writing 1-liner wrappers around UNWIND-ing functions
+// enables writing 1-liner wrappers around xapi functions
 //
 #define xproxy(func, ...)       \
   enter;                        \

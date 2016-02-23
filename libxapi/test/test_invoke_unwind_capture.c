@@ -85,7 +85,6 @@ int main()
       , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
       , alpha_dead_count
     );
-printf("\n");
   }
 
   // victory
