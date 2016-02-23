@@ -53,5 +53,13 @@ void error_unfreeze(struct memblk * const restrict mb, error * restrict e)
 void error_thaw(char * const restrict mb, error * restrict e)
   __attribute__((nonnull));
 
+/// error_errval
+//
+// SUMMARY
+//  gets the exit status for an error, that is, (errtab->id << 16 ) | code
+//
+xapi error_errval(const error * const restrict e)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

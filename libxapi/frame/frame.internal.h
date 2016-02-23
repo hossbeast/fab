@@ -57,7 +57,6 @@ extern __thread struct frame_addresses
   size_t    a;
 } g_frame_addresses;
 
-extern __thread struct frame_addresses g_frame_addresses;
 extern __thread void * xapi_calling_frame_address;
 extern __thread void * xapi_caller_frame_address;
 extern __thread const etable * xapi_stack_raised_etab;

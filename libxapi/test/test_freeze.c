@@ -31,7 +31,7 @@ xapi beta(int num)
 {
   enter;
 
-  fail(XAPI_ILLFATAL);
+  fail(TEST_ERROR_ONE);
 
   finally : coda;
 }
@@ -69,8 +69,12 @@ coda;
 
 int main()
 {
+#if XAPI_MODE_STACKTRACE
+  xapi_errtab_register(perrtab_TEST);
+#endif
+
   int exit = foo();
-  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
 #if XAPI_MODE_STACKTRACE
   struct calltree * ct = xapi_calltree_thaw(space);

@@ -29,7 +29,7 @@ xapi beta()
 {
   enter;
 
-  fail(XAPI_ILLFATAL);
+  fail(TEST_ERROR_ONE);
 
   finally : coda;
 }
@@ -46,7 +46,7 @@ xapi alpha()
   int exit;
   if((exit = invoke(beta)))
   {
-    assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+    assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
 #if XAPI_MODE_STACKTRACE
     z = xapi_trace_full(space, sizeof(space));
@@ -63,9 +63,12 @@ xapi alpha()
 
 int main()
 {
-  int exit = alpha();
+#if XAPI_MODE_STACKTRACE
+  xapi_errtab_register(perrtab_TEST);
+#endif
 
-  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+  int exit = alpha();
+  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   succeed;
 }

@@ -30,7 +30,7 @@ xapi ababab()
 {
   enter;
 
-  fail(XAPI_ILLFATAL);
+  fail(TEST_ERROR_ONE);
 
   finally : coda;
 }
@@ -41,7 +41,9 @@ xapi baz()
 
   fatal(ababab);
 
-  finally : coda;
+finally:
+  XAPI_INFOF("baz", "%d", 1);
+coda;
 }
 
 xapi bar()
@@ -68,7 +70,7 @@ xapi qux()
 {
   enter;
 
-  fail(XAPI_NOFATAL);
+  fail(TEST_ERROR_TWO);
 
   finally : coda;
 }
@@ -78,10 +80,15 @@ xapi epsilon()
 {
   enter;
 
+char name[333];
+sprintf(name, "epsilon_%d", epsilon_count);
+
   epsilon_count++;
   fatal(qux);
 
 finally:
+  XAPI_INFOF(name, "%d", 1);
+
   fatal(qux);
 coda;
 }
@@ -118,27 +125,22 @@ xapi zeta()
 {
   enter;
 
-#if XAPI_MODE_STACKTRACE
-  char space[4096];
-  size_t z;
-#endif
-
   fatal(alpha);
 
 finally:
-#if XAPI_MODE_STACKTRACE
-  z = xapi_trace_full(space, sizeof(space));
-  write(1, space, z);
-  write(1, "\n", 1);
-#endif
+  XAPI_INFOF("zeta", "%d", 1);
 coda;
 }
 
 int main()
 {
+#if XAPI_MODE_STACKTRACE
+  xapi_errtab_register(perrtab_TEST);
+#endif
+
   // alpha should propagate the error from epsilon
   int exit = zeta();
-  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // alpha dead area should have been skipped
   assert(alpha_dead_count == 0

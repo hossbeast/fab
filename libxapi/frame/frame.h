@@ -75,9 +75,7 @@ xapi xapi_frame_leave(int topframe);
 //
 int xapi_unwinding();
 
-xapi_code xapi_frame_errcode();
-xapi xapi_frame_errval();
-const etable * xapi_frame_errtab();
+xapi xapi_frame_errval(xapi_frame_index index);
 
 /// xapi_frame_set
 //

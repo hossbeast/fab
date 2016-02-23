@@ -2,8 +2,8 @@
 #define _XAPI_ERRTAB_H
 #include "xapi.h"
 #define ETABLE_XAPI \
-_E(1, ILLFATAL, "non xapi-enabled function invoked with fatal") \
-_E(2, NOFATAL, "xapi-enabled function invoked without fatal") \
+_E(1, ILLFATAL, "non-xapi function invoked with fatal") \
+_E(2, NOFATAL, "xapi function invoked without fatal") \
 _E(3, ILLFAIL, "fail invoked without a code or table     ") \
 _E(4, NOMEM, "Out of memory (not calltree related)") \
 

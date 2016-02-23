@@ -94,7 +94,7 @@ static size_t error_trace(char * const dst, const size_t sz, const error * const
 	return z;
 }
 
-static size_t frame_function(char * const dst, const size_t sz, frame * f)
+static size_t frame_trace_function(char * const dst, const size_t sz, frame * f)
 {
 	size_t z = 0;
 	SAY("%s", f->func);
@@ -102,7 +102,7 @@ static size_t frame_function(char * const dst, const size_t sz, frame * f)
 	return z;
 }
 
-static size_t frame_info(char * const dst, const size_t sz, frame * f)
+static size_t frame_trace_info(char * const dst, const size_t sz, frame * f)
 {
 	size_t z = 0;
 
@@ -123,7 +123,7 @@ static size_t frame_info(char * const dst, const size_t sz, frame * f)
 	return z;
 }
 
-static size_t frame_location(char * const dst, const size_t sz, frame * f)
+static size_t frame_trace_location(char * const dst, const size_t sz, frame * f)
 {
 	size_t z = 0;
 
@@ -146,80 +146,98 @@ static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc,
 	if(in)
 		SAY("in ");
 
-	z += frame_function(dst + z, sz - z, f);
+	z += frame_trace_function(dst + z, sz - z, f);
 	if(f->infos.l)
 	{
 		SAY("(");
-		z += frame_info(dst + z, sz - z, f);
+		z += frame_trace_info(dst + z, sz - z, f);
 		SAY(")");
 	}
 
 	if(loc && f->file)
 	{
 		SAY(" at ");
-		z += frame_location(dst + z, sz - z, f);
+		z += frame_trace_location(dst + z, sz - z, f);
 	}
 
 	return z;
 }
 
-static size_t trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int x, int y, int level);
-
-static size_t trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int x, int y, int level)
+/// calltree_locate_substack
+//
+// SUMMARY
+//  returns the greatest parent index within the window, or -1
+//
+static int calltree_locate_substack(calltree * const restrict ct, int a, int b)
 {
-// k : iterator variable
-// x : start index
-// y : end index
-// i : 
-// j : 
+  int x;
+  for(x = b; x > a; x--)
+  {
+    if(ct->frames.v[x].parent_index > a)
+      return x;
+  }
 
-  int k;
+  return -1;
+}
+
+/// calltree_trace_frames
+//
+// SUMMARY
+// 
+//
+// PARAMETERS
+//  dst   - buffer to write to
+//  sz    - size of dst
+//  ct    - 
+//  a     - start index, inclusive
+//  b     - end index, inclusive
+//  level - indentation
+//
+static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a, int b, int level);
+static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a, int b, int level)
+{
+  int x;
 	size_t z = 0;
 
+  int b0 = b; // end index for the main sequence
+  int b1 = b; // end index for the subsequence
+
+  // find the bounds of the substack, if any
+  if((x = calltree_locate_substack(ct, a, b)) != -1)
+  {
+    b0 = ct->frames.v[x].parent_index;
+    b1 = x;
+  }
+
   SAY("%*s", level * 2, "");
-	z += error_trace(dst + z, sz - z, ct->frames.v[x].error);
+	z += error_trace(dst + z, sz - z, ct->frames.v[a].error);
 	SAY("\n");
 
-  // first parent index which is less than the current index
-  int i;
-  int j = y;
-  for(i = y; i > x; i--)
-  for(k = y; k > x; k--)
-  {
-    if(ct->frames.v[k].parent_index > x)
-    {
-printf("@%d\n", k);
-      j = ct->frames.v[k].parent_index;
-      break;
-    }
-  }
-
-  i = k;
-  int rank = (j - x + 1) + (y - i);
-printf("[x:%d, j:%d, y:%d, i:%d] %d # %d\n", x, j, y, i, level, rank);
-
-  for(; x <= j; x++)
+  // main sequence
+  for(x = a; x <= b0; x++)
   {
     SAY("%*s", level * 2, "");
-    SAY(" %2d/%d : ", j - x + (y - i), rank);
+    SAY(" %2d : ", b0 - x + (b - b1));
     z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
 
-    if((x + 1) <= j)
+    if((x + 1) <= b0)
       SAY("\n");
   }
 
-  if(j != y)
+  // subsequence
+  if(b0 != b)
   {
     SAY("\n");
-    z += trace_frames(dst + z, sz - z, ct, j + 1, i, level + 1);
+    z += calltree_trace_frames(dst + z, sz - z, ct, b0 + 1, b1, level + 1);
+  }
 
-    for(x = i + 1; x <= y; x++)
-    {
-      SAY("\n");
-      SAY("%*s", level * 2, "");
-      SAY(" %2d/%d : ", y - x, rank);
-      z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
-    }
+  // trailing sequence
+  for(x = b1 + 1; x <= b; x++)
+  {
+    SAY("\n");
+    SAY("%*s", level * 2, "");
+    SAY(" %2d : ", b - x);
+    z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
   }
 
 	return z;
@@ -227,48 +245,28 @@ printf("[x:%d, j:%d, y:%d, i:%d] %d # %d\n", x, j, y, i, level, rank);
 
 static size_t calltree_trace(char * const dst, const size_t sz, calltree * const restrict ct)
 {
-/*
-  printf("{ \"exit_value\" : %u, \"exit_code\" : %u, \"exit_table\" : %p\n"
-    , ct->exit_value
-    , ct->exit_code
-    , ct->exit_table
-  );
-
-  printf(", frames : [");
-
-  int x;
-  for(x = 0; x < ct->frames.l; x++)
-  {
-    frame * f = &ct->frames.v[x];
-
-    if(x)
-      printf(",");
-    printf("{");
-    printf("  \"%s\" : %ld\n", "parent_index", f->parent_index);
-    printf(", \"%s\" : %p\n", "error", f->error);
-    printf(", \"%s\" : \"%.*s\"\n", "file", (int)f->filel, f->file);
-    printf(", \"%s\" : \"%.*s\"\n", "func", (int)f->funcl, f->func);
-    printf(", \"%s\" : %d\n", "line", f->line);
-    printf("}\n");
-  }
-
-  printf("]}\n");
-*/
-
-  return trace_frames(dst, sz, ct, 0, ct->frames.l - 1, 0);
+  return calltree_trace_frames(dst, sz, ct, 0, ct->frames.l - 1, 0);
 }
 
 static size_t calltree_trace_pithy(calltree * const restrict ct, char * const dst, const size_t sz)
 {
+  int x;
 	size_t z = 0;
+
+  int skip_at = -1;
+  int skip_to = -1;
+
+  if((x = calltree_locate_substack(ct, 0, ct->frames.l - 1)) != -1)
+  {
+    skip_at = ct->frames.v[x].parent_index;
+    skip_to = x + 1;
+  }
 
 	z += error_trace(dst + z, sz - z, ct->frames.v[0].error);
 
 	info * nfo = 0;
 
 	size_t zt = z;
-	int x;
-//	for(x = ct->frames.l; x >= MAX(ct->frames.l - 5 /* heuristic */, 0); x--)
   for(x = 0; x < ct->frames.l; x++)
 	{
 		int y;
@@ -316,6 +314,9 @@ static size_t calltree_trace_pithy(calltree * const restrict ct, char * const ds
 				nfo = &ct->frames.v[x].infos.v[y];
 			}
 		}
+
+    if(x == skip_at)
+      x = skip_to - 1; // x incremented by the loop
 	}
 
 	if(nfo)
@@ -367,7 +368,7 @@ API size_t xapi_trace_full(char * const dst, const size_t sz)
 
 API void xapi_pithytrace()
 {
-	char space[512];
+	char space[4096];
 
 	size_t z = xapi_trace_pithy(space, sizeof(space));
 	dprintf(2, "%.*s\n", (int)z, space);
@@ -375,7 +376,7 @@ API void xapi_pithytrace()
 
 API void xapi_fulltrace()
 {
-	char space[512];
+	char space[4096];
 
 	size_t z = xapi_trace_full(space, sizeof(space));
 	dprintf(2, "%.*s\n", (int)z, space);
@@ -383,7 +384,7 @@ API void xapi_fulltrace()
 
 API void xapi_backtrace()
 {
-	char space[512];
+	char space[4096];
 
 	size_t z = xapi_trace_full(space, sizeof(space));
 	dprintf(2, "%.*s\n", (int)z, space);

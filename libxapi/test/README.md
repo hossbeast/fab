@@ -7,6 +7,5 @@ reason is of course because libxunit uses libxapi.
 
 The tests are divided into three groups based on which mode they apply to:
 
-* unwinding : code using DXAPI_UNWINDING
+* stacktrace : code using DXAPI_STACKTRACE
 * errcode : code using DXAPI_ERRCODE
-* both : both

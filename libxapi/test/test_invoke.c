@@ -28,7 +28,7 @@ xapi beta()
 {
   enter;
 
-  fail(XAPI_ILLFATAL);
+  fail(TEST_ERROR_ONE);
 
   finally : coda;
 }
@@ -53,11 +53,15 @@ xapi foo()
 
 int main()
 {
+#if XAPI_MODE_STACKTRACE
+  xapi_errtab_register(perrtab_TEST);
+#endif
+
   // invoke the function, collect its exit status
   int exit = foo();
 
   // assertions
-  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // victory
   succeed;

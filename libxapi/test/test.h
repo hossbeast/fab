@@ -21,9 +21,10 @@
 #include "xapi/exit.h"
 #include "xapi/errtab.h"
 #include "xapi/XAPI.errtab.h"
+#include "errtab/TEST.errtab.h"
 
 #undef perrtab
-#define perrtab perrtab_XAPI
+#define perrtab perrtab_TEST
 
 #define MMS(a) a, strlen(a)
 #define QUOTE(x) #x

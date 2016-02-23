@@ -47,3 +47,8 @@ void error_thaw(char * const restrict mb, error * restrict e)
   e->etab = xapi_errtab_byid((intptr_t)e->etab);
   memblk_thaw(mb, &e->msg);
 }
+
+xapi error_errval(const error * const restrict e)
+{
+  return (e->etab->id << 16) | e->code;
+}

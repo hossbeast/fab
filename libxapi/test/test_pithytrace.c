@@ -31,7 +31,7 @@ xapi delta(int num)
   enter;
 
   delta_count++;
-  fail(XAPI_ILLFATAL);
+  fail(TEST_ERROR_ONE);
 
 finally:
   XAPI_INFOF("num", "%d", num);
@@ -78,9 +78,13 @@ coda;
 
 int main()
 {
+#if XAPI_MODE_STACKTRACE
+  xapi_errtab_register(perrtab_TEST);
+#endif
+
   // alpha should fail
   int exit = alpha();
-  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // dead area should have been skipped
   assert(beta_dead_count == 0

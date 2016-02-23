@@ -53,6 +53,10 @@ int foo()
 
 int main()
 {
+#if XAPI_MODE_STACKTRACE
+  xapi_errtab_register(perrtab_TEST);
+#endif
+
   int exit = foo();
   assert_code(exit, 0);
 

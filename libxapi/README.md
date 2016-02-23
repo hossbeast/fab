@@ -1,7 +1,7 @@
 # libxapi
 
-xapi is a calling convention in which the return value of a function communicates
-its success or failure.
+xapi is a calling convention in which the return value of a function communicates its success or
+failure.
 
 libxapi is an error handling library for xapi code.
 
@@ -13,8 +13,7 @@ First, specify a table of error codes that your component can encounter.
     1 FOO  the foo has failed
     2 BAR  the bar is broken
 
-Use the fail macro to raise an error, and use the fatal macro to invoke other
-xapi-enabled functions
+Use the fail macro to throw an error, and use the fatal macro to invoke other xapi-enabled functions
 
     xapi foo()
     {
@@ -23,7 +22,7 @@ xapi-enabled functions
       char * str = 0;
       fatal(xmalloc, &str, 100);    // call another xapi-enabled function
     
-      fail(EFOO);                   // raise an error
+      fail(EFOO);                   // throw an error
     
       finally:                      // xapi-enabled functions end with finally/coda
         free(str);                  // cleanup
@@ -32,25 +31,21 @@ xapi-enabled functions
 
 ## How it works
 
-When an error is raised, the callstack will unwind and, from the perspective of
-the top-level xapi-enabled function, one of two things will happen.
+When an error is thrown, the callstack unwinds and the function returns an exit value : an unsigned
+integer that encodes the error table (in the high bits) and error code (in the low bits).
 
 ### XAPI_ERRCODE
 
-If you compile with -DXAPI_ERRCODE, the function returns an exit value : an unsigned
-integer that encodes the error table (in the high bits) and error code (in the low bits).
+If you compile with -DXAPI_ERRCODE, unwinding is accomplished by means of the exit value.
 
-    void main()
-
-It is not necessary to link with libxapi.so when compiling with -DXAPI_ERRCODE
+It is not necessary to link with libxapi-xapi.so when compiling with -DXAPI_ERRCODE
 
 ### XAPI_STACKTRACE
 
-If you compile with -DXAPI_STACKTRACE, the top-level xapi function still returns an
-unsigned integer that encodes the error table and code. libxapi provides functions
-for getting more information from the exit value.
+If you compile with -DXAPI_STACKTRACE, while unwinding, a xapi-enabled function can produce a
+backtrace. In addition, libxapi provides functions for getting more information from the exit value.
 
-while unwinding, xapi functions can produce a backtrace
+You must link with libxapi-xapi.so when compiling with -DXAPI_STACKTRACE
 
     xapi foo()
     {
@@ -72,9 +67,9 @@ while unwinding, xapi functions can produce a backtrace
       }
     }
 
-libxapi does no allocation or counting until an error is raised. This means that
-in the case of an actual ENOMEM, constructing the calltree will fail, so it is
-recommended to pre-allocate memory to libxapi, viz.
+libxapi does no allocation or counting until an error is thrown. This means that in the case of an
+actual ENOMEM, constructing the calltree will fail. It is recommended to pre-allocate memory to
+libxapi, viz.
 
  #include "xapi/mm.h"
 
@@ -98,7 +93,7 @@ recommended to pre-allocate memory to libxapi, viz.
   * registering etables for exit value resolution
   * getting strings from exit values, in the context of an etable
 
-## Implementation Details
+## fail after finally
 
 A xapi function consists of two sections, the body and the finally block. fail/finally may be used
 in either block. The only difference is that, if fail is invoked in the finally block, the remainder
@@ -107,13 +102,12 @@ handling works in other implementations, such as C# and Java.
 
 With most other implementations, the original error and stack trace are discarded. libxapi preserves
 the original error. In stacktrace mode, the stack for the new error is rooted in the frame whose
-finally block was executing when it was raised.
+finally block was executing when it was thrown. These frames are included when the backtrace is
+rendered.
 
-In errorcode mode, the exit value from the function encodes the latter error, if any.
+In this case, the exit value encodes the original error.
 
-## Notes
-
-libxlinux is a library that provides xapi wrappers for most linux calls (open, read, write, etc)
+## Reserved words
 
 The following is a list of the reserved words.
 
@@ -126,3 +120,7 @@ The following is a list of the reserved words.
 * invoke
 * conclude
 * xproxy
+
+## Notes
+
+libxlinux is a library that provides xapi wrappers for linux calls (open, read, write, etc)

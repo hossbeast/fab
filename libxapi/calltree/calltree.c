@@ -93,7 +93,7 @@ void __attribute__((nonnull)) calltree_thaw(char * const restrict mb, calltree *
 frame * calltree_frame_push()
 {
   if(g_calltree_stor == 0)
-    wmalloc(&g_calltree_stor, sizeof(*g_calltree_stor));
+    mm_malloc(&g_calltree_stor, sizeof(*g_calltree_stor));
 
   if(g_calltree == 0)
   {
@@ -109,7 +109,7 @@ frame * calltree_frame_push()
     // too many frames
   }
 
-  assure(&g_calltree->frames.v, &g_calltree->frames.l, &g_calltree->frames.a, sizeof(*g_calltree->frames.v), g_calltree->frames.l + 1);
+  mm_assure(&g_calltree->frames.v, &g_calltree->frames.l, &g_calltree->frames.a, sizeof(*g_calltree->frames.v), g_calltree->frames.l + 1);
   xapi_top_frame_index = g_calltree->frames.l;
 	frame * f = &g_calltree->frames.v[g_calltree->frames.l++];
   memset(f, 0, sizeof(*f));
@@ -122,20 +122,14 @@ frame * calltree_frame_push()
 
 API void xapi_calltree_unwind()
 {
-  mm_reset();
-
   g_calltree = 0;
 #if DEVEL
   S = g_calltree;
 #endif
 
-  xapi_sentinel = 0;
   xapi_top_frame_index = -1;
 
 #if XAPI_RUNTIME_CHECKS
-  g_frame_addresses.l = 0;
-  xapi_calling_frame_address = 0;
-  xapi_caller_frame_address = 0;
   xapi_stack_raised_etab = 0;
   xapi_stack_raised_code = 0;
 #endif
@@ -164,4 +158,19 @@ API calltree * xapi_calltree_thaw(char * const restrict mb)
   calltree_thaw(mb, g_calltree);
 
   return g_calltree;
+}
+
+API xapi_code xapi_calltree_errcode()
+{
+  return g_calltree->exit_code;
+}
+
+API xapi xapi_calltree_errval()
+{
+  return g_calltree->exit_value;
+}
+
+API const etable * xapi_calltree_errtab()
+{
+	return g_calltree->exit_table;
 }

@@ -88,12 +88,12 @@ static frame * frame_set(
   if(file)
     filel = strlen(file);
 
-  sloadw(&f->file, &f->filel, file, filel);
-  sloadw(&f->func, &f->funcl, func, funcl);
+  mm_sloadw(&f->file, &f->filel, file, filel);
+  mm_sloadw(&f->func, &f->funcl, func, funcl);
 
   if(code)
   {
-    wmalloc(&f->error, sizeof(*f->error));
+    mm_malloc(&f->error, sizeof(*f->error));
     f->error->etab = etab;
     f->error->code = code;
     f->error->msgl = 0;
@@ -102,7 +102,7 @@ static frame * frame_set(
     {
       g_calltree->exit_code = code;
       g_calltree->exit_table = etab;
-      g_calltree->exit_value = (etab->id << 16) | code;
+      g_calltree->exit_value = error_errval(g_calltree->frames.v[0].error);
     }
   }
 
@@ -210,7 +210,13 @@ API xapi xapi_frame_leave(int topframe)
     exit = g_calltree->exit_value;
 
   if(topframe)
+  {
     xapi_calltree_unwind();
+    xapi_sentinel = 0;
+#if XAPI_RUNTIME_CHECKS
+    xapi_calling_frame_address = 0;
+#endif
+  }
 
   return exit;
 }
@@ -220,19 +226,9 @@ API int xapi_unwinding()
   return !!g_calltree;
 }
 
-API xapi_code xapi_frame_errcode()
+API xapi xapi_frame_errval(xapi_frame_index index)
 {
-  return g_calltree->exit_code;
-}
-
-API xapi xapi_frame_errval()
-{
-  return g_calltree->exit_value;
-}
-
-API const etable * xapi_frame_errtab()
-{
-	return g_calltree->exit_table;
+  return error_errval(g_calltree->frames.v[index].error);
 }
 
 API void xapi_frame_set(
@@ -259,7 +255,7 @@ API void xapi_frame_set_messagew(
 )
 {
 	frame * f = frame_set(etab, code, parent_index, file, line, func);
-  sloadw(&f->error->msg, &f->error->msgl, msg, msgl);
+  mm_sloadw(&f->error->msg, &f->error->msgl, msg, msgl);
 }
 
 API void xapi_frame_set_messagef(
@@ -278,7 +274,7 @@ API void xapi_frame_set_messagef(
   // save the msg when setting the base frame
   va_list va;
   va_start(va, func);
-  svloadf(&f->error->msg, &f->error->msgl, fmt, va);
+  mm_svloadf(&f->error->msg, &f->error->msgl, fmt, va);
   va_end(va);
 }
 
@@ -296,13 +292,13 @@ API void xapi_frame_infow(const char * const k, int kl, const char * const v, in
       frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
 
       // ensure allocation for the info list
-      assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
+      mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
       info * i = &f->infos.v[f->infos.l++];
       memset(i, 0, sizeof(*i));
 
       // save the strings
-      sloadw(&i->ks, &i->kl, k, kl);
-      sloadw(&i->vs, &i->vl, v, vl);
+      mm_sloadw(&i->ks, &i->kl, k, kl);
+      mm_sloadw(&i->vs, &i->vl, v, vl);
     }
   }
 }
@@ -328,13 +324,13 @@ API void xapi_frame_infof(const char * const k, int kl, const char * const vfmt,
       frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
 
       // ensure allocation for the info list
-      assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
+      mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
       info * i = &f->infos.v[f->infos.l++];
       memset(i, 0, sizeof(*i));
 
       // save the strings
-      sloadw(&i->ks, &i->kl, k, kl);
-      svloadf(&i->vs, &i->vl, vfmt, va);
+      mm_sloadw(&i->ks, &i->kl, k, kl);
+      mm_svloadf(&i->vs, &i->vl, vfmt, va);
     }
 
     va_end(va);

@@ -30,7 +30,7 @@ xapi delta()
 {
   enter;
 
-  fail(XAPI_NOFATAL);
+  fail(TEST_ERROR_TWO);
 
   finally : coda;
 }
@@ -39,7 +39,7 @@ xapi beta()
 {
   enter;
 
-  fail(XAPI_ILLFATAL);
+  fail(TEST_ERROR_ONE);
 
   finally : coda;
 }
@@ -49,22 +49,13 @@ xapi alpha()
 {
   enter;
 
-#if XAPI_MODE_STACKTRACE
-  char space[4096];
-  size_t z;
-#endif
-
   int exit;
   if((exit = invoke(beta)))
   {
-    assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+    assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
 #if XAPI_MODE_STACKTRACE
-    z = xapi_trace_full(space, sizeof(space));
-    write(1, space, z);
-    write(1, "\n", 1);
-
-    // disard
+    // discard
     xapi_calltree_unwind();
 #endif
   }
@@ -73,23 +64,28 @@ xapi alpha()
 
   alpha_dead_count++;
 
-	finally : coda;
+  finally : coda;
 }
 
 int main()
 {
+#if XAPI_MODE_STACKTRACE
+  xapi_errtab_register(perrtab_TEST);
+#endif
+
   int x;
   for(x = 0; x < 3; x++)
   {
+    // alpha calls beta, unwinds, and calls delta, which fails with NOFATAL
     int exit = alpha();
-
-    assert_exit(exit, perrtab_XAPI, XAPI_NOFATAL);
+    assert_exit(exit, perrtab_TEST, TEST_ERROR_TWO);
 
     // dead area should have been skipped
     assert(alpha_dead_count == 0
       , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
       , alpha_dead_count
     );
+printf("\n");
   }
 
   // victory

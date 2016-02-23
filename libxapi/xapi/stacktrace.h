@@ -29,9 +29,12 @@
 #include "xapi/trace.h"
 
 /*
-** enable XAPI_RUNTIME_CHECKS to :
-**  [x] detect non-UNWIND-ing function invoked with fatal
-**  [x] detect UNWIND-ing function invoked without fatal in the presence of an active callstack
+
+XAPI_RUNTIME_CHECKS enables detection of some common mistakes
+ ILLFATAL	non-xapi function invoked with fatal
+ NOFATAL	xapi function invoked without fatal
+ ILLFAIL  fail invoked without a code or table     
+
 */
 #if XAPI_RUNTIME_CHECKS
 #include "xapi/XAPI.errtab.h"
@@ -61,7 +64,7 @@ when calling non-xapi code, you have a couple of options.
    by convention, these wrapper functions are named "w<function>"
 
     ADVANTAGES/DISADVANTAGES - see above, also you must write the (small) wrapper
-    EXAMPLE : common/wstdlib/wmalloc
+    EXAMPLE : common/wstdlib/wrealloc
 
 3) you can write a proxy function that invokes that function, and calls fail on its behalf when an error
    is returned. Any relevant message should be supplied to fail, and info k/v/p provided in the
@@ -95,8 +98,13 @@ when calling non-xapi code, you have a couple of options.
   __xapi_frame_index[0] = xapi_top_frame_index;         \
   xapi_record_frame(xapi_calling_frame_address);        \
   if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
-  {                                                   \
-    tfail(perrtab_XAPI, XAPI_NOFATAL);                \
+  {                                                     \
+    tfailf(perrtab_XAPI, XAPI_NOFATAL                   \
+      , "%s invoked without fatal, expected caller : %p, recorded caller : %p" \
+      , __FUNCTION__                                    \
+      , __builtin_frame_address(1)                      \
+      , xapi_calling_frame_address                      \
+    );                                                  \
   }
 #else
 #define enter                                         \
@@ -172,28 +180,44 @@ when calling non-xapi code, you have a couple of options.
       void * calling_frame_address = __builtin_frame_address(0);                                    \
       xapi_calling_frame_address = calling_frame_address;                                           \
       /* the target function fixes calling_frame to caller_frame in enter */                        \
-      xapi __r = func(__VA_ARGS__);                                                                 \
+      func(__VA_ARGS__);                                                                            \
       if(xapi_caller_frame_address != calling_frame_address)                                        \
       {                                                                                             \
-        __r = (perrtab_XAPI->id << 16) | XAPI_ILLFATAL;                                             \
-        __r = XAPI_ILLFATAL;                                                                        \
         XAPI_FRAME_SET_MESSAGEF(perrtab_XAPI, XAPI_ILLFATAL                                         \
-          , #func " invoked with fatal, expected caller : %p, actual caller : %p"                   \
+          , "non-xapi function " #func " invoked with fatal, expected caller : %p, recorded caller : %p"                   \
           , calling_frame_address                                                                   \
           , xapi_caller_frame_address                                                               \
         );                                                                                          \
       }                                                                                             \
+      else if(xapi_top_frame_index != __xapi_frame_index[0])                                        \
+      {                                                                                             \
+        XAPI_FRAME_SET(0, 0);                                                                       \
+      }                                                                                             \
+      xapi __r = 0;                                                                                 \
+      if(xapi_top_frame_index != __xapi_frame_index[0])                                             \
+      {                                                                                             \
+        __r = xapi_frame_errval(__xapi_frame_index[0] + 1);                                         \
+      }                                                                                             \
       __r;                                                                                          \
   })
 #else
-#define xapi_invoke(func, ...) \
-  ({ func(__VA_ARGS__); })
+#define xapi_invoke(func, ...)                              \
+  ({                                                        \
+      func(__VA_ARGS__);                                    \
+      xapi __r = 0;                                         \
+      if(xapi_top_frame_index != __xapi_frame_index[0])     \
+      {                                                     \
+        XAPI_FRAME_SET(0, 0);                               \
+        __r = xapi_frame_errval(__xapi_frame_index[0] + 1); \
+      }                                                     \
+      __r;                                                  \
+  })
 #endif
 
 /// invoke
 //
 // SUMMARY
-//  used in conjunction with xapi_callstack_unwindto to invoke an xapi-enabled function
+//  used in conjunction with xapi_callstack_unwind to invoke a xapi-enabled function
 //  and, when it returns an error, conditionally propagate or discard that error
 //
 #define invoke(func, ...) xapi_invoke(func, ##__VA_ARGS__)
@@ -207,13 +231,13 @@ when calling non-xapi code, you have a couple of options.
 //  fatal can appear in a finally block ; while unwinding, the fatal is a no-op
 //
 #undef fatal
-#define fatal(func, ...)                    \
-  do {                                      \
-    xapi_invoke(func, ##__VA_ARGS__);       \
-    if(xapi_top_frame_index != __xapi_frame_index[0])    \
-    {                                       \
-      tfail(0, 0);                          \
-    }                                       \
+#define fatal(func, ...)                                \
+  do {                                                  \
+    xapi_invoke(func, ##__VA_ARGS__);                   \
+    if(xapi_top_frame_index != __xapi_frame_index[0])   \
+    {                                                   \
+      goto XAPI_FINALIZE;                               \
+    }                                                   \
   } while(0)
 
 /// fatalize
@@ -357,21 +381,21 @@ XAPI_LEAVE:                         \
 // SUMMARY
 //  while unwinding, const pointer to the error table, and zero otherwise
 //
-#define XAPI_ERRTAB xapi_frame_errtab()
+#define XAPI_ERRTAB xapi_calltree_errtab()
 
 /// XAPI_ERROR
 //
 // SUMMARY
-//  while unwinding, the error id, that is, errtab->id << 16 | errcode
+//  while unwinding, the exit value, that is, errtab->id << 16 | errcode
 //
-#define XAPI_ERRVAL xapi_frame_errval()
+#define XAPI_ERRVAL xapi_calltree_errval()
 
 /// XAPI_ERRCODE
 //
 // SUMMARY
 //  while unwinding, the error code, and zero otherwise
 //
-#define XAPI_ERRCODE xapi_frame_errcode()
+#define XAPI_ERRCODE xapi_calltree_errcode()
 
 /// XAPI_THROWING
 //

@@ -26,7 +26,7 @@
 #define enter                                         \
   __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;  \
   int __xapi_f1 = 0;                                  \
-  xapi __xapi_r[2] = { }
+  xapi __xapi_r[2] = { 0, 0 }
 
 /*
 ** called at the site of an error
@@ -183,7 +183,7 @@ XAPI_LEAVE:             \
 // SUMMARY
 //  while unwinding, the error id, that is, errtab->id << 16 | errcode
 //
-#define XAPI_ERRVAL (__xapi_r[0] ?: __xapi_r[1])
+#define XAPI_ERRVAL (__xapi_r[1] ?: __xapi_r[0])
 
 /// XAPI_ERRCODE
 //

@@ -30,7 +30,7 @@ xapi beta(int num)
   enter;
 
   beta_count++;
-  fail(XAPI_ILLFATAL);
+  fail(TEST_ERROR_ONE);
 
   finally : coda;
 }
@@ -55,12 +55,16 @@ xapi foo()
 
 int main()
 {
+#if XAPI_MODE_STACKTRACE
+  xapi_errtab_register(perrtab_TEST);
+#endif
+
   int expected = 3;
   int x;
   for(x = 0; x < expected; x++)
   {
     int exit = foo();
-    assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+    assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
   }
 
   assert(beta_count == expected

@@ -32,7 +32,7 @@ xapi delta()
   enter;
 
   delta_count++;
-  fail(XAPI_ILLFATAL);
+  fail(TEST_ERROR_ONE);
 
   finally : coda;
 }
@@ -86,9 +86,13 @@ coda;
 
 int main()
 {
+#if XAPI_MODE_STACKTRACE
+  xapi_errtab_register(perrtab_TEST);
+#endif
+
   // zeta fails
   int exit = zeta();
-  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // alpha dead area should have been skipped
   assert(alpha_finally_count == 1
