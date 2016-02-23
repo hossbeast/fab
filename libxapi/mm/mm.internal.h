@@ -18,6 +18,14 @@
 #ifndef _XAPI_MM_INTERNAL_H
 #define _XAPI_MM_INTERNAL_H
 
+/*
+
+mm manages a per-thread allocation memblk used exclusively for g_calltree
+
+All mm allocations are directly attributable to g_calltree or its children
+
+*/
+
 #include <sys/types.h>
 #include <stdarg.h>
 
@@ -35,23 +43,30 @@ extern __thread struct memblk mm_mb;
 //
 void mm_teardown();
 
-/// mm_reset
+/// mm_malloc
 //
 // SUMMARY
-//  clear counts on this thread ; allocations remain intact
+//  xmalloc semantics
 //
-void mm_reset();
-
-void wmalloc(void * restrict p, size_t sz)
+void mm_malloc(void * restrict p, size_t sz)
   __attribute__((nonnull));
 
-void wrealloc(void * restrict p, size_t es, size_t ec, size_t oec)
+/// wrealloc
+//
+// SUMMARY
+//  xrealloc semantics
+//
+void mm_realloc(void * restrict p, size_t es, size_t ec, size_t oec)
   __attribute__((nonnull));
 
-void assure(void * restrict p, size_t * const restrict dstl, size_t * const restrict dsta, size_t z, size_t l)
+/// mm_assure
+//
+// SUMMARY
+//
+void mm_assure(void * restrict p, size_t * const restrict dstl, size_t * const restrict dsta, size_t z, size_t l)
   __attribute__((nonnull));
 
-/// sloadw
+/// mm_sloadw
 //
 // SUMMARY
 //  allocate storage for and copy a string, specified as a pointer/length pair
@@ -62,10 +77,10 @@ void assure(void * restrict p, size_t * const restrict dstl, size_t * const rest
 //  s    - string to copy from
 //  [l]  - length of s, or 0 for strlen
 //
-void sloadw(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict s, size_t l)
+void mm_sloadw(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict s, size_t l)
   __attribute__((nonnull));
 
-/// sloadf
+/// mm_sloadf
 //
 // SUMMARY
 //  allocate storage for and copy a string, specified in printf style
@@ -73,10 +88,11 @@ void sloadw(char ** const restrict dst, size_t * const restrict dstl, const char
 // PARAMETERS
 //  dst  - (returns) string
 //  dstl - (returns) string length
+//  fmt  - format stringn
+//  va   - va_list
 //
-void svloadf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict fmt, va_list va)
+void mm_svloadf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
-
 
 #undef restrict
 #endif

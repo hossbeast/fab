@@ -35,7 +35,12 @@ __thread struct memblk mm_mb;
 // static
 //
 
-static void allocate(size_t sz)
+/// assure
+//
+// SUMMARY
+//  ensures that the top block has enough space to satisfy an allocation of the specified size
+//
+static void assure(size_t sz)
 {
   int __attribute__((unused)) _r;
 
@@ -44,6 +49,7 @@ static void allocate(size_t sz)
 #define MEMBLOCK_LARGE			0x8000 /* 8k : additional blocks */
 
 	// request is too large to satisfy
+  // request cannot fit in a single block ; too large to satisfy
 	if(sz > MEMBLOCK_LARGE)
 		goto failed;
 
@@ -57,23 +63,30 @@ static void allocate(size_t sz)
 		{
 			size_t ns = mb->blocksa ?: 3;
 			ns = ns * 2 + ns / 2;
-			if((mb->blocks = calloc(sizeof(*mb->blocks) * ns, 1)) == 0)
+      if((mb->blocks = realloc(mb->blocks, sizeof(*mb->blocks) * ns)) == 0)
 				goto failed;
 			mb->blocksa = ns;
 		}
 
-		if((mb->blocksl < MEMBLOCK_THRESHOLD) && (sz <= MEMBLOCK_SMALL))
-			mb->blocks[mb->blocksl].a = MEMBLOCK_SMALL;
-		else
-			mb->blocks[mb->blocksl].a = MEMBLOCK_LARGE;
+    typeof(mb->blocks[0]) * block = &mb->blocks[mb->blocksl];
 
-		if((mb->blocks[mb->blocksl].s = calloc(sizeof(*mb->blocks[0].s) * mb->blocks[mb->blocksl].a, 1)) == 0)
-			goto failed;
+    /* reallocate the block */
+    if(block->a == 0 || (block->a == MEMBLOCK_SMALL && sz > MEMBLOCK_SMALL))
+    {
+      if((mb->blocksl < MEMBLOCK_THRESHOLD) && (sz <= MEMBLOCK_SMALL))
+        block->a = MEMBLOCK_SMALL;
+      else
+        block->a = MEMBLOCK_LARGE;
 
-		// cumulative offset
-		if(mb->blocksl)
-			mb->blocks[mb->blocksl].o = mb->blocks[mb->blocksl - 1].o + mb->blocks[mb->blocksl - 1].l;
+      if((block->s = realloc(block->s, sizeof(*block->s) * block->a)) == 0)
+        goto failed;
 
+      // cumulative offset
+      if(mb->blocksl)
+        block->o = mb->blocks[mb->blocksl - 1].o + mb->blocks[mb->blocksl - 1].l;
+    }
+
+    memset(block->s, 0, sizeof(*block->s) * block->a);
 		mb->blocksl++;
 	}
 
@@ -103,16 +116,9 @@ void mm_teardown()
   free(mb->blocks);
 }
 
-void mm_reset()
+void mm_malloc(void * restrict p, size_t sz)
 {
-	struct memblk * mb = &mm_mb;
-
-  mb->blocksl = 0;
-}
-
-void wmalloc(void * restrict p, size_t sz)
-{
-  allocate(sz);
+  assure(sz);
 
 	struct memblk * mb = &mm_mb;
 
@@ -121,36 +127,36 @@ void wmalloc(void * restrict p, size_t sz)
 	mb->blocks[mb->blocksl - 1].l += sz;
 }
 
-void wrealloc(void * restrict p, size_t es, size_t ec, size_t oec)
+void mm_realloc(void * restrict p, size_t es, size_t ec, size_t oec)
 {
 	void * old = *(void**)p;
-	wmalloc(p, es * ec);
+	mm_malloc(p, es * ec);
 	if(old)
 		memcpy(*(void**)p, old, es * oec);
 }
 
-void assure(void * restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, size_t z, size_t l)
+void mm_assure(void * restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, size_t z, size_t l)
 {
 	if(l > (*dsta))
 	{
 		size_t ns = (*dsta) ?: 10;
 		while(ns <= l)
 			ns = ns * 2 + ns / 2;
-		wrealloc(dst, z, ns, *dsta);
+		mm_realloc(dst, z, ns, *dsta);
 		(*dsta) = ns;
 	}
 }
 
-void sloadw(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict s, size_t l)
+void mm_sloadw(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict s, size_t l)
 {
-  wmalloc(dst, l + 1);
+  mm_malloc(dst, l + 1);
 
 	(*dstl) = l;
 	memcpy(*dst, s, l);
 	(*dst)[l] = 0;
 }
 
-void svloadf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict fmt, va_list va)
+void mm_svloadf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict fmt, va_list va)
 {
   // measure
   va_list va2;
@@ -159,7 +165,7 @@ void svloadf(char ** const restrict dst, size_t * const restrict dstl, const cha
   va_end(va2);
 
   // allocate
-  wmalloc(dst, l + 1);
+  mm_malloc(dst, l + 1);
 
   // copy
   (*dstl) = l;
@@ -172,5 +178,5 @@ void svloadf(char ** const restrict dst, size_t * const restrict dstl, const cha
 
 API void xapi_allocate(size_t sz)
 {
-  allocate(sz);
+  assure(sz);
 }
