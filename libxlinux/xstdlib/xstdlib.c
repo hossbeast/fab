@@ -27,14 +27,20 @@ API xapi xmalloc(void* target, size_t size)
 {
   enter;
 
+  void * mem = 0;
+
 	if(policy)
 	{
 		fatal(policy->malloc, policy, target, size);
 	}
-	else if(((*(void**)target) = calloc(size, 1)) == 0)
+  else if((mem = calloc(size, 1)) == 0)
 	{
 		fail(errno);
 	}
+	else
+  {
+    *(void**)target = mem;
+  }
 	
 finally :
 	XAPI_INFOF("size", "%zu", size);
@@ -52,7 +58,10 @@ API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
 	else
 	{
 		void** t = ((void**)target);
-		*t = realloc(*t, es * ec);
+    void * mem = 0;
+    if((mem = realloc(*t, es * ec)) == 0)
+      fail(errno);
+    *t = mem;
 
 		if(es * ec)
 		{
