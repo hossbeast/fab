@@ -18,6 +18,8 @@
 #include "internal.h"
 #include "logs.internal.h"
 
+#include "category/category.h"
+
 logger_category * logs = (logger_category []) {
     { name : "LOGGER", description : "logger configuration changes" }
 };

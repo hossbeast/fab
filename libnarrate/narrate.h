@@ -35,12 +35,12 @@
 
 //  narrate to a fixed size buffer discarding overflow
 #define narrationw(buf, siz) narrator * _narrator = ({   \
-  if(siz > 0) { buf[0] = 0; };                                  \
+  if(siz > 0) { buf[0] = 0; };                           \
   (typeof(*_narrator)[]){{ .bb = buf, .bsz = siz }};     \
 })
 
 // narrate to a file descriptor
-#define narrationd(fd) narrator * _narrator = (typeof(*_narrator)[]){{ .fd = fd }}
+#define narrationd(fdd) narrator * _narrator = (typeof(*_narrator)[]){{ .fd = fdd }}
 
 //
 // write to the active narration

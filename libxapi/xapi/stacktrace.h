@@ -94,7 +94,7 @@ when calling non-xapi code, you have a couple of options.
   int __xapi_f1 = 0;                                    \
   int __xapi_topframe = !xapi_sentinel;                 \
   xapi_sentinel = 1;                                    \
-  xapi_frame_index __xapi_frame_index[2] = { -1, -1 };  \
+  xapi_frame_index __attribute__((unused)) __xapi_frame_index[2] = { -1, -1 };  \
   __xapi_frame_index[0] = xapi_top_frame_index;         \
   xapi_record_frame(xapi_calling_frame_address);        \
   if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
@@ -112,7 +112,7 @@ when calling non-xapi code, you have a couple of options.
   int __xapi_f1 = 0;                                  \
   int __xapi_topframe = !xapi_sentinel;               \
   xapi_sentinel = 1;                                  \
-  xapi_frame_index __xapi_frame_index[2] = { -1, -1 };\
+  xapi_frame_index __attribute__((unused)) __xapi_frame_index[2] = { -1, -1 };\
   __xapi_frame_index[0] = xapi_top_frame_index
 #endif
 

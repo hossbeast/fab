@@ -192,4 +192,15 @@ XAPI_LEAVE:             \
 //
 #define XAPI_ERRCODE (XAPI_ERRVAL & 0xFFFF)
 
+/// XAPI_THROWING
+//
+// SUMMARY
+//  true while unwinding due to throwing the specified error
+//
+// PARAMETERS
+//  errtab  - pointer to error table
+//  errcode - error code
+//
+#define XAPI_THROWING(c) (XAPI_UNWINDING && XAPI_ERRCODE == ((c) & 0xFFFF))
+
 #endif

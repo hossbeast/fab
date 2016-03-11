@@ -21,10 +21,81 @@
 #include <inttypes.h>
 
 #include "xapi.h"
-
 #include "stream.h"
 
+struct pstring;
+struct list;
+struct narrator;
+
+/// stream
+//
+// SUMMARY
+//  represents an outlet to which log messages are emitted
+//
+typedef struct stream
+{
+  // unique identifier
+  int id;
+
+  // unique identifier for the stream
+  char * name;
+  size_t namel;
+
+  // attributes for logs emitted to the stream, at higher precedence than both
+  // category definitions and attributes at the log site
+  uint32_t attr;
+
+  // the filters determine which log messages are emitted to the stream
+  struct list * filters;
+
+  // emitted log messages are written to the narrator
+  struct narrator * narrator;
+
+  struct pstring * buffer;
+} stream;
+
+/// g_streams
+//
+// SUMMARY
+//  
+//
+extern struct list * g_streams;
+
 #define restrict __restrict
+
+xapi stream_setup();
+void stream_teardown();
+
+int stream_would(const stream * const restrict streamp, const uint64_t ids)
+  __attribute__((nonnull));
+
+int streams_would(const uint64_t ids);
+
+/// streams_write
+//
+// SUMAMRY
+//
+//
+// PARAMETERS
+//  ids       - 
+//  attrs     - 
+//  message   - 
+//  time_msec - 
+//
+xapi streams_write(const uint64_t ids, const uint32_t attrs, const struct pstring * restrict message, const long time_msec)
+  __attribute__((nonnull));
+
+/// stream_byid
+//
+// SUMMARY
+//  lookup an active stream by id
+//
+// PARAMETERS
+//  id       - id
+//  category - (returns) category definition
+//
+xapi stream_byid(int id, stream ** const restrict streamp)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

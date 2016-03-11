@@ -31,33 +31,45 @@
   LOGGER_STREAM_DEF(FILE          , 0x03, x , y)  /* write to a rolling logfile  */   \
 
 enum {
-#define LOGGER_STREAM_DEF(a, b, x, y) L_ ## a = UINT8_C(b),
+#define LOGGER_STREAM_DEF(a, b, x, y) LOGGER_STREAM_ ## a = UINT8_C(b),
 LOGGER_STREAM_TABLE(0, 0)
 #undef LOGGER_STREAM_DEF
 };
 
-
+/// logger_stream
+//
+// user definition
+//
 typedef struct logger_stream
 {
-  char *      id;
+  // (optional) unique name for the stream
+  char * name;              // e.g. console
+  size_t namel;
 
-  uint32_t    attr;
+  uint8_t type;             // e.g. LOGGER_STREAM_FD
 
-  uint8_t     type;
+  // options and modifiers
+  uint32_t attr;            // e.g. L_RED | L_TRACE
+
+  char * filter_expr;       // e.g. +INFO
   
   union {
-    int     fd;   // LOGGER_STREAM_FD
+    int fd;         // LOGGER_STREAM_FD
   };
+
+  // (returns) unique id
+  int id;
 } logger_stream;
 
 /// logger_stream_register
 //
 // SUMMARY
+//  provide a list of streams for writingn log messages to
 //  
 // PARAMETERS
 //  streams - sentinel-terminated list of stream definitions
 //
-xapi logger_stream_register(const logger_stream * const restrict streams)
+xapi logger_stream_register(const logger_stream * restrict streams)
   __attribute__((nonnull));
 
 #endif

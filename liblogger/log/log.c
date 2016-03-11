@@ -22,13 +22,15 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "xapi.h"
 #include "xlinux.h"
 #include "pstring.h"
 
 #include "internal.h"
-#include "log.h"
+#include "log.internal.h"
+#include "stream.internal.h"
 
 #include "macros.h"
 #include "strutil.h"
@@ -36,136 +38,41 @@
 
 #define restrict __restrict
 
-#define COLORHEX(x)	(o_colors[(x & L_COLOR_VALUE) >> 60])
-#define COLOR(x)		(char[7]){ 0x1b, 0x5b, 0x31, 0x3b, 0x33, COLORHEX(x), 0x6d }, 7
-#define NOCOLOR			(char[6]){ 0x1b, 0x5b, 0x30, 0x3b, 0x30             , 0x6d }, 6
-
 //
 // [[ static ]]
 //
 
-static uint64_t o_space_bits;	// when a log is being constructed, effective bits
-static char * 	o_space;			// storage between logvprintf/flush calls
-static int			o_space_a;		// allocation
-static int			o_space_l;		// bytes
-static int			o_space_w;		// visible characters
-
-static uint64_t	o_prefix_bits = ~0ULL;	// prefix decision bits
-
-#if DEBUG || DEVEL
-static uint64_t	  o_trace_bits  = 0ULL;		// trace decision bits
-static pstring *  o_trace_func; // trace storage
-static pstring *  o_trace_file;
-static int			  o_trace_line;
-#endif
-
-static unsigned char o_colors[] = {
-	/* NO COLOR */   0x00
-	/* L_RED 		*/ , 0x31
-	/* L_GREEN	*/ , 0x32
-	/* L_YELLOW */ , 0x33
-	/* L_CYAN 	*/ , 0x36
-	/* L_BLUE 	*/ , 0x34
-};
-
-/*
-** w specifies whether this segment comprises "visible chars", or not
-*/
-
-static int logwrite(const char * s, size_t l, int w)
-{
-	if((o_space_l + l) >= o_space_a)
-	{
-    fatal(xrealloc, &o_space, o_space_l + l + 1);
-		o_space_a = o_space_l + l + 1;
-	}
-
-	memcpy(o_space + o_space_l, s, l);
-	o_space_l += l;
-
-	if(w)
-		o_space_w += l;
-
-  return l;
-}
-
-static int logvprintf(const char * fmt, va_list va)
-{
-	va_list va2;
-	va_copy(va2, va);
-	
-	int w = vsnprintf(0, 0, fmt, va2);
-	va_end(va2);
-
-	if((o_space_l + w) >= o_space_a)
-	{
-		o_space = realloc(o_space, o_space_l + w + 1);
-		o_space_a = o_space_l + w + 1;
-	}
-
-	vsprintf(o_space + o_space_l, fmt, va);
-
-	o_space_l += w;
-	o_space_w += w;
-
-	return w;
-}
-
-static int logprintf(const char * fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	int w = logvprintf(fmt, va);
-	va_end(va);
-
-	return w;
-}
+static __thread uint64_t  storage_ids;	    // when a log is being constructed, effective bits
+static __thread uint32_t  storage_attrs;
+static __thread pstring * storage_message;  // the log message
+static __thread long      storage_time_msec;
 
 /// start
 //
 // SUMMARY
-//  store the log prefix if log_would
+//  store the log prefix if streams_would
 //
 // PARAMETERS
-//  e - log bits
-//  w - (returns) whether log_would
+//  ids   - log bits
+//  attrs - 
+//  w     - (returns) whether streams_would
 //
-static xapi start(const uint64_t e, int * const restrict w)
+static xapi start(const uint64_t ids, uint32_t attrs, int * const restrict w)
 {
   enter;
 
-  (*w) = 0;
-	if(log_would(e))
+	if(streams_would(ids))
 	{
-		o_space_bits = e;
-		o_space_w = 0;
-		o_space_l = 0;
-#if DEBUG || DEVEL
-    fatal(psclear, &o_trace_func);
-    fatal(psclear, &o_trace_file);
-#endif
-
-		// colorization
-		if((e & L_COLOR_VALUE) && COLORHEX(e))
-		{
-      sayw(COLOR(e), 0);     
-		}
-
-		if(o_space_bits & o_prefix_bits)
-		{
-			// prefix
-			int x;
-			for(x = 0; x < g_logs_l; x++)
-			{
-				if((e & g_logs[x].v) == g_logs[x].v)
-				{
-          sayf("%*s : ", o_name_len, g_logs[x].s);
-					break;
-				}
-			}
-		}
-
     (*w) = 1;
+
+    storage_ids = ids;
+    storage_attrs = attrs;
+    fatal(psclear, &storage_message);
+
+    // wall-clock milliseconds
+    struct timespec times;
+    clock_gettime(CLOCK_REALTIME, &times);
+    storage_time_msec = (times.tv_sec * 1000) * (times.tv_nsec / 1000);
 	}
 
   finally : coda;
@@ -175,182 +82,126 @@ static xapi finish()
 {
   enter;
 
-#if DEBUG || DEVEL
-	// location trace for errors
-	if(o_space_bits & o_trace_bits)
-		logprintf(" in %s at %s:%d", o_trace_func->s, o_trace_file->s, o_trace_line);
-#endif
-
-	if((o_space_bits & L_COLOR_VALUE) && COLORHEX(o_space_bits))
-	{
-    sayw(COLOR(e), 0);
-	}
-
-  says("\n");
-
-	// flush to stdout
-	int __attribute__((unused)) r = write(2, o_space, o_space_l);
-
-	o_space_bits = 0;
+  // write to active streams
+  fatal(streams_write, storage_ids, storage_attrs, storage_message, storage_time_msec);
+	storage_ids = 0;
 
   finally : coda;
 }
-
-#if DEBUG || DEVEL
-static xapi trace_store(const char * const func, const char * file, int line)
-{
-  enter;
-
-	char * slash = 0;
-	if((slash = strrchr(file, '/')))
-		file = slash + 1;
-  fatal(psloads, &o_trace_func, func);
-  fatal(psloads, &o_trace_file, file);
-
-	o_trace_line = line;
-
-  finally : coda;
-}
-#endif
 
 //
 // api
 //
 
-xapi logger_vlogf(const uint64_t e, const char * const fmt, va_list va)
+API xapi logger_vlogf(const uint64_t ids, uint32_t attrs, const char * const fmt, va_list va)
 {
   enter;
 
-	if(o_space_bits)
+	if(storage_ids)
 	{
-		if(log_would(o_space_bits))
-			logvprintf(fmt, va);
+		if(streams_would(storage_ids))
+      fatal(psvcatf, &storage_message, fmt, va);
 	}
-	else if(start(e))
-	{
-		// the message
-		logvprintf(fmt, va);
+  else
+  {
+    int w = 0;
+    fatal(start, ids, attrs, &w);
 
-#if DEBUG || DEVEL
-		// store trace info
-		trace_store(func, file, line);
-#endif
-
-		fatal(finish);
-	}
+    if(w)
+    {
+      fatal(psvcatf, &storage_message, fmt, va);
+      fatal(finish);
+    }
+  }
 
   finally : coda;
 }
 
-xapi logger_logf(const uint64_t e, const char * const fmt, ...)
+API xapi logger_logf(const uint64_t ids, uint32_t attrs, const char * const fmt, ...)
 {
+  enter;
+
 	va_list va;
 	va_start(va, fmt);
-	log_vlogf(e, fmt, va);
+	fatal(logger_vlogf, ids, attrs, fmt, va);
+
+finally:
 	va_end(va);
+coda;
 }
 
-xapi logger_logs(const uint64_t e, const char * const s)
-{
-	log_logw(e, s, strlen(s));
-}
-
-xapi logger_logw(const uint64_t e, const char * const src, size_t len)
+API xapi logger_logs(const uint64_t ids, uint32_t attrs, const char * const s)
 {
   enter;
 
-	if(o_space_bits)
+	fatal(logger_logw, ids, attrs, s, strlen(s));
+
+  finally : coda;
+}
+
+API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src, size_t len)
+{
+  enter;
+
+	if(storage_ids)
 	{
-		if(log_would(o_space_bits))
-			logwrite(src, len, 1);
+		if(streams_would(storage_ids))
+      fatal(pscatw, &storage_message, src, len);
 	}
-	else if(start(e))
+	else
 	{
-		// the message
-		logwrite(src, len, 1);
+    int w = 0;
+    fatal(start, ids, attrs, &w);
 
-#if DEBUG || DEVEL
-		// store trace info
-		fatal(trace_store, func, file, line);
-#endif
-
-		fatal(finish);
+    if(w)
+    {
+      fatal(pscatw, &storage_message, src, len);
+      fatal(finish);
+    }
 	}
 
   finally : coda;
 }
 
-xapi logger_log_start(const uint64_t e)
+API xapi logger_log_start(const uint64_t ids, uint32_t attrs)
 {
   enter;
 
   int w;
-  fatal(start, e, &w);
-
-#if DEBUG || DEVEL
-  if(w)
-	{
-		// store trace
-		fatal(trace_store, func, file, line);
-	}
-#endif
+  fatal(start, ids, attrs, &w);
 
   finally : coda;
 }
 
-xapi logger_log_finish()
+API xapi logger_log_finish()
 {
   enter;
 
-	if(log_would(o_space_bits))
+	if(streams_would(storage_ids))
 		fatal(finish);
 
-	o_space_bits = 0;
+	storage_ids = 0;
 
   finally : coda;
 }
 
-int logger_log_would(const uint64_t e)
+API int logger_log_would(const uint64_t ids)
 {
-	int r = 0;
-	if((e & L_TAG) == 0)
-	{
-		r = 1;
-	}
-	else
-	{
-		int x;
-		for(x = 0; x < o_filter_l; x++)
-		{
-			uint64_t rr = 0;
-			if(o_filter[x].m == '(')
-				rr = e & o_filter[x].v & L_TAG;
-			if(o_filter[x].m == '{')
-				rr = ((e & o_filter[x].v & L_TAG) == (e & L_TAG));
-			if(o_filter[x].m == '[')
-				rr = ((e & o_filter[x].v & L_TAG) == (o_filter[x].v & L_TAG));
-			if(o_filter[x].m == '<')
-				rr = ((e & L_TAG) == (o_filter[x].v & L_TAG));
-
-			if(rr)
-			{
-				if(o_filter[x].o == '+')
-					r = 1;
-				if(o_filter[x].o == '-')
-					r = 0;
-			}
-		}
-	}
-
-	return r;
+  return streams_would(ids);
 }
 
-int logger_log_bytes()
+API int logger_log_bytes()
 {
-	return o_space_l;
+  if(storage_message)
+    return storage_message->l;
+
+  return 0;
 }
 
-int logger_log_chars()
+API int logger_log_chars()
 {
-	return o_space_w;
+  if(storage_message)
+    return storage_message->l;
+
+  return 0;
 }

@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
 #include <inttypes.h>
 
 #include "xapi.h"
@@ -317,7 +318,7 @@ finally:
 coda;
 }
 
-xapi logger_category_activate()
+API xapi logger_category_activate()
 {
   enter;
 
@@ -452,21 +453,30 @@ finally:
 coda;
 }
 
-xapi category_byname(const char * const restrict name, size_t namel, logger_category ** const restrict category)
+API xapi category_byname(const char * const restrict name, size_t namel, logger_category ** const restrict category)
 {
   enter;
 
   namel = namel ?: strlen(name);
-  (*category) = map_get(activated_byname, name, namel);
+
+  logger_category ** categoryp = 0;
+  if((categoryp = map_get(activated_byid, name, namel)))
+    *category = *categoryp;
+  else
+    *category = 0;
 
   finally : coda;
 }
 
-xapi category_byid(uint64_t id, logger_category ** const restrict category)
+API xapi category_byid(uint64_t id, logger_category ** const restrict category)
 {
   enter;
 
-  (*category) = map_get(activated_byid, MM(id));
+  logger_category ** categoryp = 0;
+  if((categoryp = map_get(activated_byid, MM(id))))
+    *category = *categoryp;
+  else
+    *category = 0;
 
   finally : coda;
 }

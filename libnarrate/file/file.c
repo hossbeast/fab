@@ -43,7 +43,32 @@ xapi file_mark(narrator * const restrict n, size_t * const restrict mark)
 {
   enter;
 
-  
+  // (*mark) = lseek(n->fd, 0, SEEK_SET) 
 
   finally : coda;
+}
+
+//
+// api
+//
+
+API xapi narrator_file_create(int fd, narrator ** const restrict n)
+{
+  enter;
+
+  fatal(xmalloc, n, sizeof(**n));
+  (*n)->fd = fd;
+
+  finally : coda;
+}
+
+API void narrator_file_free(narrator * n)
+{
+  free(n);
+}
+
+API void narrator_file_xfree(narrator ** const restrict n)
+{
+  narrator_file_free(*n);
+  *n = 0;
 }

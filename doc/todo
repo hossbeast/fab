@@ -27,4 +27,7 @@
  makescripts.sh should not use ./fab/fab.devel, because then you cant make changes that break the current version
   it should build with either 1) system fab, or 2) a configurable directory
 
+ you should be able to specify a PRIMARY node in your selections, and have it expand to all of the SECONDARY children of that node
+  e.x. fab foo.c -> fab foo.{devel,debug,final}.o
+
 ** profiling

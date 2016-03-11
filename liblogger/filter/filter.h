@@ -1,4 +1,3 @@
-
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -19,47 +18,58 @@
 #ifndef _LOGGER_FILTER_H
 #define _LOGGER_FILTER_H
 
-/// logger_filter_apply
+/// logger_filter_push
 //
 // SUMMARY
-//  parse the logexpr to a filter and add it to the end of the list, or append
-//  it, making it the last filter
+//  append a filter to the filters for the specified stream
 //
 // PARAMETERS
+//  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
 //  expr       - logexpr
 //  [expr_len] - length of expr, or 0 for strlen
 //
-xapi logger_filter_push(const char * const restrict expr, size_t exprl)
+xapi logger_filter_push(const int stream_id, const char * const restrict expr, size_t exprl)
 	__attribute__((nonnull));
 
 /// logger_filter_unshift
 //
 // SUMMARY
-//  see logger_filter_push, except the new filter is added at the front, or
-//  prepended, making it the first filter
+//  prepend a filter to the filters for the specified stream
 //
-xapi logger_filter_unshift(const char * const restrict expr, size_t exprl)
+// PARAMETERS
+//  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
+//
+xapi logger_filter_unshift(const int stream_id, const char * const restrict expr, size_t exprl)
 	__attribute__((nonnull));
 
 /// logger_filter_pop
 //
 // SUMMARY
-//  remove the last filter
+//  remove the last filter from the filters for the specified stream
 //
-xapi logger_filter_pop();
+// PARAMETERS
+//  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
+//
+xapi logger_filter_pop(const int stream_id);
 
 /// logger_filter_clear
 //
 // SUMMARY
-//  remove the first filter
+//  remove the first filter from the filters for the specified stream
 //
-xapi logger_filter_shift();
+// PARAMETERS
+//  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
+//
+xapi logger_filter_shift(const int stream_id);
 
 /// logger_filter_clear
 //
 // SUMMARY
-//  remove all filters
+//  remove all filters from the specified stream
 //
-xapi logger_filter_clear();
+// PARAMETERS
+//  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
+//
+xapi logger_filter_clear(const int stream_id);
 
 #endif

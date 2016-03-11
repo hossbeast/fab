@@ -64,10 +64,5 @@ void xapi_calltree_unfreeze();
 struct calltree * xapi_calltree_thaw(char * const restrict mb)
 	__attribute__((nonnull));
 
-
-xapi_code xapi_calltree_errcode();
-xapi xapi_calltree_errval();
-const etable * xapi_calltree_errtab();
-
 #undef restrict
 #endif

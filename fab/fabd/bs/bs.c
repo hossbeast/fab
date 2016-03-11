@@ -63,7 +63,7 @@ int buildscript_mk(
 	int k;
 
 	char ** keys	= 0;
-	size_t keysl			= 0;
+	size_t keysl	= 0;
 	map * lmap		= 0;
 	pstring * ps	= 0;
 

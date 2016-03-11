@@ -46,14 +46,14 @@ finally:
 coda;
 }
 
-xapi narrate_sayc(narrator * const restrict n, int c)
+API xapi narrate_sayc(narrator * const restrict n, int c)
 {
 	xproxy(narrate_sayw, n, (char*)&c, 1);
 }
 
 // route to appropriate implementation
 
-xapi narrate_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+API xapi narrate_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
 {
   enter;
 

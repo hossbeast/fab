@@ -17,3 +17,4 @@
 
 1		TOOMANY		number of unique categories exceeds the limit
 2   ILLORDER  incompatible ordering of category definitions
+3   BADFILTER invalid filter expression

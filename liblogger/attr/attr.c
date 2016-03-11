@@ -31,10 +31,10 @@ uint32_t attr_combine(uint32_t A, uint32_t B)
     A |= (B & COLOR_OPT);
   }
 
-  if(B & PREFIX_OPT)
+  if(B & CATEGORY_OPT)
   {
-    A &= ~PREFIX_OPT;
-    A |= (B & PREFIX_OPT);
+    A &= ~CATEGORY_OPT;
+    A |= (B & CATEGORY_OPT);
   }
 
   if(B & TRACE_OPT)
@@ -56,22 +56,52 @@ xapi attr_say(uint32_t attr, narrator * const restrict _narrator)
 {
   enter;
 
-/*
-  size_t mark;
-  fatal(narrator_mark, _narrator, &mark);
-*/
+  int wrote = 0;
 
   if(attr & COLOR_OPT)
-    says(COLOR_VALUE(attr));
+  {
+    if(wrote)
+      sayc(',');
+    wrote = 1;
 
-  if(attr & PREFIX_OPT)
-    says(PREFIX_VALUE(attr));
+    says(COLOR_VALUE(attr));
+  }
+
+  if(attr & CATEGORY_OPT)
+  {
+    if(wrote)
+      sayc(',');
+    wrote = 1;
+
+    says(CATEGORY_VALUE(attr));
+  }
 
   if(attr & TRACE_OPT)
+  {
+    if(wrote)
+      sayc(',');
+    wrote = 1;
+
     says(TRACE_VALUE(attr));
+  }
 
   if(attr & DISCOVERY_OPT)
+  {
+    if(wrote)
+      sayc(',');
+    wrote = 1;
+
     says(DISCOVERY_VALUE(attr));
+  }
+
+  if(attr & TIMESTAMP_OPT)
+  {
+    if(wrote)
+      sayc(',');
+    wrote = 1;
+
+    says(TIMESTAMP_VALUE(attr));
+  }
 
   finally : coda;
 }

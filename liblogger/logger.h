@@ -41,19 +41,30 @@ extern int			g_logvsl;				// length of g_logvs
 /*
  * options and modifiers that can be applied to a log message
  */
-#define LOGGER_ATTR_TABLE(x, y)                                                             \
-  LOGGER_ATTR_DEF(NOCOLOR       , 0x00000001 , x , y)  /* (default) not colorized */        \
-  LOGGER_ATTR_DEF(RED           , 0x00000002 , x , y)  /* terminal colorization : red */    \
-  LOGGER_ATTR_DEF(GREEN         , 0x00000003 , x , y)  /* terminal colorization : green */  \
-  LOGGER_ATTR_DEF(YELLOW        , 0x00000004 , x , y)  /* terminal colorization : yellow */ \
-  LOGGER_ATTR_DEF(CYAN          , 0x00000005 , x , y)  /* terminal colorization : cyan */   \
-  LOGGER_ATTR_DEF(BLUE          , 0x00000006 , x , y)  /* terminal colorization : blue */   \
-  LOGGER_ATTR_DEF(PREFIX        , 0x00000040 , x , y)  /* (default) includes the prefix */  \
-  LOGGER_ATTR_DEF(PREFIX_OFF    , 0x00000080 , x , y)                                       \
-  LOGGER_ATTR_DEF(TRACE_OFF     , 0x00000010 , x , y)  /* (default) */                      \
-  LOGGER_ATTR_DEF(TRACE         , 0x00000020 , x , y)  /* includes trace info */            \
-  LOGGER_ATTR_DEF(DISCOVERY_OFF , 0x00000100 , x , y)  /* (default) */                      \
-  LOGGER_ATTR_DEF(DISCOVERY     , 0x00000200 , x , y)  /* includes discovery info */
+#define LOGGER_ATTR_TABLE(x, y)                                                                 \
+  LOGGER_ATTR_DEF(NOCOLOR       , 0x00000001 , x , y)  /* (default) not colorized */            \
+  LOGGER_ATTR_DEF(RED           , 0x00000002 , x , y)  /* terminal colorization : red */        \
+  LOGGER_ATTR_DEF(GREEN         , 0x00000003 , x , y)  /* terminal colorization : green */      \
+  LOGGER_ATTR_DEF(YELLOW        , 0x00000004 , x , y)  /* terminal colorization : yellow */     \
+  LOGGER_ATTR_DEF(CYAN          , 0x00000005 , x , y)  /* terminal colorization : cyan */       \
+  LOGGER_ATTR_DEF(BLUE          , 0x00000006 , x , y)  /* terminal colorization : blue */       \
+  LOGGER_ATTR_DEF(CATEGORY      , 0x00000010 , x , y)  /* (default) include the category name*/ \
+  LOGGER_ATTR_DEF(CATEGORY_OFF  , 0x00000020 , x , y)                                           \
+  LOGGER_ATTR_DEF(TRACE_OFF     , 0x00000040 , x , y)  /* (default) */                          \
+  LOGGER_ATTR_DEF(TRACE         , 0x00000080 , x , y)  /* include trace info */                 \
+  LOGGER_ATTR_DEF(DISCOVERY_OFF , 0x00000100 , x , y)  /* (default) */                          \
+  LOGGER_ATTR_DEF(DISCOVERY     , 0x00000200 , x , y)  /* include discovery info */             \
+  LOGGER_ATTR_DEF(TIMESTAMP_OFF , 0x00000400 , x , y)  /* (default) */                          \
+  LOGGER_ATTR_DEF(TIMESTAMP     , 0x00000800 , x , y)  /* include timestamp */
+
+// prefix includes the category name and thread id
+// timestamp is an additional part of the prefix
+//   e.x.
+// 12-25-2016 12:12:12 77345467 INFO 
+// ^-----------------^
+//   \- the timestamp
+// ^-------------------------------^
+//    \- the prefix
 
 enum {
 #define LOGGER_ATTR_DEF(a, b, x, y) L_ ## a = UINT32_C(b),
@@ -70,17 +81,19 @@ LOGGER_ATTR_TABLE(0, 0)
 /// logger_setup
 //
 // SUMMARY
-//  parse cmdline args, populate g_argv and related variables, call logger_register_resolve
+//  must be the first liblogger invocation, and invoked exactly once
 //
-// REMARKS
-//  should be called after logger_register
+xapi logger_setup();
+
+/// logger_initialize
+//
+// SUMMARY
+//  parse cmdline args, populate g_argv and related variables, calls logger_category_activate
 //
 // PARAMETERS
-//  argc - first argument to main
-//  argv - second argument to main
-//  envp - third argument to main
+//  [envp] - third argument to main
 //
-xapi logger_setup(int argc, const char ** argv, const char ** restrict envp);
+xapi logger_initialize(char ** restrict envp);
 
 /// logger_teardown
 //

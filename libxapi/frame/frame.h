@@ -147,5 +147,9 @@ void xapi_frame_set_messagef(
 void xapi_frame_infow(const char * const restrict k, int kl, const char * const restrict vstr, int vlen);
 void xapi_frame_infof(const char * const restrict k, int kl, const char * const restrict vfmt, ...);
 
+xapi_code xapi_calltree_errcode();
+xapi xapi_calltree_errval();
+const etable * xapi_calltree_errtab();
+
 #undef restrict
 #endif

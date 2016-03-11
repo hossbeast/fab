@@ -18,8 +18,8 @@
 #ifndef _LOGGER_LOGS_INTERNAL_H
 #define _LOGGER_LOGS_INTERNAL_H
 
-extern logger_category * logs;
+extern struct logger_category * logs;
 
-#define L_LOGGER logs[0].bits
+#define L_LOGGER logs[0].id
 
 #endif

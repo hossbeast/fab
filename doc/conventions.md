@@ -62,7 +62,7 @@ xapi foo_alloc(foo **)        # allocates foo
 xapi foo_create(foo **)       # synonym
 xapi foo_mk(foo * e, foo **)  # like _alloc, reuse an existing instance
 void foo_free(foo *)          # release resources
-void foo_xfree(foo **)        # idempotent free
+void foo_xfree(foo ** const restrict)        # idempotent free
 void foo_reset(foo *)         # set lengths to zero, preserve allocations
 void foo_clear(foo *)         # synonym
 ```

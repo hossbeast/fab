@@ -44,8 +44,8 @@ narrator * _narrator;
 // SUMMARY
 //  get a mark indicating position in the output
 //
-// RETURNS
-//  nonnegative position, if the narration supports marks, -1 otherwise
+// PARAMETERS
+//  mark - (returns) nonnegative position, if the narration supports marks, -1 otherwise
 //
 xapi narrate_mark(narrator * const restrict n, size_t * const restrict mark)
   __attribute__((nonnull));

@@ -18,4 +18,14 @@
 #ifndef _NARRATE_FILE_H
 #define _NARRATE_FILE_H
 
+#define restrict __restrict
+
+xapi narrator_file_create(int fd, narrator ** const restrict n)
+  __attribute__((nonnull));
+
+void narrator_file_free(narrator * n);
+void narrator_file_xfree(narrator ** const restrict n)
+  __attribute__((nonnull));
+
+#undef restrict
 #endif

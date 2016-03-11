@@ -23,8 +23,11 @@
 
 #include "filter.h"
 
-struct filter;
 struct narrator;
+struct list;
+
+typedef struct filter filter;
+struct filter;
 
 /// filter_setup
 //
@@ -40,12 +43,62 @@ xapi filter_setup();
 //
 void filter_teardown();
 
+/// filter_free
+//
+// SUMMARY
+//  free a filter with free semantics
+//
+void filter_free(filter * filterp);
+
+/// filter_xfree
+//
+// SUMMARY
+//  free a filter with xfree semantics
+//
+void filter_xfree(filter ** const restrict filterp)
+  __attribute__((nonnull));
+
 /// filter_say
 //
 // SUMMARY
 //  
 //
-xapi filter_say(struct filter * filterp, struct narrator * _narrator)
+xapi filter_say(filter * filterp, struct narrator * _narrator)
+  __attribute__((nonnull));
+
+/// filter_parse
+//
+// SUMMARY
+//  parse a filter expression
+//
+// PARAMETERS
+//  expr  - filter expression
+//  exprl - length of exor ; 0 for strlen
+//  res   - (returns) the filter
+//
+xapi filter_parse(const char * const restrict expr, size_t exprl, filter ** const restrict res)
+  __attribute__((nonnull));
+
+/// filter_push
+//
+// SUMMARY
+//
+xapi filter_push(const int stream_id, filter * const restrict filterp)
+  __attribute__((nonnull));
+
+/// filter_unshift
+//
+// SUMMARY
+//
+xapi filter_unshift(const int stream_id, filter * const restrict filterp)
+  __attribute__((nonnull));
+
+/// filter_would
+//
+// SUMMARY
+//  returns a boolean value indicating whether a log is passed by the filter
+//
+int filters_would(const struct list * const restrict filters, const uint64_t ids)
   __attribute__((nonnull));
 
 #endif
