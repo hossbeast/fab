@@ -31,7 +31,11 @@ struct calltree;
 // SUMMARY
 //  call xapi_trace_pithy and write the output to stderr
 //
+// PARAMETERS
+//  [to] - file descriptor to write to
+//
 void xapi_pithytrace();
+void xapi_pithytrace_to(int fd);
 
 /// xapi_fulltrace
 /// xapi_backtrace
@@ -39,8 +43,13 @@ void xapi_pithytrace();
 // SUMMARY
 //  call xapi_trace_full and write the output to stderr
 //
+// PARAMETERS
+//  [to] - file descriptor to write to
+//
 void xapi_fulltrace();
+void xapi_fulltrace_to(int fd);
 void xapi_backtrace();
+void xapi_backtrace_to(int fd);
 
 /// xapi_trace_pithy
 //

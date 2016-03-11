@@ -366,26 +366,39 @@ API size_t xapi_trace_full(char * const dst, const size_t sz)
 	return calltree_trace_full(g_calltree, dst, sz);
 }
 
-API void xapi_pithytrace()
+API void xapi_pithytrace_to(int fd)
+{
+	char space[4096];
+	size_t z = xapi_trace_pithy(space, sizeof(space));
+	dprintf(fd, "%.*s\n", (int)z, space);
+}
+
+API void xapi_fulltrace_to(int fd)
+{
+	char space[4096];
+	size_t z = xapi_trace_full(space, sizeof(space));
+	dprintf(fd, "%.*s\n", (int)z, space);
+}
+
+API void xapi_backtrace_to(int fd)
 {
 	char space[4096];
 
-	size_t z = xapi_trace_pithy(space, sizeof(space));
-	dprintf(2, "%.*s\n", (int)z, space);
+	size_t z = xapi_trace_full(space, sizeof(space));
+	dprintf(fd, "%.*s\n", (int)z, space);
+}
+
+API void xapi_pithytrace()
+{
+  xapi_pithytrace_to(2);
 }
 
 API void xapi_fulltrace()
 {
-	char space[4096];
-
-	size_t z = xapi_trace_full(space, sizeof(space));
-	dprintf(2, "%.*s\n", (int)z, space);
+  xapi_fulltrace_to(2);
 }
 
 API void xapi_backtrace()
 {
-	char space[4096];
-
-	size_t z = xapi_trace_full(space, sizeof(space));
-	dprintf(2, "%.*s\n", (int)z, space);
+  xapi_backtrace_to(2);
 }
