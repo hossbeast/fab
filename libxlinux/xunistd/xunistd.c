@@ -71,7 +71,7 @@ API xapi axread(int fd, void * buf, size_t count)
 	}
 
 finally:
-	if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
+	if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
 	{
 		XAPI_INFOF("expected", "%zu", count);
 		XAPI_INFOF("actual", "%zd", actual);
@@ -110,7 +110,7 @@ API xapi axwrite(int fd, const void * buf, size_t count)
 	}
 
 finally:
-	if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
+	if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
 	{
 		XAPI_INFOF("expected", "%zu", count);
 		XAPI_INFOF("actual", "%zd", actual);

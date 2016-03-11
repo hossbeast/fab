@@ -29,7 +29,8 @@ API xapi xvdprintf(int fd, const char * const restrict fmt, va_list va)
 {
   enter;
 
-	fatalize(errno, vdprintf, fd, fmt, va);
+  if(vdprintf(fd, fmt, va) < 0)
+    fail(errno);
 
 finally:
 	XAPI_INFOF("fd", "%d", fd);

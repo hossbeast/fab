@@ -26,15 +26,11 @@
 //
 // reallocates *s1, appends s2 onto *s1
 //
-// returns nonzero on malloc failure
-//
 xapi ixstrncat(char** s1, const char* s2, int s2len);
 
 /// xstrcat
 //
 // reallocates *s1, appends s2 onto *s1
-//
-// returns nonzero on malloc failure
 //
 xapi ixstrcat(char** s1, const char* s2);
 
@@ -42,23 +38,17 @@ xapi ixstrcat(char** s1, const char* s2);
 //
 // calculates size required to vprintf, reallocates *s and appends the new string onto *s
 //
-// returns nonzero on malloc failure
-//
 xapi ixstrcatf(char** s, char* fmt, ...);
 
 /// xstrdup
 //
 // copies s2 to *s1, reallocating *s1 if necessary, deallocating it if it was already allocated
 //
-// returns nonzero on malloc failure
-//
 xapi ixstrdup(char** s1, const char* s2);
 
 /// xstrndup
 //
 // copies s2 to *s1, reallocating *s1 if necessary, deallocating it if it was already allocated
-//
-// returns nonzero on malloc failure
 //
 xapi ixstrndup(char** s1, const char* s2, const size_t l);
 

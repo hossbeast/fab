@@ -24,7 +24,11 @@
 
 API xapi xreadv(int fd, const struct iovec * iov, int iovcnt)
 {
-	xproxy(readv, fd, iov, iovcnt);
+  enter;
+
+	fatalize(errno, readv, fd, iov, iovcnt);
+
+  finally : coda;
 }
 
 API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
@@ -44,7 +48,7 @@ API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
 		tfail(perrtab_XLINUX, XLINUX_LESS);
 
 finally:
-	if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
+	if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
 	{
 		XAPI_INFOF("expected", "%zd", expected);
 		XAPI_INFOF("actual", "%zd", actual);
@@ -54,7 +58,11 @@ coda;
 
 API xapi xwritev(int fd, const struct iovec * iov, int iovcnt)
 {
-	xproxy(writev, fd, iov, iovcnt);
+  enter;
+
+	fatalize(errno, writev, fd, iov, iovcnt);
+
+  finally :  coda;
 }
 
 API xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
