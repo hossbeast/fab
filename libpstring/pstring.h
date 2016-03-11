@@ -70,15 +70,15 @@ xapi psclear(pstring ** restrict p)
 //
 void psfree(pstring *);
 
-/// pswfree
+/// psxfree
 //
 // SUMMARY
-//  free a pstring with wfree semantics
+//  free a pstring with xfree semantics
 //
 // PARAMETERS
 //  p - pstring
 //
-void pswfree(pstring **)
+void psxfree(pstring **)
 	__attribute__((nonnull));
 
 /// psload
@@ -108,10 +108,10 @@ xapi psvloadf(pstring ** restrict p, const char * const restrict fmt, va_list va
 xapi psloadf(pstring ** restrict p, const char * const restrict fmt, ...)
 	__attribute__((nonnull(1, 2)));
 
-xapi psloads(pstring ** restrict p, char * const restrict s)
+xapi psloads(pstring ** restrict p, const char * const restrict s)
 	__attribute__((nonnull));
 
-xapi psloadw(pstring ** restrict p, char * const restrict s, size_t l)
+xapi psloadw(pstring ** restrict p, const char * const restrict s, size_t l)
 	__attribute__((nonnull));
 
 xapi psloadc(pstring ** restrict p, int c)
@@ -128,10 +128,10 @@ xapi psvcatf(pstring ** restrict p, const char * const restrict fmt, va_list va)
 xapi pscatf(pstring ** restrict p, const char * const restrict fmt, ...)
 	__attribute__((nonnull(1, 2)));
 
-xapi pscats(pstring ** restrict p, char * const restrict s)
+xapi pscats(pstring ** restrict p, const char * const restrict s)
 	__attribute__((nonnull));
 
-xapi pscatw(pstring ** restrict p, char * const restrict s, size_t l)
+xapi pscatw(pstring ** restrict p, const char * const restrict s, size_t l)
 	__attribute__((nonnull));
 
 xapi pscatc(pstring ** restrict p, int c)
@@ -151,10 +151,10 @@ xapi psvmkf(pstring * restrict e, pstring ** restrict p, const char * const rest
 xapi psmkf(pstring * restrict e, pstring ** restrict p, const char * const restrict fmt, ...)
 	__attribute__((nonnull(2,3)));
 
-xapi psmks(pstring * restrict e, char * const restrict s, pstring ** restrict p)
+xapi psmks(pstring * restrict e, const char * const restrict s, pstring ** restrict p)
 	__attribute__((nonnull(2,3)));
 
-xapi psmkw(pstring * restrict e, char * const restrict s, size_t l, pstring ** restrict p)
+xapi psmkw(pstring * restrict e, const char * const restrict s, size_t l, pstring ** restrict p)
 	__attribute__((nonnull(2,4)));
 
 xapi psmkc(pstring * restrict e, int c, pstring ** restrict p)
