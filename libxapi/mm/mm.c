@@ -65,6 +65,14 @@ static void assure(size_t sz)
 			ns = ns * 2 + ns / 2;
       if((mb->blocks = realloc(mb->blocks, sizeof(*mb->blocks) * ns)) == 0)
 				goto failed;
+
+      // zero out the new section
+      memset(
+          mb->blocks + mb->blocksa
+        , 0
+        , (ns - mb->blocksa) * sizeof(*mb->blocks)
+      );
+
 			mb->blocksa = ns;
 		}
 
@@ -73,13 +81,14 @@ static void assure(size_t sz)
     /* reallocate the block */
     if(block->a == 0 || (block->a == MEMBLOCK_SMALL && sz > MEMBLOCK_SMALL))
     {
+      size_t ns = MEMBLOCK_LARGE;
       if((mb->blocksl < MEMBLOCK_THRESHOLD) && (sz <= MEMBLOCK_SMALL))
         block->a = MEMBLOCK_SMALL;
-      else
-        block->a = MEMBLOCK_LARGE;
 
-      if((block->s = realloc(block->s, sizeof(*block->s) * block->a)) == 0)
+      if((block->s = realloc(block->s, sizeof(*block->s) * ns)) == 0)
         goto failed;
+
+      block->a = ns;
 
       // cumulative offset
       if(mb->blocksl)
