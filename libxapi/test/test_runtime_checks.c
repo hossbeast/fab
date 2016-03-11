@@ -88,7 +88,7 @@ int main()
 {
 #if XAPI_MODE_STACKTRACE && XAPI_RUNTIME_CHECKS
   // verify NOFATAL
-  int exit = foo_nofatal();
+  xapi exit = foo_nofatal();
   assert_exit(exit, perrtab_XAPI, XAPI_NOFATAL);
 
   // verify ILLFATAL

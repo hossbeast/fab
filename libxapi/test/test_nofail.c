@@ -55,7 +55,7 @@ int main()
   xapi_errtab_register(perrtab_TEST);
 #endif
 
-  int exit = foo();
+  xapi exit = foo();
   assert_exit(exit, 0, 0);
 
   succeed;

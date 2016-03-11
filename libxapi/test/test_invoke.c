@@ -58,7 +58,7 @@ int main()
 #endif
 
   // invoke the function, collect its exit status
-  int exit = foo();
+  xapi exit = foo();
 
   // assertions
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);

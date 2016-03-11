@@ -139,7 +139,7 @@ int main()
 #endif
 
   // alpha should propagate the error from epsilon
-  int exit = zeta();
+  xapi exit = zeta();
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // alpha dead area should have been skipped

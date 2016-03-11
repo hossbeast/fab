@@ -83,7 +83,7 @@ int main()
 #endif
 
   // alpha should fail
-  int exit = alpha();
+  xapi exit = alpha();
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // dead area should have been skipped

@@ -73,7 +73,7 @@ int main()
   xapi_errtab_register(perrtab_TEST);
 #endif
 
-  int exit = foo();
+  xapi exit = foo();
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
 #if XAPI_MODE_STACKTRACE

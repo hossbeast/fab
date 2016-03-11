@@ -63,7 +63,7 @@ int main()
   int x;
   for(x = 0; x < expected; x++)
   {
-    int exit = foo();
+    xapi exit = foo();
     assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
   }
 

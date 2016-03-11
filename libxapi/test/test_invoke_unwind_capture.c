@@ -77,7 +77,7 @@ int main()
   for(x = 0; x < 3; x++)
   {
     // alpha calls beta, unwinds, and calls delta, which fails with NOFATAL
-    int exit = alpha();
+    xapi exit = alpha();
     assert_exit(exit, perrtab_TEST, TEST_ERROR_TWO);
 
     // dead area should have been skipped
