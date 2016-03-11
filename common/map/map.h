@@ -20,59 +20,83 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+
 #include "xapi.h"
 
-#define restrict __restrict
-
-// opaque map type declaration
 struct map;
 typedef struct map map;
 
-// keys / values are dereferenced before being returned (map_get, map_keys, map_values)
-#define MAP_DEREF   1
+#ifndef MAP_VALUE_TYPE
+# define MAP_VALUE_TYPE void
+#endif
+
+#define MAP_PRIMARY     0x01    /* primary storage of the values in the map */
+#define MAP_SECONDARY   0x02    /* not the primary storage of the objects in the map */
+
+#define restrict __restrict
 
 /// map_create
 //
 // create an empty map
 //
-// parameters
-//  map					- created map goes here
+// PARAMETERS
+//  map         - (returns) newly allocated map
+//  vsz         - value size > 0
 //  destructor  - invoked with key/value just before freeing their associated memory
+//  attr        - bitwise combination of MAP_* options and modifiers
+//  [capacity]  - initial capacity, the minimum number of entries which can be set without rehashing
 //
-// returns nonzero on success
+// REMARKS
+//  either attr & MAP_PRIMARY and vsz != 0, or attr & MAP_SECONDARY and vsz == 0
 //
-xapi map_create(map** const restrict m, void (*destructor)(void*, void*))
-	__attribute__((nonnull(1)));
+xapi map_create(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr)
+  __attribute__((nonnull(1)));
+
+xapi map_createx(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr, size_t capacity)
+  __attribute__((nonnull(1)));
 
 /// map_free
 //
-// free a map with free semantics
+// SUMMARY
+//  free a map with free semantics
 //
-void map_free(map* const restrict map);
+void map_free(map * const restrict map);
 
 /// map_xfree
 //
-// free a map with xfree semantics
+// SUMMARY
+//  free a map with xfree semantics
 //
-void map_xfree(map** const restrict map)
-	__attribute__((nonnull));
+void map_xfree(map ** const restrict map)
+  __attribute__((nonnull));
+
+/// map_add
+//
+// SUMMARY
+//  set a key/value pair on a MAP_PRIMARY map
+//
+// PARAMETERS
+//  map   - map
+//  key   - pointer to key
+//  keyl  - key length
+//  rv    - (returns) pointer to value
+//
+xapi map_add(map * const restrict m, const char * const restrict key, size_t keyl, MAP_VALUE_TYPE * const * const restrict rv)
+  __attribute__((nonnull));
 
 /// map_set
 //
-// set key/value pair on the map
+// SUMMARY
+//  set a key/value pair on a MAP_SECONDARY map
 //
-// parameters
-//  map				- map instance
-//  key				- pointer to key
-//  key_len		- key length
-//  [value]		- pointer to value, or 0
-//  value_len	- value length
-//  [rv]      - internally cast to void**, returns pointer to the stored value
+// PARAMETERS
+//  map    - map
+//  key    - pointer to key
+//  keyl   - key length
+//  value  - pointer to value
 //
-// returns zero on success
-//
-xapi map_set(map* const restrict map, const void* const restrict key, size_t key_len, const void* const restrict value, size_t value_len, void * restrict rv)
-	__attribute__((nonnull(1, 2)));
+xapi map_set(map * const restrict m, const char * const restrict key, size_t keyl, MAP_VALUE_TYPE * const restrict value)
+  __attribute__((nonnull));
 
 /// map_get
 //
@@ -80,110 +104,118 @@ xapi map_set(map* const restrict map, const void* const restrict key, size_t key
 //  given a key, returns pointer to associated value, or 0 if not found
 //
 // PARAMETERS
-//  map			- map instance
-//	key			- pointer to key
-//	key_len	- length of key
-//  [opts]  - bitwise combination of MAP_*
+//  map     - map
+//  key     - pointer to key
+//  keyl - length of key
 //
 // EXAMPLE
-//	int k = 15;
-//	int* v = 0;
-//	if((v = map_get(map, MM(k))) == 0)
-//		/* key is not set */
+//  int k = 15;
+//  int* v = 0;
+//  if((v = map_get(map, MM(k))) == 0)
+//    /* key is not set */
 //
 // SUMMARY
 //  returns pointer to the stored value, or 0 if not found
 //
-void * map_getx(const map * const restrict m, const void * const restrict key, size_t keyl, uint32_t opts)
-	__attribute__((nonnull));
-
-void * map_get (const map * const restrict m, const void * const restrict key, size_t keyl)
-	__attribute__((nonnull));
+MAP_VALUE_TYPE * map_get(const map * const restrict m, const char * const restrict key, size_t keyl)
+  __attribute__((nonnull));
 
 /// map_clear
 //
 // disassociate all keys - internal structures in the map remain allocated
 //
-// returns nonzero on success
-//
-void map_clear(map* const restrict map)
-	__attribute__((nonnull));
+void map_clear(map * const restrict map)
+  __attribute__((nonnull));
 
 /// map_delete
 //
-// disassociates the specified key - if not found, does nothing
-//
-// returns 1 if the key was found, 0 otherwise
-//
-int map_delete(map* const restrict map, const void* const restrict key, size_t key_len)
-	__attribute__((nonnull));
-//
-/// map_values
-//
 // SUMMARY
-//  returns a list of values in the map
+//  remove an entry from the map, if any
 //
 // PARAMETERS
-//  m      - map instance
-//  list   - (returns) list, to be freed by the caller
-//  listl  - (returns) size of list
-//  [opts] - bitwise combination of MAP_*
+//  m    - map
+//  key  - pointer to key
+//  keyl - length of key
 //
 // RETURNS
-//  xapi semantics
+//  boolean value indicating whether an entry was found and removed
 //
-xapi map_keysx(const map * const restrict m, void * const restrict list, size_t * const restrict listl, uint32_t opts)
-	__attribute__((nonnull));
+int map_delete(map * const restrict m, const char * const restrict key, size_t keyl)
+  __attribute__((nonnull));
 
-xapi map_keys (const map * const restrict m, void * const restrict list, size_t * const restrict listl)
-	__attribute__((nonnull));
-
-/// map_values
+/// map_size
 //
 // SUMMARY
-//  returns a list of values in the map
+//  get the number of entries in the map
 //
-// PARAMETERS
-//  m      - map instance
-//  list   - (returns) list, to be freed by the caller
-//  listl  - (returns) size of list
-//  [opts] - bitwise combination of MAP_*
-//
-// RETURNS
-//  xapi semantics
-//
-xapi map_valuesx(const map * const restrict m, void * const restrict list, size_t * const restrict listl, uint32_t opts)
-	__attribute__((nonnull));
-
-xapi map_values (const map * const restrict m, void * const restrict list, size_t * const restrict listl)
-	__attribute__((nonnull));
-
-/// map_clone
-//
-// copy all keys and values from src to dst
-//
-xapi map_clone(map* const restrict dst, const map * const restrict src)
-	__attribute__((nonnull));
-
-xapi map_copyto(map* const restrict dst, const map * const restrict src)
-	__attribute__((nonnull));
-
 size_t map_size(const map * const restrict m)
   __attribute__((nonnull));
 
-size_t map_slots(const map * const restrict m)
+/// map_values
+//
+// SUMMARY
+//  returns a list of values in the map
+//
+// PARAMETERS
+//  m      - map
+//  list   - (returns) list, to be freed by the caller
+//  listl  - (returns) size of list
+//
+// RETURNS
+//  xapi semantics
+//
+xapi map_keys(const map * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
   __attribute__((nonnull));
 
-void * map_keyat(const map * const restrict m, int x)
+/// map_values
+//
+// SUMMARY
+//  returns a list of values in the map
+//
+// PARAMETERS
+//  m      - map
+//  list   - (returns) list, to be freed by the caller
+//  listl  - (returns) size of list
+//
+// RETURNS
+//  xapi semantics
+//
+xapi map_values(const map * const restrict m, MAP_VALUE_TYPE *** restrict values, size_t * const restrict valuesl)
   __attribute__((nonnull));
 
-void * map_keyatx(const map * const restrict m, int x, uint32_t o)
+/// map_table_size
+//
+// SUMMARY
+//  get the size of the map tables for use with map_keyat / map_valueat
+//
+// PARAMETERS
+//  m - map 
+//
+size_t map_table_size(const map * const restrict m)
   __attribute__((nonnull));
 
-void * map_valueat(const map * const restrict m, int x)
+/// map_keyat
+//
+// SUMMARY
+//  get the key at the specified slot, if any
+//
+// PARAMETERS
+//  m - map
+//  x - slot index
+//
+const char * map_table_key(const map * const restrict m, size_t x)
   __attribute__((nonnull));
 
-void * map_valueatx(const map * const restrict m, int x, uint32_t o)
+/// map_valueat
+//
+// SUMMARY
+//  get the value at the specified slot, if any
+//
+// PARAMETERS
+//  m - map
+//  x - slot index
+//
+MAP_VALUE_TYPE * map_table_value(const map * const restrict m, size_t x)
   __attribute__((nonnull));
 
 #undef restrict

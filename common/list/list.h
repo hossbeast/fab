@@ -23,37 +23,14 @@
 
 #include "xapi.h"
 
-#include "list.h"
-
 struct list;
 typedef struct list list;
 
 #ifndef LIST_ELEMENT_TYPE
-# define LIST_ELEMENT_TYPE void*
+# define LIST_ELEMENT_TYPE void
 #endif
 
-#define LIST_PRIMARY    0x01    /* primary storage of the objects in the list */
-#define LIST_SECONDARY  0x02    /* not the primary storage of the objects in the list */
-
 /*
-
-#2 - primary storage - the objects themselves
-
-  #define LIST_ELEMENT_TYPE foo*
-  list_create(&listp, sizeof(foo), foo_destructor, LIST_PRIMARY)
-
-  USAGE
-   foo_t * foop = 0;
-   list_push(listp, &foop);
-   foop->bar = "baz";
-
-   foo_t * foops[2];
-   list_push_range(listp, foops, 2);
-   foops[0]->bar = "baz";
-   foops[1]->bar = "qux";
-
-   foo_t * foop = list_pop(listp)
-   foop = list_get(listp, 0)
 
 #1 - secondary storage - pointers to objects stored elsewhere
 
@@ -78,59 +55,38 @@ typedef struct list list;
 //  create an empty list
 //
 // PARAMETERS
-//  list			   - created list goes here
-//  [esz]        - element size > 0
+//  list         - created list goes here
 //  [destructor] - invoked with key/value just before freeing their associated storage
 //  [attr]       - bitwise combination of LIST_* options and modifiers
+//  [capacity]   - initial capacity
 //
-// REMARKS
-//  either attr == LIST_PRIMARY and esz != 0 OR attr == LIST_SECONDARY and esz == 0
-//
-// RETURNS
-//  returns nonzero on success
-//
-xapi list_create(list ** const restrict list, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE), uint32_t attr)
-	__attribute__((nonnull(1)));
+xapi list_create(list ** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *))
+  __attribute__((nonnull(1)));
 
-/// list_grow
-//
-// SUMMARY
-// 
-// PARAMETERS
-//
-xapi list_grow(list * const restrict list, size_t len)
-  __attribute__((nonnull));
-
-/// list_ensure
-//
-// SUMMARY
-// 
-// PARAMETERS
-//
-xapi list_ensure(list * const restrict list, size_t len)
-  __attribute__((nonnull));
+xapi list_createx(list ** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
+  __attribute__((nonnull(1)));
 
 /// list_free
 //
 // SUMMARY
 //  free a list with free semantics
 //
-void list_free(list * const restrict list);
+void list_free(list * const restrict li);
 
 /// list_xfree
 //
 // SUMMARY
 //  free a list with xfree semantics
 //
-void list_xfree(list ** const restrict list)
-	__attribute__((nonnull));
+void list_xfree(list ** const restrict li)
+  __attribute__((nonnull));
 
 /// list_size
 //
 // SUMMARY
 //  get the number of elements in the list
 //
-size_t list_size(list * const restrict list)
+size_t list_size(const list * const restrict li)
   __attribute__((nonnull));
 
 /// list_get
@@ -138,7 +94,7 @@ size_t list_size(list * const restrict list)
 // SUMMARY
 //  retrieve an element from the list by index
 //
-LIST_ELEMENT_TYPE list_get(list * const restrict list, int x)
+LIST_ELEMENT_TYPE * list_get(const list * const restrict li, int x)
   __attribute__((nonnull));
 
 /// list_shift
@@ -147,11 +103,10 @@ LIST_ELEMENT_TYPE list_get(list * const restrict list, int x)
 //  remove the first element of the list
 //
 // REMARKS
-//  depending on the type, do not use list_shift with LIST_PRIMARY because the
-//  destructor will have been invoked on the item before list_shift returns
+//  the destructor is called on the element before this function returns
 //
-LIST_ELEMENT_TYPE list_shift(list * const restrict list)
-  __attribute__((nonnull));
+xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
+  __attribute__((nonnull(1)));
 
 /// list_pop
 //
@@ -159,63 +114,62 @@ LIST_ELEMENT_TYPE list_shift(list * const restrict list)
 //  remove the last element of the list
 //
 // REMARKS
-//  depending on the type, do not use list_pop with LIST_PRIMARY because the
-//  destructor will have been invoked on the item before list_pop returns
+//  the destructor is called on the element before this function returns
 //
-LIST_ELEMENT_TYPE list_pop(list * const restrict list)
-  __attribute__((nonnull));
+xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
+  __attribute__((nonnull(1)));
 
 /// list_push
 //
 // SUMMARY
-//  add an item to the end of the list
+//  add an element to the end of the list
 //
 // PARAMETERS
-//  s  - list
-//  el - pointer to element to append
+//  li - list
+//  el - pointer to element
 //
-xapi list_push(list * const restrict list, void * const restrict el)
+xapi list_push(list * const restrict li, LIST_ELEMENT_TYPE * const el)
   __attribute__((nonnull));
 
 /// list_push_range
 //
 // SUMMARY
-//  add items to the end of the list
+//  add elements to the end of the list
 //
 // PARAMETERS
 //  s   - list
 //  el  - pointer to first element to append
 //  len - number of elements
 //
-xapi list_push_range(list * const restrict list, void * const restrict el, size_t len)
+xapi list_push_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
   __attribute__((nonnull));
 
 /// list_unshift
 //
 // SUMMARY
-//  add an item to the beginning of the list
+//  add an element to the beginning of the list
 //
 // PARAMETERS
 //  s  - list
-//  el - pointer to element to append
+//  el - pointer to element
 //
-xapi list_unshift(list * const restrict list, void * const restrict el)
+xapi list_unshift(list * const restrict li, LIST_ELEMENT_TYPE * const el)
   __attribute__((nonnull));
 
 /// list_unshift_range
 //
 // SUMMARY
-//  add items to the beginning of the list
+//  add elements to the beginning of the list
 //
 // REMARKS
-//  the order of the items is not reversed
+//  the order of the elements is not reversed
 //
 // PARAMETERS
 //  s   - list
 //  el  - pointer to first element to append
 //  len - number of elements
 //
-xapi list_unshift_range(list * const restrict list, void * const restrict el, size_t len)
+xapi list_unshift_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
   __attribute__((nonnull));
 
 /// list_insert
@@ -228,7 +182,7 @@ xapi list_unshift_range(list * const restrict list, void * const restrict el, si
 //  index - 0 <= index <= list_size(s)
 //  el    - pointer to element to insert
 //
-xapi list_insert(list * const restrict list, size_t index, void * const restrict el)
+xapi list_insert(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
   __attribute__((nonnull));
 
 /// list_insert_range
@@ -242,7 +196,7 @@ xapi list_insert(list * const restrict list, size_t index, void * const restrict
 //  el    - pointer to the first element to insert
 //  len   - number of elements to insert
 //
-xapi list_insert_range(list * const restrict list, size_t index, void * const restrict el, size_t len)
+xapi list_insert_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
   __attribute__((nonnull));
 
 /// list_clear
@@ -250,7 +204,7 @@ xapi list_insert_range(list * const restrict list, size_t index, void * const re
 // SUMMARY
 //  reset the number of elements in the list - the allocation remains intact
 //
-void list_clear(list * const restrict list)
+void list_clear(list * const restrict li)
   __attribute__((nonnull));
 
 /// list_sort
@@ -258,21 +212,21 @@ void list_clear(list * const restrict list)
 // SUMMARY
 //  sort the list
 //
-void list_sort(list * const restrict list, int (*compar)(const LIST_ELEMENT_TYPE, const LIST_ELEMENT_TYPE, void *), void * arg)
+void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *, const LIST_ELEMENT_TYPE *, void *), void * arg)
   __attribute__((nonnull(1, 2)));
 
 /// list_sublist
 //
 // SUMMARY
-//  create a copy of a subset of a list
+//  create subset of a list - the two lists contain pointers to the same underlying objects
 //
 // PARAMETERS
 //  list  - list to copy from
 //  index - index at which to begin copying
 //  len   - number of elements to copy
-//  rv    - (returns) pointer to sublist 
+//  rv    - (returns) pointer to list, or reuses an existing list
 //
-xapi list_sublist(list * const restrict listp, size_t index, size_t len, list ** const restrict rv)
+xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** const restrict rv)
   __attribute__((nonnull));
 
 #undef restrict

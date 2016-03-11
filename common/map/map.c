@@ -25,72 +25,118 @@
 #include "xlinux.h"
 #include "macros.h"
 
-#define SATURATION 0.45f      /* for 1000-sized table, reallocate at 450 keys */
+/*
+ * Default capacity, the minimum number of entries which can be set without rehashing
+ */
+#define DEFAULT_CAPACITY  100
 
-#define restrict __restrict
+/*
+ * Maximum proportion of used entries to allocated table size
+ *
+ * valid values : 0 < saturation <= 1
+ *
+ * smaller values trade space for time because sparser tables mean shorter probe sequences
+ */
+#define SATURATION        0.45f      /* for 100-sized table, reallocate at 45 keys */
+
 typedef struct
 {
-  int     d;      // deleted
-
+  int     d;      // deleted (boolean)
   size_t  a;      // allocated
   size_t  l;      // length
-
   char    p[];    // payload
-} __attribute__((packed)) slot;
+} __attribute__((packed)) key;
 
 struct map
 {
-  size_t      l;        // table length, in elements (always a power of two)
-  uint32_t    lm;       // bitmask equal to table length - 1
-  slot**      tk;       // key table
-  slot**      tv;       // val table
+  size_t      size;           // number of active entries
+  uint32_t    attr;           // options and modifiers
+  size_t      vsz;            // for MAP_PRIMARY, size of values
+  void (*destructor)(const char *, MAP_VALUE_TYPE *);
 
-  size_t      kc;       // number of stored k/v pairs
-  void (*destructor)(void*, void*);
+  size_t      table_size;     // table length, in elements (always a power of two)
+  size_t      overflow_size;  // size at which to rehash
+  size_t      lm;             // bitmask equal to table_size - 1
+  key **      tk;             // key table
+  char *      tv;             // value table
 };
 
-static uint32_t hashkey(const map* const restrict m, const char* const restrict k, const size_t kl)
+#define VALUE(m, tv, x) ({                         \
+  void * val;                                      \
+  if(m->attr & MAP_PRIMARY)                        \
+  {                                                \
+    val = tv + (x * VALUE_SIZE(m));                \
+  }                                                \
+  else                                             \
+  {                                                \
+    val = *(char**)(tv + (x * VALUE_SIZE(m)));     \
+  }                                                \
+  val;                                             \
+})
+
+#define VALUE_SIZE(m) ({          \
+  size_t valz = sizeof(void*);    \
+  if((m)->attr & MAP_PRIMARY)     \
+  {                               \
+    valz = (m)->vsz;              \
+  }                               \
+  valz;                           \
+})
+
+#define restrict __restrict
+
+//
+// static
+//
+
+/// hashkey
+//
+// SUMMARY
+//  compute a hash for the key
+//
+// REMARKS
+//  the jenkins hash function : http://en.wikipedia.org/wiki/Jenkins_hash_function
+// 
+static size_t __attribute__((nonnull)) hashkey(const char * const restrict k, const size_t kl, size_t lm)
 {
-/*
- * this hashing algorithm taken from the jenkins hash function
- *   http://en.wikipedia.org/wiki/Jenkins_hash_function
- */
-
-  uint32_t jenkins(const map* const restrict m, const char* const k, const size_t kl)
+  size_t x;
+  size_t h = 0;
+  for(x = 0; x < kl; x++)
   {
-    int x;
-    uint32_t h = 0;
-    for(x = 0; x < kl; x++)
-    {
-      h += k[x];
-      h += (h << 10);
-      h ^= (h >> 6);
-    }
-    h += (h << 3);
-    h ^= (h >> 11);
-    h += (h << 15);
+    h += k[x];
+    h += (h << 10);
+    h ^= (h >> 6);
+  }
+  h += (h << 3);
+  h ^= (h >> 11);
+  h += (h << 15);
 
-    return h;
-  };
-
-  return jenkins(m, k, kl) & m->lm;
+  return h & lm;
 }
 
-/// lookup
+/// probe
 //
-// lookup the given key, returns the index found in *i
+// SUMMARY
+//  search for a key by linear probe and get its index
 //
-// returns
-//  0  : found
-//  1  : not found, and a deleted slot is in the probe sequence (i)
+// PARAMETERS
+//  m    - map
+//  key  - pointer to key
+//  keyl - size of key, nonzero
+//  i    - (returns) table index
+//
+// RETURNS
+//   0 : found
+//   1 : not found, and the first deleted slot in the probe sequence is returned in i
 //  -1 : not found
 //
-static int lookup(const map* const restrict m, const char* const restrict k, const size_t kl, uint32_t* const restrict i)
+static int __attribute__((nonnull)) probe(const map * const restrict m, const char * const restrict key, const size_t keyl, size_t * const restrict i)
 {
-  *i = hashkey(m, k, kl);
+  // start at the index which the key hashes to
+  *i = hashkey(key, keyl, m->lm);
 
-  uint32_t ij = 0;
-  uint32_t * ijp = &ij;
+  size_t ij = 0;
+  size_t * ijp = &ij;
 
   while(1)
   {
@@ -103,9 +149,9 @@ static int lookup(const map* const restrict m, const char* const restrict k, con
 
         ijp = 0;
       }
-      else if(m->tk[*i]->l == kl)
+      else if(m->tk[*i]->l == keyl)
       {
-        if(memcmp(k, m->tk[*i]->p, kl) == 0)
+        if(memcmp(key, m->tk[*i]->p, keyl) == 0)
           return 0;
       }
     }
@@ -125,188 +171,79 @@ static int lookup(const map* const restrict m, const char* const restrict k, con
   }
 }
 
-//// [[ API ]] /////
-
-xapi map_create(map** const restrict m, void (*destructor)(void*, void*))
+static xapi __attribute__((nonnull(1))) put(
+    map * const restrict m
+  , const char * const restrict k
+  , size_t kl
+  , MAP_VALUE_TYPE * const restrict v
+  , MAP_VALUE_TYPE * const * const restrict rv
+)
 {
   enter;
 
-  fatal(xmalloc, m, sizeof(*m[0]));
+  key ** ks = 0;    // old keytable
+  char * vs = 0;    // old value table
+  size_t ksl = 0;
 
-  // compute initial table size for 100 keys @ given saturation
-  (*m)->l = 100 * (1 / SATURATION);
+  int x;
 
-  // round up to the next highest power of 2
-  (*m)->l--;
-  (*m)->l |= (*m)->l >> 1;
-  (*m)->l |= (*m)->l >> 2;
-  (*m)->l |= (*m)->l >> 4;
-  (*m)->l |= (*m)->l >> 8;
-  (*m)->l |= (*m)->l >> 16;
-  (*m)->l++;
-
-  (*m)->lm = (*m)->l - 1;
-
-  fatal(xmalloc, &(*m)->tk, sizeof(*(*m)->tk) * (*m)->l);
-  fatal(xmalloc, &(*m)->tv, sizeof(*(*m)->tv) * (*m)->l);
-
-  (*m)->destructor = destructor;
-
-  finally : coda;
-}
-
-xapi map_set(map* const restrict m, const void* const restrict k, size_t kl, const void* const restrict v, size_t vl, void * restrict rv)
-{
-  enter;
-
-  slot** ks = 0;
-  slot** vs = 0;
-  slot** uk = 0;
-  slot** uv = 0;
-
-  // perform lookup, see if this key is already mapped to something
-  uint32_t i = 0;
-  int r = lookup(m, k, kl, &i);
-  if(r == 0)
+  size_t i = 0;
+  int r = probe(m, k, kl, &i);
+  if(r == 0)  // found
   {
-    // this entry will be updated with the new value
+    // the value will be overwritten
     if(m->destructor)
-      m->destructor(0, m->tv[i]->p);
-
-    m->tv[i]->l = 0;
+      m->destructor(0, VALUE(m, m->tv, i));
   }
-  else if(r == 1)
+  else if(r == 1) // not found, and a suitable deleted slot exists
   {
-    // not found, and a suitable deleted slot exists
+    // no-op
   }
-  else if(m->kc == (int)(m->l * SATURATION))
+  else if(m->size == m->overflow_size) // not found, and saturation has been reached
   {
-    // not found, and saturation has been reached
+    // allocate new tables
+    void * tmp = m->tk;
+    fatal(xmalloc, &m->tk, sizeof(*m->tk) * (m->table_size << 2));
+    ks = tmp;
+    ksl = m->table_size;
 
-    // linear list of set keys and values
-    fatal(xmalloc, &ks, m->kc * sizeof(*ks));
-    fatal(xmalloc, &vs, m->kc * sizeof(*vs));
+    tmp = m->tv;
+    fatal(xmalloc, &m->tv, VALUE_SIZE(m) * (m->table_size << 2));
+    vs = tmp;
 
-    // partial list of unset (but allocated) keys and values
-    fatal(xmalloc, &uk, (m->l - m->kc) * sizeof(*uk));
-    fatal(xmalloc, &uv, (m->l - m->kc) * sizeof(*uv));
+    m->table_size <<= 2;
+    m->overflow_size = (size_t)(m->table_size * SATURATION);
+    m->lm = m->table_size - 1;
 
-    // get list of set keys/values
-    int y = 0;
-    int x = 0;
-    for(x = 0; x < m->l; x++)
+    // reassociate active entries
+    for(x = 0; x < ksl; x++)
     {
-      if(m->tk[x])
-        m->tk[x]->d = 0;
-
-      if(m->tk[x] && m->tk[x]->l)
+      if(ks[x] && ks[x]->l && !ks[x]->d)
       {
-        ks[y] = m->tk[x];
-        m->tk[x] = 0;
-
-        vs[y] = m->tv[x];
-        m->tv[x] = 0;
-        
-        y++;
-      }
-    }
-
-    // reallocate tables
-    fatal(xrealloc
-      , &m->tk
-      , 1
-      , sizeof(*m->tk) * (m->l << 2)
-      , sizeof(*m->tk) * (m->l)
-    );
-    fatal(xrealloc
-      , &m->tv
-      , 1
-      , sizeof(*m->tv) * (m->l << 2)
-      , sizeof(*m->tv) * (m->l)
-    );
-
-    m->l <<= 2;
-    m->lm = m->l - 1;
-
-    // reassociate all k/v pairs
-    y = 0;
-    for(x = 0; x < m->kc; x++)
-    {
-      uint32_t j = hashkey(m, ks[x]->p, ks[x]->l);
-
-      while(1)
-      {
-        if(!m->tk[j] || !m->tk[j]->l)
+        // first empty spot in the linear probe sequence
+        size_t j = hashkey(ks[x]->p, ks[x]->l, m->lm);
+        while(m->tk[j])
         {
-          if(m->tk[j])
-          {
-            // displacement
-            uk[y] = m->tk[j];
-            uv[y] = m->tv[j];
-            y++;
-          }
-
-          m->tk[j] = ks[x];
-          m->tv[j] = vs[x];
-          break;
+          j++;
+          j &= m->lm;
         }
 
-        j++;
-        j &= m->lm;
+        m->tk[j] = ks[x];
+        ks[x] = 0;
+        memcpy(m->tv + (VALUE_SIZE(m) * j), vs + (VALUE_SIZE(m) * x), VALUE_SIZE(m));
       }
     }
 
-    // add unset (but allocated) k/v which were displaced
-    uint32_t j = 0;
-    for(x = 0; x < y; x++)
-    {
-      while(m->tk[j])
-        j++;
-
-      m->tk[j] = uk[x];
-      m->tv[j] = uv[x];
-    }
-
-    // re-hash the current key
-    lookup(m, k, kl, &i);
+    // probe against the new table dimensions
+    probe(m, k, kl, &i);
   }
-
-  // allocate the value slot if necessary
-  if(m->tv[i] == 0 || vl >= m->tv[i]->a)
-  {
-    fatal(xrealloc
-      , &m->tv[i]
-      , 1
-      , sizeof(*m->tv[i]) + MAX(vl, sizeof(void*)) + 1
-      , sizeof(*m->tv[i]) + (m->tv[i] ? m->tv[i]->a : 0)
-    );
-
-    m->tv[i]->a = MAX(vl, sizeof(void*)) + 1;
-  }
-
-  if(!v || vl < sizeof(void*))
-  {
-    memset(m->tv[i]->p, 0, sizeof(void*) + 1);
-  }
-  if(v)
-  {
-    memcpy(m->tv[i]->p, v, vl);
-    m->tv[i]->p[vl] = 0;
-  }
-  m->tv[i]->l = vl;
 
   // copy the key
   if(r)
   {
     if(m->tk[i] == 0 || kl >= m->tk[i]->a)
     {
-      fatal(xrealloc
-        , &m->tk[i]
-        , 1
-        , sizeof(*m->tk[i]) + kl + 1
-        , sizeof(*m->tk[i]) + (m->tk[i] ? m->tk[i]->a : 0)
-      );
-
+      fatal(xrealloc, &m->tk[i], sizeof(*m->tk[i]), kl + 1, (m->tk[i] ? m->tk[i]->a : 0));
       m->tk[i]->a = kl + 1;
     }
 
@@ -315,256 +252,182 @@ xapi map_set(map* const restrict m, const void* const restrict k, size_t kl, con
     m->tk[i]->l = kl;
     m->tk[i]->d = 0;
 
-    m->kc++;
+    m->size++;
   }
 
+  // copy the value
+  if(v)
+    ((void**)m->tv)[i] = v;
+
+  // return a pointer to the value
   if(rv)
-    *(void**)rv = m->tv[i]->p;
+    *(void**)rv = VALUE(m, m->tv, i);
 
 finally:
+  for(x = 0; x < ksl; x++)
+  {
+    // destructor was called for these entries when they were deleted
+    free(ks[x]);
+  }
+
   free(ks);
   free(vs);
-  free(uk);
-  free(uv);
 coda;
 }
 
-void * map_getx(const map* const restrict m, const void* const restrict k, size_t kl, uint32_t o)
+//
+// public
+//
+
+xapi map_createx(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr, size_t capacity)
 {
-  // perform lookup
-  uint32_t i = 0;
-  if(lookup(m, k, kl, &i) == 0)
-  {
-    if(o & MAP_DEREF)
-    {
-      void ** p = (void*)m->tv[i]->p;
-      return *p;
-    }
-    else
-      return m->tv[i]->p;
-  }
+  enter;
+
+  fatal(xmalloc, m, sizeof(*m[0]));
+
+  // compute initial table size for 100 keys @ given saturation
+  (*m)->table_size = capacity * (1 / SATURATION);
+
+  // round up to the next highest power of 2
+  (*m)->table_size--;
+  (*m)->table_size |= (*m)->table_size >> 1;
+  (*m)->table_size |= (*m)->table_size >> 2;
+  (*m)->table_size |= (*m)->table_size >> 4;
+  (*m)->table_size |= (*m)->table_size >> 8;
+  (*m)->table_size |= (*m)->table_size >> 16;
+  (*m)->table_size++;
+
+  (*m)->overflow_size = (size_t)((*m)->table_size * SATURATION);
+  (*m)->lm = (*m)->table_size - 1;
+
+  fatal(xmalloc, &(*m)->tk, sizeof(*(*m)->tk) * (*m)->table_size);
+  fatal(xmalloc, &(*m)->tv, VALUE_SIZE(*m) * (*m)->table_size);
+
+  (*m)->destructor = destructor;
+  (*m)->vsz = vsz;
+  (*m)->attr = attr;
+
+  finally : coda;
+}
+
+xapi map_create(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr)
+{
+  enter;
+
+  fatal(map_createx, m, vsz, destructor, attr, DEFAULT_CAPACITY);
+
+  finally : coda;
+}
+
+xapi map_add(map * const restrict m, const char * const restrict k, size_t kl, MAP_VALUE_TYPE * const * const restrict rv)
+{
+  enter;
+
+  fatal(put, m, k, kl, 0, rv);
+
+  finally : coda;
+}
+
+xapi map_set(map* const restrict m, const char * const restrict k, size_t kl, MAP_VALUE_TYPE * const restrict v)
+{
+  enter;
+
+  fatal(put, m, k, kl, v, 0);
+
+  finally : coda;
+}
+
+MAP_VALUE_TYPE * map_get(const map* const restrict m, const char * const restrict k, size_t kl)
+{
+  // perform probe
+  size_t i = 0;
+  if(probe(m, k, kl, &i) == 0)
+    return VALUE(m, m->tv, i);
 
   return 0;
 }
 
-void * map_get (const map* const restrict m, const void* const restrict k, size_t kl)
-{
-  return map_getx(m, k, kl, 0);
-}
-
 size_t map_size(const map * const restrict m)
 {
-  return m->kc;
+  return m->size;
 }
 
 void map_clear(map* const restrict m)
 {
   // reset all lengths; all allocations remain intact
   int x;
-  for(x = 0; x < m->l; x++)
+  for(x = 0; x < m->table_size; x++)
   {
     if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     {
       if(m->destructor)
       {
-        m->destructor(
-            m->tk[x]->p
-          , m->tv[x]->p
-        );
+        m->destructor(m->tk[x]->p, VALUE(m, m->tv, x));
       }
+
       m->tk[x]->l = 0;
       m->tk[x]->d = 0;
-      m->tv[x]->l = 0;
     }
   }
 
-  m->kc = 0;
+  m->size = 0;
 }
 
-int map_delete(map* const restrict m, const void* const restrict k, size_t kl)
+int map_delete(map* const restrict m, const char * const restrict k, size_t kl)
 {
-  uint32_t i = 0;
-  if(lookup(m, k, kl, &i) == 0)
+  size_t i = 0;
+  if(probe(m, k, kl, &i) == 0)
   {
     if(m->destructor)
     {
-      m->destructor(
-          m->tk[i]->p
-        , m->tv[i]->p
-      );
+      m->destructor(m->tk[i]->p, VALUE(m, m->tv, i));
     }
 
     m->tk[i]->l = 0;
     m->tk[i]->d = 1;
-    m->tv[i]->l = 0;
 
-    m->kc--;
+    m->size--;
 
-    return 0;
+    return 1;
   }
 
-  return 1;
+  return 0;
 }
 
-xapi map_keysx(const map* const restrict m, void * const restrict l, size_t * const restrict z, uint32_t o)
+xapi map_keys(const map * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
 {
   enter;
 
-  fatal(xmalloc, l, m->kc * sizeof(void*));
-  *z = 0;
+  fatal(xmalloc, keys, m->size * sizeof(*keys));
+  (*keysl) = 0;
 
-  int x;
-  for(x = 0; x < m->l; x++)
+  size_t x;
+  for(x = 0; x < m->table_size; x++)
   {
     if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     {
-      if(o & MAP_DEREF)
-      {
-        void ** p = (void*)m->tk[x]->p;
-        (*(void***)l)[(*z)++] = *p;
-      }
-      else
-        (*(void***)l)[(*z)++] = m->tk[x]->p;
+      (*keys)[(*keysl)++] = m->tk[x]->p;
     }
   }
 
   finally : coda;
 }
 
-xapi map_keys (const map* const restrict m, void * const restrict l, size_t * const restrict z)
-{
-  xproxy(map_keysx, m, l, z, 0);
-}
-
-xapi map_valuesx(const map* const restrict m, void* const restrict l, size_t * const restrict z, uint32_t o)
+xapi map_values(const map* const restrict m, MAP_VALUE_TYPE *** restrict values, size_t * const restrict valuesl)
 {
   enter;
 
-  fatal(xmalloc, l, m->kc * sizeof(void*));
-  *z = 0;
+  fatal(xmalloc, values, m->size * sizeof(*values));
+  (*valuesl) = 0;
 
-  int x;
-  for(x = 0; x < m->l; x++)
+  size_t x;
+  for(x = 0; x < m->table_size; x++)
   {
     if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     {
-      if(o & MAP_DEREF)
-      {
-        void ** p = (void*)m->tv[x]->p;
-        (*(void***)l)[(*z)++] = *p;
-      }
-      else
-        (*(void***)l)[(*z)++] = m->tv[x]->p;
+      (*values)[(*valuesl)++] = VALUE(m, m->tv, x);
     }
   }
-
-  finally : coda;
-}
-
-xapi map_values (const map* const restrict m, void* const restrict l, size_t * const restrict z)
-{
-   xproxy(map_valuesx, m, l, z, 0);
-}
-
-xapi map_copyto(map* const restrict dst, const map * const restrict src)
-{
-  enter;
-
-  int x;
-
-  // the dst map must have precisely the same size in order for the probe sequences to work 
-  if(dst->l != src->l)
-  {
-    if(dst->l > src->l)
-    {
-      for(x = src->l; x < dst->l; x++)
-      {
-        free(dst->tk[x]);
-        free(dst->tv[x]);
-      }
-    }
-
-    fatal(xrealloc, &dst->tk, 1, sizeof(*dst->tk) * src->l, 0);
-    fatal(xrealloc, &dst->tv, 1, sizeof(*dst->tv) * src->l, 0);
-
-    dst->l = src->l;
-    dst->lm = src->lm;
-  }
-
-  for(x = 0; x < src->l; x++)
-  {
-    if(src->tk[x])
-    {
-      if(src->tk[x]->d)
-      {
-        if(dst->tk[x] == 0)
-        {
-          fatal(xmalloc, &dst->tk[x], sizeof(*dst->tk[x]));
-        }
-
-        dst->tk[x]->d = 1;
-        dst->tk[x]->l = 0;
-      }
-      else if(src->tk[x]->l)
-      {
-        // reallocate key slot if necessary
-        if(dst->tk[x] == 0 || src->tk[x]->l >= dst->tk[x]->a)
-        {
-          fatal(xrealloc
-            , &dst->tk[x]
-            , 1
-            , sizeof(*dst->tk[x]) + src->tk[x]->l + 1
-            , sizeof(*dst->tk[x]) + (dst->tk[x] ? dst->tk[x]->a : 0)
-          );
-
-          dst->tk[x]->a = src->tk[x]->l + 1;
-        }
-
-        // copy the key
-        memcpy(dst->tk[x]->p, src->tk[x]->p, src->tk[x]->l);
-        dst->tk[x]->p[src->tk[x]->l] = 0;
-        dst->tk[x]->l = src->tk[x]->l;
-        dst->tk[x]->d = 0;
-
-        // reallocate the value slot if necessary
-        if(dst->tv[x] == 0 || src->tv[x]->l >= dst->tv[x]->a)
-        {
-          fatal(xrealloc
-            , &dst->tv[x]
-            , 1
-            , sizeof(*dst->tv[x]) + MAX(src->tv[x]->l, sizeof(void*)) + 1
-            , sizeof(*dst->tv[x]) + (dst->tv[x] ? dst->tv[x]->a : 0)
-          );
-
-          dst->tv[x]->a = MAX(src->tv[x]->l, sizeof(void*)) + 1;
-        }
-
-        // copy the value
-        if(src->tv[x]->l < sizeof(void*))
-        {
-          memset(dst->tv[x]->p, 0, sizeof(void*) + 1);
-        }
-
-        memcpy(dst->tv[x]->p, src->tv[x]->p, src->tv[x]->l);
-        dst->tv[x]->p[src->tv[x]->l] = 0;
-
-        dst->tv[x]->l = src->tv[x]->l;
-        dst->tv[x]->d = 0;
-      }
-    }
-  }
-
-  dst->kc = src->kc;
-
-  finally : coda;
-}
-
-xapi map_clone(map* const restrict dst, const map * const restrict src)
-{
-  enter;
-
-  map_clear(dst);
-  fatal(map_copyto, dst, src);
 
   finally : coda;
 }
@@ -574,18 +437,17 @@ void map_free(map* const restrict m)
   if(m)   // free-like semantics
   {
     int x;
-    for(x = 0; x < m->l; x++)
+    for(x = 0; x < m->table_size; x++)
     {
       if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
       {
         if(m->destructor)
-          m->destructor(m->tk[x]->p, m->tv[x]->p);
+          m->destructor(m->tk[x]->p, VALUE(m, m->tv, x));
       }
 
       free(m->tk[x]);
-      free(m->tv[x]);
     }
-    
+
     free(m->tk);
     free(m->tv);
   }
@@ -599,43 +461,23 @@ void map_xfree(map** const restrict m)
   *m = 0;
 }
 
-size_t map_slots(const map * const restrict m)
+size_t map_table_size(const map * const restrict m)
 {
-  return m->l;
+  return m->table_size;
 }
 
-void * map_keyatx(const map * const restrict m, int x, uint32_t o)
+const char * map_table_key(const map * const restrict m, size_t x)
 {
   if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
-  {
-    if(o & MAP_DEREF)
-      return *(void**)m->tk[x]->p;
-    else
-      return m->tk[x]->p;
-  }
+    return m->tk[x]->p;
 
   return 0;
 }
 
-void * map_keyat(const map * const restrict m, int x)
-{
-  return map_keyatx(m, x, 0);
-}
-
-void * map_valueatx(const map * const restrict m, int x, uint32_t o)
+MAP_VALUE_TYPE * map_table_value(const map * const restrict m, size_t x)
 {
   if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
-  {
-    if(o & MAP_DEREF)
-      return *(void**)m->tv[x]->p;
-    else
-      return m->tv[x]->p;
-  }
+    return VALUE(m, m->tv, x);
 
   return 0;
-}
-
-void * map_valueat(const map * const restrict m, int x)
-{
-  return map_valueatx(m, x, 0);
 }

@@ -23,8 +23,8 @@
 #include "xlinux/SYS.errtab.h"
 
 struct item;
-#define LIST_ELEMENT_TYPE struct item
-#include "list.h"
+#define ARRAY_ELEMENT_TYPE struct item
+#include "array.h"
 
 typedef struct item
 {
@@ -32,18 +32,18 @@ typedef struct item
   int x;
 } item;
 
-xapi validate(list * listp)
+xapi validate(array * ar)
 {
   enter;
 
   int x;
-  for(x = 1; x < list_size(listp); x++)
+  for(x = 1; x < array_size(ar); x++)
   {
-    item * A = list_get(listp, x - 1);
-    item * B = list_get(listp, x);
+    item * A = array_get(ar, x - 1);
+    item * B = array_get(ar, x);
 
     if(B->x <= A->x)
-      tfail(perrtab_SYS, SYS_ENOMEM);
+      tfailf(perrtab_SYS, SYS_ENOMEM, "expected %d <= %d", B->x, A->x);
   }
 
   finally : coda;
@@ -54,48 +54,34 @@ xapi main()
   enter;
 
   xapi r;
-  list * listp = 0;
+  array * ar = 0;
+  fatal(array_create, &ar, sizeof(item), 0);
+
   item * itemp = 0;
-  item * itemps[2];
-
-  fatal(list_create, &listp, (void*)free);
-
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 4;
-  fatal(list_push, listp, itemp);
-  itemp = 0;
-
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 5;
-  fatal(list_push, listp, itemp);
-  itemp = 0;
-
-  fatal(xmalloc, &itemp, sizeof(*itemp));
+  fatal(array_unshift, ar, &itemp);
   itemp->x = 6;
-  fatal(list_push, listp, itemp);
-  itemp = 0;
+  fatal(array_unshift, ar, &itemp);
+  itemp->x = 5;
+  fatal(array_unshift, ar, &itemp);
+  itemp->x = 4;
 
-  fatal(validate, listp);
+  fatal(validate, ar);
 
-  fatal(xmalloc, &itemps[0], sizeof(**itemps));
-  itemps[0]->x = 1;
-  fatal(xmalloc, &itemps[1], sizeof(**itemps));
-  itemps[1]->x = 2;
-  fatal(list_unshift_range, listp, itemps, 2); 
+  item * itemps[2];
+  fatal(array_insert_range, ar, 3, 2, itemps);
+  itemps[0]->x = 7;
+  itemps[1]->x = 8;
 
-  fatal(validate, listp);
+  fatal(validate, ar);
 
-  fatal(list_pop, listp, 0);
-  fatal(list_shift, listp, 0);
-
-  fatal(validate, listp);
-
-  fatal(xmalloc, &itemp, sizeof(*itemp));
+  fatal(array_insert, ar, 0, &itemp);
+  itemp->x = 1;
+  fatal(array_insert, ar, 1, &itemp);
+  itemp->x = 2;
+  fatal(array_insert, ar, 2, &itemp);
   itemp->x = 3;
-  fatal(list_insert, listp, 1, itemp);
-  itemp = 0;
 
-  fatal(validate, listp);
+  fatal(validate, ar);
 
 finally:
   if(XAPI_UNWINDING)
@@ -103,8 +89,7 @@ finally:
     xapi_backtrace();
   }
 
-  list_free(listp);
-  free(itemp);
+  array_free(ar);
 conclude(&r);
 
   xapi_teardown();
