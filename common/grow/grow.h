@@ -40,7 +40,7 @@ xapi grow(void * target, size_t es, size_t len, size_t ec, size_t * const restri
 // SUMMARY
 //  grow with the ability to specify the seed
 //
-xapi grow2(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac, size_t seed);
+xapi growx(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac, size_t seed);
 
 #undef restrict
 #endif

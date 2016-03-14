@@ -42,8 +42,8 @@ xapi validate(array * ar)
     item * A = array_get(ar, x - 1);
     item * B = array_get(ar, x);
 
-    if(B->x <= A->x)
-      tfailf(perrtab_SYS, SYS_ENOMEM, "expected %d <= %d", B->x, A->x);
+    if(!(B->x >= A->x))
+      tfailf(perrtab_SYS, SYS_ENOMEM, "expected %d >= %d", B->x, A->x);
   }
 
   finally : coda;
@@ -55,7 +55,7 @@ xapi main()
 
   xapi r;
   array * ar = 0;
-  fatal(array_create, &ar, sizeof(item), 0);
+  fatal(array_create, &ar, sizeof(item));
 
   item * itemp = 0;
   fatal(array_unshift, ar, &itemp);

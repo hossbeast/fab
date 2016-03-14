@@ -23,8 +23,8 @@
 
 #include "xapi.h"
 
-struct array;
-typedef struct array array;
+struct list;
+typedef struct list array;
 
 #ifndef ARRAY_ELEMENT_TYPE
 # define ARRAY_ELEMENT_TYPE void
@@ -32,7 +32,11 @@ typedef struct array array;
 
 /*
 
-dynamically resizing array meant to be primary storage for the elements it contains
+SUMMARY
+ dynamically resizing ordered collection of elements addressable by index
+
+REMARKS
+ meant to be used as the primary storage for the elements in the collection
 
 */
 
@@ -52,8 +56,8 @@ dynamically resizing array meant to be primary storage for the elements it conta
 // REMARKS
 //  either attr == ARRAY_PRIMARY and esz != 0 OR attr == ARRAY_SECONDARY and esz == 0
 //
-xapi array_create(array ** const restrict ar, size_t esz, void (*destructor)(ARRAY_ELEMENT_TYPE *))
-  __attribute__((nonnull(1)));
+xapi array_create(array ** const restrict ar, size_t esz)
+  __attribute__((nonnull));
 
 xapi array_createx(array ** const restrict ar, size_t esz, void (*destructor)(ARRAY_ELEMENT_TYPE *), size_t capacity)
   __attribute__((nonnull(1)));

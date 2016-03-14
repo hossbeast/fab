@@ -67,15 +67,19 @@ static int policy_realloc(mempolicy * restrict plc, void * restrict p, size_t es
 // api
 //
 
-int memblk_mk(memblk ** mb)
+xapi memblk_mk(memblk ** mb)
 {
+  enter;
+
 	fatal(xmalloc, mb, sizeof(**mb));
 
 	finally : coda;
 }
 
-int memblk_mk_mapped(memblk ** mb, int prot, int flags)
+xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
 {
+  enter;
+
 	fatal(xmalloc, mb, sizeof(**mb));
 
 	(*mb)->mapped = 1;
@@ -85,7 +89,7 @@ int memblk_mk_mapped(memblk ** mb, int prot, int flags)
 	finally : coda;
 }
 
-int memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
+xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 {
 	// save the active policy, but the memblk itself should use the default mm
 	mempolicy * mm = mempolicy_pop(0);
@@ -139,8 +143,10 @@ finally:
 coda;
 }
 
-int memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
+xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
 {
+  enter;
+
 	void * old = *(void**)p;
 	fatal(memblk_alloc, mb, p, es * ec);
 	if(old)
@@ -189,8 +195,10 @@ mempolicy * memblk_getpolicy(memblk * mb)
 	return &mb->policy;
 }
 
-int memblk_writeto(memblk * const restrict mb, const int fd)
+xapi memblk_writeto(memblk * const restrict mb, const int fd)
 {
+  enter;
+
 	struct iovec * iov = 0;
 	fatal(xmalloc, &iov, sizeof(*iov) * mb->blocksl);
 
@@ -206,38 +214,4 @@ int memblk_writeto(memblk * const restrict mb, const int fd)
 finally:
 	free(iov);
 coda;
-}
-
-int memblk_bwriteto(memblk * const restrict mb, const int fd)
-{
-	struct iovec * iov = 0;
-	if((iov = malloc(sizeof(*iov) * mb->blocksl)) == 0)
-		return ENOMEM;
-
-	int x;
-	for(x = 0; x < mb->blocksl; x++)
-	{
-		iov[x].iov_base = mb->blocks[x].s;
-		iov[x].iov_len = mb->blocks[x].l;
-	}
-
-	ssize_t actual;
-	if((actual = writev(fd, iov, mb->blocksl)) == -1)
-	{
-		free(iov);
-		return errno;
-	}
-
-	ssize_t expected = 0;
-	for(x = 0; x < mb->blocksl; x++)
-	  expected += iov[x].iov_len;
-	
-	if(actual != expected)
-	{
-		free(iov);
-		return 1;
-	}
-
-	free(iov);
-	return 0;
 }

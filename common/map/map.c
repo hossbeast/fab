@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "map.h"
+#include "map.def.h"
 
 #include "xapi.h"
 #include "xlinux.h"
@@ -61,6 +62,15 @@ struct map
   char *      tv;             // value table
 };
 
+#define VALUE_SIZE(m) ({          \
+  size_t valz = sizeof(void*);    \
+  if((m)->attr & MAP_PRIMARY)     \
+  {                               \
+    valz = (m)->vsz;              \
+  }                               \
+  valz;                           \
+})
+
 #define VALUE(m, tv, x) ({                         \
   void * val;                                      \
   if(m->attr & MAP_PRIMARY)                        \
@@ -72,15 +82,6 @@ struct map
     val = *(char**)(tv + (x * VALUE_SIZE(m)));     \
   }                                                \
   val;                                             \
-})
-
-#define VALUE_SIZE(m) ({          \
-  size_t valz = sizeof(void*);    \
-  if((m)->attr & MAP_PRIMARY)     \
-  {                               \
-    valz = (m)->vsz;              \
-  }                               \
-  valz;                           \
 })
 
 #define restrict __restrict
@@ -171,7 +172,42 @@ static int __attribute__((nonnull)) probe(const map * const restrict m, const ch
   }
 }
 
-static xapi __attribute__((nonnull(1))) put(
+//
+// protected
+//
+
+xapi map_allocate(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr, size_t capacity)
+{
+  enter;
+
+  fatal(xmalloc, m, sizeof(*m[0]));
+
+  // compute initial table size for 100 keys @ given saturation
+  (*m)->table_size = (capacity ?: DEFAULT_CAPACITY) * (1 / SATURATION);
+
+  // round up to the next highest power of 2
+  (*m)->table_size--;
+  (*m)->table_size |= (*m)->table_size >> 1;
+  (*m)->table_size |= (*m)->table_size >> 2;
+  (*m)->table_size |= (*m)->table_size >> 4;
+  (*m)->table_size |= (*m)->table_size >> 8;
+  (*m)->table_size |= (*m)->table_size >> 16;
+  (*m)->table_size++;
+
+  (*m)->overflow_size = (size_t)((*m)->table_size * SATURATION);
+  (*m)->lm = (*m)->table_size - 1;
+
+  fatal(xmalloc, &(*m)->tk, sizeof(*(*m)->tk) * (*m)->table_size);
+  fatal(xmalloc, &(*m)->tv, VALUE_SIZE(*m) * (*m)->table_size);
+
+  (*m)->destructor = destructor;
+  (*m)->vsz = vsz;
+  (*m)->attr = attr;
+
+  finally : coda;
+}
+
+xapi map_put(
     map * const restrict m
   , const char * const restrict k
   , size_t kl
@@ -275,55 +311,25 @@ finally:
 coda;
 }
 
+
 //
 // public
 //
 
-xapi map_createx(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr, size_t capacity)
+xapi map_create(map ** const restrict m)
 {
   enter;
 
-  fatal(xmalloc, m, sizeof(*m[0]));
-
-  // compute initial table size for 100 keys @ given saturation
-  (*m)->table_size = capacity * (1 / SATURATION);
-
-  // round up to the next highest power of 2
-  (*m)->table_size--;
-  (*m)->table_size |= (*m)->table_size >> 1;
-  (*m)->table_size |= (*m)->table_size >> 2;
-  (*m)->table_size |= (*m)->table_size >> 4;
-  (*m)->table_size |= (*m)->table_size >> 8;
-  (*m)->table_size |= (*m)->table_size >> 16;
-  (*m)->table_size++;
-
-  (*m)->overflow_size = (size_t)((*m)->table_size * SATURATION);
-  (*m)->lm = (*m)->table_size - 1;
-
-  fatal(xmalloc, &(*m)->tk, sizeof(*(*m)->tk) * (*m)->table_size);
-  fatal(xmalloc, &(*m)->tv, VALUE_SIZE(*m) * (*m)->table_size);
-
-  (*m)->destructor = destructor;
-  (*m)->vsz = vsz;
-  (*m)->attr = attr;
+  fatal(map_allocate, m, 0, 0, MAP_SECONDARY, 0);
 
   finally : coda;
 }
 
-xapi map_create(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr)
+xapi map_createx(map ** const restrict m, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
 {
   enter;
 
-  fatal(map_createx, m, vsz, destructor, attr, DEFAULT_CAPACITY);
-
-  finally : coda;
-}
-
-xapi map_add(map * const restrict m, const char * const restrict k, size_t kl, MAP_VALUE_TYPE * const * const restrict rv)
-{
-  enter;
-
-  fatal(put, m, k, kl, 0, rv);
+  fatal(map_allocate, m, 0, destructor, MAP_SECONDARY, capacity);
 
   finally : coda;
 }
@@ -332,7 +338,7 @@ xapi map_set(map* const restrict m, const char * const restrict k, size_t kl, MA
 {
   enter;
 
-  fatal(put, m, k, kl, v, 0);
+  fatal(map_put, m, k, kl, v, 0);
 
   finally : coda;
 }

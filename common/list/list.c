@@ -21,25 +21,37 @@
 #include "xlinux.h"
 
 #include "list.h"
+#include "list.def.h"
 
 #include "grow.h"
-#include "ensure.h"
+#include "assure.h"
 
 /*
  * Default capacity, the minimum number of entries which can be stored without reallocating
  */
 #define DEFAULT_CAPACITY  10
 
-struct list
-{
-  char *   v;     // storage
-  size_t   l;     // number of elements
-  size_t   a;     // allocated size in elements
+#define ELEMENT_SIZE(li) ({       \
+  size_t elz = sizeof(void*);     \
+  if((li)->attr & LIST_PRIMARY)   \
+  {                               \
+    elz = (li)->esz;              \
+  }                               \
+  elz;                            \
+})
 
-  void (*destructor)(void *);
-};
-
-#define ELEMENT(li, x) *(char**)((li)->v + ((x) * sizeof(void*)))
+#define ELEMENT(li, x) ({                               \
+  void * el;                                            \
+  if((li)->attr & LIST_PRIMARY)                         \
+  {                                                     \
+    el = (li)->v + ((x) * ELEMENT_SIZE(li));            \
+  }                                                     \
+  else                                                  \
+  {                                                     \
+    el = *(char**)((li)->v + ((x) * ELEMENT_SIZE(li))); \
+  }                                                     \
+  el;                                                   \
+})
 
 #define restrict __restrict
 
@@ -52,9 +64,61 @@ static xapi list_grow(list * const restrict li, size_t len)
   xproxy(grow, &li->v, sizeof(void*), len, li->l, &li->a);
 }
 
-static xapi list_ensure(list * const restrict li, size_t len)
+static xapi list_assure(list * const restrict li, size_t len)
 {
-  xproxy(ensure, &li->v, sizeof(void*), len, &li->a);
+  xproxy(assure, &li->v, sizeof(void*), len, &li->a);
+}
+
+//
+// protected
+//
+
+xapi list_allocate(list ** const restrict li, uint32_t attr, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
+{
+  enter;
+
+  fatal(xmalloc, li, sizeof(**li));
+
+  (*li)->destructor = destructor;
+  (*li)->esz = esz;
+  (*li)->attr = attr;
+
+  fatal(list_grow, *li, capacity ?: DEFAULT_CAPACITY);
+
+  finally : coda;
+}
+
+xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+{
+  enter;
+
+  fatal(assure, &li->v, sizeof(void*), li->l + len, &li->a);
+
+  memmove(
+      li->v + ((index + len) * ELEMENT_SIZE(li))
+    , li->v + (index * ELEMENT_SIZE(li))
+    , (li->l - index + len) * ELEMENT_SIZE(li)
+  );
+
+  if(el)
+  {
+    memcpy(
+        li->v + (index * ELEMENT_SIZE(li))
+      , el
+      , len * ELEMENT_SIZE(li)
+    );
+  }
+
+  if(rv)
+  {
+    size_t x;
+    for(x = 0; x < len; x++)
+      rv[x] = ELEMENT(li, index + x);
+  }
+
+  li->l += len;
+
+  finally : coda;
 }
 
 //
@@ -63,20 +127,12 @@ static xapi list_ensure(list * const restrict li, size_t len)
 
 xapi list_createx(list** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
 {
-  enter;
-
-  fatal(xmalloc, li, sizeof(**li));
-
-  (*li)->destructor = destructor;
-
-  fatal(list_grow, *li, capacity);
-
-  finally : coda;
+  xproxy(list_allocate, li, LIST_SECONDARY, 0, destructor, capacity);
 }
 
 xapi list_create(list** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *))
 {
-  xproxy(list_createx, li, destructor, DEFAULT_CAPACITY);
+  xproxy(list_allocate, li, LIST_SECONDARY, 0, destructor, 0);
 }
 
 void list_free(list * const restrict li)
@@ -123,7 +179,7 @@ xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el
 {
   enter;
 
-  void * e = 0;
+  LIST_ELEMENT_TYPE * e = 0;
   if(li->l)
   {
     e = ELEMENT(li, 0);
@@ -164,59 +220,50 @@ xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
 
 xapi list_push(list * const restrict li, LIST_ELEMENT_TYPE * const el)
 {
-  xproxy(list_insert_range, li, li->l, &el, 1);
+  xproxy(list_add, li, li->l, 1, &el, 0);
 }
 
 xapi list_push_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
 {
-  xproxy(list_insert_range, li, li->l, el, len);
+  xproxy(list_add, li, li->l, len, el, 0);
 }
 
 xapi list_unshift(list * const restrict li, LIST_ELEMENT_TYPE * const el)
 {
-  xproxy(list_insert_range, li, 0, &el, 1);
+  xproxy(list_add, li, 0, 1, &el, 0);
 }
 
 xapi list_unshift_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
 {
-  xproxy(list_insert_range, li, 0, el, len);
+  xproxy(list_add, li, 0, len, el, 0);
 }
 
 xapi list_insert(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
 {
-  xproxy(list_insert_range, li, index, &el, 1);
+  xproxy(list_add, li, index, 1, &el, 0);
 }
 
 xapi list_insert_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
 {
-  enter;
-
-  fatal(ensure, &li->v, sizeof(void*), li->l + len, &li->a);
-
-  memmove(
-      li->v + ((index + len) * sizeof(void*))
-    , li->v + (index * sizeof(void*))
-    , (li->l - index + len) * sizeof(void*)
-  );
-
-  memcpy(
-      li->v + (index * sizeof(void*))
-    , el
-    , len * sizeof(void*)
-  );
-  li->l += len;
-
-  finally : coda;
+  xproxy(list_add, li, index, len, el, 0);
 }
 
 void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *, const LIST_ELEMENT_TYPE *, void *), void * arg)
 {
-  int lcompar(const void * A, const void * B, void * arg)
+  if(li->attr & LIST_PRIMARY)
   {
-    return compar(*(const LIST_ELEMENT_TYPE **)A, *(const LIST_ELEMENT_TYPE **)B, arg);
-  };
+    qsort_r(li->v, li->l, ELEMENT_SIZE(li), compar, arg);
+  }
 
-  qsort_r(li->v, li->l, sizeof(void*), lcompar, arg);
+  if(li->attr & LIST_SECONDARY)
+  {
+    int lcompar(const void * A, const void * B, void * arg)
+    {
+      return compar(*(const LIST_ELEMENT_TYPE **)A, *(const LIST_ELEMENT_TYPE **)B, arg);
+    };
+
+    qsort_r(li->v, li->l, sizeof(void*), lcompar, arg);
+  }
 }
 
 xapi list_sublist(list * const restrict li, size_t index, size_t len, list ** const restrict rv)
@@ -227,11 +274,11 @@ xapi list_sublist(list * const restrict li, size_t index, size_t len, list ** co
     fatal(list_create, rv, li->destructor);
   list_clear(*rv);
 
-  fatal(list_ensure, *rv, len);
+  fatal(list_assure, *rv, len);
   memcpy(
       (*rv)->v
-    , li->v + (index * sizeof(void*))
-    , len * sizeof(void*)
+    , li->v + (index * ELEMENT_SIZE(li))
+    , len * ELEMENT_SIZE(li)
   );
   (*rv)->l = len;
 

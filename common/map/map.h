@@ -18,6 +18,19 @@
 #ifndef _MAP_H
 #define _MAP_H
 
+/*
+
+MODULE
+ map
+
+SUMMARY
+ dynamically resizing unordered collection of key/value pairs
+
+REMARKS
+ meant to be used as secondary storage for the elements in the collection
+
+*/
+
 #include <sys/types.h>
 #include <stdint.h>
 
@@ -30,29 +43,22 @@ typedef struct map map;
 # define MAP_VALUE_TYPE void
 #endif
 
-#define MAP_PRIMARY     0x01    /* primary storage of the values in the map */
-#define MAP_SECONDARY   0x02    /* not the primary storage of the objects in the map */
-
 #define restrict __restrict
 
 /// map_create
 //
-// create an empty map
+// SUMMARY
+//  create an empty map
 //
 // PARAMETERS
-//  map         - (returns) newly allocated map
-//  vsz         - value size > 0
-//  destructor  - invoked with key/value just before freeing their associated memory
-//  attr        - bitwise combination of MAP_* options and modifiers
-//  [capacity]  - initial capacity, the minimum number of entries which can be set without rehashing
+//  map          - (returns) newly allocated map
+//  [destructor] - invoked with key/value just before freeing their associated memory
+//  [capacity]   - initial capacity, the minimum number of entries which can be set without rehashing
 //
-// REMARKS
-//  either attr & MAP_PRIMARY and vsz != 0, or attr & MAP_SECONDARY and vsz == 0
-//
-xapi map_create(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr)
-  __attribute__((nonnull(1)));
+xapi map_create(map ** const restrict m)
+  __attribute__((nonnull));
 
-xapi map_createx(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr, size_t capacity)
+xapi map_createx(map ** const restrict m, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
   __attribute__((nonnull(1)));
 
 /// map_free
@@ -70,24 +76,10 @@ void map_free(map * const restrict map);
 void map_xfree(map ** const restrict map)
   __attribute__((nonnull));
 
-/// map_add
-//
-// SUMMARY
-//  set a key/value pair on a MAP_PRIMARY map
-//
-// PARAMETERS
-//  map   - map
-//  key   - pointer to key
-//  keyl  - key length
-//  rv    - (returns) pointer to value
-//
-xapi map_add(map * const restrict m, const char * const restrict key, size_t keyl, MAP_VALUE_TYPE * const * const restrict rv)
-  __attribute__((nonnull));
-
 /// map_set
 //
 // SUMMARY
-//  set a key/value pair on a MAP_SECONDARY map
+//  add or update an element
 //
 // PARAMETERS
 //  map    - map

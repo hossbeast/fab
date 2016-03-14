@@ -29,6 +29,7 @@ SUMMARY
 */
 
 #include <sys/types.h>
+#include "xapi.h"
 
 struct mempolicy;		// xlinux/mempolicy.h
 
@@ -42,7 +43,7 @@ typedef struct memblk memblk;
 // SUMMARY
 //  create an memblk
 //
-int memblk_mk(memblk ** mb)
+xapi memblk_mk(memblk ** mb)
 	__attribute__((nonnull));
 
 /// memblk_mk_mapped
@@ -50,7 +51,7 @@ int memblk_mk(memblk ** mb)
 // SUMMARY
 //  create an memblk whose allocations are backed by mmapped pages
 //
-int memblk_mk_mapped(memblk ** mb, int prot, int flags)
+xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
 	__attribute__((nonnull));
 
 /// memblk_alloc
@@ -58,7 +59,7 @@ int memblk_mk_mapped(memblk ** mb, int prot, int flags)
 // SUMMARY
 //  request an allocation
 //
-int memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
+xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 	__attribute__((nonnull));
 
 /// memblk_realloc
@@ -66,7 +67,7 @@ int memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 // SUMMARY
 //  request a reallocation
 //
-int memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
+xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
 	__attribute__((nonnull));
 
 /// memblk_free
@@ -94,26 +95,12 @@ struct mempolicy * memblk_getpolicy(memblk * mb);
 /// memblk_writeto
 //
 // SUMMARY
-//  consolidate the memblk and write it to a file descriptor with a single writev
+//  write contents of the memblk to a file descriptor with a single writev
 //
 // ERRORS
-//  as for writev, plus LINUX_LESS : actual bytes != expected bytes
+//  as for libxlinux/axwritev
 //
-int memblk_writeto(memblk * const restrict mb, const int fd)
-	__attribute__((nonnull));
-
-/// memblk_bwriteto
-//
-// SUMMARY
-//  consolidate the memblk and write it to a file descriptor with a single writev
-//
-// ERRORS
-//  as for writev, plus LINUX_LESS : actual bytes != expected bytes
-//
-// REMARKS
-//  this is a non-xapi function
-//
-int memblk_bwriteto(memblk * const restrict mb, const int fd)
+xapi memblk_writeto(memblk * const restrict mb, const int fd)
 	__attribute__((nonnull));
 
 #undef restrict

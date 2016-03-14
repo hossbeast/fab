@@ -32,18 +32,11 @@ typedef struct list list;
 
 /*
 
-#1 - secondary storage - pointers to objects stored elsewhere
+SUMMARY
+ dynamically resizing ordered collection of elements addressable by index
 
-  #define LIST_ELEMENT_TYPE foo*
-  list_create(&list, 0, 0, LIST_SECONDARY)
-
-  USAGE
-   foo * list_of_foop[3];
-   list_push(listp, &list_of_foop[0]);
-   list_insert_range(listp, 0, list_of_foop, 3);
-
-   foo * foop = list_pop(listp);
-   foop = list_get(listp, 0)
+REMARKS
+ meant to be used as secondary storage for the elements in the collection
 
 */
 
@@ -101,6 +94,10 @@ LIST_ELEMENT_TYPE * list_get(const list * const restrict li, int x)
 //
 // SUMMARY
 //  remove the first element of the list
+//
+// PARAMETERS
+//  li - 
+//  el - 
 //
 // REMARKS
 //  the destructor is called on the element before this function returns

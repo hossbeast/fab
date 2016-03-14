@@ -75,7 +75,7 @@ void memblk_unfreeze(memblk * const restrict mb, void * restrict p)
 /// memblk_thaw
 //
 // SUMMARY
-//  recover objects from an consolidated memblk
+//  recover objects from a consolidated memblk
 //
 // PARAMETERS
 //  mb - pointer to memory consolidated from an memblk (memblk_writeto, memblk_copyto)
@@ -100,7 +100,6 @@ void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t
 //
 size_t memblk_size(memblk * const restrict mb)
 	__attribute__((nonnull));
-
 
 #undef restrict
 #endif

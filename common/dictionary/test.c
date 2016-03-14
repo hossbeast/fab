@@ -23,8 +23,8 @@
 #include "xlinux/SYS.errtab.h"
 
 struct item;
-#define MAP_VALUE_TYPE struct item
-#include "map.h"
+#define DICTIONARY_VALUE_TYPE struct item
+#include "dictionary.h"
 
 #include "macros.h"
 
@@ -35,12 +35,7 @@ struct item
 };
 typedef struct item item;
 
-static void destructor(const char * key, item * value)
-{
-  free(value);
-}
-
-xapi validate(map * mapp)
+xapi validate(dictionary * dp)
 {
   enter;
 
@@ -51,20 +46,20 @@ xapi validate(map * mapp)
 
   // retrieve by key
   item * itemp;
-  itemp = map_get(mapp, MMS("one"));
+  itemp = dictionary_get(dp, MMS("one"));
   if(itemp->x != 1)
     tfail(perrtab_SYS, SYS_ENOMEM);
 
-  itemp = map_get(mapp, MMS("two"));
+  itemp = dictionary_get(dp, MMS("two"));
   if(itemp->x != 2)
     tfail(perrtab_SYS, SYS_ENOMEM);
 
-  itemp = map_get(mapp, MMS("three"));
+  itemp = dictionary_get(dp, MMS("three"));
   if(itemp->x != 3)
     tfail(perrtab_SYS, SYS_ENOMEM);
 
   // lists of keys
-  fatal(map_keys, mapp, &keys, &keysl);
+  fatal(dictionary_keys, dp, &keys, &keysl);
 
   if(keysl != 3)
     tfail(perrtab_SYS, SYS_ENOMEM);
@@ -82,7 +77,7 @@ xapi validate(map * mapp)
     tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %s, actual: %s", "two", keys[2]);
 
   // list of values
-  fatal(map_values, mapp, &values, &valuesl);
+  fatal(dictionary_values, dp, &values, &valuesl);
 
   if(valuesl != 3)
     tfail(perrtab_SYS, SYS_ENOMEM);
@@ -101,10 +96,10 @@ xapi validate(map * mapp)
 
   // by slot
   int x;
-  for(x = 0; x < map_table_size(mapp); x++)
+  for(x = 0; x < dictionary_table_size(dp); x++)
   {
-    const char * key = map_table_key(mapp, x);
-    itemp = map_table_value(mapp, x);
+    const char * key = dictionary_table_key(dp, x);
+    itemp = dictionary_table_value(dp, x);
 
     if(!key ^ !itemp)
       tfail(perrtab_SYS, SYS_ENOMEM);
@@ -143,48 +138,94 @@ xapi test()
 {
   enter;
 
-  map * mapp = 0;
+  dictionary * dp = 0;
+  fatal(dictionary_create, &dp, sizeof(item));
+
   item * itemp = 0;
-
-  fatal(map_createx, &mapp, destructor, 0);
-
-  fatal(xmalloc, &itemp, sizeof(*itemp));
+  fatal(dictionary_set, dp, MMS("one"), &itemp);
   itemp->x = 1;
-  fatal(map_set, mapp, MMS("one"), itemp);
-  itemp = 0;
 
-  fatal(xmalloc, &itemp, sizeof(*itemp));
+  fatal(dictionary_set, dp, MMS("two"), &itemp);
   itemp->x = 2;
-  fatal(map_set, mapp, MMS("two"), itemp);
-  itemp = 0;
 
-  fatal(xmalloc, &itemp, sizeof(*itemp));
+  fatal(dictionary_set, dp, MMS("three"), &itemp);
   itemp->x = 3;
-  fatal(map_set, mapp, MMS("three"), itemp);
-  itemp = 0;
 
-  fatal(validate, mapp);
+  fatal(validate, dp);
 
 finally:
-  map_free(mapp);
-  free(itemp);
+  dictionary_free(dp);
 coda;
 }
 
-int main()
+xapi test_rehash()
 {
   enter;
 
-  xapi r;
+  dictionary * dp = 0;
+  fatal(dictionary_createx, &dp, sizeof(item), 0, 2);
+
+  int x;
+  for(x = 0; x <= 35; x++)
+  {
+    item * itemp = 0;
+    fatal(dictionary_set, dp, MM(x), &itemp);
+    itemp->x = x;
+
+    if(x == 1 || x == 7 || x == 35)
+    {
+      if(x == 7)
+      {
+        int i;
+        for(i = 0; i < 7; i++)
+        {
+          if(!dictionary_delete(dp, MM(i)))
+            tfailf(perrtab_SYS, SYS_ENOMEM, "expected : (found), actual : %d", i);
+        }
+      }
+
+      if(x >= 7)
+      {
+        int i;
+        for(i = 0; i < 7; i++)
+        {
+          item * itemp = 0;
+          if((itemp = dictionary_get(dp, MM(i))))
+            tfailf(perrtab_SYS, SYS_ENOMEM, "expected : (null), actual : %d", itemp->x);
+        }
+
+        for(i = 7; i < x; i++)
+        {
+          item * itemp = 0;
+          if(!(itemp = dictionary_get(dp, MM(i))))
+            tfailf(perrtab_SYS, SYS_ENOMEM, "expected : (found), actual : %d", i);
+        }
+      }
+    }
+  }
+
+finally:
+  dictionary_free(dp);
+coda;
+}
+
+xapi go()
+{
+  enter;
+
   fatal(test);
+  fatal(test_rehash);
 
 finally:
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();
   }
-conclude(&r);
+coda;
+}
 
+int main()
+{
+  go();
   xapi_teardown();
-  return r;
 }

@@ -1,0 +1,77 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+#ifndef _MAP_DEF_H
+#define _MAP_DEF_H
+
+/*
+
+MODULE
+ map.def
+
+SUMMARY
+ low-level map create / mutate apis
+
+*/
+
+#include <sys/types.h>
+#include <stdint.h>
+
+#include "xapi.h"
+
+struct map;
+
+#define MAP_PRIMARY     0x01    /* primary storage of the values in the map */
+#define MAP_SECONDARY   0x02    /* not the primary storage of the values in the map */
+
+#define restrict __restrict
+
+/// map_allocate
+//
+// SUMMARY
+//  create an empty map
+//
+// PARAMETERS
+//  map          - (returns) newly allocated map
+//  attr         - bitwise combination of MAP_* options and modifiers
+//  [vsz]        - value size > 0
+//  [destructor] - invoked with key/value just before freeing their associated memory
+//  [capacity]   - initial capacity, the minimum number of entries which can be set without rehashing
+//
+// REMARKS
+//  either attr & MAP_PRIMARY and vsz != 0, or attr & MAP_SECONDARY and vsz == 0
+//
+xapi map_allocate(struct map ** const restrict m, uint32_t attr, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
+  __attribute__((nonnull(1)));
+
+/// map_put
+//
+// SUMMARY
+//  create or update a key/value pair mapping
+//
+// PARAMETERS
+//  map   - map
+//  key   - pointer to key
+//  keyl  - key length
+//  [r]   - pointer to value
+//  [rv]  - (returns) pointer to map-owned value
+//
+xapi map_put(struct map * const restrict m, const char * const restrict key, size_t keyl, MAP_VALUE_TYPE * r, MAP_VALUE_TYPE * const * const restrict rv)
+  __attribute__((nonnull(1,2)));
+
+#undef restrict
+#endif
