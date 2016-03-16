@@ -51,13 +51,13 @@
 
 #define VALUE(m, tv, x) ({                         \
   void * val;                                      \
-  if(m->attr & MAP_PRIMARY)                        \
+  if((m)->attr & MAP_PRIMARY)                      \
   {                                                \
-    val = tv + (x * VALUE_SIZE(m));                \
+    val = tv + ((x) * VALUE_SIZE(m));              \
   }                                                \
   else                                             \
   {                                                \
-    val = *(char**)(tv + (x * VALUE_SIZE(m)));     \
+    val = *(char**)(tv + ((x) * VALUE_SIZE(m)));   \
   }                                                \
   val;                                             \
 })
@@ -175,12 +175,12 @@ xapi map_allocate(map ** const restrict m, uint32_t attr, size_t vsz, void (*des
   (*m)->overflow_size = (size_t)((*m)->table_size * SATURATION);
   (*m)->lm = (*m)->table_size - 1;
 
-  fatal(xmalloc, &(*m)->tk, sizeof(*(*m)->tk) * (*m)->table_size);
-  fatal(xmalloc, &(*m)->tv, VALUE_SIZE(*m) * (*m)->table_size);
-
   (*m)->destructor = destructor;
   (*m)->vsz = vsz;
   (*m)->attr = attr;
+
+  fatal(xmalloc, &(*m)->tk, sizeof(*(*m)->tk) * (*m)->table_size);
+  fatal(xmalloc, &(*m)->tv, VALUE_SIZE(*m) * (*m)->table_size);
 
   finally : coda;
 }
