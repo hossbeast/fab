@@ -40,28 +40,6 @@
  */
 #define SATURATION        0.45f      /* for 100-sized table, reallocate at 45 keys */
 
-typedef struct
-{
-  int     d;      // deleted (boolean)
-  size_t  a;      // allocated
-  size_t  l;      // length
-  char    p[];    // payload
-} __attribute__((packed)) key;
-
-struct map
-{
-  size_t      size;           // number of active entries
-  uint32_t    attr;           // options and modifiers
-  size_t      vsz;            // for MAP_PRIMARY, size of values
-  void (*destructor)(const char *, MAP_VALUE_TYPE *);
-
-  size_t      table_size;     // table length, in elements (always a power of two)
-  size_t      overflow_size;  // size at which to rehash
-  size_t      lm;             // bitmask equal to table_size - 1
-  key **      tk;             // key table
-  char *      tv;             // value table
-};
-
 #define VALUE_SIZE(m) ({          \
   size_t valz = sizeof(void*);    \
   if((m)->attr & MAP_PRIMARY)     \
@@ -176,7 +154,7 @@ static int __attribute__((nonnull)) probe(const map * const restrict m, const ch
 // protected
 //
 
-xapi map_allocate(map ** const restrict m, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), uint32_t attr, size_t capacity)
+xapi map_allocate(map ** const restrict m, uint32_t attr, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
 {
   enter;
 
@@ -320,7 +298,7 @@ xapi map_create(map ** const restrict m)
 {
   enter;
 
-  fatal(map_allocate, m, 0, 0, MAP_SECONDARY, 0);
+  fatal(map_allocate, m, MAP_SECONDARY, 0, 0, 0);
 
   finally : coda;
 }
@@ -329,7 +307,7 @@ xapi map_createx(map ** const restrict m, void (*destructor)(const char *, MAP_V
 {
   enter;
 
-  fatal(map_allocate, m, 0, destructor, MAP_SECONDARY, capacity);
+  fatal(map_allocate, m, MAP_SECONDARY, 0, destructor, capacity);
 
   finally : coda;
 }

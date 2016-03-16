@@ -33,7 +33,27 @@ SUMMARY
 
 #include "xapi.h"
 
-struct map;
+typedef struct
+{
+  int     d;      // deleted (boolean)
+  size_t  a;      // allocated
+  size_t  l;      // length
+  char    p[];    // payload
+} __attribute__((packed)) key;
+
+struct map
+{
+  size_t      size;           // number of active entries
+  uint32_t    attr;           // options and modifiers
+  size_t      vsz;            // for MAP_PRIMARY, size of values
+  void (*destructor)(const char *, MAP_VALUE_TYPE *);
+
+  size_t      table_size;     // table length, in elements (always a power of two)
+  size_t      overflow_size;  // size at which to rehash
+  size_t      lm;             // bitmask equal to table_size - 1
+  key **      tk;             // key table
+  char *      tv;             // value table
+};
 
 #define MAP_PRIMARY     0x01    /* primary storage of the values in the map */
 #define MAP_SECONDARY   0x02    /* not the primary storage of the values in the map */

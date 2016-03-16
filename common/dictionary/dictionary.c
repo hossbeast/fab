@@ -20,18 +20,23 @@
 #include "map.h"
 #include "map.def.h"
 
+struct dictionary
+{
+  struct map;
+};
+
 //
 // public
 //
 
 xapi dictionary_create(dictionary ** const restrict m, size_t vsz)
 {
-  xproxy(map_allocate, m, vsz, 0, MAP_PRIMARY, 0);
+  xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, 0, 0);
 }
 
 xapi dictionary_createx(dictionary ** const restrict m, size_t vsz, void (*destructor)(const char *, DICTIONARY_VALUE_TYPE *), size_t capacity)
 {
-  xproxy(map_allocate, m, vsz, destructor, MAP_PRIMARY, capacity);
+  xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, destructor, capacity);
 }
 
 xapi dictionary_set(dictionary * const restrict m, const char * const restrict key, size_t keyl, DICTIONARY_VALUE_TYPE * const * const restrict value)
@@ -76,7 +81,7 @@ void dictionary_free(dictionary* const restrict m)
 
 void dictionary_xfree(dictionary** const restrict m)
 {
-  map_xfree(m);
+  map_xfree((void*)m);
 }
 
 size_t dictionary_table_size(const dictionary * const restrict m)

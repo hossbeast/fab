@@ -33,8 +33,6 @@ REMARKS
 
 #include "xapi.h"
 
-struct list;
-
 #define LIST_PRIMARY    0x01  /* primary storage of elements in the list */
 #define LIST_SECONDARY  0x02  /* not the primary storage of elements in the list */
 
@@ -46,7 +44,7 @@ struct list
 
   uint32_t attr;
   size_t   esz;   // element size, for MAP_PRIMARY
-  void (*destructor)(void *);
+  void (*destructor)(LIST_ELEMENT_TYPE *);
 };
 
 #define restrict __restrict

@@ -20,18 +20,23 @@
 #include "list.h"
 #include "list.def.h"
 
+struct array
+{
+  struct list;
+};
+
 //
 // public
 //
 
 xapi array_create(array ** const restrict ar, size_t esz)
 {
-  xproxy(list_allocate, ar, LIST_PRIMARY, esz, 0, 0);
+  xproxy(list_allocate, (void*)ar, LIST_PRIMARY, esz, 0, 0);
 }
 
 xapi array_createx(array ** const restrict ar, size_t esz, void (*destructor)(ARRAY_ELEMENT_TYPE *), size_t capacity)
 {
-  xproxy(list_allocate, ar, LIST_PRIMARY, esz, destructor, capacity);
+  xproxy(list_allocate, (void*)ar, LIST_PRIMARY, esz, destructor, capacity);
 }
 
 void array_free(array * const restrict ar)
@@ -41,7 +46,7 @@ void array_free(array * const restrict ar)
 
 void array_xfree(array ** const restrict ar)
 {
-  list_xfree(ar);
+  list_xfree((void*)ar);
 }
 
 size_t array_size(const array * const restrict ar)

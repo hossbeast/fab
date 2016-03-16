@@ -23,8 +23,8 @@
 
 #include "xapi.h"
 
-struct list;
-typedef struct list array;
+struct array;
+typedef struct array array;
 
 #ifndef ARRAY_ELEMENT_TYPE
 # define ARRAY_ELEMENT_TYPE void

@@ -36,8 +36,8 @@ REMARKS
 
 #include "xapi.h"
 
-struct map;
-typedef struct map dictionary;
+struct dictionary;
+typedef struct dictionary dictionary;
 
 #ifndef DICTIONARY_VALUE_TYPE
 # define DICTIONARY_VALUE_TYPE void
