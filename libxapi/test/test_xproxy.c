@@ -20,11 +20,11 @@
 /*
 
 SUMMARY
-  exercise the conclude macro
+ test delegation with xproxy
 
 */
 
-xapi beta()
+xapi zeta()
 {
   enter;
 
@@ -33,22 +33,16 @@ xapi beta()
 
 xapi alpha()
 {
-  enter;
-
-  fatal(beta);
-
-  finally : coda;
+  xproxy(zeta);
 }
 
-static uint32_t r;
-int foo()
+xapi foo()
 {
   enter;
 
   fatal(alpha);
 
-  finally : conclude(&r);
-  return r;
+  finally : coda;
 }
 
 int main()
@@ -58,7 +52,7 @@ int main()
 #endif
 
   xapi exit = foo();
-  assert_code(exit, 0);
+  assert_exit(exit, 0, 0);
 
   succeed;
 }

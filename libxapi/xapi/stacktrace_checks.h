@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_STACKTRACE_H
-#define _XAPI_STACKTRACE_H
+#ifndef _XAPI_STACKTRACE_CHECKS_H
+#define _XAPI_STACKTRACE_CHECKS_H
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -27,6 +27,20 @@
 
 // declarations of trace-description functions
 #include "xapi/trace.h"
+
+/*
+
+MODULE
+  XAPI_MODE_STACKTRACE_CHECKS
+
+SUMMARY
+ enables detection of some common mistakes
+  ILLFATAL	non-xapi function invoked with fatal
+  NOFATAL	xapi function invoked without fatal
+  ILLFAIL  fail invoked without a code or table     
+
+*/
+#include "xapi/XAPI.errtab.h"
 
 #define restrict __restrict
 
@@ -76,13 +90,23 @@ when calling non-xapi code, you have a couple of options.
 //  __xapi_topframe - used by xapi_frame_leave to cleanup when the top-level function exits
 //  __xapi_frame_index - index of the frame recorded when this function failed
 //
-#define enter                                         \
-  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;  \
-  int __xapi_f1 = 0;                                  \
-  int __xapi_topframe = !xapi_sentinel;               \
-  xapi_sentinel = 1;                                  \
-  xapi_frame_index __attribute__((unused)) __xapi_frame_index[2] = { -1, -1 };\
-  __xapi_frame_index[0] = xapi_top_frame_index
+#define enter                                           \
+  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;    \
+  int __xapi_f1 = 0;                                    \
+  int __xapi_topframe = !xapi_sentinel;                 \
+  xapi_sentinel = 1;                                    \
+  xapi_frame_index __attribute__((unused)) __xapi_frame_index[2] = { -1, -1 };  \
+  __xapi_frame_index[0] = xapi_top_frame_index;         \
+  xapi_record_frame(xapi_calling_frame_address);        \
+  if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
+  {                                                     \
+    tfailf(perrtab_XAPI, XAPI_NOFATAL                   \
+      , "%s invoked without fatal, expected caller : %p, recorded caller : %p" \
+      , __FUNCTION__                                    \
+      , __builtin_frame_address(1)                      \
+      , xapi_calling_frame_address                      \
+    );                                                  \
+  }
 
 /*
 ** called at the site of an error
@@ -140,16 +164,32 @@ when calling non-xapi code, you have a couple of options.
 /*
 ** called elsewhere in the stack
 */
-#define xapi_invoke(func, ...)                              \
-  ({                                                        \
-      func(__VA_ARGS__);                                    \
-      xapi __r = 0;                                         \
-      if(xapi_top_frame_index != __xapi_frame_index[0])     \
-      {                                                     \
-        XAPI_FRAME_SET(0, 0);                               \
-        __r = xapi_frame_errval(__xapi_frame_index[0] + 1); \
-      }                                                     \
-      __r;                                                  \
+
+#define xapi_invoke(func, ...)                                                                      \
+  ({                                                                                                \
+      /* record the calling frame */                                                                \
+      void * calling_frame_address = __builtin_frame_address(0);                                    \
+      xapi_calling_frame_address = calling_frame_address;                                           \
+      /* the target function fixes calling_frame to caller_frame in enter */                        \
+      func(__VA_ARGS__);                                                                            \
+      if(xapi_caller_frame_address != calling_frame_address)                                        \
+      {                                                                                             \
+        XAPI_FRAME_SET_MESSAGEF(perrtab_XAPI, XAPI_ILLFATAL                                         \
+          , "non-xapi function " #func " invoked with fatal, expected caller : %p, recorded caller : %p"                   \
+          , calling_frame_address                                                                   \
+          , xapi_caller_frame_address                                                               \
+        );                                                                                          \
+      }                                                                                             \
+      else if(xapi_top_frame_index != __xapi_frame_index[0])                                        \
+      {                                                                                             \
+        XAPI_FRAME_SET(0, 0);                                                                       \
+      }                                                                                             \
+      xapi __r = 0;                                                                                 \
+      if(xapi_top_frame_index != __xapi_frame_index[0])                                             \
+      {                                                                                             \
+        __r = xapi_frame_errval(__xapi_frame_index[0] + 1);                                         \
+      }                                                                                             \
+      __r;                                                                                          \
   })
 
 /// invoke
@@ -221,7 +261,10 @@ when calling non-xapi code, you have a couple of options.
 //
 // enables writing 1-liner wrappers around xapi functions
 //
-#define xproxy(func, ...) return func(__VA_ARGS__)
+#define xproxy(func, ...)       \
+  enter;                        \
+  fatal(func, ##__VA_ARGS__);   \
+  finally : coda
 
 /// finally
 //

@@ -34,18 +34,18 @@ Use the fail macro to throw an error, and use the fatal macro to invoke other xa
 When an error is thrown, the callstack unwinds and the function returns an exit value : an unsigned
 integer that encodes the error table (in the high bits) and error code (in the low bits).
 
-### XAPI_ERRCODE
+### XAPI_MODE_ERRCODE
 
-If you compile with -DXAPI_ERRCODE, unwinding is accomplished by means of the exit value.
+If you compile with -DXAPI_MODE_ERRCODE, unwinding is accomplished by means of the exit value.
 
-It is not necessary to link with libxapi-xapi.so when compiling with -DXAPI_ERRCODE
+It is not necessary to link with libxapi-xapi.so when compiling with -DXAPI_MODE_ERRCODE
 
-### XAPI_STACKTRACE
+### XAPI_MODE_STACKTRACE
 
-If you compile with -DXAPI_STACKTRACE, while unwinding, a xapi-enabled function can produce a
+If you compile with -DXAPI_MODE_STACKTRACE, while unwinding, a xapi-enabled function can produce a
 backtrace. In addition, libxapi provides functions for getting more information from the exit value.
 
-You must link with libxapi-xapi.so when compiling with -DXAPI_STACKTRACE
+You must link with libxapi-xapi.so when compiling with -DXAPI_MODE_STACKTRACE
 
     xapi foo()
     {
@@ -78,6 +78,16 @@ libxapi, viz.
    ...
    finally : coda;
  }
+
+### XAPI_STACKTRACE_CHECKS
+
+If you compile with -DXAPI_MODE_STACKTRACE_CHECKS, the same comments apply as for XAPI_MODE_STACKTRACE.
+Additionally, in this mode, code is instrumented with runtime checks that will cause errors to be thrown
+when certain common mistakes are made in the use of the xapi calling convention.
+
+This mode is intended to be used in development only.
+
+You must link with libxapi-xapi-devel.so when compiling with -DXAPI_MODE_STACKTRACE_CHECKS
 
 ## Features
 

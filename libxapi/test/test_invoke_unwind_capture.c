@@ -54,7 +54,7 @@ xapi alpha()
   {
     assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
-#if XAPI_MODE_STACKTRACE
+#if XAPI_STACKTRACE_INCL
     // discard
     xapi_calltree_unwind();
 #endif
@@ -69,7 +69,7 @@ xapi alpha()
 
 int main()
 {
-#if XAPI_MODE_STACKTRACE
+#if XAPI_STACKTRACE_INCL
   xapi_errtab_register(perrtab_TEST);
 #endif
 

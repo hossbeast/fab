@@ -30,6 +30,12 @@
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
 
+#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
+#define XAPI_STACKTRACE_INCL 1
+#else
+#define XAPI_STACKTRACE_INCL 0
+#endif
+
 /*
 
 In the xapi tests, all assertions are made in main, which is not itself a
@@ -49,7 +55,7 @@ xapi-enabled function
     }                                                      \
   } while(0)
 
-#if XAPI_MODE_STACKTRACE
+#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
 #define assert_etab(exit, etab)                       \
   assert(                                             \
       xapi_exit_errtab(exit) == etab                  \
@@ -60,7 +66,7 @@ xapi-enabled function
 #define assert_etab(etab)
 #endif
 
-#if XAPI_MODE_STACKTRACE
+#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
 #define assert_code(exit, ecode)                              \
   assert(                                                     \
       xapi_exit_errcode(exit) == ecode                        \
@@ -81,7 +87,7 @@ xapi-enabled function
   )
 #endif
 
-#if XAPI_MODE_STACKTRACE
+#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
 #define assert_exit(exit, etab, ecode)                                                  \
   assert(                                                                               \
       xapi_exit_errtab(exit) == etab && xapi_exit_errcode(exit) == ecode                \
@@ -99,7 +105,7 @@ xapi-enabled function
   assert_code(exit, ecode)
 #endif
 
-#if XAPI_MODE_STACKTRACE
+#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
 #define succeed                                                         \
   do {                                                                  \
     xapi_teardown();                                                    \

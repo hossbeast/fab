@@ -69,12 +69,14 @@ typedef struct etable
 #endif
 
 // pull in the appropriate implementation
-#if XAPI_MODE_STACKTRACE
+#if XAPI_MODE_STACKTRACE_CHECKS
+# include "xapi/stacktrace_checks.h"
+#elif XAPI_MODE_STACKTRACE
 # include "xapi/stacktrace.h"
 #elif XAPI_MODE_ERRORCODE
 # include "xapi/errorcode.h"
 #else
-# error "neither XAPI_MODE_STACKTRACE nor XAPI_MODE_ERRORCODE is defined"
+# error "one of { XAPI_MODE_STACKTRACE_CHECKS, XAPI_MODE_STACKTRACE, XAPI_MODE_ERRORCODE } must be defined"
 #endif
 
 /// xapi_teardown

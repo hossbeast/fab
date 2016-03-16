@@ -64,7 +64,7 @@ xapi foo_nofatal()
   finally : coda;
 }
 
-#if XAPI_MODE_STACKTRACE && XAPI_RUNTIME_CHECKS
+#if XAPI_MODE_STACKTRACE_CHECKS
 xapi foo_illfail_noetab()
 {
   enter;
@@ -86,7 +86,7 @@ xapi foo_illfail_nocode()
 
 int main()
 {
-#if XAPI_MODE_STACKTRACE && XAPI_RUNTIME_CHECKS
+#if XAPI_MODE_STACKTRACE_CHECKS
   // verify NOFATAL
   xapi exit = foo_nofatal();
   assert_exit(exit, perrtab_XAPI, XAPI_NOFATAL);

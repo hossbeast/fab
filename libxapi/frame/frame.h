@@ -37,14 +37,14 @@ typedef int_fast32_t xapi_frame_index;
 extern __thread xapi_frame_index xapi_top_frame_index;
 extern __thread int xapi_sentinel;
 
-#if XAPI_RUNTIME_CHECKS
+#if XAPI_MODE_STACKTRACE_CHECKS
 /// xapi_frame_*_frame_address
 //
 // SUMMARY
 //  implementation of ILLFATAL and NOFATAL checks
 //
 // REMARKS
-//  with RUNTIME_CHECKS enabled, fatal/leave are instrumented to call these functions to
+//  with STACKTRACE_CHECKS enabled, fatal/leave are instrumented to call these functions to
 //  track the addresses of the fatal callstack and raise an error when there is disagreement
 //  with the underlying callstack
 //

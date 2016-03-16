@@ -68,7 +68,7 @@ xapi zeta()
 {
   enter;
 
-#if XAPI_MODE_STACKTRACE
+#if XAPI_STACKTRACE_INCL
   char space[4096];
   size_t z;
 #endif
@@ -76,7 +76,7 @@ xapi zeta()
   fatal(alpha);
 
 finally:
-#if XAPI_MODE_STACKTRACE
+#if XAPI_STACKTRACE_INCL
   z = xapi_trace_full(space, sizeof(space));
   write(1, space, z);
   write(1, "\n", 1);
@@ -86,7 +86,7 @@ coda;
 
 int main()
 {
-#if XAPI_MODE_STACKTRACE
+#if XAPI_STACKTRACE_INCL
   xapi_errtab_register(perrtab_TEST);
 #endif
 

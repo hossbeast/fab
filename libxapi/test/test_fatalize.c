@@ -49,7 +49,7 @@ xapi foo()
 
 int main()
 {
-#if XAPI_MODE_STACKTRACE
+#if XAPI_STACKTRACE_INCL
   xapi_errtab_register(perrtab_TEST);
 #endif
 

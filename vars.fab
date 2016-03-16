@@ -170,27 +170,18 @@ $cflags				= [
 ]
 
 # cflags options
-$cflags_eapi  = [ -DXAPI_MODE_ERRORCODE ]
-$cflags_xapi  = [ -DXAPI_MODE_STACKTRACE ]
-
 $cflags_final = [ -O3 ]
-$cflags_debug = [ -O0 -ggdb3 -DDEBUG -DXAPI_RUNTIME_CHECKS -DSANITY ]
-$cflags_devel = [ -O0 -ggdb3 -DDEVEL -DXAPI_RUNTIME_CHECKS -DSANITY [ -DBUILDROOT="\""$buildroot"\"" ~ j ] -DDEBUG_IPC ]
+$cflags_debug = [ -O0 -ggdb3 -DDEBUG ]
+$cflags_devel = [ -O0 -ggdb3 -DDEVEL -DSANITY [ -DBUILDROOT="\""$buildroot"\"" ~ j ] -DDEBUG_IPC ]
 
 # some xunit code runs with devel code, so runtime_checks must match
-$cflags_xunit = [ -O0 -ggdb3 -DDEVEL -DXUNIT -DXAPI_RUNTIME_CHECKS [ $dlibxunit ~ s/^/-I ] ]
+$cflags_xunit = [ -O0 -ggdb3 -DDEVEL -DXUNIT [ $dlibxunit ~ s/^/-I ] ]
 
 # cflags variants
-$cflags_eapi_final = [ $cflags $cflags_eapi $cflags_final ]
-$cflags_eapi_debug = [ $cflags $cflags_eapi $cflags_debug ]
-$cflags_eapi_devel = [ $cflags $cflags_eapi $cflags_devel ]
-$cflags_xapi_final = [ $cflags $cflags_xapi $cflags_final ]
-$cflags_xapi_debug = [ $cflags $cflags_xapi $cflags_debug ]
-$cflags_xapi_devel = [ $cflags $cflags_xapi $cflags_devel ]
-$cflags_xapi_xunit = [ $cflags $cflags_xapi $cflags_xunit ]
-
-# filesystem declarations
-#filesystem {
-#  path : /
-#  invalidate : stat / content / notify / always / never
-#}
+$cflags_eapi_final = [ $cflags -DXAPI_MODE_ERRORCODE $cflags_final ]
+$cflags_eapi_debug = [ $cflags -DXAPI_MODE_ERRORCODE $cflags_debug ]
+$cflags_eapi_devel = [ $cflags -DXAPI_MODE_ERRORCODE $cflags_devel ]
+$cflags_xapi_final = [ $cflags -DXAPI_MODE_STACKTRACE $cflags_final ]
+$cflags_xapi_debug = [ $cflags -DXAPI_MODE_STACKTRACE $cflags_debug ]
+$cflags_xapi_devel = [ $cflags -DXAPI_MODE_STACKTRACE_CHECKS $cflags_devel ]
+$cflags_xapi_xunit = [ $cflags -DXAPI_MODE_STACKTRACE_CHECKS $cflags_xunit ]
