@@ -61,12 +61,12 @@
 
 static xapi list_grow(list * const restrict li, size_t len)
 {
-  xproxy(grow, &li->v, sizeof(void*), len, li->l, &li->a);
+  xproxy(grow, &li->v, ELEMENT_SIZE(li), len, li->l, &li->a);
 }
 
 static xapi list_assure(list * const restrict li, size_t len)
 {
-  xproxy(assure, &li->v, sizeof(void*), len, &li->a);
+  xproxy(assure, &li->v, ELEMENT_SIZE(li), len, &li->a);
 }
 
 //
@@ -92,7 +92,7 @@ xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
 {
   enter;
 
-  fatal(assure, &li->v, sizeof(void*), li->l + len, &li->a);
+  fatal(assure, &li->v, ELEMENT_SIZE(li), li->l + len, &li->a);
 
   memmove(
       li->v + ((index + len) * ELEMENT_SIZE(li))
@@ -188,8 +188,8 @@ xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el
 
     memmove(
         li->v
-      , li->v + sizeof(void*)
-      , (li->l - 1) * sizeof(void*)
+      , li->v + ELEMENT_SIZE(li)
+      , (li->l - 1) * ELEMENT_SIZE(li)
     );
 
     li->l--;
@@ -262,7 +262,7 @@ void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *
       return compar(*(const LIST_ELEMENT_TYPE **)A, *(const LIST_ELEMENT_TYPE **)B, arg);
     };
 
-    qsort_r(li->v, li->l, sizeof(void*), lcompar, arg);
+    qsort_r(li->v, li->l, ELEMENT_SIZE(li), lcompar, arg);
   }
 }
 
