@@ -1,76 +1,36 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
 #include <stdio.h>
 
 #include "xapi.h"
-#include "xlinux/SYS.errtab.h"
 
-#include "narrator.h"
-#include "narrator/fixed.h"
-#include "narrator/growing.h"
+#include "internal.h"
 #include "narrator/file.h"
 
-xapi validate(narrator * const N)
-{
-  enter;
-
-  sayf("%d", 40);
-  sayf(" %d", 41);
-  sayf(" %d", 42);
-  sayf(" %d", 43);
-  sayf(" %d", 44);
-
-  finally : coda;
-}
-
-xapi test_growing()
-{
-  enter;
-
-  narrator * N = 0;
-  fatal(narrator_growing_create, &N);
-  fatal(validate, N);
-  printf("%s\n", narrator_first(N));
-
-finally:
-  narrator_free(N);
-coda;
-}
-
-xapi test_fixed()
-{
-  enter;
-
-  narrator * N = 0;
-  fatal(narrator_fixed_create, &N, 2048);
-  fatal(validate, N);
-  printf("%s\n", narrator_first(N));
-
-finally:
-  narrator_free(N);
-coda;
-}
-
-xapi test_file()
-{
-  enter;
-
-  narrator * N = 0;
-  fatal(narrator_file_create, &N, 1);
-  fatal(validate, N);
-  printf("\n");
-
-finally:
-  narrator_free(N);
-coda;
-}
+#include "test_util.h"
 
 int main()
 {
   enter;
 
   xapi R = 0;
-  fatal(test_growing);
-  fatal(test_fixed);
-  fatal(test_file);
+
+  success;
 
 finally:
   if(XAPI_UNWINDING)

@@ -18,13 +18,12 @@
 #include <stdio.h>
 
 #include "xapi.h"
-#include "pstring.h"
 
-#include "test.h"
 #include "internal.h"
-
-#include "narrator.h"
 #include "narrator/growing.h"
+
+#include "test_util.h"
+#include "pstring.h"
 
 xapi say(narrator * const N)
 {
@@ -66,6 +65,8 @@ int main()
 
   xapi R = 0;
   fatal(test_basic);
+
+  success;
 
 finally:
   if(XAPI_UNWINDING)

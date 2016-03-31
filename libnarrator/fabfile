@@ -26,7 +26,7 @@ $basename			= [ narrator ]
 $libname_eapi	= [ lib $basename .so ~ j ]
 $libname_xapi	= [ lib $basename -xapi .so ~ j ]
 $copts				= [ -fPIC [ $dlibnarrator ~ lsr c -d s/^/-I ]
-	# include paths - mark as system to preclude dependency discovery from gcc
+	# include paths
 	[ $dlibxapi $dlibxlinux ~ s/^/-I ]
 ]
 
@@ -47,18 +47,12 @@ $lflags_xapi_debug	= [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug [ -Wl,-s
 $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-soname,libnarrator-xapi-devel.so ~ j ] ]
 
 # source files, filter out tests
-+[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = $dlibnarrator; $cc; $cflags = $cflags_eapi_final; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = $dlibnarrator; $cc; $cflags = $cflags_eapi_debug; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = $dlibnarrator; $cc; $cflags = $cflags_eapi_devel; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibnarrator; $cc; $cflags = $cflags_xapi_final; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibnarrator; $cc; $cflags = $cflags_xapi_debug; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibnarrator; $cc; $cflags = $cflags_xapi_devel; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.xapi.errtab]($dext = [ eapi.final.pic.o ]; $rdirs = $dlibnarrator; $apidata = [1]; $cc; $cflags = $cflags_eapi_final)
-+[@std.xapi.errtab]($dext = [ eapi.debug.pic.o ]; $rdirs = $dlibnarrator; $apidata = [1]; $cc; $cflags = $cflags_eapi_debug)
-+[@std.xapi.errtab]($dext = [ eapi.devel.pic.o ]; $rdirs = $dlibnarrator; $apidata = [1]; $cc; $cflags = $cflags_eapi_devel)
-+[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibnarrator; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
-+[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibnarrator; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibnarrator; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_final)
++[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_debug)
++[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_devel)
 
 
 ##
@@ -175,10 +169,10 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-s
 #  for rationale see test/README.md
 #
 
-+[@std.c]($dext = [ xapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = $cflags_xapi_devel)
-+[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $rdirs = $dlibnarrator; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ xapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
++[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $dirs = [ $droot/test/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
 
-[ $*/test ~ j lsr sx/c/test sy dj shift ] ::^ [ [ $*/errtab/TEST.errtab.xapi.devel.o ~ j ] $libnarrator_xapi_devel ]
+[ $*/test ~ j lsr sx/c/test sy dj shift ] ::^ [ [ $droot/test/errtab/TEST.errtab.xapi.devel.o ~ j ] $libnarrator_xapi_devel ]
 [ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.o ]
 {
 	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel ] [
@@ -189,4 +183,12 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-s
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
+}
+
+[ @test.verbose ] : [ $*/test ~ j lsr sx/c/test sy ]
+{
+  set -e
+  (
+    [ $@ ~ rx/ineed fi/; ]
+  ) | tee /dev/fd/501
 }

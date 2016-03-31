@@ -19,11 +19,10 @@
 
 #include "xapi.h"
 
-#include "test.h"
 #include "internal.h"
-
-#include "narrator.h"
 #include "narrator/fixed.h"
+
+#include "test_util.h"
 
 xapi say(narrator * const N)
 {
@@ -85,6 +84,8 @@ int main()
   xapi R = 0;
   fatal(test_basic);
   fatal(test_constrained);
+
+  success;
 
 finally:
   if(XAPI_UNWINDING)
