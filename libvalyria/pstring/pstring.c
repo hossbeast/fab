@@ -23,6 +23,8 @@
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
 
+#include "internal.h"
+
 #include "assure.h"
 
 struct pstring_internals
@@ -59,10 +61,10 @@ static xapi __attribute__((nonnull)) psassure(pstring * const restrict ps, size_
 }
 
 //
-// public
+// api
 //
 
-xapi pscreatex(pstring ** const restrict rv, size_t capacity)
+API xapi pscreatex(pstring ** const restrict rv, size_t capacity)
 {
   enter;
 
@@ -78,14 +80,14 @@ finally:
 coda;
 }
 
-xapi pscreate(pstring ** const restrict ps)
+API xapi pscreate(pstring ** const restrict ps)
 {
   xproxy(pscreatex, ps, 0);
 }
 
 // mk
 
-xapi psvmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, va_list va)
+API xapi psvmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -99,7 +101,7 @@ xapi psvmkf(pstring ** restrict ps, pstring * restrict e, const char * const res
   finally : coda;
 }
 
-xapi psmkf(pstring ** const restrict ps, pstring * restrict e, const char * const restrict fmt, ...)
+API xapi psmkf(pstring ** const restrict ps, pstring * restrict e, const char * const restrict fmt, ...)
 {
   enter;
 
@@ -111,12 +113,12 @@ xapi psmkf(pstring ** const restrict ps, pstring * restrict e, const char * cons
   finally : coda;
 }
 
-xapi psmks(pstring ** restrict ps, pstring * restrict e, const char * const restrict s)
+API xapi psmks(pstring ** restrict ps, pstring * restrict e, const char * const restrict s)
 {
   xproxy(psmkw, ps, e, s, strlen(s));
 }
 
-xapi psmkw(pstring ** restrict ps, pstring * restrict e, const char * const restrict s, size_t l)
+API xapi psmkw(pstring ** restrict ps, pstring * restrict e, const char * const restrict s, size_t l)
 {
   enter;
 
@@ -130,7 +132,7 @@ xapi psmkw(pstring ** restrict ps, pstring * restrict e, const char * const rest
   finally : coda;
 }
 
-xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c)
+API xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c)
 {
   enter;
 
@@ -144,7 +146,7 @@ xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c)
   finally : coda;
 }
 
-xapi psclear(pstring * restrict ps)
+API xapi psclear(pstring * restrict ps)
 {
   enter;
 
@@ -153,7 +155,7 @@ xapi psclear(pstring * restrict ps)
   finally : coda;
 }
 
-void psfree(pstring * ps)
+API void psfree(pstring * ps)
 {
   if(ps)
   {
@@ -162,7 +164,7 @@ void psfree(pstring * ps)
   free(ps);
 }
 
-void psxfree(pstring ** ps)
+API void psxfree(pstring ** ps)
 {
   psfree(*ps);
   *ps = 0;
@@ -170,7 +172,7 @@ void psxfree(pstring ** ps)
 
 // load
 
-xapi psvloadf(pstring * restrict ps, const char * const restrict fmt, va_list va)
+API xapi psvloadf(pstring * restrict ps, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -194,7 +196,7 @@ finally:
 coda;
 }
 
-xapi psloadf(pstring * restrict ps, const char * const restrict fmt, ...)
+API xapi psloadf(pstring * restrict ps, const char * const restrict fmt, ...)
 {
   enter;
 
@@ -207,12 +209,12 @@ finally:
 coda;
 }
 
-xapi psloads(pstring * restrict ps, const char * const restrict s)
+API xapi psloads(pstring * restrict ps, const char * const restrict s)
 {
   xproxy(psloadw, ps, s, strlen(s));
 }
 
-xapi psloadw(pstring * restrict ps, const char * const restrict s, size_t l)
+API xapi psloadw(pstring * restrict ps, const char * const restrict s, size_t l)
 {
   enter;
 
@@ -224,7 +226,7 @@ xapi psloadw(pstring * restrict ps, const char * const restrict s, size_t l)
   finally : coda;
 }
 
-xapi psloadc(pstring * restrict ps, int c)
+API xapi psloadc(pstring * restrict ps, int c)
 {
   enter;
 
@@ -238,7 +240,7 @@ xapi psloadc(pstring * restrict ps, int c)
 
 // cat
 
-xapi psvcatf(pstring * restrict ps, const char * const restrict fmt, va_list va)
+API xapi psvcatf(pstring * restrict ps, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -260,7 +262,7 @@ xapi psvcatf(pstring * restrict ps, const char * const restrict fmt, va_list va)
   finally : coda;
 }
 
-xapi pscatf(pstring * restrict ps, const char * const restrict fmt, ...)
+API xapi pscatf(pstring * restrict ps, const char * const restrict fmt, ...)
 {
   enter;
 
@@ -273,12 +275,12 @@ finally:
 coda;
 }
 
-xapi pscats(pstring * restrict ps, const char * const restrict s)
+API xapi pscats(pstring * restrict ps, const char * const restrict s)
 {
   xproxy(pscatw, ps, s, strlen(s));
 }
 
-xapi pscatw(pstring * restrict ps, const char * const restrict s, size_t l)
+API xapi pscatw(pstring * restrict ps, const char * const restrict s, size_t l)
 {
   enter;
 
@@ -290,7 +292,7 @@ xapi pscatw(pstring * restrict ps, const char * const restrict s, size_t l)
   finally : coda;
 }
 
-xapi pscatc(pstring * restrict ps, int c)
+API xapi pscatc(pstring * restrict ps, int c)
 {
   enter;
 

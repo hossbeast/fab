@@ -20,8 +20,10 @@
 
 #include "xlinux.h"
 
-#include "list.h"
+#include "internal.h"
+#define LIST_INTERNALS struct list_internals
 #include "list.def.h"
+#include "list.h"
 
 #include "grow.h"
 #include "assure.h"
@@ -73,19 +75,25 @@ static xapi list_assure(list * const restrict li, size_t len)
 // protected
 //
 
-xapi list_allocate(list ** const restrict li, uint32_t attr, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
+xapi list_allocate(list ** const restrict rv, uint32_t attr, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
 {
   enter;
 
-  fatal(xmalloc, li, sizeof(**li));
+  list * li = 0;
+  fatal(xmalloc, &li, sizeof(*li));
 
-  (*li)->destructor = destructor;
-  (*li)->esz = esz;
-  (*li)->attr = attr;
+  li->destructor = destructor;
+  li->esz = esz;
+  li->attr = attr;
 
-  fatal(list_grow, *li, capacity ?: DEFAULT_CAPACITY);
+  fatal(list_grow, li, capacity ?: DEFAULT_CAPACITY);
 
-  finally : coda;
+  *rv = li;
+  li = 0;
+
+finally:
+  list_free(li);
+coda;
 }
 
 xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
@@ -122,20 +130,20 @@ xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
 }
 
 //
-// public
+// api
 //
 
-xapi list_createx(list** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
+API xapi list_createx(list** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
 {
   xproxy(list_allocate, li, LIST_SECONDARY, 0, destructor, capacity);
 }
 
-xapi list_create(list** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *))
+API xapi list_create(list** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *))
 {
   xproxy(list_allocate, li, LIST_SECONDARY, 0, destructor, 0);
 }
 
-void list_free(list * const restrict li)
+API void list_free(list * const restrict li)
 {
   if(li)
   {
@@ -145,18 +153,18 @@ void list_free(list * const restrict li)
   free(li);
 }
 
-void list_xfree(list ** const restrict li)
+API void list_xfree(list ** const restrict li)
 {
   list_free(*li);
   *li = 0;
 }
 
-size_t list_size(const list * const restrict li)
+API size_t list_size(const list * const restrict li)
 {
   return li->l;
 }
 
-void list_clear(list * const restrict li)
+API void list_clear(list * const restrict li)
 {
   if(li->destructor)
   {
@@ -170,12 +178,12 @@ void list_clear(list * const restrict li)
   li->l = 0;
 }
 
-LIST_ELEMENT_TYPE * list_get(const list * const restrict li, int x)
+API LIST_ELEMENT_TYPE * list_get(const list * const restrict li, int x)
 {
   return ELEMENT(li, x);
 }
 
-xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
+API xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
 {
   enter;
 
@@ -200,7 +208,7 @@ xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el
   finally : coda;
 }
 
-xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
+API xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
 {
   enter;
 
@@ -218,37 +226,37 @@ xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
   finally : coda;
 }
 
-xapi list_push(list * const restrict li, LIST_ELEMENT_TYPE * const el)
+API xapi list_push(list * const restrict li, LIST_ELEMENT_TYPE * const el)
 {
   xproxy(list_add, li, li->l, 1, &el, 0);
 }
 
-xapi list_push_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
+API xapi list_push_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
 {
   xproxy(list_add, li, li->l, len, el, 0);
 }
 
-xapi list_unshift(list * const restrict li, LIST_ELEMENT_TYPE * const el)
+API xapi list_unshift(list * const restrict li, LIST_ELEMENT_TYPE * const el)
 {
   xproxy(list_add, li, 0, 1, &el, 0);
 }
 
-xapi list_unshift_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
+API xapi list_unshift_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
 {
   xproxy(list_add, li, 0, len, el, 0);
 }
 
-xapi list_insert(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
+API xapi list_insert(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
 {
   xproxy(list_add, li, index, 1, &el, 0);
 }
 
-xapi list_insert_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
+API xapi list_insert_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
 {
   xproxy(list_add, li, index, len, el, 0);
 }
 
-void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *, const LIST_ELEMENT_TYPE *, void *), void * arg)
+API void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *, const LIST_ELEMENT_TYPE *, void *), void * arg)
 {
   if(li->attr & LIST_PRIMARY)
   {
@@ -266,7 +274,7 @@ void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *
   }
 }
 
-xapi list_sublist(list * const restrict li, size_t index, size_t len, list ** const restrict rv)
+API xapi list_sublist(list * const restrict li, size_t index, size_t len, list ** const restrict rv)
 {
   enter;
 

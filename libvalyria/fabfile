@@ -1,0 +1,193 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# definitions
++[ $*/../vars.fab ]
+
+# source invocations
++[ $dcommon ]() @common
+
+# variables
+$basename     = [ valyria ]
+$libname_eapi = [ lib $basename .so ~ j ]
+$libname_xapi = [ lib $basename -xapi .so ~ j ]
+$libdeps_dirs = [ $dlibxapi $dlibxlinux ]
+$copts        = [ -fPIC [ $* ~ lsr c -d s/^/-I ] [ $libdeps_dirs ~ s/^/-I ] ]
+
+# cflags variants
+$cflags_eapi_final = [ $cflags_eapi_final $copts ]
+$cflags_eapi_debug = [ $cflags_eapi_debug $copts ]
+$cflags_eapi_devel = [ $cflags_eapi_devel $copts ]
+$cflags_xapi_final = [ $cflags_xapi_final $copts ]
+$cflags_xapi_debug = [ $cflags_xapi_debug $copts ]
+$cflags_xapi_devel = [ $cflags_xapi_devel $copts ]
+
+$lopts              = [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
+$lflags_eapi_final  = [ $lopts $libxlinux_eapi_final [ -Wl,-soname,libvalyria.so ~ j ] ]
+$lflags_eapi_debug  = [ $lopts $libxlinux_eapi_debug [ -Wl,-soname,libvalyria.so ~ j ] ]
+$lflags_eapi_devel  = [ $lopts $libxlinux_eapi_devel [ -Wl,-soname,libvalyria-devel.so ~ j ] ]
+$lflags_xapi_final  = [ $lopts $libxapi_xapi_final $libxlinux_xapi_final [ -Wl,-soname,libvalyria-xapi.so ~ j ] ]
+$lflags_xapi_debug  = [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug [ -Wl,-soname,libvalyria-xapi.so ~ j ] ]
+$lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-soname,libvalyria-xapi-devel.so ~ j ] ]
+
+# source files, filter out tests
++[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_final)
++[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_debug)
++[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_devel)
+
+##
+## dependencies
+##
+
+# default NOFILE target - build everything
+[ @all ] : [ @all.eapi @all.xapi ]
+[ @all.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
+[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @final ] : [ @final.eapi @final.xapi ]
+[ @final.eapi ] : [ $libvalyria_eapi_final ]
+[ @final.xapi ] : [ $libvalyria_xapi_final ]
+[ @debug ] : [ @debug.eapi @debug.xapi ]
+[ @debug.eapi ] : [ $libvalyria_eapi_debug ]
+[ @debug.xapi ] : [ $libvalyria_xapi_debug ]
+[ @devel ] : [ @devel.eapi @devel.xapi ]
+[ @devel.eapi ] : [ $libvalyria_eapi_devel ]
+[ @devel.xapi ] : [ $libvalyria_xapi_devel ]
+
+##
+## formulas
+##
+
+# library exports
+[ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
+{
+    (echo "{ global: "
+  > perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=|;)/) { print "$1;\n" }' <(\
+    cat -- [ $@ ~ rx/ineed fi ] )
+  > echo "local: *; };"
+    ) 1>[ $@ ]
+}
+
+# link the library
+[ $libvalyria_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/eapi.final.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
+}
+
+[ $libvalyria_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/eapi.debug.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
+}
+
+[ $libvalyria_eapi_devel ] : [ [ $*/exports ~ j ]  [ $* ~ ls l/test d lsr sx/c/eapi.devel.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
+}
+
+[ $libvalyria_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.final.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
+}
+
+[ $libvalyria_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.debug.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
+}
+
+[ $libvalyria_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.devel.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
+}
+
+[ $libvalyria_eapi_final ] :^ [ $libxlinux_eapi_final ]
+[ $libvalyria_eapi_debug ] :^ [ $libxlinux_eapi_debug ]
+[ $libvalyria_eapi_devel ] :^ [ $libxlinux_eapi_devel ]
+[ $libvalyria_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final ]
+[ $libvalyria_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug ]
+[ $libvalyria_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel ]
+
+##
+## tasks
+##
+
+[ @install.final.eapi ] : [ @final.eapi ]
+{
+  install -d                                    [ $destdir/$libdir ]
+  install [ $libvalyria_eapi_final ]            [ $destdir/$libdir/$libname_eapi ]
+}
+
+[ @install.debug.eapi ] : [ @debug.eapi ]
+{
+  install -d                                    [ $destdir/$libdir ]
+  install [ $libvalyria_eapi_debug ]            [ $destdir/$libdir/$libname_eapi ]
+}
+
+[ @install.final.xapi ] : [ @final.xapi ]
+{
+  install -d                                    [ $destdir/$libdir ]
+  install [ $libvalyria_xapi_final ]            [ $destdir/$libdir/$libname_xapi ]
+}
+
+[ @install.debug.xapi ] : [ @debug.xapi ]
+{
+  install -d                                    [ $destdir/$libdir ]
+  install [ $libvalyria_xapi_debug ]            [ $destdir/$libdir/$libname_xapi ]
+}
+
+[ @installdevheaders ]
+{
+  install -d                                    [ $destdir/$incdir ]
+  install [ $*/valyria.h  ]                     [ $destdir/$incdir/ ]
+
+  install -d                                    [ $destdir/$incdir/valyria ]
+  install [ $*/valyria/pstring.h ]              [ $destdir/$incdir/valyria/ ]
+  install [ $*/valyria/array.h ]                [ $destdir/$incdir/valyria/ ]
+  install [ $*/valyria/list.h ]                 [ $destdir/$incdir/valyria/ ]
+  install [ $*/valyria/dictionary.h ]           [ $destdir/$incdir/valyria/ ]
+  install [ $*/valyria/map.h ]                  [ $destdir/$incdir/valyria/ ]
+}
+
+#
+# tests
+#  for rationale see test/README.md
+#
+
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $dirs = [ $droot/test/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
+
+[ $*/test ~ j lsr sx/c/test sy dj shift ] ::^ [ [ $droot/test/errtab/TEST.errtab.xapi.devel.pic.o ~ j ] ]
+[ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.pic.o ]
+{
+	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel $libxlinux_xapi_devel ] [
+  ] [ $dlibxapi $dlibxlinux $* ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
+}
+
+[ @test ] : [ $*/test ~ j lsr sx/c/test sy ]
+{
+  set -e
+  [ $@ ~ rx/ineed fi/; ]
+}
+
+[ @test.verbose ] : [ $*/test ~ j lsr sx/c/test sy ]
+{
+  set -e
+  (
+    [ $@ ~ rx/ineed fi/; ]
+  ) | tee /dev/fd/501
+}

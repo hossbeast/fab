@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _DICTIONARY_H
-#define _DICTIONARY_H
+#ifndef _VALYRIA_DICTIONARY_H
+#define _VALYRIA_DICTIONARY_H
 
 /*
 

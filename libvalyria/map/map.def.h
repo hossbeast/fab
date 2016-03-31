@@ -33,6 +33,9 @@ SUMMARY
 
 #include "xapi.h"
 
+#define MAP_PRIMARY     0x01    /* primary storage of the values in the map */
+#define MAP_SECONDARY   0x02    /* not the primary storage of the values in the map */
+
 typedef struct
 {
   int     d;      // deleted (boolean)
@@ -54,9 +57,6 @@ struct map
   key **      tk;             // key table
   char *      tv;             // value table
 };
-
-#define MAP_PRIMARY     0x01    /* primary storage of the values in the map */
-#define MAP_SECONDARY   0x02    /* not the primary storage of the values in the map */
 
 #define restrict __restrict
 

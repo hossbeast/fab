@@ -37,7 +37,7 @@ xapi validate(array * ar)
   enter;
 
   int x;
-  for(x = 1; x < array_size(ar); x++)
+  for(x = 1; x < ar->l; x++)
   {
     item * A = array_get(ar, x - 1);
     item * B = array_get(ar, x);
@@ -49,7 +49,7 @@ xapi validate(array * ar)
   finally : coda;
 }
 
-xapi main()
+int main()
 {
   enter;
 
@@ -93,5 +93,5 @@ finally:
 conclude(&r);
 
   xapi_teardown();
-  return r;
+  return !!r;
 }

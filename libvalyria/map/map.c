@@ -19,11 +19,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xapi.h"
+#include "xlinux.h"
+
+#include "internal.h"
 #include "map.h"
 #include "map.def.h"
 
-#include "xapi.h"
-#include "xlinux.h"
 #include "macros.h"
 
 /*
@@ -291,10 +293,10 @@ coda;
 
 
 //
-// public
+// api
 //
 
-xapi map_create(map ** const restrict m)
+API xapi map_create(map ** const restrict m)
 {
   enter;
 
@@ -303,7 +305,7 @@ xapi map_create(map ** const restrict m)
   finally : coda;
 }
 
-xapi map_createx(map ** const restrict m, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
+API xapi map_createx(map ** const restrict m, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
 {
   enter;
 
@@ -312,7 +314,7 @@ xapi map_createx(map ** const restrict m, void (*destructor)(const char *, MAP_V
   finally : coda;
 }
 
-xapi map_set(map* const restrict m, const char * const restrict k, size_t kl, MAP_VALUE_TYPE * const restrict v)
+API xapi map_set(map* const restrict m, const char * const restrict k, size_t kl, MAP_VALUE_TYPE * const restrict v)
 {
   enter;
 
@@ -321,7 +323,7 @@ xapi map_set(map* const restrict m, const char * const restrict k, size_t kl, MA
   finally : coda;
 }
 
-MAP_VALUE_TYPE * map_get(const map* const restrict m, const char * const restrict k, size_t kl)
+API MAP_VALUE_TYPE * map_get(const map* const restrict m, const char * const restrict k, size_t kl)
 {
   // perform probe
   size_t i = 0;
@@ -331,12 +333,12 @@ MAP_VALUE_TYPE * map_get(const map* const restrict m, const char * const restric
   return 0;
 }
 
-size_t map_size(const map * const restrict m)
+API size_t map_size(const map * const restrict m)
 {
   return m->size;
 }
 
-void map_clear(map* const restrict m)
+API void map_clear(map* const restrict m)
 {
   // reset all lengths; all allocations remain intact
   int x;
@@ -357,7 +359,7 @@ void map_clear(map* const restrict m)
   m->size = 0;
 }
 
-int map_delete(map* const restrict m, const char * const restrict k, size_t kl)
+API int map_delete(map* const restrict m, const char * const restrict k, size_t kl)
 {
   size_t i = 0;
   if(probe(m, k, kl, &i) == 0)
@@ -378,7 +380,7 @@ int map_delete(map* const restrict m, const char * const restrict k, size_t kl)
   return 0;
 }
 
-xapi map_keys(const map * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
+API xapi map_keys(const map * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
 {
   enter;
 
@@ -397,7 +399,7 @@ xapi map_keys(const map * const restrict m, const char *** const restrict keys, 
   finally : coda;
 }
 
-xapi map_values(const map* const restrict m, MAP_VALUE_TYPE *** restrict values, size_t * const restrict valuesl)
+API xapi map_values(const map* const restrict m, MAP_VALUE_TYPE *** restrict values, size_t * const restrict valuesl)
 {
   enter;
 
@@ -416,7 +418,7 @@ xapi map_values(const map* const restrict m, MAP_VALUE_TYPE *** restrict values,
   finally : coda;
 }
 
-void map_free(map* const restrict m)
+API void map_free(map* const restrict m)
 {
   if(m)   // free-like semantics
   {
@@ -439,18 +441,18 @@ void map_free(map* const restrict m)
   free(m);
 }
 
-void map_xfree(map** const restrict m)
+API void map_xfree(map** const restrict m)
 {
   map_free(*m);
   *m = 0;
 }
 
-size_t map_table_size(const map * const restrict m)
+API size_t map_table_size(const map * const restrict m)
 {
   return m->table_size;
 }
 
-const char * map_table_key(const map * const restrict m, size_t x)
+API const char * map_table_key(const map * const restrict m, size_t x)
 {
   if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     return m->tk[x]->p;
@@ -458,7 +460,7 @@ const char * map_table_key(const map * const restrict m, size_t x)
   return 0;
 }
 
-MAP_VALUE_TYPE * map_table_value(const map * const restrict m, size_t x)
+API MAP_VALUE_TYPE * map_table_value(const map * const restrict m, size_t x)
 {
   if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     return VALUE(m, m->tv, x);

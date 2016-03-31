@@ -15,20 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ARRAY_H
-#define _ARRAY_H
-
-#include <sys/types.h>
-#include <stdint.h>
-
-#include "xapi.h"
-
-struct array;
-typedef struct array array;
-
-#ifndef ARRAY_ELEMENT_TYPE
-# define ARRAY_ELEMENT_TYPE void
-#endif
+#ifndef _VALYRIA_ARRAY_H
+#define _VALYRIA_ARRAY_H
 
 /*
 
@@ -39,6 +27,25 @@ REMARKS
  meant to be used as the primary storage for the elements in the collection
 
 */
+
+#include <sys/types.h>
+#include <stdint.h>
+
+#include "xapi.h"
+
+typedef struct array
+{
+  size_t l;
+
+#ifndef ARRAY_INTERNALS
+# define ARRAY_INTERNALS
+#endif
+  ARRAY_INTERNALS;
+} array;
+
+#ifndef ARRAY_ELEMENT_TYPE
+# define ARRAY_ELEMENT_TYPE void
+#endif
 
 #define restrict __restrict
 

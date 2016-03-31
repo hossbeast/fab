@@ -15,20 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LIST_H
-#define _LIST_H
-
-#include <sys/types.h>
-#include <stdint.h>
-
-#include "xapi.h"
-
-struct list;
-typedef struct list list;
-
-#ifndef LIST_ELEMENT_TYPE
-# define LIST_ELEMENT_TYPE void
-#endif
+#ifndef _VALYRIA_LIST_H
+#define _VALYRIA_LIST_H
 
 /*
 
@@ -39,6 +27,25 @@ REMARKS
  meant to be used as secondary storage for the elements in the collection
 
 */
+
+#include <sys/types.h>
+#include <stdint.h>
+
+#include "xapi.h"
+
+typedef struct list
+{
+  size_t l;  // number of elements
+
+#ifndef LIST_INTERNALS
+# define LIST_INTERNALS
+#endif
+  LIST_INTERNALS;
+} list;
+
+#ifndef LIST_ELEMENT_TYPE
+# define LIST_ELEMENT_TYPE void
+#endif
 
 #define restrict __restrict
 

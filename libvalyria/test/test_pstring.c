@@ -38,7 +38,7 @@ xapi validate(pstring * ps)
   finally : coda;
 }
 
-xapi main()
+int main()
 {
   enter;
 
@@ -63,5 +63,5 @@ finally:
 conclude(&r);
 
   xapi_teardown();
-  return r;
+  return !!r;
 }

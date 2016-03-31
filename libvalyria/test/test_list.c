@@ -37,7 +37,7 @@ xapi validate(list * listp)
   enter;
 
   int x;
-  for(x = 1; x < list_size(listp); x++)
+  for(x = 1; x < listp->l; x++)
   {
     item * A = list_get(listp, x - 1);
     item * B = list_get(listp, x);
@@ -49,7 +49,7 @@ xapi validate(list * listp)
   finally : coda;
 }
 
-xapi main()
+int main()
 {
   enter;
 
@@ -108,5 +108,5 @@ finally:
 conclude(&r);
 
   xapi_teardown();
-  return r;
+  return !!r;
 }

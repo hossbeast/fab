@@ -30,7 +30,6 @@ once {
 	$cflags_xapi_final = [ $cflags_xapi_final $cflags ]
 	$cflags_xapi_debug = [ $cflags_xapi_debug $cflags ]
 	$cflags_xapi_devel = [ $cflags_xapi_devel $cflags ]
-	$cflags_xapi_xunit = [ $cflags_xapi_xunit $cflags ]
 
 	# c files
 	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ eapi.final.o ]; $cflags = $cflags_eapi_final)
@@ -46,10 +45,4 @@ once {
 	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ xapi.final.pic.o ]; $cflags = [ $cflags_xapi_final -fPIC ])
 	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ xapi.debug.pic.o ]; $cflags = [ $cflags_xapi_debug -fPIC ])
 	+[@std.c]($rdirs = $*; $cc; $filter = [ ~ ?{ cons{?, l,/test.c v} ]; $dext = [ xapi.devel.pic.o ]; $cflags = [ $cflags_xapi_devel -fPIC ])
-
-	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.xunit.pic.o ]; $cflags = [ $cflags_xapi_xunit -fPIC ])
-
-	# xunit tests
-#	+[$dxunit/../fablib/xunit.fab]($base = $*; $cc; $cflags; $xunit = $xunit_xapi_devel)
-  +[$xunit_tests]($rdirs = $*)
 }

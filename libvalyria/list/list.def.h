@@ -33,13 +33,18 @@ REMARKS
 
 #include "xapi.h"
 
+struct list;    // list.h
+
 #define LIST_PRIMARY    0x01  /* primary storage of elements in the list */
 #define LIST_SECONDARY  0x02  /* not the primary storage of elements in the list */
 
-struct list
+#ifndef LIST_ELEMENT_TYPE
+# define LIST_ELEMENT_TYPE void
+#endif
+
+struct list_internals
 {
   char *   v;     // storage
-  size_t   l;     // number of elements
   size_t   a;     // allocated size in elements
 
   uint32_t attr;
@@ -64,7 +69,7 @@ struct list
 // REMARKS
 //  either attr & LIST_PRIMARY && esz != 0 or attr & LIST_SECONDARY && esz == 0
 //
-xapi list_allocate(list ** const restrict li, uint32_t attr, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
+xapi list_allocate(struct list ** const restrict li, uint32_t attr, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
   __attribute__((nonnull(1)));
 
 /// list_add
@@ -79,7 +84,7 @@ xapi list_allocate(list ** const restrict li, uint32_t attr, size_t esz, void (*
 //  [el]  - pointer to the first element to add
 //  [rv]  - (returns) pointers to elements
 //
-xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+xapi list_add(struct list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
   __attribute__((nonnull(1)));
 
 #undef restrict
