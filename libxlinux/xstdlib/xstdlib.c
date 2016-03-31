@@ -29,21 +29,21 @@ API xapi xmalloc(void* target, size_t size)
 
   void * mem = 0;
 
-	if(policy)
-	{
-		fatal(policy->malloc, policy, target, size);
-	}
+  if(policy)
+  {
+    fatal(policy->malloc, policy, target, size);
+  }
   else if((mem = calloc(size, 1)) == 0)
-	{
-		fail(errno);
-	}
-	else
+  {
+    fail(errno);
+  }
+  else
   {
     *(void**)target = mem;
   }
-	
+  
 finally :
-	XAPI_INFOF("size", "%zu", size);
+  XAPI_INFOF("size", "%zu", size);
 coda;
 }
 
@@ -51,112 +51,112 @@ API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
   enter;
 
-	if(policy)
-	{
-		fatal(policy->realloc, policy, target, es, ec, oec);
-	}
-	else
-	{
-		void** t = ((void**)target);
+  if(policy)
+  {
+    fatal(policy->realloc, policy, target, es, ec, oec);
+  }
+  else
+  {
+    void** t = ((void**)target);
     void * mem = 0;
     if((mem = realloc(*t, es * ec)) == 0)
       fail(errno);
     *t = mem;
 
-		if(es * ec)
-		{
-			if(*t)
-			{
-				if(((ssize_t)ec - (ssize_t)oec) > 0)
-					memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
-			}
-			else
-			{
-				fail(errno);
-			}
-		}
-	}
+    if(es * ec)
+    {
+      if(*t)
+      {
+        if(((ssize_t)ec - (ssize_t)oec) > 0)
+          memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
+      }
+      else
+      {
+        fail(errno);
+      }
+    }
+  }
 
 finally :
-	XAPI_INFOF("size", "%zu", es * ec);
+  XAPI_INFOF("size", "%zu", es * ec);
 coda;
 }
 
 void API ifree(void* target)
 {
-	if(policy)
-	{
-		if(policy->ifree)
-			policy->ifree(policy, target);
-	}
-	else
-	{
-		void** t = (void**)target;
+  if(policy)
+  {
+    if(policy->ifree)
+      policy->ifree(policy, target);
+  }
+  else
+  {
+    void** t = (void**)target;
 
-		free(*t);
-		*t = 0;
-	}
+    free(*t);
+    *t = 0;
+  }
 }
 
 void API xfree(void* target)
 {
-	if(policy)
-	{
-		if(policy->free)
-			policy->free(policy, target);
-	}
-	else
-	{
-		free(target);
-	}
+  if(policy)
+  {
+    if(policy->free)
+      policy->free(policy, target);
+  }
+  else
+  {
+    free(target);
+  }
 }
 
 API xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void *, const void *, void *, int * r), void * arg)
 {
   enter;
 
-	int hasfailed = 0;
+  int hasfailed = 0;
 
-	int compar(const void * A, const void * B, void * T)
-	{
-		enter;
+  int compar(const void * A, const void * B, void * T)
+  {
+    enter;
 
-		int r = 0;
-		if(!hasfailed)
-			fatal(xcompar, A, B, T, &r);
+    int r = 0;
+    if(!hasfailed)
+      fatal(xcompar, A, B, T, &r);
 
-		int R = 0;
-		finally : conclude(&R);
+    int R = 0;
+    finally : conclude(&R);
 
-		if(R)
-		{
-			hasfailed = 1;
-			r = 0;
-		}
+    if(R)
+    {
+      hasfailed = 1;
+      r = 0;
+    }
 
-		return r;
-	};
+    return r;
+  };
 
-	qsort_r(base, nmemb, size, compar, arg);
+  qsort_r(base, nmemb, size, compar, arg);
 
-	if(hasfailed)
-		fail(0);
+  if(hasfailed)
+    fail(0);
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
 {
   enter;
 
-	ssize_t lr;
-	if(!r)
-		r = &lr;
+  ssize_t lr;
+  if(!r)
+    r = &lr;
 
-	if((*r = readlink(pathname, buf, bufsiz)) == -1)
-		fail(errno);
+  if((*r = readlink(pathname, buf, bufsiz)) == -1)
+    fail(errno);
 
 finally:
-	XAPI_INFOS("path", pathname);
+  XAPI_INFOS("path", pathname);
 coda;
 }

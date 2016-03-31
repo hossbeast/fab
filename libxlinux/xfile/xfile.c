@@ -25,7 +25,7 @@ API xapi xflock(int fd, int operation)
 {
   enter;
 
-	fatalize(errno, flock, fd, operation);
+  fatalize(errno, flock, fd, operation);
 
-	finally : coda;
+  finally : coda;
 }

@@ -23,11 +23,11 @@ API xapi xopendir(const char * name, DIR ** dd)
 {
   enter;
 
-	if(((*dd) = opendir(name)) == 0)
-		fail(errno);
+  if(((*dd) = opendir(name)) == 0)
+    fail(errno);
 
 finally:
-	XAPI_INFOF("path", "%s", name);
+  XAPI_INFOF("path", "%s", name);
 coda;
 }
 
@@ -35,11 +35,11 @@ API xapi uxopendir(const char * name, DIR ** dd)
 {
   enter;
 
-	if(((*dd) = opendir(name)) == 0 && errno != ENOENT)
-		fail(errno);
+  if(((*dd) = opendir(name)) == 0 && errno != ENOENT)
+    fail(errno);
 
 finally:
-	XAPI_INFOF("path", "%s", name);
+  XAPI_INFOF("path", "%s", name);
 coda;
 }
 
@@ -47,9 +47,9 @@ API xapi xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
 {
   enter;
 
-	int r;
-	if((r = readdir_r(dirp, entry, result)))
-		fail(r);
+  int r;
+  if((r = readdir_r(dirp, entry, result)))
+    fail(r);
 
-	finally : coda;
+  finally : coda;
 }

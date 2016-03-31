@@ -25,14 +25,14 @@ API xapi xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t of
 {
   enter;
 
-	if(r && (*r = mmap(addr, length, prot, flags, fd, offset)) == MAP_FAILED)
-		fail(errno);
+  if(r && (*r = mmap(addr, length, prot, flags, fd, offset)) == MAP_FAILED)
+    fail(errno);
 
-	else if(!r && mmap(addr, length, prot, flags, fd, offset) == MAP_FAILED)
-		fail(errno);
-	
+  else if(!r && mmap(addr, length, prot, flags, fd, offset) == MAP_FAILED)
+    fail(errno);
+  
 finally:
-	XAPI_INFOF("length", "%zu", length);
+  XAPI_INFOF("length", "%zu", length);
 coda;
 }
 
@@ -40,19 +40,19 @@ API xapi xmunmap(void * addr, size_t length)
 {
   enter;
 
-	fatalize(errno, munmap, addr, length);
+  fatalize(errno, munmap, addr, length);
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi ixmunmap(void * addr, size_t length)
 {
   enter;
 
-	if(*(void**)addr)
-		fatalize(errno, munmap, *(void**)addr, length);
+  if(*(void**)addr)
+    fatalize(errno, munmap, *(void**)addr, length);
 
-	*(void**)addr = 0;
+  *(void**)addr = 0;
 
-	finally : coda;
+  finally : coda;
 }

@@ -30,33 +30,33 @@ API xapi xnftw(const char *dirpath, int (*xfn) (const char *fpath, const struct 
 
   int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
   {
-		enter;
+    enter;
 
     fatal(xfn, fpath, sb, typeflag, ftwbuf);
 
-		int R = 0;
-		finally : conclude(&R);
+    int R = 0;
+    finally : conclude(&R);
 
-		if(R == 0)
-			return FTW_CONTINUE;
+    if(R == 0)
+      return FTW_CONTINUE;
 
-		return FTW_STOP;
+    return FTW_STOP;
   };
 
   // depth-first
-	if(nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
-	{
-		fail(0);	// propagate error raised by callback
-	}
-	/*
-	else
-	{
-		fail(XLINUX_FTWERROR);	// internal-to-ftw error
-	}
-	*/
-	
+  if(nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
+  {
+    fail(0);  // propagate error raised by callback
+  }
+  /*
+  else
+  {
+    fail(XLINUX_FTWERROR);  // internal-to-ftw error
+  }
+  */
+  
 finally:
-	XAPI_INFOF("path", "%s", dirpath);
+  XAPI_INFOF("path", "%s", dirpath);
 coda;
 }
 
@@ -66,38 +66,38 @@ API xapi xnftw_nth(const char *dirpath, int (*xfn) (const char *fpath, const str
 
   int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
   {
-		enter;
+    enter;
 
-		if(ftwbuf->level == level)
-			fatal(xfn, fpath, sb, typeflag, ftwbuf);
+    if(ftwbuf->level == level)
+      fatal(xfn, fpath, sb, typeflag, ftwbuf);
 
-		int R;
-		finally : conclude(&R);
+    int R;
+    finally : conclude(&R);
 
-		if(R == 0)
-		{
-			if(ftwbuf->level == level)
-				return FTW_SKIP_SUBTREE;	// process only nth-level files
-			else
-				return FTW_CONTINUE;
-		}
+    if(R == 0)
+    {
+      if(ftwbuf->level == level)
+        return FTW_SKIP_SUBTREE;  // process only nth-level files
+      else
+        return FTW_CONTINUE;
+    }
 
-		return FTW_STOP;
+    return FTW_STOP;
   };
 
   // depth-first
-	if(nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
-	{
-		fail(0);	// user callback raised an error
-	}
-	/*
-	else
-	{
-		fail(XLINUX_FTWERROR);	// internal-to-ftw error
-	}
-	*/
-	
+  if(nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
+  {
+    fail(0);  // user callback raised an error
+  }
+  /*
+  else
+  {
+    fail(XLINUX_FTWERROR);  // internal-to-ftw error
+  }
+  */
+  
 finally:
-	XAPI_INFOF("path", "%s", dirpath);
+  XAPI_INFOF("path", "%s", dirpath);
 coda;
 }

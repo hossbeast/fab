@@ -44,15 +44,15 @@ API xapi ixdlclose(void ** dl)
 {
   enter;
 
-	if(*dl)
-	{
-		dlerror();
-		dlclose(*dl);
-		*dl = 0;
-		char * e = dlerror();
-		if(e)
-			fails(XLINUX_DLERROR, e);
-	}
+  if(*dl)
+  {
+    dlerror();
+    dlclose(*dl);
+    *dl = 0;
+    char * e = dlerror();
+    if(e)
+      fails(XLINUX_DLERROR, e);
+  }
 
   finally : coda;
 }

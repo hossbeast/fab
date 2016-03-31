@@ -26,7 +26,7 @@ API xapi xreadv(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 
-	fatalize(errno, readv, fd, iov, iovcnt);
+  fatalize(errno, readv, fd, iov, iovcnt);
 
   finally : coda;
 }
@@ -35,24 +35,24 @@ API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 
-	ssize_t expected = 0;
-	ssize_t actual;
-	if((actual = readv(fd, iov, iovcnt)) == -1)
-		fail(errno);
+  ssize_t expected = 0;
+  ssize_t actual;
+  if((actual = readv(fd, iov, iovcnt)) == -1)
+    fail(errno);
 
-	int x;
-	for(x = 0; x < iovcnt; x++)
-		expected += iov[x].iov_len;
+  int x;
+  for(x = 0; x < iovcnt; x++)
+    expected += iov[x].iov_len;
 
-	if(actual != expected)
-		tfail(perrtab_XLINUX, XLINUX_LESS);
+  if(actual != expected)
+    tfail(perrtab_XLINUX, XLINUX_LESS);
 
 finally:
-	if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
-	{
-		XAPI_INFOF("expected", "%zd", expected);
-		XAPI_INFOF("actual", "%zd", actual);
-	}
+  if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
+  {
+    XAPI_INFOF("expected", "%zd", expected);
+    XAPI_INFOF("actual", "%zd", actual);
+  }
 coda;
 }
 
@@ -60,7 +60,7 @@ API xapi xwritev(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 
-	fatalize(errno, writev, fd, iov, iovcnt);
+  fatalize(errno, writev, fd, iov, iovcnt);
 
   finally :  coda;
 }
@@ -69,23 +69,23 @@ API xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 
-	ssize_t expected = 0;
-	ssize_t actual;
-	if((actual = writev(fd, iov, iovcnt)) == -1)
-		fail(errno);
+  ssize_t expected = 0;
+  ssize_t actual;
+  if((actual = writev(fd, iov, iovcnt)) == -1)
+    fail(errno);
 
-	int x;
-	for(x = 0; x < iovcnt; x++)
-		expected += iov[x].iov_len;
+  int x;
+  for(x = 0; x < iovcnt; x++)
+    expected += iov[x].iov_len;
 
-	if(actual != expected)
-		tfail(perrtab_XLINUX, XLINUX_LESS);
+  if(actual != expected)
+    tfail(perrtab_XLINUX, XLINUX_LESS);
 
 finally:
-	if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
-	{
-		XAPI_INFOF("expected", "%zd", expected);
-		XAPI_INFOF("actual", "%zd", actual);
-	}
+  if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
+  {
+    XAPI_INFOF("expected", "%zd", expected);
+    XAPI_INFOF("actual", "%zd", actual);
+  }
 coda;
 }

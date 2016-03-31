@@ -25,21 +25,21 @@ API xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen,
 {
   enter;
 
-	if(getpwuid_r(uid, pwd, buf, buflen, result) == 0)
-	{
-		// possibly found, check *result
-	}
-	else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
-	{
-		*result = 0;	// uid not found
-	}
-	else
-	{
-		fail(errno);
-	}
+  if(getpwuid_r(uid, pwd, buf, buflen, result) == 0)
+  {
+    // possibly found, check *result
+  }
+  else if(errno == ENOENT || errno == ESRCH || errno == EBADF || errno == EPERM)
+  {
+    *result = 0;  // uid not found
+  }
+  else
+  {
+    fail(errno);
+  }
 
 finally :
-	XAPI_INFOF("uid", "%zu", uid);
+  XAPI_INFOF("uid", "%zu", uid);
 coda;
 }
 
@@ -47,9 +47,9 @@ API xapi xgetpwuid(uid_t uid, struct passwd ** const pwd)
 {
   enter;
 
-	errno = 0;
-	if(((*pwd) = getpwuid(uid)) == 0)
-		fail(errno);
+  errno = 0;
+  if(((*pwd) = getpwuid(uid)) == 0)
+    fail(errno);
 
-	finally : coda;
+  finally : coda;
 }

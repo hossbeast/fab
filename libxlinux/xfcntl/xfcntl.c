@@ -25,14 +25,14 @@ API xapi xopen(const char * path, int flags, int * const fd)
 {
   enter;
 
-	if(fd && (*fd = open(path, flags)) == -1)
-		fail(errno);
+  if(fd && (*fd = open(path, flags)) == -1)
+    fail(errno);
 
-	else if(!fd && open(path, flags) == -1)
-		fail(errno);
+  else if(!fd && open(path, flags) == -1)
+    fail(errno);
 
 finally:
-	XAPI_INFOF("path", "%s", path);
+  XAPI_INFOF("path", "%s", path);
 coda;
 }
 
@@ -40,16 +40,16 @@ API xapi uxopen(const char * path, int flags, int * const fd)
 {
   enter;
 
-	if((*fd = open(path, flags)) == -1)
-	{
-		if(errno != ENOENT)
-			fail(errno);
+  if((*fd = open(path, flags)) == -1)
+  {
+    if(errno != ENOENT)
+      fail(errno);
 
-		*fd = -1;
-	}
+    *fd = -1;
+  }
 
 finally:
-	XAPI_INFOF("path", "%s", path);
+  XAPI_INFOF("path", "%s", path);
 coda;
 }
 
@@ -57,14 +57,14 @@ API xapi xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 {
   enter;
 
-	if(fd && (*fd = open(path, flags, mode)) == -1)
-		fail(errno);
+  if(fd && (*fd = open(path, flags, mode)) == -1)
+    fail(errno);
 
-	else if(!fd && open(path, flags, mode) == -1)
-		fail(errno);
+  else if(!fd && open(path, flags, mode) == -1)
+    fail(errno);
 
 finally:
-	XAPI_INFOF("path", "%s", path);
+  XAPI_INFOF("path", "%s", path);
 coda;
 }
 
@@ -72,15 +72,15 @@ API xapi uxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 {
   enter;
 
-	if((*fd = open(path, flags, mode)) == -1)
-	{
-		if(errno != ENOENT)
-			fail(errno);
+  if((*fd = open(path, flags, mode)) == -1)
+  {
+    if(errno != ENOENT)
+      fail(errno);
 
-		*fd = -1;
-	}
+    *fd = -1;
+  }
 
 finally:
-	XAPI_INFOF("path", "%s", path);
+  XAPI_INFOF("path", "%s", path);
 coda;
 }

@@ -25,18 +25,18 @@ API xapi xwait(int * status)
 {
   enter;
 
-	if(wait(status) == -1)
-		fail(errno);
+  if(wait(status) == -1)
+    fail(errno);
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi xwaitpid(pid_t pid, int * status, int options)
 {
   enter;
 
-	if(waitpid(pid, status, options) == -1)
-		fail(errno);
+  if(waitpid(pid, status, options) == -1)
+    fail(errno);
 
-	finally : coda;
+  finally : coda;
 }
