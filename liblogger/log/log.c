@@ -26,7 +26,7 @@
 
 #include "xapi.h"
 #include "xlinux.h"
-#include "pstring.h"
+#include "valyria/pstring.h"
 
 #include "internal.h"
 #include "log.internal.h"
@@ -61,13 +61,16 @@ static xapi start(const uint64_t ids, uint32_t attrs, int * const restrict w)
 {
   enter;
 
+  if(storage_message == 0)
+    fatal(pscreate, &storage_message);
+
 	if(streams_would(ids))
 	{
     (*w) = 1;
 
     storage_ids = ids;
     storage_attrs = attrs;
-    fatal(psclear, &storage_message);
+    fatal(psclear, storage_message);
 
     // wall-clock milliseconds
     struct timespec times;
@@ -100,7 +103,7 @@ API xapi logger_vlogf(const uint64_t ids, uint32_t attrs, const char * const fmt
 	if(storage_ids)
 	{
 		if(streams_would(storage_ids))
-      fatal(psvcatf, &storage_message, fmt, va);
+      fatal(psvcatf, storage_message, fmt, va);
 	}
   else
   {
@@ -109,7 +112,7 @@ API xapi logger_vlogf(const uint64_t ids, uint32_t attrs, const char * const fmt
 
     if(w)
     {
-      fatal(psvcatf, &storage_message, fmt, va);
+      fatal(psvcatf, storage_message, fmt, va);
       fatal(finish);
     }
   }
@@ -146,7 +149,7 @@ API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src,
 	if(storage_ids)
 	{
 		if(streams_would(storage_ids))
-      fatal(pscatw, &storage_message, src, len);
+      fatal(pscatw, storage_message, src, len);
 	}
 	else
 	{
@@ -155,7 +158,7 @@ API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src,
 
     if(w)
     {
-      fatal(pscatw, &storage_message, src, len);
+      fatal(pscatw, storage_message, src, len);
       fatal(finish);
     }
 	}

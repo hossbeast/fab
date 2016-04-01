@@ -27,6 +27,7 @@
 
 #include "internal.h"
 #include "category/category.internal.h"
+#include "stream.h"
 #include "stream/stream.internal.h"
 #include "filter/filter.internal.h"
 
@@ -88,10 +89,13 @@ API xapi logger_initialize(char ** restrict envp)
 
 #if __linux__
   // locate auxiliary vector
-  while(*envp)
+  if(envp)
+  {
+    while(*envp)
+      envp++;
     envp++;
-  envp++;
-  auxvec = (void*)envp;
+    auxvec = (void*)envp;
+  }
 #endif
 
 	// snarf the cmdline
@@ -147,17 +151,20 @@ API xapi logger_initialize(char ** restrict envp)
 				auxvec = (void*)auxv;
 			}
 
-			while(*auxvec)
-			{
-				unsigned long key = auxvec[0];
-				unsigned long val = auxvec[1];
-				if(key == AT_EXECFN)
-				{
-					execfn = (char*)(uintptr_t)val;
-					break;
-				}
-				auxvec += 2;
-			}
+      if(auxvec)
+      {
+        while(*auxvec)
+        {
+          unsigned long key = auxvec[0];
+          unsigned long val = auxvec[1];
+          if(key == AT_EXECFN)
+          {
+            execfn = (char*)(uintptr_t)val;
+            break;
+          }
+          auxvec += 2;
+        }
+      }
 #endif
 		}
 
@@ -298,6 +305,8 @@ printf("logs : %s\n", g_logvs);
 for(x = 0; x < g_logc; x++)
 	printf("[%2d] %s\n", x, g_logv[x]);
 #endif
+
+  fatal(logger_category_activate);
 
 finally:
 	fatal(ixclose, &fd);

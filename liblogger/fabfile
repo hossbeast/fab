@@ -25,8 +25,7 @@
 $basename			= [ logger ]
 $libname_eapi	= [ lib $basename .so ~ j ]
 $libname_xapi	= [ lib $basename -xapi .so ~ j ]
-$libdeps_dirs = [ $dlibxapi $dlibxlinux $dlibpstring $dlibnarrate ]
-$copts				= [ -fPIC [ $dliblogger ~ lsr c -d s/^/-I ] [ $libdeps_dirs ~ s/^/-I ] ]
+$copts				= [ -fPIC [ [ $dliblogger ~ lsr c -d ] [ $dlibxapi $dlibxlinux $dlibnarrator $dlibvalyria ] ~ s/^/-I ] ]
 
 # cflags variants
 $cflags_eapi_final = [ $cflags_eapi_final $copts ]
@@ -37,21 +36,20 @@ $cflags_xapi_debug = [ $cflags_xapi_debug $copts ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $copts ]
 
 $lopts							= [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
-$lflags_eapi_final	= [ $lopts $libxlinux_eapi_final $libpstring_eapi_final $libnarrate_eapi_final [ -Wl,-soname,liblogger.so ~ j ] ]
-$lflags_eapi_debug	= [ $lopts $libxlinux_eapi_debug $libpstring_eapi_debug $libnarrate_eapi_debug [ -Wl,-soname,liblogger.so ~ j ] ]
-$lflags_eapi_devel	= [ $lopts $libxlinux_eapi_devel $libpstring_eapi_devel $libnarrate_eapi_devel [ -Wl,-soname,liblogger-devel.so ~ j ] ]
-$lflags_xapi_final	= [ $lopts $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $libnarrate_xapi_final [ -Wl,-soname,liblogger-xapi.so ~ j ] ]
-$lflags_xapi_debug	= [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $libnarrate_xapi_debug [ -Wl,-soname,liblogger-xapi.so ~ j ] ]
-$libdeps_devel      = [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $libnarrate_xapi_devel ]
-$lflags_xapi_devel	= [ $lopts $libdeps_devel [ -Wl,-soname,liblogger-xapi-devel.so ~ j ] ]
+$lflags_eapi_final	= [ $lopts $libxlinux_eapi_final $libnarrator_eapi_final [ -Wl,-soname,liblogger.so ~ j ] ]
+$lflags_eapi_debug	= [ $lopts $libxlinux_eapi_debug $libnarrator_eapi_debug [ -Wl,-soname,liblogger.so ~ j ] ]
+$lflags_eapi_devel	= [ $lopts $libxlinux_eapi_devel $libnarrator_eapi_devel [ -Wl,-soname,liblogger-devel.so ~ j ] ]
+$lflags_xapi_final	= [ $lopts $libxapi_xapi_final $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_devel [ -Wl,-soname,liblogger-xapi.so ~ j ] ]
+$lflags_xapi_debug	= [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug [ -Wl,-soname,liblogger-xapi.so ~ j ] ]
+$lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel [ -Wl,-soname,liblogger-xapi-devel.so ~ j ] ]
 
 # source files, filter out tests
-+[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_eapi_final; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_eapi_debug; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_eapi_devel; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_xapi_final; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_xapi_debug; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
-+[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $dliblogger; $cc; $cflags = $cflags_xapi_devel; $filter = [ ~ ?{ cons{?, l,/test.c v} ])
++[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $dirs = $*; $cc; $cflags = $cflags_eapi_final)
++[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $dirs = $*; $cc; $cflags = $cflags_eapi_debug)
++[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $dirs = $*; $cc; $cflags = $cflags_eapi_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $dirs = $*; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $dirs = $*; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $dirs = $*; $cc; $cflags = $cflags_xapi_devel)
 +[@std.xapi.errtab]($dext = [ eapi.final.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_eapi_final)
 +[@std.xapi.errtab]($dext = [ eapi.debug.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_eapi_debug)
 +[@std.xapi.errtab]($dext = [ eapi.devel.pic.o ]; $rdirs = $dliblogger; $apidata = [1]; $cc; $cflags = $cflags_eapi_devel)
@@ -93,42 +91,42 @@ $lflags_xapi_devel	= [ $lopts $libdeps_devel [ -Wl,-soname,liblogger-xapi-devel.
 }
 
 # link the library
-[ $liblogger_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/eapi.final.pic.o sy ] ]
+[ $liblogger_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/eapi.final.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
 }
 
-[ $liblogger_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/eapi.debug.pic.o sy ] ]
+[ $liblogger_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/eapi.debug.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
 }
 
-[ $liblogger_eapi_devel ] : [ [ $*/exports ~ j ]  [ $* ~ lsr l/test.c v sx/c/eapi.devel.pic.o sy ] ]
+[ $liblogger_eapi_devel ] : [ [ $*/exports ~ j ]  [ $* ~ ls l/test d lsr sx/c/eapi.devel.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
 }
 
-[ $liblogger_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/xapi.final.pic.o sy ] ]
+[ $liblogger_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.final.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $liblogger_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/xapi.debug.pic.o sy ] ]
+[ $liblogger_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.debug.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $liblogger_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c v sx/c/xapi.devel.pic.o sy ] ]
+[ $liblogger_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.devel.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
 }
 
-[ $liblogger_eapi_final ] :^ [ $libxlinux_eapi_final $libpstring_eapi_final ]
-[ $liblogger_eapi_debug ] :^ [ $libxlinux_eapi_debug $libpstring_eapi_debug ]
-[ $liblogger_eapi_devel ] :^ [ $libxlinux_eapi_devel $libpstring_eapi_devel ]
-[ $liblogger_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final ]
-[ $liblogger_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug ]
-[ $liblogger_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel ]
+[ $liblogger_eapi_final ] :^ [ $libxlinux_eapi_final $libnarrator_eapi_final $libvalyria_eapi_final ]
+[ $liblogger_eapi_debug ] :^ [ $libxlinux_eapi_debug $libnarrator_eapi_debug $libvalyria_eapi_debug ]
+[ $liblogger_eapi_devel ] :^ [ $libxlinux_eapi_devel $libnarrator_eapi_devel $libvalyria_eapi_devel ]
+[ $liblogger_xapi_final ] :^ [ $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final $libxapi_xapi_final ]
+[ $liblogger_xapi_debug ] :^ [ $libxlinux_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug $libxapi_xapi_debug ]
+[ $liblogger_xapi_devel ] :^ [ $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel $libxapi_xapi_devel ]
 
 ##
 ## tasks
@@ -164,7 +162,8 @@ $lflags_xapi_devel	= [ $lopts $libdeps_devel [ -Wl,-soname,liblogger-xapi-devel.
 	install [ $dliblogger/logger.h	]							  [ $destdir/$incdir/ ]
 
 	install -d 																			[ $destdir/$incdir/logger ]
-	# install [ $dliblogger/logger/narrator.h]			[ $destdir/$incdir/logger/ ]
+	install [ $dliblogger/logger/category.h ]			  [ $destdir/$incdir/logger/ ]
+	install [ $dliblogger/logger/stream.h ]			    [ $destdir/$incdir/logger/ ]
 }
 
 #
@@ -172,43 +171,23 @@ $lflags_xapi_devel	= [ $lopts $libdeps_devel [ -Wl,-soname,liblogger-xapi-devel.
 #  for rationale see test/README.md
 #
 
-# compile test code
-+[@std.c]($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $dirs = [ $droot/test/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
 
-# unit directories
-$dunits = [
- [ $* ~ lsr ]	# recursive directories
-
- # those directories that contain an eponymous c file and a test.c
- ~ ?, -d s,$,/test.c -f dn s,\x5b^/\x5d+$,\0/\0.c -f dn 
-]
-
-$test_sos = [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
-
-# test sos compiled for xunit ; the unit so includes the source and test object files and their dependencies
-[ $test_sos ~ dj shift ]
-	:: [[ $< ~ ?, dn s,\x5b^/\x5d+$,\0/\0.xapi.xunit.pic.o ]
-			[ $< ~ ?, dn s,\x5b^/\x5d+$,\0/test.xapi.xunit.pic.o ]]
+[ $*/test ~ j lsr sx/c/test sy dj shift ] ::^ [ [ $droot/test/errtab/TEST.errtab.xapi.devel.pic.o ~ j ] ]
+[ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.pic.o ]
 {
-	[ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [
-	] [ [ $@ ~ rx/aneedw lx/o fi ] ~ s/^/\x20\x5c\x0a ]
+	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel ] [
+  ] [ $dlibxapi $dlibxlinux $dlibnarrator $dlibvalyria $* ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
-# test executables
-[ $test_sos ~ sxf/test dj shift ] :: [ $< ~ sxf/xapi.xunit.so ]
-{
-	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/ineed ] [ $libdeps_devel ] [
-  ] [ $libdeps_dirs ~ [ ?{ [ rb{ [ $@ ~ dn ] } ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] [
-  ] ~ fi ]
-}
-
-[ @test ] : [ $test_sos ~ sxf/test ]
+[ @test ] : [ $*/test ~ j lsr sx/c/test sy ]
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
 }
 
-[ @test.verbose ] : [ $test_sos ~ sxf/test ]
+[ @test.verbose ] : [ $*/test ~ j lsr sx/c/test sy ]
 {
   set -e
   (

@@ -63,7 +63,7 @@ void filter_xfree(filter ** const restrict filterp)
 // SUMMARY
 //  
 //
-xapi filter_say(filter * filterp, struct narrator * _narrator)
+xapi filter_say(filter * filterp, struct narrator * n)
   __attribute__((nonnull));
 
 /// filter_parse

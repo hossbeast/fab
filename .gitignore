@@ -14,3 +14,6 @@ exports
 *.1.gz
 *.errorcode
 *.stacktrace
+*.stacktrace_checks
+/common/*/test
+*.test

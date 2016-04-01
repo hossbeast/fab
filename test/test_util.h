@@ -51,12 +51,12 @@ SUMMARY
   } while(0)
 
 #define assert_exit(exit, etab, ecode)                                        \
-  assert(                                                                     \
+  assertf(                                                                    \
          (ecode | xapi_exit_errcode(exit)) == 0                               \
       || (xapi_exit_errtab(exit) == etab && xapi_exit_errcode(exit) == ecode) \
     , "expected : %s/%s(%d), actual : %s/%s(%d)"                              \
-    , etab ? errtab_name(etab) : 0                                            \
-    , etab ? errtab_errname(etab, ecode) : 0                                  \
+    , etab ? xapi_errtab_name(etab) : 0                                       \
+    , etab ? xapi_errtab_errname(etab, ecode) : 0                             \
     , ecode                                                                   \
     , xapi_exit_errtab_name(exit)                                             \
     , xapi_exit_errname(exit)                                                 \

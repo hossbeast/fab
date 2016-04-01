@@ -24,6 +24,7 @@
 #include "stream.h"
 
 struct pstring;
+struct array;
 struct list;
 struct narrator;
 
@@ -48,10 +49,10 @@ typedef struct stream
   // the filters determine which log messages are emitted to the stream
   struct list * filters;
 
+  struct pstring * buffer;
+
   // emitted log messages are written to the narrator
   struct narrator * narrator;
-
-  struct pstring * buffer;
 } stream;
 
 /// g_streams
@@ -59,7 +60,7 @@ typedef struct stream
 // SUMMARY
 //  
 //
-extern struct list * g_streams;
+extern struct array * g_streams;
 
 #define restrict __restrict
 

@@ -1,19 +1,34 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
 #include <stdio.h>
 
 #include "xapi.h"
 #include "xapi/calltree.h"
 
-#include "test.h"
+#include "logger.h"
+#include "internal.h"
+#include "category.internal.h"
+#include "attr.internal.h"
+#include "LOGGER.errtab.h"
+
 #include "test_util.h"
 
-#include "logger.h"
-#include "category.internal.h"
-#include "errtab/LOGGER.errtab.h"
-#include "errtab/TEST.errtab.h"
-#include "attr.internal.h"
-
-#define QUOTE(x) #x
-#define XQUOTE(x) QUOTE(x)
+#include "macros.h"
 
 /// test_setup
 //
@@ -47,7 +62,7 @@ xapi assert_ascending(logger_category * logsp)
     {
       if(strcmp(logs[0]->name, logs[1]->name) == 0)
       {
-        assert(logs[1]->id == logs[0]->id
+        assertf(logs[1]->id == logs[0]->id
           , "expected id : %"PRIu64", actual id : %"PRIu64
           , logs[0]->id
           , logs[1]->id
@@ -55,7 +70,7 @@ xapi assert_ascending(logger_category * logsp)
       }
       else
       {
-        assert(logs[1]->id > logs[0]->id
+        assertf(logs[1]->id > logs[0]->id
           , "expected id > %"PRIu64", actual id : %"PRIu64
           , logs[0]->id
           , logs[1]->id
@@ -386,12 +401,12 @@ xapi test_category_list_merge_attr_rank()
   fatal(logger_category_activate);
 
   fatal(assert_ascending, logs_a);
-  assert((logs_a[0].attr & COLOR_OPT) == L_BLUE, "expected : %s, actual : %s", COLOR_VALUE(L_BLUE), COLOR_VALUE(logs_a[0].attr));
-  assert((logs_a[1].attr & COLOR_OPT) == L_BLUE, "expected : %s, actual : %s", COLOR_VALUE(L_BLUE), COLOR_VALUE(logs_a[1].attr));
-  assert((logs_a[2].attr & COLOR_OPT) == L_RED, "expected : %s, actual : %s", COLOR_VALUE(L_RED), COLOR_VALUE(logs_a[2].attr));
-  assert((logs_a[2].attr & TRACE_OPT) == L_TRACE, "expected : %s, actual : %s", TRACE_VALUE(L_TRACE), TRACE_VALUE(logs_a[2].attr));
-  assert((logs_a[3].attr & COLOR_OPT) == L_RED, "expected : %s, actual : %s", COLOR_VALUE(L_RED), COLOR_VALUE(logs_a[3].attr));
-  assert((logs_a[3].attr & TRACE_OPT) == L_TRACE, "expected : %s, actual : %s", TRACE_VALUE(L_TRACE), TRACE_VALUE(logs_a[3].attr));
+  assertf((logs_a[0].attr & COLOR_OPT) == L_BLUE, "expected : %s, actual : %s", COLOR_VALUE(L_BLUE), COLOR_VALUE(logs_a[0].attr));
+  assertf((logs_a[1].attr & COLOR_OPT) == L_BLUE, "expected : %s, actual : %s", COLOR_VALUE(L_BLUE), COLOR_VALUE(logs_a[1].attr));
+  assertf((logs_a[2].attr & COLOR_OPT) == L_RED, "expected : %s, actual : %s", COLOR_VALUE(L_RED), COLOR_VALUE(logs_a[2].attr));
+  assertf((logs_a[2].attr & TRACE_OPT) == L_TRACE, "expected : %s, actual : %s", TRACE_VALUE(L_TRACE), TRACE_VALUE(logs_a[2].attr));
+  assertf((logs_a[3].attr & COLOR_OPT) == L_RED, "expected : %s, actual : %s", COLOR_VALUE(L_RED), COLOR_VALUE(logs_a[3].attr));
+  assertf((logs_a[3].attr & TRACE_OPT) == L_TRACE, "expected : %s, actual : %s", TRACE_VALUE(L_TRACE), TRACE_VALUE(logs_a[3].attr));
 
   finally : coda;
 }
@@ -438,7 +453,7 @@ int main()
     }
 
     assert_exit(exit, perrtab_LOGGER, tests[x].expected);
-    succeed;
+    success;
   }
 
 finally:

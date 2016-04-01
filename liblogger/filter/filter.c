@@ -17,7 +17,7 @@
 
 #include "xapi.h"
 #include "xlinux.h"
-#include "narrate.h"
+#include "narrator.h"
 
 #include "internal.h"
 #include "filter.internal.h"
@@ -26,8 +26,12 @@
 #include "category.internal.h"
 #include "stream.internal.h"
 
-#define LIST_ELEMENT_TYPE filter*
-#include "list.h"
+#define LIST_ELEMENT_TYPE filter
+#include "valyria/list.h"
+
+#define ARRAY_ELEMENT_TYPE stream
+#include "valyria/array.h"
+
 #include "macros.h"
 #include "strutil.h"
 
@@ -146,7 +150,7 @@ xapi filter_parse(const char * const restrict expr, size_t exprl, filter ** cons
   finally : coda;
 }
 
-xapi filter_say(filter * filterp, struct narrator * _narrator)
+xapi filter_say(filter * filterp, struct narrator * N)
 {
   enter;
 
@@ -201,6 +205,7 @@ int filters_would(const list * const restrict filters, const uint64_t ids)
 	return r;
 }
 
+
 xapi filter_push(const int stream_id, filter * const restrict filterp)
 {
   enter;
@@ -217,7 +222,7 @@ xapi filter_push(const int stream_id, filter * const restrict filterp)
   else
   {
     int x;
-    for(x = list_size(g_streams) - 1; x >= 0; x--)
+    for(x = array_size(g_streams) - 1; x >= 0; x--)
     {
       if(x)
       {
@@ -228,7 +233,7 @@ xapi filter_push(const int stream_id, filter * const restrict filterp)
         clone = filterp;
       }
 
-      fatal(list_push, ((stream *)list_get(g_streams, x))->filters, clone);
+      fatal(list_push, ((stream *)array_get(g_streams, x))->filters, clone);
       clone = 0;
     }
   }
@@ -254,7 +259,7 @@ xapi filter_unshift(const int stream_id, filter * const restrict filterp)
   else
   {
     int x;
-    for(x = list_size(g_streams) - 1; x >= 0; x--)
+    for(x = array_size(g_streams) - 1; x >= 0; x--)
     {
       if(x)
       {
@@ -265,7 +270,7 @@ xapi filter_unshift(const int stream_id, filter * const restrict filterp)
         clone = filterp;
       }
 
-      fatal(list_unshift, ((stream *)list_get(g_streams, x))->filters, clone);
+      fatal(list_unshift, ((stream *)array_get(g_streams, x))->filters, clone);
       clone = 0;
     }
   }
@@ -324,9 +329,9 @@ API xapi logger_filter_pop(const int stream_id)
   else
   {
     int x;
-    for(x = 0; x < list_size(g_streams); x++)
+    for(x = 0; x < array_size(g_streams); x++)
     {
-      list_pop(((stream *)list_get(g_streams, x))->filters);
+      fatal(list_pop, ((stream *)array_get(g_streams, x))->filters, 0);
     }
   }
   
@@ -345,9 +350,9 @@ API xapi logger_filter_shift(const int stream_id)
   else
   {
     int x;
-    for(x = 0; x < list_size(g_streams); x++)
+    for(x = 0; x < array_size(g_streams); x++)
     {
-      list_shift(((stream *)list_get(g_streams, x))->filters);
+      fatal(list_shift, ((stream *)array_get(g_streams, x))->filters, 0);
     }
   }
   
@@ -366,9 +371,9 @@ API xapi logger_filter_clear(const int stream_id)
   else
   {
     int x;
-    for(x = 0; x < list_size(g_streams); x++)
+    for(x = 0; x < array_size(g_streams); x++)
     {
-      list_clear(((stream *)list_get(g_streams, x))->filters);
+      list_clear(((stream *)array_get(g_streams, x))->filters);
     }
   }
   

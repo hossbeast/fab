@@ -1,18 +1,17 @@
 # liblogger
 
-An application using liblogger configures a set of output streams, each of
-which is equipped with a set of filters. Components of the application issue
-logging requests that are tagged with one or more categories. The filters for a
-stream determine, based on its categories, which log messages are output to
-that stream. The application provides a default set of streams and filters,
-which can be overridden with command-line parameters, and reconfigured
-dynamically at runtime.
+An application using liblogger configures a set of output streams, each of which is equipped with a
+set of filters. Components in the application issue logging requests that are tagged with one or
+more categories. For each logging request, the filters for a stream determine, based on the categories
+associated with the request, whether that request is output to the stream.
+
+The application provides a default set of streams and filters, which can be overridden with
+command-line parameters, and reconfigured dynamically at runtime.
 
 # logging requests
 
-Before issuing a logging request, an application component calls
-logger_register to obtains ids for the categories it will use. Any component
-that registers a category with a given name receives the same id.
+At startup time, an application component calls logger_register to obtains ids for the categories it
+will use. Any component that registers a category with a given name receives the same id.
 
 # logging options
 

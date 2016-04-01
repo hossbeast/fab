@@ -26,13 +26,16 @@
 
 API void narrator_free(narrator * restrict n)
 {
-  // route to implementation
-  if(n->type == NARRATOR_GROWING)
-		growing_free(n);
-	else if(n->type == NARRATOR_FIXED)
-		fixed_free(n);
-	else if(n->type == NARRATOR_FILE)
-    file_free(n);
+  if(n)
+  {
+    // route to implementation
+    if(n->type == NARRATOR_GROWING)
+      growing_free(n);
+    else if(n->type == NARRATOR_FIXED)
+      fixed_free(n);
+    else if(n->type == NARRATOR_FILE)
+      file_free(n);
+  }
 }
 
 API void narrator_xfree(narrator ** const restrict n)

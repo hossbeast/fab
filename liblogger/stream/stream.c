@@ -20,9 +20,9 @@
 
 #include "xapi.h"
 #include "xlinux.h"
-#include "narrate.h"
-#include "narrate/file.h"
-#include "pstring.h"
+#include "narrator.h"
+#include "narrator/file.h"
+#include "valyria/pstring.h"
 
 #include "internal.h"
 #include "stream/stream.internal.h"
@@ -30,16 +30,20 @@
 #include "filter/filter.internal.h"
 #include "category/category.internal.h"
 
-#define LIST_ELEMENT_TYPE stream*
-#include "list.h"
+#define ARRAY_ELEMENT_TYPE stream
+#include "valyria/array.h"
+
+#define MAP_VALUE_TYPE stream
+#include "valyria/map.h"
+
 #include "macros.h"
 #include "strutil.h"
-#include "map.h"
+#include "valyria/list.h"
 
 #define restrict __restrict
 
 // active streams
-list * g_streams;
+array * g_streams;
 
 //
 // static
@@ -53,19 +57,11 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
 
   uint32_t attr = attr_combine(base_attr, streamp->attr);
 
-narrationd(1);
-sayf("base 0x%08lx ", base_attr);
-fatal(attr_say, base_attr, _narrator);
-says("\n");
-
-sayf("effe 0x%08lx ", attr);
-fatal(attr_say, attr, _narrator);
-says("\n");
-
-  fatal(psclear, &streamp->buffer);
+  fatal(psclear, streamp->buffer);
 
   if(CATEGORY_OPT & attr)
   {
+    // emit the name of the category with the lowest id
     uint64_t bit = UINT64_C(1);
     while(bit)
     {
@@ -77,15 +73,48 @@ says("\n");
 
     logger_category * category = 0;
     fatal(category_byid, bit, &category);
-    fatal(pscatw, &streamp->buffer, category->name, category->namel);
+    fatal(pscatw, streamp->buffer, category->name, category->namel);
   }
 
-  fatal(pscatw, &streamp->buffer, message->s, message->l);
-  fatal(pscatc, &streamp->buffer, '\n');
+  fatal(pscatw, streamp->buffer, message->s, message->l);
+  fatal(pscatc, streamp->buffer, '\n');
 
-  fatal(narrate_sayw, streamp->narrator, streamp->buffer->s, streamp->buffer->l);
+  fatal(narrator_sayw, streamp->narrator, streamp->buffer->s, streamp->buffer->l);
 
   finally : coda;
+}
+
+static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict streamp, const logger_stream * restrict def)
+{
+  enter;
+
+  fatal(ixstrdup, &streamp->name, def->name);
+  streamp->namel = strlen(streamp->name);
+  streamp->attr = def->attr;
+  fatal(pscreate, &streamp->buffer);
+
+  if(def->type == LOGGER_STREAM_FD)
+  {
+    fatal(narrator_file_create, &streamp->narrator, def->fd);
+  }
+
+  if(def->filter_expr)
+  {
+    // parse and attach to just this stream
+  }
+
+  finally : coda;
+}
+
+static void __attribute__((nonnull)) stream_destroy(stream * const restrict streamp)
+{
+  if(streamp)
+  {
+    free(streamp->name);
+    list_free(streamp->filters);
+    psfree(streamp->buffer);
+    narrator_free(streamp->narrator);
+  }
 }
 
 //
@@ -95,15 +124,15 @@ xapi stream_setup()
 {
   enter;
 
-  fatal(list_create, &g_streams, sizeof(stream), 0, LIST_PRIMARY);
-  fatal(map_create, &streams_byid, 0);
+  fatal(array_createx, &g_streams, sizeof(stream), stream_destroy, 0);
+  fatal(map_create, &streams_byid);
 
   finally : coda;
 }
 
 void stream_teardown()
 {
-  list_xfree(&g_streams);
+  array_xfree(&g_streams);
   map_xfree(&streams_byid);
 }
 
@@ -137,17 +166,18 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const pstring *
     base_attr = attr_combine(base_attr, site_attr);
 
     int x;
-    for(x = 0; x < list_size(g_streams); x++)
+    for(x = 0; x < array_size(g_streams); x++)
     {
-      stream * streamp = list_get(g_streams, x);
+      stream * streamp = array_get(g_streams, x);
       if(stream_would(streamp, ids))
       {
         fatal(stream_write, streamp, ids, base_attr, message, time_msec);
       }
     }
 
-    if(list_size(g_streams) == 0)
+    if(array_size(g_streams) == 0)
     {
+      // the default is to write everything to stderr
       int __attribute__((unused)) _r = write(2, message->s, message->l);
       _r = write(2, "\n", 1);
     }
@@ -166,13 +196,14 @@ int stream_would(const stream * const restrict streamp, const uint64_t ids)
 
 int streams_would(const uint64_t ids)
 {
-  if(list_size(g_streams) == 0)
+  // the default is to log everything
+  if(array_size(g_streams) == 0)
     return 1;
 
   int x;
-  for(x = 0; x < list_size(g_streams); x++)
+  for(x = 0; x < array_size(g_streams); x++)
   {
-    stream * streamp = list_get(g_streams, x);
+    stream * streamp = array_get(g_streams, x);
     if(stream_would(streamp, ids))
       return 1;
   }
@@ -200,23 +231,11 @@ API xapi logger_stream_register(const logger_stream * restrict streams)
   while(streams->type)
   {
     stream * streamp = 0;
-    fatal(list_push, g_streams, &streamp);
+    fatal(array_push, g_streams, &streamp);
 
-    fatal(ixstrdup, &streamp->name, streams->name);
-    streamp->namel = strlen(streamp->name);
-    streamp->attr = streams->attr;
+    fatal(stream_initialize, streamp, streams);
 
-    if(streams->type == LOGGER_STREAM_FD)
-    {
-      fatal(narrator_file_create, streams->fd, &streamp->narrator);
-    }
-
-    if(streams->filter_expr)
-    {
-      // parse and attach to just this stream
-    }
-
-    fatal(map_set, streams_byid, MM(streamp->id), MM(streamp), 0);
+    fatal(map_set, streams_byid, MM(streamp->id), streamp);
 
     streams++;
   }

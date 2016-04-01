@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "narrate.h"
+#include "narrator.h"
 
 #include "internal.h"
 #include "attr/attr.internal.h"
@@ -52,7 +52,7 @@ uint32_t attr_combine(uint32_t A, uint32_t B)
   return A;
 }
 
-xapi attr_say(uint32_t attr, narrator * const restrict _narrator)
+xapi attr_say(uint32_t attr, narrator * const restrict N)
 {
   enter;
 
