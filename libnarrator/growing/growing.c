@@ -19,10 +19,12 @@
 
 #include "xapi.h"
 #include "xlinux.h"
-#include "pstring.h"
 
 #include "internal.h"
 #include "growing.internal.h"
+
+#include "macros.h"
+#include "assure.h"
 
 #define restrict __restrict
 
@@ -32,19 +34,43 @@
 
 xapi growing_vsayf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
 {
-	xproxy(psvcatf, n->ps, fmt, va);
+  enter;
+
+  va_list va2;
+  va_copy(va2, va);
+
+  // attempt to perform the entire write to the buffer
+  int r = vsnprintf(n->s + n->l, n->a - n->l, fmt, va2);
+  va_end(va2);
+
+  // check whether output was truncated
+  if(r >= (n->a - n->l))
+  {
+    fatal(assure, &n->s, sizeof(*n->s), n->l + r + 1, &n->a);
+    vsprintf(n->s + n->l, fmt, va);
+  }
+  n->l += r;
+
+  finally : coda;
 }
 
 xapi growing_sayw(narrator_growing * const restrict n, char * const restrict b, size_t l)
 {
-	xproxy(pscatw, n->ps, b, l);
+  enter;
+
+  fatal(assure, &n->s, sizeof(*n->s), n->l + l + 1, &n->a);
+  memcpy(n->s + n->l, b, l);
+  n->s[n->l + l] = 0;
+  n->l += l;
+
+  finally : coda;
 }
 
 xapi growing_mark(narrator_growing * const restrict n, size_t * const restrict mark)
 {
   enter;
 
-  (*mark) = n->ps->l;
+  (*mark) = n->l;
 
   finally : coda;
 }
@@ -53,7 +79,7 @@ void growing_free(narrator_growing * n)
 {
   if(n)
   {
-    psfree(n->ps);
+    free(n->s);
   }
 
   free(n);
@@ -61,7 +87,7 @@ void growing_free(narrator_growing * n)
 
 const char * growing_first(narrator_growing * const restrict n)
 {
-  return n->ps->s;
+  return n->s;
 }
 
 //
@@ -76,7 +102,6 @@ API xapi narrator_growing_create(narrator ** const restrict rv)
   fatal(xmalloc, &n, sizeof(*n));
 
   n->type = NARRATOR_GROWING;
-  fatal(pscreate, &n->growing.ps);
   
   *rv = n;
   n = 0;

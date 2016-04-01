@@ -23,7 +23,6 @@
 #include "narrator/growing.h"
 
 #include "test_util.h"
-#include "pstring.h"
 
 xapi say(narrator * const N)
 {
@@ -51,8 +50,8 @@ xapi test_basic()
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
 
-  assertf(strcmp(N->growing.ps->s, expected) == 0, "expected '%s', actual '%s'", expected, N->growing.ps->s);
-  assertf(N->growing.ps->l == expectedl, "expected written : %zu, actual : %zu", expectedl, N->fixed.bz);
+  assertf(strcmp(N->growing.s, expected) == 0, "expected '%s', actual '%s'", expected, N->growing.s);
+  assertf(N->growing.l == expectedl, "expected written : %zu, actual : %zu", expectedl, N->fixed.bz);
 
 finally:
   narrator_free(N);

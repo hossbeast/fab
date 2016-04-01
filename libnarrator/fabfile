@@ -169,11 +169,11 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-s
 #  for rationale see test/README.md
 #
 
-+[@std.c]($dext = [ xapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
-+[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $dirs = [ $droot/test/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $dirs = [ $droot/test/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
 
-[ $*/test ~ j lsr sx/c/test sy dj shift ] ::^ [ [ $droot/test/errtab/TEST.errtab.xapi.devel.o ~ j ] $libnarrator_xapi_devel ]
-[ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.o ]
+[ $*/test ~ j lsr sx/c/test sy dj shift ] ::^ [ [ $droot/test/errtab/TEST.errtab.xapi.devel.pic.o ~ j ] $libnarrator_xapi_devel ]
+[ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.pic.o ]
 {
 	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel ] [
   ] [ $dlibxapi $dlibxlinux $* ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]

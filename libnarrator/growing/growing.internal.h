@@ -33,11 +33,11 @@ SUMMARY
 
 #include "xapi.h"
 
-struct pstring;     // pstring.h
-
 typedef struct narrator_growing
 {
-  struct pstring * ps;
+  char * s;
+  size_t l;
+  size_t a;
 } narrator_growing;
 
 #define restrict __restrict
