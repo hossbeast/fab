@@ -15,22 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGER_INTERNAL_H
-#define _LOGGER_INTERNAL_H
+#include "logger/category.h"
+#include "logger/stream.h"
 
-// public header file
-#include "logger.h"
+extern logger_category * logs;
 
-#include "logs/logs.internal.h"
+#define L_FOO logs[0].id
+#define L_BAR logs[1].id
 
-// visibility declaration macros
-#define API __attribute__((visibility("protected")))
-#define APIDATA
-
-// default error table
-#undef perrtab
-// modules should #include LOGGER.errtab.h directly in order to get the dependency
-#include "LOGGER.errtab.h"
-#define perrtab perrtab_LOGGER
-
-#endif
+extern logger_stream * streams;

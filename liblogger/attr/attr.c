@@ -49,6 +49,12 @@ uint32_t attr_combine(uint32_t A, uint32_t B)
     A |= (B & DISCOVERY_OPT);
   }
 
+  if(B & DATESTAMP_OPT)
+  {
+    A &= ~DATESTAMP_OPT;
+    A |= (B & DATESTAMP_OPT);
+  }
+
   return A;
 }
 
@@ -94,13 +100,13 @@ xapi attr_say(uint32_t attr, narrator * const restrict N)
     says(DISCOVERY_VALUE(attr));
   }
 
-  if(attr & TIMESTAMP_OPT)
+  if(attr & DATESTAMP_OPT)
   {
     if(wrote)
       sayc(',');
     wrote = 1;
 
-    says(TIMESTAMP_VALUE(attr));
+    says(DATESTAMP_VALUE(attr));
   }
 
   finally : coda;

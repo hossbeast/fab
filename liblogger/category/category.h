@@ -19,6 +19,9 @@
 #define _LOGGER_CATEGORY_H
 
 #include <stdint.h>
+#include <sys/types.h>
+
+#include "xapi.h"
 
 /// logger_category
 //

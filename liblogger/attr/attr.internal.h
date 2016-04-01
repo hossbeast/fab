@@ -30,7 +30,7 @@ struct narrator;
 #define CATEGORY_OPT  UINT32_C(0x00000030)
 #define TRACE_OPT     UINT32_C(0x000000C0)
 #define DISCOVERY_OPT UINT32_C(0x00000300)
-#define TIMESTAMP_OPT UINT32_C(0x00000C00)
+#define DATESTAMP_OPT UINT32_C(0x00000C00)
 
 // get the name of a color from its constant
 #define LOGGER_ATTR_DEF(a, b, x, m) (x & m) == b ? "L_" #a : 
@@ -38,7 +38,7 @@ struct narrator;
 #define CATEGORY_VALUE(x)   LOGGER_ATTR_TABLE(x, CATEGORY_OPT) "NONE"
 #define TRACE_VALUE(x)      LOGGER_ATTR_TABLE(x, TRACE_OPT) "NONE"
 #define DISCOVERY_VALUE(x)  LOGGER_ATTR_TABLE(x, DISCOVERY_OPT) "NONE"
-#define TIMESTAMP_VALUE(x)  LOGGER_ATTR_TABLE(x, TIMESTAMP_OPT) "NONE"
+#define DATESTAMP_VALUE(x)  LOGGER_ATTR_TABLE(x, DATESTAMP_OPT) "NONE"
 
 #define restrict __restrict
 

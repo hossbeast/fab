@@ -26,8 +26,8 @@
 #include "xlinux.h"
 
 #include "internal.h"
+#include "logs/logs.internal.h"
 #include "category/category.internal.h"
-#include "stream.h"
 #include "stream/stream.internal.h"
 #include "filter/filter.internal.h"
 
@@ -63,6 +63,9 @@ API xapi logger_setup()
   fatal(xapi_errtab_register, perrtab_LOGGER);
   fatal(category_setup);
   fatal(stream_setup);
+
+  // register logs
+  fatal(logger_category_register, logs, "liblogger");
 
   finally : coda;
 }

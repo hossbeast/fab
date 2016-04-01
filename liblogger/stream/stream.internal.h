@@ -37,6 +37,7 @@ typedef struct stream
 {
   // unique identifier
   int id;
+  uint8_t type;
 
   // unique identifier for the stream
   char * name;
@@ -67,9 +68,18 @@ extern struct array * g_streams;
 xapi stream_setup();
 void stream_teardown();
 
+/// stream_would
+//
+// SUMMARY
+//
 int stream_would(const stream * const restrict streamp, const uint64_t ids)
   __attribute__((nonnull));
 
+/// streams_would
+//
+// SUMMARY
+//  
+//
 int streams_would(const uint64_t ids);
 
 /// streams_write

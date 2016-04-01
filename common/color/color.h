@@ -17,18 +17,40 @@
 
 #include <sys/types.h>
 
+// byte sequence tables
 extern char (*g_colors_7)[7];
 extern char (*g_colors_6)[6];
+extern char (*g_colors_5)[5];
 
 #define CSEVEN(x) g_colors_7[x]
 #define CSIX(x)   g_colors_6[x]
+#define CFIVE(x)  g_colors_5[x]
 
-#define RED					CSEVEN(0)
-#define GREEN				CSEVEN(1)
-#define YELLOW			CSEVEN(2)
-#define BLUE				CSEVEN(3)
-#define CYAN				CSEVEN(5)
-#define NONE				CSIX(0)
+// definitions
+#define RED             CFIVE(0)
+#define GREEN           CFIVE(1)
+#define YELLOW          CFIVE(2)
+#define BLUE            CFIVE(3)
+#define MAGENTA         CFIVE(4)
+#define CYAN            CFIVE(5)
+#define WHITE           CFIVE(6)
+
+// bold definitions
+#define BOLD_RED        CSEVEN(0)
+#define BOLD_GREEN      CSEVEN(1)
+#define BOLD_YELLOW     CSEVEN(2)
+#define BOLD_BLUE       CSEVEN(3)
+#define BOLD_MAGENTA    CSEVEN(4)
+#define BOLD_CYAN       CSEVEN(5)
+#define BOLD_WHITE      CSEVEN(6)
+
+#define NONE            CSIX(0)
+
+//
+// example
+//  write(1, COLOR(RED));
+//  write(1, COLOR(NONE));
+//
 
 #define COLOR(x) x, sizeof(x)
 #define CSIZE(x) sizeof(x)

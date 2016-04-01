@@ -18,7 +18,10 @@
 #ifndef _LOGGER_LOGS_INTERNAL_H
 #define _LOGGER_LOGS_INTERNAL_H
 
-extern struct logger_category * logs;
+#include "logs.h"
+#include "logger/category.h"
+
+extern logger_category * logs;
 
 #define L_LOGGER logs[0].id
 

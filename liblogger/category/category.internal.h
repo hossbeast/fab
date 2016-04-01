@@ -24,13 +24,13 @@
 
 #include "category.h"
 
-/// category_max_name_length
+/// category_name_max_length
 //
 // SUMMARY
 //  length of the longest category name
 //  written in logger_category_resolve
 //
-extern int category_max_name_length;
+extern int category_name_max_length;
 
 /// category_setup
 //

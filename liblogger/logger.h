@@ -41,21 +41,30 @@ extern int			g_logvsl;				// length of g_logvs
 /*
  * options and modifiers that can be applied to a log message
  */
-#define LOGGER_ATTR_TABLE(x, y)                                                                 \
-  LOGGER_ATTR_DEF(NOCOLOR       , 0x00000001 , x , y)  /* (default) not colorized */            \
-  LOGGER_ATTR_DEF(RED           , 0x00000002 , x , y)  /* terminal colorization : red */        \
-  LOGGER_ATTR_DEF(GREEN         , 0x00000003 , x , y)  /* terminal colorization : green */      \
-  LOGGER_ATTR_DEF(YELLOW        , 0x00000004 , x , y)  /* terminal colorization : yellow */     \
-  LOGGER_ATTR_DEF(CYAN          , 0x00000005 , x , y)  /* terminal colorization : cyan */       \
-  LOGGER_ATTR_DEF(BLUE          , 0x00000006 , x , y)  /* terminal colorization : blue */       \
-  LOGGER_ATTR_DEF(CATEGORY      , 0x00000010 , x , y)  /* (default) include the category name*/ \
-  LOGGER_ATTR_DEF(CATEGORY_OFF  , 0x00000020 , x , y)                                           \
-  LOGGER_ATTR_DEF(TRACE_OFF     , 0x00000040 , x , y)  /* (default) */                          \
-  LOGGER_ATTR_DEF(TRACE         , 0x00000080 , x , y)  /* include trace info */                 \
-  LOGGER_ATTR_DEF(DISCOVERY_OFF , 0x00000100 , x , y)  /* (default) */                          \
-  LOGGER_ATTR_DEF(DISCOVERY     , 0x00000200 , x , y)  /* include discovery info */             \
-  LOGGER_ATTR_DEF(TIMESTAMP_OFF , 0x00000400 , x , y)  /* (default) */                          \
-  LOGGER_ATTR_DEF(TIMESTAMP     , 0x00000800 , x , y)  /* include timestamp */
+#define LOGGER_ATTR_TABLE(x, y)                                                                   \
+  LOGGER_ATTR_DEF(NOCOLOR       , 0x00000001 , x , y)  /* (default) not colorized */              \
+  LOGGER_ATTR_DEF(RED           , 0x00000002 , x , y)  /* terminal colorization : red */          \
+  LOGGER_ATTR_DEF(GREEN         , 0x00000003 , x , y)  /* terminal colorization : green */        \
+  LOGGER_ATTR_DEF(YELLOW        , 0x00000004 , x , y)  /* terminal colorization : yellow */       \
+  LOGGER_ATTR_DEF(BLUE          , 0x00000005 , x , y)  /* terminal colorization : blue */         \
+  LOGGER_ATTR_DEF(MAGENTA       , 0x00000006 , x , y)  /* terminal colorization : magenta */      \
+  LOGGER_ATTR_DEF(CYAN          , 0x00000007 , x , y)  /* terminal colorization : cyan */         \
+  LOGGER_ATTR_DEF(WHITE         , 0x00000008 , x , y)  /* terminal colorization : cyan */         \
+  LOGGER_ATTR_DEF(BOLD_RED      , 0x00000009 , x , y)  /* terminal colorization : bold red */     \
+  LOGGER_ATTR_DEF(BOLD_GREEN    , 0x0000000a , x , y)  /* terminal colorization : bold green */   \
+  LOGGER_ATTR_DEF(BOLD_YELLOW   , 0x0000000b , x , y)  /* terminal colorization : bold yellow */  \
+  LOGGER_ATTR_DEF(BOLD_BLUE     , 0x0000000c , x , y)  /* terminal colorization : bold blue */    \
+  LOGGER_ATTR_DEF(BOLD_MAGENTA  , 0x0000000d , x , y)  /* terminal colorization : bold magenta */ \
+  LOGGER_ATTR_DEF(BOLD_CYAN     , 0x0000000e , x , y)  /* terminal colorization : bold cyan */    \
+  LOGGER_ATTR_DEF(BOLD_WHITE    , 0x0000000f , x , y)  /* terminal colorization : bold cyan */    \
+  LOGGER_ATTR_DEF(CATEGORY      , 0x00000010 , x , y)  /* (default) include the category name*/   \
+  LOGGER_ATTR_DEF(CATEGORY_OFF  , 0x00000020 , x , y)                                             \
+  LOGGER_ATTR_DEF(TRACE_OFF     , 0x00000040 , x , y)  /* (default) */                            \
+  LOGGER_ATTR_DEF(TRACE         , 0x00000080 , x , y)  /* include trace info */                   \
+  LOGGER_ATTR_DEF(DISCOVERY_OFF , 0x00000100 , x , y)  /* (default) */                            \
+  LOGGER_ATTR_DEF(DISCOVERY     , 0x00000200 , x , y)  /* include discovery info */               \
+  LOGGER_ATTR_DEF(DATESTAMP_OFF , 0x00000400 , x , y)  /* (default) */                            \
+  LOGGER_ATTR_DEF(DATESTAMP     , 0x00000800 , x , y)  /* include timestamp */
 
 // prefix includes the category name and thread id
 // timestamp is an additional part of the prefix

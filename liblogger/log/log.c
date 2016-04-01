@@ -74,8 +74,8 @@ static xapi start(const uint64_t ids, uint32_t attrs, int * const restrict w)
 
     // wall-clock milliseconds
     struct timespec times;
-    clock_gettime(CLOCK_REALTIME, &times);
-    storage_time_msec = (times.tv_sec * 1000) * (times.tv_nsec / 1000);
+    fatal(xclock_gettime, CLOCK_REALTIME, &times);
+    storage_time_msec = (times.tv_sec * 1000) + (times.tv_nsec / 1000);
 	}
 
   finally : coda;

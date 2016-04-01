@@ -36,9 +36,11 @@
 #define MAP_VALUE_TYPE stream
 #include "valyria/map.h"
 
+#include "valyria/list.h"
+
 #include "macros.h"
 #include "strutil.h"
-#include "valyria/list.h"
+#include "color.h"
 
 #define restrict __restrict
 
@@ -51,17 +53,86 @@ array * g_streams;
 
 static map * streams_byid;
 
+/// stream_write
+//
+// SUMMARY
+//  write a log message to a stream
+//
+// PARAMETERS
+//  streamp    - stream to write to
+//  ids        - bitmask of ids for the message
+//  base_attr  - category attributes + log site attributes
+//  message    - 
+//  time_msec  - 
+//
 static xapi __attribute__((nonnull)) stream_write(stream * const restrict streamp, const uint64_t ids, const uint32_t base_attr, const pstring * const restrict message, const long time_msec)
 {
   enter;
 
+  // effective attributes : category + log site + stream
   uint32_t attr = attr_combine(base_attr, streamp->attr);
 
   fatal(psclear, streamp->buffer);
 
-  if(CATEGORY_OPT & attr)
+  int prev = 0;
+  if(attr & COLOR_OPT)
   {
-    // emit the name of the category with the lowest id
+    if((attr & COLOR_OPT) == L_RED)
+      fatal(pscatw, streamp->buffer, COLOR(RED));
+    else if((attr & COLOR_OPT) == L_GREEN)
+      fatal(pscatw, streamp->buffer, COLOR(GREEN));
+    else if((attr & COLOR_OPT) == L_YELLOW)
+      fatal(pscatw, streamp->buffer, COLOR(YELLOW));
+    else if((attr & COLOR_OPT) == L_BLUE)
+      fatal(pscatw, streamp->buffer, COLOR(BLUE));
+    else if((attr & COLOR_OPT) == L_MAGENTA)
+      fatal(pscatw, streamp->buffer, COLOR(MAGENTA));
+    else if((attr & COLOR_OPT) == L_CYAN)
+      fatal(pscatw, streamp->buffer, COLOR(CYAN));
+    else if((attr & COLOR_OPT) == L_WHITE)
+      fatal(pscatw, streamp->buffer, COLOR(WHITE));
+
+    else if((attr & COLOR_OPT) == L_BOLD_RED)
+      fatal(pscatw, streamp->buffer, COLOR(BOLD_RED));
+    else if((attr & COLOR_OPT) == L_BOLD_GREEN)
+      fatal(pscatw, streamp->buffer, COLOR(BOLD_GREEN));
+    else if((attr & COLOR_OPT) == L_BOLD_YELLOW)
+      fatal(pscatw, streamp->buffer, COLOR(BOLD_YELLOW));
+    else if((attr & COLOR_OPT) == L_BOLD_BLUE)
+      fatal(pscatw, streamp->buffer, COLOR(BOLD_BLUE));
+    else if((attr & COLOR_OPT) == L_BOLD_MAGENTA)
+      fatal(pscatw, streamp->buffer, COLOR(BOLD_MAGENTA));
+    else if((attr & COLOR_OPT) == L_BOLD_CYAN)
+      fatal(pscatw, streamp->buffer, COLOR(BOLD_CYAN));
+    else if((attr & COLOR_OPT) == L_BOLD_WHITE)
+      fatal(pscatw, streamp->buffer, COLOR(BOLD_WHITE));
+  }
+
+  if(attr & DATESTAMP_OPT)
+  {
+    struct tm tm;
+    time_t time = time_msec / 1000;
+    localtime_r(&time, &tm);
+
+    char * months[] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun"
+      , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+
+    fatal(pscatf, streamp->buffer, "%4d %s %02d %02d:%02d:%02d"
+      , tm.tm_year + 1900
+      , months[tm.tm_mon]
+      , tm.tm_mday
+      , tm.tm_hour
+      , tm.tm_min
+      , tm.tm_sec
+    );
+    prev = 1;
+  }
+
+  if(attr & CATEGORY_OPT)
+  {
+    // emit the name of the category with the least id
     uint64_t bit = UINT64_C(1);
     while(bit)
     {
@@ -73,11 +144,33 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
 
     logger_category * category = 0;
     fatal(category_byid, bit, &category);
-    fatal(pscatw, streamp->buffer, category->name, category->namel);
+    if(prev)
+      fatal(pscats, streamp->buffer, " ");
+    fatal(pscatf, streamp->buffer, "%*.*s", category_name_max_length, category->namel, category->name);
+    prev = 1;
   }
 
+  if(prev)
+    fatal(pscats, streamp->buffer, " ");
+
+  // the mssage
   fatal(pscatw, streamp->buffer, message->s, message->l);
-  fatal(pscatc, streamp->buffer, '\n');
+
+  if(attr & DISCOVERY_OPT)
+  {
+
+  }
+
+  // message terminator
+  if(streamp->type == LOGGER_STREAM_FD)
+  {
+    fatal(pscatc, streamp->buffer, '\n');
+  }
+
+  if(attr & COLOR_OPT)
+  {
+    fatal(pscatw, streamp->buffer, COLOR(NONE));
+  }
 
   fatal(narrator_sayw, streamp->narrator, streamp->buffer->s, streamp->buffer->l);
 
@@ -88,11 +181,15 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
 {
   enter;
 
-  fatal(ixstrdup, &streamp->name, def->name);
-  streamp->namel = strlen(streamp->name);
+  if(def->name)
+  {
+    fatal(ixstrdup, &streamp->name, def->name);
+    streamp->namel = strlen(streamp->name);
+  }
   streamp->attr = def->attr;
   fatal(pscreate, &streamp->buffer);
 
+  streamp->type = def->type;
   if(def->type == LOGGER_STREAM_FD)
   {
     fatal(narrator_file_create, &streamp->narrator, def->fd);
@@ -142,7 +239,7 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const pstring *
 
   if(streams_would(ids))
   {
-    /* combine attributes from various places in increasing order of precedence to get the effective attributes */
+    // base attributes : category attributes + log site attributes
     uint32_t base_attr = 0;
 
     // log categories

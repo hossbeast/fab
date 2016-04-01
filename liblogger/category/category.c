@@ -465,12 +465,7 @@ API xapi category_byname(const char * const restrict name, size_t namel, logger_
   enter;
 
   namel = namel ?: strlen(name);
-
-  logger_category ** categoryp = 0;
-  if((categoryp = map_get(activated_byid, name, namel)))
-    *category = *categoryp;
-  else
-    *category = 0;
+  *category = map_get(activated_byname, name, namel);
 
   finally : coda;
 }
@@ -479,11 +474,7 @@ API xapi category_byid(uint64_t id, logger_category ** const restrict category)
 {
   enter;
 
-  logger_category ** categoryp = 0;
-  if((categoryp = map_get(activated_byid, MM(id))))
-    *category = *categoryp;
-  else
-    *category = 0;
+  *category = map_get(activated_byid, MM(id));
 
   finally : coda;
 }
