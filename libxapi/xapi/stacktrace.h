@@ -25,9 +25,6 @@
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
 
-// declarations of trace-description functions
-#include "xapi/trace.h"
-
 #define restrict __restrict
 
 /*

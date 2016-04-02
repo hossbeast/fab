@@ -19,6 +19,7 @@
 #include "memblk.def.h"
 
 #include "xapi/calltree.h"
+#include "xapi/trace.h"
 
 /*
 

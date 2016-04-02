@@ -16,6 +16,9 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <unistd.h>
+
+#include "xapi/trace.h"
+
 #include "test.h"
 
 /*
