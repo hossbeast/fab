@@ -25,15 +25,17 @@
 
 #include "pstring.h"
 
+#include "test_util.h"
+
 xapi validate(pstring * ps)
 {
   enter;
 
   if(ps->l != 10)
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected length : %zu, actual : %zu", 10, ps->l);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected length : %zu, actual : %zu", 10, ps->l);
 
   if(strcmp(ps->s, "1234567890"))
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected string : %s, actual : %s", "1234567890", ps->s);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected string : %s, actual : %s", "1234567890", ps->s);
 
   finally : coda;
 }
@@ -52,6 +54,8 @@ int main()
   fatal(psloadc, ps, '1');
   fatal(pscatf, ps, "%s", "234567890");
   fatal(validate, ps);
+
+  success;
 
 finally:
   if(XAPI_UNWINDING)

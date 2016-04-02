@@ -26,6 +26,8 @@ struct item;
 #define ARRAY_ELEMENT_TYPE struct item
 #include "array.h"
 
+#include "test_util.h"
+
 typedef struct item
 {
   int a;
@@ -43,7 +45,7 @@ xapi validate(array * ar)
     item * B = array_get(ar, x);
 
     if(!(B->x >= A->x))
-      tfailf(perrtab_SYS, SYS_ENOMEM, "expected %d >= %d", B->x, A->x);
+      tfailf(perrtab_TEST, TEST_FAIL, "expected %d >= %d", B->x, A->x);
   }
 
   finally : coda;
@@ -82,6 +84,8 @@ int main()
   itemp->x = 3;
 
   fatal(validate, ar);
+
+  success;
 
 finally:
   if(XAPI_UNWINDING)

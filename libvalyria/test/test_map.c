@@ -26,6 +26,7 @@ struct item;
 #define MAP_VALUE_TYPE struct item
 #include "map.h"
 
+#include "test_util.h"
 #include "macros.h"
 
 struct item
@@ -53,51 +54,51 @@ xapi validate(map * mapp)
   item * itemp;
   itemp = map_get(mapp, MMS("one"));
   if(itemp->x != 1)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   itemp = map_get(mapp, MMS("two"));
   if(itemp->x != 2)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   itemp = map_get(mapp, MMS("three"));
   if(itemp->x != 3)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   // lists of keys
   fatal(map_keys, mapp, &keys, &keysl);
 
   if(keysl != 3)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   int stringsort(const void * A, const void * B) { return strcmp(*(char **)A, *(char**)B); };
   qsort(keys, keysl, sizeof(*keys), stringsort);
 
   if(strcmp(keys[0], "one"))
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %s, actual: %s", "one", keys[0]);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "one", keys[0]);
 
   if(strcmp(keys[1], "three"))
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %s, actual: %s", "three", keys[1]);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "three", keys[1]);
 
   if(strcmp(keys[2], "two"))
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %s, actual: %s", "two", keys[2]);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "two", keys[2]);
 
   // list of values
   fatal(map_values, mapp, &values, &valuesl);
 
   if(valuesl != 3)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   int itemsort(const void * A, const void * B) { return (*(item **)A)->x - (*(item **)B)->x; };
   qsort(values, valuesl, sizeof(*values), itemsort);
 
   if(values[0]->x != 1)
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 1, values[0]->x);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 1, values[0]->x);
 
   if(values[1]->x != 2)
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 2, values[1]->x);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 2, values[1]->x);
 
   if(values[2]->x != 3)
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 3, values[2]->x);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 3, values[2]->x);
 
   // by slot
   int x;
@@ -107,28 +108,28 @@ xapi validate(map * mapp)
     itemp = map_table_value(mapp, x);
 
     if(!key ^ !itemp)
-      tfail(perrtab_SYS, SYS_ENOMEM);
+      tfail(perrtab_TEST, TEST_FAIL);
 
     if(key)
     {
       if(strcmp(key, "one") == 0)
       {
         if(itemp->x != 1)
-          tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 1, itemp->x);
+          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 1, itemp->x);
       }
       else if(strcmp(key, "two") == 0)
       {
         if(itemp->x != 2)
-          tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 2, itemp->x);
+          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 2, itemp->x);
       }
       else if(strcmp(key, "three") == 0)
       {
         if(itemp->x != 3)
-          tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 3, itemp->x);
+          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 3, itemp->x);
       }
       else
       {
-        tfail(perrtab_SYS, SYS_ENOMEM);
+        tfail(perrtab_TEST, TEST_FAIL);
       }
     }
   }
@@ -139,10 +140,11 @@ finally:
 coda;
 }
 
-xapi test()
+int main()
 {
   enter;
 
+  xapi r;
   map * mapp = 0;
   item * itemp = 0;
 
@@ -165,26 +167,19 @@ xapi test()
 
   fatal(validate, mapp);
 
-finally:
-  map_free(mapp);
-  free(itemp);
-coda;
-}
-
-int main()
-{
-  enter;
-
-  xapi r;
-  fatal(test);
+  success;
 
 finally:
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();
   }
+
+  map_free(mapp);
+  free(itemp);
+
 conclude(&r);
 
   xapi_teardown();
-  return r;
+  return !!r;
 }

@@ -27,6 +27,7 @@ struct item;
 #include "dictionary.h"
 
 #include "macros.h"
+#include "test_util.h"
 
 struct item
 {
@@ -48,51 +49,51 @@ xapi validate(dictionary * dp)
   item * itemp;
   itemp = dictionary_get(dp, MMS("one"));
   if(itemp->x != 1)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   itemp = dictionary_get(dp, MMS("two"));
   if(itemp->x != 2)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   itemp = dictionary_get(dp, MMS("three"));
   if(itemp->x != 3)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   // lists of keys
   fatal(dictionary_keys, dp, &keys, &keysl);
 
   if(keysl != 3)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   int stringsort(const void * A, const void * B) { return strcmp(*(char **)A, *(char**)B); };
   qsort(keys, keysl, sizeof(*keys), stringsort);
 
   if(strcmp(keys[0], "one"))
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %s, actual: %s", "one", keys[0]);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "one", keys[0]);
 
   if(strcmp(keys[1], "three"))
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %s, actual: %s", "three", keys[1]);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "three", keys[1]);
 
   if(strcmp(keys[2], "two"))
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %s, actual: %s", "two", keys[2]);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "two", keys[2]);
 
   // list of values
   fatal(dictionary_values, dp, &values, &valuesl);
 
   if(valuesl != 3)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_TEST, TEST_FAIL);
 
   int itemsort(const void * A, const void * B) { return (*(item **)A)->x - (*(item **)B)->x; };
   qsort(values, valuesl, sizeof(*values), itemsort);
 
   if(values[0]->x != 1)
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 1, values[0]->x);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 1, values[0]->x);
 
   if(values[1]->x != 2)
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 2, values[1]->x);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 2, values[1]->x);
 
   if(values[2]->x != 3)
-    tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 3, values[2]->x);
+    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 3, values[2]->x);
 
   // by slot
   int x;
@@ -102,28 +103,28 @@ xapi validate(dictionary * dp)
     itemp = dictionary_table_value(dp, x);
 
     if(!key ^ !itemp)
-      tfail(perrtab_SYS, SYS_ENOMEM);
+      tfail(perrtab_TEST, TEST_FAIL);
 
     if(key)
     {
       if(strcmp(key, "one") == 0)
       {
         if(itemp->x != 1)
-          tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 1, itemp->x);
+          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 1, itemp->x);
       }
       else if(strcmp(key, "two") == 0)
       {
         if(itemp->x != 2)
-          tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 2, itemp->x);
+          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 2, itemp->x);
       }
       else if(strcmp(key, "three") == 0)
       {
         if(itemp->x != 3)
-          tfailf(perrtab_SYS, SYS_ENOMEM, "expected : %d, actual: %d", 3, itemp->x);
+          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 3, itemp->x);
       }
       else
       {
-        tfail(perrtab_SYS, SYS_ENOMEM);
+        tfail(perrtab_TEST, TEST_FAIL);
       }
     }
   }
@@ -180,7 +181,7 @@ xapi test_rehash()
         for(i = 0; i < 7; i++)
         {
           if(!dictionary_delete(dp, MM(i)))
-            tfailf(perrtab_SYS, SYS_ENOMEM, "expected : (found), actual : %d", i);
+            tfailf(perrtab_TEST, TEST_FAIL, "expected : (found), actual : %d", i);
         }
       }
 
@@ -191,14 +192,14 @@ xapi test_rehash()
         {
           item * itemp = 0;
           if((itemp = dictionary_get(dp, MM(i))))
-            tfailf(perrtab_SYS, SYS_ENOMEM, "expected : (null), actual : %d", itemp->x);
+            tfailf(perrtab_TEST, TEST_FAIL, "expected : (null), actual : %d", itemp->x);
         }
 
         for(i = 7; i < x; i++)
         {
           item * itemp = 0;
           if(!(itemp = dictionary_get(dp, MM(i))))
-            tfailf(perrtab_SYS, SYS_ENOMEM, "expected : (found), actual : %d", i);
+            tfailf(perrtab_TEST, TEST_FAIL, "expected : (found), actual : %d", i);
         }
       }
     }
@@ -209,23 +210,24 @@ finally:
 coda;
 }
 
-xapi go()
+int main()
 {
   enter;
 
+  xapi r;
+
   fatal(test);
   fatal(test_rehash);
+
+  success;
 
 finally:
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();
   }
-coda;
-}
+conclude(&r);
 
-int main()
-{
-  go();
   xapi_teardown();
+  return !!r;
 }

@@ -55,18 +55,19 @@ typedef struct array
 //  create an empty array
 //
 // PARAMETERS
-//  array        - created array goes here
-//  esz          - element size > 0
-//  [destructor] - invoked with key/value just before freeing their associated storage
-//  [capacity]   - initial capacity
+//  array             - created array goes here
+//  esz               - element size > 0
+//  [destroy_element] - invoked on an element when its storage becomes unused
+//  [capacity]        - initial capacity
 //
 // REMARKS
-//  either attr == ARRAY_PRIMARY and esz != 0 OR attr == ARRAY_SECONDARY and esz == 0
+//  destroy_element follows the destroy idiom, not the free idiom, i.e. it should not free the pointer
+//  itself, as this memory is owned by the array
 //
 xapi array_create(array ** const restrict ar, size_t esz)
   __attribute__((nonnull));
 
-xapi array_createx(array ** const restrict ar, size_t esz, void (*destructor)(ARRAY_ELEMENT_TYPE *), size_t capacity)
+xapi array_createx(array ** const restrict ar, size_t esz, void (*destroy_element)(ARRAY_ELEMENT_TYPE *), size_t capacity)
   __attribute__((nonnull(1)));
 
 /// array_free
@@ -117,7 +118,7 @@ ARRAY_ELEMENT_TYPE * array_get(const array * const restrict ar, int x)
 //  [el] - (returns) pointer to element
 //
 // REMARKS
-//  the destructor is called before this function returns
+//  destroy_element is called before this function returns
 //
 xapi array_shift(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
   __attribute__((nonnull(1)));
@@ -132,7 +133,7 @@ xapi array_shift(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict
 //  [el] - (returns) pointer to element
 //
 // REMARKS
-//  the destructor is called before this function returns
+//  destroy_element is called before this function returns
 //
 xapi array_pop(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
   __attribute__((nonnull(1)));

@@ -26,6 +26,8 @@ struct item;
 #define LIST_ELEMENT_TYPE struct item
 #include "list.h"
 
+#include "test_util.h"
+
 typedef struct item
 {
   int a;
@@ -43,7 +45,7 @@ xapi validate(list * listp)
     item * B = list_get(listp, x);
 
     if(B->x <= A->x)
-      tfail(perrtab_SYS, SYS_ENOMEM);
+      tfail(perrtab_TEST, TEST_FAIL);
   }
 
   finally : coda;
@@ -96,6 +98,8 @@ int main()
   itemp = 0;
 
   fatal(validate, listp);
+
+  success;
 
 finally:
   if(XAPI_UNWINDING)

@@ -55,15 +55,18 @@ typedef struct list
 //  create an empty list
 //
 // PARAMETERS
-//  list         - created list goes here
-//  [destructor] - invoked with key/value just before freeing their associated storage
-//  [attr]       - bitwise combination of LIST_* options and modifiers
-//  [capacity]   - initial capacity
+//  list           - created list goes here
+//  [free_element] - invoked on an element when its storage becomes unused
+//  [attr]         - bitwise combination of LIST_* options and modifiers
+//  [capacity]     - initial capacity
 //
-xapi list_create(list ** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *))
+// REMARKS
+//  free_element follows the free idiom
+//
+xapi list_create(list ** const restrict li, void (*free_element)(LIST_ELEMENT_TYPE *))
   __attribute__((nonnull(1)));
 
-xapi list_createx(list ** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
+xapi list_createx(list ** const restrict li, void (*free_element)(LIST_ELEMENT_TYPE *), size_t capacity)
   __attribute__((nonnull(1)));
 
 /// list_free
@@ -107,7 +110,7 @@ LIST_ELEMENT_TYPE * list_get(const list * const restrict li, int x)
 //  el - 
 //
 // REMARKS
-//  the destructor is called on the element before this function returns
+//  free_element is called on the element before this function returns
 //
 xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
   __attribute__((nonnull(1)));
@@ -118,7 +121,7 @@ xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el
 //  remove the last element of the list
 //
 // REMARKS
-//  the destructor is called on the element before this function returns
+//  free_element is called on the element before this function returns
 //
 xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
   __attribute__((nonnull(1)));
