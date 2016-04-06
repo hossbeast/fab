@@ -143,25 +143,25 @@ int main()
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // alpha dead area should have been skipped
-  assert(alpha_dead_count == 0
+  assertf(alpha_dead_count == 0
     , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
     , alpha_dead_count
   );
 
   // beta should have been run once
-  assert(beta_count == 1
+  assertf(beta_count == 1
     , "expected beta-count : 1, actual beta-count : %d"
     , beta_count
   );
 
   // delta should have been run once
-  assert(delta_count == 1
+  assertf(delta_count == 1
     , "expected delta-count : 1, actual delta-count : %d"
     , delta_count
   );
 
   // epsilon should have been run once
-  assert(epsilon_count == 1
+  assertf(epsilon_count == 1
     , "expected epsilon-count : 1, actual epsilon-count : %d"
     , epsilon_count
   );

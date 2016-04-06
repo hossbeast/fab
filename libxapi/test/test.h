@@ -22,7 +22,7 @@
 #include "xapi/exit.h"
 #include "xapi/errtab.h"
 #include "xapi/XAPI.errtab.h"
-#include "errtab/TEST.errtab.h"
+#include "test/errtab/TEST.errtab.h"
 
 #undef perrtab
 #define perrtab perrtab_TEST
@@ -44,7 +44,7 @@ xapi-enabled function
 
 */
 
-#define assert(bool, fmt, ...)                             \
+#define assertf(bool, fmt, ...)                            \
   do {                                                     \
     if(!(bool))                                            \
     {                                                      \
@@ -58,7 +58,7 @@ xapi-enabled function
 
 #if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
 #define assert_etab(exit, etab)                       \
-  assert(                                             \
+  assertf(                                            \
       xapi_exit_errtab(exit) == etab                  \
     , "expected etab : %s, actual etab : %s"          \
   )
@@ -69,7 +69,7 @@ xapi-enabled function
 
 #if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
 #define assert_code(exit, ecode)                              \
-  assert(                                                     \
+  assertf(                                                    \
       xapi_exit_errcode(exit) == ecode                        \
     , "expected code : %s(%d), actual code : %s(%d)"          \
     , #ecode                                                  \
@@ -80,7 +80,7 @@ xapi-enabled function
 #endif
 #if XAPI_MODE_ERRORCODE
 #define assert_code(exit, ecode)                      \
-  assert(                                             \
+  assertf(                                            \
       ((exit) & 0xFFFF) == ecode                      \
     , "expected code : %d, actual code : %d"          \
     , ecode                                           \
@@ -90,7 +90,7 @@ xapi-enabled function
 
 #if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
 #define assert_exit(exit, etab, ecode)                                                  \
-  assert(                                                                               \
+  assertf(                                                                              \
       xapi_exit_errtab(exit) == etab && xapi_exit_errcode(exit) == ecode                \
     , "expected exit : %s/%s(%d), actual exit : %s/%s(%d)"                              \
     , ({ const char * s = 0; if(etab) { s = xapi_errtab_name(etab ?: (void*)1); } s; }) \

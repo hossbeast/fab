@@ -18,31 +18,4 @@
 #ifndef _XAPI_INFO_H
 #define _XAPI_INFO_H
 
-#include <sys/types.h>
-
-struct memblk;
-
-typedef struct info
-{
-  char *	ks;		// key
-  size_t	kl;
-  size_t	ka;
-
-  char *	vs;		// value
-  size_t  vl;
-  size_t  va;
-} info;
-
-#define restrict __restrict 
-
-void info_freeze(struct memblk * const restrict mb, info * restrict i)
-  __attribute__((nonnull));
-
-void info_unfreeze(struct memblk * const restrict mb, info * restrict i)
-  __attribute__((nonnull));
-
-void info_thaw(char * const restrict mb, info * restrict i)
-  __attribute__((nonnull));
-
-#undef restrict
 #endif

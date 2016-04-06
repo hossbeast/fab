@@ -81,7 +81,7 @@ int main()
     assert_exit(exit, perrtab_TEST, TEST_ERROR_TWO);
 
     // dead area should have been skipped
-    assert(alpha_dead_count == 0
+    assertf(alpha_dead_count == 0
       , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
       , alpha_dead_count
     );

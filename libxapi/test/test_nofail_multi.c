@@ -66,7 +66,7 @@ int main()
     assert_exit(exit, 0, 0);
   }
 
-  assert(beta_count == expected
+  assertf(beta_count == expected
     , "expected beta-count : %d, actual beta-count : %d"
     , expected, beta_count
   );

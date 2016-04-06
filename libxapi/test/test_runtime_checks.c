@@ -18,6 +18,8 @@
 #include "test.h"
 #include "xapi/XAPI.errtab.h"
 
+#include "xapi/trace.h"
+
 /*
 
 SUMMARY
@@ -25,6 +27,7 @@ SUMMARY
 
 */
 
+#if XAPI_MODE_STACKTRACE_CHECKS
 xapi gamma_xapi()
 {
   enter;
@@ -46,26 +49,45 @@ int alpha_notxapi()
   return 1;
 }
 
-xapi foo_illfatal()
+xapi test_illfatal()
 {
   enter;
+
+  char space[2048];
+  size_t z;
 
   fatal(alpha_notxapi);
 
-  finally : coda;
+finally:
+  // ensure that the trace contains the function name
+  z = xapi_trace_full(space, sizeof(space));
+  assertf(strstr(space, "function=alpha_notxapi"), "expected function, actual trace\n**\n%.*s\n**\n", (int)z, space);
+
+  z = xapi_trace_pithy(space, sizeof(space));
+  assertf(strstr(space, "function=alpha_notxapi"), "expected function, actual trace\n**\n%.*s\n**\n", (int)z, space);
+coda;
 }
 
-xapi foo_nofatal()
+xapi test_nofatal()
 {
   enter;
 
+  char space[2048];
+  size_t z;
+
   fatal(beta_xapi);
 
-  finally : coda;
+finally:
+  // ensure that the trace contains the function name
+  z = xapi_trace_full(space, sizeof(space));
+  assertf(strstr(space, "function=gamma_xapi"), "expected function, actual trace\n**\n%.*s\n**\n", (int)z, space);
+
+  z = xapi_trace_pithy(space, sizeof(space));
+  assertf(strstr(space, "function=gamma_xapi"), "expected function, actual trace\n**\n%.*s\n**\n", (int)z, space);
+coda;
 }
 
-#if XAPI_MODE_STACKTRACE_CHECKS
-xapi foo_illfail_noetab()
+xapi test_illfail_noetab()
 {
   enter;
 
@@ -74,7 +96,7 @@ xapi foo_illfail_noetab()
   finally : coda;
 }
 
-xapi foo_illfail_nocode()
+xapi test_illfail_nocode()
 {
   enter;
 
@@ -88,17 +110,17 @@ int main()
 {
 #if XAPI_MODE_STACKTRACE_CHECKS
   // verify NOFATAL
-  xapi exit = foo_nofatal();
+  xapi exit = test_nofatal();
   assert_exit(exit, perrtab_XAPI, XAPI_NOFATAL);
 
   // verify ILLFATAL
-  exit = foo_illfatal();
+  exit = test_illfatal();
   assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
 
-  exit = foo_illfail_noetab();
+  exit = test_illfail_noetab();
   assert_exit(exit, perrtab_XAPI, XAPI_ILLFAIL);
 
-  exit = foo_illfail_nocode();
+  exit = test_illfail_nocode();
   assert_exit(exit, perrtab_XAPI, XAPI_ILLFAIL);
 #endif
 

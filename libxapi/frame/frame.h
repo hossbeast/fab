@@ -75,6 +75,14 @@ xapi xapi_frame_leave(int topframe);
 //
 int xapi_unwinding();
 
+/// xapi_frame_errval
+//
+// SUMMARY
+//  get the exit status for the specified frame
+//
+// PARAMETERS
+//  index - index of the frame
+//
 xapi xapi_frame_errval(xapi_frame_index index);
 
 /// xapi_frame_set
@@ -106,21 +114,23 @@ void xapi_frame_set(
   , const char * const restrict func
 );
 
-void xapi_frame_set_messagew(
+void xapi_frame_set_infow(
     const struct etable * const restrict etab
   , const xapi_code code
   , const xapi_frame_index parent_index
-  , const char * const restrict msg
-  , int msgl
+  , const char * const restrict key
+  , const char * const restrict vbuf
+  , size_t vlen
   , const char * const restrict file
   , const int line
   , const char * const restrict func
 );
 
-void xapi_frame_set_messagef(
+void xapi_frame_set_infof(
     const struct etable * const restrict etab
   , const xapi_code code
   , const xapi_frame_index parent_index
+  , const char * const restrict key
   , const char * const restrict fmt
   , const char * const restrict file
   , const int line

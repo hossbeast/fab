@@ -18,6 +18,38 @@
 #ifndef _XAPI_INFO_INTERNAL_H
 #define _XAPI_INFO_INTERNAL_H
 
+#include <sys/types.h>
+
 #include "info.h"
 
+struct memblk;
+
+typedef struct info
+{
+  char *	ks;		// key
+  size_t	kl;
+  size_t	ka;
+
+  char *	vs;		// value
+  size_t  vl;
+  size_t  va;
+} info;
+
+// per-thread info staging
+extern __thread info * info_staging;
+extern __thread size_t info_stagingl;
+extern __thread size_t info_staginga;
+
+#define restrict __restrict 
+
+void info_freeze(struct memblk * const restrict mb, info * restrict i)
+  __attribute__((nonnull));
+
+void info_unfreeze(struct memblk * const restrict mb, info * restrict i)
+  __attribute__((nonnull));
+
+void info_thaw(char * const restrict mb, info * restrict i)
+  __attribute__((nonnull));
+
+#undef restrict
 #endif

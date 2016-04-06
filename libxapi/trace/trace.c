@@ -56,6 +56,7 @@ static size_t error_trace(char * const dst, const size_t sz, const error * const
 		);
   }
 #endif
+#if 0
 	else if(e->etab && e->code && e->msg)
 	{
 		SAY("[%s:%s] %.*s"
@@ -64,6 +65,7 @@ static size_t error_trace(char * const dst, const size_t sz, const error * const
 			, (int)e->msgl, e->msg 
 		);
 	}
+#endif
 	else if(e->etab && e->code)
 	{
 		SAY("[%s:%s] %s"
@@ -72,6 +74,7 @@ static size_t error_trace(char * const dst, const size_t sz, const error * const
 			, e->code > e->etab->max ? "unspecified error" : e->etab->v[e->code + (e->etab->min * -1)].desc
 		);
 	}
+#if 0
 	else if(e->etab && e->msg)
 	{
 		SAY("[%s] %.*s"
@@ -86,6 +89,7 @@ static size_t error_trace(char * const dst, const size_t sz, const error * const
 			, (int)e->msgl, e->msg 
 		);
 	}
+#endif
 	else if(e->code)
 	{
 		SAY("[%d]", e->code);

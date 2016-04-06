@@ -33,19 +33,16 @@ void error_freeze(memblk * const restrict mb, error * restrict e)
 	** etab is allocated outside of the memblk and must be handled specially
 	*/
   e->etab = (void*)(intptr_t)e->etab->id;
-  memblk_freeze(mb, &e->msg);
 }
 
 void error_unfreeze(memblk * const restrict mb, error * restrict e)
 {
   e->etab = xapi_errtab_byid((intptr_t)e->etab);
-  memblk_unfreeze(mb, &e->msg);
 }
 
 void error_thaw(char * const restrict mb, error * restrict e)
 {
   e->etab = xapi_errtab_byid((intptr_t)e->etab);
-  memblk_thaw(mb, &e->msg);
 }
 
 xapi error_errval(const error * const restrict e)

@@ -28,27 +28,28 @@ typedef struct error
 {
 	const struct etable *	etab;		// error table
 	xapi_code             code;		// error code
-	char *	              msg;	  // error message
-  size_t                msgl;
 } error;
 
 /// error_freeze
 //
-//
+// SUMMARY
+//  see memblk_freeze
 //
 void error_freeze(struct memblk * const restrict mb, error * restrict e)
   __attribute__((nonnull));
 
 /// error_unfreeze
 //
-//
+// SUMMARY
+//  see memblk_unfreeze
 //
 void error_unfreeze(struct memblk * const restrict mb, error * restrict e)
   __attribute__((nonnull));
 
 /// error_thaw
 //
-//
+// SUMMARY
+//  see memblk_thaw
 //
 void error_thaw(char * const restrict mb, error * restrict e)
   __attribute__((nonnull));

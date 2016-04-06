@@ -67,21 +67,24 @@ extern __thread int xapi_stack_raised_code;
 
 /// frame_freeze
 //
-//
+// SUMMARY
+//  see memblk_freeze
 //
 void frame_freeze(struct memblk * const restrict mb, frame * restrict f)
   __attribute__((nonnull));
 
 /// frame_unfreeze
 //
-//
+// SUMMARY
+//  see memblk_unfreeze
 //
 void frame_unfreeze(struct memblk * const restrict mb, frame * restrict f)
   __attribute__((nonnull));
 
 /// frame_thaw
 //
-//
+// SUMMARY
+//  see memblk_thaw
 //
 void frame_thaw(char * const restrict mb, frame * restrict f)
   __attribute__((nonnull));

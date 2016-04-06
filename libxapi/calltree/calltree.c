@@ -25,6 +25,7 @@
 #include "errtab.internal.h"
 #include "mm.internal.h"
 #include "frame.internal.h"
+#include "info.internal.h"
 
 #if XAPI_RUNTIME_CHECKS
 # include "frame.internal.h"
@@ -106,7 +107,7 @@ frame * calltree_frame_push()
 
   if(g_calltree->frames.l == INT_FAST32_MAX)
   {
-    // too many frames
+    // stack overflow
   }
 
   mm_assure(&g_calltree->frames.v, &g_calltree->frames.l, &g_calltree->frames.a, sizeof(*g_calltree->frames.v), g_calltree->frames.l + 1);
@@ -128,6 +129,7 @@ API void xapi_calltree_unwind()
 #endif
 
   xapi_top_frame_index = -1;
+  info_stagingl = 0;
 
 #if XAPI_RUNTIME_CHECKS
   xapi_stack_raised_etab = 0;
@@ -159,6 +161,8 @@ API calltree * xapi_calltree_thaw(char * const restrict mb)
 
   return g_calltree;
 }
+
+// unwind inspection
 
 API xapi_code xapi_calltree_errcode()
 {

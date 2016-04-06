@@ -90,19 +90,19 @@ int main()
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // dead area should have been skipped
-  assert(beta_dead_count == 0
+  assertf(beta_dead_count == 0
     , "expected beta-dead-count : 0, actual beta-dead-count : %d"
     , beta_dead_count
   );
 
   // beta should have been run once
-  assert(beta_count == 1
+  assertf(beta_count == 1
     , "expected beta-count : 1, actual beta-count : %d"
     , beta_count
   );
 
   // delta should have been run twice
-  assert(delta_count == 2
+  assertf(delta_count == 2
     , "expected delta-count : 2, actual delta-count : %d"
     , delta_count
   );

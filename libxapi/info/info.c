@@ -16,12 +16,17 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "internal.h"
-#include "info.h"
+#include "info.internal.h"
 
 #include "macros.h"
 #include "memblk.def.h"
 
 #define restrict __restrict
+
+// per-thread info staging
+__thread APIDATA info * info_staging;
+__thread APIDATA size_t info_stagingl;
+__thread APIDATA size_t info_staginga;
 
 //
 // public
