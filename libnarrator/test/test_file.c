@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
 
 #include "internal.h"
 #include "narrator/file.h"

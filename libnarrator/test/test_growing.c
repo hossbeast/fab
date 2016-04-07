@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
 
 #include "internal.h"
 #include "narrator/growing.h"
@@ -50,8 +51,8 @@ xapi test_basic()
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
 
-  assertf(strcmp(N->growing.s, expected) == 0, "expected '%s', actual '%s'", expected, N->growing.s);
-  assertf(N->growing.l == expectedl, "expected written : %zu, actual : %zu", expectedl, N->fixed.bz);
+  assertf(strcmp(N->growing.s, expected) == 0, "%s", "%s", expected, N->growing.s);
+  assertf(N->growing.l == expectedl, "written %zu", "written %zu", expectedl, N->growing.l);
 
 finally:
   narrator_free(N);

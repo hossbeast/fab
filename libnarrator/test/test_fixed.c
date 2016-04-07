@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
 
 #include "internal.h"
 #include "narrator/fixed.h"
@@ -50,8 +51,8 @@ xapi test_basic()
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
 
-  assertf(strcmp(N->fixed.bb, expected) == 0, "expected '%s', actual '%s'", expected, narrator_first(N));
-  assertf(N->fixed.bz == expectedl, "expected written : %zu, actual : %zu", expectedl, N->fixed.bz);
+  assertf(strcmp(N->fixed.bb, expected) == 0, "%s", "%s", expected, narrator_first(N));
+  assertf(N->fixed.bz == expectedl, "written %zu", "written %zu", expectedl, N->fixed.bz);
 
 finally:
   narrator_free(N);
@@ -69,8 +70,8 @@ xapi test_constrained()
   char * expected = "40 41 ";
   size_t expectedl = strlen(expected);
 
-  assertf(strcmp(N->fixed.bb, expected) == 0, "expected '%s', actual '%s'", expected, narrator_first(N));
-  assertf(N->fixed.bz == expectedl, "expected written : %zu, actual : %zu", expectedl, N->fixed.bz);
+  assertf(strcmp(N->fixed.bb, expected) == 0, "%s", "%s", expected, narrator_first(N));
+  assertf(N->fixed.bz == expectedl, "written %zu", "written %zu", expectedl, N->fixed.bz);
 
 finally:
   narrator_free(N);
