@@ -63,9 +63,11 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 ##
 
 # default NOFILE target - build library and all operators
-[ @all ] : [ @all.eapi @all.xapi ]
-[ @all.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
-[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @all ] : [ @release ]
+
+[ @release ] : [ @release.eapi @release.xapi ]
+[ @release.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
+[ @release.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final ] : [ @final.eapi @final.xapi ]
 [ @final.eapi ] : [ $libxlinux_eapi_final ]
 [ @final.xapi ] : [ $libxlinux_xapi_final ]

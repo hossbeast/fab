@@ -60,9 +60,11 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-s
 ##
 
 # default NOFILE target - build everything
-[ @all ] : [ @all.eapi @all.xapi ]
-[ @all.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
-[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @all ] : [ @release @test ]
+
+[ @release ] : [ @release.eapi @release.xapi ]
+[ @release.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
+[ @release.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final ] : [ @final.eapi @final.xapi ]
 [ @final.eapi ] : [ $libnarrator_eapi_final ]
 [ @final.xapi ] : [ $libnarrator_xapi_final ]
