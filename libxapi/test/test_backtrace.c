@@ -37,7 +37,7 @@ xapi delta(int num)
   fail(TEST_ERROR_ONE);
 
 finally:
-  XAPI_INFOF("num", "%d", num);
+  xapi_infof("num", "%d", num);
 coda;
 }
 

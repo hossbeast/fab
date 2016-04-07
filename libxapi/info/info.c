@@ -17,6 +17,9 @@
 
 #include "internal.h"
 #include "info.internal.h"
+#include "calltree.internal.h"
+#include "frame.internal.h"
+#include "mm.internal.h"
 
 #include "macros.h"
 #include "memblk.def.h"
@@ -48,4 +51,82 @@ void info_thaw(char * const restrict mb, info * restrict i)
 {
   memblk_thaw(mb, &i->ks);
   memblk_thaw(mb, &i->vs);
+}
+
+//
+// api
+//
+
+API void xapi_info_addw(const char * const key, const char * const vbuf, size_t vlen)
+{
+  if(g_calltree || g_fail_intent)
+  {
+    if(key && vbuf && vlen)
+    {
+      info * i = 0;
+      if(g_calltree)
+      {
+        frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
+
+        // ensure allocation for the info list
+        mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
+        i = &f->infos.v[f->infos.l++];
+      }
+      else
+      {
+        // if not unwinding, stage these infos for inclusion into the base frame
+        mm_assure(&info_staging, &info_stagingl, &info_staginga, sizeof(*info_staging), info_stagingl + 1);
+        i = &info_staging[info_stagingl++];
+      }
+
+      memset(i, 0, sizeof(*i));
+      mm_sloadw(&i->ks, &i->kl, key, strlen(key));
+      mm_sloadw(&i->vs, &i->vl, vbuf, vlen);
+    }
+  }
+}
+
+API void xapi_info_addf(const char * const key, const char * const vfmt, ...)
+{
+  va_list va;
+  va_start(va, vfmt);
+
+  xapi_info_vaddf(key, vfmt, va);
+
+  va_end(va);
+}
+
+API void xapi_info_vaddf(const char * const key, const char * const vfmt, va_list va)
+{
+  if(g_calltree || g_fail_intent)
+  {
+    // measure
+    va_list va2;
+    va_copy(va2, va);
+    size_t vlen = vsnprintf(0, 0, vfmt, va2);
+    va_end(va2);
+
+    if(key && vfmt && vlen)
+    {
+      info * i = 0;
+      if(g_calltree)
+      {
+        frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
+
+        // ensure allocation for the info list
+        mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
+        i = &f->infos.v[f->infos.l++];
+      }
+      else
+      {
+        // if not unwinding, stage these infos for inclusion into the base frame
+        mm_assure(&info_staging, &info_stagingl, &info_staginga, sizeof(*info_staging), info_stagingl + 1);
+        i = &info_staging[info_stagingl++];
+      }
+
+      memset(i, 0, sizeof(*i));
+      mm_sloadw(&i->ks, &i->kl, key, strlen(key));
+      mm_svloadf(&i->vs, &i->vl, vfmt, va);
+    }
+  }
 }

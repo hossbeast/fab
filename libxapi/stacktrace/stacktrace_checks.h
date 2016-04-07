@@ -94,9 +94,10 @@ when calling non-xapi code, you have a couple of options.
   xapi_record_frame(xapi_calling_frame_address);                                              \
   if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
   {                                                                                           \
-    XAPI_INFOS("function", __FUNCTION__);                                                     \
-    XAPI_INFOF("expected caller", "%p", __builtin_frame_address(1));                          \
-    XAPI_INFOF("recorded caller", "%p", xapi_calling_frame_address);                          \
+    xapi_fail_intent();                                                                       \
+    xapi_infos("function", __FUNCTION__);                                                     \
+    xapi_infof("expected caller", "%p", __builtin_frame_address(1));                          \
+    xapi_infof("recorded caller", "%p", xapi_calling_frame_address);                          \
     tfail(perrtab_XAPI, XAPI_NOFATAL);                                                        \
   }
 
@@ -110,9 +111,9 @@ when calling non-xapi code, you have a couple of options.
       if(xapi_caller_frame_address != calling_frame_address)                    \
       {                                                                         \
         XAPI_FRAME_SET(perrtab_XAPI, XAPI_ILLFATAL);                            \
-        XAPI_INFOS("function", #func);                                          \
-        XAPI_INFOF("expected caller", "%p", calling_frame_address);             \
-        XAPI_INFOF("recorded caller", "%p", xapi_caller_frame_address);         \
+        xapi_infos("function", #func);                                          \
+        xapi_infof("expected caller", "%p", calling_frame_address);             \
+        xapi_infof("recorded caller", "%p", xapi_caller_frame_address);         \
       }                                                                         \
       else if(xapi_top_frame_index != __xapi_frame_index[0])                    \
       {                                                                         \

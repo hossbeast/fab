@@ -21,9 +21,11 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <string.h>
 
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
+#include "xapi/info.h"
 
 #define restrict __restrict
 
@@ -36,20 +38,18 @@
 // SUMMARY
 //  fail the current frame with the specified error and the prevailing error table
 //
-// ARGUMENTS
-//  [etab]  - error table
+// REMARKS
+//  it is possible to inline a single info kvp with a fail call. If more than one info kvp
+//  is to be applied, use XAPI_INFO
+//
+// PARAMETERS 
+//  [etab]  - error table, otherwise use the prevailing error table
 //  code    - error code
 //  [key]   - key for an info kvp to add to the frame
-//  [vstr]  - error message
-//  [vbuf]  - error message length (0 for strlen)
-//  [vbufl] - error message length (0 for strlen)
-//  [fmt]   - format string for error message
-//
-// VARIANTS
-//  tfail - specify the error table
-//  fails - error message specified as null-terminated string
-//  failw - error message specified as pointer/length pair
-//  failf - error message specified in printf/style
+//  [vstr]  - value string
+//  [vbuf]  - value buffer
+//  [vbufl] - value buffer length
+//  [vfmt]  - value in printf-style
 //
 #define tfail(etab, code)                               \
   do {                                                  \
@@ -60,7 +60,7 @@
   } while(0)
 
 #define tfails(etab, code, key, vstr)   \
-  tfailw(etab, code, key, vstr, 0)
+  tfailw(etab, code, key, vstr, strlen(vstr))
 
 #define tfailw(etab, code, key, vbuf, vlen)               \
   do {                                                    \
@@ -81,7 +81,7 @@
 #define fail(code)                    tfail (perrtab, code)
 #define fails(code, key, vstr)        tfails(perrtab, code, key, vstr)
 #define failw(code, key, vbuf, vbufl) tfailw(perrtab, code, key, vbuf, vbufl)
-#define failf(code, key, fmt, ...)    tfailf(perrtab, code, key, fmt, ##__VA_ARGS__)
+#define failf(code, key, vfmt, ...)   tfailf(perrtab, code, key, vfmt, ##__VA_ARGS__)
 
 /// invoke
 //
@@ -119,15 +119,9 @@
 //  fatalize is typically used in a small wrapper for some underlying function. A new frame is not
 //  created for the underlying function, its failures are "subsumed" into the calling frame
 //
-// ARGUMENTS
-//  [table]- error table
+// PARAMETERS
+//  [etab] - error table
 //  code   - error code returned from the function
-//  [msg]  - error message returned from the function
-//  [msgl] - error message length (0 for strlen)
-//
-// VARIANTS
-//  fatalizes - error message specified as null-terminated string
-//  fatalizew - error message specified as pointer/length pair
 //
 #define tfatalize(etab, code, func, ...)                          \
   do {                                                            \
@@ -135,18 +129,7 @@
       tfail(etab, code);                                          \
   } while(0)
 
-#define tfatalizes(etab, code, msg, func, ...)                    \
-  tfatalizew(etab, code, msg, 0, func, ##__VA_ARGS__)
-
-#define tfatalizew(etab, code, msg, msgl, func, ...)              \
-  do {                                                            \
-    if(func(__VA_ARGS__))                                         \
-      tfailw(etab, code, msg, msgl);                              \
-  } while(0)
-
 #define fatalize(code, func, ...)  tfatalize (perrtab, code, func, ##__VA_ARGS__)
-#define fatalizes(code, func, ...) tfatalizes(perrtab, code, func, ##__VA_ARGS__)
-#define fatalizew(code, func, ...) tfatalizew(perrtab, code, func, ##__VA_ARGS__)
 
 /// finally
 //
@@ -195,7 +178,7 @@ XAPI_LEAVE:                         \
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOS(etab, code, key, vstr) \
-  XAPI_FRAME_SET_INFOW(etab, code, key, vstr, 0)
+  XAPI_FRAME_SET_INFOW(etab, code, key, vstr, strlen(vstr))
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOW(etab, code, key, vbuf, vlen)	\
@@ -215,23 +198,22 @@ XAPI_LEAVE:                         \
 //  apply an info kvp to a calltree frame
 //
 // REMARKS
-//  Before unwinding, infos are staged to be applied to the base frame. There is no way to unstage, so
-//  infos should only be staged when a fail call is imminent. Otherwise, xapi_info should only
-//  be called in a finally block, and infos are applied to the frame for that function invocation.
+//  Before unwinding, but after calling xapi_fail_intent, infos are staged to be applied to the base
+//  frame. There is no way to unstage, so infos should only be staged when a fail call is imminent.
+//  Otherwise, xapi_info should only be called in a finally block, and infos are applied to the
+//  frame for that function invocation.
 //
-// VARIANTS
-//  infos - value string specified as a null-terminated string
-//  infow - value string specified as a buffer/length pair
-//  infof - value string specified in prinft-style
-//
-#define XAPI_INFOS(k, vstr)                      \
-  XAPI_INFOW(k, vstr, 0)
+#define xapi_infos(key, vstr)                      \
+  xapi_info_addw(key, vstr, strlen(vstr))
 
-#define XAPI_INFOW(k, vbuf, vlen)                \
-  xapi_frame_infow(k, 0, vbuf, vlen)
+#define xapi_infow(key, vbuf, vlen)                \
+  xapi_info_addw(key, vbuf, vlen)
 
-#define XAPI_INFOF(k, vfmt, ...)                 \
-  xapi_frame_infof(k, 0, vfmt, ##__VA_ARGS__)
+#define xapi_infof(key, vfmt, ...)                 \
+  xapi_info_addf(key, vfmt, ##__VA_ARGS__)
+
+#define xapi_vinfof(key, vfmt, va)                 \
+  xapi_info_vaddf(key, vfmt, va)
 
 /// XAPI_UNWINDING
 //

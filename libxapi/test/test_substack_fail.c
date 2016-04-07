@@ -42,7 +42,7 @@ xapi baz()
   fatal(ababab);
 
 finally:
-  XAPI_INFOF("baz", "%d", 1);
+  xapi_infof("baz", "%d", 1);
 coda;
 }
 
@@ -87,7 +87,7 @@ sprintf(name, "epsilon_%d", epsilon_count);
   fatal(qux);
 
 finally:
-  XAPI_INFOF(name, "%d", 1);
+  xapi_infof(name, "%d", 1);
 
   fatal(qux);
 coda;
@@ -128,7 +128,7 @@ xapi zeta()
   fatal(alpha);
 
 finally:
-  XAPI_INFOF("zeta", "%d", 1);
+  xapi_infof("zeta", "%d", 1);
 coda;
 }
 

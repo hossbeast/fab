@@ -36,6 +36,7 @@
 
 __thread calltree * g_calltree;
 __thread calltree * g_calltree_stor;
+__thread int g_intent_to_fail;
 
 #define restrict __restrict
 
@@ -130,6 +131,7 @@ API void xapi_calltree_unwind()
 
   xapi_top_frame_index = -1;
   info_stagingl = 0;
+  g_fail_intent = 0;
 
 #if XAPI_RUNTIME_CHECKS
   xapi_stack_raised_etab = 0;

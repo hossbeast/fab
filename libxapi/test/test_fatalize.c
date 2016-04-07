@@ -38,7 +38,7 @@ xapi alpha()
   finally : coda;
 }
 
-xapi foo()
+xapi test_fatalize()
 {
   enter;
 
@@ -54,9 +54,7 @@ int main()
 #endif
 
   // invoke the function, collect its exit status
-  xapi exit = foo();
-
-  // assertions
+  xapi exit = test_fatalize();
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // victory

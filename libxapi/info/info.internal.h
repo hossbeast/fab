@@ -42,12 +42,27 @@ extern __thread size_t info_staginga;
 
 #define restrict __restrict 
 
+/// info_freeze
+//
+// SUMMARY
+//  see memblk_freeze
+//
 void info_freeze(struct memblk * const restrict mb, info * restrict i)
   __attribute__((nonnull));
 
+/// info_freeze
+//
+// SUMMARY
+//  see memblk_freeze
+//
 void info_unfreeze(struct memblk * const restrict mb, info * restrict i)
   __attribute__((nonnull));
 
+/// info_freeze
+//
+// SUMMARY
+//  see memblk_freeze
+//
 void info_thaw(char * const restrict mb, info * restrict i)
   __attribute__((nonnull));
 

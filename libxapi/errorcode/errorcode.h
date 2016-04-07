@@ -38,28 +38,30 @@
 //  fail the current frame with the specified error code
 //
 // ARGUMENTS
+//  etab    - error table
 //  code    - error code
 //  [table] - discarded
-//  [msg]   - discarded
-//  [msgl]  - discarded
-//  [fmt]   - discarded
+//  [key]   - discarded
+//  [vstr]  - discarded
+//  [vlen]  - discarded
+//  [vfmt]  - discarded
 
-#define tfail(perrtab, code)                          \
-  do {                                                \
-    __xapi_r[0] = (code) & 0xFFFF;                    \
-    if(perrtab)                                       \
-      __xapi_r[0] |= (((etable *)perrtab)->id << 16); \
-    goto XAPI_FINALIZE;                               \
+#define tfail(etab, code)                          \
+  do {                                             \
+    __xapi_r[0] = (code) & 0xFFFF;                 \
+    if(etab)                                       \
+      __xapi_r[0] |= (((etable *)etab)->id << 16); \
+    goto XAPI_FINALIZE;                            \
   } while(0)
 
-#define tfails(perrtab, code, msg)        tfail(perrtab, code)
-#define tfailw(perrtab, code, msg, msgl)  tfail(perrtab, code)
-#define tfailf(perrtab, code, fmt, ...)   tfail(perrtab, code)
+#define tfails(etab, code, key, vstr)       tfail(etab, code)
+#define tfailw(etab, code, key, vbuf, vlen) tfail(etab, code)
+#define tfailf(etab, code, key, vfmt, ...)  tfail(etab, code)
 
-#define fail(code)             tfail (0, code)
-#define fails(code, msg)       tfails(0, code, msg)
-#define failw(code, msg, msgl) tfailw(0, code, msg, msgl)
-#define failf(code, fmt, ...)  tfailf(0, code, fmt, ##__VA_ARGS__)
+#define fail(code)                   tfail (0, code)
+#define fails(code, key, vstr)       tfails(0, code, key, vstr)
+#define failw(code, key, vbuf, vlen) tfailw(0, code, vbuf, vlen)
+#define failf(code, key, fmt, ...)   tfailf(0, code, vfmt, ##__VA_ARGS__)
 
 /*
 ** called elsewhere in the stack
@@ -91,7 +93,8 @@
 /// fatalize
 //
 // SUMMARY
-//  invoke a non-xapi-enabled function and if it fails, fail the current frame with its error code
+//  invoke a non-xapi-enabled function and if it fails, fail the current frame with the specified
+//  error code, which is evaluated after the function returns
 //
 #define tfatalize(perrtab, code, func, ...)   \
   do {                                        \
@@ -99,32 +102,13 @@
       tfail(perrtab, code);                   \
   } while(0)
 
-#define tfatalizes(perrtab, code, msg, func, ...)         \
-  tfatalizew(perrtab, code, msg, 0, func, ##__VA_ARGS__)
-
-#define tfatalizew(perrtab, code, msg, msgl, func, ...)   \
-  do {                                                    \
-    if(func(__VA_ARGS__))                                 \
-      tfailw(perrtab, code, msg, msgl);                   \
-  } while(0)
-
 #define fatalize(code, func, ...)  tfatalize (perrtab, code, func, ##__VA_ARGS__)
-#define fatalizes(code, func, ...) tfatalizes(perrtab, code, func, ##__VA_ARGS__)
-#define fatalizew(code, func, ...) tfatalizew(perrtab, code, func, ##__VA_ARGS__)
 
 /// xproxy
 //
 // 1-liner
 //
 #define xproxy(func, ...) return func(__VA_ARGS__)
-
-#define delegate(func, ...) return func(__VA_ARGS__)
-
-/// invoke
-//
-// SUMMARY
-//  
-//
 
 /// finally
 //
@@ -153,7 +137,6 @@ XAPI_FINALLY
 XAPI_LEAVE:             \
   return XAPI_ERRVAL
 
-
 #define conclude(r)     \
   goto XAPI_LEAVE;      \
 XAPI_LEAVE:             \
@@ -163,9 +146,10 @@ XAPI_LEAVE:             \
 ** called after finally
 */ 
 
-#define XAPI_INFOS(k, vstr)
-#define XAPI_INFOW(k, vstr, len)
-#define XAPI_INFOF(k, vfmt, ...)
+#define xapi_infos(key, vstr)
+#define xapi_infow(key, vbuf, vlen)
+#define xapi_infof(key, vfmt, ...)
+#define xapi_vinfof(key, vfmt, va)
 
 /// XAPI_UNWINDING
 //
@@ -189,7 +173,7 @@ XAPI_LEAVE:             \
 // SUMMARY
 //  while unwinding, the error code, and zero otherwise
 //
-#define XAPI_ERRCODE (XAPI_ERRVAL & 0xFFFF)
+#define XAPI_ERRCODE ((XAPI_ERRVAL) & 0xFFFF)
 
 /// XAPI_THROWING
 //

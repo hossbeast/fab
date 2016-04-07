@@ -63,6 +63,9 @@ extern __thread const etable * xapi_stack_raised_etab;
 extern __thread int xapi_stack_raised_code;
 #endif
 
+// per-thread flag which signals the users intent to fail
+extern __thread int g_fail_intent;
+
 #define restrict __restrict 
 
 /// frame_freeze

@@ -88,22 +88,21 @@ xapi xapi_frame_errval(xapi_frame_index index);
 /// xapi_frame_set
 //
 // SUMMARY
-//  set properties for the top frame during unwinding
+//  set properties for the current frame during unwinding, and, optionally, apply a single info kvp
+//  to a calltree frame
 //
 // PARAMETERS
-//  [s]    - saved pointer to stack
-//  [etab] - errtab table (nonnull when code is nonzero)
-//  [code] - error code (nonzero when raising a new error)
-//  [msg]  - message
-//  [msgl] - message length (0 for strlen)
-//  [fmt]  - format string
-//  [file] - file name
-//  [line] - line number
-//  func   - function name
-//
-// VARIANTS
-//  messagew - message is specified as pointer/length pair
-//  messagef - message is specified in printf/style
+//  [etab]         - errtab table (nonnull when code is nonzero)
+//  [code]         - error code (nonzero when raising a new error)
+//  parent_index   - 
+//  [key]          - key for a single, optional kvp to apply to the frame
+//  [vstr]         - value string
+//  [vbuf]         - value buffer
+//  [vlen]         - value buffer length
+//  [vfmt]         - value in printf-style
+//  [file]         - file name
+//  [line]         - line number
+//  func           - function name
 //
 void xapi_frame_set(
     const struct etable * const restrict etab
@@ -112,7 +111,8 @@ void xapi_frame_set(
   , const char * const restrict file
   , const int line
   , const char * const restrict func
-);
+)
+  __attribute__((nonnull(6)));
 
 void xapi_frame_set_infow(
     const struct etable * const restrict etab
@@ -124,39 +124,33 @@ void xapi_frame_set_infow(
   , const char * const restrict file
   , const int line
   , const char * const restrict func
-);
+)
+  __attribute__((nonnull(9)));
 
 void xapi_frame_set_infof(
     const struct etable * const restrict etab
   , const xapi_code code
   , const xapi_frame_index parent_index
   , const char * const restrict key
-  , const char * const restrict fmt
+  , const char * const restrict vfmt
   , const char * const restrict file
   , const int line
   , const char * const restrict func
   , ...
-);
+)
+  __attribute__((nonnull(8)));
 
-/// xapi_frame_info
+/// xapi_fail_intent
 //
 // SUMMARY
-//  add key/value info to the top frame (no-op if key or value is null or 0-length)
+//  normally, 
 //
-// PARAMETERS
-//  kstr   - key string
-//  [kl]   - key length or 0 for strlen
-//  [vstr] - value string
-//  [vl]   - vstr length or 0 for strlen
-//  [vfmt] - format string for value
-//
-// VARIANTS
-//  infow - value is specified in as pointer/length pair
-//  infof - value is specified in printf/style
-//
-void xapi_frame_infow(const char * const restrict k, int kl, const char * const restrict vstr, int vlen);
-void xapi_frame_infof(const char * const restrict k, int kl, const char * const restrict vfmt, ...);
+void xapi_fail_intent();
 
+///
+//
+//
+//
 xapi_code xapi_calltree_errcode();
 xapi xapi_calltree_errval();
 const etable * xapi_calltree_errtab();

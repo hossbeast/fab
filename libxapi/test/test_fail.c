@@ -24,7 +24,7 @@ SUMMARY
 
 */
 
-xapi beta()
+xapi alpha()
 {
   enter;
 
@@ -33,7 +33,34 @@ xapi beta()
   finally : coda;
 }
 
-xapi alpha()
+xapi beta()
+{
+  enter;
+
+  fails(TEST_ERROR_ONE, "foo", "bar");
+
+  finally : coda;
+}
+
+xapi zeta()
+{
+  enter;
+
+  failf(TEST_ERROR_ONE, "foo", "%s", "bar");
+
+  finally : coda;
+}
+
+xapi test_fail()
+{
+  enter;
+
+  fatal(alpha);
+
+  finally : coda;
+}
+
+xapi test_fails()
 {
   enter;
 
@@ -42,11 +69,11 @@ xapi alpha()
   finally : coda;
 }
 
-xapi foo()
+xapi test_failf()
 {
   enter;
 
-  fatal(alpha);
+  fatal(zeta);
 
   finally : coda;
 }
@@ -58,9 +85,13 @@ int main()
 #endif
 
   // invoke the function, collect its exit status
-  xapi exit = foo();
+  xapi exit = test_fail();
+  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
-  // assertions
+  exit = test_fails();
+  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+
+  exit = test_failf();
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // victory

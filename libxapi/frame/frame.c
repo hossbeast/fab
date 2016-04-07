@@ -47,6 +47,7 @@ __thread APIDATA int xapi_stack_raised_code;
 // per-thread sentinels
 __thread APIDATA int xapi_sentinel;
 __thread APIDATA xapi_frame_index xapi_top_frame_index = -1;
+__thread int g_fail_intent;
 
 //
 // static
@@ -123,45 +124,6 @@ static void frame_set(
     xapi_stack_raised_code = code;
   }
 #endif
-}
-
-static void frame_vinfof(const char * const k, int kl, const char * const vfmt, va_list va)
-{
-  info * i = 0;
-
-  if(k)
-    kl = kl ?: strlen(k);
-
-  // measure
-  va_list va2;
-  va_copy(va2, va);
-  size_t vl = vsnprintf(0, 0, vfmt, va2);
-  va_end(va2);
-
-  if(k && kl && vl)
-  {
-    if(g_calltree)
-    {
-      frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
-
-      // ensure allocation for the info list
-      mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
-      i = &f->infos.v[f->infos.l++];
-    }
-    else
-    {
-      // if not unwinding, stage these infos for inclusion into the base frame
-      mm_assure(&info_staging, &info_stagingl, &info_staginga, sizeof(*info_staging), info_stagingl + 1);
-      i = &info_staging[info_stagingl++];
-    }
-  }
-
-  if(i)
-  {
-    memset(i, 0, sizeof(*i));
-    mm_sloadw(&i->ks, &i->kl, k, kl);
-    mm_svloadf(&i->vs, &i->vl, vfmt, va);
-  }
 }
 
 //
@@ -245,6 +207,11 @@ API void xapi_record_frame(void * calling_frame)
 }
 #endif
 
+API void xapi_fail_intent()
+{
+  g_fail_intent = 1;
+}
+
 API xapi xapi_frame_leave(int topframe)
 {
 #if XAPI_RUNTIME_CHECKS
@@ -303,7 +270,7 @@ API void xapi_frame_set_infow(
 )
 {
 	frame_set(etab, code, parent_index, file, line, func);
-  xapi_frame_infow(key, 0, vbuf, vlen);
+  xapi_info_addw(key, vbuf, vlen);
 }
 
 API void xapi_frame_set_infof(
@@ -320,56 +287,8 @@ API void xapi_frame_set_infof(
 {
 	frame_set(etab, code, parent_index, file, line, func);
 
-  // save the msg when setting the base frame
   va_list va;
   va_start(va, func);
-
-  frame_vinfof(key, 0, vfmt, va);
-
-  va_end(va);
-}
-
-API void xapi_frame_infow(const char * const k, int kl, const char * const v, int vl)
-{
-  info * i = 0;
-  
-  if(k)
-    kl = kl ?: strlen(k);
-  if(v)
-    vl = vl ?: strlen(v);
-
-  if(k && kl && v && vl)
-  {
-    if(g_calltree)
-    {
-      frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
-
-      // ensure allocation for the info list
-      mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
-      i = &f->infos.v[f->infos.l++];
-    }
-    else
-    {
-      // if not unwinding, stage these infos for inclusion into the base frame
-      mm_assure(&info_staging, &info_stagingl, &info_staginga, sizeof(*info_staging), info_stagingl + 1);
-      i = &info_staging[info_stagingl++];
-    }
-  }
-
-  if(i)
-  {
-    memset(i, 0, sizeof(*i));
-    mm_sloadw(&i->ks, &i->kl, k, kl);
-    mm_sloadw(&i->vs, &i->vl, v, vl);
-  }
-}
-
-API void xapi_frame_infof(const char * const k, int kl, const char * const vfmt, ...)
-{
-  va_list va;
-  va_start(va, vfmt);
-
-  frame_vinfof(k, kl, vfmt, va);
-
+  xapi_info_vaddf(key, vfmt, va);
   va_end(va);
 }
