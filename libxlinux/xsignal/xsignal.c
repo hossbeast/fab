@@ -28,8 +28,8 @@ API xapi xkill(pid_t pid, int sig)
   fatalize(errno, kill, pid, sig);
 
 finally:
-  XAPI_INFOF("pid", "%ld", (long)pid);
-  XAPI_INFOF("sig", "%d", sig);
+  xapi_infof("pid", "%ld", (long)pid);
+  xapi_infof("sig", "%d", sig);
 coda;
 }
 
@@ -56,7 +56,7 @@ API xapi xsigaction(int signum, const struct sigaction * act, struct sigaction *
   fatalize(errno, sigaction, signum, act, oldact);
 
 finally:
-  XAPI_INFOF("sig", "%d", signum);
+  xapi_infof("sig", "%d", signum);
 coda;
 }
 

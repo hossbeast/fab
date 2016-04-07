@@ -36,18 +36,32 @@ SUMMARY
 
 #include "macros.h"
 
-#define assertf(bool, fmt, ...)           \
-  do                                      \
-  {                                       \
-    if(!(bool))                           \
-    {                                     \
-      tfailf(                             \
-          perrtab_TEST                    \
-        , TEST_FAIL                       \
-        , fmt ", result : fail"           \
-        , ##__VA_ARGS__                   \
-      );                                  \
-    }                                     \
+void ufailf_info(const char * const restrict expfmt, const char * const restrict actfmt, ...)
+  __attribute__((nonnull(1, 2)));
+
+#define ufail()                   \
+  tfail(perrtab_TEST, TEST_FAIL)
+
+#define ufailf(expfmt, actfmt, ...)               \
+  do {                                            \
+    ufailf_info(expfmt, actfmt, ##__VA_ARGS__);   \
+    ufail();                                      \
+  } while(0)
+
+#define assert(bool)      \
+  do {                    \
+    if(!(bool))           \
+    {                     \
+      ufail();            \
+    }                     \
+  } while(0)
+
+#define assertf(bool, expfmt, actfmt, ...)    \
+  do {                                        \
+    if(!(bool))                               \
+    {                                         \
+      ufailf(expfmt, actfmt, ##__VA_ARGS__);  \
+    }                                         \
   } while(0)
 
 #define assert_exit(exit, etab, ecode)                                        \

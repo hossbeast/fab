@@ -32,7 +32,7 @@ API xapi xstat(const char * path, struct stat * buf)
     fail(errno);
   
 finally:
-  XAPI_INFOF("path", "%s", path);
+  xapi_infof("path", "%s", path);
 coda;
 }
 
@@ -49,7 +49,7 @@ API xapi uxstat(const char * path, struct stat * buf, int * r)
   }
   
 finally:
-  XAPI_INFOF("path", "%s", path);
+  xapi_infof("path", "%s", path);
 coda;
 }
 
@@ -61,7 +61,7 @@ API xapi xlstat(const char * path, struct stat * buf, int * r)
     fail(errno);
   
 finally:
-  XAPI_INFOF("path", "%s", path);
+  xapi_infof("path", "%s", path);
 coda;
 }
 
@@ -78,7 +78,7 @@ API xapi uxlstat(const char * path, struct stat * buf, int * r)
   }
   
 finally:
-  XAPI_INFOF("path", "%s", path);
+  xapi_infof("path", "%s", path);
 coda;
 }
 
@@ -105,7 +105,7 @@ API xapi uxfstat(int fd, struct stat * buf)
   }
   
 finally:
-  XAPI_INFOF("fd", "%d", fd);
+  xapi_infof("fd", "%d", fd);
 coda;
 }
 
@@ -138,7 +138,7 @@ API xapi uxutimensat(int dirfd, const char * const restrict pathname, const stru
   }
 
 finally:
-  XAPI_INFOF("path", "%s", pathname);
+  xapi_infof("path", "%s", pathname);
 coda;
 }
 
@@ -149,7 +149,7 @@ API xapi xmkdir(const char * pathname, mode_t mode)
   fatalize(errno, mkdir, pathname, mode);
 
 finally:
-  XAPI_INFOS("path", pathname);
+  xapi_infos("path", pathname);
 coda;
 }
 
@@ -161,7 +161,7 @@ API xapi uxmkdir(const char * pathname, mode_t mode)
     fail(errno);
 
 finally:
-  XAPI_INFOS("path", pathname);
+  xapi_infos("path", pathname);
 coda;
 }
 
@@ -172,6 +172,6 @@ API xapi xfchmod(int fd, mode_t mode)
   fatalize(errno, fchmod, fd, mode);
 
 finally:
-  XAPI_INFOF("fd", "%d", fd);
+  xapi_infof("fd", "%d", fd);
 coda;
 }

@@ -19,6 +19,8 @@
 #include <stdio.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
+
 #include "xlinux.h"
 #include "xlinux/SYS.errtab.h"
 
@@ -44,8 +46,7 @@ xapi validate(array * ar)
     item * A = array_get(ar, x - 1);
     item * B = array_get(ar, x);
 
-    if(!(B->x >= A->x))
-      tfailf(perrtab_TEST, TEST_FAIL, "expected %d >= %d", B->x, A->x);
+    assertf(B->x >= A->x, "B >= A", "%d < %d", B->x, A->x);
   }
 
   finally : coda;

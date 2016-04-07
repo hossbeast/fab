@@ -32,7 +32,7 @@ API xapi xopen(const char * path, int flags, int * const fd)
     fail(errno);
 
 finally:
-  XAPI_INFOF("path", "%s", path);
+  xapi_infof("path", "%s", path);
 coda;
 }
 
@@ -49,7 +49,7 @@ API xapi uxopen(const char * path, int flags, int * const fd)
   }
 
 finally:
-  XAPI_INFOF("path", "%s", path);
+  xapi_infof("path", "%s", path);
 coda;
 }
 
@@ -64,7 +64,7 @@ API xapi xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
     fail(errno);
 
 finally:
-  XAPI_INFOF("path", "%s", path);
+  xapi_infof("path", "%s", path);
 coda;
 }
 
@@ -81,6 +81,6 @@ API xapi uxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
   }
 
 finally:
-  XAPI_INFOF("path", "%s", path);
+  xapi_infof("path", "%s", path);
 coda;
 }

@@ -50,8 +50,8 @@ API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
 finally:
   if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
   {
-    XAPI_INFOF("expected", "%zd", expected);
-    XAPI_INFOF("actual", "%zd", actual);
+    xapi_infof("expected", "%zd", expected);
+    xapi_infof("actual", "%zd", actual);
   }
 coda;
 }
@@ -84,8 +84,8 @@ API xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
 finally:
   if(XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
   {
-    XAPI_INFOF("expected", "%zd", expected);
-    XAPI_INFOF("actual", "%zd", actual);
+    xapi_infof("expected", "%zd", expected);
+    xapi_infof("actual", "%zd", actual);
   }
 coda;
 }

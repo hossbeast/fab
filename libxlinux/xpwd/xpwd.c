@@ -39,7 +39,7 @@ API xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen,
   }
 
 finally :
-  XAPI_INFOF("uid", "%zu", uid);
+  xapi_infof("uid", "%zu", uid);
 coda;
 }
 

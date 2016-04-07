@@ -33,10 +33,10 @@ API xapi xdlopen(const char * filename, int flag, void ** dl)
 
   dlerror();
   if(((*dl) = dlopen(filename, flag)) == 0)
-    fails(XLINUX_DLERROR, dlerror());
+    fails(XLINUX_DLERROR, "error", dlerror());
 
 finally :
-  XAPI_INFOF("path", "%s", filename);
+  xapi_infof("path", "%s", filename);
 coda;
 }
 
@@ -51,7 +51,7 @@ API xapi ixdlclose(void ** dl)
     *dl = 0;
     char * e = dlerror();
     if(e)
-      fails(XLINUX_DLERROR, e);
+      fails(XLINUX_DLERROR, "error", e);
   }
 
   finally : coda;
@@ -65,10 +65,10 @@ API xapi xdlsym(void * dl, const char * sym, void ** psym)
   (*psym) = dlsym(dl, sym);
   char * e = dlerror();
   if(e)
-    fails(XLINUX_DLERROR, e);
+    fails(XLINUX_DLERROR, "error", e);
 
 finally :
-  XAPI_INFOF("sym", "%s", sym);
+  xapi_infof("sym", "%s", sym);
 coda;
 }
 
@@ -80,9 +80,9 @@ API xapi uxdlsym(void * dl, const char * sym, void ** psym)
   (*psym) = dlsym(dl, sym);
   char * e = dlerror();
   if(e && strstr(e, "undefined symbol") == 0)
-    fails(XLINUX_DLERROR, e);
+    fails(XLINUX_DLERROR, "error", e);
 
 finally :
-  XAPI_INFOF("sym", "%s", sym);
+  xapi_infof("sym", "%s", sym);
 coda;
 }

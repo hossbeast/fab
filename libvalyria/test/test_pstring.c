@@ -20,6 +20,8 @@
 #include <string.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
+
 #include "xlinux.h"
 #include "xlinux/SYS.errtab.h"
 
@@ -31,11 +33,8 @@ xapi validate(pstring * ps)
 {
   enter;
 
-  if(ps->l != 10)
-    tfailf(perrtab_TEST, TEST_FAIL, "expected length : %zu, actual : %zu", 10, ps->l);
-
-  if(strcmp(ps->s, "1234567890"))
-    tfailf(perrtab_TEST, TEST_FAIL, "expected string : %s, actual : %s", "1234567890", ps->s);
+  assertf(ps->l == 10, "length %zu", "length %zu", 10, ps->l);
+  assertf(strcmp(ps->s, "1234567890") == 0, "content %s", "content %s", "1234567890", ps->s);
 
   finally : coda;
 }

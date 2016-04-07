@@ -19,6 +19,8 @@
 #include <stdio.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
+
 #include "xlinux.h"
 #include "xlinux/SYS.errtab.h"
 
@@ -53,52 +55,35 @@ xapi validate(map * mapp)
   // retrieve by key
   item * itemp;
   itemp = map_get(mapp, MMS("one"));
-  if(itemp->x != 1)
-    tfail(perrtab_TEST, TEST_FAIL);
+  assertf(itemp->x == 1, "%d", "%d", 1, itemp->x);
 
   itemp = map_get(mapp, MMS("two"));
-  if(itemp->x != 2)
-    tfail(perrtab_TEST, TEST_FAIL);
+  assertf(itemp->x == 2, "%d", "%d", 2, itemp->x);
 
   itemp = map_get(mapp, MMS("three"));
-  if(itemp->x != 3)
-    tfail(perrtab_TEST, TEST_FAIL);
+  assertf(itemp->x == 3, "%d", "%d", 3, itemp->x);
 
   // lists of keys
   fatal(map_keys, mapp, &keys, &keysl);
-
-  if(keysl != 3)
-    tfail(perrtab_TEST, TEST_FAIL);
+  assertf(keysl == 3, "keys %d", "keys %zu", 3, keysl);
 
   int stringsort(const void * A, const void * B) { return strcmp(*(char **)A, *(char**)B); };
   qsort(keys, keysl, sizeof(*keys), stringsort);
 
-  if(strcmp(keys[0], "one"))
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "one", keys[0]);
-
-  if(strcmp(keys[1], "three"))
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "three", keys[1]);
-
-  if(strcmp(keys[2], "two"))
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "two", keys[2]);
+  assertf(strcmp(keys[0], "one") == 0, "%s", "%s", "one", keys[0]);
+  assertf(strcmp(keys[1], "three") == 0, "%s", "%s", "three", keys[1]);
+  assertf(strcmp(keys[2], "two") == 0, "%s", "%s", "two", keys[2]);
 
   // list of values
   fatal(map_values, mapp, &values, &valuesl);
-
-  if(valuesl != 3)
-    tfail(perrtab_TEST, TEST_FAIL);
+  assertf(keysl == 3, "values %d", "values %zu", 3, keysl);
 
   int itemsort(const void * A, const void * B) { return (*(item **)A)->x - (*(item **)B)->x; };
   qsort(values, valuesl, sizeof(*values), itemsort);
 
-  if(values[0]->x != 1)
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 1, values[0]->x);
-
-  if(values[1]->x != 2)
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 2, values[1]->x);
-
-  if(values[2]->x != 3)
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 3, values[2]->x);
+  assertf(values[0]->x == 1, "%d", "%d", 1, values[0]->x);
+  assertf(values[1]->x == 2, "%d", "%d", 2, values[1]->x);
+  assertf(values[2]->x == 3, "%d", "%d", 3, values[2]->x);
 
   // by slot
   int x;
@@ -108,28 +93,25 @@ xapi validate(map * mapp)
     itemp = map_table_value(mapp, x);
 
     if(!key ^ !itemp)
-      tfail(perrtab_TEST, TEST_FAIL);
+      ufail();
 
     if(key)
     {
       if(strcmp(key, "one") == 0)
       {
-        if(itemp->x != 1)
-          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 1, itemp->x);
+        assertf(itemp->x == 1, "%d", "%d", 1, itemp->x);
       }
       else if(strcmp(key, "two") == 0)
       {
-        if(itemp->x != 2)
-          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 2, itemp->x);
+        assertf(itemp->x == 2, "%d", "%d", 2, itemp->x);
       }
       else if(strcmp(key, "three") == 0)
       {
-        if(itemp->x != 3)
-          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 3, itemp->x);
+        assertf(itemp->x == 3, "%d", "%d", 3, itemp->x);
       }
       else
       {
-        tfail(perrtab_TEST, TEST_FAIL);
+        ufail();
       }
     }
   }

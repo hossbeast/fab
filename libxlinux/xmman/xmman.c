@@ -32,7 +32,7 @@ API xapi xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t of
     fail(errno);
   
 finally:
-  XAPI_INFOF("length", "%zu", length);
+  xapi_infof("length", "%zu", length);
 coda;
 }
 

@@ -43,7 +43,7 @@ API xapi xmalloc(void* target, size_t size)
   }
   
 finally :
-  XAPI_INFOF("size", "%zu", size);
+  xapi_infof("size", "%zu", size);
 coda;
 }
 
@@ -78,7 +78,7 @@ API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
   }
 
 finally :
-  XAPI_INFOF("size", "%zu", es * ec);
+  xapi_infof("size", "%zu", es * ec);
 coda;
 }
 
@@ -157,6 +157,6 @@ API xapi xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r
     fail(errno);
 
 finally:
-  XAPI_INFOS("path", pathname);
+  xapi_infos("path", pathname);
 coda;
 }

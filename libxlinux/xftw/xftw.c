@@ -56,7 +56,7 @@ API xapi xnftw(const char *dirpath, int (*xfn) (const char *fpath, const struct 
   */
   
 finally:
-  XAPI_INFOF("path", "%s", dirpath);
+  xapi_infof("path", "%s", dirpath);
 coda;
 }
 
@@ -98,6 +98,6 @@ API xapi xnftw_nth(const char *dirpath, int (*xfn) (const char *fpath, const str
   */
   
 finally:
-  XAPI_INFOF("path", "%s", dirpath);
+  xapi_infof("path", "%s", dirpath);
 coda;
 }

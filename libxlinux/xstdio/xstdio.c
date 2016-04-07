@@ -33,6 +33,6 @@ API xapi xvdprintf(int fd, const char * const restrict fmt, va_list va)
     fail(errno);
 
 finally:
-  XAPI_INFOF("fd", "%d", fd);
+  xapi_infof("fd", "%d", fd);
 coda;
 }

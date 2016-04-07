@@ -73,8 +73,8 @@ API xapi axread(int fd, void * buf, size_t count)
 finally:
   if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
   {
-    XAPI_INFOF("expected", "%zu", count);
-    XAPI_INFOF("actual", "%zd", actual);
+    xapi_infof("expected", "%zu", count);
+    xapi_infof("actual", "%zd", actual);
   }
 coda;
 }
@@ -112,8 +112,8 @@ API xapi axwrite(int fd, const void * buf, size_t count)
 finally:
   if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
   {
-    XAPI_INFOF("expected", "%zu", count);
-    XAPI_INFOF("actual", "%zd", actual);
+    xapi_infof("expected", "%zu", count);
+    xapi_infof("actual", "%zd", actual);
   }
 coda;
 }
@@ -151,7 +151,7 @@ API xapi xclose(int fd)
   fatalize(errno, close, fd);
 
 finally:
-  XAPI_INFOF("fd", "%d", fd);
+  xapi_infof("fd", "%d", fd);
 coda;
 }
 
@@ -166,7 +166,7 @@ API xapi ixclose(int * fd)
   }
 
 finally:
-  XAPI_INFOF("fd", "%d", *fd);
+  xapi_infof("fd", "%d", *fd);
 coda;
 }
 
@@ -177,7 +177,7 @@ API xapi xsymlink(const char * target, const char * linkpath)
   fatalize(errno, symlink, target, linkpath);
 
 finally:
-  XAPI_INFOF("path", "%s", linkpath);
+  xapi_infof("path", "%s", linkpath);
 coda;
 }
 
@@ -202,7 +202,7 @@ API xapi xunlink(const char * pathname, int * r)
     fail(errno);
 
 finally:
-  XAPI_INFOF("path", "%s", pathname);
+  xapi_infof("path", "%s", pathname);
 coda;
 }
 
@@ -217,7 +217,7 @@ API xapi uxunlink(const char * pathname, int * r)
     fail(errno);
 
 finally:
-  XAPI_INFOF("path", "%s", pathname);
+  xapi_infof("path", "%s", pathname);
 coda;
 }
 
@@ -298,7 +298,7 @@ API xapi xeuidaccess(const char * pathname, int mode, int * const r)
     fail(errno);
 
 finally:
-  XAPI_INFOS("path", pathname);
+  xapi_infos("path", pathname);
 coda;
 }  
 
@@ -313,7 +313,7 @@ API xapi uxeuidaccess(const char * pathname, int mode, int * const r)
     fail(errno);
 
 finally:
-  XAPI_INFOS("path", pathname);
+  xapi_infos("path", pathname);
 coda;
 }  
 
@@ -324,7 +324,7 @@ API xapi xseteuid(uid_t euid)
   fatalize(errno, seteuid, euid);
 
 finally:
-  XAPI_INFOF("euid", "%d", euid);
+  xapi_infof("euid", "%d", euid);
 coda;
 }
 
@@ -335,7 +335,7 @@ API xapi xsetegid(gid_t egid)
   fatalize(errno, setegid, egid);
 
 finally:
-  XAPI_INFOF("egid", "%d", egid);
+  xapi_infof("egid", "%d", egid);
 coda;
 }
 
@@ -346,7 +346,7 @@ API xapi xtruncate(const char * path, off_t length)
   fatalize(errno, truncate, path, length);
 
 finally :
-  XAPI_INFOS("path", path);
+  xapi_infos("path", path);
 coda;
 }
 
@@ -366,7 +366,7 @@ API xapi xrmdir(const char * pathname)
   fatalize(errno, rmdir, pathname);
 
 finally:
-  XAPI_INFOS("path", pathname);
+  xapi_infos("path", pathname);
 coda;
 }
 
@@ -386,7 +386,7 @@ API xapi xexecv(const char * path, char * const argv[])
   fatalize(errno, execv, path, argv);
 
 finally:
-  XAPI_INFOS("path", path);
+  xapi_infos("path", path);
 coda;
 }
 
@@ -397,7 +397,7 @@ API xapi xchdir(const char * path)
   fatalize(errno, chdir, path);
 
 finally:
-  XAPI_INFOF("path", "%s", path);
+  xapi_infof("path", "%s", path);
 coda;
 }
 
@@ -408,6 +408,6 @@ API xapi xfchdir(int fd)
   fatalize(errno, fchdir, fd);
 
 finally:
-  XAPI_INFOF("fd", "%d", fd);
+  xapi_infof("fd", "%d", fd);
 coda;
 }

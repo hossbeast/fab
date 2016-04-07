@@ -19,6 +19,8 @@
 #include <stdio.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
+
 #include "xlinux.h"
 #include "xlinux/SYS.errtab.h"
 
@@ -49,51 +51,51 @@ xapi validate(dictionary * dp)
   item * itemp;
   itemp = dictionary_get(dp, MMS("one"));
   if(itemp->x != 1)
-    tfail(perrtab_TEST, TEST_FAIL);
+    ufail();
 
   itemp = dictionary_get(dp, MMS("two"));
   if(itemp->x != 2)
-    tfail(perrtab_TEST, TEST_FAIL);
+    ufail();
 
   itemp = dictionary_get(dp, MMS("three"));
   if(itemp->x != 3)
-    tfail(perrtab_TEST, TEST_FAIL);
+    ufail();
 
   // lists of keys
   fatal(dictionary_keys, dp, &keys, &keysl);
 
   if(keysl != 3)
-    tfail(perrtab_TEST, TEST_FAIL);
+    ufail();
 
   int stringsort(const void * A, const void * B) { return strcmp(*(char **)A, *(char**)B); };
   qsort(keys, keysl, sizeof(*keys), stringsort);
 
   if(strcmp(keys[0], "one"))
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "one", keys[0]);
+    ufailf("%s", "%s", "one", keys[0]);
 
   if(strcmp(keys[1], "three"))
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "three", keys[1]);
+    ufailf("%s", "%s", "three", keys[1]);
 
   if(strcmp(keys[2], "two"))
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %s, actual: %s", "two", keys[2]);
+    ufailf("%s", "%s", "two", keys[2]);
 
   // list of values
   fatal(dictionary_values, dp, &values, &valuesl);
 
   if(valuesl != 3)
-    tfail(perrtab_TEST, TEST_FAIL);
+    ufail();
 
   int itemsort(const void * A, const void * B) { return (*(item **)A)->x - (*(item **)B)->x; };
   qsort(values, valuesl, sizeof(*values), itemsort);
 
   if(values[0]->x != 1)
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 1, values[0]->x);
+    ufailf("%d", "%d", 1, values[0]->x);
 
   if(values[1]->x != 2)
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 2, values[1]->x);
+    ufailf("%d", "%d", 2, values[1]->x);
 
   if(values[2]->x != 3)
-    tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 3, values[2]->x);
+    ufailf("%d", "%d", 3, values[2]->x);
 
   // by slot
   int x;
@@ -103,28 +105,28 @@ xapi validate(dictionary * dp)
     itemp = dictionary_table_value(dp, x);
 
     if(!key ^ !itemp)
-      tfail(perrtab_TEST, TEST_FAIL);
+      ufail();
 
     if(key)
     {
       if(strcmp(key, "one") == 0)
       {
         if(itemp->x != 1)
-          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 1, itemp->x);
+          ufailf("%d", "%d", 1, itemp->x);
       }
       else if(strcmp(key, "two") == 0)
       {
         if(itemp->x != 2)
-          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 2, itemp->x);
+          ufailf("%d", "%d", 2, itemp->x);
       }
       else if(strcmp(key, "three") == 0)
       {
         if(itemp->x != 3)
-          tfailf(perrtab_TEST, TEST_FAIL, "expected : %d, actual: %d", 3, itemp->x);
+          ufailf("%d", "%d", 3, itemp->x);
       }
       else
       {
-        tfail(perrtab_TEST, TEST_FAIL);
+        ufail();
       }
     }
   }
@@ -181,7 +183,7 @@ xapi test_rehash()
         for(i = 0; i < 7; i++)
         {
           if(!dictionary_delete(dp, MM(i)))
-            tfailf(perrtab_TEST, TEST_FAIL, "expected : (found), actual : %d", i);
+            ufailf("%s", "%d", "(found)", i);
         }
       }
 
@@ -192,14 +194,14 @@ xapi test_rehash()
         {
           item * itemp = 0;
           if((itemp = dictionary_get(dp, MM(i))))
-            tfailf(perrtab_TEST, TEST_FAIL, "expected : (null), actual : %d", itemp->x);
+            ufailf("%s", "%d", "(null)", itemp->x);
         }
 
         for(i = 7; i < x; i++)
         {
           item * itemp = 0;
           if(!(itemp = dictionary_get(dp, MM(i))))
-            tfailf(perrtab_TEST, TEST_FAIL, "expected : (found), actual : %d", i);
+            ufailf("%s", "%d", "(found)", i);
         }
       }
     }

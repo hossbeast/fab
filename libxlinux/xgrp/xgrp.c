@@ -39,7 +39,7 @@ API xapi uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, 
   }
 
 finally :
-  XAPI_INFOF("gid", "%zu", gid);
+  xapi_infof("gid", "%zu", gid);
 coda;
 }
 
