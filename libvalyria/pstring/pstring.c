@@ -24,16 +24,9 @@
 #include "xlinux/xstdlib.h"
 
 #include "internal.h"
+#include "pstring.internal.h"
 
 #include "assure.h"
-
-struct pstring_internals
-{
-  size_t a; // allocated size
-};
-
-#define PSTRING_INTERNALS struct pstring_internals
-#include "pstring.h"
 
 /*
  * Default capacity

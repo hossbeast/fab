@@ -25,7 +25,7 @@
 #include "xlinux.h"
 #include "xlinux/SYS.errtab.h"
 
-#include "pstring.h"
+#include "pstring.internal.h"
 
 #include "test_util.h"
 
@@ -33,26 +33,72 @@ xapi validate(pstring * ps)
 {
   enter;
 
+  assertf(ps->a > ps->l, "allocated %zu", "length %zu", ps->a, ps->l);
+
+  finally : coda;
+}
+
+xapi assert_contents(pstring * ps)
+{
+  enter;
+
+  fatal(validate, ps);
   assertf(ps->l == 10, "length %zu", "length %zu", 10, ps->l);
   assertf(strcmp(ps->s, "1234567890") == 0, "content %s", "content %s", "1234567890", ps->s);
 
   finally : coda;
 }
 
-int main()
+xapi test_basic()
 {
   enter;
 
-  xapi r;
   pstring * ps = 0;
+
   fatal(pscreate, &ps);
   fatal(psloads, ps, "1234567890");
-  fatal(validate, ps);
+  fatal(assert_contents, ps);
 
   fatal(psclear, ps);
   fatal(psloadc, ps, '1');
   fatal(pscatf, ps, "%s", "234567890");
-  fatal(validate, ps);
+  fatal(assert_contents, ps);
+
+finally:
+  psfree(ps);
+coda;
+}
+
+xapi test_load()
+{
+  enter;
+
+  pstring * ps = 0;
+
+  fatal(pscreate, &ps);
+
+  int x;
+  for(x = 0; x < 25; x++)
+  {
+    fatal(pscats, ps, " "); fatal(validate, ps);
+    fatal(pscatc, ps, ' '); fatal(validate, ps);
+    fatal(pscatf, ps, "%s %s %s %s", "alpha", "beta", "delta", "gamma"); fatal(validate, ps);
+    fatal(pscatf, ps, "%s %s %s %s", "alpha", "beta", "delta", "gamma"); fatal(validate, ps);
+    fatal(pscatf, ps, "%s %s %s %s", "alpha", "beta", "delta", "gamma"); fatal(validate, ps);
+  }
+
+finally:
+  psfree(ps);
+coda;
+}
+
+int main()
+{
+  enter;
+  xapi R;
+
+  fatal(test_basic);
+  fatal(test_load);
 
   success;
 
@@ -62,9 +108,8 @@ finally:
     xapi_backtrace();
   }
 
-  psfree(ps);
-conclude(&r);
+conclude(&R);
 
   xapi_teardown();
-  return !!r;
+  return !!R;
 }

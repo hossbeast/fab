@@ -53,11 +53,10 @@ xapi validate(list * listp)
   finally : coda;
 }
 
-int main()
+xapi test_basic()
 {
   enter;
 
-  xapi r;
   list * listp = 0;
   item * itemp = 0;
   item * itemps[2];
@@ -101,6 +100,42 @@ int main()
 
   fatal(validate, listp);
 
+finally:
+  list_free(listp);
+  free(itemp);
+coda;
+}
+
+xapi test_load()
+{
+  enter;
+
+  list * listp = 0;
+  fatal(list_create, &listp, 0);
+
+  int x;
+  for(x = 0; x < 50; x++)
+    fatal(list_push, listp, (void*)listp);
+
+  for(x = 0; x < 300; x++)
+    fatal(list_unshift, listp, (void*)listp);
+
+  for(x = 0; x < 35; x++)
+    fatal(list_insert, listp, x, (void*)listp);
+
+finally:
+  list_free(listp);
+coda;
+}
+
+int main()
+{
+  enter;
+  xapi r;
+
+  fatal(test_basic);
+  fatal(test_load);
+
   success;
 
 finally:
@@ -109,8 +144,6 @@ finally:
     xapi_backtrace();
   }
 
-  list_free(listp);
-  free(itemp);
 conclude(&r);
 
   xapi_teardown();

@@ -100,14 +100,17 @@ xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
 {
   enter;
 
+  // allocate new space if necessary
   fatal(assure, &li->v, ELEMENT_SIZE(li), li->l + len, &li->a);
 
+  // for an insertion, displace existing elements
   memmove(
       li->v + ((index + len) * ELEMENT_SIZE(li))
     , li->v + (index * ELEMENT_SIZE(li))
-    , (li->l - index + len) * ELEMENT_SIZE(li)
+    , (li->l - index) * ELEMENT_SIZE(li)
   );
 
+  // copy the elements into place
   if(el)
   {
     memcpy(
@@ -117,6 +120,7 @@ xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
     );
   }
 
+  // return pointers to the elements
   if(rv)
   {
     size_t x;
