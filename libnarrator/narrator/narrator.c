@@ -30,11 +30,11 @@ API void narrator_free(narrator * restrict n)
   {
     // route to implementation
     if(n->type == NARRATOR_GROWING)
-      growing_free(n);
+      growing_free(&n->growing);
     else if(n->type == NARRATOR_FIXED)
-      fixed_free(n);
+      fixed_free(&n->fixed);
     else if(n->type == NARRATOR_FILE)
-      file_free(n);
+      file_free(&n->file);
   }
 }
 
@@ -44,32 +44,24 @@ API void narrator_xfree(narrator ** const restrict n)
   *n = 0;
 }
 
-API xapi narrator_mark(narrator * const restrict n, size_t * const restrict mark)
+API xapi narrator_seek(narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
   enter;
 
   // route to implementation
   if(n->type == NARRATOR_GROWING)
-		fatal(growing_mark, n, mark);
+		fatal(growing_seek, &n->growing, offset, whence, res);
 	else if(n->type == NARRATOR_FIXED)
-		fatal(fixed_mark, n, mark);
+		fatal(fixed_seek, &n->fixed, offset, whence, res);
 	else if(n->type == NARRATOR_FILE)
-    fatal(file_mark, n, mark);
+    fatal(file_seek, &n->file, offset, whence, res);
 
   finally : coda;
 }
 
-API const char * narrator_first(narrator * const restrict n)
+API xapi narrator_reset(narrator * const restrict n)
 {
-  // route to implementation
-  if(n->type == NARRATOR_GROWING)
-		return growing_first(n);
-	else if(n->type == NARRATOR_FIXED)
-		return fixed_first(n);
-	else if(n->type == NARRATOR_FILE)
-    return file_first(n);
-
-  return 0;
+  xproxy(narrator_seek, n, 0, SEEK_SET, 0);
 }
 
 API xapi narrator_sayf(narrator * n, const char * const restrict fmt, ...)
@@ -96,11 +88,11 @@ API xapi narrator_vsayf(narrator * const restrict n, const char * const restrict
   enter;
 
 	if(n->type == NARRATOR_GROWING)
-		fatal(growing_vsayf, n, fmt, va);
+		fatal(growing_vsayf, &n->growing, fmt, va);
 	else if(n->type == NARRATOR_FIXED)
-		fatal(fixed_vsayf, n, fmt, va);
+		fatal(fixed_vsayf, &n->fixed, fmt, va);
 	else if(n->type == NARRATOR_FILE)
-		fatal(file_vsayf, n, fmt, va);
+		fatal(file_vsayf, &n->file, fmt, va);
 
 	finally : coda;
 }
@@ -110,11 +102,11 @@ API xapi narrator_sayw(narrator * const restrict n, char * const restrict b, siz
   enter;
 
 	if(n->type == NARRATOR_GROWING)
-		fatal(growing_sayw, n, b, l);
+		fatal(growing_sayw, &n->growing, b, l);
 	else if(n->type == NARRATOR_FIXED)
-		fatal(fixed_sayw, n, b, l);
+		fatal(fixed_sayw, &n->fixed, b, l);
 	else if(n->type == NARRATOR_FILE)
-		fatal(file_sayw, n, b, l);
+		fatal(file_sayw, &n->file, b, l);
 
 	finally : coda;
 }

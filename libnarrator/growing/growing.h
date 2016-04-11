@@ -43,5 +43,19 @@ SUMMARY
 xapi narrator_growing_create(narrator ** const restrict n)
   __attribute__((nonnull));
 
+/// narrator_growing_buffer
+//
+// SUMMARY
+//  get a pointer to the underlying store
+//
+// PARAMETERS
+//  n - growing narrator
+//
+// REMARKS
+//  further operations on the narrator may free the buffer
+//
+const char * narrator_growing_buffer(narrator * const restrict n)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

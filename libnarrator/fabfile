@@ -47,13 +47,12 @@ $lflags_xapi_debug	= [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug [ -Wl,-s
 $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-soname,libnarrator-xapi-devel.so ~ j ] ]
 
 # source files, filter out tests
-+[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_final)
-+[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_debug)
-+[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_devel)
-+[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_final)
-+[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $dlibnarrator ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_devel)
-
++[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_final)
++[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_debug)
++[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_devel)
 
 ##
 ## dependencies

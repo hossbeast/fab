@@ -37,7 +37,7 @@ xapi fixed_vsayf(narrator_fixed * const restrict n, const char * const restrict 
 {
   enter;
 
-  n->bz += znvloadf(n->bb + n->bz, n->bsz - n->bz, fmt, va);
+  n->l += znvloadf(n->s + n->l, n->a - n->l, fmt, va);
 
   finally : coda;
 }
@@ -46,16 +46,26 @@ xapi fixed_sayw(narrator_fixed * const restrict n, char * const restrict b, size
 {
   enter;
 
-  n->bz += znloadw(n->bb + n->bz, n->bsz - n->bz, b, l);
+  n->l += znloadw(n->s + n->l, n->a - n->l, b, l);
 
   finally : coda;
 }
 
-xapi fixed_mark(narrator_fixed * const restrict n, size_t * const restrict mark)
+xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
   enter;
 
-  (*mark) = n->bz;
+  if(whence == NARRATOR_SEEK_SET)
+    n->l = offset;
+  else if(whence == NARRATOR_SEEK_CUR)
+    n->l += offset;
+
+  // for a fixed narrator, the "end" is the allocated size
+  else if(whence == NARRATOR_SEEK_END)
+    n->l = (n->a + offset);
+
+  if(res)
+    *res = n->l;
 
   finally : coda;
 }
@@ -64,14 +74,9 @@ void fixed_free(narrator_fixed * n)
 {
   if(n)
   {
-    free(n->bb);
+    free(n->s);
   }
   free(n);
-}
-
-const char * fixed_first(narrator_fixed * const restrict n)
-{
-  return n->bb;
 }
 
 //
@@ -86,14 +91,19 @@ API xapi narrator_fixed_create(narrator ** const restrict rv, size_t size)
   fatal(xmalloc, &n, sizeof(*n));
 
   n->type = NARRATOR_FIXED;
-  n->bsz = size + 1;    // trailing null byte
+  n->fixed.a = size + 1;    // trailing null byte
 
-  fatal(xmalloc, &n->fixed.bb, sizeof(*n->fixed.bb) * n->bsz);
+  fatal(xmalloc, &n->fixed.s, sizeof(*n->fixed.s) * n->fixed.a);
 
   *rv = n;
   n = 0;
 
 finally:
-  fixed_free(n);
+  fixed_free(&n->fixed);
 coda;
+}
+
+API const char * narrator_fixed_buffer(narrator * const restrict n)
+{
+  return n->fixed.s;
 }

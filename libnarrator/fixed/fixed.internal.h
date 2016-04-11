@@ -33,9 +33,9 @@ SUMMARY
 
 typedef struct narrator_fixed
 {
-  char *  bb;       // buffer
-  size_t  bsz;      // allocated size
-  size_t  bz;       // 
+  char *  s;      // buffer
+  size_t  l;      // position
+  size_t  a;      // allocated size
 } narrator_fixed;
 
 #define restrict __restrict
@@ -59,23 +59,18 @@ xapi fixed_vsayf(narrator_fixed * const restrict n, const char * const restrict 
 xapi fixed_sayw(narrator_fixed * const restrict n, char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
-/// fixed_mark
+/// fixed_seek
 //
 // SUMMARY
-//  get a mark indicating the current position
+//  reposition the narrator to offset according to whence
 //
 // PARAMETERS
-//  n    - fixed narrator
-//  mark - (returns) mark indicating current position
+//  n      - fixed narrator
+//  offset - byte offset
+//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
+//  [res]  - (returns) the resulting absolute offset
 //
-xapi fixed_mark(narrator_fixed * const restrict n, size_t * const restrict mark)
-  __attribute__((nonnull));
-
-/// fixed_first
-//
-// SUMMARY
-//
-const char * fixed_first(narrator_fixed * const restrict n)
+xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull));
 
 /// fixed_free

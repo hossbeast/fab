@@ -50,6 +50,7 @@ xapi growing_vsayf(narrator_growing * const restrict n, const char * const restr
     vsprintf(n->s + n->l, fmt, va);
   }
   n->l += r;
+  n->m = MAX(n->l, n->m);
 
   finally : coda;
 }
@@ -62,15 +63,26 @@ xapi growing_sayw(narrator_growing * const restrict n, char * const restrict b, 
   memcpy(n->s + n->l, b, l);
   n->s[n->l + l] = 0;
   n->l += l;
+  n->m = MAX(n->l, n->m);
 
   finally : coda;
 }
 
-xapi growing_mark(narrator_growing * const restrict n, size_t * const restrict mark)
+xapi growing_seek(narrator_growing * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
   enter;
 
-  (*mark) = n->l;
+  if(whence == NARRATOR_SEEK_SET)
+    n->l = offset;
+  else if(whence == NARRATOR_SEEK_CUR)
+    n->l += offset;
+
+  // for a growing narrator, the "end" is the greatest position ever written to
+  else if(whence == NARRATOR_SEEK_END)
+    n->l = (n->m + offset);
+
+  if(res)
+    *res = n->l;
 
   finally : coda;
 }
@@ -83,11 +95,6 @@ void growing_free(narrator_growing * n)
   }
 
   free(n);
-}
-
-const char * growing_first(narrator_growing * const restrict n)
-{
-  return n->s;
 }
 
 //
@@ -107,6 +114,11 @@ API xapi narrator_growing_create(narrator ** const restrict rv)
   n = 0;
 
 finally:
-  growing_free(n);
+  growing_free(&n->growing);
 coda;
+}
+
+API const char * narrator_growing_buffer(narrator * const restrict n)
+{
+  return n->growing.s;
 }

@@ -35,9 +35,10 @@ SUMMARY
 
 typedef struct narrator_growing
 {
-  char * s;
-  size_t l;
-  size_t a;
+  char *  s;    // the buffer
+  size_t  l;    // position
+  size_t  a;    // allocated size
+  size_t  m;    // maximum position
 } narrator_growing;
 
 #define restrict __restrict
@@ -61,24 +62,19 @@ xapi growing_vsayf(narrator_growing * const restrict n, const char * const restr
 xapi growing_sayw(narrator_growing * const restrict n, char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
-/// growing_mark
+/// growing_seek
 //
 // SUMMARY
-//  get a mark indicating the current position
+//  reposition the narrator to offset according to whence
 //
 // PARAMETERS
-//  n    - growing narrator
-//  mark - (returns) mark indicating current position
+//  n      - growing narrator
+//  offset - byte offset
+//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
+//  [res]  - (returns) the resulting absolute offset
 //
-xapi growing_mark(narrator_growing * const restrict n, size_t * const restrict mark)
-  __attribute__((nonnull));
-
-/// growing_first
-//
-// SUMMARY
-//
-const char * growing_first(narrator_growing * const restrict n)
-  __attribute__((nonnull));
+xapi growing_seek(narrator_growing * const restrict n, off_t offset, int whence, off_t * restrict res)
+  __attribute__((nonnull(1)));
 
 /// narrator_free
 //

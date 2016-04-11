@@ -32,9 +32,16 @@
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
-#define NARRATOR_FIXED    1
-#define NARRATOR_GROWING  2
-#define NARRATOR_FILE     3
+#define NARRATOR_TYPE_TABLE(x)     \
+  NARRATOR_TYPE_DEF(FIXED  , 1, x) \
+  NARRATOR_TYPE_DEF(GROWING, 2, x) \
+  NARRATOR_TYPE_DEF(FILE   , 3, x)
+
+enum {
+#define NARRATOR_TYPE_DEF(a, b, x) NARRATOR_ ## a = b,
+NARRATOR_TYPE_TABLE(0)
+#undef NARRATOR_TYPE_DEF
+};
 
 /// narrator
 //
@@ -44,13 +51,8 @@
 typedef struct narrator
 {
   union {
-    narrator_fixed;
     narrator_fixed fixed;
-
-    narrator_growing;
     narrator_growing growing;
-
-    narrator_file;
     narrator_file file;
   };
 

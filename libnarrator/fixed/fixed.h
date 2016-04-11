@@ -42,5 +42,19 @@ SUMMARY
 xapi narrator_fixed_create(narrator ** const restrict n, size_t size)
   __attribute__((nonnull));
 
+/// narrator_fixed_buffer
+//
+// SUMMARY
+//  get a pointer to the underlying store
+//
+// PARAMETERS
+//  n - fixed narrator
+//
+// REMARKS
+//  further operations on the narrator may free the buffer
+//
+const char * narrator_fixed_buffer(narrator * const restrict n)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

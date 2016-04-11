@@ -24,13 +24,14 @@ LIBRARY
  narrator
 
 SUMMARY
- A narrator supports write operations, which are propagated to an underlying store
+ A narrator supports write operations, which are propagated to an underlying output channel or store
 
 */
 
 #include <stdarg.h>
 #include <sys/types.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "xapi.h"
 
@@ -81,23 +82,37 @@ xapi narrator_sayw(struct narrator * const restrict n, char * const restrict b, 
 xapi narrator_sayc(struct narrator * const restrict n, int c)
 	__attribute__((nonnull));
 
-/// narrator_mark
+#define NARRATOR_SEEK_TABLE(x)                                                        \
+  NARRATOR_SEEK_DEF(SET , SEEK_SET  , x)  /* absolute offset */                       \
+  NARRATOR_SEEK_DEF(CUR , SEEK_CUR  , x)  /* offset relative to current position */   \
+  NARRATOR_SEEK_DEF(END , SEEK_END  , x)  /* offset relative to size of the store */
+
+enum {
+#define NARRATOR_SEEK_DEF(a, b, x) NARRATOR_SEEK_ ## a = b,
+NARRATOR_SEEK_TABLE(0)
+#undef NARRATOR_SEEK_DEF
+};
+
+/// narrator_seek
 //
 // SUMMARY
-//  get a mark indicating position in the output
+//  reposition the narrator to offset according to whence
 //
 // PARAMETERS
-//  mark - (returns) nonnegative position, if the narration supports marks, -1 otherwise
+//  n      - narrator
+//  offset - byte offset
+//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
+//  [res]  - (returns) the resulting absolute offset
 //
-xapi narrator_mark(struct narrator * const restrict n, size_t * const restrict mark)
-  __attribute__((nonnull));
+xapi narrator_seek(struct narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
+  __attribute__((nonnull(1)));
 
-/// narrator_first
+/// narrator_reset
 //
 // SUMMARY
-//  get a pointer to the first record
+//  reposition the narrator such that subsequent writes start at the beginning
 //
-const char * narrator_first(struct narrator * const restrict n)
+xapi narrator_reset(struct narrator * const restrict n)
   __attribute__((nonnull));
 
 /// narrator_free

@@ -64,21 +64,16 @@ xapi file_sayw(narrator_file * const restrict n, char * const restrict b, size_t
 //  get a mark indicating the current position
 //
 // PARAMETERS
-//  n    - file narrator
-//  mark - (returns) mark indicating current position, or -1 if marks are not supported
+//  n      - narrator
+//  offset - byte offset
+//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
+//  [res]  - (returns) the resulting absolute offset
 //
 // REMARKS
 //  not supported for all file types
 //
-xapi file_mark(narrator_file * const restrict n, size_t * const restrict mark)
-  __attribute__((nonnull));
-
-/// file_first
-//
-// SUMMARY
-//
-const char * file_first(narrator_file * const restrict n)
-  __attribute__((nonnull));
+xapi file_seek(narrator_file * const restrict n, off_t offset, int whence, off_t * restrict res)
+  __attribute__((nonnull(1)));
 
 /// narrator_free
 //

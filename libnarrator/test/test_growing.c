@@ -53,6 +53,7 @@ xapi test_basic()
 
   assertf(strcmp(N->growing.s, expected) == 0, "%s", "%s", expected, N->growing.s);
   assertf(N->growing.l == expectedl, "written %zu", "written %zu", expectedl, N->growing.l);
+  assert(N->growing.s == narrator_growing_buffer(N));
 
 finally:
   narrator_free(N);

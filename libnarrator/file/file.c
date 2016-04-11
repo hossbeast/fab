@@ -39,23 +39,19 @@ xapi file_sayw(narrator_file * const restrict n, char * const restrict b, size_t
 	xproxy(axwrite, n->fd, b, l);
 }
 
-xapi file_mark(narrator_file * const restrict n, size_t * const restrict mark)
+xapi file_seek(narrator_file * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
-  enter;
+  xproxy(xlseek, n->fd, offset, whence, res);
+}
 
-  // (*mark) = lseek(n->fd, 0, SEEK_SET) 
-
-  finally : coda;
+xapi file_reset(narrator_file * const restrict n)
+{
+  xproxy(xlseek, n->fd, 0, SEEK_SET, 0);
 }
 
 void file_free(narrator_file * n)
 {
   free(n);
-}
-
-const char * file_first(narrator_file * const restrict n)
-{
-  return 0;
 }
 
 //
