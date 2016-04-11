@@ -48,12 +48,26 @@ void ufailf_info(const char * const restrict expfmt, const char * const restrict
     ufail();                                      \
   } while(0)
 
+#define ufails(exp, act, ...)                     \
+  do {                                            \
+    ufails_info(exp, act);                        \
+    ufail();                                      \
+  } while(0)
+
 #define assert(bool)      \
   do {                    \
     if(!(bool))           \
     {                     \
       ufail();            \
     }                     \
+  } while(0)
+
+#define asserts(bool, exp, act, ...)          \
+  do {                                        \
+    if(!(bool))                               \
+    {                                         \
+      ufails(exp, act);                       \
+    }                                         \
   } while(0)
 
 #define assertf(bool, expfmt, actfmt, ...)    \
@@ -68,7 +82,7 @@ void ufailf_info(const char * const restrict expfmt, const char * const restrict
   assertf(                                                                    \
          (ecode | xapi_exit_errcode(exit)) == 0                               \
       || (xapi_exit_errtab(exit) == etab && xapi_exit_errcode(exit) == ecode) \
-    , "expected : %s/%s(%d), actual : %s/%s(%d)"                              \
+    , "%s/%s(%d)", "%s/%s(%d)"                                                \
     , etab ? xapi_errtab_name(etab) : 0                                       \
     , etab ? xapi_errtab_errname(etab, ecode) : 0                             \
     , ecode                                                                   \

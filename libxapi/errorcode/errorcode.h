@@ -45,12 +45,13 @@
 //  [vstr]  - discarded
 //  [vlen]  - discarded
 //  [vfmt]  - discarded
-
+//
 #define tfail(etab, code)                          \
   do {                                             \
     __xapi_r[0] = (code) & 0xFFFF;                 \
-    if(etab)                                       \
+    if(etab) {                                     \
       __xapi_r[0] |= (((etable *)etab)->id << 16); \
+    }                                              \
     goto XAPI_FINALIZE;                            \
   } while(0)
 
@@ -58,10 +59,10 @@
 #define tfailw(etab, code, key, vbuf, vlen) tfail(etab, code)
 #define tfailf(etab, code, key, vfmt, ...)  tfail(etab, code)
 
-#define fail(code)                   tfail (0, code)
-#define fails(code, key, vstr)       tfails(0, code, key, vstr)
-#define failw(code, key, vbuf, vlen) tfailw(0, code, vbuf, vlen)
-#define failf(code, key, fmt, ...)   tfailf(0, code, vfmt, ##__VA_ARGS__)
+#define fail(code)                   tfail(0, code)
+#define fails(code, key, vstr)       tfail(0, code)
+#define failw(code, key, vbuf, vlen) tfail(0, code)
+#define failf(code, key, vfmt, ...)  tfail(0, code)
 
 /*
 ** called elsewhere in the stack
@@ -146,11 +147,6 @@ XAPI_LEAVE:             \
 ** called after finally
 */ 
 
-#define xapi_infos(key, vstr)
-#define xapi_infow(key, vbuf, vlen)
-#define xapi_infof(key, vfmt, ...)
-#define xapi_vinfof(key, vfmt, va)
-
 /// XAPI_UNWINDING
 //
 // SUMMARY
@@ -185,5 +181,12 @@ XAPI_LEAVE:             \
 //  errcode - error code
 //
 #define XAPI_THROWING(c) (XAPI_UNWINDING && XAPI_ERRCODE == ((c) & 0xFFFF))
+
+// resolve to nothing under eapi
+#define xapi_fail_intent()
+#define xapi_infos(key, vstr)
+#define xapi_infow(key, vbuf, vlen)
+#define xapi_infof(key, vfmt, ...)
+#define xapi_vinfof(key, vfmt, va)
 
 #endif

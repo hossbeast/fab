@@ -40,7 +40,7 @@
 //
 // REMARKS
 //  it is possible to inline a single info kvp with a fail call. If more than one info kvp
-//  is to be applied, use XAPI_INFO
+//  is to be applied, use xapi_info
 //
 // PARAMETERS 
 //  [etab]  - error table, otherwise use the prevailing error table
@@ -82,6 +82,13 @@
 #define fails(code, key, vstr)        tfails(perrtab, code, key, vstr)
 #define failw(code, key, vbuf, vbufl) tfailw(perrtab, code, key, vbuf, vbufl)
 #define failf(code, key, vfmt, ...)   tfailf(perrtab, code, key, vfmt, ##__VA_ARGS__)
+
+/// fail_intent
+//
+// SUMMARY
+//  allows to stage info kvps just before calling fail, see xapi_info
+//
+#define fail_intent() xapi_fail_intent()
 
 /// invoke
 //
@@ -192,7 +199,7 @@ XAPI_LEAVE:                         \
 ** called after finally
 */ 
 
-/// XAPI_INFO
+/// xapi_info
 //
 // SUMMARY
 //  apply an info kvp to a calltree frame

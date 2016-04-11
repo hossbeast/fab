@@ -78,6 +78,17 @@ xapi test_failf()
   finally : coda;
 }
 
+xapi test_fail_intent()
+{
+  enter;
+
+  xapi_fail_intent();
+  xapi_infos("foo", "bar");
+  fail(TEST_ERROR_ONE);
+
+  finally : coda;
+}
+
 int main()
 {
 #if XAPI_STACKTRACE_INCL
@@ -92,6 +103,9 @@ int main()
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   exit = test_failf();
+  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+
+  exit = test_fail_intent();
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
   // victory

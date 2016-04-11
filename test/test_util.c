@@ -32,3 +32,10 @@ void ufailf_info(const char * const restrict expfmt, const char * const restrict
 
   va_end(va);
 }
+
+void ufails_info(const char * const restrict exp, const char * const restrict act)
+{
+  xapi_fail_intent();
+  xapi_infos("expected", exp);
+  xapi_infos("actual", act);
+}
