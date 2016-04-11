@@ -111,7 +111,7 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
       {
         if(loc->ax != -1 && (loc->ax + loc->axl) != x)
         {
-          failf(LOGGER_ILLORDER, "category %s repeated non-consecutively", a->name);
+          failf(LOGGER_ILLREPEAT, "category", "%s", a->name);
         }
       }
       else
@@ -135,7 +135,7 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
       {
         if(loc->bx != -1 && (loc->bx + loc->bxl) != y)
         {
-          failf(LOGGER_ILLORDER, "category %s repeated non-consecutively", b->name);
+          failf(LOGGER_ILLREPEAT, "category", "%s", b->name);
         }
       }
       else
@@ -205,7 +205,10 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
       // common elements must appear in the same order
       if(strcmp(a->name, b->name))
       {
-        failf(LOGGER_ILLORDER, "category %s given with opposite ordering relative to %s", a->name, b->name);
+        xapi_fail_intent();
+        xapi_infof("category A", "%s", a->name);
+        xapi_infof("category B", "%s", b->name);
+        fail(LOGGER_ILLORDER);
       }
 
       // take all elements from both sequences
@@ -278,7 +281,7 @@ void category_teardown()
 // api
 //
 
-API xapi logger_category_register(logger_category * logs, char * const restrict identity)
+API xapi logger_category_register(logger_category * logs)
 {
   enter;
 
@@ -315,11 +318,6 @@ API xapi logger_category_register(logger_category * logs, char * const restrict 
 #endif
 
 finally:
-  if(XAPI_THROWING(LOGGER_ILLORDER))
-  {
-    XAPI_INFOF("identity", "%s", identity);
-  }
-
   list_free(tmp);
 coda;
 }
@@ -364,7 +362,7 @@ API xapi logger_category_activate()
 
     // assign the id as the next unused bit from the mask
     if(~used_category_ids_mask == 0)
-      fail(LOGGER_TOOMANY);
+      failf(LOGGER_TOOMANY, "limit", "%d", MAX_CATEGORIES);
 
     uint64_t id = ~used_category_ids_mask & -~used_category_ids_mask;
     used_category_ids_mask |= id;
@@ -437,7 +435,7 @@ API xapi logger_category_activate()
     fatal(narrator_fixed_create, &N, 128);
     sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, list_get(activated, x)->name, list_get(activated, x)->id, list_get(activated, x)->attr);
     fatal(attr_say, list_get(activated, x)->attr, N);
-    printf("%s\n", narrator_first(N));
+    printf("%s\n", narrator_fixed_buffer(N));
 
     x = y - 1;
   }
@@ -447,11 +445,6 @@ API xapi logger_category_activate()
   list_xfree(&registering);
 
 finally:
-  if(XAPI_THROWING(LOGGER_TOOMANY))
-  {
-    XAPI_INFOF("max", "%d", MAX_CATEGORIES);
-  }
-
   list_free(activating);
   map_free(activating_byname);
   map_free(activating_byid);

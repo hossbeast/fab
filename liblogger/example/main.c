@@ -16,6 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
+#include "xapi/trace.h"
+
 #include "logger.h"
 
 #include "logs.h"
@@ -23,24 +25,24 @@
 int main(int argc, char ** argv, char ** envp)
 {
   enter;
-
   xapi R;
+
   fatal(logger_setup);
-  fatal(logger_category_register, logs, 0);
+  fatal(logger_category_register, logs);
   fatal(logger_stream_register, streams);
   fatal(logger_initialize, envp);
   
-  logs(L_FOO, "hello world");
+  xlogs(L_FOO, L_RED, "red");
+  xlogs(L_FOO, L_GREEN, "green");
+  xlogs(L_FOO, L_YELLOW, "yellow");
+  xlogs(L_FOO, L_BLUE, "blue");
+  xlogs(L_FOO, L_MAGENTA, "magenta");
+  xlogs(L_FOO, L_CYAN, "cyan");
+  xlogs(L_FOO, L_WHITE, "white");
 
-  xlogs(L_BAR, L_RED, "red");
-  xlogs(L_BAR, L_GREEN, "green");
-  xlogs(L_BAR, L_YELLOW, "yellow");
-  xlogs(L_BAR, L_BLUE, "blue");
-  xlogs(L_BAR, L_MAGENTA, "magenta");
-  xlogs(L_BAR, L_CYAN, "cyan");
-  xlogs(L_BAR, L_WHITE, "white");
+  xlogs(L_BAR, L_BOLD_RED, "red");
 
-  xlogs(L_BAR, 0, "regular");
+  xlogs(L_BAR | L_FOO, 0, "regular");
 
   xlogs(L_BAR, L_BOLD_RED, "red");
   xlogs(L_BAR, L_BOLD_GREEN, "green");
@@ -51,6 +53,11 @@ int main(int argc, char ** argv, char ** envp)
   xlogs(L_BAR, L_BOLD_WHITE, "white");
 
 finally:
+  if(XAPI_UNWINDING)
+  {
+    xapi_backtrace();
+  }
+
   logger_teardown();
 conclude(&R);
 

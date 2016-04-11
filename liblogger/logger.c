@@ -19,6 +19,7 @@
 #include <sys/auxv.h>
 #endif
 
+#include <stdio.h>
 #include <string.h>
 
 #include "xapi.h"
@@ -65,7 +66,7 @@ API xapi logger_setup()
   fatal(stream_setup);
 
   // register logs
-  fatal(logger_category_register, logs, "liblogger");
+  fatal(logger_category_register, logs);
 
   finally : coda;
 }
@@ -89,6 +90,9 @@ API xapi logger_initialize(char ** restrict envp)
   filter * filterp = 0;
 
   const unsigned long * restrict auxvec = 0;
+
+  fatal(logger_category_activate);
+  fatal(stream_activate);
 
 #if __linux__
   // locate auxiliary vector
@@ -194,16 +198,6 @@ API xapi logger_initialize(char ** restrict envp)
 	}
 #endif
 
-#if 0
-for(x = 0; x < g_argvsl; x++)
-{
-	printf("[%02d] 0x%02hhx", x, g_argvs[x]);
-	if(g_argvs[x] > 0x20 && g_argvs[x] < 0x7f)
-		printf(" %c", g_argvs[x]);
-	printf("\n");
-}
-#endif
-
 	// 1. replace nulls with spaces in g_argvs
 	// 2. construct g_argv, array of arguments
 	i = 0;
@@ -292,8 +286,10 @@ for(x = 0; x < g_argvsl; x++)
 		strcat(g_logvs, g_logv[x]);
 	}
 
-#if 0
-printf("args : %s\n", g_argvs);
+#if 1
+printf("liblogger program arguments\n\n");
+printf("g_argvs : %s\n", g_argvs);
+printf("g_argv\n");
 for(x = 0; x < g_argc; x++)
 {
 	printf("[%2d] %s", x, g_argv[x]);
@@ -304,12 +300,14 @@ for(x = 0; x < g_argc; x++)
 	printf("\n");
 }
 
-printf("logs : %s\n", g_logvs);
+printf("g_logvs : %s\n", g_logvs);
+printf("g_logv\n");
 for(x = 0; x < g_logc; x++)
 	printf("[%2d] %s\n", x, g_logv[x]);
+printf("\n");
 #endif
 
-  fatal(logger_category_activate);
+  fatal(streams_report);
 
 finally:
 	fatal(ixclose, &fd);

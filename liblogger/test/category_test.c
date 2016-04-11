@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
 #include "xapi/calltree.h"
 
 #include "logger.h"
@@ -63,7 +64,8 @@ xapi assert_ascending(logger_category * logsp)
       if(strcmp(logs[0]->name, logs[1]->name) == 0)
       {
         assertf(logs[1]->id == logs[0]->id
-          , "expected id : %"PRIu64", actual id : %"PRIu64
+          , "id %"PRIu64
+          , "id %"PRIu64
           , logs[0]->id
           , logs[1]->id
         );
@@ -71,7 +73,8 @@ xapi assert_ascending(logger_category * logsp)
       else
       {
         assertf(logs[1]->id > logs[0]->id
-          , "expected id > %"PRIu64", actual id : %"PRIu64
+          , "id %"PRIu64
+          , "id %"PRIu64
           , logs[0]->id
           , logs[1]->id
         );
@@ -97,7 +100,7 @@ xapi test_category_list_merge_success()
     , {}
   };
 
-  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_a);
   fatal(logger_category_activate);
 
   fatal(assert_ascending, logs_a);
@@ -125,8 +128,8 @@ xapi test_category_list_merge_success_two()
     , {}
   };
 
-  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
-  fatal(logger_category_register, logs_b, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_a);
+  fatal(logger_category_register, logs_b);
   fatal(logger_category_activate);
 
   fatal(assert_ascending, logs_a);
@@ -155,9 +158,9 @@ xapi test_category_list_merge_success_two_activate()
     , {}
   };
 
-  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_a);
   fatal(logger_category_activate);
-  fatal(logger_category_register, logs_b, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_b);
   fatal(logger_category_activate);
 
   fatal(assert_ascending, logs_a);
@@ -180,7 +183,7 @@ xapi test_category_list_merge_success_nonunique()
     , {}
   };
 
-  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_a);
   fatal(logger_category_activate);
 
   fatal(assert_ascending, logs_a);
@@ -260,7 +263,7 @@ xapi test_category_list_merge_success_max()
     , {}
   };
 
-  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_a);
   fatal(logger_category_activate);
 
   finally : coda;
@@ -282,8 +285,8 @@ xapi test_category_list_merge_failure_order()
     , {}
   };
 
-  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
-  fatal(logger_category_register, logs_b, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_a);
+  fatal(logger_category_register, logs_b);
   fatal(logger_category_activate);
 
   finally : coda;
@@ -300,7 +303,7 @@ xapi test_category_list_merge_failure_order_single()
     , {}
   };
 
-  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_a);
   fatal(logger_category_activate);
 
   finally : coda;
@@ -379,7 +382,7 @@ xapi test_category_list_merge_failure_toomany()
     , {}
   };
 
-  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_a);
   fatal(logger_category_activate);
 
   finally : coda;
@@ -397,7 +400,7 @@ xapi test_category_list_merge_attr_rank()
     , {}
   };
 
-  fatal(logger_category_register, logs_a, __FILE__ " : " XQUOTE(__LINE__));
+  fatal(logger_category_register, logs_a);
   fatal(logger_category_activate);
 
   fatal(assert_ascending, logs_a);
@@ -430,7 +433,7 @@ int main()
     , { entry : test_category_list_merge_success_max }
 
     , { entry : test_category_list_merge_failure_order, expected : LOGGER_ILLORDER }
-    , { entry : test_category_list_merge_failure_order_single, expected : LOGGER_ILLORDER }
+    , { entry : test_category_list_merge_failure_order_single, expected : LOGGER_ILLREPEAT }
     , { entry : test_category_list_merge_failure_toomany, expected : LOGGER_TOOMANY }
 
     , { entry : test_category_list_merge_attr_rank }
@@ -459,7 +462,7 @@ int main()
 finally:
   if(XAPI_UNWINDING)
   {
-    XAPI_INFOF("test", "%d", x);
+    xapi_infof("test", "%d", x);
     xapi_backtrace();
   }
 

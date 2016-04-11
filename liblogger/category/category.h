@@ -59,13 +59,14 @@ typedef struct logger_category
 //
 // PARAMETERS
 //  logs       - sentinel-terminated list of categories used by the component
-//  [identity] - name of application component, for error messages
 //
 // THROWS
-//  ILLORDER - incompatible ordering between the previously-registered categories and logs
+//  TOOMANY
+//  ILLREPEAT
+//  ILLORDER
 //
-xapi logger_category_register(logger_category * logs, char * const restrict identity)
-  __attribute__((nonnull(1)));
+xapi logger_category_register(logger_category * logs)
+  __attribute__((nonnull));
 
 /// logger_category_activate
 //
@@ -74,8 +75,9 @@ xapi logger_category_register(logger_category * logs, char * const restrict iden
 //  logger_category_activate call
 //
 // THROWS
-//  ILLORDER - incompatible ordering between the previously-activated categories and the newly-activating categories
-//  TOOMANY  - too many unique-by-name categories
+//  TOOMANY
+//  ILLREPEAT
+//  ILLORDER
 //
 xapi logger_category_activate();
 

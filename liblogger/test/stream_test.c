@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
 #include "xapi/calltree.h"
 
 #include "internal.h"
@@ -96,7 +97,7 @@ int main()
 finally:
   if(XAPI_UNWINDING)
   {
-    XAPI_INFOF("test", "%d", x);
+    xapi_infof("test", "%d", x);
     xapi_backtrace();
   }
 

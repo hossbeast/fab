@@ -26,8 +26,12 @@
 struct narrator;
 struct list;
 
-typedef struct filter filter;
-struct filter;
+typedef struct filter
+{
+	uint64_t	v;		// tag
+  char      m;    // mode, ( or % or ^
+	char			o;		// operation, + or -
+} filter;
 
 /// filter_setup
 //
@@ -73,7 +77,7 @@ xapi filter_say(filter * filterp, struct narrator * n)
 //
 // PARAMETERS
 //  expr  - filter expression
-//  exprl - length of exor ; 0 for strlen
+//  exprl - length of expr ; 0 for strlen
 //  res   - (returns) the filter
 //
 xapi filter_parse(const char * const restrict expr, size_t exprl, filter ** const restrict res)
@@ -82,8 +86,16 @@ xapi filter_parse(const char * const restrict expr, size_t exprl, filter ** cons
 /// filter_push
 //
 // SUMMARY
+//  append a filter to stream(s)
 //
-xapi filter_push(const int stream_id, filter * const restrict filterp)
+// PARAMETERS
+//  [stream_id] - id of a stream to append the filter to, or 0 to apply to all active streams
+//  filterp     - filter
+//
+// REMARKS
+//  takes ownership of the filter instance
+//
+xapi filter_push(const int stream_id, filter * restrict filterp)
   __attribute__((nonnull));
 
 /// filter_unshift

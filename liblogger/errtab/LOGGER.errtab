@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1		TOOMANY		number of unique categories exceeds the limit
-2   ILLORDER  incompatible ordering of category definitions
-3   BADFILTER invalid filter expression
+1   TOOMANY   number of unique categories exceeds the limit
+2   ILLREPEAT category repeated non-consecutively
+3   ILLORDER  incompatible ordering of category definitions
+4   BADFILTER invalid filter expression

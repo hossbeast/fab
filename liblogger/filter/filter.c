@@ -26,23 +26,15 @@
 #include "category.internal.h"
 #include "stream.internal.h"
 
-#define LIST_ELEMENT_TYPE filter
-#include "valyria/list.h"
-
 #define ARRAY_ELEMENT_TYPE stream
 #include "valyria/array.h"
+
+#include "valyria/list.h"
 
 #include "macros.h"
 #include "strutil.h"
 
 #define restrict __restrict
-
-typedef struct filter
-{
-	uint64_t	v;		// tag
-  char      m;    // mode, ( or % or ^
-	char			o;		// operation, + or -
-} filter;
 
 //
 // [[ static ]]
@@ -84,66 +76,65 @@ xapi filter_parse(const char * const restrict expr, size_t exprl, filter ** cons
 
   exprl = exprl ?: strlen(expr);
 
-  // skip leading whitespace
+  // track characters used
   int off = 0;
-  while(exprl > off && (expr[off] == ' ' || expr[off] == '\t'))
-    off++;
 
-  if(exprl > off && (expr[off] == '+' || expr[off] == '-'))
+  if(exprl && (expr[off] == '+' || expr[off] == '-'))
   {
+    char m = ' ';
     char o = expr[off];
     off++;
 
-    if(off < exprl)
+    uint64_t category_ids = 0;
+    while(off != exprl)
     {
-      int y;
-      for(y = off; y < exprl; y++)
+      for(; off < exprl; off++)
       {
-        if(expr[y] == ' ' || expr[y] == '\t')
+        if(expr[off] != ',' && expr[off] != '|')
           break;
       }
 
-      uint64_t tag = 0;
-      int k = 0;
-      while(k != y)
+      int x;
+      for(x = off; x < exprl; x++)
       {
-        if(expr[off] == ',' || expr[off] == '|')
-          off++;
-
-        for(k = off; k < y; k++)
-        {
-          if(expr[k] == ',' || expr[k] == '|')
-            break;
-        }
-
-        if(estrcmp(&expr[off], k-off, "ALL", 3, 0) == 0)
-        {
-          tag |= L_ALL;
-          off += 3;
-        }
-        else
-        {
-          logger_category * category = 0;
-          fatal(category_byname, &expr[off], k - off, &category);
-
-          if(category == 0)
-            break; // nothing
-
-          tag |= category->id;
-          off += category->namel;
-        }
+        if(expr[x] == ',' || expr[x] == '|' || expr[x] == '%' || expr[x] == '^')
+          break;
       }
 
-      if(tag && (off == y))
+      if(estrcmp(expr + off, x - off, "ALL", 3, 0) == 0)
       {
-        // allocate
-        fatal(xmalloc, res, sizeof(**res));
-
-        (**res) = (typeof(**res)){
-            v : tag & L_ALL
-          , o : o
-        };
+        category_ids |= L_ALL;
       }
+      else
+      {
+        logger_category * category = 0;
+        fatal(category_byname, expr + off, x - off, &category);
+
+        if(category == 0)
+          break;  // no such category
+
+        category_ids |= category->id;
+      }
+
+      // trailing flag indicating the mode
+      if(x < exprl && (expr[x] == '%' || expr[x] == '^'))
+      {
+        m = expr[x++];
+      }
+
+      off += (x - off);
+    }
+
+    // successful if all of the text was used
+    if(off == exprl)
+    {
+      fatal(xmalloc, res, sizeof(**res));
+
+      (**res) = (typeof(**res)){
+          v : category_ids & L_ALL
+        , m : m
+        , o : o
+      };
     }
   }
 
@@ -156,22 +147,21 @@ xapi filter_say(filter * filterp, struct narrator * N)
 
   sayc(filterp->o);
 
-  uint64_t mask = filterp->v;
-  uint64_t id = UINT64_C(1);
-  while(mask)
+  uint64_t bit = UINT64_C(1);
+  while(bit)
   {
-    if(mask & id)
+    if(bit & filterp->v)
     {
       logger_category * category = 0;
-      fatal(category_byid, mask & id, &category);
-      if(category)
-      {
-        sayf("%.*s", category->namel, category->name);
-      }
+      fatal(category_byid, bit, &category);
 
-      mask &= ~id;
+      if((bit - 1) & filterp->v)
+        says(",");
+
+      sayf("%.*s", category->namel, category->name);
     }
-    id <<= 1;
+
+    bit <<= 1;
   }
 
   finally : coda;
@@ -179,10 +169,10 @@ xapi filter_say(filter * filterp, struct narrator * N)
 
 int filters_would(const list * const restrict filters, const uint64_t ids)
 {
-  int r = 1;
+  int r = 0;
 
   int x;
-  for(x = 0; x < list_size(filters); x++)
+  for(x = 0; x < filters->l; x++)
   {
     filter * filterp = list_get(filters, x);
     uint64_t rr = 0;
@@ -205,8 +195,7 @@ int filters_would(const list * const restrict filters, const uint64_t ids)
 	return r;
 }
 
-
-xapi filter_push(const int stream_id, filter * const restrict filterp)
+xapi filter_push(const int stream_id, filter * restrict filterp)
 {
   enter;
 
@@ -217,12 +206,13 @@ xapi filter_push(const int stream_id, filter * const restrict filterp)
     stream * streamp = 0;
     fatal(stream_byid, stream_id, &streamp);
 
-    fatal(list_push, streamp->filters, filterp);
+    fatal(stream_filter_push, streamp, filterp);
+    filterp = 0;
   }
   else
   {
     int x;
-    for(x = array_size(g_streams) - 1; x >= 0; x--)
+    for(x = g_streams->l - 1; x >= 0; x--)
     {
       if(x)
       {
@@ -231,14 +221,16 @@ xapi filter_push(const int stream_id, filter * const restrict filterp)
       else
       {
         clone = filterp;
+        filterp = 0;
       }
 
-      fatal(list_push, ((stream *)array_get(g_streams, x))->filters, clone);
+      fatal(stream_filter_push, (stream*)array_get(g_streams, x), clone);
       clone = 0;
     }
   }
  
 finally:
+  filter_free(filterp);
   filter_free(clone);
 coda;
 }
@@ -312,6 +304,9 @@ API xapi logger_filter_unshift(const int stream_id, const char * const restrict 
   if(!filterp)
     fail(LOGGER_BADFILTER);
 
+  fatal(filter_unshift, stream_id, filterp);
+  filterp = 0;
+
 finally:
   filter_free(filterp);
 coda;
@@ -325,6 +320,7 @@ API xapi logger_filter_pop(const int stream_id)
   {
     stream * streamp = 0;
     fatal(stream_byid, stream_id, &streamp);
+    fatal(list_pop, streamp->filters, 0);
   }
   else
   {
@@ -346,6 +342,7 @@ API xapi logger_filter_shift(const int stream_id)
   {
     stream * streamp = 0;
     fatal(stream_byid, stream_id, &streamp);
+    fatal(list_shift, streamp->filters, 0);
   }
   else
   {
@@ -367,6 +364,7 @@ API xapi logger_filter_clear(const int stream_id)
   {
     stream * streamp = 0;
     fatal(stream_byid, stream_id, &streamp);
+    list_clear(streamp->filters);
   }
   else
   {

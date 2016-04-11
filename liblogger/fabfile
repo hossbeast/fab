@@ -63,9 +63,11 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnarr
 ##
 
 # default NOFILE target - build everything
-[ @all ] : [ @all.eapi @all.xapi ]
-[ @all.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
-[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @all ] : [ @release @test ]
+
+[ @release ] : [ @release.eapi @release.xapi ]
+[ @release.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
+[ @release.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final ] : [ @final.eapi @final.xapi ]
 [ @final.eapi ] : [ $liblogger_eapi_final ]
 [ @final.xapi ] : [ $liblogger_xapi_final ]
@@ -177,8 +179,10 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnarr
 [ $*/test ~ j lsr sx/c/test sy dj shift ] ::^ [ [ $droot/test/errtab/TEST.errtab.xapi.devel.pic.o ~ j ] ]
 [ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.pic.o ]
 {
-	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel ] [
-  ] [ $dlibxapi $dlibxlinux $dlibnarrator $dlibvalyria $* ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
+	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [
+  ] [ [ $@ ~ rx/aneedw lx/o ss u ] ~ ?{ j{ } s{ }{\s\x5c\n}{g} ] [
+  ] [ $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel ] [
+  ] [ $* $dlibxapi $dlibxlinux $dlibnarrator $dlibvalyria ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
 [ @test ] : [ $*/test ~ j lsr sx/c/test sy ]

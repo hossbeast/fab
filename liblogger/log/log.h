@@ -15,4 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1		FAIL		failed assertion
+#ifndef _LOGGER_LOG_H
+#define _LOGGER_LOG_H
+
+#endif

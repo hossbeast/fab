@@ -22,6 +22,7 @@
 #include "xlinux.h"
 #include "narrator.h"
 #include "narrator/file.h"
+#include "narrator/fixed.h"
 #include "valyria/pstring.h"
 
 #include "internal.h"
@@ -29,6 +30,7 @@
 #include "attr/attr.internal.h"
 #include "filter/filter.internal.h"
 #include "category/category.internal.h"
+#include "log/log.internal.h"
 
 #define ARRAY_ELEMENT_TYPE stream
 #include "valyria/array.h"
@@ -36,6 +38,7 @@
 #define MAP_VALUE_TYPE stream
 #include "valyria/map.h"
 
+#define LIST_ELEMENT_TYPE filter
 #include "valyria/list.h"
 
 #include "macros.h"
@@ -52,6 +55,9 @@ array * g_streams;
 //
 
 static map * streams_byid;
+
+// registered, not yet activated streams
+static list * registered;
 
 /// stream_write
 //
@@ -155,10 +161,43 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
 
   // the mssage
   fatal(pscatw, streamp->buffer, message->s, message->l);
+  prev = 1;
 
   if(attr & DISCOVERY_OPT)
   {
+    // emit the names of all tagged categories
+    if(ids & L_ALL)
+    {
+      if(prev)
+        fatal(pscats, streamp->buffer, " ");
+      prev = 1;
+      fatal(pscats, streamp->buffer, "{ ");
 
+      uint64_t bit = UINT64_C(1);
+      while(bit)
+      {
+        if(bit & ids)
+        {
+          logger_category * category = 0;
+          fatal(category_byid, bit, &category);
+
+          if((bit - 1) & ids)
+            fatal(pscats, streamp->buffer, " | ");
+
+          fatal(pscatf, streamp->buffer, "%.*s", category->namel, category->name);
+
+        }
+
+        bit <<= 1;
+      }
+
+      fatal(pscats, streamp->buffer, " }");
+    }
+  }
+
+  if(attr & COLOR_OPT)
+  {
+    fatal(pscatw, streamp->buffer, COLOR(NONE));
   }
 
   // message terminator
@@ -167,20 +206,18 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
     fatal(pscatc, streamp->buffer, '\n');
   }
 
-  if(attr & COLOR_OPT)
-  {
-    fatal(pscatw, streamp->buffer, COLOR(NONE));
-  }
-
   fatal(narrator_sayw, streamp->narrator, streamp->buffer->s, streamp->buffer->l);
 
   finally : coda;
 }
 
-static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict streamp, const logger_stream * restrict def)
+static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict streamp, uint32_t id, const logger_stream * restrict def)
 {
   enter;
 
+  filter * filterp = 0;
+
+  streamp->id = id;
   if(def->name)
   {
     fatal(ixstrdup, &streamp->name, def->name);
@@ -188,6 +225,7 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
   }
   streamp->attr = def->attr;
   fatal(pscreate, &streamp->buffer);
+  fatal(list_create, &streamp->filters, filter_free);
 
   streamp->type = def->type;
   if(def->type == LOGGER_STREAM_FD)
@@ -195,12 +233,17 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
     fatal(narrator_file_create, &streamp->narrator, def->fd);
   }
 
-  if(def->filter_expr)
+  // parse and attach to just this stream
+  if(def->expr)
   {
-    // parse and attach to just this stream
+    fatal(filter_parse, def->expr, 0, &filterp);
+    fatal(stream_filter_push, streamp, filterp);
+    filterp = 0;
   }
 
-  finally : coda;
+finally:
+  filter_free(filterp);
+coda;
 }
 
 static void __attribute__((nonnull)) stream_destroy(stream * const restrict streamp)
@@ -222,6 +265,7 @@ xapi stream_setup()
   enter;
 
   fatal(array_createx, &g_streams, sizeof(stream), stream_destroy, 0);
+  fatal(list_create, &registered, 0);
   fatal(map_create, &streams_byid);
 
   finally : coda;
@@ -317,6 +361,78 @@ xapi stream_byid(int id, stream ** const restrict streamp)
   finally : coda;
 }
 
+xapi stream_activate()
+{
+  enter;
+
+  int x;
+  for(x = 0; x < registered->l; x++)
+  {
+    stream * streamp = 0;
+    fatal(array_push, g_streams, &streamp);
+    fatal(stream_initialize, streamp, x, (logger_stream*)list_get(registered, x));
+    fatal(map_set, streams_byid, MM(streamp->id), streamp);
+  }
+
+  finally : coda;
+}
+
+xapi stream_filter_push(stream * const restrict streamp, filter * restrict filterp)
+{
+  enter;
+
+  fatal(list_push, streamp->filters, filterp);
+  filterp = 0;
+
+finally:
+  filter_free(filterp);
+coda;
+}
+
+xapi streams_report()
+{
+  enter;
+
+  narrator * N = 0;
+  fatal(narrator_fixed_create, &N, 2048);
+
+  int x;
+  for(x = 0; x < g_streams->l; x++)
+  {
+    fatal(narrator_seek, N, 0, SEEK_SET, 0);
+    fatal(stream_say, array_get(g_streams, x), N);
+
+    logs(L_LOGGER, narrator_fixed_buffer(N));
+  }
+
+finally:
+  narrator_free(N);
+coda;
+}
+
+xapi stream_say(stream * const restrict streamp, narrator * restrict N)
+{
+  enter;
+
+  sayf("id : %"PRIu32, streamp->id);
+  sayf(", type : %s", LOGGER_STREAM_STR(streamp->type));
+  sayf(", name : %s", streamp->name);
+  says(", attr : ");
+  fatal(attr_say, streamp->attr, N);
+  says(", filters : [");
+  int x;
+  for(x = 0; x < streamp->filters->l; x++)
+  {
+    if(x)
+      says(",");
+    says(" ");
+    fatal(filter_say, list_get(streamp->filters, x), N);
+  }
+  says(" ]");
+
+  finally : coda;
+}
+
 //
 // api
 //
@@ -327,13 +443,7 @@ API xapi logger_stream_register(const logger_stream * restrict streams)
 
   while(streams->type)
   {
-    stream * streamp = 0;
-    fatal(array_push, g_streams, &streamp);
-
-    fatal(stream_initialize, streamp, streams);
-
-    fatal(map_set, streams_byid, MM(streamp->id), streamp);
-
+    fatal(list_push, registered, (void*)streams);
     streams++;
   }
 

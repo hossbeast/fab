@@ -27,6 +27,7 @@ struct pstring;
 struct array;
 struct list;
 struct narrator;
+struct filter;
 
 /// stream
 //
@@ -36,7 +37,7 @@ struct narrator;
 typedef struct stream
 {
   // unique identifier
-  int id;
+  uint32_t id;
   uint8_t type;
 
   // unique identifier for the stream
@@ -67,6 +68,13 @@ extern struct array * g_streams;
 
 xapi stream_setup();
 void stream_teardown();
+
+/// stream_activate
+//
+// SUMMARY
+//  activate the streams registered with logger_stream_register
+//
+xapi stream_activate();
 
 /// stream_would
 //
@@ -106,6 +114,35 @@ xapi streams_write(const uint64_t ids, const uint32_t attrs, const struct pstrin
 //  category - (returns) category definition
 //
 xapi stream_byid(int id, stream ** const restrict streamp)
+  __attribute__((nonnull));
+
+/// stream_filter_push
+//
+// SUMMARY
+//  append a filter to the filters for the specified stream
+//
+// PARAMETERS
+//  streamp - stream
+//  filterp - filter
+//
+// REMARKS
+//  takes ownership of the filter instance
+//
+xapi stream_filter_push(stream * const restrict streamp, struct filter * restrict filterp)
+  __attribute__((nonnull));
+
+/// streams_report
+//
+// SUMMARY
+//
+xapi streams_report();
+
+/// stream_say
+//
+// SUMMARY
+//  write a description of the stream to a narrator
+//
+xapi stream_say(stream * const restrict streamp, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #undef restrict

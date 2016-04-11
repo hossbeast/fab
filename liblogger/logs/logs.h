@@ -18,4 +18,6 @@
 #ifndef _LOGGER_LOGS_H
 #define _LOGGER_LOGS_H
 
+#define L_LOGGER logs[0].id
+
 #endif

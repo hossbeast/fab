@@ -18,4 +18,6 @@
 #ifndef _LOGGER_LOG_INTERNAL_H
 #define _LOGGER_LOG_INTERNAL_H
 
+#include "log.h"
+
 #endif

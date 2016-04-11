@@ -66,15 +66,6 @@ extern int			g_logvsl;				// length of g_logvs
   LOGGER_ATTR_DEF(DATESTAMP_OFF , 0x00000400 , x , y)  /* (default) */                            \
   LOGGER_ATTR_DEF(DATESTAMP     , 0x00000800 , x , y)  /* include timestamp */
 
-// prefix includes the category name and thread id
-// timestamp is an additional part of the prefix
-//   e.x.
-// 12-25-2016 12:12:12 77345467 INFO 
-// ^-----------------^
-//   \- the timestamp
-// ^-------------------------------^
-//    \- the prefix
-
 enum {
 #define LOGGER_ATTR_DEF(a, b, x, y) L_ ## a = UINT32_C(b),
 LOGGER_ATTR_TABLE(0, 0)
