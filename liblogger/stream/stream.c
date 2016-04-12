@@ -281,47 +281,44 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const pstring *
 {
   enter;
 
-  if(streams_would(ids))
+  // base attributes : category attributes + log site attributes
+  uint32_t base_attr = 0;
+
+  // log categories
+  uint64_t copy = ids;
+  uint64_t bit = UINT64_C(1) << 63;
+  while(copy)
   {
-    // base attributes : category attributes + log site attributes
-    uint32_t base_attr = 0;
-
-    // log categories
-    uint64_t copy = ids;
-    uint64_t bit = UINT64_C(1) << 63;
-    while(copy)
+    if(copy & bit)
     {
-      if(copy & bit)
-      {
-        logger_category * category = 0;
-        fatal(category_byid, bit, &category);
-        if(category)
-          base_attr = attr_combine(base_attr, category->attr);
+      logger_category * category = 0;
+      fatal(category_byid, bit, &category);
+      if(category)
+        base_attr = attr_combine(base_attr, category->attr);
 
-        copy &= ~bit;
-      }
-      bit >>= 1;
+      copy &= ~bit;
     }
+    bit >>= 1;
+  }
 
-    // log site
-    base_attr = attr_combine(base_attr, site_attr);
+  // log site
+  base_attr = attr_combine(base_attr, site_attr);
 
-    int x;
-    for(x = 0; x < array_size(g_streams); x++)
+  int x;
+  for(x = 0; x < array_size(g_streams); x++)
+  {
+    stream * streamp = array_get(g_streams, x);
+    if(stream_would(streamp, ids))
     {
-      stream * streamp = array_get(g_streams, x);
-      if(stream_would(streamp, ids))
-      {
-        fatal(stream_write, streamp, ids, base_attr, message, time_msec);
-      }
+      fatal(stream_write, streamp, ids, base_attr, message, time_msec);
     }
+  }
 
-    if(array_size(g_streams) == 0)
-    {
-      // the default is to write everything to stderr
-      int __attribute__((unused)) _r = write(2, message->s, message->l);
-      _r = write(2, "\n", 1);
-    }
+  if(array_size(g_streams) == 0)
+  {
+    // the default is to write everything to stderr
+    int __attribute__((unused)) _r = write(2, message->s, message->l);
+    _r = write(2, "\n", 1);
   }
 
   finally : coda;

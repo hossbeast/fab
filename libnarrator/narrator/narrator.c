@@ -19,6 +19,7 @@
 #include "growing/growing.internal.h"
 #include "file/file.internal.h"
 #include "fixed/fixed.internal.h"
+#include "multi/multi.internal.h"
 
 //
 // api
@@ -35,6 +36,8 @@ API void narrator_free(narrator * restrict n)
       fixed_free(&n->fixed);
     else if(n->type == NARRATOR_FILE)
       file_free(&n->file);
+    else if(n->type == NARRATOR_MULTI)
+      multi_free(&n->multi);
   }
 }
 
@@ -55,6 +58,8 @@ API xapi narrator_seek(narrator * const restrict n, off_t offset, int whence, of
 		fatal(fixed_seek, &n->fixed, offset, whence, res);
 	else if(n->type == NARRATOR_FILE)
     fatal(file_seek, &n->file, offset, whence, res);
+	else if(n->type == NARRATOR_MULTI)
+    fatal(multi_seek, &n->multi, offset, whence, res);
 
   finally : coda;
 }
@@ -93,6 +98,8 @@ API xapi narrator_vsayf(narrator * const restrict n, const char * const restrict
 		fatal(fixed_vsayf, &n->fixed, fmt, va);
 	else if(n->type == NARRATOR_FILE)
 		fatal(file_vsayf, &n->file, fmt, va);
+	else if(n->type == NARRATOR_MULTI)
+		fatal(multi_vsayf, &n->multi, fmt, va);
 
 	finally : coda;
 }
@@ -107,6 +114,8 @@ API xapi narrator_sayw(narrator * const restrict n, char * const restrict b, siz
 		fatal(fixed_sayw, &n->fixed, b, l);
 	else if(n->type == NARRATOR_FILE)
 		fatal(file_sayw, &n->file, b, l);
+	else if(n->type == NARRATOR_MULTI)
+		fatal(multi_sayw, &n->multi, b, l);
 
 	finally : coda;
 }

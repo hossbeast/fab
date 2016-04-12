@@ -23,19 +23,21 @@
 // public header file
 #include "narrator.h"
 
-// structure definitions
-#include "fixed.internal.h"
-#include "growing.internal.h"
-#include "file.internal.h"
-
 // other declarations
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
-#define NARRATOR_TYPE_TABLE(x)     \
-  NARRATOR_TYPE_DEF(FIXED  , 1, x) \
-  NARRATOR_TYPE_DEF(GROWING, 2, x) \
-  NARRATOR_TYPE_DEF(FILE   , 3, x)
+// structure definitions
+#include "fixed.internal.h"
+#include "growing.internal.h"
+#include "file.internal.h"
+#include "multi.internal.h"
+
+#define NARRATOR_TYPE_TABLE(x)      \
+  NARRATOR_TYPE_DEF(FIXED  , 1, x)  \
+  NARRATOR_TYPE_DEF(GROWING, 2, x)  \
+  NARRATOR_TYPE_DEF(FILE   , 3, x)  \
+  NARRATOR_TYPE_DEF(MULTI  , 4, x)
 
 enum {
 #define NARRATOR_TYPE_DEF(a, b, x) NARRATOR_ ## a = b,
@@ -54,6 +56,7 @@ typedef struct narrator
     narrator_fixed fixed;
     narrator_growing growing;
     narrator_file file;
+    narrator_multi multi;
   };
 
   uint8_t type;       // one of NARRATOR_*

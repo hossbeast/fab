@@ -15,53 +15,58 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATE_FILE_INTERNAL_H
-#define _NARRATE_FILE_INTERNAL_H
+#ifndef _NARRATE_MULTI_INTERNAL_H
+#define _NARRATE_MULTI_INTERNAL_H
 
 /*
 
 MODULE
- file
+ multi
 
 SUMMARY
- narrator which writes to a file descriptor
+ narrator which writes to a dynamically resizing buffer that grows without bound
 
 */
 
 #include <sys/types.h>
+#include <stdarg.h>
 
 #include "xapi.h"
 
-typedef struct narrator_file
+#include "multi.h"
+
+typedef struct narrator_multi
 {
-  int fd;           // file descriptor
-} narrator_file;
+  narrator ** v;    // narrators
+  size_t l;         // number in use
+  size_t a;         // allocated size
+} narrator_multi;
 
 #define restrict __restrict
 
-/// file_say
+/// multi_say
 //
 // SUMMARY
-//  write to a file_narrator
+//  write to a multi narrator
 //
 // PARAMETERS
-//  n     - file narrator
+//  n     - multi narrator
 //  [fmt] - printf-style format string
 //  [va]  - varargs
 //  [b]   - buffer
 //  [l]   - size of buffer
-//
+// 
 
-xapi file_vsayf(narrator_file * const restrict n, const char * const restrict fmt, va_list va)
+xapi multi_vsayf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-xapi file_sayw(narrator_file * const restrict n, char * const restrict b, size_t l)
+xapi multi_sayw(narrator_multi * const restrict n, char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
-/// file_seek
+/// multi_seek
 //
 // SUMMARY
-//  reposition a file narrator
+//  Seek all of the narrators underlying a multi narrator. It is unspecified which of them res is updated to reflect.
 //
 // PARAMETERS
 //  n      - narrator
@@ -69,18 +74,15 @@ xapi file_sayw(narrator_file * const restrict n, char * const restrict b, size_t
 //  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
 //  [res]  - (returns) the resulting absolute offset
 //
-// REMARKS
-//  not supported for all file types
-//
-xapi file_seek(narrator_file * const restrict n, off_t offset, int whence, off_t * restrict res)
+xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull(1)));
 
-/// file_free
+/// multi_free
 //
 // SUMMARY
-//  free a file narrator with free semantics
+//  free a multi narrator with free semantics
 //
-void file_free(narrator_file * restrict n);
+void multi_free(narrator_multi * restrict n);
 
 #undef restrict
 #endif
