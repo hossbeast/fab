@@ -57,7 +57,7 @@ finally:
 coda;
 }
 
-xapi multi_sayw(narrator_multi * const restrict n, char * const restrict b, size_t l)
+xapi multi_sayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
 {
   enter;
 
@@ -79,14 +79,9 @@ xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off
   finally : coda;
 }
 
-void multi_free(narrator_multi * n)
+void multi_destroy(narrator_multi * n)
 {
-  if(n)
-  {
-    free(n->v);
-  }
-
-  free(n);
+  free(n->v);
 }
 
 //
@@ -107,7 +102,7 @@ API xapi narrator_multi_create(narrator ** const restrict rv)
   n = 0;
 
 finally:
-  multi_free(&n->multi);
+  narrator_free(n);
 coda;
 }
 

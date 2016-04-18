@@ -34,7 +34,7 @@ xapi file_vsayf(narrator_file * const restrict n, const char * const restrict fm
  	xproxy(xvdprintf, n->fd, fmt, va);
 }
 
-xapi file_sayw(narrator_file * const restrict n, char * const restrict b, size_t l)
+xapi file_sayw(narrator_file * const restrict n, const char * const restrict b, size_t l)
 {
 	xproxy(axwrite, n->fd, b, l);
 }
@@ -49,9 +49,8 @@ xapi file_reset(narrator_file * const restrict n)
   xproxy(xlseek, n->fd, 0, SEEK_SET, 0);
 }
 
-void file_free(narrator_file * n)
+void file_destroy(narrator_file * n)
 {
-  free(n);
 }
 
 //
@@ -67,4 +66,9 @@ API xapi narrator_file_create(narrator ** const restrict n, int fd)
   (*n)->file.fd = fd;
 
   finally : coda;
+}
+
+API int narrator_file_fd(narrator * const restrict n)
+{
+  return n->file.fd;
 }

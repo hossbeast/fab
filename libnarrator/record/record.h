@@ -15,57 +15,52 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATOR_FIXED_H
-#define _NARRATOR_FIXED_H
+#ifndef _NARRATOR_RECORD_H
+#define _NARRATOR_RECORD_H
 
 /*
 
 MODULE
- narrator/fixed
+ narrator/record
 
 SUMMARY
- narrator that writes to a fixed-size buffer, discarding overflow
+ narrator that accumulates writes and propagates records to an underlying narrator
 
 */
 
+#include "xapi.h"
+
 #define restrict __restrict
 
-/// narrator_fixed_create
+/// narrator_record_create
 //
 // SUMMARY
-//  allocate a file narrator
+//  allocate a record narrator
 //
 // PARAMETERS
-//  n    - (returns) narrator
-//  size - size of the buffer
+//  n  - (returns) narrator
+//  np - underlying narrator
 //
-xapi narrator_fixed_create(narrator ** const restrict n, size_t size)
+xapi narrator_record_create(narrator ** const restrict n, narrator * const restrict np)
+  __attribute__((nonnull(1)));
+
+/// narrator_record_reset
+//
+// SUMMARY
+//  resets the underlying narrator
+//
+// PARAMETERS
+//  n - record narrator
+//
+void narrator_record_reset(narrator * const restrict n)
   __attribute__((nonnull));
 
-/// narrator_fixed_buffer
+/// narrator_record_write
 //
 // SUMMARY
-//  get a pointer to the underlying store
+//  propagate to the underlying narrator with a single write
 //
-// PARAMETERS
-//  n - fixed narrator
-//
-// REMARKS
-//  further operations on the narrator may free the buffer
-//
-const char * narrator_fixed_buffer(narrator * const restrict n)
-  __attribute__((nonnull));
-
-/// narrator_fixed_size
-//
-// SUMMARY
-//  get the size in bytes of the data written to the underlying store
-//
-// PARAMETERS
-//  n - fixed narrator
-//
-size_t narrator_fixed_size(narrator * const restrict n)
-  __attribute__((nonnull));
+xapi narrator_record_write();
 
 #undef restrict
 #endif

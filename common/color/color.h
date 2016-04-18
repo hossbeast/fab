@@ -15,6 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef _COLOR_H
+#define _COLOR_H
+
 #include <sys/types.h>
 
 // byte sequence tables
@@ -54,3 +57,5 @@ extern char (*g_colors_5)[5];
 
 #define COLOR(x) x, sizeof(x)
 #define CSIZE(x) sizeof(x)
+
+#endif

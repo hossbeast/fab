@@ -15,22 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATE_FILE_INTERNAL_H
-#define _NARRATE_FILE_INTERNAL_H
-
-/*
-
-MODULE
- file
-
-SUMMARY
- narrator which writes to a file descriptor
-
-*/
+#ifndef _NARRATOR_FILE_INTERNAL_H
+#define _NARRATOR_FILE_INTERNAL_H
 
 #include <sys/types.h>
 
 #include "xapi.h"
+#include "file.h"
 
 typedef struct narrator_file
 {
@@ -55,7 +46,7 @@ typedef struct narrator_file
 xapi file_vsayf(narrator_file * const restrict n, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-xapi file_sayw(narrator_file * const restrict n, char * const restrict b, size_t l)
+xapi file_sayw(narrator_file * const restrict n, const char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
 /// file_seek
@@ -75,12 +66,12 @@ xapi file_sayw(narrator_file * const restrict n, char * const restrict b, size_t
 xapi file_seek(narrator_file * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull(1)));
 
-/// file_free
+/// file_destroy
 //
 // SUMMARY
-//  free a file narrator with free semantics
+//  destroy a file narrator
 //
-void file_free(narrator_file * restrict n);
+void file_destroy(narrator_file * restrict n);
 
 #undef restrict
 #endif

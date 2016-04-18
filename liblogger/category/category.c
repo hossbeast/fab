@@ -277,6 +277,39 @@ void category_teardown()
   map_xfree(&activated_byid);
 }
 
+
+xapi category_report()
+{
+  enter;
+
+  int mark = 0;
+  logs(L_LOGGER, "liblogger categories");
+
+  int x;
+  for(x = 0; x < list_size(activated); x++)
+  {
+    // find the bounds of the name-group
+    int y;
+    for(y = x + 1; y < list_size(activated); y++)
+    {
+      if(strcmp(list_get(activated, x)->name, list_get(activated, y)->name))
+        break;
+    }
+
+    fatal(log_start, L_LOGGER, &mark);
+    narrator * N = log_narrator();
+    sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, list_get(activated, x)->name, list_get(activated, x)->id, list_get(activated, x)->attr);
+    fatal(attr_say, list_get(activated, x)->attr, N);
+    fatal(log_finish, &mark);
+
+    x = y - 1;
+  }
+
+finally:
+  fatal(log_finish, &mark);
+coda;
+}
+
 //
 // api
 //
@@ -326,7 +359,6 @@ API xapi logger_category_activate()
 {
   enter;
 
-  narrator * N = 0;
   category_name_max_length = 0;
 
   // mask of category ids that have been assigned
@@ -420,27 +452,6 @@ API xapi logger_category_activate()
   activated_byid = activating_byid;
   activating_byid = T;
 
-#if 1
-  printf("logging categories\n");
-  for(x = 0; x < list_size(activated); x++)
-  {
-    // find the bounds of the name-group
-    int y;
-    for(y = x + 1; y < list_size(activated); y++)
-    {
-      if(strcmp(list_get(activated, x)->name, list_get(activated, y)->name))
-        break;
-    }
-
-    fatal(narrator_fixed_create, &N, 128);
-    sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, list_get(activated, x)->name, list_get(activated, x)->id, list_get(activated, x)->attr);
-    fatal(attr_say, list_get(activated, x)->attr, N);
-    printf("%s\n", narrator_fixed_buffer(N));
-
-    x = y - 1;
-  }
-#endif
-
   list_xfree(&registered);
   list_xfree(&registering);
 
@@ -449,7 +460,6 @@ finally:
   map_free(activating_byname);
   map_free(activating_byid);
   list_free(sublist);
-  narrator_free(N);
 coda;
 }
 

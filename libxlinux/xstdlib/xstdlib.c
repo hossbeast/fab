@@ -90,6 +90,8 @@ coda;
 
 void API ifree(void* target)
 {
+  void** t = (void**)target;
+
   if(policy)
   {
     if(policy->ifree)
@@ -97,11 +99,10 @@ void API ifree(void* target)
   }
   else
   {
-    void** t = (void**)target;
-
     free(*t);
-    *t = 0;
   }
+
+  *t = 0;
 }
 
 void API xfree(void* target)

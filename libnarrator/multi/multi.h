@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATE_MULTI_H
-#define _NARRATE_MULTI_H
+#ifndef _NARRATOR_MULTI_H
+#define _NARRATOR_MULTI_H
 
 /*
 

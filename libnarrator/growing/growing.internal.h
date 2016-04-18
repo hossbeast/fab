@@ -15,23 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATE_GROWING_INTERNAL_H
-#define _NARRATE_GROWING_INTERNAL_H
-
-/*
-
-MODULE
- growing
-
-SUMMARY
- narrator which writes to a dynamically resizing buffer that grows without bound
-
-*/
+#ifndef _NARRATOR_GROWING_INTERNAL_H
+#define _NARRATOR_GROWING_INTERNAL_H
 
 #include <sys/types.h>
 #include <stdarg.h>
 
 #include "xapi.h"
+#include "growing.h"
 
 typedef struct narrator_growing
 {
@@ -59,7 +50,7 @@ typedef struct narrator_growing
 xapi growing_vsayf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-xapi growing_sayw(narrator_growing * const restrict n, char * const restrict b, size_t l)
+xapi growing_sayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
 /// growing_seek
@@ -76,12 +67,12 @@ xapi growing_sayw(narrator_growing * const restrict n, char * const restrict b, 
 xapi growing_seek(narrator_growing * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull(1)));
 
-/// narrator_free
+/// narrator_destroy
 //
 // SUMMARY
-//  free a file narrator with free semantics
+//  destroy a growing narrator
 //
-void growing_free(narrator_growing * restrict n);
+void growing_destroy(narrator_growing * restrict n);
 
 #undef restrict
 #endif

@@ -15,58 +15,58 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATOR_GROWING_H
-#define _NARRATOR_GROWING_H
-
-/*
-
-MODULE
- narrator/growing
-
-SUMMARY
- narrator that accumulates all writes, growing without bound
-
-*/
+#ifndef _NARRATOR_NULLITY_INTERNAL_H
+#define _NARRATOR_NULLITY_INTERNAL_H
 
 #include "xapi.h"
+#include "nullity.h"
+
+typedef struct narrator_nullity
+{
+} narrator_nullity;
 
 #define restrict __restrict
 
-/// narrator_growing_create
+/// nullity_setup
 //
 // SUMMARY
-//  allocate a growing narrator
+//  module initialization
 //
-// PARAMETERS
-//  n - (returns) narrator
-//
-xapi narrator_growing_create(narrator ** const restrict n)
-  __attribute__((nonnull));
+xapi nullity_setup();
 
-/// narrator_growing_buffer
+/// nullity_teardown
 //
 // SUMMARY
-//  get a pointer to the underlying store
+//  module cleanup
 //
-// PARAMETERS
-//  n - growing narrator
-//
-// REMARKS
-//  further operations on the narrator may free the buffer
-//
-const char * narrator_growing_buffer(narrator * const restrict n)
-  __attribute__((nonnull));
+void nullity_teardown();
 
-/// narrator_growing_size
+/// nullity_say
 //
 // SUMMARY
-//  get the size in bytes of the data written to the underlying store
+//  no-op
 //
-// PARAMETERS
-//  n - growing narrator
+
+xapi nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
+	__attribute__((nonnull));
+
+xapi nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
+	__attribute__((nonnull));
+
+/// nullity_seek
 //
-size_t narrator_growing_size(narrator * const restrict n)
-  __attribute__((nonnull));
+// SUMMARY
+//  no-op
+//
+xapi nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence, off_t * restrict res)
+  __attribute__((nonnull(1)));
+
+/// narrator_destroy
+//
+// SUMMARY
+//  destroy a nullity narrator
+//
+void nullity_destroy(narrator_nullity * restrict n);
 
 #undef restrict
 #endif

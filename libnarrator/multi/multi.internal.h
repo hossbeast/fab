@@ -15,24 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATE_MULTI_INTERNAL_H
-#define _NARRATE_MULTI_INTERNAL_H
-
-/*
-
-MODULE
- multi
-
-SUMMARY
- narrator which writes to a dynamically resizing buffer that grows without bound
-
-*/
+#ifndef _NARRATOR_MULTI_INTERNAL_H
+#define _NARRATOR_MULTI_INTERNAL_H
 
 #include <sys/types.h>
 #include <stdarg.h>
 
 #include "xapi.h"
-
 #include "multi.h"
 
 typedef struct narrator_multi
@@ -60,7 +49,7 @@ typedef struct narrator_multi
 xapi multi_vsayf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-xapi multi_sayw(narrator_multi * const restrict n, char * const restrict b, size_t l)
+xapi multi_sayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
 /// multi_seek
@@ -77,12 +66,12 @@ xapi multi_sayw(narrator_multi * const restrict n, char * const restrict b, size
 xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull(1)));
 
-/// multi_free
+/// multi_destroy
 //
 // SUMMARY
-//  free a multi narrator with free semantics
+//  destroy a multi narrator
 //
-void multi_free(narrator_multi * restrict n);
+void multi_destroy(narrator_multi * restrict n);
 
 #undef restrict
 #endif

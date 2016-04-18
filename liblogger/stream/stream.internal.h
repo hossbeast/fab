@@ -51,10 +51,11 @@ typedef struct stream
   // the filters determine which log messages are emitted to the stream
   struct list * filters;
 
-  struct pstring * buffer;
-
-  // emitted log messages are written to the narrator
+  // log messages are written to this record narrator
   struct narrator * narrator;
+
+  // the underlying narrator
+  struct narrator * narrator_base;
 } stream;
 
 /// g_streams
@@ -98,10 +99,11 @@ int streams_would(const uint64_t ids);
 // PARAMETERS
 //  ids       - 
 //  attrs     - 
-//  message   - 
+//  b         -
+//  l         - 
 //  time_msec - 
 //
-xapi streams_write(const uint64_t ids, const uint32_t attrs, const struct pstring * restrict message, const long time_msec)
+xapi streams_write(const uint64_t ids, const uint32_t attrs, const char * const restrict b, size_t l, const long time_msec)
   __attribute__((nonnull));
 
 /// stream_byid
@@ -134,6 +136,7 @@ xapi stream_filter_push(stream * const restrict streamp, struct filter * restric
 /// streams_report
 //
 // SUMMARY
+//  log a summary of configured streams to LOGGER
 //
 xapi streams_report();
 

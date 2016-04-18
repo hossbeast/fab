@@ -71,4 +71,11 @@ xapi category_byname(const char * const restrict name, size_t namel, logger_cate
 xapi category_byid(uint64_t id, logger_category ** const restrict category)
   __attribute__((nonnull));
 
+/// category_report
+//
+// SUMMARY
+//  log a summary of registered categories to LOGGER
+//
+xapi category_report();
+
 #endif

@@ -27,6 +27,9 @@
 #include "xapi.h"
 #include "xlinux.h"
 #include "valyria/pstring.h"
+#include "narrator.h"
+#include "narrator/growing.h"
+#include "narrator/nullity.h"
 
 #include "internal.h"
 #include "log.internal.h"
@@ -42,10 +45,10 @@
 // [[ static ]]
 //
 
-static __thread uint64_t  storage_ids;	    // when a log is being constructed, effective bits
-static __thread uint32_t  storage_attrs;
-static __thread pstring * storage_message;  // the log message
-static __thread long      storage_time_msec;
+static __thread uint64_t    storage_ids;	    // when a log is being constructed, effective bits
+static __thread uint32_t    storage_attrs;
+static __thread narrator *  storage_narrator; // the log message
+static __thread long        storage_time_msec;
 
 /// start
 //
@@ -61,8 +64,8 @@ static xapi start(const uint64_t ids, uint32_t attrs, int * const restrict w)
 {
   enter;
 
-  if(storage_message == 0)
-    fatal(pscreate, &storage_message);
+  if(storage_narrator == 0)
+    fatal(narrator_growing_create, &storage_narrator);
 
 	if(streams_would(ids))
 	{
@@ -70,7 +73,7 @@ static xapi start(const uint64_t ids, uint32_t attrs, int * const restrict w)
 
     storage_ids = ids;
     storage_attrs = attrs;
-    fatal(psclear, storage_message);
+    fatal(narrator_reset, storage_narrator);
 
     // wall-clock milliseconds
     struct timespec times;
@@ -86,7 +89,15 @@ static xapi finish()
   enter;
 
   // write to active streams
-  fatal(streams_write, storage_ids, storage_attrs, storage_message, storage_time_msec);
+  fatal(streams_write
+    , storage_ids
+    , storage_attrs
+    , narrator_growing_buffer(storage_narrator)
+    , narrator_growing_size(storage_narrator)
+    , storage_time_msec
+  );
+
+  // reset
 	storage_ids = 0;
 
   finally : coda;
@@ -103,7 +114,7 @@ API xapi logger_vlogf(const uint64_t ids, uint32_t attrs, const char * const fmt
 	if(storage_ids)
 	{
 		if(streams_would(storage_ids))
-      fatal(psvcatf, storage_message, fmt, va);
+      fatal(narrator_vsayf, storage_narrator, fmt, va);
 	}
   else
   {
@@ -112,7 +123,7 @@ API xapi logger_vlogf(const uint64_t ids, uint32_t attrs, const char * const fmt
 
     if(w)
     {
-      fatal(psvcatf, storage_message, fmt, va);
+      fatal(narrator_vsayf, storage_narrator, fmt, va);
       fatal(finish);
     }
   }
@@ -149,7 +160,7 @@ API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src,
 	if(storage_ids)
 	{
 		if(streams_would(storage_ids))
-      fatal(pscatw, storage_message, src, len);
+      fatal(narrator_sayw, storage_narrator, src, len);
 	}
 	else
 	{
@@ -158,7 +169,7 @@ API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src,
 
     if(w)
     {
-      fatal(pscatw, storage_message, src, len);
+      fatal(narrator_sayw, storage_narrator, src, len);
       fatal(finish);
     }
 	}
@@ -166,45 +177,69 @@ API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src,
   finally : coda;
 }
 
-API xapi logger_log_start(const uint64_t ids, uint32_t attrs)
+API xapi log_xstart(const uint64_t ids, uint32_t attrs, int * const restrict mark)
 {
   enter;
 
   int w;
   fatal(start, ids, attrs, &w);
+  if(w)
+    *mark = 1;
 
   finally : coda;
 }
 
-API xapi logger_log_finish()
+API xapi log_start(const uint64_t ids, int * const restrict mark)
 {
   enter;
 
-	if(streams_would(storage_ids))
-		fatal(finish);
-
-	storage_ids = 0;
+  int w;
+  fatal(start, ids, 0, &w);
+  if(w)
+    *mark = 1;
 
   finally : coda;
 }
 
-API int logger_log_would(const uint64_t ids)
+API narrator * log_narrator(int * const restrict mark)
+{
+  if(*mark) 
+    return storage_narrator;
+
+  return g_narrator_nullity;
+}
+
+API xapi log_finish(int * const restrict mark)
+{
+  enter;
+
+  if(*mark)
+  {
+		fatal(finish);
+    *mark = 0;
+    storage_ids = 0;
+  }
+
+  finally : coda;
+}
+
+API int log_would(const uint64_t ids)
 {
   return streams_would(ids);
 }
 
 API int logger_log_bytes()
 {
-  if(storage_message)
-    return storage_message->l;
+  if(storage_narrator)
+    return narrator_growing_size(storage_narrator);
 
   return 0;
 }
 
 API int logger_log_chars()
 {
-  if(storage_message)
-    return storage_message->l;
+  if(storage_narrator)
+    return narrator_growing_size(storage_narrator);
 
   return 0;
 }

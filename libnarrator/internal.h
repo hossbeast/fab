@@ -32,12 +32,16 @@
 #include "growing.internal.h"
 #include "file.internal.h"
 #include "multi.internal.h"
+#include "nullity.internal.h"
+#include "record.internal.h"
 
 #define NARRATOR_TYPE_TABLE(x)      \
-  NARRATOR_TYPE_DEF(FIXED  , 1, x)  \
-  NARRATOR_TYPE_DEF(GROWING, 2, x)  \
-  NARRATOR_TYPE_DEF(FILE   , 3, x)  \
-  NARRATOR_TYPE_DEF(MULTI  , 4, x)
+  NARRATOR_TYPE_DEF(FIXED   , 1, x) \
+  NARRATOR_TYPE_DEF(GROWING , 2, x) \
+  NARRATOR_TYPE_DEF(FILE    , 3, x) \
+  NARRATOR_TYPE_DEF(MULTI   , 4, x) \
+  NARRATOR_TYPE_DEF(NULLITY , 5, x) \
+  NARRATOR_TYPE_DEF(RECORD  , 6, x)
 
 enum {
 #define NARRATOR_TYPE_DEF(a, b, x) NARRATOR_ ## a = b,
@@ -57,6 +61,8 @@ typedef struct narrator
     narrator_growing growing;
     narrator_file file;
     narrator_multi multi;
+    narrator_nullity nullity;
+    narrator_record record;
   };
 
   uint8_t type;       // one of NARRATOR_*

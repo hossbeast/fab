@@ -15,21 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATE_FIXED_INTERNAL_H
-#define _NARRATE_FIXED_INTERNAL_H
-
-/*
-
-MODULE
- fixed
-
-SUMMARY
- narrator that writes to a fixed size buffer, discarding overflow
-
-*/
+#ifndef _NARRATOR_FIXED_INTERNAL_H
+#define _NARRATOR_FIXED_INTERNAL_H
 
 #include <sys/types.h>
+
 #include "xapi.h"
+#include "fixed.h"
 
 typedef struct narrator_fixed
 {
@@ -56,7 +48,7 @@ typedef struct narrator_fixed
 xapi fixed_vsayf(narrator_fixed * const restrict n, const char * const restrict fmt, va_list va)
 	__attribute__((nonnull));
 
-xapi fixed_sayw(narrator_fixed * const restrict n, char * const restrict b, size_t l)
+xapi fixed_sayw(narrator_fixed * const restrict n, const char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
 /// fixed_seek
@@ -73,12 +65,12 @@ xapi fixed_sayw(narrator_fixed * const restrict n, char * const restrict b, size
 xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull));
 
-/// fixed_free
+/// fixed_destroy
 //
 // SUMMARY
-//  free a file narrator with free semantics
+//  destroy a fixed narrator
 //
-void fixed_free(narrator_fixed * restrict n);
+void fixed_destroy(narrator_fixed * restrict n);
 
 #undef restrict
 #endif

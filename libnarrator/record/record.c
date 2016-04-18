@@ -21,7 +21,7 @@
 #include "xlinux.h"
 
 #include "internal.h"
-#include "growing.internal.h"
+#include "record.internal.h"
 
 #include "macros.h"
 #include "assure.h"
@@ -32,7 +32,7 @@
 // public
 //
 
-xapi growing_vsayf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
+xapi record_vsayf(narrator_record * const restrict n, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -50,12 +50,11 @@ xapi growing_vsayf(narrator_growing * const restrict n, const char * const restr
     vsprintf(n->s + n->l, fmt, va);
   }
   n->l += r;
-  n->m = MAX(n->l, n->m);
 
   finally : coda;
 }
 
-xapi growing_sayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
+xapi record_sayw(narrator_record * const restrict n, const char * const restrict b, size_t l)
 {
   enter;
 
@@ -63,47 +62,34 @@ xapi growing_sayw(narrator_growing * const restrict n, const char * const restri
   memcpy(n->s + n->l, b, l);
   n->s[n->l + l] = 0;
   n->l += l;
-  n->m = MAX(n->l, n->m);
 
   finally : coda;
 }
 
-xapi growing_seek(narrator_growing * const restrict n, off_t offset, int whence, off_t * restrict res)
+xapi record_seek(narrator_record * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
-  enter;
-
-  if(whence == NARRATOR_SEEK_SET)
-    n->l = offset;
-  else if(whence == NARRATOR_SEEK_CUR)
-    n->l += offset;
-
-  // for a growing narrator, the "end" is the greatest position ever written to
-  else if(whence == NARRATOR_SEEK_END)
-    n->l = (n->m + offset);
-
-  if(res)
-    *res = n->l;
-
-  finally : coda;
+  xproxy(narrator_seek, n->n, offset, whence, res);
 }
 
-void growing_destroy(narrator_growing * n)
+void record_destroy(narrator_record * n)
 {
   free(n->s);
+  narrator_free(n->n);
 }
 
 //
 // api
 //
 
-API xapi narrator_growing_create(narrator ** const restrict rv)
+API xapi narrator_record_create(narrator ** const restrict rv, narrator * const restrict np)
 {
   enter;
 
   narrator * n = 0;
   fatal(xmalloc, &n, sizeof(*n));
 
-  n->type = NARRATOR_GROWING;
+  n->type = NARRATOR_RECORD;
+  n->record.n = np;
   
   *rv = n;
   n = 0;
@@ -113,12 +99,13 @@ finally:
 coda;
 }
 
-API const char * narrator_growing_buffer(narrator * const restrict n)
+API xapi narrator_record_write(narrator * const restrict n)
 {
-  return n->growing.s;
-}
+  enter;
 
-API size_t narrator_growing_size(narrator * const restrict n)
-{
-  return n->growing.l;
+  // flush to the underlying narrator and reset
+  fatal(narrator_sayw, n->record.n, n->record.s, n->record.l);
+  n->record.l = 0; 
+
+  finally : coda;
 }

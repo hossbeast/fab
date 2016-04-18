@@ -15,40 +15,30 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATOR_FILE_H
-#define _NARRATOR_FILE_H
+#ifndef _LOGGER_ARGUMENTS_INTERNAL_H
+#define _LOGGER_ARGUMENTS_INTERNAL_H
 
-/*
+#include "arguments.h"
 
-MODULE
- narrator/file
-
-SUMMARY
- narrator that passes all writes to a file descriptor
-
-*/
-
-#define restrict __restrict
-
-/// narrator_file_create
+/// arguments_initialize
 //
 // SUMMARY
-//  allocate a file narrator
+//  parse cmdline args, populate g_argv and related variables
 //
-// PARAMETERS
-//  n  - (returns) narrator
-//  fd - file descriptor
-//
-xapi narrator_file_create(narrator ** const restrict n, int fd)
-  __attribute__((nonnull));
+xapi arguments_initialize(char ** restrict envp);
 
-/// narrator_file_fd
+/// arguments_report
 //
 // SUMMARY
-//  get the file descriptor for a file narrator
+//  log a description of cmdline args to LOGGER
 //
-int narrator_file_fd(narrator * const restrict n)
-  __attribute__((nonnull));
+xapi arguments_report();
 
-#undef restrict
+/// arguments_teardown
+//
+// SUMMARY
+//  release resources
+//
+void arguments_teardown();
+
 #endif

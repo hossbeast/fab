@@ -15,19 +15,36 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
+#ifndef _NARRATOR_NULLITY_H
+#define _NARRATOR_NULLITY_H
+
+/*
+
+MODULE
+ narrator/nullity
+
+SUMMARY
+ narrator that discards writes
+
+*/
 
 #include "xapi.h"
-#include "xlinux.h"
-
-#include "internal.h"
-
-#include "growing/growing.internal.h"
-#include "fixed/fixed.internal.h"
-#include "file/file.internal.h"
 
 #define restrict __restrict
 
+/// narrator_nullity_create
 //
-// public
+// SUMMARY
+//  allocate a nullity narrator
 //
+// PARAMETERS
+//  n - (returns) narrator
+//
+xapi narrator_nullity_create(narrator ** const restrict n)
+  __attribute__((nonnull));
+
+/// read-only singleton nullity narrator allocated in narrator_setup
+extern narrator * g_narrator_nullity;
+
+#undef restrict
+#endif

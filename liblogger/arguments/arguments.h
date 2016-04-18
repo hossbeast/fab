@@ -15,40 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATOR_FILE_H
-#define _NARRATOR_FILE_H
+#ifndef _LOGGER_ARGUMENTS_H
+#define _LOGGER_ARGUMENTS_H
 
-/*
-
-MODULE
- narrator/file
-
-SUMMARY
- narrator that passes all writes to a file descriptor
-
-*/
-
-#define restrict __restrict
-
-/// narrator_file_create
-//
-// SUMMARY
-//  allocate a file narrator
-//
-// PARAMETERS
-//  n  - (returns) narrator
-//  fd - file descriptor
-//
-xapi narrator_file_create(narrator ** const restrict n, int fd)
-  __attribute__((nonnull));
-
-/// narrator_file_fd
-//
-// SUMMARY
-//  get the file descriptor for a file narrator
-//
-int narrator_file_fd(narrator * const restrict n)
-  __attribute__((nonnull));
-
-#undef restrict
 #endif

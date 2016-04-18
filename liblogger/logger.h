@@ -24,6 +24,8 @@
 
 #include "xapi.h"
 
+struct narrator;    // libnarrator
+
 /*
  * liblogger-provided program arguments, populated during logger_setup
  */
@@ -148,33 +150,42 @@ xapi logger_logc (const uint64_t ids, const uint32_t attrs, const char c)
 //
 // SUMMARY
 //  begin logging a message if log_would([bits])
-//  subsequent log* calls append to this log until log_finish is called
-//  each log_start call is accompanied by a log_finish call
+//  subsequent log* calls append to this log message until log_finish is called
+//  each logger_start call is accompanied by a logger_finish call
 //
 // PARAMETERS
 //  ids     - bitwise combination of category ids
 //  [attrs] - bitwise combination of L_* options and modifiers
+//  mark    - if log_would, and if the call succeeds, set to 1
 //
-xapi logger_log_start(const uint64_t ids, const uint32_t attrs);
+xapi log_xstart(const uint64_t ids, const uint32_t attrs, int * const restrict mark);
 
-#define  log_start(ids) fatal(logger_log_start, ids, 0)
-#define log_xstart(...) fatal(logger_log_start, __VA_ARGS__)
+xapi log_start(const uint64_t ids, int * const restrict mark);
 
 /// log_finish
 //
 // SUMMARY
 //  complete the log that was started with log_start
 //
-xapi logger_log_finish();
-#define log_finish() fatal(logger_log_finish)
+// PARAMETERS
+//  [mark] - if *mark, if if the call succeeds, set to 0
+//
+xapi log_finish(int * const restrict mark);
+
+/// log_narrator
+//
+// SUMMARY
+//  between log_start and log_finish calls, returns a narrator which may be used to append to the
+//  current log message
+//
+struct narrator * log_narrator();
 
 /// log_would
 //
 // SUMMARY
 //  true if a log with the specified ids would write to any stream
 //
-int logger_log_would(const uint64_t ids);
-#define log_would(ids) logger_log_would(ids)
+int log_would(const uint64_t ids);
 
 /// log_bytes
 //
@@ -182,7 +193,7 @@ int logger_log_would(const uint64_t ids);
 //  if called after log_start, returns the number of bytes written since log_start
 //  otherwise, returns the number of bytes written on the last log* call or log_start/log_finish sequence
 //
-int logger_log_bytes();
+int log_bytes();
 
 /// log_chars
 //
@@ -190,7 +201,7 @@ int logger_log_bytes();
 //  if called after log_start, returns the number of characters written since log_start (excludes control bytes)
 //  otherwise, returns the number of characters written on the last log* call or log_start/log_finish sequence
 //
-int logger_log_chars();
+int log_chars();
 
 #undef restrict
 #endif

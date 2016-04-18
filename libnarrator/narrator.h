@@ -39,11 +39,11 @@ SUMMARY
 // write to the active narration
 //
 
-#define vsayf(fmt, lst)  fatal(narrator_vsayf, N, fmt, lst)
-#define sayf(fmt, ...)   fatal(narrator_sayf , N, fmt, ##__VA_ARGS__)
+#define vsayf(...)       fatal(narrator_vsayf, N, ##__VA_ARGS__)
+#define sayf(...)        fatal(narrator_sayf , N, ##__VA_ARGS__)
 #define says(s)          fatal(narrator_sayw , N, s, strlen(s))
-#define sayw(b, l)       fatal(narrator_sayw , N, b, l)
-#define sayc(c)          fatal(narrator_sayc , N, c)
+#define sayw(...)        fatal(narrator_sayw , N, ##__VA_ARGS__)
+#define sayc(...)        fatal(narrator_sayc , N, ##__VA_ARGS__)
 
 struct narrator;
 typedef struct narrator narrator;
@@ -71,7 +71,7 @@ xapi narrator_sayf(struct narrator * const restrict n, const char * const restri
 // SUMMARY
 //  write to the specified narrator
 //
-xapi narrator_sayw(struct narrator * const restrict n, char * const restrict b, size_t l)
+xapi narrator_sayw(struct narrator * const restrict n, const char * const restrict b, size_t l)
 	__attribute__((nonnull));
 
 /// narrator_sayc

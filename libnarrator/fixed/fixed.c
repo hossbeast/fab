@@ -42,7 +42,7 @@ xapi fixed_vsayf(narrator_fixed * const restrict n, const char * const restrict 
   finally : coda;
 }
 
-xapi fixed_sayw(narrator_fixed * const restrict n, char * const restrict b, size_t l)
+xapi fixed_sayw(narrator_fixed * const restrict n, const char * const restrict b, size_t l)
 {
   enter;
 
@@ -70,13 +70,9 @@ xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off
   finally : coda;
 }
 
-void fixed_free(narrator_fixed * n)
+void fixed_destroy(narrator_fixed * n)
 {
-  if(n)
-  {
-    free(n->s);
-  }
-  free(n);
+  free(n->s);
 }
 
 //
@@ -99,11 +95,16 @@ API xapi narrator_fixed_create(narrator ** const restrict rv, size_t size)
   n = 0;
 
 finally:
-  fixed_free(&n->fixed);
+  narrator_free(n);
 coda;
 }
 
 API const char * narrator_fixed_buffer(narrator * const restrict n)
 {
   return n->fixed.s;
+}
+
+API size_t narrator_fixed_size(narrator * const restrict n)
+{
+  return n->fixed.l;
 }

@@ -25,7 +25,7 @@ logger_category * logs = (logger_category []) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { type : LOGGER_STREAM_FD , fd : 1 , expr : "+FOO", attr : L_CATEGORY | L_DATESTAMP | L_DISCOVERY  }
-  , { type : LOGGER_STREAM_FD , fd : 2 , expr : "+BAR", attr : L_NOCOLOR }
+    { type : LOGGER_STREAM_FD , fd : 1 , expr : "+FOO", attr : L_CATEGORY | L_DATESTAMP_OFF }
+//  , { type : LOGGER_STREAM_FD , fd : 2 , expr : "+BAR", attr : L_NOCOLOR }
   , { }
 };

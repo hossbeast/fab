@@ -23,6 +23,7 @@
 #include "narrator.h"
 #include "narrator/file.h"
 #include "narrator/fixed.h"
+#include "narrator/record.h"
 #include "valyria/pstring.h"
 
 #include "internal.h"
@@ -68,53 +69,55 @@ static list * registered;
 //  streamp    - stream to write to
 //  ids        - bitmask of ids for the message
 //  base_attr  - category attributes + log site attributes
-//  message    - 
+//  b          - 
+//  l          - 
 //  time_msec  - 
 //
-static xapi __attribute__((nonnull)) stream_write(stream * const restrict streamp, const uint64_t ids, const uint32_t base_attr, const pstring * const restrict message, const long time_msec)
+static xapi __attribute__((nonnull)) stream_write(stream * const restrict streamp, const uint64_t ids, const uint32_t base_attr, const char * const restrict b, size_t l, const long time_msec)
 {
   enter;
+
+  // enable say
+  narrator * N = streamp->narrator;
 
   // effective attributes : category + log site + stream
   uint32_t attr = attr_combine(base_attr, streamp->attr);
 
-  fatal(psclear, streamp->buffer);
-
   int prev = 0;
-  if(attr & COLOR_OPT)
+  if((attr & COLOR_OPT) && (attr & COLOR_OPT) != L_NOCOLOR)
   {
     if((attr & COLOR_OPT) == L_RED)
-      fatal(pscatw, streamp->buffer, COLOR(RED));
+      sayw(COLOR(RED));
     else if((attr & COLOR_OPT) == L_GREEN)
-      fatal(pscatw, streamp->buffer, COLOR(GREEN));
+      sayw(COLOR(GREEN));
     else if((attr & COLOR_OPT) == L_YELLOW)
-      fatal(pscatw, streamp->buffer, COLOR(YELLOW));
+      sayw(COLOR(YELLOW));
     else if((attr & COLOR_OPT) == L_BLUE)
-      fatal(pscatw, streamp->buffer, COLOR(BLUE));
+      sayw(COLOR(BLUE));
     else if((attr & COLOR_OPT) == L_MAGENTA)
-      fatal(pscatw, streamp->buffer, COLOR(MAGENTA));
+      sayw(COLOR(MAGENTA));
     else if((attr & COLOR_OPT) == L_CYAN)
-      fatal(pscatw, streamp->buffer, COLOR(CYAN));
+      sayw(COLOR(CYAN));
     else if((attr & COLOR_OPT) == L_WHITE)
-      fatal(pscatw, streamp->buffer, COLOR(WHITE));
+      sayw(COLOR(WHITE));
 
     else if((attr & COLOR_OPT) == L_BOLD_RED)
-      fatal(pscatw, streamp->buffer, COLOR(BOLD_RED));
+      sayw(COLOR(BOLD_RED));
     else if((attr & COLOR_OPT) == L_BOLD_GREEN)
-      fatal(pscatw, streamp->buffer, COLOR(BOLD_GREEN));
+      sayw(COLOR(BOLD_GREEN));
     else if((attr & COLOR_OPT) == L_BOLD_YELLOW)
-      fatal(pscatw, streamp->buffer, COLOR(BOLD_YELLOW));
+      sayw(COLOR(BOLD_YELLOW));
     else if((attr & COLOR_OPT) == L_BOLD_BLUE)
-      fatal(pscatw, streamp->buffer, COLOR(BOLD_BLUE));
+      sayw(COLOR(BOLD_BLUE));
     else if((attr & COLOR_OPT) == L_BOLD_MAGENTA)
-      fatal(pscatw, streamp->buffer, COLOR(BOLD_MAGENTA));
+      sayw(COLOR(BOLD_MAGENTA));
     else if((attr & COLOR_OPT) == L_BOLD_CYAN)
-      fatal(pscatw, streamp->buffer, COLOR(BOLD_CYAN));
+      sayw(COLOR(BOLD_CYAN));
     else if((attr & COLOR_OPT) == L_BOLD_WHITE)
-      fatal(pscatw, streamp->buffer, COLOR(BOLD_WHITE));
+      sayw(COLOR(BOLD_WHITE));
   }
 
-  if(attr & DATESTAMP_OPT)
+  if((attr & DATESTAMP_OPT) == L_DATESTAMP)
   {
     struct tm tm;
     time_t time = time_msec / 1000;
@@ -125,7 +128,7 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
       , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
 
-    fatal(pscatf, streamp->buffer, "%4d %s %02d %02d:%02d:%02d"
+    sayf("%4d %s %02d %02d:%02d:%02d"
       , tm.tm_year + 1900
       , months[tm.tm_mon]
       , tm.tm_mday
@@ -136,7 +139,7 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
     prev = 1;
   }
 
-  if(attr & CATEGORY_OPT)
+  if((attr & CATEGORY_OPT) == L_CATEGORY)
   {
     // emit the name of the category with the least id
     uint64_t bit = UINT64_C(1);
@@ -151,27 +154,27 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
     logger_category * category = 0;
     fatal(category_byid, bit, &category);
     if(prev)
-      fatal(pscats, streamp->buffer, " ");
-    fatal(pscatf, streamp->buffer, "%*.*s", category_name_max_length, category->namel, category->name);
+      says(" ");
+    sayf("%*.*s", category_name_max_length, category->namel, category->name);
     prev = 1;
   }
 
   if(prev)
-    fatal(pscats, streamp->buffer, " ");
+    says(" ");
 
   // the mssage
-  fatal(pscatw, streamp->buffer, message->s, message->l);
+  sayw(b, l);
   prev = 1;
 
-  if(attr & DISCOVERY_OPT)
+  if((attr & DISCOVERY_OPT) == L_DISCOVERY)
   {
     // emit the names of all tagged categories
     if(ids & L_ALL)
     {
       if(prev)
-        fatal(pscats, streamp->buffer, " ");
+        says(" ");
       prev = 1;
-      fatal(pscats, streamp->buffer, "{ ");
+      says("{ ");
 
       uint64_t bit = UINT64_C(1);
       while(bit)
@@ -182,31 +185,31 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
           fatal(category_byid, bit, &category);
 
           if((bit - 1) & ids)
-            fatal(pscats, streamp->buffer, " | ");
+            says(" | ");
 
-          fatal(pscatf, streamp->buffer, "%.*s", category->namel, category->name);
-
+          sayf("%.*s", category->namel, category->name);
         }
 
         bit <<= 1;
       }
 
-      fatal(pscats, streamp->buffer, " }");
+      says(" }");
     }
   }
 
-  if(attr & COLOR_OPT)
+  if((attr & COLOR_OPT) && (attr & COLOR_OPT) != L_NOCOLOR)
   {
-    fatal(pscatw, streamp->buffer, COLOR(NONE));
+    sayw(COLOR(NONE));
   }
 
   // message terminator
   if(streamp->type == LOGGER_STREAM_FD)
   {
-    fatal(pscatc, streamp->buffer, '\n');
+    sayc('\n');
   }
 
-  fatal(narrator_sayw, streamp->narrator, streamp->buffer->s, streamp->buffer->l);
+  // flush
+  fatal(narrator_record_write, N);
 
   finally : coda;
 }
@@ -224,14 +227,14 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
     streamp->namel = strlen(streamp->name);
   }
   streamp->attr = def->attr;
-  fatal(pscreate, &streamp->buffer);
   fatal(list_create, &streamp->filters, filter_free);
 
   streamp->type = def->type;
   if(def->type == LOGGER_STREAM_FD)
   {
-    fatal(narrator_file_create, &streamp->narrator, def->fd);
+    fatal(narrator_file_create, &streamp->narrator_base, def->fd);
   }
+  fatal(narrator_record_create, &streamp->narrator, streamp->narrator_base);
 
   // parse and attach to just this stream
   if(def->expr)
@@ -252,8 +255,8 @@ static void __attribute__((nonnull)) stream_destroy(stream * const restrict stre
   {
     free(streamp->name);
     list_free(streamp->filters);
-    psfree(streamp->buffer);
     narrator_free(streamp->narrator);
+    narrator_free(streamp->narrator_base);
   }
 }
 
@@ -277,7 +280,7 @@ void stream_teardown()
   map_xfree(&streams_byid);
 }
 
-xapi streams_write(const uint64_t ids, const uint32_t site_attr, const pstring * restrict message, const long time_msec)
+xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * const restrict b, size_t l,  const long time_msec)
 {
   enter;
 
@@ -310,14 +313,14 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const pstring *
     stream * streamp = array_get(g_streams, x);
     if(stream_would(streamp, ids))
     {
-      fatal(stream_write, streamp, ids, base_attr, message, time_msec);
+      fatal(stream_write, streamp, ids, base_attr, b, l, time_msec);
     }
   }
 
   if(array_size(g_streams) == 0)
   {
     // the default is to write everything to stderr
-    int __attribute__((unused)) _r = write(2, message->s, message->l);
+    int __attribute__((unused)) _r = write(2, b, l);
     _r = write(2, "\n", 1);
   }
 
@@ -390,20 +393,22 @@ xapi streams_report()
 {
   enter;
 
-  narrator * N = 0;
-  fatal(narrator_fixed_create, &N, 2048);
+  int mark = 0;
+
+  logs(L_LOGGER, "liblogger streams configuration");
 
   int x;
   for(x = 0; x < g_streams->l; x++)
   {
-    fatal(narrator_seek, N, 0, SEEK_SET, 0);
+    fatal(log_start, L_LOGGER, &mark);
+    narrator * N = log_narrator();
+    says(" ");
     fatal(stream_say, array_get(g_streams, x), N);
-
-    logs(L_LOGGER, narrator_fixed_buffer(N));
+    fatal(log_finish, &mark);
   }
 
 finally:
-  narrator_free(N);
+  fatal(log_finish, &mark);
 coda;
 }
 
@@ -426,6 +431,9 @@ xapi stream_say(stream * const restrict streamp, narrator * restrict N)
     fatal(filter_say, list_get(streamp->filters, x), N);
   }
   says(" ]");
+
+  if(streamp->type == LOGGER_STREAM_FD)
+    sayf(", fd : %d", narrator_file_fd(streamp->narrator_base));
 
   finally : coda;
 }
