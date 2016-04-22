@@ -257,6 +257,21 @@ API void xapi_frame_set(
 	frame_set(etab, code, parent_index, file, line, func);
 }
 
+API void xapi_frame_set_infos(
+    const etable * const restrict etab
+  , const xapi_code code
+  , const xapi_frame_index parent_index
+  , const char * const restrict key
+  , const char * const restrict vstr
+  , const char * const restrict file
+  , const int line
+  , const char * const restrict func
+)
+{
+	frame_set(etab, code, parent_index, file, line, func);
+  xapi_info_adds(key, vstr);
+}
+
 API void xapi_frame_set_infow(
     const etable * const restrict etab
   , const xapi_code code

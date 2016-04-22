@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <errno.h>
-#include <string.h>
 
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
@@ -60,7 +59,12 @@
   } while(0)
 
 #define tfails(etab, code, key, vstr)   \
-  tfailw(etab, code, key, vstr, strlen(vstr))
+  do {                                                    \
+    /* populate the current stack frame */                \
+    XAPI_FRAME_SET_INFOS(etab, code, key, vstr);          \
+    /* jump to the finally label */                       \
+    goto XAPI_FINALIZE;                                   \
+  } while(0)
 
 #define tfailw(etab, code, key, vbuf, vlen)               \
   do {                                                    \
@@ -185,7 +189,7 @@ XAPI_LEAVE:                         \
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOS(etab, code, key, vstr) \
-  XAPI_FRAME_SET_INFOW(etab, code, key, vstr, strlen(vstr))
+	xapi_frame_set_infos(etab, code, __xapi_frame_index[1], key, vstr, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOW(etab, code, key, vbuf, vlen)	\
@@ -211,7 +215,7 @@ XAPI_LEAVE:                         \
 //  frame for that function invocation.
 //
 #define xapi_infos(key, vstr)                      \
-  xapi_info_addw(key, vstr, strlen(vstr))
+  xapi_info_adds(key, vstr)
 
 #define xapi_infow(key, vbuf, vlen)                \
   xapi_info_addw(key, vbuf, vlen)

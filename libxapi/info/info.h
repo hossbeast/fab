@@ -20,6 +20,17 @@
 
 #define restrict __restrict
 
+/// xapi_info_adds
+//
+// SUMMARY
+//  add an info key/value pair to a calltree frame (no-op if key or value is null or 0-length)
+//
+// PARAMETERS
+//  [key]  - key string
+//  [vstr] - value string
+//
+void xapi_info_adds(const char * const restrict key, const char * const restrict vstr);
+
 /// xapi_info_addw
 //
 // SUMMARY

@@ -114,6 +114,18 @@ void xapi_frame_set(
 )
   __attribute__((nonnull(6)));
 
+void xapi_frame_set_infos(
+    const struct etable * const restrict etab
+  , const xapi_code code
+  , const xapi_frame_index parent_index
+  , const char * const restrict key
+  , const char * const restrict vstr
+  , const char * const restrict file
+  , const int line
+  , const char * const restrict func
+)
+  __attribute__((nonnull(8)));
+
 void xapi_frame_set_infow(
     const struct etable * const restrict etab
   , const xapi_code code

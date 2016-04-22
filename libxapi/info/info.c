@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
+
 #include "internal.h"
 #include "info.internal.h"
 #include "calltree.internal.h"
@@ -56,6 +58,11 @@ void info_thaw(char * const restrict mb, info * restrict i)
 //
 // api
 //
+
+API void xapi_info_adds(const char * const key, const char * const vstr)
+{
+  xapi_info_addw(key, vstr, strlen(vstr));
+}
 
 API void xapi_info_addw(const char * const key, const char * const vbuf, size_t vlen)
 {
