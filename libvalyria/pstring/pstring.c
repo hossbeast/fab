@@ -157,7 +157,7 @@ API void psfree(pstring * ps)
   free(ps);
 }
 
-API void psxfree(pstring ** ps)
+API void psifree(pstring ** ps)
 {
   psfree(*ps);
   *ps = 0;

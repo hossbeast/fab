@@ -68,12 +68,12 @@ xapi map_createx(map ** const restrict m, void (*destructor)(const char *, MAP_V
 //
 void map_free(map * const restrict map);
 
-/// map_xfree
+/// map_ifree
 //
 // SUMMARY
-//  free a map with xfree semantics
+//  free a map with ifree semantics
 //
-void map_xfree(map ** const restrict map)
+void map_ifree(map ** const restrict map)
   __attribute__((nonnull));
 
 /// map_set

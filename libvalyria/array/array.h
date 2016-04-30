@@ -77,12 +77,12 @@ xapi array_createx(array ** const restrict ar, size_t esz, void (*destroy_elemen
 //
 void array_free(array * const ar);
 
-/// array_xfree
+/// array_ifree
 //
 // SUMMARY
-//  free a array with xfree semantics
+//  free a array with ifree semantics
 //
-void array_xfree(array ** const ar)
+void array_ifree(array ** const ar)
   __attribute__((nonnull));
 
 /// array_size

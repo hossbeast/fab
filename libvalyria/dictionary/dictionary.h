@@ -69,12 +69,12 @@ xapi dictionary_createx(dictionary ** const restrict m, size_t vsz, void (*destr
 //
 void dictionary_free(dictionary * const restrict dictionary);
 
-/// dictionary_xfree
+/// dictionary_ifree
 //
 // SUMMARY
-//  free a dictionary with xfree semantics
+//  free a dictionary with ifree semantics
 //
-void dictionary_xfree(dictionary ** const restrict dictionary)
+void dictionary_ifree(dictionary ** const restrict dictionary)
   __attribute__((nonnull));
 
 /// dictionary_set

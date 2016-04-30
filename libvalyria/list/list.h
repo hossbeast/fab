@@ -76,12 +76,12 @@ xapi list_createx(list ** const restrict li, void (*free_element)(LIST_ELEMENT_T
 //
 void list_free(list * const restrict li);
 
-/// list_xfree
+/// list_ifree
 //
 // SUMMARY
-//  free a list with xfree semantics
+//  free a list with ifree semantics
 //
-void list_xfree(list ** const restrict li)
+void list_ifree(list ** const restrict li)
   __attribute__((nonnull));
 
 /// list_size

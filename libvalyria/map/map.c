@@ -441,7 +441,7 @@ API void map_free(map* const restrict m)
   free(m);
 }
 
-API void map_xfree(map** const restrict m)
+API void map_ifree(map** const restrict m)
 {
   map_free(*m);
   *m = 0;

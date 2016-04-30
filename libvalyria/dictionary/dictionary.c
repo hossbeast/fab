@@ -80,9 +80,9 @@ API void dictionary_free(dictionary* const restrict m)
   map_free(m);
 }
 
-API void dictionary_xfree(dictionary** const restrict m)
+API void dictionary_ifree(dictionary** const restrict m)
 {
-  map_xfree((void*)m);
+  map_ifree((void*)m);
 }
 
 API size_t dictionary_table_size(const dictionary * const restrict m)

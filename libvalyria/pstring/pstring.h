@@ -98,15 +98,15 @@ xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c)
 //
 void psfree(pstring * restrict ps);
 
-/// psxfree
+/// psifree
 //
 // SUMMARY
-//  free a pstring with xfree semantics
+//  free a pstring with ifree semantics
 //
 // PARAMETERS
 //  p - pstring
 //
-void psxfree(pstring ** const restrict ps)
+void psifree(pstring ** const restrict ps)
 	__attribute__((nonnull));
 
 /// psclear

@@ -41,9 +41,9 @@ API void array_free(array * const restrict ar)
   return list_free((void*)ar);
 }
 
-API void array_xfree(array ** const restrict ar)
+API void array_ifree(array ** const restrict ar)
 {
-  list_xfree((void*)ar);
+  list_ifree((void*)ar);
 }
 
 API size_t array_size(const array * const restrict ar)

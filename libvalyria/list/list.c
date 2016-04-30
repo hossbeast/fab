@@ -157,7 +157,7 @@ API void list_free(list * const restrict li)
   free(li);
 }
 
-API void list_xfree(list ** const restrict li)
+API void list_ifree(list ** const restrict li)
 {
   list_free(*li);
   *li = 0;
