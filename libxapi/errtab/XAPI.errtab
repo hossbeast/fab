@@ -1,21 +1,23 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	ILLFATAL	non-xapi function invoked with fatal
-2	NOFATAL		xapi function invoked without fatal
-3 ILLFAIL   fail invoked without a code or table     
-4 NOMEM     Out of memory (not calltree related)
+1 ILLFATAL  non-xapi function invoked with fatal
+2 NOFATAL   xapi function invoked without fatal
+3 NOCODE    fail invoked without a code
+4 NOTABLE   fail invoked without a table
+5 NOMEM     out of memory (not calltree related)
+6 AUNLOAD   asymmetric load-unload sequence

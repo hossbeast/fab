@@ -47,7 +47,7 @@ static size_t error_trace(char * const dst, const size_t sz, const error * const
 
   }
 #if XAPI_RUNTIME_CHECKS
-  else if(e->etab == perrtab_XAPI && e->code == XAPI_ILLFAIL)
+  else if(e->etab == perrtab_XAPI && (e->code == XAPI_NOCODE || e->code == XAPI_NOTABLE))
   {
 		SAY("[%s:%s] %s"
 			, e->etab->name

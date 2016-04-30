@@ -64,10 +64,13 @@ static void frame_set(
 {
 #if XAPI_RUNTIME_CHECKS
   // code and table are specified together
-  if((code == 0) ^ (etab == 0))
+  if(!code ^ !etab)
   {
+    if(!code)
+      code = XAPI_NOCODE;
+    else if(!etab)
+      code = XAPI_NOTABLE;
     etab = perrtab_XAPI;
-    code = XAPI_ILLFAIL;
   }
 #endif
 
@@ -76,10 +79,13 @@ static void frame_set(
 
 #if XAPI_RUNTIME_CHECKS
   // code and table are required for the base frame
-  if(g_calltree->frames.l == 1 && !code)
+  if(g_calltree->frames.l == 1 && (!code || !etab))
   {
+    if(!code)
+      code = XAPI_NOCODE;
+    else if(!etab)
+      code = XAPI_NOTABLE;
     etab = perrtab_XAPI;
-    code = XAPI_ILLFAIL;
   }
 #endif
 
@@ -134,6 +140,7 @@ void frame_teardown()
 {
 #if XAPI_RUNTIME_CHECKS
   free(g_frame_addresses.v);
+  g_frame_addresses.v = 0;
 #endif
 }
 

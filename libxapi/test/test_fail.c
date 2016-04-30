@@ -16,6 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "test.h"
+#include "xapi.h"
+#include "xapi/trace.h"
 
 /*
 
@@ -82,11 +84,23 @@ xapi test_fail_intent()
 {
   enter;
 
+#if XAPI_STACKTRACE_INCL
+  char space[2048];
+  size_t z;
+#endif
+
   xapi_fail_intent();
   xapi_infos("foo", "bar");
+  xapi_infos("baz", "qux");
   fail(TEST_ERROR_ONE);
 
-  finally : coda;
+finally:
+#if XAPI_STACKTRACE_INCL
+  // ensure that the trace contains both infos
+  z = xapi_trace_full(space, sizeof(space));
+  assertf(strstr(space, "foo=bar"), "expected kvp foo=bar, actual trace\n**\n%.*s\n**\n", (int)z, space);
+#endif
+coda;
 }
 
 int main()

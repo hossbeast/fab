@@ -23,7 +23,7 @@
 /*
 
 SUMMARY
- verify that runtime checks catch ILLFATAL/NOFATAL/ILLFAIL errors
+ verify that runtime checks catch ILLFATAL/NOFATAL/NOCODE/NOTABLE errors
 
 */
 
@@ -118,10 +118,10 @@ int main()
   assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
 
   exit = test_illfail_noetab();
-  assert_exit(exit, perrtab_XAPI, XAPI_ILLFAIL);
+  assert_exit(exit, perrtab_XAPI, XAPI_NOTABLE);
 
   exit = test_illfail_nocode();
-  assert_exit(exit, perrtab_XAPI, XAPI_ILLFAIL);
+  assert_exit(exit, perrtab_XAPI, XAPI_NOCODE);
 #endif
 
   // victory

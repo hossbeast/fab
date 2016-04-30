@@ -18,6 +18,8 @@
 #ifndef _XAPI_TRACE_H
 #define _XAPI_TRACE_H
 
+#include <sys/types.h>
+
 struct calltree;
 
 #define restrict __restrict

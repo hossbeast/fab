@@ -29,17 +29,18 @@ of the calling convention.
 To use this library, you must specify an error propagation mode by defining one
 of the following macros:
 
+XAPI_MODE_STACKTRACE_CHECKS
 XAPI_MODE_STACKTRACE
 XAPI_MODE_ERRORCODE
 
-STACKTRACE requires a runtime link against libxapi.so, ERRCODE does not
+STACKTRACE* modes require a runtime link against libxapi.so, ERRCODE does not
 
 */
 
-// types for components of xapi exit value
-
 // return type for xapi functions, called its exit value
 typedef uint32_t xapi;
+
+// types for components of xapi exit value
 typedef uint16_t xapi_code;
 typedef uint16_t xapi_etable_id;
 
@@ -59,14 +60,6 @@ typedef struct etable
   xapi_code       min;   // min err
   xapi_code       max;   // max err
 } etable;
-
-/*
-** declared by the application
-**  perrtab - pointer to etable
-*/
-#ifndef perrtab
-#define perrtab ((void*)0)
-#endif
 
 // pull in the appropriate implementation
 #if XAPI_MODE_STACKTRACE_CHECKS
