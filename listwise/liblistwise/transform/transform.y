@@ -15,16 +15,19 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-%code top {
+%code requires {
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <stdint.h>
 	#include <string.h>
 
-	#include "transform.def.h"
-
 	#include "xlinux.h"
 
+	#include "transform.def.h"
+  #include "operator.internal.h"
+}
+
+%code top {
 	// defined in transform.lex.o
 	int transform_yylex(void* yylvalp, void* yyllocp, void* scanner);
 }

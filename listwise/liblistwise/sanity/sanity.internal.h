@@ -19,6 +19,8 @@
 #define _LISTWISE_SANITY_INTERNAL_H
 
 #include "xapi.h"
+#include "sanity.h"
+#include "lwx.internal.h"
 
 #define restrict __restrict
 

@@ -23,8 +23,6 @@
 #include "listwise/operator.h"
 #include "listwise/lwx.h"
 
-#include "xapi/SYS.errtab.h"
-
 #include "xlinux.h"
 #include "parseint.h"
 #include "strutil.h"

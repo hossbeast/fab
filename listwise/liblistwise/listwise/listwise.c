@@ -15,45 +15,76 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+
 #include "xapi.h"
 #include "xapi/errtab.h"
+#include "xapi/XAPI.errtab.h"
 #include "xlinux.h"
+#include "narrator.h"
+#include "logger.h"
 
 #include "internal.h"
 #include "listwise/PCRE.errtab.h"
 #include "listwise/LW.errtab.h"
+#include "operators.internal.h"
+#include "lwx.internal.h"
+#include "object.internal.h"
 
 #define restrict __restrict
+
+static int handles;
 
 //
 // api
 //
 
-API xapi listwise_setup()
+API xapi listwise_load()
 {
   enter;
 
-  static int setup;
-
-  if(!setup)
+  if(handles == 0)
   {
+    // dependencies
+    fatal(xlinux_load);
+    fatal(narrator_load);
+    fatal(logger_load);
+
+    // modules
     fatal(xapi_errtab_register, perrtab_PCRE);
     fatal(xapi_errtab_register, perrtab_LW);
     fatal(operators_setup);
     fatal(lwx_setup);
-
-    setup = 1;
   }
-
-  char * foo;
-  fatal(xmalloc, &foo, 12);
+  handles++;
 
   finally : coda;
 }
 
-API void listwise_teardown()
+API xapi listwise_unload()
 {
-  operators_teardown();
-  object_teardown();
-  lwx_teardown();
+  enter;
+
+  if(--handles == 0)
+  {
+    // modules
+    object_teardown();
+    lwx_teardown();
+    fatal(operators_release);
+
+    // dependencies
+    fatal(xlinux_unload);
+    fatal(narrator_unload);
+    fatal(logger_unload);
+  }
+  else if(handles < 0)
+  {
+    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "liblistwise");
+  }
+
+  finally : coda;
 }
+
+// * my dependencies are not unloaded until I am unloaded
+// * failure to load will lead will not increment handles, and unload will be no-op
+// * I can only unload if I and my dependencies loaded successfully

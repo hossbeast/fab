@@ -17,15 +17,15 @@
 
 #include <stdio.h>
 #include <string.h>
-
 #include <pcre.h>
 
-#include "internal.h"
-
-/* libpcre error table */
-#include "listwise/PCRE.errtab.h"
-
+#include "xapi.h"
 #include "xlinux.h"
+
+#include "internal.h"
+#include "re.internal.h"
+#include "PCRE.errtab.h"
+
 #include "macros.h"
 
 API xapi re_compile(char* s, struct re* re, char* mod)
@@ -44,7 +44,7 @@ API xapi re_compile(char* s, struct re* re, char* mod)
 	int off = -1;
 	if((re->c_pcre = pcre_compile(s, reopts, &errstr, &off, 0)) == 0)
 	{
-		tfails(perrtab_PCRE, 0, errstr);
+		tfails(perrtab_PCRE, 0, "message", errstr);
 	}
 
 	errstr = 0;
@@ -52,7 +52,7 @@ API xapi re_compile(char* s, struct re* re, char* mod)
 	re->c_pcre_extra = pcre_study(re->c_pcre, 0, &errstr);
 	if(errstr)
 	{
-		tfails(perrtab_PCRE, 0, errstr);
+		tfails(perrtab_PCRE, 0, "message", errstr);
 	}
 
 	int r;
@@ -62,11 +62,11 @@ API xapi re_compile(char* s, struct re* re, char* mod)
 	}
 
 finally:
-	XAPI_INFOF("pcre", "%s", s);
+	xapi_infof("pcre", "%s", s);
 	if(mod)
-		XAPI_INFOF("mod", "%s", mod);
+		xapi_infof("mod", "%s", mod);
 	if(off)
-		XAPI_INFOF("off", "%d", off);
+		xapi_infof("off", "%d", off);
 coda;
 }
 

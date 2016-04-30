@@ -21,12 +21,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "sanity.h"
-#include "internal.h"
-
+#include "xapi.h"
 #include "xlinux.h"
+#include "valyria/map.h"
+
+#include "internal.h"
+#include "sanity.internal.h"
+#include "logging.internal.h"
+#include "object.internal.h"
+
 #include "macros.h"
-#include "map.h"
 
 #define restrict __restrict
 

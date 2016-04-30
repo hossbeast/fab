@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_WINDOW_INTERNAL_H
 #define _LISTWISE_WINDOW_INTERNAL_H
 
+#include "window.h"
+
 #define restrict __restrict
 
 /// lstack_windows_activate

@@ -22,7 +22,8 @@
 	#include "transform/transform.def.h"
 	#include "transform/transform.tab.h"
 	#include "transform/transform.tokens.h"
-	#include "transform/genscan.h"
+	#include "genscan.internal.h"
+  #include "operators.internal.h"
 
 	#include "macros.h"
 

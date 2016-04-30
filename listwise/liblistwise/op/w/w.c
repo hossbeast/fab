@@ -55,13 +55,13 @@ xapi op_validate(operation* o)
   enter;
 
 	if(o->argsl != 1 && (o->argsl % 2) != 0)
-		failf(LW_ARGSNUM, "actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "expected %s", "actual %d", "1 or even", o->argsl);
 
 	int x;
 	for(x = 0; x < o->argsl; x++)
 	{
 		if(o->args[x]->itype != ITYPE_I64)
-			failf(LW_ARGSDOM, "should be i64");
+			failf(LW_ARGSDOM, "expected %s", "actual %d", "i64", o->args[x]->itype);
 	}
 
 	finally : coda;

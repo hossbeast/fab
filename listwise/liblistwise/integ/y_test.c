@@ -18,12 +18,37 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-	.tests = (xunit_test*[]) {
+    .setup = listwise_test_setup
+  , .release = listwise_test_release
+	, .tests = (xunit_test*[]) {
+
+/* sx : WINDOWS_STAGE | SELECTION_STAGE */
+
+			/* sy : selections */
 		  (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sx/z"
-				, .final = (char*[]) { "foo", "foo.z", "foo.a.z", "foo.a.b.z", 0 }
+				, .xsfm = "sx/z sy"
+				, .final = (char*[]) { "foo.z", "foo.a.z", "foo.a.b.z", 0 }
 		  }}
+
+			/* wy : windows */
+		, (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+				, .xsfm = "sx/z wy"
+				, .final = (char*[]) { "z", "z", "z", 0 }
+		  }}
+
+			/* selections and windows */
+		, (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+				, .xsfm = "sx/z y"
+				, .final = (char*[]) { "z", "z", "z", 0 }
+		  }}
+
+/* sy WINDOWS_ACTIVATE | SELECTION_STAGE */
+/* sy WINDOWS_STAGE | SELECTION_ACTIVATE */
+
+/*
 		, (listwise_test[]){{ .entry = listwise_test_entry
 				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
 				, .xsfm = "sx/b/z"
@@ -44,6 +69,7 @@ xunit_unit xunit = {
 				, .xsfm = "sxf/b.c/z"
 				, .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
 		  }}
+*/
 		, 0
 	}
 };

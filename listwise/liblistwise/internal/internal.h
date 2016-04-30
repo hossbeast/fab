@@ -18,52 +18,15 @@
 #ifndef _LISTWISE_INTERNAL_H
 #define _LISTWISE_INTERNAL_H
 
-//
-// api (library users)
-//
 #include "listwise.h"
-#include "describe.h"
-#include "exec.h"
-#include "fs.h"
-#include "transform.h"
-#include "genscan.h"
-#include "iterate.h"
-#include "logging.h"
-#include "lstack.h"
-#include "lwx.h"
-#include "object.h"
-#include "operator.h"
-#include "operators.h"
-#include "re.h"
-#include "selection.h"
-#include "tune.h"
-#include "window.h"
 
-//
-// operator (listwise operators)
-//
-#include "logging.internal.h"
-
-//
-// internal
-//
-#include "describe.internal.h"
-#include "operator.internal.h"
-#include "operators.internal.h"
-#include "window.internal.h"
-#include "sanity.internal.h"
-#include "object.internal.h"
-#include "selection.internal.h"
-#include "transform.internal.h"
-#include "lwx.internal.h"
+// visibility declarations
+#define API __attribute__((visibility("protected")))
+#define APIDATA
 
 // error tables
 #include "LW.errtab.h"
 #undef perrtab
 #define perrtab perrtab_LW
-
-// visibility declarations
-#define API __attribute__((visibility("protected")))
-#define APIDATA
 
 #endif

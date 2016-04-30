@@ -15,9 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
-
+#include "xapi.h"
 #include "xlinux.h"
+
+#include "internal.h"
+#include "lwx.internal.h"
+#include "lstack.internal.h"
+
 #include "wstdlib.h"
 
 #define restrict __restrict
@@ -44,7 +48,7 @@ void lwx_teardown()
 {
 	if(listwise_identity)
 		free(listwise_identity->s);
-	free(listwise_identity);
+	ifree(&listwise_identity);
 }
 
 ///

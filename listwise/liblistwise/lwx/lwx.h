@@ -24,7 +24,7 @@
 //
 // contains the lstack - stack of lists of rows
 //
-struct lwx
+typedef struct lwx
 {
 	struct // stack of lists
 	{
@@ -125,6 +125,6 @@ struct lwx
 
 	uint64_t  flags;		// available for application-use
 	void *    ptr;			// available for application-use
-};
+} lwx;
 
 #endif

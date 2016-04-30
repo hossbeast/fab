@@ -60,7 +60,7 @@ xapi op_validate(operation* o)
 	if(o->argsl)
 	{
 		if(o->args[0]->itype != ITYPE_I64)
-			fails(LW_ARGSDOM, "should be i64");
+			failf(LW_ARGSDOM, "expected %s", "actual %d", "i64", o->args[0]->itype);
 	}
 
 	finally : coda;

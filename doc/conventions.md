@@ -46,25 +46,41 @@ xapi transform_canon_say(const transform * trans, narrator * restrict _narrator)
 xapi bits_say(const uint64_t bits, narrator * restrict _narrator)
 ```
 
-## module setup / teardown
+# module lifecycle management
+
+single-invocation initialization and teardown
+
+## setup / teardown / release
 
 ```
-xapi module_setup()
-void module_teardown()
+xapi module_setup()         # affirmative initialization
+void module_teardown()      # affirmative resource cleanup
+xapi module_release()       # affirmative resource cleanup that may fail (close, dlclose)
 ```
 
-## alloc / free / reset
+## load / unload
 
-for heap allocated objects
+reference-counted initialization and teardown
 
 ```
-xapi foo_alloc(foo **)        # allocates foo
-xapi foo_create(foo **)       # synonym
-xapi foo_mk(foo * e, foo **)  # like _alloc, reuse an existing instance
-void foo_free(foo *)          # release resources
-void foo_xfree(foo ** const restrict)        # idempotent free
-void foo_reset(foo *)         # set lengths to zero, preserve allocations
-void foo_clear(foo *)         # synonym
+xapi libname_load()         # increment reference count, initialization on zero
+xapi libname_unload()       # decrement reference count, release on zero
+```
+
+# object lifecycle management
+
+## alloc / create / mk / free / ifree / reset / clear
+
+default strategy for heap allocated objects
+
+```
+xapi foo_alloc(foo **)                # allocate foo
+xapi foo_create(foo **)               # synonym
+xapi foo_mk(foo * e, foo **)          # like _alloc, reuse an existing instance
+void foo_free(foo *)                  # release resources
+void foo_ifree(foo ** const restrict) # safe and idempotent free
+void foo_reset(foo *)                 # set lengths to zero, preserve allocations
+void foo_clear(foo *)                 # synonym
 ```
 
 ## dispose / recycle
@@ -72,7 +88,7 @@ void foo_clear(foo *)         # synonym
 when releasing resources can fail (like file descriptors)
 
 ```
-xapi foo_dispose(foo *)       # idempotent like xfree, can fail
+xapi foo_dispose(foo *)       # idempotent like ifree, can fail
 xapi foo_recycle(foo *)       # idempotent like reset, can fail
 ```
 
@@ -96,8 +112,7 @@ w _name_ (wrapper)
   fails exactly when the underlying function fails
 
 x _name_ (xapi)
-* xapi-enabled proxy function that invokes fatality exactly when the underlying
-  function fails
+* xapi-enabled proxy function that fails exactly when the underlying function fails
 
 u _name_ (union)
 * fails only in some subset of failure cases of the underlying function as
@@ -113,8 +128,8 @@ e _name_  (extended)
 * performs the same operation as the underlying function on another data type
 
 i _name_  (idempotent)
-* accepts a pointer to an identifier to some resource and, upon successful
-  completion, sets the value pointed to to the identity value for that resource
+* accepts a pointer to a handle for some resource and, upon successful
+  completion, sets the value pointed at to the identity value for that resource
   type
 
 _name_ vf

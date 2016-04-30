@@ -15,24 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_TEST_H
-#define _LISTWISE_TEST_H
+#ifndef _LISTWISE_EXEC_INTERNAL_H
+#define _LISTWISE_EXEC_INTERNAL_H
 
-#include "xapi.h"
-
-struct listwise_test;
-#define TEST_TYPE struct listwise_test
-#include "xunit.h"
-
-xapi listwise_test_entry(const struct listwise_test*)
-	__attribute__((nonnull));
-
-typedef struct listwise_test
-{
-	xunit_test;
-	char ** init;
-	char * xsfm;
-	char ** final;
-} listwise_test;
+#include "exec.h"
 
 #endif

@@ -15,25 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "listwise_test.h"
+#ifndef _LISTWISE_GENSCAN_INTERNAL_H
+#define _LISTWISE_GENSCAN_INTERNAL_H
 
-xunit_unit xunit = {
-	.tests = (xunit_test*[]) {
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "a", "c", "b", "d", 0 }
-				, .xsfm = "ss"
-				, .final = (char*[]) { "a", "b", "c", "d", 0 }
-			}}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "a", "c", "b", "d", 0 }
-				, .xsfm = "ss"
-				, .final = (char*[]) { "a", "b", "c", "d", 0 }
-			}} 
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "a", "c", "b", "d", 0 }
-				, .xsfm = "ss"
-				, .final = (char*[]) { "a", "b", "c", "d", 0 }
-			}} 
-		, 0
-	}
-};
+#include "genscan.h"
+
+#undef restrict
+#endif

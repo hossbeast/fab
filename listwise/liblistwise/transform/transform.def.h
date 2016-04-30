@@ -22,6 +22,7 @@
 #include <stdint.h>
 
 #include "internal.h"
+#include "transform.h"
 
 #include "yyutil.h"
 

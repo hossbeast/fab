@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_OBJECT_INTERNAL_H
 #define _LISTWISE_OBJECT_INTERNAL_H
 
+#include "object.h"
+
 struct map;	// map.h
 
 // collection of registered object types with lookup index by type id

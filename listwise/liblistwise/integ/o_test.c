@@ -18,25 +18,32 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-	.tests = (xunit_test*[]) {
+    .setup = listwise_test_setup
+  , .release = listwise_test_release
+  , .tests = (xunit_test*[]) {
+
+/* s : WINDOWS_STAGE | SELECTION_STAGE */
+/* l : WINDOWS_STAGE | SELECTION_ACTIVATE */
+
 		  (listwise_test[]){{ .entry = listwise_test_entry
-				/* unique entries are preserved */
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "uu"
-				, .final = (char*[]) { "ao", "ob", "c", "od", 0 }
+				, .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
+				, .xsfm = "sx/x o s/z/a sy"
+				, .final = (char*[]) { "aoo", "foo.x", "foo.a.x", "foo.a.b.x", 0 }
+		  }}
+			/* o : works across multiple chained o operators */
+		, (listwise_test[]){{ .entry = listwise_test_entry
+				, .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
+				, .xsfm = "sx/x o s/z/a o l/b sy"
+				, .final = (char*[]) { "aoo", "foo.x", "foo.a.x", "foo.a.b.x", "bar", 0 }
 		  }}
 		, (listwise_test[]){{ .entry = listwise_test_entry
-				/* non-unique consecutive entries removed */
-				, .init = (char*[]) { "ao", "ao", "c", "od", 0 }
-				, .xsfm = "uu"
-				, .final = (char*[]) { "ao", "c", "od", 0 }
+				, .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
+				, .xsfm = "sx/x o l/b"
+				, .final = (char*[]) { "foo.x", "foo.a.x", "foo.a.b.x", "bar", 0 }
 		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				/* non-consecutive unique entries are removed */
-				, .init = (char*[]) { "ao", "ob", "ao", "od", 0 }
-				, .xsfm = "uu"
-				, .final = (char*[]) { "ao", "ob", "od", 0 }
-		  }}
+
+/* sy WINDOWS_ACTIVATE | SELECTION_STAGE */
+/* sy WINDOWS_STAGE | SELECTION_ACTIVATE */
 		, 0
 	}
 };

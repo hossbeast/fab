@@ -16,6 +16,10 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "internal.h"
+#include "iterate.internal.h"
+#include "lwx.internal.h"
+#include "selection.internal.h"
+#include "window.internal.h"
 
 #define restrict __restrict
 

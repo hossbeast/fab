@@ -20,10 +20,11 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <pcre.h>
 
 #include "xapi.h"
 
-#include "pstring.h"
+#include "valyria/pstring.h"
 
 #include "listwise.h"
 #include "listwise/lstack.h"
@@ -31,7 +32,10 @@
 #include "listwise/selection.h"
 #include "listwise/window.h"
 
-#include <pcre.h>
+// default error table
+#ifndef perrtab
+#define perrtab perrtab_LW
+#endif
 
 #define restrict __restrict
 
@@ -145,7 +149,7 @@ xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict d
 //  [ps]      - 
 //  writer    - 
 //
-xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring ** const restrict ps)
+xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring * const restrict ps)
 	__attribute__((nonnull));
 
 //

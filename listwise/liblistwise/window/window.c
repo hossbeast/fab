@@ -19,10 +19,14 @@
 #include <string.h>
 
 #include "xapi.h"
+#include "xlinux.h"
 
 #include "internal.h"
+#include "window.internal.h"
+#include "lwx.internal.h"
+#include "lstack.internal.h"
+#include "tune.internal.h"
 
-#include "xlinux.h"
 #include "macros.h"
 
 #define restrict __restrict

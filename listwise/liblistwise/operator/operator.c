@@ -21,13 +21,14 @@
 #include "xlinux.h"
 
 #include "internal.h"
+#include "operator.internal.h"
 
 #define restrict __restrict
 
 ///
 /// public
 ///
-xapi listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
+xapi listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, pstring * restrict ps, fwriter writer)
 {
   enter;
 
@@ -70,7 +71,7 @@ xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict d
   finally : coda;
 }
 
-xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring ** const restrict ps)
+xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring * const restrict ps)
 {
   enter;
 

@@ -79,7 +79,7 @@ xapi op_validate(operation* o)
 	if(o->argsl == 2 || o->argsl == 3)
 	{
 		if(o->args[0]->l == 0)
-			fails(LW_ARGSDOM, "empty argument");
+			fails(LW_ARGSDOM, "length", "0");
 
 		if(o->argsl == 2 || o->args[2]->l == 0)
 			fatal(re_compile, o->args[0]->s, &o->args[0]->re, 0);
@@ -88,7 +88,7 @@ xapi op_validate(operation* o)
 	}
 	else
 	{
-		failf(LW_ARGSNUM, "expected : 2 or 3, actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "expected %s", "actual %d", "2 or 3", o->argsl);
 	}
 
 	o->args[0]->itype = ITYPE_RE;
@@ -99,7 +99,10 @@ xapi op_validate(operation* o)
 	{
 		if(o->args[1]->refs.v[x].ref > o->args[0]->re.c_caps)
 		{
-			failf(LW_ILLREF, "captures : %d, backref: %d", o->args[0]->re.c_caps, o->args[1]->refs.v[x].ref);
+      xapi_fail_intent();
+      xapi_infof("captures", "%d", o->args[0]->re.c_caps);
+      xapi_infof("backref", "%d", o->args[1]->refs.v[x].ref);
+			fail(LW_ILLREF);
 		}
 	}
 

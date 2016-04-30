@@ -1,7 +1,7 @@
 #include "LW.errtab.h"
 #define APIDATA
 etable errtab_LW = {
-   .tag = "LW"
+   .name = "LW"
  , .min = ERRMIN_LW
  , .max = ERRMAX_LW
  , .v =  (typeof(((etable*)0)->v[0])[]) {

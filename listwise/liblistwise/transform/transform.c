@@ -19,15 +19,17 @@
 #include <inttypes.h>
 
 #include "internal.h"
-
+#include "transform.internal.h"
 #include "transform/transform.def.h"
 #include "transform/transform.tab.h"
 #include "transform/transform.lex.h"
 #include "transform/transform.tokens.h"
 #include "transform/transform.states.h"
-#include "genscan.h"
+#include "genscan.internal.h"
+#include "logging.internal.h"
 
 #include "xlinux.h"
+#include "xlinux/SYS.errtab.h"
 
 #include "macros.h"
 
@@ -106,7 +108,10 @@ static xapi operation_validate(operation * op)
 	{
 		if(op->argsl)
 		{
-			failf(LW_ARGSNUM, "expected: 0, actual: %d", op->argsl);
+      xapi_fail_intent();
+      xapi_infof("expected", "%d", 0);
+      xapi_infof("actual", "%d", op->argsl);
+			fail(LW_ARGSNUM);
 		}
 	}
 
@@ -116,7 +121,7 @@ static xapi operation_validate(operation * op)
 	}
 
 finally :
-	XAPI_INFOF("op", "%s", op->op->s);
+	xapi_infof("op", "%s", op->op->s);
 coda;
 }
 
@@ -135,12 +140,12 @@ static xapi reduce(parse_param * pp)
 		else if(pp->scanerr)
 		{
 			// error from the scanner
-			fails(pp->scanerr, pp->error_str);
+			fails(pp->scanerr, "message", pp->error_str);
 		}
 		else if(pp->gramerr)
 		{
 			// error from the parser
-			fails(LW_SYNTAX, pp->error_str);
+			fails(LW_SYNTAX, "message", pp->error_str);
 		}
 		else
 		{
@@ -155,9 +160,9 @@ finally :
 		if(pp->scanerr || pp->gramerr)
 		{
 			if(pp->namel)
-				XAPI_INFOF("input", "%.*s", pp->namel, pp->name);
+				xapi_infof("input", "%.*s", pp->namel, pp->name);
 
-			XAPI_INFOF("loc", "[%d,%d - %d,%d]"
+			xapi_infof("loc", "[%d,%d - %d,%d]"
 				, pp->error_loc.f_lin + 1
 				, pp->error_loc.f_col + 1
 				, pp->error_loc.l_lin + 1
@@ -166,7 +171,7 @@ finally :
 
 			if(pp->gramerr)
 			{
-				XAPI_INFOF("token", "%s", pp->tokenstring);
+				xapi_infof("token", "%s", pp->tokenstring);
 			}
 		}
 	}
@@ -244,7 +249,7 @@ finally:
 	yyu_extra_destroy(&pp);
 	transform_parser_free(lp);
 
-XAPI_INFOS("transform-string", b);
+  xapi_infos("transform-string", b);
 coda;
 }
 
@@ -252,7 +257,7 @@ coda;
 /// static : describe
 ///
 
-static xapi transform_arg_canon(arg * const arg, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+static xapi transform_arg_canon(arg * const arg, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
 {
   enter;
 
@@ -311,7 +316,7 @@ static xapi transform_arg_canon(arg * const arg, uint32_t sm, char * const dst, 
 	finally : coda;
 }
 
-static xapi transform_args_canon(arg ** const args, const int argsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+static xapi transform_args_canon(arg ** const args, const int argsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
 {
   enter;
 
@@ -337,7 +342,7 @@ static xapi transform_args_canon(arg ** const args, const int argsl, uint32_t sm
 	finally : coda;
 }
 
-static xapi transform_operations_canon(operation ** const ops, int opsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+static xapi transform_operations_canon(operation ** const ops, int opsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
 {
   enter;
 
@@ -353,7 +358,7 @@ static xapi transform_operations_canon(operation ** const ops, int opsl, uint32_
 	finally : coda;
 }
 
-static xapi transform_canon(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+static xapi transform_canon(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
 {
   enter;
 
@@ -369,7 +374,7 @@ static xapi transform_canon(transform * const restrict g, char * const restrict 
 	finally : coda;
 }
 
-static xapi transform_description(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
+static xapi transform_description(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * const z, pstring * restrict ps, fwriter writer)
 {
   enter;
 
@@ -418,7 +423,7 @@ static xapi transform_description(transform * const restrict g, char * const res
 /// public : describe
 ///
 
-xapi transform_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, fwriter writer)
+xapi transform_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
 {
   enter;
 
@@ -572,7 +577,7 @@ API xapi transform_canon_write(transform * const restrict g, char * const restri
   finally : coda;
 }
 
-API xapi transform_canon_pswrite(transform * const restrict g, pstring ** restrict ps)
+API xapi transform_canon_pswrite(transform * const restrict g, pstring * restrict ps)
 {
 	enter;
 
@@ -583,43 +588,33 @@ API xapi transform_canon_pswrite(transform * const restrict g, pstring ** restri
 	finally : coda;
 }
 
-API xapi transform_canon_dump(transform * const restrict g, pstring ** restrict ps)
+API xapi transform_canon_dump(transform * const restrict g, pstring * restrict ps)
 {
 	enter;
 
-	pstring * lps = 0;
-	if(!ps)
-		ps = &lps;
 	fatal(psclear, ps);
 
 	size_t lz = 0;
 	fatal(transform_canon, g, 0, 0, &lz, ps, pswrite);
-	printf("%.*s\n", (int)(*ps)->l, (*ps)->s);
+	printf("%.*s\n", (int)ps->l, ps->s);
 
-finally:
-	psfree(lps);
-coda;
+  finally : coda;
 }
 
-API xapi transform_canon_log(transform * const restrict g, pstring ** restrict ps, void * restrict udata)
+API xapi transform_canon_log(transform * const restrict g, pstring * restrict ps, void * restrict udata)
 {
 	enter;
 
-	pstring * lps = 0;
-	if(!ps)
-		ps = &lps;
 	fatal(psclear, ps);
 
 	if(lw_would_transform())
 	{
 		size_t lz = 0;
 		fatal(transform_canon, g, 0, 0, &lz, ps, pswrite);
-		lw_log_transform("%.*s", (int)(*ps)->l, (*ps)->s);
+		lw_log_transform("%.*s", (int)ps->l, ps->s);
 	}
 
-finally:
-	psfree(lps);
-coda;
+  finally : coda;
 }
 
 API xapi transform_description_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
@@ -635,7 +630,7 @@ API xapi transform_description_write(transform * const restrict g, char * const 
   finally : coda;
 }
 
-API xapi transform_description_pswrite(transform * const restrict g, pstring ** restrict ps)
+API xapi transform_description_pswrite(transform * const restrict g, pstring * restrict ps)
 {
 	enter;
 
@@ -646,42 +641,31 @@ API xapi transform_description_pswrite(transform * const restrict g, pstring ** 
 	finally : coda;
 }
 
-API xapi transform_description_dump(transform * const restrict g, pstring ** restrict ps)
+API xapi transform_description_dump(transform * const restrict g, pstring * restrict ps)
 {
 	enter;
 
-	pstring * lps = 0;
-	if(!ps)
-		ps = &lps;
 	fatal(psclear, ps);
 
 	size_t lz = 0;
 	fatal(transform_description, g, 0, 0, &lz, ps, pswrite);
-	printf("%.*s\n", (int)(*ps)->l, (*ps)->s);
+	printf("%.*s\n", (int)ps->l, ps->s);
 
-finally:
-	psfree(lps);
-coda;
+  finally : coda;
 }
 
-API xapi transform_description_log(transform * const restrict g, pstring ** restrict ps, void * restrict udata)
+API xapi transform_description_log(transform * const restrict g, pstring * restrict ps, void * restrict udata)
 {
 	enter;
 
-	pstring * lps = 0;
-
 	if(lw_would_transform())
 	{
-		if(!ps)
-			ps = &lps;
 		fatal(psclear, ps);
 
 		size_t lz = 0;
 		fatal(transform_description, g, 0, 0, &lz, ps, pswrite);
-		lw_log_transform("%.*s", (int)(*ps)->l, (*ps)->s);
+		lw_log_transform("%.*s", (int)ps->l, ps->s);
 	}
 
-finally:
-	psfree(lps);
-coda;
+  finally : coda;
 }

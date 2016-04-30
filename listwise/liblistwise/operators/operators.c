@@ -25,9 +25,13 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include "internal.h"
-
+#include "xapi.h"
 #include "xlinux.h"
+
+#include "internal.h"
+#include "operators.internal.h"
+#include "operator.internal.h"
+
 #include "macros.h"
 
 operator **	APIDATA g_ops;
@@ -200,16 +204,25 @@ finally:
 coda;
 }
 
-void operators_teardown()
+xapi operators_release()
 {
+  enter;
+
 	int x;
 	for(x = 0; x < g_dls_l; x++)
-		dlclose(g_dls[x]);
+		fatal(xdlclose, g_dls[x]);
 
-	free(g_dls);
-	free(g_ops);
-	free(g_ops_by_s);
-	free(g_ops_by_mnemonic);
+	ifree(&g_dls);
+  g_dls_l = 0;
+  g_dls_a = 0;
+
+	ifree(&g_ops);
+	ifree(&g_ops_by_s);
+	ifree(&g_ops_by_mnemonic);
+  g_ops_a = 0;
+  g_ops_l = 0;
+
+  finally : coda;
 }
 
 //
@@ -269,7 +282,6 @@ API xapi listwise_register_opdir(char * dir)
 {
 	enter;
 
-	// 
 	size_t old_len = g_ops_l;
 
 	// load operators from the specified directory
@@ -308,6 +320,6 @@ API xapi listwise_register_opdir(char * dir)
 	qsort(g_ops_by_mnemonic, g_ops_l, sizeof(*g_ops_by_mnemonic), (void*)op_compare_by_mnemonic);
 
 finally:
-	XAPI_INFOF("path", "%s", dir);
+	xapi_infof("path", "%s", dir);
 coda;
 }

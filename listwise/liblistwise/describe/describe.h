@@ -19,7 +19,7 @@
 #define _LISTWISE_DESCRIBE_H
 
 #include "xapi.h"
-#include "pstring.h"
+#include "valyria/pstring.h"
 
 #define restrict __restrict
 
@@ -46,8 +46,8 @@ xapi lstack_description_write(lwx * const restrict lx, char * const restrict dst
 //  lx  - lstack instance
 //  ps  - pstring to write to
 //
-xapi lstack_description_pswrite(lwx * const restrict lx, pstring ** const restrict ps)
-	__attribute__((nonnull(1, 2)));
+xapi lstack_description_pswrite(lwx * const restrict lx, pstring * const restrict ps)
+	__attribute__((nonnull));
 
 /// lstack_dump
 //
@@ -55,10 +55,10 @@ xapi lstack_description_pswrite(lwx * const restrict lx, pstring ** const restri
 //  write a multiline description of the specified list-stack to stdout
 //
 // PARAMETERS
-//  lx   - lstack instance
-//  [ps] - pstring to write to
+//  lx - lstack instance
+//  ps - pstring to write to
 //
-xapi lstack_description_dump(lwx * const restrict, pstring ** restrict ps)
+xapi lstack_description_dump(lwx * const restrict, pstring * restrict ps)
 	__attribute__((nonnull));
 
 /// lstack_description_log
@@ -68,10 +68,10 @@ xapi lstack_description_dump(lwx * const restrict, pstring ** restrict ps)
 //
 // PARAMETERS
 //  lx      - lstack instance
-//  [ps]    - pstring to write to
+//  ps      - pstring to write to
 //  [udata] - passthrough
 //
-xapi lstack_description_log(lwx * const restrict, pstring ** restrict ps, void * restrict udata)
+xapi lstack_description_log(lwx * const restrict, pstring * restrict ps, void * restrict udata)
 	__attribute__((nonnull));
 
 #undef restrict

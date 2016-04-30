@@ -1,7 +1,7 @@
 #include "PCRE.errtab.h"
 #define APIDATA
 etable errtab_PCRE = {
-   .tag = "PCRE"
+   .name = "PCRE"
  , .min = ERRMIN_PCRE
  , .max = ERRMAX_PCRE
  , .v =  (typeof(((etable*)0)->v[0])[]) {

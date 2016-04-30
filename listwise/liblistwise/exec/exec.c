@@ -17,13 +17,22 @@
 
 #include <string.h>
 
+#include "xapi.h"
+#include "xlinux.h"
+
 #include "internal.h"
+#include "exec.internal.h"
+#include "lwx.internal.h"
+#include "transform.internal.h"
+#include "lstack.internal.h"
+#include "operator.internal.h"
+#include "logging.internal.h"
+#include "selection.internal.h"
+#include "window.internal.h"
 
 #if SANITY
-#include "sanity.h"
+#include "sanity.internal.h"
 #endif
-
-#include "xlinux.h"
 
 #include "macros.h"
 
@@ -81,11 +90,11 @@ static xapi exec_transform(
 
 	if(lw_would_exec())
 	{
-		fatal(transform_canon_pswrite, g, &ps);
+		fatal(transform_canon_pswrite, g, ps);
 		lw_log_exec(" >>      %.*s", (int)ps->l, ps->s);
 
 		// log the lstack before beginning
-		fatal(lstack_description_pswrite, *lx, &ps);
+		fatal(lstack_description_pswrite, *lx, ps);
 		lw_log_exec("%.*s", (int)ps->l, ps->s);
 	}
 
@@ -137,7 +146,7 @@ static xapi exec_transform(
 				// log the lstack
 				if(lw_would_exec())
 				{
-					fatal(lstack_description_pswrite, *lx, &ps);
+					fatal(lstack_description_pswrite, *lx, ps);
 					lw_log_exec("%.*s", (int)ps->l, ps->s);
 				}
 			}
@@ -145,10 +154,10 @@ static xapi exec_transform(
 			// log the operation
 			if(lw_would_exec())
 			{
-	extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps);
+        extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring * restrict ps);
 
-				fatal(operation_canon_pswrite, g->ops[i], 0, &ps);
-				fatal(listwise_lwop_pswrite, g->ops[i]->op->optype, 1, &ps1);
+				fatal(operation_canon_pswrite, g->ops[i], 0, ps);
+				fatal(listwise_lwop_pswrite, g->ops[i]->op->optype, 1, ps1);
 
 				lw_log_exec("");
 				lw_log_exec(" >> [%2d] %.*s%*s%.*s", i, (int)ps->l, ps->s, MAX(35 - ps->l, 0), "", (int)ps1->l, ps1->s);
@@ -186,7 +195,7 @@ static xapi exec_transform(
 		// log the lstack
 		if(lw_would_exec())
 		{
-			fatal(lstack_description_pswrite, *lx, &ps);
+			fatal(lstack_description_pswrite, *lx, ps);
 			lw_log_exec("%.*s", (int)ps->l, ps->s);
 		}
 	}

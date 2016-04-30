@@ -15,24 +15,29 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_LWX_INTERNAL_H
-#define _LISTWISE_LWX_INTERNAL_H
+#ifndef _LISTWISE_TEST_H
+#define _LISTWISE_TEST_H
 
 #include "xapi.h"
-#include "lwx.h"
 
-/// lwx_setup
-//
-// SUMMARY
-//  initialize the component
-//
-xapi lwx_setup();
+struct listwise_test;
+#define TEST_TYPE struct listwise_test
+#include "xunit.h"
+#include "xunit/logs.h"
+#include "xunit/XUNIT.errtab.h"
 
-/// lwx_teardown
-//
-// SUMMARY
-//  free resources used by the component
-//
-void lwx_teardown();
+xapi listwise_test_setup(const xunit_unit *);
+xapi listwise_test_release(const xunit_unit *);
+
+xapi listwise_test_entry(const struct listwise_test*)
+	__attribute__((nonnull));
+
+typedef struct listwise_test
+{
+	xunit_test;
+	char ** init;
+	char * xsfm;
+	char ** final;
+} listwise_test;
 
 #endif

@@ -21,6 +21,13 @@
 #include "xlinux.h"
 
 #include "internal.h"
+#include "describe.internal.h"
+#include "operator.internal.h"
+#include "genscan.internal.h"
+#include "lwx.internal.h"
+#include "window.internal.h"
+#include "transform.internal.h"
+#include "logging.internal.h"
 
 #include "macros.h"
 
@@ -77,7 +84,7 @@ static uint32_t __attribute__((unused)) arg_scanmode(arg * const arg)
 	return sm;
 }
 
-static xapi lstack_description(lwx * const lx, char * const dst, const size_t sz, size_t * const z, pstring ** restrict ps, fwriter writer)
+static xapi lstack_description(lwx * const lx, char * const dst, const size_t sz, size_t * const z, pstring * restrict ps, fwriter writer)
 {
   enter;
 
@@ -322,7 +329,7 @@ static xapi lstack_description(lwx * const lx, char * const dst, const size_t sz
 /// public
 ///
 
-xapi operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** restrict ps)
+xapi operation_canon_pswrite(operation * const oper, uint32_t sm, pstring * restrict ps)
 {
   enter;
 
@@ -333,7 +340,7 @@ xapi operation_canon_pswrite(operation * const oper, uint32_t sm, pstring ** res
 }
 
 /// writes to a fixed size buffer
-xapi zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+xapi zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring * restrict ps, const char * const restrict fmt, ...)
 {
   enter;
 
@@ -349,20 +356,20 @@ xapi zwrite(char * const restrict dst, const size_t sz, size_t * restrict z, pst
 }
 
 /// writes to a dynamically-resizing pstring
-xapi pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring ** restrict ps, const char * const restrict fmt, ...)
+xapi pswrite(char * const restrict dst, const size_t sz, size_t * restrict z, pstring * restrict ps, const char * const restrict fmt, ...)
 {
   enter;
 
 	size_t ol = 0;
-	if(*ps)
-		ol = (*ps)->l;
+	if(ps)
+		ol = ps->l;
 
 	va_list va;
 	va_start(va, fmt);
 	fatal(psvcatf, ps, fmt, va);
 	va_end(va);
 
-	(*z) += (*ps)->l - ol;
+	(*z) += ps->l - ol;
 
 	finally : coda;
 }
@@ -384,7 +391,7 @@ API xapi lstack_description_write(lwx * const restrict lx, char * const restrict
   finally : coda;
 }
 
-API xapi lstack_description_pswrite(lwx * const restrict lx, pstring ** restrict ps)
+API xapi lstack_description_pswrite(lwx * const restrict lx, pstring * restrict ps)
 {
   enter;
 
@@ -395,42 +402,30 @@ API xapi lstack_description_pswrite(lwx * const restrict lx, pstring ** restrict
   finally : coda;
 }
 
-API xapi lstack_description_dump(lwx * const restrict lx, pstring ** restrict ps)
+API xapi lstack_description_dump(lwx * const restrict lx, pstring * restrict ps)
 {
   enter;
 
-	pstring * lps = 0;
-	if(!ps)
-		ps = &lps;
-	fatal(psclear, ps);
-
+  fatal(psclear, ps);
 	size_t lz = 0;
 	fatal(lstack_description, lx, 0, 0, &lz, ps, pswrite);
-	printf("%.*s\n", (int)(*ps)->l, (*ps)->s);
+	printf("%.*s\n", (int)ps->l, ps->s);
 
-finally:
-	psfree(lps);
-coda;
+  finally : coda;
 }
 
-API xapi lstack_description_log(lwx * const restrict lx, pstring ** restrict ps, void * restrict udata)
+API xapi lstack_description_log(lwx * const restrict lx, pstring * restrict ps, void * restrict udata)
 {
   enter;
-
-	pstring * lps = 0;
 
 	if(lw_would_lstack())
 	{
-		if(!ps)
-			ps = &lps;
 		fatal(psclear, ps);
 
 		size_t lz = 0;
 		fatal(lstack_description, lx, 0, 0, &lz, ps, pswrite);
-		lw_log_lstack("%.*s", (int)(*ps)->l, (*ps)->s);
+		lw_log_lstack("%.*s", (int)ps->l, ps->s);
 	}
 
-finally:
-	psfree(lps);
-coda;
+  finally : coda;
 }

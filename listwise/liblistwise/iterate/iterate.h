@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_ITERATE_H
 #define _LISTWISE_ITERATE_H
 
+struct lwx;
+
 ///
 /// macros for iterating the lstack in an lw context
 ///

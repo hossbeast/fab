@@ -19,6 +19,7 @@
 #define _LISTWISE_SELECTION_INTERNAL_H
 
 #include "xapi.h"
+#include "selection.h"
 
 #define restrict __restrict
 

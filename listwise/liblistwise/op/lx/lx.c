@@ -71,7 +71,7 @@ xapi op_validate(operation* o)
   enter;
 
 	if(o->argsl < 1)
-		failf(LW_ARGSNUM, "expected : N > 0, actual : %d", o->argsl);
+		failf(LW_ARGSNUM, "expected %s", "actual %d", "1 or more", o->argsl);
 
 	finally : coda;
 }

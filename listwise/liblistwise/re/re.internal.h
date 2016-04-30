@@ -15,25 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "listwise_test.h"
+#ifndef _LISTWISE_RE_INTERNAL_H
+#define _LISTWISE_RE_INTERNAL_H
 
-xunit_unit xunit = {
-	.tests = (xunit_test*[]) {
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "l/o"
-				, .final = (char*[]) { "ao", "ob", "od", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "l/o wy"
-				, .final = (char*[]) { "o", "o", "o", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "l/o wy uu"
-				, .final = (char*[]) { "o", 0 }
-		  }}
-		, 0
-	}
-};
+#include "re.h"
+
+#endif

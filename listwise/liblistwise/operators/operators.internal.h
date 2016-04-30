@@ -19,6 +19,7 @@
 #define _LISTWISE_OPERATORS_INTERNAL_H
 
 #include "xapi.h"
+#include "operators.h"
 
 /// operators_setup
 //
@@ -32,6 +33,6 @@ xapi operators_setup();
 // SUMMARY
 //  free resources used by the component
 //
-void operators_teardown();
+xapi operators_release();
 
 #endif

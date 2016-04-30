@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "internal.h"
+#include "logging.internal.h"
 
 struct listwise_logging * APIDATA listwise_logging_config;
 

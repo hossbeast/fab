@@ -19,8 +19,7 @@
 #include <inttypes.h>
 
 #include "internal.h"
-
-#include "transform/genscan.h"
+#include "genscan.internal.h"
 #undef _GENSCAN
 
 #include "transform/transform.states.h"

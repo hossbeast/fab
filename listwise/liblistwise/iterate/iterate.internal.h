@@ -15,24 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_LWX_INTERNAL_H
-#define _LISTWISE_LWX_INTERNAL_H
+#ifndef _LISTWISE_ITERATE_INTERNAL_H
+#define _LISTWISE_ITERATE_INTERNAL_H
 
-#include "xapi.h"
-#include "lwx.h"
-
-/// lwx_setup
-//
-// SUMMARY
-//  initialize the component
-//
-xapi lwx_setup();
-
-/// lwx_teardown
-//
-// SUMMARY
-//  free resources used by the component
-//
-void lwx_teardown();
+#include "iterate.h"
 
 #endif

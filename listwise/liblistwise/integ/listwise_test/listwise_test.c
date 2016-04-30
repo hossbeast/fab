@@ -19,24 +19,42 @@
 #include <string.h>
 
 #include "xapi.h"
+#include "logger.h"
 
 #include "internal.h"
 #include "listwise_test.h"
 #include "macros.h"
 
+xapi listwise_test_setup(const xunit_unit * unit)
+{
+  enter;
+
+  fatal(listwise_load);
+
+  finally : coda;
+}
+
+xapi listwise_test_release(const xunit_unit * unit)
+{
+  enter;
+
+  fatal(listwise_unload);
+
+  finally : coda;
+}
+
 API xapi listwise_test_entry(const listwise_test * test)
 {
 	enter;
 
+  int token = 0;
 	lwx * lx = 0;
 	int i = 0;
 	int x = 0;
 
-  // liblistwise initialization (idempotent)
-  fatal(listwise_setup);
-
 	// log in the inset
-	if(log_start(L_XUNIT | L_INSET))
+  fatal(log_start, L_INSET, &token);
+  if(token)
 	{
 		logs(0, "[ ");
 		for(x = 0; x < sentinel(test->init); x++)
@@ -46,13 +64,14 @@ API xapi listwise_test_entry(const listwise_test * test)
 			logs(0, test->init[x]);
 		}
 		logf(0, " ~ %s ]", test->xsfm);
-		log_finish();
+		fatal(log_finish, &token);
 	}
 
 	fatal(listwise_exec, test->xsfm, 0, test->init, 0, sentinel(test->init), &lx);
 
 	// log the outset
-	if(log_start(L_XUNIT | L_OUTSET))
+  fatal(log_start, L_OUTSET, &token);
+  if(token)
 	{
 		logs(0, "[ ");
 
@@ -72,7 +91,7 @@ API xapi listwise_test_entry(const listwise_test * test)
 		LSTACK_ITEREND
 
 		logs(0, " ]");
-		log_finish();
+		fatal(log_finish, &token);
 	}
 
 	// compare
@@ -88,7 +107,10 @@ API xapi listwise_test_entry(const listwise_test * test)
 		{
 			if(strcmp(test->final[i], s))
 			{
-				failf(XUNIT_FAIL, "expected row : %s, actual : %s", test->final[i], s);
+        xapi_fail_intent();
+        xapi_infof("expected", "row %s", test->final[i]);
+        xapi_infof("actual", "row %s", s);
+				tfail(perrtab_XUNIT, XUNIT_FAIL);
 			}
 		}
 
@@ -98,10 +120,14 @@ API xapi listwise_test_entry(const listwise_test * test)
 
 	if(i != sentinel(test->final))
 	{
-		failf(XUNIT_FAIL, "expected rows : %d, actual : %d", sentinel(test->final), i);
+    xapi_fail_intent();
+    xapi_infof("expected", "rows %d", sentinel(test->final));
+    xapi_infof("actual", "rows %d", i);
+		tfail(perrtab_XUNIT, XUNIT_FAIL);
 	}
 
 finally:
+  fatal(log_finish, &token);
 	lwx_free(lx);
 coda;
 }

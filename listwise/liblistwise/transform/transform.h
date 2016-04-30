@@ -116,7 +116,7 @@ xapi transform_canon_write(transform * const restrict g, char * const restrict d
 //  g  - transform
 //  ps - pstring to write to
 //
-xapi transform_canon_pswrite(transform * const restrict g, struct pstring ** restrict ps)
+xapi transform_canon_pswrite(transform * const restrict g, struct pstring * restrict ps)
 	__attribute__((nonnull));
 
 /// transform_canon_dump
@@ -128,7 +128,7 @@ xapi transform_canon_pswrite(transform * const restrict g, struct pstring ** res
 //  g    - transform
 //  [ps] - pstring to write to
 //
-xapi transform_canon_dump(transform * const restrict g, struct pstring ** restrict ps)
+xapi transform_canon_dump(transform * const restrict g, struct pstring * restrict ps)
 	__attribute__((nonnull));
 
 /// transform_canon_log
@@ -141,7 +141,7 @@ xapi transform_canon_dump(transform * const restrict g, struct pstring ** restri
 //  [ps]    - pstring to write to
 //  [udata] - passthrough
 //
-xapi transform_canon_log(transform * const restrict g, struct pstring ** restrict ps, void * restrict udata)
+xapi transform_canon_log(transform * const restrict g, struct pstring * restrict ps, void * restrict udata)
 	__attribute__((nonnull(1)));
 
 /// transform_description_write
@@ -170,7 +170,7 @@ xapi transform_description_write(transform * const restrict g, char * const rest
 //  g  - transform
 //  ps - pstring to write to
 //
-xapi transform_description_pswrite(transform * const restrict g, struct pstring ** restrict ps)
+xapi transform_description_pswrite(transform * const restrict g, struct pstring * restrict ps)
 	__attribute__((nonnull));
 
 /// transform_description_dump
@@ -182,7 +182,7 @@ xapi transform_description_pswrite(transform * const restrict g, struct pstring 
 //  g    - transform
 //  [ps] - pstring to write to
 //
-xapi transform_description_dump(transform * const restrict g, struct pstring ** restrict ps)
+xapi transform_description_dump(transform * const restrict g, struct pstring * restrict ps)
 	__attribute__((nonnull));
 
 /// transform_description_log
@@ -195,7 +195,7 @@ xapi transform_description_dump(transform * const restrict g, struct pstring ** 
 //  [ps]    - pstring to write to
 //  [udata] - passthrough
 //
-xapi transform_description_log(transform * const restrict g, struct pstring ** restrict ps, void * restrict udata)
+xapi transform_description_log(transform * const restrict g, struct pstring * restrict ps, void * restrict udata)
 	__attribute__((nonnull(1)));
 
 #undef restrict

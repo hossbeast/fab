@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_LOGGING_INTERNAL_H
 #define _LISTWISE_LOGGING_INTERNAL_H
 
+#include "logging.h"
+
 /*
  * internal logging macros
 */

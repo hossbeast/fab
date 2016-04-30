@@ -46,19 +46,19 @@ typedef struct lwx lwx;
 
 #define restrict __restrict
 
-/// listwise_setup
+/// listwise_load
 //
 // SUMMARY
 //  initialize the library
 //
-xapi listwise_setup();
+xapi listwise_load();
 
-/// listwise_teardown
+/// listwise_unload
 //
 // SUMMARY
 //  free resources used by the library
 //
-void listwise_teardown();
+xapi listwise_unload();
 
 /// listwise_exec
 //

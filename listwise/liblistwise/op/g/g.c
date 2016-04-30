@@ -27,10 +27,12 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "xapi.h"
+#include "xlinux.h"
+#include "xlinux/SYS.errtab.h"
+
 #include "listwise/operator.h"
 #include "listwise/fs.h"
-
-#include "xlinux.h"
 
 /*
 
@@ -133,8 +135,9 @@ finally:
 
 	if(fd != -1)
 		close(fd);
-XAPI_INFOS("path", path);
-XAPI_INFOF("size", "%d", size);
+
+  xapi_infos("path", path);
+  xapi_infof("size", "%d", size);
 coda;
 }
 

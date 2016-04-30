@@ -18,7 +18,9 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-	.tests = (xunit_test*[]) {
+    .setup = listwise_test_setup
+  , .release = listwise_test_release
+	, .tests = (xunit_test*[]) {
 
 /* s : SELECTION_STAGE | WINDOWS_STAGE | MODIFIERS_CANHAVE | ARGS_CANHAVE | OPERATION_INPLACE */
 

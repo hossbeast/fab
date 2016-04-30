@@ -20,9 +20,16 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "internal.h"
-
 #include "xlinux.h"
+
+#include "internal.h"
+#include "lstack.internal.h"
+#include "lwx.internal.h"
+#include "tune.internal.h"
+#include "window.internal.h"
+#include "LW.errtab.h"
+#include "object.internal.h"
+
 #include "macros.h"
 
 #define restrict __restrict
@@ -642,8 +649,8 @@ API xapi lstack_merge(lwx * const restrict lx, int a, int b)
 	lx->l--;
 
 finally:
-	XAPI_INFOF("to", "%d", a);
-	XAPI_INFOF("from", "%d", b);
+	xapi_infof("to", "%d", a);
+	xapi_infof("from", "%d", b);
 coda;
 }
 

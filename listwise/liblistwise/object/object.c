@@ -18,22 +18,37 @@
 #include <stddef.h>
 
 #include "internal.h"
+#include "object.internal.h"
+#include "LW.errtab.h"
 
-#include "coll.h"
-#include "map.h"
+#define MAP_VALUE_TYPE listwise_object
+#include "valyria/map.h"
+
+#include "macros.h"
+
+map * object_registry;
 
 //
 // public
 //
 
-void object_teardown()
+xapi object_setup()
 {
-	map_free(object_registry);
+  enter;
+
+  fatal(map_create, &object_registry);
+
+  finally : coda;
 }
 
-///
-/// [[ LSTACK API (for objects) ]]
-///
+void object_teardown()
+{
+	map_ifree(&object_registry);
+}
+
+//
+// [[ LSTACK API (for objects) ]]
+//
 
 API xapi listwise_register_object(uint8_t type, listwise_object * def)
 {
@@ -41,11 +56,8 @@ API xapi listwise_register_object(uint8_t type, listwise_object * def)
 
 	def->type = type;
 
-	if(object_registry == 0)
-		fatal(map_create, &object_registry, 0);
-
 	// cache for lookup
-	fatal(map_set, object_registry, MM(type), MM(def), 0);
+	fatal(map_set, object_registry, MM(type), def);
 
 	finally : coda;
 }
@@ -59,15 +71,12 @@ API xapi listwise_lookup_object(uint8_t type, listwise_object ** obj)
 {
 	enter;
 
-	listwise_object ** rv = 0;
-	if((rv = map_get(object_registry, MM(type))) == 0)
+	if(((*obj) = map_get(object_registry, MM(type))) == 0)
 	{
 		fail(LW_NOOBJ);
 	}
 
-	(*obj) = (*rv);
-
 finally:
-	XAPI_INFOF("type", "%hhu", type);
+	xapi_infof("type", "%hhu", type);
 coda;
 }

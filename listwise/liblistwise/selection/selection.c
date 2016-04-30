@@ -18,9 +18,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "internal.h"
-
 #include "xlinux.h"
+
+#include "internal.h"
+#include "selection.internal.h"
+#include "lstack.internal.h"
+#include "lwx.internal.h"
+
 #include "macros.h"
 
 #define restrict __restrict
