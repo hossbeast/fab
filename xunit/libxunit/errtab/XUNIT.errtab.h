@@ -2,7 +2,7 @@
 #define _XUNIT_ERRTAB_H
 #include "xapi.h"
 #define ETABLE_XUNIT \
-_E(1, BADARGS, "invalid command-line arguments") \
+_E(1, FAIL, "unit test failure") \
 
 enum {
 #define _E(a, b, c) XUNIT_ ## b = a,

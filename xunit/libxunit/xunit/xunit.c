@@ -17,23 +17,48 @@
 
 #include "xapi.h"
 #include "xapi/errtab.h"
+#include "xapi/XAPI.errtab.h"
 
 #include "internal.h"
-#include "errtab/XUNIT.errtab.h"
+#include "XUNIT.errtab.h"
+#include "logs.internal.h"
+
+static int handles;
 
 //
 // api
 //
 
-API xapi xunit_setup()
+API xapi xunit_load()
 {
   enter;
 
-  fatal(xapi_errtab_register, perrtab_XUNIT);
+  if(handles == 0)
+  {
+    // dependencies
+    fatal(logger_load);
+
+    // modules
+    fatal(logs_setup);
+    fatal(xapi_errtab_register, perrtab_XUNIT);
+  }
+  handles++;
 
   finally : coda;
 }
 
-API void xunit_teardown()
+API xapi xunit_unload()
 {
+  enter;
+
+  if(--handles == 0)
+  {
+    fatal(logger_unload);
+  }
+  else if(handles < 0)
+  {
+    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "libxunit");
+  }
+
+  finally : coda;
 }

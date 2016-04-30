@@ -1,7 +1,7 @@
 #include "XUNIT.errtab.h"
 #define APIDATA
 etable errtab_XUNIT = {
-   .tag = "XUNIT"
+   .name = "XUNIT"
  , .min = ERRMIN_XUNIT
  , .max = ERRMAX_XUNIT
  , .v =  (typeof(((etable*)0)->v[0])[]) {
@@ -9,4 +9,4 @@ etable errtab_XUNIT = {
 ETABLE_XUNIT
 #undef _E
 }};
-etable *  perrtab_XUNIT = &errtab_XUNIT;
+etable * APIDATA perrtab_XUNIT = &errtab_XUNIT;

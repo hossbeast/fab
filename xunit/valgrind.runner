@@ -49,7 +49,7 @@ valgrind_status=$?
 valgrind_errors=$(cat $valgrind_out | grep 'ERROR SUMMARY' | grep -o '[0-9]\+ errors' | cut -d' ' -f 1-1 | head -n 1)
 valgrind_leaks=$( cat $valgrind_out | grep 'LEAK SUMMARY' -A 4 | grep -o 'bytes in [^ ]\+' | cut -d' ' -f 3-3 | sort -r -n | head -n 1)
 
-# unlink the file the existing vg.out link points to if any
+# unlink the file that the existing vg.out link points to, if any
 (rm $(readlink vg.out)) 2>/dev/null
 
 # assert

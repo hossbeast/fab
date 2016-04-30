@@ -24,7 +24,7 @@
 $cflags = [
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
-	[ [ $dxunit ~ lsr c -d ] $dlibxapi $dlibxlinux $dlibxunit ~ s/^/-I ]
+	[ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dlibxunit $dliblogger ~ s/^/-I ]
 ]
 
 $cflags_xapi_final = [ $cflags $cflags_xapi_final ]
@@ -34,23 +34,24 @@ $cflags_xapi_devel = [ $cflags $cflags_xapi_devel ]
 
 $lflags = [ -ldl ]
 $rpath = [ 
-	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dliblistwise ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+	[ $dlibxapi $dlibxlinux $dlibxunit $dliblogger $dlibvalyria $dlibnarrator ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
-$lflags_xapi_final = [ $lflags_xapi_final $lflags $libxapi_xapi_final $libxlinux_xapi_final $libxunit_xapi_final ]
-$lflags_xapi_debug = [ $lflags_xapi_debug $lflags $libxapi_xapi_debug $libxlinux_xapi_debug $libxunit_xapi_debug ]
-$lflags_xapi_devel = [ $lflags_xapi_devel $lflags $libxapi_xapi_devel $libxlinux_xapi_devel $libxunit_xapi_devel $rpath ]
+$lflags_xapi_final = [ $lflags_xapi_final $lflags $libxapi_xapi_final $libxlinux_xapi_final $libxunit_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final ]
+$lflags_xapi_debug = [ $lflags_xapi_debug $lflags $libxapi_xapi_debug $libxlinux_xapi_debug $libxunit_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug ]
+$lflags_xapi_devel = [ $lflags_xapi_devel $lflags $libxapi_xapi_devel $libxlinux_xapi_devel $libxunit_xapi_devel $liblogger_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel $rpath ]
 
 # c files
-+[@std.c]($dext = [ xapi.final.o ]; $rdirs = $dxunit; $cc; $cflags = $cflags_xapi_final)
-+[@std.c]($dext = [ xapi.debug.o ]; $rdirs = $dxunit; $cc; $cflags = $cflags_xapi_debug)
-+[@std.c]($dext = [ xapi.devel.o ]; $rdirs = $dxunit; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ xapi.final.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_devel)
 
 # errtab
-+[@std.xapi.errtab]($dext = [ xapi.final.o ]; $rdirs = $dxunit; $cc; $cflags = $cflags_xapi_final)
-+[@std.xapi.errtab]($dext = [ xapi.debug.o ]; $rdirs = $dxunit; $cc; $cflags = $cflags_xapi_debug)
-+[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $rdirs = $dxunit; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_devel)
 
 # catchall node
+[ @release ] : [ @all ]
 [ @all ] : [ @final @debug @devel ]
 [ @final ] : [ $xunit_xapi_final ]
 [ @debug ] : [ $xunit_xapi_debug ]
@@ -59,37 +60,21 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lflags $libxapi_xapi_devel $libxlinux
 #
 # formulas
 #
-[ $xunit_xapi_final ] : [ $dxunit/main.xapi.final.o ~ j ]
+[ $xunit_xapi_final ] : [ $*/main.xapi.final.o ~ j ]
 {
-	[ $cc ] [ $cflags_xapi_final $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final $lflags ~ fi ]
+	[ $cc ] [ $cflags_xapi_final $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $xunit_xapi_debug ] : [ $dxunit/main.xapi.debug.o ~ j ]
+[ $xunit_xapi_debug ] : [ $*/main.xapi.debug.o ~ j ]
 {
-	[ $cc ] [ $cflags_xapi_debug $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug $lflags ~ fi ]
+	[ $cc ] [ $cflags_xapi_debug $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $xunit_xapi_devel ] : [ $dxunit/main.xapi.devel.o ~ j ]
+[ $xunit_xapi_devel ] : [ $*/main.xapi.devel.o ~ j ]
 {
-	[ $cc ] [ $cflags_xapi_devel $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel $lflags ~ fi ]
+	[ $cc ] [ $cflags_xapi_devel $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
 }
 
-[ $xunit_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libxunit_xapi_final ]
-[ $xunit_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libxunit_xapi_debug ]
-[ $xunit_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libxunit_xapi_devel $libpstring_xapi_devel ]
-
-#
-# tasks
-#
-
-[ @install.final ] : [ $xunit_xapi_final ]
-{
-	install -d											[ $destdir/$bindir ]
-	install [ $xunit_xapi_final ]		[ $destdir/$bindir/xunit ]
-}
-
-[ @install.debug ] : [ $xunit_xapi_debug ]
-{
-	install -d											[ $destdir/$bindir ]
-	install [ $xunit_xapi_debug ]		[ $destdir/$bindir/xunit ]
-}
+[ $xunit_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libxunit_xapi_final $liblogger_xapi_final ]
+[ $xunit_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libxunit_xapi_debug $liblogger_xapi_debug ]
+[ $xunit_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libxunit_xapi_devel $liblogger_xapi_devel ]

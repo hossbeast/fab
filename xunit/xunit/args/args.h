@@ -31,9 +31,6 @@
 /* error reporting modes */																																											\
 	_MODE(MODE_BACKTRACE_FULL							, 0x0b	, x)		/* report on immediate error condition only */					\
 	_MODE(MODE_BACKTRACE_PITHY	 					, 0x0c	, x)		/* unwind stack when reporting errors */								\
-/* logging modes */																																															\
-	_MODE(MODE_LOGTRACE_NONE							, 0x0d	, x)		/* disable log trace */																	\
-	_MODE(MODE_LOGTRACE_FULL							, 0x0e	, x)		/* enable log trace */
 
 #define _MODE(a, b, c) a = b,
 enum {
@@ -47,12 +44,11 @@ MODE_TABLE_DEVEL(0)
 
 struct g_args_t
 {
-	char **	test_objects;
-	int			test_objectsl;
+	char **	objects;
+	size_t  objectsl;
 
 #if DEBUG || DEVEL
 	int			mode_backtrace;		// backtrace reporting mode
-	int			mode_logtrace;		// logtrace mode
 #endif
 
 	long		procs;

@@ -19,18 +19,18 @@
 #define _LOGS_H
 
 #include "logger.h"
+#include "logger/category.h"
+#include "logger/stream.h"
 
-#if DEBUG || DEVEL
-# define L_LOGGER				0x0000000000000001ULL
-#endif
-#define L_ERROR					0x0000000000000002ULL
-#define L_WARN					0x0000000000000004ULL
-#define L_INFO					0x0000000000000008ULL
-#define L_ARGS					0x0000000000000010ULL
-#define L_PARAMS				0x0000000000000020ULL
-#define L_INSET					0x0000000000000040ULL
-#define L_OUTSET				0x0000000000000080ULL
-#define L_DLOAD					0x0000000000000100ULL
-#define L_XUNIT					0x0000000000000200ULL
+extern logger_category * logs;
+extern logger_stream * streams;
+
+#define L_ARGS		logs[0].id
+#define L_PARAMS	logs[1].id
+#define L_DLOAD		logs[2].id
+#define L_SUMMARY logs[3].id
+#define L_UNIT		logs[4].id
+#define L_TEST    logs[5].id
+#define L_FAIL    logs[6].id
 
 #endif

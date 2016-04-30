@@ -22,15 +22,16 @@
 #include <getopt.h>
 
 #include "xapi.h"
-#include "error/XUNIT.errtab.h"
+#include "errtab/MAIN.errtab.h"
 #undef perrtab
-#define perrtab perrtab_XUNIT
+#define perrtab perrtab_MAIN
 #include "xlinux.h"
 
 #include "args.h"
 #include "logs.h"
 
 #include "macros.h"
+#include "assure.h"
 
 struct g_args_t g_args;
 
@@ -55,20 +56,17 @@ if(help)
 {
 	printf(
 "\n"
-"usage : xunit [ [ option ] [ logexpr ] [ test .so's ] ] ...\n"
+"usage : xunit [ [ option ] [ logexpr ] [ /path/to/object ] ] ...\n"
 "\n"
-"        xunit --help|-h   : this message\n"
-"        xunit --version   : version information\n"
-"        xunit --logcats   : logging category listing\n"
+" --help    : this message\n"
+" --version : version information\n"
+" --logs    : logger configuration\n"
 "\n"
-"----------------- [ options ] ------------------------------------------------------------\n"
+"----------------- [ options ] -------------------------------------------------------------\n"
 "\n"
-" -a                             placeholder\n"
 #if DEBUG || DEVEL
-"  --logtrace-no       (default) do not include file/function/line in log messages\n"
-"  --logtrace                    include file/function/line in log messages\n"
-"  --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
-"  --backtrace-full              produce a complete description of the callstack upon failure\n"
+" --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
+" --backtrace-full              produce a complete description of the callstack upon failure\n"
 #endif
 	);
 }
@@ -77,41 +75,41 @@ if(logcats)
 {
 	printf(
 "\n"
-"----------------- [ logexpr  ] -----------------------------------------------------------\n"
+"----------------- [ logexpr ] -------------------------------------------------------------\n"
 "\n"
 " +<logcat> to enable logging category\n"  
 " -<logcat> to disable logging category\n"  
 "\n"
 );
 
+// logger_arguments_report() ??
+#if 0
 	int x;
-	for(x = 0; x < g_logs_l; x++)
-		printf("  %-10s %s\n", g_logs[x].s, g_logs[x].d);
+	for(x = 0; x < g_logc; x++)
+		printf("  %-10s %s\n", g_logv[x], g_logv[x].d);
+#endif
 }
 
 printf(
 "\n"
 "For more information visit http://fabutil.org\n"
-"\n"
 );
 
 	exit(!valid);
 }
 
-static xapi addtest(char * test, int * test_objectsa)
+static xapi objects_push(char * path, size_t * objectsa)
 {
   enter;
 
-	if(g_args.test_objectsl == *test_objectsa)
-	{
-		int ns = *test_objectsa ?: 10;
-		ns = ns * 2 + ns / 2;
+  // arguments to dlopen are specified as paths
+  if(strstr(path, "/") == 0)
+  {
+    failf(MAIN_NOTPATH, "argument", "%s", path);
+  }
 
-		fatal(xrealloc, &g_args.test_objects, sizeof(*g_args.test_objects), ns, *test_objectsa);
-		*test_objectsa = ns;
-	}
-
-	fatal(ixstrdup, &g_args.test_objects[g_args.test_objectsl++], test);
+  fatal(assure, &g_args.objects, sizeof(*g_args.objects), g_args.objectsl + 1, objectsa);
+	fatal(ixstrdup, &g_args.objects[g_args.objectsl++], path);
 
 	finally : coda;
 }
@@ -123,7 +121,7 @@ xapi args_parse()
 	int help = 0;
 	int version = 0;
 	int	logcats = 0;
-	int test_objectsa = 0;
+	size_t objectsa = 0;
 
 	struct option longopts[] = {
 		  { "help"												, no_argument				, &help, 1 } 
@@ -133,8 +131,6 @@ xapi args_parse()
 #if DEBUG || DEVEL
 		, { "backtrace-pithy"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
 		, { "backtrace-full"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
-		, { "logtrace-no"									, no_argument				, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
-		, { "logtrace"										, no_argument				, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
 #endif
 		, { }
 	};
@@ -155,7 +151,6 @@ xapi args_parse()
 	//
 #if DEBUG || DEVEL
 	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
-	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
 #endif
 
 	int x;
@@ -167,33 +162,29 @@ xapi args_parse()
 		{
 			// longopts - placeholder
 		}
-		else if(x == 'a')
-		{
-			// placeholder
-		}
 		else if(x == '?')
 		{
 			// unrecognized argv element
 			if(optopt)
 			{
-				failf(XUNIT_BADARGS, "unknown switch : -%c", optopt);
+				failf(MAIN_NXSWITCH, "switch", "-%c", optopt);
 			}
 			else
 			{
-				failf(XUNIT_BADARGS, "unknown argument : %s", g_argv[optind-1]);
+				failf(MAIN_BADARGS, "argument", "%s", g_argv[optind-1]);
 			}
 		}
 		else
 		{
 			// non-option argv elements
-			fatal(addtest, optarg, &test_objectsa);
+			fatal(objects_push, optarg, &objectsa);
 		}
 	}
 
 	for(; optind < g_argc; optind++)
 	{
 		// options following --
-		fatal(addtest, g_argv[optind], &test_objectsa);
+		fatal(objects_push, g_argv[optind], &objectsa);
 	}
 
 	if(help || version || logcats)
@@ -218,7 +209,6 @@ xapi args_summarize()
 
 #if DEBUG || DEVEL
 	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-logtrace          =%s", g_args.mode_logtrace == DEFAULT_MODE_LOGTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_logtrace));
 #endif
 
 	if(g_args.concurrency == 0)
@@ -228,10 +218,10 @@ xapi args_summarize()
 
 	logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", g_args.concurrency == (int)((float)g_args.procs * 1.2f) ? " " : "*", 'j', space);
 
-	if(g_args.test_objectsl == 0)
-		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) test_object(s)         =", " ", ' ');
-	for(x = 0; x < g_args.test_objectsl; x++)
-		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) test_object(s)         =%s", "*", ' ', g_args.test_objects[x]);
+	if(g_args.objectsl == 0)
+		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) object(s)         =", " ", ' ');
+	for(x = 0; x < g_args.objectsl; x++)
+		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) object(s)         =%s", "*", ' ', g_args.objects[x]);
 
 	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
@@ -241,8 +231,8 @@ xapi args_summarize()
 void args_teardown()
 {
 	int x;
-	for(x = 0; x < g_args.test_objectsl; x++)
-		free(g_args.test_objects[x]);
+	for(x = 0; x < g_args.objectsl; x++)
+		free(g_args.objects[x]);
 
-	free(g_args.test_objects);
+	free(g_args.objects);
 }

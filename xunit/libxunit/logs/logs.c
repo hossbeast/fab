@@ -15,20 +15,20 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include "internal.h"
 #include "logs.h"
 
-logger_category * logs = (logger_category []) {
-	  { name : "ARGS"			, description : "program arguments" }
-	, { name : "PARAMS"		, description : "program execution parameters" }
-	, { name : "DLOAD"		, description : "dload details"                 , attr : L_MAGENTA }
-  , { name : "SUMMARY"  , description : "per-suite results" }
-	, { name : "UNIT"	  	, description : "per-unit results" }
-  , { name : "TEST"     , description : "per-test results" }
-  , { name : "FAIL"     , description : "test failure details" }
+APIDATA logger_category * xunit_logs = (logger_category []) {
+    { name : "INSET"    , description : "test input set" }
+  , { name : "OUTSET"   , description : "test output set" }
   , { }
 };
 
-logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+SUMMARY|FAIL" }
-  , { }
-};
+xapi logs_setup()
+{
+  enter;
+
+  fatal(logger_category_register, xunit_logs);
+
+  finally : coda;
+}

@@ -20,20 +20,19 @@
 
 #include "xapi.h"
 
-/// xapi_setup
+/// xunit_setup
 //
 // SUMMARY
-//  call during setup to initialize libxunit, including to register libxunit
-//  error tables
+//  initialize the library
 //
-xapi xunit_setup();
+xapi xunit_load();
 
-/// xapi_teardown
+/// xunit_unload
 //
 // SUMMARY
-//  cleanup - call during shutdown
+//  release the library
 //
-void xapi_teardown();
+xapi xunit_unload();
 
 #ifndef TEST_TYPE
 # define TEST_TYPE struct xunit_test
@@ -45,29 +44,34 @@ void xapi_teardown();
 struct xunit_unit;
 struct xunit_test;
 
-// xapi
 typedef xapi (*xunit_unit_setup)(const UNIT_TYPE*);
-typedef xapi (*xunit_unit_teardown)(const UNIT_TYPE*);
+typedef void (*xunit_unit_teardown)(const UNIT_TYPE*);
+typedef xapi (*xunit_unit_release)(const UNIT_TYPE*);
 typedef xapi (*xunit_test_entry)(const TEST_TYPE*);
 
+/// xunit_unit
+//
+// SUMMARY
+//  each test module exports a single xunit_unit named xunit
+//
+typedef struct xunit_unit
+{
+	xunit_unit_setup		  setup;
+	xunit_unit_teardown	  teardown;
+	xunit_unit_release	  release;
+	struct xunit_test **  tests;		// sentinel-terminated list of pointers to tests
+} xunit_unit;
+
+/// xunit_test
+//
+// SUMMARY
+//  a single test
+//
 typedef struct xunit_test
 {
 	struct xunit_unit *	unit;
 	char *							name;
 	xunit_test_entry		entry;
 } xunit_test;
-
-typedef struct xunit_unit
-{
-	xunit_unit_setup		setup;
-	xunit_unit_teardown	teardown;
-	xunit_test **				tests;		// sentinel-terminated list of pointers to tests
-} xunit_unit;
-
-#include "xunit/XUNIT.errtab.h"
-#undef perrtab
-#define perrtab perrtab_XUNIT
-
-#include "xunit/logs.h"
 
 #endif

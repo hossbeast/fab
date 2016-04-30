@@ -18,85 +18,59 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
+#define perrtab perrtab_MAIN
 #include "xapi.h"
+#include "xapi/trace.h"
 #include "xapi/calltree.h"
-
 #include "xlinux.h"
 #include "xunit.h"
-#include "xunit/error.h"
+#include "xunit/XUNIT.errtab.h"
+#include "logger.h"
 
 #include "args.h"
 #include "logs.h"
+#include "errtab/MAIN.errtab.h"
+#include "macros.h"
 
-int main(int g_argc, char** g_argv)
+int main(int argc, char** argv, char ** envp)
 {
   enter;
 
+  xapi R;
   char space[4096];
   size_t tracesz = 0;
 
   int total_pass = 0;
   int total_fail = 0;
 	//
-	// allocated with the same size as g_args.test_objects
+	// allocated with the same size as g_args.objects
   void ** objects = 0;
-	size_t  objectsl = 0;
+  int x = 0;
+  int token;
 
-  // link in libxunit
-  xunit_errcode(1234);
+  // load libraries
+  fatal(logger_load);
+  fatal(xlinux_load);
+  fatal(xunit_load);
 
-#if 0
-  // link in liblistwise - there are symbol binding problems when just dloading it
-extern int listwise_allocation_seed;
-  listwise_allocation_seed = 10;
-
-//  fatal(xdlopen, "/home/todd/fab/listwise/liblistwise/liblistwise.devel.so", RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND, &object);
-#endif
-
-  // initialize logger - prepare g_argc/g_argv
-  fatal(log_init, 0);
+  // initialize logger
+  fatal(logger_category_register, logs);
+  fatal(logger_stream_register, streams);
+  fatal(logger_initialize, envp);
 
   // parse cmdline arguments
   fatal(args_parse);
-
-  // configure logger
-#if DEVEL || DEBUG
-  if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
-  {
-    fatal(log_config_and_describe
-      , L_TAG                       // prefix
-      , 0                           // trace
-      , L_LOGGER                    // describe bits
-    );
-  }
-  else
-  {
-    fatal(log_config_and_describe
-      , L_TAG
-      , 0
-      , L_LOGGER
-    );
-  }
-#else
-  fatal(log_config, L_TAG);
-#endif
-
-  // default logging categories, with lower precedence than cmdline logexprs
-  fatal(log_parse_and_describe, "+ERROR|WARN|INFO", 0, 1, L_INFO);
-  fatal(log_parse_and_describe, "+{XUNIT}", 0, 1, L_INFO);
 
   // summarize
   fatal(args_summarize);
 
 	// allocation for dloaded objects
-	objectsl = g_args.test_objectsl;
-	fatal(xmalloc, &objects, sizeof(*objects) * objectsl);
+	fatal(xmalloc, &objects, sizeof(*objects) * g_args.objectsl);
 
-  int x;
-  for(x = 0; x < g_args.test_objectsl; x++)
+  for(;x < g_args.objectsl; x++)
   {
     // open the object
-    fatal(xdlopen, g_args.test_objects[x], RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND, &objects[x]);
+    fatal(xdlopen, g_args.objects[x], RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND, &objects[x]);
 
     // load the test manifest
     xunit_unit * xunit;
@@ -108,95 +82,124 @@ extern int listwise_allocation_seed;
       while(*test)
         test++;
 
-      logf(L_XUNIT | L_DLOAD, "%s -> xunit : { setup : %s, teardown : %s, tests : %zu }"
-        , g_args.test_objects[x]
-        , xunit->setup ? "true" : "false"
-        , xunit->teardown ? "true" : "false"
+      logf(L_DLOAD, "loaded %s -> xunit : { setup : %p, teardown : %p, release : %p, tests : %zu }"
+        , g_args.objects[x]
+        , xunit->setup 
+        , xunit->teardown
+        , xunit->release
         , test - xunit->tests
       );
     }
     else
     {
-      logf(L_XUNIT | L_DLOAD, "%s", g_args.test_objects[x]);		// not an object containing tests
+      logf(L_DLOAD, "loaded %s", g_args.objects[x]);		// not an object containing tests
     }
 
     if(xunit)
     {
-      // execute setup, if any
+      // unit setup
       if(xunit->setup)
         fatal(xunit->setup, xunit);
 
       xunit_test ** test = xunit->tests;
 
-      int pass = 0;
-      int fail = 0;
+      int unit_pass = 0;
+      int unit_fail = 0;
+      int unit_tests = sentinel(test);
 
       // execute all tests
       while(*test)
       {
-        if((*test)->name)
-          logf(L_XUNIT, "%s[%d] %s", g_args.test_objects[x], pass + fail, (*test)->name);
-        else
-          logf(L_XUNIT, "%s[%d]", g_args.test_objects[x], pass + fail);
-
         // convenience
         (*test)->unit = xunit;
 
+        int test_pass = 0;
+        int test_fail = 0;
+
         if(invoke((*test)->entry, (*test)))
         {
+          // add identifying info
+          if((*test)->name)
+            xapi_info_adds("test", (*test)->name);
+          else
+            xapi_info_addf("test", "%d", test - xunit->tests);
+          xapi_info_adds("object", g_args.objects[x]);
+
           // propagate non-unit-testing errors
           if(XAPI_ERRTAB != perrtab_XUNIT || XAPI_ERRCODE != XUNIT_FAIL)
             fail(0);
 
-          // for unit-testing errors, log the error
+          // save the trace
           size_t z = xapi_trace_pithy(space, sizeof(space));
-          logf(L_XUNIT | L_RED, " %.*s", (int)z, space);
 
-          // discard the error frame(s)
+          // discard the error frames
           xapi_calltree_unwind();
+
+          // for unit-testing errors, log the failure and continue
+          logf(L_FAIL, "%*s %.*s", 3, "", (int)z, space);
           
-          fail++;
+          test_fail++;
         }
         else
         {
-          pass++;
+          test_pass++;
         }
+
+        // report for this test
+        fatal(log_xstart, L_TEST, test_pass ? L_GREEN : L_RED, &token);
+        xlogf(0, test_pass ? L_GREEN : L_RED
+          , "%7s %*s %s %*s (%3d / %-3d)"
+          , "test"
+          , 7, ""
+          , test_pass ? "pass" : "fail"
+          , 4, ""
+          , (test - xunit->tests) + 1
+          , unit_tests
+        );
+
+        if((*test)->name)
+          logf(0, " %s", (*test)->name);
+        fatal(log_finish, &token);
+
+        unit_pass += test_pass;
+        unit_fail += test_fail;
 
         test++;
       }
 
-      // execute teardown, if any
-      if(xunit->teardown)
-        fatal(xunit->teardown, xunit);
-
       // report for this module
-      logf(L_XUNIT | (fail == 0 ? L_GREEN : L_RED)
-        , " %9s : %3d / %3d or %%% 5.2f"
-        , "pass"
-        , pass
-        , (pass + fail)
-        , 100 * ((double)pass / (double)(pass + fail))
+      xlogf(L_UNIT, unit_fail == 0 ? L_GREEN : L_RED
+        , "%6s %%%6.2f pass rate (%3d / %-3d) for %s"
+        , "unit"
+        , 100 * ((double)unit_pass / (double)(unit_pass + unit_fail))
+        , unit_pass
+        , unit_tests
+        , g_args.objects[x]
       );
 
-      total_pass += pass;
-      total_fail += fail;
+      total_pass += unit_pass;
+      total_fail += unit_fail;
 
+      // unit cleanup
       if(xunit->teardown)
-        fatal(xunit->teardown, xunit);
+        xunit->teardown(xunit);
+
+      if(xunit->release)
+        fatal(xunit->release, xunit);
     }
   }
 
   // summary report
-  logf(L_XUNIT | (total_fail == 0 ? L_GREEN : L_RED)
-    , "%-10s : %3d / %3d or %%% 5.2f"
-    , "total pass"
+  xlogf(L_SUMMARY, total_fail ? L_RED : L_GREEN
+    , "%-5s %%%6.2f pass rate (%3d / %-3d)"
+    , "suite"
+    , 100 * ((double)total_pass / (double)(total_pass + total_fail))
     , total_pass
     , (total_pass + total_fail)
-    , 100 * ((double)total_pass / (double)(total_pass + total_fail))
   );
 
 finally:
-  args_teardown();
+  fatal(log_finish, &token);
 
   if(XAPI_UNWINDING)
   {
@@ -213,17 +216,21 @@ finally:
     }
 #endif
 
-    logw(L_RED, space, tracesz);
+    xlogw(0, L_RED, space, tracesz);
   }
 
-	for(x = 0; x < objectsl; x++)
-		fatal(ixdlclose, &objects[x]);
+  int j;
+	for(j = 0; j < x; j++)
+		fatal(xdlclose, objects[j]);
 	free(objects);
 
-  log_teardown();
+  args_teardown();
+  fatal(xunit_unload);
+  fatal(logger_unload);
 
-int R;
 conclude(&R);
 
-return R || total_fail;
+  xapi_teardown();
+
+  return R | total_fail;
 }

@@ -15,4 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	BADARGS	invalid command-line arguments
+#ifndef _XUNIT_LOGS_INTERNAL_H
+#define _XUNIT_LOGS_INTERNAL_H
+
+#include "xapi.h"
+#include "logs.h"
+
+xapi logs_setup();
+
+#endif

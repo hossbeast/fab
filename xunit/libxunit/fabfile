@@ -24,14 +24,10 @@
 # variables
 $basename			= [ xunit ]
 $libname_xapi = [ lib $basename .so ~ j ]
-$copts				= [ -fPIC [ $dlibxunit ~ lsr c -d s/^/-I ]
-	# include paths
-	[ $dlibxapi ~ s/^/-I ]
-]
+$copts				= [ -fPIC [ $dlibxapi $dliblogger [ $* ~ lsr c -d ] ~ s/^/-I ] ]
 $cflags_xapi_final	= [ $cflags_xapi_final $copts ]
 $cflags_xapi_debug	= [ $cflags_xapi_debug $copts ]
 $cflags_xapi_devel	= [ $cflags_xapi_devel $copts ]
-
 $lopts							= [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
 $lflags_xapi_final	= [ $libxapi_xapi_final $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
 $lflags_xapi_debug	= [ $libxapi_xapi_debug $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
@@ -49,9 +45,8 @@ $lflags_xapi_devel	= [ $libxapi_xapi_devel $lopts [ -Wl,-soname,libxunit-xapi-de
 ## dependencies
 ##
 
-# default NOFILE target - build library and all operators
-[ @all ] : [ @all.xapi ]
-[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @release ] : [ @release.xapi ]
+[ @release.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final ] : [ @final.xapi ]
 [ @final.xapi ] : [ $libxunit_xapi_final ]
 [ @debug ] : [ @debug.xapi ]
@@ -74,37 +69,22 @@ $lflags_xapi_devel	= [ $libxapi_xapi_devel $lopts [ -Wl,-soname,libxunit-xapi-de
 }
 
 # link the library
-[ $libxunit_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sxf/c/xapi.final.pic.o y ] ]
+[ $libxunit_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.final.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ] 
 }
 
-[ $libxunit_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sxf/c/xapi.debug.pic.o y ] ]
+[ $libxunit_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.debug.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ] 
 }
 
-[ $libxunit_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sxf/c/xapi.devel.pic.o y ] ]
+[ $libxunit_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.devel.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ] 
 }
 
-[ $libxunit_xapi_final ] :^ [ $libxapi_xapi_final ]
-[ $libxunit_xapi_debug ] :^ [ $libxapi_xapi_debug ]
-[ $libxunit_xapi_devel ] :^ [ $libxapi_xapi_devel ]
-
-##
-## tasks
-##
-
-[ @install.final.xapi ] : [ @final.xapi ]
-{
-	install -d															[ $destdir/$libdir ]
-	install [ $libxunit ]										[ $destdir/$libdir/$libname_xapi ]
-}
-
-[ @installdevheaders ]
-{
-	install -d															[ $destdir/$incdir ]
-	install [ $dlibxunit/xunit.h	]					[ $destdir/$incdir/xunit.h ]
-}
+# library dependencies
+[ $libxunit_xapi_final ] :^ [ $libxapi_xapi_final $liblogger_xapi_final ]
+[ $libxunit_xapi_debug ] :^ [ $libxapi_xapi_debug $liblogger_xapi_debug ]
+[ $libxunit_xapi_devel ] :^ [ $libxapi_xapi_devel $liblogger_xapi_devel ]
