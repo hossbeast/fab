@@ -30,6 +30,14 @@
 xapi xdlopen(const char * filename, int flag, void ** dl)
 	__attribute__((nonnull));
 
+/// xdlclose
+//
+// SUMMARY
+//  fatalize-able wrapper for dlclose
+//
+xapi xdlclose(void * dl)
+  __attribute__((nonnull));
+
 /// ixdlclose
 //
 // SUMMARY

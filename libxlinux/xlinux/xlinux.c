@@ -15,32 +15,47 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include "xapi.h"
 #include "xapi/errtab.h"
+#include "xapi/XAPI.errtab.h"
 
 #include "internal.h"
 #include "errtab/SYS.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
+static int handles;
+
 //
 // api
 //
 
-API xapi xlinux_setup()
+API xapi xlinux_load()
 {
   enter;
 
-  static int setup;
-
-  if(!setup)
+  if(handles == 0)
   {
+    // modules
+    fatal(xapi_errtab_register, perrtab_SYS);
     fatal(xapi_errtab_register, perrtab_XLINUX);
-    setup = 1;
   }
+  handles++;
 
   finally : coda;
 }
 
-API void xlinux_teardown()
+API xapi xlinux_unload()
 {
+  enter;
 
+  if(--handles == 0)
+  {
+
+  }
+  else if(handles < 0)
+  {
+    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "xlinux");
+  }
+
+  finally : coda;
 }

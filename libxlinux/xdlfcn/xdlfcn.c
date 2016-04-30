@@ -40,18 +40,27 @@ finally :
 coda;
 }
 
+API xapi xdlclose(void * dl)
+{
+  enter;
+
+  dlerror();
+  dlclose(dl);
+  char * e = dlerror();
+  if(e)
+    fails(XLINUX_DLERROR, "error", e);
+
+  finally : coda;
+}
+
 API xapi ixdlclose(void ** dl)
 {
   enter;
 
   if(*dl)
   {
-    dlerror();
-    dlclose(*dl);
+    fatal(xdlclose, *dl);
     *dl = 0;
-    char * e = dlerror();
-    if(e)
-      fails(XLINUX_DLERROR, "error", e);
   }
 
   finally : coda;

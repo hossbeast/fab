@@ -20,19 +20,19 @@
 
 #include "xapi.h"
 
-/// xlinux_setup
+/// xlinux_load
 //
 // SUMMARY
-//  initialize the library (idempotent)
+//  initialize the library
 //
-xapi xlinux_setup();
+xapi xlinux_load();
 
-/// xlinux_teardown
+/// xlinux_unload
 //
 // SUMMARY
-//  free resources used by the library
+//  release the library
 //
-void xlinux_teardown();
+xapi xlinux_unload();
 
 #include "xlinux/xdirent.h"
 #include "xlinux/xdlfcn.h"

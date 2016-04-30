@@ -126,7 +126,7 @@ API xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const 
 
   int compar(const void * A, const void * B, void * T)
   {
-    enter;
+    enter_nochecks;
 
     int r = 0;
     if(!hasfailed)
