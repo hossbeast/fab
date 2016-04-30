@@ -92,7 +92,7 @@ xapi test_filter_parse()
       assertf(filterp == 0, "%p", "%p", 0, filterp);
     }
 
-    filter_xfree(&filterp);
+    filter_ifree(&filterp);
   }
 
 finally:

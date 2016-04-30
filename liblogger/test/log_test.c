@@ -20,12 +20,17 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
+#include "narrator.h"
+#include "narrator/fixed.h"
 
 #include "internal.h"
 #include "stream.internal.h"
 #include "LOGGER.errtab.h"
+#include "category.internal.h"
 
 #include "test_util.h"
+
+narrator * N;
 
 /// test_setup
 //
@@ -36,13 +41,15 @@ xapi test_setup()
 {
   enter;
 
-  // initialize the module
-  stream_teardown();
+  // initialize 
+  fatal(category_setup);
   fatal(stream_setup);
+
+  fatal(narrator_fixed_create, &N, 2048);
 
   // register a stream
   logger_stream * streams = (logger_stream []) {
-      { name : "foo", type : LOGGER_STREAM_FD, .fd = 1 }
+      { name : "foo", type : LOGGER_STREAM_NARRATOR, narrator : N }
     , { }
   };
 
@@ -52,11 +59,56 @@ xapi test_setup()
   finally : coda;
 }
 
-xapi test_stream_would()
+void test_teardown()
+{
+  narrator_ifree(&N);
+  stream_teardown();
+  category_teardown();
+}
+
+/// test_log_zero
+//
+// categories of zero should always be emitted
+//
+xapi test_log_zero()
 {
   enter;
 
+  // act
+  logs(0, "foo");
+
+  // assert
+  char * expected = "foo";
+  const char * actual = narrator_fixed_buffer(N);
+  assertf(strcmp(expected, actual) == 0, "%s", "%s", expected, actual);
+
   finally : coda;
+}
+
+xapi test_log_start()
+{
+  enter;
+
+  int token;
+
+  // act
+  fatal(log_start, 0, &token);
+
+  // only the ids specified in log_start matter
+  logs(0xa, "f");
+  logs(0, "o");
+  logs(75, "o");
+
+  fatal(log_finish, &token);
+
+  // assert
+  char * expected = "foo";
+  const char * actual = narrator_fixed_buffer(N);
+  assertf(strcmp(expected, actual) == 0, "%s", "%s", expected, actual);
+  
+finally:
+  fatal(log_finish, &token);
+coda;
 }
 
 int main()
@@ -71,11 +123,13 @@ int main()
     xapi (*entry)();
     int expected;
   } tests[] = {
-      { entry : test_stream_would }
+      { entry : test_log_zero }
+    , { entry : test_log_start }
   };
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
+    test_teardown();
     fatal(test_setup);
 
     xapi exit;
@@ -91,8 +145,9 @@ int main()
     }
 
     assert_exit(exit, perrtab_LOGGER, tests[x].expected);
-    success;
   }
+
+  success;
 
 finally:
   if(XAPI_UNWINDING)
@@ -100,5 +155,7 @@ finally:
     xapi_infof("test", "%d", x);
     xapi_backtrace();
   }
+
+  test_teardown();
 coda;
 }

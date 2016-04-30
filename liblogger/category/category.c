@@ -270,11 +270,11 @@ xapi category_setup()
 
 void category_teardown()
 {
-  list_xfree(&registered);
-  list_xfree(&registering);
-  list_xfree(&activated);
-  map_xfree(&activated_byname);
-  map_xfree(&activated_byid);
+  list_ifree(&registered);
+  list_ifree(&registering);
+  list_ifree(&activated);
+  map_ifree(&activated_byname);
+  map_ifree(&activated_byid);
 }
 
 
@@ -452,8 +452,8 @@ API xapi logger_category_activate()
   activated_byid = activating_byid;
   activating_byid = T;
 
-  list_xfree(&registered);
-  list_xfree(&registering);
+  list_ifree(&registered);
+  list_ifree(&registering);
 
 finally:
   list_free(activating);

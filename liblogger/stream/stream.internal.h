@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -56,12 +56,13 @@ typedef struct stream
 
   // the underlying narrator
   struct narrator * narrator_base;
+  struct narrator * narrator_owned;
 } stream;
 
 /// g_streams
 //
 // SUMMARY
-//  
+//
 //
 extern struct array * g_streams;
 
@@ -87,7 +88,7 @@ int stream_would(const stream * const restrict streamp, const uint64_t ids)
 /// streams_would
 //
 // SUMMARY
-//  
+//
 //
 int streams_would(const uint64_t ids);
 
@@ -97,11 +98,11 @@ int streams_would(const uint64_t ids);
 //
 //
 // PARAMETERS
-//  ids       - 
-//  attrs     - 
+//  ids       -
+//  attrs     -
 //  b         -
-//  l         - 
-//  time_msec - 
+//  l         -
+//  time_msec -
 //
 xapi streams_write(const uint64_t ids, const uint32_t attrs, const char * const restrict b, size_t l, const long time_msec)
   __attribute__((nonnull));

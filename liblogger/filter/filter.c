@@ -64,7 +64,7 @@ void filter_free(filter * filter)
   free(filter);
 }
 
-void __attribute__((unused)) filter_xfree(filter ** filter)
+void __attribute__((unused)) filter_ifree(filter ** filter)
 {
   filter_free(*filter);
   *filter = 0;
@@ -170,6 +170,9 @@ xapi filter_say(filter * filterp, struct narrator * N)
 int filters_would(const list * const restrict filters, const uint64_t ids)
 {
   int r = 0;
+
+  if((ids & L_ALL) == 0)
+    return 1;
 
   int x;
   for(x = 0; x < filters->l; x++)

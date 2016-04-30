@@ -22,13 +22,16 @@
 
 #include "xapi.h"
 
+struct narrator;
+
 /*
  * options and modifiers that can be applied to a log message
  */
-#define LOGGER_STREAM_TABLE(x)                                                    \
-  LOGGER_STREAM_DEF(FD            , 0x01, x)  /* write to a file descriptor */    \
-  LOGGER_STREAM_DEF(RING          , 0x02, x)  /* write to a ring buffer */        \
-  LOGGER_STREAM_DEF(FILE          , 0x03, x)  /* write to a rolling logfile  */   \
+#define LOGGER_STREAM_TABLE(x)                                                      \
+  LOGGER_STREAM_DEF(FD            , 0x01  , x)  /* write to a file descriptor */    \
+  LOGGER_STREAM_DEF(RING          , 0x02  , x)  /* write to a ring buffer */        \
+  LOGGER_STREAM_DEF(FILE          , 0x03  , x)  /* write to a rolling logfile  */   \
+  LOGGER_STREAM_DEF(NARRATOR      , 0x04  , x)  /* write to a narrator */
 
 enum {
 #define LOGGER_STREAM_DEF(a, b, x) LOGGER_STREAM_ ## a = UINT8_C(b),
@@ -57,7 +60,8 @@ typedef struct logger_stream
   char * expr;              // e.g. +INFO
   
   union {
-    int fd;                 // LOGGER_STREAM_FD
+    int fd;                       // LOGGER_STREAM_FD
+    struct narrator * narrator;   // LOGGER_STREAM_NARRATOR
   };
 
   // (returns) unique id

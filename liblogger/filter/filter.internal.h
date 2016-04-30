@@ -54,12 +54,12 @@ void filter_teardown();
 //
 void filter_free(filter * filterp);
 
-/// filter_xfree
+/// filter_ifree
 //
 // SUMMARY
-//  free a filter with xfree semantics
+//  free a filter with ifree semantics
 //
-void filter_xfree(filter ** const restrict filterp)
+void filter_ifree(filter ** const restrict filterp)
   __attribute__((nonnull));
 
 /// filter_say

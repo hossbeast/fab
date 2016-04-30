@@ -155,7 +155,10 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
     fatal(category_byid, bit, &category);
     if(prev)
       says(" ");
-    sayf("%*.*s", category_name_max_length, category->namel, category->name);
+    if(category)
+      sayf("%*.*s", category_name_max_length, category->namel, category->name);
+    else
+      sayf("%*s", category_name_max_length, "");
     prev = 1;
   }
 
@@ -232,7 +235,16 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
   streamp->type = def->type;
   if(def->type == LOGGER_STREAM_FD)
   {
-    fatal(narrator_file_create, &streamp->narrator_base, def->fd);
+    fatal(narrator_file_create, &streamp->narrator_owned, def->fd);
+    streamp->narrator_base = streamp->narrator_owned;
+  }
+  else if(def->type == LOGGER_STREAM_NARRATOR)
+  {
+    streamp->narrator_base = def->narrator;
+  }
+  else
+  {
+    failf(LOGGER_NXSTREAM, "type", "%d", def->type);
   }
   fatal(narrator_record_create, &streamp->narrator, streamp->narrator_base);
 
@@ -256,7 +268,7 @@ static void __attribute__((nonnull)) stream_destroy(stream * const restrict stre
     free(streamp->name);
     list_free(streamp->filters);
     narrator_free(streamp->narrator);
-    narrator_free(streamp->narrator_base);
+    narrator_free(streamp->narrator_owned);
   }
 }
 
@@ -276,8 +288,9 @@ xapi stream_setup()
 
 void stream_teardown()
 {
-  array_xfree(&g_streams);
-  map_xfree(&streams_byid);
+  array_free(g_streams);
+  map_free(streams_byid);
+  list_free(registered);
 }
 
 xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * const restrict b, size_t l,  const long time_msec)
@@ -434,6 +447,8 @@ xapi stream_say(stream * const restrict streamp, narrator * restrict N)
 
   if(streamp->type == LOGGER_STREAM_FD)
     sayf(", fd : %d", narrator_file_fd(streamp->narrator_base));
+  else if(streamp->type == LOGGER_STREAM_NARRATOR)
+    sayf(", narrator : %p", streamp->narrator_base);
 
   finally : coda;
 }
