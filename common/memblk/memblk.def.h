@@ -31,19 +31,19 @@ SUMMARY
 
 typedef struct memblk 
 {
-	struct {
-		char *	s;
-		size_t	l;
-		size_t	a;
-		size_t	o;			// cumulative offset
-	} *			blocks;
-	size_t	blocksl;
-	size_t	blocksa;
+  struct {
+    char *  s;
+    size_t  l;
+    size_t  a;
+    size_t  o;      // cumulative offset
+  } *     blocks;
+  size_t  blocksl;
+  size_t  blocksa;
 
 #ifndef MEMBLK_INTERNALS
 # define MEMBLK_INTERNALS
 #endif
-	MEMBLK_INTERNALS;
+  MEMBLK_INTERNALS;
 } memblk;
 
 #define restrict __restrict
@@ -58,7 +58,7 @@ typedef struct memblk
 //  p  - pointer to pointer to memory allocated with mb (T**)
 //
 void memblk_freeze(memblk * const restrict mb, void * restrict p)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// memblk_unfreeze
 //
@@ -70,7 +70,7 @@ void memblk_freeze(memblk * const restrict mb, void * restrict p)
 //  p  - pointer to pointer to memory allocated with mb (T**)
 //
 void memblk_unfreeze(memblk * const restrict mb, void * restrict p)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// memblk_thaw
 //
@@ -82,7 +82,7 @@ void memblk_unfreeze(memblk * const restrict mb, void * restrict p)
 //  p  - pointer to pointer to memory allocated with mb (T**)
 //
 void memblk_thaw(char * const restrict mb, void * restrict p)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 
 /// memblk_copyto
@@ -91,7 +91,7 @@ void memblk_thaw(char * const restrict mb, void * restrict p)
 //  consolidate the memblk
 //
 void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// memblk_size
 //
@@ -99,7 +99,7 @@ void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t
 //  get the size of the memblk
 //
 size_t memblk_size(memblk * const restrict mb)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

@@ -31,7 +31,7 @@ SUMMARY
 #include <sys/types.h>
 #include "xapi.h"
 
-struct mempolicy;		// xlinux/mempolicy.h
+struct mempolicy;   // xlinux/mempolicy.h
 
 struct memblk;
 typedef struct memblk memblk;
@@ -44,7 +44,7 @@ typedef struct memblk memblk;
 //  create an memblk
 //
 xapi memblk_mk(memblk ** mb)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// memblk_mk_mapped
 //
@@ -52,7 +52,7 @@ xapi memblk_mk(memblk ** mb)
 //  create an memblk whose allocations are backed by mmapped pages
 //
 xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// memblk_alloc
 //
@@ -60,7 +60,7 @@ xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
 //  request an allocation
 //
 xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// memblk_realloc
 //
@@ -68,7 +68,7 @@ xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 //  request a reallocation
 //
 xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// memblk_free
 //
@@ -83,7 +83,7 @@ void memblk_free(memblk * mb);
 //  free an memblk with xfree semantics
 //
 void memblk_xfree(memblk ** mb)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// mempolicy 
 //
@@ -101,7 +101,7 @@ struct mempolicy * memblk_getpolicy(memblk * mb);
 //  as for libxlinux/axwritev
 //
 xapi memblk_writeto(memblk * const restrict mb, const int fd)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

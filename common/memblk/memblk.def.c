@@ -26,80 +26,80 @@
 
 void memblk_freeze(memblk * const restrict mb, void * restrict _p)
 {
-	void ** p = _p;
+  void ** p = _p;
 
-	if(*p)
-	{
-		int x;
-		for(x = 0; x < mb->blocksl; x++)
-		{
-			ptrdiff_t delta = (char*)*p - mb->blocks[x].s;
-			if(delta >= 0 && delta < mb->blocks[x].l)
-			{
+  if(*p)
+  {
+    int x;
+    for(x = 0; x < mb->blocksl; x++)
+    {
+      ptrdiff_t delta = (char*)*p - mb->blocks[x].s;
+      if(delta >= 0 && delta < mb->blocks[x].l)
+      {
 #if 0
 printf("%p -> %zu\n", *p, (size_t)(mb->blocks[x].o + delta));
 #endif
-				(*p) = (void*)(intptr_t)(mb->blocks[x].o + delta);
-				return;
-			}
-		}
+        (*p) = (void*)(intptr_t)(mb->blocks[x].o + delta);
+        return;
+      }
+    }
 
-		// does not point into the memblk
-	}
+    // does not point into the memblk
+  }
 }
 
 void memblk_unfreeze(memblk * const restrict mb, void * restrict _p)
 {
-	void ** p = _p;
+  void ** p = _p;
 
-	if(*p)
-	{
-		int x;
-		for(x = 0; x < mb->blocksl; x++)
-		{
-			size_t delta = (intptr_t)(char*)*p - mb->blocks[x].o;
+  if(*p)
+  {
+    int x;
+    for(x = 0; x < mb->blocksl; x++)
+    {
+      size_t delta = (intptr_t)(char*)*p - mb->blocks[x].o;
 
-			if(delta >= 0 && delta < mb->blocks[x].l)
-			{
+      if(delta >= 0 && delta < mb->blocks[x].l)
+      {
 #if 0
 printf("%zu -> %p\n", (size_t)*p, mb->blocks[x].s + delta);
 #endif
-				*p = mb->blocks[x].s + delta;
-				return;
-			}
-		}
+        *p = mb->blocks[x].s + delta;
+        return;
+      }
+    }
 
-		// does not point into the memblk
-	}
+    // does not point into the memblk
+  }
 }
 
 void memblk_thaw(char * const restrict mb, void * restrict _p)
 {
-	void ** p = _p;
+  void ** p = _p;
 
-	if(*p)
-	{
+  if(*p)
+  {
 #if 0
 printf("%p -> %zu\n", *p, (size_t)(intptr_t)(mb + (size_t)(intptr_t)*p));
 #endif
-		*p = mb + (size_t)(intptr_t)*p;
-	}
+    *p = mb + (size_t)(intptr_t)*p;
+  }
 }
 
 void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
 {
-	int x;
-	for(x = 0; x < mb->blocksl; x++)
-		memcpy(dst + mb->blocks[x].o, mb->blocks[x].s, mb->blocks[x].l);
+  int x;
+  for(x = 0; x < mb->blocksl; x++)
+    memcpy(dst + mb->blocks[x].o, mb->blocks[x].s, mb->blocks[x].l);
 }
 
 size_t memblk_size(memblk * const restrict mb)
 {
-	size_t r = 0;
+  size_t r = 0;
 
-	int x;
-	for(x = 0; x < mb->blocksl; x++)
-		r += mb->blocks[x].l;
+  int x;
+  for(x = 0; x < mb->blocksl; x++)
+    r += mb->blocks[x].l;
 
-	return r;
+  return r;
 }

@@ -29,18 +29,18 @@
 /// >> file://clients.h :
 /// extern union g_clients_t
 /// {
-/// 	coll_doubly c;
+///   coll_doubly c;
 /// 
-/// 	struct
-/// 	{
-/// 		int				len;
-/// 		int				alloc;
-/// 		int				size;
-/// 		client**	e;
+///   struct
+///   {
+///     int       len;
+///     int       alloc;
+///     int       size;
+///     client**  e;
 /// 
-/// 		idx*		by_key;
-/// 		idx*		by_ipsid;
-/// 	};
+///     idx*    by_key;
+///     idx*    by_ipsid;
+///   };
 /// } g_clients;
 ///
 /// >> file://clients.c :
@@ -52,10 +52,10 @@
 /// for(x = 0; x < g_clients.len; x++)
 /// {
 ///   // free client fields
-///		free(g_clients.e[x]->string);
+///   free(g_clients.e[x]->string);
 ///
-///		// free memory for this client
-///		free(g_clients.e[x]);
+///   // free memory for this client
+///   free(g_clients.e[x]);
 /// }
 ///
 /// // free collection memory
@@ -64,18 +64,18 @@
 
 typedef struct coll_singly
 {
-	int 	len;			// initialized elements in e
-	int 	alloc;		// allocated size of e (in elements)
-	int 	size;			// size of elements in e
-	char*	e;				// singly-allocated list of collection elements
+  int   len;      // initialized elements in e
+  int   alloc;    // allocated size of e (in elements)
+  int   size;     // size of elements in e
+  char* e;        // singly-allocated list of collection elements
 } coll_singly;
 
 typedef struct coll_doubly
 {
-	int 	len;			// initialized elements in e
-	int 	alloc;		// allocated size of e (in elements)
-	int 	size;			// size of elements pointed to by entries in e
-	char*	e;				// doubly-allocated list of collection elements
+  int   len;      // initialized elements in e
+  int   alloc;    // allocated size of e (in elements)
+  int   size;     // size of elements pointed to by entries in e
+  char* e;        // doubly-allocated list of collection elements
 } coll_doubly;
 
 xapi coll_singly_add(coll_singly* c, void* el, void* ret);

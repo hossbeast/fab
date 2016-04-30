@@ -40,25 +40,25 @@
 // returns 0 if an integer was parsed with the given constraints, nonzero otherwise
 //
 int parseint(
-	  const char* const	s
-	, char*							f
-	, intmax_t					lo
-	, intmax_t					hi
-	, uint8_t						min
-	, uint8_t						max
-	, void*							r
-	, int*							rn
+    const char* const s
+  , char*             f
+  , intmax_t          lo
+  , intmax_t          hi
+  , uint8_t           min
+  , uint8_t           max
+  , void*             r
+  , int*              rn
 ) __attribute__((nonnull(2)));
 
 int parseuint(
-	  const char* const	s
-	, char*							f
-	, uintmax_t					lo
-	, uintmax_t					hi
-	, uint8_t						min
-	, uint8_t						max
-	, void*							r
-	, int*							rn
+    const char* const s
+  , char*             f
+  , uintmax_t         lo
+  , uintmax_t         hi
+  , uint8_t           min
+  , uint8_t           max
+  , void*             r
+  , int*              rn
 ) __attribute__((nonnull(2)));
 
 

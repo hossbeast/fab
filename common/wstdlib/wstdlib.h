@@ -31,7 +31,7 @@
 //  returns 0 on success
 //  
 int wmalloc(void* t, size_t sz)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xrealloc
 //
@@ -47,6 +47,6 @@ int wmalloc(void* t, size_t sz)
 //  returns 0 on success
 //
 int wrealloc(void* t, size_t es, size_t ec, size_t oec)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #endif

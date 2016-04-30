@@ -21,29 +21,29 @@
 
 int wmalloc(void* target, size_t size)
 {
-	if(((*(void**)target) = calloc(size, 1)) == 0)
-		return 1;
+  if(((*(void**)target) = calloc(size, 1)) == 0)
+    return 1;
 
-	return 0;
+  return 0;
 }
 
 int wrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
-	void** t = ((void**)target);
-	*t = realloc(*t, es * ec);
+  void** t = ((void**)target);
+  *t = realloc(*t, es * ec);
 
-	if(es * ec)
-	{
-		if(*t)
-		{
-			if(((ssize_t)ec - (ssize_t)oec) > 0)
-				memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
-		}
-		else
-		{
-			return 1;
-		}
-	}
+  if(es * ec)
+  {
+    if(*t)
+    {
+      if(((ssize_t)ec - (ssize_t)oec) > 0)
+        memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
+    }
+    else
+    {
+      return 1;
+    }
+  }
 
-	return 0;
+  return 0;
 }

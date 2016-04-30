@@ -33,15 +33,15 @@ xapi assurex(void * target, size_t es, size_t len, size_t * const restrict ac, s
   enter;
 
   void ** p = (void**)target;
-	if(!*p || len > *ac)
-	{
-		size_t nc = *ac ?: seed;
-		while(nc < len)
-			nc = nc * 2 + nc / 2;
+  if(!*p || len > *ac)
+  {
+    size_t nc = *ac ?: seed;
+    while(nc < len)
+      nc = nc * 2 + nc / 2;
 
-		fatal(xrealloc, p, es, nc, *ac);
+    fatal(xrealloc, p, es, nc, *ac);
     *ac = nc;
-	}
+  }
 
-	finally : coda;
+  finally : coda;
 }

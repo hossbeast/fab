@@ -47,7 +47,7 @@ int estrcmp(const char* A, int alen, const char* B, int blen, int case_insensiti
 // returns a pointer offset from A where B was found, or 0
 //
 char* estrstr(char * restrict A, int alen, const char * const restrict B, int blen, const int case_insensitive)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /*
 /// wstrcatf
@@ -99,7 +99,7 @@ int wsprintf(char** s, char* fmt, ...);
 //  returns number of bytes written
 //
 int stresc(char * const restrict src, const size_t len, char * const restrict dst, const size_t sz)
-	__attribute__((nonnull(1, 3)));
+  __attribute__((nonnull(1, 3)));
 
 #undef restrict
 #endif

@@ -28,45 +28,45 @@ xapi coll_doubly_add(coll_doubly* c, void* el, void* ret)
 {
   enter;
 
-	if(c->len == c->alloc)
-	{
-		int ns = c->alloc ?: 10;
-		ns = ns * 2 + ns / 2;
+  if(c->len == c->alloc)
+  {
+    int ns = c->alloc ?: 10;
+    ns = ns * 2 + ns / 2;
 
-		void* tmp = c->e;
-		fatal(xmalloc, &c->e, ns * sizeof(void*));
-		if(tmp)
-			memcpy(c->e, tmp, c->alloc * sizeof(void*));
-		free(tmp);
-		c->alloc = ns;
-	}
+    void* tmp = c->e;
+    fatal(xmalloc, &c->e, ns * sizeof(void*));
+    if(tmp)
+      memcpy(c->e, tmp, c->alloc * sizeof(void*));
+    free(tmp);
+    c->alloc = ns;
+  }
 
-	char** t = ((char**)(c->e + (sizeof(void*) * c->len)));
+  char** t = ((char**)(c->e + (sizeof(void*) * c->len)));
 
-	if(el)
-		memcpy(t, el, sizeof(void*));
-	else
-	{
-		fatal(xmalloc, t, c->size);
-	}
+  if(el)
+    memcpy(t, el, sizeof(void*));
+  else
+  {
+    fatal(xmalloc, t, c->size);
+  }
 
-	if(ret)
-		*(void**)ret = *t;
+  if(ret)
+    *(void**)ret = *t;
 
-	c->len++;
+  c->len++;
 
-	finally : coda;
+  finally : coda;
 }
 
 void coll_doubly_free(coll_doubly* c)
 {
-	int x;
-	for(x = 0; x < c->len; x++)
-		free(((char**)c->e)[x]);
+  int x;
+  for(x = 0; x < c->len; x++)
+    free(((char**)c->e)[x]);
 
-	free(c->e);
+  free(c->e);
 
-	c->len = 0;
-	c->alloc = 0;
-	c->e = 0;
+  c->len = 0;
+  c->alloc = 0;
+  c->e = 0;
 }

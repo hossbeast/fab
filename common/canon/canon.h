@@ -23,16 +23,16 @@
 
 #define restrict __restrict
 
-#define CAN_SLASH					0x00			// resolve extra "/" characters
-#define CAN_INIT_DOT			0x01			// resolve references to the "." and ".." directories at the initial component 
-#define CAN_NEXT_DOT			0x02			// resolve references to the "." and ".." directories at positions other than the initial component 
-#define CAN_FORCE_DOT			0x04			// force the path to begin with "."
-#define CAN_NEXT_SYM			0x08			// resolve symlinks at positions other than the final component which do not cross mount points
-#define CAN_NEXT_SYMMNT		0x10			// resolve symlinks at positions other than the final component which cross mount points
-#define CAN_FINL_SYM			0x20			// resolve symlinks at the final component which do not cross mount points
-#define CAN_FINL_SYMMNT		0x40			// resolve symlinks at the final component which cross mount points
+#define CAN_SLASH         0x00      // resolve extra "/" characters
+#define CAN_INIT_DOT      0x01      // resolve references to the "." and ".." directories at the initial component 
+#define CAN_NEXT_DOT      0x02      // resolve references to the "." and ".." directories at positions other than the initial component 
+#define CAN_FORCE_DOT     0x04      // force the path to begin with "."
+#define CAN_NEXT_SYM      0x08      // resolve symlinks at positions other than the final component which do not cross mount points
+#define CAN_NEXT_SYMMNT   0x10      // resolve symlinks at positions other than the final component which cross mount points
+#define CAN_FINL_SYM      0x20      // resolve symlinks at the final component which do not cross mount points
+#define CAN_FINL_SYMMNT   0x40      // resolve symlinks at the final component which cross mount points
 
-#define CAN_REALPATH			0xFF			// canon = realpath (except ENOENT is not an error)
+#define CAN_REALPATH      0xFF      // canon = realpath (except ENOENT is not an error)
 
 /// canon - man 3 realpath
 //
@@ -56,16 +56,16 @@
 //  0 on ENOMEM, 1 otherwise
 //
 xapi canon(
-	  const char * restrict path
-	, int pathl
-	, const char * const restrict base
-	, int basel
-	, char * const restrict dst
-	, const size_t siz
-	, size_t * restrict z
-	, uint32_t opts
+    const char * restrict path
+  , int pathl
+  , const char * const restrict base
+  , int basel
+  , char * const restrict dst
+  , const size_t siz
+  , size_t * restrict z
+  , uint32_t opts
 )
-	__attribute((nonnull(1, 5)));
+  __attribute((nonnull(1, 5)));
 
 /// rebase
 //
@@ -81,15 +81,15 @@ xapi canon(
 //  [z]       - returns the number of bytes written
 //
 xapi rebase(
-	  const char * const restrict path
-	, int pathl
-	, const char * const restrict base
-	, int basel
-	, char * const restrict dst
-	, const size_t siz
-	, size_t * restrict z
+    const char * const restrict path
+  , int pathl
+  , const char * const restrict base
+  , int basel
+  , char * const restrict dst
+  , const size_t siz
+  , size_t * restrict z
 )
-	__attribute__((nonnull(1, 3, 5)));
+  __attribute__((nonnull(1, 3, 5)));
 
 #undef restrict
 #endif

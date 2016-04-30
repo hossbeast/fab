@@ -69,7 +69,7 @@ char* bytestring_r(int base, char* s, int l);
 //  number of bytes written, not including the terminating null byte
 //
 size_t elapsed_string_timespec(const struct timespec * const restrict start, const struct timespec * const restrict end, char * const restrict dst, size_t sz)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

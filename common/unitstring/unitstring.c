@@ -34,52 +34,52 @@
 
 typedef struct
 {
-	char*	name;
-	char*	fmt;
-	int		quant;
+  char* name;
+  char* fmt;
+  int   quant;
 } dec_config;
 
 static void decompose(int base, dec_config* config, size_t len, int* k)
 {
-	int x;
-	for(x = len - 1; x > 0; x--)
-	{
-		int prod = 1;
-		int y;
-		for(y = 1; y <= x; y++)
-		{
-			prod *= config[y].quant;
-		}
-		k[x] = base / prod;
-		base -= k[x] * prod;
-	}
-	k[0] = base;
+  int x;
+  for(x = len - 1; x > 0; x--)
+  {
+    int prod = 1;
+    int y;
+    for(y = 1; y <= x; y++)
+    {
+      prod *= config[y].quant;
+    }
+    k[x] = base / prod;
+    base -= k[x] * prod;
+  }
+  k[0] = base;
 }
 
 static int reconstruct(dec_config* conf, size_t len, int* k, char* s, int l)
 {
-	int c = 0;
-	int n = 0;
-	int x;
-	for(x = len - 1; x >= 0; x--)
-	{
-		if(k[x] || conf[x].fmt)
-		{
-			if(c)
-			{
-				snprintf(&s[c], MAX(l - c, 0), ", %n", &n);
-				c += n;
-			}
+  int c = 0;
+  int n = 0;
+  int x;
+  for(x = len - 1; x >= 0; x--)
+  {
+    if(k[x] || conf[x].fmt)
+    {
+      if(c)
+      {
+        snprintf(&s[c], MAX(l - c, 0), ", %n", &n);
+        c += n;
+      }
 
-			snprintf(&s[c], MAX(l - c, 0), conf[x].fmt ? conf[x].fmt : "%d%n", k[x], &n);
-			c += n;
+      snprintf(&s[c], MAX(l - c, 0), conf[x].fmt ? conf[x].fmt : "%d%n", k[x], &n);
+      c += n;
 
-			snprintf(&s[c], MAX(l - c, 0), " %s%n", conf[x].name, &n);
-			c += n;
-		}
-	}
+      snprintf(&s[c], MAX(l - c, 0), " %s%n", conf[x].name, &n);
+      c += n;
+    }
+  }
 
-	return c;
+  return c;
 }
 
 //
@@ -87,142 +87,142 @@ static int reconstruct(dec_config* conf, size_t len, int* k, char* s, int l)
 //
 
 static char o_space[5][100];
-static unsigned char	o_x;
+static unsigned char  o_x;
 
 char* durationstring_r(int base, char* s, int l)
 {
-	dec_config config[] = {
-		  { .name = "sec(s)",	.fmt = "%.02d%n" }
-		, { .name = "min(s)",	.quant = 60 }
-		, { .name = "hr(s)",	.quant = 60 }
-		, { .name = "day(s)",	.quant = 24 }
-		, { .name = "yr(s)",	.quant = 365 }
-	};
+  dec_config config[] = {
+      { .name = "sec(s)", .fmt = "%.02d%n" }
+    , { .name = "min(s)", .quant = 60 }
+    , { .name = "hr(s)",  .quant = 60 }
+    , { .name = "day(s)", .quant = 24 }
+    , { .name = "yr(s)",  .quant = 365 }
+  };
 
-	int components[5] = { 0 };
+  int components[5] = { 0 };
 
-	decompose(base, config, sizeof(config) / sizeof(config[0]), components);
-	/* int c = */ reconstruct(config, sizeof(config) / sizeof(config[0]), components, s, l);
+  decompose(base, config, sizeof(config) / sizeof(config[0]), components);
+  /* int c = */ reconstruct(config, sizeof(config) / sizeof(config[0]), components, s, l);
 
-//	sprintf(s + c, " or %us", base);
+//  sprintf(s + c, " or %us", base);
 
-	return s;
+  return s;
 }
 
 char* durationstring(int base)
 {
-	durationstring_r(base, o_space[o_x], sizeof(o_space[o_x]));
-	char* r = o_space[o_x];
-	o_x = (o_x + 1) % (sizeof(o_space) / sizeof(o_space[0]));
-	return r;
+  durationstring_r(base, o_space[o_x], sizeof(o_space[o_x]));
+  char* r = o_space[o_x];
+  o_x = (o_x + 1) % (sizeof(o_space) / sizeof(o_space[0]));
+  return r;
 }
 
 char* bytestring_r(int base, char* s, int l)
 {
-	dec_config config[] = {
+  dec_config config[] = {
       { .name = "byte(s)" }
-    , { .name = "KB",	.quant = 1 << 10 }
-    , { .name = "MB",		.quant = 1 << 10 }
-    , { .name = "GB",		.quant = 1 << 10 }
+    , { .name = "KB", .quant = 1 << 10 }
+    , { .name = "MB",   .quant = 1 << 10 }
+    , { .name = "GB",   .quant = 1 << 10 }
   };
 
-	int components[4] = { 0 };
+  int components[4] = { 0 };
 
-	decompose(base, config, sizeof(config) / sizeof(config[0]), components);
-	/* int c =*/ reconstruct(config, sizeof(config) / sizeof(config[0]), components, s, l);
+  decompose(base, config, sizeof(config) / sizeof(config[0]), components);
+  /* int c =*/ reconstruct(config, sizeof(config) / sizeof(config[0]), components, s, l);
 
-//	sprintf(s + c, " or %ub", base);
+//  sprintf(s + c, " or %ub", base);
 
-	return s;
+  return s;
 }
 
 char* bytestring(int base)
 {
-	bytestring_r(base, o_space[o_x], sizeof(o_space[o_x]));
-	char* r = o_space[o_x];
-	o_x = (o_x + 1) % (sizeof(o_space) / sizeof(o_space[0]));
-	return r;
+  bytestring_r(base, o_space[o_x], sizeof(o_space[o_x]));
+  char* r = o_space[o_x];
+  o_x = (o_x + 1) % (sizeof(o_space) / sizeof(o_space[0]));
+  return r;
 }
 
 typedef struct
 {
-	char *		name;
-	char *		fmt;
-	uint64_t	quant;
+  char *    name;
+  char *    fmt;
+  uint64_t  quant;
 } config64;
 
 static void decompose64(uint64_t base, config64 * conf, size_t len, double * k)
 {
-	int x;
-	for(x = len - 1; x >= 0; x--)
-	{
-		uint64_t prod = 1;
-		int y;
-		for(y = 0; y <= x; y++)
-		{
-			prod *= conf[y].quant;
-		}
-		if(x == 0)
-			k[x] = (double)base / prod;
-		else
-		{
-			k[x] = (double)(base / prod);
-			base -= (uint64_t)k[x] * prod;
-		}
-	}
+  int x;
+  for(x = len - 1; x >= 0; x--)
+  {
+    uint64_t prod = 1;
+    int y;
+    for(y = 0; y <= x; y++)
+    {
+      prod *= conf[y].quant;
+    }
+    if(x == 0)
+      k[x] = (double)base / prod;
+    else
+    {
+      k[x] = (double)(base / prod);
+      base -= (uint64_t)k[x] * prod;
+    }
+  }
 }
 
 static size_t reconstruct64(config64 * conf, size_t len, double * k, char* s, int l)
 {
-	int c = 0;
-	int n = 0;
-	int x;
-	for(x = len - 1; x >= 0; x--)
-	{
-		if(k[x] || conf[x].fmt)
-		{
-			if(c)
-			{
-				snprintf(&s[c], MAX(l - c, 0), ", %n", &n);
-				c += n;
-			}
+  int c = 0;
+  int n = 0;
+  int x;
+  for(x = len - 1; x >= 0; x--)
+  {
+    if(k[x] || conf[x].fmt)
+    {
+      if(c)
+      {
+        snprintf(&s[c], MAX(l - c, 0), ", %n", &n);
+        c += n;
+      }
 
-			snprintf(&s[c], MAX(l - c, 0), conf[x].fmt ? conf[x].fmt : "%3.0f%n", k[x], &n);
-			c += n;
+      snprintf(&s[c], MAX(l - c, 0), conf[x].fmt ? conf[x].fmt : "%3.0f%n", k[x], &n);
+      c += n;
 
-			snprintf(&s[c], MAX(l - c, 0), " %s%n", conf[x].name, &n);
-			c += n;
-		}
-	}
+      snprintf(&s[c], MAX(l - c, 0), " %s%n", conf[x].name, &n);
+      c += n;
+    }
+  }
 
-	return c;
+  return c;
 }
 
 size_t elapsed_string_timespec(const struct timespec * const restrict start, const struct timespec * const restrict end, char * const restrict dst, size_t sz)
 {
-	config64 conf[] = {
-		  { .name = "sec(s)"	,	.quant = 1000000000, .fmt = "%4.02lg%n" }
-		, { .name = "min(s)"	,	.quant = 60 }
-		, { .name = "hr(s)"		,	.quant = 60 }
-		, { .name = "day(s)"	,	.quant = 24 }
-		, { .name = "yr(s)"		,	.quant = 365 }
-	};
+  config64 conf[] = {
+      { .name = "sec(s)"  , .quant = 1000000000, .fmt = "%4.02lg%n" }
+    , { .name = "min(s)"  , .quant = 60 }
+    , { .name = "hr(s)"   , .quant = 60 }
+    , { .name = "day(s)"  , .quant = 24 }
+    , { .name = "yr(s)"   , .quant = 365 }
+  };
 
-	// calculate delta
-	uint64_t base = end->tv_sec - start->tv_sec;
-	if(end->tv_nsec < start->tv_nsec)
-	{
-		base -= 1;
-		base *= 1000000000;
-		base += (end->tv_nsec + 1000000000) - start->tv_nsec;
-	}
-	else
-	{
-		base *= 1000000000;
-		base += end->tv_nsec - start->tv_nsec;
-	}
+  // calculate delta
+  uint64_t base = end->tv_sec - start->tv_sec;
+  if(end->tv_nsec < start->tv_nsec)
+  {
+    base -= 1;
+    base *= 1000000000;
+    base += (end->tv_nsec + 1000000000) - start->tv_nsec;
+  }
+  else
+  {
+    base *= 1000000000;
+    base += end->tv_nsec - start->tv_nsec;
+  }
 
-	double components[sizeof(conf) / sizeof(conf[0])];
-	decompose64(base, conf, sizeof(conf) / sizeof(conf[0]), components);
-	return reconstruct64(conf, sizeof(conf) / sizeof(conf[0]), components, dst, sz);
+  double components[sizeof(conf) / sizeof(conf[0])];
+  decompose64(base, conf, sizeof(conf) / sizeof(conf[0]), components);
+  return reconstruct64(conf, sizeof(conf) / sizeof(conf[0]), components, dst, sz);
 }
