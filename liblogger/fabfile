@@ -39,7 +39,7 @@ $lopts							= [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
 $lflags_eapi_final	= [ $lopts $libxlinux_eapi_final $libnarrator_eapi_final [ -Wl,-soname,liblogger.so ~ j ] ]
 $lflags_eapi_debug	= [ $lopts $libxlinux_eapi_debug $libnarrator_eapi_debug [ -Wl,-soname,liblogger.so ~ j ] ]
 $lflags_eapi_devel	= [ $lopts $libxlinux_eapi_devel $libnarrator_eapi_devel [ -Wl,-soname,liblogger-devel.so ~ j ] ]
-$lflags_xapi_final	= [ $lopts $libxapi_xapi_final $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_devel [ -Wl,-soname,liblogger-xapi.so ~ j ] ]
+$lflags_xapi_final	= [ $lopts $libxapi_xapi_final $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final [ -Wl,-soname,liblogger-xapi.so ~ j ] ]
 $lflags_xapi_debug	= [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug [ -Wl,-soname,liblogger-xapi.so ~ j ] ]
 $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel [ -Wl,-soname,liblogger-xapi-devel.so ~ j ] ]
 

@@ -318,11 +318,13 @@ coda;
 
 void arguments_teardown()
 {
-  xfree(g_argvs);
+  free(g_argvs);
   int x;
   for(x = 0; x < g_argc; x++)
-    xfree(g_argv[x]);
-  xfree(g_argv);
-  xfree(g_logv);
-  xfree(g_logvs);
+    free(g_argv[x]);
+  free(g_argv);
+  for(x = 0; x < g_logc; x++)
+    free(g_logv[x]);
+  free(g_logv);
+  free(g_logvs);
 }

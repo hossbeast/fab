@@ -282,7 +282,7 @@ xapi category_report()
 {
   enter;
 
-  int mark = 0;
+  int token = 0;
   logs(L_LOGGER, "liblogger categories");
 
   int x;
@@ -296,17 +296,17 @@ xapi category_report()
         break;
     }
 
-    fatal(log_start, L_LOGGER, &mark);
+    fatal(log_start, L_LOGGER, &token);
     narrator * N = log_narrator();
     sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, list_get(activated, x)->name, list_get(activated, x)->id, list_get(activated, x)->attr);
     fatal(attr_say, list_get(activated, x)->attr, N);
-    fatal(log_finish, &mark);
+    fatal(log_finish, &token);
 
     x = y - 1;
   }
 
 finally:
-  fatal(log_finish, &mark);
+  fatal(log_finish, &token);
 coda;
 }
 

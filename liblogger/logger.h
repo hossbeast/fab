@@ -80,12 +80,19 @@ LOGGER_ATTR_TABLE(0, 0)
 
 #define restrict __restrict
 
-/// logger_setup
+/// logger_load
 //
 // SUMMARY
-//  must be the first liblogger invocation, and invoked exactly once
+//  initialize the library
 //
-xapi logger_setup();
+xapi logger_load();
+
+/// logger_unload
+//
+// SUMMARY
+//  release the library
+//
+xapi logger_unload();
 
 /// logger_initialize
 //
@@ -96,13 +103,6 @@ xapi logger_setup();
 //  [envp] - third argument to main
 //
 xapi logger_initialize(char ** restrict envp);
-
-/// logger_teardown
-//
-// SUMMARY
-//  cleanup
-//
-void logger_teardown();
 
 /// log
 //
@@ -156,11 +156,11 @@ xapi logger_logc (const uint64_t ids, const uint32_t attrs, const char c)
 // PARAMETERS
 //  ids     - bitwise combination of category ids
 //  [attrs] - bitwise combination of L_* options and modifiers
-//  mark    - if log_would, and if the call succeeds, set to 1
+//  token    - if log_would, and if the call succeeds, set to 1
 //
-xapi log_xstart(const uint64_t ids, const uint32_t attrs, int * const restrict mark);
+xapi log_xstart(const uint64_t ids, const uint32_t attrs, int * const restrict token);
 
-xapi log_start(const uint64_t ids, int * const restrict mark);
+xapi log_start(const uint64_t ids, int * const restrict token);
 
 /// log_finish
 //
@@ -168,9 +168,9 @@ xapi log_start(const uint64_t ids, int * const restrict mark);
 //  complete the log that was started with log_start
 //
 // PARAMETERS
-//  [mark] - if *mark, if if the call succeeds, set to 0
+//  [token] - if *token, if if the call succeeds, set to 0
 //
-xapi log_finish(int * const restrict mark);
+xapi log_finish(int * const restrict token);
 
 /// log_narrator
 //

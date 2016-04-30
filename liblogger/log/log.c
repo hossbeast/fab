@@ -45,7 +45,7 @@
 // [[ static ]]
 //
 
-static __thread uint64_t    storage_ids;	    // when a log is being constructed, effective bits
+static __thread uint64_t    storage_ids;      // when a log is being constructed, effective bits
 static __thread uint32_t    storage_attrs;
 static __thread narrator *  storage_narrator; // the log message
 static __thread long        storage_time_msec;
@@ -67,8 +67,8 @@ static xapi start(const uint64_t ids, uint32_t attrs, int * const restrict w)
   if(storage_narrator == 0)
     fatal(narrator_growing_create, &storage_narrator);
 
-	if(streams_would(ids))
-	{
+  if(streams_would(ids))
+  {
     (*w) = 1;
 
     storage_ids = ids;
@@ -79,7 +79,7 @@ static xapi start(const uint64_t ids, uint32_t attrs, int * const restrict w)
     struct timespec times;
     fatal(xclock_gettime, CLOCK_REALTIME, &times);
     storage_time_msec = (times.tv_sec * 1000) + (times.tv_nsec / 1000);
-	}
+  }
 
   finally : coda;
 }
@@ -98,7 +98,7 @@ static xapi finish()
   );
 
   // reset
-	storage_ids = 0;
+  storage_ids = 0;
 
   finally : coda;
 }
@@ -111,11 +111,11 @@ API xapi logger_vlogf(const uint64_t ids, uint32_t attrs, const char * const fmt
 {
   enter;
 
-	if(storage_ids)
-	{
-		if(streams_would(storage_ids))
+  if(storage_ids)
+  {
+    if(streams_would(storage_ids))
       fatal(narrator_vsayf, storage_narrator, fmt, va);
-	}
+  }
   else
   {
     int w = 0;
@@ -135,12 +135,12 @@ API xapi logger_logf(const uint64_t ids, uint32_t attrs, const char * const fmt,
 {
   enter;
 
-	va_list va;
-	va_start(va, fmt);
-	fatal(logger_vlogf, ids, attrs, fmt, va);
+  va_list va;
+  va_start(va, fmt);
+  fatal(logger_vlogf, ids, attrs, fmt, va);
 
 finally:
-	va_end(va);
+  va_end(va);
 coda;
 }
 
@@ -148,7 +148,7 @@ API xapi logger_logs(const uint64_t ids, uint32_t attrs, const char * const s)
 {
   enter;
 
-	fatal(logger_logw, ids, attrs, s, strlen(s));
+  fatal(logger_logw, ids, attrs, s, strlen(s));
 
   finally : coda;
 }
@@ -157,13 +157,13 @@ API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src,
 {
   enter;
 
-	if(storage_ids)
-	{
-		if(streams_would(storage_ids))
+  if(storage_ids)
+  {
+    if(streams_would(storage_ids))
       fatal(narrator_sayw, storage_narrator, src, len);
-	}
-	else
-	{
+  }
+  else
+  {
     int w = 0;
     fatal(start, ids, attrs, &w);
 
@@ -172,51 +172,51 @@ API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src,
       fatal(narrator_sayw, storage_narrator, src, len);
       fatal(finish);
     }
-	}
+  }
 
   finally : coda;
 }
 
-API xapi log_xstart(const uint64_t ids, uint32_t attrs, int * const restrict mark)
+API xapi log_xstart(const uint64_t ids, uint32_t attrs, int * const restrict token)
 {
   enter;
 
-  int w;
+  int w = 0;
   fatal(start, ids, attrs, &w);
   if(w)
-    *mark = 1;
+    *token = 1;
 
   finally : coda;
 }
 
-API xapi log_start(const uint64_t ids, int * const restrict mark)
+API xapi log_start(const uint64_t ids, int * const restrict token)
 {
   enter;
 
-  int w;
+  int w = 0;
   fatal(start, ids, 0, &w);
   if(w)
-    *mark = 1;
+    *token = 1;
 
   finally : coda;
 }
 
-API narrator * log_narrator(int * const restrict mark)
+API narrator * log_narrator(int * const restrict token)
 {
-  if(*mark) 
+  if(*token) 
     return storage_narrator;
 
   return g_narrator_nullity;
 }
 
-API xapi log_finish(int * const restrict mark)
+API xapi log_finish(int * const restrict token)
 {
   enter;
 
-  if(*mark)
+  if(*token)
   {
-		fatal(finish);
-    *mark = 0;
+    fatal(finish);
+    *token = 0;
     storage_ids = 0;
   }
 

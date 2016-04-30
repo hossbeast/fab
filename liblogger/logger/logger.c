@@ -24,34 +24,66 @@
 
 #include "xapi.h"
 #include "xapi/errtab.h"
+#include "xapi/XAPI.errtab.h"
 #include "xlinux.h"
+#include "narrator.h"
 
 #include "internal.h"
-#include "logs/logs.internal.h"
-#include "category/category.internal.h"
-#include "stream/stream.internal.h"
-#include "filter/filter.internal.h"
-#include "arguments/arguments.internal.h"
-
-#include "logger/LOGGER.errtab.h"
+#include "LOGGER.errtab.h"
+#include "logs.internal.h"
+#include "category.internal.h"
+#include "stream.internal.h"
+#include "filter.internal.h"
+#include "arguments.internal.h"
 
 #define restrict __restrict
+
+static int handles;
 
 //
 // api
 //
 
-API xapi logger_setup()
+API xapi logger_load()
 {
   enter;
 
-  // one-time setup
-  fatal(xapi_errtab_register, perrtab_LOGGER);
-  fatal(category_setup);
-  fatal(stream_setup);
+  if(handles == 0)
+  {
+    // dependencies
+    fatal(xlinux_load);
+    fatal(narrator_load);
 
-  // register logs
-  fatal(logger_category_register, logs);
+    // modules
+    fatal(category_setup);
+    fatal(stream_setup);
+    fatal(xapi_errtab_register, perrtab_LOGGER);
+    fatal(logger_category_register, logs);
+  }
+  handles++;
+
+  finally : coda;
+}
+
+API xapi logger_unload()
+{
+  enter;
+
+  if(--handles == 0)
+  {
+    // modules
+    category_teardown();
+    stream_teardown();
+    arguments_teardown();
+
+    // dependencies
+    fatal(xlinux_unload);
+    fatal(narrator_unload);
+  }
+  else if(handles < 0)
+  {
+    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "liblogger");
+  }
 
   finally : coda;
 }
@@ -75,22 +107,4 @@ API xapi logger_initialize(char ** restrict envp)
   fatal(streams_report);
 
   finally : coda;
-}
-
-API void logger_teardown()
-{
-	free(g_argvs);
-	int x;
-	for(x = 0; x < g_argc; x++)
-		free(g_argv[x]);
-	free(g_argv);
-
-	for(x = 0; x < g_logc; x++)
-		free(g_logv[x]);
-	free(g_logv);
-
-	free(g_logvs);
-
-  category_teardown();
-  stream_teardown();
 }

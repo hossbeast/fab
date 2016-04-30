@@ -419,7 +419,7 @@ int main()
   enter;
 
   int x = 0;
-  fatal(logger_setup, 0, 0, 0);
+  fatal(xapi_errtab_register, perrtab_LOGGER);
   fatal(xapi_errtab_register, perrtab_TEST);
 
   struct {
@@ -465,7 +465,5 @@ finally:
     xapi_infof("test", "%d", x);
     xapi_backtrace();
   }
-
-  logger_teardown();
 coda;
 }

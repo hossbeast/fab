@@ -26,6 +26,7 @@
 #include "internal.h"
 #include "LOGGER.errtab.h"
 #include "filter.internal.h"
+#include "category.internal.h"
 
 #define LIST_ELEMENT_TYPE filter
 #include "valyria/list.h"
@@ -47,6 +48,7 @@ xapi suite_setup()
 {
   enter;
 
+  fatal(category_setup);
   fatal(logger_category_register, logs_test);
   fatal(logger_category_activate);
 
@@ -163,7 +165,7 @@ int main()
   enter;
 
   int x = 0;
-  fatal(logger_setup, 0, 0, 0);
+  fatal(xapi_errtab_register, perrtab_LOGGER);
   fatal(xapi_errtab_register, perrtab_TEST);
   fatal(suite_setup);
 
@@ -198,7 +200,5 @@ finally:
   {
     xapi_backtrace();
   }
-
-  logger_teardown();
 coda;
 }
