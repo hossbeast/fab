@@ -123,6 +123,8 @@ void mm_teardown()
   }
 
   free(mb->blocks);
+  mb->blocks = 0;
+  mb->blocksl = 0;
 }
 
 void mm_malloc(void * restrict p, size_t sz)

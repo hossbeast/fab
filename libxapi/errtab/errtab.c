@@ -52,7 +52,10 @@ static void __attribute__((constructor)) init()
 void errtab_teardown()
 {
   if(tab != tab_stat)
+  {
     free(tab);
+    tab = 0;
+  }
 }
 
 //
