@@ -26,6 +26,7 @@
 
 #include "xapi.h"
 #include "xlinux.h"
+#include "xlinux/SYS.errtab.h"
 
 #include "canon.h"
 #include "strutil.h"

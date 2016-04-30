@@ -162,9 +162,9 @@ do																					\
 //
 #define YYU_FATAL(x, ...)							\
 do {																	\
-	enter;														  \
-	fatal(x, ##__VA_ARGS__);						\
+	enter_nochecks;											\
 	int R;															\
+	fatal(x, ##__VA_ARGS__);						\
 	finally : conclude(&R);							\
 	if(R)																\
 	{																		\
