@@ -28,13 +28,13 @@
 
 #include "listwise.h"
 #include "listwise/lstack.h"
-#include "listwise/LW.errtab.h"
+#include "listwise/LISTWISE.errtab.h"
 #include "listwise/selection.h"
 #include "listwise/window.h"
 
 // default error table
 #ifndef perrtab
-#define perrtab perrtab_LW
+#define perrtab perrtab_LISTWISE
 #endif
 
 #define restrict __restrict
@@ -48,7 +48,7 @@
 **  lstack.h             - manipulating lstacks
 **  selection.h          - manipulating the selection
 **  window.h             - manipulating windows
-**  LW.errtab.h          - liblistwise error table
+**  LISTWISE.errtab.h          - liblistwise error table
 **  PCRE.errtab.h        - libpcre error table
 **
 ** extra functionality

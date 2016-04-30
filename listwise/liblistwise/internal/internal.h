@@ -25,8 +25,8 @@
 #define APIDATA
 
 // error tables
-#include "LW.errtab.h"
+#include "errtab/LISTWISE.errtab.h"
 #undef perrtab
-#define perrtab perrtab_LW
+#define perrtab perrtab_LISTWISE
 
 #endif

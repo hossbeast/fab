@@ -111,7 +111,7 @@ static xapi operation_validate(operation * op)
       xapi_fail_intent();
       xapi_infof("expected", "%d", 0);
       xapi_infof("actual", "%d", op->argsl);
-			fail(LW_ARGSNUM);
+			fail(LISTWISE_ARGSNUM);
 		}
 	}
 
@@ -145,7 +145,7 @@ static xapi reduce(parse_param * pp)
 		else if(pp->gramerr)
 		{
 			// error from the parser
-			fails(LW_SYNTAX, "message", pp->error_str);
+			fails(LISTWISE_SYNTAX, "message", pp->error_str);
 		}
 		else
 		{

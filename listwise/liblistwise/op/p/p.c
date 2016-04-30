@@ -60,7 +60,7 @@ xapi op_validate(operation* o)
   enter;
 
 	if(o->argsl == 0 || (o->argsl != 1 && (o->argsl % 2) != 0))
-		failf(LW_ARGSNUM, "expected", "actual %d", "1 or even", o->argsl);
+		failf(LISTWISE_ARGSNUM, "expected", "actual %d", "1 or even", o->argsl);
 
 	int x;
 	for(x = 0; x < o->argsl; x++)
@@ -71,7 +71,7 @@ xapi op_validate(operation* o)
       xapi_infos("expected", "i64");
       xapi_infof("actual", "%d", o->args[x]->itype);
       xapi_infof("index", "%d", x);
-			fail(LW_ARGSTYPE);
+			fail(LISTWISE_ARGSTYPE);
     }
 	}
 

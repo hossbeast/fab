@@ -60,11 +60,11 @@ static xapi op_validate(operation* o)
 	if(o->argsl == 1 || o->argsl == 2)
 	{
 		if(o->args[0]->l == 0)
-			fails(LW_ARGSDOM, "length", "0");
+			fails(LISTWISE_ARGSDOM, "length", "0");
 	}
 	else
 	{
-		failf(LW_ARGSNUM, "expected %s", "actual %d", "1 or 2", o->argsl);
+		failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "1 or 2", o->argsl);
 	}
 
 	finally : coda;

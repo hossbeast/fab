@@ -78,17 +78,17 @@ xapi op_validate(operation* o)
 
 	if(o->argsl != 1)
 	{
-		failf(LW_ARGSNUM, "expected %d", "actual %d", 1, o->argsl);
+		failf(LISTWISE_ARGSNUM, "expected %d", "actual %d", 1, o->argsl);
 	}
 
 	if(o->args[0]->itype != ITYPE_I64)
 	{
-		failf(LW_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
+		failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
 	}
 
 	if(o->args[0]->i64 < 1)
 	{
-		failf(LW_ARGSDOM, "expected %s", "actual : %"PRIi64, ">= 0", o->args[0]->i64);
+		failf(LISTWISE_ARGSDOM, "expected %s", "actual : %"PRIi64, ">= 0", o->args[0]->i64);
 	}
 
 	finally : coda;

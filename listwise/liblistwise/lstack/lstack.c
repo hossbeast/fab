@@ -27,7 +27,7 @@
 #include "lwx.internal.h"
 #include "tune.internal.h"
 #include "window.internal.h"
-#include "LW.errtab.h"
+#include "errtab/LISTWISE.errtab.h"
 #include "object.internal.h"
 
 #include "macros.h"
@@ -605,13 +605,13 @@ API xapi lstack_merge(lwx * const restrict lx, int a, int b)
   enter;
 
 	if(a < 0 || a >= lx->l)
-		fail(LW_NOLIST);
+		fail(LISTWISE_NOLIST);
 
 	if(b < 0 || b >= lx->l)
-		fail(LW_NOLIST);
+		fail(LISTWISE_NOLIST);
 
 	if(a == b)
-		fail(LW_ILLOP);
+		fail(LISTWISE_ILLOP);
 
 	// number of entries to move
 	int al = lx->s[a].l;

@@ -1,7 +1,7 @@
-#ifndef _LW_ERRTAB_H
-#define _LW_ERRTAB_H
+#ifndef _LISTWISE_ERRTAB_H
+#define _LISTWISE_ERRTAB_H
 #include "xapi.h"
-#define ETABLE_LW \
+#define ETABLE_LISTWISE \
 _E(1, SYNTAX, "transform string could not be parsed") \
 _E(2, ILLBYTE, "transform string contains illegal byte(s)") \
 _E(3, ILLREF, "transform contains illegal backreference") \
@@ -15,11 +15,11 @@ _E(10, NOROW, "lwx operation requested out-of-bounds row index") \
 _E(11, ILLOP, "lwx operation cannot be completed") \
 
 enum {
-#define _E(a, b, c) LW_ ## b = a,
-ETABLE_LW
+#define _E(a, b, c) LISTWISE_ ## b = a,
+ETABLE_LISTWISE
 #undef _E
 };
-#define ERRMIN_LW 1
-#define ERRMAX_LW 11
-extern etable * perrtab_LW;
+#define ERRMIN_LISTWISE 1
+#define ERRMAX_LISTWISE 11
+extern etable * perrtab_LISTWISE;
 #endif

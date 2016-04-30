@@ -1,1 +1,1 @@
-../error/PCRE.errtab.h
+../errtab/PCRE.errtab.h

@@ -69,10 +69,10 @@ xapi op_validate(operation* o)
   enter;
 
 	if(o->argsl > 1)
-		failf(LW_ARGSNUM, "expected %s", "actual %d", "0, or 1", o->argsl);
+		failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "0, or 1", o->argsl);
 
 	else if(o->argsl == 1 && o->args[0]->itype != ITYPE_I64)
-		failf(LW_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
+		failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
 
 	finally : coda;
 }

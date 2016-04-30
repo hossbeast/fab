@@ -51,7 +51,7 @@ xapi op_validate(operation* o)
 
 	if(o->argsl && o->args[0]->itype != ITYPE_I64)
   {
-    failf(LW_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
+    failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
   }
 
 	finally : coda;

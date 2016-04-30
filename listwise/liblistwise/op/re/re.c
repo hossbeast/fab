@@ -68,7 +68,7 @@ static xapi op_validate(operation* o)
 	if(o->argsl == 1 || o->argsl == 2)
 	{
 		if(o->args[0]->l == 0)
-			fails(LW_ARGSDOM, "length", "0");
+			fails(LISTWISE_ARGSDOM, "length", "0");
 
 		if(o->argsl == 1 || o->args[1]->l == 0)
 			fatal(re_compile, o->args[0]->s, &o->args[0]->re, 0);
@@ -77,7 +77,7 @@ static xapi op_validate(operation* o)
 	}
 	else
 	{
-		failf(LW_ARGSNUM, "expected", "actual %d", "1 or 2", o->argsl);
+		failf(LISTWISE_ARGSNUM, "expected", "actual %d", "1 or 2", o->argsl);
 	}
 
 	o->args[0]->itype = ITYPE_RE;

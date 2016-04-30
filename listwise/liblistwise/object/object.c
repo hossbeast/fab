@@ -19,7 +19,7 @@
 
 #include "internal.h"
 #include "object.internal.h"
-#include "LW.errtab.h"
+#include "errtab/LISTWISE.errtab.h"
 
 #define MAP_VALUE_TYPE listwise_object
 #include "valyria/map.h"
@@ -73,7 +73,7 @@ API xapi listwise_lookup_object(uint8_t type, listwise_object ** obj)
 
 	if(((*obj) = map_get(object_registry, MM(type))) == 0)
 	{
-		fail(LW_NOOBJ);
+		fail(LISTWISE_NOOBJ);
 	}
 
 finally:

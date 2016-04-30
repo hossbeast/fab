@@ -54,7 +54,7 @@ xapi op_validate(operation* o)
   enter;
 
 	if(o->argsl != 1 && o->argsl != 2)
-		failf(LW_ARGSNUM, "expected", "%s", "actual %d", "1 or 2", o->argsl);
+		failf(LISTWISE_ARGSNUM, "expected", "%s", "actual %d", "1 or 2", o->argsl);
 
 	finally : coda;
 }

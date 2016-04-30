@@ -25,8 +25,8 @@
 #include "logger.h"
 
 #include "internal.h"
-#include "listwise/PCRE.errtab.h"
-#include "listwise/LW.errtab.h"
+#include "errtab/PCRE.errtab.h"
+#include "errtab/LISTWISE.errtab.h"
 #include "operators.internal.h"
 #include "lwx.internal.h"
 #include "object.internal.h"
@@ -52,7 +52,7 @@ API xapi listwise_load()
 
     // modules
     fatal(xapi_errtab_register, perrtab_PCRE);
-    fatal(xapi_errtab_register, perrtab_LW);
+    fatal(xapi_errtab_register, perrtab_LISTWISE);
     fatal(operators_setup);
     fatal(lwx_setup);
   }
