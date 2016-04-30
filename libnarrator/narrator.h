@@ -35,6 +35,20 @@ SUMMARY
 
 #include "xapi.h"
 
+/// narrator_load
+//
+// SUMMARY
+//  initialize the library
+//
+xapi narrator_load();
+
+/// narrator_unload
+//
+// SUMMARY
+//  release the library
+//
+xapi narrator_unload();
+
 //
 // write to the active narration
 //
@@ -122,12 +136,12 @@ xapi narrator_reset(struct narrator * const restrict n)
 //
 void narrator_free(struct narrator * restrict n);
 
-/// narrator_xfree
+/// narrator_ifree
 //
 // SUMMARY
-//  free a narrator with xfree semantics
+//  free a narrator with ifree semantics
 //
-void narrator_xfree(struct narrator ** const restrict n)
+void narrator_ifree(struct narrator ** const restrict n)
   __attribute__((nonnull));
 
 #undef restrict

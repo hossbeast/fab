@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
+#include "xapi/XAPI.errtab.h"
 #include "xlinux.h"
 
 #include "internal.h"
@@ -27,22 +28,45 @@
 #include "nullity/nullity.internal.h"
 #include "record/record.internal.h"
 
+static int handles;
+
 //
 // api
 //
 
-API xapi narrator_setup()
+API xapi narrator_load()
 {
   enter;
 
-  fatal(nullity_setup);
+  if(handles == 0)
+  {
+    // dependencies
+    fatal(xlinux_load);
+
+    // modules
+    fatal(nullity_setup);
+  }
+  handles++;
 
   finally : coda;
 }
 
-API void narrator_teardown()
+API xapi narrator_unload()
 {
-  nullity_teardown();
+  enter;
+
+  if(--handles == 0)
+  {
+    nullity_teardown();
+
+    fatal(xlinux_unload);
+  }
+  else if(handles < 0)
+  {
+    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "libnarrator");
+  }
+
+  finally : coda;
 }
 
 API void narrator_free(narrator * restrict n)
@@ -67,7 +91,7 @@ API void narrator_free(narrator * restrict n)
   xfree(n);
 }
 
-API void narrator_xfree(narrator ** const restrict n)
+API void narrator_ifree(narrator ** const restrict n)
 {
   narrator_free(*n);
   *n = 0;

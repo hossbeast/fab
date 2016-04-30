@@ -74,7 +74,6 @@ xapi record_seek(narrator_record * const restrict n, off_t offset, int whence, o
 void record_destroy(narrator_record * n)
 {
   free(n->s);
-  narrator_free(n->n);
 }
 
 //

@@ -30,7 +30,7 @@ typedef struct narrator_record
   size_t  l;    // position
   size_t  a;    // allocated size
 
-  struct narrator * n;    // underlying narrator
+  struct narrator * n;    // underlying narrator, (not owned)
 } narrator_record;
 
 #define restrict __restrict
