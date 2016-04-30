@@ -28,6 +28,8 @@
   int __xapi_f1 = 0;                                  \
   xapi __xapi_r[2] = { 0, 0 }
 
+#define enter_nochecks enter
+
 /*
 ** called at the site of an error
 */

@@ -101,6 +101,15 @@ when calling non-xapi code, you have a couple of options.
     tfail(perrtab_XAPI, XAPI_NOFATAL);                                                        \
   }
 
+#define enter_nochecks                                                                        \
+  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;                                          \
+  int __xapi_f1 = 0;                                                                          \
+  int __xapi_topframe = !xapi_sentinel;                                                       \
+  xapi_sentinel = 1;                                                                          \
+  xapi_frame_index __attribute__((unused)) __xapi_frame_index[2] = { -1, -1 };                \
+  __xapi_frame_index[0] = xapi_top_frame_index;                                               \
+  xapi_record_frame(xapi_calling_frame_address)
+
 #define xapi_invoke(func, ...)                                                  \
   ({                                                                            \
       /* record the calling frame */                                            \

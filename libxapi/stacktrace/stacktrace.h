@@ -82,6 +82,8 @@ when calling non-xapi code, you have a couple of options.
   xapi_frame_index __attribute__((unused)) __xapi_frame_index[2] = { -1, -1 };  \
   __xapi_frame_index[0] = xapi_top_frame_index
 
+#define enter_nochecks enter
+
 /*
 ** called at the site of an error
 */
