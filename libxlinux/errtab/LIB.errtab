@@ -15,8 +15,4 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 ILLFATAL  non-xapi function invoked with fatal
-2 NOFATAL   xapi function invoked without fatal
-3 NOCODE    fail invoked without a code
-4 NOTABLE   fail invoked without a table
-5 NOMEM     out of memory (not calltree related)
+1 AUNLOAD asymmetric load-unload sequence

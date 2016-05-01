@@ -21,6 +21,7 @@
 
 #include "internal.h"
 #include "errtab/SYS.errtab.h"
+#include "errtab/LIB.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
 static int handles;
@@ -35,9 +36,12 @@ API xapi xlinux_load()
 
   if(handles == 0)
   {
+#ifndef XAPI_MODE_ERRORCODE
     // modules
     fatal(xapi_errtab_register, perrtab_SYS);
+    fatal(xapi_errtab_register, perrtab_LIB);
     fatal(xapi_errtab_register, perrtab_XLINUX);
+#endif
   }
   handles++;
 
@@ -54,7 +58,7 @@ API xapi xlinux_unload()
   }
   else if(handles < 0)
   {
-    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "xlinux");
+    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libxlinux");
   }
 
   finally : coda;
