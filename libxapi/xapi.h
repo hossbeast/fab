@@ -63,8 +63,10 @@ typedef struct etable
 
 // pull in the appropriate implementation
 #if XAPI_MODE_STACKTRACE_CHECKS
+# define XAPI_STACKTRACE 1
 # include "xapi/stacktrace_checks.h"
 #elif XAPI_MODE_STACKTRACE
+# define XAPI_STACKTRACE 1
 # include "xapi/stacktrace.h"
 #elif XAPI_MODE_ERRORCODE
 # include "xapi/errorcode.h"
