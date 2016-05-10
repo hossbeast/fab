@@ -20,6 +20,10 @@
 
 #include <stdint.h>
 
+struct narrator;    // narrator.h
+
+typedef struct lwx_windows lwx_windows;
+
 /// listwise execution context
 //
 // contains the lstack - stack of lists of rows
@@ -126,5 +130,8 @@ typedef struct lwx
 	uint64_t  flags;		// available for application-use
 	void *    ptr;			// available for application-use
 } lwx;
+
+xapi lwx_say(lwx * const restrict lx, struct narrator * const restrict N)
+  __attribute__((nonnull));
 
 #endif

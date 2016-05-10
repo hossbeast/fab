@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "listwise/operator.h"
-#include "listwise/logging.h"
 #include "listwise/lwx.h"
 
 /*
@@ -40,7 +39,7 @@ N = 0 means merge all lists
 */
 
 static xapi op_validate(operation* o);
-static xapi op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -66,7 +65,7 @@ xapi op_validate(operation* o)
 	finally : coda;
 }
 
-xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 

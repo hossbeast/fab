@@ -16,8 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/XAPI.errtab.h"
 #include "xlinux.h"
+#include "xlinux/LIB.errtab.h"
 
 #include "internal.h"
 #include "growing/growing.internal.h"
@@ -63,7 +63,7 @@ API xapi narrator_unload()
   }
   else if(handles < 0)
   {
-    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "libnarrator");
+    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libnarrator");
   }
 
   finally : coda;

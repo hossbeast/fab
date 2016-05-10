@@ -18,7 +18,7 @@
 once {
 	+[ $*/../vars.fab ]
 
-	$cflags = [ $dlibxapi $dlibxlinux ~ s/^/-I ]
+	$cflags = [ $dlibxapi $dlibxlinux $dliblogger ~ s/^/-I ]
 
 	$cflags_eapi_final = [ $cflags_eapi_final $cflags ]
 	$cflags_eapi_debug = [ $cflags_eapi_debug $cflags ]

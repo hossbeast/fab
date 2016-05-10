@@ -19,6 +19,8 @@
 
 #include "xapi.h"
 #include "xlinux.h"
+#include "narrator.h"
+#include "narrator/fixed.h"
 
 #include "internal.h"
 #include "exec.internal.h"
@@ -39,22 +41,21 @@
 #define restrict __restrict
 
 ///
-/// static
+/// API
 ///
 
-static xapi exec_transform(
+API xapi listwise_exec_transform(
 	  transform * const restrict g
 	, char ** const restrict init
-	, int * const restrict initls
-	, const int initl
+	, size_t * const restrict initls
+	, const size_t initl
 	, lwx ** restrict lx
-	, void * udata
 )
 {
   enter;
 
-	pstring * ps = 0;
-	pstring * ps1 = 0;
+  int token = 0;
+  narrator * N = 0;
 
 	// ovec workspace
 	int* ovec = 0;
@@ -64,6 +65,8 @@ static xapi exec_transform(
 	// sanity
 	sanityblock * sb = 0;
 #endif
+
+  fatal(narrator_fixed_create, &N, 2048);
 
 	// list stack allocation
 	if(!*lx)
@@ -88,21 +91,25 @@ static xapi exec_transform(
 	(*lx)->win.active_era++;
 	(*lx)->win.staged_era++;
 
-	if(lw_would_exec())
+	if(log_would(L_LISTWISE | L_EXEC))
 	{
-		fatal(transform_canon_pswrite, g, ps);
-		lw_log_exec(" >>      %.*s", (int)ps->l, ps->s);
+    fatal(log_start, L_LISTWISE | L_EXEC, &token);
+    logs(0, " >>      ");
+    fatal(transform_canon_say, g, log_narrator());
+    fatal(log_finish, &token);
+    
 
 		// log the lstack before beginning
-		fatal(lstack_description_pswrite, *lx, ps);
-		lw_log_exec("%.*s", (int)ps->l, ps->s);
+    fatal(log_start, L_LISTWISE | L_EXEC, &token);
+    fatal(lwx_say, *lx, log_narrator());
+    fatal(log_finish, &token);
 	}
 
 #if SANITY
 	if(listwise_sanity)
 	{
 		fatal(sanityblock_create, &sb);
-		fatal(sanity, *lx, sb, udata);
+		fatal(sanity, *lx, sb);
 	}
 #endif
 
@@ -144,29 +151,36 @@ static xapi exec_transform(
 			if(i != x)
 			{
 				// log the lstack
-				if(lw_would_exec())
+				if(log_would(L_LISTWISE | L_EXEC))
 				{
-					fatal(lstack_description_pswrite, *lx, ps);
-					lw_log_exec("%.*s", (int)ps->l, ps->s);
+          fatal(log_start, L_LISTWISE | L_EXEC, &token);
+          fatal(lwx_say, *lx, log_narrator());
+          fatal(log_finish, &token);
 				}
 			}
 
 			// log the operation
-			if(lw_would_exec())
+			if(log_would(L_LISTWISE | L_EXEC))
 			{
-        extern int operation_canon_pswrite(operation * const oper, uint32_t sm, pstring * restrict ps);
+        fatal(narrator_reset, N);
+        fatal(operation_canon_say, g->ops[i], 0, N);
 
-				fatal(operation_canon_pswrite, g->ops[i], 0, ps);
-				fatal(listwise_lwop_pswrite, g->ops[i]->op->optype, 1, ps1);
-
-				lw_log_exec("");
-				lw_log_exec(" >> [%2d] %.*s%*s%.*s", i, (int)ps->l, ps->s, MAX(35 - ps->l, 0), "", (int)ps1->l, ps1->s);
-			}
+        fatal(log_start, L_LISTWISE | L_EXEC, &token);
+				logf(L_LISTWISE | L_EXEC, " >> [%2d] %.*s%*s"
+          , i
+          , (int)narrator_fixed_size(N)
+          , narrator_fixed_buffer(N)
+          , MAX(35 - narrator_fixed_size(N), 0)
+          , ""
+        );
+        fatal(listwise_lwop_say, g->ops[i]->op->optype, 1, log_narrator());
+        fatal(log_finish, &token);
+      }
 
 			// execute the operation
 			if((*lx)->l || (g->ops[i]->op->optype & LWOPT_EMPTYSTACK_YES))
 				if(g->ops[i]->op->op_exec)
-					fatal(g->ops[i]->op->op_exec, g->ops[i], *lx, &ovec, &ovec_len, udata);
+					fatal(g->ops[i]->op->op_exec, g->ops[i], *lx, &ovec, &ovec_len);
 
 			// age active windows
 			if(g->ops[x]->op->optype & LWOPT_WINDOWS_RESET)
@@ -178,7 +192,7 @@ static xapi exec_transform(
 
 #if SANITY
 			if(listwise_sanity)
-				fatal(sanity, *lx, sb, udata);
+				fatal(sanity, *lx, sb);
 #endif
 		}
 
@@ -193,66 +207,40 @@ static xapi exec_transform(
 		(*lx)->win.staged_era++;
 
 		// log the lstack
-		if(lw_would_exec())
+		if(log_would(L_LISTWISE | L_EXEC))
 		{
-			fatal(lstack_description_pswrite, *lx, ps);
-			lw_log_exec("%.*s", (int)ps->l, ps->s);
+      fatal(log_start, L_LISTWISE | L_EXEC, &token);
+      fatal(lwx_say, *lx, log_narrator());
+      fatal(log_finish, &token);
 		}
 	}
 
 finally:
+  fatal(log_finish, &token);
+
+  narrator_free(N);
 	free(ovec);
-	psfree(ps);
-	psfree(ps1);
 #if SANITY
 	sanityblock_free(sb);
 #endif
 coda;
 }
 
-///
-/// API
-///
-
-API xapi listwise_exec_transform(
-	  transform * const restrict g
-	, char ** const restrict init
-	, int * const restrict initls
-	, const int initl
-	, lwx ** restrict lx
-)
-{
-	xproxy(exec_transform, g, init, initls, initl, lx, 0);
-}
-
-API xapi listwise_exec_transform2(
-	  transform * const restrict g
-	, char ** const restrict init
-	, int * const restrict initls
-	, const int initl
-	, lwx ** restrict lx
-	, void * udata
-)
-{
-	xproxy(exec_transform, g, init, initls, initl, lx, udata);
-}
-
 API xapi listwise_exec(
-    char * const restrict s
-  , int l
+    const char * const restrict ts
   , char ** const restrict init
-  , int * const restrict initls
-  , const int initl
+  , size_t * const restrict initls
+  , const size_t initl
   , lwx ** restrict lx
 )
 {
   enter;
 
 	// transform
-	transform* g = 0;
+	transform * g = 0;
 
-	fatal(transform_parse, 0, s, l, &g);
-	fatal(exec_transform, g, init, initls, initl, lx, 0);
+	fatal(transform_parse, 0, ts, 0, &g);
+	fatal(listwise_exec_transform, g, init, initls, initl, lx);
 
 finally:
 	transform_free(g);

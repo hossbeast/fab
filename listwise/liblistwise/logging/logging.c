@@ -15,12 +15,32 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include "xapi.h"
+#include "logger.h"
+
 #include "internal.h"
 #include "logging.internal.h"
 
-struct listwise_logging * APIDATA listwise_logging_config;
+APIDATA logger_category * listwise_logs = (logger_category []) {
+	  { name : "LISTWISE" , description : "liblistwise logging" }
+	, { name : "PARSE"		, description : "transform-string parsing results" }
+	, { name : "EXEC"		  , description : "step-by-step listwise transformation" }
+	, { name : "OPINFO"		, description : "operator informational messages" }
+#if DEVEL
+	, { name : "TOKENS"		, description : "transform parsing - token stream" }
+	, { name : "STATES"		, description : "transform parsing - lexer states" }
+#if SANITY
+	, { name : "SANITY"		, description : "listwise sanity checks" }
+#endif
+#endif
+  , { }
+};
 
-API void listwise_logging_configure(struct listwise_logging * logging)
+xapi logging_setup()
 {
-	listwise_logging_config = logging;
+  enter;
+
+  fatal(logger_category_register, listwise_logs);
+
+  finally : coda;
 }

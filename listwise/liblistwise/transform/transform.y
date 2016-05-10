@@ -96,7 +96,7 @@ utterance
 transform
 	: args opsep operations opsep_epsilon
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		YFATAL(xmalloc, &$$, sizeof(*$$));
 		$$->args = $1;
 		$$->argsl = 0;
 
@@ -112,13 +112,13 @@ transform
 	}
 	| args opsep_epsilon
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		YFATAL(xmalloc, &$$, sizeof(*$$));
 		$$->args = $1;
 		$$->argsl = parm->argsl;
 	}
 	| operations opsep_epsilon
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		YFATAL(xmalloc, &$$, sizeof(*$$));
 		$$->ops = $1;
 		$$->opsl = parm->opsl;
 	}
@@ -133,7 +133,7 @@ operations
 			int ns = parm->opsa ?: 6;
 			ns = ns * 2 + ns / 2;
 
-			YYU_FATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->opsa);
+			YFATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->opsa);
 			parm->opsa = ns;
 		}
 		$$[parm->opsl++] = $3;
@@ -146,14 +146,14 @@ operations
 			int ns = parm->opsa ?: 6;
 			ns = ns * 2 + ns / 2;
 
-			YYU_FATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->opsa);
+			YFATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->opsa);
 			parm->opsa = ns;
 		}
 		$$[parm->opsl++] = $2;
 	}
 	| operation
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$) * 2);
+		YFATAL(xmalloc, &$$, sizeof(*$$) * 2);
 		parm->opsa = 1;
 		parm->opsl = 0;
 		$$[parm->opsl++] = $1;
@@ -193,7 +193,7 @@ operation
 	}
 	| OP
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		YFATAL(xmalloc, &$$, sizeof(*$$));
 		$$->op = $1;
 	}
 	;
@@ -211,14 +211,14 @@ args_delimited
 		{
 			int ns = parm->argsa ?: 3;
 			ns = ns * 2 + ns / 2;
-			YYU_FATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->argsa);
+			YFATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->argsa);
 			parm->argsa = ns;
 		}
 		$$[parm->argsl++] = $3;
 	}
 	| arg
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$) * 2);
+		YFATAL(xmalloc, &$$, sizeof(*$$) * 2);
 		parm->argsl = 0;
 		parm->argsa = 1;
 		$$[parm->argsl++] = $1;
@@ -241,14 +241,14 @@ args_enclosed
 		{
 			int ns = parm->argsa ?: 3;
 			ns = ns * 2 + ns / 2;
-			YYU_FATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->argsa);
+			YFATAL(xrealloc, &$$, sizeof(*$$), ns + 1, parm->argsa);
 			parm->argsa = ns;
 		}
 		$$[parm->argsl++] = $3;
 	}
 	| argopen arg argclose
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$) * 2);
+		YFATAL(xmalloc, &$$, sizeof(*$$) * 2);
 		parm->argsl = 0;
 		parm->argsa = 1;
 		$$[parm->argsl++] = $2;
@@ -277,7 +277,7 @@ arg
 		char* o = $$->s;
 
 		// reallocate the string value of the argument
-		YYU_FATAL(xrealloc, &$$->s, 1, $$->l + $2->l + 1, $$->l);
+		YFATAL(xrealloc, &$$->s, 1, $$->l + $2->l + 1, $$->l);
 		memcpy($$->s + $$->l, $2->s, $2->l);
 		$$->s[$$->l + $2->l] = 0;
 
@@ -292,7 +292,7 @@ arg
 		// use new reference, if there is one
 		if($2->refs.v)
 		{
-			YYU_FATAL(xrealloc, &$$->refs, sizeof(*$$), $$->refs.l + 1, $$->refs.l);
+			YFATAL(xrealloc, &$$->refs, sizeof(*$$), $$->refs.l + 1, $$->refs.l);
 
 			$$->refs.v[$$->refs.l].s = $$->s + $$->l;
 			$$->refs.v[$$->refs.l].l = $2->l;
@@ -315,7 +315,7 @@ arg
 		char* o = $$->s;
 
 		// reallocate the string value of the argument
-		YYU_FATAL(xrealloc, &$$->s, 1, $$->l + (@2.e - @2.s) + 1, $$->l);
+		YFATAL(xrealloc, &$$->s, 1, $$->l + (@2.e - @2.s) + 1, $$->l);
 		memcpy($$->s + $$->l, @2.s, (@2.e - @2.s));
 		$$->s[$$->l + (@2.e - @2.s)] = 0;
 
@@ -332,10 +332,10 @@ arg
 	}
 	| I64
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		YFATAL(xmalloc, &$$, sizeof(*$$));
 
 		$$->l = @1.e - @1.s;
-		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		YFATAL(xmalloc, &$$->s, $$->l + 1);
 		memcpy($$->s, @1.s, $$->l);
 
 		$$->itype = ITYPE_I64;
@@ -347,37 +347,37 @@ arg
 string
 	: STR
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		YFATAL(xmalloc, &$$, sizeof(*$$));
 
 		$$->l = @1.e - @1.s;
-		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		YFATAL(xmalloc, &$$->s, $$->l + 1);
 		memcpy($$->s, @1.s, $$->l);
 	}
 	| HREF
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		YFATAL(xmalloc, &$$, sizeof(*$$));
 
 		$$->l = 1;
-		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		YFATAL(xmalloc, &$$->s, $$->l + 1);
 		$$->s[0] = $1;
 	}
 	| CREF
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		YFATAL(xmalloc, &$$, sizeof(*$$));
 
 		$$->l = 1;
-		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		YFATAL(xmalloc, &$$->s, $$->l + 1);
 		$$->s[0] = $1;
 	}
 	| BREF
 	{
-		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
+		YFATAL(xmalloc, &$$, sizeof(*$$));
 
 		$$->l = 1;
-		YYU_FATAL(xmalloc, &$$->s, $$->l + 1);
+		YFATAL(xmalloc, &$$->s, $$->l + 1);
 		$$->s[0] = $1;
 
-		YYU_FATAL(xmalloc, &$$->refs.v, sizeof(*$$->refs.v));
+		YFATAL(xmalloc, &$$->refs.v, sizeof(*$$->refs.v));
 
 		$$->refs.v[0].s = $$->s;
 		$$->refs.v[0].l = $$->l;

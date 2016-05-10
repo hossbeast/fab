@@ -39,7 +39,7 @@ OPERATION
 */
 
 static xapi op_validate(operation*);
-static xapi op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -58,19 +58,29 @@ xapi op_validate(operation* o)
   enter;
 
 	if(o->argsl != 1 && (o->argsl % 2) != 0)
-		failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "1 or even", o->argsl);
+  {
+    xapi_fail_intent();
+    xapi_info_adds("expected", "1 or even");
+    xapi_info_addf("actual", "%d", o->argsl);
+		fail(LISTWISE_ARGSNUM);
+  }
 
 	int x;
 	for(x = 0; x < o->argsl; x++)
 	{
 		if(o->args[x]->itype != ITYPE_I64)
-			failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[x]->itype);
+    {
+      xapi_fail_intent();
+      xapi_info_adds("expected", "i64");
+      xapi_info_addf("actual", "%d", o->args[x]->itype);
+      fail(LISTWISE_ARGSTYPE);
+    }
 	}
 
 	finally : coda;
 }
 
-xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 

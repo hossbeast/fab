@@ -51,7 +51,7 @@ n+1 ..) contents of the stack beyond list 0 when we started
 */
 
 static xapi op_validate(operation* o);
-static xapi op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -77,7 +77,7 @@ xapi op_validate(operation* o)
 	finally : coda;
 }
 
-xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 

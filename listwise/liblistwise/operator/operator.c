@@ -19,6 +19,7 @@
 #include <inttypes.h>
 
 #include "xlinux.h"
+#include "narrator.h"
 
 #include "internal.h"
 #include "operator.internal.h"
@@ -28,7 +29,8 @@
 ///
 /// public
 ///
-xapi listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, pstring * restrict ps, fwriter writer)
+
+xapi listwise_lwop_say(uint64_t optype, int effectual, narrator * const restrict N)
 {
   enter;
 
@@ -42,8 +44,8 @@ xapi listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, co
 			if(t <= LWOP_EFFECTUAL || !effectual)
 			{
 				if(said)
-					SAY("|");
-				SAY(LWOPT_STR(t));
+					says("|");
+				says(LWOPT_STR(t));
 				said = 1;
 			}
 		}
@@ -52,32 +54,4 @@ xapi listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, co
 	}
 
 	finally : coda;
-}
-
-///
-/// api
-///
-
-xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * restrict z)
-{
-  enter;
-
-	size_t lz = 0;
-	if(!z)
-		z = &lz;
-
-	fatal(listwise_lwop, optype, effectual, dst, sz, z, 0, zwrite);
-
-  finally : coda;
-}
-
-xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring * const restrict ps)
-{
-  enter;
-
-	size_t lz = 0;
-	fatal(psclear, ps);
-	fatal(listwise_lwop, optype, effectual, 0, 0, &lz, ps, pswrite);
-
-  finally : coda;
 }

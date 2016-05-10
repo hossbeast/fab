@@ -67,8 +67,8 @@ OPERATION
 
 */
 
-static xapi op_exec_ls(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_lsr(operation*, lwx*, int**, int*, void**);
+static xapi op_exec_ls(operation*, lwx*, int**, int*);
+static xapi op_exec_lsr(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -88,7 +88,7 @@ operator op_desc[] = {
 	, {}
 };
 
-static xapi listing(lwx* ls, char * s, int recurse, void ** udata)
+static xapi listing(lwx* ls, char * s, int recurse)
 {
   enter;
 
@@ -110,7 +110,7 @@ static xapi listing(lwx* ls, char * s, int recurse, void ** udata)
 					{
 						char * zs = 0;
 						fatal(lstack_string, ls, 0, ls->s[0].l - 1, &zs);
-						fatal(listing, ls, zs, recurse, udata);
+						fatal(listing, ls, zs, recurse);
 					}
 				}
 			}
@@ -122,7 +122,7 @@ static xapi listing(lwx* ls, char * s, int recurse, void ** udata)
 	}
 	else if(errno == ENOTDIR || errno == ENOENT)
 	{
-		lw_log_opinfo("opendir('%s')=[%d][%s]", s, errno, strerror(errno));
+		logf(L_LISTWISE | L_OPINFO, "opendir('%s')=[%d][%s]", s, errno, strerror(errno));
 	}
 	else
 	{
@@ -135,7 +135,7 @@ finally:
 coda;
 }
 
-static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse, void ** udata)
+static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurse)
 {
   enter;
 
@@ -145,7 +145,7 @@ static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurs
 	if(o->argsl)
 	{
 		for(x = 0; x < o->argsl; x++)
-			fatal(listing, ls, o->args[x]->s, recurse, udata);
+			fatal(listing, ls, o->args[x]->s, recurse);
 	}
 	else
 	{
@@ -154,7 +154,7 @@ static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurs
 		{
 			char * zs = 0;
 			fatal(lstack_string, ls, 1, x, &zs);
-			fatal(listing, ls, zs, recurse, udata);
+			fatal(listing, ls, zs, recurse);
 		}
 		LSTACK_ITEREND
 	}
@@ -162,12 +162,12 @@ static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurs
 	finally : coda;
 }
 
-xapi op_exec_ls(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_ls(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, ls, ovec, ovec_len, 0, udata);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0);
 }
 
-xapi op_exec_lsr(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_lsr(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, ls, ovec, ovec_len, 1, udata);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 1);
 }

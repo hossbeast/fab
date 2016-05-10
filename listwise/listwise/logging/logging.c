@@ -15,23 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_SELECTION_INTERNAL_H
-#define _LISTWISE_SELECTION_INTERNAL_H
-
 #include "xapi.h"
-#include "selection.h"
 
-struct lwx;
+#include "logger/stream.h"
 
-#define restrict __restrict
+#include "logging.h"
 
-/// lstack_selection_activate
-//
-// SUMMARY
-//  activate selections staged by the previous operation
-//
-xapi lstack_selection_activate(struct lwx* const restrict lx)
-	__attribute__((nonnull));
+logger_category * categories = (logger_category []) {
+    { name : "ERROR"    , description : "failures leading to shutdown" }
+	, { name : "ARGS"			, description : "program arguments" }
+	, { name : "PARAMS"		, description : "program execution parameters" }
+  , { name : "LOGGER" }
+  , { }
+};
 
-#undef restrict
-#endif
+logger_stream * streams = (logger_stream []) {
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR" }
+  , { }
+};
+
+xapi logs_setup()
+{
+  enter;
+
+  fatal(logger_category_register, categories);
+  fatal(logger_stream_register, streams);
+
+  finally : coda;
+}

@@ -26,6 +26,7 @@
 #include <dlfcn.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
 #include "xlinux.h"
 
 #include "internal.h"
@@ -195,7 +196,7 @@ xapi operators_setup()
 finally:
 	if(XAPI_UNWINDING)
 	{
-#if XAPI_PROVIDE_BACKTRACE
+#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
 		xapi_backtrace();
 #else
 	dprintf(1, "liblistwise : failed to load operators\n");

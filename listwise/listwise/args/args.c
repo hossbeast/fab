@@ -21,19 +21,23 @@
 #include <string.h>
 #include <getopt.h>
 
+#include "xapi.h"
+#include "xlinux.h"
+#include "logger.h"
+#include "logger/filter.h"
+#include "logger/arguments.h"
+#include "logger/category.h"
+
 #include "listwise.h"
 #include "listwise/operator.h"
 #include "listwise/operators.h"
 #include "listwise/transform.h"
 
-#include "xapi.h"
-#include "LISTWISE.errtab.h"
+#include "errtab/MAIN.errtab.h"
 #undef perrtab
-#define perrtab perrtab_LISTWISE
-#include "xlinux.h"
-
+#define perrtab perrtab_MAIN
 #include "args.h"
-#include "logs.h"
+#include "logging.h"
 
 #include "macros.h"
 #include "parseint.h"
@@ -44,8 +48,10 @@ struct g_args_t g_args;
 // static
 //
 
-static void usage(int valid, int version, int help, int logs, int ops, uint64_t opmask)
+static xapi usage(int valid, int version, int help, int logs, int ops, uint64_t opmask)
 {
+  enter;
+
 printf(
 "listwise : list transformation utility\n"
 );
@@ -65,14 +71,14 @@ if(help)
 {
 printf(
 "\n"
-"usage : lw [ [ <option> ] [ <logexpr> ] [ <transform-expr> ] ] ...\n"
+"usage : %s [ [ <option> ] [ <logexpr> ] [ <non-options> ] [  ] ] ...\n"
 "\n"
 " --help      this message\n"
 " --version   version information\n"
-" --logs      logexpr listing\n"
+" --logs      logging category listing\n"
 " --ops       listwise operator listing\n"
 "\n"
-"----------------- [ options ] ---------------------------------------------------------------\n"
+"----------------- [ options ] --------------------------------------------------------------------\n"
 "\n"
 " -s                 (default) output only selected entries\n"
 " -a                           output entire list, not just selected entries\n"
@@ -82,7 +88,7 @@ printf(
 "                    (default) separate output rows by newline\n"
 " -Z                           separate output rows by null byte instead of by newline\n"
 " -A                 (default) process subsequent <path> arguments line-wise (ascii)\n"
-" -0                           process subsequent <path> arguments nullbyte-wise (null)\n"
+" -0                           process subsequent <path> arguments null-wise (null)\n"
 " +<int>                       append subsequent non-options using priority <int> (default : 0)\n"
 "\n"
 " -t <arg>                     add <arg> to transform-expr (transform)\n"
@@ -99,11 +105,10 @@ printf(
 " +H                           treat subsequent non-options as -H <path>\n"
 #if DEBUG || DEVEL
 "\n"
-" --logtrace-no      (default) do not include file/function/line in log messages\n"
-" --logtrace                   include file/function/line in log messages\n"
 " --backtrace-pithy  (default) produce a summary of the callstack on error\n"
 " --backtrace-full             produce a complete description of the callstack on error\n"
 #endif
+  , g_argv[0]
 );
 }
 
@@ -111,16 +116,13 @@ if(logs)
 {
 printf(
 "\n"
-"----------------- [ logexpr  ] -----------------------------------------------------------\n"
-"\n"
-" +<logcat> to enable logging category (use TAG for all)\n"
-" -<logcat> to disable logging category (use TAG for all)\n"
+"----------------- [ logs ] -----------------------------------------------------------------------\n"
 "\n"
 );
 
-int x;
-for(x = 0; x < g_logs_l; x++)
-	printf("  %-10s %s\n", g_logs[x].s, g_logs[x].d);
+  fatal(logger_filter_push, 0, "+LOGGER", 0);
+  fatal(category_report);
+  fatal(logger_filter_pop, 0);
 }
 
 if(ops)
@@ -136,7 +138,7 @@ for(x = 0; x < g_ops_l; x++)
 // from LWOPT_TABLE in liblistwise/operator/operator.h
 printf(
 "\n"
-"----------------- [ ops ] ---------------------------------------------------------\n"
+"----------------- [ ops ] ------------------------------------------------------------------------\n"
 "\n"
 "options\n"
 " --o<N>          0 < N < f      only list ops having property <N>\n"
@@ -213,10 +215,14 @@ printf(
 );
 
 exit(!valid);
+
+  finally : coda;
 }
 
-static int option(int type, int linewise, int rank, int bang, char * s)
+static xapi option(int type, int linewise, int rank, int bang, char * s)
 {
+  enter;
+
 	if(g_args.inputsl == g_args.inputsa)
 	{
 		size_t ns = g_args.inputsa ?: 10;
@@ -240,8 +246,17 @@ static int option(int type, int linewise, int rank, int bang, char * s)
 // public
 //
 
-int args_parse()
+xapi args_report()
 {
+  enter;
+
+  finally : coda;
+}
+
+xapi args_parse()
+{
+  enter;
+
 	int help = 0;
 	int version = 0;
 	int	logs = 0;
@@ -295,8 +310,6 @@ int args_parse()
 #if DEBUG || DEVEL
 		, { "backtrace-pithy"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
 		, { "backtrace-full"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
-		, { "logtrace-no"									, no_argument				, &g_args.mode_logtrace	, MODE_LOGTRACE_NONE }
-		, { "logtrace"										, no_argument				, &g_args.mode_logtrace	, MODE_LOGTRACE_FULL }
 #endif
 		, { }
 	};
@@ -317,7 +330,6 @@ int args_parse()
 	//
 #if DEBUG || DEVEL
 	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
-	g_args.mode_logtrace		= DEFAULT_MODE_LOGTRACE;
 #endif
 
 	g_args.mode_output			= DEFAULT_MODE_OUTPUT;
@@ -401,11 +413,11 @@ int args_parse()
 			// unrecognized argv element
 			if(optopt)
 			{
-				failf(LISTWISE_BADARGS, "unknown switch : -%c", optopt);
+				failf(MAIN_BADARGS, "switch", "-%c", optopt);
 			}
 			else
 			{
-				failf(LISTWISE_BADARGS, "unknown argument : %s", g_argv[optind-1]);
+				failf(MAIN_BADARGS, "argument", "%s", g_argv[optind-1]);
 			}
 		}
 		else
@@ -427,7 +439,7 @@ int args_parse()
 					// rank
 				}
 				else
-					failf(LISTWISE_BADARGS, "unknown argument : %s", optarg);
+					failf(MAIN_BADARGS, "unknown argument : %s", optarg);
 			}
 			else
 			{
@@ -449,7 +461,7 @@ int args_parse()
 					rank = 0;
 				}
 
-				fatal(option, type, linewise, rank, optarg == g_interpreting, optarg);
+				fatal(option, type, linewise, rank, optarg == g_interpreter, optarg);
 			}
 		}
 	}
@@ -470,7 +482,7 @@ int args_parse()
 
 	// options following --
 	for(; optind < g_argc; optind++)
-		fatal(option, non_options, linewise, prevailing_rank, g_argv[optind] == g_interpreting, g_argv[optind]);
+		fatal(option, non_options, linewise, prevailing_rank, g_argv[optind] == g_interpreter, g_argv[optind]);
 
 	// sort according to rank
 	int compar(typeof(*g_args.inputs) * A, typeof(*g_args.inputs) * B)
@@ -486,7 +498,7 @@ for(x = 0; x < g_args.inputsl; x++)
 
 	if(help || version || logs || ops)
 	{
-		usage(1, 1, help, logs, ops, opmask);
+		fatal(usage, 1, 1, help, logs, ops, opmask);
 	}
 
 	finally : coda;

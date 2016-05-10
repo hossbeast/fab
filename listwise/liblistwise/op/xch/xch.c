@@ -21,6 +21,8 @@
 
 #include "listwise/operator.h"
 #include "listwise/lwx.h"
+
+#include "logger.h"
 #include "listwise/logging.h"
 
 /*
@@ -40,7 +42,7 @@ OPERATION
 */
 
 static xapi op_validate(operation* o);
-static xapi op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -66,7 +68,7 @@ xapi op_validate(operation* o)
 	finally : coda;
 }
 
-xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -78,7 +80,7 @@ xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 
 	if(!(ls->l > to))
 	{
-		lw_log_opinfo("xch/%d out of range", to);
+    logf(L_LISTWISE | L_OPINFO, "xch/%d out of range", to);
 	}
 	else
 	{

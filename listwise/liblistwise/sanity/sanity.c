@@ -27,8 +27,8 @@
 
 #include "internal.h"
 #include "sanity.internal.h"
-#include "logging.internal.h"
 #include "object.internal.h"
+#include "logging.internal.h"
 
 #include "macros.h"
 
@@ -67,13 +67,13 @@ void sanityblock_free(sanityblock * const sb)
 	free(sb);
 }
 
-xapi sanity(struct lwx * const restrict ls, sanityblock * const restrict sb, void ** udata)
+xapi sanity(struct lwx * const restrict ls, sanityblock * const restrict sb)
 {
   enter;
 
 	int R = 0;
 
-#define err(fmt, ...) lw_log_sanity(fmt, ##__VA_ARGS__); R++
+#define err(fmt, ...) logf(L_LISTWISE | L_SANITY, fmt, ##__VA_ARGS__); R++
 
 uint64_t totlists = 0;
 uint64_t totstrings = 0;
@@ -237,7 +237,7 @@ totcompares++;
 		}
 	}
 
-	lw_log_sanity("SANITY : %3lu lists @ %6.2f apiece, %5d strings, compares : %lu", totlists, ((double)totstrings) / ((double)ls->a), sb->s_stringsl, totcompares);
+	logf(L_LISTWISE | L_SANITY, "SANITY : %3lu lists @ %6.2f apiece, %5d strings, compares : %lu", totlists, ((double)totstrings) / ((double)ls->a), sb->s_stringsl, totcompares);
 
 	if(R)
 		exit(1);

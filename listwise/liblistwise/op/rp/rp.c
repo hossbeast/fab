@@ -43,7 +43,7 @@ OPERATION
 
 */
 
-static xapi op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -56,7 +56,7 @@ operator op_desc[] = {
 	, {}
 };
 
-xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -82,7 +82,7 @@ xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		}
 		else if(errno == ENOENT || errno == ENOTDIR)
 		{
-			lw_log_opinfo("realpath(%.*s)=[%d][%s]", l, s, errno, strerror(errno));
+			logf(L_LISTWISE | L_OPINFO, "realpath(%.*s)=[%d][%s]", l, s, errno, strerror(errno));
 		}
 		else
 		{

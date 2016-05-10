@@ -21,16 +21,15 @@
 #include "xapi.h"
 
 #include "operator.h"
-#include "describe.internal.h"
 
-struct pstring;
+struct narrator;
 
 #define restrict __restrict
 
-/// listwise_lwop
+/// listwise_lwop_say
 //
 // SUMMARY
-//  write a description of the specified optype using the specified fwriter
+//  write a description of the specified optype
 //
 // PARAMETERS
 //  optype    - 
@@ -41,8 +40,8 @@ struct pstring;
 //  [ps]      - 
 //  writer    - 
 //
-xapi listwise_lwop(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * const z, struct pstring * restrict ps, fwriter writer)
-	__attribute__((nonnull(7)));
+xapi listwise_lwop_say(uint64_t optype, int effectual, struct narrator * const restrict N)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

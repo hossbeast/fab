@@ -30,8 +30,6 @@
 **   which 1) does not make them accessible for logging purposes, and 2) intermittently crashes when calling topstate
 **   
 **  fatal macros for use within the parser - for things such as allocating memory
-**
-**  yyerror implementation - 
 */
 
 #include <stdio.h>
@@ -84,9 +82,10 @@ typedef struct yyu_extra
   char            error_str[256];   //  string
   char            tokenstring[256]; //  tokenstring (gramerr only)
 
-  // logging configuration
-  void *          udata;            // passed to logging callbacks
+  uint64_t        state_logs;       // logging category ids for state transition logging
+  uint64_t        token_logs;       // logging category ids for token logging
 
+#if 0
   // yyu calls this function to log scanner state changes
   void *          state_token;      // passed to state logging callback
   int             (*state_would)(void * token, void * udata);
@@ -96,6 +95,7 @@ typedef struct yyu_extra
   void *          token_token;      // passed to token logging callback
   int             (*token_would)(void * token, void * udata);
   void            (*token_log)(void * token, void * udata, const char * func, const char * file, int line, char * fmt, ...);
+#endif
 
   // yyu calls this function to get a token name from a token
   const char *    (*tokname)(int token);
@@ -151,7 +151,7 @@ do                                          \
   }                                         \
 } while(0)
 
-/// YYU_FATAL
+/// YYU_YFATAL
 //
 // fatal for use within grammar rules - invokes YYABORT
 //
@@ -160,17 +160,45 @@ do                                          \
 //  %parse-param { void * scanner }
 //  %parse-param { parse_param * parm }
 //
-#define YYU_FATAL(x, ...)             \
+#define YFATAL(x, ...)                \
 do {                                  \
   enter_nochecks;                     \
-  int R;                              \
+  xapi _yyu_R;                        \
   fatal(x, ##__VA_ARGS__);            \
-  finally : conclude(&R);             \
-  if(R)                               \
+  finally : conclude(&_yyu_R);        \
+  if(_yyu_R)                          \
   {                                   \
     YYABORT;                          \
   }                                   \
 } while(0)
+
+#define lenter        \
+  enter_nochecks;     \
+  xapi _yyu_R = 0;    \
+  int _yyu_V = 0;     \
+  int _yyu_Vb = 0
+
+#define lcoda                   \
+  conclude(&_yyu_R);            \
+  if(_yyu_R)                    \
+  {                             \
+    while(yyextra->states_n)    \
+      DROPSTATE;                \
+    LOCWRITE;                   \
+    yyu_scanner_error(yylloc, yyextra); \
+    return 0;                   \
+  }                             \
+  else if(_yyu_Vb)              \
+  {                             \
+    return _yyu_V;              \
+  }
+
+#define yield(x)       \
+  do {                 \
+    _yyu_V = (x);      \
+    _yyu_Vb = 1;       \
+    goto XAPI_LEAVE;   \
+  } while(0)
 
 /// yyu_locwrite
 //
@@ -242,28 +270,21 @@ int yyu_nstate(yyu_extra * const restrict xtra, const int n)
 // PARAMETERS
 //  state - state
 //  xtra  - yyextra
-//  line  - line number in the scanner
 //
 // REMARKS
 //  typically you need to call this with PUSHSTATE in order to to also affect the scanner state stack
 //
-void yyu_pushstate(
-    const int state
-  , yyu_extra * const restrict xtra
-  , const char * func
-  , const char * file
-  , const int line
-)
+xapi yyu_pushstate(const int state, yyu_extra * const restrict xtra)
   __attribute__((nonnull));
 
 /// PUSHSTATE
 //
 // call yyu_pushstate from a scanner rule - and push a state into the internal scanner stack
 //
-#define PUSHSTATE(state)                                              \
-  do {                                                                \
-    yyu_pushstate(state, yyextra, __FUNCTION__, __FILE__, __LINE__);  \
-    yy_push_state(state, yyextra->scanner);                           \
+#define PUSHSTATE(state)                       \
+  do {                                         \
+    fatal(yyu_pushstate, state, yyextra);      \
+    yy_push_state(state, yyextra->scanner);    \
   } while(0)
 
 /// yyu_popstate
@@ -273,27 +294,30 @@ void yyu_pushstate(
 //
 // PARAMETERS
 //  xtra - yyextra
-//  line - line number in the scanner
 //
 // REMARKS
 //  typically you need to call this with POPSTATE in order to to also affect the scanner state stack
 //
-void yyu_popstate(
-    yyu_extra * const restrict xtra
-  , const char * func
-  , const char * file
-  , const int line
-)
+xapi yyu_popstate(yyu_extra * const restrict xtra)
   __attribute__((nonnull));
 
 /// POPSTATE
 //
 // call yyu_popstate from a scanner rule - also pop a state from the internal scanner stack
 //
-#define POPSTATE                                              \
-  do {                                                        \
-    yy_pop_state(yyextra->scanner);                           \
-    yyu_popstate(yyextra, __FUNCTION__, __FILE__, __LINE__);  \
+#define POPSTATE                          \
+  do {                                    \
+    yy_pop_state(yyextra->scanner);       \
+    fatal(yyu_popstate, yyextra);         \
+  } while(0)
+
+void yyu_dropstate(yyu_extra * const restrict xtra)
+  __attribute__((nonnull));
+
+#define DROPSTATE                     \
+  do {                                \
+    yy_pop_state(yyextra->scanner);   \
+    yyu_dropstate(yyextra);           \
   } while(0)
 
 /// yyu_ptoken
@@ -308,18 +332,14 @@ void yyu_popstate(
 //  xtra  - yyextra
 //  text  - yytext (text the token was parsed from)
 //  leng  - yyleng 
-//  line  - line number where the token was scanned
 //
-void yyu_ptoken(
+xapi yyu_ptoken(
     const int token
   , void * const restrict lval
   , yyu_location * const restrict lloc
   , yyu_extra * const restrict xtra
   , char * restrict text
   , const int leng
-  , const char * func
-  , const char * file
-  , const int line
 )
   __attribute__((nonnull));
 
@@ -327,15 +347,15 @@ void yyu_ptoken(
 //
 // call yyu_ptoken with default parameters from a scanner rule
 //
-#define PTOKEN(token) yyu_ptoken(token, yylval, yylloc, yyextra, yytext, yyleng, 0, __FUNCTION__, __FILE__, __LINE__)
+#define PTOKEN(token) fatal(yyu_ptoken, token, yylval, yylloc, yyextra, yytext, yyleng, 0)
 
 /// yyu_scanner_error
 //
 // SUMMARY
 //  invoked by scanner rule to report invalid input before returning 0 to indicate end-of-input
 //
-void yyu_scanner_error(yyu_location * const restrict lloc, yyu_extra * const restrict xtra, const int error, char const * fmt, ...)
-  __attribute__((nonnull(1,2,4)));
+void yyu_scanner_error(yyu_location * const restrict lloc, yyu_extra * const restrict xtra)//, const int error, char const * fmt, ...)
+  __attribute__((nonnull(1,2)));
 
 /// yyu_grammar_error
 //
@@ -360,9 +380,8 @@ void yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict
 //  leng  - yyleng
 //  del   - offset from start of yytext
 //  isnl  - whether this token is a single newline
-//  line  - line number in the scanner
 //
-int yyu_lexify(
+xapi yyu_lexify(
     const int token
   , void * const restrict lval
   , const size_t lvalsz
@@ -372,9 +391,6 @@ int yyu_lexify(
   , const int leng
   , const int del
   , const int isnl
-  , const char * func
-  , const char * file
-  , const int line
 )
   __attribute__((nonnull));
 
@@ -382,7 +398,7 @@ int yyu_lexify(
 //
 // call yyu_lexify with default parameters from a scanner rule
 //
-#define LEXIFY(token) yyu_lexify(token, yylval, sizeof(yylval), yylloc, yyextra, yytext, yyleng, 0, 0, __FUNCTION__, __FILE__, __LINE__)
+#define LEXIFY(token) fatal(yyu_lexify, token, yylval, sizeof(yylval), yylloc, yyextra, yytext, yyleng, 0, 0)
 
 #undef restrict
 #endif

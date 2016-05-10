@@ -1431,7 +1431,7 @@ yyreduce:
   case 4:
 #line 98 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.transform), sizeof(*(yyval.transform)));
+		YFATAL(xmalloc, &(yyval.transform), sizeof(*(yyval.transform)));
 		(yyval.transform)->args = (yyvsp[-3].args);
 		(yyval.transform)->argsl = 0;
 
@@ -1451,7 +1451,7 @@ yyreduce:
   case 5:
 #line 114 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.transform), sizeof(*(yyval.transform)));
+		YFATAL(xmalloc, &(yyval.transform), sizeof(*(yyval.transform)));
 		(yyval.transform)->args = (yyvsp[-1].args);
 		(yyval.transform)->argsl = parm->argsl;
 	}
@@ -1461,7 +1461,7 @@ yyreduce:
   case 6:
 #line 120 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.transform), sizeof(*(yyval.transform)));
+		YFATAL(xmalloc, &(yyval.transform), sizeof(*(yyval.transform)));
 		(yyval.transform)->ops = (yyvsp[-1].operations);
 		(yyval.transform)->opsl = parm->opsl;
 	}
@@ -1477,7 +1477,7 @@ yyreduce:
 			int ns = parm->opsa ?: 6;
 			ns = ns * 2 + ns / 2;
 
-			YYU_FATAL(xrealloc, &(yyval.operations), sizeof(*(yyval.operations)), ns + 1, parm->opsa);
+			YFATAL(xrealloc, &(yyval.operations), sizeof(*(yyval.operations)), ns + 1, parm->opsa);
 			parm->opsa = ns;
 		}
 		(yyval.operations)[parm->opsl++] = (yyvsp[0].operation);
@@ -1494,7 +1494,7 @@ yyreduce:
 			int ns = parm->opsa ?: 6;
 			ns = ns * 2 + ns / 2;
 
-			YYU_FATAL(xrealloc, &(yyval.operations), sizeof(*(yyval.operations)), ns + 1, parm->opsa);
+			YFATAL(xrealloc, &(yyval.operations), sizeof(*(yyval.operations)), ns + 1, parm->opsa);
 			parm->opsa = ns;
 		}
 		(yyval.operations)[parm->opsl++] = (yyvsp[0].operation);
@@ -1505,7 +1505,7 @@ yyreduce:
   case 9:
 #line 155 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.operations), sizeof(*(yyval.operations)) * 2);
+		YFATAL(xmalloc, &(yyval.operations), sizeof(*(yyval.operations)) * 2);
 		parm->opsa = 1;
 		parm->opsl = 0;
 		(yyval.operations)[parm->opsl++] = (yyvsp[0].operation);
@@ -1546,7 +1546,7 @@ yyreduce:
   case 19:
 #line 195 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.operation), sizeof(*(yyval.operation)));
+		YFATAL(xmalloc, &(yyval.operation), sizeof(*(yyval.operation)));
 		(yyval.operation)->op = (yyvsp[0].op);
 	}
 #line 1553 "transform/transform.tab.c" /* yacc.c:1646  */
@@ -1560,7 +1560,7 @@ yyreduce:
 		{
 			int ns = parm->argsa ?: 3;
 			ns = ns * 2 + ns / 2;
-			YYU_FATAL(xrealloc, &(yyval.args), sizeof(*(yyval.args)), ns + 1, parm->argsa);
+			YFATAL(xrealloc, &(yyval.args), sizeof(*(yyval.args)), ns + 1, parm->argsa);
 			parm->argsa = ns;
 		}
 		(yyval.args)[parm->argsl++] = (yyvsp[0].arg);
@@ -1571,7 +1571,7 @@ yyreduce:
   case 23:
 #line 220 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.args), sizeof(*(yyval.args)) * 2);
+		YFATAL(xmalloc, &(yyval.args), sizeof(*(yyval.args)) * 2);
 		parm->argsl = 0;
 		parm->argsa = 1;
 		(yyval.args)[parm->argsl++] = (yyvsp[0].arg);
@@ -1587,7 +1587,7 @@ yyreduce:
 		{
 			int ns = parm->argsa ?: 3;
 			ns = ns * 2 + ns / 2;
-			YYU_FATAL(xrealloc, &(yyval.args), sizeof(*(yyval.args)), ns + 1, parm->argsa);
+			YFATAL(xrealloc, &(yyval.args), sizeof(*(yyval.args)), ns + 1, parm->argsa);
 			parm->argsa = ns;
 		}
 		(yyval.args)[parm->argsl++] = (yyvsp[-1].arg);
@@ -1598,7 +1598,7 @@ yyreduce:
   case 30:
 #line 250 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.args), sizeof(*(yyval.args)) * 2);
+		YFATAL(xmalloc, &(yyval.args), sizeof(*(yyval.args)) * 2);
 		parm->argsl = 0;
 		parm->argsa = 1;
 		(yyval.args)[parm->argsl++] = (yyvsp[-1].arg);
@@ -1614,7 +1614,7 @@ yyreduce:
 		char* o = (yyval.arg)->s;
 
 		// reallocate the string value of the argument
-		YYU_FATAL(xrealloc, &(yyval.arg)->s, 1, (yyval.arg)->l + (yyvsp[0].arg)->l + 1, (yyval.arg)->l);
+		YFATAL(xrealloc, &(yyval.arg)->s, 1, (yyval.arg)->l + (yyvsp[0].arg)->l + 1, (yyval.arg)->l);
 		memcpy((yyval.arg)->s + (yyval.arg)->l, (yyvsp[0].arg)->s, (yyvsp[0].arg)->l);
 		(yyval.arg)->s[(yyval.arg)->l + (yyvsp[0].arg)->l] = 0;
 
@@ -1629,7 +1629,7 @@ yyreduce:
 		// use new reference, if there is one
 		if((yyvsp[0].arg)->refs.v)
 		{
-			YYU_FATAL(xrealloc, &(yyval.arg)->refs, sizeof(*(yyval.arg)), (yyval.arg)->refs.l + 1, (yyval.arg)->refs.l);
+			YFATAL(xrealloc, &(yyval.arg)->refs, sizeof(*(yyval.arg)), (yyval.arg)->refs.l + 1, (yyval.arg)->refs.l);
 
 			(yyval.arg)->refs.v[(yyval.arg)->refs.l].s = (yyval.arg)->s + (yyval.arg)->l;
 			(yyval.arg)->refs.v[(yyval.arg)->refs.l].l = (yyvsp[0].arg)->l;
@@ -1656,7 +1656,7 @@ yyreduce:
 		char* o = (yyval.arg)->s;
 
 		// reallocate the string value of the argument
-		YYU_FATAL(xrealloc, &(yyval.arg)->s, 1, (yyval.arg)->l + ((yylsp[0]).e - (yylsp[0]).s) + 1, (yyval.arg)->l);
+		YFATAL(xrealloc, &(yyval.arg)->s, 1, (yyval.arg)->l + ((yylsp[0]).e - (yylsp[0]).s) + 1, (yyval.arg)->l);
 		memcpy((yyval.arg)->s + (yyval.arg)->l, (yylsp[0]).s, ((yylsp[0]).e - (yylsp[0]).s));
 		(yyval.arg)->s[(yyval.arg)->l + ((yylsp[0]).e - (yylsp[0]).s)] = 0;
 
@@ -1677,10 +1677,10 @@ yyreduce:
   case 41:
 #line 334 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
+		YFATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
 		(yyval.arg)->l = (yylsp[0]).e - (yylsp[0]).s;
-		YYU_FATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
+		YFATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
 		memcpy((yyval.arg)->s, (yylsp[0]).s, (yyval.arg)->l);
 
 		(yyval.arg)->itype = ITYPE_I64;
@@ -1692,10 +1692,10 @@ yyreduce:
   case 43:
 #line 349 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
+		YFATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
 		(yyval.arg)->l = (yylsp[0]).e - (yylsp[0]).s;
-		YYU_FATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
+		YFATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
 		memcpy((yyval.arg)->s, (yylsp[0]).s, (yyval.arg)->l);
 	}
 #line 1702 "transform/transform.tab.c" /* yacc.c:1646  */
@@ -1704,10 +1704,10 @@ yyreduce:
   case 44:
 #line 357 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
+		YFATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
 		(yyval.arg)->l = 1;
-		YYU_FATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
+		YFATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
 		(yyval.arg)->s[0] = (yyvsp[0].ref);
 	}
 #line 1714 "transform/transform.tab.c" /* yacc.c:1646  */
@@ -1716,10 +1716,10 @@ yyreduce:
   case 45:
 #line 365 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
+		YFATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
 		(yyval.arg)->l = 1;
-		YYU_FATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
+		YFATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
 		(yyval.arg)->s[0] = (yyvsp[0].ref);
 	}
 #line 1726 "transform/transform.tab.c" /* yacc.c:1646  */
@@ -1728,13 +1728,13 @@ yyreduce:
   case 46:
 #line 373 "transform/transform.y" /* yacc.c:1646  */
     {
-		YYU_FATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
+		YFATAL(xmalloc, &(yyval.arg), sizeof(*(yyval.arg)));
 
 		(yyval.arg)->l = 1;
-		YYU_FATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
+		YFATAL(xmalloc, &(yyval.arg)->s, (yyval.arg)->l + 1);
 		(yyval.arg)->s[0] = (yyvsp[0].ref);
 
-		YYU_FATAL(xmalloc, &(yyval.arg)->refs.v, sizeof(*(yyval.arg)->refs.v));
+		YFATAL(xmalloc, &(yyval.arg)->refs.v, sizeof(*(yyval.arg)->refs.v));
 
 		(yyval.arg)->refs.v[0].s = (yyval.arg)->s;
 		(yyval.arg)->refs.v[0].l = (yyval.arg)->l;

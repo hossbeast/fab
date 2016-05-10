@@ -20,6 +20,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xapi.h"
+#include "xlinux.h"
+#include "logger.h"
+
 #include "yyutil.h"
 
 #include "wstdlib.h"
@@ -70,16 +74,18 @@ void yyu_locwrite(yyu_location * const lloc, yyu_extra * const xtra, char * cons
   lloc->l = lloc->e - lloc->s;
 }
 
-void yyu_pushstate(const int state, yyu_extra * const xtra, const char * func, const char * file, const int line)
+xapi yyu_pushstate(const int state, yyu_extra * const xtra)
 {
-  if(xtra->state_log && xtra->state_would && xtra->state_would(xtra->state_token, xtra->udata))
+  enter;
+
+  if(log_would(xtra->state_logs))
   {
     int al = snprintf(xtra->space, sizeof(xtra->space), "%s -> %s"
       , xtra->statename(yyu_nstate(xtra, 0))
       , xtra->statename(state)
     );
 
-    xtra->state_log(xtra->state_token, xtra->udata, func, file, line
+    logf(xtra->state_logs
       , "(%2d) %.*s %*s @ %*s "
       , xtra->states_n
       , al
@@ -92,21 +98,30 @@ void yyu_pushstate(const int state, yyu_extra * const xtra, const char * func, c
   }
 
   xtra->states[xtra->states_n++] = state;
+
+  finally : coda;
 }
 
-void yyu_popstate(yyu_extra * const xtra, const char * func, const char * file, const int line)
+void yyu_dropstate(yyu_extra * const xtra)
 {
+  xtra->states_n--;
+}
+
+xapi yyu_popstate(yyu_extra * const xtra)
+{
+  enter;
+
   int x = yyu_nstate(xtra, 0);
   xtra->states_n--;
 
-  if(xtra->state_log && xtra->state_would && xtra->state_would(xtra->state_token, xtra->udata))
+  if(log_would(xtra->state_logs))
   {
     int al = snprintf(xtra->space, sizeof(xtra->space), "%s <- %s"
       , xtra->statename(yyu_nstate(xtra, 0))
       , xtra->statename(x)
     );
 
-    xtra->state_log(xtra->state_token, xtra->udata, func, file, line
+    logf(xtra->state_logs
       , "(%2d) %.*s %*s @ %*s "
       , xtra->states_n
       , al
@@ -117,6 +132,8 @@ void yyu_popstate(yyu_extra * const xtra, const char * func, const char * file, 
       , ""
     );
   }
+
+  finally : coda;
 }
 
 int yyu_nstate(yyu_extra * const xtra, const int n)
@@ -124,9 +141,11 @@ int yyu_nstate(yyu_extra * const xtra, const int n)
   return (xtra->states_n > n) ? xtra->states[xtra->states_n - n - 1] : -1;
 }
 
-void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng, const char * func, const char * file, const int line)
+xapi yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng)
 {
-  if(xtra->token_log && xtra->token_would && xtra->token_would(xtra->token_token, xtra->udata))
+  enter;
+
+  if(log_would(xtra->token_logs))
   {
     // token source string
     char * abuf = xtra->space;
@@ -144,7 +163,7 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
     if(xtra->inputstr)
       xtra->inputstr(xtra, &cbuf, &clen);
 
-    xtra->token_log(xtra->token_token, xtra->udata, func, file, line
+    logf(xtra->token_logs
       , "%8s ) '%.*s'%s%.*s%s %*s @ %s%.*s%s[%3d,%3d - %3d,%3d]"
       , xtra->tokname(token) ?: ""  // token name
       , alen                        // escaped string from which the token was scanned
@@ -165,13 +184,16 @@ void yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
       , lloc->l_col + 1
     );
   }
+
+  finally : coda;
 }
 
-void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra, const int error, char const * fmt, ...)
+void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra)//, const int error, char const * fmt, ...)
 {
   // save the error
-  xtra->scanerr = error;
+  xtra->scanerr = 1;//error;
 
+/*
   // save the error string
   if(fmt)
   {
@@ -180,6 +202,7 @@ void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra, const 
     vsnprintf(xtra->error_str, sizeof(xtra->error_str), fmt, va);
     va_end(va);
   }
+*/
 
   // save the location
   memcpy(&xtra->error_loc, lloc, sizeof(xtra->error_loc));
@@ -242,15 +265,17 @@ void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_extr
   }
 }
 
-int yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del, const int isnl, const char * func, const char * file, const int line)
+xapi yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del, const int isnl)
 {
+  enter;
+
   if(isnl)
     yyu_locreset(lloc, xtra, del);
   else
     yyu_locwrite(lloc, xtra, text, leng, del);
 
-  // print the token if requested
-  yyu_ptoken(token, lval, lloc, xtra, text, leng, func, file, line);
+  // possibly log the token
+  fatal(yyu_ptoken, token, lval, lloc, xtra, text, leng);
 
   // store location for error reporting
   memcpy(&xtra->last_loc, lloc, sizeof(xtra->last_loc));
@@ -259,17 +284,17 @@ int yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_loca
   // store lval for error reporting
   if(lvalsz >= xtra->last_lval_aloc)
   {
-    wrealloc(&xtra->last_lval, lvalsz + 1, 1, xtra->last_lval_aloc);
+    fatal(xrealloc, &xtra->last_lval, lvalsz + 1, 1, xtra->last_lval_aloc);
     xtra->last_lval_aloc = lvalsz + 1;
   }
 
   memcpy(xtra->last_lval, lval, lvalsz);
   ((char*)xtra->last_lval)[lvalsz] = 0;
 
-  return token;
+  finally : coda;
 }
 
 void yyu_extra_destroy(yyu_extra * const xtra)
 {
-  free(xtra->last_lval);
+  xfree(xtra->last_lval);
 }

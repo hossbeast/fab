@@ -43,8 +43,8 @@ OPERATION
 
 */
 
-static xapi op_exec_ss(operation*, lwx*, int**, int*, void **);
-static xapi op_exec_sn(operation*, lwx*, int**, int*, void **);
+static xapi op_exec_ss(operation*, lwx*, int**, int*);
+static xapi op_exec_sn(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -66,7 +66,7 @@ operator op_desc[] = {
 #define STRING_NCASE	2
 #define NUMERIC				3
 
-static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode, void ** udata)
+static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
 {
   enter;
 
@@ -165,7 +165,7 @@ finally:
 coda;
 }
 
-xapi op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
+xapi op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
   enter;
 
@@ -180,13 +180,13 @@ xapi op_exec_ss(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** ud
 		if(o->argsl >= 1)
 			ncase = strchr(o->args[0]->s, 'i') != 0;
 
-		fatal(op_exec, o, lx, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE, udata);
+		fatal(op_exec, o, lx, ovec, ovec_len, ncase ? STRING_NCASE : STRING_WCASE);
 	}
 
 	finally : coda;
 }
 
-xapi op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** udata)
+xapi op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len)
 {
   enter;
 
@@ -196,7 +196,7 @@ xapi op_exec_sn(operation * o, lwx * lx, int ** ovec, int * ovec_len, void ** ud
 	}
 	else
 	{
-		fatal(op_exec, o, lx, ovec, ovec_len, NUMERIC, udata);
+		fatal(op_exec, o, lx, ovec, ovec_len, NUMERIC);
 	}
 
 	finally : coda;

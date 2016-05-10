@@ -65,7 +65,6 @@ API xapi fs_statfmt(
 	, char * const restrict dst
 	, size_t sz
 	, size_t * const z
-	, void ** udata
 )
 {
   enter;
@@ -106,7 +105,7 @@ API xapi fs_statfmt(
 
 	if(r)
 	{
-		lw_log_opinfo("%s(%.*s)=[%d][%s]", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
+		logf(L_LISTWISE | L_OPINFO, "%s(%.*s)=[%d][%s]", isstat ? "stat" : "lstat", sl, s, errno, strerror(errno));
 	}
 	else
 	{

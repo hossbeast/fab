@@ -18,6 +18,9 @@
 #include <stdarg.h>
 #include <inttypes.h>
 
+#include "xapi.h"
+#include "narrator.h"
+
 #include "internal.h"
 #include "transform.internal.h"
 #include "transform/transform.def.h"
@@ -35,10 +38,10 @@
 
 #define restrict __restrict
 
-struct transform_parser
+typedef struct transform_parser
 {
 	void * p;		// scanner
-};
+} transform_parser;
 
 ///
 /// static
@@ -137,9 +140,14 @@ static xapi reduce(parse_param * pp)
 			// memory exhaustion error from the parser
 			tfail(perrtab_SYS, ENOMEM);
 		}
+		else if(XAPI_UNWINDING)
+		{
+      // fail from within a lexer or parser rule (such as ENOMEM or NXOP)
+			fail(0);
+		}
 		else if(pp->scanerr)
 		{
-			// error from the scanner
+			// scanner invoked YYU_LFAILF
 			fails(pp->scanerr, "message", pp->error_str);
 		}
 		else if(pp->gramerr)
@@ -147,15 +155,10 @@ static xapi reduce(parse_param * pp)
 			// error from the parser
 			fails(LISTWISE_SYNTAX, "message", pp->error_str);
 		}
-		else
-		{
-			// error thrown from a grammar rule (such as ENOMEM)
-			fail(0);
-		}
 	}
 
 finally :
-	if(XAPI_UNWINDING)
+	if(XAPI_FAILING)
 	{
 		if(pp->scanerr || pp->gramerr)
 		{
@@ -178,9 +181,11 @@ finally :
 coda;
 }
 
-static xapi parse(transform_parser ** p, char* s, int l, char * name, int namel, transform** g, void * udata)
+static xapi parse(transform_parser ** restrict p, const char * const restrict s, size_t sl, char * const restrict name, transform ** const restrict g)
 {
   enter;
+
+  int token = 0;
 
 	// local parser
 	transform_parser * lp = 0;
@@ -189,13 +194,13 @@ static xapi parse(transform_parser ** p, char* s, int l, char * name, int namel,
 	void * state = 0;
 
 	// transform-string
-	char * b = s;
+	const char * b = s;
 
 	if(!p)
 		p = &lp;
 
 	if(!*p)
-		fatal(transform_mkparser, p);
+		fatal(transform_parser_create, p);
 
 	// results struct for this parse
 	parse_param pp = {
@@ -204,13 +209,8 @@ static xapi parse(transform_parser ** p, char* s, int l, char * name, int namel,
 		, .inputstr				= transform_inputstr
 		, .lvalstr				= transform_lvalstr
 #if DEBUG || DEVEL
-		, .udata					= udata
-		, .token_token		= listwise_logging_config ? listwise_logging_config->tokens_token : 0
-		, .token_would		= listwise_logging_config ? listwise_logging_config->tokens_would : 0
-		, .token_log			= listwise_logging_config ? listwise_logging_config->tokens_log : 0
-		, .state_token		= listwise_logging_config ? listwise_logging_config->states_token : 0
-		, .state_would		= listwise_logging_config ? listwise_logging_config->states_would : 0
-		, .state_log			= listwise_logging_config ? listwise_logging_config->states_log : 0
+    , .state_logs     = L_LISTWISE | L_STATES
+    , .token_logs     = L_LISTWISE | L_TOKENS
 #endif
 	};
 
@@ -239,10 +239,17 @@ static xapi parse(transform_parser ** p, char* s, int l, char * name, int namel,
 		for(x = 0; x < (*g)->opsl; x++)
 			fatal(operation_validate, (*g)->ops[x]);
 
-		fatal(transform_description_log, *g, 0, udata);
+    if(log_would(L_LISTWISE | L_PARSE))
+    {
+      fatal(log_start, L_LISTWISE | L_PARSE, &token);
+      fatal(transform_description_say, *g, log_narrator());
+      fatal(log_finish, &token);
+    }
 	}
 
 finally:
+  fatal(log_finish, &token);
+
 	// cleanup state for this parse
 	transform_yy_delete_buffer(state, (*p)->p);
 	transform_free(pp.g);
@@ -253,11 +260,7 @@ finally:
 coda;
 }
 
-///
-/// static : describe
-///
-
-static xapi transform_arg_canon(arg * const arg, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
+static xapi arg_canon_say(arg * const arg, uint32_t sm, narrator * const restrict N)
 {
   enter;
 
@@ -270,53 +273,53 @@ static xapi transform_arg_canon(arg * const arg, uint32_t sm, char * const dst, 
 	{
 		if(arg->refs.l > k && arg->refs.v[k].s == &arg->s[i])
 		{
-			SAY("\\%d", arg->refs.v[k].ref);
+			sayf("\\%d", arg->refs.v[k].ref);
 
 			i += arg->refs.v[k].l - 1;
 			k++;
 		}
 		else if(arg->s[i] == ' ' && GS_DELIMITED(sm))
 		{
-			SAY("\\s");
+			sayf("\\s");
 		}
 		else if(arg->s[i] == '\t' && GS_DELIMITED(sm))
 		{
-			SAY("\\t");
+			sayf("\\t");
 		}
 		else if(arg->s[i] == '\r' && GS_DELIMITED(sm))
 		{
-			SAY("\\r");
+			sayf("\\r");
 		}
 		else if(arg->s[i] == '\n' && GS_DELIMITED(sm))
 		{
-			SAY("\\n");
+			sayf("\\n");
 		}
 		else if((arg->s[i] != ' ' || arg->s[i] != '\t' || arg->s[i] != '\n' || arg->s[i] != '\r') && (arg->s[i] <= 0x20 || arg->s[i] >= 0x7f))
 		{
-			SAY("\\x{%02hhx}", arg->s[i]);
+			sayf("\\x{%02hhx}", arg->s[i]);
 		}
 		else if(arg->s[i] == '\\' && GS_DOREFS(sm))
 		{
-			SAY("\\%c", arg->s[i]);
+			sayf("\\%c", arg->s[i]);
 		}
 		else if(GS_DELIMITED(sm) && arg->s[i] == genscan_opening_char[sm])
 		{
-			SAY("\\%c", arg->s[i]);
+			sayf("\\%c", arg->s[i]);
 		}
 		else if(GS_ENCLOSED(sm) && arg->s[i] == genscan_closing_char[sm])
 		{
-			SAY("\\%c", arg->s[i]);
+			sayf("\\%c", arg->s[i]);
 		}
 		else
 		{
-			SAY("%c", arg->s[i]);
+			sayf("%c", arg->s[i]);
 		}
 	}
 
 	finally : coda;
 }
 
-static xapi transform_args_canon(arg ** const args, const int argsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
+static xapi args_canon_say(arg ** const args, const int argsl, uint32_t sm, narrator * const restrict N)
 {
   enter;
 
@@ -325,24 +328,24 @@ static xapi transform_args_canon(arg ** const args, const int argsl, uint32_t sm
 	{
 		// emit the opener
 		if(GS_ENCLOSED(sm))
-			SAY("%c", genscan_opening_char[sm]);
+			sayf("%c", genscan_opening_char[sm]);
 		else if(x)
-			SAY("%c", genscan_opening_char[sm]);
+			sayf("%c", genscan_opening_char[sm]);
 
 		// emit the argument string
-		fatal(transform_arg_canon, args[x], sm, dst + (*z), sz - (*z), z, ps, writer);
+		fatal(arg_canon_say, args[x], sm, N);
 
 		// emit the closer
 		if(GS_ENCLOSED(sm))
-			SAY("%c", genscan_closing_char[sm]);
+			sayf("%c", genscan_closing_char[sm]);
 		else if(x == (argsl - 1) && args[x]->l == 0)
-			SAY("%c", genscan_opening_char[sm]);
+			sayf("%c", genscan_opening_char[sm]);
 	}
 
 	finally : coda;
 }
 
-static xapi transform_operations_canon(operation ** const ops, int opsl, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
+static xapi operations_canon_say(operation ** const ops, int opsl, uint32_t sm, narrator * const restrict N)
 {
   enter;
 
@@ -350,71 +353,10 @@ static xapi transform_operations_canon(operation ** const ops, int opsl, uint32_
 	for(x = 0; x < opsl; x++)
 	{
 		if(x)
-			SAY(" ");
+			sayf(" ");
 
-		fatal(transform_operation_canon, ops[x], sm, dst + (*z), sz - (*z), z, ps, writer);
+		fatal(operation_canon_say, ops[x], sm, N);
 	}
-
-	finally : coda;
-}
-
-static xapi transform_canon(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
-{
-  enter;
-
-	uint32_t sm = GENSCAN_SLASH_DOREFS;
-
-	fatal(transform_args_canon, g->args, g->argsl, sm, dst + (*z), sz - (*z), z, ps, writer);
-
-	if(z)
-		SAY(" ");
-
-	fatal(transform_operations_canon, g->ops, g->opsl, sm, dst + (*z), sz - (*z), z, ps, writer);
-
-	finally : coda;
-}
-
-static xapi transform_description(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * const z, pstring * restrict ps, fwriter writer)
-{
-  enter;
-
-	// expanded transform description
-	SAY("transform @ %p {\n", g);
-	SAY("  initial list\n");
-
-	int x;
-	for(x = 0; x < g->argsl; x++)
-	{
-		SAY("    ");
-		fatal(transform_arg_canon, g->args[x], 0, dst + (*z), sz - (*z), z, ps, writer);
-		SAY("\n");
-	}
-
-	SAY("  operations\n");
-	for(x = 0; x < g->opsl; x++)
-	{
-		SAY("    OP - %s\n", g->ops[x]->op->s);
-		SAY("      args\n");
-
-		int y;
-		for(y = 0; y < g->ops[x]->argsl; y++)
-		{
-			SAY("        ");
-			fatal(transform_arg_canon, g->ops[x]->args[y], 0, dst + (*z), sz - (*z), z, ps, writer);
-			SAY("\n");
-		}
-
-		if(y == 0)
-			SAY("        none\n");
-	}
-
-	if(x == 0)
-		SAY("    none");
-
-	// canonicalized transform-string
-	SAY("\n --> ");
-	fatal(transform_canon, g, dst + (*z), sz - (*z), z, ps, writer);
-	SAY("\n}");
 
 	finally : coda;
 }
@@ -423,17 +365,17 @@ static xapi transform_description(transform * const restrict g, char * const res
 /// public : describe
 ///
 
-xapi transform_operation_canon(operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, pstring * restrict ps, fwriter writer)
+xapi operation_canon_say(operation * const oper, uint32_t sm, narrator * const restrict N)
 {
   enter;
 
-	SAY("%s", oper->op->s);
+	sayf("%s", oper->op->s);
 
 	// conditionally emit the delimiter
 	if(oper->argsl)
-		SAY("%c", genscan_opening_char[sm]);
+		sayf("%c", genscan_opening_char[sm]);
 
-	fatal(transform_args_canon, oper->args, oper->argsl, sm, dst + (*z), sz - (*z), z, ps, writer);
+	fatal(args_canon_say, oper->args, oper->argsl, sm, N);
 
 	finally : coda;
 }
@@ -442,7 +384,7 @@ xapi transform_operation_canon(operation * const oper, uint32_t sm, char * const
 /// api
 ///
 
-API xapi transform_mkparser(transform_parser ** p)
+API xapi transform_parser_create(transform_parser ** restrict p)
 {
 	enter;
 
@@ -454,7 +396,7 @@ API xapi transform_mkparser(transform_parser ** p)
 	finally : coda;
 }
 
-API void transform_parser_free(transform_parser * p)
+API void transform_parser_free(transform_parser * restrict p)
 {
 	if(p)
 	{
@@ -464,13 +406,31 @@ API void transform_parser_free(transform_parser * p)
 	free(p);
 }
 
-API void transform_parser_xfree(transform_parser ** p)
+API void transform_parser_ifree(transform_parser ** const restrict p)
 {
 	transform_parser_free(*p);
 	*p = 0;
 }
 
-API void transform_free(transform* g)
+API xapi transform_parse(transform_parser ** restrict p, const char * const restrict s, size_t sl, transform ** const restrict g)
+{
+	enter;
+
+	fatal(parse, p, s, sl, 0, g);
+
+	finally : coda;
+}
+
+API xapi transform_parsex(transform_parser ** restrict p, const char * const restrict s, size_t sl, char * const restrict name, transform ** g)
+{
+	enter;
+
+	fatal(parse, p, s, sl, name, g);
+
+	finally : coda;
+}
+
+API void transform_free(transform * restrict g)
 {
 	if(g)
 	{
@@ -518,154 +478,75 @@ API void transform_free(transform* g)
 	free(g);
 }
 
-API void transform_xfree(transform** g)
+API void transform_ifree(transform ** const restrict g)
 {
 	transform_free(*g);
 	*g = 0;
 }
 
-API xapi transform_parse(transform_parser ** p, char* s, int l, transform** g)
-{
-	enter;
-
-	fatal(parse, p, s, l, 0, 0, g, 0);
-
-	finally : coda;
-}
-
-API xapi transform_parse2(transform_parser ** p, char* s, int l, transform** g, void * udata)
-{
-	enter;
-
-	fatal(parse, p, s, l, 0, 0, g, udata);
-
-	finally : coda;
-}
-
-API xapi transform_parse_named(transform_parser ** p, char* s, int l, char * name, int namel, transform** g)
-{
-	enter;
-
-	fatal(parse, p, s, l, name, namel, g, 0);
-
-	finally : coda;
-}
-
-API xapi transform_parse_named2(transform_parser ** p, char* s, int l, char * name, int namel, transform** g, void * udata)
-{
-	enter;
-
-	fatal(parse, p, s, l, name, namel, g, udata);
-
-	finally : coda;
-}
-
-///
-/// api : describe
-///
-
-API xapi transform_canon_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
+API xapi transform_canon_say(transform * const restrict g, narrator * const restrict N)
 {
   enter;
 
-	size_t lz = 0;
-	if(!z)
-		z = &lz;
+	uint32_t sm = GENSCAN_SLASH_DOREFS;
 
-	fatal(transform_canon, g, dst, sz, z, 0, zwrite);
+  off_t pos;
+  fatal(narrator_seek, N, 0, NARRATOR_SEEK_CUR, &pos);
 
-  finally : coda;
-}
+	fatal(args_canon_say, g->args, g->argsl, sm, N);
 
-API xapi transform_canon_pswrite(transform * const restrict g, pstring * restrict ps)
-{
-	enter;
+  off_t T = pos;
+  fatal(narrator_seek, N, 0, NARRATOR_SEEK_CUR, &pos);
 
-	size_t lz = 0;
-	fatal(psclear, ps);
-	fatal(transform_canon, g, 0, 0, &lz, ps, pswrite);
+	if(T != pos)
+		says(" ");
+
+	fatal(operations_canon_say, g->ops, g->opsl, sm, N);
 
 	finally : coda;
 }
 
-API xapi transform_canon_dump(transform * const restrict g, pstring * restrict ps)
-{
-	enter;
-
-	fatal(psclear, ps);
-
-	size_t lz = 0;
-	fatal(transform_canon, g, 0, 0, &lz, ps, pswrite);
-	printf("%.*s\n", (int)ps->l, ps->s);
-
-  finally : coda;
-}
-
-API xapi transform_canon_log(transform * const restrict g, pstring * restrict ps, void * restrict udata)
-{
-	enter;
-
-	fatal(psclear, ps);
-
-	if(lw_would_transform())
-	{
-		size_t lz = 0;
-		fatal(transform_canon, g, 0, 0, &lz, ps, pswrite);
-		lw_log_transform("%.*s", (int)ps->l, ps->s);
-	}
-
-  finally : coda;
-}
-
-API xapi transform_description_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
+API xapi transform_description_say(transform * const restrict g, narrator * const restrict N)
 {
   enter;
 
-	size_t lz = 0;
-	if(!z)
-		z = &lz;
+	// expanded transform description
+	sayf("transform @ %p {\n", g);
+	sayf("  initial list\n");
 
-	fatal(transform_description, g, dst, sz, z, 0, zwrite);
-
-  finally : coda;
-}
-
-API xapi transform_description_pswrite(transform * const restrict g, pstring * restrict ps)
-{
-	enter;
-
-	size_t lz = 0;
-	fatal(psclear, ps);
-	fatal(transform_description, g, 0, 0, &lz, ps, pswrite);
-
-	finally : coda;
-}
-
-API xapi transform_description_dump(transform * const restrict g, pstring * restrict ps)
-{
-	enter;
-
-	fatal(psclear, ps);
-
-	size_t lz = 0;
-	fatal(transform_description, g, 0, 0, &lz, ps, pswrite);
-	printf("%.*s\n", (int)ps->l, ps->s);
-
-  finally : coda;
-}
-
-API xapi transform_description_log(transform * const restrict g, pstring * restrict ps, void * restrict udata)
-{
-	enter;
-
-	if(lw_would_transform())
+	int x;
+	for(x = 0; x < g->argsl; x++)
 	{
-		fatal(psclear, ps);
-
-		size_t lz = 0;
-		fatal(transform_description, g, 0, 0, &lz, ps, pswrite);
-		lw_log_transform("%.*s", (int)ps->l, ps->s);
+		sayf("    ");
+		fatal(arg_canon_say, g->args[x], 0, N);
+		sayf("\n");
 	}
 
-  finally : coda;
+	sayf("  operations\n");
+	for(x = 0; x < g->opsl; x++)
+	{
+		sayf("    OP - %s\n", g->ops[x]->op->s);
+		sayf("      args\n");
+
+		int y;
+		for(y = 0; y < g->ops[x]->argsl; y++)
+		{
+			sayf("        ");
+			fatal(arg_canon_say, g->ops[x]->args[y], 0, N);
+			sayf("\n");
+		}
+
+		if(y == 0)
+			sayf("        none\n");
+	}
+
+	if(x == 0)
+		sayf("    none");
+
+	// canonicalized transform-string
+	sayf("\n --> ");
+	fatal(transform_canon_say, g, N);
+	sayf("\n}");
+
+	finally : coda;
 }

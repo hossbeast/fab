@@ -20,6 +20,8 @@
 
 #include "xapi.h"
 
+struct lwx;   // lwx.h
+
 #define restrict __restrict
 
 /// lstack_selection_stage
@@ -27,7 +29,7 @@
 // SUMMARY
 //  stage the selection 0:y
 //
-xapi lstack_selection_stage(lwx * const restrict lx, int y)
+xapi lstack_selection_stage(struct lwx* const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_selection_reset
@@ -35,7 +37,7 @@ xapi lstack_selection_stage(lwx * const restrict lx, int y)
 // SUMMARY
 //  reset selection (select all)
 //
-xapi lstack_selection_reset(lwx * const restrict lx)
+xapi lstack_selection_reset(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 #define LWX_SELECTION_ALL			0		/* universe */
@@ -50,7 +52,7 @@ xapi lstack_selection_reset(lwx * const restrict lx)
 // RETURNS
 //  one of LWX_SELECTION_*
 //
-int lstack_selection_state(lwx * const restrict lx)
+int lstack_selection_state(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 #undef restrict

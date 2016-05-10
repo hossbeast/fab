@@ -39,7 +39,7 @@ OPERATION
 */
 
 static xapi op_validate(operation* o);
-static xapi op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -85,7 +85,7 @@ static xapi op_validate(operation* o)
 	finally : coda;
 }
 
-xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 

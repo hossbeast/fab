@@ -20,6 +20,8 @@
 
 #include "window.h"
 
+struct lwx;
+
 #define restrict __restrict
 
 /// lstack_windows_activate
@@ -27,7 +29,7 @@
 // SUMMARY
 //  activate staged windows (even if their lease has expired)
 //
-xapi lstack_windows_activate(lwx * const restrict lx)
+xapi lstack_windows_activate(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_window_deactivate
@@ -35,7 +37,7 @@ xapi lstack_windows_activate(lwx * const restrict lx)
 // SUMMARY
 //  reset the active window for the specified row
 //
-xapi lstack_window_deactivate(lwx * const restrict lx, int y)
+xapi lstack_window_deactivate(struct lwx* const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_windows_staged_state
@@ -51,7 +53,7 @@ xapi lstack_window_deactivate(lwx * const restrict lx, int y)
 // RETURNS
 //  one of LWX_WINDOWS_*
 //
-int lstack_windows_staged_state(lwx * const restrict lx, int y, struct lwx_windows ** win)
+int lstack_windows_staged_state(struct lwx* const restrict lx, int y, struct lwx_windows ** win)
 	__attribute__((nonnull(1)));
 
 #undef restrict

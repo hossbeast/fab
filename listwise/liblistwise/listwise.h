@@ -18,26 +18,11 @@
 #ifndef _LISTWISE_H
 #define _LISTWISE_H
 
-#include <stdint.h>
+#include <sys/types.h>
+
 #include "xapi.h"
 
-/*
-** liblistwise API
-**
-** core functionality
-**  listwise.h           - listwise evaluation, read lstack rows
-**  listwise/error.h     - listwise error table and error code lookup
-**
-** additional functionality
-**  listwise/exec.h      - additional listwise_exec* forms
-**  listwise/lstack.h    - lstack manipulation
-**  listwise/describe.h  - human-readable descriptions of lstacks and transforms
-**  listwise/tune.h      - tunable execution parameters
-**  listwise/logging.h   - logging hooks
-**  listwise/operators.h - enumerate and lookup loaded operators, register additional operators
-*/
-
-// listwise execution context - an opaque type
+// listwise execution context
 struct lwx;
 typedef struct lwx lwx;
 
@@ -63,11 +48,10 @@ xapi listwise_unload();
 /// listwise_exec
 //
 // SUMMARY
-//  parse the listwise transform string and execute it against the lw execution context
+//  parse the transform-string and execute it against the lw execution context
 //
 // PARAMETERS
-//  s        - transform string
-//  l        - s length, or 0 for strlen
+//  ts       - transform-string
 //  [init]   - rows to write to the stack before executing
 //  [initls] - lengths for rows in init, 0 for strlen
 //  initl    - number of rows in init
@@ -78,39 +62,37 @@ xapi listwise_unload();
 //
 // REMARKS
 //  if *lx is null, a new lw context is created and returned
-//  otherwise, an existing lw context is reused
 //
 xapi listwise_exec(
-    char * const restrict s
-  , int l
+    const char * const restrict ts
   , char ** const restrict init
-  , int * const restrict initls
-  , const int initl
-  , lwx ** restrict lx
+  , size_t * const restrict initls
+  , const size_t initl
+  , struct lwx ** restrict lx
 )
-  __attribute__((nonnull(1, 6)));
+  __attribute__((nonnull(1, 5)));
 
 /// lwx_alloc
 //
 // SUMMARY
 //  allocate an lw context
 //
-xapi lwx_alloc(lwx ** const restrict)
+xapi lwx_alloc(struct lwx ** const restrict)
   __attribute__((nonnull));
 
 /// lwx_free
 //
 // SUMMARY
-//  free an lw context with free-like semantics
+//  free an lw context with free semantics
 //
-void lwx_free(lwx * const restrict);
+void lwx_free(struct lwx * const restrict);
 
-/// lwx_xfree
+/// lwx_ifree
 //
 // SUMMARY
-//  free an lw context with xfree-like semantics
+//  free an lw context with ifree semantics
 //
-void lwx_xfree(lwx ** const restrict)
+void lwx_ifree(struct lwx ** const restrict)
   __attribute__((nonnull));
 
 ///
@@ -158,7 +140,7 @@ void lwx_xfree(lwx ** const restrict)
 // REMARKS
 //  use lstack_getstring when a string (or tmp space) is required
 //
-xapi lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
+xapi lstack_getbytes(struct lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
   __attribute__((nonnull));
 
 /// lstack_getstring
@@ -179,7 +161,7 @@ xapi lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restri
 // REMARKS
 //  getstring is guaranteed to return a string that is 1) null-terminated, and 2) in tmp space
 //
-xapi lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
+xapi lstack_getstring(struct lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
   __attribute__((nonnull));
 
 /// lstack_string
@@ -195,7 +177,7 @@ xapi lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restr
 // RETURNS
 //  0 on success
 //
-xapi lstack_string(lwx * const restrict lx, int x, int y, char ** restrict r)
+xapi lstack_string(struct lwx * const restrict lx, int x, int y, char ** restrict r)
   __attribute__((nonnull));
 
 /// lwx_reset 
@@ -206,7 +188,7 @@ xapi lstack_string(lwx * const restrict lx, int x, int y, char ** restrict r)
 // REMARKS
 //  no-op with zero-valued parameter
 //
-xapi lwx_reset(lwx * const restrict lx)
+xapi lwx_reset(struct lwx * const restrict lx)
   __attribute__((nonnull));
 
 /// listwise_identity 
@@ -214,7 +196,7 @@ xapi lwx_reset(lwx * const restrict lx)
 // SUMMARY
 //  pointer to singleton liblistwise-managed lwx object with a single 0-element list
 //
-extern lwx * listwise_identity;
+extern struct lwx * listwise_identity;
 
 #undef restrict
 #endif

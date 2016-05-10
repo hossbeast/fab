@@ -67,7 +67,7 @@ API xapi listwise_test_entry(const listwise_test * test)
 		fatal(log_finish, &token);
 	}
 
-	fatal(listwise_exec, test->xsfm, 0, test->init, 0, sentinel(test->init), &lx);
+	fatal(listwise_exec, test->xsfm, test->init, 0, sentinel(test->init), &lx);
 
 	// log the outset
   fatal(log_start, L_OUTSET, &token);

@@ -24,7 +24,7 @@
 
 // forward declaration
 struct lwx_windows;		// lwx.h
-typedef struct lwx_windows lwx_windows;
+struct lwx;           // lwx.h
 
 // window states
 #define LWX_WINDOWS_TABLE(x)																				\
@@ -48,7 +48,7 @@ LWX_WINDOWS_TABLE(0)
 // SUMMARY
 //  add a segment to the staged window(s) for the specified row
 //
-xapi lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
+xapi lstack_windows_stage(struct lwx* const restrict lx, int y, int off, int len)
 	__attribute__((nonnull));
 
 /// lstack_windows_stage_all
@@ -56,7 +56,7 @@ xapi lstack_windows_stage(lwx * const restrict lx, int y, int off, int len)
 // SUMMARY
 //  set the staged windows to the universe-set
 //
-xapi lstack_windows_stage_all(lwx * const restrict lx, int y)
+xapi lstack_windows_stage_all(struct lwx* const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_windows_stage_nil
@@ -64,7 +64,7 @@ xapi lstack_windows_stage_all(lwx * const restrict lx, int y)
 // SUMMARY
 //  set the staged windows to the empty-set
 //
-xapi lstack_windows_stage_nil(lwx * const restrict lx, int y)
+xapi lstack_windows_stage_nil(struct lwx* const restrict lx, int y)
 	__attribute__((nonnull));
 
 /// lstack_windows_state
@@ -80,7 +80,7 @@ xapi lstack_windows_stage_nil(lwx * const restrict lx, int y)
 // RETURNS
 //  one of LWX_WINDOWS_*
 //
-int lstack_windows_state(lwx * const restrict lx, int y, struct lwx_windows ** win)
+int lstack_windows_state(struct lwx* const restrict lx, int y, struct lwx_windows ** win)
 	__attribute__((nonnull(1)));
 
 #undef restrict

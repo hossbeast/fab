@@ -38,8 +38,8 @@ NO ARGUMENTS
 
 */
 
-static xapi v_exec(operation*, lwx*, int**, int*, void**);
-static xapi wv_exec(operation*, lwx*, int**, int*, void**);
+static xapi v_exec(operation*, lwx*, int**, int*);
+static xapi wv_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -59,7 +59,7 @@ operator op_desc[] = {
 	, {}
 };
 
-xapi v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -74,7 +74,7 @@ xapi v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	finally : coda;
 }
 
-xapi wv_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi wv_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 

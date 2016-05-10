@@ -40,9 +40,9 @@ OPERATION
 */
 
 static xapi op_validate(operation* o);
-static xapi op_exec_A(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_B(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_C(operation*, lwx*, int**, int*, void**);
+static xapi op_exec_A(operation*, lwx*, int**, int*);
+static xapi op_exec_B(operation*, lwx*, int**, int*);
+static xapi op_exec_C(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -94,7 +94,7 @@ xapi op_validate(operation* o)
 	finally : coda;
 }
 
-static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int bef, int af, void ** udata)
+static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int bef, int af)
 {
   enter;
 
@@ -125,17 +125,17 @@ static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int bef, i
 	finally : coda;
 }
 
-xapi op_exec_A(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_A(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, lx, ovec, ovec_len, 0, 1, udata);
+	xproxy(op_exec, o, lx, ovec, ovec_len, 0, 1);
 }
 
-xapi op_exec_B(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_B(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, lx, ovec, ovec_len, 1, 0, udata);
+	xproxy(op_exec, o, lx, ovec, ovec_len, 1, 0);
 }
 
-xapi op_exec_C(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_C(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, lx, ovec, ovec_len, 1, 1, udata);
+	xproxy(op_exec, o, lx, ovec, ovec_len, 1, 1);
 }

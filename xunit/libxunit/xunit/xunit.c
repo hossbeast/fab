@@ -17,7 +17,8 @@
 
 #include "xapi.h"
 #include "xapi/errtab.h"
-#include "xapi/XAPI.errtab.h"
+#include "xlinux.h"
+#include "xlinux/LIB.errtab.h"
 
 #include "internal.h"
 #include "XUNIT.errtab.h"
@@ -57,7 +58,7 @@ API xapi xunit_unload()
   }
   else if(handles < 0)
   {
-    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "libxunit");
+    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libxunit");
   }
 
   finally : coda;

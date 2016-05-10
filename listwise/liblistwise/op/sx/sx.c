@@ -29,8 +29,8 @@ sxf operator - substitution by filename extension (fullmatch)
 */
 
 static xapi op_validate(operation* o);
-static xapi op_exec_sx(operation*, lwx*, int**, int*, void **);
-static xapi op_exec_sxf(operation*, lwx*, int**, int*, void **);
+static xapi op_exec_sx(operation*, lwx*, int**, int*);
+static xapi op_exec_sxf(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -59,7 +59,7 @@ xapi op_validate(operation* o)
 	finally : coda;
 }
 
-static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmatch, void ** udata)
+static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullmatch)
 {
   enter;
 
@@ -164,12 +164,12 @@ static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int fullma
 	finally : coda;
 }
 
-xapi op_exec_sx(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_sx(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, ls, ovec, ovec_len, 0, udata);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 0);
 }
 
-xapi op_exec_sxf(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_sxf(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, ls, ovec, ovec_len, 1, udata);
+	xproxy(op_exec, o, ls, ovec, ovec_len, 1);
 }

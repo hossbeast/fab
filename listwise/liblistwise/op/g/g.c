@@ -55,7 +55,7 @@ OPERATION
 
 */
 
-static xapi op_exec(operation*, lwx*, int**, int*, void**);
+static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -68,7 +68,7 @@ operator op_desc[] = {
 	, {}
 };
 
-static xapi gobble(lwx* lx, char * path, char * fmt, char * flags, void ** udata)
+static xapi gobble(lwx* lx, char * path, char * fmt, char * flags)
 {
   enter;
 
@@ -84,7 +84,7 @@ static xapi gobble(lwx* lx, char * path, char * fmt, char * flags, void ** udata
 
 	if(fmt)
 	{
-		fatal(fs_statfmt, path, 0, fmt, flags, space, sizeof(space), &sz, udata);
+		fatal(fs_statfmt, path, 0, fmt, flags, space, sizeof(space), &sz);
 		xref = strstr(space, "%x");
 	}
 
@@ -141,7 +141,7 @@ finally:
 coda;
 }
 
-xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -188,7 +188,7 @@ xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 	{
 		char * zs = 0;
 		fatal(lstack_string, lx, 1, x, &zs);
-		fatal(gobble, lx, zs, fmt, flags, udata);
+		fatal(gobble, lx, zs, fmt, flags);
 	}
 	LSTACK_ITEREND
 

@@ -20,15 +20,14 @@
 
 #include "xapi.h"
 #include "transform.h"
-#include "describe.internal.h"
 
 struct operation;
 struct pstring;
 
 #define restrict __restrict
 
-xapi transform_operation_canon(struct operation * const oper, uint32_t sm, char * const dst, const size_t sz, size_t * restrict z, struct pstring * restrict ps, fwriter writer)
-	__attribute__((nonnull(1, 7)));
+xapi operation_canon_say(struct operation * const oper, uint32_t sm, struct narrator * const restrict N)
+	__attribute__((nonnull(1, 3)));
 
 #undef restrict
 #endif

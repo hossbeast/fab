@@ -179,9 +179,8 @@ typedef struct operator
 	//  lx       - lstack
 	//  ovec     - (see listwise/re.h)
 	//  ovec_len -
-	//  udata    - (see listwise/log.h)
 	//
-	xapi 		(*op_exec)(struct operation*, lwx*, int**, int*, void**);
+	xapi 		(*op_exec)(struct operation*, struct lwx*, int**, int*);
 
 	char		s[6];			// name ; required
 	int			sl;				// name length

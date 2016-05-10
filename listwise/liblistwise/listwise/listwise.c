@@ -19,8 +19,8 @@
 
 #include "xapi.h"
 #include "xapi/errtab.h"
-#include "xapi/XAPI.errtab.h"
 #include "xlinux.h"
+#include "xlinux/LIB.errtab.h"
 #include "narrator.h"
 #include "logger.h"
 
@@ -30,6 +30,7 @@
 #include "operators.internal.h"
 #include "lwx.internal.h"
 #include "object.internal.h"
+#include "logging.internal.h"
 
 #define restrict __restrict
 
@@ -51,10 +52,13 @@ API xapi listwise_load()
     fatal(logger_load);
 
     // modules
-    fatal(xapi_errtab_register, perrtab_PCRE);
-    fatal(xapi_errtab_register, perrtab_LISTWISE);
     fatal(operators_setup);
     fatal(lwx_setup);
+    fatal(logging_setup);
+#ifndef XAPI_MODE_ERRORCODE
+    fatal(xapi_errtab_register, perrtab_PCRE);
+    fatal(xapi_errtab_register, perrtab_LISTWISE);
+#endif
   }
   handles++;
 
@@ -79,12 +83,12 @@ API xapi listwise_unload()
   }
   else if(handles < 0)
   {
-    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "liblistwise");
+    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "liblistwise");
   }
 
   finally : coda;
 }
 
 // * my dependencies are not unloaded until I am unloaded
-// * failure to load will lead will not increment handles, and unload will be no-op
+// * failure to load means handles are not incremeneted, and unload will be no-op
 // * I can only unload if I and my dependencies loaded successfully

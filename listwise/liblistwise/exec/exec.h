@@ -45,19 +45,9 @@ struct transform;
 xapi listwise_exec_transform(
 	  struct transform * const restrict g
 	, char ** const restrict init
-	, int * const restrict initls
-	, const int initl
+	, size_t * const restrict initls
+	, size_t initl
 	, struct lwx ** restrict lx
-)
-	__attribute__((nonnull(1, 5)));
-
-xapi listwise_exec_transform2(
-	  struct transform * const restrict g
-	, char ** const restrict init
-	, int * const restrict initls
-	, const int initl
-	, struct lwx ** restrict lx
-	, void * udata
 )
 	__attribute__((nonnull(1, 5)));
 

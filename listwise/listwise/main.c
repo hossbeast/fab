@@ -28,31 +28,25 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 
+#include "xapi.h"
+#include "xapi/trace.h"
+#include "xlinux.h"
+#include "valyria/pstring.h"
+
 #include "listwise.h"
 #include "listwise/operator.h"
 #include "listwise/transform.h"
 #include "listwise/object.h"
-#include "listwise/logging.h"
-#include "listwise/describe.h"
 #include "listwise/lstack.h"
 #include "listwise/exec.h"
 
-#include "xapi.h"
-#include "LISTWISE.errtab.h"
-#undef perrtab
-#define perrtab perrtab_LISTWISE
-
-#include "xlinux.h"
-
-#include "pstring.h"
-
 #include "args.h"
-#include "logs.h"
+#include "logging.h"
+#include "errtab/MAIN.errtab.h"
+#undef perrtab
+#define perrtab perrtab_MAIN
 
-#if XAPI_PROVIDE_ERRCODE
-__thread int __xapi_r;
-#endif
-
+#if 0
 int listwise_would(void * token, void * udata)
 {
 	return log_would(*(uint64_t*)token);
@@ -69,6 +63,7 @@ void listwise_log(void * token, void * udata, const char * func, const char * fi
 #endif
 	va_end(va);
 }
+#endif
 
 /// snarf
 //
@@ -80,8 +75,10 @@ void listwise_log(void * token, void * udata, const char * func, const char * fi
 //  mem  - append contents here
 //  bang - true if this file is an interpreter script
 //
-static int snarf(char * path, int bang, pstring ** mem)
+static int snarf(char * path, int bang, pstring * mem)
 {
+  enter;
+
 	int fd = -1;
 	struct stat st;
 
@@ -131,7 +128,7 @@ static int snarf(char * path, int bang, pstring ** mem)
 	}
 	else
 	{
-		failf(LISTWISE_BADFILE, "type : %s (%d)"
+		failf(MAIN_BADFILE, "type : %s (%d)"
 			,   S_ISREG(st.st_mode)			? "REG"
 				: S_ISDIR(st.st_mode)			? "DIR"
 				: S_ISCHR(st.st_mode)			? "CHR"
@@ -147,10 +144,11 @@ static int snarf(char * path, int bang, pstring ** mem)
 finally:
 	fatal(ixclose, &fd);
 
-	XAPI_INFOF("path", "%s", path);
+	xapi_infof("path", "%s", path);
 coda;
 }
 
+#if 0
 // setup liblistwise logging
 static struct listwise_logging * logging = (struct listwise_logging[]) {{
 		.transform_token	= (uint64_t[]) { L_PARSE }
@@ -179,32 +177,41 @@ static struct listwise_logging * logging = (struct listwise_logging[]) {{
 	, .sanity_log				= listwise_log
 #endif
 }};
+#endif
 
 int main(int argc, char ** argv, char ** envp)
 {
+  enter;
+
 	char space[4096];
 
+  xapi R = 0;
 	pstring * temp = 0;
 	pstring *	trans = 0;
-
 	transform* g = 0;						// transform
 	lwx * lx = 0;								// list stack
 
-	unsigned long * auxv = 0;
-#if __linux__
-	// locate auxiliary vector
-	while(*envp)
-		envp++;
-	envp++;
-	auxv = (void*)envp;
-#endif
+  // load libraries
+  fatal(logger_load);
+  fatal(xlinux_load);
+  fatal(listwise_load);
 
-	// initialize logger - prepare g_argc/g_argv
-	fatal(log_init, auxv);
+  // modules
+  fatal(logs_setup);
 
-	// parse cmdline arguments
+	// locals
+	fatal(lwx_alloc, &lx);
+  fatal(pscreate, &temp);
+	fatal(pscreate, &trans);
+
+  // initialize logger
+  fatal(logger_initialize, envp);
+
+  // parse cmdline args
 	fatal(args_parse);
+  fatal(args_report);
 
+#if 0
 	// configure logger
 #if DEBUG || DEVEL
 	if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
@@ -241,15 +248,13 @@ int main(int argc, char ** argv, char ** envp)
 
 	// setup liblistwise logging
 	listwise_logging_configure(logging);
-
-	// allocate lstack
-	fatal(lwx_alloc, &lx);
+#endif
 
 	// read transform-expr from stdin
 	if(g_args.stdin_init_list_items)
 	{
-		fatal(psclear, &temp);
-		fatal(snarf, "-", 0, &temp);
+		fatal(psclear, temp);
+		fatal(snarf, "-", 0, temp);
 
 		char delim = g_args.stdin_linewise ? '\n' : 0;
 
@@ -273,8 +278,8 @@ int main(int argc, char ** argv, char ** envp)
 		}
 		else if(g_args.inputs[x].type == INPUT_TYPE_INIT_LIST_FILE)
 		{
-			fatal(psclear, &temp);
-			fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, &temp);
+			fatal(psclear, temp);
+			fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, temp);
 
 			char delim = g_args.inputs[x].linewise ? '\n' : 0;
 
@@ -290,21 +295,21 @@ int main(int argc, char ** argv, char ** envp)
 		else if(g_args.inputs[x].type == INPUT_TYPE_TRANSFORM_ITEM)
 		{
 			if(trans && trans->l)
-				fatal(pscats, &trans, " ");
+				fatal(pscats, trans, " ");
 
-			fatal(pscats, &trans, g_args.inputs[x].s);
+			fatal(pscats, trans, g_args.inputs[x].s);
 		}
 		else if(g_args.inputs[x].type == INPUT_TYPE_TRANSFORM_FILE)
 		{
 			if(trans && trans->l)
-				fatal(pscats, &trans, " ");
+				fatal(pscats, trans, " ");
 			
-			fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, &trans);
+			fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, trans);
 		}
 		else if(g_args.inputs[x].type == INPUT_TYPE_HYBRID_FILE)
 		{
-			fatal(psclear, &temp);
-			fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, &temp);
+			fatal(psclear, temp);
+			fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, temp);
 
 			// read transform-expr until 3 consecutive newlines
 			char * s[2] = { temp->s, 0 };
@@ -319,9 +324,9 @@ int main(int argc, char ** argv, char ** envp)
 					if(s[0] != temp->s || (s[1] - s[0]) <= 2 || memcmp(s[0], "#!", 2))
 					{
 						if(trans && trans->l)
-							fatal(pscats, &trans, " ");
+							fatal(pscats, trans, " ");
 
-						fatal(pscatw, &trans, s[0], s[1] - s[0]);
+						fatal(pscatw, trans, s[0], s[1] - s[0]);
 					}
 				}
 
@@ -343,20 +348,13 @@ int main(int argc, char ** argv, char ** envp)
 		}
 	}
 
-	if(trans)
-	{
-#if DEBUG || DEVEL
-		fatal(transform_parse2, 0, trans->s, trans->l, &g, 0);
-#else
+  // parse
+	if(trans->l)
 		fatal(transform_parse, 0, trans->s, trans->l, &g);
-#endif
-	}
 
 	// execute
 	if(g)
-	{
-		fatal(listwise_exec_transform2, g, 0, 0, 0, &lx, 0);
-	}
+		fatal(listwise_exec_transform, g, 0, 0, 0, &lx);
 
 	// OUTPUT
 	int i = 0;
@@ -421,13 +419,7 @@ int main(int argc, char ** argv, char ** envp)
 	}
 
 finally:
-	lwx_free(lx);
-	transform_free(g);
-	args_teardown();
-	psfree(temp);
-	psfree(trans);
-
-#if XAPI_PROVIDE_BACKTRACE
+#if XAPI_STACKTRACE
 	if(XAPI_UNWINDING)
 	{
 		size_t tracesz = 0;
@@ -445,10 +437,29 @@ finally:
 		}
 #endif
 
-		logw(L_RED, space, tracesz);
+		xlogw(L_ERROR, L_RED, space, tracesz);
 	}
 #endif
 
-	log_teardown();
-coda;
+  // locals
+	lwx_free(lx);
+	transform_free(g);
+	psfree(temp);
+	psfree(trans);
+
+  // modules
+  args_teardown();
+
+  // libraries
+  fatal(logger_unload);
+  fatal(xlinux_unload);
+  fatal(listwise_unload);
+
+conclude(&R);
+
+#ifndef XAPI_MODE_ERRORCODE
+  xapi_teardown();
+#endif
+
+  return R;
 }

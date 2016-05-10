@@ -53,7 +53,7 @@ void sanityblock_free(sanityblock * const restrict sb)
 void sanityblock_reset(sanityblock * const restrict sb)
 	__attribute__((nonnull));
 
-xapi sanity(struct lwx * const restrict lx, sanityblock * const restrict sb, void ** udata)
+xapi sanity(struct lwx * const restrict lx, sanityblock * const restrict sb)
 	__attribute__((nonnull));
 #endif
 

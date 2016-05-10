@@ -23,6 +23,8 @@
 
 #include "listwise.h"
 
+struct lwx; // lwx.h
+
 #define restrict __restrict
 
 /// lstack_readrow
@@ -42,7 +44,7 @@
 //  [str] - whether the return value is required to be null-terminated and in tmp space
 //  [raw] - indicates whether the raw storage was returned (object entry not resolved, window not resolved, and str was not specified)
 //
-xapi lstack_readrow(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl, uint8_t * const restrict rt, int obj, int win, int str, int * const restrict raw)
+xapi lstack_readrow(struct lwx* const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl, uint8_t * const restrict rt, int obj, int win, int str, int * const restrict raw)
 	__attribute__((nonnull(1)));
 
 /// lstack_write
@@ -63,13 +65,13 @@ xapi lstack_readrow(lwx * const restrict lx, int x, int y, char ** const restric
 //  writew - string specified as pointer/length pair
 //  writef - string specified as printf-style arglist// PARAMETERS
 //
-xapi lstack_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
+xapi lstack_writes(struct lwx* const restrict lx, int x, int y, const char* const restrict s)
 	__attribute__((nonnull));
 
-xapi lstack_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
+xapi lstack_writew(struct lwx* const restrict lx, int x, int y, const char* const restrict s, size_t l)
 	__attribute__((nonnull));
 
-xapi lstack_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+xapi lstack_writef(struct lwx* const restrict lx, int x, int y, const char* const restrict fmt, ...)
 	__attribute__((nonnull(1, 4)));
 
 /// lstack_alt_write
@@ -93,13 +95,13 @@ xapi lstack_writef(lwx * const restrict lx, int x, int y, const char* const rest
 // REMARKS
 //  used in conjunction with lstack_displace
 //
-xapi lstack_alt_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
+xapi lstack_alt_writes(struct lwx* const restrict lx, int x, int y, const char* const restrict s)
 	__attribute__((nonnull));
 
-xapi lstack_alt_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
+xapi lstack_alt_writew(struct lwx* const restrict lx, int x, int y, const char* const restrict s, size_t l)
 	__attribute__((nonnull));
 
-xapi lstack_alt_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+xapi lstack_alt_writef(struct lwx* const restrict lx, int x, int y, const char* const restrict fmt, ...)
 	__attribute__((nonnull(1, 4)));
 
 /// lstack_cat
@@ -120,13 +122,13 @@ xapi lstack_alt_writef(lwx * const restrict lx, int x, int y, const char* const 
 //  catw - string specified as pointer/length pair
 //  catf - string specified as printf-style arglist
 //
-xapi lstack_cats(lwx * const restrict lx, int x, int y, const char* const restrict s)
+xapi lstack_cats(struct lwx* const restrict lx, int x, int y, const char* const restrict s)
 	__attribute__((nonnull));
 
-xapi lstack_catw(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
+xapi lstack_catw(struct lwx* const restrict lx, int x, int y, const char* const restrict s, size_t l)
 	__attribute__((nonnull));
 
-xapi lstack_catf(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
+xapi lstack_catf(struct lwx* const restrict lx, int x, int y, const char* const restrict fmt, ...)
 	__attribute__((nonnull(1, 4)));
 
 /// lstack_add
@@ -145,13 +147,13 @@ xapi lstack_catf(lwx * const restrict lx, int x, int y, const char* const restri
 //  writew - string specified as pointer/length pair
 //  writef - string specified as printf-style arglist
 //
-xapi lstack_adds(lwx * const restrict lx, const char* const restrict s)
+xapi lstack_adds(struct lwx* const restrict lx, const char* const restrict s)
 	__attribute__((nonnull));
 
-xapi lstack_addw(lwx * const restrict lx, const char* const restrict s, size_t l)
+xapi lstack_addw(struct lwx* const restrict lx, const char* const restrict s, size_t l)
 	__attribute__((nonnull));
 
-xapi lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
+xapi lstack_addf(struct lwx* const restrict lx, const char* const restrict fmt, ...)
 	__attribute__((nonnull(1, 2)));
 
 ///
@@ -165,28 +167,28 @@ xapi lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
 //
 // delete the 0th list - all other lists are shifted down
 //
-xapi lstack_shift(lwx * const restrict lx)
+xapi lstack_shift(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_unshift
 //
 // unshift an empty list onto the stack at index zero - all other lists are shifted up
 //
-xapi lstack_unshift(lwx * const restrict lx)
+xapi lstack_unshift(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_pop
 //
 // delete the Nth list
 //
-xapi lstack_pop(lwx * const restrict lx)
+xapi lstack_pop(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_push
 //
 // push an empty list onto the end of the stack
 //
-xapi lstack_push(lwx * const restrict lx)
+xapi lstack_push(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_merge
@@ -194,14 +196,14 @@ xapi lstack_push(lwx * const restrict lx)
 // SUMMARY
 //  merge list {src} into list {dst}, reducing the number of lists by 1
 //
-xapi lstack_merge(lwx * const restrict lx, int dst, int src)
+xapi lstack_merge(struct lwx* const restrict lx, int dst, int src)
 	__attribute__((nonnull));
 
 /// lstack_allocate
 //
 //
 //
-xapi lstack_allocate(lwx * const restrict lx, int x, int y, int z);
+xapi lstack_allocate(struct lwx* const restrict lx, int x, int y, int z);
 
 /// lstack_clear
 //
@@ -213,7 +215,7 @@ xapi lstack_allocate(lwx * const restrict lx, int x, int y, int z);
 //  x  - list index
 //  y  - row index
 //
-xapi lstack_clear(lwx * const restrict lx, int x, int y)
+xapi lstack_clear(struct lwx* const restrict lx, int x, int y)
   __attribute__((nonnull));
 
 /// ensure
@@ -228,7 +230,7 @@ xapi lstack_clear(lwx * const restrict lx, int x, int y)
 // updates stack and list length to be at least the dimension specified
 //  ** this is NOT done for string length **
 //
-xapi lstack_ensure(lwx * const restrict lx, int x, int y, int z);
+xapi lstack_ensure(struct lwx* const restrict lx, int x, int y, int z);
 
 /// lstack_move
 //
@@ -248,7 +250,7 @@ xapi lstack_ensure(lwx * const restrict lx, int x, int y, int z);
 // RETURNS
 //  lstack_move returns 0, indicating success
 //
-xapi lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
+xapi lstack_move(struct lwx* const restrict lx, int ax, int ay, int bx, int by)
 	__attribute__((nonnull));
 
 /// lstack_swap
@@ -259,7 +261,7 @@ xapi lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 // RETURNS
 //  lstack_swap returns 0, indicating success
 //
-xapi lstack_swap(lwx * const restrict lx, int ax, int ay, int bx, int by)
+xapi lstack_swap(struct lwx* const restrict lx, int ax, int ay, int bx, int by)
 	__attribute__((nonnull));
 
 /// lstack_swaptop
@@ -271,7 +273,7 @@ xapi lstack_swap(lwx * const restrict lx, int ax, int ay, int bx, int by)
 //  ay - list index of entry 1
 //  by - list index of entry 2
 //
-xapi lstack_swaptop(lwx * const restrict lx, int ay, int by)
+xapi lstack_swaptop(struct lwx* const restrict lx, int ay, int by)
 	__attribute__((nonnull));
 
 /// lstack_delete
@@ -291,7 +293,7 @@ xapi lstack_swaptop(lwx * const restrict lx, int ay, int by)
 // RETURNS
 //  lstack_delete returns 0, indicating success
 //
-xapi lstack_delete(lwx * const restrict lx, int x, int y)
+xapi lstack_delete(struct lwx* const restrict lx, int x, int y)
 	__attribute__((nonnull));
 
 /// lstack_displace
@@ -314,35 +316,35 @@ xapi lstack_delete(lwx * const restrict lx, int x, int y)
 // RETURNS
 //  0 on success
 //
-xapi lstack_displace(lwx * const restrict lx, int x, int y, int l)
+xapi lstack_displace(struct lwx* const restrict lx, int x, int y, int l)
 	__attribute__((nonnull));
 
 /// lwx_getflags
 //
 // get application-use flags associated with an lwx
 //
-uint64_t lwx_getflags(lwx * const restrict)
+uint64_t lwx_getflags(struct lwx* const restrict)
 	__attribute__((nonnull));
 
 /// lwx_setflags
 //
 // set application-use flags associated with an lwx
 //
-uint64_t lwx_setflags(lwx * const restrict, const uint64_t)
+uint64_t lwx_setflags(struct lwx* const restrict, const uint64_t)
 	__attribute__((nonnull));
 
 /// lwx_getptr
 //
 // get application-use ptr associated with an lwx
 //
-void * lwx_getptr(lwx * const restrict)
+void * lwx_getptr(struct lwx* const restrict)
 	__attribute__((nonnull));
 
 /// lwx_setptr
 //
 // set application-use ptr associated with an lwx
 //
-void * lwx_setptr(lwx * const, void * const)
+void * lwx_setptr(struct lwx* const, void * const)
 	__attribute__((nonnull(1)));
 
 /*
@@ -354,21 +356,21 @@ void * lwx_setptr(lwx * const, void * const)
 //
 // move the first list on the stack to the last position
 //
-xapi lstack_cycle(lwx * const restrict lx)
+xapi lstack_cycle(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_recycle
 //
 // move the last list on the stack to the first position
 //
-xapi lstack_recycle(lwx * const restrict lx)
+xapi lstack_recycle(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 /// lstack_xchg
 //
 // exchange the first and second lists on the stack
 //
-xapi lstack_xchg(lwx * const restrict lx)
+xapi lstack_xchg(struct lwx* const restrict lx)
 	__attribute__((nonnull));
 
 #undef restrict

@@ -74,13 +74,13 @@ xapi libname_unload()       # decrement reference count, release on zero
 default strategy for heap allocated objects
 
 ```
-xapi foo_alloc(foo **)                # allocate foo
-xapi foo_create(foo **)               # synonym
-xapi foo_mk(foo * e, foo **)          # like _alloc, reuse an existing instance
-void foo_free(foo *)                  # release resources
-void foo_ifree(foo ** const restrict) # safe and idempotent free
-void foo_reset(foo *)                 # set lengths to zero, preserve allocations
-void foo_clear(foo *)                 # synonym
+xapi foo_alloc(foo ** const) notnull        # allocate foo
+xapi foo_create(foo ** const) notnull       # synonym
+xapi foo_mk(foo ** rv, foo * e) notnull(1)  # like _alloc, reuse an existing instance
+void foo_free(foo *)                        # release resources
+void foo_ifree(foo ** const ) notnull       # safe and idempotent free
+void foo_reset(foo *) notnull               # set lengths to zero, preserve allocations
+void foo_clear(foo *) notnull               # synonym
 ```
 
 ## dispose / recycle

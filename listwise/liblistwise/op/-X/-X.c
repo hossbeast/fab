@@ -49,14 +49,14 @@ OPERATION
 
 */
 
-static xapi op_exec_f(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_d(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_l(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_e(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_z(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_r(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_w(operation*, lwx*, int**, int*, void**);
-static xapi op_exec_x(operation*, lwx*, int**, int*, void**);
+static xapi op_exec_f(operation*, lwx*, int**, int*);
+static xapi op_exec_d(operation*, lwx*, int**, int*);
+static xapi op_exec_l(operation*, lwx*, int**, int*);
+static xapi op_exec_e(operation*, lwx*, int**, int*);
+static xapi op_exec_z(operation*, lwx*, int**, int*);
+static xapi op_exec_r(operation*, lwx*, int**, int*);
+static xapi op_exec_w(operation*, lwx*, int**, int*);
+static xapi op_exec_x(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
 	{
@@ -117,7 +117,7 @@ operator op_desc[] = {
 	, {}
 };
 
-static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linkstat, int (*selector)(struct stat *), void ** udata)
+static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linkstat, int (*selector)(struct stat *))
 {
   enter;
 
@@ -149,7 +149,7 @@ static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linkst
 	finally : coda;
 }
 
-xapi op_exec_f(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_f(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -158,12 +158,12 @@ xapi op_exec_f(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		return st && S_ISREG(st->st_mode);
 	};
 
-	fatal(op_exec, o, ls, ovec, ovec_len, 0, selector, udata);
+	fatal(op_exec, o, ls, ovec, ovec_len, 0, selector);
 
   finally : coda;
 }
 
-xapi op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -172,12 +172,12 @@ xapi op_exec_d(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		return st && S_ISDIR(st->st_mode);
 	};
 
-	fatal(op_exec, o, ls, ovec, ovec_len, 0, selector, udata);
+	fatal(op_exec, o, ls, ovec, ovec_len, 0, selector);
 
   finally : coda;
 }
 
-xapi op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -186,12 +186,12 @@ xapi op_exec_l(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		return st && S_ISLNK(st->st_mode);
 	};
 
-	fatal(op_exec, o, ls, ovec, ovec_len, 1, selector, udata);
+	fatal(op_exec, o, ls, ovec, ovec_len, 1, selector);
 
   finally : coda;
 }
 
-xapi op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -200,12 +200,12 @@ xapi op_exec_e(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		return !!st;
 	};
 
-	fatal(op_exec, o, ls, ovec, ovec_len, 0, selector, udata);
+	fatal(op_exec, o, ls, ovec, ovec_len, 0, selector);
 
   finally : coda;
 }
 
-xapi op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -214,12 +214,12 @@ xapi op_exec_z(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 		return st && S_ISDIR(st->st_mode) ? st->st_nlink == 0 : st->st_size == 0;
 	};
 
-	fatal(op_exec, o, ls, ovec, ovec_len, 0, selector, udata);
+	fatal(op_exec, o, ls, ovec, ovec_len, 0, selector);
 
   finally : coda;
 }
 
-xapi op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -242,7 +242,7 @@ xapi op_exec_r(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	finally : coda;
 }
 
-xapi op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
@@ -265,7 +265,7 @@ xapi op_exec_w(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
 	finally : coda;
 }
 
-xapi op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len, void ** udata)
+xapi op_exec_x(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 

@@ -15,24 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGS_H
-#define _LOGS_H
+#ifndef _LOGGING_H
+#define _LOGGING_H
 
 #include "logger.h"
+#include "logger/category.h"
 
-#if DEVEL
-# define L_LOGGER			0x0000000000000001ULL
-#endif
-#define L_PARSE				0x0000000000000002ULL		/* display the parsed generator */
-#define L_EXEC				0x0000000000000004ULL		/* step-by-step LW exectution */
-#define L_OPINFO			0x0000000000000008ULL		/* operator informational messages */
+struct logger_stream;
 
-#if DEBUG || DEVEL
-# define L_TOKENS			0x0000000000000010ULL		/* scanner token stream */
-# define L_STATES			0x0000000000000020ULL		/* scanner state changes */
-#endif
-#if SANITY
-# define L_SANITY			0x0000000000000040ULL
-#endif
+extern logger_category * categories;
+extern struct logger_stream * streams;
+
+#define L_ERROR		categories[0].id
+#define L_ARGS		categories[1].id
+#define L_PARAMS	categories[2].id
+#define L_LOGGER	categories[3].id
+
+xapi logs_setup();
 
 #endif

@@ -23,6 +23,8 @@
 
 #include "listwise.h"
 
+struct lwx;     // lwx.h
+
 #define restrict __restrict
 
 /* LISTWISE OBJECT API
@@ -173,7 +175,7 @@ xapi listwise_lookup_object(uint8_t type, listwise_object ** obj);
 //  o     - pointer object
 //  type  - object type
 //
-xapi lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
+xapi lstack_obj_write(struct lwx* const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
 /// lstack_obj_alt_write
@@ -191,7 +193,7 @@ xapi lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const r
 // REMARKS
 //  used in conjunction with lstack_displace
 //
-xapi lstack_obj_alt_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
+xapi lstack_obj_alt_write(struct lwx* const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
 /// lstack_add
@@ -204,7 +206,7 @@ xapi lstack_obj_alt_write(lwx * const restrict lx, int x, int y, const void* con
 //  o     - pointer object
 //  type  - object type
 //
-xapi lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
+xapi lstack_obj_add(struct lwx* const restrict lx, const void* const restrict o, uint8_t type)
 	__attribute__((nonnull));
 
 /// lstack_getobject
@@ -225,7 +227,7 @@ xapi lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8
 // REMARKS
 //  getobject will return 0 in rt for a non-object entry. getobject does not use tmp space
 //
-xapi lstack_getobject(lwx * const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
+xapi lstack_getobject(struct lwx* const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
   __attribute__((nonnull));
 
 #endif

@@ -17,10 +17,13 @@
 
 #include "xapi.h"
 #include "xlinux.h"
+#include "narrator.h"
 
 #include "internal.h"
 #include "lwx.internal.h"
 #include "lstack.internal.h"
+#include "selection.internal.h"
+#include "window.internal.h"
 
 #include "wstdlib.h"
 
@@ -64,23 +67,22 @@ API xapi lwx_alloc(lwx ** const lx)
 	finally : coda;
 }
 
-uint64_t API lwx_getflags(lwx * const lx)
+API uint64_t lwx_getflags(lwx * const lx)
 {
 	return lx->flags;
 }
 
-uint64_t API lwx_setflags(lwx * const lx, const uint64_t g)
+API uint64_t lwx_setflags(lwx * const lx, const uint64_t g)
 {
 	return ((lx->flags = g));
 }
 
-typedef void * voidstar;
-voidstar API lwx_getptr(lwx * const lx)
+API void * lwx_getptr(lwx * const lx)
 {
 	return lx->ptr;
 }
 
-voidstar API lwx_setptr(lwx * const lx, void * const g)
+API void * lwx_setptr(lwx * const lx, void * const g)
 {
 	return ((lx->ptr = g));
 }
@@ -140,6 +142,253 @@ API xapi lwx_reset(lwx * lx)
 	lx->l = 0;
 	lx->sel.active = 0;
 	lx->sel.staged = 0;
+
+	finally : coda;
+}
+
+API xapi lwx_say(lwx * const restrict lx, narrator * const restrict N)
+{
+  enter;
+
+	sayf("sel active { lease(%3d) %s era(%3d) %s nil=%d } staged { lease(%3d) %s era(%3d) }\n"
+		, lx->sel.active ? lx->sel.active->lease : 0
+		, (lx->sel.active ? lx->sel.active->lease : 0) == lx->sel.active_era ? "= " : "!="
+		, lx->sel.active_era
+		, (lx->sel.active ? lx->sel.active->state == LWX_SELECTION_NONE : 0) ? "but" : "and"
+		, lx->sel.active ? lx->sel.active->state == LWX_SELECTION_NONE : 0
+		, lx->sel.staged ? lx->sel.staged->lease : 0
+		, (lx->sel.staged ? lx->sel.staged->lease : 0) == lx->sel.staged_era ? "= " : "!="
+		, lx->sel.staged_era
+	);
+	sayf("win active { %*sera(%3d)%*s } staged { %*sera(%3d) }\n"
+		, 14, ""
+		, lx->win.active_era
+		, 10, ""
+		, 14, ""
+		, lx->win.staged_era
+	);
+
+	int x;
+	int y;
+	for(x = lx->l - 1; x >= 0; x--)
+	{
+		if(x != lx->l - 1)
+			sayf("\n");
+
+		if(lx->s[x].l == 0)
+		{
+			sayf("[%4d     ] -- empty", x);
+		}
+
+		for(y = 0; y < lx->s[x].l; y++)
+		{
+			int __attribute__((unused)) select = 0;
+			int __attribute__((unused)) staged = 0;
+			if(x == 0)
+			{
+				select = 1;
+				if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
+				{
+					select = 0;
+					if(lx->sel.active->state != LWX_SELECTION_NONE && lx->sel.active->sl > (y / 8))
+					{
+						select = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
+					}
+				}
+
+				if(lx->sel.staged && lx->sel.staged->lease == lx->sel.staged_era)
+				{
+					if(lx->sel.staged->sl > (y / 8))
+					{
+						staged = lx->sel.staged->s[y / 8] & (0x01 << (y % 8));
+					}
+				}
+			}
+			
+			if(x != lx->l - 1 || y)
+				sayf("\n");
+
+			// for each entry : indexes, whether selected, staged
+			sayf("[%4d,%4d] %s%s "
+				, x
+				, y
+				, select ? ">" : " "
+				, staged ? "+" : " "
+			);
+
+			// display the string value of the row
+			char * s = 0;
+			int sl = 0;
+			fatal(lstack_readrow, lx, x, y, &s, &sl, 0, 1, 0, 0, 0);
+
+			sayf("'%.*s'", sl, s);
+
+			// also display object properties if applicable
+			if(lx->s[x].s[y].type)
+			{
+				sayf("[%hhu]%p/%p", lx->s[x].s[y].type, *(void**)lx->s[x].s[y].s, lx->s[x].s[y].s);
+			}
+
+			// indicate active windows other than ALL, which is the default state
+			if(x == 0)
+			{
+				lwx_windows * win;
+				int state = lstack_windows_state(lx, y, &win);
+
+				if(state != LWX_WINDOWS_ALL)
+				{
+					sayf("\n");
+					off_t oz;
+          fatal(narrator_seek, N, 0, NARRATOR_SEEK_CUR, &oz);
+					sayf("%16s", " ");
+
+					if(state != LWX_WINDOWS_NONE)
+					{
+						int escaping = 0;
+						int w = -1;
+						int i;
+
+						for(i = 0; i < sl; i++)
+						{
+							if(w == -1 && lx->win.s[y].active->s[0].o == i)
+							{
+								w = 0;
+							}
+
+							if(escaping)
+							{
+								if(s[i] == 0x6d)
+									escaping = 0;
+							}
+							else if(s[i] == 0x1b)
+							{
+								escaping = 1;
+							}
+							else
+							{
+								int marked = 0;
+								if(w >= 0 && w < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[w].o)
+								{
+									if((i - lx->win.s[y].active->s[w].o) < lx->win.s[y].active->s[w].l)
+									{
+										sayf("^");
+										marked = 1;
+									}
+								}
+
+								if(!marked)
+								{
+									// between internal windows
+									sayf(" ");
+									if(w >= 0 && w < lx->win.s[y].active->l && i >= lx->win.s[y].active->s[w].o)
+										w++;
+								}
+							}
+						}
+					}
+
+          off_t z;
+          fatal(narrator_seek, N, 0, NARRATOR_SEEK_CUR, &z);
+					if((z - oz) < 45)
+						sayf("%*s", 45 - (z - oz), "");
+
+					sayf(" active { lease(%3d) %s era(%3d)"
+						, lx->win.s[y].active->lease
+						, lx->win.s[y].active->lease == lx->win.active_era ? "= " : "!="
+						, lx->win.active_era
+					);
+
+					if(lx->win.s[y].active->lease == lx->win.active_era)
+					{
+						sayf(" %s state=%s"
+							, lx->win.s[y].active->state == LWX_WINDOWS_SOME ? "and" : "but"
+							, LWX_WINDOWS_STR(lx->win.s[y].active->state)
+						);
+					}
+					sayf(" }");
+				}
+			}
+
+			// indicate staged windows
+			if(x == 0)// && lx->win.s[y].staged && lx->win.s[y].staged->lease == lx->win.staged_era && !lx->win.s[y].staged->state == LWX_WINDOWS_NONE)
+			{
+				if(lx->win.s[y].staged)
+				{
+					sayf("\n");
+					off_t oz;
+          fatal(narrator_seek, N, 0, NARRATOR_SEEK_CUR, &oz);
+					sayf("%16s", " ");
+
+					lwx_windows * win;
+					int state = lstack_windows_staged_state(lx, y, &win);
+
+					if(state != LWX_WINDOWS_NONE)
+					{
+						int escaping = 0;
+						int w = -1;
+						int i;
+						for(i = 0; i < sl; i++)
+						{
+							if(state == LWX_WINDOWS_SOME && w == -1 && lx->win.s[y].staged->s[0].o == i)
+							{
+								w = 0;
+							}
+
+							if(escaping)
+							{
+								if(s[i] == 0x6d)
+									escaping = 0;
+							}
+							else if(s[i] == 0x1b)
+							{
+								escaping = 1;
+							}
+							else if(state == LWX_WINDOWS_SOME)
+							{
+								int marked = 0;
+								if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
+								{
+									if((i - lx->win.s[y].staged->s[w].o) < lx->win.s[y].staged->s[w].l)
+									{
+										sayf("+");
+										marked = 1;
+									}
+								}
+
+								if(!marked)
+								{
+									// between internal windows
+									sayf(" ");
+									if(w >= 0 && w < lx->win.s[y].staged->l && i >= lx->win.s[y].staged->s[w].o)
+										w++;
+								}
+							}
+						}
+					}
+
+          off_t z;
+          fatal(narrator_seek, N, 0, NARRATOR_SEEK_CUR, &z);
+					if((z - oz) < 45)
+						sayf("%*s", 45 - (z - oz), "");
+
+					sayf(" staged { lease(%3d) %s era(%3d)"
+						, lx->win.s[y].staged->lease
+						, lx->win.s[y].staged->lease == lx->win.staged_era ? "= " : "!="
+						, lx->win.staged_era
+					);
+
+					if(lx->win.s[y].staged->lease == lx->win.staged_era)
+					{
+						sayf(" %s state=%s"
+							, lx->win.s[y].staged->state == LWX_WINDOWS_SOME ? "and" : "but"
+							, LWX_WINDOWS_STR(lx->win.s[y].staged->state)
+						);
+					}
+					sayf(" }");
+				}
+			}
+		}
+	}
 
 	finally : coda;
 }

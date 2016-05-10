@@ -22,12 +22,11 @@
 
 #include "xapi.h"
 
-struct pstring;		// pstring.h
-
-/// definitions are in operator.h
-struct arg;
-struct operation;
-typedef struct transform_parser transform_parser;
+struct pstring;		          // valyria/pstring.h
+struct narrator;            // narrator.h
+struct arg;                 // operator.h
+struct operation;           // operator.h
+struct transform_parser;    // transform.c
 
 typedef struct transform
 {
@@ -38,165 +37,91 @@ typedef struct transform
 	int									opsl;
 } transform;
 
+#define restrict __restrict
+
 ///
 /// [[ TRANSFORM API ]]
 ///
 
-#define restrict __restrict
+/// transform_parser_create
+//
+// SUMMARY
+//  allocate a transform-string parser
+//
+xapi transform_parser_create(struct transform_parser ** restrict)
+  __attribute__((nonnull));
 
-/// transform_mkparser
+/// transform_parser_free
 //
-// returns a transform parser
+// SUMMARY
+//  free a transform-string parser with free semantics
 //
-xapi transform_mkparser(transform_parser ** p);
+void transform_parser_free(struct transform_parser * restrict);
+
+/// transform_parser_ifree
+//
+// SUMMARY
+//  free a transform-string parser with ifree semantics
+//
+void transform_parser_ifree(struct transform_parser ** const restrict)
+  __attribute__((nonnull));
 
 /// transform_parse
 //
-// parse a transform string
+// SUMMARY
+//  parse a transform-string
 //
-// parameters
-//
-//  [p]    - parser returned from mkparser
-//   s     - transform string
-//   l     - length of transform string, or 0 for strlen
-//   r     - receives parsed transform
+// PARAMETERS
+//  [p]    - parser returned from parser_create
+//  s      - transform string
+//  [l]    - length of transform string, or 0 for strlen
+//  r      - receives parsed transform
 //  [name] - also specify a name for this input (that is only used in informational and error messages)
 //
-xapi transform_parse(transform_parser ** p, char* s, int l, transform** r);
-xapi transform_parse2(transform_parser ** p, char* s, int l, transform** r, void * udata);
+xapi transform_parse(struct transform_parser ** restrict p, const char * const restrict s, size_t sl, transform ** const restrict r)
+  __attribute__((nonnull(2)));
 
-/// transform_parse_named
-//
-// see transform_parse
-//
-xapi transform_parse_named(transform_parser ** p, char* s, int l, char * name, int namel, transform** r);
-xapi transform_parse_named2(transform_parser ** p, char* s, int l, char * name, int namel, transform** r, void * udata);
-
-/// transform_freeparser 
-//
-// frees a transform parser returned from mkparser
-//
-void transform_parser_free(transform_parser*);
-void transform_parser_xfree(transform_parser**);
+xapi transform_parsex(struct transform_parser ** restrict p, const char * const restrict s, size_t sl, char * const restrict name, transform ** r)
+  __attribute__((nonnull(2)));
 
 /// transform_free
 //
-// frees a transform returned from parse
+// SUMMARY
+//  frees a transform with free semantics
 //
-void transform_free(transform*);
-void transform_xfree(transform**);
+void transform_free(transform * restrict);
 
-///
-/// transform : describe
-///
-
-/// transform_canon_write
+/// transform_ifree
 //
 // SUMMARY
-//  write a canonical transform-string for the specified transform to the specified buffer
+//  free a transform with ifree semantics
 //
-// PARAMETERS
-//  g   - transform
-//  dst - buffer
-//  sz  - size of buffer
-//  [z] - incremented by the amount written to dst
-//
-// RETURNS
-//  the number of bytes written
-//
-xapi transform_canon_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
-	__attribute__((nonnull(1, 2)));
+void transform_ifree(transform ** const restrict)
+  __attribute__((nonnull));
 
-/// transform_canon_pswrite
+/// transform_canon_say
 //
 // SUMMARY
-//  write a canonical transform-string for the specified transform to the specified pstring
+//  write the canonical representation of a transform to a narrator
 //
 // PARAMETERS
-//  g  - transform
-//  ps - pstring to write to
+//  g - transform
+//  N - narrator
 //
-xapi transform_canon_pswrite(transform * const restrict g, struct pstring * restrict ps)
-	__attribute__((nonnull));
+xapi transform_canon_say(transform * const restrict g, struct narrator * const restrict N)
+  __attribute__((nonnull));
 
-/// transform_canon_dump
+/// transform_description_say
 //
 // SUMMARY
-//  write a canonical transform-string for the specified transform to stdout
+//  write a descriptive / verbose / human readable / representation of a transform to a narrator
 //
 // PARAMETERS
-//  g    - transform
-//  [ps] - pstring to write to
+//  g - transform
+//  N - narrator
 //
-xapi transform_canon_dump(transform * const restrict g, struct pstring * restrict ps)
-	__attribute__((nonnull));
-
-/// transform_canon_log
-//
-// SUMMARY
-//  write a canonical transform-string for the specified transform to log_transform
-//
-// PARAMETERS
-//  g       - transform
-//  [ps]    - pstring to write to
-//  [udata] - passthrough
-//
-xapi transform_canon_log(transform * const restrict g, struct pstring * restrict ps, void * restrict udata)
-	__attribute__((nonnull(1)));
-
-/// transform_description_write
-//
-// SUMMARY
-//  write a multiline description for the specified transform to the specified buffer
-//
-// PARAMETERS
-//  g   - transform
-//  dst - buffer
-//  sz  - size of buffer
-//  [z] - incremented by the amount written to dst
-//
-// RETURNS
-//  the number of bytes written
-//
-xapi transform_description_write(transform * const restrict g, char * const restrict dst, const size_t sz, size_t * restrict z)
-	__attribute__((nonnull(1, 2)));
-
-/// transform_description_pswrite
-//
-// SUMMARY
-//  write a multiline description for the specified transform to the specified pstring
-//
-// PARAMETERS
-//  g  - transform
-//  ps - pstring to write to
-//
-xapi transform_description_pswrite(transform * const restrict g, struct pstring * restrict ps)
-	__attribute__((nonnull));
-
-/// transform_description_dump
-//
-// SUMMARY
-//  write a multiline description for the specified transform to stdout
-//
-// PARAMETERS
-//  g    - transform
-//  [ps] - pstring to write to
-//
-xapi transform_description_dump(transform * const restrict g, struct pstring * restrict ps)
-	__attribute__((nonnull));
-
-/// transform_description_log
-//
-// SUMMARY
-//  write a multiline description for the specified transform to log_transform
-//
-// PARAMETERS
-//  g       - transform
-//  [ps]    - pstring to write to
-//  [udata] - passthrough
-//
-xapi transform_description_log(transform * const restrict g, struct pstring * restrict ps, void * restrict udata)
-	__attribute__((nonnull(1)));
+xapi transform_description_say(transform * const restrict g, struct narrator * const restrict N)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

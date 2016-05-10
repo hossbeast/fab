@@ -16,12 +16,12 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 1		SYNTAX		transform string could not be parsed
-2		ILLBYTE		transform string contains illegal byte(s)
-3		ILLREF		transform contains illegal backreference
-4		NXOP			transform contains unknown operator
-5		ARGSNUM		transform wrong number of arguments
-6		ARGSTYPE	transform argument of the wrong type
-7		ARGSDOM		transform argument out of expected range
+2		ILLBYTE		contains illegal byte(s)
+3		ILLREF		illegal backreference
+4		NXOP			unknown operator
+5		ARGSNUM		wrong number of arguments
+6		ARGSTYPE	argument of the wrong type
+7		ARGSDOM		argument out of expected range
 8		NOOBJ			unknown object type referenced
 9		NOLIST		lwx operation requested out-of-bounds list index
 10	NOROW			lwx operation requested out-of-bounds row index
