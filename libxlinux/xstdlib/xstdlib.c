@@ -43,10 +43,7 @@ API xapi xmalloc(void* target, size_t size)
   }
   
 finally :
-  if(XAPI_UNWINDING)
-  {
-    xapi_infof("size", "%zu", size);
-  }
+  xapi_infof("size", "%zu", size);
 coda;
 }
 
@@ -81,10 +78,7 @@ API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
   }
 
 finally :
-  if(XAPI_UNWINDING)
-  {
-    xapi_infof("size", "%zu", es * ec);
-  }
+  xapi_infof("size", "%zu", es * ec);
 coda;
 }
 

@@ -36,9 +36,9 @@ $lflags_xapi_debug	= [ $lflags_xapi_debug $lflags [ "-Wl,-soname," libxapi-xapi.
 $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-devel.so ~ j ] ]
 
 # source files
-+[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $dlibxapi ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_final)
-+[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $dlibxapi ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $dlibxapi ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $dlibxapi ~ ls l/integ d ]; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $dlibxapi ~ ls l/integ d ]; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $dlibxapi ~ ls l/integ d ]; $cc; $cflags = $cflags_xapi_devel)
 +[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $dirs = [ $*/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
 +[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $dirs = [ $*/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
 +[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $dirs = [ $*/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
@@ -70,17 +70,17 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 }
 
 # link the library
-[ $libxapi_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.final.pic.o y ] ]
+[ $libxapi_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/integ d lsr sx/c/xapi.final.pic.o y ] ]
 {
 	[ [ $cc ] [ $cflags_xapi_final ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_final ~ fi ]
 }
 
-[ $libxapi_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.debug.pic.o y ] ]
+[ $libxapi_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/integ d lsr sx/c/xapi.debug.pic.o y ] ]
 {
 	[ [ $cc ] [ $cflags_xapi_debug ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_debug ~ fi ]
 }
 
-[ $libxapi_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.devel.pic.o y ] ]
+[ $libxapi_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls l/integ d lsr sx/c/xapi.devel.pic.o y ] ]
 {
 	[ [ $cc ] [ $cflags_xapi_devel ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_devel ~ fi ]
 }
@@ -118,26 +118,26 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 #  for rationale see test/README.md
 #
 
-+[@std.c]($dext = [ xapi.debug.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.c]($dext = [ xapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = $cflags_xapi_devel)
-+[@std.c]($dext = [ eapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
-+[@std.xapi.errtab]($dext = [ xapi.debug.o ]; $rdirs = [ $*/test ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
-+[@std.xapi.errtab]($dext = [ eapi.devel.o ]; $rdirs = [ $*/test ~ j ]; $apidata = [1]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
++[@std.c]($dext = [ xapi.debug.o ]; $rdirs = [ $*/integ ~ j ]; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.o ]; $rdirs = [ $*/integ ~ j ]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ eapi.devel.o ]; $rdirs = [ $*/integ ~ j ]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
++[@std.xapi.errtab]($dext = [ xapi.debug.o ]; $rdirs = [ $*/integ ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $rdirs = [ $*/integ ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ eapi.devel.o ]; $rdirs = [ $*/integ ~ j ]; $apidata = [1]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
 
-[ $*/test ~ j lsr l/errtab v sx/c/stacktrace_checks sy dj shift ] ::^ [ $libxapi_xapi_devel [ $*/test/errtab/TEST.errtab.xapi.devel.o ~ j ] ]
-[ $*/test ~ j lsr l/errtab v sx/c/stacktrace_checks sy dj shift ] :: [ $< ~ sx/stacktrace_checks/xapi.devel.o ]
+[ $*/integ ~ j lsr l/errtab v sx/c/stacktrace_checks sy dj shift ] ::^ [ $libxapi_xapi_devel [ $*/integ/errtab/TEST.errtab.xapi.devel.o ~ j ] ]
+[ $*/integ ~ j lsr l/errtab v sx/c/stacktrace_checks sy dj shift ] :: [ $< ~ sx/stacktrace_checks/xapi.devel.o ]
 {
-	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel ] [ $dlibxapi ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
+	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel ] [ $dlibxapi ~ [ ?{ [ rb{$*/integ} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
-[ $*/test ~ j lsr l/errtab v sx/c/stacktrace sy dj shift ] ::^ [ $libxapi_xapi_debug [ $*/test/errtab/TEST.errtab.xapi.debug.o ~ j ] ]
-[ $*/test ~ j lsr l/errtab v sx/c/stacktrace sy dj shift ] :: [ $< ~ sx/stacktrace/xapi.debug.o ]
+[ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy dj shift ] ::^ [ $libxapi_xapi_debug [ $*/integ/errtab/TEST.errtab.xapi.debug.o ~ j ] ]
+[ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy dj shift ] :: [ $< ~ sx/stacktrace/xapi.debug.o ]
 {
-	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_debug ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_debug ] [ $dlibxapi ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
+	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_debug ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_debug ] [ $dlibxapi ~ [ ?{ [ rb{$*/integ} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
-[ $*/test ~ j lsr l/errtab v sx/c/errorcode sy dj shift ] :: [ $< ~ sx/errorcode/eapi.devel.o ]
+[ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy dj shift ] :: [ $< ~ sx/errorcode/eapi.devel.o ]
 {
 	[ [ $cc ] -o [ $@ ] [ $cflags_eapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] ~ fi ]
 }
@@ -145,13 +145,13 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
 [ @test ] : [ @test.stacktrace_checks @test.stacktrace @test.errorcode ]
 [ @test.verbose ] : [ @test.stacktrace_checks.verbose @test.stacktrace.verbose @test.errorcode.verbose ]
 
-[ @test.stacktrace ] : [ $*/test ~ j lsr l/errtab v sx/c/stacktrace sy ]
+[ @test.stacktrace ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy ]
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
 }
 
-[ @test.stacktrace.verbose ] : [ $*/test ~ j lsr l/errtab v sx/c/stacktrace sy ]
+[ @test.stacktrace.verbose ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy ]
 {
   set -e
   (
@@ -159,13 +159,13 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
   ) | tee /dev/fd/501
 }
 
-[ @test.stacktrace_checks ] : [ $*/test ~ j lsr l/errtab v sx/c/stacktrace_checks sy ]
+[ @test.stacktrace_checks ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace_checks sy ]
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
 }
 
-[ @test.stacktrace_checks.verbose ] : [ $*/test ~ j lsr l/errtab v sx/c/stacktrace_checks sy ]
+[ @test.stacktrace_checks.verbose ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace_checks sy ]
 {
   set -e
   (
@@ -173,13 +173,13 @@ $lflags_xapi_devel	= [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-
   ) | tee /dev/fd/501
 }
 
-[ @test.errorcode ] : [ $*/test ~ j lsr l/errtab v sx/c/errorcode sy ]
+[ @test.errorcode ] : [ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy ]
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
 }
 
-[ @test.errorcode.verbose ] : [ $*/test ~ j lsr l/errtab v sx/c/errorcode sy ]
+[ @test.errorcode.verbose ] : [ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy ]
 {
   set -e
   (

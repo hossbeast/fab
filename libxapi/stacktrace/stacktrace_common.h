@@ -87,13 +87,6 @@
 #define failw(code, key, vbuf, vbufl) tfailw(perrtab, code, key, vbuf, vbufl)
 #define failf(code, key, vfmt, ...)   tfailf(perrtab, code, key, vfmt, ##__VA_ARGS__)
 
-/// fail_intent
-//
-// SUMMARY
-//  allows to stage info kvps just before calling fail, see xapi_info
-//
-#define fail_intent() xapi_fail_intent()
-
 /// invoke
 //
 // SUMMARY
@@ -114,7 +107,7 @@
 #define fatal(func, ...)                                \
   do {                                                  \
     xapi_invoke(func, ##__VA_ARGS__);                   \
-    if(xapi_top_frame_index != __xapi_frame_index[0])   \
+    if(xapi_top_frame_index != __xapi_current_frame)    \
     {                                                   \
       goto XAPI_FINALIZE;                               \
     }                                                   \
@@ -145,19 +138,18 @@
 /// finally
 //
 // SUMMARY
-//  statements between finally and coda are executed even upon fail
+//  statements between finally and coda are executed exactly once, even upon fail
 //
-#define finally                 \
-  goto XAPI_FINALIZE;           \
-XAPI_FINALIZE:                  \
-  if(__xapi_f1)                 \
-  {                             \
-    goto XAPI_LEAVE;            \
-  }                             \
-  __xapi_frame_index[0] = xapi_top_frame_index; \
-  __xapi_frame_index[1] = xapi_top_frame_index; \
-  __xapi_f1 = 1;                \
-  goto XAPI_FINALLY;            \
+#define finally                                 \
+  goto XAPI_FINALIZE;                           \
+XAPI_FINALIZE:                                  \
+  if(__xapi_f1)                                 \
+  {                                             \
+    goto XAPI_LEAVE;                            \
+  }                                             \
+  __xapi_current_frame = xapi_top_frame_index;  \
+  __xapi_f1 = 1;                                \
+  goto XAPI_FINALLY;                            \
 XAPI_FINALLY
 
 /// coda
@@ -185,19 +177,19 @@ XAPI_LEAVE:                         \
 
 // call xapi_frame_set with the current location
 #define XAPI_FRAME_SET(etab, code)	\
-	xapi_frame_set(etab, code, __xapi_frame_index[1], __FILE__, __LINE__, __FUNCTION__)
+	xapi_frame_set(etab, code, __xapi_f1 ? __xapi_current_frame : -1, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOS(etab, code, key, vstr) \
-	xapi_frame_set_infos(etab, code, __xapi_frame_index[1], key, vstr, __FILE__, __LINE__, __FUNCTION__)
+	xapi_frame_set_infos(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vstr, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOW(etab, code, key, vbuf, vlen)	\
-	xapi_frame_set_infow(etab, code, __xapi_frame_index[1], key, vbuf, vlen, __FILE__, __LINE__, __FUNCTION__)
+	xapi_frame_set_infow(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vbuf, vlen, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOF(etab, code, key, vfmt, ...)	\
-	xapi_frame_set_infof(etab, code, __xapi_frame_index[1], key, vfmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+	xapi_frame_set_infof(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vfmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 /*
 ** called after finally
@@ -206,25 +198,41 @@ XAPI_LEAVE:                         \
 /// xapi_info
 //
 // SUMMARY
-//  apply an info kvp to a calltree frame
+//  apply an info kvp to the current frame while failing that frame
 //
 // REMARKS
-//  Before unwinding, but after calling xapi_fail_intent, infos are staged to be applied to the base
-//  frame. There is no way to unstage, so infos should only be staged when a fail call is imminent.
-//  Otherwise, xapi_info should only be called in a finally block, and infos are applied to the
-//  frame for that function invocation.
+//  xapi_info should only be called in a finally block
 //
-#define xapi_infos(key, vstr)                      \
-  xapi_info_adds(key, vstr)
+#define xapi_infos(key, vstr)                           \
+  do {                                                  \
+    if(XAPI_FAILING)                                    \
+      xapi_info_adds(key, vstr);                        \
+  } while(0)
 
-#define xapi_infow(key, vbuf, vlen)                \
-  xapi_info_addw(key, vbuf, vlen)
+#define xapi_infow(key, vbuf, vlen)                     \
+  do {                                                  \
+    if(XAPI_FAILING)                                    \
+      xapi_info_addw(key, vbuf, vlen);                  \
+  } while(0)
 
-#define xapi_infof(key, vfmt, ...)                 \
-  xapi_info_addf(key, vfmt, ##__VA_ARGS__)
+#define xapi_infof(key, vfmt, ...)                      \
+  do {                                                  \
+    if(XAPI_FAILING)                                    \
+      xapi_info_addf(key, vfmt, ##__VA_ARGS__);         \
+  } while(0)
 
-#define xapi_vinfof(key, vfmt, va)                 \
-  xapi_info_vaddf(key, vfmt, va)
+#define xapi_vinfof(key, vfmt, va)                      \
+  do {                                                  \
+    if(XAPI_FAILING)                                    \
+      xapi_info_vaddf(key, vfmt, va);                   \
+  } while(0)
+
+/// XAPI_FAILING
+//
+// SUMMARY
+//  true after fail has been invoked in the current frame
+//
+#define XAPI_FAILING (xapi_top_frame_index != __xapi_base_frame)
 
 /// XAPI_UNWINDING
 //

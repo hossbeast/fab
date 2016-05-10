@@ -20,7 +20,7 @@
 /*
 
 SUMMARY
-  exercise the conclude macro
+ simple test in which no error is thrown
 
 */
 
@@ -40,25 +40,23 @@ xapi alpha()
   finally : coda;
 }
 
-static uint32_t r;
-int foo()
+xapi foo()
 {
   enter;
 
   fatal(alpha);
 
-  finally : conclude(&r);
-  return r;
+  finally : coda;
 }
 
 int main()
 {
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   xapi_errtab_register(perrtab_TEST);
 #endif
 
   xapi exit = foo();
-  assert_code(exit, 0);
+  assert_exit(exit, 0, 0);
 
   succeed;
 }

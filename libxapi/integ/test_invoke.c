@@ -16,19 +16,15 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "test.h"
-#include "memblk.def.h"
-
-#include "xapi/calltree.h"
-#include "xapi/trace.h"
 
 /*
 
 SUMMARY
- test the functionality of xapi_calltree_freeze
+ test calling a top-level xapi function directly and capturing its exit status
 
 */
 
-xapi beta(int num)
+xapi beta()
 {
   enter;
 
@@ -37,51 +33,36 @@ xapi beta(int num)
   finally : coda;
 }
 
-xapi alpha(int num)
+xapi alpha()
 {
   enter;
 
-  fatal(beta, num);
+  fatal(beta);
 
   finally : coda;
 }
-
-char space[4096 << 2];
-char space2[4096];
 
 xapi foo()
 {
   enter;
 
-#if XAPI_STACKTRACE_INCL
-  memblk * mb;
-#endif
+  fatal(alpha);
 
-  fatal(alpha, 125);
-
-finally:
-#if XAPI_STACKTRACE_INCL
-  mb = xapi_calltree_freeze();
-  memblk_copyto(mb, space, sizeof(space));
-  xapi_calltree_unfreeze();
-#endif
-coda;
+  finally : coda;
 }
 
 int main()
 {
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   xapi_errtab_register(perrtab_TEST);
 #endif
 
+  // invoke the function, collect its exit status
   xapi exit = foo();
+
+  // assertions
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
-#if XAPI_STACKTRACE_INCL
-  struct calltree * ct = xapi_calltree_thaw(space);
-  size_t z = xapi_trace_calltree_full(ct, space2, sizeof(space2));
-  printf("reconstituted trace\n%.*s\n", (int)z, space2);
-#endif
-
+  // victory
   succeed;
 }

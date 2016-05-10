@@ -70,23 +70,20 @@ when calling non-xapi code, you have a couple of options.
 //  must be the first line of any xapi function
 //
 // DETAILS
-//  __xapi_f1       - tracks whether the finalize label has been hit
-//  __xapi_topframe - used by xapi_frame_leave to cleanup when the top-level function exits
-//  __xapi_frame_index - index of the frame recorded when this function failed
+//  __xapi_f1            - true if the finalize label has been hit
+//  __xapi_topframe      - true if this is a top-level frame
+//  __xapi_base_frame    - index of the base frame for this invocation
+//  __xapi_current_frame - index of the current frame for this invocation
 //
-#define enter                                                                   \
-  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;                            \
-  int __xapi_f1 = 0;                                                            \
-  int __xapi_topframe = !xapi_sentinel;                                         \
-  xapi_sentinel = 1;                                                            \
-  xapi_frame_index __attribute__((unused)) __xapi_frame_index[2] = { -1, -1 };  \
-  __xapi_frame_index[0] = xapi_top_frame_index
+#define enter                                                                           \
+  __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;                                    \
+  int __xapi_f1 = 0;                                                                    \
+  int __xapi_topframe = !xapi_sentinel;                                                 \
+  xapi_sentinel = 1;                                                                    \
+  xapi_frame_index __attribute__((unused)) __xapi_base_frame = xapi_top_frame_index;    \
+  xapi_frame_index __attribute__((unused)) __xapi_current_frame = xapi_top_frame_index
 
 #define enter_nochecks enter
-
-/*
-** called at the site of an error
-*/
 
 /*
 ** called elsewhere in the stack
@@ -95,10 +92,10 @@ when calling non-xapi code, you have a couple of options.
   ({                                                        \
       func(__VA_ARGS__);                                    \
       xapi __r = 0;                                         \
-      if(xapi_top_frame_index != __xapi_frame_index[0])     \
+      if(xapi_top_frame_index != __xapi_current_frame)      \
       {                                                     \
         XAPI_FRAME_SET(0, 0);                               \
-        __r = xapi_frame_errval(__xapi_frame_index[0] + 1); \
+        __r = xapi_frame_errval(__xapi_current_frame + 1);  \
       }                                                     \
       __r;                                                  \
   })

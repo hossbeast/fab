@@ -79,7 +79,7 @@ libxapi, viz.
    finally : coda;
  }
 
-### XAPI_STACKTRACE_CHECKS
+### XAPI_MODE_STACKTRACE_CHECKS
 
 If you compile with -DXAPI_MODE_STACKTRACE_CHECKS, the same comments apply as for XAPI_MODE_STACKTRACE.
 Additionally, in this mode, code is instrumented with runtime checks that will cause errors to be thrown
@@ -110,10 +110,12 @@ in either block. The only difference is that, if fail is invoked in the finally 
 of the finally block is skipped, and the function returns. This is consistent with the way exception
 handling works in other implementations, such as C# and Java.
 
-With most other implementations, the original error and stack trace are discarded. libxapi preserves
-the original error. In stacktrace mode, the stack for the new error is rooted in the frame whose
-finally block was executing when it was thrown. These frames are included when the backtrace is
-rendered.
+With other implementations, the original error and stack trace are discarded. libxapi preserves the
+original error.
+
+In stacktrace mode, the stack for the new error is rooted in the frame whose finally block was
+executing when it was thrown. For that function, the calltree includes two frames, the frame for the
+body block, and a subframe, for the finally block.
 
 In this case, the exit value encodes the original error.
 

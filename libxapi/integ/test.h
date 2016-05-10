@@ -22,7 +22,7 @@
 #include "xapi/exit.h"
 #include "xapi/errtab.h"
 #include "xapi/XAPI.errtab.h"
-#include "test/errtab/TEST.errtab.h"
+#include "integ/errtab/TEST.errtab.h"
 
 #undef perrtab
 #define perrtab perrtab_TEST
@@ -30,12 +30,6 @@
 #define MMS(a) a, strlen(a)
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
-
-#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
-#define XAPI_STACKTRACE_INCL 1
-#else
-#define XAPI_STACKTRACE_INCL 0
-#endif
 
 /*
 

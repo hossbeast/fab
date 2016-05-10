@@ -16,68 +16,63 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <unistd.h>
-#include "test.h"
+
 #include "xapi/trace.h"
+
+#include "test.h"
 
 /*
 
 SUMMARY
- fatal call a function while unwinding which does not fail
+ call fail in a finally block during unwinding
 
 */
 
 int delta_count;
-xapi delta()
+xapi delta(int num)
 {
   enter;
 
   delta_count++;
   fail(TEST_ERROR_ONE);
 
-  finally : coda;
+finally:
+  xapi_infof("num", "%d", num);
+coda;
 }
 
 int beta_count;
+int beta_dead_count;
 xapi beta()
 {
   enter;
 
   beta_count++;
+  fatal(delta, __LINE__);
 
-  finally : coda;
+finally:
+  // delta should fail, and beta should terminate
+  fatal(delta, __LINE__);
+
+  // this line should not be hit
+  beta_dead_count = 1;
+coda;
 }
 
-int alpha_finally_count;
 xapi alpha()
 {
   enter;
 
-  // delta fails
-  fatal(delta);
-
-finally :
-  // beta does not fail
-  fatal(beta);
-
-  // this line should be executed
-  alpha_finally_count = 1;
-coda;
-}
-
-xapi zeta()
-{
-  enter;
-
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   char space[4096];
   size_t z;
 #endif
 
-  fatal(alpha);
+  fatal(beta);
 
 finally:
-#if XAPI_STACKTRACE_INCL
-  z = xapi_trace_full(space, sizeof(space));
+#if XAPI_STACKTRACE
+  z = xapi_trace_pithy(space, sizeof(space));
   write(1, space, z);
   write(1, "\n", 1);
 #endif
@@ -86,18 +81,18 @@ coda;
 
 int main()
 {
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   xapi_errtab_register(perrtab_TEST);
 #endif
 
-  // zeta fails
-  xapi exit = zeta();
+  // alpha should fail
+  xapi exit = alpha();
   assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
-  // alpha dead area should have been skipped
-  assertf(alpha_finally_count == 1
-    , "expected alpha-finally-count : 1, actual alpha-finally-count : %d"
-    , alpha_finally_count
+  // dead area should have been skipped
+  assertf(beta_dead_count == 0
+    , "expected beta-dead-count : 0, actual beta-dead-count : %d"
+    , beta_dead_count
   );
 
   // beta should have been run once
@@ -107,8 +102,8 @@ int main()
   );
 
   // delta should have been run twice
-  assertf(delta_count == 1
-    , "expected delta-count : 1, actual delta-count : %d"
+  assertf(delta_count == 2
+    , "expected delta-count : 2, actual delta-count : %d"
     , delta_count
   );
 

@@ -152,13 +152,6 @@ void xapi_frame_set_infof(
 )
   __attribute__((nonnull(8)));
 
-/// xapi_fail_intent
-//
-// SUMMARY
-//  normally, 
-//
-void xapi_fail_intent();
-
 ///
 //
 //

@@ -155,6 +155,7 @@ XAPI_LEAVE:             \
 //  true if an error has been raised
 //
 #define XAPI_UNWINDING (__xapi_r[0] || __xapi_r[1])
+#define XAPI_FAILING   (__xapi_r[0] || __xapi_r[1])
 
 // does not apply to MODE_ERRORCODE
 #define XAPI_ERRTAB 0
@@ -186,6 +187,10 @@ XAPI_LEAVE:             \
 
 // resolve to nothing under eapi
 #define xapi_fail_intent()
+#define xapi_info_adds(key, vstr)
+#define xapi_info_addw(key, vbuf, vlen)
+#define xapi_info_addf(key, vfmt, ...)
+#define xapi_vinfof(key, vfmt, va)
 #define xapi_infos(key, vstr)
 #define xapi_infow(key, vbuf, vlen)
 #define xapi_infof(key, vfmt, ...)

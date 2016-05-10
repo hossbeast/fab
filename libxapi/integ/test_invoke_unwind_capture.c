@@ -15,14 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <unistd.h>
 #include "test.h"
+#include "xapi/calltree.h"
 
 /*
 
 SUMMARY
- test calling a top-level xapi function directly and capturing its exit status
+ use invoke/unwind to capture, inspect, and discard an error
 
 */
+
+xapi delta()
+{
+  enter;
+
+  fail(TEST_ERROR_TWO);
+
+  finally : coda;
+}
 
 xapi beta()
 {
@@ -33,35 +44,48 @@ xapi beta()
   finally : coda;
 }
 
+static int alpha_dead_count;
 xapi alpha()
 {
   enter;
 
-  fatal(beta);
+  int exit;
+  if((exit = invoke(beta)))
+  {
+    assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
 
-  finally : coda;
-}
+#if XAPI_STACKTRACE
+    // discard
+    xapi_calltree_unwind();
+#endif
+  }
 
-xapi foo()
-{
-  enter;
+  fatal(delta);
 
-  fatal(alpha);
+  alpha_dead_count++;
 
   finally : coda;
 }
 
 int main()
 {
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   xapi_errtab_register(perrtab_TEST);
 #endif
 
-  // invoke the function, collect its exit status
-  xapi exit = foo();
+  int x;
+  for(x = 0; x < 3; x++)
+  {
+    // alpha calls beta, unwinds, and calls delta, which fails with NOFATAL
+    xapi exit = alpha();
+    assert_exit(exit, perrtab_TEST, TEST_ERROR_TWO);
 
-  // assertions
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+    // dead area should have been skipped
+    assertf(alpha_dead_count == 0
+      , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
+      , alpha_dead_count
+    );
+  }
 
   // victory
   succeed;

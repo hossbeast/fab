@@ -27,8 +27,8 @@ void ufailf_info(const char * const restrict expfmt, const char * const restrict
   va_start(va, actfmt);
 
   xapi_fail_intent();
-  xapi_vinfof("expected", expfmt, va);
-  xapi_vinfof("actual", actfmt, va);
+  xapi_info_vaddf("expected", expfmt, va);
+  xapi_info_vaddf("actual", actfmt, va);
 
   va_end(va);
 }
@@ -36,6 +36,6 @@ void ufailf_info(const char * const restrict expfmt, const char * const restrict
 void ufails_info(const char * const restrict exp, const char * const restrict act)
 {
   xapi_fail_intent();
-  xapi_infos("expected", exp);
-  xapi_infos("actual", act);
+  xapi_info_adds("expected", exp);
+  xapi_info_adds("actual", act);
 }

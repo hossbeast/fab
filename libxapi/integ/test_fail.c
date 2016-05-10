@@ -84,18 +84,18 @@ xapi test_fail_intent()
 {
   enter;
 
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   char space[2048];
   size_t z;
 #endif
 
   xapi_fail_intent();
-  xapi_infos("foo", "bar");
-  xapi_infos("baz", "qux");
+  xapi_info_adds("foo", "bar");
+  xapi_info_adds("baz", "qux");
   fail(TEST_ERROR_ONE);
 
 finally:
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   // ensure that the trace contains both infos
   z = xapi_trace_full(space, sizeof(space));
   assertf(strstr(space, "foo=bar"), "expected kvp foo=bar, actual trace\n**\n%.*s\n**\n", (int)z, space);
@@ -105,7 +105,7 @@ coda;
 
 int main()
 {
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   xapi_errtab_register(perrtab_TEST);
 #endif
 

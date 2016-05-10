@@ -20,25 +20,23 @@
 /*
 
 SUMMARY
- invoke a function with fatalize
+ test delegation with xproxy
 
 */
 
-int beta()
-{
-  return 42;
-}
-
-xapi alpha()
+xapi zeta()
 {
   enter;
-
-  fatalize(TEST_ERROR_ONE, beta);
 
   finally : coda;
 }
 
-xapi test_fatalize()
+xapi alpha()
+{
+  xproxy(zeta);
+}
+
+xapi foo()
 {
   enter;
 
@@ -49,14 +47,12 @@ xapi test_fatalize()
 
 int main()
 {
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   xapi_errtab_register(perrtab_TEST);
 #endif
 
-  // invoke the function, collect its exit status
-  xapi exit = test_fatalize();
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+  xapi exit = foo();
+  assert_exit(exit, 0, 0);
 
-  // victory
   succeed;
 }

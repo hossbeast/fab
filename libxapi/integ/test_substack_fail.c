@@ -21,7 +21,7 @@
 /*
 
 SUMMARY
- fatal call a function while unwinding which fails
+ while unwinding, fatal call a function that itself fails, assert the proper call path
 
 */
 
@@ -40,9 +40,7 @@ xapi baz()
 
   fatal(ababab);
 
-finally:
-  xapi_infof("baz", "%d", 1);
-coda;
+  finally : coda;
 }
 
 xapi bar()
@@ -79,15 +77,13 @@ xapi epsilon()
 {
   enter;
 
-char name[333];
-sprintf(name, "epsilon_%d", epsilon_count);
+  char name[333];
+  sprintf(name, "epsilon_%d", epsilon_count);
 
   epsilon_count++;
   fatal(qux);
 
 finally:
-  xapi_infof(name, "%d", 1);
-
   fatal(qux);
 coda;
 }
@@ -126,14 +122,12 @@ xapi zeta()
 
   fatal(alpha);
 
-finally:
-  xapi_infof("zeta", "%d", 1);
-coda;
+  finally : coda;
 }
 
 int main()
 {
-#if XAPI_STACKTRACE_INCL
+#if XAPI_STACKTRACE
   xapi_errtab_register(perrtab_TEST);
 #endif
 

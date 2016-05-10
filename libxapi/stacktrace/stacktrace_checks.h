@@ -81,24 +81,25 @@ when calling non-xapi code, you have a couple of options.
 //  must be the first line of any xapi function
 //
 // DETAILS
-//  __xapi_f1       - tracks whether the finalize label has been hit
-//  __xapi_topframe - used by xapi_frame_leave to cleanup when the top-level function exits
-//  __xapi_frame_index - index of the frame recorded when this function failed
+//  __xapi_f1            - tracks whether the finalize label has been hit
+//  __xapi_topframe      - used by xapi_frame_leave to cleanup when the top-level function exits
+//  __xapi_base_frame    - index of the base frame for this invocation
+//  __xapi_current_frame - index of the current frame for this invocation
 //
 #define enter                                                                                 \
   __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;                                          \
   int __xapi_f1 = 0;                                                                          \
   int __xapi_topframe = !xapi_sentinel;                                                       \
   xapi_sentinel = 1;                                                                          \
-  xapi_frame_index __attribute__((unused)) __xapi_frame_index[2] = { -1, -1 };                \
-  __xapi_frame_index[0] = xapi_top_frame_index;                                               \
+  xapi_frame_index __attribute__((unused)) __xapi_base_frame = xapi_top_frame_index;          \
+  xapi_frame_index __attribute__((unused)) __xapi_current_frame = xapi_top_frame_index;       \
   xapi_record_frame(xapi_calling_frame_address);                                              \
   if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
   {                                                                                           \
     xapi_fail_intent();                                                                       \
-    xapi_infos("function", __FUNCTION__);                                                     \
-    xapi_infof("expected caller", "%p", __builtin_frame_address(1));                          \
-    xapi_infof("recorded caller", "%p", xapi_calling_frame_address);                          \
+    xapi_info_adds("function", __FUNCTION__);                                                 \
+    xapi_info_addf("expected caller", "%p", __builtin_frame_address(1));                      \
+    xapi_info_addf("recorded caller", "%p", xapi_calling_frame_address);                      \
     tfail(perrtab_XAPI, XAPI_NOFATAL);                                                        \
   }
 
@@ -107,8 +108,8 @@ when calling non-xapi code, you have a couple of options.
   int __xapi_f1 = 0;                                                                          \
   int __xapi_topframe = !xapi_sentinel;                                                       \
   xapi_sentinel = 1;                                                                          \
-  xapi_frame_index __attribute__((unused)) __xapi_frame_index[2] = { -1, -1 };                \
-  __xapi_frame_index[0] = xapi_top_frame_index;                                               \
+  xapi_frame_index __attribute__((unused)) __xapi_base_frame = xapi_top_frame_index;          \
+  xapi_frame_index __attribute__((unused)) __xapi_current_frame = xapi_top_frame_index;       \
   xapi_record_frame(xapi_calling_frame_address)
 
 #define xapi_invoke(func, ...)                                                  \
@@ -125,14 +126,14 @@ when calling non-xapi code, you have a couple of options.
         xapi_infof("expected caller", "%p", calling_frame_address);             \
         xapi_infof("recorded caller", "%p", xapi_caller_frame_address);         \
       }                                                                         \
-      else if(xapi_top_frame_index != __xapi_frame_index[0])                    \
+      else if(xapi_top_frame_index != __xapi_current_frame)                     \
       {                                                                         \
         XAPI_FRAME_SET(0, 0);                                                   \
       }                                                                         \
       xapi __r = 0;                                                             \
-      if(xapi_top_frame_index != __xapi_frame_index[0])                         \
+      if(xapi_top_frame_index != __xapi_current_frame)                          \
       {                                                                         \
-        __r = xapi_frame_errval(__xapi_frame_index[0] + 1);                     \
+        __r = xapi_frame_errval(__xapi_current_frame + 1);                      \
       }                                                                         \
       __r;                                                                      \
   })
