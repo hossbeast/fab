@@ -255,6 +255,60 @@ coda;
 // public
 //
 
+xapi category_say_verbose(logger_category * const restrict cat, narrator * restrict N)
+{
+  enter;
+
+  sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " : "
+    , category_name_max_length
+    , cat->name
+    , cat->id
+    , cat->attr
+  );
+
+  fatal(attr_say, cat->attr, N);
+  says(cat->description);
+  if(cat->attr)
+  {
+    says(", +");
+    fatal(attr_say, cat->attr, N);
+  }
+
+  finally : coda;
+}
+
+API xapi category_report_verbose()
+{
+  enter;
+
+  int token = 0;
+  logs(L_LOGGER, "logger categories");
+
+  int x;
+  for(x = 0; x < list_size(activated); x++)
+  {
+    // find the bounds of the name-group
+    int y;
+    for(y = x + 1; y < list_size(activated); y++)
+    {
+      if(strcmp(list_get(activated, x)->name, list_get(activated, y)->name))
+        break;
+    }
+
+    fatal(log_start, L_LOGGER, &token);
+    narrator * N = log_narrator();
+    says(" ");
+    fatal(category_say_verbose, list_get(activated, x), N);
+    fatal(log_finish, &token);
+
+    x = y - 1;
+  }
+
+finally:
+  fatal(log_finish, &token);
+coda;
+}
+
 xapi category_setup()
 {
   enter;
@@ -277,13 +331,24 @@ void category_teardown()
   map_ifree(&activated_byid);
 }
 
+//
+// api
+//
 
-xapi category_report()
+API xapi category_say(logger_category * const restrict cat, narrator * restrict N)
+{
+  enter;
+
+  sayf("%*s : %s", category_name_max_length, cat->name, cat->description);
+
+  finally : coda;
+}
+
+API xapi category_report()
 {
   enter;
 
   int token = 0;
-  logs(L_LOGGER, "liblogger categories");
 
   int x;
   for(x = 0; x < list_size(activated); x++)
@@ -298,8 +363,8 @@ xapi category_report()
 
     fatal(log_start, L_LOGGER, &token);
     narrator * N = log_narrator();
-    sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " ", category_name_max_length, list_get(activated, x)->name, list_get(activated, x)->id, list_get(activated, x)->attr);
-    fatal(attr_say, list_get(activated, x)->attr, N);
+    says(" ");
+    fatal(category_say, list_get(activated, x), N);
     fatal(log_finish, &token);
 
     x = y - 1;
@@ -309,10 +374,6 @@ finally:
   fatal(log_finish, &token);
 coda;
 }
-
-//
-// api
-//
 
 API xapi logger_category_register(logger_category * logs)
 {

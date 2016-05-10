@@ -24,21 +24,7 @@
 
 #include "xapi.h"
 
-struct narrator;    // libnarrator
-
-/*
- * liblogger-provided program arguments, populated during logger_setup
- */
-extern char **	g_argv;					// array of args as delimited by nulls
-extern int			g_argc;					// count of g_argv
-extern char *		g_argvs;				// single string, nulls replaced with spaces
-extern int			g_argvsl;				// length of g_argvs
-extern char *		g_binary;				// executable; pointer into g_argv
-extern char *		g_interpreter;	// interpreter script, if executing as an interpreter; pointer into g_argv
-extern char **	g_logv;					// array of logexprs
-extern int			g_logc;					// count of g_logv
-extern char *		g_logvs;				// single string of logexprs
-extern int			g_logvsl;				// length of g_logvs
+struct narrator; // libnarrator
 
 /*
  * options and modifiers that can be applied to a log message

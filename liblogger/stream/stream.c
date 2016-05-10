@@ -343,16 +343,16 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * co
 int stream_would(const stream * const restrict streamp, const uint64_t ids)
 {
   if(!streamp->filters)
-    return 1;
+    return 0;
 
   return filters_would(streamp->filters, ids);
 }
 
 int streams_would(const uint64_t ids)
 {
-  // the default is to log everything
+  // the default is to log nothing
   if(array_size(g_streams) == 0)
-    return 1;
+    return 0;
 
   int x;
   for(x = 0; x < array_size(g_streams); x++)
@@ -408,7 +408,7 @@ xapi streams_report()
 
   int mark = 0;
 
-  logs(L_LOGGER, "liblogger streams configuration");
+  logs(L_LOGGER, "logger streams");
 
   int x;
   for(x = 0; x < g_streams->l; x++)

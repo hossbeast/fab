@@ -24,8 +24,8 @@
 
 #include "xapi.h"
 #include "xapi/errtab.h"
-#include "xapi/XAPI.errtab.h"
 #include "xlinux.h"
+#include "xlinux/LIB.errtab.h"
 #include "narrator.h"
 
 #include "internal.h"
@@ -58,8 +58,10 @@ API xapi logger_load()
     // modules
     fatal(category_setup);
     fatal(stream_setup);
-    fatal(xapi_errtab_register, perrtab_LOGGER);
     fatal(logger_category_register, logs);
+#ifndef XAPI_MODE_ERRORCODE
+    fatal(xapi_errtab_register, perrtab_LOGGER);
+#endif
   }
   handles++;
 
@@ -84,7 +86,7 @@ API xapi logger_unload()
   }
   else if(handles < 0)
   {
-    tfails(perrtab_XAPI, XAPI_AUNLOAD, "library", "liblogger");
+    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "liblogger");
   }
 
   finally : coda;
@@ -105,7 +107,7 @@ API xapi logger_initialize(char ** restrict envp)
 
   // reports to LOGGER
   fatal(arguments_report);
-  fatal(category_report);
+  fatal(category_report_verbose);
   fatal(streams_report);
 
   finally : coda;

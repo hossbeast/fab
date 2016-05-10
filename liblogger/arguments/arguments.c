@@ -48,14 +48,14 @@
 APIDATA char **			  g_argv;
 APIDATA int					  g_argc;
 APIDATA char *			  g_argvs;
-APIDATA int					  g_argvsl;
+APIDATA size_t			  g_argvsl;
 APIDATA char *			  g_binary;
 APIDATA char *			  g_interpreter;
 APIDATA char **			  g_logv;
 APIDATA static size_t	g_logva;
 APIDATA int					  g_logc;
 APIDATA char *			  g_logvs;
-APIDATA int					  g_logvsl;
+APIDATA size_t			  g_logvsl;
 
 //
 // public
@@ -65,32 +65,28 @@ xapi arguments_report()
 {
   enter;
 
-  int mark = 0;
+  int token = 0;
 
-  logf(L_LOGGER, "liblogger program arguments");
-  logf(L_LOGGER, "g_argvs : %s", g_argvs);
-
-  logf(L_LOGGER, "g_argv");
+  logf(L_LOGGER, "logger cmdline arguments");
+  logf(L_LOGGER, " args : %s", g_argvs);
   int x;
   for(x = 0; x < g_argc; x++)
   {
-    fatal(log_start, L_LOGGER, &mark);
-    logf(L_LOGGER, " [%2d] %s", x, g_argv[x]);
+    fatal(log_start, L_LOGGER, &token);
+    logf(L_LOGGER, "  [%2d] %s", x, g_argv[x]);
     if(g_binary == g_argv[x])
-      logf(L_LOGGER, " <-- binary");
+      logf(L_LOGGER, "   <-- binary");
     else if(g_interpreter == g_argv[x])
-      logf(L_LOGGER, " <-- interpreting");
-    fatal(log_finish, &mark);
+      logf(L_LOGGER, "   <-- interpreting");
+    fatal(log_finish, &token);
   }
 
-  logf(L_LOGGER, "g_logvs : %s", g_logvs);
-
-  logf(L_LOGGER, "g_logv");
+  logf(L_LOGGER, " logs : %s", g_logvs);
   for(x = 0; x < g_logc; x++)
-    logf(L_LOGGER, " [%2d] %s", x, g_logv[x]);
+    logf(L_LOGGER, "  [%2d] %s", x, g_logv[x]);
 
 finally:
-  fatal(log_finish, &mark);
+  fatal(log_finish, &token);
 coda;
 }
 
@@ -99,8 +95,10 @@ xapi arguments_initialize(char ** restrict envp)
   enter;
 
 	int	fd = -1;
-	int	argsa = 0;	// g_argvs allocated size
-	int	argva = 0;
+  char * argvs = 0;
+  size_t argvsl = 0; // argvs length
+	size_t argvsa = 0;	// argvs allocated size
+	size_t argva = 0;
 #if __linux__
 	char * auxv = 0;
 	size_t auxvl = 0;
@@ -128,26 +126,26 @@ xapi arguments_initialize(char ** restrict envp)
 	// snarf the cmdline
 	fatal(xopen, "/proc/self/cmdline", O_RDONLY, &fd);
 
-	// read into g_argvs - single string containing entire cmdline
+	// read into argvs - single string containing entire cmdline
 	int binaryx = -1;
 	int interpx = -1;
 	char * execfn = 0;
 	do
 	{
-		size_t newa = argsa ?: 100;
+		size_t newa = argvsa ?: 100;
 		newa += newa * 2 + newa / 2;
-		fatal(xrealloc, &g_argvs, sizeof(*g_argvs), newa, argsa);
-		argsa = newa;
-		g_argvsl += read(fd, &g_argvs[g_argvsl], argsa - g_argvsl);
-	} while(g_argvsl == argsa);
-	g_argvsl--;
+		fatal(xrealloc, &argvs, sizeof(*argvs), newa, argvsa);
+		argvsa = newa;
+		argvsl += read(fd, &argvs[argvsl], argvsa - argvsl);
+	} while(argvsl == argvsa);
+	argvsl--;
 
 	// locate binary and interpreter, if any
-	for(x = -1; x < g_argvsl; x = y)
+	for(x = -1; x < (int)argvsl; x = y)
 	{
-		for(y = x + 1; y < g_argvsl; y++)
+		for(y = x + 1; y < argvsl; y++)
 		{
-			if(g_argvs[y] == 0)
+			if(argvs[y] == 0)
 				break;
 		}
 
@@ -196,7 +194,7 @@ xapi arguments_initialize(char ** restrict envp)
 		}
 
 		// when interpreting, AT_EXECFN is the interpreter script
-		else if(interpx == -1 && execfn && strcmp(&g_argvs[x + 1], execfn) == 0)
+		else if(interpx == -1 && execfn && strcmp(&argvs[x + 1], execfn) == 0)
 		{
 			interpx = x + 1;
 		}
@@ -210,22 +208,24 @@ xapi arguments_initialize(char ** restrict envp)
 	*
 	* getauxval is probably not available on all unices
 	*/
-	for(x = binaryx + strlen(&g_argvs[binaryx]) + 1; x < (interpx - 1); x++)
-	{
-		// process the optional-arg in a linux-specific way
-		if(g_argvs[x] == 0x20)
-			g_argvs[x] = 0;
-	}
+  if(binaryx >= 0)
+  {
+    for(x = binaryx + strlen(&argvs[binaryx]) + 1; x < (interpx - 1); x++)
+    {
+      // process the optional-arg in a linux-specific way
+      if(argvs[x] == 0x20)
+        argvs[x] = 0;
+    }
+  }
 #endif
 
-	// 1. replace nulls with spaces in g_argvs
-	// 2. construct g_argv, array of arguments
+	// construct g_argv, array of arguments
 	i = 0;
-	for(x = 0; x <= g_argvsl; x++)
+	for(x = 0; x <= argvsl; x++)
 	{
-		if(g_argvs[x] == 0)
+		if(argvs[x] == 0)
 		{
-			int len = strlen(&g_argvs[i]);
+			int len = strlen(&argvs[i]);
 			if(len)
 			{
 				if(g_argc == argva)
@@ -237,7 +237,7 @@ xapi arguments_initialize(char ** restrict envp)
 				}
 
 				fatal(xmalloc, &g_argv[g_argc], len + 1);
-				memcpy(g_argv[g_argc], &g_argvs[i], len);
+				memcpy(g_argv[g_argc], &argvs[i], len);
 
 				if(binaryx == i)
 					g_binary = g_argv[g_argc];
@@ -247,9 +247,6 @@ xapi arguments_initialize(char ** restrict envp)
 				g_argc++;
 				i = x + 1;
 			}
-
-			if(x < g_argvsl)
-				g_argvs[x] = ' ';
 		}
 	}
 
@@ -289,6 +286,25 @@ xapi arguments_initialize(char ** restrict envp)
 		}
 	}
 
+  // render to g_argvs
+	g_argvsl = 0;
+	for(x = 0; x < g_argc; x++)
+	{
+		if(x)
+			g_argvsl++;
+		g_argvsl += strlen(g_argv[x]);
+	}
+
+	fatal(xmalloc, &g_argvs, g_argvsl + 1);
+
+	for(x = 0; x < g_argc; x++)
+	{
+		if(x)
+			strcat(g_argvs, " ");
+		strcat(g_argvs, g_argv[x]);
+	}
+
+  // render to g_logvs
 	g_logvsl = 0;
 	for(x = 0; x < g_logc; x++)
 	{
@@ -313,6 +329,7 @@ finally:
 #if __linux__
 	free(auxv);
 #endif
+  free(argvs);
 coda;
 }
 

@@ -155,10 +155,13 @@ xapi filter_say(filter * filterp, struct narrator * N)
       logger_category * category = 0;
       fatal(category_byid, bit, &category);
 
-      if((bit - 1) & filterp->v)
-        says(",");
+      if(category)
+      {
+        if((bit - 1) & filterp->v)
+          says(",");
 
-      sayf("%.*s", category->namel, category->name);
+        sayf("%.*s", category->namel, category->name);
+      }
     }
 
     bit <<= 1;
@@ -170,9 +173,6 @@ xapi filter_say(filter * filterp, struct narrator * N)
 int filters_would(const list * const restrict filters, const uint64_t ids)
 {
   int r = 0;
-
-  if((ids & L_ALL) == 0)
-    return 1;
 
   int x;
   for(x = 0; x < filters->l; x++)

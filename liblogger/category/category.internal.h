@@ -24,6 +24,8 @@
 
 #include "category.h"
 
+struct narrator;  // libnarrator
+
 /// category_name_max_length
 //
 // SUMMARY
@@ -71,11 +73,23 @@ xapi category_byname(const char * const restrict name, size_t namel, logger_cate
 xapi category_byid(uint64_t id, logger_category ** const restrict category)
   __attribute__((nonnull));
 
-/// category_report
+/// category_report_verbose
 //
 // SUMMARY
-//  log a summary of registered categories to LOGGER
+//  log a summary of activated categories to LOGGER
 //
-xapi category_report();
+xapi category_report_verbose();
+
+/// category_say_verbose
+//
+// SUMMARY
+//  write a description of a logger category to a narrator
+//
+// PARAMETERS
+//  cat - logger category
+//  N   - narrator
+//
+xapi category_say_verbose(logger_category * const restrict cat, struct narrator * const restrict N)
+  __attribute__((nonnull));
 
 #endif

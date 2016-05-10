@@ -18,4 +18,21 @@
 #ifndef _LOGGER_ARGUMENTS_H
 #define _LOGGER_ARGUMENTS_H
 
+#include "xapi.h"
+
+/*
+ * liblogger-provided program arguments, populated during logger_initialize
+ */
+extern char **	g_argv;					// array of non-logger arguments
+extern int			g_argc;					// count of g_argv
+extern char *		g_argvs;				// single string of non-logger arguments
+extern size_t		g_argvsl;				// length of g_argvs
+extern char *		g_binary;				// executable; pointer into g_argv
+extern char *		g_interpreter;	// interpreter script, if executing as an interpreter; pointer into g_argv
+
+extern char **	g_logv;					// array of logexpr arguments
+extern int			g_logc;					// count of g_logv
+extern char *		g_logvs;				// single string of logexpr arguments
+extern size_t   g_logvsl;				// length of g_logvs
+
 #endif
