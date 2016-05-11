@@ -15,20 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "logs.h"
+#ifndef _XUNIT_LOGGING_H
+#define _XUNIT_LOGGING_H
 
-logger_category * logs = (logger_category []) {
-	  { name : "ARGS"			, description : "program arguments" }
-	, { name : "PARAMS"		, description : "program execution parameters" }
-	, { name : "DLOAD"		, description : "dload details"                 , attr : L_MAGENTA }
-  , { name : "SUMMARY"  , description : "per-suite results" }
-	, { name : "UNIT"	  	, description : "per-unit results" }
-  , { name : "TEST"     , description : "per-test results" }
-  , { name : "FAIL"     , description : "test failure details" }
-  , { }
-};
+#include "logger.h"
+#include "logger/category.h"
 
-logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+SUMMARY|FAIL" }
-  , { }
-};
+extern logger_category * xunit_logs;
+
+#define L_INSET		xunit_logs[0].id
+#define L_OUTSET	xunit_logs[1].id
+
+#endif

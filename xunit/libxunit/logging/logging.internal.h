@@ -15,20 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
-#include "logs.h"
+#ifndef _XUNIT_LOGGING_INTERNAL_H
+#define _XUNIT_LOGGING_INTERNAL_H
 
-APIDATA logger_category * xunit_logs = (logger_category []) {
-    { name : "INSET"    , description : "test input set" }
-  , { name : "OUTSET"   , description : "test output set" }
-  , { }
-};
+#include "xapi.h"
+#include "logging.h"
 
-xapi logs_setup()
-{
-  enter;
+xapi logging_setup();
 
-  fatal(logger_category_register, xunit_logs);
-
-  finally : coda;
-}
+#endif

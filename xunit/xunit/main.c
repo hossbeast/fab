@@ -28,7 +28,7 @@
 #include "logger.h"
 
 #include "args.h"
-#include "logs.h"
+#include "logging.h"
 #include "errtab/MAIN.errtab.h"
 #include "macros.h"
 
@@ -54,7 +54,7 @@ int main(int argc, char** argv, char ** envp)
   fatal(xunit_load);
 
   // initialize logger
-  fatal(logger_category_register, logs);
+  fatal(logger_category_register, categories);
   fatal(logger_stream_register, streams);
   fatal(logger_initialize, envp);
 

@@ -15,12 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XUNIT_LOGS_INTERNAL_H
-#define _XUNIT_LOGS_INTERNAL_H
-
-#include "xapi.h"
-#include "logs.h"
-
-xapi logs_setup();
+#ifndef _LOGGER_LOGGING_H
+#define _LOGGER_LOGGING_H
 
 #endif

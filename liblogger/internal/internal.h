@@ -21,8 +21,6 @@
 // public header file
 #include "logger.h"
 
-#include "logs/logs.internal.h"
-
 // visibility declaration macros
 #define API __attribute__((visibility("protected")))
 #define APIDATA

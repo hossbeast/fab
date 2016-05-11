@@ -15,9 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGER_LOGS_H
-#define _LOGGER_LOGS_H
+#ifndef _LOGGER_LOGGING_INTERNAL_H
+#define _LOGGER_LOGGING_INTERNAL_H
 
-#define L_LOGGER logs[0].id
+#include "logging.h"
+#include "category.h"
+
+extern struct logger_category * logger_categories;
+
+#define L_LOGGER logger_categories[0].id
 
 #endif

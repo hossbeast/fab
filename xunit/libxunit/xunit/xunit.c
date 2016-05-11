@@ -22,7 +22,7 @@
 
 #include "internal.h"
 #include "XUNIT.errtab.h"
-#include "logs.internal.h"
+#include "logging.internal.h"
 
 static int handles;
 
@@ -40,7 +40,7 @@ API xapi xunit_load()
     fatal(logger_load);
 
     // modules
-    fatal(logs_setup);
+    fatal(logging_setup);
     fatal(xapi_errtab_register, perrtab_XUNIT);
   }
   handles++;

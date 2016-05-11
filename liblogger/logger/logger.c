@@ -30,7 +30,7 @@
 
 #include "internal.h"
 #include "LOGGER.errtab.h"
-#include "logs.internal.h"
+#include "logging.internal.h"
 #include "category.internal.h"
 #include "stream.internal.h"
 #include "filter.internal.h"
@@ -58,7 +58,7 @@ API xapi logger_load()
     // modules
     fatal(category_setup);
     fatal(stream_setup);
-    fatal(logger_category_register, logs);
+    fatal(logger_category_register, logger_categories);
 #ifndef XAPI_MODE_ERRORCODE
     fatal(xapi_errtab_register, perrtab_LOGGER);
 #endif

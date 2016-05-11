@@ -27,21 +27,7 @@
 #include "internal.h"
 #include "arguments.internal.h"
 #include "filter.internal.h"
-
-#if 0
-#include <stdio.h>
-#include <string.h>
-
-#include "xapi/errtab.h"
-
-#include "internal.h"
-#include "logs/logs.internal.h"
-#include "category/category.internal.h"
-#include "stream/stream.internal.h"
-#include "filter/filter.internal.h"
-
-#include "logger/LOGGER.errtab.h"
-#endif
+#include "logging.internal.h"
 
 #define restrict __restrict
 

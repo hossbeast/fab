@@ -29,6 +29,7 @@
 #include "category/category.internal.h"
 #include "log/log.internal.h"
 #include "attr/attr.internal.h"
+#include "logging.internal.h"
 
 #define LIST_ELEMENT_TYPE logger_category
 #include "valyria/list.h"

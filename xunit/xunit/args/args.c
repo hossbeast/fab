@@ -26,9 +26,11 @@
 #undef perrtab
 #define perrtab perrtab_MAIN
 #include "xlinux.h"
+#include "logger.h"
+#include "logger/arguments.h"
 
 #include "args.h"
-#include "logs.h"
+#include "logging.h"
 
 #include "macros.h"
 #include "assure.h"

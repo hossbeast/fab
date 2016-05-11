@@ -15,14 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGER_LOGS_INTERNAL_H
-#define _LOGGER_LOGS_INTERNAL_H
+#ifndef _LOGGING_H
+#define _LOGGING_H
 
-#include "logs.h"
+#include "logger.h"
 #include "logger/category.h"
+#include "logger/stream.h"
 
-extern logger_category * logs;
+extern logger_category * categories;
+extern logger_stream * streams;
 
-#define L_LOGGER logs[0].id
+#define L_ARGS		categories[0].id
+#define L_PARAMS	categories[1].id
+#define L_DLOAD		categories[2].id
+#define L_SUMMARY categories[3].id
+#define L_UNIT		categories[4].id
+#define L_TEST    categories[5].id
+#define L_FAIL    categories[6].id
 
 #endif

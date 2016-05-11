@@ -32,6 +32,7 @@
 #include "filter/filter.internal.h"
 #include "category/category.internal.h"
 #include "log/log.internal.h"
+#include "logging/logging.internal.h"
 
 #define ARRAY_ELEMENT_TYPE stream
 #include "valyria/array.h"
