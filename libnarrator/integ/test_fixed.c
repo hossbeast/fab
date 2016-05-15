@@ -21,7 +21,7 @@
 #include "xapi/trace.h"
 
 #include "internal.h"
-#include "narrator/growing.h"
+#include "narrator/fixed.h"
 
 #include "test_util.h"
 
@@ -36,7 +36,7 @@ xapi say(narrator * const N)
   sayf(" %d", 43);
   sayf(" %d", 4);
   sayc('4');
-
+  
   finally : coda;
 }
 
@@ -45,15 +45,35 @@ xapi test_basic()
   enter;
 
   narrator * N = 0;
-  fatal(narrator_growing_create, &N);
+  fatal(narrator_fixed_create, &N, 64);
   fatal(say, N);
 
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
 
-  assertf(strcmp(N->growing.s, expected) == 0, "%s", "%s", expected, N->growing.s);
-  assertf(N->growing.l == expectedl, "written %zu", "written %zu", expectedl, N->growing.l);
-  assert(N->growing.s == narrator_growing_buffer(N));
+  assertf(strcmp(N->fixed.s, expected) == 0, "%s", "%s", expected, N->fixed.s);
+  assertf(N->fixed.l == expectedl, "written %zu", "written %zu", expectedl, N->fixed.l);
+  assert(N->fixed.s == narrator_fixed_buffer(N));
+
+finally:
+  narrator_free(N);
+coda;
+}
+
+xapi test_constrained()
+{
+  enter;
+
+  narrator * N = 0;
+  fatal(narrator_fixed_create, &N, 6);
+  fatal(say, N);
+
+  char * expected = "40 41 ";
+  size_t expectedl = strlen(expected);
+
+  assertf(strcmp(N->fixed.s, expected) == 0, "%s", "%s", expected, N->fixed.s);
+  assertf(N->fixed.l == expectedl, "written %zu", "written %zu", expectedl, N->fixed.l);
+  assert(N->fixed.s == narrator_fixed_buffer(N));
 
 finally:
   narrator_free(N);
@@ -66,6 +86,7 @@ int main()
 
   xapi R = 0;
   fatal(test_basic);
+  fatal(test_constrained);
 
   success;
 
@@ -76,5 +97,6 @@ finally:
   }
 conclude(&R);
 
+  xapi_teardown();
   return !!R;
 }

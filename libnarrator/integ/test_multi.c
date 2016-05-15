@@ -89,5 +89,6 @@ finally:
   }
 conclude(&R);
 
+  xapi_teardown();
   return !!R;
 }

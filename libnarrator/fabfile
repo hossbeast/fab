@@ -47,19 +47,19 @@ $lflags_xapi_debug	= [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug [ -Wl,-s
 $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-soname,libnarrator-xapi-devel.so ~ j ] ]
 
 # source files, filter out tests
-+[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_final)
-+[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_debug)
-+[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_devel)
-+[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_final)
-+[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = [ $* ~ ls l/integ d ]; $cc; $cflags = $cflags_eapi_final)
++[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/integ d ]; $cc; $cflags = $cflags_eapi_debug)
++[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/integ d ]; $cc; $cflags = $cflags_eapi_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $* ~ ls l/integ d ]; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = [ $* ~ ls l/integ d ]; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $* ~ ls l/integ d ]; $cc; $cflags = $cflags_xapi_devel)
 
 ##
 ## dependencies
 ##
 
 # default NOFILE target - build everything
-[ @all ] : [ @release @test ]
+[ @all ] : [ @release @integ ]
 
 [ @release ] : [ @release.eapi @release.xapi ]
 [ @release.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
@@ -89,32 +89,32 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-s
 }
 
 # link the library
-[ $libnarrator_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/eapi.final.pic.o sy ] ]
+[ $libnarrator_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/integ d lsr sx/c/eapi.final.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
 }
 
-[ $libnarrator_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/eapi.debug.pic.o sy ] ]
+[ $libnarrator_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/integ d lsr sx/c/eapi.debug.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
 }
 
-[ $libnarrator_eapi_devel ] : [ [ $*/exports ~ j ]  [ $* ~ ls l/test d lsr sx/c/eapi.devel.pic.o sy ] ]
+[ $libnarrator_eapi_devel ] : [ [ $*/exports ~ j ]  [ $* ~ ls l/integ d lsr sx/c/eapi.devel.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
 }
 
-[ $libnarrator_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.final.pic.o sy ] ]
+[ $libnarrator_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ ls l/integ d lsr sx/c/xapi.final.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $libnarrator_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.debug.pic.o sy ] ]
+[ $libnarrator_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ ls l/integ d lsr sx/c/xapi.debug.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $libnarrator_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls l/test d lsr sx/c/xapi.devel.pic.o sy ] ]
+[ $libnarrator_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ ls l/integ d lsr sx/c/xapi.devel.pic.o sy ] ]
 {
 	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
 }
@@ -170,23 +170,23 @@ $lflags_xapi_devel	= [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-s
 #  for rationale see test/README.md
 #
 
-+[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $*/integ ~ j ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
 +[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $dirs = [ $droot/test/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
 
-[ $*/test ~ j lsr sx/c/test sy dj shift ] ::^ [ [ $droot/test/errtab/TEST.errtab.xapi.devel.pic.o ~ j ] $libnarrator_xapi_devel ]
-[ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.pic.o ]
+[ $*/integ ~ j lsr sx/c/test sy dj shift ] ::^ [ [ $droot/test/errtab/TEST.errtab.xapi.devel.pic.o ~ j ] $libnarrator_xapi_devel ]
+[ $*/integ ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.pic.o ]
 {
 	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel ] [
-  ] [ $dlibxapi $dlibxlinux $* ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
+  ] [ $dlibxapi $dlibxlinux $* ~ [ ?{ [ rb{$*/integ} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
-[ @test ] : [ $*/test ~ j lsr sx/c/test sy ]
+[ @integ ] : [ $*/integ ~ j lsr sx/c/test sy ]
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
 }
 
-[ @test.verbose ] : [ $*/test ~ j lsr sx/c/test sy ]
+[ @integ.verbose ] : [ $*/integ ~ j lsr sx/c/test sy ]
 {
   set -e
   (
