@@ -18,20 +18,6 @@
 #ifndef _YYUTIL_H
 #define _YYUTIL_H
 
-/*
-** yyutil contains common implementation details for scanner/parser systems, including :
-**
-**  uniform logging output : tokens scanned, start condition changes, grammar and scanner errors
-**
-**  location tracking - provides a generic location struct including starting/ending line/column/string and a macro
-**   for combining locations in parser productions
-**
-**  start condition management - provides a mechanism for storing a stack of start conditions in tandem with but outside of flex
-**   which 1) does not make them accessible for logging purposes, and 2) intermittently crashes when calling topstate
-**   
-**  fatal macros for use within the parser - for things such as allocating memory
-*/
-
 #include <stdio.h>
 
 #include "xapi.h"
@@ -319,29 +305,6 @@ void yyu_dropstate(yyu_extra * const restrict xtra)
     yy_pop_state(yyextra->scanner);   \
     yyu_dropstate(yyextra);           \
   } while(0)
-
-/// yyu_ptoken
-//
-// SUMMARY
-//  print an info message about a scanned token
-//
-// PARAMETERS
-//  token - token
-//  lval  - yylval
-//  lloc  - yylloc
-//  xtra  - yyextra
-//  text  - yytext (text the token was parsed from)
-//  leng  - yyleng 
-//
-xapi yyu_ptoken(
-    const int token
-  , void * const restrict lval
-  , yyu_location * const restrict lloc
-  , yyu_extra * const restrict xtra
-  , char * restrict text
-  , const int leng
-)
-  __attribute__((nonnull));
 
 /// PTOKEN
 //

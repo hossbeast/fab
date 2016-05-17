@@ -24,124 +24,37 @@
 #include "xlinux.h"
 #include "logger.h"
 
+#include "internal.h"
 #include "yyutil.h"
 
-#include "wstdlib.h"
 #include "macros.h"
 #include "strutil.h"
 
-void yyu_locreset(yyu_location * const lloc, yyu_extra * const xtra, const int del)
-{
-  // assign location for current token
-  lloc->f_col = xtra->loc.f_col + del;
-  lloc->l_col = xtra->loc.l_col - 1;
-  lloc->f_lin = xtra->loc.f_lin;
-  lloc->l_lin = xtra->loc.l_lin;
-  lloc->s = xtra->loc.s + del;
-  lloc->e = xtra->loc.e;
-  lloc->l = lloc->e - lloc->s;
+//
+// static
+//
 
-  // reset running location track
-  xtra->loc.f_lin++;
-  xtra->loc.l_lin = xtra->loc.f_lin;
-  xtra->loc.f_col = 0;
-  xtra->loc.l_col = 0;
-}
-
-void yyu_locwrite(yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del)
-{
-  // update running location track
-  xtra->loc.f_col = xtra->loc.l_col;
-  xtra->loc.l_col = xtra->loc.f_col + leng;
-  xtra->loc.s     = text;
-  xtra->loc.e     = text + leng;
-
-  // assign location to the current token
-  lloc->f_col = xtra->loc.f_col + del;
-  lloc->l_col = xtra->loc.l_col - 1;
-  lloc->f_lin = xtra->loc.f_lin;
-  lloc->l_lin = xtra->loc.l_lin;
-  if(xtra->loc.s == xtra->loc.e)
-  {
-    lloc->s = xtra->loc.s + del;
-    lloc->e = xtra->loc.s + del;
-  }
-  else
-  {
-    lloc->s = xtra->loc.s + del;
-    lloc->e = xtra->loc.e;
-  }
-  lloc->l = lloc->e - lloc->s;
-}
-
-xapi yyu_pushstate(const int state, yyu_extra * const xtra)
-{
-  enter;
-
-  if(log_would(xtra->state_logs))
-  {
-    int al = snprintf(xtra->space, sizeof(xtra->space), "%s -> %s"
-      , xtra->statename(yyu_nstate(xtra, 0))
-      , xtra->statename(state)
-    );
-
-    logf(xtra->state_logs
-      , "(%2d) %.*s %*s @ %*s "
-      , xtra->states_n
-      , al
-      , xtra->space
-      , MAX(58 - al, 0)
-      , ""
-      , 18
-      , ""
-    );
-  }
-
-  xtra->states[xtra->states_n++] = state;
-
-  finally : coda;
-}
-
-void yyu_dropstate(yyu_extra * const xtra)
-{
-  xtra->states_n--;
-}
-
-xapi yyu_popstate(yyu_extra * const xtra)
-{
-  enter;
-
-  int x = yyu_nstate(xtra, 0);
-  xtra->states_n--;
-
-  if(log_would(xtra->state_logs))
-  {
-    int al = snprintf(xtra->space, sizeof(xtra->space), "%s <- %s"
-      , xtra->statename(yyu_nstate(xtra, 0))
-      , xtra->statename(x)
-    );
-
-    logf(xtra->state_logs
-      , "(%2d) %.*s %*s @ %*s "
-      , xtra->states_n
-      , al
-      , xtra->space
-      , MAX(58 - al, 0)
-      , ""
-      , 18
-      , ""
-    );
-  }
-
-  finally : coda;
-}
-
-int yyu_nstate(yyu_extra * const xtra, const int n)
-{
-  return (xtra->states_n > n) ? xtra->states[xtra->states_n - n - 1] : -1;
-}
-
-xapi yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, yyu_extra * const xtra, char * text, const int leng)
+/// ptoken
+//
+// SUMMARY
+//  log an info message about a scanned token
+//
+// PARAMETERS
+//  token - token
+//  lval  - yylval
+//  lloc  - yylloc
+//  xtra  - yyextra
+//  text  - yytext (text the token was parsed from)
+//  leng  - yyleng 
+//
+static xapi __attribute__((nonnull)) ptoken(
+    const int token
+  , void * const restrict lval
+  , yyu_location * const restrict lloc
+  , yyu_extra * const restrict xtra
+  , char * restrict text
+  , const int leng
+)
 {
   enter;
 
@@ -188,7 +101,122 @@ xapi yyu_ptoken(const int token, void * const lval, yyu_location * const lloc, y
   finally : coda;
 }
 
-void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra)//, const int error, char const * fmt, ...)
+//
+// api
+//
+
+API void yyu_locreset(yyu_location * const lloc, yyu_extra * const xtra, const int del)
+{
+  // assign location for current token
+  lloc->f_col = xtra->loc.f_col + del;
+  lloc->l_col = xtra->loc.l_col - 1;
+  lloc->f_lin = xtra->loc.f_lin;
+  lloc->l_lin = xtra->loc.l_lin;
+  lloc->s = xtra->loc.s + del;
+  lloc->e = xtra->loc.e;
+  lloc->l = lloc->e - lloc->s;
+
+  // reset running location track
+  xtra->loc.f_lin++;
+  xtra->loc.l_lin = xtra->loc.f_lin;
+  xtra->loc.f_col = 0;
+  xtra->loc.l_col = 0;
+}
+
+API void yyu_locwrite(yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del)
+{
+  // update running location track
+  xtra->loc.f_col = xtra->loc.l_col;
+  xtra->loc.l_col = xtra->loc.f_col + leng;
+  xtra->loc.s     = text;
+  xtra->loc.e     = text + leng;
+
+  // assign location to the current token
+  lloc->f_col = xtra->loc.f_col + del;
+  lloc->l_col = xtra->loc.l_col - 1;
+  lloc->f_lin = xtra->loc.f_lin;
+  lloc->l_lin = xtra->loc.l_lin;
+  if(xtra->loc.s == xtra->loc.e)
+  {
+    lloc->s = xtra->loc.s + del;
+    lloc->e = xtra->loc.s + del;
+  }
+  else
+  {
+    lloc->s = xtra->loc.s + del;
+    lloc->e = xtra->loc.e;
+  }
+  lloc->l = lloc->e - lloc->s;
+}
+
+API xapi yyu_pushstate(const int state, yyu_extra * const xtra)
+{
+  enter;
+
+  if(log_would(xtra->state_logs))
+  {
+    int al = snprintf(xtra->space, sizeof(xtra->space), "%s -> %s"
+      , xtra->statename(yyu_nstate(xtra, 0))
+      , xtra->statename(state)
+    );
+
+    logf(xtra->state_logs
+      , "(%2d) %.*s %*s @ %*s "
+      , xtra->states_n
+      , al
+      , xtra->space
+      , MAX(58 - al, 0)
+      , ""
+      , 18
+      , ""
+    );
+  }
+
+  xtra->states[xtra->states_n++] = state;
+
+  finally : coda;
+}
+
+API void yyu_dropstate(yyu_extra * const xtra)
+{
+  xtra->states_n--;
+}
+
+API xapi yyu_popstate(yyu_extra * const xtra)
+{
+  enter;
+
+  int x = yyu_nstate(xtra, 0);
+  xtra->states_n--;
+
+  if(log_would(xtra->state_logs))
+  {
+    int al = snprintf(xtra->space, sizeof(xtra->space), "%s <- %s"
+      , xtra->statename(yyu_nstate(xtra, 0))
+      , xtra->statename(x)
+    );
+
+    logf(xtra->state_logs
+      , "(%2d) %.*s %*s @ %*s "
+      , xtra->states_n
+      , al
+      , xtra->space
+      , MAX(58 - al, 0)
+      , ""
+      , 18
+      , ""
+    );
+  }
+
+  finally : coda;
+}
+
+API int yyu_nstate(yyu_extra * const xtra, const int n)
+{
+  return (xtra->states_n > n) ? xtra->states[xtra->states_n - n - 1] : -1;
+}
+
+API void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra)//, const int error, char const * fmt, ...)
 {
   // save the error
   xtra->scanerr = 1;//error;
@@ -208,7 +236,7 @@ void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra)//, con
   memcpy(&xtra->error_loc, lloc, sizeof(xtra->error_loc));
 }
 
-void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
+API void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
 {
   if(xtra->gramerr || xtra->scanerr)
   {
@@ -265,7 +293,7 @@ void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_extr
   }
 }
 
-xapi yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del, const int isnl)
+API xapi yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del, const int isnl)
 {
   enter;
 
@@ -275,7 +303,7 @@ xapi yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_loc
     yyu_locwrite(lloc, xtra, text, leng, del);
 
   // possibly log the token
-  fatal(yyu_ptoken, token, lval, lloc, xtra, text, leng);
+  fatal(ptoken, token, lval, lloc, xtra, text, leng);
 
   // store location for error reporting
   memcpy(&xtra->last_loc, lloc, sizeof(xtra->last_loc));
@@ -294,7 +322,7 @@ xapi yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_loc
   finally : coda;
 }
 
-void yyu_extra_destroy(yyu_extra * const xtra)
+API void yyu_extra_destroy(yyu_extra * const xtra)
 {
   xfree(xtra->last_lval);
 }

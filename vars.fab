@@ -15,9 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-$VERSIONL				= [ 0 6 0 0 ]											# version list - major, minor, revision, build
-$VERSIONS				= [ v [ $VERSIONL ~ j/. ] ~ j ]		# version string
-$VERSIONN				= [ $VERSIONL ~ j s/^0//g ] 			# version number
+$VERSIONL       = [ 0 6 0 0 ]                     # version list - major, minor, revision, build
+$VERSIONS       = [ v [ $VERSIONL ~ j/. ] ~ j ]   # version string
+$VERSIONN       = [ $VERSIONL ~ j s/^0//g ]       # version number
 
 #
 # debug :
@@ -30,7 +30,7 @@ $VERSIONN				= [ $VERSIONL ~ j s/^0//g ] 			# version number
 #   - SANITY logging categories and related options
 #  - disable ug+s check (to facilitate execution under valgrind)
 #
-#$debug					= [ 0 ]
+#$debug         = [ 0 ]
 
 #
 # devel : (debug + portable)
@@ -40,93 +40,111 @@ $VERSIONN				= [ $VERSIONL ~ j s/^0//g ] 			# version number
 #   - fab-provided invocations
 #   - all libraries, via rpath
 #
-#$devel					= [ 0 ]
+#$devel         = [ 0 ]
 
 # source directories
-$droot					= [ $* ]
-$dfabcore				= [ $*/fab ~ j ]
-$dfab						= [ $*/fab/fab ~ j ]
-$dfabd					= [ $*/fab/fabd ~ j ]
-$dfabw					= [ $*/fab/fabw ~ j ]
-$dutil					= [ $*/fab/util ~ j ] 
-$dcommon				= [ $*/common ~ j ]
-$dlibxapi				= [ $*/libxapi ~ j ]
-$dlibxlinux			= [ $*/libxlinux ~ j ]
-$dlibvalyria	  = [ $*/libvalyria ~ j ]
-$dlibnarrator		= [ $*/libnarrator ~ j ]
-$dliblistwise		= [ $*/listwise/liblistwise ~ j ]
-$dlistwise			= [ $*/listwise/listwise ~ j ]
-$dlibxunit			= [ $*/xunit/libxunit ~ j ]
-$dxunit					= [ $*/xunit/xunit ~ j ]
+$droot          = [ $* ]
+$dfabcore       = [ $*/fab ~ j ]
+$dfab           = [ $*/fab/fab ~ j ]
+$dfabd          = [ $*/fab/fabd ~ j ]
+$dfabw          = [ $*/fab/fabw ~ j ]
+$dlibfabcore    = [ $*/fab/libfabcore ~ j ]
+$dutil          = [ $*/fab/util ~ j ] 
+$dcommon        = [ $*/common ~ j ]
+$dlibxapi       = [ $*/libxapi ~ j ]
+$dlibxlinux     = [ $*/libxlinux ~ j ]
+$dlibvalyria    = [ $*/libvalyria ~ j ]
+$dlibolympus    = [ $*/libolympus ~ j ]
+$dlibyyutil     = [ $*/libyyutil ~ j ]
+$dlibnarrator   = [ $*/libnarrator ~ j ]
+$dliblistwise   = [ $*/listwise/liblistwise ~ j ]
+$dlistwise      = [ $*/listwise/listwise ~ j ]
+$dlibxunit      = [ $*/xunit/libxunit ~ j ]
+$dxunit         = [ $*/xunit/xunit ~ j ]
 $dliblogger     = [ $*/liblogger ~ j ]
 
 # build artifacts
-$libxapi_xapi_final			= [ $dlibxapi/libxapi-xapi.final.so ~ j ]
-$libxapi_xapi_debug			= [ $dlibxapi/libxapi-xapi.debug.so ~ j ]
-$libxapi_xapi_devel			= [ $dlibxapi/libxapi-xapi-devel.so ~ j ]
-$libxlinux_eapi_final		= [ $dlibxlinux/libxlinux.final.so ~ j ]
-$libxlinux_eapi_debug		= [ $dlibxlinux/libxlinux.debug.so ~ j ]
-$libxlinux_eapi_devel		= [ $dlibxlinux/libxlinux-devel.so ~ j ]
-$libxlinux_xapi_final		= [ $dlibxlinux/libxlinux-xapi.final.so ~ j ]
-$libxlinux_xapi_debug		= [ $dlibxlinux/libxlinux-xapi.debug.so ~ j ]
-$libxlinux_xapi_devel		= [ $dlibxlinux/libxlinux-xapi-devel.so ~ j ]
-$liblistwise_eapi_final	= [ $dliblistwise/liblistwise.final.so ~ j ]
-$liblistwise_eapi_debug	= [ $dliblistwise/liblistwise.debug.so ~ j ]
-$liblistwise_eapi_devel	= [ $dliblistwise/liblistwise-devel.so ~ j ]
-$liblistwise_xapi_final	= [ $dliblistwise/liblistwise-xapi.final.so ~ j ]
-$liblistwise_xapi_debug	= [ $dliblistwise/liblistwise-xapi.debug.so ~ j ]
-$liblistwise_xapi_devel	= [ $dliblistwise/liblistwise-xapi-devel.so ~ j ]
-$listwise_eapi_final		= [ $dlistwise/listwise.eapi.final ~ j ]
-$listwise_eapi_debug		= [ $dlistwise/listwise.eapi.debug ~ j ]
-$listwise_eapi_devel		= [ $dlistwise/listwise.eapi.devel ~ j ]
-$listwise_xapi_final		= [ $dlistwise/listwise.xapi.final ~ j ]
-$listwise_xapi_debug		= [ $dlistwise/listwise.xapi.debug ~ j ]
-$listwise_xapi_devel		= [ $dlistwise/listwise.xapi.devel ~ j ]
-$libvalyria_eapi_final	= [ $dlibvalyria/libvalyria.final.so ~ j ]
-$libvalyria_eapi_debug	= [ $dlibvalyria/libvalyria.debug.so ~ j ]
-$libvalyria_eapi_devel	= [ $dlibvalyria/libvalyria-devel.so ~ j ]
-$libvalyria_xapi_final	= [ $dlibvalyria/libvalyria-xapi.final.so ~ j ]
-$libvalyria_xapi_debug	= [ $dlibvalyria/libvalyria-xapi.debug.so ~ j ]
-$libvalyria_xapi_devel	= [ $dlibvalyria/libvalyria-xapi-devel.so ~ j ]
-$libnarrator_eapi_final	= [ $dlibnarrator/libnarrator.final.so ~ j ]
-$libnarrator_eapi_debug	= [ $dlibnarrator/libnarrator.debug.so ~ j ]
-$libnarrator_eapi_devel	= [ $dlibnarrator/libnarrator-devel.so ~ j ]
-$libnarrator_xapi_final	= [ $dlibnarrator/libnarrator-xapi.final.so ~ j ]
-$libnarrator_xapi_debug	= [ $dlibnarrator/libnarrator-xapi.debug.so ~ j ]
-$libnarrator_xapi_devel	= [ $dlibnarrator/libnarrator-xapi-devel.so ~ j ]
-$libxunit_xapi_final		= [ $dlibxunit/libxunit-xapi.final.so ~ j ]
-$libxunit_xapi_debug		= [ $dlibxunit/libxunit-xapi.debug.so ~ j ]
-$libxunit_xapi_devel		= [ $dlibxunit/libxunit-xapi-devel.so ~ j ]
-$liblogger_eapi_final		= [ $dliblogger/liblogger.final.so ~ j ]
-$liblogger_eapi_debug		= [ $dliblogger/liblogger.debug.so ~ j ]
-$liblogger_eapi_devel		= [ $dliblogger/liblogger-devel.so ~ j ]
-$liblogger_xapi_final		= [ $dliblogger/liblogger-xapi.final.so ~ j ]
-$liblogger_xapi_debug		= [ $dliblogger/liblogger-xapi.debug.so ~ j ]
-$liblogger_xapi_devel		= [ $dliblogger/liblogger-xapi-devel.so ~ j ]
-$fab_final							= [ $dfab/fab.final ~ j ]
-$fab_debug							= [ $dfab/fab.debug ~ j ]
-$fab_devel							= [ $dfab/fab.devel ~ j ]
-$fabd_final							= [ $dfabd/fabd.final ~ j ]
-$fabd_debug							= [ $dfabd/fabd.debug ~ j ]
-$fabd_devel							= [ $dfabd/fabd.devel ~ j ]
-$fabw_final							= [ $dfabw/fabw.final ~ j ]
-$fabw_debug							= [ $dfabw/fabw.debug ~ j ]
-$fabw_devel							= [ $dfabw/fabw.devel ~ j ]
-$xunit_xapi_final				= [ $dxunit/xunit.final ~ j ]
-$xunit_xapi_debug				= [ $dxunit/xunit.debug ~ j ]
-$xunit_xapi_devel				= [ $dxunit/xunit.devel ~ j ]
+$libxapi_xapi_final     = [ $dlibxapi/libxapi-xapi.final.so ~ j ]
+$libxapi_xapi_debug     = [ $dlibxapi/libxapi-xapi.debug.so ~ j ]
+$libxapi_xapi_devel     = [ $dlibxapi/libxapi-xapi-devel.so ~ j ]
+$libxlinux_eapi_final   = [ $dlibxlinux/libxlinux.final.so ~ j ]
+$libxlinux_eapi_debug   = [ $dlibxlinux/libxlinux.debug.so ~ j ]
+$libxlinux_eapi_devel   = [ $dlibxlinux/libxlinux-devel.so ~ j ]
+$libxlinux_xapi_final   = [ $dlibxlinux/libxlinux-xapi.final.so ~ j ]
+$libxlinux_xapi_debug   = [ $dlibxlinux/libxlinux-xapi.debug.so ~ j ]
+$libxlinux_xapi_devel   = [ $dlibxlinux/libxlinux-xapi-devel.so ~ j ]
+$liblistwise_eapi_final = [ $dliblistwise/liblistwise.final.so ~ j ]
+$liblistwise_eapi_debug = [ $dliblistwise/liblistwise.debug.so ~ j ]
+$liblistwise_eapi_devel = [ $dliblistwise/liblistwise-devel.so ~ j ]
+$liblistwise_xapi_final = [ $dliblistwise/liblistwise-xapi.final.so ~ j ]
+$liblistwise_xapi_debug = [ $dliblistwise/liblistwise-xapi.debug.so ~ j ]
+$liblistwise_xapi_devel = [ $dliblistwise/liblistwise-xapi-devel.so ~ j ]
+$listwise_eapi_final    = [ $dlistwise/listwise.eapi.final ~ j ]
+$listwise_eapi_debug    = [ $dlistwise/listwise.eapi.debug ~ j ]
+$listwise_eapi_devel    = [ $dlistwise/listwise.eapi.devel ~ j ]
+$listwise_xapi_final    = [ $dlistwise/listwise.xapi.final ~ j ]
+$listwise_xapi_debug    = [ $dlistwise/listwise.xapi.debug ~ j ]
+$listwise_xapi_devel    = [ $dlistwise/listwise.xapi.devel ~ j ]
+$libvalyria_eapi_final  = [ $dlibvalyria/libvalyria.final.so ~ j ]
+$libvalyria_eapi_debug  = [ $dlibvalyria/libvalyria.debug.so ~ j ]
+$libvalyria_eapi_devel  = [ $dlibvalyria/libvalyria-devel.so ~ j ]
+$libvalyria_xapi_final  = [ $dlibvalyria/libvalyria-xapi.final.so ~ j ]
+$libvalyria_xapi_debug  = [ $dlibvalyria/libvalyria-xapi.debug.so ~ j ]
+$libvalyria_xapi_devel  = [ $dlibvalyria/libvalyria-xapi-devel.so ~ j ]
+$libolympus_eapi_final  = [ $dlibolympus/libolympus.final.so ~ j ]
+$libolympus_eapi_debug  = [ $dlibolympus/libolympus.debug.so ~ j ]
+$libolympus_eapi_devel  = [ $dlibolympus/libolympus-devel.so ~ j ]
+$libolympus_xapi_final  = [ $dlibolympus/libolympus-xapi.final.so ~ j ]
+$libolympus_xapi_debug  = [ $dlibolympus/libolympus-xapi.debug.so ~ j ]
+$libolympus_xapi_devel  = [ $dlibolympus/libolympus-xapi-devel.so ~ j ]
+$libyyutil_eapi_final   = [ $dlibyyutil/libyyutil.final.so ~ j ]
+$libyyutil_eapi_debug   = [ $dlibyyutil/libyyutil.debug.so ~ j ]
+$libyyutil_eapi_devel   = [ $dlibyyutil/libyyutil-devel.so ~ j ]
+$libyyutil_xapi_final   = [ $dlibyyutil/libyyutil-xapi.final.so ~ j ]
+$libyyutil_xapi_debug   = [ $dlibyyutil/libyyutil-xapi.debug.so ~ j ]
+$libyyutil_xapi_devel   = [ $dlibyyutil/libyyutil-xapi-devel.so ~ j ]
+$libnarrator_eapi_final = [ $dlibnarrator/libnarrator.final.so ~ j ]
+$libnarrator_eapi_debug = [ $dlibnarrator/libnarrator.debug.so ~ j ]
+$libnarrator_eapi_devel = [ $dlibnarrator/libnarrator-devel.so ~ j ]
+$libnarrator_xapi_final = [ $dlibnarrator/libnarrator-xapi.final.so ~ j ]
+$libnarrator_xapi_debug = [ $dlibnarrator/libnarrator-xapi.debug.so ~ j ]
+$libnarrator_xapi_devel = [ $dlibnarrator/libnarrator-xapi-devel.so ~ j ]
+$libxunit_xapi_final    = [ $dlibxunit/libxunit-xapi.final.so ~ j ]
+$libxunit_xapi_debug    = [ $dlibxunit/libxunit-xapi.debug.so ~ j ]
+$libxunit_xapi_devel    = [ $dlibxunit/libxunit-xapi-devel.so ~ j ]
+$liblogger_eapi_final   = [ $dliblogger/liblogger.final.so ~ j ]
+$liblogger_eapi_debug   = [ $dliblogger/liblogger.debug.so ~ j ]
+$liblogger_eapi_devel   = [ $dliblogger/liblogger-devel.so ~ j ]
+$liblogger_xapi_final   = [ $dliblogger/liblogger-xapi.final.so ~ j ]
+$liblogger_xapi_debug   = [ $dliblogger/liblogger-xapi.debug.so ~ j ]
+$liblogger_xapi_devel   = [ $dliblogger/liblogger-xapi-devel.so ~ j ]
+$fab_final              = [ $dfab/fab.final ~ j ]
+$fab_debug              = [ $dfab/fab.debug ~ j ]
+$fab_devel              = [ $dfab/fab.devel ~ j ]
+$fabd_final             = [ $dfabd/fabd.final ~ j ]
+$fabd_debug             = [ $dfabd/fabd.debug ~ j ]
+$fabd_devel             = [ $dfabd/fabd.devel ~ j ]
+$fabw_final             = [ $dfabw/fabw.final ~ j ]
+$fabw_debug             = [ $dfabw/fabw.debug ~ j ]
+$fabw_devel             = [ $dfabw/fabw.devel ~ j ]
+$libfabcore_xapi_final  = [ $dlibfabcore/libfabcore-xapi.final.so ~ j ]
+$libfabcore_xapi_debug  = [ $dlibfabcore/libfabcore-xapi.debug.so ~ j ]
+$libfabcore_xapi_devel  = [ $dlibfabcore/libfabcore-xapi-devel.so ~ j ]
+$xunit_xapi_final       = [ $dxunit/xunit.final ~ j ]
+$xunit_xapi_debug       = [ $dxunit/xunit.debug ~ j ]
+$xunit_xapi_devel       = [ $dxunit/xunit.devel ~ j ]
 $xunit_valgrind_runner  = [ $*/xunit/valgrind.runner ~ j ]
 $xunit_tests            = [ $*/test/xunit.fab ~ j ]
-$gccdep_final						= [ $dutil/gcc-dep ~ j ]
-$gccdep_debug						= [ $dutil/gcc-dep ~ j ]
-$gccdep_devel						= [ $dutil/gcc-dep ~ j ]
+$gccdep_final           = [ $dutil/gcc-dep ~ j ]
+$gccdep_debug           = [ $dutil/gcc-dep ~ j ]
+$gccdep_devel           = [ $dutil/gcc-dep ~ j ]
 
 # install directories (these are suitable for ubuntu-64)
-$destdir				= [ ]															# root install directory - does not affect runtime directories
-$incdir					= [ /usr/include ]								# header files
-$bindir					= [ /usr/local/bin ]							# executables
-$libdir					= [ /usr/lib/x86_64-linux-gnu ]		# dynamically linked libraries
-$mandir					= [ /usr/share/man ]							# man files
+$destdir        = [ ]                             # root install directory - does not affect runtime directories
+$incdir         = [ /usr/include ]                # header files
+$bindir         = [ /usr/local/bin ]              # executables
+$libdir         = [ /usr/lib/x86_64-linux-gnu ]   # dynamically linked libraries
+$mandir         = [ /usr/share/man ]              # man files
 
 #
 # configurable runtime directories
@@ -134,39 +152,39 @@ $mandir					= [ /usr/share/man ]							# man files
 #
 
 # install-time values
-$buildroot						 	= [ $* ~ can ]
-$dlibdir								= [ /usr/lib ]										# dloaded libraries
-$fabtmpdir							= [ /var/tmp/fab ]								# fab tmp
-$fabtmpdir_devel				= [ /tmp/$fabtmpdir ~ j can ]			# fab tmp
-$fabipcdir							= [ /var/run/fab ]
-$fabipcdir_devel				= [ /tmp/$fabipcdir ~ j can ]			# fab shm/ipc files
-$lwopdir								= [ $dlibdir/listwise ~ j can ]
-$lwopdir_devel					= [ $dliblistwise/op ~ j can ]
-$lwopext								= [ so ]
-$fablwopdir							= [ $dlibdir/fab/listwise ~ j can ]
-$fablwopdir_devel				= [ $dfabcore/fablw/op ~ j can ]
-$fabinvokedir						= [ $dlibdir/fab/fablib ~ j can ]
-$fabinvokedir_devel			= [ $dfabcore/fablib ~ j can ]
+$buildroot              = [ $* ~ can ]
+$dlibdir                = [ /usr/lib ]                    # dloaded libraries
+$fabtmpdir              = [ /var/tmp/fab ]                # fab tmp
+$fabtmpdir_devel        = [ /tmp/$fabtmpdir ~ j can ]     # fab tmp
+$fabipcdir              = [ /var/run/fab ]
+$fabipcdir_devel        = [ /tmp/$fabipcdir ~ j can ]     # fab shm/ipc files
+$lwopdir                = [ $dlibdir/listwise ~ j can ]
+$lwopdir_devel          = [ $dliblistwise/op ~ j can ]
+$lwopext                = [ so ]
+$fablwopdir             = [ $dlibdir/fab/listwise ~ j can ]
+$fablwopdir_devel       = [ $dfabcore/fablw/op ~ j can ]
+$fabinvokedir           = [ $dlibdir/fab/fablib ~ j can ]
+$fabinvokedir_devel     = [ $dfabcore/fablib ~ j can ]
 
 # compilers and their flags
-$flex				= [ flex ]
-$flexflags	= [ ]
+$flex       = [ flex ]
+$flexflags  = [ ]
 
-$bison			= [ bison ]
-$bisonflags	= [ --warnings=error ]
+$bison      = [ bison ]
+$bisonflags = [ --warnings=error ]
 
-$cc					= [ gcc ]
+$cc         = [ gcc ]
 
 # cflags options
-$cflags				= [
-	# universal compiler options
-	[ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log ]
+$cflags       = [
+  # universal compiler options
+  [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log ]
 
-	# include paths
-	[ $dcommon ~ lsr c -d s/^/-I ]
+  # include paths
+  [ $dcommon ~ lsr c -d s/^/-I ]
 
-	# buildstamp
-	[ -DBUILDSTAMP='[ $^starttime ~ datef ]' ~ j ]
+  # buildstamp
+  [ -DBUILDSTAMP='[ $^starttime ~ datef ]' ~ j ]
 ]
 
 # cflags options
