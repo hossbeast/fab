@@ -28,7 +28,10 @@
 typedef struct
 {
 	/* yyu-defined xtra fields */
-	yyu_extra;
+  union {
+    yyu_extra;
+    yyu_extra yyu;
+  };
 
 	transform * 		g;						// parsing results
 

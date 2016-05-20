@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef _MAP_H
+#define _MAP_H
 
 #include <stdint.h>
 

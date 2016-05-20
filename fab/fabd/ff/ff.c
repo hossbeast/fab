@@ -171,7 +171,8 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 	}
 #endif
 
-	parse_param pp = {
+	parse_param pp = {};
+  pp.yyu = (typeof(pp.yyu)) {
 		  .tokname			= ff_tokenname
 		, .statename		= ff_statename
 		, .inputstr			= ff_inputstr
@@ -296,7 +297,7 @@ static int parse(const ff_parser * const p, char* b, int sz, const path * const 
 finally :
 	// cleanup state for this parse
 	ff_yy_delete_buffer(state, p->p);
-	yyu_extra_destroy(&pp);
+	yyu_extra_destroy(&pp.yyu);
 
 	ff_freefile(ff);
 

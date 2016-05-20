@@ -23,6 +23,8 @@
 
 #include "memblk.def.h"
 
+typedef struct memblk memblk;
+
 #define restrict __restrict
 
 //

@@ -18,7 +18,7 @@
 #ifndef _MEMBLK_DEF_H
 #define _MEMBLK_DEF_H
 
-typedef struct memblk 
+struct memblk 
 {
 	struct {
 		char *	s;
@@ -33,7 +33,7 @@ typedef struct memblk
 # define MEMBLK_INTERNALS
 #endif
 	MEMBLK_INTERNALS
-} memblk;
+};
 
 #define restrict __restrict
 
@@ -46,7 +46,7 @@ typedef struct memblk
 //  mb - memblk instance
 //  p  - pointer to pointer to memory allocated with mb (T**)
 //
-void memblk_freeze(memblk * const restrict mb, void * restrict p)
+void memblk_freeze(struct memblk * const restrict mb, void * restrict p)
 	__attribute__((nonnull));
 
 /// memblk_unfreeze
@@ -58,7 +58,7 @@ void memblk_freeze(memblk * const restrict mb, void * restrict p)
 //  mb - memblk instance
 //  p  - pointer to pointer to memory allocated with mb (T**)
 //
-void memblk_unfreeze(memblk * const restrict mb, void * restrict p)
+void memblk_unfreeze(struct memblk * const restrict mb, void * restrict p)
 	__attribute__((nonnull));
 
 /// memblk_thaw

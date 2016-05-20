@@ -116,7 +116,7 @@
 		else if(token == OP)
 			lval->op = *(operator **)v;
 
-		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, ldel, token == LF, func, file, line);
+		return yyu_lexify(token, lval, sizeof(*lval), lloc, &xtra->yyu, text, leng, ldel, token == LF, func, file, line);
 	}
 %}
 
@@ -199,7 +199,7 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																														while(yyextra->states_n)
 																															POPSTATE;
 																														LOCWRITE;
-																														yyu_scanner_error(yylloc, yyextra, LW_NXOP, "unknown operator : %s", yytext);
+																														yyu_scanner_error(yylloc, &yyextra->yyu, LW_NXOP, "unknown operator : %s", yytext);
 																														return 0;
 																													}
 																												}
@@ -360,14 +360,14 @@ ILL		[\x00-\x08\x0B-\x1F\x7F-\xFF]
 																													while(yyextra->states_n)
 																														POPSTATE;
 																													LOCWRITE;
-																													yyu_scanner_error(yylloc, yyextra, LW_ILLBYTE, "unexpected byte 0x%02hhx", yytext[0]);
+																													yyu_scanner_error(yylloc, &yyextra->yyu, LW_ILLBYTE, "unexpected byte 0x%02hhx", yytext[0]);
 																													return 0;	/* return end-of-input */
 																												}
 <*>[\x20-\x7E]																					{
 																													while(yyextra->states_n)
 																														POPSTATE;
 																													LOCWRITE;
-																													yyu_scanner_error(yylloc, yyextra, LW_ILLBYTE, "unexpected character '%1$c'(0x%1$02hhx)", yytext[0]);
+																													yyu_scanner_error(yylloc, &yyextra->yyu, LW_ILLBYTE, "unexpected character '%1$c'(0x%1$02hhx)", yytext[0]);
 																													return 0;	/* return end-of-input */
 																												}
 <<EOF>>																									{

@@ -30,13 +30,16 @@ _E(-27, PCRE_ERROR_JIT_STACKLIMIT, "") \
 _E(-28, PCRE_ERROR_BADMODE, "") \
 _E(-29, PCRE_ERROR_BADENDIANNESS, "") \
 _E(-30, PCRE_ERROR_DFA_BADRESTART, "") \
+_E(-31, PCRE_ERROR_JIT_BADOPTION, "") \
+_E(-32, PCRE_ERROR_BADLENGTH, "") \
+_E(-33, PCRE_ERROR_UNSET, "") \
 
 enum {
 #define _E(a, b, c) PCRE_ ## b = a,
 ETABLE_PCRE
 #undef _E
 };
-#define ERRMIN_PCRE -30
+#define ERRMIN_PCRE -33
 #define ERRMAX_PCRE -1
 extern etable * perrtab_PCRE;
 #endif

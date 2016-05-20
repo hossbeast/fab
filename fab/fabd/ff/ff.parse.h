@@ -23,7 +23,10 @@
 typedef struct
 {
 	/* yyu-defined xtra fields */
-	yyu_extra;
+  union {
+    yyu_extra;
+    yyu_extra yyu;
+  };
 
 	struct ff_file *		ff;					// fabfile being parsed
 	struct ff_node *		ffn;				// ffn being parsed

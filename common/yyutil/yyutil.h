@@ -191,7 +191,7 @@ void yyu_locwrite(yyu_location * const restrict lloc, yyu_extra * const restrict
 //
 // call yyu_locwrite with default parameters from a scanner rule
 //
-#define LOCWRITE yyu_locwrite(yylloc, yyextra, yytext, yyleng, 0)
+#define LOCWRITE yyu_locwrite(yylloc, (yyu_extra*)&yyextra->yyu, yytext, yyleng, 0)
 
 /// yyu_locreset
 //
@@ -210,7 +210,7 @@ void yyu_locreset(yyu_location * const restrict lloc, yyu_extra * const restrict
 //
 // call yyu_locreset with default parameters from a scanner rule
 //
-#define LOCRESET yyu_locreset(yylloc, yyextra, 0)
+#define LOCRESET yyu_locreset(yylloc, (yyu_extra*)&yyextra->yyu, 0)
 
 /// yyu_nstate
 //
@@ -226,7 +226,7 @@ int yyu_nstate(yyu_extra * const restrict xtra, const int n)
 //
 // call yyu_nstate with default parameters from a scanner rule
 //
-#define NSTATE(n) yyu_nstate(yyextra, n)
+#define NSTATE(n) yyu_nstate((yyu_extra*)&yyextra->yyu, n)
 
 /// TOPSTATE
 //
@@ -262,8 +262,8 @@ void yyu_pushstate(
 //
 #define PUSHSTATE(state)																							\
 	do {																																\
-		yyu_pushstate(state, yyextra, __FUNCTION__, __FILE__, __LINE__);	\
-		yy_push_state(state, yyextra->scanner);														\
+		yyu_pushstate(state, (yyu_extra*)&yyextra->yyu, __FUNCTION__, __FILE__, __LINE__);	\
+		yy_push_state(state, yyextra->yyu.scanner);														\
 	} while(0)
 
 /// yyu_popstate
@@ -292,8 +292,8 @@ void yyu_popstate(
 //
 #define POPSTATE																							\
 	do {																												\
-		yy_pop_state(yyextra->scanner);														\
-		yyu_popstate(yyextra, __FUNCTION__, __FILE__, __LINE__);	\
+		yy_pop_state(yyextra->yyu.scanner);														\
+		yyu_popstate((yyu_extra*)&yyextra->yyu, __FUNCTION__, __FILE__, __LINE__);	\
 	} while(0)
 
 /// yyu_ptoken
@@ -327,7 +327,7 @@ void yyu_ptoken(
 //
 // call yyu_ptoken with default parameters from a scanner rule
 //
-#define PTOKEN(token) yyu_ptoken(token, yylval, yylloc, yyextra, yytext, yyleng, 0, __FUNCTION__, __FILE__, __LINE__)
+#define PTOKEN(token) yyu_ptoken(token, yylval, yylloc, (yyu_extra*)&yyextra->yyu, yytext, yyleng, 0, __FUNCTION__, __FILE__, __LINE__)
 
 /// yyu_scanner_error
 //
@@ -382,7 +382,7 @@ int yyu_lexify(
 //
 // call yyu_lexify with default parameters from a scanner rule
 //
-#define LEXIFY(token) yyu_lexify(token, yylval, sizeof(yylval), yylloc, yyextra, yytext, yyleng, 0, 0, __FUNCTION__, __FILE__, __LINE__)
+#define LEXIFY(token) yyu_lexify(token, yylval, sizeof(yylval), yylloc, (void*)&yyextra->yyu, yytext, yyleng, 0, 0, __FUNCTION__, __FILE__, __LINE__)
 
 #undef restrict
 #endif

@@ -92,7 +92,10 @@ struct frame
 */ 
 struct frame_static
 {
-	struct frame;
+  union {
+    struct frame;
+    struct frame frame;
+  };
 
 	char buf_file[64];
 	char buf_func[64];

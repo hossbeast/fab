@@ -13,7 +13,7 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 35
+#define YY_FLEX_SUBMINOR_VERSION 39
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -170,7 +170,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	int yy_n_chars;
+	yy_size_t yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -214,13 +214,13 @@ void ff_yypop_buffer_state (yyscan_t yyscanner );
 
 YY_BUFFER_STATE ff_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
 YY_BUFFER_STATE ff_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE ff_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
+YY_BUFFER_STATE ff_yy_scan_bytes (yyconst char *bytes,yy_size_t len ,yyscan_t yyscanner );
 
 void *ff_yyalloc (yy_size_t ,yyscan_t yyscanner );
 void *ff_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
 void ff_yyfree (void * ,yyscan_t yyscanner );
 
-#define ff_yywrap(n) 1
+#define ff_yywrap(yyscanner) 1
 #define YY_SKIP_YYWRAP
 
 #define yytext_ptr yytext_r
@@ -275,13 +275,17 @@ FILE *ff_yyget_out (yyscan_t yyscanner );
 
 void ff_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
 
-int ff_yyget_leng (yyscan_t yyscanner );
+yy_size_t ff_yyget_leng (yyscan_t yyscanner );
 
 char *ff_yyget_text (yyscan_t yyscanner );
 
 int ff_yyget_lineno (yyscan_t yyscanner );
 
 void ff_yyset_lineno (int line_number ,yyscan_t yyscanner );
+
+int ff_yyget_column  (yyscan_t yyscanner );
+
+void ff_yyset_column (int column_no ,yyscan_t yyscanner );
 
 YYSTYPE * ff_yyget_lval (yyscan_t yyscanner );
 
@@ -357,8 +361,8 @@ extern int ff_yylex \
 #undef YY_DECL
 #endif
 
-#line 186 "fab/fabd/ff/ff.l"
+#line 185 "fab/fabd/ff/ff.l"
 
-#line 363 "fab/fabd/ff/ff.lex.h"
+#line 367 "fab/fabd/ff/ff.lex.h"
 #undef ff_yyIN_HEADER
 #endif /* ff_yyHEADER_H */

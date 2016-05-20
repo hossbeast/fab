@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stddef.h>
 
+#include "xapi.h"
 #include "xapi/SYS.errtab.h"
 
 #include "xlinux.h"
@@ -66,7 +67,7 @@ mempolicy * memblk_getpolicy(memblk * mb)
 		mb->policy.mb = mb;
 	}
 
-	return &mb->policy;
+	return (void*)&mb->policy;
 }
 
 xapi memblk_mk(memblk ** mb)

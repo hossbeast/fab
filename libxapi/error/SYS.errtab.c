@@ -5,7 +5,7 @@ etable errtab_SYS = {
  , .min = ERRMIN_SYS
  , .max = ERRMAX_SYS
  , .v =  (typeof(((etable*)0)->v[0])[]) {
-#define _E(a, b, c) [ a + (ERRMIN_SYS * -1) ] = { .name = #b, .desc = c },
+#define _E(a, b, c) [ a + (ERRMIN_SYS * -1) ] = { .name = #b, .desc = c, .str = #b " : " c },
 ETABLE_SYS
 #undef _E
 }};

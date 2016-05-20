@@ -25,6 +25,8 @@
 #include "memblk.def.h"
 #include "macros.h"
 
+typedef struct memblk memblk;
+
 // per-thread callstack storage
 __thread struct callstack * callstack;
 __thread struct memblk callstack_mb;
@@ -244,13 +246,13 @@ int API xapi_frame_enter()
 
 		if(callstack->l == 0)	// base frame
 		{
-			callstack->v[callstack->l] = &callstack->frames.alt[0];
+			callstack->v[callstack->l] = &callstack->frames.alt[0].frame;
 			callstack->v[callstack->l]->finalized = 0;
 			callstack->v[callstack->l]->populated = 0;
 			callstack->l++;
 		}
 
-		callstack->v[callstack->l] = &callstack->frames.alt[1];
+		callstack->v[callstack->l] = &callstack->frames.alt[1].frame;
 		callstack->v[callstack->l]->finalized = 0;
 		callstack->v[callstack->l]->populated = 0;
 #if XAPI_RUNTIME_CHECKS

@@ -368,6 +368,7 @@ string
 	}
 	| BREF
 	{
+    // memset(&@$, 0, sizeof(@$));
 		YYU_FATAL(xmalloc, &$$, sizeof(*$$));
 
 		$$->l = 1;

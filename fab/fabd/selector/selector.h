@@ -30,15 +30,14 @@ struct gn;
 #define restrict __restrict
 
 struct selector;
-typedef struct selector selector;
 
 /// selector_process
 //
 // SUMMARY
 //
-int selector_process(selector * const restrict s, const int id, const ff_parser * const restrict ffp, map * const restrict tmap, lwx *** restrict stax, int * restrict staxa, int staxp);
+int selector_process(struct selector * const restrict s, const int id, const ff_parser * const restrict ffp, map * const restrict tmap, lwx *** restrict stax, int * restrict staxa, int staxp);
 
-char * selector_string(const selector * const restrict s, char * const restrict dst, const size_t z);
+char * selector_string(const struct selector * const restrict s, char * const restrict dst, const size_t z);
 
 /// selector_finalize
 //
@@ -70,10 +69,10 @@ int selector_init();
 //
 void selector_teardown();
 
-void selector_freeze(char * const restrict p, selector * restrict s)
+void selector_freeze(char * const restrict p, struct selector * restrict s)
 	__attribute__((nonnull));
 
-void selector_thaw(char * const restrict p, selector * restrict s)
+void selector_thaw(char * const restrict p, struct selector * restrict s)
 	__attribute__((nonnull));
 
 #undef restrict

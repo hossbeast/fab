@@ -19,12 +19,13 @@
 #ifndef _MEMBLK_H
 #define _MEMBLK_H
 
+#include "xapi.h"
+
 struct mempolicy;		// xlinux/mempolicy.h
 
 struct memblk;
 typedef struct memblk memblk;
 
-typedef int xapi;
 #define restrict __restrict
 
 //
@@ -36,7 +37,7 @@ typedef int xapi;
 // SUMMARY
 //  create an memblk
 //
-xapi memblk_mk(memblk ** mb)
+xapi memblk_mk(struct memblk ** mb)
 	__attribute__((nonnull));
 
 /// memblk_alloc
@@ -44,7 +45,7 @@ xapi memblk_mk(memblk ** mb)
 // SUMMARY
 //  request an allocation
 //
-xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
+xapi memblk_alloc(struct memblk * restrict mb, void * restrict p, size_t sz)
 	__attribute__((nonnull));
 
 /// memblk_realloc
@@ -52,7 +53,7 @@ xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 // SUMMARY
 //  request a reallocation
 //
-xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
+xapi memblk_realloc(struct memblk * restrict mb, void * restrict p, size_t es, size_t ec, size_t oec)
 	__attribute__((nonnull));
 
 /// memblk_free
@@ -60,14 +61,14 @@ xapi memblk_realloc(memblk * restrict mb, void * restrict p, size_t es, size_t e
 // SUMMARY
 //  free an memblk with free semantics
 //
-void memblk_free(memblk * mb);
+void memblk_free(struct memblk * mb);
 
 /// memblk_xfree
 //
 // SUMMARY
 //  free an memblk with xfree semantics
 //
-void memblk_xfree(memblk ** mb)
+void memblk_xfree(struct memblk ** mb)
 	__attribute__((nonnull));
 
 /// mempolicy 
@@ -75,14 +76,14 @@ void memblk_xfree(memblk ** mb)
 // SUMMARY
 //  get the mempolicy associated with this memblk
 //
-struct mempolicy * memblk_getpolicy(memblk * mb);
+struct mempolicy * memblk_getpolicy(struct memblk * mb);
 
 /// memblk_size
 //
 // SUMMARY
 //  get the size of the memblk
 //
-size_t memblk_size(memblk * const restrict mb)
+size_t memblk_size(struct memblk * const restrict mb)
 	__attribute__((nonnull));
 
 /// memblk_writeto
@@ -93,7 +94,7 @@ size_t memblk_size(memblk * const restrict mb)
 // ERRORS
 //  as for writev, plus LINUX_LESS : actual bytes != expected bytes
 //
-xapi memblk_writeto(memblk * const restrict mb, const int fd)
+xapi memblk_writeto(struct memblk * const restrict mb, const int fd)
 	__attribute__((nonnull));
 
 /// memblk_bwriteto
@@ -107,7 +108,7 @@ xapi memblk_writeto(memblk * const restrict mb, const int fd)
 // REMARKS
 //  this is a non-xapi function
 //
-int memblk_bwriteto(memblk * const restrict mb, const int fd)
+int memblk_bwriteto(struct memblk * const restrict mb, const int fd)
 	__attribute__((nonnull));
 
 /// memblk_copyto
@@ -115,7 +116,7 @@ int memblk_bwriteto(memblk * const restrict mb, const int fd)
 // SUMMARY
 //  consolidate the memblk
 //
-void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
+void memblk_copyto(struct memblk * const restrict mb, char * const restrict dst, size_t sz)
 	__attribute__((nonnull));
 
 #undef restrict

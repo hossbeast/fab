@@ -187,7 +187,8 @@ static int parse(transform_parser ** p, char* s, int l, char * name, int namel, 
 		fatal(transform_mkparser, p);
 
 	// results struct for this parse
-	parse_param pp = {
+	parse_param pp = {};
+  pp.yyu = (typeof(pp.yyu)) {
 		  .tokname				= transform_tokenname
 		, .statename			= transform_statename
 		, .inputstr				= transform_inputstr
@@ -235,7 +236,7 @@ finally:
 	// cleanup state for this parse
 	transform_yy_delete_buffer(state, (*p)->p);
 	transform_free(pp.g);
-	yyu_extra_destroy(&pp);
+	yyu_extra_destroy(&pp.yyu);
 	transform_parser_free(lp);
 
 XAPI_INFOS("transform-string", b);

@@ -131,7 +131,7 @@ $bisonflags	= [ --warnings=error ]
 $cc					= [ gcc ]
 $cflags     = [
 	# universal compiler options
-	[ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -DXAPI_PROVIDE_BACKTRACE ]
+	[ -m64 -Wall -Werror -D_GNU_SOURCE -fms-extensions -DXAPI_PROVIDE_BACKTRACE ]
 
 	# include paths
 	[ $dcommon ~ lsr c -d s/^/-I ]

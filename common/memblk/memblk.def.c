@@ -23,7 +23,7 @@
 
 #define restrict __restrict
 
-void memblk_freeze(memblk * const restrict mb, void * restrict _p)
+void memblk_freeze(struct memblk * const restrict mb, void * restrict _p)
 {
 	void ** p = _p;
 
@@ -47,7 +47,7 @@ printf("%p -> %zu\n", *p, (size_t)(mb->blocks[x].o + delta));
 	}
 }
 
-void memblk_unfreeze(memblk * const restrict mb, void * restrict _p)
+void memblk_unfreeze(struct memblk * const restrict mb, void * restrict _p)
 {
 	void ** p = _p;
 
