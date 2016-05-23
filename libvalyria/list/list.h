@@ -219,6 +219,9 @@ void list_clear(list * const restrict li)
 // SUMMARY
 //  sort the list
 //
+// SEE
+//  man 3 qsort
+//
 void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *, const LIST_ELEMENT_TYPE *, void *), void * arg)
   __attribute__((nonnull(1, 2)));
 
@@ -231,9 +234,30 @@ void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *
 //  list  - list to copy from
 //  index - index at which to begin copying
 //  len   - number of elements to copy
-//  rv    - (returns) pointer to list, or reuses an existing list
+//  lc    - (returns) pointer to list, or reuses an existing list
 //
-xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** const restrict rv)
+xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** const restrict lc)
+  __attribute__((nonnull));
+
+/// list_search
+//
+// SUMMARY
+//  perform a binary search among list elements
+//
+// SEE
+//  man 3 bsearch
+//
+// PARAMETERS
+//  li     - list
+//  key    - key to search for
+//  compar - comparison function
+//  [lx]   - (returns) last index inspected
+//  [lc]   - (returns) result of last comparison
+//
+LIST_ELEMENT_TYPE * list_searchx(list * const restrict li, const void * const restrict key, int (*compar)(const void *, const LIST_ELEMENT_TYPE *), size_t * restrict lx, int * restrict lc)
+  __attribute__((nonnull(1, 2, 3)));
+
+LIST_ELEMENT_TYPE * list_search(list * const restrict li, const void * const restrict key, int (*compar)(const void *, const LIST_ELEMENT_TYPE *))
   __attribute__((nonnull));
 
 #undef restrict

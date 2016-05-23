@@ -105,3 +105,13 @@ API void array_sort(array * const restrict ar, int (*compar)(const ARRAY_ELEMENT
 {
   list_sort((void*)ar, compar, arg);
 }
+
+API ARRAY_ELEMENT_TYPE * array_searchx(array * const restrict ar, const void * const restrict key, int (*compar)(const void *, const ARRAY_ELEMENT_TYPE *), size_t * restrict lx, int * restrict lc)
+{
+  return list_searchx((void*)ar, key, compar, lx, lc);
+}
+
+API ARRAY_ELEMENT_TYPE * array_search(array * const restrict ar, const void * const restrict key, int (*compar)(const void *, const ARRAY_ELEMENT_TYPE *))
+{
+  return list_search((void*)ar, key, compar);
+}

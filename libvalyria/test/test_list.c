@@ -128,6 +128,58 @@ finally:
 coda;
 }
 
+xapi test_insertion_sort()
+{
+  enter;
+
+  list * listp = 0;
+  item * itemp = 0;
+
+  int ** items = (int*[]) {
+      (int[]) { 4, 6, 7, 5, 0 }
+    , (int[]) { 9, 8, 7, 6, 5, 4, 3, 2, 0 }
+    , (int[]) { 8, 7, 4, 3, 2, 12, 15, 33, 0 }
+    , (int[]) { 1, 0 }
+    , 0
+  };
+
+  int x;
+  for(x = 0; x < sentinel(items); x++)
+  {
+    list_ifree(&listp);
+    fatal(list_create, &listp, (void*)free);
+
+    int y;
+    for(y = 0; y < sentinel(items[x]); y++)
+    {
+      int compar(const void * key, const item * el)
+      {
+        return ((item *)key)->x - el->x;
+      };
+
+      fatal(xmalloc, &itemp, sizeof(*itemp));
+      itemp->x = items[x][y];
+
+      size_t lx = 0;
+      int lc = 0;
+      list_searchx(listp, itemp, compar, &lx, &lc);
+      if(lc <= 0)
+        fatal(list_insert, listp, lx, itemp);
+      else if(lc > 0)
+        fatal(list_insert, listp, lx + 1, itemp);
+
+      itemp = 0;
+    }
+
+    fatal(validate, listp);
+  }
+
+finally:
+  list_free(listp);
+  free(itemp);
+coda;
+}
+
 int main()
 {
   enter;
@@ -135,6 +187,7 @@ int main()
 
   fatal(test_basic);
   fatal(test_load);
+  fatal(test_insertion_sort);
 
   success;
 

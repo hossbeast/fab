@@ -48,7 +48,7 @@ struct list_internals
   size_t   a;     // allocated size in elements
 
   uint32_t attr;
-  size_t   esz;   // element size, for MAP_PRIMARY
+  size_t   esz;   // element size, for primary storage
   void (*destructor)(LIST_ELEMENT_TYPE *);
 };
 

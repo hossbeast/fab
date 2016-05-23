@@ -242,5 +242,26 @@ void array_clear(array * const ar)
 void array_sort(array * const restrict ar, int (*compar)(const ARRAY_ELEMENT_TYPE *, const ARRAY_ELEMENT_TYPE *, void *), void * arg)
   __attribute__((nonnull(1, 2)));
 
+/// array_search
+//
+// SUMMARY
+//  perform a binary search among array elements
+//
+// SEE
+//  man 3 bsearch
+//
+// PARAMETERS
+//  ar     - array
+//  key    - key to search for
+//  compar - comparison function
+//  [lx]   - (returns) last index inspected
+//  [lc]   - (returns) result of last comparison
+//
+ARRAY_ELEMENT_TYPE * array_searchx(array * const restrict ar, const void * const restrict key, int (*compar)(const void *, const ARRAY_ELEMENT_TYPE *), size_t * restrict lx, int * restrict lc)
+  __attribute__((nonnull(1, 2, 3)));
+
+ARRAY_ELEMENT_TYPE * array_search(array * const restrict ar, const void * const restrict key, int (*compar)(const void *, const ARRAY_ELEMENT_TYPE *))
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

@@ -267,7 +267,7 @@ API void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TY
     qsort_r(li->v, li->l, ELEMENT_SIZE(li), compar, arg);
   }
 
-  if(li->attr & LIST_SECONDARY)
+  else if(li->attr & LIST_SECONDARY)
   {
     int lcompar(const void * A, const void * B, void * arg)
     {
@@ -295,4 +295,48 @@ API xapi list_sublist(list * const restrict li, size_t index, size_t len, list *
   (*rv)->l = len;
 
   finally : coda;
+}
+
+API LIST_ELEMENT_TYPE * list_searchx(list * const restrict li, const void * const restrict key, int (*compar)(const void *, const LIST_ELEMENT_TYPE *), size_t * restrict lx, int * restrict lc)
+{
+  LIST_ELEMENT_TYPE * elp = 0;
+
+  if(li->attr & LIST_PRIMARY)
+  {
+    int pcompar(const void * key, const void * el)
+    {
+      int r = compar(key, el);
+      if(lx)
+        *lx = ((char*)el - li->v) / ELEMENT_SIZE(li);
+      if(lc)
+        *lc = r;
+      return r;
+    };
+
+    elp = bsearch(key, li->v, li->l, ELEMENT_SIZE(li), pcompar);
+  }
+
+  else if(li->attr & LIST_SECONDARY)
+  {
+    int scompar(const void * key, const void * el)
+    {
+      int r = compar(key, *(const LIST_ELEMENT_TYPE **)el);
+      if(lx)
+        *lx = ((char*)el - li->v) / ELEMENT_SIZE(li);
+      if(lc)
+        *lc = r;
+      return r;
+    }
+
+    void * res;
+    if((res = bsearch(key, li->v, li->l, ELEMENT_SIZE(li), scompar)))
+      elp = *(LIST_ELEMENT_TYPE **)res;
+  }
+
+  return elp;
+}
+
+API LIST_ELEMENT_TYPE * list_search(list * const restrict li, const void * const restrict key, int (*compar)(const void *, const LIST_ELEMENT_TYPE *))
+{
+  return list_searchx(li, key, compar, 0, 0);
 }
