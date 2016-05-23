@@ -31,7 +31,7 @@ struct FTW;
 // CALLBACK
 //  xnftw uses an internal callback which is passed to nftw. That callback fatal-invokes the xnftw callback
 //
-xapi xnftw(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags);
+xapi xnftw(const char * dirpath, xapi (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags);
 
 /// xnftw_nth
 //
@@ -41,6 +41,6 @@ xapi xnftw(const char * dirpath, int (*fn)(const char * fpath, const struct stat
 // CALLBACK
 //  as for xnftw
 //
-xapi xnftw_nth(const char * dirpath, int (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags, int level);
+xapi xnftw_nth(const char * dirpath, xapi (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags, int level);
 
 #endif

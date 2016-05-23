@@ -24,7 +24,7 @@
 #undef perrtab
 #define perrtab perrtab_XLINUX
 
-API xapi xnftw(const char *dirpath, int (*xfn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
+API xapi xnftw(const char *dirpath, xapi (*xfn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
 {
   enter;
 
@@ -60,7 +60,7 @@ finally:
 coda;
 }
 
-API xapi xnftw_nth(const char *dirpath, int (*xfn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags, int level)
+API xapi xnftw_nth(const char *dirpath, xapi (*xfn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags, int level)
 {
   enter;
 
