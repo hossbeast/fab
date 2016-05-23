@@ -15,10 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _CANON_H
-#define _CANON_H
+#ifndef _LORIEN_CANON_H
+#define _LORIEN_CANON_H
 
 #include <stdint.h>
+#include <sys/types.h>
+
 #include "xapi.h"
 
 #define restrict __restrict
@@ -37,10 +39,9 @@
 /// canon - man 3 realpath
 //
 // SUMMARY
-//  convert a path into a more canonical representation by performing a subset
-//  of path translation operations. when all operations are specified, the result
-//  is a canonicalized absolute pathname, as returned by the realpath function (except
-//  that ENOENT is not an error)
+//  convert a path into a more canonical representation by performing a subset of path translation
+//  operations. when all operations are specified, the result is a canonicalized absolute pathname,
+//  as returned by the realpath function (except that ENOENT is not an error)
 //
 // PARAMETERS
 //  path        - path to be canonicalized
@@ -52,44 +53,17 @@
 //  [z]         - returns the number of bytes written
 //  opts        - bitwise mask of operations to perform - 0 = CAN_REALPATH
 //
-// RETURNS
-//  0 on ENOMEM, 1 otherwise
-//
 xapi canon(
-    const char * restrict path
-  , int pathl
-  , const char * const restrict base
-  , int basel
-  , char * const restrict dst
-  , const size_t siz
-  , size_t * restrict z
-  , uint32_t opts
+    /* 1 */ const char * restrict path
+  , /* 2 */ size_t pathl
+  , /* 3 */ const char * const restrict base
+  , /* 4 */ size_t basel
+  , /* 5 */ char * const restrict dst
+  , /* 6 */ const size_t siz
+  , /* 7 */ size_t * restrict z
+  , /* 8 */ uint32_t opts
 )
   __attribute((nonnull(1, 5)));
-
-/// rebase
-//
-// reformulate a normalized absolute path into a relative path in terms of some absolute base path
-//
-// PARAMETERS
-//  path      - absolute, normalized path to rebase
-//  [pathl]   - length of path, 0 for strlen
-//  base      - absolute directory path to rebase against
-//  [basel]   - length of base, 0 for strlen
-//  dst       - path relative to base is written here
-//  siz       - max bytes to write to dst
-//  [z]       - returns the number of bytes written
-//
-xapi rebase(
-    const char * const restrict path
-  , int pathl
-  , const char * const restrict base
-  , int basel
-  , char * const restrict dst
-  , const size_t siz
-  , size_t * restrict z
-)
-  __attribute__((nonnull(1, 3, 5)));
 
 #undef restrict
 #endif

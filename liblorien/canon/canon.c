@@ -28,8 +28,11 @@
 #include "xlinux.h"
 #include "xlinux/SYS.errtab.h"
 
-#include "canon.h"
+#include "internal.h"
+#include "canon.internal.h"
+
 #include "strutil.h"
+#include "macros.h"
 
 //
 // static
@@ -123,18 +126,18 @@ xapi breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 static void add(size_t * z, char * const resolved, size_t sz, char * fmt, ...)
 {
   if(*z && resolved[(*z) - 1] != '/')
-    (*z) += snprintf(resolved + (*z), sz - (*z), "/");
+    (*z) += znloadf(resolved + (*z), sz - (*z), "/");
 
   va_list va;
   va_start(va, fmt);
-  (*z) += vsnprintf(resolved + (*z), sz - (*z), fmt, va);
+  (*z) += znvloadf(resolved + (*z), sz - (*z), fmt, va);
   va_end(va);
 
   resolved[(*z)] = 0;
 }
 
 //
-// public
+// api
 //
 
 /*
@@ -158,11 +161,11 @@ optimization
  time savings here by memoization
 */
 
-xapi canon(
+API xapi canon(
     const char * path
-  , int pathl
+  , size_t pathl
   , const char * const base
-  , int basel
+  , size_t basel
   , char * const dst
   , const size_t siz
   , size_t * z
@@ -250,7 +253,7 @@ for(x = 0; x < il; x++)
     if(i[ix].t == SLASH)
     {
       if((*z) == 0)
-        (*z) += snprintf(dst + (*z), siz - (*z), "/");
+        (*z) += znloadf(dst + (*z), siz - (*z), "/");
     }
     else if(i[ix].t == DOT)
     {
@@ -317,7 +320,14 @@ for(x = 0; x < il; x++)
       {
         /* do not resolve nofile references against the filesystem lest they be resolved against slash (/) */
       }
-      else if(lstat(dst, &stb[0]) == 0)
+      else if(lstat(dst, &stb[0]))
+      {
+        if(errno != ENOENT && errno != EACCES && errno != ENOTDIR)
+        {
+          tfail(perrtab_SYS, errno);
+        }
+      }
+      else
       {
         if(S_ISLNK(stb[0].st_mode))
         {
@@ -350,23 +360,16 @@ for(x = 0; x < il; x++)
                 (*z) = oldz;
             }
           }
-          else
+          else if((isfinal && (opts & CAN_FINL_SYMMNT)) || (!isfinal && (opts & CAN_NEXT_SYMMNT)))
           {
-            if((isfinal && (opts & CAN_FINL_SYMMNT)) || (!isfinal && (opts & CAN_NEXT_SYMMNT)))
-            {
-              fatal(breakup, &i, &ia, &il, ix + 1, "%.*s", j, space);
+            fatal(breakup, &i, &ia, &il, ix + 1, "%.*s", j, space);
 
-              if(space[0] == '/')
-                (*z) = 0;
-              else
-                (*z) = oldz;
-            }
+            if(space[0] == '/')
+              (*z) = 0;
+            else
+              (*z) = oldz;
           }
         }
-      }
-      else if(errno != ENOENT && errno != EACCES && errno != ENOTDIR)
-      {
-        tfail(perrtab_SYS, errno);
       }
     }
   }
@@ -386,74 +389,4 @@ finally:
     xfree(i[x].s);
   xfree(i);
 coda;
-}
-
-xapi rebase(
-    const char * const path
-  , int pathl
-  , const char * const base
-  , int basel
-  , char * const dst
-  , const size_t siz
-  , size_t * z
-)
-{
-  enter;
-
-  pathl = pathl ?: strlen(path);
-  basel = basel ?: strlen(base);
-
-  size_t local_z;
-  if(z == 0)
-  {
-    z = &local_z;
-  }
-
-  // match up as many segments between path and base as possible
-  int x;
-  for(x = 0; x < pathl && x < basel; x++)
-  {
-    int y = 0;
-    while((x + y) < pathl && (x + y) < basel && path[x + y] == base[x + y] && path[x + y] != '/')
-      y++;
-
-    if((path[x + y] == '/' || ((x + y) == pathl)) &&  (base[x + y] == '/' || ((x + y) == basel)))
-    {
-      x += y;
-    }
-    else
-    {
-      break;
-    }
-  }
-
-  // for each segment in base beyond path, append ".."
-  (*z) = 0;
-  int i;
-  for(i = x; i < basel; i++)
-  {
-    int y = 0;
-    while((i + y) < basel && base[i + y] != '/')
-      y++;
-
-    if(y && estrcmp(base + i, y - i, ".", 1, 0))
-    {
-      if(i != x)
-        (*z) += snprintf(dst + (*z), siz - (*z), "/");
-      (*z) += snprintf(dst + (*z), siz - (*z), "..");
-    }
-
-    i += y;
-  }
-
-  // append the remainder of the path
-  if((pathl - x) > 0)
-  {
-    if(*z)
-      (*z) += snprintf(dst + (*z), siz - (*z), "/");
-
-    (*z) += snprintf(dst + (*z), siz - (*z), "%.*s", pathl - x, path + x);
-  }
-
-  finally : coda;
 }

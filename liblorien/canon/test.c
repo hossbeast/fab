@@ -1,3 +1,20 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -7,6 +24,10 @@
 struct canon_test;
 #define TEST_TYPE struct canon_test
 #include "xunit.h"
+#include "xunit/logging.h"
+#include "xunit/XUNIT.errtab.h"
+
+#include "logger.h"
 
 xapi canon_test_entry(const struct canon_test*)
   __attribute__((nonnull));
@@ -27,18 +48,21 @@ xapi canon_test_entry(const canon_test * test)
   char space[512];
 
   // log the inset
-  logs(L_XUNIT | L_INSET, test->path);
+  logs(L_INSET, test->path);
 
   // transform
   size_t z;
   fatal(canon, test->path, 0, test->base, 0, space, sizeof(space), &z, test->opts);
 
   // log the outset
-  logs(L_XUNIT | L_OUTSET, space);
+  logs(L_OUTSET, space);
 
   if(strcmp(test->final, space))
   {
-    failf(XUNIT_FAIL, "expected %s, actual %s", test->final, space);
+    xapi_fail_intent();
+    xapi_info_addf("expected", "%s", test->final);
+    xapi_info_addf("actual", "%s", space);
+    tfail(perrtab_XUNIT, XUNIT_FAIL);
   }
 
   finally : coda;

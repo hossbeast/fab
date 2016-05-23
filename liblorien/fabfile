@@ -1,0 +1,181 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# definitions
++[ $*/../vars.fab ]
+
+# source invocations
++[ $dcommon ]() @common
+
+# variables
+$basename     = [ lorien ]
+$libname_eapi = [ lib $basename .so ~ j ]
+$libname_xapi = [ lib $basename -xapi .so ~ j ]
+$copts        = [ -fPIC [ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dliblogger $dlibvalyria $dlibnarrator $dlibxunit ~ s/^/-I ] ]
+
+# cflags variants
+$cflags_eapi_final = [ $cflags_eapi_final $copts ]
+$cflags_eapi_debug = [ $cflags_eapi_debug $copts ]
+$cflags_eapi_devel = [ $cflags_eapi_devel $copts ]
+$cflags_xapi_final = [ $cflags_xapi_final $copts ]
+$cflags_xapi_debug = [ $cflags_xapi_debug $copts ]
+$cflags_xapi_devel = [ $cflags_xapi_devel $copts ]
+$cflags_xapi_xunit = [ $cflags_xapi_xunit $copts ]
+
+$lopts              = [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
+$lflags_eapi_final  = [ $lopts $libxlinux_eapi_final $liblogger_eapi_final $libvalyria_eapi_final $libnarrator_eapi_final [ -Wl,-soname,liblorien.so ~ j ] ]
+$lflags_eapi_debug  = [ $lopts $libxlinux_eapi_debug $liblogger_eapi_debug $libvalyria_eapi_debug $libnarrator_eapi_debug [ -Wl,-soname,liblorien.so ~ j ] ]
+$lflags_eapi_devel  = [ $lopts $libxlinux_eapi_devel $liblogger_eapi_devel $libvalyria_eapi_devel $libnarrator_eapi_devel [ -Wl,-soname,liblorien-devel.so ~ j ] ]
+$lflags_xapi_final  = [ $lopts $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final $libvalyria_xapi_final $libnarrator_xapi_final [ -Wl,-soname,liblorien-xapi.so ~ j ] ]
+$lflags_xapi_debug  = [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $libvalyria_xapi_debug $libnarrator_xapi_debug [ -Wl,-soname,liblorien-xapi.so ~ j ] ]
+$lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel $libvalyria_xapi_devel $libnarrator_xapi_devel [ -Wl,-soname,liblorien-xapi-devel.so ~ j ] ]
+
+# source files, filter out tests
++[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_eapi_final)
++[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_eapi_debug)
++[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_eapi_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_xunit)
++[@std.xapi.errtab]($dext = [ eapi.final.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_eapi_final)
++[@std.xapi.errtab]($dext = [ eapi.debug.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_eapi_debug)
++[@std.xapi.errtab]($dext = [ eapi.devel.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_eapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
+
+##
+## dependencies
+##
+
+# default NOFILE target - build everything
+[ @all ] : [ @release @test ]
+
+[ @release ] : [ @release.eapi @release.xapi ]
+[ @release.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
+[ @release.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
+[ @final ] : [ @final.eapi @final.xapi ]
+[ @final.eapi ] : [ $liblorien_eapi_final ]
+[ @final.xapi ] : [ $liblorien_xapi_final ]
+[ @debug ] : [ @debug.eapi @debug.xapi ]
+[ @debug.eapi ] : [ $liblorien_eapi_debug ]
+[ @debug.xapi ] : [ $liblorien_xapi_debug ]
+[ @devel ] : [ @devel.eapi @devel.xapi ]
+[ @devel.eapi ] : [ $liblorien_eapi_devel ]
+[ @devel.xapi ] : [ $liblorien_xapi_devel ]
+
+##
+## formulas
+##
+
+# library exports
+[ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
+{
+    (echo "{ global: "
+  > perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=|;)/) { print "$1;\n" }' <(\
+    cat -- [ $@ ~ rx/ineed fi ] )
+  > echo "local: *; };"
+    ) 1>[ $@ ]
+}
+
+# link the library
+[ $liblorien_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/eapi.final.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
+}
+
+[ $liblorien_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/eapi.debug.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
+}
+
+[ $liblorien_eapi_devel ] : [ [ $*/exports ~ j ]  [ $* ~ lsr l/test.c d sx/c/eapi.devel.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
+}
+
+[ $liblorien_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/xapi.final.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
+}
+
+[ $liblorien_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/xapi.debug.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
+}
+
+[ $liblorien_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/xapi.devel.pic.o sy ] ]
+{
+  [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
+}
+
+[ $liblorien_eapi_final ] :^ [ $libxlinux_eapi_final $liblogger_eapi_final $libvalyria_eapi_final $libnarrator_eapi_final ]
+[ $liblorien_eapi_debug ] :^ [ $libxlinux_eapi_debug $liblogger_eapi_debug $libvalyria_eapi_debug $libnarrator_eapi_final ]
+[ $liblorien_eapi_devel ] :^ [ $libxlinux_eapi_devel $liblogger_eapi_devel $libvalyria_eapi_devel $libnarrator_eapi_final ]
+[ $liblorien_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final $libvalyria_xapi_final $libnarrator_xapi_final ]
+[ $liblorien_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $libvalyria_xapi_debug $libnarrator_xapi_debug ]
+[ $liblorien_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel $libvalyria_xapi_devel $libnarrator_xapi_devel ]
+
+##
+## tasks
+##
+
+[ @install.final.eapi ] : [ @final.eapi ]
+{
+  install -d                                    [ $destdir/$libdir ]
+  install [ $liblorien_eapi_final ]            [ $destdir/$libdir/$libname_eapi ]
+}
+
+[ @install.debug.eapi ] : [ @debug.eapi ]
+{
+  install -d                                    [ $destdir/$libdir ]
+  install [ $liblorien_eapi_debug ]            [ $destdir/$libdir/$libname_eapi ]
+}
+
+[ @install.final.xapi ] : [ @final.xapi ]
+{
+  install -d                                    [ $destdir/$libdir ]
+  install [ $liblorien_xapi_final ]            [ $destdir/$libdir/$libname_xapi ]
+}
+
+[ @install.debug.xapi ] : [ @debug.xapi ]
+{
+  install -d                                    [ $destdir/$libdir ]
+  install [ $liblorien_xapi_debug ]            [ $destdir/$libdir/$libname_xapi ]
+}
+
+[ @installdevheaders ]
+{
+  install -d                                    [ $destdir/$incdir/lorien ]
+  install [ $*/lorien/canon.h ]                [ $destdir/$incdir/lorien/ ]
+}
+
+#
+# unit tests
+#
+
+[ $* ~ lsr m/test.c$ sx/c/xapi.xunit.so dj shift ] :: [ $< ~ sx/so/pic.o ]
+{
+  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
+}
+
+[ @test ] : [ $* ~ lsr m/test.c$ sx/c/xapi.xunit.so ]
+{
+  [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $@ ~ rx/ineed fi ]
+}
