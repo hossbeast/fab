@@ -39,20 +39,27 @@ typedef struct vertex
 	int									traversed;
 } vertex;
 
-/// vertex_initialize
+/// vertex_create
 //
 // SUMMARY
 //  initialize a vertex
 //
-xapi vertex_initialize(vertex * restrict v)
+xapi vertex_create(vertex ** const restrict v)
   __attribute__((nonnull));
 
-/// vertex_destroy
+/// vertex_free
 //
 // SUMMARY
-//  destroy a vertex
+//  free a vertex with free semantics
 //
-void vertex_destroy(vertex * restrict v)
+void vertex_free(vertex * restrict v);
+
+/// vertex_ifree
+//
+// SUMMARY
+//  free a vertex with ifree semantics
+//
+void vertex_ifree(vertex ** const restrict v)
   __attribute__((nonnull));
 
 #endif

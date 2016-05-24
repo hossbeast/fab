@@ -59,7 +59,7 @@ if [[ $valgrind_status -ne 0 || $valgrind_errors -ne 0 || $valgrind_leaks -ne 0 
 
   if [[ $valgrind_errors -ne 0 || $valgrind_leaks -ne 0 ]]; then
     # report
-    echo
+    exec 1>&2
     echo " ========================================="
     echo "   VALGRIND DETECTED ERRORS (see vg.out)"
     echo " ========================================="

@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
+#include "xlinux.h"
 
 #include "valyria/list.h"
 
@@ -28,20 +29,32 @@
 // public
 //
 
-xapi vertex_initialize(vertex * restrict v)
+xapi vertex_create(vertex ** const restrict v)
 {
   enter;
 
-  fatal(list_create, &v->up, 0);
-  fatal(list_create, &v->down, 0);
+  fatal(xmalloc, v, sizeof(**v));
+  fatal(list_create, &(*v)->up, 0);
+  fatal(list_create, &(*v)->down, 0);
 
   finally : coda;
 }
 
-void vertex_destroy(vertex * restrict v)
+void vertex_free(vertex * const restrict v)
 {
-  list_free(v->up);
-  list_free(v->down);
+  if(v)
+  {
+    list_free(v->up);
+    list_free(v->down);
+  }
+
+  free(v);
+}
+
+void vertex_ifree(vertex ** const restrict v)
+{
+  vertex_free(*v);
+  *v = 0;
 }
 
 //

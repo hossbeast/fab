@@ -47,7 +47,7 @@ struct item;
 
 #include "macros.h"
 
-#define ATTR_TABLE(x)                  \
+#define ATTR_TABLE(x)             \
   ATTR_DEF(WEAK , 0x01  , x)
 
 enum {
@@ -77,7 +77,8 @@ typedef struct graph_test
   uint32_t  attrs;
   char *    from;
   char *    expected;   // expected path
-  char *    cycle;      // expected cycle
+  int       cycle;      // expected only that a cycle exists
+  char *    cycle_path; // expected cycle path
 } graph_test;
 
 typedef struct item
@@ -156,10 +157,13 @@ printf("\n");
   xapi exit;
   if((exit = invoke(graph_traverse, g, root->v, (void*)vertex_say, test->skip, test->finish, test->stop, test->attrs, N)))
   {
+    // unexpected error
     if(xapi_exit_errtab(exit) != perrtab_LORIEN || xapi_exit_errcode(exit) != LORIEN_CYCLE)
-    {
-      fail(0);  // propagate unexpected errors
-    }
+      fail(0);
+
+    // cycle not expected for this test
+    else if(!test->cycle && !test->cycle_path)
+      fail(0);
 
     // save the trace
     xapi_trace_full(space, sizeof(space));
@@ -178,16 +182,16 @@ printf("\n");
       tfail(perrtab_XUNIT, XUNIT_FAIL);
     }
   }
-  else if(test->cycle)
+  else if(test->cycle || test->cycle_path)
   {
     if(xapi_exit_errtab(exit) != perrtab_LORIEN || xapi_exit_errcode(exit) != LORIEN_CYCLE)
     {
       xapi_fail_intent();
-      xapi_info_adds("expected cycle", test->cycle);
+      xapi_info_adds("expected", "cycle");
       xapi_info_adds("actual", "no cycle detected");
       tfail(perrtab_XUNIT, XUNIT_FAIL);
     }
-    else
+    else if(test->cycle_path)
     {
       char * marker = "in graph_traverse(path=";
       char * actual = strstr(space, marker);
@@ -197,17 +201,17 @@ printf("\n");
         actual += strlen(marker);
         end = strstr(actual, ")");
       }
-      if(actual == 0 || end == 0 || end - actual != strlen(test->cycle))
+      if(actual == 0 || end == 0 || end - actual != strlen(test->cycle_path))
       {
         xapi_fail_intent();
-        xapi_info_adds("expected cycle", test->cycle);
+        xapi_info_adds("expected cycle", test->cycle_path);
         xapi_info_adds("actual", "cycle path not reported");
         tfail(perrtab_XUNIT, XUNIT_FAIL);
       }
-      else if(memcmp(actual, test->cycle, end - actual))
+      else if(memcmp(actual, test->cycle_path, end - actual))
       {
         xapi_fail_intent();
-        xapi_info_adds("expected cycle", test->cycle);
+        xapi_info_adds("expected cycle", test->cycle_path);
         xapi_info_addf("actual cycle", "%.*s", (int)(end - actual), actual);
         tfail(perrtab_XUNIT, XUNIT_FAIL);
       }
@@ -215,7 +219,9 @@ printf("\n");
   }
 
 finally:
+  graph_free(g);
   dictionary_free(items);
+  narrator_free(N);
 coda;
 }
 
@@ -318,13 +324,38 @@ xunit_unit xunit = {
             }
           , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_BREADTH
           , from      : "A"
-          , cycle     : "A -> B -> C -> D -> E -> F -> G -> A"
+          , cycle_path: "A -> B -> C -> D -> E -> F -> G -> A"
         }}
-
+        // self-referential cycle
+      , (graph_test[]){{ .entry = graph_test_entry
+          , edges : (struct edges*[]) {
+                (struct edges[]) {{ edges : "AB BA" }}
+              , 0
+            }
+          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_BREADTH
+          , from      : "A"
+          , cycle_path: "A -> B -> A"
+        }}
         // duplicate labels
+      , (graph_test[]){{ .entry = graph_test_entry
+          , edges : (struct edges*[]) {
+                (struct edges[]) {{ edges : "AB BC AB CD AB AB" }}
+              , 0
+            }
+          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_BREADTH
+          , from      : "A"
+          , expected  : "ABCD"
+        }}
         // cycle that exceeds the stack size
-        // cycle message format
-
+      , (graph_test[]){{ .entry = graph_test_entry
+          , edges : (struct edges*[]) {
+                (struct edges[]) {{ edges : "ab bc cd de ef fg gh hi ij jk kl lm mn no op pq qr rs st tu uv vw wx xy yz zA AB BC CD DE EF FG GH HI IJ JK KL LM MN NO OP PQ QR RS ST TU UV VW WX XY YZ Za" }}
+              , 0
+            }
+          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_BREADTH
+          , from      : "a"
+          , cycle     : 1
+        }}
       , 0
   }
 };

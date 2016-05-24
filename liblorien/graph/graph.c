@@ -21,7 +21,6 @@
 #include "xapi.h"
 #include "xlinux.h"
 
-#include "valyria/array.h"
 #include "valyria/list.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
@@ -40,8 +39,8 @@ typedef struct edge
 
 struct graph
 {
-  array * vertices;
-  array * edges;
+  list * vertices;
+  list * edges;
   xapi (* say)(vertex * const restrict v, struct narrator * const restrict N);
   int traversal_ids;
 };
@@ -72,7 +71,7 @@ static int traverse(
   , uint32_t method
   , int vtraverse
   , int vvisit
-  , vertex * (* const restrict stack)[64]
+  , vertex * (* const restrict stack)[32]
   , size_t * restrict stackz
 )
 {
@@ -88,6 +87,8 @@ printf("visit %d\n", vvisit);
 	if(v->guard)	// cycle detected
     fail(LORIEN_CYCLE);
 
+  v->guard = 1;	// descend
+
   if(method == GRAPH_TRAVERSE_BREADTH && vvisit && v->visited != id)
   {
 		fatal(visit, v, arg);
@@ -96,8 +97,6 @@ printf("visit %d\n", vvisit);
 
   if(vtraverse && v->traversed != id)
   {
-    v->guard = 1;	// descend
-
     int x = -1;
     while(1)
     {
@@ -140,7 +139,6 @@ printf("visit %d\n", vvisit);
       );
     }
 
-    v->guard = 0;	// ascend
     v->traversed = id;
   }
 
@@ -149,6 +147,8 @@ printf("visit %d\n", vvisit);
     fatal(visit, v, arg);
     v->visited = id;
   }
+
+  v->guard = 0;	// ascend
 
 finally:
   if(XAPI_THROWING(LORIEN_CYCLE))
@@ -169,8 +169,8 @@ API xapi graph_create(graph ** const restrict g, xapi (* say)(struct vertex * co
   enter;
 
   fatal(xmalloc, g, sizeof(**g));
-  fatal(array_createx, &(*g)->vertices, sizeof(vertex), (void*)vertex_destroy, 0);
-  fatal(array_create, &(*g)->edges, sizeof(edge));
+  fatal(list_create, &(*g)->vertices, (void*)vertex_free);
+  fatal(list_create, &(*g)->edges, (void*)free);
 
   (*g)->say = say;
 
@@ -181,8 +181,8 @@ API void graph_free(graph * const restrict g)
 {
   if(g)
   {
-    array_free(g->vertices);
-    array_free(g->edges);
+    list_free(g->vertices);
+    list_free(g->edges);
   }
 
   free(g);
@@ -198,10 +198,16 @@ xapi graph_vertex_create(graph * const restrict g, struct vertex ** const restri
 {
   enter;
 
-  fatal(array_push, g->vertices, (void*)v);
-  fatal(vertex_initialize, *v);
+  vertex * lv = 0;
+  fatal(vertex_create, &lv);
 
-  finally : coda;
+  fatal(list_push, g->vertices, (void*)lv);
+  *v = lv;
+  lv = 0;
+
+finally:
+  vertex_free(lv);
+coda;
 }
 
 API xapi graph_relate(graph * const restrict g, vertex * const restrict A, vertex * const restrict B, uint32_t attrs)
@@ -221,20 +227,20 @@ API xapi graph_relate(graph * const restrict g, vertex * const restrict A, verte
   if(list_searchx(A->down, B, compar, &lx, &lc) == 0)
   {
     // no such edge
-    fatal(array_push, g->edges, (void*)&e);
-
+    fatal(xmalloc, &e, sizeof(*e));
     e->A = A;
     e->B = B;
     e->attrs = attrs;
 
     fatal(list_push, A->down, e);
     fatal(list_push, B->up, e);
+
+    fatal(list_push, g->edges, e);
     e = 0;
   }
 
 finally:
-  if(e)
-    fatal(array_pop, g->edges, 0);
+  free(e);
 coda;
 }
 
@@ -252,7 +258,7 @@ API xapi graph_traverse(
   enter;
 
   narrator * N = 0;
-  vertex * stack[64] = {};
+  vertex * stack[32] = {};
   size_t stackz = 0;
 
   int id = ++g->traversal_ids;
