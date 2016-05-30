@@ -25,7 +25,7 @@
 #include "logger.h"
 
 #include "internal.h"
-#include "yyutil.h"
+#include "yyutil/scanner.h"
 
 #include "macros.h"
 #include "strutil.h"
@@ -234,63 +234,6 @@ API void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra)//,
 
   // save the location
   memcpy(&xtra->error_loc, lloc, sizeof(xtra->error_loc));
-}
-
-API void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
-{
-  if(xtra->gramerr || xtra->scanerr)
-  {
-    // already called
-  }
-  else
-  {
-    xtra->gramerr = -1;
-
-    // save the error string
-    if(err)
-    {
-      if(err && strstr(err, "syntax error, ") == err)
-      {
-        err += 14;
-      }
-
-      int errlen = MIN(sizeof(xtra->error_str) - 1, strlen(err));
-      memcpy(xtra->error_str, err, errlen);
-      xtra->error_str[errlen] = 0;
-    }
-
-    // save the location
-    memcpy(&xtra->error_loc, lloc, sizeof(xtra->error_loc));
-
-    // save the tokenstring for the last scanned token
-    if(xtra->last_token)
-    {
-      // token source string
-      char * s    = xtra->last_loc.s;
-      char * e    = xtra->last_loc.e;
-      char * abuf = xtra->last_loc.s;
-      size_t alen = stresc(s, e - s, xtra->space, sizeof(xtra->space));
-
-      // token value
-      char * bbuf = 0;
-      size_t blen = 0;
-      if(xtra->lvalstr)
-        xtra->lvalstr(xtra->last_token, xtra->last_lval, xtra, &bbuf, &blen);
-
-      snprintf(xtra->tokenstring, sizeof(xtra->tokenstring)
-        , "%s%s%.*s%s%s%.*s%s"
-        , xtra->tokname(xtra->last_token) ?: ""   // token name
-        , alen ? " (" : ""
-        , (int)alen                         // escaped string from which the token was scanned
-        , abuf
-        , alen ? ")" : ""
-        , blen ? " (" : ""
-        , (int)blen                         // representation of the semantic value for the token
-        , bbuf
-        , blen ? ")" : ""
-      );
-    }
-  }
 }
 
 API xapi yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu_location * const lloc, yyu_extra * const xtra, char * const text, const int leng, const int del, const int isnl)

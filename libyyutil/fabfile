@@ -78,7 +78,7 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblog
 ##
 
 # library exports
-[ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
+[ $*/exports ~ j ] : [ $* ~ lsr c lx/c ]
 {
     (echo "{ global: "
   > perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=|;)/) { print "$1;\n" }' <(\
