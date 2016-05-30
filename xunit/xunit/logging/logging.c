@@ -18,7 +18,8 @@
 #include "logging.h"
 
 logger_category * categories = (logger_category []) {
-	  { name : "ARGS"			, description : "program arguments" }
+	  { name : "ERROR"		, description : "errors leading to shutdown" }
+	, { name : "ARGS"			, description : "program arguments" }
 	, { name : "PARAMS"		, description : "program execution parameters" }
 	, { name : "DLOAD"		, description : "dload details"                 , attr : L_MAGENTA }
   , { name : "SUMMARY"  , description : "per-suite results" }
@@ -29,6 +30,6 @@ logger_category * categories = (logger_category []) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+SUMMARY|FAIL" }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+ERROR|SUMMARY|FAIL" }
   , { }
 };

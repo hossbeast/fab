@@ -46,7 +46,7 @@ int main(int argc, char** argv, char ** envp)
 	// allocated with the same size as g_args.objects
   void ** objects = 0;
   int x = 0;
-  int token;
+  int token = 0;
 
   // load libraries
   fatal(logger_load);
@@ -216,7 +216,7 @@ finally:
     }
 #endif
 
-    xlogw(0, L_RED, space, tracesz);
+    xlogw(L_ERROR, L_RED, space, tracesz);
   }
 
   int j;

@@ -28,6 +28,7 @@
 #include "xlinux.h"
 #include "logger.h"
 #include "logger/arguments.h"
+#include "logger/filter.h"
 
 #include "args.h"
 #include "logging.h"
@@ -37,10 +38,12 @@
 
 struct g_args_t g_args;
 
-static void usage(int valid, int version, int help, int logcats)
+static xapi usage(int valid, int version, int help, int logs)
 {
+  enter;
+
 	printf(
-"xunit : unit test runner\n"
+"xunit : test runner\n"
 );
 if(version)
 {
@@ -64,7 +67,7 @@ if(help)
 " --version : version information\n"
 " --logs    : logger configuration\n"
 "\n"
-"----------------- [ options ] -------------------------------------------------------------\n"
+"----------------- [ options ] --------------------------------------------------------------------\n"
 "\n"
 #if DEBUG || DEVEL
 " --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
@@ -73,31 +76,28 @@ if(help)
 	);
 }
 
-if(logcats)
+if(logs)
 {
-	printf(
+printf(
 "\n"
-"----------------- [ logexpr ] -------------------------------------------------------------\n"
-"\n"
-" +<logcat> to enable logging category\n"  
-" -<logcat> to disable logging category\n"  
+"----------------- [ logs ] -----------------------------------------------------------------------\n"
 "\n"
 );
 
-// logger_arguments_report() ??
-#if 0
-	int x;
-	for(x = 0; x < g_logc; x++)
-		printf("  %-10s %s\n", g_logv[x], g_logv[x].d);
-#endif
+  fatal(logger_filter_push, 0, "+LOGGER", 0);
+  fatal(category_report);
+  fatal(logger_filter_pop, 0);
 }
 
 printf(
 "\n"
 "For more information visit http://fabutil.org\n"
+"\n"
 );
 
-	exit(!valid);
+exit(!valid);
+
+  finally : coda;
 }
 
 static xapi objects_push(char * path, size_t * objectsa)
@@ -122,13 +122,24 @@ xapi args_parse()
 
 	int help = 0;
 	int version = 0;
-	int	logcats = 0;
+	int	logs = 0;
 	size_t objectsa = 0;
 
 	struct option longopts[] = {
-		  { "help"												, no_argument				, &help, 1 } 
-		, { "version"											, no_argument				, &version, 1 } 
-		, { "logcats"											, no_argument				, &logcats, 1 } 
+		  { "help"												, no_argument				, &help, 1 }
+		, { "args"												, no_argument				, &help, 1 }
+		, { "params"											, no_argument				, &help, 1 }
+		, { "options"											, no_argument				, &help, 1 }
+		, { "opts"												, no_argument				, &help, 1 }
+		, { "version"											, no_argument				, &version, 1 }
+		, { "vers"												, no_argument				, &version, 1 }
+		, { "vrs"													, no_argument				, &version, 1 }
+		, { "log"													, no_argument				, &logs, 1 }
+		, { "logs"												, no_argument				, &logs, 1 }
+		, { "logcat"											, no_argument				, &logs, 1 }
+		, { "logcats"											, no_argument				, &logs, 1 }
+		, { "logexpr"											, no_argument				, &logs, 1 }
+		, { "logexprs"										, no_argument				, &logs, 1 }
 
 #if DEBUG || DEVEL
 		, { "backtrace-pithy"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
@@ -189,9 +200,9 @@ xapi args_parse()
 		fatal(objects_push, g_argv[optind], &objectsa);
 	}
 
-	if(help || version || logcats)
+	if(help || version || logs)
 	{
-		usage(1, 1, help, logcats);
+		fatal(usage, 1, 1, help, logs);
 	}
 
 	finally : coda;
