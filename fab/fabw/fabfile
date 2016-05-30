@@ -20,16 +20,14 @@
 
 # source invocations
 +[ $dcommon ]() @common
-+[ $dfabcore/common/common.fab ~ j ]() @fabcommon
 
 # variables
-$sdirs = [ $dfabw  ~ lsr c -d ]
 $cflags = [
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
 	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
 	# include paths
-	[ $sdirs [ $dfabcore/common ~ j lsr c -d ] $dlibxapi $dlibxlinux $dlibpstring $dlibnarrate ~ s/^/-I ]
+	[ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dliblogger $dlibfabcore $dlibnarrator ~ s/^/-I ]
 ]
 
 $params = [
@@ -50,21 +48,20 @@ $cflags_xapi_final = [ $cflags_xapi_final $cflags $params ]
 $cflags_xapi_debug = [ $cflags_xapi_debug $cflags $params ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $cflags $params_devel ]
 
-$rpath = [ 
-	[ $dlibxapi $dlibxlinux $dlibxunit $dlibpstring $dlibnarrate ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
-]
-$lflags_xapi_final = [ $lflags_xapi_final $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $libnarrate_xapi_final ]
-$lflags_xapi_debug = [ $lflags_xapi_debug $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $libnarrate_xapi_debug ]
-$lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $libnarrate_xapi_devel $rpath ]
+$rpath = [ $dlibxapi $dlibxlinux $dliblogger $dlibfabcore $dlibnarrator $dlibvalyria $dliblorien ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+$lflags_xapi_final = [ $lflags_xapi_final $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final $libfabcore_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final $liblorien_xapi_final ]
+$lflags_xapi_debug = [ $lflags_xapi_debug $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $libfabcore_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug $liblorien_xapi_debug ]
+$lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel $libfabcore_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel $liblorien_xapi_devel $rpath ]
 
 # standard files - standard compilation
-+[@std.c]($dext = [ xapi.final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_xapi_final)
-+[@std.c]($dext = [ xapi.debug.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_xapi_debug)
-+[@std.c]($dext = [ xapi.devel.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_xapi_devel; $gccdep = $gccdep_devel)
++[@std.c]($dext = [ xapi.final.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_devel; $gccdep = $gccdep_devel)
 
 #
 # catchall node
 #
+[ @release ] : [ @all ]
 [ @all ] : [ @final @debug @devel ]
 [ @final ] : [ $fabw_final ]
 [ @debug ] : [ $fabw_debug ]
@@ -73,23 +70,23 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_de
 #
 # executables
 #
-[ $fabw_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libpstring_xapi_final $libnarrate_xapi_final ]
-[ $fabw_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libpstring_xapi_debug $libnarrate_xapi_debug ]
-[ $fabw_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libpstring_xapi_devel $libnarrate_xapi_devel ]
+[ $fabw_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final $libfabcore_xapi_final ]
+[ $fabw_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $libfabcore_xapi_debug ]
+[ $fabw_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel $libfabcore_xapi_devel ]
 
 [ $fabw_final ] : [ $dfabw/main.xapi.final.o ~ j ] 
 {
-	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ]
+	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o/so uu fi ] [ $lflags_xapi_final ~ fi ]
 }
 
 [ $fabw_debug ] : [ $dfabw/main.xapi.debug.o ~ j ] 
 {
-	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ]
+	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o/so uu fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
 [ $fabw_devel ] : [ $dfabw/main.xapi.devel.o ~ j ] 
 {
-	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
+	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o/so uu fi ] [ $lflags_xapi_devel ~ fi ]
 }
 
 #

@@ -15,11 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _GLOBAL_H
-#define _GLOBAL_H
+#include "xapi.h"
 
-#include "fabcore/FAB.errtab.h"
-#undef perrtab
-#define perrtab perrtab_FAB
-
-#endif
+xapi usage_report();

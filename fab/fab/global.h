@@ -18,17 +18,8 @@
 #ifndef _FAB_GLOBAL_H
 #define _FAB_GLOBAL_H
 
-// fab error table
-#include "FAB.errtab.h"
+#include "fabcore/FAB.errtab.h"
 #undef perrtab
 #define perrtab perrtab_FAB
-
-// fab common modules
-#include "args.h"
-#include "params.h"
-#include "logs.h"
-#include "dirutil.h"
-#include "path.h"
-#include "identity.h"
 
 #endif

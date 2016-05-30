@@ -15,11 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _GLOBAL_H
-#define _GLOBAL_H
+#include "xapi.h"
+#include "xlinux.h"
+#include "xlinux/SYS.errtab.h"
+#include "logger.h"
 
-#include "fabcore/FAB.errtab.h"
-#undef perrtab
-#define perrtab perrtab_FAB
+#include "fabcore/sigbank.h"
+#include "fabcore/params.h"
+#include "fabcore/identity.h"
 
-#endif
+#include "global.h"
+#include "launchp.h"
+#include "logging.h"
+
+#include "macros.h"
+
+#define restrict __restrict
+
+//
+// public
+//

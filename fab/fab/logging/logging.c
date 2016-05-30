@@ -15,11 +15,34 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _GLOBAL_H
-#define _GLOBAL_H
+#include "xapi.h"
 
-#include "fabcore/FAB.errtab.h"
-#undef perrtab
-#define perrtab perrtab_FAB
+#include "logger/stream.h"
 
+#include "logging.h"
+
+logger_category * categories = (logger_category[]) {
+    { name : "ERROR" , description : "errors leading to shutdown" }
+  , { name : "INFO"  , description : "program flow" }
+  , { name : "ARGS"  , description : "program arguments report" }
+
+#if DEBUG || DEVEL
+  , { name : "IPC"   , description : "signal-exchange" }
 #endif
+  , { }
+};
+
+logger_stream * streams = (logger_stream []) {
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR,INFO" }
+  , { }
+};
+
+xapi logging_setup()
+{
+  enter;
+
+  fatal(logger_category_register, categories);
+  fatal(logger_stream_register, streams);
+
+  finally : coda;
+}

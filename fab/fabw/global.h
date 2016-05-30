@@ -18,11 +18,7 @@
 #ifndef _FABW_GLOBAL_H
 #define _FABW_GLOBAL_H
 
-#include "FAB.errtab.h"
 #undef perrtab
 #define perrtab perrtab_FAB
-
-#include "logs.h"
-#include "logger.h"
 
 #endif

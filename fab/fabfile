@@ -24,7 +24,7 @@
 +[ $dfabd ]()			@fabd
 
 # variables
-$sdirs = [ $dfabd [ $dfabcore/common ~ j ] ~ lsr c -d ]
+$sdirs = [ $dfabd [ $dfabroot/common ~ j ] ~ lsr c -d ]
 
 $cflags = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
 	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
@@ -53,9 +53,9 @@ $cflags_xapi_debug = [ $cflags_xapi_debug $cflags $params ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $cflags $params_devel ]
 
 # operator so's
-$faboplist_xapi_final = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.final.so sy ]
-$faboplist_xapi_debug = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.debug.so sy ]
-$faboplist_xapi_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
+$faboplist_xapi_final = [ $dfabroot/fablw/op ~ j lsr sx/c/xapi.final.so sy ]
+$faboplist_xapi_debug = [ $dfabroot/fablw/op ~ j lsr sx/c/xapi.debug.so sy ]
+$faboplist_xapi_devel = [ $dfabroot/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 
 #
 # catchall node
@@ -74,11 +74,11 @@ $faboplist_xapi_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 #  no discovery on these files, because they would then depend on *.pic.o files within fab which
 #  do not exist ; instead those link-time references are satisfied by the fabd executable
 #
-+[@std.c]($dext = [ xapi.final.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_xapi_final -fPIC ]; -$cobjpaths)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rfabdirs = [ $dfabroot/fablw ~ j ]; $cc; $cflags = [ $cflags_xapi_final -fPIC ]; -$cobjpaths)
 [ $cobjpaths ] : [ $fabd_final ]
-+[@std.c]($dext = [ xapi.debug.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_xapi_debug -fPIC ]; -$cobjpaths)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rfabdirs = [ $dfabroot/fablw ~ j ]; $cc; $cflags = [ $cflags_xapi_debug -fPIC ]; -$cobjpaths)
 [ $cobjpaths ] : [ $fabd_debug ]
-+[@std.c]($dext = [ xapi.devel.pic.o ]; $rfabdirs = [ $dfabcore/fablw ~ j ]; $cc; $cflags = [ $cflags_xapi_devel -fPIC ]; -$cobjpaths)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rfabdirs = [ $dfabroot/fablw ~ j ]; $cc; $cflags = [ $cflags_xapi_devel -fPIC ]; -$cobjpaths)
 [ $cobjpaths ] : [ $fabd_devel ]
 
 #
@@ -123,12 +123,12 @@ $faboplist_xapi_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 	install -d																					[ $destdir/$fabinvokedir/std/flex ]
 	install -d																					[ $destdir/$fabinvokedir/std/bison ]
 	install -d																					[ $destdir/$fabinvokedir/std/xapi ]
-	install [ $dfabcore/fablib/std/c.fab ]							[ $destdir/$fabinvokedir/std/c.fab ]
-	install [ $dfabcore/fablib/std/l.fab ]							[ $destdir/$fabinvokedir/std/l.fab ]
-	install [ $dfabcore/fablib/std/y.fab ]							[ $destdir/$fabinvokedir/std/y.fab ]
-	install [ $dfabcore/fablib/std/flex/states.fab ]		[ $destdir/$fabinvokedir/std/flex/states.fab ]
-	install [ $dfabcore/fablib/std/bison/tokens.fab ]		[ $destdir/$fabinvokedir/std/bison/tokens.fab ]
-	install [ $dfabcore/fablib/std/xapi/errtab.fab ]		[ $destdir/$fabinvokedir/std/xapi/errtab.fab ]
+	install [ $dfabroot/fablib/std/c.fab ]							[ $destdir/$fabinvokedir/std/c.fab ]
+	install [ $dfabroot/fablib/std/l.fab ]							[ $destdir/$fabinvokedir/std/l.fab ]
+	install [ $dfabroot/fablib/std/y.fab ]							[ $destdir/$fabinvokedir/std/y.fab ]
+	install [ $dfabroot/fablib/std/flex/states.fab ]		[ $destdir/$fabinvokedir/std/flex/states.fab ]
+	install [ $dfabroot/fablib/std/bison/tokens.fab ]		[ $destdir/$fabinvokedir/std/bison/tokens.fab ]
+	install [ $dfabroot/fablib/std/xapi/errtab.fab ]		[ $destdir/$fabinvokedir/std/xapi/errtab.fab ]
 
 	rm -rf 																							[ $destdir/$fablwopdir ] 2>/dev/null
 	install -d																					[ $destdir/$fablwopdir ]
@@ -144,16 +144,16 @@ $faboplist_xapi_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 
 [ @install.final ] : [ @install.base ]
 {
-	install [ $dfabcore/fablw/op/fi/fi.xapi.final.so ]	[ $destdir/$fablwopdir/fi.so ]
-	install [ $dfabcore/fablw/op/fg/fg.xapi.final.so ]	[ $destdir/$fablwopdir/fg.so ]
+	install [ $dfabroot/fablw/op/fi/fi.xapi.final.so ]	[ $destdir/$fablwopdir/fi.so ]
+	install [ $dfabroot/fablw/op/fg/fg.xapi.final.so ]	[ $destdir/$fablwopdir/fg.so ]
 }
 [ @install.local.final] : [ @install.final @install.local @fab.install.local.final @fabw.install.local.final @fabd.install.local.final ]
 [ @install.dist.final] : [ @install.final @fab.install.dist.final @fabw.install.dist.final @fabd.install.dist.final ]
 
 [ @install.debug ] : [ @install.base ]
 {
-	install [ $dfabcore/fablw/op/fi/fi.xapi.debug.so ]	[ $destdir/$fablwopdir/fi.so ]
-	install [ $dfabcore/fablw/op/fg/fg.xapi.debug.so ]	[ $destdir/$fablwopdir/fg.so ]
+	install [ $dfabroot/fablw/op/fi/fi.xapi.debug.so ]	[ $destdir/$fablwopdir/fi.so ]
+	install [ $dfabroot/fablw/op/fg/fg.xapi.debug.so ]	[ $destdir/$fablwopdir/fg.so ]
 }
 
 [ @install.local.debug ] : [ @install.debug @install.local @fab.install.local.debug @fabw.install.local.debug @fabd.install.local.debug ]
@@ -162,18 +162,18 @@ $faboplist_xapi_devel = [ $dfabcore/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 [ @install.man ] : [ @install.man1 ]
 
 # build the man gz
-[ @man ] : [ $dfabcore/man/fab.1.gz ~ j ]
-[ $dfabcore/man/fab.1.gz ~ j ] : [ $dfabcore/man/fab.1 ~ j ]
+[ @man ] : [ $dfabroot/man/fab.1.gz ~ j ]
+[ $dfabroot/man/fab.1.gz ~ j ] : [ $dfabroot/man/fab.1 ~ j ]
 {
-	cat [ $dfabcore/man/fab.1 ] [
+	cat [ $dfabroot/man/fab.1 ] [
 	] | sed -e 's/---BUILDVERS---/[ $VERSIONS ]/' [
 	] | sed -e 's/---BUILDDATE---/[ $^starttime ~ datef/%Y-%m-%d ]/' [
 	] | gzip -9c > [ $@ ]
 }
 
 # install the man gz
-[ @install.man1 ] : [ $dfabcore/man/fab.1.gz ~ j ]
+[ @install.man1 ] : [ $dfabroot/man/fab.1.gz ~ j ]
 {
 	install -d 																		[ $destdir/$mandir/man1 ]
-	install [ $dfabcore/man/fab.1.gz ]						[ $destdir/$mandir/man1/fab.1.gz ]
+	install [ $dfabroot/man/fab.1.gz ]						[ $destdir/$mandir/man1/fab.1.gz ]
 }

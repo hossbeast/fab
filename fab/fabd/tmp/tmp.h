@@ -18,6 +18,10 @@
 #ifndef _TMP_H
 #define _TMP_H
 
+#include "xapi.h"
+
+#define restrict __restrict
+
 /// tmp_cleanup
 //
 // SUMMARY
@@ -26,6 +30,6 @@
 // PARAMETERS
 //  pid - delete directory for this pid even if it has not yet expired
 //
-int tmp_cleanup(pid_t * dels, size_t delsl);
+xapi tmp_cleanup(pid_t * const restrict pids, size_t pidsl);
 
 #endif

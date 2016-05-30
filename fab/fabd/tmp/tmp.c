@@ -22,16 +22,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "xapi.h"
 #include "xlinux.h"
 
-#include "tmp.h"
-#include "params.h"
+#include "fabcore/dirutil.h"
 
-#include "logs.h"
 #include "global.h"
-#include "dirutil.h"
+#include "logging.h"
+#include "tmp.h"
+
 #include "macros.h"
-#include "args.h"
 
 /*
 ** time after which fabd will delete unknown entries in the tmp directory
@@ -43,8 +43,10 @@
 // public
 //
 
-int tmp_cleanup(pid_t * dels, size_t delsl)
+xapi tmp_cleanup(pid_t * pids, size_t pidsl)
 {
+  enter;
+
 	char space[512];
 
 	time_t now = time(0);
@@ -52,19 +54,21 @@ int tmp_cleanup(pid_t * dels, size_t delsl)
 	//
 	// TMPDIR/pid
 	//
-	fatal(mkdirp, XQUOTE(FABTMPDIR) "/pid", S_IRWXU | S_IRWXG | S_IRWXO); 
+	fatal(mkdirps, S_IRWXU | S_IRWXG | S_IRWXO, XQUOTE(FABTMPDIR) "/pid");
 
 	// cleanup the tmp dir
-	int fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
+	xapi fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
 	{
+    enter;
+
 		if(typeflag != FTW_D)
-			fails(FAB_BADTMP, "not a directory");
+			fails(FAB_BADTMP, "error", "not a directory");
 
 		pid_t pid = 0;
 		int n = 0;
 		if(sscanf(fpath + ftwbuf->base, "%d%n", &pid, &n) != 1 || (ftwbuf->base + n) != strlen(fpath))
 		{
-			fails(FAB_BADTMP, "not numeric"); // dirname consists of something other than <pid>
+			fails(FAB_BADTMP, "error", "not numeric"); // dirname consists of something other than <pid>
 		}
 
 		// not presently executing
@@ -72,13 +76,13 @@ int tmp_cleanup(pid_t * dels, size_t delsl)
 		{
 			int r = 1;
 			int x;
-			for(x = 0; x < delsl; x++)
+			for(x = 0; x < pidsl; x++)
 			{
-				if(pid == dels[x])
+				if(pid == pids[x])
 					break;
 			}
 
-			if(x == delsl)	// not in dels
+			if(x == pidsl)	// not in pids
 			{
 				// check stamp file
 				snprintf(space, sizeof(space), "%s/%s", fpath, "stamp");
@@ -94,12 +98,12 @@ int tmp_cleanup(pid_t * dels, size_t delsl)
 			// directory is for del, does not contain a stamp file, or the stamp file is older than the expiration policy
 			if(r)
 			{
-				fatal(rmdir_recursive, fpath, 1, FAB_BADTMP);
+				fatal(rmdir_recursive, fpath, 1);
 			}
 		}
 
 	finally :
-		XAPI_INFOF("path", "%s", fpath);
+		xapi_infof("path", "%s", fpath);
 	coda;
 	};
 

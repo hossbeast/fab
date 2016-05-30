@@ -158,19 +158,22 @@ All tests use xunit, except those in the eventual dependencies of xunit (xapi, x
 should use internal apis, #include "foo.internal.h"
 
 ```
-unit
-  unit.c
-  unit.h
-  test.c
+module
+  unit
+    unit.c
+    unit.h
+    test.c
 ```
 
 or
 
 ```
 module
+  unit
+    unit.c
+    unit.h
   test
-    test_unita.c
-    test_unitb.c
+    test_unit.c
 ```
 
 ## integration tests

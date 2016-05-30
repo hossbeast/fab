@@ -15,11 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _GLOBAL_H
-#define _GLOBAL_H
+#include <sys/types.h>
 
-#include "fabcore/FAB.errtab.h"
-#undef perrtab
-#define perrtab perrtab_FAB
+#include "xapi.h"
 
-#endif
+/// fabd_launchp
+//
+// SUMMARY
+//  launch the specified process for this ipc-hash if it is not already running
+//
+// PARAMETERS
+//  pgid  - (returns) pgid of the process
+//
+xapi launchp_fabd(int fablockfd, pid_t * const restrict pgid)
+  __attribute__((nonnull));

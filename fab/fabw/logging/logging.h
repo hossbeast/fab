@@ -15,11 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _GLOBAL_H
-#define _GLOBAL_H
+#ifndef _LOGGING_H
+#define _LOGGING_H
 
-#include "fabcore/FAB.errtab.h"
-#undef perrtab
-#define perrtab perrtab_FAB
+#include "logger.h"
+#include "logger/category.h"
+
+extern logger_category * categories;
+
+#define L_ERROR categories[0x00].id
+#define L_IPC   categories[0x01].id
+
+/// logging_setup
+//
+// SUMMARY
+//  register logging categories
+//
+xapi logging_setup();
 
 #endif
