@@ -66,12 +66,12 @@ API xapi xnftw_nth(const char *dirpath, xapi (*xfn) (const char *fpath, const st
 
   int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
   {
-    enter;
+    enter_nochecks;
 
     if(ftwbuf->level == level)
       fatal(xfn, fpath, sb, typeflag, ftwbuf);
 
-    int R;
+    xapi R;
     finally : conclude(&R);
 
     if(R == 0)

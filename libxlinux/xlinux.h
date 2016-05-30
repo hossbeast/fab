@@ -52,5 +52,6 @@ xapi xlinux_unload();
 #include "xlinux/xuio.h"
 #include "xlinux/xwait.h"
 #include "xlinux/xstdio.h"
+#include "xlinux/xshm.h"
 
 #endif

@@ -19,6 +19,7 @@
 #define _XUNISTD_H
 
 #include <unistd.h>
+#include <stdarg.h>
 
 #include "xapi.h"
 
@@ -136,16 +137,40 @@ xapi uxsymlink(const char * restrict target, const char * restrict linkpath)
 // SUMMARY
 //  proxy for unlink
 //
-xapi xunlink(const char * restrict pathname, int * restrict r)
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi xunlink(const char * restrict pathname)
+	__attribute__((nonnull));
+
+xapi xunlinks(const char * restrict pathname)
+	__attribute__((nonnull));
+
+xapi xunlinkf(const char * restrict fmt, ...)
 	__attribute__((nonnull(1)));
+
+xapi xunlinkvf(const char * restrict fmt, va_list va)
+	__attribute__((nonnull));
 
 /// uxunlink
 //
 // SUMMARY
 //  proxy for unlink that fails only when errno != ENOENT
 //
-xapi uxunlink(const char * restrict pathname, int * restrict r)
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi uxunlink(const char * const restrict pathname)
+	__attribute__((nonnull));
+
+xapi uxunlinks(const char * const restrict pathname)
+	__attribute__((nonnull));
+
+xapi uxunlinkf(const char * const restrict fmt, ...)
 	__attribute__((nonnull(1)));
+
+xapi uxunlinkvf(const char * const restrict fmt, va_list va)
+	__attribute__((nonnull));
 
 /// xfork
 //
@@ -258,6 +283,13 @@ xapi xrmdir(const char * restrict pathname)
 //
 xapi xsetpgid(pid_t pid, pid_t pgid);
 
+/// xsetsid
+//
+// SUMMARY
+//  proxy for setsid
+//
+xapi xsetsid();
+
 /// xexecv
 //
 // SUMMARY
@@ -271,7 +303,20 @@ xapi xexecv(const char * path, char * const argv[])
 // SUMMARY
 //  xapi proxy for chdir
 //
-xapi xchdir(const char * path);
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi xchdir(const char * const restrict path)
+  __attribute__((nonnull));
+
+xapi xchdirs(const char * const restrict path)
+  __attribute__((nonnull));
+
+xapi xchdirf(const char * const restrict fmt, ...)
+  __attribute__((nonnull));
+
+xapi xchdirvf(const char * const restrict fmt, va_list va)
+  __attribute__((nonnull));
 
 /// xfchdir
 //

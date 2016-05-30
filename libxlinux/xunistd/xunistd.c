@@ -63,20 +63,19 @@ API xapi axread(int fd, void * buf, size_t count)
     ssize_t cur = read(fd, ((char*)buf) + actual, count - actual);
 
     if(cur == 0)
+    {
+      xapi_fail_intent();
+      xapi_info_addf("expected", "%zu", count);
+      xapi_info_addf("actual", "%zd", actual);
       tfail(perrtab_XLINUX, XLINUX_LESS);
-    if(cur == -1)
+    }
+    else if(cur == -1)
       fail(errno);
 
     actual += cur;
   }
 
-finally:
-  if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
-  {
-    xapi_infof("expected", "%zu", count);
-    xapi_infof("actual", "%zd", actual);
-  }
-coda;
+  finally : coda;
 }
 
 API xapi xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
@@ -102,20 +101,19 @@ API xapi axwrite(int fd, const void * buf, size_t count)
     ssize_t cur = write(fd, ((char*)buf) + actual, count - actual);
 
     if(cur == 0)
+    {
+      xapi_fail_intent();
+      xapi_info_addf("expected", "%zu", count);
+      xapi_info_addf("actual", "%zd", actual);
       tfail(perrtab_XLINUX, XLINUX_LESS);
-    if(cur == -1)
+    }
+    else if(cur == -1)
       fail(errno);
 
     actual += cur;
   }
 
-finally:
-  if(XAPI_UNWINDING && XAPI_ERRTAB == perrtab_XLINUX && XAPI_ERRCODE == XLINUX_LESS)
-  {
-    xapi_infof("expected", "%zu", count);
-    xapi_infof("actual", "%zd", actual);
-  }
-coda;
+  finally : coda;
 }
 
 API xapi xgetcwd(char * buf, size_t size, char ** res)
@@ -191,34 +189,100 @@ API xapi uxsymlink(const char * target, const char * linkpath)
   finally : coda;
 }
 
-API xapi xunlink(const char * pathname, int * r)
+API xapi xunlink(const char * pathname)
+{
+  xproxy(xunlinks, pathname);
+}
+
+API xapi xunlinks(const char * paths)
 {
   enter;
 
-  if(r && ((*r) = unlink(pathname)) != 0)
-    fail(errno);
-
-  else if(!r && unlink(pathname) != 0)
+  if(unlink(paths) != 0)
     fail(errno);
 
 finally:
-  xapi_infof("path", "%s", pathname);
+  xapi_infof("path", "%s", paths);
 coda;
 }
 
-API xapi uxunlink(const char * pathname, int * r)
+API xapi xunlinkvf(const char * fmt, va_list va)
 {
   enter;
 
-  if(r && ((*r) = unlink(pathname)) != 0 && errno != ENOENT)
-    fail(errno);
+  char space[512];
+  size_t sz = vsnprintf(space, sizeof(space), fmt, va);
+  if(sz >= sizeof(space))
+  {
+    xapi_fail_intent();
+    xapi_info_addf("max size", "%zu", sizeof(space));
+    xapi_info_addf("actual size", "%zu", sz);
+    tfail(perrtab_XLINUX, XLINUX_NAMETOOLONG);
+  }
 
-  else if(!r && unlink(pathname) != 0 && errno != ENOENT)
+  fatal(xunlinks, space);
+
+  finally : coda;
+}
+
+API xapi xunlinkf(const char * fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, fmt);
+  fatal(xunlinkvf, fmt, va);
+
+  finally : coda;
+}
+
+API xapi uxunlink(const char * const restrict path)
+{
+  enter;
+
+  if(unlink(path) != 0 && errno != ENOENT)
     fail(errno);
 
 finally:
-  xapi_infof("path", "%s", pathname);
+  xapi_infof("path", "%s", path);
 coda;
+}
+
+API xapi uxunlinks(const char * const restrict path)
+{
+  xproxy(uxunlink, path);
+}
+
+API xapi uxunlinkf(const char * const restrict fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, fmt);
+  fatal(uxunlinkvf, fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi uxunlinkvf(const char * const restrict fmt, va_list va)
+{
+  enter;
+
+  char space[512];
+  size_t sz = vsnprintf(space, sizeof(space), fmt, va);
+  if(sz >= sizeof(space))
+  {
+    xapi_fail_intent();
+    xapi_info_addf("max size", "%zu", sizeof(space));
+    xapi_info_addf("actual size", "%zu", sz);
+    tfail(perrtab_XLINUX, XLINUX_NAMETOOLONG);
+  }
+
+  fatal(uxunlinks, space);
+
+  finally : coda;
 }
 
 API xapi xfork(pid_t * r)
@@ -379,6 +443,16 @@ API xapi xsetpgid(pid_t pid, pid_t pgid)
   finally : coda;
 }
 
+API xapi xsetsid()
+{
+  enter;
+
+  if(setsid() == -1)
+    fail(errno);
+
+  finally : coda;
+}
+
 API xapi xexecv(const char * path, char * const argv[])
 {
   enter;
@@ -390,7 +464,7 @@ finally:
 coda;
 }
 
-API xapi xchdir(const char * path)
+API xapi xchdir(const char * const restrict path)
 {
   enter;
 
@@ -399,6 +473,43 @@ API xapi xchdir(const char * path)
 finally:
   xapi_infof("path", "%s", path);
 coda;
+}
+
+API xapi xchdirs(const char * const restrict path)
+{
+  xproxy(xchdir, path);
+}
+
+API xapi xchdirf(const char * const restrict fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, fmt);
+  fatal(xchdirvf, fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi xchdirvf(const char * const restrict fmt, va_list va)
+{
+  enter;
+
+  char space[512];
+  size_t sz = vsnprintf(space, sizeof(space), fmt, va);
+  if(sz >= sizeof(space))
+  {
+    xapi_fail_intent();
+    xapi_info_addf("max size", "%zu", sizeof(space));
+    xapi_info_addf("actual size", "%zu", sz);
+    tfail(perrtab_XLINUX, XLINUX_NAMETOOLONG);
+  }
+
+  fatal(xchdirs, space);
+
+  finally : coda;
 }
 
 API xapi xfchdir(int fd)

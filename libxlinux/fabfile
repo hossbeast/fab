@@ -25,7 +25,7 @@
 $basename			= [ xlinux ]
 $libname_eapi	= [ lib $basename .so ~ j ]
 $libname_xapi = [ lib $basename -xapi .so ~ j ]
-$copts				= [ -fPIC [ [ $dlibxlinux ~ lsr c -d ] $dlibxapi ~ s/^/-I ] ]
+$copts				= [ -fPIC [ [ $* ~ lsr c -d ] $dlibxapi ~ s/^/-I ] ]
 
 # cflags variants
 $cflags_eapi_final = [ $cflags_eapi_final $copts ]
@@ -45,18 +45,18 @@ $lflags_xapi_debug = [ $lflags $libxapi_xapi_debug [ -Wl,-soname,libxlinux-xapi.
 $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-devel.so ~ j ] ]
 
 # source files
-+[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_eapi_final)
-+[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_eapi_debug)
-+[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_eapi_devel)
-+[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_xapi_final)
-+[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_xapi_debug)
-+[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibxlinux; $cc; $cflags = $cflags_xapi_devel)
-+[@std.xapi.errtab]($dext = [ eapi.final.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_eapi_final)
-+[@std.xapi.errtab]($dext = [ eapi.debug.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_eapi_debug)
-+[@std.xapi.errtab]($dext = [ eapi.devel.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_eapi_devel)
-+[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
-+[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $rdirs = $dlibxlinux; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_eapi_final)
++[@std.c]($dext = [ eapi.debug.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_eapi_debug)
++[@std.c]($dext = [ eapi.devel.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_eapi_devel)
++[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
++[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ eapi.final.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_eapi_final)
++[@std.xapi.errtab]($dext = [ eapi.debug.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_eapi_debug)
++[@std.xapi.errtab]($dext = [ eapi.devel.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_eapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
 
 ##
 ## dependencies
@@ -83,7 +83,7 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 ##
 
 # the SYS errtab is generated from available system header files
-[ $dlibxlinux/errtab/SYS.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
+[ $*/errtab/SYS.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
 {
 	exec > [ $@ ]
 
@@ -92,9 +92,9 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 }
 
 # compiled sys errtab
-+[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxlinux/errtab/SYS.errtab ~ j ] [ $dlibxlinux/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_final)
-+[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxlinux/errtab/SYS.errtab ~ j ] [ $dlibxlinux/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $apidata = [ 1 ]; $paths = [[ $dlibxlinux/errtab/SYS.errtab ~ j ] [ $dlibxlinux/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $apidata = [ 1 ]; $paths = [[ $*/errtab/SYS.errtab ~ j ] [ $*/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $apidata = [ 1 ]; $paths = [[ $*/errtab/SYS.errtab ~ j ] [ $*/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $apidata = [ 1 ]; $paths = [[ $*/errtab/SYS.errtab ~ j ] [ $*/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_devel)
 
 # library exports
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
@@ -107,32 +107,32 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 }
 
 # link the library
-[ $libxlinux_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.final.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.eapi.final.pic.o ~ j ] ]
+[ $libxlinux_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.final.pic.o sy ] [ $*/errtab/SYS.errtab.eapi.final.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
 }
 
-[ $libxlinux_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.debug.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.eapi.debug.pic.o ~ j ] ]
+[ $libxlinux_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.debug.pic.o sy ] [ $*/errtab/SYS.errtab.eapi.debug.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
 }
 
-[ $libxlinux_eapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.devel.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.eapi.devel.pic.o ~ j ] ]
+[ $libxlinux_eapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.devel.pic.o sy ] [ $*/errtab/SYS.errtab.eapi.devel.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
 }
 
-[ $libxlinux_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.final.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.xapi.final.pic.o ~ j ] ]
+[ $libxlinux_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.final.pic.o sy ] [ $*/errtab/SYS.errtab.xapi.final.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $libxlinux_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.debug.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.xapi.debug.pic.o ~ j ] ]
+[ $libxlinux_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.debug.pic.o sy ] [ $*/errtab/SYS.errtab.xapi.debug.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $libxlinux_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.devel.pic.o sy ] [ $dlibxlinux/errtab/SYS.errtab.xapi.devel.pic.o ~ j ] ]
+[ $libxlinux_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.devel.pic.o sy ] [ $*/errtab/SYS.errtab.xapi.devel.pic.o ~ j ] ]
 {
 	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
 }
@@ -176,23 +176,23 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 [ @installdevheaders ]
 {
 	install -d																					[ $destdir/$incdir ]
-	install [ $dlibxlinux/xlinux.h ]										[ $destdir/$incdir/ ]
+	install [ $*/xlinux.h ]										[ $destdir/$incdir/ ]
 
 	install -d																					[ $destdir/$incdir/xlinux ]
-	install [ $dlibxlinux/xlinux/xdirent.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xdlfcn.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xfcntl.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xftw.h ]								[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xgrp.h ]								[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xmman.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xpwd.h ]								[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xstat.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xstdlib.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xstring.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xtime.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xunistd.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xsignal.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xfile.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xprctl.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $dlibxlinux/xlinux/xstdio.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xdirent.h ]						[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xdlfcn.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xfcntl.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xftw.h ]								[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xgrp.h ]								[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xmman.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xpwd.h ]								[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xstat.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xstdlib.h ]						[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xstring.h ]						[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xtime.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xunistd.h ]						[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xsignal.h ]						[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xfile.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xprctl.h ]							[ $destdir/$incdir/xlinux/ ]
+	install [ $*/xlinux/xstdio.h ]							[ $destdir/$incdir/xlinux/ ]
 }
