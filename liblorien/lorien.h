@@ -15,16 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LORIEN_INTERNAL_H
-#define _LORIEN_INTERNAL_H
+#ifndef _LORIEN_H
+#define _LORIEN_H
 
-#include "lorien.h"
+#include "xapi.h"
 
-// visibility declaration macros
-#define API __attribute__((visibility("protected")))
-#define APIDATA
+/// lorien_load
+//
+// SUMMARY
+//  initialize the library
+//
+xapi lorien_load();
 
-#undef perrtab
-#define perrtab perrtab_LORIEN
+/// lorien_unload
+//
+// SUMMARY
+//  release the library
+//
+xapi lorien_unload();
 
 #endif
