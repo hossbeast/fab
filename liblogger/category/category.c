@@ -278,7 +278,16 @@ xapi category_say_verbose(logger_category * const restrict cat, narrator * restr
   finally : coda;
 }
 
-API xapi category_report_verbose()
+xapi category_say(logger_category * const restrict cat, narrator * restrict N)
+{
+  enter;
+
+  sayf("%*s : %s", category_name_max_length, cat->name, cat->description);
+
+  finally : coda;
+}
+
+API xapi categories_report_verbose()
 {
   enter;
 
@@ -336,16 +345,7 @@ void category_teardown()
 // api
 //
 
-API xapi category_say(logger_category * const restrict cat, narrator * restrict N)
-{
-  enter;
-
-  sayf("%*s : %s", category_name_max_length, cat->name, cat->description);
-
-  finally : coda;
-}
-
-API xapi category_report()
+API xapi logger_categories_report()
 {
   enter;
 

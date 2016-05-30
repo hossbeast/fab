@@ -18,28 +18,36 @@
 #ifndef _LOGGER_FILTER_H
 #define _LOGGER_FILTER_H
 
-/// logger_filter_push
+/// logger_filter_pushs
 //
 // SUMMARY
-//  append a filter to the filters for the specified stream
+//  append filters to a stream
 //
 // PARAMETERS
 //  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
 //  expr       - logexpr
-//  [expr_len] - length of expr, or 0 for strlen
+//  [exprl]    - expr length
 //
-xapi logger_filter_push(const int stream_id, const char * const restrict expr, size_t exprl)
+xapi logger_filter_pushs(const int stream_id, const char * const restrict expr)
+	__attribute__((nonnull));
+
+xapi logger_filter_pushw(const int stream_id, const char * const restrict expr, size_t exprl)
 	__attribute__((nonnull));
 
 /// logger_filter_unshift
 //
 // SUMMARY
-//  prepend a filter to the filters for the specified stream
+//  prepend filters to a specified stream
 //
 // PARAMETERS
 //  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
+//  expr       - logexpr
+//  [exprl]    - expr length
 //
-xapi logger_filter_unshift(const int stream_id, const char * const restrict expr, size_t exprl)
+xapi logger_filter_unshifts(const int stream_id, const char * const restrict expr)
+	__attribute__((nonnull));
+
+xapi logger_filter_unshiftw(const int stream_id, const char * const restrict expr, size_t exprl)
 	__attribute__((nonnull));
 
 /// logger_filter_pop

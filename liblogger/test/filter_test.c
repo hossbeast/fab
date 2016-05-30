@@ -62,23 +62,33 @@ xapi test_filter_parse()
   filter * filterp = 0;
 
   struct {
-    char * expr; // expression
+    char * expr;  // expression
 
-    uint64_t v;  // expected ids
-    char m;      // expected mode
-    char o;      // expected operation
+    uint64_t v;   // expected ids
+    char m;       // expected mode
+    char o;       // expected operation
+    size_t off;   // expected offset
   } tests[] = { 
-      { expr : "+A"             , v : L_A                   , m : ' ' , o : '+' }
-    , { expr : "+A,BAR"         , v : L_A | L_BAR           , m : ' ' , o : '+' }
-    , { expr : "-BAR"           , v : L_BAR                 , m : ' ' , o : '-' }
-    , { expr : "-BAR%"          , v : L_BAR                 , m : '%' , o : '-' }
-    , { expr : "+DELTA,A,BAR^"  , v : L_A | L_BAR | L_DELTA , m : '^' , o : '+' }
+      { expr : "+A"             , v : L_A                   , m : ' ' , o : '+' , off : 2 }
+    , { expr : "+A,BAR"         , v : L_A | L_BAR           , m : ' ' , o : '+' , off : 6 }
+    , { expr : "-BAR"           , v : L_BAR                 , m : ' ' , o : '-' , off : 4 }
+    , { expr : "-BAR%"          , v : L_BAR                 , m : '%' , o : '-' , off : 5 }
+    , { expr : "+DELTA,A,BAR^"  , v : L_A | L_BAR | L_DELTA , m : '^' , o : '+' , off : 13 }
+    , { expr : "-BAR  "         , v : L_BAR                 , m : ' ' , o : '-' , off : 4 }
+    , { expr : "  -BAR"         , v : L_BAR                 , m : ' ' , o : '-' , off : 6 }
+    , { expr : "+BAR,,BAR"      , v : L_BAR                 , m : ' ' , o : '+' , off : 9 }
+    , { expr : "+BAR||BAR"      , v : L_BAR                 , m : ' ' , o : '+' , off : 9 }
+    , { expr : "+|BAR||BAR|"    , v : L_BAR                 , m : ' ' , o : '+' , off : 11 }
+    , { expr : "+DELTA%"        , v : L_DELTA               , m : '%' , o : '+' , off : 7 }
+    , { expr : "+DELTA|%"       , v : L_DELTA               , m : '%' , o : '+' , off : 8 }
+    , { expr : "+A +BAR"        , v : L_A                   , m : ' ' , o : '+' , off : 2 }
   };
 
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    fatal(filter_parse, tests[x].expr, 0, &filterp);
+    size_t off = 0;
+    fatal(filter_parses, tests[x].expr, &filterp, &off);
 
     if(tests[x].v)
     {
@@ -86,6 +96,7 @@ xapi test_filter_parse()
       assertf(filterp->v == tests[x].v, "ids 0x%"PRIx64, "ids 0x%"PRIx64, tests[x].v, filterp->v);
       assertf(filterp->m == tests[x].m, "mode %c", "mode %c", tests[x].m, filterp->m);
       assertf(filterp->o == tests[x].o, "operation %c", "operation %c", tests[x].o, filterp->o);
+      assertf(off == tests[x].off, "offset %zu", "offset %zu", tests[x].off, off);
     }
     else
     {
@@ -100,6 +111,7 @@ finally:
   {
     xapi_infos("test", "test_filter_parse");
     xapi_infos("input", tests[x].expr);
+    xapi_infof("case", "%d", x);
   }
 
   filter_free(filterp);
@@ -138,7 +150,7 @@ xapi test_filters_would()
     char ** expr;
     for(expr = tests[x].expr; *expr; expr++)
     {
-      fatal(filter_parse, *expr, 0, &filterp);
+      fatal(filter_parses, *expr, &filterp, 0);
       fatal(list_push, filters, filterp);
       filterp = 0;
     }

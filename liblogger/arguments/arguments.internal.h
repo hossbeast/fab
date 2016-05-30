@@ -27,13 +27,6 @@
 //
 xapi arguments_initialize(char ** restrict envp);
 
-/// arguments_report
-//
-// SUMMARY
-//  log a description of cmdline args to LOGGER
-//
-xapi arguments_report();
-
 /// arguments_teardown
 //
 // SUMMARY

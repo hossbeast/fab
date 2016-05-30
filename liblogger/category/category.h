@@ -88,19 +88,7 @@ xapi logger_category_activate();
 // SUMMARY
 //  log a summary of activated categories to LOGGER
 //
-xapi category_report();
-
-/// category_say
-//
-// SUMMARY
-//  write a description of a logger category to a narrator
-//
-// PARAMETERS
-//  cat - logger category
-//  N   - narrator
-//
-xapi category_say(logger_category * const restrict cat, struct narrator * const restrict N)
-  __attribute__((nonnull));
+xapi logger_categories_report();
 
 #undef restrict
 #endif

@@ -67,7 +67,7 @@ void filter_ifree(filter ** const restrict filterp)
 // SUMMARY
 //  
 //
-xapi filter_say(filter * filterp, struct narrator * n)
+xapi filter_say(filter * filterp, struct narrator * N)
   __attribute__((nonnull));
 
 /// filter_parse
@@ -75,13 +75,20 @@ xapi filter_say(filter * filterp, struct narrator * n)
 // SUMMARY
 //  parse a filter expression
 //
-// PARAMETERS
-//  expr  - filter expression
-//  exprl - length of expr ; 0 for strlen
-//  res   - (returns) the filter
+// REMARKS
+//  ignores leading whitespace
 //
-xapi filter_parse(const char * const restrict expr, size_t exprl, filter ** const restrict res)
-  __attribute__((nonnull));
+// PARAMETERS
+//  expr    - filter expression
+//  [exprl] - expr length
+//  [res]   - (returns) if parsing was successful, returns the filter
+//  [off]   - (returns) if parsing was successful, returns number of bytes used
+//
+xapi filter_parses(const char * const restrict expr, filter ** const restrict res, size_t * const restrict off)
+  __attribute__((nonnull(1)));
+
+xapi filter_parsew(const char * const restrict expr, size_t exprl, filter ** const restrict res, size_t * const restrict off)
+  __attribute__((nonnull(1)));
 
 /// filter_push
 //

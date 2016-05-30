@@ -134,13 +134,6 @@ xapi stream_byid(int id, stream ** const restrict streamp)
 xapi stream_filter_push(stream * const restrict streamp, struct filter * restrict filterp)
   __attribute__((nonnull));
 
-/// streams_report
-//
-// SUMMARY
-//  log a summary of configured streams to LOGGER
-//
-xapi streams_report();
-
 /// stream_say
 //
 // SUMMARY

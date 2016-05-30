@@ -35,4 +35,11 @@ extern int			g_logc;					// count of g_logv
 extern char *		g_logvs;				// single string of logexpr arguments
 extern size_t   g_logvsl;				// length of g_logvs
 
+/// logger_arguments_report
+//
+// SUMMARY
+//  log a description of cmdline args to LOGGER
+//
+xapi logger_arguments_report();
+
 #endif

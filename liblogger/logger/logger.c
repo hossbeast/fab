@@ -106,9 +106,9 @@ API xapi logger_initialize(char ** restrict envp)
   fatal(arguments_initialize, envp);
 
   // reports to LOGGER
-  fatal(arguments_report);
-  fatal(category_report_verbose);
-  fatal(streams_report);
+  fatal(logger_arguments_report);
+  fatal(categories_report_verbose);
+  fatal(logger_streams_report);
 
   finally : coda;
 }

@@ -80,4 +80,11 @@ typedef struct logger_stream
 xapi logger_stream_register(const logger_stream * restrict streams)
   __attribute__((nonnull));
 
+/// logger_streams_report
+//
+// SUMMARY
+//  log a summary of configured streams to LOGGER
+//
+xapi logger_streams_report();
+
 #endif

@@ -78,12 +78,24 @@ xapi category_byid(uint64_t id, logger_category ** const restrict category)
 // SUMMARY
 //  log a summary of activated categories to LOGGER
 //
-xapi category_report_verbose();
+xapi categories_report_verbose();
+
+/// category_say
+//
+// SUMMARY
+//  write a description of a logger category to a narrator
+//
+// PARAMETERS
+//  cat - logger category
+//  N   - narrator
+//
+xapi category_say(logger_category * const restrict cat, struct narrator * const restrict N)
+  __attribute__((nonnull));
 
 /// category_say_verbose
 //
 // SUMMARY
-//  write a description of a logger category to a narrator
+//  write a verbose description of a logger category to a narrator
 //
 // PARAMETERS
 //  cat - logger category

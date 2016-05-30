@@ -47,35 +47,6 @@ APIDATA size_t			  g_logvsl;
 // public
 //
 
-xapi arguments_report()
-{
-  enter;
-
-  int token = 0;
-
-  logf(L_LOGGER, "logger cmdline arguments");
-  logf(L_LOGGER, " args : %s", g_argvs);
-  int x;
-  for(x = 0; x < g_argc; x++)
-  {
-    fatal(log_start, L_LOGGER, &token);
-    logf(L_LOGGER, "  [%2d] %s", x, g_argv[x]);
-    if(g_binary == g_argv[x])
-      logf(L_LOGGER, "   <-- binary");
-    else if(g_interpreter == g_argv[x])
-      logf(L_LOGGER, "   <-- interpreting");
-    fatal(log_finish, &token);
-  }
-
-  logf(L_LOGGER, " logs : %s", g_logvs);
-  for(x = 0; x < g_logc; x++)
-    logf(L_LOGGER, "  [%2d] %s", x, g_logv[x]);
-
-finally:
-  fatal(log_finish, &token);
-coda;
-}
-
 xapi arguments_initialize(char ** restrict envp)
 {
   enter;
@@ -239,7 +210,7 @@ xapi arguments_initialize(char ** restrict envp)
 	// process g_argv, splicing out recognized logger-options
 	for(x = 0; x < g_argc; x++)
 	{
-    fatal(filter_parse, g_argv[x], 0, &filterp);
+    fatal(filter_parses, g_argv[x], &filterp, 0);
     if(filterp)
     {
       fatal(filter_push, 0, filterp);
@@ -330,4 +301,37 @@ void arguments_teardown()
     free(g_logv[x]);
   free(g_logv);
   free(g_logvs);
+}
+
+//
+// api
+//
+
+API xapi logger_arguments_report()
+{
+  enter;
+
+  int token = 0;
+
+  logf(L_LOGGER, "logger cmdline arguments");
+  logf(L_LOGGER, " args : %s", g_argvs);
+  int x;
+  for(x = 0; x < g_argc; x++)
+  {
+    fatal(log_start, L_LOGGER, &token);
+    logf(L_LOGGER, "  [%2d] %s", x, g_argv[x]);
+    if(g_binary == g_argv[x])
+      logf(L_LOGGER, "   <-- binary");
+    else if(g_interpreter == g_argv[x])
+      logf(L_LOGGER, "   <-- interpreting");
+    fatal(log_finish, &token);
+  }
+
+  logf(L_LOGGER, " logs : %s", g_logvs);
+  for(x = 0; x < g_logc; x++)
+    logf(L_LOGGER, "  [%2d] %s", x, g_logv[x]);
+
+finally:
+  fatal(log_finish, &token);
+coda;
 }

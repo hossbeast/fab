@@ -70,14 +70,16 @@ void __attribute__((unused)) filter_ifree(filter ** filter)
   *filter = 0;
 }
 
-xapi filter_parse(const char * const restrict expr, size_t exprl, filter ** const restrict res)
+xapi filter_parsew(const char * const restrict expr, size_t exprl, filter ** const restrict filterp, size_t * const restrict offp)
 {
   enter;
 
-  exprl = exprl ?: strlen(expr);
-
   // track characters used
-  int off = 0;
+  size_t off = 0;
+
+  // skip leading whitespace
+  while(expr[off] == ' ')
+    off++;
 
   if(exprl && (expr[off] == '+' || expr[off] == '-'))
   {
@@ -86,18 +88,20 @@ xapi filter_parse(const char * const restrict expr, size_t exprl, filter ** cons
     off++;
 
     uint64_t category_ids = 0;
-    while(off != exprl)
+    while(off != exprl && expr[off] != ' ')
     {
+      // skip leading category delimiters
       for(; off < exprl; off++)
       {
         if(expr[off] != ',' && expr[off] != '|')
           break;
       }
 
+      // find the end of the category name
       int x;
       for(x = off; x < exprl; x++)
       {
-        if(expr[x] == ',' || expr[x] == '|' || expr[x] == '%' || expr[x] == '^')
+        if(expr[x] == ',' || expr[x] == '|' || expr[x] == '%' || expr[x] == '^' || expr[x] == ' ')
           break;
       }
 
@@ -110,35 +114,52 @@ xapi filter_parse(const char * const restrict expr, size_t exprl, filter ** cons
         logger_category * category = 0;
         fatal(category_byname, expr + off, x - off, &category);
 
+        // no such category
         if(category == 0)
-          break;  // no such category
+        {
+          category_ids = 0;
+          break;
+        }
 
         category_ids |= category->id;
       }
 
+      // skip trailing category delimiters
+      while(expr[x] == ',' || expr[x] == '|')
+        x++;
+
       // trailing flag indicating the mode
       if(x < exprl && (expr[x] == '%' || expr[x] == '^'))
-      {
         m = expr[x++];
-      }
 
       off += (x - off);
     }
 
-    // successful if all of the text was used
-    if(off == exprl)
+    // successful if every named categories was found
+    if(category_ids)
     {
-      fatal(xmalloc, res, sizeof(**res));
+      if(filterp)
+      {
+        fatal(xmalloc, filterp, sizeof(**filterp));
 
-      (**res) = (typeof(**res)){
-          v : category_ids & L_ALL
-        , m : m
-        , o : o
-      };
+        (**filterp) = (typeof(**filterp)){
+            v : category_ids & L_ALL
+          , m : m
+          , o : o
+        };
+      }
+
+      if(offp)
+        *offp = off;
     }
   }
 
   finally : coda;
+}
+
+xapi filter_parses(const char * const restrict expr, filter ** const restrict filterp, size_t * const restrict offp)
+{
+  xproxy(filter_parsew, expr, strlen(expr), filterp, offp);
 }
 
 xapi filter_say(filter * filterp, struct narrator * N)
@@ -279,40 +300,68 @@ coda;
 // api
 //
 
-API xapi logger_filter_push(const int stream_id, const char * const restrict expr, size_t exprl)
+API xapi logger_filter_pushw(const int stream_id, const char * const restrict expr, size_t exprl)
 {
   enter;
 
   filter * filterp = 0;
-  fatal(filter_parse, expr, exprl, &filterp);
 
-  if(!filterp)
-    fail(LOGGER_BADFILTER);
+  size_t x;
+  for(x = 0; x < exprl; x++)
+  {
+    size_t off = 0;
+    fatal(filter_parsew, expr + x, exprl - x, &filterp, &off);
 
-  fatal(filter_push, stream_id, filterp);
-  filterp = 0;
+    if(!filterp)
+      fail(LOGGER_BADFILTER);
+
+    fatal(filter_push, stream_id, filterp);
+    filterp = 0;
+
+    x += off;
+  }
 
 finally:
   filter_free(filterp);
+  xapi_infof("expr", "%.*s", (int)exprl, expr);
 coda;
 }
 
-API xapi logger_filter_unshift(const int stream_id, const char * const restrict expr, size_t exprl)
+API xapi logger_filter_pushs(const int stream_id, const char * const restrict expr)
+{
+  xproxy(logger_filter_pushw, stream_id, expr, strlen(expr));
+}
+
+API xapi logger_filter_unshiftw(const int stream_id, const char * const restrict expr, size_t exprl)
 {
   enter;
 
   filter * filterp = 0;
-  fatal(filter_parse, expr, exprl, &filterp);
 
-  if(!filterp)
-    fail(LOGGER_BADFILTER);
+  size_t x;
+  for(x = 0; x < exprl; x++)
+  {
+    size_t off = 0;
+    fatal(filter_parsew, expr + x, exprl - x, &filterp, &off);
 
-  fatal(filter_unshift, stream_id, filterp);
-  filterp = 0;
+    if(!filterp)
+      fail(LOGGER_BADFILTER);
+
+    fatal(filter_unshift, stream_id, filterp);
+    filterp = 0;
+
+    x += (off - x) + 1;
+  }
 
 finally:
   filter_free(filterp);
+  xapi_infof("expr", "%.*s", (int)exprl, expr);
 coda;
+}
+
+API xapi logger_filter_unshifts(const int stream_id, const char * const restrict expr)
+{
+  xproxy(logger_filter_unshiftw, stream_id, expr, strlen(expr));
 }
 
 API xapi logger_filter_pop(const int stream_id)
@@ -328,7 +377,7 @@ API xapi logger_filter_pop(const int stream_id)
   else
   {
     int x;
-    for(x = 0; x < array_size(g_streams); x++)
+    for(x = 0; x < g_streams->l; x++)
     {
       fatal(list_pop, ((stream *)array_get(g_streams, x))->filters, 0);
     }

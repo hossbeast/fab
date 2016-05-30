@@ -252,7 +252,15 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
   // parse and attach to just this stream
   if(def->expr)
   {
-    fatal(filter_parse, def->expr, 0, &filterp);
+    fatal(filter_parses, def->expr, &filterp, 0);
+
+    if(!filterp)
+    {
+      xapi_fail_intent();
+      xapi_info_adds("expr", def->expr);
+      fail(LOGGER_BADFILTER);
+    }
+
     fatal(stream_filter_push, streamp, filterp);
     filterp = 0;
   }
@@ -343,15 +351,16 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * co
 
 int stream_would(const stream * const restrict streamp, const uint64_t ids)
 {
-  if(!streamp->filters)
-    return 0;
+  // for a stream with no filters, log everything
+  if(list_size(streamp->filters) == 0)
+    return 1;
 
   return filters_would(streamp->filters, ids);
 }
 
 int streams_would(const uint64_t ids)
 {
-  // the default is to log nothing
+  // if there are no streams, log nothing
   if(array_size(g_streams) == 0)
     return 0;
 
@@ -403,29 +412,6 @@ finally:
 coda;
 }
 
-xapi streams_report()
-{
-  enter;
-
-  int mark = 0;
-
-  logs(L_LOGGER, "logger streams");
-
-  int x;
-  for(x = 0; x < g_streams->l; x++)
-  {
-    fatal(log_start, L_LOGGER, &mark);
-    narrator * N = log_narrator();
-    says(" ");
-    fatal(stream_say, array_get(g_streams, x), N);
-    fatal(log_finish, &mark);
-  }
-
-finally:
-  fatal(log_finish, &mark);
-coda;
-}
-
 xapi stream_say(stream * const restrict streamp, narrator * restrict N)
 {
   enter;
@@ -469,4 +455,27 @@ API xapi logger_stream_register(const logger_stream * restrict streams)
   }
 
   finally : coda;
+}
+
+API xapi logger_streams_report()
+{
+  enter;
+
+  int mark = 0;
+
+  logs(L_LOGGER, "logger streams");
+
+  int x;
+  for(x = 0; x < g_streams->l; x++)
+  {
+    fatal(log_start, L_LOGGER, &mark);
+    narrator * N = log_narrator();
+    says(" ");
+    fatal(stream_say, array_get(g_streams, x), N);
+    fatal(log_finish, &mark);
+  }
+
+finally:
+  fatal(log_finish, &mark);
+coda;
 }
