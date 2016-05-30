@@ -20,9 +20,9 @@
 #include <stddef.h>
 
 #include "xapi.h"
-#include "xapi/SYS.errtab.h"
 
 #include "xlinux.h"
+#include "xlinux/SYS.errtab.h"
 #include "xlinux/mempolicy.h"
 
 struct memblk_internals
@@ -91,6 +91,8 @@ xapi memblk_mk_mapped(memblk ** mb, int prot, int flags)
 
 xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 {
+  enter;
+
   // save the active policy, but the memblk itself should use the default mm
   mempolicy * mm = mempolicy_pop(0);
 
@@ -125,7 +127,7 @@ xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
       fatal(xmalloc, &mb->blocks[mb->blocksl].s, sizeof(*mb->blocks[0].s) * mb->blocks[mb->blocksl].a);
     }
 
-    // cumulative offset
+    // running offset
     if(mb->blocksl)
       mb->blocks[mb->blocksl].o = mb->blocks[mb->blocksl - 1].o + mb->blocks[mb->blocksl - 1].l;
 

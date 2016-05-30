@@ -25,10 +25,11 @@
 
 /// cksum
 //
-// simple hash
+// SUMMARY
+//  simple hash
 //
-uint32_t cksum(const void * const restrict v, size_t l);
+uint32_t cksum(const void * const restrict v, size_t l)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif
-

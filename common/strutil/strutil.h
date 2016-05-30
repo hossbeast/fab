@@ -49,40 +49,6 @@ int estrcmp(const char* A, int alen, const char* B, int blen, int case_insensiti
 char* estrstr(char * restrict A, int alen, const char * const restrict B, int blen, const int case_insensitive)
   __attribute__((nonnull));
 
-/*
-/// wstrcatf
-//
-// calculates size required to vprintf, reallocates *s and appends the new string onto *s
-//
-// returns nonzero on malloc failure
-//
-int wstrcatf(char** s, char* fmt, ...);
-
-/// wstrcat
-//
-// reallocates *s1, appends s2 onto *s1
-//
-// returns nonzero on malloc failure
-//
-int wstrcat(char** s1, const char* s2);
-
-/// wstrdup
-//
-// copies s2 to *s1, reallocating *s1 if necessary, deallocating it if it was already allocated
-//
-// returns nonzero on malloc failure
-//
-int wstrdup(char** s1, const char* s2);
-
-/// wsprintf
-//
-// - free(*s)
-// - allocate(*s)
-// - sprintf(fmt, ...) -> *s
-//
-int wsprintf(char** s, char* fmt, ...);
-*/
-
 /// stresc
 //
 // SUMMARY

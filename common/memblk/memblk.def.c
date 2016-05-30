@@ -80,7 +80,7 @@ void memblk_thaw(char * const restrict mb, void * restrict _p)
   if(*p)
   {
 #if 0
-printf("%p -> %zu\n", *p, (size_t)(intptr_t)(mb + (size_t)(intptr_t)*p));
+printf("%p -> %p\n", *p, mb + (size_t)(intptr_t)*p);
 #endif
     *p = mb + (size_t)(intptr_t)*p;
   }
