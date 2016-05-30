@@ -20,22 +20,22 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (xunit_test*[]) {
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "a", "c", "b", "d", 0 }
-				, .xsfm = "ss"
-				, .final = (char*[]) { "a", "b", "c", "d", 0 }
-			}}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "a", "c", "b", "d", 0 }
-				, .xsfm = "ss"
-				, .final = (char*[]) { "a", "b", "c", "d", 0 }
-			}} 
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "a", "c", "b", "d", 0 }
-				, .xsfm = "ss"
-				, .final = (char*[]) { "a", "b", "c", "d", 0 }
-			}} 
-		, 0
-	}
+  , .tests = (xunit_test*[]) {
+      (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "a", "c", "b", "d", 0 }
+        , .xsfm = "ss"
+        , .final = (char*[]) { "a", "b", "c", "d", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "a", "c", "b", "d", 0 }
+        , .xsfm = "ss"
+        , .final = (char*[]) { "a", "b", "c", "d", 0 }
+      }} 
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "a", "c", "b", "d", 0 }
+        , .xsfm = "ss"
+        , .final = (char*[]) { "a", "b", "c", "d", 0 }
+      }} 
+    , 0
+  }
 };

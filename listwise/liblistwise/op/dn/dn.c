@@ -31,79 +31,79 @@ NO ARGUMENTS
 
 OPERATION
 
-	1. foreach selected string
-		2. replace that string with dirname(itself)
+  1. foreach selected string
+    2. replace that string with dirname(itself)
 
 */
 
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "dn"
-		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE
-		, .op_exec			= op_exec
-		, .mnemonic			= "dirname"
-		, .desc					= "get component of filepath preceeding the filename"
-	}
-	, {}
+  {
+      .s            = "dn"
+    , .optype       = LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE
+    , .op_exec      = op_exec
+    , .mnemonic     = "dirname"
+    , .desc         = "get component of filepath preceeding the filename"
+  }
+  , {}
 };
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	int x;
-	LSTACK_ITERATE(ls, x, go)
-	if(go)
-	{
-		char * ss;
-		int ssl;
-		int raw;
+  int x;
+  LSTACK_ITERATE(ls, x, go)
+  if(go)
+  {
+    char * ss;
+    int ssl;
+    int raw;
 
-		// raw is true if this row is not an object entry, and has no window in effect
-		fatal(lstack_readrow, ls, 0, x, &ss, &ssl, 0, 1, 1, 0, &raw);
+    // raw is true if this row is not an object entry, and has no window in effect
+    fatal(lstack_readrow, ls, 0, x, &ss, &ssl, 0, 1, 1, 0, &raw);
 
-		if(ssl)
-		{
-			char * s = ss;
-			char * e = ss + ssl - 1;
+    if(ssl)
+    {
+      char * s = ss;
+      char * e = ss + ssl - 1;
 
-			while(e != s && e[0] == '/')
-				e--;
+      while(e != s && e[0] == '/')
+        e--;
 
-			if(e != s)
-				e--;
+      if(e != s)
+        e--;
 
-			while(e != s && e[0] != '/')
-				e--;
+      while(e != s && e[0] != '/')
+        e--;
 
-			while(e != s && e[0] == '/')
-				e--;
+      while(e != s && e[0] == '/')
+        e--;
 
-			if(s != e || s[0] == '.')
-			{
-				e++;
+      if(s != e || s[0] == '.')
+      {
+        e++;
 
-				if(raw)
-				{
-					ls->s[0].s[x].l = e - s;
-					ls->s[0].t[x].y = LWTMP_UNSET;
-					ls->win.s[x].active = 0;
-					ls->win.s[x].staged = 0;
-				}
-				else
-				{
-					// rewrite the entry
-					fatal(lstack_writew, ls, 0, x, s, e - s);
-				}
+        if(raw)
+        {
+          ls->s[0].s[x].l = e - s;
+          ls->s[0].t[x].y = LWTMP_UNSET;
+          ls->win.s[x].active = 0;
+          ls->win.s[x].staged = 0;
+        }
+        else
+        {
+          // rewrite the entry
+          fatal(lstack_writew, ls, 0, x, s, e - s);
+        }
 
-				// record this index was hit
-				fatal(lstack_selection_stage, ls, x);
-			}
-		}
-	}
-	LSTACK_ITEREND
+        // record this index was hit
+        fatal(lstack_selection_stage, ls, x);
+      }
+    }
+  }
+  LSTACK_ITEREND
 
-	finally : coda;
+  finally : coda;
 }

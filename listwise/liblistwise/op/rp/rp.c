@@ -46,52 +46,52 @@ OPERATION
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "rp"
-		, .optype				= LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
-		, .op_exec			= op_exec
-		, .mnemonic			= "realpath"
-		, .desc					= "path canonicalization with realpath"
-	}
-	, {}
+  {
+      .s            = "rp"
+    , .optype       = LWOP_SELECTION_STAGE | LWOP_OPERATION_INPLACE | LWOP_OPERATION_FILESYSTEM
+    , .op_exec      = op_exec
+    , .mnemonic     = "realpath"
+    , .desc         = "path canonicalization with realpath"
+  }
+  , {}
 };
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	char * ss = 0;
-	int x;
-	LSTACK_ITERATE(ls, x, go)
-	if(go)
-	{
-		char * s;
-		int l;
-		fatal(lstack_getstring, ls, 0, x, &s, &l);
+  char * ss = 0;
+  int x;
+  LSTACK_ITERATE(ls, x, go)
+  if(go)
+  {
+    char * s;
+    int l;
+    fatal(lstack_getstring, ls, 0, x, &s, &l);
 
-		ifree(&ss);
-		if((ss = realpath(s, 0)))
-		{
-			fatal(lstack_writes
-				, ls
-				, 0
-				, x
-				, ss
-			);
-			fatal(lstack_selection_stage, ls, x);
-		}
-		else if(errno == ENOENT || errno == ENOTDIR)
-		{
-			logf(L_LISTWISE | L_OPINFO, "realpath(%.*s)=[%d][%s]", l, s, errno, strerror(errno));
-		}
-		else
-		{
-			tfail(perrtab_SYS, errno);
-		}
-	}
-	LSTACK_ITEREND
+    ifree(&ss);
+    if((ss = realpath(s, 0)))
+    {
+      fatal(lstack_writes
+        , ls
+        , 0
+        , x
+        , ss
+      );
+      fatal(lstack_selection_stage, ls, x);
+    }
+    else if(errno == ENOENT || errno == ENOTDIR)
+    {
+      logf(L_LISTWISE | L_OPINFO, "realpath(%.*s)=[%d][%s]", l, s, errno, strerror(errno));
+    }
+    else
+    {
+      tfail(perrtab_SYS, errno);
+    }
+  }
+  LSTACK_ITEREND
 
 finally:
-	free(ss);
+  free(ss);
 coda;
 }

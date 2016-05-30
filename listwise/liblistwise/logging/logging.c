@@ -22,15 +22,15 @@
 #include "logging.internal.h"
 
 APIDATA logger_category * listwise_logs = (logger_category []) {
-	  { name : "LISTWISE" , description : "liblistwise logging" }
-	, { name : "PARSE"		, description : "transform-string parsing results" }
-	, { name : "EXEC"		  , description : "step-by-step listwise transformation" }
-	, { name : "OPINFO"		, description : "operator informational messages" }
+    { name : "LISTWISE" , description : "liblistwise logging" }
+  , { name : "PARSE"    , description : "transform-string parsing results" }
+  , { name : "EXEC"     , description : "step-by-step listwise transformation" }
+  , { name : "OPINFO"   , description : "operator informational messages" }
 #if DEVEL
-	, { name : "TOKENS"		, description : "transform parsing - token stream" }
-	, { name : "STATES"		, description : "transform parsing - lexer states" }
+  , { name : "TOKENS"   , description : "transform parsing - token stream" }
+  , { name : "STATES"   , description : "transform parsing - lexer states" }
 #if SANITY
-	, { name : "SANITY"		, description : "listwise sanity checks" }
+  , { name : "SANITY"   , description : "listwise sanity checks" }
 #endif
 #endif
   , { }

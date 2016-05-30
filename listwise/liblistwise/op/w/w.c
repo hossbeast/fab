@@ -28,11 +28,11 @@
 w operator - select window of lines in the top list by offset/length
 
 ARGUMENTS
-	 1  - offset to start of window
-		    if negative, interpreted as offset from the end of the list
-			  default : 0
-	*2  - length of window
-			  default : 0 - entire list
+   1  - offset to start of window
+        if negative, interpreted as offset from the end of the list
+        default : 0
+  *2  - length of window
+        default : 0 - entire list
 
 */
 
@@ -40,78 +40,78 @@ static xapi op_validate(operation* o);
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "w"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec
-		, .mnemonic			= "window"
-		, .desc					= "select rows by offset/length"
-	}, {}
+  {
+      .s            = "w"
+    , .optype       = LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec
+    , .mnemonic     = "window"
+    , .desc         = "select rows by offset/length"
+  }, {}
 };
 
 xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl != 1 && (o->argsl % 2) != 0)
-		failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "1 or even", o->argsl);
+  if(o->argsl != 1 && (o->argsl % 2) != 0)
+    failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "1 or even", o->argsl);
 
-	int x;
-	for(x = 0; x < o->argsl; x++)
-	{
-		if(o->args[x]->itype != ITYPE_I64)
-			failf(LISTWISE_ARGSDOM, "expected %s", "actual %d", "i64", o->args[x]->itype);
-	}
+  int x;
+  for(x = 0; x < o->argsl; x++)
+  {
+    if(o->args[x]->itype != ITYPE_I64)
+      failf(LISTWISE_ARGSDOM, "expected %s", "actual %d", "i64", o->args[x]->itype);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	// number of already selected rows in top list
-	int count = LSTACK_COUNT(lx);
+  // number of already selected rows in top list
+  int count = LSTACK_COUNT(lx);
 
-	int i;
-	for(i = 0; i < o->argsl; i += 2)
-	{
-		int win_off = o->args[i]->i64;
-		int win_len = 0;
+  int i;
+  for(i = 0; i < o->argsl; i += 2)
+  {
+    int win_off = o->args[i]->i64;
+    int win_len = 0;
 
-		if(o->argsl > (i + 1))
-			win_len = o->args[i + 1]->i64;
+    if(o->argsl > (i + 1))
+      win_len = o->args[i + 1]->i64;
 
-		int off = win_off;
-		int len = win_len;
+    int off = win_off;
+    int len = win_len;
 
-		if(win_off < 0)
-			off = count + win_off;
-		if(win_len == 0)
-			len = count - off;
-		else
-			len = MIN(len, count - off);
+    if(win_off < 0)
+      off = count + win_off;
+    if(win_len == 0)
+      len = count - off;
+    else
+      len = MIN(len, count - off);
 
-		if(off >= 0 && off < count && len > 0)
-		{
-			int x;
-			int j = 0;
-			int k = 0;
-			LSTACK_ITERATE(lx, x, go)
-			if(go)
-			{
-				if(k >= off && j < len)
-				{
-					fatal(lstack_selection_stage, lx, x);
-					j++;
-				}
+    if(off >= 0 && off < count && len > 0)
+    {
+      int x;
+      int j = 0;
+      int k = 0;
+      LSTACK_ITERATE(lx, x, go)
+      if(go)
+      {
+        if(k >= off && j < len)
+        {
+          fatal(lstack_selection_stage, lx, x);
+          j++;
+        }
 
-				k++;
-			}
-			LSTACK_ITEREND
-		}
-	}
+        k++;
+      }
+      LSTACK_ITEREND
+    }
+  }
 
-	finally : coda;
+  finally : coda;
 }

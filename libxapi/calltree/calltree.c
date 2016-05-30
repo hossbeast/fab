@@ -46,15 +46,15 @@ __thread int g_intent_to_fail;
 
 void calltree_freeze(struct memblk * const restrict mb, calltree * restrict ct)
 {
-	/*
-	** etab is allocated outside of the memblk and must be handled specially
-	*/
+  /*
+  ** etab is allocated outside of the memblk and must be handled specially
+  */
   if(ct->exit_table)
-  	ct->exit_table = (void*)(intptr_t)ct->exit_table->id;
+    ct->exit_table = (void*)(intptr_t)ct->exit_table->id;
 
-	int x;
-	for(x = 0; x < ct->frames.l; x++)
-		frame_freeze(mb, &ct->frames.v[x]);
+  int x;
+  for(x = 0; x < ct->frames.l; x++)
+    frame_freeze(mb, &ct->frames.v[x]);
   memblk_freeze(mb, &ct->frames.v);
 }
 
@@ -65,12 +65,12 @@ void calltree_freeze(struct memblk * const restrict mb, calltree * restrict ct)
 void calltree_unfreeze(struct memblk * const restrict mb, calltree * restrict ct)
 {
   if(ct->exit_table)
-  	ct->exit_table = xapi_errtab_byid((intptr_t)ct->exit_table);
+    ct->exit_table = xapi_errtab_byid((intptr_t)ct->exit_table);
 
-	memblk_unfreeze(mb, &ct->frames.v);
-	int x;
-	for(x = 0; x < ct->frames.l; x++)
-		frame_unfreeze(mb, &ct->frames.v[x]);
+  memblk_unfreeze(mb, &ct->frames.v);
+  int x;
+  for(x = 0; x < ct->frames.l; x++)
+    frame_unfreeze(mb, &ct->frames.v[x]);
 }
 
 /// calltree_thaw
@@ -82,10 +82,10 @@ void __attribute__((nonnull)) calltree_thaw(char * const restrict mb, calltree *
   if(ct->exit_table)
     ct->exit_table = xapi_errtab_byid((intptr_t)ct->exit_table);
 
-	memblk_thaw(mb, &ct->frames.v);
-	int x;
-	for(x = 0; x < ct->frames.l; x++)
-		frame_thaw(mb, &ct->frames.v[x]);
+  memblk_thaw(mb, &ct->frames.v);
+  int x;
+  for(x = 0; x < ct->frames.l; x++)
+    frame_thaw(mb, &ct->frames.v[x]);
 }
 
 //
@@ -113,7 +113,7 @@ frame * calltree_frame_push()
 
   mm_assure(&g_calltree->frames.v, &g_calltree->frames.l, &g_calltree->frames.a, sizeof(*g_calltree->frames.v), g_calltree->frames.l + 1);
   xapi_top_frame_index = g_calltree->frames.l;
-	frame * f = &g_calltree->frames.v[g_calltree->frames.l++];
+  frame * f = &g_calltree->frames.v[g_calltree->frames.l++];
   memset(f, 0, sizeof(*f));
   return f;
 }
@@ -178,5 +178,5 @@ API xapi xapi_calltree_errval()
 
 API const etable * xapi_calltree_errtab()
 {
-	return g_calltree->exit_table;
+  return g_calltree->exit_table;
 }

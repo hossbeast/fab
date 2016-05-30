@@ -38,7 +38,7 @@ OPERATION
  use entire top list
 
  for each entry
-	1. create N copies of this entry at indexes x + 1 .. N
+  1. create N copies of this entry at indexes x + 1 .. N
 
 */
 
@@ -46,75 +46,75 @@ static xapi op_validate(operation* o);
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "cp"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE | LWOP_WINDOWS_RESET
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec
-		, .desc					= "duplicate list entries"
-		, .mnemonic			= "copy"
-	}, {}
+  {
+      .s            = "cp"
+    , .optype       = LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE | LWOP_WINDOWS_RESET
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec
+    , .desc         = "duplicate list entries"
+    , .mnemonic     = "copy"
+  }, {}
 };
 
 xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl > 1)
-		failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "0, or 1", o->argsl);
+  if(o->argsl > 1)
+    failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "0, or 1", o->argsl);
 
-	else if(o->argsl == 1 && o->args[0]->itype != ITYPE_I64)
-		failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
+  else if(o->argsl == 1 && o->args[0]->itype != ITYPE_I64)
+    failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	int N = 1;
-	if(o->argsl)
-		N = o->args[0]->i64;
+  int N = 1;
+  if(o->argsl)
+    N = o->args[0]->i64;
 
-	int c = 0;
-	int k = ls->s[0].l;
+  int c = 0;
+  int k = ls->s[0].l;
 
-	int x;
-	LSTACK_ITERREV(ls, x, go);
-	if(go)
-	{
-		// prepare N entries at x+1 for writing
-		fatal(lstack_displace, ls, 0, x + 1, N);
-		
-		int y;
-		for(y = 1; y <= N; y++)
-		{
-			if(ls->s[0].s[x].type)
-			{
-				fatal(lstack_obj_alt_write, ls, 0, x+y, *(void**)ls->s[0].s[x].s, ls->s[0].s[x].type);
-			}
-			else
-			{
-				fatal(lstack_alt_writew, ls, 0, x+y, ls->s[0].s[x].s, ls->s[0].s[x].l);
-			}
-		}
-	}
-	LSTACK_ITEREND;
+  int x;
+  LSTACK_ITERREV(ls, x, go);
+  if(go)
+  {
+    // prepare N entries at x+1 for writing
+    fatal(lstack_displace, ls, 0, x + 1, N);
+    
+    int y;
+    for(y = 1; y <= N; y++)
+    {
+      if(ls->s[0].s[x].type)
+      {
+        fatal(lstack_obj_alt_write, ls, 0, x+y, *(void**)ls->s[0].s[x].s, ls->s[0].s[x].type);
+      }
+      else
+      {
+        fatal(lstack_alt_writew, ls, 0, x+y, ls->s[0].s[x].s, ls->s[0].s[x].l);
+      }
+    }
+  }
+  LSTACK_ITEREND;
 
-	LSTACK_ITERATE(ls, x, go);
-	if(x < k)
-	{
-		if(go)
-		{
-			int y;
-			for(y = 0; y <= N; y++)
-				fatal(lstack_selection_stage, ls, x + y + c);
+  LSTACK_ITERATE(ls, x, go);
+  if(x < k)
+  {
+    if(go)
+    {
+      int y;
+      for(y = 0; y <= N; y++)
+        fatal(lstack_selection_stage, ls, x + y + c);
 
-			c += N;
-		}
-	}
-	LSTACK_ITEREND;
+      c += N;
+    }
+  }
+  LSTACK_ITEREND;
 
-	finally : coda;
+  finally : coda;
 }

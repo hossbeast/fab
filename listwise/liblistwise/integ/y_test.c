@@ -20,56 +20,56 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (xunit_test*[]) {
+  , .tests = (xunit_test*[]) {
 
 /* sx : WINDOWS_STAGE | SELECTION_STAGE */
 
-			/* sy : selections */
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sx/z sy"
-				, .final = (char*[]) { "foo.z", "foo.a.z", "foo.a.b.z", 0 }
-		  }}
+      /* sy : selections */
+      (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "sx/z sy"
+        , .final = (char*[]) { "foo.z", "foo.a.z", "foo.a.b.z", 0 }
+      }}
 
-			/* wy : windows */
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sx/z wy"
-				, .final = (char*[]) { "z", "z", "z", 0 }
-		  }}
+      /* wy : windows */
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "sx/z wy"
+        , .final = (char*[]) { "z", "z", "z", 0 }
+      }}
 
-			/* selections and windows */
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sx/z y"
-				, .final = (char*[]) { "z", "z", "z", 0 }
-		  }}
+      /* selections and windows */
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "sx/z y"
+        , .final = (char*[]) { "z", "z", "z", 0 }
+      }}
 
 /* sy WINDOWS_ACTIVATE | SELECTION_STAGE */
 /* sy WINDOWS_STAGE | SELECTION_ACTIVATE */
 
 /*
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sx/b/z"
-				, .final = (char*[]) { "foo", "foo.a", "foo.a.z", "foo.a.b.c", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sxf/z"
-				, .final = (char*[]) { "foo", "foo.z", "foo.z", "foo.z", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
-				, .xsfm = "sxf/b.c/z"
-				, .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
-				, .xsfm = "sxf/b.c/z"
-				, .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
-		  }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "sx/b/z"
+        , .final = (char*[]) { "foo", "foo.a", "foo.a.z", "foo.a.b.c", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "sxf/z"
+        , .final = (char*[]) { "foo", "foo.z", "foo.z", "foo.z", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
+        , .xsfm = "sxf/b.c/z"
+        , .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
+        , .xsfm = "sxf/b.c/z"
+        , .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
+      }}
 */
-		, 0
-	}
+    , 0
+  }
 };

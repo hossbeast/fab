@@ -20,7 +20,7 @@
 
 #include "object.h"
 
-struct map;	// map.h
+struct map; // map.h
 
 // collection of registered object types with lookup index by type id
 struct map * object_registry;

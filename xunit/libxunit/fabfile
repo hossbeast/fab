@@ -22,16 +22,16 @@
 +[ $dcommon ]() @common
 
 # variables
-$basename			= [ xunit ]
+$basename     = [ xunit ]
 $libname_xapi = [ lib $basename .so ~ j ]
-$copts				= [ -fPIC [ $dlibxapi $dlibxlinux $dliblogger [ $* ~ lsr c -d ] ~ s/^/-I ] ]
-$cflags_xapi_final	= [ $cflags_xapi_final $copts ]
-$cflags_xapi_debug	= [ $cflags_xapi_debug $copts ]
-$cflags_xapi_devel	= [ $cflags_xapi_devel $copts ]
-$lopts							= [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
-$lflags_xapi_final	= [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
-$lflags_xapi_debug	= [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
-$lflags_xapi_devel	= [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel $lopts [ -Wl,-soname,libxunit-xapi-devel.so ~ j ] ]
+$copts        = [ -fPIC [ $dlibxapi $dlibxlinux $dliblogger [ $* ~ lsr c -d ] ~ s/^/-I ] ]
+$cflags_xapi_final  = [ $cflags_xapi_final $copts ]
+$cflags_xapi_debug  = [ $cflags_xapi_debug $copts ]
+$cflags_xapi_devel  = [ $cflags_xapi_devel $copts ]
+$lopts              = [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
+$lflags_xapi_final  = [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
+$lflags_xapi_debug  = [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
+$lflags_xapi_devel  = [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel $lopts [ -Wl,-soname,libxunit-xapi-devel.so ~ j ] ]
 
 # library dependencies
 [ $libxunit_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final ]
@@ -66,25 +66,25 @@ $lflags_xapi_devel	= [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi
 # library exports
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
-	  (echo "{ global: "
-	> perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=|;)/) { print "$1;\n" }' <(\
-	  cat -- [ $@ ~ rx/ineed fi ] )
-	> echo "local: *; };"
-	  ) 1>[ $@ ]
+    (echo "{ global: "
+  > perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=|;)/) { print "$1;\n" }' <(\
+    cat -- [ $@ ~ rx/ineed fi ] )
+  > echo "local: *; };"
+    ) 1>[ $@ ]
 }
 
 # link the library
 [ $libxunit_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.final.pic.o sy ] ]
 {
-	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ] 
+  [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ] 
 }
 
 [ $libxunit_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.debug.pic.o sy ] ]
 {
-	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ] 
+  [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ] 
 }
 
 [ $libxunit_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.devel.pic.o sy ] ]
 {
-	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ] 
+  [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ] 
 }

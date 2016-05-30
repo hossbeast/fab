@@ -18,7 +18,7 @@
 #ifndef _XAPI_CALLTREE_H
 #define _XAPI_CALLTREE_H
 
-struct memblk;			// memblk.h
+struct memblk;      // memblk.h
 struct calltree;
 
 #define restrict __restrict
@@ -62,7 +62,7 @@ void xapi_calltree_unfreeze();
 //  calltree instance (pointer-equivalent with mb)
 //
 struct calltree * xapi_calltree_thaw(char * const restrict mb)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

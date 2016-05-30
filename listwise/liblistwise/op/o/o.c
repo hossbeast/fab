@@ -33,20 +33,20 @@ NO ARGUMENTS
 
 OPERATION
 
-	1. do not reset the "last list" before the next operator
-	2. do not excute the implicit "y" after the preceeding operator
+  1. do not reset the "last list" before the next operator
+  2. do not excute the implicit "y" after the preceeding operator
 
-	1. do not unstage selections
-	2. do not unstage windows
+  1. do not unstage selections
+  2. do not unstage windows
 
 */
 
 operator op_desc[] = {
-	{
-		  .s						= "o"
-		, .optype				= LWOP_AGGREGATE
-		, .mnemonic			= "or"
-		, .desc					= "aggregate selection and windows across operators"
-	}
-	, {}
+  {
+      .s            = "o"
+    , .optype       = LWOP_AGGREGATE
+    , .mnemonic     = "or"
+    , .desc         = "aggregate selection and windows across operators"
+  }
+  , {}
 };

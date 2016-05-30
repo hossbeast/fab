@@ -25,32 +25,32 @@
 
 API void lwx_iterate_loop(lwx * const restrict lx, const int x, const int y, const int sel, const int win, int * const restrict go)
 {
-	*go = 1;
-	if(sel && lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
-	{
-		*go = 0;
-		if(lx->sel.active->state != LWX_SELECTION_NONE && lx->sel.active->sl > (y / 8))
-		{
-			*go = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
-		}
-	}
+  *go = 1;
+  if(sel && lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
+  {
+    *go = 0;
+    if(lx->sel.active->state != LWX_SELECTION_NONE && lx->sel.active->sl > (y / 8))
+    {
+      *go = lx->sel.active->s[y / 8] & (0x01 << (y % 8));
+    }
+  }
 
-	if(*go)
-	{
-		if(win)
-		{
-			if(lstack_windows_state(lx, y, 0) == LWX_WINDOWS_NONE)
-				*go = 0;
-		}
-	}
+  if(*go)
+  {
+    if(win)
+    {
+      if(lstack_windows_state(lx, y, 0) == LWX_WINDOWS_NONE)
+        *go = 0;
+    }
+  }
 }
 
 int API lwx_lists(lwx * const restrict lx)
 {
-	return lx->l;
+  return lx->l;
 }
 
 int API lwx_rows(lwx * const restrict lx, const int x)
 {
-	return lx->s[x].l;
+  return lx->s[x].l;
 }

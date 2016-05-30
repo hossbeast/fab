@@ -20,66 +20,66 @@
 use strict;
 use warnings;
 
-my @S;	# strong
-my @W;	# weak
+my @S;  # strong
+my @W;  # weak
 
 my $gen = '';
 if($ARGV[0])
 {
-	$gen = $ARGV[0];
-	$gen =~ s/^\s+//;
-	$gen =~ s/\s+//;
+  $gen = $ARGV[0];
+  $gen =~ s/^\s+//;
+  $gen =~ s/\s+//;
 }
 
 #for my $line (map { chomp ; $_ } <RDOUT>)
 for (map { chomp ; $_ } <STDIN>)
 {
-	if(/^[^:]+:$/)	# -MP lines, only
-	{
-		push @S, substr $_, 0, -1;		# strong dependency on the header
-		
-		my $line = substr $_, 0, -2;	# exclude trailing newline and colon
-		$line = "${line}h";
+  if(/^[^:]+:$/)  # -MP lines, only
+  {
+    push @S, substr $_, 0, -1;    # strong dependency on the header
+    
+    my $line = substr $_, 0, -2;  # exclude trailing newline and colon
+    $line = "${line}h";
 
-		# for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
-		if(! -r $line && $gen)
-		{
-			$line = $gen . "/" . $line;
-		}
+    # for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
+    if(! -r $line && $gen)
+    {
+      $line = $gen . "/" . $line;
+    }
 
-		if($line =~ /\.lex\.h$/)
-		{
-			$line =~ s/\.lex\.h/.lex/;
-			push @W, $line;				# weak dependency on the object
-		}
-		elsif($line =~ /\.tab\.h$/)
-		{
-			$line =~ s/\.tab\.h/.tab/;
-			push @W, $line;				# weak dependency on the object
-		}
-		elsif($line =~ /\.states\.h$/)
-		{
-			$line =~ s/\.states\.h/.states/;
-			push @W, $line;				# weak dependency on the object
-		}
-		elsif($line =~ /\.tokens\.h$/)
-		{
-			$line =~ s/\.tokens\.h/.tokens/;
-			push @W, $line;				# weak dependency on the object
-		}
-		else
-		{
-			# corresponding .c file
-			if($line =~ s/\.h$/.c/)
-			{
-				if(-r $line)
-				{
-					$line =~ s/\.c$//;
-					push @W, $line;			# weak dependency on the object, if a corresponding c file exists
-				}
-			}
-		}
-	}
+    if($line =~ /\.lex\.h$/)
+    {
+      $line =~ s/\.lex\.h/.lex/;
+      push @W, $line;       # weak dependency on the object
+    }
+    elsif($line =~ /\.tab\.h$/)
+    {
+      $line =~ s/\.tab\.h/.tab/;
+      push @W, $line;       # weak dependency on the object
+    }
+    elsif($line =~ /\.states\.h$/)
+    {
+      $line =~ s/\.states\.h/.states/;
+      push @W, $line;       # weak dependency on the object
+    }
+    elsif($line =~ /\.tokens\.h$/)
+    {
+      $line =~ s/\.tokens\.h/.tokens/;
+      push @W, $line;       # weak dependency on the object
+    }
+    else
+    {
+      # corresponding .c file
+      if($line =~ s/\.h$/.c/)
+      {
+        if(-r $line)
+        {
+          $line =~ s/\.c$//;
+          push @W, $line;     # weak dependency on the object, if a corresponding c file exists
+        }
+      }
+    }
+  }
 }
 
 #
@@ -88,17 +88,17 @@ for (map { chomp ; $_ } <STDIN>)
 
 for(my $x = 1; $x <= $#ARGV; $x += 2)
 {
-	if(@S)
-	{
-		print "[ $ARGV[$x] ] : [\n";
-		print "$_\n" for @S;
-		print "]\n";
-	}
+  if(@S)
+  {
+    print "[ $ARGV[$x] ] : [\n";
+    print "$_\n" for @S;
+    print "]\n";
+  }
 
-	if(@W)
-	{
-		print "[ $ARGV[$x] ] :* [\n";
-		print "$_.$ARGV[$x+1]\n" for @W;
-		print "]\n";
-	}
+  if(@W)
+  {
+    print "[ $ARGV[$x] ] :* [\n";
+    print "$_.$ARGV[$x+1]\n" for @W;
+    print "]\n";
+  }
 }

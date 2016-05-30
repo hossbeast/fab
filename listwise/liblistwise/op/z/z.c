@@ -39,23 +39,23 @@ OPERATION
 */
 
 operator op_desc[] = {
-	  {
-		  .s						= "z"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET
-		, .mnemonic			= "reset"
-		, .desc					= "remove selection and windows"
-	}
-	, {
-		  .s						= "sz"
-		, .optype				= LWOP_SELECTION_RESET
-		, .mnemonic			= "selection-reset"
-		, .desc					= "remove selection"
-	}
-	, {
-		  .s						= "wz"
-		, .optype				= LWOP_WINDOWS_RESET
-		, .mnemonic			= "windows-reset"
-		, .desc					= "remove windows"
-	}
-	, {}
+    {
+      .s            = "z"
+    , .optype       = LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET
+    , .mnemonic     = "reset"
+    , .desc         = "remove selection and windows"
+  }
+  , {
+      .s            = "sz"
+    , .optype       = LWOP_SELECTION_RESET
+    , .mnemonic     = "selection-reset"
+    , .desc         = "remove selection"
+  }
+  , {
+      .s            = "wz"
+    , .optype       = LWOP_WINDOWS_RESET
+    , .mnemonic     = "windows-reset"
+    , .desc         = "remove windows"
+  }
+  , {}
 };

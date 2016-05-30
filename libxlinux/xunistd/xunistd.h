@@ -34,7 +34,7 @@
 //  [bytes] - returns the number of bytes read
 //
 xapi xread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 /// uxread
 //
@@ -48,7 +48,7 @@ xapi xread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
 //  using uxread with an fd not marked with O_NONBLOCK is probably an error
 //
 xapi uxread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 /// axread
 //
@@ -58,7 +58,7 @@ xapi uxread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
 // PARAMETERS
 //
 xapi axread(int fd, void * restrict buf, size_t count)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xwrite
 //
@@ -69,7 +69,7 @@ xapi axread(int fd, void * restrict buf, size_t count)
 //  [bytes] - returns the number of bytes written
 //
 xapi xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 /// axwrite
 //
@@ -79,7 +79,7 @@ xapi xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 // PARAMETERS
 //
 xapi axwrite(int fd, const void * buf, size_t count)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xgetcwd
 //
@@ -114,7 +114,7 @@ xapi xclose(int fd);
 //  idempotent proxy for close
 //
 xapi ixclose(int * const restrict fd)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xsymlink
 //
@@ -122,7 +122,7 @@ xapi ixclose(int * const restrict fd)
 //  proxy for symlink
 //
 xapi xsymlink(const char * restrict target, const char * restrict linkpath)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// uxsymlink
 //
@@ -130,7 +130,7 @@ xapi xsymlink(const char * restrict target, const char * restrict linkpath)
 //  proxy for symlink which only fails when errno != EEXIST
 //
 xapi uxsymlink(const char * restrict target, const char * restrict linkpath)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xunlink
 //
@@ -141,16 +141,16 @@ xapi uxsymlink(const char * restrict target, const char * restrict linkpath)
 //  s/f/vf - different ways to pass path
 //
 xapi xunlink(const char * restrict pathname)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi xunlinks(const char * restrict pathname)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi xunlinkf(const char * restrict fmt, ...)
-	__attribute__((nonnull(1)));
+  __attribute__((nonnull(1)));
 
 xapi xunlinkvf(const char * restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// uxunlink
 //
@@ -161,16 +161,16 @@ xapi xunlinkvf(const char * restrict fmt, va_list va)
 //  s/f/vf - different ways to pass path
 //
 xapi uxunlink(const char * const restrict pathname)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi uxunlinks(const char * const restrict pathname)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi uxunlinkf(const char * const restrict fmt, ...)
-	__attribute__((nonnull(1)));
+  __attribute__((nonnull(1)));
 
 xapi uxunlinkvf(const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xfork
 //
@@ -213,7 +213,7 @@ xapi xsetresgid(gid_t rgid, gid_t egid, gid_t sgid);
 //  proxy for euidaccess
 //
 xapi xeuidaccess(const char * restrict pathname, int mode, int * const restrict r)
-	__attribute__((nonnull(1)));
+  __attribute__((nonnull(1)));
 
 /// uxeuidaccess
 //
@@ -221,7 +221,7 @@ xapi xeuidaccess(const char * restrict pathname, int mode, int * const restrict 
 //  proxy for euidaccess that only fails when errno !: { EACCES, ENOENT, ENOTDIR }
 //
 xapi uxeuidaccess(const char * restrict pathname, int mode, int * const restrict r)
-	__attribute__((nonnull(1)));
+  __attribute__((nonnull(1)));
 
 /// xseteuid
 //
@@ -243,7 +243,7 @@ xapi xsetegid(gid_t egid);
 //  proxy for getresuid
 //
 xapi xgetresuid(uid_t * const restrict ruid, uid_t * const restrict euid, uid_t * const restrict suid)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xgetresgid
 //
@@ -251,7 +251,7 @@ xapi xgetresuid(uid_t * const restrict ruid, uid_t * const restrict euid, uid_t 
 //  proxy for getresgid
 //
 xapi xgetresgid(gid_t * const restrict rgid, gid_t * const restrict egid, gid_t * const restrict sgid)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xtruncate
 //
@@ -259,7 +259,7 @@ xapi xgetresgid(gid_t * const restrict rgid, gid_t * const restrict egid, gid_t 
 //  proxy for truncate
 //
 xapi xtruncate(const char * restrict path, off_t length)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xftruncate
 //
@@ -274,7 +274,7 @@ xapi xftruncate(int fd, off_t length);
 //  proxy for rmdir
 //
 xapi xrmdir(const char * restrict pathname)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xsetpgid
 //
@@ -296,7 +296,7 @@ xapi xsetsid();
 //  xapi proxy for execv
 //
 xapi xexecv(const char * path, char * const argv[])
-	__attribute__((nonnull(1)));
+  __attribute__((nonnull(1)));
 
 /// xchdir
 //

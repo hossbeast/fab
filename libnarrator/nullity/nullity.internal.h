@@ -48,10 +48,10 @@ void nullity_teardown();
 //
 
 xapi nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// nullity_seek
 //

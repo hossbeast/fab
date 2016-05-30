@@ -240,6 +240,7 @@ finally:
 
   // module teardown
   sigbank_teardown();
+  args_teardown();
 
   // libraries
   fatal(logger_unload);

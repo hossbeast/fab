@@ -28,7 +28,7 @@
 
 API const char * xapi_exit_errname(const xapi exit)
 {
-	xapi_etable_id id = exit >> 16;			// table id
+  xapi_etable_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -38,7 +38,7 @@ API const char * xapi_exit_errname(const xapi exit)
 
 API const char * xapi_exit_errdesc(const xapi exit)
 {
-	xapi_etable_id id = exit >> 16;			// table id
+  xapi_etable_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -48,7 +48,7 @@ API const char * xapi_exit_errdesc(const xapi exit)
 
 API const char * xapi_exit_errstr(const xapi exit)
 {
-	xapi_etable_id id = exit >> 16;			// table id
+  xapi_etable_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -58,17 +58,17 @@ API const char * xapi_exit_errstr(const xapi exit)
 
 API const etable * xapi_exit_errtab(const xapi exit)
 {
-	xapi_etable_id id = exit >> 16;			// table id
+  xapi_etable_id id = exit >> 16;     // table id
 
-	if(id < 1 || id > tabl)
-		return 0;
+  if(id < 1 || id > tabl)
+    return 0;
 
   return tab[id - 1];
 }
 
 API xapi_code xapi_exit_errcode(const xapi exit)
 {
-	xapi_etable_id id = exit >> 16;			// table id
+  xapi_etable_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -78,7 +78,7 @@ API xapi_code xapi_exit_errcode(const xapi exit)
 
 API const char * xapi_exit_errtab_name(const xapi exit)
 {
-	xapi_etable_id id = exit >> 16;			// table id
+  xapi_etable_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -88,7 +88,7 @@ API const char * xapi_exit_errtab_name(const xapi exit)
 
 API xapi_etable_id xapi_exit_errtab_id(const xapi exit)
 {
-	xapi_etable_id id = exit >> 16;			// table id
+  xapi_etable_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;

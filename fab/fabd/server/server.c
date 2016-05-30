@@ -44,15 +44,15 @@
 static int fab_trap[] = {
     [ ERRMAX_FAB + 1] = 0
 
-	, [ FAB_SYNTAX ] = 1
-	, [ FAB_ILLBYTE ] = 1
-	, [ FAB_UNSATISFIED ] = 1
-	, [ FAB_CMDFAIL ] = 1
-	, [ FAB_NOINVOKE ] = 1
-	, [ FAB_BADPLAN ] = 1
-	, [ FAB_CYCLE ] = 1
-	, [ FAB_NOSELECT ] = 1
-	, [ FAB_DSCPARSE ] = 1
+  , [ FAB_SYNTAX ] = 1
+  , [ FAB_ILLBYTE ] = 1
+  , [ FAB_UNSATISFIED ] = 1
+  , [ FAB_CMDFAIL ] = 1
+  , [ FAB_NOINVOKE ] = 1
+  , [ FAB_BADPLAN ] = 1
+  , [ FAB_CYCLE ] = 1
+  , [ FAB_NOSELECT ] = 1
+  , [ FAB_DSCPARSE ] = 1
 };
 
 //
@@ -71,10 +71,10 @@ static xapi pid_load(server * const restrict server)
   int fd = -1;
   char space[512];
 
-	// load fab/pid
-	snprintf(space, sizeof(space), "%s/client/pid", server->ipcdir);
-	fatal(xopen, space, O_RDONLY, &fd);
-	fatal(axread, fd, &server->pid, sizeof(server->pid));
+  // load fab/pid
+  snprintf(space, sizeof(space), "%s/client/pid", server->ipcdir);
+  fatal(xopen, space, O_RDONLY, &fd);
+  fatal(axread, fd, &server->pid, sizeof(server->pid));
   if(server->pid <= 0)
   {
     xapi_fail_intent();

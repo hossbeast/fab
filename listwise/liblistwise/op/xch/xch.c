@@ -37,7 +37,7 @@ ARGUMENTS
 
 OPERATION
 
-	1. exchange the top list and the {to} list
+  1. exchange the top list and the {to} list
 
 */
 
@@ -45,49 +45,49 @@ static xapi op_validate(operation* o);
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "xch"
-		, .optype				= LWOP_ARGS_CANHAVE | LWOP_STACKOP
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec
-		, .desc					= "swap a list to the top of the stack"
-		, .mnemonic			= "exchange"
-	}, {}
+  {
+      .s            = "xch"
+    , .optype       = LWOP_ARGS_CANHAVE | LWOP_STACKOP
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec
+    , .desc         = "swap a list to the top of the stack"
+    , .mnemonic     = "exchange"
+  }, {}
 };
 
 xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl)
-	{
-		if(o->args[0]->itype != ITYPE_I64)
-			failf(LISTWISE_ARGSDOM, "expected %s", "actual %d", "i64", o->args[0]->itype);
-	}
+  if(o->argsl)
+  {
+    if(o->args[0]->itype != ITYPE_I64)
+      failf(LISTWISE_ARGSDOM, "expected %s", "actual %d", "i64", o->args[0]->itype);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	int to = 1;
-	if(o->argsl)
-		to = o->args[0]->i64;
-	if(to < 0)
-		to = ls->l + to;
+  int to = 1;
+  if(o->argsl)
+    to = o->args[0]->i64;
+  if(to < 0)
+    to = ls->l + to;
 
-	if(!(ls->l > to))
-	{
+  if(!(ls->l > to))
+  {
     logf(L_LISTWISE | L_OPINFO, "xch/%d out of range", to);
-	}
-	else
-	{
-		typeof(ls->s[0]) T = ls->s[0];
-		ls->s[0] = ls->s[to];
-		ls->s[to] = T;
-	}
+  }
+  else
+  {
+    typeof(ls->s[0]) T = ls->s[0];
+    ls->s[0] = ls->s[to];
+    ls->s[to] = T;
+  }
 
-	finally : coda;
+  finally : coda;
 }

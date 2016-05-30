@@ -15,5 +15,5 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1	BADFILE	unable to process file
-2	BADARGS	invalid command-line arguments
+1 BADFILE unable to process file
+2 BADARGS invalid command-line arguments

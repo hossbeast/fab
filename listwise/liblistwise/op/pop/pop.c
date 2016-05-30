@@ -23,12 +23,12 @@
 pop operator - delete the Nth list from the stack
 
 ARGUMENTS
-	[1] - number of times to pop, default : 1
+  [1] - number of times to pop, default : 1
 
 OPERATION
 
  N times (0 means until only 0th list remains)
-	1. delete the Nth list from the stack
+  1. delete the Nth list from the stack
 
 */
 
@@ -36,40 +36,40 @@ static xapi op_exec(operation*, lwx*, int**, int*);
 static xapi op_validate(operation*);
 
 operator op_desc[] = {
-	{
-		  .s						= "pop"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_STACKOP
-		, .op_exec			= op_exec
-		, .op_validate	= op_validate
-		, .desc					= "delete the nth list"
-	}, {}
+  {
+      .s            = "pop"
+    , .optype       = LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_STACKOP
+    , .op_exec      = op_exec
+    , .op_validate  = op_validate
+    , .desc         = "delete the nth list"
+  }, {}
 };
 
 xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl && o->args[0]->itype != ITYPE_I64)
+  if(o->argsl && o->args[0]->itype != ITYPE_I64)
   {
     failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
   }
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	int N = 1;
-	if(o->argsl)
-		N = o->args[0]->i64;
-	if(N == 0)
-		N = ls->l - 1;
+  int N = 1;
+  if(o->argsl)
+    N = o->args[0]->i64;
+  if(N == 0)
+    N = ls->l - 1;
 
-	int x;
-	for(x = 0; x < N; x++)
-		fatal(lstack_pop, ls);
+  int x;
+  for(x = 0; x < N; x++)
+    fatal(lstack_pop, ls);
 
-	finally : coda;
+  finally : coda;
 }

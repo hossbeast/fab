@@ -36,54 +36,54 @@ OPERATION
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "r"
-		, .optype				= 0
-		, .op_exec			= op_exec
-		, .mnemonic			= "reverse"
-		, .desc					= "reverse rows"
-	}
-	, {}
+  {
+      .s            = "r"
+    , .optype       = 0
+    , .op_exec      = op_exec
+    , .mnemonic     = "reverse"
+    , .desc         = "reverse rows"
+  }
+  , {}
 };
 
 xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
-	{
-		// all items are selected ; reverse the entire list
-		int x;
-		for(x = 0; x < (lx->s[0].l / 2); x++)
-			fatal(lstack_swaptop, lx, x, lx->s[0].l - 1 - x);
-	}
-	else if(lx->sel.active->state == LWX_SELECTION_NONE)
-	{
-		// no items selected ; no-op
-	}
-	else
-	{
-		// subset of items is selected ; reverse those items amongst themselves
-		int a = 0;	// first selected row
-		while((lx->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
-			a++;
+  if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
+  {
+    // all items are selected ; reverse the entire list
+    int x;
+    for(x = 0; x < (lx->s[0].l / 2); x++)
+      fatal(lstack_swaptop, lx, x, lx->s[0].l - 1 - x);
+  }
+  else if(lx->sel.active->state == LWX_SELECTION_NONE)
+  {
+    // no items selected ; no-op
+  }
+  else
+  {
+    // subset of items is selected ; reverse those items amongst themselves
+    int a = 0;  // first selected row
+    while((lx->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
+      a++;
 
-		int b = (lx->sel.active->sl * 8) + 7;	// last selected row
-		while((b/8) >= lx->sel.active->sl || (lx->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
-			b--;
+    int b = (lx->sel.active->sl * 8) + 7; // last selected row
+    while((b/8) >= lx->sel.active->sl || (lx->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
+      b--;
 
-		int x;
-		for(x = 0; x < (lx->sel.active->l / 2); x++)
-		{
-			fatal(lstack_swaptop, lx, a++, b--);
+    int x;
+    for(x = 0; x < (lx->sel.active->l / 2); x++)
+    {
+      fatal(lstack_swaptop, lx, a++, b--);
 
-			while((lx->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
-				a++;
+      while((lx->sel.active->s[a/8] & (0x01 << (a%8))) == 0)
+        a++;
 
-			while((lx->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
-				b--;
-		}
-	}
+      while((lx->sel.active->s[b/8] & (0x01 << (b%8))) == 0)
+        b--;
+    }
+  }
 
-	finally : coda;
+  finally : coda;
 }

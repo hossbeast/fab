@@ -16,32 +16,32 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 once {
-	+[ $*/../vars.fab ]
+  +[ $*/../vars.fab ]
 
-	$cflags = [ $dlibxapi $dlibxlinux ~ s/^/-I ]
+  $cflags = [ $dlibxapi $dlibxlinux ~ s/^/-I ]
 
-	$cflags_eapi_final = [ $cflags_eapi_final $cflags ]
-	$cflags_eapi_debug = [ $cflags_eapi_debug $cflags ]
-	$cflags_eapi_devel = [ $cflags_eapi_devel $cflags ]
-	$cflags_xapi_final = [ $cflags_xapi_final $cflags ]
-	$cflags_xapi_debug = [ $cflags_xapi_debug $cflags ]
-	$cflags_xapi_devel = [ $cflags_xapi_devel $cflags ]
-	$cflags_xapi_xunit = [ $cflags_xapi_xunit $cflags ]
+  $cflags_eapi_final = [ $cflags_eapi_final $cflags ]
+  $cflags_eapi_debug = [ $cflags_eapi_debug $cflags ]
+  $cflags_eapi_devel = [ $cflags_eapi_devel $cflags ]
+  $cflags_xapi_final = [ $cflags_xapi_final $cflags ]
+  $cflags_xapi_debug = [ $cflags_xapi_debug $cflags ]
+  $cflags_xapi_devel = [ $cflags_xapi_devel $cflags ]
+  $cflags_xapi_xunit = [ $cflags_xapi_xunit $cflags ]
 
-	# c files
-	+[@std.c]($rdirs = $*; $cc; $dext = [ eapi.final.o ];     $cflags = $cflags_eapi_final)
-	+[@std.c]($rdirs = $*; $cc; $dext = [ eapi.debug.o ];     $cflags = $cflags_eapi_debug)
-	+[@std.c]($rdirs = $*; $cc; $dext = [ eapi.devel.o ];     $cflags = $cflags_eapi_devel)
-	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.final.o ];     $cflags = $cflags_xapi_final)
-	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.debug.o ];     $cflags = $cflags_xapi_debug)
-	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.devel.o ];     $cflags = $cflags_xapi_devel)
-	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.xunit.o ];     $cflags = $cflags_xapi_xunit)
+  # c files
+  +[@std.c]($rdirs = $*; $cc; $dext = [ eapi.final.o ];     $cflags = $cflags_eapi_final)
+  +[@std.c]($rdirs = $*; $cc; $dext = [ eapi.debug.o ];     $cflags = $cflags_eapi_debug)
+  +[@std.c]($rdirs = $*; $cc; $dext = [ eapi.devel.o ];     $cflags = $cflags_eapi_devel)
+  +[@std.c]($rdirs = $*; $cc; $dext = [ xapi.final.o ];     $cflags = $cflags_xapi_final)
+  +[@std.c]($rdirs = $*; $cc; $dext = [ xapi.debug.o ];     $cflags = $cflags_xapi_debug)
+  +[@std.c]($rdirs = $*; $cc; $dext = [ xapi.devel.o ];     $cflags = $cflags_xapi_devel)
+  +[@std.c]($rdirs = $*; $cc; $dext = [ xapi.xunit.o ];     $cflags = $cflags_xapi_xunit)
 
-	+[@std.c]($rdirs = $*; $cc; $dext = [ eapi.final.pic.o ]; $cflags = [ $cflags_eapi_final -fPIC ])
-	+[@std.c]($rdirs = $*; $cc; $dext = [ eapi.debug.pic.o ]; $cflags = [ $cflags_eapi_debug -fPIC ])
-	+[@std.c]($rdirs = $*; $cc; $dext = [ eapi.devel.pic.o ]; $cflags = [ $cflags_eapi_devel -fPIC ])
-	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.final.pic.o ]; $cflags = [ $cflags_xapi_final -fPIC ])
-	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.debug.pic.o ]; $cflags = [ $cflags_xapi_debug -fPIC ])
-	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.devel.pic.o ]; $cflags = [ $cflags_xapi_devel -fPIC ])
-	+[@std.c]($rdirs = $*; $cc; $dext = [ xapi.xunit.pic.o ]; $cflags = [ $cflags_xapi_xunit -fPIC ])
+  +[@std.c]($rdirs = $*; $cc; $dext = [ eapi.final.pic.o ]; $cflags = [ $cflags_eapi_final -fPIC ])
+  +[@std.c]($rdirs = $*; $cc; $dext = [ eapi.debug.pic.o ]; $cflags = [ $cflags_eapi_debug -fPIC ])
+  +[@std.c]($rdirs = $*; $cc; $dext = [ eapi.devel.pic.o ]; $cflags = [ $cflags_eapi_devel -fPIC ])
+  +[@std.c]($rdirs = $*; $cc; $dext = [ xapi.final.pic.o ]; $cflags = [ $cflags_xapi_final -fPIC ])
+  +[@std.c]($rdirs = $*; $cc; $dext = [ xapi.debug.pic.o ]; $cflags = [ $cflags_xapi_debug -fPIC ])
+  +[@std.c]($rdirs = $*; $cc; $dext = [ xapi.devel.pic.o ]; $cflags = [ $cflags_xapi_devel -fPIC ])
+  +[@std.c]($rdirs = $*; $cc; $dext = [ xapi.xunit.pic.o ]; $cflags = [ $cflags_xapi_xunit -fPIC ])
 }

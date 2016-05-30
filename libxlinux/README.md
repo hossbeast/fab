@@ -15,23 +15,23 @@ if a function has both a Type and Operation modifier, the Operation modifier is 
 ### Grammar
 
 fname
-	: Operations Type name
-	| Operations name
-	| Type name
+  : Operations Type name
+  | Operations name
+  | Type name
 
 Operations
   : Operations Operation
   | Operation
-	
+  
 Operation
-	: 'i'
-	| 'u'
-	| 'a'
-	| 'e'
+  : 'i'
+  | 'u'
+  | 'a'
+  | 'e'
 
 Type
-	: 'w'
-	| 'x'
+  : 'w'
+  | 'x'
 
 ### Type
 

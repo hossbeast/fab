@@ -31,7 +31,7 @@ struct lwx;
 //  activate selections staged by the previous operation
 //
 xapi lstack_selection_activate(struct lwx* const restrict lx)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

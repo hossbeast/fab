@@ -23,7 +23,7 @@
 
 extern logger_category * xunit_logs;
 
-#define L_INSET		xunit_logs[0].id
-#define L_OUTSET	xunit_logs[1].id
+#define L_INSET   xunit_logs[0].id
+#define L_OUTSET  xunit_logs[1].id
 
 #endif

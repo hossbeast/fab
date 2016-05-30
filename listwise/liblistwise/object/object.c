@@ -43,7 +43,7 @@ xapi object_setup()
 
 void object_teardown()
 {
-	map_ifree(&object_registry);
+  map_ifree(&object_registry);
 }
 
 //
@@ -52,31 +52,31 @@ void object_teardown()
 
 API xapi listwise_register_object(uint8_t type, listwise_object * def)
 {
-	enter;
+  enter;
 
-	def->type = type;
+  def->type = type;
 
-	// cache for lookup
-	fatal(map_set, object_registry, MM(type), def);
+  // cache for lookup
+  fatal(map_set, object_registry, MM(type), def);
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi listwise_enumerate_objects(listwise_object *** list, size_t * list_len)
 {
-	xproxy(map_values, object_registry, list, list_len);
+  xproxy(map_values, object_registry, list, list_len);
 }
 
 API xapi listwise_lookup_object(uint8_t type, listwise_object ** obj)
 {
-	enter;
+  enter;
 
-	if(((*obj) = map_get(object_registry, MM(type))) == 0)
-	{
-		fail(LISTWISE_NOOBJ);
-	}
+  if(((*obj) = map_get(object_registry, MM(type))) == 0)
+  {
+    fail(LISTWISE_NOOBJ);
+  }
 
 finally:
-	xapi_infof("type", "%hhu", type);
+  xapi_infof("type", "%hhu", type);
 coda;
 }

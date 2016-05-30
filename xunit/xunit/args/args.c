@@ -42,24 +42,24 @@ static xapi usage(int valid, int version, int help, int logs)
 {
   enter;
 
-	printf(
+  printf(
 "xunit : test runner\n"
 );
 if(version)
 {
-	printf(" fab-" XQUOTE(FABVERSIONS)
+  printf(" fab-" XQUOTE(FABVERSIONS)
 #if DEVEL
-	"+DEVEL"
+  "+DEVEL"
 #elif DEBUG
-	"+DEBUG"
+  "+DEBUG"
 #endif
-		" @ " XQUOTE(BUILDSTAMP)
-		"\n"
-	);
+    " @ " XQUOTE(BUILDSTAMP)
+    "\n"
+  );
 }
 if(help)
 {
-	printf(
+  printf(
 "\n"
 "usage : xunit [ [ option ] [ logexpr ] [ /path/to/object ] ] ...\n"
 "\n"
@@ -73,7 +73,7 @@ if(help)
 " --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
 " --backtrace-full              produce a complete description of the callstack upon failure\n"
 #endif
-	);
+  );
 }
 
 if(logs)
@@ -111,141 +111,141 @@ static xapi objects_push(char * path, size_t * objectsa)
   }
 
   fatal(assure, &g_args.objects, sizeof(*g_args.objects), g_args.objectsl + 1, objectsa);
-	fatal(ixstrdup, &g_args.objects[g_args.objectsl++], path);
+  fatal(ixstrdup, &g_args.objects[g_args.objectsl++], path);
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi args_parse()
 {
   enter;
 
-	int help = 0;
-	int version = 0;
-	int	logs = 0;
-	size_t objectsa = 0;
+  int help = 0;
+  int version = 0;
+  int logs = 0;
+  size_t objectsa = 0;
 
-	struct option longopts[] = {
-		  { "help"												, no_argument				, &help, 1 }
-		, { "args"												, no_argument				, &help, 1 }
-		, { "params"											, no_argument				, &help, 1 }
-		, { "options"											, no_argument				, &help, 1 }
-		, { "opts"												, no_argument				, &help, 1 }
-		, { "version"											, no_argument				, &version, 1 }
-		, { "vers"												, no_argument				, &version, 1 }
-		, { "vrs"													, no_argument				, &version, 1 }
-		, { "log"													, no_argument				, &logs, 1 }
-		, { "logs"												, no_argument				, &logs, 1 }
-		, { "logcat"											, no_argument				, &logs, 1 }
-		, { "logcats"											, no_argument				, &logs, 1 }
-		, { "logexpr"											, no_argument				, &logs, 1 }
-		, { "logexprs"										, no_argument				, &logs, 1 }
+  struct option longopts[] = {
+      { "help"                        , no_argument       , &help, 1 }
+    , { "args"                        , no_argument       , &help, 1 }
+    , { "params"                      , no_argument       , &help, 1 }
+    , { "options"                     , no_argument       , &help, 1 }
+    , { "opts"                        , no_argument       , &help, 1 }
+    , { "version"                     , no_argument       , &version, 1 }
+    , { "vers"                        , no_argument       , &version, 1 }
+    , { "vrs"                         , no_argument       , &version, 1 }
+    , { "log"                         , no_argument       , &logs, 1 }
+    , { "logs"                        , no_argument       , &logs, 1 }
+    , { "logcat"                      , no_argument       , &logs, 1 }
+    , { "logcats"                     , no_argument       , &logs, 1 }
+    , { "logexpr"                     , no_argument       , &logs, 1 }
+    , { "logexprs"                    , no_argument       , &logs, 1 }
 
 #if DEBUG || DEVEL
-		, { "backtrace-pithy"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
-		, { "backtrace-full"							, no_argument				, &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
+    , { "backtrace-pithy"             , no_argument       , &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
+    , { "backtrace-full"              , no_argument       , &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
 #endif
-		, { }
-	};
+    , { }
+  };
 
-	char * switches =
-		// getopt options
-		"-"
+  char * switches =
+    // getopt options
+    "-"
 
-		// no-argument switches
-		""
+    // no-argument switches
+    ""
 
-		// with-argument switches
-		""
-	;
+    // with-argument switches
+    ""
+  ;
 
-	//
-	// args:defaults
-	//
+  //
+  // args:defaults
+  //
 #if DEBUG || DEVEL
-	g_args.mode_backtrace		= DEFAULT_MODE_BACKTRACE;
+  g_args.mode_backtrace   = DEFAULT_MODE_BACKTRACE;
 #endif
 
-	int x;
-	int indexptr;
-	opterr = 0;
-	while(indexptr = 0, (x = getopt_long(g_argc, &g_argv[0], switches, longopts, &indexptr)) != -1)
-	{
-		if(x == 0)
-		{
-			// longopts - placeholder
-		}
-		else if(x == '?')
-		{
-			// unrecognized argv element
-			if(optopt)
-			{
-				failf(MAIN_NXSWITCH, "switch", "-%c", optopt);
-			}
-			else
-			{
-				failf(MAIN_BADARGS, "argument", "%s", g_argv[optind-1]);
-			}
-		}
-		else
-		{
-			// non-option argv elements
-			fatal(objects_push, optarg, &objectsa);
-		}
-	}
+  int x;
+  int indexptr;
+  opterr = 0;
+  while(indexptr = 0, (x = getopt_long(g_argc, &g_argv[0], switches, longopts, &indexptr)) != -1)
+  {
+    if(x == 0)
+    {
+      // longopts - placeholder
+    }
+    else if(x == '?')
+    {
+      // unrecognized argv element
+      if(optopt)
+      {
+        failf(MAIN_NXSWITCH, "switch", "-%c", optopt);
+      }
+      else
+      {
+        failf(MAIN_BADARGS, "argument", "%s", g_argv[optind-1]);
+      }
+    }
+    else
+    {
+      // non-option argv elements
+      fatal(objects_push, optarg, &objectsa);
+    }
+  }
 
-	for(; optind < g_argc; optind++)
-	{
-		// options following --
-		fatal(objects_push, g_argv[optind], &objectsa);
-	}
+  for(; optind < g_argc; optind++)
+  {
+    // options following --
+    fatal(objects_push, g_argv[optind], &objectsa);
+  }
 
-	if(help || version || logs)
-	{
-		fatal(usage, 1, 1, help, logs);
-	}
+  if(help || version || logs)
+  {
+    fatal(usage, 1, 1, help, logs);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi args_summarize()
 {
   enter;
 
-	char space[512];
-	int x;
+  char space[512];
+  int x;
 
-	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
+  logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
-	// log execution parameters under PARAMS
-	logf(L_PARAMS	, "%11sprocessors             =%ld"						, ""	, g_args.procs);
+  // log execution parameters under PARAMS
+  logf(L_PARAMS , "%11sprocessors             =%ld"           , ""  , g_args.procs);
 
 #if DEBUG || DEVEL
-	logf(L_ARGS | L_PARAMS				, " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
+  logf(L_ARGS | L_PARAMS        , " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
 #endif
 
-	if(g_args.concurrency == 0)
-		snprintf(space, sizeof(space)  , "%s", "unbounded");
-	else
-		snprintf(space, sizeof(space)  , "%d", g_args.concurrency);
+  if(g_args.concurrency == 0)
+    snprintf(space, sizeof(space)  , "%s", "unbounded");
+  else
+    snprintf(space, sizeof(space)  , "%d", g_args.concurrency);
 
-	logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", g_args.concurrency == (int)((float)g_args.procs * 1.2f) ? " " : "*", 'j', space);
+  logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", g_args.concurrency == (int)((float)g_args.procs * 1.2f) ? " " : "*", 'j', space);
 
-	if(g_args.objectsl == 0)
-		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) object(s)         =", " ", ' ');
-	for(x = 0; x < g_args.objectsl; x++)
-		logf(L_ARGS | L_PARAMS			, " %s (  %c  ) object(s)         =%s", "*", ' ', g_args.objects[x]);
+  if(g_args.objectsl == 0)
+    logf(L_ARGS | L_PARAMS      , " %s (  %c  ) object(s)         =", " ", ' ');
+  for(x = 0; x < g_args.objectsl; x++)
+    logf(L_ARGS | L_PARAMS      , " %s (  %c  ) object(s)         =%s", "*", ' ', g_args.objects[x]);
 
-	logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
+  logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
 
-	finally : coda;
+  finally : coda;
 }
 
 void args_teardown()
 {
-	int x;
-	for(x = 0; x < g_args.objectsl; x++)
-		free(g_args.objects[x]);
+  int x;
+  for(x = 0; x < g_args.objectsl; x++)
+    free(g_args.objects[x]);
 
-	free(g_args.objects);
+  free(g_args.objects);
 }

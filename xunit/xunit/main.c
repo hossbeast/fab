@@ -42,8 +42,8 @@ int main(int argc, char** argv, char ** envp)
 
   int total_pass = 0;
   int total_fail = 0;
-	//
-	// allocated with the same size as g_args.objects
+  //
+  // allocated with the same size as g_args.objects
   void ** objects = 0;
   int x = 0;
   int token = 0;
@@ -64,8 +64,8 @@ int main(int argc, char** argv, char ** envp)
   // summarize
   fatal(args_summarize);
 
-	// allocation for dloaded objects
-	fatal(xmalloc, &objects, sizeof(*objects) * g_args.objectsl);
+  // allocation for dloaded objects
+  fatal(xmalloc, &objects, sizeof(*objects) * g_args.objectsl);
 
   for(;x < g_args.objectsl; x++)
   {
@@ -92,7 +92,7 @@ int main(int argc, char** argv, char ** envp)
     }
     else
     {
-      logf(L_DLOAD, "loaded %s", g_args.objects[x]);		// not an object containing tests
+      logf(L_DLOAD, "loaded %s", g_args.objects[x]);    // not an object containing tests
     }
 
     if(xunit)
@@ -220,9 +220,9 @@ finally:
   }
 
   int j;
-	for(j = 0; j < x; j++)
-		fatal(xdlclose, objects[j]);
-	free(objects);
+  for(j = 0; j < x; j++)
+    fatal(xdlclose, objects[j]);
+  free(objects);
 
   args_teardown();
   fatal(xunit_unload);

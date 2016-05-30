@@ -61,7 +61,7 @@ xapi alpha()
     fail(exit);
   }
 
-	finally : coda;
+  finally : coda;
 }
 
 int main()

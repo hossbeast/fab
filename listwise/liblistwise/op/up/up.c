@@ -39,53 +39,53 @@ OPERATION
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "up"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
-		, .op_exec			= op_exec
-		, .mnemonic			= "up"
-		, .desc					= "move rows to the top"
-	}, {}
+  {
+      .s            = "up"
+    , .optype       = LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
+    , .op_exec      = op_exec
+    , .mnemonic     = "up"
+    , .desc         = "move rows to the top"
+  }, {}
 };
 
 xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
-	{
-		// everything selected ; no-op
-	}
-	else if(lx->sel.active->state == LWX_SELECTION_NONE)
-	{
-		// nothing selected ; no-op
-	}
-	else
-	{
-		int i = 0;
-		int x;
-		LSTACK_ITERATE(lx, x, go)
-		if(go)
-		{
-			// swap the row storage
-			typeof(lx->s[0].s[0]) Ts = lx->s[0].s[i];
-			lx->s[0].s[i] = lx->s[0].s[x];
-			lx->s[0].s[x] = Ts;
+  if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
+  {
+    // everything selected ; no-op
+  }
+  else if(lx->sel.active->state == LWX_SELECTION_NONE)
+  {
+    // nothing selected ; no-op
+  }
+  else
+  {
+    int i = 0;
+    int x;
+    LSTACK_ITERATE(lx, x, go)
+    if(go)
+    {
+      // swap the row storage
+      typeof(lx->s[0].s[0]) Ts = lx->s[0].s[i];
+      lx->s[0].s[i] = lx->s[0].s[x];
+      lx->s[0].s[x] = Ts;
 
-			// swap the row temp storage
-			typeof(lx->s[0].t[0]) Tt = lx->s[0].t[i];
-			lx->s[0].t[i] = lx->s[0].t[x];
-			lx->s[0].t[x] = Tt;
+      // swap the row temp storage
+      typeof(lx->s[0].t[0]) Tt = lx->s[0].t[i];
+      lx->s[0].t[i] = lx->s[0].t[x];
+      lx->s[0].t[x] = Tt;
 
-			// WINDOWS_RESET : not necessary to swap the row window
+      // WINDOWS_RESET : not necessary to swap the row window
 
-			i++;
-		}
-		LSTACK_ITEREND;
+      i++;
+    }
+    LSTACK_ITEREND;
 
-		for(x = 0; x < i; x++)
-			fatal(lstack_selection_stage, lx, x);
-	}
+    for(x = 0; x < i; x++)
+      fatal(lstack_selection_stage, lx, x);
+  }
 
-	finally : coda;
+  finally : coda;
 }

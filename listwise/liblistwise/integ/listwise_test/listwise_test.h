@@ -30,14 +30,14 @@ xapi listwise_test_setup(const xunit_unit *);
 xapi listwise_test_release(const xunit_unit *);
 
 xapi listwise_test_entry(const struct listwise_test*)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 typedef struct listwise_test
 {
-	xunit_test;
-	char ** init;
-	char * xsfm;
-	char ** final;
+  xunit_test;
+  char ** init;
+  char * xsfm;
+  char ** final;
 } listwise_test;
 
 #endif

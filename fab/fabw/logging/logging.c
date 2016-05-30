@@ -22,8 +22,8 @@
 #include "logging.h"
 
 logger_category * categories = (logger_category []) {
-	  { name : "ERROR"	, description : "fatal errors" }
-	, { name : "IPC"	  , description : "signal-exchange" }
+    { name : "ERROR"  , description : "fatal errors" }
+  , { name : "IPC"    , description : "signal-exchange" }
   , { }
 };
 

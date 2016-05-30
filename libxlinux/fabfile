@@ -22,10 +22,10 @@
 +[ $dcommon ]() @common
 
 # variables
-$basename			= [ xlinux ]
-$libname_eapi	= [ lib $basename .so ~ j ]
+$basename     = [ xlinux ]
+$libname_eapi = [ lib $basename .so ~ j ]
 $libname_xapi = [ lib $basename -xapi .so ~ j ]
-$copts				= [ -fPIC [ [ $* ~ lsr c -d ] $dlibxapi ~ s/^/-I ] ]
+$copts        = [ -fPIC [ [ $* ~ lsr c -d ] $dlibxapi ~ s/^/-I ] ]
 
 # cflags variants
 $cflags_eapi_final = [ $cflags_eapi_final $copts ]
@@ -36,7 +36,7 @@ $cflags_xapi_debug = [ $cflags_xapi_debug $copts ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $copts ]
 
 # -lrt required for glibc < 2.17 as per man clock_gettime
-$lflags						 = [ -ldl -lrt -shared  [ -Wl,--version-script=$*/exports ~ j ] ]
+$lflags            = [ -ldl -lrt -shared  [ -Wl,--version-script=$*/exports ~ j ] ]
 $lflags_eapi_final = [ $lflags [ -Wl,-soname,libxlinux.so ~ j ] ]
 $lflags_eapi_debug = [ $lflags [ -Wl,-soname,libxlinux.so ~ j ] ]
 $lflags_eapi_devel = [ $lflags [ -Wl,-soname,libxlinux-devel.so ~ j ] ]
@@ -85,10 +85,10 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 # the SYS errtab is generated from available system header files
 [ $*/errtab/SYS.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
 {
-	exec > [ $@ ]
+  exec > [ $@ ]
 
-	cat /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h  | \
-	> sed -e 's/#define\s\+\(E[A-Z]\+\)\s\+\([0-9]\+\)\s\+\/\*\s*\(.*\)\s\+\*\//\2\t\1\t\3/p; d'
+  cat /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h  | \
+  > sed -e 's/#define\s\+\(E[A-Z]\+\)\s\+\([0-9]\+\)\s\+\/\*\s*\(.*\)\s\+\*\//\2\t\1\t\3/p; d'
 }
 
 # compiled sys errtab
@@ -99,42 +99,42 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 # library exports
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
-	  (echo "{ global: "
-	> perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=)/) { print "$1;\n" }' <(\
-	  cat -- [ $@ ~ rx/ineed fi ] )
-	> echo "local: *; };"
-	  ) 1>[ $@ ]
+    (echo "{ global: "
+  > perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=)/) { print "$1;\n" }' <(\
+    cat -- [ $@ ~ rx/ineed fi ] )
+  > echo "local: *; };"
+    ) 1>[ $@ ]
 }
 
 # link the library
 [ $libxlinux_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.final.pic.o sy ] [ $*/errtab/SYS.errtab.eapi.final.pic.o ~ j ] ]
 {
-	[ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
+  [ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
 }
 
 [ $libxlinux_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.debug.pic.o sy ] [ $*/errtab/SYS.errtab.eapi.debug.pic.o ~ j ] ]
 {
-	[ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
+  [ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
 }
 
 [ $libxlinux_eapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.devel.pic.o sy ] [ $*/errtab/SYS.errtab.eapi.devel.pic.o ~ j ] ]
 {
-	[ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
+  [ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
 }
 
 [ $libxlinux_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.final.pic.o sy ] [ $*/errtab/SYS.errtab.xapi.final.pic.o ~ j ] ]
 {
-	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
+  [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
 }
 
 [ $libxlinux_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.debug.pic.o sy ] [ $*/errtab/SYS.errtab.xapi.debug.pic.o ~ j ] ]
 {
-	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
+  [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
 [ $libxlinux_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.devel.pic.o sy ] [ $*/errtab/SYS.errtab.xapi.devel.pic.o ~ j ] ]
 {
-	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
+  [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
 }
 
 # inter-module dependencies
@@ -151,48 +151,48 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 
 [ @install.final.eapi ] : [ @final.eapi ]
 {
-	install -d																			[ $destdir/$libdir ]
-	install [ $libxlinux_eapi_final ]								[ $destdir/$libdir/$libname_eapi ]
+  install -d                                      [ $destdir/$libdir ]
+  install [ $libxlinux_eapi_final ]               [ $destdir/$libdir/$libname_eapi ]
 }
 
 [ @install.debug.eapi ] : [ @debug.eapi ]
 {
-	install -d																			[ $destdir/$libdir ]
-	install [ $libxlinux_eapi_debug ]								[ $destdir/$libdir/$libname_eapi ]
+  install -d                                      [ $destdir/$libdir ]
+  install [ $libxlinux_eapi_debug ]               [ $destdir/$libdir/$libname_eapi ]
 }
 
 [ @install.final.xapi ] : [ @final.xapi ]
 {
-	install -d																			[ $destdir/$libdir ]
-	install [ $libxlinux_xapi_final ]								[ $destdir/$libdir/$libname_xapi ]
+  install -d                                      [ $destdir/$libdir ]
+  install [ $libxlinux_xapi_final ]               [ $destdir/$libdir/$libname_xapi ]
 }
 
 [ @install.debug.xapi ] : [ @debug.xapi ]
 {
-	install -d																			[ $destdir/$libdir ]
-	install [ $libxlinux_xapi_debug ]								[ $destdir/$libdir/$libname_xapi ]
+  install -d                                      [ $destdir/$libdir ]
+  install [ $libxlinux_xapi_debug ]               [ $destdir/$libdir/$libname_xapi ]
 }
 
 [ @installdevheaders ]
 {
-	install -d																					[ $destdir/$incdir ]
-	install [ $*/xlinux.h ]										[ $destdir/$incdir/ ]
+  install -d                                          [ $destdir/$incdir ]
+  install [ $*/xlinux.h ]                   [ $destdir/$incdir/ ]
 
-	install -d																					[ $destdir/$incdir/xlinux ]
-	install [ $*/xlinux/xdirent.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xdlfcn.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xfcntl.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xftw.h ]								[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xgrp.h ]								[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xmman.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xpwd.h ]								[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xstat.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xstdlib.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xstring.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xtime.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xunistd.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xsignal.h ]						[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xfile.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xprctl.h ]							[ $destdir/$incdir/xlinux/ ]
-	install [ $*/xlinux/xstdio.h ]							[ $destdir/$incdir/xlinux/ ]
+  install -d                                          [ $destdir/$incdir/xlinux ]
+  install [ $*/xlinux/xdirent.h ]           [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xdlfcn.h ]              [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xfcntl.h ]              [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xftw.h ]                [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xgrp.h ]                [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xmman.h ]             [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xpwd.h ]                [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xstat.h ]             [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xstdlib.h ]           [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xstring.h ]           [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xtime.h ]             [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xunistd.h ]           [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xsignal.h ]           [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xfile.h ]             [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xprctl.h ]              [ $destdir/$incdir/xlinux/ ]
+  install [ $*/xlinux/xstdio.h ]              [ $destdir/$incdir/xlinux/ ]
 }

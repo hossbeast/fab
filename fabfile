@@ -19,15 +19,15 @@
 +[ $*/vars.fab ]
 
 # source invocations
-+[ $dcommon ]()				@common
-+[ $dlibxapi ]()			@libxapi
-+[ $dlibxlinux ]()		@libxlinux
-+[ $dlibpstring ]()		@libpstring
-+[ $dliblistwise ]()	@liblistwise
-+[ $dlistwise ]() 		@listwise
-+[ $dxunit ]() 				@xunit
-+[ $dlibxunit ]()			@libxunit
-+[ $dfabcore ]() 			@fabcore
++[ $dcommon ]()       @common
++[ $dlibxapi ]()      @libxapi
++[ $dlibxlinux ]()    @libxlinux
++[ $dlibpstring ]()   @libpstring
++[ $dliblistwise ]()  @liblistwise
++[ $dlistwise ]()     @listwise
++[ $dxunit ]()        @xunit
++[ $dlibxunit ]()     @libxunit
++[ $dfabcore ]()      @fabcore
 
 # build artifacts
 [ @all ] : [ @all.xapi ]

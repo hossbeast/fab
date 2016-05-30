@@ -31,31 +31,31 @@ ln operator - line numbers : insert <num> at the beginning of each entry
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "ln"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_OPERATION_INPLACE
-		, .op_exec			= op_exec
-		, .mnemonic			= "line numbers"
-		, .desc					= "prepend line number to selected entries"
-	}
-	, {}
+  {
+      .s            = "ln"
+    , .optype       = LWOP_SELECTION_RESET | LWOP_OPERATION_INPLACE
+    , .op_exec      = op_exec
+    , .mnemonic     = "line numbers"
+    , .desc         = "prepend line number to selected entries"
+  }
+  , {}
 };
 
 xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	int x;
-	LSTACK_ITERATE(lx, x, go)
-	if(go)
-	{
-		char * ss;
-		int ssl;
-		fatal(lstack_getstring, lx, 0, x, &ss, &ssl);
-		fatal(lstack_writef, lx, 0, x, "%d ", x);
-		fatal(lstack_catw, lx, 0, x, ss, ssl);
-	}
-	LSTACK_ITEREND
+  int x;
+  LSTACK_ITERATE(lx, x, go)
+  if(go)
+  {
+    char * ss;
+    int ssl;
+    fatal(lstack_getstring, lx, 0, x, &ss, &ssl);
+    fatal(lstack_writef, lx, 0, x, "%d ", x);
+    fatal(lstack_catw, lx, 0, x, ss, ssl);
+  }
+  LSTACK_ITEREND
 
-	finally : coda;
+  finally : coda;
 }

@@ -48,10 +48,10 @@ typedef struct narrator_growing
 // 
 
 xapi growing_vsayf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi growing_sayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// growing_seek
 //

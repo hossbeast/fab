@@ -45,97 +45,97 @@ static xapi op_exec_B(operation*, lwx*, int**, int*);
 static xapi op_exec_C(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "A"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec_A
-		, .desc					= "select trailing context"
-		, .mnemonic			= "after"
-	}
-	, {
-		  .s						= "B"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec_B
-		, .desc					= "select leading context"
-		, .mnemonic			= "before"
-	}
-	, {
-		  .s						= "C"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec_C
-		, .desc					= "select leading and trailing context"
-		, .mnemonic			= "context"
-	}
-	, {}
+  {
+      .s            = "A"
+    , .optype       = LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec_A
+    , .desc         = "select trailing context"
+    , .mnemonic     = "after"
+  }
+  , {
+      .s            = "B"
+    , .optype       = LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec_B
+    , .desc         = "select leading context"
+    , .mnemonic     = "before"
+  }
+  , {
+      .s            = "C"
+    , .optype       = LWOP_SELECTION_ACTIVATE | LWOP_ARGS_CANHAVE
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec_C
+    , .desc         = "select leading and trailing context"
+    , .mnemonic     = "context"
+  }
+  , {}
 };
 
 xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl != 1)
-	{
-		failf(LISTWISE_ARGSNUM, "expected %d", "actual %d", 1, o->argsl);
-	}
+  if(o->argsl != 1)
+  {
+    failf(LISTWISE_ARGSNUM, "expected %d", "actual %d", 1, o->argsl);
+  }
 
-	if(o->args[0]->itype != ITYPE_I64)
-	{
-		failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
-	}
+  if(o->args[0]->itype != ITYPE_I64)
+  {
+    failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
+  }
 
-	if(o->args[0]->i64 < 1)
-	{
-		failf(LISTWISE_ARGSDOM, "expected %s", "actual : %"PRIi64, ">= 0", o->args[0]->i64);
-	}
+  if(o->args[0]->i64 < 1)
+  {
+    failf(LISTWISE_ARGSDOM, "expected %s", "actual : %"PRIi64, ">= 0", o->args[0]->i64);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int bef, int af)
 {
   enter;
 
-	int C = o->args[0]->i64;
+  int C = o->args[0]->i64;
 
-	int x;
-	LSTACK_ITERATE(lx, x, go)
-	if(go)
-	{
-		int i;
-		for(i = 0; i < C; i++)
-		{
-			if(bef)
-			{
-				if((x - i - 1) >= 0)
-					fatal(lstack_selection_stage, lx, x - i - 1);
-			}
-			if(af)
-			{
-				if((x + i + 1) < lwx_rows(lx, 0))
-					fatal(lstack_selection_stage, lx, x + i + 1);
-			}
-			fatal(lstack_selection_stage, lx, x);
-		}
-	}
-	LSTACK_ITEREND;
+  int x;
+  LSTACK_ITERATE(lx, x, go)
+  if(go)
+  {
+    int i;
+    for(i = 0; i < C; i++)
+    {
+      if(bef)
+      {
+        if((x - i - 1) >= 0)
+          fatal(lstack_selection_stage, lx, x - i - 1);
+      }
+      if(af)
+      {
+        if((x + i + 1) < lwx_rows(lx, 0))
+          fatal(lstack_selection_stage, lx, x + i + 1);
+      }
+      fatal(lstack_selection_stage, lx, x);
+    }
+  }
+  LSTACK_ITEREND;
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec_A(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, lx, ovec, ovec_len, 0, 1);
+  xproxy(op_exec, o, lx, ovec, ovec_len, 0, 1);
 }
 
 xapi op_exec_B(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, lx, ovec, ovec_len, 1, 0);
+  xproxy(op_exec, o, lx, ovec, ovec_len, 1, 0);
 }
 
 xapi op_exec_C(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, lx, ovec, ovec_len, 1, 1);
+  xproxy(op_exec, o, lx, ovec, ovec_len, 1, 1);
 }

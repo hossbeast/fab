@@ -24,13 +24,13 @@
 #define restrict __restrict
 
 #if DEBUG || DEVEL
-# define DEFAULT_MODE_BACKTRACE		MODE_BACKTRACE_FULL
-# define DEFAULT_MODE_LOGTRACE		MODE_LOGTRACE_NONE
+# define DEFAULT_MODE_BACKTRACE   MODE_BACKTRACE_FULL
+# define DEFAULT_MODE_LOGTRACE    MODE_LOGTRACE_NONE
 
-#define MODE_TABLE_DEVEL(x)																																											\
-/* error reporting modes */																																											\
-	_MODE(MODE_BACKTRACE_FULL							, 0x0b	, x)		/* report on immediate error condition only */					\
-	_MODE(MODE_BACKTRACE_PITHY	 					, 0x0c	, x)		/* unwind stack when reporting errors */								\
+#define MODE_TABLE_DEVEL(x)                                                                                     \
+/* error reporting modes */                                                                                     \
+  _MODE(MODE_BACKTRACE_FULL             , 0x0b  , x)    /* report on immediate error condition only */          \
+  _MODE(MODE_BACKTRACE_PITHY            , 0x0c  , x)    /* unwind stack when reporting errors */                \
 
 #define _MODE(a, b, c) a = b,
 enum {
@@ -44,15 +44,15 @@ MODE_TABLE_DEVEL(0)
 
 struct g_args_t
 {
-	char **	objects;
-	size_t  objectsl;
+  char ** objects;
+  size_t  objectsl;
 
 #if DEBUG || DEVEL
-	int			mode_backtrace;		// backtrace reporting mode
+  int     mode_backtrace;   // backtrace reporting mode
 #endif
 
-	long		procs;
-	int			concurrency;			// concurrently limiting factor
+  long    procs;
+  int     concurrency;      // concurrently limiting factor
 } g_args;
 
 xapi args_parse();

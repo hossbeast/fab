@@ -26,10 +26,10 @@ struct logger_stream;
 extern logger_category * categories;
 extern struct logger_stream * streams;
 
-#define L_ERROR		categories[0].id
-#define L_ARGS		categories[1].id
-#define L_PARAMS	categories[2].id
-#define L_LOGGER	categories[3].id
+#define L_ERROR   categories[0].id
+#define L_ARGS    categories[1].id
+#define L_PARAMS  categories[2].id
+#define L_LOGGER  categories[3].id
 
 xapi logs_setup();
 

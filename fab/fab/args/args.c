@@ -57,8 +57,10 @@
 #undef perrtab
 #define perrtab perrtab_FAB
 
+struct g_args * g_args;
+
 //
-// [[ static ]]
+//
 //
 
 static xapi usage(int valid, int version, int help, int logcats)
@@ -547,4 +549,9 @@ xapi args_collate_request(memblk * const restrict mb, request ** const restrict 
 finally:
   mempolicy_unwind(&mpc);
 coda;
+}
+
+void args_teardown()
+{
+  xfree(g_args);
 }

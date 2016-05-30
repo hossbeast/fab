@@ -216,7 +216,7 @@ int filters_would(const list * const restrict filters, const uint64_t ids)
     }
   }
 
-	return r;
+  return r;
 }
 
 xapi filter_push(const int stream_id, filter * restrict filterp)

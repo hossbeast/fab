@@ -26,23 +26,23 @@
 
 uint32_t genscan_parse(char * s, int l)
 {
-	uint32_t * modes = 0;
+  uint32_t * modes = 0;
 
-	int x;
-	for(x = 0; x < l; x++)
-	{
-		if(s[x] == '?' && modes == 0)
-			modes = genscan_by_opening_char_dorefs;
+  int x;
+  for(x = 0; x < l; x++)
+  {
+    if(s[x] == '?' && modes == 0)
+      modes = genscan_by_opening_char_dorefs;
 
-		else if(s[x] == '?')
-			modes = genscan_by_opening_char_norefs;
+    else if(s[x] == '?')
+      modes = genscan_by_opening_char_norefs;
 
-		else if(modes && modes[(int)s[x]] != UINT32_MAX)
-			return modes[(int)s[x]];
-	}
+    else if(modes && modes[(int)s[x]] != UINT32_MAX)
+      return modes[(int)s[x]];
+  }
 
-	/* 0 happens to be the default scanmode */
-	return 0;
+  /* 0 happens to be the default scanmode */
+  return 0;
 }
 
 /*
@@ -64,7 +64,7 @@ GENSCAN_TABLE_NOREFS(0)
 };
 
 uint32_t * genscan_by_opening_char_dorefs = (uint32_t[]){
-	/* indexable by any int8_t, yields -1 for chars for which there is no such scanmode */
+  /* indexable by any int8_t, yields -1 for chars for which there is no such scanmode */
  [ 0 ... 255 ] = UINT32_MAX,
 #define _GENSCAN(a, b, c, d, e, f, g) [ c ] = b,
 GENSCAN_TABLE_DOREFS(0)
@@ -72,7 +72,7 @@ GENSCAN_TABLE_DOREFS(0)
 };
 
 uint32_t * genscan_by_opening_char_norefs = (uint32_t[]){
-	/* indexable by any int8_t, yields -1 for chars for which there is no such scanmode */
+  /* indexable by any int8_t, yields -1 for chars for which there is no such scanmode */
  [ 0 ... 255 ] = UINT32_MAX,
 #define _GENSCAN(a, b, c, d, e, f, g) [ c ] = b,
 GENSCAN_TABLE_NOREFS(0)

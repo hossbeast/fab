@@ -22,7 +22,7 @@
 
 #include "xapi.h"
 
-struct pstring;		          // valyria/pstring.h
+struct pstring;             // valyria/pstring.h
 struct narrator;            // narrator.h
 struct arg;                 // operator.h
 struct operation;           // operator.h
@@ -30,11 +30,11 @@ struct transform_parser;    // transform.c
 
 typedef struct transform
 {
-	struct arg **				args;		// initial list contents
-	int									argsl;
+  struct arg **       args;   // initial list contents
+  int                 argsl;
 
-	struct operation **	ops;		// operator/args pairs to be executed sequentially
-	int									opsl;
+  struct operation ** ops;    // operator/args pairs to be executed sequentially
+  int                 opsl;
 } transform;
 
 #define restrict __restrict

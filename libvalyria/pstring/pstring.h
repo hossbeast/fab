@@ -32,8 +32,8 @@ SUMMARY
 
 typedef struct pstring
 {
-	char * s;   // buffer
-	size_t l;   // size
+  char * s;   // buffer
+  size_t l;   // size
 
 #ifndef PSTRING_INTERNALS
 # define PSTRING_INTERNALS
@@ -74,19 +74,19 @@ xapi pscreatex(pstring ** const restrict ps, size_t capacity)
 //  [c]   - single byte
 //
 xapi psvmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull(1,3)));
+  __attribute__((nonnull(1,3)));
 
 xapi psmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, ...)
-	__attribute__((nonnull(1,3)));
+  __attribute__((nonnull(1,3)));
 
 xapi psmks(pstring ** restrict ps, pstring * restrict e, const char * const restrict s)
-	__attribute__((nonnull(1,3)));
+  __attribute__((nonnull(1,3)));
 
 xapi psmkw(pstring ** restrict ps, pstring * restrict e, const char * const restrict b, size_t l)
-	__attribute__((nonnull(1,3)));
+  __attribute__((nonnull(1,3)));
 
 xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c)
-	__attribute__((nonnull(1)));
+  __attribute__((nonnull(1)));
 
 /// psfree
 //
@@ -107,7 +107,7 @@ void psfree(pstring * restrict ps);
 //  p - pstring
 //
 void psifree(pstring ** const restrict ps)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// psclear
 //
@@ -118,7 +118,7 @@ void psifree(pstring ** const restrict ps)
 //  p - pstring
 //
 xapi psclear(pstring * restrict p)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// psload
 //
@@ -143,19 +143,19 @@ xapi psclear(pstring * restrict p)
 //
 
 xapi psvloadf(pstring * restrict p, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi psloadf(pstring * restrict p, const char * const restrict fmt, ...)
-	__attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2)));
 
 xapi psloads(pstring * restrict p, const char * const restrict s)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi psloadw(pstring * restrict p, const char * const restrict b, size_t l)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi psloadc(pstring * restrict p, int c)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// pscat
 //
@@ -171,19 +171,19 @@ xapi psloadc(pstring * restrict p, int c)
 //  [c]   - single byte
 //
 xapi psvcatf(pstring * restrict p, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi pscatf(pstring * restrict p, const char * const restrict fmt, ...)
-	__attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2)));
 
 xapi pscats(pstring * restrict p, const char * const restrict s)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi pscatw(pstring * restrict p, const char * const restrict b, size_t l)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi pscatc(pstring * restrict p, int c)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

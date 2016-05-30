@@ -54,117 +54,117 @@ static xapi op_validate(operation* o);
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "dj"
-		, .optype				= LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_OPERATION_PUSHBEFORE | LWOP_STACKOP | LWOP_WINDOWS_RESET
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec
-		, .desc					= "split list into a stack of lists"
-		, .mnemonic			= "disjoin"
-	}, {}
+  {
+      .s            = "dj"
+    , .optype       = LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_OPERATION_PUSHBEFORE | LWOP_STACKOP | LWOP_WINDOWS_RESET
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec
+    , .desc         = "split list into a stack of lists"
+    , .mnemonic     = "disjoin"
+  }, {}
 };
 
 xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl > 1)
-		failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "0, or 1", o->argsl);
+  if(o->argsl > 1)
+    failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "0, or 1", o->argsl);
 
-	else if(o->argsl == 1 && o->args[0]->itype != ITYPE_I64)
-		failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
+  else if(o->argsl == 1 && o->args[0]->itype != ITYPE_I64)
+    failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	int N = 1;
-	if(o->argsl)
-		N = o->args[0]->i64;
+  int N = 1;
+  if(o->argsl)
+    N = o->args[0]->i64;
 
-	// where the remainder list (list 0) should be after the loop completes
-	// to be contiguous with the newly created lists
-	int i = ls->l - 1;
+  // where the remainder list (list 0) should be after the loop completes
+  // to be contiguous with the newly created lists
+  int i = ls->l - 1;
 
-	// number of lists added to the stack by the loop
-	int k = 0;
+  // number of lists added to the stack by the loop
+  int k = 0;
 
-	int j = 0;
-	int x;
-	LSTACK_ITERREV(ls, x, go)
-	if(go)
-	{
-		if(j == 0)
-		{
-			k++;
-			fatal(lstack_push, ls);
-		}
+  int j = 0;
+  int x;
+  LSTACK_ITERREV(ls, x, go)
+  if(go)
+  {
+    if(j == 0)
+    {
+      k++;
+      fatal(lstack_push, ls);
+    }
 
-		fatal(lstack_ensure, ls, ls->l - 1, N - j - 1, 0);
-		fatal(lstack_move, ls, ls->l - 1, N - j - 1, 0, x);
+    fatal(lstack_ensure, ls, ls->l - 1, N - j - 1, 0);
+    fatal(lstack_move, ls, ls->l - 1, N - j - 1, 0, x);
 
-		j = (j + 1) % N;
-	}
-	LSTACK_ITEREND
+    j = (j + 1) % N;
+  }
+  LSTACK_ITEREND
 
-	// possibly shrink the last list created
-	if(j)
-	{
-		memmove(
-			  &ls->s[ls->l - 1].s[0]
-			, &ls->s[ls->l - 1].s[N - j]
-			, j * sizeof(ls->s[0].s[0])
-		);
-		memmove(
-			  &ls->s[ls->l - 1].t[0]
-			, &ls->s[ls->l - 1].t[N - j]
-			, j * sizeof(ls->s[0].t[0])
-		);
+  // possibly shrink the last list created
+  if(j)
+  {
+    memmove(
+        &ls->s[ls->l - 1].s[0]
+      , &ls->s[ls->l - 1].s[N - j]
+      , j * sizeof(ls->s[0].s[0])
+    );
+    memmove(
+        &ls->s[ls->l - 1].t[0]
+      , &ls->s[ls->l - 1].t[N - j]
+      , j * sizeof(ls->s[0].t[0])
+    );
 
-		ls->s[ls->l - 1].l = j;
-		ls->s[ls->l - 1].a = j;
-	}
+    ls->s[ls->l - 1].l = j;
+    ls->s[ls->l - 1].a = j;
+  }
 
-	// move the remainder list to just before the newly-created lists
-	typeof(ls->s[0]) G = ls->s[0];
-	memmove(
-		  &ls->s[0]
-		, &ls->s[1]
-		, i * sizeof(ls->s[0])
-	);
-	ls->s[i] = G;
+  // move the remainder list to just before the newly-created lists
+  typeof(ls->s[0]) G = ls->s[0];
+  memmove(
+      &ls->s[0]
+    , &ls->s[1]
+    , i * sizeof(ls->s[0])
+  );
+  ls->s[i] = G;
 
-	// reverse the portion of the stack with the newly-created lists
-	for(x = i + 1; x <= ((i + k + 1) / 2); x++)
-	{
-		int a = x;
-		int b = i + 1 + k - x + i;
+  // reverse the portion of the stack with the newly-created lists
+  for(x = i + 1; x <= ((i + k + 1) / 2); x++)
+  {
+    int a = x;
+    int b = i + 1 + k - x + i;
 
-		typeof(ls->s[0]) T = ls->s[a];
-		ls->s[a] = ls->s[b];
-		ls->s[b] = T;
-	}
+    typeof(ls->s[0]) T = ls->s[a];
+    ls->s[a] = ls->s[b];
+    ls->s[b] = T;
+  }
 
-	// move the portion of the stack just generated to the top
-	//  (the new lists, and the remainder list)
-	typeof(ls->s[0])* T = alloca(i * sizeof(ls->s[0]));
-	memcpy(T, &ls->s[0], i * sizeof(ls->s[0]));
+  // move the portion of the stack just generated to the top
+  //  (the new lists, and the remainder list)
+  typeof(ls->s[0])* T = alloca(i * sizeof(ls->s[0]));
+  memcpy(T, &ls->s[0], i * sizeof(ls->s[0]));
 
-	memmove(
-		  &ls->s[0]
-		, &ls->s[i]
-		, (k + 1) * sizeof(ls->s[0])
-	);
+  memmove(
+      &ls->s[0]
+    , &ls->s[i]
+    , (k + 1) * sizeof(ls->s[0])
+  );
 
-	// move the displaced portion to the end
-	memcpy(
-		  &ls->s[k + i - ((i % 2) ? 0 : 1)]
-		, T
-		, i * sizeof(ls->s[0])
-	);
+  // move the displaced portion to the end
+  memcpy(
+      &ls->s[k + i - ((i % 2) ? 0 : 1)]
+    , T
+    , i * sizeof(ls->s[0])
+  );
 
-	finally : coda;
+  finally : coda;
 }

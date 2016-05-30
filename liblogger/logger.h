@@ -113,15 +113,15 @@ xapi logger_initialize(char ** restrict envp);
 //  [line]  - line number
 //
 xapi logger_logvf(const uint64_t ids, const uint32_t attrs, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull(3)));
+  __attribute__((nonnull(3)));
 xapi logger_logf (const uint64_t ids, const uint32_t attrs, const char * const restrict fmt, ...)
-	__attribute__((nonnull(3)));
+  __attribute__((nonnull(3)));
 xapi logger_logs (const uint64_t ids, const uint32_t attrs, const char * const restrict s)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 xapi logger_logw (const uint64_t ids, const uint32_t attrs, const char * const restrict src, size_t len)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 xapi logger_logc (const uint64_t ids, const uint32_t attrs, const char c)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #define  logvf(ids, ...) fatal(logger_logvf , ids , 0 , __VA_ARGS__)
 #define   logf(ids, ...) fatal(logger_logf  , ids , 0 , __VA_ARGS__)

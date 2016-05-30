@@ -20,25 +20,25 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (xunit_test*[]) {
+  , .tests = (xunit_test*[]) {
 
 /* wvp : WINDOWS_ACTIVATE */
 
-			(listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/. y wvp"
-				, .final = (char*[]) { "foo", "foo", "foo", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y wvp"
-				, .final = (char*[]) { "foo", "foo", "foo", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "a", "aa", "aaa", "aaaa", 0 }
-				, .xsfm = "l/a y wvp"
-				, .final = (char*[]) { 0 }
-		  }}
-		, 0
-	}
+      (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/. y wvp"
+        , .final = (char*[]) { "foo", "foo", "foo", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y wvp"
+        , .final = (char*[]) { "foo", "foo", "foo", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "a", "aa", "aaa", "aaaa", 0 }
+        , .xsfm = "l/a y wvp"
+        , .final = (char*[]) { 0 }
+      }}
+    , 0
+  }
 };

@@ -52,7 +52,7 @@ xapi uxkill(pid_t pid, int sig, int * r);
 //  xapi proxy for sigaction
 //
 xapi xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 /// xsigprocmask
 //
@@ -68,6 +68,6 @@ xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
 //  (it is kind of the whole point ...)
 //
 xapi uxsigsuspend(const sigset_t * mask)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #endif

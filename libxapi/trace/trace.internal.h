@@ -25,10 +25,10 @@ struct calltree;
 #define restrict __restrict
 
 size_t trace_calltree_pithy(struct calltree * const restrict cs, char * const dst, const size_t sz)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 size_t trace_calltree_full(struct calltree * const restrict cs, char * const dst, const size_t sz)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

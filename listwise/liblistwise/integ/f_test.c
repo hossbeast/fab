@@ -20,58 +20,58 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (xunit_test*[]) {
+  , .tests = (xunit_test*[]) {
 
 /* p : WINDOWS_ACTIVATE | SELECTION_STAGE */
 
-		// off/len of zero : all fields
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
-				, .xsfm = "l/\"/g y f"
-				, .final = (char*[]) { "alpha", "alphabeta", "alphabetagamma", "alphabetagammadeltaepsilon", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
-				, .xsfm = "l/\"/g y f/0"
-				, .final = (char*[]) { "alpha", "alphabeta", "alphabetagamma", "alphabetagammadeltaepsilon", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
-				, .xsfm = "l/\"/g y f/0/0"
-				, .final = (char*[]) { "alpha", "alphabeta", "alphabetagamma", "alphabetagammadeltaepsilon", 0 }
-		  }}
+    // off/len of zero : all fields
+      (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
+        , .xsfm = "l/\"/g y f"
+        , .final = (char*[]) { "alpha", "alphabeta", "alphabetagamma", "alphabetagammadeltaepsilon", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
+        , .xsfm = "l/\"/g y f/0"
+        , .final = (char*[]) { "alpha", "alphabeta", "alphabetagamma", "alphabetagammadeltaepsilon", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
+        , .xsfm = "l/\"/g y f/0/0"
+        , .final = (char*[]) { "alpha", "alphabeta", "alphabetagamma", "alphabetagammadeltaepsilon", 0 }
+      }}
 
-		// off/len : in fields
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
-				, .xsfm = "l/\"/g y f/0/1"
-				, .final = (char*[]) { "alpha", "alpha", "alpha", "alpha", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
-				, .xsfm = "l/\"/g y f/1/2"
-				, .final = (char*[]) { "betagamma", "betagamma", 0 }
-		  }}
+    // off/len : in fields
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
+        , .xsfm = "l/\"/g y f/0/1"
+        , .final = (char*[]) { "alpha", "alpha", "alpha", "alpha", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
+        , .xsfm = "l/\"/g y f/1/2"
+        , .final = (char*[]) { "betagamma", "betagamma", 0 }
+      }}
 
-		// negative offset : relative to end of fields
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
-				, .xsfm = "l/\"/g y f/-2/1 y"
-				, .final = (char*[]) { "alpha", "beta", "delta", 0 }
-		  }}
-		// negative length : relative to end of fields
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
-				, .xsfm = "l/\"/g y f/-2/-1 y"
-				, .final = (char*[]) { "alphabeta", "betagamma", "deltaepsilon", 0 }
-		  }}
+    // negative offset : relative to end of fields
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
+        , .xsfm = "l/\"/g y f/-2/1 y"
+        , .final = (char*[]) { "alpha", "beta", "delta", 0 }
+      }}
+    // negative length : relative to end of fields
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "\"alpha\"", "\"alpha\" : \"beta\"", "\"alpha\" : \"beta\" : \"gamma\"", "\"alpha\" : \"beta\" : \"gamma\" : \"delta\" : \"epsilon\"", 0 }
+        , .xsfm = "l/\"/g y f/-2/-1 y"
+        , .final = (char*[]) { "alphabeta", "betagamma", "deltaepsilon", 0 }
+      }}
 
-		// other
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo" }
-				, .xsfm = "l/o/g wy f"
-				, .final = (char*[]) { 0 }
-		  }}
+    // other
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo" }
+        , .xsfm = "l/o/g wy f"
+        , .final = (char*[]) { 0 }
+      }}
     , 0
-	}
+  }
 };

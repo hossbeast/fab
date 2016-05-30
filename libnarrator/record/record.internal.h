@@ -42,10 +42,10 @@ typedef struct narrator_record
 //
 
 xapi record_vsayf(narrator_record * const restrict n, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi record_sayw(narrator_record * const restrict n, const char * const restrict b, size_t l)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// record_write
 //

@@ -34,24 +34,24 @@ xapi listwise_lwop_say(uint64_t optype, int effectual, narrator * const restrict
 {
   enter;
 
-	uint64_t t = 0x01;
-	int said = 0;
+  uint64_t t = 0x01;
+  int said = 0;
 
-	while(t)
-	{
-		if(optype & t)
-		{
-			if(t <= LWOP_EFFECTUAL || !effectual)
-			{
-				if(said)
-					says("|");
-				says(LWOPT_STR(t));
-				said = 1;
-			}
-		}
+  while(t)
+  {
+    if(optype & t)
+    {
+      if(t <= LWOP_EFFECTUAL || !effectual)
+      {
+        if(said)
+          says("|");
+        says(LWOPT_STR(t));
+        said = 1;
+      }
+    }
 
-		t <<= 1;
-	}
+    t <<= 1;
+  }
 
-	finally : coda;
+  finally : coda;
 }

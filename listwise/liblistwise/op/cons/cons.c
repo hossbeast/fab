@@ -42,38 +42,38 @@ static xapi op_validate(operation*);
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "cons"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET | LWOP_ARGS_CANHAVE | LWOP_EMPTYSTACK_YES | LWOP_OPERATION_PUSHBEFORE
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec
-		, .desc					= "create new list from the specified items"
-		, .mnemonic			= "construct"
-	}
-	, {}
+  {
+      .s            = "cons"
+    , .optype       = LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET | LWOP_ARGS_CANHAVE | LWOP_EMPTYSTACK_YES | LWOP_OPERATION_PUSHBEFORE
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec
+    , .desc         = "create new list from the specified items"
+    , .mnemonic     = "construct"
+  }
+  , {}
 };
 
 static xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl < 1)
-	{
-		failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "1 or more", o->argsl);
-	}
+  if(o->argsl < 1)
+  {
+    failf(LISTWISE_ARGSNUM, "expected %s", "actual %d", "1 or more", o->argsl);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	fatal(lstack_unshift, ls);
+  fatal(lstack_unshift, ls);
 
-	int x;
-	for(x = 0; x < o->argsl; x++)
-		fatal(lstack_addw, ls, o->args[x]->s, o->args[x]->l);
+  int x;
+  for(x = 0; x < o->argsl; x++)
+    fatal(lstack_addw, ls, o->args[x]->s, o->args[x]->l);
 
-	finally : coda;
+  finally : coda;
 }

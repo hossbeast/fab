@@ -26,8 +26,8 @@ struct memblk;
 
 typedef struct error
 {
-	const struct etable *	etab;		// error table
-	xapi_code             code;		// error code
+  const struct etable * etab;   // error table
+  xapi_code             code;   // error code
 } error;
 
 /// error_freeze

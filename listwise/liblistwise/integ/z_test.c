@@ -20,32 +20,32 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (xunit_test*[]) {
+  , .tests = (xunit_test*[]) {
 
 /* z : WINDOWS_RESET | SELECTION_RESET */
 
-			/* selection is reset */
-			/*  l : {SELECTION,WINDOWS}_RESET */
-		    (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/. y sz"
-				, .final = (char*[]) { "foo", ".", ".", ".", 0 }
-		  }}
-			, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/. y wz"
-				, .final = (char*[]) { "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-		  }}
-			, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/. y z"
-				, .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-		  }}
+      /* selection is reset */
+      /*  l : {SELECTION,WINDOWS}_RESET */
+        (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/. y sz"
+        , .final = (char*[]) { "foo", ".", ".", ".", 0 }
+      }}
+      , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/. y wz"
+        , .final = (char*[]) { "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+      }}
+      , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/. y z"
+        , .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+      }}
 
-			/* windows are reset */
+      /* windows are reset */
 
 /* sz SELECTION_RESET */
 /* wz WINDOWS_RESET */
-		, 0
-	}
+    , 0
+  }
 };

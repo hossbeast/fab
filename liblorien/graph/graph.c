@@ -32,8 +32,8 @@
 
 typedef struct edge
 {
-	struct vertex * A;			// A depends on B, A -> B
-	struct vertex * B;
+  struct vertex * A;      // A depends on B, A -> B
+  struct vertex * B;
   uint64_t        attrs;  // properties of the edge
 } edge;
 
@@ -60,7 +60,7 @@ struct graph
 //
 
 static int traverse(
-	  vertex * const restrict v
+    vertex * const restrict v
   , xapi (* const visit)(vertex * const restrict, void *)
   , uint32_t skip
   , uint32_t finish
@@ -84,14 +84,14 @@ printf("traverse %d\n", vtraverse);
 printf("visit %d\n", vvisit);
 #endif
 
-	if(v->guard)	// cycle detected
+  if(v->guard)  // cycle detected
     fail(LORIEN_CYCLE);
 
-  v->guard = 1;	// descend
+  v->guard = 1; // descend
 
   if(method == GRAPH_TRAVERSE_BREADTH && vvisit && v->visited != id)
   {
-		fatal(visit, v, arg);
+    fatal(visit, v, arg);
     v->visited = id;
   }
 
@@ -148,13 +148,13 @@ printf("visit %d\n", vvisit);
     v->visited = id;
   }
 
-  v->guard = 0;	// ascend
+  v->guard = 0; // ascend
 
 finally:
   if(XAPI_THROWING(LORIEN_CYCLE))
   {
-		if((*stackz) < sizeof((*stack)) / sizeof((*stack)[0]))
-			(*stack)[(*stackz)++] = v;
+    if((*stackz) < sizeof((*stack)) / sizeof((*stack)[0]))
+      (*stack)[(*stackz)++] = v;
   }
 coda;
 }

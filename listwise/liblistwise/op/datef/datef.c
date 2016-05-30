@@ -36,59 +36,59 @@ ARGUMENTS
 
 OPERATION
 
-	1. foreach item in selection, or, if no selection, in top list
-	2. apply date format and replace entry
+  1. foreach item in selection, or, if no selection, in top list
+  2. apply date format and replace entry
 
 */
 
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "datef"
-		, .optype				= LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
-		, .op_exec			= op_exec
-		, .desc					= "format unix date to a string"
-		, .mnemonic			= "date format"
-	}, {}
+  {
+      .s            = "datef"
+    , .optype       = LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE | LWOP_OPERATION_INPLACE
+    , .op_exec      = op_exec
+    , .desc         = "format unix date to a string"
+    , .mnemonic     = "date format"
+  }, {}
 };
 
 xapi op_exec(operation* o, lwx * lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	char space[64];
+  char space[64];
 
-	char * fmt = "%a %b %d %Y %H:%M:%S";
-	if(o->argsl)
-		fmt = o->args[0]->s;
+  char * fmt = "%a %b %d %Y %H:%M:%S";
+  if(o->argsl)
+    fmt = o->args[0]->s;
 
-	int x;
-	LSTACK_ITERATE(lx, x, go)
-	if(go)
-	{
-		char * ss;
-		int ssl;
-		fatal(lstack_getstring, lx, 0, x, &ss, &ssl);
+  int x;
+  LSTACK_ITERATE(lx, x, go)
+  if(go)
+  {
+    char * ss;
+    int ssl;
+    fatal(lstack_getstring, lx, 0, x, &ss, &ssl);
 
-		// parse as time_t
+    // parse as time_t
     uint32_t u32 = 0;
-		if(parseuint(ss, SCNu32, 0, UINT32_MAX, 1, 10, &u32, 0) == 0)
-		{
+    if(parseuint(ss, SCNu32, 0, UINT32_MAX, 1, 10, &u32, 0) == 0)
+    {
       time_t T = (time_t)u32;
 
-			// format to string
-			struct tm tm = {};
-			strftime(space, sizeof(space), fmt, localtime_r(&T, &tm));
+      // format to string
+      struct tm tm = {};
+      strftime(space, sizeof(space), fmt, localtime_r(&T, &tm));
 
-			// rewrite the row
-			fatal(lstack_writes, lx, 0, x, space);
+      // rewrite the row
+      fatal(lstack_writes, lx, 0, x, space);
 
-			// add to staged selections
-			fatal(lstack_selection_stage, lx, x);
-		}
-	}
-	LSTACK_ITEREND
+      // add to staged selections
+      fatal(lstack_selection_stage, lx, x);
+    }
+  }
+  LSTACK_ITEREND
 
-	finally : coda;
+  finally : coda;
 }

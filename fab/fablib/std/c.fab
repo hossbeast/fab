@@ -50,38 +50,38 @@ $dscext = [ $dext ]
 
 # paths to source files for discovery
 $cdscpaths = [
-	[
-		$paths				# paths
-		$dscpaths			# paths, discovery only
+  [
+    $paths        # paths
+    $dscpaths     # paths, discovery only
 
-		[
-			$dirs				# directories
-			$dscdirs		# directories, discovery only
-		~ [ ls [ lx/$sext ~ j ] ~ fi ] ]
+    [
+      $dirs       # directories
+      $dscdirs    # directories, discovery only
+    ~ [ ls [ lx/$sext ~ j ] ~ fi ] ]
 
-		[
-			$rdirs			# recursive directories
-			$rdscdirs		# recursive directories, discovery only
-		~ [ lsr [ lx/$sext ~ j ] ~ fi ] ]
+    [
+      $rdirs      # recursive directories
+      $rdscdirs   # recursive directories, discovery only
+    ~ [ lsr [ lx/$sext ~ j ] ~ fi ] ]
  ~ [ $dscfilter ] ]
 ~ [ $filter ] ]
 
 # paths to source files for fabrication
 $cfabpaths = [
-	[
-		$paths				# paths
-		$fabpaths			# paths, fabrication only
+  [
+    $paths        # paths
+    $fabpaths     # paths, fabrication only
 
-		[
-			$dirs				# directories
-			$fabdirs		# directories, fabrication only
-		~ [ ls [ lx/$sext ~ j ] ~ fi ] ]
+    [
+      $dirs       # directories
+      $fabdirs    # directories, fabrication only
+    ~ [ ls [ lx/$sext ~ j ] ~ fi ] ]
 
-		[
-			$rdirs			# recursive directories
-			$rfabdirs		# recursive directories, fabrication only
-		~ [ lsr [ lx/$sext ~ j ] ~ fi ] ]
-	~ [ $fabfilter ] ]
+    [
+      $rdirs      # recursive directories
+      $rfabdirs   # recursive directories, fabrication only
+    ~ [ lsr [ lx/$sext ~ j ] ~ fi ] ]
+  ~ [ $fabfilter ] ]
  ~ [ $filter ] ]
 
 # paths to object files
@@ -95,11 +95,11 @@ $cobjpaths = [ $cfabpaths ~ [ sx/$sext/$dext ] ]
 #
 [ $cdscpaths ] %
 {
-	[ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG [ $@ ] | [ $^gccdep ] '[ $gendir ]' [ $@ ~ [ rx [ sx/$sext/$dext ~ j ] ~ fi ] ] [ $dscext ]
+  [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG [ $@ ] | [ $^gccdep ] '[ $gendir ]' [ $@ ~ [ rx [ sx/$sext/$dext ~ j ] ~ fi ] ] [ $dscext ]
 }
 
 # fabrication and dependency
 [ $cobjpaths ~ dj shift ] :: [ $< ~ [ sx/$dext/$sext ] ]
 {
-	[ $cc ] [ $cflags ~ uu fi ] -c [ $@ ~ [ rx/ineed [ lx/$sext ~ j ] uu fi ~ fi ] ] -o [ $@ ]
+  [ $cc ] [ $cflags ~ uu fi ] -c [ $@ ~ [ rx/ineed [ lx/$sext ~ j ] uu fi ~ fi ] ] -o [ $@ ]
 }

@@ -20,32 +20,32 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (xunit_test*[]) {
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sx/z"
-				, .final = (char*[]) { "foo", "foo.z", "foo.a.z", "foo.a.b.z", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sx/b/z"
-				, .final = (char*[]) { "foo", "foo.a", "foo.a.z", "foo.a.b.c", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "sxf/z"
-				, .final = (char*[]) { "foo", "foo.z", "foo.z", "foo.z", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
-				, .xsfm = "sxf/b.c/z"
-				, .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
-				, .xsfm = "sxf/b.c/z"
-				, .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
-		  }}
-		, 0
-	}
+  , .tests = (xunit_test*[]) {
+      (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "sx/z"
+        , .final = (char*[]) { "foo", "foo.z", "foo.a.z", "foo.a.b.z", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "sx/b/z"
+        , .final = (char*[]) { "foo", "foo.a", "foo.a.z", "foo.a.b.c", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "sxf/z"
+        , .final = (char*[]) { "foo", "foo.z", "foo.z", "foo.z", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
+        , .xsfm = "sxf/b.c/z"
+        , .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
+        , .xsfm = "sxf/b.c/z"
+        , .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
+      }}
+    , 0
+  }
 };

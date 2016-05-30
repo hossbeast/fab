@@ -38,7 +38,7 @@ xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, str
 //  proxy for getpwuid
 //
 xapi xgetpwuid(uid_t uid, struct passwd ** const restrict pwd)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

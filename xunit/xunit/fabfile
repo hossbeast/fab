@@ -22,9 +22,9 @@
 
 # variables
 $cflags = [
-	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
-	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
-	[ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dlibxunit $dliblogger ~ s/^/-I ]
+  [ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
+  [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
+  [ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dlibxunit $dliblogger ~ s/^/-I ]
 ]
 
 $cflags_xapi_final = [ $cflags $cflags_xapi_final ]
@@ -34,7 +34,7 @@ $cflags_xapi_devel = [ $cflags $cflags_xapi_devel ]
 
 $lflags = [ -ldl ]
 $rpath = [ 
-	[ $dlibxapi $dlibxlinux $dlibxunit $dliblogger $dlibvalyria $dlibnarrator ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+  [ $dlibxapi $dlibxlinux $dlibxunit $dliblogger $dlibvalyria $dlibnarrator ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 $lflags_xapi_final = [ $lflags_xapi_final $lflags $libxapi_xapi_final $libxlinux_xapi_final $libxunit_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final ]
 $lflags_xapi_debug = [ $lflags_xapi_debug $lflags $libxapi_xapi_debug $libxlinux_xapi_debug $libxunit_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug ]
@@ -62,17 +62,17 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lflags $libxapi_xapi_devel $libxlinux
 #
 [ $xunit_xapi_final ] : [ $*/main.xapi.final.o ~ j ]
 {
-	[ $cc ] [ $cflags_xapi_final $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ]
+  [ $cc ] [ $cflags_xapi_final $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ]
 }
 
 [ $xunit_xapi_debug ] : [ $*/main.xapi.debug.o ~ j ]
 {
-	[ $cc ] [ $cflags_xapi_debug $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ]
+  [ $cc ] [ $cflags_xapi_debug $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
 [ $xunit_xapi_devel ] : [ $*/main.xapi.devel.o ~ j ]
 {
-	[ $cc ] [ $cflags_xapi_devel $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
+  [ $cc ] [ $cflags_xapi_devel $cflags ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
 }
 
 [ $xunit_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libxunit_xapi_final $liblogger_xapi_final ]

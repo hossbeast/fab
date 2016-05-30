@@ -35,34 +35,34 @@ NO ARGUMENTS
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "wvp"
-		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE
-		, .op_exec			= op_exec
-		, .desc					= "window section preceeding first windowed section"
-		, .mnemonic			= "window-preceeding"
-	}
-	, {}
+  {
+      .s            = "wvp"
+    , .optype       = LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE
+    , .op_exec      = op_exec
+    , .desc         = "window section preceeding first windowed section"
+    , .mnemonic     = "window-preceeding"
+  }
+  , {}
 };
 
 xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	int x;
-	LSTACK_ITERATE(lx, x, go)
-	if(go)
-	{
-		lwx_windows * win;
-		int state;
-		if((state = lstack_windows_state(lx, x, &win)) == LWX_WINDOWS_SOME)
-		{
-			// preceeding the first windowed segment
-			fatal(lstack_windows_stage, lx, x, 0, win->s[0].o);
-			fatal(lstack_selection_stage, lx, x);
-		}
-	}
-	LSTACK_ITEREND
+  int x;
+  LSTACK_ITERATE(lx, x, go)
+  if(go)
+  {
+    lwx_windows * win;
+    int state;
+    if((state = lstack_windows_state(lx, x, &win)) == LWX_WINDOWS_SOME)
+    {
+      // preceeding the first windowed segment
+      fatal(lstack_windows_stage, lx, x, 0, win->s[0].o);
+      fatal(lstack_selection_stage, lx, x);
+    }
+  }
+  LSTACK_ITEREND
 
-	finally : coda;
+  finally : coda;
 }

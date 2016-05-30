@@ -28,7 +28,7 @@
 //  xapi proxy for readv
 //
 xapi xreadv(int fd, const struct iovec * iov, int iovcnt)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 /// axreadv
 //
@@ -36,7 +36,7 @@ xapi xreadv(int fd, const struct iovec * iov, int iovcnt)
 //  xapi proxy for readv that also fails when count != actual
 //
 xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 /// xwritev
 //
@@ -44,7 +44,7 @@ xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
 //  xapi proxy for writev
 //
 xapi xwritev(int fd, const struct iovec * iov, int iovcnt)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 /// axwritev
 //
@@ -52,6 +52,6 @@ xapi xwritev(int fd, const struct iovec * iov, int iovcnt)
 //  xapi proxy for writev that also fails when actual != count
 //
 xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 #endif

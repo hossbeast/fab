@@ -30,7 +30,7 @@ struct lwx;   // lwx.h
 //  stage the selection 0:y
 //
 xapi lstack_selection_stage(struct lwx* const restrict lx, int y)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// lstack_selection_reset
 //
@@ -38,11 +38,11 @@ xapi lstack_selection_stage(struct lwx* const restrict lx, int y)
 //  reset selection (select all)
 //
 xapi lstack_selection_reset(struct lwx* const restrict lx)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
-#define LWX_SELECTION_ALL			0		/* universe */
-#define LWX_SELECTION_NONE		1		/* empty-set */
-#define LWX_SELECTION_SOME		2		/* non-empty proper subset */
+#define LWX_SELECTION_ALL     0   /* universe */
+#define LWX_SELECTION_NONE    1   /* empty-set */
+#define LWX_SELECTION_SOME    2   /* non-empty proper subset */
 
 /// lstack_selection_state
 //
@@ -53,7 +53,7 @@ xapi lstack_selection_reset(struct lwx* const restrict lx)
 //  one of LWX_SELECTION_*
 //
 int lstack_selection_state(struct lwx* const restrict lx)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

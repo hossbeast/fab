@@ -63,7 +63,7 @@ OPERATION
       2.1 if argument is the path to a directory
           2.2 for each item in the the directory listing
               2.3 append path to the item (relative to the argument given)
-							2.4 repeat 2.2 for this item
+              2.4 repeat 2.2 for this item
 
 */
 
@@ -71,67 +71,67 @@ static xapi op_exec_ls(operation*, lwx*, int**, int*);
 static xapi op_exec_lsr(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "ls"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
-		, .op_exec			= op_exec_ls
-		, .mnemonic			= "directory-listing"
-		, .desc					= "create new list from directory listing(s)"
-	}
-	, {
-		  .s						= "lsr"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
-		, .op_exec			= op_exec_lsr
-		, .mnemonic			= "directory-listing-recursive"
-		, .desc					= "create new list from recursive directory listing(s)"
-	}
-	, {}
+  {
+      .s            = "ls"
+    , .optype       = LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
+    , .op_exec      = op_exec_ls
+    , .mnemonic     = "directory-listing"
+    , .desc         = "create new list from directory listing(s)"
+  }
+  , {
+      .s            = "lsr"
+    , .optype       = LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_OPERATION_PUSHBEFORE | LWOP_OPERATION_FILESYSTEM | LWOP_EMPTYSTACK_YES
+    , .op_exec      = op_exec_lsr
+    , .mnemonic     = "directory-listing-recursive"
+    , .desc         = "create new list from recursive directory listing(s)"
+  }
+  , {}
 };
 
 static xapi listing(lwx* ls, char * s, int recurse)
 {
   enter;
 
-	DIR * dd = 0;
-	if((dd = opendir(s)))
-	{
-		struct dirent ent;
-		struct dirent * entp = 0;
-		while(1)
-		{
-			fatal(xreaddir_r, dd, &ent, &entp);
-			if(entp)
-			{
-				if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
-				{
-					fatal(lstack_addf, ls, "%s/%s", s, entp->d_name);
+  DIR * dd = 0;
+  if((dd = opendir(s)))
+  {
+    struct dirent ent;
+    struct dirent * entp = 0;
+    while(1)
+    {
+      fatal(xreaddir_r, dd, &ent, &entp);
+      if(entp)
+      {
+        if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+        {
+          fatal(lstack_addf, ls, "%s/%s", s, entp->d_name);
 
-					if(recurse)
-					{
-						char * zs = 0;
-						fatal(lstack_string, ls, 0, ls->s[0].l - 1, &zs);
-						fatal(listing, ls, zs, recurse);
-					}
-				}
-			}
-			else
-			{
-				break;
-			}
-		}
-	}
-	else if(errno == ENOTDIR || errno == ENOENT)
-	{
-		logf(L_LISTWISE | L_OPINFO, "opendir('%s')=[%d][%s]", s, errno, strerror(errno));
-	}
-	else
-	{
-		fatal(lstack_adds, ls, s);
-	}
+          if(recurse)
+          {
+            char * zs = 0;
+            fatal(lstack_string, ls, 0, ls->s[0].l - 1, &zs);
+            fatal(listing, ls, zs, recurse);
+          }
+        }
+      }
+      else
+      {
+        break;
+      }
+    }
+  }
+  else if(errno == ENOTDIR || errno == ENOENT)
+  {
+    logf(L_LISTWISE | L_OPINFO, "opendir('%s')=[%d][%s]", s, errno, strerror(errno));
+  }
+  else
+  {
+    fatal(lstack_adds, ls, s);
+  }
 
 finally:
-	if(dd)
-		closedir(dd);
+  if(dd)
+    closedir(dd);
 coda;
 }
 
@@ -139,35 +139,35 @@ static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int recurs
 {
   enter;
 
-	int x;
-	fatal(lstack_unshift, ls);
+  int x;
+  fatal(lstack_unshift, ls);
 
-	if(o->argsl)
-	{
-		for(x = 0; x < o->argsl; x++)
-			fatal(listing, ls, o->args[x]->s, recurse);
-	}
-	else
-	{
-		LSTACK_ITERATE_FWD(ls, 1, x, 1, 1, go)
-		if(go)
-		{
-			char * zs = 0;
-			fatal(lstack_string, ls, 1, x, &zs);
-			fatal(listing, ls, zs, recurse);
-		}
-		LSTACK_ITEREND
-	}
+  if(o->argsl)
+  {
+    for(x = 0; x < o->argsl; x++)
+      fatal(listing, ls, o->args[x]->s, recurse);
+  }
+  else
+  {
+    LSTACK_ITERATE_FWD(ls, 1, x, 1, 1, go)
+    if(go)
+    {
+      char * zs = 0;
+      fatal(lstack_string, ls, 1, x, &zs);
+      fatal(listing, ls, zs, recurse);
+    }
+    LSTACK_ITEREND
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec_ls(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, ls, ovec, ovec_len, 0);
+  xproxy(op_exec, o, ls, ovec, ovec_len, 0);
 }
 
 xapi op_exec_lsr(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
-	xproxy(op_exec, o, ls, ovec, ovec_len, 1);
+  xproxy(op_exec, o, ls, ovec, ovec_len, 1);
 }

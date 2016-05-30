@@ -44,10 +44,10 @@ typedef struct narrator_file
 //
 
 xapi file_vsayf(narrator_file * const restrict n, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi file_sayw(narrator_file * const restrict n, const char * const restrict b, size_t l)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// file_seek
 //

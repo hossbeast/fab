@@ -30,7 +30,7 @@
 (fab specific) fg operator - select graph nodes
 
 ARGUMENTS
-	[0] - options string
+  [0] - options string
 
 OPERATION
   with no arguments, fx is equivalent to fxc - set interpolation mode to INTERPOLATION_DELIM_WS
@@ -42,68 +42,68 @@ static int op_validate(operation* o);
 static int op_exec(operation*, lwx*, int**, int*, void**);
 
 operator op_desc[] = {
-	{
-		  .s						= "fg"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec
-		, .mnemonic			= "fab-graph"
-		, .desc					= "(fab specific) select graph nodes (p|s|g|t|n)"
-	}
-	, {}
+  {
+      .s            = "fg"
+    , .optype       = LWOP_SELECTION_ACTIVATE | LWOP_MODIFIERS_CANHAVE | LWOP_ARGS_CANHAVE
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec
+    , .mnemonic     = "fab-graph"
+    , .desc         = "(fab specific) select graph nodes (p|s|g|t|n)"
+  }
+  , {}
 };
 
 int op_validate(operation* o)
 {
-	if(o->argsl != 0 && o->argsl != 1)
-	{
-		failf(LW_ARGSNUM, "expected 0 or 1, actual : %d", o->argsl);
-	}
+  if(o->argsl != 0 && o->argsl != 1)
+  {
+    failf(LW_ARGSNUM, "expected 0 or 1, actual : %d", o->argsl);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 int op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, void ** udata)
 {
-	uint32_t set = 0xFFFFFFFF;
+  uint32_t set = 0xFFFFFFFF;
 
-	if(o->argsl)
-	{
-		set = 0;
-		if(strstr(o->args[0]->s, "p"))
-			set |= (GN_TYPE_PRIMARY & GN_TYPE_BITSPACE);
-		if(strstr(o->args[0]->s, "s"))
-			set |= (GN_TYPE_SECONDARY & GN_TYPE_BITSPACE);
-		if(strstr(o->args[0]->s, "g"))
-			set |= (GN_TYPE_GENERATED & GN_TYPE_BITSPACE);
-		if(strstr(o->args[0]->s, "t"))
-			set |= (GN_TYPE_TASK & GN_TYPE_BITSPACE);
-		if(strstr(o->args[0]->s, "n"))
-			set |= (GN_TYPE_GROUP & GN_TYPE_BITSPACE);
-	}
+  if(o->argsl)
+  {
+    set = 0;
+    if(strstr(o->args[0]->s, "p"))
+      set |= (GN_TYPE_PRIMARY & GN_TYPE_BITSPACE);
+    if(strstr(o->args[0]->s, "s"))
+      set |= (GN_TYPE_SECONDARY & GN_TYPE_BITSPACE);
+    if(strstr(o->args[0]->s, "g"))
+      set |= (GN_TYPE_GENERATED & GN_TYPE_BITSPACE);
+    if(strstr(o->args[0]->s, "t"))
+      set |= (GN_TYPE_TASK & GN_TYPE_BITSPACE);
+    if(strstr(o->args[0]->s, "n"))
+      set |= (GN_TYPE_GROUP & GN_TYPE_BITSPACE);
+  }
 
-	int x;
-	LSTACK_ITERATE(lx, x, go)
-	if(go)
-	{
-		gn * g = 0;
+  int x;
+  LSTACK_ITERATE(lx, x, go)
+  if(go)
+  {
+    gn * g = 0;
 
-		char * sp = 0;
-		uint8_t st = 0;
-		fatal(lstack_getobject, lx, 0, x, &sp, &st);
+    char * sp = 0;
+    uint8_t st = 0;
+    fatal(lstack_getobject, lx, 0, x, &sp, &st);
 
-		if(st == LISTWISE_TYPE_GNLW)
-		{
-			g = *(void**)sp;
-		}
+    if(st == LISTWISE_TYPE_GNLW)
+    {
+      g = *(void**)sp;
+    }
 
-		if(g)
-		{
-			if(g->type & set)
-				fatal(lstack_selection_stage, lx, x);
-		}
-	}
-	LSTACK_ITEREND;
+    if(g)
+    {
+      if(g->type & set)
+        fatal(lstack_selection_stage, lx, x);
+    }
+  }
+  LSTACK_ITEREND;
 
-	finally : coda;
+  finally : coda;
 }

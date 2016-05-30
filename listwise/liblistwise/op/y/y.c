@@ -34,21 +34,21 @@ NO ARGUMENTS
 */
 
 operator op_desc[] = {
-	/* these operators specify ACTIVATE without STAGE */
-	{
-		  .s						= "y"
-		, .optype				= LWOP_ACTIVATION_OVERRIDE | LWOPT_SELECTION_ACTIVATE | LWOPT_WINDOWS_ACTIVATE
-		, .desc					= "activate staged selection and windows"
-	}
-	, {
-		  .s						= "sy"
-		, .optype				= LWOP_ACTIVATION_OVERRIDE | LWOPT_SELECTION_ACTIVATE
-		, .desc					= "activate staged selection"
-	}
-	, {
-		  .s						= "wy"
-		, .optype				= LWOP_ACTIVATION_OVERRIDE | LWOPT_WINDOWS_ACTIVATE
-		, .desc					= "activate staged windows"
-	}
-	, {}
+  /* these operators specify ACTIVATE without STAGE */
+  {
+      .s            = "y"
+    , .optype       = LWOP_ACTIVATION_OVERRIDE | LWOPT_SELECTION_ACTIVATE | LWOPT_WINDOWS_ACTIVATE
+    , .desc         = "activate staged selection and windows"
+  }
+  , {
+      .s            = "sy"
+    , .optype       = LWOP_ACTIVATION_OVERRIDE | LWOPT_SELECTION_ACTIVATE
+    , .desc         = "activate staged selection"
+  }
+  , {
+      .s            = "wy"
+    , .optype       = LWOP_ACTIVATION_OVERRIDE | LWOPT_WINDOWS_ACTIVATE
+    , .desc         = "activate staged windows"
+  }
+  , {}
 };

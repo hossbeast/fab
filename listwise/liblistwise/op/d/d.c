@@ -30,53 +30,53 @@ NO ARGUMENTS
 
 OPERATION
 
-	1. push an empty list on the stack
-	2. invert the current selection
-	3. move all selected items to the top list
+  1. push an empty list on the stack
+  2. invert the current selection
+  3. move all selected items to the top list
 
 */
 
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "d"
-		, .optype				= LWOP_STACKOP | LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET
-		, .op_exec			= op_exec
-		, .mnemonic			= "delete"
-		, .desc					= "extract rows into a new list"
-	}
-	, {}
+  {
+      .s            = "d"
+    , .optype       = LWOP_STACKOP | LWOP_SELECTION_RESET | LWOP_WINDOWS_RESET
+    , .op_exec      = op_exec
+    , .mnemonic     = "delete"
+    , .desc         = "extract rows into a new list"
+  }
+  , {}
 };
 
 xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	// create a new list at index 0
-	fatal(lstack_unshift, lx);
+  // create a new list at index 0
+  fatal(lstack_unshift, lx);
 
-	if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
-	{
-		size_t num;
-		if(lx->sel.active->state == LWX_SELECTION_NONE)
-			num = 0;
-		else
-			num = lx->sel.active->l;
+  if(lx->sel.active && lx->sel.active->lease == lx->sel.active_era)
+  {
+    size_t num;
+    if(lx->sel.active->state == LWX_SELECTION_NONE)
+      num = 0;
+    else
+      num = lx->sel.active->l;
 
-		// ensure allocation in the new list @ [0]
-		fatal(lstack_ensure, lx, 0, lx->s[1].l - num - 1, -1);
+    // ensure allocation in the new list @ [0]
+    fatal(lstack_ensure, lx, 0, lx->s[1].l - num - 1, -1);
 
-		int i = 0;
-		int x;
-		for(x = lx->s[1].l - 1; x >= 0; x--)
-		{
-			if(lx->sel.active->state == LWX_SELECTION_NONE || (lx->sel.active->sl <= (x/8)) || (lx->sel.active->s[x/8] & (0x01 << (x%8))) == 0)
-			{
-				fatal(lstack_move, lx, 0, lx->s[1].l - num - 1 - i, 1, x);
-			}
-		}
-	}
+    int i = 0;
+    int x;
+    for(x = lx->s[1].l - 1; x >= 0; x--)
+    {
+      if(lx->sel.active->state == LWX_SELECTION_NONE || (lx->sel.active->sl <= (x/8)) || (lx->sel.active->s[x/8] & (0x01 << (x%8))) == 0)
+      {
+        fatal(lstack_move, lx, 0, lx->s[1].l - num - 1 - i, 1, x);
+      }
+    }
+  }
 
-	finally : coda;
+  finally : coda;
 }

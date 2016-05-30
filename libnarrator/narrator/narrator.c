@@ -103,16 +103,16 @@ API xapi narrator_seek(narrator * const restrict n, off_t offset, int whence, of
 
   // dispatch
   if(n->type == NARRATOR_GROWING)
-		fatal(growing_seek, &n->growing, offset, whence, res);
-	else if(n->type == NARRATOR_FIXED)
-		fatal(fixed_seek, &n->fixed, offset, whence, res);
-	else if(n->type == NARRATOR_FILE)
+    fatal(growing_seek, &n->growing, offset, whence, res);
+  else if(n->type == NARRATOR_FIXED)
+    fatal(fixed_seek, &n->fixed, offset, whence, res);
+  else if(n->type == NARRATOR_FILE)
     fatal(file_seek, &n->file, offset, whence, res);
-	else if(n->type == NARRATOR_MULTI)
+  else if(n->type == NARRATOR_MULTI)
     fatal(multi_seek, &n->multi, offset, whence, res);
-	else if(n->type == NARRATOR_NULLITY)
+  else if(n->type == NARRATOR_NULLITY)
     fatal(nullity_seek, &n->nullity, offset, whence, res);
-	else if(n->type == NARRATOR_RECORD)
+  else if(n->type == NARRATOR_RECORD)
     fatal(record_seek, &n->record, offset, whence, res);
 
   finally : coda;
@@ -127,57 +127,57 @@ API xapi narrator_sayf(narrator * n, const char * const restrict fmt, ...)
 {
   enter;
 
-	va_list va;
-	va_start(va, fmt);
+  va_list va;
+  va_start(va, fmt);
 
-	fatal(narrator_vsayf, n, fmt, va);
+  fatal(narrator_vsayf, n, fmt, va);
 
 finally:
-	va_end(va);
+  va_end(va);
 coda;
 }
 
 API xapi narrator_sayc(narrator * const restrict n, int c)
 {
-	xproxy(narrator_sayw, n, (char*)&c, 1);
+  xproxy(narrator_sayw, n, (char*)&c, 1);
 }
 
 API xapi narrator_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
 {
   enter;
 
-	if(n->type == NARRATOR_GROWING)
-		fatal(growing_vsayf, &n->growing, fmt, va);
-	else if(n->type == NARRATOR_FIXED)
-		fatal(fixed_vsayf, &n->fixed, fmt, va);
-	else if(n->type == NARRATOR_FILE)
-		fatal(file_vsayf, &n->file, fmt, va);
-	else if(n->type == NARRATOR_MULTI)
-		fatal(multi_vsayf, &n->multi, fmt, va);
-	else if(n->type == NARRATOR_NULLITY)
-		fatal(nullity_vsayf, &n->nullity, fmt, va);
-	else if(n->type == NARRATOR_RECORD)
-		fatal(record_vsayf, &n->record, fmt, va);
+  if(n->type == NARRATOR_GROWING)
+    fatal(growing_vsayf, &n->growing, fmt, va);
+  else if(n->type == NARRATOR_FIXED)
+    fatal(fixed_vsayf, &n->fixed, fmt, va);
+  else if(n->type == NARRATOR_FILE)
+    fatal(file_vsayf, &n->file, fmt, va);
+  else if(n->type == NARRATOR_MULTI)
+    fatal(multi_vsayf, &n->multi, fmt, va);
+  else if(n->type == NARRATOR_NULLITY)
+    fatal(nullity_vsayf, &n->nullity, fmt, va);
+  else if(n->type == NARRATOR_RECORD)
+    fatal(record_vsayf, &n->record, fmt, va);
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi narrator_sayw(narrator * const restrict n, const char * const restrict b, size_t l)
 {
   enter;
 
-	if(n->type == NARRATOR_GROWING)
-		fatal(growing_sayw, &n->growing, b, l);
-	else if(n->type == NARRATOR_FIXED)
-		fatal(fixed_sayw, &n->fixed, b, l);
-	else if(n->type == NARRATOR_FILE)
-		fatal(file_sayw, &n->file, b, l);
-	else if(n->type == NARRATOR_MULTI)
-		fatal(multi_sayw, &n->multi, b, l);
-	else if(n->type == NARRATOR_NULLITY)
-		fatal(nullity_sayw, &n->nullity, b, l);
-	else if(n->type == NARRATOR_RECORD)
-		fatal(record_sayw, &n->record, b, l);
+  if(n->type == NARRATOR_GROWING)
+    fatal(growing_sayw, &n->growing, b, l);
+  else if(n->type == NARRATOR_FIXED)
+    fatal(fixed_sayw, &n->fixed, b, l);
+  else if(n->type == NARRATOR_FILE)
+    fatal(file_sayw, &n->file, b, l);
+  else if(n->type == NARRATOR_MULTI)
+    fatal(multi_sayw, &n->multi, b, l);
+  else if(n->type == NARRATOR_NULLITY)
+    fatal(nullity_sayw, &n->nullity, b, l);
+  else if(n->type == NARRATOR_RECORD)
+    fatal(record_sayw, &n->record, b, l);
 
-	finally : coda;
+  finally : coda;
 }

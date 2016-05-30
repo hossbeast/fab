@@ -32,7 +32,7 @@
 //  proxy for stat
 //
 xapi xstat(const char * restrict path, struct stat * restrict buf)
-	__attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2)));
 
 /// uxstat
 //
@@ -41,7 +41,7 @@ xapi xstat(const char * restrict path, struct stat * restrict buf)
 //  if stat fails but uxstat does not, buf is zeroed
 //
 xapi uxstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
-	__attribute__((nonnull(1,2)));
+  __attribute__((nonnull(1,2)));
 
 /// xlstat
 //
@@ -49,7 +49,7 @@ xapi uxstat(const char * restrict path, struct stat * restrict buf, int * restri
 //  proxy for lstat
 //
 xapi xlstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
-	__attribute__((nonnull(1,2)));
+  __attribute__((nonnull(1,2)));
 
 /// uxlstat
 //
@@ -58,7 +58,7 @@ xapi xlstat(const char * restrict path, struct stat * restrict buf, int * restri
 //  if lstat fails but uxlstat does not, buf is zeroed
 //
 xapi uxlstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
-	__attribute__((nonnull(1,2)));
+  __attribute__((nonnull(1,2)));
 
 /// xfstat
 //
@@ -66,7 +66,7 @@ xapi uxlstat(const char * restrict path, struct stat * restrict buf, int * restr
 //  proxy for fstat
 //
 xapi xfstat(int fd, struct stat * restrict buf)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// uxfstat
 //
@@ -75,7 +75,7 @@ xapi xfstat(int fd, struct stat * restrict buf)
 //  if stat fails and errno == ENOENT, buf is zeroed
 //
 xapi uxfstat(int fd, struct stat * restrict buf)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xfutimens
 //
@@ -104,7 +104,7 @@ xapi uxutimensat(int dirfd, const char * const restrict pathname, const struct t
 //  proxy for mkdir
 //
 xapi xmkdir(const char * restrict pathname, mode_t mode)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// uxmkdir
 //
@@ -112,7 +112,7 @@ xapi xmkdir(const char * restrict pathname, mode_t mode)
 //  proxy for mkdir which only fails when errno != ENOENT
 //
 xapi uxmkdir(const char * restrict pathname, mode_t mode)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xfchmod
 //

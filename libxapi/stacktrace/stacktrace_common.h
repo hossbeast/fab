@@ -176,20 +176,20 @@ XAPI_LEAVE:                         \
   (*r) = xapi_frame_leave(__xapi_topframe)
 
 // call xapi_frame_set with the current location
-#define XAPI_FRAME_SET(etab, code)	\
-	xapi_frame_set(etab, code, __xapi_f1 ? __xapi_current_frame : -1, __FILE__, __LINE__, __FUNCTION__)
+#define XAPI_FRAME_SET(etab, code)  \
+  xapi_frame_set(etab, code, __xapi_f1 ? __xapi_current_frame : -1, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOS(etab, code, key, vstr) \
-	xapi_frame_set_infos(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vstr, __FILE__, __LINE__, __FUNCTION__)
+  xapi_frame_set_infos(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vstr, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
-#define XAPI_FRAME_SET_INFOW(etab, code, key, vbuf, vlen)	\
-	xapi_frame_set_infow(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vbuf, vlen, __FILE__, __LINE__, __FUNCTION__)
+#define XAPI_FRAME_SET_INFOW(etab, code, key, vbuf, vlen) \
+  xapi_frame_set_infow(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vbuf, vlen, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
-#define XAPI_FRAME_SET_INFOF(etab, code, key, vfmt, ...)	\
-	xapi_frame_set_infof(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vfmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define XAPI_FRAME_SET_INFOF(etab, code, key, vfmt, ...)  \
+  xapi_frame_set_infof(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vfmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 /*
 ** called after finally

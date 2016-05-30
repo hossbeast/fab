@@ -28,21 +28,21 @@
 
 typedef struct
 {
-	/* yyu-defined xtra fields */
-	yyu_extra;
+  /* yyu-defined xtra fields */
+  yyu_extra;
 
-	transform * 		g;						// parsing results
+  transform *     g;            // parsing results
 
-	char						temp[256];		// temp space
-	char *					name;					// input name
-	int							namel;
-	uint32_t				scanmode;			// one of GENSCAN_*
+  char            temp[256];    // temp space
+  char *          name;         // input name
+  int             namel;
+  uint32_t        scanmode;     // one of GENSCAN_*
 
-	/* intermediary allocation tracking */
-	int							opsl;
-	int							opsa;
-	int							argsl;
-	int							argsa;
+  /* intermediary allocation tracking */
+  int             opsl;
+  int             opsa;
+  int             argsl;
+  int             argsa;
 } parse_param;
 
 // defined in transform.tab.o
@@ -59,6 +59,6 @@ int transform_yyparse(void*, parse_param*);
 //  called from tab.o and lex.o
 //
 static void transform_yyerror(void* loc, void* scanner, parse_param* pp, char const* err)
-	__attribute__((weakref("yyu_grammar_error")));
+  __attribute__((weakref("yyu_grammar_error")));
 
 #endif

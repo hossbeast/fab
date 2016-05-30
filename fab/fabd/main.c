@@ -88,12 +88,12 @@ int main(int argc, char** argv, char ** envp)
 
   xapi R = 0;
   int token = 0;
-	char space[2048];
-	char space2[2048];
+  char space[2048];
+  char space2[2048];
   char ipcdir[512];
   char hash[9] = { 0 };
-	int fd = -1;
-	size_t tracesz = 0;
+  int fd = -1;
+  size_t tracesz = 0;
 
   server * server = 0;
   memblk * mb = 0;
@@ -130,33 +130,33 @@ int main(int argc, char** argv, char ** envp)
   fatal(memblk_mk, &mb);
 
 #if 0
-	// register object types with liblistwise
-	fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
-	fatal(listwise_register_object, LISTWISE_TYPE_LIST, &listlw);
+  // register object types with liblistwise
+  fatal(listwise_register_object, LISTWISE_TYPE_GNLW, &gnlw);
+  fatal(listwise_register_object, LISTWISE_TYPE_LIST, &listlw);
 
-	// load additional fab-specific listwise operators
-	fatal(listwise_register_opdir, XQUOTE(FABLWOPDIR));
+  // load additional fab-specific listwise operators
+  fatal(listwise_register_opdir, XQUOTE(FABLWOPDIR));
 #endif
 
-	// fabd is normally invoked with a single argument, but in devel mode, check for nodaemon
-	int daemon = 1;
+  // fabd is normally invoked with a single argument, but in devel mode, check for nodaemon
+  int daemon = 1;
 
 #if DEVEL
-	if(argc > 2)
-		if(strcmp(argv[2], "--nodaemon") == 0)
-			daemon = 0;
+  if(argc > 2)
+    if(strcmp(argv[2], "--nodaemon") == 0)
+      daemon = 0;
 #endif
 
-	// close standard file descriptors
-	fatal(xclose, 0);
-	fatal(xopen, "/dev/null", O_RDONLY, 0);
+  // close standard file descriptors
+  fatal(xclose, 0);
+  fatal(xopen, "/dev/null", O_RDONLY, 0);
 
-	// get ipc dir
+  // get ipc dir
   uint32_t u32;
-	if(argc < 2 || parseuint(argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
-		fail(FAB_BADARGS);
+  if(argc < 2 || parseuint(argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
+    fail(FAB_BADARGS);
   snprintf(hash, sizeof(hash), "%08x", u32);
-	snprintf(ipcdir, sizeof(ipcdir), "%s/%s", XQUOTE(FABIPCDIR), hash);
+  snprintf(ipcdir, sizeof(ipcdir), "%s/%s", XQUOTE(FABIPCDIR), hash);
 
 #if DEBUG || DEVEL
   fatal(log_start, L_IPC, &token);
@@ -173,20 +173,20 @@ int main(int argc, char** argv, char ** envp)
   if(pgid && pgid != g_params.pgid)
     failf(FAB_FABDLOCK, "pgid", "%ld", (long)pgid);
 
-	// allow creation of world-rw files
-	umask(0);
+  // allow creation of world-rw files
+  umask(0);
   fatal(xchdir, "/");
   fatal(identity_assume_fabsys);
 
-	// create symlink for dsc in hashdir
-	snprintf(space, sizeof(space), "%s/dsc", ipcdir);
-	snprintf(space2, sizeof(space2), XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
-	fatal(uxunlink, space);
-	fatal(xsymlink, space2, space);
+  // create symlink for dsc in hashdir
+  snprintf(space, sizeof(space), "%s/dsc", ipcdir);
+  snprintf(space2, sizeof(space2), XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
+  fatal(uxunlink, space);
+  fatal(xsymlink, space2, space);
 
 #if __linux__
-	// arrange to terminate if the parent fabw process dies
-	fatal(xprctl, PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0);
+  // arrange to terminate if the parent fabw process dies
+  fatal(xprctl, PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0);
 #endif
 
   fatal(server_create, &server, ipcdir, hash);
@@ -195,7 +195,7 @@ int main(int argc, char** argv, char ** envp)
     fatal(server_ready, server);
 
   while(1)
-	{
+  {
     // receive a signal from fab
     int signum = 0;
     pid_t pid = 0;
@@ -220,27 +220,27 @@ int main(int argc, char** argv, char ** envp)
 
     fatal(usage_report);
 
-		// cleanup tmp dir, including specifically the last fab pid we are tracking
-		fatal(tmp_cleanup, &fab_pids[sizeof(fab_pids) / sizeof(fab_pids[0]) - 1], 1);
+    // cleanup tmp dir, including specifically the last fab pid we are tracking
+    fatal(tmp_cleanup, &fab_pids[sizeof(fab_pids) / sizeof(fab_pids[0]) - 1], 1);
 
-		// cycle fab pids
-		memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
-		fab_pids[0] = server->pid;
-	}
+    // cycle fab pids
+    memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
+    fab_pids[0] = server->pid;
+  }
 
-	// touch stamp file
-	snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
-	fatal(ixclose, &fd);
-	fatal(uxopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
-	if(fd != -1)
-	  fatal(xfutimens, fd, 0);
+  // touch stamp file
+  snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
+  fatal(ixclose, &fd);
+  fatal(uxopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
+  if(fd != -1)
+    fatal(xfutimens, fd, 0);
 
-	// cycle in my own pid
-	memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
-	fab_pids[0] = g_params.pid;
+  // cycle in my own pid
+  memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
+  fab_pids[0] = g_params.pid;
 
-	// cleanup tmp dir, including specifically all of the fab pids we are tracking and my own pid
-	fatal(tmp_cleanup, fab_pids, sizeof(fab_pids) / sizeof(fab_pids[0]));
+  // cleanup tmp dir, including specifically all of the fab pids we are tracking and my own pid
+  fatal(tmp_cleanup, fab_pids, sizeof(fab_pids) / sizeof(fab_pids[0]));
 
 finally:
   fatal(log_finish, &token);
@@ -251,25 +251,25 @@ finally:
   xapi_infos("hash", hash);
 #endif
 
-	if(XAPI_UNWINDING)
-	{
+  if(XAPI_UNWINDING)
+  {
     tracesz = xapi_trace_full(space, sizeof(space));
-		xlogw(L_ERROR, L_RED, space, tracesz);
-	}
+    xlogw(L_ERROR, L_RED, space, tracesz);
+  }
 
   // locals
-//	map_free(rmap);
-//	map_free(vmap);
+//  map_free(rmap);
+//  map_free(vmap);
 //  fabd_handler_context_free(ctx);
-	fatal(ixclose, &fd);
+  fatal(ixclose, &fd);
   fatal(server_dispose, &server);
   fatal(memblk_free, mb);
 
   // modules
-//	gn_teardown();
-//	fml_teardown();
-//	ff_teardown();
-//	selector_teardown();
+//  gn_teardown();
+//  fml_teardown();
+//  ff_teardown();
+//  selector_teardown();
 
   // libraries
   fatal(xlinux_unload);

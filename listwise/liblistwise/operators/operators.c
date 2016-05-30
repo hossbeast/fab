@@ -35,15 +35,15 @@
 
 #include "macros.h"
 
-operator **	APIDATA g_ops;
-operator ** APIDATA	g_ops_by_s;
+operator ** APIDATA g_ops;
+operator ** APIDATA g_ops_by_s;
 operator ** APIDATA g_ops_by_mnemonic;
-int									g_ops_a;
-int					APIDATA g_ops_l;
+int                 g_ops_a;
+int         APIDATA g_ops_l;
 
-void **	g_dls;
-int			g_dls_a;
-int			g_dls_l;
+void ** g_dls;
+int     g_dls_a;
+int     g_dls_l;
 
 //
 // static
@@ -55,131 +55,131 @@ static xapi op_load(char* path)
 {
   enter;
 
-	operator* op = 0;
+  operator* op = 0;
 
 #if DEBUG_LWOP_LOAD
 dprintf(501, " +%s :", path);
 #endif
 
-	char* name = path + strlen(path) - 1;
-	int namel = 0;
-	while(name[0] != '/')
-		name--;
-	name++;
+  char* name = path + strlen(path) - 1;
+  int namel = 0;
+  while(name[0] != '/')
+    name--;
+  name++;
 
-	while(name[namel] != '.')
-		namel++;
+  while(name[namel] != '.')
+    namel++;
 
-	if(g_dls_a == g_dls_l)
-	{
-		size_t ns = g_dls_a ?: 10;
-		ns = ns * 2 + ns / 2;
-		fatal(xrealloc, &g_dls, sizeof(*g_dls), ns, g_dls_a);
-		g_dls_a = ns;
-	}
+  if(g_dls_a == g_dls_l)
+  {
+    size_t ns = g_dls_a ?: 10;
+    ns = ns * 2 + ns / 2;
+    fatal(xrealloc, &g_dls, sizeof(*g_dls), ns, g_dls_a);
+    g_dls_a = ns;
+  }
 
-	void * dl = 0;
-	fatal(xdlopen, path, RTLD_NOW | RTLD_GLOBAL, &dl);
-	g_dls[g_dls_l++] = dl;
-	fatal(xdlsym, dl, "op_desc", (void*)&op);
+  void * dl = 0;
+  fatal(xdlopen, path, RTLD_NOW | RTLD_GLOBAL, &dl);
+  g_dls[g_dls_l++] = dl;
+  fatal(xdlsym, dl, "op_desc", (void*)&op);
 
-	while(op->desc)
-	{
-		if(g_ops_a == g_ops_l)
-		{
-			int ns = g_ops_a ?: 10;
-			ns = ns * 2 + ns / 2;
-			fatal(xrealloc, &g_ops, sizeof(g_ops[0]), ns, g_ops_a);
-			g_ops_a = ns;
-		}
+  while(op->desc)
+  {
+    if(g_ops_a == g_ops_l)
+    {
+      int ns = g_ops_a ?: 10;
+      ns = ns * 2 + ns / 2;
+      fatal(xrealloc, &g_ops, sizeof(g_ops[0]), ns, g_ops_a);
+      g_ops_a = ns;
+    }
 
 #if DEBUG_LWOP_LOAD
 dprintf(501, " %s", op->s);
 #endif
-		op->sl = strlen(op->s);
-		if(op->mnemonic)
-			op->mnemonicl = strlen(op->mnemonic);
-		g_ops[g_ops_l++] = op++;
-	}
+    op->sl = strlen(op->s);
+    if(op->mnemonic)
+      op->mnemonicl = strlen(op->mnemonic);
+    g_ops[g_ops_l++] = op++;
+  }
 
 #if DEBUG_LWOP_LOAD
 dprintf(501, "\n");
 #endif
 
-	finally : coda;
+  finally : coda;
 }
 
 static xapi read_opdir(char * s)
 {
   enter;
 
-	char space[256];
-	snprintf(space, sizeof(space) - 1, "%s", s);
+  char space[256];
+  snprintf(space, sizeof(space) - 1, "%s", s);
 
   DIR * dd = 0;
-	fatal(xopendir, space, &dd);
+  fatal(xopendir, space, &dd);
 
-	space[strlen(space)] = '/';
+  space[strlen(space)] = '/';
 
-	struct dirent ent = {};
-	struct dirent * entp = 0;
-	while(1)
-	{
-		fatal(xreaddir_r, dd, &ent, &entp);
+  struct dirent ent = {};
+  struct dirent * entp = 0;
+  while(1)
+  {
+    fatal(xreaddir_r, dd, &ent, &entp);
 
-		if(entp)
-		{
-			if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
-			{
-				if(entp->d_type == DT_DIR)
-				{
-					snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
-					fatal(read_opdir, space);
-				}
-				else if(strlen(entp->d_name) > 2)
-				{
-					// locate the filename portion
-					size_t nl = strlen(entp->d_name);
-					char * f = entp->d_name + nl;
-					while(f != entp->d_name && *f != '/')
-						f--;
+    if(entp)
+    {
+      if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
+      {
+        if(entp->d_type == DT_DIR)
+        {
+          snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
+          fatal(read_opdir, space);
+        }
+        else if(strlen(entp->d_name) > 2)
+        {
+          // locate the filename portion
+          size_t nl = strlen(entp->d_name);
+          char * f = entp->d_name + nl;
+          while(f != entp->d_name && *f != '/')
+            f--;
 
-					if(*f == '/')
-						f++;
+          if(*f == '/')
+            f++;
 
-					// locate the (full) extension portion
-					while(((f - entp->d_name) < nl) && *f != '.')
-						f++;
+          // locate the (full) extension portion
+          while(((f - entp->d_name) < nl) && *f != '.')
+            f++;
 
-					if(*f == '.')
-						f++;
+          if(*f == '.')
+            f++;
 
 #ifndef LWOPEXT
 #define LWOPEXT so
 #endif
-					if(strcmp(f, XQUOTE(LWOPEXT)) == 0)
-					{
-						snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
-						fatal(op_load, space);
-					}
-					else
-					{
+          if(strcmp(f, XQUOTE(LWOPEXT)) == 0)
+          {
+            snprintf(space + strlen(s) + 1, sizeof(space) - strlen(s) - 1, "%s", entp->d_name);
+            fatal(op_load, space);
+          }
+          else
+          {
 #if DEBUG_LWOP_LOAD
 dprintf(501, " -%s : %s cmp %s\n", entp->d_name, f, XQUOTE(LWOPEXT));
 #endif
-					}
-				}
-			}
-		}
-		else
-		{
-			break;
-		}
-	}
+          }
+        }
+      }
+    }
+    else
+    {
+      break;
+    }
+  }
 
 finally:
-	if(dd)
-	  closedir(dd);
+  if(dd)
+    closedir(dd);
 coda;
 }
 
@@ -189,19 +189,19 @@ coda;
 
 xapi operators_setup()
 {
-	enter;
+  enter;
 
-	fatal(listwise_register_opdir, XQUOTE(LWOPDIR));	/* /usr/lib/listwise */
+  fatal(listwise_register_opdir, XQUOTE(LWOPDIR));  /* /usr/lib/listwise */
 
 finally:
-	if(XAPI_UNWINDING)
-	{
+  if(XAPI_UNWINDING)
+  {
 #if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
-		xapi_backtrace();
+    xapi_backtrace();
 #else
-	dprintf(1, "liblistwise : failed to load operators\n");
+  dprintf(1, "liblistwise : failed to load operators\n");
 #endif
-	}
+  }
 coda;
 }
 
@@ -209,17 +209,17 @@ xapi operators_release()
 {
   enter;
 
-	int x;
-	for(x = 0; x < g_dls_l; x++)
-		fatal(xdlclose, g_dls[x]);
+  int x;
+  for(x = 0; x < g_dls_l; x++)
+    fatal(xdlclose, g_dls[x]);
 
-	ifree(&g_dls);
+  ifree(&g_dls);
   g_dls_l = 0;
   g_dls_a = 0;
 
-	ifree(&g_ops);
-	ifree(&g_ops_by_s);
-	ifree(&g_ops_by_mnemonic);
+  ifree(&g_ops);
+  ifree(&g_ops_by_s);
+  ifree(&g_ops_by_mnemonic);
   g_ops_a = 0;
   g_ops_l = 0;
 
@@ -232,95 +232,95 @@ xapi operators_release()
 
 API operator * op_lookup(char* s, int l)
 {
-	int op_compare_by_s(const void* __attribute__((unused)) K, const operator** B)
-	{
-		int x;
-		for(x = 0; x < l && x < (*B)->sl; x++)
-		{
-			if(s[x] - (*B)->s[x])
-				return s[x] - (*B)->s[x];
-		}
+  int op_compare_by_s(const void* __attribute__((unused)) K, const operator** B)
+  {
+    int x;
+    for(x = 0; x < l && x < (*B)->sl; x++)
+    {
+      if(s[x] - (*B)->s[x])
+        return s[x] - (*B)->s[x];
+    }
 
-		if(l > (*B)->sl)
-			return 1;
-		if(l < (*B)->sl)
-			return -1;
+    if(l > (*B)->sl)
+      return 1;
+    if(l < (*B)->sl)
+      return -1;
 
-		return 0;
-	};
+    return 0;
+  };
 
-	operator** r = bsearch((void*)1, g_ops_by_s, g_ops_l, sizeof(g_ops[0]), (void*)op_compare_by_s);
+  operator** r = bsearch((void*)1, g_ops_by_s, g_ops_l, sizeof(g_ops[0]), (void*)op_compare_by_s);
 
-	if(r)
-		return *r;
+  if(r)
+    return *r;
 
-	int op_compare_by_mnemonic(const void* __attribute__((unused)) K, const operator** B)
-	{
-		int x;
-		for(x = 0; x < l && x < (*B)->mnemonicl; x++)
-		{
-			if(s[x] - (*B)->mnemonic[x])
-				return s[x] - (*B)->mnemonic[x];
-		}
+  int op_compare_by_mnemonic(const void* __attribute__((unused)) K, const operator** B)
+  {
+    int x;
+    for(x = 0; x < l && x < (*B)->mnemonicl; x++)
+    {
+      if(s[x] - (*B)->mnemonic[x])
+        return s[x] - (*B)->mnemonic[x];
+    }
 
-		if(l > (*B)->mnemonicl)
-			return 1;
-		if(l < (*B)->mnemonicl)
-			return -1;
+    if(l > (*B)->mnemonicl)
+      return 1;
+    if(l < (*B)->mnemonicl)
+      return -1;
 
-		return 0;
-	};
+    return 0;
+  };
 
-	r = bsearch((void*)1, g_ops_by_mnemonic, g_ops_l, sizeof(g_ops[0]), (void*)op_compare_by_mnemonic);
+  r = bsearch((void*)1, g_ops_by_mnemonic, g_ops_l, sizeof(g_ops[0]), (void*)op_compare_by_mnemonic);
 
-	if(r)
-		return *r;
+  if(r)
+    return *r;
 
-	return 0;
+  return 0;
 }
 
 API xapi listwise_register_opdir(char * dir)
 {
-	enter;
+  enter;
 
-	size_t old_len = g_ops_l;
+  size_t old_len = g_ops_l;
 
-	// load operators from the specified directory
-	fatal(read_opdir, dir);
+  // load operators from the specified directory
+  fatal(read_opdir, dir);
 
-	// assign to lookup lists
-	fatal(xrealloc, &g_ops_by_s, sizeof(*g_ops_by_s), g_ops_l, old_len);
-	fatal(xrealloc, &g_ops_by_mnemonic, sizeof(*g_ops_by_mnemonic), g_ops_l, old_len);
+  // assign to lookup lists
+  fatal(xrealloc, &g_ops_by_s, sizeof(*g_ops_by_s), g_ops_l, old_len);
+  fatal(xrealloc, &g_ops_by_mnemonic, sizeof(*g_ops_by_mnemonic), g_ops_l, old_len);
 
-	int x;
-	for(x = old_len; x < g_ops_l; x++)
-	{
-		g_ops_by_s[x] = g_ops[x];
-		g_ops_by_mnemonic[x] = g_ops[x];
-	}
+  int x;
+  for(x = old_len; x < g_ops_l; x++)
+  {
+    g_ops_by_s[x] = g_ops[x];
+    g_ops_by_mnemonic[x] = g_ops[x];
+  }
 
-	// prepare lookup indexes
-	int op_compare_by_s(const operator** A, const operator** B)
-	{
-		return strcmp((*A)->s, (*B)->s);
-	};
+  // prepare lookup indexes
+  int op_compare_by_s(const operator** A, const operator** B)
+  {
+    return strcmp((*A)->s, (*B)->s);
+  };
 
-	int op_compare_by_mnemonic(const operator** A, const operator** B)
-	{
-		if((*A)->mnemonic && (*B)->mnemonic)
-			return strcmp((*A)->mnemonic, (*B)->mnemonic);
-		else if((*A)->mnemonic)
-			return 1;
-		else if((*B)->mnemonic)
-			return -1;
+  int op_compare_by_mnemonic(const operator** A, const operator** B)
+  {
+    if((*A)->mnemonic && (*B)->mnemonic)
+      return strcmp((*A)->mnemonic, (*B)->mnemonic);
+    else if((*A)->mnemonic)
+      return 1;
+    else if((*B)->mnemonic)
+      return -1;
 
-		return 0;
-	};
+    return 0;
+  };
 
-	qsort(g_ops_by_s, g_ops_l, sizeof(*g_ops_by_s), (void*)op_compare_by_s);
-	qsort(g_ops_by_mnemonic, g_ops_l, sizeof(*g_ops_by_mnemonic), (void*)op_compare_by_mnemonic);
+  qsort(g_ops_by_s, g_ops_l, sizeof(*g_ops_by_s), (void*)op_compare_by_s);
+  qsort(g_ops_by_mnemonic, g_ops_l, sizeof(*g_ops_by_mnemonic), (void*)op_compare_by_mnemonic);
 
 finally:
-	xapi_infof("path", "%s", dir);
+  xapi_infof("path", "%s", dir);
 coda;
 }

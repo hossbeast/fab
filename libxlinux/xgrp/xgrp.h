@@ -38,7 +38,7 @@ xapi uxgetgrgid_r(gid_t uid, struct group * grp, char * buf, size_t buflen, stru
 //  proxy for getgrgid
 //
 xapi xgetgrgid(gid_t gid, struct group ** const restrict grp)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

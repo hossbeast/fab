@@ -60,29 +60,29 @@ xapi re_compile(char* s, struct re* re, char* mod);
 //    int l;
 //    int* ovec;
 //    int ovec_len;
-//		if(re_execute(re, s, l, 0, &ovec, &ovec_len) == 0)
-//		{
-//			/* failure */
-//		}
-//		else if(ovec[0] > 0)
-//		{
-//			int x;
-//			for(x = 0; x < ovec[0]; x++)
-//			{
-//				int a = ovec[1 + (x * 2) + 0];
-//				int b = ovec[1 + (x * 2) + 1];
+//    if(re_execute(re, s, l, 0, &ovec, &ovec_len) == 0)
+//    {
+//      /* failure */
+//    }
+//    else if(ovec[0] > 0)
+//    {
+//      int x;
+//      for(x = 0; x < ovec[0]; x++)
+//      {
+//        int a = ovec[1 + (x * 2) + 0];
+//        int b = ovec[1 + (x * 2) + 1];
 //
-//				if(a >= 0 && b >= 0)
-//				{
-//					/* print x'th subcapture - recall the 0th subcapture is the entire match */
-//					printf("%.*s", b - a, s + a);
-//				}
-//			}
-//		}
-//		else
-//		{
-//			/* no match */
-//		}
+//        if(a >= 0 && b >= 0)
+//        {
+//          /* print x'th subcapture - recall the 0th subcapture is the entire match */
+//          printf("%.*s", b - a, s + a);
+//        }
+//      }
+//    }
+//    else
+//    {
+//      /* no match */
+//    }
 //
 // REMARKS
 //  libc exports a function named re_exec

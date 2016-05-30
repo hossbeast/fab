@@ -35,72 +35,72 @@
 
 API xapi lstack_selection_stage(lwx * const restrict lx, int y)
 {
-	enter;
+  enter;
 
-	if(lx->sel.staged == 0)
-	{
-		lx->sel.staged = &lx->sel.storage[0];
+  if(lx->sel.staged == 0)
+  {
+    lx->sel.staged = &lx->sel.storage[0];
 
-		if(lx->sel.staged == lx->sel.active)
-			lx->sel.staged = &lx->sel.storage[1];
+    if(lx->sel.staged == lx->sel.active)
+      lx->sel.staged = &lx->sel.storage[1];
 
-		// force renewal
-		lx->sel.staged->lease = -1;
-	}
+    // force renewal
+    lx->sel.staged->lease = -1;
+  }
 
-	// renew lease
-	if(lx->sel.staged->lease != lx->sel.staged_era || lx->sel.staged->state == LWX_SELECTION_NONE)
-	{
-		lx->sel.staged->lease = lx->sel.staged_era;
-		lx->sel.staged->state = 0;
-		lx->sel.staged->l = 0;
-		lx->sel.staged->sl = 0;
-	}
+  // renew lease
+  if(lx->sel.staged->lease != lx->sel.staged_era || lx->sel.staged->state == LWX_SELECTION_NONE)
+  {
+    lx->sel.staged->lease = lx->sel.staged_era;
+    lx->sel.staged->state = 0;
+    lx->sel.staged->l = 0;
+    lx->sel.staged->sl = 0;
+  }
 
-	// reallocate if necessary
-	if(lx->sel.staged->sa <= (y / 8))
-	{
-		fatal(xrealloc, &lx->sel.staged->s, sizeof(*lx->sel.staged->s), (y/8)+1, lx->sel.staged->sa);
-		lx->sel.staged->sa = (y/8)+1;
-	}
+  // reallocate if necessary
+  if(lx->sel.staged->sa <= (y / 8))
+  {
+    fatal(xrealloc, &lx->sel.staged->s, sizeof(*lx->sel.staged->s), (y/8)+1, lx->sel.staged->sa);
+    lx->sel.staged->sa = (y/8)+1;
+  }
 
-	// reset any already-allocated elements now visible
-	int x;
-	for(x = lx->sel.staged->sl; x <= (y/8); x++)
-		lx->sel.staged->s[x] = 0;
+  // reset any already-allocated elements now visible
+  int x;
+  for(x = lx->sel.staged->sl; x <= (y/8); x++)
+    lx->sel.staged->s[x] = 0;
 
-	// increase length
-	lx->sel.staged->sl = MAX(lx->sel.staged->sl, (y/8)+1);
+  // increase length
+  lx->sel.staged->sl = MAX(lx->sel.staged->sl, (y/8)+1);
 
-	// set this particular bit, track total bits
-	if((lx->sel.staged->s[y/8] & (0x01 << (y%8))) == 0)
-	{
-		if(++lx->sel.staged->l == lx->s[0].l)
-			lx->sel.staged->state = LWX_SELECTION_ALL;
-	}
+  // set this particular bit, track total bits
+  if((lx->sel.staged->s[y/8] & (0x01 << (y%8))) == 0)
+  {
+    if(++lx->sel.staged->l == lx->s[0].l)
+      lx->sel.staged->state = LWX_SELECTION_ALL;
+  }
 
-	lx->sel.staged->s[y/8] |= (0x01 << (y%8));
+  lx->sel.staged->s[y/8] |= (0x01 << (y%8));
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_selection_reset(lwx * const restrict lx)
 {
-	enter;
+  enter;
 
-	lx->sel.active_era++;
+  lx->sel.active_era++;
 
-	finally : coda;
+  finally : coda;
 }
 
 API int lstack_selection_state(lwx * const restrict lx)
 {
-	if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
-	{
-		return LWX_SELECTION_ALL;		// all rows are selected
-	}
+  if(lx->sel.active == 0 || lx->sel.active->lease != lx->sel.active_era)
+  {
+    return LWX_SELECTION_ALL;   // all rows are selected
+  }
 
-	return lx->sel.active->state;
+  return lx->sel.active->state;
 }
 
 //
@@ -109,24 +109,24 @@ API int lstack_selection_state(lwx * const restrict lx)
 
 xapi lstack_selection_activate(lwx * const restrict lx)
 {
-	enter;
+  enter;
 
-	if(lx->sel.staged && lx->sel.staged->lease == lx->sel.staged_era)
-	{
-		lx->sel.active = lx->sel.staged;
-	}
-	else
-	{
-		// no selection made ; nil selection
-		lx->sel.active = &lx->sel.storage[0];
-		lx->sel.active->state = LWX_SELECTION_NONE;
-	}
+  if(lx->sel.staged && lx->sel.staged->lease == lx->sel.staged_era)
+  {
+    lx->sel.active = lx->sel.staged;
+  }
+  else
+  {
+    // no selection made ; nil selection
+    lx->sel.active = &lx->sel.storage[0];
+    lx->sel.active->state = LWX_SELECTION_NONE;
+  }
 
-	// renew lease
-	lx->sel.active->lease = lx->sel.active_era;
+  // renew lease
+  lx->sel.active->lease = lx->sel.active_era;
 
-	// reset staged
-	lx->sel.staged = 0;
+  // reset staged
+  lx->sel.staged = 0;
 
-	finally : coda;
+  finally : coda;
 }

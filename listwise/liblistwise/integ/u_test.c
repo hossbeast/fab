@@ -20,25 +20,25 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (xunit_test*[]) {
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				/* unique entries are preserved */
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "u"
-				, .final = (char*[]) { "ao", "ob", "c", "od", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				/* non-unique consecutive entries removed */
-				, .init = (char*[]) { "ao", "ao", "c", "od", 0 }
-				, .xsfm = "u"
-				, .final = (char*[]) { "ao", "c", "od", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				/* non-consecutive unique entries are preserved */
-				, .init = (char*[]) { "ao", "ob", "ao", "od", 0 }
-				, .xsfm = "u"
-				, .final = (char*[]) { "ao", "ob", "ao", "od", 0 }
-		  }}
-		, 0
-	}
+  , .tests = (xunit_test*[]) {
+      (listwise_test[]){{ .entry = listwise_test_entry
+        /* unique entries are preserved */
+        , .init = (char*[]) { "ao", "ob", "c", "od", 0 }
+        , .xsfm = "u"
+        , .final = (char*[]) { "ao", "ob", "c", "od", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        /* non-unique consecutive entries removed */
+        , .init = (char*[]) { "ao", "ao", "c", "od", 0 }
+        , .xsfm = "u"
+        , .final = (char*[]) { "ao", "c", "od", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        /* non-consecutive unique entries are preserved */
+        , .init = (char*[]) { "ao", "ob", "ao", "od", 0 }
+        , .xsfm = "u"
+        , .final = (char*[]) { "ao", "ob", "ao", "od", 0 }
+      }}
+    , 0
+  }
 };

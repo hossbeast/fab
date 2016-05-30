@@ -53,305 +53,305 @@ static xapi allocate(lwx * const restrict lx, int x, int y, int z)
 {
   enter;
 
-	if(x >= 0)
-	{
-		if(lx->a <= x)
-		{
-			int ns = lx->a ?: listwise_allocation_seed;
-			while(ns <= x)
-				ns = ns * 2 + ns / 2;
+  if(x >= 0)
+  {
+    if(lx->a <= x)
+    {
+      int ns = lx->a ?: listwise_allocation_seed;
+      while(ns <= x)
+        ns = ns * 2 + ns / 2;
 
-			fatal(xrealloc, &lx->s, sizeof(*lx->s), ns, lx->a);
-			lx->a = ns;
-		}
+      fatal(xrealloc, &lx->s, sizeof(*lx->s), ns, lx->a);
+      lx->a = ns;
+    }
 
-		if(y >= 0)
-		{
-			if(lx->s[x].a <= y)
-			{
-				int ns = lx->s[x].a ?: listwise_allocation_seed;
-				while(ns <= y)
-					ns = ns * 2 + ns / 2;
+    if(y >= 0)
+    {
+      if(lx->s[x].a <= y)
+      {
+        int ns = lx->s[x].a ?: listwise_allocation_seed;
+        while(ns <= y)
+          ns = ns * 2 + ns / 2;
 
-				// list of rows
-				fatal(xrealloc, &lx->s[x].s, sizeof(*lx->s[0].s), ns, lx->s[x].a);
+        // list of rows
+        fatal(xrealloc, &lx->s[x].s, sizeof(*lx->s[0].s), ns, lx->s[x].a);
 
-				// list of temp space
-				fatal(xrealloc, &lx->s[x].t, sizeof(*lx->s[0].t), ns, lx->s[x].a);
+        // list of temp space
+        fatal(xrealloc, &lx->s[x].t, sizeof(*lx->s[0].t), ns, lx->s[x].a);
 
-				lx->s[x].a = ns;
-			}
+        lx->s[x].a = ns;
+      }
 
-			// ensure window list
-			if(x == 0 && lx->win.a <= y)
-			{
-				int ns = lx->win.a ?: listwise_allocation_seed;
-				while(ns <= y)
-					ns = ns * 2 + ns / 2;
+      // ensure window list
+      if(x == 0 && lx->win.a <= y)
+      {
+        int ns = lx->win.a ?: listwise_allocation_seed;
+        while(ns <= y)
+          ns = ns * 2 + ns / 2;
 
-				void * old = lx->win.s;
-				fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->win.a);
-				lx->win.a = ns;
+        void * old = lx->win.s;
+        fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->win.a);
+        lx->win.a = ns;
 
-				if(old != lx->win.s)
-				{
-					// if this reallocation moves lx->win.s, any lx->win.s[-].{active,staged} that was
-					// nonzero will then be invalid
-					int k;
-					for(k = 0; k < lx->win.a; k++)
-					{
-						if(lx->win.s[k].active)
-							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_storage_index];
+        if(old != lx->win.s)
+        {
+          // if this reallocation moves lx->win.s, any lx->win.s[-].{active,staged} that was
+          // nonzero will then be invalid
+          int k;
+          for(k = 0; k < lx->win.a; k++)
+          {
+            if(lx->win.s[k].active)
+              lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_storage_index];
 
-						if(lx->win.s[k].staged)
-							lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_storage_index];
-					}
-				}
-			}
+            if(lx->win.s[k].staged)
+              lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_storage_index];
+          }
+        }
+      }
 
-			if(z >= 0)
-			{
-				if(lx->s[x].s[y].a <= z)
-				{
-					int ns = lx->s[x].s[y].a ?: listwise_allocation_seed;
-					while(ns <= z)
-						ns = ns * 2 + ns / 2;
+      if(z >= 0)
+      {
+        if(lx->s[x].s[y].a <= z)
+        {
+          int ns = lx->s[x].s[y].a ?: listwise_allocation_seed;
+          while(ns <= z)
+            ns = ns * 2 + ns / 2;
 
-					fatal(xrealloc
-						, &lx->s[x].s[y].s
-						, sizeof(*lx->s[0].s[0].s)
-						, ns
-						, lx->s[x].s[y].a
-					);
+          fatal(xrealloc
+            , &lx->s[x].s[y].s
+            , sizeof(*lx->s[0].s[0].s)
+            , ns
+            , lx->s[x].s[y].a
+          );
 
-					lx->s[x].s[y].a = ns;
-				}
-			}
-		}
-	}
+          lx->s[x].s[y].a = ns;
+        }
+      }
+    }
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 static xapi ensure(lwx * const restrict lx, int x, int y, int z)
 {
   enter;
 
-	if(x >= 0)
-	{
-		// ensure stack has enough lists
-		if(lx->a <= x)
-		{
-			int ns = lx->a ?: listwise_allocation_seed;
-			while(ns <= x)
-				ns = ns * 2 + ns / 2;
+  if(x >= 0)
+  {
+    // ensure stack has enough lists
+    if(lx->a <= x)
+    {
+      int ns = lx->a ?: listwise_allocation_seed;
+      while(ns <= x)
+        ns = ns * 2 + ns / 2;
 
-			fatal(xrealloc, &lx->s, sizeof(lx->s[0]), ns, lx->a);
-			lx->a = ns;
-		}
+      fatal(xrealloc, &lx->s, sizeof(lx->s[0]), ns, lx->a);
+      lx->a = ns;
+    }
 
-		if(lx->l <= x)
-			lx->l = x + 1;
+    if(lx->l <= x)
+      lx->l = x + 1;
 
-		if(y >= 0)
-		{
-			// ensure list has enough strings
-			if(lx->s[x].a <= y)
-			{
-				int ns = lx->s[x].a ?: listwise_allocation_seed;
-				while(ns <= y)
-					ns = ns * 2 + ns / 2;
-				
-				// list of strings
-				fatal(xrealloc, &lx->s[x].s, sizeof(lx->s[x].s[0]), ns, lx->s[x].a);
+    if(y >= 0)
+    {
+      // ensure list has enough strings
+      if(lx->s[x].a <= y)
+      {
+        int ns = lx->s[x].a ?: listwise_allocation_seed;
+        while(ns <= y)
+          ns = ns * 2 + ns / 2;
+        
+        // list of strings
+        fatal(xrealloc, &lx->s[x].s, sizeof(lx->s[x].s[0]), ns, lx->s[x].a);
 
-				// list of tmp space
-				fatal(xrealloc, &lx->s[x].t, sizeof(lx->s[x].t[0]), ns, lx->s[x].a);
+        // list of tmp space
+        fatal(xrealloc, &lx->s[x].t, sizeof(lx->s[x].t[0]), ns, lx->s[x].a);
 
-				lx->s[x].a = ns;
-			}
+        lx->s[x].a = ns;
+      }
 
-			// ensure window list
-			if(x == 0 && lx->win.a <= y)
-			{
-				int ns = lx->win.a ?: listwise_allocation_seed;
-				while(ns <= y)
-					ns = ns * 2 + ns / 2;
+      // ensure window list
+      if(x == 0 && lx->win.a <= y)
+      {
+        int ns = lx->win.a ?: listwise_allocation_seed;
+        while(ns <= y)
+          ns = ns * 2 + ns / 2;
 
-				void * old = lx->win.s;
-				fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->win.a);
-				lx->win.a = ns;
+        void * old = lx->win.s;
+        fatal(xrealloc, &lx->win.s, sizeof(*lx->win.s), ns, lx->win.a);
+        lx->win.a = ns;
 
-				if(old != lx->win.s)
-				{
-					// if this reallocation moves lx->win.s, any lx->win.s[-].{active,staged} that was
-					// nonzero will then be invalid
-					int k;
-					for(k = 0; k < lx->win.a; k++)
-					{
-						if(lx->win.s[k].active)
-							lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_storage_index];
+        if(old != lx->win.s)
+        {
+          // if this reallocation moves lx->win.s, any lx->win.s[-].{active,staged} that was
+          // nonzero will then be invalid
+          int k;
+          for(k = 0; k < lx->win.a; k++)
+          {
+            if(lx->win.s[k].active)
+              lx->win.s[k].active = &lx->win.s[k].storage[lx->win.s[k].active_storage_index];
 
-						if(lx->win.s[k].staged)
-							lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_storage_index];
-					}
-				}
-			}
+            if(lx->win.s[k].staged)
+              lx->win.s[k].staged = &lx->win.s[k].storage[lx->win.s[k].staged_storage_index];
+          }
+        }
+      }
 
-			if(lx->s[x].l <= y)
-				lx->s[x].l = y + 1;
+      if(lx->s[x].l <= y)
+        lx->s[x].l = y + 1;
 
-			if(z >= 0)
-			{
-				// ensure string has enough space
-				if(lx->s[x].s[y].a <= z)
-				{
-					int ns = lx->s[x].s[y].a ?: listwise_allocation_seed;
-					while(ns <= z)
-						ns = ns * 2 + ns / 2;
+      if(z >= 0)
+      {
+        // ensure string has enough space
+        if(lx->s[x].s[y].a <= z)
+        {
+          int ns = lx->s[x].s[y].a ?: listwise_allocation_seed;
+          while(ns <= z)
+            ns = ns * 2 + ns / 2;
 
-					fatal(xrealloc, &lx->s[x].s[y].s, sizeof(lx->s[x].s[y].s[0]), ns, lx->s[x].s[y].a);
-					lx->s[x].s[y].a = ns;
-				}
-			}
-		}
-	}
+          fatal(xrealloc, &lx->s[x].s[y].s, sizeof(lx->s[x].s[y].s[0]), ns, lx->s[x].s[y].a);
+          lx->s[x].s[y].a = ns;
+        }
+      }
+    }
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 static xapi writestack_alt(lwx * const restrict lx, int x, int y, const void* const restrict s, int l, uint8_t type)
 {
   enter;
 
-	if(type)
-	{
-		// ensure stack has enough lists, list has enough strings, string has enough bytes
-		fatal(allocate, lx, x, y, sizeof(s) - 1);
+  if(type)
+  {
+    // ensure stack has enough lists, list has enough strings, string has enough bytes
+    fatal(allocate, lx, x, y, sizeof(s) - 1);
 
-		// copy the pointer, set the type
-		memcpy(lx->s[x].s[y].s, (void*)&s, sizeof(s));
-		lx->s[x].s[y].type = type;
-		lx->s[x].s[y].l = 0;
-	}
-	else
-	{
-		fatal(allocate, lx, x, y, l);
+    // copy the pointer, set the type
+    memcpy(lx->s[x].s[y].s, (void*)&s, sizeof(s));
+    lx->s[x].s[y].type = type;
+    lx->s[x].s[y].l = 0;
+  }
+  else
+  {
+    fatal(allocate, lx, x, y, l);
 
-		// write and cap the string
-		memcpy(lx->s[x].s[y].s, s, l);
-		lx->s[x].s[y].s[l] = 0;
-		lx->s[x].s[y].l = l;
-		lx->s[x].s[y].type = 0;
-	}
+    // write and cap the string
+    memcpy(lx->s[x].s[y].s, s, l);
+    lx->s[x].s[y].s[l] = 0;
+    lx->s[x].s[y].l = l;
+    lx->s[x].s[y].type = 0;
+  }
 
-	// dirty the temp space for this row
-	lx->s[x].t[y].y = LWTMP_UNSET;
+  // dirty the temp space for this row
+  lx->s[x].t[y].y = LWTMP_UNSET;
 
-	// reset the window for this row
-	if(x == 0)
-	{
-		fatal(lstack_window_deactivate, lx, y);
-	}
+  // reset the window for this row
+  if(x == 0)
+  {
+    fatal(lstack_window_deactivate, lx, y);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 static xapi vwritestack_alt(lwx * const restrict lx, int x, int y, const void* const restrict fmt, va_list va)
 {
   enter;
 
-	va_list va2;
-	va_copy(va2, va);
+  va_list va2;
+  va_copy(va2, va);
 
-	int l = vsnprintf(0, 0, fmt, va);
-	va_end(va);
+  int l = vsnprintf(0, 0, fmt, va);
+  va_end(va);
 
-	fatal(allocate, lx, x, y, l);
+  fatal(allocate, lx, x, y, l);
 
-	vsprintf(lx->s[x].s[y].s, fmt, va2);
-	va_end(va2);
+  vsprintf(lx->s[x].s[y].s, fmt, va2);
+  va_end(va2);
 
-	lx->s[x].s[y].l = l;
-	lx->s[x].s[y].type = 0;
+  lx->s[x].s[y].l = l;
+  lx->s[x].s[y].type = 0;
 
-	// dirty the temp space for this row
-	lx->s[x].t[y].y = LWTMP_UNSET;
+  // dirty the temp space for this row
+  lx->s[x].t[y].y = LWTMP_UNSET;
 
-	// reset the window for this row
-	if(x == 0)
-	{
-		fatal(lstack_window_deactivate, lx, y);
-	}
+  // reset the window for this row
+  if(x == 0)
+  {
+    fatal(lstack_window_deactivate, lx, y);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 static xapi writestack(lwx * const restrict lx, int x, int y, const void* const restrict s, int l, uint8_t type)
 {
   enter;
 
-	if(type)
-	{
-		// ensure stack has enough lists, list has enough strings, string has enough bytes
-		fatal(ensure, lx, x, y, sizeof(s));
+  if(type)
+  {
+    // ensure stack has enough lists, list has enough strings, string has enough bytes
+    fatal(ensure, lx, x, y, sizeof(s));
 
-		// copy the pointer, set the type
-		memcpy(lx->s[x].s[y].s, (void*)&s, sizeof(s));
-		lx->s[x].s[y].type = type;
-		lx->s[x].s[y].l = 0;
-	}
-	else
-	{
-		fatal(ensure, lx, x, y, l);
+    // copy the pointer, set the type
+    memcpy(lx->s[x].s[y].s, (void*)&s, sizeof(s));
+    lx->s[x].s[y].type = type;
+    lx->s[x].s[y].l = 0;
+  }
+  else
+  {
+    fatal(ensure, lx, x, y, l);
 
-		// write and cap the string
-		memcpy(lx->s[x].s[y].s, s, l);
-		lx->s[x].s[y].s[l] = 0;
-		lx->s[x].s[y].l = l;
-		lx->s[x].s[y].type = 0;
-	}
+    // write and cap the string
+    memcpy(lx->s[x].s[y].s, s, l);
+    lx->s[x].s[y].s[l] = 0;
+    lx->s[x].s[y].l = l;
+    lx->s[x].s[y].type = 0;
+  }
 
-	// dirty the temp space for this entry
-	lx->s[x].t[y].y = LWTMP_UNSET;
+  // dirty the temp space for this entry
+  lx->s[x].t[y].y = LWTMP_UNSET;
 
-	// reset the window for this row
-	if(x == 0)
-	{
-		fatal(lstack_window_deactivate, lx, y);
-	}
+  // reset the window for this row
+  if(x == 0)
+  {
+    fatal(lstack_window_deactivate, lx, y);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 static xapi vwritestack(lwx * const restrict lx, int x, int y, const char* const restrict fmt, va_list va)
 {
   enter;
 
-	va_list va2;
-	va_copy(va2, va);
+  va_list va2;
+  va_copy(va2, va);
 
-	int l = vsnprintf(0, 0, fmt, va);
-	va_end(va);
+  int l = vsnprintf(0, 0, fmt, va);
+  va_end(va);
 
-	fatal(ensure, lx, x, y, l);
+  fatal(ensure, lx, x, y, l);
 
-	vsprintf(lx->s[x].s[y].s, fmt, va2);
-	va_end(va2);
+  vsprintf(lx->s[x].s[y].s, fmt, va2);
+  va_end(va2);
 
-	lx->s[x].s[y].l = l;
-	lx->s[x].s[y].type = 0;
+  lx->s[x].s[y].l = l;
+  lx->s[x].s[y].type = 0;
 
-	// dirty the temp space for this entry
-	lx->s[x].t[y].y = LWTMP_UNSET;
+  // dirty the temp space for this entry
+  lx->s[x].t[y].y = LWTMP_UNSET;
 
-	// reset the window for this row
-	if(x == 0)
-	{
-		fatal(lstack_window_deactivate, lx, y);
-	}
+  // reset the window for this row
+  if(x == 0)
+  {
+    fatal(lstack_window_deactivate, lx, y);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 //
@@ -360,99 +360,99 @@ static xapi vwritestack(lwx * const restrict lx, int x, int y, const char* const
 
 API xapi lstack_clear(lwx * const restrict lx, int x, int y)
 {
-	enter;
+  enter;
 
-	lx->s[x].s[y].l = 0;
-	lx->s[x].s[y].type = 0;
+  lx->s[x].s[y].l = 0;
+  lx->s[x].s[y].type = 0;
 
-	lx->s[x].t[y].y = LWTMP_UNSET;
+  lx->s[x].t[y].y = LWTMP_UNSET;
 
-	if(x == 0)
-	{
-		fatal(lstack_window_deactivate, lx, y);
-	}
+  if(x == 0)
+  {
+    fatal(lstack_window_deactivate, lx, y);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_catw(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
 {
-	enter;
+  enter;
 
-	// ensure stack has enough lists, stack has enough strings, string has enough bytes
-	fatal(ensure, lx, x, y, -1);
-	fatal(ensure, lx, x, y, lx->s[x].s[y].l + l);
+  // ensure stack has enough lists, stack has enough strings, string has enough bytes
+  fatal(ensure, lx, x, y, -1);
+  fatal(ensure, lx, x, y, lx->s[x].s[y].l + l);
 
-	// append and cap the string
-	memcpy(lx->s[x].s[y].s + lx->s[x].s[y].l, s, l);
-	lx->s[x].s[y].s[lx->s[x].s[y].l + l] = 0;
-	lx->s[x].s[y].l += l;
-	lx->s[x].s[y].type = 0;
+  // append and cap the string
+  memcpy(lx->s[x].s[y].s + lx->s[x].s[y].l, s, l);
+  lx->s[x].s[y].s[lx->s[x].s[y].l + l] = 0;
+  lx->s[x].s[y].l += l;
+  lx->s[x].s[y].type = 0;
 
-	lx->s[x].t[y].y = LWTMP_UNSET;
+  lx->s[x].t[y].y = LWTMP_UNSET;
 
-	if(x == 0)
-	{
-		fatal(lstack_window_deactivate, lx, y);
-	}
+  if(x == 0)
+  {
+    fatal(lstack_window_deactivate, lx, y);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_cats(lwx * const restrict lx, int x, int y, const char* const restrict s)
 {
-	xproxy(lstack_catw, lx, x, y, s, strlen(s));
+  xproxy(lstack_catw, lx, x, y, s, strlen(s));
 }
 
 API xapi lstack_catf(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
 {
-	enter;
+  enter;
 
-	va_list va;
-	va_start(va, fmt);
+  va_list va;
+  va_start(va, fmt);
 
-	va_list va2;
-	va_copy(va2, va);
+  va_list va2;
+  va_copy(va2, va);
 
-	int l = vsnprintf(0, 0, fmt, va);
-	va_end(va);
+  int l = vsnprintf(0, 0, fmt, va);
+  va_end(va);
 
-	// ensure stack has enough lists, stack has enough strings, string has enough bytes
-	fatal(ensure, lx, x, y, -1);
-	fatal(ensure, lx, x, y, lx->s[x].s[y].l + l + 1);
+  // ensure stack has enough lists, stack has enough strings, string has enough bytes
+  fatal(ensure, lx, x, y, -1);
+  fatal(ensure, lx, x, y, lx->s[x].s[y].l + l + 1);
 
-	// append and cap the string
-	vsprintf(lx->s[x].s[y].s + lx->s[x].s[y].l, fmt, va2);
-	lx->s[x].s[y].s[lx->s[x].s[y].l + l] = 0;
-	lx->s[x].s[y].l += l;
-	lx->s[x].s[y].type = 0;
+  // append and cap the string
+  vsprintf(lx->s[x].s[y].s + lx->s[x].s[y].l, fmt, va2);
+  lx->s[x].s[y].s[lx->s[x].s[y].l + l] = 0;
+  lx->s[x].s[y].l += l;
+  lx->s[x].s[y].type = 0;
 
-	lx->s[x].t[y].y = LWTMP_UNSET;
+  lx->s[x].t[y].y = LWTMP_UNSET;
 
-	if(x == 0)
-	{
-		fatal(lstack_window_deactivate, lx, y);
-	}
+  if(x == 0)
+  {
+    fatal(lstack_window_deactivate, lx, y);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
 {
-	xproxy(writestack, lx, x, y, s, strlen(s), 0);
+  xproxy(writestack, lx, x, y, s, strlen(s), 0);
 }
 
 API xapi lstack_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
 {
-	xproxy(writestack, lx, x, y, s, l, 0);
+  xproxy(writestack, lx, x, y, s, l, 0);
 }
 
 API xapi lstack_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
 {
   enter;
 
-	va_list va;
-	va_start(va, fmt);
+  va_list va;
+  va_start(va, fmt);
 
   fatal(vwritestack, lx, x, y, fmt, va);
 
@@ -461,508 +461,508 @@ API xapi lstack_writef(lwx * const restrict lx, int x, int y, const char* const 
 
 API xapi lstack_adds(lwx * const restrict lx, const char* const restrict s)
 {
-	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, s, strlen(s), 0);
+  xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, s, strlen(s), 0);
 }
 
 API xapi lstack_addw(lwx * const restrict lx, const char* const restrict s, size_t l)
 {
-	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, s, l, 0);
+  xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, s, l, 0);
 }
 
 API xapi lstack_addf(lwx * const restrict lx, const char* const restrict fmt, ...)
 {
   enter;
 
-	va_list va;
-	va_start(va, fmt);
+  va_list va;
+  va_start(va, fmt);
 
-	fatal(vwritestack, lx, 0, lx->l ? lx->s[0].l : 0, fmt, va);
+  fatal(vwritestack, lx, 0, lx->l ? lx->s[0].l : 0, fmt, va);
 
   finally : coda;
 }
 
 API xapi lstack_alt_writes(lwx * const restrict lx, int x, int y, const char* const restrict s)
 {
-	xproxy(writestack_alt, lx, x, y, s, strlen(s), 0);
+  xproxy(writestack_alt, lx, x, y, s, strlen(s), 0);
 }
 
 API xapi lstack_alt_writew(lwx * const restrict lx, int x, int y, const char* const restrict s, size_t l)
 {
-	xproxy(writestack_alt, lx, x, y, s, l, 0);
+  xproxy(writestack_alt, lx, x, y, s, l, 0);
 }
 
 API xapi lstack_alt_writef(lwx * const restrict lx, int x, int y, const char* const restrict fmt, ...)
 {
   enter;
 
-	va_list va;
-	va_start(va, fmt);
+  va_list va;
+  va_start(va, fmt);
 
-	fatal(vwritestack_alt, lx, x, y, fmt, va);
+  fatal(vwritestack_alt, lx, x, y, fmt, va);
 
   finally : coda;
 }
 
 API xapi lstack_obj_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 {
-	xproxy(writestack, lx, x, y, o, 0, type);
+  xproxy(writestack, lx, x, y, o, 0, type);
 }
 
 API xapi lstack_obj_add(lwx * const restrict lx, const void* const restrict o, uint8_t type)
 {
-	xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, o, 0, type);
+  xproxy(writestack, lx, 0, lx->l ? lx->s[0].l : 0, o, 0, type);
 }
 
 API xapi lstack_obj_alt_write(lwx * const restrict lx, int x, int y, const void* const restrict o, uint8_t type)
 {
-	xproxy(writestack_alt, lx, x, y, o, 0, type);
+  xproxy(writestack_alt, lx, x, y, o, 0, type);
 }
 
 // shift removes the first list from the stack
 API xapi lstack_shift(lwx * const restrict lx)
 {
-	enter;
+  enter;
 
-	if(lx->l)
-	{
-		typeof(lx->s[0]) T = lx->s[0];
+  if(lx->l)
+  {
+    typeof(lx->s[0]) T = lx->s[0];
 
-		memmove(
-			  &lx->s[0]
-			, &lx->s[1]
-			, (lx->l - 1) * sizeof(lx->s[0])
-		);
+    memmove(
+        &lx->s[0]
+      , &lx->s[1]
+      , (lx->l - 1) * sizeof(lx->s[0])
+    );
 
-		lx->s[--lx->l] = T;
-	}
+    lx->s[--lx->l] = T;
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 // pop removes the last list from the stack
 API xapi lstack_pop(lwx * const restrict lx)
 {
-	enter;
+  enter;
 
-	if(lx->l)
-		lx->l--;
+  if(lx->l)
+    lx->l--;
 
-	finally : coda;
+  finally : coda;
 }
 
 // unshift allocates a new list at index 0
 API xapi lstack_unshift(lwx * const restrict lx)
 {
-	enter;
+  enter;
 
-	// allocate new list, if necessary
-	if(lx->l == lx->a)
-	{
-		fatal(xrealloc, &lx->s, sizeof(lx->s[0]), lx->l + 1, lx->a);
-		lx->a++;
-	}
+  // allocate new list, if necessary
+  if(lx->l == lx->a)
+  {
+    fatal(xrealloc, &lx->s, sizeof(lx->s[0]), lx->l + 1, lx->a);
+    lx->a++;
+  }
 
-	lx->l++;
+  lx->l++;
 
-	// swap an unused list into position zero
-	typeof(lx->s[0]) T = lx->s[lx->l - 1];
+  // swap an unused list into position zero
+  typeof(lx->s[0]) T = lx->s[lx->l - 1];
 
-	// copy list pointers down
-	memmove(
-			&lx->s[1]
-		, &lx->s[0]
-		, (lx->l - 1) * sizeof(lx->s[0])
-	);
+  // copy list pointers down
+  memmove(
+      &lx->s[1]
+    , &lx->s[0]
+    , (lx->l - 1) * sizeof(lx->s[0])
+  );
 
-	lx->s[0] = T;
+  lx->s[0] = T;
 
-	// reset it
-	lx->s[0].l = 0;
+  // reset it
+  lx->s[0].l = 0;
 
-	finally : coda;
+  finally : coda;
 }
 
 // push allocates a new list at the end
 API xapi lstack_push(lwx * const restrict lx)
 {
-	enter;
+  enter;
 
-	// allocate new list, if necessary
-	if(lx->l == lx->a)
-	{
-		fatal(xrealloc, &lx->s, sizeof(lx->s[0]), lx->l + 1, lx->a);
-		lx->a++;
-	}
+  // allocate new list, if necessary
+  if(lx->l == lx->a)
+  {
+    fatal(xrealloc, &lx->s, sizeof(lx->s[0]), lx->l + 1, lx->a);
+    lx->a++;
+  }
 
-	// reset
-	lx->s[lx->l++].l = 0;
+  // reset
+  lx->s[lx->l++].l = 0;
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_merge(lwx * const restrict lx, int a, int b)
 {
   enter;
 
-	if(a < 0 || a >= lx->l)
-		fail(LISTWISE_NOLIST);
+  if(a < 0 || a >= lx->l)
+    fail(LISTWISE_NOLIST);
 
-	if(b < 0 || b >= lx->l)
-		fail(LISTWISE_NOLIST);
+  if(b < 0 || b >= lx->l)
+    fail(LISTWISE_NOLIST);
 
-	if(a == b)
-		fail(LISTWISE_ILLOP);
+  if(a == b)
+    fail(LISTWISE_ILLOP);
 
-	// number of entries to move
-	int al = lx->s[a].l;
-	int n = lx->s[b].l;
+  // number of entries to move
+  int al = lx->s[a].l;
+  int n = lx->s[b].l;
 
-	// ensure allocated space in dest list
-	fatal(allocate, lx, a, al + n - 1, -1);
+  // ensure allocated space in dest list
+  fatal(allocate, lx, a, al + n - 1, -1);
 
-	// copy unused rows from dst list to temp space
-	typeof(lx->s[0].s[0]) * Ts = alloca(n * sizeof(*Ts));
-	typeof(lx->s[0].t[0]) * Tt = alloca(n * sizeof(*Tt));
-	memcpy(Ts, &lx->s[a].s[al], n * sizeof(*Ts));
-	memcpy(Tt, &lx->s[a].t[al], n * sizeof(*Tt));
+  // copy unused rows from dst list to temp space
+  typeof(lx->s[0].s[0]) * Ts = alloca(n * sizeof(*Ts));
+  typeof(lx->s[0].t[0]) * Tt = alloca(n * sizeof(*Tt));
+  memcpy(Ts, &lx->s[a].s[al], n * sizeof(*Ts));
+  memcpy(Tt, &lx->s[a].t[al], n * sizeof(*Tt));
 
-	// copy rows from src to dst, overwriting the rows just copied to temp
-	memcpy(&lx->s[a].s[al], &lx->s[b].s[0], n * sizeof(lx->s[0].s[0]));
-	memcpy(&lx->s[a].t[al], &lx->s[b].t[0], n * sizeof(lx->s[0].t[0]));
+  // copy rows from src to dst, overwriting the rows just copied to temp
+  memcpy(&lx->s[a].s[al], &lx->s[b].s[0], n * sizeof(lx->s[0].s[0]));
+  memcpy(&lx->s[a].t[al], &lx->s[b].t[0], n * sizeof(lx->s[0].t[0]));
 
-	// copy rows from temp to src list
-	memcpy(&lx->s[b].s[0], Ts, n * sizeof(lx->s[0].s[0]));
-	memcpy(&lx->s[b].t[0], Tt, n * sizeof(lx->s[0].t[0]));
+  // copy rows from temp to src list
+  memcpy(&lx->s[b].s[0], Ts, n * sizeof(lx->s[0].s[0]));
+  memcpy(&lx->s[b].t[0], Tt, n * sizeof(lx->s[0].t[0]));
 
-	// shorten src list
-	lx->s[b].l = 0;
+  // shorten src list
+  lx->s[b].l = 0;
 
-	// extend dst list
-	lx->s[a].l += n;
+  // extend dst list
+  lx->s[a].l += n;
 
-	// move remaining lists down and place the src list at the end of the stack
-	typeof(lx->s[0]) T = lx->s[b];
-	memmove(&lx->s[b], &lx->s[b + 1], (lx->l - b - 1) * sizeof(lx->s[0]));
-	lx->s[lx->l - 1] = T;
+  // move remaining lists down and place the src list at the end of the stack
+  typeof(lx->s[0]) T = lx->s[b];
+  memmove(&lx->s[b], &lx->s[b + 1], (lx->l - b - 1) * sizeof(lx->s[0]));
+  lx->s[lx->l - 1] = T;
 
-	// shorten stack
-	lx->l--;
+  // shorten stack
+  lx->l--;
 
 finally:
-	xapi_infof("to", "%d", a);
-	xapi_infof("from", "%d", b);
+  xapi_infof("to", "%d", a);
+  xapi_infof("from", "%d", b);
 coda;
 }
 
 API xapi lstack_allocate(lwx * const restrict lx, int x, int y, int z)
 {
-	xproxy(allocate, lx, x, y, z);
+  xproxy(allocate, lx, x, y, z);
 }
 
 API xapi lstack_ensure(lwx * const restrict lx, int x, int y, int z)
 {
-	xproxy(ensure, lx, x, y, z);
+  xproxy(ensure, lx, x, y, z);
 }
 
 API xapi lstack_move(lwx * const restrict lx, int ax, int ay, int bx, int by)
 {
-	enter;
+  enter;
 
-	// copy of ax:ay, which is about to be overwritten
-	typeof(lx->s[0].s[0]) Ts = lx->s[ax].s[ay];
-	typeof(lx->s[0].t[0]) Tt = lx->s[ax].t[ay];
+  // copy of ax:ay, which is about to be overwritten
+  typeof(lx->s[0].s[0]) Ts = lx->s[ax].s[ay];
+  typeof(lx->s[0].t[0]) Tt = lx->s[ax].t[ay];
 
-	// copy
-	lx->s[ax].s[ay] = lx->s[bx].s[by];
-	lx->s[ax].t[ay] = lx->s[bx].t[by];
+  // copy
+  lx->s[ax].s[ay] = lx->s[bx].s[by];
+  lx->s[ax].t[ay] = lx->s[bx].t[by];
 
-	// overwrite bx:by, creating a duplicate entry
-	memmove(&lx->s[bx].s[by], &lx->s[bx].s[by+1], (lx->s[bx].l - by - 1) * sizeof(lx->s[0].s[0]));
-	memmove(&lx->s[bx].t[by], &lx->s[bx].t[by+1], (lx->s[bx].l - by - 1) * sizeof(lx->s[0].t[0]));
+  // overwrite bx:by, creating a duplicate entry
+  memmove(&lx->s[bx].s[by], &lx->s[bx].s[by+1], (lx->s[bx].l - by - 1) * sizeof(lx->s[0].s[0]));
+  memmove(&lx->s[bx].t[by], &lx->s[bx].t[by+1], (lx->s[bx].l - by - 1) * sizeof(lx->s[0].t[0]));
 
-	// overwrite the duplicate entry with the original dest
-	lx->s[bx].s[lx->s[bx].l - 1] = Ts;
-	lx->s[bx].t[lx->s[bx].l - 1] = Tt;
+  // overwrite the duplicate entry with the original dest
+  lx->s[bx].s[lx->s[bx].l - 1] = Ts;
+  lx->s[bx].t[lx->s[bx].l - 1] = Tt;
 
-	// adjust the length
-	lx->s[bx].l--;
+  // adjust the length
+  lx->s[bx].l--;
 
 #if 0
-	if(ax == 0)
-	{
-		// if moving to an entry in the 0th list, unstage its window, if any
-		lx->win.s[ay].staged = 0;
-	}
+  if(ax == 0)
+  {
+    // if moving to an entry in the 0th list, unstage its window, if any
+    lx->win.s[ay].staged = 0;
+  }
 #endif
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_swap(lwx * const restrict lx, int ax, int ay, int bx, int by)
 {
-	enter;
+  enter;
 
-	if(ax == 0 && bx == 0)
-	{
+  if(ax == 0 && bx == 0)
+  {
 /*
-		int t = lx->order[ay];
-		lx->order[ay] = lx->order[by];
-		lx->order[by] = t;
+    int t = lx->order[ay];
+    lx->order[ay] = lx->order[by];
+    lx->order[by] = t;
 */
-	}
-	else
-	{
-		// copy of ax:ay, which is about to be overwritten
-		typeof(lx->s[0].s[0]) Ts = lx->s[ax].s[ay];
-		lx->s[ax].s[ay] = lx->s[bx].s[by];
-		lx->s[bx].s[by] = Ts;
+  }
+  else
+  {
+    // copy of ax:ay, which is about to be overwritten
+    typeof(lx->s[0].s[0]) Ts = lx->s[ax].s[ay];
+    lx->s[ax].s[ay] = lx->s[bx].s[by];
+    lx->s[bx].s[by] = Ts;
 
-		// dirty temp space for these rows
-		lx->s[ax].t[ay].y = 0;
-		lx->s[bx].t[by].y = 0;
+    // dirty temp space for these rows
+    lx->s[ax].t[ay].y = 0;
+    lx->s[bx].t[by].y = 0;
 
-		if(ax == 0 || bx == 0)
-		{
-			lx->win.active_era++;
-			lx->win.staged_era++;
-			lx->sel.active_era++;
-			lx->sel.staged_era++;
-		}
-	}
+    if(ax == 0 || bx == 0)
+    {
+      lx->win.active_era++;
+      lx->win.staged_era++;
+      lx->sel.active_era++;
+      lx->sel.staged_era++;
+    }
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_displace(lwx * const restrict lx, int x, int y, int l)
 {
-	enter;
+  enter;
 
-	// notice that this is a no-op when l == 0
-	// ensure there are sufficient unused entries beyond s[x].l
-	fatal(allocate, lx, x, lx->s[x].l + l - 1, -1);
+  // notice that this is a no-op when l == 0
+  // ensure there are sufficient unused entries beyond s[x].l
+  fatal(allocate, lx, x, lx->s[x].l + l - 1, -1);
 
-	// copy l allocated entries from beyond s[x].l
-	typeof(lx->s[0].s[0]) * Ts = alloca(l * sizeof(lx->s[0].s[0]));
-	typeof(lx->s[0].t[0]) * Tt = alloca(l * sizeof(lx->s[0].t[0]));
-	memcpy(Ts, &lx->s[x].s[lx->s[x].l], l * sizeof(lx->s[0].s[0]));
-	memcpy(Tt, &lx->s[x].t[lx->s[x].l], l * sizeof(lx->s[0].t[0]));
+  // copy l allocated entries from beyond s[x].l
+  typeof(lx->s[0].s[0]) * Ts = alloca(l * sizeof(lx->s[0].s[0]));
+  typeof(lx->s[0].t[0]) * Tt = alloca(l * sizeof(lx->s[0].t[0]));
+  memcpy(Ts, &lx->s[x].s[lx->s[x].l], l * sizeof(lx->s[0].s[0]));
+  memcpy(Tt, &lx->s[x].t[lx->s[x].l], l * sizeof(lx->s[0].t[0]));
 
-	// copy entries at y down, creating hole of size l
-	// this also overwrites the entries we just copied
-	memmove(&lx->s[x].s[y + l], &lx->s[x].s[y], (lx->s[x].l - y) * sizeof(lx->s[0].s[0]));
-	memmove(&lx->s[x].t[y + l], &lx->s[x].t[y], (lx->s[x].l - y) * sizeof(lx->s[0].t[0]));
+  // copy entries at y down, creating hole of size l
+  // this also overwrites the entries we just copied
+  memmove(&lx->s[x].s[y + l], &lx->s[x].s[y], (lx->s[x].l - y) * sizeof(lx->s[0].s[0]));
+  memmove(&lx->s[x].t[y + l], &lx->s[x].t[y], (lx->s[x].l - y) * sizeof(lx->s[0].t[0]));
 
-	// copy the l unused entries into the hole
-	memcpy(&lx->s[x].s[y], Ts, l * sizeof(lx->s[0].s[0]));
-	memcpy(&lx->s[x].t[y], Tt, l * sizeof(lx->s[0].t[0]));
+  // copy the l unused entries into the hole
+  memcpy(&lx->s[x].s[y], Ts, l * sizeof(lx->s[0].s[0]));
+  memcpy(&lx->s[x].t[y], Tt, l * sizeof(lx->s[0].t[0]));
 
-	lx->s[x].l += l;
+  lx->s[x].l += l;
 
 #if 0
-	if(x == 0)
-	{
-		// if displacing entries in the 0th list, unstage their windows, if any
-		int i;
-		for(i = 0; i < l; i++)
-			lx->win.s[y + i].staged = 0;
-	}
+  if(x == 0)
+  {
+    // if displacing entries in the 0th list, unstage their windows, if any
+    int i;
+    for(i = 0; i < l; i++)
+      lx->win.s[y + i].staged = 0;
+  }
 #endif
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_delete(lwx * const restrict lx, int x, int y)
 {
-	enter;
+  enter;
 
-	// copy of this entry
-	typeof(lx->s[0].s[0]) Ts = lx->s[x].s[y];
-	typeof(lx->s[0].t[0]) Tt = lx->s[x].t[y];
+  // copy of this entry
+  typeof(lx->s[0].s[0]) Ts = lx->s[x].s[y];
+  typeof(lx->s[0].t[0]) Tt = lx->s[x].t[y];
 
-	// overwrite this entry
-	memmove(&lx->s[x].s[y], &lx->s[x].s[y+1], (lx->s[x].l - y - 1) * sizeof(lx->s[0].s[0]));
-	memmove(&lx->s[x].t[y], &lx->s[x].t[y+1], (lx->s[x].l - y - 1) * sizeof(lx->s[0].t[0]));
+  // overwrite this entry
+  memmove(&lx->s[x].s[y], &lx->s[x].s[y+1], (lx->s[x].l - y - 1) * sizeof(lx->s[0].s[0]));
+  memmove(&lx->s[x].t[y], &lx->s[x].t[y+1], (lx->s[x].l - y - 1) * sizeof(lx->s[0].t[0]));
 
-	// overwrite the duplicated entry with the current entry
-	lx->s[x].s[lx->s[x].l - 1] = Ts;
-	lx->s[x].t[lx->s[x].l - 1] = Tt;
+  // overwrite the duplicated entry with the current entry
+  lx->s[x].s[lx->s[x].l - 1] = Ts;
+  lx->s[x].t[lx->s[x].l - 1] = Tt;
 
-	lx->s[x].l--;
+  lx->s[x].l--;
 
 #if 0
-	if(x == 0)
-	{
-		// if deleting an entry in the 0th list
-	}
+  if(x == 0)
+  {
+    // if deleting an entry in the 0th list
+  }
 #endif
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * const rl, uint8_t * const rt, int obj, int win, int str, int * const raw)
 {
-	enter;
+  enter;
 
-	char * zs		= lx->s[x].s[y].s;
-	int zsl			= lx->s[x].s[y].l;
-	uint8_t zst	= lx->s[x].s[y].type;
-	int zraw = 1;
+  char * zs   = lx->s[x].s[y].s;
+  int zsl     = lx->s[x].s[y].l;
+  uint8_t zst = lx->s[x].s[y].type;
+  int zraw = 1;
 
-	// resolve the object if requested
-	if(obj && lx->s[x].s[y].type)
-	{
-		listwise_object * o = 0;
-		fatal(listwise_lookup_object, lx->s[x].s[y].type, &o);
+  // resolve the object if requested
+  if(obj && lx->s[x].s[y].type)
+  {
+    listwise_object * o = 0;
+    fatal(listwise_lookup_object, lx->s[x].s[y].type, &o);
 
-		o->string(*(void**)lx->s[x].s[y].s, o->string_property, &zs, &zsl);
-		zraw = 0;
-	}
+    o->string(*(void**)lx->s[x].s[y].s, o->string_property, &zs, &zsl);
+    zraw = 0;
+  }
 
-	// if there is a window in effect for this entry
-	if(win && x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
-	{
-		if(lx->s[x].t[y].y != LWTMP_WINDOW)
-		{
-			if(lx->s[x].t[y].a <= lx->win.s[y].active->zl)
-			{
-				fatal(xrealloc
-					, &lx->s[x].t[y].s
-					, sizeof(*lx->s[0].t[0].s)
-					, lx->win.s[y].active->zl + 1
-					, lx->s[x].t[y].a
-				);
+  // if there is a window in effect for this entry
+  if(win && x == 0 && lx->win.s[y].active && lx->win.s[y].active->lease == lx->win.active_era)
+  {
+    if(lx->s[x].t[y].y != LWTMP_WINDOW)
+    {
+      if(lx->s[x].t[y].a <= lx->win.s[y].active->zl)
+      {
+        fatal(xrealloc
+          , &lx->s[x].t[y].s
+          , sizeof(*lx->s[0].t[0].s)
+          , lx->win.s[y].active->zl + 1
+          , lx->s[x].t[y].a
+        );
 
-				lx->s[x].t[y].a = lx->win.s[y].active->zl + 1;
-			}
+        lx->s[x].t[y].a = lx->win.s[y].active->zl + 1;
+      }
 
-			if(lx->win.s[y].active->state == LWX_WINDOWS_NONE)
-			{
-				lx->s[x].t[y].l = 0;
-			}
-			else
-			{
-				// resolve the object if it has not yet been resolved
-				if(!obj && lx->s[x].s[y].type)
-				{
-					listwise_object * o = 0;
-					fatal(listwise_lookup_object, lx->s[x].s[y].type, &o);
+      if(lx->win.s[y].active->state == LWX_WINDOWS_NONE)
+      {
+        lx->s[x].t[y].l = 0;
+      }
+      else
+      {
+        // resolve the object if it has not yet been resolved
+        if(!obj && lx->s[x].s[y].type)
+        {
+          listwise_object * o = 0;
+          fatal(listwise_lookup_object, lx->s[x].s[y].type, &o);
 
-					o->string(*(void**)lx->s[x].s[y].s, o->string_property, &zs, &zsl);
-					zraw = 0;
-				}
+          o->string(*(void**)lx->s[x].s[y].s, o->string_property, &zs, &zsl);
+          zraw = 0;
+        }
 
-				// resolve the window to the temp space
-				if(lx->win.s[y].active->state == LWX_WINDOWS_ALL)
-				{
-					memcpy(lx->s[x].t[y].s, zs, zsl);
-				}
-				else
-				{
-					size_t z = 0;
-					int i;
-					for(i = 0; i < lx->win.s[y].active->l; i++)
-					{
-						memcpy(lx->s[x].t[y].s + z, zs + lx->win.s[y].active->s[i].o, lx->win.s[y].active->s[i].l);
-						z += lx->win.s[y].active->s[i].l;
-					}
-				}
+        // resolve the window to the temp space
+        if(lx->win.s[y].active->state == LWX_WINDOWS_ALL)
+        {
+          memcpy(lx->s[x].t[y].s, zs, zsl);
+        }
+        else
+        {
+          size_t z = 0;
+          int i;
+          for(i = 0; i < lx->win.s[y].active->l; i++)
+          {
+            memcpy(lx->s[x].t[y].s + z, zs + lx->win.s[y].active->s[i].o, lx->win.s[y].active->s[i].l);
+            z += lx->win.s[y].active->s[i].l;
+          }
+        }
 
-				lx->s[x].t[y].s[lx->win.s[y].active->zl] = 0;
-				lx->s[x].t[y].l = lx->win.s[y].active->zl;
-				lx->s[x].t[y].y = LWTMP_WINDOW;
-			}
-		}
+        lx->s[x].t[y].s[lx->win.s[y].active->zl] = 0;
+        lx->s[x].t[y].l = lx->win.s[y].active->zl;
+        lx->s[x].t[y].y = LWTMP_WINDOW;
+      }
+    }
 
-		zs = lx->s[x].t[y].s;
-		zsl = lx->s[x].t[y].l;
-		zraw = 0;
-	}
-	else if(str)
-	{
-		if(lx->s[x].t[y].y != LWTMP_STRING)
-		{
-			if(lx->s[x].t[y].a <= zsl)
-			{
-				fatal(xrealloc
-					, &lx->s[x].t[y].s
-					, sizeof(lx->s[x].t[y].s[0])
-					, zsl + 1
-					, lx->s[x].t[y].a
-				);
+    zs = lx->s[x].t[y].s;
+    zsl = lx->s[x].t[y].l;
+    zraw = 0;
+  }
+  else if(str)
+  {
+    if(lx->s[x].t[y].y != LWTMP_STRING)
+    {
+      if(lx->s[x].t[y].a <= zsl)
+      {
+        fatal(xrealloc
+          , &lx->s[x].t[y].s
+          , sizeof(lx->s[x].t[y].s[0])
+          , zsl + 1
+          , lx->s[x].t[y].a
+        );
 
-				lx->s[x].t[y].a = zsl + 1;
-			}
+        lx->s[x].t[y].a = zsl + 1;
+      }
 
-			memcpy(lx->s[x].t[y].s, zs, zsl);
-			lx->s[x].t[y].s[zsl] = 0;
-			lx->s[x].t[y].l = zsl;
-			lx->s[x].t[y].y = LWTMP_STRING;
-		}
-		
-		zs = lx->s[x].t[y].s;
-		zsl = lx->s[x].t[y].l;
-		zraw = 0;
-	}
+      memcpy(lx->s[x].t[y].s, zs, zsl);
+      lx->s[x].t[y].s[zsl] = 0;
+      lx->s[x].t[y].l = zsl;
+      lx->s[x].t[y].y = LWTMP_STRING;
+    }
+    
+    zs = lx->s[x].t[y].s;
+    zsl = lx->s[x].t[y].l;
+    zraw = 0;
+  }
 
-	if(r)
-		*r  = zs;
-	if(rl)
-		*rl = zsl;
-	if(rt)
-		*rt = zst;
-	if(raw)
-		*raw = zraw;
+  if(r)
+    *r  = zs;
+  if(rl)
+    *rl = zsl;
+  if(rt)
+    *rt = zst;
+  if(raw)
+    *raw = zraw;
 
-	finally : coda;
+  finally : coda;
 }
 
 API xapi lstack_getobject(lwx * const restrict lx, int x, int y, char ** const restrict r, uint8_t * const restrict rt)
 {
-	xproxy(lstack_readrow, lx, x, y, r, 0, rt, 0, 0, 0, 0);
+  xproxy(lstack_readrow, lx, x, y, r, 0, rt, 0, 0, 0, 0);
 }
 
 API xapi lstack_getbytes(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
 {
-	xproxy(lstack_readrow, lx, x, y, r, rl, 0, 1, 1, 0, 0);
+  xproxy(lstack_readrow, lx, x, y, r, rl, 0, 1, 1, 0, 0);
 }
 
 API xapi lstack_getstring(lwx * const restrict lx, int x, int y, char ** const restrict r, int * const restrict rl)
 {
-	xproxy(lstack_readrow, lx, x, y, r, rl, 0, 1, 1, 1, 0);
+  xproxy(lstack_readrow, lx, x, y, r, rl, 0, 1, 1, 1, 0);
 }
 
 API xapi lstack_string(lwx * const restrict lx, int x, int y, char ** r)
 {
-	xproxy(lstack_readrow, lx, x, y, r, 0, 0, 1, 1, 1, 0);
+  xproxy(lstack_readrow, lx, x, y, r, 0, 0, 1, 1, 1, 0);
 }
 
 API xapi lstack_swaptop(lwx * const restrict lx, int ay, int by)
 {
-	enter;
+  enter;
 
-	typeof(lx->s[0].s[0]) Ts = lx->s[0].s[ay];
-	typeof(lx->s[0].t[0]) Tt = lx->s[0].t[ay];
-	typeof(lx->win.s[0])  Tw = lx->win.s[ay];
+  typeof(lx->s[0].s[0]) Ts = lx->s[0].s[ay];
+  typeof(lx->s[0].t[0]) Tt = lx->s[0].t[ay];
+  typeof(lx->win.s[0])  Tw = lx->win.s[ay];
 
-	lx->s[0].s[ay] = lx->s[0].s[by];
-	lx->s[0].t[ay] = lx->s[0].t[by];
-	
-	lx->win.s[ay]	= lx->win.s[by];
-	if(lx->win.s[ay].active && lx->win.s[ay].active->lease == lx->win.active_era)
-	{
-		lx->win.s[ay].active = &lx->win.s[ay].storage[lx->win.s[ay].active_storage_index];
-		lx->win.s[ay].staged = &lx->win.s[ay].storage[lx->win.s[ay].staged_storage_index];
-	}
+  lx->s[0].s[ay] = lx->s[0].s[by];
+  lx->s[0].t[ay] = lx->s[0].t[by];
+  
+  lx->win.s[ay] = lx->win.s[by];
+  if(lx->win.s[ay].active && lx->win.s[ay].active->lease == lx->win.active_era)
+  {
+    lx->win.s[ay].active = &lx->win.s[ay].storage[lx->win.s[ay].active_storage_index];
+    lx->win.s[ay].staged = &lx->win.s[ay].storage[lx->win.s[ay].staged_storage_index];
+  }
 
-	lx->s[0].s[by] = Ts;
-	lx->s[0].t[by] = Tt;
+  lx->s[0].s[by] = Ts;
+  lx->s[0].t[by] = Tt;
 
-	lx->win.s[by]	= Tw;
-	if(lx->win.s[by].active && lx->win.s[by].active->lease == lx->win.active_era)
-	{
-		lx->win.s[by].active = &lx->win.s[by].storage[lx->win.s[by].active_storage_index];
-		lx->win.s[by].staged = &lx->win.s[by].storage[lx->win.s[by].staged_storage_index];
-	}
+  lx->win.s[by] = Tw;
+  if(lx->win.s[by].active && lx->win.s[by].active->lease == lx->win.active_era)
+  {
+    lx->win.s[by].active = &lx->win.s[by].storage[lx->win.s[by].active_storage_index];
+    lx->win.s[by].staged = &lx->win.s[by].storage[lx->win.s[by].staged_storage_index];
+  }
 
-	finally : coda;
+  finally : coda;
 }

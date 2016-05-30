@@ -35,58 +35,58 @@ OPERATION
  use entire top list
 
  for each entry
-	1. create N copies of this entry at indexes x + 1 .. N
+  1. create N copies of this entry at indexes x + 1 .. N
 
 */
 
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "t"
-		, .optype				= LWOP_OPERATION_PUSHBEFORE | LWOP_SELECTION_RESET
-		, .op_exec			= op_exec
-		, .desc					= "tear windows into a new list"
-		, .mnemonic			= "tear"
-	}, {}
+  {
+      .s            = "t"
+    , .optype       = LWOP_OPERATION_PUSHBEFORE | LWOP_SELECTION_RESET
+    , .op_exec      = op_exec
+    , .desc         = "tear windows into a new list"
+    , .mnemonic     = "tear"
+  }, {}
 };
 
 static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	fatal(lstack_unshift, lx);
+  fatal(lstack_unshift, lx);
 
-	int x;
-	int i;
+  int x;
+  int i;
 
-	LSTACK_ITERATE_FWD(lx, 1, x, 1, 1, go)
-	if(go)
-	{
-		struct lwx_windows * win;
-		int state;
-		if((state = lstack_windows_state(lx, x, &win)) != LWX_WINDOWS_NONE)
-		{
-			// request that readrow return temp space, and not to resolve the active window
-			char * zs;
-			int    zsl;
-			fatal(lstack_readrow, lx, 1, x, &zs, &zsl, 0, 1, 0, 1, 0);
+  LSTACK_ITERATE_FWD(lx, 1, x, 1, 1, go)
+  if(go)
+  {
+    struct lwx_windows * win;
+    int state;
+    if((state = lstack_windows_state(lx, x, &win)) != LWX_WINDOWS_NONE)
+    {
+      // request that readrow return temp space, and not to resolve the active window
+      char * zs;
+      int    zsl;
+      fatal(lstack_readrow, lx, 1, x, &zs, &zsl, 0, 1, 0, 1, 0);
 
-			if(state == LWX_WINDOWS_ALL)
-			{
-				fatal(lstack_addw, lx, zs, zsl);
-			}
-			else
-			{
-				for(i = 0; i < win->l; i++)
-				{
-					// write the windowed segment
-					fatal(lstack_addw, lx, zs + win->s[i].o, win->s[i].l);
-				}
-			}
-		}
-	}
-	LSTACK_ITEREND
+      if(state == LWX_WINDOWS_ALL)
+      {
+        fatal(lstack_addw, lx, zs, zsl);
+      }
+      else
+      {
+        for(i = 0; i < win->l; i++)
+        {
+          // write the windowed segment
+          fatal(lstack_addw, lx, zs + win->s[i].o, win->s[i].l);
+        }
+      }
+    }
+  }
+  LSTACK_ITEREND
 
-	finally : coda;
+  finally : coda;
 }

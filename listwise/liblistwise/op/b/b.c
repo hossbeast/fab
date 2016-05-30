@@ -28,11 +28,11 @@
 b operator - window by character offset/length
 
 ARGUMENTS (1, or multiples of 2)
-	 1  - offset, in fields, to start of window
-		    if negative, interpreted as offset from the end of the string
-		    default : 0
-	*2  - length, in fields, of window
-		    default : 0 - entire string
+   1  - offset, in fields, to start of window
+        if negative, interpreted as offset from the end of the string
+        default : 0
+  *2  - length, in fields, of window
+        default : 0 - entire string
 
 OPERATION
 
@@ -42,87 +42,87 @@ static xapi op_validate(operation*);
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "b"
-		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec
-		, .mnemonic			= "bytes"
-		, .desc					= "window by character offset/length"
-	}
-	, {}
+  {
+      .s            = "b"
+    , .optype       = LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE | LWOP_ARGS_CANHAVE
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec
+    , .mnemonic     = "bytes"
+    , .desc         = "window by character offset/length"
+  }
+  , {}
 };
 
 xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl != 1 && (o->argsl % 2) != 0)
+  if(o->argsl != 1 && (o->argsl % 2) != 0)
   {
     xapi_fail_intent();
     xapi_info_adds("expected", "1 or even");
     xapi_info_addf("actual", "%d", o->argsl);
-		fail(LISTWISE_ARGSNUM);
+    fail(LISTWISE_ARGSNUM);
   }
 
-	int x;
-	for(x = 0; x < o->argsl; x++)
-	{
-		if(o->args[x]->itype != ITYPE_I64)
+  int x;
+  for(x = 0; x < o->argsl; x++)
+  {
+    if(o->args[x]->itype != ITYPE_I64)
     {
       xapi_fail_intent();
       xapi_info_adds("expected", "i64");
       xapi_info_addf("actual", "%d", o->args[x]->itype);
       fail(LISTWISE_ARGSTYPE);
     }
-	}
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	int x;
-	LSTACK_ITERATE(lx, x, go)
-	if(go)
-	{
-		char * ss = 0;
-		int ssl   = 0;
+  int x;
+  LSTACK_ITERATE(lx, x, go)
+  if(go)
+  {
+    char * ss = 0;
+    int ssl   = 0;
 
-		fatal(lstack_readrow, lx, 0, x, &ss, &ssl, 0, 1, 1, 0, 0);
+    fatal(lstack_readrow, lx, 0, x, &ss, &ssl, 0, 1, 1, 0, 0);
 
-		int i;
-		for(i = 0; i < o->argsl; i += 2)
-		{
-			int win_off = o->args[i]->i64;
-			int win_len = 0;
+    int i;
+    for(i = 0; i < o->argsl; i += 2)
+    {
+      int win_off = o->args[i]->i64;
+      int win_len = 0;
 
-			if(o->argsl > (i + 1))
-				win_len = o->args[i + 1]->i64;
+      if(o->argsl > (i + 1))
+        win_len = o->args[i + 1]->i64;
 
-			int off = win_off;
-			int len = win_len;
+      int off = win_off;
+      int len = win_len;
 
-			if(win_off < 0)
-				off = ssl + win_off;
-			if(win_len == 0)
-				len = ssl - off;
-			else
-				len = MIN(len, ssl - off);
+      if(win_off < 0)
+        off = ssl + win_off;
+      if(win_len == 0)
+        len = ssl - off;
+      else
+        len = MIN(len, ssl - off);
 
-			if(off >= 0 && off < ssl && len > 0)
-			{
-				// append window segment
-				fatal(lstack_windows_stage, lx, x, off, len);
+      if(off >= 0 && off < ssl && len > 0)
+      {
+        // append window segment
+        fatal(lstack_windows_stage, lx, x, off, len);
 
-				// record this index was hit
-				fatal(lstack_selection_stage, lx, x);
-			}
-		}
-	}
-	LSTACK_ITEREND
+        // record this index was hit
+        fatal(lstack_selection_stage, lx, x);
+      }
+    }
+  }
+  LSTACK_ITEREND
 
-	finally : coda;
+  finally : coda;
 }

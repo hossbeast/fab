@@ -32,20 +32,20 @@ typedef struct frame
 
   struct error *  error;  // (optional) error
 
-	char * 					file;		// file name
+  char *          file;   // file name
   size_t          filel;
 
-	char * 					func;		// function name
+  char *          func;   // function name
   size_t          funcl;
 
-	int							line;   // line number
+  int             line;   // line number
 
-	struct                  // infos for the frame
-	{
-		struct info * v;
-		size_t        l;
+  struct                  // infos for the frame
+  {
+    struct info * v;
+    size_t        l;
     size_t        a;
-	} infos;
+  } infos;
 } frame;
 
 #if XAPI_RUNTIME_CHECKS

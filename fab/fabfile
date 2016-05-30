@@ -19,33 +19,33 @@
 +[ $*/../vars.fab ]
 
 # source invocations
-+[ $dfab ]()			@fab
-+[ $dfabw ]()			@fabw
-+[ $dfabd ]()			@fabd
++[ $dfab ]()      @fab
++[ $dfabw ]()     @fabw
++[ $dfabd ]()     @fabd
 
 # variables
 $sdirs = [ $dfabd [ $dfabroot/common ~ j ] ~ lsr c -d ]
 
 $cflags = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
-	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
-	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
+  [ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
+  [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
-	# include paths - mark as system to preclude dependency discovery from gcc
-	[ $dlibxapi $dlibxlinux $dlibpstring $dliblistwise ~ s/^/-I ]
+  # include paths - mark as system to preclude dependency discovery from gcc
+  [ $dlibxapi $dlibxlinux $dlibpstring $dliblistwise ~ s/^/-I ]
 ]
 
 $params = [
-	[ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
-	[ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
-	[ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
-	[ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
+  [ -DFABLWOPDIR="\""$fablwopdir"\"" ~ j ]
+  [ -DFABINVOKEDIR="\""$fabinvokedir"\"" ~ j ]
+  [ -DFABTMPDIR="\""$fabtmpdir"\"" ~ j ]
+  [ -DFABIPCDIR="\""$fabipcdir"\"" ~ j ]
 ]
 
 $params_devel = [
-	[ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
-	[ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
-	[ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
-	[ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
+  [ -DFABLWOPDIR="\""$fablwopdir_devel"\"" ~ j ]
+  [ -DFABINVOKEDIR="\""$fabinvokedir_devel"\"" ~ j ]
+  [ -DFABTMPDIR="\""$fabtmpdir_devel"\"" ~ j ]
+  [ -DFABIPCDIR="\""$fabipcdir_devel"\"" ~ j ]
 ]
 
 $cflags_xapi_final = [ $cflags_xapi_final $cflags $params ]
@@ -86,17 +86,17 @@ $faboplist_xapi_devel = [ $dfabroot/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 #
 [ $faboplist_xapi_final ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
 {
-	[ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
+  [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ]  [ $@ ~ rx/ineed fi ] -shared
 }
 
 [ $faboplist_xapi_debug ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
 {
-	[ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
+  [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ]  [ $@ ~ rx/ineed fi ] -shared
 }
 
 [ $faboplist_xapi_devel ~ dj shift ] :: [ $< ~ rx sx/pic.o ]
 {
-	[ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ]	[ $@ ~ rx/ineed fi ] -shared
+  [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ]  [ $@ ~ rx/ineed fi ] -shared
 }
 
 # also a bridge dependency on the fabd executable
@@ -110,50 +110,50 @@ $faboplist_xapi_devel = [ $dfabroot/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 
 [ @install.base ]
 {
-	install -d																					[ $destdir/$bindir ]
-	install [ $gccdep_final ] 													[ $destdir/$bindir ]
+  install -d                                          [ $destdir/$bindir ]
+  install [ $gccdep_final ]                           [ $destdir/$bindir ]
 
-	rm -rf																							[ $destdir/$fabtmpdir ] 2>/dev/null
-	install -d 																					[ $destdir/$fabtmpdir ]
-	rm -rf																							[ $destdir/$fabipcdir ] 2>/dev/null
-	install -d 																					[ $destdir/$fabipcdir ]
+  rm -rf                                              [ $destdir/$fabtmpdir ] 2>/dev/null
+  install -d                                          [ $destdir/$fabtmpdir ]
+  rm -rf                                              [ $destdir/$fabipcdir ] 2>/dev/null
+  install -d                                          [ $destdir/$fabipcdir ]
 
-	rm -rf																							[ $destdir/$fabinvokedir ] 2>/dev/null
-	install -d																					[ $destdir/$fabinvokedir/std ]
-	install -d																					[ $destdir/$fabinvokedir/std/flex ]
-	install -d																					[ $destdir/$fabinvokedir/std/bison ]
-	install -d																					[ $destdir/$fabinvokedir/std/xapi ]
-	install [ $dfabroot/fablib/std/c.fab ]							[ $destdir/$fabinvokedir/std/c.fab ]
-	install [ $dfabroot/fablib/std/l.fab ]							[ $destdir/$fabinvokedir/std/l.fab ]
-	install [ $dfabroot/fablib/std/y.fab ]							[ $destdir/$fabinvokedir/std/y.fab ]
-	install [ $dfabroot/fablib/std/flex/states.fab ]		[ $destdir/$fabinvokedir/std/flex/states.fab ]
-	install [ $dfabroot/fablib/std/bison/tokens.fab ]		[ $destdir/$fabinvokedir/std/bison/tokens.fab ]
-	install [ $dfabroot/fablib/std/xapi/errtab.fab ]		[ $destdir/$fabinvokedir/std/xapi/errtab.fab ]
+  rm -rf                                              [ $destdir/$fabinvokedir ] 2>/dev/null
+  install -d                                          [ $destdir/$fabinvokedir/std ]
+  install -d                                          [ $destdir/$fabinvokedir/std/flex ]
+  install -d                                          [ $destdir/$fabinvokedir/std/bison ]
+  install -d                                          [ $destdir/$fabinvokedir/std/xapi ]
+  install [ $dfabroot/fablib/std/c.fab ]              [ $destdir/$fabinvokedir/std/c.fab ]
+  install [ $dfabroot/fablib/std/l.fab ]              [ $destdir/$fabinvokedir/std/l.fab ]
+  install [ $dfabroot/fablib/std/y.fab ]              [ $destdir/$fabinvokedir/std/y.fab ]
+  install [ $dfabroot/fablib/std/flex/states.fab ]    [ $destdir/$fabinvokedir/std/flex/states.fab ]
+  install [ $dfabroot/fablib/std/bison/tokens.fab ]   [ $destdir/$fabinvokedir/std/bison/tokens.fab ]
+  install [ $dfabroot/fablib/std/xapi/errtab.fab ]    [ $destdir/$fabinvokedir/std/xapi/errtab.fab ]
 
-	rm -rf 																							[ $destdir/$fablwopdir ] 2>/dev/null
-	install -d																					[ $destdir/$fablwopdir ]
+  rm -rf                                              [ $destdir/$fablwopdir ] 2>/dev/null
+  install -d                                          [ $destdir/$fablwopdir ]
 }
 
 [ @install.local ] : [ @install.base ]
 {
-	chmod 777																						[ $destdir/$fabtmpdir ]
-	chmod 777																						[ $destdir/$fabipcdir ]
-	chown fabsys:fabsys																	[ $destdir/$fabtmpdir ]
-	chown fabsys:fabsys																	[ $destdir/$fabipcdir ]
+  chmod 777                                           [ $destdir/$fabtmpdir ]
+  chmod 777                                           [ $destdir/$fabipcdir ]
+  chown fabsys:fabsys                                 [ $destdir/$fabtmpdir ]
+  chown fabsys:fabsys                                 [ $destdir/$fabipcdir ]
 }
 
 [ @install.final ] : [ @install.base ]
 {
-	install [ $dfabroot/fablw/op/fi/fi.xapi.final.so ]	[ $destdir/$fablwopdir/fi.so ]
-	install [ $dfabroot/fablw/op/fg/fg.xapi.final.so ]	[ $destdir/$fablwopdir/fg.so ]
+  install [ $dfabroot/fablw/op/fi/fi.xapi.final.so ]  [ $destdir/$fablwopdir/fi.so ]
+  install [ $dfabroot/fablw/op/fg/fg.xapi.final.so ]  [ $destdir/$fablwopdir/fg.so ]
 }
 [ @install.local.final] : [ @install.final @install.local @fab.install.local.final @fabw.install.local.final @fabd.install.local.final ]
 [ @install.dist.final] : [ @install.final @fab.install.dist.final @fabw.install.dist.final @fabd.install.dist.final ]
 
 [ @install.debug ] : [ @install.base ]
 {
-	install [ $dfabroot/fablw/op/fi/fi.xapi.debug.so ]	[ $destdir/$fablwopdir/fi.so ]
-	install [ $dfabroot/fablw/op/fg/fg.xapi.debug.so ]	[ $destdir/$fablwopdir/fg.so ]
+  install [ $dfabroot/fablw/op/fi/fi.xapi.debug.so ]  [ $destdir/$fablwopdir/fi.so ]
+  install [ $dfabroot/fablw/op/fg/fg.xapi.debug.so ]  [ $destdir/$fablwopdir/fg.so ]
 }
 
 [ @install.local.debug ] : [ @install.debug @install.local @fab.install.local.debug @fabw.install.local.debug @fabd.install.local.debug ]
@@ -165,15 +165,15 @@ $faboplist_xapi_devel = [ $dfabroot/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 [ @man ] : [ $dfabroot/man/fab.1.gz ~ j ]
 [ $dfabroot/man/fab.1.gz ~ j ] : [ $dfabroot/man/fab.1 ~ j ]
 {
-	cat [ $dfabroot/man/fab.1 ] [
-	] | sed -e 's/---BUILDVERS---/[ $VERSIONS ]/' [
-	] | sed -e 's/---BUILDDATE---/[ $^starttime ~ datef/%Y-%m-%d ]/' [
-	] | gzip -9c > [ $@ ]
+  cat [ $dfabroot/man/fab.1 ] [
+  ] | sed -e 's/---BUILDVERS---/[ $VERSIONS ]/' [
+  ] | sed -e 's/---BUILDDATE---/[ $^starttime ~ datef/%Y-%m-%d ]/' [
+  ] | gzip -9c > [ $@ ]
 }
 
 # install the man gz
 [ @install.man1 ] : [ $dfabroot/man/fab.1.gz ~ j ]
 {
-	install -d 																		[ $destdir/$mandir/man1 ]
-	install [ $dfabroot/man/fab.1.gz ]						[ $destdir/$mandir/man1/fab.1.gz ]
+  install -d                                    [ $destdir/$mandir/man1 ]
+  install [ $dfabroot/man/fab.1.gz ]            [ $destdir/$mandir/man1/fab.1.gz ]
 }

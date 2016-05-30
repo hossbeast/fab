@@ -44,27 +44,27 @@ static void assure(size_t sz)
 {
   int __attribute__((unused)) _r;
 
-#define MEMBLOCK_SMALL			0x1000 /* 1k : first THRESHOLD blocks */
-#define MEMBLOCK_THRESHOLD	0x4			
-#define MEMBLOCK_LARGE			0x8000 /* 8k : additional blocks */
+#define MEMBLOCK_SMALL      0x1000 /* 1k : first THRESHOLD blocks */
+#define MEMBLOCK_THRESHOLD  0x4     
+#define MEMBLOCK_LARGE      0x8000 /* 8k : additional blocks */
 
-	// request is too large to satisfy
+  // request is too large to satisfy
   // request cannot fit in a single block ; too large to satisfy
-	if(sz > MEMBLOCK_LARGE)
-		goto failed;
+  if(sz > MEMBLOCK_LARGE)
+    goto failed;
 
-	struct memblk * mb = &mm_mb;
+  struct memblk * mb = &mm_mb;
 
-	/* current block is full */
-	if(mb->blocksl == 0 || ((mb->blocks[mb->blocksl - 1].l + sz) > mb->blocks[mb->blocksl - 1].a))
-	{
-		/* reallocate the block container */
-		if(mb->blocksl == mb->blocksa)
-		{
-			size_t ns = mb->blocksa ?: 3;
-			ns = ns * 2 + ns / 2;
+  /* current block is full */
+  if(mb->blocksl == 0 || ((mb->blocks[mb->blocksl - 1].l + sz) > mb->blocks[mb->blocksl - 1].a))
+  {
+    /* reallocate the block container */
+    if(mb->blocksl == mb->blocksa)
+    {
+      size_t ns = mb->blocksa ?: 3;
+      ns = ns * 2 + ns / 2;
       if((mb->blocks = realloc(mb->blocks, sizeof(*mb->blocks) * ns)) == 0)
-				goto failed;
+        goto failed;
 
       // zero out the new section
       memset(
@@ -73,8 +73,8 @@ static void assure(size_t sz)
         , (ns - mb->blocksa) * sizeof(*mb->blocks)
       );
 
-			mb->blocksa = ns;
-		}
+      mb->blocksa = ns;
+    }
 
     typeof(mb->blocks[0]) * block = &mb->blocks[mb->blocksl];
 
@@ -96,10 +96,10 @@ static void assure(size_t sz)
     }
 
     memset(block->s, 0, sizeof(*block->s) * block->a);
-		mb->blocksl++;
-	}
+    mb->blocksl++;
+  }
 
-	return;
+  return;
 failed:
   _r = write(2, MMS("libxapi failure to allocate while unwinding ; consider calling xapi_allocate\n"));
 }
@@ -110,7 +110,7 @@ failed:
 
 void mm_teardown()
 {
-	struct memblk * mb = &mm_mb;
+  struct memblk * mb = &mm_mb;
 
 //
 // how to teardown all threads?
@@ -131,40 +131,40 @@ void mm_malloc(void * restrict p, size_t sz)
 {
   assure(sz);
 
-	struct memblk * mb = &mm_mb;
+  struct memblk * mb = &mm_mb;
 
   // allocate from the block
-	*(void**)p = mb->blocks[mb->blocksl - 1].s + mb->blocks[mb->blocksl - 1].l;
-	mb->blocks[mb->blocksl - 1].l += sz;
+  *(void**)p = mb->blocks[mb->blocksl - 1].s + mb->blocks[mb->blocksl - 1].l;
+  mb->blocks[mb->blocksl - 1].l += sz;
 }
 
 void mm_realloc(void * restrict p, size_t es, size_t ec, size_t oec)
 {
-	void * old = *(void**)p;
-	mm_malloc(p, es * ec);
-	if(old)
-		memcpy(*(void**)p, old, es * oec);
+  void * old = *(void**)p;
+  mm_malloc(p, es * ec);
+  if(old)
+    memcpy(*(void**)p, old, es * oec);
 }
 
 void mm_assure(void * restrict dst, size_t * const restrict dstl, size_t * const restrict dsta, size_t z, size_t l)
 {
-	if(l > (*dsta))
-	{
-		size_t ns = (*dsta) ?: 10;
-		while(ns <= l)
-			ns = ns * 2 + ns / 2;
-		mm_realloc(dst, z, ns, *dsta);
-		(*dsta) = ns;
-	}
+  if(l > (*dsta))
+  {
+    size_t ns = (*dsta) ?: 10;
+    while(ns <= l)
+      ns = ns * 2 + ns / 2;
+    mm_realloc(dst, z, ns, *dsta);
+    (*dsta) = ns;
+  }
 }
 
 void mm_sloadw(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict s, size_t l)
 {
   mm_malloc(dst, l + 1);
 
-	(*dstl) = l;
-	memcpy(*dst, s, l);
-	(*dst)[l] = 0;
+  (*dstl) = l;
+  memcpy(*dst, s, l);
+  (*dst)[l] = 0;
 }
 
 void mm_svloadf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict fmt, va_list va)

@@ -175,7 +175,7 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 
 [ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.pic.o ]
 {
-	[ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel $libxlinux_xapi_devel ] [
+  [ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel $libxlinux_xapi_devel ] [
   ] [ $dlibxapi $dlibxlinux $* ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 

@@ -118,13 +118,13 @@ API xapi sigbank_setup(const char * restrict name)
   sigaddset(&app_set, FABSIG_ACK);
 
   // establish the default signal mask
-	fatal(xsigprocmask, SIG_SETMASK, &app_set, 0);
+  fatal(xsigprocmask, SIG_SETMASK, &app_set, 0);
 
-	// handle all signals
-	struct sigaction action = {
-		  .sa_sigaction = signal_handler
-		, .sa_flags = SA_SIGINFO
-	};
+  // handle all signals
+  struct sigaction action = {
+      .sa_sigaction = signal_handler
+    , .sa_flags = SA_SIGINFO
+  };
 
 #if DEBUG || DEVEL
   if(log_would(L_FABCORE | L_IPC))
@@ -139,15 +139,15 @@ API xapi sigbank_setup(const char * restrict name)
 #endif
 
   int x;
-	for(x = 1; x < SIGUNUSED; x++)
-	{
-		if(x != SIGKILL && x != SIGSTOP && x != SIGSEGV)
-		{
-			fatal(xsigaction, x, &action, 0);
-		}
-	}
-	for(x = SIGRTMIN; x <= SIGRTMAX; x++)
-	{
+  for(x = 1; x < SIGUNUSED; x++)
+  {
+    if(x != SIGKILL && x != SIGSTOP && x != SIGSEGV)
+    {
+      fatal(xsigaction, x, &action, 0);
+    }
+  }
+  for(x = SIGRTMIN; x <= SIGRTMAX; x++)
+  {
 #if DEBUG || DEVEL
     if((x - SIGRTMIN) == 30)
     {
@@ -157,7 +157,7 @@ API xapi sigbank_setup(const char * restrict name)
 #endif
 
     fatal(xsigaction, x, &action, 0);
-	}
+  }
 
   finally : coda;
 }

@@ -24,9 +24,9 @@
 # variables
 $sdirs = [ $* ~ lsr c -d ]
 $cflags = [
-	[ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
-	[ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
-	[ $sdirs $dlibxapi $dlibxlinux $dlibvalyria $dliblogger $dliblistwise ~ s/^/-I ]
+  [ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
+  [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
+  [ $sdirs $dlibxapi $dlibxlinux $dlibvalyria $dliblogger $dliblistwise ~ s/^/-I ]
 ]
 $cflags_eapi_final = [ $cflags $cflags_eapi_final ]
 $cflags_eapi_debug = [ $cflags $cflags_eapi_debug ]
@@ -36,7 +36,7 @@ $cflags_xapi_debug = [ $cflags $cflags_xapi_debug ]
 $cflags_xapi_devel = [ $cflags $cflags_xapi_devel ]
 
 $rpath = [ 
-	[ $dlibxapi $dlibxlinux $dlibvalyria $dliblistwise $dlibnarrator $dliblogger ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+  [ $dlibxapi $dlibxlinux $dlibvalyria $dliblistwise $dlibnarrator $dliblogger ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 $lflags_eapi_final = [ $libxlinux_eapi_final $libvalyria_eapi_final $liblogger_eapi_final $liblistwise_eapi_final $libnarrator_eapi_final ]
 $lflags_eapi_debug = [ $libxlinux_eapi_debug $libvalyria_eapi_debug $liblogger_eapi_debug $liblistwise_eapi_debug $libnarrator_eapi_debug ]
@@ -81,32 +81,32 @@ $lflags_xapi_devel = [ $libxlinux_xapi_devel $libvalyria_xapi_devel $liblogger_x
 
 [ $listwise_eapi_final ] : [ $*/main.eapi.final.o ~ j ]
 {
-	[ [ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_eapi_final ~ fi ] ~ fi/\x20\x5c\x0a ]
+  [ [ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_eapi_final ~ fi ] ~ fi/\x20\x5c\x0a ]
 }
 
 [ $listwise_eapi_debug ] : [ $*/main.eapi.debug.o ~ j ]
 {
-	[ [ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_eapi_debug ~ fi ] ~ fi/\x20\x5c\x0a ]
+  [ [ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_eapi_debug ~ fi ] ~ fi/\x20\x5c\x0a ]
 }
 
 [ $listwise_eapi_devel ] : [ $*/main.eapi.devel.o ~ j ]
 {
-	[ [ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_eapi_devel ~ fi ] ~ fi/\x20\x5c\x0a ]
+  [ [ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_eapi_devel ~ fi ] ~ fi/\x20\x5c\x0a ]
 }
 
 [ $listwise_xapi_final ] : [ $*/main.xapi.final.o ~ j ]
 {
-	[ [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ] ~ fi/\x20\x5c\x0a ]
+  [ [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ] ~ fi/\x20\x5c\x0a ]
 }
 
 [ $listwise_xapi_debug ] : [ $*/main.xapi.debug.o ~ j ]
 {
-	[ [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ] ~ fi/\x20\x5c\x0a ]
+  [ [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ] ~ fi/\x20\x5c\x0a ]
 }
 
 [ $listwise_xapi_devel ] : [ $*/main.xapi.devel.o ~ j ]
 {
-	[ [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ] ~ fi/\x20\x5c\x0a ]
+  [ [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ] ~ fi/\x20\x5c\x0a ]
 }
 
 # library dependencies
@@ -123,16 +123,16 @@ $lflags_xapi_devel = [ $libxlinux_xapi_devel $libvalyria_xapi_devel $liblogger_x
 
 [ @install.final ] : [ $listwise_xapi_final ]
 {
-	install -d												[ $destdir/$bindir ]
-	install [ $listwise_xapi_final ]	[ $destdir/$bindir/listwise ]
-	ln -vfs [ listwise ]							[ $destdir/$bindir/lw ]
+  install -d                        [ $destdir/$bindir ]
+  install [ $listwise_xapi_final ]  [ $destdir/$bindir/listwise ]
+  ln -vfs [ listwise ]              [ $destdir/$bindir/lw ]
 }
 
 [ @install.debug ] : [ $listwise_xapi_debug ]
 {
-	install -d												[ $destdir/$bindir ]
-	install [ $listwise_xapi_debug ]	[ $destdir/$bindir/listwise ]
-	ln -vfs [ listwise ]							[ $destdir/$bindir/lw ]
+  install -d                        [ $destdir/$bindir ]
+  install [ $listwise_xapi_debug ]  [ $destdir/$bindir/listwise ]
+  ln -vfs [ listwise ]              [ $destdir/$bindir/lw ]
 }
 
 [ @install.man ] : [ @install.man1 ]
@@ -141,17 +141,17 @@ $lflags_xapi_devel = [ $libxlinux_xapi_devel $libvalyria_xapi_devel $liblogger_x
 [ @man ] : [ $*/man/listwise.1.gz ~ j ]
 [ $*/man/listwise.1.gz ~ j ] : [ $*/man/listwise.1 ~ j ]
 {
-	cat [ $*/man/listwise.1 ] [
-	] | sed -e 's/---BUILDVERS---/[ $VERSIONS ]/' [
-	] | sed -e 's/---BUILDDATE---/[ $^starttime ~ datef/%Y-%m-%d ]/' [
-	] | gzip -9c > [ $@ ]
+  cat [ $*/man/listwise.1 ] [
+  ] | sed -e 's/---BUILDVERS---/[ $VERSIONS ]/' [
+  ] | sed -e 's/---BUILDDATE---/[ $^starttime ~ datef/%Y-%m-%d ]/' [
+  ] | gzip -9c > [ $@ ]
 }
 
 
 # install the man gz
 [ @install.man1 ] : [ $*/man/listwise.1.gz ~ j ]
 {
-	install -d 																		[ $destdir/$mandir/man1 ]
-	install [ $*/man/listwise.1.gz ]			[ $destdir/$mandir/man1/listwise.1.gz ]
-	ln -fs listwise.1.gz													[ $destdir/$mandir/man1/lw.1.gz ]
+  install -d                                    [ $destdir/$mandir/man1 ]
+  install [ $*/man/listwise.1.gz ]      [ $destdir/$mandir/man1/listwise.1.gz ]
+  ln -fs listwise.1.gz                          [ $destdir/$mandir/man1/lw.1.gz ]
 }

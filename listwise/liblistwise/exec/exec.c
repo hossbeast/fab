@@ -45,11 +45,11 @@
 ///
 
 API xapi listwise_exec_transform(
-	  transform * const restrict g
-	, char ** const restrict init
-	, size_t * const restrict initls
-	, const size_t initl
-	, lwx ** restrict lx
+    transform * const restrict g
+  , char ** const restrict init
+  , size_t * const restrict initls
+  , const size_t initl
+  , lwx ** restrict lx
 )
 {
   enter;
@@ -57,116 +57,116 @@ API xapi listwise_exec_transform(
   int token = 0;
   narrator * N = 0;
 
-	// ovec workspace
-	int* ovec = 0;
-	int ovec_len = 0;
+  // ovec workspace
+  int* ovec = 0;
+  int ovec_len = 0;
 
 #if SANITY
-	// sanity
-	sanityblock * sb = 0;
+  // sanity
+  sanityblock * sb = 0;
 #endif
 
   fatal(narrator_fixed_create, &N, 2048);
 
-	// list stack allocation
-	if(!*lx)
-		fatal(lwx_alloc, lx);
+  // list stack allocation
+  if(!*lx)
+    fatal(lwx_alloc, lx);
 
-	// write init elements to the top of list stack
-	int x;
-	for(x = 0; x < initl; x++)
-	{
-		fatal(lstack_addw, *lx, init[x], initls ? initls[x] : strlen(init[x]));
-	}
+  // write init elements to the top of list stack
+  int x;
+  for(x = 0; x < initl; x++)
+  {
+    fatal(lstack_addw, *lx, init[x], initls ? initls[x] : strlen(init[x]));
+  }
 
-	// write initial transform args at top of list stack
-	for(x = 0; x < g->argsl; x++)
-	{
-		fatal(lstack_addw, *lx, g->args[x]->s, g->args[x]->l);
-	}
+  // write initial transform args at top of list stack
+  for(x = 0; x < g->argsl; x++)
+  {
+    fatal(lstack_addw, *lx, g->args[x]->s, g->args[x]->l);
+  }
 
-	// the initial state of selection/windows is all
-	(*lx)->sel.active_era++;
-	(*lx)->sel.staged_era++;
-	(*lx)->win.active_era++;
-	(*lx)->win.staged_era++;
+  // the initial state of selection/windows is all
+  (*lx)->sel.active_era++;
+  (*lx)->sel.staged_era++;
+  (*lx)->win.active_era++;
+  (*lx)->win.staged_era++;
 
-	if(log_would(L_LISTWISE | L_EXEC))
-	{
+  if(log_would(L_LISTWISE | L_EXEC))
+  {
     fatal(log_start, L_LISTWISE | L_EXEC, &token);
     logs(0, " >>      ");
     fatal(transform_canon_say, g, log_narrator());
     fatal(log_finish, &token);
     
 
-		// log the lstack before beginning
+    // log the lstack before beginning
     fatal(log_start, L_LISTWISE | L_EXEC, &token);
     fatal(lwx_say, *lx, log_narrator());
     fatal(log_finish, &token);
-	}
+  }
 
 #if SANITY
-	if(listwise_sanity)
-	{
-		fatal(sanityblock_create, &sb);
-		fatal(sanity, *lx, sb);
-	}
+  if(listwise_sanity)
+  {
+    fatal(sanityblock_create, &sb);
+    fatal(sanity, *lx, sb);
+  }
 #endif
 
-	// execute operations
-	int y;
-	for(x = 0; x < g->opsl; x = y)
-	{
-		int sel_activate = 0;
-		int win_activate = 0;
+  // execute operations
+  int y;
+  for(x = 0; x < g->opsl; x = y)
+  {
+    int sel_activate = 0;
+    int win_activate = 0;
 
-		// locate an alternating sequence of OR operators
-		for(y = x; y < g->opsl; y++)
-		{
-			if((y - x) && (y - x) % 2)
-			{
-				if(!(g->ops[y]->op->optype & LWOPT_AGGREGATE))
-					break;
-			}
+    // locate an alternating sequence of OR operators
+    for(y = x; y < g->opsl; y++)
+    {
+      if((y - x) && (y - x) % 2)
+      {
+        if(!(g->ops[y]->op->optype & LWOPT_AGGREGATE))
+          break;
+      }
 
-			if(g->ops[y]->op->optype & LWOPT_SELECTION_ACTIVATE)
-				sel_activate = 1;
+      if(g->ops[y]->op->optype & LWOPT_SELECTION_ACTIVATE)
+        sel_activate = 1;
 
-			if(g->ops[y]->op->optype & LWOPT_WINDOWS_ACTIVATE)
-				win_activate = 1;
-		}
+      if(g->ops[y]->op->optype & LWOPT_WINDOWS_ACTIVATE)
+        win_activate = 1;
+    }
 
-		// possibly terminating with a y operator
-		if(y < g->opsl && (g->ops[y]->op->optype & LWOPT_ACTIVATION_OVERRIDE))
-		{
-			// override activation settings
-			sel_activate = !!(g->ops[y]->op->optype & LWOPT_SELECTION_ACTIVATE);
-			win_activate = !!(g->ops[y]->op->optype & LWOPT_WINDOWS_ACTIVATE);
-			y++;
-		}
+    // possibly terminating with a y operator
+    if(y < g->opsl && (g->ops[y]->op->optype & LWOPT_ACTIVATION_OVERRIDE))
+    {
+      // override activation settings
+      sel_activate = !!(g->ops[y]->op->optype & LWOPT_SELECTION_ACTIVATE);
+      win_activate = !!(g->ops[y]->op->optype & LWOPT_WINDOWS_ACTIVATE);
+      y++;
+    }
 
-		int i;
-		for(i = x; i < y; i++)
-		{
-			if(i != x)
-			{
-				// log the lstack
-				if(log_would(L_LISTWISE | L_EXEC))
-				{
+    int i;
+    for(i = x; i < y; i++)
+    {
+      if(i != x)
+      {
+        // log the lstack
+        if(log_would(L_LISTWISE | L_EXEC))
+        {
           fatal(log_start, L_LISTWISE | L_EXEC, &token);
           fatal(lwx_say, *lx, log_narrator());
           fatal(log_finish, &token);
-				}
-			}
+        }
+      }
 
-			// log the operation
-			if(log_would(L_LISTWISE | L_EXEC))
-			{
+      // log the operation
+      if(log_would(L_LISTWISE | L_EXEC))
+      {
         fatal(narrator_reset, N);
         fatal(operation_canon_say, g->ops[i], 0, N);
 
         fatal(log_start, L_LISTWISE | L_EXEC, &token);
-				logf(L_LISTWISE | L_EXEC, " >> [%2d] %.*s%*s"
+        logf(L_LISTWISE | L_EXEC, " >> [%2d] %.*s%*s"
           , i
           , (int)narrator_fixed_size(N)
           , narrator_fixed_buffer(N)
@@ -177,51 +177,51 @@ API xapi listwise_exec_transform(
         fatal(log_finish, &token);
       }
 
-			// execute the operation
-			if((*lx)->l || (g->ops[i]->op->optype & LWOPT_EMPTYSTACK_YES))
-				if(g->ops[i]->op->op_exec)
-					fatal(g->ops[i]->op->op_exec, g->ops[i], *lx, &ovec, &ovec_len);
+      // execute the operation
+      if((*lx)->l || (g->ops[i]->op->optype & LWOPT_EMPTYSTACK_YES))
+        if(g->ops[i]->op->op_exec)
+          fatal(g->ops[i]->op->op_exec, g->ops[i], *lx, &ovec, &ovec_len);
 
-			// age active windows
-			if(g->ops[x]->op->optype & LWOPT_WINDOWS_RESET)
-				(*lx)->win.active_era++;
+      // age active windows
+      if(g->ops[x]->op->optype & LWOPT_WINDOWS_RESET)
+        (*lx)->win.active_era++;
 
-			// age active selections
-			if(g->ops[x]->op->optype & LWOPT_SELECTION_RESET)
-				(*lx)->sel.active_era++;
+      // age active selections
+      if(g->ops[x]->op->optype & LWOPT_SELECTION_RESET)
+        (*lx)->sel.active_era++;
 
 #if SANITY
-			if(listwise_sanity)
-				fatal(sanity, *lx, sb);
+      if(listwise_sanity)
+        fatal(sanity, *lx, sb);
 #endif
-		}
+    }
 
-		// staged selection
-		if(sel_activate)
-			fatal(lstack_selection_activate, *lx);
-		(*lx)->sel.staged_era++;
+    // staged selection
+    if(sel_activate)
+      fatal(lstack_selection_activate, *lx);
+    (*lx)->sel.staged_era++;
 
-		// staged windows
-		if(win_activate)
-			fatal(lstack_windows_activate, *lx);
-		(*lx)->win.staged_era++;
+    // staged windows
+    if(win_activate)
+      fatal(lstack_windows_activate, *lx);
+    (*lx)->win.staged_era++;
 
-		// log the lstack
-		if(log_would(L_LISTWISE | L_EXEC))
-		{
+    // log the lstack
+    if(log_would(L_LISTWISE | L_EXEC))
+    {
       fatal(log_start, L_LISTWISE | L_EXEC, &token);
       fatal(lwx_say, *lx, log_narrator());
       fatal(log_finish, &token);
-		}
-	}
+    }
+  }
 
 finally:
   fatal(log_finish, &token);
 
   narrator_free(N);
-	free(ovec);
+  free(ovec);
 #if SANITY
-	sanityblock_free(sb);
+  sanityblock_free(sb);
 #endif
 coda;
 }
@@ -236,13 +236,13 @@ API xapi listwise_exec(
 {
   enter;
 
-	// transform
-	transform * g = 0;
+  // transform
+  transform * g = 0;
 
-	fatal(transform_parse, 0, ts, 0, &g);
-	fatal(listwise_exec_transform, g, init, initls, initl, lx);
+  fatal(transform_parse, 0, ts, 0, &g);
+  fatal(listwise_exec_transform, g, init, initls, initl, lx);
 
 finally:
-	transform_free(g);
+  transform_free(g);
 coda;
 }

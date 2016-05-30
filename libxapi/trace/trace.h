@@ -63,7 +63,7 @@ void xapi_backtrace_to(int fd);
 //  sz   - max bytes to write, including null byte
 //
 size_t xapi_trace_pithy(char * const restrict dst, const size_t sz)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xapi_trace_full
 //
@@ -78,7 +78,7 @@ size_t xapi_trace_pithy(char * const restrict dst, const size_t sz)
 //  sz   - max bytes to write, including null byte
 //
 size_t xapi_trace_full(char * const restrict dst, const size_t sz)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xapi_trace_calltree_pithy
 //

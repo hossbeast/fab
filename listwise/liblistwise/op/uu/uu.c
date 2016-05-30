@@ -46,82 +46,82 @@ OPERATION
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-			.s						= "uu"
-		, .optype				= LWOP_SELECTION_ACTIVATE
-		, .op_exec			= op_exec
-		, .desc					= "select unique - sort not required"
-	}
-	, {}
+  {
+      .s            = "uu"
+    , .optype       = LWOP_SELECTION_ACTIVATE
+    , .op_exec      = op_exec
+    , .desc         = "select unique - sort not required"
+  }
+  , {}
 };
 
 xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
-	enter;
+  enter;
 
-	// indexes to be sorted
-	int * mema = 0;
+  // indexes to be sorted
+  int * mema = 0;
 
-	if(!(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->state == LWX_SELECTION_NONE))
-	{
-		char * As = 0;
-		int    Asl = 0;
-		char * Bs = 0;
-		int    Bsl = 0;
-		int    r = 0;
+  if(!(lx->sel.active && lx->sel.active->lease == lx->sel.active_era && lx->sel.active->state == LWX_SELECTION_NONE))
+  {
+    char * As = 0;
+    int    Asl = 0;
+    char * Bs = 0;
+    int    Bsl = 0;
+    int    r = 0;
 
-		fatal(xmalloc, &mema, (lx->sel.active ? lx->sel.active->l : lx->s[0].l) * sizeof(*mema));
+    fatal(xmalloc, &mema, (lx->sel.active ? lx->sel.active->l : lx->s[0].l) * sizeof(*mema));
 
-		int i = 0;
-		int x;
-		LSTACK_ITERATE(lx, x, go)
-		if(go)
-		{
-			mema[i++] = x;
-		}
-		LSTACK_ITEREND;
+    int i = 0;
+    int x;
+    LSTACK_ITERATE(lx, x, go)
+    if(go)
+    {
+      mema[i++] = x;
+    }
+    LSTACK_ITEREND;
 
-		xapi compar(const void * A, const void * B, void * T, int * r)
-		{
+    xapi compar(const void * A, const void * B, void * T, int * r)
+    {
       enter;
 
-			fatal(lstack_getbytes, lx, 0, *(int*)A, &As, &Asl);
-			fatal(lstack_getbytes, lx, 0, *(int*)B, &Bs, &Bsl);
+      fatal(lstack_getbytes, lx, 0, *(int*)A, &As, &Asl);
+      fatal(lstack_getbytes, lx, 0, *(int*)B, &Bs, &Bsl);
 
-			(*r) = estrcmp(As, Asl, Bs, Bsl, 0);
+      (*r) = estrcmp(As, Asl, Bs, Bsl, 0);
 
-			finally : coda;
-		}
+      finally : coda;
+    }
 
-		fatal(xqsort_r, mema, i, sizeof(*mema), compar, 0);
+    fatal(xqsort_r, mema, i, sizeof(*mema), compar, 0);
 
-		if(i)
-		{
-			fatal(lstack_selection_stage, lx, mema[0]);
-			fatal(lstack_getbytes, lx, 0, mema[0], &As, &Asl);
+    if(i)
+    {
+      fatal(lstack_selection_stage, lx, mema[0]);
+      fatal(lstack_getbytes, lx, 0, mema[0], &As, &Asl);
 
-			for(x = 1; x < i; x++)
-			{
-				if(x % 2)
-				{
-					fatal(lstack_getbytes, lx, 0, mema[x], &Bs, &Bsl);
-					r = estrcmp(As, Asl, Bs, Bsl, 0);
-				}
-				else
-				{
-					fatal(lstack_getbytes, lx, 0, mema[x], &As, &Asl);
-					r = estrcmp(Bs, Bsl, As, Asl, 0);
-				}
+      for(x = 1; x < i; x++)
+      {
+        if(x % 2)
+        {
+          fatal(lstack_getbytes, lx, 0, mema[x], &Bs, &Bsl);
+          r = estrcmp(As, Asl, Bs, Bsl, 0);
+        }
+        else
+        {
+          fatal(lstack_getbytes, lx, 0, mema[x], &As, &Asl);
+          r = estrcmp(Bs, Bsl, As, Asl, 0);
+        }
 
-				if(r)
-				{
-					fatal(lstack_selection_stage, lx, mema[x]);
-				}
-			}
-		}
-	}
+        if(r)
+        {
+          fatal(lstack_selection_stage, lx, mema[x]);
+        }
+      }
+    }
+  }
 
 finally :
-	free(mema);
+  free(mema);
 coda;
 }

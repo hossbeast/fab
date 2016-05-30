@@ -28,7 +28,7 @@
 //  fatalize-able wrapper for dlopen
 //
 xapi xdlopen(const char * filename, int flag, void ** dl)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xdlclose
 //
@@ -44,7 +44,7 @@ xapi xdlclose(void * dl)
 //  idempotent xapi-proxy for dlclose that sets *dl = 0
 //
 xapi ixdlclose(void ** dl)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xdlsym
 //

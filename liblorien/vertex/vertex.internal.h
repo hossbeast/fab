@@ -29,14 +29,14 @@ typedef struct vertex
   struct list * up;    // edges where this == B, i.e. { up } -> this
   struct list * down;  // edges where this == A, i.e. this -> { down }
 
-	// buildplan create tracking
-	int									height;		// distance of longest route to a leaf node
-	int									stage;		// assigned stage - NEARLY always equal to height
+  // buildplan create tracking
+  int                 height;   // distance of longest route to a leaf node
+  int                 stage;    // assigned stage - NEARLY always equal to height
 
-	// traversal tracking
-	int									guard;
-	int									visited;
-	int									traversed;
+  // traversal tracking
+  int                 guard;
+  int                 visited;
+  int                 traversed;
 } vertex;
 
 /// vertex_create

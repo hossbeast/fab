@@ -70,7 +70,7 @@ typedef struct narrator narrator;
 //  formatted write from va_list to the specified narrator
 //
 xapi narrator_vsayf(struct narrator * const restrict n, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// narrator_sayf
 //
@@ -78,7 +78,7 @@ xapi narrator_vsayf(struct narrator * const restrict n, const char * const restr
 //  formatted write to the specified narrator
 //
 xapi narrator_sayf(struct narrator * const restrict n, const char * const restrict fmt, ...)
-	__attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2)));
 
 /// narrator_sayw
 //
@@ -86,7 +86,7 @@ xapi narrator_sayf(struct narrator * const restrict n, const char * const restri
 //  write to the specified narrator
 //
 xapi narrator_sayw(struct narrator * const restrict n, const char * const restrict b, size_t l)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// narrator_sayc
 //
@@ -94,7 +94,7 @@ xapi narrator_sayw(struct narrator * const restrict n, const char * const restri
 //  write a byte to the specified narrator
 //
 xapi narrator_sayc(struct narrator * const restrict n, int c)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #define NARRATOR_SEEK_TABLE(x)                                                        \
   NARRATOR_SEEK_DEF(SET , SEEK_SET  , x)  /* absolute offset */                       \

@@ -20,15 +20,15 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (xunit_test*[]) {
+  , .tests = (xunit_test*[]) {
 
 /* s : SELECTION_STAGE | WINDOWS_STAGE | MODIFIERS_CANHAVE | ARGS_CANHAVE | OPERATION_INPLACE */
 
-		// remove part of the row, select/leave the remainder
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "1-DFOO", 0 }
-				, .xsfm = "s/^1// sy"
-				, .final = (char*[]) { "-DFOO", 0 }
-		  }}
-	}
+    // remove part of the row, select/leave the remainder
+      (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "1-DFOO", 0 }
+        , .xsfm = "s/^1// sy"
+        , .final = (char*[]) { "-DFOO", 0 }
+      }}
+  }
 };

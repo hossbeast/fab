@@ -41,15 +41,15 @@
 // REMARKS
 //
 xapi fs_statfmt(
-	  const char * const restrict s
-	, int sl
-	, const char * restrict fmt
-	, const char * const restrict flags
-	, char * const restrict dst
-	, size_t sz
-	, size_t * const restrict z
+    const char * const restrict s
+  , int sl
+  , const char * restrict fmt
+  , const char * const restrict flags
+  , char * const restrict dst
+  , size_t sz
+  , size_t * const restrict z
 )
-	__attribute__((nonnull(1, 5, 7)));
+  __attribute__((nonnull(1, 5, 7)));
 
 #undef restrict
 #endif

@@ -26,11 +26,11 @@ struct memblk;
 
 typedef struct info
 {
-  char *	ks;		// key
-  size_t	kl;
-  size_t	ka;
+  char *  ks;   // key
+  size_t  kl;
+  size_t  ka;
 
-  char *	vs;		// value
+  char *  vs;   // value
   size_t  vl;
   size_t  va;
 } info;

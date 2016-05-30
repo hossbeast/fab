@@ -28,9 +28,9 @@ struct list;
 
 typedef struct filter
 {
-	uint64_t	v;		// tag
+  uint64_t  v;    // tag
   char      m;    // mode, ( or % or ^
-	char			o;		// operation, + or -
+  char      o;    // operation, + or -
 } filter;
 
 /// filter_setup

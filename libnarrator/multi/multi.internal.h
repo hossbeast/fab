@@ -47,10 +47,10 @@ typedef struct narrator_multi
 // 
 
 xapi multi_vsayf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi multi_sayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// multi_seek
 //

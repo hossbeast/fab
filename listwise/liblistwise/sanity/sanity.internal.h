@@ -27,34 +27,34 @@
 #if SANITY
 typedef struct
 {
-	struct
-	{
-		int l;
-		int a;
-		uint8_t t;
+  struct
+  {
+    int l;
+    int a;
+    uint8_t t;
 
-		int x;
-		int y;
-		typeof(((struct lwx*)0)->s[0].s[0].s[0]) *	s;
-		typeof(((struct lwx*)0)->s[0].s[0].s[0]) *	o;
-		int ol;
-		int oa;
-	} *																	s_strings;
-	int																	s_stringsl;
-	int																	s_stringsa;
+    int x;
+    int y;
+    typeof(((struct lwx*)0)->s[0].s[0].s[0]) *  s;
+    typeof(((struct lwx*)0)->s[0].s[0].s[0]) *  o;
+    int ol;
+    int oa;
+  } *                                 s_strings;
+  int                                 s_stringsl;
+  int                                 s_stringsa;
 } sanityblock;
 
 xapi sanityblock_create(sanityblock ** const restrict sb)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 void sanityblock_free(sanityblock * const restrict sb)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 void sanityblock_reset(sanityblock * const restrict sb)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi sanity(struct lwx * const restrict lx, sanityblock * const restrict sb)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 #endif
 
 #undef restrict

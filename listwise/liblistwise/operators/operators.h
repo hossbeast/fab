@@ -31,22 +31,22 @@ struct operator;
 //  in addition to the default locations liblistwise loads these from
 //
 xapi listwise_register_opdir(char * const restrict dir)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 // available operators - dloaded at init time
-extern struct operator** 		g_ops;
-extern struct operator** 		g_ops_by_s;					// pointers to g_ops sorted by s
-extern struct operator** 		g_ops_by_mnemonic;	// pointers to g_ops sorted by mnemonic
-extern int									g_ops_l;
+extern struct operator**    g_ops;
+extern struct operator**    g_ops_by_s;         // pointers to g_ops sorted by s
+extern struct operator**    g_ops_by_mnemonic;  // pointers to g_ops sorted by mnemonic
+extern int                  g_ops_l;
 
 // lookup an operator by name or mnemonic
-struct operator*						op_lookup(char* s, int l);
+struct operator*            op_lookup(char* s, int l);
 
 // lookup an operator by name
-struct operator*						op_lookup_by_s(char* s, int l);
+struct operator*            op_lookup_by_s(char* s, int l);
 
 // lookup an operator by mnemonic
-struct operator*						op_lookup_by_mnemonic(char* s, int l);
+struct operator*            op_lookup_by_mnemonic(char* s, int l);
 
 #undef restrict
 #endif

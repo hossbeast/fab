@@ -163,13 +163,13 @@ void frame_unfreeze(memblk * const restrict mb, frame * restrict f)
   memblk_unfreeze(mb, &f->error);
   if(f->error)
     error_unfreeze(mb, f->error);
-	memblk_unfreeze(mb, &f->file);
-	memblk_unfreeze(mb, &f->func);
+  memblk_unfreeze(mb, &f->file);
+  memblk_unfreeze(mb, &f->func);
 
-	memblk_unfreeze(mb, &f->infos.v);
-	int x;
-	for(x = 0; x < f->infos.l; x++)
-		info_unfreeze(mb, &f->infos.v[x]);
+  memblk_unfreeze(mb, &f->infos.v);
+  int x;
+  for(x = 0; x < f->infos.l; x++)
+    info_unfreeze(mb, &f->infos.v[x]);
 }
 
 void frame_thaw(char * const restrict mb, frame * restrict f)
@@ -177,13 +177,13 @@ void frame_thaw(char * const restrict mb, frame * restrict f)
   memblk_thaw(mb, &f->error);
   if(f->error)
     error_thaw(mb, f->error);
-	memblk_thaw(mb, &f->file);
-	memblk_thaw(mb, &f->func);
+  memblk_thaw(mb, &f->file);
+  memblk_thaw(mb, &f->func);
 
-	memblk_thaw(mb, &f->infos.v);
-	int x;
-	for(x = 0; x < f->infos.l; x++)
-		info_thaw(mb, &f->infos.v[x]);
+  memblk_thaw(mb, &f->infos.v);
+  int x;
+  for(x = 0; x < f->infos.l; x++)
+    info_thaw(mb, &f->infos.v[x]);
 }
 
 //
@@ -198,17 +198,17 @@ API void xapi_record_frame(void * calling_frame)
   size_t z = sizeof(*g_frame_addresses.v);
   size_t l = g_frame_addresses.l + 1;
 
-	if(l > (*dsta))
-	{
-		size_t ns = (*dsta) ?: 10;
-		while(ns <= l)
-			ns = ns * 2 + ns / 2;
+  if(l > (*dsta))
+  {
+    size_t ns = (*dsta) ?: 10;
+    while(ns <= l)
+      ns = ns * 2 + ns / 2;
     if((*(void**)dst = realloc(*(void**)dst, ns * z)) == 0)
     {
       /* failure to allocate */
     }
-		(*dsta) = ns;
-	}
+    (*dsta) = ns;
+  }
 
   g_frame_addresses.v[g_frame_addresses.l++] = calling_frame;
 }
@@ -261,7 +261,7 @@ API void xapi_frame_set(
   , const char * const func
 )
 {
-	frame_set(etab, code, parent_index, file, line, func);
+  frame_set(etab, code, parent_index, file, line, func);
 }
 
 API void xapi_frame_set_infos(
@@ -275,7 +275,7 @@ API void xapi_frame_set_infos(
   , const char * const restrict func
 )
 {
-	frame_set(etab, code, parent_index, file, line, func);
+  frame_set(etab, code, parent_index, file, line, func);
   xapi_info_adds(key, vstr);
 }
 
@@ -291,7 +291,7 @@ API void xapi_frame_set_infow(
   , const char * const restrict func
 )
 {
-	frame_set(etab, code, parent_index, file, line, func);
+  frame_set(etab, code, parent_index, file, line, func);
   xapi_info_addw(key, vbuf, vlen);
 }
 
@@ -307,7 +307,7 @@ API void xapi_frame_set_infof(
   , ...
 )
 {
-	frame_set(etab, code, parent_index, file, line, func);
+  frame_set(etab, code, parent_index, file, line, func);
 
   va_list va;
   va_start(va, func);

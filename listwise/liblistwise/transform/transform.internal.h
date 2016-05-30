@@ -27,7 +27,7 @@ struct pstring;
 #define restrict __restrict
 
 xapi operation_canon_say(struct operation * const oper, uint32_t sm, struct narrator * const restrict N)
-	__attribute__((nonnull(1, 3)));
+  __attribute__((nonnull(1, 3)));
 
 #undef restrict
 #endif

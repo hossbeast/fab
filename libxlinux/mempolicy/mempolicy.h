@@ -24,16 +24,16 @@
 
 typedef struct mempolicy
 {
-	int (*malloc)(struct mempolicy * plc, void * target, size_t size)
-		__attribute__((nonnull));
+  int (*malloc)(struct mempolicy * plc, void * target, size_t size)
+    __attribute__((nonnull));
 
-	int (*realloc)(struct mempolicy * plc, void * target, size_t es, size_t ec, size_t oec)
-		__attribute__((nonnull));
-	
-	void (*ifree)(struct mempolicy * plc, void * target)
-		__attribute__((nonnull));
+  int (*realloc)(struct mempolicy * plc, void * target, size_t es, size_t ec, size_t oec)
+    __attribute__((nonnull));
+  
+  void (*ifree)(struct mempolicy * plc, void * target)
+    __attribute__((nonnull));
 
-	void (*free)(struct mempolicy * plc, void * target);
+  void (*free)(struct mempolicy * plc, void * target);
 } mempolicy;
 
 #define restrict __restrict

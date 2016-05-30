@@ -20,22 +20,22 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (struct xunit_test*[]) {
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "l/o"
-				, .final = (char*[]) { "ao", "ob", "od", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "l/o wy"
-				, .final = (char*[]) { "o", "o", "o", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "ao", "ob", "c", "od", 0 }
-				, .xsfm = "l/o wy uu"
-				, .final = (char*[]) { "o", 0 }
-		  }}
-		, 0
-	}
+  , .tests = (struct xunit_test*[]) {
+      (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "ao", "ob", "c", "od", 0 }
+        , .xsfm = "l/o"
+        , .final = (char*[]) { "ao", "ob", "od", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "ao", "ob", "c", "od", 0 }
+        , .xsfm = "l/o wy"
+        , .final = (char*[]) { "o", "o", "o", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "ao", "ob", "c", "od", 0 }
+        , .xsfm = "l/o wy uu"
+        , .final = (char*[]) { "o", 0 }
+      }}
+    , 0
+  }
 };

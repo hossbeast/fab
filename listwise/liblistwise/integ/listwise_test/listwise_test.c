@@ -45,89 +45,89 @@ xapi listwise_test_release(const xunit_unit * unit)
 
 API xapi listwise_test_entry(const listwise_test * test)
 {
-	enter;
+  enter;
 
   int token = 0;
-	lwx * lx = 0;
-	int i = 0;
-	int x = 0;
+  lwx * lx = 0;
+  int i = 0;
+  int x = 0;
 
-	// log in the inset
+  // log in the inset
   fatal(log_start, L_INSET, &token);
   if(token)
-	{
-		logs(0, "[ ");
-		for(x = 0; x < sentinel(test->init); x++)
-		{
-			if(x)
-				logs(0, ", ");
-			logs(0, test->init[x]);
-		}
-		logf(0, " ~ %s ]", test->xsfm);
-		fatal(log_finish, &token);
-	}
+  {
+    logs(0, "[ ");
+    for(x = 0; x < sentinel(test->init); x++)
+    {
+      if(x)
+        logs(0, ", ");
+      logs(0, test->init[x]);
+    }
+    logf(0, " ~ %s ]", test->xsfm);
+    fatal(log_finish, &token);
+  }
 
-	fatal(listwise_exec, test->xsfm, test->init, 0, sentinel(test->init), &lx);
+  fatal(listwise_exec, test->xsfm, test->init, 0, sentinel(test->init), &lx);
 
-	// log the outset
+  // log the outset
   fatal(log_start, L_OUTSET, &token);
   if(token)
-	{
-		logs(0, "[ ");
+  {
+    logs(0, "[ ");
 
-		i = 0;
-		x = 0;
-		LSTACK_ITERATE(lx, x, go)
-		if(go)
-		{
-			char * s;
-			fatal(lstack_string, lx, 0, x, &s);
+    i = 0;
+    x = 0;
+    LSTACK_ITERATE(lx, x, go)
+    if(go)
+    {
+      char * s;
+      fatal(lstack_string, lx, 0, x, &s);
 
-			if(i)
-				logs(0, ", ");
-			logs(0, s);
-			i++;
-		}
-		LSTACK_ITEREND
+      if(i)
+        logs(0, ", ");
+      logs(0, s);
+      i++;
+    }
+    LSTACK_ITEREND
 
-		logs(0, " ]");
-		fatal(log_finish, &token);
-	}
+    logs(0, " ]");
+    fatal(log_finish, &token);
+  }
 
-	// compare
-	i = 0;
-	x = 0;
-	LSTACK_ITERATE(lx, x, go)
-	if(go)
-	{
-		char * s;
-		fatal(lstack_string, lx, 0, x, &s);
+  // compare
+  i = 0;
+  x = 0;
+  LSTACK_ITERATE(lx, x, go)
+  if(go)
+  {
+    char * s;
+    fatal(lstack_string, lx, 0, x, &s);
 
-		if(i < sentinel(test->final))
-		{
-			if(strcmp(test->final[i], s))
-			{
+    if(i < sentinel(test->final))
+    {
+      if(strcmp(test->final[i], s))
+      {
         xapi_fail_intent();
         xapi_infof("expected", "row %s", test->final[i]);
         xapi_infof("actual", "row %s", s);
-				tfail(perrtab_XUNIT, XUNIT_FAIL);
-			}
-		}
+        tfail(perrtab_XUNIT, XUNIT_FAIL);
+      }
+    }
 
-		i++;
-	}
-	LSTACK_ITEREND
+    i++;
+  }
+  LSTACK_ITEREND
 
-	if(i != sentinel(test->final))
-	{
+  if(i != sentinel(test->final))
+  {
     xapi_fail_intent();
     xapi_infof("expected", "rows %d", sentinel(test->final));
     xapi_infof("actual", "rows %d", i);
-		tfail(perrtab_XUNIT, XUNIT_FAIL);
-	}
+    tfail(perrtab_XUNIT, XUNIT_FAIL);
+  }
 
 finally:
   fatal(log_finish, &token);
-	lwx_free(lx);
+  lwx_free(lx);
 coda;
 }

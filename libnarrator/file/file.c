@@ -31,12 +31,12 @@
 
 xapi file_vsayf(narrator_file * const restrict n, const char * const restrict fmt, va_list va)
 {
- 	xproxy(xvdprintf, n->fd, fmt, va);
+  xproxy(xvdprintf, n->fd, fmt, va);
 }
 
 xapi file_sayw(narrator_file * const restrict n, const char * const restrict b, size_t l)
 {
-	xproxy(axwrite, n->fd, b, l);
+  xproxy(axwrite, n->fd, b, l);
 }
 
 xapi file_seek(narrator_file * const restrict n, off_t offset, int whence, off_t * restrict res)

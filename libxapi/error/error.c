@@ -29,9 +29,9 @@
 
 void error_freeze(memblk * const restrict mb, error * restrict e)
 {
-	/*
-	** etab is allocated outside of the memblk and must be handled specially
-	*/
+  /*
+  ** etab is allocated outside of the memblk and must be handled specially
+  */
   e->etab = (void*)(intptr_t)e->etab->id;
 }
 

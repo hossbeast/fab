@@ -40,45 +40,45 @@ OPERATION
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "vf"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
-		, .op_exec			= op_exec
-		, .desc					= "select following"
-	}
-	, {}
+  {
+      .s            = "vf"
+    , .optype       = LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
+    , .op_exec      = op_exec
+    , .desc         = "select following"
+  }
+  , {}
 };
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	if(ls->l)
-	{
-		int i = -1;
+  if(ls->l)
+  {
+    int i = -1;
 
-		int x;
-		LSTACK_ITERATE(ls, x, go);
-		if(go)
-		{
-			i = x;
-		}
-		LSTACK_ITEREND;
+    int x;
+    LSTACK_ITERATE(ls, x, go);
+    if(go)
+    {
+      i = x;
+    }
+    LSTACK_ITEREND;
 
-		if(i > -1)
-		{
-			if(ls->l > 0)
-			{
-				for(x = 0; x < ls->s[0].l; x++)
-				{
-					if(x > i)
-					{
-						fatal(lstack_selection_stage, ls, x);
-					}
-				}
-			}
-		}
-	}
+    if(i > -1)
+    {
+      if(ls->l > 0)
+      {
+        for(x = 0; x < ls->s[0].l; x++)
+        {
+          if(x > i)
+          {
+            fatal(lstack_selection_stage, ls, x);
+          }
+        }
+      }
+    }
+  }
 
-	finally : coda;
+  finally : coda;
 }

@@ -46,10 +46,10 @@ typedef struct narrator_fixed
 // 
 
 xapi fixed_vsayf(narrator_fixed * const restrict n, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi fixed_sayw(narrator_fixed * const restrict n, const char * const restrict b, size_t l)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// fixed_seek
 //

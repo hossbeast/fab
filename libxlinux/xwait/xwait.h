@@ -28,7 +28,7 @@
 //  xapi proxy for wait
 //
 xapi xwait(int * status)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xwaitpid
 //
@@ -36,7 +36,7 @@ xapi xwait(int * status)
 //  xapi proxy for waitpid
 //
 xapi xwaitpid(pid_t pid, int * status, int options)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 #undef restrict
 #endif

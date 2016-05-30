@@ -4,19 +4,19 @@ caller, it is returned via the final parameter to the wrapper/proxy
 if a function has both a TYPE and OPERATION modifier, the OPERATION modifier is first
 
 fname
-	: OPERATIONs TYPE name
-	| OPERATIONs name
-	| TYPE name
-	
+  : OPERATIONs TYPE name
+  | OPERATIONs name
+  | TYPE name
+  
 OPERATION
-	: i 
-	| u
-	| a
-	| e
+  : i 
+  | u
+  | a
+  | e
 
 TYPE
-	: w
-	| x
+  : w
+  | x
 
 TYPE
 ----

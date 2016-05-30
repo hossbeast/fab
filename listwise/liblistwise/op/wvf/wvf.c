@@ -35,37 +35,37 @@ NO ARGUMENTS
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "wvf"
-		, .optype				= LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE
-		, .op_exec			= op_exec
-		, .desc					= "window section following last windowed section"
-		, .mnemonic			= "window-following"
-	}
-	, {}
+  {
+      .s            = "wvf"
+    , .optype       = LWOP_WINDOWS_ACTIVATE | LWOP_SELECTION_STAGE
+    , .op_exec      = op_exec
+    , .desc         = "window section following last windowed section"
+    , .mnemonic     = "window-following"
+  }
+  , {}
 };
 
 xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	int x;
-	LSTACK_ITERATE(lx, x, go)
-	if(go)
-	{
-		lwx_windows * win;
-		if(lstack_windows_state(lx, x, &win) == LWX_WINDOWS_SOME)
-		{
-			// read the row
-			int ssl = 0;
-			fatal(lstack_readrow, lx, 0, x, 0, &ssl, 0, 1, 0, 0, 0);
+  int x;
+  LSTACK_ITERATE(lx, x, go)
+  if(go)
+  {
+    lwx_windows * win;
+    if(lstack_windows_state(lx, x, &win) == LWX_WINDOWS_SOME)
+    {
+      // read the row
+      int ssl = 0;
+      fatal(lstack_readrow, lx, 0, x, 0, &ssl, 0, 1, 0, 0, 0);
 
-			// following the last windowed segment
-			fatal(lstack_windows_stage, lx, x, win->s[win->l - 1].o + win->s[win->l - 1].l, ssl - (win->s[win->l - 1].o + win->s[win->l - 1].l));
-			fatal(lstack_selection_stage, lx, x);
-		}
-	}
-	LSTACK_ITEREND
+      // following the last windowed segment
+      fatal(lstack_windows_stage, lx, x, win->s[win->l - 1].o + win->s[win->l - 1].l, ssl - (win->s[win->l - 1].o + win->s[win->l - 1].l));
+      fatal(lstack_selection_stage, lx, x);
+    }
+  }
+  LSTACK_ITEREND
 
-	finally : coda;
+  finally : coda;
 }

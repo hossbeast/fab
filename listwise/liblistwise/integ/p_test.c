@@ -20,69 +20,69 @@
 xunit_unit xunit = {
     .setup = listwise_test_setup
   , .release = listwise_test_release
-	, .tests = (xunit_test*[]) {
+  , .tests = (xunit_test*[]) {
 
 /* p : WINDOWS_ACTIVATE | SELECTION_STAGE */
 
-		// off/len of zero : entire string
-		  (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/0"
-				, .final = (char*[]) { "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/0/0"
-				, .final = (char*[]) { "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-		  }}
+    // off/len of zero : entire string
+      (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/0"
+        , .final = (char*[]) { "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/0/0"
+        , .final = (char*[]) { "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+      }}
 
-		// off/len : in fields
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/0/1"
-				, .final = (char*[]) { "foo", "foo", "foo", 0 }
-		  }}
+    // off/len : in fields
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/0/1"
+        , .final = (char*[]) { "foo", "foo", "foo", 0 }
+      }}
 
-		// negative offset : relative to end of string
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/-3"
-				, .final = (char*[]) { "foo.a.b", "a.b.c", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/-3 y"
-				, .final = (char*[]) { "foo.a.b", "a.b.c", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/-1"
-				, .final = (char*[]) { "a", "b", "c", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/-1"
-				, .final = (char*[]) { "a", "b", "c", 0 }
-		  }}
+    // negative offset : relative to end of string
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/-3"
+        , .final = (char*[]) { "foo.a.b", "a.b.c", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/-3 y"
+        , .final = (char*[]) { "foo.a.b", "a.b.c", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/-1"
+        , .final = (char*[]) { "a", "b", "c", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/-1"
+        , .final = (char*[]) { "a", "b", "c", 0 }
+      }}
 
-		// negative length : relative to end of string
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/0/-2 y"
-				, .final = (char*[]) { "foo", "foo.a", 0 }
-		  }}
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/-3/-2"
-				, .final = (char*[]) { "foo", "a", 0 }
-		  }}
+    // negative length : relative to end of string
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/0/-2 y"
+        , .final = (char*[]) { "foo", "foo.a", 0 }
+      }}
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/-3/-2"
+        , .final = (char*[]) { "foo", "a", 0 }
+      }}
 
-		// arguments come in pairs
-		, (listwise_test[]){{ .entry = listwise_test_entry
-				, .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
-				, .xsfm = "l/./g y p/0/1/2/1"
-				, .final = (char*[]) { "foo", "foob", "foob", 0 }
-		  }}
-		, 0
-	}
+    // arguments come in pairs
+    , (listwise_test[]){{ .entry = listwise_test_entry
+        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+        , .xsfm = "l/./g y p/0/1/2/1"
+        , .final = (char*[]) { "foo", "foob", "foob", 0 }
+      }}
+    , 0
+  }
 };

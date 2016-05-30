@@ -23,12 +23,12 @@
 shift operator - delete the 0th list from the stack
 
 ARGUMENTS
-	[1] - number of times to shift, default : 1
+  [1] - number of times to shift, default : 1
 
 OPERATION
 
  N times (0 means until only the Nth list remains)
-	 1. delete the 0th list from the stack
+   1. delete the 0th list from the stack
 
 */
 
@@ -36,39 +36,39 @@ static xapi op_exec(operation*, lwx*, int**, int*);
 static xapi op_validate(operation*);
 
 operator op_desc[] = {
-	{
-		  .s						= "shift"
-		, .optype				= LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_STACKOP
-		, .op_exec			= op_exec
-		, .op_validate	= op_validate
-		, .desc					= "delete the 0th list"
-	}
-	, {}
+  {
+      .s            = "shift"
+    , .optype       = LWOP_SELECTION_RESET | LWOP_ARGS_CANHAVE | LWOP_STACKOP
+    , .op_exec      = op_exec
+    , .op_validate  = op_validate
+    , .desc         = "delete the 0th list"
+  }
+  , {}
 };
 
 xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl && o->args[0]->itype != ITYPE_I64)
-		failf(LISTWISE_ARGSTYPE, "expected", "i64", "actual %d", o->args[0]->itype);
+  if(o->argsl && o->args[0]->itype != ITYPE_I64)
+    failf(LISTWISE_ARGSTYPE, "expected", "i64", "actual %d", o->args[0]->itype);
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	int N = 1;
-	if(o->argsl)
-		N = o->args[0]->i64;
-	if(N == 0)
-		N = ls->l - 1;
+  int N = 1;
+  if(o->argsl)
+    N = o->args[0]->i64;
+  if(N == 0)
+    N = ls->l - 1;
 
-	int x;
-	for(x = 0; x < N; x++)
-		fatal(lstack_shift, ls);
+  int x;
+  for(x = 0; x < N; x++)
+    fatal(lstack_shift, ls);
 
-	finally : coda;
+  finally : coda;
 }

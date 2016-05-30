@@ -70,45 +70,45 @@ struct arg;
 //
 
 /* these actually have some effect on processing */
-#define LWOP_SELECTION_STAGE				LWOPT_SELECTION_STAGE						// stages selections (which may be activated with the y operator)
-#define LWOP_SELECTION_ACTIVATE			(LWOPT_SELECTION_STAGE	| LWOPT_SELECTION_ACTIVATE)			//  lw applies the sy operator after this operator
-#define LWOP_SELECTION_RESET				LWOPT_SELECTION_RESET						// lw resets the selection after executing the operator (apart from the staging mechanism)
-#define LWOP_WINDOWS_STAGE					LWOPT_WINDOWS_STAGE							// stages windows (which may be ratified with the y operator)
-#define LWOP_WINDOWS_ACTIVATE				(LWOPT_WINDOWS_STAGE		| LWOPT_WINDOWS_ACTIVATE)				//  lw applies the wy operator after this operator
-#define LWOP_WINDOWS_RESET					LWOPT_WINDOWS_RESET							// lw resets all windows after executing this operator (apart from the staging mechanism)
-#define LWOP_AGGREGATE							LWOPT_AGGREGATE
-#define LWOP_ACTIVATION_OVERRIDE		LWOPT_ACTIVATION_OVERRIDE
-#define LWOP_ARGS_CANHAVE						LWOPT_ARGS_CANHAVE							// can have arguments (verified before op_validate)
-#define LWOP_EMPTYSTACK_YES					LWOPT_EMPTYSTACK_YES						// operator is invoked even in the context of an empty stack
+#define LWOP_SELECTION_STAGE        LWOPT_SELECTION_STAGE           // stages selections (which may be activated with the y operator)
+#define LWOP_SELECTION_ACTIVATE     (LWOPT_SELECTION_STAGE  | LWOPT_SELECTION_ACTIVATE)     //  lw applies the sy operator after this operator
+#define LWOP_SELECTION_RESET        LWOPT_SELECTION_RESET           // lw resets the selection after executing the operator (apart from the staging mechanism)
+#define LWOP_WINDOWS_STAGE          LWOPT_WINDOWS_STAGE             // stages windows (which may be ratified with the y operator)
+#define LWOP_WINDOWS_ACTIVATE       (LWOPT_WINDOWS_STAGE    | LWOPT_WINDOWS_ACTIVATE)       //  lw applies the wy operator after this operator
+#define LWOP_WINDOWS_RESET          LWOPT_WINDOWS_RESET             // lw resets all windows after executing this operator (apart from the staging mechanism)
+#define LWOP_AGGREGATE              LWOPT_AGGREGATE
+#define LWOP_ACTIVATION_OVERRIDE    LWOPT_ACTIVATION_OVERRIDE
+#define LWOP_ARGS_CANHAVE           LWOPT_ARGS_CANHAVE              // can have arguments (verified before op_validate)
+#define LWOP_EMPTYSTACK_YES         LWOPT_EMPTYSTACK_YES            // operator is invoked even in the context of an empty stack
 
 // bits <= LWOP_EFFECTUAL have an effect
 #define LWOP_EFFECTUAL LWOP_EMPTYSTACK_YES
 
 /* there are informational */
-#define LWOP_STACKOP								LWOPT_STACKOP								| LWOPT_SELECTION_RESET | LWOPT_WINDOWS_RESET		// stack operation : manipulation of entire lists
-#define LWOP_MODIFIERS_CANHAVE			LWOPT_MODIFIERS_CANHAVE					// last argument is a modifiers string
-#define LWOP_OPERATION_PUSHBEFORE		LWOPT_OPERATION_PUSHBEFORE	| LWOP_STACKOP																	// first operation is to push an empty list
-#define LWOP_OPERATION_INPLACE			LWOPT_OPERATION_INPLACE					// modifies the contents of rows in the top list in-place
-#define LWOP_OPERATION_FILESYSTEM		LWOPT_OPERATION_FILESYSTEM			// operator reads from the filesystem
+#define LWOP_STACKOP                LWOPT_STACKOP               | LWOPT_SELECTION_RESET | LWOPT_WINDOWS_RESET   // stack operation : manipulation of entire lists
+#define LWOP_MODIFIERS_CANHAVE      LWOPT_MODIFIERS_CANHAVE         // last argument is a modifiers string
+#define LWOP_OPERATION_PUSHBEFORE   LWOPT_OPERATION_PUSHBEFORE  | LWOP_STACKOP                                  // first operation is to push an empty list
+#define LWOP_OPERATION_INPLACE      LWOPT_OPERATION_INPLACE         // modifies the contents of rows in the top list in-place
+#define LWOP_OPERATION_FILESYSTEM   LWOPT_OPERATION_FILESYSTEM      // operator reads from the filesystem
 
 /* the individual options are defined here */
-#define LWOPT_TABLE(x)													\
-	_LWOPT(SELECTION_STAGE				, 0x0001	, x)	\
-	_LWOPT(SELECTION_ACTIVATE			, 0x0002	, x)	\
-	_LWOPT(SELECTION_RESET				, 0x0004	, x)	\
-	_LWOPT(WINDOWS_STAGE					, 0x0008	, x)	\
-	_LWOPT(WINDOWS_ACTIVATE				, 0x0010	, x)	\
-	_LWOPT(WINDOWS_RESET					, 0x0020	, x)	\
-	_LWOPT(AGGREGATE							, 0x0040	, x)	\
-	_LWOPT(ACTIVATION_OVERRIDE		, 0x0080	, x)	\
-	_LWOPT(ARGS_CANHAVE						, 0x0100	, x)	\
-	_LWOPT(EMPTYSTACK_YES					, 0x0200	, x)	\
-	_LWOPT(STACKOP								, 0x0400	, x)	\
-	_LWOPT(MODIFIERS_CANHAVE			, 0x0800	, x)	\
-	_LWOPT(OPERATION_PUSHBEFORE		, 0x1000	, x)	\
-	_LWOPT(OPERATION_INPLACE			, 0x2000	, x)	\
-	_LWOPT(OPERATION_FILESYSTEM		, 0x4000	, x)
-	
+#define LWOPT_TABLE(x)                          \
+  _LWOPT(SELECTION_STAGE        , 0x0001  , x)  \
+  _LWOPT(SELECTION_ACTIVATE     , 0x0002  , x)  \
+  _LWOPT(SELECTION_RESET        , 0x0004  , x)  \
+  _LWOPT(WINDOWS_STAGE          , 0x0008  , x)  \
+  _LWOPT(WINDOWS_ACTIVATE       , 0x0010  , x)  \
+  _LWOPT(WINDOWS_RESET          , 0x0020  , x)  \
+  _LWOPT(AGGREGATE              , 0x0040  , x)  \
+  _LWOPT(ACTIVATION_OVERRIDE    , 0x0080  , x)  \
+  _LWOPT(ARGS_CANHAVE           , 0x0100  , x)  \
+  _LWOPT(EMPTYSTACK_YES         , 0x0200  , x)  \
+  _LWOPT(STACKOP                , 0x0400  , x)  \
+  _LWOPT(MODIFIERS_CANHAVE      , 0x0800  , x)  \
+  _LWOPT(OPERATION_PUSHBEFORE   , 0x1000  , x)  \
+  _LWOPT(OPERATION_INPLACE      , 0x2000  , x)  \
+  _LWOPT(OPERATION_FILESYSTEM   , 0x4000  , x)
+  
 enum {
 #define _LWOPT(a, b, x) LWOPT_ ## a = b,
 LWOPT_TABLE(0)
@@ -133,7 +133,7 @@ LWOPT_TABLE(0)
 //  writer    - 
 //
 xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * restrict z)
-	__attribute__((nonnull(3)));
+  __attribute__((nonnull(3)));
 
 /// listwise_lwop_pswrite
 //
@@ -150,40 +150,40 @@ xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict d
 //  writer    - 
 //
 xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring * const restrict ps)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 //
 // operator - each op exports one of these structs
 //
 typedef struct operator
 {
-	uint64_t	optype;			// bitwise combination of LWOP_*
-	char *		desc;				// operator description
-	char *		mnemonic;		// longform name ; not required
-	int				mnemonicl;	// mnemonic length
+  uint64_t  optype;     // bitwise combination of LWOP_*
+  char *    desc;       // operator description
+  char *    mnemonic;   // longform name ; not required
+  int       mnemonicl;  // mnemonic length
 
-	/// op_validate
-	//
-	// SUMMARY
-	//  validate the operation
-	//
-	xapi 		(*op_validate)(struct operation*);
+  /// op_validate
+  //
+  // SUMMARY
+  //  validate the operation
+  //
+  xapi    (*op_validate)(struct operation*);
 
-	/// op_exec
-	//
-	// SUMMARY
-	//  execute operator
-	//
-	// PARAMETERS
-	//  o        - operation
-	//  lx       - lstack
-	//  ovec     - (see listwise/re.h)
-	//  ovec_len -
-	//
-	xapi 		(*op_exec)(struct operation*, struct lwx*, int**, int*);
+  /// op_exec
+  //
+  // SUMMARY
+  //  execute operator
+  //
+  // PARAMETERS
+  //  o        - operation
+  //  lx       - lstack
+  //  ovec     - (see listwise/re.h)
+  //  ovec_len -
+  //
+  xapi    (*op_exec)(struct operation*, struct lwx*, int**, int*);
 
-	char		s[6];			// name ; required
-	int			sl;				// name length
+  char    s[6];     // name ; required
+  int     sl;       // name length
 } operator;
 
 //
@@ -191,7 +191,7 @@ typedef struct operator
 //
 enum
 {
-	  REFTYPE_BREF = 10
+    REFTYPE_BREF = 10
 };
 
 //
@@ -199,49 +199,49 @@ enum
 //
 typedef struct arg
 {
-	char*		s;		// string value of the arg, null-terminated
-	int			l;		// string length
+  char*   s;    // string value of the arg, null-terminated
+  int     l;    // string length
 
-	struct
-	{
-		struct ref		// references within the string
-		{
-			char* s;		// start of the reference 
-			char* e;		//   end of the reference (pointer to the character following the last character of the reference)
-			int		l;		// length of the reference (l = e - s)
+  struct
+  {
+    struct ref    // references within the string
+    {
+      char* s;    // start of the reference 
+      char* e;    //   end of the reference (pointer to the character following the last character of the reference)
+      int   l;    // length of the reference (l = e - s)
 
-			int		k;		// REFTYPE_*
+      int   k;    // REFTYPE_*
 
-			union
-			{
-				int		ref;		// value of the backreference
-			};
-		}				*v;
+      union
+      {
+        int   ref;    // value of the backreference
+      };
+    }       *v;
 
-		int			l;	// number of references
-		int			a;	// alloc
+    int     l;  // number of references
+    int     a;  // alloc
 
-		// pointer to the last reference, if any
-		struct ref * last;
-	} refs;
+    // pointer to the last reference, if any
+    struct ref * last;
+  } refs;
 
-#define ITYPE_RE		1
-#define ITYPE_I64		2
+#define ITYPE_RE    1
+#define ITYPE_I64   2
 
-	// indicates which member of the interpreted value union to use
-	uint8_t						itype;
+  // indicates which member of the interpreted value union to use
+  uint8_t           itype;
 
-	union					// interpreted value of the arg, if any
-	{
-		struct re
-		{
-			pcre*					c_pcre;
-			pcre_extra*		c_pcre_extra;
-			int						c_caps;
-		}								re;
+  union         // interpreted value of the arg, if any
+  {
+    struct re
+    {
+      pcre*         c_pcre;
+      pcre_extra*   c_pcre_extra;
+      int           c_caps;
+    }               re;
 
-		int64_t					i64;
-	};
+    int64_t         i64;
+  };
 } arg;
 
 //
@@ -249,11 +249,11 @@ typedef struct arg
 //
 typedef struct operation
 {
-	struct operation*	next;
+  struct operation* next;
 
-	operator*					op;			// operator
-	arg**							args;		// arguments
-	int								argsl;
+  operator*         op;     // operator
+  arg**             args;   // arguments
+  int               argsl;
 } operation;
 
 #undef restrict

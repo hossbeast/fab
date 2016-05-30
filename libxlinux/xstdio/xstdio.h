@@ -30,10 +30,10 @@
 //  proxy for vdprintf
 //
 // PARAMETERS
-// 	as for vdprintf
+//  as for vdprintf
 //
 xapi xvdprintf(int fd, const char * const restrict fmt, va_list va)
-	__attribute__((nonnull(2)));
+  __attribute__((nonnull(2)));
 
 #undef restrict 
 #endif

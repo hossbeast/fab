@@ -43,13 +43,13 @@ struct transform;
 //  otherwise, an existing lw context is reused
 //
 xapi listwise_exec_transform(
-	  struct transform * const restrict g
-	, char ** const restrict init
-	, size_t * const restrict initls
-	, size_t initl
-	, struct lwx ** restrict lx
+    struct transform * const restrict g
+  , char ** const restrict init
+  , size_t * const restrict initls
+  , size_t initl
+  , struct lwx ** restrict lx
 )
-	__attribute__((nonnull(1, 5)));
+  __attribute__((nonnull(1, 5)));
 
 #undef restrict
 #endif

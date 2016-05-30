@@ -29,10 +29,10 @@
 //  [exprl]    - expr length
 //
 xapi logger_filter_pushs(const int stream_id, const char * const restrict expr)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi logger_filter_pushw(const int stream_id, const char * const restrict expr, size_t exprl)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// logger_filter_unshift
 //
@@ -45,10 +45,10 @@ xapi logger_filter_pushw(const int stream_id, const char * const restrict expr, 
 //  [exprl]    - expr length
 //
 xapi logger_filter_unshifts(const int stream_id, const char * const restrict expr)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 xapi logger_filter_unshiftw(const int stream_id, const char * const restrict expr, size_t exprl)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// logger_filter_pop
 //

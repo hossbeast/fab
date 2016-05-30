@@ -42,82 +42,82 @@ static xapi v_exec(operation*, lwx*, int**, int*);
 static xapi wv_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "v"
-		, .optype				= LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
-		, .op_exec			= v_exec
-		, .mnemonic			= "invert"
-		, .desc					= "invert selection"
-	}
-	, {
-		  .s						= "wv"
-		, .optype				= LWOP_WINDOWS_ACTIVATE
-		, .op_exec			= wv_exec
-		, .mnemonic			= "windows-invert"
-		, .desc					= "invert windows"
-	}
-	, {}
+  {
+      .s            = "v"
+    , .optype       = LWOP_SELECTION_ACTIVATE | LWOP_WINDOWS_RESET
+    , .op_exec      = v_exec
+    , .mnemonic     = "invert"
+    , .desc         = "invert selection"
+  }
+  , {
+      .s            = "wv"
+    , .optype       = LWOP_WINDOWS_ACTIVATE
+    , .op_exec      = wv_exec
+    , .mnemonic     = "windows-invert"
+    , .desc         = "invert windows"
+  }
+  , {}
 };
 
 xapi v_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	int x;
-	LSTACK_ITERATE(ls, x, go);
-	if(!go)
-	{
-		fatal(lstack_selection_stage, ls, x);
-	}
-	LSTACK_ITEREND;
+  int x;
+  LSTACK_ITERATE(ls, x, go);
+  if(!go)
+  {
+    fatal(lstack_selection_stage, ls, x);
+  }
+  LSTACK_ITEREND;
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi wv_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
 {
   enter;
 
-	int x;
-	LSTACK_ITERATE_FWD(lx, 0, x, 1, 0, go)
-	if(go)
-	{
-		lwx_windows * win;
-		int state = lstack_windows_state(lx, x, &win);
-		if(state == LWX_WINDOWS_ALL)
-		{
-			fatal(lstack_windows_stage_nil, lx, x);
-		}
-		else
-		{
-			char * s = 0;
-			int sl = 0;
-			fatal(lstack_readrow, lx, 0, x, &s, &sl, 0, 1, 0, 0, 0);
+  int x;
+  LSTACK_ITERATE_FWD(lx, 0, x, 1, 0, go)
+  if(go)
+  {
+    lwx_windows * win;
+    int state = lstack_windows_state(lx, x, &win);
+    if(state == LWX_WINDOWS_ALL)
+    {
+      fatal(lstack_windows_stage_nil, lx, x);
+    }
+    else
+    {
+      char * s = 0;
+      int sl = 0;
+      fatal(lstack_readrow, lx, 0, x, &s, &sl, 0, 1, 0, 0, 0);
 
-			if(state == LWX_WINDOWS_SOME)
-			{
-				// before the first windowed segment
-				if(win->s[0].o)
-					fatal(lstack_windows_stage, lx, x, 0, win->s[0].o);
+      if(state == LWX_WINDOWS_SOME)
+      {
+        // before the first windowed segment
+        if(win->s[0].o)
+          fatal(lstack_windows_stage, lx, x, 0, win->s[0].o);
 
-				int i;
-				for(i = 1; i < win->l; i++)
-				{
-					// region following the previous segment and preceeding the current segment
-					fatal(lstack_windows_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, win->s[i].o - (win->s[i - 1].o + win->s[i - 1].l));
-				}
+        int i;
+        for(i = 1; i < win->l; i++)
+        {
+          // region following the previous segment and preceeding the current segment
+          fatal(lstack_windows_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, win->s[i].o - (win->s[i - 1].o + win->s[i - 1].l));
+        }
 
-				// following the last windowed segment
-				if(sl - (win->s[i - 1].o + win->s[i - 1].l))
-					fatal(lstack_windows_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, sl - (win->s[i - 1].o + win->s[i - 1].l));
-			}
-			else // state == LWX_WINDOWS_NONE
-			{
-				fatal(lstack_windows_stage, lx, x, 0, sl);
-			}
-		}
-	}
-	LSTACK_ITEREND
+        // following the last windowed segment
+        if(sl - (win->s[i - 1].o + win->s[i - 1].l))
+          fatal(lstack_windows_stage, lx, x, win->s[i - 1].o + win->s[i - 1].l, sl - (win->s[i - 1].o + win->s[i - 1].l));
+      }
+      else // state == LWX_WINDOWS_NONE
+      {
+        fatal(lstack_windows_stage, lx, x, 0, sl);
+      }
+    }
+  }
+  LSTACK_ITEREND
 
-	finally : coda;
+  finally : coda;
 }

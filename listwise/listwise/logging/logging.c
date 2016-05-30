@@ -23,8 +23,8 @@
 
 logger_category * categories = (logger_category []) {
     { name : "ERROR"    , description : "failures leading to shutdown" }
-	, { name : "ARGS"			, description : "program arguments" }
-	, { name : "PARAMS"		, description : "program execution parameters" }
+  , { name : "ARGS"     , description : "program arguments" }
+  , { name : "PARAMS"   , description : "program execution parameters" }
   , { name : "LOGGER" }
   , { }
 };

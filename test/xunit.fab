@@ -41,11 +41,11 @@ $filter = [ ]
 
 # unit directories
 $dunits = [
-	[
-    $dirs							# directories
-    [ $rdirs ~ lsr ]	# recursive directories
+  [
+    $dirs             # directories
+    [ $rdirs ~ lsr ]  # recursive directories
     ~ [ $filter ]
-	]
+  ]
 
  # those directories that contain an eponymous c file and a test.c
  ~ ?, -d s,$,/test.c -f dn s,\x5b^/\x5d+$,\0/\0.c -f dn 
@@ -55,11 +55,11 @@ $xunit_sos = [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 
 # test sos compiled for xunit ; the unit so includes the source and test object files and their dependencies
 [ $xunit_sos ~ dj shift ]
-	:: [[ $< ~ ?, dn s,\x5b^/\x5d+$,\0/\0.xapi.xunit.pic.o ]
-			[ $< ~ ?, dn s,\x5b^/\x5d+$,\0/test.xapi.xunit.pic.o ]]
+  :: [[ $< ~ ?, dn s,\x5b^/\x5d+$,\0/\0.xapi.xunit.pic.o ]
+      [ $< ~ ?, dn s,\x5b^/\x5d+$,\0/test.xapi.xunit.pic.o ]]
 {
-	[ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [
-	] [ [ $@ ~ rx/aneedw lx/o fi ] ~ s/^/\x20\x5c\x0a ]
+  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [
+  ] [ [ $@ ~ rx/aneedw lx/o fi ] ~ s/^/\x20\x5c\x0a ]
 }
 
 #
@@ -72,10 +72,10 @@ $xunit_sos = [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 # run all tests
 [ @test ] : [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 {
-	[ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $util_objects ] [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
+  [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $util_objects ] [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
 }
 
 [ @test.verbose ] : [ $dunits ~ ?, s,\x5b^/\x5d+$,\0/\0.xapi.xunit.so ]
 {
-	[ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] +XUNIT [ $util_objects ] [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
+  [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] +XUNIT [ $util_objects ] [ $@ ~ rx/aneed lx/so fi ] 1>&501 2>&502
 }

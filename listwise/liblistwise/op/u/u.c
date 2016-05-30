@@ -44,38 +44,38 @@ OPERATION
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "u"
-		, .optype				= LWOP_SELECTION_ACTIVATE
-		, .op_exec			= op_exec
-		, .mnemonic			= "unique"
-		, .desc					= "select unique - already sorted"
-	}, {}
+  {
+      .s            = "u"
+    , .optype       = LWOP_SELECTION_ACTIVATE
+    , .op_exec      = op_exec
+    , .mnemonic     = "unique"
+    , .desc         = "select unique - already sorted"
+  }, {}
 };
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	char * As = 0;
-	int    Asl = 0;
-	char * Bs = 0;
-	int    Bsl = 0;
+  char * As = 0;
+  int    Asl = 0;
+  char * Bs = 0;
+  int    Bsl = 0;
 
-	int x;
-	LSTACK_ITERATE(ls, x, go)
-	if(go)
-	{
-		As = Bs;
-		Asl = Bsl;
-		fatal(lstack_getbytes, ls, 0, x, &Bs, &Bsl);
+  int x;
+  LSTACK_ITERATE(ls, x, go)
+  if(go)
+  {
+    As = Bs;
+    Asl = Bsl;
+    fatal(lstack_getbytes, ls, 0, x, &Bs, &Bsl);
 
-		if(As == 0 || estrcmp(As, Asl, Bs, Bsl, 0))
-		{
-			fatal(lstack_selection_stage, ls, x);
-		}
-	}
-	LSTACK_ITEREND
+    if(As == 0 || estrcmp(As, Asl, Bs, Bsl, 0))
+    {
+      fatal(lstack_selection_stage, ls, x);
+    }
+  }
+  LSTACK_ITEREND
 
-	finally : coda;
+  finally : coda;
 }

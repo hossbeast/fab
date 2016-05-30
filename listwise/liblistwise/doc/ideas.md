@@ -3,7 +3,7 @@
 //       select by expression on x (every other, etc) 
 // y     transliteration 
 // jw    join lists - window  
-// jm		 join lists - regex 
+// jm    join lists - regex 
 //       (set) intersect - jw on whole string 
 //       (set) union - same as c 
 

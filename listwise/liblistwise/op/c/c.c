@@ -42,49 +42,49 @@ static xapi op_validate(operation* o);
 static xapi op_exec(operation*, lwx*, int**, int*);
 
 operator op_desc[] = {
-	{
-		  .s						= "c"
-		, .optype				= LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_STACKOP
-		, .op_validate	= op_validate
-		, .op_exec			= op_exec
-		, .desc					= "combine lists on the stack"
-		, .mnemonic			= "coalesce"
-	}, {}
+  {
+      .s            = "c"
+    , .optype       = LWOP_ARGS_CANHAVE | LWOP_SELECTION_RESET | LWOP_STACKOP
+    , .op_validate  = op_validate
+    , .op_exec      = op_exec
+    , .desc         = "combine lists on the stack"
+    , .mnemonic     = "coalesce"
+  }, {}
 };
 
 xapi op_validate(operation* o)
 {
   enter;
 
-	if(o->argsl)
-	{
-		if(o->args[0]->itype != ITYPE_I64)
-			failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
-	}
+  if(o->argsl)
+  {
+    if(o->args[0]->itype != ITYPE_I64)
+      failf(LISTWISE_ARGSTYPE, "expected %s", "actual %d", "i64", o->args[0]->itype);
+  }
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 {
   enter;
 
-	int N = 1;
+  int N = 1;
 
-	if(o->argsl)
-		N = o->args[0]->i64;
+  if(o->argsl)
+    N = o->args[0]->i64;
 
-	if(N == 0)
-		N = ls->l - 1;
-	else if(N < 0)
-		N = ls->l + N;
+  if(N == 0)
+    N = ls->l - 1;
+  else if(N < 0)
+    N = ls->l + N;
 
-	if(!(N < 0 || N >= ls->l))
-	{
-		int x;
-		for(x = 0; x < N; x++)
-			fatal(lstack_merge, ls, 0, 1);
-	}
+  if(!(N < 0 || N >= ls->l))
+  {
+    int x;
+    for(x = 0; x < N; x++)
+      fatal(lstack_merge, ls, 0, 1);
+  }
 
-	finally : coda;
+  finally : coda;
 }

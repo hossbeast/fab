@@ -33,7 +33,7 @@
 //  returns 0 on success
 //  
 xapi xmalloc(void* target, size_t size)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xrealloc
 //
@@ -49,7 +49,7 @@ xapi xmalloc(void* target, size_t size)
 //  returns 0 on success
 //
 xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xfree
 //
@@ -64,7 +64,7 @@ void xfree(void* target);
 //  does this: free(*target); *target = 0;
 //
 void ifree(void* target)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 /// xqsort_r
 //
@@ -72,7 +72,7 @@ void ifree(void* target)
 //  proxy for qsort_r which invokes the sorting function with fatal
 //
 xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void *, const void *, void *, int * r), void * arg)
-	__attribute__((nonnull(1, 4)));
+  __attribute__((nonnull(1, 4)));
 
 /// xreadlink
 //
@@ -80,6 +80,6 @@ xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void
 //  proxy for readlink
 //
 xapi xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
-	__attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2)));
 
 #endif
