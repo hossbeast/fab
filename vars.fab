@@ -62,7 +62,6 @@ $dlistwise      = [ $*/listwise/listwise ~ j ]
 $dlibxunit      = [ $*/xunit/libxunit ~ j ]
 $dxunit         = [ $*/xunit/xunit ~ j ]
 $dliblogger     = [ $*/liblogger ~ j ]
-$dlibdirs       = [ $dlibxapi $dlibxlinux $dlibxunit $dliblogger $dlibfabcore $dlibvalyria $dlibolympuys ]
 
 # build artifacts
 $libxapi_xapi_final     = [ $dlibxapi/libxapi-xapi.final.so ~ j ]

@@ -10,14 +10,13 @@
   * #includes the public header file
   * defines visibility constants API, APIDATA
   * may re-define perrtab, the default error table
+  * does NOT include any other internal header files
 
 ## binary project organization
 
 * global.h is included by every source file
-  * contains #includes that are absolutely mandatory for every unit
-  * typically this is only logs.h and the appropriate errtab.h file
-  * should also re-define perrtab, the default error table
-  * because each #include creates a dependency for every unit, global.h #includes should be minimized
+  * should define perrtab, the default error table
+  * does NOT include any other internal header files
 
 # data types
 
@@ -42,8 +41,8 @@ modifiers / flags
 using libnarrator
 
 ```
-xapi transform_canon_say(const transform * trans, narrator * restrict _narrator)
-xapi bits_say(const uint64_t bits, narrator * restrict _narrator)
+xapi transform_canon_say(const transform * trans, narrator * const restrict _narrator) notnull(2)
+xapi bits_say(const uint64_t bits, narrator * const restrict _narrator) notnull(2)
 ```
 
 # module lifecycle management
@@ -149,3 +148,38 @@ _name_ c (character)
 
 _name_ x (extra)
 * takes an extra options parameter
+
+# testing
+
+All tests use xunit, except those in the eventual dependencies of xunit (xapi, xlinux, logger, valyria, narrator)
+
+## unit tests
+
+should use internal apis, #include "foo.internal.h"
+
+```
+unit
+  unit.c
+  unit.h
+  test.c
+```
+
+or
+
+```
+module
+  test
+    test_unita.c
+    test_unitb.c
+```
+
+## integration tests
+
+should NOT use internal apis, #include "foo.h"
+
+```
+module
+  integ
+    test_foo.c
+    test_bar.c
+```
