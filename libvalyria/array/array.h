@@ -218,6 +218,47 @@ xapi array_insert(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE **
 xapi array_insert_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
   __attribute__((nonnull));
 
+/// array_set
+//
+// SUMMARY
+//  update the element in the array at the specified index
+//
+// REMARKS
+//  the existing element at the index is destroyed
+//
+// PARAMETERS
+//  ar    - array
+//  index - 0 <= index < array_size(s)
+//  el    - (returns) pointer to the element
+//
+void array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
+  __attribute__((nonnull));
+
+/// array_set_range
+//
+// SUMMARY
+//  update elements in the array at the specified range of indexes
+//
+// REMARKS
+//  the existing element at the index is destroyed
+//
+// PARAMETERS
+//  ar    - array
+//  index - 0 <= index < array_size(s)
+//  len   - number of elements to insert
+//  el    - (returns) pointers to the elements
+//
+void array_set_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+  __attribute__((nonnull));
+
+/// array_clear
+//
+// SUMMARY
+//  reset the number of elements in the array - the allocation remains intact
+//
+void array_clear(array * const restrict ar)
+  __attribute__((nonnull));
+
 /// array_clear
 //
 // SUMMARY
@@ -254,14 +295,13 @@ void array_sort(array * const restrict ar, int (*compar)(const ARRAY_ELEMENT_TYP
 //  ar     - array
 //  key    - key to search for
 //  compar - comparison function
-//  [lx]   - (returns) last index inspected
-//  [lc]   - (returns) result of last comparison
+//   key   - key
+//   el    - pointer to element
+//   idx   - element index
+//   [ud]  - user data
 //
-ARRAY_ELEMENT_TYPE * array_searchx(array * const restrict ar, const void * const restrict key, int (*compar)(const void *, const ARRAY_ELEMENT_TYPE *), size_t * restrict lx, int * restrict lc)
-  __attribute__((nonnull(1, 2, 3)));
-
-ARRAY_ELEMENT_TYPE * array_search(array * const restrict ar, const void * const restrict key, int (*compar)(const void *, const ARRAY_ELEMENT_TYPE *))
-  __attribute__((nonnull));
+ARRAY_ELEMENT_TYPE * array_searchx(array * const restrict ar, void * ud, int (*compar)(void *, const ARRAY_ELEMENT_TYPE *, size_t))
+  __attribute__((nonnull(1,3)));
 
 #undef restrict
 #endif

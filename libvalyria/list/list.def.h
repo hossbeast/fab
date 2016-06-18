@@ -87,5 +87,12 @@ xapi list_allocate(struct list ** const restrict li, uint32_t attr, size_t esz, 
 xapi list_add(struct list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
   __attribute__((nonnull(1)));
 
+/// list_put
+//
+//
+//
+void list_put(struct list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+  __attribute__((nonnull(1)));
+
 #undef restrict
 #endif

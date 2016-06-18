@@ -52,11 +52,10 @@ xapi validate(array * ar)
   finally : coda;
 }
 
-int main()
+xapi test_basic()
 {
   enter;
 
-  xapi r;
   array * ar = 0;
   fatal(array_create, &ar, sizeof(item));
 
@@ -86,6 +85,56 @@ int main()
 
   fatal(validate, ar);
 
+finally:
+  array_free(ar);
+coda;
+}
+
+xapi test_set()
+{
+  enter;
+
+  array * ar = 0;
+  fatal(array_create, &ar, sizeof(item));
+
+  item * itemps[3];
+  fatal(array_push_range, ar, sizeof(itemps) / sizeof(itemps[0]), itemps);
+  itemps[0]->x = 1;
+  itemps[1]->x = 2;
+  itemps[2]->x = 3;
+
+  fatal(validate, ar);
+
+  item * itemp;
+  array_set(ar, 0, &itemp);
+  itemp->x = 1;
+  array_set(ar, 1, &itemp);
+  itemp->x = 2;
+  array_set(ar, 2, &itemp);
+  itemp->x = 3;
+
+  fatal(validate, ar);
+
+  array_set_range(ar, 0, sizeof(itemps) / sizeof(itemps[0]), itemps);
+  itemps[0]->x = 10;
+  itemps[1]->x = 20;
+  itemps[2]->x = 30;
+
+  fatal(validate, ar);
+
+finally:
+  array_free(ar);
+coda;
+}
+
+int main()
+{
+  enter;
+  xapi r;
+
+  fatal(test_basic);
+  fatal(test_set);
+
   success;
 
 finally:
@@ -94,7 +143,6 @@ finally:
     xapi_backtrace();
   }
 
-  array_free(ar);
 conclude(&r);
 
   xapi_teardown();

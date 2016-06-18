@@ -23,7 +23,7 @@
 #include "internal.h"
 #define LIST_INTERNALS struct list_internals
 #include "list.def.h"
-#include "list.h"
+#include "list.internal.h"
 
 #include "grow.h"
 #include "assure.h"
@@ -71,6 +71,27 @@ static xapi list_assure(list * const restrict li, size_t len)
   xproxy(assure, &li->v, ELEMENT_SIZE(li), len, &li->a);
 }
 
+static void list_update(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+{
+  // copy the elements into place
+  if(el)
+  {
+    memcpy(
+        li->v + (index * ELEMENT_SIZE(li))
+      , el
+      , len * ELEMENT_SIZE(li)
+    );
+  }
+
+  // return pointers to the elements
+  if(rv)
+  {
+    size_t x;
+    for(x = 0; x < len; x++)
+      rv[x] = ELEMENT(li, index + x);
+  }
+}
+
 //
 // protected
 //
@@ -96,6 +117,19 @@ finally:
 coda;
 }
 
+void list_put(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+{
+  // destroy existing elements
+  size_t x;
+  if(li->destructor)
+  {
+    for(x = 0; x < len; x++)
+      li->destructor(ELEMENT(li, index + x));   
+  }
+
+  list_update(li, index, len, el, rv);
+}
+
 xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
 {
   enter;
@@ -110,23 +144,7 @@ xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
     , (li->l - index) * ELEMENT_SIZE(li)
   );
 
-  // copy the elements into place
-  if(el)
-  {
-    memcpy(
-        li->v + (index * ELEMENT_SIZE(li))
-      , el
-      , len * ELEMENT_SIZE(li)
-    );
-  }
-
-  // return pointers to the elements
-  if(rv)
-  {
-    size_t x;
-    for(x = 0; x < len; x++)
-      rv[x] = ELEMENT(li, index + x);
-  }
+  list_update(li, index, len, el, rv);
 
   li->l += len;
 
@@ -260,6 +278,16 @@ API xapi list_insert_range(list * const restrict li, size_t index, LIST_ELEMENT_
   xproxy(list_add, li, index, len, el, 0);
 }
 
+API void list_set(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
+{
+  return list_put(li, index, 1, &el, 0);  
+}
+
+API void list_set_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
+{
+  return list_put(li, index, len, el, 0);  
+}
+
 API void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *, const LIST_ELEMENT_TYPE *, void *), void * arg)
 {
   if(li->attr & LIST_PRIMARY)
@@ -297,46 +325,41 @@ API xapi list_sublist(list * const restrict li, size_t index, size_t len, list *
   finally : coda;
 }
 
-API LIST_ELEMENT_TYPE * list_searchx(list * const restrict li, const void * const restrict key, int (*compar)(const void *, const LIST_ELEMENT_TYPE *), size_t * restrict lx, int * restrict lc)
+struct context
+{
+  int (*compar)(void *, const LIST_ELEMENT_TYPE *, size_t);
+  const char * v;
+  size_t esz;
+  void * ud;
+};
+
+static int pcompar(struct context * ctx, const void * el)
+{
+  return ctx->compar(ctx->ud, el, ((char*)el - ctx->v) / ctx->esz);
+};
+
+static int scompar(struct context * ctx, const void * el)
+{
+  return ctx->compar(ctx->ud, *(const LIST_ELEMENT_TYPE **)el, ((char*)el - ctx->v) / ctx->esz);
+}
+
+API LIST_ELEMENT_TYPE * list_search(list * const restrict li, void * ud, int (*compar)(void *, const LIST_ELEMENT_TYPE *, size_t))
 {
   LIST_ELEMENT_TYPE * elp = 0;
 
+  struct context ctx = { v : li->v, ud : ud, esz : ELEMENT_SIZE(li), compar : compar };
+
   if(li->attr & LIST_PRIMARY)
   {
-    int pcompar(const void * key, const void * el)
-    {
-      int r = compar(key, el);
-      if(lx)
-        *lx = ((char*)el - li->v) / ELEMENT_SIZE(li);
-      if(lc)
-        *lc = r;
-      return r;
-    };
-
-    elp = bsearch(key, li->v, li->l, ELEMENT_SIZE(li), pcompar);
+    elp = bsearch(&ctx, li->v, li->l, ctx.esz, (void*)pcompar);
   }
-
-  else if(li->attr & LIST_SECONDARY)
+  else // li->attr & LIST_SECONDARY
   {
-    int scompar(const void * key, const void * el)
-    {
-      int r = compar(key, *(const LIST_ELEMENT_TYPE **)el);
-      if(lx)
-        *lx = ((char*)el - li->v) / ELEMENT_SIZE(li);
-      if(lc)
-        *lc = r;
-      return r;
-    }
 
     void * res;
-    if((res = bsearch(key, li->v, li->l, ELEMENT_SIZE(li), scompar)))
+    if((res = bsearch(&ctx, li->v, li->l, ctx.esz, (void*)scompar)))
       elp = *(LIST_ELEMENT_TYPE **)res;
   }
 
   return elp;
-}
-
-API LIST_ELEMENT_TYPE * list_search(list * const restrict li, const void * const restrict key, int (*compar)(const void *, const LIST_ELEMENT_TYPE *))
-{
-  return list_searchx(li, key, compar, 0, 0);
 }

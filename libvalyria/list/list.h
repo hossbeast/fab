@@ -198,12 +198,45 @@ xapi list_insert(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * con
 //  insert elements into the list at the specified index
 //
 // PARAMETERS
-//  s     - list
+//  li    - list
 //  index - 0 <= index <= list_size(s)
 //  el    - pointer to the first element to insert
 //  len   - number of elements to insert
 //
 xapi list_insert_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
+  __attribute__((nonnull));
+
+/// list_set
+//
+// SUMMARY
+//  update the element in the list at the specified index
+//
+// REMARKS
+//  the existing element at the index is destroyed
+//
+// PARAMETERS
+//  li    - list
+//  index - 0 <= index < list_size(s)
+//  el    - pointer to the element to place
+//
+void list_set(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
+  __attribute__((nonnull));
+
+/// list_set_range
+//
+// SUMMARY
+//  update elements in the list at the specified range of indexes
+//
+// REMARKS
+//  the existing element at the index is destroyed
+//
+// PARAMETERS
+//  li    - list
+//  index - 0 <= index < list_size(s)
+//  el    - pointer to the element to place
+//  len   - number of elements to insert
+//
+void list_set_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
   __attribute__((nonnull));
 
 /// list_clear
@@ -248,17 +281,15 @@ xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** c
 //  man 3 bsearch
 //
 // PARAMETERS
-//  li     - list
-//  key    - key to search for
+//  li - list
+//  ud - user data
 //  compar - comparison function
-//  [lx]   - (returns) last index inspected
-//  [lc]   - (returns) result of last comparison
+//   ud  - user data
+//   el  - pointer to element
+//   idx - element index
 //
-LIST_ELEMENT_TYPE * list_searchx(list * const restrict li, const void * const restrict key, int (*compar)(const void *, const LIST_ELEMENT_TYPE *), size_t * restrict lx, int * restrict lc)
-  __attribute__((nonnull(1, 2, 3)));
-
-LIST_ELEMENT_TYPE * list_search(list * const restrict li, const void * const restrict key, int (*compar)(const void *, const LIST_ELEMENT_TYPE *))
-  __attribute__((nonnull));
+LIST_ELEMENT_TYPE * list_search(list * const restrict li, void * ud, int (*compar)(void * ud, const LIST_ELEMENT_TYPE * el, size_t idx))
+  __attribute__((nonnull(1, 3)));
 
 #undef restrict
 #endif

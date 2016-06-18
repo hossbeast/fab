@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -36,6 +36,11 @@ typedef struct item
   int x;
 } item;
 
+/// validate
+//
+// SUMMARY
+//  accesses each item in the list and asserts that the list is sorted in ascending order
+//
 xapi validate(list * listp)
 {
   enter;
@@ -84,7 +89,7 @@ xapi test_basic()
   itemps[0]->x = 1;
   fatal(xmalloc, &itemps[1], sizeof(**itemps));
   itemps[1]->x = 2;
-  fatal(list_unshift_range, listp, itemps, 2); 
+  fatal(list_unshift_range, listp, itemps, 2);
 
   fatal(validate, listp);
 
@@ -152,17 +157,19 @@ xapi test_insertion_sort()
     int y;
     for(y = 0; y < sentinel(items[x]); y++)
     {
-      int compar(const void * key, const item * el)
+      size_t lx = 0;
+      int lc = 0;
+
+      int compar(void * ud, const item * el, size_t idx)
       {
-        return ((item *)key)->x - el->x;
+        lx = idx;
+        return lc = itemp->x - el->x;
       };
 
       fatal(xmalloc, &itemp, sizeof(*itemp));
       itemp->x = items[x][y];
 
-      size_t lx = 0;
-      int lc = 0;
-      list_searchx(listp, itemp, compar, &lx, &lc);
+      list_search(listp, 0, compar);
       if(lc <= 0)
         fatal(list_insert, listp, lx, itemp);
       else if(lc > 0)
@@ -170,6 +177,48 @@ xapi test_insertion_sort()
 
       itemp = 0;
     }
+
+    fatal(validate, listp);
+  }
+
+finally:
+  list_free(listp);
+  free(itemp);
+coda;
+}
+
+/// test_set
+//
+// SUMMARY
+//  tests list_set
+//
+xapi test_set()
+{
+  enter;
+
+  list * listp = 0;
+  item * itemp = 0;
+  item * itemps[3];
+
+  fatal(list_create, &listp, (void*)free);
+
+  fatal(xmalloc, &itemps[0], sizeof(**itemps));
+  itemps[0]->x = 1;
+  fatal(xmalloc, &itemps[1], sizeof(**itemps));
+  itemps[1]->x = 2;
+  fatal(xmalloc, &itemps[2], sizeof(**itemps));
+  itemps[2]->x = 3;
+  fatal(list_push_range, listp, itemps, sizeof(itemps) / sizeof(itemps[0]));
+
+  fatal(validate, listp);
+
+  int x;
+  for(x = 2; x <= 0; x--)
+  {
+    fatal(xmalloc, &itemp, sizeof(*itemp));
+    itemp->x = x + 3;
+    fatal(list_set, listp, x, itemp);
+    itemp = 0;
 
     fatal(validate, listp);
   }
@@ -188,6 +237,7 @@ int main()
   fatal(test_basic);
   fatal(test_load);
   fatal(test_insertion_sort);
+  fatal(test_set);
 
   success;
 

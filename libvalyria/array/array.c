@@ -17,7 +17,7 @@
 
 #include "internal.h"
 #include "list.def.h"
-#include "list.h"
+#include "list.internal.h"
 
 #define ARRAY_INTERNALS struct list_internals
 #include "array.h"
@@ -101,17 +101,22 @@ API xapi array_insert_range(array * const restrict ar, size_t index, size_t len,
   xproxy(list_add, (void*)ar, index, len, 0, el);
 }
 
+void array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
+{
+  list_put((void*)ar, index, 1, 0, el);
+}
+
+void array_set_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+{
+  list_put((void*)ar, index, len, 0, el);
+}
+
 API void array_sort(array * const restrict ar, int (*compar)(const ARRAY_ELEMENT_TYPE *, const ARRAY_ELEMENT_TYPE *, void *), void * arg)
 {
   list_sort((void*)ar, compar, arg);
 }
 
-API ARRAY_ELEMENT_TYPE * array_searchx(array * const restrict ar, const void * const restrict key, int (*compar)(const void *, const ARRAY_ELEMENT_TYPE *), size_t * restrict lx, int * restrict lc)
+API ARRAY_ELEMENT_TYPE * array_search(array * const restrict ar, void * ud, int (*compar)(void *, const ARRAY_ELEMENT_TYPE *, size_t))
 {
-  return list_searchx((void*)ar, key, compar, lx, lc);
-}
-
-API ARRAY_ELEMENT_TYPE * array_search(array * const restrict ar, const void * const restrict key, int (*compar)(const void *, const ARRAY_ELEMENT_TYPE *))
-{
-  return list_search((void*)ar, key, compar);
+  return list_search((void*)ar, ud, compar);
 }
