@@ -114,7 +114,7 @@ API xapi ixstrndup(char** s1, const char* s2, const size_t l)
     xfree(*s1);
     *s1 = 0;
 
-    fatal(ixstrcat, s1, s2);
+    fatal(ixstrncat, s1, s2, l);
   }
 
   finally : coda;
