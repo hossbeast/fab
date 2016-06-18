@@ -26,6 +26,7 @@
 #include "multi/multi.internal.h"
 
 #include "nullity/nullity.internal.h"
+#include "file/file.internal.h"
 #include "record/record.internal.h"
 
 static int handles;
@@ -45,6 +46,7 @@ API xapi narrator_load()
 
     // modules
     fatal(nullity_setup);
+    fatal(file_setup);
   }
   handles++;
 
@@ -58,6 +60,7 @@ API xapi narrator_unload()
   if(--handles == 0)
   {
     nullity_teardown();
+    file_teardown();
 
     fatal(xlinux_unload);
   }

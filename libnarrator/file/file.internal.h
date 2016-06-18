@@ -30,6 +30,20 @@ typedef struct narrator_file
 
 #define restrict __restrict
 
+/// file_setup
+//
+// SUMMARY
+//  module initialization
+//
+xapi file_setup();
+
+/// file_teardown
+//
+// SUMMARY
+//  module cleanup
+//
+void file_teardown();
+
 /// file_say
 //
 // SUMMARY

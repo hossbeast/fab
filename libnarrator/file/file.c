@@ -25,9 +25,28 @@
 
 #define restrict __restrict
 
+APIDATA narrator * g_narrator_stdout;
+APIDATA narrator * g_narrator_stderr;
+
 //
 // public
 //
+
+xapi file_setup()
+{
+  enter;
+
+  fatal(narrator_file_create, &g_narrator_stdout, 1);
+  fatal(narrator_file_create, &g_narrator_stderr, 2);
+
+  finally : coda;
+}
+
+void file_teardown()
+{
+  narrator_free(g_narrator_stdout);
+  narrator_free(g_narrator_stderr);
+}
 
 xapi file_vsayf(narrator_file * const restrict n, const char * const restrict fmt, va_list va)
 {

@@ -50,5 +50,9 @@ xapi narrator_file_create(narrator ** const restrict n, int fd)
 int narrator_file_fd(narrator * const restrict n)
   __attribute__((nonnull));
 
+/// read-only singleton file narrator allocated in narrator_setup
+extern narrator * g_narrator_stdout;
+extern narrator * g_narrator_stderr;
+
 #undef restrict
 #endif
