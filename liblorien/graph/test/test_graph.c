@@ -59,9 +59,6 @@ ATTR_TABLE(0)
 #define ATTR_DEF(a, b, x) (x) == b ? #a :
 #define ATTR_STRING(x) ATTR_TABLE(x) "UNKNOWN"
 
-xapi graph_test_entry(const struct graph_test*)
-  __attribute__((nonnull));
-
 typedef struct graph_test
 {
   xunit_test;
@@ -91,13 +88,12 @@ xapi vertex_say(vertex * const restrict v, narrator * const restrict N)
 {
   enter;
 
-//printf("%c", vertex_value(v)->label);
   sayc(vertex_value(v)->label);
 
   finally : coda;
 }
 
-xapi graph_test_entry(const graph_test * test)
+xapi graph_test_entry(graph_test * test)
 {
   enter;
 
@@ -138,11 +134,6 @@ xapi graph_test_entry(const graph_test * test)
         B->label = edges[1];
         vertex_value_set(B->v, B);
       }
-
-printf("%c -> %c", A->label, B->label);
-if(attrs)
-  printf(" %s", ATTR_STRING(attrs));
-printf("\n");
 
       fatal(graph_relate, g, A->v, B->v, attrs);
 

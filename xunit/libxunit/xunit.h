@@ -44,10 +44,10 @@ xapi xunit_unload();
 struct xunit_unit;
 struct xunit_test;
 
-typedef xapi (*xunit_unit_setup)(const UNIT_TYPE*);
-typedef void (*xunit_unit_teardown)(const UNIT_TYPE*);
-typedef xapi (*xunit_unit_release)(const UNIT_TYPE*);
-typedef xapi (*xunit_test_entry)(const TEST_TYPE*);
+typedef xapi (*xunit_unit_setup)(UNIT_TYPE*);
+typedef void (*xunit_unit_teardown)(UNIT_TYPE*);
+typedef xapi (*xunit_unit_release)(UNIT_TYPE*);
+typedef xapi (*xunit_test_entry)(TEST_TYPE*);
 
 /// xunit_unit
 //

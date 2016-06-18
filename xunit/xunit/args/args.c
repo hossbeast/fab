@@ -84,8 +84,8 @@ printf(
 "\n"
 );
 
-  fatal(logger_filter_push, 0, "+LOGGER", 0);
-  fatal(category_report);
+  fatal(logger_filter_pushs, 0, "+LOGGER");
+  fatal(logger_categories_report);
   fatal(logger_filter_pop, 0);
 }
 

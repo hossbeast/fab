@@ -122,7 +122,7 @@ int main(int argc, char** argv, char ** envp)
           if((*test)->name)
             xapi_info_adds("test", (*test)->name);
           else
-            xapi_info_addf("test", "%d", test - xunit->tests);
+            xapi_info_addf("test", "%d", (test - xunit->tests) + 1);
           xapi_info_adds("object", g_args.objects[x]);
 
           // propagate non-unit-testing errors

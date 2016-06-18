@@ -217,14 +217,12 @@ API xapi graph_relate(graph * const restrict g, vertex * const restrict A, verte
   edge * e = 0;
 
   // binary search for the edge
-  int compar(const void * key, const void * item)
+  int compar(void * key, const void * item, size_t idx)
   {
     ptrdiff_t diff = key - (void*)((edge *)item)->B;
     return diff > 0 ? 1 : diff < 1 ? -1 : 0;
   };
-  size_t lx = 0;
-  int lc = 0;
-  if(list_searchx(A->down, B, compar, &lx, &lc) == 0)
+  if(list_search(A->down, B, compar) == 0)
   {
     // no such edge
     fatal(xmalloc, &e, sizeof(*e));

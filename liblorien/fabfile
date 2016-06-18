@@ -95,32 +95,32 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblog
 }
 
 # link the library
-[ $liblorien_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/eapi.final.pic.o sy ] ]
+[ $liblorien_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr -d m/\/test$ d -d ls sx/c/eapi.final.pic.o sy ] ]
 {
   [ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
 }
 
-[ $liblorien_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/eapi.debug.pic.o sy ] ]
+[ $liblorien_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr -d m/\/test$ d -d ls sx/c/eapi.debug.pic.o sy ] ]
 {
   [ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
 }
 
-[ $liblorien_eapi_devel ] : [ [ $*/exports ~ j ]  [ $* ~ lsr l/test.c d sx/c/eapi.devel.pic.o sy ] ]
+[ $liblorien_eapi_devel ] : [ [ $*/exports ~ j ]  [ $* ~ lsr -d m/\/test$ d -d ls sx/c/eapi.devel.pic.o sy ] ]
 {
   [ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
 }
 
-[ $liblorien_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/xapi.final.pic.o sy ] ]
+[ $liblorien_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr -d m/\/test$ d -d ls sx/c/xapi.final.pic.o sy ] ]
 {
   [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $liblorien_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/xapi.debug.pic.o sy ] ]
+[ $liblorien_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr -d m/\/test$ d -d ls sx/c/xapi.debug.pic.o sy ] ]
 {
   [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $liblorien_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr l/test.c d sx/c/xapi.devel.pic.o sy ] ]
+[ $liblorien_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr -d m/\/test$ d -d ls sx/c/xapi.devel.pic.o sy ] ]
 {
   [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
 }
@@ -170,12 +170,12 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblog
 # unit tests
 #
 
-[ $* ~ lsr m/test.c$ sx/c/xapi.xunit.so dj shift ] :: [ $< ~ sx/so/pic.o ]
+[ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy dj shift ] :: [ $< ~ sx/so/pic.o ]
 {
   [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
 }
 
-[ @test ] : [ $* ~ lsr m/test.c$ sx/c/xapi.xunit.so ]
+[ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $@ ~ rx/ineed fi ]
 }

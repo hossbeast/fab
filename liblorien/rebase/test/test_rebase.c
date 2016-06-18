@@ -29,9 +29,6 @@ struct rebase_test;
 
 #include "logger.h"
 
-xapi rebase_test_entry(const struct rebase_test*)
-  __attribute__((nonnull));
-
 typedef struct rebase_test
 {
   xunit_test;
@@ -40,7 +37,7 @@ typedef struct rebase_test
   char *    expected;
 } rebase_test;
 
-xapi rebase_test_entry(const rebase_test * test)
+xapi rebase_test_entry(rebase_test * test)
 {
   enter;
 

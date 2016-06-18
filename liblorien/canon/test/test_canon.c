@@ -29,9 +29,6 @@ struct canon_test;
 
 #include "logger.h"
 
-xapi canon_test_entry(const struct canon_test*)
-  __attribute__((nonnull));
-
 typedef struct canon_test
 {
   xunit_test;
@@ -41,7 +38,7 @@ typedef struct canon_test
   char *    final;
 } canon_test;
 
-xapi canon_test_entry(const canon_test * test)
+xapi __attribute__((nonnull)) canon_test_entry(canon_test * const test)
 {
   enter;
 
