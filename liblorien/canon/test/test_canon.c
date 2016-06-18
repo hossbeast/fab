@@ -25,7 +25,7 @@ struct canon_test;
 #define TEST_TYPE struct canon_test
 #include "xunit.h"
 #include "xunit/logging.h"
-#include "xunit/XUNIT.errtab.h"
+#include "xunit/assert.h"
 
 #include "logger.h"
 
@@ -54,13 +54,7 @@ xapi __attribute__((nonnull)) canon_test_entry(canon_test * const test)
   // log the outset
   logs(L_OUTSET, space);
 
-  if(strcmp(test->final, space))
-  {
-    xapi_fail_intent();
-    xapi_info_addf("expected", "%s", test->final);
-    xapi_info_addf("actual", "%s", space);
-    tfail(perrtab_XUNIT, XUNIT_FAIL);
-  }
+  assertf(strcmp(test->final, space) == 0, "%s", "%s", test->final, space);
 
   finally : coda;
 }

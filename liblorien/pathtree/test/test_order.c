@@ -26,7 +26,7 @@ struct pathtree_test;
 #define TEST_TYPE struct pathtree_test
 #include "xunit.h"
 #include "xunit/logging.h"
-#include "xunit/XUNIT.errtab.h"
+#include "xunit/assert.h"
 
 #include "valyria/list.h"
 
@@ -90,14 +90,9 @@ static xapi pathtree_order_test_entry(pathtree_test * test)
     hash[0] = hash[1];
     hash[1] = hashtree(pt->root);
 
-    if(hash[0] && hash[1] && hash[0] != hash[1])
-    {
-      xapi_fail_intent();
-      xapi_info_addf("case", "%d", x);
-      xapi_info_addf("expected hash", "%"PRIu64, hash[0]);
-      xapi_info_addf("actual hash", "%"PRIu64, hash[1]);
-      tfail(perrtab_XUNIT, XUNIT_FAIL);
-    }
+    if(hash[0] && hash[1])
+      assertf(hash[0] == hash[1], "%"PRIu64, "%"PRIu64, hash[0], hash[1]);
+
   } while(permute(indexes, indexesl));
 
 finally:

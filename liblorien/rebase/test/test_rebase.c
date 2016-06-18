@@ -25,7 +25,7 @@ struct rebase_test;
 #define TEST_TYPE struct rebase_test
 #include "xunit.h"
 #include "xunit/logging.h"
-#include "xunit/XUNIT.errtab.h"
+#include "xunit/assert.h"
 
 #include "logger.h"
 
@@ -52,13 +52,7 @@ xapi rebase_test_entry(rebase_test * test)
   // log the outset
   logs(L_OUTSET, space);
 
-  if(strcmp(test->expected, space))
-  {
-    xapi_fail_intent();
-    xapi_info_addf("expected", "%s", test->expected);
-    xapi_info_addf("actual", "%s", space);
-    tfail(perrtab_XUNIT, XUNIT_FAIL);
-  }
+  assertf(strcmp(test->expected, space) == 0, "%s", "%s", test->expected, space);
 
   finally : coda;
 }

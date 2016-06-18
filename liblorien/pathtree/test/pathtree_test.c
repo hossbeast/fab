@@ -30,7 +30,7 @@ struct pathtree_test;
 #define TEST_TYPE struct pathtree_test
 #include "xunit.h"
 #include "xunit/logging.h"
-#include "xunit/XUNIT.errtab.h"
+#include "xunit/assert.h"
 
 #include "logger.h"
 
@@ -54,32 +54,14 @@ xapi pathtree_validate(node * const restrict n, node * const restrict parent)
   enter;
 
   // prefix length
-  if(n->pfxl != strlen(n->pfx ?: ""))
-  {
-    xapi_fail_intent();
-    xapi_info_addf("expected prefix length", "%zu", strlen(n->pfx));
-    xapi_info_addf("actual prefix length", "%zu", n->pfxl);
-    tfail(perrtab_XUNIT, XUNIT_FAIL);
-  }
+  assertf(n->pfxl == strlen(n->pfx ?: ""), "%zu", "%zu", strlen(n->pfx ?: ""), n->pfxl);
 
   // prefix always begins with a slash
-  if(n->pfxl && n->pfx[0] != '/')
-  {
-    xapi_fail_intent();
-    xapi_info_addf("expected prefix[0]", "%c", '/');
-    xapi_info_addf("actual prefix[0]", "%c", n->pfx[0]);
-    tfail(perrtab_XUNIT, XUNIT_FAIL);
-  }
+  assertf(n->pfxl == 0 || n->pfx[0] == '/', "%c", "%c", '/', n->pfx[0]);
 
   // keyl must be accurate
   size_t parent_keyl = parent ? parent->keyl : 0;
-  if(n->keyl != (parent_keyl + n->pfxl))
-  {
-    xapi_fail_intent();
-    xapi_info_addf("expected keyl", "%zu", parent_keyl);
-    xapi_info_addf("actual keyl", "%zu", n->keyl);
-    tfail(perrtab_XUNIT, XUNIT_FAIL);
-  }
+  assertf(n->keyl == (parent_keyl + n->pfxl), "%zu", "%zu", parent_keyl, n->keyl);
 
   // children must be unique and sorted asc
   int x;
@@ -88,13 +70,10 @@ xapi pathtree_validate(node * const restrict n, node * const restrict parent)
     node * A = list_get(n->children, x - 1);
     node * B = list_get(n->children, x);
     int r = estrcmp(A->pfx, A->pfxl, B->pfx, B->pfxl, 0);
-    if(r >= 0)
-    {
-      xapi_fail_intent();
-      xapi_info_addf("expected", "%.*s < %.*s", A->pfxl, A->pfx, B->pfxl, B->pfx);
-      xapi_info_addf("actual", "%.*s %s %.*s", A->pfxl, A->pfx, r ? ">" : "=", B->pfxl, B->pfx);
-      tfail(perrtab_XUNIT, XUNIT_FAIL);
-    }
+    assertf(r < 0, "%.*s < %.*s", "%.*s %s %.*s"
+      , A->pfxl, A->pfx, B->pfxl, B->pfx
+      , A->pfxl, A->pfx, r ? ">" : "=", B->pfxl, B->pfx
+    );
   }
 
   for(x = 0; x < n->children->l; x++)
@@ -122,13 +101,10 @@ xapi pathtree_test_entry(pathtree_test * test)
   for(y = 0; y < sentinel(test->entries); y++)
   {
     char ** val = pathtree_search(pt, test->entries[y].key);
-    if(val == 0 || *val != test->entries[y].key)
-    {
-      xapi_fail_intent();
-      xapi_info_addf("expected value", "%s", test->entries[y].key);
-      xapi_info_addf("actual value", "%s", val ? *val : "(not found)");
-      tfail(perrtab_XUNIT, XUNIT_FAIL);
-    }
+    char * expected = test->entries[y].key;
+    char * actual = val ? *val : "(none)";
+
+    assertf(strcmp(expected, actual) == 0, "%s", "%s", expected, actual);
   }
 
   // additional queries
@@ -137,14 +113,10 @@ xapi pathtree_test_entry(pathtree_test * test)
     for(y = 0; y < sentinel(test->queries); y++)
     {
       char ** val = pathtree_search(pt, test->queries[y].key);
-      if((!val && test->queries[y].val) || (val && strcmp(*val, test->queries[y].val)))
-      {
-        xapi_fail_intent();
-        xapi_info_addf("query", "%s", test->queries[y].key);
-        xapi_info_addf("expected value", "%s", test->queries[y].val ?: "(none)");
-        xapi_info_addf("actual value", "%s", val ? *val : "(not found)");
-        tfail(perrtab_XUNIT, XUNIT_FAIL);
-      }
+      char * expected = test->queries[y].val ?: "(none)";
+      char * actual = val ? *val : "(none)";
+
+      assertf(strcmp(expected, actual) == 0, "%s", "%s", expected, actual);
     }
   }
 

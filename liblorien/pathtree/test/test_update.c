@@ -26,7 +26,7 @@ struct pathtree_test;
 #define TEST_TYPE struct pathtree_test
 #include "xunit.h"
 #include "xunit/logging.h"
-#include "xunit/XUNIT.errtab.h"
+#include "xunit/assert.h"
 
 #include "valyria/list.h"
 
@@ -66,13 +66,7 @@ static xapi pathtree_update_test_entry(pathtree_test * test)
 
   char ** val = pathtree_search(pt, "/gondor/moria/osgiliath");
 
-  if(!val || strcmp(*val, "bar"))
-  {
-    xapi_fail_intent();
-    xapi_info_adds("expected", "bar");
-    xapi_info_adds("actual", val ? *val : "(not found)");
-    tfail(perrtab_XUNIT, XUNIT_FAIL);
-  }
+  assertf(strcmp("bar", val ? *val : "(none)") == 0, "%s", "%s", "bar", val ? *val : "(none)");
 
 finally:
   pathtree_free(pt);

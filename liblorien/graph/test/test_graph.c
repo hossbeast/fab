@@ -29,7 +29,7 @@ struct graph_test;
 #define TEST_TYPE struct graph_test
 #include "xunit.h"
 #include "xunit/logging.h"
-#include "xunit/XUNIT.errtab.h"
+#include "xunit/assert.h"
 
 struct item;
 #define DICTIONARY_VALUE_TYPE struct item
@@ -165,24 +165,15 @@ xapi graph_test_entry(graph_test * test)
 
   if(test->expected)
   {
-    if(strcmp(narrator_fixed_buffer(N), test->expected))
-    {
-      xapi_fail_intent();
-      xapi_info_adds("expected", test->expected);
-      xapi_info_adds("actual", narrator_fixed_buffer(N));
-      tfail(perrtab_XUNIT, XUNIT_FAIL);
-    }
+    assertf(strcmp(test->expected, narrator_fixed_buffer(N)) == 0, "%s", "%s", test->expected, narrator_fixed_buffer(N));
   }
   else if(test->cycle || test->cycle_path)
   {
-    if(xapi_exit_errtab(exit) != perrtab_LORIEN || xapi_exit_errcode(exit) != LORIEN_CYCLE)
-    {
-      xapi_fail_intent();
-      xapi_info_adds("expected", "cycle");
-      xapi_info_adds("actual", "no cycle detected");
-      tfail(perrtab_XUNIT, XUNIT_FAIL);
-    }
-    else if(test->cycle_path)
+    // appropriate exit status
+    assert_exit(exit, perrtab_LORIEN, LORIEN_CYCLE);
+
+    // appropriate error message
+    if(test->cycle_path)
     {
       char * marker = "in graph_traverse(path=";
       char * actual = strstr(space, marker);
@@ -194,17 +185,11 @@ xapi graph_test_entry(graph_test * test)
       }
       if(actual == 0 || end == 0 || end - actual != strlen(test->cycle_path))
       {
-        xapi_fail_intent();
-        xapi_info_adds("expected cycle", test->cycle_path);
-        xapi_info_adds("actual", "cycle path not reported");
-        tfail(perrtab_XUNIT, XUNIT_FAIL);
+        ufailf("expected cycle %s", "actual cycle %s", test->cycle_path, "(not reported)");
       }
       else if(memcmp(actual, test->cycle_path, end - actual))
       {
-        xapi_fail_intent();
-        xapi_info_adds("expected cycle", test->cycle_path);
-        xapi_info_addf("actual cycle", "%.*s", (int)(end - actual), actual);
-        tfail(perrtab_XUNIT, XUNIT_FAIL);
+        ufailf("expected cycle %s", "actual cycle %.*s", test->cycle_path, (int)(end - actual), actual);
       }
     }
   }
