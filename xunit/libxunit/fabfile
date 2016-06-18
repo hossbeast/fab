@@ -33,11 +33,6 @@ $lflags_xapi_final  = [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xap
 $lflags_xapi_debug  = [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
 $lflags_xapi_devel  = [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel $lopts [ -Wl,-soname,libxunit-xapi-devel.so ~ j ] ]
 
-# library dependencies
-[ $libxunit_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final ]
-[ $libxunit_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug ]
-[ $libxunit_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel ]
-
 # source files
 +[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibxunit; $cc; $cflags = $cflags_xapi_final)
 +[@std.c]($dext = [ xapi.debug.pic.o ]; $rdirs = $dlibxunit; $cc; $cflags = $cflags_xapi_debug)
@@ -88,3 +83,8 @@ $lflags_xapi_devel  = [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xap
 {
   [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ] 
 }
+
+# library dependencies
+[ $libxunit_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final ]
+[ $libxunit_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug ]
+[ $libxunit_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel ]
