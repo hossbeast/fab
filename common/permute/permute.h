@@ -15,48 +15,21 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "cksum.h"
+#ifndef _PERMUTE_H
+#define _PERMUTE_H
 
+#include <sys/types.h>
+#include <stdint.h>
+
+#define restrict __restrict
+
+/// permute
 //
-// public
+// SUMMARY
+//  reorder a set in place to obtain the next permutation
 //
+int permute(uint8_t * const restrict set, size_t setl)
+  __attribute__((nonnull));
 
-uint32_t cksum(const void * const restrict v, size_t l)
-{
-  const char * s = v;
-  uint32_t h = 0;
-
-  int x;
-  for(x = 0; x < l; x++)
-  {
-    h += s[x];
-    h += (h << 10);
-    h ^= (h >> 6);
-  }
-
-  h += (h << 3);
-  h ^= (h >> 11);
-  h += (h << 15);
-
-  return h;
-}
-
-uint64_t cksum64(const void * const restrict v, size_t l)
-{
-  const char * s = v;
-  uint64_t h = 0;
-
-  int x;
-  for(x = 0; x < l; x++)
-  {
-    h += s[x];
-    h += (h << 13);
-    h ^= (h >> 3);
-  }
-
-  h += (h << 3);
-  h ^= (h >> 23);
-  h += (h << 34);
-
-  return h;
-}
+#undef restrict
+#endif

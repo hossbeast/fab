@@ -93,6 +93,9 @@
 // SUMMARY
 //  counts the number of elements in an array terminated by a zeroed-entry
 //
+// RETURNS
+//  size_t
+//
 #define sentinel(x) ({                                \
   typeof((x)[0]) * p = (x);                           \
   while(memcmp(p, (char[sizeof(*p)]){}, sizeof(*p)))  \

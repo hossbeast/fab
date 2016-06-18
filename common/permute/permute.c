@@ -15,48 +15,47 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "cksum.h"
+#include "permute.h"
+
+static void swap(uint8_t * const restrict set, size_t a, size_t b)
+{
+  size_t T = set[a];
+  set[a] = set[b];
+  set[b] = T;
+}
+
+static void reverse(uint8_t * const restrict set, size_t i, size_t len)
+{
+  int x;
+  for(x = 0; x < len / 2; x++)
+    swap(set, i + x, i + len - 1 - x);
+}
 
 //
 // public
 //
 
-uint32_t cksum(const void * const restrict v, size_t l)
+int permute(uint8_t * const restrict set, size_t setl)
 {
-  const char * s = v;
-  uint32_t h = 0;
-
-  int x;
-  for(x = 0; x < l; x++)
+  int k;
+  for(k = setl - 2; k >= 0; k--)
   {
-    h += s[x];
-    h += (h << 10);
-    h ^= (h >> 6);
+    if(set[k] < set[k + 1])
+      break;
   }
 
-  h += (h << 3);
-  h ^= (h >> 11);
-  h += (h << 15);
+  if(k == -1)
+    return 0;
 
-  return h;
-}
-
-uint64_t cksum64(const void * const restrict v, size_t l)
-{
-  const char * s = v;
-  uint64_t h = 0;
-
-  int x;
-  for(x = 0; x < l; x++)
+  int i;
+  for(i = setl - 1; i >  k; i--)
   {
-    h += s[x];
-    h += (h << 13);
-    h ^= (h >> 3);
+    if(set[k] < set[i])
+      break; 
   }
 
-  h += (h << 3);
-  h ^= (h >> 23);
-  h += (h << 34);
+  swap(set, k, i);
+  reverse(set, k + 1, setl - (k + 1));
 
-  return h;
+  return 1;
 }
