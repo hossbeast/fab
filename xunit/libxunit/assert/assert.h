@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -37,8 +37,14 @@ void xunit_failf_info(const char * const restrict expfmt, const char * const res
 void xunit_fails_info(const char * const restrict exp, const char * const restrict act)
   __attribute__((nonnull));
 
-#define ufail()                   \
-  tfail(perrtab_XUNIT, XUNIT_FAIL)
+extern __thread uint32_t xunit_assertions_passed;
+extern __thread uint32_t xunit_assertions_failed;
+
+#define ufail()                       \
+  do {                                \
+    xunit_assertions_failed++;        \
+    tfail(perrtab_XUNIT, XUNIT_FAIL); \
+  } while(0)
 
 #define ufailf(expfmt, actfmt, ...)                   \
   do {                                                \
@@ -52,28 +58,28 @@ void xunit_fails_info(const char * const restrict exp, const char * const restri
     ufail();                                      \
   } while(0)
 
-#define assert(bool)      \
-  do {                    \
-    if(!(bool))           \
-    {                     \
-      ufail();            \
-    }                     \
+#define assert(bool)              \
+  do {                            \
+    if(!(bool))                   \
+      ufail();                    \
+    else                          \
+      xunit_assertions_passed++;  \
   } while(0)
 
 #define asserts(bool, exp, act, ...)          \
   do {                                        \
     if(!(bool))                               \
-    {                                         \
       ufails(exp, act);                       \
-    }                                         \
+    else                                      \
+      xunit_assertions_passed++;              \
   } while(0)
 
 #define assertf(bool, expfmt, actfmt, ...)    \
   do {                                        \
     if(!(bool))                               \
-    {                                         \
       ufailf(expfmt, actfmt, ##__VA_ARGS__);  \
-    }                                         \
+    else                                      \
+      xunit_assertions_passed++;              \
   } while(0)
 
 #define assert_exit(exit, etab, ecode)                                        \

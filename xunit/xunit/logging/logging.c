@@ -22,14 +22,14 @@ logger_category * categories = (logger_category []) {
   , { name : "ARGS"     , description : "program arguments" }
   , { name : "PARAMS"   , description : "program execution parameters" }
   , { name : "DLOAD"    , description : "dload details"                 , attr : L_MAGENTA }
-  , { name : "SUMMARY"  , description : "per-suite results" }
-  , { name : "UNIT"     , description : "per-unit results" }
   , { name : "TEST"     , description : "per-test results" }
+  , { name : "UNIT"     , description : "per-unit results" }
+  , { name : "SUITE"    , description : "per-suite results" }
   , { name : "FAIL"     , description : "test failure details" }
   , { }
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+ERROR|SUMMARY|FAIL" }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+ERROR|FAIL|SUITE", attr : L_CATEGORY }
   , { }
 };

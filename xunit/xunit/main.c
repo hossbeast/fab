@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -24,8 +24,11 @@
 #include "xapi/calltree.h"
 #include "xlinux.h"
 #include "xunit.h"
+#include "xunit/assert.h"
 #include "xunit/XUNIT.errtab.h"
 #include "logger.h"
+#include "narrator.h"
+#include "narrator/units.h"
 
 #include "args.h"
 #include "logging.h"
@@ -40,9 +43,11 @@ int main(int argc, char** argv, char ** envp)
   char space[4096];
   size_t tracesz = 0;
 
-  int total_pass = 0;
-  int total_fail = 0;
-  //
+  uint32_t suite_assertions_passed = 0;
+  uint32_t suite_assertions_failed = 0;
+  uint32_t suite_tests = 0;
+  uint32_t suite_units = 0;
+
   // allocated with the same size as g_args.objects
   void ** objects = 0;
   int x = 0;
@@ -67,6 +72,10 @@ int main(int argc, char** argv, char ** envp)
   // allocation for dloaded objects
   fatal(xmalloc, &objects, sizeof(*objects) * g_args.objectsl);
 
+  struct timespec suite_start;
+  struct timespec suite_end;
+  fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &suite_start);
+
   for(;x < g_args.objectsl; x++)
   {
     // open the object
@@ -78,16 +87,12 @@ int main(int argc, char** argv, char ** envp)
 
     if(xunit)
     {
-      xunit_test ** test = xunit->tests;
-      while(*test)
-        test++;
-
       logf(L_DLOAD, "loaded %s -> xunit : { setup : %p, teardown : %p, release : %p, tests : %zu }"
         , g_args.objects[x]
-        , xunit->setup 
+        , xunit->setup
         , xunit->teardown
         , xunit->release
-        , test - xunit->tests
+        , sentinel(xunit->tests)
       );
     }
     else
@@ -97,32 +102,43 @@ int main(int argc, char** argv, char ** envp)
 
     if(xunit)
     {
+      suite_units++;
+
+      struct timespec unit_start;
+      struct timespec unit_end;
+      fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &unit_start);
+
       // unit setup
       if(xunit->setup)
         fatal(xunit->setup, xunit);
 
       xunit_test ** test = xunit->tests;
 
-      int unit_pass = 0;
-      int unit_fail = 0;
-      int unit_tests = sentinel(test);
+      uint32_t unit_assertions_passed = 0;
+      uint32_t unit_assertions_failed = 0;
+      uint32_t unit_tests = 0;
 
       // execute all tests
       while(*test)
       {
+        unit_tests++;
+
         // convenience
         (*test)->unit = xunit;
 
-        int test_pass = 0;
-        int test_fail = 0;
+        xunit_assertions_passed = 0;
+        xunit_assertions_failed = 0;
+
+        struct timespec test_start;
+        struct timespec test_end;
+        fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_start);
 
         if(invoke((*test)->entry, (*test)))
         {
           // add identifying info
           if((*test)->name)
             xapi_info_adds("test", (*test)->name);
-          else
-            xapi_info_addf("test", "%d", (test - xunit->tests) + 1);
+
           xapi_info_adds("object", g_args.objects[x]);
 
           // propagate non-unit-testing errors
@@ -136,49 +152,46 @@ int main(int argc, char** argv, char ** envp)
           xapi_calltree_unwind();
 
           // for unit-testing errors, log the failure and continue
-          logf(L_FAIL, "%*s %.*s", 3, "", (int)z, space);
-          
-          test_fail++;
+          logf(L_FAIL, "   %.*s", (int)z, space);
         }
-        else
-        {
-          test_pass++;
-        }
+
+        fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_end);
 
         // report for this test
-        fatal(log_xstart, L_TEST, test_pass ? L_GREEN : L_RED, &token);
-        xlogf(0, test_pass ? L_GREEN : L_RED
-          , "%7s %*s %s %*s (%3d / %-3d)"
-          , "test"
-          , 7, ""
-          , test_pass ? "pass" : "fail"
-          , 4, ""
-          , (test - xunit->tests) + 1
-          , unit_tests
+        fatal(log_xstart, L_TEST, xunit_assertions_failed == 0 ? L_GREEN : L_RED, &token);
+        logf(0
+          , "  %%%6.2f pass rate on %6d assertions in "
+          , 100 * ((double)xunit_assertions_passed / (double)(xunit_assertions_passed + xunit_assertions_failed))
+          , xunit_assertions_passed + xunit_assertions_failed
         );
 
-        if((*test)->name)
-          logf(0, " %s", (*test)->name);
+        fatal(elapsed_say, &test_start, &test_end, log_narrator());
         fatal(log_finish, &token);
 
-        unit_pass += test_pass;
-        unit_fail += test_fail;
+        unit_assertions_passed += xunit_assertions_passed;
+        unit_assertions_failed += xunit_assertions_failed;
 
         test++;
       }
 
+      fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &unit_end);
+
       // report for this module
-      xlogf(L_UNIT, unit_fail == 0 ? L_GREEN : L_RED
-        , "%6s %%%6.2f pass rate (%3d / %-3d) for %s"
-        , "unit"
-        , 100 * ((double)unit_pass / (double)(unit_pass + unit_fail))
-        , unit_pass
-        , unit_tests
-        , g_args.objects[x]
+      fatal(log_xstart, L_UNIT, unit_assertions_failed == 0 ? L_GREEN : L_RED, &token);
+      logf(0
+        , " %%%6.2f pass rate on %6d assertions by %3d tests in "
+        , 100 * ((double)unit_assertions_passed / (double)(unit_assertions_passed + unit_assertions_failed))
+        , unit_assertions_passed + unit_assertions_failed
+        , sentinel(xunit->tests)
       );
 
-      total_pass += unit_pass;
-      total_fail += unit_fail;
+      fatal(elapsed_say, &unit_start, &unit_end, log_narrator());
+      fatal(log_finish, &token);
+
+      suite_assertions_passed += unit_assertions_passed;
+      suite_assertions_failed += unit_assertions_failed;
+      suite_units++;
+      suite_tests += unit_tests;
 
       // unit cleanup
       if(xunit->teardown)
@@ -189,14 +202,20 @@ int main(int argc, char** argv, char ** envp)
     }
   }
 
+  fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &suite_end);
+
   // summary report
-  xlogf(L_SUMMARY, total_fail ? L_RED : L_GREEN
-    , "%-5s %%%6.2f pass rate (%3d / %-3d)"
-    , "suite"
-    , 100 * ((double)total_pass / (double)(total_pass + total_fail))
-    , total_pass
-    , (total_pass + total_fail)
+  fatal(log_xstart, L_SUITE, suite_assertions_failed == 0 ? L_GREEN : L_RED, &token);
+  logf(0
+    , "%%%6.2f pass rate on %6d assertions by %3d tests from %4d units in "
+    , 100 * ((double)suite_assertions_passed / (double)(suite_assertions_passed + suite_assertions_failed))
+    , (suite_assertions_passed + suite_assertions_failed)
+    , suite_tests
+    , suite_units
   );
+
+  fatal(elapsed_say, &suite_start, &suite_end, log_narrator());
+  fatal(log_finish, &token);
 
 finally:
   fatal(log_finish, &token);
@@ -229,8 +248,7 @@ finally:
   fatal(logger_unload);
 
 conclude(&R);
-
   xapi_teardown();
 
-  return R | total_fail;
+  return R | suite_assertions_failed;
 }

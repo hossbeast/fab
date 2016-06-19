@@ -29,9 +29,9 @@ extern logger_stream * streams;
 #define L_ARGS    categories[1].id
 #define L_PARAMS  categories[2].id
 #define L_DLOAD   categories[3].id
-#define L_SUMMARY categories[4].id
+#define L_TEST    categories[4].id
 #define L_UNIT    categories[5].id
-#define L_TEST    categories[6].id
+#define L_SUITE   categories[6].id
 #define L_FAIL    categories[7].id
 
 #endif

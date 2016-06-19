@@ -24,7 +24,7 @@
 $cflags = [
   [ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
   [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
-  [ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dlibxunit $dliblogger ~ s/^/-I ]
+  [ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dlibxunit $dliblogger $dlibnarrator ~ s/^/-I ]
 ]
 
 $cflags_xapi_final = [ $cflags $cflags_xapi_final ]

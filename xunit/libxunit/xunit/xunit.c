@@ -19,10 +19,10 @@
 #include "xapi/errtab.h"
 #include "xlinux.h"
 #include "xlinux/LIB.errtab.h"
+#include "logger.h"
 
 #include "internal.h"
 #include "XUNIT.errtab.h"
-#include "logging.internal.h"
 
 static int handles;
 
@@ -40,7 +40,6 @@ API xapi xunit_load()
     fatal(logger_load);
 
     // modules
-    fatal(logging_setup);
     fatal(xapi_errtab_register, perrtab_XUNIT);
   }
   handles++;
