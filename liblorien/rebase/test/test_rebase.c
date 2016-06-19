@@ -24,7 +24,6 @@
 struct rebase_test;
 #define TEST_TYPE struct rebase_test
 #include "xunit.h"
-#include "xunit/logging.h"
 #include "xunit/assert.h"
 
 #include "logger.h"
@@ -43,14 +42,8 @@ xapi rebase_test_entry(rebase_test * test)
 
   char space[512];
 
-  // log the inset
-  logs(L_INSET, test->path);
-
   // transform
   fatal(rebase, test->path, 0, test->base, 0, space, sizeof(space), 0);
-
-  // log the outset
-  logs(L_OUTSET, space);
 
   assertf(strcmp(test->expected, space) == 0, "%s", "%s", test->expected, space);
 

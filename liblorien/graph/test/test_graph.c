@@ -28,7 +28,6 @@
 struct graph_test;
 #define TEST_TYPE struct graph_test
 #include "xunit.h"
-#include "xunit/logging.h"
 #include "xunit/assert.h"
 
 struct item;
@@ -160,8 +159,6 @@ xapi graph_test_entry(graph_test * test)
     xapi_trace_full(space, sizeof(space));
     xapi_calltree_unwind();
   }
-
-  logf(L_OUTSET, "path %s", narrator_fixed_buffer(N));
 
   if(test->expected)
   {

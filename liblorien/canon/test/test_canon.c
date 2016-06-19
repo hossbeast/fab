@@ -24,7 +24,6 @@
 struct canon_test;
 #define TEST_TYPE struct canon_test
 #include "xunit.h"
-#include "xunit/logging.h"
 #include "xunit/assert.h"
 
 #include "logger.h"
@@ -44,15 +43,9 @@ xapi __attribute__((nonnull)) canon_test_entry(canon_test * const test)
 
   char space[512];
 
-  // log the inset
-  logs(L_INSET, test->path);
-
   // transform
   size_t z;
   fatal(canon, test->path, 0, test->base, 0, space, sizeof(space), &z, test->opts);
-
-  // log the outset
-  logs(L_OUTSET, space);
 
   assertf(strcmp(test->final, space) == 0, "%s", "%s", test->final, space);
 

@@ -25,7 +25,6 @@
 struct pathtree_test;
 #define TEST_TYPE struct pathtree_test
 #include "xunit.h"
-#include "xunit/logging.h"
 #include "xunit/assert.h"
 
 #include "valyria/list.h"
