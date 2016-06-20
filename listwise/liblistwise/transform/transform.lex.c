@@ -1048,6 +1048,9 @@ static yyconst flex_int16_t yy_chk[2160] =
 	#include <stdio.h>
 	#include <inttypes.h>
 
+	// contains much of the implemention of the scanner
+	#include "yyutil/scanner.h"
+
 	#include "transform/transform.def.h"
 	#include "transform/transform.tab.h"
 	#include "transform/transform.tokens.h"
@@ -1055,9 +1058,6 @@ static yyconst flex_int16_t yy_chk[2160] =
   #include "operators.internal.h"
 
 	#include "macros.h"
-
-	// contains much of the implemention of the scanner
-	#include "yyutil.h"
 
 	/// LEX
 	//

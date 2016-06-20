@@ -19,6 +19,9 @@
 	#include <stdio.h>
 	#include <inttypes.h>
 
+	// contains much of the implemention of the scanner
+	#include "yyutil/scanner.h"
+
 	#include "transform/transform.def.h"
 	#include "transform/transform.tab.h"
 	#include "transform/transform.tokens.h"
@@ -26,9 +29,6 @@
   #include "operators.internal.h"
 
 	#include "macros.h"
-
-	// contains much of the implemention of the scanner
-	#include "yyutil.h"
 
 	/// LEX
 	//

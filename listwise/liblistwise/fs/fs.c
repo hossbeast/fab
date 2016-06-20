@@ -24,12 +24,13 @@
 
 #include "xapi.h"
 #include "xlinux.h"
+#include "lorien/canon.h"
+#include "lorien/rebase.h"
 
 #include "internal.h"
 #include "fs.internal.h"
 #include "logging.internal.h"
 
-#include "canon.h"
 #include "parseint.h"
 #include "color.h"
 #include "macros.h"

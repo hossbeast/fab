@@ -24,9 +24,9 @@
 #include <unistd.h>
 
 #include "listwise/operator.h"
+#include "lorien/canon.h"
 
 #include "xlinux.h"
-#include "canon.h"
 
 /*
 

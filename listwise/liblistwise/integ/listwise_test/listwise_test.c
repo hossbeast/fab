@@ -25,7 +25,7 @@
 #include "listwise_test.h"
 #include "macros.h"
 
-xapi listwise_test_setup(const xunit_unit * unit)
+xapi listwise_test_setup(xunit_unit * unit)
 {
   enter;
 
@@ -34,7 +34,7 @@ xapi listwise_test_setup(const xunit_unit * unit)
   finally : coda;
 }
 
-xapi listwise_test_release(const xunit_unit * unit)
+xapi listwise_test_release(xunit_unit * unit)
 {
   enter;
 
@@ -43,7 +43,7 @@ xapi listwise_test_release(const xunit_unit * unit)
   finally : coda;
 }
 
-API xapi listwise_test_entry(const listwise_test * test)
+API xapi listwise_test_entry(listwise_test * test)
 {
   enter;
 
@@ -52,6 +52,7 @@ API xapi listwise_test_entry(const listwise_test * test)
   int i = 0;
   int x = 0;
 
+#if 0
   // log in the inset
   fatal(log_start, L_INSET, &token);
   if(token)
@@ -64,11 +65,13 @@ API xapi listwise_test_entry(const listwise_test * test)
       logs(0, test->init[x]);
     }
     logf(0, " ~ %s ]", test->xsfm);
-    fatal(log_finish, &token);
   }
+  fatal(log_finish, &token);
+#endif
 
   fatal(listwise_exec, test->xsfm, test->init, 0, sentinel(test->init), &lx);
 
+#if 0
   // log the outset
   fatal(log_start, L_OUTSET, &token);
   if(token)
@@ -91,8 +94,9 @@ API xapi listwise_test_entry(const listwise_test * test)
     LSTACK_ITEREND
 
     logs(0, " ]");
-    fatal(log_finish, &token);
   }
+  fatal(log_finish, &token);
+#endif
 
   // compare
   i = 0;
@@ -104,27 +108,13 @@ API xapi listwise_test_entry(const listwise_test * test)
     fatal(lstack_string, lx, 0, x, &s);
 
     if(i < sentinel(test->final))
-    {
-      if(strcmp(test->final[i], s))
-      {
-        xapi_fail_intent();
-        xapi_infof("expected", "row %s", test->final[i]);
-        xapi_infof("actual", "row %s", s);
-        tfail(perrtab_XUNIT, XUNIT_FAIL);
-      }
-    }
+      assertf(strcmp(test->final[i], s) == 0, "row %s", "row %s", test->final[i], s);
 
     i++;
   }
   LSTACK_ITEREND
 
-  if(i != sentinel(test->final))
-  {
-    xapi_fail_intent();
-    xapi_infof("expected", "rows %d", sentinel(test->final));
-    xapi_infof("actual", "rows %d", i);
-    tfail(perrtab_XUNIT, XUNIT_FAIL);
-  }
+  assertf(i == sentinel(test->final), "rows %d", "rows %d", sentinel(test->final), i);
 
 finally:
   fatal(log_finish, &token);

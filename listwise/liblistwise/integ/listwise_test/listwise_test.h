@@ -23,13 +23,11 @@
 struct listwise_test;
 #define TEST_TYPE struct listwise_test
 #include "xunit.h"
-#include "xunit/logs.h"
-#include "xunit/XUNIT.errtab.h"
+#include "xunit/assert.h"
 
-xapi listwise_test_setup(const xunit_unit *);
-xapi listwise_test_release(const xunit_unit *);
-
-xapi listwise_test_entry(const struct listwise_test*)
+xapi listwise_test_setup(xunit_unit *);
+xapi listwise_test_release(xunit_unit *);
+xapi listwise_test_entry(struct listwise_test*)
   __attribute__((nonnull));
 
 typedef struct listwise_test

@@ -20,6 +20,9 @@
 
 #include "xapi.h"
 #include "narrator.h"
+#include "xlinux.h"
+#include "xlinux/SYS.errtab.h"
+#include "yyutil/scanner.h"
 
 #include "internal.h"
 #include "transform.internal.h"
@@ -30,9 +33,6 @@
 #include "transform/transform.states.h"
 #include "genscan.internal.h"
 #include "logging.internal.h"
-
-#include "xlinux.h"
-#include "xlinux/SYS.errtab.h"
 
 #include "macros.h"
 

@@ -25,8 +25,6 @@
 #include "selection.internal.h"
 #include "window.internal.h"
 
-#include "wstdlib.h"
-
 #define restrict __restrict
 
 lwx * APIDATA listwise_identity = 0;

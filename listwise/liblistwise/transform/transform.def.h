@@ -24,7 +24,7 @@
 #include "internal.h"
 #include "transform.h"
 
-#include "yyutil.h"
+#include "yyutil/parser.h"
 
 typedef struct
 {
