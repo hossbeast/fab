@@ -18,6 +18,8 @@
 #ifndef _GROW_H
 #define _GROW_H
 
+#include <sys/types.h>
+
 #include "xapi.h"
 
 #define restrict __restrict

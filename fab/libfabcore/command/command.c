@@ -16,7 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 #include "narrator.h"
 
 #include "internal.h"
@@ -39,10 +40,10 @@ API void command_free(command * const restrict cmd)
   {
     size_t x;
     for(x = 0; x < sizeof(cmd->strings) / sizeof(cmd->strings[0]); x++)
-      free(cmd->strings[x]);
+      xfree(cmd->strings[x]);
   }
 
-  free(cmd);
+  xfree(cmd);
 }
 
 API void command_ifree(command ** const restrict cmd)

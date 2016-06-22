@@ -27,6 +27,8 @@
 #include "xapi.h"
 #include "xlinux.h"
 #include "xlinux/SYS.errtab.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 
 #include "internal.h"
 #include "canon.internal.h"

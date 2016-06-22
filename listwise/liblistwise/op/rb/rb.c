@@ -23,7 +23,7 @@
 #include <dirent.h>
 #include <unistd.h>
 
-#include "xlinux.h"
+#include "xlinux/xunistd.h"
 
 #include "lorien/canon.h"
 #include "lorien/rebase.h"

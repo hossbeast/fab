@@ -25,7 +25,8 @@
 
 #include "listwise/operator.h"
 
-#include "xlinux.h"
+#include "xlinux/xstat.h"
+#include "xlinux/xunistd.h"
 
 /*
 

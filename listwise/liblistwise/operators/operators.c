@@ -27,7 +27,10 @@
 
 #include "xapi.h"
 #include "xapi/trace.h"
-#include "xlinux.h"
+
+#include "xlinux/xstdlib.h"
+#include "xlinux/xdlfcn.h"
+#include "xlinux/xdirent.h"
 
 #include "internal.h"
 #include "operators.internal.h"

@@ -24,7 +24,8 @@
 #include "listwise/operator.h"
 #include "listwise/lwx.h"
 
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
+
 #include "parseint.h"
 #include "strutil.h"
 

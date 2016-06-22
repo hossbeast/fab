@@ -15,15 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <unistd.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xpwd.h"
+#include "xlinux/xgrp.h"
+#include "xlinux/xstring.h"
 
 #include "internal.h"
 #include "identity.internal.h"
@@ -51,22 +49,22 @@ xapi identity_setup()
 
   // get real-user-id name for this process
   fatal(xgetpwuid, g_params.ruid, &pwd);
-  g_params.ruid_name = strdup(pwd->pw_name);
+  fatal(ixstrdup, &g_params.ruid_name, pwd->pw_name);
   g_params.ruid_namel = strlen(g_params.ruid_name);
 
   // get effective-user-id name for this process
   fatal(xgetpwuid, g_params.euid, &pwd);
-  g_params.euid_name = strdup(pwd->pw_name);
+  fatal(ixstrdup, &g_params.euid_name, pwd->pw_name);
   g_params.euid_namel = strlen(g_params.euid_name);
 
   // get real-group-id name for this process
   fatal(xgetgrgid, g_params.rgid, &grp);
-  g_params.rgid_name = strdup(grp->gr_name);
+  fatal(ixstrdup, &g_params.rgid_name, grp->gr_name);
   g_params.rgid_namel = strlen(g_params.rgid_name);
 
   // get effective-group-id name for this process
   fatal(xgetgrgid, g_params.egid, &grp);
-  g_params.egid_name = strdup(grp->gr_name);
+  fatal(ixstrdup, &g_params.egid_name, grp->gr_name);
   g_params.egid_namel = strlen(g_params.egid_name);
 
 #if DEBUG || DEVEL

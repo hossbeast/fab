@@ -47,7 +47,7 @@ extern int transform_yydebug;
 	#include <stdint.h>
 	#include <string.h>
 
-	#include "xlinux.h"
+	#include "xlinux/xstdlib.h"
 
 	#include "transform.def.h"
   #include "operator.internal.h"

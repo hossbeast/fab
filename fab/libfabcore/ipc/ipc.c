@@ -15,8 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdarg.h>
+
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xunistd.h"
 #include "xlinux/SYS.errtab.h"
 
 #include "internal.h"

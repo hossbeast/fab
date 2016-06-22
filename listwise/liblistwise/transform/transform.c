@@ -20,8 +20,10 @@
 
 #include "xapi.h"
 #include "narrator.h"
-#include "xlinux.h"
+
+#include "xlinux/xstdlib.h"
 #include "xlinux/SYS.errtab.h"
+
 #include "yyutil/scanner.h"
 
 #include "internal.h"

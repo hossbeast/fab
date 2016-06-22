@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 #include "map.h"

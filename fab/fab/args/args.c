@@ -24,7 +24,8 @@
 #include <getopt.h>
 #include <stdarg.h>
 
-#include "xlinux.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xstdlib.h"
 #include "xlinux/mempolicy.h"
 
 #include "listwise.h"

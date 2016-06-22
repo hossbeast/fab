@@ -17,9 +17,11 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xstdlib.h"
 #include "narrator.h"
 #include "narrator/file.h"
 #include "narrator/fixed.h"
@@ -274,7 +276,7 @@ static void __attribute__((nonnull)) stream_destroy(stream * const restrict stre
 {
   if(streamp)
   {
-    free(streamp->name);
+    xfree(streamp->name);
     list_free(streamp->filters);
     narrator_free(streamp->narrator);
     narrator_free(streamp->narrator_owned);

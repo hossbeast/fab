@@ -27,6 +27,7 @@
 #include "lorien/canon.h"
 
 #include "xlinux.h"
+#include "xlinux/xunistd.h"
 
 /*
 

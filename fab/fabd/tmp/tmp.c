@@ -23,7 +23,8 @@
 #include <sys/types.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstat.h"
+#include "xlinux/xftw.h"
 
 #include "fabcore/dirutil.h"
 

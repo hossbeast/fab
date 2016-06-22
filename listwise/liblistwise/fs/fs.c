@@ -23,7 +23,11 @@
 #include <sys/types.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xpwd.h"
+#include "xlinux/xgrp.h"
+#include "xlinux/xtime.h"
+#include "xlinux/xunistd.h"
+
 #include "lorien/canon.h"
 #include "lorien/rebase.h"
 

@@ -18,7 +18,9 @@
 #include <stdio.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdio.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 #include "file/file.internal.h"

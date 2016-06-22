@@ -25,8 +25,9 @@
 #include "listwise/lwx.h"
 #include "listwise/logging.h"
 
+#include "xlinux/xdirent.h"
+
 #include "parseint.h"
-#include "xlinux.h"
 
 /*
 

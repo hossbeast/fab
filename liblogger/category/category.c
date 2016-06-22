@@ -19,7 +19,7 @@
 #include <inttypes.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "valyria/pstring.h"

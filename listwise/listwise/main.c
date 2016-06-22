@@ -31,6 +31,9 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 #include "xlinux.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xstat.h"
+#include "xlinux/xunistd.h"
 #include "valyria/pstring.h"
 
 #include "listwise.h"

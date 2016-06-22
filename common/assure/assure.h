@@ -18,6 +18,8 @@
 #ifndef _ASSURE_H
 #define _ASSURE_H
 
+#include <sys/types.h>
+
 #include "xapi.h"
 
 #define restrict __restrict

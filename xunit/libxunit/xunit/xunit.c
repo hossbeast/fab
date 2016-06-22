@@ -17,7 +17,6 @@
 
 #include "xapi.h"
 #include "xapi/errtab.h"
-#include "xlinux.h"
 #include "xlinux/LIB.errtab.h"
 #include "logger.h"
 

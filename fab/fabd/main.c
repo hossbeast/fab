@@ -24,12 +24,17 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/prctl.h>
 
 #include "xapi.h"
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
+
 #include "xlinux.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xprctl.h"
+#include "xlinux/xstat.h"
+
 #include "narrator.h"
 #include "valyria.h"
 #include "logger.h"

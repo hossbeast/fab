@@ -20,7 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 #include "lstack.internal.h"

@@ -21,10 +21,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <string.h>
+#include <sys/wait.h>
 
 #include "xapi.h"
 #include "xapi/trace.h"
-#include "xlinux.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xsignal.h"
+#include "xlinux/xstdlib.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "logger.h"
@@ -164,7 +167,7 @@ API xapi sigbank_setup(const char * restrict name)
 
 API void sigbank_teardown()
 {
-  free(program);
+  xfree(program);
 }
 
 API int sigbank_select(int * restrict sig, pid_t * restrict pid)

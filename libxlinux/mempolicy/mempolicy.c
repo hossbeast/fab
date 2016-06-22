@@ -19,6 +19,7 @@
 #include "mempolicy/mempolicy.internal.h"
 #include "errtab/SYS.errtab.h"
 #include "errtab/XLINUX.errtab.h"
+#include "xstdlib.h"
 
 // arbitrary max policies
 #define MAX_POLICIES 8

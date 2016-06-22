@@ -21,7 +21,7 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 #include "xlinux/SYS.errtab.h"
 
 struct item;

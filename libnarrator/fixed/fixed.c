@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 #include "fixed.internal.h"

@@ -22,7 +22,8 @@
 #include <stdarg.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xstdlib.h"
 #include "lorien/canon.h"
 #include "lorien/rebase.h"
 

@@ -23,7 +23,9 @@
 #include <string.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xftw.h"
+#include "xlinux/xstat.h"
 
 #include "internal.h"
 #include "dirutil.internal.h"

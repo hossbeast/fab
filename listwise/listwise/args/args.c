@@ -22,7 +22,8 @@
 #include <getopt.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 #include "logger.h"
 #include "logger/filter.h"
 #include "logger/arguments.h"
@@ -120,8 +121,8 @@ printf(
 "\n"
 );
 
-  fatal(logger_filter_push, 0, "+LOGGER", 0);
-  fatal(category_report);
+  fatal(logger_filter_pushs, 0, "+LOGGER");
+  fatal(logger_categories_report);
   fatal(logger_filter_pop, 0);
 }
 

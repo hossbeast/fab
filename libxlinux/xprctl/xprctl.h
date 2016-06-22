@@ -18,6 +18,8 @@
 #ifndef _XLINUX_XPRCTL_H
 #define _XLINUX_XPRCTL_H
 
+#include <sys/prctl.h>
+
 #include "xapi.h"
 
 /// xprctl

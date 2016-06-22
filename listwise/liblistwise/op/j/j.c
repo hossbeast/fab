@@ -19,7 +19,7 @@
 #include <string.h>
 #include <alloca.h>
 
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 
 #include "listwise/operator.h"
 #include "listwise/lwx.h"

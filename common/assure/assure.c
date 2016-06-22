@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 
 #include "assure.h"
 

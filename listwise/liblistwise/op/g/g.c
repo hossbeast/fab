@@ -28,7 +28,9 @@
 #include <unistd.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+
+#include "xlinux/xfcntl.h"
+#include "xlinux/xunistd.h"
 #include "xlinux/SYS.errtab.h"
 
 #include "listwise/operator.h"

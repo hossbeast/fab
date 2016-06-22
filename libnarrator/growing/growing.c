@@ -18,7 +18,7 @@
 #include <stdio.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 #include "growing.internal.h"
@@ -89,7 +89,7 @@ xapi growing_seek(narrator_growing * const restrict n, off_t offset, int whence,
 
 void growing_destroy(narrator_growing * n)
 {
-  free(n->s);
+  xfree(n->s);
 }
 
 //

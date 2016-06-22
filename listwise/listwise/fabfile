@@ -36,14 +36,14 @@ $cflags_xapi_debug = [ $cflags $cflags_xapi_debug ]
 $cflags_xapi_devel = [ $cflags $cflags_xapi_devel ]
 
 $rpath = [ 
-  [ $dlibxapi $dlibxlinux $dlibvalyria $dliblistwise $dlibnarrator $dliblogger ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+  [ $dlibxapi $dlibxlinux $dlibvalyria $dliblistwise $dlibnarrator $dliblogger $dliblorien $dlibyyutil ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
-$lflags_eapi_final = [ $libxlinux_eapi_final $libvalyria_eapi_final $liblogger_eapi_final $liblistwise_eapi_final $libnarrator_eapi_final ]
-$lflags_eapi_debug = [ $libxlinux_eapi_debug $libvalyria_eapi_debug $liblogger_eapi_debug $liblistwise_eapi_debug $libnarrator_eapi_debug ]
-$lflags_eapi_devel = [ $libxlinux_eapi_devel $libvalyria_eapi_devel $liblogger_eapi_devel $liblistwise_eapi_devel $libnarrator_eapi_devel $rpath ]
-$lflags_xapi_final = [ $libxlinux_xapi_final $libvalyria_xapi_final $liblogger_xapi_final $liblistwise_xapi_final $libnarrator_xapi_final $libxapi_xapi_final ]
-$lflags_xapi_debug = [ $libxlinux_xapi_debug $libvalyria_xapi_debug $liblogger_xapi_debug $liblistwise_xapi_debug $libnarrator_xapi_debug $libxapi_xapi_debug ]
-$lflags_xapi_devel = [ $libxlinux_xapi_devel $libvalyria_xapi_devel $liblogger_xapi_devel $liblistwise_xapi_devel $libnarrator_xapi_devel $libxapi_xapi_devel $rpath ]
+$lflags_eapi_final = [ $libxlinux_eapi_final $libvalyria_eapi_final $libyyutil_eapi_final $liblorien_eapi_final $liblogger_eapi_final $liblistwise_eapi_final $libnarrator_eapi_final ]
+$lflags_eapi_debug = [ $libxlinux_eapi_debug $libvalyria_eapi_debug $libyyutil_eapi_debug $liblorien_eapi_debug $liblogger_eapi_debug $liblistwise_eapi_debug $libnarrator_eapi_debug ]
+$lflags_eapi_devel = [ $libxlinux_eapi_devel $libvalyria_eapi_devel $libyyutil_eapi_devel $liblorien_eapi_devel $liblogger_eapi_devel $liblistwise_eapi_devel $libnarrator_eapi_devel $rpath ]
+$lflags_xapi_final = [ $libxlinux_xapi_final $libvalyria_xapi_final $libyyutil_xapi_final $liblorien_xapi_final $liblogger_xapi_final $liblistwise_xapi_final $libnarrator_xapi_final $libxapi_xapi_final ]
+$lflags_xapi_debug = [ $libxlinux_xapi_debug $libvalyria_xapi_debug $libyyutil_xapi_debug $liblorien_xapi_debug $liblogger_xapi_debug $liblistwise_xapi_debug $libnarrator_xapi_debug $libxapi_xapi_debug ]
+$lflags_xapi_devel = [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $liblorien_xapi_devel $liblogger_xapi_devel $liblistwise_xapi_devel $libnarrator_xapi_devel $libxapi_xapi_devel $rpath ]
 
 # c files
 +[@std.c]($dext = [ eapi.final.o ]; $dirs = $sdirs; $cc; $cflags = $cflags_eapi_final)

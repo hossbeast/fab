@@ -18,7 +18,7 @@
 #include <stdio.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 #include "multi.internal.h"
@@ -81,7 +81,7 @@ xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off
 
 void multi_destroy(narrator_multi * n)
 {
-  free(n->v);
+  xfree(n->v);
 }
 
 //

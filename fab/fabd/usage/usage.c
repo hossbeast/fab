@@ -16,7 +16,10 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xlinux.h"
+
+#include "xlinux/xfcntl.h"
+#include "xlinux/xunistd.h"
+
 #include "narrator.h"
 #include "narrator/units.h"
 #include "logger.h"

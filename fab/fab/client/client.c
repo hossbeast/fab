@@ -28,8 +28,16 @@
 
 #include "xapi.h"
 #include "xapi/trace.h"
-#include "xlinux.h"
+
+#include "xlinux/xfcntl.h"
 #include "xlinux/SYS.errtab.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstat.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xshm.h"
+#include "xlinux/xsignal.h"
+
 #include "narrator.h"
 #include "narrator/units.h"
 #include "logger.h"

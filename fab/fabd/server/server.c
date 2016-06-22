@@ -19,7 +19,14 @@
 #include "xapi/trace.h"
 #include "xapi/exit.h"
 #include "xapi/calltree.h"
-#include "xlinux.h"
+
+#include "xlinux/xfcntl.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xshm.h"
+#include "xlinux/xsignal.h"
+
 #include "xlinux/mempolicy.h"
 #include "listwise/LISTWISE.errtab.h"
 #include "listwise/PCRE.errtab.h"

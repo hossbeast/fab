@@ -17,7 +17,8 @@
 
 #include "xapi.h"
 #include "xapi/exit.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 #include "narrator.h"
 
 #include "internal.h"

@@ -21,9 +21,11 @@
 
 #include "xapi.h"
 
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xmman.h"
 #include "xlinux/SYS.errtab.h"
 #include "xlinux/mempolicy.h"
+#include "xlinux/xuio.h"
 
 struct memblk_internals
 {

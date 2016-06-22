@@ -20,7 +20,8 @@
 #include <string.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 #include "narrator.h"
 #include "narrator/file.h"
 

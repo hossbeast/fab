@@ -25,7 +25,7 @@
 #include <time.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xtime.h"
 #include "valyria/pstring.h"
 #include "narrator.h"
 #include "narrator/growing.h"

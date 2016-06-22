@@ -25,7 +25,8 @@
 #include "errtab/MAIN.errtab.h"
 #undef perrtab
 #define perrtab perrtab_MAIN
-#include "xlinux.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xstdlib.h"
 #include "logger.h"
 #include "logger/arguments.h"
 #include "logger/filter.h"

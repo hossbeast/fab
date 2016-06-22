@@ -18,7 +18,7 @@
 #include <stdio.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 #include "record.internal.h"
@@ -73,7 +73,7 @@ xapi record_seek(narrator_record * const restrict n, off_t offset, int whence, o
 
 void record_destroy(narrator_record * n)
 {
-  free(n->s);
+  xfree(n->s);
 }
 
 //

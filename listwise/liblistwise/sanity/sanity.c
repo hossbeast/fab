@@ -22,7 +22,7 @@
 #include <stdint.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 #include "valyria/map.h"
 
 #include "internal.h"

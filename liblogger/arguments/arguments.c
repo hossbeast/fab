@@ -22,7 +22,9 @@
 #include <string.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xunistd.h"
 
 #include "internal.h"
 #include "arguments.internal.h"

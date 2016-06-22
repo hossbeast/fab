@@ -22,7 +22,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 #include "xlinux/SYS.errtab.h"
 
 #include "listwise/operator.h"

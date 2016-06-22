@@ -24,7 +24,8 @@
 #include <stdarg.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 #include "lorien/canon.h"
 #include "logger.h"
 
