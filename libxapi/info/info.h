@@ -18,6 +18,7 @@
 #ifndef _XAPI_INFO_H
 #define _XAPI_INFO_H
 
+#if XAPI_STACKTRACE
 #define restrict __restrict
 
 /// xapi_fail_intent
@@ -93,4 +94,5 @@ void xapi_info_vaddf(const char * const restrict key, const char * const restric
   __attribute__((nonnull(2)));
 
 #undef restrict
+#endif
 #endif

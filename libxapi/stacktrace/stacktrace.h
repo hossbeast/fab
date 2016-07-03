@@ -54,6 +54,7 @@ when calling non-xapi code, you have a couple of options.
 
 */
 
+#if XAPI_STACKTRACE
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -106,4 +107,5 @@ when calling non-xapi code, you have a couple of options.
 //
 #define xproxy(func, ...) return func(__VA_ARGS__)
 
+#endif
 #endif

@@ -18,6 +18,8 @@
 #ifndef _XAPI_CALLTREE_H
 #define _XAPI_CALLTREE_H
 
+#if XAPI_STACKTRACE
+
 struct memblk;      // memblk.h
 struct calltree;
 
@@ -65,4 +67,5 @@ struct calltree * xapi_calltree_thaw(char * const restrict mb)
   __attribute__((nonnull));
 
 #undef restrict
+#endif
 #endif

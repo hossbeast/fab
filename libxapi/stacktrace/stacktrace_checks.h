@@ -64,6 +64,8 @@ when calling non-xapi code, you have a couple of options.
 
 */
 
+#if XAPI_STACKTRACE
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <errno.h>
@@ -148,4 +150,5 @@ when calling non-xapi code, you have a couple of options.
   fatal(func, ##__VA_ARGS__);   \
   finally : coda
 
+#endif
 #endif

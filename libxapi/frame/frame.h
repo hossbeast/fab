@@ -1,32 +1,39 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef _XAPI_FRAME_H
 #define _XAPI_FRAME_H
 
-#include <stdint.h>
-
 /*
-** application-visible frame manipulation functions used in XAPI_STACKTRACE mode
-**
-** none of these functions are called directly by application code; they are accessed
-** through the macros provided in xapi/stacktrace.h
+
+SUMMARY
+ application-visible frame manipulation functions used in XAPI_STACKTRACE mode
+
+REMARKS
+ none of these functions are called directly by application code; they are accessed
+ through the macros provided in xapi/stacktrace.h
+
 */
 
+#include "xapi.h"
+
+#if XAPI_STACKTRACE
+
+#include <stdint.h>
 #define restrict __restrict
 
 struct etable;
@@ -94,7 +101,7 @@ xapi xapi_frame_errval(xapi_frame_index index);
 // PARAMETERS
 //  [etab]         - errtab table (nonnull when code is nonzero)
 //  [code]         - error code (nonzero when raising a new error)
-//  parent_index   - 
+//  parent_index   -
 //  [key]          - key for a single, optional kvp to apply to the frame
 //  [vstr]         - value string
 //  [vbuf]         - value buffer
@@ -161,4 +168,5 @@ xapi xapi_calltree_errval();
 const etable * xapi_calltree_errtab();
 
 #undef restrict
+#endif
 #endif

@@ -20,6 +20,7 @@
 
 #include "xapi.h"
 
+#if XAPI_STACKTRACE
 #define restrict __restrict
 
 /// xapi_exit_errname
@@ -129,4 +130,5 @@ xapi xapi_exit_synth(const etable * const restrict etab, const xapi_code errcode
   __attribute__((nonnull));
 
 #undef restrict
+#endif
 #endif

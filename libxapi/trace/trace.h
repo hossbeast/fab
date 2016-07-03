@@ -18,6 +18,8 @@
 #ifndef _XAPI_TRACE_H
 #define _XAPI_TRACE_H
 
+#if XAPI_STACKTRACE
+
 #include <sys/types.h>
 
 struct calltree;
@@ -95,4 +97,5 @@ size_t xapi_trace_calltree_full(struct calltree * const restrict cs, char * cons
   __attribute__((nonnull));
 
 #undef restrict
+#endif
 #endif

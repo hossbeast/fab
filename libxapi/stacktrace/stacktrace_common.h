@@ -18,6 +18,8 @@
 #ifndef _XAPI_STACKTRACE_COMMON_H
 #define _XAPI_STACKTRACE_COMMON_H
 
+#if XAPI_STACKTRACE
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <errno.h>
@@ -274,4 +276,5 @@ XAPI_LEAVE:                         \
 #define XAPI_THROWING(c) (XAPI_UNWINDING && XAPI_ERRTAB == (perrtab) && XAPI_ERRCODE == (c))
 
 #undef restrict
+#endif
 #endif

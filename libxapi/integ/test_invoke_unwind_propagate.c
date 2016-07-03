@@ -17,6 +17,7 @@
 
 #include <unistd.h>
 
+#include "xapi.h"
 #include "xapi/trace.h"
 
 #include "test.h"

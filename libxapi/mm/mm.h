@@ -18,6 +18,8 @@
 #ifndef _XAPI_MM_H
 #define _XAPI_MM_H
 
+#if XAPI_STACKTRACE
+
 // suggested value for xapi_allocate
 #define XAPI_BYTES_DEFAULT (1024 * 32)
 
@@ -31,4 +33,5 @@
 //
 API void xapi_allocate(size_t bytes);
 
+#endif
 #endif
