@@ -182,6 +182,12 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 [ @test ] : [ $*/test ~ j lsr sx/c/test sy ]
 {
   set -e
+  for x in [ $@ ~ rx/ineed fi ] ; do [ $xunit_valgrind_runner ] $x ; done
+}
+
+[ @test.fast ] : [ $*/test ~ j lsr sx/c/test sy ]
+{
+  set -e
   [ $@ ~ rx/ineed fi/; ]
 }
 

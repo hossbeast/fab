@@ -185,5 +185,17 @@ xapi pscatw(pstring * restrict p, const char * const restrict b, size_t l)
 xapi pscatc(pstring * restrict p, int c)
   __attribute__((nonnull));
 
+/// pscmp
+//
+// SUMMARY
+//  compare two pstring instances
+//
+// PARAMETERS
+//  A - pstring
+//  B - pstring
+//
+int pscmp(const pstring * const restrict A, const pstring * const restrict B)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

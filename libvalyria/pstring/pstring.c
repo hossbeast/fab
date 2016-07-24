@@ -27,6 +27,7 @@
 #include "pstring.internal.h"
 
 #include "assure.h"
+#include "strutil.h"
 
 /*
  * Default capacity
@@ -295,4 +296,9 @@ API xapi pscatc(pstring * restrict ps, int c)
   ps->l++;
 
   finally : coda;
+}
+
+API int pscmp(const pstring * const restrict A, const pstring * const restrict B)
+{
+  return estrcmp(A->s, A->l, B->s, B->l, 0);
 }
