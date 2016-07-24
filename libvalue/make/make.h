@@ -69,10 +69,14 @@ xapi value_boolean_mk(struct value_store * const restrict stor, const struct yyu
 //  rv     - (returns) value containing string
 //
 // VARIANT
+//  s - string
 //  w - buffer
 //  v - value
 //  c - character
 //
+xapi value_string_mks(struct value_store * const restrict stor, const struct yyu_location * const restrict loc, struct value * e, struct value ** rv, const char * const restrict s)
+  __attribute__((nonnull(1, 4, 5)));
+
 xapi value_string_mkw(struct value_store * const restrict stor, const struct yyu_location * const restrict loc, struct value * e, struct value ** rv, const char * const restrict b, size_t l)
   __attribute__((nonnull(1, 4, 5)));
 
@@ -92,10 +96,17 @@ xapi value_string_mkv(struct value_store * const restrict stor, const struct yyu
 //  [loc] - value location
 //  [e]   - existing value to append to, if any
 //  rv    - (returns) value containing the map
-//  key   - key to insert
+//  key   - key to insert (VALUE_TYPE_STRING)
 //  val   - value to insert
 //
-xapi value_map_mk(struct value_store * const restrict stor, const struct yyu_location * const restrict loc, struct value * e, struct value ** rv, struct value * key, struct value * val)
+// VARIANTS
+//  v - key from value
+//  s - key from string
+//
+xapi value_map_mkv(struct value_store * const restrict stor, const struct yyu_location * const restrict loc, struct value * e, struct value ** rv, struct value * key, struct value * val)
+  __attribute__((nonnull(1, 4, 5, 6)));
+
+xapi value_map_mks(struct value_store * const restrict stor, const struct yyu_location * const restrict loc, struct value * e, struct value ** rv, const char * const key, struct value * val)
   __attribute__((nonnull(1, 4, 5, 6)));
 
 /// value_list_mk

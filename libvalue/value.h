@@ -88,6 +88,7 @@ xapi value_load(void);
 //
 xapi value_unload(void);
 
+#if 0
 /// value_mkfloat
 //
 // SUMMARY
@@ -171,6 +172,7 @@ xapi value_map_mk(struct value_store * const restrict stor, const struct yyu_loc
 //
 xapi value_list_mk(struct value_store * const restrict stor, const struct yyu_location * const restrict loc, value * e, value ** rv, value * el)
   __attribute__((nonnull(1, 4, 5)));
+#endif
 
 /// value_say
 //
