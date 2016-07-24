@@ -49,25 +49,6 @@
 #undef perrtab
 #define perrtab perrtab_MAIN
 
-#if 0
-int listwise_would(void * token, void * udata)
-{
-  return log_would(*(uint64_t*)token);
-}
-
-void listwise_log(void * token, void * udata, const char * func, const char * file, int line, char * fmt, ...)
-{
-  va_list va;
-  va_start(va, fmt);
-#if DEBUG || DEVEL
-  log_vlogf(func, file, line, *(uint64_t*)token, fmt, va);
-#else
-  log_vlogf(*(uint64_t*)token, fmt, va);
-#endif
-  va_end(va);
-}
-#endif
-
 /// snarf
 //
 // SUMMARY

@@ -41,9 +41,19 @@ typedef struct yyu_location
   int     l;      // length of location, equal to e - s
 } yyu_location;
 
+/// YYU_EXTRA_TYPE
+//
+// SUMMARY
+//  must have struct yyu_extra as its first member
+//
+#ifndef YYU_EXTRA_TYPE
+# define YYU_EXTRA_TYPE struct yyu_extra
+#endif
+
 /// yyu_extra
 //
-// structure for parsing data (yyextra)
+// SUMMARY
+//  structure for parsing data (yyextra)
 //
 typedef struct yyu_extra
 {
@@ -55,7 +65,6 @@ typedef struct yyu_extra
   int             states_n;
   yyu_location    loc;              // running location track for this parse
   char            space[256];       // temp space
-  char            space2[256];
 
                                     // last successfully scanned token
   yyu_location    last_loc;         //  location
@@ -79,11 +88,19 @@ typedef struct yyu_extra
   const char *    (*statename)(int token);
 
   // yyu calls this function to get a description of the input for location messages
-  int             (*inputstr)(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);
+  void            (*inputstr)(YYU_EXTRA_TYPE * restrict xtra, char ** restrict buf, size_t * restrict blen);
 
   // yyu calls this function get a textual description of a scanned token
-  int             (*lvalstr)(int token, void * restrict lval, struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict blen);
+  void            (*lvalstr)(int token, void * restrict lval, YYU_EXTRA_TYPE * restrict xtra, char ** restrict buf, size_t * restrict blen);
 } yyu_extra;
+
+/// yyu_extra_destroy
+//
+// SUMMARY
+//  destroy an yyu_extra
+//
+void yyu_extra_destroy(yyu_extra * const restrict)
+  __attribute__((nonnull));
 
 /// YYULTYPE
 //
@@ -139,5 +156,32 @@ do {                                  \
     YYABORT;                          \
   }                                   \
 } while(0)
+
+/// yyu_grammar_error
+//
+// SUMMARY
+//  yyerror - invoked by yyparse to report failure-to-reduce before returning 1
+//
+// PARAMETERS
+//  lloc    - 
+//  scanner - 
+//  xtra    - 
+//  err     - 
+//
+void yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict scanner, YYU_EXTRA_TYPE * const restrict xtra, char const * err)
+  __attribute__((nonnull(1,2,3)));
+
+/// yyu_reduce
+//
+// SUMMARY
+//  frontend to the parsing machinery
+//
+// PARAMETERS
+//  parser       - yyparse
+//  pp           - parse_param instance
+//  syntax_error - exit value to use when the parse fails with failure-to-reduce
+//
+xapi yyu_reduce(int (*parser)(void *, YYU_EXTRA_TYPE *), YYU_EXTRA_TYPE * pp, xapi syntax_error)
+  __attribute__((nonnull));
 
 #endif

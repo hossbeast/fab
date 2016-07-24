@@ -72,17 +72,17 @@ void transform_parser_ifree(struct transform_parser ** const restrict)
 //  parse a transform-string
 //
 // PARAMETERS
-//  [p]    - parser returned from parser_create
+//  p      - (returns) reusable parser instance
 //  s      - transform string
-//  [l]    - length of transform string, or 0 for strlen
-//  r      - receives parsed transform
+//  [sl]   - length of transform string, or 0 for strlen
 //  [name] - also specify a name for this input (that is only used in informational and error messages)
+//  r      - receives parsed transform
 //
 xapi transform_parse(struct transform_parser ** restrict p, const char * const restrict s, size_t sl, transform ** const restrict r)
-  __attribute__((nonnull(2)));
+  __attribute__((nonnull(2,4)));
 
 xapi transform_parsex(struct transform_parser ** restrict p, const char * const restrict s, size_t sl, char * const restrict name, transform ** r)
-  __attribute__((nonnull(2)));
+  __attribute__((nonnull(2,5)));
 
 /// transform_free
 //

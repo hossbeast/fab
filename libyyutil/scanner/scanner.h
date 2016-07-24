@@ -19,17 +19,9 @@
 #define _YYUTIL_SCANNER_H
 
 #include "xapi.h"
-
 #include "yyutil/parser.h"
 
 #define restrict __restrict
-
-/// yyu_extra_destroy
-//
-// free memory associated with an yyu_extra struct
-//
-void yyu_extra_destroy(yyu_extra * const restrict)
-  __attribute__((nonnull));
 
 #define lenter        \
   enter_nochecks;     \
@@ -71,7 +63,7 @@ void yyu_extra_destroy(yyu_extra * const restrict)
 //  leng - yyleng
 //  del  - offset from yytext to start of location for this token
 //
-void yyu_locwrite(yyu_location * const restrict lloc, yyu_extra * const restrict xtra, char * const restrict text, const int leng, const int del)
+void yyu_locwrite(yyu_location * const restrict lloc, YYU_EXTRA_TYPE * const restrict xtra, char * const restrict text, const int leng, const int del)
   __attribute__((nonnull));
 
 /// LOCWRITE
@@ -90,7 +82,7 @@ void yyu_locwrite(yyu_location * const restrict lloc, yyu_extra * const restrict
 //  xtra - yyextra
 //  del  - offset from start of this token to the newline
 //
-void yyu_locreset(yyu_location * const restrict lloc, yyu_extra * const restrict xtra, const int del)
+void yyu_locreset(yyu_location * const restrict lloc, YYU_EXTRA_TYPE * const restrict xtra, const int del)
   __attribute__((nonnull));
 
 /// LOCRESET
@@ -106,7 +98,7 @@ void yyu_locreset(yyu_location * const restrict lloc, yyu_extra * const restrict
 //   0 - current state
 //   1 - next state following POP
 //
-int yyu_nstate(yyu_extra * const restrict xtra, const int n)
+int yyu_nstate(YYU_EXTRA_TYPE * const restrict xtra, const int n)
   __attribute__((nonnull));
 
 /// NSTATE
@@ -133,7 +125,7 @@ int yyu_nstate(yyu_extra * const restrict xtra, const int n)
 // REMARKS
 //  typically you need to call this with PUSHSTATE in order to to also affect the scanner state stack
 //
-xapi yyu_pushstate(const int state, yyu_extra * const restrict xtra)
+xapi yyu_pushstate(const int state, YYU_EXTRA_TYPE * const restrict xtra)
   __attribute__((nonnull));
 
 /// PUSHSTATE
@@ -157,7 +149,7 @@ xapi yyu_pushstate(const int state, yyu_extra * const restrict xtra)
 // REMARKS
 //  typically you need to call this with POPSTATE in order to to also affect the scanner state stack
 //
-xapi yyu_popstate(yyu_extra * const restrict xtra)
+xapi yyu_popstate(YYU_EXTRA_TYPE * const restrict xtra)
   __attribute__((nonnull));
 
 /// POPSTATE
@@ -170,7 +162,7 @@ xapi yyu_popstate(yyu_extra * const restrict xtra)
     fatal(yyu_popstate, yyextra);         \
   } while(0)
 
-void yyu_dropstate(yyu_extra * const restrict xtra)
+void yyu_dropstate(YYU_EXTRA_TYPE * const restrict xtra)
   __attribute__((nonnull));
 
 #define DROPSTATE                     \
@@ -190,16 +182,8 @@ void yyu_dropstate(yyu_extra * const restrict xtra)
 // SUMMARY
 //  invoked by scanner rule to report invalid input before returning 0 to indicate end-of-input
 //
-void yyu_scanner_error(yyu_location * const restrict lloc, yyu_extra * const restrict xtra)//, const int error, char const * fmt, ...)
+void yyu_scanner_error(yyu_location * const restrict lloc, YYU_EXTRA_TYPE * const restrict xtra)
   __attribute__((nonnull(1,2)));
-
-/// yyu_grammar_error
-//
-// SUMMARY
-//  yyerror - invoked by yyparse to report failure-to-reduce before returning 1
-//
-void yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_extra * const restrict xtra, char const * err)
-  __attribute__((nonnull(1,2,3)));
 
 /// yyu_lexify
 //
@@ -222,7 +206,7 @@ xapi yyu_lexify(
   , void * const restrict lval
   , const size_t lvalsz
   , yyu_location * const restrict lloc
-  , yyu_extra * const restrict xtra
+  , YYU_EXTRA_TYPE * const restrict xtra
   , char * const restrict text
   , const int leng
   , const int del

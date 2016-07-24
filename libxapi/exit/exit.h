@@ -113,5 +113,20 @@ const char * xapi_exit_errtab_name(const xapi exit);
 //
 xapi_etable_id xapi_exit_errtab_id(const xapi exit);
 
+/// xapi_exit_synth
+//
+// SUMMARY
+//  create an exit value from an error table ane error code
+//
+// PARAMETERS
+//  etab    - error table
+//  errcode - error code
+//
+// RETURNS
+//  exit value
+//
+xapi xapi_exit_synth(const etable * const restrict etab, const xapi_code errcode)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

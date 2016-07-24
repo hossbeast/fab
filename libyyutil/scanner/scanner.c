@@ -218,19 +218,7 @@ API int yyu_nstate(yyu_extra * const xtra, const int n)
 
 API void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra)//, const int error, char const * fmt, ...)
 {
-  // save the error
-  xtra->scanerr = 1;//error;
-
-/*
-  // save the error string
-  if(fmt)
-  {
-    va_list va;
-    va_start(va, fmt);
-    vsnprintf(xtra->error_str, sizeof(xtra->error_str), fmt, va);
-    va_end(va);
-  }
-*/
+  xtra->scanerr = 1;
 
   // save the location
   memcpy(&xtra->error_loc, lloc, sizeof(xtra->error_loc));
@@ -263,9 +251,4 @@ API xapi yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu
   ((char*)xtra->last_lval)[lvalsz] = 0;
 
   finally : coda;
-}
-
-API void yyu_extra_destroy(yyu_extra * const xtra)
-{
-  xfree(xtra->last_lval);
 }

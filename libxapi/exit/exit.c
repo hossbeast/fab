@@ -95,3 +95,8 @@ API xapi_etable_id xapi_exit_errtab_id(const xapi exit)
 
   return xapi_errtab_id(tab[id - 1]);
 }
+
+API xapi xapi_exit_synth(const etable * const restrict etab, const xapi_code errcode)
+{
+  return ((etab->id) << 16) | errcode;
+}

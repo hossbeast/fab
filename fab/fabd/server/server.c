@@ -380,6 +380,7 @@ xapi server_dispatch(server * const restrict server, request * const restrict re
   }
 
 finally:
+  fatal(xchdir, "/");
   mempolicy_unwind(&mpc);
 coda;
 }

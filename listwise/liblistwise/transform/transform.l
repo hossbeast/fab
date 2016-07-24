@@ -80,7 +80,7 @@
 	// SUMMARY
 	//  populate semantic value, invoke yyu_lexify
 	//
-	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
+	xapi lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
 	{
     enter;
 

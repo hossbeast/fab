@@ -1,0 +1,9 @@
+filesystem {
+	path : a b c ~ rp
+	invalidate-method : inotify
+	hook : Q
+}
+
+filesystem {
+	foo : bar
+}

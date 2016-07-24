@@ -40,7 +40,6 @@
 #include "logger.h"
 #include "logger/filter.h"
 #include "logger/stream.h"
-#include "fabcore.h"
 #include "lorien.h"
 #include "yyutil.h"
 #include "listwise.h"
@@ -51,6 +50,7 @@
 #include "listwise/LISTWISE.errtab.h"
 #include "listwise/PCRE.errtab.h"
 
+#include "fabcore.h"
 #include "fabcore/identity.h"
 #include "fabcore/path.h"
 #include "fabcore/params.h"
@@ -65,20 +65,9 @@
 #include "server.h"
 #include "usage.h"
 #include "logging.h"
-
-//#include "fabd_handler.h"
-
-//#include "gn.h"
-//#include "gnlw.h"
-//#include "lwutil.h"
-//#include "var.h"
-//#include "ffproc.h"
-//#include "cfg.h"
-//#include "cfg.protected.h"
-//#include "fml.h"
-//#include "selector.h"
 #include "tmp.h"
 #include "server.h"
+#include "config.h"
 
 #include "parseint.h"
 #include "macros.h"
@@ -218,7 +207,6 @@ int main(int argc, char** argv, char ** envp)
     response * resp = 0;
     fatal(server_receive, server, &req);
     fatal(server_dispatch, server, req, mb, &resp);
-    fatal(xchdir, "/");
 
     // task complete
     fatal(server_respond, server, mb, resp);

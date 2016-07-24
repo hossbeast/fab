@@ -18,6 +18,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "xapi.h"
+#include "xapi/exit.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/SYS.errtab.h"
+
 #include "internal.h"
 #include "yyutil/parser.h"
 
@@ -36,7 +41,7 @@ API void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_
   }
   else
   {
-    xtra->gramerr = -1;
+    xtra->gramerr = 1;
 
     // save the error string
     if(err)
@@ -83,4 +88,55 @@ API void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_
       );
     }
   }
+}
+
+API xapi yyu_reduce(int (*parser)(void *, yyu_extra *), yyu_extra * pp, xapi syntax_error)
+{
+  enter;
+
+  // error from the parser means failure to reduce
+  int r;
+  if((r = parser(pp->scanner, pp)) || pp->scanerr)
+  {
+    if(r == 2)
+    {
+      // memory exhaustion error from the parser
+      tfail(perrtab_SYS, SYS_ENOMEM);
+    }
+    else if(XAPI_UNWINDING)
+    {
+      // fail from within a lexer or parser rule
+      tfail(0, 0);
+    }
+    else if(pp->gramerr)
+    {
+      // failure to reduce from the parser
+      tfails(xapi_exit_errtab(syntax_error), xapi_exit_errcode(syntax_error), "message", pp->error_str);
+    }
+  }
+
+finally :
+  if(XAPI_UNWINDING)
+  {
+    if(pp->scanerr || pp->gramerr)
+    {
+      xapi_infof("location", "[%d,%d - %d,%d]"
+        , pp->error_loc.f_lin + 1
+        , pp->error_loc.f_col + 1
+        , pp->error_loc.l_lin + 1
+        , pp->error_loc.l_col + 1
+      );
+
+      if(pp->gramerr)
+      {
+        xapi_infos("token", pp->tokenstring);
+      }
+    }
+  }
+coda;
+}
+
+API void yyu_extra_destroy(yyu_extra * const xtra)
+{
+  xfree(xtra->last_lval);
 }
