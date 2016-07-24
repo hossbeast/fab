@@ -24,19 +24,19 @@ SUMMARY
 
 */
 
-xapi zeta()
+static xapi zeta()
 {
   enter;
 
   finally : coda;
 }
 
-xapi alpha()
+static xapi alpha()
 {
   xproxy(zeta);
 }
 
-xapi foo()
+static xapi foo()
 {
   enter;
 

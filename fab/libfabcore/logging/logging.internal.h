@@ -26,6 +26,6 @@
 // SUMMARY
 //  register logging categories
 //
-xapi logging_setup();
+xapi logging_setup(void);
 
 #endif

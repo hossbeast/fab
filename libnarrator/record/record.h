@@ -60,7 +60,7 @@ void narrator_record_reset(narrator * const restrict n)
 // SUMMARY
 //  propagate to the underlying narrator with a single write
 //
-xapi narrator_record_write();
+xapi narrator_record_write(narrator * const restrict n);
 
 #undef restrict
 #endif

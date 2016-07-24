@@ -20,6 +20,8 @@
 	#include <inttypes.h>
 
 	// contains much of the implemention of the scanner
+  struct transform_xtra;
+  #define YYU_EXTRA_TYPE struct transform_xtra
 	#include "yyutil/scanner.h"
 
 	#include "transform/transform.def.h"
@@ -80,7 +82,7 @@
 	// SUMMARY
 	//  populate semantic value, invoke yyu_lexify
 	//
-	xapi lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
+	static xapi lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, transform_xtra * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
 	{
     enter;
 
@@ -113,7 +115,7 @@
 		else if(token == OP)
 			lval->op = *(operator **)v;
 
-		fatal(yyu_lexify, token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, ldel, token == LF);
+		fatal(yyu_lexify, token, lval, sizeof(*lval), lloc, xtra, text, leng, ldel, token == LF);
 
     finally : coda;
 	}
@@ -123,7 +125,7 @@
 %option reentrant
 %option bison-bridge bison-locations
 %option prefix="transform_yy"
-%option extra-type="parse_param*"
+%option extra-type="transform_xtra*"
 %option stack
 
 %x ws

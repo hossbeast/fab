@@ -26,7 +26,7 @@ SUMMARY
 
 */
 
-xapi alpha()
+static xapi alpha()
 {
   enter;
 
@@ -35,7 +35,7 @@ xapi alpha()
   finally : coda;
 }
 
-xapi beta()
+static xapi beta()
 {
   enter;
 
@@ -44,7 +44,7 @@ xapi beta()
   finally : coda;
 }
 
-xapi zeta()
+static xapi zeta()
 {
   enter;
 
@@ -53,7 +53,7 @@ xapi zeta()
   finally : coda;
 }
 
-xapi test_fail()
+static xapi test_fail()
 {
   enter;
 
@@ -62,7 +62,7 @@ xapi test_fail()
   finally : coda;
 }
 
-xapi test_fails()
+static xapi test_fails()
 {
   enter;
 
@@ -71,7 +71,7 @@ xapi test_fails()
   finally : coda;
 }
 
-xapi test_failf()
+static xapi test_failf()
 {
   enter;
 
@@ -80,7 +80,7 @@ xapi test_failf()
   finally : coda;
 }
 
-xapi test_fail_intent()
+static xapi test_fail_intent()
 {
   enter;
 

@@ -52,7 +52,7 @@ xapi sigbank_setup(const char * restrict name);
 // SUMMARY
 //  cleanup
 //
-void sigbank_teardown();
+void sigbank_teardown(void);
 
 /// sigbank_select
 //

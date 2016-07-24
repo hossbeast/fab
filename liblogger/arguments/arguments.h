@@ -40,6 +40,6 @@ extern size_t   g_logvsl;       // length of g_logvs
 // SUMMARY
 //  log a description of cmdline args to LOGGER
 //
-xapi logger_arguments_report();
+xapi logger_arguments_report(void);
 
 #endif

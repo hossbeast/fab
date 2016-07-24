@@ -45,6 +45,7 @@ $params_devel = [
 $cflags_xapi_final = [ $cflags_xapi_final $copts $params ]
 $cflags_xapi_debug = [ $cflags_xapi_debug $copts $params ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $copts $params_devel ]
+$cflags_xapi_xunit = [ $cflags_xapi_xunit $copts $params_xunit -fPIC ]
 
 $rpath = [ 
   [ $dlibxapi $dlibxlinux $dliblistwise $dlibvalyria $dlibvalue $dliblogger $dlibxunit $dlibnarrator $dlibfabcore $dliblorien $dlibyyutil ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
@@ -60,28 +61,35 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 +[@std.c]($dext = [ xapi.final.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
 +[@std.c]($dext = [ xapi.debug.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_debug)
 +[@std.c]($dext = [ xapi.devel.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_xunit)
 +[@std.l]($dext = [ xapi.final.o ]; $rdirs = $*; $cc $flex $flexflags; $cflags = $cflags_xapi_final)
 +[@std.l]($dext = [ xapi.debug.o ]; $rdirs = $*; $cc $flex $flexflags; $cflags = $cflags_xapi_debug)
 +[@std.l]($dext = [ xapi.devel.o ]; $rdirs = $*; $cc $flex $flexflags; $cflags = $cflags_xapi_devel)
++[@std.l]($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $cc $flex $flexflags; $cflags = $cflags_xapi_xunit)
 +[@std.y]($dext = [ xapi.final.o ]; $rdirs = $*; $cc $bison $bisonflags; $cflags = $cflags_xapi_final)
 +[@std.y]($dext = [ xapi.debug.o ]; $rdirs = $*; $cc $bison $bisonflags; $cflags = $cflags_xapi_debug)
 +[@std.y]($dext = [ xapi.devel.o ]; $rdirs = $*; $cc $bison $bisonflags; $cflags = $cflags_xapi_devel)
++[@std.y]($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $cc $bison $bisonflags; $cflags = $cflags_xapi_xunit)
 
 # generated files
++[@std.xapi.errtab] ($dext = [ xapi.final.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_final)
 +[@std.xapi.errtab] ($dext = [ xapi.debug.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
 +[@std.xapi.errtab] ($dext = [ xapi.devel.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
-+[@std.xapi.errtab] ($dext = [ xapi.xunit.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab] ($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $apidata = [1]; $cc; $cflags = $cflags_xapi_xunit)
 +[@std.flex.states] ($dext = [ xapi.final.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
 +[@std.flex.states] ($dext = [ xapi.debug.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_debug)
 +[@std.flex.states] ($dext = [ xapi.devel.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_devel)
++[@std.flex.states] ($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_xunit)
 +[@std.bison.tokens]($dext = [ xapi.final.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
 +[@std.bison.tokens]($dext = [ xapi.debug.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_debug)
 +[@std.bison.tokens]($dext = [ xapi.devel.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_devel)
++[@std.bison.tokens]($dext = [ xapi.xunit.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_xunit)
 
 #
 # catchall node
 #
-[ @all ] : [ @final @debug @devel ]
+[ @all ] : [ @release @test ]
+[ @release ] : [ @final @debug @devel ]
 [ @final ] : [ $fabd_final ]
 [ @debug ] : [ $fabd_debug ]
 [ @devel ] : [ $fabd_devel ]
@@ -141,3 +149,28 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 
 [ @install.dist.debug ] : [ @install.base.debug ]
 [ @install.local.debug ] : [ @install.base.debug ]
+
+#
+# unit tests
+#
+
+[ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy dj shift ] :: [ $< ~ sx/so/pic.o ]
+{
+  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
+}
+
+[ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
+{
+  [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [
+  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel ] [
+  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfabcore_xapi_devel $libyyutil_xapi_devel ] [
+  ] [ $@ ~ rx/ineed fi ]
+}
+
+[ @test.fast ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
+{
+  [ $xunit_xapi_devel ] [
+  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel ~ fi ] [
+  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfabcore_xapi_devel $libyyutil_xapi_devel ~ fi ] [
+  ] [ $@ ~ rx/ineed fi ]
+}

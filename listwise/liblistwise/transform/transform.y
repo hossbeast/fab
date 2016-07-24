@@ -37,7 +37,7 @@
 %locations
 %name-prefix "transform_yy"
 %parse-param { void* scanner }
-%parse-param { parse_param* parm }
+%parse-param { transform_xtra * parm }
 %lex-param { void* scanner }
 
 /* zero-based lines and columns */

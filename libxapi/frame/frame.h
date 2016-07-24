@@ -80,7 +80,7 @@ xapi xapi_frame_leave(int topframe);
 // SUMMARY
 //  true if an error has been raised
 //
-int xapi_unwinding();
+int xapi_unwinding(void);
 
 /// xapi_frame_errval
 //
@@ -163,9 +163,9 @@ void xapi_frame_set_infof(
 //
 //
 //
-xapi_code xapi_calltree_errcode();
-xapi xapi_calltree_errval();
-const etable * xapi_calltree_errtab();
+xapi_code xapi_calltree_errcode(void);
+xapi xapi_calltree_errval(void);
+const etable * xapi_calltree_errtab(void);
 
 #undef restrict
 #endif

@@ -37,7 +37,7 @@ typedef struct canon_test
   char *    final;
 } canon_test;
 
-xapi __attribute__((nonnull)) canon_test_entry(canon_test * const test)
+static xapi __attribute__((nonnull)) canon_test_entry(canon_test * const test)
 {
   enter;
 

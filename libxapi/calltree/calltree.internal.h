@@ -71,14 +71,14 @@ calltree * S;
 // SUMMARY
 //  free the calltree for this thread with free semantics
 //
-void calltree_free();
+void calltree_free(void);
 
 /// calltree_frame_push
 //
 // SUMMARY
 //  during unwinding, allocate a frame on the calltree
 //
-struct frame * calltree_frame_push();
+struct frame * calltree_frame_push(void);
 
 #undef restrict
 #endif

@@ -25,13 +25,13 @@
 // SUMMARY
 //  initialize the library
 //
-xapi lorien_load();
+xapi lorien_load(void);
 
 /// lorien_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi lorien_unload();
+xapi lorien_unload(void);
 
 #endif

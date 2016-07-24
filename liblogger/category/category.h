@@ -81,14 +81,14 @@ xapi logger_category_register(logger_category * logs)
 //  ILLREPEAT
 //  ILLORDER
 //
-xapi logger_category_activate();
+xapi logger_category_activate(void);
 
 /// category_report
 //
 // SUMMARY
 //  log a summary of activated categories to LOGGER
 //
-xapi logger_categories_report();
+xapi logger_categories_report(void);
 
 #undef restrict
 #endif

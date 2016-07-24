@@ -17,4 +17,4 @@
 
 #include "xapi.h"
 
-xapi usage_report();
+xapi usage_report(void);

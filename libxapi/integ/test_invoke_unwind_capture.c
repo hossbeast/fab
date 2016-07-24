@@ -26,7 +26,7 @@ SUMMARY
 
 */
 
-xapi delta()
+static xapi delta()
 {
   enter;
 
@@ -35,7 +35,7 @@ xapi delta()
   finally : coda;
 }
 
-xapi beta()
+static xapi beta()
 {
   enter;
 
@@ -45,7 +45,7 @@ xapi beta()
 }
 
 static int alpha_dead_count;
-xapi alpha()
+static xapi alpha()
 {
   enter;
 

@@ -20,22 +20,16 @@
 
 #include "xapi.h"
 
-/* 
-** working off of the assumption that seteuid/setegid are negligible
-** performance-wise, a pair of these calls should bracket every code block that needs to access
-** fabsys:fabsys files, within the same function
-*/
-
 /// identity_assume_user
 //
 // assume ruid identity, i.e. the user who executed the program
 //
-xapi identity_assume_user();
+xapi identity_assume_user(void);
 
 /// identity_assume_fabsys
 //
 // assume euid identity, i.e. fabsys:fabsys
 //
-xapi identity_assume_fabsys();
+xapi identity_assume_fabsys(void);
 
 #endif

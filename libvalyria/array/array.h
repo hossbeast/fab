@@ -300,7 +300,7 @@ void array_sort(array * const restrict ar, int (*compar)(const ARRAY_ELEMENT_TYP
 //   idx   - element index
 //   [ud]  - user data
 //
-ARRAY_ELEMENT_TYPE * array_searchx(array * const restrict ar, void * ud, int (*compar)(void *, const ARRAY_ELEMENT_TYPE *, size_t))
+ARRAY_ELEMENT_TYPE * array_search(array * const restrict ar, void * ud, int (*compar)(void *, const ARRAY_ELEMENT_TYPE *, size_t))
   __attribute__((nonnull(1,3)));
 
 #undef restrict

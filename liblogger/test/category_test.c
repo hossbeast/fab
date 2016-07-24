@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -31,28 +31,13 @@
 
 #include "macros.h"
 
-/// test_setup
-//
-// SUMMARY
-//  initialize the category module
-//
-xapi test_setup()
-{
-  enter;
-
-  category_teardown();
-  fatal(category_setup);
-
-  finally : coda;
-}
-
 /// assert_ascending
 //
 // SUMMARY
 //  verify that a sequence of category definitions are sorted by id in
 //  ascending order
 //
-xapi assert_ascending(logger_category * logsp)
+static xapi assert_ascending(logger_category * logsp)
 {
   enter;
 
@@ -88,7 +73,7 @@ xapi assert_ascending(logger_category * logsp)
   finally : coda;
 }
 
-xapi test_category_list_merge_success()
+static xapi test_category_list_merge_success()
 {
   enter;
 
@@ -108,7 +93,7 @@ xapi test_category_list_merge_success()
   finally : coda;
 }
 
-xapi test_category_list_merge_success_two()
+static xapi test_category_list_merge_success_two()
 {
   enter;
 
@@ -138,7 +123,7 @@ xapi test_category_list_merge_success_two()
   finally : coda;
 }
 
-xapi test_category_list_merge_success_two_activate()
+static xapi test_category_list_merge_success_two_activate()
 {
   enter;
 
@@ -169,7 +154,7 @@ xapi test_category_list_merge_success_two_activate()
   finally : coda;
 }
 
-xapi test_category_list_merge_success_nonunique()
+static xapi test_category_list_merge_success_nonunique()
 {
   enter;
 
@@ -191,7 +176,7 @@ xapi test_category_list_merge_success_nonunique()
   finally : coda;
 }
 
-xapi test_category_list_merge_success_max()
+static xapi test_category_list_merge_success_max()
 {
   enter;
 
@@ -269,7 +254,7 @@ xapi test_category_list_merge_success_max()
   finally : coda;
 }
 
-xapi test_category_list_merge_failure_order()
+static xapi test_category_list_merge_failure_order()
 {
   enter;
 
@@ -292,7 +277,7 @@ xapi test_category_list_merge_failure_order()
   finally : coda;
 }
 
-xapi test_category_list_merge_failure_order_single()
+static xapi test_category_list_merge_failure_order_single()
 {
   enter;
 
@@ -309,7 +294,7 @@ xapi test_category_list_merge_failure_order_single()
   finally : coda;
 }
 
-xapi test_category_list_merge_failure_toomany()
+static xapi test_category_list_merge_failure_toomany()
 {
   enter;
 
@@ -388,7 +373,7 @@ xapi test_category_list_merge_failure_toomany()
   finally : coda;
 }
 
-xapi test_category_list_merge_attr_rank()
+static xapi test_category_list_merge_attr_rank()
 {
   enter;
 
@@ -418,6 +403,7 @@ int main()
 {
   enter;
 
+  xapi R = 0;
   int x = 0;
   fatal(xapi_errtab_register, perrtab_LOGGER);
   fatal(xapi_errtab_register, perrtab_TEST);
@@ -441,7 +427,7 @@ int main()
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    fatal(test_setup);
+    fatal(category_setup);
 
     xapi exit;
     if((exit = invoke(tests[x].entry)))
@@ -457,13 +443,20 @@ int main()
 
     assert_exit(exit, perrtab_LOGGER, tests[x].expected);
     success;
+
+    category_teardown();
   }
 
 finally:
+  category_teardown();
+
   if(XAPI_UNWINDING)
   {
     xapi_infof("test", "%d", x);
     xapi_backtrace();
   }
-coda;
+conclude(&R);
+  xapi_teardown();
+
+  return !!R;
 }

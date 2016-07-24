@@ -40,14 +40,14 @@ SUMMARY
 // SUMMARY
 //  initialize the library
 //
-xapi narrator_load();
+xapi narrator_load(void);
 
 /// narrator_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi narrator_unload();
+xapi narrator_unload(void);
 
 //
 // write to the active narration

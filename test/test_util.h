@@ -36,8 +36,12 @@ SUMMARY
 
 #include "macros.h"
 
+#define restrict __restrict
+
 void ufailf_info(const char * const restrict expfmt, const char * const restrict actfmt, ...)
   __attribute__((nonnull(1, 2)));
+
+void ufails_info(const char * const restrict exp, const char * const restrict act);
 
 #define ufail()                   \
   tfail(perrtab_TEST, TEST_FAIL)
@@ -96,4 +100,5 @@ void ufailf_info(const char * const restrict expfmt, const char * const restrict
     dprintf(1, "[" __FILE__ ":" XQUOTE(__LINE__) "] result : pass\n"); \
   } while(0)
 
+#undef restrict
 #endif

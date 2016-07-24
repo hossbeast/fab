@@ -25,13 +25,13 @@
 // SUMMARY
 //  initialize the library
 //
-xapi yyutil_load();
+xapi yyutil_load(void);
 
 /// yyutil_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi yyutil_unload();
+xapi yyutil_unload(void);
 
 #endif

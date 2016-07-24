@@ -482,7 +482,7 @@ xapi args_report()
   {
     fatal(log_start, L_ARGS, &token);
     logf(0, "(  %c  ) targets(s)            =", ' ');
-    fatal(target_say, &g_args->targets[x], log_narrator());
+    fatal(target_say, &g_args->targets[x], log_narrator(&token));
     fatal(log_finish, &token);
   }
 

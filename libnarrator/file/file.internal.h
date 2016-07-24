@@ -35,14 +35,14 @@ typedef struct narrator_file
 // SUMMARY
 //  module initialization
 //
-xapi file_setup();
+xapi file_setup(void);
 
 /// file_teardown
 //
 // SUMMARY
 //  module cleanup
 //
-void file_teardown();
+void file_teardown(void);
 
 /// file_say
 //

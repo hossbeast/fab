@@ -24,13 +24,12 @@
 extern struct logger_category * fabcore_categories;
 
 #define L_FABCORE fabcore_categories[0x00].id
-#define L_CONFIG  fabcore_categories[0x01].id
-
-#define L_ERROR   fabcore_categories[0x02].id
-#define L_INFO    fabcore_categories[0x03].id
-#define L_PARAMS  fabcore_categories[0x04].id
-#define L_TIMING  fabcore_categories[0x05].id
-#define L_USAGE   fabcore_categories[0x06].id
+#define L_ERROR   fabcore_categories[0x01].id
+#define L_INFO    fabcore_categories[0x02].id
+#define L_PARAMS  fabcore_categories[0x03].id
+#define L_TIMING  fabcore_categories[0x04].id
+#define L_USAGE   fabcore_categories[0x05].id
+#define L_CONFIG  fabcore_categories[0x06].id
 
 #if DEBUG || DEVEL
 #define L_IPC     fabcore_categories[0x07].id

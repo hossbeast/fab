@@ -180,16 +180,15 @@ int main(int argc, char ** argv, char ** envp)
   fatal(xlinux_load);
   fatal(listwise_load);
 
-  // modules
-  fatal(logs_setup);
+  // logging
+  fatal(logging_setup);
+  fatal(logger_arguments_setup, envp);
+  fatal(logger_initialize);
 
   // locals
   fatal(lwx_alloc, &lx);
   fatal(pscreate, &temp);
   fatal(pscreate, &trans);
-
-  // initialize logger
-  fatal(logger_initialize, envp);
 
   // parse cmdline args
   fatal(args_parse);

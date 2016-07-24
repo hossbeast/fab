@@ -25,7 +25,7 @@
 
 #include "test_util.h"
 
-xapi say(narrator * const N)
+static xapi say(narrator * const N)
 {
   enter;
 
@@ -40,7 +40,7 @@ xapi say(narrator * const N)
   finally : coda;
 }
 
-xapi test_basic()
+static xapi test_basic()
 {
   enter;
 
@@ -60,7 +60,7 @@ finally:
 coda;
 }
 
-xapi test_constrained()
+static xapi test_constrained()
 {
   enter;
 

@@ -25,13 +25,13 @@
 // SUMMARY
 //  initialize the library
 //
-xapi xlinux_load();
+xapi xlinux_load(void);
 
 /// xlinux_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi xlinux_unload();
+xapi xlinux_unload(void);
 
 #endif

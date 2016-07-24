@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -27,6 +27,7 @@
 #include "stream.internal.h"
 #include "LOGGER.errtab.h"
 #include "category.internal.h"
+#include "log.internal.h"
 
 #include "test_util.h"
 
@@ -45,11 +46,11 @@ static logger_category * categories = (logger_category []) {
 // SUMMARY
 //  initialize the module
 //
-xapi test_setup()
+static xapi test_setup()
 {
   enter;
 
-  // initialize 
+  // initialize
   fatal(category_setup);
   fatal(stream_setup);
 
@@ -70,18 +71,19 @@ xapi test_setup()
   finally : coda;
 }
 
-void test_teardown()
+static void test_teardown()
 {
   narrator_ifree(&N);
   stream_teardown();
   category_teardown();
+  log_teardown();
 }
 
 /// test_log_zero
 //
 // categories of zero should always be emitted
 //
-xapi test_log_zero()
+static xapi test_log_zero()
 {
   enter;
 
@@ -100,7 +102,7 @@ xapi test_log_zero()
 //
 // categories of zero should always be emitted
 //
-xapi test_log_nonzero()
+static xapi test_log_nonzero()
 {
   enter;
 
@@ -115,7 +117,7 @@ xapi test_log_nonzero()
   finally : coda;
 }
 
-xapi test_log_start()
+static xapi test_log_start()
 {
   enter;
 
@@ -135,7 +137,7 @@ xapi test_log_start()
   char * expected = "foo";
   const char * actual = narrator_fixed_buffer(N);
   assertf(strcmp(expected, actual) == 0, "%s", "%s", expected, actual);
-  
+
 finally:
   fatal(log_finish, &token);
 coda;
@@ -145,6 +147,7 @@ int main()
 {
   enter;
 
+  xapi R = 0;
   int x = 0;
   fatal(xapi_errtab_register, perrtab_LOGGER);
   fatal(xapi_errtab_register, perrtab_TEST);
@@ -176,17 +179,19 @@ int main()
     }
 
     assert_exit(exit, perrtab_LOGGER, tests[x].expected);
+    success;
   }
 
-  success;
-
 finally:
+  test_teardown();
+
   if(XAPI_UNWINDING)
   {
     xapi_infof("test", "%d", x);
     xapi_backtrace();
   }
+conclude(&R);
+  xapi_teardown();
 
-  test_teardown();
-coda;
+  return !!R;
 }

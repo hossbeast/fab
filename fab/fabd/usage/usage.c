@@ -55,7 +55,7 @@ xapi usage_report()
     }
     fatal(log_start, L_USAGE, &token);
     logs(0, "usage : mem(");
-    fatal(bytesize_say, pages * g_params.pagesize, log_narrator());
+    fatal(bytesize_say, pages * g_params.pagesize, log_narrator(&token));
     logs(0, ")");
     fatal(log_finish, &token);
   }

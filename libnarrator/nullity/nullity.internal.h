@@ -32,14 +32,14 @@ typedef struct narrator_nullity
 // SUMMARY
 //  module initialization
 //
-xapi nullity_setup();
+xapi nullity_setup(void);
 
 /// nullity_teardown
 //
 // SUMMARY
 //  module cleanup
 //
-void nullity_teardown();
+void nullity_teardown(void);
 
 /// nullity_say
 //

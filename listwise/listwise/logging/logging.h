@@ -31,6 +31,6 @@ extern struct logger_stream * streams;
 #define L_PARAMS  categories[2].id
 #define L_LOGGER  categories[3].id
 
-xapi logs_setup();
+xapi logging_setup(void);
 
 #endif

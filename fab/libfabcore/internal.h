@@ -18,6 +18,9 @@
 #ifndef _FABCORE_INTERNAL_H
 #define _FABCORE_INTERNAL_H
 
+// public api
+#include "fabcore.h"
+
 // visibility declaration macros
 #define API __attribute__((visibility("protected")))
 #define APIDATA

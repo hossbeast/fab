@@ -29,7 +29,7 @@ SUMMARY
 
 */
 
-xapi beta()
+static xapi beta()
 {
   enter;
 
@@ -38,7 +38,7 @@ xapi beta()
   finally : coda;
 }
 
-xapi alpha()
+static xapi alpha()
 {
   enter;
 

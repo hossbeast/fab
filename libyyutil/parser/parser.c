@@ -111,7 +111,11 @@ API xapi yyu_reduce(int (*parser)(void *, yyu_extra *), yyu_extra * pp, xapi syn
     else if(pp->gramerr)
     {
       // failure to reduce from the parser
+#if XAPI_STACKTRACE
       tfails(xapi_exit_errtab(syntax_error), xapi_exit_errcode(syntax_error), "message", pp->error_str);
+#else
+      tfails(0, syntax_error, "message", pp->error_str);
+#endif
     }
   }
 

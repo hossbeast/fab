@@ -83,7 +83,7 @@ typedef struct item
   vertex * v;
 } item;
 
-xapi vertex_say(vertex * const restrict v, narrator * const restrict N)
+static xapi vertex_say(vertex * const restrict v, narrator * const restrict N)
 {
   enter;
 
@@ -92,7 +92,7 @@ xapi vertex_say(vertex * const restrict v, narrator * const restrict N)
   finally : coda;
 }
 
-xapi graph_test_entry(graph_test * test)
+static xapi graph_test_entry(graph_test * test)
 {
   enter;
 

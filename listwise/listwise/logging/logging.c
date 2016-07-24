@@ -34,7 +34,7 @@ logger_stream * streams = (logger_stream []) {
   , { }
 };
 
-xapi logs_setup()
+xapi logging_setup()
 {
   enter;
 

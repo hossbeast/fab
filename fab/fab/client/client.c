@@ -75,7 +75,7 @@ struct client
 // static
 //
 
-xapi pgid_load(client * const restrict client)
+static xapi pgid_load(client * const restrict client)
 {
   enter;
 
@@ -261,7 +261,7 @@ xapi client_launchp(client * const restrict client)
       fatal(log_start, L_IPC, &token);
       logf(0, "%ld/%ld/%s ", getpgid(0), getpid(), "fab");
       off_t off = 0;
-      fatal(narrator_seek, log_narrator(), 0, NARRATOR_SEEK_CUR, &off);
+      fatal(narrator_seek, log_narrator(&token), 0, NARRATOR_SEEK_CUR, &off);
       logf(0, "%*s execv(", MAX(0, 20 - off), "");
       int x;
       for(x = 0; x < sentinel(argv); x++)
@@ -303,9 +303,9 @@ xapi client_make_request(client * const restrict client, memblk * const restrict
   fatal(log_start, L_IPC, &token);
   logf(0, "%ld/%ld/%s ", getpgid(0), getpid(), "fab");
   off_t off = 0;
-  fatal(narrator_seek, log_narrator(), 0, NARRATOR_SEEK_CUR, &off);
+  fatal(narrator_seek, log_narrator(&token), 0, NARRATOR_SEEK_CUR, &off);
   logf(0, "%*s request ", MAX(0, 20 - off), "");
-  fatal(request_say, req, log_narrator());
+  fatal(request_say, req, log_narrator(&token));
   fatal(log_finish, &token);
 #endif
 
@@ -337,9 +337,9 @@ xapi client_make_request(client * const restrict client, memblk * const restrict
 #if DEBUG || DEVEL
   fatal(log_start, L_IPC, &token);
   logf(0, "%ld/%ld/%s ", getpgid(0), getpid(), "fab");
-  fatal(narrator_seek, log_narrator(), 0, NARRATOR_SEEK_CUR, &off);
+  fatal(narrator_seek, log_narrator(&token), 0, NARRATOR_SEEK_CUR, &off);
   logf(0, "%*s response ", MAX(0, 20 - off), "");
-  fatal(response_say, res, log_narrator());
+  fatal(response_say, res, log_narrator(&token));
   fatal(log_finish, &token);
 #endif
 

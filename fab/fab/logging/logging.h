@@ -37,6 +37,6 @@ extern struct logger_category * categories;
 // SUMMARY
 //  register logging categories
 //
-xapi logging_setup();
+xapi logging_setup(void);
 
 #endif

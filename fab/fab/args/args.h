@@ -119,21 +119,21 @@ extern struct g_args
 //  invalid, for example required options are not present, or invalid
 //  parameters are given to an option
 //
-xapi args_parse();
+xapi args_parse(void);
 
 /// args_report
 //
 // SUMMARY
 //  log a summary of args as-parsed
 //
-xapi args_report();
+xapi args_report(void);
 
 /// args_teardown
 //
 // SUMMARY
 //  free g_args
 //
-void args_teardown();
+void args_teardown(void);
 
 /// args_collate_request
 //

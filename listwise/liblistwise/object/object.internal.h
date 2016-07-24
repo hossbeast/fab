@@ -18,6 +18,8 @@
 #ifndef _LISTWISE_OBJECT_INTERNAL_H
 #define _LISTWISE_OBJECT_INTERNAL_H
 
+#include "xapi.h"
+
 #include "object.h"
 
 struct map; // map.h
@@ -25,6 +27,7 @@ struct map; // map.h
 // collection of registered object types with lookup index by type id
 struct map * object_registry;
 
-void object_teardown();
+xapi object_setup(void);
+void object_teardown(void);
 
 #endif

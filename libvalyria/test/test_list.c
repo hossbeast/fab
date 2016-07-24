@@ -41,7 +41,7 @@ typedef struct item
 // SUMMARY
 //  accesses each item in the list and asserts that the list is sorted in ascending order
 //
-xapi validate(list * listp)
+static xapi validate(list * listp)
 {
   enter;
 
@@ -58,7 +58,7 @@ xapi validate(list * listp)
   finally : coda;
 }
 
-xapi test_basic()
+static xapi test_basic()
 {
   enter;
 
@@ -111,7 +111,7 @@ finally:
 coda;
 }
 
-xapi test_load()
+static xapi test_load()
 {
   enter;
 
@@ -133,7 +133,7 @@ finally:
 coda;
 }
 
-xapi test_insertion_sort()
+static xapi test_insertion_sort()
 {
   enter;
 
@@ -192,7 +192,7 @@ coda;
 // SUMMARY
 //  tests list_set
 //
-xapi test_set()
+static xapi test_set()
 {
   enter;
 

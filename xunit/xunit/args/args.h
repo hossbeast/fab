@@ -55,8 +55,8 @@ struct g_args_t
   int     concurrency;      // concurrently limiting factor
 } g_args;
 
-xapi args_parse();
-xapi args_summarize();
-void args_teardown();
+xapi args_parse(void);
+xapi args_summarize(void);
+void args_teardown(void);
 
 #endif

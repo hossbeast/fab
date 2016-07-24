@@ -24,12 +24,26 @@ struct value;   // libvalue
 
 #define restrict __restrict
 
+/// config_setup
+//
+// SUMMARY
+//  initialize the config module
+//
+xapi config_setup(void);
+
 /// config_load
 //
 // SUMMARY
 //  (re)-load the config files, discard
 //
-xapi config_load();
+xapi config_load(void);
+
+/// config_teardown
+//
+// SUMMARY
+//  free resources
+//
+void config_teardown(void);
 
 /// config_apply
 //
@@ -54,20 +68,6 @@ xapi config_apply(const char * const restrict src, size_t len)
 //
 xapi config_query(const char * const restrict query, struct value ** const restrict val)
   __attribute__((nonnull));
-
-/// config_setup
-//
-// SUMMARY
-//  initialize the config module
-//
-xapi config_setup();
-
-/// config_teardown
-//
-// SUMMARY
-//  free resources
-//
-void config_teardown();
 
 #undef restrict
 #endif

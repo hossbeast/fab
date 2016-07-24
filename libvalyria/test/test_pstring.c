@@ -29,7 +29,7 @@
 
 #include "test_util.h"
 
-xapi validate(pstring * ps)
+static xapi validate(pstring * ps)
 {
   enter;
 
@@ -38,7 +38,7 @@ xapi validate(pstring * ps)
   finally : coda;
 }
 
-xapi assert_contents(pstring * ps)
+static xapi assert_contents(pstring * ps)
 {
   enter;
 
@@ -49,7 +49,7 @@ xapi assert_contents(pstring * ps)
   finally : coda;
 }
 
-xapi test_basic()
+static xapi test_basic()
 {
   enter;
 
@@ -69,7 +69,7 @@ finally:
 coda;
 }
 
-xapi test_load()
+static xapi test_load()
 {
   enter;
 

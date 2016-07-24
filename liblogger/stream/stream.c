@@ -258,9 +258,7 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
 
     if(!filterp)
     {
-      xapi_fail_intent();
-      xapi_info_adds("expr", def->expr);
-      fail(LOGGER_BADFILTER);
+      fails(LOGGER_BADFILTER, "expr", def->expr);
     }
 
     fatal(stream_filter_push, streamp, filterp);
@@ -299,9 +297,9 @@ xapi stream_setup()
 
 void stream_teardown()
 {
-  array_free(g_streams);
-  map_free(streams_byid);
-  list_free(registered);
+  array_ifree(&g_streams);
+  map_ifree(&streams_byid);
+  list_ifree(&registered);
 }
 
 xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * const restrict b, size_t l,  const long time_msec)
@@ -391,13 +389,19 @@ xapi stream_activate()
   enter;
 
   int x;
-  for(x = 0; x < registered->l; x++)
+
+  if(registered)
   {
-    stream * streamp = 0;
-    fatal(array_push, g_streams, &streamp);
-    fatal(stream_initialize, streamp, x, (logger_stream*)list_get(registered, x));
-    fatal(map_set, streams_byid, MM(streamp->id), streamp);
+    for(x = 0; x < registered->l; x++)
+    {
+      stream * streamp = 0;
+      fatal(array_push, g_streams, &streamp);
+      fatal(stream_initialize, streamp, x, (logger_stream*)list_get(registered, x));
+      fatal(map_set, streams_byid, MM(streamp->id), streamp);
+    }
   }
+
+  list_ifree(&registered);
 
   finally : coda;
 }
@@ -463,21 +467,21 @@ API xapi logger_streams_report()
 {
   enter;
 
-  int mark = 0;
+  int token = 0;
 
   logs(L_LOGGER, "logger streams");
 
   int x;
   for(x = 0; x < g_streams->l; x++)
   {
-    fatal(log_start, L_LOGGER, &mark);
-    narrator * N = log_narrator();
+    fatal(log_start, L_LOGGER, &token);
+    narrator * N = log_narrator(&token);
     says(" ");
     fatal(stream_say, array_get(g_streams, x), N);
-    fatal(log_finish, &mark);
+    fatal(log_finish, &token);
   }
 
 finally:
-  fatal(log_finish, &mark);
+  fatal(log_finish, &token);
 coda;
 }

@@ -100,7 +100,8 @@ int main(int argc, char** argv, char ** envp)
 
   // logging
   fatal(logging_setup);
-  fatal(logger_initialize, envp);
+  fatal(logger_arguments_setup, envp);
+  fatal(logger_initialize);
 
   // modules
   fatal(sigbank_setup, "fab");
@@ -123,7 +124,7 @@ int main(int argc, char** argv, char ** envp)
   fatal(log_start, L_IPC, &token);
   logf(0, "%ld/%ld/%s ", getpgid(0), getpid(), "fab");
   off_t off = 0;
-  fatal(narrator_seek, log_narrator(), 0, NARRATOR_SEEK_CUR, &off);
+  fatal(narrator_seek, log_narrator(&token), 0, NARRATOR_SEEK_CUR, &off);
   logf(0, "%*s started", MAX(0, 20 - off), "");
   fatal(log_finish, &token);
 #endif
@@ -216,7 +217,7 @@ finally:
   fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
   fatal(log_start, L_INFO, &token);
   logs(0, "elapsed : ");
-  fatal(elapsed_say, &time_start, &time_end, log_narrator());
+  fatal(elapsed_say, &time_start, &time_end, log_narrator(&token));
   fatal(log_finish, &token);
 
 #if DEBUG || DEVEL

@@ -44,7 +44,7 @@ __thread int g_intent_to_fail;
 // static
 //
 
-void calltree_freeze(struct memblk * const restrict mb, calltree * restrict ct)
+static void calltree_freeze(struct memblk * const restrict mb, calltree * restrict ct)
 {
   /*
   ** etab is allocated outside of the memblk and must be handled specially
@@ -62,7 +62,7 @@ void calltree_freeze(struct memblk * const restrict mb, calltree * restrict ct)
 //
 //
 //
-void calltree_unfreeze(struct memblk * const restrict mb, calltree * restrict ct)
+static void calltree_unfreeze(struct memblk * const restrict mb, calltree * restrict ct)
 {
   if(ct->exit_table)
     ct->exit_table = xapi_errtab_byid((intptr_t)ct->exit_table);
@@ -77,7 +77,7 @@ void calltree_unfreeze(struct memblk * const restrict mb, calltree * restrict ct
 //
 //
 //
-void __attribute__((nonnull)) calltree_thaw(char * const restrict mb, calltree * restrict ct)
+static void __attribute__((nonnull)) calltree_thaw(char * const restrict mb, calltree * restrict ct)
 {
   if(ct->exit_table)
     ct->exit_table = xapi_errtab_byid((intptr_t)ct->exit_table);

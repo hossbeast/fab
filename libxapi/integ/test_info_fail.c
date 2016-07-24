@@ -28,7 +28,7 @@ SUMMARY
 
 */
 
-xapi epsilon()
+static xapi epsilon()
 {
   enter;
 
@@ -37,7 +37,7 @@ finally:
 coda;
 }
 
-xapi delta()
+static xapi delta()
 {
   enter;
 
@@ -49,7 +49,7 @@ finally:
 coda;
 }
 
-xapi beta()
+static xapi beta()
 {
   enter;
 
@@ -60,7 +60,7 @@ finally:
 coda;
 }
 
-xapi alpha()
+static xapi alpha()
 {
   enter;
 
@@ -77,7 +77,7 @@ finally :
 coda;
 }
 
-xapi zeta()
+static xapi zeta()
 {
   enter;
 

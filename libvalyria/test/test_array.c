@@ -36,7 +36,7 @@ typedef struct item
   int x;
 } item;
 
-xapi validate(array * ar)
+static xapi validate(array * ar)
 {
   enter;
 
@@ -52,7 +52,7 @@ xapi validate(array * ar)
   finally : coda;
 }
 
-xapi test_basic()
+static xapi test_basic()
 {
   enter;
 
@@ -90,7 +90,7 @@ finally:
 coda;
 }
 
-xapi test_set()
+static xapi test_set()
 {
   enter;
 

@@ -65,11 +65,6 @@ xapi file_seek(narrator_file * const restrict n, off_t offset, int whence, off_t
   xproxy(xlseek, n->fd, offset, whence, res);
 }
 
-xapi file_reset(narrator_file * const restrict n)
-{
-  xproxy(xlseek, n->fd, 0, SEEK_SET, 0);
-}
-
 void file_destroy(narrator_file * n)
 {
 }

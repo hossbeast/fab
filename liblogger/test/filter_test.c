@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -44,7 +44,7 @@ static logger_category * logs_test = (logger_category[]) {
 #define L_BAR   logs_test[1].id
 #define L_DELTA logs_test[2].id
 
-xapi suite_setup()
+static xapi suite_setup()
 {
   enter;
 
@@ -55,7 +55,12 @@ xapi suite_setup()
   finally : coda;
 }
 
-xapi test_filter_parse()
+static void suite_teardown()
+{
+  category_teardown();
+}
+
+static xapi test_filter_parse()
 {
   enter;
 
@@ -68,7 +73,7 @@ xapi test_filter_parse()
     char m;       // expected mode
     char o;       // expected operation
     size_t off;   // expected offset
-  } tests[] = { 
+  } tests[] = {
       { expr : "+A"             , v : L_A                   , m : ' ' , o : '+' , off : 2 }
     , { expr : "+A,BAR"         , v : L_A | L_BAR           , m : ' ' , o : '+' , off : 6 }
     , { expr : "-BAR"           , v : L_BAR                 , m : ' ' , o : '-' , off : 4 }
@@ -82,6 +87,11 @@ xapi test_filter_parse()
     , { expr : "+DELTA%"        , v : L_DELTA               , m : '%' , o : '+' , off : 7 }
     , { expr : "+DELTA|%"       , v : L_DELTA               , m : '%' , o : '+' , off : 8 }
     , { expr : "+A +BAR"        , v : L_A                   , m : ' ' , o : '+' , off : 2 }
+    , { expr : "--foo" }
+    , { expr : "-bar" }
+    , { expr : "+bar" }
+    , { expr : "bar" }
+    , { expr : "BAR" }
   };
 
   int x;
@@ -96,12 +106,13 @@ xapi test_filter_parse()
       assertf(filterp->v == tests[x].v, "ids 0x%"PRIx64, "ids 0x%"PRIx64, tests[x].v, filterp->v);
       assertf(filterp->m == tests[x].m, "mode %c", "mode %c", tests[x].m, filterp->m);
       assertf(filterp->o == tests[x].o, "operation %c", "operation %c", tests[x].o, filterp->o);
-      assertf(off == tests[x].off, "offset %zu", "offset %zu", tests[x].off, off);
     }
     else
     {
       assertf(filterp == 0, "%p", "%p", 0, filterp);
     }
+
+    assertf(off == tests[x].off, "offset %zu", "offset %zu", tests[x].off, off);
 
     filter_ifree(&filterp);
   }
@@ -118,7 +129,7 @@ finally:
 coda;
 }
 
-xapi test_filters_would()
+static xapi test_filters_would()
 {
   enter;
 
@@ -176,6 +187,7 @@ int main()
 {
   enter;
 
+  xapi R = 0;
   int x = 0;
   fatal(xapi_errtab_register, perrtab_LOGGER);
   fatal(xapi_errtab_register, perrtab_TEST);
@@ -208,9 +220,15 @@ int main()
   }
 
 finally:
+  suite_teardown();
+
   if(XAPI_UNWINDING)
   {
+    xapi_infof("test", "%d", x);
     xapi_backtrace();
   }
-coda;
+conclude(&R);
+  xapi_teardown();
+
+  return !!R;
 }

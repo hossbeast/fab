@@ -26,7 +26,7 @@
 
 #include "test_util.h"
 
-xapi test_interval_say()
+static xapi test_interval_say()
 {
   enter;
 
@@ -65,7 +65,7 @@ finally:
 coda;
 }
 
-xapi test_bytesize_say()
+static xapi test_bytesize_say()
 {
   enter;
 
@@ -99,7 +99,7 @@ finally:
 coda;
 }
 
-xapi test_elapsed_say()
+static xapi test_elapsed_say()
 {
   enter;
 

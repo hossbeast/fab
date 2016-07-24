@@ -227,9 +227,8 @@ void config_yyfree (void * ,yyscan_t yyscanner );
 
 #ifdef YY_HEADER_EXPORT_START_CONDITIONS
 #define INITIAL 0
-#define initial 1
-#define multilinecomment 2
-#define quoted 3
+#define multilinecomment 1
+#define quoted 2
 
 #endif
 
@@ -354,8 +353,8 @@ extern int config_yylex \
 #undef YY_DECL
 #endif
 
-#line 180 "config_parser/config.l"
+#line 179 "config_parser/config.l"
 
-#line 360 "config_parser/config.lex.h"
+#line 359 "config_parser/config.lex.h"
 #undef config_yyIN_HEADER
 #endif /* config_yyHEADER_H */

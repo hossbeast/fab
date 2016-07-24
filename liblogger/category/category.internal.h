@@ -39,14 +39,14 @@ extern int category_name_max_length;
 // SUMMARY
 //
 //
-xapi category_setup();
+xapi category_setup(void);
 
 /// category_teardown
 //
 // SUMMARY
 //  
 //
-void category_teardown();
+void category_teardown(void);
 
 /// category_byname
 //
@@ -78,7 +78,7 @@ xapi category_byid(uint64_t id, logger_category ** const restrict category)
 // SUMMARY
 //  log a summary of activated categories to LOGGER
 //
-xapi categories_report_verbose();
+xapi categories_report_verbose(void);
 
 /// category_say
 //

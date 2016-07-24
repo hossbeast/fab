@@ -27,6 +27,8 @@
 #include "config.h"
 #include "config_parser.h"
 
+#include "snarf.h"
+
 #define restrict __restrict
 
 #define SYSTEM_CONFIG_PATH    "/etc/fabconfig"
@@ -46,37 +48,6 @@ static xapi apply(value * dst, value * src)
   enter;
 
   finally : coda;
-}
-
-static xapi snarf(const char * const restrict path, char ** const restrict dst, size_t * const restrict dstl)
-{
-  enter;
-
-  int fd = -1;
-  fatal(xopen, path, O_RDONLY, &fd);
-
-  size_t dsta = 0;
-  *dstl = 0;
-
-  do
-  {
-    if((dsta - *dstl) == 0)
-    {
-      size_t newa = dsta ?: 128;
-      newa += newa * 2 + newa / 2;
-      fatal(xrealloc, dst, sizeof(**dst), newa, dsta);
-      dsta = newa;
-    }
-
-    ssize_t count;
-    fatal(xread, fd, &(*dst)[*dstl], dsta - *dstl, &count);
-    *dstl += count;
-  } while(*dstl == dsta);
-  (*dstl)--;
-
-finally:
-  fatal(ixclose, &fd);
-coda;
 }
 
 //

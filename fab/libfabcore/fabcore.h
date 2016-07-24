@@ -35,14 +35,14 @@ SUMMARY
 // SUMMARY
 //  initialize the library
 //
-xapi fabcore_load();
+xapi fabcore_load(void);
 
 /// fabcore_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi fabcore_unload();
+xapi fabcore_unload(void);
 
 #undef restrict
 #endif

@@ -106,8 +106,8 @@ struct g_args_t
   size_t  inputsa;
 } g_args;
 
-xapi args_parse();
-xapi args_report();
-void args_teardown();
+xapi args_parse(void);
+xapi args_report(void);
+void args_teardown(void);
 
 #endif

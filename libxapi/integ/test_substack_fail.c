@@ -25,7 +25,7 @@ SUMMARY
 
 */
 
-xapi ababab()
+static xapi ababab()
 {
   enter;
 
@@ -34,7 +34,7 @@ xapi ababab()
   finally : coda;
 }
 
-xapi baz()
+static xapi baz()
 {
   enter;
 
@@ -43,7 +43,7 @@ xapi baz()
   finally : coda;
 }
 
-xapi bar()
+static xapi bar()
 {
   enter;
 
@@ -53,7 +53,7 @@ xapi bar()
 }
 
 int delta_count;
-xapi delta()
+static xapi delta()
 {
   enter;
 
@@ -63,7 +63,7 @@ xapi delta()
   finally : coda;
 }
 
-xapi qux()
+static xapi qux()
 {
   enter;
 
@@ -73,7 +73,7 @@ xapi qux()
 }
 
 int epsilon_count;
-xapi epsilon()
+static xapi epsilon()
 {
   enter;
 
@@ -89,7 +89,7 @@ coda;
 }
 
 int beta_count;
-xapi beta()
+static xapi beta()
 {
   enter;
 
@@ -100,7 +100,7 @@ xapi beta()
 }
 
 int alpha_dead_count;
-xapi alpha()
+static xapi alpha()
 {
   enter;
 
@@ -116,7 +116,7 @@ finally :
 coda;
 }
 
-xapi zeta()
+static xapi zeta()
 {
   enter;
 

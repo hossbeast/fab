@@ -38,7 +38,7 @@ struct item
 };
 typedef struct item item;
 
-xapi validate(dictionary * dp)
+static xapi validate(dictionary * dp)
 {
   enter;
 
@@ -137,7 +137,7 @@ finally:
 coda;
 }
 
-xapi test()
+static xapi test()
 {
   enter;
 
@@ -161,7 +161,7 @@ finally:
 coda;
 }
 
-xapi test_rehash()
+static xapi test_rehash()
 {
   enter;
 

@@ -306,7 +306,7 @@ API xapi categories_report_verbose()
     }
 
     fatal(log_start, L_LOGGER, &token);
-    narrator * N = log_narrator();
+    narrator * N = log_narrator(&token);
     says(" ");
     fatal(category_say_verbose, list_get(activated, x), N);
     fatal(log_finish, &token);
@@ -363,7 +363,7 @@ API xapi logger_categories_report()
     }
 
     fatal(log_start, L_LOGGER, &token);
-    narrator * N = log_narrator();
+    narrator * N = log_narrator(&token);
     says(" ");
     fatal(category_say, list_get(activated, x), N);
     fatal(log_finish, &token);

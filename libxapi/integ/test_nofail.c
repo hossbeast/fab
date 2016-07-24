@@ -24,14 +24,14 @@ SUMMARY
 
 */
 
-xapi beta()
+static xapi beta()
 {
   enter;
 
   finally : coda;
 }
 
-xapi alpha()
+static xapi alpha()
 {
   enter;
 
@@ -40,7 +40,7 @@ xapi alpha()
   finally : coda;
 }
 
-xapi foo()
+static xapi foo()
 {
   enter;
 

@@ -28,6 +28,9 @@
 #include "value.h"
 #include "value/value_store.h"
 
+#include "fabcore.h"
+#include "fabcore/logging.h"
+
 struct config_xtra;
 #define YYU_EXTRA_TYPE struct config_xtra
 #include "internal.h"

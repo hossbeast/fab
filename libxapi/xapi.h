@@ -79,6 +79,6 @@ typedef struct etable
 // SUMMARY
 //  release memory
 //
-void xapi_teardown();
+void xapi_teardown(void);
 
 #endif

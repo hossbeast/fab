@@ -78,14 +78,16 @@ xapi filter_parsew(const char * const restrict expr, size_t exprl, filter ** con
   size_t off = 0;
 
   // skip leading whitespace
-  while(expr[off] == ' ')
+  while(off < exprl && expr[off] == ' ')
     off++;
 
   if(exprl && (expr[off] == '+' || expr[off] == '-'))
   {
     char m = ' ';
-    char o = expr[off];
-    off++;
+    char o = expr[off++];
+
+    // start of category names
+    size_t cat_off = off;
 
     uint64_t category_ids = 0;
     while(off != exprl && expr[off] != ' ')
@@ -101,27 +103,28 @@ xapi filter_parsew(const char * const restrict expr, size_t exprl, filter ** con
       int x;
       for(x = off; x < exprl; x++)
       {
-        if(expr[x] == ',' || expr[x] == '|' || expr[x] == '%' || expr[x] == '^' || expr[x] == ' ')
+        // valid characters in a category name
+        if((expr[x] < 'A' || expr[x] > 'Z') && expr[x] != '_')
           break;
       }
 
-      if(estrcmp(expr + off, x - off, "ALL", 3, 0) == 0)
+      if(x == off)
       {
-        category_ids |= L_ALL;
+        break;
       }
-      else
+      else if(x == exprl || expr[x] == ',' || expr[x] == '|' || expr[x] == '%' || expr[x] == '^' || expr[x] == ' ')
       {
-        logger_category * category = 0;
-        fatal(category_byname, expr + off, x - off, &category);
-
-        // no such category
-        if(category == 0)
+        if(estrcmp(expr + off, x - off, "ALL", 3, 0) == 0)
         {
-          category_ids = 0;
-          break;
+          category_ids |= L_ALL;
         }
-
-        category_ids |= category->id;
+        else
+        {
+          logger_category * category = 0;
+          fatal(category_byname, expr + off, x - off, &category);
+          if(category)
+            category_ids |= category->id;
+        }
       }
 
       // skip trailing category delimiters
@@ -135,23 +138,21 @@ xapi filter_parsew(const char * const restrict expr, size_t exprl, filter ** con
       off += (x - off);
     }
 
-    // successful if every named categories was found
-    if(category_ids)
+    // create a filter if any named category was found
+    if(category_ids && filterp)
     {
-      if(filterp)
-      {
-        fatal(xmalloc, filterp, sizeof(**filterp));
+      fatal(xmalloc, filterp, sizeof(**filterp));
 
-        (**filterp) = (typeof(**filterp)){
-            v : category_ids & L_ALL
-          , m : m
-          , o : o
-        };
-      }
+      (**filterp) = (typeof(**filterp)){
+          v : category_ids & L_ALL
+        , m : m
+        , o : o
+      };
+    }
 
+    if(off > cat_off)
       if(offp)
         *offp = off;
-    }
   }
 
   finally : coda;

@@ -43,7 +43,7 @@ static void destructor(const char * key, item * value)
   free(value);
 }
 
-xapi validate(map * mapp)
+static xapi validate(map * mapp)
 {
   enter;
 

@@ -25,14 +25,14 @@
 // SUMMARY
 //  initialize the library
 //
-xapi xunit_load();
+xapi xunit_load(void);
 
 /// xunit_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi xunit_unload();
+xapi xunit_unload(void);
 
 #ifndef TEST_TYPE
 # define TEST_TYPE struct xunit_test

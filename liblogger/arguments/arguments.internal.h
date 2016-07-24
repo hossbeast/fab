@@ -20,18 +20,11 @@
 
 #include "arguments.h"
 
-/// arguments_initialize
-//
-// SUMMARY
-//  parse cmdline args, populate g_argv and related variables
-//
-xapi arguments_initialize(char ** restrict envp);
-
 /// arguments_teardown
 //
 // SUMMARY
 //  release resources
 //
-void arguments_teardown();
+void arguments_teardown(void);
 
 #endif

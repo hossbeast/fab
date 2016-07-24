@@ -109,6 +109,6 @@ struct YYLTYPE
 
 
 
-int transform_yyparse (void* scanner, parse_param* parm);
+int transform_yyparse (void* scanner, transform_xtra * parm);
 
 #endif /* !YY_TRANSFORM_YY_TRANSFORM_TRANSFORM_TAB_H_INCLUDED  */

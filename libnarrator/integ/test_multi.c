@@ -27,7 +27,7 @@
 
 #include "test_util.h"
 
-xapi validate(int count, ...)
+static xapi validate(int count, ...)
 {
   enter;
 
@@ -48,7 +48,7 @@ finally:
 coda;
 }
 
-xapi test_basic()
+static xapi test_basic()
 {
   enter;
 

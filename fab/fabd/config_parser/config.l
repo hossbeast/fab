@@ -64,7 +64,7 @@
       , 0                       \
     )
 
-  xapi lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, config_xtra * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
+  static xapi lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, config_xtra * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
   {
     enter;
 
@@ -115,7 +115,6 @@
 %option extra-type="config_xtra *"
 %option stack
 
-%x initial
 %x multilinecomment
 %x quoted
 
@@ -136,23 +135,23 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <multilinecomment>[\n]                                  { LOCRESET; }
 
  /* whitespace */
-<initial>[\n]                                           { LOCRESET; }
-<initial>[\r\t ]+                                       { LOCWRITE; }
+<INITIAL>[\n]                                           { LOCRESET; }
+<INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
-<initial>[[\]{}]                                        { lenter; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
-<initial>(?i:true|false)                                { lenter; LEX(BOOL); yield(BOOL); finally : lcoda; }
-<initial>[0-9]+                                         { lenter; LEX(INT); yield(INT); finally : lcoda; }
-<initial>[-][0-9]+                                      { lenter; LEX(INT); yield(INT); finally : lcoda; }
-<initial>(?i:0x[a-f0-9]+)                               { lenter; LEX(HEX); yield(HEX); finally : lcoda; }
-<initial>[+-]?[0-9]+[.][0-9]+                           { lenter; LEX(FLOAT); yield(FLOAT); finally : lcoda; }
-<initial>["]                                            { lenter; PUSHSTATE(quoted); LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
+<INITIAL>[[\]{}]                                        { lenter; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
+<INITIAL>(?i:true|false)                                { lenter; LEX(BOOL); yield(BOOL); finally : lcoda; }
+<INITIAL>[0-9]+                                         { lenter; LEX(INT); yield(INT); finally : lcoda; }
+<INITIAL>[-][0-9]+                                      { lenter; LEX(INT); yield(INT); finally : lcoda; }
+<INITIAL>(?i:0x[a-f0-9]+)                               { lenter; LEX(HEX); yield(HEX); finally : lcoda; }
+<INITIAL>[+-]?[0-9]+[.][0-9]+                           { lenter; LEX(FLOAT); yield(FLOAT); finally : lcoda; }
+<INITIAL>["]                                            { lenter; PUSHSTATE(quoted); LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
 
 <quoted>["]                                             { lenter; POPSTATE; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
 <quoted>\\[\\"abtnvfrs0]                                { lenter; LEXV(CREF, 1); yield(CREF); finally : lcoda; }
 <quoted>(?i:\\x[0-9a-f]{2})                             { lenter; LEXV(HREF, 2); yield(HREF); finally : lcoda; }
 <quoted>(?i:\\x\{[0-9a-f]{1,2}\})                       { lenter; LEXV(HREF, 3); yield(HREF); finally : lcoda; }
-<quoted>[^\n"\x00-\x1F\x7F-\xFF]+                       { lenter; LEX(STR); yield(STR); finally : lcoda; }
+<quoted,INITIAL>[^\n"\x00-\x1F\x7F-\xFF]+               { lenter; LEX(STR); yield(STR); finally : lcoda; }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           lenter;
@@ -168,7 +167,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
                                                           while(yyextra->states_n)
                                                             { POPSTATE; }
                                                           LOCWRITE;
-                                                          failf(CONFIG_ILLBYTE, "character", "'%1c'(0x%$102hhx)", yytext[0]);
+                                                          failf(CONFIG_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
                                                           finally : lcoda;
                                                         }
 <<EOF>>                                                 {

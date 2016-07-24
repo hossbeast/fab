@@ -117,12 +117,6 @@ API void lwx_free(lwx * lx)
   }
 }
 
-API void lwx_xfree(lwx ** lx)
-{
-  lwx_free(*lx);
-  *lx = 0;
-}
-
 API xapi lwx_reset(lwx * lx)
 {
   enter;

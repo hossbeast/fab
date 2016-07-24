@@ -28,6 +28,6 @@ extern size_t     tabl;
 // SUMMARY
 //  release memory
 //
-void errtab_teardown();
+void errtab_teardown(void);
 
 #endif

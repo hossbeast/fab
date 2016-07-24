@@ -40,6 +40,7 @@ API xapi fabcore_load()
 
   if(handles == 0)
   {
+printf("fabcore_load\n");
     // dependencies
     fatal(xlinux_load);
     fatal(logger_load);
@@ -64,6 +65,7 @@ API xapi fabcore_unload()
 
   if(--handles == 0)
   {
+printf("fabcore_unload\n");
     // modules
     params_teardown();
 

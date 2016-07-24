@@ -25,7 +25,7 @@
 //
 // PARAMETERS
 //  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
-//  expr       - logexpr
+//  expr       - space-delimited filter exprs
 //  [exprl]    - expr length
 //
 xapi logger_filter_pushs(const int stream_id, const char * const restrict expr)
@@ -41,7 +41,7 @@ xapi logger_filter_pushw(const int stream_id, const char * const restrict expr, 
 //
 // PARAMETERS
 //  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
-//  expr       - logexpr
+//  expr       - space-delimited filter exprs
 //  [exprl]    - expr length
 //
 xapi logger_filter_unshifts(const int stream_id, const char * const restrict expr)

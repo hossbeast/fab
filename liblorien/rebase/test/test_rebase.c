@@ -36,7 +36,7 @@ typedef struct rebase_test
   char *    expected;
 } rebase_test;
 
-xapi rebase_test_entry(rebase_test * test)
+static xapi rebase_test_entry(rebase_test * test)
 {
   enter;
 

@@ -33,7 +33,7 @@ struct calltree;
 // PARAMETERS
 //  frame - frame to unwind to
 //
-void xapi_calltree_unwind();
+void xapi_calltree_unwind(void);
 
 /// xapi_calltree_freeze
 //
@@ -43,7 +43,7 @@ void xapi_calltree_unwind();
 // RETURNS
 //  containing memblk
 //
-struct memblk * xapi_calltree_freeze();
+struct memblk * xapi_calltree_freeze(void);
 
 /// xapi_calltree_unfreeze
 //
@@ -53,7 +53,7 @@ struct memblk * xapi_calltree_freeze();
 // RETURNS
 //  containing memblk
 //
-void xapi_calltree_unfreeze();
+void xapi_calltree_unfreeze(void);
 
 /// xapi_calltree_thaw
 //

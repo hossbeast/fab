@@ -1049,6 +1049,8 @@ static yyconst flex_int16_t yy_chk[2160] =
 	#include <inttypes.h>
 
 	// contains much of the implemention of the scanner
+  struct transform_xtra;
+  #define YYU_EXTRA_TYPE struct transform_xtra
 	#include "yyutil/scanner.h"
 
 	#include "transform/transform.def.h"
@@ -1109,7 +1111,7 @@ static yyconst flex_int16_t yy_chk[2160] =
 	// SUMMARY
 	//  populate semantic value, invoke yyu_lexify
 	//
-	int lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, parse_param * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
+	static xapi lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, transform_xtra * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
 	{
     enter;
 
@@ -1142,7 +1144,7 @@ static yyconst flex_int16_t yy_chk[2160] =
 		else if(token == OP)
 			lval->op = *(operator **)v;
 
-		fatal(yyu_lexify, token, lval, sizeof(*lval), lloc, &xtra->yyu_extra, text, leng, ldel, token == LF);
+		fatal(yyu_lexify, token, lval, sizeof(*lval), lloc, xtra, text, leng, ldel, token == LF);
 
     finally : coda;
 	}
@@ -1160,7 +1162,7 @@ static yyconst flex_int16_t yy_chk[2160] =
 
 
 /* bytes that cannot appear in the string being scanned */
-#line 1164 "transform/transform.lex.c"
+#line 1166 "transform/transform.lex.c"
 
 #define INITIAL 0
 #define ws 1
@@ -1197,7 +1199,7 @@ static yyconst flex_int16_t yy_chk[2160] =
 #include <unistd.h>
 #endif
 
-#define YY_EXTRA_TYPE parse_param*
+#define YY_EXTRA_TYPE transform_xtra*
 
 /* Holds the entire state of the reentrant scanner. */
 struct yyguts_t
@@ -1466,11 +1468,11 @@ YY_DECL
 		}
 
 	{
-#line 147 "transform/transform.l"
+#line 149 "transform/transform.l"
 
 
  /* single-line comments */
-#line 1474 "transform/transform.lex.c"
+#line 1476 "transform/transform.lex.c"
 
 	while ( 1 )		/* loops until end-of-file is reached */
 		{
@@ -1529,39 +1531,39 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 150 "transform/transform.l"
+#line 152 "transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 /* multiline comments are nestable */
 case 2:
 YY_RULE_SETUP
-#line 153 "transform/transform.l"
+#line 155 "transform/transform.l"
 { lenter; LOCWRITE; PUSHSTATE(multilinecomment); finally : lcoda; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 154 "transform/transform.l"
+#line 156 "transform/transform.l"
 { lenter; LOCWRITE; POPSTATE; finally : lcoda; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 155 "transform/transform.l"
+#line 157 "transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 156 "transform/transform.l"
+#line 158 "transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 157 "transform/transform.l"
+#line 159 "transform/transform.l"
 { LOCWRITE; }
 	YY_BREAK
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 158 "transform/transform.l"
+#line 160 "transform/transform.l"
 { LOCRESET; }
 	YY_BREAK
 /*
@@ -1573,17 +1575,17 @@ YY_RULE_SETUP
 case 8:
 /* rule 8 can match eol */
 YY_RULE_SETUP
-#line 167 "transform/transform.l"
+#line 169 "transform/transform.l"
 { lenter; LEX(LF, 0); yield(LF); finally : lcoda; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 168 "transform/transform.l"
+#line 170 "transform/transform.l"
 { lenter; LEX(WS, 0); yield(WS); finally : lcoda; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 170 "transform/transform.l"
+#line 172 "transform/transform.l"
 {
                                                           lenter;
 
@@ -1604,7 +1606,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 187 "transform/transform.l"
+#line 189 "transform/transform.l"
 {
                                                           lenter;
 
@@ -1618,7 +1620,7 @@ YY_RULE_SETUP
 /* following ws, an alpha string must be an operator name or mnemonic */
 case 12:
 YY_RULE_SETUP
-#line 198 "transform/transform.l"
+#line 200 "transform/transform.l"
 {
                                                           lenter;
 
@@ -1638,578 +1640,578 @@ YY_RULE_SETUP
 /* after processing a scanmode directive, revert to the INITIAL scanner */
 case 13:
 YY_RULE_SETUP
-#line 214 "transform/transform.l"
+#line 216 "transform/transform.l"
 { LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 215 "transform/transform.l"
+#line 217 "transform/transform.l"
 { lenter; LOCWRITE; yyextra->scanmode = genscan_parse(yytext, yyleng); POPSTATE; finally : lcoda; }
 	YY_BREAK
 /* process anything else with the current scanmode */
 case 15:
 /* rule 15 can match eol */
 YY_RULE_SETUP
-#line 218 "transform/transform.l"
+#line 220 "transform/transform.l"
 { lenter; PUSHSTATE(genscan_startcondition_initial[yyextra->scanmode]); finally : lcoda; yyless(0); }
 	YY_BREAK
 /* fabricate an empty-string STR token */
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 221 "transform/transform.l"
+#line 223 "transform/transform.l"
 { lenter; POPSTATE; yyless(0); LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 /* slash-delimited scanner */
 case 17:
 YY_RULE_SETUP
-#line 224 "transform/transform.l"
+#line 226 "transform/transform.l"
 { lenter; LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 225 "transform/transform.l"
+#line 227 "transform/transform.l"
 { lenter; PUSHSTATE(emptyarg); yyless(1); LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 19:
 /* rule 19 can match eol */
 YY_RULE_SETUP
-#line 226 "transform/transform.l"
+#line 228 "transform/transform.l"
 { lenter; POPSTATE; finally : lcoda; yyless(0); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 227 "transform/transform.l"
+#line 229 "transform/transform.l"
 { lenter; LEXV(I64, 0, 0); yield(I64); finally : lcoda; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 229 "transform/transform.l"
+#line 231 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 22:
 /* rule 22 can match eol */
 YY_RULE_SETUP
-#line 231 "transform/transform.l"
+#line 233 "transform/transform.l"
 { lenter; LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 232 "transform/transform.l"
+#line 234 "transform/transform.l"
 { lenter; LEXV(CREF, 1, 0); yield(CREF); finally : lcoda; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 233 "transform/transform.l"
+#line 235 "transform/transform.l"
 { lenter; LEXV(HREF, 2, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 234 "transform/transform.l"
+#line 236 "transform/transform.l"
 { lenter; LEXV(HREF, 3, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 235 "transform/transform.l"
+#line 237 "transform/transform.l"
 { lenter; LEXV(BREF, 1, 0); yield(BREF); finally : lcoda; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 236 "transform/transform.l"
+#line 238 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 /* comma-delimited scanner */
 case 28:
 YY_RULE_SETUP
-#line 239 "transform/transform.l"
+#line 241 "transform/transform.l"
 { lenter; LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 240 "transform/transform.l"
+#line 242 "transform/transform.l"
 { lenter; PUSHSTATE(emptyarg); yyless(1); LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 30:
 /* rule 30 can match eol */
 YY_RULE_SETUP
-#line 241 "transform/transform.l"
+#line 243 "transform/transform.l"
 { lenter; POPSTATE; finally : lcoda; yyless(0); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 242 "transform/transform.l"
+#line 244 "transform/transform.l"
 { lenter; LEXV(I64, 0, 0); yield(I64); finally : lcoda; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 244 "transform/transform.l"
+#line 246 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 33:
 /* rule 33 can match eol */
 YY_RULE_SETUP
-#line 246 "transform/transform.l"
+#line 248 "transform/transform.l"
 { lenter; LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 247 "transform/transform.l"
+#line 249 "transform/transform.l"
 { lenter; LEXV(CREF, 1, 0); yield(CREF); finally : lcoda; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 248 "transform/transform.l"
+#line 250 "transform/transform.l"
 { lenter; LEXV(HREF, 2, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 249 "transform/transform.l"
+#line 251 "transform/transform.l"
 { lenter; LEXV(HREF, 3, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 250 "transform/transform.l"
+#line 252 "transform/transform.l"
 { lenter; LEXV(BREF, 1, 0); yield(BREF); finally : lcoda; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 251 "transform/transform.l"
+#line 253 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 /* dot-delimited scanner */
 case 39:
 YY_RULE_SETUP
-#line 254 "transform/transform.l"
+#line 256 "transform/transform.l"
 { lenter; LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 255 "transform/transform.l"
+#line 257 "transform/transform.l"
 { lenter; PUSHSTATE(emptyarg); yyless(1); LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 41:
 /* rule 41 can match eol */
 YY_RULE_SETUP
-#line 256 "transform/transform.l"
+#line 258 "transform/transform.l"
 { lenter; POPSTATE; finally : lcoda; yyless(0); }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 257 "transform/transform.l"
+#line 259 "transform/transform.l"
 { lenter; LEXV(I64, 0, 0); yield(I64); finally : lcoda; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 259 "transform/transform.l"
+#line 261 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 44:
 /* rule 44 can match eol */
 YY_RULE_SETUP
-#line 261 "transform/transform.l"
+#line 263 "transform/transform.l"
 { lenter; LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 262 "transform/transform.l"
+#line 264 "transform/transform.l"
 { lenter; LEXV(CREF, 1, 0); yield(CREF); finally : lcoda; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 263 "transform/transform.l"
+#line 265 "transform/transform.l"
 { lenter; LEXV(HREF, 2, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 264 "transform/transform.l"
+#line 266 "transform/transform.l"
 { lenter; LEXV(HREF, 3, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 265 "transform/transform.l"
+#line 267 "transform/transform.l"
 { lenter; LEXV(BREF, 1, 0); yield(BREF); finally : lcoda; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 266 "transform/transform.l"
+#line 268 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 /* colon-delimited scanner */
 case 50:
 YY_RULE_SETUP
-#line 269 "transform/transform.l"
+#line 271 "transform/transform.l"
 { lenter; LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 270 "transform/transform.l"
+#line 272 "transform/transform.l"
 { lenter; PUSHSTATE(emptyarg); yyless(1); LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 52:
 /* rule 52 can match eol */
 YY_RULE_SETUP
-#line 271 "transform/transform.l"
+#line 273 "transform/transform.l"
 { lenter; POPSTATE; finally : lcoda; yyless(0); }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 272 "transform/transform.l"
+#line 274 "transform/transform.l"
 { lenter; LEXV(I64, 0, 0); yield(I64); finally : lcoda; }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 274 "transform/transform.l"
+#line 276 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 55:
 /* rule 55 can match eol */
 YY_RULE_SETUP
-#line 276 "transform/transform.l"
+#line 278 "transform/transform.l"
 { lenter; LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 277 "transform/transform.l"
+#line 279 "transform/transform.l"
 { lenter; LEXV(CREF, 1, 0); yield(CREF); finally : lcoda; }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 278 "transform/transform.l"
+#line 280 "transform/transform.l"
 { lenter; LEXV(HREF, 2, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 279 "transform/transform.l"
+#line 281 "transform/transform.l"
 { lenter; LEXV(HREF, 3, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 280 "transform/transform.l"
+#line 282 "transform/transform.l"
 { lenter; LEXV(BREF, 1, 0); yield(BREF); finally : lcoda; }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 281 "transform/transform.l"
+#line 283 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 /* semicolon-delimited scanner */
 case 61:
 YY_RULE_SETUP
-#line 284 "transform/transform.l"
+#line 286 "transform/transform.l"
 { lenter; LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 285 "transform/transform.l"
+#line 287 "transform/transform.l"
 { lenter; PUSHSTATE(emptyarg); yyless(1); LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 63:
 /* rule 63 can match eol */
 YY_RULE_SETUP
-#line 286 "transform/transform.l"
+#line 288 "transform/transform.l"
 { lenter; POPSTATE; finally : lcoda; yyless(0); }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 287 "transform/transform.l"
+#line 289 "transform/transform.l"
 { lenter; LEXV(I64, 0, 0); yield(I64); finally : lcoda; }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 289 "transform/transform.l"
+#line 291 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 66:
 /* rule 66 can match eol */
 YY_RULE_SETUP
-#line 291 "transform/transform.l"
+#line 293 "transform/transform.l"
 { lenter; LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 292 "transform/transform.l"
+#line 294 "transform/transform.l"
 { lenter; LEXV(CREF, 1, 0); yield(CREF); finally : lcoda; }
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 293 "transform/transform.l"
+#line 295 "transform/transform.l"
 { lenter; LEXV(HREF, 2, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 294 "transform/transform.l"
+#line 296 "transform/transform.l"
 { lenter; LEXV(HREF, 3, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 295 "transform/transform.l"
+#line 297 "transform/transform.l"
 { lenter; LEXV(BREF, 1, 0); yield(BREF); finally : lcoda; }
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 296 "transform/transform.l"
+#line 298 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 /* braces-enclosed scanner */
 case 72:
 YY_RULE_SETUP
-#line 299 "transform/transform.l"
+#line 301 "transform/transform.l"
 { lenter; PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 73:
 /* rule 73 can match eol */
 YY_RULE_SETUP
-#line 300 "transform/transform.l"
+#line 302 "transform/transform.l"
 { lenter; POPSTATE; finally : lcoda; yyless(0); }
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 301 "transform/transform.l"
+#line 303 "transform/transform.l"
 { lenter; PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 302 "transform/transform.l"
+#line 304 "transform/transform.l"
 { lenter; POPSTATE; if(TOPSTATE == braces) { LEX(yytext[0], 0); yield(yytext[0]); } else { LEX(STR, 0); yield(STR); } finally : lcoda; }
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 304 "transform/transform.l"
+#line 306 "transform/transform.l"
 { lenter; LEXV(I64, 0, 0); yield(I64); finally : lcoda; }
 	YY_BREAK
 case 77:
 /* rule 77 can match eol */
 YY_RULE_SETUP
-#line 306 "transform/transform.l"
+#line 308 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 308 "transform/transform.l"
+#line 310 "transform/transform.l"
 { lenter; LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 309 "transform/transform.l"
+#line 311 "transform/transform.l"
 { lenter; LEXV(CREF, 1, 0); yield(CREF); finally : lcoda; }
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 310 "transform/transform.l"
+#line 312 "transform/transform.l"
 { lenter; LEXV(HREF, 2, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 311 "transform/transform.l"
+#line 313 "transform/transform.l"
 { lenter; LEXV(HREF, 3, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 312 "transform/transform.l"
+#line 314 "transform/transform.l"
 { lenter; LEXV(BREF, 1, 0); yield(BREF); finally : lcoda; }
 	YY_BREAK
 case 83:
 /* rule 83 can match eol */
 YY_RULE_SETUP
-#line 313 "transform/transform.l"
+#line 315 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 /* brackets-enclosed scanner */
 case 84:
 YY_RULE_SETUP
-#line 316 "transform/transform.l"
+#line 318 "transform/transform.l"
 { lenter; PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 85:
 /* rule 85 can match eol */
 YY_RULE_SETUP
-#line 317 "transform/transform.l"
+#line 319 "transform/transform.l"
 { lenter; POPSTATE; yyless(0); finally : lcoda; }
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 318 "transform/transform.l"
+#line 320 "transform/transform.l"
 { lenter; PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 319 "transform/transform.l"
+#line 321 "transform/transform.l"
 { lenter; POPSTATE; if(TOPSTATE == brackets) { LEX(yytext[0], 0); yield(yytext[0]); } else { LEX(STR, 0); yield(STR); } finally : lcoda; }
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 321 "transform/transform.l"
+#line 323 "transform/transform.l"
 { lenter; LEXV(I64, 0, 0); yield(I64); finally : lcoda; }
 	YY_BREAK
 case 89:
 /* rule 89 can match eol */
 YY_RULE_SETUP
-#line 323 "transform/transform.l"
+#line 325 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 325 "transform/transform.l"
+#line 327 "transform/transform.l"
 { lenter; LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 326 "transform/transform.l"
+#line 328 "transform/transform.l"
 { lenter; LEXV(CREF, 1, 0); yield(CREF); finally : lcoda; }
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 327 "transform/transform.l"
+#line 329 "transform/transform.l"
 { lenter; LEXV(HREF, 2, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 328 "transform/transform.l"
+#line 330 "transform/transform.l"
 { lenter; LEXV(HREF, 3, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 329 "transform/transform.l"
+#line 331 "transform/transform.l"
 { lenter; LEXV(BREF, 1, 0); yield(BREF); finally : lcoda; }
 	YY_BREAK
 case 95:
 /* rule 95 can match eol */
 YY_RULE_SETUP
-#line 330 "transform/transform.l"
+#line 332 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 /* parens-enclosed scanner */
 case 96:
 YY_RULE_SETUP
-#line 333 "transform/transform.l"
+#line 335 "transform/transform.l"
 { lenter; PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 97:
 /* rule 97 can match eol */
 YY_RULE_SETUP
-#line 334 "transform/transform.l"
+#line 336 "transform/transform.l"
 { lenter; POPSTATE; finally : lcoda; yyless(0); }
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-#line 335 "transform/transform.l"
+#line 337 "transform/transform.l"
 { lenter; PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 99:
 YY_RULE_SETUP
-#line 336 "transform/transform.l"
+#line 338 "transform/transform.l"
 { lenter; POPSTATE; if(TOPSTATE == parens) { LEX(yytext[0], 0); yield(yytext[0]); } else { LEX(STR, 0); yield(STR); } finally : lcoda; }
 	YY_BREAK
 case 100:
 YY_RULE_SETUP
-#line 338 "transform/transform.l"
+#line 340 "transform/transform.l"
 { lenter; LEXV(I64, 0, 0); yield(I64); finally : lcoda; }
 	YY_BREAK
 case 101:
 /* rule 101 can match eol */
 YY_RULE_SETUP
-#line 340 "transform/transform.l"
+#line 342 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 102:
 YY_RULE_SETUP
-#line 342 "transform/transform.l"
+#line 344 "transform/transform.l"
 { lenter; LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 103:
 YY_RULE_SETUP
-#line 343 "transform/transform.l"
+#line 345 "transform/transform.l"
 { lenter; LEXV(CREF, 1, 0); yield(CREF); finally : lcoda; }
 	YY_BREAK
 case 104:
 YY_RULE_SETUP
-#line 344 "transform/transform.l"
+#line 346 "transform/transform.l"
 { lenter; LEXV(HREF, 2, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
-#line 345 "transform/transform.l"
+#line 347 "transform/transform.l"
 { lenter; LEXV(HREF, 3, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 106:
 YY_RULE_SETUP
-#line 346 "transform/transform.l"
+#line 348 "transform/transform.l"
 { lenter; LEXV(BREF, 1, 0); yield(BREF); finally : lcoda; }
 	YY_BREAK
 case 107:
 /* rule 107 can match eol */
 YY_RULE_SETUP
-#line 347 "transform/transform.l"
+#line 349 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 /* angles-enclosed scanner */
 case 108:
 YY_RULE_SETUP
-#line 350 "transform/transform.l"
+#line 352 "transform/transform.l"
 { lenter; PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); LEX(yytext[0], 0); yield(yytext[0]); finally : lcoda; }
 	YY_BREAK
 case 109:
 /* rule 109 can match eol */
 YY_RULE_SETUP
-#line 351 "transform/transform.l"
+#line 353 "transform/transform.l"
 { lenter; POPSTATE; finally : lcoda; yyless(0); }
 	YY_BREAK
 case 110:
 YY_RULE_SETUP
-#line 352 "transform/transform.l"
+#line 354 "transform/transform.l"
 { lenter; PUSHSTATE(genscan_startcondition_argscan[yyextra->scanmode]); LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 111:
 YY_RULE_SETUP
-#line 353 "transform/transform.l"
+#line 355 "transform/transform.l"
 { lenter; POPSTATE; if(TOPSTATE == angles) { LEX(yytext[0], 0); yield(yytext[0]); } else { LEX(STR, 0); yield(STR); } finally : lcoda; }
 	YY_BREAK
 case 112:
 YY_RULE_SETUP
-#line 355 "transform/transform.l"
+#line 357 "transform/transform.l"
 { lenter; LEXV(I64, 0, 0); yield(I64); finally : lcoda; }
 	YY_BREAK
 case 113:
 /* rule 113 can match eol */
 YY_RULE_SETUP
-#line 357 "transform/transform.l"
+#line 359 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 114:
 YY_RULE_SETUP
-#line 359 "transform/transform.l"
+#line 361 "transform/transform.l"
 { lenter; LEX(STR, 1); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 115:
 YY_RULE_SETUP
-#line 360 "transform/transform.l"
+#line 362 "transform/transform.l"
 { lenter; LEXV(CREF, 1, 0); yield(CREF); finally : lcoda; }
 	YY_BREAK
 case 116:
 YY_RULE_SETUP
-#line 361 "transform/transform.l"
+#line 363 "transform/transform.l"
 { lenter; LEXV(HREF, 2, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 117:
 YY_RULE_SETUP
-#line 362 "transform/transform.l"
+#line 364 "transform/transform.l"
 { lenter; LEXV(HREF, 3, 0); yield(HREF); finally : lcoda; }
 	YY_BREAK
 case 118:
 YY_RULE_SETUP
-#line 363 "transform/transform.l"
+#line 365 "transform/transform.l"
 { lenter; LEXV(BREF, 1, 0); yield(BREF); finally : lcoda; }
 	YY_BREAK
 case 119:
 /* rule 119 can match eol */
 YY_RULE_SETUP
-#line 364 "transform/transform.l"
+#line 366 "transform/transform.l"
 { lenter; LEX(STR, 0); yield(STR); finally : lcoda; }
 	YY_BREAK
 case 120:
 /* rule 120 can match eol */
 YY_RULE_SETUP
-#line 366 "transform/transform.l"
+#line 368 "transform/transform.l"
 {
                                                           lenter;
                                                           failf(LISTWISE_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
@@ -2218,7 +2220,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 121:
 YY_RULE_SETUP
-#line 371 "transform/transform.l"
+#line 373 "transform/transform.l"
 {
                                                           lenter;
                                                           failf(LISTWISE_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
@@ -2251,7 +2253,7 @@ case YY_STATE_EOF(parens_dorefs):
 case YY_STATE_EOF(angles):
 case YY_STATE_EOF(angles_norefs):
 case YY_STATE_EOF(angles_dorefs):
-#line 376 "transform/transform.l"
+#line 378 "transform/transform.l"
 {
                                                           lenter;
 																													while(yyextra->states_n)
@@ -2262,10 +2264,10 @@ case YY_STATE_EOF(angles_dorefs):
 	YY_BREAK
 case 122:
 YY_RULE_SETUP
-#line 383 "transform/transform.l"
+#line 385 "transform/transform.l"
 ECHO;
 	YY_BREAK
-#line 2269 "transform/transform.lex.c"
+#line 2271 "transform/transform.lex.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -3436,4 +3438,4 @@ void transform_yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 382 "transform/transform.l"
+#line 384 "transform/transform.l"

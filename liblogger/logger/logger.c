@@ -92,9 +92,11 @@ API xapi logger_unload()
   finally : coda;
 }
 
-API xapi logger_initialize(char ** restrict envp)
+API xapi logger_initialize()
 {
   enter;
+
+  filter * filterp = 0;
 
   // resolve category registration
   fatal(logger_category_activate);
@@ -102,13 +104,27 @@ API xapi logger_initialize(char ** restrict envp)
   // activate streams, including embedded filter definitions
   fatal(stream_activate);
 
-  // prepare program arguments
-  fatal(arguments_initialize, envp);
+  // reset filters for all streams
+  fatal(logger_filter_clear, 0);
+
+  // process logger arguments on cmdline
+  int x;
+  for(x = 0; x < g_logc; x++)
+  {
+    fatal(filter_parses, g_logv[x], &filterp, 0);
+    if(filterp)
+    {
+      fatal(filter_push, 0, filterp);
+      filterp = 0;
+    }
+  }
 
   // reports to LOGGER
   fatal(logger_arguments_report);
   fatal(categories_report_verbose);
   fatal(logger_streams_report);
 
-  finally : coda;
+finally:
+  filter_free(filterp);
+coda;
 }

@@ -24,12 +24,12 @@ SUMMARY
 
 */
 
-int beta()
+static int beta()
 {
   return 42;
 }
 
-xapi alpha()
+static xapi alpha()
 {
   enter;
 
@@ -38,7 +38,7 @@ xapi alpha()
   finally : coda;
 }
 
-xapi test_fatalize()
+static xapi test_fatalize()
 {
   enter;
 

@@ -26,13 +26,13 @@
 // SUMMARY
 //  initialize the component
 //
-xapi operators_setup();
+xapi operators_setup(void);
 
 /// operators_teardown
 //
 // SUMMARY
 //  free resources used by the component
 //
-xapi operators_release();
+xapi operators_release(void);
 
 #endif

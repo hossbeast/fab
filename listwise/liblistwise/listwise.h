@@ -36,14 +36,14 @@ typedef struct lwx lwx;
 // SUMMARY
 //  initialize the library
 //
-xapi listwise_load();
+xapi listwise_load(void);
 
 /// listwise_unload
 //
 // SUMMARY
 //  free resources used by the library
 //
-xapi listwise_unload();
+xapi listwise_unload(void);
 
 /// listwise_exec
 //

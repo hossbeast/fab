@@ -85,6 +85,6 @@ xapi logger_stream_register(const logger_stream * restrict streams)
 // SUMMARY
 //  log a summary of configured streams to LOGGER
 //
-xapi logger_streams_report();
+xapi logger_streams_report(void);
 
 #endif

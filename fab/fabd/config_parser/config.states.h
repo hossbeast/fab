@@ -5,8 +5,7 @@ extern int * config_statenumbers;
 extern char ** config_statenames;
 enum config_statenames {
 config_INITIAL = 0,
-config_initial = 1,
-config_multilinecomment = 2,
-config_quoted = 3,
+config_multilinecomment = 1,
+config_quoted = 2,
 };
 #endif

@@ -53,7 +53,7 @@ typedef struct
   int           f;  // force
 } item;
 
-xapi breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
+static xapi breakup(item ** i, int * ia, int * il, int at, char * fmt, ...)
 {
   enter;
 

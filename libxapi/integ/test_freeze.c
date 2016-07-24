@@ -28,7 +28,7 @@ SUMMARY
 
 */
 
-xapi beta(int num)
+static xapi beta(int num)
 {
   enter;
 
@@ -37,7 +37,7 @@ xapi beta(int num)
   finally : coda;
 }
 
-xapi alpha(int num)
+static xapi alpha(int num)
 {
   enter;
 
@@ -49,7 +49,7 @@ xapi alpha(int num)
 char space[4096 << 2];
 char space2[4096];
 
-xapi foo()
+static xapi foo()
 {
   enter;
 

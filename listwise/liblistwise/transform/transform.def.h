@@ -24,12 +24,17 @@
 #include "internal.h"
 #include "transform.h"
 
+struct transform_xtra;
+#define YYU_EXTRA_TYPE struct transform_xtra
 #include "yyutil/parser.h"
 
-typedef struct
+typedef struct transform_xtra
 {
   /* yyu-defined xtra fields */
-  yyu_extra;
+  union {
+    yyu_extra;
+    yyu_extra yyu;
+  };
 
   transform *     g;            // parsing results
 
@@ -43,10 +48,7 @@ typedef struct
   int             opsa;
   int             argsl;
   int             argsa;
-} parse_param;
-
-// defined in transform.tab.o
-int transform_yyparse(void*, parse_param*);
+} transform_xtra;
 
 /// transform_yyerror
 //
@@ -58,7 +60,7 @@ int transform_yyparse(void*, parse_param*);
 // DETAILS
 //  called from tab.o and lex.o
 //
-static void transform_yyerror(void* loc, void* scanner, parse_param* pp, char const* err)
+static void transform_yyerror(void * loc, void * scanner, transform_xtra * xtra, char const* err)
   __attribute__((weakref("yyu_grammar_error")));
 
 #endif

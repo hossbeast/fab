@@ -97,7 +97,7 @@ void frame_thaw(char * const restrict mb, frame * restrict f)
 // SUMMARY
 //  release memory
 //
-void frame_teardown();
+void frame_teardown(void);
 
 #undef restrict
 #endif

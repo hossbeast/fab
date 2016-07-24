@@ -24,8 +24,6 @@
 #include "xlinux/xstdlib.h"
 #include "xlinux/SYS.errtab.h"
 
-#include "yyutil/scanner.h"
-
 #include "internal.h"
 #include "transform.internal.h"
 #include "transform/transform.def.h"
@@ -37,6 +35,7 @@
 #include "logging.internal.h"
 
 #include "macros.h"
+#include "yyutil/scanner.h"
 
 #define restrict __restrict
 
@@ -49,9 +48,9 @@ typedef struct transform_parser
 /// static
 ///
 
-static int transform_inputstr(struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
+static void transform_inputstr(struct transform_xtra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
 {
-  parse_param * pp = (parse_param*)xtra;
+  transform_xtra * pp = (transform_xtra*)xtra;
 
   *buf = 0;
   *bufl = 0;
@@ -62,13 +61,11 @@ static int transform_inputstr(struct yyu_extra * restrict xtra, char ** restrict
     *buf = pp->temp;
     *bufl = pp->namel;
   }
-
-  return 0;
 }
 
-static int transform_lvalstr(int token, void * restrict lval, struct yyu_extra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
+static void transform_lvalstr(int token, void * restrict lval, struct transform_xtra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
 {
-  parse_param * pp = (parse_param*)xtra;
+  transform_xtra * pp = (transform_xtra*)xtra;
 
   *buf = 0;
   *bufl = 0;
@@ -91,8 +88,6 @@ static int transform_lvalstr(int token, void * restrict lval, struct yyu_extra *
 
     *buf = pp->temp;
   }
-
-  return 0;
 }
 
 static const char * transform_statename(int state)
@@ -130,7 +125,7 @@ finally :
 coda;
 }
 
-static xapi reduce(parse_param * pp)
+static xapi reduce(transform_xtra * pp)
 {
   enter;
 
@@ -205,7 +200,7 @@ static xapi parse(transform_parser ** restrict p, const char * const restrict s,
     fatal(transform_parser_create, p);
 
   // results struct for this parse
-  parse_param pp = {
+  transform_xtra pp = {
       .tokname        = transform_tokenname
     , .statename      = transform_statename
     , .inputstr       = transform_inputstr
@@ -244,7 +239,7 @@ static xapi parse(transform_parser ** restrict p, const char * const restrict s,
     if(log_would(L_LISTWISE | L_PARSE))
     {
       fatal(log_start, L_LISTWISE | L_PARSE, &token);
-      fatal(transform_description_say, *g, log_narrator());
+      fatal(transform_description_say, *g, log_narrator(&token));
       fatal(log_finish, &token);
     }
   }

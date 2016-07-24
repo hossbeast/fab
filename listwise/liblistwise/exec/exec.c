@@ -95,13 +95,13 @@ API xapi listwise_exec_transform(
   {
     fatal(log_start, L_LISTWISE | L_EXEC, &token);
     logs(0, " >>      ");
-    fatal(transform_canon_say, g, log_narrator());
+    fatal(transform_canon_say, g, log_narrator(&token));
     fatal(log_finish, &token);
     
 
     // log the lstack before beginning
     fatal(log_start, L_LISTWISE | L_EXEC, &token);
-    fatal(lwx_say, *lx, log_narrator());
+    fatal(lwx_say, *lx, log_narrator(&token));
     fatal(log_finish, &token);
   }
 
@@ -154,7 +154,7 @@ API xapi listwise_exec_transform(
         if(log_would(L_LISTWISE | L_EXEC))
         {
           fatal(log_start, L_LISTWISE | L_EXEC, &token);
-          fatal(lwx_say, *lx, log_narrator());
+          fatal(lwx_say, *lx, log_narrator(&token));
           fatal(log_finish, &token);
         }
       }
@@ -173,7 +173,7 @@ API xapi listwise_exec_transform(
           , MAX(35 - narrator_fixed_size(N), 0)
           , ""
         );
-        fatal(listwise_lwop_say, g->ops[i]->op->optype, 1, log_narrator());
+        fatal(listwise_lwop_say, g->ops[i]->op->optype, 1, log_narrator(&token));
         fatal(log_finish, &token);
       }
 
@@ -210,7 +210,7 @@ API xapi listwise_exec_transform(
     if(log_would(L_LISTWISE | L_EXEC))
     {
       fatal(log_start, L_LISTWISE | L_EXEC, &token);
-      fatal(lwx_say, *lx, log_narrator());
+      fatal(lwx_say, *lx, log_narrator(&token));
       fatal(log_finish, &token);
     }
   }

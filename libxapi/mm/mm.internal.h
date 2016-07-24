@@ -41,7 +41,7 @@ extern __thread struct memblk mm_mb;
 // SUMMARY
 //  release memory across all threads
 //
-void mm_teardown();
+void mm_teardown(void);
 
 /// mm_malloc
 //

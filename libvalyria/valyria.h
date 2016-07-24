@@ -25,13 +25,13 @@
 // SUMMARY
 //  initialize the library
 //
-xapi valyria_load();
+xapi valyria_load(void);
 
 /// valyria_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi valyria_unload();
+xapi valyria_unload(void);
 
 #endif

@@ -34,4 +34,10 @@ extern logger_stream * streams;
 #define L_SUITE   categories[6].id
 #define L_FAIL    categories[7].id
 
+/// logging_setup
+//
+// 
+//
+xapi logging_setup(void);
+
 #endif

@@ -62,9 +62,9 @@ int main(int argc, char** argv, char ** envp)
   fatal(xunit_load);
 
   // initialize logger
-  fatal(logger_category_register, categories);
-  fatal(logger_stream_register, streams);
-  fatal(logger_initialize, envp);
+  fatal(logging_setup);
+  fatal(logger_arguments_setup, envp);
+  fatal(logger_initialize);
 
   // parse cmdline arguments
   fatal(args_parse);
@@ -168,7 +168,7 @@ int main(int argc, char** argv, char ** envp)
           , xunit_assertions_passed + xunit_assertions_failed
         );
 
-        fatal(elapsed_say, &test_start, &test_end, log_narrator());
+        fatal(elapsed_say, &test_start, &test_end, log_narrator(&token));
         fatal(log_finish, &token);
 
         unit_assertions_passed += xunit_assertions_passed;
@@ -188,7 +188,7 @@ int main(int argc, char** argv, char ** envp)
         , sentinel(xunit->tests)
       );
 
-      fatal(elapsed_say, &unit_start, &unit_end, log_narrator());
+      fatal(elapsed_say, &unit_start, &unit_end, log_narrator(&token));
       fatal(log_finish, &token);
 
       suite_assertions_passed += unit_assertions_passed;
@@ -217,7 +217,7 @@ int main(int argc, char** argv, char ** envp)
     , suite_units
   );
 
-  fatal(elapsed_say, &suite_start, &suite_end, log_narrator());
+  fatal(elapsed_say, &suite_start, &suite_end, log_narrator(&token));
   fatal(log_finish, &token);
 
 finally:

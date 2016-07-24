@@ -29,6 +29,7 @@ APIDATA logger_category * fabcore_categories = (logger_category []) {
   , { name : "PARAMS"   , description : "program execution parameters" }
   , { name : "TIMING"   , description : "granular timing reports" }
   , { name : "USAGE"    , description : "resource usage reports" }
+  , { name : "CONFIG"   , description : "libfabcore logging" }
 #if 0
   , { name : "BPINFO"   , description : "buildplan - flow" }
   , { name : "BPEXEC"   , description : "buildplan - execution" }
@@ -50,6 +51,8 @@ APIDATA logger_category * fabcore_categories = (logger_category []) {
 #endif
 #if DEBUG || DEVEL
   , { name : "IPC"      , description : "signal-exchange" }
+  , { name : "TOKENS"   , description : "token stream" }
+  , { name : "STATES"   , description : "lexer states" }
 #endif
   , { }
 };

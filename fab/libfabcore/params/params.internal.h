@@ -28,12 +28,12 @@
 // invalid, for example required options are not present, or invalid
 // parameters are given to an option
 //
-xapi params_setup();
+xapi params_setup(void);
 
 /// params_teardown
 //
 // free g_params
 //
-void params_teardown();
+void params_teardown(void);
 
 #endif

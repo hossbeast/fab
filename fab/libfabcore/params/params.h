@@ -60,4 +60,11 @@ extern struct g_params_t
 //char            ipcdir[2048];               // ipc dir
 } g_params;
 
+/// params_report
+//
+// SUMMARY
+//  log a description of params
+//
+xapi params_report(void);
+
 #endif

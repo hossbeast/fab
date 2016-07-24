@@ -68,15 +68,15 @@ extern struct array * g_streams;
 
 #define restrict __restrict
 
-xapi stream_setup();
-void stream_teardown();
+xapi stream_setup(void);
+void stream_teardown(void);
 
 /// stream_activate
 //
 // SUMMARY
 //  activate the streams registered with logger_stream_register
 //
-xapi stream_activate();
+xapi stream_activate(void);
 
 /// stream_would
 //

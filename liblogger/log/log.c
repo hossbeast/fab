@@ -108,7 +108,7 @@ static xapi finish()
 
 void log_teardown()
 {
-  narrator_free(storage_narrator);
+  narrator_ifree(&storage_narrator);
 }
 
 //
@@ -238,7 +238,7 @@ API int log_would(const uint64_t ids)
   return streams_would(ids);
 }
 
-API int logger_log_bytes()
+API int log_bytes()
 {
   if(storage_narrator)
     return narrator_growing_size(storage_narrator);
@@ -246,7 +246,7 @@ API int logger_log_bytes()
   return 0;
 }
 
-API int logger_log_chars()
+API int log_chars()
 {
   if(storage_narrator)
     return narrator_growing_size(storage_narrator);

@@ -288,7 +288,7 @@ xapi xsetpgid(pid_t pid, pid_t pgid);
 // SUMMARY
 //  proxy for setsid
 //
-xapi xsetsid();
+xapi xsetsid(void);
 
 /// xexecv
 //

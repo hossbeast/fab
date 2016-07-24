@@ -29,7 +29,7 @@
 #include "xlinux/SYS.errtab.h"
 
 #include "internal.h"
-#include "canon.internal.h"
+#include "rebase.internal.h"
 
 #include "strutil.h"
 #include "macros.h"

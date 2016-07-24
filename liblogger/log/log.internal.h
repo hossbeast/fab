@@ -20,6 +20,6 @@
 
 #include "log.h"
 
-void log_teardown();
+void log_teardown(void);
 
 #endif

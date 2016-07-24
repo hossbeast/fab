@@ -24,14 +24,14 @@ SUMMARY
 
 */
 
-xapi beta()
+static xapi beta()
 {
   enter;
 
   finally : coda;
 }
 
-xapi alpha()
+static xapi alpha()
 {
   enter;
 
@@ -41,7 +41,7 @@ xapi alpha()
 }
 
 static uint32_t r;
-int foo()
+static int foo()
 {
   enter;
 

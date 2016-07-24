@@ -47,7 +47,8 @@ xapi client_dispose(client ** const restrict client)
 // SUMMARY
 //  verify that fabd is still running and has not reported any failure
 //
-xapi client_verify();
+xapi client_verify(client * const restrict client)
+  __attribute__((nonnull));
 
 /// client_send_request
 //

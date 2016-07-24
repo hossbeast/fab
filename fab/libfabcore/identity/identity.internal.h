@@ -25,6 +25,6 @@
 // populates the identity fields of g_params and asserts that this
 // executable has the correct ownership and permissions
 //
-xapi identity_setup();
+xapi identity_setup(void);
 
 #endif

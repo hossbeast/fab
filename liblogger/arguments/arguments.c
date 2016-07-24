@@ -49,7 +49,24 @@ APIDATA size_t        g_logvsl;
 // public
 //
 
-xapi arguments_initialize(char ** restrict envp)
+void arguments_teardown()
+{
+  free(g_argvs);
+  int x;
+  for(x = 0; x < g_argc; x++)
+    free(g_argv[x]);
+  free(g_argv);
+  for(x = 0; x < g_logc; x++)
+    free(g_logv[x]);
+  free(g_logv);
+  free(g_logvs);
+}
+
+//
+// api
+//
+
+API xapi logger_arguments_setup(char ** restrict envp)
 {
   enter;
 
@@ -66,8 +83,6 @@ xapi arguments_initialize(char ** restrict envp)
   int x;
   int y;
   int i;
-
-  filter * filterp = 0;
 
   const unsigned long * restrict auxvec = 0;
 
@@ -212,12 +227,10 @@ xapi arguments_initialize(char ** restrict envp)
   // process g_argv, splicing out recognized logger-options
   for(x = 0; x < g_argc; x++)
   {
-    fatal(filter_parses, g_argv[x], &filterp, 0);
-    if(filterp)
+    size_t used = 0;
+    fatal(filter_parses, g_argv[x], 0, &used);
+    if(used)
     {
-      fatal(filter_push, 0, filterp);
-      filterp = 0;
-
       if(g_logc == g_logva)
       {
         size_t ns = g_logva ?: 10;
@@ -283,7 +296,6 @@ xapi arguments_initialize(char ** restrict envp)
 
 finally:
   fatal(ixclose, &fd);
-  filter_free(filterp);
 
 #if __linux__
   free(auxv);
@@ -291,23 +303,6 @@ finally:
   free(argvs);
 coda;
 }
-
-void arguments_teardown()
-{
-  free(g_argvs);
-  int x;
-  for(x = 0; x < g_argc; x++)
-    free(g_argv[x]);
-  free(g_argv);
-  for(x = 0; x < g_logc; x++)
-    free(g_logv[x]);
-  free(g_logv);
-  free(g_logvs);
-}
-
-//
-// api
-//
 
 API xapi logger_arguments_report()
 {

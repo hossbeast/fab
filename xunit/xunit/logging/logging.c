@@ -33,3 +33,13 @@ logger_stream * streams = (logger_stream []) {
     { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+ERROR|FAIL|SUITE", attr : L_CATEGORY }
   , { }
 };
+
+xapi logging_setup()
+{
+  enter;
+
+  fatal(logger_category_register, categories);
+  fatal(logger_stream_register, streams);
+
+  finally : coda;
+}

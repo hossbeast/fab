@@ -28,14 +28,14 @@ SUMMARY
 */
 
 #if XAPI_MODE_STACKTRACE_CHECKS
-xapi gamma_xapi()
+static xapi gamma_xapi()
 {
   enter;
 
   finally : coda;
 }
 
-xapi beta_xapi()
+static xapi beta_xapi()
 {
   enter;
 
@@ -44,12 +44,12 @@ xapi beta_xapi()
   finally : coda;
 }
 
-int alpha_notxapi()
+static int alpha_notxapi()
 {
   return 1;
 }
 
-xapi test_illfatal()
+static xapi test_illfatal()
 {
   enter;
 
@@ -68,7 +68,7 @@ finally:
 coda;
 }
 
-xapi test_nofatal()
+static xapi test_nofatal()
 {
   enter;
 
@@ -87,7 +87,7 @@ finally:
 coda;
 }
 
-xapi test_illfail_noetab()
+static xapi test_illfail_noetab()
 {
   enter;
 
@@ -96,7 +96,7 @@ xapi test_illfail_noetab()
   finally : coda;
 }
 
-xapi test_illfail_nocode()
+static xapi test_illfail_nocode()
 {
   enter;
 

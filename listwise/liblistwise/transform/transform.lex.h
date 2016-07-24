@@ -263,7 +263,7 @@ void transform_yyfree (void * ,yyscan_t yyscanner );
 #include <unistd.h>
 #endif
 
-#define YY_EXTRA_TYPE parse_param*
+#define YY_EXTRA_TYPE transform_xtra*
 
 int transform_yylex_init (yyscan_t* scanner);
 
@@ -376,7 +376,7 @@ extern int transform_yylex \
 #undef YY_DECL
 #endif
 
-#line 382 "transform/transform.l"
+#line 384 "transform/transform.l"
 
 #line 382 "transform/transform.lex.h"
 #undef transform_yyIN_HEADER

@@ -69,26 +69,35 @@ LOGGER_ATTR_TABLE(0, 0)
 /// logger_load
 //
 // SUMMARY
-//  initialize the library
+//  load the library
 //
-xapi logger_load();
+xapi logger_load(void);
 
 /// logger_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi logger_unload();
+xapi logger_unload(void);
 
-/// logger_initialize
+/// logger_arguments_setup
 //
 // SUMMARY
-//  parse cmdline args, populate g_argv and related variables, calls logger_category_activate
+//  parse cmdline args, populate g_argv and related variables
 //
 // PARAMETERS
 //  [envp] - third argument to main
 //
-xapi logger_initialize(char ** restrict envp);
+xapi logger_arguments_setup(char ** restrict envp);
+
+/// logger_initialize
+//
+// SUMMARY
+//  1. activate registered categories and streams
+//  2. reset filters for all streams, and reapply filters from stream definitions and cmdline arguments
+//  3. log effective logger configuration
+//
+xapi logger_initialize(void);
 
 /// log
 //
@@ -112,7 +121,7 @@ xapi logger_initialize(char ** restrict envp);
 //  [file]  - file name
 //  [line]  - line number
 //
-xapi logger_logvf(const uint64_t ids, const uint32_t attrs, const char * const restrict fmt, va_list va)
+xapi logger_vlogf(const uint64_t ids, const uint32_t attrs, const char * const restrict fmt, va_list va)
   __attribute__((nonnull(3)));
 xapi logger_logf (const uint64_t ids, const uint32_t attrs, const char * const restrict fmt, ...)
   __attribute__((nonnull(3)));
@@ -164,7 +173,8 @@ xapi log_finish(int * const restrict token);
 //  between log_start and log_finish calls, returns a narrator which may be used to append to the
 //  current log message
 //
-struct narrator * log_narrator();
+struct narrator * log_narrator(int * const restrict token)
+  __attribute__((nonnull));
 
 /// log_would
 //
@@ -179,7 +189,7 @@ int log_would(const uint64_t ids);
 //  if called after log_start, returns the number of bytes written since log_start
 //  otherwise, returns the number of bytes written on the last log* call or log_start/log_finish sequence
 //
-int log_bytes();
+int log_bytes(void);
 
 /// log_chars
 //
@@ -187,7 +197,7 @@ int log_bytes();
 //  if called after log_start, returns the number of characters written since log_start (excludes control bytes)
 //  otherwise, returns the number of characters written on the last log* call or log_start/log_finish sequence
 //
-int log_chars();
+int log_chars(void);
 
 #undef restrict
 #endif
