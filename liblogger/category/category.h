@@ -70,19 +70,6 @@ typedef struct logger_category
 xapi logger_category_register(logger_category * logs)
   __attribute__((nonnull));
 
-/// logger_category_activate
-//
-// SUMMARY
-//  assign the bits member to all categories which have been registered since the last
-//  logger_category_activate call
-//
-// THROWS
-//  TOOMANY
-//  ILLREPEAT
-//  ILLORDER
-//
-xapi logger_category_activate(void);
-
 /// category_report
 //
 // SUMMARY

@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -256,6 +256,28 @@ coda;
 // public
 //
 
+xapi category_setup()
+{
+  enter;
+
+  fatal(list_create, &registered, 0);
+  fatal(list_create, &registering, 0);
+  fatal(list_create, &activated, 0);
+  fatal(map_create, &activated_byname);
+  fatal(map_create, &activated_byid);
+
+  finally : coda;
+}
+
+void category_teardown()
+{
+  list_ifree(&registered);
+  list_ifree(&registering);
+  list_ifree(&activated);
+  map_ifree(&activated_byname);
+  map_ifree(&activated_byid);
+}
+
 xapi category_say_verbose(logger_category * const restrict cat, narrator * restrict N)
 {
   enter;
@@ -319,105 +341,7 @@ finally:
 coda;
 }
 
-xapi category_setup()
-{
-  enter;
-
-  fatal(list_create, &registered, 0);
-  fatal(list_create, &registering, 0);
-  fatal(list_create, &activated, 0);
-  fatal(map_create, &activated_byname);
-  fatal(map_create, &activated_byid);
-
-  finally : coda;
-}
-
-void category_teardown()
-{
-  list_ifree(&registered);
-  list_ifree(&registering);
-  list_ifree(&activated);
-  map_ifree(&activated_byname);
-  map_ifree(&activated_byid);
-}
-
-//
-// api
-//
-
-API xapi logger_categories_report()
-{
-  enter;
-
-  int token = 0;
-
-  int x;
-  for(x = 0; x < list_size(activated); x++)
-  {
-    // find the bounds of the name-group
-    int y;
-    for(y = x + 1; y < list_size(activated); y++)
-    {
-      if(strcmp(list_get(activated, x)->name, list_get(activated, y)->name))
-        break;
-    }
-
-    fatal(log_start, L_LOGGER, &token);
-    narrator * N = log_narrator(&token);
-    says(" ");
-    fatal(category_say, list_get(activated, x), N);
-    fatal(log_finish, &token);
-
-    x = y - 1;
-  }
-
-finally:
-  fatal(log_finish, &token);
-coda;
-}
-
-API xapi logger_category_register(logger_category * logs)
-{
-  enter;
-
-  if(!registered)
-    fatal(list_create, &registered, 0);
-
-  if(!registering)
-    fatal(list_create, &registering, 0);
-
-  list * tmp = 0;
-  fatal(list_create, &tmp, 0);
-  while(logs->name)
-  {
-    fatal(list_push, tmp, logs);
-    logs++;
-  }
-
-  // merge the registered list with the new list
-  fatal(category_list_merge, registered, tmp, registering);
-
-  // swap registering and registered
-  void * T = registered;
-  registered = registering;
-  registering = T;
-
-#if 0
-  printf("registered categories\n");
-  int x;
-  for(x = 0; x < list_size(registered); x++)
-  {
-    logger_category * this = list_get(registered, x); 
-    printf("%*s\n", category_name_max_length, this->name);
-  }
-#endif
-
-finally:
-  list_free(tmp);
-coda;
-}
-
-API xapi logger_category_activate()
+API xapi categories_activate()
 {
   enter;
 
@@ -522,6 +446,82 @@ finally:
   map_free(activating_byname);
   map_free(activating_byid);
   list_free(sublist);
+coda;
+}
+
+//
+// api
+//
+
+API xapi logger_categories_report()
+{
+  enter;
+
+  int token = 0;
+
+  int x;
+  for(x = 0; x < list_size(activated); x++)
+  {
+    // find the bounds of the name-group
+    int y;
+    for(y = x + 1; y < list_size(activated); y++)
+    {
+      if(strcmp(list_get(activated, x)->name, list_get(activated, y)->name))
+        break;
+    }
+
+    fatal(log_start, L_LOGGER, &token);
+    narrator * N = log_narrator(&token);
+    says(" ");
+    fatal(category_say, list_get(activated, x), N);
+    fatal(log_finish, &token);
+
+    x = y - 1;
+  }
+
+finally:
+  fatal(log_finish, &token);
+coda;
+}
+
+API xapi logger_category_register(logger_category * logs)
+{
+  enter;
+
+  if(!registered)
+    fatal(list_create, &registered, 0);
+
+  if(!registering)
+    fatal(list_create, &registering, 0);
+
+  list * tmp = 0;
+  fatal(list_create, &tmp, 0);
+  while(logs->name)
+  {
+    fatal(list_push, tmp, logs);
+    logs++;
+  }
+
+  // merge the registered list with the new list
+  fatal(category_list_merge, registered, tmp, registering);
+
+  // swap registering and registered
+  void * T = registered;
+  registered = registering;
+  registering = T;
+
+#if 0
+  printf("registered categories\n");
+  int x;
+  for(x = 0; x < list_size(registered); x++)
+  {
+    logger_category * this = list_get(registered, x);
+    printf("%*s\n", category_name_max_length, this->name);
+  }
+#endif
+
+finally:
+  list_free(tmp);
 coda;
 }
 

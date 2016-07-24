@@ -18,6 +18,8 @@
 #ifndef _LOGGER_ARGUMENTS_INTERNAL_H
 #define _LOGGER_ARGUMENTS_INTERNAL_H
 
+#include "xapi.h"
+
 #include "arguments.h"
 
 /// arguments_teardown
@@ -26,5 +28,12 @@
 //  release resources
 //
 void arguments_teardown(void);
+
+/// arguments_finalize
+//
+// SUMMARY
+//  apply logger cmdline arguments
+//
+xapi arguments_finalize(void);
 
 #endif

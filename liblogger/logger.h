@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -60,11 +60,20 @@ LOGGER_ATTR_TABLE(0, 0)
 #undef LOGGER_ATTR_DEF
 };
 
-
 // all categories
 #define L_ALL UINT64_C(0xFFFFFFFFFFFFFFFF)
 
 #define restrict __restrict
+
+/// g_logger_default_stderr
+//
+// SUMMARY
+//  changes the default request handling from drop silently to write to stderr
+//
+// REMARKS
+//  an application using liblogger should export this and set it to nonzero
+//
+int g_logger_default_stderr;
 
 /// logger_load
 //
@@ -90,14 +99,14 @@ xapi logger_unload(void);
 //
 xapi logger_arguments_setup(char ** restrict envp);
 
-/// logger_initialize
+/// logger_finalize
 //
 // SUMMARY
 //  1. activate registered categories and streams
 //  2. reset filters for all streams, and reapply filters from stream definitions and cmdline arguments
 //  3. log effective logger configuration
 //
-xapi logger_initialize(void);
+xapi logger_finalize(void);
 
 /// log
 //

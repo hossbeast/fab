@@ -86,7 +86,7 @@ static xapi test_category_list_merge_success()
   };
 
   fatal(logger_category_register, logs_a);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   fatal(assert_ascending, logs_a);
 
@@ -115,7 +115,7 @@ static xapi test_category_list_merge_success_two()
 
   fatal(logger_category_register, logs_a);
   fatal(logger_category_register, logs_b);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   fatal(assert_ascending, logs_a);
   fatal(assert_ascending, logs_b);
@@ -144,9 +144,9 @@ static xapi test_category_list_merge_success_two_activate()
   };
 
   fatal(logger_category_register, logs_a);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
   fatal(logger_category_register, logs_b);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   fatal(assert_ascending, logs_a);
   fatal(assert_ascending, logs_b);
@@ -169,7 +169,7 @@ static xapi test_category_list_merge_success_nonunique()
   };
 
   fatal(logger_category_register, logs_a);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   fatal(assert_ascending, logs_a);
 
@@ -249,7 +249,7 @@ static xapi test_category_list_merge_success_max()
   };
 
   fatal(logger_category_register, logs_a);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   finally : coda;
 }
@@ -272,7 +272,7 @@ static xapi test_category_list_merge_failure_order()
 
   fatal(logger_category_register, logs_a);
   fatal(logger_category_register, logs_b);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   finally : coda;
 }
@@ -289,7 +289,7 @@ static xapi test_category_list_merge_failure_order_single()
   };
 
   fatal(logger_category_register, logs_a);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   finally : coda;
 }
@@ -368,7 +368,7 @@ static xapi test_category_list_merge_failure_toomany()
   };
 
   fatal(logger_category_register, logs_a);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   finally : coda;
 }
@@ -386,7 +386,7 @@ static xapi test_category_list_merge_attr_rank()
   };
 
   fatal(logger_category_register, logs_a);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   fatal(assert_ascending, logs_a);
   assertf((logs_a[0].attr & COLOR_OPT) == L_BLUE, "expected : %s, actual : %s", COLOR_VALUE(L_BLUE), COLOR_VALUE(logs_a[0].attr));

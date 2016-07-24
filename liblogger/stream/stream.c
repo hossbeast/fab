@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -72,9 +72,9 @@ static list * registered;
 //  streamp    - stream to write to
 //  ids        - bitmask of ids for the message
 //  base_attr  - category attributes + log site attributes
-//  b          - 
-//  l          - 
-//  time_msec  - 
+//  b          -
+//  l          -
+//  time_msec  -
 //
 static xapi __attribute__((nonnull)) stream_write(stream * const restrict streamp, const uint64_t ids, const uint32_t base_attr, const char * const restrict b, size_t l, const long time_msec)
 {
@@ -251,14 +251,29 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
   }
   fatal(narrator_record_create, &streamp->narrator, streamp->narrator_base);
 
-  // parse and attach to just this stream
+  // save the expression for late binding
   if(def->expr)
+    fatal(ixstrdup, &streamp->expr, def->expr);
+
+finally:
+  filter_free(filterp);
+coda;
+}
+
+static xapi __attribute__((nonnull)) stream_finalize(stream * const restrict streamp)
+{
+  enter;
+
+  filter * filterp = 0;
+
+  // parse and attach to just this stream
+  if(streamp->expr)
   {
-    fatal(filter_parses, def->expr, &filterp, 0);
+    fatal(filter_parses, streamp->expr, &filterp, 0);
 
     if(!filterp)
     {
-      fails(LOGGER_BADFILTER, "expr", def->expr);
+      fails(LOGGER_BADFILTER, "expr", streamp->expr);
     }
 
     fatal(stream_filter_push, streamp, filterp);
@@ -278,12 +293,14 @@ static void __attribute__((nonnull)) stream_destroy(stream * const restrict stre
     list_free(streamp->filters);
     narrator_free(streamp->narrator);
     narrator_free(streamp->narrator_owned);
+    xfree(streamp->expr);
   }
 }
 
 //
 // public
 //
+
 xapi stream_setup()
 {
   enter;
@@ -301,6 +318,40 @@ void stream_teardown()
   map_ifree(&streams_byid);
   list_ifree(&registered);
 }
+
+xapi streams_activate()
+{
+  enter;
+
+  int x;
+
+  if(registered)
+  {
+    for(x = 0; x < registered->l; x++)
+    {
+      stream * streamp = 0;
+      fatal(array_push, g_streams, &streamp);
+      fatal(stream_initialize, streamp, x, (logger_stream*)list_get(registered, x));
+      fatal(map_set, streams_byid, MM(streamp->id), streamp);
+    }
+  }
+
+  list_ifree(&registered);
+
+  finally : coda;
+}
+
+xapi streams_finalize()
+{
+  enter;
+
+  int x;
+  for(x = 0; x < g_streams->l; x++)
+    fatal(stream_finalize, array_get(g_streams, x));
+
+  finally : coda;
+}
+
 
 xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * const restrict b, size_t l,  const long time_msec)
 {
@@ -329,21 +380,21 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * co
   // log site
   base_attr = attr_combine(base_attr, site_attr);
 
-  int x;
-  for(x = 0; x < array_size(g_streams); x++)
+  // not properly configured - write to stderr
+  if(ids == 0 || array_size(g_streams) == 0)
   {
-    stream * streamp = array_get(g_streams, x);
-    if(stream_would(streamp, ids))
-    {
-      fatal(stream_write, streamp, ids, base_attr, b, l, time_msec);
-    }
-  }
-
-  if(array_size(g_streams) == 0)
-  {
-    // the default is to write everything to stderr
     int __attribute__((unused)) _r = write(2, b, l);
     _r = write(2, "\n", 1);
+  }
+  else
+  {
+    int x;
+    for(x = 0; x < array_size(g_streams); x++)
+    {
+      stream * streamp = array_get(g_streams, x);
+      if(stream_would(streamp, ids))
+        fatal(stream_write, streamp, ids, base_attr, b, l, time_msec);
+    }
   }
 
   finally : coda;
@@ -351,18 +402,16 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * co
 
 int stream_would(const stream * const restrict streamp, const uint64_t ids)
 {
-  // for a stream with no filters, log everything
   if(list_size(streamp->filters) == 0)
-    return 1;
+    return 0;
 
   return filters_would(streamp->filters, ids);
 }
 
 int streams_would(const uint64_t ids)
 {
-  // if there are no streams, log nothing
-  if(array_size(g_streams) == 0)
-    return 0;
+  if(ids == 0 || array_size(g_streams) == 0)
+    return !!g_logger_default_stderr;
 
   int x;
   for(x = 0; x < array_size(g_streams); x++)
@@ -380,28 +429,6 @@ xapi stream_byid(int id, stream ** const restrict streamp)
   enter;
 
   (*streamp) = map_get(streams_byid, MM(id));
-
-  finally : coda;
-}
-
-xapi stream_activate()
-{
-  enter;
-
-  int x;
-
-  if(registered)
-  {
-    for(x = 0; x < registered->l; x++)
-    {
-      stream * streamp = 0;
-      fatal(array_push, g_streams, &streamp);
-      fatal(stream_initialize, streamp, x, (logger_stream*)list_get(registered, x));
-      fatal(map_set, streams_byid, MM(streamp->id), streamp);
-    }
-  }
-
-  list_ifree(&registered);
 
   finally : coda;
 }
@@ -431,8 +458,6 @@ xapi stream_say(stream * const restrict streamp, narrator * restrict N)
   int x;
   for(x = 0; x < streamp->filters->l; x++)
   {
-    if(x)
-      says(",");
     says(" ");
     fatal(filter_say, list_get(streamp->filters, x), N);
   }

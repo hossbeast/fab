@@ -48,6 +48,19 @@ xapi category_setup(void);
 //
 void category_teardown(void);
 
+/// categories_activate
+//
+// SUMMARY
+//  assign the bits member to all categories which have been registered since the last
+//  categories_activate call
+//
+// THROWS
+//  TOOMANY
+//  ILLREPEAT
+//  ILLORDER
+//
+xapi categories_activate(void);
+
 /// category_byname
 //
 // SUMMARY

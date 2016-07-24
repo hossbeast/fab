@@ -91,13 +91,14 @@ xapi foo_dispose(foo *)       # idempotent like ifree, can fail
 xapi foo_recycle(foo *)       # idempotent like reset, can fail
 ```
 
-## initialize / destroy
+## initialize / destroy / finalize
 
 for statically allocated objects
 
 ```
 xapi foo_initialize(foo *)    # does not allocate foo
 void foo_destroy(foo *)       # does not free foo
+xapi foo_finalize(foo *)      # late binding / finish initialization
 ```
 
 # function naming

@@ -50,7 +50,7 @@ static xapi suite_setup()
 
   fatal(category_setup);
   fatal(logger_category_register, logs_test);
-  fatal(logger_category_activate);
+  fatal(categories_activate);
 
   finally : coda;
 }

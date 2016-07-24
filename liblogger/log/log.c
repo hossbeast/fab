@@ -235,6 +235,9 @@ API xapi log_finish(int * const restrict token)
 
 API int log_would(const uint64_t ids)
 {
+  if(ids == 0)
+    return !!g_logger_default_stderr;
+
   return streams_would(ids);
 }
 

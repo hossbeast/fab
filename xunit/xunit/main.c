@@ -64,7 +64,7 @@ int main(int argc, char** argv, char ** envp)
   // initialize logger
   fatal(logging_setup);
   fatal(logger_arguments_setup, envp);
-  fatal(logger_initialize);
+  fatal(logger_finalize);
 
   // parse cmdline arguments
   fatal(args_parse);
@@ -79,7 +79,7 @@ int main(int argc, char** argv, char ** envp)
   struct timespec suite_end;
   fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &suite_start);
 
-  for(;x < g_args.objectsl; x++)
+  for(x = 0; x < g_args.objectsl; x++)
   {
     // open the object
     fatal(xdlopen, g_args.objects[x], RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND, &objects[x]);
@@ -241,9 +241,11 @@ finally:
     xlogw(L_ERROR, L_RED, space, tracesz);
   }
 
-  int j;
-  for(j = 0; j < x; j++)
-    fatal(xdlclose, objects[j]);
+#if 1
+  // dlclose will cause leak reports to have blank frames
+  for(x = 0; x < g_args.objectsl; x++)
+    fatal(ixdlclose, &objects[x]);
+#endif
   free(objects);
 
   args_teardown();

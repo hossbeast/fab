@@ -31,6 +31,8 @@
 #include "filter.internal.h"
 #include "logging.internal.h"
 
+#include "snarf.h"
+
 #define restrict __restrict
 
 APIDATA char **       g_argv;
@@ -62,6 +64,28 @@ void arguments_teardown()
   free(g_logvs);
 }
 
+xapi arguments_finalize()
+{
+  enter;
+
+  filter * filterp = 0;
+
+  int x;
+  for(x = 0; x < g_logc; x++)
+  {
+    fatal(filter_parses, g_logv[x], &filterp, 0);
+    if(filterp)
+    {
+      fatal(filter_push, 0, filterp);
+      filterp = 0;
+    }
+  }
+
+finally:
+  filter_free(filterp);
+coda;
+}
+
 //
 // api
 //
@@ -73,7 +97,6 @@ API xapi logger_arguments_setup(char ** restrict envp)
   int fd = -1;
   char * argvs = 0;
   size_t argvsl = 0; // argvs length
-  size_t argvsa = 0;  // argvs allocated size
   size_t argva = 0;
 #if __linux__
   char * auxv = 0;
@@ -83,6 +106,10 @@ API xapi logger_arguments_setup(char ** restrict envp)
   int x;
   int y;
   int i;
+
+  int binaryx = -1;
+  int interpx = -1;
+  char * execfn = 0;
 
   const unsigned long * restrict auxvec = 0;
 
@@ -97,22 +124,8 @@ API xapi logger_arguments_setup(char ** restrict envp)
   }
 #endif
 
-  // snarf the cmdline
-  fatal(xopen, "/proc/self/cmdline", O_RDONLY, &fd);
-
   // read into argvs - single string containing entire cmdline
-  int binaryx = -1;
-  int interpx = -1;
-  char * execfn = 0;
-  do
-  {
-    size_t newa = argvsa ?: 100;
-    newa += newa * 2 + newa / 2;
-    fatal(xrealloc, &argvs, sizeof(*argvs), newa, argvsa);
-    argvsa = newa;
-    argvsl += read(fd, &argvs[argvsl], argvsa - argvsl);
-  } while(argvsl == argvsa);
-  argvsl--;
+  fatal(snarf, "/proc/self/cmdline", &argvs, &argvsl);
 
   // locate binary and interpreter, if any
   for(x = -1; x < (int)argvsl; x = y)

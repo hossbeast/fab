@@ -34,6 +34,9 @@ logger_stream * streams = (logger_stream []) {
   , { }
 };
 
+// while misconfigured, write log messages to stderr
+int g_logger_default_stderr = 1;
+
 xapi logging_setup()
 {
   enter;

@@ -35,38 +35,33 @@ narrator * N;
 
 #define L_FOO categories[0].id
 
-
 static logger_category * categories = (logger_category []) {
     { name : "FOO", description : "foo" }
   , { }
 };
 
-/// test_setup
-//
-// SUMMARY
-//  initialize the module
-//
+static logger_stream * streams = (logger_stream []) {
+    { name : "foo", type : LOGGER_STREAM_NARRATOR, expr : "+FOO" }
+  , { }
+};
+
 static xapi test_setup()
 {
   enter;
 
-  // initialize
+  // initialize modules
   fatal(category_setup);
   fatal(stream_setup);
 
   fatal(narrator_fixed_create, &N, 2048);
+  streams[0].narrator = N;
 
   // register a stream
   fatal(logger_category_register, categories);
-  fatal(logger_category_activate);
-
-  logger_stream * streams = (logger_stream []) {
-      { name : "foo", type : LOGGER_STREAM_NARRATOR, narrator : N, expr : "+FOO" }
-    , { }
-  };
-
   fatal(logger_stream_register, streams);
-  fatal(stream_activate);
+  fatal(categories_activate);
+  fatal(streams_activate);
+  fatal(streams_finalize);
 
   finally : coda;
 }
@@ -79,30 +74,7 @@ static void test_teardown()
   log_teardown();
 }
 
-/// test_log_zero
-//
-// categories of zero should always be emitted
-//
-static xapi test_log_zero()
-{
-  enter;
-
-  // act
-  logs(0, "foo");
-
-  // assert
-  char * expected = "";
-  const char * actual = narrator_fixed_buffer(N);
-  assertf(strcmp(expected, actual) == 0, "%s", "%s", expected, actual);
-
-  finally : coda;
-}
-
-/// test_log_nonzero
-//
-// categories of zero should always be emitted
-//
-static xapi test_log_nonzero()
+static xapi test_log()
 {
   enter;
 
@@ -156,8 +128,7 @@ int main()
     xapi (*entry)();
     int expected;
   } tests[] = {
-      { entry : test_log_zero }
-    , { entry : test_log_nonzero }
+      { entry : test_log }
     , { entry : test_log_start }
   };
 

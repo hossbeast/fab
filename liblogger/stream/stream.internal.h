@@ -48,6 +48,9 @@ typedef struct stream
   // category definitions and attributes at the log site
   uint32_t attr;
 
+  // filter expression
+  char * expr;
+
   // the filters determine which log messages are emitted to the stream
   struct list * filters;
 
@@ -68,15 +71,33 @@ extern struct array * g_streams;
 
 #define restrict __restrict
 
+/// stream_setup
+//
+// SUMMARY
+//  module setup
+//
 xapi stream_setup(void);
+
+/// stream_teardown
+//
+// SUMMARY
+//  module cleanup
+//
 void stream_teardown(void);
 
-/// stream_activate
+/// streams_activate
 //
 // SUMMARY
 //  activate the streams registered with logger_stream_register
 //
-xapi stream_activate(void);
+xapi streams_activate(void);
+
+/// streams_finalize
+//
+// SUMMARY
+//  apply the filter expr for each stream
+//
+xapi streams_finalize(void);
 
 /// stream_would
 //
