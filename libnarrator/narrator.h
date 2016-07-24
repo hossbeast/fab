@@ -30,7 +30,6 @@ SUMMARY
 
 #include <stdarg.h>
 #include <sys/types.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "xapi.h"
@@ -55,7 +54,7 @@ xapi narrator_unload(void);
 
 #define vsayf(...)       fatal(narrator_vsayf, N, ##__VA_ARGS__)
 #define sayf(...)        fatal(narrator_sayf , N, ##__VA_ARGS__)
-#define says(s)          fatal(narrator_sayw , N, s, strlen(s))
+#define says(...)        fatal(narrator_says , N, ##__VA_ARGS__)
 #define sayw(...)        fatal(narrator_sayw , N, ##__VA_ARGS__)
 #define sayc(...)        fatal(narrator_sayc , N, ##__VA_ARGS__)
 
@@ -86,6 +85,14 @@ xapi narrator_sayf(struct narrator * const restrict n, const char * const restri
 //  write to the specified narrator
 //
 xapi narrator_sayw(struct narrator * const restrict n, const char * const restrict b, size_t l)
+  __attribute__((nonnull));
+
+/// narrator_says
+//
+// SUMMARY
+//  write to the specified narrator
+//
+xapi narrator_says(struct narrator * const restrict n, const char * const restrict s)
   __attribute__((nonnull));
 
 /// narrator_sayc
@@ -143,6 +150,13 @@ void narrator_free(struct narrator * restrict n);
 //
 void narrator_ifree(struct narrator ** const restrict n)
   __attribute__((nonnull));
+
+/// read-only singleton narrators that write to fixed file descriptors
+extern narrator * g_narrator_stdout;
+extern narrator * g_narrator_stderr;
+
+/// read-only singleton nullity narrator that discards all output
+extern narrator * g_narrator_nullity;
 
 #undef restrict
 #endif

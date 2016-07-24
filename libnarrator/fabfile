@@ -59,7 +59,7 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 ##
 
 # default NOFILE target - build everything
-[ @all ] : [ @release @integ ]
+[ @all ] : [ @release @test ]
 
 [ @release ] : [ @release.eapi @release.xapi ]
 [ @release.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
@@ -180,13 +180,19 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
   ] [ $dlibxapi $dlibxlinux $* ~ [ ?{ [ rb{$*/integ} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
-[ @integ ] : [ $*/integ ~ j lsr sx/c/test sy ]
+[ @test ] : [ $*/integ ~ j lsr sx/c/test sy ]
+{
+  set -e
+  for x in [ $@ ~ rx/ineed fi ] ; do [ $xunit_valgrind_runner ] $x ; done
+}
+
+[ @test.fast ] : [ $*/integ ~ j lsr sx/c/test sy ]
 {
   set -e
   [ $@ ~ rx/ineed fi/; ]
 }
 
-[ @integ.verbose ] : [ $*/integ ~ j lsr sx/c/test sy ]
+[ @test.verbose ] : [ $*/integ ~ j lsr sx/c/test sy ]
 {
   set -e
   (

@@ -43,8 +43,5 @@ SUMMARY
 xapi narrator_nullity_create(narrator ** const restrict n)
   __attribute__((nonnull));
 
-/// read-only singleton nullity narrator allocated in narrator_setup
-extern narrator * g_narrator_nullity;
-
 #undef restrict
 #endif

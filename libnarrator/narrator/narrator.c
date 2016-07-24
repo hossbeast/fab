@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
+
 #include "xapi.h"
 
 #include "xlinux.h"
@@ -185,4 +187,9 @@ API xapi narrator_sayw(narrator * const restrict n, const char * const restrict 
     fatal(record_sayw, &n->record, b, l);
 
   finally : coda;
+}
+
+API xapi narrator_says(narrator * const restrict n, const char * const restrict s)
+{
+  xproxy(narrator_sayw, n, s, strlen(s));
 }
