@@ -132,37 +132,6 @@ finally:
 coda;
 }
 
-#if 0
-// setup liblistwise logging
-static struct listwise_logging * logging = (struct listwise_logging[]) {{
-    .transform_token  = (uint64_t[]) { L_PARSE }
-  , .transform_would  = listwise_would
-  , .transform_log    = listwise_log
-  , .lstack_token     = (uint64_t[]) { L_EXEC }
-  , .lstack_would     = listwise_would
-  , .lstack_log       = listwise_log
-  , .exec_token       = (uint64_t[]) { L_EXEC }
-  , .exec_would       = listwise_would
-  , .exec_log         = listwise_log
-  , .opinfo_token     = (uint64_t[]) { L_OPINFO }
-  , .opinfo_would     = listwise_would
-  , .opinfo_log       = listwise_log
-#if DEBUG || DEVEL
-  , .tokens_token     = (uint64_t[]) { L_TOKENS }
-  , .tokens_would     = listwise_would
-  , .tokens_log       = listwise_log
-  , .states_token     = (uint64_t[]) { L_STATES }
-  , .states_would     = listwise_would
-  , .states_log       = listwise_log
-#endif
-#if SANITY
-  , .sanity_token     = (uint64_t[]) { L_SANITY }
-  , .sanity_would     = listwise_would
-  , .sanity_log       = listwise_log
-#endif
-}};
-#endif
-
 int main(int argc, char ** argv, char ** envp)
 {
   enter;
@@ -193,45 +162,6 @@ int main(int argc, char ** argv, char ** envp)
   // parse cmdline args
   fatal(args_parse);
   fatal(args_report);
-
-#if 0
-  // configure logger
-#if DEBUG || DEVEL
-  if(g_args.mode_logtrace == MODE_LOGTRACE_FULL)
-  {
-    fatal(log_config_and_describe
-      , L_TOKENS | L_STATES | L_OPINFO    // prefix
-#if DEVEL
-      | L_LOGGER
-#endif
-      , L_OPINFO | L_TOKENS | L_STATES    // trace
-      , 0                               // describe bits
-#if DEVEL
-      | L_LOGGER
-#endif
-    );
-  }
-  else
-  {
-    fatal(log_config_and_describe
-      , L_TOKENS | L_STATES | L_OPINFO
-#if DEVEL
-      | L_LOGGER
-#endif
-      , 0
-      , 0
-#if DEVEL
-      | L_LOGGER
-#endif
-    );
-  }
-#else
-  fatal(log_config, L_OPINFO);    // prefix
-#endif
-
-  // setup liblistwise logging
-  listwise_logging_configure(logging);
-#endif
 
   // read transform-expr from stdin
   if(g_args.stdin_init_list_items)
