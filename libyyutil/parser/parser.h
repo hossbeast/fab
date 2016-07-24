@@ -38,7 +38,7 @@ typedef struct yyu_location
 
   char *  s;      // pointer to start of location
   char *  e;      // pointer to end of location
-  int     l;      // length of location, equal to e - s
+  size_t  l;      // length of location, equal to e - s
 } yyu_location;
 
 /// YYU_EXTRA_TYPE

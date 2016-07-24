@@ -16,52 +16,25 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/errtab.h"
-#include "xlinux.h"
-#include "xlinux/LIB.errtab.h"
 #include "logger.h"
 
 #include "internal.h"
 #include "logging.internal.h"
 
-//
-// api
-//
+logger_category * categories = (logger_category []) {
+    { name : "YYUTIL"   , description : "libyyutil logging" }
+#if DEBUG || DEVEL || XUNIT
+  , { name : "TOKENS"   , description : "scanner - token stream" }
+  , { name : "STATES"   , description : "scanner - lexer states" }
+#endif
+  , { }
+};
 
-static int handles;
-
-API xapi yyutil_load()
+xapi logging_setup()
 {
   enter;
 
-  if(handles++ == 0)
-  {
-    // dependencies
-    fatal(xlinux_load);
-    fatal(logger_load);
-
-    // modules
-    fatal(logging_setup);
-  }
-
-  finally : coda;
-}
-
-API xapi yyutil_unload()
-{
-  enter;
-
-  if(--handles == 0)
-  {
-    // modules
-    // dependencies
-    fatal(xlinux_unload);
-    fatal(logger_unload);
-  }
-  else if(handles < 0)
-  {
-    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libyyutil");
-  }
+  fatal(logger_category_register, categories);
 
   finally : coda;
 }

@@ -15,53 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/errtab.h"
-#include "xlinux.h"
-#include "xlinux/LIB.errtab.h"
-#include "logger.h"
+#ifndef _LISTWISE_LOGGING_H
+#define _LISTWISE_LOGGING_H
 
-#include "internal.h"
-#include "logging.internal.h"
-
-//
-// api
-//
-
-static int handles;
-
-API xapi yyutil_load()
-{
-  enter;
-
-  if(handles++ == 0)
-  {
-    // dependencies
-    fatal(xlinux_load);
-    fatal(logger_load);
-
-    // modules
-    fatal(logging_setup);
-  }
-
-  finally : coda;
-}
-
-API xapi yyutil_unload()
-{
-  enter;
-
-  if(--handles == 0)
-  {
-    // modules
-    // dependencies
-    fatal(xlinux_unload);
-    fatal(logger_unload);
-  }
-  else if(handles < 0)
-  {
-    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libyyutil");
-  }
-
-  finally : coda;
-}
+#endif
