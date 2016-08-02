@@ -44,6 +44,9 @@ VALUE_TYPE_TABLE(0)
 #undef VALUE_TYPE
 };
 
+#define VALUE_TYPE(a, b, x) (x) == b ? "VALUE_TYPE_" #a :
+#define VALUE_TYPE_STRING(x) VALUE_TYPE_TABLE(x) "UNKNOWN"
+
 typedef struct value_location {
   int f_lin;
   int f_col;

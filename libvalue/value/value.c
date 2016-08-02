@@ -22,9 +22,6 @@
 #include "internal.h"
 #include "store.internal.h"
 
-#define VALUE_TYPE(a, b, x) (x) == b ? "VALUE_TYPE_" #a :
-#define VALUE_TYPE_STRING(x) VALUE_TYPE_TABLE(x) "UNKNOWN"
-
 //
 // static
 //
