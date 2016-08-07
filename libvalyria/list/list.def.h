@@ -89,7 +89,15 @@ xapi list_add(struct list * const restrict li, size_t index, size_t len, LIST_EL
 
 /// list_put
 //
+// SUMMARY
+//  overwrite elements in the list
 //
+// PARAMETERS
+//  li    - list
+//  index - 0 <= index <= list_size(li)
+//  len   - number of elements to overwrite
+//  [el]  - pointer to the first element to write
+//  [rv]  - (returns) pointers to elements
 //
 void list_put(struct list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
   __attribute__((nonnull(1)));

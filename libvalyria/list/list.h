@@ -84,6 +84,14 @@ void list_free(list * const restrict li);
 void list_ifree(list ** const restrict li)
   __attribute__((nonnull));
 
+/// list_clear
+//
+// SUMMARY
+//  reset the number of elements in the list - the allocation remains intact
+//
+void list_clear(list * const restrict li)
+  __attribute__((nonnull));
+
 /// list_size
 //
 // SUMMARY
@@ -228,23 +236,15 @@ void list_set(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const 
 //  update elements in the list at the specified range of indexes
 //
 // REMARKS
-//  the existing element at the index is destroyed
+//  the existing elements at the index are destroyed
 //
 // PARAMETERS
 //  li    - list
 //  index - 0 <= index < list_size(s)
-//  el    - pointer to the element to place
-//  len   - number of elements to insert
+//  el    - pointer to the first element to place
+//  len   - number of elements to place
 //
 void list_set_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
-  __attribute__((nonnull));
-
-/// list_clear
-//
-// SUMMARY
-//  reset the number of elements in the list - the allocation remains intact
-//
-void list_clear(list * const restrict li)
   __attribute__((nonnull));
 
 /// list_sort
@@ -257,20 +257,6 @@ void list_clear(list * const restrict li)
 //
 void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *, const LIST_ELEMENT_TYPE *, void *), void * arg)
   __attribute__((nonnull(1, 2)));
-
-/// list_sublist
-//
-// SUMMARY
-//  create subset of a list - the two lists contain pointers to the same underlying objects
-//
-// PARAMETERS
-//  list  - list to copy from
-//  index - index at which to begin copying
-//  len   - number of elements to copy
-//  lc    - (returns) pointer to list, or reuses an existing list
-//
-xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** const restrict lc)
-  __attribute__((nonnull));
 
 /// list_search
 //
@@ -290,6 +276,50 @@ xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** c
 //
 LIST_ELEMENT_TYPE * list_search(list * const restrict li, void * ud, int (*compar)(void * ud, const LIST_ELEMENT_TYPE * el, size_t idx))
   __attribute__((nonnull(1, 3)));
+
+/// list_sublist
+//
+// SUMMARY
+//  create subset of a list - the two lists contain pointers to the same underlying objects
+//
+// PARAMETERS
+//  list  - list to copy from
+//  index - index at which to begin copying
+//  len   - number of elements to copy
+//  lc    - (returns) pointer to list, or reuses an existing list
+//
+xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** const restrict lc)
+  __attribute__((nonnull));
+
+/// list_splice
+//
+// SUMMARY
+//  copy elements between two lists, overwriting elements in the destination list
+//
+// PARAMETERS
+//  dst       - list to copy to
+//  dst_index - 0 <= dst_index <= list_size(dst)
+//  src       - list to copy from
+//  src_index - 0 <= src_index <= list_size(src)
+//  len       - number >= 0 of elements to copy
+//
+xapi list_splice(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
+  __attribute__((nonnull));
+
+/// list_replicate
+//
+// SUMMARY
+//  copy elements between two lists, expanding the destination list
+//
+// PARAMETERS
+//  dst       - list to copy to
+//  dst_index - 0 <= dst_index <= list_size(dst)
+//  src       - list to copy from
+//  src_index - 0 <= src_index <= list_size(src)
+//  len       - number >= 0 of elements to copy
+//
+xapi list_replicate(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

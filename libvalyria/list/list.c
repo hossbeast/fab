@@ -71,6 +71,11 @@ static xapi list_assure(list * const restrict li, size_t len)
   xproxy(assure, &li->v, ELEMENT_SIZE(li), len, &li->a);
 }
 
+/// list_update
+//
+// SUMMARY
+//  overwrite elements in the list
+//
 static void list_update(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
 {
   // copy the elements into place
@@ -90,6 +95,25 @@ static void list_update(list * const restrict li, size_t index, size_t len, LIST
     for(x = 0; x < len; x++)
       rv[x] = ELEMENT(li, index + x);
   }
+}
+
+/// list_move
+//
+// SUMMARY
+//  copy elements from one list to another
+//
+// REMARKS
+//  the lists must be compatible, e.g. have the same element size and destructor
+//
+static void list_move(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
+{
+  size_t elsz = ELEMENT_SIZE(dst);
+
+  memcpy(
+      dst->v + (dst_index * elsz)
+    , src->v + (src_index * elsz)
+    , len * elsz
+  );
 }
 
 //
@@ -135,7 +159,7 @@ xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
   enter;
 
   // allocate new space if necessary
-  fatal(assure, &li->v, ELEMENT_SIZE(li), li->l + len, &li->a);
+  fatal(list_assure, li, li->l + len);
 
   // for an insertion, displace existing elements
   memmove(
@@ -145,7 +169,6 @@ xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
   );
 
   list_update(li, index, len, el, rv);
-
   li->l += len;
 
   finally : coda;
@@ -362,4 +385,40 @@ API LIST_ELEMENT_TYPE * list_search(list * const restrict li, void * ud, int (*c
   }
 
   return elp;
+}
+
+API xapi list_splice(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
+{
+  enter;
+
+  size_t x;
+  if(dst->destructor)
+  {
+    for(x = 0; x < len; x++)
+      dst->destructor(ELEMENT(dst, dst_index + x));
+  }
+
+  list_move(dst, dst_index, src, src_index, len);
+
+  finally : coda;
+}
+
+API xapi list_replicate(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
+{
+  enter;
+
+  // allocate new space if necessary
+  fatal(list_assure, dst, dst->l + len);
+
+  // displace existing elements
+  memmove(
+      dst->v + ((dst_index + len) * ELEMENT_SIZE(dst))
+    , dst->v + (dst_index * ELEMENT_SIZE(dst))
+    , (dst->l - dst_index) * ELEMENT_SIZE(dst)
+  );
+  
+  list_move(dst, dst_index, src, src_index, len);
+  dst->l += len;
+
+  finally : coda;
 }
