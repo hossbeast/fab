@@ -49,7 +49,7 @@ struct map
   size_t      size;           // number of active entries
   uint32_t    attr;           // options and modifiers
   size_t      vsz;            // for MAP_PRIMARY, size of values
-  void (*destructor)(const char *, MAP_VALUE_TYPE *);
+  void (*destructor)(MAP_VALUE_TYPE *);
 
   size_t      table_size;     // table length, in elements (always a power of two)
   size_t      overflow_size;  // size at which to rehash
@@ -69,13 +69,13 @@ struct map
 //  map          - (returns) newly allocated map
 //  attr         - bitwise combination of MAP_* options and modifiers
 //  [vsz]        - value size > 0
-//  [destructor] - invoked with key/value just before freeing their associated memory
+//  [destructor] - invoked with the value just before freeing it (keys may not be managed in this way)
 //  [capacity]   - initial capacity, the minimum number of entries which can be set without rehashing
 //
 // REMARKS
 //  either attr & MAP_PRIMARY and vsz != 0, or attr & MAP_SECONDARY and vsz == 0
 //
-xapi map_allocate(struct map ** const restrict m, uint32_t attr, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
+xapi map_allocate(struct map ** const restrict m, uint32_t attr, size_t vsz, void (*destructor)(MAP_VALUE_TYPE *), size_t capacity)
   __attribute__((nonnull(1)));
 
 /// map_put

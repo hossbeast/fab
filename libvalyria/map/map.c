@@ -156,7 +156,7 @@ static int __attribute__((nonnull)) probe(const map * const restrict m, const ch
 // protected
 //
 
-xapi map_allocate(map ** const restrict m, uint32_t attr, size_t vsz, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
+xapi map_allocate(map ** const restrict m, uint32_t attr, size_t vsz, void (*destructor)(MAP_VALUE_TYPE *), size_t capacity)
 {
   enter;
 
@@ -209,7 +209,7 @@ xapi map_put(
   {
     // the value will be overwritten
     if(m->destructor)
-      m->destructor(0, VALUE(m, m->tv, i));
+      m->destructor(VALUE(m, m->tv, i));
   }
   else if(r == 1) // not found, and a suitable deleted slot exists
   {
@@ -305,7 +305,7 @@ API xapi map_create(map ** const restrict m)
   finally : coda;
 }
 
-API xapi map_createx(map ** const restrict m, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
+API xapi map_createx(map ** const restrict m, void (*destructor)(MAP_VALUE_TYPE *), size_t capacity)
 {
   enter;
 
@@ -348,7 +348,7 @@ API void map_clear(map* const restrict m)
     {
       if(m->destructor)
       {
-        m->destructor(m->tk[x]->p, VALUE(m, m->tv, x));
+        m->destructor(VALUE(m, m->tv, x));
       }
 
       m->tk[x]->l = 0;
@@ -366,7 +366,7 @@ API int map_delete(map* const restrict m, const char * const restrict k, size_t 
   {
     if(m->destructor)
     {
-      m->destructor(m->tk[i]->p, VALUE(m, m->tv, i));
+      m->destructor(VALUE(m, m->tv, i));
     }
 
     m->tk[i]->l = 0;
@@ -428,7 +428,7 @@ API void map_free(map* const restrict m)
       if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
       {
         if(m->destructor)
-          m->destructor(m->tk[x]->p, VALUE(m, m->tv, x));
+          m->destructor(VALUE(m, m->tv, x));
       }
 
       free(m->tk[x]);

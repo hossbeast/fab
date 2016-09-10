@@ -53,13 +53,13 @@ typedef struct dictionary dictionary;
 // PARAMETERS
 //  dictionary   - (returns) newly allocated dictionary
 //  vsz          - value size > 0
-//  [destructor] - invoked with key/value just before freeing their associated memory
+//  [destructor] - invoked with the value just before freeing it (keys may not be managed in this way)
 //  [capacity]   - initial capacity, the minimum number of entries which can be set without rehashing
 //
 xapi dictionary_create(dictionary ** const restrict m, size_t vsz)
   __attribute__((nonnull(1)));
 
-xapi dictionary_createx(dictionary ** const restrict m, size_t vsz, void (*destructor)(const char *, DICTIONARY_VALUE_TYPE *), size_t capacity)
+xapi dictionary_createx(dictionary ** const restrict m, size_t vsz, void (*destructor)(DICTIONARY_VALUE_TYPE *), size_t capacity)
   __attribute__((nonnull(1)));
 
 /// dictionary_free

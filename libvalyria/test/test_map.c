@@ -22,7 +22,6 @@
 #include "xapi/trace.h"
 
 #include "xlinux/xstdlib.h"
-#include "xlinux/SYS.errtab.h"
 
 struct item;
 #define MAP_VALUE_TYPE struct item
@@ -38,7 +37,7 @@ struct item
 };
 typedef struct item item;
 
-static void destructor(const char * key, item * value)
+static void destructor(item * value)
 {
   free(value);
 }

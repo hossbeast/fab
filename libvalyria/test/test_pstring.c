@@ -22,9 +22,6 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-#include "xlinux.h"
-#include "xlinux/SYS.errtab.h"
-
 #include "pstring.internal.h"
 
 #include "test_util.h"

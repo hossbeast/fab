@@ -16,8 +16,9 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xlinux.h"
-#include "xlinux/LIB.errtab.h"
+#include "xapi/SYS.errtab.h"
+
+#include "xlinux/load.h"
 
 #include "internal.h"
 #include "load.internal.h"
@@ -55,7 +56,7 @@ API xapi valyria_unload()
   }
   else if(handles < 0)
   {
-    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libvalyria");
+    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "libvalyria");
   }
 
   finally : coda;

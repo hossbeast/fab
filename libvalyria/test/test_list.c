@@ -22,7 +22,6 @@
 #include "xapi/trace.h"
 
 #include "xlinux/xstdlib.h"
-#include "xlinux/SYS.errtab.h"
 
 struct item;
 #define LIST_ELEMENT_TYPE struct item

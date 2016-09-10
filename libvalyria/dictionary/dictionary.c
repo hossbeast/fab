@@ -35,7 +35,7 @@ API xapi dictionary_create(dictionary ** const restrict m, size_t vsz)
   xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, 0, 0);
 }
 
-API xapi dictionary_createx(dictionary ** const restrict m, size_t vsz, void (*destructor)(const char *, DICTIONARY_VALUE_TYPE *), size_t capacity)
+API xapi dictionary_createx(dictionary ** const restrict m, size_t vsz, void (*destructor)(DICTIONARY_VALUE_TYPE *), size_t capacity)
 {
   xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, destructor, capacity);
 }

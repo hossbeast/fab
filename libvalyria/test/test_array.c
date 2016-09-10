@@ -21,9 +21,6 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-#include "xlinux.h"
-#include "xlinux/SYS.errtab.h"
-
 struct item;
 #define ARRAY_ELEMENT_TYPE struct item
 #include "array.h"

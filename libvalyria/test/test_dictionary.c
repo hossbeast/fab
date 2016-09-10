@@ -21,9 +21,6 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-#include "xlinux.h"
-#include "xlinux/SYS.errtab.h"
-
 struct item;
 #define DICTIONARY_VALUE_TYPE struct item
 #include "dictionary.h"

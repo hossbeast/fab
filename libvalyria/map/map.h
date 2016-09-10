@@ -52,13 +52,13 @@ typedef struct map map;
 //
 // PARAMETERS
 //  map          - (returns) newly allocated map
-//  [destructor] - invoked with key/value just before freeing their associated memory
+//  [destructor] - invoked with the value just before freeing it (keys may not be managed in this way)
 //  [capacity]   - initial capacity, the minimum number of entries which can be set without rehashing
 //
 xapi map_create(map ** const restrict m)
   __attribute__((nonnull));
 
-xapi map_createx(map ** const restrict m, void (*destructor)(const char *, MAP_VALUE_TYPE *), size_t capacity)
+xapi map_createx(map ** const restrict m, void (*destructor)(MAP_VALUE_TYPE *), size_t capacity)
   __attribute__((nonnull(1)));
 
 /// map_free
