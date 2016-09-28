@@ -156,7 +156,14 @@ static int __attribute__((nonnull)) probe(const map * const restrict m, const ch
 // protected
 //
 
-xapi map_allocate(map ** const restrict m, uint32_t attr, size_t vsz, void (*destructor)(MAP_VALUE_TYPE *), size_t capacity)
+xapi map_allocate(
+    map ** const restrict m
+  , uint32_t attr
+  , size_t vsz
+  , void (*free_value)(MAP_VALUE_TYPE *)
+  , xapi (*xfree_value)(MAP_VALUE_TYPE *)
+  , size_t capacity
+)
 {
   enter;
 
@@ -177,7 +184,8 @@ xapi map_allocate(map ** const restrict m, uint32_t attr, size_t vsz, void (*des
   (*m)->overflow_size = (size_t)((*m)->table_size * SATURATION);
   (*m)->lm = (*m)->table_size - 1;
 
-  (*m)->destructor = destructor;
+  (*m)->free_value = free_value;
+  (*m)->xfree_value = xfree_value;
   (*m)->vsz = vsz;
   (*m)->attr = attr;
 
@@ -208,8 +216,10 @@ xapi map_put(
   if(r == 0)  // found
   {
     // the value will be overwritten
-    if(m->destructor)
-      m->destructor(VALUE(m, m->tv, i));
+    if(m->free_value)
+      m->free_value(VALUE(m, m->tv, i));
+    else if(m->xfree_value)
+      fatal(m->xfree_value, VALUE(m, m->tv, i));
   }
   else if(r == 1) // not found, and a suitable deleted slot exists
   {
@@ -282,12 +292,12 @@ xapi map_put(
 finally:
   for(x = 0; x < ksl; x++)
   {
-    // destructor was called for these entries when they were deleted
-    free(ks[x]);
+    // free_element was called for these values when they were deleted
+    xfree(ks[x]);
   }
 
-  free(ks);
-  free(vs);
+  xfree(ks);
+  xfree(vs);
 coda;
 }
 
@@ -300,16 +310,21 @@ API xapi map_create(map ** const restrict m)
 {
   enter;
 
-  fatal(map_allocate, m, MAP_SECONDARY, 0, 0, 0);
+  fatal(map_allocate, m, MAP_SECONDARY, 0, 0, 0, 0);
 
   finally : coda;
 }
 
-API xapi map_createx(map ** const restrict m, void (*destructor)(MAP_VALUE_TYPE *), size_t capacity)
+API xapi map_createx(
+    map ** const restrict m
+  , void (*free_value)(MAP_VALUE_TYPE *)
+  , xapi (*xfree_value)(MAP_VALUE_TYPE *)
+  , size_t capacity
+)
 {
   enter;
 
-  fatal(map_allocate, m, MAP_SECONDARY, 0, destructor, capacity);
+  fatal(map_allocate, m, MAP_SECONDARY, 0, free_value, xfree_value, capacity);
 
   finally : coda;
 }
@@ -338,18 +353,20 @@ API size_t map_size(const map * const restrict m)
   return m->size;
 }
 
-API void map_clear(map* const restrict m)
+API xapi map_recycle(map* const restrict m)
 {
+  enter;
+
   // reset all lengths; all allocations remain intact
   int x;
   for(x = 0; x < m->table_size; x++)
   {
     if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     {
-      if(m->destructor)
-      {
-        m->destructor(VALUE(m, m->tv, x));
-      }
+      if(m->free_value)
+        m->free_value(VALUE(m, m->tv, x));
+      else if(m->xfree_value)
+        fatal(m->xfree_value, VALUE(m, m->tv, x));
 
       m->tk[x]->l = 0;
       m->tk[x]->d = 0;
@@ -357,27 +374,29 @@ API void map_clear(map* const restrict m)
   }
 
   m->size = 0;
+
+  finally : coda;
 }
 
-API int map_delete(map* const restrict m, const char * const restrict k, size_t kl)
+API xapi map_delete(map* const restrict m, const char * const restrict k, size_t kl)
 {
+  enter;
+
   size_t i = 0;
   if(probe(m, k, kl, &i) == 0)
   {
-    if(m->destructor)
-    {
-      m->destructor(VALUE(m, m->tv, i));
-    }
+    if(m->free_value)
+      m->free_value(VALUE(m, m->tv, i));
+    else if(m->xfree_value)
+      fatal(m->xfree_value, VALUE(m, m->tv, i));
 
     m->tk[i]->l = 0;
     m->tk[i]->d = 1;
 
     m->size--;
-
-    return 1;
   }
 
-  return 0;
+  finally : coda;
 }
 
 API xapi map_keys(const map * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
@@ -418,8 +437,10 @@ API xapi map_values(const map* const restrict m, MAP_VALUE_TYPE *** restrict val
   finally : coda;
 }
 
-API void map_free(map* const restrict m)
+API xapi map_xfree(map* const restrict m)
 {
+  enter;
+
   if(m)   // free-like semantics
   {
     int x;
@@ -427,24 +448,32 @@ API void map_free(map* const restrict m)
     {
       if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
       {
-        if(m->destructor)
-          m->destructor(VALUE(m, m->tv, x));
+        if(m->free_value)
+          m->free_value(VALUE(m, m->tv, x));
+        else if(m->xfree_value)
+          fatal(m->xfree_value, VALUE(m, m->tv, x));
       }
 
-      free(m->tk[x]);
+      xfree(m->tk[x]);
     }
 
-    free(m->tk);
-    free(m->tv);
+    xfree(m->tk);
+    xfree(m->tv);
   }
 
-  free(m);
+  xfree(m);
+
+  finally : coda;
 }
 
-API void map_ifree(map** const restrict m)
+API xapi map_ixfree(map** const restrict m)
 {
-  map_free(*m);
+  enter;
+
+  fatal(map_xfree, *m);
   *m = 0;
+
+  finally : coda;
 }
 
 API size_t map_table_size(const map * const restrict m)

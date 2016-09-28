@@ -51,29 +51,35 @@ typedef struct map map;
 //  create an empty map
 //
 // PARAMETERS
-//  map          - (returns) newly allocated map
-//  [destructor] - invoked with the value just before freeing it (keys may not be managed in this way)
-//  [capacity]   - initial capacity, the minimum number of entries which can be set without rehashing
+//  map           - (returns) newly allocated map
+//  [free_value]  - invoked with the value just before freeing it (keys may not be managed in this way)
+//  [xfree_value] - invoked with the value just before freeing it (keys may not be managed in this way)
+//  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
 //
 xapi map_create(map ** const restrict m)
   __attribute__((nonnull));
 
-xapi map_createx(map ** const restrict m, void (*destructor)(MAP_VALUE_TYPE *), size_t capacity)
+xapi map_createx(
+    map ** const restrict m
+  , void (*free_value)(MAP_VALUE_TYPE *)
+  , xapi (*xfree_value)(MAP_VALUE_TYPE *)
+  , size_t capacity
+)
   __attribute__((nonnull(1)));
 
-/// map_free
+/// map_xfree
 //
 // SUMMARY
-//  free a map with free semantics
+//  free a map
 //
-void map_free(map * const restrict map);
+xapi map_xfree(map * const restrict map);
 
-/// map_ifree
+/// map_ixfree
 //
 // SUMMARY
-//  free a map with ifree semantics
+//  free a map, zero its reference
 //
-void map_ifree(map ** const restrict map)
+xapi map_ixfree(map ** const restrict map)
   __attribute__((nonnull));
 
 /// map_set
@@ -112,11 +118,11 @@ xapi map_set(map * const restrict m, const char * const restrict key, size_t key
 MAP_VALUE_TYPE * map_get(const map * const restrict m, const char * const restrict key, size_t keyl)
   __attribute__((nonnull));
 
-/// map_clear
+/// map_recycle
 //
 // disassociate all keys - internal structures in the map remain allocated
 //
-void map_clear(map * const restrict map)
+xapi map_recycle(map * const restrict map)
   __attribute__((nonnull));
 
 /// map_delete
@@ -129,10 +135,7 @@ void map_clear(map * const restrict map)
 //  key  - pointer to key
 //  keyl - length of key
 //
-// RETURNS
-//  boolean value indicating whether an entry was found and removed
-//
-int map_delete(map * const restrict m, const char * const restrict key, size_t keyl)
+xapi map_delete(map * const restrict m, const char * const restrict key, size_t keyl)
   __attribute__((nonnull));
 
 /// map_size

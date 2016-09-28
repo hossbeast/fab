@@ -67,22 +67,28 @@ typedef struct array
 xapi array_create(array ** const restrict ar, size_t esz)
   __attribute__((nonnull));
 
-xapi array_createx(array ** const restrict ar, size_t esz, void (*destroy_element)(ARRAY_ELEMENT_TYPE *), size_t capacity)
+xapi array_createx(
+    array ** const restrict ar
+  , size_t esz
+  , void (*free_element)(ARRAY_ELEMENT_TYPE *)
+  , xapi (*xfree_element)(ARRAY_ELEMENT_TYPE *)
+  , size_t capacity
+)
   __attribute__((nonnull(1)));
 
-/// array_free
+/// array_xfree
 //
 // SUMMARY
-//  free a array with free semantics
+//  free an array
 //
-void array_free(array * const ar);
+xapi array_xfree(array * const restrict ar);
 
 /// array_ifree
 //
 // SUMMARY
-//  free a array with ifree semantics
+//  free an array, zero its reference
 //
-void array_ifree(array ** const ar)
+xapi array_ixfree(array ** const restrict ar)
   __attribute__((nonnull));
 
 /// array_size
@@ -231,7 +237,7 @@ xapi array_insert_range(array * const restrict ar, size_t index, size_t len, ARR
 //  index - 0 <= index < array_size(s)
 //  el    - (returns) pointer to the element
 //
-void array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
   __attribute__((nonnull));
 
 /// array_set_range
@@ -248,15 +254,15 @@ void array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** co
 //  len   - number of elements to insert
 //  el    - (returns) pointers to the elements
 //
-void array_set_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_set_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
   __attribute__((nonnull));
 
-/// array_clear
+/// array_recycle
 //
 // SUMMARY
 //  reset the number of elements in the array - the allocation remains intact
 //
-void array_clear(array * const restrict ar)
+xapi array_recycle(array * const restrict ar)
   __attribute__((nonnull));
 
 /// array_clear
@@ -267,7 +273,7 @@ void array_clear(array * const restrict ar)
 // REMARKS
 //  allocations remain intact
 //
-void array_clear(array * const ar)
+xapi array_recycle(array * const ar)
   __attribute__((nonnull));
 
 /// array_sort

@@ -129,7 +129,7 @@ int main()
   map * mapp = 0;
   item * itemp = 0;
 
-  fatal(map_createx, &mapp, destructor, 0);
+  fatal(map_createx, &mapp, destructor, 0, 0);
 
   fatal(xmalloc, &itemp, sizeof(*itemp));
   itemp->x = 1;
@@ -156,7 +156,7 @@ finally:
     xapi_backtrace();
   }
 
-  map_free(mapp);
+  fatal(map_xfree, mapp);
   free(itemp);
 
 conclude(&r);

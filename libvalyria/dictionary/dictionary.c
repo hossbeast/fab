@@ -32,12 +32,18 @@ struct dictionary
 
 API xapi dictionary_create(dictionary ** const restrict m, size_t vsz)
 {
-  xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, 0, 0);
+  xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, 0, 0, 0);
 }
 
-API xapi dictionary_createx(dictionary ** const restrict m, size_t vsz, void (*destructor)(DICTIONARY_VALUE_TYPE *), size_t capacity)
+API xapi dictionary_createx(
+    dictionary ** const restrict m
+  , size_t vsz
+  , void (*free_value)(DICTIONARY_VALUE_TYPE *)
+  , xapi (*xfree_value)(DICTIONARY_VALUE_TYPE *)
+  , size_t capacity
+)
 {
-  xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, destructor, capacity);
+  xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, free_value, xfree_value, capacity);
 }
 
 API xapi dictionary_set(dictionary * const restrict m, const char * const restrict key, size_t keyl, DICTIONARY_VALUE_TYPE * const * const restrict value)
@@ -55,14 +61,14 @@ API size_t dictionary_size(const dictionary * const restrict m)
   return map_size(m);
 }
 
-API void dictionary_clear(dictionary* const restrict m)
+API xapi dictionary_recycle(dictionary* const restrict m)
 {
-  return map_clear(m);
+  xproxy(map_recycle, m);
 }
 
-API int dictionary_delete(dictionary * const restrict m, const char * const restrict key, size_t keyl)
+API xapi dictionary_delete(dictionary * const restrict m, const char * const restrict key, size_t keyl)
 {
-  return map_delete(m, key, keyl);
+  xproxy(map_delete, m, key, keyl);
 }
 
 API xapi dictionary_keys(const dictionary * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
@@ -75,14 +81,14 @@ API xapi dictionary_values(const dictionary* const restrict m, DICTIONARY_VALUE_
   xproxy(map_values, m, values, valuesl);
 }
 
-API void dictionary_free(dictionary* const restrict m)
+API xapi dictionary_xfree(dictionary* const restrict m)
 {
-  map_free(m);
+  xproxy(map_xfree, m);
 }
 
-API void dictionary_ifree(dictionary** const restrict m)
+API xapi dictionary_ixfree(dictionary** const restrict m)
 {
-  map_ifree((void*)m);
+  xproxy(map_ixfree, (void*)m);
 }
 
 API size_t dictionary_table_size(const dictionary * const restrict m)

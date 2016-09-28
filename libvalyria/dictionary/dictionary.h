@@ -51,30 +51,37 @@ typedef struct dictionary dictionary;
 //  create an empty dictionary
 //
 // PARAMETERS
-//  dictionary   - (returns) newly allocated dictionary
-//  vsz          - value size > 0
-//  [destructor] - invoked with the value just before freeing it (keys may not be managed in this way)
-//  [capacity]   - initial capacity, the minimum number of entries which can be set without rehashing
+//  dictionary    - (returns) newly allocated dictionary
+//  vsz           - value size > 0
+//  [free_value]  - invoked with the value just before freeing it (keys may not be managed in this way)
+//  [xfree_value] - invoked with the value just before freeing it (keys may not be managed in this way)
+//  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
 //
 xapi dictionary_create(dictionary ** const restrict m, size_t vsz)
   __attribute__((nonnull(1)));
 
-xapi dictionary_createx(dictionary ** const restrict m, size_t vsz, void (*destructor)(DICTIONARY_VALUE_TYPE *), size_t capacity)
+xapi dictionary_createx(
+    dictionary ** const restrict m
+  , size_t vsz
+  , void (*free_value)(DICTIONARY_VALUE_TYPE *)
+  , xapi (*xfree_value)(DICTIONARY_VALUE_TYPE *)
+  , size_t capacity
+)
   __attribute__((nonnull(1)));
 
-/// dictionary_free
+/// dictionary_xfree
 //
 // SUMMARY
-//  free a dictionary with free semantics
+//  free a dictionary
 //
-void dictionary_free(dictionary * const restrict dictionary);
+xapi dictionary_xfree(dictionary * const restrict dictionary);
 
-/// dictionary_ifree
+/// dictionary_ixfree
 //
 // SUMMARY
-//  free a dictionary with ifree semantics
+//  free a dictionary, zero its reference
 //
-void dictionary_ifree(dictionary ** const restrict dictionary)
+xapi dictionary_ixfree(dictionary ** const restrict dictionary)
   __attribute__((nonnull));
 
 /// dictionary_set
@@ -107,12 +114,12 @@ xapi dictionary_set(dictionary * const restrict m, const char * const restrict k
 DICTIONARY_VALUE_TYPE * dictionary_get(const dictionary * const restrict m, const char * const restrict key, size_t keyl)
   __attribute__((nonnull));
 
-/// dictionary_clear
+/// dictionary_recycle
 //
 // SUMMARY
 //  disassociate all keys, retain internal allocations
 //
-void dictionary_clear(dictionary * const restrict dictionary)
+xapi dictionary_recycle(dictionary * const restrict dictionary)
   __attribute__((nonnull));
 
 /// dictionary_delete
@@ -125,10 +132,7 @@ void dictionary_clear(dictionary * const restrict dictionary)
 //  key  - pointer to key
 //  keyl - length of key
 //
-// RETURNS
-//  boolean value indicating whether an entry was found and removed
-//
-int dictionary_delete(dictionary * const restrict m, const char * const restrict key, size_t keyl)
+xapi dictionary_delete(dictionary * const restrict m, const char * const restrict key, size_t keyl)
   __attribute__((nonnull));
 
 /// dictionary_size

@@ -28,22 +28,28 @@
 
 API xapi array_create(array ** const restrict ar, size_t esz)
 {
-  xproxy(list_allocate, (void*)ar, LIST_PRIMARY, esz, 0, 0);
+  xproxy(list_allocate, (void*)ar, LIST_PRIMARY, esz, 0, 0, 0);
 }
 
-API xapi array_createx(array ** const restrict ar, size_t esz, void (*destructor)(ARRAY_ELEMENT_TYPE *), size_t capacity)
+API xapi array_createx(
+    array ** const restrict ar
+  , size_t esz
+  , void (*free_element)(ARRAY_ELEMENT_TYPE *)
+  , xapi (*xfree_element)(ARRAY_ELEMENT_TYPE *)
+  , size_t capacity
+)
 {
-  xproxy(list_allocate, (void*)ar, LIST_PRIMARY, esz, destructor, capacity);
+  xproxy(list_allocate, (void*)ar, LIST_PRIMARY, esz, free_element, xfree_element, capacity);
 }
 
-API void array_free(array * const restrict ar)
+API xapi array_xfree(array * const restrict ar)
 {
-  return list_free((void*)ar);
+  xproxy(list_xfree, (void*)ar);
 }
 
-API void array_ifree(array ** const restrict ar)
+API xapi array_ixfree(array ** const restrict ar)
 {
-  list_ifree((void*)ar);
+  xproxy(list_ixfree, (void*)ar);
 }
 
 API size_t array_size(const array * const restrict ar)
@@ -51,9 +57,9 @@ API size_t array_size(const array * const restrict ar)
   return list_size((void*)ar);
 }
 
-API void array_clear(array * const restrict ar)
+API xapi array_recycle(array * const restrict ar)
 {
-  return list_clear((void*)ar);
+  xproxy(list_recycle, (void*)ar);
 }
 
 API ARRAY_ELEMENT_TYPE * array_get(const array * const restrict ar, int x)
@@ -101,14 +107,14 @@ API xapi array_insert_range(array * const restrict ar, size_t index, size_t len,
   xproxy(list_add, (void*)ar, index, len, 0, el);
 }
 
-void array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
 {
-  list_put((void*)ar, index, 1, 0, el);
+  xproxy(list_put, (void*)ar, index, 1, 0, el);
 }
 
-void array_set_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_set_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
 {
-  list_put((void*)ar, index, len, 0, el);
+  xproxy(list_put, (void*)ar, index, len, 0, el);
 }
 
 API void array_sort(array * const restrict ar, int (*compar)(const ARRAY_ELEMENT_TYPE *, const ARRAY_ELEMENT_TYPE *, void *), void * arg)

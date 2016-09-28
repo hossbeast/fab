@@ -49,7 +49,8 @@ struct list_internals
 
   uint32_t attr;
   size_t   esz;   // element size, for primary storage
-  void (*destructor)(LIST_ELEMENT_TYPE *);
+  void (*free_element)(LIST_ELEMENT_TYPE *);
+  xapi (*xfree_element)(LIST_ELEMENT_TYPE *);
 };
 
 #define restrict __restrict
@@ -60,16 +61,24 @@ struct list_internals
 //  create an empty list
 //
 // PARAMETERS
-//  list         - (returns) list instance
-//  attr         - bitwise combination of LIST_* options and modifiers
-//  [esz]        - value size > 0
-//  [destructor] - invoked with key/value just before freeing their associated storage
-//  [capacity]   - initial capacity
+//  list            - (returns) list instance
+//  attr            - bitwise combination of LIST_* options and modifiers
+//  [esz]           - value size > 0
+//  [free_element]  - invoked on an element before releasing its storage
+//  [xfree_element] - invoked on an element before releasing its storage
+//  [capacity]      - initial capacity
 //
 // REMARKS
 //  either attr & LIST_PRIMARY && esz != 0 or attr & LIST_SECONDARY && esz == 0
 //
-xapi list_allocate(struct list ** const restrict li, uint32_t attr, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
+xapi list_allocate(
+    struct list ** const restrict li
+  , uint32_t attr
+  , size_t esz
+  , void (*free_element)(LIST_ELEMENT_TYPE *)
+  , xapi (*xfree_element)(LIST_ELEMENT_TYPE *)
+  , size_t capacity
+)
   __attribute__((nonnull(1)));
 
 /// list_add
@@ -99,7 +108,7 @@ xapi list_add(struct list * const restrict li, size_t index, size_t len, LIST_EL
 //  [el]  - pointer to the first element to write
 //  [rv]  - (returns) pointers to elements
 //
-void list_put(struct list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+xapi list_put(struct list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
   __attribute__((nonnull(1)));
 
 #undef restrict

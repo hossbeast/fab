@@ -103,7 +103,7 @@ static void list_update(list * const restrict li, size_t index, size_t len, LIST
 //  copy elements from one list to another
 //
 // REMARKS
-//  the lists must be compatible, e.g. have the same element size and destructor
+//  the lists must be compatible, e.g. have the same element size and value_free callbacks
 //
 static void list_move(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
 {
@@ -116,18 +116,56 @@ static void list_move(list * const restrict dst, size_t dst_index, list * const 
   );
 }
 
+/// list_free_range
+//
+// SUMMARY
+//  free a range of elements in a list
+//
+// PARAMETERS
+//  li    - pointer to list
+//  start - index of the first element
+//  len   - number of elements
+//
+static xapi list_free_range(list * const restrict li, size_t start, size_t len)
+{
+  enter;
+
+  size_t x;
+
+  if(li->free_element)
+  {
+    for(x = 0; x < len; x++)
+      li->free_element(ELEMENT(li, start + x));
+  }
+  else if(li->xfree_element)
+  {
+    for(x = 0; x < len; x++)
+      fatal(li->xfree_element, ELEMENT(li, start + x));
+  }
+
+  finally : coda;
+}
+
 //
 // protected
 //
 
-xapi list_allocate(list ** const restrict rv, uint32_t attr, size_t esz, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
+xapi list_allocate(
+    list ** const restrict rv
+  , uint32_t attr
+  , size_t esz
+  , void (*free_element)(LIST_ELEMENT_TYPE *)
+  , xapi (*xfree_element)(LIST_ELEMENT_TYPE *)
+  , size_t capacity
+)
 {
   enter;
 
   list * li = 0;
   fatal(xmalloc, &li, sizeof(*li));
 
-  li->destructor = destructor;
+  li->free_element = free_element;
+  li->xfree_element = xfree_element;
   li->esz = esz;
   li->attr = attr;
 
@@ -137,21 +175,20 @@ xapi list_allocate(list ** const restrict rv, uint32_t attr, size_t esz, void (*
   li = 0;
 
 finally:
-  list_free(li);
+  fatal(list_xfree, li);
 coda;
 }
 
-void list_put(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+xapi list_put(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
 {
+  enter;
+
   // destroy existing elements
-  size_t x;
-  if(li->destructor)
-  {
-    for(x = 0; x < len; x++)
-      li->destructor(ELEMENT(li, index + x));   
-  }
+  fatal(list_free_range, li, index, len);
 
   list_update(li, index, len, el, rv);
+
+  finally : coda;
 }
 
 xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
@@ -178,30 +215,43 @@ xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
 // api
 //
 
-API xapi list_createx(list** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *), size_t capacity)
+API xapi list_createx(
+    list** const restrict li
+  , void (*free_element)(LIST_ELEMENT_TYPE *)
+  , xapi (*xfree_element)(LIST_ELEMENT_TYPE *)
+  , size_t capacity
+)
 {
-  xproxy(list_allocate, li, LIST_SECONDARY, 0, destructor, capacity);
+  xproxy(list_allocate, li, LIST_SECONDARY, 0, free_element, xfree_element, capacity);
 }
 
-API xapi list_create(list** const restrict li, void (*destructor)(LIST_ELEMENT_TYPE *))
+API xapi list_create(list** const restrict li)
 {
-  xproxy(list_allocate, li, LIST_SECONDARY, 0, destructor, 0);
+  xproxy(list_allocate, li, LIST_SECONDARY, 0, 0, 0, 0);
 }
 
-API void list_free(list * const restrict li)
+API xapi list_xfree(list * const restrict li)
 {
+  enter;
+
   if(li)
   {
-    list_clear(li);
+    fatal(list_recycle, li);
     free(li->v);
   }
   free(li);
+
+  finally : coda;
 }
 
-API void list_ifree(list ** const restrict li)
+API xapi list_ixfree(list ** const restrict li)
 {
-  list_free(*li);
+  enter;
+
+  fatal(list_xfree, *li);
   *li = 0;
+
+  finally : coda;
 }
 
 API size_t list_size(const list * const restrict li)
@@ -209,18 +259,14 @@ API size_t list_size(const list * const restrict li)
   return li->l;
 }
 
-API void list_clear(list * const restrict li)
+API xapi list_recycle(list * const restrict li)
 {
-  if(li->destructor)
-  {
-    int x;
-    for(x = 0; x < li->l; x++)
-    {
-      li->destructor(ELEMENT(li, x));
-    }
-  }
+  enter;
 
+  fatal(list_free_range, li, 0, li->l);
   li->l = 0;
+
+  finally : coda;
 }
 
 API LIST_ELEMENT_TYPE * list_get(const list * const restrict li, int x)
@@ -236,8 +282,10 @@ API xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restric
   if(li->l)
   {
     e = ELEMENT(li, 0);
-    if(li->destructor)
-      li->destructor(e);
+    if(li->free_element)
+      li->free_element(e);
+    else if(li->xfree_element)
+      fatal(li->xfree_element, e);
 
     memmove(
         li->v
@@ -261,8 +309,10 @@ API xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict 
   if(li->l)
   {
     e = ELEMENT(li, li->l - 1);
-    if(li->destructor)
-      li->destructor(e);
+    if(li->free_element)
+      li->free_element(e);
+    else if(li->xfree_element)
+      fatal(li->xfree_element, e);
     li->l--;
   }
   if(el)
@@ -301,14 +351,14 @@ API xapi list_insert_range(list * const restrict li, size_t index, LIST_ELEMENT_
   xproxy(list_add, li, index, len, el, 0);
 }
 
-API void list_set(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
+API xapi list_set(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
 {
-  return list_put(li, index, 1, &el, 0);  
+  xproxy(list_put, li, index, 1, &el, 0);  
 }
 
-API void list_set_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
+API xapi list_set_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
 {
-  return list_put(li, index, len, el, 0);  
+  xproxy(list_put, li, index, len, el, 0);  
 }
 
 API void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *, const LIST_ELEMENT_TYPE *, void *), void * arg)
@@ -334,8 +384,8 @@ API xapi list_sublist(list * const restrict li, size_t index, size_t len, list *
   enter;
 
   if(!*rv)
-    fatal(list_create, rv, li->destructor);
-  list_clear(*rv);
+    fatal(list_createx, rv, li->free_element, li->xfree_element, len);
+  fatal(list_recycle, *rv);
 
   fatal(list_assure, *rv, len);
   memcpy(
@@ -391,13 +441,7 @@ API xapi list_splice(list * const restrict dst, size_t dst_index, list * const r
 {
   enter;
 
-  size_t x;
-  if(dst->destructor)
-  {
-    for(x = 0; x < len; x++)
-      dst->destructor(ELEMENT(dst, dst_index + x));
-  }
-
+  fatal(list_free_range, dst, dst_index, len);
   list_move(dst, dst_index, src, src_index, len);
 
   finally : coda;

@@ -55,41 +55,46 @@ typedef struct list
 //  create an empty list
 //
 // PARAMETERS
-//  list           - created list goes here
-//  [free_element] - invoked on an element when its storage becomes unused
-//  [attr]         - bitwise combination of LIST_* options and modifiers
-//  [capacity]     - initial capacity
+//  list            - created list goes here
+//  [free_element]  - invoked on an element before releasing its storage
+//  [xfree_element] - invoked on an element before releasing its storage
+//  [capacity]      - initial capacity
 //
 // REMARKS
 //  free_element follows the free idiom
 //
-xapi list_create(list ** const restrict li, void (*free_element)(LIST_ELEMENT_TYPE *))
+xapi list_create(list ** const restrict li)
   __attribute__((nonnull(1)));
 
-xapi list_createx(list ** const restrict li, void (*free_element)(LIST_ELEMENT_TYPE *), size_t capacity)
+xapi list_createx(
+    list ** const restrict li
+  , void (*free_element)(LIST_ELEMENT_TYPE *)
+  , xapi (*xfree_element)(LIST_ELEMENT_TYPE *)
+  , size_t capacity
+)
   __attribute__((nonnull(1)));
 
-/// list_free
+/// list_xfree
 //
 // SUMMARY
-//  free a list with free semantics
+//  free a list
 //
-void list_free(list * const restrict li);
+xapi list_xfree(list * const restrict li);
 
-/// list_ifree
+/// list_ixfree
 //
 // SUMMARY
-//  free a list with ifree semantics
+//  free a list, zero its reference
 //
-void list_ifree(list ** const restrict li)
+xapi list_ixfree(list ** const restrict li)
   __attribute__((nonnull));
 
-/// list_clear
+/// list_recycle
 //
 // SUMMARY
 //  reset the number of elements in the list - the allocation remains intact
 //
-void list_clear(list * const restrict li)
+xapi list_recycle(list * const restrict li)
   __attribute__((nonnull));
 
 /// list_size
@@ -118,7 +123,7 @@ LIST_ELEMENT_TYPE * list_get(const list * const restrict li, int x)
 //  el - 
 //
 // REMARKS
-//  free_element is called on the element before this function returns
+//  x/free_element is called on the element before this function returns
 //
 xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
   __attribute__((nonnull(1)));
@@ -129,7 +134,7 @@ xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el
 //  remove the last element of the list
 //
 // REMARKS
-//  free_element is called on the element before this function returns
+//  x/free_element is called on the element before this function returns
 //
 xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
   __attribute__((nonnull(1)));
@@ -227,7 +232,7 @@ xapi list_insert_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE
 //  index - 0 <= index < list_size(s)
 //  el    - pointer to the element to place
 //
-void list_set(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
+xapi list_set(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
   __attribute__((nonnull));
 
 /// list_set_range
@@ -244,7 +249,7 @@ void list_set(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const 
 //  el    - pointer to the first element to place
 //  len   - number of elements to place
 //
-void list_set_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
+xapi list_set_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
   __attribute__((nonnull));
 
 /// list_sort

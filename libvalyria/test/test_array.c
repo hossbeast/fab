@@ -83,7 +83,7 @@ static xapi test_basic()
   fatal(validate, ar);
 
 finally:
-  array_free(ar);
+  fatal(array_xfree, ar);
 coda;
 }
 
@@ -103,11 +103,11 @@ static xapi test_set()
   fatal(validate, ar);
 
   item * itemp;
-  array_set(ar, 0, &itemp);
+  fatal(array_set, ar, 0, &itemp);
   itemp->x = 1;
-  array_set(ar, 1, &itemp);
+  fatal(array_set, ar, 1, &itemp);
   itemp->x = 2;
-  array_set(ar, 2, &itemp);
+  fatal(array_set, ar, 2, &itemp);
   itemp->x = 3;
 
   fatal(validate, ar);
@@ -120,7 +120,7 @@ static xapi test_set()
   fatal(validate, ar);
 
 finally:
-  array_free(ar);
+  fatal(array_xfree, ar);
 coda;
 }
 

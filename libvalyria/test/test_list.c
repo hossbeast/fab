@@ -65,7 +65,7 @@ static xapi test_basic()
   item * itemp = 0;
   item * itemps[2];
 
-  fatal(list_create, &listp, (void*)free);
+  fatal(list_createx, &listp, (void*)free, 0, 0);
 
   fatal(xmalloc, &itemp, sizeof(*itemp));
   itemp->x = 4;
@@ -105,7 +105,7 @@ static xapi test_basic()
   fatal(validate, listp);
 
 finally:
-  list_free(listp);
+  fatal(list_xfree, listp);
   free(itemp);
 coda;
 }
@@ -115,7 +115,7 @@ static xapi test_load()
   enter;
 
   list * listp = 0;
-  fatal(list_create, &listp, 0);
+  fatal(list_create, &listp);
 
   int x;
   for(x = 0; x < 50; x++)
@@ -128,7 +128,7 @@ static xapi test_load()
     fatal(list_insert, listp, x, (void*)listp);
 
 finally:
-  list_free(listp);
+  fatal(list_xfree, listp);
 coda;
 }
 
@@ -150,8 +150,8 @@ static xapi test_insertion_sort()
   int x;
   for(x = 0; x < sentinel(items); x++)
   {
-    list_ifree(&listp);
-    fatal(list_create, &listp, (void*)free);
+    fatal(list_ixfree, &listp);
+    fatal(list_createx, &listp, (void*)free, 0, 0);
 
     int y;
     for(y = 0; y < sentinel(items[x]); y++)
@@ -181,7 +181,7 @@ static xapi test_insertion_sort()
   }
 
 finally:
-  list_free(listp);
+  fatal(list_xfree, listp);
   free(itemp);
 coda;
 }
@@ -199,7 +199,7 @@ static xapi test_set()
   item * itemp = 0;
   item * itemps[3];
 
-  fatal(list_create, &listp, (void*)free);
+  fatal(list_createx, &listp, (void*)free, 0, 0);
 
   fatal(xmalloc, &itemps[0], sizeof(**itemps));
   itemps[0]->x = 1;
@@ -223,7 +223,7 @@ static xapi test_set()
   }
 
 finally:
-  list_free(listp);
+  fatal(list_xfree, listp);
   free(itemp);
 coda;
 }

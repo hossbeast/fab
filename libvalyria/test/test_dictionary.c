@@ -154,7 +154,7 @@ static xapi test()
   fatal(validate, dp);
 
 finally:
-  dictionary_free(dp);
+  fatal(dictionary_xfree, dp);
 coda;
 }
 
@@ -163,7 +163,7 @@ static xapi test_rehash()
   enter;
 
   dictionary * dp = 0;
-  fatal(dictionary_createx, &dp, sizeof(item), 0, 2);
+  fatal(dictionary_createx, &dp, sizeof(item), 0, 0, 2);
 
   int x;
   for(x = 0; x <= 35; x++)
@@ -178,10 +178,7 @@ static xapi test_rehash()
       {
         int i;
         for(i = 0; i < 7; i++)
-        {
-          if(!dictionary_delete(dp, MM(i)))
-            ufailf("%s", "%d", "(found)", i);
-        }
+          fatal(dictionary_delete, dp, MM(i));
       }
 
       if(x >= 7)
@@ -205,7 +202,7 @@ static xapi test_rehash()
   }
 
 finally:
-  dictionary_free(dp);
+  fatal(dictionary_xfree, dp);
 coda;
 }
 
