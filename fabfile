@@ -19,33 +19,46 @@
 +[ $*/vars.fab ]
 
 # source invocations
-+[ $dcommon ]()       @common
++[ $dfabcore ]()      @fabcore
++[ $dliblistwise ]()  @liblistwise
++[ $dliblogger ]()    @liblogger
++[ $dliblorien ]()    @liblorien
++[ $dlibmoria ]()     @libmoria
++[ $dlibnarrator ]()  @libnarrator
++[ $dlibvalue ]()     @libvalue
++[ $dlibvalyria ]()   @libvalyria
 +[ $dlibxapi ]()      @libxapi
 +[ $dlibxlinux ]()    @libxlinux
-+[ $dlibpstring ]()   @libpstring
-+[ $dliblistwise ]()  @liblistwise
++[ $dlibxunit ]()     @libxunit
++[ $dlibyyutil ]()    @libyyutil
 +[ $dlistwise ]()     @listwise
 +[ $dxunit ]()        @xunit
-+[ $dlibxunit ]()     @libxunit
-+[ $dfabcore ]()      @fabcore
 
 # build artifacts
-[ @all ] : [ @all.xapi ]
-[ @final ] : [ @final.xapi ]
-[ @debug ] : [ @debug.xapi ]
-[ @devel ] : [ @devel.xapi ]
-[ @man ] : [ @fabcore.man @listwise.man ]
+[ @all ] : [ @final @debug @devel ]
+[ @final ] : [
+  @fabcore.final @liblistwise.final @liblogger.final @liblorien.final @libmoria.final
+  @libnarrator.final @libvalue.final @libvalyria.final @libxapi.final @libxlinux.final @libxunit.final
+  @libyyutil.final @listwise.final @xunit.final
+]
 
-[ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
-[ @final.xapi ] : [ @libxapi.final.xapi @libxlinux.final.xapi @libpstring.final.xapi @liblistwise.final.xapi @listwise.final @fabcore.final.xapi ]
-[ @debug.xapi ] : [ @libxapi.debug.xapi @libxlinux.debug.xapi @libpstring.debug.xapi @liblistwise.debug.xapi @listwise.debug @fabcore.debug.xapi ]
-[ @devel.xapi ] : [ @libxapi.devel.xapi @libxlinux.devel.xapi @libpstring.devel.xapi @liblistwise.devel.xapi @listwise.devel @fabcore.devel.xapi ]
+[ @debug ] : [
+  @fabcore.debug @liblistwise.debug @liblogger.debug @liblorien.debug @libmoria.debug
+  @libnarrator.debug @libvalue.debug @libvalyria.debug @libxapi.debug @libxlinux.debug @libxunit.debug
+  @libyyutil.debug @listwise.debug @xunit.debug
+]
+
+[ @devel ] : [
+  @fabcore.devel @liblistwise.devel @liblogger.devel @liblorien.devel @libmoria.devel
+  @libnarrator.devel @libvalue.devel @libvalyria.devel @libxapi.devel @libxlinux.devel @libxunit.devel
+  @libyyutil.devel @listwise.devel @xunit.devel
+]
 
 # install libraries
 [ @install.base.final ] : [ @install.base.final.xapi ]
 [ @install.base.debug ] : [ @install.base.debug.xapi ]
-[ @install.base.final.xapi ] : [ @libxapi.install.final.xapi @libxlinux.install.final.xapi @libpstring.install.final.xapi @liblistwise.install.final.xapi @listwise.install.final ]
-[ @install.base.debug.xapi ] : [ @libxapi.install.debug.xapi @libxlinux.install.debug.xapi @libpstring.install.debug.xapi @liblistwise.install.debug.xapi @listwise.install.debug ]
+[ @install.base.final.xapi ] : [ @libxapi.install.final.xapi @libxlinux.install.final.xapi @libvalyria.install.final.xapi @liblistwise.install.final.xapi @listwise.install.final ]
+[ @install.base.debug.xapi ] : [ @libxapi.install.debug.xapi @libxlinux.install.debug.xapi @libvalyria.install.debug.xapi @liblistwise.install.debug.xapi @listwise.install.debug ]
 
 # install local and dist
 [ @install.local.final ] : [ @install.local.final.xapi ]

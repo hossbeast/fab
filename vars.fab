@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -44,26 +44,26 @@ $VERSIONN       = [ $VERSIONL ~ j s/^0//g ]       # version number
 
 # source directories
 $droot          = [ $* ]
-$dfabcore       = [ $*/fab ~ j ]
+$dcommon        = [ $*/common ~ j ]
 $dfab           = [ $*/fab/fab ~ j ]
+$dfabcore       = [ $*/fab ~ j ]
 $dfabd          = [ $*/fab/fabd ~ j ]
 $dfabw          = [ $*/fab/fabw ~ j ]
 $dlibfab        = [ $*/fab/libfab ~ j ]
-$dutil          = [ $*/fab/util ~ j ] 
-$dcommon        = [ $*/common ~ j ]
-$dlibxapi       = [ $*/libxapi ~ j ]
-$dlibxlinux     = [ $*/libxlinux ~ j ]
-$dlibvalyria    = [ $*/libvalyria ~ j ]
-$dlibvalue      = [ $*/libvalue ~ j ]
+$dliblistwise   = [ $*/listwise/liblistwise ~ j ]
+$dliblogger     = [ $*/liblogger ~ j ]
 $dliblorien     = [ $*/liblorien ~ j ]
 $dlibmoria      = [ $*/libmoria ~ j ]
-$dlibyyutil     = [ $*/libyyutil ~ j ]
 $dlibnarrator   = [ $*/libnarrator ~ j ]
-$dliblistwise   = [ $*/listwise/liblistwise ~ j ]
-$dlistwise      = [ $*/listwise/listwise ~ j ]
+$dlibvalue      = [ $*/libvalue ~ j ]
+$dlibvalyria    = [ $*/libvalyria ~ j ]
+$dlibxapi       = [ $*/libxapi ~ j ]
+$dlibxlinux     = [ $*/libxlinux ~ j ]
 $dlibxunit      = [ $*/xunit/libxunit ~ j ]
+$dlibyyutil     = [ $*/libyyutil ~ j ]
+$dlistwise      = [ $*/listwise/listwise ~ j ]
+$dutil          = [ $*/fab/util ~ j ]
 $dxunit         = [ $*/xunit/xunit ~ j ]
-$dliblogger     = [ $*/liblogger ~ j ]
 
 # build artifacts
 $libxapi_xapi_final     = [ $dlibxapi/libxapi-xapi.final.so ~ j ]
