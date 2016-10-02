@@ -183,7 +183,7 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 {
   [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [
   ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel ~ fi ] [
-  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfabcore_xapi_devel $libyyutil_xapi_devel ~ fi ] [
+  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libyyutil_xapi_devel ~ fi ] [
   ] [ $@ ~ rx/ineed fi ]
 }
 
@@ -191,6 +191,6 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 {
   [ $xunit_xapi_devel ] [
   ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel ~ fi ] [
-  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfabcore_xapi_devel $libyyutil_xapi_devel ~ fi ] [
+  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libyyutil_xapi_devel ~ fi ] [
   ] [ $@ ~ rx/ineed fi ]
 }

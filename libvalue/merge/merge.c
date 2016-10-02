@@ -68,7 +68,7 @@ static xapi merge(value * const restrict dst, const value * const restrict src)
   finally : coda;
 }
 
-xapi value_merge(value * const restrict dst, const value * const restrict src)
+API xapi value_merge(value * const restrict dst, const value * const restrict src)
 {
   enter;
 

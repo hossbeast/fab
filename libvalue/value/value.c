@@ -26,24 +26,19 @@
 // static
 //
 
-static xapi value_say_recurse(const value * const restrict val, int level, narrator * const restrict N)
+static xapi __attribute__((nonnull)) say_value_verbose(const value * const restrict val, int level, narrator * const restrict N);
+static xapi __attribute__((nonnull)) say_value_verbose(const value * const restrict val, int level, narrator * const restrict N)
 {
   enter;
 
   int x;
-
-  if(val == 0)
-  {
-    says("(empty)");
-  }
-
-  else if(val->type == VALUE_TYPE_LIST)
+  if(val->type == VALUE_TYPE_LIST)
   {
     sayf("%s [", VALUE_TYPE_STRING(val->type));
     for(x = 0; x < val->l->l; x++)
     {
       sayf("\n%*s", (level + 1) * 2, "");
-      fatal(value_say_recurse, list_get(val->l, x), level + 1, N);
+      fatal(say_value_verbose, list_get(val->l, x), level + 1, N);
     }
     sayf("\n%*s]", level * 2, "");
   }
@@ -54,9 +49,9 @@ static xapi value_say_recurse(const value * const restrict val, int level, narra
     for(x = 0; x < val->keys->l; x++)
     {
       sayf("\n%*s", (level + 1) * 2, "");
-      fatal(value_say_recurse, list_get(val->keys, x), level + 1, N);
+      fatal(say_value_verbose, list_get(val->keys, x), level + 1, N);
       sayf(" : ");
-      fatal(value_say_recurse, list_get(val->vals, x), level + 1, N);
+      fatal(say_value_verbose, list_get(val->vals, x), level + 1, N);
     }
     sayf("\n%*s}", level * 2, "");
   }
@@ -79,13 +74,87 @@ static xapi value_say_recurse(const value * const restrict val, int level, narra
   finally : coda;
 }
 
+static xapi __attribute__((nonnull)) say_value_canon(const value * const restrict val, int level, narrator * const restrict N)
+{
+  enter;
+
+  int x;
+  if(val->type == VALUE_TYPE_LIST)
+  {
+    says("[");
+    for(x = 0; x < val->l->l; x++)
+    {
+      sayf("\n%*s", (level + 1) * 2, "");
+      fatal(say_value_canon, list_get(val->l, x), level + 1, N);
+    }
+    sayf("\n%*s]", level * 2, "");
+  }
+
+  else if(val->type == VALUE_TYPE_MAP)
+  {
+    says("{");
+    for(x = 0; x < val->keys->l; x++)
+    {
+      sayf("\n%*s", (level + 1) * 2, "");
+      fatal(say_value_canon, list_get(val->keys, x), level + 1, N);
+      sayf(" : ");
+      fatal(say_value_canon, list_get(val->vals, x), level + 1, N);
+    }
+    sayf("\n%*s}", level * 2, "");
+  }
+
+  else if(val->type == VALUE_TYPE_STRING)
+  {
+    sayf("%s", val->s->s);
+  }
+
+  else if(val->type == VALUE_TYPE_FLOAT)
+  {
+    sayf("%f", val->f);
+  }
+
+  else if(val->type == VALUE_TYPE_BOOLEAN)
+  {
+    sayf("%s", val->b ? "true" : "false");
+  }
+
+  finally : coda;
+}
+
 //
 // api
 //
 
 API xapi value_say(const value * const restrict val, narrator * const restrict N)
 {
-  xproxy(value_say_recurse, val, 0, N);
+  enter;
+
+  if(val == 0)
+  {
+    says("(empty)");
+  }
+  else
+  {
+    fatal(say_value_canon, val, 0, N);
+  }
+
+  finally : coda;
+}
+
+API xapi value_say_verbose(const value * const restrict val, narrator * const restrict N)
+{
+  enter;
+
+  if(val == 0)
+  {
+    says("(empty)");
+  }
+  else
+  {
+    fatal(say_value_verbose, val, 0, N);
+  }
+
+  finally : coda;
 }
 
 API int value_cmp(const value * const restrict A, const value * const restrict B)
